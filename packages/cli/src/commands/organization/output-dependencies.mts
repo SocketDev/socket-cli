@@ -9,6 +9,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+const logger = getDefaultLogger()
+
 
 export async function outputDependencies(
   result: CResult<SocketSdkSuccessResult<'searchDependencies'>['data']>,
@@ -27,11 +29,11 @@ export async function outputDependencies(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -48,16 +50,16 @@ function outputMarkdown(
     offset: number
   },
 ) {
-  getDefaultLogger().log(mdHeader('Organization dependencies'))
-  getDefaultLogger().log('')
-  getDefaultLogger().log('Request details:')
-  getDefaultLogger().log('- Offset:', offset)
-  getDefaultLogger().log('- Limit:', limit)
-  getDefaultLogger().log(
+  logger.log(mdHeader('Organization dependencies'))
+  logger.log('')
+  logger.log('Request details:')
+  logger.log('- Offset:', offset)
+  logger.log('- Limit:', limit)
+  logger.log(
     '- Is there more data after this?',
     result.end ? 'no' : 'yes',
   )
-  getDefaultLogger().log('')
+  logger.log('')
 
   const options = {
     columns: [
@@ -71,5 +73,5 @@ function outputMarkdown(
     ],
   }
 
-  getDefaultLogger().log(chalkTable(options, result.rows))
+  logger.log(chalkTable(options, result.rows))
 }

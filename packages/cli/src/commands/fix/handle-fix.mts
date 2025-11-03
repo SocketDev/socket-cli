@@ -10,6 +10,8 @@ import { convertPurlToGhsas } from '../../utils/purl/to-ghsa.mts'
 import type { FixConfig } from './types.mts'
 import type { OutputKind } from '../../types.mts'
 import type { Remap } from '@socketsecurity/lib/objects'
+const logger = getDefaultLogger()
+
 
 const GHSA_FORMAT_REGEXP = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/
 const CVE_FORMAT_REGEXP = /^CVE-\d{4}-\d{4,}$/
@@ -58,7 +60,7 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
       const conversionResult = await convertCveToGhsa(trimmedId)
       if (conversionResult.ok) {
         validGhsas.push(conversionResult.data)
-        getDefaultLogger().info(
+        logger.info(
           `Converted ${trimmedId} to ${conversionResult.data}`,
         )
       } else {
@@ -74,7 +76,7 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
           conversionResult.data.length > 3
             ? `${conversionResult.data.slice(0, 3).join(', ')} … and ${conversionResult.data.length - 3} more`
             : joinAnd(conversionResult.data)
-        getDefaultLogger().info(
+        logger.info(
           `Converted ${trimmedId} to ${conversionResult.data.length} GHSA(s): ${displayGhsas}`,
         )
       } else {
@@ -91,7 +93,7 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
   }
 
   if (errors.length) {
-    getDefaultLogger().warn(
+    logger.warn(
       `Skipped ${errors.length} invalid IDs:\n${errors.map(e => `  - ${e}`).join('\n')}`,
     )
     debugDir({ errors })

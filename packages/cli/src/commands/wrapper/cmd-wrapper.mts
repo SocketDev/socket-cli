@@ -13,6 +13,8 @@ import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
+const logger = getDefaultLogger()
+
 
 import type {
   CliCommandConfig,
@@ -104,7 +106,7 @@ async function run(
   }
 
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
@@ -142,7 +144,7 @@ async function run(
   }
 
   if (!existsSync(bashRcPath) && !existsSync(zshRcPath)) {
-    getDefaultLogger().fail(
+    logger.fail(
       'There was an issue setting up the alias in your bash profile',
     )
     return
@@ -156,7 +158,7 @@ async function run(
       skippedFiles,
       success: modifiedFiles.length > 0 || skippedFiles.length > 0,
     }
-    getDefaultLogger().log(JSON.stringify(result, null, 2))
+    logger.log(JSON.stringify(result, null, 2))
   } else if (outputKind === 'markdown') {
     const arr = []
     arr.push(`# Socket Wrapper ${enable ? 'Enabled' : 'Disabled'}`)
@@ -187,7 +189,7 @@ async function run(
     )
     arr.push('')
 
-    getDefaultLogger().log(arr.join('\n'))
+    logger.log(arr.join('\n'))
   }
   // Text mode output is already handled by add/remove functions.
 }

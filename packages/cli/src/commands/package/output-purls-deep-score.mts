@@ -6,6 +6,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { PurlDataResponse } from './fetch-purl-deep-score.mts'
 import type { CResult, OutputKind } from '../../types.mts'
+const logger = getDefaultLogger()
+
 
 export async function outputPurlsDeepScore(
   purl: string,
@@ -17,28 +19,28 @@ export async function outputPurlsDeepScore(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   if (outputKind === 'markdown') {
     const md = createMarkdownReport(result.data)
-    getDefaultLogger().success(
+    logger.success(
       `Score report for "${result.data.purl}" ("${purl}"):\n`,
     )
-    getDefaultLogger().log(md)
+    logger.log(md)
     return
   }
 
-  getDefaultLogger().log(
+  logger.log(
     `Score report for "${purl}" (use --json for raw and --markdown for formatted reports):`,
   )
-  getDefaultLogger().log(result.data)
-  getDefaultLogger().log('')
+  logger.log(result.data)
+  logger.log('')
 }
 
 export function createMarkdownReport(data: PurlDataResponse): string {

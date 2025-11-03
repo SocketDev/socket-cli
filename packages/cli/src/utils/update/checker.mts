@@ -27,6 +27,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { onExit } from '@socketsecurity/lib/signal-exit'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
+const logger = getDefaultLogger()
+
 import { UPDATE_NOTIFIER_TIMEOUT } from '../../constants/cache.mts'
 
 export interface AuthInfo {
@@ -226,7 +228,7 @@ const NetworkUtils = {
         const isLastAttempt = attempts === maxAttempts
 
         if (isLastAttempt) {
-          getDefaultLogger().warn(
+          logger.warn(
             `Failed to fetch version after ${maxAttempts} attempts: ${error instanceof Error ? error.message : String(error)}`,
           )
           throw error
@@ -234,7 +236,7 @@ const NetworkUtils = {
 
         // Exponential backoff.
         const delay = baseDelay * 2 ** (attempts - 1)
-        getDefaultLogger().log(
+        logger.log(
           `Attempt ${attempts} failed, retrying in ${delay}ms: ${error instanceof Error ? error.message : String(error)}`,
         )
 
@@ -285,7 +287,7 @@ async function checkForUpdates(
       updateAvailable,
     }
   } catch (error) {
-    getDefaultLogger().log(
+    logger.log(
       `Failed to check for updates: ${error instanceof Error ? error.message : String(error)}`,
     )
     throw error

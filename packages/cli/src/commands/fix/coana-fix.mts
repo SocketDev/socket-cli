@@ -49,6 +49,8 @@ import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-n
 
 import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
+const logger = getDefaultLogger()
+
 
 export async function coanaFix(
   fixConfig: FixConfig,
@@ -134,14 +136,14 @@ export async function coanaFix(
       if (envCheck.present.length) {
         // Some CI vars are set but not all - show what's missing.
         if (envCheck.missing.length) {
-          getDefaultLogger().info(
+          logger.info(
             'Running in local mode - fixes will be applied directly to your working directory.\n' +
               `Missing environment variables for PR creation: ${joinAnd(envCheck.missing)}`,
           )
         }
       } else {
         // No CI vars are present - show general local mode message.
-        getDefaultLogger().info(
+        logger.info(
           'Running in local mode - fixes will be applied directly to your working directory.\n' +
             getCiEnvInstructions(),
         )
@@ -199,7 +201,7 @@ export async function coanaFix(
 
       // Copy to outputFile if provided.
       if (outputFile) {
-        getDefaultLogger().info(`Copying fixes result to ${outputFile}`)
+        logger.info(`Copying fixes result to ${outputFile}`)
         const tmpContent = await fs.readFile(tmpFile, 'utf8')
         await fs.writeFile(outputFile, tmpContent, 'utf8')
       }
@@ -337,14 +339,14 @@ export async function coanaFix(
 
   const skippedCount = ids.length - unprocessedIds.length
   if (skippedCount > 0) {
-    getDefaultLogger().info(
+    logger.info(
       `Skipping ${skippedCount} already-fixed ${pluralize('GHSA', { count: skippedCount })}`,
     )
   }
 
   // Clean up stale and merged Socket Fix PRs before creating new ones.
   if (shouldOpenPrs && fixEnv.repoInfo) {
-    getDefaultLogger().substep('Cleaning up stale and merged Socket Fix PRs...')
+    logger.substep('Cleaning up stale and merged Socket Fix PRs...')
 
     for (let i = 0, { length } = unprocessedIds; i < length; i += 1) {
       const ghsaId = unprocessedIds[i]!
@@ -403,7 +405,7 @@ export async function coanaFix(
     )
 
     if (!fixCResult.ok) {
-      getDefaultLogger().error(
+      logger.error(
         `Update failed for ${ghsaId}: ${getErrorCause(fixCResult)}`,
       )
       continue
@@ -504,7 +506,7 @@ export async function coanaFix(
         (await gitPushBranch(branch, cwd))
 
       if (!pushed) {
-        getDefaultLogger().warn(
+        logger.warn(
           `Push failed for ${ghsaId}, skipping PR creation.`,
         )
         // Clean up remote branch if it was pushed.
@@ -532,7 +534,7 @@ export async function coanaFix(
 
       // Set up git remote.
       if (!fixEnv.githubToken) {
-        getDefaultLogger().error(
+        logger.error(
           'Cannot create pull request: SOCKET_CLI_GITHUB_TOKEN environment variable is not set.\n' +
             'Set SOCKET_CLI_GITHUB_TOKEN or GITHUB_TOKEN to enable PR creation.',
         )
@@ -570,8 +572,8 @@ export async function coanaFix(
         const { data } = prResponse
         const prRef = `PR #${data.number}`
 
-        getDefaultLogger().success(`Opened ${prRef} for ${ghsaId}.`)
-        getDefaultLogger().info(`PR URL: ${data.html_url}`)
+        logger.success(`Opened ${prRef} for ${ghsaId}.`)
+        logger.info(`PR URL: ${data.html_url}`)
         logPrEvent('created', data.number, ghsaId, data.html_url)
 
         // Mark GHSA as fixed in tracker.
@@ -579,19 +581,19 @@ export async function coanaFix(
         await markGhsaFixed(cwd, ghsaId, data.number, branch)
 
         if (autopilot) {
-          getDefaultLogger().indent()
+          logger.indent()
           spinner?.indent()
           // eslint-disable-next-line no-await-in-loop
           const { details, enabled } = await enablePrAutoMerge(data)
           if (enabled) {
-            getDefaultLogger().info(`Auto-merge enabled for ${prRef}.`)
+            logger.info(`Auto-merge enabled for ${prRef}.`)
           } else {
             const message = `Failed to enable auto-merge for ${prRef}${
               details ? `:\n${details.map(d => ` - ${d}`).join('\n')}` : '.'
             }`
-            getDefaultLogger().error(message)
+            logger.error(message)
           }
-          getDefaultLogger().dedent()
+          logger.dedent()
           spinner?.dedent()
         }
       }
@@ -602,7 +604,7 @@ export async function coanaFix(
       // eslint-disable-next-line no-await-in-loop
       await gitCheckoutBranch(fixEnv.baseBranch, cwd)
     } catch (e) {
-      getDefaultLogger().warn(
+      logger.warn(
         `Unexpected condition: Push failed for ${ghsaId}, skipping PR creation.`,
       )
       debugDir(e)

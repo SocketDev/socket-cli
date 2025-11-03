@@ -9,6 +9,8 @@ import { spawn } from '@socketsecurity/lib/spawn'
 
 import { outputAskCommand } from './output-ask.mts'
 import ENV from '../../constants/env.mts'
+const logger = getDefaultLogger()
+
 
 // Semantic index for fast word-overlap matching (lazy-loaded, ~3KB).
 let semanticIndex: any = null
@@ -642,17 +644,17 @@ export async function handleAsk(options: HandleAskOptions): Promise<void> {
 
   // If not executing, just show the command.
   if (!execute) {
-    getDefaultLogger().log('')
-    getDefaultLogger().log(
+    logger.log('')
+    logger.log(
       '💡 Tip: Add --execute or -e to run this command directly',
     )
     return
   }
 
   // Execute the command.
-  getDefaultLogger().log('')
-  getDefaultLogger().log('🚀 Executing...')
-  getDefaultLogger().log('')
+  logger.log('')
+  logger.log('🚀 Executing...')
+  logger.log('')
 
   const result = await spawn('socket', intent.command, {
     stdio: 'inherit',
@@ -660,7 +662,7 @@ export async function handleAsk(options: HandleAskOptions): Promise<void> {
   })
 
   if (result.code !== 0) {
-    getDefaultLogger().error(`Command failed with exit code ${result.code}`)
+    logger.error(`Command failed with exit code ${result.code}`)
     // eslint-disable-next-line n/no-process-exit
     process.exit(result.code)
   }

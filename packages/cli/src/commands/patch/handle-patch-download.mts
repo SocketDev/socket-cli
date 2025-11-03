@@ -47,6 +47,8 @@ import type { OutputKind } from '../../types.mts'
 import type { PatchRecord } from '../../utils/manifest/patches.mts'
 import type { Spinner } from '@socketsecurity/lib/spinner'
 import type { SocketSdk } from '@socketsecurity/sdk'
+const logger = getDefaultLogger()
+
 
 export type HandlePatchDownloadConfig = {
   cwd: string
@@ -221,7 +223,7 @@ export async function handlePatchDownload({
         error: e.message,
         uuid,
       })
-      getDefaultLogger().error(`Failed to download patch ${uuid}: ${e.message}`)
+      logger.error(`Failed to download patch ${uuid}: ${e.message}`)
     }
   }
 
@@ -290,7 +292,7 @@ async function collectPatchesFromScan(
       }
     }
   } catch (e: any) {
-    getDefaultLogger().error(`Failed to stream patches from scan: ${e.message}`)
+    logger.error(`Failed to stream patches from scan: ${e.message}`)
   }
 
   return uuids

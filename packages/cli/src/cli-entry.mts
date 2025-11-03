@@ -37,6 +37,8 @@ import lookupRegistryUrl from 'registry-url'
 import { debug as debugNs, debugDir } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+const logger = getDefaultLogger()
+
 // Debug logger for manifest operations
 const debug = debugNs
 
@@ -176,7 +178,7 @@ void (async () => {
     })()
 
     if (isJson) {
-      getDefaultLogger().log(
+      logger.log(
         serializeResultJson({
           ok: false,
           message: errorTitle,
@@ -185,8 +187,8 @@ void (async () => {
       )
     } else {
       // Add 2 newlines in stderr to bump below any spinner.
-      getDefaultLogger().error('\n')
-      getDefaultLogger().fail(failMsgWithBadge(errorTitle, errorMessage))
+      logger.error('\n')
+      logger.fail(failMsgWithBadge(errorTitle, errorMessage))
       if (errorBody) {
         debugDir('inspect', { errorBody })
       }

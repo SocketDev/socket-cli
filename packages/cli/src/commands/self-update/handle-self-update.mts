@@ -35,6 +35,8 @@ import {
 import { canSelfUpdate, isSeaBinary } from '../../utils/sea/detect.mjs'
 
 import type { CliCommandConfig } from '../../utils/cli/with-subcommands.mjs'
+const logger = getDefaultLogger()
+
 
 // Helper functions for updater paths.
 function getSocketCliUpdaterDownloadsDir(): string {
@@ -62,7 +64,7 @@ async function createBackup(currentPath: string): Promise<string> {
 
   try {
     await fs.copyFile(currentPath, backupPath)
-    getDefaultLogger().info(`Created backup at ${backupPath}`)
+    logger.info(`Created backup at ${backupPath}`)
     return backupPath
   } catch (error) {
     throw new Error(
@@ -104,7 +106,7 @@ async function replaceBinary(
       await fs.rename(newPath, currentPath)
     }
 
-    getDefaultLogger().info('Binary replacement completed successfully')
+    logger.info('Binary replacement completed successfully')
   } catch (error) {
     throw new Error(
       `Failed to replace binary: ${error instanceof Error ? error.message : String(error)}`,
@@ -124,28 +126,28 @@ async function updateStubBinary(
 
   // Only proceed if we have a stub path from IPC.
   if (!stubPath) {
-    getDefaultLogger().info(
+    logger.info(
       'No stub path received - CLI not launched via bootstrap stub',
     )
     return false
   }
 
   if (!existsSync(stubPath)) {
-    getDefaultLogger().warn(`Stub path from IPC does not exist: ${stubPath}`)
+    logger.warn(`Stub path from IPC does not exist: ${stubPath}`)
     return false
   }
 
-  getDefaultLogger().info(`Checking bootstrap stub for updates: ${stubPath}`)
+  logger.info(`Checking bootstrap stub for updates: ${stubPath}`)
 
   if (dryRun) {
-    getDefaultLogger().info('[DRY RUN] Would download and update stub')
+    logger.info('[DRY RUN] Would download and update stub')
     return false
   }
 
   try {
     // Fetch stub package metadata from npm registry.
     const stubPackageName = getSocketbinPackageName()
-    getDefaultLogger().info(
+    logger.info(
       `Fetching stub package metadata: ${stubPackageName}@${latestVersion}`,
     )
 
@@ -155,7 +157,7 @@ async function updateStubBinary(
       throw new Error('Invalid package metadata from npm registry')
     }
 
-    getDefaultLogger().info('Downloading new stub package...')
+    logger.info('Downloading new stub package...')
 
     const downloadsDir = getSocketCliUpdaterDownloadsDir()
     const stagingDir = getSocketCliUpdaterStagingDir()
@@ -193,13 +195,13 @@ async function updateStubBinary(
 
       // Create backup of current stub.
       const backupPath = await createBackup(stubPath)
-      getDefaultLogger().info(`Created stub backup: ${backupPath}`)
+      logger.info(`Created stub backup: ${backupPath}`)
 
       try {
         // Replace the stub binary.
         await replaceBinary(extractedPath, stubPath)
 
-        getDefaultLogger().info(
+        logger.info(
           `${colors.green('✓')} Bootstrap stub updated successfully!`,
         )
         return true
@@ -207,11 +209,11 @@ async function updateStubBinary(
         // Restore from backup on failure.
         try {
           await fs.copyFile(backupPath, stubPath)
-          getDefaultLogger().info(
+          logger.info(
             'Restored stub from backup after update failure',
           )
         } catch (restoreError) {
-          getDefaultLogger().error(
+          logger.error(
             `Failed to restore stub from backup: ${restoreError instanceof Error ? restoreError.message : String(restoreError)}`,
           )
         }
@@ -231,7 +233,7 @@ async function updateStubBinary(
       }
     }
   } catch (error) {
-    getDefaultLogger().error(
+    logger.error(
       `Failed to update stub: ${error instanceof Error ? error.message : String(error)}`,
     )
     return false
@@ -333,8 +335,8 @@ Examples
     throw new Error('Unable to determine current binary path')
   }
 
-  getDefaultLogger().info(`Current version: ${colors.cyan(currentVersion)}`)
-  getDefaultLogger().info(`Current binary: ${currentBinaryPath}`)
+  logger.info(`Current version: ${colors.cyan(currentVersion)}`)
+  logger.info(`Current binary: ${currentBinaryPath}`)
 
   if (!existsSync(currentBinaryPath)) {
     throw new Error(`Current binary not found at ${currentBinaryPath}`)
@@ -342,7 +344,7 @@ Examples
 
   // Fetch latest version from npm registry.
   const packageName = getSocketbinPackageName()
-  getDefaultLogger().info(`Fetching latest version from npm: ${packageName}`)
+  logger.info(`Fetching latest version from npm: ${packageName}`)
 
   const metadata = await fetchPackageMetadata(packageName, 'latest')
   const latestVersion = metadata.version
@@ -351,7 +353,7 @@ Examples
     throw new Error('Invalid package metadata from npm registry')
   }
 
-  getDefaultLogger().info(`Latest version: ${colors.green(latestVersion)}`)
+  logger.info(`Latest version: ${colors.green(latestVersion)}`)
 
   // Check if update is needed.
   if (!force && currentVersion === latestVersion) {
@@ -365,7 +367,7 @@ Examples
     // Even if CLI is up to date, check if stub needs updating.
     const stubUpdated = await updateStubBinary(latestVersion, dryRun)
     if (stubUpdated) {
-      getDefaultLogger().info(
+      logger.info(
         'Bootstrap stub has been updated to match CLI version.',
       )
     }
@@ -391,13 +393,13 @@ Examples
     const tarballPath = path.join(tempDir, 'package.tgz')
     const extractedBinaryPath = path.join(tempDir, 'socket-binary')
 
-    getDefaultLogger().info(`Downloading package: ${metadata.dist.tarball}`)
+    logger.info(`Downloading package: ${metadata.dist.tarball}`)
 
     // Download tarball.
     await downloadTarball(metadata.dist.tarball, tarballPath)
 
     // Verify integrity.
-    getDefaultLogger().info('Verifying package integrity...')
+    logger.info('Verifying package integrity...')
     const isValid = await verifyTarballIntegrity(
       tarballPath,
       metadata.dist.integrity,
@@ -410,7 +412,7 @@ Examples
     }
 
     // Extract binary from tarball.
-    getDefaultLogger().info('Extracting binary from package...')
+    logger.info('Extracting binary from package...')
     const binaryRelativePath = getBinaryRelativePath()
     await extractBinaryFromTarball(
       tarballPath,
@@ -434,29 +436,29 @@ Examples
         backupPath,
       })
 
-      getDefaultLogger().info(
+      logger.info(
         `${colors.green('✓')} Update completed successfully!`,
       )
-      getDefaultLogger().info(`Backup saved to: ${backupPath}`)
+      logger.info(`Backup saved to: ${backupPath}`)
 
       // Check and update stub if launched via bootstrap.
       const stubUpdated = await updateStubBinary(latestVersion, dryRun)
       if (stubUpdated) {
-        getDefaultLogger().info(
+        logger.info(
           'Both CLI and bootstrap stub have been updated successfully!',
         )
       }
 
-      getDefaultLogger().info(
+      logger.info(
         'Please restart the application to use the new version.',
       )
     } catch (error) {
       // Restore from backup on failure.
       try {
         await fs.copyFile(backupPath, currentBinaryPath)
-        getDefaultLogger().info('Restored from backup after update failure')
+        logger.info('Restored from backup after update failure')
       } catch (restoreError) {
-        getDefaultLogger().error(
+        logger.error(
           `Failed to restore from backup: ${restoreError instanceof Error ? restoreError.message : String(restoreError)}`,
         )
       }

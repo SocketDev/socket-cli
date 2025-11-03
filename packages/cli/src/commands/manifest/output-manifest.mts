@@ -7,6 +7,8 @@ import { mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
+const logger = getDefaultLogger()
+
 
 export type ManifestResult = {
   files: string[]
@@ -25,10 +27,10 @@ export async function outputManifest(
 
   if (!result.ok) {
     if (outputKind === 'json') {
-      getDefaultLogger().log(serializeResultJson(result))
+      logger.log(serializeResultJson(result))
       return
     }
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -36,7 +38,7 @@ export async function outputManifest(
     const json = serializeResultJson(result)
 
     if (out === '-') {
-      getDefaultLogger().log(json)
+      logger.log(json)
     } else {
       fs.writeFileSync(out, json, 'utf8')
     }
@@ -73,7 +75,7 @@ export async function outputManifest(
     const md = arr.join('\n')
 
     if (out === '-') {
-      getDefaultLogger().log(md)
+      logger.log(md)
     } else {
       fs.writeFileSync(out, md, 'utf8')
     }

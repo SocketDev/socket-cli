@@ -8,6 +8,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import ENV from './constants/env.mts'
 
+const logger = getDefaultLogger()
+
 if (ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
   const require = createRequire(import.meta.url)
   const Sentry = /*@__PURE__*/ require('@sentry/node')
@@ -15,7 +17,7 @@ if (ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
     onFatalError(error: Error) {
       // Defer module loads until after Sentry.init is called.
       if (ENV.SOCKET_CLI_DEBUG) {
-        getDefaultLogger().fail('[DEBUG] [Sentry onFatalError]:', error)
+        logger.fail('[DEBUG] [Sentry onFatalError]:', error)
       }
     },
     dsn: 'https://66736701db8e4ffac046bd09fa6aaced@o555220.ingest.us.sentry.io/4508846967619585',
@@ -29,7 +31,7 @@ if (ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
   Sentry.setTag('version', ENV.INLINED_SOCKET_CLI_VERSION_HASH)
   if (ENV.SOCKET_CLI_DEBUG) {
     Sentry.setTag('debugging', true)
-    getDefaultLogger().info('[DEBUG] Set up Sentry.')
+    logger.info('[DEBUG] Set up Sentry.')
   } else {
     Sentry.setTag('debugging', false)
   }
@@ -38,5 +40,5 @@ if (ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
     internals.setSentry(Sentry)
   }
 } else if (ENV.SOCKET_CLI_DEBUG) {
-  getDefaultLogger().info('[DEBUG] Sentry disabled explicitly.')
+  logger.info('[DEBUG] Sentry disabled explicitly.')
 }

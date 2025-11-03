@@ -24,6 +24,8 @@
  */
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+const logger = getDefaultLogger()
+
 
 /**
  * Model registry mapping package names to npm packages.
@@ -67,8 +69,8 @@ export async function loadOptionalModel(
     throw new Error(`Unknown optional model: ${packageName}`)
   }
 
-  getDefaultLogger().info(`${modelInfo.description}`)
-  getDefaultLogger().info(
+  logger.info(`${modelInfo.description}`)
+  logger.info(
     `Total size: ${(modelInfo.totalSize / 1024 / 1024).toFixed(1)} MB`,
   )
 

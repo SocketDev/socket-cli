@@ -13,6 +13,8 @@ import { fileLink } from '../../utils/terminal/link.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+const logger = getDefaultLogger()
+
 
 type DiffScanArtifact =
   SocketSdkSuccessResult<'GetOrgDiffScan'>['data']['artifacts']['added'][number]
@@ -35,10 +37,10 @@ export async function outputDiffScan(
 
   if (!result.ok) {
     if (outputKind === 'json') {
-      getDefaultLogger().log(serializeResultJson(result))
+      logger.log(serializeResultJson(result))
       return
     }
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -63,8 +65,8 @@ export async function outputDiffScan(
   // In this case neither the --json nor the --file flag was passed
   // Dump the JSON to CLI and let NodeJS deal with truncation
 
-  getDefaultLogger().log('Diff scan result:')
-  getDefaultLogger().log(
+  logger.log('Diff scan result:')
+  logger.log(
     util.inspect(result.data, {
       showHidden: false,
       depth: depth > 0 ? depth : null,
@@ -72,10 +74,10 @@ export async function outputDiffScan(
       maxArrayLength: null,
     }),
   )
-  getDefaultLogger().info(
+  logger.info(
     '\n 📝 To display the detailed report in the terminal, use the --json flag. For a friendlier report, use the --markdown flag.\n',
   )
-  getDefaultLogger().info(dashboardMessage)
+  logger.info(dashboardMessage)
 }
 
 async function handleJson(
@@ -86,23 +88,23 @@ async function handleJson(
   const json = serializeResultJson(data)
 
   if (file && file !== '-') {
-    getDefaultLogger().log(`Writing json to \`${file}\``)
+    logger.log(`Writing json to \`${file}\``)
     fs.writeFile(file, json, err => {
       if (err) {
-        getDefaultLogger().fail(`Writing to \`${file}\` failed...`)
-        getDefaultLogger().error(err)
+        logger.fail(`Writing to \`${file}\` failed...`)
+        logger.error(err)
       } else {
-        getDefaultLogger().success(
+        logger.success(
           `Data successfully written to \`${fileLink(file)}\``,
         )
       }
-      getDefaultLogger().error(dashboardMessage)
+      logger.error(dashboardMessage)
     })
   } else {
     // only .log goes to stdout
-    getDefaultLogger().info('\n Diff scan result: \n')
-    getDefaultLogger().log(json)
-    getDefaultLogger().info(dashboardMessage)
+    logger.info('\n Diff scan result: \n')
+    logger.log(json)
+    logger.info(dashboardMessage)
   }
 }
 
@@ -111,141 +113,141 @@ async function handleMarkdown(
 ) {
   const SOCKET_SBOM_URL_PREFIX = `${SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
 
-  getDefaultLogger().log(mdHeader('Scan diff result'))
-  getDefaultLogger().log('')
-  getDefaultLogger().log(
+  logger.log(mdHeader('Scan diff result'))
+  logger.log('')
+  logger.log(
     'This Socket.dev report shows the changes between two scans:',
   )
-  getDefaultLogger().log(
+  logger.log(
     `- [${data.before.id}](${SOCKET_SBOM_URL_PREFIX}${data.before.id})`,
   )
-  getDefaultLogger().log(
+  logger.log(
     `- [${data.after.id}](${SOCKET_SBOM_URL_PREFIX}${data.after.id})`,
   )
-  getDefaultLogger().log('')
-  getDefaultLogger().log(
+  logger.log('')
+  logger.log(
     `You can [view this report in your dashboard](${data.diff_report_url})`,
   )
-  getDefaultLogger().log('')
-  getDefaultLogger().log(mdHeader('Changes', 2))
-  getDefaultLogger().log('')
-  getDefaultLogger().log(
+  logger.log('')
+  logger.log(mdHeader('Changes', 2))
+  logger.log('')
+  logger.log(
     `- directDependenciesChanged: ${data.directDependenciesChanged}`,
   )
-  getDefaultLogger().log(`- Added packages: ${data.artifacts.added.length}`)
+  logger.log(`- Added packages: ${data.artifacts.added.length}`)
 
   if (data.artifacts.added.length > 0) {
     data.artifacts.added.slice(0, 10).forEach((artifact: DiffScanArtifact) => {
-      getDefaultLogger().log(
+      logger.log(
         `  - ${artifact.type} ${artifact.name}@${artifact.version}`,
       )
     })
     if (data.artifacts.added.length > 10) {
-      getDefaultLogger().log(`  … and ${data.artifacts.added.length - 10} more`)
+      logger.log(`  … and ${data.artifacts.added.length - 10} more`)
     }
   }
 
-  getDefaultLogger().log(`- Removed packages: ${data.artifacts.removed.length}`)
+  logger.log(`- Removed packages: ${data.artifacts.removed.length}`)
   if (data.artifacts.removed.length > 0) {
     data.artifacts.removed
       .slice(0, 10)
       .forEach((artifact: DiffScanArtifact) => {
-        getDefaultLogger().log(
+        logger.log(
           `  - ${artifact.type} ${artifact.name}@${artifact.version}`,
         )
       })
     if (data.artifacts.removed.length > 10) {
-      getDefaultLogger().log(
+      logger.log(
         `  … and ${data.artifacts.removed.length - 10} more`,
       )
     }
   }
 
-  getDefaultLogger().log(
+  logger.log(
     `- Replaced packages: ${data.artifacts.replaced.length}`,
   )
   if (data.artifacts.replaced.length > 0) {
     data.artifacts.replaced
       .slice(0, 10)
       .forEach((artifact: DiffScanArtifact) => {
-        getDefaultLogger().log(
+        logger.log(
           `  - ${artifact.type} ${artifact.name}@${artifact.version}`,
         )
       })
     if (data.artifacts.replaced.length > 10) {
-      getDefaultLogger().log(
+      logger.log(
         `  … and ${data.artifacts.replaced.length - 10} more`,
       )
     }
   }
 
-  getDefaultLogger().log(`- Updated packages: ${data.artifacts.updated.length}`)
+  logger.log(`- Updated packages: ${data.artifacts.updated.length}`)
   if (data.artifacts.updated.length > 0) {
     data.artifacts.updated
       .slice(0, 10)
       .forEach((artifact: DiffScanArtifact) => {
-        getDefaultLogger().log(
+        logger.log(
           `  - ${artifact.type} ${artifact.name}@${artifact.version}`,
         )
       })
     if (data.artifacts.updated.length > 10) {
-      getDefaultLogger().log(
+      logger.log(
         `  … and ${data.artifacts.updated.length - 10} more`,
       )
     }
   }
 
   const unchanged = data.artifacts.unchanged ?? []
-  getDefaultLogger().log(`- Unchanged packages: ${unchanged.length}`)
+  logger.log(`- Unchanged packages: ${unchanged.length}`)
   if (unchanged.length > 0) {
     const firstUpToTen = unchanged.slice(0, 10)
     for (const artifact of firstUpToTen) {
-      getDefaultLogger().log(
+      logger.log(
         `  - ${artifact.type} ${artifact.name}@${artifact.version}`,
       )
     }
     if (unchanged.length > 10) {
-      getDefaultLogger().log(`  … and ${unchanged.length - 10} more`)
+      logger.log(`  … and ${unchanged.length - 10} more`)
     }
   }
 
-  getDefaultLogger().log('')
-  getDefaultLogger().log(`## Scan ${data.before.id}`)
-  getDefaultLogger().log('')
-  getDefaultLogger().log(
+  logger.log('')
+  logger.log(`## Scan ${data.before.id}`)
+  logger.log('')
+  logger.log(
     'This Scan was considered to be the "base" / "from" / "before" Scan.',
   )
-  getDefaultLogger().log('')
+  logger.log('')
   for (const { 0: key, 1: value } of Object.entries(data.before)) {
     if (key === 'pull_request' && !value) {
       continue
     }
     if (!['id', 'organization_id', 'repository_id'].includes(key)) {
-      getDefaultLogger().group(
+      logger.group(
         `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${value}`,
       )
-      getDefaultLogger().groupEnd()
+      logger.groupEnd()
     }
   }
 
-  getDefaultLogger().log('')
-  getDefaultLogger().log(`## Scan ${data.after.id}`)
-  getDefaultLogger().log('')
-  getDefaultLogger().log(
+  logger.log('')
+  logger.log(`## Scan ${data.after.id}`)
+  logger.log('')
+  logger.log(
     'This Scan was considered to be the "head" / "to" / "after" Scan.',
   )
-  getDefaultLogger().log('')
+  logger.log('')
   for (const { 0: key, 1: value } of Object.entries(data.after)) {
     if (key === 'pull_request' && !value) {
       continue
     }
     if (!['id', 'organization_id', 'repository_id'].includes(key)) {
-      getDefaultLogger().group(
+      logger.group(
         `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${value}`,
       )
-      getDefaultLogger().groupEnd()
+      logger.groupEnd()
     }
   }
 
-  getDefaultLogger().log('')
+  logger.log('')
 }

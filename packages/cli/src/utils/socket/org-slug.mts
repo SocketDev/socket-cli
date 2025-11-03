@@ -6,6 +6,8 @@ import { CONFIG_KEY_DEFAULT_ORG } from '../../constants/config.mjs'
 import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
 import { getConfigValueOrUndef } from '../config.mts'
 import { webLink } from '../terminal/link.mjs'
+const logger = getDefaultLogger()
+
 
 export async function determineOrgSlug(
   orgFlag: string,
@@ -16,47 +18,47 @@ export async function determineOrgSlug(
   let orgSlug = String(orgFlag || defaultOrgSlug || '')
   if (!orgSlug) {
     if (!interactive) {
-      getDefaultLogger().warn(
+      logger.warn(
         'Note: This command requires an org slug because the Socket API endpoint does.',
       )
-      getDefaultLogger().warn('')
-      getDefaultLogger().warn(
+      logger.warn('')
+      logger.warn(
         'It seems no default org was setup and the `--org` flag was not used.',
       )
-      getDefaultLogger().warn(
+      logger.warn(
         "Additionally, `--no-interactive` was set so we can't ask for it.",
       )
-      getDefaultLogger().warn(
+      logger.warn(
         'Since v1.0.0 the org _argument_ for all commands was dropped in favor of an',
       )
-      getDefaultLogger().warn(
+      logger.warn(
         'implicit default org setting, which will be setup when you run `socket login`.',
       )
-      getDefaultLogger().warn('')
-      getDefaultLogger().warn(
+      logger.warn('')
+      logger.warn(
         'Note: When running in CI, you probably want to set the `--org` flag.',
       )
-      getDefaultLogger().warn('')
-      getDefaultLogger().warn(
+      logger.warn('')
+      logger.warn(
         `For details, see the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}`,
       )
-      getDefaultLogger().warn('')
-      getDefaultLogger().warn(
+      logger.warn('')
+      logger.warn(
         'This command will exit now because the org slug is required to proceed.',
       )
       return ['', undefined]
     }
 
-    getDefaultLogger().warn(
+    logger.warn(
       'Unable to determine the target org. Trying to auto-discover it now...',
     )
-    getDefaultLogger().info('Note: Run `socket login` to set a default org.')
-    getDefaultLogger().error(
+    logger.info('Note: Run `socket login` to set a default org.')
+    logger.error(
       '      Use the --org flag to override the default org.',
     )
-    getDefaultLogger().error('')
+    logger.error('')
     if (dryRun) {
-      getDefaultLogger().fail('Skipping auto-discovery of org in dry-run mode')
+      logger.fail('Skipping auto-discovery of org in dry-run mode')
     } else {
       orgSlug = (await suggestOrgSlug()) || ''
       if (orgSlug) {

@@ -5,6 +5,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+const logger = getDefaultLogger()
+
 
 export async function outputUpdateRepo(
   result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']>,
@@ -16,13 +18,13 @@ export async function outputUpdateRepo(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
-  getDefaultLogger().success(`Repository \`${repoName}\` updated successfully`)
+  logger.success(`Repository \`${repoName}\` updated successfully`)
 }

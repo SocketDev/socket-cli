@@ -22,6 +22,8 @@ import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+const logger = getDefaultLogger()
+
 
 type RepoListItem =
   SocketSdkSuccessResult<'listRepositories'>['data']['results'][number]
@@ -64,8 +66,8 @@ export async function createScanFromGithub({
 
   targetRepos = targetRepos.map(s => s.trim()).filter(Boolean)
 
-  getDefaultLogger().info(`Have ${targetRepos.length} repo names to Scan!`)
-  getDefaultLogger().log('')
+  logger.info(`Have ${targetRepos.length} repo names to Scan!`)
+  logger.log('')
 
   if (!targetRepos.filter(Boolean).length) {
     return {
@@ -113,8 +115,8 @@ export async function createScanFromGithub({
     }
   }
 
-  getDefaultLogger().success(targetRepos.length, 'GitHub repos detected')
-  getDefaultLogger().success(scansCreated, 'with supported Manifest files')
+  logger.success(targetRepos.length, 'GitHub repos detected')
+  logger.success(scansCreated, 'with supported Manifest files')
 
   return {
     ok: true,
@@ -140,10 +142,10 @@ async function scanRepo(
     repos: string
   },
 ): Promise<CResult<{ scanCreated: boolean }>> {
-  getDefaultLogger().info(
+  logger.info(
     `Requesting repo details from GitHub API for: \`${orgGithub}/${repoSlug}\`...`,
   )
-  getDefaultLogger().group()
+  logger.group()
   const result = await scanOneRepo(repoSlug, {
     githubApiUrl,
     githubToken,
@@ -152,8 +154,8 @@ async function scanRepo(
     outputKind,
     repos,
   })
-  getDefaultLogger().groupEnd()
-  getDefaultLogger().log('')
+  logger.groupEnd()
+  logger.log('')
   return result
 }
 
@@ -185,7 +187,7 @@ async function scanOneRepo(
   }
   const { defaultBranch, repoApiUrl } = repoResult.data
 
-  getDefaultLogger().info(`Default branch: \`${defaultBranch}\``)
+  logger.info(`Default branch: \`${defaultBranch}\``)
 
   const treeResult = await getRepoBranchTree({
     defaultBranch,
@@ -200,7 +202,7 @@ async function scanOneRepo(
   const files = treeResult.data
 
   if (!files.length) {
-    getDefaultLogger().warn(
+    logger.warn(
       'No files were reported for the default branch. Moving on to next repo.',
     )
     return { ok: true, data: { scanCreated: false } }
@@ -290,12 +292,12 @@ async function testAndDownloadManifestFiles({
   repoApiUrl: string
   githubToken: string
 }): Promise<CResult<unknown>> {
-  getDefaultLogger().info(
+  logger.info(
     `File tree for ${defaultBranch} contains`,
     files.length,
     'entries. Searching for supported manifest files...',
   )
-  getDefaultLogger().group()
+  logger.group()
   let fileCount = 0
   let firstFailureResult: any
   for (const file of files) {
@@ -315,12 +317,12 @@ async function testAndDownloadManifestFiles({
       firstFailureResult = result
     }
   }
-  getDefaultLogger().groupEnd()
-  getDefaultLogger().info('Found and downloaded', fileCount, 'manifest files')
+  logger.groupEnd()
+  logger.info('Found and downloaded', fileCount, 'manifest files')
 
   if (!fileCount) {
     if (firstFailureResult) {
-      getDefaultLogger().fail(
+      logger.fail(
         'While no supported manifest files were downloaded, at least one error encountered trying to do so. Showing the first error.',
       )
       return firstFailureResult
@@ -407,7 +409,7 @@ async function downloadManifestFile({
   try {
     downloadUrl = JSON.parse(downloadUrlText).download_url
   } catch {
-    getDefaultLogger().fail(
+    logger.fail(
       `GitHub response contained invalid JSON for download url for: ${file}`,
     )
 
@@ -425,7 +427,7 @@ async function downloadManifestFile({
   const result = await streamDownloadWithFetch(localPath, downloadUrl)
   if (!result.ok) {
     // Do we proceed? Bail? Hrm...
-    getDefaultLogger().fail(
+    logger.fail(
       `Failed to download manifest file, skipping to next file. File: ${file}`,
     )
     return result
@@ -449,12 +451,12 @@ async function streamDownloadWithFetch(
 
     if (!response.ok) {
       const errorMsg = `Download failed due to bad server response: ${response.status} ${response.statusText} for ${downloadUrl}`
-      getDefaultLogger().fail(errorMsg)
+      logger.fail(errorMsg)
       return { ok: false, message: 'Download Failed', cause: errorMsg }
     }
 
     if (!response.body) {
-      getDefaultLogger().fail(
+      logger.fail(
         `Download failed because the server response was empty, for ${downloadUrl}`,
       )
       return {
@@ -480,7 +482,7 @@ async function streamDownloadWithFetch(
     // It resolves when the piping is fully complete and fileStream is closed.
     return { ok: true, data: localPath }
   } catch (e) {
-    getDefaultLogger().fail(
+    logger.fail(
       'An error was thrown while trying to download a manifest file... url:',
       downloadUrl,
     )
@@ -493,7 +495,7 @@ async function streamDownloadWithFetch(
       try {
         await fs.unlink(localPath)
       } catch (e) {
-        getDefaultLogger().fail(
+        logger.fail(
           formatErrorWithDetail(`Error deleting partial file ${localPath}`, e),
         )
       }
@@ -532,7 +534,7 @@ async function getLastCommitDetails({
     lastCommitMessage: string
   }>
 > {
-  getDefaultLogger().info(
+  logger.info(
     `Requesting last commit for default branch ${defaultBranch} for ${orgGithub}/${repoSlug}...`,
   )
 
@@ -552,10 +554,10 @@ async function getLastCommitDetails({
   try {
     lastCommit = JSON.parse(commitText)?.[0]
   } catch {
-    getDefaultLogger().fail(
+    logger.fail(
       'GitHub response contained invalid JSON for last commit',
     )
-    getDefaultLogger().error(commitText)
+    logger.error(commitText)
     return {
       ok: false,
       message: 'Invalid JSON response',
@@ -651,7 +653,7 @@ async function getRepoDetails({
       Authorization: `Bearer ${githubToken}`,
     },
   })
-  getDefaultLogger().success('Request completed.')
+  logger.success('Request completed.')
 
   const repoDetailsText = await repoDetailsResponse.text()
   debug(`response: repo ${repoDetailsText}`)
@@ -660,10 +662,10 @@ async function getRepoDetails({
   try {
     repoDetails = JSON.parse(repoDetailsText)
   } catch {
-    getDefaultLogger().fail(
+    logger.fail(
       `GitHub response contained invalid JSON for repo ${repoSlug}`,
     )
-    getDefaultLogger().error(repoDetailsText)
+    logger.error(repoDetailsText)
     return {
       ok: false,
       message: 'Invalid JSON response',
@@ -696,7 +698,7 @@ async function getRepoBranchTree({
   repoApiUrl: string
   repoSlug: string
 }): Promise<CResult<string[]>> {
-  getDefaultLogger().info(
+  logger.info(
     `Requesting default branch file tree; branch \`${defaultBranch}\`, repo \`${orgGithub}/${repoSlug}\`...`,
   )
 
@@ -717,10 +719,10 @@ async function getRepoBranchTree({
   try {
     treeDetails = JSON.parse(treeText)
   } catch {
-    getDefaultLogger().fail(
+    logger.fail(
       `GitHub response contained invalid JSON for default branch of repo ${repoSlug}`,
     )
-    getDefaultLogger().error(treeText)
+    logger.error(treeText)
     return {
       ok: false,
       message: 'Invalid JSON response',
@@ -730,13 +732,13 @@ async function getRepoBranchTree({
 
   if (treeDetails.message) {
     if (treeDetails.message === 'Git Repository is empty.') {
-      getDefaultLogger().warn(
+      logger.warn(
         `GitHub reports the default branch of repo ${repoSlug} to be empty. Moving on to next repo.`,
       )
       return { ok: true, data: [] }
     }
 
-    getDefaultLogger().fail(
+    logger.fail(
       'Negative response from GitHub:',
       treeDetails.message,
     )

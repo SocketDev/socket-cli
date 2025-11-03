@@ -23,6 +23,8 @@ import { normalizePurl } from '../../utils/purl/parse.mjs'
 
 import type { OutputKind } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/lib/spinner'
+const logger = getDefaultLogger()
+
 
 export interface PatchRmData {
   filesRestored: number
@@ -76,10 +78,10 @@ export async function handlePatchRm({
     if (!metadata) {
       spinner?.stop()
       if (outputKind === 'text') {
-        getDefaultLogger().warn(
+        logger.warn(
           'No backups found for this patch. Original files cannot be restored.',
         )
-        getDefaultLogger().log('Removing patch from manifest only.')
+        logger.log('Removing patch from manifest only.')
       }
     }
 
@@ -96,11 +98,11 @@ export async function handlePatchRm({
       if (restoreResults.failed.length > 0) {
         spinner?.stop()
         if (outputKind === 'text') {
-          getDefaultLogger().warn(
+          logger.warn(
             `Failed to restore ${restoreResults.failed.length} ${pluralize('file', { count: restoreResults.failed.length })}:`,
           )
           for (const filePath of restoreResults.failed) {
-            getDefaultLogger().log(`  - ${filePath}`)
+            logger.log(`  - ${filePath}`)
           }
         }
       }
@@ -119,9 +121,9 @@ export async function handlePatchRm({
     spinner?.stop()
 
     if (outputKind === 'text') {
-      getDefaultLogger().log(`Removed patch for ${normalizedPurl}`)
+      logger.log(`Removed patch for ${normalizedPurl}`)
       if (filesRestored > 0) {
-        getDefaultLogger().log(
+        logger.log(
           `Restored ${filesRestored} ${pluralize('file', { count: filesRestored })} from backups`,
         )
       }

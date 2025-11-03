@@ -14,6 +14,8 @@ import { getFlagListOutput } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
+const logger = getDefaultLogger()
+
 
 import type {
   CliCommandConfig,
@@ -134,7 +136,7 @@ async function run(
   if (!bin) {
     if (sockJson.defaults?.manifest?.sbt?.bin) {
       bin = sockJson.defaults?.manifest?.sbt?.bin
-      getDefaultLogger().info(`Using default --bin from ${SOCKET_JSON}:`, bin)
+      logger.info(`Using default --bin from ${SOCKET_JSON}:`, bin)
     } else {
       bin = 'sbt'
     }
@@ -144,7 +146,7 @@ async function run(
     sockJson.defaults?.manifest?.sbt?.stdout !== undefined
   ) {
     stdout = sockJson.defaults?.manifest?.sbt?.stdout
-    getDefaultLogger().info(
+    logger.info(
       `Using default --stdout from ${SOCKET_JSON}:`,
       stdout,
     )
@@ -154,7 +156,7 @@ async function run(
   } else if (!out) {
     if (sockJson.defaults?.manifest?.sbt?.outfile) {
       out = sockJson.defaults?.manifest?.sbt?.outfile
-      getDefaultLogger().info(`Using default --out from ${SOCKET_JSON}:`, out)
+      logger.info(`Using default --out from ${SOCKET_JSON}:`, out)
     } else {
       out = './socket.pom.xml'
     }
@@ -162,7 +164,7 @@ async function run(
   if (!sbtOpts) {
     if (sockJson.defaults?.manifest?.sbt?.sbtOpts) {
       sbtOpts = sockJson.defaults?.manifest?.sbt?.sbtOpts
-      getDefaultLogger().info(
+      logger.info(
         `Using default --sbt-opts from ${SOCKET_JSON}:`,
         sbtOpts,
       )
@@ -175,7 +177,7 @@ async function run(
     sockJson.defaults?.manifest?.sbt?.verbose !== undefined
   ) {
     verbose = sockJson.defaults?.manifest?.sbt?.verbose
-    getDefaultLogger().info(
+    logger.info(
       `Using default --verbose from ${SOCKET_JSON}:`,
       verbose,
     )
@@ -184,11 +186,11 @@ async function run(
   }
 
   if (verbose) {
-    getDefaultLogger().group('- ', parentName, config.commandName, ':')
-    getDefaultLogger().group('- flags:', cli.flags)
-    getDefaultLogger().groupEnd()
-    getDefaultLogger().log('- input:', cli.input)
-    getDefaultLogger().groupEnd()
+    logger.group('- ', parentName, config.commandName, ':')
+    logger.group('- flags:', cli.flags)
+    logger.groupEnd()
+    logger.log('- input:', cli.input)
+    logger.groupEnd()
   }
 
   // Note: stdin input not supported. SBT manifest generation requires a directory
@@ -206,15 +208,15 @@ async function run(
   }
 
   if (verbose) {
-    getDefaultLogger().group()
-    getDefaultLogger().log('- target:', cwd)
-    getDefaultLogger().log('- sbt bin:', bin)
-    getDefaultLogger().log('- out:', out)
-    getDefaultLogger().groupEnd()
+    logger.group()
+    logger.log('- target:', cwd)
+    logger.log('- sbt bin:', bin)
+    logger.log('- out:', out)
+    logger.groupEnd()
   }
 
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

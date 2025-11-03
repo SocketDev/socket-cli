@@ -26,6 +26,8 @@ import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
+const logger = getDefaultLogger()
+
 import { getDefaultApiToken } from './sdk.mts'
 import { CONFIG_KEY_API_BASE_URL } from '../../constants/config.mts'
 import ENV from '../../constants/env.mts'
@@ -94,19 +96,19 @@ function logPermissionsFor403(cmdPath?: string | undefined): void {
     return
   }
 
-  getDefaultLogger().error('')
-  getDefaultLogger().error('🔐 Required API Permissions:')
+  logger.error('')
+  logger.error('🔐 Required API Permissions:')
   for (const permission of requirements.permissions) {
-    getDefaultLogger().error(`   • ${permission}`)
+    logger.error(`   • ${permission}`)
   }
-  getDefaultLogger().error('')
-  getDefaultLogger().error('💡 To fix this:')
-  getDefaultLogger().error(`   1. Visit ${SOCKET_SETTINGS_API_TOKENS_URL}`)
-  getDefaultLogger().error(
+  logger.error('')
+  logger.error('💡 To fix this:')
+  logger.error(`   1. Visit ${SOCKET_SETTINGS_API_TOKENS_URL}`)
+  logger.error(
     '   2. Edit your API token to grant the permissions listed above',
   )
-  getDefaultLogger().error('   3. Re-run your command')
-  getDefaultLogger().error('')
+  logger.error('   3. Re-run your command')
+  logger.error('')
 }
 
 // The Socket API server that should be used for operations.
@@ -211,9 +213,9 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     if (description && spinner) {
       const message = `Received Socket API response (after requesting ${description}).`
       if (sdkResult.success) {
-        getDefaultLogger().success(message)
+        logger.success(message)
       } else {
-        getDefaultLogger().info(message)
+        logger.info(message)
       }
     }
   } catch (e) {
@@ -224,7 +226,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
       cause: messageWithCauses(e as Error),
     }
     if (description) {
-      getDefaultLogger().fail(
+      logger.fail(
         `An error was thrown while requesting ${description}`,
       )
       debugApiResponse(description, undefined, e)

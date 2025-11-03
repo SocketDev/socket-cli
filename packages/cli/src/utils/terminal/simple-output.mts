@@ -8,6 +8,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { serializeResultJson } from '../output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mjs'
+const logger = getDefaultLogger()
+
 
 // Simple outputResult implementation
 function outputResult<T>(
@@ -19,11 +21,11 @@ function outputResult<T>(
   },
 ): void {
   if (outputKind === 'json') {
-    getDefaultLogger().log(handlers.json(result))
+    logger.log(handlers.json(result))
   } else if (result.ok) {
     handlers.success(result.data)
   } else {
-    getDefaultLogger().error(result.message || 'Operation failed')
+    logger.error(result.message || 'Operation failed')
   }
 }
 
@@ -73,14 +75,14 @@ export function simpleOutput<T>(
     success: (data: T) => {
       // Show title if provided
       if (title) {
-        getDefaultLogger().log(colors.cyan(title))
+        logger.log(colors.cyan(title))
       }
 
       // Handle table output
       if (table && outputKind !== 'json') {
         const rows = table.rows(data)
         if (rows.length === 0) {
-          getDefaultLogger().log(emptyMessage)
+          logger.log(emptyMessage)
           return
         }
 
@@ -93,7 +95,7 @@ export function simpleOutput<T>(
           return formatted
         })
 
-        getDefaultLogger().log(
+        logger.log(
           chalkTable({ columns: table.columns }, formattedRows),
         )
         return
@@ -106,7 +108,7 @@ export function simpleOutput<T>(
       }
 
       // Default: log the data
-      getDefaultLogger().log(data)
+      logger.log(data)
     },
   })
 }
@@ -168,7 +170,7 @@ export function outputPaginatedList<T>(
     text: data => {
       // Show pagination info
       const { direction, nextPage, page, perPage, sort } = pagination
-      getDefaultLogger().log(
+      logger.log(
         `Page: ${page}, Per page: ${perPage === Number.POSITIVE_INFINITY ? 'all' : perPage}` +
           (sort ? `, Sort: ${sort}` : '') +
           (direction ? `, Direction: ${direction}` : ''),
@@ -177,7 +179,7 @@ export function outputPaginatedList<T>(
       // Show table
       const rows = tableOptions.getRows(data)
       if (rows.length === 0) {
-        getDefaultLogger().log(tableOptions.emptyMessage || 'No results found')
+        logger.log(tableOptions.emptyMessage || 'No results found')
         return
       }
 
@@ -190,13 +192,13 @@ export function outputPaginatedList<T>(
         return formatted
       })
 
-      getDefaultLogger().log(
+      logger.log(
         chalkTable({ columns: tableOptions.columns }, formattedRows),
       )
 
       // Show next page hint
       if (nextPage !== null) {
-        getDefaultLogger().log(`\nNext page: ${nextPage}`)
+        logger.log(`\nNext page: ${nextPage}`)
       }
     },
   })

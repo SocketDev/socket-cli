@@ -10,6 +10,8 @@ import { mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { OutputKind } from '../../types.mts'
+const logger = getDefaultLogger()
+
 
 export async function outputConfigList({
   full,
@@ -39,7 +41,7 @@ export async function outputConfigList({
     if (failed) {
       process.exitCode = 1
     }
-    getDefaultLogger().log(
+    logger.log(
       serializeResultJson(
         failed
           ? {
@@ -67,29 +69,29 @@ export async function outputConfigList({
       0,
     )
 
-    getDefaultLogger().log(mdHeader('Local CLI Config'))
-    getDefaultLogger().log('')
-    getDefaultLogger().log(`This is the local CLI config (full=${!!full}):`)
-    getDefaultLogger().log('')
+    logger.log(mdHeader('Local CLI Config'))
+    logger.log('')
+    logger.log(`This is the local CLI config (full=${!!full}):`)
+    logger.log('')
     for (const key of supportedConfigKeys) {
       const result = getConfigValue(key)
       if (!result.ok) {
-        getDefaultLogger().log(`- ${key}: failed to read: ${result.message}`)
+        logger.log(`- ${key}: failed to read: ${result.message}`)
       } else {
         let value = result.data
         if (!full && isSensitiveConfigKey(key)) {
           value = '********'
         }
         if (full || value !== undefined) {
-          getDefaultLogger().log(
+          logger.log(
             `- ${key}:${' '.repeat(Math.max(0, maxWidth - key.length + 3))} ${Array.isArray(value) ? value.join(', ') || '<none>' : (value ?? '<none>')}`,
           )
         }
       }
     }
     if (readOnly) {
-      getDefaultLogger().log('')
-      getDefaultLogger().log(
+      logger.log('')
+      logger.log(
         'Note: the config is in read-only mode, meaning at least one key was temporarily\n      overridden from an env var or command flag.',
       )
     }

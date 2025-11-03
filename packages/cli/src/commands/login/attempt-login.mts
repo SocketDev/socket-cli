@@ -23,6 +23,8 @@ import { setupTabCompletion } from '../install/setup-tab-completion.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { Choice } from '@socketsecurity/lib/stdio/prompts'
+const logger = getDefaultLogger()
+
 
 type OrgChoice = Choice<string>
 type OrgChoices = OrgChoice[]
@@ -38,7 +40,7 @@ export async function attemptLogin(
   })
 
   if (apiTokenInput === undefined) {
-    getDefaultLogger().fail('Canceled by user')
+    logger.fail('Canceled by user')
     return { ok: false, message: 'Canceled', cause: 'Canceled by user' }
   }
 
@@ -47,7 +49,7 @@ export async function attemptLogin(
   const sockSdkCResult = await setupSdk({ apiBaseUrl, apiProxy, apiToken })
   if (!sockSdkCResult.ok) {
     process.exitCode = 1
-    getDefaultLogger().fail(
+    logger.fail(
       failMsgWithBadge(sockSdkCResult.message, sockSdkCResult.cause),
     )
     return
@@ -61,7 +63,7 @@ export async function attemptLogin(
   })
   if (!orgsCResult.ok) {
     process.exitCode = 1
-    getDefaultLogger().fail(
+    logger.fail(
       failMsgWithBadge(orgsCResult.message, orgsCResult.cause),
     )
     return
@@ -71,7 +73,7 @@ export async function attemptLogin(
 
   const orgSlugs = getOrgSlugs(organizations)
 
-  getDefaultLogger().success(`API token verified: ${joinAnd(orgSlugs)}`)
+  logger.success(`API token verified: ${joinAnd(orgSlugs)}`)
 
   const enterpriseOrgs = getEnterpriseOrgs(organizations)
 
@@ -95,7 +97,7 @@ export async function attemptLogin(
       ],
     })
     if (id === undefined) {
-      getDefaultLogger().fail('Canceled by user')
+      logger.fail('Canceled by user')
       return { ok: false, message: 'Canceled', cause: 'Canceled by user' }
     }
     if (id) {
@@ -107,7 +109,7 @@ export async function attemptLogin(
       default: true,
     })
     if (shouldEnforce === undefined) {
-      getDefaultLogger().fail('Canceled by user')
+      logger.fail('Canceled by user')
       return { ok: false, message: 'Canceled', cause: 'Canceled by user' }
     }
     if (shouldEnforce) {
@@ -136,19 +138,19 @@ export async function attemptLogin(
     ],
   })
   if (wantToComplete === undefined) {
-    getDefaultLogger().fail('Canceled by user')
+    logger.fail('Canceled by user')
     return { ok: false, message: 'Canceled', cause: 'Canceled by user' }
   }
   if (wantToComplete) {
-    getDefaultLogger().log('')
-    getDefaultLogger().log('Setting up tab completion...')
+    logger.log('')
+    logger.log('Setting up tab completion...')
     const setupCResult = await setupTabCompletion('socket')
     if (setupCResult.ok) {
-      getDefaultLogger().success(
+      logger.success(
         'Tab completion will be enabled after restarting your terminal',
       )
     } else {
-      getDefaultLogger().fail(
+      logger.fail(
         'Failed to install tab completion script. Try `socket install completion` later.',
       )
     }
@@ -159,17 +161,17 @@ export async function attemptLogin(
   const previousPersistedToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
   try {
     applyLogin(apiToken, enforcedOrgs, apiBaseUrl, apiProxy)
-    getDefaultLogger().success(
+    logger.success(
       `API credentials ${previousPersistedToken === apiToken ? 'refreshed' : previousPersistedToken ? 'updated' : 'set'}`,
     )
     if (isConfigFromFlag()) {
-      getDefaultLogger().log('')
-      getDefaultLogger().warn(
+      logger.log('')
+      logger.warn(
         'Note: config is in read-only mode, at least one key was overridden through flag/env, so the login was not persisted!',
       )
     }
   } catch {
     process.exitCode = 1
-    getDefaultLogger().fail('API login failed')
+    logger.fail('API login failed')
   }
 }

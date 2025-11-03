@@ -5,6 +5,8 @@ import { mdError, mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
+const logger = getDefaultLogger()
+
 
 export async function outputFixResult(
   result: CResult<unknown>,
@@ -15,26 +17,26 @@ export async function outputFixResult(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
 
   if (outputKind === 'markdown') {
     if (!result.ok) {
-      getDefaultLogger().log(mdError(result.message, result.cause))
+      logger.log(mdError(result.message, result.cause))
     } else {
-      getDefaultLogger().log(mdHeader('Fix Completed'))
-      getDefaultLogger().log('')
-      getDefaultLogger().log('✓ Finished!')
+      logger.log(mdHeader('Fix Completed'))
+      logger.log('')
+      logger.log('✓ Finished!')
     }
     return
   }
 
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
-  getDefaultLogger().log('')
-  getDefaultLogger().success('Finished!')
+  logger.log('')
+  logger.success('Finished!')
 }

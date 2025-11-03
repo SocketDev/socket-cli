@@ -15,6 +15,8 @@ import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { mailtoLink } from '../../utils/terminal/link.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
+const logger = getDefaultLogger()
+
 
 import type {
   CliCommandConfig,
@@ -229,7 +231,7 @@ async function run(
   })
 
   if (argSet.size) {
-    getDefaultLogger().info(
+    logger.info(
       `Warning: ignoring these excessive args: ${joinAnd(Array.from(argSet))}`,
     )
   }
@@ -270,7 +272,7 @@ async function run(
   }
 
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

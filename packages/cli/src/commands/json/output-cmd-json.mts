@@ -8,30 +8,32 @@ import { REDACTED } from '../../constants/cli.mts'
 import ENV from '../../constants/env.mts'
 import { SOCKET_JSON } from '../../constants/socket.mts'
 import { tildify } from '../../utils/fs/home-path.mjs'
+const logger = getDefaultLogger()
+
 
 export async function outputCmdJson(cwd: string) {
-  getDefaultLogger().info('Target cwd:', ENV.VITEST ? REDACTED : tildify(cwd))
+  logger.info('Target cwd:', ENV.VITEST ? REDACTED : tildify(cwd))
 
   const sockJsonPath = path.join(cwd, SOCKET_JSON)
   const tildeSockJsonPath = ENV.VITEST ? REDACTED : tildify(sockJsonPath)
 
   if (!existsSync(sockJsonPath)) {
-    getDefaultLogger().fail(`Not found: ${tildeSockJsonPath}`)
+    logger.fail(`Not found: ${tildeSockJsonPath}`)
     process.exitCode = 1
     return
   }
 
   if (!safeStatsSync(sockJsonPath)?.isFile()) {
-    getDefaultLogger().fail(
+    logger.fail(
       `This is not a regular file (maybe a directory?): ${tildeSockJsonPath}`,
     )
     process.exitCode = 1
     return
   }
 
-  getDefaultLogger().success(`This is the contents of ${tildeSockJsonPath}:`)
-  getDefaultLogger().error('')
+  logger.success(`This is the contents of ${tildeSockJsonPath}:`)
+  logger.error('')
 
   const data = safeReadFileSync(sockJsonPath)
-  getDefaultLogger().log(data)
+  logger.log(data)
 }

@@ -18,6 +18,8 @@ import {
 
 import type { CResult } from '../../types.mts'
 import type { SocketJson } from '../../utils/socket/json.mts'
+const logger = getDefaultLogger()
+
 
 export async function setupScanConfig(
   cwd: string,
@@ -25,39 +27,39 @@ export async function setupScanConfig(
 ): Promise<CResult<unknown>> {
   const jsonPath = path.join(cwd, SOCKET_JSON)
   if (fs.existsSync(jsonPath)) {
-    getDefaultLogger().info(`Found ${SOCKET_JSON} at ${jsonPath}`)
+    logger.info(`Found ${SOCKET_JSON} at ${jsonPath}`)
   } else {
-    getDefaultLogger().info(
+    logger.info(
       `No ${SOCKET_JSON} found at ${cwd}, will generate a new one`,
     )
   }
 
-  getDefaultLogger().log('')
-  getDefaultLogger().log(
+  logger.log('')
+  logger.log(
     'Note: This tool will set up flag and argument defaults for certain',
   )
-  getDefaultLogger().log(
+  logger.log(
     '      CLI commands. You can still override them by explicitly',
   )
-  getDefaultLogger().log(
+  logger.log(
     '      setting the flag. It is meant to be a convenience tool.',
   )
-  getDefaultLogger().log('')
-  getDefaultLogger().log(
+  logger.log('')
+  logger.log(
     `This command will generate a \`${SOCKET_JSON}\` file in the target cwd.`,
   )
-  getDefaultLogger().log(
+  logger.log(
     'You can choose to add this file to your repo (handy for collab)',
   )
-  getDefaultLogger().log(
+  logger.log(
     'or to add it to the ignored files, or neither. This file is only',
   )
-  getDefaultLogger().log('used in CLI workflows.')
-  getDefaultLogger().log('')
-  getDefaultLogger().log(
+  logger.log('used in CLI workflows.')
+  logger.log('')
+  logger.log(
     'Note: For details on a flag you can run `socket <cmd> --help`',
   )
-  getDefaultLogger().log('')
+  logger.log('')
 
   const sockJsonCResult = readSocketJsonSync(cwd, defaultOnReadError)
   if (!sockJsonCResult.ok) {
@@ -116,9 +118,9 @@ export async function setupScanConfig(
     }
   }
 
-  getDefaultLogger().log('')
-  getDefaultLogger().log(`Setup complete. Writing ${SOCKET_JSON}`)
-  getDefaultLogger().log('')
+  logger.log('')
+  logger.log(`Setup complete. Writing ${SOCKET_JSON}`)
+  logger.log('')
 
   if (
     await select({
@@ -359,9 +361,9 @@ async function configureGithub(
 }
 
 function canceledByUser(): CResult<{ canceled: boolean }> {
-  getDefaultLogger().log('')
-  getDefaultLogger().info('User canceled')
-  getDefaultLogger().log('')
+  logger.log('')
+  logger.info('User canceled')
+  logger.log('')
   return { ok: true, data: { canceled: true } }
 }
 

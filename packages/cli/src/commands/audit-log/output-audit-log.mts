@@ -14,6 +14,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+const logger = getDefaultLogger()
+
 
 type AuditLogEvent =
   SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results'][number]
@@ -39,7 +41,7 @@ export async function outputAuditLog(
   }
 
   if (outputKind === OUTPUT_JSON) {
-    getDefaultLogger().log(
+    logger.log(
       await outputAsJson(result, {
         logType,
         orgSlug,
@@ -50,12 +52,12 @@ export async function outputAuditLog(
   }
 
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   if (outputKind === OUTPUT_MARKDOWN) {
-    getDefaultLogger().log(
+    logger.log(
       await outputAsMarkdown(result.data, {
         logType,
         orgSlug,
@@ -159,7 +161,7 @@ ${table}
 `
   } catch (e) {
     process.exitCode = 1
-    getDefaultLogger().fail(
+    logger.fail(
       `There was a problem converting the logs to Markdown, please try the \`${FLAG_JSON}\` flag`,
     )
     debug('Markdown conversion failed')

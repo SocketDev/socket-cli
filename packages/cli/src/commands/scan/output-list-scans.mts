@@ -8,6 +8,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+const logger = getDefaultLogger()
+
 
 type ScanListItem =
   SocketSdkSuccessResult<'listFullScans'>['data']['results'][number]
@@ -21,11 +23,11 @@ export async function outputListScans(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -55,5 +57,5 @@ export async function outputListScans(
     }
   })
 
-  getDefaultLogger().log(chalkTable(options, formattedResults))
+  logger.log(chalkTable(options, formattedResults))
 }

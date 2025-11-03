@@ -11,6 +11,8 @@ import { DRY_RUN_BAILING_NOW, FLAG_HELP } from '../../constants/cli.mjs'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { filterFlags, isHelpFlag } from '../../utils/process/cmd.mts'
+const logger = getDefaultLogger()
+
 
 import type {
   CliCommandConfig,
@@ -284,14 +286,14 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    getDefaultLogger().fail(
+    logger.fail(
       `Unknown ${pluralize('argument', { count: unknownsCount })}: ${joinAnd(unknowns)}`,
     )
     return
   }
 
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
@@ -303,7 +305,7 @@ async function run(
     if (yargv.lifecycle === undefined) {
       yargv.lifecycle = 'pre-build'
       yargv['install-deps'] = false
-      getDefaultLogger().info(
+      logger.info(
         `Setting cdxgen --lifecycle to "${yargv.lifecycle}" to avoid arbitrary code execution on this scan.\n  Pass "--lifecycle build" to generate a BOM consisting of information obtained during the build process.\n  See cdxgen ${terminalLink(
           'BOM lifecycles documentation',
           'https://cyclonedx.github.io/cdxgen/#/ADVANCED?id=bom-lifecycles',

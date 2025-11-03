@@ -5,6 +5,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { PatchRmData } from './handle-patch-rm.mts'
 import type { CResult, OutputKind } from '../../types.mts'
+const logger = getDefaultLogger()
+
 
 export async function outputPatchRmResult(
   result: CResult<PatchRmData>,
@@ -15,27 +17,27 @@ export async function outputPatchRmResult(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
 
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   const { filesRestored, purl } = result.data
 
   if (outputKind === 'markdown') {
-    getDefaultLogger().log('## Patch Removed\n')
-    getDefaultLogger().log(`**PURL**: ${purl}`)
-    getDefaultLogger().log(`**Files Restored**: ${filesRestored}`)
+    logger.log('## Patch Removed\n')
+    logger.log(`**PURL**: ${purl}`)
+    logger.log(`**Files Restored**: ${filesRestored}`)
     return
   }
 
   // Default output.
-  getDefaultLogger().group('')
-  getDefaultLogger().log(`PURL: ${purl}`)
-  getDefaultLogger().log(`Files restored: ${filesRestored}`)
-  getDefaultLogger().groupEnd()
+  logger.group('')
+  logger.log(`PURL: ${purl}`)
+  logger.log(`Files restored: ${filesRestored}`)
+  logger.groupEnd()
 }

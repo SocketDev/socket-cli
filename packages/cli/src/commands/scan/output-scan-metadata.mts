@@ -6,6 +6,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+const logger = getDefaultLogger()
+
 
 export async function outputScanMetadata(
   result: CResult<SocketSdkSuccessResult<'getFullScanMetadata'>['data']>,
@@ -17,17 +19,17 @@ export async function outputScanMetadata(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   if (outputKind === 'markdown') {
-    getDefaultLogger().log(`${mdHeader('Scan meta data')}\n`)
-    getDefaultLogger().log(`${mdKeyValue('Scan ID', scanId)}\n`)
+    logger.log(`${mdHeader('Scan meta data')}\n`)
+    logger.log(`${mdKeyValue('Scan ID', scanId)}\n`)
     for (const { 0: key, 1: value } of Object.entries(result.data)) {
       if (
         [
@@ -41,13 +43,13 @@ export async function outputScanMetadata(
       ) {
         continue
       }
-      getDefaultLogger().log(`- ${key}: ${value}`)
+      logger.log(`- ${key}: ${value}`)
     }
-    getDefaultLogger().log(
+    logger.log(
       `\nYou can view this report at: [${result.data.html_report_url}](${result.data.html_report_url})\n`,
     )
   } else {
-    getDefaultLogger().log(`Scan ID: ${scanId}\n`)
+    logger.log(`Scan ID: ${scanId}\n`)
     for (const { 0: key, 1: value } of Object.entries(result.data)) {
       if (
         [
@@ -61,9 +63,9 @@ export async function outputScanMetadata(
       ) {
         continue
       }
-      getDefaultLogger().log(`- ${key}:`, value)
+      logger.log(`- ${key}:`, value)
     }
-    getDefaultLogger().log(
+    logger.log(
       `\nYou can view this report at: ${result.data.html_report_url}]\n`,
     )
   }

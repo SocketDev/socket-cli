@@ -29,6 +29,8 @@ import { dlxManifest } from '@socketsecurity/lib/dlx-manifest'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
+const logger = getDefaultLogger()
+
 import { checkForUpdates as performUpdateCheck } from './checker.mts'
 import {
   scheduleExitNotification,
@@ -67,28 +69,28 @@ export async function checkForUpdates(
     version,
   } = { __proto__: null, ...options } as UpdateManagerOptions
 
-  const logger = getDefaultLogger()
+  const loggerLocal = getDefaultLogger()
 
   // Validate required parameters.
   if (!isNonEmptyString(name)) {
-    logger.warn('Package name must be a non-empty string')
+    loggerLocal.warn('Package name must be a non-empty string')
     return false
   }
 
   if (!isNonEmptyString(version)) {
-    logger.warn('Current version must be a non-empty string')
+    loggerLocal.warn('Current version must be a non-empty string')
     return false
   }
 
   if (ttl < 0) {
-    logger.warn('TTL must be a non-negative number')
+    loggerLocal.warn('TTL must be a non-negative number')
     return false
   }
 
   // Validate auth info if provided.
   if (authInfo) {
     if (!isNonEmptyString(authInfo.token) || !isNonEmptyString(authInfo.type)) {
-      logger.warn(
+      loggerLocal.warn(
         'Invalid auth info provided, proceeding without authentication',
       )
     }
@@ -96,7 +98,7 @@ export async function checkForUpdates(
 
   // Validate registry URL if provided.
   if (registryUrl && !isNonEmptyString(registryUrl)) {
-    logger.warn('Invalid registry URL provided, using default')
+    loggerLocal.warn('Invalid registry URL provided, using default')
   }
 
   let record: StoreRecord | undefined
@@ -107,7 +109,7 @@ export async function checkForUpdates(
     timestamp = Date.now()
 
     if (timestamp <= 0) {
-      logger.warn('Invalid system time, using cached data only')
+      loggerLocal.warn('Invalid system time, using cached data only')
       if (record) {
         // Use cached data for notification.
         const updateAvailable = version !== record.version
@@ -129,7 +131,7 @@ export async function checkForUpdates(
       return false
     }
   } catch (error) {
-    logger.warn(
+    loggerLocal.warn(
       `Failed to access cache: ${error instanceof Error ? error.message : String(error)}`,
     )
     timestamp = Date.now()
@@ -156,13 +158,13 @@ export async function checkForUpdates(
           version: updateResult.latest,
         })
       } catch (error) {
-        logger.warn(
+        loggerLocal.warn(
           `Failed to update cache: ${error instanceof Error ? error.message : String(error)}`,
         )
         // Continue anyway - cache update failure is not critical.
       }
     } catch (error) {
-      logger.log(
+      loggerLocal.log(
         `Failed to fetch latest version: ${error instanceof Error ? error.message : String(error)}`,
       )
 
@@ -174,7 +176,7 @@ export async function checkForUpdates(
           updateAvailable: version !== record.version,
         }
       } else {
-        logger.log('No version information available')
+        loggerLocal.log('No version information available')
         return false
       }
     }
@@ -202,7 +204,7 @@ export async function checkForUpdates(
         scheduleExitNotification(notificationOptions)
       }
     } catch (error) {
-      logger.warn(
+      loggerLocal.warn(
         `Failed to set up notification: ${error instanceof Error ? error.message : String(error)}`,
       )
       // Notification failure is not critical - update is still available.
@@ -226,7 +228,7 @@ export async function scheduleUpdateCheck(
     await checkForUpdates(updateOptions)
   } catch (error) {
     // Silent failure - update checks should never block the main CLI.
-    getDefaultLogger().log(
+    logger.log(
       `Update check failed: ${error instanceof Error ? error.message : String(error)}`,
     )
   }

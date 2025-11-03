@@ -6,6 +6,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { ReachabilityAnalysisResult } from './perform-reachability-analysis.mts'
 import type { CResult, OutputKind } from '../../types.mts'
+const logger = getDefaultLogger()
+
 
 export async function outputScanReach(
   result: CResult<ReachabilityAnalysisResult>,
@@ -19,11 +21,11 @@ export async function outputScanReach(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -31,9 +33,9 @@ export async function outputScanReach(
     ? outputPath
     : DOT_SOCKET_DOT_FACTS_JSON
 
-  getDefaultLogger().log('')
-  getDefaultLogger().success('Reachability analysis completed successfully!')
-  getDefaultLogger().info(
+  logger.log('')
+  logger.success('Reachability analysis completed successfully!')
+  logger.info(
     `Reachability report has been written to: ${actualOutputPath}`,
   )
 }

@@ -5,6 +5,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { PatchGetData } from './handle-patch-get.mts'
 import type { CResult, OutputKind } from '../../types.mts'
+const logger = getDefaultLogger()
+
 
 export async function outputPatchGetResult(
   result: CResult<PatchGetData>,
@@ -15,39 +17,39 @@ export async function outputPatchGetResult(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
 
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   const { files, outputDir, purl } = result.data
 
   if (outputKind === 'markdown') {
-    getDefaultLogger().log('## Patch Files Retrieved\n')
-    getDefaultLogger().log(`**PURL**: ${purl}`)
-    getDefaultLogger().log(`**Output Directory**: ${outputDir}`)
-    getDefaultLogger().log(`**Files**: ${files.length}\n`)
+    logger.log('## Patch Files Retrieved\n')
+    logger.log(`**PURL**: ${purl}`)
+    logger.log(`**Output Directory**: ${outputDir}`)
+    logger.log(`**Files**: ${files.length}\n`)
     for (const file of files) {
-      getDefaultLogger().log(`- ${file}`)
+      logger.log(`- ${file}`)
     }
     return
   }
 
   // Default output.
-  getDefaultLogger().group('')
-  getDefaultLogger().log(`PURL: ${purl}`)
-  getDefaultLogger().log(`Output directory: ${outputDir}`)
-  getDefaultLogger().log(`Files copied: ${files.length}`)
+  logger.group('')
+  logger.log(`PURL: ${purl}`)
+  logger.log(`Output directory: ${outputDir}`)
+  logger.log(`Files copied: ${files.length}`)
   if (files.length > 0) {
-    getDefaultLogger().group()
+    logger.group()
     for (const file of files) {
-      getDefaultLogger().log(`- ${file}`)
+      logger.log(`- ${file}`)
     }
-    getDefaultLogger().groupEnd()
+    logger.groupEnd()
   }
-  getDefaultLogger().groupEnd()
+  logger.groupEnd()
 }

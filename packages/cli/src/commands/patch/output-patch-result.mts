@@ -6,6 +6,8 @@ import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
+const logger = getDefaultLogger()
+
 
 export async function outputPatchResult(
   result: CResult<{ patched: string[] }>,
@@ -16,31 +18,31 @@ export async function outputPatchResult(
   }
 
   if (outputKind === OUTPUT_JSON) {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
 
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   const { patched } = result.data
 
-  getDefaultLogger().log('')
+  logger.log('')
 
   if (patched.length) {
-    getDefaultLogger().group(
+    logger.group(
       `Successfully processed patches for ${patched.length} ${pluralize('package', { count: patched.length })}:`,
     )
     for (const pkg of patched) {
-      getDefaultLogger().success(pkg)
+      logger.success(pkg)
     }
-    getDefaultLogger().groupEnd()
+    logger.groupEnd()
   } else {
-    getDefaultLogger().warn('No packages found requiring patches.')
+    logger.warn('No packages found requiring patches.')
   }
 
-  getDefaultLogger().log('')
-  getDefaultLogger().success('Patch command completed!')
+  logger.log('')
+  logger.success('Patch command completed!')
 }

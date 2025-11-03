@@ -6,6 +6,8 @@ import { getPurlObject } from '../../utils/purl/parse.mts'
 
 import type { ThreadFeedResponse } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
+const logger = getDefaultLogger()
+
 
 export async function outputThreatFeed(
   result: CResult<ThreadFeedResponse>,
@@ -16,16 +18,16 @@ export async function outputThreatFeed(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   if (!result.data?.results?.length) {
-    getDefaultLogger().warn('Did not receive any data to display.')
+    logger.warn('Did not receive any data to display.')
     return
   }
 

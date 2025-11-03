@@ -6,6 +6,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+const logger = getDefaultLogger()
+
 
 export async function outputLicensePolicy(
   result: CResult<SocketSdkSuccessResult<'getOrgLicensePolicy'>['data']>,
@@ -16,19 +18,19 @@ export async function outputLicensePolicy(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
-  getDefaultLogger().info('Use --json to get the full result')
-  getDefaultLogger().log(mdHeader('License policy'))
-  getDefaultLogger().log('')
-  getDefaultLogger().log('This is the license policy for your organization:')
-  getDefaultLogger().log('')
+  logger.info('Use --json to get the full result')
+  logger.log(mdHeader('License policy'))
+  logger.log('')
+  logger.log('This is the license policy for your organization:')
+  logger.log('')
   const rules = result.data['license_policy']!
   const entries = rules ? Object.entries(rules) : []
   const mapped: Array<[string, string]> = entries.map(
@@ -36,6 +38,6 @@ export async function outputLicensePolicy(
       [key, (value as any)?.allowed ? ' yes' : ' no'] as const,
   )
   mapped.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-  getDefaultLogger().log(mdTableOfPairs(mapped, ['License Name', 'Allowed']))
-  getDefaultLogger().log('')
+  logger.log(mdTableOfPairs(mapped, ['License Name', 'Allowed']))
+  logger.log('')
 }

@@ -26,6 +26,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { onExit } from '@socketsecurity/lib/signal-exit'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
+const logger = getDefaultLogger()
+
 import { SEA_UPDATE_COMMAND } from '../../constants/cli.mts'
 import { getSeaBinaryPath } from '../sea/detect.mts'
 import { githubRepoLink, socketPackageLink } from '../terminal/link.mts'
@@ -91,22 +93,22 @@ export function showUpdateNotification(
 
   try {
     const formatted = formatUpdateMessage(options)
-    const logger = getDefaultLogger()
+    const loggerLocal = getDefaultLogger()
 
-    logger.log(`\n\n${formatted.message}`)
+    loggerLocal.log(`\n\n${formatted.message}`)
     if (formatted.command) {
-      logger.log(formatted.command)
+      loggerLocal.log(formatted.command)
     }
-    logger.log(`📝 ${formatted.changelog}`)
+    loggerLocal.log(`📝 ${formatted.changelog}`)
   } catch {
     // If formatting or logging fails, show a simpler message.
-    const logger = getDefaultLogger()
+    const loggerLocal = getDefaultLogger()
     const { current, latest, name } = options
     const seaBinPath = getSeaBinaryPath()
 
-    logger.log(`\n\n📦 Update available for ${name}: ${current} → ${latest}`)
+    loggerLocal.log(`\n\n📦 Update available for ${name}: ${current} → ${latest}`)
     if (isNonEmptyString(seaBinPath)) {
-      logger.log(
+      loggerLocal.log(
         `Run '${seaBinPath} ${SEA_UPDATE_COMMAND}' to update automatically`,
       )
     }
@@ -128,7 +130,7 @@ export function scheduleExitNotification(
     const notificationLogger = () => showUpdateNotification(options)
     onExit(notificationLogger)
   } catch (error) {
-    getDefaultLogger().warn(
+    logger.warn(
       `Failed to schedule exit notification: ${error instanceof Error ? error.message : String(error)}`,
     )
   }

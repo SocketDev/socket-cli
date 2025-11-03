@@ -15,6 +15,8 @@ import {
   outputPaginatedList,
 } from '../../utils/terminal/simple-output.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
+const logger = getDefaultLogger()
+
 
 export const cmdRepositoryListSimplified = buildCommand({
   name: 'list',
@@ -99,14 +101,14 @@ export const cmdRepositoryListSimplified = buildCommand({
 
     // Dry run check
     if (dryRun) {
-      getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+      logger.log(DRY_RUN_BAILING_NOW)
       return
     }
 
     // Auth check
     if (!hasDefaultApiToken()) {
-      getDefaultLogger().error('This command requires a Socket API token')
-      getDefaultLogger().log('Run `socket login` first')
+      logger.error('This command requires a Socket API token')
+      logger.log('Run `socket login` first')
       process.exitCode = 1
       return
     }

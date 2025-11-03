@@ -26,6 +26,8 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 import type { RangeStyle } from '../../utils/semver.mts'
+const logger = getDefaultLogger()
+
 
 export const CMD_NAME = 'fix'
 
@@ -323,14 +325,14 @@ async function run(
   }
 
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_NOT_SAVING)
+    logger.log(DRY_RUN_NOT_SAVING)
     return
   }
 
   const orgSlugCResult = await getDefaultOrgSlug()
   if (!orgSlugCResult.ok) {
     process.exitCode = orgSlugCResult.code ?? 1
-    getDefaultLogger().fail(
+    logger.fail(
       `${ERROR_UNABLE_RESOLVE_ORG}.\nEnsure a Socket API token is specified for the organization using the SOCKET_CLI_API_TOKEN environment variable.`,
     )
     return

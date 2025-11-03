@@ -17,6 +17,8 @@ import { spawn } from '@socketsecurity/lib/spawn'
 import { gte } from 'semver'
 import { SOCKET_CLI_ISSUES_URL } from '../../../cli/src/constants/socket.mts'
 
+const logger = getDefaultLogger()
+
 export const SOCKET_DLX_DIR = path.join(homedir(), '.socket', '_dlx')
 
 /**
@@ -169,9 +171,9 @@ export async function downloadCli() {
   try {
     mkdirSync(SOCKET_DLX_DIR, { recursive: true })
   } catch (e) {
-    getDefaultLogger().error('Failed to create Socket directory')
-    getDefaultLogger().error(`   Error: ${e instanceof Error ? e.message : String(e)}`)
-    getDefaultLogger().error(`   Path: ${SOCKET_DLX_DIR}`)
+    logger.error('Failed to create Socket directory')
+    logger.error(`   Error: ${e instanceof Error ? e.message : String(e)}`)
+    logger.error(`   Path: ${SOCKET_DLX_DIR}`)
     process.exit(1)
   }
 
@@ -184,7 +186,8 @@ export async function downloadCli() {
         // Uses caret range (^) to auto-update within same major version.
         // Update notifications will only trigger for major version changes.
         await downloadPackage({
-          package: `@socketsecurity/cli@^${SOCKET_CLI_VERSION_MAJOR}`,
+          // @ts-expect-error - Injected by esbuild define.
+          package: '@socketsecurity/cli@^' + __SOCKET_CLI_VERSION_MAJOR__,
           binaryName: 'socket',
           // Use cached version if available.
           force: false,
@@ -193,14 +196,14 @@ export async function downloadCli() {
 
     return result
   } catch (e) {
-    getDefaultLogger().error('Failed to download Socket CLI')
-    getDefaultLogger().error(`   Error: ${e instanceof Error ? e.message : String(e)}`)
-    getDefaultLogger().error('')
-    getDefaultLogger().error('This may be a temporary issue. Please try:')
-    getDefaultLogger().error('  1. Check your internet connection')
-    getDefaultLogger().error('  2. Try running the command again')
-    getDefaultLogger().error(`  3. Manually create directory: mkdir -p "${SOCKET_DLX_DIR}"`)
-    getDefaultLogger().error(`  4. Report issue at: ${SOCKET_CLI_ISSUES_URL}`)
+    logger.error('Failed to download Socket CLI')
+    logger.error(`   Error: ${e instanceof Error ? e.message : String(e)}`)
+    logger.error('')
+    logger.error('This may be a temporary issue. Please try:')
+    logger.error('  1. Check your internet connection')
+    logger.error('  2. Try running the command again')
+    logger.error(`  3. Manually create directory: mkdir -p "${SOCKET_DLX_DIR}"`)
+    logger.error(`  4. Report issue at: ${SOCKET_CLI_ISSUES_URL}`)
     process.exit(1)
   }
 }
@@ -216,7 +219,8 @@ export async function findAndExecuteCli(args) {
 
   // Pass metadata to CLI for manifest writing.
   // CLI will use this to write entries to ~/.socket/_dlx/.dlx-manifest.json
-  const spec = `@socketsecurity/cli@^${SOCKET_CLI_VERSION_MAJOR}`
+  // @ts-expect-error - Injected by esbuild define.
+  const spec = '@socketsecurity/cli@^' + __SOCKET_CLI_VERSION_MAJOR__
   process.env.SOCKET_CLI_BOOTSTRAP_SPEC = spec
   process.env.SOCKET_CLI_BOOTSTRAP_CACHE_DIR = cliPackageDir
 
@@ -229,8 +233,8 @@ export async function findAndExecuteCli(args) {
   }
 
   // If we can't find the CLI, exit with error.
-  getDefaultLogger().error('Socket CLI installation failed')
-  getDefaultLogger().error('   CLI entry point not found after installation')
-  getDefaultLogger().error(`   Looked in: ${cliEntry}`)
+  logger.error('Socket CLI installation failed')
+  logger.error('   CLI entry point not found after installation')
+  logger.error(`   Looked in: ${cliEntry}`)
   return 1
 }
