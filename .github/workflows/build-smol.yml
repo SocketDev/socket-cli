@@ -115,7 +115,7 @@ jobs:
     needs: build-deps
     name: 🤏 Build smol binary - ${{ matrix.platform }}-${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 120
+    timeout-minutes: ${{ inputs.force && 150 || 120 }}
     strategy:
       fail-fast: true
       max-parallel: 8
@@ -231,7 +231,7 @@ jobs:
         id: smol-cache-key
         shell: bash
         run: |
-          PATCHES_HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f \( -name "*.patch" -o -name "*.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          PATCHES_HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f \( -name "*.patch" -o -name "*.template.patch" -o -name "*.mjs" -o -name "*.template.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           # Include bootstrap/socket dependencies in cache key to invalidate when they change.
           COMBINED_HASH=$(echo "$PATCHES_HASH-${{ needs.build-deps.outputs.deps-hash }}" | sha256sum | cut -d' ' -f1)
           echo "hash=$COMBINED_HASH" >> $GITHUB_OUTPUT
@@ -271,6 +271,41 @@ jobs:
           key: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.smol-cache-key.outputs.hash }}
           restore-keys: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-
 
+      - name: Validate build cache integrity
+        if: steps.check-platform.outputs.should-run == 'true' && steps.smol-build-cache.outputs.cache-hit == 'true'
+        shell: bash
+        run: |
+          CACHE_VALID="true"
+
+          # Check checkpoint files exist.
+          if [ ! -f "packages/node-smol-builder/build/.checkpoints/cloned" ]; then
+            echo "⚠ Missing 'cloned' checkpoint"
+            CACHE_VALID="false"
+          fi
+
+          # If final binary exists, all checkpoints should exist.
+          BINARY_PATH="packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}"
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            BINARY_PATH="${BINARY_PATH}.exe"
+          fi
+
+          if [ -f "$BINARY_PATH" ]; then
+            for checkpoint in cloned built complete; do
+              if [ ! -f "packages/node-smol-builder/build/.checkpoints/$checkpoint" ]; then
+                echo "❌ Incomplete cache: missing $checkpoint checkpoint but binary exists"
+                CACHE_VALID="false"
+              fi
+            done
+          fi
+
+          # Invalidate corrupted cache.
+          if [ "$CACHE_VALID" = "false" ]; then
+            echo "::warning::Invalidating corrupted build cache..."
+            rm -rf packages/node-smol-builder/build
+          else
+            echo "✓ Build cache integrity validated"
+          fi
+
       - name: Verify smol binary cache
         if: steps.check-platform.outputs.should-run == 'true'
         id: smol-cache-valid
@@ -284,6 +319,15 @@ jobs:
           if [ -f "$BINARY_PATH" ]; then
             echo "valid=true" >> $GITHUB_OUTPUT
             echo "✓ Smol binary cache valid: $BINARY_PATH"
+
+            # Smoke test: verify binary can execute --version.
+            if "$BINARY_PATH" --version >/dev/null 2>&1; then
+              echo "✓ Binary smoke test passed (--version)"
+            else
+              echo "::warning::Binary exists but failed smoke test, will rebuild"
+              echo "valid=false" >> $GITHUB_OUTPUT
+              rm -f "$BINARY_PATH"
+            fi
           else
             echo "valid=false" >> $GITHUB_OUTPUT
             echo "✗ Smol binary cache invalid or missing: $BINARY_PATH"

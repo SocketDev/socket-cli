@@ -645,10 +645,61 @@ async function restoreCachedBinary(buildDir, nodeBinary, platform, arch, version
     logger.log(`${colors.green('✓')} Restored cached binary (${size})`)
     logger.log(`   From: ${cacheFile}`)
 
+    // Smoke test: verify binary can execute --version.
+    try {
+      const versionResult = await spawn(nodeBinary, ['--version'], { timeout: 5_000 })
+      if (versionResult.code === 0) {
+        logger.log(`${colors.green('✓')} Binary smoke test passed (--version)`)
+      } else {
+        logger.warn('Binary exists but failed smoke test, will rebuild')
+        return false
+      }
+    } catch (e) {
+      logger.warn(`Binary smoke test failed: ${e.message}, will rebuild`)
+      return false
+    }
+
     return true
   } catch (e) {
     logger.warn(`Failed to restore cache: ${e.message}`)
     return false
+  }
+}
+
+/**
+ * Check if there is sufficient disk space for the build.
+ */
+async function checkDiskSpace() {
+  try {
+    // Use df command to check available space (works on macOS, Linux, Windows with WSL).
+    const dfResult = await spawn('df', ['-BG', BUILD_DIR])
+    if (dfResult.code !== 0) {
+      // If df fails (e.g., on Windows without WSL), skip check.
+      logger.log('⚠  Could not check disk space (df command unavailable)')
+      return
+    }
+
+    // Parse output to find available space in GB.
+    const match = dfResult.stdout.match(/(\d+)G\s+\d+%/)
+    const availableGB = match ? parseInt(match[1]) : 0
+
+    if (availableGB < 20) {
+      throw new Error(
+        `Insufficient disk space: ${availableGB}GB available, need 20GB minimum\n\n` +
+        `Try:\n` +
+        `  - Clear old builds: rm -rf packages/node-smol-builder/build\n` +
+        `  - Clear ccache: ccache -C\n` +
+        `  - Check Docker images: docker system df`
+      )
+    }
+
+    logger.log(`${colors.green('✓')} Disk space: ${availableGB}GB available`)
+  } catch (e) {
+    // On Windows, df might not be available, so we catch and warn.
+    if (e.message.includes('Insufficient disk space')) {
+      throw e
+    }
+    logger.log('⚠  Could not check disk space:', e.message)
   }
 }
 
@@ -983,6 +1034,7 @@ async function main() {
   await saveBuildLog(BUILD_DIR, 'Phase 1: Pre-flight Checks')
   await checkRequiredTools()
   await checkBuildEnvironment()
+  await checkDiskSpace()
   await saveBuildLog(BUILD_DIR, 'Pre-flight checks completed')
   await saveBuildLog(BUILD_DIR, '')
 
@@ -1458,11 +1510,14 @@ async function main() {
       logger.log('::endgroup::')
     } catch (e) {
       logger.log('::endgroup::')
-      // Build failed - show last 50 lines of build log.
-      const lastLines = await getLastLogLines(BUILD_DIR, 50)
+      logger.log('')
+      logger.log('::error::Ninja build failed - see collapsed "Compiling Node.js" section above for full compiler output')
+      logger.log('')
+      // Build failed - show last 100 lines of build log.
+      const lastLines = await getLastLogLines(BUILD_DIR, 100)
       if (lastLines) {
         logger.error()
-        logger.error('Last 50 lines of build log:')
+        logger.error('Last 100 lines of build log:')
         logger.error('━'.repeat(60))
         logger.error(lastLines)
         logger.error('━'.repeat(60))
