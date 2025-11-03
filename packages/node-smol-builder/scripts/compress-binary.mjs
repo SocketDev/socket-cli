@@ -50,21 +50,21 @@ const TOOLS_DIR = path.resolve(__dirname, '../additions/003-compression-tools')
 const PLATFORM_CONFIG = {
   __proto__: null,
   darwin: {
-    toolName: 'socket_macho_compress',
+    toolName: 'socketsecurity_macho_compress',
     binaryFormat: 'Mach-O',
     defaultQuality: 'lzfse',
     qualityOptions: ['lz4', 'zlib', 'lzfse', 'lzma'],
     buildCommand: '/usr/bin/make -f Makefile'
   },
   linux: {
-    toolName: 'socket_elf_compress',
+    toolName: 'socketsecurity_elf_compress',
     binaryFormat: 'ELF',
     defaultQuality: 'lzma',
     qualityOptions: ['lzma'],
     buildCommand: '/usr/bin/make -f Makefile.linux'
   },
   win32: {
-    toolName: 'socket_pe_compress',
+    toolName: 'socketsecurity_pe_compress',
     binaryFormat: 'PE',
     defaultQuality: 'lzms',
     qualityOptions: ['xpress', 'xpress_huff', 'lzms'],
