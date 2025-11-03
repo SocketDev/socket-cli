@@ -83,6 +83,31 @@ jobs:
       - name: Validate socket package
         if: ${{ inputs.publish-socket != false }}
         run: pnpm --filter socket run verify
+      - name: Smoke test socket package
+        if: ${{ inputs.publish-socket != false }}
+        run: |
+          echo "Running smoke test on socket package..."
+          cd packages/socket
+
+          # Pack the package locally (doesn't publish).
+          npm pack
+
+          # Install it in a temp directory.
+          TEMP_DIR=$(mktemp -d)
+          cd "$TEMP_DIR"
+          npm install --no-save "$OLDPWD"/socket-*.tgz
+
+          # Test basic commands.
+          echo "Testing: socket --version"
+          npx socket --version || (echo "✗ socket --version failed" && exit 1)
+
+          echo "Testing: socket --help"
+          npx socket --help || (echo "✗ socket --help failed" && exit 1)
+
+          echo "✓ Smoke test passed"
+
+          # Cleanup.
+          rm -rf "$TEMP_DIR"
       - name: Publish socket package
         if: ${{ inputs.publish-socket != false }}
         working-directory: packages/socket

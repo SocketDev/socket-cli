@@ -492,7 +492,7 @@ jobs:
 
   summary:
     name: 📊 🧱 WASM Build Summary
-    if: always()
+    if: always() && !cancelled()
     needs: [build-yoga-layout, build-models, build-onnx-runtime]
     runs-on: ubuntu-latest
     steps:
@@ -506,33 +506,83 @@ jobs:
         run: |
           echo "# 🧱 WASM Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## ✅ Build Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Selected WASM assets built successfully and cached." >> $GITHUB_STEP_SUMMARY
+
+          # Check status of builds.
+          YOGA_STATUS="${{ needs.build-yoga-layout.result }}"
+          MODELS_STATUS="${{ needs.build-models.result }}"
+          ONNX_STATUS="${{ needs.build-onnx-runtime.result }}"
+
+          # Determine overall status.
+          if [ "$YOGA_STATUS" = "failure" ] || [ "$MODELS_STATUS" = "failure" ] || [ "$ONNX_STATUS" = "failure" ]; then
+            echo "## ✗ Build Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "One or more builds failed. Check the logs above for details." >> $GITHUB_STEP_SUMMARY
+          elif [ "$YOGA_STATUS" = "skipped" ] && [ "$MODELS_STATUS" = "skipped" ] && [ "$ONNX_STATUS" = "skipped" ]; then
+            echo "## ⊘ Builds Skipped" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "All builds were skipped (likely due to workflow inputs)." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ✓ Build Complete" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Selected WASM assets built successfully and cached." >> $GITHUB_STEP_SUMMARY
+          fi
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Asset | Files |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
-          if [ -d "artifacts/yoga-wasm" ]; then
-            echo "| 🧘 Yoga Layout | \`yoga.wasm\`, \`yoga.js\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Asset | Status | Files |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|-------|" >> $GITHUB_STEP_SUMMARY
+
+          # Yoga Layout.
+          if [ "$YOGA_STATUS" = "success" ]; then
+            echo "| 🧘 Yoga Layout | ✓ | \`yoga.wasm\`, \`yoga.js\` |" >> $GITHUB_STEP_SUMMARY
+          elif [ "$YOGA_STATUS" = "skipped" ]; then
+            echo "| 🧘 Yoga Layout | ⊘ | Skipped |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 🧘 Yoga Layout | ✗ | Failed |" >> $GITHUB_STEP_SUMMARY
           fi
-          if [ -d "artifacts/ai-models" ]; then
-            # Detect quantization level from file names.
-            if [ -f "artifacts/ai-models/minilm-l6-int8.onnx" ]; then
-              echo "| 🤖 AI Models | \`minilm-l6-int8.onnx\` (INT8), \`codet5-encoder-int8.onnx\` (INT8), \`codet5-decoder-int8.onnx\` (INT8) |" >> $GITHUB_STEP_SUMMARY
-            elif [ -f "artifacts/ai-models/minilm-l6-int4.onnx" ]; then
-              echo "| 🤖 AI Models | \`minilm-l6-int4.onnx\` (INT4), \`codet5-encoder-int4.onnx\` (INT4), \`codet5-decoder-int4.onnx\` (INT4) |" >> $GITHUB_STEP_SUMMARY
+
+          # AI Models.
+          if [ "$MODELS_STATUS" = "success" ]; then
+            if [ -d "artifacts/ai-models" ]; then
+              if [ -f "artifacts/ai-models/minilm-l6-int8.onnx" ]; then
+                echo "| 🤖 AI Models | ✓ | \`*-int8.onnx\` (INT8) |" >> $GITHUB_STEP_SUMMARY
+              elif [ -f "artifacts/ai-models/minilm-l6-int4.onnx" ]; then
+                echo "| 🤖 AI Models | ✓ | \`*-int4.onnx\` (INT4) |" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "| 🤖 AI Models | ✓ | Built |" >> $GITHUB_STEP_SUMMARY
+              fi
             else
-              echo "| 🤖 AI Models | $(ls artifacts/ai-models/*.onnx 2>/dev/null | xargs -n1 basename | sed 's/^/`/;s/$/`/' | tr '\n' ',' | sed 's/,$//' || echo "No ONNX files found") |" >> $GITHUB_STEP_SUMMARY
+              echo "| 🤖 AI Models | ✓ | Built |" >> $GITHUB_STEP_SUMMARY
             fi
+          elif [ "$MODELS_STATUS" = "skipped" ]; then
+            echo "| 🤖 AI Models | ⊘ | Skipped |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 🤖 AI Models | ✗ | Failed |" >> $GITHUB_STEP_SUMMARY
           fi
-          if [ -d "artifacts/onnx-runtime" ]; then
-            echo "| 🌐 ONNX Runtime | \`ort-wasm-simd-threaded.wasm\`, \`ort-wasm-simd-threaded.mjs\` |" >> $GITHUB_STEP_SUMMARY
+
+          # ONNX Runtime.
+          if [ "$ONNX_STATUS" = "success" ]; then
+            echo "| 🌐 ONNX Runtime | ✓ | \`ort-wasm-simd-threaded.*\` |" >> $GITHUB_STEP_SUMMARY
+          elif [ "$ONNX_STATUS" = "skipped" ]; then
+            echo "| 🌐 ONNX Runtime | ⊘ | Skipped |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 🌐 ONNX Runtime | ✗ | Failed |" >> $GITHUB_STEP_SUMMARY
           fi
+
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "### → Next Steps" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- These artifacts are now cached for CI builds" >> $GITHUB_STEP_SUMMARY
-          echo "- CLI builds will use these cached WASM assets" >> $GITHUB_STEP_SUMMARY
-          echo "- Cache is invalidated when source files change" >> $GITHUB_STEP_SUMMARY
+
+          # Check if any succeeded.
+          if [ "$YOGA_STATUS" = "success" ] || [ "$MODELS_STATUS" = "success" ] || [ "$ONNX_STATUS" = "success" ]; then
+            echo "- Artifacts cached for CI builds" >> $GITHUB_STEP_SUMMARY
+            echo "- CLI builds will use cached WASM assets" >> $GITHUB_STEP_SUMMARY
+            echo "- Cache invalidated on source changes" >> $GITHUB_STEP_SUMMARY
+          elif [ "$YOGA_STATUS" = "skipped" ] && [ "$MODELS_STATUS" = "skipped" ] && [ "$ONNX_STATUS" = "skipped" ]; then
+            echo "- Re-run workflow with builds enabled" >> $GITHUB_STEP_SUMMARY
+            echo "- Or use \`workflow_dispatch\` to build specific assets" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Check build logs for error details" >> $GITHUB_STEP_SUMMARY
+            echo "- Fix issues and re-run workflow" >> $GITHUB_STEP_SUMMARY
+          fi

@@ -115,48 +115,48 @@ jobs:
     needs: build-deps
     name: ⚡ Smol - ${{ matrix.platform }}-${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: ${{ inputs.force && 150 || 120 }}
+    timeout-minutes: ${{ inputs.force && 180 || 150 }}
     strategy:
       fail-fast: true
       max-parallel: 8
       matrix:
         include:
-          # Linux builds (8-core runners for faster compilation).
-          - runner: ubuntu-latest-8-cores
+          # Linux builds.
+          - runner: ubuntu-latest
             os: linux
             platform: linux
             arch: x64
-          - runner: ubuntu-latest-8-cores
+          - runner: ubuntu-latest
             os: linux
             platform: linux
             arch: arm64
 
           # Alpine Linux builds - use musl binaries from unofficial-builds.nodejs.org.
-          - runner: ubuntu-latest-8-cores
+          - runner: ubuntu-latest
             os: linux
             platform: alpine
             arch: x64
-          - runner: ubuntu-latest-8-cores
+          - runner: ubuntu-latest
             os: linux
             platform: alpine
             arch: arm64
 
-          # macOS builds (8-core runners for faster compilation).
-          - runner: macos-latest-xlarge
+          # macOS builds.
+          - runner: macos-latest
             os: darwin
             platform: darwin
             arch: x64
-          - runner: macos-latest-xlarge
+          - runner: macos-latest
             os: darwin
             platform: darwin
             arch: arm64
 
-          # Windows builds (8-core runners for faster compilation).
-          - runner: windows-latest-8-cores
+          # Windows builds.
+          - runner: windows-latest
             os: windows
             platform: win32
             arch: x64
-          - runner: windows-latest-8-cores
+          - runner: windows-latest
             os: windows
             platform: win32
             arch: arm64
@@ -511,17 +511,37 @@ jobs:
 
   summary:
     name: ⚡ Build Summary
-    needs: [build-smol]
-    if: always()
+    needs: [build-deps, build-smol]
+    if: always() && !cancelled()
     runs-on: ubuntu-latest
     steps:
       - name: Generate summary
         run: |
           echo "# ⚡ Socket Smol Node Build" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## ✓ Build Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Socket smol binaries (compressed Node.js + CLI) built successfully." >> $GITHUB_STEP_SUMMARY
+
+          # Check status of dependencies.
+          DEPS_STATUS="${{ needs.build-deps.result }}"
+          BUILD_STATUS="${{ needs.build-smol.result }}"
+
+          if [ "$DEPS_STATUS" = "failure" ] || [ "$BUILD_STATUS" = "failure" ]; then
+            echo "## ✗ Build Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "One or more builds failed. Check the logs above for details." >> $GITHUB_STEP_SUMMARY
+          elif [ "$DEPS_STATUS" = "skipped" ] && [ "$BUILD_STATUS" = "skipped" ]; then
+            echo "## ⊘ Builds Skipped" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "All builds were skipped (likely due to workflow inputs)." >> $GITHUB_STEP_SUMMARY
+          elif [ "$BUILD_STATUS" = "skipped" ]; then
+            echo "## ⊘ Builds Skipped" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Builds were skipped (platform builds disabled by workflow inputs)." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ✓ Build Complete" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Socket smol binaries (compressed Node.js + CLI) built successfully." >> $GITHUB_STEP_SUMMARY
+          fi
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### ⚡ Socket Smol Method" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -537,6 +557,15 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### → Next Steps" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- Binaries cached for E2E tests" >> $GITHUB_STEP_SUMMARY
-          echo "- Use \`publish-socketbin.yml\` to publish" >> $GITHUB_STEP_SUMMARY
-          echo "- Cache invalidated on patch/script changes" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$BUILD_STATUS" = "success" ]; then
+            echo "- Binaries cached for E2E tests" >> $GITHUB_STEP_SUMMARY
+            echo "- Use \`publish-socketbin.yml\` to publish" >> $GITHUB_STEP_SUMMARY
+            echo "- Cache invalidated on patch/script changes" >> $GITHUB_STEP_SUMMARY
+          elif [ "$BUILD_STATUS" = "skipped" ]; then
+            echo "- Re-run workflow with platform builds enabled" >> $GITHUB_STEP_SUMMARY
+            echo "- Or use \`workflow_dispatch\` to trigger specific platforms" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Check build logs for error details" >> $GITHUB_STEP_SUMMARY
+            echo "- Fix issues and re-run workflow" >> $GITHUB_STEP_SUMMARY
+          fi

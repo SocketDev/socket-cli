@@ -144,12 +144,12 @@ jobs:
             platform: alpine
             arch: arm64
 
-          # macOS builds - use arm64 runner to build both x64 and arm64.
-          - runner: macos-latest-large
+          # macOS builds.
+          - runner: macos-latest
             os: darwin
             platform: darwin
             arch: x64
-          - runner: macos-latest-large
+          - runner: macos-latest
             os: darwin
             platform: darwin
             arch: arm64
@@ -537,17 +537,37 @@ jobs:
 
   summary:
     name: 📊 🌊 SEA Node Build Summary
-    needs: [build-sea]
-    if: always()
+    needs: [build-deps, build-sea]
+    if: always() && !cancelled()
     runs-on: ubuntu-latest
     steps:
       - name: Generate summary
         run: |
           echo "# 🌊 SEA Node Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## ✅ Build Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "SEA (Single Executable Application) binaries built successfully and cached." >> $GITHUB_STEP_SUMMARY
+
+          # Check status of dependencies.
+          DEPS_STATUS="${{ needs.build-deps.result }}"
+          BUILD_STATUS="${{ needs.build-sea.result }}"
+
+          if [ "$DEPS_STATUS" = "failure" ] || [ "$BUILD_STATUS" = "failure" ]; then
+            echo "## ✗ Build Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "One or more builds failed. Check the logs above for details." >> $GITHUB_STEP_SUMMARY
+          elif [ "$DEPS_STATUS" = "skipped" ] && [ "$BUILD_STATUS" = "skipped" ]; then
+            echo "## ⊘ Builds Skipped" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "All builds were skipped (likely due to workflow inputs)." >> $GITHUB_STEP_SUMMARY
+          elif [ "$BUILD_STATUS" = "skipped" ]; then
+            echo "## ⊘ Builds Skipped" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Builds were skipped (platform builds disabled by workflow inputs)." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ✓ Build Complete" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "SEA (Single Executable Application) binaries built successfully and cached." >> $GITHUB_STEP_SUMMARY
+          fi
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📦 Build Method" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -555,14 +575,23 @@ jobs:
           echo "|--------|-------------|------|" >> $GITHUB_STEP_SUMMARY
           echo "| 🌊 SEA | Single Executable Application | ~70 MB |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🎯 Platforms Built" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Platforms" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- 🐧 Linux (x64, arm64)" >> $GITHUB_STEP_SUMMARY
-          echo "- 🍎 macOS (x64, arm64)" >> $GITHUB_STEP_SUMMARY
-          echo "- 🪟 Windows (x64, arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "- Linux (x64, arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "- macOS (x64, arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "- Windows (x64, arm64)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "### → Next Steps" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- These binaries are now cached for E2E tests" >> $GITHUB_STEP_SUMMARY
-          echo "- Use \`publish-socketbin.yml\` to publish to npm" >> $GITHUB_STEP_SUMMARY
-          echo "- Cache is invalidated when source files change" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$BUILD_STATUS" = "success" ]; then
+            echo "- Binaries cached for E2E tests" >> $GITHUB_STEP_SUMMARY
+            echo "- Use \`publish-socketbin.yml\` to publish" >> $GITHUB_STEP_SUMMARY
+            echo "- Cache invalidated on source changes" >> $GITHUB_STEP_SUMMARY
+          elif [ "$BUILD_STATUS" = "skipped" ]; then
+            echo "- Re-run workflow with platform builds enabled" >> $GITHUB_STEP_SUMMARY
+            echo "- Or use \`workflow_dispatch\` to trigger specific platforms" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Check build logs for error details" >> $GITHUB_STEP_SUMMARY
+            echo "- Fix issues and re-run workflow" >> $GITHUB_STEP_SUMMARY
+          fi
