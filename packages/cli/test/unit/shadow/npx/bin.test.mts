@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { NPX } from '@socketsecurity/lib/constants/agents'
 
-import shadowNpxBin from '../../../../src/bin.mts'
+import shadowNpxBin from '../../../../src/shadow/npx/bin.mts'
 
-import type { ShadowBinOptions } from '../../../../src/npm-base.mts'
+import type { ShadowBinOptions } from '../../../../src/shadow/npm-base.mts'
 
 // Mock shadowNpmBase.
 const mockShadowNpmBase = vi.hoisted(() => vi.fn())

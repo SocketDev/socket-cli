@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { shadowNpmInstall } from '../../../../src/install.mts'
+import { shadowNpmInstall } from '../../../../src/shadow/npm/install.mts'
 
-import type { ShadowNpmInstallOptions } from '../../../../src/install.mts'
+import type { ShadowNpmInstallOptions } from '../../../../src/shadow/npm/install.mts'
 import type { Spinner } from '@socketsecurity/lib/spinner'
 
 // Mock all dependencies.

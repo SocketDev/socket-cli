@@ -6,7 +6,7 @@ import {
   getArboristNodeClassPath,
   getArboristOverrideSetClassPath,
   getArboristPackagePath,
-} from '../../../../src/paths.mts'
+} from '../../../../src/shadow/npm/paths.mts'
 
 // Mock dependencies.
 const mockGetNpmRequire = vi.hoisted(() => vi.fn())
