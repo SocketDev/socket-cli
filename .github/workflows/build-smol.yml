@@ -182,7 +182,7 @@ jobs:
           fi
           echo "should-run=$SHOULD_RUN" >> $GITHUB_OUTPUT
           if [ "$SHOULD_RUN" = "true" ]; then
-            echo "✓ Building ${{ matrix.platform }}-${{ matrix.arch }}"
+            echo -e "\033[32m✓\033[0m Building ${{ matrix.platform }}-${{ matrix.arch }}"
           else
             echo "⊘ Skipping ${{ matrix.platform }}-${{ matrix.arch }} (disabled by inputs)"
           fi
@@ -205,10 +205,10 @@ jobs:
           echo "=== Verifying downloaded bootstrap artifacts ==="
           echo ""
           echo "Checking for required files:"
-          ls -lh packages/bootstrap/dist/bootstrap-smol.js && echo "✓ bootstrap-smol.js present" || (echo "❌ bootstrap-smol.js missing" && exit 1)
-          ls -lh packages/socket/dist/bootstrap.js && echo "✓ socket bootstrap.js present" || (echo "❌ socket bootstrap.js missing" && exit 1)
+          ls -lh packages/bootstrap/dist/bootstrap-smol.js && echo -e "\033[32m✓\033[0m bootstrap-smol.js present" || (echo -e "\033[31m✗\033[0m bootstrap-smol.js missing" && exit 1)
+          ls -lh packages/socket/dist/bootstrap.js && echo -e "\033[32m✓\033[0m socket bootstrap.js present" || (echo -e "\033[31m✗\033[0m socket bootstrap.js missing" && exit 1)
           echo ""
-          echo "✓ Bootstrap artifacts verified"
+          echo -e "\033[32m✓\033[0m Bootstrap artifacts verified"
 
       - name: Setup Node.js
         if: steps.check-platform.outputs.should-run == 'true'
@@ -285,7 +285,7 @@ jobs:
 
           # Check checkpoint files exist.
           if [ ! -f "packages/node-smol-builder/build/.checkpoints/cloned" ]; then
-            echo "⚠ Missing 'cloned' checkpoint"
+            echo -e "\033[33m⚠\033[0m Missing 'cloned' checkpoint"
             CACHE_VALID="false"
           fi
 
@@ -298,7 +298,7 @@ jobs:
           if [ -f "$BINARY_PATH" ]; then
             for checkpoint in cloned built complete; do
               if [ ! -f "packages/node-smol-builder/build/.checkpoints/$checkpoint" ]; then
-                echo "❌ Incomplete cache: missing $checkpoint checkpoint but binary exists"
+                echo -e "\033[31m✗\033[0m Incomplete cache: missing $checkpoint checkpoint but binary exists"
                 CACHE_VALID="false"
               fi
             done
@@ -309,7 +309,7 @@ jobs:
             echo "::warning::Invalidating corrupted build cache..."
             rm -rf packages/node-smol-builder/build
           else
-            echo "✓ Build cache integrity validated"
+            echo -e "\033[32m✓\033[0m Build cache integrity validated"
           fi
 
       - name: Verify smol binary cache
@@ -324,11 +324,11 @@ jobs:
 
           if [ -f "$BINARY_PATH" ]; then
             echo "valid=true" >> $GITHUB_OUTPUT
-            echo "✓ Smol binary cache valid: $BINARY_PATH"
+            echo -e "\033[32m✓\033[0m Smol binary cache valid: $BINARY_PATH"
 
             # Smoke test: verify binary can execute --version.
             if "$BINARY_PATH" --version >/dev/null 2>&1; then
-              echo "✓ Binary smoke test passed (--version)"
+              echo -e "\033[32m✓\033[0m Binary smoke test passed (--version)"
             else
               echo "::warning::Binary exists but failed smoke test, will rebuild"
               echo "valid=false" >> $GITHUB_OUTPUT
@@ -336,7 +336,7 @@ jobs:
             fi
           else
             echo "valid=false" >> $GITHUB_OUTPUT
-            echo "✗ Smol binary cache invalid or missing: $BINARY_PATH"
+            echo -e "\033[31m✗\033[0m Smol binary cache invalid or missing: $BINARY_PATH"
           fi
 
       - name: Setup Python
@@ -452,7 +452,7 @@ jobs:
               echo "socket-smol-${{ matrix.platform }}-${{ matrix.arch }} size: $(du -h $BINARY_PATH | cut -f1)"
             fi
           else
-            echo "⚠️  Binary not found at expected path"
+            echo -e "\033[33m⚠\033[0m  Binary not found at expected path"
           fi
 
       - name: Upload smol binary
