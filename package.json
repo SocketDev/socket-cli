@@ -75,7 +75,7 @@
     "ink": "6.3.1",
     "ink-table": "3.1.0",
     "js-yaml": "npm:@zkochan/js-yaml@0.0.10",
-    "lint-staged": "16.1.6",
+    "lint-staged": "16.2.6",
     "magic-string": "catalog:",
     "micromatch": "4.0.8",
     "mock-fs": "5.5.0",
