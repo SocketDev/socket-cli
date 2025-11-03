@@ -9,7 +9,6 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 export type ManifestResult = {
   files: string[]
   type: 'gradle' | 'sbt'

@@ -26,7 +26,6 @@ import type { OutputKind } from '../../types.mts'
 import type { Remap } from '@socketsecurity/lib/objects'
 const logger = getDefaultLogger()
 
-
 export type HandleCreateNewScanConfig = {
   autoManifest: boolean
   branchName: string
@@ -102,9 +101,7 @@ export async function handleCreateNewScan({
       outputKind,
       verbose: false,
     })
-    logger.info(
-      'Auto-generation finished. Proceeding with Scan creation.',
-    )
+    logger.info('Auto-generation finished. Proceeding with Scan creation.')
   }
 
   const spinner = getSpinner()

@@ -12,7 +12,6 @@ import type { OutputKind } from '../../types.mts'
 import type { Remap } from '@socketsecurity/lib/objects'
 const logger = getDefaultLogger()
 
-
 const GHSA_FORMAT_REGEXP = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/
 const CVE_FORMAT_REGEXP = /^CVE-\d{4}-\d{4,}$/
 
@@ -60,9 +59,7 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
       const conversionResult = await convertCveToGhsa(trimmedId)
       if (conversionResult.ok) {
         validGhsas.push(conversionResult.data)
-        logger.info(
-          `Converted ${trimmedId} to ${conversionResult.data}`,
-        )
+        logger.info(`Converted ${trimmedId} to ${conversionResult.data}`)
       } else {
         errors.push(`${trimmedId}: ${conversionResult.message}`)
       }

@@ -3,7 +3,6 @@
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 const logger = getDefaultLogger()
 
-
 /**
  * Lazily load Ink and React dependencies only when needed
  * This prevents React from being bundled in the main CLI bundle

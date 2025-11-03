@@ -8,7 +8,6 @@ import type { DiscoveredPatch } from './handle-patch-discover.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 type PatchDiscoverResultData = {
   patches: DiscoveredPatch[]
 }

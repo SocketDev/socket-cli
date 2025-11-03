@@ -10,7 +10,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { LocalConfig } from '../../utils/config.mts'
 const logger = getDefaultLogger()
 
-
 export async function outputConfigAuto(
   key: keyof LocalConfig,
   result: CResult<unknown>,
@@ -80,9 +79,7 @@ export async function outputConfigAuto(
             `OK. Updated defaultOrg to "${proceed}".\nYou should no longer need to add the org to commands that normally require it.`,
           )
         } else {
-          logger.log(
-            failMsgWithBadge(updateResult.message, updateResult.cause),
-          )
+          logger.log(failMsgWithBadge(updateResult.message, updateResult.cause))
         }
       } else {
         logger.log('OK. No changes made.')
@@ -109,9 +106,7 @@ export async function outputConfigAuto(
         if (updateResult.ok) {
           logger.log(`OK. Updated enforcedOrgs to "${proceed}".`)
         } else {
-          logger.log(
-            failMsgWithBadge(updateResult.message, updateResult.cause),
-          )
+          logger.log(failMsgWithBadge(updateResult.message, updateResult.cause))
         }
       } else {
         logger.log('OK. No changes made.')

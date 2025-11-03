@@ -22,7 +22,6 @@ import type { PatchDownloadResult } from './handle-patch-download.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 type OutputOptions = {
   outputKind: OutputKind
 }

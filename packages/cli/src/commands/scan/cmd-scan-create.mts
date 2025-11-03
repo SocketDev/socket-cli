@@ -42,7 +42,6 @@ import type {
 import type { PURL_Type } from '../../utils/ecosystem/types.mjs'
 const logger = getDefaultLogger()
 
-
 export const CMD_NAME = 'create'
 
 const description = 'Create a new Socket scan and report'
@@ -343,10 +342,7 @@ async function run(
   if (!branchName) {
     if (sockJson.defaults?.scan?.create?.branch) {
       branchName = sockJson.defaults.scan.create.branch
-      logger.info(
-        `Using default --branch from ${SOCKET_JSON}:`,
-        branchName,
-      )
+      logger.info(`Using default --branch from ${SOCKET_JSON}:`, branchName)
     } else {
       branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
     }
@@ -354,10 +350,7 @@ async function run(
   if (!repoName) {
     if (sockJson.defaults?.scan?.create?.repo) {
       repoName = sockJson.defaults.scan.create.repo
-      logger.info(
-        `Using default --repo from ${SOCKET_JSON}:`,
-        repoName,
-      )
+      logger.info(`Using default --repo from ${SOCKET_JSON}:`, repoName)
     } else {
       repoName = await getRepoName(cwd)
     }
@@ -365,10 +358,7 @@ async function run(
   if (typeof report !== 'boolean') {
     if (sockJson.defaults?.scan?.create?.report !== undefined) {
       report = sockJson.defaults.scan.create.report
-      logger.info(
-        `Using default --report from ${SOCKET_JSON}:`,
-        report,
-      )
+      logger.info(`Using default --report from ${SOCKET_JSON}:`, report)
     } else {
       report = false
     }

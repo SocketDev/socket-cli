@@ -8,7 +8,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 export async function outputQuota(
   result: CResult<SocketSdkSuccessResult<'getQuota'>['data']>,
   outputKind: OutputKind = 'text',
@@ -29,15 +28,11 @@ export async function outputQuota(
   if (outputKind === 'markdown') {
     logger.log(mdHeader('Quota'))
     logger.log('')
-    logger.log(
-      `Quota left on the current API token: ${result.data.quota}`,
-    )
+    logger.log(`Quota left on the current API token: ${result.data.quota}`)
     logger.log('')
     return
   }
 
-  logger.log(
-    `Quota left on the current API token: ${result.data.quota}`,
-  )
+  logger.log(`Quota left on the current API token: ${result.data.quota}`)
   logger.log('')
 }

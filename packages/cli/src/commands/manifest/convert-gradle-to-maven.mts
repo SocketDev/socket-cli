@@ -11,7 +11,6 @@ import type { ManifestResult } from './output-manifest.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 export async function convertGradleToMaven({
   bin,
   cwd,
@@ -62,17 +61,10 @@ export async function convertGradleToMaven({
     const initLocation = path.join(distPath, 'init.gradle')
     const commandArgs = ['--init-script', initLocation, ...gradleOpts, 'pom']
     if (verbose && isTextMode) {
-      logger.log(
-        '[VERBOSE] Executing:',
-        [bin],
-        ', args:',
-        commandArgs,
-      )
+      logger.log('[VERBOSE] Executing:', [bin], ', args:', commandArgs)
     }
     if (isTextMode) {
-      logger.log(
-        `Converting gradle to maven from \`${bin}\` on \`${cwd}\` ...`,
-      )
+      logger.log(`Converting gradle to maven from \`${bin}\` on \`${cwd}\` ...`)
     }
     const output = await execGradleWithSpinner(
       rBin,

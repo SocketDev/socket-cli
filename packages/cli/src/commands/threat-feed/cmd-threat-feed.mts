@@ -17,7 +17,6 @@ import { mailtoLink } from '../../utils/terminal/link.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 const logger = getDefaultLogger()
 
-
 import type {
   CliCommandConfig,
   CliCommandContext,

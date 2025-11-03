@@ -48,7 +48,6 @@ import type { CResult } from '../../types.mts'
 import type { FileValidationResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 const TOKEN_VISIBLE_LENGTH = 5
 
 // The Socket API server that should be used for operations.

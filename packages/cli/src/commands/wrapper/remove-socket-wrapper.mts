@@ -3,15 +3,12 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 const logger = getDefaultLogger()
 
-
 export function removeSocketWrapper(filepath: string): void {
   let content: string | undefined
   try {
     content = readFileSync(filepath, 'utf8')
   } catch (e) {
-    logger.fail(
-      `There was an error removing the alias${e ? ':' : '.'}`,
-    )
+    logger.fail(`There was an error removing the alias${e ? ':' : '.'}`)
     if (e) {
       logger.error(e)
     }

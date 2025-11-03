@@ -8,7 +8,6 @@ import type { ThreadFeedResponse } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 export async function outputThreatFeed(
   result: CResult<ThreadFeedResponse>,
   outputKind: OutputKind,

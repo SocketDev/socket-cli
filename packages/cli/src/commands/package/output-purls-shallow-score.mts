@@ -11,7 +11,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 const logger = getDefaultLogger()
 
-
 // This is a simplified view of an artifact. Potentially merged with other artifacts.
 interface DedupedArtifact {
   ecosystem: string // artifact.type

@@ -7,7 +7,6 @@ import type { PatchRmData } from './handle-patch-rm.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 export async function outputPatchRmResult(
   result: CResult<PatchRmData>,
   outputKind: OutputKind,

@@ -3,7 +3,6 @@
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 const logger = getDefaultLogger()
 
-
 /**
  * Logger with command context
  */
@@ -87,8 +86,7 @@ export function createCommandLogger(
     warn: (...args: any[]) => logger.warn(...prefixArgs(...args)),
     error: (...args: any[]) => logger.error(...prefixArgs(...args)),
     fail: (...args: any[]) => logger.fail(...prefixArgs(...args)),
-    success: (...args: any[]) =>
-      logger.success(...prefixArgs(...args)),
+    success: (...args: any[]) => logger.success(...prefixArgs(...args)),
     commandName,
   }
 }

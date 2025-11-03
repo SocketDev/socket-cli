@@ -7,7 +7,6 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 export async function outputConfigUnset(
   updateResult: CResult<undefined | string>,
   outputKind: OutputKind,
@@ -21,9 +20,7 @@ export async function outputConfigUnset(
     return
   }
   if (!updateResult.ok) {
-    logger.fail(
-      failMsgWithBadge(updateResult.message, updateResult.cause),
-    )
+    logger.fail(failMsgWithBadge(updateResult.message, updateResult.cause))
     return
   }
 

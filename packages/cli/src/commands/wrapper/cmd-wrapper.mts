@@ -15,7 +15,6 @@ import { getOutputKind } from '../../utils/output/mode.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 const logger = getDefaultLogger()
 
-
 import type {
   CliCommandConfig,
   CliCommandContext,
@@ -144,9 +143,7 @@ async function run(
   }
 
   if (!existsSync(bashRcPath) && !existsSync(zshRcPath)) {
-    logger.fail(
-      'There was an issue setting up the alias in your bash profile',
-    )
+    logger.fail('There was an issue setting up the alias in your bash profile')
     return
   }
 

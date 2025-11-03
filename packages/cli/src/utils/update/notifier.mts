@@ -106,7 +106,9 @@ export function showUpdateNotification(
     const { current, latest, name } = options
     const seaBinPath = getSeaBinaryPath()
 
-    loggerLocal.log(`\n\n📦 Update available for ${name}: ${current} → ${latest}`)
+    loggerLocal.log(
+      `\n\n📦 Update available for ${name}: ${current} → ${latest}`,
+    )
     if (isNonEmptyString(seaBinPath)) {
       loggerLocal.log(
         `Run '${seaBinPath} ${SEA_UPDATE_COMMAND}' to update automatically`,

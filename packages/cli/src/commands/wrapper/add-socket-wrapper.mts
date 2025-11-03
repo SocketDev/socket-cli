@@ -3,7 +3,6 @@ import fs from 'node:fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 const logger = getDefaultLogger()
 
-
 export function addSocketWrapper(file: string): void {
   fs.appendFile(
     file,

@@ -226,9 +226,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
       cause: messageWithCauses(e as Error),
     }
     if (description) {
-      logger.fail(
-        `An error was thrown while requesting ${description}`,
-      )
+      logger.fail(`An error was thrown while requesting ${description}`)
       debugApiResponse(description, undefined, e)
     } else {
       debugApiResponse('Socket API', undefined, e)

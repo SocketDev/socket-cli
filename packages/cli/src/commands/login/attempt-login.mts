@@ -25,7 +25,6 @@ import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 import type { Choice } from '@socketsecurity/lib/stdio/prompts'
 const logger = getDefaultLogger()
 
-
 type OrgChoice = Choice<string>
 type OrgChoices = OrgChoice[]
 
@@ -49,9 +48,7 @@ export async function attemptLogin(
   const sockSdkCResult = await setupSdk({ apiBaseUrl, apiProxy, apiToken })
   if (!sockSdkCResult.ok) {
     process.exitCode = 1
-    logger.fail(
-      failMsgWithBadge(sockSdkCResult.message, sockSdkCResult.cause),
-    )
+    logger.fail(failMsgWithBadge(sockSdkCResult.message, sockSdkCResult.cause))
     return
   }
 
@@ -63,9 +60,7 @@ export async function attemptLogin(
   })
   if (!orgsCResult.ok) {
     process.exitCode = 1
-    logger.fail(
-      failMsgWithBadge(orgsCResult.message, orgsCResult.cause),
-    )
+    logger.fail(failMsgWithBadge(orgsCResult.message, orgsCResult.cause))
     return
   }
 

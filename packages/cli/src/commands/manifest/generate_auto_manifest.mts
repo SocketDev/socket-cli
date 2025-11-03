@@ -13,7 +13,6 @@ import type { GeneratableManifests } from './detect-manifest-actions.mts'
 import type { OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 export async function generateAutoManifest({
   cwd,
   detected,
@@ -34,9 +33,7 @@ export async function generateAutoManifest({
   if (!sockJson?.defaults?.manifest?.sbt?.disabled && detected.sbt) {
     const isTextMode = outputKind === 'text'
     if (isTextMode) {
-      logger.log(
-        'Detected a Scala sbt build, generating pom files with sbt...',
-      )
+      logger.log('Detected a Scala sbt build, generating pom files with sbt...')
     }
     await convertSbtToMaven({
       // Note: `sbt` is more likely to be resolved against PATH env

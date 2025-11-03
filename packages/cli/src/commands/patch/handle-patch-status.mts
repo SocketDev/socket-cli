@@ -23,7 +23,6 @@ import type { OutputKind } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/lib/spinner'
 const logger = getDefaultLogger()
 
-
 export interface PatchStatus {
   appliedAt: string | undefined
   appliedLocations: string[]

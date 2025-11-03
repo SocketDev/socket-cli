@@ -8,7 +8,6 @@ import type { ReachabilityAnalysisResult } from './perform-reachability-analysis
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 export async function outputScanReach(
   result: CResult<ReachabilityAnalysisResult>,
   {
@@ -35,7 +34,5 @@ export async function outputScanReach(
 
   logger.log('')
   logger.success('Reachability analysis completed successfully!')
-  logger.info(
-    `Reachability report has been written to: ${actualOutputPath}`,
-  )
+  logger.info(`Reachability report has been written to: ${actualOutputPath}`)
 }

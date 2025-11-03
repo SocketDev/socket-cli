@@ -9,7 +9,6 @@ import { serializeResultJson } from '../output/result-json.mts'
 import type { OutputKind } from '../../types.mjs'
 const logger = getDefaultLogger()
 
-
 export function checkCommandInput(
   outputKind: OutputKind,
   ...checks: Array<{
@@ -68,9 +67,7 @@ export function checkCommandInput(
       }),
     )
   } else {
-    logger.fail(
-      failMsgWithBadge('Input error', msg.join('\n').trim()),
-    )
+    logger.fail(failMsgWithBadge('Input error', msg.join('\n').trim()))
   }
 
   return false

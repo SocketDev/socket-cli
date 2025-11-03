@@ -9,7 +9,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { LocalConfig } from '../../utils/config.mts'
 const logger = getDefaultLogger()
 
-
 export async function outputConfigGet(
   key: keyof LocalConfig,
   result: CResult<LocalConfig[keyof LocalConfig]>,
