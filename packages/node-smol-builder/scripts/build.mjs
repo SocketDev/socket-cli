@@ -47,7 +47,7 @@
  *   node scripts/load.mjs build-custom-node --test-full  # Build + run full tests
  */
 
-import { existsSync, promises as fs } from 'node:fs'
+import { existsSync, readdirSync, promises as fs } from 'node:fs'
 import { cpus, platform } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
