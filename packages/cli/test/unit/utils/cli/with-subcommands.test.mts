@@ -8,7 +8,7 @@ import {
 } from '../../../../../src/utils/cli/with-subcommands.mts'
 
 // Mock meow.
-vi.mock('../../meow.mts', () => ({
+vi.mock('../../../../../src/utils/cli/meow.mts', () => ({
   default: vi.fn((helpText, options) => {
     // Simulate meow processing flags with defaults.
     const argv = options?.argv || []
@@ -60,7 +60,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 }))
 
 // Mock config utilities.
-vi.mock('../config.mts', () => ({
+vi.mock('../../../../../src/utils/config.mts', () => ({
   getConfigValueOrUndef: vi.fn(),
   isConfigFromFlag: vi.fn(() => false),
   overrideCachedConfig: vi.fn(),
@@ -68,17 +68,17 @@ vi.mock('../config.mts', () => ({
 }))
 
 // Mock debug utility.
-vi.mock('../debug.mts', () => ({
+vi.mock('../../../../../src/utils/debug.mts', () => ({
   isDebug: vi.fn(() => false),
 }))
 
 // Mock SDK utility.
-vi.mock('../sdk.mts', () => ({
+vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
   getVisibleTokenPrefix: vi.fn(() => 'test'),
 }))
 
 // Mock terminal link utility.
-vi.mock('../terminal/link.mts', () => ({
+vi.mock('../../../../../src/utils/terminal/link.mts', () => ({
   socketPackageLink: vi.fn(pkg => pkg),
 }))
 

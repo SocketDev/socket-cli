@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../test/helpers/mocks.mts'
+} from '../../../../test/helpers/mocks.mts'
 import { fetchThreatFeed } from '../../../../../src/commands/threat-feed/fetch-threat-feed.mts'
 
 // Mock the dependencies.

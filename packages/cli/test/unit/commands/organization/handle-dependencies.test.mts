@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createSuccessResult,
   setupTestEnvironment,
-} from '../../../test/helpers/index.mts'
+} from '../../../../test/helpers/index.mts'
 import { fetchDependencies } from '../../../../../src/commands/organization/fetch-dependencies.mts'
 import { handleDependencies } from '../../../../../src/commands/organization/handle-dependencies.mts'
 import { outputDependencies } from '../../../../../src/commands/organization/output-dependencies.mts'

@@ -89,7 +89,7 @@ describe('package-environment', () => {
 
   describe('detectPackageEnvironment', () => {
     it('detects npm environment with package-lock.json', async () => {
-      const { findUp } = await import('../../../../src/utils/fs/find-up.mts')
+      const { findUp } = await import('../../../../../src/utils/fs/find-up.mts')
       const mockFindUpImported = vi.mocked(findUp)
 
       // Mock finding package-lock.json.
@@ -112,7 +112,7 @@ describe('package-environment', () => {
     })
 
     it('detects pnpm environment with pnpm-lock.yaml', async () => {
-      const { findUp } = await import('../../../../src/utils/fs/find-up.mts')
+      const { findUp } = await import('../../../../../src/utils/fs/find-up.mts')
       const mockFindUpImported = vi.mocked(findUp)
 
       // Mock finding pnpm-lock.yaml.
@@ -145,7 +145,7 @@ describe('package-environment', () => {
     })
 
     it('detects yarn environment with yarn.lock', async () => {
-      const { findUp } = await import('../../../../src/utils/fs/find-up.mts')
+      const { findUp } = await import('../../../../../src/utils/fs/find-up.mts')
       const mockFindUpImported = vi.mocked(findUp)
 
       // Mock finding yarn.lock.
@@ -178,7 +178,7 @@ describe('package-environment', () => {
     })
 
     it('detects bun environment with bun.lockb', async () => {
-      const { findUp } = await import('../../../../src/utils/fs/find-up.mts')
+      const { findUp } = await import('../../../../../src/utils/fs/find-up.mts')
       const mockFindUpImported = vi.mocked(findUp)
 
       // Mock finding bun.lockb.

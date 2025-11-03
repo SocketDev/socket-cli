@@ -4,7 +4,7 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../test/helpers/sdk-test-helpers.mts'
+} from '../../../../test/helpers/sdk-test-helpers.mts'
 import { fetchAuditLog } from '../../../../../src/commands/audit-log/fetch-audit-log.mts'
 
 // Mock the dependencies.

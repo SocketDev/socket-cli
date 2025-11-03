@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../test/helpers/mocks.mts'
+} from '../../../../test/helpers/mocks.mts'
 import { handleManifestConda } from '../../../../../src/commands/manifest/handle-manifest-conda.mts'
 
 // Mock the dependencies.

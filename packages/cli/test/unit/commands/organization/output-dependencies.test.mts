@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../test/helpers/index.mts'
+} from '../../../../test/helpers/index.mts'
 
 import type { CResult } from '../../../../../src/commands/organization/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'

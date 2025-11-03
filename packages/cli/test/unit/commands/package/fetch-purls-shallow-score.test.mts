@@ -4,7 +4,7 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../test/helpers/sdk-test-helpers.mts'
+} from '../../../../test/helpers/sdk-test-helpers.mts'
 import { fetchPurlsShallowScore } from '../../../../../src/commands/package/fetch-purls-shallow-score.mts'
 
 // Mock the dependencies.

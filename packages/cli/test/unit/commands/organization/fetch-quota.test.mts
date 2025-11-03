@@ -4,7 +4,7 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../test/helpers/sdk-test-helpers.mts'
+} from '../../../../test/helpers/sdk-test-helpers.mts'
 import { fetchQuota } from '../../../../../src/commands/organization/fetch-quota.mts'
 
 // Mock the dependencies.

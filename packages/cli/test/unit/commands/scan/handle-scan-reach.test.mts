@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../test/helpers/mocks.mts'
+} from '../../../../test/helpers/mocks.mts'
 import { handleScanReach } from '../../../../../src/commands/scan/handle-scan-reach.mts'
 
 // Mock the dependencies.

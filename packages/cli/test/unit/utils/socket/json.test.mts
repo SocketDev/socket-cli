@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   SOCKET_JSON,
   SOCKET_WEBSITE_URL,
-} from '../../../../src/constants/socket.mts'
+} from '../../../../../src/constants/socket.mts'
 import {
   findSocketJsonUp,
   getDefaultSocketJson,

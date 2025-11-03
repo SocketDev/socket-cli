@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../test/helpers/mocks.mts'
+} from '../../../../test/helpers/mocks.mts'
 import { handleConfigUnset } from '../../../../../src/commands/config/handle-config-unset.mts'
 
 // Mock the dependencies.

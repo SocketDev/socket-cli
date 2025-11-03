@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../test/helpers/mocks.mts'
+} from '../../../../test/helpers/mocks.mts'
 import { handleCreateGithubScan } from '../../../../../src/commands/scan/handle-create-github-scan.mts'
 
 // Mock the dependencies.

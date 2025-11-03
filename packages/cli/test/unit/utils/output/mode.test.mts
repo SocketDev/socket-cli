@@ -4,7 +4,7 @@ import {
   OUTPUT_JSON,
   OUTPUT_MARKDOWN,
   OUTPUT_TEXT,
-} from '../../../../src/constants/cli.mts'
+} from '../../../../../src/constants/cli.mts'
 import { getOutputKind } from '../../../../../src/utils/output/mode.mts'
 
 describe('getOutputKind', () => {

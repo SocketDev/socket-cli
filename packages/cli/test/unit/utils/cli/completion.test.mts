@@ -17,7 +17,7 @@ vi.mock('node:fs', () => ({
 }))
 
 // Mock constants/paths.
-vi.mock('../../constants/paths.mts', () => ({
+vi.mock('../../../../../src/constants/paths.mts', () => ({
   rootPath: '/mock/dist/path',
   getSocketAppDataPath: vi.fn(() => '/mock/app/data'),
 }))

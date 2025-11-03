@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../test/helpers/mocks.mts'
+} from '../../../../test/helpers/mocks.mts'
 import { fetchUpdateRepo } from '../../../../../src/commands/repository/fetch-update-repo.mts'
 
 // Mock the dependencies.

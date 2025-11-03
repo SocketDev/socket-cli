@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../test/helpers/mocks.mts'
+} from '../../../../test/helpers/mocks.mts'
 import { handleConfigAuto } from '../../../../../src/commands/config/handle-config-auto.mts'
 
 // Mock the dependencies.
