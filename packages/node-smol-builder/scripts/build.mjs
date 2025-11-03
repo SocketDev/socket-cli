@@ -389,7 +389,7 @@ async function embedSocketSecurityBootstrap() {
     .join(' +\n')
 
   // Read the loader template.
-  const loaderTemplatePath = join(ADDITIONS_DIR, 'lib', 'internal', 'socketsecurity_bootstrap_loader.js.template')
+  const loaderTemplatePath = join(ADDITIONS_DIR, '002-bootstrap-loader', 'internal', 'socketsecurity_bootstrap_loader.js.template')
   const loaderTemplate = await readFile(loaderTemplatePath, 'utf8')
 
   // Embed the bootstrap in the loader template.
@@ -399,7 +399,7 @@ async function embedSocketSecurityBootstrap() {
   )
 
   // Write the processed loader to additions/ (will be copied during copyBuildAdditions phase).
-  const finalLoaderPath = join(ADDITIONS_DIR, 'lib', 'internal', 'socketsecurity_bootstrap_loader.js')
+  const finalLoaderPath = join(ADDITIONS_DIR, '002-bootstrap-loader', 'internal', 'socketsecurity_bootstrap_loader.js')
   await mkdir(dirname(finalLoaderPath), { recursive: true })
   await writeFile(finalLoaderPath, finalLoader, 'utf8')
 
@@ -1584,9 +1584,20 @@ async function main() {
 
   getDefaultLogger().log('')
 
+  // Re-sign after stripping for macOS ARM64 (strip invalidates code signature).
+  if (IS_MACOS && ARCH === 'arm64') {
+    printHeader('Code Signing (macOS ARM64 - After Stripping)')
+    getDefaultLogger().log('Re-signing binary after stripping for macOS ARM64 compatibility...')
+    getDefaultLogger().log('(strip command invalidates code signature, re-signing required)')
+    getDefaultLogger().logNewline()
+    await exec('codesign', ['--sign', '-', '--force', nodeBinary])
+    getDefaultLogger().success('Binary re-signed successfully after stripping')
+    getDefaultLogger().logNewline()
+  }
+
   // Smoke test binary after stripping (ensure strip didn't corrupt it).
   getDefaultLogger().log('Testing binary after stripping...')
-  const smokeTest = await smokeTestBinary(nodeBinary, process.env)
+  const smokeTest = await smokeTestBinary(nodeBinary)
 
   if (!smokeTest.passed) {
     printError(
@@ -1712,7 +1723,7 @@ async function main() {
     getDefaultLogger().log('Copying platform-specific decompression tool for distribution...')
     getDefaultLogger().logNewline()
 
-    const toolsDir = join(ROOT_DIR, 'additions', 'tools')
+    const toolsDir = join(ROOT_DIR, 'additions', '003-compression-tools')
     const decompressTool = IS_MACOS
       ? 'socketsecurity_macho_decompress'
       : WIN32
@@ -1867,7 +1878,7 @@ async function main() {
   getDefaultLogger().log('Testing that pkg can use the installed binary...')
   getDefaultLogger().log('')
 
-  const cacheTest = await smokeTestBinary(targetPath, process.env)
+  const cacheTest = await smokeTestBinary(targetPath)
 
   if (!cacheTest.passed) {
     printError(
