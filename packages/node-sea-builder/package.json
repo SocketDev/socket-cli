@@ -6,7 +6,7 @@
   "description": "Native Node.js SEA binary builder (fallback)",
   "devDependencies": {
     "postject": "catalog:",
-    "vitest": "3.0.0"
+    "vitest": "4.0.3"
   },
   "license": "MIT",
   "name": "@socketbin/node-sea-builder",
