@@ -22,7 +22,6 @@ import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 const logger = getDefaultLogger()
 
-
 import type {
   CliCommandConfig,
   CliCommandContext,
@@ -139,10 +138,7 @@ async function run(
   } else if (!filename) {
     if (sockJson.defaults?.manifest?.conda?.infile) {
       filename = sockJson.defaults?.manifest?.conda?.infile
-      logger.info(
-        `Using default --file from ${SOCKET_JSON}:`,
-        filename,
-      )
+      logger.info(`Using default --file from ${SOCKET_JSON}:`, filename)
     } else {
       filename = ENVIRONMENT_YML
     }
@@ -152,10 +148,7 @@ async function run(
     sockJson.defaults?.manifest?.conda?.stdout !== undefined
   ) {
     stdout = sockJson.defaults?.manifest?.conda?.stdout
-    logger.info(
-      `Using default --stdout from ${SOCKET_JSON}:`,
-      stdout,
-    )
+    logger.info(`Using default --stdout from ${SOCKET_JSON}:`, stdout)
   }
   if (stdout) {
     out = '-'
@@ -172,10 +165,7 @@ async function run(
     sockJson.defaults?.manifest?.conda?.verbose !== undefined
   ) {
     verbose = sockJson.defaults?.manifest?.conda?.verbose
-    logger.info(
-      `Using default --verbose from ${SOCKET_JSON}:`,
-      verbose,
-    )
+    logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
   } else if (verbose === undefined) {
     verbose = false
   }

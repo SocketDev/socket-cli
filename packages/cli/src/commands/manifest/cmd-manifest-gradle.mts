@@ -16,7 +16,6 @@ import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 const logger = getDefaultLogger()
 
-
 import type {
   CliCommandConfig,
   CliCommandContext,
@@ -142,10 +141,7 @@ async function run(
   if (verbose === undefined) {
     if (sockJson.defaults?.manifest?.gradle?.verbose !== undefined) {
       verbose = sockJson.defaults?.manifest?.gradle?.verbose
-      logger.info(
-        `Using default --verbose from ${SOCKET_JSON}:`,
-        verbose,
-      )
+      logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
     } else {
       verbose = false
     }

@@ -7,7 +7,6 @@ import type { ManifestResult } from './output-manifest.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 export async function convertSbtToMaven({
   bin,
   cwd,

@@ -37,7 +37,6 @@ import { canSelfUpdate, isSeaBinary } from '../../utils/sea/detect.mjs'
 import type { CliCommandConfig } from '../../utils/cli/with-subcommands.mjs'
 const logger = getDefaultLogger()
 
-
 // Helper functions for updater paths.
 function getSocketCliUpdaterDownloadsDir(): string {
   return path.join(os.tmpdir(), 'socket-cli-updater', 'downloads')
@@ -126,9 +125,7 @@ async function updateStubBinary(
 
   // Only proceed if we have a stub path from IPC.
   if (!stubPath) {
-    logger.info(
-      'No stub path received - CLI not launched via bootstrap stub',
-    )
+    logger.info('No stub path received - CLI not launched via bootstrap stub')
     return false
   }
 
@@ -201,17 +198,13 @@ async function updateStubBinary(
         // Replace the stub binary.
         await replaceBinary(extractedPath, stubPath)
 
-        logger.info(
-          `${colors.green('✓')} Bootstrap stub updated successfully!`,
-        )
+        logger.info(`${colors.green('✓')} Bootstrap stub updated successfully!`)
         return true
       } catch (error) {
         // Restore from backup on failure.
         try {
           await fs.copyFile(backupPath, stubPath)
-          logger.info(
-            'Restored stub from backup after update failure',
-          )
+          logger.info('Restored stub from backup after update failure')
         } catch (restoreError) {
           logger.error(
             `Failed to restore stub from backup: ${restoreError instanceof Error ? restoreError.message : String(restoreError)}`,
@@ -367,9 +360,7 @@ Examples
     // Even if CLI is up to date, check if stub needs updating.
     const stubUpdated = await updateStubBinary(latestVersion, dryRun)
     if (stubUpdated) {
-      logger.info(
-        'Bootstrap stub has been updated to match CLI version.',
-      )
+      logger.info('Bootstrap stub has been updated to match CLI version.')
     }
 
     return
@@ -436,9 +427,7 @@ Examples
         backupPath,
       })
 
-      logger.info(
-        `${colors.green('✓')} Update completed successfully!`,
-      )
+      logger.info(`${colors.green('✓')} Update completed successfully!`)
       logger.info(`Backup saved to: ${backupPath}`)
 
       // Check and update stub if launched via bootstrap.
@@ -449,9 +438,7 @@ Examples
         )
       }
 
-      logger.info(
-        'Please restart the application to use the new version.',
-      )
+      logger.info('Please restart the application to use the new version.')
     } catch (error) {
       // Restore from backup on failure.
       try {

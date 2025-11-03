@@ -15,7 +15,6 @@ import type { Spinner } from '@socketsecurity/lib/spinner'
 import type { SocketSdk } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 export type PatchVulnerability = {
   cve?: string
   severity?: string
@@ -160,9 +159,7 @@ export async function handlePatchDiscover({
         `Creating scan with ${packagePaths.length} package ${pluralize('file', { count: packagePaths.length })}...`,
       )
 
-      logger.log(
-        `[DEBUG] Package files to scan: ${packagePaths.join(', ')}`,
-      )
+      logger.log(`[DEBUG] Package files to scan: ${packagePaths.join(', ')}`)
 
       // Create scan (silent by default, background operation).
       const scanResult = await fetchCreateOrgFullScan(
@@ -638,9 +635,7 @@ async function enrichPatchesWithPackageNames(
     const scanResult = await sdk.getFullScan(orgSlug, scanId)
 
     if (!scanResult.success || !scanResult.data) {
-      logger.error(
-        '[DEBUG] Failed to fetch scan data for enrichment',
-      )
+      logger.error('[DEBUG] Failed to fetch scan data for enrichment')
       return patches
     }
 
@@ -661,9 +656,7 @@ async function enrichPatchesWithPackageNames(
       }
     }
 
-    logger.log(
-      `[DEBUG] Built artifact map with ${artifactMap.size} entries`,
-    )
+    logger.log(`[DEBUG] Built artifact map with ${artifactMap.size} entries`)
 
     // Enrich patches with package names.
     return patches.map(patch => {

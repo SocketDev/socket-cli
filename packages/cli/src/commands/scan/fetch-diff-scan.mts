@@ -6,7 +6,6 @@ import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 export async function fetchDiffScan({
   id1,
   id2,
@@ -18,9 +17,7 @@ export async function fetchDiffScan({
 }): Promise<CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>> {
   logger.info('Scan ID 1:', id1)
   logger.info('Scan ID 2:', id2)
-  logger.info(
-    'Note: this request may take some time if the scans are big',
-  )
+  logger.info('Note: this request may take some time if the scans are big')
 
   return await queryApiSafeJson<
     SocketSdkSuccessResult<'GetOrgDiffScan'>['data']

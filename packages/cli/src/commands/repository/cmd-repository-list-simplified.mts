@@ -17,7 +17,6 @@ import {
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 const logger = getDefaultLogger()
 
-
 export const cmdRepositoryListSimplified = buildCommand({
   name: 'list',
   description: 'List repositories in an organization',

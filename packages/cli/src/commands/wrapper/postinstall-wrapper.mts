@@ -12,7 +12,6 @@ import { getErrorCause } from '../../utils/error/errors.mjs'
 import { updateInstalledTabCompletionScript } from '../install/setup-tab-completion.mts'
 const logger = getDefaultLogger()
 
-
 export async function postinstallWrapper() {
   const bashRcPath = getBashRcPath()
   const zshRcPath = getZshRcPath()
@@ -45,9 +44,7 @@ Do you want to install the Socket npm wrapper (this will create an alias to the 
         if (result.ok) {
           // This will work no matter what alias(es) were registered since that
           // is controlled by bashrc and they all share the same tab script.
-          logger.success(
-            'Updated the installed Socket tab completion script',
-          )
+          logger.success('Updated the installed Socket tab completion script')
           updatedTabCompletion = true
         }
       }
@@ -60,9 +57,7 @@ Do you want to install the Socket npm wrapper (this will create an alias to the 
   if (!updatedTabCompletion) {
     // Setting up tab completion requires bashrc modification. I'm not sure if
     // it's cool to just do that from an npm install...
-    logger.log(
-      'Run `socket install completion` to setup bash tab completion',
-    )
+    logger.log('Run `socket install completion` to setup bash tab completion')
   }
 }
 

@@ -49,7 +49,6 @@ import type { Spinner } from '@socketsecurity/lib/spinner'
 import type { SocketSdk } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 export type HandlePatchDownloadConfig = {
   cwd: string
   outputKind: OutputKind

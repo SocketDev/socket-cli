@@ -10,7 +10,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 type ScanListItem =
   SocketSdkSuccessResult<'listFullScans'>['data']['results'][number]
 

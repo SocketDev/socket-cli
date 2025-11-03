@@ -21,7 +21,6 @@ import type { OutputKind } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/lib/spinner'
 const logger = getDefaultLogger()
 
-
 export interface PatchListEntry {
   appliedAt: string | undefined
   description: string | undefined
@@ -111,9 +110,7 @@ export async function handlePatchList({
       )
 
       logger.log('')
-      logger.log(
-        'Select patches to apply (use arrow keys and Enter):',
-      )
+      logger.log('Select patches to apply (use arrow keys and Enter):')
       logger.log('')
 
       // Create choices for selection.

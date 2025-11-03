@@ -6,7 +6,6 @@ import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../cli/with-subcommands.mjs'
 const logger = getDefaultLogger()
 
-
 import type { MeowFlags } from '../../flags.mts'
 import type {
   CliCommandConfig,

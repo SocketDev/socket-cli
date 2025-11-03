@@ -16,7 +16,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 type AuditLogEvent =
   SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results'][number]
 

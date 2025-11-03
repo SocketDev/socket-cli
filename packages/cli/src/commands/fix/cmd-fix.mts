@@ -28,7 +28,6 @@ import type {
 import type { RangeStyle } from '../../utils/semver.mts'
 const logger = getDefaultLogger()
 
-
 export const CMD_NAME = 'fix'
 
 const DEFAULT_LIMIT = 10

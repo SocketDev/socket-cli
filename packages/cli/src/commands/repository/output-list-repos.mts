@@ -11,7 +11,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 export async function outputListRepos(
   result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']>,
   outputKind: OutputKind,
@@ -73,9 +72,7 @@ export async function outputListRepos(
       `(Hint: you can use \`socket repository list --page ${nextPage}\`)`,
     )
   } else if (perPage === Number.POSITIVE_INFINITY) {
-    logger.info(
-      'This should be the entire list available on the server.',
-    )
+    logger.info('This should be the entire list available on the server.')
   } else {
     logger.info(
       `This is page ${page}. Server indicated this is the last page with results.`,

@@ -13,7 +13,6 @@ import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { filterFlags, isHelpFlag } from '../../utils/process/cmd.mts'
 const logger = getDefaultLogger()
 
-
 import type {
   CliCommandConfig,
   CliCommandContext,

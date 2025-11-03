@@ -7,7 +7,6 @@ import { stripAnsi } from '@socketsecurity/lib/strings'
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 function prepareContent(content: string): string {
   return stripAnsi(content.trim())
 }
@@ -34,10 +33,7 @@ export async function convertCondaToRequirements(
       })
       process.stdin.on('error', e => {
         if (verbose) {
-          logger.error(
-            'Unexpected error while reading from stdin:',
-            e,
-          )
+          logger.error('Unexpected error while reading from stdin:', e)
         }
         reject(e)
       })
@@ -51,9 +47,7 @@ export async function convertCondaToRequirements(
           resolve(prepareContent(strings.join('')))
         } else {
           if (verbose) {
-            logger.error(
-              'stdin closed explicitly without data received',
-            )
+            logger.error('stdin closed explicitly without data received')
           }
           reject(new Error('No data received from stdin'))
         }

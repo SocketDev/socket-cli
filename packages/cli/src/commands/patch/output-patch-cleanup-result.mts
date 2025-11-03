@@ -7,7 +7,6 @@ import type { PatchCleanupData } from './handle-patch-cleanup.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 export async function outputPatchCleanupResult(
   result: CResult<PatchCleanupData>,
   outputKind: OutputKind,

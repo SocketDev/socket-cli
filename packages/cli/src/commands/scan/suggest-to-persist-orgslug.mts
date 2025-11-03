@@ -4,7 +4,6 @@ import { select } from '@socketsecurity/lib/stdio/prompts'
 import { getConfigValue, updateConfigValue } from '../../utils/config.mts'
 const logger = getDefaultLogger()
 
-
 export async function suggestToPersistOrgSlug(orgSlug: string): Promise<void> {
   const skipAsk = getConfigValue('skipAskToPersistDefaultOrg')
   if (!skipAsk.ok || skipAsk.data) {
@@ -46,9 +45,7 @@ export async function suggestToPersistOrgSlug(orgSlug: string): Promise<void> {
   } else if (result === 'sush') {
     const updateResult = updateConfigValue('skipAskToPersistDefaultOrg', true)
     if (updateResult.ok) {
-      logger.info(
-        'Default org not changed. Will not ask to persist again.',
-      )
+      logger.info('Default org not changed. Will not ask to persist again.')
     } else {
       logger.fail(
         `(Non blocking) Failed to store preference; will ask to persist again next time. Reason: ${updateResult.cause}`,

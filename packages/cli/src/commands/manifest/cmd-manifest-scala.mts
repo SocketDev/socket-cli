@@ -16,7 +16,6 @@ import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 const logger = getDefaultLogger()
 
-
 import type {
   CliCommandConfig,
   CliCommandContext,
@@ -146,10 +145,7 @@ async function run(
     sockJson.defaults?.manifest?.sbt?.stdout !== undefined
   ) {
     stdout = sockJson.defaults?.manifest?.sbt?.stdout
-    logger.info(
-      `Using default --stdout from ${SOCKET_JSON}:`,
-      stdout,
-    )
+    logger.info(`Using default --stdout from ${SOCKET_JSON}:`, stdout)
   }
   if (stdout) {
     out = '-'
@@ -164,10 +160,7 @@ async function run(
   if (!sbtOpts) {
     if (sockJson.defaults?.manifest?.sbt?.sbtOpts) {
       sbtOpts = sockJson.defaults?.manifest?.sbt?.sbtOpts
-      logger.info(
-        `Using default --sbt-opts from ${SOCKET_JSON}:`,
-        sbtOpts,
-      )
+      logger.info(`Using default --sbt-opts from ${SOCKET_JSON}:`, sbtOpts)
     } else {
       sbtOpts = ''
     }
@@ -177,10 +170,7 @@ async function run(
     sockJson.defaults?.manifest?.sbt?.verbose !== undefined
   ) {
     verbose = sockJson.defaults?.manifest?.sbt?.verbose
-    logger.info(
-      `Using default --verbose from ${SOCKET_JSON}:`,
-      verbose,
-    )
+    logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
   } else if (verbose === undefined) {
     verbose = false
   }

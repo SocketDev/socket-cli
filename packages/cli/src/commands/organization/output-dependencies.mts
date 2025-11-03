@@ -11,7 +11,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 export async function outputDependencies(
   result: CResult<SocketSdkSuccessResult<'searchDependencies'>['data']>,
   {
@@ -55,10 +54,7 @@ function outputMarkdown(
   logger.log('Request details:')
   logger.log('- Offset:', offset)
   logger.log('- Limit:', limit)
-  logger.log(
-    '- Is there more data after this?',
-    result.end ? 'no' : 'yes',
-  )
+  logger.log('- Is there more data after this?', result.end ? 'no' : 'yes')
   logger.log('')
 
   const options = {

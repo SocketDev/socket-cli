@@ -8,7 +8,6 @@ import { getConfigValueOrUndef } from '../config.mts'
 import { webLink } from '../terminal/link.mjs'
 const logger = getDefaultLogger()
 
-
 export async function determineOrgSlug(
   orgFlag: string,
   interactive: boolean,
@@ -53,9 +52,7 @@ export async function determineOrgSlug(
       'Unable to determine the target org. Trying to auto-discover it now...',
     )
     logger.info('Note: Run `socket login` to set a default org.')
-    logger.error(
-      '      Use the --org flag to override the default org.',
-    )
+    logger.error('      Use the --org flag to override the default org.')
     logger.error('')
     if (dryRun) {
       logger.fail('Skipping auto-discovery of org in dry-run mode')

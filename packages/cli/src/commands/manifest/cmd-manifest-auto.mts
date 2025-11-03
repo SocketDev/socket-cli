@@ -114,9 +114,7 @@ async function run(
     logger.log(
       '- Make sure to run it from the correct dir (use --cwd to target another dir)',
     )
-    logger.log(
-      '- Make sure the necessary build tools are available (`PATH`)',
-    )
+    logger.log('- Make sure the necessary build tools are available (`PATH`)')
     process.exitCode = 1
     return
   }

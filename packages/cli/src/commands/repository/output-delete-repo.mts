@@ -7,7 +7,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 export async function outputDeleteRepo(
   result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']>,
   repoName: string,
@@ -26,7 +25,5 @@ export async function outputDeleteRepo(
     return
   }
 
-  logger.success(
-    `OK. Repository \`${repoName}\` deleted successfully`,
-  )
+  logger.success(`OK. Repository \`${repoName}\` deleted successfully`)
 }

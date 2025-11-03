@@ -8,7 +8,6 @@ import type { PatchStatus } from './handle-patch-status.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 type PatchStatusResultData = {
   statuses: PatchStatus[]
 }
@@ -51,9 +50,7 @@ export async function outputPatchStatusResult(
 
   if (outputKind === 'markdown') {
     if (statuses.length === 0) {
-      logger.log(
-        `${mdHeader('Patch Status', 2)}\n\nNo patches found.`,
-      )
+      logger.log(`${mdHeader('Patch Status', 2)}\n\nNo patches found.`)
       return
     }
 
@@ -71,9 +68,7 @@ export async function outputPatchStatusResult(
       }
 
       if (status.description) {
-        logger.log(
-          `${mdKeyValue('Description', status.description)}\n`,
-        )
+        logger.log(`${mdKeyValue('Description', status.description)}\n`)
       }
 
       if (status.downloadedAt) {
@@ -85,9 +80,7 @@ export async function outputPatchStatusResult(
       }
 
       logger.log(mdKeyValue('Files', status.fileCount))
-      logger.log(
-        mdKeyValue('Vulnerabilities', status.vulnerabilityCount),
-      )
+      logger.log(mdKeyValue('Vulnerabilities', status.vulnerabilityCount))
 
       if (status.appliedLocations.length > 0) {
         logger.log('**Locations**:')
@@ -169,7 +162,5 @@ export async function outputPatchStatusResult(
   // Legend.
   logger.log('')
   logger.log('Legend:')
-  logger.log(
-    '  [✓] Applied    [○] Downloaded    [✗] Failed    [?] Unknown',
-  )
+  logger.log('  [✓] Applied    [○] Downloaded    [✗] Failed    [?] Unknown')
 }

@@ -4,7 +4,6 @@ import { applyLogout } from './apply-logout.mts'
 import { isConfigFromFlag } from '../../utils/config.mts'
 const logger = getDefaultLogger()
 
-
 export function attemptLogout() {
   try {
     applyLogout()

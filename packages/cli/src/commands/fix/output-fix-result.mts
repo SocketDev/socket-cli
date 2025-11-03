@@ -7,7 +7,6 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 export async function outputFixResult(
   result: CResult<unknown>,
   outputKind: OutputKind,

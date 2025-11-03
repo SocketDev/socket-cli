@@ -11,7 +11,6 @@ import type { OrganizationsCResult } from './fetch-organization-list.mts'
 import type { OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 export async function outputOrganizationList(
   orgsCResult: OrganizationsCResult,
   outputKind: OutputKind = 'text',
@@ -26,9 +25,7 @@ export async function outputOrganizationList(
   }
 
   if (!orgsCResult.ok) {
-    logger.fail(
-      failMsgWithBadge(orgsCResult.message, orgsCResult.cause),
-    )
+    logger.fail(failMsgWithBadge(orgsCResult.message, orgsCResult.cause))
     return
   }
 
@@ -67,15 +64,11 @@ export async function outputOrganizationList(
   logger.log(
     `| Name${' '.repeat(mw1 - 4)} | ID${' '.repeat(mw2 - 2)} | Plan${' '.repeat(mw3 - 4)} |`,
   )
-  logger.log(
-    `| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`,
-  )
+  logger.log(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`)
   for (const o of organizations) {
     logger.log(
       `| ${(o.name || '').padEnd(mw1, ' ')} | ${(o.id || '').padEnd(mw2, ' ')} | ${(o.plan || '').padEnd(mw3, ' ')} |`,
     )
   }
-  logger.log(
-    `| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`,
-  )
+  logger.log(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`)
 }

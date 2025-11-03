@@ -24,7 +24,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 type RepoListItem =
   SocketSdkSuccessResult<'listRepositories'>['data']['results'][number]
 
@@ -554,9 +553,7 @@ async function getLastCommitDetails({
   try {
     lastCommit = JSON.parse(commitText)?.[0]
   } catch {
-    logger.fail(
-      'GitHub response contained invalid JSON for last commit',
-    )
+    logger.fail('GitHub response contained invalid JSON for last commit')
     logger.error(commitText)
     return {
       ok: false,
@@ -662,9 +659,7 @@ async function getRepoDetails({
   try {
     repoDetails = JSON.parse(repoDetailsText)
   } catch {
-    logger.fail(
-      `GitHub response contained invalid JSON for repo ${repoSlug}`,
-    )
+    logger.fail(`GitHub response contained invalid JSON for repo ${repoSlug}`)
     logger.error(repoDetailsText)
     return {
       ok: false,
@@ -738,10 +733,7 @@ async function getRepoBranchTree({
       return { ok: true, data: [] }
     }
 
-    logger.fail(
-      'Negative response from GitHub:',
-      treeDetails.message,
-    )
+    logger.fail('Negative response from GitHub:', treeDetails.message)
     return {
       ok: false,
       message: 'Unexpected error response',

@@ -32,7 +32,6 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 const logger = getDefaultLogger()
 
-
 /**
  * Platform name mappings for GitHub releases.
  */

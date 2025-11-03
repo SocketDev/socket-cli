@@ -51,7 +51,6 @@ import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 export async function coanaFix(
   fixConfig: FixConfig,
 ): Promise<CResult<{ data?: unknown; fixed: boolean }>> {
@@ -405,9 +404,7 @@ export async function coanaFix(
     )
 
     if (!fixCResult.ok) {
-      logger.error(
-        `Update failed for ${ghsaId}: ${getErrorCause(fixCResult)}`,
-      )
+      logger.error(`Update failed for ${ghsaId}: ${getErrorCause(fixCResult)}`)
       continue
     }
 
@@ -506,9 +503,7 @@ export async function coanaFix(
         (await gitPushBranch(branch, cwd))
 
       if (!pushed) {
-        logger.warn(
-          `Push failed for ${ghsaId}, skipping PR creation.`,
-        )
+        logger.warn(`Push failed for ${ghsaId}, skipping PR creation.`)
         // Clean up remote branch if it was pushed.
         try {
           // eslint-disable-next-line no-await-in-loop

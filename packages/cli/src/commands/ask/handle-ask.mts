@@ -11,7 +11,6 @@ import { outputAskCommand } from './output-ask.mts'
 import ENV from '../../constants/env.mts'
 const logger = getDefaultLogger()
 
-
 // Semantic index for fast word-overlap matching (lazy-loaded, ~3KB).
 let semanticIndex: any = null
 
@@ -645,9 +644,7 @@ export async function handleAsk(options: HandleAskOptions): Promise<void> {
   // If not executing, just show the command.
   if (!execute) {
     logger.log('')
-    logger.log(
-      '💡 Tip: Add --execute or -e to run this command directly',
-    )
+    logger.log('💡 Tip: Add --execute or -e to run this command directly')
     return
   }
 

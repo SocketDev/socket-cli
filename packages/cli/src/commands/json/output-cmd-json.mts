@@ -10,7 +10,6 @@ import { SOCKET_JSON } from '../../constants/socket.mts'
 import { tildify } from '../../utils/fs/home-path.mjs'
 const logger = getDefaultLogger()
 
-
 export async function outputCmdJson(cwd: string) {
   logger.info('Target cwd:', ENV.VITEST ? REDACTED : tildify(cwd))
 

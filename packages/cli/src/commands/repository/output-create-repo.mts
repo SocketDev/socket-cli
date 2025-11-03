@@ -7,7 +7,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 export function outputCreateRepo(
   result: CResult<SocketSdkSuccessResult<'createRepository'>['data']>,
   requestedName: string,

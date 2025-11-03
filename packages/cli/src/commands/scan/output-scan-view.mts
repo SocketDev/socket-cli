@@ -12,7 +12,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 const logger = getDefaultLogger()
 
-
 export async function outputScanView(
   result: CResult<SocketArtifact[]>,
   orgSlug: string,
@@ -43,14 +42,10 @@ export async function outputScanView(
       logger.info('Writing json results to', filePath)
       try {
         await fs.writeFile(filePath, json, 'utf8')
-        logger.info(
-          `Data successfully written to ${fileLink(filePath)}`,
-        )
+        logger.info(`Data successfully written to ${fileLink(filePath)}`)
       } catch (e) {
         process.exitCode = 1
-        logger.fail(
-          'There was an error trying to write the markdown to disk',
-        )
+        logger.fail('There was an error trying to write the markdown to disk')
         logger.error(e)
         logger.log(
           serializeResultJson({
@@ -103,14 +98,10 @@ View this report at: ${SOCKET_WEBSITE_URL}/dashboard/org/${orgSlug}/sbom/${scanI
   if (filePath && filePath !== '-') {
     try {
       await fs.writeFile(filePath, report, 'utf8')
-      logger.log(
-        `Data successfully written to ${fileLink(filePath)}`,
-      )
+      logger.log(`Data successfully written to ${fileLink(filePath)}`)
     } catch (e) {
       process.exitCode = 1
-      logger.fail(
-        'There was an error trying to write the markdown to disk',
-      )
+      logger.fail('There was an error trying to write the markdown to disk')
       logger.error(e)
     }
   } else {
