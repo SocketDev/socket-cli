@@ -1,26 +1,44 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getDefaultOrgSlug } from '../../../../../src/commands/../../../../src/commands/ci/fetch-default-org-slug.mts'
+import { getDefaultOrgSlug } from '../../../../../src/commands/ci/fetch-default-org-slug.mts'
+
+// Create mock functions with hoisting.
+const { mockGetConfigValueOrUndef, mockFetchOrganization, mockEnv } = vi.hoisted(() => {
+  const env = {
+    SOCKET_CLI_ORG_SLUG: undefined,
+  }
+  return {
+    mockGetConfigValueOrUndef: vi.fn(),
+    mockFetchOrganization: vi.fn(),
+    mockEnv: env,
+  }
+})
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../utils/config.mts', () => ({
-  getConfigValueOrUndef: vi.fn(),
+vi.mock('../../../../../src/utils/config.mts', () => ({
+  getConfigValueOrUndef: mockGetConfigValueOrUndef,
 }))
 
-vi.mock('../../../../../src/commands/../constants/env.mts', () => ({
-  default: {
-    SOCKET_CLI_ORG_SLUG: undefined,
-  },
+vi.mock('../../../../../src/constants/env.mts', () => ({
+  default: mockEnv,
 }))
 
 vi.mock('../../../../../src/commands/organization/fetch-organization-list.mts', () => ({
-  fetchOrganization: vi.fn(),
+  fetchOrganization: mockFetchOrganization,
 }))
 
 describe('getDefaultOrgSlug', () => {
+  const mockFn = mockGetConfigValueOrUndef
+  const mockFetchFn = mockFetchOrganization
+  const env = mockEnv
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    env.SOCKET_CLI_ORG_SLUG = undefined
+  })
+
   it('uses config defaultOrg when set', async () => {
-    const { getConfigValueOrUndef } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
-    vi.mocked(getConfigValueOrUndef).mockReturnValue('config-org-slug')
+    mockFn.mockReturnValue('config-org-slug')
 
     const result = await getDefaultOrgSlug()
 
@@ -28,15 +46,12 @@ describe('getDefaultOrgSlug', () => {
       ok: true,
       data: 'config-org-slug',
     })
-    expect(getConfigValueOrUndef).toHaveBeenCalledWith('defaultOrg')
+    expect(mockFn).toHaveBeenCalledWith('defaultOrg')
   })
 
   it('uses environment variable when no config', async () => {
-    const { getConfigValueOrUndef } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
-    vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
-
-    const ENV = await import('../../../../../src/commands/../constants/env.mts')
-    ENV.default.SOCKET_CLI_ORG_SLUG = 'env-org-slug'
+    mockFn.mockReturnValue(undefined)
+    env.SOCKET_CLI_ORG_SLUG = 'env-org-slug'
 
     const result = await getDefaultOrgSlug()
 
@@ -47,16 +62,10 @@ describe('getDefaultOrgSlug', () => {
   })
 
   it('fetches from API when no config or env', async () => {
-    const { getConfigValueOrUndef } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
-    const { fetchOrganization } = await import(
-      '../../../../../src/commands/organization/fetch-organization-list.mts'
-    )
+    mockFn.mockReturnValue(undefined)
+    env.SOCKET_CLI_ORG_SLUG = undefined
 
-    vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
-    const ENV = await import('../../../../../src/commands/../constants/env.mts')
-    ENV.default.SOCKET_CLI_ORG_SLUG = undefined
-
-    vi.mocked(fetchOrganization).mockResolvedValue({
+    mockFetchFn.mockResolvedValue({
       ok: true,
       data: {
         organizations: {
@@ -79,21 +88,15 @@ describe('getDefaultOrgSlug', () => {
   })
 
   it('returns error when fetchOrganization fails', async () => {
-    const { getConfigValueOrUndef } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
-    const { fetchOrganization } = await import(
-      '../../../../../src/commands/organization/fetch-organization-list.mts'
-    )
-
-    vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
-    const ENV = await import('../../../../../src/commands/../constants/env.mts')
-    ENV.default.SOCKET_CLI_ORG_SLUG = undefined
+    mockFn.mockReturnValue(undefined)
+    env.SOCKET_CLI_ORG_SLUG = undefined
 
     const error = {
       ok: false,
       code: 401,
       message: 'Unauthorized',
     }
-    vi.mocked(fetchOrganization).mockResolvedValue(error)
+    mockFetchFn.mockResolvedValue(error)
 
     const result = await getDefaultOrgSlug()
 
@@ -101,16 +104,10 @@ describe('getDefaultOrgSlug', () => {
   })
 
   it('returns error when no organizations found', async () => {
-    const { getConfigValueOrUndef } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
-    const { fetchOrganization } = await import(
-      '../../../../../src/commands/organization/fetch-organization-list.mts'
-    )
+    mockFn.mockReturnValue(undefined)
+    env.SOCKET_CLI_ORG_SLUG = undefined
 
-    vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
-    const ENV = await import('../../../../../src/commands/../constants/env.mts')
-    ENV.default.SOCKET_CLI_ORG_SLUG = undefined
-
-    vi.mocked(fetchOrganization).mockResolvedValue({
+    mockFetchFn.mockResolvedValue({
       ok: true,
       data: {
         organizations: {},
@@ -127,16 +124,10 @@ describe('getDefaultOrgSlug', () => {
   })
 
   it('returns error when organization has no name', async () => {
-    const { getConfigValueOrUndef } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
-    const { fetchOrganization } = await import(
-      '../../../../../src/commands/organization/fetch-organization-list.mts'
-    )
+    mockFn.mockReturnValue(undefined)
+    env.SOCKET_CLI_ORG_SLUG = undefined
 
-    vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
-    const ENV = await import('../../../../../src/commands/../constants/env.mts')
-    ENV.default.SOCKET_CLI_ORG_SLUG = undefined
-
-    vi.mocked(fetchOrganization).mockResolvedValue({
+    mockFetchFn.mockResolvedValue({
       ok: true,
       data: {
         organizations: {

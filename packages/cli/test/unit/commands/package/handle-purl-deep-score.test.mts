@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handlePurlDeepScore } from '../../../../../src/commands/../../../../src/commands/package/handle-purl-deep-score.mts'
+import { handlePurlDeepScore } from '../../../../src/commands/package/handle-purl-deep-score.mts'
+import { fetchPurlDeepScore } from '../../../../src/commands/package/fetch-purl-deep-score.mts'
+import { outputPurlsDeepScore } from '../../../../src/commands/package/output-purls-deep-score.mts'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../../../../src/commands/package/fetch-purl-deep-score.mts', () => ({
+vi.mock('../../../../src/commands/package/fetch-purl-deep-score.mts', () => ({
   fetchPurlDeepScore: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/../../../../src/commands/package/output-purls-deep-score.mts', () => ({
+vi.mock('../../../../src/commands/package/output-purls-deep-score.mts', () => ({
   outputPurlsDeepScore: vi.fn(),
 }))
 vi.mock('@socketsecurity/lib/debug', () => ({
@@ -21,11 +24,6 @@ describe('handlePurlDeepScore', () => {
   })
 
   it('fetches and outputs deep score successfully', async () => {
-    const { fetchPurlDeepScore } = await import('../../../../../src/commands/../src/fetch-purl-deep-score.mts')
-    const { outputPurlsDeepScore } = await import(
-      './output-purls-deep-score.mts'
-    )
-
     const mockData = {
       ok: true,
       data: {
@@ -45,11 +43,6 @@ describe('handlePurlDeepScore', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchPurlDeepScore } = await import('../../../../../src/commands/../src/fetch-purl-deep-score.mts')
-    const { outputPurlsDeepScore } = await import(
-      './output-purls-deep-score.mts'
-    )
-
     const mockError = {
       ok: false,
       error: new Error('Failed to fetch deep score'),
@@ -64,11 +57,6 @@ describe('handlePurlDeepScore', () => {
   })
 
   it('handles markdown output', async () => {
-    const { fetchPurlDeepScore } = await import('../../../../../src/commands/../src/fetch-purl-deep-score.mts')
-    const { outputPurlsDeepScore } = await import(
-      './output-purls-deep-score.mts'
-    )
-
     const mockData = {
       ok: true,
       data: {
@@ -90,9 +78,6 @@ describe('handlePurlDeepScore', () => {
   })
 
   it('logs debug information', async () => {
-    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
-    const { fetchPurlDeepScore } = await import('../../../../../src/commands/../src/fetch-purl-deep-score.mts')
-
     const mockData = {
       ok: true,
       data: { name: 'package1', version: '1.0.0', score: 91 },
@@ -114,9 +99,6 @@ describe('handlePurlDeepScore', () => {
   })
 
   it('logs debug information on failure', async () => {
-    const { debug } = await import('@socketsecurity/lib/debug')
-    const { fetchPurlDeepScore } = await import('../../../../../src/commands/../src/fetch-purl-deep-score.mts')
-
     const mockError = {
       ok: false,
       error: new Error('API error'),
@@ -129,8 +111,6 @@ describe('handlePurlDeepScore', () => {
   })
 
   it('handles different purl formats', async () => {
-    const { fetchPurlDeepScore } = await import('../../../../../src/commands/../src/fetch-purl-deep-score.mts')
-
     const purls = [
       'pkg:npm/package1@1.0.0',
       'pkg:npm/@scope/package@2.0.0',
@@ -151,11 +131,6 @@ describe('handlePurlDeepScore', () => {
   })
 
   it('handles text output', async () => {
-    const { fetchPurlDeepScore } = await import('../../../../../src/commands/../src/fetch-purl-deep-score.mts')
-    const { outputPurlsDeepScore } = await import(
-      './output-purls-deep-score.mts'
-    )
-
     const mockData = {
       ok: true,
       data: {

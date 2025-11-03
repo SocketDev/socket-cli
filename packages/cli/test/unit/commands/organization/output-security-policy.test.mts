@@ -5,7 +5,7 @@ import {
   createSuccessResult,
 } from '../../../../../src/commands/../../../test/helpers/index.mts'
 
-import type { CResult } from '../../../../../src/commands/../../../../src/commands/organization/types.mts'
+import type { CResult } from '../../../../../src/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 describe('outputSecurityPolicy', () => {
@@ -28,12 +28,12 @@ describe('outputSecurityPolicy', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/utils/output/result-json.mts', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
     const { outputSecurityPolicy } = await import(
-      './output-security-policy.mts'
+      '../../../../../src/commands/organization/output-security-policy.mts'
     )
 
     const result: CResult<
@@ -69,12 +69,12 @@ describe('outputSecurityPolicy', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/utils/output/result-json.mts', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
     const { outputSecurityPolicy } = await import(
-      './output-security-policy.mts'
+      '../../../../../src/commands/organization/output-security-policy.mts'
     )
 
     const result: CResult<
@@ -106,13 +106,13 @@ describe('outputSecurityPolicy', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../../src/commands/../utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../../src/utils/output/markdown.mts', () => ({
       mdHeader: mockMdHeader,
       mdTableOfPairs: mockMdTableOfPairs,
     }))
 
     const { outputSecurityPolicy } = await import(
-      './output-security-policy.mts'
+      '../../../../../src/commands/organization/output-security-policy.mts'
     )
 
     const result: CResult<
@@ -161,12 +161,12 @@ describe('outputSecurityPolicy', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../../src/commands/../utils/error/fail-msg-with-badge.mts', () => ({
+    vi.doMock('../../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
     const { outputSecurityPolicy } = await import(
-      './output-security-policy.mts'
+      '../../../../../src/commands/organization/output-security-policy.mts'
     )
 
     const result: CResult<
@@ -202,13 +202,13 @@ describe('outputSecurityPolicy', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../../src/commands/../utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../../src/utils/output/markdown.mts', () => ({
       mdHeader: mockMdHeader,
       mdTableOfPairs: mockMdTableOfPairs,
     }))
 
     const { outputSecurityPolicy } = await import(
-      './output-security-policy.mts'
+      '../../../../../src/commands/organization/output-security-policy.mts'
     )
 
     const result: CResult<
@@ -242,13 +242,13 @@ describe('outputSecurityPolicy', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../../src/commands/../utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../../src/utils/output/markdown.mts', () => ({
       mdHeader: mockMdHeader,
       mdTableOfPairs: mockMdTableOfPairs,
     }))
 
     const { outputSecurityPolicy } = await import(
-      './output-security-policy.mts'
+      '../../../../../src/commands/organization/output-security-policy.mts'
     )
 
     const result: CResult<
@@ -279,13 +279,13 @@ describe('outputSecurityPolicy', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../../src/commands/../utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../../src/utils/output/markdown.mts', () => ({
       mdHeader: mockMdHeader,
       mdTableOfPairs: mockMdTableOfPairs,
     }))
 
     const { outputSecurityPolicy } = await import(
-      './output-security-policy.mts'
+      '../../../../../src/commands/organization/output-security-policy.mts'
     )
 
     const result: CResult<
@@ -327,12 +327,12 @@ describe('outputSecurityPolicy', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/utils/output/result-json.mts', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
     const { outputSecurityPolicy } = await import(
-      './output-security-policy.mts'
+      '../../../../../src/commands/organization/output-security-policy.mts'
     )
 
     const result: CResult<

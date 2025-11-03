@@ -5,7 +5,7 @@ import {
   createSuccessResult,
 } from '../../../../../src/commands/../../../test/helpers/index.mts'
 
-import type { CResult } from '../../../../../src/commands/../../../../src/commands/repository/types.mts'
+import type { CResult } from '../../../../src/commands/repository/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 describe('outputUpdateRepo', () => {
@@ -29,11 +29,11 @@ describe('outputUpdateRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputUpdateRepo } = await import('../../../../../src/commands/../src/output-update-repo.mts')
+    const { outputUpdateRepo } = await import('../../../../src/commands/repository/output-update-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
@@ -62,11 +62,11 @@ describe('outputUpdateRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputUpdateRepo } = await import('../../../../../src/commands/../src/output-update-repo.mts')
+    const { outputUpdateRepo } = await import('../../../../src/commands/repository/output-update-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createErrorResult('Unauthorized', {
@@ -94,7 +94,7 @@ describe('outputUpdateRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    const { outputUpdateRepo } = await import('../../../../../src/commands/../src/output-update-repo.mts')
+    const { outputUpdateRepo } = await import('../../../../src/commands/repository/output-update-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
@@ -124,11 +124,11 @@ describe('outputUpdateRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../../src/commands/../utils/error/fail-msg-with-badge.mts', () => ({
+    vi.doMock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
-    const { outputUpdateRepo } = await import('../../../../../src/commands/../src/output-update-repo.mts')
+    const { outputUpdateRepo } = await import('../../../../src/commands/repository/output-update-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createErrorResult('Repository not found', {
@@ -160,7 +160,7 @@ describe('outputUpdateRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    const { outputUpdateRepo } = await import('../../../../../src/commands/../src/output-update-repo.mts')
+    const { outputUpdateRepo } = await import('../../../../src/commands/repository/output-update-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
@@ -188,7 +188,7 @@ describe('outputUpdateRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    const { outputUpdateRepo } = await import('../../../../../src/commands/../src/output-update-repo.mts')
+    const { outputUpdateRepo } = await import('../../../../src/commands/repository/output-update-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
@@ -216,7 +216,7 @@ describe('outputUpdateRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    const { outputUpdateRepo } = await import('../../../../../src/commands/../src/output-update-repo.mts')
+    const { outputUpdateRepo } = await import('../../../../src/commands/repository/output-update-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
@@ -245,11 +245,11 @@ describe('outputUpdateRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputUpdateRepo } = await import('../../../../../src/commands/../src/output-update-repo.mts')
+    const { outputUpdateRepo } = await import('../../../../src/commands/repository/output-update-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createErrorResult('Error without code')

@@ -4,11 +4,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { confirm } from '@socketsecurity/lib/stdio/prompts'
 
-import { outputCreateNewScan } from '../../../../../src/commands/../../../../src/commands/scan/output-create-new-scan.mts'
-import { failMsgWithBadge } from '../../../../../src/commands/../../../src/utils/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../../../../src/commands/../../../src/utils/output/result-json.mjs'
+import { outputCreateNewScan } from '../../../../../src/commands/scan/output-create-new-scan.mts'
+import { failMsgWithBadge } from '../../../../../src/utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../../../../src/utils/output/result-json.mjs'
 
-import type { CResult } from '../../../../../src/commands/../../../../src/commands/scan/types.mts'
+import type { CResult } from '../../../../../src/commands/scan/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Mock the dependencies.
@@ -31,11 +31,11 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 
-vi.mock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
+vi.mock('../../../../../src/utils/output/result-json.mjs', () => ({
   serializeResultJson: vi.fn(result => JSON.stringify(result)),
 }))
 
-vi.mock('../../../../../src/commands/../utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock('../../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
 }))
 

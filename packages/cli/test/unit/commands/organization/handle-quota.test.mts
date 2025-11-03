@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { setupTestEnvironment } from '../../../../../src/commands/../../../test/helpers/index.mts'
-import { handleQuota } from '../../../../../src/commands/../../../../src/commands/organization/handle-quota.mts'
+import { handleQuota } from '../../../../../src/commands/organization/handle-quota.mts'
 
-vi.mock('../../../../../src/commands/../../../../src/commands/organization/fetch-quota.mts', () => ({
+vi.mock('../../../../../src/commands/organization/fetch-quota.mts', () => ({
   fetchQuota: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/../../../../src/commands/organization/output-quota.mts', () => ({
+vi.mock('../../../../../src/commands/organization/output-quota.mts', () => ({
   outputQuota: vi.fn(),
 }))
 
@@ -15,8 +15,8 @@ describe('handleQuota', () => {
   setupTestEnvironment()
 
   it('should fetch and output quota with default output kind', async () => {
-    const { fetchQuota } = await import('../../../../../src/commands/../src/fetch-quota.mts')
-    const { outputQuota } = await import('../../../../../src/commands/../src/output-quota.mts')
+    const { fetchQuota } = await import('../../../../../src/commands/organization/fetch-quota.mts')
+    const { outputQuota } = await import('../../../../../src/commands/organization/output-quota.mts')
     const mockFetch = vi.mocked(fetchQuota)
     const mockOutput = vi.mocked(outputQuota)
 
@@ -36,8 +36,8 @@ describe('handleQuota', () => {
   })
 
   it('should handle json output kind', async () => {
-    const { fetchQuota } = await import('../../../../../src/commands/../src/fetch-quota.mts')
-    const { outputQuota } = await import('../../../../../src/commands/../src/output-quota.mts')
+    const { fetchQuota } = await import('../../../../../src/commands/organization/fetch-quota.mts')
+    const { outputQuota } = await import('../../../../../src/commands/organization/output-quota.mts')
     const mockFetch = vi.mocked(fetchQuota)
     const mockOutput = vi.mocked(outputQuota)
 
@@ -57,8 +57,8 @@ describe('handleQuota', () => {
   })
 
   it('should handle markdown output kind', async () => {
-    const { fetchQuota } = await import('../../../../../src/commands/../src/fetch-quota.mts')
-    const { outputQuota } = await import('../../../../../src/commands/../src/output-quota.mts')
+    const { fetchQuota } = await import('../../../../../src/commands/organization/fetch-quota.mts')
+    const { outputQuota } = await import('../../../../../src/commands/organization/output-quota.mts')
     const mockFetch = vi.mocked(fetchQuota)
     const mockOutput = vi.mocked(outputQuota)
 
@@ -78,8 +78,8 @@ describe('handleQuota', () => {
   })
 
   it('should handle table output kind', async () => {
-    const { fetchQuota } = await import('../../../../../src/commands/../src/fetch-quota.mts')
-    const { outputQuota } = await import('../../../../../src/commands/../src/output-quota.mts')
+    const { fetchQuota } = await import('../../../../../src/commands/organization/fetch-quota.mts')
+    const { outputQuota } = await import('../../../../../src/commands/organization/output-quota.mts')
     const mockFetch = vi.mocked(fetchQuota)
     const mockOutput = vi.mocked(outputQuota)
 
@@ -99,8 +99,8 @@ describe('handleQuota', () => {
   })
 
   it('should propagate errors from fetchQuota', async () => {
-    const { fetchQuota } = await import('../../../../../src/commands/../src/fetch-quota.mts')
-    const { outputQuota } = await import('../../../../../src/commands/../src/output-quota.mts')
+    const { fetchQuota } = await import('../../../../../src/commands/organization/fetch-quota.mts')
+    const { outputQuota } = await import('../../../../../src/commands/organization/output-quota.mts')
     const mockFetch = vi.mocked(fetchQuota)
     const mockOutput = vi.mocked(outputQuota)
 

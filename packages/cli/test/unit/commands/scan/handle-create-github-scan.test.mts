@@ -3,15 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../../src/commands/../../../test/helpers/mocks.mts'
-import { handleCreateGithubScan } from '../../../../../src/commands/../../../../src/commands/scan/handle-create-github-scan.mts'
+} from '../../../../../test/helpers/mocks.mts'
+import { handleCreateGithubScan } from '../../../../../src/commands/scan/handle-create-github-scan.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../../../../src/commands/scan/create-scan-from-github.mts', () => ({
+vi.mock('../../../../../src/commands/scan/create-scan-from-github.mts', () => ({
   createScanFromGithub: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/../../../../src/commands/scan/output-scan-github.mts', () => ({
+vi.mock('../../../../../src/commands/scan/output-scan-github.mts', () => ({
   outputScanGithub: vi.fn(),
 }))
 
@@ -22,9 +22,9 @@ describe('handleCreateGithubScan', () => {
 
   it('creates GitHub scan and outputs result successfully', async () => {
     const { createScanFromGithub } = await import(
-      './create-scan-from-github.mts'
+      '../../../../../src/commands/scan/create-scan-from-github.mts'
     )
-    const { outputScanGithub } = await import('../../../../../src/commands/../src/output-scan-github.mts')
+    const { outputScanGithub } = await import('../../../../../src/commands/scan/output-scan-github.mts')
     const mockCreate = vi.mocked(createScanFromGithub)
     const mockOutput = vi.mocked(outputScanGithub)
 
@@ -64,7 +64,7 @@ describe('handleCreateGithubScan', () => {
     const { createScanFromGithub } = await import(
       './create-scan-from-github.mts'
     )
-    const { outputScanGithub } = await import('../../../../../src/commands/../src/output-scan-github.mts')
+    const { outputScanGithub } = await import('../../../../../src/commands/scan/output-scan-github.mts')
     const mockCreate = vi.mocked(createScanFromGithub)
     const mockOutput = vi.mocked(outputScanGithub)
 
@@ -137,7 +137,7 @@ describe('handleCreateGithubScan', () => {
     const { createScanFromGithub } = await import(
       './create-scan-from-github.mts'
     )
-    const { outputScanGithub } = await import('../../../../../src/commands/../src/output-scan-github.mts')
+    const { outputScanGithub } = await import('../../../../../src/commands/scan/output-scan-github.mts')
     const mockCreate = vi.mocked(createScanFromGithub)
     const mockOutput = vi.mocked(outputScanGithub)
 

@@ -3,15 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../../src/commands/../../../test/helpers/mocks.mts'
-import { fetchCreateRepo } from '../../../../../src/commands/../../../../src/commands/repository/fetch-create-repo.mts'
+} from '../../../helpers/mocks.mts'
+import { fetchCreateRepo } from '../../../../src/commands/repository/fetch-create-repo.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../utils/socket/api.mts', () => ({
+vi.mock('../../../../src/utils/socket/api.mts', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/../utils/socket/sdk.mts', () => ({
+vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
   setupSdk: vi.fn(),
 }))
 
@@ -21,8 +21,8 @@ describe('fetchCreateRepo', () => {
   })
 
   it('creates repository successfully', async () => {
-    const { handleApiCall } = await vi.importMock('../../../../../src/commands/../utils/socket/api.mts')
-    const { setupSdk } = await vi.importMock('../../../../../src/commands/../utils/socket/sdk.mts')
+    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
+    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
     const mockHandleApi = vi.mocked(handleApiCall)
     const mockSetupSdk = vi.mocked(setupSdk)
 
@@ -72,7 +72,7 @@ describe('fetchCreateRepo', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await vi.importMock('../../../../../src/commands/../utils/socket/sdk.mts')
+    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
 
     mockSetupSdk.mockResolvedValue(
@@ -95,8 +95,8 @@ describe('fetchCreateRepo', () => {
   })
 
   it('handles API call failure', async () => {
-    const { setupSdk } = await vi.importMock('../../../../../src/commands/../utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../../src/commands/../utils/socket/api.mts')
+    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
+    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
@@ -127,8 +127,8 @@ describe('fetchCreateRepo', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await vi.importMock('../../../../../src/commands/../utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../../src/commands/../utils/socket/api.mts')
+    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
+    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
@@ -160,8 +160,8 @@ describe('fetchCreateRepo', () => {
   })
 
   it('handles minimal repository data', async () => {
-    const { setupSdk } = await vi.importMock('../../../../../src/commands/../utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../../src/commands/../utils/socket/api.mts')
+    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
+    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
@@ -191,8 +191,8 @@ describe('fetchCreateRepo', () => {
   })
 
   it('handles full repository configuration', async () => {
-    const { setupSdk } = await vi.importMock('../../../../../src/commands/../utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../../src/commands/../utils/socket/api.mts')
+    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
+    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
@@ -224,8 +224,8 @@ describe('fetchCreateRepo', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await vi.importMock('../../../../../src/commands/../utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../../src/commands/../utils/socket/api.mts')
+    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
+    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 

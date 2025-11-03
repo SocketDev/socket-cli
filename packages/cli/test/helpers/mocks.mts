@@ -116,6 +116,14 @@ export function setupSdkModuleMocks() {
  */
 export function setupOutputModuleMocks() {
   vi.mock('@socketsecurity/lib/logger', () => ({
+    getDefaultLogger: vi.fn(() => ({
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      success: vi.fn(),
+    })),
     logger: {
       fail: vi.fn(),
       log: vi.fn(),

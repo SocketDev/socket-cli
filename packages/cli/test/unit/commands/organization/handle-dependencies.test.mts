@@ -1,24 +1,29 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   createSuccessResult,
   setupTestEnvironment,
 } from '../../../../../src/commands/../../../test/helpers/index.mts'
-import { fetchDependencies } from '../../../../../src/commands/../../../../src/commands/organization/fetch-dependencies.mts'
-import { handleDependencies } from '../../../../../src/commands/../../../../src/commands/organization/handle-dependencies.mts'
-import { outputDependencies } from '../../../../../src/commands/../../../../src/commands/organization/output-dependencies.mts'
+import { handleDependencies } from '../../../../../src/commands/organization/handle-dependencies.mts'
 
-vi.mock('../../../../../src/commands/../../../../src/commands/organization/fetch-dependencies.mts', () => ({
+vi.mock('../../../../../src/commands/organization/fetch-dependencies.mts', () => ({
   fetchDependencies: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/../../../../src/commands/organization/output-dependencies.mts', () => ({
+vi.mock('../../../../../src/commands/organization/output-dependencies.mts', () => ({
   outputDependencies: vi.fn(),
 }))
 
 describe('handleDependencies', () => {
   setupTestEnvironment()
 
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('should fetch and output dependencies successfully', async () => {
+    const { fetchDependencies } = await import('../../../../../src/commands/organization/fetch-dependencies.mts')
+    const { outputDependencies } = await import('../../../../../src/commands/organization/output-dependencies.mts')
+
     const mockResult = createSuccessResult([
       {
         name: 'test-package',
@@ -45,6 +50,9 @@ describe('handleDependencies', () => {
   })
 
   it('should handle fetch failure', async () => {
+    const { fetchDependencies } = await import('../../../../../src/commands/organization/fetch-dependencies.mts')
+    const { outputDependencies } = await import('../../../../../src/commands/organization/output-dependencies.mts')
+
     const mockResult = {
       ok: false,
       error: new Error('Fetch failed'),
@@ -68,6 +76,9 @@ describe('handleDependencies', () => {
   })
 
   it('should handle different output kinds', async () => {
+    const { fetchDependencies } = await import('../../../../../src/commands/organization/fetch-dependencies.mts')
+    const { outputDependencies } = await import('../../../../../src/commands/organization/output-dependencies.mts')
+
     const mockResult = createSuccessResult([])
 
     vi.mocked(fetchDependencies).mockResolvedValue(mockResult)
@@ -87,6 +98,9 @@ describe('handleDependencies', () => {
   })
 
   it('should handle large offsets and limits', async () => {
+    const { fetchDependencies } = await import('../../../../../src/commands/organization/fetch-dependencies.mts')
+    const { outputDependencies } = await import('../../../../../src/commands/organization/output-dependencies.mts')
+
     const mockResult = createSuccessResult([])
 
     vi.mocked(fetchDependencies).mockResolvedValue(mockResult)

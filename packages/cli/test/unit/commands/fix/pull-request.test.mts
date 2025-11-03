@@ -1,23 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { openSocketFixPr } from '../../../../../src/commands/../../../../src/commands/fix/pull-request.mts'
+import { openSocketFixPr } from '../../../../src/commands/fix/pull-request.mts'
 
-// Mock dependencies.
-vi.mock('../../../../../src/commands/../../../../src/commands/fix/git.mts', () => ({
-  getSocketFixPullRequestTitle: vi.fn((ghsaIds: string[]) =>
+const mockGetOctokit = vi.hoisted(() => vi.fn())
+const mockCreatePrProvider = vi.hoisted(() => vi.fn())
+const mockGetSocketFixPullRequestTitle = vi.hoisted(() =>
+  vi.fn((ghsaIds: string[]) =>
     ghsaIds.length === 1
       ? `Fix for ${ghsaIds[0]}`
       : `Fixes for ${ghsaIds.length} GHSAs`,
   ),
-  getSocketFixPullRequestBody: vi.fn(() => 'Mock PR body'),
+)
+const mockGetSocketFixPullRequestBody = vi.hoisted(() =>
+  vi.fn(() => 'Mock PR body'),
+)
+
+// Mock dependencies.
+vi.mock('../../../../src/commands/fix/git.mts', () => ({
+  getSocketFixPullRequestTitle: mockGetSocketFixPullRequestTitle,
+  getSocketFixPullRequestBody: mockGetSocketFixPullRequestBody,
 }))
 
-vi.mock('../../../../../src/commands/../utils/git/github.mts', () => ({
-  getOctokit: vi.fn(),
+vi.mock('../../../../src/utils/git/github.mts', () => ({
+  getOctokit: mockGetOctokit,
 }))
 
-vi.mock('../../../../../src/commands/../utils/git/provider-factory.mts', () => ({
-  createPrProvider: vi.fn(),
+vi.mock('../../../../src/utils/git/provider-factory.mts', () => ({
+  createPrProvider: mockCreatePrProvider,
 }))
 
 describe('pull-request', () => {
@@ -56,13 +65,8 @@ describe('pull-request', () => {
 
   describe('openSocketFixPr', () => {
     it('creates PR successfully on first attempt', async () => {
-      const { getOctokit } = await import('../../../../../src/commands/../../../../src/utils/git/github.mts')
-      const { createPrProvider } = await import(
-        '../../../../../src/commands/../utils/git/provider-factory.mts'
-      )
-
-      vi.mocked(getOctokit).mockReturnValue(mockOctokit)
-      vi.mocked(createPrProvider).mockReturnValue(mockProvider)
+      mockGetOctokit.mockReturnValue(mockOctokit)
+      mockCreatePrProvider.mockReturnValue(mockProvider)
 
       // Provider returns simplified response.
       mockProvider.createPr.mockResolvedValue({
@@ -97,13 +101,8 @@ describe('pull-request', () => {
     })
 
     it('retries on 5xx error', async () => {
-      const { getOctokit } = await import('../../../../../src/commands/../../../../src/utils/git/github.mts')
-      const { createPrProvider } = await import(
-        '../../../../../src/commands/../utils/git/provider-factory.mts'
-      )
-
-      vi.mocked(getOctokit).mockReturnValue(mockOctokit)
-      vi.mocked(createPrProvider).mockReturnValue(mockProvider)
+      mockGetOctokit.mockReturnValue(mockOctokit)
+      mockCreatePrProvider.mockReturnValue(mockProvider)
 
       // Provider succeeds after retries (retry logic is in provider).
       mockProvider.createPr.mockResolvedValue({
@@ -134,11 +133,7 @@ describe('pull-request', () => {
     })
 
     it('does not retry on 422 validation error', async () => {
-      const { createPrProvider } = await import(
-        '../../../../../src/commands/../utils/git/provider-factory.mts'
-      )
-
-      vi.mocked(createPrProvider).mockReturnValue(mockProvider)
+      mockCreatePrProvider.mockReturnValue(mockProvider)
 
       // Provider throws error (validation errors are not retried in provider).
       mockProvider.createPr.mockRejectedValue(
@@ -157,11 +152,7 @@ describe('pull-request', () => {
     })
 
     it('respects custom retry count', async () => {
-      const { createPrProvider } = await import(
-        '../../../../../src/commands/../utils/git/provider-factory.mts'
-      )
-
-      vi.mocked(createPrProvider).mockReturnValue(mockProvider)
+      mockCreatePrProvider.mockReturnValue(mockProvider)
 
       // Provider throws error after retries.
       mockProvider.createPr.mockRejectedValue(
@@ -180,11 +171,7 @@ describe('pull-request', () => {
     })
 
     it('returns undefined after all retries exhausted', async () => {
-      const { createPrProvider } = await import(
-        '../../../../../src/commands/../utils/git/provider-factory.mts'
-      )
-
-      vi.mocked(createPrProvider).mockReturnValue(mockProvider)
+      mockCreatePrProvider.mockReturnValue(mockProvider)
 
       // Provider throws error.
       mockProvider.createPr.mockRejectedValue(new Error('Network error'))
@@ -201,13 +188,8 @@ describe('pull-request', () => {
     })
 
     it('uses exponential backoff for retries', async () => {
-      const { getOctokit } = await import('../../../../../src/commands/../../../../src/utils/git/github.mts')
-      const { createPrProvider } = await import(
-        '../../../../../src/commands/../utils/git/provider-factory.mts'
-      )
-
-      vi.mocked(getOctokit).mockReturnValue(mockOctokit)
-      vi.mocked(createPrProvider).mockReturnValue(mockProvider)
+      mockGetOctokit.mockReturnValue(mockOctokit)
+      mockCreatePrProvider.mockReturnValue(mockProvider)
 
       // Provider succeeds (backoff logic is in provider).
       mockProvider.createPr.mockResolvedValue({
@@ -236,14 +218,8 @@ describe('pull-request', () => {
     })
 
     it('passes GHSA details to PR body generator', async () => {
-      const { getOctokit } = await import('../../../../../src/commands/../../../../src/utils/git/github.mts')
-      const { createPrProvider } = await import(
-        '../../../../../src/commands/../utils/git/provider-factory.mts'
-      )
-      const { getSocketFixPullRequestBody } = await import('../../../../../src/commands/../src/git.mts')
-
-      vi.mocked(getOctokit).mockReturnValue(mockOctokit)
-      vi.mocked(createPrProvider).mockReturnValue(mockProvider)
+      mockGetOctokit.mockReturnValue(mockOctokit)
+      mockCreatePrProvider.mockReturnValue(mockProvider)
 
       mockProvider.createPr.mockResolvedValue({
         number: 999,
@@ -278,7 +254,7 @@ describe('pull-request', () => {
         },
       )
 
-      expect(getSocketFixPullRequestBody).toHaveBeenCalledWith(
+      expect(mockGetSocketFixPullRequestBody).toHaveBeenCalledWith(
         ['GHSA-details-test'],
         mockGhsaDetails,
       )

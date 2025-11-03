@@ -3,14 +3,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../../src/commands/../../../test/helpers/mocks.mts'
-import { handleConfigSet } from '../../../../../src/commands/../../../../src/commands/config/handle-config-set.mts'
+} from '../../../../../test/helpers/mocks.mts'
+import { handleConfigSet } from '../../../../../src/commands/config/handle-config-set.mts'
+
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  info: vi.fn(),
+  log: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+}))
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../../../../src/commands/config/output-config-set.mts', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
+}))
+
+vi.mock('../../../../../src/commands/config/output-config-set.mts', () => ({
   outputConfigSet: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/../utils/config.mts', () => ({
+vi.mock('../../../../../src/utils/config.mts', () => ({
   updateConfigValue: vi.fn(),
 }))
 vi.mock('@socketsecurity/lib/debug', () => ({
@@ -25,8 +38,8 @@ describe('handleConfigSet', () => {
   })
 
   it('sets config value successfully', async () => {
-    const { updateConfigValue } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
-    const { outputConfigSet } = await import('../../../../../src/commands/../src/output-config-set.mts')
+    const { updateConfigValue } = await import('../../../../../src/utils/config.mts')
+    const { outputConfigSet } = await import('../../../../../src/commands/config/output-config-set.mts')
 
     const mockResult = createSuccessResult('new-value')
     vi.mocked(updateConfigValue).mockReturnValue(mockResult)
@@ -45,8 +58,8 @@ describe('handleConfigSet', () => {
   })
 
   it('handles config update failure', async () => {
-    const { updateConfigValue } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
-    const { outputConfigSet } = await import('../../../../../src/commands/../src/output-config-set.mts')
+    const { updateConfigValue } = await import('../../../../../src/utils/config.mts')
+    const { outputConfigSet } = await import('../../../../../src/commands/config/output-config-set.mts')
 
     const mockResult = createErrorResult('Config update failed')
     vi.mocked(updateConfigValue).mockReturnValue(mockResult)
@@ -62,8 +75,8 @@ describe('handleConfigSet', () => {
   })
 
   it('handles markdown output', async () => {
-    const { updateConfigValue } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
-    const { outputConfigSet } = await import('../../../../../src/commands/../src/output-config-set.mts')
+    const { updateConfigValue } = await import('../../../../../src/utils/config.mts')
+    const { outputConfigSet } = await import('../../../../../src/commands/config/output-config-set.mts')
 
     const mockResult = createSuccessResult('markdown-value')
     vi.mocked(updateConfigValue).mockReturnValue(mockResult)
@@ -80,7 +93,7 @@ describe('handleConfigSet', () => {
 
   it('logs debug information', async () => {
     const { debug, debugDir } = await import('@socketsecurity/lib/debug')
-    const { updateConfigValue } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
+    const { updateConfigValue } = await import('../../../../../src/utils/config.mts')
 
     vi.mocked(updateConfigValue).mockReturnValue(
       createSuccessResult('debug-value'),
@@ -105,7 +118,7 @@ describe('handleConfigSet', () => {
 
   it('logs debug information on failure', async () => {
     const { debug } = await import('@socketsecurity/lib/debug')
-    const { updateConfigValue } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
+    const { updateConfigValue } = await import('../../../../../src/utils/config.mts')
 
     vi.mocked(updateConfigValue).mockReturnValue(createErrorResult('Failed'))
 
@@ -119,7 +132,7 @@ describe('handleConfigSet', () => {
   })
 
   it('handles different config keys', async () => {
-    const { updateConfigValue } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
+    const { updateConfigValue } = await import('../../../../../src/utils/config.mts')
 
     const keys = ['apiToken', 'org', 'repoName', 'apiBaseUrl', 'apiProxy']
 

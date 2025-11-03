@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleManifestSetup } from '../../../../../src/commands/../../../../src/commands/manifest/handle-manifest-setup.mts'
+import { handleManifestSetup } from '../../../../src/commands/manifest/handle-manifest-setup.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../../../../src/commands/manifest/output-manifest-setup.mts', () => ({
+vi.mock('../../../../src/commands/manifest/output-manifest-setup.mts', () => ({
   outputManifestSetup: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/../../../../src/commands/manifest/setup-manifest-config.mts', () => ({
+vi.mock('../../../../src/commands/manifest/setup-manifest-config.mts', () => ({
   setupManifestConfig: vi.fn(),
 }))
 
@@ -16,8 +16,8 @@ describe('handleManifestSetup', () => {
   })
 
   it('sets up manifest config successfully', async () => {
-    const { setupManifestConfig } = await import('../../../../../src/commands/../src/setup-manifest-config.mts')
-    const { outputManifestSetup } = await import('../../../../../src/commands/../src/output-manifest-setup.mts')
+    const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+    const { outputManifestSetup } = await import('../../../../src/commands/manifest/output-manifest-setup.mts')
 
     const mockResult = {
       ok: true,
@@ -38,8 +38,8 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles setup failure', async () => {
-    const { setupManifestConfig } = await import('../../../../../src/commands/../src/setup-manifest-config.mts')
-    const { outputManifestSetup } = await import('../../../../../src/commands/../src/output-manifest-setup.mts')
+    const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+    const { outputManifestSetup } = await import('../../../../src/commands/manifest/output-manifest-setup.mts')
 
     const mockError = {
       ok: false,
@@ -54,8 +54,8 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles defaultOnReadError flag true', async () => {
-    const { setupManifestConfig } = await import('../../../../../src/commands/../src/setup-manifest-config.mts')
-    const { outputManifestSetup } = await import('../../../../../src/commands/../src/output-manifest-setup.mts')
+    const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+    const { outputManifestSetup } = await import('../../../../src/commands/manifest/output-manifest-setup.mts')
 
     const mockResult = {
       ok: true,
@@ -70,7 +70,7 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles defaultOnReadError flag false', async () => {
-    const { setupManifestConfig } = await import('../../../../../src/commands/../src/setup-manifest-config.mts')
+    const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
 
     vi.mocked(setupManifestConfig).mockResolvedValue({
       ok: true,
@@ -83,8 +83,8 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles empty data result', async () => {
-    const { setupManifestConfig } = await import('../../../../../src/commands/../src/setup-manifest-config.mts')
-    const { outputManifestSetup } = await import('../../../../../src/commands/../src/output-manifest-setup.mts')
+    const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+    const { outputManifestSetup } = await import('../../../../src/commands/manifest/output-manifest-setup.mts')
 
     const mockResult = {
       ok: true,
@@ -98,7 +98,7 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles async errors', async () => {
-    const { setupManifestConfig } = await import('../../../../../src/commands/../src/setup-manifest-config.mts')
+    const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
 
     vi.mocked(setupManifestConfig).mockRejectedValue(new Error('Async error'))
 
@@ -108,7 +108,7 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles current directory path', async () => {
-    const { setupManifestConfig } = await import('../../../../../src/commands/../src/setup-manifest-config.mts')
+    const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
 
     vi.mocked(setupManifestConfig).mockResolvedValue({
       ok: true,
@@ -121,7 +121,7 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles absolute path', async () => {
-    const { setupManifestConfig } = await import('../../../../../src/commands/../src/setup-manifest-config.mts')
+    const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
 
     vi.mocked(setupManifestConfig).mockResolvedValue({
       ok: true,

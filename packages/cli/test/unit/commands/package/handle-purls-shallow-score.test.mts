@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handlePurlsShallowScore } from '../../../../../src/commands/../../../../src/commands/package/handle-purls-shallow-score.mts'
+import { handlePurlsShallowScore } from '../../../../src/commands/package/handle-purls-shallow-score.mts'
+import { fetchPurlsShallowScore } from '../../../../src/commands/package/fetch-purls-shallow-score.mts'
+import { outputPurlsShallowScore } from '../../../../src/commands/package/output-purls-shallow-score.mts'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../../../../src/commands/package/fetch-purls-shallow-score.mts', () => ({
+vi.mock('../../../../src/commands/package/fetch-purls-shallow-score.mts', () => ({
   fetchPurlsShallowScore: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/../../../../src/commands/package/output-purls-shallow-score.mts', () => ({
+vi.mock('../../../../src/commands/package/output-purls-shallow-score.mts', () => ({
   outputPurlsShallowScore: vi.fn(),
 }))
 vi.mock('@socketsecurity/lib/debug', () => ({
@@ -21,13 +24,6 @@ describe('handlePurlsShallowScore', () => {
   })
 
   it('fetches and outputs shallow scores successfully', async () => {
-    const { fetchPurlsShallowScore } = await import(
-      './fetch-purls-shallow-score.mts'
-    )
-    const { outputPurlsShallowScore } = await import(
-      './output-purls-shallow-score.mts'
-    )
-
     const mockData = {
       ok: true,
       data: [
@@ -52,13 +48,6 @@ describe('handlePurlsShallowScore', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchPurlsShallowScore } = await import(
-      './fetch-purls-shallow-score.mts'
-    )
-    const { outputPurlsShallowScore } = await import(
-      './output-purls-shallow-score.mts'
-    )
-
     const mockError = {
       ok: false,
       error: new Error('Failed to fetch scores'),
@@ -80,13 +69,6 @@ describe('handlePurlsShallowScore', () => {
   })
 
   it('handles markdown output', async () => {
-    const { fetchPurlsShallowScore } = await import(
-      './fetch-purls-shallow-score.mts'
-    )
-    const { outputPurlsShallowScore } = await import(
-      './output-purls-shallow-score.mts'
-    )
-
     const mockData = {
       ok: true,
       data: [{ name: 'package1', version: '1.0.0', score: 90 }],
@@ -107,13 +89,6 @@ describe('handlePurlsShallowScore', () => {
   })
 
   it('handles empty purls array', async () => {
-    const { fetchPurlsShallowScore } = await import(
-      './fetch-purls-shallow-score.mts'
-    )
-    const { outputPurlsShallowScore } = await import(
-      './output-purls-shallow-score.mts'
-    )
-
     const mockData = {
       ok: true,
       data: [],
@@ -130,11 +105,6 @@ describe('handlePurlsShallowScore', () => {
   })
 
   it('logs debug information', async () => {
-    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
-    const { fetchPurlsShallowScore } = await import(
-      './fetch-purls-shallow-score.mts'
-    )
-
     const mockData = {
       ok: true,
       data: [{ name: 'package1', version: '1.0.0', score: 88 }],
@@ -157,11 +127,6 @@ describe('handlePurlsShallowScore', () => {
   })
 
   it('logs debug information on failure', async () => {
-    const { debug } = await import('@socketsecurity/lib/debug')
-    const { fetchPurlsShallowScore } = await import(
-      './fetch-purls-shallow-score.mts'
-    )
-
     const mockError = {
       ok: false,
       error: new Error('API error'),
@@ -177,13 +142,6 @@ describe('handlePurlsShallowScore', () => {
   })
 
   it('handles multiple purls', async () => {
-    const { fetchPurlsShallowScore } = await import(
-      './fetch-purls-shallow-score.mts'
-    )
-    const { outputPurlsShallowScore } = await import(
-      './output-purls-shallow-score.mts'
-    )
-
     const mockData = {
       ok: true,
       data: [

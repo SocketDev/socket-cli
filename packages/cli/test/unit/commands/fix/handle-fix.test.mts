@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { convertIdsToGhsas } from '../../../../../src/commands/../../../../src/commands/fix/handle-fix.mts'
+import { convertIdsToGhsas } from '../../../../src/commands/fix/handle-fix.mts'
 
 // Mock the dependencies.
 vi.mock('@socketsecurity/lib/arrays', () => ({
@@ -16,21 +16,24 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
+const mockConvertCveToGhsa = vi.hoisted(() => vi.fn())
+const mockConvertPurlToGhsas = vi.hoisted(() => vi.fn())
+
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
-vi.mock('../../../../../src/commands/../../../../src/commands/fix/coana-fix.mts', () => ({
+vi.mock('../../../../src/commands/fix/coana-fix.mts', () => ({
   coanaFix: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/../../../../src/commands/fix/output-fix-result.mts', () => ({
+vi.mock('../../../../src/commands/fix/output-fix-result.mts', () => ({
   outputFixResult: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/../utils/cve-to-ghsa.mts', () => ({
-  convertCveToGhsa: vi.fn(),
+vi.mock('../../../../src/utils/cve-to-ghsa.mts', () => ({
+  convertCveToGhsa: mockConvertCveToGhsa,
 }))
-vi.mock('../../../../../src/commands/../utils/purl/to-ghsa.mts', () => ({
-  convertPurlToGhsas: vi.fn(),
+vi.mock('../../../../src/utils/purl/to-ghsa.mts', () => ({
+  convertPurlToGhsas: mockConvertPurlToGhsas,
 }))
 
 describe('convertIdsToGhsas', () => {
@@ -46,21 +49,19 @@ describe('convertIdsToGhsas', () => {
   })
 
   it('converts CVE IDs to GHSA IDs', async () => {
-    const { convertCveToGhsa } = await import('../../../../../src/commands/../../../../src/utils/cve-to-ghsa.mts')
-
-    vi.mocked(convertCveToGhsa).mockResolvedValueOnce({
+    mockConvertCveToGhsa.mockResolvedValueOnce({
       ok: true,
       data: 'GHSA-1234-5678-9abc',
     })
-    vi.mocked(convertCveToGhsa).mockResolvedValueOnce({
+    mockConvertCveToGhsa.mockResolvedValueOnce({
       ok: true,
       data: 'GHSA-abcd-efgh-ijkl',
     })
 
     const result = await convertIdsToGhsas(['CVE-2021-12345', 'CVE-2022-98765'])
 
-    expect(convertCveToGhsa).toHaveBeenCalledWith('CVE-2021-12345')
-    expect(convertCveToGhsa).toHaveBeenCalledWith('CVE-2022-98765')
+    expect(mockConvertCveToGhsa).toHaveBeenCalledWith('CVE-2021-12345')
+    expect(mockConvertCveToGhsa).toHaveBeenCalledWith('CVE-2022-98765')
     expect(mockLogger.info).toHaveBeenCalledWith(
       'Converted CVE-2021-12345 to GHSA-1234-5678-9abc',
     )
@@ -71,16 +72,14 @@ describe('convertIdsToGhsas', () => {
   })
 
   it('converts PURL IDs to GHSA IDs', async () => {
-    const { convertPurlToGhsas } = await import('../../../../../src/commands/../../../../src/utils/purl/to-ghsa.mts')
-
-    vi.mocked(convertPurlToGhsas).mockResolvedValue({
+    mockConvertPurlToGhsas.mockResolvedValue({
       ok: true,
       data: ['GHSA-test-purl-ghsa'],
     })
 
     const result = await convertIdsToGhsas(['pkg:npm/package@1.0.0'])
 
-    expect(convertPurlToGhsas).toHaveBeenCalledWith('pkg:npm/package@1.0.0')
+    expect(mockConvertPurlToGhsas).toHaveBeenCalledWith('pkg:npm/package@1.0.0')
     expect(result).toEqual(['GHSA-test-purl-ghsa'])
   })
 
@@ -99,9 +98,7 @@ describe('convertIdsToGhsas', () => {
   })
 
   it('handles invalid CVE format', async () => {
-    const { convertCveToGhsa } = await import('../../../../../src/commands/../../../../src/utils/cve-to-ghsa.mts')
-
-    vi.mocked(convertCveToGhsa).mockResolvedValue({
+    mockConvertCveToGhsa.mockResolvedValue({
       ok: true,
       data: 'GHSA-1234-5678-9abc',
     })
@@ -117,9 +114,7 @@ describe('convertIdsToGhsas', () => {
   })
 
   it('handles CVE conversion failure', async () => {
-    const { convertCveToGhsa } = await import('../../../../../src/commands/../../../../src/utils/cve-to-ghsa.mts')
-
-    vi.mocked(convertCveToGhsa).mockResolvedValue({
+    mockConvertCveToGhsa.mockResolvedValue({
       ok: false,
       message: 'No GHSA found for CVE CVE-2021-99999',
       error: new Error('CVE not found'),
@@ -139,9 +134,7 @@ describe('convertIdsToGhsas', () => {
   })
 
   it('handles PURL conversion failure', async () => {
-    const { convertPurlToGhsas } = await import('../../../../../src/commands/../../../../src/utils/purl/to-ghsa.mts')
-
-    vi.mocked(convertPurlToGhsas).mockResolvedValue({
+    mockConvertPurlToGhsas.mockResolvedValue({
       ok: false,
       message: 'Package not found',
       error: new Error('Package not found'),
@@ -158,9 +151,7 @@ describe('convertIdsToGhsas', () => {
   })
 
   it('handles empty PURL conversion result', async () => {
-    const { convertPurlToGhsas } = await import('../../../../../src/commands/../../../../src/utils/purl/to-ghsa.mts')
-
-    vi.mocked(convertPurlToGhsas).mockResolvedValue({
+    mockConvertPurlToGhsas.mockResolvedValue({
       ok: true,
       data: [],
     })
@@ -176,14 +167,11 @@ describe('convertIdsToGhsas', () => {
   })
 
   it('handles mixed ID types', async () => {
-    const { convertCveToGhsa } = await import('../../../../../src/commands/../../../../src/utils/cve-to-ghsa.mts')
-    const { convertPurlToGhsas } = await import('../../../../../src/commands/../../../../src/utils/purl/to-ghsa.mts')
-
-    vi.mocked(convertCveToGhsa).mockResolvedValue({
+    mockConvertCveToGhsa.mockResolvedValue({
       ok: true,
       data: 'GHSA-from-cve-test',
     })
-    vi.mocked(convertPurlToGhsas).mockResolvedValue({
+    mockConvertPurlToGhsas.mockResolvedValue({
       ok: true,
       data: ['GHSA-from-purl-test'],
     })

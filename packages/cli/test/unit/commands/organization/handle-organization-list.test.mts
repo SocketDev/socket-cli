@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { setupTestEnvironment } from '../../../../../src/commands/../../../test/helpers/index.mts'
-import { handleOrganizationList } from '../../../../../src/commands/../../../../src/commands/organization/handle-organization-list.mts'
+import { handleOrganizationList } from '../../../../../src/commands/organization/handle-organization-list.mts'
 
 // Mock the dependencies.
 
-vi.mock('../../../../../src/commands/../../../../src/commands/organization/fetch-organization-list.mts', () => ({
+vi.mock('../../../../../src/commands/organization/fetch-organization-list.mts', () => ({
   fetchOrganization: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/../../../../src/commands/organization/output-organization-list.mts', () => ({
+vi.mock('../../../../../src/commands/organization/output-organization-list.mts', () => ({
   outputOrganizationList: vi.fn(),
 }))
 
@@ -24,7 +24,7 @@ describe('handleOrganizationList', () => {
   setupTestEnvironment()
 
   it('fetches and outputs organization list successfully', async () => {
-    const { fetchOrganization } = await import('../../../../../src/commands/../src/fetch-organization-list.mts')
+    const { fetchOrganization } = await import('../../../../../src/commands/organization/fetch-organization-list.mts')
     const { outputOrganizationList } = await import(
       './output-organization-list.mts'
     )
@@ -57,7 +57,7 @@ describe('handleOrganizationList', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchOrganization } = await import('../../../../../src/commands/../src/fetch-organization-list.mts')
+    const { fetchOrganization } = await import('../../../../../src/commands/organization/fetch-organization-list.mts')
     const { outputOrganizationList } = await import(
       './output-organization-list.mts'
     )
@@ -77,7 +77,7 @@ describe('handleOrganizationList', () => {
   })
 
   it('uses default text output format', async () => {
-    const { fetchOrganization } = await import('../../../../../src/commands/../src/fetch-organization-list.mts')
+    const { fetchOrganization } = await import('../../../../../src/commands/organization/fetch-organization-list.mts')
     const { outputOrganizationList } = await import(
       './output-organization-list.mts'
     )
@@ -92,7 +92,7 @@ describe('handleOrganizationList', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { fetchOrganization } = await import('../../../../../src/commands/../src/fetch-organization-list.mts')
+    const { fetchOrganization } = await import('../../../../../src/commands/organization/fetch-organization-list.mts')
     const { outputOrganizationList } = await import(
       './output-organization-list.mts'
     )
@@ -108,7 +108,7 @@ describe('handleOrganizationList', () => {
 
   it('passes debug messages correctly', async () => {
     const { debug, debugDir } = await import('@socketsecurity/lib/debug')
-    const { fetchOrganization } = await import('../../../../../src/commands/../src/fetch-organization-list.mts')
+    const { fetchOrganization } = await import('../../../../../src/commands/organization/fetch-organization-list.mts')
     const mockDebug = vi.mocked(debug)
     const mockDebugDir = vi.mocked(debugDir)
     const mockFetch = vi.mocked(fetchOrganization)
@@ -126,7 +126,7 @@ describe('handleOrganizationList', () => {
 
   it('handles error case with debug messages', async () => {
     const { debug } = await import('@socketsecurity/lib/debug')
-    const { fetchOrganization } = await import('../../../../../src/commands/../src/fetch-organization-list.mts')
+    const { fetchOrganization } = await import('../../../../../src/commands/organization/fetch-organization-list.mts')
     const mockDebug = vi.mocked(debug)
     const mockFetch = vi.mocked(fetchOrganization)
 

@@ -5,7 +5,7 @@ import {
   createSuccessResult,
 } from '../../../../../src/commands/../../../test/helpers/index.mts'
 
-import type { CResult } from '../../../../../src/commands/../../../../src/commands/organization/types.mts'
+import type { CResult } from '../../../../../src/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 describe('outputDependencies', () => {
@@ -28,11 +28,11 @@ describe('outputDependencies', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/utils/output/result-json.mts', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputDependencies } = await import('../../../../../src/commands/../src/output-dependencies.mts')
+    const { outputDependencies } = await import('../../../../../src/commands/organization/output-dependencies.mts')
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -77,11 +77,11 @@ describe('outputDependencies', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/utils/output/result-json.mts', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputDependencies } = await import('../../../../../src/commands/../src/output-dependencies.mts')
+    const { outputDependencies } = await import('../../../../../src/commands/organization/output-dependencies.mts')
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -132,7 +132,7 @@ describe('outputDependencies', () => {
       },
     }))
 
-    const { outputDependencies } = await import('../../../../../src/commands/../src/output-dependencies.mts')
+    const { outputDependencies } = await import('../../../../../src/commands/organization/output-dependencies.mts')
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -195,11 +195,11 @@ describe('outputDependencies', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../../src/commands/../utils/error/fail-msg-with-badge.mts', () => ({
+    vi.doMock('../../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
-    const { outputDependencies } = await import('../../../../../src/commands/../src/output-dependencies.mts')
+    const { outputDependencies } = await import('../../../../../src/commands/organization/output-dependencies.mts')
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -254,7 +254,7 @@ describe('outputDependencies', () => {
       },
     }))
 
-    const { outputDependencies } = await import('../../../../../src/commands/../src/output-dependencies.mts')
+    const { outputDependencies } = await import('../../../../../src/commands/organization/output-dependencies.mts')
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -317,7 +317,7 @@ describe('outputDependencies', () => {
       },
     }))
 
-    const { outputDependencies } = await import('../../../../../src/commands/../src/output-dependencies.mts')
+    const { outputDependencies } = await import('../../../../../src/commands/organization/output-dependencies.mts')
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -350,11 +350,11 @@ describe('outputDependencies', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/utils/output/result-json.mts', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputDependencies } = await import('../../../../../src/commands/../src/output-dependencies.mts')
+    const { outputDependencies } = await import('../../../../../src/commands/organization/output-dependencies.mts')
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']

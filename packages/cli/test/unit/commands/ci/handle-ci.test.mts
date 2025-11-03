@@ -1,52 +1,82 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { UNKNOWN_ERROR } from '../../../../../src/commands/../../../src/constants/errors.mts'
-import { handleCi } from '../../../../../src/commands/../../../../src/commands/ci/handle-ci.mts'
+import { UNKNOWN_ERROR } from '../../../../../src/constants/errors.mts'
+import { handleCi } from '../../../../../src/commands/ci/handle-ci.mts'
+
+// Create mock functions with hoisting.
+const {
+  mockDebug,
+  mockDebugDir,
+  mockGetDefaultOrgSlug,
+  mockDetectDefaultBranch,
+  mockGetRepoName,
+  mockGitBranch,
+  mockSerializeResultJson,
+  mockHandleCreateNewScan,
+  mockLogger,
+} = vi.hoisted(() => {
+  const logger = {
+    fail: vi.fn(),
+    log: vi.fn(),
+    info: vi.fn(),
+    success: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }
+  return {
+    mockDebug: vi.fn(),
+    mockDebugDir: vi.fn(),
+    mockGetDefaultOrgSlug: vi.fn(),
+    mockDetectDefaultBranch: vi.fn(),
+    mockGetRepoName: vi.fn(),
+    mockGitBranch: vi.fn(),
+    mockSerializeResultJson: vi.fn(result => JSON.stringify(result)),
+    mockHandleCreateNewScan: vi.fn(),
+    mockLogger: logger,
+  }
+})
 
 // Mock the dependencies.
 vi.mock('@socketsecurity/lib/debug', () => ({
-  debug: vi.fn(),
-  debugDir: vi.fn(),
+  debug: mockDebug,
+  debugDir: mockDebugDir,
   debugLog: vi.fn(),
   isDebug: vi.fn(() => false),
-}))
-
-const mockLogger = vi.hoisted(() => ({
-  fail: vi.fn(),
-  log: vi.fn(),
-  info: vi.fn(),
-  success: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
 }))
 
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
-vi.mock('../../../../../src/commands/../../../../src/commands/ci/fetch-default-org-slug.mts', () => ({
-  getDefaultOrgSlug: vi.fn(),
+
+vi.mock('../../../../../src/commands/ci/fetch-default-org-slug.mts', () => ({
+  getDefaultOrgSlug: mockGetDefaultOrgSlug,
 }))
-vi.mock('../../../../../src/commands/../constants.mts', () => ({
+
+vi.mock('../../../../../src/constants.mts', () => ({
   default: {
     REPORT_LEVEL_ERROR: 'error',
   },
 }))
-vi.mock('../../../../../src/commands/../utils/git/operations.mjs', () => ({
-  detectDefaultBranch: vi.fn(),
-  getRepoName: vi.fn(),
-  gitBranch: vi.fn(),
+
+vi.mock('../../../../../src/utils/git/operations.mjs', () => ({
+  detectDefaultBranch: mockDetectDefaultBranch,
+  getRepoName: mockGetRepoName,
+  gitBranch: mockGitBranch,
 }))
-vi.mock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
-  serializeResultJson: vi.fn(result => JSON.stringify(result)),
+
+vi.mock('../../../../../src/utils/output/result-json.mjs', () => ({
+  serializeResultJson: mockSerializeResultJson,
 }))
+
 vi.mock('../../../../../src/commands/scan/handle-create-new-scan.mts', () => ({
-  handleCreateNewScan: vi.fn(),
+  handleCreateNewScan: mockHandleCreateNewScan,
 }))
 
 describe('handleCi', () => {
   const originalCwd = process.cwd
   const originalExitCode = process.exitCode
+  const logger = mockLogger
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -60,28 +90,20 @@ describe('handleCi', () => {
   })
 
   it('handles CI scan successfully', async () => {
-    const { getDefaultOrgSlug } = await import('../../../../../src/commands/../src/fetch-default-org-slug.mts')
-    const { detectDefaultBranch, getRepoName, gitBranch } = await import(
-      '../../../../../src/commands/../utils/git/operations.mjs'
-    )
-    const { handleCreateNewScan } = await import(
-      '../../../../../src/commands/scan/handle-create-new-scan.mts'
-    )
-
-    vi.mocked(getDefaultOrgSlug).mockResolvedValue({
+    mockGetDefaultOrgSlug.mockResolvedValue({
       ok: true,
       data: 'test-org',
     })
-    vi.mocked(gitBranch).mockResolvedValue('feature-branch')
-    vi.mocked(getRepoName).mockResolvedValue('test-repo')
+    mockGitBranch.mockResolvedValue('feature-branch')
+    mockGetRepoName.mockResolvedValue('test-repo')
 
     await handleCi(false)
 
-    expect(getDefaultOrgSlug).toHaveBeenCalled()
-    expect(gitBranch).toHaveBeenCalledWith('/test/project')
-    expect(getRepoName).toHaveBeenCalledWith('/test/project')
-    expect(detectDefaultBranch).not.toHaveBeenCalled()
-    expect(handleCreateNewScan).toHaveBeenCalledWith({
+    expect(mockGetDefaultOrgSlug).toHaveBeenCalled()
+    expect(mockGitBranch).toHaveBeenCalledWith('/test/project')
+    expect(mockGetRepoName).toHaveBeenCalledWith('/test/project')
+    expect(mockDetectDefaultBranch).not.toHaveBeenCalled()
+    expect(mockHandleCreateNewScan).toHaveBeenCalledWith({
       autoManifest: false,
       branchName: 'feature-branch',
       commitMessage: '',
@@ -107,27 +129,19 @@ describe('handleCi', () => {
   })
 
   it('uses default branch when git branch is not available', async () => {
-    const { getDefaultOrgSlug } = await import('../../../../../src/commands/../src/fetch-default-org-slug.mts')
-    const { detectDefaultBranch, getRepoName, gitBranch } = await import(
-      '../../../../../src/commands/../utils/git/operations.mjs'
-    )
-    const { handleCreateNewScan } = await import(
-      '../../../../../src/commands/scan/handle-create-new-scan.mts'
-    )
-
-    vi.mocked(getDefaultOrgSlug).mockResolvedValue({
+    mockGetDefaultOrgSlug.mockResolvedValue({
       ok: true,
       data: 'test-org',
     })
-    vi.mocked(gitBranch).mockResolvedValue(null)
-    vi.mocked(detectDefaultBranch).mockResolvedValue('main')
-    vi.mocked(getRepoName).mockResolvedValue('test-repo')
+    mockGitBranch.mockResolvedValue(null)
+    mockDetectDefaultBranch.mockResolvedValue('main')
+    mockGetRepoName.mockResolvedValue('test-repo')
 
     await handleCi(false)
 
-    expect(gitBranch).toHaveBeenCalled()
-    expect(detectDefaultBranch).toHaveBeenCalledWith('/test/project')
-    expect(handleCreateNewScan).toHaveBeenCalledWith(
+    expect(mockGitBranch).toHaveBeenCalled()
+    expect(mockDetectDefaultBranch).toHaveBeenCalledWith('/test/project')
+    expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
       expect.objectContaining({
         branchName: 'main',
       }),
@@ -135,24 +149,16 @@ describe('handleCi', () => {
   })
 
   it('handles auto-manifest mode', async () => {
-    const { getDefaultOrgSlug } = await import('../../../../../src/commands/../src/fetch-default-org-slug.mts')
-    const { getRepoName, gitBranch } = await import(
-      '../../../../../src/commands/../utils/git/operations.mjs'
-    )
-    const { handleCreateNewScan } = await import(
-      '../../../../../src/commands/scan/handle-create-new-scan.mts'
-    )
-
-    vi.mocked(getDefaultOrgSlug).mockResolvedValue({
+    mockGetDefaultOrgSlug.mockResolvedValue({
       ok: true,
       data: 'test-org',
     })
-    vi.mocked(gitBranch).mockResolvedValue('develop')
-    vi.mocked(getRepoName).mockResolvedValue('test-repo')
+    mockGitBranch.mockResolvedValue('develop')
+    mockGetRepoName.mockResolvedValue('test-repo')
 
     await handleCi(true)
 
-    expect(handleCreateNewScan).toHaveBeenCalledWith(
+    expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
       expect.objectContaining({
         autoManifest: true,
       }),
@@ -160,70 +166,51 @@ describe('handleCi', () => {
   })
 
   it('handles org slug fetch failure', async () => {
-    const { getDefaultOrgSlug } = await import('../../../../../src/commands/../src/fetch-default-org-slug.mts')
-    const { serializeResultJson } = await import(
-      '../../../../../src/commands/../utils/output/result-json.mjs'
-    )
-    const { handleCreateNewScan } = await import(
-      '../../../../../src/commands/scan/handle-create-new-scan.mts'
-    )
-
     const error = {
       ok: false as const,
       code: 401,
       error: {},
     }
-    vi.mocked(getDefaultOrgSlug).mockResolvedValue(error)
+    mockGetDefaultOrgSlug.mockResolvedValue(error)
 
     await handleCi(false)
 
     expect(process.exitCode).toBe(401)
-    expect(serializeResultJson).toHaveBeenCalledWith(error)
-    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(error))
-    expect(handleCreateNewScan).not.toHaveBeenCalled()
+    expect(mockSerializeResultJson).toHaveBeenCalledWith(error)
+    expect(logger.log).toHaveBeenCalledWith(JSON.stringify(error))
+    expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
   })
 
   it('sets default exit code on org slug failure without code', async () => {
-    const { getDefaultOrgSlug } = await import('../../../../../src/commands/../src/fetch-default-org-slug.mts')
-    const { serializeResultJson } = await import(
-      '../../../../../src/commands/../utils/output/result-json.mjs'
-    )
-
     const error = {
       ok: false as const,
       error: new Error(UNKNOWN_ERROR),
     }
-    vi.mocked(getDefaultOrgSlug).mockResolvedValue(error)
-    vi.mocked(serializeResultJson).mockReturnValue('{"error":"Unknown error"}')
+    mockGetDefaultOrgSlug.mockResolvedValue(error)
+    mockSerializeResultJson.mockReturnValue('{"error":"Unknown error"}')
 
     await handleCi(false)
 
     expect(process.exitCode).toBe(1)
-    expect(mockLogger.log).toHaveBeenCalled()
+    expect(logger.log).toHaveBeenCalled()
   })
 
   it('logs debug information', async () => {
-    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
-    const { getDefaultOrgSlug } = await import('../../../../../src/commands/../src/fetch-default-org-slug.mts')
-    const { getRepoName, gitBranch } = await import(
-      '../../../../../src/commands/../utils/git/operations.mjs'
-    )
-
-    vi.mocked(getDefaultOrgSlug).mockResolvedValue({
+    mockGetDefaultOrgSlug.mockResolvedValue({
       ok: true,
       data: 'debug-org',
     })
-    vi.mocked(gitBranch).mockResolvedValue('debug-branch')
-    vi.mocked(getRepoName).mockResolvedValue('debug-repo')
+    mockGitBranch.mockResolvedValue('debug-branch')
+    mockGetRepoName.mockResolvedValue('debug-repo')
 
     await handleCi(false)
 
-    expect(debug).toHaveBeenCalledWith('Starting CI scan')
-    expect(debugDir).toHaveBeenCalledWith({ autoManifest: false })
-    expect(debug).toHaveBeenCalledWith(
+    expect(mockDebug).toHaveBeenCalledWith('Starting CI scan')
+    expect(mockDebugDir).toHaveBeenCalledWith({ autoManifest: false })
+    expect(mockDebug).toHaveBeenCalledWith(
       'CI scan for debug-org/debug-repo on branch debug-branch',
     )
-    expect(debugDir).toHaveBeenCalledWith({
+    expect(mockDebugDir).toHaveBeenCalledWith({
       orgSlug: 'debug-org',
       cwd: '/test/project',
       branchName: 'debug-branch',
@@ -232,18 +219,15 @@ describe('handleCi', () => {
   })
 
   it('logs debug info on org slug failure', async () => {
-    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
-    const { getDefaultOrgSlug } = await import('../../../../../src/commands/../src/fetch-default-org-slug.mts')
-
     const error = {
       ok: false as const,
       error: new Error('Failed'),
     }
-    vi.mocked(getDefaultOrgSlug).mockResolvedValue(error)
+    mockGetDefaultOrgSlug.mockResolvedValue(error)
 
     await handleCi(false)
 
-    expect(debug).toHaveBeenCalledWith('Failed to get default org slug')
-    expect(debugDir).toHaveBeenCalledWith({ orgSlugCResult: error })
+    expect(mockDebug).toHaveBeenCalledWith('Failed to get default org slug')
+    expect(mockDebugDir).toHaveBeenCalledWith({ orgSlugCResult: error })
   })
 })

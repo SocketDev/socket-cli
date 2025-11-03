@@ -3,22 +3,22 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../../src/commands/../../../test/helpers/mocks.mts'
-import { handleScanReport } from '../../../../../src/commands/../../../../src/commands/scan/handle-scan-report.mts'
+} from '../../../../../test/helpers/mocks.mts'
+import { handleScanReport } from '../../../../../src/commands/scan/handle-scan-report.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../../../../src/commands/scan/fetch-report-data.mts', () => ({
+vi.mock('../../../../../src/commands/scan/fetch-report-data.mts', () => ({
   fetchScanData: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/../../../../src/commands/scan/output-scan-report.mts', () => ({
+vi.mock('../../../../../src/commands/scan/output-scan-report.mts', () => ({
   outputScanReport: vi.fn(),
 }))
 
 describe('handleScanReport', () => {
   it('fetches scan data and outputs report successfully', async () => {
-    const { fetchScanData } = await import('../../../../../src/commands/../src/fetch-report-data.mts')
-    const { outputScanReport } = await import('../../../../../src/commands/../src/output-scan-report.mts')
+    const { fetchScanData } = await import('../../../../../src/commands/scan/fetch-report-data.mts')
+    const { outputScanReport } = await import('../../../../../src/commands/scan/output-scan-report.mts')
     const mockFetch = vi.mocked(fetchScanData)
     const mockOutput = vi.mocked(outputScanReport)
 
@@ -59,8 +59,8 @@ describe('handleScanReport', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchScanData } = await import('../../../../../src/commands/../src/fetch-report-data.mts')
-    const { outputScanReport } = await import('../../../../../src/commands/../src/output-scan-report.mts')
+    const { fetchScanData } = await import('../../../../../src/commands/scan/fetch-report-data.mts')
+    const { outputScanReport } = await import('../../../../../src/commands/scan/output-scan-report.mts')
     const mockFetch = vi.mocked(fetchScanData)
     const mockOutput = vi.mocked(outputScanReport)
 
@@ -85,8 +85,8 @@ describe('handleScanReport', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { fetchScanData } = await import('../../../../../src/commands/../src/fetch-report-data.mts')
-    const { outputScanReport } = await import('../../../../../src/commands/../src/output-scan-report.mts')
+    const { fetchScanData } = await import('../../../../../src/commands/scan/fetch-report-data.mts')
+    const { outputScanReport } = await import('../../../../../src/commands/scan/output-scan-report.mts')
     const mockFetch = vi.mocked(fetchScanData)
     const mockOutput = vi.mocked(outputScanReport)
 
@@ -112,8 +112,8 @@ describe('handleScanReport', () => {
   })
 
   it('passes all configuration options correctly', async () => {
-    const { fetchScanData } = await import('../../../../../src/commands/../src/fetch-report-data.mts')
-    const { outputScanReport } = await import('../../../../../src/commands/../src/output-scan-report.mts')
+    const { fetchScanData } = await import('../../../../../src/commands/scan/fetch-report-data.mts')
+    const { outputScanReport } = await import('../../../../../src/commands/scan/output-scan-report.mts')
     const mockFetch = vi.mocked(fetchScanData)
     const mockOutput = vi.mocked(outputScanReport)
 
@@ -139,8 +139,8 @@ describe('handleScanReport', () => {
   })
 
   it('handles text output with short format', async () => {
-    const { fetchScanData } = await import('../../../../../src/commands/../src/fetch-report-data.mts')
-    const { outputScanReport } = await import('../../../../../src/commands/../src/output-scan-report.mts')
+    const { fetchScanData } = await import('../../../../../src/commands/scan/fetch-report-data.mts')
+    const { outputScanReport } = await import('../../../../../src/commands/scan/output-scan-report.mts')
     const mockFetch = vi.mocked(fetchScanData)
     const mockOutput = vi.mocked(outputScanReport)
 

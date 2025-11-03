@@ -3,24 +3,24 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../../src/commands/../../../test/helpers/mocks.mts'
-import { handleManifestConda } from '../../../../../src/commands/../../../../src/commands/manifest/handle-manifest-conda.mts'
+} from '../../../helpers/mocks.mts'
+import { handleManifestConda } from '../../../../src/commands/manifest/handle-manifest-conda.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../../../../src/commands/manifest/convert-conda-to-requirements.mts', () => ({
+vi.mock('../../../../src/commands/manifest/convert-conda-to-requirements.mts', () => ({
   convertCondaToRequirements: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/../../../../src/commands/manifest/output-requirements.mts', () => ({
+vi.mock('../../../../src/commands/manifest/output-requirements.mts', () => ({
   outputRequirements: vi.fn(),
 }))
 
 describe('handleManifestConda', () => {
   it('converts conda file and outputs requirements successfully', async () => {
     const { convertCondaToRequirements } = await import(
-      './convert-conda-to-requirements.mts'
+      '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
     )
-    const { outputRequirements } = await import('../../../../../src/commands/../src/output-requirements.mts')
+    const { outputRequirements } = await import('../../../../src/commands/manifest/output-requirements.mts')
     const mockConvert = vi.mocked(convertCondaToRequirements)
     const mockOutput = vi.mocked(outputRequirements)
 
@@ -54,9 +54,9 @@ describe('handleManifestConda', () => {
 
   it('handles conversion failure', async () => {
     const { convertCondaToRequirements } = await import(
-      './convert-conda-to-requirements.mts'
+      '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
     )
-    const { outputRequirements } = await import('../../../../../src/commands/../src/output-requirements.mts')
+    const { outputRequirements } = await import('../../../../src/commands/manifest/output-requirements.mts')
     const mockConvert = vi.mocked(convertCondaToRequirements)
     const mockOutput = vi.mocked(outputRequirements)
 
@@ -77,9 +77,9 @@ describe('handleManifestConda', () => {
 
   it('handles different output formats', async () => {
     const { convertCondaToRequirements } = await import(
-      './convert-conda-to-requirements.mts'
+      '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
     )
-    const { outputRequirements } = await import('../../../../../src/commands/../src/output-requirements.mts')
+    const { outputRequirements } = await import('../../../../src/commands/manifest/output-requirements.mts')
     const mockConvert = vi.mocked(convertCondaToRequirements)
     const mockOutput = vi.mocked(outputRequirements)
 
@@ -107,7 +107,7 @@ describe('handleManifestConda', () => {
 
   it('handles verbose mode', async () => {
     const { convertCondaToRequirements } = await import(
-      './convert-conda-to-requirements.mts'
+      '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
     )
     const mockConvert = vi.mocked(convertCondaToRequirements)
 
@@ -130,7 +130,7 @@ describe('handleManifestConda', () => {
 
   it('handles different working directories', async () => {
     const { convertCondaToRequirements } = await import(
-      './convert-conda-to-requirements.mts'
+      '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
     )
     const mockConvert = vi.mocked(convertCondaToRequirements)
 

@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import FIXTURE from '../../../../../src/commands/../../../src/analytics-fixture.json' with {
+import FIXTURE from '../../../../src/commands/analytics/analytics-fixture.json' with {
   type: 'json',
 }
 import {
   formatDataOrg,
   formatDataRepo,
   renderMarkdown,
-} from '../../../../../src/commands/../../../../src/commands/analytics/output-analytics.mts'
+} from '../../../../src/commands/analytics/output-analytics.mts'
 
 describe('output-analytics', () => {
   describe('format data', () => {

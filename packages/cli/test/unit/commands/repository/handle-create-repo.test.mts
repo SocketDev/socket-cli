@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleCreateRepo } from '../../../../../src/commands/../../../../src/commands/repository/handle-create-repo.mts'
+import { handleCreateRepo } from '../../../../src/commands/repository/handle-create-repo.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../../../../src/commands/repository/fetch-create-repo.mts', () => ({
+vi.mock('../../../../src/commands/repository/fetch-create-repo.mts', () => ({
   fetchCreateRepo: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/../../../../src/commands/repository/output-create-repo.mts', () => ({
+vi.mock('../../../../src/commands/repository/output-create-repo.mts', () => ({
   outputCreateRepo: vi.fn(),
 }))
 vi.mock('@socketsecurity/lib/debug', () => ({
@@ -21,8 +21,8 @@ describe('handleCreateRepo', () => {
   })
 
   it('creates repository successfully', async () => {
-    const { fetchCreateRepo } = await import('../../../../../src/commands/../src/fetch-create-repo.mts')
-    const { outputCreateRepo } = await import('../../../../../src/commands/../src/output-create-repo.mts')
+    const { fetchCreateRepo } = await import('../../../../src/commands/repository/fetch-create-repo.mts')
+    const { outputCreateRepo } = await import('../../../../src/commands/repository/output-create-repo.mts')
 
     const mockData = {
       ok: true,
@@ -59,8 +59,8 @@ describe('handleCreateRepo', () => {
   })
 
   it('handles creation failure', async () => {
-    const { fetchCreateRepo } = await import('../../../../../src/commands/../src/fetch-create-repo.mts')
-    const { outputCreateRepo } = await import('../../../../../src/commands/../src/output-create-repo.mts')
+    const { fetchCreateRepo } = await import('../../../../src/commands/repository/fetch-create-repo.mts')
+    const { outputCreateRepo } = await import('../../../../src/commands/repository/output-create-repo.mts')
 
     const mockError = {
       ok: false,
@@ -93,8 +93,8 @@ describe('handleCreateRepo', () => {
   })
 
   it('handles markdown output', async () => {
-    const { fetchCreateRepo } = await import('../../../../../src/commands/../src/fetch-create-repo.mts')
-    const { outputCreateRepo } = await import('../../../../../src/commands/../src/output-create-repo.mts')
+    const { fetchCreateRepo } = await import('../../../../src/commands/repository/fetch-create-repo.mts')
+    const { outputCreateRepo } = await import('../../../../src/commands/repository/output-create-repo.mts')
 
     const mockData = {
       ok: true,
@@ -123,7 +123,7 @@ describe('handleCreateRepo', () => {
 
   it('logs debug information', async () => {
     const { debug, debugDir } = await import('@socketsecurity/lib/debug')
-    const { fetchCreateRepo } = await import('../../../../../src/commands/../src/fetch-create-repo.mts')
+    const { fetchCreateRepo } = await import('../../../../src/commands/repository/fetch-create-repo.mts')
 
     const mockData = {
       ok: true,
@@ -157,7 +157,7 @@ describe('handleCreateRepo', () => {
 
   it('logs debug information on failure', async () => {
     const { debug } = await import('@socketsecurity/lib/debug')
-    const { fetchCreateRepo } = await import('../../../../../src/commands/../src/fetch-create-repo.mts')
+    const { fetchCreateRepo } = await import('../../../../src/commands/repository/fetch-create-repo.mts')
 
     vi.mocked(fetchCreateRepo).mockResolvedValue({
       ok: false,
@@ -180,9 +180,9 @@ describe('handleCreateRepo', () => {
   })
 
   it('handles different visibility types', async () => {
-    const { fetchCreateRepo } = await import('../../../../../src/commands/../src/fetch-create-repo.mts')
+    const { fetchCreateRepo } = await import('../../../../src/commands/repository/fetch-create-repo.mts')
     const { outputCreateRepo: _outputCreateRepo } = await import(
-      './output-create-repo.mts'
+      '../../../../src/commands/repository/output-create-repo.mts'
     )
 
     const visibilities = ['public', 'private', 'internal']
@@ -213,9 +213,9 @@ describe('handleCreateRepo', () => {
   })
 
   it('handles empty optional fields', async () => {
-    const { fetchCreateRepo } = await import('../../../../../src/commands/../src/fetch-create-repo.mts')
+    const { fetchCreateRepo } = await import('../../../../src/commands/repository/fetch-create-repo.mts')
     const { outputCreateRepo: _outputCreateRepo } = await import(
-      './output-create-repo.mts'
+      '../../../../src/commands/repository/output-create-repo.mts'
     )
 
     vi.mocked(fetchCreateRepo).mockResolvedValue({

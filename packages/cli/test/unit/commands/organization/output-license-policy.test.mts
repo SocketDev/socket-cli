@@ -27,12 +27,12 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/utils/output/result-json.mts', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputLicensePolicy } = await import('../../../../../src/commands/../src/output-license-policy.mts')
+    const { outputLicensePolicy } = await import('../../../../../src/commands/organization/output-license-policy.mts')
 
     const result = createSuccessResult({
       license_policy: {
@@ -67,12 +67,12 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/utils/output/result-json.mts', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputLicensePolicy } = await import('../../../../../src/commands/../src/output-license-policy.mts')
+    const { outputLicensePolicy } = await import('../../../../../src/commands/organization/output-license-policy.mts')
 
     const result = createErrorResult('Unauthorized', {
       code: 2,
@@ -103,13 +103,13 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../../src/commands/../utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../../src/utils/output/markdown.mts', () => ({
       mdHeader: vi.fn(title => `# ${title}`),
       mdTableOfPairs: mockMdTableOfPairs,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputLicensePolicy } = await import('../../../../../src/commands/../src/output-license-policy.mts')
+    const { outputLicensePolicy } = await import('../../../../../src/commands/organization/output-license-policy.mts')
 
     const result = createSuccessResult({
       license_policy: {
@@ -153,12 +153,12 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../../src/commands/../utils/error/fail-msg-with-badge.mts', () => ({
+    vi.doMock('../../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputLicensePolicy } = await import('../../../../../src/commands/../src/output-license-policy.mts')
+    const { outputLicensePolicy } = await import('../../../../../src/commands/organization/output-license-policy.mts')
 
     const result = createErrorResult('Failed to fetch policy', {
       code: 1,
@@ -193,13 +193,13 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../../src/commands/../utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../../src/utils/output/markdown.mts', () => ({
       mdHeader: vi.fn(title => `# ${title}`),
       mdTableOfPairs: mockMdTableOfPairs,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputLicensePolicy } = await import('../../../../../src/commands/../src/output-license-policy.mts')
+    const { outputLicensePolicy } = await import('../../../../../src/commands/organization/output-license-policy.mts')
 
     const result = createSuccessResult({
       license_policy: {
@@ -233,13 +233,13 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../../src/commands/../utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../../src/utils/output/markdown.mts', () => ({
       mdHeader: vi.fn(title => `# ${title}`),
       mdTableOfPairs: mockMdTableOfPairs,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputLicensePolicy } = await import('../../../../../src/commands/../src/output-license-policy.mts')
+    const { outputLicensePolicy } = await import('../../../../../src/commands/organization/output-license-policy.mts')
 
     const result = createSuccessResult({
       license_policy: {},
@@ -271,13 +271,13 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../../src/commands/../utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../../src/utils/output/markdown.mts', () => ({
       mdHeader: vi.fn(title => `# ${title}`),
       mdTableOfPairs: mockMdTableOfPairs,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputLicensePolicy } = await import('../../../../../src/commands/../src/output-license-policy.mts')
+    const { outputLicensePolicy } = await import('../../../../../src/commands/organization/output-license-policy.mts')
 
     const result = createSuccessResult({
       license_policy: null,
@@ -309,12 +309,12 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/utils/output/result-json.mts', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputLicensePolicy } = await import('../../../../../src/commands/../src/output-license-policy.mts')
+    const { outputLicensePolicy } = await import('../../../../../src/commands/organization/output-license-policy.mts')
 
     const result = createErrorResult('Error')
 

@@ -3,14 +3,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../../src/commands/../../../test/helpers/mocks.mts'
-import { handleConfigGet } from '../../../../../src/commands/../../../../src/commands/config/handle-config-get.mts'
+} from '../../../../../test/helpers/mocks.mts'
+import { handleConfigGet } from '../../../../../src/commands/config/handle-config-get.mts'
+
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  info: vi.fn(),
+  log: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+}))
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../../../../src/commands/config/output-config-get.mts', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
+}))
+
+vi.mock('../../../../../src/commands/config/output-config-get.mts', () => ({
   outputConfigGet: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/../utils/config.mts', () => ({
+vi.mock('../../../../../src/utils/config.mts', () => ({
   getConfigValue: vi.fn(),
 }))
 
@@ -20,8 +33,8 @@ describe('handleConfigGet', () => {
   })
 
   it('gets config value successfully', async () => {
-    const { getConfigValue } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
-    const { outputConfigGet } = await import('../../../../../src/commands/../src/output-config-get.mts')
+    const { getConfigValue } = await import('../../../../../src/utils/config.mts')
+    const { outputConfigGet } = await import('../../../../../src/commands/config/output-config-get.mts')
 
     const mockResult = createSuccessResult('test-token')
     vi.mocked(getConfigValue).mockReturnValue(mockResult)
@@ -36,8 +49,8 @@ describe('handleConfigGet', () => {
   })
 
   it('handles missing config value', async () => {
-    const { getConfigValue } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
-    const { outputConfigGet } = await import('../../../../../src/commands/../src/output-config-get.mts')
+    const { getConfigValue } = await import('../../../../../src/utils/config.mts')
+    const { outputConfigGet } = await import('../../../../../src/commands/config/output-config-get.mts')
 
     const mockResult = createErrorResult('Config value not found')
     vi.mocked(getConfigValue).mockReturnValue(mockResult)
@@ -52,8 +65,8 @@ describe('handleConfigGet', () => {
   })
 
   it('handles markdown output', async () => {
-    const { getConfigValue } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
-    const { outputConfigGet } = await import('../../../../../src/commands/../src/output-config-get.mts')
+    const { getConfigValue } = await import('../../../../../src/utils/config.mts')
+    const { outputConfigGet } = await import('../../../../../src/commands/config/output-config-get.mts')
 
     const mockResult = createSuccessResult('https://api.socket.dev')
     vi.mocked(getConfigValue).mockReturnValue(mockResult)
@@ -72,8 +85,8 @@ describe('handleConfigGet', () => {
   })
 
   it('handles different config keys', async () => {
-    const { getConfigValue } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
-    const { outputConfigGet } = await import('../../../../../src/commands/../src/output-config-get.mts')
+    const { getConfigValue } = await import('../../../../../src/utils/config.mts')
+    const { outputConfigGet } = await import('../../../../../src/commands/config/output-config-get.mts')
 
     const keys = ['apiToken', 'org', 'repoName', 'apiBaseUrl', 'apiProxy']
 
@@ -93,8 +106,8 @@ describe('handleConfigGet', () => {
   })
 
   it('handles empty config value', async () => {
-    const { getConfigValue } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
-    const { outputConfigGet } = await import('../../../../../src/commands/../src/output-config-get.mts')
+    const { getConfigValue } = await import('../../../../../src/utils/config.mts')
+    const { outputConfigGet } = await import('../../../../../src/commands/config/output-config-get.mts')
 
     const mockResult = createSuccessResult('')
     vi.mocked(getConfigValue).mockReturnValue(mockResult)
@@ -108,8 +121,8 @@ describe('handleConfigGet', () => {
   })
 
   it('handles undefined config value', async () => {
-    const { getConfigValue } = await import('../../../../../src/commands/../../../../src/utils/config.mts')
-    const { outputConfigGet } = await import('../../../../../src/commands/../src/output-config-get.mts')
+    const { getConfigValue } = await import('../../../../../src/utils/config.mts')
+    const { outputConfigGet } = await import('../../../../../src/commands/config/output-config-get.mts')
 
     const mockResult = createSuccessResult(undefined)
     vi.mocked(getConfigValue).mockReturnValue(mockResult)

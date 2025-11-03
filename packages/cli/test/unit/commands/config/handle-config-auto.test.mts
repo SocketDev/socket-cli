@@ -3,60 +3,67 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../../src/commands/../../../test/helpers/mocks.mts'
-import { handleConfigAuto } from '../../../../../src/commands/../../../../src/commands/config/handle-config-auto.mts'
+} from '../../../../../test/helpers/mocks.mts'
+import { handleConfigAuto } from '../../../../../src/commands/config/handle-config-auto.mts'
+
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  info: vi.fn(),
+  log: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+}))
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../../../../src/commands/config/discover-config-value.mts', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
+}))
+
+vi.mock('../../../../../src/commands/config/discover-config-value.mts', () => ({
   discoverConfigValue: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/../../../../src/commands/config/output-config-auto.mts', () => ({
+vi.mock('../../../../../src/commands/config/output-config-auto.mts', () => ({
   outputConfigAuto: vi.fn(),
 }))
 
 describe('handleConfigAuto', () => {
   it('discovers and outputs config value successfully', async () => {
-    const { discoverConfigValue } = await import('../../../../../src/commands/../src/discover-config-value.mts')
-    const { outputConfigAuto } = await import('../../../../../src/commands/../src/output-config-auto.mts')
-    const mockDiscover = vi.mocked(discoverConfigValue)
-    const mockOutput = vi.mocked(outputConfigAuto)
+    const { discoverConfigValue } = await import('../../../../../src/commands/config/discover-config-value.mts')
+    const { outputConfigAuto } = await import('../../../../../src/commands/config/output-config-auto.mts')
 
     const mockResult = createSuccessResult('discovered-api-token')
-    mockDiscover.mockResolvedValue(mockResult)
+    vi.mocked(discoverConfigValue).mockResolvedValue(mockResult)
 
     await handleConfigAuto({ key: 'apiToken', outputKind: 'json' })
 
-    expect(mockDiscover).toHaveBeenCalledWith('apiToken')
-    expect(mockOutput).toHaveBeenCalledWith('apiToken', mockResult, 'json')
+    expect(discoverConfigValue).toHaveBeenCalledWith('apiToken')
+    expect(outputConfigAuto).toHaveBeenCalledWith('apiToken', mockResult, 'json')
   })
 
   it('handles discovery failure', async () => {
-    const { discoverConfigValue } = await import('../../../../../src/commands/../src/discover-config-value.mts')
-    const { outputConfigAuto } = await import('../../../../../src/commands/../src/output-config-auto.mts')
-    const mockDiscover = vi.mocked(discoverConfigValue)
-    const mockOutput = vi.mocked(outputConfigAuto)
+    const { discoverConfigValue } = await import('../../../../../src/commands/config/discover-config-value.mts')
+    const { outputConfigAuto } = await import('../../../../../src/commands/config/output-config-auto.mts')
 
     const mockResult = createErrorResult('Config not found')
-    mockDiscover.mockResolvedValue(mockResult)
+    vi.mocked(discoverConfigValue).mockResolvedValue(mockResult)
 
     await handleConfigAuto({ key: 'orgSlug', outputKind: 'text' })
 
-    expect(mockDiscover).toHaveBeenCalledWith('orgSlug')
-    expect(mockOutput).toHaveBeenCalledWith('orgSlug', mockResult, 'text')
+    expect(discoverConfigValue).toHaveBeenCalledWith('orgSlug')
+    expect(outputConfigAuto).toHaveBeenCalledWith('orgSlug', mockResult, 'text')
   })
 
   it('handles markdown output format', async () => {
-    const { discoverConfigValue } = await import('../../../../../src/commands/../src/discover-config-value.mts')
-    const { outputConfigAuto } = await import('../../../../../src/commands/../src/output-config-auto.mts')
-    const mockDiscover = vi.mocked(discoverConfigValue)
-    const mockOutput = vi.mocked(outputConfigAuto)
+    const { discoverConfigValue } = await import('../../../../../src/commands/config/discover-config-value.mts')
+    const { outputConfigAuto } = await import('../../../../../src/commands/config/output-config-auto.mts')
 
-    mockDiscover.mockResolvedValue(createSuccessResult('test-value'))
+    vi.mocked(discoverConfigValue).mockResolvedValue(createSuccessResult('test-value'))
 
     await handleConfigAuto({ key: 'orgId', outputKind: 'markdown' })
 
-    expect(mockOutput).toHaveBeenCalledWith(
+    expect(outputConfigAuto).toHaveBeenCalledWith(
       'orgId',
       expect.any(Object),
       'markdown',
@@ -64,34 +71,29 @@ describe('handleConfigAuto', () => {
   })
 
   it('handles different config keys', async () => {
-    const { discoverConfigValue } = await import('../../../../../src/commands/../src/discover-config-value.mts')
-    const { outputConfigAuto } = await import('../../../../../src/commands/../src/output-config-auto.mts')
-    const mockDiscover = vi.mocked(discoverConfigValue)
-    const _mockOutput = vi.mocked(outputConfigAuto)
+    const { discoverConfigValue } = await import('../../../../../src/commands/config/discover-config-value.mts')
 
     const keys = ['apiToken', 'apiUrl', 'orgId', 'orgSlug'] as const
 
     for (const key of keys) {
-      mockDiscover.mockResolvedValue(createSuccessResult(`${key}-value`))
+      vi.mocked(discoverConfigValue).mockResolvedValue(createSuccessResult(`${key}-value`))
       // eslint-disable-next-line no-await-in-loop
       await handleConfigAuto({ key, outputKind: 'json' })
-      expect(mockDiscover).toHaveBeenCalledWith(key)
+      expect(discoverConfigValue).toHaveBeenCalledWith(key)
     }
   })
 
   it('handles text output format', async () => {
-    const { discoverConfigValue } = await import('../../../../../src/commands/../src/discover-config-value.mts')
-    const { outputConfigAuto } = await import('../../../../../src/commands/../src/output-config-auto.mts')
-    const mockDiscover = vi.mocked(discoverConfigValue)
-    const mockOutput = vi.mocked(outputConfigAuto)
+    const { discoverConfigValue } = await import('../../../../../src/commands/config/discover-config-value.mts')
+    const { outputConfigAuto } = await import('../../../../../src/commands/config/output-config-auto.mts')
 
-    mockDiscover.mockResolvedValue(
+    vi.mocked(discoverConfigValue).mockResolvedValue(
       createSuccessResult('https://api.socket.dev'),
     )
 
     await handleConfigAuto({ key: 'apiUrl', outputKind: 'text' })
 
-    expect(mockOutput).toHaveBeenCalledWith(
+    expect(outputConfigAuto).toHaveBeenCalledWith(
       'apiUrl',
       expect.objectContaining({
         ok: true,

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { CResult } from '../../../../../src/commands/../../../../src/commands/repository/types.mts'
+import type { CResult } from '../../../../src/commands/repository/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Mock the dependencies.
@@ -18,11 +18,11 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 
-vi.mock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
+vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
   serializeResultJson: vi.fn(result => JSON.stringify(result)),
 }))
 
-vi.mock('../../../../../src/commands/../utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
 }))
 
@@ -33,9 +33,9 @@ describe('outputCreateRepo', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { outputCreateRepo } = await import('../../../../../src/commands/../../../../src/commands/repository/output-create-repo.mts')
+    const { outputCreateRepo } = await import('../../../../src/commands/repository/output-create-repo.mts')
     const { serializeResultJson } = await vi.importMock(
-      '../../../../../src/commands/../utils/output/result-json.mjs',
+      '../../../../src/utils/output/result-json.mjs',
     )
     const mockSerialize = vi.mocked(serializeResultJson)
 
@@ -55,7 +55,7 @@ describe('outputCreateRepo', () => {
   })
 
   it('outputs error in JSON format', async () => {
-    const { outputCreateRepo } = await import('../../../../../src/commands/../../../../src/commands/repository/output-create-repo.mts')
+    const { outputCreateRepo } = await import('../../../../src/commands/repository/output-create-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
@@ -72,7 +72,7 @@ describe('outputCreateRepo', () => {
   })
 
   it('outputs success message when slug matches requested name', async () => {
-    const { outputCreateRepo } = await import('../../../../../src/commands/../../../../src/commands/repository/output-create-repo.mts')
+    const { outputCreateRepo } = await import('../../../../src/commands/repository/output-create-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
@@ -91,7 +91,7 @@ describe('outputCreateRepo', () => {
   })
 
   it('outputs success message with warning when slug differs from requested name', async () => {
-    const { outputCreateRepo } = await import('../../../../../src/commands/../../../../src/commands/repository/output-create-repo.mts')
+    const { outputCreateRepo } = await import('../../../../src/commands/repository/output-create-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
@@ -110,9 +110,9 @@ describe('outputCreateRepo', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { outputCreateRepo } = await import('../../../../../src/commands/../../../../src/commands/repository/output-create-repo.mts')
+    const { outputCreateRepo } = await import('../../../../src/commands/repository/output-create-repo.mts')
     const { failMsgWithBadge } = await vi.importMock(
-      '../../../../../src/commands/../utils/error/fail-msg-with-badge.mts',
+      '../../../../src/utils/error/fail-msg-with-badge.mts',
     )
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
@@ -135,7 +135,7 @@ describe('outputCreateRepo', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { outputCreateRepo } = await import('../../../../../src/commands/../../../../src/commands/repository/output-create-repo.mts')
+    const { outputCreateRepo } = await import('../../../../src/commands/repository/output-create-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
@@ -153,7 +153,7 @@ describe('outputCreateRepo', () => {
   })
 
   it('handles empty slug properly', async () => {
-    const { outputCreateRepo } = await import('../../../../../src/commands/../../../../src/commands/repository/output-create-repo.mts')
+    const { outputCreateRepo } = await import('../../../../src/commands/repository/output-create-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
@@ -171,7 +171,7 @@ describe('outputCreateRepo', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
-    const { outputCreateRepo } = await import('../../../../../src/commands/../../../../src/commands/repository/output-create-repo.mts')
+    const { outputCreateRepo } = await import('../../../../src/commands/repository/output-create-repo.mts')
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
         ok: false,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { generateReport } from '../../../../../src/commands/../../../../src/commands/scan/generate-report.mts'
+import { generateReport } from '../../../../../src/commands/scan/generate-report.mts'
 
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
