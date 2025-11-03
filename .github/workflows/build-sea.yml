@@ -1,4 +1,4 @@
-name: 🌊 Build SEA Node Binaries
+name: ⚡ Socket SEA Binaries
 
 on:
   workflow_call:
@@ -57,7 +57,7 @@ concurrency:
 
 jobs:
   build-deps:
-    name: 📦 Build Dependencies
+    name: ⚡ Socket Dependencies
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
@@ -115,7 +115,7 @@ jobs:
           retention-days: 1
 
   build-sea:
-    name: 🌊 Build SEA binary - ${{ matrix.platform }}-${{ matrix.arch }}
+    name: ⚡ Socket SEA - ${{ matrix.platform }}-${{ matrix.arch }}
     needs: build-deps
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60

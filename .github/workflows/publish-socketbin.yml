@@ -1,4 +1,4 @@
-name: 📦 Publish @socketbin packages to npm registry
+name: ⚡ Socket Publish
 
 on:
   workflow_dispatch:

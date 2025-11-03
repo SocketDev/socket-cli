@@ -1,4 +1,4 @@
-name: 🧱 Build WASM Assets
+name: ⚡ Socket WASM Assets
 
 on:
   workflow_call:
