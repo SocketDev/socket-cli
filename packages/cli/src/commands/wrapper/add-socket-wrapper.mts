@@ -1,6 +1,8 @@
 import fs from 'node:fs'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+const logger = getDefaultLogger()
+
 
 export function addSocketWrapper(file: string): void {
   fs.appendFile(
@@ -10,23 +12,23 @@ export function addSocketWrapper(file: string): void {
       if (err) {
         return new Error(`There was an error setting up the alias: ${err}`)
       }
-      getDefaultLogger().success(
+      logger.success(
         `The alias was added to ${file}. Running 'npm install' will now be wrapped in Socket's "safe npm" 🎉`,
       )
-      getDefaultLogger().log(
+      logger.log(
         '  If you want to disable it at any time, run `socket wrapper --disable`',
       )
-      getDefaultLogger().log('')
-      getDefaultLogger().info(
+      logger.log('')
+      logger.info(
         'This will only be active in new terminal sessions going forward.',
       )
-      getDefaultLogger().log(
+      logger.log(
         '  You will need to restart your terminal or run this command to activate the alias in the current session:',
       )
-      getDefaultLogger().log('')
-      getDefaultLogger().log(`    source ${file}`)
-      getDefaultLogger().log('')
-      getDefaultLogger().log('(You only need to do this once)')
+      logger.log('')
+      logger.log(`    source ${file}`)
+      logger.log('')
+      logger.log('(You only need to do this once)')
     },
   )
 }

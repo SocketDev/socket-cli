@@ -20,6 +20,8 @@ import { getFlagListOutput } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
+const logger = getDefaultLogger()
+
 
 import type {
   CliCommandConfig,
@@ -130,14 +132,14 @@ async function run(
     sockJson.defaults?.manifest?.conda?.stdin !== undefined
   ) {
     stdin = sockJson.defaults?.manifest?.conda?.stdin
-    getDefaultLogger().info(`Using default --stdin from ${SOCKET_JSON}:`, stdin)
+    logger.info(`Using default --stdin from ${SOCKET_JSON}:`, stdin)
   }
   if (stdin) {
     filename = '-'
   } else if (!filename) {
     if (sockJson.defaults?.manifest?.conda?.infile) {
       filename = sockJson.defaults?.manifest?.conda?.infile
-      getDefaultLogger().info(
+      logger.info(
         `Using default --file from ${SOCKET_JSON}:`,
         filename,
       )
@@ -150,7 +152,7 @@ async function run(
     sockJson.defaults?.manifest?.conda?.stdout !== undefined
   ) {
     stdout = sockJson.defaults?.manifest?.conda?.stdout
-    getDefaultLogger().info(
+    logger.info(
       `Using default --stdout from ${SOCKET_JSON}:`,
       stdout,
     )
@@ -160,7 +162,7 @@ async function run(
   } else if (!out) {
     if (sockJson.defaults?.manifest?.conda?.outfile) {
       out = sockJson.defaults?.manifest?.conda?.outfile
-      getDefaultLogger().info(`Using default --out from ${SOCKET_JSON}:`, out)
+      logger.info(`Using default --out from ${SOCKET_JSON}:`, out)
     } else {
       out = REQUIREMENTS_TXT
     }
@@ -170,7 +172,7 @@ async function run(
     sockJson.defaults?.manifest?.conda?.verbose !== undefined
   ) {
     verbose = sockJson.defaults?.manifest?.conda?.verbose
-    getDefaultLogger().info(
+    logger.info(
       `Using default --verbose from ${SOCKET_JSON}:`,
       verbose,
     )
@@ -179,12 +181,12 @@ async function run(
   }
 
   if (verbose) {
-    getDefaultLogger().group('- ', parentName, config.commandName, ':')
-    getDefaultLogger().group('- flags:', cli.flags)
-    getDefaultLogger().groupEnd()
-    getDefaultLogger().log('- target:', cwd)
-    getDefaultLogger().log('- output:', out)
-    getDefaultLogger().groupEnd()
+    logger.group('- ', parentName, config.commandName, ':')
+    logger.group('- flags:', cli.flags)
+    logger.groupEnd()
+    logger.log('- target:', cwd)
+    logger.log('- output:', out)
+    logger.groupEnd()
   }
 
   const outputKind = getOutputKind(json, markdown)
@@ -208,12 +210,12 @@ async function run(
     return
   }
 
-  getDefaultLogger().warn(
+  logger.warn(
     'Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk.',
   )
 
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

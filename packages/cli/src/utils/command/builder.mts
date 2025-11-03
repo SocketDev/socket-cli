@@ -4,6 +4,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../cli/with-subcommands.mjs'
+const logger = getDefaultLogger()
+
 
 import type { MeowFlags } from '../../flags.mts'
 import type {
@@ -160,10 +162,10 @@ export function buildParentCommand(
     ) {
       // This is typically handled by meowWithSubcommands
       // but we can provide a fallback
-      getDefaultLogger().log(`Available subcommands for ${name}:`)
+      logger.log(`Available subcommands for ${name}:`)
       for (const [key, cmd] of Object.entries(subcommands)) {
         if (!cmd.hidden) {
-          getDefaultLogger().log(`  ${key} - ${cmd.description}`)
+          logger.log(`  ${key} - ${cmd.description}`)
         }
       }
     },
@@ -236,9 +238,9 @@ export const errorHandlers = {
    * Handle missing required argument
    */
   missingArg: (argName: string, example?: string) => {
-    getDefaultLogger().error(`Missing required argument: ${argName}`)
+    logger.error(`Missing required argument: ${argName}`)
     if (example) {
-      getDefaultLogger().log(`Example: ${example}`)
+      logger.log(`Example: ${example}`)
     }
     process.exitCode = 1
   },
@@ -247,9 +249,9 @@ export const errorHandlers = {
    * Handle API error
    */
   apiError: (error: any, operation: string) => {
-    getDefaultLogger().error(`Failed to ${operation}`)
+    logger.error(`Failed to ${operation}`)
     if (error.message) {
-      getDefaultLogger().error(error.message)
+      logger.error(error.message)
     }
     process.exitCode = 1
   },
@@ -258,7 +260,7 @@ export const errorHandlers = {
    * Handle validation error
    */
   validationError: (message: string) => {
-    getDefaultLogger().error(`Validation error: ${message}`)
+    logger.error(`Validation error: ${message}`)
     process.exitCode = 1
   },
 }

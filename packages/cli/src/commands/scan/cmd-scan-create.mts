@@ -40,6 +40,8 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 import type { PURL_Type } from '../../utils/ecosystem/types.mjs'
+const logger = getDefaultLogger()
+
 
 export const CMD_NAME = 'create'
 
@@ -330,7 +332,7 @@ async function run(
   if (typeof autoManifest !== 'boolean') {
     if (sockJson.defaults?.scan?.create?.autoManifest !== undefined) {
       autoManifest = sockJson.defaults.scan.create.autoManifest
-      getDefaultLogger().info(
+      logger.info(
         `Using default --auto-manifest from ${SOCKET_JSON}:`,
         autoManifest,
       )
@@ -341,7 +343,7 @@ async function run(
   if (!branchName) {
     if (sockJson.defaults?.scan?.create?.branch) {
       branchName = sockJson.defaults.scan.create.branch
-      getDefaultLogger().info(
+      logger.info(
         `Using default --branch from ${SOCKET_JSON}:`,
         branchName,
       )
@@ -352,7 +354,7 @@ async function run(
   if (!repoName) {
     if (sockJson.defaults?.scan?.create?.repo) {
       repoName = sockJson.defaults.scan.create.repo
-      getDefaultLogger().info(
+      logger.info(
         `Using default --repo from ${SOCKET_JSON}:`,
         repoName,
       )
@@ -363,7 +365,7 @@ async function run(
   if (typeof report !== 'boolean') {
     if (sockJson.defaults?.scan?.create?.report !== undefined) {
       report = sockJson.defaults.scan.create.report
-      getDefaultLogger().info(
+      logger.info(
         `Using default --report from ${SOCKET_JSON}:`,
         report,
       )
@@ -422,25 +424,25 @@ async function run(
 
   const detected = await detectManifestActions(sockJson, cwd)
   if (detected.count > 0 && !autoManifest) {
-    getDefaultLogger().info(
+    logger.info(
       `Detected ${detected.count} manifest targets we could try to generate. Please set the --auto-manifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.`,
     )
   }
 
   if (updatedInput && orgSlug && targets.length) {
-    getDefaultLogger().info(
+    logger.info(
       'Note: You can invoke this command next time to skip the interactive questions:',
     )
-    getDefaultLogger().error('```')
-    getDefaultLogger().error(
+    logger.error('```')
+    logger.error(
       `    socket scan create [other flags…] ${orgSlug} ${targets.join(' ')}`,
     )
-    getDefaultLogger().error('```')
-    getDefaultLogger().error('')
-    getDefaultLogger().info(
+    logger.error('```')
+    logger.error('')
+    logger.info(
       `You can also run \`socket scan setup\` to persist these flag defaults to a ${SOCKET_JSON} file.`,
     )
-    getDefaultLogger().error('')
+    logger.error('')
   }
 
   const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
@@ -571,7 +573,7 @@ async function run(
   }
 
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

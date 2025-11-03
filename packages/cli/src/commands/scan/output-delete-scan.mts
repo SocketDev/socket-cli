@@ -5,6 +5,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+const logger = getDefaultLogger()
+
 
 export async function outputDeleteScan(
   result: CResult<SocketSdkSuccessResult<'deleteFullScan'>['data']>,
@@ -15,13 +17,13 @@ export async function outputDeleteScan(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
-  getDefaultLogger().success('Scan deleted successfully')
+  logger.success('Scan deleted successfully')
 }

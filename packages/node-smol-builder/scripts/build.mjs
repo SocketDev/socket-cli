@@ -297,6 +297,17 @@ async function copyBuildAdditions() {
   getDefaultLogger().log(
     `✅ Copied ${ADDITIONS_DIR.replace(`${ROOT_DIR}/`, '')}/ → ${NODE_DIR}/`,
   )
+
+  // Fix: The patch file references tools/socket_brotli2c.cc but the additions
+  // directory has tools/socketsecurity_brotli2c.cc. Copy the file to the expected name.
+  const socketBrotli2cSource = join(NODE_DIR, '003-compression-tools', 'socketsecurity_brotli2c.cc')
+  const socketBrotli2cDest = join(NODE_DIR, 'tools', 'socket_brotli2c.cc')
+
+  if (existsSync(socketBrotli2cSource)) {
+    await copyFile(socketBrotli2cSource, socketBrotli2cDest)
+    getDefaultLogger().log(`✅ Copied socket_brotli2c.cc to tools/ (patch expects this name)`)
+  }
+
   getDefaultLogger().log('')
 }
 
@@ -310,29 +321,28 @@ async function embedSocketSecurityBootstrap() {
   // Use transformed bootstrap from bootstrap package (compatible with Node.js internal bootstrap context).
   const bootstrapSource = join(ROOT_DIR, '..', 'bootstrap', 'dist', 'bootstrap-smol.js')
 
-  // Auto-build bootstrap if missing.
-  if (!existsSync(bootstrapSource)) {
-    getDefaultLogger().log('')
-    getDefaultLogger().info(`Bootstrap not found at: ${bootstrapSource}`)
-    getDefaultLogger().info(`Building @socketsecurity/bootstrap package...`)
-    getDefaultLogger().log('')
+  // Always rebuild bootstrap to ensure latest version.
+  // Bootstrap build is fast (~5 seconds) and ensures version placeholders are current.
+  getDefaultLogger().log('')
+  getDefaultLogger().info(`Rebuilding @socketsecurity/bootstrap package...`)
+  getDefaultLogger().log('')
 
-    const result = await spawn(
-      'pnpm',
-      ['--filter', '@socketsecurity/bootstrap', 'run', 'build'],
-      {
-        cwd: join(ROOT_DIR, '../..'),
-        shell: WIN32,
-        stdio: 'inherit',
-      }
-    )
-
-    if (result.code !== 0) {
-      throw new Error(`Failed to build @socketsecurity/bootstrap package (exit code ${result.code})`)
+  const result = await spawn(
+    'pnpm',
+    ['--filter', '@socketsecurity/bootstrap', 'run', 'build'],
+    {
+      cwd: join(ROOT_DIR, '../..'),
+      shell: WIN32,
+      stdio: 'inherit',
     }
+  )
 
-    // Verify bootstrap was built.
-    if (!existsSync(bootstrapSource)) {
+  if (result.code !== 0) {
+    throw new Error(`Failed to build @socketsecurity/bootstrap package (exit code ${result.code})`)
+  }
+
+  // Verify bootstrap was built.
+  if (!existsSync(bootstrapSource)) {
       // Try to show what files exist to help diagnose.
       getDefaultLogger().error(`Bootstrap file not found at: ${bootstrapSource}`)
       getDefaultLogger().info(`Checking for bootstrap files...`)
@@ -351,10 +361,9 @@ async function embedSocketSecurityBootstrap() {
       }
 
       throw new Error(`Bootstrap build succeeded but dist file not found at: ${bootstrapSource}`)
-    }
-
-    getDefaultLogger().log('')
   }
+
+  getDefaultLogger().log('')
 
   printHeader('Embedding Socket Security Bootstrap (Minimal Injection)')
 

@@ -8,6 +8,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+const logger = getDefaultLogger()
+
 
 export async function outputViewRepo(
   result: CResult<SocketSdkSuccessResult<'createRepository'>['data']>,
@@ -18,11 +20,11 @@ export async function outputViewRepo(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -38,5 +40,5 @@ export async function outputViewRepo(
     ],
   }
 
-  getDefaultLogger().log(chalkTable(options, [result.data]))
+  logger.log(chalkTable(options, [result.data]))
 }

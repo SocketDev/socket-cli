@@ -3,6 +3,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 
 import type { CResult } from '../../types.mts'
+const logger = getDefaultLogger()
+
 
 export async function outputManifestSetup(result: CResult<unknown>) {
   if (!result.ok) {
@@ -10,9 +12,9 @@ export async function outputManifestSetup(result: CResult<unknown>) {
   }
 
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
-  getDefaultLogger().success('Setup complete')
+  logger.success('Setup complete')
 }

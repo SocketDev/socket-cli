@@ -8,6 +8,8 @@ import { mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
+const logger = getDefaultLogger()
+
 
 export async function outputRequirements(
   result: CResult<{ content: string; pip: string }>,
@@ -20,10 +22,10 @@ export async function outputRequirements(
 
   if (!result.ok) {
     if (outputKind === 'json') {
-      getDefaultLogger().log(serializeResultJson(result))
+      logger.log(serializeResultJson(result))
       return
     }
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -31,7 +33,7 @@ export async function outputRequirements(
     const json = serializeResultJson(result)
 
     if (out === '-') {
-      getDefaultLogger().log(json)
+      logger.log(json)
     } else {
       fs.writeFileSync(out, json, 'utf8')
     }
@@ -54,7 +56,7 @@ export async function outputRequirements(
     const md = arr.join('\n')
 
     if (out === '-') {
-      getDefaultLogger().log(md)
+      logger.log(md)
     } else {
       fs.writeFileSync(out, md, 'utf8')
     }
@@ -62,8 +64,8 @@ export async function outputRequirements(
   }
 
   if (out === '-') {
-    getDefaultLogger().log(result.data.pip)
-    getDefaultLogger().log('')
+    logger.log(result.data.pip)
+    logger.log('')
   } else {
     fs.writeFileSync(out, result.data.pip, 'utf8')
   }

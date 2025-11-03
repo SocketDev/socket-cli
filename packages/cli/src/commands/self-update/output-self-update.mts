@@ -5,6 +5,8 @@
 import colors from 'yoctocolors-cjs'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+const logger = getDefaultLogger()
+
 
 /**
  * Self-update output options.
@@ -34,28 +36,28 @@ export async function outputSelfUpdate(
   } = options
 
   if (isUpToDate) {
-    getDefaultLogger().success(
+    logger.success(
       `Already up to date (${colors.cyan(currentVersion)})`,
     )
     return
   }
 
   if (dryRun) {
-    getDefaultLogger().log(
+    logger.log(
       `${colors.yellow('→')} Update available: ${colors.gray(currentVersion)} → ${colors.green(latestVersion)}`,
     )
-    getDefaultLogger().log('Run without --dry-run to perform the update')
+    logger.log('Run without --dry-run to perform the update')
     return
   }
 
   if (updateSucceeded) {
-    getDefaultLogger().success(
+    logger.success(
       `Successfully updated from ${colors.gray(currentVersion)} to ${colors.green(latestVersion)}`,
     )
     if (backupPath) {
-      getDefaultLogger().log(`${colors.dim('Backup:')} ${backupPath}`)
+      logger.log(`${colors.dim('Backup:')} ${backupPath}`)
     }
   } else {
-    getDefaultLogger().fail('Update failed')
+    logger.fail('Update failed')
   }
 }

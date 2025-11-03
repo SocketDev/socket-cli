@@ -9,6 +9,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import type { Direction } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+const logger = getDefaultLogger()
+
 
 export async function outputListRepos(
   result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']>,
@@ -25,7 +27,7 @@ export async function outputListRepos(
 
   if (outputKind === 'json') {
     if (result.ok) {
-      getDefaultLogger().log(
+      logger.log(
         serializeResultJson({
           ok: true,
           data: {
@@ -39,16 +41,16 @@ export async function outputListRepos(
         }),
       )
     } else {
-      getDefaultLogger().log(serializeResultJson(result))
+      logger.log(serializeResultJson(result))
     }
     return
   }
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
-  getDefaultLogger().log(
+  logger.log(
     `Result page: ${page}, results per page: ${perPage === Number.POSITIVE_INFINITY ? 'all' : perPage}, sorted by: ${sort}, direction: ${direction}`,
   )
 
@@ -62,20 +64,20 @@ export async function outputListRepos(
     ],
   }
 
-  getDefaultLogger().log(chalkTable(options, result.data.results))
+  logger.log(chalkTable(options, result.data.results))
   if (nextPage) {
-    getDefaultLogger().info(
+    logger.info(
       `This is page ${page}. Server indicated there are more results available on page ${nextPage}...`,
     )
-    getDefaultLogger().info(
+    logger.info(
       `(Hint: you can use \`socket repository list --page ${nextPage}\`)`,
     )
   } else if (perPage === Number.POSITIVE_INFINITY) {
-    getDefaultLogger().info(
+    logger.info(
       'This should be the entire list available on the server.',
     )
   } else {
-    getDefaultLogger().info(
+    logger.info(
       `This is page ${page}. Server indicated this is the last page with results.`,
     )
   }

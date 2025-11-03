@@ -8,6 +8,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { LocalConfig } from '../../utils/config.mts'
+const logger = getDefaultLogger()
+
 
 export async function outputConfigAuto(
   key: keyof LocalConfig,
@@ -19,39 +21,39 @@ export async function outputConfigAuto(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   if (outputKind === 'markdown') {
-    getDefaultLogger().log(mdHeader('Auto discover config value'))
-    getDefaultLogger().log('')
-    getDefaultLogger().log(
+    logger.log(mdHeader('Auto discover config value'))
+    logger.log('')
+    logger.log(
       `Attempted to automatically discover the value for config key: "${key}"`,
     )
-    getDefaultLogger().log('')
+    logger.log('')
     if (result.ok) {
-      getDefaultLogger().log(`The discovered value is: "${result.data}"`)
+      logger.log(`The discovered value is: "${result.data}"`)
       if (result.message) {
-        getDefaultLogger().log('')
-        getDefaultLogger().log(result.message)
+        logger.log('')
+        logger.log(result.message)
       }
     }
-    getDefaultLogger().log('')
+    logger.log('')
   } else {
     if (result.message) {
-      getDefaultLogger().log(result.message)
-      getDefaultLogger().log('')
+      logger.log(result.message)
+      logger.log('')
     }
-    getDefaultLogger().log(`- ${key}: ${result.data}`)
-    getDefaultLogger().log('')
+    logger.log(`- ${key}: ${result.data}`)
+    logger.log('')
 
     if (isConfigFromFlag()) {
-      getDefaultLogger().log(
+      logger.log(
         '(Unable to persist this value because the config is in read-only mode, meaning it was overridden through env or flag.)',
       )
     } else if (key === 'defaultOrg') {
@@ -71,19 +73,19 @@ export async function outputConfigAuto(
           }),
       })
       if (proceed) {
-        getDefaultLogger().log(`Setting defaultOrg to "${proceed}"...`)
+        logger.log(`Setting defaultOrg to "${proceed}"...`)
         const updateResult = updateConfigValue('defaultOrg', proceed)
         if (updateResult.ok) {
-          getDefaultLogger().log(
+          logger.log(
             `OK. Updated defaultOrg to "${proceed}".\nYou should no longer need to add the org to commands that normally require it.`,
           )
         } else {
-          getDefaultLogger().log(
+          logger.log(
             failMsgWithBadge(updateResult.message, updateResult.cause),
           )
         }
       } else {
-        getDefaultLogger().log('OK. No changes made.')
+        logger.log('OK. No changes made.')
       }
     } else if (key === 'enforcedOrgs') {
       const proceed = await select({
@@ -102,17 +104,17 @@ export async function outputConfigAuto(
           }),
       })
       if (proceed) {
-        getDefaultLogger().log(`Setting enforcedOrgs key to "${proceed}"...`)
+        logger.log(`Setting enforcedOrgs key to "${proceed}"...`)
         const updateResult = updateConfigValue('defaultOrg', proceed)
         if (updateResult.ok) {
-          getDefaultLogger().log(`OK. Updated enforcedOrgs to "${proceed}".`)
+          logger.log(`OK. Updated enforcedOrgs to "${proceed}".`)
         } else {
-          getDefaultLogger().log(
+          logger.log(
             failMsgWithBadge(updateResult.message, updateResult.cause),
           )
         }
       } else {
-        getDefaultLogger().log('OK. No changes made.')
+        logger.log('OK. No changes made.')
       }
     }
   }

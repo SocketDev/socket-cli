@@ -20,6 +20,8 @@ import {
 
 import type { OutputKind } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/lib/spinner'
+const logger = getDefaultLogger()
+
 
 export interface PatchCleanupData {
   cleaned: string[]
@@ -50,7 +52,7 @@ export async function handlePatchCleanup({
       cleaned.push(uuid)
       spinner?.stop()
       if (outputKind === 'text') {
-        getDefaultLogger().log(`Cleaned up backups for ${uuid}`)
+        logger.log(`Cleaned up backups for ${uuid}`)
       }
     } else if (all) {
       // Clean up all backups.
@@ -60,7 +62,7 @@ export async function handlePatchCleanup({
       if (allPatchUuids.length === 0) {
         spinner?.stop()
         if (outputKind === 'text') {
-          getDefaultLogger().log('No patch backups found')
+          logger.log('No patch backups found')
         }
       } else {
         spinner?.text(
@@ -75,7 +77,7 @@ export async function handlePatchCleanup({
 
         spinner?.stop()
         if (outputKind === 'text') {
-          getDefaultLogger().log(
+          logger.log(
             `Cleaned up backups for ${cleaned.length} ${pluralize('patch', { count: cleaned.length })}`,
           )
         }
@@ -111,7 +113,7 @@ export async function handlePatchCleanup({
       if (orphanedUuids.length === 0) {
         spinner?.stop()
         if (outputKind === 'text') {
-          getDefaultLogger().log('No orphaned patch backups found')
+          logger.log('No orphaned patch backups found')
         }
       } else {
         spinner?.text(
@@ -126,7 +128,7 @@ export async function handlePatchCleanup({
 
         spinner?.stop()
         if (outputKind === 'text') {
-          getDefaultLogger().log(
+          logger.log(
             `Cleaned up ${cleaned.length} orphaned ${pluralize('backup', { count: cleaned.length })}`,
           )
         }

@@ -21,6 +21,8 @@ import { hasBackupForPatch } from '../../utils/manifest/patch-backup.mts'
 import type { PatchRecord } from './manifest-schema.mts'
 import type { OutputKind } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/lib/spinner'
+const logger = getDefaultLogger()
+
 
 export interface PatchStatus {
   appliedAt: string | undefined
@@ -239,11 +241,11 @@ export async function handlePatchStatus({
 
     if (outputKind === 'text') {
       if (statuses.length === 0) {
-        getDefaultLogger().log('No patches found in manifest')
+        logger.log('No patches found in manifest')
       } else if (filteredStatuses.length === 0) {
-        getDefaultLogger().log('No patches match the filter criteria')
+        logger.log('No patches match the filter criteria')
       } else {
-        getDefaultLogger().log(
+        logger.log(
           `Found ${filteredStatuses.length} ${pluralize('patch', { count: filteredStatuses.length })}`,
         )
       }

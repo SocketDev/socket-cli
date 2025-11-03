@@ -24,6 +24,8 @@ import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
 import type { Remap } from '@socketsecurity/lib/objects'
+const logger = getDefaultLogger()
+
 
 export type HandleCreateNewScanConfig = {
   autoManifest: boolean
@@ -89,7 +91,7 @@ export async function handleCreateNewScan({
   })
 
   if (autoManifest) {
-    getDefaultLogger().info('Auto-generating manifest files ...')
+    logger.info('Auto-generating manifest files ...')
     debug('Auto-manifest mode enabled')
     const sockJson = readOrDefaultSocketJson(cwd)
     const detected = await detectManifestActions(sockJson, cwd)
@@ -100,7 +102,7 @@ export async function handleCreateNewScan({
       outputKind,
       verbose: false,
     })
-    getDefaultLogger().info(
+    logger.info(
       'Auto-generation finished. Proceeding with Scan creation.',
     )
   }
@@ -144,7 +146,7 @@ export async function handleCreateNewScan({
   debugDir({ packagePaths })
 
   if (readOnly) {
-    getDefaultLogger().log('[ReadOnly] Bailing now')
+    logger.log('[ReadOnly] Bailing now')
     debug('Read-only mode, exiting early')
     return
   }
@@ -154,8 +156,8 @@ export async function handleCreateNewScan({
 
   // If reachability is enabled, perform reachability analysis.
   if (reach.runReachabilityAnalysis) {
-    getDefaultLogger().error('')
-    getDefaultLogger().info('Starting reachability analysis...')
+    logger.error('')
+    logger.info('Starting reachability analysis...')
     debug('Reachability analysis enabled')
     debugDir({ reachabilityOptions: reach })
 
@@ -179,7 +181,7 @@ export async function handleCreateNewScan({
       return
     }
 
-    getDefaultLogger().success('Reachability analysis completed successfully')
+    logger.success('Reachability analysis completed successfully')
 
     const reachabilityReport = reachResult.data?.reachabilityReport
 
@@ -196,7 +198,7 @@ export async function handleCreateNewScan({
   }
 
   // Display final file count after all modifications.
-  getDefaultLogger().success(
+  logger.success(
     `Found ${scanPaths.length} ${pluralize('file', { count: scanPaths.length })} to include in scan`,
   )
 

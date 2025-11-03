@@ -10,6 +10,8 @@ import { fileLink } from '../../utils/terminal/link.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
+const logger = getDefaultLogger()
+
 
 export async function outputScanView(
   result: CResult<SocketArtifact[]>,
@@ -24,10 +26,10 @@ export async function outputScanView(
 
   if (!result.ok) {
     if (outputKind === 'json') {
-      getDefaultLogger().log(serializeResultJson(result))
+      logger.log(serializeResultJson(result))
       return
     }
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -38,19 +40,19 @@ export async function outputScanView(
     const json = serializeResultJson(result)
 
     if (filePath && filePath !== '-') {
-      getDefaultLogger().info('Writing json results to', filePath)
+      logger.info('Writing json results to', filePath)
       try {
         await fs.writeFile(filePath, json, 'utf8')
-        getDefaultLogger().info(
+        logger.info(
           `Data successfully written to ${fileLink(filePath)}`,
         )
       } catch (e) {
         process.exitCode = 1
-        getDefaultLogger().fail(
+        logger.fail(
           'There was an error trying to write the markdown to disk',
         )
-        getDefaultLogger().error(e)
-        getDefaultLogger().log(
+        logger.error(e)
+        logger.log(
           serializeResultJson({
             ok: false,
             message: 'File Write Failure',
@@ -61,7 +63,7 @@ export async function outputScanView(
       return
     }
 
-    getDefaultLogger().log(json)
+    logger.log(json)
     return
   }
 
@@ -101,17 +103,17 @@ View this report at: ${SOCKET_WEBSITE_URL}/dashboard/org/${orgSlug}/sbom/${scanI
   if (filePath && filePath !== '-') {
     try {
       await fs.writeFile(filePath, report, 'utf8')
-      getDefaultLogger().log(
+      logger.log(
         `Data successfully written to ${fileLink(filePath)}`,
       )
     } catch (e) {
       process.exitCode = 1
-      getDefaultLogger().fail(
+      logger.fail(
         'There was an error trying to write the markdown to disk',
       )
-      getDefaultLogger().error(e)
+      logger.error(e)
     }
   } else {
-    getDefaultLogger().log(report)
+    logger.log(report)
   }
 }

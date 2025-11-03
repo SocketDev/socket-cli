@@ -1,6 +1,8 @@
 /** @fileoverview Lazy loading utility for Ink/React components to reduce bundle size */
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+const logger = getDefaultLogger()
+
 
 /**
  * Lazily load Ink and React dependencies only when needed
@@ -12,7 +14,7 @@ export async function loadInk(): Promise<{ ink: any; React: any }> {
     const [ink, React] = await Promise.all([import('ink'), import('react')])
     return { ink, React }
   } catch (error) {
-    getDefaultLogger().error('Failed to load Ink/React components')
+    logger.error('Failed to load Ink/React components')
     throw error
   }
 }
@@ -25,7 +27,7 @@ export async function loadInkTable() {
     const { default: Table } = await import('ink-table')
     return Table
   } catch (error) {
-    getDefaultLogger().error('Failed to load ink-table component')
+    logger.error('Failed to load ink-table component')
     throw error
   }
 }

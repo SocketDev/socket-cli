@@ -7,6 +7,8 @@ import { failMsgWithBadge } from '../error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../output/result-json.mts'
 
 import type { OutputKind } from '../../types.mjs'
+const logger = getDefaultLogger()
+
 
 export function checkCommandInput(
   outputKind: OutputKind,
@@ -58,7 +60,7 @@ export function checkCommandInput(
   process.exitCode = 2
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(
+    logger.log(
       serializeResultJson({
         ok: false,
         message: 'Input error',
@@ -66,7 +68,7 @@ export function checkCommandInput(
       }),
     )
   } else {
-    getDefaultLogger().fail(
+    logger.fail(
       failMsgWithBadge('Input error', msg.join('\n').trim()),
     )
   }

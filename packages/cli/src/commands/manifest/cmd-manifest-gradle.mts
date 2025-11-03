@@ -14,6 +14,8 @@ import { getFlagListOutput } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
+const logger = getDefaultLogger()
+
 
 import type {
   CliCommandConfig,
@@ -121,7 +123,7 @@ async function run(
   if (!bin) {
     if (sockJson.defaults?.manifest?.gradle?.bin) {
       bin = sockJson.defaults?.manifest?.gradle?.bin
-      getDefaultLogger().info(`Using default --bin from ${SOCKET_JSON}:`, bin)
+      logger.info(`Using default --bin from ${SOCKET_JSON}:`, bin)
     } else {
       bin = path.join(cwd, 'gradlew')
     }
@@ -129,7 +131,7 @@ async function run(
   if (!gradleOpts) {
     if (sockJson.defaults?.manifest?.gradle?.gradleOpts) {
       gradleOpts = sockJson.defaults?.manifest?.gradle?.gradleOpts
-      getDefaultLogger().info(
+      logger.info(
         `Using default --gradle-opts from ${SOCKET_JSON}:`,
         gradleOpts,
       )
@@ -140,7 +142,7 @@ async function run(
   if (verbose === undefined) {
     if (sockJson.defaults?.manifest?.gradle?.verbose !== undefined) {
       verbose = sockJson.defaults?.manifest?.gradle?.verbose
-      getDefaultLogger().info(
+      logger.info(
         `Using default --verbose from ${SOCKET_JSON}:`,
         verbose,
       )
@@ -150,11 +152,11 @@ async function run(
   }
 
   if (verbose) {
-    getDefaultLogger().group('- ', parentName, config.commandName, ':')
-    getDefaultLogger().group('- flags:', cli.flags)
-    getDefaultLogger().groupEnd()
-    getDefaultLogger().log('- input:', cli.input)
-    getDefaultLogger().groupEnd()
+    logger.group('- ', parentName, config.commandName, ':')
+    logger.group('- flags:', cli.flags)
+    logger.groupEnd()
+    logger.log('- input:', cli.input)
+    logger.groupEnd()
   }
 
   // Note: stdin input not supported. Gradle manifest generation requires a directory
@@ -172,14 +174,14 @@ async function run(
   }
 
   if (verbose) {
-    getDefaultLogger().group()
-    getDefaultLogger().info('- cwd:', cwd)
-    getDefaultLogger().info('- gradle bin:', bin)
-    getDefaultLogger().groupEnd()
+    logger.group()
+    logger.info('- cwd:', cwd)
+    logger.info('- gradle bin:', bin)
+    logger.groupEnd()
   }
 
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

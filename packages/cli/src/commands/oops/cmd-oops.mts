@@ -5,6 +5,8 @@ import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
+const logger = getDefaultLogger()
+
 
 import type {
   CliCommandConfig,
@@ -56,13 +58,13 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
   if (json && !justThrow) {
     process.exitCode = 1
-    getDefaultLogger().log(
+    logger.log(
       serializeResultJson({
         ok: false,
         message: 'Oops',
@@ -73,7 +75,7 @@ async function run(
 
   if (markdown && !justThrow) {
     process.exitCode = 1
-    getDefaultLogger().fail(
+    logger.fail(
       failMsgWithBadge('Oops', 'This error was intentionally left blank'),
     )
     return

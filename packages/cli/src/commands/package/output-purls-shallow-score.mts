@@ -9,6 +9,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
+const logger = getDefaultLogger()
+
 
 // This is a simplified view of an artifact. Potentially merged with other artifacts.
 interface DedupedArtifact {
@@ -42,11 +44,11 @@ export function outputPurlsShallowScore(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -54,12 +56,12 @@ export function outputPurlsShallowScore(
 
   if (outputKind === 'markdown') {
     const md = generateMarkdownReport(rows, missing)
-    getDefaultLogger().log(md)
+    logger.log(md)
     return
   }
 
   const txt = generateTextReport(rows, missing)
-  getDefaultLogger().log(txt)
+  logger.log(txt)
 }
 
 function formatReportCard(

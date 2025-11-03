@@ -4,6 +4,8 @@ import { queryApiSafeJson } from '../../utils/socket/api.mjs'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+const logger = getDefaultLogger()
+
 
 export async function fetchDiffScan({
   id1,
@@ -14,9 +16,9 @@ export async function fetchDiffScan({
   id2: string
   orgSlug: string
 }): Promise<CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>> {
-  getDefaultLogger().info('Scan ID 1:', id1)
-  getDefaultLogger().info('Scan ID 2:', id2)
-  getDefaultLogger().info(
+  logger.info('Scan ID 1:', id1)
+  logger.info('Scan ID 2:', id2)
+  logger.info(
     'Note: this request may take some time if the scans are big',
   )
 
