@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   AGENTS,
   detectPackageEnvironment,
-} from '../../../../src/environment.mts'
+} from '../../../../../src/utils/ecosystem/environment.mts'
 
 // Mock the dependencies.
 const mockExistsSync = vi.hoisted(() => vi.fn())
