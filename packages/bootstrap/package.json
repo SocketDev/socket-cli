@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Shared bootstrap for Socket CLI npm wrapper and smol binary",
   "private": true,
-  "type": "module",
   "exports": {
+    ".": "./dist/index.js",
     "./bootstrap-npm.js": "./dist/bootstrap-npm.js",
     "./bootstrap-sea.js": "./dist/bootstrap-sea.js",
     "./bootstrap-smol.js": "./dist/bootstrap-smol.js",
