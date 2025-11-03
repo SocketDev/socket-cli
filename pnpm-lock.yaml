@@ -66,7 +66,7 @@ overrides:
   is-core-module: npm:@socketregistry/is-core-module@^1.0.11
   isarray: npm:@socketregistry/isarray@^1.0.8
   lodash: 4.17.21
-  npm-package-arg: 13.0.0
+  npm-package-arg: 13.0.1
   packageurl-js: npm:@socketregistry/packageurl-js@^1.3.5
   path-parse: npm:@socketregistry/path-parse@^1.0.8
   safe-buffer: npm:@socketregistry/safe-buffer@^1.0.9
@@ -75,8 +75,8 @@ overrides:
   set-function-length: npm:@socketregistry/set-function-length@^1.0.10
   shell-quote: npm:shell-quote@^1.8.3
   side-channel: npm:@socketregistry/side-channel@^1.0.10
-  string-width: 8.1.0
   string_decoder: 0.10.31
+  string-width: 8.1.0
   tiny-colors: 2.1.3
   typedarray: npm:@socketregistry/typedarray@^1.0.8
   undici: 6.21.3
@@ -341,8 +341,8 @@ importers:
         specifier: 14.0.10
         version: 14.0.10
       npm-package-arg:
-        specifier: 13.0.0
-        version: 13.0.0
+        specifier: 13.0.1
+        version: 13.0.1
       npm-run-all2:
         specifier: 8.0.4
         version: 8.0.4
@@ -4528,8 +4528,8 @@ packages:
     resolution: {integrity: sha512-CJi3OS4JLsNMmr2u07OJlhcrPxCeOeP/4xq67aWNai6TNWWbTrlNDgl8NcFKVlcBKp18GPj+EzbNIgrBfZhsag==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
-  npm-package-arg@13.0.0:
-    resolution: {integrity: sha512-+t2etZAGcB7TbbLHfDwooV9ppB2LhhcT6A+L9cahsf9mEUAoQ6CktLEVvEnpD0N5CkX7zJqnPGaFtoQDy9EkHQ==}
+  npm-package-arg@13.0.1:
+    resolution: {integrity: sha512-6zqls5xFvJbgFjB1B2U6yITtyGBjDBORB7suI4zA4T/sZ1OmkMFlaQSNB/4K0LtXNA1t4OprAFxPisadK5O2ag==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
   npm-packlist@10.0.3:
@@ -6340,7 +6340,7 @@ snapshots:
       minimatch: 10.0.3
       node-stream-zip: 1.15.0
       npm-install-checks: 7.1.2
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.1
       npm-pick-manifest: 11.0.1
       packageurl-js: '@socketregistry/packageurl-js@1.3.5'
       parse-conflict-json: 4.0.0
@@ -6783,7 +6783,7 @@ snapshots:
       minimatch: 9.0.5
       nopt: 8.1.0
       npm-install-checks: 7.1.2
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.1
       npm-pick-manifest: 10.0.0
       npm-registry-fetch: 18.0.2
       pacote: 21.0.3
@@ -10124,7 +10124,7 @@ snapshots:
 
   npm-normalize-package-bin@5.0.0: {}
 
-  npm-package-arg@13.0.0:
+  npm-package-arg@13.0.1:
     dependencies:
       hosted-git-info: 9.0.2
       proc-log: 5.0.0
@@ -10140,21 +10140,21 @@ snapshots:
     dependencies:
       npm-install-checks: 7.1.2
       npm-normalize-package-bin: 4.0.0
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.1
       semver: 7.7.2
 
   npm-pick-manifest@11.0.1:
     dependencies:
       npm-install-checks: 7.1.2
       npm-normalize-package-bin: 4.0.0
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.1
       semver: 7.7.2
 
   npm-pick-manifest@11.0.3:
     dependencies:
       npm-install-checks: 8.0.0
       npm-normalize-package-bin: 5.0.0
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.1
       semver: 7.7.2
 
   npm-registry-fetch@18.0.2:
@@ -10165,7 +10165,7 @@ snapshots:
       minipass: 7.1.2
       minipass-fetch: 4.0.1
       minizlib: 3.1.0
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.1
       proc-log: 5.0.0
     transitivePeerDependencies:
       - supports-color
@@ -10178,7 +10178,7 @@ snapshots:
       minipass: 7.1.2
       minipass-fetch: 4.0.1
       minizlib: 3.1.0
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.1
       proc-log: 5.0.0
     transitivePeerDependencies:
       - supports-color
@@ -10321,7 +10321,7 @@ snapshots:
       cacache: 20.0.1
       fs-minipass: 3.0.3
       minipass: 7.1.2
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.1
       npm-packlist: 10.0.3
       npm-pick-manifest: 11.0.3
       npm-registry-fetch: 19.1.0
