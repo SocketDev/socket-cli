@@ -667,43 +667,6 @@ async function restoreCachedBinary(buildDir, nodeBinary, platform, arch, version
 }
 
 /**
- * Check if there is sufficient disk space for the build.
- */
-async function checkDiskSpace() {
-  try {
-    // Use df command to check available space (works on macOS, Linux, Windows with WSL).
-    const dfResult = await spawn('df', ['-BG', BUILD_DIR])
-    if (dfResult.code !== 0) {
-      // If df fails (e.g., on Windows without WSL), skip check.
-      logger.log('⚠  Could not check disk space (df command unavailable)')
-      return
-    }
-
-    // Parse output to find available space in GB.
-    const match = dfResult.stdout.match(/(\d+)G\s+\d+%/)
-    const availableGB = match ? parseInt(match[1]) : 0
-
-    if (availableGB < 20) {
-      throw new Error(
-        `Insufficient disk space: ${availableGB}GB available, need 20GB minimum\n\n` +
-        `Try:\n` +
-        `  - Clear old builds: rm -rf packages/node-smol-builder/build\n` +
-        `  - Clear ccache: ccache -C\n` +
-        `  - Check Docker images: docker system df`
-      )
-    }
-
-    logger.log(`${colors.green('✓')} Disk space: ${availableGB}GB available`)
-  } catch (e) {
-    // On Windows, df might not be available, so we catch and warn.
-    if (e.message.includes('Insufficient disk space')) {
-      throw e
-    }
-    logger.log('⚠  Could not check disk space:', e.message)
-  }
-}
-
-/**
  * Check if required tools are available, auto-installing if possible.
  */
 async function checkRequiredTools() {
@@ -1034,7 +997,6 @@ async function main() {
   await saveBuildLog(BUILD_DIR, 'Phase 1: Pre-flight Checks')
   await checkRequiredTools()
   await checkBuildEnvironment()
-  await checkDiskSpace()
   await saveBuildLog(BUILD_DIR, 'Pre-flight checks completed')
   await saveBuildLog(BUILD_DIR, '')
 
