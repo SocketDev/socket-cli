@@ -19,6 +19,8 @@ import { getPurlObject } from '../../utils/purl/parse.mjs'
 
 import type { OutputKind } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/lib/spinner'
+const logger = getDefaultLogger()
+
 
 export interface PatchListEntry {
   appliedAt: string | undefined
@@ -81,13 +83,13 @@ export async function handlePatchList({
 
     if (patches.length === 0) {
       if (outputKind === 'text') {
-        getDefaultLogger().log('No patches found in manifest')
+        logger.log('No patches found in manifest')
       }
       return
     }
 
     if (outputKind === 'text') {
-      getDefaultLogger().log(
+      logger.log(
         `Found ${patches.length} ${pluralize('patch', { count: patches.length })} in manifest`,
       )
     }
@@ -95,7 +97,7 @@ export async function handlePatchList({
     // Interactive mode: Let user select patches to apply.
     if (interactive) {
       if (patches.length === 0) {
-        getDefaultLogger().log('No patches available to select')
+        logger.log('No patches available to select')
         return
       }
 
@@ -108,11 +110,11 @@ export async function handlePatchList({
         outputKind,
       )
 
-      getDefaultLogger().log('')
-      getDefaultLogger().log(
+      logger.log('')
+      logger.log(
         'Select patches to apply (use arrow keys and Enter):',
       )
-      getDefaultLogger().log('')
+      logger.log('')
 
       // Create choices for selection.
       const choices = [
@@ -150,7 +152,7 @@ export async function handlePatchList({
       })
 
       if (selectedValue === '__CANCEL__') {
-        getDefaultLogger().log('Cancelled')
+        logger.log('Cancelled')
         return
       }
 
@@ -163,11 +165,11 @@ export async function handlePatchList({
         purlsToApply.push(selectedValue)
       }
 
-      getDefaultLogger().log('')
-      getDefaultLogger().log(
+      logger.log('')
+      logger.log(
         `Applying ${purlsToApply.length} ${pluralize('patch', { count: purlsToApply.length })}...`,
       )
-      getDefaultLogger().log('')
+      logger.log('')
 
       // Convert PURLs to PackageURL objects.
       const purlObjs = purlsToApply

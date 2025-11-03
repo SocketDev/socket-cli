@@ -20,6 +20,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { PatchDownloadResult } from './handle-patch-download.mts'
 import type { CResult, OutputKind } from '../../types.mts'
+const logger = getDefaultLogger()
+
 
 type OutputOptions = {
   outputKind: OutputKind
@@ -37,49 +39,49 @@ export async function outputPatchDownloadResult(
   }
 
   if (outputKind === OUTPUT_JSON) {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
 
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   const { downloaded, failed } = result.data
 
-  getDefaultLogger().log('')
+  logger.log('')
 
   // Show downloaded patches.
   if (downloaded.length) {
-    getDefaultLogger().group(
+    logger.group(
       `Successfully downloaded ${downloaded.length} ${pluralize('patch', { count: downloaded.length })}:`,
     )
     for (const patch of downloaded) {
-      getDefaultLogger().success(`${patch.purl} (${patch.uuid})`)
+      logger.success(`${patch.purl} (${patch.uuid})`)
     }
-    getDefaultLogger().groupEnd()
+    logger.groupEnd()
   }
 
   // Show failed patches.
   if (failed.length) {
-    getDefaultLogger().log('')
-    getDefaultLogger().group(
+    logger.log('')
+    logger.group(
       `Failed to download ${failed.length} ${pluralize('patch', { count: failed.length })}:`,
     )
     for (const failure of failed) {
-      getDefaultLogger().error(`${failure.uuid}: ${failure.error}`)
+      logger.error(`${failure.uuid}: ${failure.error}`)
     }
-    getDefaultLogger().groupEnd()
+    logger.groupEnd()
   }
 
   // Summary.
-  getDefaultLogger().log('')
+  logger.log('')
   if (failed.length) {
-    getDefaultLogger().warn(
+    logger.warn(
       `Patch download completed with ${failed.length} ${pluralize('failure', { count: failed.length })}`,
     )
   } else {
-    getDefaultLogger().success('All patches downloaded successfully!')
+    logger.success('All patches downloaded successfully!')
   }
 }

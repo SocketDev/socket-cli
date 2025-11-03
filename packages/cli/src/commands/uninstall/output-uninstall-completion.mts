@@ -3,6 +3,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 
 import type { CResult } from '../../types.mts'
+const logger = getDefaultLogger()
+
 
 export async function outputUninstallCompletion(
   result: CResult<{ action: string; left: string[] }>,
@@ -11,33 +13,33 @@ export async function outputUninstallCompletion(
   if (!result.ok) {
     process.exitCode = result.code ?? 1
 
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
-  getDefaultLogger().log(result.message)
-  getDefaultLogger().log('')
-  getDefaultLogger().log(
+  logger.log(result.message)
+  logger.log('')
+  logger.log(
     'To remove the tab completion from the current shell (instance of bash) you',
   )
-  getDefaultLogger().log(
+  logger.log(
     'can run this command (due to a bash limitation NodeJS cannot do this):',
   )
-  getDefaultLogger().log('')
-  getDefaultLogger().log(`    complete -r ${targetName}`)
-  getDefaultLogger().log('')
-  getDefaultLogger().log(
+  logger.log('')
+  logger.log(`    complete -r ${targetName}`)
+  logger.log('')
+  logger.log(
     'Next time you open a terminal it should no longer be there, regardless.',
   )
-  getDefaultLogger().log('')
+  logger.log('')
   if (result.data.left.length) {
-    getDefaultLogger().log(
+    logger.log(
       'Detected more Socket Alias completions left in bashrc. Run `socket uninstall <cmd>` to remove them too.',
     )
-    getDefaultLogger().log('')
+    logger.log('')
     result.data.left.forEach(str => {
-      getDefaultLogger().log(`  - \`${str}\``)
+      logger.log(`  - \`${str}\``)
     })
-    getDefaultLogger().log('')
+    logger.log('')
   }
 }

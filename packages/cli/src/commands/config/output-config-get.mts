@@ -7,6 +7,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { LocalConfig } from '../../utils/config.mts'
+const logger = getDefaultLogger()
+
 
 export async function outputConfigGet(
   key: keyof LocalConfig,
@@ -18,31 +20,31 @@ export async function outputConfigGet(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   const readOnly = isConfigFromFlag()
 
   if (outputKind === 'markdown') {
-    getDefaultLogger().log(mdHeader('Config Value'))
-    getDefaultLogger().log('')
-    getDefaultLogger().log(`Config key '${key}' has value '${result.data}`)
+    logger.log(mdHeader('Config Value'))
+    logger.log('')
+    logger.log(`Config key '${key}' has value '${result.data}`)
     if (readOnly) {
-      getDefaultLogger().log('')
-      getDefaultLogger().log(
+      logger.log('')
+      logger.log(
         'Note: the config is in read-only mode, meaning at least one key was temporarily\n      overridden from an env var or command flag.',
       )
     }
   } else {
-    getDefaultLogger().log(`${key}: ${result.data}`)
+    logger.log(`${key}: ${result.data}`)
     if (readOnly) {
-      getDefaultLogger().log('')
-      getDefaultLogger().log(
+      logger.log('')
+      logger.log(
         'Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag.',
       )
     }

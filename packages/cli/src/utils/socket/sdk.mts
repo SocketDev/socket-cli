@@ -46,6 +46,8 @@ import { getConfigValueOrUndef } from '../config.mts'
 
 import type { CResult } from '../../types.mts'
 import type { FileValidationResult } from '@socketsecurity/sdk'
+const logger = getDefaultLogger()
+
 
 const TOKEN_VISIBLE_LENGTH = 5
 
@@ -166,10 +168,10 @@ export async function setupSdk(
         },
       ): FileValidationResult => {
         if (invalidPaths.length > 0) {
-          getDefaultLogger().warn(
+          logger.warn(
             `Skipped ${invalidPaths.length} ${pluralize('file', { count: invalidPaths.length })} that could not be read`,
           )
-          getDefaultLogger().substep(
+          logger.substep(
             'This may occur with Yarn Berry PnP virtual filesystem or pnpm symlinks',
           )
         }

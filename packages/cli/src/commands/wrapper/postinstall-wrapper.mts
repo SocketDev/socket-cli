@@ -10,6 +10,8 @@ import { getBashRcPath, getZshRcPath } from '../../constants/paths.mts'
 import { getBashrcDetails } from '../../utils/cli/completion.mjs'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import { updateInstalledTabCompletionScript } from '../install/setup-tab-completion.mts'
+const logger = getDefaultLogger()
+
 
 export async function postinstallWrapper() {
   const bashRcPath = getBashRcPath()
@@ -43,7 +45,7 @@ Do you want to install the Socket npm wrapper (this will create an alias to the 
         if (result.ok) {
           // This will work no matter what alias(es) were registered since that
           // is controlled by bashrc and they all share the same tab script.
-          getDefaultLogger().success(
+          logger.success(
             'Updated the installed Socket tab completion script',
           )
           updatedTabCompletion = true
@@ -58,14 +60,14 @@ Do you want to install the Socket npm wrapper (this will create an alias to the 
   if (!updatedTabCompletion) {
     // Setting up tab completion requires bashrc modification. I'm not sure if
     // it's cool to just do that from an npm install...
-    getDefaultLogger().log(
+    logger.log(
       'Run `socket install completion` to setup bash tab completion',
     )
   }
 }
 
 async function setupShadowNpm(query: string): Promise<void> {
-  getDefaultLogger().log(`
+  logger.log(`
  _____         _       _
 |   __|___ ___| |_ ___| |_
 |__   | . |  _| '_| -_|  _|

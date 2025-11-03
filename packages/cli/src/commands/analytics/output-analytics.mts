@@ -10,6 +10,8 @@ import { fileLink } from '../../utils/terminal/link.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+const logger = getDefaultLogger()
+
 
 const METRICS = [
   'total_critical_alerts',
@@ -63,10 +65,10 @@ export async function outputAnalytics(
 
   if (!result.ok) {
     if (outputKind === 'json') {
-      getDefaultLogger().log(serializeResultJson(result))
+      logger.log(serializeResultJson(result))
       return
     }
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -77,13 +79,13 @@ export async function outputAnalytics(
       try {
         await fs.writeFile(filepath, serialized, 'utf8')
         debugFileOp('write', filepath)
-        getDefaultLogger().success(
+        logger.success(
           `Data successfully written to ${fileLink(filepath)}`,
         )
       } catch (e) {
         debugFileOp('write', filepath, e)
         process.exitCode = 1
-        getDefaultLogger().log(
+        logger.log(
           serializeResultJson({
             ok: false,
             message: 'File Write Failure',
@@ -92,7 +94,7 @@ export async function outputAnalytics(
         )
       }
     } else {
-      getDefaultLogger().log(serialized)
+      logger.log(serialized)
     }
 
     return
@@ -109,15 +111,15 @@ export async function outputAnalytics(
       try {
         await fs.writeFile(filepath, serialized, 'utf8')
         debugFileOp('write', filepath)
-        getDefaultLogger().success(
+        logger.success(
           `Data successfully written to ${fileLink(filepath)}`,
         )
       } catch (e) {
         debugFileOp('write', filepath, e)
-        getDefaultLogger().error(e)
+        logger.error(e)
       }
     } else {
-      getDefaultLogger().log(serialized)
+      logger.log(serialized)
     }
   } else {
     await displayAnalyticsWithInk(fdata)

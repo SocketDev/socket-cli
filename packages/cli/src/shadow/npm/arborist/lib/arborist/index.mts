@@ -6,6 +6,8 @@ import UntypedArborist from '@npmcli/arborist/lib/arborist/index.js'
 import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+const logger = getDefaultLogger()
+
 import { NPX } from '../../../../../constants/agents.mts'
 import ENV from '../../../../../constants/env.mts'
 import { NODE_MODULES } from '../../../../../constants/packages.mts'
@@ -181,11 +183,11 @@ export class SafeArborist extends Arborist {
       )
     }
     if (!silent && !shadowSilent) {
-      getDefaultLogger().success(
+      logger.success(
         `Socket ${binName} ${acceptRisks ? 'accepted' : 'found no'}${hasExisting ? ' new' : ''} risks`,
       )
       if (isShadowNpx) {
-        getDefaultLogger().log(`Running ${options.add?.[0]}`)
+        logger.log(`Running ${options.add?.[0]}`)
       }
     }
 

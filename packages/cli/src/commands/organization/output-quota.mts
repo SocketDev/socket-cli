@@ -6,6 +6,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+const logger = getDefaultLogger()
+
 
 export async function outputQuota(
   result: CResult<SocketSdkSuccessResult<'getQuota'>['data']>,
@@ -16,26 +18,26 @@ export async function outputQuota(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   if (outputKind === 'markdown') {
-    getDefaultLogger().log(mdHeader('Quota'))
-    getDefaultLogger().log('')
-    getDefaultLogger().log(
+    logger.log(mdHeader('Quota'))
+    logger.log('')
+    logger.log(
       `Quota left on the current API token: ${result.data.quota}`,
     )
-    getDefaultLogger().log('')
+    logger.log('')
     return
   }
 
-  getDefaultLogger().log(
+  logger.log(
     `Quota left on the current API token: ${result.data.quota}`,
   )
-  getDefaultLogger().log('')
+  logger.log('')
 }

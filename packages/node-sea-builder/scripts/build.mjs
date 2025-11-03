@@ -510,13 +510,13 @@ async function buildTarget(target, options) {
     path.join(__dirname, '../../..', 'packages', 'bootstrap', 'dist', 'bootstrap-sea.js'),
   )
 
-  // Check if bootstrap needs to be built.
-  if (!existsSync(bootstrapPath)) {
-    getDefaultLogger().log('')
-    getDefaultLogger().log(`${colors.blue('ℹ')} Bootstrap not found, building @socketsecurity/bootstrap package...`)
-    getDefaultLogger().log('')
+  // Always rebuild bootstrap to ensure latest version.
+  // Bootstrap build is fast (~5 seconds) and ensures version placeholders are current.
+  getDefaultLogger().log('')
+  getDefaultLogger().log(`${colors.blue('ℹ')} Rebuilding @socketsecurity/bootstrap package...`)
+  getDefaultLogger().log('')
 
-    const result = await spawn(
+  const result = await spawn(
       'pnpm',
       ['--filter', '@socketsecurity/bootstrap', 'run', 'build'],
       {

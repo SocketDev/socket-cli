@@ -30,6 +30,8 @@ import { promises as fs } from 'node:fs'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
+const logger = getDefaultLogger()
+
 
 /**
  * Platform name mappings for GitHub releases.
@@ -151,9 +153,9 @@ async function clearQuarantine(filePath: string): Promise<void> {
     await spawn('xattr', ['-d', 'com.apple.quarantine', filePath], {
       stdio: 'ignore',
     })
-    getDefaultLogger().log('Cleared quarantine attribute')
+    logger.log('Cleared quarantine attribute')
   } catch (e) {
-    getDefaultLogger().log(
+    logger.log(
       `Failed to clear quarantine: ${e instanceof Error ? e.message : String(e)}`,
     )
   }
@@ -170,9 +172,9 @@ async function ensureExecutable(filePath: string): Promise<void> {
 
   try {
     await fs.chmod(filePath, 0o755)
-    getDefaultLogger().log('Set executable permissions')
+    logger.log('Set executable permissions')
   } catch (e) {
-    getDefaultLogger().warn(
+    logger.warn(
       `Failed to set executable permissions: ${e instanceof Error ? e.message : String(e)}`,
     )
   }

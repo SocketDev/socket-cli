@@ -5,6 +5,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { PatchCleanupData } from './handle-patch-cleanup.mts'
 import type { CResult, OutputKind } from '../../types.mts'
+const logger = getDefaultLogger()
+
 
 export async function outputPatchCleanupResult(
   result: CResult<PatchCleanupData>,
@@ -15,24 +17,24 @@ export async function outputPatchCleanupResult(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
 
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   const { cleaned } = result.data
 
   if (outputKind === 'markdown') {
-    getDefaultLogger().log('## Patch Backups Cleaned\n')
-    getDefaultLogger().log(`**Count**: ${cleaned.length}\n`)
+    logger.log('## Patch Backups Cleaned\n')
+    logger.log(`**Count**: ${cleaned.length}\n`)
     if (cleaned.length > 0) {
-      getDefaultLogger().log('**UUIDs**:\n')
+      logger.log('**UUIDs**:\n')
       for (const uuid of cleaned) {
-        getDefaultLogger().log(`- ${uuid}`)
+        logger.log(`- ${uuid}`)
       }
     }
     return
@@ -43,14 +45,14 @@ export async function outputPatchCleanupResult(
     return
   }
 
-  getDefaultLogger().group('')
-  getDefaultLogger().log(`Cleaned backups: ${cleaned.length}`)
+  logger.group('')
+  logger.log(`Cleaned backups: ${cleaned.length}`)
   if (cleaned.length > 0) {
-    getDefaultLogger().group()
+    logger.group()
     for (const uuid of cleaned) {
-      getDefaultLogger().log(`- ${uuid}`)
+      logger.log(`- ${uuid}`)
     }
-    getDefaultLogger().groupEnd()
+    logger.groupEnd()
   }
-  getDefaultLogger().groupEnd()
+  logger.groupEnd()
 }

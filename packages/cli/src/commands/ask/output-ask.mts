@@ -1,6 +1,8 @@
 import colors from 'yoctocolors-cjs'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+const logger = getDefaultLogger()
+
 
 interface OutputAskCommandOptions {
   query: string
@@ -29,14 +31,14 @@ export function outputAskCommand(options: OutputAskCommandOptions): void {
   const { context, explain, intent, query } = options
 
   // Show the query.
-  getDefaultLogger().log('')
-  getDefaultLogger().log(colors.bold(colors.magenta('❯ You asked:')))
-  getDefaultLogger().log(`  "${colors.cyan(query)}"`)
-  getDefaultLogger().log('')
+  logger.log('')
+  logger.log(colors.bold(colors.magenta('❯ You asked:')))
+  logger.log(`  "${colors.cyan(query)}"`)
+  logger.log('')
 
   // Show interpretation.
-  getDefaultLogger().log(colors.bold(colors.magenta('🤖 I understood:')))
-  getDefaultLogger().log(`  ${intent.explanation}`)
+  logger.log(colors.bold(colors.magenta('🤖 I understood:')))
+  logger.log(`  ${intent.explanation}`)
 
   // Show extracted details if present.
   const details = []
@@ -60,42 +62,42 @@ export function outputAskCommand(options: OutputAskCommandOptions): void {
   }
 
   if (details.length > 0) {
-    getDefaultLogger().log(`  ${details.join(', ')}`)
+    logger.log(`  ${details.join(', ')}`)
   }
 
   // Show confidence if low.
   if (intent.confidence < 0.6) {
-    getDefaultLogger().log('')
-    getDefaultLogger().log(
+    logger.log('')
+    logger.log(
       colors.yellow(
         '⚠️  Low confidence - the command might not match your intent exactly',
       ),
     )
   }
 
-  getDefaultLogger().log('')
+  logger.log('')
 
   // Show the command.
-  getDefaultLogger().log(colors.bold(colors.magenta('📝 Command:')))
-  getDefaultLogger().log(
+  logger.log(colors.bold(colors.magenta('📝 Command:')))
+  logger.log(
     `  ${colors.green('$')} socket ${colors.cyan(intent.command.join(' '))}`,
   )
 
   // Show explanation if requested.
   if (explain) {
-    getDefaultLogger().log('')
-    getDefaultLogger().log(colors.bold(colors.magenta('💡 Explanation:')))
-    getDefaultLogger().log(explainCommand(intent))
+    logger.log('')
+    logger.log(colors.bold(colors.magenta('💡 Explanation:')))
+    logger.log(explainCommand(intent))
   }
 
   // Show context.
   if (context.hasPackageJson && explain) {
-    getDefaultLogger().log('')
-    getDefaultLogger().log(colors.bold(colors.magenta('📦 Project Context:')))
+    logger.log('')
+    logger.log(colors.bold(colors.magenta('📦 Project Context:')))
     const depCount = Object.keys(context.dependencies || {}).length
     const devDepCount = Object.keys(context.devDependencies || {}).length
-    getDefaultLogger().log(`  Dependencies: ${depCount} packages`)
-    getDefaultLogger().log(`  Dev Dependencies: ${devDepCount} packages`)
+    logger.log(`  Dependencies: ${depCount} packages`)
+    logger.log(`  Dev Dependencies: ${devDepCount} packages`)
   }
 }
 

@@ -5,6 +5,8 @@ import path from 'node:path'
 import { NPM } from '@socketsecurity/lib/constants/agents'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+const logger = getDefaultLogger()
+
 import ENV from '../../constants/env.mts'
 import { NODE_MODULES } from '../../constants/packages.mts'
 import { SOCKET_CLI_ISSUES_URL } from '../../constants/socket.mts'
@@ -14,7 +16,7 @@ import {
 } from '../fs/path-resolve.mts'
 
 function exitWithBinPathError(binName: string): never {
-  getDefaultLogger().fail(
+  logger.fail(
     `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable`,
   )
   // The exit code 127 indicates that the command or binary being executed
@@ -60,7 +62,7 @@ export function getNpmDirPath() {
       message +=
         '\n\nThis is may be a bug with socket-npm related to changes to the npm CLI.'
       message += `\nPlease report to ${SOCKET_CLI_ISSUES_URL}.`
-      getDefaultLogger().fail(message)
+      logger.fail(message)
       // The exit code 127 indicates that the command or binary being executed
       // could not be found.
       // eslint-disable-next-line n/no-process-exit

@@ -12,6 +12,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/lib/spinner'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+const logger = getDefaultLogger()
+
 
 export type CreateNewScanOptions = {
   interactive?: boolean | undefined
@@ -38,7 +40,7 @@ export async function outputCreateNewScan(
   spinner?.stop()
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     if (wasSpinning) {
       spinner?.start()
     }
@@ -46,7 +48,7 @@ export async function outputCreateNewScan(
   }
 
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     if (wasSpinning) {
       spinner?.start()
     }
@@ -54,40 +56,40 @@ export async function outputCreateNewScan(
   }
 
   if (!result.data.id) {
-    getDefaultLogger().fail('Did not receive a scan ID from the API.')
+    logger.fail('Did not receive a scan ID from the API.')
     process.exitCode = 1
   }
 
   if (outputKind === 'markdown') {
-    getDefaultLogger().log(mdHeader('Create New Scan'))
-    getDefaultLogger().log('')
+    logger.log(mdHeader('Create New Scan'))
+    logger.log('')
     if (result.data.id) {
-      getDefaultLogger().log(
+      logger.log(
         `A [new Scan](${result.data.html_report_url}) was created with ID: ${result.data.id}`,
       )
-      getDefaultLogger().log('')
+      logger.log('')
     } else {
-      getDefaultLogger().log(
+      logger.log(
         'The server did not return a Scan ID while trying to create a new Scan. This could be an indication something went wrong.',
       )
     }
-    getDefaultLogger().log('')
+    logger.log('')
     if (wasSpinning) {
       spinner?.start()
     }
     return
   }
 
-  getDefaultLogger().log('')
-  getDefaultLogger().success('Scan completed successfully!')
+  logger.log('')
+  logger.success('Scan completed successfully!')
 
   const htmlReportUrl = result.data.html_report_url
   if (htmlReportUrl) {
-    getDefaultLogger().log(
+    logger.log(
       `View report at: ${terminalLink(htmlReportUrl, htmlReportUrl)}`,
     )
   } else {
-    getDefaultLogger().log('No report available.')
+    logger.log('No report available.')
   }
 
   if (

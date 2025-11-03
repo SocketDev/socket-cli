@@ -11,6 +11,8 @@ import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 
 import type { GeneratableManifests } from './detect-manifest-actions.mts'
 import type { OutputKind } from '../../types.mts'
+const logger = getDefaultLogger()
+
 
 export async function generateAutoManifest({
   cwd,
@@ -26,13 +28,13 @@ export async function generateAutoManifest({
   const sockJson = readOrDefaultSocketJson(cwd)
 
   if (verbose) {
-    getDefaultLogger().info(`Using this ${SOCKET_JSON} for defaults:`, sockJson)
+    logger.info(`Using this ${SOCKET_JSON} for defaults:`, sockJson)
   }
 
   if (!sockJson?.defaults?.manifest?.sbt?.disabled && detected.sbt) {
     const isTextMode = outputKind === 'text'
     if (isTextMode) {
-      getDefaultLogger().log(
+      logger.log(
         'Detected a Scala sbt build, generating pom files with sbt...',
       )
     }
@@ -54,7 +56,7 @@ export async function generateAutoManifest({
   if (!sockJson?.defaults?.manifest?.gradle?.disabled && detected.gradle) {
     const isTextMode = outputKind === 'text'
     if (isTextMode) {
-      getDefaultLogger().log(
+      logger.log(
         'Detected a gradle build (Gradle, Kotlin, Scala), running default gradle generator...',
       )
     }
@@ -76,7 +78,7 @@ export async function generateAutoManifest({
   }
 
   if (!sockJson?.defaults?.manifest?.conda?.disabled && detected.conda) {
-    getDefaultLogger().log(
+    logger.log(
       'Detected an environment.yml file, running default Conda generator...',
     )
     await handleManifestConda({

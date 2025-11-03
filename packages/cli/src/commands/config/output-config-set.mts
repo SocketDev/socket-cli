@@ -5,6 +5,8 @@ import { mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
+const logger = getDefaultLogger()
+
 
 export async function outputConfigSet(
   result: CResult<undefined | string>,
@@ -15,28 +17,28 @@ export async function outputConfigSet(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   if (outputKind === 'markdown') {
-    getDefaultLogger().log(mdHeader('Update config'))
-    getDefaultLogger().log('')
-    getDefaultLogger().log(result.message)
+    logger.log(mdHeader('Update config'))
+    logger.log('')
+    logger.log(result.message)
     if (result.data) {
-      getDefaultLogger().log('')
-      getDefaultLogger().log(result.data)
+      logger.log('')
+      logger.log(result.data)
     }
   } else {
-    getDefaultLogger().log('OK')
-    getDefaultLogger().log(result.message)
+    logger.log('OK')
+    logger.log(result.message)
     if (result.data) {
-      getDefaultLogger().log('')
-      getDefaultLogger().log(result.data)
+      logger.log('')
+      logger.log(result.data)
     }
   }
 }
