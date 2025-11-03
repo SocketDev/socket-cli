@@ -1,4 +1,4 @@
-name: ⚡ Socket SEA Binaries
+name: ⚡ SEA Binaries
 
 on:
   workflow_call:
@@ -115,7 +115,7 @@ jobs:
           retention-days: 1
 
   build-sea:
-    name: ⚡ Socket SEA - ${{ matrix.platform }}-${{ matrix.arch }}
+    name: ⚡ SEA - ${{ matrix.platform }}-${{ matrix.arch }}
     needs: build-deps
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60

@@ -1,4 +1,4 @@
-name: ⚡ Socket Smol Node Binaries
+name: ⚡ Smol Node Binaries
 
 on:
   workflow_call:
@@ -57,7 +57,7 @@ concurrency:
 
 jobs:
   build-deps:
-    name: ⚡ Socket Dependencies
+    name: ⚡ Dependencies
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:
@@ -113,7 +113,7 @@ jobs:
 
   build-smol:
     needs: build-deps
-    name: ⚡ Socket Smol - ${{ matrix.platform }}-${{ matrix.arch }}
+    name: ⚡ Smol - ${{ matrix.platform }}-${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: ${{ inputs.force && 150 || 120 }}
     strategy:
@@ -510,7 +510,7 @@ jobs:
           if-no-files-found: ignore
 
   summary:
-    name: ⚡ Socket Build Summary
+    name: ⚡ Build Summary
     needs: [build-smol]
     if: always()
     runs-on: ubuntu-latest

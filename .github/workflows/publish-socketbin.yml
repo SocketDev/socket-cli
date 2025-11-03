@@ -1,4 +1,4 @@
-name: ⚡ Socket Publish
+name: ⚡ Publish
 
 on:
   workflow_dispatch:

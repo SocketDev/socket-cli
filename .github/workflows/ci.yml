@@ -1,4 +1,4 @@
-name: ⚡ Socket CI
+name: ⚡ CI
 
 # Dependencies:
 #   - SocketDev/socket-registry/.github/workflows/ci.yml
