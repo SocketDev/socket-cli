@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { rootAliases, rootCommands } from '../../src/src/commands.mts'
+import { rootAliases, rootCommands } from '../../src/commands.mts'
 
 describe('commands', () => {
   describe('rootCommands', () => {

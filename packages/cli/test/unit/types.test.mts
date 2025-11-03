@@ -6,7 +6,7 @@ import type {
   SocketCliConfigObject,
   SocketconfigAny,
   ValidResult,
-} from '../../src/src/types.mts'
+} from '../../src/types.mts'
 
 describe('types', () => {
   describe('CResult type', () => {

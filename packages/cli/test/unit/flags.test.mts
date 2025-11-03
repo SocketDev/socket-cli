@@ -7,7 +7,7 @@ import {
   outputFlags,
   resetFlagCache,
   validationFlags,
-} from '../../src/src/flags.mts'
+} from '../../src/flags.mts'
 
 // Mock dependencies.
 vi.mock('meow', () => ({

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import ENV from '../../src/src/constants/env.mts'
+import ENV from '../../src/constants/env.mts'
 
 // Mock environment variables before importing constants.
 vi.stubEnv('SOCKET_API_BASE_URL', '')
