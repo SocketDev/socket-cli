@@ -1,24 +1,24 @@
 import npmPackageArg from 'npm-package-arg'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createPurlObject } from '../../../../src/purl/parse.mts'
+import { createPurlObject } from '../../../../src/src/utils/purl/parse.mts'
 import {
   npmSpecToPurl,
   safeNpa,
   safeNpmSpecToPurl,
   safeParseNpmSpec,
-} from '../../../../../src/utils/npm/spec.mts'
+} from '../../../../src/src/utils/npm/spec.mts'
 
 // Mock dependencies.
 vi.mock('npm-package-arg', () => ({
   default: vi.fn(),
 }))
 
-vi.mock('../purl/parse.mts', () => ({
+vi.mock('../../../../src/utils/purl/parse.mts', () => ({
   createPurlObject: vi.fn(),
 }))
 
-vi.mock('../constants.mts', () => ({
+vi.mock('../../../../src/constants/agents.mts', () => ({
   NPM: 'npm',
 }))
 

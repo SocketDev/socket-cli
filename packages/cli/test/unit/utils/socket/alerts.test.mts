@@ -31,15 +31,15 @@ vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
   })),
 }))
 
-vi.mock('../config.mts', () => ({
+vi.mock('../../../../../src/utils/config.mts', () => ({
   findSocketYmlSync: vi.fn(),
 }))
 
-vi.mock('../validation/filter-config.mts', () => ({
+vi.mock('../../../../../src/utils/validation/filter-config.mts', () => ({
   toFilterConfig: vi.fn(),
 }))
 
-vi.mock('../pnpm/lockfile.mts', () => ({
+vi.mock('../../../../../src/utils/pnpm/lockfile.mts', () => ({
   extractPurlsFromPnpmLockfile: vi.fn(),
 }))
 
@@ -47,15 +47,13 @@ vi.mock('../../../../../src/utils/socket/package-alert.mts', () => ({
   addArtifactToAlertsMap: vi.fn(),
 }))
 
+import { extractPurlsFromPnpmLockfile } from '../../../../../src/utils/pnpm/lockfile.mts'
+import { setupSdk } from '../../../../../src/utils/socket/sdk.mts'
+import { findSocketYmlSync } from '../../../../../src/utils/config.mts'
+
 describe('alerts-map utilities', () => {
   describe('getAlertsMapFromPnpmLockfile', () => {
     it('calls extractPurlsFromPnpmLockfile with lockfile', async () => {
-      const { extractPurlsFromPnpmLockfile } = await import(
-        '../pnpm/lockfile.mts'
-      )
-      const { setupSdk } = await import('../../src/sdk.mts')
-      const { findSocketYmlSync } = await import('../config.mts')
-
       vi.mocked(extractPurlsFromPnpmLockfile).mockReturnValue([])
       vi.mocked(setupSdk).mockReturnValue({
         ok: true,
@@ -94,9 +92,6 @@ describe('alerts-map utilities', () => {
 
   describe('getAlertsMapFromPurls', () => {
     it('returns map for empty purls', async () => {
-      const { setupSdk } = await import('../../src/sdk.mts')
-      const { findSocketYmlSync } = await import('../config.mts')
-
       vi.mocked(setupSdk).mockReturnValue({
         ok: true,
         data: {
@@ -125,8 +120,6 @@ describe('alerts-map utilities', () => {
     })
 
     it('requires API token', async () => {
-      const { setupSdk } = await import('../../src/sdk.mts')
-
       vi.mocked(setupSdk).mockReturnValue({
         ok: false,
         message: 'No API token',

@@ -7,7 +7,7 @@ import {
   COMPLETION_CMD_PREFIX,
   getBashrcDetails,
   getCompletionSourcingCommand,
-} from '../../../../src/cli/completion.mts'
+} from '../../../../src/src/cli/completion.mts'
 
 // Mock node:fs.
 vi.mock('node:fs', () => ({

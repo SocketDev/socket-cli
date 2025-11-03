@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies first.
-vi.mock('../config.mts', () => ({
+vi.mock('../../../../../src/utils/config.mts', () => ({
   getConfigValueOrUndef: vi.fn(),
 }))
 
@@ -28,6 +28,7 @@ vi.mock('@socketsecurity/lib/spinner', () => ({
   })),
 }))
 
+import { getConfigValueOrUndef } from '../../../../../src/utils/config.mts'
 import {
   getDefaultApiBaseUrl,
   getErrorMessageForHttpStatusCode,
@@ -53,13 +54,12 @@ describe('api utilities', () => {
       // Reset modules to pick up the new environment variable.
       await vi.resetModules()
       // Re-import to get the freshly loaded module with the stubbed env var.
-      const { getDefaultApiBaseUrl } = await import('../../src/api.mts')
+      const { getDefaultApiBaseUrl } = await import('../../../../../src/utils/socket/api.mts')
       const result = getDefaultApiBaseUrl()
       expect(result).toBe('https://custom.api.url')
     })
 
     it('falls back to config value when env not set', async () => {
-      const { getConfigValueOrUndef } = await import('../config.mts')
       vi.mocked(getConfigValueOrUndef).mockReturnValue('https://config.api.url')
 
       const result = getDefaultApiBaseUrl()
@@ -67,7 +67,6 @@ describe('api utilities', () => {
     })
 
     it('returns default API_V0_URL when neither env nor config set', async () => {
-      const { getConfigValueOrUndef } = await import('../config.mts')
       vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
 
       const result = getDefaultApiBaseUrl()

@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../../test/helpers/mocks.mts'
-import { handleConfigUnset } from '../../../../../src/commands/config/handle-config-unset.mts'
+import { handleConfigUnset } from '../../../../src/src/commands/config/handle-config-unset.mts'
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),

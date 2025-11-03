@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { convertPurlToGhsas } from '../../../../../src/utils/purl/to-ghsa.mts'
+import { convertPurlToGhsas } from '../../../../src/src/utils/purl/to-ghsa.mts'
 
 // Mock the dependencies.
 vi.mock('../git/github.mts', () => ({

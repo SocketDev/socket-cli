@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../../test/helpers/mocks.mts'
-import { handleDeleteScan } from '../../../../../src/commands/scan/handle-delete-scan.mts'
+import { handleDeleteScan } from '../../../../src/src/commands/scan/handle-delete-scan.mts'
 
 // Mock the dependencies.
 vi.mock('../../../../../src/commands/scan/fetch-delete-org-full-scan.mts', () => ({

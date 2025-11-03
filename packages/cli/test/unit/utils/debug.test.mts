@@ -25,7 +25,7 @@ import {
   debugFileOp,
   debugGit,
   debugScan,
-} from '../../../../src/utils/debug.mts'
+} from '../../../src/src/utils/debug.mts'
 
 describe('debug utilities', () => {
   beforeEach(() => {

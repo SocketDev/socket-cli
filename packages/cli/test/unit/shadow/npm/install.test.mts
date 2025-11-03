@@ -27,11 +27,11 @@ vi.mock('@socketsecurity/lib/agent', () => ({
   ),
 }))
 
-vi.mock('../../utils/npm/paths.mts', () => ({
+vi.mock('../../../../src/utils/npm/paths.mts', () => ({
   getNpmBinPath: mockGetNpmBinPath,
 }))
 
-vi.mock('../../constants/paths.mts', () => ({
+vi.mock('../../../../src/constants/paths.mts', () => ({
   execPath: '/usr/bin/node',
   instrumentWithSentryPath: '/mock/sentry.js',
   nodeHardenFlags: ['--frozen-intrinsics'],
@@ -40,24 +40,24 @@ vi.mock('../../constants/paths.mts', () => ({
   shadowNpmInjectPath: '/mock/inject.js',
 }))
 
-vi.mock('../../constants/env.mts', () => ({
+vi.mock('../../../../src/constants/env.mts', () => ({
   default: {
     INLINED_SOCKET_CLI_SENTRY_BUILD: false,
   },
   processEnv: { SOCKET_ENV: 'test' },
 }))
 
-vi.mock('../../constants/shadow.mts', () => ({
+vi.mock('../../../../src/constants/shadow.mts', () => ({
   SOCKET_CLI_SHADOW_BIN: 'SOCKET_CLI_SHADOW_BIN',
   SOCKET_CLI_SHADOW_PROGRESS: 'SOCKET_CLI_SHADOW_PROGRESS',
   SOCKET_IPC_HANDSHAKE: 'SOCKET_IPC_HANDSHAKE',
 }))
 
-vi.mock('../../constants/agents.mts', () => ({
+vi.mock('../../../../src/constants/agents.mts', () => ({
   NPM: 'npm',
 }))
 
-vi.mock('../../constants/cli.mts', () => ({
+vi.mock('../../../../src/constants/cli.mts', () => ({
   FLAG_LOGLEVEL: '--loglevel',
 }))
 

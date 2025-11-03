@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { determineOrgSlug } from '../../../../src/socket/org-slug.mts'
+import { determineOrgSlug } from '../../../../../src/utils/socket/org-slug.mts'
 
 // Mock dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -17,29 +17,34 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 
-vi.mock('../../constants/config.mts', () => ({
+vi.mock('../../../../../src/constants/config.mts', () => ({
   CONFIG_KEY_DEFAULT_ORG: 'defaultOrg',
 }))
 
-vi.mock('../../constants/socket.mts', () => ({
+vi.mock('../../../../../src/constants/socket.mts', () => ({
   V1_MIGRATION_GUIDE_URL: 'https://socket.dev/migration-guide',
 }))
 
-vi.mock('../config.mts', () => ({
+vi.mock('../../../../../src/utils/config.mts', () => ({
   getConfigValueOrUndef: vi.fn(),
 }))
 
-vi.mock('../terminal/link.mts', () => ({
+vi.mock('../../../../../src/utils/terminal/link.mts', () => ({
   webLink: vi.fn((_url, text) => text),
 }))
 
-vi.mock('../../commands/scan/suggest-org-slug.mts', () => ({
+vi.mock('../../../../../src/commands/scan/suggest-org-slug.mts', () => ({
   suggestOrgSlug: vi.fn(),
 }))
 
-vi.mock('../../commands/scan/suggest-to-persist-orgslug.mts', () => ({
+vi.mock('../../../../../src/commands/scan/suggest-to-persist-orgslug.mts', () => ({
   suggestToPersistOrgSlug: vi.fn(),
 }))
+
+import { getConfigValueOrUndef } from '../../../../../src/utils/config.mts'
+import { webLink } from '../../../../../src/utils/terminal/link.mts'
+import { suggestOrgSlug } from '../../../../../src/commands/scan/suggest-org-slug.mts'
+import { suggestToPersistOrgSlug } from '../../../../../src/commands/scan/suggest-to-persist-orgslug.mts'
 
 describe('determineOrgSlug', () => {
   beforeEach(() => {
@@ -48,8 +53,7 @@ describe('determineOrgSlug', () => {
 
   describe('when org flag is provided', () => {
     it('uses org flag value over default', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
-      getConfigValueOrUndef.mockReturnValue('default-org')
+      vi.mocked(getConfigValueOrUndef).mockReturnValue('default-org')
 
       const result = await determineOrgSlug('flag-org', false, false)
 
@@ -58,8 +62,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('returns org flag even when no default exists', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
-      getConfigValueOrUndef.mockReturnValue(undefined)
+      vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
 
       const result = await determineOrgSlug('provided-org', false, false)
 
@@ -67,8 +70,6 @@ describe('determineOrgSlug', () => {
     })
 
     it('handles empty string org flag', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
-      vi.mocked(await import('@socketsecurity/lib/logger'))
       getConfigValueOrUndef.mockReturnValue(undefined)
 
       const result = await determineOrgSlug('', false, false)
@@ -82,8 +83,7 @@ describe('determineOrgSlug', () => {
 
   describe('when using default org', () => {
     it('uses default org when no flag provided', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
-      getConfigValueOrUndef.mockReturnValue('configured-default-org')
+      vi.mocked(getConfigValueOrUndef).mockReturnValue('configured-default-org')
 
       const result = await determineOrgSlug('', false, false)
 
@@ -94,8 +94,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('handles numeric default org', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
-      getConfigValueOrUndef.mockReturnValue(12345 as any)
+      vi.mocked(getConfigValueOrUndef).mockReturnValue(12345 as any)
 
       const result = await determineOrgSlug('', false, false)
 
@@ -105,9 +104,6 @@ describe('determineOrgSlug', () => {
 
   describe('non-interactive mode', () => {
     it('returns empty org and logs warnings when no org available', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
-      vi.mocked(await import('@socketsecurity/lib/logger'))
-      const { webLink } = vi.mocked(await import('../../../../../src/utils/terminal/link.mts'))
       getConfigValueOrUndef.mockReturnValue(undefined)
 
       const result = await determineOrgSlug('', false, false)
@@ -135,8 +131,6 @@ describe('determineOrgSlug', () => {
     })
 
     it('logs all migration guide messages', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
-      vi.mocked(await import('@socketsecurity/lib/logger'))
       getConfigValueOrUndef.mockReturnValue(undefined)
 
       await determineOrgSlug('', false, false)
@@ -152,14 +146,12 @@ describe('determineOrgSlug', () => {
 
   describe('interactive mode', () => {
     it('suggests org slug when no org available', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
       const { suggestOrgSlug } = vi.mocked(
-        await import('../../commands/scan/suggest-org-slug.mts'),
+        await import('../../../../../src/commands/scan/suggest-org-slug.mts'),
       )
       const { suggestToPersistOrgSlug } = vi.mocked(
-        await import('../../commands/scan/suggest-to-persist-orgslug.mts'),
+        await import('../../../../../src/commands/scan/suggest-to-persist-orgslug.mts'),
       )
-      vi.mocked(await import('@socketsecurity/lib/logger'))
 
       getConfigValueOrUndef.mockReturnValue(undefined)
       suggestOrgSlug.mockResolvedValue('suggested-org')
@@ -181,12 +173,11 @@ describe('determineOrgSlug', () => {
     })
 
     it('handles null suggestion from suggestOrgSlug', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
       const { suggestOrgSlug } = vi.mocked(
-        await import('../../commands/scan/suggest-org-slug.mts'),
+        await import('../../../../../src/commands/scan/suggest-org-slug.mts'),
       )
       const { suggestToPersistOrgSlug } = vi.mocked(
-        await import('../../commands/scan/suggest-to-persist-orgslug.mts'),
+        await import('../../../../../src/commands/scan/suggest-to-persist-orgslug.mts'),
       )
 
       getConfigValueOrUndef.mockReturnValue(undefined)
@@ -200,12 +191,11 @@ describe('determineOrgSlug', () => {
     })
 
     it('handles undefined suggestion from suggestOrgSlug', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
       const { suggestOrgSlug } = vi.mocked(
-        await import('../../commands/scan/suggest-org-slug.mts'),
+        await import('../../../../../src/commands/scan/suggest-org-slug.mts'),
       )
       const { suggestToPersistOrgSlug } = vi.mocked(
-        await import('../../commands/scan/suggest-to-persist-orgslug.mts'),
+        await import('../../../../../src/commands/scan/suggest-to-persist-orgslug.mts'),
       )
 
       getConfigValueOrUndef.mockReturnValue(undefined)
@@ -219,11 +209,9 @@ describe('determineOrgSlug', () => {
     })
 
     it('skips auto-discovery in dry-run mode', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
       const { suggestOrgSlug } = vi.mocked(
-        await import('../../commands/scan/suggest-org-slug.mts'),
+        await import('../../../../../src/commands/scan/suggest-org-slug.mts'),
       )
-      vi.mocked(await import('@socketsecurity/lib/logger'))
 
       getConfigValueOrUndef.mockReturnValue(undefined)
 
@@ -239,8 +227,7 @@ describe('determineOrgSlug', () => {
 
   describe('edge cases', () => {
     it('handles boolean values for org flag', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
-      getConfigValueOrUndef.mockReturnValue('default')
+      vi.mocked(getConfigValueOrUndef).mockReturnValue('default')
 
       const result = await determineOrgSlug(true as any, false, false)
 
@@ -248,8 +235,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('handles null values for org flag', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
-      getConfigValueOrUndef.mockReturnValue('default')
+      vi.mocked(getConfigValueOrUndef).mockReturnValue('default')
 
       const result = await determineOrgSlug(null as any, false, false)
 
@@ -257,8 +243,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('handles undefined values for org flag', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
-      getConfigValueOrUndef.mockReturnValue('default')
+      vi.mocked(getConfigValueOrUndef).mockReturnValue('default')
 
       const result = await determineOrgSlug(undefined as any, false, false)
 
@@ -266,8 +251,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('handles numeric values for org flag', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
-      getConfigValueOrUndef.mockReturnValue(undefined)
+      vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
 
       const result = await determineOrgSlug(42 as any, false, false)
 
@@ -275,12 +259,11 @@ describe('determineOrgSlug', () => {
     })
 
     it('handles empty string suggestion from suggestOrgSlug', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
       const { suggestOrgSlug } = vi.mocked(
-        await import('../../commands/scan/suggest-org-slug.mts'),
+        await import('../../../../../src/commands/scan/suggest-org-slug.mts'),
       )
       const { suggestToPersistOrgSlug } = vi.mocked(
-        await import('../../commands/scan/suggest-to-persist-orgslug.mts'),
+        await import('../../../../../src/commands/scan/suggest-to-persist-orgslug.mts'),
       )
 
       getConfigValueOrUndef.mockReturnValue(undefined)
@@ -293,8 +276,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('preserves whitespace in org slug', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
-      getConfigValueOrUndef.mockReturnValue(undefined)
+      vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
 
       const result = await determineOrgSlug('  org-with-spaces  ', false, false)
 
@@ -304,9 +286,8 @@ describe('determineOrgSlug', () => {
 
   describe('combination scenarios', () => {
     it('prioritizes org flag over everything else', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
       const { suggestOrgSlug } = vi.mocked(
-        await import('../../commands/scan/suggest-org-slug.mts'),
+        await import('../../../../../src/commands/scan/suggest-org-slug.mts'),
       )
 
       getConfigValueOrUndef.mockReturnValue('default-org')
@@ -319,9 +300,8 @@ describe('determineOrgSlug', () => {
     })
 
     it('uses default when available in interactive mode', async () => {
-      const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
       const { suggestOrgSlug } = vi.mocked(
-        await import('../../commands/scan/suggest-org-slug.mts'),
+        await import('../../../../../src/commands/scan/suggest-org-slug.mts'),
       )
 
       getConfigValueOrUndef.mockReturnValue('configured-org')

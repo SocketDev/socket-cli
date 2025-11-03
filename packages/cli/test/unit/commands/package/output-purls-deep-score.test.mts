@@ -1,24 +1,24 @@
 import { describe, expect, it } from 'vitest'
 
-import goDeep from '../../../../src/commands/package/fixtures/go_deep.json' with {
+import goDeep from '../../../../src/src/commands/package/fixtures/go_deep.json' with {
   type: 'json',
 }
-import mavenDeep from '../../../../src/commands/package/fixtures/maven_deep.json' with {
+import mavenDeep from '../../../../src/src/commands/package/fixtures/maven_deep.json' with {
   type: 'json',
 }
-import npmDeep from '../../../../src/commands/package/fixtures/npm_deep.json' with {
+import npmDeep from '../../../../src/src/commands/package/fixtures/npm_deep.json' with {
   type: 'json',
 }
-import nugetDeep from '../../../../src/commands/package/fixtures/nuget_deep.json' with {
+import nugetDeep from '../../../../src/src/commands/package/fixtures/nuget_deep.json' with {
   type: 'json',
 }
-import pythonDeep from '../../../../src/commands/package/fixtures/python_deep.json' with {
+import pythonDeep from '../../../../src/src/commands/package/fixtures/python_deep.json' with {
   type: 'json',
 }
-import rubyDeep from '../../../../src/commands/package/fixtures/ruby_deep.json' with {
+import rubyDeep from '../../../../src/src/commands/package/fixtures/ruby_deep.json' with {
   type: 'json',
 }
-import { createMarkdownReport } from '../../../../src/commands/package/output-purls-deep-score.mts'
+import { createMarkdownReport } from '../../../../src/src/commands/package/output-purls-deep-score.mts'
 
 describe('package score output', async () => {
   describe('npm', () => {

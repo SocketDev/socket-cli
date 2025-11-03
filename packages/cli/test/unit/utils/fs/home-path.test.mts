@@ -2,10 +2,10 @@ import path from 'node:path'
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { tildify } from '../../../../src/fs/home-path.mts'
+import { tildify } from '../../../../src/utils/fs/home-path.mts'
 
 // Mock constants.
-vi.mock('../../constants/paths.mts', () => ({
+vi.mock('../../../../src/constants/paths.mts', () => ({
   homePath: '/Users/testuser',
 }))
 

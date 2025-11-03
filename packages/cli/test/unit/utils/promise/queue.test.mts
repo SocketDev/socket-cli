@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { PromiseQueue } from '../../../../../src/utils/promise/queue.mts'
+import { PromiseQueue } from '../../../../src/utils/promise/queue.mts'
 
 describe('PromiseQueue', () => {
   it('should execute tasks with limited concurrency', async () => {

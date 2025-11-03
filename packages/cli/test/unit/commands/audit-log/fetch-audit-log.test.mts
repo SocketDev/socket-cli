@@ -5,7 +5,7 @@ import {
   setupSdkMockSuccess,
   setupSdkSetupFailure,
 } from '../../../../../src/commands/../../../test/helpers/sdk-test-helpers.mts'
-import { fetchAuditLog } from '../../../../../src/commands/../../../../src/commands/audit-log/fetch-audit-log.mts'
+import { fetchAuditLog } from '../../../../src/src/commands/../../../../src/commands/audit-log/fetch-audit-log.mts'
 
 // Mock the dependencies.
 vi.mock('../../../../../src/commands/../utils/socket/api.mts', () => ({

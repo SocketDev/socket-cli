@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { openSocketFixPr } from '../../../../src/commands/fix/pull-request.mts'
+import { openSocketFixPr } from '../../../../src/src/commands/fix/pull-request.mts'
 
 const mockGetOctokit = vi.hoisted(() => vi.fn())
 const mockCreatePrProvider = vi.hoisted(() => vi.fn())

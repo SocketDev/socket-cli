@@ -4,7 +4,7 @@ import {
   camelToKebab,
   kebabToCamel,
   pluralize,
-} from '../../../../src/data/strings.mts'
+} from '../../../../src/src/data/strings.mts'
 
 describe('strings utilities', () => {
   describe('camelToKebab', () => {

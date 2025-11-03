@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../../src/commands/../../../test/helpers/mocks.mts'
-import { handleLicensePolicy } from '../../../../../src/commands/organization/handle-license-policy.mts'
+import { handleLicensePolicy } from '../../../../src/src/commands/organization/handle-license-policy.mts'
 
 // Mock the dependencies.
 

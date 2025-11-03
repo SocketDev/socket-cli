@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { extractTier1ReachabilityScanId } from '../../../../src/coana/extract-scan-id.mts'
+import { extractTier1ReachabilityScanId } from '../../../../src/src/coana/extract-scan-id.mts'
 
 // Mock @socketsecurity/lib/fs.
 vi.mock('@socketsecurity/lib/fs', () => ({

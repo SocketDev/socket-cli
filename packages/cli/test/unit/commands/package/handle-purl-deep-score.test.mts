@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handlePurlDeepScore } from '../../../../src/commands/package/handle-purl-deep-score.mts'
-import { fetchPurlDeepScore } from '../../../../src/commands/package/fetch-purl-deep-score.mts'
-import { outputPurlsDeepScore } from '../../../../src/commands/package/output-purls-deep-score.mts'
+import { handlePurlDeepScore } from '../../../../src/src/commands/package/handle-purl-deep-score.mts'
+import { fetchPurlDeepScore } from '../../../../src/src/commands/package/fetch-purl-deep-score.mts'
+import { outputPurlsDeepScore } from '../../../../src/src/commands/package/output-purls-deep-score.mts'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 
 // Mock the dependencies.

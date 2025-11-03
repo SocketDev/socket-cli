@@ -9,19 +9,19 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { CollatorStub } from '../../../../src/polyfills/intl-stub/collator.mts'
-import { DateTimeFormatStub } from '../../../../src/polyfills/intl-stub/date-time-format.mts'
-import { DisplayNamesStub } from '../../../../src/polyfills/intl-stub/display-names.mts'
+import { CollatorStub } from '../../../src/src/polyfills/intl-stub/collator.mts'
+import { DateTimeFormatStub } from '../../../src/src/polyfills/intl-stub/date-time-format.mts'
+import { DisplayNamesStub } from '../../../src/src/polyfills/intl-stub/display-names.mts'
 import {
   getCanonicalLocales,
   supportedValuesOf,
-} from '../../../../src/polyfills/intl-stub/helpers.mts'
-import { ListFormatStub } from '../../../../src/polyfills/intl-stub/list-format.mts'
-import { LocaleStub } from '../../../../src/polyfills/intl-stub/locale.mts'
-import { NumberFormatStub } from '../../../../src/polyfills/intl-stub/number-format.mts'
-import { PluralRulesStub } from '../../../../src/polyfills/intl-stub/plural-rules.mts'
-import { RelativeTimeFormatStub } from '../../../../src/polyfills/intl-stub/relative-time-format.mts'
-import { SegmenterStub } from '../../../../src/polyfills/intl-stub/segmenter.mts'
+} from '../../../src/src/polyfills/intl-stub/helpers.mts'
+import { ListFormatStub } from '../../../src/src/polyfills/intl-stub/list-format.mts'
+import { LocaleStub } from '../../../src/src/polyfills/intl-stub/locale.mts'
+import { NumberFormatStub } from '../../../src/src/polyfills/intl-stub/number-format.mts'
+import { PluralRulesStub } from '../../../src/src/polyfills/intl-stub/plural-rules.mts'
+import { RelativeTimeFormatStub } from '../../../src/src/polyfills/intl-stub/relative-time-format.mts'
+import { SegmenterStub } from '../../../src/src/polyfills/intl-stub/segmenter.mts'
 
 describe('Intl stub polyfill', () => {
   describe('DateTimeFormatStub', () => {

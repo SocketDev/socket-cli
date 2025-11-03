@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleManifestSetup } from '../../../../src/commands/manifest/handle-manifest-setup.mts'
+import { handleManifestSetup } from '../../../../src/src/commands/manifest/handle-manifest-setup.mts'
 
 // Mock the dependencies.
 vi.mock('../../../../src/commands/manifest/output-manifest-setup.mts', () => ({

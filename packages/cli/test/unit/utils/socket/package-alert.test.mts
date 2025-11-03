@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { ALERT_SEVERITY } from '../../../../../src/utils/alert/severity.mts'
+import { ALERT_SEVERITY } from '../../../../src/utils/alert/severity.mts'
 import {
   alertSeverityComparator,
   alertsHaveBlocked,
@@ -8,9 +8,9 @@ import {
   getAlertSeverityOrder,
   getAlertsSeverityOrder,
   getSeverityLabel,
-} from '../../../../../src/utils/socket/package-alert.mts'
+} from '../../../../src/utils/socket/package-alert.mts'
 
-import type { SocketPackageAlert } from '../../../../../src/utils/socket/package-alert.mts'
+import type { SocketPackageAlert } from '../../../../src/utils/socket/package-alert.mts'
 
 // Mock dependencies.
 vi.mock('../../../../../src/utils/alert/artifact.mts', () => ({

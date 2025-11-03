@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest'
 import {
   getScanWithEnvVars,
   getSimpleCleanScan,
-} from '../../../../../src/commands/scan/generate-report-test-helpers.mts'
-import { generateReport } from '../../../../../src/commands/scan/generate-report.mts'
+} from '../../../../src/src/commands/scan/generate-report-test-helpers.mts'
+import { generateReport } from '../../../../src/src/commands/scan/generate-report.mts'
 
-import type { ScanReport } from '../../../../../src/commands/scan/generate-report.mts'
+import type { ScanReport } from '../../../../src/src/commands/scan/generate-report.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // biome-ignore lint/correctness/noUnusedVariables: Destructuring import for test setup

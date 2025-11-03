@@ -5,7 +5,7 @@ import {
   createSuccessResult,
 } from '../../../../../src/commands/../../../test/helpers/index.mts'
 
-import type { CResult } from '../../../../../src/types.mts'
+import type { CResult } from '../../../../src/src/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 describe('outputSecurityPolicy', () => {

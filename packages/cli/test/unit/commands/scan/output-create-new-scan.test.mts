@@ -4,11 +4,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { confirm } from '@socketsecurity/lib/stdio/prompts'
 
-import { outputCreateNewScan } from '../../../../../src/commands/scan/output-create-new-scan.mts'
-import { failMsgWithBadge } from '../../../../../src/utils/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../../../../src/utils/output/result-json.mjs'
+import { outputCreateNewScan } from '../../../../src/src/commands/scan/output-create-new-scan.mts'
+import { failMsgWithBadge } from '../../../../src/src/utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../../../src/src/utils/output/result-json.mjs'
 
-import type { CResult } from '../../../../../src/commands/scan/types.mts'
+import type { CResult } from '../../../../src/src/commands/scan/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Mock the dependencies.

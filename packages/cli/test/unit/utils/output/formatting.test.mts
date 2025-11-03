@@ -5,10 +5,10 @@ import {
   getFlagListOutput,
   getFlagsHelpOutput,
   getHelpListOutput,
-} from '../../../../../src/utils/output/formatting.mts'
+} from '../../../../src/utils/output/formatting.mts'
 
 // Mock requirements module.
-vi.mock('../ecosystem/requirements.mts', () => ({
+vi.mock('../../../../src/utils/ecosystem/requirements.mts', () => ({
   getRequirements: vi.fn(),
   getRequirementsKey: vi.fn(),
 }))
@@ -21,7 +21,7 @@ describe('output-formatting utilities', () => {
   describe('getFlagApiRequirementsOutput', () => {
     it('formats API requirements with quota and permissions', async () => {
       const { getRequirements, getRequirementsKey } = vi.mocked(
-        await import('../../../../../src/utils/ecosystem/requirements.mts'),
+        await import('../../../../src/utils/ecosystem/requirements.mts'),
       )
 
       getRequirementsKey.mockReturnValue('scan:create')
@@ -41,7 +41,7 @@ describe('output-formatting utilities', () => {
 
     it('formats quota only when present', async () => {
       const { getRequirements, getRequirementsKey } = vi.mocked(
-        await import('../../../../../src/utils/ecosystem/requirements.mts'),
+        await import('../../../../src/utils/ecosystem/requirements.mts'),
       )
 
       getRequirementsKey.mockReturnValue('test')
@@ -59,7 +59,7 @@ describe('output-formatting utilities', () => {
 
     it('formats permissions only when present', async () => {
       const { getRequirements, getRequirementsKey } = vi.mocked(
-        await import('../../../../../src/utils/ecosystem/requirements.mts'),
+        await import('../../../../src/utils/ecosystem/requirements.mts'),
       )
 
       getRequirementsKey.mockReturnValue('test')
@@ -77,7 +77,7 @@ describe('output-formatting utilities', () => {
 
     it('returns (none) when no requirements found', async () => {
       const { getRequirements, getRequirementsKey } = vi.mocked(
-        await import('../../../../../src/utils/ecosystem/requirements.mts'),
+        await import('../../../../src/utils/ecosystem/requirements.mts'),
       )
 
       getRequirementsKey.mockReturnValue('missing')
@@ -91,7 +91,7 @@ describe('output-formatting utilities', () => {
 
     it('respects custom indent option', async () => {
       const { getRequirements, getRequirementsKey } = vi.mocked(
-        await import('../../../../../src/utils/ecosystem/requirements.mts'),
+        await import('../../../../src/utils/ecosystem/requirements.mts'),
       )
 
       getRequirementsKey.mockReturnValue('test')

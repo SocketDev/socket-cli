@@ -18,13 +18,13 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { normalizePath } from '@socketsecurity/lib/path'
 
-import { InputError } from '../../../../src/error/errors.mts'
+import { InputError } from '../../../../src/utils/error/errors.mts'
 import {
   cleanDlxCache,
   getDlxCachePath,
   getSocketHomePath,
   listDlxCache,
-} from '../../../../../src/utils/dlx/binary.mts'
+} from '../../../../src/utils/dlx/binary.mts'
 
 describe('binary', () => {
   describe('getSocketHomePath', () => {

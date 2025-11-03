@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../helpers/mocks.mts'
-import { fetchCreateRepo } from '../../../../src/commands/repository/fetch-create-repo.mts'
+} from '../../../../src/helpers/mocks.mts'
+import { fetchCreateRepo } from '../../../../src/src/commands/repository/fetch-create-repo.mts'
 
 // Mock the dependencies.
 vi.mock('../../../../src/utils/socket/api.mts', () => ({

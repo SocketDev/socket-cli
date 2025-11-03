@@ -18,7 +18,7 @@ vi.mock('@npmcli/config', () => ({
   }),
 }))
 
-import { getNpmConfig } from '../../../../../src/utils/npm/config.mts'
+import { getNpmConfig } from '../../../../src/src/utils/npm/config.mts'
 
 import NpmConfig from '@npmcli/config'
 

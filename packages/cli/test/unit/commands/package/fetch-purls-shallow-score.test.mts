@@ -4,8 +4,8 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../helpers/sdk-test-helpers.mts'
-import { fetchPurlsShallowScore } from '../../../../src/commands/package/fetch-purls-shallow-score.mts'
+} from '../../../../src/helpers/sdk-test-helpers.mts'
+import { fetchPurlsShallowScore } from '../../../../src/src/commands/package/fetch-purls-shallow-score.mts'
 
 // Mock the dependencies.
 vi.mock('../../../../src/utils/socket/api.mts', () => ({

@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../helpers/mocks.mts'
-import { handleAuditLog } from '../../../../src/commands/audit-log/handle-audit-log.mts'
+} from '../../../../src/helpers/mocks.mts'
+import { handleAuditLog } from '../../../../src/src/commands/audit-log/handle-audit-log.mts'
 
 // Mock the dependencies.
 vi.mock('../../../../src/commands/audit-log/fetch-audit-log.mts', () => ({

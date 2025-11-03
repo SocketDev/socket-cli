@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   isRunningInTemporaryExecutor,
   shouldSkipShadow,
-} from '../../../../../src/utils/dlx/detection.mts'
+} from '../../../../src/utils/dlx/detection.mts'
 
-import type { default as ENV } from '../../../../../src/constants/env.mts'
+import type { default as ENV } from '../../../../src/constants/env.mts'
 
 // Mock the dependencies.
 vi.mock('@socketsecurity/lib/path', () => ({
@@ -13,7 +13,7 @@ vi.mock('@socketsecurity/lib/path', () => ({
 }))
 
 // Mock the ENV module.
-vi.mock('../../../../../src/constants/env.mts', () => ({
+vi.mock('../../../../src/constants/env.mts', () => ({
   default: {
     npm_config_user_agent: undefined,
     npm_config_cache: undefined,
@@ -25,7 +25,7 @@ describe('detection', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks()
-    mockEnv = (await import('../../../../../src/constants/env.mts')).default
+    mockEnv = (await import('../../../../src/constants/env.mts')).default
     // Reset the mock values.
     mockEnv.npm_config_user_agent = undefined
     mockEnv.npm_config_cache = undefined

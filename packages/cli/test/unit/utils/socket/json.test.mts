@@ -27,7 +27,7 @@ vi.mock('node:fs', () => ({
   },
 }))
 
-vi.mock('../fs/find-up.mts', () => ({
+vi.mock('../../../../../src/utils/fs/find-up.mts', () => ({
   findUp: vi.fn(),
 }))
 
@@ -44,6 +44,8 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
+
+import { findUp } from '../../../../../src/utils/fs/find-up.mts'
 
 describe('socket-json utilities', () => {
   beforeEach(() => {
@@ -101,7 +103,6 @@ describe('socket-json utilities', () => {
 
   describe('findSocketJsonUp', () => {
     it('calls findUp with correct parameters', async () => {
-      const { findUp } = await import('../../../../../src/utils/fs/find-up.mts')
       vi.mocked(findUp).mockResolvedValue('/path/to/socket.json')
 
       const result = await findSocketJsonUp('/test/dir')
@@ -113,7 +114,6 @@ describe('socket-json utilities', () => {
     })
 
     it('returns undefined when socket.json not found', async () => {
-      const { findUp } = await import('../../../../../src/utils/fs/find-up.mts')
       vi.mocked(findUp).mockResolvedValue(undefined)
 
       const result = await findSocketJsonUp('/test/dir')
@@ -123,7 +123,6 @@ describe('socket-json utilities', () => {
 
   describe('readOrDefaultSocketJsonUp', () => {
     it('reads socket.json when found up the tree', async () => {
-      const { findUp } = await import('../../../../../src/utils/fs/find-up.mts')
       const mockJson = { version: 1, custom: 'data' }
       vi.mocked(findUp).mockResolvedValue('/parent/socket.json')
       vi.mocked(existsSync).mockReturnValue(true)
@@ -134,7 +133,6 @@ describe('socket-json utilities', () => {
     })
 
     it('returns default when socket.json not found up the tree', async () => {
-      const { findUp } = await import('../../../../../src/utils/fs/find-up.mts')
       vi.mocked(findUp).mockResolvedValue(undefined)
 
       const result = await readOrDefaultSocketJsonUp('/test/dir')
@@ -146,7 +144,7 @@ describe('socket-json utilities', () => {
     it('successfully reads and parses valid JSON file', async () => {
       const mockJson = { version: 1, custom: 'data' }
       vi.mocked(existsSync).mockReturnValue(true)
-      vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(mockJson))
+      (fs.readFile as any).mockResolvedValue(JSON.stringify(mockJson))
 
       const result = await readSocketJson('/test/dir')
       expect(result.ok).toBe(true)
@@ -167,7 +165,7 @@ describe('socket-json utilities', () => {
 
     it('returns error when file read fails and defaultOnError is false', async () => {
       vi.mocked(existsSync).mockReturnValue(true)
-      vi.mocked(fs.readFile).mockRejectedValue(new Error('Read error'))
+      (fs.readFile as any).mockRejectedValue(new Error('Read error'))
 
       const result = await readSocketJson('/test/dir', false)
       expect(result.ok).toBe(false)
@@ -178,7 +176,7 @@ describe('socket-json utilities', () => {
 
     it('returns default when file read fails and defaultOnError is true', async () => {
       vi.mocked(existsSync).mockReturnValue(true)
-      vi.mocked(fs.readFile).mockRejectedValue(new Error('Read error'))
+      (fs.readFile as any).mockRejectedValue(new Error('Read error'))
 
       const result = await readSocketJson('/test/dir', true)
       expect(result.ok).toBe(true)
@@ -189,7 +187,7 @@ describe('socket-json utilities', () => {
 
     it('returns error when JSON parse fails and defaultOnError is false', async () => {
       vi.mocked(existsSync).mockReturnValue(true)
-      vi.mocked(fs.readFile).mockResolvedValue('invalid json')
+      (fs.readFile as any).mockResolvedValue('invalid json')
 
       const result = await readSocketJson('/test/dir', false)
       expect(result.ok).toBe(false)
@@ -200,7 +198,7 @@ describe('socket-json utilities', () => {
 
     it('returns default when JSON parse fails and defaultOnError is true', async () => {
       vi.mocked(existsSync).mockReturnValue(true)
-      vi.mocked(fs.readFile).mockResolvedValue('invalid json')
+      (fs.readFile as any).mockResolvedValue('invalid json')
 
       const result = await readSocketJson('/test/dir', true)
       expect(result.ok).toBe(true)
@@ -211,7 +209,7 @@ describe('socket-json utilities', () => {
 
     it('returns default when file content is empty', async () => {
       vi.mocked(existsSync).mockReturnValue(true)
-      vi.mocked(fs.readFile).mockResolvedValue('null')
+      (fs.readFile as any).mockResolvedValue('null')
 
       const result = await readSocketJson('/test/dir')
       expect(result.ok).toBe(true)
@@ -307,7 +305,7 @@ describe('socket-json utilities', () => {
   describe('writeSocketJson', () => {
     it('successfully writes socket.json', async () => {
       const mockJson = { version: 1, custom: 'data' }
-      vi.mocked(fs.writeFile).mockResolvedValue(undefined)
+      (fs.writeFile as any).mockResolvedValue(undefined)
 
       const result = await writeSocketJson('/test/dir', mockJson as any)
       expect(result.ok).toBe(true)
@@ -331,7 +329,7 @@ describe('socket-json utilities', () => {
 
     it('writes with proper formatting', async () => {
       const mockJson = getDefaultSocketJson()
-      vi.mocked(fs.writeFile).mockResolvedValue(undefined)
+      (fs.writeFile as any).mockResolvedValue(undefined)
 
       await writeSocketJson('/test/dir', mockJson)
       expect(fs.writeFile).toHaveBeenCalledWith(

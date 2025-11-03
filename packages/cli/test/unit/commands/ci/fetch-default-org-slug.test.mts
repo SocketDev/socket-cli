@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getDefaultOrgSlug } from '../../../../../src/commands/ci/fetch-default-org-slug.mts'
+import { getDefaultOrgSlug } from '../../../../src/src/commands/ci/fetch-default-org-slug.mts'
 
 // Create mock functions with hoisting.
 const { mockGetConfigValueOrUndef, mockFetchOrganization, mockEnv } = vi.hoisted(() => {

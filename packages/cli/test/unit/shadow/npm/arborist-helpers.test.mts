@@ -1,17 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { DiffAction } from '../../../../src/arborist/types.mts'
+import { DiffAction } from '../../../../src/shadow/npm/arborist/types.mts'
 import {
   getAlertsMapFromArborist,
   getDetailsFromDiff,
-} from '../../../../../src/shadow/npm/arborist-helpers.mts'
+} from '../../../../src/shadow/npm/arborist-helpers.mts'
 
 import type {
   ArboristInstance,
   Diff,
   NodeClass,
-} from '../../../../src/arborist/types.mts'
-import type { PackageDetail } from '../../../../../src/shadow/npm/arborist-helpers.mts'
+} from '../../../../src/shadow/npm/arborist/types.mts'
+import type { PackageDetail } from '../../../../src/shadow/npm/arborist-helpers.mts'
 import type { Spinner } from '@socketsecurity/lib/spinner'
 
 // Mock all dependencies.
@@ -20,11 +20,11 @@ const mockIdToNpmPurl = vi.hoisted(() => vi.fn())
 const mockParseUrl = vi.hoisted(() => vi.fn())
 const mockToFilterConfig = vi.hoisted(() => vi.fn())
 
-vi.mock('../../utils/socket/alerts.mts', () => ({
+vi.mock('../../../../src/utils/socket/alerts.mts', () => ({
   getAlertsMapFromPurls: mockGetAlertsMapFromPurls,
 }))
 
-vi.mock('../../utils/ecosystem/spec.mts', () => ({
+vi.mock('../../../../src/utils/ecosystem/spec.mts', () => ({
   idToNpmPurl: mockIdToNpmPurl,
 }))
 
@@ -32,11 +32,11 @@ vi.mock('@socketsecurity/lib/url', () => ({
   parseUrl: mockParseUrl,
 }))
 
-vi.mock('../../utils/validation/filter-config.mts', () => ({
+vi.mock('../../../../src/utils/validation/filter-config.mts', () => ({
   toFilterConfig: mockToFilterConfig,
 }))
 
-vi.mock('../../constants.mts', async importOriginal => {
+vi.mock('../../../../src/constants.mts', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,

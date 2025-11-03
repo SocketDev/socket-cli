@@ -5,7 +5,7 @@ import {
   setupSdkMockSuccess,
   setupSdkSetupFailure,
 } from '../../../../../src/commands/../../../test/helpers/sdk-test-helpers.mts'
-import { fetchLicensePolicy } from '../../../../../src/commands/../../../../src/commands/organization/fetch-license-policy.mts'
+import { fetchLicensePolicy } from '../../../../src/src/commands/../../../../src/commands/organization/fetch-license-policy.mts'
 
 // Mock the dependencies.
 vi.mock('../../../../../src/commands/../utils/socket/api.mts', () => ({

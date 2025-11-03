@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleListRepos } from '../../../../src/commands/repository/handle-list-repos.mts'
+import { handleListRepos } from '../../../../src/src/commands/repository/handle-list-repos.mts'
 
 // Mock the dependencies.
 vi.mock('../../../../src/commands/repository/fetch-list-all-repos.mts', () => ({

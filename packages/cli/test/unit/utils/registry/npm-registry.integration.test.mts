@@ -18,7 +18,7 @@ import {
   extractBinaryFromTarball,
   extractTarball,
   verifyTarballIntegrity,
-} from '../../../../../src/utils/registry/npm-registry.mts'
+} from '../../../../src/utils/registry/npm-registry.mts'
 
 /**
  * Helper to create a test tarball in memory.

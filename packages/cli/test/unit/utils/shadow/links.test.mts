@@ -7,7 +7,7 @@ import {
   installNpxLinks,
   installPnpmLinks,
   installYarnLinks,
-} from '../../../../../src/utils/shadow/links.mts'
+} from '../../../../src/src/utils/shadow/links.mts'
 
 // Mock the dependencies.
 vi.mock('cmd-shim', () => ({

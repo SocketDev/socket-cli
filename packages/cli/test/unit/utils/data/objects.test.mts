@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createEnum, pick } from '../../../../src/data/objects.mts'
+import { createEnum, pick } from '../../../../src/src/data/objects.mts'
 
 describe('objects utilities', () => {
   describe('createEnum', () => {

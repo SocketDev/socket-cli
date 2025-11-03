@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { UNKNOWN_ERROR } from '../../../../../src/constants/errors.mts'
-import { handleCi } from '../../../../../src/commands/ci/handle-ci.mts'
+import { UNKNOWN_ERROR } from '../../../../src/src/constants/errors.mts'
+import { handleCi } from '../../../../src/src/commands/ci/handle-ci.mts'
 
 // Create mock functions with hoisting.
 const {

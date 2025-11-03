@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleUninstallCompletion } from '../../../../../src/commands/../../../../src/commands/uninstall/handle-uninstall-completion.mts'
+import { handleUninstallCompletion } from '../../../../src/commands/uninstall/handle-uninstall-completion.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../../../../src/commands/uninstall/output-uninstall-completion.mts', () => ({
+vi.mock('../../../../src/commands/uninstall/output-uninstall-completion.mts', () => ({
   outputUninstallCompletion: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/../../../../src/commands/uninstall/teardown-tab-completion.mts', () => ({
+vi.mock('../../../../src/commands/uninstall/teardown-tab-completion.mts', () => ({
   teardownTabCompletion: vi.fn(),
 }))
 
@@ -17,10 +17,10 @@ describe('handleUninstallCompletion', () => {
 
   it('uninstalls completion successfully', async () => {
     const { teardownTabCompletion } = await import(
-      './teardown-tab-completion.mts'
+      '../../../../src/commands/uninstall/teardown-tab-completion.mts'
     )
     const { outputUninstallCompletion } = await import(
-      './output-uninstall-completion.mts'
+      '../../../../src/commands/uninstall/output-uninstall-completion.mts'
     )
 
     vi.mocked(teardownTabCompletion).mockResolvedValue({
@@ -42,10 +42,10 @@ describe('handleUninstallCompletion', () => {
 
   it('handles uninstallation failure', async () => {
     const { teardownTabCompletion } = await import(
-      './teardown-tab-completion.mts'
+      '../../../../src/commands/uninstall/teardown-tab-completion.mts'
     )
     const { outputUninstallCompletion } = await import(
-      './output-uninstall-completion.mts'
+      '../../../../src/commands/uninstall/output-uninstall-completion.mts'
     )
 
     const error = new Error('Failed to uninstall completion')
@@ -68,10 +68,10 @@ describe('handleUninstallCompletion', () => {
 
   it('handles different shell targets', async () => {
     const { teardownTabCompletion } = await import(
-      './teardown-tab-completion.mts'
+      '../../../../src/commands/uninstall/teardown-tab-completion.mts'
     )
     const { outputUninstallCompletion } = await import(
-      './output-uninstall-completion.mts'
+      '../../../../src/commands/uninstall/output-uninstall-completion.mts'
     )
 
     const shells = ['bash', 'zsh', 'fish', 'powershell']
@@ -98,10 +98,10 @@ describe('handleUninstallCompletion', () => {
 
   it('handles empty target name', async () => {
     const { teardownTabCompletion } = await import(
-      './teardown-tab-completion.mts'
+      '../../../../src/commands/uninstall/teardown-tab-completion.mts'
     )
     const { outputUninstallCompletion } = await import(
-      './output-uninstall-completion.mts'
+      '../../../../src/commands/uninstall/output-uninstall-completion.mts'
     )
 
     vi.mocked(teardownTabCompletion).mockResolvedValue({
@@ -123,10 +123,10 @@ describe('handleUninstallCompletion', () => {
 
   it('handles unsupported shell', async () => {
     const { teardownTabCompletion } = await import(
-      './teardown-tab-completion.mts'
+      '../../../../src/commands/uninstall/teardown-tab-completion.mts'
     )
     const { outputUninstallCompletion } = await import(
-      './output-uninstall-completion.mts'
+      '../../../../src/commands/uninstall/output-uninstall-completion.mts'
     )
 
     vi.mocked(teardownTabCompletion).mockResolvedValue({
@@ -148,10 +148,10 @@ describe('handleUninstallCompletion', () => {
 
   it('handles completion not found', async () => {
     const { teardownTabCompletion } = await import(
-      './teardown-tab-completion.mts'
+      '../../../../src/commands/uninstall/teardown-tab-completion.mts'
     )
     const { outputUninstallCompletion } = await import(
-      './output-uninstall-completion.mts'
+      '../../../../src/commands/uninstall/output-uninstall-completion.mts'
     )
 
     vi.mocked(teardownTabCompletion).mockResolvedValue({
@@ -173,7 +173,7 @@ describe('handleUninstallCompletion', () => {
 
   it('handles async errors', async () => {
     const { teardownTabCompletion } = await import(
-      './teardown-tab-completion.mts'
+      '../../../../src/commands/uninstall/teardown-tab-completion.mts'
     )
 
     vi.mocked(teardownTabCompletion).mockRejectedValue(new Error('Async error'))

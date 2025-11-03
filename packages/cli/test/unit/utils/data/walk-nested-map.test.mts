@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { walkNestedMap } from '../../../../src/data/walk-nested-map.mts'
+import { walkNestedMap } from '../../../../src/src/data/walk-nested-map.mts'
 
 describe('walkNestedMap', () => {
   it('should walk a flat map', () => {

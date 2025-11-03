@@ -24,25 +24,25 @@ vi.mock('node:fs', async importOriginal => {
   }
 })
 
-vi.mock('../utils/spawn/spawn-node.mjs', () => ({
+vi.mock('../../../src/utils/spawn/spawn-node.mts', () => ({
   spawnNode: mockSpawnNode,
   findSystemNodejs: mockFindSystemNodejs,
 }))
 
-vi.mock('../utils/shadow/links.mts', () => ({
+vi.mock('../../../src/utils/shadow/links.mts', () => ({
   installNpmLinks: mockInstallNpmLinks,
   installNpxLinks: mockInstallNpxLinks,
 }))
 
-vi.mock('../utils/utils/socket/sdk.mts', () => ({
+vi.mock('../../../src/utils/socket/sdk.mts', () => ({
   getPublicApiToken: mockGetPublicApiToken,
 }))
 
-vi.mock('../utils/utils/fs/find-up.mts', () => ({
+vi.mock('../../../src/utils/fs/find-up.mts', () => ({
   findUp: mockFindUp,
 }))
 
-vi.mock('../constants/shadow/npm/paths.mts', async importOriginal => {
+vi.mock('../../../src/constants/paths.mts', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,
@@ -52,7 +52,7 @@ vi.mock('../constants/shadow/npm/paths.mts', async importOriginal => {
   }
 })
 
-vi.mock('../constants/shadow.mts', async importOriginal => {
+vi.mock('../../../src/constants/shadow.mts', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,
@@ -63,7 +63,7 @@ vi.mock('../constants/shadow.mts', async importOriginal => {
   }
 })
 
-vi.mock('../constants/env.mts', () => ({
+vi.mock('../../../src/constants/env.mts', () => ({
   default: {
     INLINED_SOCKET_CLI_SENTRY_BUILD: false,
   },

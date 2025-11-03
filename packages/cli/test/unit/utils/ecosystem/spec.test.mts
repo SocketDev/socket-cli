@@ -4,7 +4,7 @@ import {
   idToNpmPurl,
   idToPurl,
   resolvePackageVersion,
-} from '../../../../../src/utils/ecosystem/spec.mts'
+} from '../../../../src/src/utils/ecosystem/spec.mts'
 
 // Mock semver module.
 vi.mock('semver', () => ({

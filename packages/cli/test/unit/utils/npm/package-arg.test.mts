@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { safeNpa } from '../../../../../src/utils/npm/package-arg.mts'
+import { safeNpa } from '../../../../src/src/utils/npm/package-arg.mts'
 
 // Mock npm-package-arg.
 vi.mock('npm-package-arg', () => ({

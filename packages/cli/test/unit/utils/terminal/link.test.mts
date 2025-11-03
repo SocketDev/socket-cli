@@ -10,7 +10,7 @@ import {
   socketDocsLink,
   socketPackageLink,
   webLink,
-} from '../../../../src/terminal/link.mts'
+} from '../../../../src/utils/terminal/link.mts'
 
 // Mock terminal-link module.
 vi.mock('terminal-link', () => ({

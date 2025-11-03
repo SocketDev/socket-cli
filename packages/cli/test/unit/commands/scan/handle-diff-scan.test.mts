@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../../test/helpers/mocks.mts'
-import { handleDiffScan } from '../../../../../src/commands/scan/handle-diff-scan.mts'
+import { handleDiffScan } from '../../../../src/src/commands/scan/handle-diff-scan.mts'
 
 // Mock the dependencies.
 vi.mock('../../../../../src/commands/scan/fetch-diff-scan.mts', () => ({

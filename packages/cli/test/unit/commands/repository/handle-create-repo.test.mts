@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleCreateRepo } from '../../../../src/commands/repository/handle-create-repo.mts'
+import { handleCreateRepo } from '../../../../src/src/commands/repository/handle-create-repo.mts'
 
 // Mock the dependencies.
 vi.mock('../../../../src/commands/repository/fetch-create-repo.mts', () => ({

@@ -12,7 +12,7 @@ import {
 const mockGetNpmRequire = vi.hoisted(() => vi.fn())
 const mockNormalizePath = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../../src/utils/npm/paths.mts', () => ({
+vi.mock('../../../../src/utils/npm/paths.mts', () => ({
   getNpmRequire: mockGetNpmRequire,
 }))
 
@@ -20,7 +20,7 @@ vi.mock('@socketsecurity/lib/path', () => ({
   normalizePath: mockNormalizePath,
 }))
 
-vi.mock('../../../../../src/constants.mts', async importOriginal => {
+vi.mock('../../../../src/constants.mts', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,
@@ -62,7 +62,7 @@ describe('npm/paths', () => {
     it('should cache the result on subsequent calls', async () => {
       // Import fresh module to test caching
       const { getArboristPackagePath: freshGetArboristPackagePath } =
-        await import('../../../../../src/shadow/npm/paths.mts')
+        await import('../../../../src/shadow/npm/paths.mts')
 
       const first = freshGetArboristPackagePath()
       const second = freshGetArboristPackagePath()
@@ -81,7 +81,7 @@ describe('npm/paths', () => {
       vi.resetModules()
 
       const { getArboristPackagePath: freshGetArboristPackagePath } =
-        await import('../../../../../src/shadow/npm/paths.mts')
+        await import('../../../../src/shadow/npm/paths.mts')
       const result = freshGetArboristPackagePath()
 
       expect(result).toBe('/complex/path/node_modules/@npmcli/arborist')
@@ -89,7 +89,7 @@ describe('npm/paths', () => {
 
     it('should handle Windows paths when WIN32 is true', () => {
       // Re-import with WIN32: true.
-      vi.doMock('../../../../../src/constants.mts', async importOriginal => {
+      vi.doMock('../../../../src/constants.mts', async importOriginal => {
         const actual = (await importOriginal()) as Record<string, any>
         return {
           ...actual,
@@ -108,7 +108,7 @@ describe('npm/paths', () => {
       )
 
       // Re-import the module to get updated WIN32 value.
-      return import('../../../../../src/shadow/npm/paths.mts').then(module => {
+      return import('../../../../src/shadow/npm/paths.mts').then(module => {
         const result = module.getArboristPackagePath()
         expect(result).toContain('@npmcli/arborist')
       })

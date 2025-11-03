@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../../test/helpers/mocks.mts'
-import { handleCreateNewScan } from '../../../../../src/commands/scan/handle-create-new-scan.mts'
+import { handleCreateNewScan } from '../../../../src/src/commands/scan/handle-create-new-scan.mts'
 
 // Mock all the dependencies.
 const mockLogger = vi.hoisted(() => ({

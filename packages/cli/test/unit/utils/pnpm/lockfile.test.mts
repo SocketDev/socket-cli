@@ -9,7 +9,7 @@ import {
   readPnpmLockfile,
   stripLeadingPnpmDepPathSlash,
   stripPnpmPeerSuffix,
-} from '../../../../src/pnpm/lockfile.mts'
+} from '../../../../src/src/pnpm/lockfile.mts'
 
 // Mock fs module.
 vi.mock('node:fs', () => ({

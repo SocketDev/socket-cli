@@ -7,13 +7,13 @@ import {
   PACKAGE_LOCK_JSON,
   PNPM_LOCK_YAML,
   YARN_LOCK,
-} from '../../../../../src/constants/packages.mts'
-import { createTestWorkspace } from '../../../../test/helpers/workspace-helper.mts'
+} from '../../../../src/constants/packages.mts'
+import { createTestWorkspace } from '../../../helpers/workspace-helper.mts'
 import {
   findBinPathDetailsSync,
   findNpmDirPathSync,
   getPackageFilesForScan,
-} from '../../../../../src/utils/fs/path-resolve.mts'
+} from '../../../../src/utils/fs/path-resolve.mts'
 
 const PACKAGE_JSON = 'package.json'
 
@@ -378,7 +378,7 @@ describe('Path Resolve', () => {
     })
 
     it('handles shadowed bin paths', async () => {
-      const constants = await import('../../../../../src/constants.mts')
+      const constants = await import('../../../../src/constants.mts')
       const shadowBinPath = constants.default.shadowBinPath
       const { whichBinSync } = vi.mocked(
         await import('@socketsecurity/lib/bin'),
@@ -443,7 +443,7 @@ describe('Path Resolve', () => {
     })
 
     it('handles only shadow bin in path', async () => {
-      const constants = await import('../../../../../src/constants.mts')
+      const constants = await import('../../../../src/constants.mts')
       const shadowBinPath = constants.default.shadowBinPath
       const { whichBinSync } = vi.mocked(
         await import('@socketsecurity/lib/bin'),

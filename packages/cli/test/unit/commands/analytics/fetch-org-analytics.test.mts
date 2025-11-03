@@ -5,7 +5,7 @@ import {
   setupSdkMockSuccess,
   setupSdkSetupFailure,
 } from '../../../../../src/commands/../../../test/helpers/sdk-test-helpers.mts'
-import { fetchOrgAnalyticsData } from '../../../../../src/commands/../../../../src/commands/analytics/fetch-org-analytics.mts'
+import { fetchOrgAnalyticsData } from '../../../../src/src/commands/../../../../src/commands/analytics/fetch-org-analytics.mts'
 
 // Mock the dependencies.
 vi.mock('../../../../../src/commands/../utils/socket/api.mts', () => ({

@@ -1,31 +1,31 @@
 import { describe, expect, it } from 'vitest'
 
-import goShallow from '../../../../src/commands/package/fixtures/go_shallow.json' with {
+import goShallow from '../../../../src/src/commands/package/fixtures/go_shallow.json' with {
   type: 'json',
 }
-import mavenShallow from '../../../../src/commands/package/fixtures/maven_shallow.json' with {
+import mavenShallow from '../../../../src/src/commands/package/fixtures/maven_shallow.json' with {
   type: 'json',
 }
-import npmShallow from '../../../../src/commands/package/fixtures/npm_shallow.json' with {
+import npmShallow from '../../../../src/src/commands/package/fixtures/npm_shallow.json' with {
   type: 'json',
 }
-import nugetShallow from '../../../../src/commands/package/fixtures/nuget_shallow.json' with {
+import nugetShallow from '../../../../src/src/commands/package/fixtures/nuget_shallow.json' with {
   type: 'json',
 }
-import pythonDupes from '../../../../src/commands/package/fixtures/python_dupes.json' with {
+import pythonDupes from '../../../../src/src/commands/package/fixtures/python_dupes.json' with {
   type: 'json',
 }
-import pythonShallow from '../../../../src/commands/package/fixtures/python_shallow.json' with {
+import pythonShallow from '../../../../src/src/commands/package/fixtures/python_shallow.json' with {
   type: 'json',
 }
-import rubyShallow from '../../../../src/commands/package/fixtures/ruby_shallow.json' with {
+import rubyShallow from '../../../../src/src/commands/package/fixtures/ruby_shallow.json' with {
   type: 'json',
 }
 import {
   generateMarkdownReport,
   generateTextReport,
   preProcess,
-} from '../../../../src/commands/package/output-purls-shallow-score.mts'
+} from '../../../../src/src/commands/package/output-purls-shallow-score.mts'
 
 describe('package score output', async () => {
   describe('npm', () => {

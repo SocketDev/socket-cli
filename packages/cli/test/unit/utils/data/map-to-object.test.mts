@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { mapToObject } from '../../../../src/data/map-to-object.mts'
+import { mapToObject } from '../../../../src/src/data/map-to-object.mts'
 
 describe('map-to-object', () => {
   it('should convert a map string string', () => {

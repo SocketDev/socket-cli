@@ -5,7 +5,7 @@ import {
   setupSdkMockSuccess,
   setupSdkSetupFailure,
 } from '../../../../../src/commands/../../../test/helpers/sdk-test-helpers.mts'
-import { fetchQuota } from '../../../../../src/commands/../../../../src/commands/organization/fetch-quota.mts'
+import { fetchQuota } from '../../../../src/src/commands/../../../../src/commands/organization/fetch-quota.mts'
 
 // Mock the dependencies.
 vi.mock('../../../../../src/commands/../utils/socket/api.mts', () => ({

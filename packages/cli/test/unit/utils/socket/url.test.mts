@@ -8,48 +8,28 @@ import {
 } from '../../../../../src/utils/socket/url.mts'
 
 // Mock constants.
-vi.mock('../constants.mts', () => ({
+vi.mock('../../../../../src/constants.mts', () => ({
   default: {
     SOCKET_WEBSITE_URL: 'https://socket.dev',
   },
 }))
 
 // Mock purl.
-vi.mock('../purl/parse.mts', () => ({
-  getPurlObject: vi.fn(purl => {
-    if (typeof purl === 'string') {
-      // Simple parsing for tests.
-      const parts = purl.split('/')
-      const typePart = parts[0]?.replace('pkg:', '')
-      const namePart = parts[1]
-      const [name, version] = namePart?.split('@') || []
-
-      if (namePart?.startsWith('@')) {
-        // Scoped package.
-        const [scope, pkg] = namePart.split('/')
-        const [pkgName, ver] = pkg?.split('@') || []
-        return {
-          type: typePart,
-          namespace: scope,
-          name: pkgName,
-          version: ver,
-        }
-      }
-
-      return {
-        type: typePart,
-        namespace: undefined,
-        name,
-        version,
-      }
-    }
-    return purl
-  }),
+vi.mock('../../../../../src/utils/purl/parse.mts', () => ({
+  getPurlObject: vi.fn(),
 }))
+
+import { getPurlObject } from '../../../../../src/utils/purl/parse.mts'
 
 describe('socket-url utilities', () => {
   describe('getPkgFullNameFromPurl', () => {
     it('returns name for packages without namespace', () => {
+      vi.mocked(getPurlObject).mockImplementation((purl: any) => {
+        if (typeof purl === 'string') {
+          return { type: 'npm', namespace: undefined, name: 'express', version: '4.18.0' }
+        }
+        return purl
+      })
       const result = getPkgFullNameFromPurl('pkg:npm/express@4.18.0')
       expect(result).toBe('express')
     })
@@ -61,8 +41,7 @@ describe('socket-url utilities', () => {
         name: 'core',
         version: '7.0.0',
       }
-      const { getPurlObject } = vi.mocked(await import('../../../../../src/utils/purl/parse.mts'))
-      getPurlObject.mockReturnValue(purlObj as any)
+      vi.mocked(getPurlObject).mockReturnValue(purlObj as any)
 
       const result = getPkgFullNameFromPurl('pkg:npm/@babel/core@7.0.0')
       expect(result).toBe('@babel/core')
@@ -75,8 +54,7 @@ describe('socket-url utilities', () => {
         name: 'commons',
         version: '3.0',
       }
-      const { getPurlObject } = vi.mocked(await import('../../../../../src/utils/purl/parse.mts'))
-      getPurlObject.mockReturnValue(purlObj as any)
+      vi.mocked(getPurlObject).mockReturnValue(purlObj as any)
 
       const result = getPkgFullNameFromPurl(purlObj as any)
       expect(result).toBe('org.apache:commons')
@@ -89,8 +67,7 @@ describe('socket-url utilities', () => {
         name: 'rest-framework',
         version: '3.0',
       }
-      const { getPurlObject } = vi.mocked(await import('../../../../../src/utils/purl/parse.mts'))
-      getPurlObject.mockReturnValue(purlObj as any)
+      vi.mocked(getPurlObject).mockReturnValue(purlObj as any)
 
       const result = getPkgFullNameFromPurl(purlObj as any)
       expect(result).toBe('django/rest-framework')
@@ -162,8 +139,7 @@ describe('socket-url utilities', () => {
 
   describe('getSocketDevPackageOverviewUrlFromPurl', () => {
     it('generates URL from PURL string', async () => {
-      const { getPurlObject } = vi.mocked(await import('../../../../../src/utils/purl/parse.mts'))
-      getPurlObject.mockReturnValue({
+      vi.mocked(getPurlObject).mockReturnValue({
         type: 'npm',
         namespace: undefined,
         name: 'express',

@@ -20,15 +20,15 @@ const mockSpawn = vi.hoisted(() => vi.fn())
 const mockGetAlertsMapFromPurls = vi.hoisted(() => vi.fn())
 const mockLogAlertsMap = vi.hoisted(() => vi.fn())
 
-vi.mock('../../utils/socket/alerts.mts', () => ({
+vi.mock('../../../../src/utils/socket/alerts.mts', () => ({
   getAlertsMapFromPurls: mockGetAlertsMapFromPurls,
 }))
 
-vi.mock('../../utils/socket/package-alert.mts', () => ({
+vi.mock('../../../../src/utils/socket/package-alert.mts', () => ({
   logAlertsMap: mockLogAlertsMap,
 }))
 
-vi.mock('../../utils/shadow/links.mts', () => ({
+vi.mock('../../../../src/utils/shadow/links.mts', () => ({
   installYarnLinks: mockInstallYarnLinks,
 }))
 
@@ -36,7 +36,7 @@ vi.mock('@socketsecurity/lib/spawn', () => ({
   spawn: mockSpawn,
 }))
 
-vi.mock('../../constants.mts', async importOriginal => {
+vi.mock('../../../../src/constants.mts', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,

@@ -6,9 +6,9 @@ import {
   resolvePyCli,
   resolveSfw,
   resolveSynp,
-} from '../../../../src/resolve-binary.mjs'
+} from '../../../../src/utils/dlx/resolve-binary.mjs'
 
-import type { BinaryResolution } from '../../../../src/resolve-binary.mjs'
+import type { BinaryResolution } from '../../../../src/utils/dlx/resolve-binary.mjs'
 
 describe('resolve-binary', () => {
   const originalEnv = process.env

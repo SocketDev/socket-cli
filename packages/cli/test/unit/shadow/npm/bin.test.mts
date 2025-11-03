@@ -9,7 +9,7 @@ import type { ShadowBinOptions } from '../../../../src/shadow/npm-base.mts'
 // Mock shadowNpmBase.
 const mockShadowNpmBase = vi.hoisted(() => vi.fn())
 
-vi.mock('../npm-base.mts', () => ({
+vi.mock('../../../../src/shadow/npm-base.mts', () => ({
   default: mockShadowNpmBase,
 }))
 

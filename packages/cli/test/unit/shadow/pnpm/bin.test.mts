@@ -25,21 +25,21 @@ const mockReadPnpmLockfile = vi.hoisted(() => vi.fn())
 const mockLogAlertsMap = vi.hoisted(() => vi.fn())
 const mockExistsSync = vi.hoisted(() => vi.fn())
 
-vi.mock('../../utils/socket/alerts.mts', () => ({
+vi.mock('../../../../src/utils/socket/alerts.mts', () => ({
   getAlertsMapFromPnpmLockfile: mockGetAlertsMapFromPnpmLockfile,
   getAlertsMapFromPurls: mockGetAlertsMapFromPurls,
 }))
 
-vi.mock('../../utils/pnpm.mts', () => ({
+vi.mock('../../../../src/utils/pnpm.mts', () => ({
   parsePnpmLockfile: mockParsePnpmLockfile,
   readPnpmLockfile: mockReadPnpmLockfile,
 }))
 
-vi.mock('../../utils/socket/package-alert.mts', () => ({
+vi.mock('../../../../src/utils/socket/package-alert.mts', () => ({
   logAlertsMap: mockLogAlertsMap,
 }))
 
-vi.mock('../../utils/shadow/links.mts', () => ({
+vi.mock('../../../../src/utils/shadow/links.mts', () => ({
   installPnpmLinks: mockInstallPnpmLinks,
 }))
 
@@ -47,7 +47,7 @@ vi.mock('@socketsecurity/lib/spawn', () => ({
   spawn: mockSpawn,
 }))
 
-vi.mock('../../constants.mts', async importOriginal => {
+vi.mock('../../../../src/constants.mts', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,

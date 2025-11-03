@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../../test/helpers/mocks.mts'
-import { handleConfigAuto } from '../../../../../src/commands/config/handle-config-auto.mts'
+import { handleConfigAuto } from '../../../../src/src/commands/config/handle-config-auto.mts'
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),

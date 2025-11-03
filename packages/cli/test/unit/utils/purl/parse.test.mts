@@ -6,7 +6,7 @@ import {
   createPurlObject,
   getPurlObject,
   normalizePurl,
-} from '../../../../src/purl/parse.mts'
+} from '../../../../src/src/purl/parse.mts'
 
 // Mock dependencies.
 vi.mock('@socketsecurity/lib/objects', () => ({

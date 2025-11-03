@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleInstallCompletion } from '../../../../../src/commands/../../../../src/commands/install/handle-install-completion.mts'
+import { handleInstallCompletion } from '../../../../src/commands/install/handle-install-completion.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../../../../src/commands/install/output-install-completion.mts', () => ({
+vi.mock('../../../../src/commands/install/output-install-completion.mts', () => ({
   outputInstallCompletion: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/../../../../src/commands/install/setup-tab-completion.mts', () => ({
+vi.mock('../../../../src/commands/install/setup-tab-completion.mts', () => ({
   setupTabCompletion: vi.fn(),
 }))
 
@@ -16,9 +16,9 @@ describe('handleInstallCompletion', () => {
   })
 
   it('installs completion successfully', async () => {
-    const { setupTabCompletion } = await import('../../../../../src/commands/../src/setup-tab-completion.mts')
+    const { setupTabCompletion } = await import('../../../../src/commands/install/setup-tab-completion.mts')
     const { outputInstallCompletion } = await import(
-      './output-install-completion.mts'
+      '../../../../src/commands/install/output-install-completion.mts'
     )
 
     vi.mocked(setupTabCompletion).mockResolvedValue({
@@ -36,9 +36,9 @@ describe('handleInstallCompletion', () => {
   })
 
   it('handles installation failure', async () => {
-    const { setupTabCompletion } = await import('../../../../../src/commands/../src/setup-tab-completion.mts')
+    const { setupTabCompletion } = await import('../../../../src/commands/install/setup-tab-completion.mts')
     const { outputInstallCompletion } = await import(
-      './output-install-completion.mts'
+      '../../../../src/commands/install/output-install-completion.mts'
     )
 
     const error = new Error('Failed to install completion')
@@ -57,9 +57,9 @@ describe('handleInstallCompletion', () => {
   })
 
   it('handles different shell targets', async () => {
-    const { setupTabCompletion } = await import('../../../../../src/commands/../src/setup-tab-completion.mts')
+    const { setupTabCompletion } = await import('../../../../src/commands/install/setup-tab-completion.mts')
     const { outputInstallCompletion } = await import(
-      './output-install-completion.mts'
+      '../../../../src/commands/install/output-install-completion.mts'
     )
 
     const shells = ['bash', 'zsh', 'fish', 'powershell']
@@ -82,9 +82,9 @@ describe('handleInstallCompletion', () => {
   })
 
   it('handles empty target name', async () => {
-    const { setupTabCompletion } = await import('../../../../../src/commands/../src/setup-tab-completion.mts')
+    const { setupTabCompletion } = await import('../../../../src/commands/install/setup-tab-completion.mts')
     const { outputInstallCompletion } = await import(
-      './output-install-completion.mts'
+      '../../../../src/commands/install/output-install-completion.mts'
     )
 
     vi.mocked(setupTabCompletion).mockResolvedValue({
@@ -102,9 +102,9 @@ describe('handleInstallCompletion', () => {
   })
 
   it('handles unsupported shell', async () => {
-    const { setupTabCompletion } = await import('../../../../../src/commands/../src/setup-tab-completion.mts')
+    const { setupTabCompletion } = await import('../../../../src/commands/install/setup-tab-completion.mts')
     const { outputInstallCompletion } = await import(
-      './output-install-completion.mts'
+      '../../../../src/commands/install/output-install-completion.mts'
     )
 
     vi.mocked(setupTabCompletion).mockResolvedValue({
@@ -122,7 +122,7 @@ describe('handleInstallCompletion', () => {
   })
 
   it('handles async errors', async () => {
-    const { setupTabCompletion } = await import('../../../../../src/commands/../src/setup-tab-completion.mts')
+    const { setupTabCompletion } = await import('../../../../src/commands/install/setup-tab-completion.mts')
 
     vi.mocked(setupTabCompletion).mockRejectedValue(new Error('Async error'))
 

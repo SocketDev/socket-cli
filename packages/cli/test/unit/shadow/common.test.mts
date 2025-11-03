@@ -40,19 +40,19 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 
-vi.mock('../utils/utils/socket/alerts.mts', () => ({
+vi.mock('../../../src/utils/socket/alerts.mts', () => ({
   getAlertsMapFromPurls: mockGetAlertsMapFromPurls,
 }))
 
-vi.mock('../utils/utils/socket/package-alert.mts', () => ({
+vi.mock('../../../src/utils/socket/package-alert.mts', () => ({
   logAlertsMap: mockLogAlertsMap,
 }))
 
-vi.mock('../utils/utils/npm/spec.mts', () => ({
+vi.mock('../../../src/utils/npm/spec.mts', () => ({
   safeNpmSpecToPurl: mockSafeNpmSpecToPurl,
 }))
 
-vi.mock('../utils/process/cmd.mts', () => ({
+vi.mock('../../../src/utils/process/cmd.mts', () => ({
   isAddCommand: mockIsAddCommand,
 }))
 
