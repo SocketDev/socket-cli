@@ -373,7 +373,6 @@ export default [
       'import-x/no-unresolved': 'off',
       'no-await-in-loop': 'off',
       'no-unused-vars': 'off',
-      'no-undef': 'off',
     },
   },
   {
