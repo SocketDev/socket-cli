@@ -25,9 +25,9 @@ vi.mock('../../constants/packages.mts', () => ({
 
 describe('yarn-paths utilities', () => {
   let originalExit: typeof process.exit
-  let getYarnBinPath: typeof import('./paths.mts')['getYarnBinPath']
-  let getYarnBinPathDetails: typeof import('./paths.mts')['getYarnBinPathDetails']
-  let isYarnBinPathShadowed: typeof import('./paths.mts')['isYarnBinPathShadowed']
+  let getYarnBinPath: typeof import('../../../../src/utils/yarn/paths.mts')['getYarnBinPath']
+  let getYarnBinPathDetails: typeof import('../../../../src/utils/yarn/paths.mts')['getYarnBinPathDetails']
+  let isYarnBinPathShadowed: typeof import('../../../../src/utils/yarn/paths.mts')['isYarnBinPathShadowed']
 
   beforeEach(async () => {
     vi.clearAllMocks()
@@ -41,7 +41,7 @@ describe('yarn-paths utilities', () => {
     }) as any
 
     // Re-import functions after module reset to clear caches
-    const yarnPaths = await import('./paths.mts')
+    const yarnPaths = await import('../../../../src/utils/yarn/paths.mts')
     getYarnBinPath = yarnPaths.getYarnBinPath
     getYarnBinPathDetails = yarnPaths.getYarnBinPathDetails
     isYarnBinPathShadowed = yarnPaths.isYarnBinPathShadowed

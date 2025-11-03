@@ -33,7 +33,7 @@ describe('outputCreateRepo', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { outputCreateRepo } = await import('./output-create-repo.mts')
+    const { outputCreateRepo } = await import('../../src/output-create-repo.mts')
     const { serializeResultJson } = await vi.importMock(
       '../../utils/output/result-json.mjs',
     )
@@ -55,7 +55,7 @@ describe('outputCreateRepo', () => {
   })
 
   it('outputs error in JSON format', async () => {
-    const { outputCreateRepo } = await import('./output-create-repo.mts')
+    const { outputCreateRepo } = await import('../../src/output-create-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
@@ -72,7 +72,7 @@ describe('outputCreateRepo', () => {
   })
 
   it('outputs success message when slug matches requested name', async () => {
-    const { outputCreateRepo } = await import('./output-create-repo.mts')
+    const { outputCreateRepo } = await import('../../src/output-create-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
@@ -91,7 +91,7 @@ describe('outputCreateRepo', () => {
   })
 
   it('outputs success message with warning when slug differs from requested name', async () => {
-    const { outputCreateRepo } = await import('./output-create-repo.mts')
+    const { outputCreateRepo } = await import('../../src/output-create-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
@@ -110,7 +110,7 @@ describe('outputCreateRepo', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { outputCreateRepo } = await import('./output-create-repo.mts')
+    const { outputCreateRepo } = await import('../../src/output-create-repo.mts')
     const { failMsgWithBadge } = await vi.importMock(
       '../../utils/error/fail-msg-with-badge.mts',
     )
@@ -135,7 +135,7 @@ describe('outputCreateRepo', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { outputCreateRepo } = await import('./output-create-repo.mts')
+    const { outputCreateRepo } = await import('../../src/output-create-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
@@ -153,7 +153,7 @@ describe('outputCreateRepo', () => {
   })
 
   it('handles empty slug properly', async () => {
-    const { outputCreateRepo } = await import('./output-create-repo.mts')
+    const { outputCreateRepo } = await import('../../src/output-create-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
@@ -171,7 +171,7 @@ describe('outputCreateRepo', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
-    const { outputCreateRepo } = await import('./output-create-repo.mts')
+    const { outputCreateRepo } = await import('../../src/output-create-repo.mts')
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
         ok: false,

@@ -240,7 +240,7 @@ describe('pull-request', () => {
       const { createPrProvider } = await import(
         '../../utils/git/provider-factory.mts'
       )
-      const { getSocketFixPullRequestBody } = await import('./git.mts')
+      const { getSocketFixPullRequestBody } = await import('../../src/git.mts')
 
       vi.mocked(getOctokit).mockReturnValue(mockOctokit)
       vi.mocked(createPrProvider).mockReturnValue(mockProvider)

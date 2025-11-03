@@ -14,7 +14,7 @@ vi.mock('@socketsecurity/lib/debug', () => ({
 
 describe('fetchScan', () => {
   it('fetches scan successfully', async () => {
-    const { fetchScan } = await import('./fetch-scan.mts')
+    const { fetchScan } = await import('../../src/fetch-scan.mts')
     const { queryApiSafeText } = await import('../../utils/socket/api.mts')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
 
@@ -44,7 +44,7 @@ describe('fetchScan', () => {
   })
 
   it('handles API call failure', async () => {
-    const { fetchScan } = await import('./fetch-scan.mts')
+    const { fetchScan } = await import('../../src/fetch-scan.mts')
     const { queryApiSafeText } = await import('../../utils/socket/api.mts')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
 
@@ -62,7 +62,7 @@ describe('fetchScan', () => {
   })
 
   it('handles invalid JSON in scan data', async () => {
-    const { fetchScan } = await import('./fetch-scan.mts')
+    const { fetchScan } = await import('../../src/fetch-scan.mts')
     const { queryApiSafeText } = await import('../../utils/socket/api.mts')
     const { debug, debugDir } = await import('@socketsecurity/lib/debug')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
@@ -97,7 +97,7 @@ describe('fetchScan', () => {
   })
 
   it('handles empty scan data', async () => {
-    const { fetchScan } = await import('./fetch-scan.mts')
+    const { fetchScan } = await import('../../src/fetch-scan.mts')
     const { queryApiSafeText } = await import('../../utils/socket/api.mts')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
 
@@ -113,7 +113,7 @@ describe('fetchScan', () => {
   })
 
   it('filters out empty lines but fails on invalid JSON', async () => {
-    const { fetchScan } = await import('./fetch-scan.mts')
+    const { fetchScan } = await import('../../src/fetch-scan.mts')
     const { queryApiSafeText } = await import('../../utils/socket/api.mts')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
 
@@ -141,7 +141,7 @@ describe('fetchScan', () => {
   })
 
   it('properly URL encodes scan ID', async () => {
-    const { fetchScan } = await import('./fetch-scan.mts')
+    const { fetchScan } = await import('../../src/fetch-scan.mts')
     const { queryApiSafeText } = await import('../../utils/socket/api.mts')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
 
@@ -161,7 +161,7 @@ describe('fetchScan', () => {
   })
 
   it('handles different org slugs', async () => {
-    const { fetchScan } = await import('./fetch-scan.mts')
+    const { fetchScan } = await import('../../src/fetch-scan.mts')
     const { queryApiSafeText } = await import('../../utils/socket/api.mts')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
 
@@ -189,7 +189,7 @@ describe('fetchScan', () => {
   })
 
   it('handles single line of JSON', async () => {
-    const { fetchScan } = await import('./fetch-scan.mts')
+    const { fetchScan } = await import('../../src/fetch-scan.mts')
     const { queryApiSafeText } = await import('../../utils/socket/api.mts')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
 
@@ -210,7 +210,7 @@ describe('fetchScan', () => {
   })
 
   it('uses null prototype internally', async () => {
-    const { fetchScan } = await import('./fetch-scan.mts')
+    const { fetchScan } = await import('../../src/fetch-scan.mts')
     const { queryApiSafeText } = await import('../../utils/socket/api.mts')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
 

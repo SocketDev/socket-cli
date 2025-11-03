@@ -48,7 +48,7 @@ describe('fetchScanData', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { fetchScanData } = await import('./fetch-report-data.mts')
+    const { fetchScanData } = await import('../../src/fetch-report-data.mts')
     const { setupSdk } = await vi.importMock('../../utils/socket/sdk.mjs')
     const mockSetupSdk = vi.mocked(setupSdk)
 

@@ -32,7 +32,7 @@ describe('outputViewRepo', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputViewRepo } = await import('./output-view-repo.mts')
+    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createSuccessResult({
@@ -71,7 +71,7 @@ describe('outputViewRepo', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputViewRepo } = await import('./output-view-repo.mts')
+    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createErrorResult('Unauthorized', {
@@ -112,7 +112,7 @@ describe('outputViewRepo', () => {
       },
     }))
 
-    const { outputViewRepo } = await import('./output-view-repo.mts')
+    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
 
     const repoData = {
       archived: true,
@@ -165,7 +165,7 @@ describe('outputViewRepo', () => {
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
-    const { outputViewRepo } = await import('./output-view-repo.mts')
+    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createErrorResult('Repository not found', {
@@ -210,7 +210,7 @@ describe('outputViewRepo', () => {
       },
     }))
 
-    const { outputViewRepo } = await import('./output-view-repo.mts')
+    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
 
     const repoData = {
       archived: false,
@@ -257,7 +257,7 @@ describe('outputViewRepo', () => {
       },
     }))
 
-    const { outputViewRepo } = await import('./output-view-repo.mts')
+    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
 
     const repoData = {
       archived: false,
@@ -304,7 +304,7 @@ describe('outputViewRepo', () => {
       },
     }))
 
-    const { outputViewRepo } = await import('./output-view-repo.mts')
+    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
 
     const repoData = {
       archived: false,
@@ -345,7 +345,7 @@ describe('outputViewRepo', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputViewRepo } = await import('./output-view-repo.mts')
+    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createErrorResult('Error without code')

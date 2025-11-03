@@ -18,8 +18,8 @@ vi.mock('./output-license-policy.mts', () => ({
 
 describe('handleLicensePolicy', () => {
   it('handles successful license policy fetch', async () => {
-    const { fetchLicensePolicy } = await import('./fetch-license-policy.mts')
-    const { outputLicensePolicy } = await import('./output-license-policy.mts')
+    const { fetchLicensePolicy } = await import('../../src/fetch-license-policy.mts')
+    const { outputLicensePolicy } = await import('../../src/output-license-policy.mts')
     const mockFetch = vi.mocked(fetchLicensePolicy)
     const mockOutput = vi.mocked(outputLicensePolicy)
 
@@ -36,8 +36,8 @@ describe('handleLicensePolicy', () => {
   })
 
   it('handles failed license policy fetch', async () => {
-    const { fetchLicensePolicy } = await import('./fetch-license-policy.mts')
-    const { outputLicensePolicy } = await import('./output-license-policy.mts')
+    const { fetchLicensePolicy } = await import('../../src/fetch-license-policy.mts')
+    const { outputLicensePolicy } = await import('../../src/output-license-policy.mts')
     const mockFetch = vi.mocked(fetchLicensePolicy)
     const mockOutput = vi.mocked(outputLicensePolicy)
 
@@ -51,8 +51,8 @@ describe('handleLicensePolicy', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { fetchLicensePolicy } = await import('./fetch-license-policy.mts')
-    const { outputLicensePolicy } = await import('./output-license-policy.mts')
+    const { fetchLicensePolicy } = await import('../../src/fetch-license-policy.mts')
+    const { outputLicensePolicy } = await import('../../src/output-license-policy.mts')
     const mockFetch = vi.mocked(fetchLicensePolicy)
     const mockOutput = vi.mocked(outputLicensePolicy)
 

@@ -60,7 +60,7 @@ describe('handleCi', () => {
   })
 
   it('handles CI scan successfully', async () => {
-    const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
+    const { getDefaultOrgSlug } = await import('../../src/fetch-default-org-slug.mts')
     const { detectDefaultBranch, getRepoName, gitBranch } = await import(
       '../../utils/git/operations.mjs'
     )
@@ -107,7 +107,7 @@ describe('handleCi', () => {
   })
 
   it('uses default branch when git branch is not available', async () => {
-    const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
+    const { getDefaultOrgSlug } = await import('../../src/fetch-default-org-slug.mts')
     const { detectDefaultBranch, getRepoName, gitBranch } = await import(
       '../../utils/git/operations.mjs'
     )
@@ -135,7 +135,7 @@ describe('handleCi', () => {
   })
 
   it('handles auto-manifest mode', async () => {
-    const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
+    const { getDefaultOrgSlug } = await import('../../src/fetch-default-org-slug.mts')
     const { getRepoName, gitBranch } = await import(
       '../../utils/git/operations.mjs'
     )
@@ -160,7 +160,7 @@ describe('handleCi', () => {
   })
 
   it('handles org slug fetch failure', async () => {
-    const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
+    const { getDefaultOrgSlug } = await import('../../src/fetch-default-org-slug.mts')
     const { serializeResultJson } = await import(
       '../../utils/output/result-json.mjs'
     )
@@ -184,7 +184,7 @@ describe('handleCi', () => {
   })
 
   it('sets default exit code on org slug failure without code', async () => {
-    const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
+    const { getDefaultOrgSlug } = await import('../../src/fetch-default-org-slug.mts')
     const { serializeResultJson } = await import(
       '../../utils/output/result-json.mjs'
     )
@@ -204,7 +204,7 @@ describe('handleCi', () => {
 
   it('logs debug information', async () => {
     const { debug, debugDir } = await import('@socketsecurity/lib/debug')
-    const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
+    const { getDefaultOrgSlug } = await import('../../src/fetch-default-org-slug.mts')
     const { getRepoName, gitBranch } = await import(
       '../../utils/git/operations.mjs'
     )
@@ -233,7 +233,7 @@ describe('handleCi', () => {
 
   it('logs debug info on org slug failure', async () => {
     const { debug, debugDir } = await import('@socketsecurity/lib/debug')
-    const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
+    const { getDefaultOrgSlug } = await import('../../src/fetch-default-org-slug.mts')
 
     const error = {
       ok: false as const,

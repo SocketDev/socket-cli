@@ -48,7 +48,7 @@ describe('provider-factory', () => {
 
   describe('createPrProvider', () => {
     it('returns GitLabProvider when GITLAB_HOST is set', async () => {
-      const providerFactory = await import('./provider-factory.mts')
+      const providerFactory = await import('../../src/provider-factory.mts')
       vi.spyOn(providerFactory, 'getGitRemoteUrlSync').mockReturnValue(
         'https://github.com/owner/repo.git',
       )
@@ -62,7 +62,7 @@ describe('provider-factory', () => {
     })
 
     it('falls back to GitHubProvider when git command fails', async () => {
-      const providerFactory = await import('./provider-factory.mts')
+      const providerFactory = await import('../../src/provider-factory.mts')
       vi.spyOn(providerFactory, 'getGitRemoteUrlSync').mockReturnValue('')
 
       const provider = providerFactory.createPrProvider()
@@ -71,7 +71,7 @@ describe('provider-factory', () => {
     })
 
     it('falls back to GitHubProvider for empty remote', async () => {
-      const providerFactory = await import('./provider-factory.mts')
+      const providerFactory = await import('../../src/provider-factory.mts')
       vi.spyOn(providerFactory, 'getGitRemoteUrlSync').mockReturnValue('')
 
       const provider = providerFactory.createPrProvider()
@@ -106,7 +106,7 @@ describe('GitHubProvider', () => {
 
   describe('createPr', () => {
     it('creates PR successfully', async () => {
-      const { getOctokit } = await import('./github.mts')
+      const { getOctokit } = await import('../../src/github.mts')
       vi.mocked(getOctokit).mockReturnValue(mockOctokit)
 
       mockOctokit.pulls.create.mockResolvedValue({
@@ -135,7 +135,7 @@ describe('GitHubProvider', () => {
     })
 
     it('handles merged PR state', async () => {
-      const { getOctokit } = await import('./github.mts')
+      const { getOctokit } = await import('../../src/github.mts')
       vi.mocked(getOctokit).mockReturnValue(mockOctokit)
 
       mockOctokit.pulls.create.mockResolvedValue({
@@ -163,7 +163,7 @@ describe('GitHubProvider', () => {
 
   describe('addComment', () => {
     it('adds comment successfully', async () => {
-      const { getOctokit } = await import('./github.mts')
+      const { getOctokit } = await import('../../src/github.mts')
       vi.mocked(getOctokit).mockReturnValue(mockOctokit)
 
       mockOctokit.issues.createComment.mockResolvedValue({})
@@ -187,7 +187,7 @@ describe('GitHubProvider', () => {
 
   describe('listPrs', () => {
     it('lists PRs with pagination', async () => {
-      const { cacheFetch, getOctokitGraphql } = await import('./github.mts')
+      const { cacheFetch, getOctokitGraphql } = await import('../../src/github.mts')
       vi.mocked(getOctokitGraphql).mockReturnValue(mockOctokitGraphql)
 
       const mockResponse = {
@@ -237,7 +237,7 @@ describe('GitHubProvider', () => {
 
   describe('deleteBranch', () => {
     it('deletes branch successfully', async () => {
-      const { gitDeleteRemoteBranch } = await import('./operations.mts')
+      const { gitDeleteRemoteBranch } = await import('../../src/operations.mts')
       vi.mocked(gitDeleteRemoteBranch).mockResolvedValue(true)
 
       const provider = new GitHubProvider()
@@ -248,7 +248,7 @@ describe('GitHubProvider', () => {
     })
 
     it('handles deletion failure gracefully', async () => {
-      const { gitDeleteRemoteBranch } = await import('./operations.mts')
+      const { gitDeleteRemoteBranch } = await import('../../src/operations.mts')
       vi.mocked(gitDeleteRemoteBranch).mockResolvedValue(false)
 
       const provider = new GitHubProvider()

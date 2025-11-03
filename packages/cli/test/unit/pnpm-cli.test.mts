@@ -6,8 +6,8 @@ vi.mock('./shadow/pnpm/bin.mts', () => ({
 }))
 
 // Import modules after mocks are set up.
-const { default: runPnpmCli } = await import('./pnpm-cli.mts')
-const shadowPnpmBinModule = await import('./shadow/pnpm/bin.mts')
+const { default: runPnpmCli } = await import('../../src/pnpm-cli.mts')
+const shadowPnpmBinModule = await import('../../src/shadow/pnpm/bin.mts')
 const mockShadowPnpmBin = vi.mocked(shadowPnpmBinModule.default)
 
 // Mock process methods.

@@ -17,7 +17,7 @@ vi.mock('./output-security-policy.mts', () => ({
 
 describe('handleSecurityPolicy', () => {
   it('fetches and outputs security policy successfully', async () => {
-    const { fetchSecurityPolicy } = await import('./fetch-security-policy.mts')
+    const { fetchSecurityPolicy } = await import('../../src/fetch-security-policy.mts')
     const { outputSecurityPolicy } = await import(
       './output-security-policy.mts'
     )
@@ -50,7 +50,7 @@ describe('handleSecurityPolicy', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchSecurityPolicy } = await import('./fetch-security-policy.mts')
+    const { fetchSecurityPolicy } = await import('../../src/fetch-security-policy.mts')
     const { outputSecurityPolicy } = await import(
       './output-security-policy.mts'
     )
@@ -67,7 +67,7 @@ describe('handleSecurityPolicy', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { fetchSecurityPolicy } = await import('./fetch-security-policy.mts')
+    const { fetchSecurityPolicy } = await import('../../src/fetch-security-policy.mts')
     const { outputSecurityPolicy } = await import(
       './output-security-policy.mts'
     )
@@ -82,7 +82,7 @@ describe('handleSecurityPolicy', () => {
   })
 
   it('handles different organization slugs', async () => {
-    const { fetchSecurityPolicy } = await import('./fetch-security-policy.mts')
+    const { fetchSecurityPolicy } = await import('../../src/fetch-security-policy.mts')
     const mockFetch = vi.mocked(fetchSecurityPolicy)
 
     const orgSlugs = [
@@ -101,7 +101,7 @@ describe('handleSecurityPolicy', () => {
   })
 
   it('handles text output with detailed policy', async () => {
-    const { fetchSecurityPolicy } = await import('./fetch-security-policy.mts')
+    const { fetchSecurityPolicy } = await import('../../src/fetch-security-policy.mts')
     const { outputSecurityPolicy } = await import(
       './output-security-policy.mts'
     )

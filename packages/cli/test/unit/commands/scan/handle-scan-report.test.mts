@@ -17,8 +17,8 @@ vi.mock('./output-scan-report.mts', () => ({
 
 describe('handleScanReport', () => {
   it('fetches scan data and outputs report successfully', async () => {
-    const { fetchScanData } = await import('./fetch-report-data.mts')
-    const { outputScanReport } = await import('./output-scan-report.mts')
+    const { fetchScanData } = await import('../../src/fetch-report-data.mts')
+    const { outputScanReport } = await import('../../src/output-scan-report.mts')
     const mockFetch = vi.mocked(fetchScanData)
     const mockOutput = vi.mocked(outputScanReport)
 
@@ -59,8 +59,8 @@ describe('handleScanReport', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchScanData } = await import('./fetch-report-data.mts')
-    const { outputScanReport } = await import('./output-scan-report.mts')
+    const { fetchScanData } = await import('../../src/fetch-report-data.mts')
+    const { outputScanReport } = await import('../../src/output-scan-report.mts')
     const mockFetch = vi.mocked(fetchScanData)
     const mockOutput = vi.mocked(outputScanReport)
 
@@ -85,8 +85,8 @@ describe('handleScanReport', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { fetchScanData } = await import('./fetch-report-data.mts')
-    const { outputScanReport } = await import('./output-scan-report.mts')
+    const { fetchScanData } = await import('../../src/fetch-report-data.mts')
+    const { outputScanReport } = await import('../../src/output-scan-report.mts')
     const mockFetch = vi.mocked(fetchScanData)
     const mockOutput = vi.mocked(outputScanReport)
 
@@ -112,8 +112,8 @@ describe('handleScanReport', () => {
   })
 
   it('passes all configuration options correctly', async () => {
-    const { fetchScanData } = await import('./fetch-report-data.mts')
-    const { outputScanReport } = await import('./output-scan-report.mts')
+    const { fetchScanData } = await import('../../src/fetch-report-data.mts')
+    const { outputScanReport } = await import('../../src/output-scan-report.mts')
     const mockFetch = vi.mocked(fetchScanData)
     const mockOutput = vi.mocked(outputScanReport)
 
@@ -139,8 +139,8 @@ describe('handleScanReport', () => {
   })
 
   it('handles text output with short format', async () => {
-    const { fetchScanData } = await import('./fetch-report-data.mts')
-    const { outputScanReport } = await import('./output-scan-report.mts')
+    const { fetchScanData } = await import('../../src/fetch-report-data.mts')
+    const { outputScanReport } = await import('../../src/output-scan-report.mts')
     const mockFetch = vi.mocked(fetchScanData)
     const mockOutput = vi.mocked(outputScanReport)
 

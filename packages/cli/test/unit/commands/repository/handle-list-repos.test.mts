@@ -19,8 +19,8 @@ describe('handleListRepos', () => {
   })
 
   it('fetches all repositories when all flag is true', async () => {
-    const { fetchListAllRepos } = await import('./fetch-list-all-repos.mts')
-    const { outputListRepos } = await import('./output-list-repos.mts')
+    const { fetchListAllRepos } = await import('../../src/fetch-list-all-repos.mts')
+    const { outputListRepos } = await import('../../src/output-list-repos.mts')
 
     const mockData = {
       ok: true,
@@ -58,8 +58,8 @@ describe('handleListRepos', () => {
   })
 
   it('fetches paginated repositories when all is false', async () => {
-    const { fetchListRepos } = await import('./fetch-list-repos.mts')
-    const { outputListRepos } = await import('./output-list-repos.mts')
+    const { fetchListRepos } = await import('../../src/fetch-list-repos.mts')
+    const { outputListRepos } = await import('../../src/output-list-repos.mts')
 
     const mockData = {
       ok: true,
@@ -102,8 +102,8 @@ describe('handleListRepos', () => {
   })
 
   it('handles error response for paginated fetch', async () => {
-    const { fetchListRepos } = await import('./fetch-list-repos.mts')
-    const { outputListRepos } = await import('./output-list-repos.mts')
+    const { fetchListRepos } = await import('../../src/fetch-list-repos.mts')
+    const { outputListRepos } = await import('../../src/output-list-repos.mts')
 
     const mockError = {
       ok: false,
@@ -133,8 +133,8 @@ describe('handleListRepos', () => {
   })
 
   it('handles null nextPage for last page', async () => {
-    const { fetchListRepos } = await import('./fetch-list-repos.mts')
-    const { outputListRepos } = await import('./output-list-repos.mts')
+    const { fetchListRepos } = await import('../../src/fetch-list-repos.mts')
+    const { outputListRepos } = await import('../../src/output-list-repos.mts')
 
     const mockData = {
       ok: true,
@@ -167,8 +167,8 @@ describe('handleListRepos', () => {
   })
 
   it('handles markdown output', async () => {
-    const { fetchListAllRepos } = await import('./fetch-list-all-repos.mts')
-    const { outputListRepos } = await import('./output-list-repos.mts')
+    const { fetchListAllRepos } = await import('../../src/fetch-list-all-repos.mts')
+    const { outputListRepos } = await import('../../src/output-list-repos.mts')
 
     const mockData = {
       ok: true,
@@ -198,7 +198,7 @@ describe('handleListRepos', () => {
   })
 
   it('handles different sort options', async () => {
-    const { fetchListRepos } = await import('./fetch-list-repos.mts')
+    const { fetchListRepos } = await import('../../src/fetch-list-repos.mts')
 
     const sortOptions = ['name', 'created', 'updated', 'pushed']
 
@@ -226,8 +226,8 @@ describe('handleListRepos', () => {
   })
 
   it('handles different page sizes', async () => {
-    const { fetchListRepos } = await import('./fetch-list-repos.mts')
-    const { outputListRepos } = await import('./output-list-repos.mts')
+    const { fetchListRepos } = await import('../../src/fetch-list-repos.mts')
+    const { outputListRepos } = await import('../../src/output-list-repos.mts')
 
     const mockData = {
       ok: true,

@@ -6,8 +6,8 @@ vi.mock('./shadow/yarn/bin.mts', () => ({
 }))
 
 // Import modules after mocks are set up.
-const { default: runYarnCli } = await import('./yarn-cli.mts')
-const shadowYarnBinModule = await import('./shadow/yarn/bin.mts')
+const { default: runYarnCli } = await import('../../src/yarn-cli.mts')
+const shadowYarnBinModule = await import('../../src/shadow/yarn/bin.mts')
 const mockShadowYarnBin = vi.mocked(shadowYarnBinModule.default)
 
 // Mock process methods.

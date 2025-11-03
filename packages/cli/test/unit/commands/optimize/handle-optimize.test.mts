@@ -58,7 +58,7 @@ describe('handleOptimize', () => {
     const { detectAndValidatePackageEnvironment } = await import(
       '../../utils/ecosystem/environment.mts'
     )
-    const { applyOptimization } = await import('./apply-optimization.mts')
+    const { applyOptimization } = await import('../../src/apply-optimization.mts')
     const { outputOptimizeResult } = await import(
       './output-optimize-result.mts'
     )
@@ -115,7 +115,7 @@ describe('handleOptimize', () => {
     const { outputOptimizeResult } = await import(
       './output-optimize-result.mts'
     )
-    const { applyOptimization } = await import('./apply-optimization.mts')
+    const { applyOptimization } = await import('../../src/apply-optimization.mts')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: false,
@@ -177,7 +177,7 @@ describe('handleOptimize', () => {
     const { outputOptimizeResult } = await import(
       './output-optimize-result.mts'
     )
-    const { applyOptimization } = await import('./apply-optimization.mts')
+    const { applyOptimization } = await import('../../src/apply-optimization.mts')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,
@@ -212,7 +212,7 @@ describe('handleOptimize', () => {
     const { detectAndValidatePackageEnvironment } = await import(
       '../../utils/ecosystem/environment.mts'
     )
-    const { applyOptimization } = await import('./apply-optimization.mts')
+    const { applyOptimization } = await import('../../src/apply-optimization.mts')
     const { outputOptimizeResult } = await import(
       './output-optimize-result.mts'
     )
@@ -254,7 +254,7 @@ describe('handleOptimize', () => {
     const { detectAndValidatePackageEnvironment } = await import(
       '../../utils/ecosystem/environment.mts'
     )
-    const { applyOptimization } = await import('./apply-optimization.mts')
+    const { applyOptimization } = await import('../../src/apply-optimization.mts')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,
@@ -291,7 +291,7 @@ describe('handleOptimize', () => {
     const { detectAndValidatePackageEnvironment } = await import(
       '../../utils/ecosystem/environment.mts'
     )
-    const { applyOptimization } = await import('./apply-optimization.mts')
+    const { applyOptimization } = await import('../../src/apply-optimization.mts')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,

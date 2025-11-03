@@ -33,7 +33,7 @@ describe('outputUpdateRepo', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputUpdateRepo } = await import('./output-update-repo.mts')
+    const { outputUpdateRepo } = await import('../../src/output-update-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
@@ -66,7 +66,7 @@ describe('outputUpdateRepo', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputUpdateRepo } = await import('./output-update-repo.mts')
+    const { outputUpdateRepo } = await import('../../src/output-update-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createErrorResult('Unauthorized', {
@@ -94,7 +94,7 @@ describe('outputUpdateRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    const { outputUpdateRepo } = await import('./output-update-repo.mts')
+    const { outputUpdateRepo } = await import('../../src/output-update-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
@@ -128,7 +128,7 @@ describe('outputUpdateRepo', () => {
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
-    const { outputUpdateRepo } = await import('./output-update-repo.mts')
+    const { outputUpdateRepo } = await import('../../src/output-update-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createErrorResult('Repository not found', {
@@ -160,7 +160,7 @@ describe('outputUpdateRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    const { outputUpdateRepo } = await import('./output-update-repo.mts')
+    const { outputUpdateRepo } = await import('../../src/output-update-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
@@ -188,7 +188,7 @@ describe('outputUpdateRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    const { outputUpdateRepo } = await import('./output-update-repo.mts')
+    const { outputUpdateRepo } = await import('../../src/output-update-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
@@ -216,7 +216,7 @@ describe('outputUpdateRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    const { outputUpdateRepo } = await import('./output-update-repo.mts')
+    const { outputUpdateRepo } = await import('../../src/output-update-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
@@ -249,7 +249,7 @@ describe('outputUpdateRepo', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputUpdateRepo } = await import('./output-update-repo.mts')
+    const { outputUpdateRepo } = await import('../../src/output-update-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createErrorResult('Error without code')

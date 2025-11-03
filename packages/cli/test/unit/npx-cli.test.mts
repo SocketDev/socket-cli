@@ -6,8 +6,8 @@ vi.mock('./shadow/npx/bin.mts', () => ({
 }))
 
 // Import modules after mocks are set up.
-const { default: runNpxCli } = await import('./npx-cli.mts')
-const shadowNpxBinModule = await import('./shadow/npx/bin.mts')
+const { default: runNpxCli } = await import('../../src/npx-cli.mts')
+const shadowNpxBinModule = await import('../../src/shadow/npx/bin.mts')
 const mockShadowNpxBin = vi.mocked(shadowNpxBinModule.default)
 
 // Mock process methods.

@@ -20,7 +20,7 @@ describe('handleManifestConda', () => {
     const { convertCondaToRequirements } = await import(
       './convert-conda-to-requirements.mts'
     )
-    const { outputRequirements } = await import('./output-requirements.mts')
+    const { outputRequirements } = await import('../../src/output-requirements.mts')
     const mockConvert = vi.mocked(convertCondaToRequirements)
     const mockOutput = vi.mocked(outputRequirements)
 
@@ -56,7 +56,7 @@ describe('handleManifestConda', () => {
     const { convertCondaToRequirements } = await import(
       './convert-conda-to-requirements.mts'
     )
-    const { outputRequirements } = await import('./output-requirements.mts')
+    const { outputRequirements } = await import('../../src/output-requirements.mts')
     const mockConvert = vi.mocked(convertCondaToRequirements)
     const mockOutput = vi.mocked(outputRequirements)
 
@@ -79,7 +79,7 @@ describe('handleManifestConda', () => {
     const { convertCondaToRequirements } = await import(
       './convert-conda-to-requirements.mts'
     )
-    const { outputRequirements } = await import('./output-requirements.mts')
+    const { outputRequirements } = await import('../../src/output-requirements.mts')
     const mockConvert = vi.mocked(convertCondaToRequirements)
     const mockOutput = vi.mocked(outputRequirements)
 

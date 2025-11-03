@@ -16,7 +16,7 @@ describe('handleInstallCompletion', () => {
   })
 
   it('installs completion successfully', async () => {
-    const { setupTabCompletion } = await import('./setup-tab-completion.mts')
+    const { setupTabCompletion } = await import('../../src/setup-tab-completion.mts')
     const { outputInstallCompletion } = await import(
       './output-install-completion.mts'
     )
@@ -36,7 +36,7 @@ describe('handleInstallCompletion', () => {
   })
 
   it('handles installation failure', async () => {
-    const { setupTabCompletion } = await import('./setup-tab-completion.mts')
+    const { setupTabCompletion } = await import('../../src/setup-tab-completion.mts')
     const { outputInstallCompletion } = await import(
       './output-install-completion.mts'
     )
@@ -57,7 +57,7 @@ describe('handleInstallCompletion', () => {
   })
 
   it('handles different shell targets', async () => {
-    const { setupTabCompletion } = await import('./setup-tab-completion.mts')
+    const { setupTabCompletion } = await import('../../src/setup-tab-completion.mts')
     const { outputInstallCompletion } = await import(
       './output-install-completion.mts'
     )
@@ -82,7 +82,7 @@ describe('handleInstallCompletion', () => {
   })
 
   it('handles empty target name', async () => {
-    const { setupTabCompletion } = await import('./setup-tab-completion.mts')
+    const { setupTabCompletion } = await import('../../src/setup-tab-completion.mts')
     const { outputInstallCompletion } = await import(
       './output-install-completion.mts'
     )
@@ -102,7 +102,7 @@ describe('handleInstallCompletion', () => {
   })
 
   it('handles unsupported shell', async () => {
-    const { setupTabCompletion } = await import('./setup-tab-completion.mts')
+    const { setupTabCompletion } = await import('../../src/setup-tab-completion.mts')
     const { outputInstallCompletion } = await import(
       './output-install-completion.mts'
     )
@@ -122,7 +122,7 @@ describe('handleInstallCompletion', () => {
   })
 
   it('handles async errors', async () => {
-    const { setupTabCompletion } = await import('./setup-tab-completion.mts')
+    const { setupTabCompletion } = await import('../../src/setup-tab-completion.mts')
 
     vi.mocked(setupTabCompletion).mockRejectedValue(new Error('Async error'))
 

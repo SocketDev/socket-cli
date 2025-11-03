@@ -54,7 +54,7 @@ describe('handleScanReach', () => {
     const { fetchSupportedScanFileNames } = await import(
       './fetch-supported-scan-file-names.mts'
     )
-    const { outputScanReach } = await import('./output-scan-reach.mts')
+    const { outputScanReach } = await import('../../src/output-scan-reach.mts')
     const { performReachabilityAnalysis } = await import(
       './perform-reachability-analysis.mts'
     )
@@ -112,7 +112,7 @@ describe('handleScanReach', () => {
     const { fetchSupportedScanFileNames } = await import(
       './fetch-supported-scan-file-names.mts'
     )
-    const { outputScanReach } = await import('./output-scan-reach.mts')
+    const { outputScanReach } = await import('../../src/output-scan-reach.mts')
 
     const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
     const mockOutput = vi.mocked(outputScanReach)
@@ -175,7 +175,7 @@ describe('handleScanReach', () => {
     const { fetchSupportedScanFileNames } = await import(
       './fetch-supported-scan-file-names.mts'
     )
-    const { outputScanReach } = await import('./output-scan-reach.mts')
+    const { outputScanReach } = await import('../../src/output-scan-reach.mts')
     const { performReachabilityAnalysis } = await import(
       './perform-reachability-analysis.mts'
     )

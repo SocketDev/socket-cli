@@ -109,7 +109,7 @@ describe('handleCreateNewScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
+    const { outputCreateNewScan } = await import('../../src/output-create-new-scan.mts')
 
     vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
       createSuccessResult(new Set(['package.json', 'yarn.lock'])),
@@ -262,7 +262,7 @@ describe('handleCreateNewScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { finalizeTier1Scan } = await import('./finalize-tier1-scan.mts')
+    const { finalizeTier1Scan } = await import('../../src/finalize-tier1-scan.mts')
 
     vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
       createSuccessResult(new Set(['package.json'])),
@@ -309,7 +309,7 @@ describe('handleCreateNewScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { handleScanReport } = await import('./handle-scan-report.mts')
+    const { handleScanReport } = await import('../../src/handle-scan-report.mts')
 
     vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
       createSuccessResult(new Set(['package.json'])),
@@ -340,7 +340,7 @@ describe('handleCreateNewScan', () => {
     const { fetchSupportedScanFileNames } = await import(
       './fetch-supported-scan-file-names.mts'
     )
-    const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
+    const { outputCreateNewScan } = await import('../../src/output-create-new-scan.mts')
 
     const error = new Error('API error')
     vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(

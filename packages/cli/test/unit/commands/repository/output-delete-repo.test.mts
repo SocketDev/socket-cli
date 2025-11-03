@@ -33,7 +33,7 @@ describe('outputDeleteRepo', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputDeleteRepo } = await import('./output-delete-repo.mts')
+    const { outputDeleteRepo } = await import('../../src/output-delete-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createSuccessResult({
@@ -66,7 +66,7 @@ describe('outputDeleteRepo', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputDeleteRepo } = await import('./output-delete-repo.mts')
+    const { outputDeleteRepo } = await import('../../src/output-delete-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createErrorResult('Unauthorized', {
@@ -94,7 +94,7 @@ describe('outputDeleteRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    const { outputDeleteRepo } = await import('./output-delete-repo.mts')
+    const { outputDeleteRepo } = await import('../../src/output-delete-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createSuccessResult({
@@ -128,7 +128,7 @@ describe('outputDeleteRepo', () => {
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
-    const { outputDeleteRepo } = await import('./output-delete-repo.mts')
+    const { outputDeleteRepo } = await import('../../src/output-delete-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createErrorResult('Repository not found', {
@@ -160,7 +160,7 @@ describe('outputDeleteRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    const { outputDeleteRepo } = await import('./output-delete-repo.mts')
+    const { outputDeleteRepo } = await import('../../src/output-delete-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createSuccessResult({
@@ -188,7 +188,7 @@ describe('outputDeleteRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    const { outputDeleteRepo } = await import('./output-delete-repo.mts')
+    const { outputDeleteRepo } = await import('../../src/output-delete-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createSuccessResult({
@@ -216,7 +216,7 @@ describe('outputDeleteRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    const { outputDeleteRepo } = await import('./output-delete-repo.mts')
+    const { outputDeleteRepo } = await import('../../src/output-delete-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createSuccessResult({
@@ -249,7 +249,7 @@ describe('outputDeleteRepo', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputDeleteRepo } = await import('./output-delete-repo.mts')
+    const { outputDeleteRepo } = await import('../../src/output-delete-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createErrorResult('Error without code')

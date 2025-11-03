@@ -6,8 +6,8 @@ vi.mock('./shadow/npm/bin.mts', () => ({
 }))
 
 // Import modules after mocks are set up.
-const { default: runNpmCli } = await import('./npm-cli.mts')
-const shadowNpmBinModule = await import('./shadow/npm/bin.mts')
+const { default: runNpmCli } = await import('../../src/npm-cli.mts')
+const shadowNpmBinModule = await import('../../src/shadow/npm/bin.mts')
 const mockShadowNpmBin = vi.mocked(shadowNpmBinModule.default)
 
 // Mock process methods.

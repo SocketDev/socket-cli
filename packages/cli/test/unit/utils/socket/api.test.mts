@@ -53,7 +53,7 @@ describe('api utilities', () => {
       // Reset modules to pick up the new environment variable.
       await vi.resetModules()
       // Re-import to get the freshly loaded module with the stubbed env var.
-      const { getDefaultApiBaseUrl } = await import('./api.mts')
+      const { getDefaultApiBaseUrl } = await import('../../src/api.mts')
       const result = getDefaultApiBaseUrl()
       expect(result).toBe('https://custom.api.url')
     })

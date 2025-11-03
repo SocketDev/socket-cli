@@ -118,7 +118,7 @@ describe('postinstallWrapper', () => {
   })
 
   it('sets up wrapper when user confirms for bashrc', async () => {
-    const { addSocketWrapper } = await import('./add-socket-wrapper.mts')
+    const { addSocketWrapper } = await import('../../src/add-socket-wrapper.mts')
     const { checkSocketWrapperSetup } = await import(
       './check-socket-wrapper-setup.mts'
     )
@@ -140,7 +140,7 @@ describe('postinstallWrapper', () => {
   })
 
   it('sets up wrapper for both bashrc and zshrc when both exist', async () => {
-    const { addSocketWrapper } = await import('./add-socket-wrapper.mts')
+    const { addSocketWrapper } = await import('../../src/add-socket-wrapper.mts')
     const { checkSocketWrapperSetup } = await import(
       './check-socket-wrapper-setup.mts'
     )
@@ -160,7 +160,7 @@ describe('postinstallWrapper', () => {
   })
 
   it('handles error during wrapper setup', async () => {
-    const { addSocketWrapper } = await import('./add-socket-wrapper.mts')
+    const { addSocketWrapper } = await import('../../src/add-socket-wrapper.mts')
     const { checkSocketWrapperSetup } = await import(
       './check-socket-wrapper-setup.mts'
     )

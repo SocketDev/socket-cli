@@ -20,7 +20,7 @@ describe('handleDeleteScan', () => {
     const { fetchDeleteOrgFullScan } = await import(
       './fetch-delete-org-full-scan.mts'
     )
-    const { outputDeleteScan } = await import('./output-delete-scan.mts')
+    const { outputDeleteScan } = await import('../../src/output-delete-scan.mts')
     const mockFetch = vi.mocked(fetchDeleteOrgFullScan)
     const mockOutput = vi.mocked(outputDeleteScan)
 
@@ -41,7 +41,7 @@ describe('handleDeleteScan', () => {
     const { fetchDeleteOrgFullScan } = await import(
       './fetch-delete-org-full-scan.mts'
     )
-    const { outputDeleteScan } = await import('./output-delete-scan.mts')
+    const { outputDeleteScan } = await import('../../src/output-delete-scan.mts')
     const mockFetch = vi.mocked(fetchDeleteOrgFullScan)
     const mockOutput = vi.mocked(outputDeleteScan)
 
@@ -58,7 +58,7 @@ describe('handleDeleteScan', () => {
     const { fetchDeleteOrgFullScan } = await import(
       './fetch-delete-org-full-scan.mts'
     )
-    const { outputDeleteScan } = await import('./output-delete-scan.mts')
+    const { outputDeleteScan } = await import('../../src/output-delete-scan.mts')
     const mockFetch = vi.mocked(fetchDeleteOrgFullScan)
     const mockOutput = vi.mocked(outputDeleteScan)
 
@@ -95,7 +95,7 @@ describe('handleDeleteScan', () => {
     const { fetchDeleteOrgFullScan } = await import(
       './fetch-delete-org-full-scan.mts'
     )
-    const { outputDeleteScan } = await import('./output-delete-scan.mts')
+    const { outputDeleteScan } = await import('../../src/output-delete-scan.mts')
     const mockFetch = vi.mocked(fetchDeleteOrgFullScan)
     const mockOutput = vi.mocked(outputDeleteScan)
 

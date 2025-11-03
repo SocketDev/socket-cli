@@ -24,7 +24,7 @@ describe('handleCreateGithubScan', () => {
     const { createScanFromGithub } = await import(
       './create-scan-from-github.mts'
     )
-    const { outputScanGithub } = await import('./output-scan-github.mts')
+    const { outputScanGithub } = await import('../../src/output-scan-github.mts')
     const mockCreate = vi.mocked(createScanFromGithub)
     const mockOutput = vi.mocked(outputScanGithub)
 
@@ -64,7 +64,7 @@ describe('handleCreateGithubScan', () => {
     const { createScanFromGithub } = await import(
       './create-scan-from-github.mts'
     )
-    const { outputScanGithub } = await import('./output-scan-github.mts')
+    const { outputScanGithub } = await import('../../src/output-scan-github.mts')
     const mockCreate = vi.mocked(createScanFromGithub)
     const mockOutput = vi.mocked(outputScanGithub)
 
@@ -137,7 +137,7 @@ describe('handleCreateGithubScan', () => {
     const { createScanFromGithub } = await import(
       './create-scan-from-github.mts'
     )
-    const { outputScanGithub } = await import('./output-scan-github.mts')
+    const { outputScanGithub } = await import('../../src/output-scan-github.mts')
     const mockCreate = vi.mocked(createScanFromGithub)
     const mockOutput = vi.mocked(outputScanGithub)
 

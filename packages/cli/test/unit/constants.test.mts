@@ -18,7 +18,7 @@ describe('constants', () => {
   })
 
   it('exports expected properties', async () => {
-    const constants = (await import('./constants.mts')).default
+    const constants = (await import('../../src/constants.mts')).default
 
     // Check for basic properties.
     expect(constants).toHaveProperty('rootPath')
@@ -40,7 +40,7 @@ describe('constants', () => {
   })
 
   it('has correct path properties', async () => {
-    const constants = (await import('./constants.mts')).default
+    const constants = (await import('../../src/constants.mts')).default
 
     // rootPath should be the parent of src directory.
     expect(constants.rootPath).toContain('socket-cli')
@@ -55,7 +55,7 @@ describe('constants', () => {
   })
 
   it('has correct URL defaults', async () => {
-    const constants = (await import('./constants.mts')).default
+    const constants = (await import('../../src/constants.mts')).default
 
     expect(constants.API_V0_URL).toBe('https://api.socket.dev/v0/')
     expect(constants.NPM_REGISTRY_URL).toBe('https://registry.npmjs.org')
@@ -71,7 +71,7 @@ describe('constants', () => {
   })
 
   it('has correct command constants', async () => {
-    const constants = (await import('./constants.mts')).default
+    const constants = (await import('../../src/constants.mts')).default
 
     // Package managers.
     expect(constants.NPM).toBe('npm')
@@ -85,7 +85,7 @@ describe('constants', () => {
   })
 
   it('has correct flag constants', async () => {
-    const constants = (await import('./constants.mts')).default
+    const constants = (await import('../../src/constants.mts')).default
 
     expect(constants.FLAG_QUIET).toBe('--quiet')
     expect(constants.FLAG_SILENT).toBe('--silent')
@@ -96,13 +96,13 @@ describe('constants', () => {
   })
 
   it('has correct encoding constants', async () => {
-    const constants = (await import('./constants.mts')).default
+    const constants = (await import('../../src/constants.mts')).default
 
     expect(constants.UTF8).toBe('utf8')
   })
 
   it('has correct socket-specific constants', async () => {
-    const constants = (await import('./constants.mts')).default
+    const constants = (await import('../../src/constants.mts')).default
 
     expect(constants.SOCKET_CLI_ISSUES_URL).toBe(
       'https://github.com/SocketDev/socket-cli/issues',
@@ -114,7 +114,7 @@ describe('constants', () => {
   })
 
   it('has various constant flags', async () => {
-    const constants = (await import('./constants.mts')).default
+    const constants = (await import('../../src/constants.mts')).default
 
     // Check for some known flags.
     expect(constants.FLAG_CONFIG).toBe('--config')
@@ -124,7 +124,7 @@ describe('constants', () => {
   })
 
   it('has socket file constants', async () => {
-    const constants = (await import('./constants.mts')).default
+    const constants = (await import('../../src/constants.mts')).default
 
     expect(constants.SOCKET_JSON).toBe('socket.json')
     expect(constants.SOCKET_YAML).toBe('socket.yaml')
@@ -132,14 +132,14 @@ describe('constants', () => {
   })
 
   it('has shadow directories configuration', async () => {
-    const constants = (await import('./constants.mts')).default
+    const constants = (await import('../../src/constants.mts')).default
 
     expect(constants.shadowBinPath).toBeDefined()
     expect(constants.shadowBinPath).toContain('shadow-bin')
   })
 
   it('ENV object contains expected environment variables', async () => {
-    const _constants = (await import('./constants.mts')).default
+    const _constants = (await import('../../src/constants.mts')).default
 
     expect(ENV).toBeDefined()
     expect(typeof ENV).toBe('object')

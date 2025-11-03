@@ -52,12 +52,12 @@ vi.mock('../../constants/packages.mts', () => ({
 
 describe('npm-paths utilities', () => {
   let originalExit: typeof process.exit
-  let getNpmBinPath: typeof import('./paths.mts')['getNpmBinPath']
-  let getNpmDirPath: typeof import('./paths.mts')['getNpmDirPath']
-  let getNpmRequire: typeof import('./paths.mts')['getNpmRequire']
-  let getNpxBinPath: typeof import('./paths.mts')['getNpxBinPath']
-  let isNpmBinPathShadowed: typeof import('./paths.mts')['isNpmBinPathShadowed']
-  let isNpxBinPathShadowed: typeof import('./paths.mts')['isNpxBinPathShadowed']
+  let getNpmBinPath: typeof import('../../../../src/utils/npm/paths.mts')['getNpmBinPath']
+  let getNpmDirPath: typeof import('../../../../src/utils/npm/paths.mts')['getNpmDirPath']
+  let getNpmRequire: typeof import('../../../../src/utils/npm/paths.mts')['getNpmRequire']
+  let getNpxBinPath: typeof import('../../../../src/utils/npm/paths.mts')['getNpxBinPath']
+  let isNpmBinPathShadowed: typeof import('../../../../src/utils/npm/paths.mts')['isNpmBinPathShadowed']
+  let isNpxBinPathShadowed: typeof import('../../../../src/utils/npm/paths.mts')['isNpxBinPathShadowed']
 
   beforeEach(async () => {
     vi.clearAllMocks()
@@ -71,7 +71,7 @@ describe('npm-paths utilities', () => {
     }) as any
 
     // Re-import functions after module reset to clear caches
-    const npmPaths = await import('./paths.mts')
+    const npmPaths = await import('../../../../src/utils/npm/paths.mts')
     getNpmBinPath = npmPaths.getNpmBinPath
     getNpmDirPath = npmPaths.getNpmDirPath
     getNpmRequire = npmPaths.getNpmRequire
@@ -176,7 +176,7 @@ describe('npm-paths utilities', () => {
       findNpmDirPathSync.mockReturnValue(undefined)
 
       // Re-import after setting up mocks.
-      const { getNpmDirPath: localGetNpmDirPath } = await import('./paths.mts')
+      const { getNpmDirPath: localGetNpmDirPath } = await import('../../../../src/utils/npm/paths.mts')
       const result = localGetNpmDirPath()
 
       // Normalize path separators for cross-platform compatibility.

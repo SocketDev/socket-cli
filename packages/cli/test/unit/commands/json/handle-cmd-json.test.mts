@@ -13,7 +13,7 @@ describe('handleCmdJson', () => {
   })
 
   it('outputs JSON for given directory', async () => {
-    const { outputCmdJson } = await import('./output-cmd-json.mts')
+    const { outputCmdJson } = await import('../../src/output-cmd-json.mts')
 
     await handleCmdJson('/test/project')
 
@@ -21,7 +21,7 @@ describe('handleCmdJson', () => {
   })
 
   it('handles current directory', async () => {
-    const { outputCmdJson } = await import('./output-cmd-json.mts')
+    const { outputCmdJson } = await import('../../src/output-cmd-json.mts')
 
     await handleCmdJson('.')
 
@@ -29,7 +29,7 @@ describe('handleCmdJson', () => {
   })
 
   it('handles absolute path', async () => {
-    const { outputCmdJson } = await import('./output-cmd-json.mts')
+    const { outputCmdJson } = await import('../../src/output-cmd-json.mts')
 
     await handleCmdJson('/absolute/path/to/project')
 
@@ -37,7 +37,7 @@ describe('handleCmdJson', () => {
   })
 
   it('handles relative path', async () => {
-    const { outputCmdJson } = await import('./output-cmd-json.mts')
+    const { outputCmdJson } = await import('../../src/output-cmd-json.mts')
 
     await handleCmdJson('../relative/path')
 
@@ -45,7 +45,7 @@ describe('handleCmdJson', () => {
   })
 
   it('handles empty path', async () => {
-    const { outputCmdJson } = await import('./output-cmd-json.mts')
+    const { outputCmdJson } = await import('../../src/output-cmd-json.mts')
 
     await handleCmdJson('')
 
@@ -53,7 +53,7 @@ describe('handleCmdJson', () => {
   })
 
   it('handles async errors', async () => {
-    const { outputCmdJson } = await import('./output-cmd-json.mts')
+    const { outputCmdJson } = await import('../../src/output-cmd-json.mts')
 
     vi.mocked(outputCmdJson).mockRejectedValue(new Error('Output error'))
 
@@ -61,7 +61,7 @@ describe('handleCmdJson', () => {
   })
 
   it('is called exactly once per invocation', async () => {
-    const { outputCmdJson } = await import('./output-cmd-json.mts')
+    const { outputCmdJson } = await import('../../src/output-cmd-json.mts')
 
     vi.mocked(outputCmdJson).mockResolvedValue(undefined)
 
@@ -71,7 +71,7 @@ describe('handleCmdJson', () => {
   })
 
   it('handles Windows-style paths', async () => {
-    const { outputCmdJson } = await import('./output-cmd-json.mts')
+    const { outputCmdJson } = await import('../../src/output-cmd-json.mts')
 
     vi.mocked(outputCmdJson).mockResolvedValue(undefined)
 

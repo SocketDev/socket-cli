@@ -17,8 +17,8 @@ vi.mock('./output-list-scans.mts', () => ({
 
 describe('handleListScans', () => {
   it('fetches and outputs scan list successfully', async () => {
-    const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
-    const { outputListScans } = await import('./output-list-scans.mts')
+    const { fetchOrgFullScanList } = await import('../../src/fetch-list-scans.mts')
+    const { outputListScans } = await import('../../src/output-list-scans.mts')
     const mockFetch = vi.mocked(fetchOrgFullScanList)
     const mockOutput = vi.mocked(outputListScans)
 
@@ -68,8 +68,8 @@ describe('handleListScans', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
-    const { outputListScans } = await import('./output-list-scans.mts')
+    const { fetchOrgFullScanList } = await import('../../src/fetch-list-scans.mts')
+    const { outputListScans } = await import('../../src/output-list-scans.mts')
     const mockFetch = vi.mocked(fetchOrgFullScanList)
     const mockOutput = vi.mocked(outputListScans)
 
@@ -92,7 +92,7 @@ describe('handleListScans', () => {
   })
 
   it('handles pagination parameters', async () => {
-    const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
+    const { fetchOrgFullScanList } = await import('../../src/fetch-list-scans.mts')
     const mockFetch = vi.mocked(fetchOrgFullScanList)
 
     mockFetch.mockResolvedValue(createSuccessResult([]))
@@ -118,8 +118,8 @@ describe('handleListScans', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
-    const { outputListScans } = await import('./output-list-scans.mts')
+    const { fetchOrgFullScanList } = await import('../../src/fetch-list-scans.mts')
+    const { outputListScans } = await import('../../src/output-list-scans.mts')
     const mockFetch = vi.mocked(fetchOrgFullScanList)
     const mockOutput = vi.mocked(outputListScans)
 
@@ -141,7 +141,7 @@ describe('handleListScans', () => {
   })
 
   it('handles filtering by branch and repository', async () => {
-    const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
+    const { fetchOrgFullScanList } = await import('../../src/fetch-list-scans.mts')
     const mockFetch = vi.mocked(fetchOrgFullScanList)
 
     mockFetch.mockResolvedValue(createSuccessResult([]))

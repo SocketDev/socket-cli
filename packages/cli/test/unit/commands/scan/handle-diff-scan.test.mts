@@ -17,8 +17,8 @@ vi.mock('./output-diff-scan.mts', () => ({
 
 describe('handleDiffScan', () => {
   it('fetches and outputs scan diff successfully', async () => {
-    const { fetchDiffScan } = await import('./fetch-diff-scan.mts')
-    const { outputDiffScan } = await import('./output-diff-scan.mts')
+    const { fetchDiffScan } = await import('../../src/fetch-diff-scan.mts')
+    const { outputDiffScan } = await import('../../src/output-diff-scan.mts')
     const mockFetch = vi.mocked(fetchDiffScan)
     const mockOutput = vi.mocked(outputDiffScan)
 
@@ -57,8 +57,8 @@ describe('handleDiffScan', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchDiffScan } = await import('./fetch-diff-scan.mts')
-    const { outputDiffScan } = await import('./output-diff-scan.mts')
+    const { fetchDiffScan } = await import('../../src/fetch-diff-scan.mts')
+    const { outputDiffScan } = await import('../../src/output-diff-scan.mts')
     const mockFetch = vi.mocked(fetchDiffScan)
     const mockOutput = vi.mocked(outputDiffScan)
 
@@ -82,8 +82,8 @@ describe('handleDiffScan', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { fetchDiffScan } = await import('./fetch-diff-scan.mts')
-    const { outputDiffScan } = await import('./output-diff-scan.mts')
+    const { fetchDiffScan } = await import('../../src/fetch-diff-scan.mts')
+    const { outputDiffScan } = await import('../../src/output-diff-scan.mts')
     const mockFetch = vi.mocked(fetchDiffScan)
     const mockOutput = vi.mocked(outputDiffScan)
 
@@ -108,8 +108,8 @@ describe('handleDiffScan', () => {
   })
 
   it('handles different depth values', async () => {
-    const { fetchDiffScan } = await import('./fetch-diff-scan.mts')
-    const { outputDiffScan } = await import('./output-diff-scan.mts')
+    const { fetchDiffScan } = await import('../../src/fetch-diff-scan.mts')
+    const { outputDiffScan } = await import('../../src/output-diff-scan.mts')
     const mockFetch = vi.mocked(fetchDiffScan)
     const mockOutput = vi.mocked(outputDiffScan)
 
@@ -136,8 +136,8 @@ describe('handleDiffScan', () => {
   })
 
   it('handles text output without file', async () => {
-    const { fetchDiffScan } = await import('./fetch-diff-scan.mts')
-    const { outputDiffScan } = await import('./output-diff-scan.mts')
+    const { fetchDiffScan } = await import('../../src/fetch-diff-scan.mts')
+    const { outputDiffScan } = await import('../../src/output-diff-scan.mts')
     const mockFetch = vi.mocked(fetchDiffScan)
     const mockOutput = vi.mocked(outputDiffScan)
 

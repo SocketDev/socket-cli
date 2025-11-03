@@ -53,7 +53,7 @@ describe('alerts-map utilities', () => {
       const { extractPurlsFromPnpmLockfile } = await import(
         '../pnpm/lockfile.mts'
       )
-      const { setupSdk } = await import('./sdk.mts')
+      const { setupSdk } = await import('../../src/sdk.mts')
       const { findSocketYmlSync } = await import('../config.mts')
 
       vi.mocked(extractPurlsFromPnpmLockfile).mockReturnValue([])
@@ -94,7 +94,7 @@ describe('alerts-map utilities', () => {
 
   describe('getAlertsMapFromPurls', () => {
     it('returns map for empty purls', async () => {
-      const { setupSdk } = await import('./sdk.mts')
+      const { setupSdk } = await import('../../src/sdk.mts')
       const { findSocketYmlSync } = await import('../config.mts')
 
       vi.mocked(setupSdk).mockReturnValue({
@@ -125,7 +125,7 @@ describe('alerts-map utilities', () => {
     })
 
     it('requires API token', async () => {
-      const { setupSdk } = await import('./sdk.mts')
+      const { setupSdk } = await import('../../src/sdk.mts')
 
       vi.mocked(setupSdk).mockReturnValue({
         ok: false,

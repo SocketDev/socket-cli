@@ -62,7 +62,7 @@ describe('npm/paths', () => {
     it('should cache the result on subsequent calls', async () => {
       // Import fresh module to test caching
       const { getArboristPackagePath: freshGetArboristPackagePath } =
-        await import('./paths.mts')
+        await import('../../../../../src/shadow/npm/paths.mts')
 
       const first = freshGetArboristPackagePath()
       const second = freshGetArboristPackagePath()
@@ -81,7 +81,7 @@ describe('npm/paths', () => {
       vi.resetModules()
 
       const { getArboristPackagePath: freshGetArboristPackagePath } =
-        await import('./paths.mts')
+        await import('../../../../../src/shadow/npm/paths.mts')
       const result = freshGetArboristPackagePath()
 
       expect(result).toBe('/complex/path/node_modules/@npmcli/arborist')
@@ -108,7 +108,7 @@ describe('npm/paths', () => {
       )
 
       // Re-import the module to get updated WIN32 value.
-      return import('./paths.mts').then(module => {
+      return import('../../../../../src/shadow/npm/paths.mts').then(module => {
         const result = module.getArboristPackagePath()
         expect(result).toContain('@npmcli/arborist')
       })

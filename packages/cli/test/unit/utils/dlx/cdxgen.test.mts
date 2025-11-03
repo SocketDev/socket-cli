@@ -25,7 +25,7 @@ describe('spawnCdxgenDlx', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks()
-    const { spawnDlx } = await import('./spawn.mts')
+    const { spawnDlx } = await import('../../../../src/utils/dlx/spawn.mts')
     mockSpawnDlx = vi.mocked(spawnDlx)
     // Setup default resolved value for the mock.
     mockSpawnDlx.mockResolvedValue({
@@ -84,7 +84,7 @@ describe('spawnCdxgenDlx', () => {
   })
 
   it('returns spawnDlx result', async () => {
-    const { spawnDlx } = await import('./spawn.mts')
+    const { spawnDlx } = await import('../../../../src/utils/dlx/spawn.mts')
     const mockFn = vi.mocked(spawnDlx)
 
     const expectedResult = {
