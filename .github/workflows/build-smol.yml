@@ -69,12 +69,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
-          node-version: 22
+          node-version: 22.11.0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1 # v4.2.0
         with:
-          version: ^10.16.0
+          version: 10.20.0
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -214,13 +214,13 @@ jobs:
         if: steps.check-platform.outputs.should-run == 'true'
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
-          node-version: 22
+          node-version: 22.11.0
 
       - name: Setup pnpm
         if: steps.check-platform.outputs.should-run == 'true'
         uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1 # v4.2.0
         with:
-          version: ^10.16.0
+          version: 10.20.0
 
       - name: Install dependencies
         if: steps.check-platform.outputs.should-run == 'true'
@@ -293,7 +293,7 @@ jobs:
         if: steps.smol-cache-valid.outputs.valid != 'true' || inputs.force
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
-          python-version: '3.11'
+          python-version: '3.13.0'
 
       - name: Verify Python installation
         if: steps.smol-cache-valid.outputs.valid != 'true' || inputs.force
@@ -362,7 +362,7 @@ jobs:
             alpine:3.19 \
             sh -c "
               apk add --no-cache nodejs npm python3 make g++ linux-headers git ccache ninja && \
-              npm install -g pnpm@10.16.0 && \
+              npm install -g pnpm@10.20.0 && \
               pnpm --filter @socketbin/node-smol-builder run build
             "
 
