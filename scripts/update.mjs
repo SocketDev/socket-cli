@@ -64,13 +64,7 @@ async function main() {
 
       const socketResult = await spawn(
         'pnpm',
-        [
-          'update',
-          '@socketsecurity/*',
-          '@socketregistry/*',
-          '--latest',
-          '-r',
-        ],
+        ['update', '@socketsecurity/*', '@socketregistry/*', '--latest', '-r'],
         {
           shell: WIN32,
           stdio: quiet ? 'pipe' : 'inherit',
