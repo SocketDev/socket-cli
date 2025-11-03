@@ -13,6 +13,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import semver from 'semver'
 import colors from 'yoctocolors-cjs'
 
+
+const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.join(__dirname, '..')
 
@@ -69,7 +71,7 @@ const {
 } = values
 
 if (!platform || !arch) {
-  getDefaultLogger().error(
+  logger.error(
     'Usage: prepublish-socketbin.mjs --platform=darwin --arch=arm64 [--version=0.0.0-20250122.143052] [--method=smol]',
   )
   process.exit(1)
@@ -121,9 +123,9 @@ async function generatePackage() {
 
     // Write updated package.json
     await fs.writeFile(pkgPath, `${JSON.stringify(updatedPkg, null, 2)}\n`)
-    getDefaultLogger().log(`Updated: ${packageDir}/package.json`)
-    getDefaultLogger().log(`  Version: ${cleanVersion}`)
-    getDefaultLogger().log(`  Build method: ${buildMethod}`)
+    logger.log(`Updated: ${packageDir}/package.json`)
+    logger.log(`  Version: ${cleanVersion}`)
+    logger.log(`  Build method: ${buildMethod}`)
 
     // Check if binary exists and copy it
     const sourceBinary = path.join(
@@ -140,18 +142,18 @@ async function generatePackage() {
       if (platform !== 'win32') {
         await fs.chmod(targetBinary, 0o755)
       }
-      getDefaultLogger().log(`Copied binary: ${sourceBinary} -> ${targetBinary}`)
+      logger.log(`Copied binary: ${sourceBinary} -> ${targetBinary}`)
     } catch {
-      getDefaultLogger().warn(`Warning: Binary not found at ${sourceBinary}`)
-      getDefaultLogger().warn('Binary should be copied manually or in CI')
+      logger.warn(`Warning: Binary not found at ${sourceBinary}`)
+      logger.warn('Binary should be copied manually or in CI')
     }
 
-    getDefaultLogger().log(`\nPackage generated successfully at: ${packageDir}`)
-    getDefaultLogger().log(
+    logger.log(`\nPackage generated successfully at: ${packageDir}`)
+    logger.log(
       `\nTo publish:\n  cd ${packageDir}\n  npm publish --provenance --access public`,
     )
   } catch (error) {
-    getDefaultLogger().error('Error generating package:', error)
+    logger.error('Error generating package:', error)
     process.exit(1)
   }
 }

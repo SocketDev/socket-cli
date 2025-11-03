@@ -18,6 +18,8 @@ import path from 'node:path'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+
+const logger = getDefaultLogger()
 /**
  * Execute command and wait for completion.
  */
@@ -75,7 +77,7 @@ async function checkRustInstalled() {
  * Install Rust via rustup (cross-platform).
  */
 async function installRust() {
-  getDefaultLogger().progress(
+  logger.progress(
     'Installing Rust toolchain via rustup (this may take a few minutes)',
   )
 
@@ -85,7 +87,7 @@ async function installRust() {
     if (isWindows) {
       // Windows: Download and run rustup-init.exe.
       const rustupUrl = 'https://win.rustup.rs/x86_64'
-      getDefaultLogger().substep(`Downloading rustup-init.exe from ${rustupUrl}`)
+      logger.substep(`Downloading rustup-init.exe from ${rustupUrl}`)
 
       const response = await fetch(rustupUrl)
       if (!response.ok) {
@@ -99,7 +101,7 @@ async function installRust() {
       const exePath = path.join(tmpDir, 'rustup-init.exe')
       await fs.writeFile(exePath, Buffer.from(buffer))
 
-      getDefaultLogger().substep('Running rustup-init.exe')
+      logger.substep('Running rustup-init.exe')
       const result = await exec(
         exePath,
         [
@@ -128,7 +130,7 @@ async function installRust() {
     } else {
       // Linux/macOS: Download and run shell script.
       const rustupUrl = 'https://sh.rustup.rs'
-      getDefaultLogger().substep(`Downloading rustup from ${rustupUrl}`)
+      logger.substep(`Downloading rustup from ${rustupUrl}`)
 
       const response = await fetch(rustupUrl)
       if (!response.ok) {
@@ -142,7 +144,7 @@ async function installRust() {
       const scriptPath = path.join(tmpDir, 'rustup-init.sh')
       await fs.writeFile(scriptPath, script, 'utf-8')
 
-      getDefaultLogger().substep('Running rustup installer')
+      logger.substep('Running rustup installer')
       const result = await exec(
         'sh',
         [scriptPath, '-y', '--default-toolchain', 'stable'],
@@ -164,11 +166,11 @@ async function installRust() {
       await fs.unlink(scriptPath)
     }
 
-    getDefaultLogger().done('Rust installed successfully')
+    logger.done('Rust installed successfully')
     return true
   } catch (e) {
-    getDefaultLogger().error(`Failed to install Rust: ${e.message}`)
-    getDefaultLogger().error('Please install manually: https://rustup.rs/')
+    logger.error(`Failed to install Rust: ${e.message}`)
+    logger.error('Please install manually: https://rustup.rs/')
     return false
   }
 }
@@ -198,7 +200,7 @@ async function checkWasmTargetInstalled() {
  * Install wasm32-unknown-unknown target.
  */
 async function installWasmTarget() {
-  getDefaultLogger().progress('Installing wasm32-unknown-unknown target')
+  logger.progress('Installing wasm32-unknown-unknown target')
 
   const rustupCmd = existsSync(RUSTUP_PATH) ? RUSTUP_PATH : 'rustup'
 
@@ -212,11 +214,11 @@ async function installWasmTarget() {
   )
 
   if (result.code !== 0) {
-    getDefaultLogger().error('Failed to install wasm32 target')
+    logger.error('Failed to install wasm32 target')
     return false
   }
 
-  getDefaultLogger().done('wasm32-unknown-unknown target installed')
+  logger.done('wasm32-unknown-unknown target installed')
   return true
 }
 
@@ -237,7 +239,7 @@ async function checkWasmPackInstalled() {
  * Install wasm-pack via cargo.
  */
 async function installWasmPack() {
-  getDefaultLogger().progress('Installing wasm-pack (this may take a few minutes)')
+  logger.progress('Installing wasm-pack (this may take a few minutes)')
 
   const cargoCmd = existsSync(CARGO_PATH) ? CARGO_PATH : 'cargo'
 
@@ -251,11 +253,11 @@ async function installWasmPack() {
   })
 
   if (result.code !== 0) {
-    getDefaultLogger().error('Failed to install wasm-pack')
+    logger.error('Failed to install wasm-pack')
     return false
   }
 
-  getDefaultLogger().done('wasm-pack installed successfully')
+  logger.done('wasm-pack installed successfully')
   return true
 }
 
@@ -263,45 +265,45 @@ async function installWasmPack() {
  * Main check and install function.
  */
 export async function checkRustToolchain() {
-  getDefaultLogger().step('Checking Rust Toolchain')
+  logger.step('Checking Rust Toolchain')
 
   // Check Rust.
   const hasRust = await checkRustInstalled()
   if (!hasRust) {
-    getDefaultLogger().warn('Rust not found')
+    logger.warn('Rust not found')
     const installed = await installRust()
     if (!installed) {
       return false
     }
   } else {
-    getDefaultLogger().info('Rust found')
+    logger.info('Rust found')
   }
 
   // Check wasm32 target.
   const hasWasmTarget = await checkWasmTargetInstalled()
   if (!hasWasmTarget) {
-    getDefaultLogger().warn('wasm32-unknown-unknown target not found')
+    logger.warn('wasm32-unknown-unknown target not found')
     const installed = await installWasmTarget()
     if (!installed) {
       return false
     }
   } else {
-    getDefaultLogger().info('wasm32-unknown-unknown target found')
+    logger.info('wasm32-unknown-unknown target found')
   }
 
   // Check wasm-pack.
   const hasWasmPack = await checkWasmPackInstalled()
   if (!hasWasmPack) {
-    getDefaultLogger().warn('wasm-pack not found')
+    logger.warn('wasm-pack not found')
     const installed = await installWasmPack()
     if (!installed) {
       return false
     }
   } else {
-    getDefaultLogger().info('wasm-pack found')
+    logger.info('wasm-pack found')
   }
 
-  getDefaultLogger().success('Rust Toolchain Ready')
+  logger.success('Rust Toolchain Ready')
 
   return true
 }

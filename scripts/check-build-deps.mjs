@@ -17,6 +17,8 @@ import { spawn } from '@socketsecurity/lib/spawn'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
+
+const logger = getDefaultLogger()
 const IS_MACOS = platform() === 'darwin'
 const IS_LINUX = platform() === 'linux'
 const IS_WINDOWS = platform() === 'win32'
@@ -81,11 +83,11 @@ async function checkDiskSpace() {
  * Install UPX via package manager
  */
 async function installUpx() {
-  getDefaultLogger().log('📦 Installing UPX...')
+  logger.log('📦 Installing UPX...')
 
   try {
     if (IS_MACOS) {
-      getDefaultLogger().log('   Using Homebrew...')
+      logger.log('   Using Homebrew...')
       const result = await spawn('brew', ['install', 'upx'], {
         stdio: 'inherit',
         shell: false,
@@ -95,7 +97,7 @@ async function installUpx() {
     if (IS_LINUX) {
       // Try apt first (Ubuntu/Debian)
       if (await commandExists('apt-get')) {
-        getDefaultLogger().log('   Using apt-get...')
+        logger.log('   Using apt-get...')
         const result = await spawn(
           'sudo',
           ['apt-get', 'install', '-y', 'upx-ucl'],
@@ -109,7 +111,7 @@ async function installUpx() {
 
       // Try dnf (RHEL/Fedora)
       if (await commandExists('dnf')) {
-        getDefaultLogger().log('   Using dnf...')
+        logger.log('   Using dnf...')
         const result = await spawn('sudo', ['dnf', 'install', '-y', 'upx'], {
           stdio: 'inherit',
           shell: false,
@@ -119,7 +121,7 @@ async function installUpx() {
 
       // Try yum (older RHEL/CentOS)
       if (await commandExists('yum')) {
-        getDefaultLogger().log('   Using yum...')
+        logger.log('   Using yum...')
         const result = await spawn('sudo', ['yum', 'install', '-y', 'upx'], {
           stdio: 'inherit',
           shell: false,
@@ -128,7 +130,7 @@ async function installUpx() {
       }
     } else if (IS_WINDOWS) {
       if (await commandExists('choco')) {
-        getDefaultLogger().log('   Using Chocolatey...')
+        logger.log('   Using Chocolatey...')
         const result = await spawn('choco', ['install', '-y', 'upx'], {
           stdio: 'inherit',
           shell: false,
@@ -137,11 +139,11 @@ async function installUpx() {
       }
     }
   } catch (error) {
-    getDefaultLogger().log(`   ${colors.red('✗')} Installation failed: ${error.message}`)
+    logger.log(`   ${colors.red('✗')} Installation failed: ${error.message}`)
     return false
   }
 
-  getDefaultLogger().log(`   ${colors.red('✗')} No supported package manager found`)
+  logger.log(`   ${colors.red('✗')} No supported package manager found`)
   return false
 }
 
@@ -149,20 +151,20 @@ async function installUpx() {
  * Main check function
  */
 async function main() {
-  getDefaultLogger().log('🔍 Checking build dependencies...')
-  getDefaultLogger().log('')
+  logger.log('🔍 Checking build dependencies...')
+  logger.log('')
 
   const checks = []
   let hasErrors = false
   let hasWarnings = false
 
   // Check build tools
-  getDefaultLogger().log('📋 Build Tools:')
+  logger.log('📋 Build Tools:')
 
   const gcc = await commandExists('gcc')
   const gccVersion = gcc ? await getVersion('gcc') : null
   checks.push({ name: 'gcc', required: true, found: gcc, version: gccVersion })
-  getDefaultLogger().log(`   ${gcc ? `${colors.green('✓')}` : `${colors.red('✗')}`} gcc: ${gccVersion || 'not found'}`)
+  logger.log(`   ${gcc ? `${colors.green('✓')}` : `${colors.red('✗')}`} gcc: ${gccVersion || 'not found'}`)
   if (!gcc) {
     hasErrors = true
   }
@@ -170,7 +172,7 @@ async function main() {
   const gxx = await commandExists('g++')
   const gxxVersion = gxx ? await getVersion('g++') : null
   checks.push({ name: 'g++', required: true, found: gxx, version: gxxVersion })
-  getDefaultLogger().log(`   ${gxx ? `${colors.green('✓')}` : `${colors.red('✗')}`} g++: ${gxxVersion || 'not found'}`)
+  logger.log(`   ${gxx ? `${colors.green('✓')}` : `${colors.red('✗')}`} g++: ${gxxVersion || 'not found'}`)
   if (!gxx) {
     hasErrors = true
   }
@@ -183,7 +185,7 @@ async function main() {
     found: make,
     version: makeVersion,
   })
-  getDefaultLogger().log(`   ${make ? `${colors.green('✓')}` : `${colors.red('✗')}`} make: ${makeVersion || 'not found'}`)
+  logger.log(`   ${make ? `${colors.green('✓')}` : `${colors.red('✗')}`} make: ${makeVersion || 'not found'}`)
   if (!make) {
     hasErrors = true
   }
@@ -196,7 +198,7 @@ async function main() {
     found: python,
     version: pythonVersion,
   })
-  getDefaultLogger().log(
+  logger.log(
     `   ${python ? `${colors.green('✓')}` : `${colors.red('✗')}`} python3: ${pythonVersion || 'not found'}`,
   )
   if (!python) {
@@ -206,102 +208,102 @@ async function main() {
   const git = await commandExists('git')
   const gitVersion = git ? await getVersion('git') : null
   checks.push({ name: 'git', required: true, found: git, version: gitVersion })
-  getDefaultLogger().log(`   ${git ? `${colors.green('✓')}` : `${colors.red('✗')}`} git: ${gitVersion || 'not found'}`)
+  logger.log(`   ${git ? `${colors.green('✓')}` : `${colors.red('✗')}`} git: ${gitVersion || 'not found'}`)
   if (!git) {
     hasErrors = true
   }
 
-  getDefaultLogger().log('')
+  logger.log('')
 
   // Check optional tools
-  getDefaultLogger().log('🔧 Optional Tools:')
+  logger.log('🔧 Optional Tools:')
 
   const upx = await commandExists('upx')
   const upxVersion = upx ? await getVersion('upx') : null
   checks.push({ name: 'upx', required: false, found: upx, version: upxVersion })
 
   if (IS_MACOS) {
-    getDefaultLogger().log('   ℹ️  UPX: not used on macOS (incompatible with code signing)')
+    logger.log('   ℹ️  UPX: not used on macOS (incompatible with code signing)')
   } else {
-    getDefaultLogger().log(`   ${upx ? `${colors.green('✓')}` : `${colors.yellow('⚠')} `} upx: ${upxVersion || 'not found'}`)
+    logger.log(`   ${upx ? `${colors.green('✓')}` : `${colors.yellow('⚠')} `} upx: ${upxVersion || 'not found'}`)
     if (!upx) {
       hasWarnings = true
-      getDefaultLogger().log(
+      logger.log(
         '      UPX enables 30-50% binary compression on Linux/Windows',
       )
-      getDefaultLogger().log(
+      logger.log(
         '      Build will succeed without UPX but produce larger binaries',
       )
     }
   }
 
-  getDefaultLogger().log('')
+  logger.log('')
 
   // Check disk space
-  getDefaultLogger().log('💾 Disk Space:')
+  logger.log('💾 Disk Space:')
   const diskSpace = await checkDiskSpace()
-  getDefaultLogger().log(`   Available: ${diskSpace}`)
-  getDefaultLogger().log('   Required: ~10GB for Node.js source and build')
-  getDefaultLogger().log('')
+  logger.log(`   Available: ${diskSpace}`)
+  logger.log('   Required: ~10GB for Node.js source and build')
+  logger.log('')
 
   // Check existing build
   const nodeBuilt = existsSync(
     'build/node-smol/out/Release/node',
   )
   if (nodeBuilt) {
-    getDefaultLogger().log(`${colors.green('✓')} Custom Node.js binary already built`)
-    getDefaultLogger().log('   Location: build/node-smol/out/Release/node')
-    getDefaultLogger().log('')
+    logger.log(`${colors.green('✓')} Custom Node.js binary already built`)
+    logger.log('   Location: build/node-smol/out/Release/node')
+    logger.log('')
   }
 
   // Summary
-  getDefaultLogger().log('📊 Summary:')
+  logger.log('📊 Summary:')
   const required = checks.filter(c => c.required)
   const optional = checks.filter(c => !c.required)
 
   const requiredOk = required.filter(c => c.found).length
   const optionalOk = optional.filter(c => c.found).length
 
-  getDefaultLogger().log(
+  logger.log(
     `   Required: ${requiredOk}/${required.length} ` +
       `${requiredOk === required.length ? `${colors.green('✓')}` : `${colors.red('✗')}`}`,
   )
-  getDefaultLogger().log(
+  logger.log(
     `   Optional: ${optionalOk}/${optional.length} ` +
       `${optionalOk === optional.length ? `${colors.green('✓')}` : `${colors.yellow('⚠')} `}`,
   )
-  getDefaultLogger().log('')
+  logger.log('')
 
   // Platform-specific installation instructions
   if (hasErrors) {
-    getDefaultLogger().log(`${colors.red('✗')} Missing required dependencies!`)
-    getDefaultLogger().log('')
-    getDefaultLogger().log('📥 Installation instructions:')
-    getDefaultLogger().log('')
+    logger.log(`${colors.red('✗')} Missing required dependencies!`)
+    logger.log('')
+    logger.log('📥 Installation instructions:')
+    logger.log('')
 
     if (IS_MACOS) {
-      getDefaultLogger().log('   macOS (Homebrew):')
-      getDefaultLogger().log('   $ xcode-select --install')
-      getDefaultLogger().log('   $ brew install python@3')
-      getDefaultLogger().log('')
+      logger.log('   macOS (Homebrew):')
+      logger.log('   $ xcode-select --install')
+      logger.log('   $ brew install python@3')
+      logger.log('')
     } else if (IS_LINUX) {
-      getDefaultLogger().log('   Ubuntu/Debian:')
-      getDefaultLogger().log(
+      logger.log('   Ubuntu/Debian:')
+      logger.log(
         '   $ sudo apt-get install build-essential python3 git upx-ucl',
       )
-      getDefaultLogger().log('')
-      getDefaultLogger().log('   RHEL/Fedora/CentOS:')
-      getDefaultLogger().log('   $ sudo dnf install gcc gcc-c++ make python3 git upx')
-      getDefaultLogger().log('')
+      logger.log('')
+      logger.log('   RHEL/Fedora/CentOS:')
+      logger.log('   $ sudo dnf install gcc gcc-c++ make python3 git upx')
+      logger.log('')
     } else if (IS_WINDOWS) {
-      getDefaultLogger().log('   Windows (Chocolatey):')
-      getDefaultLogger().log(
+      logger.log('   Windows (Chocolatey):')
+      logger.log(
         '   $ choco install visualstudio2022buildtools python git upx',
       )
-      getDefaultLogger().log('')
-      getDefaultLogger().log('   Or use WSL2 (recommended):')
-      getDefaultLogger().log('   $ wsl --install -d Ubuntu')
-      getDefaultLogger().log('')
+      logger.log('')
+      logger.log('   Or use WSL2 (recommended):')
+      logger.log('   $ wsl --install -d Ubuntu')
+      logger.log('')
     }
 
     process.exit(1)
@@ -309,17 +311,17 @@ async function main() {
 
   // Offer to install UPX
   if (hasWarnings && !upx && !IS_MACOS && !IS_CI) {
-    getDefaultLogger().log(`${colors.yellow('⚠')}  UPX is not installed`)
-    getDefaultLogger().log('')
-    getDefaultLogger().log('UPX compression benefits:')
-    getDefaultLogger().log('   • 30-50% smaller binaries (~44MB → ~22-31MB)')
-    getDefaultLogger().log('   • Fast decompression (~50ms startup overhead)')
-    getDefaultLogger().log('   • Recommended for distribution builds')
-    getDefaultLogger().log('')
+    logger.log(`${colors.yellow('⚠')}  UPX is not installed`)
+    logger.log('')
+    logger.log('UPX compression benefits:')
+    logger.log('   • 30-50% smaller binaries (~44MB → ~22-31MB)')
+    logger.log('   • Fast decompression (~50ms startup overhead)')
+    logger.log('   • Recommended for distribution builds')
+    logger.log('')
 
     // In interactive mode, offer to install
     if (process.stdin.isTTY) {
-      getDefaultLogger().log('Would you like to install UPX now? (y/N)')
+      logger.log('Would you like to install UPX now? (y/N)')
 
       // Read user input
       const readline = await import('node:readline')
@@ -336,45 +338,45 @@ async function main() {
       if (answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes') {
         const success = await installUpx()
         if (success) {
-          getDefaultLogger().log(`${colors.green('✓')} UPX installed successfully!`)
+          logger.log(`${colors.green('✓')} UPX installed successfully!`)
         } else {
-          getDefaultLogger().log(`${colors.red('✗')} UPX installation failed`)
-          getDefaultLogger().log('   You can install it manually later')
+          logger.log(`${colors.red('✗')} UPX installation failed`)
+          logger.log('   You can install it manually later')
         }
       } else {
-        getDefaultLogger().log('⏭️  Skipping UPX installation')
-        getDefaultLogger().log(
+        logger.log('⏭️  Skipping UPX installation')
+        logger.log(
           '   Build will continue but produce larger binaries (~44MB vs ~22-31MB)',
         )
       }
     } else {
-      getDefaultLogger().log('ℹ️  To install UPX manually:')
+      logger.log('ℹ️  To install UPX manually:')
       if (IS_LINUX) {
-        getDefaultLogger().log('   $ sudo apt-get install upx-ucl  # Ubuntu/Debian')
-        getDefaultLogger().log('   $ sudo dnf install upx          # RHEL/Fedora')
+        logger.log('   $ sudo apt-get install upx-ucl  # Ubuntu/Debian')
+        logger.log('   $ sudo dnf install upx          # RHEL/Fedora')
       } else if (IS_WINDOWS) {
-        getDefaultLogger().log('   $ choco install upx')
+        logger.log('   $ choco install upx')
       }
     }
 
-    getDefaultLogger().log('')
+    logger.log('')
   }
 
   // Success
-  getDefaultLogger().log(`${colors.green('✓')} All required dependencies are available`)
+  logger.log(`${colors.green('✓')} All required dependencies are available`)
   if (hasWarnings) {
-    getDefaultLogger().log(
+    logger.log(
       `${colors.yellow('⚠')}  Some optional optimizations are unavailable (build will succeed)`,
     )
   }
-  getDefaultLogger().log('')
-  getDefaultLogger().log('Ready to build! Run:')
-  getDefaultLogger().log('   pnpm run build:yao-pkg:node')
-  getDefaultLogger().log('')
+  logger.log('')
+  logger.log('Ready to build! Run:')
+  logger.log('   pnpm run build:yao-pkg:node')
+  logger.log('')
 }
 
 // Run checks
 main().catch(error => {
-  getDefaultLogger().error(`${colors.red('✗')} Dependency check failed:`, error.message)
+  logger.error(`${colors.red('✗')} Dependency check failed:`, error.message)
   process.exit(1)
 })

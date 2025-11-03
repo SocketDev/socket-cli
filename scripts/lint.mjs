@@ -15,6 +15,8 @@ import {
   runAcrossPackages,
 } from './utils/monorepo-helper.mjs'
 
+const logger = getDefaultLogger()
+
 /**
  * Get files to lint and determine affected packages.
  */
@@ -84,20 +86,20 @@ async function main() {
 
     // Show help if requested.
     if (values.help) {
-      getDefaultLogger().log('Monorepo Lint Runner')
-      getDefaultLogger().log('\nUsage: pnpm lint [options]')
-      getDefaultLogger().log('\nOptions:')
-      getDefaultLogger().log('  --help         Show this help message')
-      getDefaultLogger().log('  --fix          Automatically fix problems')
-      getDefaultLogger().log('  --all          Lint all packages')
-      getDefaultLogger().log('  --changed      Lint packages with changed files (default)')
-      getDefaultLogger().log('  --staged       Lint packages with staged files')
-      getDefaultLogger().log('  --quiet, --silent  Suppress progress messages')
-      getDefaultLogger().log('\nExamples:')
-      getDefaultLogger().log('  pnpm lint                # Lint changed packages (default)')
-      getDefaultLogger().log('  pnpm lint --fix          # Fix issues in changed packages')
-      getDefaultLogger().log('  pnpm lint --all          # Lint all packages')
-      getDefaultLogger().log('  pnpm lint --staged --fix # Fix issues in staged packages')
+      logger.log('Monorepo Lint Runner')
+      logger.log('\nUsage: pnpm lint [options]')
+      logger.log('\nOptions:')
+      logger.log('  --help         Show this help message')
+      logger.log('  --fix          Automatically fix problems')
+      logger.log('  --all          Lint all packages')
+      logger.log('  --changed      Lint packages with changed files (default)')
+      logger.log('  --staged       Lint packages with staged files')
+      logger.log('  --quiet, --silent  Suppress progress messages')
+      logger.log('\nExamples:')
+      logger.log('  pnpm lint                # Lint changed packages (default)')
+      logger.log('  pnpm lint --fix          # Fix issues in changed packages')
+      logger.log('  pnpm lint --all          # Lint all packages')
+      logger.log('  pnpm lint --staged --fix # Fix issues in staged packages')
       process.exitCode = 0
       return
     }
@@ -106,7 +108,7 @@ async function main() {
 
     if (!quiet) {
       printHeader('Monorepo Lint Runner')
-      getDefaultLogger().log('')
+      logger.log('')
     }
 
     // Get files to lint and affected packages.
@@ -114,8 +116,8 @@ async function main() {
 
     if (!packages.length) {
       if (!quiet) {
-        getDefaultLogger().step('Skipping lint')
-        getDefaultLogger().substep(reason)
+        logger.step('Skipping lint')
+        logger.substep(reason)
       }
       process.exitCode = 0
       return
@@ -124,8 +126,8 @@ async function main() {
     // Display what we're linting.
     if (!quiet) {
       const modeText = mode === 'all' ? 'all packages' : `${mode} packages`
-      getDefaultLogger().step(`Linting ${modeText} (${packages.length} package${packages.length > 1 ? 's' : ''})`)
-      getDefaultLogger().error('') // Blank line.
+      logger.step(`Linting ${modeText} (${packages.length} package${packages.length > 1 ? 's' : ''})`)
+      logger.error('') // Blank line.
     }
 
     // Run lint across affected packages.
@@ -134,23 +136,23 @@ async function main() {
 
     if (exitCode !== 0) {
       if (!quiet) {
-        getDefaultLogger().error('')
-        getDefaultLogger().log('Lint failed')
+        logger.error('')
+        logger.log('Lint failed')
       }
       process.exitCode = exitCode
     } else {
       if (!quiet) {
-        getDefaultLogger().error('')
-        getDefaultLogger().success('All lint checks passed!')
+        logger.error('')
+        logger.success('All lint checks passed!')
       }
     }
   } catch (error) {
-    getDefaultLogger().error(`Lint runner failed: ${error.message}`)
+    logger.error(`Lint runner failed: ${error.message}`)
     process.exitCode = 1
   }
 }
 
 main().catch(e => {
-  getDefaultLogger().error(e)
+  logger.error(e)
   process.exitCode = 1
 })

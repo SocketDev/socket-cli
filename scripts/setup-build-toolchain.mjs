@@ -32,6 +32,8 @@ import { fileURLToPath } from 'node:url'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
+
+const logger = getDefaultLogger()
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
@@ -72,7 +74,7 @@ function log(message, color = '') {
 
   const prefix = color ? colors[color] || '' : ''
   const suffix = color ? colors.reset : ''
-  getDefaultLogger().log(`${prefix}${message}${suffix}`)
+  logger.log(`${prefix}${message}${suffix}`)
 }
 
 function logSuccess(message) {
@@ -1058,7 +1060,7 @@ async function main() {
 main().catch(error => {
   logError(`\nSetup failed: ${error.message}`)
   if (error.stack) {
-    getDefaultLogger().error(error.stack)
+    logger.error(error.stack)
   }
   process.exit(1)
 })

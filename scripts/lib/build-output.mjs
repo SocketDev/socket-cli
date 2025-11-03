@@ -6,70 +6,72 @@
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+
+const logger = getDefaultLogger()
 /**
  * Print section header.
  */
 export function printHeader(title) {
-  getDefaultLogger().log('')
-  getDefaultLogger().log('━'.repeat(60))
-  getDefaultLogger().log(`  ${title}`)
-  getDefaultLogger().log('━'.repeat(60))
-  getDefaultLogger().log('')
+  logger.log('')
+  logger.log('━'.repeat(60))
+  logger.log(`  ${title}`)
+  logger.log('━'.repeat(60))
+  logger.log('')
 }
 
 /**
  * Print error with instructions.
  */
 export function printError(title, message, instructions = []) {
-  getDefaultLogger().error('')
-  getDefaultLogger().error('❌', title)
-  getDefaultLogger().error('')
-  getDefaultLogger().error(message)
+  logger.error('')
+  logger.error('❌', title)
+  logger.error('')
+  logger.error(message)
   if (instructions.length > 0) {
-    getDefaultLogger().error('')
-    getDefaultLogger().error('What to do:')
+    logger.error('')
+    logger.error('What to do:')
     for (const instruction of instructions) {
-      getDefaultLogger().error(`  • ${instruction}`)
+      logger.error(`  • ${instruction}`)
     }
   }
-  getDefaultLogger().error('')
+  logger.error('')
 }
 
 /**
  * Print warning with suggestions.
  */
 export function printWarning(title, message, suggestions = []) {
-  getDefaultLogger().warn('')
-  getDefaultLogger().warn('⚠️ ', title)
-  getDefaultLogger().warn('')
-  getDefaultLogger().warn(message)
+  logger.warn('')
+  logger.warn('⚠️ ', title)
+  logger.warn('')
+  logger.warn(message)
   if (suggestions.length > 0) {
-    getDefaultLogger().warn('')
-    getDefaultLogger().warn('Suggestions:')
+    logger.warn('')
+    logger.warn('Suggestions:')
     for (const suggestion of suggestions) {
-      getDefaultLogger().warn(`  • ${suggestion}`)
+      logger.warn(`  • ${suggestion}`)
     }
   }
-  getDefaultLogger().warn('')
+  logger.warn('')
 }
 
 /**
  * Print success message.
  */
 export function printSuccess(message) {
-  getDefaultLogger().log(`✅ ${message}`)
+  logger.log(`✅ ${message}`)
 }
 
 /**
  * Print info message.
  */
 export function printInfo(message) {
-  getDefaultLogger().log(`ℹ️  ${message}`)
+  logger.log(`ℹ️  ${message}`)
 }
 
 /**
  * Print step with description.
  */
 export function printStep(step, total, description) {
-  getDefaultLogger().log(`[${step}/${total}] ${description}`)
+  logger.log(`[${step}/${total}] ${description}`)
 }
