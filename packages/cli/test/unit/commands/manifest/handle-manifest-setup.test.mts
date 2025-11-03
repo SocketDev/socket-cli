@@ -3,10 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { handleManifestSetup } from '../../../../../src/commands/manifest/handle-manifest-setup.mts'
 
 // Mock the dependencies.
-vi.mock('./output-manifest-setup.mts', () => ({
+vi.mock('../../../../../src/commands/manifest/output-manifest-setup.mts', () => ({
   outputManifestSetup: vi.fn(),
 }))
-vi.mock('./setup-manifest-config.mts', () => ({
+vi.mock('../../../../../src/commands/manifest/setup-manifest-config.mts', () => ({
   setupManifestConfig: vi.fn(),
 }))
 

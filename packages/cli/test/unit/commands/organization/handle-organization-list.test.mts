@@ -5,11 +5,11 @@ import { handleOrganizationList } from '../../../../../src/commands/organization
 
 // Mock the dependencies.
 
-vi.mock('./fetch-organization-list.mts', () => ({
+vi.mock('../../../../../src/commands/organization/fetch-organization-list.mts', () => ({
   fetchOrganization: vi.fn(),
 }))
 
-vi.mock('./output-organization-list.mts', () => ({
+vi.mock('../../../../../src/commands/organization/output-organization-list.mts', () => ({
   outputOrganizationList: vi.fn(),
 }))
 

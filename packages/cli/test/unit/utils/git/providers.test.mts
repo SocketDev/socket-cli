@@ -13,13 +13,13 @@ vi.mock('../../constants/paths.mts', () => ({
   getGithubCachePath: () => path.join(mockCacheDir, 'github'),
 }))
 
-vi.mock('./github.mts', () => ({
+vi.mock('../../../../../src/utils/git/github.mts', () => ({
   getOctokit: vi.fn(),
   getOctokitGraphql: vi.fn(),
   cacheFetch: vi.fn(),
 }))
 
-vi.mock('./operations.mts', () => ({
+vi.mock('../../../../../src/utils/git/operations.mts', () => ({
   gitDeleteRemoteBranch: vi.fn(),
 }))
 

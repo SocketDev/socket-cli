@@ -23,10 +23,10 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
   confirm: vi.fn(),
 }))
-vi.mock('./add-socket-wrapper.mts', () => ({
+vi.mock('../../../../../src/commands/wrapper/add-socket-wrapper.mts', () => ({
   addSocketWrapper: vi.fn(),
 }))
-vi.mock('./check-socket-wrapper-setup.mts', () => ({
+vi.mock('../../../../../src/commands/wrapper/check-socket-wrapper-setup.mts', () => ({
   checkSocketWrapperSetup: vi.fn(),
 }))
 vi.mock('../../constants/paths.mts', () => ({

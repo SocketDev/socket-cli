@@ -7,11 +7,11 @@ import {
 import { handleScanConfig } from '../../../../../src/commands/scan/handle-scan-config.mts'
 
 // Mock the dependencies.
-vi.mock('./output-scan-config-result.mts', () => ({
+vi.mock('../../../../../src/commands/scan/output-scan-config-result.mts', () => ({
   outputScanConfigResult: vi.fn(),
 }))
 
-vi.mock('./setup-scan-config.mts', () => ({
+vi.mock('../../../../../src/commands/scan/setup-scan-config.mts', () => ({
   setupScanConfig: vi.fn(),
 }))
 

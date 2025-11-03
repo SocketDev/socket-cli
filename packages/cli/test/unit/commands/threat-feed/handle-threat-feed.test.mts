@@ -3,10 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { handleThreatFeed } from '../../../../../src/commands/threat-feed/handle-threat-feed.mts'
 
 // Mock the dependencies.
-vi.mock('./fetch-threat-feed.mts', () => ({
+vi.mock('../../../../../src/commands/threat-feed/fetch-threat-feed.mts', () => ({
   fetchThreatFeed: vi.fn(),
 }))
-vi.mock('./output-threat-feed.mts', () => ({
+vi.mock('../../../../../src/commands/threat-feed/output-threat-feed.mts', () => ({
   outputThreatFeed: vi.fn(),
 }))
 

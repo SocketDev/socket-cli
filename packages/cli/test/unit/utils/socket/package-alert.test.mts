@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { ALERT_SEVERITY } from '../../../../src/alert/severity.mts'
+import { ALERT_SEVERITY } from '../../../../../src/utils/alert/severity.mts'
 import {
   alertSeverityComparator,
   alertsHaveBlocked,
@@ -13,18 +13,18 @@ import {
 import type { SocketPackageAlert } from '../../../../../src/utils/socket/package-alert.mts'
 
 // Mock dependencies.
-vi.mock('./alert/artifact.mts', () => ({
+vi.mock('../../../../../src/utils/alert/artifact.mts', () => ({
   isArtifactAlertCve: vi.fn(),
 }))
 
-vi.mock('./alert/fix.mts', () => ({
+vi.mock('../../../../../src/utils/alert/fix.mts', () => ({
   ALERT_FIX_TYPE: {
     cve: 'cve',
     upgrade: 'upgrade',
   },
 }))
 
-vi.mock('./alert/severity.mts', () => ({
+vi.mock('../../../../../src/utils/alert/severity.mts', () => ({
   ALERT_SEVERITY: {
     critical: 'critical',
     high: 'high',

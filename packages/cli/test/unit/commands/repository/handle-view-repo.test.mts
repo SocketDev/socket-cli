@@ -4,11 +4,11 @@ import { createSuccessResult } from '../../../../src/helpers/index.mts'
 import { handleViewRepo } from '../../../../../src/commands/repository/handle-view-repo.mts'
 
 // Setup mocks at module level
-vi.mock('./fetch-view-repo.mts', () => ({
+vi.mock('../../../../../src/commands/repository/fetch-view-repo.mts', () => ({
   fetchViewRepo: vi.fn(),
 }))
 
-vi.mock('./output-view-repo.mts', () => ({
+vi.mock('../../../../../src/commands/repository/output-view-repo.mts', () => ({
   outputViewRepo: vi.fn(),
 }))
 

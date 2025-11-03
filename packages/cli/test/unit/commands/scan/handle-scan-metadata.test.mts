@@ -7,11 +7,11 @@ import {
 import { handleOrgScanMetadata } from '../../../../../src/commands/scan/handle-scan-metadata.mts'
 
 // Mock the dependencies.
-vi.mock('./fetch-scan-metadata.mts', () => ({
+vi.mock('../../../../../src/commands/scan/fetch-scan-metadata.mts', () => ({
   fetchScanMetadata: vi.fn(),
 }))
 
-vi.mock('./output-scan-metadata.mts', () => ({
+vi.mock('../../../../../src/commands/scan/output-scan-metadata.mts', () => ({
   outputScanMetadata: vi.fn(),
 }))
 

@@ -8,10 +8,10 @@ import { fetchDependencies } from '../../../../../src/commands/organization/fetc
 import { handleDependencies } from '../../../../../src/commands/organization/handle-dependencies.mts'
 import { outputDependencies } from '../../../../../src/commands/organization/output-dependencies.mts'
 
-vi.mock('./fetch-dependencies.mts', () => ({
+vi.mock('../../../../../src/commands/organization/fetch-dependencies.mts', () => ({
   fetchDependencies: vi.fn(),
 }))
-vi.mock('./output-dependencies.mts', () => ({
+vi.mock('../../../../../src/commands/organization/output-dependencies.mts', () => ({
   outputDependencies: vi.fn(),
 }))
 

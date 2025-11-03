@@ -4,11 +4,11 @@ import { createSuccessResult } from '../../../../src/helpers/mocks.mts'
 import { handleDeleteRepo } from '../../../../../src/commands/repository/handle-delete-repo.mts'
 
 // Mock the dependencies.
-vi.mock('./fetch-delete-repo.mts', () => ({
+vi.mock('../../../../../src/commands/repository/fetch-delete-repo.mts', () => ({
   fetchDeleteRepo: vi.fn(),
 }))
 
-vi.mock('./output-delete-repo.mts', () => ({
+vi.mock('../../../../../src/commands/repository/output-delete-repo.mts', () => ({
   outputDeleteRepo: vi.fn(),
 }))
 

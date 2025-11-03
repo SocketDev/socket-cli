@@ -7,13 +7,13 @@ import {
 import { handleAnalytics } from '../../../../../src/commands/analytics/handle-analytics.mts'
 
 // Mock the dependencies.
-vi.mock('./fetch-org-analytics.mts', () => ({
+vi.mock('../../../../../src/commands/analytics/fetch-org-analytics.mts', () => ({
   fetchOrgAnalyticsData: vi.fn(),
 }))
-vi.mock('./fetch-repo-analytics.mts', () => ({
+vi.mock('../../../../../src/commands/analytics/fetch-repo-analytics.mts', () => ({
   fetchRepoAnalyticsData: vi.fn(),
 }))
-vi.mock('./output-analytics.mts', () => ({
+vi.mock('../../../../../src/commands/analytics/output-analytics.mts', () => ({
   outputAnalytics: vi.fn(),
 }))
 

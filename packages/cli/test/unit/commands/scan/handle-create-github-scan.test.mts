@@ -7,11 +7,11 @@ import {
 import { handleCreateGithubScan } from '../../../../../src/commands/scan/handle-create-github-scan.mts'
 
 // Mock the dependencies.
-vi.mock('./create-scan-from-github.mts', () => ({
+vi.mock('../../../../../src/commands/scan/create-scan-from-github.mts', () => ({
   createScanFromGithub: vi.fn(),
 }))
 
-vi.mock('./output-scan-github.mts', () => ({
+vi.mock('../../../../../src/commands/scan/output-scan-github.mts', () => ({
   outputScanGithub: vi.fn(),
 }))
 

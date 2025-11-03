@@ -7,7 +7,7 @@ import {
 import { handleConfigGet } from '../../../../../src/commands/config/handle-config-get.mts'
 
 // Mock the dependencies.
-vi.mock('./output-config-get.mts', () => ({
+vi.mock('../../../../../src/commands/config/output-config-get.mts', () => ({
   outputConfigGet: vi.fn(),
 }))
 vi.mock('../../utils/config.mts', () => ({

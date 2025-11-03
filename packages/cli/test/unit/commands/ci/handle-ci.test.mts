@@ -24,7 +24,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
-vi.mock('./fetch-default-org-slug.mts', () => ({
+vi.mock('../../../../../src/commands/ci/fetch-default-org-slug.mts', () => ({
   getDefaultOrgSlug: vi.fn(),
 }))
 vi.mock('../../constants.mts', () => ({

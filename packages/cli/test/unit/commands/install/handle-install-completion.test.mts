@@ -3,10 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { handleInstallCompletion } from '../../../../../src/commands/install/handle-install-completion.mts'
 
 // Mock the dependencies.
-vi.mock('./output-install-completion.mts', () => ({
+vi.mock('../../../../../src/commands/install/output-install-completion.mts', () => ({
   outputInstallCompletion: vi.fn(),
 }))
-vi.mock('./setup-tab-completion.mts', () => ({
+vi.mock('../../../../../src/commands/install/setup-tab-completion.mts', () => ({
   setupTabCompletion: vi.fn(),
 }))
 

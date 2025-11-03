@@ -26,13 +26,13 @@ vi.mock('@socketsecurity/lib/constants/agents', () => ({
   VLT: 'vlt',
 }))
 
-vi.mock('./apply-optimization.mts', () => ({
+vi.mock('../../../../../src/commands/optimize/apply-optimization.mts', () => ({
   applyOptimization: vi.fn(),
 }))
-vi.mock('./output-optimize-result.mts', () => ({
+vi.mock('../../../../../src/commands/optimize/output-optimize-result.mts', () => ({
   outputOptimizeResult: vi.fn(),
 }))
-vi.mock('./shared.mts', () => ({
+vi.mock('../../../../../src/commands/optimize/shared.mts', () => ({
   CMD_NAME: 'optimize',
 }))
 vi.mock('../../utils/process/cmd.mts', () => ({

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { openSocketFixPr } from '../../../../../src/commands/fix/pull-request.mts'
 
 // Mock dependencies.
-vi.mock('./git.mts', () => ({
+vi.mock('../../../../../src/commands/fix/git.mts', () => ({
   getSocketFixPullRequestTitle: vi.fn((ghsaIds: string[]) =>
     ghsaIds.length === 1
       ? `Fix for ${ghsaIds[0]}`

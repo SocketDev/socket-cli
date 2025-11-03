@@ -4,11 +4,11 @@ import { createSuccessResult } from '../../../../src/helpers/mocks.mts'
 import { handleUpdateRepo } from '../../../../../src/commands/repository/handle-update-repo.mts'
 
 // Mock the dependencies.
-vi.mock('./fetch-update-repo.mts', () => ({
+vi.mock('../../../../../src/commands/repository/fetch-update-repo.mts', () => ({
   fetchUpdateRepo: vi.fn(),
 }))
 
-vi.mock('./output-update-repo.mts', () => ({
+vi.mock('../../../../../src/commands/repository/output-update-repo.mts', () => ({
   outputUpdateRepo: vi.fn(),
 }))
 

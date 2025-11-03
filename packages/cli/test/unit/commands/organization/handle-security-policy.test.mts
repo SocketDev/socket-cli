@@ -7,11 +7,11 @@ import {
 import { handleSecurityPolicy } from '../../../../../src/commands/organization/handle-security-policy.mts'
 
 // Mock the dependencies.
-vi.mock('./fetch-security-policy.mts', () => ({
+vi.mock('../../../../../src/commands/organization/fetch-security-policy.mts', () => ({
   fetchSecurityPolicy: vi.fn(),
 }))
 
-vi.mock('./output-security-policy.mts', () => ({
+vi.mock('../../../../../src/commands/organization/output-security-policy.mts', () => ({
   outputSecurityPolicy: vi.fn(),
 }))
 

@@ -29,15 +29,15 @@ vi.mock('@socketsecurity/lib/constants/process', () => ({
   })),
 }))
 
-vi.mock('./fetch-supported-scan-file-names.mts', () => ({
+vi.mock('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts', () => ({
   fetchSupportedScanFileNames: vi.fn(),
 }))
 
-vi.mock('./output-scan-reach.mts', () => ({
+vi.mock('../../../../../src/commands/scan/output-scan-reach.mts', () => ({
   outputScanReach: vi.fn(),
 }))
 
-vi.mock('./perform-reachability-analysis.mts', () => ({
+vi.mock('../../../../../src/commands/scan/perform-reachability-analysis.mts', () => ({
   performReachabilityAnalysis: vi.fn(),
 }))
 

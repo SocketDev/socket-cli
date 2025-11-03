@@ -7,11 +7,11 @@ import {
 import { handleListScans } from '../../../../../src/commands/scan/handle-list-scans.mts'
 
 // Mock the dependencies.
-vi.mock('./fetch-list-scans.mts', () => ({
+vi.mock('../../../../../src/commands/scan/fetch-list-scans.mts', () => ({
   fetchOrgFullScanList: vi.fn(),
 }))
 
-vi.mock('./output-list-scans.mts', () => ({
+vi.mock('../../../../../src/commands/scan/output-list-scans.mts', () => ({
   outputListScans: vi.fn(),
 }))
 

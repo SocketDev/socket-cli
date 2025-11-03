@@ -20,7 +20,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 
-vi.mock('./sdk.mts', () => ({
+vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
   getPublicApiToken: vi.fn(),
   setupSdk: vi.fn(() => ({
     org: {
@@ -43,7 +43,7 @@ vi.mock('../pnpm/lockfile.mts', () => ({
   extractPurlsFromPnpmLockfile: vi.fn(),
 }))
 
-vi.mock('./package-alert.mts', () => ({
+vi.mock('../../../../../src/utils/socket/package-alert.mts', () => ({
   addArtifactToAlertsMap: vi.fn(),
 }))
 

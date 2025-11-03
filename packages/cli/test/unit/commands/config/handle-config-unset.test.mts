@@ -7,7 +7,7 @@ import {
 import { handleConfigUnset } from '../../../../../src/commands/config/handle-config-unset.mts'
 
 // Mock the dependencies.
-vi.mock('./output-config-unset.mts', () => ({
+vi.mock('../../../../../src/commands/config/output-config-unset.mts', () => ({
   outputConfigUnset: vi.fn(),
 }))
 vi.mock('../../utils/config.mts', () => ({

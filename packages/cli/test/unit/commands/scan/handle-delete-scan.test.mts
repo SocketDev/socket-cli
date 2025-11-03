@@ -7,11 +7,11 @@ import {
 import { handleDeleteScan } from '../../../../../src/commands/scan/handle-delete-scan.mts'
 
 // Mock the dependencies.
-vi.mock('./fetch-delete-org-full-scan.mts', () => ({
+vi.mock('../../../../../src/commands/scan/fetch-delete-org-full-scan.mts', () => ({
   fetchDeleteOrgFullScan: vi.fn(),
 }))
 
-vi.mock('./output-delete-scan.mts', () => ({
+vi.mock('../../../../../src/commands/scan/output-delete-scan.mts', () => ({
   outputDeleteScan: vi.fn(),
 }))
 

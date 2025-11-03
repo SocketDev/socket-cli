@@ -7,10 +7,10 @@ import {
 import { handleAuditLog } from '../../../../../src/commands/audit-log/handle-audit-log.mts'
 
 // Mock the dependencies.
-vi.mock('./fetch-audit-log.mts', () => ({
+vi.mock('../../../../../src/commands/audit-log/fetch-audit-log.mts', () => ({
   fetchAuditLog: vi.fn(),
 }))
-vi.mock('./output-audit-log.mts', () => ({
+vi.mock('../../../../../src/commands/audit-log/output-audit-log.mts', () => ({
   outputAuditLog: vi.fn(),
 }))
 

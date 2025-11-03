@@ -7,11 +7,11 @@ import {
 import { handleConfigAuto } from '../../../../../src/commands/config/handle-config-auto.mts'
 
 // Mock the dependencies.
-vi.mock('./discover-config-value.mts', () => ({
+vi.mock('../../../../../src/commands/config/discover-config-value.mts', () => ({
   discoverConfigValue: vi.fn(),
 }))
 
-vi.mock('./output-config-auto.mts', () => ({
+vi.mock('../../../../../src/commands/config/output-config-auto.mts', () => ({
   outputConfigAuto: vi.fn(),
 }))
 

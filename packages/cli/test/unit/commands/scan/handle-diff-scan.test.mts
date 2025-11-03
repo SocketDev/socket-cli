@@ -7,11 +7,11 @@ import {
 import { handleDiffScan } from '../../../../../src/commands/scan/handle-diff-scan.mts'
 
 // Mock the dependencies.
-vi.mock('./fetch-diff-scan.mts', () => ({
+vi.mock('../../../../../src/commands/scan/fetch-diff-scan.mts', () => ({
   fetchDiffScan: vi.fn(),
 }))
 
-vi.mock('./output-diff-scan.mts', () => ({
+vi.mock('../../../../../src/commands/scan/output-diff-scan.mts', () => ({
   outputDiffScan: vi.fn(),
 }))
 

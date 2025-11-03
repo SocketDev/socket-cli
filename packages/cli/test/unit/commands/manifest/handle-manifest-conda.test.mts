@@ -7,11 +7,11 @@ import {
 import { handleManifestConda } from '../../../../../src/commands/manifest/handle-manifest-conda.mts'
 
 // Mock the dependencies.
-vi.mock('./convert-conda-to-requirements.mts', () => ({
+vi.mock('../../../../../src/commands/manifest/convert-conda-to-requirements.mts', () => ({
   convertCondaToRequirements: vi.fn(),
 }))
 
-vi.mock('./output-requirements.mts', () => ({
+vi.mock('../../../../../src/commands/manifest/output-requirements.mts', () => ({
   outputRequirements: vi.fn(),
 }))
 

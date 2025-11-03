@@ -20,10 +20,10 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
-vi.mock('./coana-fix.mts', () => ({
+vi.mock('../../../../../src/commands/fix/coana-fix.mts', () => ({
   coanaFix: vi.fn(),
 }))
-vi.mock('./output-fix-result.mts', () => ({
+vi.mock('../../../../../src/commands/fix/output-fix-result.mts', () => ({
   outputFixResult: vi.fn(),
 }))
 vi.mock('../../utils/cve-to-ghsa.mts', () => ({

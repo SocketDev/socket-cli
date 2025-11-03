@@ -7,11 +7,11 @@ import {
 import { handleScanReport } from '../../../../../src/commands/scan/handle-scan-report.mts'
 
 // Mock the dependencies.
-vi.mock('./fetch-report-data.mts', () => ({
+vi.mock('../../../../../src/commands/scan/fetch-report-data.mts', () => ({
   fetchScanData: vi.fn(),
 }))
 
-vi.mock('./output-scan-report.mts', () => ({
+vi.mock('../../../../../src/commands/scan/output-scan-report.mts', () => ({
   outputScanReport: vi.fn(),
 }))
 

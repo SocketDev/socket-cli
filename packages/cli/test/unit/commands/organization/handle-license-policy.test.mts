@@ -8,11 +8,11 @@ import { handleLicensePolicy } from '../../../../../src/commands/organization/ha
 
 // Mock the dependencies.
 
-vi.mock('./fetch-license-policy.mts', () => ({
+vi.mock('../../../../../src/commands/organization/fetch-license-policy.mts', () => ({
   fetchLicensePolicy: vi.fn(),
 }))
 
-vi.mock('./output-license-policy.mts', () => ({
+vi.mock('../../../../../src/commands/organization/output-license-policy.mts', () => ({
   outputLicensePolicy: vi.fn(),
 }))
 

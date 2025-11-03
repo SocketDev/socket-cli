@@ -23,22 +23,22 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 vi.mock('@socketsecurity/lib/words', () => ({
   pluralize: vi.fn((word, count) => (count === 1 ? word : `${word}s`)),
 }))
-vi.mock('./fetch-create-org-full-scan.mts', () => ({
+vi.mock('../../../../../src/commands/scan/fetch-create-org-full-scan.mts', () => ({
   fetchCreateOrgFullScan: vi.fn(),
 }))
-vi.mock('./fetch-supported-scan-file-names.mts', () => ({
+vi.mock('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts', () => ({
   fetchSupportedScanFileNames: vi.fn(),
 }))
-vi.mock('./finalize-tier1-scan.mts', () => ({
+vi.mock('../../../../../src/commands/scan/finalize-tier1-scan.mts', () => ({
   finalizeTier1Scan: vi.fn(),
 }))
-vi.mock('./handle-scan-report.mts', () => ({
+vi.mock('../../../../../src/commands/scan/handle-scan-report.mts', () => ({
   handleScanReport: vi.fn(),
 }))
-vi.mock('./output-create-new-scan.mts', () => ({
+vi.mock('../../../../../src/commands/scan/output-create-new-scan.mts', () => ({
   outputCreateNewScan: vi.fn(),
 }))
-vi.mock('./perform-reachability-analysis.mts', () => ({
+vi.mock('../../../../../src/commands/scan/perform-reachability-analysis.mts', () => ({
   performReachabilityAnalysis: vi.fn(),
 }))
 vi.mock('@socketsecurity/lib/constants/process', () => ({

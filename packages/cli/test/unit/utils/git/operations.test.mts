@@ -41,7 +41,7 @@ vi.mock('../../constants/socket.mts', () => ({
 }))
 
 // Mock debug.
-vi.mock('./debug.mts', () => ({
+vi.mock('../../../../../src/utils/git/debug.mts', () => ({
   debugGit: vi.fn(),
 }))
 

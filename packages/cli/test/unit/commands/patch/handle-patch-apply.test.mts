@@ -43,7 +43,7 @@ vi.mock('@socketsecurity/lib/packages', () => ({
   readPackageJson: vi.fn(),
 }))
 
-vi.mock('./output-patch-result.mts', () => ({
+vi.mock('../../../../../src/commands/patch/output-patch-result.mts', () => ({
   outputPatchResult: vi.fn(),
 }))
 
