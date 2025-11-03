@@ -7,20 +7,30 @@ import {
 import { handleAuditLog } from '../../../../src/src/commands/audit-log/handle-audit-log.mts'
 
 // Mock the dependencies.
+const mockFetchAuditLog = vi.hoisted(() => vi.fn())
+const mockOutputAuditLog = vi.hoisted(() => vi.fn())
+const mockGetDefaultLogger = vi.hoisted(() => vi.fn(())
+const mockLog = vi.hoisted(() => vi.fn())
+const mockInfo = vi.hoisted(() => vi.fn())
+const mockWarn = vi.hoisted(() => vi.fn())
+const mockError = vi.hoisted(() => vi.fn())
+const mockFail = vi.hoisted(() => vi.fn())
+const mockSuccess = vi.hoisted(() => vi.fn())
+
 vi.mock('../../../../src/commands/audit-log/fetch-audit-log.mts', () => ({
-  fetchAuditLog: vi.fn(),
+  fetchAuditLog: mockFetchAuditLog,
 }))
 vi.mock('../../../../src/commands/audit-log/output-audit-log.mts', () => ({
-  outputAuditLog: vi.fn(),
+  outputAuditLog: mockOutputAuditLog,
 }))
 vi.mock('@socketsecurity/lib/logger', () => ({
-  getDefaultLogger: vi.fn(() => ({
-    log: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    fail: vi.fn(),
-    success: vi.fn(),
+  getDefaultLogger: mockGetDefaultLogger => ({
+    log: mockLog,
+    info: mockInfo,
+    warn: mockWarn,
+    error: mockError,
+    fail: mockFail,
+    success: mockSuccess,
   })),
 }))
 
@@ -37,7 +47,7 @@ describe('handleAuditLog', () => {
       { id: 1, type: 'security', message: 'Security event' },
       { id: 2, type: 'access', message: 'Access event' },
     ])
-    vi.mocked(fetchAuditLog).mockResolvedValue(mockLogs)
+    mockFetchAuditLog.mockResolvedValue(mockLogs)
 
     await handleAuditLog({
       logType: 'security',
@@ -68,7 +78,7 @@ describe('handleAuditLog', () => {
     const { outputAuditLog } = await import('../../../../src/commands/audit-log/output-audit-log.mts')
 
     const mockLogs = createSuccessResult([])
-    vi.mocked(fetchAuditLog).mockResolvedValue(mockLogs)
+    mockFetchAuditLog.mockResolvedValue(mockLogs)
 
     await handleAuditLog({
       logType: 'all',
@@ -101,7 +111,7 @@ describe('handleAuditLog', () => {
     const mockLogs = createSuccessResult([
       { id: 1, type: 'config', message: 'Config change' },
     ])
-    vi.mocked(fetchAuditLog).mockResolvedValue(mockLogs)
+    mockFetchAuditLog.mockResolvedValue(mockLogs)
 
     await handleAuditLog({
       logType: 'config',
@@ -132,7 +142,7 @@ describe('handleAuditLog', () => {
     const { outputAuditLog } = await import('../../../../src/commands/audit-log/output-audit-log.mts')
 
     const mockLogs = createSuccessResult([])
-    vi.mocked(fetchAuditLog).mockResolvedValue(mockLogs)
+    mockFetchAuditLog.mockResolvedValue(mockLogs)
 
     await handleAuditLog({
       logType: 'access',
@@ -150,7 +160,7 @@ describe('handleAuditLog', () => {
     const { outputAuditLog } = await import('../../../../src/commands/audit-log/output-audit-log.mts')
 
     const mockError = createErrorResult('API error')
-    vi.mocked(fetchAuditLog).mockResolvedValue(mockError)
+    mockFetchAuditLog.mockResolvedValue(mockError)
 
     await handleAuditLog({
       logType: 'security',
@@ -169,7 +179,7 @@ describe('handleAuditLog', () => {
     const logTypes = ['all', 'security', 'access', 'config', 'data']
 
     for (const logType of logTypes) {
-      vi.mocked(fetchAuditLog).mockResolvedValue(createSuccessResult([]))
+      mockFetchAuditLog.mockResolvedValue(createSuccessResult([]))
 
       // eslint-disable-next-line no-await-in-loop
       await handleAuditLog({

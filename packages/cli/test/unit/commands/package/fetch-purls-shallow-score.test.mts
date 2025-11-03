@@ -8,17 +8,22 @@ import {
 import { fetchPurlsShallowScore } from '../../../../src/src/commands/package/fetch-purls-shallow-score.mts'
 
 // Mock the dependencies.
+const mockHandleApiCall = vi.hoisted(() => vi.fn())
+const mockSetupSdk = vi.hoisted(() => vi.fn())
+const mockGetDefaultLogger = vi.hoisted(() => vi.fn(())
+const mockInfo = vi.hoisted(() => vi.fn())
+
 vi.mock('../../../../src/utils/socket/api.mts', () => ({
-  handleApiCall: vi.fn(),
+  handleApiCall: mockHandleApiCall,
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
-  setupSdk: vi.fn(),
+  setupSdk: mockSetupSdk,
 }))
 
 vi.mock('@socketsecurity/lib/logger', () => ({
-  getDefaultLogger: vi.fn(() => ({
-    info: vi.fn(),
+  getDefaultLogger: mockGetDefaultLogger => ({
+    info: mockInfo,
   })),
 }))
 

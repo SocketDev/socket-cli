@@ -18,6 +18,8 @@ import {
 } from '../../../../../src/utils/socket/json.mts'
 
 // Mock dependencies.
+const mockFindUp = vi.hoisted(() => vi.fn())
+
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
   readFileSync: vi.fn(),
@@ -28,7 +30,7 @@ vi.mock('node:fs', () => ({
 }))
 
 vi.mock('../../../../../src/utils/fs/find-up.mts', () => ({
-  findUp: vi.fn(),
+  findUp: mockFindUp,
 }))
 
 const mockLogger = vi.hoisted(() => ({
@@ -103,7 +105,7 @@ describe('socket-json utilities', () => {
 
   describe('findSocketJsonUp', () => {
     it('calls findUp with correct parameters', async () => {
-      vi.mocked(findUp).mockResolvedValue('/path/to/socket.json')
+      mockFindUp.mockResolvedValue('/path/to/socket.json')
 
       const result = await findSocketJsonUp('/test/dir')
       expect(result).toBe('/path/to/socket.json')
@@ -114,7 +116,7 @@ describe('socket-json utilities', () => {
     })
 
     it('returns undefined when socket.json not found', async () => {
-      vi.mocked(findUp).mockResolvedValue(undefined)
+      mockFindUp.mockResolvedValue(undefined)
 
       const result = await findSocketJsonUp('/test/dir')
       expect(result).toBeUndefined()
@@ -124,7 +126,7 @@ describe('socket-json utilities', () => {
   describe('readOrDefaultSocketJsonUp', () => {
     it('reads socket.json when found up the tree', async () => {
       const mockJson = { version: 1, custom: 'data' }
-      vi.mocked(findUp).mockResolvedValue('/parent/socket.json')
+      mockFindUp.mockResolvedValue('/parent/socket.json')
       vi.mocked(existsSync).mockReturnValue(true)
       vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockJson))
 
@@ -133,7 +135,7 @@ describe('socket-json utilities', () => {
     })
 
     it('returns default when socket.json not found up the tree', async () => {
-      vi.mocked(findUp).mockResolvedValue(undefined)
+      mockFindUp.mockResolvedValue(undefined)
 
       const result = await readOrDefaultSocketJsonUp('/test/dir')
       expect(result.version).toBe(1)

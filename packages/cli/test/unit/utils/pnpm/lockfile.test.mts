@@ -12,13 +12,16 @@ import {
 } from '../../../../src/src/pnpm/lockfile.mts'
 
 // Mock fs module.
+const mockExistsSync = vi.hoisted(() => vi.fn())
+const mockReadFileUtf8 = vi.hoisted(() => vi.fn())
+
 vi.mock('node:fs', () => ({
-  existsSync: vi.fn(),
+  existsSync: mockExistsSync,
 }))
 
 // Mock registry modules.
 vi.mock('@socketsecurity/lib/fs', () => ({
-  readFileUtf8: vi.fn(),
+  readFileUtf8: mockReadFileUtf8,
 }))
 
 describe('pnpm utilities', () => {
@@ -149,8 +152,8 @@ packages: {}`
       const { existsSync } = await import('node:fs')
       const { readFileUtf8 } = await import('@socketsecurity/lib/fs')
 
-      vi.mocked(existsSync).mockReturnValue(true)
-      vi.mocked(readFileUtf8).mockResolvedValue('lockfile content')
+      mockExistsSync.mockReturnValue(true)
+      mockReadFileUtf8.mockResolvedValue('lockfile content')
 
       const result = await readPnpmLockfile('/path/to/pnpm-lock.yaml')
       expect(result).toBe('lockfile content')
@@ -161,7 +164,7 @@ packages: {}`
     it('returns undefined for non-existent lockfile', async () => {
       const { existsSync } = await import('node:fs')
 
-      vi.mocked(existsSync).mockReturnValue(false)
+      mockExistsSync.mockReturnValue(false)
 
       const result = await readPnpmLockfile('/path/to/missing.yaml')
       expect(result).toBeUndefined()

@@ -26,13 +26,17 @@ const mockLog = mockLogger.log
 const mockFail = mockLogger.fail
 const mockSuccess = mockLogger.success
 
+const mockSerializeResultJson = vi.hoisted(() => vi.fn(result => JSON.stringify(result))
+const mockDefault = vi.hoisted(() => vi.fn())
+const mockConfirm = vi.hoisted(() => vi.fn())
+
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
 vi.mock('../../../../../src/utils/output/result-json.mjs', () => ({
-  serializeResultJson: vi.fn(result => JSON.stringify(result)),
+  serializeResultJson: mockSerializeResultJson),
 }))
 
 vi.mock('../../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
@@ -40,15 +44,15 @@ vi.mock('../../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
 }))
 
 vi.mock('open', () => ({
-  default: vi.fn(),
+  default: mockDefault,
 }))
 
 vi.mock('terminal-link', () => ({
-  default: vi.fn((url, text) => `[${text}](${url})`),
+  default: mockDefault => `[${text}](${url})`),
 }))
 
 vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
-  confirm: vi.fn(),
+  confirm: mockConfirm,
 }))
 
 describe('outputCreateNewScan', () => {
@@ -67,7 +71,7 @@ describe('outputCreateNewScan', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const mockSerialize = vi.mocked(serializeResultJson)
+    const mockSerialize = mockSerializeResultJson
 
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
       {
@@ -184,7 +188,7 @@ describe('outputCreateNewScan', () => {
   })
 
   it('opens browser when interactive and user confirms', async () => {
-    const mockConfirm = vi.mocked(confirm)
+    const mockConfirm = mockConfirm
     const mockOpen = vi.mocked(open)
 
     mockConfirm.mockResolvedValue(true)
@@ -213,7 +217,7 @@ describe('outputCreateNewScan', () => {
   })
 
   it('does not open browser when user declines', async () => {
-    const mockConfirm = vi.mocked(confirm)
+    const mockConfirm = mockConfirm
     const mockOpen = vi.mocked(open)
 
     mockConfirm.mockResolvedValue(false)

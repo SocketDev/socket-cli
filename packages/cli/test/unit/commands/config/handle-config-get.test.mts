@@ -15,16 +15,19 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 // Mock the dependencies.
+const mockOutputConfigGet = vi.hoisted(() => vi.fn())
+const mockGetConfigValue = vi.hoisted(() => vi.fn())
+
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
 vi.mock('../../../../../src/commands/config/output-config-get.mts', () => ({
-  outputConfigGet: vi.fn(),
+  outputConfigGet: mockOutputConfigGet,
 }))
 vi.mock('../../../../../src/utils/config.mts', () => ({
-  getConfigValue: vi.fn(),
+  getConfigValue: mockGetConfigValue,
 }))
 
 describe('handleConfigGet', () => {
@@ -37,7 +40,7 @@ describe('handleConfigGet', () => {
     const { outputConfigGet } = await import('../../../../../src/commands/config/output-config-get.mts')
 
     const mockResult = createSuccessResult('test-token')
-    vi.mocked(getConfigValue).mockReturnValue(mockResult)
+    mockGetConfigValue.mockReturnValue(mockResult)
 
     await handleConfigGet({
       key: 'apiToken',
@@ -53,7 +56,7 @@ describe('handleConfigGet', () => {
     const { outputConfigGet } = await import('../../../../../src/commands/config/output-config-get.mts')
 
     const mockResult = createErrorResult('Config value not found')
-    vi.mocked(getConfigValue).mockReturnValue(mockResult)
+    mockGetConfigValue.mockReturnValue(mockResult)
 
     await handleConfigGet({
       key: 'org',
@@ -69,7 +72,7 @@ describe('handleConfigGet', () => {
     const { outputConfigGet } = await import('../../../../../src/commands/config/output-config-get.mts')
 
     const mockResult = createSuccessResult('https://api.socket.dev')
-    vi.mocked(getConfigValue).mockReturnValue(mockResult)
+    mockGetConfigValue.mockReturnValue(mockResult)
 
     await handleConfigGet({
       key: 'apiBaseUrl',
@@ -92,7 +95,7 @@ describe('handleConfigGet', () => {
 
     for (const key of keys) {
       const mockResult = createSuccessResult(`value-for-${key}`)
-      vi.mocked(getConfigValue).mockReturnValue(mockResult)
+      mockGetConfigValue.mockReturnValue(mockResult)
 
       // eslint-disable-next-line no-await-in-loop
       await handleConfigGet({
@@ -110,7 +113,7 @@ describe('handleConfigGet', () => {
     const { outputConfigGet } = await import('../../../../../src/commands/config/output-config-get.mts')
 
     const mockResult = createSuccessResult('')
-    vi.mocked(getConfigValue).mockReturnValue(mockResult)
+    mockGetConfigValue.mockReturnValue(mockResult)
 
     await handleConfigGet({
       key: 'apiToken',
@@ -125,7 +128,7 @@ describe('handleConfigGet', () => {
     const { outputConfigGet } = await import('../../../../../src/commands/config/output-config-get.mts')
 
     const mockResult = createSuccessResult(undefined)
-    vi.mocked(getConfigValue).mockReturnValue(mockResult)
+    mockGetConfigValue.mockReturnValue(mockResult)
 
     await handleConfigGet({
       key: 'org',

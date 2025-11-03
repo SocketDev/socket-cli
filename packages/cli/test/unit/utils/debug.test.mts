@@ -1,14 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the registry debug functions.
+const mockDebug = vi.hoisted(() => vi.fn())
+const mockDebugCache = vi.hoisted(() => vi.fn())
+const mockDebugDir = vi.hoisted(() => vi.fn())
+const mockDebugDirNs = vi.hoisted(() => vi.fn())
+const mockDebugNs = vi.hoisted(() => vi.fn())
+const mockIsDebug = vi.hoisted(() => vi.fn(())
+const mockIsDebugNs = vi.hoisted(() => vi.fn(())
+
 vi.mock('@socketsecurity/lib/debug', () => ({
-  debug: vi.fn(),
-  debugCache: vi.fn(),
-  debugDir: vi.fn(),
-  debugDirNs: vi.fn(),
-  debugNs: vi.fn(),
-  isDebug: vi.fn(() => false),
-  isDebugNs: vi.fn(() => false),
+  debug: mockDebug,
+  debugCache: mockDebugCache,
+  debugDir: mockDebugDir,
+  debugDirNs: mockDebugDirNs,
+  debugNs: mockDebugNs,
+  isDebug: mockIsDebug => false),
+  isDebugNs: mockIsDebugNs => false),
 }))
 
 import {
@@ -30,8 +38,8 @@ import {
 describe('debug utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(isDebug).mockReturnValue(false)
-    vi.mocked(isDebugNs).mockReturnValue(false)
+    mockIsDebug.mockReturnValue(false)
+    mockIsDebugNs.mockReturnValue(false)
   })
 
   describe('debugApiResponse', () => {
@@ -53,7 +61,7 @@ describe('debug utilities', () => {
     })
 
     it('logs notice for successful responses when debug is enabled', () => {
-      vi.mocked(isDebugNs).mockReturnValue(true)
+      mockIsDebugNs.mockReturnValue(true)
 
       debugApiResponse('/api/test', 200)
 
@@ -61,7 +69,7 @@ describe('debug utilities', () => {
     })
 
     it('does not log for successful responses when debug is disabled', () => {
-      vi.mocked(isDebugNs).mockReturnValue(false)
+      mockIsDebugNs.mockReturnValue(false)
 
       debugApiResponse('/api/test', 200)
 
@@ -92,7 +100,7 @@ describe('debug utilities', () => {
     })
 
     it('logs silly level for successful operations when enabled', () => {
-      vi.mocked(isDebugNs).mockReturnValue(true)
+      mockIsDebugNs.mockReturnValue(true)
 
       debugFileOp('write', '/path/to/file')
 
@@ -100,7 +108,7 @@ describe('debug utilities', () => {
     })
 
     it('does not log for successful operations when silly is disabled', () => {
-      vi.mocked(isDebugNs).mockReturnValue(false)
+      mockIsDebugNs.mockReturnValue(false)
 
       debugFileOp('create', '/path/to/file')
 
@@ -136,7 +144,7 @@ describe('debug utilities', () => {
     })
 
     it('logs progress when silly debug is enabled', () => {
-      vi.mocked(isDebugNs).mockReturnValue(true)
+      mockIsDebugNs.mockReturnValue(true)
 
       debugScan('progress', 10)
 
@@ -192,7 +200,7 @@ describe('debug utilities', () => {
     })
 
     it('logs silly when config not found and debug enabled', () => {
-      vi.mocked(isDebugNs).mockReturnValue(true)
+      mockIsDebugNs.mockReturnValue(true)
 
       debugConfig('.socketrc', false)
 
@@ -203,7 +211,7 @@ describe('debug utilities', () => {
     })
 
     it('does not log when config not found and debug disabled', () => {
-      vi.mocked(isDebugNs).mockReturnValue(false)
+      mockIsDebugNs.mockReturnValue(false)
 
       debugConfig('.socketrc', false)
 
@@ -222,7 +230,7 @@ describe('debug utilities', () => {
     })
 
     it('logs notice for important successful operations', () => {
-      vi.mocked(isDebugNs).mockImplementation(level => level === 'notice')
+      mockIsDebugNs.mockImplementation(level => level === 'notice')
 
       debugGit('push', true)
 
@@ -230,7 +238,7 @@ describe('debug utilities', () => {
     })
 
     it('logs commit operations', () => {
-      vi.mocked(isDebugNs).mockReturnValue(true)
+      mockIsDebugNs.mockReturnValue(true)
 
       debugGit('commit', true)
 
@@ -238,7 +246,7 @@ describe('debug utilities', () => {
     })
 
     it('logs other operations only with silly debug', () => {
-      vi.mocked(isDebugNs).mockImplementation(level => level === 'silly')
+      mockIsDebugNs.mockImplementation(level => level === 'silly')
 
       debugGit('status', true)
 
@@ -246,7 +254,7 @@ describe('debug utilities', () => {
     })
 
     it('does not log non-important operations without silly debug', () => {
-      vi.mocked(isDebugNs).mockReturnValue(false)
+      mockIsDebugNs.mockReturnValue(false)
 
       debugGit('status', true)
 

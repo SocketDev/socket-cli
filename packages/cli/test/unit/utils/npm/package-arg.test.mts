@@ -3,8 +3,10 @@ import { describe, expect, it, vi } from 'vitest'
 import { safeNpa } from '../../../../src/src/utils/npm/package-arg.mts'
 
 // Mock npm-package-arg.
+const mockDefault = vi.hoisted(() => vi.fn())
+
 vi.mock('npm-package-arg', () => ({
-  default: vi.fn(),
+  default: mockDefault,
 }))
 
 describe('npm-package-arg utilities', () => {

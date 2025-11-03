@@ -3,11 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { handleManifestSetup } from '../../../../src/src/commands/manifest/handle-manifest-setup.mts'
 
 // Mock the dependencies.
+const mockOutputManifestSetup = vi.hoisted(() => vi.fn())
+const mockSetupManifestConfig = vi.hoisted(() => vi.fn())
+
 vi.mock('../../../../src/commands/manifest/output-manifest-setup.mts', () => ({
-  outputManifestSetup: vi.fn(),
+  outputManifestSetup: mockOutputManifestSetup,
 }))
 vi.mock('../../../../src/commands/manifest/setup-manifest-config.mts', () => ({
-  setupManifestConfig: vi.fn(),
+  setupManifestConfig: mockSetupManifestConfig,
 }))
 
 describe('handleManifestSetup', () => {
@@ -29,7 +32,7 @@ describe('handleManifestSetup', () => {
         },
       },
     }
-    vi.mocked(setupManifestConfig).mockResolvedValue(mockResult)
+    mockSetupManifestConfig.mockResolvedValue(mockResult)
 
     await handleManifestSetup('/test/project', false)
 
@@ -45,7 +48,7 @@ describe('handleManifestSetup', () => {
       ok: false,
       error: new Error('Failed to setup manifest'),
     }
-    vi.mocked(setupManifestConfig).mockResolvedValue(mockError)
+    mockSetupManifestConfig.mockResolvedValue(mockError)
 
     await handleManifestSetup('/test/project', true)
 
@@ -61,7 +64,7 @@ describe('handleManifestSetup', () => {
       ok: true,
       data: { manifestPath: '/test/socket.json' },
     }
-    vi.mocked(setupManifestConfig).mockResolvedValue(mockResult)
+    mockSetupManifestConfig.mockResolvedValue(mockResult)
 
     await handleManifestSetup('/some/dir', true)
 
@@ -72,7 +75,7 @@ describe('handleManifestSetup', () => {
   it('handles defaultOnReadError flag false', async () => {
     const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
 
-    vi.mocked(setupManifestConfig).mockResolvedValue({
+    mockSetupManifestConfig.mockResolvedValue({
       ok: true,
       data: {},
     })
@@ -90,7 +93,7 @@ describe('handleManifestSetup', () => {
       ok: true,
       data: {},
     }
-    vi.mocked(setupManifestConfig).mockResolvedValue(mockResult)
+    mockSetupManifestConfig.mockResolvedValue(mockResult)
 
     await handleManifestSetup('/test', false)
 
@@ -100,7 +103,7 @@ describe('handleManifestSetup', () => {
   it('handles async errors', async () => {
     const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
 
-    vi.mocked(setupManifestConfig).mockRejectedValue(new Error('Async error'))
+    mockSetupManifestConfig.mockRejectedValue(new Error('Async error'))
 
     await expect(handleManifestSetup('/test', false)).rejects.toThrow(
       'Async error',
@@ -110,7 +113,7 @@ describe('handleManifestSetup', () => {
   it('handles current directory path', async () => {
     const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
 
-    vi.mocked(setupManifestConfig).mockResolvedValue({
+    mockSetupManifestConfig.mockResolvedValue({
       ok: true,
       data: { manifestPath: './socket.json' },
     })
@@ -123,7 +126,7 @@ describe('handleManifestSetup', () => {
   it('handles absolute path', async () => {
     const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
 
-    vi.mocked(setupManifestConfig).mockResolvedValue({
+    mockSetupManifestConfig.mockResolvedValue({
       ok: true,
       data: { manifestPath: '/absolute/path/socket.json' },
     })

@@ -3,11 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { handleScanView } from '../../../../src/src/commands/scan/handle-scan-view.mts'
 
 // Mock the dependencies.
+const mockFetchScan = vi.hoisted(() => vi.fn())
+const mockOutputScanView = vi.hoisted(() => vi.fn())
+
 vi.mock('../../../../../src/commands/scan/fetch-scan.mts', () => ({
-  fetchScan: vi.fn(),
+  fetchScan: mockFetchScan,
 }))
 vi.mock('../../../../../src/commands/scan/output-scan-view.mts', () => ({
-  outputScanView: vi.fn(),
+  outputScanView: mockOutputScanView,
 }))
 
 describe('handleScanView', () => {
@@ -32,7 +35,7 @@ describe('handleScanView', () => {
         createdAt: '2024-01-01T00:00:00Z',
       },
     }
-    vi.mocked(fetchScan).mockResolvedValue(mockData)
+    mockFetchScan.mockResolvedValue(mockData)
 
     await handleScanView('test-org', 'scan-123', '/output/path.json', 'json')
 
@@ -54,7 +57,7 @@ describe('handleScanView', () => {
       ok: false,
       error: new Error('Scan not found'),
     }
-    vi.mocked(fetchScan).mockResolvedValue(mockError)
+    mockFetchScan.mockResolvedValue(mockError)
 
     await handleScanView('test-org', 'invalid-scan', '', 'text')
 
@@ -80,7 +83,7 @@ describe('handleScanView', () => {
         results: null,
       },
     }
-    vi.mocked(fetchScan).mockResolvedValue(mockData)
+    mockFetchScan.mockResolvedValue(mockData)
 
     await handleScanView('org-2', 'scan-456', 'report.md', 'markdown')
 
@@ -101,7 +104,7 @@ describe('handleScanView', () => {
       ok: true,
       data: { id: 'scan-789', status: 'pending' },
     }
-    vi.mocked(fetchScan).mockResolvedValue(mockData)
+    mockFetchScan.mockResolvedValue(mockData)
 
     await handleScanView('my-org', 'scan-789', '', 'json')
 
@@ -121,7 +124,7 @@ describe('handleScanView', () => {
     const statuses = ['pending', 'in_progress', 'completed', 'failed']
 
     for (const status of statuses) {
-      vi.mocked(fetchScan).mockResolvedValue({
+      mockFetchScan.mockResolvedValue({
         ok: true,
         data: { id: 'scan-test', status },
       })
@@ -153,7 +156,7 @@ describe('handleScanView', () => {
         vulnerabilities: [],
       },
     }
-    vi.mocked(fetchScan).mockResolvedValue(mockData)
+    mockFetchScan.mockResolvedValue(mockData)
 
     await handleScanView('test-org', 'scan-999', '-', 'text')
 
@@ -169,7 +172,7 @@ describe('handleScanView', () => {
   it('handles async errors', async () => {
     const { fetchScan } = await import('../../../../../src/commands/scan/fetch-scan.mts')
 
-    vi.mocked(fetchScan).mockRejectedValue(new Error('Network error'))
+    mockFetchScan.mockRejectedValue(new Error('Network error'))
 
     await expect(
       handleScanView('org', 'scan-id', 'file.json', 'json'),

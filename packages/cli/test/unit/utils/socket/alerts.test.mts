@@ -15,6 +15,11 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
+const mockFindSocketYmlSync = vi.hoisted(() => vi.fn())
+const mockToFilterConfig = vi.hoisted(() => vi.fn())
+const mockExtractPurlsFromPnpmLockfile = vi.hoisted(() => vi.fn())
+const mockAddArtifactToAlertsMap = vi.hoisted(() => vi.fn())
+
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
@@ -32,19 +37,19 @@ vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
 }))
 
 vi.mock('../../../../../src/utils/config.mts', () => ({
-  findSocketYmlSync: vi.fn(),
+  findSocketYmlSync: mockFindSocketYmlSync,
 }))
 
 vi.mock('../../../../../src/utils/validation/filter-config.mts', () => ({
-  toFilterConfig: vi.fn(),
+  toFilterConfig: mockToFilterConfig,
 }))
 
 vi.mock('../../../../../src/utils/pnpm/lockfile.mts', () => ({
-  extractPurlsFromPnpmLockfile: vi.fn(),
+  extractPurlsFromPnpmLockfile: mockExtractPurlsFromPnpmLockfile,
 }))
 
 vi.mock('../../../../../src/utils/socket/package-alert.mts', () => ({
-  addArtifactToAlertsMap: vi.fn(),
+  addArtifactToAlertsMap: mockAddArtifactToAlertsMap,
 }))
 
 import { extractPurlsFromPnpmLockfile } from '../../../../../src/utils/pnpm/lockfile.mts'
@@ -54,7 +59,7 @@ import { findSocketYmlSync } from '../../../../../src/utils/config.mts'
 describe('alerts-map utilities', () => {
   describe('getAlertsMapFromPnpmLockfile', () => {
     it('calls extractPurlsFromPnpmLockfile with lockfile', async () => {
-      vi.mocked(extractPurlsFromPnpmLockfile).mockReturnValue([])
+      mockExtractPurlsFromPnpmLockfile.mockReturnValue([])
       vi.mocked(setupSdk).mockReturnValue({
         ok: true,
         data: {
@@ -68,7 +73,7 @@ describe('alerts-map utilities', () => {
           },
         },
       } as any)
-      vi.mocked(findSocketYmlSync).mockReturnValue({
+      mockFindSocketYmlSync.mockReturnValue({
         ok: false,
       } as any)
 
@@ -105,7 +110,7 @@ describe('alerts-map utilities', () => {
           },
         },
       } as any)
-      vi.mocked(findSocketYmlSync).mockReturnValue({
+      mockFindSocketYmlSync.mockReturnValue({
         ok: false,
       } as any)
 

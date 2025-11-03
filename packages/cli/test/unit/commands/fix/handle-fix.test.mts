@@ -3,8 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { convertIdsToGhsas } from '../../../../src/src/commands/fix/handle-fix.mts'
 
 // Mock the dependencies.
+const mockJoinAnd = vi.hoisted(() => vi.fn(arr => arr.join(' and '))
+const mockCoanaFix = vi.hoisted(() => vi.fn())
+const mockOutputFixResult = vi.hoisted(() => vi.fn())
+
 vi.mock('@socketsecurity/lib/arrays', () => ({
-  joinAnd: vi.fn(arr => arr.join(' and ')),
+  joinAnd: mockJoinAnd),
 }))
 
 const mockLogger = vi.hoisted(() => ({
@@ -24,10 +28,10 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 vi.mock('../../../../src/commands/fix/coana-fix.mts', () => ({
-  coanaFix: vi.fn(),
+  coanaFix: mockCoanaFix,
 }))
 vi.mock('../../../../src/commands/fix/output-fix-result.mts', () => ({
-  outputFixResult: vi.fn(),
+  outputFixResult: mockOutputFixResult,
 }))
 vi.mock('../../../../src/utils/cve-to-ghsa.mts', () => ({
   convertCveToGhsa: mockConvertCveToGhsa,

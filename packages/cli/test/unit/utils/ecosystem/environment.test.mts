@@ -7,6 +7,15 @@ import {
 
 // Mock the dependencies.
 const mockExistsSync = vi.hoisted(() => vi.fn())
+const mockDefault = vi.hoisted(() => vi.fn())
+const mockParse = vi.hoisted(() => vi.fn(())
+const mockValid = vi.hoisted(() => vi.fn(())
+const mockSatisfies = vi.hoisted(() => vi.fn(())
+const mockMajor = vi.hoisted(() => vi.fn(())
+const mockMinor = vi.hoisted(() => vi.fn(())
+const mockPatch = vi.hoisted(() => vi.fn(())
+const mockCoerce = vi.hoisted(() => vi.fn(())
+
 vi.mock('node:fs', async importOriginal => {
   const actual = (await importOriginal()) as any
   return {
@@ -16,7 +25,7 @@ vi.mock('node:fs', async importOriginal => {
 })
 
 vi.mock('browserslist', () => ({
-  default: vi.fn().mockReturnValue([]),
+  default: mockDefault.mockReturnValue([]),
 }))
 
 const mockWhichBin = vi.hoisted(() => vi.fn())
@@ -49,18 +58,18 @@ vi.mock('../fs/find-up.mts', () => ({
 }))
 
 vi.mock('@socketregistry/hyrious__bun.lockb/index.cjs', () => ({
-  parse: vi.fn().mockReturnValue({}),
+  parse: mockParse.mockReturnValue({}),
 }))
 
 vi.mock('semver', () => ({
   default: {
-    parse: vi.fn(() => null),
-    valid: vi.fn(() => null),
-    satisfies: vi.fn(() => true),
-    major: vi.fn(() => 20),
-    minor: vi.fn(() => 0),
-    patch: vi.fn(() => 0),
-    coerce: vi.fn(() => ({ version: '1.0.0' })),
+    parse: mockParse => null),
+    valid: mockValid => null),
+    satisfies: mockSatisfies => true),
+    major: mockMajor => 20),
+    minor: mockMinor => 0),
+    patch: mockPatch => 0),
+    coerce: mockCoerce => ({ version: '1.0.0' })),
     lt: vi.fn(() => false),
   },
 }))

@@ -7,12 +7,15 @@ import {
 import { handleManifestConda } from '../../../../src/src/commands/manifest/handle-manifest-conda.mts'
 
 // Mock the dependencies.
+const mockConvertCondaToRequirements = vi.hoisted(() => vi.fn())
+const mockOutputRequirements = vi.hoisted(() => vi.fn())
+
 vi.mock('../../../../src/commands/manifest/convert-conda-to-requirements.mts', () => ({
-  convertCondaToRequirements: vi.fn(),
+  convertCondaToRequirements: mockConvertCondaToRequirements,
 }))
 
 vi.mock('../../../../src/commands/manifest/output-requirements.mts', () => ({
-  outputRequirements: vi.fn(),
+  outputRequirements: mockOutputRequirements,
 }))
 
 describe('handleManifestConda', () => {
@@ -21,8 +24,8 @@ describe('handleManifestConda', () => {
       '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
     )
     const { outputRequirements } = await import('../../../../src/commands/manifest/output-requirements.mts')
-    const mockConvert = vi.mocked(convertCondaToRequirements)
-    const mockOutput = vi.mocked(outputRequirements)
+    const mockConvert = mockConvertCondaToRequirements
+    const mockOutput = mockOutputRequirements
 
     const mockRequirements = createSuccessResult([
       'numpy==1.23.0',
@@ -57,8 +60,8 @@ describe('handleManifestConda', () => {
       '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
     )
     const { outputRequirements } = await import('../../../../src/commands/manifest/output-requirements.mts')
-    const mockConvert = vi.mocked(convertCondaToRequirements)
-    const mockOutput = vi.mocked(outputRequirements)
+    const mockConvert = mockConvertCondaToRequirements
+    const mockOutput = mockOutputRequirements
 
     const mockError = createErrorResult('Invalid conda file format')
     mockConvert.mockResolvedValue(mockError)
@@ -80,8 +83,8 @@ describe('handleManifestConda', () => {
       '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
     )
     const { outputRequirements } = await import('../../../../src/commands/manifest/output-requirements.mts')
-    const mockConvert = vi.mocked(convertCondaToRequirements)
-    const mockOutput = vi.mocked(outputRequirements)
+    const mockConvert = mockConvertCondaToRequirements
+    const mockOutput = mockOutputRequirements
 
     mockConvert.mockResolvedValue(createSuccessResult([]))
 
@@ -109,7 +112,7 @@ describe('handleManifestConda', () => {
     const { convertCondaToRequirements } = await import(
       '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
     )
-    const mockConvert = vi.mocked(convertCondaToRequirements)
+    const mockConvert = mockConvertCondaToRequirements
 
     mockConvert.mockResolvedValue(createSuccessResult([]))
 
@@ -132,7 +135,7 @@ describe('handleManifestConda', () => {
     const { convertCondaToRequirements } = await import(
       '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
     )
-    const mockConvert = vi.mocked(convertCondaToRequirements)
+    const mockConvert = mockConvertCondaToRequirements
 
     mockConvert.mockResolvedValue(createSuccessResult([]))
 

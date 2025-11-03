@@ -4,20 +4,23 @@ import { createSuccessResult } from '../../../../src/helpers/mocks.mts'
 import { handleUpdateRepo } from '../../../../src/src/commands/repository/handle-update-repo.mts'
 
 // Mock the dependencies.
+const mockFetchUpdateRepo = vi.hoisted(() => vi.fn())
+const mockOutputUpdateRepo = vi.hoisted(() => vi.fn())
+
 vi.mock('../../../../src/commands/repository/fetch-update-repo.mts', () => ({
-  fetchUpdateRepo: vi.fn(),
+  fetchUpdateRepo: mockFetchUpdateRepo,
 }))
 
 vi.mock('../../../../src/commands/repository/output-update-repo.mts', () => ({
-  outputUpdateRepo: vi.fn(),
+  outputUpdateRepo: mockOutputUpdateRepo,
 }))
 
 describe('handleUpdateRepo', () => {
   it('updates repository and outputs result successfully', async () => {
     const { fetchUpdateRepo } = await import('../../../../src/commands/repository/fetch-update-repo.mts')
     const { outputUpdateRepo } = await import('../../../../src/commands/repository/output-update-repo.mts')
-    const mockFetch = vi.mocked(fetchUpdateRepo)
-    const mockOutput = vi.mocked(outputUpdateRepo)
+    const mockFetch = mockFetchUpdateRepo
+    const mockOutput = mockOutputUpdateRepo
 
     const mockResult = createSuccessResult({
       id: 'repo-123',
@@ -48,8 +51,8 @@ describe('handleUpdateRepo', () => {
   it('handles update failure', async () => {
     const { fetchUpdateRepo } = await import('../../../../src/commands/repository/fetch-update-repo.mts')
     const { outputUpdateRepo } = await import('../../../../src/commands/repository/output-update-repo.mts')
-    const mockFetch = vi.mocked(fetchUpdateRepo)
-    const mockOutput = vi.mocked(outputUpdateRepo)
+    const mockFetch = mockFetchUpdateRepo
+    const mockOutput = mockOutputUpdateRepo
 
     const mockError = {
       ok: false,
@@ -75,8 +78,8 @@ describe('handleUpdateRepo', () => {
   it('handles markdown output format', async () => {
     const { fetchUpdateRepo } = await import('../../../../src/commands/repository/fetch-update-repo.mts')
     const { outputUpdateRepo } = await import('../../../../src/commands/repository/output-update-repo.mts')
-    const mockFetch = vi.mocked(fetchUpdateRepo)
-    const mockOutput = vi.mocked(outputUpdateRepo)
+    const mockFetch = mockFetchUpdateRepo
+    const mockOutput = mockOutputUpdateRepo
 
     mockFetch.mockResolvedValue(createSuccessResult({}))
 
@@ -101,7 +104,7 @@ describe('handleUpdateRepo', () => {
 
   it('handles different visibility settings', async () => {
     const { fetchUpdateRepo } = await import('../../../../src/commands/repository/fetch-update-repo.mts')
-    const mockFetch = vi.mocked(fetchUpdateRepo)
+    const mockFetch = mockFetchUpdateRepo
 
     mockFetch.mockResolvedValue(createSuccessResult({}))
 
@@ -130,8 +133,8 @@ describe('handleUpdateRepo', () => {
   it('handles different default branches', async () => {
     const { fetchUpdateRepo } = await import('../../../../src/commands/repository/fetch-update-repo.mts')
     const { outputUpdateRepo } = await import('../../../../src/commands/repository/output-update-repo.mts')
-    const mockFetch = vi.mocked(fetchUpdateRepo)
-    const mockOutput = vi.mocked(outputUpdateRepo)
+    const mockFetch = mockFetchUpdateRepo
+    const mockOutput = mockOutputUpdateRepo
 
     mockFetch.mockResolvedValue(
       createSuccessResult({ defaultBranch: 'develop' }),

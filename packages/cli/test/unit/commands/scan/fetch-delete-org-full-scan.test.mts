@@ -8,12 +8,15 @@ import {
 import { fetchDeleteOrgFullScan } from '../../../../src/src/commands/scan/fetch-delete-org-full-scan.mts'
 
 // Mock the dependencies.
+const mockHandleApiCall = vi.hoisted(() => vi.fn())
+const mockSetupSdk = vi.hoisted(() => vi.fn())
+
 vi.mock('../../../../../src/utils/socket/api.mts', () => ({
-  handleApiCall: vi.fn(),
+  handleApiCall: mockHandleApiCall,
 }))
 
 vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
-  setupSdk: vi.fn(),
+  setupSdk: mockSetupSdk,
 }))
 
 describe('fetchDeleteOrgFullScan', () => {

@@ -5,19 +5,26 @@ import { handleOrganizationList } from '../../../../src/src/commands/organizatio
 
 // Mock the dependencies.
 
+const mockFetchOrganization = vi.hoisted(() => vi.fn())
+const mockOutputOrganizationList = vi.hoisted(() => vi.fn())
+const mockDebug = vi.hoisted(() => vi.fn())
+const mockDebugDir = vi.hoisted(() => vi.fn())
+const mockDebugLog = vi.hoisted(() => vi.fn())
+const mockIsDebug = vi.hoisted(() => vi.fn(())
+
 vi.mock('../../../../../src/commands/organization/fetch-organization-list.mts', () => ({
-  fetchOrganization: vi.fn(),
+  fetchOrganization: mockFetchOrganization,
 }))
 
 vi.mock('../../../../../src/commands/organization/output-organization-list.mts', () => ({
-  outputOrganizationList: vi.fn(),
+  outputOrganizationList: mockOutputOrganizationList,
 }))
 
 vi.mock('@socketsecurity/lib/debug', () => ({
-  debug: vi.fn(),
-  debugDir: vi.fn(),
-  debugLog: vi.fn(),
-  isDebug: vi.fn(() => false),
+  debug: mockDebug,
+  debugDir: mockDebugDir,
+  debugLog: mockDebugLog,
+  isDebug: mockIsDebug => false),
 }))
 
 describe('handleOrganizationList', () => {
@@ -28,8 +35,8 @@ describe('handleOrganizationList', () => {
     const { outputOrganizationList } = await import(
       './output-organization-list.mts'
     )
-    const mockFetch = vi.mocked(fetchOrganization)
-    const mockOutput = vi.mocked(outputOrganizationList)
+    const mockFetch = mockFetchOrganization
+    const mockOutput = mockOutputOrganizationList
 
     const mockData = {
       ok: true,
@@ -61,8 +68,8 @@ describe('handleOrganizationList', () => {
     const { outputOrganizationList } = await import(
       './output-organization-list.mts'
     )
-    const mockFetch = vi.mocked(fetchOrganization)
-    const mockOutput = vi.mocked(outputOrganizationList)
+    const mockFetch = mockFetchOrganization
+    const mockOutput = mockOutputOrganizationList
 
     const mockError = {
       ok: false,
@@ -81,8 +88,8 @@ describe('handleOrganizationList', () => {
     const { outputOrganizationList } = await import(
       './output-organization-list.mts'
     )
-    const mockFetch = vi.mocked(fetchOrganization)
-    const mockOutput = vi.mocked(outputOrganizationList)
+    const mockFetch = mockFetchOrganization
+    const mockOutput = mockOutputOrganizationList
 
     mockFetch.mockResolvedValue({ ok: true, data: [] })
 
@@ -96,8 +103,8 @@ describe('handleOrganizationList', () => {
     const { outputOrganizationList } = await import(
       './output-organization-list.mts'
     )
-    const mockFetch = vi.mocked(fetchOrganization)
-    const mockOutput = vi.mocked(outputOrganizationList)
+    const mockFetch = mockFetchOrganization
+    const mockOutput = mockOutputOrganizationList
 
     mockFetch.mockResolvedValue({ ok: true, data: [] })
 
@@ -109,9 +116,9 @@ describe('handleOrganizationList', () => {
   it('passes debug messages correctly', async () => {
     const { debug, debugDir } = await import('@socketsecurity/lib/debug')
     const { fetchOrganization } = await import('../../../../../src/commands/organization/fetch-organization-list.mts')
-    const mockDebug = vi.mocked(debug)
-    const mockDebugDir = vi.mocked(debugDir)
-    const mockFetch = vi.mocked(fetchOrganization)
+    const mockDebug = mockDebug
+    const mockDebugDir = mockDebugDir
+    const mockFetch = mockFetchOrganization
 
     mockFetch.mockResolvedValue({ ok: true, data: [] })
 
@@ -127,8 +134,8 @@ describe('handleOrganizationList', () => {
   it('handles error case with debug messages', async () => {
     const { debug } = await import('@socketsecurity/lib/debug')
     const { fetchOrganization } = await import('../../../../../src/commands/organization/fetch-organization-list.mts')
-    const mockDebug = vi.mocked(debug)
-    const mockFetch = vi.mocked(fetchOrganization)
+    const mockDebug = mockDebug
+    const mockFetch = mockFetchOrganization
 
     mockFetch.mockResolvedValue({ ok: false, error: 'Network error' })
 

@@ -10,12 +10,15 @@ import {
 } from '../../../../src/src/utils/npm/spec.mts'
 
 // Mock dependencies.
+const mockDefault = vi.hoisted(() => vi.fn())
+const mockCreatePurlObject = vi.hoisted(() => vi.fn())
+
 vi.mock('npm-package-arg', () => ({
-  default: vi.fn(),
+  default: mockDefault,
 }))
 
 vi.mock('../../../../src/utils/purl/parse.mts', () => ({
-  createPurlObject: vi.fn(),
+  createPurlObject: mockCreatePurlObject,
 }))
 
 vi.mock('../../../../src/constants/agents.mts', () => ({
@@ -25,7 +28,7 @@ vi.mock('../../../../src/constants/agents.mts', () => ({
 // Don't mock the module we're testing - only mock its dependencies.
 
 const mockNpmPackageArg = vi.mocked(npmPackageArg)
-const mockCreatePurlObject = vi.mocked(createPurlObject)
+const mockCreatePurlObject = mockCreatePurlObject
 
 describe('npm-spec utilities', () => {
   beforeEach(() => {

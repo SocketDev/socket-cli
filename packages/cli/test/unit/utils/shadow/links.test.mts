@@ -10,8 +10,20 @@ import {
 } from '../../../../src/src/utils/shadow/links.mts'
 
 // Mock the dependencies.
+const mockDefault = vi.hoisted(() => vi.fn())
+const mockGetDistPath = vi.hoisted(() => vi.fn(())
+const mockShouldSkipShadow = vi.hoisted(() => vi.fn())
+const mockGetNpmBinPath = vi.hoisted(() => vi.fn())
+const mockGetNpxBinPath = vi.hoisted(() => vi.fn())
+const mockIsNpmBinPathShadowed = vi.hoisted(() => vi.fn())
+const mockIsNpxBinPathShadowed = vi.hoisted(() => vi.fn())
+const mockGetPnpmBinPath = vi.hoisted(() => vi.fn())
+const mockIsPnpmBinPathShadowed = vi.hoisted(() => vi.fn())
+const mockGetYarnBinPath = vi.hoisted(() => vi.fn())
+const mockIsYarnBinPathShadowed = vi.hoisted(() => vi.fn())
+
 vi.mock('cmd-shim', () => ({
-  default: vi.fn(),
+  default: mockDefault,
 }))
 vi.mock('@socketsecurity/lib/constants/platform', async () => {
   return {
@@ -19,24 +31,24 @@ vi.mock('@socketsecurity/lib/constants/platform', async () => {
   }
 })
 vi.mock('../../../../../src/constants/paths.mts', () => ({
-  getDistPath: vi.fn(() => '/socket-cli/dist'),
+  getDistPath: mockGetDistPath => '/socket-cli/dist'),
 }))
 vi.mock('../dlx/detection.mts', () => ({
-  shouldSkipShadow: vi.fn(),
+  shouldSkipShadow: mockShouldSkipShadow,
 }))
 vi.mock('../npm/paths.mts', () => ({
-  getNpmBinPath: vi.fn(),
-  getNpxBinPath: vi.fn(),
-  isNpmBinPathShadowed: vi.fn(),
-  isNpxBinPathShadowed: vi.fn(),
+  getNpmBinPath: mockGetNpmBinPath,
+  getNpxBinPath: mockGetNpxBinPath,
+  isNpmBinPathShadowed: mockIsNpmBinPathShadowed,
+  isNpxBinPathShadowed: mockIsNpxBinPathShadowed,
 }))
 vi.mock('../pnpm/paths.mts', () => ({
-  getPnpmBinPath: vi.fn(),
-  isPnpmBinPathShadowed: vi.fn(),
+  getPnpmBinPath: mockGetPnpmBinPath,
+  isPnpmBinPathShadowed: mockIsPnpmBinPathShadowed,
 }))
 vi.mock('../yarn/paths.mts', () => ({
-  getYarnBinPath: vi.fn(),
-  isYarnBinPathShadowed: vi.fn(),
+  getYarnBinPath: mockGetYarnBinPath,
+  isYarnBinPathShadowed: mockIsYarnBinPathShadowed,
 }))
 
 describe('shadow-links', () => {
@@ -55,8 +67,8 @@ describe('shadow-links', () => {
     it('should return bin path when shouldSkipShadow is true', async () => {
       const { shouldSkipShadow } = await import('../../../../../src/utils/dlx/detection.mts')
       const { getNpmBinPath } = await import('../../../../../src/utils/npm/paths.mts')
-      const mockShouldSkip = vi.mocked(shouldSkipShadow)
-      const mockGetBin = vi.mocked(getNpmBinPath)
+      const mockShouldSkip = mockShouldSkipShadow
+      const mockGetBin = mockGetNpmBinPath
 
       mockGetBin.mockReturnValue('/usr/local/bin/npm')
       mockShouldSkip.mockReturnValue(true)
@@ -72,9 +84,9 @@ describe('shadow-links', () => {
       const { getNpmBinPath, isNpmBinPathShadowed } = await import(
         '../npm/paths.mts'
       )
-      const mockShouldSkip = vi.mocked(shouldSkipShadow)
-      const mockGetBin = vi.mocked(getNpmBinPath)
-      const mockIsShadowed = vi.mocked(isNpmBinPathShadowed)
+      const mockShouldSkip = mockShouldSkipShadow
+      const mockGetBin = mockGetNpmBinPath
+      const mockIsShadowed = mockIsNpmBinPathShadowed
 
       mockGetBin.mockReturnValue('/usr/local/bin/npm')
       mockShouldSkip.mockReturnValue(false)
@@ -91,9 +103,9 @@ describe('shadow-links', () => {
       const { getNpmBinPath, isNpmBinPathShadowed } = await import(
         '../npm/paths.mts'
       )
-      const mockShouldSkip = vi.mocked(shouldSkipShadow)
-      const mockGetBin = vi.mocked(getNpmBinPath)
-      const mockIsShadowed = vi.mocked(isNpmBinPathShadowed)
+      const mockShouldSkip = mockShouldSkipShadow
+      const mockGetBin = mockGetNpmBinPath
+      const mockIsShadowed = mockIsNpmBinPathShadowed
 
       mockGetBin.mockReturnValue('/usr/local/bin/npm')
       mockShouldSkip.mockReturnValue(false)
@@ -113,9 +125,9 @@ describe('shadow-links', () => {
       )
       const constants = await import('@socketsecurity/lib/constants/platform')
       const mockCmdShim = vi.mocked(cmdShim)
-      const mockShouldSkip = vi.mocked(shouldSkipShadow)
-      const mockGetBin = vi.mocked(getNpmBinPath)
-      const mockIsShadowed = vi.mocked(isNpmBinPathShadowed)
+      const mockShouldSkip = mockShouldSkipShadow
+      const mockGetBin = mockGetNpmBinPath
+      const mockIsShadowed = mockIsNpmBinPathShadowed
 
       // @ts-expect-error - Modifying mock constants.
       constants.WIN32 = true
@@ -139,8 +151,8 @@ describe('shadow-links', () => {
     it('should return bin path when shouldSkipShadow is true', async () => {
       const { shouldSkipShadow } = await import('../../../../../src/utils/dlx/detection.mts')
       const { getNpxBinPath } = await import('../../../../../src/utils/npm/paths.mts')
-      const mockShouldSkip = vi.mocked(shouldSkipShadow)
-      const mockGetBin = vi.mocked(getNpxBinPath)
+      const mockShouldSkip = mockShouldSkipShadow
+      const mockGetBin = mockGetNpxBinPath
 
       mockGetBin.mockReturnValue('/usr/local/bin/npx')
       mockShouldSkip.mockReturnValue(true)
@@ -156,9 +168,9 @@ describe('shadow-links', () => {
       const { getNpxBinPath, isNpxBinPathShadowed } = await import(
         '../npm/paths.mts'
       )
-      const mockShouldSkip = vi.mocked(shouldSkipShadow)
-      const mockGetBin = vi.mocked(getNpxBinPath)
-      const mockIsShadowed = vi.mocked(isNpxBinPathShadowed)
+      const mockShouldSkip = mockShouldSkipShadow
+      const mockGetBin = mockGetNpxBinPath
+      const mockIsShadowed = mockIsNpxBinPathShadowed
 
       mockGetBin.mockReturnValue('/usr/local/bin/npx')
       mockShouldSkip.mockReturnValue(false)
@@ -175,8 +187,8 @@ describe('shadow-links', () => {
     it('should return bin path when shouldSkipShadow is true', async () => {
       const { shouldSkipShadow } = await import('../../../../../src/utils/dlx/detection.mts')
       const { getPnpmBinPath } = await import('../../../../../src/utils/pnpm/paths.mts')
-      const mockShouldSkip = vi.mocked(shouldSkipShadow)
-      const mockGetBin = vi.mocked(getPnpmBinPath)
+      const mockShouldSkip = mockShouldSkipShadow
+      const mockGetBin = mockGetPnpmBinPath
 
       mockGetBin.mockReturnValue('/usr/local/bin/pnpm')
       mockShouldSkip.mockReturnValue(true)
@@ -192,9 +204,9 @@ describe('shadow-links', () => {
       const { getPnpmBinPath, isPnpmBinPathShadowed } = await import(
         '../pnpm/paths.mts'
       )
-      const mockShouldSkip = vi.mocked(shouldSkipShadow)
-      const mockGetBin = vi.mocked(getPnpmBinPath)
-      const mockIsShadowed = vi.mocked(isPnpmBinPathShadowed)
+      const mockShouldSkip = mockShouldSkipShadow
+      const mockGetBin = mockGetPnpmBinPath
+      const mockIsShadowed = mockIsPnpmBinPathShadowed
 
       mockGetBin.mockReturnValue('/usr/local/bin/pnpm')
       mockShouldSkip.mockReturnValue(false)
@@ -214,9 +226,9 @@ describe('shadow-links', () => {
       )
       const constants = await import('@socketsecurity/lib/constants/platform')
       const mockCmdShim = vi.mocked(cmdShim)
-      const mockShouldSkip = vi.mocked(shouldSkipShadow)
-      const mockGetBin = vi.mocked(getPnpmBinPath)
-      const mockIsShadowed = vi.mocked(isPnpmBinPathShadowed)
+      const mockShouldSkip = mockShouldSkipShadow
+      const mockGetBin = mockGetPnpmBinPath
+      const mockIsShadowed = mockIsPnpmBinPathShadowed
 
       // @ts-expect-error - Modifying mock constants.
       constants.WIN32 = true
@@ -240,8 +252,8 @@ describe('shadow-links', () => {
     it('should return bin path when shouldSkipShadow is true', async () => {
       const { shouldSkipShadow } = await import('../../../../../src/utils/dlx/detection.mts')
       const { getYarnBinPath } = await import('../../../../../src/utils/yarn/paths.mts')
-      const mockShouldSkip = vi.mocked(shouldSkipShadow)
-      const mockGetBin = vi.mocked(getYarnBinPath)
+      const mockShouldSkip = mockShouldSkipShadow
+      const mockGetBin = mockGetYarnBinPath
 
       mockGetBin.mockReturnValue('/usr/local/bin/yarn')
       mockShouldSkip.mockReturnValue(true)
@@ -257,9 +269,9 @@ describe('shadow-links', () => {
       const { getYarnBinPath, isYarnBinPathShadowed } = await import(
         '../yarn/paths.mts'
       )
-      const mockShouldSkip = vi.mocked(shouldSkipShadow)
-      const mockGetBin = vi.mocked(getYarnBinPath)
-      const mockIsShadowed = vi.mocked(isYarnBinPathShadowed)
+      const mockShouldSkip = mockShouldSkipShadow
+      const mockGetBin = mockGetYarnBinPath
+      const mockIsShadowed = mockIsYarnBinPathShadowed
 
       mockGetBin.mockReturnValue('/usr/local/bin/yarn')
       mockShouldSkip.mockReturnValue(false)
@@ -276,9 +288,9 @@ describe('shadow-links', () => {
       const { getYarnBinPath, isYarnBinPathShadowed } = await import(
         '../yarn/paths.mts'
       )
-      const mockShouldSkip = vi.mocked(shouldSkipShadow)
-      const mockGetBin = vi.mocked(getYarnBinPath)
-      const mockIsShadowed = vi.mocked(isYarnBinPathShadowed)
+      const mockShouldSkip = mockShouldSkipShadow
+      const mockGetBin = mockGetYarnBinPath
+      const mockIsShadowed = mockIsYarnBinPathShadowed
 
       mockGetBin.mockReturnValue('/usr/local/bin/yarn')
       mockShouldSkip.mockReturnValue(false)
@@ -298,9 +310,9 @@ describe('shadow-links', () => {
       )
       const constants = await import('@socketsecurity/lib/constants/platform')
       const mockCmdShim = vi.mocked(cmdShim)
-      const mockShouldSkip = vi.mocked(shouldSkipShadow)
-      const mockGetBin = vi.mocked(getYarnBinPath)
-      const mockIsShadowed = vi.mocked(isYarnBinPathShadowed)
+      const mockShouldSkip = mockShouldSkipShadow
+      const mockGetBin = mockGetYarnBinPath
+      const mockIsShadowed = mockIsYarnBinPathShadowed
 
       // @ts-expect-error - Modifying mock constants.
       constants.WIN32 = true

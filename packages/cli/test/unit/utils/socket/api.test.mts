@@ -1,13 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies first.
+const mockGetConfigValueOrUndef = vi.hoisted(() => vi.fn())
+const mockSpinner = vi.hoisted(() => vi.fn(())
+const mockStart = vi.hoisted(() => vi.fn())
+const mockStop = vi.hoisted(() => vi.fn())
+const mockSucceed = vi.hoisted(() => vi.fn())
+const mockFail = vi.hoisted(() => vi.fn())
+
 vi.mock('../../../../../src/utils/config.mts', () => ({
-  getConfigValueOrUndef: vi.fn(),
+  getConfigValueOrUndef: mockGetConfigValueOrUndef,
 }))
 
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
-  fail: vi.fn(),
+  fail: mockFail,
   info: vi.fn(),
   log: vi.fn(),
   success: vi.fn(),
@@ -20,11 +27,11 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 }))
 
 vi.mock('@socketsecurity/lib/spinner', () => ({
-  Spinner: vi.fn(() => ({
-    start: vi.fn(),
-    stop: vi.fn(),
-    succeed: vi.fn(),
-    fail: vi.fn(),
+  Spinner: mockSpinner => ({
+    start: mockStart,
+    stop: mockStop,
+    succeed: mockSucceed,
+    fail: mockFail,
   })),
 }))
 
@@ -60,14 +67,14 @@ describe('api utilities', () => {
     })
 
     it('falls back to config value when env not set', async () => {
-      vi.mocked(getConfigValueOrUndef).mockReturnValue('https://config.api.url')
+      mockGetConfigValueOrUndef.mockReturnValue('https://config.api.url')
 
       const result = getDefaultApiBaseUrl()
       expect(result).toBe('https://config.api.url')
     })
 
     it('returns default API_V0_URL when neither env nor config set', async () => {
-      vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
+      mockGetConfigValueOrUndef.mockReturnValue(undefined)
 
       const result = getDefaultApiBaseUrl()
       expect(result).toBe('https://api.socket.dev/v0/')
@@ -153,10 +160,10 @@ describe('api utilities', () => {
       } as any)
 
       const mockSpinner = {
-        start: vi.fn(),
-        stop: vi.fn(),
-        succeed: vi.fn(),
-        fail: vi.fn(),
+        start: mockStart,
+        stop: mockStop,
+        succeed: mockSucceed,
+        fail: mockFail,
       }
 
       await handleApiCall(mockApiPromise, { spinner: mockSpinner as any })
@@ -173,10 +180,10 @@ describe('api utilities', () => {
       } as any)
 
       const mockSpinner = {
-        start: vi.fn(),
-        stop: vi.fn(),
-        succeed: vi.fn(),
-        fail: vi.fn(),
+        start: mockStart,
+        stop: mockStop,
+        succeed: mockSucceed,
+        fail: mockFail,
       }
 
       await handleApiCallNoSpinner(mockApiPromise, {

@@ -7,12 +7,15 @@ import {
 import { handleDeleteScan } from '../../../../src/src/commands/scan/handle-delete-scan.mts'
 
 // Mock the dependencies.
+const mockFetchDeleteOrgFullScan = vi.hoisted(() => vi.fn())
+const mockOutputDeleteScan = vi.hoisted(() => vi.fn())
+
 vi.mock('../../../../../src/commands/scan/fetch-delete-org-full-scan.mts', () => ({
-  fetchDeleteOrgFullScan: vi.fn(),
+  fetchDeleteOrgFullScan: mockFetchDeleteOrgFullScan,
 }))
 
 vi.mock('../../../../../src/commands/scan/output-delete-scan.mts', () => ({
-  outputDeleteScan: vi.fn(),
+  outputDeleteScan: mockOutputDeleteScan,
 }))
 
 describe('handleDeleteScan', () => {
@@ -21,8 +24,8 @@ describe('handleDeleteScan', () => {
       './fetch-delete-org-full-scan.mts'
     )
     const { outputDeleteScan } = await import('../../../../../src/commands/scan/output-delete-scan.mts')
-    const mockFetch = vi.mocked(fetchDeleteOrgFullScan)
-    const mockOutput = vi.mocked(outputDeleteScan)
+    const mockFetch = mockFetchDeleteOrgFullScan
+    const mockOutput = mockOutputDeleteScan
 
     const mockResult = createSuccessResult({
       deleted: true,
@@ -42,8 +45,8 @@ describe('handleDeleteScan', () => {
       './fetch-delete-org-full-scan.mts'
     )
     const { outputDeleteScan } = await import('../../../../../src/commands/scan/output-delete-scan.mts')
-    const mockFetch = vi.mocked(fetchDeleteOrgFullScan)
-    const mockOutput = vi.mocked(outputDeleteScan)
+    const mockFetch = mockFetchDeleteOrgFullScan
+    const mockOutput = mockOutputDeleteScan
 
     const mockError = createErrorResult('Scan not found')
     mockFetch.mockResolvedValue(mockError)
@@ -59,8 +62,8 @@ describe('handleDeleteScan', () => {
       './fetch-delete-org-full-scan.mts'
     )
     const { outputDeleteScan } = await import('../../../../../src/commands/scan/output-delete-scan.mts')
-    const mockFetch = vi.mocked(fetchDeleteOrgFullScan)
-    const mockOutput = vi.mocked(outputDeleteScan)
+    const mockFetch = mockFetchDeleteOrgFullScan
+    const mockOutput = mockOutputDeleteScan
 
     mockFetch.mockResolvedValue(createSuccessResult({}))
 
@@ -73,7 +76,7 @@ describe('handleDeleteScan', () => {
     const { fetchDeleteOrgFullScan } = await import(
       './fetch-delete-org-full-scan.mts'
     )
-    const mockFetch = vi.mocked(fetchDeleteOrgFullScan)
+    const mockFetch = mockFetchDeleteOrgFullScan
 
     mockFetch.mockResolvedValue(createSuccessResult({}))
 
@@ -96,8 +99,8 @@ describe('handleDeleteScan', () => {
       './fetch-delete-org-full-scan.mts'
     )
     const { outputDeleteScan } = await import('../../../../../src/commands/scan/output-delete-scan.mts')
-    const mockFetch = vi.mocked(fetchDeleteOrgFullScan)
-    const mockOutput = vi.mocked(outputDeleteScan)
+    const mockFetch = mockFetchDeleteOrgFullScan
+    const mockOutput = mockOutputDeleteScan
 
     mockFetch.mockResolvedValue(
       createSuccessResult({

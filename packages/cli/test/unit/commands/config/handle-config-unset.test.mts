@@ -15,16 +15,19 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 // Mock the dependencies.
+const mockOutputConfigUnset = vi.hoisted(() => vi.fn())
+const mockUpdateConfigValue = vi.hoisted(() => vi.fn())
+
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
 vi.mock('../../../../../src/commands/config/output-config-unset.mts', () => ({
-  outputConfigUnset: vi.fn(),
+  outputConfigUnset: mockOutputConfigUnset,
 }))
 vi.mock('../../../../../src/utils/config.mts', () => ({
-  updateConfigValue: vi.fn(),
+  updateConfigValue: mockUpdateConfigValue,
 }))
 
 describe('handleConfigUnset', () => {
@@ -37,7 +40,7 @@ describe('handleConfigUnset', () => {
     const { outputConfigUnset } = await import('../../../../../src/commands/config/output-config-unset.mts')
 
     const mockResult = createSuccessResult(undefined)
-    vi.mocked(updateConfigValue).mockReturnValue(mockResult)
+    mockUpdateConfigValue.mockReturnValue(mockResult)
 
     await handleConfigUnset({
       key: 'apiToken',
@@ -53,7 +56,7 @@ describe('handleConfigUnset', () => {
     const { outputConfigUnset } = await import('../../../../../src/commands/config/output-config-unset.mts')
 
     const mockResult = createErrorResult('Cannot unset config')
-    vi.mocked(updateConfigValue).mockReturnValue(mockResult)
+    mockUpdateConfigValue.mockReturnValue(mockResult)
 
     await handleConfigUnset({
       key: 'org',
@@ -69,7 +72,7 @@ describe('handleConfigUnset', () => {
     const { outputConfigUnset } = await import('../../../../../src/commands/config/output-config-unset.mts')
 
     const mockResult = createSuccessResult(undefined)
-    vi.mocked(updateConfigValue).mockReturnValue(mockResult)
+    mockUpdateConfigValue.mockReturnValue(mockResult)
 
     await handleConfigUnset({
       key: 'repoName',
@@ -88,7 +91,7 @@ describe('handleConfigUnset', () => {
 
     for (const key of keys) {
       const mockResult = createSuccessResult(undefined)
-      vi.mocked(updateConfigValue).mockReturnValue(mockResult)
+      mockUpdateConfigValue.mockReturnValue(mockResult)
 
       // eslint-disable-next-line no-await-in-loop
       await handleConfigUnset({
@@ -106,7 +109,7 @@ describe('handleConfigUnset', () => {
     const { outputConfigUnset } = await import('../../../../../src/commands/config/output-config-unset.mts')
 
     const mockResult = createSuccessResult(undefined)
-    vi.mocked(updateConfigValue).mockReturnValue(mockResult)
+    mockUpdateConfigValue.mockReturnValue(mockResult)
 
     await handleConfigUnset({
       key: 'apiToken',
@@ -122,7 +125,7 @@ describe('handleConfigUnset', () => {
 
     // Even if already unset, the function should still succeed.
     const mockResult = createSuccessResult(undefined)
-    vi.mocked(updateConfigValue).mockReturnValue(mockResult)
+    mockUpdateConfigValue.mockReturnValue(mockResult)
 
     await handleConfigUnset({
       key: 'org',

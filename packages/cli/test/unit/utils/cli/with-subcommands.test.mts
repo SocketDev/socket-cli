@@ -8,6 +8,14 @@ import {
 } from '../../../../src/src/utils/cli/with-subcommands.mts'
 
 // Mock meow.
+const mockGetConfigValueOrUndef = vi.hoisted(() => vi.fn())
+const mockIsConfigFromFlag = vi.hoisted(() => vi.fn(())
+const mockOverrideCachedConfig = vi.hoisted(() => vi.fn())
+const mockOverrideConfigApiToken = vi.hoisted(() => vi.fn())
+const mockIsDebug = vi.hoisted(() => vi.fn(())
+const mockGetVisibleTokenPrefix = vi.hoisted(() => vi.fn(())
+const mockSocketPackageLink = vi.hoisted(() => vi.fn(pkg => pkg))
+
 vi.mock('../../../../../src/utils/cli/meow.mts', () => ({
   default: vi.fn((helpText, options) => {
     // Simulate meow processing flags with defaults.
@@ -61,25 +69,25 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 
 // Mock config utilities.
 vi.mock('../../../../../src/utils/config.mts', () => ({
-  getConfigValueOrUndef: vi.fn(),
-  isConfigFromFlag: vi.fn(() => false),
-  overrideCachedConfig: vi.fn(),
-  overrideConfigApiToken: vi.fn(),
+  getConfigValueOrUndef: mockGetConfigValueOrUndef,
+  isConfigFromFlag: mockIsConfigFromFlag => false),
+  overrideCachedConfig: mockOverrideCachedConfig,
+  overrideConfigApiToken: mockOverrideConfigApiToken,
 }))
 
 // Mock debug utility.
 vi.mock('../../../../../src/utils/debug.mts', () => ({
-  isDebug: vi.fn(() => false),
+  isDebug: mockIsDebug => false),
 }))
 
 // Mock SDK utility.
 vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
-  getVisibleTokenPrefix: vi.fn(() => 'test'),
+  getVisibleTokenPrefix: mockGetVisibleTokenPrefix => 'test'),
 }))
 
 // Mock terminal link utility.
 vi.mock('../../../../../src/utils/terminal/link.mts', () => ({
-  socketPackageLink: vi.fn(pkg => pkg),
+  socketPackageLink: mockSocketPackageLink,
 }))
 
 // Mock process.exit.

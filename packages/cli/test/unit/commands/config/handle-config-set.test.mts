@@ -15,21 +15,27 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 // Mock the dependencies.
+const mockOutputConfigSet = vi.hoisted(() => vi.fn())
+const mockUpdateConfigValue = vi.hoisted(() => vi.fn())
+const mockDebug = vi.hoisted(() => vi.fn())
+const mockDebugDir = vi.hoisted(() => vi.fn())
+const mockIsDebug = vi.hoisted(() => vi.fn(())
+
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
 vi.mock('../../../../../src/commands/config/output-config-set.mts', () => ({
-  outputConfigSet: vi.fn(),
+  outputConfigSet: mockOutputConfigSet,
 }))
 vi.mock('../../../../../src/utils/config.mts', () => ({
-  updateConfigValue: vi.fn(),
+  updateConfigValue: mockUpdateConfigValue,
 }))
 vi.mock('@socketsecurity/lib/debug', () => ({
-  debug: vi.fn(),
-  debugDir: vi.fn(),
-  isDebug: vi.fn(() => false),
+  debug: mockDebug,
+  debugDir: mockDebugDir,
+  isDebug: mockIsDebug => false),
 }))
 
 describe('handleConfigSet', () => {
@@ -42,7 +48,7 @@ describe('handleConfigSet', () => {
     const { outputConfigSet } = await import('../../../../../src/commands/config/output-config-set.mts')
 
     const mockResult = createSuccessResult('new-value')
-    vi.mocked(updateConfigValue).mockReturnValue(mockResult)
+    mockUpdateConfigValue.mockReturnValue(mockResult)
 
     await handleConfigSet({
       key: 'apiToken',
@@ -62,7 +68,7 @@ describe('handleConfigSet', () => {
     const { outputConfigSet } = await import('../../../../../src/commands/config/output-config-set.mts')
 
     const mockResult = createErrorResult('Config update failed')
-    vi.mocked(updateConfigValue).mockReturnValue(mockResult)
+    mockUpdateConfigValue.mockReturnValue(mockResult)
 
     await handleConfigSet({
       key: 'org',
@@ -79,7 +85,7 @@ describe('handleConfigSet', () => {
     const { outputConfigSet } = await import('../../../../../src/commands/config/output-config-set.mts')
 
     const mockResult = createSuccessResult('markdown-value')
-    vi.mocked(updateConfigValue).mockReturnValue(mockResult)
+    mockUpdateConfigValue.mockReturnValue(mockResult)
 
     await handleConfigSet({
       key: 'repoName',
@@ -95,7 +101,7 @@ describe('handleConfigSet', () => {
     const { debug, debugDir } = await import('@socketsecurity/lib/debug')
     const { updateConfigValue } = await import('../../../../../src/utils/config.mts')
 
-    vi.mocked(updateConfigValue).mockReturnValue(
+    mockUpdateConfigValue.mockReturnValue(
       createSuccessResult('debug-value'),
     )
 
@@ -120,7 +126,7 @@ describe('handleConfigSet', () => {
     const { debug } = await import('@socketsecurity/lib/debug')
     const { updateConfigValue } = await import('../../../../../src/utils/config.mts')
 
-    vi.mocked(updateConfigValue).mockReturnValue(createErrorResult('Failed'))
+    mockUpdateConfigValue.mockReturnValue(createErrorResult('Failed'))
 
     await handleConfigSet({
       key: 'apiToken',
@@ -137,7 +143,7 @@ describe('handleConfigSet', () => {
     const keys = ['apiToken', 'org', 'repoName', 'apiBaseUrl', 'apiProxy']
 
     for (const key of keys) {
-      vi.mocked(updateConfigValue).mockReturnValue(
+      mockUpdateConfigValue.mockReturnValue(
         createSuccessResult(`value-for-${key}`),
       )
 

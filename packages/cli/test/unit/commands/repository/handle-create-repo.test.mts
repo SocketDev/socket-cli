@@ -3,16 +3,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { handleCreateRepo } from '../../../../src/src/commands/repository/handle-create-repo.mts'
 
 // Mock the dependencies.
+const mockFetchCreateRepo = vi.hoisted(() => vi.fn())
+const mockOutputCreateRepo = vi.hoisted(() => vi.fn())
+const mockDebug = vi.hoisted(() => vi.fn())
+const mockDebugDir = vi.hoisted(() => vi.fn())
+const mockIsDebug = vi.hoisted(() => vi.fn(())
+
 vi.mock('../../../../src/commands/repository/fetch-create-repo.mts', () => ({
-  fetchCreateRepo: vi.fn(),
+  fetchCreateRepo: mockFetchCreateRepo,
 }))
 vi.mock('../../../../src/commands/repository/output-create-repo.mts', () => ({
-  outputCreateRepo: vi.fn(),
+  outputCreateRepo: mockOutputCreateRepo,
 }))
 vi.mock('@socketsecurity/lib/debug', () => ({
-  debug: vi.fn(),
-  debugDir: vi.fn(),
-  isDebug: vi.fn(() => false),
+  debug: mockDebug,
+  debugDir: mockDebugDir,
+  isDebug: mockIsDebug => false),
 }))
 
 describe('handleCreateRepo', () => {
@@ -33,7 +39,7 @@ describe('handleCreateRepo', () => {
         visibility: 'private',
       },
     }
-    vi.mocked(fetchCreateRepo).mockResolvedValue(mockData)
+    mockFetchCreateRepo.mockResolvedValue(mockData)
 
     await handleCreateRepo(
       {
@@ -66,7 +72,7 @@ describe('handleCreateRepo', () => {
       ok: false,
       error: new Error('Repository already exists'),
     }
-    vi.mocked(fetchCreateRepo).mockResolvedValue(mockError)
+    mockFetchCreateRepo.mockResolvedValue(mockError)
 
     await handleCreateRepo(
       {
@@ -100,7 +106,7 @@ describe('handleCreateRepo', () => {
       ok: true,
       data: { id: '456', name: 'test-repo' },
     }
-    vi.mocked(fetchCreateRepo).mockResolvedValue(mockData)
+    mockFetchCreateRepo.mockResolvedValue(mockData)
 
     await handleCreateRepo(
       {
@@ -129,7 +135,7 @@ describe('handleCreateRepo', () => {
       ok: true,
       data: { id: '789', name: 'debug-repo' },
     }
-    vi.mocked(fetchCreateRepo).mockResolvedValue(mockData)
+    mockFetchCreateRepo.mockResolvedValue(mockData)
 
     await handleCreateRepo(
       {
@@ -159,7 +165,7 @@ describe('handleCreateRepo', () => {
     const { debug } = await import('@socketsecurity/lib/debug')
     const { fetchCreateRepo } = await import('../../../../src/commands/repository/fetch-create-repo.mts')
 
-    vi.mocked(fetchCreateRepo).mockResolvedValue({
+    mockFetchCreateRepo.mockResolvedValue({
       ok: false,
       error: new Error('Failed'),
     })
@@ -188,7 +194,7 @@ describe('handleCreateRepo', () => {
     const visibilities = ['public', 'private', 'internal']
 
     for (const visibility of visibilities) {
-      vi.mocked(fetchCreateRepo).mockResolvedValue({
+      mockFetchCreateRepo.mockResolvedValue({
         ok: true,
         data: { id: '1', name: 'repo', visibility },
       })
@@ -218,7 +224,7 @@ describe('handleCreateRepo', () => {
       '../../../../src/commands/repository/output-create-repo.mts'
     )
 
-    vi.mocked(fetchCreateRepo).mockResolvedValue({
+    mockFetchCreateRepo.mockResolvedValue({
       ok: true,
       data: { id: '1', name: 'minimal-repo' },
     })

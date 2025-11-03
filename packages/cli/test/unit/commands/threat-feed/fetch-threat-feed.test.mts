@@ -7,8 +7,10 @@ import {
 import { fetchThreatFeed } from '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
 
 // Mock the dependencies.
+const mockQueryApiSafeJson = vi.hoisted(() => vi.fn())
+
 vi.mock('../../../../src/utils/socket/api.mts', () => ({
-  queryApiSafeJson: vi.fn(),
+  queryApiSafeJson: mockQueryApiSafeJson,
 }))
 
 describe('fetchThreatFeed', () => {
@@ -20,7 +22,7 @@ describe('fetchThreatFeed', () => {
     const { queryApiSafeJson } = await import(
       '../../../../src/utils/socket/api.mts'
     )
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
+    const mockQueryApi = mockQueryApiSafeJson
 
     const mockData = {
       threats: [
@@ -70,7 +72,7 @@ describe('fetchThreatFeed', () => {
     const { queryApiSafeJson } = await import(
       '../../../../src/utils/socket/api.mts',
     )
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
+    const mockQueryApi = mockQueryApiSafeJson
 
     const error = createErrorResult('Failed to fetch threat feed', {
       code: 1,
@@ -96,7 +98,7 @@ describe('fetchThreatFeed', () => {
     const { queryApiSafeJson } = await import(
       '../../../../src/utils/socket/api.mts',
     )
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
+    const mockQueryApi = mockQueryApiSafeJson
 
     mockQueryApi.mockResolvedValue(
       createErrorResult('Threat feed service unavailable', { code: 503 }),
@@ -121,7 +123,7 @@ describe('fetchThreatFeed', () => {
     const { queryApiSafeJson } = await import(
       '../../../../src/utils/socket/api.mts',
     )
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
+    const mockQueryApi = mockQueryApiSafeJson
 
     mockQueryApi.mockResolvedValue(createSuccessResult({}))
 
@@ -146,7 +148,7 @@ describe('fetchThreatFeed', () => {
     const { queryApiSafeJson } = await import(
       '../../../../src/utils/socket/api.mts',
     )
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
+    const mockQueryApi = mockQueryApiSafeJson
 
     mockQueryApi.mockResolvedValue(createSuccessResult({ threats: [] }))
 
@@ -171,7 +173,7 @@ describe('fetchThreatFeed', () => {
     const { queryApiSafeJson } = await import(
       '../../../../src/utils/socket/api.mts',
     )
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
+    const mockQueryApi = mockQueryApiSafeJson
 
     mockQueryApi.mockResolvedValue(createSuccessResult({ threats: [] }))
 
@@ -196,7 +198,7 @@ describe('fetchThreatFeed', () => {
     const { queryApiSafeJson } = await import(
       '../../../../src/utils/socket/api.mts',
     )
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
+    const mockQueryApi = mockQueryApiSafeJson
 
     mockQueryApi.mockResolvedValue(createSuccessResult({ threats: [] }))
 
@@ -221,7 +223,7 @@ describe('fetchThreatFeed', () => {
     const { queryApiSafeJson } = await import(
       '../../../../src/utils/socket/api.mts',
     )
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
+    const mockQueryApi = mockQueryApiSafeJson
 
     mockQueryApi.mockResolvedValue(createSuccessResult({}))
 

@@ -10,6 +10,8 @@ import {
 } from '../../../../src/src/cli/completion.mts'
 
 // Mock node:fs.
+const mockGetSocketAppDataPath = vi.hoisted(() => vi.fn(())
+
 vi.mock('node:fs', () => ({
   default: {
     existsSync: vi.fn(),
@@ -19,7 +21,7 @@ vi.mock('node:fs', () => ({
 // Mock constants/paths.
 vi.mock('../../../../../src/constants/paths.mts', () => ({
   rootPath: '/mock/dist/path',
-  getSocketAppDataPath: vi.fn(() => '/mock/app/data'),
+  getSocketAppDataPath: mockGetSocketAppDataPath => '/mock/app/data'),
 }))
 
 describe('completion utilities', () => {

@@ -7,12 +7,15 @@ import {
 import { handleCreateGithubScan } from '../../../../src/src/commands/scan/handle-create-github-scan.mts'
 
 // Mock the dependencies.
+const mockCreateScanFromGithub = vi.hoisted(() => vi.fn())
+const mockOutputScanGithub = vi.hoisted(() => vi.fn())
+
 vi.mock('../../../../../src/commands/scan/create-scan-from-github.mts', () => ({
-  createScanFromGithub: vi.fn(),
+  createScanFromGithub: mockCreateScanFromGithub,
 }))
 
 vi.mock('../../../../../src/commands/scan/output-scan-github.mts', () => ({
-  outputScanGithub: vi.fn(),
+  outputScanGithub: mockOutputScanGithub,
 }))
 
 describe('handleCreateGithubScan', () => {
@@ -25,8 +28,8 @@ describe('handleCreateGithubScan', () => {
       '../../../../../src/commands/scan/create-scan-from-github.mts'
     )
     const { outputScanGithub } = await import('../../../../../src/commands/scan/output-scan-github.mts')
-    const mockCreate = vi.mocked(createScanFromGithub)
-    const mockOutput = vi.mocked(outputScanGithub)
+    const mockCreate = mockCreateScanFromGithub
+    const mockOutput = mockOutputScanGithub
 
     const mockResult = createSuccessResult({
       scanId: 'scan-123',
@@ -65,8 +68,8 @@ describe('handleCreateGithubScan', () => {
       './create-scan-from-github.mts'
     )
     const { outputScanGithub } = await import('../../../../../src/commands/scan/output-scan-github.mts')
-    const mockCreate = vi.mocked(createScanFromGithub)
-    const mockOutput = vi.mocked(outputScanGithub)
+    const mockCreate = mockCreateScanFromGithub
+    const mockOutput = mockOutputScanGithub
 
     const mockError = createErrorResult('GitHub authentication failed')
     mockCreate.mockResolvedValue(mockError)
@@ -89,7 +92,7 @@ describe('handleCreateGithubScan', () => {
     const { createScanFromGithub } = await import(
       './create-scan-from-github.mts'
     )
-    const mockCreate = vi.mocked(createScanFromGithub)
+    const mockCreate = mockCreateScanFromGithub
 
     mockCreate.mockResolvedValue(createSuccessResult({}))
 
@@ -113,7 +116,7 @@ describe('handleCreateGithubScan', () => {
     const { createScanFromGithub } = await import(
       './create-scan-from-github.mts'
     )
-    const mockCreate = vi.mocked(createScanFromGithub)
+    const mockCreate = mockCreateScanFromGithub
 
     mockCreate.mockResolvedValue(createSuccessResult({}))
 
@@ -138,8 +141,8 @@ describe('handleCreateGithubScan', () => {
       './create-scan-from-github.mts'
     )
     const { outputScanGithub } = await import('../../../../../src/commands/scan/output-scan-github.mts')
-    const mockCreate = vi.mocked(createScanFromGithub)
-    const mockOutput = vi.mocked(outputScanGithub)
+    const mockCreate = mockCreateScanFromGithub
+    const mockOutput = mockOutputScanGithub
 
     mockCreate.mockResolvedValue(createSuccessResult({}))
 
@@ -161,7 +164,7 @@ describe('handleCreateGithubScan', () => {
     const { createScanFromGithub } = await import(
       './create-scan-from-github.mts'
     )
-    const mockCreate = vi.mocked(createScanFromGithub)
+    const mockCreate = mockCreateScanFromGithub
 
     mockCreate.mockResolvedValue(createSuccessResult({}))
 

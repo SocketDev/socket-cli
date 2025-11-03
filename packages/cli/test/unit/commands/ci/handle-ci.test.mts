@@ -37,11 +37,14 @@ const {
 })
 
 // Mock the dependencies.
+const mockDebugLog = vi.hoisted(() => vi.fn())
+const mockIsDebug = vi.hoisted(() => vi.fn(())
+
 vi.mock('@socketsecurity/lib/debug', () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
-  debugLog: vi.fn(),
-  isDebug: vi.fn(() => false),
+  debugLog: mockDebugLog,
+  isDebug: mockIsDebug => false),
 }))
 
 vi.mock('@socketsecurity/lib/logger', () => ({

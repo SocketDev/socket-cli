@@ -6,11 +6,14 @@ import {
 } from '../../../../../src/commands/../../../test/helpers/index.mts'
 import { handleDependencies } from '../../../../src/src/commands/organization/handle-dependencies.mts'
 
+const mockFetchDependencies = vi.hoisted(() => vi.fn())
+const mockOutputDependencies = vi.hoisted(() => vi.fn())
+
 vi.mock('../../../../../src/commands/organization/fetch-dependencies.mts', () => ({
-  fetchDependencies: vi.fn(),
+  fetchDependencies: mockFetchDependencies,
 }))
 vi.mock('../../../../../src/commands/organization/output-dependencies.mts', () => ({
-  outputDependencies: vi.fn(),
+  outputDependencies: mockOutputDependencies,
 }))
 
 describe('handleDependencies', () => {
@@ -32,8 +35,8 @@ describe('handleDependencies', () => {
       },
     ])
 
-    vi.mocked(fetchDependencies).mockResolvedValue(mockResult)
-    vi.mocked(outputDependencies).mockResolvedValue()
+    mockFetchDependencies.mockResolvedValue(mockResult)
+    mockOutputDependencies.mockResolvedValue()
 
     await handleDependencies({
       limit: 10,
@@ -58,8 +61,8 @@ describe('handleDependencies', () => {
       error: new Error('Fetch failed'),
     }
 
-    vi.mocked(fetchDependencies).mockResolvedValue(mockResult)
-    vi.mocked(outputDependencies).mockResolvedValue()
+    mockFetchDependencies.mockResolvedValue(mockResult)
+    mockOutputDependencies.mockResolvedValue()
 
     await handleDependencies({
       limit: 20,
@@ -81,8 +84,8 @@ describe('handleDependencies', () => {
 
     const mockResult = createSuccessResult([])
 
-    vi.mocked(fetchDependencies).mockResolvedValue(mockResult)
-    vi.mocked(outputDependencies).mockResolvedValue()
+    mockFetchDependencies.mockResolvedValue(mockResult)
+    mockOutputDependencies.mockResolvedValue()
 
     await handleDependencies({
       limit: 5,
@@ -103,8 +106,8 @@ describe('handleDependencies', () => {
 
     const mockResult = createSuccessResult([])
 
-    vi.mocked(fetchDependencies).mockResolvedValue(mockResult)
-    vi.mocked(outputDependencies).mockResolvedValue()
+    mockFetchDependencies.mockResolvedValue(mockResult)
+    mockOutputDependencies.mockResolvedValue()
 
     await handleDependencies({
       limit: 100,

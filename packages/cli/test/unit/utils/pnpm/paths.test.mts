@@ -10,13 +10,15 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
+const mockFindBinPathDetailsSync = vi.hoisted(() => vi.fn())
+
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
 vi.mock('../fs/path-resolve.mts', () => ({
-  findBinPathDetailsSync: vi.fn(),
+  findBinPathDetailsSync: mockFindBinPathDetailsSync,
 }))
 
 describe('pnpm-paths utilities', () => {
@@ -54,7 +56,7 @@ describe('pnpm-paths utilities', () => {
       const { findBinPathDetailsSync } = vi.mocked(
         await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
-      findBinPathDetailsSync.mockReturnValue({
+      mockFindBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/pnpm',
         shadowed: false,
       })
@@ -69,7 +71,7 @@ describe('pnpm-paths utilities', () => {
       const { findBinPathDetailsSync } = vi.mocked(
         await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
-      findBinPathDetailsSync.mockReturnValue({
+      mockFindBinPathDetailsSync.mockReturnValue({
         path: undefined,
         shadowed: false,
       })
@@ -86,7 +88,7 @@ describe('pnpm-paths utilities', () => {
       const { findBinPathDetailsSync } = vi.mocked(
         await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
-      findBinPathDetailsSync.mockReturnValue({
+      mockFindBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/pnpm',
         shadowed: false,
       })
@@ -102,7 +104,7 @@ describe('pnpm-paths utilities', () => {
       const { findBinPathDetailsSync } = vi.mocked(
         await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
-      findBinPathDetailsSync.mockReturnValue({
+      mockFindBinPathDetailsSync.mockReturnValue({
         path: 'C:\\Program Files\\pnpm\\bin\\pnpm.cmd',
         shadowed: false,
       })
@@ -116,7 +118,7 @@ describe('pnpm-paths utilities', () => {
       const { findBinPathDetailsSync } = vi.mocked(
         await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
-      findBinPathDetailsSync.mockReturnValue({
+      mockFindBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/lib/node_modules/.bin/pnpm',
         shadowed: false,
       })
@@ -130,7 +132,7 @@ describe('pnpm-paths utilities', () => {
       const { findBinPathDetailsSync } = vi.mocked(
         await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
-      findBinPathDetailsSync.mockReturnValue({
+      mockFindBinPathDetailsSync.mockReturnValue({
         path: '/home/user/.cache/corepack/pnpm/9.0.0/bin/pnpm',
         shadowed: false,
       })
@@ -150,7 +152,7 @@ describe('pnpm-paths utilities', () => {
         path: '/usr/local/bin/pnpm',
         shadowed: true,
       }
-      findBinPathDetailsSync.mockReturnValue(mockDetails)
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
 
       const result = getPnpmBinPathDetails()
 
@@ -166,7 +168,7 @@ describe('pnpm-paths utilities', () => {
         path: '/usr/local/bin/pnpm',
         shadowed: false,
       }
-      findBinPathDetailsSync.mockReturnValue(mockDetails)
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
 
       const result1 = getPnpmBinPathDetails()
       const result2 = getPnpmBinPathDetails()
@@ -183,7 +185,7 @@ describe('pnpm-paths utilities', () => {
         path: undefined,
         shadowed: false,
       }
-      findBinPathDetailsSync.mockReturnValue(mockDetails)
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
 
       const result = getPnpmBinPathDetails()
 
@@ -198,7 +200,7 @@ describe('pnpm-paths utilities', () => {
         path: '/usr/local/bin/pnpm',
         shadowed: true,
       }
-      findBinPathDetailsSync.mockReturnValue(mockDetails)
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
 
       const result = getPnpmBinPathDetails()
 
@@ -214,7 +216,7 @@ describe('pnpm-paths utilities', () => {
         path: '/usr/local/bin/pnpm',
         shadowed: false,
       }
-      findBinPathDetailsSync.mockReturnValue(mockDetails)
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
 
       const result1 = getPnpmBinPathDetails()
       const result2 = getPnpmBinPathDetails()
@@ -229,7 +231,7 @@ describe('pnpm-paths utilities', () => {
       const { findBinPathDetailsSync } = vi.mocked(
         await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
-      findBinPathDetailsSync.mockReturnValue({
+      mockFindBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/pnpm',
         shadowed: true,
       })
@@ -243,7 +245,7 @@ describe('pnpm-paths utilities', () => {
       const { findBinPathDetailsSync } = vi.mocked(
         await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
-      findBinPathDetailsSync.mockReturnValue({
+      mockFindBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/pnpm',
         shadowed: false,
       })
@@ -257,7 +259,7 @@ describe('pnpm-paths utilities', () => {
       const { findBinPathDetailsSync } = vi.mocked(
         await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
-      findBinPathDetailsSync.mockReturnValue({
+      mockFindBinPathDetailsSync.mockReturnValue({
         path: undefined,
         shadowed: false,
       })
@@ -271,7 +273,7 @@ describe('pnpm-paths utilities', () => {
       const { findBinPathDetailsSync } = vi.mocked(
         await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
-      findBinPathDetailsSync.mockReturnValue({
+      mockFindBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/pnpm',
         shadowed: true,
       })
@@ -291,7 +293,7 @@ describe('pnpm-paths utilities', () => {
       const { findBinPathDetailsSync } = vi.mocked(
         await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
-      findBinPathDetailsSync.mockReturnValue({
+      mockFindBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/pnpm',
         shadowed: true,
       })

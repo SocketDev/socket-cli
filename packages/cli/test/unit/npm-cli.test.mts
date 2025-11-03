@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock shadow/npm/bin module.
+const mockDefault = vi.hoisted(() => vi.fn())
+
 vi.mock('./shadow/npm/bin.mts', () => ({
-  default: vi.fn(),
+  default: mockDefault,
 }))
 
 // Import modules after mocks are set up.

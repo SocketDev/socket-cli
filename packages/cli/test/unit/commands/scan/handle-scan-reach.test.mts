@@ -16,37 +16,47 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
+const mockGetSpinner = vi.hoisted(() => vi.fn(())
+const mockStart = vi.hoisted(() => vi.fn())
+const mockStop = vi.hoisted(() => vi.fn())
+const mockSuccessAndStop = vi.hoisted(() => vi.fn())
+const mockFetchSupportedScanFileNames = vi.hoisted(() => vi.fn())
+const mockOutputScanReach = vi.hoisted(() => vi.fn())
+const mockPerformReachabilityAnalysis = vi.hoisted(() => vi.fn())
+const mockCheckCommandInput = vi.hoisted(() => vi.fn())
+const mockGetPackageFilesForScan = vi.hoisted(() => vi.fn())
+
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
 vi.mock('@socketsecurity/lib/constants/process', () => ({
-  getSpinner: vi.fn(() => ({
-    start: vi.fn(),
-    stop: vi.fn(),
-    successAndStop: vi.fn(),
+  getSpinner: mockGetSpinner => ({
+    start: mockStart,
+    stop: mockStop,
+    successAndStop: mockSuccessAndStop,
   })),
 }))
 
 vi.mock('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts', () => ({
-  fetchSupportedScanFileNames: vi.fn(),
+  fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
 }))
 
 vi.mock('../../../../../src/commands/scan/output-scan-reach.mts', () => ({
-  outputScanReach: vi.fn(),
+  outputScanReach: mockOutputScanReach,
 }))
 
 vi.mock('../../../../../src/commands/scan/perform-reachability-analysis.mts', () => ({
-  performReachabilityAnalysis: vi.fn(),
+  performReachabilityAnalysis: mockPerformReachabilityAnalysis,
 }))
 
 vi.mock('../../../../../src/utils/validation/check-input.mts', () => ({
-  checkCommandInput: vi.fn(),
+  checkCommandInput: mockCheckCommandInput,
 }))
 
 vi.mock('../../../../../src/utils/fs/path-resolve.mts', () => ({
-  getPackageFilesForScan: vi.fn(),
+  getPackageFilesForScan: mockGetPackageFilesForScan,
 }))
 
 describe('handleScanReach', () => {
@@ -65,11 +75,11 @@ describe('handleScanReach', () => {
       '../../../../../src/utils/fs/path-resolve.mts'
     )
 
-    const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
-    const mockOutput = vi.mocked(outputScanReach)
-    const mockPerformAnalysis = vi.mocked(performReachabilityAnalysis)
-    const mockCheckInput = vi.mocked(checkCommandInput)
-    const mockGetPackageFiles = vi.mocked(getPackageFilesForScan)
+    const mockFetchSupported = mockFetchSupportedScanFileNames
+    const mockOutput = mockOutputScanReach
+    const mockPerformAnalysis = mockPerformReachabilityAnalysis
+    const mockCheckInput = mockCheckCommandInput
+    const mockGetPackageFiles = mockGetPackageFilesForScan
 
     mockFetchSupported.mockResolvedValue(
       createSuccessResult(['package.json', 'package-lock.json']),
@@ -114,8 +124,8 @@ describe('handleScanReach', () => {
     )
     const { outputScanReach } = await import('../../../../../src/commands/scan/output-scan-reach.mts')
 
-    const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
-    const mockOutput = vi.mocked(outputScanReach)
+    const mockFetchSupported = mockFetchSupportedScanFileNames
+    const mockOutput = mockOutputScanReach
 
     const mockError = createErrorResult('Failed to fetch supported files')
     mockFetchSupported.mockResolvedValue(mockError)
@@ -146,9 +156,9 @@ describe('handleScanReach', () => {
       '../../../../../src/utils/fs/path-resolve.mts'
     )
 
-    const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
-    const mockCheckInput = vi.mocked(checkCommandInput)
-    const mockGetPackageFiles = vi.mocked(getPackageFilesForScan)
+    const mockFetchSupported = mockFetchSupportedScanFileNames
+    const mockCheckInput = mockCheckCommandInput
+    const mockGetPackageFiles = mockGetPackageFilesForScan
 
     mockFetchSupported.mockResolvedValue(createSuccessResult(['package.json']))
     mockGetPackageFiles.mockResolvedValue([])
@@ -186,11 +196,11 @@ describe('handleScanReach', () => {
       '../../../../../src/utils/fs/path-resolve.mts'
     )
 
-    const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
-    const mockOutput = vi.mocked(outputScanReach)
-    const mockPerformAnalysis = vi.mocked(performReachabilityAnalysis)
-    const mockCheckInput = vi.mocked(checkCommandInput)
-    const mockGetPackageFiles = vi.mocked(getPackageFilesForScan)
+    const mockFetchSupported = mockFetchSupportedScanFileNames
+    const mockOutput = mockOutputScanReach
+    const mockPerformAnalysis = mockPerformReachabilityAnalysis
+    const mockCheckInput = mockCheckCommandInput
+    const mockGetPackageFiles = mockGetPackageFilesForScan
 
     mockFetchSupported.mockResolvedValue(createSuccessResult(['package.json']))
     mockGetPackageFiles.mockResolvedValue(['/project/package.json'])

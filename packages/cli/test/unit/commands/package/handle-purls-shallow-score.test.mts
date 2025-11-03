@@ -6,16 +6,22 @@ import { outputPurlsShallowScore } from '../../../../src/src/commands/package/ou
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 
 // Mock the dependencies.
+const mockFetchPurlsShallowScore = vi.hoisted(() => vi.fn())
+const mockOutputPurlsShallowScore = vi.hoisted(() => vi.fn())
+const mock_debug = vi.hoisted(() => vi.fn())
+const mockDebug = vi.hoisted(() => vi.fn())
+const mockDebugDir = vi.hoisted(() => vi.fn())
+
 vi.mock('../../../../src/commands/package/fetch-purls-shallow-score.mts', () => ({
-  fetchPurlsShallowScore: vi.fn(),
+  fetchPurlsShallowScore: mockFetchPurlsShallowScore,
 }))
 vi.mock('../../../../src/commands/package/output-purls-shallow-score.mts', () => ({
-  outputPurlsShallowScore: vi.fn(),
+  outputPurlsShallowScore: mockOutputPurlsShallowScore,
 }))
 vi.mock('@socketsecurity/lib/debug', () => ({
-  _debug: vi.fn(),
-  debug: vi.fn(),
-  debugDir: vi.fn(),
+  _debug: mock_debug,
+  debug: mockDebug,
+  debugDir: mockDebugDir,
 }))
 
 describe('handlePurlsShallowScore', () => {
@@ -31,7 +37,7 @@ describe('handlePurlsShallowScore', () => {
         { name: 'package2', version: '2.0.0', score: 92 },
       ],
     }
-    vi.mocked(fetchPurlsShallowScore).mockResolvedValue(mockData)
+    mockFetchPurlsShallowScore.mockResolvedValue(mockData)
 
     const purls = ['pkg:npm/package1@1.0.0', 'pkg:npm/package2@2.0.0']
     await handlePurlsShallowScore({
@@ -52,7 +58,7 @@ describe('handlePurlsShallowScore', () => {
       ok: false,
       error: new Error('Failed to fetch scores'),
     }
-    vi.mocked(fetchPurlsShallowScore).mockResolvedValue(mockError)
+    mockFetchPurlsShallowScore.mockResolvedValue(mockError)
 
     const purls = ['pkg:npm/package1@1.0.0']
     await handlePurlsShallowScore({
@@ -73,7 +79,7 @@ describe('handlePurlsShallowScore', () => {
       ok: true,
       data: [{ name: 'package1', version: '1.0.0', score: 90 }],
     }
-    vi.mocked(fetchPurlsShallowScore).mockResolvedValue(mockData)
+    mockFetchPurlsShallowScore.mockResolvedValue(mockData)
 
     const purls = ['pkg:npm/package1@1.0.0']
     await handlePurlsShallowScore({
@@ -93,7 +99,7 @@ describe('handlePurlsShallowScore', () => {
       ok: true,
       data: [],
     }
-    vi.mocked(fetchPurlsShallowScore).mockResolvedValue(mockData)
+    mockFetchPurlsShallowScore.mockResolvedValue(mockData)
 
     await handlePurlsShallowScore({
       outputKind: 'json',
@@ -109,7 +115,7 @@ describe('handlePurlsShallowScore', () => {
       ok: true,
       data: [{ name: 'package1', version: '1.0.0', score: 88 }],
     }
-    vi.mocked(fetchPurlsShallowScore).mockResolvedValue(mockData)
+    mockFetchPurlsShallowScore.mockResolvedValue(mockData)
 
     const purls = ['pkg:npm/package1@1.0.0']
     await handlePurlsShallowScore({
@@ -131,7 +137,7 @@ describe('handlePurlsShallowScore', () => {
       ok: false,
       error: new Error('API error'),
     }
-    vi.mocked(fetchPurlsShallowScore).mockResolvedValue(mockError)
+    mockFetchPurlsShallowScore.mockResolvedValue(mockError)
 
     await handlePurlsShallowScore({
       outputKind: 'json',
@@ -150,7 +156,7 @@ describe('handlePurlsShallowScore', () => {
         { name: 'package3', version: '3.0.0', score: 78 },
       ],
     }
-    vi.mocked(fetchPurlsShallowScore).mockResolvedValue(mockData)
+    mockFetchPurlsShallowScore.mockResolvedValue(mockData)
 
     const purls = [
       'pkg:npm/package1@1.0.0',

@@ -13,6 +13,10 @@ import {
 import type { GhsaTracker } from '../../../../src/src/commands/fix/ghsa-tracker.mts'
 
 // Mock file system operations.
+const mockReadJson = vi.hoisted(() => vi.fn())
+const mockSafeMkdir = vi.hoisted(() => vi.fn())
+const mockWriteJson = vi.hoisted(() => vi.fn())
+
 vi.mock('node:fs', async () => {
   const actual = await vi.importActual<typeof import('node:fs')>('node:fs')
   return {
@@ -27,9 +31,9 @@ vi.mock('node:fs', async () => {
 })
 
 vi.mock('@socketsecurity/lib/fs', () => ({
-  readJson: vi.fn(),
-  safeMkdir: vi.fn(),
-  writeJson: vi.fn(),
+  readJson: mockReadJson,
+  safeMkdir: mockSafeMkdir,
+  writeJson: mockWriteJson,
 }))
 
 describe('ghsa-tracker', () => {
@@ -55,7 +59,7 @@ describe('ghsa-tracker', () => {
         ],
       }
 
-      vi.mocked(readJson).mockResolvedValue(mockTracker)
+      mockReadJson.mockResolvedValue(mockTracker)
 
       const result = await loadGhsaTracker(mockCwd)
 
@@ -65,7 +69,7 @@ describe('ghsa-tracker', () => {
 
     it('creates new tracker when file does not exist', async () => {
       const { readJson } = await import('@socketsecurity/lib/fs')
-      vi.mocked(readJson).mockRejectedValue(new Error('ENOENT'))
+      mockReadJson.mockRejectedValue(new Error('ENOENT'))
 
       const result = await loadGhsaTracker(mockCwd)
 
@@ -77,7 +81,7 @@ describe('ghsa-tracker', () => {
 
     it('handles null tracker data', async () => {
       const { readJson } = await import('@socketsecurity/lib/fs')
-      vi.mocked(readJson).mockResolvedValue(null)
+      mockReadJson.mockResolvedValue(null)
 
       const result = await loadGhsaTracker(mockCwd)
 
@@ -122,7 +126,7 @@ describe('ghsa-tracker', () => {
         fixed: [],
       }
 
-      vi.mocked(readJson).mockResolvedValue(existingTracker)
+      mockReadJson.mockResolvedValue(existingTracker)
 
       await markGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab', 123)
 
@@ -156,7 +160,7 @@ describe('ghsa-tracker', () => {
         ],
       }
 
-      vi.mocked(readJson).mockResolvedValue(existingTracker)
+      mockReadJson.mockResolvedValue(existingTracker)
 
       await markGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab', 200)
 
@@ -175,7 +179,7 @@ describe('ghsa-tracker', () => {
       )
 
       // Verify only one record exists (old one was removed).
-      const savedTracker = vi.mocked(writeJson).mock.calls[0]![1] as GhsaTracker
+      const savedTracker = mockWriteJson.mock.calls[0]![1] as GhsaTracker
       expect(savedTracker.fixed).toHaveLength(1)
     })
 
@@ -193,19 +197,19 @@ describe('ghsa-tracker', () => {
         ],
       }
 
-      vi.mocked(readJson).mockResolvedValue(existingTracker)
+      mockReadJson.mockResolvedValue(existingTracker)
 
       // Add a new record with a later timestamp.
       await markGhsaFixed(mockCwd, 'GHSA-new', 200)
 
-      const savedTracker = vi.mocked(writeJson).mock.calls[0]![1] as GhsaTracker
+      const savedTracker = mockWriteJson.mock.calls[0]![1] as GhsaTracker
       expect(savedTracker.fixed[0]!.ghsaId).toBe('GHSA-new')
       expect(savedTracker.fixed[1]!.ghsaId).toBe('GHSA-old')
     })
 
     it('handles errors gracefully', async () => {
       const { readJson } = await import('@socketsecurity/lib/fs')
-      vi.mocked(readJson).mockRejectedValue(new Error('Permission denied'))
+      mockReadJson.mockRejectedValue(new Error('Permission denied'))
 
       // Should not throw.
       await expect(
@@ -229,7 +233,7 @@ describe('ghsa-tracker', () => {
         ],
       }
 
-      vi.mocked(readJson).mockResolvedValue(tracker)
+      mockReadJson.mockResolvedValue(tracker)
 
       const result = await isGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab')
 
@@ -243,7 +247,7 @@ describe('ghsa-tracker', () => {
         fixed: [],
       }
 
-      vi.mocked(readJson).mockResolvedValue(tracker)
+      mockReadJson.mockResolvedValue(tracker)
 
       const result = await isGhsaFixed(mockCwd, 'GHSA-9999-9999-9999')
 
@@ -252,7 +256,7 @@ describe('ghsa-tracker', () => {
 
     it('returns false on error', async () => {
       const { readJson } = await import('@socketsecurity/lib/fs')
-      vi.mocked(readJson).mockRejectedValue(new Error('Read error'))
+      mockReadJson.mockRejectedValue(new Error('Read error'))
 
       const result = await isGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab')
 
@@ -281,7 +285,7 @@ describe('ghsa-tracker', () => {
         ],
       }
 
-      vi.mocked(readJson).mockResolvedValue(tracker)
+      mockReadJson.mockResolvedValue(tracker)
 
       const result = await getFixedGhsas(mockCwd)
 
@@ -291,7 +295,7 @@ describe('ghsa-tracker', () => {
 
     it('returns empty array on error', async () => {
       const { readJson } = await import('@socketsecurity/lib/fs')
-      vi.mocked(readJson).mockRejectedValue(new Error('Read error'))
+      mockReadJson.mockRejectedValue(new Error('Read error'))
 
       const result = await getFixedGhsas(mockCwd)
 

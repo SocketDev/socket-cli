@@ -2,10 +2,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createErrorResult } from '../../../../../test/helpers/mocks.mts'
 
+const mockDebug = vi.hoisted(() => vi.fn())
+const mockDebugDir = vi.hoisted(() => vi.fn())
+const mockDebugFn = vi.hoisted(() => vi.fn())
+const mockHandleApiCallNoSpinner = vi.hoisted(() => vi.fn())
+const mockQueryApiSafeText = vi.hoisted(() => vi.fn())
+const mockSetupSdk = vi.hoisted(() => vi.fn())
+const mockFormatErrorWithDetail = vi.hoisted(() => vi.fn())
+
 vi.mock('@socketsecurity/lib/debug', () => ({
-  debug: vi.fn(),
-  debugDir: vi.fn(),
-  debugFn: vi.fn(),
+  debug: mockDebug,
+  debugDir: mockDebugDir,
+  debugFn: mockDebugFn,
 }))
 
 const mockLogger = vi.hoisted(() => ({
@@ -32,16 +40,16 @@ vi.mock('@socketsecurity/lib/spinner', () => ({
 }))
 
 vi.mock('../../../../../src/utils/socket/api.mts', () => ({
-  handleApiCallNoSpinner: vi.fn(),
-  queryApiSafeText: vi.fn(),
+  handleApiCallNoSpinner: mockHandleApiCallNoSpinner,
+  queryApiSafeText: mockQueryApiSafeText,
 }))
 
 vi.mock('../../../../../src/utils/socket/sdk.mjs', () => ({
-  setupSdk: vi.fn(),
+  setupSdk: mockSetupSdk,
 }))
 
 vi.mock('../../../../../src/utils/error/errors.mjs', () => ({
-  formatErrorWithDetail: vi.fn(),
+  formatErrorWithDetail: mockFormatErrorWithDetail,
 }))
 
 describe('fetchScanData', () => {
@@ -52,7 +60,7 @@ describe('fetchScanData', () => {
   it('handles SDK setup failure', async () => {
     const { fetchScanData } = await import('../../../../../src/commands/scan/fetch-report-data.mts')
     const { setupSdk } = await vi.importMock('../../../../../src/utils/socket/sdk.mjs')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = mockSetupSdk
 
     const error = createErrorResult('Failed to setup SDK', {
       code: 1,

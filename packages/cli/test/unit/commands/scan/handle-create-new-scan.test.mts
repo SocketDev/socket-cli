@@ -16,6 +16,23 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
+const mockFetchCreateOrgFullScan = vi.hoisted(() => vi.fn())
+const mockFetchSupportedScanFileNames = vi.hoisted(() => vi.fn())
+const mockFinalizeTier1Scan = vi.hoisted(() => vi.fn())
+const mockHandleScanReport = vi.hoisted(() => vi.fn())
+const mockOutputCreateNewScan = vi.hoisted(() => vi.fn())
+const mockPerformReachabilityAnalysis = vi.hoisted(() => vi.fn())
+const mockGetSpinner = vi.hoisted(() => vi.fn(())
+const mockStart = vi.hoisted(() => vi.fn())
+const mockStop = vi.hoisted(() => vi.fn())
+const mockSuccessAndStop = vi.hoisted(() => vi.fn())
+const mockCheckCommandInput = vi.hoisted(() => vi.fn())
+const mockGetPackageFilesForScan = vi.hoisted(() => vi.fn())
+const mockReadOrDefaultSocketJson = vi.hoisted(() => vi.fn())
+const mockSocketDocsLink = vi.hoisted(() => vi.fn(())
+const mockDetectManifestActions = vi.hoisted(() => vi.fn())
+const mockGenerateAutoManifest = vi.hoisted(() => vi.fn())
+
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
@@ -24,47 +41,47 @@ vi.mock('@socketsecurity/lib/words', () => ({
   pluralize: vi.fn((word, count) => (count === 1 ? word : `${word}s`)),
 }))
 vi.mock('../../../../../src/commands/scan/fetch-create-org-full-scan.mts', () => ({
-  fetchCreateOrgFullScan: vi.fn(),
+  fetchCreateOrgFullScan: mockFetchCreateOrgFullScan,
 }))
 vi.mock('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts', () => ({
-  fetchSupportedScanFileNames: vi.fn(),
+  fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
 }))
 vi.mock('../../../../../src/commands/scan/finalize-tier1-scan.mts', () => ({
-  finalizeTier1Scan: vi.fn(),
+  finalizeTier1Scan: mockFinalizeTier1Scan,
 }))
 vi.mock('../../../../../src/commands/scan/handle-scan-report.mts', () => ({
-  handleScanReport: vi.fn(),
+  handleScanReport: mockHandleScanReport,
 }))
 vi.mock('../../../../../src/commands/scan/output-create-new-scan.mts', () => ({
-  outputCreateNewScan: vi.fn(),
+  outputCreateNewScan: mockOutputCreateNewScan,
 }))
 vi.mock('../../../../../src/commands/scan/perform-reachability-analysis.mts', () => ({
-  performReachabilityAnalysis: vi.fn(),
+  performReachabilityAnalysis: mockPerformReachabilityAnalysis,
 }))
 vi.mock('@socketsecurity/lib/constants/process', () => ({
-  getSpinner: vi.fn(() => ({
-    start: vi.fn(),
-    stop: vi.fn(),
-    successAndStop: vi.fn(),
+  getSpinner: mockGetSpinner => ({
+    start: mockStart,
+    stop: mockStop,
+    successAndStop: mockSuccessAndStop,
   })),
 }))
 vi.mock('../../../../../src/utils/validation/check-input.mts', () => ({
-  checkCommandInput: vi.fn(),
+  checkCommandInput: mockCheckCommandInput,
 }))
 vi.mock('../../../../../src/utils/fs/path-resolve.mts', () => ({
-  getPackageFilesForScan: vi.fn(),
+  getPackageFilesForScan: mockGetPackageFilesForScan,
 }))
 vi.mock('../../../../../src/utils/socket/json.mts', () => ({
-  readOrDefaultSocketJson: vi.fn(),
+  readOrDefaultSocketJson: mockReadOrDefaultSocketJson,
 }))
 vi.mock('../../../../../src/utils/terminal/link.mts', () => ({
-  socketDocsLink: vi.fn(() => 'https://docs.socket.dev'),
+  socketDocsLink: mockSocketDocsLink => 'https://docs.socket.dev'),
 }))
 vi.mock('../../../../../src/commands/manifest/detect-manifest-actions.mts', () => ({
-  detectManifestActions: vi.fn(),
+  detectManifestActions: mockDetectManifestActions,
 }))
 vi.mock('../../../../../src/commands/manifest/generate_auto_manifest.mts', () => ({
-  generateAutoManifest: vi.fn(),
+  generateAutoManifest: mockGenerateAutoManifest,
 }))
 
 describe('handleCreateNewScan', () => {
@@ -111,15 +128,15 @@ describe('handleCreateNewScan', () => {
     )
     const { outputCreateNewScan } = await import('../../../../../src/commands/scan/output-create-new-scan.mts')
 
-    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
+    mockFetchSupportedScanFileNames.mockResolvedValue(
       createSuccessResult(new Set(['package.json', 'yarn.lock'])),
     )
-    vi.mocked(getPackageFilesForScan).mockResolvedValue([
+    mockGetPackageFilesForScan.mockResolvedValue([
       '/test/project/package.json',
       '/test/project/yarn.lock',
     ])
-    vi.mocked(checkCommandInput).mockReturnValue(true)
-    vi.mocked(fetchCreateOrgFullScan).mockResolvedValue(
+    mockCheckCommandInput.mockReturnValue(true)
+    mockFetchCreateOrgFullScan.mockResolvedValue(
       createSuccessResult({ id: 'scan-123' }),
     )
 
@@ -163,15 +180,15 @@ describe('handleCreateNewScan', () => {
       '../../../../../src/utils/validation/check-input.mts'
     )
 
-    vi.mocked(readOrDefaultSocketJson).mockReturnValue({})
-    vi.mocked(detectManifestActions).mockResolvedValue({ detected: true })
-    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
+    mockReadOrDefaultSocketJson.mockReturnValue({})
+    mockDetectManifestActions.mockResolvedValue({ detected: true })
+    mockFetchSupportedScanFileNames.mockResolvedValue(
       createSuccessResult(new Set(['package.json'])),
     )
-    vi.mocked(getPackageFilesForScan).mockResolvedValue([
+    mockGetPackageFilesForScan.mockResolvedValue([
       '/test/project/package.json',
     ])
-    vi.mocked(checkCommandInput).mockReturnValue(true)
+    mockCheckCommandInput.mockReturnValue(true)
 
     await handleCreateNewScan({ ...mockConfig, autoManifest: true })
 
@@ -196,11 +213,11 @@ describe('handleCreateNewScan', () => {
       '../../../../../src/utils/validation/check-input.mts'
     )
 
-    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
+    mockFetchSupportedScanFileNames.mockResolvedValue(
       createSuccessResult(new Set(['package.json'])),
     )
-    vi.mocked(getPackageFilesForScan).mockResolvedValue([])
-    vi.mocked(checkCommandInput).mockReturnValue(false)
+    mockGetPackageFilesForScan.mockResolvedValue([])
+    mockCheckCommandInput.mockReturnValue(false)
 
     await handleCreateNewScan(mockConfig)
 
@@ -227,13 +244,13 @@ describe('handleCreateNewScan', () => {
       './fetch-create-org-full-scan.mts'
     )
 
-    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
+    mockFetchSupportedScanFileNames.mockResolvedValue(
       createSuccessResult(new Set(['package.json'])),
     )
-    vi.mocked(getPackageFilesForScan).mockResolvedValue([
+    mockGetPackageFilesForScan.mockResolvedValue([
       '/test/project/package.json',
     ])
-    vi.mocked(checkCommandInput).mockReturnValue(true)
+    mockCheckCommandInput.mockReturnValue(true)
 
     await handleCreateNewScan({
       ...mockConfig,
@@ -264,20 +281,20 @@ describe('handleCreateNewScan', () => {
     )
     const { finalizeTier1Scan } = await import('../../../../../src/commands/scan/finalize-tier1-scan.mts')
 
-    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
+    mockFetchSupportedScanFileNames.mockResolvedValue(
       createSuccessResult(new Set(['package.json'])),
     )
-    vi.mocked(getPackageFilesForScan).mockResolvedValue([
+    mockGetPackageFilesForScan.mockResolvedValue([
       '/test/project/package.json',
     ])
-    vi.mocked(checkCommandInput).mockReturnValue(true)
-    vi.mocked(performReachabilityAnalysis).mockResolvedValue(
+    mockCheckCommandInput.mockReturnValue(true)
+    mockPerformReachabilityAnalysis.mockResolvedValue(
       createSuccessResult({
         reachabilityReport: '/test/project/.socket.facts.json',
         tier1ReachabilityScanId: 'tier1-scan-456',
       }),
     )
-    vi.mocked(fetchCreateOrgFullScan).mockResolvedValue(
+    mockFetchCreateOrgFullScan.mockResolvedValue(
       createSuccessResult({ id: 'scan-789' }),
     )
 
@@ -311,14 +328,14 @@ describe('handleCreateNewScan', () => {
     )
     const { handleScanReport } = await import('../../../../../src/commands/scan/handle-scan-report.mts')
 
-    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
+    mockFetchSupportedScanFileNames.mockResolvedValue(
       createSuccessResult(new Set(['package.json'])),
     )
-    vi.mocked(getPackageFilesForScan).mockResolvedValue([
+    mockGetPackageFilesForScan.mockResolvedValue([
       '/test/project/package.json',
     ])
-    vi.mocked(checkCommandInput).mockReturnValue(true)
-    vi.mocked(fetchCreateOrgFullScan).mockResolvedValue(
+    mockCheckCommandInput.mockReturnValue(true)
+    mockFetchCreateOrgFullScan.mockResolvedValue(
       createSuccessResult({ id: 'scan-report-123' }),
     )
 
@@ -343,7 +360,7 @@ describe('handleCreateNewScan', () => {
     const { outputCreateNewScan } = await import('../../../../../src/commands/scan/output-create-new-scan.mts')
 
     const error = new Error('API error')
-    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
+    mockFetchSupportedScanFileNames.mockResolvedValue(
       createErrorResult(error.message),
     )
 

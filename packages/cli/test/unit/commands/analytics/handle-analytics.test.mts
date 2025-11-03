@@ -10,14 +10,18 @@ import { fetchRepoAnalyticsData } from '../../../../src/src/commands/analytics/f
 import { outputAnalytics } from '../../../../src/src/commands/analytics/output-analytics.mts'
 
 // Mock the dependencies.
+const mockFetchOrgAnalyticsData = vi.hoisted(() => vi.fn())
+const mockFetchRepoAnalyticsData = vi.hoisted(() => vi.fn())
+const mockOutputAnalytics = vi.hoisted(() => vi.fn())
+
 vi.mock('../../../../src/commands/analytics/fetch-org-analytics.mts', () => ({
-  fetchOrgAnalyticsData: vi.fn(),
+  fetchOrgAnalyticsData: mockFetchOrgAnalyticsData,
 }))
 vi.mock('../../../../src/commands/analytics/fetch-repo-analytics.mts', () => ({
-  fetchRepoAnalyticsData: vi.fn(),
+  fetchRepoAnalyticsData: mockFetchRepoAnalyticsData,
 }))
 vi.mock('../../../../src/commands/analytics/output-analytics.mts', () => ({
-  outputAnalytics: vi.fn(),
+  outputAnalytics: mockOutputAnalytics,
 }))
 
 describe('handleAnalytics', () => {
@@ -27,7 +31,7 @@ describe('handleAnalytics', () => {
 
   it('fetches org analytics when scope is org', async () => {
     const mockData = [{ packages: 10, vulnerabilities: 2 }]
-    vi.mocked(fetchOrgAnalyticsData).mockResolvedValue(
+    mockFetchOrgAnalyticsData.mockResolvedValue(
       createSuccessResult(mockData),
     )
 
@@ -54,7 +58,7 @@ describe('handleAnalytics', () => {
 
   it('fetches repo analytics when repo is provided', async () => {
     const mockData = [{ packages: 5, vulnerabilities: 1 }]
-    vi.mocked(fetchRepoAnalyticsData).mockResolvedValue(
+    mockFetchRepoAnalyticsData.mockResolvedValue(
       createSuccessResult(mockData),
     )
 
@@ -104,7 +108,7 @@ describe('handleAnalytics', () => {
   })
 
   it('handles empty analytics data for org', async () => {
-    vi.mocked(fetchOrgAnalyticsData).mockResolvedValue(createSuccessResult([]))
+    mockFetchOrgAnalyticsData.mockResolvedValue(createSuccessResult([]))
 
     await handleAnalytics({
       filepath: '/tmp/analytics.json',
@@ -126,7 +130,7 @@ describe('handleAnalytics', () => {
   })
 
   it('handles empty analytics data for repo', async () => {
-    vi.mocked(fetchRepoAnalyticsData).mockResolvedValue(createSuccessResult([]))
+    mockFetchRepoAnalyticsData.mockResolvedValue(createSuccessResult([]))
 
     await handleAnalytics({
       filepath: '/tmp/analytics.json',
@@ -148,7 +152,7 @@ describe('handleAnalytics', () => {
 
   it('passes through fetch errors', async () => {
     const errorResult = createErrorResult('API error')
-    vi.mocked(fetchOrgAnalyticsData).mockResolvedValue(errorResult)
+    mockFetchOrgAnalyticsData.mockResolvedValue(errorResult)
 
     await handleAnalytics({
       filepath: '/tmp/analytics.json',
@@ -166,7 +170,7 @@ describe('handleAnalytics', () => {
 
   it('handles markdown output kind', async () => {
     const mockData = [{ packages: 10, vulnerabilities: 2 }]
-    vi.mocked(fetchOrgAnalyticsData).mockResolvedValue(
+    mockFetchOrgAnalyticsData.mockResolvedValue(
       createSuccessResult(mockData),
     )
 
@@ -192,7 +196,7 @@ describe('handleAnalytics', () => {
 
   it('handles text output kind', async () => {
     const mockData = [{ packages: 10, vulnerabilities: 2 }]
-    vi.mocked(fetchOrgAnalyticsData).mockResolvedValue(
+    mockFetchOrgAnalyticsData.mockResolvedValue(
       createSuccessResult(mockData),
     )
 

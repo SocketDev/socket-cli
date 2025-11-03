@@ -6,16 +6,22 @@ import { outputPurlsDeepScore } from '../../../../src/src/commands/package/outpu
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 
 // Mock the dependencies.
+const mockFetchPurlDeepScore = vi.hoisted(() => vi.fn())
+const mockOutputPurlsDeepScore = vi.hoisted(() => vi.fn())
+const mockDebug = vi.hoisted(() => vi.fn())
+const mockDebugDir = vi.hoisted(() => vi.fn())
+const mockIsDebug = vi.hoisted(() => vi.fn(())
+
 vi.mock('../../../../src/commands/package/fetch-purl-deep-score.mts', () => ({
-  fetchPurlDeepScore: vi.fn(),
+  fetchPurlDeepScore: mockFetchPurlDeepScore,
 }))
 vi.mock('../../../../src/commands/package/output-purls-deep-score.mts', () => ({
-  outputPurlsDeepScore: vi.fn(),
+  outputPurlsDeepScore: mockOutputPurlsDeepScore,
 }))
 vi.mock('@socketsecurity/lib/debug', () => ({
-  debug: vi.fn(),
-  debugDir: vi.fn(),
-  isDebug: vi.fn(() => false),
+  debug: mockDebug,
+  debugDir: mockDebugDir,
+  isDebug: mockIsDebug => false),
 }))
 
 describe('handlePurlDeepScore', () => {
@@ -33,7 +39,7 @@ describe('handlePurlDeepScore', () => {
         dependencies: ['dep1', 'dep2'],
       },
     }
-    vi.mocked(fetchPurlDeepScore).mockResolvedValue(mockData)
+    mockFetchPurlDeepScore.mockResolvedValue(mockData)
 
     const purl = 'pkg:npm/package1@1.0.0'
     await handlePurlDeepScore(purl, 'json')
@@ -47,7 +53,7 @@ describe('handlePurlDeepScore', () => {
       ok: false,
       error: new Error('Failed to fetch deep score'),
     }
-    vi.mocked(fetchPurlDeepScore).mockResolvedValue(mockError)
+    mockFetchPurlDeepScore.mockResolvedValue(mockError)
 
     const purl = 'pkg:npm/package1@1.0.0'
     await handlePurlDeepScore(purl, 'text')
@@ -65,7 +71,7 @@ describe('handlePurlDeepScore', () => {
         score: 88,
       },
     }
-    vi.mocked(fetchPurlDeepScore).mockResolvedValue(mockData)
+    mockFetchPurlDeepScore.mockResolvedValue(mockData)
 
     const purl = 'pkg:npm/package1@1.0.0'
     await handlePurlDeepScore(purl, 'markdown')
@@ -82,7 +88,7 @@ describe('handlePurlDeepScore', () => {
       ok: true,
       data: { name: 'package1', version: '1.0.0', score: 91 },
     }
-    vi.mocked(fetchPurlDeepScore).mockResolvedValue(mockData)
+    mockFetchPurlDeepScore.mockResolvedValue(mockData)
 
     const purl = 'pkg:npm/package1@1.0.0'
     await handlePurlDeepScore(purl, 'json')
@@ -103,7 +109,7 @@ describe('handlePurlDeepScore', () => {
       ok: false,
       error: new Error('API error'),
     }
-    vi.mocked(fetchPurlDeepScore).mockResolvedValue(mockError)
+    mockFetchPurlDeepScore.mockResolvedValue(mockError)
 
     await handlePurlDeepScore('pkg:npm/package1@1.0.0', 'json')
 
@@ -118,7 +124,7 @@ describe('handlePurlDeepScore', () => {
     ]
 
     for (const purl of purls) {
-      vi.mocked(fetchPurlDeepScore).mockResolvedValue({
+      mockFetchPurlDeepScore.mockResolvedValue({
         ok: true,
         data: { name: 'test', version: '1.0.0', score: 85 },
       })
@@ -139,7 +145,7 @@ describe('handlePurlDeepScore', () => {
         score: 93,
       },
     }
-    vi.mocked(fetchPurlDeepScore).mockResolvedValue(mockData)
+    mockFetchPurlDeepScore.mockResolvedValue(mockData)
 
     const purl = 'pkg:npm/package1@1.0.0'
     await handlePurlDeepScore(purl, 'text')

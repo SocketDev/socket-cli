@@ -3,14 +3,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { handleListRepos } from '../../../../src/src/commands/repository/handle-list-repos.mts'
 
 // Mock the dependencies.
+const mockFetchListAllRepos = vi.hoisted(() => vi.fn())
+const mockFetchListRepos = vi.hoisted(() => vi.fn())
+const mockOutputListRepos = vi.hoisted(() => vi.fn())
+
 vi.mock('../../../../src/commands/repository/fetch-list-all-repos.mts', () => ({
-  fetchListAllRepos: vi.fn(),
+  fetchListAllRepos: mockFetchListAllRepos,
 }))
 vi.mock('../../../../src/commands/repository/fetch-list-repos.mts', () => ({
-  fetchListRepos: vi.fn(),
+  fetchListRepos: mockFetchListRepos,
 }))
 vi.mock('../../../../src/commands/repository/output-list-repos.mts', () => ({
-  outputListRepos: vi.fn(),
+  outputListRepos: mockOutputListRepos,
 }))
 
 describe('handleListRepos', () => {
@@ -30,7 +34,7 @@ describe('handleListRepos', () => {
         { id: '3', name: 'repo3' },
       ],
     }
-    vi.mocked(fetchListAllRepos).mockResolvedValue(mockData)
+    mockFetchListAllRepos.mockResolvedValue(mockData)
 
     await handleListRepos({
       all: true,
@@ -71,7 +75,7 @@ describe('handleListRepos', () => {
         nextPage: 2,
       },
     }
-    vi.mocked(fetchListRepos).mockResolvedValue(mockData)
+    mockFetchListRepos.mockResolvedValue(mockData)
 
     await handleListRepos({
       all: false,
@@ -109,7 +113,7 @@ describe('handleListRepos', () => {
       ok: false,
       error: new Error('Failed to fetch repositories'),
     }
-    vi.mocked(fetchListRepos).mockResolvedValue(mockError)
+    mockFetchListRepos.mockResolvedValue(mockError)
 
     await handleListRepos({
       all: false,
@@ -143,7 +147,7 @@ describe('handleListRepos', () => {
         nextPage: null,
       },
     }
-    vi.mocked(fetchListRepos).mockResolvedValue(mockData)
+    mockFetchListRepos.mockResolvedValue(mockData)
 
     await handleListRepos({
       all: false,
@@ -174,7 +178,7 @@ describe('handleListRepos', () => {
       ok: true,
       data: [{ id: '1', name: 'repo1' }],
     }
-    vi.mocked(fetchListAllRepos).mockResolvedValue(mockData)
+    mockFetchListAllRepos.mockResolvedValue(mockData)
 
     await handleListRepos({
       all: true,
@@ -203,7 +207,7 @@ describe('handleListRepos', () => {
     const sortOptions = ['name', 'created', 'updated', 'pushed']
 
     for (const sort of sortOptions) {
-      vi.mocked(fetchListRepos).mockResolvedValue({
+      mockFetchListRepos.mockResolvedValue({
         ok: true,
         data: { repos: [], nextPage: null },
       })
@@ -233,7 +237,7 @@ describe('handleListRepos', () => {
       ok: true,
       data: { repos: [], nextPage: null },
     }
-    vi.mocked(fetchListRepos).mockResolvedValue(mockData)
+    mockFetchListRepos.mockResolvedValue(mockData)
 
     await handleListRepos({
       all: false,
