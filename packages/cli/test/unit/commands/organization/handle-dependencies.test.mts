@@ -3,15 +3,15 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createSuccessResult,
   setupTestEnvironment,
-} from '../../../../test/helpers/index.mts'
-import { fetchDependencies } from '../../../../../src/commands/organization/fetch-dependencies.mts'
-import { handleDependencies } from '../../../../../src/commands/organization/handle-dependencies.mts'
-import { outputDependencies } from '../../../../../src/commands/organization/output-dependencies.mts'
+} from '../../../../../src/commands/../../../test/helpers/index.mts'
+import { fetchDependencies } from '../../../../../src/commands/../../../../src/commands/organization/fetch-dependencies.mts'
+import { handleDependencies } from '../../../../../src/commands/../../../../src/commands/organization/handle-dependencies.mts'
+import { outputDependencies } from '../../../../../src/commands/../../../../src/commands/organization/output-dependencies.mts'
 
-vi.mock('../../../../../src/commands/organization/fetch-dependencies.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/organization/fetch-dependencies.mts', () => ({
   fetchDependencies: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/organization/output-dependencies.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/organization/output-dependencies.mts', () => ({
   outputDependencies: vi.fn(),
 }))
 

@@ -21,7 +21,7 @@ vi.mock('@socketsecurity/lib/spawn', () => ({
 }))
 
 // Mock constants.
-vi.mock('../../constants/env.mts', () => ({
+vi.mock('../../../../../src/constants/env.mts', () => ({
   default: {
     GITHUB_BASE_REF: undefined,
     GITHUB_REF_NAME: undefined,
@@ -90,7 +90,7 @@ describe('git utilities', () => {
 
   describe('getBaseBranch', () => {
     it('returns GITHUB_BASE_REF when in PR', async () => {
-      const ENV = vi.mocked(await import('../../constants/env.mts')).default
+      const ENV = vi.mocked(await import('../../../../../src/constants/env.mts')).default
       ENV.GITHUB_BASE_REF = 'main'
 
       const result = await getBaseBranch()
@@ -100,7 +100,7 @@ describe('git utilities', () => {
     })
 
     it('returns GITHUB_REF_NAME when it is a branch', async () => {
-      const ENV = vi.mocked(await import('../../constants/env.mts')).default
+      const ENV = vi.mocked(await import('../../../../../src/constants/env.mts')).default
       ENV.GITHUB_REF_TYPE = 'branch'
       ENV.GITHUB_REF_NAME = 'feature-branch'
 

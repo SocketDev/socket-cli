@@ -2,7 +2,7 @@ import fs from 'node:fs'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { checkSocketWrapperSetup } from '../../../../../src/commands/wrapper/check-socket-wrapper-setup.mts'
+import { checkSocketWrapperSetup } from '../../../../../src/commands/../../../../src/commands/wrapper/check-socket-wrapper-setup.mts'
 
 // Mock the dependencies.
 vi.mock('node:fs')

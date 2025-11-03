@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../test/helpers/index.mts'
+} from '../../../../../src/commands/../../../test/helpers/index.mts'
 
-import type { CResult } from '../../../../../src/commands/repository/types.mts'
+import type { CResult } from '../../../../../src/commands/../../../../src/commands/repository/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 describe('outputViewRepo', () => {
@@ -28,11 +28,11 @@ describe('outputViewRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
+    const { outputViewRepo } = await import('../../../../../src/commands/../src/output-view-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createSuccessResult({
@@ -67,11 +67,11 @@ describe('outputViewRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
+    const { outputViewRepo } = await import('../../../../../src/commands/../src/output-view-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createErrorResult('Unauthorized', {
@@ -112,7 +112,7 @@ describe('outputViewRepo', () => {
       },
     }))
 
-    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
+    const { outputViewRepo } = await import('../../../../../src/commands/../src/output-view-repo.mts')
 
     const repoData = {
       archived: true,
@@ -161,11 +161,11 @@ describe('outputViewRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../utils/error/fail-msg-with-badge.mts', () => ({
+    vi.doMock('../../../../../src/commands/../utils/error/fail-msg-with-badge.mts', () => ({
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
-    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
+    const { outputViewRepo } = await import('../../../../../src/commands/../src/output-view-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createErrorResult('Repository not found', {
@@ -210,7 +210,7 @@ describe('outputViewRepo', () => {
       },
     }))
 
-    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
+    const { outputViewRepo } = await import('../../../../../src/commands/../src/output-view-repo.mts')
 
     const repoData = {
       archived: false,
@@ -257,7 +257,7 @@ describe('outputViewRepo', () => {
       },
     }))
 
-    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
+    const { outputViewRepo } = await import('../../../../../src/commands/../src/output-view-repo.mts')
 
     const repoData = {
       archived: false,
@@ -304,7 +304,7 @@ describe('outputViewRepo', () => {
       },
     }))
 
-    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
+    const { outputViewRepo } = await import('../../../../../src/commands/../src/output-view-repo.mts')
 
     const repoData = {
       archived: false,
@@ -341,11 +341,11 @@ describe('outputViewRepo', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
+    const { outputViewRepo } = await import('../../../../../src/commands/../src/output-view-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createErrorResult('Error without code')

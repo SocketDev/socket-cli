@@ -3,17 +3,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../test/helpers/mocks.mts'
-import { handleAnalytics } from '../../../../../src/commands/analytics/handle-analytics.mts'
+} from '../../../../../src/commands/../../../test/helpers/mocks.mts'
+import { handleAnalytics } from '../../../../../src/commands/../../../../src/commands/analytics/handle-analytics.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/analytics/fetch-org-analytics.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/analytics/fetch-org-analytics.mts', () => ({
   fetchOrgAnalyticsData: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/analytics/fetch-repo-analytics.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/analytics/fetch-repo-analytics.mts', () => ({
   fetchRepoAnalyticsData: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/analytics/output-analytics.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/analytics/output-analytics.mts', () => ({
   outputAnalytics: vi.fn(),
 }))
 
@@ -23,8 +23,8 @@ describe('handleAnalytics', () => {
   })
 
   it('fetches org analytics when scope is org', async () => {
-    const { fetchOrgAnalyticsData } = await import('../../src/fetch-org-analytics.mts')
-    const { outputAnalytics } = await import('../../src/output-analytics.mts')
+    const { fetchOrgAnalyticsData } = await import('../../../../../src/commands/../src/fetch-org-analytics.mts')
+    const { outputAnalytics } = await import('../../../../../src/commands/../src/output-analytics.mts')
 
     const mockData = [{ packages: 10, vulnerabilities: 2 }]
     vi.mocked(fetchOrgAnalyticsData).mockResolvedValue(
@@ -56,7 +56,7 @@ describe('handleAnalytics', () => {
     const { fetchRepoAnalyticsData } = await import(
       './fetch-repo-analytics.mts'
     )
-    const { outputAnalytics } = await import('../../src/output-analytics.mts')
+    const { outputAnalytics } = await import('../../../../../src/commands/../src/output-analytics.mts')
 
     const mockData = [{ packages: 5, vulnerabilities: 1 }]
     vi.mocked(fetchRepoAnalyticsData).mockResolvedValue(
@@ -85,7 +85,7 @@ describe('handleAnalytics', () => {
   })
 
   it('returns error when repo is missing and scope is not org', async () => {
-    const { outputAnalytics } = await import('../../src/output-analytics.mts')
+    const { outputAnalytics } = await import('../../../../../src/commands/../src/output-analytics.mts')
 
     await handleAnalytics({
       filepath: '/tmp/analytics.json',
@@ -111,8 +111,8 @@ describe('handleAnalytics', () => {
   })
 
   it('handles empty analytics data for org', async () => {
-    const { fetchOrgAnalyticsData } = await import('../../src/fetch-org-analytics.mts')
-    const { outputAnalytics } = await import('../../src/output-analytics.mts')
+    const { fetchOrgAnalyticsData } = await import('../../../../../src/commands/../src/fetch-org-analytics.mts')
+    const { outputAnalytics } = await import('../../../../../src/commands/../src/output-analytics.mts')
 
     vi.mocked(fetchOrgAnalyticsData).mockResolvedValue(createSuccessResult([]))
 
@@ -139,7 +139,7 @@ describe('handleAnalytics', () => {
     const { fetchRepoAnalyticsData } = await import(
       './fetch-repo-analytics.mts'
     )
-    const { outputAnalytics } = await import('../../src/output-analytics.mts')
+    const { outputAnalytics } = await import('../../../../../src/commands/../src/output-analytics.mts')
 
     vi.mocked(fetchRepoAnalyticsData).mockResolvedValue(createSuccessResult([]))
 
@@ -162,8 +162,8 @@ describe('handleAnalytics', () => {
   })
 
   it('passes through fetch errors', async () => {
-    const { fetchOrgAnalyticsData } = await import('../../src/fetch-org-analytics.mts')
-    const { outputAnalytics } = await import('../../src/output-analytics.mts')
+    const { fetchOrgAnalyticsData } = await import('../../../../../src/commands/../src/fetch-org-analytics.mts')
+    const { outputAnalytics } = await import('../../../../../src/commands/../src/output-analytics.mts')
 
     const errorResult = createErrorResult('API error')
     vi.mocked(fetchOrgAnalyticsData).mockResolvedValue(errorResult)
@@ -183,8 +183,8 @@ describe('handleAnalytics', () => {
   })
 
   it('handles markdown output kind', async () => {
-    const { fetchOrgAnalyticsData } = await import('../../src/fetch-org-analytics.mts')
-    const { outputAnalytics } = await import('../../src/output-analytics.mts')
+    const { fetchOrgAnalyticsData } = await import('../../../../../src/commands/../src/fetch-org-analytics.mts')
+    const { outputAnalytics } = await import('../../../../../src/commands/../src/output-analytics.mts')
 
     const mockData = [{ packages: 10, vulnerabilities: 2 }]
     vi.mocked(fetchOrgAnalyticsData).mockResolvedValue(
@@ -212,8 +212,8 @@ describe('handleAnalytics', () => {
   })
 
   it('handles text output kind', async () => {
-    const { fetchOrgAnalyticsData } = await import('../../src/fetch-org-analytics.mts')
-    const { outputAnalytics } = await import('../../src/output-analytics.mts')
+    const { fetchOrgAnalyticsData } = await import('../../../../../src/commands/../src/fetch-org-analytics.mts')
+    const { outputAnalytics } = await import('../../../../../src/commands/../src/output-analytics.mts')
 
     const mockData = [{ packages: 10, vulnerabilities: 2 }]
     vi.mocked(fetchOrgAnalyticsData).mockResolvedValue(

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { runAgentInstall } from '../../../../../src/commands/optimize/agent-installer.mts'
+import { runAgentInstall } from '../../../../../src/commands/../../../../src/commands/optimize/agent-installer.mts'
 
 // Mock dependencies.
 vi.mock('@socketsecurity/lib/spawn', () => ({
@@ -14,11 +14,11 @@ vi.mock('@socketsecurity/lib/spinner', () => ({
   })),
 }))
 
-vi.mock('../../shadow/npm/install.mts', () => ({
+vi.mock('../../../../../src/commands/../shadow/npm/install.mts', () => ({
   shadowNpmInstall: vi.fn(),
 }))
 
-vi.mock('../../utils/process/cmd.mts', () => ({
+vi.mock('../../../../../src/commands/../utils/process/cmd.mts', () => ({
   cmdFlagsToString: vi.fn(flags =>
     Object.entries(flags || {})
       .map(([k, v]) => `--${k}=${v}`)
@@ -26,7 +26,7 @@ vi.mock('../../utils/process/cmd.mts', () => ({
   ),
 }))
 
-vi.mock('../../constants.mts', () => ({
+vi.mock('../../../../../src/commands/../constants.mts', () => ({
   default: {
     nodeHardenFlags: [],
     nodeNoWarningsFlags: [],
@@ -43,7 +43,7 @@ describe('agent installer utilities', () => {
   describe('runAgentInstall', () => {
     it('uses shadowNpmInstall for npm agent', async () => {
       const { shadowNpmInstall } = vi.mocked(
-        await import('../../shadow/npm/install.mts'),
+        await import('../../../../../src/commands/../shadow/npm/install.mts'),
       )
       shadowNpmInstall.mockReturnValue(Promise.resolve({ status: 0 }) as any)
 

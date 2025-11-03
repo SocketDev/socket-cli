@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { openSocketFixPr } from '../../../../../src/commands/fix/pull-request.mts'
+import { openSocketFixPr } from '../../../../../src/commands/../../../../src/commands/fix/pull-request.mts'
 
 // Mock dependencies.
-vi.mock('../../../../../src/commands/fix/git.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/fix/git.mts', () => ({
   getSocketFixPullRequestTitle: vi.fn((ghsaIds: string[]) =>
     ghsaIds.length === 1
       ? `Fix for ${ghsaIds[0]}`
@@ -12,11 +12,11 @@ vi.mock('../../../../../src/commands/fix/git.mts', () => ({
   getSocketFixPullRequestBody: vi.fn(() => 'Mock PR body'),
 }))
 
-vi.mock('../../utils/git/github.mts', () => ({
+vi.mock('../../../../../src/commands/../utils/git/github.mts', () => ({
   getOctokit: vi.fn(),
 }))
 
-vi.mock('../../utils/git/provider-factory.mts', () => ({
+vi.mock('../../../../../src/commands/../utils/git/provider-factory.mts', () => ({
   createPrProvider: vi.fn(),
 }))
 
@@ -56,9 +56,9 @@ describe('pull-request', () => {
 
   describe('openSocketFixPr', () => {
     it('creates PR successfully on first attempt', async () => {
-      const { getOctokit } = await import('../../../../../src/utils/git/github.mts')
+      const { getOctokit } = await import('../../../../../src/commands/../../../../src/utils/git/github.mts')
       const { createPrProvider } = await import(
-        '../../utils/git/provider-factory.mts'
+        '../../../../../src/commands/../utils/git/provider-factory.mts'
       )
 
       vi.mocked(getOctokit).mockReturnValue(mockOctokit)
@@ -97,9 +97,9 @@ describe('pull-request', () => {
     })
 
     it('retries on 5xx error', async () => {
-      const { getOctokit } = await import('../../../../../src/utils/git/github.mts')
+      const { getOctokit } = await import('../../../../../src/commands/../../../../src/utils/git/github.mts')
       const { createPrProvider } = await import(
-        '../../utils/git/provider-factory.mts'
+        '../../../../../src/commands/../utils/git/provider-factory.mts'
       )
 
       vi.mocked(getOctokit).mockReturnValue(mockOctokit)
@@ -135,7 +135,7 @@ describe('pull-request', () => {
 
     it('does not retry on 422 validation error', async () => {
       const { createPrProvider } = await import(
-        '../../utils/git/provider-factory.mts'
+        '../../../../../src/commands/../utils/git/provider-factory.mts'
       )
 
       vi.mocked(createPrProvider).mockReturnValue(mockProvider)
@@ -158,7 +158,7 @@ describe('pull-request', () => {
 
     it('respects custom retry count', async () => {
       const { createPrProvider } = await import(
-        '../../utils/git/provider-factory.mts'
+        '../../../../../src/commands/../utils/git/provider-factory.mts'
       )
 
       vi.mocked(createPrProvider).mockReturnValue(mockProvider)
@@ -181,7 +181,7 @@ describe('pull-request', () => {
 
     it('returns undefined after all retries exhausted', async () => {
       const { createPrProvider } = await import(
-        '../../utils/git/provider-factory.mts'
+        '../../../../../src/commands/../utils/git/provider-factory.mts'
       )
 
       vi.mocked(createPrProvider).mockReturnValue(mockProvider)
@@ -201,9 +201,9 @@ describe('pull-request', () => {
     })
 
     it('uses exponential backoff for retries', async () => {
-      const { getOctokit } = await import('../../../../../src/utils/git/github.mts')
+      const { getOctokit } = await import('../../../../../src/commands/../../../../src/utils/git/github.mts')
       const { createPrProvider } = await import(
-        '../../utils/git/provider-factory.mts'
+        '../../../../../src/commands/../utils/git/provider-factory.mts'
       )
 
       vi.mocked(getOctokit).mockReturnValue(mockOctokit)
@@ -236,11 +236,11 @@ describe('pull-request', () => {
     })
 
     it('passes GHSA details to PR body generator', async () => {
-      const { getOctokit } = await import('../../../../../src/utils/git/github.mts')
+      const { getOctokit } = await import('../../../../../src/commands/../../../../src/utils/git/github.mts')
       const { createPrProvider } = await import(
-        '../../utils/git/provider-factory.mts'
+        '../../../../../src/commands/../utils/git/provider-factory.mts'
       )
-      const { getSocketFixPullRequestBody } = await import('../../src/git.mts')
+      const { getSocketFixPullRequestBody } = await import('../../../../../src/commands/../src/git.mts')
 
       vi.mocked(getOctokit).mockReturnValue(mockOctokit)
       vi.mocked(createPrProvider).mockReturnValue(mockProvider)

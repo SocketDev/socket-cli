@@ -3,22 +3,22 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../test/helpers/mocks.mts'
-import { handleDiffScan } from '../../../../../src/commands/scan/handle-diff-scan.mts'
+} from '../../../../../src/commands/../../../test/helpers/mocks.mts'
+import { handleDiffScan } from '../../../../../src/commands/../../../../src/commands/scan/handle-diff-scan.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/scan/fetch-diff-scan.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/scan/fetch-diff-scan.mts', () => ({
   fetchDiffScan: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/scan/output-diff-scan.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/scan/output-diff-scan.mts', () => ({
   outputDiffScan: vi.fn(),
 }))
 
 describe('handleDiffScan', () => {
   it('fetches and outputs scan diff successfully', async () => {
-    const { fetchDiffScan } = await import('../../src/fetch-diff-scan.mts')
-    const { outputDiffScan } = await import('../../src/output-diff-scan.mts')
+    const { fetchDiffScan } = await import('../../../../../src/commands/../src/fetch-diff-scan.mts')
+    const { outputDiffScan } = await import('../../../../../src/commands/../src/output-diff-scan.mts')
     const mockFetch = vi.mocked(fetchDiffScan)
     const mockOutput = vi.mocked(outputDiffScan)
 
@@ -57,8 +57,8 @@ describe('handleDiffScan', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchDiffScan } = await import('../../src/fetch-diff-scan.mts')
-    const { outputDiffScan } = await import('../../src/output-diff-scan.mts')
+    const { fetchDiffScan } = await import('../../../../../src/commands/../src/fetch-diff-scan.mts')
+    const { outputDiffScan } = await import('../../../../../src/commands/../src/output-diff-scan.mts')
     const mockFetch = vi.mocked(fetchDiffScan)
     const mockOutput = vi.mocked(outputDiffScan)
 
@@ -82,8 +82,8 @@ describe('handleDiffScan', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { fetchDiffScan } = await import('../../src/fetch-diff-scan.mts')
-    const { outputDiffScan } = await import('../../src/output-diff-scan.mts')
+    const { fetchDiffScan } = await import('../../../../../src/commands/../src/fetch-diff-scan.mts')
+    const { outputDiffScan } = await import('../../../../../src/commands/../src/output-diff-scan.mts')
     const mockFetch = vi.mocked(fetchDiffScan)
     const mockOutput = vi.mocked(outputDiffScan)
 
@@ -108,8 +108,8 @@ describe('handleDiffScan', () => {
   })
 
   it('handles different depth values', async () => {
-    const { fetchDiffScan } = await import('../../src/fetch-diff-scan.mts')
-    const { outputDiffScan } = await import('../../src/output-diff-scan.mts')
+    const { fetchDiffScan } = await import('../../../../../src/commands/../src/fetch-diff-scan.mts')
+    const { outputDiffScan } = await import('../../../../../src/commands/../src/output-diff-scan.mts')
     const mockFetch = vi.mocked(fetchDiffScan)
     const mockOutput = vi.mocked(outputDiffScan)
 
@@ -136,8 +136,8 @@ describe('handleDiffScan', () => {
   })
 
   it('handles text output without file', async () => {
-    const { fetchDiffScan } = await import('../../src/fetch-diff-scan.mts')
-    const { outputDiffScan } = await import('../../src/output-diff-scan.mts')
+    const { fetchDiffScan } = await import('../../../../../src/commands/../src/fetch-diff-scan.mts')
+    const { outputDiffScan } = await import('../../../../../src/commands/../src/output-diff-scan.mts')
     const mockFetch = vi.mocked(fetchDiffScan)
     const mockOutput = vi.mocked(outputDiffScan)
 

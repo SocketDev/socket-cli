@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleScanView } from '../../../../../src/commands/scan/handle-scan-view.mts'
+import { handleScanView } from '../../../../../src/commands/../../../../src/commands/scan/handle-scan-view.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/scan/fetch-scan.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/scan/fetch-scan.mts', () => ({
   fetchScan: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/scan/output-scan-view.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/scan/output-scan-view.mts', () => ({
   outputScanView: vi.fn(),
 }))
 
@@ -16,8 +16,8 @@ describe('handleScanView', () => {
   })
 
   it('fetches and outputs scan view successfully', async () => {
-    const { fetchScan } = await import('../../src/fetch-scan.mts')
-    const { outputScanView } = await import('../../src/output-scan-view.mts')
+    const { fetchScan } = await import('../../../../../src/commands/../src/fetch-scan.mts')
+    const { outputScanView } = await import('../../../../../src/commands/../src/output-scan-view.mts')
 
     const mockData = {
       ok: true,
@@ -47,8 +47,8 @@ describe('handleScanView', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchScan } = await import('../../src/fetch-scan.mts')
-    const { outputScanView } = await import('../../src/output-scan-view.mts')
+    const { fetchScan } = await import('../../../../../src/commands/../src/fetch-scan.mts')
+    const { outputScanView } = await import('../../../../../src/commands/../src/output-scan-view.mts')
 
     const mockError = {
       ok: false,
@@ -69,8 +69,8 @@ describe('handleScanView', () => {
   })
 
   it('handles markdown output', async () => {
-    const { fetchScan } = await import('../../src/fetch-scan.mts')
-    const { outputScanView } = await import('../../src/output-scan-view.mts')
+    const { fetchScan } = await import('../../../../../src/commands/../src/fetch-scan.mts')
+    const { outputScanView } = await import('../../../../../src/commands/../src/output-scan-view.mts')
 
     const mockData = {
       ok: true,
@@ -94,8 +94,8 @@ describe('handleScanView', () => {
   })
 
   it('handles empty file path', async () => {
-    const { fetchScan } = await import('../../src/fetch-scan.mts')
-    const { outputScanView } = await import('../../src/output-scan-view.mts')
+    const { fetchScan } = await import('../../../../../src/commands/../src/fetch-scan.mts')
+    const { outputScanView } = await import('../../../../../src/commands/../src/output-scan-view.mts')
 
     const mockData = {
       ok: true,
@@ -115,8 +115,8 @@ describe('handleScanView', () => {
   })
 
   it('handles different scan statuses', async () => {
-    const { fetchScan } = await import('../../src/fetch-scan.mts')
-    const { outputScanView } = await import('../../src/output-scan-view.mts')
+    const { fetchScan } = await import('../../../../../src/commands/../src/fetch-scan.mts')
+    const { outputScanView } = await import('../../../../../src/commands/../src/output-scan-view.mts')
 
     const statuses = ['pending', 'in_progress', 'completed', 'failed']
 
@@ -142,8 +142,8 @@ describe('handleScanView', () => {
   })
 
   it('handles text output format', async () => {
-    const { fetchScan } = await import('../../src/fetch-scan.mts')
-    const { outputScanView } = await import('../../src/output-scan-view.mts')
+    const { fetchScan } = await import('../../../../../src/commands/../src/fetch-scan.mts')
+    const { outputScanView } = await import('../../../../../src/commands/../src/output-scan-view.mts')
 
     const mockData = {
       ok: true,
@@ -167,7 +167,7 @@ describe('handleScanView', () => {
   })
 
   it('handles async errors', async () => {
-    const { fetchScan } = await import('../../src/fetch-scan.mts')
+    const { fetchScan } = await import('../../../../../src/commands/../src/fetch-scan.mts')
 
     vi.mocked(fetchScan).mockRejectedValue(new Error('Network error'))
 

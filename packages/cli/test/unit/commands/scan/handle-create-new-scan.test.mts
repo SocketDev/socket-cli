@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../test/helpers/mocks.mts'
-import { handleCreateNewScan } from '../../../../../src/commands/scan/handle-create-new-scan.mts'
+} from '../../../../../src/commands/../../../test/helpers/mocks.mts'
+import { handleCreateNewScan } from '../../../../../src/commands/../../../../src/commands/scan/handle-create-new-scan.mts'
 
 // Mock all the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -23,22 +23,22 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 vi.mock('@socketsecurity/lib/words', () => ({
   pluralize: vi.fn((word, count) => (count === 1 ? word : `${word}s`)),
 }))
-vi.mock('../../../../../src/commands/scan/fetch-create-org-full-scan.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/scan/fetch-create-org-full-scan.mts', () => ({
   fetchCreateOrgFullScan: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/scan/fetch-supported-scan-file-names.mts', () => ({
   fetchSupportedScanFileNames: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/scan/finalize-tier1-scan.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/scan/finalize-tier1-scan.mts', () => ({
   finalizeTier1Scan: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/scan/handle-scan-report.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/scan/handle-scan-report.mts', () => ({
   handleScanReport: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/scan/output-create-new-scan.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/scan/output-create-new-scan.mts', () => ({
   outputCreateNewScan: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/scan/perform-reachability-analysis.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/scan/perform-reachability-analysis.mts', () => ({
   performReachabilityAnalysis: vi.fn(),
 }))
 vi.mock('@socketsecurity/lib/constants/process', () => ({
@@ -48,22 +48,22 @@ vi.mock('@socketsecurity/lib/constants/process', () => ({
     successAndStop: vi.fn(),
   })),
 }))
-vi.mock('../../utils/validation/check-input.mts', () => ({
+vi.mock('../../../../../src/commands/../utils/validation/check-input.mts', () => ({
   checkCommandInput: vi.fn(),
 }))
-vi.mock('../../utils/fs/path-resolve.mts', () => ({
+vi.mock('../../../../../src/commands/../utils/fs/path-resolve.mts', () => ({
   getPackageFilesForScan: vi.fn(),
 }))
-vi.mock('../../utils/socket/json.mts', () => ({
+vi.mock('../../../../../src/commands/../utils/socket/json.mts', () => ({
   readOrDefaultSocketJson: vi.fn(),
 }))
-vi.mock('../../utils/terminal/link.mts', () => ({
+vi.mock('../../../../../src/commands/../utils/terminal/link.mts', () => ({
   socketDocsLink: vi.fn(() => 'https://docs.socket.dev'),
 }))
-vi.mock('../manifest/detect-manifest-actions.mts', () => ({
+vi.mock('../../../../../src/commands/manifest/detect-manifest-actions.mts', () => ({
   detectManifestActions: vi.fn(),
 }))
-vi.mock('../manifest/generate_auto_manifest.mts', () => ({
+vi.mock('../../../../../src/commands/manifest/generate_auto_manifest.mts', () => ({
   generateAutoManifest: vi.fn(),
 }))
 
@@ -101,15 +101,15 @@ describe('handleCreateNewScan', () => {
       './fetch-supported-scan-file-names.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/fs/path-resolve.mts'
+      '../../../../../src/commands/../utils/fs/path-resolve.mts'
     )
     const { checkCommandInput } = await import(
-      '../../utils/validation/check-input.mts'
+      '../../../../../src/commands/../utils/validation/check-input.mts'
     )
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { outputCreateNewScan } = await import('../../src/output-create-new-scan.mts')
+    const { outputCreateNewScan } = await import('../../../../../src/commands/../src/output-create-new-scan.mts')
 
     vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
       createSuccessResult(new Set(['package.json', 'yarn.lock'])),
@@ -145,22 +145,22 @@ describe('handleCreateNewScan', () => {
 
   it('handles auto-manifest mode', async () => {
     const { readOrDefaultSocketJson } = await import(
-      '../../utils/socket/json.mts'
+      '../../../../../src/commands/../utils/socket/json.mts'
     )
     const { detectManifestActions } = await import(
-      '../manifest/detect-manifest-actions.mts'
+      '../../../../../src/commands/manifest/detect-manifest-actions.mts'
     )
     const { generateAutoManifest } = await import(
-      '../manifest/generate_auto_manifest.mts'
+      '../../../../../src/commands/manifest/generate_auto_manifest.mts'
     )
     const { fetchSupportedScanFileNames } = await import(
       './fetch-supported-scan-file-names.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/fs/path-resolve.mts'
+      '../../../../../src/commands/../utils/fs/path-resolve.mts'
     )
     const { checkCommandInput } = await import(
-      '../../utils/validation/check-input.mts'
+      '../../../../../src/commands/../utils/validation/check-input.mts'
     )
 
     vi.mocked(readOrDefaultSocketJson).mockReturnValue({})
@@ -190,10 +190,10 @@ describe('handleCreateNewScan', () => {
       './fetch-supported-scan-file-names.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/fs/path-resolve.mts'
+      '../../../../../src/commands/../utils/fs/path-resolve.mts'
     )
     const { checkCommandInput } = await import(
-      '../../utils/validation/check-input.mts'
+      '../../../../../src/commands/../utils/validation/check-input.mts'
     )
 
     vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
@@ -218,10 +218,10 @@ describe('handleCreateNewScan', () => {
       './fetch-supported-scan-file-names.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/fs/path-resolve.mts'
+      '../../../../../src/commands/../utils/fs/path-resolve.mts'
     )
     const { checkCommandInput } = await import(
-      '../../utils/validation/check-input.mts'
+      '../../../../../src/commands/../utils/validation/check-input.mts'
     )
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
@@ -251,10 +251,10 @@ describe('handleCreateNewScan', () => {
       './fetch-supported-scan-file-names.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/fs/path-resolve.mts'
+      '../../../../../src/commands/../utils/fs/path-resolve.mts'
     )
     const { checkCommandInput } = await import(
-      '../../utils/validation/check-input.mts'
+      '../../../../../src/commands/../utils/validation/check-input.mts'
     )
     const { performReachabilityAnalysis } = await import(
       './perform-reachability-analysis.mts'
@@ -262,7 +262,7 @@ describe('handleCreateNewScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { finalizeTier1Scan } = await import('../../src/finalize-tier1-scan.mts')
+    const { finalizeTier1Scan } = await import('../../../../../src/commands/../src/finalize-tier1-scan.mts')
 
     vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
       createSuccessResult(new Set(['package.json'])),
@@ -301,15 +301,15 @@ describe('handleCreateNewScan', () => {
       './fetch-supported-scan-file-names.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/fs/path-resolve.mts'
+      '../../../../../src/commands/../utils/fs/path-resolve.mts'
     )
     const { checkCommandInput } = await import(
-      '../../utils/validation/check-input.mts'
+      '../../../../../src/commands/../utils/validation/check-input.mts'
     )
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { handleScanReport } = await import('../../src/handle-scan-report.mts')
+    const { handleScanReport } = await import('../../../../../src/commands/../src/handle-scan-report.mts')
 
     vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
       createSuccessResult(new Set(['package.json'])),
@@ -340,7 +340,7 @@ describe('handleCreateNewScan', () => {
     const { fetchSupportedScanFileNames } = await import(
       './fetch-supported-scan-file-names.mts'
     )
-    const { outputCreateNewScan } = await import('../../src/output-create-new-scan.mts')
+    const { outputCreateNewScan } = await import('../../../../../src/commands/../src/output-create-new-scan.mts')
 
     const error = new Error('API error')
     vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(

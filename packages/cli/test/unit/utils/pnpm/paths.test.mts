@@ -21,9 +21,9 @@ vi.mock('../fs/path-resolve.mts', () => ({
 
 describe('pnpm-paths utilities', () => {
   let originalExit: typeof process.exit
-  let getPnpmBinPath: typeof import('../../../../src/utils/pnpm/paths.mts')['getPnpmBinPath']
-  let getPnpmBinPathDetails: typeof import('../../../../src/utils/pnpm/paths.mts')['getPnpmBinPathDetails']
-  let isPnpmBinPathShadowed: typeof import('../../../../src/utils/pnpm/paths.mts')['isPnpmBinPathShadowed']
+  let getPnpmBinPath: typeof import('../../../../../src/utils/pnpm/paths.mts')['getPnpmBinPath']
+  let getPnpmBinPathDetails: typeof import('../../../../../src/utils/pnpm/paths.mts')['getPnpmBinPathDetails']
+  let isPnpmBinPathShadowed: typeof import('../../../../../src/utils/pnpm/paths.mts')['isPnpmBinPathShadowed']
 
   beforeEach(async () => {
     vi.clearAllMocks()
@@ -37,7 +37,7 @@ describe('pnpm-paths utilities', () => {
     }) as any
 
     // Re-import functions after module reset to clear caches
-    const pnpmPaths = await import('../../../../src/utils/pnpm/paths.mts')
+    const pnpmPaths = await import('../../../../../src/utils/pnpm/paths.mts')
     getPnpmBinPath = pnpmPaths.getPnpmBinPath
     getPnpmBinPathDetails = pnpmPaths.getPnpmBinPathDetails
     isPnpmBinPathShadowed = pnpmPaths.isPnpmBinPathShadowed

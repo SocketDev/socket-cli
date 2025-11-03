@@ -12,13 +12,13 @@ beforeEach(() => {
 
 describe('cmd-repository-list', () => {
   it('should have a default export', async () => {
-    const module = await import('../../../../../src/commands/repository/cmd-repository-list-simplified.mts')
+    const module = await import('../../../../../src/commands/../../../../src/commands/repository/cmd-repository-list-simplified.mts')
     expect(module.default).toBeDefined()
     expect(typeof module.default).toBe('object')
   })
 
   it('should have required command structure', async () => {
-    const module = await import('../../../../../src/commands/repository/cmd-repository-list-simplified.mts')
+    const module = await import('../../../../../src/commands/../../../../src/commands/repository/cmd-repository-list-simplified.mts')
     const cmd = module.default
     expect(cmd.run).toBeDefined()
     expect(cmd.description).toBeDefined()

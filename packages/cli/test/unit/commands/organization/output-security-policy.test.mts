@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../test/helpers/index.mts'
+} from '../../../../../src/commands/../../../test/helpers/index.mts'
 
-import type { CResult } from '../../../../../src/commands/organization/types.mts'
+import type { CResult } from '../../../../../src/commands/../../../../src/commands/organization/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 describe('outputSecurityPolicy', () => {
@@ -28,7 +28,7 @@ describe('outputSecurityPolicy', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
@@ -69,7 +69,7 @@ describe('outputSecurityPolicy', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
@@ -106,7 +106,7 @@ describe('outputSecurityPolicy', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../../src/commands/../utils/output/markdown.mts', () => ({
       mdHeader: mockMdHeader,
       mdTableOfPairs: mockMdTableOfPairs,
     }))
@@ -161,7 +161,7 @@ describe('outputSecurityPolicy', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../utils/error/fail-msg-with-badge.mts', () => ({
+    vi.doMock('../../../../../src/commands/../utils/error/fail-msg-with-badge.mts', () => ({
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
@@ -202,7 +202,7 @@ describe('outputSecurityPolicy', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../../src/commands/../utils/output/markdown.mts', () => ({
       mdHeader: mockMdHeader,
       mdTableOfPairs: mockMdTableOfPairs,
     }))
@@ -242,7 +242,7 @@ describe('outputSecurityPolicy', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../../src/commands/../utils/output/markdown.mts', () => ({
       mdHeader: mockMdHeader,
       mdTableOfPairs: mockMdTableOfPairs,
     }))
@@ -279,7 +279,7 @@ describe('outputSecurityPolicy', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../../src/commands/../utils/output/markdown.mts', () => ({
       mdHeader: mockMdHeader,
       mdTableOfPairs: mockMdTableOfPairs,
     }))
@@ -327,7 +327,7 @@ describe('outputSecurityPolicy', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 

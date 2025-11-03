@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleUninstallCompletion } from '../../../../../src/commands/uninstall/handle-uninstall-completion.mts'
+import { handleUninstallCompletion } from '../../../../../src/commands/../../../../src/commands/uninstall/handle-uninstall-completion.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/uninstall/output-uninstall-completion.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/uninstall/output-uninstall-completion.mts', () => ({
   outputUninstallCompletion: vi.fn(),
 }))
-vi.mock('../../../../../src/commands/uninstall/teardown-tab-completion.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/uninstall/teardown-tab-completion.mts', () => ({
   teardownTabCompletion: vi.fn(),
 }))
 

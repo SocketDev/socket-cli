@@ -34,15 +34,15 @@ vi.mock('../utils/shadow/links.mts', () => ({
   installNpxLinks: mockInstallNpxLinks,
 }))
 
-vi.mock('../utils/socket/sdk.mts', () => ({
+vi.mock('../utils/utils/socket/sdk.mts', () => ({
   getPublicApiToken: mockGetPublicApiToken,
 }))
 
-vi.mock('../utils/fs/find-up.mts', () => ({
+vi.mock('../utils/utils/fs/find-up.mts', () => ({
   findUp: mockFindUp,
 }))
 
-vi.mock('../constants/paths.mts', async importOriginal => {
+vi.mock('../constants/shadow/npm/paths.mts', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,

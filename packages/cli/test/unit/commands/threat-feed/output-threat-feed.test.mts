@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { outputThreatFeed } from '../../../../../src/commands/threat-feed/output-threat-feed.mts'
-import { failMsgWithBadge } from '../../../../src/utils/error/fail-msg-with-badge.mts'
-import { msAtHome } from '../../../../src/utils/home-cache-time.mts'
-import { serializeResultJson } from '../../../../src/utils/output/result-json.mts'
+import { outputThreatFeed } from '../../../../../src/commands/../../../../src/commands/threat-feed/output-threat-feed.mts'
+import { failMsgWithBadge } from '../../../../../src/commands/../../../src/utils/error/fail-msg-with-badge.mts'
+import { msAtHome } from '../../../../../src/commands/../../../src/utils/home-cache-time.mts'
+import { serializeResultJson } from '../../../../../src/commands/../../../src/utils/output/result-json.mts'
 
 import type {
   ThreadFeedResponse,
   ThreatResult,
-} from '../../../../../src/commands/threat-feed/types.mts'
-import type { CResult } from '../../../../../src/commands/threat-feed/types.mts'
+} from '../../../../../src/commands/../../../../src/commands/threat-feed/types.mts'
+import type { CResult } from '../../../../../src/commands/../../../../src/commands/threat-feed/types.mts'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -31,19 +31,19 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 
-vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock('../../../../../src/commands/../utils/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
 }))
 
-vi.mock('../../utils/output/result-json.mts', () => ({
+vi.mock('../../../../../src/commands/../utils/output/result-json.mts', () => ({
   serializeResultJson: vi.fn(result => JSON.stringify(result)),
 }))
 
-vi.mock('../../utils/home-cache-time.mts', () => ({
+vi.mock('../../../../../src/commands/../utils/home-cache-time.mts', () => ({
   msAtHome: vi.fn(() => '2 days ago'),
 }))
 
-vi.mock('../../constants.mts', () => ({
+vi.mock('../../../../../src/commands/../constants.mts', () => ({
   default: {
     blessedOptions: {},
     spinner: {

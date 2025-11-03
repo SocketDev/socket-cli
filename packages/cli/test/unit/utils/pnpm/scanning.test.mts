@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getAlertsMapFromPnpmLockfile } from '../../../../src/socket/alerts.mts'
+import { getAlertsMapFromPnpmLockfile } from '../../../../../src/utils/socket/alerts.mts'
 import {
   extractPurlsFromPnpmLockfile,
   parsePnpmLockfile,

@@ -4,15 +4,15 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../../test/helpers/sdk-test-helpers.mts'
-import { fetchOrganization } from '../../../../../src/commands/organization/fetch-organization-list.mts'
+} from '../../../../../src/commands/../../../test/helpers/sdk-test-helpers.mts'
+import { fetchOrganization } from '../../../../../src/commands/../../../../src/commands/organization/fetch-organization-list.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/socket/api.mts', () => ({
+vi.mock('../../../../../src/commands/../utils/socket/api.mts', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/socket/sdk.mts', () => ({
+vi.mock('../../../../../src/commands/../utils/socket/sdk.mts', () => ({
   setupSdk: vi.fn(),
 }))
 
@@ -88,9 +88,9 @@ describe('fetchOrganizationList', () => {
   })
 
   it('uses provided SDK instance', async () => {
-    const { handleApiCall } = await import('../../../../../src/utils/socket/api.mts')
+    const { handleApiCall } = await import('../../../../../src/commands/../../../../src/utils/socket/api.mts')
     const { createSuccessResult } = await import(
-      '../../../test/helpers/mocks.mts'
+      '../../../../../src/commands/../../test/helpers/mocks.mts'
     )
 
     const mockSdk = {

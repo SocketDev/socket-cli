@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../test/helpers/index.mts'
+} from '../../../../../src/commands/../../../test/helpers/index.mts'
 
-import type { CResult } from '../../../../../src/commands/repository/types.mts'
+import type { CResult } from '../../../../../src/commands/../../../../src/commands/repository/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 describe('outputListRepos', () => {
@@ -29,11 +29,11 @@ describe('outputListRepos', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputListRepos } = await import('../../src/output-list-repos.mts')
+    const { outputListRepos } = await import('../../../../../src/commands/../src/output-list-repos.mts')
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
@@ -80,11 +80,11 @@ describe('outputListRepos', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputListRepos } = await import('../../src/output-list-repos.mts')
+    const { outputListRepos } = await import('../../../../../src/commands/../src/output-list-repos.mts')
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createErrorResult('Unauthorized', {
@@ -125,7 +125,7 @@ describe('outputListRepos', () => {
       },
     }))
 
-    const { outputListRepos } = await import('../../src/output-list-repos.mts')
+    const { outputListRepos } = await import('../../../../../src/commands/../src/output-list-repos.mts')
 
     const repos = [
       {
@@ -189,11 +189,11 @@ describe('outputListRepos', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../utils/error/fail-msg-with-badge.mts', () => ({
+    vi.doMock('../../../../../src/commands/../utils/error/fail-msg-with-badge.mts', () => ({
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
-    const { outputListRepos } = await import('../../src/output-list-repos.mts')
+    const { outputListRepos } = await import('../../../../../src/commands/../src/output-list-repos.mts')
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createErrorResult('Failed to fetch repositories', {
@@ -238,7 +238,7 @@ describe('outputListRepos', () => {
       },
     }))
 
-    const { outputListRepos } = await import('../../src/output-list-repos.mts')
+    const { outputListRepos } = await import('../../../../../src/commands/../src/output-list-repos.mts')
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
@@ -287,7 +287,7 @@ describe('outputListRepos', () => {
       },
     }))
 
-    const { outputListRepos } = await import('../../src/output-list-repos.mts')
+    const { outputListRepos } = await import('../../../../../src/commands/../src/output-list-repos.mts')
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
@@ -336,7 +336,7 @@ describe('outputListRepos', () => {
       },
     }))
 
-    const { outputListRepos } = await import('../../src/output-list-repos.mts')
+    const { outputListRepos } = await import('../../../../../src/commands/../src/output-list-repos.mts')
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
@@ -363,11 +363,11 @@ describe('outputListRepos', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputListRepos } = await import('../../src/output-list-repos.mts')
+    const { outputListRepos } = await import('../../../../../src/commands/../src/output-list-repos.mts')
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createErrorResult('Error without code')

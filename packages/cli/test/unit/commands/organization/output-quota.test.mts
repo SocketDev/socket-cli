@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../test/helpers/index.mts'
+} from '../../../../../src/commands/../../../test/helpers/index.mts'
 
 describe('outputQuota', () => {
   beforeEach(async () => {
@@ -27,12 +27,12 @@ describe('outputQuota', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import('../../src/output-quota.mts')
+    const { outputQuota } = await import('../../../../../src/commands/../src/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 1000,
@@ -63,12 +63,12 @@ describe('outputQuota', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import('../../src/output-quota.mts')
+    const { outputQuota } = await import('../../../../../src/commands/../src/output-quota.mts')
 
     const result = createErrorResult('Unauthorized', {
       code: 2,
@@ -100,7 +100,7 @@ describe('outputQuota', () => {
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import('../../src/output-quota.mts')
+    const { outputQuota } = await import('../../../../../src/commands/../src/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 500,
@@ -133,12 +133,12 @@ describe('outputQuota', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../utils/error/fail-msg-with-badge.mts', () => ({
+    vi.doMock('../../../../../src/commands/../utils/error/fail-msg-with-badge.mts', () => ({
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import('../../src/output-quota.mts')
+    const { outputQuota } = await import('../../../../../src/commands/../src/output-quota.mts')
 
     const result = createErrorResult('Failed to fetch quota', {
       code: 1,
@@ -172,12 +172,12 @@ describe('outputQuota', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../../src/commands/../utils/output/markdown.mts', () => ({
       mdHeader: vi.fn(title => `# ${title}`),
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import('../../src/output-quota.mts')
+    const { outputQuota } = await import('../../../../../src/commands/../src/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 750,
@@ -211,7 +211,7 @@ describe('outputQuota', () => {
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import('../../src/output-quota.mts')
+    const { outputQuota } = await import('../../../../../src/commands/../src/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 0,
@@ -243,7 +243,7 @@ describe('outputQuota', () => {
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import('../../src/output-quota.mts')
+    const { outputQuota } = await import('../../../../../src/commands/../src/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 100,
@@ -275,12 +275,12 @@ describe('outputQuota', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../../src/commands/../utils/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import('../../src/output-quota.mts')
+    const { outputQuota } = await import('../../../../../src/commands/../src/output-quota.mts')
 
     const result = createErrorResult('Error')
 

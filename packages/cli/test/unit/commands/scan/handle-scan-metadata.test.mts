@@ -3,22 +3,22 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../test/helpers/mocks.mts'
-import { handleOrgScanMetadata } from '../../../../../src/commands/scan/handle-scan-metadata.mts'
+} from '../../../../../src/commands/../../../test/helpers/mocks.mts'
+import { handleOrgScanMetadata } from '../../../../../src/commands/../../../../src/commands/scan/handle-scan-metadata.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/scan/fetch-scan-metadata.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/scan/fetch-scan-metadata.mts', () => ({
   fetchScanMetadata: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/scan/output-scan-metadata.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/scan/output-scan-metadata.mts', () => ({
   outputScanMetadata: vi.fn(),
 }))
 
 describe('handleOrgScanMetadata', () => {
   it('fetches and outputs scan metadata successfully', async () => {
-    const { fetchScanMetadata } = await import('../../src/fetch-scan-metadata.mts')
-    const { outputScanMetadata } = await import('../../src/output-scan-metadata.mts')
+    const { fetchScanMetadata } = await import('../../../../../src/commands/../src/fetch-scan-metadata.mts')
+    const { outputScanMetadata } = await import('../../../../../src/commands/../src/output-scan-metadata.mts')
     const mockFetch = vi.mocked(fetchScanMetadata)
     const mockOutput = vi.mocked(outputScanMetadata)
 
@@ -41,8 +41,8 @@ describe('handleOrgScanMetadata', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchScanMetadata } = await import('../../src/fetch-scan-metadata.mts')
-    const { outputScanMetadata } = await import('../../src/output-scan-metadata.mts')
+    const { fetchScanMetadata } = await import('../../../../../src/commands/../src/fetch-scan-metadata.mts')
+    const { outputScanMetadata } = await import('../../../../../src/commands/../src/output-scan-metadata.mts')
     const mockFetch = vi.mocked(fetchScanMetadata)
     const mockOutput = vi.mocked(outputScanMetadata)
 
@@ -56,8 +56,8 @@ describe('handleOrgScanMetadata', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { fetchScanMetadata } = await import('../../src/fetch-scan-metadata.mts')
-    const { outputScanMetadata } = await import('../../src/output-scan-metadata.mts')
+    const { fetchScanMetadata } = await import('../../../../../src/commands/../src/fetch-scan-metadata.mts')
+    const { outputScanMetadata } = await import('../../../../../src/commands/../src/output-scan-metadata.mts')
     const mockFetch = vi.mocked(fetchScanMetadata)
     const mockOutput = vi.mocked(outputScanMetadata)
 
@@ -78,8 +78,8 @@ describe('handleOrgScanMetadata', () => {
   })
 
   it('handles different scan IDs', async () => {
-    const { fetchScanMetadata } = await import('../../src/fetch-scan-metadata.mts')
-    const { outputScanMetadata } = await import('../../src/output-scan-metadata.mts')
+    const { fetchScanMetadata } = await import('../../../../../src/commands/../src/fetch-scan-metadata.mts')
+    const { outputScanMetadata } = await import('../../../../../src/commands/../src/output-scan-metadata.mts')
     const mockFetch = vi.mocked(fetchScanMetadata)
     const _mockOutput = vi.mocked(outputScanMetadata)
 
@@ -99,8 +99,8 @@ describe('handleOrgScanMetadata', () => {
   })
 
   it('handles text output with detailed metadata', async () => {
-    const { fetchScanMetadata } = await import('../../src/fetch-scan-metadata.mts')
-    const { outputScanMetadata } = await import('../../src/output-scan-metadata.mts')
+    const { fetchScanMetadata } = await import('../../../../../src/commands/../src/fetch-scan-metadata.mts')
+    const { outputScanMetadata } = await import('../../../../../src/commands/../src/output-scan-metadata.mts')
     const mockFetch = vi.mocked(fetchScanMetadata)
     const mockOutput = vi.mocked(outputScanMetadata)
 

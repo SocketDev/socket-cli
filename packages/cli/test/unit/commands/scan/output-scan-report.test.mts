@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { SOCKET_WEBSITE_URL } from '../../../../src/constants/socket.mts'
+import { SOCKET_WEBSITE_URL } from '../../../../../src/commands/../../../src/constants/socket.mts'
 import {
   toJsonReport,
   toMarkdownReport,
-} from '../../../../../src/commands/scan/output-scan-report.mts'
+} from '../../../../../src/commands/../../../../src/commands/scan/output-scan-report.mts'
 
-import type { ScanReport } from '../../../../../src/commands/scan/generate-report.mts'
+import type { ScanReport } from '../../../../../src/commands/../../../../src/commands/scan/generate-report.mts'
 
 describe('output-scan-report', () => {
   describe('toJsonReport', () => {

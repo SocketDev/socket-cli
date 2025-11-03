@@ -3,22 +3,22 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../test/helpers/mocks.mts'
-import { handleConfigAuto } from '../../../../../src/commands/config/handle-config-auto.mts'
+} from '../../../../../src/commands/../../../test/helpers/mocks.mts'
+import { handleConfigAuto } from '../../../../../src/commands/../../../../src/commands/config/handle-config-auto.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/config/discover-config-value.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/config/discover-config-value.mts', () => ({
   discoverConfigValue: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/config/output-config-auto.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/config/output-config-auto.mts', () => ({
   outputConfigAuto: vi.fn(),
 }))
 
 describe('handleConfigAuto', () => {
   it('discovers and outputs config value successfully', async () => {
-    const { discoverConfigValue } = await import('../../src/discover-config-value.mts')
-    const { outputConfigAuto } = await import('../../src/output-config-auto.mts')
+    const { discoverConfigValue } = await import('../../../../../src/commands/../src/discover-config-value.mts')
+    const { outputConfigAuto } = await import('../../../../../src/commands/../src/output-config-auto.mts')
     const mockDiscover = vi.mocked(discoverConfigValue)
     const mockOutput = vi.mocked(outputConfigAuto)
 
@@ -32,8 +32,8 @@ describe('handleConfigAuto', () => {
   })
 
   it('handles discovery failure', async () => {
-    const { discoverConfigValue } = await import('../../src/discover-config-value.mts')
-    const { outputConfigAuto } = await import('../../src/output-config-auto.mts')
+    const { discoverConfigValue } = await import('../../../../../src/commands/../src/discover-config-value.mts')
+    const { outputConfigAuto } = await import('../../../../../src/commands/../src/output-config-auto.mts')
     const mockDiscover = vi.mocked(discoverConfigValue)
     const mockOutput = vi.mocked(outputConfigAuto)
 
@@ -47,8 +47,8 @@ describe('handleConfigAuto', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { discoverConfigValue } = await import('../../src/discover-config-value.mts')
-    const { outputConfigAuto } = await import('../../src/output-config-auto.mts')
+    const { discoverConfigValue } = await import('../../../../../src/commands/../src/discover-config-value.mts')
+    const { outputConfigAuto } = await import('../../../../../src/commands/../src/output-config-auto.mts')
     const mockDiscover = vi.mocked(discoverConfigValue)
     const mockOutput = vi.mocked(outputConfigAuto)
 
@@ -64,8 +64,8 @@ describe('handleConfigAuto', () => {
   })
 
   it('handles different config keys', async () => {
-    const { discoverConfigValue } = await import('../../src/discover-config-value.mts')
-    const { outputConfigAuto } = await import('../../src/output-config-auto.mts')
+    const { discoverConfigValue } = await import('../../../../../src/commands/../src/discover-config-value.mts')
+    const { outputConfigAuto } = await import('../../../../../src/commands/../src/output-config-auto.mts')
     const mockDiscover = vi.mocked(discoverConfigValue)
     const _mockOutput = vi.mocked(outputConfigAuto)
 
@@ -80,8 +80,8 @@ describe('handleConfigAuto', () => {
   })
 
   it('handles text output format', async () => {
-    const { discoverConfigValue } = await import('../../src/discover-config-value.mts')
-    const { outputConfigAuto } = await import('../../src/output-config-auto.mts')
+    const { discoverConfigValue } = await import('../../../../../src/commands/../src/discover-config-value.mts')
+    const { outputConfigAuto } = await import('../../../../../src/commands/../src/output-config-auto.mts')
     const mockDiscover = vi.mocked(discoverConfigValue)
     const mockOutput = vi.mocked(outputConfigAuto)
 

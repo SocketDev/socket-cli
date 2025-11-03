@@ -1,21 +1,21 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { createSuccessResult } from '../../../../test/helpers/index.mts'
-import { handleViewRepo } from '../../../../../src/commands/repository/handle-view-repo.mts'
+import { createSuccessResult } from '../../../../../src/commands/../../../test/helpers/index.mts'
+import { handleViewRepo } from '../../../../../src/commands/../../../../src/commands/repository/handle-view-repo.mts'
 
 // Setup mocks at module level
-vi.mock('../../../../../src/commands/repository/fetch-view-repo.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/repository/fetch-view-repo.mts', () => ({
   fetchViewRepo: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/repository/output-view-repo.mts', () => ({
+vi.mock('../../../../../src/commands/../../../../src/commands/repository/output-view-repo.mts', () => ({
   outputViewRepo: vi.fn(),
 }))
 
 describe('handleViewRepo', () => {
   it('fetches and outputs repository details successfully', async () => {
-    const { fetchViewRepo } = await import('../../src/fetch-view-repo.mts')
-    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
+    const { fetchViewRepo } = await import('../../../../../src/commands/../src/fetch-view-repo.mts')
+    const { outputViewRepo } = await import('../../../../../src/commands/../src/output-view-repo.mts')
     const mockFetch = vi.mocked(fetchViewRepo)
     const mockOutput = vi.mocked(outputViewRepo)
 
@@ -36,8 +36,8 @@ describe('handleViewRepo', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchViewRepo } = await import('../../src/fetch-view-repo.mts')
-    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
+    const { fetchViewRepo } = await import('../../../../../src/commands/../src/fetch-view-repo.mts')
+    const { outputViewRepo } = await import('../../../../../src/commands/../src/output-view-repo.mts')
     const mockFetch = vi.mocked(fetchViewRepo)
     const mockOutput = vi.mocked(outputViewRepo)
 
@@ -56,8 +56,8 @@ describe('handleViewRepo', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { fetchViewRepo } = await import('../../src/fetch-view-repo.mts')
-    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
+    const { fetchViewRepo } = await import('../../../../../src/commands/../src/fetch-view-repo.mts')
+    const { outputViewRepo } = await import('../../../../../src/commands/../src/output-view-repo.mts')
     const mockFetch = vi.mocked(fetchViewRepo)
     const mockOutput = vi.mocked(outputViewRepo)
 
@@ -74,8 +74,8 @@ describe('handleViewRepo', () => {
   })
 
   it('handles text output format', async () => {
-    const { fetchViewRepo } = await import('../../src/fetch-view-repo.mts')
-    const { outputViewRepo } = await import('../../src/output-view-repo.mts')
+    const { fetchViewRepo } = await import('../../../../../src/commands/../src/fetch-view-repo.mts')
+    const { outputViewRepo } = await import('../../../../../src/commands/../src/output-view-repo.mts')
     const mockFetch = vi.mocked(fetchViewRepo)
     const mockOutput = vi.mocked(outputViewRepo)
 
@@ -102,7 +102,7 @@ describe('handleViewRepo', () => {
   })
 
   it('handles different repository names', async () => {
-    const { fetchViewRepo } = await import('../../src/fetch-view-repo.mts')
+    const { fetchViewRepo } = await import('../../../../../src/commands/../src/fetch-view-repo.mts')
     const mockFetch = vi.mocked(fetchViewRepo)
 
     const testCases = [
