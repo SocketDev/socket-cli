@@ -26,7 +26,6 @@
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 const logger = getDefaultLogger()
 
-
 /**
  * Model registry mapping package names to npm packages.
  * This serves as the "manifest" for available optional models.

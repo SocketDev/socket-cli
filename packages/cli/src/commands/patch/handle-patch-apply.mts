@@ -34,7 +34,6 @@ import type { PackageURL } from '@socketregistry/packageurl-js'
 import type { Spinner } from '@socketsecurity/lib/spinner'
 const logger = getDefaultLogger()
 
-
 type PatchEntry = {
   key: string
   patch: PatchRecord

@@ -3,7 +3,6 @@ import colors from 'yoctocolors-cjs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 const logger = getDefaultLogger()
 
-
 interface OutputAskCommandOptions {
   query: string
   intent: {

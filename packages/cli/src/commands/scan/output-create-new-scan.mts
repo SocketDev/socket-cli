@@ -14,7 +14,6 @@ import type { Spinner } from '@socketsecurity/lib/spinner'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 export type CreateNewScanOptions = {
   interactive?: boolean | undefined
   outputKind?: OutputKind | undefined
@@ -85,9 +84,7 @@ export async function outputCreateNewScan(
 
   const htmlReportUrl = result.data.html_report_url
   if (htmlReportUrl) {
-    logger.log(
-      `View report at: ${terminalLink(htmlReportUrl, htmlReportUrl)}`,
-    )
+    logger.log(`View report at: ${terminalLink(htmlReportUrl, htmlReportUrl)}`)
   } else {
     logger.log('No report available.')
   }

@@ -9,7 +9,6 @@ import type { PatchInfoData } from './handle-patch-info.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 export async function outputPatchInfoResult(
   result: CResult<PatchInfoData>,
   outputKind: OutputKind,
@@ -58,9 +57,7 @@ export async function outputPatchInfoResult(
 
     if (patch.vulnerabilities) {
       const vulnCount = Object.keys(patch.vulnerabilities).length
-      logger.log(
-        `${mdHeader(`Vulnerabilities (${vulnCount})`, 3)}\n`,
-      )
+      logger.log(`${mdHeader(`Vulnerabilities (${vulnCount})`, 3)}\n`)
       for (const { 0: ghsaId, 1: vuln } of Object.entries(
         patch.vulnerabilities,
       )) {
@@ -93,9 +90,7 @@ export async function outputPatchInfoResult(
   if (patch.uuid) {
     logger.log(`UUID: ${patch.uuid}`)
   }
-  logger.log(
-    `Description: ${patch.description || 'No description provided'}`,
-  )
+  logger.log(`Description: ${patch.description || 'No description provided'}`)
   logger.log(`Exported: ${patch.exportedAt}`)
   if (patch.tier) {
     logger.log(`Tier: ${patch.tier}`)

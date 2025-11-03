@@ -7,7 +7,6 @@ import colors from 'yoctocolors-cjs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 const logger = getDefaultLogger()
 
-
 /**
  * Self-update output options.
  */
@@ -36,9 +35,7 @@ export async function outputSelfUpdate(
   } = options
 
   if (isUpToDate) {
-    logger.success(
-      `Already up to date (${colors.cyan(currentVersion)})`,
-    )
+    logger.success(`Already up to date (${colors.cyan(currentVersion)})`)
     return
   }
 

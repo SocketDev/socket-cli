@@ -7,7 +7,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 export async function outputUpdateRepo(
   result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']>,
   repoName: string,

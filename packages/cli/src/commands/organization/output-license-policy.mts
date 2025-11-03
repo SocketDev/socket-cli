@@ -8,7 +8,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 export async function outputLicensePolicy(
   result: CResult<SocketSdkSuccessResult<'getOrgLicensePolicy'>['data']>,
   outputKind: OutputKind,

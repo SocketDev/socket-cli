@@ -12,7 +12,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 const METRICS = [
   'total_critical_alerts',
   'total_high_alerts',
@@ -79,9 +78,7 @@ export async function outputAnalytics(
       try {
         await fs.writeFile(filepath, serialized, 'utf8')
         debugFileOp('write', filepath)
-        logger.success(
-          `Data successfully written to ${fileLink(filepath)}`,
-        )
+        logger.success(`Data successfully written to ${fileLink(filepath)}`)
       } catch (e) {
         debugFileOp('write', filepath, e)
         process.exitCode = 1
@@ -111,9 +108,7 @@ export async function outputAnalytics(
       try {
         await fs.writeFile(filepath, serialized, 'utf8')
         debugFileOp('write', filepath)
-        logger.success(
-          `Data successfully written to ${fileLink(filepath)}`,
-        )
+        logger.success(`Data successfully written to ${fileLink(filepath)}`)
       } catch (e) {
         debugFileOp('write', filepath, e)
         logger.error(e)

@@ -7,7 +7,6 @@ import type { PatchGetData } from './handle-patch-get.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 export async function outputPatchGetResult(
   result: CResult<PatchGetData>,
   outputKind: OutputKind,

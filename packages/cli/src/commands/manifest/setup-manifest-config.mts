@@ -17,7 +17,6 @@ import type { CResult } from '../../types.mts'
 import type { SocketJson } from '../../utils/socket/json.mts'
 const logger = getDefaultLogger()
 
-
 export async function setupManifestConfig(
   cwd: string,
   defaultOnReadError = false,
@@ -35,21 +34,15 @@ export async function setupManifestConfig(
   if (fs.existsSync(jsonPath)) {
     logger.info(`Found ${SOCKET_JSON} at ${jsonPath}`)
   } else {
-    logger.info(
-      `No ${SOCKET_JSON} found at ${cwd}, will generate a new one`,
-    )
+    logger.info(`No ${SOCKET_JSON} found at ${cwd}, will generate a new one`)
   }
 
   logger.log('')
   logger.log(
     'Note: This tool will set up flag and argument defaults for certain',
   )
-  logger.log(
-    '      CLI commands. You can still override them by explicitly',
-  )
-  logger.log(
-    '      setting the flag. It is meant to be a convenience tool.',
-  )
+  logger.log('      CLI commands. You can still override them by explicitly')
+  logger.log('      setting the flag. It is meant to be a convenience tool.')
   logger.log('')
   logger.log(
     `This command will generate a ${SOCKET_JSON} file in the target cwd.`,
@@ -57,9 +50,7 @@ export async function setupManifestConfig(
   logger.log(
     'You can choose to add this file to your repo (handy for collaboration)',
   )
-  logger.log(
-    'or to add it to the ignored files, or neither. This file is only',
-  )
+  logger.log('or to add it to the ignored files, or neither. This file is only')
   logger.log('used in CLI workflows.')
   logger.log('')
 

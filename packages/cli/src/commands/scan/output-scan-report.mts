@@ -24,7 +24,6 @@ import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 export type OutputScanReportConfig = {
   orgSlug: string
   scanId: string
@@ -88,9 +87,7 @@ export async function outputScanReport(
       logger.log(serializeResultJson(scanReport))
       return
     }
-    logger.fail(
-      failMsgWithBadge(scanReport.message, scanReport.cause),
-    )
+    logger.fail(failMsgWithBadge(scanReport.message, scanReport.cause))
     return
   }
 

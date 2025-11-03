@@ -15,7 +15,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-
 type DiffScanArtifact =
   SocketSdkSuccessResult<'GetOrgDiffScan'>['data']['artifacts']['added'][number]
 
@@ -94,9 +93,7 @@ async function handleJson(
         logger.fail(`Writing to \`${file}\` failed...`)
         logger.error(err)
       } else {
-        logger.success(
-          `Data successfully written to \`${fileLink(file)}\``,
-        )
+        logger.success(`Data successfully written to \`${fileLink(file)}\``)
       }
       logger.error(dashboardMessage)
     })
@@ -115,15 +112,11 @@ async function handleMarkdown(
 
   logger.log(mdHeader('Scan diff result'))
   logger.log('')
-  logger.log(
-    'This Socket.dev report shows the changes between two scans:',
-  )
+  logger.log('This Socket.dev report shows the changes between two scans:')
   logger.log(
     `- [${data.before.id}](${SOCKET_SBOM_URL_PREFIX}${data.before.id})`,
   )
-  logger.log(
-    `- [${data.after.id}](${SOCKET_SBOM_URL_PREFIX}${data.after.id})`,
-  )
+  logger.log(`- [${data.after.id}](${SOCKET_SBOM_URL_PREFIX}${data.after.id})`)
   logger.log('')
   logger.log(
     `You can [view this report in your dashboard](${data.diff_report_url})`,
@@ -131,16 +124,12 @@ async function handleMarkdown(
   logger.log('')
   logger.log(mdHeader('Changes', 2))
   logger.log('')
-  logger.log(
-    `- directDependenciesChanged: ${data.directDependenciesChanged}`,
-  )
+  logger.log(`- directDependenciesChanged: ${data.directDependenciesChanged}`)
   logger.log(`- Added packages: ${data.artifacts.added.length}`)
 
   if (data.artifacts.added.length > 0) {
     data.artifacts.added.slice(0, 10).forEach((artifact: DiffScanArtifact) => {
-      logger.log(
-        `  - ${artifact.type} ${artifact.name}@${artifact.version}`,
-      )
+      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     })
     if (data.artifacts.added.length > 10) {
       logger.log(`  … and ${data.artifacts.added.length - 10} more`)
@@ -152,32 +141,22 @@ async function handleMarkdown(
     data.artifacts.removed
       .slice(0, 10)
       .forEach((artifact: DiffScanArtifact) => {
-        logger.log(
-          `  - ${artifact.type} ${artifact.name}@${artifact.version}`,
-        )
+        logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
       })
     if (data.artifacts.removed.length > 10) {
-      logger.log(
-        `  … and ${data.artifacts.removed.length - 10} more`,
-      )
+      logger.log(`  … and ${data.artifacts.removed.length - 10} more`)
     }
   }
 
-  logger.log(
-    `- Replaced packages: ${data.artifacts.replaced.length}`,
-  )
+  logger.log(`- Replaced packages: ${data.artifacts.replaced.length}`)
   if (data.artifacts.replaced.length > 0) {
     data.artifacts.replaced
       .slice(0, 10)
       .forEach((artifact: DiffScanArtifact) => {
-        logger.log(
-          `  - ${artifact.type} ${artifact.name}@${artifact.version}`,
-        )
+        logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
       })
     if (data.artifacts.replaced.length > 10) {
-      logger.log(
-        `  … and ${data.artifacts.replaced.length - 10} more`,
-      )
+      logger.log(`  … and ${data.artifacts.replaced.length - 10} more`)
     }
   }
 
@@ -186,14 +165,10 @@ async function handleMarkdown(
     data.artifacts.updated
       .slice(0, 10)
       .forEach((artifact: DiffScanArtifact) => {
-        logger.log(
-          `  - ${artifact.type} ${artifact.name}@${artifact.version}`,
-        )
+        logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
       })
     if (data.artifacts.updated.length > 10) {
-      logger.log(
-        `  … and ${data.artifacts.updated.length - 10} more`,
-      )
+      logger.log(`  … and ${data.artifacts.updated.length - 10} more`)
     }
   }
 
@@ -202,9 +177,7 @@ async function handleMarkdown(
   if (unchanged.length > 0) {
     const firstUpToTen = unchanged.slice(0, 10)
     for (const artifact of firstUpToTen) {
-      logger.log(
-        `  - ${artifact.type} ${artifact.name}@${artifact.version}`,
-      )
+      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     }
     if (unchanged.length > 10) {
       logger.log(`  … and ${unchanged.length - 10} more`)
@@ -233,9 +206,7 @@ async function handleMarkdown(
   logger.log('')
   logger.log(`## Scan ${data.after.id}`)
   logger.log('')
-  logger.log(
-    'This Scan was considered to be the "head" / "to" / "after" Scan.',
-  )
+  logger.log('This Scan was considered to be the "head" / "to" / "after" Scan.')
   logger.log('')
   for (const { 0: key, 1: value } of Object.entries(data.after)) {
     if (key === 'pull_request' && !value) {

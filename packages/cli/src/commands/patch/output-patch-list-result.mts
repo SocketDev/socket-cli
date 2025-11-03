@@ -8,7 +8,6 @@ import type { PatchListEntry } from './handle-patch-list.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 type CleanedPatchEntry = {
   appliedAt?: string
   description?: string
@@ -123,9 +122,7 @@ export async function outputPatchListResult(
         logger.log(mdKeyValue('Applied', patch.appliedAt))
       }
       logger.log(mdKeyValue('Files', patch.fileCount))
-      logger.log(
-        mdKeyValue('Vulnerabilities', patch.vulnerabilityCount),
-      )
+      logger.log(mdKeyValue('Vulnerabilities', patch.vulnerabilityCount))
       if (patch.tier) {
         logger.log(mdKeyValue('Tier', patch.tier))
       }
@@ -158,9 +155,7 @@ export async function outputPatchListResult(
     if (patch.uuid) {
       logger.log(`UUID: ${patch.uuid}`)
     }
-    logger.log(
-      `Description: ${patch.description || 'No description provided'}`,
-    )
+    logger.log(`Description: ${patch.description || 'No description provided'}`)
     logger.log(`Exported: ${patch.exportedAt}`)
     if (patch.appliedAt) {
       logger.log(`Applied: ${patch.appliedAt}`)

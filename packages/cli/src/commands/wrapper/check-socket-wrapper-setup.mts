@@ -3,7 +3,6 @@ import fs from 'node:fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 const logger = getDefaultLogger()
 
-
 export function checkSocketWrapperSetup(file: string): boolean {
   const fileContent = fs.readFileSync(file, 'utf8')
   const linesWithSocketAlias = fileContent

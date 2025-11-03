@@ -10,7 +10,6 @@ import { serializeResultJson } from '../output/result-json.mjs'
 import type { CResult, OutputKind } from '../../types.mjs'
 const logger = getDefaultLogger()
 
-
 // Simple outputResult implementation
 function outputResult<T>(
   result: CResult<T>,
@@ -95,9 +94,7 @@ export function simpleOutput<T>(
           return formatted
         })
 
-        logger.log(
-          chalkTable({ columns: table.columns }, formattedRows),
-        )
+        logger.log(chalkTable({ columns: table.columns }, formattedRows))
         return
       }
 
@@ -192,9 +189,7 @@ export function outputPaginatedList<T>(
         return formatted
       })
 
-      logger.log(
-        chalkTable({ columns: tableOptions.columns }, formattedRows),
-      )
+      logger.log(chalkTable({ columns: tableOptions.columns }, formattedRows))
 
       // Show next page hint
       if (nextPage !== null) {

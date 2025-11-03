@@ -31,7 +31,6 @@ import { findUp } from '../fs/find-up.mts'
 import type { CResult } from '../../types.mjs'
 const logger = getDefaultLogger()
 
-
 export interface SocketJson {
   ' _____         _       _     ': string
   '|   __|___ ___| |_ ___| |_   ': string

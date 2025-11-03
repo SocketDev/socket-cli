@@ -8,7 +8,6 @@ import type { PurlDataResponse } from './fetch-purl-deep-score.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 export async function outputPurlsDeepScore(
   purl: string,
   result: CResult<PurlDataResponse>,
@@ -29,9 +28,7 @@ export async function outputPurlsDeepScore(
 
   if (outputKind === 'markdown') {
     const md = createMarkdownReport(result.data)
-    logger.success(
-      `Score report for "${result.data.purl}" ("${purl}"):\n`,
-    )
+    logger.success(`Score report for "${result.data.purl}" ("${purl}"):\n`)
     logger.log(md)
     return
   }

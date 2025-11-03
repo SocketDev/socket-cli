@@ -5,7 +5,6 @@ import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()
 
-
 export async function outputInstallCompletion(
   result: CResult<{
     actions: string[]
@@ -35,16 +34,12 @@ export async function outputInstallCompletion(
     logger.log(`  - ${action}`)
   })
   logger.log('')
-  logger.log(
-    'Socket tab completion works automatically in new terminals.',
-  )
+  logger.log('Socket tab completion works automatically in new terminals.')
   logger.log('')
   logger.log(
     'Due to a bash limitation, tab completion cannot be enabled in the',
   )
-  logger.log(
-    'current shell (bash instance) through NodeJS. You must either:',
-  )
+  logger.log('current shell (bash instance) through NodeJS. You must either:')
   logger.log('')
   logger.log('1. Reload your .bashrc script (best):')
   logger.log('')
@@ -55,8 +50,6 @@ export async function outputInstallCompletion(
   logger.log(`   source ${result.data.targetPath}`)
   logger.log(`   ${result.data.completionCommand}`)
   logger.log('')
-  logger.log(
-    '3. Or restart bash somehow (restart terminal or run `bash`)',
-  )
+  logger.log('3. Or restart bash somehow (restart terminal or run `bash`)')
   logger.log('')
 }
