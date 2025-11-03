@@ -139,9 +139,13 @@ async function ensureToolBuilt(config) {
   const cmd = cmdParts[0]
   const cmdArgs = cmdParts.slice(1)
 
+  // Exception: Using shell: true here instead of WIN32 because:
+  // 1. These are trusted build commands (make, mingw32-make) in a controlled build environment
+  // 2. No user input in command strings - all commands are hardcoded in PLATFORM_CONFIG
+  // 3. Cross-platform make commands need shell for proper PATH resolution
   const result = await spawn(cmd, cmdArgs, {
     cwd: TOOLS_DIR,
-    shell: WIN32,
+    shell: true,
     stdio: 'inherit'
   })
 
