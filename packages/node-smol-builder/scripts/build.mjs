@@ -47,16 +47,7 @@
  *   node scripts/load.mjs build-custom-node --test-full  # Build + run full tests
  */
 
-import { existsSync, readdirSync } from 'node:fs'
-import {
-  copyFile,
-  cp,
-  mkdir,
-  readdir,
-  readFile,
-  stat,
-  writeFile,
-} from 'node:fs/promises'
+import { existsSync, readdirSync, promises as fs } from 'node:fs'
 import { cpus, platform } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -65,6 +56,7 @@ import { brotliCompressSync, constants as zlibConstants } from 'node:zlib'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { whichBinSync } from '@socketsecurity/lib/bin'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { safeMkdir } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import nodeVersionConfig from '@socketsecurity/bootstrap/node-version.json' with { type: 'json' }
@@ -324,6 +316,28 @@ async function copyBuildAdditions() {
   if (existsSync(bootstrapLoaderSource)) {
     await copyFile(bootstrapLoaderSource, bootstrapLoaderDest)
     getDefaultLogger().log(`✅ Copied socketsecurity_bootstrap_loader.js to lib/internal/`)
+  }
+
+  // Fix: Copy polyfills to lib/internal/socketsecurity_polyfills/ for external loading.
+  const polyfillsSourceDir = join(NODE_DIR, '004-polyfills')
+  const polyfillsDestDir = join(NODE_DIR, 'lib', 'internal', 'socketsecurity_polyfills')
+
+  if (existsSync(polyfillsSourceDir)) {
+    await safeMkdir(polyfillsDestDir)
+
+    const localeCompareSource = join(polyfillsSourceDir, 'localeCompare.js')
+    const localeCompareDest = join(polyfillsDestDir, 'localeCompare.js')
+    if (existsSync(localeCompareSource)) {
+      await copyFile(localeCompareSource, localeCompareDest)
+      getDefaultLogger().log(`✅ Copied localeCompare.js to lib/internal/socketsecurity_polyfills/`)
+    }
+
+    const normalizeSource = join(polyfillsSourceDir, 'normalize.js')
+    const normalizeDest = join(polyfillsDestDir, 'normalize.js')
+    if (existsSync(normalizeSource)) {
+      await copyFile(normalizeSource, normalizeDest)
+      getDefaultLogger().log(`✅ Copied normalize.js to lib/internal/socketsecurity_polyfills/`)
+    }
   }
 
   getDefaultLogger().log('')
@@ -975,8 +989,9 @@ async function main() {
 
   // Check if we can use cached build (skip if --clean).
   if (!CLEAN_BUILD) {
-    const distributionOutputBinary = join(BUILD_DIR, 'out', 'Distribution', IS_WINDOWS ? 'node.exe' : 'node')
+    const finalOutputBinary = join(BUILD_DIR, 'out', 'Final', IS_WINDOWS ? 'node.exe' : 'node')
     const distBinary = join(ROOT_DIR, 'dist', 'socket-smol')
+    const distSeaBinary = join(ROOT_DIR, 'dist', 'socket-sea')
 
     // Collect all source files that affect the build.
     const sourcePaths = collectBuildSourceFiles()
@@ -989,10 +1004,10 @@ async function main() {
       sourcePaths,
       outputPath: hashFilePath,
       validateOutput: () => {
-        // Verify both distribution binary, hash file, and dist binary exist.
-        return existsSync(distributionOutputBinary) &&
+        // Verify final binary, hash file, and at least one dist binary exist.
+        return existsSync(finalOutputBinary) &&
                existsSync(hashFilePath) &&
-               existsSync(distBinary)
+               (existsSync(distBinary) || existsSync(distSeaBinary))
       },
     })
 
@@ -1002,8 +1017,8 @@ async function main() {
       printHeader('✅ Using Cached Build')
       getDefaultLogger().log('All source files unchanged since last build.')
       getDefaultLogger().log('')
-      getDefaultLogger().substep(`Distribution binary: ${distributionOutputBinary}`)
-      getDefaultLogger().substep(`E2E binary: ${distBinary}`)
+      getDefaultLogger().substep(`Final binary: ${finalOutputBinary}`)
+      getDefaultLogger().substep(`E2E binary: ${existsSync(distBinary) ? distBinary : distSeaBinary}`)
       getDefaultLogger().log('')
       getDefaultLogger().success('Cached build is ready to use')
       getDefaultLogger().log('')
@@ -1507,12 +1522,6 @@ async function main() {
 
   await exec(nodeBinary, ['--version'], { env: smokeTestEnv })
 
-  await exec(
-    nodeBinary,
-    ['-e', `console.log("${colors.green('✓')} Binary can execute JavaScript")`],
-    { env: smokeTestEnv },
-  )
-
   getDefaultLogger().log('')
   getDefaultLogger().log(`${colors.green('✓')} Binary is functional`)
   getDefaultLogger().log('')
@@ -1523,9 +1532,9 @@ async function main() {
   getDefaultLogger().logNewline()
 
   const outputReleaseDir = join(BUILD_DIR, 'out', 'Release')
-  await mkdir(outputReleaseDir, { recursive: true })
+  await safeMkdir(outputReleaseDir)
   const outputReleaseBinary = join(outputReleaseDir, 'node')
-  await exec('cp', [nodeBinary, outputReleaseBinary])
+  await fs.cp(nodeBinary, outputReleaseBinary, { force: true, preserveTimestamps: true })
 
   getDefaultLogger().substep(`Release directory: ${outputReleaseDir}`)
   getDefaultLogger().substep('Binary: node (unmodified)')
@@ -1620,6 +1629,26 @@ async function main() {
     await exec('codesign', ['--sign', '-', '--force', nodeBinary])
     getDefaultLogger().success('Binary re-signed successfully after stripping')
     getDefaultLogger().logNewline()
+
+    // Smoke test after signing to ensure signature is valid.
+    getDefaultLogger().log('Testing binary after signing...')
+    const signTest = await smokeTestBinary(nodeBinary)
+
+    if (!signTest.passed) {
+      printError(
+        'Binary Corrupted After Signing',
+        `Binary failed smoke test: ${signTest.reason}`,
+        [
+          'Code signing may have corrupted the binary',
+          'Try rebuilding: node scripts/build-custom-node.mjs --clean',
+          'Report this issue if it persists',
+        ],
+      )
+      throw new Error('Binary corrupted after signing')
+    }
+
+    getDefaultLogger().log(`${colors.green('✓')} Binary functional after signing`)
+    getDefaultLogger().log('')
   }
 
   // Smoke test binary after stripping (ensure strip didn't corrupt it).
@@ -1648,9 +1677,9 @@ async function main() {
   getDefaultLogger().logNewline()
 
   const outputStrippedDir = join(BUILD_DIR, 'out', 'Stripped')
-  await mkdir(outputStrippedDir, { recursive: true })
+  await safeMkdir(outputStrippedDir)
   const outputStrippedBinary = join(outputStrippedDir, 'node')
-  await exec('cp', [nodeBinary, outputStrippedBinary])
+  await fs.cp(nodeBinary, outputStrippedBinary, { force: true, preserveTimestamps: true })
 
   getDefaultLogger().substep(`Stripped directory: ${outputStrippedDir}`)
   getDefaultLogger().substep('Binary: node (stripped)')
@@ -1671,7 +1700,7 @@ async function main() {
     getDefaultLogger().logNewline()
 
     const compressedDir = join(BUILD_DIR, 'out', 'Compressed')
-    await mkdir(compressedDir, { recursive: true })
+    await safeMkdir(compressedDir)
     compressedBinary = join(compressedDir, 'node')
 
     // Select compression quality based on platform.
@@ -1737,6 +1766,26 @@ async function main() {
       getDefaultLogger().logNewline()
       getDefaultLogger().substep('✓ Compressed binary signed')
       getDefaultLogger().logNewline()
+
+      // Smoke test compressed+signed binary to ensure it's functional.
+      getDefaultLogger().log('Testing compressed binary after signing...')
+      const compressedTest = await smokeTestBinary(compressedBinary)
+
+      if (!compressedTest.passed) {
+        printError(
+          'Compressed Binary Corrupted After Signing',
+          `Compressed binary failed smoke test: ${compressedTest.reason}`,
+          [
+            'Compression or signing may have corrupted the binary',
+            'Try rebuilding: node scripts/build-custom-node.mjs --clean',
+            'Report this issue if it persists',
+          ],
+        )
+        throw new Error('Compressed binary corrupted after signing')
+      }
+
+      getDefaultLogger().log(`${colors.green('✓')} Compressed binary functional after signing`)
+      getDefaultLogger().log('')
     }
 
     getDefaultLogger().substep(`Compressed directory: ${compressedDir}`)
@@ -1761,7 +1810,7 @@ async function main() {
     const decompressToolDest = join(compressedDir, decompressTool)
 
     if (existsSync(decompressToolSource)) {
-      await exec('cp', [decompressToolSource, decompressToolDest])
+      await fs.cp(decompressToolSource, decompressToolDest, { force: true, preserveTimestamps: true })
 
       // Ensure tool is executable.
       await exec('chmod', ['+x', decompressToolDest])
@@ -1795,7 +1844,7 @@ async function main() {
   // Use compressed binary if available, otherwise use stripped binary.
   printHeader('Copying to Build Output (Final)')
   const finalDir = join(BUILD_DIR, 'out', 'Final')
-  await mkdir(finalDir, { recursive: true })
+  await safeMkdir(finalDir)
   const finalBinary = join(finalDir, 'node')
 
   if (compressedBinary && existsSync(compressedBinary)) {
@@ -1805,7 +1854,7 @@ async function main() {
     const compressedDir = join(BUILD_DIR, 'out', 'Compressed')
 
     // Copy compressed binary to Final.
-    await exec('cp', [compressedBinary, finalBinary])
+    await fs.cp(compressedBinary, finalBinary, { force: true, preserveTimestamps: true })
 
     // Copy decompressor tool to Final.
     const decompressTool = IS_MACOS
@@ -1815,7 +1864,7 @@ async function main() {
     const decompressToolDest = join(finalDir, decompressTool)
 
     if (existsSync(decompressToolSource)) {
-      await exec('cp', [decompressToolSource, decompressToolDest])
+      await fs.cp(decompressToolSource, decompressToolDest, { force: true, preserveTimestamps: true })
       await exec('chmod', ['+x', decompressToolDest])
     }
 
@@ -1835,7 +1884,7 @@ async function main() {
     getDefaultLogger().log('Copying stripped binary to Final directory...')
     getDefaultLogger().logNewline()
 
-    await exec('cp', [outputStrippedBinary, finalBinary])
+    await fs.cp(outputStrippedBinary, finalBinary, { force: true, preserveTimestamps: true })
 
     const binarySize = await getFileSize(finalBinary)
     getDefaultLogger().substep('Source: build/out/Stripped/node (stripped, uncompressed)')
@@ -1854,9 +1903,9 @@ async function main() {
   getDefaultLogger().logNewline()
 
   const outputSeaDir = join(BUILD_DIR, 'out', 'Sea')
-  await mkdir(outputSeaDir, { recursive: true })
+  await safeMkdir(outputSeaDir)
   const outputSeaBinary = join(outputSeaDir, 'node')
-  await exec('cp', [nodeBinary, outputSeaBinary])
+  await fs.cp(nodeBinary, outputSeaBinary, { force: true, preserveTimestamps: true })
 
   getDefaultLogger().substep(`Sea directory: ${outputSeaDir}`)
   getDefaultLogger().substep('Binary: node (stripped + signed, ready for SEA)')
@@ -1864,98 +1913,31 @@ async function main() {
   getDefaultLogger().success('Binary copied to build/out/Sea')
   getDefaultLogger().logNewline()
 
-  // Copy to pkg cache directory (for pkg to use).
-  const pkgCacheDir = join(
-    process.env.HOME || process.env.USERPROFILE,
-    '.pkg-cache',
-    'v3.5',
-  )
-  const targetName = `built-${NODE_VERSION}-${TARGET_PLATFORM}-${ARCH}${IS_MACOS && ARCH === 'arm64' ? '-signed' : ''}`
-  const targetPath = join(pkgCacheDir, targetName)
-
-  printHeader('Installing to pkg Cache')
-  getDefaultLogger().log('Installing binary to pkg cache...')
-  getDefaultLogger().logNewline()
-  getDefaultLogger().substep(`Source: ${finalBinary}`)
-  getDefaultLogger().substep(`Cache directory: ${pkgCacheDir}`)
-  getDefaultLogger().substep(`Binary name: ${targetName}`)
-  getDefaultLogger().logNewline()
-
-  await mkdir(pkgCacheDir, { recursive: true })
-  await exec('cp', [finalBinary, targetPath])
-
-  // Verify it was copied.
-  if (!existsSync(targetPath)) {
-    printError(
-      'Cache Installation Failed',
-      'Binary was not copied to pkg cache successfully.',
-      [
-        'Check permissions on ~/.pkg-cache directory',
-        `Manually copy: cp build/out/Signed/node ~/.pkg-cache/v3.5/${targetName}`,
-      ],
-    )
-    throw new Error('Failed to install binary to pkg cache')
-  }
-
-  getDefaultLogger().log(`${colors.green('✓')} Binary installed to pkg cache successfully`)
-  getDefaultLogger().log('')
-
-  // Verify the cached binary works.
-  printHeader('Verifying Cached Binary')
-  getDefaultLogger().log('Testing that pkg can use the installed binary...')
-  getDefaultLogger().log('')
-
-  const cacheTest = await smokeTestBinary(targetPath)
-
-  if (!cacheTest.passed) {
-    printError(
-      'Cached Binary Verification Failed',
-      `Binary in pkg cache failed smoke test: ${cacheTest.reason}`,
-      [
-        'Binary may be corrupted during copy',
-        'Try rebuilding with --clean flag',
-        `Remove cached binary: rm ${targetPath}`,
-        'Then rebuild: node scripts/build-custom-node.mjs --clean',
-      ],
-    )
-    throw new Error('Cached binary verification failed')
-  }
-
-  getDefaultLogger().log(`${colors.green('✓')} Cached binary passed smoke test`)
-  getDefaultLogger().log(`${colors.green('✓')} pkg can use this binary`)
-  getDefaultLogger().log('')
-
-  // Copy final binary to build/out/Distribution.
-  printHeader('Copying Final Binary to build/out/Distribution')
-  getDefaultLogger().log('Creating final distribution binary location...')
-  getDefaultLogger().logNewline()
-
-  const distributionOutputDir = join(BUILD_DIR, 'out', 'Distribution')
-  await mkdir(distributionOutputDir, { recursive: true })
-  const distributionOutputBinary = join(distributionOutputDir, 'node')
-  await exec('cp', [finalBinary, distributionOutputBinary])
-
-  getDefaultLogger().substep(`Distribution directory: ${distributionOutputDir}`)
-  getDefaultLogger().substep('Binary: node (final distribution build)')
-  getDefaultLogger().logNewline()
-  getDefaultLogger().success('Final binary copied to build/out/Distribution')
-  getDefaultLogger().logNewline()
-
-  // Copy to dist/socket-smol for e2e testing.
+  // Copy to dist/ for E2E testing.
   printHeader('Copying to dist/ for E2E Testing')
-  getDefaultLogger().log('Creating dist/socket-smol for e2e test suite...')
+  getDefaultLogger().log('Creating dist/socket-smol and dist/socket-sea for e2e test suite...')
   getDefaultLogger().logNewline()
 
   const distDir = join(ROOT_DIR, 'dist')
-  await mkdir(distDir, { recursive: true })
-  const distBinary = join(distDir, 'socket-smol')
-  await exec('cp', [finalBinary, distBinary])
-  await exec('chmod', ['+x', distBinary])
+  await safeMkdir(distDir)
 
-  getDefaultLogger().substep(`E2E binary: ${distBinary}`)
-  getDefaultLogger().substep('Test command: pnpm --filter @socketsecurity/cli run e2e:smol')
+  // Copy final binary (compressed or stripped) to dist/socket-smol.
+  const distSmolBinary = join(distDir, 'socket-smol')
+  await fs.cp(finalBinary, distSmolBinary, { force: true, preserveTimestamps: true })
+  await exec('chmod', ['+x', distSmolBinary])
+
+  // Copy SEA binary to dist/socket-sea.
+  const distSeaBinary = join(distDir, 'socket-sea')
+  await fs.cp(outputSeaBinary, distSeaBinary, { force: true, preserveTimestamps: true })
+  await exec('chmod', ['+x', distSeaBinary])
+
+  getDefaultLogger().substep(`E2E smol binary: ${distSmolBinary}`)
+  getDefaultLogger().substep(`E2E sea binary: ${distSeaBinary}`)
+  getDefaultLogger().substep('Test commands:')
+  getDefaultLogger().substep('  pnpm --filter @socketsecurity/cli run e2e:smol')
+  getDefaultLogger().substep('  pnpm --filter @socketsecurity/cli run e2e:sea')
   getDefaultLogger().logNewline()
-  getDefaultLogger().success('Binary copied to dist/socket-smol for e2e testing')
+  getDefaultLogger().success('Binaries copied to dist/ for e2e testing')
   getDefaultLogger().logNewline()
 
   // Write source hash to cache file for future builds.

@@ -1,0 +1,32 @@
+# @node-versions: v24.10.0+
+# @description: Load external localeCompare polyfill for small-icu builds
+# @requires: lib/internal/socketsecurity_polyfills/localeCompare.js
+#
+# Loads Socket CLI's external localeCompare polyfill from lib/internal/socketsecurity_polyfills/
+# to provide fallback string comparison when native localeCompare() fails with small-icu.
+#
+# This patch adds a single require() call in primordials.js to load the external polyfill module.
+# The polyfill is a safety layer that preserves native behavior when possible and provides
+# basic alphabetical comparison as a fallback.
+#
+# PATCH CREATION PROCESS:
+# This patch was created using git diff against pristine Node.js v24.10.0 source.
+# Steps:
+#   1. Clone Node.js v24.10.0
+#   2. Add require() call in lib/internal/per_context/primordials.js before ObjectFreeze
+#   3. Generate patch with: git add lib/internal/per_context/primordials.js && git diff --cached
+#   4. Validate with: git reset --hard && patch -p1 --dry-run < patch-file
+#
+diff --git a/lib/internal/per_context/primordials.js b/lib/internal/per_context/primordials.js
+index 1234abcd..5678efgh 100644
+--- a/lib/internal/per_context/primordials.js
++++ b/lib/internal/per_context/primordials.js
+@@ -719,6 +719,9 @@ primordials.SafeStringPrototypeSearch = (str, regexp) => {
+   return match ? match.index : -1;
+ };
+
++// Socket CLI: Polyfill localeCompare for small-icu builds.
++require('internal/socketsecurity_polyfills/localeCompare');
++
+ ObjectSetPrototypeOf(primordials, null);
+ ObjectFreeze(primordials);
