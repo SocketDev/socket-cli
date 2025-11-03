@@ -15,8 +15,10 @@ vi.mock('../../../../../src/constants.mts', () => ({
 }))
 
 // Mock purl.
+const mockGetPurlObject = vi.hoisted(() => vi.fn())
+
 vi.mock('../../../../../src/utils/purl/parse.mts', () => ({
-  getPurlObject: vi.fn(),
+  getPurlObject: mockGetPurlObject,
 }))
 
 import { getPurlObject } from '../../../../../src/utils/purl/parse.mts'
@@ -24,7 +26,7 @@ import { getPurlObject } from '../../../../../src/utils/purl/parse.mts'
 describe('socket-url utilities', () => {
   describe('getPkgFullNameFromPurl', () => {
     it('returns name for packages without namespace', () => {
-      vi.mocked(getPurlObject).mockImplementation((purl: any) => {
+      mockGetPurlObject.mockImplementation((purl: any) => {
         if (typeof purl === 'string') {
           return { type: 'npm', namespace: undefined, name: 'express', version: '4.18.0' }
         }
@@ -41,7 +43,7 @@ describe('socket-url utilities', () => {
         name: 'core',
         version: '7.0.0',
       }
-      vi.mocked(getPurlObject).mockReturnValue(purlObj as any)
+      mockGetPurlObject.mockReturnValue(purlObj as any)
 
       const result = getPkgFullNameFromPurl('pkg:npm/@babel/core@7.0.0')
       expect(result).toBe('@babel/core')
@@ -54,7 +56,7 @@ describe('socket-url utilities', () => {
         name: 'commons',
         version: '3.0',
       }
-      vi.mocked(getPurlObject).mockReturnValue(purlObj as any)
+      mockGetPurlObject.mockReturnValue(purlObj as any)
 
       const result = getPkgFullNameFromPurl(purlObj as any)
       expect(result).toBe('org.apache:commons')
@@ -67,7 +69,7 @@ describe('socket-url utilities', () => {
         name: 'rest-framework',
         version: '3.0',
       }
-      vi.mocked(getPurlObject).mockReturnValue(purlObj as any)
+      mockGetPurlObject.mockReturnValue(purlObj as any)
 
       const result = getPkgFullNameFromPurl(purlObj as any)
       expect(result).toBe('django/rest-framework')
@@ -139,7 +141,7 @@ describe('socket-url utilities', () => {
 
   describe('getSocketDevPackageOverviewUrlFromPurl', () => {
     it('generates URL from PURL string', async () => {
-      vi.mocked(getPurlObject).mockReturnValue({
+      mockGetPurlObject.mockReturnValue({
         type: 'npm',
         namespace: undefined,
         name: 'express',
