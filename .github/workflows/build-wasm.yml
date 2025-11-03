@@ -176,7 +176,7 @@ jobs:
           echo "yoga.js size: $(du -h packages/yoga-layout/build/wasm/yoga.js | cut -f1)"
 
       - name: Upload yoga artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: yoga-wasm
           path: packages/yoga-layout/build/wasm/
@@ -340,7 +340,7 @@ jobs:
           echo "codet5-decoder-${SUFFIX}.onnx size: $(du -h packages/models/dist/codet5-decoder-${SUFFIX}.onnx | cut -f1)"
 
       - name: Upload models artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: ai-models
           path: packages/models/dist/
@@ -484,7 +484,7 @@ jobs:
           echo "ort-wasm-simd-threaded.mjs size: $(du -h packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.mjs | cut -f1)"
 
       - name: Upload ONNX Runtime artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: onnx-runtime
           path: packages/onnxruntime/build/wasm/
