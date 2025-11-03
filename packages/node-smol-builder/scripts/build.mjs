@@ -333,6 +333,15 @@ async function copyBuildAdditions() {
     }
   }
 
+  // Fix: The brotli2c tool needs to be in tools/ for node.gyp build target.
+  const brotli2cSource = join(NODE_DIR, '003-compression-tools', 'socketsecurity_brotli2c.cc')
+  const brotli2cDest = join(NODE_DIR, 'tools', 'socketsecurity_brotli2c.cc')
+
+  if (existsSync(brotli2cSource)) {
+    await fs.copyFile(brotli2cSource, brotli2cDest)
+    logger.log(`✅ Copied socketsecurity_brotli2c.cc to tools/`)
+  }
+
   logger.log('')
 }
 
