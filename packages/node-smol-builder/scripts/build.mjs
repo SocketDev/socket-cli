@@ -194,7 +194,7 @@ const ADDITIONS_DIR = join(ROOT_DIR, 'additions')
  *
  * 2. All addition files (additions/**)
  *    - Includes headers, source files, tools added to Node.js source tree
- *    - Example: additions/tools/socketsecurity_macho_decompress
+ *    - Example: additions/003-compression-tools/socketsecurity_macho_decompress
  *
  * 3. This build script itself (scripts/build.mjs)
  *    - Changes to build configuration flags invalidate cache
@@ -407,7 +407,7 @@ async function embedSocketSecurityBootstrap() {
   getDefaultLogger().log(`   ${(finalLoader.length / 1024).toFixed(1)}KB (includes embedded bootstrap)`)
 
   // Copy the minimal patch template to build/patches/ (no placeholder replacement needed).
-  const minimalPatchTemplatePath = join(PATCHES_DIR, 'socketsecurity_bootstrap_preexec_v24.10.0.template.patch')
+  const minimalPatchTemplatePath = join(PATCHES_DIR, '001-socketsecurity_bootstrap_preexec_v24.10.0.template.patch')
   const buildPatchesDir = join(BUILD_DIR, 'patches')
   await mkdir(buildPatchesDir, { recursive: true })
 
