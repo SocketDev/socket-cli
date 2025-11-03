@@ -517,30 +517,29 @@ async function buildTarget(target, options) {
   getDefaultLogger().log('')
 
   const result = await spawn(
-      'pnpm',
-      ['--filter', '@socketsecurity/bootstrap', 'run', 'build'],
-      {
-        cwd: path.join(__dirname, '../../..'),
-        shell: WIN32,
-        stdio: 'inherit',
-      }
+    'pnpm',
+    ['--filter', '@socketsecurity/bootstrap', 'run', 'build'],
+    {
+      cwd: path.join(__dirname, '../../..'),
+      shell: WIN32,
+      stdio: 'inherit',
+    },
+  )
+
+  if (result.code !== 0) {
+    throw new Error(
+      `Failed to build @socketsecurity/bootstrap. Exit code: ${result.code}`,
     )
-
-    if (result.code !== 0) {
-      throw new Error(
-        `Failed to build @socketsecurity/bootstrap. Exit code: ${result.code}`,
-      )
-    }
-
-    // Verify bootstrap was built.
-    if (!existsSync(bootstrapPath)) {
-      throw new Error(
-        `Bootstrap build succeeded but file not found at ${bootstrapPath}`,
-      )
-    }
-
-    getDefaultLogger().log('')
   }
+
+  // Verify bootstrap was built.
+  if (!existsSync(bootstrapPath)) {
+    throw new Error(
+      `Bootstrap build succeeded but file not found at ${bootstrapPath}`,
+    )
+  }
+
+  getDefaultLogger().log('')
 
   getDefaultLogger().log(`Using bootstrap from: ${bootstrapPath}`)
 
