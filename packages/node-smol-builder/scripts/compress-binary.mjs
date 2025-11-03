@@ -37,7 +37,7 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
