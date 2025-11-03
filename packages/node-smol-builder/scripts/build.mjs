@@ -444,7 +444,7 @@ async function embedSocketSecurityBootstrap() {
 
   // Write the processed loader to additions/ (will be copied during copyBuildAdditions phase).
   const finalLoaderPath = join(ADDITIONS_DIR, '002-bootstrap-loader', 'internal', 'socketsecurity_bootstrap_loader.js')
-  await mkdir(dirname(finalLoaderPath), { recursive: true })
+  await safeMkdir(dirname(finalLoaderPath), { recursive: true })
   await writeFile(finalLoaderPath, finalLoader, 'utf8')
 
   logger.log(`✅ Generated loader: ${finalLoaderPath.replace(`${ROOT_DIR}/`, '')}`)
@@ -453,7 +453,7 @@ async function embedSocketSecurityBootstrap() {
   // Copy the minimal patch template to build/patches/ (no placeholder replacement needed).
   const minimalPatchTemplatePath = join(PATCHES_DIR, '001-socketsecurity_bootstrap_preexec_v24.10.0.template.patch')
   const buildPatchesDir = join(BUILD_DIR, 'patches')
-  await mkdir(buildPatchesDir, { recursive: true })
+  await safeMkdir(buildPatchesDir, { recursive: true })
 
   const finalPatchPath = join(buildPatchesDir, 'socketsecurity_bootstrap_preexec_v24.10.0.patch')
   await copyFile(minimalPatchTemplatePath, finalPatchPath)
@@ -577,7 +577,7 @@ async function cacheCompiledBinary(buildDir, nodeBinary, platform, arch, version
   const cacheMetaFile = getCacheMetadataPath(buildDir, platform, arch)
 
   // Create cache directory.
-  await mkdir(cacheDir, { recursive: true })
+  await safeMkdir(cacheDir, { recursive: true })
 
   // Copy binary to cache.
   await copyFile(nodeBinary, cacheFile)
@@ -637,7 +637,7 @@ async function restoreCachedBinary(buildDir, nodeBinary, platform, arch, version
     }
 
     // Ensure output directory exists.
-    await mkdir(dirname(nodeBinary), { recursive: true })
+    await safeMkdir(dirname(nodeBinary), { recursive: true })
 
     // Restore binary.
     await copyFile(cacheFile, nodeBinary)
@@ -988,7 +988,7 @@ async function main() {
   await saveBuildLog(BUILD_DIR, '')
 
   // Ensure build directory exists.
-  await mkdir(BUILD_DIR, { recursive: true })
+  await safeMkdir(BUILD_DIR, { recursive: true })
 
   // Check if we can use cached build (skip if --clean).
   if (!CLEAN_BUILD) {
@@ -1955,7 +1955,7 @@ async function main() {
   const sourcePaths = collectBuildSourceFiles()
   const sourceHashComment = await generateHashComment(sourcePaths)
   const cacheDir = join(BUILD_DIR, '.cache')
-  await mkdir(cacheDir, { recursive: true })
+  await safeMkdir(cacheDir, { recursive: true })
   const hashFilePath = join(cacheDir, 'node.hash')
   await writeFile(hashFilePath, sourceHashComment, 'utf-8')
   logger.substep(`Cache hash: ${hashFilePath}`)
