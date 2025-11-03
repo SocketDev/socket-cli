@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest'
 import {
   getScanWithEnvVars,
   getScanWithMultiplePackages,
-} from '../../../../src/generate-report-test-helpers.mts'
-import { generateReport } from '../../../../src/generate-report.mts'
+} from '../../../../../src/commands/scan/generate-report-test-helpers.mts'
+import { generateReport } from '../../../../../src/commands/scan/generate-report.mts'
 
-import type { ScanReport } from '../../../../src/generate-report.mts'
+import type { ScanReport } from '../../../../../src/commands/scan/generate-report.mts'
 
 describe('generate-report - fold functionality', () => {
   describe('fold=none', () => {

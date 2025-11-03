@@ -2,7 +2,7 @@ import fs, { existsSync } from 'node:fs'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { postinstallWrapper } from '../../../../src/postinstall-wrapper.mts'
+import { postinstallWrapper } from '../../../../../src/commands/wrapper/postinstall-wrapper.mts'
 
 // Mock the dependencies.
 vi.mock('node:fs')
@@ -183,7 +183,7 @@ describe('postinstallWrapper', () => {
   })
 
   it('updates tab completion when it exists', async () => {
-    const { getBashrcDetails } = await import('../../utils/cli/completion.mts')
+    const { getBashrcDetails } = await import('../../../../../src/utils/cli/completion.mts')
     await import('@socketsecurity/lib/logger')
     const { updateInstalledTabCompletionScript } = await import(
       '../install/setup-tab-completion.mts'
@@ -217,7 +217,7 @@ describe('postinstallWrapper', () => {
   })
 
   it('skips tab completion update when file does not exist', async () => {
-    const { getBashrcDetails } = await import('../../utils/cli/completion.mts')
+    const { getBashrcDetails } = await import('../../../../../src/utils/cli/completion.mts')
     await import('@socketsecurity/lib/logger')
     const { updateInstalledTabCompletionScript } = await import(
       '../install/setup-tab-completion.mts'
@@ -247,7 +247,7 @@ describe('postinstallWrapper', () => {
   })
 
   it('handles tab completion update failure gracefully', async () => {
-    const { getBashrcDetails } = await import('../../utils/cli/completion.mts')
+    const { getBashrcDetails } = await import('../../../../../src/utils/cli/completion.mts')
     await import('@socketsecurity/lib/logger')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockGetDetails = vi.mocked(getBashrcDetails)
@@ -270,7 +270,7 @@ describe('postinstallWrapper', () => {
   })
 
   it('handles getBashrcDetails returning not ok', async () => {
-    const { getBashrcDetails } = await import('../../utils/cli/completion.mts')
+    const { getBashrcDetails } = await import('../../../../../src/utils/cli/completion.mts')
     await import('@socketsecurity/lib/logger')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockGetDetails = vi.mocked(getBashrcDetails)

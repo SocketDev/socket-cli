@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../src/helpers/mocks.mts'
-import { fetchListRepos } from '../../../../src/fetch-list-repos.mts'
+import { fetchListRepos } from '../../../../../src/commands/repository/fetch-list-repos.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mts', () => ({

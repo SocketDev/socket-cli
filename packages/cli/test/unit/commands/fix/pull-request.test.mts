@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { openSocketFixPr } from '../../../../src/pull-request.mts'
+import { openSocketFixPr } from '../../../../../src/commands/fix/pull-request.mts'
 
 // Mock dependencies.
 vi.mock('./git.mts', () => ({
@@ -56,7 +56,7 @@ describe('pull-request', () => {
 
   describe('openSocketFixPr', () => {
     it('creates PR successfully on first attempt', async () => {
-      const { getOctokit } = await import('../../utils/git/github.mts')
+      const { getOctokit } = await import('../../../../../src/utils/git/github.mts')
       const { createPrProvider } = await import(
         '../../utils/git/provider-factory.mts'
       )
@@ -97,7 +97,7 @@ describe('pull-request', () => {
     })
 
     it('retries on 5xx error', async () => {
-      const { getOctokit } = await import('../../utils/git/github.mts')
+      const { getOctokit } = await import('../../../../../src/utils/git/github.mts')
       const { createPrProvider } = await import(
         '../../utils/git/provider-factory.mts'
       )
@@ -201,7 +201,7 @@ describe('pull-request', () => {
     })
 
     it('uses exponential backoff for retries', async () => {
-      const { getOctokit } = await import('../../utils/git/github.mts')
+      const { getOctokit } = await import('../../../../../src/utils/git/github.mts')
       const { createPrProvider } = await import(
         '../../utils/git/provider-factory.mts'
       )
@@ -236,7 +236,7 @@ describe('pull-request', () => {
     })
 
     it('passes GHSA details to PR body generator', async () => {
-      const { getOctokit } = await import('../../utils/git/github.mts')
+      const { getOctokit } = await import('../../../../../src/utils/git/github.mts')
       const { createPrProvider } = await import(
         '../../utils/git/provider-factory.mts'
       )

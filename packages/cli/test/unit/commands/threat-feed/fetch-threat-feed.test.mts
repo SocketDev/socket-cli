@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../src/helpers/mocks.mts'
-import { fetchThreatFeed } from '../../../../src/fetch-threat-feed.mts'
+import { fetchThreatFeed } from '../../../../../src/commands/threat-feed/fetch-threat-feed.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mts', () => ({

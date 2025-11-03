@@ -6,7 +6,7 @@ import npmDeep from '../../../../src/fixtures/npm_deep.json'
 import nugetDeep from '../../../../src/fixtures/nuget_deep.json'
 import pythonDeep from '../../../../src/fixtures/python_deep.json'
 import rubyDeep from '../../../../src/fixtures/ruby_deep.json'
-import { createMarkdownReport } from '../../../../src/output-purls-deep-score.mts'
+import { createMarkdownReport } from '../../../../../src/commands/package/output-purls-deep-score.mts'
 
 describe('package score output', async () => {
   describe('npm', () => {

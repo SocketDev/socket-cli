@@ -11,7 +11,7 @@ import {
   generateMarkdownReport,
   generateTextReport,
   preProcess,
-} from '../../../../src/output-purls-shallow-score.mts'
+} from '../../../../../src/commands/package/output-purls-shallow-score.mts'
 
 describe('package score output', async () => {
   describe('npm', () => {

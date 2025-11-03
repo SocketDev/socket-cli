@@ -7,7 +7,7 @@ import {
   formatDataOrg,
   formatDataRepo,
   renderMarkdown,
-} from '../../../../src/output-analytics.mts'
+} from '../../../../../src/commands/analytics/output-analytics.mts'
 
 describe('output-analytics', () => {
   describe('format data', () => {

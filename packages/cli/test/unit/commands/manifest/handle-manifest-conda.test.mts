@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../src/helpers/mocks.mts'
-import { handleManifestConda } from '../../../../src/handle-manifest-conda.mts'
+import { handleManifestConda } from '../../../../../src/commands/manifest/handle-manifest-conda.mts'
 
 // Mock the dependencies.
 vi.mock('./convert-conda-to-requirements.mts', () => ({

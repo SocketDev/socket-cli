@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../src/helpers/mocks.mts'
-import { handleConfigGet } from '../../../../src/handle-config-get.mts'
+import { handleConfigGet } from '../../../../../src/commands/config/handle-config-get.mts'
 
 // Mock the dependencies.
 vi.mock('./output-config-get.mts', () => ({
@@ -20,7 +20,7 @@ describe('handleConfigGet', () => {
   })
 
   it('gets config value successfully', async () => {
-    const { getConfigValue } = await import('../../utils/config.mts')
+    const { getConfigValue } = await import('../../../../../src/utils/config.mts')
     const { outputConfigGet } = await import('../../src/output-config-get.mts')
 
     const mockResult = createSuccessResult('test-token')
@@ -36,7 +36,7 @@ describe('handleConfigGet', () => {
   })
 
   it('handles missing config value', async () => {
-    const { getConfigValue } = await import('../../utils/config.mts')
+    const { getConfigValue } = await import('../../../../../src/utils/config.mts')
     const { outputConfigGet } = await import('../../src/output-config-get.mts')
 
     const mockResult = createErrorResult('Config value not found')
@@ -52,7 +52,7 @@ describe('handleConfigGet', () => {
   })
 
   it('handles markdown output', async () => {
-    const { getConfigValue } = await import('../../utils/config.mts')
+    const { getConfigValue } = await import('../../../../../src/utils/config.mts')
     const { outputConfigGet } = await import('../../src/output-config-get.mts')
 
     const mockResult = createSuccessResult('https://api.socket.dev')
@@ -72,7 +72,7 @@ describe('handleConfigGet', () => {
   })
 
   it('handles different config keys', async () => {
-    const { getConfigValue } = await import('../../utils/config.mts')
+    const { getConfigValue } = await import('../../../../../src/utils/config.mts')
     const { outputConfigGet } = await import('../../src/output-config-get.mts')
 
     const keys = ['apiToken', 'org', 'repoName', 'apiBaseUrl', 'apiProxy']
@@ -93,7 +93,7 @@ describe('handleConfigGet', () => {
   })
 
   it('handles empty config value', async () => {
-    const { getConfigValue } = await import('../../utils/config.mts')
+    const { getConfigValue } = await import('../../../../../src/utils/config.mts')
     const { outputConfigGet } = await import('../../src/output-config-get.mts')
 
     const mockResult = createSuccessResult('')
@@ -108,7 +108,7 @@ describe('handleConfigGet', () => {
   })
 
   it('handles undefined config value', async () => {
-    const { getConfigValue } = await import('../../utils/config.mts')
+    const { getConfigValue } = await import('../../../../../src/utils/config.mts')
     const { outputConfigGet } = await import('../../src/output-config-get.mts')
 
     const mockResult = createSuccessResult(undefined)

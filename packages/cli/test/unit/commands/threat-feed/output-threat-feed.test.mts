@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { outputThreatFeed } from '../../../../src/output-threat-feed.mts'
+import { outputThreatFeed } from '../../../../../src/commands/threat-feed/output-threat-feed.mts'
 import { failMsgWithBadge } from '../../../../src/utils/error/fail-msg-with-badge.mts'
 import { msAtHome } from '../../../../src/utils/home-cache-time.mts'
 import { serializeResultJson } from '../../../../src/utils/output/result-json.mts'
@@ -8,8 +8,8 @@ import { serializeResultJson } from '../../../../src/utils/output/result-json.mt
 import type {
   ThreadFeedResponse,
   ThreatResult,
-} from '../../../../src/types.mts'
-import type { CResult } from '../../../../src/types.mts'
+} from '../../../../../src/commands/threat-feed/types.mts'
+import type { CResult } from '../../../../../src/commands/threat-feed/types.mts'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({

@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../src/helpers/mocks.mts'
-import { handleListScans } from '../../../../src/handle-list-scans.mts'
+import { handleListScans } from '../../../../../src/commands/scan/handle-list-scans.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-list-scans.mts', () => ({

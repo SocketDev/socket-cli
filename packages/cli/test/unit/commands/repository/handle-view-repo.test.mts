@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { createSuccessResult } from '../../../../src/helpers/index.mts'
-import { handleViewRepo } from '../../../../src/handle-view-repo.mts'
+import { handleViewRepo } from '../../../../../src/commands/repository/handle-view-repo.mts'
 
 // Setup mocks at module level
 vi.mock('./fetch-view-repo.mts', () => ({

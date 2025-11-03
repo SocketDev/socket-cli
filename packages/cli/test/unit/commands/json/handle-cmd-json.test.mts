@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleCmdJson } from '../../../../src/handle-cmd-json.mts'
+import { handleCmdJson } from '../../../../../src/commands/json/handle-cmd-json.mts'
 
 // Mock the dependencies.
 vi.mock('./output-cmd-json.mts', () => ({

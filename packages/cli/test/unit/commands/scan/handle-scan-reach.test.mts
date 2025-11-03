@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../src/helpers/mocks.mts'
-import { handleScanReach } from '../../../../src/handle-scan-reach.mts'
+import { handleScanReach } from '../../../../../src/commands/scan/handle-scan-reach.mts'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({

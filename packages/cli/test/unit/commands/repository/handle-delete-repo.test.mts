@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { createSuccessResult } from '../../../../src/helpers/mocks.mts'
-import { handleDeleteRepo } from '../../../../src/handle-delete-repo.mts'
+import { handleDeleteRepo } from '../../../../../src/commands/repository/handle-delete-repo.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-delete-repo.mts', () => ({

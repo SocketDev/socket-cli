@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { getDefaultOrgSlug } from '../../../../src/fetch-default-org-slug.mts'
+import { getDefaultOrgSlug } from '../../../../../src/commands/ci/fetch-default-org-slug.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/config.mts', () => ({
@@ -19,7 +19,7 @@ vi.mock('../organization/fetch-organization-list.mts', () => ({
 
 describe('getDefaultOrgSlug', () => {
   it('uses config defaultOrg when set', async () => {
-    const { getConfigValueOrUndef } = await import('../../utils/config.mts')
+    const { getConfigValueOrUndef } = await import('../../../../../src/utils/config.mts')
     vi.mocked(getConfigValueOrUndef).mockReturnValue('config-org-slug')
 
     const result = await getDefaultOrgSlug()
@@ -32,7 +32,7 @@ describe('getDefaultOrgSlug', () => {
   })
 
   it('uses environment variable when no config', async () => {
-    const { getConfigValueOrUndef } = await import('../../utils/config.mts')
+    const { getConfigValueOrUndef } = await import('../../../../../src/utils/config.mts')
     vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
 
     const ENV = await import('../../constants/env.mts')
@@ -47,7 +47,7 @@ describe('getDefaultOrgSlug', () => {
   })
 
   it('fetches from API when no config or env', async () => {
-    const { getConfigValueOrUndef } = await import('../../utils/config.mts')
+    const { getConfigValueOrUndef } = await import('../../../../../src/utils/config.mts')
     const { fetchOrganization } = await import(
       '../organization/fetch-organization-list.mts'
     )
@@ -79,7 +79,7 @@ describe('getDefaultOrgSlug', () => {
   })
 
   it('returns error when fetchOrganization fails', async () => {
-    const { getConfigValueOrUndef } = await import('../../utils/config.mts')
+    const { getConfigValueOrUndef } = await import('../../../../../src/utils/config.mts')
     const { fetchOrganization } = await import(
       '../organization/fetch-organization-list.mts'
     )
@@ -101,7 +101,7 @@ describe('getDefaultOrgSlug', () => {
   })
 
   it('returns error when no organizations found', async () => {
-    const { getConfigValueOrUndef } = await import('../../utils/config.mts')
+    const { getConfigValueOrUndef } = await import('../../../../../src/utils/config.mts')
     const { fetchOrganization } = await import(
       '../organization/fetch-organization-list.mts'
     )
@@ -127,7 +127,7 @@ describe('getDefaultOrgSlug', () => {
   })
 
   it('returns error when organization has no name', async () => {
-    const { getConfigValueOrUndef } = await import('../../utils/config.mts')
+    const { getConfigValueOrUndef } = await import('../../../../../src/utils/config.mts')
     const { fetchOrganization } = await import(
       '../organization/fetch-organization-list.mts'
     )

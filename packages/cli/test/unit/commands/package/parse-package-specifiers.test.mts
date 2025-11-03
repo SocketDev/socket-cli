@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parsePackageSpecifiers } from '../../../../src/parse-package-specifiers.mts'
+import { parsePackageSpecifiers } from '../../../../../src/commands/package/parse-package-specifiers.mts'
 
 describe('parse-package-specifiers', async () => {
   it('should parse a simple `npm babel`', () => {

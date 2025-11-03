@@ -7,7 +7,7 @@ import FIXTURE from '../../../../src/audit-fixture.json' with {
 import {
   outputAsJson,
   outputAsMarkdown,
-} from '../../../../src/output-audit-log.mts'
+} from '../../../../../src/commands/audit-log/output-audit-log.mts'
 
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 

@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../src/helpers/mocks.mts'
-import { handleConfigSet } from '../../../../src/handle-config-set.mts'
+import { handleConfigSet } from '../../../../../src/commands/config/handle-config-set.mts'
 
 // Mock the dependencies.
 vi.mock('./output-config-set.mts', () => ({
@@ -25,7 +25,7 @@ describe('handleConfigSet', () => {
   })
 
   it('sets config value successfully', async () => {
-    const { updateConfigValue } = await import('../../utils/config.mts')
+    const { updateConfigValue } = await import('../../../../../src/utils/config.mts')
     const { outputConfigSet } = await import('../../src/output-config-set.mts')
 
     const mockResult = createSuccessResult('new-value')
@@ -45,7 +45,7 @@ describe('handleConfigSet', () => {
   })
 
   it('handles config update failure', async () => {
-    const { updateConfigValue } = await import('../../utils/config.mts')
+    const { updateConfigValue } = await import('../../../../../src/utils/config.mts')
     const { outputConfigSet } = await import('../../src/output-config-set.mts')
 
     const mockResult = createErrorResult('Config update failed')
@@ -62,7 +62,7 @@ describe('handleConfigSet', () => {
   })
 
   it('handles markdown output', async () => {
-    const { updateConfigValue } = await import('../../utils/config.mts')
+    const { updateConfigValue } = await import('../../../../../src/utils/config.mts')
     const { outputConfigSet } = await import('../../src/output-config-set.mts')
 
     const mockResult = createSuccessResult('markdown-value')
@@ -80,7 +80,7 @@ describe('handleConfigSet', () => {
 
   it('logs debug information', async () => {
     const { debug, debugDir } = await import('@socketsecurity/lib/debug')
-    const { updateConfigValue } = await import('../../utils/config.mts')
+    const { updateConfigValue } = await import('../../../../../src/utils/config.mts')
 
     vi.mocked(updateConfigValue).mockReturnValue(
       createSuccessResult('debug-value'),
@@ -105,7 +105,7 @@ describe('handleConfigSet', () => {
 
   it('logs debug information on failure', async () => {
     const { debug } = await import('@socketsecurity/lib/debug')
-    const { updateConfigValue } = await import('../../utils/config.mts')
+    const { updateConfigValue } = await import('../../../../../src/utils/config.mts')
 
     vi.mocked(updateConfigValue).mockReturnValue(createErrorResult('Failed'))
 
@@ -119,7 +119,7 @@ describe('handleConfigSet', () => {
   })
 
   it('handles different config keys', async () => {
-    const { updateConfigValue } = await import('../../utils/config.mts')
+    const { updateConfigValue } = await import('../../../../../src/utils/config.mts')
 
     const keys = ['apiToken', 'org', 'repoName', 'apiBaseUrl', 'apiProxy']
 

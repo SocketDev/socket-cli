@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { removeSocketWrapper } from '../../../../src/remove-socket-wrapper.mts'
+import { removeSocketWrapper } from '../../../../../src/commands/wrapper/remove-socket-wrapper.mts'
 
 // Mock the dependencies.
 vi.mock('node:fs')
