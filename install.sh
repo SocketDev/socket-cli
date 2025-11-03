@@ -187,6 +187,15 @@ install_socket_cli() {
   step "Capturing lightning in a bottle ⚡"
   tar -xzf "$temp_tarball" -C "$install_dir"
 
+  # Get Socket CLI version from extracted package.
+  local cli_version
+  if [ -f "${install_dir}/package/package.json" ]; then
+    cli_version=$(grep -o '"version": *"[^"]*"' "${install_dir}/package/package.json" | head -1 | sed 's/"version": *"\([^"]*\)"/\1/')
+    if [ -n "$cli_version" ]; then
+      success "Socket CLI ${BOLD}v${cli_version}${NC} (build ${version})"
+    fi
+  fi
+
   # Find the binary (it's in package/bin/socket or package/bin/socket.exe).
   if [ "$platform" = "win32-x64" ] || [ "$platform" = "win32-arm64" ]; then
     binary_path="${install_dir}/package/bin/socket.exe"
@@ -251,11 +260,15 @@ install_socket_cli() {
   fi
 
   echo ""
-  socket_brand "${BOLD}Socket CLI installed successfully!${NC}"
+  if [ -n "$cli_version" ]; then
+    socket_brand "${BOLD}Socket CLI v${cli_version} installed successfully!${NC}"
+  else
+    socket_brand "${BOLD}Socket CLI installed successfully!${NC}"
+  fi
   echo ""
   info "Quick start:"
-  echo "  ${CYAN}socket --help${NC}           Get started with Socket"
-  echo "  ${CYAN}socket self-update${NC}      Update to the latest version"
+  echo -e "  ${CYAN}socket --help${NC}           Get started with Socket"
+  echo -e "  ${CYAN}socket self-update${NC}      Update to the latest version"
   echo ""
   socket_brand "Happy securing!"
 }
