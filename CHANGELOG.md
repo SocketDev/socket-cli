@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Unified DLX manifest storage for packages and binary downloads with persistent caching and TTL support
 - Progressive enhancement with ONNX Runtime stub for optional NLP features
 - SHA-256 checksum verification for Python build standalone downloads
+- Optional external alias detection for TypeScript configurations
 - `--reach-use-unreachable-from-precomputation` flag for `scan reach` and `scan create` commands
   to use precomputed unreachable information for improved reachability analysis accuracy
 
@@ -17,13 +18,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - DLX manifest now uses unified format supporting both npm packages and binary downloads
 - Standardized environment variable naming with SOCKET_CLI_ prefix
 - Preflight downloads now stagger with variable delays (1-3 seconds) to avoid resource contention
-- WASM build workflow now pins all tool versions (Emscripten 4.0.18, Python 3.13, pnpm 10.20.0, ONNX 1.19.1, ONNX Runtime 1.23.2)
 
 ### Fixed
 - Bootstrap stream/promises module path corrected for smol builds
 - Bootstrap error handling improved for clearer failure messages
 - Windows path handling now correctly processes UNC paths
-- SEA builder syntax error from erroneous closing brace
 
 ## [2.0.10](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.10) - 2025-10-31
 
