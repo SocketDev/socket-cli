@@ -9,6 +9,8 @@ RUN apk add --no-cache \
     g++ \
     linux-headers \
     git \
+    curl \
+    patch \
     ccache \
     ninja
 
