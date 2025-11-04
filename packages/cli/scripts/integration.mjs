@@ -117,9 +117,10 @@ async function runVitest(binaryType) {
       'run',
       'test/integration/binary/binary-test-suite.test.mts',
       '--config',
-      'vitest.config.mts',
+      'vitest.integration.config.mts',
     ],
     {
+      cwd: ROOT_DIR,
       env: {
         ...process.env,
         RUN_INTEGRATION_TESTS: '1', // Automatically enable tests when explicitly running integration.mjs.
