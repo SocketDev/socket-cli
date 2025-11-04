@@ -1,24 +1,24 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../../test/helpers/mocks.mts'
+} from '../../../../test/helpers/index.mts'
 
 // Mock the dependencies.
 const mockFetchScanData = vi.hoisted(() => vi.fn())
 const mockOutputScanReport = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../../src/commands/scan/fetch-report-data.mts', () => ({
+vi.mock('../../../../src/commands/scan/fetch-report-data.mts', () => ({
   fetchScanData: mockFetchScanData,
 }))
 
-vi.mock('../../../../../src/commands/scan/output-scan-report.mts', () => ({
+vi.mock('../../../../src/commands/scan/output-scan-report.mts', () => ({
   outputScanReport: mockOutputScanReport,
 }))
 
-vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
   setupSdk: mockSetupSdk,
 }))
 
