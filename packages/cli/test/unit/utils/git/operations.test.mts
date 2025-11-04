@@ -45,11 +45,6 @@ vi.mock('../../../../../src/constants/cli.mts', () => ({
   FLAG_QUIET: '--quiet',
 }))
 
-vi.mock('../../../../../src/constants/socket.mts', () => ({
-  SOCKET_DEFAULT_BRANCH: 'main',
-  SOCKET_DEFAULT_REPOSITORY: 'default-repo',
-}))
-
 // Mock debug.
 vi.mock('../../../../../src/utils/debug.mts', () => ({
   debugGit: vi.fn(),
