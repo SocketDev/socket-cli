@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { runAgentInstall } from '../../../../../src/commands/optimize/agent-installer.mts'
+// Create hoisted mocks.
+const { mockShadowNpmInstall } = vi.hoisted(() => ({
+  mockShadowNpmInstall: vi.fn(),
+}))
 
 // Mock dependencies.
 vi.mock('@socketsecurity/lib/spawn', () => ({
@@ -15,8 +18,10 @@ vi.mock('@socketsecurity/lib/spinner', () => ({
 }))
 
 vi.mock('../../../../../src/shadow/npm/install.mts', () => ({
-  shadowNpmInstall: vi.fn(),
+  shadowNpmInstall: mockShadowNpmInstall,
 }))
+
+import { runAgentInstall } from '../../../../../src/commands/optimize/agent-installer.mts'
 
 vi.mock('../../../../../src/utils/process/cmd.mts', () => ({
   cmdFlagsToString: vi.fn(flags =>
@@ -26,13 +31,28 @@ vi.mock('../../../../../src/utils/process/cmd.mts', () => ({
   ),
 }))
 
-vi.mock('../../../../../src/constants.mts', () => ({
-  default: {
-    nodeHardenFlags: [],
-    nodeNoWarningsFlags: [],
-  },
-  NPM: 'npm',
-  PNPM: 'pnpm',
+vi.mock('@socketsecurity/lib/constants/agents', async importOriginal => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    NPM: 'npm',
+    PNPM: 'pnpm',
+    YARN: 'yarn',
+  }
+})
+
+vi.mock('@socketsecurity/lib/constants/node', async importOriginal => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    getNodeDisableSigusr1Flags: vi.fn(() => []),
+    getNodeHardenFlags: vi.fn(() => []),
+    getNodeNoWarningsFlags: vi.fn(() => []),
+  }
+})
+
+vi.mock('@socketsecurity/lib/constants/platform', () => ({
+  WIN32: false,
 }))
 
 describe('agent installer utilities', () => {
@@ -41,13 +61,14 @@ describe('agent installer utilities', () => {
   })
 
   describe('runAgentInstall', () => {
-    // TODO: Fix this test - mock is not working correctly.
+    // TODO: Fix this test - shadowNpmInstall mock is not being called.
+    // The mock setup works (mockReturnValue doesn't error), but runAgentInstall
+    // never calls the mocked function. Possible issues:
+    // - Module resolution not matching between mock and implementation
+    // - Mock hoisting issues with complex module dependencies
+    // - Agent detection not triggering npm path (agent === NPM check failing)
     it.skip('uses shadowNpmInstall for npm agent', async () => {
-      const { shadowNpmInstall } = await import(
-        '../../../../../src/shadow/npm/install.mts'
-      )
-      const mockShadowNpmInstall = shadowNpmInstall as ReturnType<typeof vi.fn>
-      mockShadowNpmInstall.mockResolvedValue({ status: 0 } as any)
+      mockShadowNpmInstall.mockReturnValue(Promise.resolve({ status: 0 }) as any)
 
       const pkgEnvDetails = {
         agent: 'npm',
@@ -55,9 +76,9 @@ describe('agent installer utilities', () => {
         pkgPath: '/test/project',
       } as any
 
-      runAgentInstall(pkgEnvDetails)
+      await runAgentInstall(pkgEnvDetails)
 
-      expect(shadowNpmInstall).toHaveBeenCalledWith({
+      expect(mockShadowNpmInstall).toHaveBeenCalledWith({
         agentExecPath: '/usr/bin/npm',
         cwd: '/test/project',
       })
