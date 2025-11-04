@@ -101,6 +101,10 @@ async function runVitest(binaryType) {
   const dotenvxCmd = WIN32 ? 'dotenvx.cmd' : 'dotenvx'
   const dotenvxPath = path.join(NODE_MODULES_BIN_PATH, dotenvxCmd)
 
+  // Resolve vitest path.
+  const vitestCmd = WIN32 ? 'vitest.cmd' : 'vitest'
+  const vitestPath = path.join(NODE_MODULES_BIN_PATH, vitestCmd)
+
   const result = await spawn(
     dotenvxPath,
     [
@@ -109,7 +113,7 @@ async function runVitest(binaryType) {
       '-f',
       '.env.test',
       '--',
-      'vitest',
+      vitestPath,
       'run',
       'test/integration/binary/binary-test-suite.test.mts',
       '--config',
