@@ -75,7 +75,7 @@ jobs:
   # Binary distribution integration tests.
   # Tests the JS distribution and optionally SEA/smol if cached binaries are available.
   integration:
-    name: Integration Tests (${{ matrix.distribution }})
+    name: Integration Tests
     needs: ci
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -83,7 +83,6 @@ jobs:
       fail-fast: false
       matrix:
         node-version: ['24.10.0']
-        distribution: ['js']
     steps:
       - uses: SocketDev/socket-registry/.github/actions/setup-and-install@1a96ced97aaa85d61543351b90d6f463b983c46c # main
         with:
@@ -93,9 +92,90 @@ jobs:
         working-directory: packages/cli
         run: pnpm run build
 
-      - name: Run integration tests (${{ matrix.distribution }})
+      - name: Generate cache keys for binary distributions
+        id: cache-keys
+        shell: bash
+        run: |
+          # SEA cache key (matches build-sea.yml).
+          SEA_HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) 2>/dev/null | sort | xargs sha256sum 2>/dev/null | sha256sum | cut -d' ' -f1 || echo "none")
+          DEPS_HASH=$(find packages/bootstrap packages/socket -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" -o -name "*.json" \) ! -path "*/node_modules/*" ! -path "*/dist/*" ! -path "*/build/*" 2>/dev/null | sort | xargs sha256sum 2>/dev/null | sha256sum | cut -d' ' -f1 || echo "none")
+          LOCK_HASH=$(sha256sum pnpm-lock.yaml 2>/dev/null | cut -d' ' -f1 || echo "none")
+          SEA_DEPS_HASH=$(echo "$DEPS_HASH-$LOCK_HASH" | sha256sum | cut -d' ' -f1)
+          SEA_COMBINED=$(echo "$SEA_HASH-$SEA_DEPS_HASH" | sha256sum | cut -d' ' -f1)
+          echo "sea-hash=$SEA_COMBINED" >> $GITHUB_OUTPUT
+
+          # Smol cache key (matches build-smol.yml).
+          SMOL_HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f \( -name "*.patch" -o -name "*.template.patch" -o -name "*.mjs" -o -name "*.template.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" \) 2>/dev/null | sort | xargs sha256sum 2>/dev/null | sha256sum | cut -d' ' -f1 || echo "none")
+          SMOL_DEPS_HASH=$(echo "$DEPS_HASH-$LOCK_HASH" | sha256sum | cut -d' ' -f1)
+          SMOL_COMBINED=$(echo "$SMOL_HASH-$SMOL_DEPS_HASH" | sha256sum | cut -d' ' -f1)
+          echo "smol-hash=$SMOL_COMBINED" >> $GITHUB_OUTPUT
+
+      - name: Restore SEA binary cache
+        id: sea-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: packages/node-sea-builder/dist/
+          key: node-sea-linux-x64-${{ steps.cache-keys.outputs.sea-hash }}
+          restore-keys: node-sea-linux-x64-
+
+      - name: Restore smol binary cache
+        id: smol-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: packages/node-smol-builder/dist/
+          key: node-smol-linux-x64-${{ steps.cache-keys.outputs.smol-hash }}
+          restore-keys: node-smol-linux-x64-
+
+      - name: Setup cached binaries for testing
+        id: setup-binaries
+        shell: bash
+        run: |
+          echo "Setting up cached binaries for integration tests..."
+          echo ""
+
+          # Copy SEA binary from cache to expected test location.
+          SEA_CACHED="packages/node-sea-builder/dist/sea/socket-linux-x64"
+          SEA_TARGET="packages/node-sea-builder/dist/socket-sea"
+          if [ -f "$SEA_CACHED" ]; then
+            mkdir -p "$(dirname "$SEA_TARGET")"
+            cp "$SEA_CACHED" "$SEA_TARGET"
+            chmod +x "$SEA_TARGET"
+            echo "✓ SEA binary restored from cache: $SEA_TARGET"
+            echo "sea=true" >> $GITHUB_OUTPUT
+          else
+            echo "✗ SEA binary not found in cache (expected: $SEA_CACHED)"
+            echo "sea=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Copy smol binary from cache to expected test location.
+          SMOL_CACHED="packages/node-smol-builder/dist/socket-smol-linux-x64"
+          SMOL_TARGET="packages/node-smol-builder/dist/socket-smol"
+          if [ -f "$SMOL_CACHED" ]; then
+            mkdir -p "$(dirname "$SMOL_TARGET")"
+            cp "$SMOL_CACHED" "$SMOL_TARGET"
+            chmod +x "$SMOL_TARGET"
+            echo "✓ Smol binary restored from cache: $SMOL_TARGET"
+            echo "smol=true" >> $GITHUB_OUTPUT
+          else
+            echo "✗ Smol binary not found in cache (expected: $SMOL_CACHED)"
+            echo "smol=false" >> $GITHUB_OUTPUT
+          fi
+
+          # JS distribution (always available after build).
+          if [ -f "packages/cli/dist/index.js" ]; then
+            echo "✓ JS distribution: packages/cli/dist/index.js"
+            echo "js=true" >> $GITHUB_OUTPUT
+          else
+            echo "✗ JS distribution: not found"
+            echo "js=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo ""
+          echo "Integration tests will run against all available distributions."
+
+      - name: Run integration tests (all available distributions)
         working-directory: packages/cli
-        run: node scripts/integration.mjs --${{ matrix.distribution }}
+        run: node scripts/integration.mjs --all
 
   e2e:
     name: E2E Tests
