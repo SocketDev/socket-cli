@@ -60,7 +60,6 @@ import { XDG_DATA_HOME } from '../env/xdg-data-home.mts'
 
 // Import build metadata getter functions.
 import { getCdxgenVersion } from '../env/cdxgen-version.mts'
-import { getCliAiVersion } from '../env/cli-ai-version.mts'
 import { getCliHomepage } from '../env/cli-homepage.mts'
 import { getCliName } from '../env/cli-name.mts'
 import { getCliVersion } from '../env/cli-version.mts'
@@ -132,7 +131,6 @@ export {
 // Re-export build metadata getter functions.
 export {
   getCdxgenVersion,
-  getCliAiVersion,
   getCliHomepage,
   getCliName,
   getCliVersion,
@@ -208,7 +206,6 @@ const envSnapshot = {
   XDG_CACHE_HOME,
   XDG_DATA_HOME,
   // Build metadata (inlined by esbuild define).
-  INLINED_SOCKET_CLI_AI_VERSION: getCliAiVersion(),
   INLINED_SOCKET_CLI_CDXGEN_VERSION: getCdxgenVersion(),
   INLINED_SOCKET_CLI_COANA_VERSION: getCoanaVersion(),
   INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: getCdxgenVersion(),

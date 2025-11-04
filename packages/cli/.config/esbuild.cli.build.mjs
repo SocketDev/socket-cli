@@ -225,7 +225,6 @@ const config = {
       INLINED_SOCKET_CLI_VERSION_HASH: JSON.stringify(versionHash),
       INLINED_SOCKET_CLI_NAME: JSON.stringify(packageJson.name),
       INLINED_SOCKET_CLI_HOMEPAGE: JSON.stringify(packageJson.homepage),
-      INLINED_SOCKET_CLI_AI_VERSION: JSON.stringify(socketPackageJson.version),
       INLINED_SOCKET_CLI_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
       INLINED_SOCKET_CLI_COANA_VERSION: JSON.stringify(coanaVersion),
       INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION:
@@ -253,7 +252,6 @@ const config = {
       INLINED_SOCKET_CLI_VERSION_HASH: JSON.stringify(versionHash),
       INLINED_SOCKET_CLI_NAME: JSON.stringify(packageJson.name),
       INLINED_SOCKET_CLI_HOMEPAGE: JSON.stringify(packageJson.homepage),
-      INLINED_SOCKET_CLI_AI_VERSION: JSON.stringify(socketPackageJson.version),
       INLINED_SOCKET_CLI_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
       INLINED_SOCKET_CLI_COANA_VERSION: JSON.stringify(coanaVersion),
       INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION:
