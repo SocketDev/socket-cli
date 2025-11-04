@@ -1,3 +1,23 @@
+/**
+ * Unit tests for ecosystem type definitions.
+ *
+ * Purpose:
+ * Tests ecosystem type utilities and type guards. Validates TypeScript type narrowing for ecosystems.
+ *
+ * Test Coverage:
+ * - Type guard functions
+ * - Ecosystem detection
+ * - Type narrowing
+ * - Runtime type checking
+ * - Ecosystem enum validation
+ *
+ * Testing Approach:
+ * Tests TypeScript type utilities with runtime validation.
+ *
+ * Related Files:
+ * - utils/ecosystem/types.mts (implementation)
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import {

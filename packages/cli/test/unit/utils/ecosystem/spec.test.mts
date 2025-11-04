@@ -1,3 +1,23 @@
+/**
+ * Unit tests for ecosystem package spec.
+ *
+ * Purpose:
+ * Tests ecosystem package specification parsing. Validates package spec formats across ecosystems.
+ *
+ * Test Coverage:
+ * - npm package spec parsing
+ * - Python requirement.txt parsing
+ * - Go module parsing
+ * - Maven POM parsing
+ * - Multi-ecosystem support
+ *
+ * Testing Approach:
+ * Tests package specification parsers for various ecosystems.
+ *
+ * Related Files:
+ * - utils/ecosystem/spec.mts (implementation)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

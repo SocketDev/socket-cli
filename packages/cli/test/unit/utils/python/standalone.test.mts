@@ -1,3 +1,23 @@
+/**
+ * Unit tests for standalone Python utilities.
+ *
+ * Purpose:
+ * Tests standalone Python utilities. Validates Python binary detection and requirement parsing.
+ *
+ * Test Coverage:
+ * - Python binary detection
+ * - requirements.txt parsing
+ * - virtualenv detection
+ * - Python version checking
+ * - pip command execution
+ *
+ * Testing Approach:
+ * Tests Python ecosystem utilities with mocked subprocess calls.
+ *
+ * Related Files:
+ * - utils/python/standalone.mts (implementation)
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import {

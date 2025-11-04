@@ -1,3 +1,23 @@
+/**
+ * Unit tests for error message with badge.
+ *
+ * Purpose:
+ * Tests error message formatting with severity badges. Validates colored badge display with error messages.
+ *
+ * Test Coverage:
+ * - Severity badge rendering
+ * - Color coding (red for error, yellow for warning)
+ * - Message formatting
+ * - Multi-line error support
+ * - ANSI escape sequences
+ *
+ * Testing Approach:
+ * Tests formatted error output with visual indicators.
+ *
+ * Related Files:
+ * - utils/error/fail-msg-with-badge.mts (implementation)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock yoctocolors-cjs BEFORE importing the module under test

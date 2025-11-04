@@ -1,3 +1,23 @@
+/**
+ * Unit tests for ecosystem environment detection.
+ *
+ * Purpose:
+ * Tests ecosystem environment detection (Node.js, Python, Go, etc.). Validates runtime version detection.
+ *
+ * Test Coverage:
+ * - Runtime version detection
+ * - Package manager detection
+ * - Environment variable parsing
+ * - Multiple ecosystem support
+ * - Version string parsing
+ *
+ * Testing Approach:
+ * Uses mocked subprocess calls to test environment detection.
+ *
+ * Related Files:
+ * - utils/ecosystem/environment.mts (implementation)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
