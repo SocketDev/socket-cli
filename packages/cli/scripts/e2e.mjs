@@ -15,12 +15,14 @@ import { fileURLToPath } from 'node:url'
 
 import colors from 'yoctocolors-cjs'
 
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT_DIR = path.resolve(__dirname, '..')
 const MONOREPO_ROOT = path.resolve(ROOT_DIR, '../..')
+const NODE_MODULES_BIN_PATH = path.join(MONOREPO_ROOT, 'node_modules/.bin')
 
 const BINARY_PATHS = {
   __proto__: null,
@@ -92,8 +94,12 @@ async function runVitest(binaryType) {
     process.exit(1)
   }
 
+  // Use dotenvx to load test environment.
+  const dotenvxCmd = WIN32 ? 'dotenvx.cmd' : 'dotenvx'
+  const dotenvxPath = path.join(NODE_MODULES_BIN_PATH, dotenvxCmd)
+
   const result = await spawn(
-    'dotenvx',
+    dotenvxPath,
     [
       '-q',
       'run',
