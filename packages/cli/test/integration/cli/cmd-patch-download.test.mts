@@ -1,3 +1,19 @@
+/**
+ * Integration tests for `socket patch download` command.
+ *
+ * Tests downloading patch files from the Socket patch registry.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Patch file download
+ * - Patch verification
+ *
+ * Related Files:
+ * - src/commands/patch/cmd-patch-download.mts - Command definition
+ * - src/commands/patch/handle-patch-download.mts - Download logic
+ */
+
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 

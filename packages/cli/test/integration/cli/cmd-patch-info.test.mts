@@ -1,3 +1,19 @@
+/**
+ * Integration tests for `socket patch info` command.
+ *
+ * Tests displaying detailed patch information.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Patch details display
+ * - CVE information
+ *
+ * Related Files:
+ * - src/commands/patch/cmd-patch-info.mts - Command definition
+ * - src/commands/patch/handle-patch-info.mts - Info display logic
+ */
+
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 

@@ -1,3 +1,28 @@
+/**
+ * Integration tests for `socket patch` root command.
+ *
+ * Tests the patch management root command for applying security patches
+ * to vulnerable dependencies without full version upgrades.
+ *
+ * Test Coverage:
+ * - Help text display and subcommand listing
+ * - Dry-run behavior validation
+ * - Subcommand routing
+ *
+ * Available Subcommands:
+ * - cleanup: Remove unused patches
+ * - discover: Find available patches
+ * - download: Download patch files
+ * - get: Get specific patch info
+ * - info: Show patch details
+ * - list: List applied patches
+ * - rm: Remove patches
+ *
+ * Related Files:
+ * - src/commands/patch/cmd-patch.mts - Root command definition
+ * - src/commands/patch/cmd-patch-*.mts - Subcommands
+ */
+
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 

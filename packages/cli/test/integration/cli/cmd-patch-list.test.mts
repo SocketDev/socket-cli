@@ -1,3 +1,19 @@
+/**
+ * Integration tests for `socket patch list` command.
+ *
+ * Tests listing all applied patches in the project.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Applied patch listing
+ * - Output format support
+ *
+ * Related Files:
+ * - src/commands/patch/cmd-patch-list.mts - Command definition
+ * - src/commands/patch/handle-patch-list.mts - Listing logic
+ */
+
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 

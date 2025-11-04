@@ -1,3 +1,19 @@
+/**
+ * Integration tests for `socket patch discover` command.
+ *
+ * Tests discovering available patches for vulnerable dependencies.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Patch discovery from Socket registry
+ * - Available patch listing
+ *
+ * Related Files:
+ * - src/commands/patch/cmd-patch-discover.mts - Command definition
+ * - src/commands/patch/handle-patch-discover.mts - Discovery logic
+ */
+
 import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'

@@ -1,3 +1,19 @@
+/**
+ * Integration tests for `socket patch cleanup` command.
+ *
+ * Tests removing unused or obsolete patches from the project.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Unused patch detection
+ * - Patch removal
+ *
+ * Related Files:
+ * - src/commands/patch/cmd-patch-cleanup.mts - Command definition
+ * - src/commands/patch/handle-patch-cleanup.mts - Cleanup logic
+ */
+
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 

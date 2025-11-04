@@ -1,3 +1,19 @@
+/**
+ * Integration tests for `socket patch get` command.
+ *
+ * Tests retrieving specific patch information.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Patch metadata retrieval
+ * - Output format support
+ *
+ * Related Files:
+ * - src/commands/patch/cmd-patch-get.mts - Command definition
+ * - src/commands/patch/handle-patch-get.mts - Retrieval logic
+ */
+
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 

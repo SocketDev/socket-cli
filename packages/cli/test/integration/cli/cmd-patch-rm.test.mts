@@ -1,3 +1,19 @@
+/**
+ * Integration tests for `socket patch rm` command.
+ *
+ * Tests removing specific patches from the project.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Patch removal
+ * - Dependency restoration
+ *
+ * Related Files:
+ * - src/commands/patch/cmd-patch-rm.mts - Command definition
+ * - src/commands/patch/handle-patch-rm.mts - Removal logic
+ */
+
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
