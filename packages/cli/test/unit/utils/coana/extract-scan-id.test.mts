@@ -39,11 +39,11 @@ describe('coana utilities', () => {
       })
 
       const result = extractTier1ReachabilityScanId(
-        '/path/to/socket-facts.json',
+        '/path/to/.socket.facts.json',
       )
 
       expect(result).toBe('scan-123-abc')
-      expect(readJsonSync).toHaveBeenCalledWith('/path/to/socket-facts.json', {
+      expect(readJsonSync).toHaveBeenCalledWith('/path/to/.socket.facts.json', {
         throws: false,
       })
     })
@@ -55,7 +55,7 @@ describe('coana utilities', () => {
       })
 
       const result = extractTier1ReachabilityScanId(
-        '/path/to/socket-facts.json',
+        '/path/to/.socket.facts.json',
       )
 
       expect(result).toBeUndefined()
@@ -68,7 +68,7 @@ describe('coana utilities', () => {
       })
 
       const result = extractTier1ReachabilityScanId(
-        '/path/to/socket-facts.json',
+        '/path/to/.socket.facts.json',
       )
 
       expect(result).toBeUndefined()
@@ -81,7 +81,7 @@ describe('coana utilities', () => {
       })
 
       const result = extractTier1ReachabilityScanId(
-        '/path/to/socket-facts.json',
+        '/path/to/.socket.facts.json',
       )
 
       expect(result).toBeUndefined()
@@ -94,7 +94,7 @@ describe('coana utilities', () => {
       })
 
       const result = extractTier1ReachabilityScanId(
-        '/path/to/socket-facts.json',
+        '/path/to/.socket.facts.json',
       )
 
       expect(result).toBe('scan-456-def')
@@ -107,7 +107,7 @@ describe('coana utilities', () => {
       })
 
       const result = extractTier1ReachabilityScanId(
-        '/path/to/socket-facts.json',
+        '/path/to/.socket.facts.json',
       )
 
       expect(result).toBe('12345')
@@ -120,7 +120,7 @@ describe('coana utilities', () => {
       })
 
       const result = extractTier1ReachabilityScanId(
-        '/path/to/socket-facts.json',
+        '/path/to/.socket.facts.json',
       )
 
       expect(result).toBeUndefined()
@@ -133,7 +133,7 @@ describe('coana utilities', () => {
       })
 
       const result = extractTier1ReachabilityScanId(
-        '/path/to/socket-facts.json',
+        '/path/to/.socket.facts.json',
       )
 
       expect(result).toBeUndefined()
@@ -164,7 +164,7 @@ describe('coana utilities', () => {
       })
 
       const result = extractTier1ReachabilityScanId(
-        '/path/to/socket-facts.json',
+        '/path/to/.socket.facts.json',
       )
 
       expect(result).toBe('true')
@@ -177,7 +177,7 @@ describe('coana utilities', () => {
       })
 
       const result = extractTier1ReachabilityScanId(
-        '/path/to/socket-facts.json',
+        '/path/to/.socket.facts.json',
       )
 
       expect(result).toBe('scan,123')
@@ -190,7 +190,7 @@ describe('coana utilities', () => {
       })
 
       const result = extractTier1ReachabilityScanId(
-        '/path/to/socket-facts.json',
+        '/path/to/.socket.facts.json',
       )
 
       expect(result).toBe('[object Object]')
