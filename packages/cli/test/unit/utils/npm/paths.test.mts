@@ -1,3 +1,23 @@
+/**
+ * Unit tests for npm path utilities.
+ *
+ * Purpose:
+ * Tests npm-specific path utilities. Validates node_modules, package.json, and cache path resolution.
+ *
+ * Test Coverage:
+ * - node_modules path resolution
+ * - package.json location
+ * - npm cache directory
+ * - Global package paths
+ * - Workspace root detection
+ *
+ * Testing Approach:
+ * Tests npm path conventions and resolution logic.
+ *
+ * Related Files:
+ * - utils/npm/paths.mts (implementation)
+ */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies.

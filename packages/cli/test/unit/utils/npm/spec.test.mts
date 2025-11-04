@@ -1,3 +1,23 @@
+/**
+ * Unit tests for npm package spec.
+ *
+ * Purpose:
+ * Tests npm package specification handling. Validates package.json parsing and validation.
+ *
+ * Test Coverage:
+ * - package.json parsing
+ * - Dependencies extraction
+ * - Scripts validation
+ * - Engines compatibility
+ * - Workspace configuration
+ *
+ * Testing Approach:
+ * Tests package.json schema validation and parsing.
+ *
+ * Related Files:
+ * - utils/npm/spec.mts (implementation)
+ */
+
 import npmPackageArg from 'npm-package-arg'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

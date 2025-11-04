@@ -1,3 +1,23 @@
+/**
+ * Unit tests for pnpm project scanning.
+ *
+ * Purpose:
+ * Tests pnpm project scanning utilities. Validates workspace detection and manifest discovery.
+ *
+ * Test Coverage:
+ * - Workspace detection
+ * - pnpm-workspace.yaml parsing
+ * - Package discovery
+ * - Dependency graph
+ * - Monorepo support
+ *
+ * Testing Approach:
+ * Tests pnpm workspace scanning and analysis.
+ *
+ * Related Files:
+ * - utils/pnpm/scanning.mts (implementation)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getAlertsMapFromPnpmLockfile } from '../../../../src/utils/socket/alerts.mts'

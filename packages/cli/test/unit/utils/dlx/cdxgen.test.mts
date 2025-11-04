@@ -1,3 +1,23 @@
+/**
+ * Unit tests for dlx cdxgen integration.
+ *
+ * Purpose:
+ * Tests cdxgen (CycloneDX generator) integration for dlx. Validates SBOM generation via cdxgen.
+ *
+ * Test Coverage:
+ * - cdxgen execution
+ * - SBOM generation
+ * - Output parsing
+ * - Error handling
+ * - Version compatibility
+ *
+ * Testing Approach:
+ * Tests cdxgen subprocess execution and output processing.
+ *
+ * Related Files:
+ * - utils/dlx/cdxgen.mts (implementation)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { spawnCdxgenDlx } from '../../../../src/utils/dlx/spawn.mts'

@@ -1,3 +1,23 @@
+/**
+ * Unit tests for shadow realm link utilities.
+ *
+ * Purpose:
+ * Tests shadow realm symlink utilities. Validates shadow installation link management.
+ *
+ * Test Coverage:
+ * - Symlink creation
+ * - Symlink validation
+ * - Link cleanup
+ * - Broken link detection
+ * - Cross-platform link handling
+ *
+ * Testing Approach:
+ * Tests shadow realm symlink utilities for optimized installations.
+ *
+ * Related Files:
+ * - utils/shadow/links.mts (implementation)
+ */
+
 import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

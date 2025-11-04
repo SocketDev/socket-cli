@@ -1,3 +1,23 @@
+/**
+ * Unit tests for pnpm path utilities.
+ *
+ * Purpose:
+ * Tests pnpm-specific path utilities. Validates pnpm store, virtual store, and workspace paths.
+ *
+ * Test Coverage:
+ * - pnpm store path
+ * - Virtual store location
+ * - Workspace root detection
+ * - pnpm-workspace.yaml location
+ * - Global pnpm paths
+ *
+ * Testing Approach:
+ * Tests pnpm path conventions and resolution logic.
+ *
+ * Related Files:
+ * - utils/pnpm/paths.mts (implementation)
+ */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies.

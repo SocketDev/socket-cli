@@ -1,3 +1,23 @@
+/**
+ * Unit tests for dlx binary resolution.
+ *
+ * Purpose:
+ * Tests binary resolution for dlx commands. Validates locating and selecting appropriate binaries.
+ *
+ * Test Coverage:
+ * - Binary path resolution
+ * - node_modules/.bin lookup
+ * - Global binary search
+ * - Fallback logic
+ * - Platform-specific binaries
+ *
+ * Testing Approach:
+ * Tests binary resolution algorithms for dlx execution.
+ *
+ * Related Files:
+ * - utils/dlx/resolve-binary.mts (implementation)
+ */
+
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import {

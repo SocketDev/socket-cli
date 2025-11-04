@@ -1,3 +1,24 @@
+/**
+ * Unit tests for npm package argument parsing.
+ *
+ * Purpose:
+ * Tests npm package argument parsing. Validates package specifier parsing compatible with npm-package-arg.
+ *
+ * Test Coverage:
+ * - Package name parsing
+ * - Version range parsing
+ * - Git URL parsing
+ * - Tarball URL parsing
+ * - File path parsing
+ * - Scope handling
+ *
+ * Testing Approach:
+ * Tests package specifier parser with various npm formats.
+ *
+ * Related Files:
+ * - utils/npm/package-arg.mts (implementation)
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import { safeNpa } from '../../../../src/utils/npm/package-arg.mts'

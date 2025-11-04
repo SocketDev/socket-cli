@@ -1,3 +1,23 @@
+/**
+ * Unit tests for dlx package detection.
+ *
+ * Purpose:
+ * Tests package detection logic for dlx commands. Validates package name extraction and resolution.
+ *
+ * Test Coverage:
+ * - Package name extraction from URLs
+ * - Version detection
+ * - Scope handling (@org/package)
+ * - Package registry detection
+ * - Invalid input handling
+ *
+ * Testing Approach:
+ * Tests parsing and detection logic for dlx workflows.
+ *
+ * Related Files:
+ * - utils/dlx/detection.mts (implementation)
+ */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

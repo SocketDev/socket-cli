@@ -1,3 +1,23 @@
+/**
+ * Unit tests for pnpm lockfile parsing.
+ *
+ * Purpose:
+ * Tests pnpm-lock.yaml parsing. Validates pnpm lockfile format parsing and dependency extraction.
+ *
+ * Test Coverage:
+ * - pnpm-lock.yaml parsing
+ * - Dependency resolution
+ * - Workspace dependencies
+ * - Version extraction
+ * - Lockfile validation
+ *
+ * Testing Approach:
+ * Tests pnpm lockfile parser with fixture lockfiles.
+ *
+ * Related Files:
+ * - utils/pnpm/lockfile.mts (implementation)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

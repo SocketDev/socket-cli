@@ -1,3 +1,23 @@
+/**
+ * Unit tests for yarn path utilities.
+ *
+ * Purpose:
+ * Tests yarn-specific path utilities. Validates yarn cache, global, and workspace paths.
+ *
+ * Test Coverage:
+ * - yarn cache path
+ * - yarn global directory
+ * - Workspace root detection
+ * - yarn.lock location
+ * - PnP (Plug'n'Play) paths
+ *
+ * Testing Approach:
+ * Tests yarn path conventions and resolution logic.
+ *
+ * Related Files:
+ * - utils/yarn/paths.mts (implementation)
+ */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies.
