@@ -1,3 +1,30 @@
+/**
+ * Unit Tests: JSON Output Command Handler
+ *
+ * Purpose:
+ * Tests the command handler that outputs Socket CLI scan and configuration data in JSON format.
+ * Validates path handling (absolute, relative, current directory, Windows-style) and proper
+ * delegation to the output module.
+ *
+ * Test Coverage:
+ * - JSON output for given directories
+ * - Current directory handling (.)
+ * - Absolute path support
+ * - Relative path support
+ * - Empty path handling
+ * - Windows-style path support (C:\)
+ * - Async error propagation
+ * - Single invocation verification
+ *
+ * Testing Approach:
+ * Mocks outputCmdJson module to test the handler's path forwarding logic without actual
+ * JSON generation. Tests verify correct parameter passing and error handling.
+ *
+ * Related Files:
+ * - src/commands/json/handle-cmd-json.mts - Command handler
+ * - src/commands/json/output-cmd-json.mts - JSON output formatting
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleCmdJson } from '../../../../src/commands/json/handle-cmd-json.mts'

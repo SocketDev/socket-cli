@@ -1,3 +1,30 @@
+/**
+ * Unit Tests: Manifest Configuration Setup Handler
+ *
+ * Purpose:
+ * Tests the command handler that initializes Socket manifest configuration (socket.json) for
+ * a project. Validates the orchestration between configuration setup and output formatting
+ * with support for error recovery through the defaultOnReadError flag.
+ *
+ * Test Coverage:
+ * - Successful manifest configuration setup
+ * - Setup failure handling with error output
+ * - defaultOnReadError flag behavior (true/false)
+ * - Empty data result handling
+ * - Current directory and absolute path support
+ * - Async error propagation
+ *
+ * Testing Approach:
+ * Mocks setupManifestConfig and outputManifestSetup modules to test handler orchestration
+ * without actual file system operations. Tests verify correct parameter passing and
+ * CResult pattern handling.
+ *
+ * Related Files:
+ * - src/commands/manifest/handle-manifest-setup.mts - Command handler
+ * - src/commands/manifest/setup-manifest-config.mts - Configuration setup logic
+ * - src/commands/manifest/output-manifest-setup.mts - Output formatting
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleManifestSetup } from '../../../../src/commands/manifest/handle-manifest-setup.mts'

@@ -1,3 +1,32 @@
+/**
+ * Unit Tests: Socket Registry Patch Application Handler
+ *
+ * Purpose:
+ * Tests the command handler that applies Socket Registry patches to installed packages in
+ * node_modules. Validates package resolution via PURL, patch file discovery and copying,
+ * dry-run mode, and error handling for various failure scenarios.
+ *
+ * Test Coverage:
+ * - Successful patch application with file copying
+ * - Package resolution from PURL specifications
+ * - Patch file discovery via glob patterns
+ * - Dry-run mode (validation without file modifications)
+ * - Package not found error handling
+ * - Missing patch file scenarios
+ * - File system operation error handling
+ * - Multiple package patching in single invocation
+ *
+ * Testing Approach:
+ * Mocks fs operations, fast-glob, package.json reading, PURL parsing, and output formatting
+ * to test patch application logic without actual file system modifications. Tests verify
+ * proper error handling and result reporting.
+ *
+ * Related Files:
+ * - src/commands/patch/handle-patch-apply.mts - Patch application handler
+ * - src/commands/patch/output-patch-result.mts - Result output formatter
+ * - src/utils/purl/parse.mts - PURL parsing utilities
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import { handlePatchApply } from '../../../../src/commands/patch/handle-patch-apply.mts'
