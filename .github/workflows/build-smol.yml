@@ -83,8 +83,11 @@ jobs:
         id: deps-cache-key
         shell: bash
         run: |
+          # Include pnpm-lock.yaml to detect dependency changes (e.g., @socketsecurity/lib updates).
           HASH=$(find packages/bootstrap packages/socket -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" -o -name "*.json" \) ! -path "*/node_modules/*" ! -path "*/dist/*" ! -path "*/build/*" | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          echo "hash=$HASH" >> $GITHUB_OUTPUT
+          LOCK_HASH=$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)
+          COMBINED_HASH=$(echo "$HASH-$LOCK_HASH" | sha256sum | cut -d' ' -f1)
+          echo "hash=$COMBINED_HASH" >> $GITHUB_OUTPUT
 
       - name: Restore build-deps cache
         id: deps-cache
