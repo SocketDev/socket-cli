@@ -1,3 +1,29 @@
+/**
+ * Integration tests for `socket npx` wrapper command.
+ *
+ * Tests the npx package executor wrapper that adds Socket security scanning
+ * before running packages. This wrapper intercepts npx commands and scans
+ * packages for security issues before execution.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Package execution with versions
+ * - Config flag variants
+ * - Issue rules configuration
+ * - Silent mode operation
+ *
+ * Security Features:
+ * - Package scanning before execution
+ * - Malware detection integration
+ * - API token validation
+ *
+ * Related Files:
+ * - src/commands/wrapper/npx.mts - npx wrapper implementation
+ * - src/shadow/npx/ - Shadow npx implementation
+ * - test/integration/cli/cmd-npx-malware.test.mts - Malware-specific tests
+ */
+
 import { describe, expect } from 'vitest'
 
 import { NPX } from '@socketsecurity/lib/constants/agents'

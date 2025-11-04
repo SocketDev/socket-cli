@@ -1,3 +1,28 @@
+/**
+ * Integration tests for `socket yarn` wrapper command.
+ *
+ * Tests the Yarn package manager wrapper that adds Socket security scanning
+ * to Yarn operations. This wrapper intercepts Yarn commands and scans
+ * packages for security issues before installation.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Yarn install operations with scanning
+ * - Config flag variants
+ * - Issue rules configuration
+ *
+ * Security Features:
+ * - Pre-installation security scanning
+ * - Malware detection integration
+ * - Workspace support
+ *
+ * Related Files:
+ * - src/commands/wrapper/yarn.mts - Yarn wrapper implementation
+ * - src/shadow/yarn/ - Shadow Yarn implementation
+ * - test/integration/cli/cmd-yarn-malware.test.mts - Malware tests
+ */
+
 import { describe, expect } from 'vitest'
 
 import { YARN } from '@socketsecurity/lib/constants/agents'

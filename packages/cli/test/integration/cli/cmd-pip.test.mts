@@ -1,3 +1,27 @@
+/**
+ * Integration tests for `socket pip` wrapper command.
+ *
+ * Tests the pip package manager wrapper that adds Socket security scanning
+ * to Python package operations. This wrapper intercepts pip commands and
+ * scans packages for security issues before installation.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Python package installation with scanning
+ * - Config flag variants
+ * - Issue rules configuration
+ *
+ * Security Features:
+ * - Pre-installation security scanning
+ * - Malware detection for Python packages
+ * - API token validation
+ *
+ * Related Files:
+ * - src/commands/wrapper/pip.mts - pip wrapper implementation
+ * - src/shadow/pip/ - Shadow pip implementation
+ */
+
 import { describe, expect } from 'vitest'
 
 import { FLAG_CONFIG, FLAG_HELP } from '../../../src/constants/cli.mts'

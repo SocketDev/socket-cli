@@ -1,3 +1,28 @@
+/**
+ * Integration tests for `socket pnpm` wrapper command.
+ *
+ * Tests the pnpm package manager wrapper that adds Socket security scanning
+ * to pnpm operations. This wrapper intercepts pnpm commands and scans
+ * packages for security issues before installation.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - pnpm install operations with scanning
+ * - Config flag variants
+ * - Issue rules configuration
+ *
+ * Security Features:
+ * - Pre-installation security scanning
+ * - Malware detection integration
+ * - Workspace support
+ *
+ * Related Files:
+ * - src/commands/wrapper/pnpm.mts - pnpm wrapper implementation
+ * - src/shadow/pnpm/ - Shadow pnpm implementation
+ * - test/integration/cli/cmd-pnpm-malware.test.mts - Malware tests
+ */
+
 import { promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'

@@ -1,3 +1,29 @@
+/**
+ * Integration tests for Socket CLI root command.
+ *
+ * Tests the main entry point (`socket`) behavior including help output,
+ * command discovery, and graceful handling of unrecognized input.
+ *
+ * Test Coverage:
+ * - Help text display (--help flag)
+ * - Banner output format and content
+ * - Command list structure and categories
+ * - Dry-run behavior with package specs
+ * - Exit codes for valid invocations
+ *
+ * Command Categories Validated:
+ * - Main commands (login, scan, fix, optimize, cdxgen, ci)
+ * - Socket API commands (analytics, audit-log, organization, package, repository, scan, threat-feed)
+ * - Local tools (manifest, npm, npx, raw-npm, raw-npx)
+ * - CLI configuration (config, install, login, logout, uninstall, whoami, wrapper)
+ * - Global flags (--compact-header, --config, --dry-run, --help, --version, etc.)
+ *
+ * Related Files:
+ * - src/cli.mts - Main CLI entry point
+ * - src/constants/cli.mts - CLI flag constants
+ * - test/utils.mts - Test utilities (cmdit, spawnSocketCli)
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

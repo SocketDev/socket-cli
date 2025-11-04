@@ -1,3 +1,25 @@
+/**
+ * Integration tests for `socket raw-npx` command.
+ *
+ * Tests running npx without Socket security scanning wrapper.
+ * This command provides an escape hatch for operations that must bypass scanning.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Unwrapped npx execution
+ * - Pass-through of npx flags and arguments
+ *
+ * Use Cases:
+ * - Testing npx behavior without Socket intervention
+ * - CI/CD scenarios requiring unwrapped npx
+ * - Debugging wrapper-related issues
+ *
+ * Related Files:
+ * - src/commands/wrapper/raw-npx.mts - Unwrapped npx command
+ * - test/integration/cli/cmd-npx.test.mts - Wrapped npx tests
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

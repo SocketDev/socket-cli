@@ -1,3 +1,32 @@
+/**
+ * Integration tests for `socket npm` wrapper command.
+ *
+ * Tests the npm package manager wrapper that adds Socket security scanning
+ * to npm operations. This wrapper intercepts npm commands and scans packages
+ * for security issues before allowing installation.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior (--dry-run flag)
+ * - npm exec command with package versions
+ * - Config flag variants (-c vs --config)
+ * - Issue rules configuration (malware, gptMalware detection)
+ * - Silent mode (--silent flag)
+ * - Banner and exit code validation
+ *
+ * Security Features Tested:
+ * - Package scanning before execution
+ * - Malware detection (issueRules.malware)
+ * - GPT-based malware detection (issueRules.gptMalware)
+ * - API token validation
+ *
+ * Related Files:
+ * - src/commands/wrapper/npm.mts - npm wrapper implementation
+ * - src/shadow/npm/ - Shadow npm implementation for security scanning
+ * - test/integration/cli/cmd-npm-malware.test.mts - Malware-specific npm tests
+ * - test/integration/cli/cmd-raw-npm.test.mts - Unwrapped npm tests
+ */
+
 import { describe, expect } from 'vitest'
 
 import { NPM } from '@socketsecurity/lib/constants/agents'
