@@ -150,8 +150,8 @@ export async function setupSuccessfulSdkChain(
   sdkMethod: string,
   mockData: any,
 ): Promise<void> {
-  const { handleApiCall } = await import('../../src/utils/api.mts')
-  const { setupSdk } = await import('../../src/utils/sdk.mts')
+  const { handleApiCall } = await import('../../src/utils/socket/api.mts')
+  const { setupSdk } = await import('../../src/utils/socket/sdk.mts')
 
   const mockSdk = createMockSdk({
     [sdkMethod]: vi.fn().mockResolvedValue({
@@ -171,7 +171,7 @@ export async function setupSdkSetupFailure(
   message: string,
   cause?: string | undefined,
 ): Promise<void> {
-  const { setupSdk } = await import('../../src/utils/sdk.mts')
+  const { setupSdk } = await import('../../src/utils/socket/sdk.mts')
   const options: ErrorOptions = cause !== undefined ? { cause } : {}
   vi.mocked(setupSdk).mockResolvedValue(createErrorResult(message, options))
 }
@@ -184,8 +184,8 @@ export async function setupApiCallFailure(
   error: Error | string,
   code = 404,
 ): Promise<void> {
-  const { handleApiCall } = await import('../../src/utils/api.mts')
-  const { setupSdk } = await import('../../src/utils/sdk.mts')
+  const { handleApiCall } = await import('../../src/utils/socket/api.mts')
+  const { setupSdk } = await import('../../src/utils/socket/sdk.mts')
 
   const errorObj = typeof error === 'string' ? new Error(error) : error
   const mockSdk = createMockSdk({
