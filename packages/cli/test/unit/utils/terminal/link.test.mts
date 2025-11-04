@@ -1,3 +1,23 @@
+/**
+ * Unit tests for terminal link rendering.
+ *
+ * Purpose:
+ * Tests terminal hyperlink rendering. Validates OSC 8 hyperlink support.
+ *
+ * Test Coverage:
+ * - Hyperlink rendering
+ * - OSC 8 support detection
+ * - Fallback to plain URLs
+ * - Link text formatting
+ * - Terminal capability detection
+ *
+ * Testing Approach:
+ * Tests hyperlink utilities for modern terminals.
+ *
+ * Related Files:
+ * - utils/terminal/link.mts (implementation)
+ */
+
 import path from 'node:path'
 
 import { describe, expect, it, vi } from 'vitest'

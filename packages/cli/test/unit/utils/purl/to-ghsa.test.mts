@@ -1,3 +1,23 @@
+/**
+ * Unit tests for PURL to GHSA conversion.
+ *
+ * Purpose:
+ * Tests converting PURLs to GitHub Security Advisory identifiers. Validates GHSA ID generation.
+ *
+ * Test Coverage:
+ * - PURL to GHSA conversion
+ * - Ecosystem mapping
+ * - Package name normalization
+ * - GHSA format validation
+ * - Unsupported ecosystem handling
+ *
+ * Testing Approach:
+ * Tests GHSA identifier utilities for vulnerability lookups.
+ *
+ * Related Files:
+ * - utils/purl/to-ghsa.mts (implementation)
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import { convertPurlToGhsas } from '../../../../src/utils/purl/to-ghsa.mts'

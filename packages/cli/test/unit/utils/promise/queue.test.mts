@@ -1,3 +1,23 @@
+/**
+ * Unit tests for promise queue.
+ *
+ * Purpose:
+ * Tests promise queue for concurrent operation management. Validates rate limiting and concurrency control.
+ *
+ * Test Coverage:
+ * - Concurrent promise execution
+ * - Queue size management
+ * - Rate limiting
+ * - Error handling in queue
+ * - Queue draining
+ *
+ * Testing Approach:
+ * Tests asynchronous queue implementation.
+ *
+ * Related Files:
+ * - utils/promise/queue.mts (implementation)
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import { PromiseQueue } from '../../../../src/utils/promise/queue.mts'

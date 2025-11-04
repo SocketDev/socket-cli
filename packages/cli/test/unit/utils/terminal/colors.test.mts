@@ -1,3 +1,26 @@
+/**
+ * Unit tests for terminal color utilities.
+ *
+ * Purpose:
+ * Tests terminal color utilities. Validates ANSI color code generation and NO_COLOR support.
+ *
+ * Test Coverage:
+ * - ANSI color codes
+ * - Color detection
+ * - NO_COLOR environment variable
+ * - TTY detection
+ * - Color stripping
+ *
+ * Special Notes:
+ * Uses yoctocolors-cjs package for colors
+ *
+ * Testing Approach:
+ * Tests color utilities with environment mocking.
+ *
+ * Related Files:
+ * - utils/terminal/colors.mts (implementation)
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import { colorOrMarkdown } from '../../../../src/utils/terminal/colors.mts'

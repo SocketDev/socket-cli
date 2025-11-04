@@ -1,3 +1,23 @@
+/**
+ * Unit tests for JSON result formatting.
+ *
+ * Purpose:
+ * Tests JSON result formatting. Validates CResult conversion to JSON and error serialization.
+ *
+ * Test Coverage:
+ * - CResult to JSON conversion
+ * - Error serialization
+ * - Data sanitization
+ * - Nested object handling
+ * - Pretty printing options
+ *
+ * Testing Approach:
+ * Tests JSON output formatting with CResult patterns.
+ *
+ * Related Files:
+ * - utils/output/result-json.mts (implementation)
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import { serializeResultJson } from '../../../../src/utils/output/result-json.mts'

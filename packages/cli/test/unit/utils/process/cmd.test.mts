@@ -1,3 +1,26 @@
+/**
+ * Unit tests for command execution utilities.
+ *
+ * Purpose:
+ * Tests command execution utilities. Validates subprocess spawning with Socket-specific spawn wrapper.
+ *
+ * Test Coverage:
+ * - Subprocess spawning
+ * - Command output capture
+ * - Error handling
+ * - Exit code checking
+ * - Cross-platform command execution
+ *
+ * Special Notes:
+ * Always uses { spawn } from @socketsecurity/lib/spawn, never child_process.spawn
+ *
+ * Testing Approach:
+ * Uses mocked spawn from @socketsecurity/lib/spawn (NOT built-in spawn).
+ *
+ * Related Files:
+ * - utils/process/cmd.mts (implementation)
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import {

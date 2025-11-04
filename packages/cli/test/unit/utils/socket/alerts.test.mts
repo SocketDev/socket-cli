@@ -1,3 +1,23 @@
+/**
+ * Unit tests for Socket alert utilities.
+ *
+ * Purpose:
+ * Tests Socket alert data structures and utilities. Validates alert parsing and categorization.
+ *
+ * Test Coverage:
+ * - Alert parsing
+ * - Severity calculation
+ * - Alert filtering
+ * - Alert grouping
+ * - Issue rules application
+ *
+ * Testing Approach:
+ * Tests alert utilities for Socket API responses.
+ *
+ * Related Files:
+ * - utils/socket/alerts.mts (implementation)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

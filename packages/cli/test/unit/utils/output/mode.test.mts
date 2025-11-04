@@ -1,3 +1,23 @@
+/**
+ * Unit tests for output mode detection.
+ *
+ * Purpose:
+ * Tests output mode detection and selection. Validates detection of text, json, and markdown modes.
+ *
+ * Test Coverage:
+ * - Output mode parsing
+ * - Default mode selection
+ * - TTY detection
+ * - CI environment detection
+ * - Mode validation
+ *
+ * Testing Approach:
+ * Tests output mode selection logic based on environment.
+ *
+ * Related Files:
+ * - utils/output/mode.mts (implementation)
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import {

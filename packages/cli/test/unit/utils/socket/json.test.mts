@@ -1,3 +1,23 @@
+/**
+ * Unit tests for Socket JSON utilities.
+ *
+ * Purpose:
+ * Tests Socket-specific JSON parsing and formatting. Validates Socket API response handling.
+ *
+ * Test Coverage:
+ * - JSON parsing
+ * - JSON formatting
+ * - Schema validation
+ * - Error-tolerant parsing
+ * - Large JSON handling
+ *
+ * Testing Approach:
+ * Tests JSON utilities for Socket API data.
+ *
+ * Related Files:
+ * - utils/socket/json.mts (implementation)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies BEFORE imports.
