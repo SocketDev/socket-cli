@@ -42,12 +42,14 @@ async function getMockSetupSdk(): Promise<Mock> {
  *
  * @returns The mocked withSdk function
  */
-async function getMockWithSdk(): Promise<Mock> {
-  const module = await vi.importMock<
-    typeof import('../../src/utils/socket/sdk.mts')
-  >('../../src/utils/socket/sdk.mts')
-  return vi.mocked(module.withSdk)
-}
+// c8 ignore start - Dead code: withSdk not yet implemented in sdk.mts.
+// async function getMockWithSdk(): Promise<Mock> {
+//   const module = await vi.importMock<
+//     typeof import('../../src/utils/socket/sdk.mts')
+//   >('../../src/utils/socket/sdk.mts')
+//   return vi.mocked(module.withSdk)
+// }
+// c8 ignore stop
 
 /**
  * Setup SDK mock for successful API call.
@@ -158,16 +160,18 @@ export async function setupSdkMockWithCustomSdk(
  * @param mockSdkMethods - Object with SDK methods to mock
  * @returns Mock SDK object
  */
-export async function setupWithSdkMock(
-  _callback: (sdk: any) => any,
-  mockSdkMethods: Record<string, any> = {},
-) {
-  const mockSdk = createMockSdk(mockSdkMethods)
-  const withSdk = await getMockWithSdk()
+// c8 ignore start - Dead code: withSdk not yet implemented in sdk.mts.
+// export async function setupWithSdkMock(
+//   _callback: (sdk: any) => any,
+//   mockSdkMethods: Record<string, any> = {},
+// ) {
+//   const mockSdk = createMockSdk(mockSdkMethods)
+//   const withSdk = await getMockWithSdk()
 
-  withSdk.mockImplementation(async cb => {
-    return cb(mockSdk)
-  })
+//   withSdk.mockImplementation(async cb => {
+//     return cb(mockSdk)
+//   })
 
-  return mockSdk
-}
+//   return mockSdk
+// }
+// c8 ignore stop
