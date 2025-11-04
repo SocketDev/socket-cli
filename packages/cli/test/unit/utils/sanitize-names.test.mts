@@ -1,3 +1,23 @@
+/**
+ * Unit tests for name sanitization.
+ *
+ * Purpose:
+ * Tests package and file name sanitization. Validates safe name transformations.
+ *
+ * Test Coverage:
+ * - Package name sanitization
+ * - File name sanitization
+ * - Special character handling
+ * - Path traversal prevention
+ * - Unicode normalization
+ *
+ * Testing Approach:
+ * Tests input sanitization for security.
+ *
+ * Related Files:
+ * - utils/sanitize-names.mts (implementation)
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import { extractName, extractOwner } from '../../../src/utils/sanitize-names.mts'

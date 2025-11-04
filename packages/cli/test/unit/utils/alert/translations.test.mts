@@ -1,3 +1,23 @@
+/**
+ * Unit tests for alert translations.
+ *
+ * Purpose:
+ * Tests alert message translations and internationalization. Validates translation key lookups and fallback handling.
+ *
+ * Test Coverage:
+ * - Translation key resolution
+ * - Fallback to default language
+ * - Missing translation handling
+ * - Alert type translations
+ * - Severity level translations
+ *
+ * Testing Approach:
+ * Uses translation fixtures and validates i18n functionality.
+ *
+ * Related Files:
+ * - utils/alert/translations.mts (implementation)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the JSON import.

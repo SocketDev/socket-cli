@@ -1,3 +1,24 @@
+/**
+ * Unit tests for semver utilities.
+ *
+ * Purpose:
+ * Tests semantic versioning utilities. Validates version parsing, comparison, and range matching.
+ *
+ * Test Coverage:
+ * - Version parsing
+ * - Version comparison
+ * - Range satisfaction
+ * - Version sorting
+ * - Prerelease handling
+ * - Build metadata
+ *
+ * Testing Approach:
+ * Tests semver utilities used for dependency version resolution.
+ *
+ * Related Files:
+ * - utils/semver.mts (implementation)
+ */
+
 import semver from 'semver'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

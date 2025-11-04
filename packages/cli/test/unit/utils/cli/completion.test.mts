@@ -1,3 +1,23 @@
+/**
+ * Unit tests for CLI shell completion.
+ *
+ * Purpose:
+ * Tests shell completion generation for CLI commands. Validates bash, zsh, and fish completion scripts.
+ *
+ * Test Coverage:
+ * - Completion script generation
+ * - Command suggestion
+ * - Flag completion
+ * - Multi-shell support (bash, zsh, fish)
+ * - Dynamic completion data
+ *
+ * Testing Approach:
+ * Tests completion script output and validation logic.
+ *
+ * Related Files:
+ * - utils/cli/completion.mts (implementation)
+ */
+
 import fs from 'node:fs'
 import path from 'node:path'
 

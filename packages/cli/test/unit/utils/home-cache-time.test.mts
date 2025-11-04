@@ -1,3 +1,23 @@
+/**
+ * Unit tests for home cache timestamp utilities.
+ *
+ * Purpose:
+ * Tests home directory cache timestamp management. Validates cache expiration and timestamp tracking.
+ *
+ * Test Coverage:
+ * - Cache timestamp reading
+ * - Cache expiration checking
+ * - Timestamp updates
+ * - TTL (time-to-live) calculations
+ * - Missing cache handling
+ *
+ * Testing Approach:
+ * Tests cache timing utilities with mocked filesystem operations.
+ *
+ * Related Files:
+ * - utils/home-cache-time.mts (implementation)
+ */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { msAtHome } from '../../../src/utils/home-cache-time.mts'

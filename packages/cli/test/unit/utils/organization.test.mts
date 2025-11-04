@@ -1,3 +1,23 @@
+/**
+ * Unit tests for organization utilities.
+ *
+ * Purpose:
+ * Tests organization-related utilities. Validates org slug handling, validation, and API interactions.
+ *
+ * Test Coverage:
+ * - Org slug validation
+ * - Org slug normalization
+ * - Org context detection
+ * - Org-scoped operations
+ * - Default org handling
+ *
+ * Testing Approach:
+ * Tests organization context utilities used throughout CLI.
+ *
+ * Related Files:
+ * - utils/organization.mts (implementation)
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import {

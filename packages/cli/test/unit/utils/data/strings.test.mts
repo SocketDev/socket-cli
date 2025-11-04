@@ -1,3 +1,23 @@
+/**
+ * Unit tests for string utilities.
+ *
+ * Purpose:
+ * Tests string manipulation and formatting utilities. Validates truncation, pluralization, and escaping.
+ *
+ * Test Coverage:
+ * - String truncation
+ * - Pluralization
+ * - Escape/unescape functions
+ * - Case conversion
+ * - String validation
+ *
+ * Testing Approach:
+ * Tests string helper functions used across CLI.
+ *
+ * Related Files:
+ * - utils/data/strings.mts (implementation)
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import {

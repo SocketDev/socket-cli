@@ -1,3 +1,23 @@
+/**
+ * Unit tests for CLI subcommand handling.
+ *
+ * Purpose:
+ * Tests CLI subcommand registration and routing. Validates command tree structure and subcommand dispatch.
+ *
+ * Test Coverage:
+ * - Subcommand registration
+ * - Command routing
+ * - Help text for subcommands
+ * - Nested subcommand support
+ * - Command aliasing
+ *
+ * Testing Approach:
+ * Mocks meow CLI framework and tests command tree construction.
+ *
+ * Related Files:
+ * - utils/cli/with-subcommands.mts (implementation)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import meow from '../../../../src/meow.mts'

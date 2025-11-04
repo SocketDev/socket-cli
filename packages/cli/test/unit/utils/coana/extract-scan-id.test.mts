@@ -1,3 +1,23 @@
+/**
+ * Unit tests for Coana scan ID extraction.
+ *
+ * Purpose:
+ * Tests extracting Coana scan IDs from various input formats. Validates ID parsing from URLs, responses, and strings.
+ *
+ * Test Coverage:
+ * - URL-based scan ID extraction
+ * - JSON response parsing
+ * - String format handling
+ * - Invalid input error handling
+ * - ID validation
+ *
+ * Testing Approach:
+ * Tests regex patterns and parsing logic for Coana integration.
+ *
+ * Related Files:
+ * - utils/coana/extract-scan-id.mts (implementation)
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import { extractTier1ReachabilityScanId } from '../../../../src/utils/coana/extract-scan-id.mts'

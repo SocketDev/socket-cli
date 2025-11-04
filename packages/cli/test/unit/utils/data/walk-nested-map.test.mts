@@ -1,3 +1,23 @@
+/**
+ * Unit tests for nested Map traversal.
+ *
+ * Purpose:
+ * Tests recursive traversal of nested Maps. Validates visitor pattern implementation for Map data structures.
+ *
+ * Test Coverage:
+ * - Nested Map traversal
+ * - Visitor callback invocation
+ * - Depth-first traversal
+ * - Parent tracking
+ * - Early termination
+ *
+ * Testing Approach:
+ * Tests recursive algorithms for Map data structures.
+ *
+ * Related Files:
+ * - utils/data/walk-nested-map.mts (implementation)
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import { walkNestedMap } from '../../../../src/utils/data/walk-nested-map.mts'

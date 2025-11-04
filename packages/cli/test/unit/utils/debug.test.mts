@@ -1,3 +1,23 @@
+/**
+ * Unit tests for debug utilities.
+ *
+ * Purpose:
+ * Tests debug logging and diagnostic utilities. Validates conditional logging and debug mode detection.
+ *
+ * Test Coverage:
+ * - Debug mode detection
+ * - Conditional logging
+ * - Log level filtering
+ * - Debug namespace support
+ * - Performance timing
+ *
+ * Testing Approach:
+ * Tests debug utility functions with environment variable mocking.
+ *
+ * Related Files:
+ * - utils/debug.mts (implementation)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the registry debug functions.

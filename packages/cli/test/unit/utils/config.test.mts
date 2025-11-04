@@ -1,3 +1,23 @@
+/**
+ * Unit tests for configuration management.
+ *
+ * Purpose:
+ * Tests configuration file loading and merging. Validates config precedence, defaults, and environment overrides.
+ *
+ * Test Coverage:
+ * - Config file loading (.socketrc, package.json)
+ * - Default value handling
+ * - Environment variable overrides
+ * - Config merging and precedence
+ * - Validation and schema checking
+ *
+ * Testing Approach:
+ * Uses temporary config files and environment variable mocking.
+ *
+ * Related Files:
+ * - utils/config.mts (implementation)
+ */
+
 import { mkdtempSync, promises as fs, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
