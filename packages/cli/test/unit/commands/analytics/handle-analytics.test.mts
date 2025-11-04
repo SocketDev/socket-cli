@@ -3,11 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../src/helpers/mocks.mts'
-import { handleAnalytics } from '../../../../src/src/commands/analytics/handle-analytics.mts'
-import { fetchOrgAnalyticsData } from '../../../../src/src/commands/analytics/fetch-org-analytics.mts'
-import { fetchRepoAnalyticsData } from '../../../../src/src/commands/analytics/fetch-repo-analytics.mts'
-import { outputAnalytics } from '../../../../src/src/commands/analytics/output-analytics.mts'
+} from '../../../helpers/mocks.mts'
+import { handleAnalytics } from '../../../../src/commands/analytics/handle-analytics.mts'
+import { fetchOrgAnalyticsData } from '../../../../src/commands/analytics/fetch-org-analytics.mts'
+import { fetchRepoAnalyticsData } from '../../../../src/commands/analytics/fetch-repo-analytics.mts'
+import { outputAnalytics } from '../../../../src/commands/analytics/output-analytics.mts'
 
 // Mock the dependencies.
 const mockFetchOrgAnalyticsData = vi.hoisted(() => vi.fn())

@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { fetchDiffScan } from '../../../../../src/commands/scan/fetch-diff-scan.mts'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -11,23 +13,27 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 const mockQueryApiSafeJson = vi.hoisted(() => vi.fn())
+const mockGetDefaultApiToken = vi.hoisted(() => vi.fn(() => 'test-token'))
 
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock('../../../../../src/utils/socket/api.mts', () => ({
+vi.mock('../../../../src/utils/socket/api.mjs', () => ({
   queryApiSafeJson: mockQueryApiSafeJson,
 }))
 
+vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
+  getDefaultApiToken: mockGetDefaultApiToken,
+}))
+
 describe('fetchDiffScan', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('fetches diff scan successfully', async () => {
-    const { fetchDiffScan } = await import('../../../../../src/commands/scan/fetch-diff-scan.mts')
-    const { queryApiSafeJson } = await vi.importMock(
-      '../../../../../src/utils/socket/api.mts',
-    )
-    await vi.importMock('@socketsecurity/lib/logger')
     const mockQueryApi = mockQueryApiSafeJson
 
     const mockDiffData = {
@@ -65,10 +71,6 @@ describe('fetchDiffScan', () => {
   })
 
   it('handles API call failure', async () => {
-    const { fetchDiffScan } = await import('../../../../../src/commands/scan/fetch-diff-scan.mts')
-    const { queryApiSafeJson } = await vi.importMock(
-      '../../../../../src/utils/socket/api.mts',
-    )
     const mockQueryApi = mockQueryApiSafeJson
 
     const error = {
@@ -89,10 +91,6 @@ describe('fetchDiffScan', () => {
   })
 
   it('properly URL encodes scan IDs', async () => {
-    const { fetchDiffScan } = await import('../../../../../src/commands/scan/fetch-diff-scan.mts')
-    const { queryApiSafeJson } = await vi.importMock(
-      '../../../../../src/utils/socket/api.mts',
-    )
     const mockQueryApi = mockQueryApiSafeJson
 
     mockQueryApi.mockResolvedValue({
@@ -116,10 +114,6 @@ describe('fetchDiffScan', () => {
   })
 
   it('handles different org slugs', async () => {
-    const { fetchDiffScan } = await import('../../../../../src/commands/scan/fetch-diff-scan.mts')
-    const { queryApiSafeJson } = await vi.importMock(
-      '../../../../../src/utils/socket/api.mts',
-    )
     const mockQueryApi = mockQueryApiSafeJson
 
     mockQueryApi.mockResolvedValue({
@@ -150,10 +144,6 @@ describe('fetchDiffScan', () => {
   })
 
   it('handles empty diff results', async () => {
-    const { fetchDiffScan } = await import('../../../../../src/commands/scan/fetch-diff-scan.mts')
-    const { queryApiSafeJson } = await vi.importMock(
-      '../../../../../src/utils/socket/api.mts',
-    )
     const mockQueryApi = mockQueryApiSafeJson
 
     const emptyDiffData = {
@@ -182,11 +172,6 @@ describe('fetchDiffScan', () => {
   })
 
   it('handles same scan IDs gracefully', async () => {
-    const { fetchDiffScan } = await import('../../../../../src/commands/scan/fetch-diff-scan.mts')
-    const { queryApiSafeJson } = await vi.importMock(
-      '../../../../../src/utils/socket/api.mts',
-    )
-    await vi.importMock('@socketsecurity/lib/logger')
     const mockQueryApi = mockQueryApiSafeJson
 
     mockQueryApi.mockResolvedValue({
@@ -214,10 +199,6 @@ describe('fetchDiffScan', () => {
   })
 
   it('handles server timeout gracefully', async () => {
-    const { fetchDiffScan } = await import('../../../../../src/commands/scan/fetch-diff-scan.mts')
-    const { queryApiSafeJson } = await vi.importMock(
-      '../../../../../src/utils/socket/api.mts',
-    )
     const mockQueryApi = mockQueryApiSafeJson
 
     const timeoutError = {
@@ -238,10 +219,6 @@ describe('fetchDiffScan', () => {
   })
 
   it('uses null prototype internally', async () => {
-    const { fetchDiffScan } = await import('../../../../../src/commands/scan/fetch-diff-scan.mts')
-    const { queryApiSafeJson } = await vi.importMock(
-      '../../../../../src/utils/socket/api.mts',
-    )
     const mockQueryApi = mockQueryApiSafeJson
 
     mockQueryApi.mockResolvedValue({

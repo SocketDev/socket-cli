@@ -9,7 +9,7 @@ import { fetchThreatFeed } from '../../../../src/commands/threat-feed/fetch-thre
 // Mock the dependencies.
 const mockQueryApiSafeJson = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/socket/api.mts', () => ({
+vi.mock('../../../../src/utils/socket/api.mjs', () => ({
   queryApiSafeJson: mockQueryApiSafeJson,
 }))
 
@@ -20,7 +20,7 @@ describe('fetchThreatFeed', () => {
 
   it('fetches threat feed successfully', async () => {
     const { queryApiSafeJson } = await import(
-      '../../../../src/utils/socket/api.mts'
+      '../../../../src/utils/socket/api.mjs'
     )
     const mockQueryApi = mockQueryApiSafeJson
 
@@ -70,7 +70,7 @@ describe('fetchThreatFeed', () => {
 
   it('handles SDK setup failure', async () => {
     const { queryApiSafeJson } = await import(
-      '../../../../src/utils/socket/api.mts',
+      '../../../../src/utils/socket/api.mjs',
     )
     const mockQueryApi = mockQueryApiSafeJson
 
@@ -96,7 +96,7 @@ describe('fetchThreatFeed', () => {
 
   it('handles API call failure', async () => {
     const { queryApiSafeJson } = await import(
-      '../../../../src/utils/socket/api.mts',
+      '../../../../src/utils/socket/api.mjs',
     )
     const mockQueryApi = mockQueryApiSafeJson
 
@@ -121,7 +121,7 @@ describe('fetchThreatFeed', () => {
 
   it('passes custom SDK options', async () => {
     const { queryApiSafeJson } = await import(
-      '../../../../src/utils/socket/api.mts',
+      '../../../../src/utils/socket/api.mjs',
     )
     const mockQueryApi = mockQueryApiSafeJson
 
@@ -146,7 +146,7 @@ describe('fetchThreatFeed', () => {
 
   it('handles filtering by severity levels', async () => {
     const { queryApiSafeJson } = await import(
-      '../../../../src/utils/socket/api.mts',
+      '../../../../src/utils/socket/api.mjs',
     )
     const mockQueryApi = mockQueryApiSafeJson
 
@@ -171,7 +171,7 @@ describe('fetchThreatFeed', () => {
 
   it('handles pagination parameters', async () => {
     const { queryApiSafeJson } = await import(
-      '../../../../src/utils/socket/api.mts',
+      '../../../../src/utils/socket/api.mjs',
     )
     const mockQueryApi = mockQueryApiSafeJson
 
@@ -196,7 +196,7 @@ describe('fetchThreatFeed', () => {
 
   it('handles date range filtering', async () => {
     const { queryApiSafeJson } = await import(
-      '../../../../src/utils/socket/api.mts',
+      '../../../../src/utils/socket/api.mjs',
     )
     const mockQueryApi = mockQueryApiSafeJson
 
@@ -221,7 +221,7 @@ describe('fetchThreatFeed', () => {
 
   it('uses null prototype for options', async () => {
     const { queryApiSafeJson } = await import(
-      '../../../../src/utils/socket/api.mts',
+      '../../../../src/utils/socket/api.mjs',
     )
     const mockQueryApi = mockQueryApiSafeJson
 

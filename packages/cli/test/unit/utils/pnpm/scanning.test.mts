@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getAlertsMapFromPnpmLockfile } from '../../../../src/src/utils/socket/alerts.mts'
+import { getAlertsMapFromPnpmLockfile } from '../../../../src/utils/socket/alerts.mts'
 import {
   extractPurlsFromPnpmLockfile,
   parsePnpmLockfile,
-} from '../../../../src/src/utils/pnpm/lockfile.mts'
+} from '../../../../src/utils/pnpm/lockfile.mts'
 
 // Mock all dependencies with vi.hoisted for better type safety
 const mockGetPublicApiToken = vi.hoisted(() => vi.fn())
@@ -13,23 +13,23 @@ const mockFindSocketYmlSync = vi.hoisted(() => vi.fn())
 const mockAddArtifactToAlertsMap = vi.hoisted(() => vi.fn())
 const mockBatchPackageStream = vi.hoisted(() => vi.fn())
 
-const mockGetConfigValueOrUndef = vi.hoisted(() => vi.fn(())
+const mockGetConfigValueOrUndef = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
   getPublicApiToken: mockGetPublicApiToken,
   setupSdk: mockSetupSdk,
 }))
 
-vi.mock('../../../../../src/utils/config.mts', () => ({
+vi.mock('../../../../src/utils/config.mts', () => ({
   findSocketYmlSync: mockFindSocketYmlSync,
-  getConfigValueOrUndef: mockGetConfigValueOrUndef => undefined),
+  getConfigValueOrUndef: mockGetConfigValueOrUndef,
 }))
 
-vi.mock('../../../../../src/utils/socket/package-alert.mts', () => ({
+vi.mock('../../../../src/utils/socket/package-alert.mts', () => ({
   addArtifactToAlertsMap: mockAddArtifactToAlertsMap,
 }))
 
-vi.mock('../../../../../src/utils/validation/filter-config.mts', () => ({
+vi.mock('../../../../src/utils/validation/filter-config.mts', () => ({
   toFilterConfig: vi.fn(filter => filter || {}),
 }))
 

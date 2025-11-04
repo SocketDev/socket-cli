@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleCreateRepo } from '../../../../src/src/commands/repository/handle-create-repo.mts'
+import { handleCreateRepo } from '../../../../src/commands/repository/handle-create-repo.mts'
 
 // Mock the dependencies.
 const mockFetchCreateRepo = vi.hoisted(() => vi.fn())
 const mockOutputCreateRepo = vi.hoisted(() => vi.fn())
 const mockDebug = vi.hoisted(() => vi.fn())
 const mockDebugDir = vi.hoisted(() => vi.fn())
-const mockIsDebug = vi.hoisted(() => vi.fn(())
+const mockIsDebug = vi.hoisted(() => false)
 
 vi.mock('../../../../src/commands/repository/fetch-create-repo.mts', () => ({
   fetchCreateRepo: mockFetchCreateRepo,
@@ -18,7 +18,7 @@ vi.mock('../../../../src/commands/repository/output-create-repo.mts', () => ({
 vi.mock('@socketsecurity/lib/debug', () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
-  isDebug: mockIsDebug => false),
+  isDebug: mockIsDebug,
 }))
 
 describe('handleCreateRepo', () => {
@@ -27,9 +27,6 @@ describe('handleCreateRepo', () => {
   })
 
   it('creates repository successfully', async () => {
-    const { fetchCreateRepo } = await import('../../../../src/commands/repository/fetch-create-repo.mts')
-    const { outputCreateRepo } = await import('../../../../src/commands/repository/output-create-repo.mts')
-
     const mockData = {
       ok: true,
       data: {
@@ -53,7 +50,7 @@ describe('handleCreateRepo', () => {
       'json',
     )
 
-    expect(fetchCreateRepo).toHaveBeenCalledWith({
+    expect(mockFetchCreateRepo).toHaveBeenCalledWith({
       orgSlug: 'test-org',
       repoName: 'my-repo',
       description: 'Test repository',
@@ -61,13 +58,10 @@ describe('handleCreateRepo', () => {
       defaultBranch: 'main',
       visibility: 'private',
     })
-    expect(outputCreateRepo).toHaveBeenCalledWith(mockData, 'my-repo', 'json')
+    expect(mockOutputCreateRepo).toHaveBeenCalledWith(mockData, 'my-repo', 'json')
   })
 
   it('handles creation failure', async () => {
-    const { fetchCreateRepo } = await import('../../../../src/commands/repository/fetch-create-repo.mts')
-    const { outputCreateRepo } = await import('../../../../src/commands/repository/output-create-repo.mts')
-
     const mockError = {
       ok: false,
       error: new Error('Repository already exists'),
@@ -86,12 +80,12 @@ describe('handleCreateRepo', () => {
       'text',
     )
 
-    expect(fetchCreateRepo).toHaveBeenCalledWith(
+    expect(mockFetchCreateRepo).toHaveBeenCalledWith(
       expect.objectContaining({
         repoName: 'existing-repo',
       }),
     )
-    expect(outputCreateRepo).toHaveBeenCalledWith(
+    expect(mockOutputCreateRepo).toHaveBeenCalledWith(
       mockError,
       'existing-repo',
       'text',
@@ -99,9 +93,6 @@ describe('handleCreateRepo', () => {
   })
 
   it('handles markdown output', async () => {
-    const { fetchCreateRepo } = await import('../../../../src/commands/repository/fetch-create-repo.mts')
-    const { outputCreateRepo } = await import('../../../../src/commands/repository/output-create-repo.mts')
-
     const mockData = {
       ok: true,
       data: { id: '456', name: 'test-repo' },
@@ -120,7 +111,7 @@ describe('handleCreateRepo', () => {
       'markdown',
     )
 
-    expect(outputCreateRepo).toHaveBeenCalledWith(
+    expect(mockOutputCreateRepo).toHaveBeenCalledWith(
       mockData,
       'test-repo',
       'markdown',
@@ -128,9 +119,6 @@ describe('handleCreateRepo', () => {
   })
 
   it('logs debug information', async () => {
-    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
-    const { fetchCreateRepo } = await import('../../../../src/commands/repository/fetch-create-repo.mts')
-
     const mockData = {
       ok: true,
       data: { id: '789', name: 'debug-repo' },
@@ -149,22 +137,19 @@ describe('handleCreateRepo', () => {
       'json',
     )
 
-    expect(debug).toHaveBeenCalledWith(
+    expect(mockDebug).toHaveBeenCalledWith(
       'Creating repository debug-org/debug-repo',
     )
-    expect(debugDir).toHaveBeenCalledWith(
+    expect(mockDebugDir).toHaveBeenCalledWith(
       expect.objectContaining({
         orgSlug: 'debug-org',
         repoName: 'debug-repo',
       }),
     )
-    expect(debug).toHaveBeenCalledWith('Repository creation succeeded')
+    expect(mockDebug).toHaveBeenCalledWith('Repository creation succeeded')
   })
 
   it('logs debug information on failure', async () => {
-    const { debug } = await import('@socketsecurity/lib/debug')
-    const { fetchCreateRepo } = await import('../../../../src/commands/repository/fetch-create-repo.mts')
-
     mockFetchCreateRepo.mockResolvedValue({
       ok: false,
       error: new Error('Failed'),
@@ -182,15 +167,10 @@ describe('handleCreateRepo', () => {
       'json',
     )
 
-    expect(debug).toHaveBeenCalledWith('Repository creation failed')
+    expect(mockDebug).toHaveBeenCalledWith('Repository creation failed')
   })
 
   it('handles different visibility types', async () => {
-    const { fetchCreateRepo } = await import('../../../../src/commands/repository/fetch-create-repo.mts')
-    const { outputCreateRepo: _outputCreateRepo } = await import(
-      '../../../../src/commands/repository/output-create-repo.mts'
-    )
-
     const visibilities = ['public', 'private', 'internal']
 
     for (const visibility of visibilities) {
@@ -212,18 +192,13 @@ describe('handleCreateRepo', () => {
         'json',
       )
 
-      expect(fetchCreateRepo).toHaveBeenCalledWith(
+      expect(mockFetchCreateRepo).toHaveBeenCalledWith(
         expect.objectContaining({ visibility }),
       )
     }
   })
 
   it('handles empty optional fields', async () => {
-    const { fetchCreateRepo } = await import('../../../../src/commands/repository/fetch-create-repo.mts')
-    const { outputCreateRepo: _outputCreateRepo } = await import(
-      '../../../../src/commands/repository/output-create-repo.mts'
-    )
-
     mockFetchCreateRepo.mockResolvedValue({
       ok: true,
       data: { id: '1', name: 'minimal-repo' },
@@ -241,7 +216,7 @@ describe('handleCreateRepo', () => {
       'json',
     )
 
-    expect(fetchCreateRepo).toHaveBeenCalledWith({
+    expect(mockFetchCreateRepo).toHaveBeenCalledWith({
       orgSlug: 'org',
       repoName: 'minimal-repo',
       description: '',

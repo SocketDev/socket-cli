@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../src/helpers/mocks.mts'
-import { handleManifestConda } from '../../../../src/src/commands/manifest/handle-manifest-conda.mts'
+} from '../../../helpers/mocks.mts'
+import { handleManifestConda } from '../../../../src/commands/manifest/handle-manifest-conda.mts'
 
 // Mock the dependencies.
 const mockConvertCondaToRequirements = vi.hoisted(() => vi.fn())

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { determineOrgSlug } from '../../../../../src/utils/socket/org-slug.mts'
+import { overrideCachedConfig } from '../../../../../src/utils/config.mts'
 
 // Mock dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -17,57 +18,51 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 
-const mockGetConfigValueOrUndef = vi.hoisted(() => vi.fn())
 const mockWebLink = vi.hoisted(() => vi.fn((_url: string, text: string) => text))
 const mockSuggestOrgSlug = vi.hoisted(() => vi.fn())
 const mockSuggestToPersistOrgSlug = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../../src/constants/config.mts', () => ({
-  CONFIG_KEY_DEFAULT_ORG: 'defaultOrg',
-}))
+vi.mock('../../../../src/constants/config.mjs', async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    CONFIG_KEY_DEFAULT_ORG: 'defaultOrg',
+  }
+})
 
-vi.mock('../../../../../src/constants/socket.mts', () => ({
+vi.mock('../../../../src/constants/socket.mts', () => ({
   V1_MIGRATION_GUIDE_URL: 'https://socket.dev/migration-guide',
 }))
 
-vi.mock('../../../../../src/utils/config.mts', () => ({
-  getConfigValueOrUndef: mockGetConfigValueOrUndef,
-}))
-
-vi.mock('../../../../../src/utils/terminal/link.mts', () => ({
+vi.mock('../../../../src/utils/terminal/link.mjs', () => ({
   webLink: mockWebLink,
 }))
 
-vi.mock('../../../../../src/commands/scan/suggest-org-slug.mts', () => ({
+vi.mock('../../../../src/commands/scan/suggest-org-slug.mjs', () => ({
   suggestOrgSlug: mockSuggestOrgSlug,
 }))
 
-vi.mock('../../../../../src/commands/scan/suggest-to-persist-orgslug.mts', () => ({
+vi.mock('../../../../src/commands/scan/suggest-to-persist-orgslug.mjs', () => ({
   suggestToPersistOrgSlug: mockSuggestToPersistOrgSlug,
 }))
-
-import { getConfigValueOrUndef } from '../../../../../src/utils/config.mts'
-import { webLink } from '../../../../../src/utils/terminal/link.mts'
-import { suggestOrgSlug } from '../../../../../src/commands/scan/suggest-org-slug.mts'
-import { suggestToPersistOrgSlug } from '../../../../../src/commands/scan/suggest-to-persist-orgslug.mts'
 
 describe('determineOrgSlug', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    overrideCachedConfig('{}')
   })
 
   describe('when org flag is provided', () => {
     it('uses org flag value over default', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue('default-org')
+      overrideCachedConfig('{"defaultOrg": "default-org"}')
 
       const result = await determineOrgSlug('flag-org', false, false)
 
       expect(result).toEqual(['flag-org', 'default-org'])
-      expect(mockGetConfigValueOrUndef).toHaveBeenCalledWith('defaultOrg')
     })
 
     it('returns org flag even when no default exists', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue(undefined)
+      overrideCachedConfig('{}')
 
       const result = await determineOrgSlug('provided-org', false, false)
 
@@ -75,7 +70,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('handles empty string org flag', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue(undefined)
+      overrideCachedConfig('{}')
 
       const result = await determineOrgSlug('', false, false)
 
@@ -88,7 +83,7 @@ describe('determineOrgSlug', () => {
 
   describe('when using default org', () => {
     it('uses default org when no flag provided', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue('configured-default-org')
+      overrideCachedConfig('{"defaultOrg": "configured-default-org"}')
 
       const result = await determineOrgSlug('', false, false)
 
@@ -99,7 +94,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('handles numeric default org', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue(12345 as any)
+      overrideCachedConfig('{"defaultOrg": 12345}')
 
       const result = await determineOrgSlug('', false, false)
 
@@ -109,7 +104,7 @@ describe('determineOrgSlug', () => {
 
   describe('non-interactive mode', () => {
     it('returns empty org and logs warnings when no org available', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue(undefined)
+      overrideCachedConfig('{}')
 
       const result = await determineOrgSlug('', false, false)
 
@@ -136,7 +131,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('logs all migration guide messages', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue(undefined)
+      overrideCachedConfig('{}')
 
       await determineOrgSlug('', false, false)
 
@@ -151,7 +146,7 @@ describe('determineOrgSlug', () => {
 
   describe('interactive mode', () => {
     it('suggests org slug when no org available', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue(undefined)
+      overrideCachedConfig('{}')
       mockSuggestOrgSlug.mockResolvedValue('suggested-org')
 
       const result = await determineOrgSlug('', true, false)
@@ -171,7 +166,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('handles null suggestion from suggestOrgSlug', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue(undefined)
+      overrideCachedConfig('{}')
       mockSuggestOrgSlug.mockResolvedValue(null)
 
       const result = await determineOrgSlug('', true, false)
@@ -182,7 +177,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('handles undefined suggestion from suggestOrgSlug', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue(undefined)
+      overrideCachedConfig('{}')
       mockSuggestOrgSlug.mockResolvedValue(undefined as any)
 
       const result = await determineOrgSlug('', true, false)
@@ -193,7 +188,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('skips auto-discovery in dry-run mode', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue(undefined)
+      overrideCachedConfig('{}')
 
       const result = await determineOrgSlug('', true, true)
 
@@ -207,7 +202,7 @@ describe('determineOrgSlug', () => {
 
   describe('edge cases', () => {
     it('handles boolean values for org flag', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue('default')
+      overrideCachedConfig('{"defaultOrg": "default"}')
 
       const result = await determineOrgSlug(true as any, false, false)
 
@@ -215,7 +210,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('handles null values for org flag', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue('default')
+      overrideCachedConfig('{"defaultOrg": "default"}')
 
       const result = await determineOrgSlug(null as any, false, false)
 
@@ -223,7 +218,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('handles undefined values for org flag', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue('default')
+      overrideCachedConfig('{"defaultOrg": "default"}')
 
       const result = await determineOrgSlug(undefined as any, false, false)
 
@@ -231,7 +226,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('handles numeric values for org flag', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue(undefined)
+      overrideCachedConfig('{}')
 
       const result = await determineOrgSlug(42 as any, false, false)
 
@@ -239,7 +234,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('handles empty string suggestion from suggestOrgSlug', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue(undefined)
+      overrideCachedConfig('{}')
       mockSuggestOrgSlug.mockResolvedValue('')
 
       const result = await determineOrgSlug('', true, false)
@@ -249,7 +244,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('preserves whitespace in org slug', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue(undefined)
+      overrideCachedConfig('{}')
 
       const result = await determineOrgSlug('  org-with-spaces  ', false, false)
 
@@ -259,7 +254,7 @@ describe('determineOrgSlug', () => {
 
   describe('combination scenarios', () => {
     it('prioritizes org flag over everything else', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue('default-org')
+      overrideCachedConfig('{"defaultOrg": "default-org"}')
       mockSuggestOrgSlug.mockResolvedValue('suggested-org')
 
       const result = await determineOrgSlug('flag-org', true, false)
@@ -269,7 +264,7 @@ describe('determineOrgSlug', () => {
     })
 
     it('uses default when available in interactive mode', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue('configured-org')
+      overrideCachedConfig('{"defaultOrg": "configured-org"}')
 
       const result = await determineOrgSlug('', true, false)
 

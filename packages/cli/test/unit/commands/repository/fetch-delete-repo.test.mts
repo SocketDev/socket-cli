@@ -1,52 +1,32 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import {
-  createErrorResult,
-  createSuccessResult,
-} from '../../../../src/helpers/mocks.mts'
-import { fetchDeleteRepo } from '../../../../src/src/commands/repository/fetch-delete-repo.mts'
+  setupSdkMockError,
+  setupSdkMockSuccess,
+  setupSdkSetupFailure,
+} from '../../../helpers/sdk-test-helpers.mts'
+import { fetchDeleteRepo } from '../../../../src/commands/repository/fetch-delete-repo.mts'
 
 // Mock the dependencies.
-const mockHandleApiCall = vi.hoisted(() => vi.fn())
-const mockSetupSdk = vi.hoisted(() => vi.fn())
-
 vi.mock('../../../../src/utils/socket/api.mts', () => ({
-  handleApiCall: mockHandleApiCall,
+  handleApiCall: vi.fn(),
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
-  setupSdk: mockSetupSdk,
+  setupSdk: vi.fn(),
 }))
 
 describe('fetchDeleteRepo', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
   it('deletes repository successfully', async () => {
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
-    const mockSetupSdk = mockSetupSdk
-    const mockHandleApi = mockHandleApiCall
-
-    const mockSdk = {
-      deleteRepository: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          id: 'repo-123',
-          name: 'deleted-repo',
-          status: 'deleted',
-        },
-      }),
+    const mockData = {
+      id: 'repo-123',
+      name: 'deleted-repo',
+      status: 'deleted',
     }
 
-    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk as any))
-    mockHandleApi.mockResolvedValue(
-      createSuccessResult({
-        id: 'repo-123',
-        name: 'deleted-repo',
-        status: 'deleted',
-      }),
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'deleteRepository',
+      mockData,
     )
 
     const result = await fetchDeleteRepo('test-org', 'deleted-repo')
@@ -62,15 +42,10 @@ describe('fetchDeleteRepo', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const mockSetupSdk = mockSetupSdk
-
-    mockSetupSdk.mockResolvedValue(
-      createErrorResult('Failed to setup SDK', {
-        code: 1,
-        cause: 'Missing API token',
-      }),
-    )
+    await setupSdkSetupFailure('Failed to setup SDK', {
+      code: 1,
+      cause: 'Missing API token',
+    })
 
     const result = await fetchDeleteRepo('org', 'repo')
 
@@ -78,21 +53,7 @@ describe('fetchDeleteRepo', () => {
   })
 
   it('handles API call failure', async () => {
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
-    const mockSetupSdk = mockSetupSdk
-    const mockHandleApi = mockHandleApiCall
-
-    const mockSdk = {
-      deleteRepository: vi
-        .fn()
-        .mockRejectedValue(new Error('Repository not found')),
-    }
-
-    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk as any))
-    mockHandleApi.mockResolvedValue(
-      createErrorResult('Repository not found', { code: 404 }),
-    )
+    await setupSdkMockError('deleteRepository', 'Repository not found', 404)
 
     const result = await fetchDeleteRepo('org', 'nonexistent-repo')
 
@@ -103,17 +64,7 @@ describe('fetchDeleteRepo', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
-    const mockSetupSdk = mockSetupSdk
-    const mockHandleApi = mockHandleApiCall
-
-    const mockSdk = {
-      deleteRepository: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk as any))
-    mockHandleApi.mockResolvedValue(createSuccessResult({}))
+    const { mockSetupSdk } = await setupSdkMockSuccess('deleteRepository', {})
 
     const sdkOpts = {
       apiToken: 'delete-token',
@@ -126,20 +77,10 @@ describe('fetchDeleteRepo', () => {
   })
 
   it('handles insufficient permissions error', async () => {
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
-    const mockSetupSdk = mockSetupSdk
-    const mockHandleApi = mockHandleApiCall
-
-    const mockSdk = {
-      deleteRepository: vi
-        .fn()
-        .mockRejectedValue(new Error('Insufficient permissions')),
-    }
-
-    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk as any))
-    mockHandleApi.mockResolvedValue(
-      createErrorResult('Insufficient permissions', { code: 403 }),
+    await setupSdkMockError(
+      'deleteRepository',
+      'Insufficient permissions',
+      403,
     )
 
     const result = await fetchDeleteRepo('protected-org', 'protected-repo')

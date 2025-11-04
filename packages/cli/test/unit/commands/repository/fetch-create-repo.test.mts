@@ -1,55 +1,35 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import {
-  createErrorResult,
-  createSuccessResult,
-} from '../../../../src/helpers/mocks.mts'
-import { fetchCreateRepo } from '../../../../src/src/commands/repository/fetch-create-repo.mts'
+  setupSdkMockError,
+  setupSdkMockSuccess,
+  setupSdkSetupFailure,
+} from '../../../helpers/sdk-test-helpers.mts'
+import { fetchCreateRepo } from '../../../../src/commands/repository/fetch-create-repo.mts'
 
 // Mock the dependencies.
-const mockHandleApiCall = vi.hoisted(() => vi.fn())
-const mockSetupSdk = vi.hoisted(() => vi.fn())
-
 vi.mock('../../../../src/utils/socket/api.mts', () => ({
-  handleApiCall: mockHandleApiCall,
+  handleApiCall: vi.fn(),
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
-  setupSdk: mockSetupSdk,
+  setupSdk: vi.fn(),
 }))
 
 describe('fetchCreateRepo', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
   it('creates repository successfully', async () => {
-    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const mockHandleApi = mockHandleApiCall
-    const mockSetupSdk = mockSetupSdk
-
-    const mockSdk = {
-      createRepository: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          id: 'repo-123',
-          name: 'my-new-repo',
-          org: 'test-org',
-          url: 'https://github.com/test-org/my-new-repo',
-          created_at: '2025-01-20T10:00:00Z',
-          status: 'active',
-        },
-      }),
+    const mockData = {
+      id: 'repo-123',
+      name: 'my-new-repo',
+      org: 'test-org',
+      url: 'https://github.com/test-org/my-new-repo',
+      created_at: '2025-01-20T10:00:00Z',
+      status: 'active',
     }
 
-    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(
-      createSuccessResult({
-        id: 'repo-123',
-        name: 'my-new-repo',
-        org: 'test-org',
-      }),
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'createRepository',
+      mockData,
     )
 
     const result = await fetchCreateRepo({
@@ -75,15 +55,10 @@ describe('fetchCreateRepo', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const mockSetupSdk = mockSetupSdk
-
-    mockSetupSdk.mockResolvedValue(
-      createErrorResult('Failed to setup SDK', {
-        code: 1,
-        cause: 'Missing API token',
-      }),
-    )
+    await setupSdkSetupFailure('Failed to setup SDK', {
+      code: 1,
+      cause: 'Missing API token',
+    })
 
     const result = await fetchCreateRepo({
       orgSlug: 'org',
@@ -98,20 +73,10 @@ describe('fetchCreateRepo', () => {
   })
 
   it('handles API call failure', async () => {
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
-    const mockSetupSdk = mockSetupSdk
-    const mockHandleApi = mockHandleApiCall
-
-    const mockSdk = {
-      createRepository: vi
-        .fn()
-        .mockRejectedValue(new Error('Repository already exists')),
-    }
-
-    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(
-      createErrorResult('Repository already exists', { code: 409 }),
+    await setupSdkMockError(
+      'createRepository',
+      'Repository already exists',
+      409,
     )
 
     const result = await fetchCreateRepo({
@@ -130,17 +95,7 @@ describe('fetchCreateRepo', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
-    const mockSetupSdk = mockSetupSdk
-    const mockHandleApi = mockHandleApiCall
-
-    const mockSdk = {
-      createRepository: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(createSuccessResult({}))
+    const { mockSetupSdk } = await setupSdkMockSuccess('createRepository', {})
 
     const sdkOpts = {
       apiToken: 'create-token',
@@ -163,17 +118,7 @@ describe('fetchCreateRepo', () => {
   })
 
   it('handles minimal repository data', async () => {
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
-    const mockSetupSdk = mockSetupSdk
-    const mockHandleApi = mockHandleApiCall
-
-    const mockSdk = {
-      createRepository: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(createSuccessResult({}))
+    const { mockSdk } = await setupSdkMockSuccess('createRepository', {})
 
     await fetchCreateRepo({
       orgSlug: 'simple-org',
@@ -194,17 +139,7 @@ describe('fetchCreateRepo', () => {
   })
 
   it('handles full repository configuration', async () => {
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
-    const mockSetupSdk = mockSetupSdk
-    const mockHandleApi = mockHandleApiCall
-
-    const mockSdk = {
-      createRepository: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(createSuccessResult({}))
+    const { mockSdk } = await setupSdkMockSuccess('createRepository', {})
 
     const fullConfig = {
       orgSlug: 'config-org',
@@ -227,17 +162,7 @@ describe('fetchCreateRepo', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
-    const mockSetupSdk = mockSetupSdk
-    const mockHandleApi = mockHandleApiCall
-
-    const mockSdk = {
-      createRepository: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(createSuccessResult({}))
+    const { mockSdk } = await setupSdkMockSuccess('createRepository', {})
 
     // This tests that the function properly uses __proto__: null.
     await fetchCreateRepo({

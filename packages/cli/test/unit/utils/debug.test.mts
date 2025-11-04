@@ -6,8 +6,8 @@ const mockDebugCache = vi.hoisted(() => vi.fn())
 const mockDebugDir = vi.hoisted(() => vi.fn())
 const mockDebugDirNs = vi.hoisted(() => vi.fn())
 const mockDebugNs = vi.hoisted(() => vi.fn())
-const mockIsDebug = vi.hoisted(() => vi.fn(())
-const mockIsDebugNs = vi.hoisted(() => vi.fn(())
+const mockIsDebug = vi.hoisted(() => vi.fn(() => false))
+const mockIsDebugNs = vi.hoisted(() => vi.fn(() => false))
 
 vi.mock('@socketsecurity/lib/debug', () => ({
   debug: mockDebug,
@@ -15,8 +15,8 @@ vi.mock('@socketsecurity/lib/debug', () => ({
   debugDir: mockDebugDir,
   debugDirNs: mockDebugDirNs,
   debugNs: mockDebugNs,
-  isDebug: mockIsDebug => false),
-  isDebugNs: mockIsDebugNs => false),
+  isDebug: mockIsDebug,
+  isDebugNs: mockIsDebugNs,
 }))
 
 import {
@@ -33,7 +33,7 @@ import {
   debugFileOp,
   debugGit,
   debugScan,
-} from '../../../src/src/utils/debug.mts'
+} from '../../../src/utils/debug.mts'
 
 describe('debug utilities', () => {
   beforeEach(() => {

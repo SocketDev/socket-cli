@@ -10,27 +10,20 @@ const mockGitDeleteRemoteBranch = vi.hoisted(() => vi.fn())
 
 // Mock dependencies.
 const mockCacheDir = path.join(os.tmpdir(), 'socket-cache')
-vi.mock('../../../../../src/constants/paths.mts', () => ({
+vi.mock('../../../../src/constants/paths.mts', () => ({
   SOCKET_CLI_CACHE_DIR: mockCacheDir,
   getGithubCachePath: () => path.join(mockCacheDir, 'github'),
 }))
 
-vi.mock('../../../../../src/utils/git/github.mts', () => ({
+vi.mock('../../../../src/utils/git/github.mts', () => ({
   getOctokit: mockGetOctokit,
   getOctokitGraphql: mockGetOctokitGraphql,
   cacheFetch: mockCacheFetch,
 }))
 
-vi.mock('../../../../../src/utils/git/operations.mts', () => ({
+vi.mock('../../../../src/utils/git/operations.mts', () => ({
   gitDeleteRemoteBranch: mockGitDeleteRemoteBranch,
 }))
-
-vi.mock('../../../../../src/utils/git/github-provider.mts', async () => {
-  const actual = await vi.importActual<
-    typeof import('../../../../../src/utils/git/github-provider.mts')
-  >('../../../../../src/utils/git/github-provider.mts')
-  return actual
-})
 
 vi.mock('@gitbeaker/rest', () => ({
   Gitlab: vi.fn(function MockGitlab() {
@@ -48,8 +41,8 @@ vi.mock('@gitbeaker/rest', () => ({
   }),
 }))
 
-import { GitHubProvider } from '../../../../../src/utils/git/github-provider.mts'
-import { GitLabProvider } from '../../../../../src/utils/git/gitlab-provider.mts'
+import { GitHubProvider } from '../../../../src/utils/git/github-provider.mts'
+import { GitLabProvider } from '../../../../src/utils/git/gitlab-provider.mts'
 
 describe('provider-factory', () => {
   beforeEach(() => {
@@ -61,7 +54,7 @@ describe('provider-factory', () => {
   describe('createPrProvider', () => {
     it('returns GitLabProvider when GITLAB_HOST is set', async () => {
       const providerFactory = await import(
-        '../../../../../src/utils/git/provider-factory.mts'
+        '../../../../src/utils/git/provider-factory.mts'
       )
       vi.spyOn(providerFactory, 'getGitRemoteUrlSync').mockReturnValue(
         'https://github.com/owner/repo.git',
@@ -77,7 +70,7 @@ describe('provider-factory', () => {
 
     it('falls back to GitHubProvider when git command fails', async () => {
       const providerFactory = await import(
-        '../../../../../src/utils/git/provider-factory.mts'
+        '../../../../src/utils/git/provider-factory.mts'
       )
       vi.spyOn(providerFactory, 'getGitRemoteUrlSync').mockReturnValue('')
 
@@ -88,7 +81,7 @@ describe('provider-factory', () => {
 
     it('falls back to GitHubProvider for empty remote', async () => {
       const providerFactory = await import(
-        '../../../../../src/utils/git/provider-factory.mts'
+        '../../../../src/utils/git/provider-factory.mts'
       )
       vi.spyOn(providerFactory, 'getGitRemoteUrlSync').mockReturnValue('')
 
@@ -129,8 +122,7 @@ describe('GitHubProvider', () => {
 
   describe('createPr', () => {
     it('creates PR successfully', async () => {
-      mockGetOctokit.mockReturnValue(mockOctokit)
-
+      // Set up mock before creating provider.
       mockOctokit.pulls.create.mockResolvedValue({
         data: {
           number: 123,
@@ -149,6 +141,7 @@ describe('GitHubProvider', () => {
         body: 'Test body',
       })
 
+      expect(mockGetOctokit).toHaveBeenCalled()
       expect(result).toEqual({
         number: 123,
         url: 'https://github.com/owner/repo/pull/123',
@@ -157,8 +150,7 @@ describe('GitHubProvider', () => {
     })
 
     it('handles merged PR state', async () => {
-      mockGetOctokit.mockReturnValue(mockOctokit)
-
+      // Set up mock before creating provider.
       mockOctokit.pulls.create.mockResolvedValue({
         data: {
           number: 456,
@@ -184,8 +176,7 @@ describe('GitHubProvider', () => {
 
   describe('addComment', () => {
     it('adds comment successfully', async () => {
-      mockGetOctokit.mockReturnValue(mockOctokit)
-
+      // Set up mock before creating provider.
       mockOctokit.issues.createComment.mockResolvedValue({})
 
       const provider = new GitHubProvider()
@@ -207,8 +198,6 @@ describe('GitHubProvider', () => {
 
   describe('listPrs', () => {
     it('lists PRs with pagination', async () => {
-      mockGetOctokitGraphql.mockReturnValue(mockOctokitGraphql)
-
       const mockResponse = {
         repository: {
           pullRequests: {

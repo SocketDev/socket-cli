@@ -1,10 +1,9 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../../test/helpers/mocks.mts'
-import { handleScanReach } from '../../../../src/src/commands/scan/handle-scan-reach.mts'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -16,15 +15,20 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
-const mockGetSpinner = vi.hoisted(() => vi.fn(())
 const mockStart = vi.hoisted(() => vi.fn())
 const mockStop = vi.hoisted(() => vi.fn())
 const mockSuccessAndStop = vi.hoisted(() => vi.fn())
+const mockGetSpinner = vi.hoisted(() => vi.fn(() => ({
+  start: mockStart,
+  stop: mockStop,
+  successAndStop: mockSuccessAndStop,
+})))
 const mockFetchSupportedScanFileNames = vi.hoisted(() => vi.fn())
 const mockOutputScanReach = vi.hoisted(() => vi.fn())
 const mockPerformReachabilityAnalysis = vi.hoisted(() => vi.fn())
 const mockCheckCommandInput = vi.hoisted(() => vi.fn())
 const mockGetPackageFilesForScan = vi.hoisted(() => vi.fn())
+const mockPluralize = vi.hoisted(() => vi.fn((str) => str))
 
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
@@ -32,49 +36,41 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 }))
 
 vi.mock('@socketsecurity/lib/constants/process', () => ({
-  getSpinner: mockGetSpinner => ({
-    start: mockStart,
-    stop: mockStop,
-    successAndStop: mockSuccessAndStop,
-  })),
+  getSpinner: mockGetSpinner,
 }))
 
-vi.mock('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts', () => ({
+vi.mock('@socketsecurity/lib/words', () => ({
+  pluralize: mockPluralize,
+}))
+
+vi.mock('../../../../src/commands/scan/fetch-supported-scan-file-names.mts', () => ({
   fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
 }))
 
-vi.mock('../../../../../src/commands/scan/output-scan-reach.mts', () => ({
+vi.mock('../../../../src/commands/scan/output-scan-reach.mts', () => ({
   outputScanReach: mockOutputScanReach,
 }))
 
-vi.mock('../../../../../src/commands/scan/perform-reachability-analysis.mts', () => ({
+vi.mock('../../../../src/commands/scan/perform-reachability-analysis.mts', () => ({
   performReachabilityAnalysis: mockPerformReachabilityAnalysis,
 }))
 
-vi.mock('../../../../../src/utils/validation/check-input.mts', () => ({
+vi.mock('../../../../src/utils/validation/check-input.mts', () => ({
   checkCommandInput: mockCheckCommandInput,
 }))
 
-vi.mock('../../../../../src/utils/fs/path-resolve.mts', () => ({
+vi.mock('../../../../src/utils/fs/path-resolve.mjs', () => ({
   getPackageFilesForScan: mockGetPackageFilesForScan,
 }))
 
-describe('handleScanReach', () => {
-  it('performs reachability analysis successfully', async () => {
-    const { fetchSupportedScanFileNames } = await import(
-      './fetch-supported-scan-file-names.mts'
-    )
-    const { outputScanReach } = await import('../../../../../src/commands/scan/output-scan-reach.mts')
-    const { performReachabilityAnalysis } = await import(
-      './perform-reachability-analysis.mts'
-    )
-    const { checkCommandInput } = await import(
-      '../../../../../src/utils/validation/check-input.mts'
-    )
-    const { getPackageFilesForScan } = await import(
-      '../../../../../src/utils/fs/path-resolve.mts'
-    )
+const { handleScanReach } = await import('../../../../src/commands/scan/handle-scan-reach.mts')
 
+describe('handleScanReach', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('performs reachability analysis successfully', async () => {
     const mockFetchSupported = mockFetchSupportedScanFileNames
     const mockOutput = mockOutputScanReach
     const mockPerformAnalysis = mockPerformReachabilityAnalysis
@@ -119,11 +115,6 @@ describe('handleScanReach', () => {
   })
 
   it('handles supported files fetch failure', async () => {
-    const { fetchSupportedScanFileNames } = await import(
-      './fetch-supported-scan-file-names.mts'
-    )
-    const { outputScanReach } = await import('../../../../../src/commands/scan/output-scan-reach.mts')
-
     const mockFetchSupported = mockFetchSupportedScanFileNames
     const mockOutput = mockOutputScanReach
 
@@ -146,16 +137,6 @@ describe('handleScanReach', () => {
   })
 
   it('handles no eligible files found', async () => {
-    const { fetchSupportedScanFileNames } = await import(
-      './fetch-supported-scan-file-names.mts'
-    )
-    const { checkCommandInput } = await import(
-      '../../../../../src/utils/validation/check-input.mts'
-    )
-    const { getPackageFilesForScan } = await import(
-      '../../../../../src/utils/fs/path-resolve.mts'
-    )
-
     const mockFetchSupported = mockFetchSupportedScanFileNames
     const mockCheckInput = mockCheckCommandInput
     const mockGetPackageFiles = mockGetPackageFilesForScan
@@ -182,20 +163,6 @@ describe('handleScanReach', () => {
   })
 
   it('handles reachability analysis failure', async () => {
-    const { fetchSupportedScanFileNames } = await import(
-      './fetch-supported-scan-file-names.mts'
-    )
-    const { outputScanReach } = await import('../../../../../src/commands/scan/output-scan-reach.mts')
-    const { performReachabilityAnalysis } = await import(
-      './perform-reachability-analysis.mts'
-    )
-    const { checkCommandInput } = await import(
-      '../../../../../src/utils/validation/check-input.mts'
-    )
-    const { getPackageFilesForScan } = await import(
-      '../../../../../src/utils/fs/path-resolve.mts'
-    )
-
     const mockFetchSupported = mockFetchSupportedScanFileNames
     const mockOutput = mockOutputScanReach
     const mockPerformAnalysis = mockPerformReachabilityAnalysis

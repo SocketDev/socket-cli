@@ -4,10 +4,10 @@ import {
   idToNpmPurl,
   idToPurl,
   resolvePackageVersion,
-} from '../../../../src/src/utils/ecosystem/spec.mts'
+} from '../../../../src/utils/ecosystem/spec.mts'
 
 // Mock semver module.
-const mockStripPnpmPeerSuffix = vi.hoisted(() => vi.fn(v => v.replace(/_.*$/, ''))
+const mockStripPnpmPeerSuffix = vi.hoisted(() => vi.fn(v => v.replace(/_.*$/, '')))
 
 vi.mock('semver', () => ({
   default: {
@@ -16,8 +16,8 @@ vi.mock('semver', () => ({
 }))
 
 // Mock pnpm utilities.
-vi.mock('../pnpm/lockfile.mts', () => ({
-  stripPnpmPeerSuffix: mockStripPnpmPeerSuffix),
+vi.mock('../../../../src/utils/pnpm/lockfile.mts', () => ({
+  stripPnpmPeerSuffix: mockStripPnpmPeerSuffix,
 }))
 
 describe('spec utilities', () => {

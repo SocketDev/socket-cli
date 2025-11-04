@@ -1,16 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies first.
-const mockGetConfigValueOrUndef = vi.hoisted(() => vi.fn())
-const mockSpinner = vi.hoisted(() => vi.fn(())
+const mockSpinner = vi.hoisted(() => vi.fn())
 const mockStart = vi.hoisted(() => vi.fn())
 const mockStop = vi.hoisted(() => vi.fn())
 const mockSucceed = vi.hoisted(() => vi.fn())
 const mockFail = vi.hoisted(() => vi.fn())
-
-vi.mock('../../../../../src/utils/config.mts', () => ({
-  getConfigValueOrUndef: mockGetConfigValueOrUndef,
-}))
 
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -27,15 +22,10 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 }))
 
 vi.mock('@socketsecurity/lib/spinner', () => ({
-  Spinner: mockSpinner => ({
-    start: mockStart,
-    stop: mockStop,
-    succeed: mockSucceed,
-    fail: mockFail,
-  })),
+  Spinner: mockSpinner,
 }))
 
-import { getConfigValueOrUndef } from '../../../../../src/utils/config.mts'
+import { overrideCachedConfig } from '../../../../../src/utils/config.mts'
 import {
   getDefaultApiBaseUrl,
   getErrorMessageForHttpStatusCode,
@@ -47,6 +37,8 @@ describe('api utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.unstubAllEnvs()
+    // Clear cached config to avoid test interference.
+    overrideCachedConfig('{}')
   })
 
   afterEach(() => {
@@ -58,23 +50,25 @@ describe('api utilities', () => {
     it('returns environment variable when set', async () => {
       // Use vi.stubEnv to properly mock environment variable.
       vi.stubEnv('SOCKET_CLI_API_BASE_URL', 'https://custom.api.url')
-      // Reset modules to pick up the new environment variable.
-      await vi.resetModules()
-      // Re-import to get the freshly loaded module with the stubbed env var.
-      const { getDefaultApiBaseUrl } = await import('../../../../../src/utils/socket/api.mts')
+      // In VITEST mode, ENV uses process.env directly via Proxy.
       const result = getDefaultApiBaseUrl()
       expect(result).toBe('https://custom.api.url')
     })
 
     it('falls back to config value when env not set', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue('https://config.api.url')
+      // Ensure env is not set by deleting it.
+      delete process.env['SOCKET_CLI_API_BASE_URL']
+      // Set config value using overrideCachedConfig (expects JSON string).
+      overrideCachedConfig('{"apiBaseUrl": "https://config.api.url"}')
 
       const result = getDefaultApiBaseUrl()
       expect(result).toBe('https://config.api.url')
     })
 
     it('returns default API_V0_URL when neither env nor config set', async () => {
-      mockGetConfigValueOrUndef.mockReturnValue(undefined)
+      // Ensure env is not set by deleting it.
+      delete process.env['SOCKET_CLI_API_BASE_URL']
+      // Config is already cleared in beforeEach with overrideCachedConfig({}).
 
       const result = getDefaultApiBaseUrl()
       expect(result).toBe('https://api.socket.dev/v0/')

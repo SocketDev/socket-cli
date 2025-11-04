@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   getAlertsMapFromPnpmLockfile,
@@ -19,21 +19,19 @@ const mockFindSocketYmlSync = vi.hoisted(() => vi.fn())
 const mockToFilterConfig = vi.hoisted(() => vi.fn())
 const mockExtractPurlsFromPnpmLockfile = vi.hoisted(() => vi.fn())
 const mockAddArtifactToAlertsMap = vi.hoisted(() => vi.fn())
+const mockSetupSdk = vi.hoisted(() => vi.fn())
+const mockGetPublicApiToken = vi.hoisted(() => vi.fn())
+const mockGetDefaultApiToken = vi.hoisted(() => vi.fn(() => 'test-token'))
 
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
-  getPublicApiToken: vi.fn(),
-  setupSdk: vi.fn(() => ({
-    org: {
-      dependencies: {
-        post: vi.fn(),
-      },
-    },
-  })),
+vi.mock('../../../../../src/utils/socket/sdk.mjs', () => ({
+  getDefaultApiToken: mockGetDefaultApiToken,
+  getPublicApiToken: mockGetPublicApiToken,
+  setupSdk: mockSetupSdk,
 }))
 
 vi.mock('../../../../../src/utils/config.mts', () => ({
@@ -53,14 +51,16 @@ vi.mock('../../../../../src/utils/socket/package-alert.mts', () => ({
 }))
 
 import { extractPurlsFromPnpmLockfile } from '../../../../../src/utils/pnpm/lockfile.mts'
-import { setupSdk } from '../../../../../src/utils/socket/sdk.mts'
-import { findSocketYmlSync } from '../../../../../src/utils/config.mts'
 
 describe('alerts-map utilities', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   describe('getAlertsMapFromPnpmLockfile', () => {
-    it('calls extractPurlsFromPnpmLockfile with lockfile', async () => {
-      mockExtractPurlsFromPnpmLockfile.mockReturnValue([])
-      vi.mocked(setupSdk).mockReturnValue({
+    it('returns empty map for lockfile with no packages', async () => {
+      mockExtractPurlsFromPnpmLockfile.mockResolvedValue([])
+      mockSetupSdk.mockReturnValue({
         ok: true,
         data: {
           org: {
@@ -82,22 +82,20 @@ describe('alerts-map utilities', () => {
         packages: {},
       }
 
-      try {
-        await getAlertsMapFromPnpmLockfile(lockfile, {
-          apiToken: 'test-token',
-          nothrow: true,
-        })
-      } catch {
-        // May fail due to mock setup.
-      }
+      const result = await getAlertsMapFromPnpmLockfile(lockfile, {
+        apiToken: 'test-token',
+        nothrow: true,
+      })
 
-      expect(extractPurlsFromPnpmLockfile).toHaveBeenCalledWith(lockfile)
+      // Check that result is a Map.
+      expect(result).toBeInstanceOf(Map)
+      expect(result.size).toBe(0)
     })
   })
 
   describe('getAlertsMapFromPurls', () => {
     it('returns map for empty purls', async () => {
-      vi.mocked(setupSdk).mockReturnValue({
+      mockSetupSdk.mockReturnValue({
         ok: true,
         data: {
           org: {
@@ -125,7 +123,7 @@ describe('alerts-map utilities', () => {
     })
 
     it('requires API token', async () => {
-      vi.mocked(setupSdk).mockReturnValue({
+      mockSetupSdk.mockReturnValue({
         ok: false,
         message: 'No API token',
       } as any)

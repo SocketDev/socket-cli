@@ -5,14 +5,14 @@ import {
   setupSdkMockSuccess,
   setupSdkSetupFailure,
 } from '../../../../../src/commands/../../../test/helpers/sdk-test-helpers.mts'
-import { fetchDependencies } from '../../../../src/src/commands/../../../../src/commands/organization/fetch-dependencies.mts'
+import { fetchDependencies } from '../../../../../src/commands/organization/fetch-dependencies.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../utils/socket/api.mts', () => ({
+vi.mock('../../../../../src/utils/socket/api.mts', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/../utils/socket/sdk.mts', () => ({
+vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
   setupSdk: vi.fn(),
 }))
 

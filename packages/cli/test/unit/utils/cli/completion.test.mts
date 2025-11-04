@@ -7,10 +7,10 @@ import {
   COMPLETION_CMD_PREFIX,
   getBashrcDetails,
   getCompletionSourcingCommand,
-} from '../../../../src/src/cli/completion.mts'
+} from '../../../../src/utils/cli/completion.mts'
 
 // Mock node:fs.
-const mockGetSocketAppDataPath = vi.hoisted(() => vi.fn(())
+const mockGetSocketAppDataPath = vi.hoisted(() => vi.fn(() => '/mock/app/data'))
 
 vi.mock('node:fs', () => ({
   default: {
@@ -19,9 +19,9 @@ vi.mock('node:fs', () => ({
 }))
 
 // Mock constants/paths.
-vi.mock('../../../../../src/constants/paths.mts', () => ({
+vi.mock('../../../../src/constants/paths.mts', () => ({
   rootPath: '/mock/dist/path',
-  getSocketAppDataPath: mockGetSocketAppDataPath => '/mock/app/data'),
+  getSocketAppDataPath: mockGetSocketAppDataPath,
 }))
 
 describe('completion utilities', () => {

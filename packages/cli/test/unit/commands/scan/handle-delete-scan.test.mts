@@ -4,26 +4,23 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../../test/helpers/mocks.mts'
-import { handleDeleteScan } from '../../../../src/src/commands/scan/handle-delete-scan.mts'
+import { handleDeleteScan } from '../../../../src/commands/scan/handle-delete-scan.mts'
 
 // Mock the dependencies.
 const mockFetchDeleteOrgFullScan = vi.hoisted(() => vi.fn())
 const mockOutputDeleteScan = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../../src/commands/scan/fetch-delete-org-full-scan.mts', () => ({
+vi.mock('../../../../src/commands/scan/fetch-delete-org-full-scan.mts', () => ({
   fetchDeleteOrgFullScan: mockFetchDeleteOrgFullScan,
 }))
 
-vi.mock('../../../../../src/commands/scan/output-delete-scan.mts', () => ({
+vi.mock('../../../../src/commands/scan/output-delete-scan.mts', () => ({
   outputDeleteScan: mockOutputDeleteScan,
 }))
 
 describe('handleDeleteScan', () => {
   it('deletes scan and outputs result successfully', async () => {
-    const { fetchDeleteOrgFullScan } = await import(
-      './fetch-delete-org-full-scan.mts'
-    )
-    const { outputDeleteScan } = await import('../../../../../src/commands/scan/output-delete-scan.mts')
+    const { outputDeleteScan } = await import('../../../../src/commands/scan/output-delete-scan.mts')
     const mockFetch = mockFetchDeleteOrgFullScan
     const mockOutput = mockOutputDeleteScan
 
@@ -41,10 +38,7 @@ describe('handleDeleteScan', () => {
   })
 
   it('handles deletion failure', async () => {
-    const { fetchDeleteOrgFullScan } = await import(
-      './fetch-delete-org-full-scan.mts'
-    )
-    const { outputDeleteScan } = await import('../../../../../src/commands/scan/output-delete-scan.mts')
+    const { outputDeleteScan } = await import('../../../../src/commands/scan/output-delete-scan.mts')
     const mockFetch = mockFetchDeleteOrgFullScan
     const mockOutput = mockOutputDeleteScan
 
@@ -58,10 +52,7 @@ describe('handleDeleteScan', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { fetchDeleteOrgFullScan } = await import(
-      './fetch-delete-org-full-scan.mts'
-    )
-    const { outputDeleteScan } = await import('../../../../../src/commands/scan/output-delete-scan.mts')
+    const { outputDeleteScan } = await import('../../../../src/commands/scan/output-delete-scan.mts')
     const mockFetch = mockFetchDeleteOrgFullScan
     const mockOutput = mockOutputDeleteScan
 
@@ -73,9 +64,6 @@ describe('handleDeleteScan', () => {
   })
 
   it('handles different scan IDs', async () => {
-    const { fetchDeleteOrgFullScan } = await import(
-      './fetch-delete-org-full-scan.mts'
-    )
     const mockFetch = mockFetchDeleteOrgFullScan
 
     mockFetch.mockResolvedValue(createSuccessResult({}))
@@ -95,10 +83,7 @@ describe('handleDeleteScan', () => {
   })
 
   it('handles text output format', async () => {
-    const { fetchDeleteOrgFullScan } = await import(
-      './fetch-delete-org-full-scan.mts'
-    )
-    const { outputDeleteScan } = await import('../../../../../src/commands/scan/output-delete-scan.mts')
+    const { outputDeleteScan } = await import('../../../../src/commands/scan/output-delete-scan.mts')
     const mockFetch = mockFetchDeleteOrgFullScan
     const mockOutput = mockOutputDeleteScan
 

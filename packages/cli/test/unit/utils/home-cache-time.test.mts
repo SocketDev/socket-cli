@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { msAtHome } from '../../../src/src/utils/home-cache-time.mts'
+import { msAtHome } from '../../../src/utils/home-cache-time.mts'
 
 describe('ms-at-home utilities', () => {
   let originalNow: () => number

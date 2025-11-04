@@ -1,52 +1,34 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import {
-  createErrorResult,
-  createSuccessResult,
-} from '../../../../src/helpers/mocks.mts'
-import { fetchListAllRepos } from '../../../../src/src/commands/repository/fetch-list-all-repos.mts'
+  setupSdkMockError,
+  setupSdkMockSuccess,
+  setupSdkSetupFailure,
+} from '../../../helpers/sdk-test-helpers.mts'
+import { fetchListAllRepos } from '../../../../src/commands/repository/fetch-list-all-repos.mts'
 
 // Mock the dependencies.
-const mockHandleApiCall = vi.hoisted(() => vi.fn())
-const mockSetupSdk = vi.hoisted(() => vi.fn())
-
 vi.mock('../../../../src/utils/socket/api.mts', () => ({
-  handleApiCall: mockHandleApiCall,
+  handleApiCall: vi.fn(),
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
-  setupSdk: mockSetupSdk,
+  setupSdk: vi.fn(),
 }))
 
 describe('fetchListAllRepos', () => {
   it('lists all repositories successfully', async () => {
-    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const mockHandleApi = mockHandleApiCall
-    const mockSetupSdk = mockSetupSdk
-
-    const mockSdk = {
-      listRepositories: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          results: [
-            { id: 'repo-1', name: 'first-repo' },
-            { id: 'repo-2', name: 'second-repo' },
-          ],
-          nextPage: null,
-        },
-      }),
+    const mockData = {
+      results: [
+        { id: 'repo-1', name: 'first-repo' },
+        { id: 'repo-2', name: 'second-repo' },
+      ],
+      nextPage: null,
     }
 
-    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(
-      createSuccessResult({
-        results: [
-          { id: 'repo-1', name: 'first-repo' },
-          { id: 'repo-2', name: 'second-repo' },
-        ],
-        nextPage: null,
-      }),
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'listRepositories',
+      mockData,
     )
 
     const result = await fetchListAllRepos('test-org')
@@ -64,15 +46,10 @@ describe('fetchListAllRepos', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const mockSetupSdk = mockSetupSdk
-
-    mockSetupSdk.mockResolvedValue(
-      createErrorResult('Failed to setup SDK', {
-        code: 1,
-        cause: 'Missing API token',
-      }),
-    )
+    await setupSdkSetupFailure('Failed to setup SDK', {
+      code: 1,
+      cause: 'Missing API token',
+    })
 
     const result = await fetchListAllRepos('org')
 
@@ -80,19 +57,7 @@ describe('fetchListAllRepos', () => {
   })
 
   it('handles API call failure', async () => {
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
-    const mockSetupSdk = mockSetupSdk
-    const mockHandleApi = mockHandleApiCall
-
-    const mockSdk = {
-      listRepositories: vi.fn().mockRejectedValue(new Error('Access denied')),
-    }
-
-    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(
-      createErrorResult('Access denied', { code: 403 }),
-    )
+    await setupSdkMockError('listRepositories', 'Access denied', 403)
 
     const result = await fetchListAllRepos('private-org')
 
@@ -103,36 +68,29 @@ describe('fetchListAllRepos', () => {
   })
 
   it('handles multiple pages of repositories', async () => {
-    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const mockHandleApi = mockHandleApiCall
-    const mockSetupSdk = mockSetupSdk
+    // Mock with initial setup that returns first page.
+    const { mockHandleApi } = await setupSdkMockSuccess('listRepositories', {
+      results: [{ id: 'repo-1', name: 'first-repo' }],
+      nextPage: 1,
+    })
 
-    // Clear previous mock state.
+    // Mock second page - reset and provide both pages.
     mockHandleApi.mockClear()
-    mockSetupSdk.mockClear()
-
-    const mockSdk = {
-      listRepositories: vi.fn(),
-    }
-
-    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-
-    // Mock first page.
     mockHandleApi
-      .mockResolvedValueOnce(
-        createSuccessResult({
+      .mockResolvedValueOnce({
+        ok: true,
+        data: {
           results: [{ id: 'repo-1', name: 'first-repo' }],
           nextPage: 1,
-        }),
-      )
-      // Mock second page.
-      .mockResolvedValueOnce(
-        createSuccessResult({
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        data: {
           results: [{ id: 'repo-2', name: 'second-repo' }],
           nextPage: null,
-        }),
-      )
+        },
+      })
 
     const result = await fetchListAllRepos('big-org')
 
@@ -145,19 +103,10 @@ describe('fetchListAllRepos', () => {
   })
 
   it('passes sort and direction options', async () => {
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
-    const mockSetupSdk = mockSetupSdk
-    const mockHandleApi = mockHandleApiCall
-
-    const mockSdk = {
-      listRepositories: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(
-      createSuccessResult({ results: [], nextPage: null }),
-    )
+    const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
+      results: [],
+      nextPage: null,
+    })
 
     await fetchListAllRepos('sorted-org', {
       sort: 'name',
@@ -173,28 +122,20 @@ describe('fetchListAllRepos', () => {
   })
 
   it('handles infinite loop protection', async () => {
-    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const mockHandleApi = mockHandleApiCall
-    const mockSetupSdk = mockSetupSdk
+    const { mockHandleApi } = await setupSdkMockSuccess('listRepositories', {
+      results: [{ id: 'repo-1', name: 'repo' }],
+      nextPage: 1,
+    })
 
-    // Clear previous mock state.
+    // Clear initial setup calls and always return the same nextPage to trigger protection.
     mockHandleApi.mockClear()
-    mockSetupSdk.mockClear()
-
-    const mockSdk = {
-      listRepositories: vi.fn(),
-    }
-
-    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-
-    // Always return the same nextPage to trigger protection.
-    mockHandleApi.mockResolvedValue(
-      createSuccessResult({
+    mockHandleApi.mockResolvedValue({
+      ok: true,
+      data: {
         results: [{ id: 'repo-1', name: 'repo' }],
         nextPage: 1,
-      }),
-    )
+      },
+    })
 
     const result = await fetchListAllRepos('infinite-org')
 
@@ -206,19 +147,10 @@ describe('fetchListAllRepos', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
-    const mockSetupSdk = mockSetupSdk
-    const mockHandleApi = mockHandleApiCall
-
-    const mockSdk = {
-      listRepositories: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(
-      createSuccessResult({ results: [], nextPage: null }),
-    )
+    const { mockSetupSdk } = await setupSdkMockSuccess('listRepositories', {
+      results: [],
+      nextPage: null,
+    })
 
     const sdkOpts = {
       apiToken: 'list-token',
@@ -231,19 +163,10 @@ describe('fetchListAllRepos', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await vi.importMock('../../../../src/utils/socket/sdk.mts')
-    const { handleApiCall } = await vi.importMock('../../../../src/utils/socket/api.mts')
-    const mockSetupSdk = mockSetupSdk
-    const mockHandleApi = mockHandleApiCall
-
-    const mockSdk = {
-      listRepositories: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(
-      createSuccessResult({ results: [], nextPage: null }),
-    )
+    const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
+      results: [],
+      nextPage: null,
+    })
 
     // This tests that the function properly uses __proto__: null.
     await fetchListAllRepos('test-org')

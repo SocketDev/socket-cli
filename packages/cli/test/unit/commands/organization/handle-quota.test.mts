@@ -1,116 +1,98 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { setupTestEnvironment } from '../../../../../src/commands/../../../test/helpers/index.mts'
-import { handleQuota } from '../../../../src/src/commands/organization/handle-quota.mts'
+import { setupTestEnvironment } from '../../../helpers/index.mts'
+import { handleQuota } from '../../../../src/commands/organization/handle-quota.mts'
+import { fetchQuota } from '../../../../src/commands/organization/fetch-quota.mts'
+import { outputQuota } from '../../../../src/commands/organization/output-quota.mts'
 
+// Mock the dependencies.
 const mockFetchQuota = vi.hoisted(() => vi.fn())
 const mockOutputQuota = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../../src/commands/organization/fetch-quota.mts', () => ({
+vi.mock('../../../../src/commands/organization/fetch-quota.mts', () => ({
   fetchQuota: mockFetchQuota,
 }))
 
-vi.mock('../../../../../src/commands/organization/output-quota.mts', () => ({
+vi.mock('../../../../src/commands/organization/output-quota.mts', () => ({
   outputQuota: mockOutputQuota,
 }))
 
 describe('handleQuota', () => {
   setupTestEnvironment()
 
-  it('should fetch and output quota with default output kind', async () => {
-    const { fetchQuota } = await import('../../../../../src/commands/organization/fetch-quota.mts')
-    const { outputQuota } = await import('../../../../../src/commands/organization/output-quota.mts')
-    const mockFetch = mockFetchQuota
-    const mockOutput = mockOutputQuota
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
+  it('should fetch and output quota with default output kind', async () => {
     const mockData = {
       used: 100,
       limit: 1000,
       percentage: 10,
     }
 
-    mockFetch.mockResolvedValue(mockData)
-    mockOutput.mockResolvedValue()
+    mockFetchQuota.mockResolvedValue(mockData)
+    mockOutputQuota.mockResolvedValue()
 
     await handleQuota()
 
-    expect(mockFetch).toHaveBeenCalledOnce()
-    expect(mockOutput).toHaveBeenCalledWith(mockData, 'text')
+    expect(fetchQuota).toHaveBeenCalledOnce()
+    expect(outputQuota).toHaveBeenCalledWith(mockData, 'text')
   })
 
   it('should handle json output kind', async () => {
-    const { fetchQuota } = await import('../../../../../src/commands/organization/fetch-quota.mts')
-    const { outputQuota } = await import('../../../../../src/commands/organization/output-quota.mts')
-    const mockFetch = mockFetchQuota
-    const mockOutput = mockOutputQuota
-
     const mockData = {
       used: 500,
       limit: 1000,
       percentage: 50,
     }
 
-    mockFetch.mockResolvedValue(mockData)
-    mockOutput.mockResolvedValue()
+    mockFetchQuota.mockResolvedValue(mockData)
+    mockOutputQuota.mockResolvedValue()
 
     await handleQuota('json')
 
-    expect(mockFetch).toHaveBeenCalledOnce()
-    expect(mockOutput).toHaveBeenCalledWith(mockData, 'json')
+    expect(fetchQuota).toHaveBeenCalledOnce()
+    expect(outputQuota).toHaveBeenCalledWith(mockData, 'json')
   })
 
   it('should handle markdown output kind', async () => {
-    const { fetchQuota } = await import('../../../../../src/commands/organization/fetch-quota.mts')
-    const { outputQuota } = await import('../../../../../src/commands/organization/output-quota.mts')
-    const mockFetch = mockFetchQuota
-    const mockOutput = mockOutputQuota
-
     const mockData = {
       used: 0,
       limit: 100,
       percentage: 0,
     }
 
-    mockFetch.mockResolvedValue(mockData)
-    mockOutput.mockResolvedValue()
+    mockFetchQuota.mockResolvedValue(mockData)
+    mockOutputQuota.mockResolvedValue()
 
     await handleQuota('markdown')
 
-    expect(mockFetch).toHaveBeenCalledOnce()
-    expect(mockOutput).toHaveBeenCalledWith(mockData, 'markdown')
+    expect(fetchQuota).toHaveBeenCalledOnce()
+    expect(outputQuota).toHaveBeenCalledWith(mockData, 'markdown')
   })
 
   it('should handle table output kind', async () => {
-    const { fetchQuota } = await import('../../../../../src/commands/organization/fetch-quota.mts')
-    const { outputQuota } = await import('../../../../../src/commands/organization/output-quota.mts')
-    const mockFetch = mockFetchQuota
-    const mockOutput = mockOutputQuota
-
     const mockData = {
       used: 999,
       limit: 1000,
       percentage: 99.9,
     }
 
-    mockFetch.mockResolvedValue(mockData)
-    mockOutput.mockResolvedValue()
+    mockFetchQuota.mockResolvedValue(mockData)
+    mockOutputQuota.mockResolvedValue()
 
     await handleQuota('table')
 
-    expect(mockFetch).toHaveBeenCalledOnce()
-    expect(mockOutput).toHaveBeenCalledWith(mockData, 'table')
+    expect(fetchQuota).toHaveBeenCalledOnce()
+    expect(outputQuota).toHaveBeenCalledWith(mockData, 'table')
   })
 
   it('should propagate errors from fetchQuota', async () => {
-    const { fetchQuota } = await import('../../../../../src/commands/organization/fetch-quota.mts')
-    const { outputQuota } = await import('../../../../../src/commands/organization/output-quota.mts')
-    const mockFetch = mockFetchQuota
-    const mockOutput = mockOutputQuota
-
     const error = new Error('Network error')
-    mockFetch.mockRejectedValue(error)
+    mockFetchQuota.mockRejectedValue(error)
 
     await expect(handleQuota()).rejects.toThrow('Network error')
-    expect(mockOutput).not.toHaveBeenCalled()
+    expect(outputQuota).not.toHaveBeenCalled()
   })
 })

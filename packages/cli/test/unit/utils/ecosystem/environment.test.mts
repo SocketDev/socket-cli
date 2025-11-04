@@ -3,18 +3,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   AGENTS,
   detectPackageEnvironment,
-} from '../../../../src/src/utils/ecosystem/environment.mts'
+} from '../../../../src/utils/ecosystem/environment.mts'
 
 // Mock the dependencies.
 const mockExistsSync = vi.hoisted(() => vi.fn())
 const mockDefault = vi.hoisted(() => vi.fn())
-const mockParse = vi.hoisted(() => vi.fn(())
-const mockValid = vi.hoisted(() => vi.fn(())
-const mockSatisfies = vi.hoisted(() => vi.fn(())
-const mockMajor = vi.hoisted(() => vi.fn(())
-const mockMinor = vi.hoisted(() => vi.fn(())
-const mockPatch = vi.hoisted(() => vi.fn(())
-const mockCoerce = vi.hoisted(() => vi.fn(())
+const mockParse = vi.hoisted(() => vi.fn())
+const mockValid = vi.hoisted(() => vi.fn())
+const mockSatisfies = vi.hoisted(() => vi.fn())
+const mockMajor = vi.hoisted(() => vi.fn())
+const mockMinor = vi.hoisted(() => vi.fn())
+const mockPatch = vi.hoisted(() => vi.fn())
+const mockCoerce = vi.hoisted(() => vi.fn())
 
 vi.mock('node:fs', async importOriginal => {
   const actual = (await importOriginal()) as any
@@ -53,23 +53,23 @@ vi.mock('@socketsecurity/lib/spawn', () => ({
 }))
 
 const mockFindUp = vi.hoisted(() => vi.fn())
-vi.mock('../fs/find-up.mts', () => ({
+vi.mock('../../../../src/utils/fs/find-up.mts', () => ({
   findUp: mockFindUp,
 }))
 
 vi.mock('@socketregistry/hyrious__bun.lockb/index.cjs', () => ({
-  parse: mockParse.mockReturnValue({}),
+  parse: mockParse,
 }))
 
 vi.mock('semver', () => ({
   default: {
-    parse: mockParse => null),
-    valid: mockValid => null),
-    satisfies: mockSatisfies => true),
-    major: mockMajor => 20),
-    minor: mockMinor => 0),
-    patch: mockPatch => 0),
-    coerce: mockCoerce => ({ version: '1.0.0' })),
+    parse: mockParse,
+    valid: mockValid,
+    satisfies: mockSatisfies,
+    major: mockMajor,
+    minor: mockMinor,
+    patch: mockPatch,
+    coerce: mockCoerce,
     lt: vi.fn(() => false),
   },
 }))

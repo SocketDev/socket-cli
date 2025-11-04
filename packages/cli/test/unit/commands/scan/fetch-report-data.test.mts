@@ -44,13 +44,15 @@ vi.mock('../../../../../src/utils/socket/api.mts', () => ({
   queryApiSafeText: mockQueryApiSafeText,
 }))
 
-vi.mock('../../../../../src/utils/socket/sdk.mjs', () => ({
+vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
   setupSdk: mockSetupSdk,
 }))
 
-vi.mock('../../../../../src/utils/error/errors.mjs', () => ({
+vi.mock('../../../../../src/utils/error/errors.mts', () => ({
   formatErrorWithDetail: mockFormatErrorWithDetail,
 }))
+
+const { fetchScanData } = await import('../../../../../src/commands/scan/fetch-report-data.mts')
 
 describe('fetchScanData', () => {
   beforeEach(() => {
@@ -58,18 +60,15 @@ describe('fetchScanData', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { fetchScanData } = await import('../../../../../src/commands/scan/fetch-report-data.mts')
-    const { setupSdk } = await vi.importMock('../../../../../src/utils/socket/sdk.mjs')
-    const mockSetupSdk = mockSetupSdk
-
     const error = createErrorResult('Failed to setup SDK', {
       code: 1,
       cause: 'Invalid configuration',
     })
-    mockSetupSdk.mockResolvedValue(error)
+    mockSetupSdk.mockResolvedValueOnce(error)
 
     const result = await fetchScanData('test-org', 'scan-123')
 
     expect(result).toEqual(error)
+    expect(mockSetupSdk).toHaveBeenCalled()
   })
 })

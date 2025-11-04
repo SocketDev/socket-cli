@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSuccessResult } from '../../../../src/helpers/mocks.mts'
-import FIXTURE from '../../../../src/src/commands/audit-log/audit-fixture.json' with {
+import { createSuccessResult } from '../../../helpers/mocks.mts'
+import FIXTURE from '../../../../src/commands/audit-log/audit-fixture.json' with {
   type: 'json',
 }
 import {
   outputAsJson,
   outputAsMarkdown,
-} from '../../../../src/src/commands/audit-log/output-audit-log.mts'
+} from '../../../../src/commands/audit-log/output-audit-log.mts'
 
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 

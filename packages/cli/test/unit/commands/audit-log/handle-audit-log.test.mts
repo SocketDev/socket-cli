@@ -3,13 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../src/helpers/mocks.mts'
-import { handleAuditLog } from '../../../../src/src/commands/audit-log/handle-audit-log.mts'
+} from '../../../helpers/mocks.mts'
+import { handleAuditLog } from '../../../../src/commands/audit-log/handle-audit-log.mts'
 
 // Mock the dependencies.
 const mockFetchAuditLog = vi.hoisted(() => vi.fn())
 const mockOutputAuditLog = vi.hoisted(() => vi.fn())
-const mockGetDefaultLogger = vi.hoisted(() => vi.fn(())
+const mockGetDefaultLogger = vi.hoisted(() => vi.fn())
 const mockLog = vi.hoisted(() => vi.fn())
 const mockInfo = vi.hoisted(() => vi.fn())
 const mockWarn = vi.hoisted(() => vi.fn())
@@ -24,14 +24,7 @@ vi.mock('../../../../src/commands/audit-log/output-audit-log.mts', () => ({
   outputAuditLog: mockOutputAuditLog,
 }))
 vi.mock('@socketsecurity/lib/logger', () => ({
-  getDefaultLogger: mockGetDefaultLogger => ({
-    log: mockLog,
-    info: mockInfo,
-    warn: mockWarn,
-    error: mockError,
-    fail: mockFail,
-    success: mockSuccess,
-  })),
+  getDefaultLogger: mockGetDefaultLogger,
 }))
 
 describe('handleAuditLog', () => {

@@ -12,7 +12,7 @@ const mockNpmConfigInstance = {
 
 // Mock @npmcli/config with a proper constructor class.
 // Using function syntax to make it a proper constructor.
-const mockGetNpmDirPath = vi.hoisted(() => vi.fn(())
+const mockGetNpmDirPath = vi.hoisted(() => vi.fn())
 
 vi.mock('@npmcli/config', () => ({
   default: vi.fn(function MockNpmConfig() {
@@ -20,7 +20,7 @@ vi.mock('@npmcli/config', () => ({
   }),
 }))
 
-import { getNpmConfig } from '../../../../src/src/utils/npm/config.mts'
+import { getNpmConfig } from '../../../../src/utils/npm/config.mts'
 
 import NpmConfig from '@npmcli/config'
 
@@ -33,7 +33,7 @@ vi.mock('@npmcli/config/lib/definitions', () => ({
 
 // Mock npm-paths.
 vi.mock('../../../../../src/utils/npm/paths.mts', () => ({
-  getNpmDirPath: mockGetNpmDirPath => '/usr/local/lib/node_modules/npm'),
+  getNpmDirPath: mockGetNpmDirPath,
 }))
 
 const MockNpmConfig = vi.mocked(NpmConfig)

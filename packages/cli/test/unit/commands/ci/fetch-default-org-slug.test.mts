@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getDefaultOrgSlug } from '../../../../src/src/commands/ci/fetch-default-org-slug.mts'
+import { getDefaultOrgSlug } from '../../../../src/commands/ci/fetch-default-org-slug.mts'
 
 // Create mock functions with hoisting.
 const { mockGetConfigValueOrUndef, mockFetchOrganization, mockEnv } = vi.hoisted(() => {
@@ -15,15 +15,15 @@ const { mockGetConfigValueOrUndef, mockFetchOrganization, mockEnv } = vi.hoisted
 })
 
 // Mock the dependencies.
-vi.mock('../../../../../src/utils/config.mts', () => ({
+vi.mock('../../../../src/utils/config.mts', () => ({
   getConfigValueOrUndef: mockGetConfigValueOrUndef,
 }))
 
-vi.mock('../../../../../src/constants/env.mts', () => ({
+vi.mock('../../../../src/constants/env.mts', () => ({
   default: mockEnv,
 }))
 
-vi.mock('../../../../../src/commands/organization/fetch-organization-list.mts', () => ({
+vi.mock('../../../../src/commands/organization/fetch-organization-list.mts', () => ({
   fetchOrganization: mockFetchOrganization,
 }))
 

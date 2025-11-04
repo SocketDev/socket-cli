@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleScanView } from '../../../../src/src/commands/scan/handle-scan-view.mts'
+import { handleScanView } from '../../../../src/commands/scan/handle-scan-view.mts'
 
 // Mock the dependencies.
 const mockFetchScan = vi.hoisted(() => vi.fn())
 const mockOutputScanView = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../../src/commands/scan/fetch-scan.mts', () => ({
+vi.mock('../../../../src/commands/scan/fetch-scan.mts', () => ({
   fetchScan: mockFetchScan,
 }))
-vi.mock('../../../../../src/commands/scan/output-scan-view.mts', () => ({
+vi.mock('../../../../src/commands/scan/output-scan-view.mts', () => ({
   outputScanView: mockOutputScanView,
 }))
 

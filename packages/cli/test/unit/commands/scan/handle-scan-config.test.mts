@@ -4,17 +4,17 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../../test/helpers/mocks.mts'
-import { handleScanConfig } from '../../../../src/src/commands/scan/handle-scan-config.mts'
+import { handleScanConfig } from '../../../../src/commands/scan/handle-scan-config.mts'
 
 // Mock the dependencies.
 const mockOutputScanConfigResult = vi.hoisted(() => vi.fn())
 const mockSetupScanConfig = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../../src/commands/scan/output-scan-config-result.mts', () => ({
+vi.mock('../../../../src/commands/scan/output-scan-config-result.mts', () => ({
   outputScanConfigResult: mockOutputScanConfigResult,
 }))
 
-vi.mock('../../../../../src/commands/scan/setup-scan-config.mts', () => ({
+vi.mock('../../../../src/commands/scan/setup-scan-config.mts', () => ({
   setupScanConfig: mockSetupScanConfig,
 }))
 
@@ -24,10 +24,7 @@ describe('handleScanConfig', () => {
   })
 
   it('sets up scan config and outputs result', async () => {
-    const { setupScanConfig } = await import('../../../../../src/commands/scan/setup-scan-config.mts')
-    const { outputScanConfigResult } = await import(
       './output-scan-config-result.mts'
-    )
     const mockSetup = mockSetupScanConfig
     const mockOutput = mockOutputScanConfigResult
 
@@ -47,10 +44,7 @@ describe('handleScanConfig', () => {
   })
 
   it('uses defaultOnReadError when true', async () => {
-    const { setupScanConfig } = await import('../../../../../src/commands/scan/setup-scan-config.mts')
-    const { outputScanConfigResult } = await import(
       './output-scan-config-result.mts'
-    )
     const mockSetup = mockSetupScanConfig
     const mockOutput = mockOutputScanConfigResult
 
@@ -63,10 +57,7 @@ describe('handleScanConfig', () => {
   })
 
   it('handles setup failure', async () => {
-    const { setupScanConfig } = await import('../../../../../src/commands/scan/setup-scan-config.mts')
-    const { outputScanConfigResult } = await import(
       './output-scan-config-result.mts'
-    )
     const mockSetup = mockSetupScanConfig
     const mockOutput = mockOutputScanConfigResult
 
@@ -79,7 +70,6 @@ describe('handleScanConfig', () => {
   })
 
   it('uses default value for defaultOnReadError when not provided', async () => {
-    const { setupScanConfig } = await import('../../../../../src/commands/scan/setup-scan-config.mts')
     const mockSetup = mockSetupScanConfig
 
     mockSetup.mockResolvedValue(createSuccessResult({}))
@@ -91,7 +81,6 @@ describe('handleScanConfig', () => {
   })
 
   it('handles different working directories', async () => {
-    const { setupScanConfig } = await import('../../../../../src/commands/scan/setup-scan-config.mts')
     const mockSetup = mockSetupScanConfig
 
     const cwds = ['/root', '/home/user/project', './relative/path', '.']

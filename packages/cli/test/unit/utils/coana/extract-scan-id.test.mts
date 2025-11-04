@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { extractTier1ReachabilityScanId } from '../../../../src/src/coana/extract-scan-id.mts'
+import { extractTier1ReachabilityScanId } from '../../../../src/utils/coana/extract-scan-id.mts'
 
 // Mock @socketsecurity/lib/fs.
 const mockReadJsonSync = vi.hoisted(() => vi.fn())

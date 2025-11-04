@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // Mock shadow/pnpm/bin module.
 const mockDefault = vi.hoisted(() => vi.fn())
 
-vi.mock('./shadow/pnpm/bin.mts', () => ({
+vi.mock('../../src/shadow/pnpm/bin.mts', () => ({
   default: mockDefault,
 }))
 

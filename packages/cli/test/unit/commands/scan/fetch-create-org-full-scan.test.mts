@@ -21,7 +21,7 @@ vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
 describe('fetchCreateOrgFullScan', () => {
   it('creates org full scan successfully', async () => {
     const { fetchCreateOrgFullScan } = await import(
-      './fetch-create-org-full-scan.mts'
+      '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
     )
 
     const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
@@ -68,7 +68,7 @@ describe('fetchCreateOrgFullScan', () => {
 
   it('handles SDK setup failure', async () => {
     const { fetchCreateOrgFullScan } = await import(
-      './fetch-create-org-full-scan.mts'
+      '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
     )
 
     await setupSdkSetupFailure('Failed to setup SDK', {
@@ -100,7 +100,7 @@ describe('fetchCreateOrgFullScan', () => {
 
   it('handles API call failure', async () => {
     const { fetchCreateOrgFullScan } = await import(
-      './fetch-create-org-full-scan.mts'
+      '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
     )
 
     await setupSdkMockError('createFullScan', 'Failed to create scan', 500)
@@ -126,7 +126,7 @@ describe('fetchCreateOrgFullScan', () => {
 
   it('passes custom SDK options and scan options', async () => {
     const { fetchCreateOrgFullScan } = await import(
-      './fetch-create-org-full-scan.mts'
+      '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
     )
 
     const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess(
@@ -182,7 +182,7 @@ describe('fetchCreateOrgFullScan', () => {
 
   it('handles empty optional config values', async () => {
     const { fetchCreateOrgFullScan } = await import(
-      './fetch-create-org-full-scan.mts'
+      '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
     )
 
     const { mockSdk } = await setupSdkMockSuccess('createFullScan', {})
@@ -210,7 +210,7 @@ describe('fetchCreateOrgFullScan', () => {
 
   it('handles multiple package paths', async () => {
     const { fetchCreateOrgFullScan } = await import(
-      './fetch-create-org-full-scan.mts'
+      '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
     )
 
     const { mockSdk } = await setupSdkMockSuccess('createFullScan', {})
@@ -243,7 +243,7 @@ describe('fetchCreateOrgFullScan', () => {
 
   it('uses null prototype for config and options', async () => {
     const { fetchCreateOrgFullScan } = await import(
-      './fetch-create-org-full-scan.mts'
+      '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
     )
 
     const { mockSdk } = await setupSdkMockSuccess('createFullScan', {})
@@ -266,7 +266,7 @@ describe('fetchCreateOrgFullScan', () => {
 
   it('handles edge cases for different org slugs and repo names', async () => {
     const { fetchCreateOrgFullScan } = await import(
-      './fetch-create-org-full-scan.mts'
+      '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
     )
 
     const { mockSdk } = await setupSdkMockSuccess('createFullScan', {})

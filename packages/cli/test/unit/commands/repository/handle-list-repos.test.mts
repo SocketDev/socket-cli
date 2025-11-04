@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleListRepos } from '../../../../src/src/commands/repository/handle-list-repos.mts'
+import { handleListRepos } from '../../../../src/commands/repository/handle-list-repos.mts'
 
 // Mock the dependencies.
 const mockFetchListAllRepos = vi.hoisted(() => vi.fn())
@@ -23,9 +23,6 @@ describe('handleListRepos', () => {
   })
 
   it('fetches all repositories when all flag is true', async () => {
-    const { fetchListAllRepos } = await import('../../../../src/commands/repository/fetch-list-all-repos.mts')
-    const { outputListRepos } = await import('../../../../src/commands/repository/output-list-repos.mts')
-
     const mockData = {
       ok: true,
       data: [
@@ -46,11 +43,11 @@ describe('handleListRepos', () => {
       sort: 'name',
     })
 
-    expect(fetchListAllRepos).toHaveBeenCalledWith('test-org', {
+    expect(mockFetchListAllRepos).toHaveBeenCalledWith('test-org', {
       direction: 'asc',
       sort: 'name',
     })
-    expect(outputListRepos).toHaveBeenCalledWith(
+    expect(mockOutputListRepos).toHaveBeenCalledWith(
       mockData,
       'json',
       0,
@@ -62,9 +59,6 @@ describe('handleListRepos', () => {
   })
 
   it('fetches paginated repositories when all is false', async () => {
-    const { fetchListRepos } = await import('../../../../src/commands/repository/fetch-list-repos.mts')
-    const { outputListRepos } = await import('../../../../src/commands/repository/output-list-repos.mts')
-
     const mockData = {
       ok: true,
       data: {
@@ -87,14 +81,14 @@ describe('handleListRepos', () => {
       sort: 'updated',
     })
 
-    expect(fetchListRepos).toHaveBeenCalledWith({
+    expect(mockFetchListRepos).toHaveBeenCalledWith({
       direction: 'desc',
       orgSlug: 'test-org',
       page: 1,
       perPage: 10,
       sort: 'updated',
     })
-    expect(outputListRepos).toHaveBeenCalledWith(
+    expect(mockOutputListRepos).toHaveBeenCalledWith(
       mockData,
       'text',
       1,
@@ -106,9 +100,6 @@ describe('handleListRepos', () => {
   })
 
   it('handles error response for paginated fetch', async () => {
-    const { fetchListRepos } = await import('../../../../src/commands/repository/fetch-list-repos.mts')
-    const { outputListRepos } = await import('../../../../src/commands/repository/output-list-repos.mts')
-
     const mockError = {
       ok: false,
       error: new Error('Failed to fetch repositories'),
@@ -125,7 +116,7 @@ describe('handleListRepos', () => {
       sort: 'name',
     })
 
-    expect(outputListRepos).toHaveBeenCalledWith(
+    expect(mockOutputListRepos).toHaveBeenCalledWith(
       mockError,
       'json',
       0,
@@ -137,9 +128,6 @@ describe('handleListRepos', () => {
   })
 
   it('handles null nextPage for last page', async () => {
-    const { fetchListRepos } = await import('../../../../src/commands/repository/fetch-list-repos.mts')
-    const { outputListRepos } = await import('../../../../src/commands/repository/output-list-repos.mts')
-
     const mockData = {
       ok: true,
       data: {
@@ -159,7 +147,7 @@ describe('handleListRepos', () => {
       sort: 'name',
     })
 
-    expect(outputListRepos).toHaveBeenCalledWith(
+    expect(mockOutputListRepos).toHaveBeenCalledWith(
       mockData,
       'json',
       3,
@@ -171,9 +159,6 @@ describe('handleListRepos', () => {
   })
 
   it('handles markdown output', async () => {
-    const { fetchListAllRepos } = await import('../../../../src/commands/repository/fetch-list-all-repos.mts')
-    const { outputListRepos } = await import('../../../../src/commands/repository/output-list-repos.mts')
-
     const mockData = {
       ok: true,
       data: [{ id: '1', name: 'repo1' }],
@@ -190,7 +175,7 @@ describe('handleListRepos', () => {
       sort: 'created',
     })
 
-    expect(outputListRepos).toHaveBeenCalledWith(
+    expect(mockOutputListRepos).toHaveBeenCalledWith(
       mockData,
       'markdown',
       0,
@@ -202,8 +187,6 @@ describe('handleListRepos', () => {
   })
 
   it('handles different sort options', async () => {
-    const { fetchListRepos } = await import('../../../../src/commands/repository/fetch-list-repos.mts')
-
     const sortOptions = ['name', 'created', 'updated', 'pushed']
 
     for (const sort of sortOptions) {
@@ -223,16 +206,13 @@ describe('handleListRepos', () => {
         sort,
       })
 
-      expect(fetchListRepos).toHaveBeenCalledWith(
+      expect(mockFetchListRepos).toHaveBeenCalledWith(
         expect.objectContaining({ sort }),
       )
     }
   })
 
   it('handles different page sizes', async () => {
-    const { fetchListRepos } = await import('../../../../src/commands/repository/fetch-list-repos.mts')
-    const { outputListRepos } = await import('../../../../src/commands/repository/output-list-repos.mts')
-
     const mockData = {
       ok: true,
       data: { repos: [], nextPage: null },
@@ -249,10 +229,10 @@ describe('handleListRepos', () => {
       sort: 'name',
     })
 
-    expect(fetchListRepos).toHaveBeenCalledWith(
+    expect(mockFetchListRepos).toHaveBeenCalledWith(
       expect.objectContaining({ perPage: 100 }),
     )
-    expect(outputListRepos).toHaveBeenCalledWith(
+    expect(mockOutputListRepos).toHaveBeenCalledWith(
       mockData,
       'json',
       1,

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // Mock shadow/yarn/bin module.
 const mockDefault = vi.hoisted(() => vi.fn())
 
-vi.mock('./shadow/yarn/bin.mts', () => ({
+vi.mock('../../src/shadow/yarn/bin.mts', () => ({
   default: mockDefault,
 }))
 

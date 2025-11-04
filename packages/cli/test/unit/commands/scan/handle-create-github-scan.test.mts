@@ -4,17 +4,17 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../../test/helpers/mocks.mts'
-import { handleCreateGithubScan } from '../../../../src/src/commands/scan/handle-create-github-scan.mts'
+import { handleCreateGithubScan } from '../../../../src/commands/scan/handle-create-github-scan.mts'
 
 // Mock the dependencies.
 const mockCreateScanFromGithub = vi.hoisted(() => vi.fn())
 const mockOutputScanGithub = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../../src/commands/scan/create-scan-from-github.mts', () => ({
+vi.mock('../../../../src/commands/scan/create-scan-from-github.mts', () => ({
   createScanFromGithub: mockCreateScanFromGithub,
 }))
 
-vi.mock('../../../../../src/commands/scan/output-scan-github.mts', () => ({
+vi.mock('../../../../src/commands/scan/output-scan-github.mts', () => ({
   outputScanGithub: mockOutputScanGithub,
 }))
 
@@ -24,10 +24,6 @@ describe('handleCreateGithubScan', () => {
   })
 
   it('creates GitHub scan and outputs result successfully', async () => {
-    const { createScanFromGithub } = await import(
-      '../../../../../src/commands/scan/create-scan-from-github.mts'
-    )
-    const { outputScanGithub } = await import('../../../../../src/commands/scan/output-scan-github.mts')
     const mockCreate = mockCreateScanFromGithub
     const mockOutput = mockOutputScanGithub
 
@@ -64,10 +60,6 @@ describe('handleCreateGithubScan', () => {
   })
 
   it('handles creation failure', async () => {
-    const { createScanFromGithub } = await import(
-      './create-scan-from-github.mts'
-    )
-    const { outputScanGithub } = await import('../../../../../src/commands/scan/output-scan-github.mts')
     const mockCreate = mockCreateScanFromGithub
     const mockOutput = mockOutputScanGithub
 
@@ -89,9 +81,6 @@ describe('handleCreateGithubScan', () => {
   })
 
   it('handles all repositories flag', async () => {
-    const { createScanFromGithub } = await import(
-      './create-scan-from-github.mts'
-    )
     const mockCreate = mockCreateScanFromGithub
 
     mockCreate.mockResolvedValue(createSuccessResult({}))
@@ -113,9 +102,6 @@ describe('handleCreateGithubScan', () => {
   })
 
   it('handles interactive mode', async () => {
-    const { createScanFromGithub } = await import(
-      './create-scan-from-github.mts'
-    )
     const mockCreate = mockCreateScanFromGithub
 
     mockCreate.mockResolvedValue(createSuccessResult({}))
@@ -137,10 +123,6 @@ describe('handleCreateGithubScan', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { createScanFromGithub } = await import(
-      './create-scan-from-github.mts'
-    )
-    const { outputScanGithub } = await import('../../../../../src/commands/scan/output-scan-github.mts')
     const mockCreate = mockCreateScanFromGithub
     const mockOutput = mockOutputScanGithub
 
@@ -161,9 +143,6 @@ describe('handleCreateGithubScan', () => {
   })
 
   it('converts parameters to proper types', async () => {
-    const { createScanFromGithub } = await import(
-      './create-scan-from-github.mts'
-    )
     const mockCreate = mockCreateScanFromGithub
 
     mockCreate.mockResolvedValue(createSuccessResult({}))

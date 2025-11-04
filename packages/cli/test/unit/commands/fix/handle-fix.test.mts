@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { convertIdsToGhsas } from '../../../../src/src/commands/fix/handle-fix.mts'
+import { convertIdsToGhsas } from '../../../../src/commands/fix/handle-fix.mts'
 
 // Mock the dependencies.
-const mockJoinAnd = vi.hoisted(() => vi.fn(arr => arr.join(' and '))
+const mockJoinAnd = vi.hoisted(() => vi.fn(arr => arr.join(' and ')))
 const mockCoanaFix = vi.hoisted(() => vi.fn())
 const mockOutputFixResult = vi.hoisted(() => vi.fn())
 
 vi.mock('@socketsecurity/lib/arrays', () => ({
-  joinAnd: mockJoinAnd),
+  joinAnd: mockJoinAnd,
 }))
 
 const mockLogger = vi.hoisted(() => ({

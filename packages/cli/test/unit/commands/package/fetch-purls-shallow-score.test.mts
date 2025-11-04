@@ -4,13 +4,13 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../../src/helpers/sdk-test-helpers.mts'
-import { fetchPurlsShallowScore } from '../../../../src/src/commands/package/fetch-purls-shallow-score.mts'
+} from '../../../helpers/sdk-test-helpers.mts'
+import { fetchPurlsShallowScore } from '../../../../src/commands/package/fetch-purls-shallow-score.mts'
 
 // Mock the dependencies.
 const mockHandleApiCall = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
-const mockGetDefaultLogger = vi.hoisted(() => vi.fn(())
+const mockGetDefaultLogger = vi.hoisted(() => vi.fn())
 const mockInfo = vi.hoisted(() => vi.fn())
 
 vi.mock('../../../../src/utils/socket/api.mts', () => ({
@@ -22,9 +22,7 @@ vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', () => ({
-  getDefaultLogger: mockGetDefaultLogger => ({
-    info: mockInfo,
-  })),
+  getDefaultLogger: mockGetDefaultLogger,
 }))
 
 describe('fetchPurlsShallowScore', () => {

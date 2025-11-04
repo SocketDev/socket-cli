@@ -8,9 +8,9 @@ import {
   loadGhsaTracker,
   markGhsaFixed,
   saveGhsaTracker,
-} from '../../../../src/src/commands/fix/ghsa-tracker.mts'
+} from '../../../../src/commands/fix/ghsa-tracker.mts'
 
-import type { GhsaTracker } from '../../../../src/src/commands/fix/ghsa-tracker.mts'
+import type { GhsaTracker } from '../../../../src/commands/fix/ghsa-tracker.mts'
 
 // Mock file system operations.
 const mockReadJson = vi.hoisted(() => vi.fn())

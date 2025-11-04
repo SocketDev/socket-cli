@@ -1,43 +1,37 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { setupTestEnvironment } from '../../../../../src/commands/../../../test/helpers/index.mts'
-import { handleOrganizationList } from '../../../../src/src/commands/organization/handle-organization-list.mts'
+import { setupTestEnvironment } from '../../../helpers/index.mts'
+import { handleOrganizationList } from '../../../../src/commands/organization/handle-organization-list.mts'
+import { fetchOrganization } from '../../../../src/commands/organization/fetch-organization-list.mts'
+import { outputOrganizationList } from '../../../../src/commands/organization/output-organization-list.mts'
 
 // Mock the dependencies.
-
 const mockFetchOrganization = vi.hoisted(() => vi.fn())
 const mockOutputOrganizationList = vi.hoisted(() => vi.fn())
 const mockDebug = vi.hoisted(() => vi.fn())
 const mockDebugDir = vi.hoisted(() => vi.fn())
-const mockDebugLog = vi.hoisted(() => vi.fn())
-const mockIsDebug = vi.hoisted(() => vi.fn(())
 
-vi.mock('../../../../../src/commands/organization/fetch-organization-list.mts', () => ({
+vi.mock('../../../../src/commands/organization/fetch-organization-list.mts', () => ({
   fetchOrganization: mockFetchOrganization,
 }))
 
-vi.mock('../../../../../src/commands/organization/output-organization-list.mts', () => ({
+vi.mock('../../../../src/commands/organization/output-organization-list.mts', () => ({
   outputOrganizationList: mockOutputOrganizationList,
 }))
 
 vi.mock('@socketsecurity/lib/debug', () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
-  debugLog: mockDebugLog,
-  isDebug: mockIsDebug => false),
 }))
 
 describe('handleOrganizationList', () => {
   setupTestEnvironment()
 
-  it('fetches and outputs organization list successfully', async () => {
-    const { fetchOrganization } = await import('../../../../../src/commands/organization/fetch-organization-list.mts')
-    const { outputOrganizationList } = await import(
-      './output-organization-list.mts'
-    )
-    const mockFetch = mockFetchOrganization
-    const mockOutput = mockOutputOrganizationList
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
+  it('fetches and outputs organization list successfully', async () => {
     const mockData = {
       ok: true,
       data: [
@@ -55,72 +49,45 @@ describe('handleOrganizationList', () => {
         },
       ],
     }
-    mockFetch.mockResolvedValue(mockData)
+    mockFetchOrganization.mockResolvedValue(mockData)
 
     await handleOrganizationList('json')
 
-    expect(mockFetch).toHaveBeenCalled()
-    expect(mockOutput).toHaveBeenCalledWith(mockData, 'json')
+    expect(fetchOrganization).toHaveBeenCalled()
+    expect(outputOrganizationList).toHaveBeenCalledWith(mockData, 'json')
   })
 
   it('handles fetch failure', async () => {
-    const { fetchOrganization } = await import('../../../../../src/commands/organization/fetch-organization-list.mts')
-    const { outputOrganizationList } = await import(
-      './output-organization-list.mts'
-    )
-    const mockFetch = mockFetchOrganization
-    const mockOutput = mockOutputOrganizationList
-
     const mockError = {
       ok: false,
       error: 'Unauthorized',
     }
-    mockFetch.mockResolvedValue(mockError)
+    mockFetchOrganization.mockResolvedValue(mockError)
 
     await handleOrganizationList('text')
 
-    expect(mockFetch).toHaveBeenCalled()
-    expect(mockOutput).toHaveBeenCalledWith(mockError, 'text')
+    expect(fetchOrganization).toHaveBeenCalled()
+    expect(outputOrganizationList).toHaveBeenCalledWith(mockError, 'text')
   })
 
   it('uses default text output format', async () => {
-    const { fetchOrganization } = await import('../../../../../src/commands/organization/fetch-organization-list.mts')
-    const { outputOrganizationList } = await import(
-      './output-organization-list.mts'
-    )
-    const mockFetch = mockFetchOrganization
-    const mockOutput = mockOutputOrganizationList
-
-    mockFetch.mockResolvedValue({ ok: true, data: [] })
+    mockFetchOrganization.mockResolvedValue({ ok: true, data: [] })
 
     await handleOrganizationList()
 
-    expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), 'text')
+    expect(outputOrganizationList).toHaveBeenCalledWith(expect.any(Object), 'text')
   })
 
   it('handles markdown output format', async () => {
-    const { fetchOrganization } = await import('../../../../../src/commands/organization/fetch-organization-list.mts')
-    const { outputOrganizationList } = await import(
-      './output-organization-list.mts'
-    )
-    const mockFetch = mockFetchOrganization
-    const mockOutput = mockOutputOrganizationList
-
-    mockFetch.mockResolvedValue({ ok: true, data: [] })
+    mockFetchOrganization.mockResolvedValue({ ok: true, data: [] })
 
     await handleOrganizationList('markdown')
 
-    expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), 'markdown')
+    expect(outputOrganizationList).toHaveBeenCalledWith(expect.any(Object), 'markdown')
   })
 
   it('passes debug messages correctly', async () => {
-    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
-    const { fetchOrganization } = await import('../../../../../src/commands/organization/fetch-organization-list.mts')
-    const mockDebug = mockDebug
-    const mockDebugDir = mockDebugDir
-    const mockFetch = mockFetchOrganization
-
-    mockFetch.mockResolvedValue({ ok: true, data: [] })
+    mockFetchOrganization.mockResolvedValue({ ok: true, data: [] })
 
     await handleOrganizationList('json')
 
@@ -132,12 +99,7 @@ describe('handleOrganizationList', () => {
   })
 
   it('handles error case with debug messages', async () => {
-    const { debug } = await import('@socketsecurity/lib/debug')
-    const { fetchOrganization } = await import('../../../../../src/commands/organization/fetch-organization-list.mts')
-    const mockDebug = mockDebug
-    const mockFetch = mockFetchOrganization
-
-    mockFetch.mockResolvedValue({ ok: false, error: 'Network error' })
+    mockFetchOrganization.mockResolvedValue({ ok: false, error: 'Network error' })
 
     await handleOrganizationList('text')
 

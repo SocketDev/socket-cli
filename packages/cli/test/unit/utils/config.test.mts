@@ -10,7 +10,7 @@ import {
   findSocketYmlSync,
   overrideCachedConfig,
   updateConfigValue,
-} from '../../../src/src/utils/config.mts'
+} from '../../../src/utils/config.mts'
 import { testPath } from '../../../test/utils.mts'
 
 const _fixtureBaseDir = path.join(testPath, 'fixtures/utils/config')

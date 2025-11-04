@@ -1,32 +1,31 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../../src/commands/../../../test/helpers/mocks.mts'
-import { handleSecurityPolicy } from '../../../../src/src/commands/organization/handle-security-policy.mts'
+} from '../../../helpers/mocks.mts'
+import { handleSecurityPolicy } from '../../../../src/commands/organization/handle-security-policy.mts'
+import { fetchSecurityPolicy } from '../../../../src/commands/organization/fetch-security-policy.mts'
+import { outputSecurityPolicy } from '../../../../src/commands/organization/output-security-policy.mts'
 
 // Mock the dependencies.
 const mockFetchSecurityPolicy = vi.hoisted(() => vi.fn())
 const mockOutputSecurityPolicy = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../../src/commands/organization/fetch-security-policy.mts', () => ({
+vi.mock('../../../../src/commands/organization/fetch-security-policy.mts', () => ({
   fetchSecurityPolicy: mockFetchSecurityPolicy,
 }))
 
-vi.mock('../../../../../src/commands/organization/output-security-policy.mts', () => ({
+vi.mock('../../../../src/commands/organization/output-security-policy.mts', () => ({
   outputSecurityPolicy: mockOutputSecurityPolicy,
 }))
 
 describe('handleSecurityPolicy', () => {
-  it('fetches and outputs security policy successfully', async () => {
-    const { fetchSecurityPolicy } = await import('../../../../../src/commands/organization/fetch-security-policy.mts')
-    const { outputSecurityPolicy } = await import(
-      '../../../../../src/commands/organization/output-security-policy.mts'
-    )
-    const mockFetch = mockFetchSecurityPolicy
-    const mockOutput = mockOutputSecurityPolicy
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
+  it('fetches and outputs security policy successfully', async () => {
     const mockPolicy = createSuccessResult({
       rules: [
         {
@@ -44,50 +43,33 @@ describe('handleSecurityPolicy', () => {
       ],
       enforcementLevel: 'strict',
     })
-    mockFetch.mockResolvedValue(mockPolicy)
+    mockFetchSecurityPolicy.mockResolvedValue(mockPolicy)
 
     await handleSecurityPolicy('test-org', 'json')
 
-    expect(mockFetch).toHaveBeenCalledWith('test-org')
-    expect(mockOutput).toHaveBeenCalledWith(mockPolicy, 'json')
+    expect(fetchSecurityPolicy).toHaveBeenCalledWith('test-org')
+    expect(outputSecurityPolicy).toHaveBeenCalledWith(mockPolicy, 'json')
   })
 
   it('handles fetch failure', async () => {
-    const { fetchSecurityPolicy } = await import('../../../../../src/commands/organization/fetch-security-policy.mts')
-    const { outputSecurityPolicy } = await import(
-      '../../../../../src/commands/organization/output-security-policy.mts'
-    )
-    const mockFetch = mockFetchSecurityPolicy
-    const mockOutput = mockOutputSecurityPolicy
-
     const mockError = createErrorResult('Organization not found')
-    mockFetch.mockResolvedValue(mockError)
+    mockFetchSecurityPolicy.mockResolvedValue(mockError)
 
     await handleSecurityPolicy('invalid-org', 'text')
 
-    expect(mockFetch).toHaveBeenCalledWith('invalid-org')
-    expect(mockOutput).toHaveBeenCalledWith(mockError, 'text')
+    expect(fetchSecurityPolicy).toHaveBeenCalledWith('invalid-org')
+    expect(outputSecurityPolicy).toHaveBeenCalledWith(mockError, 'text')
   })
 
   it('handles markdown output format', async () => {
-    const { fetchSecurityPolicy } = await import('../../../../../src/commands/organization/fetch-security-policy.mts')
-    const { outputSecurityPolicy } = await import(
-      '../../../../../src/commands/organization/output-security-policy.mts'
-    )
-    const mockFetch = mockFetchSecurityPolicy
-    const mockOutput = mockOutputSecurityPolicy
-
-    mockFetch.mockResolvedValue(createSuccessResult({}))
+    mockFetchSecurityPolicy.mockResolvedValue(createSuccessResult({}))
 
     await handleSecurityPolicy('my-org', 'markdown')
 
-    expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), 'markdown')
+    expect(outputSecurityPolicy).toHaveBeenCalledWith(expect.any(Object), 'markdown')
   })
 
   it('handles different organization slugs', async () => {
-    const { fetchSecurityPolicy } = await import('../../../../../src/commands/organization/fetch-security-policy.mts')
-    const mockFetch = mockFetchSecurityPolicy
-
     const orgSlugs = [
       'org-with-dashes',
       'simple',
@@ -96,22 +78,15 @@ describe('handleSecurityPolicy', () => {
     ]
 
     for (const orgSlug of orgSlugs) {
-      mockFetch.mockResolvedValue(createSuccessResult({}))
+      mockFetchSecurityPolicy.mockResolvedValue(createSuccessResult({}))
       // eslint-disable-next-line no-await-in-loop
       await handleSecurityPolicy(orgSlug, 'json')
-      expect(mockFetch).toHaveBeenCalledWith(orgSlug)
+      expect(fetchSecurityPolicy).toHaveBeenCalledWith(orgSlug)
     }
   })
 
   it('handles text output with detailed policy', async () => {
-    const { fetchSecurityPolicy } = await import('../../../../../src/commands/organization/fetch-security-policy.mts')
-    const { outputSecurityPolicy } = await import(
-      '../../../../../src/commands/organization/output-security-policy.mts'
-    )
-    const mockFetch = mockFetchSecurityPolicy
-    const mockOutput = mockOutputSecurityPolicy
-
-    mockFetch.mockResolvedValue(
+    mockFetchSecurityPolicy.mockResolvedValue(
       createSuccessResult({
         rules: [
           { id: 'rule-1', name: 'CVE check', enabled: true },
@@ -124,7 +99,7 @@ describe('handleSecurityPolicy', () => {
 
     await handleSecurityPolicy('production-org', 'text')
 
-    expect(mockOutput).toHaveBeenCalledWith(
+    expect(outputSecurityPolicy).toHaveBeenCalledWith(
       expect.objectContaining({
         ok: true,
         data: expect.objectContaining({

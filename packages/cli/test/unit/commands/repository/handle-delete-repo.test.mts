@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { createSuccessResult } from '../../../../src/helpers/mocks.mts'
-import { handleDeleteRepo } from '../../../../src/src/commands/repository/handle-delete-repo.mts'
+import { createSuccessResult } from '../../../helpers/mocks.mts'
+import { handleDeleteRepo } from '../../../../src/commands/repository/handle-delete-repo.mts'
 
 // Mock the dependencies.
 const mockFetchDeleteRepo = vi.hoisted(() => vi.fn())
@@ -16,13 +16,7 @@ vi.mock('../../../../src/commands/repository/output-delete-repo.mts', () => ({
 }))
 
 describe('handleDeleteRepo', () => {
-  it('deletes repository and outputs result successfully', async () => {
-    const { fetchDeleteRepo } = await import('../../../../src/commands/repository/fetch-delete-repo.mts')
-    const { outputDeleteRepo } = await import('../../../../src/commands/repository/output-delete-repo.mts')
-    const mockFetch = mockFetchDeleteRepo
-    const mockOutput = mockOutputDeleteRepo
-
-    const mockResult = createSuccessResult({ success: true })
+  it('deletes repository and outputs result successfully', async () => {    const mockResult = createSuccessResult({ success: true })
     mockFetch.mockResolvedValue(mockResult)
 
     await handleDeleteRepo('test-org', 'test-repo', 'json')
@@ -31,13 +25,7 @@ describe('handleDeleteRepo', () => {
     expect(mockOutput).toHaveBeenCalledWith(mockResult, 'test-repo', 'json')
   })
 
-  it('handles deletion failure', async () => {
-    const { fetchDeleteRepo } = await import('../../../../src/commands/repository/fetch-delete-repo.mts')
-    const { outputDeleteRepo } = await import('../../../../src/commands/repository/output-delete-repo.mts')
-    const mockFetch = mockFetchDeleteRepo
-    const mockOutput = mockOutputDeleteRepo
-
-    const mockResult = {
+  it('handles deletion failure', async () => {    const mockResult = {
       ok: false,
       error: 'Repository not found',
     }
@@ -53,13 +41,7 @@ describe('handleDeleteRepo', () => {
     )
   })
 
-  it('handles markdown output format', async () => {
-    const { fetchDeleteRepo } = await import('../../../../src/commands/repository/fetch-delete-repo.mts')
-    const { outputDeleteRepo } = await import('../../../../src/commands/repository/output-delete-repo.mts')
-    const mockFetch = mockFetchDeleteRepo
-    const mockOutput = mockOutputDeleteRepo
-
-    mockFetch.mockResolvedValue(createSuccessResult({}))
+  it('handles markdown output format', async () => {    mockFetch.mockResolvedValue(createSuccessResult({}))
 
     await handleDeleteRepo('my-org', 'my-repo', 'markdown')
 
@@ -70,11 +52,7 @@ describe('handleDeleteRepo', () => {
     )
   })
 
-  it('handles different repository names', async () => {
-    const { fetchDeleteRepo } = await import('../../../../src/commands/repository/fetch-delete-repo.mts')
-    const { outputDeleteRepo } = await import('../../../../src/commands/repository/output-delete-repo.mts')
-    const mockFetch = mockFetchDeleteRepo
-    const _mockOutput = mockOutputDeleteRepo
+  it('handles different repository names', async () => {    const { outputDeleteRepo } = await import('../../../../src/commands/repository/output-delete-repo.mts')    const _mockOutput = mockOutputDeleteRepo
 
     const repoNames = [
       'simple-repo',
@@ -91,13 +69,7 @@ describe('handleDeleteRepo', () => {
     }
   })
 
-  it('passes text output format', async () => {
-    const { fetchDeleteRepo } = await import('../../../../src/commands/repository/fetch-delete-repo.mts')
-    const { outputDeleteRepo } = await import('../../../../src/commands/repository/output-delete-repo.mts')
-    const mockFetch = mockFetchDeleteRepo
-    const mockOutput = mockOutputDeleteRepo
-
-    mockFetch.mockResolvedValue(
+  it('passes text output format', async () => {    mockFetch.mockResolvedValue(
       createSuccessResult({ deleted: true, timestamp: '2025-01-01T00:00:00Z' }),
     )
 

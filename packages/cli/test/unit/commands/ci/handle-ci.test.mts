@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { UNKNOWN_ERROR } from '../../../../src/src/constants/errors.mts'
-import { handleCi } from '../../../../src/src/commands/ci/handle-ci.mts'
+import { UNKNOWN_ERROR } from '../../../../src/constants/errors.mts'
+import { handleCi } from '../../../../src/commands/ci/handle-ci.mts'
 
 // Create mock functions with hoisting.
 const {
@@ -38,13 +38,13 @@ const {
 
 // Mock the dependencies.
 const mockDebugLog = vi.hoisted(() => vi.fn())
-const mockIsDebug = vi.hoisted(() => vi.fn(())
+const mockIsDebug = vi.hoisted(() => vi.fn())
 
 vi.mock('@socketsecurity/lib/debug', () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
   debugLog: mockDebugLog,
-  isDebug: mockIsDebug => false),
+  isDebug: mockIsDebug,
 }))
 
 vi.mock('@socketsecurity/lib/logger', () => ({
@@ -52,27 +52,27 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 
-vi.mock('../../../../../src/commands/ci/fetch-default-org-slug.mts', () => ({
+vi.mock('../../../../src/commands/ci/fetch-default-org-slug.mts', () => ({
   getDefaultOrgSlug: mockGetDefaultOrgSlug,
 }))
 
-vi.mock('../../../../../src/constants.mts', () => ({
+vi.mock('../../../../src/constants.mts', () => ({
   default: {
     REPORT_LEVEL_ERROR: 'error',
   },
 }))
 
-vi.mock('../../../../../src/utils/git/operations.mjs', () => ({
+vi.mock('../../../../src/utils/git/operations.mjs', () => ({
   detectDefaultBranch: mockDetectDefaultBranch,
   getRepoName: mockGetRepoName,
   gitBranch: mockGitBranch,
 }))
 
-vi.mock('../../../../../src/utils/output/result-json.mjs', () => ({
+vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
   serializeResultJson: mockSerializeResultJson,
 }))
 
-vi.mock('../../../../../src/commands/scan/handle-create-new-scan.mts', () => ({
+vi.mock('../../../../src/commands/scan/handle-create-new-scan.mts', () => ({
   handleCreateNewScan: mockHandleCreateNewScan,
 }))
 

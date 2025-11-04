@@ -4,11 +4,11 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../../test/helpers/mocks.mts'
-import { handleScanReport } from '../../../../src/src/commands/scan/handle-scan-report.mts'
 
 // Mock the dependencies.
 const mockFetchScanData = vi.hoisted(() => vi.fn())
 const mockOutputScanReport = vi.hoisted(() => vi.fn())
+const mockSetupSdk = vi.hoisted(() => vi.fn())
 
 vi.mock('../../../../../src/commands/scan/fetch-report-data.mts', () => ({
   fetchScanData: mockFetchScanData,
@@ -18,12 +18,28 @@ vi.mock('../../../../../src/commands/scan/output-scan-report.mts', () => ({
   outputScanReport: mockOutputScanReport,
 }))
 
+vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
+  setupSdk: mockSetupSdk,
+}))
+
 describe('handleScanReport', () => {
+  let handleScanReport: any
+
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    if (!handleScanReport) {
+      const module = await import('../../../../src/commands/scan/handle-scan-report.mts')
+      handleScanReport = module.handleScanReport
+    }
+  })
+
   it('fetches scan data and outputs report successfully', async () => {
-    const { fetchScanData } = await import('../../../../../src/commands/scan/fetch-report-data.mts')
-    const { outputScanReport } = await import('../../../../../src/commands/scan/output-scan-report.mts')
     const mockFetch = mockFetchScanData
     const mockOutput = mockOutputScanReport
+    const mockSetup = mockSetupSdk
+
+    // Mock setupSdk to return success (not used directly by handleScanReport, but needed by fetchScanData)
+    mockSetup.mockResolvedValue(createSuccessResult({ api: {} }))
 
     const mockScanData = createSuccessResult({
       scan: {
@@ -62,10 +78,11 @@ describe('handleScanReport', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchScanData } = await import('../../../../../src/commands/scan/fetch-report-data.mts')
-    const { outputScanReport } = await import('../../../../../src/commands/scan/output-scan-report.mts')
     const mockFetch = mockFetchScanData
     const mockOutput = mockOutputScanReport
+    const mockSetup = mockSetupSdk
+
+    mockSetup.mockResolvedValue(createSuccessResult({ api: {} }))
 
     const mockError = createErrorResult('Scan not found')
     mockFetch.mockResolvedValue(mockError)
@@ -88,11 +105,11 @@ describe('handleScanReport', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { fetchScanData } = await import('../../../../../src/commands/scan/fetch-report-data.mts')
-    const { outputScanReport } = await import('../../../../../src/commands/scan/output-scan-report.mts')
     const mockFetch = mockFetchScanData
     const mockOutput = mockOutputScanReport
+    const mockSetup = mockSetupSdk
 
+    mockSetup.mockResolvedValue(createSuccessResult({ api: {} }))
     mockFetch.mockResolvedValue(createSuccessResult({}))
 
     await handleScanReport({
@@ -115,11 +132,11 @@ describe('handleScanReport', () => {
   })
 
   it('passes all configuration options correctly', async () => {
-    const { fetchScanData } = await import('../../../../../src/commands/scan/fetch-report-data.mts')
-    const { outputScanReport } = await import('../../../../../src/commands/scan/output-scan-report.mts')
     const mockFetch = mockFetchScanData
     const mockOutput = mockOutputScanReport
+    const mockSetup = mockSetupSdk
 
+    mockSetup.mockResolvedValue(createSuccessResult({ api: {} }))
     mockFetch.mockResolvedValue(createSuccessResult({}))
 
     const config = {
@@ -142,11 +159,11 @@ describe('handleScanReport', () => {
   })
 
   it('handles text output with short format', async () => {
-    const { fetchScanData } = await import('../../../../../src/commands/scan/fetch-report-data.mts')
-    const { outputScanReport } = await import('../../../../../src/commands/scan/output-scan-report.mts')
     const mockFetch = mockFetchScanData
     const mockOutput = mockOutputScanReport
+    const mockSetup = mockSetupSdk
 
+    mockSetup.mockResolvedValue(createSuccessResult({ api: {} }))
     mockFetch.mockResolvedValue(
       createSuccessResult({
         scan: { id: 'scan-abc' },

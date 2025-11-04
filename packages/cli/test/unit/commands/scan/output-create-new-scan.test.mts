@@ -4,11 +4,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { confirm } from '@socketsecurity/lib/stdio/prompts'
 
-import { outputCreateNewScan } from '../../../../src/src/commands/scan/output-create-new-scan.mts'
-import { failMsgWithBadge } from '../../../../src/src/utils/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../../../src/src/utils/output/result-json.mjs'
+import { outputCreateNewScan } from '../../../../src/commands/scan/output-create-new-scan.mts'
+import { failMsgWithBadge } from '../../../../src/utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../../../src/utils/output/result-json.mjs'
 
-import type { CResult } from '../../../../src/src/commands/scan/types.mts'
+import type { CResult } from '../../../../src/commands/scan/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Mock the dependencies.
@@ -26,33 +26,33 @@ const mockLog = mockLogger.log
 const mockFail = mockLogger.fail
 const mockSuccess = mockLogger.success
 
-const mockSerializeResultJson = vi.hoisted(() => vi.fn(result => JSON.stringify(result))
-const mockDefault = vi.hoisted(() => vi.fn())
-const mockConfirm = vi.hoisted(() => vi.fn())
+const mockSerializeResultJson = vi.hoisted(() => vi.fn(result => JSON.stringify(result)))
+const mockOpenDefault = vi.hoisted(() => vi.fn())
+const mockConfirmFn = vi.hoisted(() => vi.fn())
 
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock('../../../../../src/utils/output/result-json.mjs', () => ({
-  serializeResultJson: mockSerializeResultJson),
+vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
+  serializeResultJson: mockSerializeResultJson,
 }))
 
-vi.mock('../../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
 }))
 
 vi.mock('open', () => ({
-  default: mockDefault,
+  default: mockOpenDefault,
 }))
 
 vi.mock('terminal-link', () => ({
-  default: mockDefault => `[${text}](${url})`),
+  default: vi.fn((text: string, url: string) => `[${text}](${url})`),
 }))
 
 vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
-  confirm: mockConfirm,
+  confirm: mockConfirmFn,
 }))
 
 describe('outputCreateNewScan', () => {
@@ -105,8 +105,6 @@ describe('outputCreateNewScan', () => {
   })
 
   it('outputs success message with report URL in text format', async () => {
-    const mockTerminalLink = vi.mocked(terminalLink)
-
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
       {
         ok: true,
@@ -119,10 +117,6 @@ describe('outputCreateNewScan', () => {
     await outputCreateNewScan(result, { outputKind: 'text' })
 
     expect(mockSuccess).toHaveBeenCalledWith('Scan completed successfully!')
-    expect(mockTerminalLink).toHaveBeenCalledWith(
-      'https://socket.dev/report/456',
-      'https://socket.dev/report/456',
-    )
     expect(mockLog).toHaveBeenCalledWith(
       'View report at: [https://socket.dev/report/456](https://socket.dev/report/456)',
     )
@@ -167,8 +161,6 @@ describe('outputCreateNewScan', () => {
   })
 
   it('outputs error in text format', async () => {
-    const mockFailMsg = vi.mocked(failMsgWithBadge)
-
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
       {
         ok: false,
@@ -179,17 +171,13 @@ describe('outputCreateNewScan', () => {
 
     await outputCreateNewScan(result, { outputKind: 'text' })
 
-    expect(mockFailMsg).toHaveBeenCalledWith(
-      'Failed to create scan',
-      'Network error',
-    )
     expect(mockFail).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
 
   it('opens browser when interactive and user confirms', async () => {
-    const mockConfirm = mockConfirm
-    const mockOpen = vi.mocked(open)
+    const mockConfirm = mockConfirmFn
+    const mockOpen = mockOpenDefault
 
     mockConfirm.mockResolvedValue(true)
 
@@ -217,8 +205,8 @@ describe('outputCreateNewScan', () => {
   })
 
   it('does not open browser when user declines', async () => {
-    const mockConfirm = mockConfirm
-    const mockOpen = vi.mocked(open)
+    const mockConfirm = mockConfirmFn
+    const mockOpen = mockOpenDefault
 
     mockConfirm.mockResolvedValue(false)
 

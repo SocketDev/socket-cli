@@ -9,7 +9,7 @@ import {
   readPnpmLockfile,
   stripLeadingPnpmDepPathSlash,
   stripPnpmPeerSuffix,
-} from '../../../../src/src/pnpm/lockfile.mts'
+} from '../../../../src/utils/pnpm/lockfile.mts'
 
 // Mock fs module.
 const mockExistsSync = vi.hoisted(() => vi.fn())

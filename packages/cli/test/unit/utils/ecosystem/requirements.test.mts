@@ -3,10 +3,10 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   getRequirements,
   getRequirementsKey,
-} from '../../../../src/src/ecosystem/requirements.mts'
+} from '../../../../src/utils/ecosystem/requirements.mts'
 
 // Mock the requirements.json module.
-vi.mock('../../../../../src/utils/ecosystem/requirements.json', () => ({
+vi.mock('../../../../src/utils/ecosystem/requirements.json', () => ({
   default: {
     api: {
       'scan:create': {

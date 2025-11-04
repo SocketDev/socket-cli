@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { createSuccessResult } from '../../../../../src/commands/../../../test/helpers/index.mts'
-import { handleViewRepo } from '../../../../src/src/commands/repository/handle-view-repo.mts'
+import { handleViewRepo } from '../../../../src/commands/repository/handle-view-repo.mts'
 
 // Setup mocks at module level
 const mockFetchViewRepo = vi.hoisted(() => vi.fn())
@@ -16,13 +16,7 @@ vi.mock('../../../../src/commands/repository/output-view-repo.mts', () => ({
 }))
 
 describe('handleViewRepo', () => {
-  it('fetches and outputs repository details successfully', async () => {
-    const { fetchViewRepo } = await import('../../../../src/commands/repository/fetch-view-repo.mts')
-    const { outputViewRepo } = await import('../../../../src/commands/repository/output-view-repo.mts')
-    const mockFetch = mockFetchViewRepo
-    const mockOutput = mockOutputViewRepo
-
-    const mockRepoData = createSuccessResult({
+  it('fetches and outputs repository details successfully', async () => {    const mockRepoData = createSuccessResult({
       id: 'repo-123',
       name: 'test-repo',
       org: 'test-org',
@@ -30,41 +24,29 @@ describe('handleViewRepo', () => {
       lastUpdated: '2025-01-01T00:00:00Z',
     })
 
-    mockFetch.mockResolvedValue(mockRepoData)
+    mockFetchViewRepo.mockResolvedValue(mockRepoData)
 
     await handleViewRepo('test-org', 'test-repo', 'json')
 
-    expect(mockFetch).toHaveBeenCalledWith('test-org', 'test-repo')
-    expect(mockOutput).toHaveBeenCalledWith(mockRepoData, 'json')
+    expect(mockFetchViewRepo).toHaveBeenCalledWith('test-org', 'test-repo')
+    expect(mockOutputViewRepo).toHaveBeenCalledWith(mockRepoData, 'json')
   })
 
-  it('handles fetch failure', async () => {
-    const { fetchViewRepo } = await import('../../../../src/commands/repository/fetch-view-repo.mts')
-    const { outputViewRepo } = await import('../../../../src/commands/repository/output-view-repo.mts')
-    const mockFetch = mockFetchViewRepo
-    const mockOutput = mockOutputViewRepo
-
-    const mockError = {
+  it('handles fetch failure', async () => {    const mockError = {
       ok: false as const,
       message: 'Repository not found',
       code: 404,
     }
 
-    mockFetch.mockResolvedValue(mockError)
+    mockFetchViewRepo.mockResolvedValue(mockError)
 
     await handleViewRepo('test-org', 'nonexistent-repo', 'text')
 
-    expect(mockFetch).toHaveBeenCalledWith('test-org', 'nonexistent-repo')
-    expect(mockOutput).toHaveBeenCalledWith(mockError, 'text')
+    expect(mockFetchViewRepo).toHaveBeenCalledWith('test-org', 'nonexistent-repo')
+    expect(mockOutputViewRepo).toHaveBeenCalledWith(mockError, 'text')
   })
 
-  it('handles markdown output format', async () => {
-    const { fetchViewRepo } = await import('../../../../src/commands/repository/fetch-view-repo.mts')
-    const { outputViewRepo } = await import('../../../../src/commands/repository/output-view-repo.mts')
-    const mockFetch = mockFetchViewRepo
-    const mockOutput = mockOutputViewRepo
-
-    mockFetch.mockResolvedValue(
+  it('handles markdown output format', async () => {    mockFetchViewRepo.mockResolvedValue(
       createSuccessResult({
         name: 'my-repo',
         org: 'my-org',
@@ -73,16 +55,10 @@ describe('handleViewRepo', () => {
 
     await handleViewRepo('my-org', 'my-repo', 'markdown')
 
-    expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), 'markdown')
+    expect(mockOutputViewRepo).toHaveBeenCalledWith(expect.any(Object), 'markdown')
   })
 
-  it('handles text output format', async () => {
-    const { fetchViewRepo } = await import('../../../../src/commands/repository/fetch-view-repo.mts')
-    const { outputViewRepo } = await import('../../../../src/commands/repository/output-view-repo.mts')
-    const mockFetch = mockFetchViewRepo
-    const mockOutput = mockOutputViewRepo
-
-    mockFetch.mockResolvedValue(
+  it('handles text output format', async () => {    mockFetchViewRepo.mockResolvedValue(
       createSuccessResult({
         name: 'production-repo',
         org: 'production-org',
@@ -93,7 +69,7 @@ describe('handleViewRepo', () => {
 
     await handleViewRepo('production-org', 'production-repo', 'text')
 
-    expect(mockOutput).toHaveBeenCalledWith(
+    expect(mockOutputViewRepo).toHaveBeenCalledWith(
       expect.objectContaining({
         ok: true,
         data: expect.objectContaining({
@@ -104,21 +80,17 @@ describe('handleViewRepo', () => {
     )
   })
 
-  it('handles different repository names', async () => {
-    const { fetchViewRepo } = await import('../../../../src/commands/repository/fetch-view-repo.mts')
-    const mockFetch = mockFetchViewRepo
-
-    const testCases = [
+  it('handles different repository names', async () => {    const testCases = [
       ['org-1', 'repo-1'],
       ['my-org', 'my-awesome-project'],
       ['company', 'internal-tool'],
     ]
 
     for (const [org, repo] of testCases) {
-      mockFetch.mockResolvedValue(createSuccessResult({}))
+      mockFetchViewRepo.mockResolvedValue(createSuccessResult({}))
       // eslint-disable-next-line no-await-in-loop
       await handleViewRepo(org, repo, 'json')
-      expect(mockFetch).toHaveBeenCalledWith(org, repo)
+      expect(mockFetchViewRepo).toHaveBeenCalledWith(org, repo)
     }
   })
 })

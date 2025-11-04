@@ -1,22 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import meow from '../../../../src/src/utils/cli/meow.mts'
+import meow from '../../../../src/meow.mts'
 import {
   emitBanner,
   getLastSeenCommand,
   meowOrExit,
-} from '../../../../src/src/utils/cli/with-subcommands.mts'
+} from '../../../../src/utils/cli/with-subcommands.mts'
 
 // Mock meow.
 const mockGetConfigValueOrUndef = vi.hoisted(() => vi.fn())
-const mockIsConfigFromFlag = vi.hoisted(() => vi.fn(())
+const mockIsConfigFromFlag = vi.hoisted(() => vi.fn(() => false))
 const mockOverrideCachedConfig = vi.hoisted(() => vi.fn())
 const mockOverrideConfigApiToken = vi.hoisted(() => vi.fn())
-const mockIsDebug = vi.hoisted(() => vi.fn(())
-const mockGetVisibleTokenPrefix = vi.hoisted(() => vi.fn(())
+const mockIsDebug = vi.hoisted(() => vi.fn(() => false))
+const mockGetVisibleTokenPrefix = vi.hoisted(() => vi.fn(() => 'test'))
 const mockSocketPackageLink = vi.hoisted(() => vi.fn(pkg => pkg))
 
-vi.mock('../../../../../src/utils/cli/meow.mts', () => ({
+vi.mock('../../../../src/meow.mts', () => ({
   default: vi.fn((helpText, options) => {
     // Simulate meow processing flags with defaults.
     const argv = options?.argv || []
@@ -68,25 +68,25 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 }))
 
 // Mock config utilities.
-vi.mock('../../../../../src/utils/config.mts', () => ({
+vi.mock('../../../../src/utils/config.mts', () => ({
   getConfigValueOrUndef: mockGetConfigValueOrUndef,
-  isConfigFromFlag: mockIsConfigFromFlag => false),
+  isConfigFromFlag: mockIsConfigFromFlag,
   overrideCachedConfig: mockOverrideCachedConfig,
   overrideConfigApiToken: mockOverrideConfigApiToken,
 }))
 
 // Mock debug utility.
-vi.mock('../../../../../src/utils/debug.mts', () => ({
-  isDebug: mockIsDebug => false),
+vi.mock('../../../../src/utils/debug.mts', () => ({
+  isDebug: mockIsDebug,
 }))
 
 // Mock SDK utility.
-vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
-  getVisibleTokenPrefix: mockGetVisibleTokenPrefix => 'test'),
+vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
+  getVisibleTokenPrefix: mockGetVisibleTokenPrefix,
 }))
 
 // Mock terminal link utility.
-vi.mock('../../../../../src/utils/terminal/link.mts', () => ({
+vi.mock('../../../../src/utils/terminal/link.mts', () => ({
   socketPackageLink: mockSocketPackageLink,
 }))
 
