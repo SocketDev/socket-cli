@@ -1,3 +1,31 @@
+/**
+ * Unit Tests: Organization Dependencies Output Formatter
+ *
+ * Purpose:
+ * Tests the output formatting system for organization-wide dependency data. Validates
+ * JSON and markdown/table output formats, pagination info display, error messaging,
+ * and proper exit code setting based on result status.
+ *
+ * Test Coverage:
+ * - JSON format output for successful results
+ * - JSON format error output with exit codes
+ * - Markdown/table format with chalk-table rendering
+ * - Pagination metadata display (offset, limit, has more data)
+ * - Error messaging in markdown format with badges
+ * - Empty dependency list handling
+ * - Default exit code setting when code is undefined
+ *
+ * Testing Approach:
+ * Uses vi.doMock to reset module state between tests, mocking logger, chalk-table,
+ * yoctocolors-cjs, and result serialization utilities. Tests verify output content
+ * and exit code behavior.
+ *
+ * Related Files:
+ * - src/commands/organization/output-dependencies.mts - Output formatter
+ * - src/commands/organization/handle-dependencies.mts - Command handler
+ * - src/commands/organization/fetch-dependencies.mts - Dependencies fetcher
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

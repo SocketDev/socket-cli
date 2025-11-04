@@ -1,3 +1,27 @@
+/**
+ * Unit Tests: User Organizations List Command Handler
+ *
+ * Purpose:
+ * Tests the command handler that orchestrates fetching and displaying the list of organizations
+ * accessible to the authenticated user. Validates output format selection and error propagation
+ * through the fetch/output pipeline.
+ *
+ * Test Coverage:
+ * - Successful organization list fetch and output
+ * - Multiple output format support (json, text, markdown)
+ * - Error handling and propagation
+ *
+ * Testing Approach:
+ * Mocks fetchOrganization and outputOrganizationList modules to test orchestration logic
+ * without actual API calls or terminal output. Uses test environment setup helpers for
+ * consistent isolation.
+ *
+ * Related Files:
+ * - src/commands/organization/handle-organization-list.mts - Command handler
+ * - src/commands/organization/fetch-organization-list.mts - Organization list fetcher
+ * - src/commands/organization/output-organization-list.mts - Output formatter (not in test files)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { setupTestEnvironment } from '../../../helpers/index.mts'

@@ -1,3 +1,30 @@
+/**
+ * Unit Tests: Organization License Policy Fetcher
+ *
+ * Purpose:
+ * Tests the Socket SDK integration that fetches license policy configuration for an organization.
+ * Validates policy retrieval, SDK setup handling, API error handling, custom configuration passing,
+ * and various organization slug formats for the getOrgLicensePolicy API endpoint.
+ *
+ * Test Coverage:
+ * - Successful license policy fetching with allowed/disallowed licenses
+ * - SDK setup failure handling
+ * - API call error handling with HTTP status codes
+ * - Custom SDK options passing (API token, base URL)
+ * - Empty license policy handling for new organizations
+ * - Various organization slug format validation
+ * - Null prototype usage for security
+ *
+ * Testing Approach:
+ * Uses SDK test helpers to mock setupSdk and handleApiCall without actual API calls.
+ * Tests verify proper organization slug passing and CResult pattern usage.
+ *
+ * Related Files:
+ * - src/commands/organization/fetch-license-policy.mts - License policy fetcher
+ * - src/commands/organization/handle-license-policy.mts - Command handler
+ * - src/commands/organization/output-license-policy.mts - Output formatter
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import {

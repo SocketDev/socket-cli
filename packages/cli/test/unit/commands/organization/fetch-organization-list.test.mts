@@ -1,3 +1,29 @@
+/**
+ * Unit Tests: User Organizations List Fetcher
+ *
+ * Purpose:
+ * Tests the Socket SDK integration that fetches the list of organizations accessible to the
+ * authenticated user. Validates organization data retrieval, SDK setup handling, API error
+ * handling, custom configuration passing, and SDK instance reuse for the listOrganizations
+ * API endpoint.
+ *
+ * Test Coverage:
+ * - Successful organization list fetching with multiple orgs
+ * - SDK setup failure handling
+ * - API call error handling with HTTP status codes
+ * - Custom SDK options passing (API token, base URL)
+ * - Provided SDK instance usage (bypassing SDK setup)
+ * - Null prototype usage for security
+ *
+ * Testing Approach:
+ * Uses SDK test helpers to mock setupSdk and handleApiCall without actual API calls.
+ * Tests verify proper CResult pattern usage and organization data structure validation.
+ *
+ * Related Files:
+ * - src/commands/organization/fetch-organization-list.mts - Organization list fetcher
+ * - src/commands/organization/handle-organization-list.mts - Command handler
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import {

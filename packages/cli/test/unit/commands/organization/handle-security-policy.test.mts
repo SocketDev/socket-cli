@@ -1,3 +1,27 @@
+/**
+ * Unit Tests: Organization Security Policy Command Handler
+ *
+ * Purpose:
+ * Tests the command handler that orchestrates fetching and displaying organization security
+ * policy configuration. Validates organization slug forwarding, output format selection,
+ * and error propagation through the fetch/output pipeline.
+ *
+ * Test Coverage:
+ * - Successful security policy fetch and output
+ * - Fetch error handling and propagation
+ * - Multiple output format support (json, text, markdown)
+ * - Organization slug parameter passing
+ *
+ * Testing Approach:
+ * Mocks fetchSecurityPolicy and outputSecurityPolicy modules to test orchestration logic
+ * without actual API calls or terminal output. Uses test helpers for CResult pattern validation.
+ *
+ * Related Files:
+ * - src/commands/organization/handle-security-policy.mts - Command handler
+ * - src/commands/organization/fetch-security-policy.mts - Security policy fetcher
+ * - src/commands/organization/output-security-policy.mts - Output formatter
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

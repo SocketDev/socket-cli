@@ -1,3 +1,30 @@
+/**
+ * Unit Tests: Organization License Policy Output Formatter
+ *
+ * Purpose:
+ * Tests the output formatting system for organization license policy data. Validates JSON
+ * and text/markdown output formats, error messaging, exit code setting, and license policy
+ * display including allowed/denied licenses.
+ *
+ * Test Coverage:
+ * - JSON format output for successful results
+ * - JSON format error output with exit codes
+ * - Text format with license policy information display
+ * - Text format error output with badges
+ * - Markdown format output
+ * - Empty license policy handling
+ * - Default exit code setting when code is undefined
+ *
+ * Testing Approach:
+ * Uses vi.doMock to reset module state between tests, mocking logger, result serialization,
+ * markdown utilities, and error formatting. Tests verify output content and exit code behavior.
+ *
+ * Related Files:
+ * - src/commands/organization/output-license-policy.mts - Output formatter
+ * - src/commands/organization/handle-license-policy.mts - Command handler
+ * - src/commands/organization/fetch-license-policy.mts - License policy fetcher
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

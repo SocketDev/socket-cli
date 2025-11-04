@@ -1,3 +1,31 @@
+/**
+ * Unit Tests: API Token Quota Fetcher
+ *
+ * Purpose:
+ * Tests the Socket SDK integration that fetches quota/usage information for the authenticated
+ * API token. Validates quota data retrieval including scans, packages, and repositories limits,
+ * SDK setup handling, API error handling, and custom configuration passing for the getQuota
+ * API endpoint.
+ *
+ * Test Coverage:
+ * - Successful quota fetching with usage and limit data
+ * - SDK setup failure handling
+ * - API call error handling with HTTP status codes
+ * - Custom SDK options passing (API token, base URL)
+ * - Quota at limit scenario (100% usage)
+ * - Various organization slug handling
+ * - Null prototype usage for security
+ *
+ * Testing Approach:
+ * Uses SDK test helpers to mock setupSdk and handleApiCall without actual API calls.
+ * Tests verify proper CResult pattern usage and quota data structure validation.
+ *
+ * Related Files:
+ * - src/commands/organization/fetch-quota.mts - Quota fetcher
+ * - src/commands/organization/handle-quota.mts - Command handler
+ * - src/commands/organization/output-quota.mts - Output formatter
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import {

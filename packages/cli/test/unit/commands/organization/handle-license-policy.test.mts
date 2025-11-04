@@ -1,3 +1,27 @@
+/**
+ * Unit Tests: Organization License Policy Command Handler
+ *
+ * Purpose:
+ * Tests the command handler that orchestrates fetching and displaying organization license
+ * policy configuration. Validates organization slug forwarding, output format selection,
+ * and error propagation through the fetch/output pipeline.
+ *
+ * Test Coverage:
+ * - Successful license policy fetch and output
+ * - Fetch error handling and propagation
+ * - Multiple output format support (json, text, markdown)
+ * - Organization slug parameter passing
+ *
+ * Testing Approach:
+ * Mocks fetchLicensePolicy and outputLicensePolicy modules to test orchestration logic
+ * without actual API calls or terminal output. Uses test helpers for CResult pattern validation.
+ *
+ * Related Files:
+ * - src/commands/organization/handle-license-policy.mts - Command handler
+ * - src/commands/organization/fetch-license-policy.mts - License policy fetcher
+ * - src/commands/organization/output-license-policy.mts - Output formatter
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

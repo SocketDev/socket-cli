@@ -1,3 +1,30 @@
+/**
+ * Unit Tests: Organization Security Policy Output Formatter
+ *
+ * Purpose:
+ * Tests the output formatting system for organization security policy data. Validates JSON
+ * and text/markdown output formats, error messaging, exit code setting, and security policy
+ * display including default actions and rule-specific actions.
+ *
+ * Test Coverage:
+ * - JSON format output for successful results
+ * - JSON format error output with exit codes
+ * - Text format with security policy rules display
+ * - Text format error output with badges
+ * - Markdown format output
+ * - Empty security policy handling
+ * - Default exit code setting when code is undefined
+ *
+ * Testing Approach:
+ * Uses vi.doMock to reset module state between tests, mocking logger, result serialization,
+ * markdown utilities, and error formatting. Tests verify output content and exit code behavior.
+ *
+ * Related Files:
+ * - src/commands/organization/output-security-policy.mts - Output formatter
+ * - src/commands/organization/handle-security-policy.mts - Command handler
+ * - src/commands/organization/fetch-security-policy.mts - Security policy fetcher
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
