@@ -1,3 +1,23 @@
+/**
+ * Unit tests for postinstallWrapper.
+ *
+ * Purpose:
+ * Tests postinstall wrapper functionality. Validates automatic Socket scanning after package installation.
+ *
+ * Test Coverage:
+ * - Core functionality validation
+ * - Edge case handling
+ * - Error scenarios
+ * - Input validation
+ *
+ * Testing Approach:
+ * Comprehensive unit testing of module functionality with mocked dependencies
+ * where appropriate.
+ *
+ * Related Files:
+ * - src/postinstallWrapper.mts (implementation)
+ */
+
 import fs, { existsSync } from 'node:fs'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

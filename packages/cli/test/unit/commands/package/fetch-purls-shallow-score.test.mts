@@ -1,3 +1,32 @@
+/**
+ * Unit tests for fetchPurlsShallowScore.
+ *
+ * Purpose:
+ * Tests the batch package fetching functionality for retrieving shallow security scores
+ * for multiple PURLs (Package URLs) via the Socket API. Validates SDK integration,
+ * error handling, and batch request handling.
+ *
+ * Test Coverage:
+ * - Successful batch package score retrieval
+ * - SDK setup failure handling
+ * - API call error scenarios (rate limits, large batches)
+ * - Custom SDK options (API tokens, base URLs)
+ * - Empty PURL array handling
+ * - Mixed ecosystem PURL types (npm, pypi, maven, gem)
+ * - Large batch processing (100+ packages)
+ * - Null prototype usage for security
+ *
+ * Testing Approach:
+ * Uses SDK test helpers to mock Socket API interactions. Tests various batch sizes
+ * and PURL formats to ensure robust multi-package score fetching.
+ *
+ * Related Files:
+ * - src/commands/package/fetch-purls-shallow-score.mts (implementation)
+ * - src/commands/package/handle-purls-shallow-score.mts (handler)
+ * - src/utils/socket/api.mts (API utilities)
+ * - src/utils/socket/sdk.mts (SDK setup)
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import {

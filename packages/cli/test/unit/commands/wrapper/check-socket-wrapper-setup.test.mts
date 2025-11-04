@@ -1,3 +1,23 @@
+/**
+ * Unit tests for checkSocketWrapperSetup.
+ *
+ * Purpose:
+ * Tests checking Socket wrapper installation status. Validates detection of installed wrappers across package managers.
+ *
+ * Test Coverage:
+ * - Core functionality validation
+ * - Edge case handling
+ * - Error scenarios
+ * - Input validation
+ *
+ * Testing Approach:
+ * Comprehensive unit testing of module functionality with mocked dependencies
+ * where appropriate.
+ *
+ * Related Files:
+ * - src/checkSocketWrapperSetup.mts (implementation)
+ */
+
 import fs from 'node:fs'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,3 +1,29 @@
+/**
+ * Unit tests for handlePurlsShallowScore.
+ *
+ * Purpose:
+ * Tests the handler function that orchestrates fetching and outputting shallow security
+ * scores for multiple package PURLs. Shallow scores analyze only the package itself,
+ * excluding dependencies. Validates the batch fetch-process-output pipeline.
+ *
+ * Test Coverage:
+ * - Successful batch fetch and output
+ * - Fetch failure handling
+ * - Multiple output formats (json, text, markdown)
+ * - Empty PURL array handling
+ * - Debug logging for successes and failures
+ * - Multiple package batch processing
+ *
+ * Testing Approach:
+ * Mocks fetch and output functions to isolate handler orchestration logic. Verifies
+ * proper data flow and debug logging throughout the handler pipeline.
+ *
+ * Related Files:
+ * - src/commands/package/handle-purls-shallow-score.mts (implementation)
+ * - src/commands/package/fetch-purls-shallow-score.mts (API fetcher)
+ * - src/commands/package/output-purls-shallow-score.mts (formatter)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handlePurlsShallowScore } from '../../../../src/commands/package/handle-purls-shallow-score.mts'

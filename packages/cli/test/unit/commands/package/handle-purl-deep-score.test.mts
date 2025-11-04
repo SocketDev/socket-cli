@@ -1,3 +1,28 @@
+/**
+ * Unit tests for handlePurlDeepScore.
+ *
+ * Purpose:
+ * Tests the handler function that orchestrates fetching and outputting deep security
+ * scores for a single package PURL. Deep scores include transitive dependency analysis.
+ * Validates the fetch-process-output pipeline and debug logging.
+ *
+ * Test Coverage:
+ * - Successful deep score fetch and output
+ * - Fetch failure handling
+ * - Multiple output formats (json, text, markdown)
+ * - Debug logging for successful and failed fetches
+ * - Different PURL formats (unscoped, scoped, version tags)
+ *
+ * Testing Approach:
+ * Mocks fetch and output functions to isolate handler logic. Verifies proper
+ * orchestration between fetching, logging, and formatting layers.
+ *
+ * Related Files:
+ * - src/commands/package/handle-purl-deep-score.mts (implementation)
+ * - src/commands/package/fetch-purl-deep-score.mts (API fetcher)
+ * - src/commands/package/output-purls-deep-score.mts (formatter)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handlePurlDeepScore } from '../../../../src/commands/package/handle-purl-deep-score.mts'

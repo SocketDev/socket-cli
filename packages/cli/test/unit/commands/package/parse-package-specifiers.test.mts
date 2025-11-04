@@ -1,3 +1,30 @@
+/**
+ * Unit tests for parsePackageSpecifiers.
+ *
+ * Purpose:
+ * Tests the parser that converts user-provided package specifiers into valid PURLs
+ * (Package URLs). Handles ecosystem prefixes, scoped packages, mixed formats, and
+ * validates input correctness.
+ *
+ * Test Coverage:
+ * - Simple npm package parsing (e.g., "npm babel")
+ * - PURL with pkg: prefix parsing
+ * - npm scoped packages (@babel/core)
+ * - PURL without pkg: prefix
+ * - Multiple PURL parsing
+ * - Mixed package names and PURLs
+ * - Invalid unscoped package without namespace error
+ * - Namespace-only input error
+ * - Empty namespace error
+ *
+ * Testing Approach:
+ * Tests various input formats and validates PURL construction and error detection.
+ * Uses snapshot testing for complex multi-package scenarios.
+ *
+ * Related Files:
+ * - src/commands/package/parse-package-specifiers.mts (implementation)
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import { parsePackageSpecifiers } from '../../../../src/commands/package/parse-package-specifiers.mts'

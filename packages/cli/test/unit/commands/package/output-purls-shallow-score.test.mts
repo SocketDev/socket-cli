@@ -1,3 +1,34 @@
+/**
+ * Unit tests for output-purls-shallow-score report generation.
+ *
+ * Purpose:
+ * Tests text and markdown report generation for shallow package security scores across
+ * multiple ecosystems. Shallow scores analyze only the package itself, excluding
+ * dependencies. Uses snapshot testing to ensure consistent formatting across npm, Go,
+ * Ruby, NuGet, Maven, and Python ecosystems.
+ *
+ * Test Coverage:
+ * - npm package text and markdown formatting
+ * - Go package text and markdown formatting
+ * - Ruby package text and markdown formatting
+ * - NuGet package text and markdown formatting
+ * - Maven package text and markdown formatting
+ * - Python package text and markdown formatting
+ * - Python package deduplication logic
+ * - Score color coding (red/yellow/green thresholds)
+ * - Alert severity grouping and display
+ * - Missing package handling
+ *
+ * Testing Approach:
+ * Uses fixture JSON files from real Socket API responses and snapshot testing to
+ * validate comprehensive report structure. Tests both text (ANSI colors) and
+ * markdown output formats.
+ *
+ * Related Files:
+ * - src/commands/package/output-purls-shallow-score.mts (implementation)
+ * - src/commands/package/fixtures/*.json (test fixtures)
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import goShallow from '../../../../src/commands/package/fixtures/go_shallow.json' with {

@@ -1,3 +1,23 @@
+/**
+ * Unit tests for removeSocketWrapper.
+ *
+ * Purpose:
+ * Tests removing Socket wrapper scripts from package managers. Validates clean wrapper uninstallation.
+ *
+ * Test Coverage:
+ * - Core functionality validation
+ * - Edge case handling
+ * - Error scenarios
+ * - Input validation
+ *
+ * Testing Approach:
+ * Comprehensive unit testing of module functionality with mocked dependencies
+ * where appropriate.
+ *
+ * Related Files:
+ * - src/removeSocketWrapper.mts (implementation)
+ */
+
 import { readFileSync, writeFileSync } from 'node:fs'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
