@@ -1,3 +1,21 @@
+/**
+ * Integration tests for `socket organization quota` command.
+ *
+ * Tests API quota viewing for organizations. Shows current usage and limits
+ * for API operations to help monitor consumption.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Quota usage display
+ * - Output format support (JSON, markdown)
+ *
+ * Related Files:
+ * - src/commands/organization/cmd-organization-quota.mts - Command definition
+ * - src/commands/organization/handle-organization-quota.mts - Logic
+ * - src/commands/organization/output-organization-quota.mts - Formatting
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

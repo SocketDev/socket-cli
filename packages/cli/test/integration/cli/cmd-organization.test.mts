@@ -1,3 +1,25 @@
+/**
+ * Integration tests for `socket organization` root command.
+ *
+ * Tests the organization management root command which provides access
+ * to organization-level operations and settings.
+ *
+ * Test Coverage:
+ * - Help text display and subcommand listing
+ * - Dry-run behavior validation
+ * - Subcommand routing
+ *
+ * Available Subcommands:
+ * - dependencies: View organization dependencies
+ * - list: List available organizations
+ * - policy: Manage security policies
+ * - quota: View API quota usage
+ *
+ * Related Files:
+ * - src/commands/organization/cmd-organization.mts - Root command definition
+ * - src/commands/organization/cmd-organization-*.mts - Subcommands
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

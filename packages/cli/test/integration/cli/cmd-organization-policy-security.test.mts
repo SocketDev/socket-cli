@@ -1,3 +1,20 @@
+/**
+ * Integration tests for `socket organization policy security` command.
+ *
+ * Tests security policy management for organizations. Controls security
+ * thresholds and issue detection rules.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Security policy viewing and modification
+ * - Threshold configuration
+ *
+ * Related Files:
+ * - src/commands/organization/cmd-organization-policy-security.mts - Command definition
+ * - src/commands/organization/handle-organization-policy-security.mts - Logic
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

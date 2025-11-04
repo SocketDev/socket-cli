@@ -1,3 +1,20 @@
+/**
+ * Integration tests for `socket organization policy license` command.
+ *
+ * Tests license policy management for organizations. Controls which
+ * licenses are allowed, warned, or blocked.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - License policy viewing and modification
+ * - Policy enforcement settings
+ *
+ * Related Files:
+ * - src/commands/organization/cmd-organization-policy-license.mts - Command definition
+ * - src/commands/organization/handle-organization-policy-license.mts - Logic
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

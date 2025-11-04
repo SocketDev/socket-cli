@@ -1,3 +1,21 @@
+/**
+ * Integration tests for `socket organization dependencies` command.
+ *
+ * Tests viewing all dependencies across an organization's repositories.
+ * Provides a consolidated view of package usage for security auditing.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Organization dependency listing
+ * - Output format support (JSON, markdown)
+ *
+ * Related Files:
+ * - src/commands/organization/cmd-organization-dependencies.mts - Command definition
+ * - src/commands/organization/handle-organization-dependencies.mts - Logic
+ * - src/commands/organization/output-organization-dependencies.mts - Formatting
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

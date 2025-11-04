@@ -1,3 +1,21 @@
+/**
+ * Integration tests for `socket organization list` command.
+ *
+ * Tests listing all organizations accessible with the current API token.
+ * Used for discovering available organizations for scanning and management.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Organization listing
+ * - Output format support (JSON, markdown)
+ *
+ * Related Files:
+ * - src/commands/organization/cmd-organization-list.mts - Command definition
+ * - src/commands/organization/handle-organization-list.mts - Logic
+ * - src/commands/organization/output-organization-list.mts - Formatting
+ */
+
 import { describe, expect } from 'vitest'
 
 import {
