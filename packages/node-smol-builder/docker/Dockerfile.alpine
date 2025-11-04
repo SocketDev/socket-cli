@@ -1,6 +1,8 @@
 FROM alpine:3.19
 
 # Install build dependencies.
+# Note: curl and patch can be auto-installed by the build script,
+# but pre-installing them improves build performance.
 RUN apk add --no-cache \
     nodejs \
     npm \
