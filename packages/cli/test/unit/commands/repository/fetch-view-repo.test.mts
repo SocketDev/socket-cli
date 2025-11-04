@@ -1,3 +1,27 @@
+/**
+ * Unit tests for fetchViewRepo.
+ *
+ * Purpose:
+ * Tests fetching repository details via the Socket API. Validates SDK integration
+ * and error handling for viewing repository information.
+ *
+ * Test Coverage:
+ * - Successful repository view
+ * - SDK setup failure handling
+ * - API call errors (404 not found, 403 forbidden)
+ * - Custom SDK options
+ *
+ * Testing Approach:
+ * Uses SDK test helpers to mock Socket API interactions. Tests read-only repository
+ * data retrieval.
+ *
+ * Related Files:
+ * - src/commands/repository/fetch-view-repo.mts (implementation)
+ * - src/commands/repository/handle-view-repo.mts (handler)
+ * - src/utils/socket/api.mts (API utilities)
+ * - src/utils/socket/sdk.mts (SDK setup)
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import {

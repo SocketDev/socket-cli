@@ -1,3 +1,25 @@
+/**
+ * Unit tests for handleCreateRepo.
+ *
+ * Purpose:
+ * Tests the handler that orchestrates repository creation. Validates fetch-process-output
+ * pipeline, input validation, and error handling for repository creation workflows.
+ *
+ * Test Coverage:
+ * - Successful repository creation flow
+ * - Fetch failure handling
+ * - Input validation
+ * - Output formatting delegation
+ *
+ * Testing Approach:
+ * Mocks fetch and output functions to isolate handler orchestration logic.
+ *
+ * Related Files:
+ * - src/commands/repository/handle-create-repo.mts (implementation)
+ * - src/commands/repository/fetch-create-repo.mts (API fetcher)
+ * - src/commands/repository/output-create-repo.mts (formatter)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleCreateRepo } from '../../../../src/commands/repository/handle-create-repo.mts'

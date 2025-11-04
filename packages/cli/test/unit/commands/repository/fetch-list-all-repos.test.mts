@@ -1,3 +1,31 @@
+/**
+ * Unit tests for fetchListAllRepos.
+ *
+ * Purpose:
+ * Tests fetching all repositories for an organization with automatic pagination.
+ * Validates multi-page fetching, infinite loop protection, and sorting options.
+ *
+ * Test Coverage:
+ * - Successful single-page repository listing
+ * - SDK setup failure handling
+ * - API call errors (403 access denied)
+ * - Multiple page pagination handling
+ * - Sort and direction options
+ * - Infinite loop protection (> 100 pages)
+ * - Custom SDK options
+ * - Null prototype usage for security
+ *
+ * Testing Approach:
+ * Uses SDK test helpers with pagination mocking. Tests infinite loop protection
+ * that triggers after 100 page requests.
+ *
+ * Related Files:
+ * - src/commands/repository/fetch-list-all-repos.mts (implementation)
+ * - src/commands/repository/handle-list-repos.mts (handler)
+ * - src/utils/socket/api.mts (API utilities)
+ * - src/utils/socket/sdk.mts (SDK setup)
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import {

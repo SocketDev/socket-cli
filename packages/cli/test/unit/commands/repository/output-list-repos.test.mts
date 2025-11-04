@@ -1,3 +1,26 @@
+/**
+ * Unit tests for output-list-repos.
+ *
+ * Purpose:
+ * Tests output formatting for repository lists. Validates table formatting, pagination
+ * indicators, and empty state handling across output formats.
+ *
+ * Test Coverage:
+ * - Repository list table formatting
+ * - Pagination information display
+ * - Empty list handling
+ * - Multiple output formats (text, json, markdown)
+ * - Repository metadata columns
+ *
+ * Testing Approach:
+ * Uses result helpers to create test data. Validates formatted output strings for
+ * lists with varying sizes.
+ *
+ * Related Files:
+ * - src/commands/repository/output-list-repos.mts (implementation)
+ * - src/commands/repository/handle-list-repos.mts (handler)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

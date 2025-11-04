@@ -1,3 +1,25 @@
+/**
+ * Unit tests for handleUpdateRepo.
+ *
+ * Purpose:
+ * Tests the handler that orchestrates repository updates. Validates fetch-process-output
+ * pipeline, partial update handling, and output formatting.
+ *
+ * Test Coverage:
+ * - Successful repository update flow
+ * - Fetch failure handling
+ * - Partial update handling
+ * - Output formatting delegation
+ *
+ * Testing Approach:
+ * Mocks fetch and output functions to isolate handler orchestration logic.
+ *
+ * Related Files:
+ * - src/commands/repository/handle-update-repo.mts (implementation)
+ * - src/commands/repository/fetch-update-repo.mts (API fetcher)
+ * - src/commands/repository/output-update-repo.mts (formatter)
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import { createSuccessResult } from '../../../helpers/mocks.mts'

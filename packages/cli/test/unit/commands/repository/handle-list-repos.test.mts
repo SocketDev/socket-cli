@@ -1,3 +1,27 @@
+/**
+ * Unit tests for handleListRepos.
+ *
+ * Purpose:
+ * Tests the handler that orchestrates repository listing. Validates pagination handling,
+ * filtering, and output formatting for repository lists.
+ *
+ * Test Coverage:
+ * - Successful repository listing flow
+ * - Pagination configuration
+ * - Fetch failure handling
+ * - Output formatting delegation
+ * - Filtering and sorting options
+ *
+ * Testing Approach:
+ * Mocks fetch and output functions to isolate handler orchestration logic. Tests
+ * paginated data handling.
+ *
+ * Related Files:
+ * - src/commands/repository/handle-list-repos.mts (implementation)
+ * - src/commands/repository/fetch-list-repos.mts (API fetcher)
+ * - src/commands/repository/output-list-repos.mts (formatter)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleListRepos } from '../../../../src/commands/repository/handle-list-repos.mts'

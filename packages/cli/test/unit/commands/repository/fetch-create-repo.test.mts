@@ -1,3 +1,31 @@
+/**
+ * Unit tests for fetchCreateRepo.
+ *
+ * Purpose:
+ * Tests repository creation via the Socket API. Validates SDK integration, parameter
+ * transformation (camelCase to snake_case), and error handling for repository creation
+ * workflows.
+ *
+ * Test Coverage:
+ * - Successful repository creation
+ * - SDK setup failure handling
+ * - API call errors (409 conflict for existing repos)
+ * - Custom SDK options (API tokens, base URLs)
+ * - Minimal repository data handling
+ * - Full repository configuration
+ * - Null prototype usage for security
+ *
+ * Testing Approach:
+ * Uses SDK test helpers to mock Socket API interactions. Validates parameter
+ * transformation and comprehensive error handling.
+ *
+ * Related Files:
+ * - src/commands/repository/fetch-create-repo.mts (implementation)
+ * - src/commands/repository/handle-create-repo.mts (handler)
+ * - src/utils/socket/api.mts (API utilities)
+ * - src/utils/socket/sdk.mts (SDK setup)
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import {

@@ -1,3 +1,25 @@
+/**
+ * Unit tests for output-create-repo.
+ *
+ * Purpose:
+ * Tests output formatting for repository creation results. Validates text, JSON, and
+ * markdown formatting for successful and failed repository creation.
+ *
+ * Test Coverage:
+ * - Successful creation output formatting
+ * - Error message formatting
+ * - Multiple output formats (text, json, markdown)
+ * - Repository metadata display
+ *
+ * Testing Approach:
+ * Uses result helpers to create test data. Validates formatted output strings across
+ * different output modes.
+ *
+ * Related Files:
+ * - src/commands/repository/output-create-repo.mts (implementation)
+ * - src/commands/repository/handle-create-repo.mts (handler)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CResult } from '../../../../src/commands/repository/types.mts'

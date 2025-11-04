@@ -1,3 +1,25 @@
+/**
+ * Unit tests for output-view-repo.
+ *
+ * Purpose:
+ * Tests output formatting for detailed repository views. Validates comprehensive
+ * metadata display across output formats.
+ *
+ * Test Coverage:
+ * - Detailed repository information formatting
+ * - Error message formatting
+ * - Multiple output formats (text, json, markdown)
+ * - Metadata field display
+ *
+ * Testing Approach:
+ * Uses result helpers to create test data. Validates formatted output strings for
+ * detailed repository views.
+ *
+ * Related Files:
+ * - src/commands/repository/output-view-repo.mts (implementation)
+ * - src/commands/repository/handle-view-repo.mts (handler)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

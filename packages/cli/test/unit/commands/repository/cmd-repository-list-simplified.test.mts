@@ -1,4 +1,22 @@
-/** @fileoverview Tests for repository list command */
+/**
+ * Unit tests for cmd-repository-list-simplified.
+ *
+ * Purpose:
+ * Tests the repository list command structure and basic functionality. Validates
+ * that the command exports the required interface and can be loaded in isolated mode.
+ *
+ * Test Coverage:
+ * - Command default export existence
+ * - Required command structure (run, description)
+ * - Command function type validation
+ *
+ * Testing Approach:
+ * Uses dynamic imports with SDK mocking to avoid dynamic require errors in isolated
+ * mode. Validates command interface contract.
+ *
+ * Related Files:
+ * - src/commands/repository/cmd-repository-list-simplified.mts (implementation)
+ */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

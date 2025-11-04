@@ -1,3 +1,26 @@
+/**
+ * Unit tests for handleDeleteRepo.
+ *
+ * Purpose:
+ * Tests the handler that orchestrates repository deletion. Validates fetch-process-output
+ * pipeline and confirmation workflows for destructive operations.
+ *
+ * Test Coverage:
+ * - Successful repository deletion flow
+ * - Fetch failure handling
+ * - Output formatting delegation
+ * - Deletion confirmation handling
+ *
+ * Testing Approach:
+ * Mocks fetch and output functions to isolate handler orchestration logic. Tests
+ * destructive operation handling.
+ *
+ * Related Files:
+ * - src/commands/repository/handle-delete-repo.mts (implementation)
+ * - src/commands/repository/fetch-delete-repo.mts (API fetcher)
+ * - src/commands/repository/output-delete-repo.mts (formatter)
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import { createSuccessResult } from '../../../../test/helpers/index.mts'
