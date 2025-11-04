@@ -1,3 +1,25 @@
+/**
+ * Integration tests for `socket config list` command.
+ *
+ * Tests listing all local CLI configuration items and their current values.
+ * This command provides an overview of all config settings in one view.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - --full flag support (shows full tokens in plaintext)
+ * - Output format support (JSON, markdown, text)
+ *
+ * Security Note:
+ * By default, sensitive values like API tokens are redacted in the output.
+ * Use --full flag to show plaintext values (unsafe in shared environments).
+ *
+ * Related Files:
+ * - src/commands/config/cmd-config-list.mts - Command definition
+ * - src/commands/config/handle-config-list.mts - Config listing logic
+ * - src/commands/config/output-config-list.mts - Output formatting
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

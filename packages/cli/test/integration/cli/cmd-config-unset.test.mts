@@ -1,3 +1,29 @@
+/**
+ * Integration tests for `socket config unset` command.
+ *
+ * Tests clearing local CLI configuration values to restore default behavior.
+ * This command removes a value from the config store, allowing defaults to be used.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Key argument validation
+ * - Dry-run behavior validation
+ * - Error handling (missing arguments)
+ *
+ * Use Cases:
+ * - Restoring default values after testing custom settings
+ * - Removing custom API endpoints or proxies
+ * - Clearing organization settings
+ *
+ * Note: This is the recommended way to restore defaults. Setting a value
+ * to "undefined" using `config set` will NOT achieve the same result.
+ *
+ * Related Files:
+ * - src/commands/config/cmd-config-unset.mts - Command definition
+ * - src/commands/config/handle-config-unset.mts - Config clearing logic
+ * - src/utils/config.mts - Config management utilities
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

@@ -1,3 +1,26 @@
+/**
+ * Integration tests for `socket config auto` command.
+ *
+ * Tests the auto-discovery and automatic configuration of CLI settings.
+ * This command attempts to intelligently determine and set config values
+ * based on the user's environment and API token.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Key argument requirement
+ * - Available config keys listing
+ *
+ * Auto-Discoverable Keys:
+ * - defaultOrg: Automatically detects the organization from API token
+ * - Other keys may be added in future releases
+ *
+ * Related Files:
+ * - src/commands/config/cmd-config-auto.mts - Command definition
+ * - src/commands/config/handle-config-auto.mts - Auto-discovery logic
+ * - src/utils/config.mts - Config management utilities
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

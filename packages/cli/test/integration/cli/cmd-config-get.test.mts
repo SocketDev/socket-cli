@@ -1,3 +1,42 @@
+/**
+ * Integration tests for `socket config get` command.
+ *
+ * Tests retrieving configuration values from the CLI config store, including
+ * comprehensive validation of environment variable and config override precedence.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Key argument validation
+ * - Config value retrieval
+ * - Environment variable precedence (SOCKET_CLI_API_TOKEN, SOCKET_SECURITY_API_KEY, etc.)
+ * - Config override precedence (--config flag)
+ * - Read-only mode notification when overrides are active
+ * - Backward compatibility with legacy env var names
+ * - Platform-specific behavior (Windows Node 24+ skips)
+ *
+ * Configuration Precedence (highest to lowest):
+ * 1. Environment variables (SOCKET_CLI_API_TOKEN, SOCKET_CLI_API_KEY)
+ * 2. Legacy environment variables (SOCKET_SECURITY_API_KEY)
+ * 3. Command-line flag (--config)
+ * 4. Local config file
+ *
+ * Available Config Keys:
+ * - apiBaseUrl: Socket API base URL
+ * - apiProxy: Proxy for API requests
+ * - apiToken: Authentication token
+ * - defaultOrg: Default organization slug
+ * - enforcedOrgs: Organizations with enforced policies
+ * - skipAskToPersistDefaultOrg: Skip org persistence prompt
+ *
+ * Platform-Specific Behavior:
+ * - Windows Node 24+ has known stderr assertion failures (skipped in tests)
+ *
+ * Related Files:
+ * - src/commands/config/cmd-config-get.mts - Command definition
+ * - src/commands/config/handle-config-get.mts - Config retrieval logic
+ * - src/utils/config.mts - Config management utilities
+ */
+
 import semver from 'semver'
 import { describe, expect } from 'vitest'
 
