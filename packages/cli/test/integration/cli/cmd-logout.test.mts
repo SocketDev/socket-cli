@@ -1,3 +1,31 @@
+/**
+ * Integration tests for `socket logout` command.
+ *
+ * Tests the Socket API logout flow. This command clears all stored credentials
+ * from the local configuration, requiring re-authentication for future API operations.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Credential clearing from local config
+ * - Exit codes for successful logout
+ *
+ * Logout Behavior:
+ * - Removes API token from local config
+ * - Clears default organization setting
+ * - Does not revoke token on server (token remains valid)
+ * - Preserves other config settings (API URL, proxy, etc.)
+ *
+ * Security Note:
+ * This command only clears local credentials. To revoke an API token
+ * completely, use the Socket dashboard to delete the token.
+ *
+ * Related Files:
+ * - src/commands/logout/cmd-logout.mts - Command definition
+ * - src/commands/logout/handle-logout.mts - Logout logic
+ * - src/utils/config.mts - Config management utilities
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

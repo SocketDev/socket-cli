@@ -1,3 +1,19 @@
+/**
+ * Integration tests for `socket uninstall completion` command.
+ *
+ * Tests removing bash tab completion for Socket CLI.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Completion script removal
+ * - Shell configuration cleanup
+ *
+ * Related Files:
+ * - src/commands/uninstall/cmd-uninstall-completion.mts - Command definition
+ * - src/commands/uninstall/handle-uninstall-completion.mts - Removal logic
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

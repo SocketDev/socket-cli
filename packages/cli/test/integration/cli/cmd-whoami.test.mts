@@ -1,4 +1,21 @@
 /**
+ * Integration tests for `socket whoami` command.
+ *
+ * Tests checking Socket CLI authentication status.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Authentication status display
+ * - User information retrieval
+ * - Token validation
+ *
+ * Related Files:
+ * - src/commands/whoami/cmd-whoami.mts - Command definition
+ * - src/commands/whoami/handle-whoami.mts - Auth status logic
+ */
+
+/**
  * @fileoverview Tests for whoami command.
  * Validates authentication status display with various token sources.
  */

@@ -1,3 +1,29 @@
+/**
+ * Integration tests for `socket analytics` command.
+ *
+ * Tests the analytics command for querying organization and repository-level
+ * analytics data over specified time periods (7, 30, or 90 days).
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Scope selection (org vs repo)
+ * - Time filter validation (7, 30, 90 days)
+ * - Repository name requirement when scope is "repo"
+ * - Legacy flag detection and rejection (--scope, --repo, --time)
+ * - Argument parsing (positional vs flag-based)
+ * - Error handling (missing token, invalid time values, missing repo names)
+ * - Exit codes for various scenarios
+ *
+ * Platform-Specific Behavior:
+ * - Windows Node 24+ has known stderr assertion failures (skipped in tests)
+ *
+ * Related Files:
+ * - src/commands/analytics/cmd-analytics.mts - Command definition
+ * - src/commands/analytics/handle-analytics.mts - Analytics handler
+ * - src/commands/analytics/output-analytics.mts - Output formatting
+ */
+
 import semver from 'semver'
 import { describe, expect } from 'vitest'
 

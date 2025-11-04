@@ -1,3 +1,32 @@
+/**
+ * Integration tests for `socket json` command.
+ *
+ * Tests the socket.json discovery and display command. This command shows the
+ * effective socket.json configuration that would be applied for a given directory,
+ * taking into account inheritance from parent directories.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - File discovery in target directory
+ * - Error handling when socket.json not found
+ * - Error handling for non-existent paths
+ * - File content display (raw JSON output)
+ * - Exit codes (0 for found, 1 for not found)
+ *
+ * Socket.json Configuration:
+ * The socket.json file controls Socket CLI behavior including:
+ * - Issue rules and severity thresholds
+ * - Ignored packages and vulnerabilities
+ * - Project-specific security policies
+ * - Workspace configurations for monorepos
+ *
+ * Related Files:
+ * - src/commands/json/cmd-json.mts - Command definition
+ * - src/commands/json/handle-json.mts - Socket.json discovery logic
+ * - test/fixtures/commands/json/ - Test fixtures with socket.json files
+ * - docs/socket-json-schema.md - socket.json schema documentation
+ */
+
 import path from 'node:path'
 
 import { describe, expect } from 'vitest'

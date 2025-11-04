@@ -1,3 +1,24 @@
+/**
+ * Integration tests for `socket threat-feed` command.
+ *
+ * Tests the beta threat feed feature for viewing recent security threats.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Threat feed retrieval
+ * - Filtering options
+ * - Output format support (JSON, markdown)
+ *
+ * Beta Feature:
+ * This command is in beta and subject to changes.
+ *
+ * Related Files:
+ * - src/commands/threat-feed/cmd-threat-feed.mts - Command definition
+ * - src/commands/threat-feed/handle-threat-feed.mts - Feed retrieval logic
+ * - src/commands/threat-feed/output-threat-feed.mts - Formatting
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

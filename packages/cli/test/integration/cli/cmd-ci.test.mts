@@ -1,3 +1,27 @@
+/**
+ * Integration tests for `socket ci` command.
+ *
+ * Tests the CI command which is an alias for `socket scan create --report`.
+ * This command creates a security scan and exits with a non-zero code if
+ * the scan detects policy violations, making it ideal for automated CI/CD pipelines.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Auto-manifest flag support
+ * - Exit codes (success vs policy violations)
+ *
+ * CI/CD Integration:
+ * This command is specifically designed for automated builds where security
+ * policy enforcement is required. It uses the default organization from the
+ * API token and fails the build when issues are detected.
+ *
+ * Related Files:
+ * - src/commands/ci/cmd-ci.mts - Command definition
+ * - src/commands/ci/handle-ci.mts - CI handler (delegates to scan create)
+ * - src/commands/scan/cmd-scan-create.mts - Underlying scan create command
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

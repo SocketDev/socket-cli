@@ -1,3 +1,33 @@
+/**
+ * Integration tests for `socket login` command.
+ *
+ * Tests the Socket API authentication flow. This command prompts for an API token
+ * and stores it in the local configuration for subsequent CLI operations.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - API base URL customization (--api-base-url)
+ * - API proxy configuration (--api-proxy)
+ * - Exit codes for successful/failed authentication
+ *
+ * Authentication Flow:
+ * 1. Prompts user for Socket API token
+ * 2. Validates token with Socket API
+ * 3. Auto-discovers default organization
+ * 4. Stores credentials in local config
+ *
+ * Custom API Configuration:
+ * - --api-base-url: Connect to alternative Socket API endpoints
+ * - --api-proxy: Route API requests through proxy server
+ *
+ * Related Files:
+ * - src/commands/login/cmd-login.mts - Command definition
+ * - src/commands/login/handle-login.mts - Authentication logic
+ * - src/utils/config.mts - Config storage utilities
+ * - src/utils/api.mts - Socket API client
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

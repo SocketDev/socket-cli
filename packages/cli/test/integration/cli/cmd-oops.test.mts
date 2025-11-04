@@ -1,3 +1,19 @@
+/**
+ * Integration tests for `socket oops` command.
+ *
+ * Tests the "oops" command which likely handles error recovery or
+ * undo operations. This is a utility command for fixing mistakes.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Error recovery scenarios
+ *
+ * Related Files:
+ * - src/commands/oops/cmd-oops.mts - Command definition
+ * - src/commands/oops/handle-oops.mts - Error recovery logic
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

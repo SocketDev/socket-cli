@@ -1,3 +1,24 @@
+/**
+ * Integration tests for `socket install completion` command.
+ *
+ * Tests the bash tab completion installation for Socket CLI commands.
+ * This subcommand sets up shell completion to improve CLI usability.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Completion script installation
+ * - Shell configuration file updates
+ *
+ * Supported Shells:
+ * - Bash (via .bashrc or .bash_profile)
+ * - Other shells may be supported in future releases
+ *
+ * Related Files:
+ * - src/commands/install/cmd-install-completion.mts - Command definition
+ * - src/commands/install/handle-install-completion.mts - Installation logic
+ */
+
 import { describe, expect } from 'vitest'
 
 import {
