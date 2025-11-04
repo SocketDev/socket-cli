@@ -38,7 +38,7 @@ jobs:
       test-setup-script: 'pnpm --filter @socketsecurity/cli run build'
       lint-script: 'pnpm --filter @socketsecurity/cli run check'
       type-check-script: 'pnpm --filter @socketsecurity/cli run type'
-      test-script: 'echo "Tests run in sharded job below"'
+      run-test: false  # Tests run in separate sharded job below.
       node-versions: ${{ inputs.node-versions || '["24.10.0"]' }}
       os-versions: '["ubuntu-latest"]'
       fail-fast: false
