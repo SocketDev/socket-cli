@@ -1,3 +1,24 @@
+/**
+ * Unit tests for handleCreateGithubScan.
+ *
+ * Purpose:
+ * Tests the handler that orchestrates GitHub repository scanning. Validates GitHub integration, repository selection, and scan initialization.
+ *
+ * Test Coverage:
+ * - Successful operation flow
+ * - Fetch failure handling
+ * - Input validation
+ * - Output formatting delegation
+ * - Error propagation
+ *
+ * Testing Approach:
+ * Mocks fetch and output functions to isolate handler orchestration logic.
+ * Validates proper data flow through the handler pipeline.
+ *
+ * Related Files:
+ * - src/commands/handleCreateGithubScan.mts (implementation)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

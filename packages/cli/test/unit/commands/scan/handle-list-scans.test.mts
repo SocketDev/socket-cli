@@ -1,3 +1,24 @@
+/**
+ * Unit tests for handleListScans.
+ *
+ * Purpose:
+ * Tests the handler that orchestrates scan listing. Validates pagination, filtering, and list output.
+ *
+ * Test Coverage:
+ * - Successful operation flow
+ * - Fetch failure handling
+ * - Input validation
+ * - Output formatting delegation
+ * - Error propagation
+ *
+ * Testing Approach:
+ * Mocks fetch and output functions to isolate handler orchestration logic.
+ * Validates proper data flow through the handler pipeline.
+ *
+ * Related Files:
+ * - src/commands/handleListScans.mts (implementation)
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import {

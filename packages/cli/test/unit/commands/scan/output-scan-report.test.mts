@@ -1,3 +1,24 @@
+/**
+ * Unit tests for outputScanReport.
+ *
+ * Purpose:
+ * Tests output formatting for comprehensive scan reports. Validates alert display, score formatting, and recommendation presentation.
+ *
+ * Test Coverage:
+ * - Successful operation output formatting
+ * - Error message formatting
+ * - Multiple output formats (text, json, markdown)
+ * - Data presentation and formatting
+ * - Edge case handling
+ *
+ * Testing Approach:
+ * Uses result helpers and fixtures to create test data. Validates formatted
+ * output strings across different output modes.
+ *
+ * Related Files:
+ * - src/commands/outputScanReport.mts (implementation)
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import { SOCKET_WEBSITE_URL } from '../../../../src/constants/socket.mts'

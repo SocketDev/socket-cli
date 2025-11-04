@@ -1,3 +1,24 @@
+/**
+ * Unit tests for fetchDeleteOrgFullScan.
+ *
+ * Purpose:
+ * Tests deleting organization-wide full scans via the Socket API. Validates scan deletion and cleanup operations.
+ *
+ * Test Coverage:
+ * - Successful API operation
+ * - SDK setup failure handling
+ * - API call error scenarios
+ * - Custom SDK options (API tokens, base URLs)
+ * - Null prototype usage for security
+ *
+ * Testing Approach:
+ * Uses SDK test helpers to mock Socket API interactions. Validates comprehensive
+ * error handling and API integration.
+ *
+ * Related Files:
+ * - src/commands/DeleteOrgFullScan.mts (implementation)
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import {

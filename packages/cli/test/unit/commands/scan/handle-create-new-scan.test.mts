@@ -1,3 +1,24 @@
+/**
+ * Unit tests for handleCreateNewScan.
+ *
+ * Purpose:
+ * Tests the handler that orchestrates creating new security scans. Validates manifest file detection, configuration, and scan submission.
+ *
+ * Test Coverage:
+ * - Successful operation flow
+ * - Fetch failure handling
+ * - Input validation
+ * - Output formatting delegation
+ * - Error propagation
+ *
+ * Testing Approach:
+ * Mocks fetch and output functions to isolate handler orchestration logic.
+ * Validates proper data flow through the handler pipeline.
+ *
+ * Related Files:
+ * - src/commands/handleCreateNewScan.mts (implementation)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

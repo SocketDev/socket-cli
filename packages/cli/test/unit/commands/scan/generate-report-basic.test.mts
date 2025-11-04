@@ -1,3 +1,23 @@
+/**
+ * Unit tests for generateReportBasic.
+ *
+ * Purpose:
+ * Tests basic scan report generation. Validates core report structure and formatting without advanced features.
+ *
+ * Test Coverage:
+ * - Core functionality validation
+ * - Edge case handling
+ * - Error scenarios
+ * - Input validation
+ *
+ * Testing Approach:
+ * Comprehensive unit testing of module functionality with mocked dependencies
+ * where appropriate.
+ *
+ * Related Files:
+ * - src/generateReportBasic.mts (implementation)
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import { generateReport } from '../../../../src/commands/scan/generate-report.mts'

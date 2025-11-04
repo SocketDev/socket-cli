@@ -1,3 +1,26 @@
+/**
+ * Unit tests for fetchSupportedScanFileNames.
+ *
+ * Purpose:
+ * Tests fetching supported manifest file names for scanning. Validates which files Socket can analyze.
+ *
+ * Test Coverage:
+ * - Successful API operation
+ * - SDK setup failure handling
+ * - API call error scenarios
+ * - Custom SDK options (API tokens, base URLs)
+ * - Supported file types
+ * - Ecosystem detection
+ * - Null prototype usage for security
+ *
+ * Testing Approach:
+ * Uses SDK test helpers to mock Socket API interactions. Validates comprehensive
+ * error handling and API integration.
+ *
+ * Related Files:
+ * - src/commands/SupportedScanFileNames.mts (implementation)
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import {

@@ -1,3 +1,27 @@
+/**
+ * Unit tests for fetchScanMetadata.
+ *
+ * Purpose:
+ * Tests fetching scan metadata via the Socket API. Retrieves high-level scan information without full report details.
+ *
+ * Test Coverage:
+ * - Successful API operation
+ * - SDK setup failure handling
+ * - API call error scenarios
+ * - Custom SDK options (API tokens, base URLs)
+ * - Metadata retrieval
+ * - Scan status
+ * - Summary information
+ * - Null prototype usage for security
+ *
+ * Testing Approach:
+ * Uses SDK test helpers to mock Socket API interactions. Validates comprehensive
+ * error handling and API integration.
+ *
+ * Related Files:
+ * - src/commands/ScanMetadata.mts (implementation)
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import { setupSdkMockSuccess } from '../../../../../test/helpers/sdk-test-helpers.mts'

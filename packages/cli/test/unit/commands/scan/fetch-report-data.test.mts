@@ -1,3 +1,27 @@
+/**
+ * Unit tests for fetchReportData.
+ *
+ * Purpose:
+ * Tests fetching detailed scan report data via the Socket API. Retrieves comprehensive scan results including alerts and scores.
+ *
+ * Test Coverage:
+ * - Successful API operation
+ * - SDK setup failure handling
+ * - API call error scenarios
+ * - Custom SDK options (API tokens, base URLs)
+ * - Detailed report retrieval
+ * - Alert data
+ * - Score information
+ * - Null prototype usage for security
+ *
+ * Testing Approach:
+ * Uses SDK test helpers to mock Socket API interactions. Validates comprehensive
+ * error handling and API integration.
+ *
+ * Related Files:
+ * - src/commands/ReportData.mts (implementation)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createErrorResult } from '../../../../test/helpers/index.mts'

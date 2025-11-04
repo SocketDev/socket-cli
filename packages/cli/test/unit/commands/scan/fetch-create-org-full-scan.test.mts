@@ -1,3 +1,27 @@
+/**
+ * Unit tests for fetchCreateOrgFullScan.
+ *
+ * Purpose:
+ * Tests creating organization-wide full security scans via the Socket API. Validates scan configuration, project selection, and scan initialization.
+ *
+ * Test Coverage:
+ * - Successful API operation
+ * - SDK setup failure handling
+ * - API call error scenarios
+ * - Custom SDK options (API tokens, base URLs)
+ * - Scan configuration options
+ * - Project selection
+ * - Full scan parameters
+ * - Null prototype usage for security
+ *
+ * Testing Approach:
+ * Uses SDK test helpers to mock Socket API interactions. Validates comprehensive
+ * error handling and API integration.
+ *
+ * Related Files:
+ * - src/commands/CreateOrgFullScan.mts (implementation)
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import {

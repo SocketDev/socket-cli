@@ -1,3 +1,27 @@
+/**
+ * Unit tests for fetchListScans.
+ *
+ * Purpose:
+ * Tests listing security scans via the Socket API. Validates scan history retrieval and filtering.
+ *
+ * Test Coverage:
+ * - Successful API operation
+ * - SDK setup failure handling
+ * - API call error scenarios
+ * - Custom SDK options (API tokens, base URLs)
+ * - Scan filtering
+ * - Pagination
+ * - Sort options
+ * - Null prototype usage for security
+ *
+ * Testing Approach:
+ * Uses SDK test helpers to mock Socket API interactions. Validates comprehensive
+ * error handling and API integration.
+ *
+ * Related Files:
+ * - src/commands/ListScans.mts (implementation)
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import { setupSdkMockSuccess } from '../../../../../test/helpers/sdk-test-helpers.mts'
