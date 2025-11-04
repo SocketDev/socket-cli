@@ -1,3 +1,23 @@
+/**
+ * Unit tests for path resolution utilities.
+ *
+ * Purpose:
+ * Tests path resolution and normalization. Validates absolute path construction and relative path handling.
+ *
+ * Test Coverage:
+ * - Absolute path resolution
+ * - Relative path handling
+ * - Path normalization
+ * - Symlink resolution
+ * - Cross-platform path separators
+ *
+ * Testing Approach:
+ * Tests path utilities with various input formats.
+ *
+ * Related Files:
+ * - utils/fs/path-resolve.mts (implementation)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'

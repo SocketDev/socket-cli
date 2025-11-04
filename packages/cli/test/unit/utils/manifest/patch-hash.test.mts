@@ -1,3 +1,23 @@
+/**
+ * Unit tests for manifest patch hashing.
+ *
+ * Purpose:
+ * Tests patch hash generation and validation. Validates patch integrity checking via hashes.
+ *
+ * Test Coverage:
+ * - Hash generation
+ * - Hash validation
+ * - Checksum algorithms
+ * - Collision detection
+ * - Hash mismatch error handling
+ *
+ * Testing Approach:
+ * Tests cryptographic hash utilities for patch integrity.
+ *
+ * Related Files:
+ * - utils/manifest/patch-hash.mts (implementation)
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import {

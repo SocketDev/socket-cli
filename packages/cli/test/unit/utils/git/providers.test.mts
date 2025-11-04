@@ -1,3 +1,24 @@
+/**
+ * Unit tests for git provider detection.
+ *
+ * Purpose:
+ * Tests git provider detection (GitHub, GitLab, Bitbucket). Validates provider identification from remote URLs.
+ *
+ * Test Coverage:
+ * - GitHub detection
+ * - GitLab detection
+ * - Bitbucket detection
+ * - Remote URL parsing
+ * - SSH vs HTTPS URLs
+ * - Provider-specific features
+ *
+ * Testing Approach:
+ * Tests git provider identification and URL parsing logic.
+ *
+ * Related Files:
+ * - utils/git/providers.mts (implementation)
+ */
+
 import os from 'node:os'
 import path from 'node:path'
 

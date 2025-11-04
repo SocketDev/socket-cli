@@ -1,3 +1,23 @@
+/**
+ * Unit tests for manifest patching.
+ *
+ * Purpose:
+ * Tests manifest patching operations. Validates applying Socket registry overrides to package manifests.
+ *
+ * Test Coverage:
+ * - Patch application
+ * - Dependency rewriting
+ * - Version pinning
+ * - Patch validation
+ * - Conflict detection
+ *
+ * Testing Approach:
+ * Tests manifest patching logic with fixture manifests.
+ *
+ * Related Files:
+ * - utils/manifest/patches.mts (implementation)
+ */
+
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

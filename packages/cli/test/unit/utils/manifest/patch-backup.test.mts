@@ -1,3 +1,23 @@
+/**
+ * Unit tests for manifest patch backup.
+ *
+ * Purpose:
+ * Tests manifest patch backup functionality. Validates backup creation before applying patches.
+ *
+ * Test Coverage:
+ * - Backup file creation
+ * - Backup restoration
+ * - Backup validation
+ * - Backup cleanup
+ * - Rollback on error
+ *
+ * Testing Approach:
+ * Tests backup utilities for safe manifest patching.
+ *
+ * Related Files:
+ * - utils/manifest/patch-backup.mts (implementation)
+ */
+
 /* eslint-disable no-await-in-loop -- Sequential test operations required */
 
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'

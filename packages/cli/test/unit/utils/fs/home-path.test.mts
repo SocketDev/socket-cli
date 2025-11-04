@@ -1,3 +1,23 @@
+/**
+ * Unit tests for home directory path utilities.
+ *
+ * Purpose:
+ * Tests home directory path resolution. Validates user home directory detection across platforms.
+ *
+ * Test Coverage:
+ * - Home directory resolution
+ * - Environment variable handling (HOME, USERPROFILE)
+ * - Tilde expansion (~)
+ * - Cross-platform compatibility
+ * - Fallback handling
+ *
+ * Testing Approach:
+ * Tests home path utilities with environment mocking.
+ *
+ * Related Files:
+ * - utils/fs/home-path.mts (implementation)
+ */
+
 import path from 'node:path'
 
 import { describe, expect, it, vi } from 'vitest'

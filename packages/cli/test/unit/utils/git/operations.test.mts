@@ -1,3 +1,24 @@
+/**
+ * Unit tests for git operations.
+ *
+ * Purpose:
+ * Tests git operations (clone, status, diff, etc.). Validates git command execution and output parsing.
+ *
+ * Test Coverage:
+ * - Git clone
+ * - Git status parsing
+ * - Git diff
+ * - Git log
+ * - Branch detection
+ * - Commit information
+ *
+ * Testing Approach:
+ * Uses mocked git subprocess calls to test git integrations.
+ *
+ * Related Files:
+ * - utils/git/operations.mts (implementation)
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
