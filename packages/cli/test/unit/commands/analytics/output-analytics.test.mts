@@ -1,3 +1,30 @@
+/**
+ * Unit tests for analytics output formatting functions.
+ *
+ * Tests the data transformation and output formatting for analytics data.
+ * These tests use fixture data and snapshot testing for markdown rendering.
+ *
+ * Test Coverage:
+ * - Repository data formatting (formatDataRepo)
+ * - Organization data formatting (formatDataOrg)
+ * - Markdown rendering (renderMarkdown)
+ * - Alert type aggregation (dynamicRequire, envVars, filesystemAccess, etc.)
+ * - Time series data formatting (critical, high, medium, low alerts)
+ * - Alert counts by severity level
+ * - Top 5 alert types ranking
+ *
+ * Testing Approach:
+ * - Load analytics-fixture.json for realistic test data
+ * - Use inline snapshots to verify formatting output
+ * - Test both org-level and repo-level data transformations
+ * - Verify markdown table generation with proper headers and formatting
+ *
+ * Related Files:
+ * - src/commands/analytics/output-analytics.mts - Implementation
+ * - src/commands/analytics/analytics-fixture.json - Test fixture data
+ * - src/commands/analytics/handle-analytics.mts - Handler that uses output functions
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import FIXTURE from '../../../../src/commands/analytics/analytics-fixture.json' with {

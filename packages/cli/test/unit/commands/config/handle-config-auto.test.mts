@@ -1,3 +1,29 @@
+/**
+ * Unit tests for config auto-discovery handler.
+ *
+ * Tests the handler that automatically discovers configuration values from various sources
+ * (environment variables, config files, prompts, etc.).
+ *
+ * Test Coverage:
+ * - Successful config value discovery
+ * - Discovery failure handling
+ * - Multiple config keys (apiToken, orgSlug, etc.)
+ * - Different output kinds (json, text)
+ * - Output function integration
+ *
+ * Testing Approach:
+ * - Mock discoverConfigValue from discover-config-value.mts
+ * - Mock outputConfigAuto for output verification
+ * - Mock logger for error/success messages
+ * - Use createSuccessResult/createErrorResult helpers
+ * - Test CResult pattern flow
+ *
+ * Related Files:
+ * - src/commands/config/handle-config-auto.mts - Implementation
+ * - src/commands/config/discover-config-value.mts - Discovery logic
+ * - src/commands/config/output-config-auto.mts - Output formatter
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import {

@@ -1,3 +1,29 @@
+/**
+ * Unit tests for getDefaultOrgSlug function.
+ *
+ * Tests the organization slug resolution logic used in CI environments.
+ * This function checks multiple sources in priority order.
+ *
+ * Test Coverage:
+ * - Config file defaultOrg value (highest priority)
+ * - SOCKET_CLI_ORG_SLUG environment variable
+ * - Fallback to fetching first organization from API
+ * - Error handling when no organizations exist
+ * - API call failures during organization fetch
+ *
+ * Testing Approach:
+ * - Mock getConfigValueOrUndef from utils/config.mts
+ * - Mock fetchOrganization from organization/fetch-organization-list.mts
+ * - Mock env.SOCKET_CLI_ORG_SLUG environment variable
+ * - Test priority order and fallback chain
+ * - Verify CResult pattern (ok/error states)
+ *
+ * Related Files:
+ * - src/commands/ci/fetch-default-org-slug.mts - Implementation
+ * - src/commands/ci/handle-ci.mts - CI command handler that uses this
+ * - src/utils/config.mts - Config file utilities
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getDefaultOrgSlug } from '../../../../src/commands/ci/fetch-default-org-slug.mts'

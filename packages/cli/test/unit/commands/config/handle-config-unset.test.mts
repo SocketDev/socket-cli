@@ -1,3 +1,29 @@
+/**
+ * Unit tests for config unset handler.
+ *
+ * Tests the handler that removes configuration values from the config file.
+ * This command deletes configuration keys.
+ *
+ * Test Coverage:
+ * - Successful config value removal
+ * - Unset failure handling
+ * - Different config keys (apiToken, orgSlug, defaultOrg, etc.)
+ * - Non-existent key handling
+ * - Output function integration
+ *
+ * Testing Approach:
+ * - Mock unsetConfigValue from utils/config.mts
+ * - Mock outputConfigUnset for output verification
+ * - Mock logger for error/success messages
+ * - Use createSuccessResult/createErrorResult helpers
+ * - Test CResult pattern flow
+ *
+ * Related Files:
+ * - src/commands/config/handle-config-unset.mts - Implementation
+ * - src/utils/config.mts - Config file utilities
+ * - src/commands/config/output-config-unset.mts - Output formatter
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

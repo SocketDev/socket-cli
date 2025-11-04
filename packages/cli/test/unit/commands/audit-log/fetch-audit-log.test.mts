@@ -1,3 +1,32 @@
+/**
+ * Unit tests for fetchAuditLog function.
+ *
+ * Tests the data fetching logic for organization audit logs. These tests verify
+ * SDK integration, pagination handling, and various filtering options.
+ *
+ * Test Coverage:
+ * - Successful audit log fetch with events and total count
+ * - SDK setup failure with error propagation
+ * - API call failure handling
+ * - Custom SDK options pass-through
+ * - Different log types (all, security, access, etc.)
+ * - Pagination parameters (page, perPage)
+ * - Output kind handling (json, markdown, text)
+ * - Organization slug parameter passing
+ *
+ * Testing Approach:
+ * - Mock Socket SDK using setupSdkMockSuccess/Error/SetupFailure helpers
+ * - Mock handleApiCall from utils/socket/api.mts
+ * - Mock setupSdk from utils/socket/sdk.mts
+ * - Verify SDK method calls with correct query parameters
+ * - Test CResult pattern (ok/error states)
+ *
+ * Related Files:
+ * - src/commands/audit-log/fetch-audit-log.mts - Implementation
+ * - src/commands/audit-log/handle-audit-log.mts - Handler that calls this fetcher
+ * - test/helpers/sdk-test-helpers.mts - SDK mocking utilities
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import {

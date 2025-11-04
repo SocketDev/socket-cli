@@ -1,3 +1,31 @@
+/**
+ * Unit tests for fetchRepoAnalyticsData function.
+ *
+ * Tests the data fetching logic for repository analytics. These tests verify
+ * SDK integration for repository-specific metrics and error handling.
+ *
+ * Test Coverage:
+ * - Successful repository analytics fetch (commits, contributors, issues, PRs, stars)
+ * - SDK setup failure with error propagation
+ * - API call failure with 404 handling for non-existent repositories
+ * - Custom SDK options pass-through (apiToken, baseUrl)
+ * - Different repository name formats (org/repo, user/project)
+ * - Multiple time range parameters (1, 7, 14, 30, 60, 90, 365 days)
+ * - Prototype pollution protection verification
+ *
+ * Testing Approach:
+ * - Mock Socket SDK using setupSdkMockSuccess/Error/SetupFailure helpers
+ * - Mock handleApiCall from utils/socket/api.mts
+ * - Mock setupSdk from utils/socket/sdk.mts
+ * - Verify SDK method calls with correct repository and time parameters
+ * - Test CResult pattern (ok/error states)
+ *
+ * Related Files:
+ * - src/commands/analytics/fetch-repo-analytics.mts - Implementation
+ * - src/commands/analytics/handle-analytics.mts - Handler that calls this fetcher
+ * - test/helpers/sdk-test-helpers.mts - SDK mocking utilities
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import {

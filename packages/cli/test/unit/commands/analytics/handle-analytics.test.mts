@@ -1,3 +1,34 @@
+/**
+ * Unit tests for analytics command handler.
+ *
+ * Tests the main handler logic that orchestrates analytics data fetching and output.
+ * Validates routing between organization and repository analytics based on scope.
+ *
+ * Test Coverage:
+ * - Organization analytics fetch when scope is 'org'
+ * - Repository analytics fetch when repo is provided and scope is 'repo'
+ * - Missing repository name error when scope is 'repo' but repo is empty
+ * - Empty analytics data handling for organization
+ * - Empty analytics data handling for repository
+ * - Fetch error pass-through to output layer
+ * - Multiple output kinds (json, markdown, text)
+ * - Different time ranges (7, 30 days)
+ * - Filepath handling (with and without path)
+ *
+ * Testing Approach:
+ * - Mock fetchOrgAnalyticsData and fetchRepoAnalyticsData
+ * - Mock outputAnalytics to verify output layer calls
+ * - Use createSuccessResult/createErrorResult helpers for CResult pattern
+ * - Verify correct function selection based on scope parameter
+ * - Test validation logic before API calls
+ *
+ * Related Files:
+ * - src/commands/analytics/handle-analytics.mts - Implementation
+ * - src/commands/analytics/fetch-org-analytics.mts - Org data fetcher
+ * - src/commands/analytics/fetch-repo-analytics.mts - Repo data fetcher
+ * - src/commands/analytics/output-analytics.mts - Output formatter
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

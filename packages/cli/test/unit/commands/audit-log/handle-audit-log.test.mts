@@ -1,3 +1,31 @@
+/**
+ * Unit tests for audit log command handler.
+ *
+ * Tests the main handler logic that orchestrates audit log fetching and output.
+ * Validates integration between fetch and output layers with various configurations.
+ *
+ * Test Coverage:
+ * - Successful audit log fetch and output
+ * - Pagination handling (different page numbers and perPage values)
+ * - Different log types (security, access, all)
+ * - Multiple output kinds (json, text, markdown)
+ * - Fetch error pass-through to output layer
+ * - Empty audit log handling
+ * - Organization slug parameter passing
+ *
+ * Testing Approach:
+ * - Mock fetchAuditLog to control API responses
+ * - Mock outputAuditLog to verify output layer calls
+ * - Mock logger (getDefaultLogger) for error handling verification
+ * - Use createSuccessResult/createErrorResult helpers for CResult pattern
+ * - Verify correct parameter passing between layers
+ *
+ * Related Files:
+ * - src/commands/audit-log/handle-audit-log.mts - Implementation
+ * - src/commands/audit-log/fetch-audit-log.mts - Fetcher
+ * - src/commands/audit-log/output-audit-log.mts - Output formatter
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

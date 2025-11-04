@@ -1,3 +1,31 @@
+/**
+ * Unit tests for audit log output formatting functions.
+ *
+ * Tests the data transformation and output formatting for audit logs.
+ * These tests use fixture data and snapshot testing for both JSON and markdown output.
+ *
+ * Test Coverage:
+ * - JSON output formatting with complete audit log data
+ * - Markdown output with table rendering
+ * - Error handling with empty/invalid data (returns empty object or error report)
+ * - Audit log metadata (org, type filter, page, perPage, next page)
+ * - Event fields (event_id, created_at, type, user_email, ip_address, user_agent)
+ * - Pagination information in output
+ * - Generated timestamp redaction in snapshots
+ *
+ * Testing Approach:
+ * - Load audit-fixture.json for realistic test data
+ * - Use inline snapshots to verify formatting output
+ * - Test both successful results and error cases
+ * - Verify markdown table structure with proper headers and separators
+ * - Test JSON stringification of audit log structures
+ *
+ * Related Files:
+ * - src/commands/audit-log/output-audit-log.mts - Implementation
+ * - src/commands/audit-log/audit-fixture.json - Test fixture data
+ * - src/commands/audit-log/handle-audit-log.mts - Handler that uses output functions
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import { createSuccessResult } from '../../../helpers/mocks.mts'

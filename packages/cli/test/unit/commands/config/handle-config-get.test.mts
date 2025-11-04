@@ -1,3 +1,29 @@
+/**
+ * Unit tests for config get handler.
+ *
+ * Tests the handler that retrieves configuration values from the config file.
+ * This command reads existing config without auto-discovery.
+ *
+ * Test Coverage:
+ * - Successful config value retrieval
+ * - Missing config value handling
+ * - Different config keys (apiToken, orgSlug, etc.)
+ * - Multiple output kinds (json, text, markdown)
+ * - Output function integration
+ *
+ * Testing Approach:
+ * - Mock getConfigValue from utils/config.mts
+ * - Mock outputConfigGet for output verification
+ * - Mock logger for error/success messages
+ * - Use createSuccessResult/createErrorResult helpers
+ * - Test CResult pattern flow
+ *
+ * Related Files:
+ * - src/commands/config/handle-config-get.mts - Implementation
+ * - src/utils/config.mts - Config file utilities
+ * - src/commands/config/output-config-get.mts - Output formatter
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

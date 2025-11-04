@@ -1,3 +1,30 @@
+/**
+ * Unit tests for fetchOrgAnalyticsData function.
+ *
+ * Tests the data fetching logic for organization analytics. These tests verify
+ * SDK integration, API call handling, and error scenarios.
+ *
+ * Test Coverage:
+ * - Successful analytics data fetch with complete vulnerability breakdown
+ * - SDK setup failure with error propagation
+ * - API call failure with status code handling
+ * - Custom SDK options pass-through (apiToken, baseUrl)
+ * - Different time period parameters (7, 14, 30, 60, 90 days)
+ * - Prototype pollution protection verification
+ *
+ * Testing Approach:
+ * - Mock Socket SDK using setupSdkMockSuccess/Error/SetupFailure helpers
+ * - Mock handleApiCall from utils/socket/api.mts
+ * - Mock setupSdk from utils/socket/sdk.mts
+ * - Verify SDK method calls with correct parameters
+ * - Test CResult pattern (ok/error states)
+ *
+ * Related Files:
+ * - src/commands/analytics/fetch-org-analytics.mts - Implementation
+ * - src/commands/analytics/handle-analytics.mts - Handler that calls this fetcher
+ * - test/helpers/sdk-test-helpers.mts - SDK mocking utilities
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 
 import {
