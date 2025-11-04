@@ -7,52 +7,34 @@ import {
 
 import type { CResult } from '../../../../src/commands/repository/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
-import { outputViewRepo } from '../../../../src/commands/repository/output-view-repo.mts'
-
-// Mock the dependencies.
-const mockLogger = vi.hoisted(() => ({
-  fail: vi.fn(),
-  log: vi.fn(),
-  info: vi.fn(),
-  success: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-}))
-
-vi.mock('@socketsecurity/lib/logger', () => ({
-  getDefaultLogger: () => mockLogger,
-  logger: mockLogger,
-}))
-
-vi.mock('../../../../src/utils/output/result-json.mts', () => ({
-  serializeResultJson: vi.fn(result => JSON.stringify(result)),
-}))
-
-vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
-  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
-}))
-
-vi.mock('chalk-table', () => ({
-  default: vi.fn((_options, data) => `Table with ${data.length} row(s)`),
-}))
-
-vi.mock('yoctocolors-cjs', () => ({
-  default: {
-    magenta: vi.fn(text => text),
-  },
-}))
 
 describe('outputViewRepo', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
+  beforeEach(async () => {
+    vi.resetModules()
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { serializeResultJson } = await vi.importMock(
-      '../../../../src/utils/output/result-json.mts',
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('../../../../src/utils/output/result-json.mts', () => ({
+      serializeResultJson: mockSerializeResultJson,
+    }))
+
+    const { outputViewRepo } = await import(
+      '../../../../src/commands/repository/output-view-repo.mts'
     )
-    const mockSerialize = vi.mocked(serializeResultJson)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createSuccessResult({
@@ -67,12 +49,34 @@ describe('outputViewRepo', () => {
 
     await outputViewRepo(result, 'json')
 
-    expect(mockSerialize).toHaveBeenCalledWith(result)
+    expect(mockSerializeResultJson).toHaveBeenCalledWith(result)
     expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
     expect(process.exitCode).toBeUndefined()
   })
 
   it('outputs error in JSON format', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('../../../../src/utils/output/result-json.mts', () => ({
+      serializeResultJson: mockSerializeResultJson,
+    }))
+
+    const { outputViewRepo } = await import(
+      '../../../../src/commands/repository/output-view-repo.mts'
+    )
+
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createErrorResult('Unauthorized', {
         cause: 'Invalid API token',
@@ -86,6 +90,34 @@ describe('outputViewRepo', () => {
   })
 
   it('outputs repository table in text format', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockChalkTable = vi.fn((_options, data) => `Table with ${data.length} row(s)`)
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('chalk-table', () => ({
+      default: mockChalkTable,
+    }))
+
+    vi.doMock('yoctocolors-cjs', () => ({
+      default: {
+        magenta: vi.fn(text => text),
+      },
+    }))
+
+    const { outputViewRepo } = await import(
+      '../../../../src/commands/repository/output-view-repo.mts'
+    )
+
     const repoData = {
       archived: true,
       created_at: '2023-05-15T10:30:00Z',
@@ -119,10 +151,27 @@ describe('outputViewRepo', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { failMsgWithBadge } = await vi.importMock(
-      '../../../../src/utils/error/fail-msg-with-badge.mts',
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockFailMsgWithBadge = vi.fn((msg, cause) => `${msg}: ${cause}`)
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+      failMsgWithBadge: mockFailMsgWithBadge,
+    }))
+
+    const { outputViewRepo } = await import(
+      '../../../../src/commands/repository/output-view-repo.mts'
     )
-    const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createErrorResult('Repository not found', {
@@ -132,7 +181,7 @@ describe('outputViewRepo', () => {
 
     await outputViewRepo(result, 'text')
 
-    expect(mockFailMsg).toHaveBeenCalledWith(
+    expect(mockFailMsgWithBadge).toHaveBeenCalledWith(
       'Repository not found',
       'Not found error',
     )
@@ -141,6 +190,34 @@ describe('outputViewRepo', () => {
   })
 
   it('handles repository with null homepage', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockChalkTable = vi.fn((_options, data) => `Table with ${data.length} row(s)`)
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('chalk-table', () => ({
+      default: mockChalkTable,
+    }))
+
+    vi.doMock('yoctocolors-cjs', () => ({
+      default: {
+        magenta: vi.fn(text => text),
+      },
+    }))
+
+    const { outputViewRepo } = await import(
+      '../../../../src/commands/repository/output-view-repo.mts'
+    )
+
     const repoData = {
       archived: false,
       created_at: '2024-02-20T14:45:30Z',
@@ -160,6 +237,34 @@ describe('outputViewRepo', () => {
   })
 
   it('handles repository with empty name', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockChalkTable = vi.fn((_options, data) => `Table with ${data.length} row(s)`)
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('chalk-table', () => ({
+      default: mockChalkTable,
+    }))
+
+    vi.doMock('yoctocolors-cjs', () => ({
+      default: {
+        magenta: vi.fn(text => text),
+      },
+    }))
+
+    const { outputViewRepo } = await import(
+      '../../../../src/commands/repository/output-view-repo.mts'
+    )
+
     const repoData = {
       archived: false,
       created_at: '2024-01-01T00:00:00Z',
@@ -179,6 +284,34 @@ describe('outputViewRepo', () => {
   })
 
   it('handles very long repository data', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockChalkTable = vi.fn((_options, data) => `Table with ${data.length} row(s)`)
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('chalk-table', () => ({
+      default: mockChalkTable,
+    }))
+
+    vi.doMock('yoctocolors-cjs', () => ({
+      default: {
+        magenta: vi.fn(text => text),
+      },
+    }))
+
+    const { outputViewRepo } = await import(
+      '../../../../src/commands/repository/output-view-repo.mts'
+    )
+
     const repoData = {
       archived: false,
       created_at: '2024-12-01T09:15:22Z',
@@ -200,6 +333,28 @@ describe('outputViewRepo', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('../../../../src/utils/output/result-json.mts', () => ({
+      serializeResultJson: mockSerializeResultJson,
+    }))
+
+    const { outputViewRepo } = await import(
+      '../../../../src/commands/repository/output-view-repo.mts'
+    )
+
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createErrorResult('Error without code')
 
