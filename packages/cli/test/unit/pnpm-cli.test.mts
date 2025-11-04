@@ -1,3 +1,29 @@
+/**
+ * Unit tests for pnpm CLI wrapper.
+ *
+ * Tests the pnpm binary wrapper that provides Socket security scanning
+ * integration when users run pnpm commands directly.
+ *
+ * Test Coverage:
+ * - Initial exit code set to 1 (pessimistic exit)
+ * - shadowPnpmBin called with correct arguments and options
+ * - Process exit handling with numeric exit codes
+ * - Process signal handling (SIGKILL, etc.)
+ * - Empty arguments array handling
+ * - Environment variable preservation in spawn options (PNPM_HOME)
+ * - Spawn promise completion and awaiting
+ *
+ * Testing Approach:
+ * - Mock shadow/pnpm/bin module with vi.hoisted
+ * - Mock process.exit and process.kill methods
+ * - Create mock child process and spawn results
+ * - Test with various argv configurations (add, test, dev, run lint, list)
+ *
+ * Related Files:
+ * - src/pnpm-cli.mts - pnpm CLI wrapper implementation
+ * - src/shadow/pnpm/bin.mts - Shadow pnpm binary implementation
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock shadow/pnpm/bin module.

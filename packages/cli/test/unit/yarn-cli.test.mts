@@ -1,3 +1,31 @@
+/**
+ * Unit tests for yarn CLI wrapper.
+ *
+ * Tests the yarn binary wrapper that provides Socket security scanning
+ * integration when users run yarn commands directly.
+ *
+ * Test Coverage:
+ * - Initial exit code set to 1 (pessimistic exit)
+ * - shadowYarnBin called with correct arguments and options
+ * - Process exit handling with numeric exit codes
+ * - Process signal handling (SIGTERM, etc.)
+ * - Empty arguments array handling
+ * - Environment variable preservation in spawn options (YARN_CACHE_FOLDER)
+ * - Spawn promise completion and awaiting
+ * - Child process event handling (exit event with code/signal)
+ *
+ * Testing Approach:
+ * - Mock shadow/yarn/bin module with vi.hoisted
+ * - Mock process.exit and process.kill methods
+ * - Create mock child process with event emitter
+ * - Test with various argv configurations (add, build, start, workspace list)
+ * - Handle both immediate and deferred exit event callbacks
+ *
+ * Related Files:
+ * - src/yarn-cli.mts - yarn CLI wrapper implementation
+ * - src/shadow/yarn/bin.mts - Shadow yarn binary implementation
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock shadow/yarn/bin module.

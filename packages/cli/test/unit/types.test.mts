@@ -1,3 +1,28 @@
+/**
+ * Unit tests for TypeScript type definitions.
+ *
+ * Tests the type system used throughout the Socket CLI, focusing on the CResult
+ * pattern for error handling and the configuration object types.
+ *
+ * Test Coverage:
+ * - CResult type: ValidResult and InvalidResult structures
+ * - CResult union type: Type narrowing with ok property
+ * - SocketCliConfigObject: Minimal and full configuration objects
+ * - SocketCliConfigObject output formats: Text, JSON, markdown, and combined formats
+ * - SocketconfigAny: String or object config representations
+ * - Type guards: isValidResult implementation
+ * - Type utilities: unwrapResult for extracting values
+ *
+ * Testing Approach:
+ * - Type-level testing using TypeScript inference
+ * - Runtime validation of type behavior
+ * - Test type guards and utility functions
+ * - Validate config object structure variations
+ *
+ * Related Files:
+ * - src/types.mts - Core type definitions
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import type {

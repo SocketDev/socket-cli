@@ -1,3 +1,29 @@
+/**
+ * Unit tests for npx CLI wrapper.
+ *
+ * Tests the npx binary wrapper that provides Socket security scanning
+ * integration when users run npx commands directly.
+ *
+ * Test Coverage:
+ * - Initial exit code set to 1 (pessimistic exit)
+ * - shadowNpxBin called with correct arguments and options
+ * - Process exit handling with numeric exit codes
+ * - Process signal handling (SIGINT, etc.)
+ * - Empty arguments array handling
+ * - stdio inherit for process communication
+ * - Spawn promise completion and awaiting
+ *
+ * Testing Approach:
+ * - Mock shadow/npx/bin module with vi.hoisted
+ * - Mock process.exit and process.kill methods
+ * - Create mock child process and spawn results
+ * - Test with various argv configurations (create-react-app, eslint, webpack-dev-server, etc.)
+ *
+ * Related Files:
+ * - src/npx-cli.mts - npx CLI wrapper implementation
+ * - src/shadow/npx/bin.mts - Shadow npx binary implementation
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock shadow/npx/bin module.

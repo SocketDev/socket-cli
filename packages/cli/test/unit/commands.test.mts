@@ -1,3 +1,28 @@
+/**
+ * Unit tests for root command registry.
+ *
+ * Tests the command and alias registration system that powers the Socket CLI's
+ * primary command interface. Validates command structure, aliases, and metadata.
+ *
+ * Test Coverage:
+ * - rootCommands export validation (all expected commands present)
+ * - Command object structure (run/handler methods, descriptions)
+ * - rootAliases export validation (common aliases like audit, deps, org, pkg)
+ * - Alias structure validation (description, argv properties)
+ * - Alias target validation (point to valid commands/subcommands)
+ * - Package manager commands (npm, npx, pnpm, yarn)
+ * - Special commands (wrapper, raw-npm, raw-npx, organization, repository, scan, optimize)
+ *
+ * Testing Approach:
+ * - Direct imports and property validation
+ * - Structure validation for all commands and aliases
+ * - Target validation ensuring aliases point to valid commands
+ *
+ * Related Files:
+ * - src/commands.mts - Root command registry implementation
+ * - src/cmd-*.mts - Individual command definitions
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import { rootAliases, rootCommands } from '../../src/commands.mts'

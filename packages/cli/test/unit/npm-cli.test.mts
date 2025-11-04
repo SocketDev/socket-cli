@@ -1,3 +1,29 @@
+/**
+ * Unit tests for npm CLI wrapper.
+ *
+ * Tests the npm binary wrapper that provides Socket security scanning
+ * integration when users run npm commands directly.
+ *
+ * Test Coverage:
+ * - Initial exit code set to 1 (pessimistic exit)
+ * - shadowNpmBin called with correct arguments and options
+ * - Process exit handling with numeric exit codes
+ * - Process signal handling (SIGTERM, etc.)
+ * - Empty arguments array handling
+ * - Environment variable preservation in spawn options
+ * - Spawn promise completion and awaiting
+ *
+ * Testing Approach:
+ * - Mock shadow/npm/bin module with vi.hoisted
+ * - Mock process.exit and process.kill methods
+ * - Create mock child process and spawn results
+ * - Test with various argv configurations
+ *
+ * Related Files:
+ * - src/npm-cli.mts - npm CLI wrapper implementation
+ * - src/shadow/npm/bin.mts - Shadow npm binary implementation
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock shadow/npm/bin module.

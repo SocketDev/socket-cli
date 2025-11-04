@@ -1,3 +1,31 @@
+/**
+ * Unit tests for CLI constants module.
+ *
+ * Tests the central constants module that provides paths, URLs, flags, and
+ * environment configuration throughout the Socket CLI application.
+ *
+ * Test Coverage:
+ * - Core properties (rootPath, distPath, homePath, WIN32 platform flag)
+ * - Path properties validation (correct directory structure)
+ * - URL defaults (API_V0_URL, NPM_REGISTRY_URL, SOCKET_PUBLIC_API_TOKEN)
+ * - Environment variable overrides (via ENV object)
+ * - Command constants (NPM, NPX, PNPM, YARN, NODE_MODULES, PACKAGE_JSON)
+ * - Flag constants (FLAG_QUIET, FLAG_SILENT, FLAG_VERSION, FLAG_HELP, FLAG_JSON, etc.)
+ * - Encoding constants (UTF8)
+ * - Socket-specific constants (SOCKET_CLI_ISSUES_URL, SOCKET_DEFAULT_BRANCH)
+ * - Socket file constants (SOCKET_JSON, SOCKET_YAML, SOCKET_YML)
+ * - Shadow directories configuration (shadowBinPath)
+ *
+ * Testing Approach:
+ * - Mock environment variables using vi.stubEnv before module import
+ * - Dynamic imports to test module loading with different env states
+ * - Property existence and type validation
+ *
+ * Related Files:
+ * - src/constants.mts - Main constants module
+ * - src/constants/env.mts - Environment variable configuration
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import ENV from '../../src/constants/env.mts'

@@ -1,3 +1,27 @@
+/**
+ * Unit tests for CLI flag definitions and memory management.
+ *
+ * Tests the flag system including common flags, output flags, validation flags,
+ * and dynamic memory configuration based on system resources.
+ *
+ * Test Coverage:
+ * - getMaxOldSpaceSizeFlag: Default based on system memory (75% of RAM), NODE_OPTIONS override, CLI flag override, low memory systems
+ * - getMaxSemiSpaceSizeFlag: Calculation based on old space size, NODE_OPTIONS override, CLI flag override, scaling for small/large heaps
+ * - commonFlags: Banner, compactHeader, config, dryRun, help, helpFull, maxOldSpaceSize, maxSemiSpaceSize, spinner flags
+ * - outputFlags: JSON and markdown output format flags
+ * - validationFlags: All and strict validation mode flags
+ * - Flag structure validation (type, description, shortFlag properties)
+ *
+ * Testing Approach:
+ * - Mock meow, node:os, and constants modules
+ * - Test flag calculations with various memory configurations
+ * - Validate flag metadata and structure
+ * - Test NODE_OPTIONS and CLI argument parsing
+ *
+ * Related Files:
+ * - src/flags.mts - Flag definitions and memory management
+ */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
