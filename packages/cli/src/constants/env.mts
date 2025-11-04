@@ -5,8 +5,6 @@
 
 import process, { env } from 'node:process'
 
-import { envAsBoolean } from '@socketsecurity/lib/env'
-
 // Import CLI-specific env modules.
 import { CI } from '../env/ci.mts'
 import { DISABLE_GITHUB_CACHE } from '../env/disable-github-cache.mts'
@@ -14,6 +12,7 @@ import { GITHUB_API_URL } from '../env/github-api-url.mts'
 import { GITHUB_BASE_REF } from '../env/github-base-ref.mts'
 import { GITHUB_REF_NAME } from '../env/github-ref-name.mts'
 import { GITHUB_REF_TYPE } from '../env/github-ref-type.mts'
+import { GITHUB_REPOSITORY } from '../env/github-repository.mts'
 import { GITHUB_SERVER_URL } from '../env/github-server-url.mts'
 import { HOME } from '../env/home.mts'
 import { LOCALAPPDATA } from '../env/localappdata.mts'
@@ -46,6 +45,7 @@ import { SOCKET_CLI_NO_API_TOKEN } from '../env/socket-cli-no-api-token.mts'
 import { SOCKET_CLI_NODE_DOWNLOAD_URL } from '../env/socket-cli-node-download-url.mts'
 import { SOCKET_CLI_NPM_PATH } from '../env/socket-cli-npm-path.mts'
 import { SOCKET_CLI_OPTIMIZE } from '../env/socket-cli-optimize.mts'
+import { SOCKET_CLI_ORG_SLUG } from '../env/socket-cli-org-slug.mts'
 import { SOCKET_CLI_PYCLI_LOCAL_PATH } from '../env/socket-cli-pycli-local-path.mts'
 import { SOCKET_CLI_SEA_NODE_VERSION } from '../env/socket-cli-sea-node-version.mts'
 import { SOCKET_CLI_SFW_LOCAL_PATH } from '../env/socket-cli-sfw-local-path.mts'
@@ -58,6 +58,22 @@ import { VITEST } from '../env/vitest.mts'
 import { XDG_CACHE_HOME } from '../env/xdg-cache-home.mts'
 import { XDG_DATA_HOME } from '../env/xdg-data-home.mts'
 
+// Import build metadata getter functions.
+import { getCdxgenVersion } from '../env/cdxgen-version.mts'
+import { getCliAiVersion } from '../env/cli-ai-version.mts'
+import { getCliHomepage } from '../env/cli-homepage.mts'
+import { getCliName } from '../env/cli-name.mts'
+import { getCliVersion } from '../env/cli-version.mts'
+import { getCliVersionHash } from '../env/cli-version-hash.mts'
+import { getCoanaVersion } from '../env/coana-version.mts'
+import { isLegacyBuild } from '../env/is-legacy-build.mts'
+import { isPublishedBuild } from '../env/is-published-build.mts'
+import { isSentryBuild } from '../env/is-sentry-build.mts'
+import { getPyCliVersion } from '../env/pycli-version.mts'
+import { getPythonBuildTag } from '../env/python-build-tag.mts'
+import { getPythonVersion } from '../env/python-version.mts'
+import { getSynpVersion } from '../env/synp-version.mts'
+
 // Re-export CLI-specific env variables.
 export {
   CI,
@@ -66,6 +82,7 @@ export {
   GITHUB_BASE_REF,
   GITHUB_REF_NAME,
   GITHUB_REF_TYPE,
+  GITHUB_REPOSITORY,
   GITHUB_SERVER_URL,
   HOME,
   LOCALAPPDATA,
@@ -97,6 +114,7 @@ export {
   SOCKET_CLI_NO_API_TOKEN,
   SOCKET_CLI_NPM_PATH,
   SOCKET_CLI_OPTIMIZE,
+  SOCKET_CLI_ORG_SLUG,
   SOCKET_CLI_PYCLI_LOCAL_PATH,
   SOCKET_CLI_SEA_NODE_VERSION,
   SOCKET_CLI_SFW_LOCAL_PATH,
@@ -111,65 +129,22 @@ export {
   XDG_DATA_HOME,
 }
 
-// Getter functions for build metadata.
-// Use direct process.env access (not env imports) so esbuild define can inline values.
-// IMPORTANT: esbuild's define plugin can only replace direct process.env['KEY'] references.
-// If we imported these from env modules, esbuild couldn't inline the values at build time.
-// This is critical for embedding version info, build tags, and feature flags into the binary.
-export function getCliVersion(): string {
-  return process.env['INLINED_SOCKET_CLI_VERSION']!
-}
-
-export function getCliVersionHash(): string {
-  return process.env['INLINED_SOCKET_CLI_VERSION_HASH']!
-}
-
-export function getCliHomepage(): string {
-  return process.env['INLINED_SOCKET_CLI_HOMEPAGE']!
-}
-
-export function getCliName(): string {
-  return process.env['INLINED_SOCKET_CLI_NAME']!
-}
-
-export function isPublishedBuild(): boolean {
-  return envAsBoolean(process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'])
-}
-
-export function isLegacyBuild(): boolean {
-  return envAsBoolean(process.env['INLINED_SOCKET_CLI_LEGACY_BUILD'])
-}
-
-export function isSentryBuild(): boolean {
-  return envAsBoolean(process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'])
-}
-
-export function getCliAiVersion(): string {
-  return process.env['INLINED_SOCKET_CLI_AI_VERSION']!
-}
-
-export function getCoanaVersion(): string {
-  return process.env['INLINED_SOCKET_CLI_COANA_VERSION']!
-}
-
-export function getCdxgenVersion(): string {
-  return process.env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']!
-}
-
-export function getSynpVersion(): string {
-  return process.env['INLINED_SOCKET_CLI_SYNP_VERSION']!
-}
-
-export function getPythonVersion(): string {
-  return process.env['INLINED_SOCKET_CLI_PYTHON_VERSION']!
-}
-
-export function getPythonBuildTag(): string {
-  return process.env['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG']!
-}
-
-export function getPyCliVersion(): string {
-  return process.env['INLINED_SOCKET_CLI_PYCLI_VERSION']!
+// Re-export build metadata getter functions.
+export {
+  getCdxgenVersion,
+  getCliAiVersion,
+  getCliHomepage,
+  getCliName,
+  getCliVersion,
+  getCliVersionHash,
+  getCoanaVersion,
+  getPyCliVersion,
+  getPythonBuildTag,
+  getPythonVersion,
+  getSynpVersion,
+  isLegacyBuild,
+  isPublishedBuild,
+  isSentryBuild,
 }
 
 // Export processEnv for backward compatibility with shadow npm integration.
@@ -178,9 +153,6 @@ export const processEnv = env
 
 // Legacy default export for backward compatibility.
 // This should be avoided in new code - use the named exports instead.
-// IMPORTANT: Build metadata properties use direct process.env access (not env imports)
-// so esbuild's define plugin can inline the values at build time. This is critical for
-// embedding version info, build tags, and feature flags into the compiled binary.
 
 // Create a snapshot of environment variables for production use.
 const envSnapshot = {
@@ -190,6 +162,7 @@ const envSnapshot = {
   GITHUB_BASE_REF,
   GITHUB_REF_NAME,
   GITHUB_REF_TYPE,
+  GITHUB_REPOSITORY,
   GITHUB_SERVER_URL,
   HOME,
   LOCALAPPDATA,
@@ -221,6 +194,7 @@ const envSnapshot = {
   SOCKET_CLI_NO_API_TOKEN,
   SOCKET_CLI_NPM_PATH,
   SOCKET_CLI_OPTIMIZE,
+  SOCKET_CLI_ORG_SLUG,
   SOCKET_CLI_PYCLI_LOCAL_PATH,
   SOCKET_CLI_SEA_NODE_VERSION,
   SOCKET_CLI_SFW_LOCAL_PATH,
@@ -233,43 +207,29 @@ const envSnapshot = {
   VITEST,
   XDG_CACHE_HOME,
   XDG_DATA_HOME,
-  // Additional environment variables (accessed via ENV object).
-  GITHUB_REPOSITORY: env['GITHUB_REPOSITORY'],
-  SOCKET_CLI_ORG_SLUG: env['SOCKET_CLI_ORG_SLUG'],
   // Build metadata (inlined by esbuild define).
-  INLINED_SOCKET_CLI_AI_VERSION: process.env['INLINED_SOCKET_CLI_AI_VERSION']!,
-  INLINED_SOCKET_CLI_CDXGEN_VERSION:
-    process.env['INLINED_SOCKET_CLI_CDXGEN_VERSION']!,
-  INLINED_SOCKET_CLI_COANA_VERSION:
-    process.env['INLINED_SOCKET_CLI_COANA_VERSION']!,
-  INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION:
-    process.env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']!,
-  INLINED_SOCKET_CLI_HOMEPAGE: process.env['INLINED_SOCKET_CLI_HOMEPAGE']!,
-  INLINED_SOCKET_CLI_LEGACY_BUILD:
-    process.env['INLINED_SOCKET_CLI_LEGACY_BUILD']!,
-  INLINED_SOCKET_CLI_NAME: process.env['INLINED_SOCKET_CLI_NAME']!,
-  INLINED_SOCKET_CLI_PUBLISHED_BUILD:
-    process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD']!,
-  INLINED_SOCKET_CLI_PYTHON_BUILD_TAG:
-    process.env['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG']!,
-  INLINED_SOCKET_CLI_PYTHON_VERSION:
-    process.env['INLINED_SOCKET_CLI_PYTHON_VERSION']!,
-  INLINED_SOCKET_CLI_PYCLI_VERSION:
-    process.env['INLINED_SOCKET_CLI_PYCLI_VERSION']!,
-  INLINED_SOCKET_CLI_SENTRY_BUILD:
-    process.env['INLINED_SOCKET_CLI_SENTRY_BUILD']!,
-  INLINED_SOCKET_CLI_SYNP_VERSION:
-    process.env['INLINED_SOCKET_CLI_SYNP_VERSION']!,
-  INLINED_SOCKET_CLI_VERSION: process.env['INLINED_SOCKET_CLI_VERSION']!,
-  INLINED_SOCKET_CLI_VERSION_HASH:
-    process.env['INLINED_SOCKET_CLI_VERSION_HASH']!,
+  INLINED_SOCKET_CLI_AI_VERSION: getCliAiVersion(),
+  INLINED_SOCKET_CLI_CDXGEN_VERSION: getCdxgenVersion(),
+  INLINED_SOCKET_CLI_COANA_VERSION: getCoanaVersion(),
+  INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: getCdxgenVersion(),
+  INLINED_SOCKET_CLI_HOMEPAGE: getCliHomepage(),
+  INLINED_SOCKET_CLI_LEGACY_BUILD: isLegacyBuild(),
+  INLINED_SOCKET_CLI_NAME: getCliName(),
+  INLINED_SOCKET_CLI_PUBLISHED_BUILD: isPublishedBuild(),
+  INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: getPythonBuildTag(),
+  INLINED_SOCKET_CLI_PYTHON_VERSION: getPythonVersion(),
+  INLINED_SOCKET_CLI_PYCLI_VERSION: getPyCliVersion(),
+  INLINED_SOCKET_CLI_SENTRY_BUILD: isSentryBuild(),
+  INLINED_SOCKET_CLI_SYNP_VERSION: getSynpVersion(),
+  INLINED_SOCKET_CLI_VERSION: getCliVersion(),
+  INLINED_SOCKET_CLI_VERSION_HASH: getCliVersionHash(),
 }
 
 // Create a Proxy that uses live process.env in VITEST mode and snapshot in production.
 // This allows tests to manipulate process.env and see those changes reflected in ENV,
 // while production builds use the more efficient snapshot.
 // Check if we're in VITEST mode once at module load time.
-const isVitestMode = Boolean(process.env['VITEST'])
+const isVitestMode = !!VITEST
 
 const ENV = new Proxy(envSnapshot, {
   get(target, prop) {
@@ -306,11 +266,22 @@ const ENV = new Proxy(envSnapshot, {
         return {
           configurable: true,
           enumerable: true,
+          writable: true,
           value: process.env[prop],
         }
       }
     }
     return Reflect.getOwnPropertyDescriptor(target, prop)
+  },
+  set(_target, prop, value) {
+    // In VITEST mode, allow setting values to process.env.
+    // This enables tests to modify environment variables dynamically.
+    if (isVitestMode && typeof prop === 'string') {
+      process.env[prop] = value
+      return true
+    }
+    // In production, ENV is read-only.
+    return false
   },
 })
 
