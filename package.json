@@ -110,6 +110,7 @@
     "overrides": {
       "@octokit/graphql": "9.0.1",
       "@octokit/request-error": "7.0.0",
+      "@socketsecurity/lib": "3.2.4",
       "aggregate-error": "npm:@socketregistry/aggregate-error@^1.0.15",
       "ansi-regex": "6.1.0",
       "brace-expansion": "2.0.2",
