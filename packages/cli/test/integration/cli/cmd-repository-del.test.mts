@@ -1,3 +1,19 @@
+/**
+ * Integration tests for `socket repository del` command.
+ *
+ * Tests unregistering repositories from Socket monitoring.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Repository removal
+ * - Confirmation prompts
+ *
+ * Related Files:
+ * - src/commands/repository/cmd-repository-del.mts - Command definition
+ * - src/commands/repository/handle-repository-del.mts - Removal logic
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

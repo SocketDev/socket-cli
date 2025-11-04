@@ -1,3 +1,20 @@
+/**
+ * Integration tests for `socket repository view` command.
+ *
+ * Tests viewing detailed repository information and scan history.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Repository details display
+ * - Output format support (JSON, markdown)
+ *
+ * Related Files:
+ * - src/commands/repository/cmd-repository-view.mts - Command definition
+ * - src/commands/repository/handle-repository-view.mts - View logic
+ * - src/commands/repository/output-repository-view.mts - Formatting
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

@@ -1,3 +1,19 @@
+/**
+ * Integration tests for `socket repository create` command.
+ *
+ * Tests registering new repositories with Socket for continuous monitoring.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Repository registration
+ * - GitHub/GitLab integration setup
+ *
+ * Related Files:
+ * - src/commands/repository/cmd-repository-create.mts - Command definition
+ * - src/commands/repository/handle-repository-create.mts - Registration logic
+ */
+
 import { describe, expect } from 'vitest'
 
 import {
