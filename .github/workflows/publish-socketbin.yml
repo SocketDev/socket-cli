@@ -1,4 +1,4 @@
-name: ⚡ Publish CLIs
+name: 📦 Publish CLIs
 
 on:
   workflow_dispatch:

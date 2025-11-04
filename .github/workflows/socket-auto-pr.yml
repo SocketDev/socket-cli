@@ -1,4 +1,4 @@
-name: 🔧 Socket Fix Auto Pull Request
+name: ⚡ Fix PR
 
 on:
   schedule:

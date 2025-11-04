@@ -1,4 +1,4 @@
-name: ⚡ WASM Assets
+name: 🧩 WASM Assets
 
 on:
   workflow_call:
