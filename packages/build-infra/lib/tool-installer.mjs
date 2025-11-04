@@ -24,7 +24,7 @@ const TOOL_CONFIGS = {
     description: 'Git version control system',
     packages: {
       darwin: { brew: 'git' },
-      linux: { apt: 'git', yum: 'git', dnf: 'git' },
+      linux: { apt: 'git', yum: 'git', dnf: 'git', apk: 'git' },
       win32: { choco: 'git', scoop: 'git' },
     },
   },
@@ -32,7 +32,7 @@ const TOOL_CONFIGS = {
     description: 'Command-line tool for transferring data',
     packages: {
       darwin: { brew: 'curl' },
-      linux: { apt: 'curl', yum: 'curl', dnf: 'curl' },
+      linux: { apt: 'curl', yum: 'curl', dnf: 'curl', apk: 'curl' },
       win32: { choco: 'curl', scoop: 'curl' },
     },
   },
@@ -40,7 +40,7 @@ const TOOL_CONFIGS = {
     description: 'GNU patch utility for applying diffs',
     packages: {
       darwin: { brew: 'gpatch' },
-      linux: { apt: 'patch', yum: 'patch', dnf: 'patch' },
+      linux: { apt: 'patch', yum: 'patch', dnf: 'patch', apk: 'patch' },
       win32: { choco: 'patch', scoop: 'patch' },
     },
   },
@@ -48,7 +48,7 @@ const TOOL_CONFIGS = {
     description: 'GNU Make build tool',
     packages: {
       darwin: { brew: 'make' },
-      linux: { apt: 'make', yum: 'make', dnf: 'make' },
+      linux: { apt: 'make', yum: 'make', dnf: 'make', apk: 'make' },
       win32: { choco: 'make', scoop: 'make' },
     },
   },
@@ -56,7 +56,7 @@ const TOOL_CONFIGS = {
     description: 'Python 3 interpreter',
     packages: {
       darwin: { brew: 'python3' },
-      linux: { apt: 'python3', yum: 'python3', dnf: 'python3' },
+      linux: { apt: 'python3', yum: 'python3', dnf: 'python3', apk: 'python3' },
       win32: { choco: 'python', scoop: 'python' },
     },
   },
@@ -80,13 +80,20 @@ const PACKAGE_MANAGER_CONFIGS = {
   },
   linux: {
     preferred: 'apt',
-    available: ['apt', 'dnf', 'yum'],
+    available: ['apt', 'apk', 'dnf', 'yum'],
     apt: {
       name: 'APT',
       binary: 'apt-get',
       installScript: null, // Pre-installed on Debian/Ubuntu.
       checkCommand: 'apt-get --version',
       description: 'Debian/Ubuntu package manager',
+    },
+    apk: {
+      name: 'APK',
+      binary: 'apk',
+      installScript: null, // Pre-installed on Alpine Linux.
+      checkCommand: 'apk --version',
+      description: 'Alpine Linux package manager',
     },
     dnf: {
       name: 'DNF',
@@ -370,7 +377,7 @@ export async function installTool(tool, packageManager, { autoYes = false } = {}
   try {
     let command
     let args
-    const needsSudo = platform !== 'win32' && ['apt', 'yum', 'dnf'].includes(packageManager)
+    const needsSudo = platform !== 'win32' && ['apt', 'apk', 'yum', 'dnf'].includes(packageManager)
 
     switch (packageManager) {
       case 'brew':
@@ -383,6 +390,13 @@ export async function installTool(tool, packageManager, { autoYes = false } = {}
         args = needsSudo
           ? ['apt-get', 'install', '-y', packageName]
           : ['install', '-y', packageName]
+        break
+
+      case 'apk':
+        command = needsSudo ? 'sudo' : 'apk'
+        args = needsSudo
+          ? ['apk', 'add', '--no-cache', packageName]
+          : ['add', '--no-cache', packageName]
         break
 
       case 'yum':
@@ -511,6 +525,9 @@ export function getInstallInstructions(tool) {
     const pkg = config.packages.linux
     if (pkg.apt) {
       instructions.push('  sudo apt-get install -y ' + pkg.apt)
+    }
+    if (pkg.apk) {
+      instructions.push('  sudo apk add --no-cache ' + pkg.apk)
     }
     if (pkg.yum) {
       instructions.push('  sudo yum install -y ' + pkg.yum)
