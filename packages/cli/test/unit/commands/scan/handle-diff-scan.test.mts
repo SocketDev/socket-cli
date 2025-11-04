@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../../test/helpers/mocks.mts'
+} from '../../../../test/helpers/index.mts'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -23,11 +23,11 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 
-vi.mock('../../../../../src/commands/scan/fetch-diff-scan.mts', () => ({
+vi.mock('../../../../src/commands/scan/fetch-diff-scan.mts', () => ({
   fetchDiffScan: mockFetchDiffScan,
 }))
 
-vi.mock('../../../../../src/commands/scan/output-diff-scan.mts', () => ({
+vi.mock('../../../../src/commands/scan/output-diff-scan.mts', () => ({
   outputDiffScan: mockOutputDiffScan,
 }))
 
