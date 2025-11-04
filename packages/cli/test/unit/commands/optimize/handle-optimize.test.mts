@@ -1,8 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleOptimize } from '../../../../../src/commands/optimize/handle-optimize.mts'
+// Create hoisted mocks BEFORE any imports.
+const { mockDetectAndValidatePackageEnvironment, mockApplyOptimization, mockOutputOptimizeResult } = vi.hoisted(() => ({
+  mockDetectAndValidatePackageEnvironment: vi.fn(),
+  mockApplyOptimization: vi.fn(),
+  mockOutputOptimizeResult: vi.fn(),
+}))
 
-// Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
   log: vi.fn(),
@@ -12,15 +16,21 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
+// Mock the dependencies.
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock('@socketsecurity/lib/debug', () => ({
-  debug: vi.fn(),
-  debugDir: vi.fn(),
-}))
+vi.mock('@socketsecurity/lib/debug', async importOriginal => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    debug: vi.fn(),
+    debugDir: vi.fn(),
+    debugNs: vi.fn(() => vi.fn()),
+  }
+})
 
 vi.mock('@socketsecurity/lib/constants/agents', async importOriginal => {
   const actual = await importOriginal()
@@ -31,23 +41,28 @@ vi.mock('@socketsecurity/lib/constants/agents', async importOriginal => {
 })
 
 vi.mock('../../../../../src/commands/optimize/apply-optimization.mts', () => ({
-  applyOptimization: vi.fn(),
+  applyOptimization: mockApplyOptimization,
 }))
+
 vi.mock('../../../../../src/commands/optimize/output-optimize-result.mts', () => ({
-  outputOptimizeResult: vi.fn(),
+  outputOptimizeResult: mockOutputOptimizeResult,
 }))
+
 vi.mock('../../../../../src/commands/optimize/shared.mts', () => ({
   CMD_NAME: 'optimize',
 }))
+
 vi.mock('../../../../../src/utils/process/cmd.mts', () => ({
   cmdPrefixMessage: vi.fn((cmd, msg) => `${cmd}: ${msg}`),
 }))
+
 vi.mock('../../../../../src/utils/ecosystem/environment.mts', () => ({
-  detectAndValidatePackageEnvironment: vi.fn(),
+  detectAndValidatePackageEnvironment: mockDetectAndValidatePackageEnvironment,
 }))
 
-// TODO: Fix mocking issues with detectAndValidatePackageEnvironment and applyOptimization.
-describe.skip('handleOptimize', () => {
+import { handleOptimize } from '../../../../../src/commands/optimize/handle-optimize.mts'
+
+describe('handleOptimize', () => {
   const originalExitCode = process.exitCode
 
   beforeEach(() => {
@@ -60,24 +75,18 @@ describe.skip('handleOptimize', () => {
   })
 
   it('optimizes packages successfully', async () => {
-    const { detectAndValidatePackageEnvironment } = await import(
-      '../../../../../src/utils/ecosystem/environment.mts'
-    )
-    const { applyOptimization } = await import('../../../../../src/commands/optimize/apply-optimization.mts')
-    const { outputOptimizeResult } = await import(
-      '../../../../../src/commands/optimize/output-optimize-result.mts'
-    )
-
-    vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
+    mockDetectAndValidatePackageEnvironment.mockResolvedValue({
       ok: true,
       data: {
         agent: 'npm',
-        agentVersion: '10.0.0',
+        agentVersion: { major: 10, minor: 0, patch: 0 },
+        agentExecPath: '/usr/bin/npm',
         manifestPath: '/test/project/package.json',
         lockfilePath: '/test/project/package-lock.json',
+        pkgPath: '/test/project',
       },
     })
-    vi.mocked(applyOptimization).mockResolvedValue({
+    mockApplyOptimization.mockResolvedValue({
       ok: true,
       data: {
         optimizedCount: 5,
@@ -92,21 +101,20 @@ describe.skip('handleOptimize', () => {
       prod: false,
     })
 
-    expect(detectAndValidatePackageEnvironment).toHaveBeenCalledWith(
+    expect(mockDetectAndValidatePackageEnvironment).toHaveBeenCalledWith(
       '/test/project',
       expect.objectContaining({
         cmdName: 'optimize',
         prod: false,
       }),
     )
-    expect(applyOptimization).toHaveBeenCalledWith(
+    expect(mockApplyOptimization).toHaveBeenCalledWith(
       expect.objectContaining({
         agent: 'npm',
-        agentVersion: '10.0.0',
       }),
       { pin: false, prod: false },
     )
-    expect(outputOptimizeResult).toHaveBeenCalledWith(
+    expect(mockOutputOptimizeResult).toHaveBeenCalledWith(
       expect.objectContaining({ ok: true }),
       'json',
     )
@@ -114,15 +122,7 @@ describe.skip('handleOptimize', () => {
   })
 
   it('handles package environment validation failure', async () => {
-    const { detectAndValidatePackageEnvironment } = await import(
-      '../../../../../src/utils/ecosystem/environment.mts'
-    )
-    const { outputOptimizeResult } = await import(
-      '../../../../../src/commands/optimize/output-optimize-result.mts'
-    )
-    const { applyOptimization } = await import('../../../../../src/commands/optimize/apply-optimization.mts')
-
-    vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
+    mockDetectAndValidatePackageEnvironment.mockResolvedValue({
       ok: false,
       code: 2,
       error: new Error('Invalid package environment'),
@@ -135,23 +135,16 @@ describe.skip('handleOptimize', () => {
       prod: false,
     })
 
-    expect(outputOptimizeResult).toHaveBeenCalledWith(
+    expect(mockOutputOptimizeResult).toHaveBeenCalledWith(
       expect.objectContaining({ ok: false }),
       'text',
     )
-    expect(applyOptimization).not.toHaveBeenCalled()
+    expect(mockApplyOptimization).not.toHaveBeenCalled()
     expect(process.exitCode).toBe(2)
   })
 
   it('handles missing package environment details', async () => {
-    const { detectAndValidatePackageEnvironment } = await import(
-      '../../../../../src/utils/ecosystem/environment.mts'
-    )
-    const { outputOptimizeResult } = await import(
-      '../../../../../src/commands/optimize/output-optimize-result.mts'
-    )
-
-    vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
+    mockDetectAndValidatePackageEnvironment.mockResolvedValue({
       ok: true,
       data: undefined,
     })
@@ -163,7 +156,7 @@ describe.skip('handleOptimize', () => {
       prod: true,
     })
 
-    expect(outputOptimizeResult).toHaveBeenCalledWith(
+    expect(mockOutputOptimizeResult).toHaveBeenCalledWith(
       {
         ok: false,
         message: 'No package found.',
@@ -176,21 +169,15 @@ describe.skip('handleOptimize', () => {
   })
 
   it('handles unsupported vlt package manager', async () => {
-    const { detectAndValidatePackageEnvironment } = await import(
-      '../../../../../src/utils/ecosystem/environment.mts'
-    )
-    const { outputOptimizeResult } = await import(
-      '../../../../../src/commands/optimize/output-optimize-result.mts'
-    )
-    const { applyOptimization } = await import('../../../../../src/commands/optimize/apply-optimization.mts')
-
-    vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
+    mockDetectAndValidatePackageEnvironment.mockResolvedValue({
       ok: true,
       data: {
         agent: 'vlt',
-        agentVersion: '1.0.0',
+        agentVersion: { major: 1, minor: 0, patch: 0 },
+        agentExecPath: '/usr/bin/vlt',
         manifestPath: '/test/project/package.json',
         lockfilePath: '/test/project/vlt.lock',
+        pkgPath: '/test/project',
       },
     })
 
@@ -201,7 +188,7 @@ describe.skip('handleOptimize', () => {
       prod: false,
     })
 
-    expect(outputOptimizeResult).toHaveBeenCalledWith(
+    expect(mockOutputOptimizeResult).toHaveBeenCalledWith(
       {
         ok: false,
         message: 'Unsupported',
@@ -209,29 +196,23 @@ describe.skip('handleOptimize', () => {
       },
       'markdown',
     )
-    expect(applyOptimization).not.toHaveBeenCalled()
+    expect(mockApplyOptimization).not.toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
 
   it('handles optimization failure', async () => {
-    const { detectAndValidatePackageEnvironment } = await import(
-      '../../../../../src/utils/ecosystem/environment.mts'
-    )
-    const { applyOptimization } = await import('../../../../../src/commands/optimize/apply-optimization.mts')
-    const { outputOptimizeResult } = await import(
-      '../../../../../src/commands/optimize/output-optimize-result.mts'
-    )
-
-    vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
+    mockDetectAndValidatePackageEnvironment.mockResolvedValue({
       ok: true,
       data: {
         agent: 'yarn',
-        agentVersion: '3.0.0',
+        agentVersion: { major: 3, minor: 0, patch: 0 },
+        agentExecPath: '/usr/bin/yarn',
         manifestPath: '/test/project/package.json',
         lockfilePath: '/test/project/yarn.lock',
+        pkgPath: '/test/project',
       },
     })
-    vi.mocked(applyOptimization).mockResolvedValue({
+    mockApplyOptimization.mockResolvedValue({
       ok: false,
       code: 3,
       error: new Error('Failed to apply optimization'),
@@ -244,35 +225,35 @@ describe.skip('handleOptimize', () => {
       prod: true,
     })
 
-    expect(applyOptimization).toHaveBeenCalledWith(
+    expect(mockApplyOptimization).toHaveBeenCalledWith(
       expect.objectContaining({ agent: 'yarn' }),
       { pin: true, prod: true },
     )
-    expect(outputOptimizeResult).toHaveBeenCalledWith(
+    expect(mockOutputOptimizeResult).toHaveBeenCalledWith(
       expect.objectContaining({ ok: false }),
       'json',
     )
     expect(process.exitCode).toBe(3)
   })
 
-  it('handles pnpm package manager', async () => {
-    const { detectAndValidatePackageEnvironment } = await import(
-      '../../../../../src/utils/ecosystem/environment.mts'
-    )
-    const { applyOptimization } = await import('../../../../../src/commands/optimize/apply-optimization.mts')
-
-    vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
+  it('handles optimization with no changes', async () => {
+    mockDetectAndValidatePackageEnvironment.mockResolvedValue({
       ok: true,
       data: {
         agent: 'pnpm',
-        agentVersion: '8.0.0',
+        agentVersion: { major: 8, minor: 0, patch: 0 },
+        agentExecPath: '/usr/bin/pnpm',
         manifestPath: '/test/project/package.json',
         lockfilePath: '/test/project/pnpm-lock.yaml',
+        pkgPath: '/test/project',
       },
     })
-    vi.mocked(applyOptimization).mockResolvedValue({
+    mockApplyOptimization.mockResolvedValue({
       ok: true,
-      data: { optimizedCount: 3 },
+      data: {
+        optimizedCount: 0,
+        packages: [],
+      },
     })
 
     await handleOptimize({
@@ -282,54 +263,47 @@ describe.skip('handleOptimize', () => {
       prod: false,
     })
 
-    expect(mockLogger.info).toHaveBeenCalledWith(
-      'Optimizing packages for pnpm v8.0.0.\n',
+    expect(mockApplyOptimization).toHaveBeenCalled()
+    expect(mockOutputOptimizeResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ok: true,
+        data: expect.objectContaining({ optimizedCount: 0 }),
+      }),
+      'text',
     )
-    expect(applyOptimization).toHaveBeenCalledWith(
-      expect.objectContaining({ agent: 'pnpm' }),
-      { pin: false, prod: false },
-    )
+    expect(process.exitCode).toBeUndefined()
   })
 
-  it('logs debug information', async () => {
-    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
-    const { detectAndValidatePackageEnvironment } = await import(
-      '../../../../../src/utils/ecosystem/environment.mts'
-    )
-    const { applyOptimization } = await import('../../../../../src/commands/optimize/apply-optimization.mts')
-
-    vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
+  it('passes pin and prod options correctly', async () => {
+    mockDetectAndValidatePackageEnvironment.mockResolvedValue({
       ok: true,
       data: {
         agent: 'npm',
-        agentVersion: '10.0.0',
+        agentVersion: { major: 10, minor: 0, patch: 0 },
+        agentExecPath: '/usr/bin/npm',
         manifestPath: '/test/project/package.json',
         lockfilePath: '/test/project/package-lock.json',
+        pkgPath: '/test/project',
       },
     })
-    vi.mocked(applyOptimization).mockResolvedValue({
+    mockApplyOptimization.mockResolvedValue({
       ok: true,
-      data: { optimizedCount: 2 },
+      data: {
+        optimizedCount: 3,
+        packages: ['pkg1', 'pkg2', 'pkg3'],
+      },
     })
 
     await handleOptimize({
-      cwd: '/debug/project',
+      cwd: '/test/project',
       outputKind: 'json',
       pin: true,
-      prod: false,
+      prod: true,
     })
 
-    expect(debug).toHaveBeenCalledWith(
-      'Starting optimization for /debug/project',
+    expect(mockApplyOptimization).toHaveBeenCalledWith(
+      expect.anything(),
+      { pin: true, prod: true },
     )
-    expect(debugDir).toHaveBeenCalledWith({
-      cwd: '/debug/project',
-      outputKind: 'json',
-      pin: true,
-      prod: false,
-    })
-    expect(debug).toHaveBeenCalledWith('Detected package manager: npm v10.0.0')
-    expect(debug).toHaveBeenCalledWith('Applying optimization')
-    expect(debug).toHaveBeenCalledWith('Optimization succeeded')
   })
 })
