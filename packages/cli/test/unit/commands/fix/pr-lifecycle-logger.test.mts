@@ -1,3 +1,31 @@
+/**
+ * Unit Tests: Pull Request Lifecycle Event Logger
+ *
+ * Purpose:
+ * Tests the PR lifecycle logging utility that provides consistent, color-coded terminal output
+ * for pull request events during automated fix workflows. Validates proper log level selection,
+ * message formatting, and symbol coloring for different PR lifecycle events.
+ *
+ * Test Coverage:
+ * - Created event logging with success level
+ * - Merged event logging with success level and cleanup details
+ * - Closed event logging with info level
+ * - Updated event logging with info level and change details
+ * - Superseded event logging with warning level
+ * - Failed event logging with error level
+ * - Optional details parameter handling
+ * - Color coding application to status symbols
+ *
+ * Testing Approach:
+ * Mocks logger and yoctocolors-cjs to verify correct log level usage and color application
+ * without actual terminal output. Tests validate message content and symbol formatting.
+ *
+ * Related Files:
+ * - src/commands/fix/pr-lifecycle-logger.mts - PR event logging utility
+ * - src/commands/fix/pull-request.mts - PR creation and management using logger
+ * - src/commands/fix/handle-fix.mts - Main fix command orchestrating PR workflow
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { logPrEvent } from '../../../../src/src/commands/../../../../src/commands/fix/pr-lifecycle-logger.mts'

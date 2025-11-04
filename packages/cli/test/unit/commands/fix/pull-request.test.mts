@@ -1,3 +1,33 @@
+/**
+ * Unit Tests: Pull Request Creation for Automated Fixes
+ *
+ * Purpose:
+ * Tests the automated pull request creation system that opens PRs for security vulnerability fixes.
+ * Validates PR creation with retry logic, error handling, title/body generation, and GHSA detail
+ * integration for the Socket fix workflow.
+ *
+ * Test Coverage:
+ * - Successful PR creation on first attempt
+ * - Retry logic for transient 5xx errors
+ * - Non-retry behavior for 422 validation errors (e.g., duplicate PRs)
+ * - Custom retry count configuration
+ * - Exhausted retry handling returning undefined
+ * - Exponential backoff during retries (via provider)
+ * - GHSA details passed to PR body generator
+ *
+ * Testing Approach:
+ * Mocks Octokit GitHub client, PR provider abstraction, and PR content generators to test
+ * the orchestration logic without actual GitHub API calls. Tests verify proper retry behavior,
+ * error handling, and data flow through the PR creation pipeline.
+ *
+ * Related Files:
+ * - src/commands/fix/pull-request.mts - PR creation and retry logic
+ * - src/commands/fix/git.mts - PR title and body generation
+ * - src/utils/git/github.mts - Octokit client factory
+ * - src/utils/git/provider-factory.mts - Provider abstraction factory
+ * - src/commands/fix/handle-fix.mts - Main fix command orchestrating PR workflow
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { openSocketFixPr } from '../../../../src/commands/fix/pull-request.mts'

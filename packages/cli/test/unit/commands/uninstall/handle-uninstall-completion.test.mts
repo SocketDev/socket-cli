@@ -1,3 +1,29 @@
+/**
+ * Unit Tests: Tab Completion Uninstallation Handler
+ *
+ * Purpose:
+ * Tests the command handler that removes shell tab completion support for the Socket CLI.
+ * Validates the orchestration between teardown and output modules for different shell
+ * environments (bash, zsh, fish, powershell).
+ *
+ * Test Coverage:
+ * - Successful completion uninstallation for various shells
+ * - Uninstallation failure handling
+ * - Multiple shell target support (bash, zsh, fish, powershell)
+ * - Shell target parameter passing
+ * - Async error propagation
+ *
+ * Testing Approach:
+ * Mocks teardownTabCompletion and outputUninstallCompletion modules to test the handler's
+ * orchestration logic without actual file system modifications. Tests verify correct
+ * parameter passing and CResult pattern handling.
+ *
+ * Related Files:
+ * - src/commands/uninstall/handle-uninstall-completion.mts - Command handler
+ * - src/commands/uninstall/teardown-tab-completion.mts - Completion removal logic
+ * - src/commands/uninstall/output-uninstall-completion.mts - Output formatting
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleUninstallCompletion } from '../../../../src/commands/uninstall/handle-uninstall-completion.mts'

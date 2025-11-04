@@ -1,3 +1,26 @@
+/**
+ * Unit Tests: CI Environment Variable Helper Functions
+ *
+ * Purpose:
+ * Tests environment variable instruction generation for CI-based automated fix workflows.
+ * Validates that the helper functions correctly format and document required environment
+ * variables for enabling automatic pull request creation in CI environments.
+ *
+ * Test Coverage:
+ * - Environment variable instruction generation with exact var names
+ * - Instruction formatting and consistency validation
+ * - Integration testing placeholder for actual env var checking
+ *
+ * Testing Approach:
+ * Uses direct function invocation without mocks since env-helpers.mts provides pure
+ * instruction generation functions. Tests verify string output format and content.
+ * Actual environment variable checking is tested via integration tests.
+ *
+ * Related Files:
+ * - src/commands/fix/env-helpers.mts - Environment variable helper functions
+ * - src/commands/fix/handle-fix.mts - Main fix command handler that uses env helpers
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import { getCiEnvInstructions } from '../../../../src/commands/fix/env-helpers.mts'

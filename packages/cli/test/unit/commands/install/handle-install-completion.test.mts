@@ -1,3 +1,30 @@
+/**
+ * Unit Tests: Tab Completion Installation Handler
+ *
+ * Purpose:
+ * Tests the command handler that installs shell tab completion support for the Socket CLI.
+ * Validates the orchestration between setup and output modules for different shell environments
+ * (bash, zsh, fish, powershell).
+ *
+ * Test Coverage:
+ * - Successful completion installation for various shells
+ * - Installation failure handling
+ * - Multiple shell target support (bash, zsh, fish, powershell)
+ * - Empty and invalid target name handling
+ * - Unsupported shell detection
+ * - Async error propagation
+ *
+ * Testing Approach:
+ * Mocks setupTabCompletion and outputInstallCompletion modules to test the handler's
+ * orchestration logic without actual file system modifications. Tests verify correct
+ * parameter passing and CResult pattern handling.
+ *
+ * Related Files:
+ * - src/commands/install/handle-install-completion.mts - Command handler
+ * - src/commands/install/setup-tab-completion.mts - Completion setup logic
+ * - src/commands/install/output-install-completion.mts - Output formatting
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleInstallCompletion } from '../../../../src/commands/install/handle-install-completion.mts'

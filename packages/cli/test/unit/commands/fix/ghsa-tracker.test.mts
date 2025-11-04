@@ -1,3 +1,32 @@
+/**
+ * Unit Tests: GHSA Fix Tracker Persistence Module
+ *
+ * Purpose:
+ * Tests the GHSA fix tracker system that maintains a persistent record of fixed GitHub Security
+ * Advisories in .socket/fixed-ghsas.json. Validates tracker loading, saving, querying, and
+ * updating operations to ensure the fix command can track which vulnerabilities have already
+ * been addressed.
+ *
+ * Test Coverage:
+ * - Loading existing tracker files and creating new trackers on first run
+ * - Saving tracker data with proper directory creation
+ * - Marking GHSAs as fixed with automatic deduplication
+ * - Querying fixed GHSA status
+ * - Retrieving all fixed GHSA records
+ * - Error handling for file system failures
+ * - Tracker record sorting by timestamp
+ *
+ * Testing Approach:
+ * Mocks @socketsecurity/lib/fs functions (readJson, writeJson, safeMkdir) to test tracker
+ * operations without actual file I/O. Tests verify correct file paths, data structures,
+ * and error recovery behavior.
+ *
+ * Related Files:
+ * - src/commands/fix/ghsa-tracker.mts - GHSA tracker persistence module
+ * - src/commands/fix/handle-fix.mts - Main fix command using tracker
+ * - src/commands/fix/pull-request.mts - PR creation using tracker data
+ */
+
 import path from 'node:path'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
