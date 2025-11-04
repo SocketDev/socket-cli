@@ -20,17 +20,6 @@ vi.mock('@socketsecurity/lib/spawn', () => ({
   isSpawnError: vi.fn(e => e?.isSpawnError),
 }))
 
-// Mock constants.
-vi.mock('../../../../../src/constants/env.mts', () => ({
-  default: {
-    GITHUB_BASE_REF: undefined,
-    GITHUB_REF_NAME: undefined,
-    GITHUB_REF_TYPE: undefined,
-    SOCKET_CLI_GIT_USER_EMAIL: undefined,
-    SOCKET_CLI_GIT_USER_NAME: undefined,
-  },
-}))
-
 vi.mock('../../../../../src/constants/cli.mts', () => ({
   FLAG_QUIET: '--quiet',
 }))
@@ -90,25 +79,23 @@ describe('git utilities', () => {
 
   describe('getBaseBranch', () => {
     it('returns GITHUB_BASE_REF when in PR', async () => {
-      const ENV = vi.mocked(await import('../../../../../src/constants/env.mts')).default
-      ENV.GITHUB_BASE_REF = 'main'
+      process.env['GITHUB_BASE_REF'] = 'main'
 
       const result = await getBaseBranch()
       expect(result).toBe('main')
 
-      ENV.GITHUB_BASE_REF = undefined
+      delete process.env['GITHUB_BASE_REF']
     })
 
     it('returns GITHUB_REF_NAME when it is a branch', async () => {
-      const ENV = vi.mocked(await import('../../../../../src/constants/env.mts')).default
-      ENV.GITHUB_REF_TYPE = 'branch'
-      ENV.GITHUB_REF_NAME = 'feature-branch'
+      process.env['GITHUB_REF_TYPE'] = 'branch'
+      process.env['GITHUB_REF_NAME'] = 'feature-branch'
 
       const result = await getBaseBranch()
       expect(result).toBe('feature-branch')
 
-      ENV.GITHUB_REF_TYPE = undefined
-      ENV.GITHUB_REF_NAME = undefined
+      delete process.env['GITHUB_REF_TYPE']
+      delete process.env['GITHUB_REF_NAME']
     })
 
     it('calls detectDefaultBranch when no GitHub env vars', async () => {
