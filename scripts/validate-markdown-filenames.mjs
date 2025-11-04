@@ -155,6 +155,16 @@ function isInAllowedLocationForRegularMd(filePath) {
     return true
   }
 
+  // Allow package-level docs/ (packages/*/docs/)
+  if (dir.match(/^packages\/[^/]+\/docs($|\/)/)) {
+    return true
+  }
+
+  // Allow package-level .claude/ (packages/*/.claude/)
+  if (dir.match(/^packages\/[^/]+\/\.claude($|\/)/)) {
+    return true
+  }
+
   return false
 }
 
