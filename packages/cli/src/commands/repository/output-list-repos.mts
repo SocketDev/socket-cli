@@ -4,7 +4,7 @@ import colors from 'yoctocolors-cjs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { serializeResultJson } from '../../utils/output/result-json.mts'
 
 import type { Direction } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
