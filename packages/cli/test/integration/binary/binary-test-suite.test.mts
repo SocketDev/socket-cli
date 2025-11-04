@@ -185,7 +185,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
       if (ENV.RUN_INTEGRATION_TESTS) {
         const apiToken = await getDefaultApiToken()
         hasAuth = !!apiToken
-        if (!apiToken) {
+        if (!apiToken && !process.env.CI) {
           getDefaultLogger().log('')
           getDefaultLogger().warn(
             'Integration tests require Socket authentication.',

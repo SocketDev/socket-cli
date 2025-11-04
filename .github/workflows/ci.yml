@@ -132,6 +132,18 @@ jobs:
         run: |
           echo "Setting up cached binaries for integration tests..."
           echo ""
+          echo "Cache restoration status:"
+          echo "  SEA cache hit: ${{ steps.sea-cache.outputs.cache-hit }}"
+          echo "  Smol cache hit: ${{ steps.smol-cache.outputs.cache-hit }}"
+          echo ""
+
+          # Debug: List cache directories.
+          echo "SEA dist directory contents:"
+          ls -lah packages/node-sea-builder/dist/ 2>/dev/null || echo "  (directory does not exist)"
+          echo ""
+          echo "Smol dist directory contents:"
+          ls -lah packages/node-smol-builder/dist/ 2>/dev/null || echo "  (directory does not exist)"
+          echo ""
 
           # Copy SEA binary from cache to expected test location.
           SEA_CACHED="packages/node-sea-builder/dist/sea/socket-linux-x64"
@@ -144,6 +156,14 @@ jobs:
             echo "sea=true" >> $GITHUB_OUTPUT
           else
             echo "✗ SEA binary not found in cache (expected: $SEA_CACHED)"
+            if [ "${{ steps.sea-cache.outputs.cache-hit }}" = "true" ]; then
+              echo "  Cache was restored but binary not at expected location"
+              echo "  Available files in packages/node-sea-builder/dist/:"
+              find packages/node-sea-builder/dist/ -type f 2>/dev/null || echo "  (no files found)"
+            else
+              echo "  No cache available - binaries not built yet"
+              echo "  Run build-sea.yml workflow to build and cache SEA binaries"
+            fi
             echo "sea=false" >> $GITHUB_OUTPUT
           fi
 
@@ -158,6 +178,14 @@ jobs:
             echo "smol=true" >> $GITHUB_OUTPUT
           else
             echo "✗ Smol binary not found in cache (expected: $SMOL_CACHED)"
+            if [ "${{ steps.smol-cache.outputs.cache-hit }}" = "true" ]; then
+              echo "  Cache was restored but binary not at expected location"
+              echo "  Available files in packages/node-smol-builder/dist/:"
+              find packages/node-smol-builder/dist/ -type f 2>/dev/null || echo "  (no files found)"
+            else
+              echo "  No cache available - binaries not built yet"
+              echo "  Run build-smol.yml workflow to build and cache smol binaries"
+            fi
             echo "smol=false" >> $GITHUB_OUTPUT
           fi
 
