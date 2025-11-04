@@ -1,3 +1,21 @@
+/**
+ * Integration tests for `socket scan view` command.
+ *
+ * Tests viewing detailed scan results.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Scan details display
+ * - Issue breakdown
+ * - Output format support (JSON, markdown)
+ *
+ * Related Files:
+ * - src/commands/scan/cmd-scan-view.mts - Command definition
+ * - src/commands/scan/handle-scan-view.mts - View logic
+ * - src/commands/scan/output-scan-view.mts - Formatting
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

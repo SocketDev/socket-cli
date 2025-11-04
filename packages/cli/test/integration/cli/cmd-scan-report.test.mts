@@ -1,3 +1,21 @@
+/**
+ * Integration tests for `socket scan report` command.
+ *
+ * Tests generating security scan reports.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Report generation
+ * - Output format support (JSON, markdown, HTML)
+ * - Policy compliance checking
+ *
+ * Related Files:
+ * - src/commands/scan/cmd-scan-report.mts - Command definition
+ * - src/commands/scan/handle-scan-report.mts - Report generation logic
+ * - src/commands/scan/output-scan-report.mts - Formatting
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

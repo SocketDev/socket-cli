@@ -1,3 +1,21 @@
+/**
+ * Integration tests for `socket scan list` command.
+ *
+ * Tests listing all scans for a repository or organization.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Scan listing
+ * - Filtering options
+ * - Output format support (JSON, markdown)
+ *
+ * Related Files:
+ * - src/commands/scan/cmd-scan-list.mts - Command definition
+ * - src/commands/scan/handle-scan-list.mts - Listing logic
+ * - src/commands/scan/output-scan-list.mts - Formatting
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

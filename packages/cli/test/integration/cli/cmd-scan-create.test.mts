@@ -1,3 +1,22 @@
+/**
+ * Integration tests for `socket scan create` command.
+ *
+ * Tests creating new Socket security scans for projects.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Manifest upload and scanning
+ * - Auto-manifest generation
+ * - Report generation (--report flag)
+ * - Output format support (JSON, markdown)
+ *
+ * Related Files:
+ * - src/commands/scan/cmd-scan-create.mts - Command definition
+ * - src/commands/scan/handle-scan-create.mts - Scan creation logic
+ * - src/commands/scan/output-scan-create.mts - Formatting
+ */
+
 import path from 'node:path'
 
 import { describe, expect } from 'vitest'

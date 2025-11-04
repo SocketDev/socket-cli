@@ -1,3 +1,19 @@
+/**
+ * Integration tests for `socket scan del` command.
+ *
+ * Tests deleting scans from Socket.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Scan deletion
+ * - Confirmation prompts
+ *
+ * Related Files:
+ * - src/commands/scan/cmd-scan-del.mts - Command definition
+ * - src/commands/scan/handle-scan-del.mts - Deletion logic
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

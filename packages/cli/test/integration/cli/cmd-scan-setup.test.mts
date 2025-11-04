@@ -1,3 +1,19 @@
+/**
+ * Integration tests for `socket scan setup` command.
+ *
+ * Tests configuring scan settings for projects.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Socket.json creation/modification
+ * - Scan configuration options
+ *
+ * Related Files:
+ * - src/commands/scan/cmd-scan-setup.mts - Command definition
+ * - src/commands/scan/handle-scan-setup.mts - Setup logic
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

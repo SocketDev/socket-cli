@@ -1,3 +1,19 @@
+/**
+ * Integration tests for `socket scan metadata` command.
+ *
+ * Tests viewing scan metadata and configuration.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Metadata display
+ * - Output format support
+ *
+ * Related Files:
+ * - src/commands/scan/cmd-scan-metadata.mts - Command definition
+ * - src/commands/scan/handle-scan-metadata.mts - Metadata retrieval logic
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

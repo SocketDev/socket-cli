@@ -1,3 +1,23 @@
+/**
+ * Integration tests for `socket scan reach` dry-run mode.
+ *
+ * Tests reachability analysis in dry-run mode. This is one of three test
+ * files for reach command (dry-run, validation, execution).
+ *
+ * Test Coverage:
+ * - Dry-run behavior validation
+ * - Flag parsing without execution
+ * - Input validation in dry-run mode
+ *
+ * Note: This test suite was split from cmd-scan-reach.test.mts to improve
+ * test performance and reduce CI bottlenecks.
+ *
+ * Related Files:
+ * - src/commands/scan/cmd-scan-reach.mts - Command definition
+ * - test/integration/cli/cmd-scan-reach-validation.test.mts - Validation tests
+ * - test/integration/cli/cmd-scan-reach-execution.test.mts - Execution tests
+ */
+
 import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
