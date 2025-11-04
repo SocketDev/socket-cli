@@ -1,3 +1,35 @@
+/**
+ * Unit tests for shadow package scanning utilities.
+ *
+ * Tests the common package scanning functionality used across all shadow
+ * implementations (npm, pnpm, yarn, npx) to detect and alert on security risks.
+ *
+ * Test Coverage:
+ * - Early return when command does not need scanning (run, test, etc.)
+ * - Early return when --dry-run flag is present
+ * - dlx/npx command scanning (packages from command arguments)
+ * - add/install command scanning (packages from arguments or package.json)
+ * - Empty package list handling
+ * - package.json dependency scanning (dependencies, devDependencies, optionalDependencies, peerDependencies)
+ * - Risk acceptance filter (acceptRisks flag)
+ * - Alert detection and exit behavior when risks found
+ * - Spinner integration and stopping on alerts
+ * - Error handling (network errors, process.exit errors)
+ *
+ * Testing Approach:
+ * - Mock all dependencies (fs, logger, socket API, npm utils)
+ * - Test various command types and flag combinations
+ * - Validate PURLs generation from npm specs
+ * - Test alert filtering based on acceptRisks setting
+ * - Verify process exit codes on security violations
+ *
+ * Related Files:
+ * - src/shadow/common.mts - Common scanning implementation
+ * - src/utils/socket/alerts.mts - Alert fetching
+ * - src/utils/socket/package-alert.mts - Alert logging
+ * - src/utils/npm/spec.mts - npm spec to PURL conversion
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { FLAG_DRY_RUN } from '../../../src/constants/cli.mts'

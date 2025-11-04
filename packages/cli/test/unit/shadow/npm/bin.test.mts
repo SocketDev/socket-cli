@@ -1,3 +1,31 @@
+/**
+ * Unit tests for npm shadow binary wrapper.
+ *
+ * Tests the npm-specific shadow binary that wraps the base shadow implementation
+ * with npm-specific configuration and arguments.
+ *
+ * Test Coverage:
+ * - shadowNpmBase called with NPM binary constant
+ * - Custom options passed to shadowNpmBase (cwd, env, ipc)
+ * - Extra parameters forwarding (timeout, etc.)
+ * - Default process.argv usage when no args provided
+ * - Empty args array handling
+ * - Readonly args array handling
+ * - Complex npm commands with flags (install, --save-dev, --no-audit)
+ * - Spawn result structure preservation
+ * - Error handling from shadowNpmBase
+ *
+ * Testing Approach:
+ * - Mock shadowNpmBase module
+ * - Validate arguments passed to base implementation
+ * - Test with various argument combinations
+ * - Verify return value structure
+ *
+ * Related Files:
+ * - src/shadow/npm/bin.mts - npm shadow binary wrapper
+ * - src/shadow/npm-base.mts - Base shadow binary implementation
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { NPM } from '@socketsecurity/lib/constants/agents'

@@ -1,3 +1,38 @@
+/**
+ * Unit tests for npm shadow binary base implementation.
+ *
+ * Tests the core shadow binary functionality that wraps npm/npx commands with
+ * Socket security scanning via IPC communication and Node.js permissions.
+ *
+ * Test Coverage:
+ * - npm spawn with default arguments (--no-audit, --no-fund, --no-progress, --loglevel error)
+ * - npx spawn with correct binary path
+ * - Custom cwd option handling (string and URL)
+ * - stdio option preservation
+ * - Permission flags for npm on supported Node.js versions
+ * - No permission flags for npx
+ * - Preserving existing --node-options
+ * - Filtering audit and progress flags
+ * - Terminator args (--) handling
+ * - IPC handshake message with API token
+ * - Progress flag in IPC message
+ * - Shadow link installation (npm/npx)
+ * - Node.js hardening flags (--frozen-intrinsics, --no-warnings)
+ * - Inject script loading (--require)
+ *
+ * Testing Approach:
+ * - Mock spawnNode, findSystemNodejs, link installers
+ * - Mock constants (paths, shadow, env, node)
+ * - Validate spawn arguments and options
+ * - Test IPC data structure
+ * - Verify Node.js security flags
+ *
+ * Related Files:
+ * - src/shadow/npm-base.mts - Base npm shadow implementation
+ * - src/utils/spawn/spawn-node.mts - Node.js process spawning
+ * - src/utils/shadow/links.mts - Shadow binary link management
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { NPM, NPX } from '@socketsecurity/lib/constants/agents'

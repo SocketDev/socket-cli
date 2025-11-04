@@ -1,3 +1,36 @@
+/**
+ * Unit tests for pnpm shadow binary wrapper.
+ *
+ * Tests the pnpm-specific shadow binary that provides security scanning for
+ * pnpm package manager commands (add, install, etc.).
+ *
+ * Test Coverage:
+ * - pnpm add with single package
+ * - pnpm add with versioned package (lodash@4.17.21)
+ * - pnpm add with scoped package (@types/node)
+ * - pnpm add with scoped package and version (@types/node@20.0.0)
+ * - Multiple packages in single command
+ * - Install without lockfile (skips scanning)
+ * - Process exit with code 1 when risks found
+ * - SOCKET_CLI_ACCEPT_RISKS environment variable (changes filter to errors only)
+ * - Dry-run flag (skips scanning)
+ * - Non-install commands (run, test) without scanning
+ * - Filtering command line flags from package names
+ *
+ * Testing Approach:
+ * - Mock fs, spawn, pnpm lockfile utilities, alert fetching
+ * - Mock shadow link installation
+ * - Test PURL generation from package specs
+ * - Validate alert filtering based on risk acceptance
+ * - Test process.exit behavior on security violations
+ *
+ * Related Files:
+ * - src/shadow/pnpm/bin.mts - pnpm shadow binary implementation
+ * - src/utils/socket/alerts.mts - Alert fetching
+ * - src/utils/pnpm.mts - pnpm lockfile utilities
+ * - src/utils/shadow/links.mts - Shadow binary link management
+ */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { FLAG_DRY_RUN } from '../../../../src/constants/cli.mts'

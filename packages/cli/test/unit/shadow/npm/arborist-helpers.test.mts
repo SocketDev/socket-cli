@@ -1,3 +1,37 @@
+/**
+ * Unit tests for npm arborist helper utilities.
+ *
+ * Tests utilities that extract security alert information from npm's arborist
+ * dependency tree diff results during install operations.
+ *
+ * Test Coverage:
+ * - getAlertsMapFromArborist: Extract alerts from arborist with package details, overrides handling
+ * - getAlertsMapFromArborist: Handle arborist without actualTree (loads actual tree)
+ * - getAlertsMapFromArborist: Handle arborist without overrides
+ * - getDetailsFromDiff: Null diff handling (returns empty array)
+ * - getDetailsFromDiff: ADD action extraction with package details
+ * - getDetailsFromDiff: CHANGE action with version change (includes old and new nodes)
+ * - getDetailsFromDiff: CHANGE action without version change (skipped)
+ * - getDetailsFromDiff: REMOVE action (skipped)
+ * - getDetailsFromDiff: Unknown origin filtering (when unknownOrigin is false)
+ * - getDetailsFromDiff: Existing package inclusion (when existing filter is true)
+ * - getDetailsFromDiff: Nested diff children traversal
+ * - getDetailsFromDiff: Infinite loop detection (LOOP_SENTINEL)
+ *
+ * Testing Approach:
+ * - Mock socket alerts API, PURL conversion, URL parsing, filter config
+ * - Create mock arborist instances with actualTree/idealTree
+ * - Create mock diff structures with various actions
+ * - Validate package detail extraction logic
+ * - Test filter configuration application
+ *
+ * Related Files:
+ * - src/shadow/npm/arborist-helpers.mts - Arborist helper utilities
+ * - src/shadow/npm/arborist/types.mts - Arborist type definitions
+ * - src/utils/socket/alerts.mts - Alert fetching
+ * - src/utils/ecosystem/spec.mts - PURL conversion
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { DiffAction } from '../../../../src/shadow/npm/arborist/types.mts'

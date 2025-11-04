@@ -1,3 +1,37 @@
+/**
+ * Unit tests for npm shadow install functionality.
+ *
+ * Tests the npm install shadow implementation that wraps npm install commands
+ * with Socket security scanning and Node.js hardening flags.
+ *
+ * Test Coverage:
+ * - Default npm install spawn (with --no-audit, --no-fund, --no-progress, --loglevel silent)
+ * - Custom agent exec path (agentExecPath)
+ * - Custom arguments handling (--save-dev, typescript, etc.)
+ * - Flag filtering (audit, fund, progress flags removed)
+ * - Terminator args (--) handling
+ * - Loglevel flag preservation when provided
+ * - stdio IPC channel management (string to array conversion, array IPC addition)
+ * - IPC handshake message sending with shadow metadata
+ * - Progress flag detection in IPC message
+ * - Spinner option forwarding
+ * - Custom environment variable merging
+ * - Node.js hardening flags (--frozen-intrinsics, --no-warnings)
+ * - Inject script loading (--require)
+ *
+ * Testing Approach:
+ * - Mock spawn, getNpmBinPath, and all constants
+ * - Validate spawn arguments and options
+ * - Test IPC message structure
+ * - Verify flag filtering logic
+ * - Test stdio configuration variations
+ *
+ * Related Files:
+ * - src/shadow/npm/install.mts - npm install shadow implementation
+ * - src/utils/npm/paths.mts - npm binary path resolution
+ * - src/shadow/stdio-ipc.mts - stdio IPC utilities
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { shadowNpmInstall } from '../../../../src/shadow/npm/install.mts'

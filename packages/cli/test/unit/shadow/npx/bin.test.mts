@@ -1,3 +1,33 @@
+/**
+ * Unit tests for npx shadow binary wrapper.
+ *
+ * Tests the npx-specific shadow binary that wraps the base shadow implementation
+ * for executing packages without installation.
+ *
+ * Test Coverage:
+ * - shadowNpmBase called with NPX binary constant
+ * - Custom options passed to shadowNpmBase (cwd, env, ipc)
+ * - Extra parameters forwarding (timeout, etc.)
+ * - Default process.argv usage when no args provided
+ * - Empty args array handling
+ * - Readonly args array handling
+ * - Package execution with arguments (jest --coverage --watch)
+ * - Scoped packages (@angular/cli)
+ * - Package with version specification (@latest, @version)
+ * - Spawn result structure preservation
+ * - Error handling from shadowNpmBase
+ *
+ * Testing Approach:
+ * - Mock shadowNpmBase module
+ * - Validate arguments passed to base implementation
+ * - Test with various npx command patterns (create-react-app, cowsay, jest, etc.)
+ * - Verify return value structure
+ *
+ * Related Files:
+ * - src/shadow/npx/bin.mts - npx shadow binary wrapper
+ * - src/shadow/npm-base.mts - Base shadow binary implementation
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { NPX } from '@socketsecurity/lib/constants/agents'

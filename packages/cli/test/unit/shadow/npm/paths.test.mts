@@ -1,3 +1,32 @@
+/**
+ * Unit tests for npm arborist path resolution utilities.
+ *
+ * Tests the utilities that resolve file paths to npm's arborist package and its
+ * internal classes, which are used for dependency tree manipulation.
+ *
+ * Test Coverage:
+ * - getArboristPackagePath: Resolves @npmcli/arborist package root path
+ * - Path caching on subsequent calls
+ * - Complex nested package structure handling
+ * - Windows path handling (when WIN32 is true)
+ * - getArboristClassPath: Main arborist class path
+ * - getArboristEdgeClassPath: Edge class for dependency edges
+ * - getArboristNodeClassPath: Node class for dependency nodes
+ * - getArboristOverrideSetClassPath: Override set class for dependency overrides
+ * - Path normalization (backslashes to forward slashes)
+ *
+ * Testing Approach:
+ * - Mock getNpmRequire and normalizePath
+ * - Mock constants (WIN32 flag)
+ * - Test path extraction from require.resolve results
+ * - Validate caching behavior
+ * - Test platform-specific path handling
+ *
+ * Related Files:
+ * - src/shadow/npm/paths.mts - npm arborist path utilities
+ * - src/utils/npm/paths.mts - npm path resolution
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

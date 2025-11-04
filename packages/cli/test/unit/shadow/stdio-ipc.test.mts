@@ -1,3 +1,28 @@
+/**
+ * Unit tests for stdio IPC channel management.
+ *
+ * Tests the stdio configuration utility that ensures an IPC channel is available
+ * for communication with child processes in shadow binary implementations.
+ *
+ * Test Coverage:
+ * - String stdio conversion to array with IPC ('inherit', 'pipe', 'ignore')
+ * - Array stdio with IPC addition when not present
+ * - Array stdio preservation when IPC already present
+ * - Mixed array stdio types with IPC
+ * - Empty array stdio handling
+ * - Single element array stdio handling
+ * - Undefined stdio input (defaults to pipe with IPC)
+ * - Null stdio input handling
+ *
+ * Testing Approach:
+ * - Direct function testing with various stdio configurations
+ * - Validate array structure and IPC channel positioning
+ * - Test edge cases (empty, single element, null, undefined)
+ *
+ * Related Files:
+ * - src/shadow/stdio-ipc.mts - stdio IPC utilities
+ */
+
 import { describe, expect, it } from 'vitest'
 
 import { ensureIpcInStdio } from '../../../src/shadow/stdio-ipc.mts'
