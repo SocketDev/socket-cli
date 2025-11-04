@@ -114,7 +114,7 @@ jobs:
         id: sea-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          path: packages/node-sea-builder/dist/
+          path: packages/node-sea-builder/dist/sea/
           key: node-sea-linux-x64-${{ steps.cache-keys.outputs.sea-hash }}
           restore-keys: node-sea-linux-x64-
 
