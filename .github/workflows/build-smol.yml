@@ -1,4 +1,4 @@
-name: ⚡ Smol Node Binaries
+name: ⚡ Smol Binaries
 
 on:
   workflow_call:
@@ -513,7 +513,7 @@ jobs:
     steps:
       - name: Generate summary
         run: |
-          echo "# ⚡ Socket Smol Node Build" >> $GITHUB_STEP_SUMMARY
+          echo "# ⚡ Socket Smol Build" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           # Check status of dependencies.

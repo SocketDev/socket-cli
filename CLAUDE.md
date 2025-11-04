@@ -92,7 +92,7 @@ if (!!cli.flags['dryRun']) {
 
 **Pattern 3: No Implementation (~24 commands)** - Interactive/auth commands
 
-### Smol Node.js Binary
+### Smol Binary
 - **Locations**: `.node-source/out/Release/node`, `build/out/Release/node`
 
 ### Socket Node.js Patches

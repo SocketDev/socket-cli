@@ -50,7 +50,7 @@ const BINARIES = {
       'build',
     ],
     enabled: !!process.env.TEST_SMOL_BINARY,
-    name: 'Smol Node.js Binary',
+    name: 'Smol Binary',
     path: path.join(
       MONOREPO_ROOT,
       'packages/node-smol-builder/dist/socket-smol',
