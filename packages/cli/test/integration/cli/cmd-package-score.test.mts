@@ -1,3 +1,22 @@
+/**
+ * Integration tests for `socket package score` command.
+ *
+ * Tests retrieving Socket security scores for npm packages. The score
+ * reflects overall package security based on multiple issue categories.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Package spec parsing (ecosystem/name@version)
+ * - Score retrieval and display
+ * - Output format support (JSON, markdown)
+ *
+ * Related Files:
+ * - src/commands/package/cmd-package-score.mts - Command definition
+ * - src/commands/package/handle-package-score.mts - Score retrieval logic
+ * - src/commands/package/output-package-score.mts - Formatting
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

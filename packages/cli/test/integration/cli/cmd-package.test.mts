@@ -1,3 +1,24 @@
+/**
+ * Integration tests for `socket package` root command.
+ *
+ * Tests the package analysis root command which provides access to
+ * package-specific security and metadata operations.
+ *
+ * Test Coverage:
+ * - Help text display and subcommand listing
+ * - Dry-run behavior validation
+ * - Package spec parsing (npm/lodash@4.17.21)
+ * - Subcommand routing
+ *
+ * Available Subcommands:
+ * - score: Get package security score
+ * - shallow: Get shallow package analysis
+ *
+ * Related Files:
+ * - src/commands/package/cmd-package.mts - Root command definition
+ * - src/commands/package/cmd-package-*.mts - Subcommands
+ */
+
 import { describe, expect } from 'vitest'
 
 import {
