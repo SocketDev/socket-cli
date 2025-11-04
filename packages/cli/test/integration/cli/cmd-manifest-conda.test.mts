@@ -1,3 +1,19 @@
+/**
+ * Integration tests for `socket manifest conda` command.
+ *
+ * Tests Conda environment manifest generation for Python/data science projects.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - environment.yml parsing
+ * - Dependency resolution
+ *
+ * Related Files:
+ * - src/commands/manifest/cmd-manifest-conda.mts - Command definition
+ * - src/commands/manifest/handle-manifest-conda.mts - Conda manifest logic
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

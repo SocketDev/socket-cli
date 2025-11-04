@@ -1,3 +1,27 @@
+/**
+ * Integration tests for `socket manifest` root command.
+ *
+ * Tests the manifest generation root command which provides access to
+ * ecosystem-specific SBOM (Software Bill of Materials) generation.
+ *
+ * Test Coverage:
+ * - Help text display and subcommand listing
+ * - Dry-run behavior validation
+ * - Subcommand routing
+ *
+ * Available Subcommands:
+ * - auto: Auto-detect and generate manifests
+ * - conda: Generate conda environment manifests
+ * - gradle: Generate Gradle project manifests
+ * - kotlin: Generate Kotlin project manifests
+ * - scala: Generate Scala/SBT project manifests
+ * - setup: Install manifest generation tools
+ *
+ * Related Files:
+ * - src/commands/manifest/cmd-manifest.mts - Root command definition
+ * - src/commands/manifest/cmd-manifest-*.mts - Ecosystem-specific commands
+ */
+
 import { describe, expect } from 'vitest'
 
 import {

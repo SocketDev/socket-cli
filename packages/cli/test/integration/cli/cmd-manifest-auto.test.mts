@@ -1,3 +1,29 @@
+/**
+ * Integration tests for `socket manifest auto` command.
+ *
+ * Tests automatic manifest generation with ecosystem detection.
+ * This command analyzes the project structure and generates appropriate
+ * manifest files for detected ecosystems.
+ *
+ * Test Coverage:
+ * - Help text display and usage examples
+ * - Dry-run behavior validation
+ * - Ecosystem auto-detection
+ * - Multi-ecosystem project support
+ *
+ * Supported Ecosystems:
+ * - npm (package.json)
+ * - pnpm (pnpm-lock.yaml)
+ * - yarn (yarn.lock)
+ * - Gradle (build.gradle, build.gradle.kts)
+ * - SBT (build.sbt)
+ * - Conda (environment.yml)
+ *
+ * Related Files:
+ * - src/commands/manifest/cmd-manifest-auto.mts - Command definition
+ * - src/commands/manifest/handle-manifest-auto.mts - Auto-detection logic
+ */
+
 import { describe, expect } from 'vitest'
 
 import {
