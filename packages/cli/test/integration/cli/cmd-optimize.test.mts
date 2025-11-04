@@ -1,3 +1,33 @@
+/**
+ * Integration tests for `socket optimize` command.
+ *
+ * Tests the complete CLI flow of optimizing dependencies with @socketregistry overrides.
+ * These tests use real CLI execution (not mocked) to verify end-to-end behavior.
+ *
+ * Test Coverage:
+ * - Command help and version information
+ * - Dry-run mode validation (no file modifications)
+ * - Flag combinations (--pin, --prod, --dry-run)
+ * - Output format support (JSON, markdown, text)
+ * - Custom directory path handling
+ * - Error handling (missing package.json, invalid paths, missing API tokens)
+ * - Edge cases (conflicting flags, unknown flags, comprehensive flag combinations)
+ *
+ * Package Manager Support:
+ * - npm: Shadow installation with security scanning (tested via integration)
+ * - pnpm: Standard installation with CI-mode configuration (tested here)
+ * - yarn: Standard installation (tested here)
+ *
+ * Note: Unit tests for mocked behavior were removed due to ESM module resolution
+ * limitations. These integration tests provide comprehensive coverage by testing
+ * real CLI execution against fixture projects.
+ *
+ * Related Files:
+ * - src/commands/optimize/handle-optimize.mts - Main command handler
+ * - src/commands/optimize/agent-installer.mts - Package manager install logic
+ * - test/unit/commands/optimize/agent-installer.test.mts - Unit tests for non-npm agents
+ */
+
 import { existsSync, promises } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'

@@ -1,9 +1,32 @@
+/**
+ * Unit tests for agent-installer utilities.
+ *
+ * Tests the package manager installation logic used by the optimize command.
+ * These tests use mocked spawn/spinner to verify correct command construction.
+ *
+ * Test Coverage:
+ * - pnpm: Special flags (--config.confirmModulesPurge=false, --no-frozen-lockfile, CI=1)
+ * - yarn: Basic install command
+ * - Custom args pass-through (--frozen-lockfile, --production, etc.)
+ * - Spinner integration for progress indication
+ * - Unknown/future package managers (fallback behavior)
+ * - Option merging (args, env, stdio)
+ *
+ * npm Behavior (NOT tested here):
+ * - npm uses shadowNpmInstall for security scanning
+ * - This cannot be reliably mocked due to ESM module resolution issues
+ * - npm behavior is tested via integration tests at:
+ *   test/integration/cli/cmd-optimize.test.mts
+ *
+ * Related Files:
+ * - src/commands/optimize/agent-installer.mts - Implementation
+ * - src/shadow/npm/install.mts - npm shadow installation
+ * - test/integration/cli/cmd-optimize.test.mts - Integration tests for full optimize flow
+ */
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Create hoisted mocks.
-const { mockShadowNpmInstall } = vi.hoisted(() => ({
-  mockShadowNpmInstall: vi.fn(),
-}))
+import { runAgentInstall } from '../../../../../src/commands/optimize/agent-installer.mts'
 
 // Mock dependencies.
 vi.mock('@socketsecurity/lib/spawn', () => ({
@@ -16,12 +39,6 @@ vi.mock('@socketsecurity/lib/spinner', () => ({
     stop: vi.fn(),
   })),
 }))
-
-vi.mock('../../../../../src/shadow/npm/install.mts', () => ({
-  shadowNpmInstall: mockShadowNpmInstall,
-}))
-
-import { runAgentInstall } from '../../../../../src/commands/optimize/agent-installer.mts'
 
 vi.mock('../../../../../src/utils/process/cmd.mts', () => ({
   cmdFlagsToString: vi.fn(flags =>
@@ -61,24 +78,9 @@ describe('agent installer utilities', () => {
   })
 
   describe('runAgentInstall', () => {
-    // Skipping this test - the mock doesn't work due to module resolution issues.
-    // The mock is set up correctly but shadowNpmInstall import in agent-installer.mts
-    // doesn't resolve to the mock. This appears to be a vitest module mocking limitation
-    // with ESM + hoisted mocks. The functionality is covered by integration tests.
-    it.skip('uses shadowNpmInstall for npm agent', () => {
-      mockShadowNpmInstall.mockReturnValue(Promise.resolve({ status: 0 }) as any)
-
-      const pkgEnvDetails = {
-        agent: 'npm',
-        agentExecPath: '/usr/bin/npm',
-        pkgPath: '/test/project',
-      } as any
-
-      const result = runAgentInstall(pkgEnvDetails)
-
-      expect(mockShadowNpmInstall).toHaveBeenCalledTimes(1)
-      expect(result).toBeInstanceOf(Promise)
-    })
+    // Note: npm agent behavior (shadowNpmInstall) is covered by integration tests.
+    // The mock-based test was removed due to ESM module resolution issues that
+    // prevented proper interception. The 6 tests below cover pnpm/yarn/unknown agents.
 
     it('uses spawn for pnpm agent', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
