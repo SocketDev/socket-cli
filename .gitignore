@@ -1,7 +1,6 @@
 .DS_Store
 ._.DS_Store
 Thumbs.db
-.claude/
 /.env
 /.env.local
 /.pnpmfile.cjs
@@ -15,14 +14,15 @@ Thumbs.db
 /.yarnrc.yml
 *.log
 **/build/*.log
+**/.build-checkpoints
 **/.cache
+**/.claude
 **/coverage
 **/.type-coverage
 **/build
 !docs/build
 **/dist
 **/node_modules
-.build-checkpoints
 *.d.ts
 *.d.ts.map
 **/*.tmp

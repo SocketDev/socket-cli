@@ -1,8 +1,0 @@
-# Build artifacts (unstacked - SEA build).
-build/
-
-# Distribution artifacts (optimized binaries).
-dist/
-
-# Node modules.
-node_modules/
