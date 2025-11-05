@@ -116,7 +116,7 @@ jobs:
 
   build-smol:
     needs: build-deps
-    name: ⚡ Smol - ${{ matrix.platform }}-${{ matrix.arch }}
+    name: ⚡ Smol Binaries
     runs-on: ${{ matrix.runner }}
     timeout-minutes: ${{ inputs.force && 180 || 150 }}
     strategy:
