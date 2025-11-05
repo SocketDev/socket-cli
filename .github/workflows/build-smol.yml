@@ -661,6 +661,44 @@ jobs:
           Write-Host "Visual Studio environment configured ($exportCount variables exported)"
           Write-Host "Next build step will have access to MSVC compiler toolchain"
 
+      - name: Verify MSVC environment (Windows)
+        if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform == 'win32'
+        shell: pwsh
+        run: |
+          Write-Host "Verifying MSVC environment variables are set:"
+          Write-Host ""
+
+          # Check critical VS environment variables.
+          $criticalVars = @(
+            'VCINSTALLDIR'
+            'WindowsSDKVersion'
+            'INCLUDE'
+            'LIB'
+            'PATH'
+          )
+
+          $allSet = $true
+          foreach ($var in $criticalVars) {
+            $value = [Environment]::GetEnvironmentVariable($var)
+            if ($value) {
+              $preview = $value.Substring(0, [Math]::Min(80, $value.Length))
+              if ($value.Length -gt 80) { $preview += "..." }
+              Write-Host "  ✓ $var = $preview"
+            } else {
+              Write-Host "  ✗ $var is NOT SET"
+              $allSet = $false
+            }
+          }
+
+          Write-Host ""
+          if (-not $allSet) {
+            Write-Error "MSVC environment not properly configured!"
+            Write-Host "This will cause configure.py to fail with 'Could not locate Visual Studio installation'"
+            exit 1
+          }
+
+          Write-Host "✓ MSVC environment verified - configure.py should succeed"
+
       - name: Build smol binary (Standard platforms)
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform != 'alpine'
         run: pnpm --filter @socketbin/node-smol-builder run build
