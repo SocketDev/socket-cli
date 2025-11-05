@@ -6,7 +6,7 @@
   },
   "description": "Custom Node.js binary builder with Socket security patches",
   "devDependencies": {
-    "vitest": "3.0.0"
+    "vitest": "catalog:"
   },
   "license": "MIT",
   "name": "@socketbin/node-smol-builder",
