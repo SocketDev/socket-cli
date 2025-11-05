@@ -369,11 +369,31 @@ export async function checkNetworkConnectivity() {
       return { connected: true, statusCode: 'skipped-in-ci' }
     }
 
-    // Try to reach GitHub (where we clone from).
+    // Platform-specific network connectivity check.
+    if (WIN32) {
+      // Windows: Use PowerShell's Invoke-WebRequest.
+      const result = await spawn(
+        'powershell',
+        [
+          '-NoProfile',
+          '-Command',
+          'try { $null = Invoke-WebRequest -Uri "https://github.com" -Method Head -TimeoutSec 5 -UseBasicParsing -ErrorAction Stop; Write-Output "200" } catch { Write-Output "0" }',
+        ],
+        { shell: false, stdio: 'pipe', stdioString: true }
+      )
+
+      const statusCode = (result.stdout ?? '').trim()
+      return {
+        connected: statusCode === '200',
+        statusCode: statusCode === '200' ? '200' : null,
+      }
+    }
+
+    // Unix/Linux/macOS: Use curl.
     const result = await spawn(
       'curl',
       ['-s', '-o', '/dev/null', '-w', '%{http_code}', '--connect-timeout', '5', 'https://github.com'],
-      { shell: WIN32, stdio: 'pipe', stdioString: true }
+      { shell: false, stdio: 'pipe', stdioString: true }
     )
 
     const statusCode = (result.stdout ?? '').trim()
