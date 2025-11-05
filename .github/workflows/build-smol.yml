@@ -578,12 +578,21 @@ jobs:
           $arch = "${{ matrix.arch }}"
           Write-Host "Setting up MSVC environment for: $arch"
 
-          # Build the command string with proper quoting for paths with spaces.
-          # Must wrap the entire command in outer quotes for cmd.exe /c.
-          $cmdString = "set && cls && `"$vcvarsallPath`" $arch && cls && set"
+          # Build the command for cmd.exe with proper nested quoting.
+          # PowerShell -> cmd.exe requires careful quote escaping:
+          #   - Outer quotes for cmd.exe /c argument
+          #   - Inner quotes around vcvarsall.bat path (has spaces)
+          #   - Escape inner quotes with backtick for PowerShell
+          #
+          # Result: cmd.exe receives -> set && cls && "C:\...\vcvarsall.bat" x64 && cls && set
+          #
+          $cmdArgs = @(
+            '/c'
+            "set && cls && `"$vcvarsallPath`" $arch && cls && set"
+          )
 
-          # Invoke cmd.exe and capture output.
-          $output = & cmd.exe /c $cmdString 2>&1
+          # Invoke cmd.exe with properly structured arguments.
+          $output = & cmd.exe $cmdArgs 2>&1
 
           # Split output by form feed character (0x0C produced by cls).
           $sections = ($output -join "`n") -split "`f"
