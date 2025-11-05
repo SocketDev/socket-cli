@@ -100,7 +100,10 @@ Supports version 2 format with `projectIgnorePaths` for excluding files from rep
 
 ## Contributing
 
-**New to Socket CLI development?** Start with our [Getting Started Guide](docs/development/getting-started.md) for complete setup instructions.
+**New to Socket CLI development?**
+
+- **Quick Start (10 min)**: [Getting Started Guide](docs/getting-started.md) — Essential setup and first contribution
+- **Detailed Guide**: [Development Getting Started](docs/development/getting-started.md) — Complete end-to-end onboarding
 
 **Quick setup:**
 

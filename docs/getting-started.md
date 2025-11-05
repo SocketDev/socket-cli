@@ -1,6 +1,6 @@
-# Onboarding Guide
+# Getting Started
 
-**New Contributor Quickstart** — Get started with Socket CLI development in 10 minutes.
+**Quick start guide** — Get started with Socket CLI development in 10 minutes.
 
 ---
 
