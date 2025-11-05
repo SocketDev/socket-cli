@@ -60,9 +60,6 @@ catalogs:
     '@gitbeaker/rest':
       specifier: 43.7.0
       version: 43.7.0
-    '@iarna/toml':
-      specifier: ^2.2.5
-      version: 2.2.5
     '@inquirer/confirm':
       specifier: 5.1.16
       version: 5.1.16
@@ -201,9 +198,6 @@ catalogs:
     '@yarnpkg/extensions':
       specifier: 2.0.6
       version: 2.0.6
-    '@yarnpkg/parsers':
-      specifier: ^3.0.3
-      version: 3.0.3
     ajv-dist:
       specifier: 8.17.1
       version: 8.17.1
@@ -264,9 +258,6 @@ catalogs:
     fast-sort:
       specifier: 3.4.1
       version: 3.4.1
-    fast-xml-parser:
-      specifier: ^5.3.1
-      version: 5.3.1
     get-east-asian-width:
       specifier: 1.3.0
       version: 1.3.0
@@ -819,7 +810,7 @@ importers:
         version: link:../cli
       '@socketsecurity/lib-internal':
         specifier: workspace:*
-        version: link:../lib
+        version: link:../lib-internal
       del-cli:
         specifier: 'catalog:'
         version: 6.0.0
@@ -843,7 +834,7 @@ importers:
         version: 7.28.4
       '@socketsecurity/lib-internal':
         specifier: workspace:*
-        version: link:../lib
+        version: link:../lib-internal
       magic-string:
         specifier: 'catalog:'
         version: 0.30.19
@@ -873,7 +864,7 @@ importers:
         version: link:../build-infra
       '@socketsecurity/lib-internal':
         specifier: workspace:*
-        version: link:../lib
+        version: link:../lib-internal
       '@socketsecurity/sdk':
         specifier: workspace:*
         version: link:../sdk
@@ -911,16 +902,7 @@ importers:
         specifier: 'catalog:'
         version: 8.0.0
 
-  packages/codet5-models-builder:
-    dependencies:
-      '@socketsecurity/build-infra':
-        specifier: workspace:*
-        version: link:../build-infra
-      '@socketsecurity/lib-internal':
-        specifier: workspace:*
-        version: link:../lib
-
-  packages/lib:
+  packages/lib-internal:
     dependencies:
       '@babel/core':
         specifier: 'catalog:'
@@ -1115,24 +1097,6 @@ importers:
         specifier: 'catalog:'
         version: 4.1.8
 
-  packages/minilm-builder:
-    dependencies:
-      '@socketsecurity/build-infra':
-        specifier: workspace:*
-        version: link:../build-infra
-      '@socketsecurity/lib-internal':
-        specifier: workspace:*
-        version: link:../lib
-
-  packages/models:
-    dependencies:
-      '@socketsecurity/build-infra':
-        specifier: workspace:*
-        version: link:../build-infra
-      '@socketsecurity/lib-internal':
-        specifier: workspace:*
-        version: link:../lib
-
   packages/node-sea-builder:
     dependencies:
       '@socketsecurity/bootstrap':
@@ -1145,53 +1109,6 @@ importers:
       postject:
         specifier: 'catalog:'
         version: 1.0.0-alpha.6
-      vitest:
-        specifier: 'catalog:'
-        version: 4.0.3(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/ui@4.0.3)(jiti@2.6.1)(yaml@2.8.1)
-
-  packages/node-smol-builder:
-    dependencies:
-      '@socketsecurity/bootstrap':
-        specifier: workspace:*
-        version: link:../bootstrap
-      '@socketsecurity/build-infra':
-        specifier: workspace:*
-        version: link:../build-infra
-      '@socketsecurity/lib-internal':
-        specifier: workspace:*
-        version: link:../lib
-    devDependencies:
-      vitest:
-        specifier: 'catalog:'
-        version: 4.0.3(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/ui@4.0.3)(jiti@2.6.1)(yaml@2.8.1)
-
-  packages/onnxruntime:
-    dependencies:
-      '@socketsecurity/build-infra':
-        specifier: workspace:*
-        version: link:../build-infra
-      '@socketsecurity/lib-internal':
-        specifier: workspace:*
-        version: link:../lib
-
-  packages/sbom-generator:
-    dependencies:
-      '@iarna/toml':
-        specifier: 'catalog:'
-        version: 2.2.5
-      '@socketsecurity/lib-internal':
-        specifier: workspace:*
-        version: link:../lib
-      '@yarnpkg/parsers':
-        specifier: 'catalog:'
-        version: 3.0.3
-      fast-xml-parser:
-        specifier: 'catalog:'
-        version: 5.3.1
-      yaml:
-        specifier: 2.8.1
-        version: 2.8.1
-    devDependencies:
       vitest:
         specifier: 'catalog:'
         version: 4.0.3(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/ui@4.0.3)(jiti@2.6.1)(yaml@2.8.1)
@@ -1224,7 +1141,7 @@ importers:
         version: 1.3.5
       '@socketsecurity/lib-internal':
         specifier: workspace:*
-        version: link:../lib
+        version: link:../lib-internal
       '@types/babel__traverse':
         specifier: 'catalog:'
         version: 7.28.0
@@ -1311,7 +1228,7 @@ importers:
     devDependencies:
       '@socketsecurity/lib-internal':
         specifier: workspace:*
-        version: link:../lib
+        version: link:../lib-internal
       esbuild:
         specifier: 'catalog:'
         version: 0.25.11
@@ -1364,7 +1281,7 @@ importers:
         version: link:../build-infra
       '@socketsecurity/lib-internal':
         specifier: workspace:*
-        version: link:../lib
+        version: link:../lib-internal
 
 packages:
 
@@ -4315,10 +4232,6 @@ packages:
   fast-uri@3.1.0:
     resolution: {integrity: sha512-iPeeDKJSWf4IEOasVVrknXpaBV0IApz/gp7S2bb7Z4Lljbl2MGJRqInZiUrQwV16cpzw/D3S5j5Julj/gT52AA==}
 
-  fast-xml-parser@5.3.1:
-    resolution: {integrity: sha512-jbNkWiv2Ec1A7wuuxk0br0d0aTMUtQ4IkL+l/i1r9PRf6pLXjDgsBsWwO+UyczmQlnehi4Tbc8/KIvxGQe+I/A==}
-    hasBin: true
-
   fastq@1.19.1:
     resolution: {integrity: sha512-GwLTyxkCXjXbxqIhTsMI2Nui8huMPtnxg7krajPJAjnEG/iiOS7i+zCtWGZR9G0NBKbXKh6X9m9UIsYX/N6vvQ==}
 
@@ -6118,9 +6031,6 @@ packages:
   strip-json-comments@3.1.1:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
-
-  strnum@2.1.1:
-    resolution: {integrity: sha512-7ZvoFTiCnGxBtDqJ//Cu6fWtZtc7Y3x+QOirG15wztbdngGSkht27o2pyGWrVy0b4WAy3jbKmnoK6g5VlVNUUw==}
 
   suffix-thumb@5.0.2:
     resolution: {integrity: sha512-I5PWXAFKx3FYnI9a+dQMWNqTxoRt6vdBdb0O+BJ1sxXCWtSoQCusc13E58f+9p4MYx/qCnEMkD5jac6K2j3dgA==}
@@ -8724,10 +8634,10 @@ snapshots:
 
   '@types/yargs-parser@21.0.3': {}
 
-  '@typescript-eslint/eslint-plugin@8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)':
+  '@typescript-eslint/eslint-plugin@8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
-      '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
+      '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.44.1
       '@typescript-eslint/type-utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
@@ -10212,10 +10122,6 @@ snapshots:
   fast-sort@3.4.1: {}
 
   fast-uri@3.1.0: {}
-
-  fast-xml-parser@5.3.1:
-    dependencies:
-      strnum: 2.1.1
 
   fastq@1.19.1:
     dependencies:
@@ -12104,8 +12010,6 @@ snapshots:
 
   strip-json-comments@3.1.1: {}
 
-  strnum@2.1.1: {}
-
   suffix-thumb@5.0.2: {}
 
   supports-color@5.5.0:
@@ -12382,7 +12286,7 @@ snapshots:
 
   typescript-eslint@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2):
     dependencies:
-      '@typescript-eslint/eslint-plugin': 8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
+      '@typescript-eslint/eslint-plugin': 8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/typescript-estree': 8.44.1(typescript@5.9.2)
       '@typescript-eslint/utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)

@@ -24,7 +24,7 @@ let _maintainedNodeVersions:
   | undefined
 export function getMaintainedNodeVersions() {
   if (_maintainedNodeVersions === undefined) {
-    _maintainedNodeVersions = require('#lib/maintained-node-versions')
+    _maintainedNodeVersions = require('#lib/maintained-node-versions').default
   }
   return _maintainedNodeVersions
 }
