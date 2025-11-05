@@ -15,6 +15,6 @@
   },
   "dependencies": {
     "@socketsecurity/build-infra": "workspace:*",
-    "@socketsecurity/lib": "catalog:"
+    "@socketsecurity/lib": "workspace:*"
   }
 }
