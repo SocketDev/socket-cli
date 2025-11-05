@@ -26,6 +26,8 @@
 # - Node.js v24 gyp build system Windows argument passing
 # - tools/v8_gypfiles/v8.gyp protocol_generated_sources action
 
+--- a/deps/v8/third_party/inspector_protocol/code_generator.py
++++ b/deps/v8/third_party/inspector_protocol/code_generator.py
 @@ -357,12 +357,27 @@
  
  class Protocol(object):
