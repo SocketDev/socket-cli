@@ -124,12 +124,12 @@ jobs:
       max-parallel: 8
       matrix:
         include:
-          # Linux builds - use x64 runner to build both x64 and arm64.
+          # Linux builds.
           - runner: ubuntu-latest
             os: linux
             platform: linux
             arch: x64
-          - runner: ubuntu-latest
+          - runner: ubuntu-24.04-arm64
             os: linux
             platform: linux
             arch: arm64
@@ -139,7 +139,7 @@ jobs:
             os: linux
             platform: alpine
             arch: x64
-          - runner: ubuntu-latest
+          - runner: ubuntu-24.04-arm64
             os: linux
             platform: alpine
             arch: arm64
