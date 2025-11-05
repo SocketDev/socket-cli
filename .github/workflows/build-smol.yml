@@ -661,6 +661,25 @@ jobs:
           Write-Host "Visual Studio environment configured ($exportCount variables exported)"
 
           # ───────────────────────────────────────────────────────────────────
+          # STEP 7.5: Export gyp-specific environment variables
+          # ───────────────────────────────────────────────────────────────────
+          # gyp (used by configure.py) needs these to bypass registry detection.
+          # GYP_MSVS_VERSION: Tells gyp which VS version to use.
+          # GYP_MSVS_OVERRIDE_PATH: Bypasses registry check, uses provided path.
+          #
+          Write-Host ""
+          Write-Host "Exporting gyp environment variables:"
+
+          # GYP_MSVS_VERSION
+          $gypVersion = "2022"
+          Add-Content -Path $env:GITHUB_ENV -Value "GYP_MSVS_VERSION=$gypVersion"
+          Write-Host "  GYP_MSVS_VERSION = $gypVersion"
+
+          # GYP_MSVS_OVERRIDE_PATH
+          Add-Content -Path $env:GITHUB_ENV -Value "GYP_MSVS_OVERRIDE_PATH=$vsPath"
+          Write-Host "  GYP_MSVS_OVERRIDE_PATH = $vsPath"
+
+          # ───────────────────────────────────────────────────────────────────
           # STEP 8: Verify critical VS environment variables were set
           # ───────────────────────────────────────────────────────────────────
           # CRITICAL: Ensure vcvarsall.bat actually configured the environment.

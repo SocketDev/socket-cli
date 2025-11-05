@@ -1424,15 +1424,12 @@ async function main() {
     configureFlags.unshift('--dest-cpu=x64')
   }
 
-  // On Windows, tell gyp to use VS 2022 via generator flag (bypasses auto-detection).
-  // https://github.com/nodejs/node/blob/main/BUILDING.md#windows
-  // https://github.com/nodejs/node/blob/main/tools/gyp/pylib/gyp/MSVSVersion.py
-  if (WIN32) {
-    configureFlags.push('-G', 'msvs_version=2022')
-  }
-
   // Windows uses configure.py directly, Unix uses ./configure wrapper script.
   // Use whichBinSync to resolve full path to python.exe since we use shell: false.
+  // Note: VS version is set via GYP_MSVS_VERSION and GYP_MSVS_OVERRIDE_PATH env vars
+  // (configured in workflow) which bypasses gyp's registry detection.
+  // https://github.com/nodejs/node/blob/main/BUILDING.md#windows
+  // https://github.com/nodejs/node/blob/main/tools/gyp/pylib/gyp/MSVSVersion.py
   const configureCommand = WIN32 ? whichBinSync('python') : './configure'
   const configureArgs = WIN32 ? ['configure.py', ...configureFlags] : configureFlags
 
@@ -1440,11 +1437,19 @@ async function main() {
   if (WIN32) {
     logger.log('')
     logger.log('DEBUG: Checking environment before exec():')
-    const criticalVars = ['VCINSTALLDIR', 'WindowsSDKVersion', 'INCLUDE', 'LIB']
+    const criticalVars = [
+      'GYP_MSVS_VERSION',
+      'GYP_MSVS_OVERRIDE_PATH',
+      'VCINSTALLDIR',
+      'WindowsSDKVersion',
+      'INCLUDE',
+      'LIB',
+    ]
     for (const varName of criticalVars) {
       const value = process.env[varName]
       if (value) {
-        logger.log(`  ${colors.green('✓')} ${varName} = ${value.substring(0, 60)}...`)
+        const preview = value.substring(0, 60) + (value.length > 60 ? '...' : '')
+        logger.log(`  ${colors.green('✓')} ${varName} = ${preview}`)
       } else {
         logger.log(`  ${colors.red('✗')} ${varName} is NOT SET`)
       }
