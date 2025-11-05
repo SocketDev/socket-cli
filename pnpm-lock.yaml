@@ -914,28 +914,28 @@ importers:
     optionalDependencies:
       '@socketbin/cli-alpine-arm64':
         specifier: 0.0.0-replaced-by-provenance
-        version: link:../socketbin-cli-alpine-arm64
+        version: 0.0.0-20251103.61247
       '@socketbin/cli-alpine-x64':
         specifier: 0.0.0-replaced-by-provenance
-        version: link:../socketbin-cli-alpine-x64
+        version: 0.0.0-20251103.61247
       '@socketbin/cli-darwin-arm64':
         specifier: 0.0.0-replaced-by-provenance
-        version: link:../socketbin-cli-darwin-arm64
+        version: 0.0.0-20251103.61247
       '@socketbin/cli-darwin-x64':
         specifier: 0.0.0-replaced-by-provenance
-        version: link:../socketbin-cli-darwin-x64
+        version: 0.0.0-20251103.61247
       '@socketbin/cli-linux-arm64':
         specifier: 0.0.0-replaced-by-provenance
-        version: link:../socketbin-cli-linux-arm64
+        version: 0.0.0-20251103.61247
       '@socketbin/cli-linux-x64':
         specifier: 0.0.0-replaced-by-provenance
-        version: link:../socketbin-cli-linux-x64
+        version: 0.0.0-20251103.61247
       '@socketbin/cli-win32-arm64':
         specifier: 0.0.0-replaced-by-provenance
-        version: link:../socketbin-cli-win32-arm64
+        version: 0.0.0-20251103.61247
       '@socketbin/cli-win32-x64':
         specifier: 0.0.0-replaced-by-provenance
-        version: link:../socketbin-cli-win32-x64
+        version: 0.0.0-20251103.61247
 
   packages/socketbin-cli-alpine-arm64: {}
 
@@ -2467,6 +2467,54 @@ packages:
   '@sindresorhus/merge-streams@2.3.0':
     resolution: {integrity: sha512-LtoMMhxAlorcGhmFYI+LhPgbPZCkgP6ra1YL604EeF6U98pLlQ3iWIGMdWSC+vWmPBWBNgmDBAhnAobLROJmwg==}
     engines: {node: '>=18'}
+
+  '@socketbin/cli-alpine-arm64@0.0.0-20251103.61247':
+    resolution: {integrity: sha512-O6TYqctGvs+C3CBAzzqjKf4WNR18YxXqoMaVDRXUyrKas9sFeFFBamMyua+9U426pFF6afB3XZRtayDIg7CkdQ==}
+    cpu: [arm64]
+    os: [linux]
+    hasBin: true
+
+  '@socketbin/cli-alpine-x64@0.0.0-20251103.61247':
+    resolution: {integrity: sha512-huyaQRhWbFnHNLZWaSRr2uOoybe610xtyToEhYK3zKy18meeLJo+i2vxKuX2eXJlzA5Zb2Izt9teWUkZrXMgtQ==}
+    cpu: [x64]
+    os: [linux]
+    hasBin: true
+
+  '@socketbin/cli-darwin-arm64@0.0.0-20251103.61247':
+    resolution: {integrity: sha512-Gvf1dg3/5pp4MfaNHCM2DZDckXQ3KMOZwor2oOrnCOs9+RIGacrrmHA7oWtQSfyKvnn+PcXigZ8jcSCKR1rH/Q==}
+    cpu: [arm64]
+    os: [darwin]
+    hasBin: true
+
+  '@socketbin/cli-darwin-x64@0.0.0-20251103.61247':
+    resolution: {integrity: sha512-2T3V40X8fDP1wjvkaPmgsAcCAXUHagGdTLQMu/jEkuyb4p5xHld7jj/Fl41N5Lq1YN4LJ8IHmTRPbmD+K0fiIQ==}
+    cpu: [x64]
+    os: [darwin]
+    hasBin: true
+
+  '@socketbin/cli-linux-arm64@0.0.0-20251103.61247':
+    resolution: {integrity: sha512-KOMFzDzvYKjk71R2j/ieh/D7mFD1rmwvqObedVLmV66vqvcNHogE3litR3dDr8CcWI70ShFTw9iOt3vQJokYQQ==}
+    cpu: [arm64]
+    os: [linux]
+    hasBin: true
+
+  '@socketbin/cli-linux-x64@0.0.0-20251103.61247':
+    resolution: {integrity: sha512-NmKcXDyqLrGVn/g+XpIhhVneAysGd2rRTB/9thzMByrjSgPLDdsPBPSuV8w6Anyn2SNQ3PknqETlqGI+U4TLQQ==}
+    cpu: [x64]
+    os: [linux]
+    hasBin: true
+
+  '@socketbin/cli-win32-arm64@0.0.0-20251103.61247':
+    resolution: {integrity: sha512-OhkEdzM5+wI0hw/yoDwkME5yUNXOaBJzJbJRB4Qdtd/Irm9EE8J1DMNSsolYxvuTMz4pRD1PM6e2LOQNC3btDQ==}
+    cpu: [arm64]
+    os: [win32]
+    hasBin: true
+
+  '@socketbin/cli-win32-x64@0.0.0-20251103.61247':
+    resolution: {integrity: sha512-z8D6vsDfNhyLumj6z0MCuDhg7pLpjCv4pBMjSW+huYCkEpCGAkAfuQgaCPme5YJ4gfKSJTMZ9oGlKxpiU8u3/Q==}
+    cpu: [x64]
+    os: [win32]
+    hasBin: true
 
   '@socketregistry/es-set-tostringtag@1.0.10':
     resolution: {integrity: sha512-btXmvw1JpA8WtSoXx9mTapo9NAyIDKRRzK84i48d8zc0X09M6ORfobVnHbgwhXf7CFhkRzhYrHG9dqbI9vpELQ==}
@@ -7717,6 +7765,30 @@ snapshots:
   '@sindresorhus/is@7.1.0': {}
 
   '@sindresorhus/merge-streams@2.3.0': {}
+
+  '@socketbin/cli-alpine-arm64@0.0.0-20251103.61247':
+    optional: true
+
+  '@socketbin/cli-alpine-x64@0.0.0-20251103.61247':
+    optional: true
+
+  '@socketbin/cli-darwin-arm64@0.0.0-20251103.61247':
+    optional: true
+
+  '@socketbin/cli-darwin-x64@0.0.0-20251103.61247':
+    optional: true
+
+  '@socketbin/cli-linux-arm64@0.0.0-20251103.61247':
+    optional: true
+
+  '@socketbin/cli-linux-x64@0.0.0-20251103.61247':
+    optional: true
+
+  '@socketbin/cli-win32-arm64@0.0.0-20251103.61247':
+    optional: true
+
+  '@socketbin/cli-win32-x64@0.0.0-20251103.61247':
+    optional: true
 
   '@socketregistry/es-set-tostringtag@1.0.10': {}
 
