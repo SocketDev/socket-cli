@@ -363,6 +363,12 @@ export async function cleanCheckpoint(buildDir) {
  */
 export async function checkNetworkConnectivity() {
   try {
+    // In CI, assume network connectivity is available.
+    // The build will fail later if it's actually not available.
+    if (process.env.CI) {
+      return { connected: true, statusCode: 'skipped-in-ci' }
+    }
+
     // Try to reach GitHub (where we clone from).
     const result = await spawn(
       'curl',
