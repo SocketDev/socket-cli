@@ -2,7 +2,15 @@ import { defineConfig } from 'taze'
 
 export default defineConfig({
   // Exclude these packages (migrated from .ncurc.json reject list).
-  exclude: ['eslint-plugin-unicorn', 'terminal-link', 'yargs-parser'],
+  exclude: [
+    'eslint-plugin-unicorn',
+    'terminal-link',
+    'yargs-parser',
+    // Vendored npm workspace packages that don't exist on registry.
+    '@npmcli/docs',
+    '@npmcli/mock-globals',
+    '@npmcli/mock-registry',
+  ],
   // Interactive mode disabled for automation.
   interactive: false,
   // Use minimal logging similar to ncu loglevel.
