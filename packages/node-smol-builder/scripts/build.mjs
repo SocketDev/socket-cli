@@ -1410,9 +1410,10 @@ async function main() {
   if (IS_PROD_BUILD) {
     configureFlags.push('--v8-lite-mode') // -15-20 MB: Disables TurboFan JIT (JS slower, WASM unaffected)
     // Link Time Optimization (very slow, saves ~5-10MB).
-    if (WIN32) {
-      configureFlags.push('--with-ltcg') // Windows: Use MSVC's Link Time Code Generation.
-    } else {
+    // NOTE: LTCG disabled on Windows due to LNK2005 multiply defined symbol errors.
+    // See: https://github.com/nodejs/node/pull/21186 (Node.js made LTCG optional)
+    // Error: abseil.lib(mutex.obj) conflicts with v8_libbase.lib(mutex.obj)
+    if (!WIN32) {
       configureFlags.push('--enable-lto') // Unix/Linux/macOS: Use standard LTO.
     }
   }
