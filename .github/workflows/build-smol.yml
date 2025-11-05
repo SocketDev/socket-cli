@@ -139,7 +139,7 @@ jobs:
             os: linux
             platform: alpine
             arch: x64
-          - runner: ubuntu-latest
+          - runner: ubuntu-24.04-arm64
             os: linux
             platform: alpine
             arch: arm64
@@ -403,12 +403,6 @@ jobs:
       - name: Build smol binary (Standard platforms)
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform != 'alpine'
         run: pnpm --filter @socketbin/node-smol-builder run build
-
-      - name: Set up QEMU (Alpine)
-        if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform == 'alpine'
-        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
-        with:
-          platforms: linux/amd64,linux/arm64
 
       - name: Set up Docker Buildx (Alpine)
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform == 'alpine'
