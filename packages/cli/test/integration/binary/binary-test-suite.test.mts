@@ -73,22 +73,23 @@ const BINARIES = {
 async function buildBinary(
   binaryType: keyof typeof BINARIES,
 ): Promise<boolean> {
+  const logger = getDefaultLogger()
   const binary = BINARIES[binaryType]
 
   if (!binary.buildCommand) {
     return false
   }
 
-  getDefaultLogger().log(`Building ${binary.name}...`)
-  getDefaultLogger().log(`Running: ${binary.buildCommand.join(' ')}`)
+  logger.log(`Building ${binary.name}...`)
+  logger.log(`Running: ${binary.buildCommand.join(' ')}`)
 
   if (binaryType === 'smol') {
-    getDefaultLogger().log(
+    logger.log(
       'Note: smol build may take 30-60 minutes on first build',
     )
-    getDefaultLogger().log('      (subsequent builds are faster with caching)')
+    logger.log('      (subsequent builds are faster with caching)')
   }
-  getDefaultLogger().log('')
+  logger.log('')
 
   try {
     const result = await spawn(
@@ -101,14 +102,14 @@ async function buildBinary(
     )
 
     if (result.code !== 0) {
-      getDefaultLogger().error(`Failed to build ${binary.name}`)
+      logger.error(`Failed to build ${binary.name}`)
       return false
     }
 
-    getDefaultLogger().log(`Successfully built ${binary.name}`)
+    logger.log(`Successfully built ${binary.name}`)
     return true
   } catch (e) {
-    getDefaultLogger().error(`Error building ${binary.name}:`, e)
+    logger.error(`Error building ${binary.name}:`, e)
     return false
   }
 }
@@ -128,22 +129,30 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
     let binaryExists = false
 
     beforeAll(async () => {
+      const logger = getDefaultLogger()
+
       // Check if binary exists.
       binaryExists = existsSync(binary.path)
 
       if (!binaryExists) {
-        getDefaultLogger().log('')
-        getDefaultLogger().warn(`Binary not found: ${binary.path}`)
+        logger.log('')
+        logger.warn(`Binary not found: ${binary.path}`)
 
         // In CI: Skip building (rely on cache).
         if (process.env.CI) {
-          getDefaultLogger().log(
+          logger.log(
             'Running in CI - skipping build (binary not in cache)',
           )
-          getDefaultLogger().log(
-            'To prime cache, run: gh workflow run publish-socketbin.yml --field dry-run=true',
-          )
-          getDefaultLogger().log('')
+          if (binaryType === 'sea') {
+            logger.log(
+              'To build SEA binaries, run: gh workflow run build-sea.yml',
+            )
+          } else if (binaryType === 'smol') {
+            logger.log(
+              'To build smol binaries, run: gh workflow run build-smol.yml',
+            )
+          }
+          logger.log('')
           return
         }
 
@@ -155,15 +164,15 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         })
 
         if (!shouldBuild) {
-          getDefaultLogger().log('Skipping build. Tests will be skipped.')
-          getDefaultLogger().log(
+          logger.log('Skipping build. Tests will be skipped.')
+          logger.log(
             `To build manually, run: ${binary.buildCommand.join(' ')}`,
           )
-          getDefaultLogger().log('')
+          logger.log('')
           return
         }
 
-        getDefaultLogger().log('Building binary...')
+        logger.log('Building binary...')
         const buildSuccess = await buildBinary(binaryType)
 
         if (buildSuccess) {
@@ -171,18 +180,18 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         }
 
         if (!binaryExists) {
-          getDefaultLogger().log('')
-          getDefaultLogger().error(
+          logger.log('')
+          logger.error(
             `Failed to build ${binary.name}. Tests will be skipped.`,
           )
-          getDefaultLogger().log('To build this binary manually, run:')
-          getDefaultLogger().log(`  ${binary.buildCommand.join(' ')}`)
-          getDefaultLogger().log('')
+          logger.log('To build this binary manually, run:')
+          logger.log(`  ${binary.buildCommand.join(' ')}`)
+          logger.log('')
           return
         }
 
-        getDefaultLogger().log(`Binary built successfully: ${binary.path}`)
-        getDefaultLogger().log('')
+        logger.log(`Binary built successfully: ${binary.path}`)
+        logger.log('')
       }
 
       // Check authentication.
@@ -190,25 +199,25 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         const apiToken = await getDefaultApiToken()
         hasAuth = !!apiToken
         if (!apiToken && !process.env.CI) {
-          getDefaultLogger().log('')
-          getDefaultLogger().warn(
+          logger.log('')
+          logger.warn(
             'Integration tests require Socket authentication.',
           )
-          getDefaultLogger().log('Please run one of the following:')
-          getDefaultLogger().log(
+          logger.log('Please run one of the following:')
+          logger.log(
             '  1. socket login (to authenticate with Socket)',
           )
-          getDefaultLogger().log(
+          logger.log(
             '  2. Set SOCKET_SECURITY_API_KEY environment variable',
           )
-          getDefaultLogger().log(
+          logger.log(
             '  3. Skip integration tests by not setting RUN_INTEGRATION_TESTS',
           )
-          getDefaultLogger().log('')
-          getDefaultLogger().log(
+          logger.log('')
+          logger.log(
             'Integration tests will be skipped due to missing authentication.',
           )
-          getDefaultLogger().log('')
+          logger.log('')
         }
       }
     })
