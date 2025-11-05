@@ -1372,15 +1372,10 @@ async function main() {
     logger.log(
       `  ${colors.green('✓')} V8 Lite Mode: Disables TurboFan optimizer (saves ~15-20 MB)`,
     )
-    const ltoNote = WIN32 ? '' : ', LTO'
+    const ltoNote = WIN32 ? ', LTCG' : ', LTO'
     logger.log(
       `  ${colors.green('✓')} OPTIMIZATIONS: no-snapshot, with-code-cache (for errors), no-SEA, V8 Lite${ltoNote}`,
     )
-    if (WIN32) {
-      logger.log(
-        `  ${colors.yellow('ℹ')} LTO: Not available on Windows (MSVC handles optimization differently)`,
-      )
-    }
     logger.log('')
     logger.log(
       `  ${colors.green('✓')} V8 LITE MODE: JavaScript runs 5-10x slower (CPU-bound code)`,
@@ -1414,9 +1409,11 @@ async function main() {
   // Production-only optimizations (slow builds, smaller binaries).
   if (IS_PROD_BUILD) {
     configureFlags.push('--v8-lite-mode') // -15-20 MB: Disables TurboFan JIT (JS slower, WASM unaffected)
-    // LTO is not supported on Windows (MSVC uses /LTCG instead, configured via vcbuild.bat).
-    if (!WIN32) {
-      configureFlags.push('--enable-lto') // Link Time Optimization (very slow, saves ~5-10MB)
+    // Link Time Optimization (very slow, saves ~5-10MB).
+    if (WIN32) {
+      configureFlags.push('--with-ltcg') // Windows: Use MSVC's Link Time Code Generation.
+    } else {
+      configureFlags.push('--enable-lto') // Unix/Linux/macOS: Use standard LTO.
     }
   }
 
