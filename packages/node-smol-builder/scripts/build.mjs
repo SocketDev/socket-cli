@@ -1425,7 +1425,8 @@ async function main() {
   }
 
   // Windows uses configure.py directly, Unix uses ./configure wrapper script.
-  const configureCommand = WIN32 ? 'python' : './configure'
+  // Use whichBinSync to resolve full path to python.exe since we use shell: false.
+  const configureCommand = WIN32 ? whichBinSync('python') : './configure'
   const configureArgs = WIN32 ? ['configure.py', ...configureFlags] : configureFlags
 
   // DEBUG: Verify environment is being passed to subprocess.
@@ -1507,7 +1508,9 @@ async function main() {
     logger.log('::group::Compiling Node.js with Ninja (this will take a while...)')
 
     try {
-      await exec('ninja', ['-C', 'out/Release', `-j${CPU_COUNT}`], {
+      // Resolve full path to ninja on Windows since we use shell: false.
+      const ninjaCommand = WIN32 ? whichBinSync('ninja') : 'ninja'
+      await exec(ninjaCommand, ['-C', 'out/Release', `-j${CPU_COUNT}`], {
         cwd: NODE_DIR,
         env: process.env,
         shell: false,
