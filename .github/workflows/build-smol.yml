@@ -458,7 +458,78 @@ jobs:
 
       - name: Setup Visual Studio environment (Windows)
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform == 'win32'
-        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        shell: pwsh
+        run: |
+          # Find vcvarsall.bat using vswhere.
+          $vswherePath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+
+          if (-not (Test-Path $vswherePath)) {
+            Write-Error "vswhere.exe not found at $vswherePath"
+            exit 1
+          }
+
+          # Get the latest VS installation path.
+          $vsPath = & $vswherePath -products * -latest -prerelease -property installationPath
+          if (-not $vsPath) {
+            Write-Error "Visual Studio installation not found"
+            exit 1
+          }
+
+          $vcvarsallPath = Join-Path $vsPath "VC\Auxiliary\Build\vcvarsall.bat"
+          if (-not (Test-Path $vcvarsallPath)) {
+            Write-Error "vcvarsall.bat not found at $vcvarsallPath"
+            exit 1
+          }
+
+          Write-Host "Found vcvarsall.bat: $vcvarsallPath"
+
+          # Determine architecture.
+          $arch = "${{ matrix.arch }}"
+
+          # Run vcvarsall.bat and capture environment changes.
+          # Use form feeds (0x0C) as delimiters to separate output sections.
+          $cmd = "cmd.exe /c `"set && echo ([char]0x0C) && `"$vcvarsallPath`" $arch && echo ([char]0x0C) && set`""
+          $output = & cmd.exe /c "`"set && echo `$([char]0x0C) && `"$vcvarsallPath`" $arch && echo `$([char]0x0C) && set`""
+
+          $sections = ($output -join "`n") -split "`f"
+
+          if ($sections.Count -lt 3) {
+            Write-Error "Failed to parse vcvarsall.bat output"
+            exit 1
+          }
+
+          # Parse old and new environments.
+          $oldEnv = @{}
+          foreach ($line in ($sections[0] -split "`n")) {
+            if ($line -match '^([^=]+)=(.*)$') {
+              $oldEnv[$matches[1]] = $matches[2]
+            }
+          }
+
+          $newEnv = @{}
+          foreach ($line in ($sections[2] -split "`n")) {
+            if ($line -match '^([^=]+)=(.*)$') {
+              $newEnv[$matches[1]] = $matches[2]
+            }
+          }
+
+          # Export changed variables to GITHUB_ENV.
+          Write-Host "Exporting environment variables:"
+          foreach ($name in $newEnv.Keys) {
+            $newValue = $newEnv[$name]
+            $oldValue = $oldEnv[$name]
+
+            if ($newValue -ne $oldValue) {
+              Write-Host "  $name"
+              # Escape special characters for GITHUB_ENV format.
+              $delimiter = "EOF_$(Get-Random)"
+              Add-Content -Path $env:GITHUB_ENV -Value "$name<<$delimiter"
+              Add-Content -Path $env:GITHUB_ENV -Value $newValue
+              Add-Content -Path $env:GITHUB_ENV -Value $delimiter
+            }
+          }
+
+          Write-Host "Visual Studio environment configured"
 
       - name: Build smol binary (Standard platforms)
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform != 'alpine'
