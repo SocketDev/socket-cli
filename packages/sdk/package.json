@@ -1,0 +1,123 @@
+{
+  "name": "@socketsecurity/sdk",
+  "version": "3.1.3",
+  "private": true,
+  "license": "MIT",
+  "description": "SDK for the Socket API client",
+  "author": {
+    "name": "Socket Inc",
+    "email": "eng@socket.dev",
+    "url": "https://socket.dev"
+  },
+  "homepage": "https://github.com/SocketDev/socket-cli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git",
+    "directory": "packages/sdk"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json",
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "default": "./dist/testing.js"
+    },
+    "./types/api": {
+      "types": "./types/api.d.ts",
+      "default": "./types/api.d.ts"
+    },
+    "./types/api-helpers": {
+      "types": "./types/api-helpers.d.ts",
+      "default": "./types/api-helpers.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "bump": "node scripts/bump.mjs",
+    "check": "node scripts/check.mjs",
+    "clean": "node scripts/clean.mjs",
+    "cover": "node scripts/cover.mjs",
+    "fix": "node scripts/lint.mjs --fix",
+    "generate-sdk": "node scripts/generate-sdk.mjs",
+    "lint": "node scripts/lint.mjs",
+    "precommit": "pnpm run check --lint --staged",
+    "claude": "node scripts/claude.mjs",
+    "test": "node scripts/test.mjs",
+    "type": "tsgo --noEmit -p .config/tsconfig.check.json",
+    "update": "node scripts/update.mjs"
+  },
+  "dependencies": {
+    "@babel/generator": "catalog:",
+    "@babel/parser": "catalog:",
+    "@babel/traverse": "catalog:",
+    "@babel/types": "catalog:",
+    "@biomejs/biome": "catalog:",
+    "@eslint/compat": "catalog:",
+    "@eslint/js": "catalog:",
+    "@socketregistry/packageurl-js": "catalog:",
+    "@socketsecurity/lib": "workspace:*",
+    "@types/babel__traverse": "catalog:",
+    "@types/node": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "del": "catalog:",
+    "dev-null-cli": "catalog:",
+    "esbuild": "catalog:",
+    "eslint": "catalog:",
+    "eslint-import-resolver-typescript": "catalog:",
+    "eslint-plugin-import-x": "catalog:",
+    "eslint-plugin-jsdoc": "catalog:",
+    "eslint-plugin-n": "catalog:",
+    "eslint-plugin-sort-destructure-keys": "catalog:",
+    "eslint-plugin-unicorn": "catalog:",
+    "fast-glob": "catalog:",
+    "globals": "catalog:",
+    "http2-wrapper": "catalog:",
+    "husky": "catalog:",
+    "magic-string": "catalog:",
+    "nock": "catalog:",
+    "openapi-typescript": "catalog:",
+    "semver": "catalog:",
+    "taze": "catalog:",
+    "type-coverage": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:",
+    "yoctocolors-cjs": "catalog:"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "esbuild",
+      "unrs-resolver"
+    ],
+    "overrides": {
+      "vite": "7.1.12"
+    }
+  },
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=10.16.0"
+  },
+  "files": [
+    "CHANGELOG.md",
+    "data/*.json",
+    "dist/*.d.ts",
+    "dist/*.js",
+    "types/*.d.ts"
+  ],
+  "typeCoverage": {
+    "cache": true,
+    "atLeast": 99,
+    "ignoreAsAssertion": true,
+    "ignoreCatch": true,
+    "ignoreEmptyType": true,
+    "ignore-non-null-assertion": true,
+    "ignore-type-assertion": true,
+    "ignore-files": "test/*",
+    "strict": true
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "extends": "./tsconfig.check.json",
+  "compilerOptions": {
+    "paths": {
+      "#constants/*": ["../src/constants/*"],
+      "#env/*": ["../src/env/*"],
+      "#lib/*": ["../src/*"],
+      "#packages/*": ["../src/packages/*"],
+      "#types": ["../src/types"],
+      "#utils/*": ["../src/utils/*"],
+      "cacache": ["../src/external/cacache"],
+      "make-fetch-happen": ["../src/external/make-fetch-happen"],
+      "fast-sort": ["../src/external/fast-sort"],
+      "pacote": ["../src/external/pacote"],
+      "@socketsecurity/lib": ["../../socket-lib/dist/index.d.ts"],
+      "@socketsecurity/lib/*": ["../../socket-lib/dist/*"],
+      "@socketsecurity/registry": [
+        "../../socket-registry/registry/dist/index.d.ts"
+      ],
+      "@socketsecurity/registry/*": ["../../socket-registry/registry/dist/*"],
+      "@socketregistry/packageurl-js": [
+        "../../socket-packageurl-js/dist/index.d.ts"
+      ],
+      "@socketregistry/packageurl-js/*": ["../../socket-packageurl-js/dist/*"],
+      "@socketsecurity/sdk": ["../../socket-sdk-js/dist/index.d.ts"],
+      "@socketsecurity/sdk/*": ["../../socket-sdk-js/dist/*"]
+    }
+  }
+}

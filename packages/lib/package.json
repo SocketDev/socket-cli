@@ -1,0 +1,740 @@
+{
+  "name": "@socketsecurity/lib",
+  "version": "3.2.8",
+  "private": true,
+  "license": "MIT",
+  "description": "Core utilities and infrastructure for Socket.dev security tools",
+  "keywords": [
+    "Socket.dev",
+    "security",
+    "utilities",
+    "infrastructure"
+  ],
+  "homepage": "https://github.com/SocketDev/socket-cli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git",
+    "directory": "packages/lib"
+  },
+  "author": {
+    "name": "Socket Inc",
+    "email": "eng@socket.dev",
+    "url": "https://socket.dev"
+  },
+  "exports": {
+    "./abort": {
+      "types": "./dist/abort.d.ts",
+      "default": "./dist/abort.js"
+    },
+    "./agent": {
+      "types": "./dist/agent.d.ts",
+      "default": "./dist/agent.js"
+    },
+    "./ansi": {
+      "types": "./dist/ansi.d.ts",
+      "default": "./dist/ansi.js"
+    },
+    "./argv/flags": {
+      "types": "./dist/argv/flags.d.ts",
+      "default": "./dist/argv/flags.js"
+    },
+    "./argv/parse": {
+      "types": "./dist/argv/parse.d.ts",
+      "default": "./dist/argv/parse.js"
+    },
+    "./arrays": {
+      "types": "./dist/arrays.d.ts",
+      "default": "./dist/arrays.js"
+    },
+    "./bin": {
+      "types": "./dist/bin.d.ts",
+      "default": "./dist/bin.js"
+    },
+    "./cacache": {
+      "types": "./dist/cacache.d.ts",
+      "default": "./dist/cacache.js"
+    },
+    "./cache-with-ttl": {
+      "types": "./dist/cache-with-ttl.d.ts",
+      "default": "./dist/cache-with-ttl.js"
+    },
+    "./constants/agents": {
+      "types": "./dist/constants/agents.d.ts",
+      "default": "./dist/constants/agents.js"
+    },
+    "./constants/core": {
+      "types": "./dist/constants/core.d.ts",
+      "default": "./dist/constants/core.js"
+    },
+    "./constants/encoding": {
+      "types": "./dist/constants/encoding.d.ts",
+      "default": "./dist/constants/encoding.js"
+    },
+    "./constants/github": {
+      "types": "./dist/constants/github.d.ts",
+      "default": "./dist/constants/github.js"
+    },
+    "./constants/licenses": {
+      "types": "./dist/constants/licenses.d.ts",
+      "default": "./dist/constants/licenses.js"
+    },
+    "./constants/node": {
+      "types": "./dist/constants/node.d.ts",
+      "default": "./dist/constants/node.js"
+    },
+    "./constants/packages": {
+      "types": "./dist/constants/packages.d.ts",
+      "default": "./dist/constants/packages.js"
+    },
+    "./constants/paths": {
+      "types": "./dist/constants/paths.d.ts",
+      "default": "./dist/constants/paths.js"
+    },
+    "./constants/platform": {
+      "types": "./dist/constants/platform.d.ts",
+      "default": "./dist/constants/platform.js"
+    },
+    "./constants/process": {
+      "types": "./dist/constants/process.d.ts",
+      "default": "./dist/constants/process.js"
+    },
+    "./constants/socket": {
+      "types": "./dist/constants/socket.d.ts",
+      "default": "./dist/constants/socket.js"
+    },
+    "./constants/testing": {
+      "types": "./dist/constants/testing.d.ts",
+      "default": "./dist/constants/testing.js"
+    },
+    "./constants/time": {
+      "types": "./dist/constants/time.d.ts",
+      "default": "./dist/constants/time.js"
+    },
+    "./constants/typescript": {
+      "types": "./dist/constants/typescript.d.ts",
+      "default": "./dist/constants/typescript.js"
+    },
+    "./cover/code": {
+      "types": "./dist/cover/code.d.ts",
+      "default": "./dist/cover/code.js"
+    },
+    "./cover/formatters": {
+      "types": "./dist/cover/formatters.d.ts",
+      "default": "./dist/cover/formatters.js"
+    },
+    "./cover/type": {
+      "types": "./dist/cover/type.d.ts",
+      "default": "./dist/cover/type.js"
+    },
+    "./cover/types": {
+      "types": "./dist/cover/types.d.ts",
+      "default": "./dist/cover/types.js"
+    },
+    "./debug": {
+      "types": "./dist/debug.d.ts",
+      "default": "./dist/debug.js"
+    },
+    "./dlx": {
+      "types": "./dist/dlx.d.ts",
+      "default": "./dist/dlx.js"
+    },
+    "./dlx-binary": {
+      "types": "./dist/dlx-binary.d.ts",
+      "default": "./dist/dlx-binary.js"
+    },
+    "./dlx-manifest": {
+      "types": "./dist/dlx-manifest.d.ts",
+      "default": "./dist/dlx-manifest.js"
+    },
+    "./dlx-package": {
+      "types": "./dist/dlx-package.d.ts",
+      "default": "./dist/dlx-package.js"
+    },
+    "./effects/pulse-frames": {
+      "types": "./dist/effects/pulse-frames.d.ts",
+      "default": "./dist/effects/pulse-frames.js"
+    },
+    "./effects/text-shimmer": {
+      "types": "./dist/effects/text-shimmer.d.ts",
+      "default": "./dist/effects/text-shimmer.js"
+    },
+    "./effects/types": {
+      "types": "./dist/effects/types.d.ts",
+      "default": "./dist/effects/types.js"
+    },
+    "./effects/ultra": {
+      "types": "./dist/effects/ultra.d.ts",
+      "default": "./dist/effects/ultra.js"
+    },
+    "./env": {
+      "types": "./dist/env.d.ts",
+      "default": "./dist/env.js"
+    },
+    "./env/ci": {
+      "types": "./dist/env/ci.d.ts",
+      "default": "./dist/env/ci.js"
+    },
+    "./env/debug": {
+      "types": "./dist/env/debug.d.ts",
+      "default": "./dist/env/debug.js"
+    },
+    "./env/github": {
+      "types": "./dist/env/github.d.ts",
+      "default": "./dist/env/github.js"
+    },
+    "./env/helpers": {
+      "types": "./dist/env/helpers.d.ts",
+      "default": "./dist/env/helpers.js"
+    },
+    "./env/home": {
+      "types": "./dist/env/home.d.ts",
+      "default": "./dist/env/home.js"
+    },
+    "./env/locale": {
+      "types": "./dist/env/locale.d.ts",
+      "default": "./dist/env/locale.js"
+    },
+    "./env/node-auth-token": {
+      "types": "./dist/env/node-auth-token.d.ts",
+      "default": "./dist/env/node-auth-token.js"
+    },
+    "./env/node-env": {
+      "types": "./dist/env/node-env.d.ts",
+      "default": "./dist/env/node-env.js"
+    },
+    "./env/npm": {
+      "types": "./dist/env/npm.d.ts",
+      "default": "./dist/env/npm.js"
+    },
+    "./env/package-manager": {
+      "types": "./dist/env/package-manager.d.ts",
+      "default": "./dist/env/package-manager.js"
+    },
+    "./env/path": {
+      "types": "./dist/env/path.d.ts",
+      "default": "./dist/env/path.js"
+    },
+    "./env/pre-commit": {
+      "types": "./dist/env/pre-commit.d.ts",
+      "default": "./dist/env/pre-commit.js"
+    },
+    "./env/rewire": {
+      "types": "./dist/env/rewire.d.ts",
+      "default": "./dist/env/rewire.js"
+    },
+    "./env/shell": {
+      "types": "./dist/env/shell.d.ts",
+      "default": "./dist/env/shell.js"
+    },
+    "./env/socket": {
+      "types": "./dist/env/socket.d.ts",
+      "default": "./dist/env/socket.js"
+    },
+    "./env/socket-cli": {
+      "types": "./dist/env/socket-cli.d.ts",
+      "default": "./dist/env/socket-cli.js"
+    },
+    "./env/socket-cli-shadow": {
+      "types": "./dist/env/socket-cli-shadow.d.ts",
+      "default": "./dist/env/socket-cli-shadow.js"
+    },
+    "./env/temp-dir": {
+      "types": "./dist/env/temp-dir.d.ts",
+      "default": "./dist/env/temp-dir.js"
+    },
+    "./env/term": {
+      "types": "./dist/env/term.d.ts",
+      "default": "./dist/env/term.js"
+    },
+    "./env/test": {
+      "types": "./dist/env/test.d.ts",
+      "default": "./dist/env/test.js"
+    },
+    "./env/windows": {
+      "types": "./dist/env/windows.d.ts",
+      "default": "./dist/env/windows.js"
+    },
+    "./env/xdg": {
+      "types": "./dist/env/xdg.d.ts",
+      "default": "./dist/env/xdg.js"
+    },
+    "./fs": {
+      "types": "./dist/fs.d.ts",
+      "default": "./dist/fs.js"
+    },
+    "./functions": {
+      "types": "./dist/functions.d.ts",
+      "default": "./dist/functions.js"
+    },
+    "./git": {
+      "types": "./dist/git.d.ts",
+      "default": "./dist/git.js"
+    },
+    "./github": {
+      "types": "./dist/github.d.ts",
+      "default": "./dist/github.js"
+    },
+    "./globs": {
+      "types": "./dist/globs.d.ts",
+      "default": "./dist/globs.js"
+    },
+    "./http-request": {
+      "types": "./dist/http-request.d.ts",
+      "default": "./dist/http-request.js"
+    },
+    "./ipc": {
+      "types": "./dist/ipc.d.ts",
+      "default": "./dist/ipc.js"
+    },
+    "./json": {
+      "types": "./dist/json.d.ts",
+      "default": "./dist/json.js"
+    },
+    "./lifecycle-script-names": {
+      "types": "./dist/lifecycle-script-names.d.ts",
+      "default": "./dist/lifecycle-script-names.js"
+    },
+    "./links": {
+      "types": "./dist/links/index.d.ts",
+      "default": "./dist/links/index.js"
+    },
+    "./links/index": {
+      "types": "./dist/links/index.d.ts",
+      "default": "./dist/links/index.js"
+    },
+    "./logger": {
+      "types": "./dist/logger.d.ts",
+      "default": "./dist/logger.js"
+    },
+    "./maintained-node-versions": {
+      "types": "./dist/maintained-node-versions.d.ts",
+      "default": "./dist/maintained-node-versions.js"
+    },
+    "./memoization": {
+      "types": "./dist/memoization.d.ts",
+      "default": "./dist/memoization.js"
+    },
+    "./objects": {
+      "types": "./dist/objects.d.ts",
+      "default": "./dist/objects.js"
+    },
+    "./package-default-node-range": {
+      "types": "./dist/package-default-node-range.d.ts",
+      "default": "./dist/package-default-node-range.js"
+    },
+    "./package-default-socket-categories": {
+      "types": "./dist/package-default-socket-categories.d.ts",
+      "default": "./dist/package-default-socket-categories.js"
+    },
+    "./package-extensions": {
+      "types": "./dist/package-extensions.d.ts",
+      "default": "./dist/package-extensions.js"
+    },
+    "./packages": {
+      "types": "./dist/packages.d.ts",
+      "default": "./dist/packages.js"
+    },
+    "./packages/editable": {
+      "types": "./dist/packages/editable.d.ts",
+      "default": "./dist/packages/editable.js"
+    },
+    "./packages/exports": {
+      "types": "./dist/packages/exports.d.ts",
+      "default": "./dist/packages/exports.js"
+    },
+    "./packages/isolation": {
+      "types": "./dist/packages/isolation.d.ts",
+      "default": "./dist/packages/isolation.js"
+    },
+    "./packages/licenses": {
+      "types": "./dist/packages/licenses.d.ts",
+      "default": "./dist/packages/licenses.js"
+    },
+    "./packages/manifest": {
+      "types": "./dist/packages/manifest.d.ts",
+      "default": "./dist/packages/manifest.js"
+    },
+    "./packages/normalize": {
+      "types": "./dist/packages/normalize.d.ts",
+      "default": "./dist/packages/normalize.js"
+    },
+    "./packages/operations": {
+      "types": "./dist/packages/operations.d.ts",
+      "default": "./dist/packages/operations.js"
+    },
+    "./packages/paths": {
+      "types": "./dist/packages/paths.d.ts",
+      "default": "./dist/packages/paths.js"
+    },
+    "./packages/provenance": {
+      "types": "./dist/packages/provenance.d.ts",
+      "default": "./dist/packages/provenance.js"
+    },
+    "./packages/specs": {
+      "types": "./dist/packages/specs.d.ts",
+      "default": "./dist/packages/specs.js"
+    },
+    "./packages/validation": {
+      "types": "./dist/packages/validation.d.ts",
+      "default": "./dist/packages/validation.js"
+    },
+    "./path": {
+      "types": "./dist/path.d.ts",
+      "default": "./dist/path.js"
+    },
+    "./paths": {
+      "types": "./dist/paths.d.ts",
+      "default": "./dist/paths.js"
+    },
+    "./paths/rewire": {
+      "types": "./dist/paths/rewire.d.ts",
+      "default": "./dist/paths/rewire.js"
+    },
+    "./performance": {
+      "types": "./dist/performance.d.ts",
+      "default": "./dist/performance.js"
+    },
+    "./plugins/babel-plugin-inline-require-calls": {
+      "types": "./plugins/babel-plugin-inline-require-calls.d.ts",
+      "default": "./plugins/babel-plugin-inline-require-calls.js"
+    },
+    "./process-lock": {
+      "types": "./dist/process-lock.d.ts",
+      "default": "./dist/process-lock.js"
+    },
+    "./promise-queue": {
+      "types": "./dist/promise-queue.d.ts",
+      "default": "./dist/promise-queue.js"
+    },
+    "./promises": {
+      "types": "./dist/promises.d.ts",
+      "default": "./dist/promises.js"
+    },
+    "./regexps": {
+      "types": "./dist/regexps.d.ts",
+      "default": "./dist/regexps.js"
+    },
+    "./sea": {
+      "types": "./dist/sea.d.ts",
+      "default": "./dist/sea.js"
+    },
+    "./shadow": {
+      "types": "./dist/shadow.d.ts",
+      "default": "./dist/shadow.js"
+    },
+    "./signal-exit": {
+      "types": "./dist/signal-exit.d.ts",
+      "default": "./dist/signal-exit.js"
+    },
+    "./sorts": {
+      "types": "./dist/sorts.d.ts",
+      "default": "./dist/sorts.js"
+    },
+    "./spawn": {
+      "types": "./dist/spawn.d.ts",
+      "default": "./dist/spawn.js"
+    },
+    "./spinner": {
+      "types": "./dist/spinner.d.ts",
+      "default": "./dist/spinner.js"
+    },
+    "./ssri": {
+      "types": "./dist/ssri.d.ts",
+      "default": "./dist/ssri.js"
+    },
+    "./stdio/clear": {
+      "types": "./dist/stdio/clear.d.ts",
+      "default": "./dist/stdio/clear.js"
+    },
+    "./stdio/divider": {
+      "types": "./dist/stdio/divider.d.ts",
+      "default": "./dist/stdio/divider.js"
+    },
+    "./stdio/footer": {
+      "types": "./dist/stdio/footer.d.ts",
+      "default": "./dist/stdio/footer.js"
+    },
+    "./stdio/header": {
+      "types": "./dist/stdio/header.d.ts",
+      "default": "./dist/stdio/header.js"
+    },
+    "./stdio/mask": {
+      "types": "./dist/stdio/mask.d.ts",
+      "default": "./dist/stdio/mask.js"
+    },
+    "./stdio/progress": {
+      "types": "./dist/stdio/progress.d.ts",
+      "default": "./dist/stdio/progress.js"
+    },
+    "./stdio/prompts": {
+      "types": "./dist/stdio/prompts.d.ts",
+      "default": "./dist/stdio/prompts.js"
+    },
+    "./stdio/stderr": {
+      "types": "./dist/stdio/stderr.d.ts",
+      "default": "./dist/stdio/stderr.js"
+    },
+    "./stdio/stdout": {
+      "types": "./dist/stdio/stdout.d.ts",
+      "default": "./dist/stdio/stdout.js"
+    },
+    "./streams": {
+      "types": "./dist/streams.d.ts",
+      "default": "./dist/streams.js"
+    },
+    "./strings": {
+      "types": "./dist/strings.d.ts",
+      "default": "./dist/strings.js"
+    },
+    "./suppress-warnings": {
+      "types": "./dist/suppress-warnings.d.ts",
+      "default": "./dist/suppress-warnings.js"
+    },
+    "./tables": {
+      "types": "./dist/tables.d.ts",
+      "default": "./dist/tables.js"
+    },
+    "./temporary-executor": {
+      "types": "./dist/temporary-executor.d.ts",
+      "default": "./dist/temporary-executor.js"
+    },
+    "./themes": {
+      "types": "./dist/themes/index.d.ts",
+      "default": "./dist/themes/index.js"
+    },
+    "./themes/context": {
+      "types": "./dist/themes/context.d.ts",
+      "default": "./dist/themes/context.js"
+    },
+    "./themes/index": {
+      "types": "./dist/themes/index.d.ts",
+      "default": "./dist/themes/index.js"
+    },
+    "./themes/themes": {
+      "types": "./dist/themes/themes.d.ts",
+      "default": "./dist/themes/themes.js"
+    },
+    "./themes/types": {
+      "types": "./dist/themes/types.d.ts",
+      "default": "./dist/themes/types.js"
+    },
+    "./themes/utils": {
+      "types": "./dist/themes/utils.d.ts",
+      "default": "./dist/themes/utils.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    },
+    "./url": {
+      "types": "./dist/url.d.ts",
+      "default": "./dist/url.js"
+    },
+    "./utils/get-ipc": {
+      "types": "./dist/utils/get-ipc.d.ts",
+      "default": "./dist/utils/get-ipc.js"
+    },
+    "./validation/json-parser": {
+      "types": "./dist/validation/json-parser.d.ts",
+      "default": "./dist/validation/json-parser.js"
+    },
+    "./validation/types": {
+      "types": "./dist/validation/types.d.ts",
+      "default": "./dist/validation/types.js"
+    },
+    "./versions": {
+      "types": "./dist/versions.d.ts",
+      "default": "./dist/versions.js"
+    },
+    "./words": {
+      "types": "./dist/words.d.ts",
+      "default": "./dist/words.js"
+    },
+    "./zod": {
+      "types": "./dist/zod.d.ts",
+      "default": "./dist/zod.js"
+    },
+    "./biome.json": "./biome.json",
+    "./data/extensions.json": "./data/extensions.json",
+    "./package.json": "./package.json",
+    "./tsconfig.dts.json": "./tsconfig.dts.json",
+    "./tsconfig.json": "./tsconfig.json",
+    "./tsconfig.test.json": "./tsconfig.test.json"
+  },
+  "imports": {
+    "#constants/*": "./dist/constants/*.js",
+    "#env/*": "./dist/env/*.js",
+    "#lib/*": "./dist/*.js",
+    "#packages/*": "./dist/packages/*.js",
+    "#socketsecurity/lib/*": "@socketsecurity/lib-stable/*",
+    "#types": "./dist/types.js",
+    "#utils/*": "./dist/utils/*.js"
+  },
+  "files": [
+    "dist",
+    "data/extensions.json",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:watch": "node scripts/build-js.mjs --watch",
+    "check": "node scripts/check.mjs",
+    "claude": "node scripts/claude.mjs",
+    "clean": "node scripts/clean.mjs",
+    "cover": "node scripts/cover.mjs",
+    "dev": "pnpm run build:watch",
+    "fix": "node scripts/lint.mjs --fix",
+    "fix:build": "node scripts/fix-build.mjs",
+    "lint": "node scripts/lint.mjs",
+    "test": "node scripts/test.mjs",
+    "update": "node scripts/update.mjs"
+  },
+  "dependencies": {
+    "@babel/core": "catalog:",
+    "@babel/parser": "catalog:",
+    "@babel/traverse": "catalog:",
+    "@babel/types": "catalog:",
+    "@biomejs/biome": "catalog:",
+    "@eslint/compat": "catalog:",
+    "@eslint/js": "catalog:",
+    "@inquirer/confirm": "catalog:",
+    "@inquirer/input": "catalog:",
+    "@inquirer/password": "catalog:",
+    "@inquirer/search": "catalog:",
+    "@inquirer/select": "catalog:",
+    "@npmcli/package-json": "catalog:",
+    "@npmcli/promise-spawn": "catalog:",
+    "@socketregistry/is-unicode-supported": "catalog:",
+    "@socketregistry/packageurl-js": "catalog:",
+    "@socketregistry/yocto-spinner": "catalog:",
+    "@socketsecurity/lib-stable": "https://registry.npmjs.org/@socketsecurity/lib/-/lib-3.2.4.tgz",
+    "@types/node": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "@vitest/ui": "catalog:",
+    "@yarnpkg/extensions": "catalog:",
+    "cacache": "catalog:",
+    "debug": "catalog:",
+    "del": "catalog:",
+    "del-cli": "catalog:",
+    "esbuild": "catalog:",
+    "eslint": "catalog:",
+    "eslint-import-resolver-typescript": "catalog:",
+    "eslint-plugin-import-x": "catalog:",
+    "eslint-plugin-n": "catalog:",
+    "eslint-plugin-sort-destructure-keys": "catalog:",
+    "eslint-plugin-unicorn": "catalog:",
+    "fast-glob": "catalog:",
+    "fast-sort": "catalog:",
+    "get-east-asian-width": "catalog:",
+    "globals": "catalog:",
+    "husky": "catalog:",
+    "libnpmexec": "catalog:",
+    "libnpmpack": "catalog:",
+    "lint-staged": "catalog:",
+    "magic-string": "catalog:",
+    "make-fetch-happen": "catalog:",
+    "normalize-package-data": "catalog:",
+    "npm-package-arg": "catalog:",
+    "pacote": "catalog:",
+    "picomatch": "catalog:",
+    "semver": "catalog:",
+    "spdx-correct": "catalog:",
+    "spdx-expression-parse": "catalog:",
+    "streaming-iterables": "catalog:",
+    "taze": "catalog:",
+    "trash": "catalog:",
+    "type-coverage": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "validate-npm-package-name": "catalog:",
+    "vite-tsconfig-paths": "catalog:",
+    "vitest": "catalog:",
+    "which": "catalog:",
+    "yargs-parser": "catalog:",
+    "yoctocolors-cjs": "catalog:",
+    "zod": "catalog:"
+  },
+  "peerDependencies": {
+    "typescript": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
+  "browser": {
+    "_http_agent": false,
+    "_http_client": false,
+    "_http_common": false,
+    "_http_incoming": false,
+    "_http_outgoing": false,
+    "_http_server": false,
+    "_stream_duplex": false,
+    "_stream_passthrough": false,
+    "_stream_readable": false,
+    "_stream_transform": false,
+    "_stream_wrap": false,
+    "_stream_writable": false,
+    "_tls_common": false,
+    "_tls_wrap": false,
+    "assert": false,
+    "assert/strict": false,
+    "async_hooks": false,
+    "buffer": false,
+    "child_process": false,
+    "cluster": false,
+    "console": false,
+    "constants": false,
+    "crypto": false,
+    "dgram": false,
+    "diagnostics_channel": false,
+    "dns": false,
+    "dns/promises": false,
+    "domain": false,
+    "events": false,
+    "fs": false,
+    "fs/promises": false,
+    "http": false,
+    "http2": false,
+    "https": false,
+    "inspector": false,
+    "inspector/promises": false,
+    "module": false,
+    "net": false,
+    "os": false,
+    "path": false,
+    "path/posix": false,
+    "path/win32": false,
+    "perf_hooks": false,
+    "process": false,
+    "punycode": false,
+    "querystring": false,
+    "readline": false,
+    "readline/promises": false,
+    "repl": false,
+    "stream": false,
+    "stream/consumers": false,
+    "stream/promises": false,
+    "stream/web": false,
+    "string_decoder": false,
+    "sys": false,
+    "timers": false,
+    "timers/promises": false,
+    "tls": false,
+    "trace_events": false,
+    "tty": false,
+    "url": false,
+    "util": false,
+    "util/types": false,
+    "v8": false,
+    "vm": false,
+    "wasi": false,
+    "worker_threads": false,
+    "zlib": false
+  }
+}

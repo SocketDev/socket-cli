@@ -1,0 +1,232 @@
+{
+  "api": {
+    "batchPackageFetch": {
+      "quota": 100,
+      "permissions": ["packages:list"]
+    },
+    "batchPackageStream": {
+      "quota": 100,
+      "permissions": ["packages:list"]
+    },
+    "createDependenciesSnapshot": {
+      "quota": 100,
+      "permissions": ["report:write"]
+    },
+    "createOrgFullScan": {
+      "quota": 0,
+      "permissions": ["full-scans:create"]
+    },
+    "createOrgRepo": {
+      "quota": 0,
+      "permissions": ["repo:create"]
+    },
+    "createScanFromFilepaths": {
+      "quota": 100,
+      "permissions": ["report:write"]
+    },
+    "deleteOrgFullScan": {
+      "quota": 0,
+      "permissions": ["full-scans:delete"]
+    },
+    "deleteOrgRepo": {
+      "quota": 0,
+      "permissions": ["repo:delete"]
+    },
+    "getAuditLogEvents": {
+      "quota": 10,
+      "permissions": ["audit-log:list"]
+    },
+    "getEnabledEntitlements": {
+      "quota": 0,
+      "permissions": []
+    },
+    "getEntitlements": {
+      "quota": 0,
+      "permissions": []
+    },
+    "getIssuesByNpmPackage": {
+      "quota": 10,
+      "permissions": []
+    },
+    "getOrgAnalytics": {
+      "quota": 10,
+      "permissions": ["report:write"]
+    },
+    "getOrganizations": {
+      "quota": 0,
+      "permissions": []
+    },
+    "streamOrgFullScan": {
+      "quota": 0,
+      "permissions": ["full-scans:list"]
+    },
+    "streamPatchesFromScan": {
+      "quota": 0,
+      "permissions": ["patches:list"]
+    },
+    "getOrgFullScanBuffered": {
+      "quota": 0,
+      "permissions": ["full-scans:list"]
+    },
+    "getOrgFullScanList": {
+      "quota": 0,
+      "permissions": ["full-scans:list"]
+    },
+    "getOrgFullScanMetadata": {
+      "quota": 0,
+      "permissions": ["full-scans:list"]
+    },
+    "getOrgLicensePolicy": {
+      "quota": 0,
+      "permissions": ["settings:read"]
+    },
+    "getOrgRepo": {
+      "quota": 0,
+      "permissions": ["repo:list"]
+    },
+    "getOrgRepoList": {
+      "quota": 0,
+      "permissions": ["repo:list"]
+    },
+    "getOrgSecurityPolicy": {
+      "quota": 0,
+      "permissions": ["settings:read"]
+    },
+    "getQuota": {
+      "quota": 0,
+      "permissions": []
+    },
+    "getRepoAnalytics": {
+      "quota": 10,
+      "permissions": ["report:write"]
+    },
+    "getScan": {
+      "quota": 0,
+      "permissions": ["report:read"]
+    },
+    "getScanList": {
+      "quota": 0,
+      "permissions": ["report:read"]
+    },
+    "getSupportedScanFiles": {
+      "quota": 0,
+      "permissions": ["report:read"]
+    },
+    "getScoreByNpmPackage": {
+      "quota": 10,
+      "permissions": []
+    },
+    "postSettings": {
+      "quota": 0,
+      "permissions": []
+    },
+    "searchDependencies": {
+      "quota": 100,
+      "permissions": []
+    },
+    "updateOrgRepo": {
+      "quota": 0,
+      "permissions": ["repo:update"]
+    },
+    "uploadManifestFiles": {
+      "quota": 100,
+      "permissions": ["packages:upload"]
+    },
+    "viewPatch": {
+      "quota": 0,
+      "permissions": ["patches:view"]
+    },
+    "deleteReport": {
+      "quota": 0,
+      "permissions": ["report:delete"]
+    },
+    "exportCDX": {
+      "quota": 0,
+      "permissions": ["report:read"]
+    },
+    "exportSPDX": {
+      "quota": 0,
+      "permissions": ["report:read"]
+    },
+    "getAPITokens": {
+      "quota": 10,
+      "permissions": ["api-token:list"]
+    },
+    "postAPIToken": {
+      "quota": 10,
+      "permissions": ["api-token:create"]
+    },
+    "postAPITokenUpdate": {
+      "quota": 10,
+      "permissions": ["api-token:update"]
+    },
+    "postAPITokensRotate": {
+      "quota": 10,
+      "permissions": ["api-token:rotate"]
+    },
+    "postAPITokensRevoke": {
+      "quota": 10,
+      "permissions": ["api-token:revoke"]
+    },
+    "updateOrgSecurityPolicy": {
+      "quota": 0,
+      "permissions": ["settings:write"]
+    },
+    "updateOrgLicensePolicy": {
+      "quota": 0,
+      "permissions": ["settings:write"]
+    },
+    "getOrgTriage": {
+      "quota": 0,
+      "permissions": ["triage:alerts-list"]
+    },
+    "updateOrgAlertTriage": {
+      "quota": 0,
+      "permissions": ["triage:alerts-update"]
+    },
+    "getOrgRepoLabelList": {
+      "quota": 0,
+      "permissions": ["repo-label:list"]
+    },
+    "createOrgRepoLabel": {
+      "quota": 0,
+      "permissions": ["repo-label:create"]
+    },
+    "getOrgRepoLabel": {
+      "quota": 0,
+      "permissions": ["repo-label:list"]
+    },
+    "updateOrgRepoLabel": {
+      "quota": 0,
+      "permissions": ["repo-label:update"]
+    },
+    "deleteOrgRepoLabel": {
+      "quota": 0,
+      "permissions": ["repo-label:delete"]
+    },
+    "getDiffScanById": {
+      "quota": 0,
+      "permissions": ["diff-scans:list"]
+    },
+    "createOrgDiffScanFromIds": {
+      "quota": 0,
+      "permissions": ["diff-scans:create"]
+    },
+    "listOrgDiffScans": {
+      "quota": 0,
+      "permissions": ["diff-scans:list"]
+    },
+    "deleteOrgDiffScan": {
+      "quota": 0,
+      "permissions": ["diff-scans:delete"]
+    },
+    "getApi": {
+      "quota": 0,
+      "permissions": []
+    },
+    "sendApi": {
+      "quota": 0,
+      "permissions": []
+    }
+  }
+}

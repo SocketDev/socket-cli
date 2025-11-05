@@ -1,0 +1,184 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "files": {
+    "includes": [
+      "**",
+      "!**/.cache",
+      "!**/.claude",
+      "!**/.DS_Store",
+      "!**/._.DS_Store",
+      "!**/.env",
+      "!**/.git",
+      "!**/.github",
+      "!**/.husky",
+      "!**/.vscode",
+      "!**/coverage",
+      "!**/dist",
+      "!**/html",
+      "!**/node_modules",
+      "!**/package.json",
+      "!**/pnpm-lock.yaml",
+      "!packages/npm/**/build",
+      "!packages/npm/**/package",
+      "!perf/**/fixtures",
+      "!scripts/templates",
+      "!test/**/fixtures",
+      "!test/**/packages"
+    ],
+    "maxSize": 8388608
+  },
+  "formatter": {
+    "enabled": true,
+    "attributePosition": "auto",
+    "bracketSpacing": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 80,
+    "useEditorconfig": true
+  },
+  "javascript": {
+    "formatter": {
+      "arrowParentheses": "asNeeded",
+      "attributePosition": "auto",
+      "bracketSameLine": false,
+      "bracketSpacing": true,
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "quoteStyle": "single",
+      "semicolons": "asNeeded",
+      "trailingCommas": "all"
+    }
+  },
+  "json": {
+    "formatter": {
+      "enabled": true,
+      "trailingCommas": "none"
+    },
+    "parser": {
+      "allowComments": true,
+      "allowTrailingCommas": true
+    }
+  },
+  "linter": {
+    "rules": {
+      "complexity": {
+        "noBannedTypes": "off",
+        "useLiteralKeys": "off"
+      },
+      "style": {
+        "noParameterAssign": "off",
+        "noNonNullAssertion": "off",
+        "useAsConstAssertion": "error",
+        "useDefaultParameterLast": "error",
+        "useEnumInitializers": "error",
+        "useNodejsImportProtocol": "off",
+        "useSelfClosingElements": "error",
+        "useSingleVarDeclarator": "error",
+        "noUnusedTemplateLiteral": "error",
+        "useNumberNamespace": "error",
+        "noInferrableTypes": "off",
+        "noUselessElse": "error",
+        "useNumericSeparators": "error"
+      },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noAsyncPromiseExecutor": "off",
+        "noAssignInExpressions": "off",
+        "useIterableCallbackReturn": "off"
+      }
+    }
+  },
+  "assist": {
+    "enabled": false
+  },
+  "overrides": [
+    {
+      "includes": ["packages/npm/**/*.d.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/npm/**/*.js", "packages/npm/**/*.cjs"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noArguments": "off",
+            "noBannedTypes": "off",
+            "useLiteralKeys": "off"
+          },
+          "correctness": {
+            "noSelfAssign": "off",
+            "noUnusedVariables": "off"
+          },
+          "style": {
+            "noParameterAssign": "off",
+            "useConst": "off"
+          },
+          "suspicious": {
+            "noAssignInExpressions": "off",
+            "noDoubleEquals": "off",
+            "noExplicitAny": "off",
+            "noFunctionAssign": "off",
+            "noRedundantUseStrict": "off",
+            "noSelfCompare": "off",
+            "noShadowRestrictedNames": "off",
+            "useGetterReturn": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["test/**/*.mts"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noArguments": "off",
+            "useArrowFunction": "off"
+          },
+          "suspicious": {
+            "noExplicitAny": "off",
+            "noImportAssign": "off",
+            "noShadowRestrictedNames": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["test/**/*.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noImportAssign": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["registry/src/external/**/*.d.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/external/**/*.js", "src/external/**/*.cjs"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noRedundantUseStrict": "off"
+          }
+        }
+      }
+    }
+  ]
+}

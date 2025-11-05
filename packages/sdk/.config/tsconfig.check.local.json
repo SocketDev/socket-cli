@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.check.json",
+  "compilerOptions": {
+    "paths": {
+      "@socketsecurity/lib": ["../../socket-lib/dist/index.d.ts"],
+      "@socketsecurity/lib/*": ["../../socket-lib/dist/*"],
+      "@socketsecurity/registry": [
+        "../../socket-registry/registry/dist/index.d.ts"
+      ],
+      "@socketsecurity/registry/*": ["../../socket-registry/registry/dist/*"]
+    }
+  }
+}

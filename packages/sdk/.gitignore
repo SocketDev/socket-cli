@@ -1,0 +1,66 @@
+# OS files
+.DS_Store
+._.DS_Store
+Thumbs.db
+desktop.ini
+*.lnk
+
+# Environment & config
+/.claude
+/.env
+/.env.local
+/.env.*.local
+/.pnpmfile.cjs
+/.nvm
+
+# Build artifacts
+/.type-coverage
+/coverage
+**/dist
+**/*.tsbuildinfo
+*.d.ts
+*.d.ts.map
+
+# Temporary files
+*.tmp
+.*.tmp
+**/*.tmp
+*.log
+*.pid
+*.seed
+*.pid.lock
+*~
+.temp
+.tmp
+
+# Editor files
+/.vscode
+*.swp
+*.swo
+#*#
+.#*
+*#
+.*.sw?
+*.sublime-*
+.idea
+
+# Cache directories
+**/.cache
+.eslintcache
+.tsbuildinfo
+
+# Runtime
+node_modules
+**/node_modules
+
+# Misc temporary/generated files
+Do
+TODO
+NOTES
+scratch.*
+test-output.*
+
+# Allow specific files
+!/.vscode/extensions.json
+!api*.d.ts
+!src/types/**/*.d.ts
