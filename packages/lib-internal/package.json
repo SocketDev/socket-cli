@@ -395,7 +395,6 @@
       "default": "./dist/performance.js"
     },
     "./plugins/babel-plugin-inline-require-calls": {
-      "types": "./plugins/babel-plugin-inline-require-calls.d.ts",
       "default": "./plugins/babel-plugin-inline-require-calls.js"
     },
     "./process-lock": {
