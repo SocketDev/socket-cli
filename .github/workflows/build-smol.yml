@@ -432,6 +432,10 @@ jobs:
           Get-Command patch -ErrorAction SilentlyContinue
           & patch --version
 
+      - name: Setup Visual Studio environment (Windows)
+        if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform == 'win32'
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+
       - name: Build smol binary (Standard platforms)
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform != 'alpine'
         run: pnpm --filter @socketbin/node-smol-builder run build
