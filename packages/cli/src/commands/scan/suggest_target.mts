@@ -1,4 +1,4 @@
-import { select } from '@socketsecurity/lib/stdio/prompts'
+import { select } from '@socketsecurity/lib-internal/stdio/prompts'
 
 export async function suggestTarget(): Promise<string[]> {
   // We could prefill this with sub-dirs of the current

@@ -3,7 +3,7 @@ import { setupSdk } from '../../utils/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib-internal/spinner'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchCreateOrgFullScanConfigs = {

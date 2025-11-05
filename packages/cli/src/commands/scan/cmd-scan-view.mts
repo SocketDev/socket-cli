@@ -1,4 +1,4 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { handleScanView } from './handle-scan-view.mts'
 import { streamScan } from './stream-scan.mts'

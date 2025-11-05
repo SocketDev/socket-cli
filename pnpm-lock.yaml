@@ -583,6 +583,12 @@ importers:
       '@socketsecurity/config':
         specifier: 'catalog:'
         version: 3.0.1
+      '@socketsecurity/lib':
+        specifier: 3.2.8
+        version: 3.2.8(typescript@5.9.3)
+      '@socketsecurity/lib-external':
+        specifier: npm:@socketsecurity/lib@3.2.8
+        version: '@socketsecurity/lib@3.2.8(typescript@5.9.3)'
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.2(typescript@5.9.3)
@@ -2871,6 +2877,15 @@ packages:
 
   '@socketsecurity/lib@3.2.4':
     resolution: {integrity: sha512-zB/yzF+X9TlJDAANTRppioNf6ZfnD7Iysr2FnynWMGcSfO3v9SarxtOduC4XmnpegEZpo24A+w1lk7+F2A6B6g==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      typescript: '>=5.0.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
+  '@socketsecurity/lib@3.2.8':
+    resolution: {integrity: sha512-fGUwZUYmgnzZ2ayyQCh5PspTydjRAqP3Dpzk5dm5KOicjOeMAcT/x8XtaVkFqilCGsbzMoBTag8qWfODtfrxAQ==}
     engines: {node: '>=22'}
     peerDependencies:
       typescript: '>=5.0.0'
@@ -8436,6 +8451,10 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.2
 
+  '@socketsecurity/lib@3.2.8(typescript@5.9.3)':
+    optionalDependencies:
+      typescript: 5.9.3
+
   '@socketsecurity/registry@2.0.2(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
@@ -8705,10 +8724,10 @@ snapshots:
 
   '@types/yargs-parser@21.0.3': {}
 
-  '@typescript-eslint/eslint-plugin@8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)':
+  '@typescript-eslint/eslint-plugin@8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
-      '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
+      '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.44.1
       '@typescript-eslint/type-utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
@@ -12363,7 +12382,7 @@ snapshots:
 
   typescript-eslint@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2):
     dependencies:
-      '@typescript-eslint/eslint-plugin': 8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
+      '@typescript-eslint/eslint-plugin': 8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/typescript-estree': 8.44.1(typescript@5.9.2)
       '@typescript-eslint/utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)

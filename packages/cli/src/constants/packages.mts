@@ -7,7 +7,7 @@ export {
   PACKAGE_LOCK_JSON,
   PNPM_LOCK_YAML,
   YARN_LOCK,
-} from '@socketsecurity/lib/constants/agents'
+} from '@socketsecurity/lib-internal/constants/agents'
 
 // Package manifest files
 export const PACKAGE_JSON = 'package.json'

@@ -19,9 +19,9 @@
  * ```
  */
 
-import { which } from '@socketsecurity/lib/bin'
-import { getExecPath } from '@socketsecurity/lib/constants/node'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { which } from '@socketsecurity/lib-internal/bin'
+import { getExecPath } from '@socketsecurity/lib-internal/constants/node'
+import { spawn } from '@socketsecurity/lib-internal/spawn'
 
 import { ensureIpcInStdio } from '../../shadow/stdio-ipc.mjs'
 import { sendBootstrapHandshake } from '../sea/boot.mjs'
@@ -31,7 +31,7 @@ import type {
   SpawnOptions,
   SpawnResult,
   SpawnExtra,
-} from '@socketsecurity/lib/spawn'
+} from '@socketsecurity/lib-internal/spawn'
 
 /**
  * Options for spawnNode, extending SpawnOptions with IPC handshake data.

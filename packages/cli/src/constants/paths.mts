@@ -13,9 +13,9 @@ import {
   getExecPath,
   getNodeHardenFlags,
   getNodeNoWarningsFlags,
-} from '@socketsecurity/lib/constants/node'
-import { DOT_SOCKET_DIR } from '@socketsecurity/lib/constants/paths'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+} from '@socketsecurity/lib-internal/constants/node'
+import { DOT_SOCKET_DIR } from '@socketsecurity/lib-internal/constants/paths'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import ENV from './env.mts'
 

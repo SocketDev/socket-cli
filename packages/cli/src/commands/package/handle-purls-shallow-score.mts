@@ -1,4 +1,4 @@
-import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { debug, debugDir } from '@socketsecurity/lib-internal/debug'
 
 import { fetchPurlsShallowScore } from './fetch-purls-shallow-score.mts'
 import { outputPurlsShallowScore } from './output-purls-shallow-score.mts'

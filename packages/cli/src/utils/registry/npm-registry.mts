@@ -23,8 +23,8 @@ import path from 'node:path'
 
 import { parseTarGzip } from 'nanotar'
 
-import { safeMkdir } from '@socketsecurity/lib/fs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { safeMkdir } from '@socketsecurity/lib-internal/fs'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 const logger = getDefaultLogger()
 

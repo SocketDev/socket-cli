@@ -7,18 +7,18 @@ import {
   isNpmLoglevelFlag,
   isNpmNodeOptionsFlag,
   isNpmProgressFlag,
-} from '@socketsecurity/lib/agent'
+} from '@socketsecurity/lib-internal/agent'
 import {
   getNodeDisableSigusr1Flags,
   getNodeHardenFlags,
   getNodeNoWarningsFlags,
   supportsNodePermissionFlag,
-} from '@socketsecurity/lib/constants/node'
-import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
-import { isDebug } from '@socketsecurity/lib/debug'
-import { getOwn } from '@socketsecurity/lib/objects'
-import { normalizePath } from '@socketsecurity/lib/path'
-import { spawnSync } from '@socketsecurity/lib/spawn'
+} from '@socketsecurity/lib-internal/constants/node'
+import { NODE_MODULES } from '@socketsecurity/lib-internal/constants/paths'
+import { isDebug } from '@socketsecurity/lib-internal/debug'
+import { getOwn } from '@socketsecurity/lib-internal/objects'
+import { normalizePath } from '@socketsecurity/lib-internal/path'
+import { spawnSync } from '@socketsecurity/lib-internal/spawn'
 
 import { NPM, type NPX } from '../constants/agents.mts'
 import { FLAG_LOGLEVEL } from '../constants/cli.mts'
@@ -44,7 +44,7 @@ import type {
   SpawnExtra,
   SpawnOptions,
   SpawnResult,
-} from '@socketsecurity/lib/spawn'
+} from '@socketsecurity/lib-internal/spawn'
 import type { StdioOptions } from 'node:child_process'
 
 export type ShadowBinOptions = SpawnOptions & {

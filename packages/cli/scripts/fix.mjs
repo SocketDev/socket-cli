@@ -13,12 +13,12 @@
  *   --verbose  Show detailed output
  */
 
-import { isQuiet } from '@socketsecurity/lib/argv/flags'
-import { parseArgs } from '@socketsecurity/lib/argv/parse'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
-import { printHeader } from '@socketsecurity/lib/stdio/header'
+import { isQuiet } from '@socketsecurity/lib-external/argv/flags'
+import { parseArgs } from '@socketsecurity/lib-external/argv/parse'
+import { WIN32 } from '@socketsecurity/lib-external/constants/platform'
+import { getDefaultLogger } from '@socketsecurity/lib-external/logger'
+import { spawn } from '@socketsecurity/lib-external/spawn'
+import { printHeader } from '@socketsecurity/lib-external/stdio/header'
 
 const logger = getDefaultLogger()
 

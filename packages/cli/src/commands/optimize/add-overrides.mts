@@ -2,10 +2,10 @@ import path from 'node:path'
 
 import semver from 'semver'
 
-import { NPM, PNPM } from '@socketsecurity/lib/constants/agents'
-import { hasOwn, toSortedObject } from '@socketsecurity/lib/objects'
-import { fetchPackageManifest } from '@socketsecurity/lib/packages'
-import { pEach } from '@socketsecurity/lib/promises'
+import { NPM, PNPM } from '@socketsecurity/lib-internal/constants/agents'
+import { hasOwn, toSortedObject } from '@socketsecurity/lib-internal/objects'
+import { fetchPackageManifest } from '@socketsecurity/lib-internal/packages'
+import { pEach } from '@socketsecurity/lib-internal/promises'
 import { getManifestData } from '@socketsecurity/registry'
 
 import { lsStdoutIncludes } from './deps-includes-by-agent.mts'
@@ -27,9 +27,9 @@ import { getMajor } from '../../utils/semver.mts'
 import type { GetOverridesResult } from './get-overrides-by-agent.mts'
 import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 import type { AliasResult } from '../../utils/npm/package-arg.mts'
-import type { Logger } from '@socketsecurity/lib/logger'
-import type { PackageJson } from '@socketsecurity/lib/packages'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Logger } from '@socketsecurity/lib-internal/logger'
+import type { PackageJson } from '@socketsecurity/lib-internal/packages'
+import type { Spinner } from '@socketsecurity/lib-internal/spinner'
 
 type AddOverridesOptions = {
   logger?: Logger | undefined

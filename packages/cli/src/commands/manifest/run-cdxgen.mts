@@ -3,10 +3,10 @@ import path from 'node:path'
 
 import colors from 'yoctocolors-cjs'
 
-import { NPM, PNPM, YARN } from '@socketsecurity/lib/constants/agents'
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
-import { safeDeleteSync } from '@socketsecurity/lib/fs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { NPM, PNPM, YARN } from '@socketsecurity/lib-internal/constants/agents'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib-internal/constants/socket'
+import { safeDeleteSync } from '@socketsecurity/lib-internal/fs'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { FLAG_HELP } from '../../constants/cli.mjs'
 import {

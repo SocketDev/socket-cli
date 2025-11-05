@@ -1,16 +1,16 @@
 import open from 'open'
 import terminalLink from 'terminal-link'
 
-import { getSpinner } from '@socketsecurity/lib/constants/process'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { confirm } from '@socketsecurity/lib/stdio/prompts'
+import { getSpinner } from '@socketsecurity/lib-internal/constants/process'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { confirm } from '@socketsecurity/lib-internal/stdio/prompts'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib-internal/spinner'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 

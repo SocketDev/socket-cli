@@ -1,9 +1,9 @@
 import path from 'node:path'
 
-import { getSpinner } from '@socketsecurity/lib/constants/process'
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { pluralize } from '@socketsecurity/lib/words'
+import { getSpinner } from '@socketsecurity/lib-internal/constants/process'
+import { debug, debugDir } from '@socketsecurity/lib-internal/debug'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { pluralize } from '@socketsecurity/lib-internal/words'
 
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
@@ -23,7 +23,7 @@ import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
-import type { Remap } from '@socketsecurity/lib/objects'
+import type { Remap } from '@socketsecurity/lib-internal/objects'
 const logger = getDefaultLogger()
 
 export type HandleCreateNewScanConfig = {

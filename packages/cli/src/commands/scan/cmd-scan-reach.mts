@@ -1,8 +1,8 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { joinAnd } from '@socketsecurity/lib-internal/arrays'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { handleScanReach } from './handle-scan-reach.mts'
 import { reachabilityFlags } from './reachability-flags.mts'

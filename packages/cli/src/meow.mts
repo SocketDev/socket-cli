@@ -3,11 +3,11 @@
  * Uses socket-registry's parseArgs for argument parsing.
  */
 
-import { parseArgs } from '@socketsecurity/lib/argv/parse'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { readPackageJsonSync } from '@socketsecurity/lib/packages'
+import { parseArgs } from '@socketsecurity/lib-internal/argv/parse'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { readPackageJsonSync } from '@socketsecurity/lib-internal/packages'
 
-import type { ParseArgsConfig } from '@socketsecurity/lib/argv/parse'
+import type { ParseArgsConfig } from '@socketsecurity/lib-internal/argv/parse'
 
 const logger = getDefaultLogger()
 

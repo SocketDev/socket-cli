@@ -1,6 +1,6 @@
 import colors from 'yoctocolors-cjs'
 
-import { normalizePath } from '@socketsecurity/lib/path'
+import { normalizePath } from '@socketsecurity/lib-internal/path'
 
 import { FLAG_ORG, REDACTED } from '../../constants/cli.mts'
 import {

@@ -13,8 +13,8 @@ import path from 'node:path'
 
 import fastGlob from 'fast-glob'
 
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { WIN32 } from '@socketsecurity/lib-external/constants/platform'
+import { getDefaultLogger } from '@socketsecurity/lib-external/logger'
 
 import constants from './constants.mjs'
 

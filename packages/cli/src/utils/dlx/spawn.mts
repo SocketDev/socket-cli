@@ -14,9 +14,9 @@
  * - Executes binaries directly without package manager commands
  */
 
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
-import { dlxPackage } from '@socketsecurity/lib/dlx-package'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib-internal/constants/socket'
+import { dlxPackage } from '@socketsecurity/lib-internal/dlx-package'
+import { spawn } from '@socketsecurity/lib-internal/spawn'
 
 import { resolveCdxgen, resolveCoana } from './resolve-binary.mjs'
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
@@ -34,7 +34,7 @@ import type {
   ShadowBinResult,
 } from '../../shadow/npm-base.mjs'
 import type { CResult } from '../../types.mjs'
-import type { SpawnExtra, SpawnResult } from '@socketsecurity/lib/spawn'
+import type { SpawnExtra, SpawnResult } from '@socketsecurity/lib-internal/spawn'
 
 export type DlxOptions = ShadowBinOptions & {
   agent?: 'npm' | 'pnpm' | 'yarn' | undefined

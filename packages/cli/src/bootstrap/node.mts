@@ -18,8 +18,8 @@ import { spawn } from 'node:child_process'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { safeMkdir } from '@socketsecurity/lib/fs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { safeMkdir } from '@socketsecurity/lib-internal/fs'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { getNodeDisableSigusr1Flags } from './shared/node-flags.mjs'
 import {

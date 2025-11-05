@@ -3,6 +3,6 @@
  * Set to true/1 when running in a continuous integration environment.
  */
 
-import { getCI } from '@socketsecurity/lib/env/ci'
+import { getCI } from '@socketsecurity/lib-internal/env/ci'
 
 export const CI = getCI()

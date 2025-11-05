@@ -17,7 +17,7 @@
  * to reduce noise. Enable them explicitly when needed for deep debugging.
  */
 
-import { UNKNOWN_ERROR } from '@socketsecurity/lib/constants/core'
+import { UNKNOWN_ERROR } from '@socketsecurity/lib-internal/constants/core'
 import {
   debug,
   debugCache,
@@ -26,7 +26,7 @@ import {
   debugNs,
   isDebug,
   isDebugNs,
-} from '@socketsecurity/lib/debug'
+} from '@socketsecurity/lib-internal/debug'
 
 export type ApiRequestDebugInfo = {
   method?: string | undefined

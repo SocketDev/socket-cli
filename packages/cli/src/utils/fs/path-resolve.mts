@@ -1,10 +1,10 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { resolveBinPathSync, whichBinSync } from '@socketsecurity/lib/bin'
-import { NPM } from '@socketsecurity/lib/constants/agents'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { isDirSync } from '@socketsecurity/lib/fs'
+import { resolveBinPathSync, whichBinSync } from '@socketsecurity/lib-internal/bin'
+import { NPM } from '@socketsecurity/lib-internal/constants/agents'
+import { WIN32 } from '@socketsecurity/lib-internal/constants/platform'
+import { isDirSync } from '@socketsecurity/lib-internal/fs'
 
 import {
   filterBySupportedScanFiles,

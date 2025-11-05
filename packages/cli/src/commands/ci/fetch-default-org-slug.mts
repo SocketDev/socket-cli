@@ -1,4 +1,4 @@
-import { debug } from '@socketsecurity/lib/debug'
+import { debug } from '@socketsecurity/lib-internal/debug'
 
 import ENV from '../../constants/env.mts'
 import { getConfigValueOrUndef } from '../../utils/config.mts'

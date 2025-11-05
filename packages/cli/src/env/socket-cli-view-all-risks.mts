@@ -1,5 +1,5 @@
 /** @fileoverview SOCKET_CLI_VIEW_ALL_RISKS environment variable. */
 
-import { getSocketCliViewAllRisks } from '@socketsecurity/lib/env/socket-cli'
+import { getSocketCliViewAllRisks } from '@socketsecurity/lib-internal/env/socket-cli'
 
 export const SOCKET_CLI_VIEW_ALL_RISKS = getSocketCliViewAllRisks()

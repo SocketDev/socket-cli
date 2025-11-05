@@ -4,7 +4,7 @@
  * Provides consistent, pretty logging for build processes.
  */
 
-import loggerPkg from '@socketsecurity/lib/logger'
+import loggerPkg from '@socketsecurity/lib-external/logger'
 
 const logger = loggerPkg.getDefaultLogger()
 

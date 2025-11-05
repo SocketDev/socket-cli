@@ -1,5 +1,5 @@
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { debug, debugDir } from '@socketsecurity/lib-internal/debug'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import {
   FLAG_JSON,

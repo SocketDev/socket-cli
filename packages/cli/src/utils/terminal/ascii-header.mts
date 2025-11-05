@@ -7,12 +7,12 @@
 
 import colors from 'yoctocolors-cjs'
 
-import { applyShimmer } from '@socketsecurity/lib/effects/text-shimmer'
+import { applyShimmer } from '@socketsecurity/lib-internal/effects/text-shimmer'
 
 import type {
   ShimmerColorGradient,
   ShimmerState,
-} from '@socketsecurity/lib/effects/text-shimmer'
+} from '@socketsecurity/lib-internal/effects/text-shimmer'
 
 /**
  * Color themes for header styling.

@@ -34,9 +34,9 @@ import crypto from 'node:crypto'
 // @ts-expect-error - No type declarations available.
 import ssri from 'ssri'
 
-import * as cacache from '@socketsecurity/lib/cacache'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { pluralize } from '@socketsecurity/lib/words'
+import * as cacache from '@socketsecurity/lib-internal/cacache'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { pluralize } from '@socketsecurity/lib-internal/words'
 
 import { outputPatchDownloadResult } from './output-patch-download-result.mts'
 import ENV from '../../constants/env.mts'
@@ -45,7 +45,7 @@ import { setupSdk } from '../../utils/socket/sdk.mts'
 
 import type { OutputKind } from '../../types.mts'
 import type { PatchRecord } from '../../utils/manifest/patches.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib-internal/spinner'
 import type { SocketSdk } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 

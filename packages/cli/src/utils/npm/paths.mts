@@ -2,8 +2,8 @@ import { existsSync } from 'node:fs'
 import Module from 'node:module'
 import path from 'node:path'
 
-import { NPM } from '@socketsecurity/lib/constants/agents'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { NPM } from '@socketsecurity/lib-internal/constants/agents'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 const logger = getDefaultLogger()
 

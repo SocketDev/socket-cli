@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises'
 
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { getSpinner } from '@socketsecurity/lib/constants/process'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { joinAnd } from '@socketsecurity/lib-internal/arrays'
+import { getSpinner } from '@socketsecurity/lib-internal/constants/process'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { generateReport } from './generate-report.mts'
 import {

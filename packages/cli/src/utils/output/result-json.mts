@@ -1,6 +1,6 @@
-import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { isObject } from '@socketsecurity/lib/objects'
+import { debugDirNs, debugNs } from '@socketsecurity/lib-internal/debug'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { isObject } from '@socketsecurity/lib-internal/objects'
 
 import type { CResult } from '../../types.mjs'
 

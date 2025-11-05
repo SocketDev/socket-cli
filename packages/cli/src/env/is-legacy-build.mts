@@ -8,7 +8,7 @@
 
 import process from 'node:process'
 
-import { envAsBoolean } from '@socketsecurity/lib/env'
+import { envAsBoolean } from '@socketsecurity/lib-internal/env'
 
 export function isLegacyBuild(): boolean {
   return envAsBoolean(process.env['INLINED_SOCKET_CLI_LEGACY_BUILD'])

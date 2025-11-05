@@ -12,14 +12,14 @@
  */
 
 import { runParallel } from '@socketsecurity/build-infra/lib/script-runner'
-import { isQuiet, isVerbose } from '@socketsecurity/lib/argv/flags'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { isQuiet, isVerbose } from '@socketsecurity/lib-external/argv/flags'
+import { getDefaultLogger } from '@socketsecurity/lib-external/logger'
 import {
   printError,
   printFooter,
   printHeader,
   printSuccess,
-} from '@socketsecurity/lib/stdio/header'
+} from '@socketsecurity/lib-external/stdio/header'
 
 async function main() {
   const quiet = isQuiet()

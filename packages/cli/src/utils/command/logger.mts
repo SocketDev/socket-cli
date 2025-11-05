@@ -1,6 +1,6 @@
 /** @fileoverview Command-scoped logger for Socket CLI. Provides logging with automatic command context for better debugging and filtering. */
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 const logger = getDefaultLogger()
 
 /**

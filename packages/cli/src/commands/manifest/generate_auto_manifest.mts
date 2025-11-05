@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { convertGradleToMaven } from './convert-gradle-to-maven.mts'
 import { convertSbtToMaven } from './convert-sbt-to-maven.mts'

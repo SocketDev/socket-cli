@@ -4,8 +4,8 @@ import path from 'node:path'
 import {
   DOT_SOCKET_DIR,
   MANIFEST_JSON,
-} from '@socketsecurity/lib/constants/paths'
-import { getSpinner } from '@socketsecurity/lib/constants/process'
+} from '@socketsecurity/lib-internal/constants/paths'
+import { getSpinner } from '@socketsecurity/lib-internal/constants/process'
 
 import { handlePatchStatus } from './handle-patch-status.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'

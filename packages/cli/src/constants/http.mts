@@ -3,7 +3,7 @@
  */
 
 // Re-export NPM registry URL from registry for backward compatibility.
-export { NPM_REGISTRY_URL } from '@socketsecurity/lib/constants/agents'
+export { NPM_REGISTRY_URL } from '@socketsecurity/lib-internal/constants/agents'
 
 export const HTTP_STATUS_BAD_REQUEST = 400
 export const HTTP_STATUS_UNAUTHORIZED = 401

@@ -25,10 +25,10 @@ import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import config from '@socketsecurity/config'
-import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
-import { safeMkdirSync, safeReadFileSync } from '@socketsecurity/lib/fs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { naturalCompare } from '@socketsecurity/lib/sorts'
+import { debugDirNs, debugNs } from '@socketsecurity/lib-internal/debug'
+import { safeMkdirSync, safeReadFileSync } from '@socketsecurity/lib-internal/fs'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { naturalCompare } from '@socketsecurity/lib-internal/sorts'
 
 const logger = getDefaultLogger()
 

@@ -31,7 +31,7 @@ import browserslist from 'browserslist'
 import semver from 'semver'
 
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
-import { whichBin } from '@socketsecurity/lib/bin'
+import { whichBin } from '@socketsecurity/lib-internal/bin'
 import {
   BUN,
   BUN_LOCK,
@@ -47,18 +47,18 @@ import {
   YARN_BERRY,
   YARN_CLASSIC,
   YARN_LOCK,
-} from '@socketsecurity/lib/constants/agents'
-import { getMaintainedNodeVersions } from '@socketsecurity/lib/constants/node'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
-import { readFileBinary, readFileUtf8 } from '@socketsecurity/lib/fs'
+} from '@socketsecurity/lib-internal/constants/agents'
+import { getMaintainedNodeVersions } from '@socketsecurity/lib-internal/constants/node'
+import { WIN32 } from '@socketsecurity/lib-internal/constants/platform'
+import { debugDirNs, debugNs } from '@socketsecurity/lib-internal/debug'
+import { readFileBinary, readFileUtf8 } from '@socketsecurity/lib-internal/fs'
 import {
   readPackageJson,
   toEditablePackageJson,
-} from '@socketsecurity/lib/packages'
-import { naturalCompare } from '@socketsecurity/lib/sorts'
-import { spawn } from '@socketsecurity/lib/spawn'
-import { isNonEmptyString } from '@socketsecurity/lib/strings'
+} from '@socketsecurity/lib-internal/packages'
+import { naturalCompare } from '@socketsecurity/lib-internal/sorts'
+import { spawn } from '@socketsecurity/lib-internal/spawn'
+import { isNonEmptyString } from '@socketsecurity/lib-internal/strings'
 
 import {
   getMinimumVersionByAgent,
@@ -78,9 +78,9 @@ import { findUp } from '../fs/find-up.mts'
 import { cmdPrefixMessage } from '../process/cmd.mts'
 
 import type { CResult } from '../../types.mjs'
-import type { Logger } from '@socketsecurity/lib/logger'
-import type { Remap } from '@socketsecurity/lib/objects'
-import type { EditablePackageJson } from '@socketsecurity/lib/packages'
+import type { Logger } from '@socketsecurity/lib-internal/logger'
+import type { Remap } from '@socketsecurity/lib-internal/objects'
+import type { EditablePackageJson } from '@socketsecurity/lib-internal/packages'
 import type { SemVer } from 'semver'
 
 const DOT_PACKAGE_LOCK_JSON = '.package-lock.json'

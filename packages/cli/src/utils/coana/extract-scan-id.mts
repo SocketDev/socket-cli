@@ -11,7 +11,7 @@
  * - Extracts tier 1 reachability scan identifiers
  */
 
-import { readJsonSync } from '@socketsecurity/lib/fs'
+import { readJsonSync } from '@socketsecurity/lib-internal/fs'
 
 export function extractTier1ReachabilityScanId(
   socketFactsFile: string,

@@ -4,7 +4,7 @@
 import './polyfills/intl-stub.mts'
 
 // Set global Socket theme for consistent CLI branding.
-import { setTheme } from '@socketsecurity/lib/themes'
+import { setTheme } from '@socketsecurity/lib-internal/themes'
 setTheme('socket')
 
 import path from 'node:path'
@@ -34,8 +34,8 @@ import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import lookupRegistryAuthToken from 'registry-auth-token'
 import lookupRegistryUrl from 'registry-url'
 
-import { debug as debugNs, debugDir } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { debug as debugNs, debugDir } from '@socketsecurity/lib-internal/debug'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 const logger = getDefaultLogger()
 
@@ -58,7 +58,7 @@ import { runPreflightDownloads } from './utils/preflight/downloads.mts'
 import { isSeaBinary } from './utils/sea/detect.mts'
 import { scheduleUpdateCheck } from './utils/update/manager.mts'
 
-import { dlxManifest } from '@socketsecurity/lib/dlx-manifest'
+import { dlxManifest } from '@socketsecurity/lib-internal/dlx-manifest'
 
 const __filename = fileURLToPath(import.meta.url)
 

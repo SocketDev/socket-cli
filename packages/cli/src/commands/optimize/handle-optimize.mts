@@ -1,6 +1,6 @@
-import { VLT } from '@socketsecurity/lib/constants/agents'
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { VLT } from '@socketsecurity/lib-internal/constants/agents'
+import { debug, debugDir } from '@socketsecurity/lib-internal/debug'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { applyOptimization } from './apply-optimization.mts'
 import { outputOptimizeResult } from './output-optimize-result.mts'

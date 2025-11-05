@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { handleCreateGithubScan } from './handle-create-github-scan.mts'
 import { outputScanGithub } from './output-scan-github.mts'

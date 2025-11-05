@@ -15,9 +15,9 @@ import { fileURLToPath } from 'node:url'
 
 import colors from 'yoctocolors-cjs'
 
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { WIN32 } from '@socketsecurity/lib-external/constants/platform'
+import { getDefaultLogger } from '@socketsecurity/lib-external/logger'
+import { spawn } from '@socketsecurity/lib-external/spawn'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT_DIR = path.resolve(__dirname, '..')

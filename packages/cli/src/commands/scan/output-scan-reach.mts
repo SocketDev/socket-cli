@@ -1,4 +1,4 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'

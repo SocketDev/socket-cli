@@ -1,6 +1,6 @@
 import semver from 'semver'
 
-import { NPM } from '@socketsecurity/lib/constants/agents'
+import { NPM } from '@socketsecurity/lib-internal/constants/agents'
 
 import { stripPnpmPeerSuffix } from '../pnpm/lockfile.mts'
 

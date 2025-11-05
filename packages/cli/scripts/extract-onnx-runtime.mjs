@@ -15,7 +15,7 @@ import {
   generateHashComment,
   shouldExtract,
 } from '@socketsecurity/build-infra/lib/extraction-cache'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-external/logger'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')

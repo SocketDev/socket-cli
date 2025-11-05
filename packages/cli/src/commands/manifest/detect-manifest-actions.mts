@@ -4,7 +4,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { debugLog } from '@socketsecurity/lib/debug'
+import { debugLog } from '@socketsecurity/lib-internal/debug'
 
 import { ENVIRONMENT_YAML, ENVIRONMENT_YML } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'

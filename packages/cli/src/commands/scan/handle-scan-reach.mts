@@ -1,6 +1,6 @@
-import { getSpinner } from '@socketsecurity/lib/constants/process'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { pluralize } from '@socketsecurity/lib/words'
+import { getSpinner } from '@socketsecurity/lib-internal/constants/process'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { pluralize } from '@socketsecurity/lib-internal/words'
 
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { outputScanReach } from './output-scan-reach.mts'

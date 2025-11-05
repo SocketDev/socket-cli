@@ -1,7 +1,7 @@
 import path from 'node:path'
 
-import { debug } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { debug } from '@socketsecurity/lib-internal/debug'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { convertSbtToMaven } from './convert-sbt-to-maven.mts'
 import { outputManifest } from './output-manifest.mts'

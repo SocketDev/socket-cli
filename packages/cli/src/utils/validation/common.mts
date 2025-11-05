@@ -1,6 +1,6 @@
 /** @fileoverview Common validation patterns to DRY out repetitive checks */
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { checkCommandInput } from './check-input.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'

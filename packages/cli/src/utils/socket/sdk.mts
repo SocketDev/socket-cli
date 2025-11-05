@@ -27,12 +27,12 @@
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { password } from '@socketsecurity/lib/stdio/prompts'
-import { isNonEmptyString } from '@socketsecurity/lib/strings'
-import { isUrl } from '@socketsecurity/lib/url'
-import { pluralize } from '@socketsecurity/lib/words'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib-internal/constants/socket'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { password } from '@socketsecurity/lib-internal/stdio/prompts'
+import { isNonEmptyString } from '@socketsecurity/lib-internal/strings'
+import { isUrl } from '@socketsecurity/lib-internal/url'
+import { pluralize } from '@socketsecurity/lib-internal/words'
 import { createUserAgentFromPkgJson, SocketSdk } from '@socketsecurity/sdk'
 
 import {

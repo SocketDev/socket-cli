@@ -23,9 +23,9 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { WIN32 } from '@socketsecurity/lib-external/constants/platform'
+import { getDefaultLogger } from '@socketsecurity/lib-external/logger'
+import { spawn } from '@socketsecurity/lib-external/spawn'
 import colors from 'yoctocolors-cjs'
 
 

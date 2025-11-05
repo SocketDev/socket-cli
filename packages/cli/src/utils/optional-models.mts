@@ -23,7 +23,7 @@
  *   - Auto-cleanup: Standard npm prune/clean
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 const logger = getDefaultLogger()
 
 /**

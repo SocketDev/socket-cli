@@ -18,9 +18,9 @@ import { fileURLToPath } from 'node:url'
 
 import colors from 'yoctocolors-cjs'
 
-import { parseArgs } from '@socketsecurity/lib/argv/parse'
-import { safeDelete } from '@socketsecurity/lib/fs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { parseArgs } from '@socketsecurity/lib-external/argv/parse'
+import { safeDelete } from '@socketsecurity/lib-external/fs'
+import { getDefaultLogger } from '@socketsecurity/lib-external/logger'
 
 const logger = getDefaultLogger()
 

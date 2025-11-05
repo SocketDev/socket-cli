@@ -4,21 +4,21 @@ import path from 'node:path'
 
 import fastGlob from 'fast-glob'
 
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { NPM } from '@socketsecurity/lib/constants/agents'
-import { UTF8 } from '@socketsecurity/lib/constants/encoding'
+import { joinAnd } from '@socketsecurity/lib-internal/arrays'
+import { NPM } from '@socketsecurity/lib-internal/constants/agents'
+import { UTF8 } from '@socketsecurity/lib-internal/constants/encoding'
 import {
   DOT_SOCKET_DIR,
   MANIFEST_JSON,
   NODE_MODULES,
-} from '@socketsecurity/lib/constants/paths'
-import { debugDirNs } from '@socketsecurity/lib/debug'
-import { readDirNames } from '@socketsecurity/lib/fs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { readPackageJson } from '@socketsecurity/lib/packages'
-import { normalizePath } from '@socketsecurity/lib/path'
-import { isNonEmptyString } from '@socketsecurity/lib/strings'
-import { pluralize } from '@socketsecurity/lib/words'
+} from '@socketsecurity/lib-internal/constants/paths'
+import { debugDirNs } from '@socketsecurity/lib-internal/debug'
+import { readDirNames } from '@socketsecurity/lib-internal/fs'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { readPackageJson } from '@socketsecurity/lib-internal/packages'
+import { normalizePath } from '@socketsecurity/lib-internal/path'
+import { isNonEmptyString } from '@socketsecurity/lib-internal/strings'
+import { pluralize } from '@socketsecurity/lib-internal/words'
 
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchResult } from './output-patch-result.mts'
@@ -31,7 +31,7 @@ import { getPurlObject, normalizePurl } from '../../utils/purl/parse.mjs'
 import type { PatchRecord } from './manifest-schema.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { PackageURL } from '@socketregistry/packageurl-js'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib-internal/spinner'
 const logger = getDefaultLogger()
 
 type PatchEntry = {

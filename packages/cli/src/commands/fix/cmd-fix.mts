@@ -2,8 +2,8 @@ import path from 'node:path'
 
 import terminalLink from 'terminal-link'
 
-import { arrayUnique, joinOr } from '@socketsecurity/lib/arrays'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { arrayUnique, joinOr } from '@socketsecurity/lib-internal/arrays'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { handleFix } from './handle-fix.mts'
 import { DRY_RUN_NOT_SAVING, FLAG_ID } from '../../constants/cli.mts'

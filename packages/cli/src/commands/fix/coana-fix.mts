@@ -2,11 +2,11 @@ import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { readJsonSync } from '@socketsecurity/lib/fs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { pluralize } from '@socketsecurity/lib/words'
+import { joinAnd } from '@socketsecurity/lib-internal/arrays'
+import { debug, debugDir } from '@socketsecurity/lib-internal/debug'
+import { readJsonSync } from '@socketsecurity/lib-internal/fs'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { pluralize } from '@socketsecurity/lib-internal/words'
 
 import {
   checkCiEnvVars,
