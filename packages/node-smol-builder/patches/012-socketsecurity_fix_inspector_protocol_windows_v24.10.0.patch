@@ -28,9 +28,10 @@
 
 --- a/deps/v8/third_party/inspector_protocol/code_generator.py
 +++ b/deps/v8/third_party/inspector_protocol/code_generator.py
-@@ -359,12 +359,27 @@ def to_file_name(config, file_name):
+@@ -358,12 +358,27 @@ def to_file_name(config, file_name):
 
  class Protocol(object):
+
 -  def __init__(self, config):
 +  def __init__(self, config, config_file=None):
      self.config = config
@@ -57,11 +58,12 @@
 
      if config.protocol.options:
        self.generate_domains = [rule.domain for rule in config.protocol.options]
-@@ -605,7 +620,7 @@ def write_object_h(domain, output_dir, header_guard_prefix, config, templates,
+@@ -604,7 +619,8 @@ def write_object_h(domain, output_dir, header_guard_prefix, config, templates,
 
  def main():
    jinja_dir, config_file, config = read_config()
 -  protocol = Protocol(config)
++
 +  protocol = Protocol(config, config_file)
    if not config.exported and len(protocol.exported_domains):
      sys.stderr.write(("Domains [%s] are exported, but config is missing export "
