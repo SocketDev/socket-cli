@@ -346,6 +346,10 @@ jobs:
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           # Use 3.12 instead of 3.13 - gyp has hashlib compatibility issues with 3.13.
+          # Error: TypeError: Strings must be encoded before hashing
+          # At: tools/gyp/pylib/gyp/generator/ninja.py:813 hashlib.md5(outputs[0])
+          # Python 3.13 requires .encode() for hashlib, but gyp doesn't support it yet.
+          # Alpine 3.19 (Docker builds) ships Python 3.11.14, not affected.
           python-version: '3.12'
 
       - name: Verify Python installation
