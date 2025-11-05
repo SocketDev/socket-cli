@@ -129,7 +129,7 @@ jobs:
             os: linux
             platform: linux
             arch: x64
-          - runner: ubuntu-24.04-arm64
+          - runner: ubuntu-24.04-arm
             os: linux
             platform: linux
             arch: arm64
@@ -139,7 +139,7 @@ jobs:
             os: linux
             platform: alpine
             arch: x64
-          - runner: ubuntu-24.04-arm64
+          - runner: ubuntu-24.04-arm
             os: linux
             platform: alpine
             arch: arm64
