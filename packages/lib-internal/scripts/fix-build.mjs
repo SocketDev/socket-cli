@@ -1,6 +1,6 @@
 /**
  * @fileoverview Orchestrates all post-build fix scripts.
- * Runs generate-package-exports and fix-external-imports in sequence.
+ * Runs package exports generation, path alias fixing, and CommonJS exports fixing in sequence.
  */
 
 import { isQuiet } from '#socketsecurity/lib/argv/flags'
@@ -34,10 +34,6 @@ async function main() {
     },
     {
       args: ['scripts/fix-path-aliases.mjs', ...fixArgs],
-      command: 'node',
-    },
-    {
-      args: ['scripts/fix-external-imports.mjs', ...fixArgs],
       command: 'node',
     },
     {
