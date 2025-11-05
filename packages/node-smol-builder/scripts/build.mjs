@@ -1447,12 +1447,14 @@ async function main() {
   logger.log(`::group::Running ${WIN32 ? 'python configure.py' : './configure'}`)
 
   // On Windows, explicitly pass environment to subprocess.
-  // IMPORTANT: When passing custom env, we must disable shell wrapping (shell: false)
-  // because cmd.exe doesn't properly propagate environment variables to subprocesses.
-  const execOptions = { cwd: NODE_DIR }
+  // IMPORTANT: Must use shell: false because cmd.exe doesn't properly
+  // propagate environment variables to subprocesses.
+  const execOptions = {
+    cwd: NODE_DIR,
+    env: process.env,
+    shell: false,
+  }
   if (WIN32) {
-    execOptions.env = process.env
-    execOptions.shell = false  // Critical: disable cmd.exe wrapper
     logger.log(`DEBUG: Passing env with ${Object.keys(process.env).length} variables (shell: false)`)
   }
 
@@ -1505,12 +1507,11 @@ async function main() {
     logger.log('::group::Compiling Node.js with Ninja (this will take a while...)')
 
     try {
-      // On Windows, disable shell wrapper when passing env (same as configure.py).
-      const ninjaOptions = { cwd: NODE_DIR, env: process.env }
-      if (WIN32) {
-        ninjaOptions.shell = false
-      }
-      await exec('ninja', ['-C', 'out/Release', `-j${CPU_COUNT}`], ninjaOptions)
+      await exec('ninja', ['-C', 'out/Release', `-j${CPU_COUNT}`], {
+        cwd: NODE_DIR,
+        env: process.env,
+        shell: false,
+      })
       logger.log('::endgroup::')
     } catch (e) {
       logger.log('::endgroup::')
