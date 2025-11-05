@@ -27,15 +27,15 @@
 # - Node.js v24 gyp build system Windows argument passing
 # - tools/v8_gypfiles/v8.gyp protocol_generated_sources action
 
+diff --git a/deps/v8/third_party/inspector_protocol/code_generator.py b/deps/v8/third_party/inspector_protocol/code_generator.py
+index b1bedb58..c702516a 100755
 --- a/deps/v8/third_party/inspector_protocol/code_generator.py
 +++ b/deps/v8/third_party/inspector_protocol/code_generator.py
-@@ -602,8 +602,20 @@ class Protocol(object):
-
+@@ -604,8 +604,20 @@ class Protocol(object):
  def main():
    jinja_dir, config_file, config = read_config()
--
+
 -  protocol = Protocol(config)
-+
 +  # Windows gyp-win-tool may fail to pass --config_value correctly.
 +  # Fall back to computing the path from the config file location.
 +  if not hasattr(config.protocol, 'path'):
@@ -48,8 +48,8 @@
 +      config = config._replace(protocol=protocol_obj) if hasattr(config, '_replace') else config
 +    else:
 +      raise Exception("config.protocol.path not set and config_file not provided")
-+
-+  protocol = Protocol(config)
 
++  protocol = Protocol(config)
++
    if not config.exported and len(protocol.exported_domains):
      sys.stderr.write(("Domains [%s] are exported, but config is missing export "
