@@ -1,0 +1,13 @@
+{
+  "entry": [
+    "perf/npm/json-stable-stringify.perf.ts",
+    "registry/index.js",
+    "registry/constants/index.js",
+    "scripts/**/*.{js,ts}",
+    "src/**/*.ts",
+    "test/**/*.ts",
+    "*.js"
+  ],
+  "project": ["perf/**", "registry/**", "scripts/**", "src/**", "test/**"],
+  "ignore": ["packages/**", "test/npm/packages/**"]
+}

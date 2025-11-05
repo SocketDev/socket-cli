@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@iarna/toml": "catalog:",
-    "@socketsecurity/lib": "catalog:",
+    "@socketsecurity/lib": "workspace:*",
     "@yarnpkg/parsers": "catalog:",
     "fast-xml-parser": "catalog:",
     "yaml": "catalog:"

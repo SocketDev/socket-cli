@@ -1,0 +1,28 @@
+{
+  "npm": [
+    [
+      "pkg:npm/%40socketregistry/packageurl-js@latest",
+      {
+        "categories": ["levelup"],
+        "engines": { "node": ">=18" },
+        "interop": ["cjs"],
+        "license": "MIT",
+        "name": "@socketregistry/packageurl-js",
+        "package": "packageurl-js",
+        "version": "latest"
+      }
+    ],
+    [
+      "pkg:npm/shell-quote@latest",
+      {
+        "categories": ["tuneup"],
+        "engines": { "node": ">=18" },
+        "interop": ["cjs"],
+        "license": "MIT",
+        "name": "shell-quote",
+        "package": "shell-quote",
+        "version": "latest"
+      }
+    ]
+  ]
+}
