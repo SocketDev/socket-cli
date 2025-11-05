@@ -418,14 +418,19 @@ jobs:
 
       - name: Add Git Unix tools to PATH (Windows)
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform == 'win32'
-        shell: bash
+        shell: pwsh
         run: |
           # Git for Windows includes patch in usr/bin.
-          export PATH="/c/Program Files/Git/usr/bin:$PATH"
-          echo "/c/Program Files/Git/usr/bin" >> $GITHUB_PATH
-          echo "Verifying patch command:"
-          which patch
-          patch --version
+          # Use Windows-style path for PowerShell.
+          $gitUnixPath = "C:\Program Files\Git\usr\bin"
+          Write-Host "Adding $gitUnixPath to PATH"
+          Add-Content -Path $env:GITHUB_PATH -Value $gitUnixPath
+
+          # Verify patch command is now accessible.
+          $env:PATH = "$gitUnixPath;$env:PATH"
+          Write-Host "Verifying patch command:"
+          Get-Command patch -ErrorAction SilentlyContinue
+          & patch --version
 
       - name: Build smol binary (Standard platforms)
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform != 'alpine'
