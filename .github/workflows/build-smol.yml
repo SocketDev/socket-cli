@@ -345,7 +345,8 @@ jobs:
         if: steps.smol-cache-valid.outputs.valid != 'true' || inputs.force
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
-          python-version: '3.13.0'
+          # Use 3.12 instead of 3.13 - gyp has hashlib compatibility issues with 3.13.
+          python-version: '3.12'
 
       - name: Verify Python installation
         if: steps.smol-cache-valid.outputs.valid != 'true' || inputs.force
