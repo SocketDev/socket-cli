@@ -432,6 +432,30 @@ jobs:
           Get-Command patch -ErrorAction SilentlyContinue
           & patch --version
 
+      - name: Ensure Visual Studio is installed
+        if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform == 'win32'
+        shell: pwsh
+        run: |
+          # GitHub Actions runners come with Visual Studio pre-installed.
+          # Use vswhere to check if Visual Studio 2019+ is installed.
+          $vswherePath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+
+          if (Test-Path $vswherePath) {
+            $vsPath = & $vswherePath -latest -property installationPath
+            if ($vsPath) {
+              Write-Host "Visual Studio found at: $vsPath"
+            } else {
+              Write-Host "vswhere.exe found but no VS installation detected"
+              Write-Host "Installing Visual Studio Build Tools via Chocolatey..."
+              choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive" -y --no-progress
+              refreshenv
+            }
+          } else {
+            Write-Host "vswhere.exe not found, installing Visual Studio Build Tools..."
+            choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive" -y --no-progress
+            refreshenv
+          }
+
       - name: Setup Visual Studio environment (Windows)
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform == 'win32'
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
