@@ -129,7 +129,7 @@ jobs:
             os: linux
             platform: linux
             arch: x64
-          - runner: ubuntu-latest
+          - runner: ubuntu-24.04-arm64
             os: linux
             platform: linux
             arch: arm64
