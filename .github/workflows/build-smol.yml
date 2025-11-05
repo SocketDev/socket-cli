@@ -404,31 +404,54 @@ jobs:
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform == 'win32'
         shell: pwsh
         run: |
-          # GitHub Actions runners come with Git for Windows pre-installed.
-          # Verify it exists and is accessible.
+          # ═══════════════════════════════════════════════════════════════════
+          # CRITICAL: Verify Git for Windows Installation
+          # ═══════════════════════════════════════════════════════════════════
+          # WHY: Git for Windows provides Unix tools needed for patching Node.js source.
+          #      Specifically, we need the 'patch' command to apply Socket patches.
+          #
+          # WHAT: Check if Git for Windows is installed. If missing, install it.
+          #
+          # NOTE: GitHub Actions runners have Git pre-installed, but this ensures
+          #       compatibility with custom runners or local testing.
+          # ═══════════════════════════════════════════════════════════════════
+
           $gitPath = "C:\Program Files\Git"
           if (-not (Test-Path $gitPath)) {
-            Write-Host "Git for Windows not found at $gitPath"
-            Write-Host "Installing Git for Windows via Chocolatey..."
+            Write-Host "⚠ Git for Windows not found at $gitPath"
+            Write-Host "→ Installing Git for Windows via Chocolatey..."
             choco install git -y --no-progress
             refreshenv
           } else {
-            Write-Host "Git for Windows found at $gitPath"
+            Write-Host "✓ Git for Windows found: $gitPath"
           }
 
       - name: Add Git Unix tools to PATH (Windows)
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform == 'win32'
         shell: pwsh
         run: |
-          # Git for Windows includes patch in usr/bin.
-          # Use Windows-style path for PowerShell.
+          # ═══════════════════════════════════════════════════════════════════
+          # CRITICAL: Add Unix Tools to PATH
+          # ═══════════════════════════════════════════════════════════════════
+          # WHY: Socket patches are in unified diff format and require the 'patch'
+          #      command to apply. Git for Windows bundles Unix tools (patch, diff,
+          #      etc.) in usr/bin but doesn't add them to PATH by default.
+          #
+          # WHAT: Add Git's usr/bin directory to PATH so 'patch' is available.
+          #
+          # LOCATION: C:\Program Files\Git\usr\bin\patch.exe
+          # ═══════════════════════════════════════════════════════════════════
+
           $gitUnixPath = "C:\Program Files\Git\usr\bin"
-          Write-Host "Adding $gitUnixPath to PATH"
+
+          # Add to GITHUB_PATH so subsequent steps inherit this PATH change.
+          Write-Host "→ Adding Unix tools to PATH: $gitUnixPath"
           Add-Content -Path $env:GITHUB_PATH -Value $gitUnixPath
 
-          # Verify patch command is now accessible.
+          # Verify patch is now accessible (update PATH in current shell).
           $env:PATH = "$gitUnixPath;$env:PATH"
-          Write-Host "Verifying patch command:"
+          Write-Host ""
+          Write-Host "→ Verifying patch command:"
           Get-Command patch -ErrorAction SilentlyContinue
           & patch --version
 
@@ -436,22 +459,36 @@ jobs:
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform == 'win32'
         shell: pwsh
         run: |
-          # GitHub Actions runners come with Visual Studio pre-installed.
-          # Use vswhere to check if Visual Studio 2019+ is installed.
+          # ═══════════════════════════════════════════════════════════════════
+          # CRITICAL: Verify Visual Studio Installation
+          # ═══════════════════════════════════════════════════════════════════
+          # WHY: Node.js builds require MSVC compiler (cl.exe), linker (link.exe),
+          #      and Windows SDK. These come with Visual Studio or Build Tools.
+          #
+          # WHAT: Check if VS is installed. If missing, install Build Tools 2022.
+          #
+          # NOTE: GitHub Actions runners have VS pre-installed, but this ensures
+          #       compatibility with custom runners or local testing.
+          # ═══════════════════════════════════════════════════════════════════
+
           $vswherePath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 
           if (Test-Path $vswherePath) {
+            # vswhere found, check if VS is installed.
             $vsPath = & $vswherePath -latest -property installationPath
             if ($vsPath) {
-              Write-Host "Visual Studio found at: $vsPath"
+              Write-Host "✓ Visual Studio found: $vsPath"
             } else {
-              Write-Host "vswhere.exe found but no VS installation detected"
-              Write-Host "Installing Visual Studio Build Tools via Chocolatey..."
+              # vswhere exists but found no VS installation.
+              Write-Host "⚠ vswhere.exe found but no VS installation detected"
+              Write-Host "→ Installing Visual Studio 2022 Build Tools..."
               choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive" -y --no-progress
               refreshenv
             }
           } else {
-            Write-Host "vswhere.exe not found, installing Visual Studio Build Tools..."
+            # No vswhere means no VS installer.
+            Write-Host "⚠ vswhere.exe not found (Visual Studio not installed)"
+            Write-Host "→ Installing Visual Studio 2022 Build Tools..."
             choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive" -y --no-progress
             refreshenv
           }
@@ -460,7 +497,33 @@ jobs:
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform == 'win32'
         shell: pwsh
         run: |
-          # Find vcvarsall.bat using vswhere.
+          # ═══════════════════════════════════════════════════════════════════
+          # CRITICAL: Configure MSVC Build Environment
+          # ═══════════════════════════════════════════════════════════════════
+          # WHY: Node.js configure.py requires MSVC compiler environment variables
+          #      (PATH, INCLUDE, LIB, etc.) to locate the C++ compiler and linker.
+          #
+          # WHAT: Run vcvarsall.bat to set up the Visual Studio build environment,
+          #       then export all changed environment variables to GITHUB_ENV so
+          #       subsequent build steps can use the MSVC toolchain.
+          #
+          # FLOW:
+          #   1. Find VS installation     → vswhere.exe
+          #   2. Locate vcvarsall.bat     → VS\VC\Auxiliary\Build\
+          #   3. Capture env BEFORE       → cmd.exe: set
+          #   4. Run vcvarsall.bat        → Sets up MSVC environment
+          #   5. Capture env AFTER        → cmd.exe: set
+          #   6. Export changes           → GITHUB_ENV (for next steps)
+          #
+          # REFERENCE: Same technique as ilammy/msvc-dev-cmd action
+          # ═══════════════════════════════════════════════════════════════════
+
+          # ───────────────────────────────────────────────────────────────────
+          # STEP 1: Find Visual Studio installation using vswhere
+          # ───────────────────────────────────────────────────────────────────
+          # vswhere.exe is Microsoft's official tool for locating VS installations.
+          # It's included with VS 2017+ and GitHub Actions runners.
+          #
           $vswherePath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 
           if (-not (Test-Path $vswherePath)) {
@@ -468,13 +531,25 @@ jobs:
             exit 1
           }
 
-          # Get the latest VS installation path.
+          # Query vswhere for the latest VS installation path.
+          # -products *    : Include all VS products (Enterprise, Professional, Community, BuildTools)
+          # -latest        : Get the newest version
+          # -prerelease    : Include preview/RC versions
+          #
           $vsPath = & $vswherePath -products * -latest -prerelease -property installationPath
           if (-not $vsPath) {
             Write-Error "Visual Studio installation not found"
             exit 1
           }
 
+          # ───────────────────────────────────────────────────────────────────
+          # STEP 2: Locate vcvarsall.bat (MSVC environment setup script)
+          # ───────────────────────────────────────────────────────────────────
+          # vcvarsall.bat is the master script that sets up the MSVC build environment.
+          # It sets PATH, INCLUDE, LIB, and other variables needed by the compiler.
+          #
+          # Location: <VS Install>\VC\Auxiliary\Build\vcvarsall.bat
+          #
           $vcvarsallPath = Join-Path $vsPath "VC\Auxiliary\Build\vcvarsall.bat"
           if (-not (Test-Path $vcvarsallPath)) {
             Write-Error "vcvarsall.bat not found at $vcvarsallPath"
@@ -483,22 +558,42 @@ jobs:
 
           Write-Host "Found vcvarsall.bat: $vcvarsallPath"
 
-          # Determine architecture.
+          # ───────────────────────────────────────────────────────────────────
+          # STEP 3-5: Capture environment before/after running vcvarsall.bat
+          # ───────────────────────────────────────────────────────────────────
+          # TECHNIQUE: Run three commands in sequence, separated by form feeds (0x0C):
+          #
+          #   ┌──────────────────────────────────────────────────────────────┐
+          #   │  cmd.exe /c "set && echo \f && vcvarsall.bat && echo \f && set"
+          #   │                                                                │
+          #   │  Output sections (split by \f):                               │
+          #   │  ┌─────────────┐     ┌──────────────┐     ┌────────────────┐│
+          #   │  │ Section [0] │ \f  │ Section [1]  │ \f  │  Section [2]   ││
+          #   │  │ (env BEFORE)│     │ (vcvars msgs)│     │  (env AFTER)   ││
+          #   │  └─────────────┘     └──────────────┘     └────────────────┘│
+          #   └──────────────────────────────────────────────────────────────┘
+          #
+          # Form feed (\f = 0x0C) is chosen because it's rare in environment variables.
+          #
           $arch = "${{ matrix.arch }}"
+          Write-Host "Setting up MSVC environment for: $arch"
 
-          # Run vcvarsall.bat and capture environment changes.
-          # Use form feeds (0x0C) as delimiters to separate output sections.
-          $cmd = "cmd.exe /c `"set && echo ([char]0x0C) && `"$vcvarsallPath`" $arch && echo ([char]0x0C) && set`""
           $output = & cmd.exe /c "`"set && echo `$([char]0x0C) && `"$vcvarsallPath`" $arch && echo `$([char]0x0C) && set`""
 
+          # Split output by form feed character (0x0C = \f).
           $sections = ($output -join "`n") -split "`f"
 
           if ($sections.Count -lt 3) {
-            Write-Error "Failed to parse vcvarsall.bat output"
+            Write-Error "Failed to parse vcvarsall.bat output (expected 3 sections, got $($sections.Count))"
             exit 1
           }
 
-          # Parse old and new environments.
+          # ───────────────────────────────────────────────────────────────────
+          # STEP 6: Parse environment variables (before and after)
+          # ───────────────────────────────────────────────────────────────────
+          # Convert "NAME=VALUE" lines into PowerShell hashtables for comparison.
+          #
+          # Parse BEFORE environment (section 0).
           $oldEnv = @{}
           foreach ($line in ($sections[0] -split "`n")) {
             if ($line -match '^([^=]+)=(.*)$') {
@@ -506,6 +601,7 @@ jobs:
             }
           }
 
+          # Parse AFTER environment (section 2).
           $newEnv = @{}
           foreach ($line in ($sections[2] -split "`n")) {
             if ($line -match '^([^=]+)=(.*)$') {
@@ -513,15 +609,29 @@ jobs:
             }
           }
 
-          # Export changed variables to GITHUB_ENV.
-          Write-Host "Exporting environment variables:"
+          # ───────────────────────────────────────────────────────────────────
+          # STEP 7: Export only CHANGED variables to GITHUB_ENV
+          # ───────────────────────────────────────────────────────────────────
+          # GITHUB_ENV format (heredoc for multiline values):
+          #   VARNAME<<EOF_12345
+          #   value with
+          #   multiple lines
+          #   EOF_12345
+          #
+          # This makes variables available to ALL subsequent steps in the job.
+          #
+          Write-Host "Exporting changed environment variables:"
+          $exportCount = 0
           foreach ($name in $newEnv.Keys) {
             $newValue = $newEnv[$name]
             $oldValue = $oldEnv[$name]
 
+            # Export only variables that changed or are new.
             if ($newValue -ne $oldValue) {
               Write-Host "  $name"
-              # Escape special characters for GITHUB_ENV format.
+              $exportCount++
+
+              # Use heredoc format with random delimiter to safely handle special characters.
               $delimiter = "EOF_$(Get-Random)"
               Add-Content -Path $env:GITHUB_ENV -Value "$name<<$delimiter"
               Add-Content -Path $env:GITHUB_ENV -Value $newValue
@@ -529,7 +639,9 @@ jobs:
             }
           }
 
-          Write-Host "Visual Studio environment configured"
+          Write-Host ""
+          Write-Host "Visual Studio environment configured ($exportCount variables exported)"
+          Write-Host "Next build step will have access to MSVC compiler toolchain"
 
       - name: Build smol binary (Standard platforms)
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform != 'alpine'
