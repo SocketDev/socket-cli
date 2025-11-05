@@ -1418,8 +1418,12 @@ async function main() {
     configureFlags.unshift('--dest-cpu=x64')
   }
 
-  logger.log('::group::Running ./configure')
-  await exec('./configure', configureFlags, { cwd: NODE_DIR })
+  // Windows uses configure.py directly, Unix uses ./configure wrapper script.
+  const configureCommand = WIN32 ? 'python' : './configure'
+  const configureArgs = WIN32 ? ['configure.py', ...configureFlags] : configureFlags
+
+  logger.log(`::group::Running ${WIN32 ? 'python configure.py' : './configure'}`)
+  await exec(configureCommand, configureArgs, { cwd: NODE_DIR })
   logger.log('::endgroup::')
   logger.log(`${colors.green('✓')} Configuration complete`)
   logger.log('')
