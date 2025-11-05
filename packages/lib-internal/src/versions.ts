@@ -201,6 +201,7 @@ export function versionDiff(
   | 'patch'
   | 'prepatch'
   | 'prerelease'
+  | 'release'
   | undefined {
   try {
     return getSemver().diff(version1, version2) || undefined

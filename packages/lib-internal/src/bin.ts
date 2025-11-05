@@ -107,8 +107,6 @@ export interface WhichOptions {
   path?: string | undefined
   /** Path separator character. */
   pathExt?: string | undefined
-  /** Environment variables to use. */
-  env?: Record<string, string | undefined> | undefined
 }
 
 /**
