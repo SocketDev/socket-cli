@@ -30,7 +30,9 @@ import {
 } from '../../../../src/utils/purl/parse.mts'
 
 // Mock dependencies.
-const mockIsObjectObject = vi.hoisted(() => vi.fn(obj => obj !== null && typeof obj === 'object' && !Array.isArray(obj)))
+const mockIsObjectObject = vi.hoisted(() =>
+  vi.fn(obj => obj !== null && typeof obj === 'object' && !Array.isArray(obj)),
+)
 
 vi.mock('@socketsecurity/lib/objects', () => ({
   isObjectObject: mockIsObjectObject,

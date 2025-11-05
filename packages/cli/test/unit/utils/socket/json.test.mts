@@ -51,7 +51,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 
-import { existsSync, promises as fs, readFileSync } from 'node:fs'
+import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import {
@@ -125,7 +125,10 @@ describe('socket-json utilities', () => {
   describe('findSocketJsonUp', () => {
     it('calls findUp with correct parameters', async () => {
       // Mock fs.stat to simulate finding socket.json in parent directory.
-      mockStat.mockResolvedValue({ isFile: () => true, isDirectory: () => false })
+      mockStat.mockResolvedValue({
+        isFile: () => true,
+        isDirectory: () => false,
+      })
 
       const result = await findSocketJsonUp('/test/dir')
       // Should find socket.json somewhere up the tree.
@@ -146,7 +149,10 @@ describe('socket-json utilities', () => {
     it('reads socket.json when found up the tree', async () => {
       const mockJson = { version: 1, custom: 'data' }
       // Mock fs.stat to find socket.json.
-      mockStat.mockResolvedValue({ isFile: () => true, isDirectory: () => false })
+      mockStat.mockResolvedValue({
+        isFile: () => true,
+        isDirectory: () => false,
+      })
       mockExistsSync.mockReturnValue(true)
       mockReadFileSync.mockReturnValue(JSON.stringify(mockJson))
 

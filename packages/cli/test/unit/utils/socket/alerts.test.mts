@@ -70,8 +70,6 @@ vi.mock('../../../../../src/utils/socket/package-alert.mts', () => ({
   addArtifactToAlertsMap: mockAddArtifactToAlertsMap,
 }))
 
-import { extractPurlsFromPnpmLockfile } from '../../../../../src/utils/pnpm/lockfile.mts'
-
 describe('alerts-map utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks()

@@ -26,10 +26,11 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handlePurlsShallowScore } from '../../../../src/commands/package/handle-purls-shallow-score.mts'
-import { fetchPurlsShallowScore } from '../../../../src/commands/package/fetch-purls-shallow-score.mts'
-import { outputPurlsShallowScore } from '../../../../src/commands/package/output-purls-shallow-score.mts'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
+
+import { fetchPurlsShallowScore } from '../../../../src/commands/package/fetch-purls-shallow-score.mts'
+import { handlePurlsShallowScore } from '../../../../src/commands/package/handle-purls-shallow-score.mts'
+import { outputPurlsShallowScore } from '../../../../src/commands/package/output-purls-shallow-score.mts'
 
 // Mock the dependencies.
 const mockFetchPurlsShallowScore = vi.hoisted(() => vi.fn())
@@ -38,12 +39,18 @@ const mock_debug = vi.hoisted(() => vi.fn())
 const mockDebug = vi.hoisted(() => vi.fn())
 const mockDebugDir = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/package/fetch-purls-shallow-score.mts', () => ({
-  fetchPurlsShallowScore: mockFetchPurlsShallowScore,
-}))
-vi.mock('../../../../src/commands/package/output-purls-shallow-score.mts', () => ({
-  outputPurlsShallowScore: mockOutputPurlsShallowScore,
-}))
+vi.mock(
+  '../../../../src/commands/package/fetch-purls-shallow-score.mts',
+  () => ({
+    fetchPurlsShallowScore: mockFetchPurlsShallowScore,
+  }),
+)
+vi.mock(
+  '../../../../src/commands/package/output-purls-shallow-score.mts',
+  () => ({
+    outputPurlsShallowScore: mockOutputPurlsShallowScore,
+  }),
+)
 vi.mock('@socketsecurity/lib/debug', () => ({
   _debug: mock_debug,
   debug: mockDebug,

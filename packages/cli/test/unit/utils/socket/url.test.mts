@@ -41,14 +41,17 @@ vi.mock('../../../../../src/utils/purl/parse.mts', () => ({
   getPurlObject: mockGetPurlObject,
 }))
 
-import { getPurlObject } from '../../../../../src/utils/purl/parse.mts'
-
 describe('socket-url utilities', () => {
   describe('getPkgFullNameFromPurl', () => {
     it('returns name for packages without namespace', () => {
       mockGetPurlObject.mockImplementation((purl: any) => {
         if (typeof purl === 'string') {
-          return { type: 'npm', namespace: undefined, name: 'express', version: '4.18.0' }
+          return {
+            type: 'npm',
+            namespace: undefined,
+            name: 'express',
+            version: '4.18.0',
+          }
         }
         return purl
       })

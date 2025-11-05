@@ -133,7 +133,9 @@ describe('outputListRepos', () => {
       warn: vi.fn(),
       error: vi.fn(),
     }
-    const mockChalkTable = vi.fn((_options, data) => `Table with ${data.length} rows`)
+    const mockChalkTable = vi.fn(
+      (_options, data) => `Table with ${data.length} rows`,
+    )
 
     vi.doMock('@socketsecurity/lib/logger', () => ({
       getDefaultLogger: () => mockLogger,
@@ -248,7 +250,9 @@ describe('outputListRepos', () => {
       warn: vi.fn(),
       error: vi.fn(),
     }
-    const mockChalkTable = vi.fn((_options, data) => `Table with ${data.length} rows`)
+    const mockChalkTable = vi.fn(
+      (_options, data) => `Table with ${data.length} rows`,
+    )
 
     vi.doMock('@socketsecurity/lib/logger', () => ({
       getDefaultLogger: () => mockLogger,
@@ -297,7 +301,9 @@ describe('outputListRepos', () => {
       warn: vi.fn(),
       error: vi.fn(),
     }
-    const mockChalkTable = vi.fn((_options, data) => `Table with ${data.length} rows`)
+    const mockChalkTable = vi.fn(
+      (_options, data) => `Table with ${data.length} rows`,
+    )
 
     vi.doMock('@socketsecurity/lib/logger', () => ({
       getDefaultLogger: () => mockLogger,
@@ -346,7 +352,9 @@ describe('outputListRepos', () => {
       warn: vi.fn(),
       error: vi.fn(),
     }
-    const mockChalkTable = vi.fn((_options, data) => `Table with ${data.length} rows`)
+    const mockChalkTable = vi.fn(
+      (_options, data) => `Table with ${data.length} rows`,
+    )
 
     vi.doMock('@socketsecurity/lib/logger', () => ({
       getDefaultLogger: () => mockLogger,

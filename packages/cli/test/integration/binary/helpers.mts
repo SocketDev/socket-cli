@@ -108,12 +108,14 @@ export async function prepareBinary(
     }
 
     if (!binaryExists) {
-      logger.log(`  ✗ Build failed`)
-      logger.log(`  To build manually: ${binary.buildCommand?.join(' ') ?? 'N/A'}`)
+      logger.log('  ✗ Build failed')
+      logger.log(
+        `  To build manually: ${binary.buildCommand?.join(' ') ?? 'N/A'}`,
+      )
       return false
     }
 
-    logger.log(`  ✓ Build complete`)
+    logger.log('  ✓ Build complete')
   } else {
     // Binary exists.
     logger.log(`✓ ${binary.name}`)

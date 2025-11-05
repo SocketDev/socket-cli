@@ -23,10 +23,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { setupTestEnvironment } from '../../../helpers/index.mts'
-import { handleQuota } from '../../../../src/commands/organization/handle-quota.mts'
 import { fetchQuota } from '../../../../src/commands/organization/fetch-quota.mts'
+import { handleQuota } from '../../../../src/commands/organization/handle-quota.mts'
 import { outputQuota } from '../../../../src/commands/organization/output-quota.mts'
+import { setupTestEnvironment } from '../../../helpers/index.mts'
 
 // Mock the dependencies.
 const mockFetchQuota = vi.hoisted(() => vi.fn())

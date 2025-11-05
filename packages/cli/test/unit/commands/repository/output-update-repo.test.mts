@@ -22,9 +22,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { outputUpdateRepo } from '../../../../src/commands/repository/output-update-repo.mts'
+
 import type { CResult } from '../../../../src/commands/repository/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
-import { outputUpdateRepo } from '../../../../src/commands/repository/output-update-repo.mts'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({

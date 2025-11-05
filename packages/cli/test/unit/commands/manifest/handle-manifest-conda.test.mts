@@ -25,19 +25,22 @@
 
 import { describe, expect, it, vi } from 'vitest'
 
+import { handleManifestConda } from '../../../../src/commands/manifest/handle-manifest-conda.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../helpers/mocks.mts'
-import { handleManifestConda } from '../../../../src/commands/manifest/handle-manifest-conda.mts'
 
 // Mock the dependencies.
 const mockConvertCondaToRequirements = vi.hoisted(() => vi.fn())
 const mockOutputRequirements = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/manifest/convert-conda-to-requirements.mts', () => ({
-  convertCondaToRequirements: mockConvertCondaToRequirements,
-}))
+vi.mock(
+  '../../../../src/commands/manifest/convert-conda-to-requirements.mts',
+  () => ({
+    convertCondaToRequirements: mockConvertCondaToRequirements,
+  }),
+)
 
 vi.mock('../../../../src/commands/manifest/output-requirements.mts', () => ({
   outputRequirements: mockOutputRequirements,
@@ -48,7 +51,9 @@ describe('handleManifestConda', () => {
     const { convertCondaToRequirements } = await import(
       '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
     )
-    const { outputRequirements } = await import('../../../../src/commands/manifest/output-requirements.mts')
+    const { outputRequirements } = await import(
+      '../../../../src/commands/manifest/output-requirements.mts'
+    )
     const mockConvert = mockConvertCondaToRequirements
     const mockOutput = mockOutputRequirements
 
@@ -84,7 +89,9 @@ describe('handleManifestConda', () => {
     const { convertCondaToRequirements } = await import(
       '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
     )
-    const { outputRequirements } = await import('../../../../src/commands/manifest/output-requirements.mts')
+    const { outputRequirements } = await import(
+      '../../../../src/commands/manifest/output-requirements.mts'
+    )
     const mockConvert = mockConvertCondaToRequirements
     const mockOutput = mockOutputRequirements
 
@@ -107,7 +114,9 @@ describe('handleManifestConda', () => {
     const { convertCondaToRequirements } = await import(
       '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
     )
-    const { outputRequirements } = await import('../../../../src/commands/manifest/output-requirements.mts')
+    const { outputRequirements } = await import(
+      '../../../../src/commands/manifest/output-requirements.mts'
+    )
     const mockConvert = mockConvertCondaToRequirements
     const mockOutput = mockOutputRequirements
 

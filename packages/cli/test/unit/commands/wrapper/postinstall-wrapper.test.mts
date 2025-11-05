@@ -46,9 +46,12 @@ vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
 vi.mock('../../../../src/commands/wrapper/add-socket-wrapper.mts', () => ({
   addSocketWrapper: vi.fn(),
 }))
-vi.mock('../../../../src/commands/wrapper/check-socket-wrapper-setup.mts', () => ({
-  checkSocketWrapperSetup: vi.fn(),
-}))
+vi.mock(
+  '../../../../src/commands/wrapper/check-socket-wrapper-setup.mts',
+  () => ({
+    checkSocketWrapperSetup: vi.fn(),
+  }),
+)
 vi.mock('../../../../src/constants/paths.mts', () => ({
   getBashRcPath: vi.fn(() => '/home/user/.bashrc'),
   getZshRcPath: vi.fn(() => '/home/user/.zshrc'),
@@ -138,7 +141,9 @@ describe('postinstallWrapper', () => {
   })
 
   it('sets up wrapper when user confirms for bashrc', async () => {
-    const { addSocketWrapper } = await import('../../../../src/commands/wrapper/add-socket-wrapper.mts')
+    const { addSocketWrapper } = await import(
+      '../../../../src/commands/wrapper/add-socket-wrapper.mts'
+    )
     const { checkSocketWrapperSetup } = await import(
       '../../../../src/commands/wrapper/check-socket-wrapper-setup.mts'
     )
@@ -160,7 +165,9 @@ describe('postinstallWrapper', () => {
   })
 
   it('sets up wrapper for both bashrc and zshrc when both exist', async () => {
-    const { addSocketWrapper } = await import('../../../../src/commands/wrapper/add-socket-wrapper.mts')
+    const { addSocketWrapper } = await import(
+      '../../../../src/commands/wrapper/add-socket-wrapper.mts'
+    )
     const { checkSocketWrapperSetup } = await import(
       '../../../../src/commands/wrapper/check-socket-wrapper-setup.mts'
     )
@@ -180,7 +187,9 @@ describe('postinstallWrapper', () => {
   })
 
   it('handles error during wrapper setup', async () => {
-    const { addSocketWrapper } = await import('../../../../src/commands/wrapper/add-socket-wrapper.mts')
+    const { addSocketWrapper } = await import(
+      '../../../../src/commands/wrapper/add-socket-wrapper.mts'
+    )
     const { checkSocketWrapperSetup } = await import(
       '../../../../src/commands/wrapper/check-socket-wrapper-setup.mts'
     )
@@ -203,7 +212,9 @@ describe('postinstallWrapper', () => {
   })
 
   it('updates tab completion when it exists', async () => {
-    const { getBashrcDetails } = await import('../../../../src/utils/cli/completion.mts')
+    const { getBashrcDetails } = await import(
+      '../../../../src/utils/cli/completion.mts'
+    )
     await import('@socketsecurity/lib/logger')
     const { updateInstalledTabCompletionScript } = await import(
       '../../../../src/commands/install/setup-tab-completion.mts'
@@ -237,7 +248,9 @@ describe('postinstallWrapper', () => {
   })
 
   it('skips tab completion update when file does not exist', async () => {
-    const { getBashrcDetails } = await import('../../../../src/utils/cli/completion.mts')
+    const { getBashrcDetails } = await import(
+      '../../../../src/utils/cli/completion.mts'
+    )
     await import('@socketsecurity/lib/logger')
     const { updateInstalledTabCompletionScript } = await import(
       '../../../../src/commands/install/setup-tab-completion.mts'
@@ -267,7 +280,9 @@ describe('postinstallWrapper', () => {
   })
 
   it('handles tab completion update failure gracefully', async () => {
-    const { getBashrcDetails } = await import('../../../../src/utils/cli/completion.mts')
+    const { getBashrcDetails } = await import(
+      '../../../../src/utils/cli/completion.mts'
+    )
     await import('@socketsecurity/lib/logger')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockGetDetails = vi.mocked(getBashrcDetails)
@@ -290,7 +305,9 @@ describe('postinstallWrapper', () => {
   })
 
   it('handles getBashrcDetails returning not ok', async () => {
-    const { getBashrcDetails } = await import('../../../../src/utils/cli/completion.mts')
+    const { getBashrcDetails } = await import(
+      '../../../../src/utils/cli/completion.mts'
+    )
     await import('@socketsecurity/lib/logger')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockGetDetails = vi.mocked(getBashrcDetails)

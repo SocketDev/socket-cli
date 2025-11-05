@@ -29,16 +29,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getDefaultOrgSlug } from '../../../../src/commands/ci/fetch-default-org-slug.mts'
 
 // Create mock functions with hoisting.
-const { mockGetConfigValueOrUndef, mockFetchOrganization, mockEnv } = vi.hoisted(() => {
-  const env = {
-    SOCKET_CLI_ORG_SLUG: undefined,
-  }
-  return {
-    mockGetConfigValueOrUndef: vi.fn(),
-    mockFetchOrganization: vi.fn(),
-    mockEnv: env,
-  }
-})
+const { mockEnv, mockFetchOrganization, mockGetConfigValueOrUndef } =
+  vi.hoisted(() => {
+    const env = {
+      SOCKET_CLI_ORG_SLUG: undefined,
+    }
+    return {
+      mockGetConfigValueOrUndef: vi.fn(),
+      mockFetchOrganization: vi.fn(),
+      mockEnv: env,
+    }
+  })
 
 // Mock the dependencies.
 vi.mock('../../../../src/utils/config.mts', () => ({
@@ -49,9 +50,12 @@ vi.mock('../../../../src/constants/env.mts', () => ({
   default: mockEnv,
 }))
 
-vi.mock('../../../../src/commands/organization/fetch-organization-list.mts', () => ({
-  fetchOrganization: mockFetchOrganization,
-}))
+vi.mock(
+  '../../../../src/commands/organization/fetch-organization-list.mts',
+  () => ({
+    fetchOrganization: mockFetchOrganization,
+  }),
+)
 
 describe('getDefaultOrgSlug', () => {
   const mockFn = mockGetConfigValueOrUndef

@@ -20,8 +20,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { determineOrgSlug } from '../../../../../src/utils/socket/org-slug.mts'
 import { overrideCachedConfig } from '../../../../../src/utils/config.mts'
+import { determineOrgSlug } from '../../../../../src/utils/socket/org-slug.mts'
 
 // Mock dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -38,11 +38,13 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 
-const mockWebLink = vi.hoisted(() => vi.fn((_url: string, text: string) => text))
+const mockWebLink = vi.hoisted(() =>
+  vi.fn((_url: string, text: string) => text),
+)
 const mockSuggestOrgSlug = vi.hoisted(() => vi.fn())
 const mockSuggestToPersistOrgSlug = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/constants/config.mjs', async (importOriginal) => {
+vi.mock('../../../../src/constants/config.mjs', async importOriginal => {
   const actual = await importOriginal()
   return {
     ...actual,

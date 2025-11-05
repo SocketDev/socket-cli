@@ -21,7 +21,6 @@
 import npmPackageArg from 'npm-package-arg'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createPurlObject } from '../../../../src/utils/purl/parse.mts'
 import {
   npmSpecToPurl,
   safeNpa,

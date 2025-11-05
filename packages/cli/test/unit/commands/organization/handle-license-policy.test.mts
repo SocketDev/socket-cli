@@ -24,25 +24,31 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { fetchLicensePolicy } from '../../../../src/commands/organization/fetch-license-policy.mts'
+import { handleLicensePolicy } from '../../../../src/commands/organization/handle-license-policy.mts'
+import { outputLicensePolicy } from '../../../../src/commands/organization/output-license-policy.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../helpers/mocks.mts'
-import { handleLicensePolicy } from '../../../../src/commands/organization/handle-license-policy.mts'
-import { fetchLicensePolicy } from '../../../../src/commands/organization/fetch-license-policy.mts'
-import { outputLicensePolicy } from '../../../../src/commands/organization/output-license-policy.mts'
 
 // Mock the dependencies.
 const mockFetchLicensePolicy = vi.hoisted(() => vi.fn())
 const mockOutputLicensePolicy = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/organization/fetch-license-policy.mts', () => ({
-  fetchLicensePolicy: mockFetchLicensePolicy,
-}))
+vi.mock(
+  '../../../../src/commands/organization/fetch-license-policy.mts',
+  () => ({
+    fetchLicensePolicy: mockFetchLicensePolicy,
+  }),
+)
 
-vi.mock('../../../../src/commands/organization/output-license-policy.mts', () => ({
-  outputLicensePolicy: mockOutputLicensePolicy,
-}))
+vi.mock(
+  '../../../../src/commands/organization/output-license-policy.mts',
+  () => ({
+    outputLicensePolicy: mockOutputLicensePolicy,
+  }),
+)
 
 describe('handleLicensePolicy', () => {
   beforeEach(() => {
@@ -77,6 +83,9 @@ describe('handleLicensePolicy', () => {
 
     await handleLicensePolicy('test-org', 'markdown')
 
-    expect(outputLicensePolicy).toHaveBeenCalledWith(expect.any(Object), 'markdown')
+    expect(outputLicensePolicy).toHaveBeenCalledWith(
+      expect.any(Object),
+      'markdown',
+    )
   })
 })

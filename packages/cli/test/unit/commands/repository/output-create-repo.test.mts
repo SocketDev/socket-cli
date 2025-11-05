@@ -22,9 +22,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { outputCreateRepo } from '../../../../src/commands/repository/output-create-repo.mts'
+
 import type { CResult } from '../../../../src/commands/repository/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
-import { outputCreateRepo } from '../../../../src/commands/repository/output-create-repo.mts'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -55,7 +56,8 @@ describe('outputCreateRepo', () => {
     process.exitCode = undefined
   })
 
-  it('outputs JSON format for successful result', async () => {    const { serializeResultJson } = await vi.importMock(
+  it('outputs JSON format for successful result', async () => {
+    const { serializeResultJson } = await vi.importMock(
       '../../../../src/utils/output/result-json.mjs',
     )
     const mockSerialize = vi.mocked(serializeResultJson)
@@ -124,7 +126,8 @@ describe('outputCreateRepo', () => {
     expect(process.exitCode).toBeUndefined()
   })
 
-  it('outputs error in text format', async () => {    const { failMsgWithBadge } = await vi.importMock(
+  it('outputs error in text format', async () => {
+    const { failMsgWithBadge } = await vi.importMock(
       '../../../../src/utils/error/fail-msg-with-badge.mts',
     )
     const mockFailMsg = vi.mocked(failMsgWithBadge)
@@ -179,7 +182,8 @@ describe('outputCreateRepo', () => {
     )
   })
 
-  it('sets default exit code when code is undefined', async () => {    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
+  it('sets default exit code when code is undefined', async () => {
+    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
         ok: false,
         message: 'Error without code',

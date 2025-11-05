@@ -60,7 +60,9 @@ describe('outputDependencies', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputDependencies } = await import('../../../../src/commands/organization/output-dependencies.mts')
+    const { outputDependencies } = await import(
+      '../../../../src/commands/organization/output-dependencies.mts'
+    )
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -109,7 +111,9 @@ describe('outputDependencies', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputDependencies } = await import('../../../../src/commands/organization/output-dependencies.mts')
+    const { outputDependencies } = await import(
+      '../../../../src/commands/organization/output-dependencies.mts'
+    )
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -160,7 +164,9 @@ describe('outputDependencies', () => {
       },
     }))
 
-    const { outputDependencies } = await import('../../../../src/commands/organization/output-dependencies.mts')
+    const { outputDependencies } = await import(
+      '../../../../src/commands/organization/output-dependencies.mts'
+    )
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -227,7 +233,9 @@ describe('outputDependencies', () => {
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
-    const { outputDependencies } = await import('../../../../src/commands/organization/output-dependencies.mts')
+    const { outputDependencies } = await import(
+      '../../../../src/commands/organization/output-dependencies.mts'
+    )
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -282,7 +290,9 @@ describe('outputDependencies', () => {
       },
     }))
 
-    const { outputDependencies } = await import('../../../../src/commands/organization/output-dependencies.mts')
+    const { outputDependencies } = await import(
+      '../../../../src/commands/organization/output-dependencies.mts'
+    )
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -345,7 +355,9 @@ describe('outputDependencies', () => {
       },
     }))
 
-    const { outputDependencies } = await import('../../../../src/commands/organization/output-dependencies.mts')
+    const { outputDependencies } = await import(
+      '../../../../src/commands/organization/output-dependencies.mts'
+    )
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -382,7 +394,9 @@ describe('outputDependencies', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputDependencies } = await import('../../../../src/commands/organization/output-dependencies.mts')
+    const { outputDependencies } = await import(
+      '../../../../src/commands/organization/output-dependencies.mts'
+    )
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']

@@ -22,8 +22,8 @@
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { createSuccessResult } from '../../../helpers/mocks.mts'
 import { handleUpdateRepo } from '../../../../src/commands/repository/handle-update-repo.mts'
+import { createSuccessResult } from '../../../helpers/mocks.mts'
 
 // Mock the dependencies.
 const mockFetchUpdateRepo = vi.hoisted(() => vi.fn())
@@ -38,7 +38,8 @@ vi.mock('../../../../src/commands/repository/output-update-repo.mts', () => ({
 }))
 
 describe('handleUpdateRepo', () => {
-  it('updates repository and outputs result successfully', async () => {    const mockResult = createSuccessResult({
+  it('updates repository and outputs result successfully', async () => {
+    const mockResult = createSuccessResult({
       id: 'repo-123',
       name: 'test-repo',
       description: 'Updated description',
@@ -61,10 +62,15 @@ describe('handleUpdateRepo', () => {
     await handleUpdateRepo(params, 'json')
 
     expect(mockFetchUpdateRepo).toHaveBeenCalledWith(params)
-    expect(mockOutputUpdateRepo).toHaveBeenCalledWith(mockResult, 'test-repo', 'json')
+    expect(mockOutputUpdateRepo).toHaveBeenCalledWith(
+      mockResult,
+      'test-repo',
+      'json',
+    )
   })
 
-  it('handles update failure', async () => {    const mockError = {
+  it('handles update failure', async () => {
+    const mockError = {
       ok: false,
       error: 'Repository not found',
     }
@@ -82,10 +88,15 @@ describe('handleUpdateRepo', () => {
     await handleUpdateRepo(params, 'text')
 
     expect(mockFetchUpdateRepo).toHaveBeenCalledWith(params)
-    expect(mockOutputUpdateRepo).toHaveBeenCalledWith(mockError, 'nonexistent', 'text')
+    expect(mockOutputUpdateRepo).toHaveBeenCalledWith(
+      mockError,
+      'nonexistent',
+      'text',
+    )
   })
 
-  it('handles markdown output format', async () => {    mockFetchUpdateRepo.mockResolvedValue(createSuccessResult({}))
+  it('handles markdown output format', async () => {
+    mockFetchUpdateRepo.mockResolvedValue(createSuccessResult({}))
 
     await handleUpdateRepo(
       {
@@ -106,7 +117,8 @@ describe('handleUpdateRepo', () => {
     )
   })
 
-  it('handles different visibility settings', async () => {    mockFetchUpdateRepo.mockResolvedValue(createSuccessResult({}))
+  it('handles different visibility settings', async () => {
+    mockFetchUpdateRepo.mockResolvedValue(createSuccessResult({}))
 
     const visibilities = ['public', 'private', 'internal']
 
@@ -130,7 +142,8 @@ describe('handleUpdateRepo', () => {
     }
   })
 
-  it('handles different default branches', async () => {    mockFetchUpdateRepo.mockResolvedValue(
+  it('handles different default branches', async () => {
+    mockFetchUpdateRepo.mockResolvedValue(
       createSuccessResult({ defaultBranch: 'develop' }),
     )
 

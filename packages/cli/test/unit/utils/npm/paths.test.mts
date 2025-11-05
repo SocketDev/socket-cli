@@ -196,7 +196,9 @@ describe('npm-paths utilities', () => {
       findNpmDirPathSync.mockReturnValue(undefined)
 
       // Re-import after setting up mocks.
-      const { getNpmDirPath: localGetNpmDirPath } = await import('../../../../src/utils/npm/paths.mts')
+      const { getNpmDirPath: localGetNpmDirPath } = await import(
+        '../../../../src/utils/npm/paths.mts'
+      )
       const result = localGetNpmDirPath()
 
       // Normalize path separators for cross-platform compatibility.
@@ -213,7 +215,9 @@ describe('npm-paths utilities', () => {
       })
       findNpmDirPathSync.mockReturnValue(undefined)
 
-      const ENV = vi.mocked(await import('../../../../src/constants/env.mts')).default
+      const ENV = vi.mocked(
+        await import('../../../../src/constants/env.mts'),
+      ).default
       ENV.SOCKET_CLI_NPM_PATH = undefined
 
       vi.mocked(await import('@socketsecurity/lib/logger'))

@@ -41,7 +41,9 @@ vi.mock('../../../../src/commands/scan/output-delete-scan.mts', () => ({
 
 describe('handleDeleteScan', () => {
   it('deletes scan and outputs result successfully', async () => {
-    const { outputDeleteScan } = await import('../../../../src/commands/scan/output-delete-scan.mts')
+    const { outputDeleteScan } = await import(
+      '../../../../src/commands/scan/output-delete-scan.mts'
+    )
     const mockFetch = mockFetchDeleteOrgFullScan
     const mockOutput = mockOutputDeleteScan
 
@@ -59,7 +61,9 @@ describe('handleDeleteScan', () => {
   })
 
   it('handles deletion failure', async () => {
-    const { outputDeleteScan } = await import('../../../../src/commands/scan/output-delete-scan.mts')
+    const { outputDeleteScan } = await import(
+      '../../../../src/commands/scan/output-delete-scan.mts'
+    )
     const mockFetch = mockFetchDeleteOrgFullScan
     const mockOutput = mockOutputDeleteScan
 
@@ -73,7 +77,9 @@ describe('handleDeleteScan', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { outputDeleteScan } = await import('../../../../src/commands/scan/output-delete-scan.mts')
+    const { outputDeleteScan } = await import(
+      '../../../../src/commands/scan/output-delete-scan.mts'
+    )
     const mockFetch = mockFetchDeleteOrgFullScan
     const mockOutput = mockOutputDeleteScan
 
@@ -104,7 +110,9 @@ describe('handleDeleteScan', () => {
   })
 
   it('handles text output format', async () => {
-    const { outputDeleteScan } = await import('../../../../src/commands/scan/output-delete-scan.mts')
+    const { outputDeleteScan } = await import(
+      '../../../../src/commands/scan/output-delete-scan.mts'
+    )
     const mockFetch = mockFetchDeleteOrgFullScan
     const mockOutput = mockOutputDeleteScan
 

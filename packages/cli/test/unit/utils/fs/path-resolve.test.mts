@@ -28,12 +28,12 @@ import {
   PNPM_LOCK_YAML,
   YARN_LOCK,
 } from '../../../../src/constants/packages.mts'
-import { createTestWorkspace } from '../../../helpers/workspace-helper.mts'
 import {
   findBinPathDetailsSync,
   findNpmDirPathSync,
   getPackageFilesForScan,
 } from '../../../../src/utils/fs/path-resolve.mts'
+import { createTestWorkspace } from '../../../helpers/workspace-helper.mts'
 
 const PACKAGE_JSON = 'package.json'
 

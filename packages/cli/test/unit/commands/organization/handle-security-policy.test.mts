@@ -24,25 +24,31 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { fetchSecurityPolicy } from '../../../../src/commands/organization/fetch-security-policy.mts'
+import { handleSecurityPolicy } from '../../../../src/commands/organization/handle-security-policy.mts'
+import { outputSecurityPolicy } from '../../../../src/commands/organization/output-security-policy.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../helpers/mocks.mts'
-import { handleSecurityPolicy } from '../../../../src/commands/organization/handle-security-policy.mts'
-import { fetchSecurityPolicy } from '../../../../src/commands/organization/fetch-security-policy.mts'
-import { outputSecurityPolicy } from '../../../../src/commands/organization/output-security-policy.mts'
 
 // Mock the dependencies.
 const mockFetchSecurityPolicy = vi.hoisted(() => vi.fn())
 const mockOutputSecurityPolicy = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/organization/fetch-security-policy.mts', () => ({
-  fetchSecurityPolicy: mockFetchSecurityPolicy,
-}))
+vi.mock(
+  '../../../../src/commands/organization/fetch-security-policy.mts',
+  () => ({
+    fetchSecurityPolicy: mockFetchSecurityPolicy,
+  }),
+)
 
-vi.mock('../../../../src/commands/organization/output-security-policy.mts', () => ({
-  outputSecurityPolicy: mockOutputSecurityPolicy,
-}))
+vi.mock(
+  '../../../../src/commands/organization/output-security-policy.mts',
+  () => ({
+    outputSecurityPolicy: mockOutputSecurityPolicy,
+  }),
+)
 
 describe('handleSecurityPolicy', () => {
   beforeEach(() => {
@@ -90,7 +96,10 @@ describe('handleSecurityPolicy', () => {
 
     await handleSecurityPolicy('my-org', 'markdown')
 
-    expect(outputSecurityPolicy).toHaveBeenCalledWith(expect.any(Object), 'markdown')
+    expect(outputSecurityPolicy).toHaveBeenCalledWith(
+      expect.any(Object),
+      'markdown',
+    )
   })
 
   it('handles different organization slugs', async () => {

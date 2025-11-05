@@ -25,12 +25,12 @@
 
 import { describe, expect, it, vi } from 'vitest'
 
+import { fetchDeleteRepo } from '../../../../src/commands/repository/fetch-delete-repo.mts'
 import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
 } from '../../../helpers/sdk-test-helpers.mts'
-import { fetchDeleteRepo } from '../../../../src/commands/repository/fetch-delete-repo.mts'
 
 // Mock the dependencies.
 vi.mock('../../../../src/utils/socket/api.mts', () => ({
@@ -102,11 +102,7 @@ describe('fetchDeleteRepo', () => {
   })
 
   it('handles insufficient permissions error', async () => {
-    await setupSdkMockError(
-      'deleteRepository',
-      'Insufficient permissions',
-      403,
-    )
+    await setupSdkMockError('deleteRepository', 'Insufficient permissions', 403)
 
     const result = await fetchDeleteRepo('protected-org', 'protected-repo')
 

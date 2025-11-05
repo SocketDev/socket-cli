@@ -26,9 +26,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handlePurlDeepScore } from '../../../../src/commands/package/handle-purl-deep-score.mts'
-import { fetchPurlDeepScore } from '../../../../src/commands/package/fetch-purl-deep-score.mts'
-import { outputPurlsDeepScore } from '../../../../src/commands/package/output-purls-deep-score.mts'
-import { debug, debugDir } from '@socketsecurity/lib/debug'
 
 // Mock the dependencies.
 const mockFetchPurlDeepScore = vi.hoisted(() => vi.fn())
@@ -70,7 +67,11 @@ describe('handlePurlDeepScore', () => {
     await handlePurlDeepScore(purl, 'json')
 
     expect(mockFetchPurlDeepScore).toHaveBeenCalledWith(purl)
-    expect(mockOutputPurlsDeepScore).toHaveBeenCalledWith(purl, mockData, 'json')
+    expect(mockOutputPurlsDeepScore).toHaveBeenCalledWith(
+      purl,
+      mockData,
+      'json',
+    )
   })
 
   it('handles fetch failure', async () => {
@@ -84,7 +85,11 @@ describe('handlePurlDeepScore', () => {
     await handlePurlDeepScore(purl, 'text')
 
     expect(mockFetchPurlDeepScore).toHaveBeenCalledWith(purl)
-    expect(mockOutputPurlsDeepScore).toHaveBeenCalledWith(purl, mockError, 'text')
+    expect(mockOutputPurlsDeepScore).toHaveBeenCalledWith(
+      purl,
+      mockError,
+      'text',
+    )
   })
 
   it('handles markdown output', async () => {
@@ -175,6 +180,10 @@ describe('handlePurlDeepScore', () => {
     const purl = 'pkg:npm/package1@1.0.0'
     await handlePurlDeepScore(purl, 'text')
 
-    expect(mockOutputPurlsDeepScore).toHaveBeenCalledWith(purl, mockData, 'text')
+    expect(mockOutputPurlsDeepScore).toHaveBeenCalledWith(
+      purl,
+      mockData,
+      'text',
+    )
   })
 })

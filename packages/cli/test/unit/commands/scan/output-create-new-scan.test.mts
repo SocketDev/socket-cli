@@ -19,15 +19,9 @@
  * - src/commands/outputCreateNewScan.mts (implementation)
  */
 
-import open from 'open'
-import terminalLink from 'terminal-link'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { confirm } from '@socketsecurity/lib/stdio/prompts'
-
 import { outputCreateNewScan } from '../../../../src/commands/scan/output-create-new-scan.mts'
-import { failMsgWithBadge } from '../../../../src/utils/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../../../src/utils/output/result-json.mjs'
 
 import type { CResult } from '../../../../src/commands/scan/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -47,7 +41,9 @@ const mockLog = mockLogger.log
 const mockFail = mockLogger.fail
 const mockSuccess = mockLogger.success
 
-const mockSerializeResultJson = vi.hoisted(() => vi.fn(result => JSON.stringify(result)))
+const mockSerializeResultJson = vi.hoisted(() =>
+  vi.fn(result => JSON.stringify(result)),
+)
 const mockOpenDefault = vi.hoisted(() => vi.fn())
 const mockConfirmFn = vi.hoisted(() => vi.fn())
 

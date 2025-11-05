@@ -4,10 +4,15 @@ import path from 'node:path'
 
 import { beforeAll, describe, expect, it } from 'vitest'
 
+import {
+  MONOREPO_ROOT,
+  logger,
+  prepareBinary,
+  type BinaryConfig,
+} from './helpers.mts'
 import ENV from '../../../src/constants/env.mts'
 import { getDefaultApiToken } from '../../../src/utils/socket/sdk.mts'
 import { executeCliCommand } from '../../helpers/cli-execution.mts'
-import { MONOREPO_ROOT, logger, prepareBinary, type BinaryConfig } from './helpers.mts'
 
 const BINARY: BinaryConfig = {
   buildCommand: [
@@ -20,10 +25,7 @@ const BINARY: BinaryConfig = {
   // In CI: always enabled. Locally: only if TEST_SMOL_BINARY is set.
   enabled: process.env.CI ? true : !!process.env.TEST_SMOL_BINARY,
   name: 'Smol Binary',
-  path: path.join(
-    MONOREPO_ROOT,
-    'packages/node-smol-builder/dist/socket-smol',
-  ),
+  path: path.join(MONOREPO_ROOT, 'packages/node-smol-builder/dist/socket-smol'),
 }
 
 if (BINARY.enabled) {

@@ -38,7 +38,8 @@ vi.mock('../../../../src/commands/repository/output-view-repo.mts', () => ({
 }))
 
 describe('handleViewRepo', () => {
-  it('fetches and outputs repository details successfully', async () => {    const mockRepoData = createSuccessResult({
+  it('fetches and outputs repository details successfully', async () => {
+    const mockRepoData = createSuccessResult({
       id: 'repo-123',
       name: 'test-repo',
       org: 'test-org',
@@ -54,7 +55,8 @@ describe('handleViewRepo', () => {
     expect(mockOutputViewRepo).toHaveBeenCalledWith(mockRepoData, 'json')
   })
 
-  it('handles fetch failure', async () => {    const mockError = {
+  it('handles fetch failure', async () => {
+    const mockError = {
       ok: false as const,
       message: 'Repository not found',
       code: 404,
@@ -64,11 +66,15 @@ describe('handleViewRepo', () => {
 
     await handleViewRepo('test-org', 'nonexistent-repo', 'text')
 
-    expect(mockFetchViewRepo).toHaveBeenCalledWith('test-org', 'nonexistent-repo')
+    expect(mockFetchViewRepo).toHaveBeenCalledWith(
+      'test-org',
+      'nonexistent-repo',
+    )
     expect(mockOutputViewRepo).toHaveBeenCalledWith(mockError, 'text')
   })
 
-  it('handles markdown output format', async () => {    mockFetchViewRepo.mockResolvedValue(
+  it('handles markdown output format', async () => {
+    mockFetchViewRepo.mockResolvedValue(
       createSuccessResult({
         name: 'my-repo',
         org: 'my-org',
@@ -77,10 +83,14 @@ describe('handleViewRepo', () => {
 
     await handleViewRepo('my-org', 'my-repo', 'markdown')
 
-    expect(mockOutputViewRepo).toHaveBeenCalledWith(expect.any(Object), 'markdown')
+    expect(mockOutputViewRepo).toHaveBeenCalledWith(
+      expect.any(Object),
+      'markdown',
+    )
   })
 
-  it('handles text output format', async () => {    mockFetchViewRepo.mockResolvedValue(
+  it('handles text output format', async () => {
+    mockFetchViewRepo.mockResolvedValue(
       createSuccessResult({
         name: 'production-repo',
         org: 'production-org',
@@ -102,7 +112,8 @@ describe('handleViewRepo', () => {
     )
   })
 
-  it('handles different repository names', async () => {    const testCases = [
+  it('handles different repository names', async () => {
+    const testCases = [
       ['org-1', 'repo-1'],
       ['my-org', 'my-awesome-project'],
       ['company', 'internal-tool'],

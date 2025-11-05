@@ -52,7 +52,9 @@ vi.mock('../../../../src/commands/scan/output-diff-scan.mts', () => ({
   outputDiffScan: mockOutputDiffScan,
 }))
 
-const { handleDiffScan } = await import('../../../../src/commands/scan/handle-diff-scan.mts')
+const { handleDiffScan } = await import(
+  '../../../../src/commands/scan/handle-diff-scan.mts'
+)
 
 describe('handleDiffScan', () => {
   beforeEach(() => {

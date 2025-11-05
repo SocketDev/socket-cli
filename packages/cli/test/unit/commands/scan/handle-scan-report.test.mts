@@ -49,7 +49,9 @@ describe('handleScanReport', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
     if (!handleScanReport) {
-      const module = await import('../../../../src/commands/scan/handle-scan-report.mts')
+      const module = await import(
+        '../../../../src/commands/scan/handle-scan-report.mts'
+      )
       handleScanReport = module.handleScanReport
     }
   })

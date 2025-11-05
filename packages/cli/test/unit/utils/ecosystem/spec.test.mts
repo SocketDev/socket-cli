@@ -27,7 +27,9 @@ import {
 } from '../../../../src/utils/ecosystem/spec.mts'
 
 // Mock semver module.
-const mockStripPnpmPeerSuffix = vi.hoisted(() => vi.fn(v => v.replace(/_.*$/, '')))
+const mockStripPnpmPeerSuffix = vi.hoisted(() =>
+  vi.fn(v => v.replace(/_.*$/, '')),
+)
 
 vi.mock('semver', () => ({
   default: {

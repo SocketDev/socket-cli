@@ -39,13 +39,7 @@ vi.mock('@socketsecurity/lib/debug', () => ({
   isDebugNs: mockIsDebugNs,
 }))
 
-import {
-  debug,
-  debugDir,
-  debugNs,
-  isDebug,
-  isDebugNs,
-} from '@socketsecurity/lib/debug'
+import { debug, debugDir, debugNs } from '@socketsecurity/lib/debug'
 
 import {
   debugApiResponse,

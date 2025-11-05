@@ -28,12 +28,12 @@
 
 import { describe, expect, it, vi } from 'vitest'
 
+import { fetchListRepos } from '../../../../src/commands/repository/fetch-list-repos.mts'
 import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
 } from '../../../helpers/sdk-test-helpers.mts'
-import { fetchListRepos } from '../../../../src/commands/repository/fetch-list-repos.mts'
 
 // Mock the dependencies.
 vi.mock('../../../../src/utils/socket/api.mts', () => ({
@@ -45,7 +45,6 @@ vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
 }))
 
 describe('fetchListRepos', () => {
-
   it('lists repositories with pagination successfully', async () => {
     const mockData = {
       results: [

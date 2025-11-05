@@ -28,12 +28,12 @@
 
 import { describe, expect, it, vi } from 'vitest'
 
+import { fetchListAllRepos } from '../../../../src/commands/repository/fetch-list-all-repos.mts'
 import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
 } from '../../../helpers/sdk-test-helpers.mts'
-import { fetchListAllRepos } from '../../../../src/commands/repository/fetch-list-all-repos.mts'
 
 // Mock the dependencies.
 vi.mock('../../../../src/utils/socket/api.mts', () => ({

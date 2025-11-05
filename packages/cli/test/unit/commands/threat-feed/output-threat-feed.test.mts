@@ -29,8 +29,8 @@ import { serializeResultJson } from '../../../../src/utils/output/result-json.mt
 import type {
   ThreadFeedResponse,
   ThreatResult,
+  CResult,
 } from '../../../../src/commands/threat-feed/types.mts'
-import type { CResult } from '../../../../src/commands/threat-feed/types.mts'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({

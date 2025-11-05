@@ -92,7 +92,9 @@ describe('handlePatch', () => {
     const { existsSync, promises: fs } = await import('node:fs')
     const fastGlob = await import('fast-glob')
     const { readDirNames } = await import('@socketsecurity/lib/fs')
-    const { outputPatchResult } = await import('../../../../src/commands/patch/output-patch-result.mts')
+    const { outputPatchResult } = await import(
+      '../../../../src/commands/patch/output-patch-result.mts'
+    )
     const { findUp } = await import('../../../../src/utils/fs/find-up.mts')
     const mockExistsSync = vi.mocked(existsSync)
     const mockReadFile = vi.mocked(fs.readFile)
@@ -156,7 +158,9 @@ describe('handlePatch', () => {
 
   it('handles dry run mode', async () => {
     const { promises: fs } = await import('node:fs')
-    const { outputPatchResult } = await import('../../../../src/commands/patch/output-patch-result.mts')
+    const { outputPatchResult } = await import(
+      '../../../../src/commands/patch/output-patch-result.mts'
+    )
     const mockReadFile = vi.mocked(fs.readFile)
     const mockOutput = vi.mocked(outputPatchResult)
 
@@ -191,7 +195,9 @@ describe('handlePatch', () => {
 
   it('handles invalid JSON in manifest', async () => {
     const { promises: fs } = await import('node:fs')
-    const { outputPatchResult } = await import('../../../../src/commands/patch/output-patch-result.mts')
+    const { outputPatchResult } = await import(
+      '../../../../src/commands/patch/output-patch-result.mts'
+    )
     const mockReadFile = vi.mocked(fs.readFile)
     const mockOutput = vi.mocked(outputPatchResult)
 
@@ -222,7 +228,9 @@ describe('handlePatch', () => {
 
   it('filters patches by specified PURLs', async () => {
     const { promises: fs } = await import('node:fs')
-    const { getPurlObject } = await import('../../../../src/utils/purl/parse.mts')
+    const { getPurlObject } = await import(
+      '../../../../src/utils/purl/parse.mts'
+    )
     const mockReadFile = vi.mocked(fs.readFile)
     const mockGetPurlObject = vi.mocked(getPurlObject)
 
@@ -279,7 +287,9 @@ describe('handlePatch', () => {
 
   it('handles schema validation errors', async () => {
     const { promises: fs } = await import('node:fs')
-    const { outputPatchResult } = await import('../../../../src/commands/patch/output-patch-result.mts')
+    const { outputPatchResult } = await import(
+      '../../../../src/commands/patch/output-patch-result.mts'
+    )
     const mockReadFile = vi.mocked(fs.readFile)
     const mockOutput = vi.mocked(outputPatchResult)
 
@@ -318,7 +328,9 @@ describe('handlePatch', () => {
 
   it('handles markdown output format', async () => {
     const { promises: fs } = await import('node:fs')
-    const { outputPatchResult } = await import('../../../../src/commands/patch/output-patch-result.mts')
+    const { outputPatchResult } = await import(
+      '../../../../src/commands/patch/output-patch-result.mts'
+    )
     const mockReadFile = vi.mocked(fs.readFile)
     const mockOutput = vi.mocked(outputPatchResult)
 
@@ -347,7 +359,9 @@ describe('handlePatch', () => {
 
   it('handles file read errors', async () => {
     const { promises: fs } = await import('node:fs')
-    const { outputPatchResult } = await import('../../../../src/commands/patch/output-patch-result.mts')
+    const { outputPatchResult } = await import(
+      '../../../../src/commands/patch/output-patch-result.mts'
+    )
     const mockReadFile = vi.mocked(fs.readFile)
     const mockOutput = vi.mocked(outputPatchResult)
 

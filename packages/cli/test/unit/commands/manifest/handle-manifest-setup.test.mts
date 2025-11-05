@@ -46,8 +46,12 @@ describe('handleManifestSetup', () => {
   })
 
   it('sets up manifest config successfully', async () => {
-    const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
-    const { outputManifestSetup } = await import('../../../../src/commands/manifest/output-manifest-setup.mts')
+    const { setupManifestConfig } = await import(
+      '../../../../src/commands/manifest/setup-manifest-config.mts'
+    )
+    const { outputManifestSetup } = await import(
+      '../../../../src/commands/manifest/output-manifest-setup.mts'
+    )
 
     const mockResult = {
       ok: true,
@@ -68,8 +72,12 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles setup failure', async () => {
-    const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
-    const { outputManifestSetup } = await import('../../../../src/commands/manifest/output-manifest-setup.mts')
+    const { setupManifestConfig } = await import(
+      '../../../../src/commands/manifest/setup-manifest-config.mts'
+    )
+    const { outputManifestSetup } = await import(
+      '../../../../src/commands/manifest/output-manifest-setup.mts'
+    )
 
     const mockError = {
       ok: false,
@@ -84,8 +92,12 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles defaultOnReadError flag true', async () => {
-    const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
-    const { outputManifestSetup } = await import('../../../../src/commands/manifest/output-manifest-setup.mts')
+    const { setupManifestConfig } = await import(
+      '../../../../src/commands/manifest/setup-manifest-config.mts'
+    )
+    const { outputManifestSetup } = await import(
+      '../../../../src/commands/manifest/output-manifest-setup.mts'
+    )
 
     const mockResult = {
       ok: true,
@@ -100,7 +112,9 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles defaultOnReadError flag false', async () => {
-    const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+    const { setupManifestConfig } = await import(
+      '../../../../src/commands/manifest/setup-manifest-config.mts'
+    )
 
     mockSetupManifestConfig.mockResolvedValue({
       ok: true,
@@ -113,8 +127,12 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles empty data result', async () => {
-    const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
-    const { outputManifestSetup } = await import('../../../../src/commands/manifest/output-manifest-setup.mts')
+    const { setupManifestConfig } = await import(
+      '../../../../src/commands/manifest/setup-manifest-config.mts'
+    )
+    const { outputManifestSetup } = await import(
+      '../../../../src/commands/manifest/output-manifest-setup.mts'
+    )
 
     const mockResult = {
       ok: true,
@@ -128,7 +146,9 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles async errors', async () => {
-    const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+    const { setupManifestConfig } = await import(
+      '../../../../src/commands/manifest/setup-manifest-config.mts'
+    )
 
     mockSetupManifestConfig.mockRejectedValue(new Error('Async error'))
 
@@ -138,7 +158,9 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles current directory path', async () => {
-    const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+    const { setupManifestConfig } = await import(
+      '../../../../src/commands/manifest/setup-manifest-config.mts'
+    )
 
     mockSetupManifestConfig.mockResolvedValue({
       ok: true,
@@ -151,7 +173,9 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles absolute path', async () => {
-    const { setupManifestConfig } = await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+    const { setupManifestConfig } = await import(
+      '../../../../src/commands/manifest/setup-manifest-config.mts'
+    )
 
     mockSetupManifestConfig.mockResolvedValue({
       ok: true,

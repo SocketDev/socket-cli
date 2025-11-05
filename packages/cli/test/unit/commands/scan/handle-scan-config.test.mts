@@ -45,7 +45,7 @@ describe('handleScanConfig', () => {
   })
 
   it('sets up scan config and outputs result', async () => {
-      './output-scan-config-result.mts'
+    './output-scan-config-result.mts'
     const mockSetup = mockSetupScanConfig
     const mockOutput = mockOutputScanConfigResult
 
@@ -65,7 +65,7 @@ describe('handleScanConfig', () => {
   })
 
   it('uses defaultOnReadError when true', async () => {
-      './output-scan-config-result.mts'
+    './output-scan-config-result.mts'
     const mockSetup = mockSetupScanConfig
     const mockOutput = mockOutputScanConfigResult
 
@@ -78,7 +78,7 @@ describe('handleScanConfig', () => {
   })
 
   it('handles setup failure', async () => {
-      './output-scan-config-result.mts'
+    './output-scan-config-result.mts'
     const mockSetup = mockSetupScanConfig
     const mockOutput = mockOutputScanConfigResult
 

@@ -80,7 +80,11 @@ describe('handleCreateRepo', () => {
       defaultBranch: 'main',
       visibility: 'private',
     })
-    expect(mockOutputCreateRepo).toHaveBeenCalledWith(mockData, 'my-repo', 'json')
+    expect(mockOutputCreateRepo).toHaveBeenCalledWith(
+      mockData,
+      'my-repo',
+      'json',
+    )
   })
 
   it('handles creation failure', async () => {

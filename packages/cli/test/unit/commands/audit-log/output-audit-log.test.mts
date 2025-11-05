@@ -28,7 +28,6 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { createSuccessResult } from '../../../helpers/mocks.mts'
 import FIXTURE from '../../../../src/commands/audit-log/audit-fixture.json' with {
   type: 'json',
 }
@@ -36,6 +35,7 @@ import {
   outputAsJson,
   outputAsMarkdown,
 } from '../../../../src/commands/audit-log/output-audit-log.mts'
+import { createSuccessResult } from '../../../helpers/mocks.mts'
 
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
@@ -53,7 +53,9 @@ describe('output-audit-log', () => {
           perPage: 10,
         },
       )
-      expect(r).toMatchInlineSnapshot(`"{"ok":true,"data":{"desc":"Audit logs for given query","generated":"<redacted>","logType":"","nextPage":"2","org":"noorgslug","page":1,"perPage":10,"logs":[{"event_id":"123112","created_at":"2025-04-02T01:47:26.914Z","ip_address":"","type":"updateOrganizationSetting","user_agent":"","user_email":"person@socket.dev"},{"event_id":"122421","created_at":"2025-03-31T15:19:55.299Z","ip_address":"123.123.321.213","type":"createApiToken","user_agent":"","user_email":"person@socket.dev"},{"event_id":"121392","created_at":"2025-03-27T16:24:36.344Z","ip_address":"","type":"updateOrganizationSetting","user_agent":"super ai .com","user_email":"person@socket.dev"},{"event_id":"121391","created_at":"2025-03-27T16:24:33.912Z","ip_address":"","type":"updateOrganizationSetting","user_agent":"","user_email":"person@socket.dev"},{"event_id":"120287","created_at":"2025-03-24T21:52:12.879Z","ip_address":"","type":"updateAlertTriage","user_agent":"","user_email":"person@socket.dev"},{"event_id":"118431","created_at":"2025-03-17T15:57:29.885Z","ip_address":"","type":"updateOrganizationSetting","user_agent":"","user_email":"person@socket.dev"},{"event_id":"116928","created_at":"2025-03-10T22:53:35.734Z","ip_address":"","type":"updateApiTokenScopes","user_agent":"","user_email":"person@socket.dev"}]}}"`)
+      expect(r).toMatchInlineSnapshot(
+        `"{"ok":true,"data":{"desc":"Audit logs for given query","generated":"<redacted>","logType":"","nextPage":"2","org":"noorgslug","page":1,"perPage":10,"logs":[{"event_id":"123112","created_at":"2025-04-02T01:47:26.914Z","ip_address":"","type":"updateOrganizationSetting","user_agent":"","user_email":"person@socket.dev"},{"event_id":"122421","created_at":"2025-03-31T15:19:55.299Z","ip_address":"123.123.321.213","type":"createApiToken","user_agent":"","user_email":"person@socket.dev"},{"event_id":"121392","created_at":"2025-03-27T16:24:36.344Z","ip_address":"","type":"updateOrganizationSetting","user_agent":"super ai .com","user_email":"person@socket.dev"},{"event_id":"121391","created_at":"2025-03-27T16:24:33.912Z","ip_address":"","type":"updateOrganizationSetting","user_agent":"","user_email":"person@socket.dev"},{"event_id":"120287","created_at":"2025-03-24T21:52:12.879Z","ip_address":"","type":"updateAlertTriage","user_agent":"","user_email":"person@socket.dev"},{"event_id":"118431","created_at":"2025-03-17T15:57:29.885Z","ip_address":"","type":"updateOrganizationSetting","user_agent":"","user_email":"person@socket.dev"},{"event_id":"116928","created_at":"2025-03-10T22:53:35.734Z","ip_address":"","type":"updateApiTokenScopes","user_agent":"","user_email":"person@socket.dev"}]}}"`,
+      )
     })
 
     it('should return empty object string on error', async () => {

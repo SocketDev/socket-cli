@@ -49,7 +49,11 @@ describe('handleDeleteRepo', () => {
     await handleDeleteRepo('test-org', 'test-repo', 'json')
 
     expect(mockFetchDeleteRepo).toHaveBeenCalledWith('test-org', 'test-repo')
-    expect(mockOutputDeleteRepo).toHaveBeenCalledWith(mockResult, 'test-repo', 'json')
+    expect(mockOutputDeleteRepo).toHaveBeenCalledWith(
+      mockResult,
+      'test-repo',
+      'json',
+    )
   })
 
   it('handles deletion failure', async () => {
@@ -61,7 +65,10 @@ describe('handleDeleteRepo', () => {
 
     await handleDeleteRepo('test-org', 'nonexistent-repo', 'text')
 
-    expect(mockFetchDeleteRepo).toHaveBeenCalledWith('test-org', 'nonexistent-repo')
+    expect(mockFetchDeleteRepo).toHaveBeenCalledWith(
+      'test-org',
+      'nonexistent-repo',
+    )
     expect(mockOutputDeleteRepo).toHaveBeenCalledWith(
       mockResult,
       'nonexistent-repo',

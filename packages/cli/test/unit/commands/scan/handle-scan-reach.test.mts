@@ -39,17 +39,19 @@ const mockLogger = vi.hoisted(() => ({
 const mockStart = vi.hoisted(() => vi.fn())
 const mockStop = vi.hoisted(() => vi.fn())
 const mockSuccessAndStop = vi.hoisted(() => vi.fn())
-const mockGetSpinner = vi.hoisted(() => vi.fn(() => ({
-  start: mockStart,
-  stop: mockStop,
-  successAndStop: mockSuccessAndStop,
-})))
+const mockGetSpinner = vi.hoisted(() =>
+  vi.fn(() => ({
+    start: mockStart,
+    stop: mockStop,
+    successAndStop: mockSuccessAndStop,
+  })),
+)
 const mockFetchSupportedScanFileNames = vi.hoisted(() => vi.fn())
 const mockOutputScanReach = vi.hoisted(() => vi.fn())
 const mockPerformReachabilityAnalysis = vi.hoisted(() => vi.fn())
 const mockCheckCommandInput = vi.hoisted(() => vi.fn())
 const mockGetPackageFilesForScan = vi.hoisted(() => vi.fn())
-const mockPluralize = vi.hoisted(() => vi.fn((str) => str))
+const mockPluralize = vi.hoisted(() => vi.fn(str => str))
 
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
@@ -64,17 +66,23 @@ vi.mock('@socketsecurity/lib/words', () => ({
   pluralize: mockPluralize,
 }))
 
-vi.mock('../../../../src/commands/scan/fetch-supported-scan-file-names.mts', () => ({
-  fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
-}))
+vi.mock(
+  '../../../../src/commands/scan/fetch-supported-scan-file-names.mts',
+  () => ({
+    fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
+  }),
+)
 
 vi.mock('../../../../src/commands/scan/output-scan-reach.mts', () => ({
   outputScanReach: mockOutputScanReach,
 }))
 
-vi.mock('../../../../src/commands/scan/perform-reachability-analysis.mts', () => ({
-  performReachabilityAnalysis: mockPerformReachabilityAnalysis,
-}))
+vi.mock(
+  '../../../../src/commands/scan/perform-reachability-analysis.mts',
+  () => ({
+    performReachabilityAnalysis: mockPerformReachabilityAnalysis,
+  }),
+)
 
 vi.mock('../../../../src/utils/validation/check-input.mts', () => ({
   checkCommandInput: mockCheckCommandInput,
@@ -84,7 +92,9 @@ vi.mock('../../../../src/utils/fs/path-resolve.mjs', () => ({
   getPackageFilesForScan: mockGetPackageFilesForScan,
 }))
 
-const { handleScanReach } = await import('../../../../src/commands/scan/handle-scan-reach.mts')
+const { handleScanReach } = await import(
+  '../../../../src/commands/scan/handle-scan-reach.mts'
+)
 
 describe('handleScanReach', () => {
   beforeEach(() => {

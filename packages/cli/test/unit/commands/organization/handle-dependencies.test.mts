@@ -25,13 +25,13 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { fetchDependencies } from '../../../../src/commands/organization/fetch-dependencies.mts'
+import { handleDependencies } from '../../../../src/commands/organization/handle-dependencies.mts'
+import { outputDependencies } from '../../../../src/commands/organization/output-dependencies.mts'
 import {
   createSuccessResult,
   setupTestEnvironment,
 } from '../../../helpers/index.mts'
-import { handleDependencies } from '../../../../src/commands/organization/handle-dependencies.mts'
-import { fetchDependencies } from '../../../../src/commands/organization/fetch-dependencies.mts'
-import { outputDependencies } from '../../../../src/commands/organization/output-dependencies.mts'
 
 // Mock the dependencies.
 const mockFetchDependencies = vi.hoisted(() => vi.fn())
@@ -43,9 +43,12 @@ vi.mock('../../../../src/commands/organization/fetch-dependencies.mts', () => ({
   fetchDependencies: mockFetchDependencies,
 }))
 
-vi.mock('../../../../src/commands/organization/output-dependencies.mts', () => ({
-  outputDependencies: mockOutputDependencies,
-}))
+vi.mock(
+  '../../../../src/commands/organization/output-dependencies.mts',
+  () => ({
+    outputDependencies: mockOutputDependencies,
+  }),
+)
 
 vi.mock('@socketsecurity/lib/debug', () => ({
   debug: mockDebug,

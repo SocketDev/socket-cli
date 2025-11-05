@@ -37,8 +37,12 @@ describe('handleThreatFeed', () => {
   })
 
   it('fetches and outputs threat feed successfully', async () => {
-    const { fetchThreatFeed } = await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
-    const { outputThreatFeed } = await import('../../../../src/commands/threat-feed/output-threat-feed.mts')
+    const { fetchThreatFeed } = await import(
+      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
+    )
+    const { outputThreatFeed } = await import(
+      '../../../../src/commands/threat-feed/output-threat-feed.mts'
+    )
 
     const mockData = {
       ok: true,
@@ -88,8 +92,12 @@ describe('handleThreatFeed', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchThreatFeed } = await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
-    const { outputThreatFeed } = await import('../../../../src/commands/threat-feed/output-threat-feed.mts')
+    const { fetchThreatFeed } = await import(
+      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
+    )
+    const { outputThreatFeed } = await import(
+      '../../../../src/commands/threat-feed/output-threat-feed.mts'
+    )
 
     const mockError = {
       ok: false,
@@ -113,7 +121,9 @@ describe('handleThreatFeed', () => {
   })
 
   it('handles specific package and version filter', async () => {
-    const { fetchThreatFeed } = await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
+    const { fetchThreatFeed } = await import(
+      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
+    )
     const { outputThreatFeed: _outputThreatFeed } = await import(
       '../../../../src/commands/threat-feed/output-threat-feed.mts'
     )
@@ -152,8 +162,12 @@ describe('handleThreatFeed', () => {
   })
 
   it('handles markdown output', async () => {
-    const { fetchThreatFeed } = await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
-    const { outputThreatFeed } = await import('../../../../src/commands/threat-feed/output-threat-feed.mts')
+    const { fetchThreatFeed } = await import(
+      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
+    )
+    const { outputThreatFeed } = await import(
+      '../../../../src/commands/threat-feed/output-threat-feed.mts'
+    )
 
     const mockData = {
       ok: true,
@@ -177,7 +191,9 @@ describe('handleThreatFeed', () => {
   })
 
   it('handles different ecosystems', async () => {
-    const { fetchThreatFeed } = await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
+    const { fetchThreatFeed } = await import(
+      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
+    )
     const { outputThreatFeed: _outputThreatFeed } = await import(
       '../../../../src/commands/threat-feed/output-threat-feed.mts'
     )
@@ -210,7 +226,9 @@ describe('handleThreatFeed', () => {
   })
 
   it('handles different filter types', async () => {
-    const { fetchThreatFeed } = await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
+    const { fetchThreatFeed } = await import(
+      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
+    )
 
     const filters = ['malware', 'vulnerability', 'typosquat', 'supply-chain']
 
@@ -240,7 +258,9 @@ describe('handleThreatFeed', () => {
   })
 
   it('handles pagination', async () => {
-    const { fetchThreatFeed } = await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
+    const { fetchThreatFeed } = await import(
+      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
+    )
     const { outputThreatFeed: _outputThreatFeed } = await import(
       '../../../../src/commands/threat-feed/output-threat-feed.mts'
     )
@@ -271,8 +291,12 @@ describe('handleThreatFeed', () => {
   })
 
   it('handles empty threat feed', async () => {
-    const { fetchThreatFeed } = await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
-    const { outputThreatFeed } = await import('../../../../src/commands/threat-feed/output-threat-feed.mts')
+    const { fetchThreatFeed } = await import(
+      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
+    )
+    const { outputThreatFeed } = await import(
+      '../../../../src/commands/threat-feed/output-threat-feed.mts'
+    )
 
     const mockData = {
       ok: true,

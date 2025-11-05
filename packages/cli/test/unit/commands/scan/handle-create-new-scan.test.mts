@@ -43,7 +43,7 @@ const mockFinalizeTier1Scan = vi.hoisted(() => vi.fn())
 const mockHandleScanReport = vi.hoisted(() => vi.fn())
 const mockOutputCreateNewScan = vi.hoisted(() => vi.fn())
 const mockPerformReachabilityAnalysis = vi.hoisted(() => vi.fn())
-const mockGetSpinner = vi.hoisted(() => vi.fn())
+const _mockGetSpinner = vi.hoisted(() => vi.fn())
 const mockStart = vi.hoisted(() => vi.fn())
 const mockStop = vi.hoisted(() => vi.fn())
 const mockSuccessAndStop = vi.hoisted(() => vi.fn())
@@ -64,9 +64,12 @@ vi.mock('@socketsecurity/lib/words', () => ({
 vi.mock('../../../../src/commands/scan/fetch-create-org-full-scan.mts', () => ({
   fetchCreateOrgFullScan: mockFetchCreateOrgFullScan,
 }))
-vi.mock('../../../../src/commands/scan/fetch-supported-scan-file-names.mts', () => ({
-  fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
-}))
+vi.mock(
+  '../../../../src/commands/scan/fetch-supported-scan-file-names.mts',
+  () => ({
+    fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
+  }),
+)
 vi.mock('../../../../src/commands/scan/finalize-tier1-scan.mts', () => ({
   finalizeTier1Scan: mockFinalizeTier1Scan,
 }))
@@ -76,9 +79,12 @@ vi.mock('../../../../src/commands/scan/handle-scan-report.mts', () => ({
 vi.mock('../../../../src/commands/scan/output-create-new-scan.mts', () => ({
   outputCreateNewScan: mockOutputCreateNewScan,
 }))
-vi.mock('../../../../src/commands/scan/perform-reachability-analysis.mts', () => ({
-  performReachabilityAnalysis: mockPerformReachabilityAnalysis,
-}))
+vi.mock(
+  '../../../../src/commands/scan/perform-reachability-analysis.mts',
+  () => ({
+    performReachabilityAnalysis: mockPerformReachabilityAnalysis,
+  }),
+)
 vi.mock('@socketsecurity/lib/constants/process', () => ({
   getSpinner: () => ({
     start: mockStart,
@@ -98,9 +104,12 @@ vi.mock('../../../../src/utils/socket/json.mts', () => ({
 vi.mock('../../../../src/utils/terminal/link.mts', () => ({
   socketDocsLink: mockSocketDocsLink,
 }))
-vi.mock('../../../../src/commands/manifest/detect-manifest-actions.mts', () => ({
-  detectManifestActions: mockDetectManifestActions,
-}))
+vi.mock(
+  '../../../../src/commands/manifest/detect-manifest-actions.mts',
+  () => ({
+    detectManifestActions: mockDetectManifestActions,
+  }),
+)
 vi.mock('../../../../src/commands/manifest/generate_auto_manifest.mts', () => ({
   generateAutoManifest: mockGenerateAutoManifest,
 }))
@@ -147,7 +156,9 @@ describe('handleCreateNewScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       '../../../../src/commands/scan/fetch-create-org-full-scan.mts'
     )
-    const { outputCreateNewScan } = await import('../../../../src/commands/scan/output-create-new-scan.mts')
+    const { outputCreateNewScan } = await import(
+      '../../../../src/commands/scan/output-create-new-scan.mts'
+    )
 
     mockFetchSupportedScanFileNames.mockResolvedValue(
       createSuccessResult(new Set(['package.json', 'yarn.lock'])),
@@ -206,9 +217,7 @@ describe('handleCreateNewScan', () => {
     mockFetchSupportedScanFileNames.mockResolvedValue(
       createSuccessResult(new Set(['package.json'])),
     )
-    mockGetPackageFilesForScan.mockResolvedValue([
-      '/test/project/package.json',
-    ])
+    mockGetPackageFilesForScan.mockResolvedValue(['/test/project/package.json'])
     mockCheckCommandInput.mockReturnValue(true)
 
     await handleCreateNewScan({ ...mockConfig, autoManifest: true })
@@ -268,9 +277,7 @@ describe('handleCreateNewScan', () => {
     mockFetchSupportedScanFileNames.mockResolvedValue(
       createSuccessResult(new Set(['package.json'])),
     )
-    mockGetPackageFilesForScan.mockResolvedValue([
-      '/test/project/package.json',
-    ])
+    mockGetPackageFilesForScan.mockResolvedValue(['/test/project/package.json'])
     mockCheckCommandInput.mockReturnValue(true)
 
     await handleCreateNewScan({
@@ -297,14 +304,14 @@ describe('handleCreateNewScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       '../../../../src/commands/scan/fetch-create-org-full-scan.mts'
     )
-    const { finalizeTier1Scan } = await import('../../../../src/commands/scan/finalize-tier1-scan.mts')
+    const { finalizeTier1Scan } = await import(
+      '../../../../src/commands/scan/finalize-tier1-scan.mts'
+    )
 
     mockFetchSupportedScanFileNames.mockResolvedValue(
       createSuccessResult(new Set(['package.json'])),
     )
-    mockGetPackageFilesForScan.mockResolvedValue([
-      '/test/project/package.json',
-    ])
+    mockGetPackageFilesForScan.mockResolvedValue(['/test/project/package.json'])
     mockCheckCommandInput.mockReturnValue(true)
     mockPerformReachabilityAnalysis.mockResolvedValue(
       createSuccessResult({
@@ -344,14 +351,14 @@ describe('handleCreateNewScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       '../../../../src/commands/scan/fetch-create-org-full-scan.mts'
     )
-    const { handleScanReport } = await import('../../../../src/commands/scan/handle-scan-report.mts')
+    const { handleScanReport } = await import(
+      '../../../../src/commands/scan/handle-scan-report.mts'
+    )
 
     mockFetchSupportedScanFileNames.mockResolvedValue(
       createSuccessResult(new Set(['package.json'])),
     )
-    mockGetPackageFilesForScan.mockResolvedValue([
-      '/test/project/package.json',
-    ])
+    mockGetPackageFilesForScan.mockResolvedValue(['/test/project/package.json'])
     mockCheckCommandInput.mockReturnValue(true)
     mockFetchCreateOrgFullScan.mockResolvedValue(
       createSuccessResult({ id: 'scan-report-123' }),
@@ -375,7 +382,9 @@ describe('handleCreateNewScan', () => {
     const { fetchSupportedScanFileNames } = await import(
       '../../../../src/commands/scan/fetch-supported-scan-file-names.mts'
     )
-    const { outputCreateNewScan } = await import('../../../../src/commands/scan/output-create-new-scan.mts')
+    const { outputCreateNewScan } = await import(
+      '../../../../src/commands/scan/output-create-new-scan.mts'
+    )
 
     const error = new Error('API error')
     mockFetchSupportedScanFileNames.mockResolvedValue(
