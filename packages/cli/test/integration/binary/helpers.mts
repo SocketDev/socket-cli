@@ -72,36 +72,23 @@ export async function prepareBinary(
   binary: BinaryConfig,
   binaryType: string,
 ): Promise<boolean> {
-  // Log which binary we're testing.
-  logger.log('')
-  logger.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
-  logger.log(`Testing: ${binary.name}`)
-  logger.log(`Path: ${binary.path}`)
-  logger.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
-
   // Check if binary exists.
   let binaryExists = existsSync(binary.path)
-  logger.log(`Binary exists: ${binaryExists}`)
 
   if (!binaryExists) {
-    logger.log('')
-    logger.warn(`Binary not found: ${binary.path}`)
-
     // In CI: Skip building (rely on cache).
     if (process.env.CI) {
-      logger.log('Running in CI - skipping build (binary not in cache)')
+      logger.log(`⊘ ${binary.name} (not cached)`)
       if (binaryType === 'sea') {
-        logger.log('To build SEA binaries, run: gh workflow run build-sea.yml')
+        logger.log('  To build: gh workflow run build-sea.yml')
       } else if (binaryType === 'smol') {
-        logger.log(
-          'To build smol binaries, run: gh workflow run build-smol.yml',
-        )
+        logger.log('  To build: gh workflow run build-smol.yml')
       }
-      logger.log('')
       return false
     }
 
     // Locally: Prompt user to build.
+    logger.log(`⊘ ${binary.name} (not found)`)
     const timeWarning = binaryType === 'smol' ? ' (may take 30-60 min)' : ''
     const shouldBuild = await confirm({
       default: true,
@@ -109,15 +96,11 @@ export async function prepareBinary(
     })
 
     if (!shouldBuild) {
-      logger.log('Skipping build. Tests will be skipped.')
-      logger.log(
-        `To build manually, run: ${binary.buildCommand?.join(' ') ?? 'N/A'}`,
-      )
-      logger.log('')
+      logger.log('  Skipping tests')
       return false
     }
 
-    logger.log('Building binary...')
+    logger.log('  Building...')
     const buildSuccess = await buildBinary(binary, binaryType)
 
     if (buildSuccess) {
@@ -125,21 +108,15 @@ export async function prepareBinary(
     }
 
     if (!binaryExists) {
-      logger.log('')
-      logger.error(`Failed to build ${binary.name}. Tests will be skipped.`)
-      logger.log('To build this binary manually, run:')
-      logger.log(`  ${binary.buildCommand?.join(' ') ?? 'N/A'}`)
-      logger.log('')
+      logger.log(`  ✗ Build failed`)
+      logger.log(`  To build manually: ${binary.buildCommand?.join(' ') ?? 'N/A'}`)
       return false
     }
 
-    logger.log(`Binary built successfully: ${binary.path}`)
-    logger.log('')
+    logger.log(`  ✓ Build complete`)
   } else {
-    // Binary already exists.
-    logger.log('')
-    logger.log(`✓ Binary found and ready for testing`)
-    logger.log('')
+    // Binary exists.
+    logger.log(`✓ ${binary.name}`)
   }
 
   return true
