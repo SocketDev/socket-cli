@@ -1,9 +1,9 @@
 import { fileURLToPath } from 'node:url'
 
-import { YARN } from '@socketsecurity/lib-internal/constants/agents'
-import { WIN32 } from '@socketsecurity/lib-internal/constants/platform'
-import { debugNs } from '@socketsecurity/lib-internal/debug'
-import { spawn } from '@socketsecurity/lib-internal/spawn'
+import { YARN } from '@socketsecurity/lib/constants/agents'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { debugNs } from '@socketsecurity/lib/debug'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 import ENV from '../../constants/env.mts'
 import { shadowBinPath } from '../../constants/paths.mts'
@@ -24,7 +24,7 @@ import type {
   SpawnExtra,
   SpawnOptions,
   SpawnResult,
-} from '@socketsecurity/lib-internal/spawn'
+} from '@socketsecurity/lib/spawn'
 
 export type ShadowYarnOptions = SpawnOptions & {
   ipc?: IpcObject | undefined

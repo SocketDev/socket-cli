@@ -3,8 +3,8 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { debug } from '@socketsecurity/lib-internal/debug'
-import { safeMkdirSync } from '@socketsecurity/lib-internal/fs'
+import { debug } from '@socketsecurity/lib/debug'
+import { safeMkdirSync } from '@socketsecurity/lib/fs'
 
 import ENV from '../../constants/env.mts'
 import { homePath } from '../../constants/paths.mts'

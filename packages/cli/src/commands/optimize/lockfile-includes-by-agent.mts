@@ -4,9 +4,9 @@ import {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib-internal/constants/agents'
-import { EXT_LOCK } from '@socketsecurity/lib-internal/constants/paths'
-import { escapeRegExp } from '@socketsecurity/lib-internal/regexps'
+} from '@socketsecurity/lib/constants/agents'
+import { EXT_LOCK } from '@socketsecurity/lib/constants/paths'
+import { escapeRegExp } from '@socketsecurity/lib/regexps'
 
 import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 

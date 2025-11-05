@@ -23,8 +23,8 @@ import { setTimeout as wait } from 'node:timers/promises'
 import {
   kInternalsSymbol,
   UNKNOWN_ERROR,
-} from '@socketsecurity/lib-internal/constants/core'
-import { debugNs } from '@socketsecurity/lib-internal/debug'
+} from '@socketsecurity/lib/constants/core'
+import { debugNs } from '@socketsecurity/lib/debug'
 
 import ENV from '../../constants/env.mts'
 import {

@@ -28,8 +28,8 @@
 
 import { promises as fs } from 'node:fs'
 
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
-import { spawn } from '@socketsecurity/lib-internal/spawn'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 const logger = getDefaultLogger()
 
 /**

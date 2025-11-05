@@ -4,7 +4,7 @@
  * Provides a bordered container for the animated Socket CLI header using ANSI escape codes.
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { renderShimmerFrame } from './ascii-header.mts'
 

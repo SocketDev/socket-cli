@@ -25,8 +25,8 @@ import { dirname, join } from 'node:path'
 
 import { z } from 'zod'
 
-import { safeMkdir } from '@socketsecurity/lib-internal/fs'
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { safeMkdir } from '@socketsecurity/lib/fs'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
 

@@ -1,6 +1,6 @@
-import { debug } from '@socketsecurity/lib-internal/debug'
-import { getOwn } from '@socketsecurity/lib-internal/objects'
-import { parseUrl } from '@socketsecurity/lib-internal/url'
+import { debug } from '@socketsecurity/lib/debug'
+import { getOwn } from '@socketsecurity/lib/objects'
+import { parseUrl } from '@socketsecurity/lib/url'
 
 import { DiffAction } from './arborist/types.mts'
 import { LOOP_SENTINEL } from '../../constants/errors.mts'
@@ -14,7 +14,7 @@ import type {
   AlertFilter,
   AlertsByPurl,
 } from '../../utils/socket/package-alert.mts'
-import type { Spinner } from '@socketsecurity/lib-internal/spinner'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 function getUrlOrigin(input: string): string {
   // Using parseUrl for compatibility with Node 18+.

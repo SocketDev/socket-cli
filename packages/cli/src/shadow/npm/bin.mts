@@ -2,7 +2,7 @@ import { NPM } from '../../constants/agents.mts'
 import shadowNpmBase from '../npm-base.mts'
 
 import type { ShadowBinOptions, ShadowBinResult } from '../npm-base.mts'
-import type { SpawnExtra } from '@socketsecurity/lib-internal/spawn'
+import type { SpawnExtra } from '@socketsecurity/lib/spawn'
 
 export type { ShadowBinOptions, ShadowBinResult }
 

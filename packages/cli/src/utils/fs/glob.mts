@@ -6,12 +6,12 @@ import ignore from 'ignore'
 import micromatch from 'micromatch'
 import { parse as yamlParse } from 'yaml'
 
-import { NODE_MODULES } from '@socketsecurity/lib-internal/constants/paths'
-import { isDirSync, safeReadFile } from '@socketsecurity/lib-internal/fs'
-import { defaultIgnore } from '@socketsecurity/lib-internal/globs'
-import { readPackageJson } from '@socketsecurity/lib-internal/packages'
-import { transform } from '@socketsecurity/lib-internal/streams'
-import { isNonEmptyString } from '@socketsecurity/lib-internal/strings'
+import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
+import { isDirSync, safeReadFile } from '@socketsecurity/lib/fs'
+import { defaultIgnore } from '@socketsecurity/lib/globs'
+import { readPackageJson } from '@socketsecurity/lib/packages'
+import { transform } from '@socketsecurity/lib/streams'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import { PNPM } from '../../constants/agents.mjs'
 

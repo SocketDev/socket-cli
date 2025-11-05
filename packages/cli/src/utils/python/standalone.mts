@@ -46,11 +46,11 @@ import path from 'node:path'
 
 import semver from 'semver'
 
-import { whichBin } from '@socketsecurity/lib-internal/bin'
-import { WIN32 } from '@socketsecurity/lib-internal/constants/platform'
-import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib-internal/dlx-binary'
-import { safeMkdir } from '@socketsecurity/lib-internal/fs'
-import { spawn } from '@socketsecurity/lib-internal/spawn'
+import { whichBin } from '@socketsecurity/lib/bin'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib/dlx-binary'
+import { safeMkdir } from '@socketsecurity/lib/fs'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 import ENV from '../../constants/env.mts'
 import { PYTHON_MIN_VERSION } from '../../constants/packages.mts'

@@ -1,5 +1,5 @@
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
-import { pluralize } from '@socketsecurity/lib-internal/words'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { pluralize } from '@socketsecurity/lib/words'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdError, mdHeader, mdList } from '../../utils/output/markdown.mts'

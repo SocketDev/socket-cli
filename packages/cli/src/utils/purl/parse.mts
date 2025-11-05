@@ -24,7 +24,7 @@
  */
 
 import { PackageURL } from '@socketregistry/packageurl-js'
-import { isObjectObject } from '@socketsecurity/lib-internal/objects'
+import { isObjectObject } from '@socketsecurity/lib/objects'
 
 import type { SocketArtifact } from '../alert/artifact.mjs'
 import type { PURL_Type } from '../ecosystem/types.mjs'

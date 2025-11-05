@@ -1,12 +1,12 @@
 import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
-import { joinAnd } from '@socketsecurity/lib-internal/arrays'
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
-import { getOwn, hasOwn, toSortedObject } from '@socketsecurity/lib-internal/objects'
-import { normalizePath } from '@socketsecurity/lib-internal/path'
-import { naturalCompare } from '@socketsecurity/lib-internal/sorts'
-import { indentString, trimNewlines } from '@socketsecurity/lib-internal/strings'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getOwn, hasOwn, toSortedObject } from '@socketsecurity/lib/objects'
+import { normalizePath } from '@socketsecurity/lib/path'
+import { naturalCompare } from '@socketsecurity/lib/sorts'
+import { indentString, trimNewlines } from '@socketsecurity/lib/strings'
 
 import { NPM, NPX } from '../../constants/agents.mts'
 import {

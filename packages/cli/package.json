@@ -75,7 +75,7 @@
     "@coana-tech/cli": "catalog:",
     "@gitbeaker/rest": "catalog:",
     "@socketsecurity/build-infra": "workspace:*",
-    "@socketsecurity/lib": "workspace:*",
+    "@socketsecurity/lib-internal": "workspace:*",
     "@socketsecurity/sdk": "workspace:*",
     "ajv-dist": "catalog:",
     "compromise": "catalog:",

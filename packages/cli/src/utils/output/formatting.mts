@@ -19,11 +19,11 @@
  * - Handles kebab-case conversion for flags
  */
 
-import { joinAnd } from '@socketsecurity/lib-internal/arrays'
-import { isObject } from '@socketsecurity/lib-internal/objects'
-import { naturalCompare } from '@socketsecurity/lib-internal/sorts'
-import { indentString } from '@socketsecurity/lib-internal/strings'
-import { pluralize } from '@socketsecurity/lib-internal/words'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { isObject } from '@socketsecurity/lib/objects'
+import { naturalCompare } from '@socketsecurity/lib/sorts'
+import { indentString } from '@socketsecurity/lib/strings'
+import { pluralize } from '@socketsecurity/lib/words'
 
 import { camelToKebab } from '../data/strings.mts'
 import {

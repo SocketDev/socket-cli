@@ -3,10 +3,10 @@ import {
   isNpmFundFlag,
   isNpmLoglevelFlag,
   isNpmProgressFlag,
-} from '@socketsecurity/lib-internal/agent'
-import { isDebug } from '@socketsecurity/lib-internal/debug'
-import { getOwn, isObject } from '@socketsecurity/lib-internal/objects'
-import { spawn } from '@socketsecurity/lib-internal/spawn'
+} from '@socketsecurity/lib/agent'
+import { isDebug } from '@socketsecurity/lib/debug'
+import { getOwn, isObject } from '@socketsecurity/lib/objects'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 import { NPM } from '../../constants/agents.mts'
 import { FLAG_LOGLEVEL } from '../../constants/cli.mts'
@@ -25,8 +25,8 @@ import {
 } from '../../constants/shadow.mts'
 import { getNpmBinPath } from '../../utils/npm/paths.mts'
 
-import type { SpawnResult } from '@socketsecurity/lib-internal/spawn'
-import type { Spinner } from '@socketsecurity/lib-internal/spinner'
+import type { SpawnResult } from '@socketsecurity/lib/spawn'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 

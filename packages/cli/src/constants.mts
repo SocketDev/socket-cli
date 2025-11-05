@@ -4,8 +4,8 @@
  */
 
 // Import everything we need to re-export.
-import { UTF8 } from '@socketsecurity/lib-internal/constants/encoding'
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib-internal/constants/socket'
+import { UTF8 } from '@socketsecurity/lib/constants/encoding'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 
 import {
   BUN,

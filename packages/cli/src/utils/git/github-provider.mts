@@ -1,8 +1,8 @@
 import { RequestError } from '@octokit/request-error'
 
-import { UNKNOWN_VALUE } from '@socketsecurity/lib-internal/constants/core'
-import { debug, debugDir } from '@socketsecurity/lib-internal/debug'
-import { isNonEmptyString } from '@socketsecurity/lib-internal/strings'
+import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import { cacheFetch, getOctokit, getOctokitGraphql } from './github.mts'
 import { gitDeleteRemoteBranch } from './operations.mts'

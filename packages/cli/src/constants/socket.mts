@@ -3,7 +3,7 @@
  */
 
 // Re-export NPM registry URL from registry for backward compatibility.
-export { NPM_REGISTRY_URL } from '@socketsecurity/lib-internal/constants/agents'
+export { NPM_REGISTRY_URL } from '@socketsecurity/lib/constants/agents'
 
 // Socket API URLs
 export const API_V0_URL = 'https://api.socket.dev/v0/'

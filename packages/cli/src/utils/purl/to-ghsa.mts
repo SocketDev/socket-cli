@@ -1,4 +1,4 @@
-import { LATEST } from '@socketsecurity/lib-internal/constants/packages'
+import { LATEST } from '@socketsecurity/lib/constants/packages'
 
 import { getErrorCause } from '../error/errors.mts'
 import { cacheFetch, getOctokit } from '../git/github.mts'

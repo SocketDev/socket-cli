@@ -3,9 +3,9 @@ import { existsSync } from 'node:fs'
 import yaml from 'js-yaml'
 import semver from 'semver'
 
-import { readFileUtf8 } from '@socketsecurity/lib-internal/fs'
-import { isObjectObject } from '@socketsecurity/lib-internal/objects'
-import { stripBom } from '@socketsecurity/lib-internal/strings'
+import { readFileUtf8 } from '@socketsecurity/lib/fs'
+import { isObjectObject } from '@socketsecurity/lib/objects'
+import { stripBom } from '@socketsecurity/lib/strings'
 
 import { idToNpmPurl } from '../ecosystem/spec.mjs'
 

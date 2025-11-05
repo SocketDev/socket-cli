@@ -16,7 +16,7 @@
 import { isSeaBinary } from './detect.mts'
 import { SOCKET_IPC_HANDSHAKE } from '../../constants/shadow.mts'
 
-import type { SpawnOptions } from '@socketsecurity/lib-internal/spawn'
+import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 /**
  * Check if the current process is running as a subprocess with IPC.

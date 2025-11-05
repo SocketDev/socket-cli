@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 const logger = getDefaultLogger()
 
 export function checkSocketWrapperSetup(file: string): boolean {

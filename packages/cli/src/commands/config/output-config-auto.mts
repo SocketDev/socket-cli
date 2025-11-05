@@ -1,5 +1,5 @@
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
-import { select } from '@socketsecurity/lib-internal/stdio/prompts'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { select } from '@socketsecurity/lib/stdio/prompts'
 
 import { isConfigFromFlag, updateConfigValue } from '../../utils/config.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'

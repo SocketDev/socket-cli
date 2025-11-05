@@ -3,6 +3,6 @@
  * Enables automatic fix mode in Socket CLI.
  */
 
-import { getSocketCliFix } from '@socketsecurity/lib-internal/env/socket-cli'
+import { getSocketCliFix } from '@socketsecurity/lib/env/socket-cli'
 
 export const SOCKET_CLI_FIX = getSocketCliFix()

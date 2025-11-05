@@ -3,8 +3,8 @@ import path from 'node:path'
 
 import nlp from 'compromise'
 
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
-import { spawn } from '@socketsecurity/lib-internal/spawn'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 // Import compromise for NLP text normalization.
 
 import { outputAskCommand } from './output-ask.mts'

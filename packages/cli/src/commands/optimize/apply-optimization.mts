@@ -1,5 +1,5 @@
-import { getSpinner } from '@socketsecurity/lib-internal/constants/process'
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { addOverrides } from './add-overrides.mts'
 import { CMD_NAME } from './shared.mts'

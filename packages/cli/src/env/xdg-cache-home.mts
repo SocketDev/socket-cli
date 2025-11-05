@@ -3,6 +3,6 @@
  * User-specific cache directory following XDG Base Directory specification (Unix systems).
  */
 
-import { getXdgCacheHome } from '@socketsecurity/lib-internal/env/xdg'
+import { getXdgCacheHome } from '@socketsecurity/lib/env/xdg'
 
 export const XDG_CACHE_HOME = getXdgCacheHome()

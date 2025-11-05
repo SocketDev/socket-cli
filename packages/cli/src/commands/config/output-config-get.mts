@@ -1,4 +1,4 @@
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { isConfigFromFlag } from '../../utils/config.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'

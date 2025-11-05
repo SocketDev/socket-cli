@@ -1,6 +1,6 @@
 /** @fileoverview Command builder to DRY out repetitive cmd-*.mts command definitions */
 
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../cli/with-subcommands.mjs'

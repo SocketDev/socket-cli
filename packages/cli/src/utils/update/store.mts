@@ -6,7 +6,7 @@
  * This file will be removed in a future version.
  */
 
-import { DlxManifest } from '@socketsecurity/lib-internal/dlx-manifest'
+import { DlxManifest } from '@socketsecurity/lib/dlx-manifest'
 
 export {
   type BinaryDetails,
@@ -16,7 +16,7 @@ export {
   type ManifestEntry,
   type PackageDetails,
   type StoreRecord,
-} from '@socketsecurity/lib-internal/dlx-manifest'
+} from '@socketsecurity/lib/dlx-manifest'
 
 /**
  * Options for UpdateStore (backward compatibility wrapper).

@@ -28,16 +28,16 @@ import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { generateCacheKey } from '@socketsecurity/lib-internal/dlx'
-import { readJson, safeMkdir } from '@socketsecurity/lib-internal/fs'
-import { normalizePath } from '@socketsecurity/lib-internal/path'
-import { getSocketDlxDir } from '@socketsecurity/lib-internal/paths'
-import { spawn } from '@socketsecurity/lib-internal/spawn'
+import { generateCacheKey } from '@socketsecurity/lib/dlx'
+import { readJson, safeMkdir } from '@socketsecurity/lib/fs'
+import { normalizePath } from '@socketsecurity/lib/path'
+import { getSocketDlxDir } from '@socketsecurity/lib/paths'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 import { DLX_BINARY_CACHE_TTL } from '../../constants/cache.mjs'
 import { InputError } from '../error/errors.mts'
 
-import type { SpawnExtra, SpawnOptions } from '@socketsecurity/lib-internal/spawn'
+import type { SpawnExtra, SpawnOptions } from '@socketsecurity/lib/spawn'
 
 /**
  * Metadata structure for cached binaries (.dlx-metadata.json).

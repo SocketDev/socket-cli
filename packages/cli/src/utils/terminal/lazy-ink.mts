@@ -1,6 +1,6 @@
 /** @fileoverview Lazy loading utility for Ink/React components to reduce bundle size */
 
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 const logger = getDefaultLogger()
 
 /**

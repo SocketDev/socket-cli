@@ -3,6 +3,6 @@
  * User home directory (Unix systems).
  */
 
-import { getHome } from '@socketsecurity/lib-internal/env/home'
+import { getHome } from '@socketsecurity/lib/env/home'
 
 export const HOME = getHome()

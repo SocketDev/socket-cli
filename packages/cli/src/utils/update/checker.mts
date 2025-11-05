@@ -21,11 +21,11 @@
 
 import semver from 'semver'
 
-import { NPM_REGISTRY_URL } from '@socketsecurity/lib-internal/constants/agents'
-import { debug } from '@socketsecurity/lib-internal/debug'
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
-import { onExit } from '@socketsecurity/lib-internal/signal-exit'
-import { isNonEmptyString } from '@socketsecurity/lib-internal/strings'
+import { NPM_REGISTRY_URL } from '@socketsecurity/lib/constants/agents'
+import { debug } from '@socketsecurity/lib/debug'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { onExit } from '@socketsecurity/lib/signal-exit'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 const logger = getDefaultLogger()
 

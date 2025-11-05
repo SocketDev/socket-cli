@@ -1,8 +1,8 @@
 import { fileURLToPath } from 'node:url'
 
-import { debug, debugDir } from '@socketsecurity/lib-internal/debug'
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
-import { readPackageJson } from '@socketsecurity/lib-internal/packages'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { readPackageJson } from '@socketsecurity/lib/packages'
 
 import { FLAG_DRY_RUN } from '../constants/cli.mts'
 import { PACKAGE_JSON } from '../constants/packages.mts'
@@ -17,7 +17,7 @@ import { getAlertsMapFromPurls } from '../utils/socket/alerts.mts'
 import { logAlertsMap } from '../utils/socket/package-alert.mts'
 
 import type { AlertsByPurl } from '../utils/socket/package-alert.mts'
-import type { Spinner } from '@socketsecurity/lib-internal/spinner'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 /**
  * Extract package PURLs from command arguments for add/dlx commands where

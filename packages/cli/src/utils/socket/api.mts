@@ -21,10 +21,10 @@
 
 import { messageWithCauses } from 'pony-cause'
 
-import { getSpinner } from '@socketsecurity/lib-internal/constants/process'
-import { debug, debugDir } from '@socketsecurity/lib-internal/debug'
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
-import { isNonEmptyString } from '@socketsecurity/lib-internal/strings'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 const logger = getDefaultLogger()
 
@@ -58,7 +58,7 @@ import {
 } from '../error/errors.mts'
 
 import type { CResult } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/lib-internal/spinner'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 import type {
   SocketSdkErrorResult,
   SocketSdkOperations,

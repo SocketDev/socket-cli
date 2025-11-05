@@ -22,9 +22,9 @@
 
 import colors from 'yoctocolors-cjs'
 
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
-import { onExit } from '@socketsecurity/lib-internal/signal-exit'
-import { isNonEmptyString } from '@socketsecurity/lib-internal/strings'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { onExit } from '@socketsecurity/lib/signal-exit'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 const logger = getDefaultLogger()
 

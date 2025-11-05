@@ -1,4 +1,4 @@
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { runRawNpm } from './run-raw-npm.mts'
 import {

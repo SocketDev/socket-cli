@@ -12,7 +12,7 @@
 
 import { setTimeout as sleep } from 'node:timers/promises'
 
-import { downloadPackage } from '@socketsecurity/lib-internal/dlx-package'
+import { downloadPackage } from '@socketsecurity/lib/dlx-package'
 
 import ENV from '../../constants/env.mts'
 import { ensurePython, ensureSocketPythonCli } from '../python/standalone.mts'

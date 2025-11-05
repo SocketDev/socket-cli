@@ -5,7 +5,7 @@
  * Ensures type safety for inter-process communication.
  */
 
-import type { IpcHandshake, IpcMessage, IpcStub } from '@socketsecurity/lib-internal/ipc'
+import type { IpcHandshake, IpcMessage, IpcStub } from '@socketsecurity/lib/ipc'
 
 /**
  * Check if a value is a valid IPC message.

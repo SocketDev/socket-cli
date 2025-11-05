@@ -1,5 +1,5 @@
 {
-  "name": "@socketsecurity/lib",
+  "name": "@socketsecurity/lib-internal",
   "version": "3.2.8",
   "private": true,
   "license": "MIT",

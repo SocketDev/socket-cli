@@ -27,7 +27,7 @@
 
 import { createRequire } from 'node:module'
 
-import { isInSocketDlx } from '@socketsecurity/lib-internal/dlx'
+import { isInSocketDlx } from '@socketsecurity/lib/dlx'
 
 const require = createRequire(import.meta.url)
 

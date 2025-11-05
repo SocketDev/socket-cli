@@ -15,7 +15,7 @@
  * - Prevents repeated PATH searches
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { findBinPathDetailsSync } from '../fs/path-resolve.mjs'
 

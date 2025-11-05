@@ -3,6 +3,6 @@
  * Temporary directory path (Windows systems).
  */
 
-import { getTemp } from '@socketsecurity/lib-internal/env/temp-dir'
+import { getTemp } from '@socketsecurity/lib/env/temp-dir'
 
 export const TEMP = getTemp()

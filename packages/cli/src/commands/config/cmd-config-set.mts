@@ -1,4 +1,4 @@
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleConfigSet } from './handle-config-set.mts'
 import {
