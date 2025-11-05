@@ -115,7 +115,7 @@ async function runVitest(binaryType) {
       '--',
       vitestPath,
       'run',
-      'test/integration/binary/binary-test-suite.test.mts',
+      'test/integration/binary/',
       '--config',
       'vitest.integration.config.mts',
     ],

@@ -88,7 +88,10 @@ pnpm --filter @socketbin/node-sea-builder run build
 
 ## Test Files
 
-- `binary-test-suite.test.mts` - Main test suite (tests all 3 distributions)
+- `js.test.mts` - JS distribution tests (144 tests)
+- `sea.test.mts` - SEA binary tests (144 tests)
+- `smol.test.mts` - Smol binary tests (144 tests)
+- `helpers.mts` - Shared test utilities
 - `critical-commands.test.mts` - Core CLI commands
 - `dlx-spawn.test.mts` - DLX functionality
 

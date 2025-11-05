@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import ENV from '../../../src/constants/env.mts'
 import { getDefaultApiToken } from '../../../src/utils/socket/sdk.mts'
 import { executeCliCommand } from '../../helpers/cli-execution.mts'
-import { MONOREPO_ROOT, logger, prepareBinary, type BinaryConfig } from './binary-test-helpers.mts'
+import { MONOREPO_ROOT, logger, prepareBinary, type BinaryConfig } from './helpers.mts'
 
 const BINARY: BinaryConfig = {
   buildCommand: [

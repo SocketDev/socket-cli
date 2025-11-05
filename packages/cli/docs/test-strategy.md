@@ -88,7 +88,10 @@ describe('socket scan', () => {
 ```
 
 **Test files**:
-- `binary-test-suite.test.mts` - Tests JS/smol/SEA binaries
+- `js.test.mts` - Tests JS distribution (144 tests)
+- `sea.test.mts` - Tests SEA binary (144 tests)
+- `smol.test.mts` - Tests smol binary (144 tests)
+- `helpers.mts` - Shared test utilities
 - `critical-commands.test.mts` - Tests core commands
 - `dlx-spawn.test.mts` - Tests dlx functionality
 
@@ -163,8 +166,11 @@ packages/cli/
 │   ├── utils/
 │   └── ...
 ├── test/integration/              → Integration tests
-│   ├── binary/                    → CLI binary tests (3 files)
-│   │   ├── binary-test-suite.test.mts
+│   ├── binary/                    → CLI binary tests (6 files)
+│   │   ├── js.test.mts
+│   │   ├── sea.test.mts
+│   │   ├── smol.test.mts
+│   │   ├── helpers.mts
 │   │   ├── critical-commands.test.mts
 │   │   └── dlx-spawn.test.mts
 │   └── api/                       → API integration tests (2 files)
@@ -216,9 +222,14 @@ packages/cli/
   → Size: ~70 MB
 ```
 
-### Binary Test Suite (`test/integration/binary/binary-test-suite.test.mts`)
+### Binary Test Suite (`test/integration/binary/`)
 
-**Tests all three binary types**:
+**Separate test files for each binary type**:
+- `js.test.mts` - Tests JS distribution (144 tests)
+- `sea.test.mts` - Tests SEA binary (144 tests)
+- `smol.test.mts` - Tests smol binary (144 tests)
+
+**Each test file validates**:
 - Environment variable support
 - Configuration loading
 - Command parsing
