@@ -1,0 +1,25 @@
+# @node-versions: v24.10.0+
+# @description: Fix gyp Python 3 hashlib.md5() compatibility
+#
+# Python 3's hashlib.md5() requires bytes, not strings.
+# Fixes: TypeError: Strings must be encoded before hashing
+# At: tools/gyp/pylib/gyp/generator/ninja.py:813
+#
+# This issue affects all Python 3 versions when gyp tries to hash
+# file paths for unique_name generation on Windows.
+#
+# References:
+# - https://github.com/nodejs/node/blob/main/BUILDING.md
+# - https://docs.python.org/3/library/hashlib.html
+
+--- a/tools/gyp/pylib/gyp/generator/ninja.py
++++ b/tools/gyp/pylib/gyp/generator/ninja.py
+@@ -810,7 +810,7 @@
+                 if self.flavor == "win":
+                     # WriteNewNinjaRule uses unique_name to create a rsp file on win.
+                     extra_bindings.append(
+-                        ("unique_name", hashlib.md5(outputs[0]).hexdigest())
++                        ("unique_name", hashlib.md5(outputs[0].encode()).hexdigest())
+                     )
+
+                 self.ninja.build(
