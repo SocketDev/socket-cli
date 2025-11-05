@@ -14,6 +14,8 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 
+const logger = getDefaultLogger()
+
 const config: CliCommandConfig = {
   commandName: 'setup',
   description:
@@ -86,7 +88,6 @@ async function run(
   cwd = path.resolve(process.cwd(), cwd)
 
   if (dryRun) {
-    const logger = getDefaultLogger()
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }

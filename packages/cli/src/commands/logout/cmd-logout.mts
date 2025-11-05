@@ -10,6 +10,8 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 
+const logger = getDefaultLogger()
+
 const config: CliCommandConfig = {
   commandName: 'logout',
   description: 'Socket API logout',
@@ -49,7 +51,6 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    const logger = getDefaultLogger()
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }

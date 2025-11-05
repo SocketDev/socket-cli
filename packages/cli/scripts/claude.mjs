@@ -22,6 +22,8 @@ import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { safeDelete } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+const logger = getDefaultLogger()
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 const parentPath = path.join(rootPath, '..')
@@ -92,7 +94,6 @@ const PRICING = {
 
 // Simple inline logger.
 const log = {
-  const logger = getDefaultLogger()
   info: msg => logger.log(msg),
   error: msg => logger.error(`${colors.red('✗')} ${msg}`),
   success: msg => logger.log(`${colors.green('✓')} ${msg}`),
@@ -255,21 +256,13 @@ class CostTracker {
   showSessionSummary() {
     const duration = Date.now() - this.startTime
     logger.log(colors.cyan('\n💰 Cost Summary:'))
-    logger.log(
-      `  Input tokens: ${this.session.input.toLocaleString()}`,
-    )
-    logger.log(
-      `  Output tokens: ${this.session.output.toLocaleString()}`,
-    )
+    logger.log(`  Input tokens: ${this.session.input.toLocaleString()}`)
+    logger.log(`  Output tokens: ${this.session.output.toLocaleString()}`)
     if (this.session.cacheWrite > 0) {
-      logger.log(
-        `  Cache write: ${this.session.cacheWrite.toLocaleString()}`,
-      )
+      logger.log(`  Cache write: ${this.session.cacheWrite.toLocaleString()}`)
     }
     if (this.session.cacheRead > 0) {
-      logger.log(
-        `  Cache read: ${this.session.cacheRead.toLocaleString()}`,
-      )
+      logger.log(`  Cache read: ${this.session.cacheRead.toLocaleString()}`)
     }
     logger.log(
       `  Session cost: ${colors.green(`$${this.session.cost.toFixed(4)}`)}`,
@@ -277,9 +270,7 @@ class CostTracker {
     logger.log(
       `  Monthly total: ${colors.yellow(`$${this.monthly.cost.toFixed(2)}`)}`,
     )
-    logger.log(
-      `  Duration: ${colors.gray(formatDuration(duration))}`,
-    )
+    logger.log(`  Duration: ${colors.gray(formatDuration(duration))}`)
   }
 }
 
@@ -1261,9 +1252,7 @@ async function ensureClaudeAuthenticated(claudeCmd) {
 
     // Not authenticated, provide instructions for manual authentication
     log.warn('Claude Code login required')
-    logger.log(
-      colors.yellow('\nClaude Code needs to be authenticated.'),
-    )
+    logger.log(colors.yellow('\nClaude Code needs to be authenticated.'))
     logger.log('\nTo authenticate:')
     logger.log('  1. Open a new terminal')
     logger.log(`  2. Run: ${colors.green('claude')}`)
@@ -1314,9 +1303,7 @@ async function ensureGitHubAuthenticated() {
 
     // Not authenticated, prompt for login
     log.warn('GitHub authentication required')
-    logger.log(
-      colors.yellow('\nYou need to authenticate with GitHub.'),
-    )
+    logger.log(colors.yellow('\nYou need to authenticate with GitHub.'))
     logger.log('Follow the prompts to complete authentication.\n')
 
     // Run gh auth login interactively
@@ -1334,9 +1321,7 @@ async function ensureGitHubAuthenticated() {
       logger.log(colors.red('\nLogin failed. Please try again.'))
 
       if (attempts < maxAttempts) {
-        logger.log(
-          colors.yellow(`\nAttempt ${attempts + 1} of ${maxAttempts}`),
-        )
+        logger.log(colors.yellow(`\nAttempt ${attempts + 1} of ${maxAttempts}`))
         await new Promise(resolve => setTimeout(resolve, 1000))
       }
     }
@@ -2699,9 +2684,7 @@ Apply the fix and return ONLY the fixed code snippet.`
 
   // Report issues that need review
   if (toReview.length > 0) {
-    logger.log(
-      `\n${colors.yellow('Issues requiring manual review:')}`,
-    )
+    logger.log(`\n${colors.yellow('Issues requiring manual review:')}`)
     toReview.forEach((issue, i) => {
       logger.log(
         `${i + 1}. [${issue.severity}] ${issue.file}:${issue.line} - ${issue.description}`,
@@ -4327,18 +4310,14 @@ Let's work through this together to get CI passing.`
     logger.log(`  macOS:   ${colors.green('brew install gh')}`)
     logger.log(`  Ubuntu:  ${colors.green('sudo apt install gh')}`)
     logger.log(`  Fedora:  ${colors.green('sudo dnf install gh')}`)
-    logger.log(
-      `  Windows: ${colors.green('winget install --id GitHub.cli')}`,
-    )
+    logger.log(`  Windows: ${colors.green('winget install --id GitHub.cli')}`)
     logger.log(
       `  Other:   ${colors.gray('https://github.com/cli/cli/blob/trunk/docs/install_linux.md')}`,
     )
     logger.log(`\n${colors.yellow('After installation:')}`)
     logger.log(`  1. Run: ${colors.green('gh auth login')}`)
     logger.log('  2. Follow the prompts to authenticate')
-    logger.log(
-      `  3. Try again: ${colors.green('pnpm claude --green')}`,
-    )
+    logger.log(`  3. Try again: ${colors.green('pnpm claude --green')}`)
     return false
   }
 
@@ -4349,9 +4328,7 @@ Let's work through this together to get CI passing.`
     logger.log(
       colors.red('\nGitHub authentication is required for CI monitoring.'),
     )
-    logger.log(
-      'Please ensure you can login to GitHub CLI and try again.',
-    )
+    logger.log('Please ensure you can login to GitHub CLI and try again.')
     return false
   }
 
@@ -4449,9 +4426,7 @@ Let's work through this together to get CI passing.`
       logger.log('\n2. If not authenticated, login:')
       logger.log(`   ${colors.green('gh auth login')}`)
       logger.log('\n3. Test repository access:')
-      logger.log(
-        `   ${colors.green(`gh api repos/${owner}/${repo}`)}`,
-      )
+      logger.log(`   ${colors.green(`gh api repos/${owner}/${repo}`)}`)
       logger.log('\n4. Check if workflows exist:')
       logger.log(
         `   ${colors.green(`gh workflow list --repo ${owner}/${repo}`)}`,
@@ -4578,9 +4553,7 @@ Let's work through this together to get CI passing.`
             )
           })
           if (snapshotList.length > 5) {
-            logger.log(
-              colors.gray(`  ... and ${snapshotList.length - 5} more`),
-            )
+            logger.log(colors.gray(`  ... and ${snapshotList.length - 5} more`))
           }
         }
 
@@ -5371,16 +5344,12 @@ async function runWatchMode(claudeCmd, options = {}) {
  */
 function showOperations() {
   logger.log('\nCore operations:')
-  logger.log(
-    '  --commit       Create commits with Claude assistance',
-  )
+  logger.log('  --commit       Create commits with Claude assistance')
   logger.log(
     '  --green        Ensure all tests pass, push, monitor CI until green',
   )
   logger.log('  --push         Create commits and push to remote')
-  logger.log(
-    '  --sync         Synchronize CLAUDE.md files across projects',
-  )
+  logger.log('  --sync         Synchronize CLAUDE.md files across projects')
 
   logger.log('\nCode quality:')
   logger.log('  --audit        Security and quality audit')
@@ -5388,9 +5357,7 @@ function showOperations() {
   logger.log('  --fix          Scan for bugs and security issues')
   logger.log('  --optimize     Performance optimization analysis')
   logger.log('  --refactor     Suggest code improvements')
-  logger.log(
-    '  --review       Review staged changes before committing',
-  )
+  logger.log('  --review       Review staged changes before committing')
 
   logger.log('\nDevelopment:')
   logger.log('  --debug        Help debug errors')
@@ -5567,50 +5534,30 @@ async function main() {
 
     // Show help if requested or no operation specified.
     if (values.help || !hasOperation) {
-      logger.log(
-        '\nUsage: pnpm claude [operation] [options] [files...]',
-      )
+      logger.log('\nUsage: pnpm claude [operation] [options] [files...]')
       logger.log('\nClaude-powered utilities for Socket projects.')
       showOperations()
       logger.log('\nOptions:')
       logger.log(
         '  --cross-repo     Operate on all Socket projects (default: current only)',
       )
-      logger.log(
-        '  --dry-run        Preview changes without writing files',
-      )
+      logger.log('  --dry-run        Preview changes without writing files')
       logger.log(
         '  --max-auto-fixes N  Max auto-fix attempts (--green, default: 10)',
       )
-      logger.log(
-        '  --max-retries N  Max CI fix attempts (--green, default: 3)',
-      )
-      logger.log(
-        '  --no-darkwing    Disable "Let\'s get dangerous!" mode',
-      )
-      logger.log(
-        '  --no-report      Skip generating scan report (--fix)',
-      )
-      logger.log(
-        '  --no-verify      Use --no-verify when committing',
-      )
-      logger.log(
-        '  --pinky          Use default model (Claude 3.5 Sonnet)',
-      )
-      logger.log(
-        '  --prompt         Prompt for approval before fixes (--fix)',
-      )
-      logger.log(
-        '  --seq            Run sequentially (default: parallel)',
-      )
+      logger.log('  --max-retries N  Max CI fix attempts (--green, default: 3)')
+      logger.log('  --no-darkwing    Disable "Let\'s get dangerous!" mode')
+      logger.log('  --no-report      Skip generating scan report (--fix)')
+      logger.log('  --no-verify      Use --no-verify when committing')
+      logger.log('  --pinky          Use default model (Claude 3.5 Sonnet)')
+      logger.log('  --prompt         Prompt for approval before fixes (--fix)')
+      logger.log('  --seq            Run sequentially (default: parallel)')
       logger.log("  --skip-commit    Update files but don't commit")
       logger.log(
         '  --the-brain      Use ultrathink mode - "Try to take over the world!"',
       )
       logger.log('  --watch          Continuous monitoring mode')
-      logger.log(
-        '  --workers N      Number of parallel workers (default: 3)',
-      )
+      logger.log('  --workers N      Number of parallel workers (default: 3)')
       logger.log('\nExamples:')
       logger.log(
         '  pnpm claude --fix            # Auto-fix issues (careful mode)',
@@ -5621,30 +5568,20 @@ async function main() {
       logger.log(
         '  pnpm claude --fix --watch    # Continuous monitoring & fixing',
       )
-      logger.log(
-        '  pnpm claude --review         # Review staged changes',
-      )
-      logger.log(
-        '  pnpm claude --green          # Ensure CI passes',
-      )
+      logger.log('  pnpm claude --review         # Review staged changes')
+      logger.log('  pnpm claude --green          # Ensure CI passes')
       logger.log(
         '  pnpm claude --green --dry-run  # Test green without real CI',
       )
       logger.log(
         '  pnpm claude --fix --the-brain  # Deep analysis with ultrathink mode',
       )
-      logger.log(
-        '  pnpm claude --fix --workers 5  # Use 5 parallel workers',
-      )
+      logger.log('  pnpm claude --fix --workers 5  # Use 5 parallel workers')
       logger.log(
         '  pnpm claude --test lib/utils.js  # Generate tests for a file',
       )
-      logger.log(
-        '  pnpm claude --refactor src/index.js  # Suggest refactoring',
-      )
-      logger.log(
-        '  pnpm claude --push           # Commit and push changes',
-      )
+      logger.log('  pnpm claude --refactor src/index.js  # Suggest refactoring')
+      logger.log('  pnpm claude --push           # Commit and push changes')
       logger.log('  pnpm claude --help           # Show this help')
       logger.log('\nRequires:')
       logger.log('  - Claude Code CLI (claude) installed')
@@ -5661,17 +5598,13 @@ async function main() {
       log.failed('Claude Code CLI not found')
       log.error('Please install Claude Code to use these utilities')
       logger.log(`\n${colors.cyan('Installation Instructions:')}`)
-      logger.log(
-        '  1. Visit: https://docs.claude.com/en/docs/claude-code',
-      )
+      logger.log('  1. Visit: https://docs.claude.com/en/docs/claude-code')
       logger.log('  2. Or install via npm:')
       logger.log(
         `     ${colors.green('npm install -g @anthropic/claude-desktop')}`,
       )
       logger.log('  3. Or download directly:')
-      logger.log(
-        `     macOS: ${colors.gray('brew install claude')}`,
-      )
+      logger.log(`     macOS: ${colors.gray('brew install claude')}`)
       logger.log(
         `     Linux: ${colors.gray('curl -fsSL https://docs.claude.com/install.sh | sh')}`,
       )
@@ -5680,12 +5613,8 @@ async function main() {
       )
       logger.log(`\n${colors.yellow('After installation:')}`)
       logger.log(`  1. Run: ${colors.green('claude')}`)
-      logger.log(
-        '  2. Sign in with your Anthropic account when prompted',
-      )
-      logger.log(
-        `  3. Try again: ${colors.green('pnpm claude --help')}`,
-      )
+      logger.log('  2. Sign in with your Anthropic account when prompted')
+      logger.log(`  3. Try again: ${colors.green('pnpm claude --help')}`)
       process.exitCode = 1
       return
     }

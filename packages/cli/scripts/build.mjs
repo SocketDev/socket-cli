@@ -20,6 +20,8 @@ import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+const logger = getDefaultLogger()
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageRoot = path.resolve(__dirname, '..')
 const repoRoot = path.resolve(__dirname, '../../..')
@@ -28,7 +30,6 @@ const repoRoot = path.resolve(__dirname, '../../..')
 const isQuiet = () => process.argv.includes('--quiet')
 const isVerbose = () => process.argv.includes('--verbose')
 const log = {
-  const logger = getDefaultLogger()
   info: msg => logger.info(msg),
   step: msg => logger.step(msg),
   success: msg => logger.success(msg),

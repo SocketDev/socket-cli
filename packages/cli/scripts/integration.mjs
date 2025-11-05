@@ -19,6 +19,7 @@ import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT_DIR = path.resolve(__dirname, '..')
 const MONOREPO_ROOT = path.resolve(ROOT_DIR, '../..')
@@ -54,25 +55,16 @@ async function checkBinaryExists(binaryType) {
   if (binaryType === 'js' || binaryType === 'sea' || binaryType === 'smol') {
     const binaryPath = BINARY_PATHS[binaryType]
     if (!existsSync(binaryPath)) {
-      const logger = getDefaultLogger()
-      logger.error(
-        `${colors.red('✗')} Binary not found: ${binaryPath}`,
-      )
+      logger.error(`${colors.red('✗')} Binary not found: ${binaryPath}`)
       logger.log('')
-      logger.log(
-        'The binary must be built before running e2e tests.',
-      )
+      logger.log('The binary must be built before running e2e tests.')
       logger.log('Build commands:')
       if (binaryType === 'js') {
         logger.log('  pnpm run build')
       } else if (binaryType === 'sea') {
-        logger.log(
-          '  pnpm --filter @socketbin/node-sea-builder run build',
-        )
+        logger.log('  pnpm --filter @socketbin/node-sea-builder run build')
       } else if (binaryType === 'smol') {
-        logger.log(
-          '  pnpm --filter @socketbin/node-smol-builder run build',
-        )
+        logger.log('  pnpm --filter @socketbin/node-smol-builder run build')
       }
       logger.log('')
       return false
@@ -142,15 +134,9 @@ async function main() {
     logger.error('Invalid or missing flag')
     logger.log('')
     logger.log('Usage:')
-    logger.log(
-      '  node scripts/integration.mjs --js     # Test JS distribution',
-    )
-    logger.log(
-      '  node scripts/integration.mjs --sea    # Test SEA binary',
-    )
-    logger.log(
-      '  node scripts/integration.mjs --smol   # Test smol binary',
-    )
+    logger.log('  node scripts/integration.mjs --js     # Test JS distribution')
+    logger.log('  node scripts/integration.mjs --sea    # Test SEA binary')
+    logger.log('  node scripts/integration.mjs --smol   # Test smol binary')
     logger.log(
       '  node scripts/integration.mjs --all    # Test all distributions',
     )

@@ -26,6 +26,8 @@ import { isYarnBerry } from '../../utils/yarn/version.mts'
 import type { ShadowBinResult } from '../../shadow/npm/bin.mts'
 import type { DlxOptions } from '../../utils/dlx/spawn.mjs'
 
+const logger = getDefaultLogger()
+
 const nodejsPlatformTypes = new Set([
   'javascript',
   'js',
@@ -145,7 +147,6 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     if (outputPath) {
       const fullOutputPath = path.join(process.cwd(), outputPath)
       if (existsSync(fullOutputPath)) {
-        const logger = getDefaultLogger()
         logger.log(colors.cyanBright(`${outputPath} created!`))
       }
     }

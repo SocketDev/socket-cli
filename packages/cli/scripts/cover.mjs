@@ -25,13 +25,9 @@ import { spawn } from '@socketsecurity/lib/spawn'
  */
 function printHeader(message) {
   const logger = getDefaultLogger()
-  logger.error(
-    '\n═══════════════════════════════════════════════════════',
-  )
+  logger.error('\n═══════════════════════════════════════════════════════')
   logger.error(`  ${message}`)
-  logger.error(
-    '═══════════════════════════════════════════════════════\n',
-  )
+  logger.error('═══════════════════════════════════════════════════════\n')
 }
 
 /**
@@ -110,9 +106,7 @@ async function main() {
           logger.log('')
           logger.log(' Coverage Summary')
           logger.log(' ───────────────────────────────')
-          logger.log(
-            ` Type Coverage: ${typeCoveragePercent.toFixed(2)}%`,
-          )
+          logger.log(` Type Coverage: ${typeCoveragePercent.toFixed(2)}%`)
           logger.log('')
         }
       }
@@ -183,9 +177,7 @@ async function main() {
           const codeCoveragePercent = Number.parseFloat(allFilesMatch[1])
           logger.log(' Coverage Summary')
           logger.log(' ───────────────────────────────')
-          logger.log(
-            ` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`,
-          )
+          logger.log(` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`)
           logger.log('')
         } else if (exitCode !== 0) {
           logger.log('\n--- Output ---')
@@ -280,12 +272,8 @@ async function main() {
 
           logger.log(' Coverage Summary')
           logger.log(' ───────────────────────────────')
-          logger.log(
-            ` Type Coverage: ${typeCoveragePercent.toFixed(2)}%`,
-          )
-          logger.log(
-            ` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`,
-          )
+          logger.log(` Type Coverage: ${typeCoveragePercent.toFixed(2)}%`)
+          logger.log(` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`)
           logger.log(' ───────────────────────────────')
           logger.log(` Cumulative:    ${cumulativePercent}%`)
           logger.log('')

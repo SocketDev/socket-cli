@@ -76,9 +76,7 @@ async function buildBinary(
   logger.log(`Running: ${binary.buildCommand.join(' ')}`)
 
   if (binaryType === 'smol') {
-    logger.log(
-      'Note: smol build may take 30-60 minutes on first build',
-    )
+    logger.log('Note: smol build may take 30-60 minutes on first build')
     logger.log('      (subsequent builds are faster with caching)')
   }
   logger.log('')
@@ -130,9 +128,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
 
         // In CI: Skip building (rely on cache).
         if (process.env.CI) {
-          logger.log(
-            'Running in CI - skipping build (binary not in cache)',
-          )
+          logger.log('Running in CI - skipping build (binary not in cache)')
           logger.log(
             'To prime cache, run: gh workflow run publish-socketbin.yml --field dry-run=true',
           )
@@ -149,9 +145,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
 
         if (!shouldBuild) {
           logger.log('Skipping build. Tests will be skipped.')
-          logger.log(
-            `To build manually, run: ${binary.buildCommand.join(' ')}`,
-          )
+          logger.log(`To build manually, run: ${binary.buildCommand.join(' ')}`)
           logger.log('')
           return
         }
@@ -165,9 +159,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
 
         if (!binaryExists) {
           logger.log('')
-          logger.error(
-            `Failed to build ${binary.name}. Tests will be skipped.`,
-          )
+          logger.error(`Failed to build ${binary.name}. Tests will be skipped.`)
           logger.log('To build this binary manually, run:')
           logger.log(`  ${binary.buildCommand.join(' ')}`)
           logger.log('')
@@ -186,19 +178,11 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
           logger.log('')
           logger.warn('E2E tests require Socket authentication.')
           logger.log('Please run one of the following:')
-          logger.log(
-            '  1. socket login (to authenticate with Socket)',
-          )
-          logger.log(
-            '  2. Set SOCKET_SECURITY_API_KEY environment variable',
-          )
-          logger.log(
-            '  3. Skip E2E tests by not setting RUN_E2E_TESTS',
-          )
+          logger.log('  1. socket login (to authenticate with Socket)')
+          logger.log('  2. Set SOCKET_SECURITY_API_KEY environment variable')
+          logger.log('  3. Skip E2E tests by not setting RUN_E2E_TESTS')
           logger.log('')
-          logger.log(
-            'E2E tests will be skipped due to missing authentication.',
-          )
+          logger.log('E2E tests will be skipped due to missing authentication.')
           logger.log('')
         }
       }

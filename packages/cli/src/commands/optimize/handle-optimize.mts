@@ -77,9 +77,7 @@ export async function handleOptimize({
     return
   }
 
-  logger.info(
-    `Optimizing packages for ${agent} v${agentVersion}.\n`,
-  )
+  logger.info(`Optimizing packages for ${agent} v${agentVersion}.\n`)
 
   debug('Applying optimization')
   const optimizationResult = await applyOptimization(pkgEnvDetails, {

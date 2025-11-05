@@ -23,6 +23,8 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 
+const logger = getDefaultLogger()
+
 export const CMD_NAME = 'analytics'
 
 const description = 'Look up analytics data'
@@ -178,7 +180,6 @@ async function run(
   }
 
   if (dryRun) {
-    const logger = getDefaultLogger()
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }

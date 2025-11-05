@@ -107,9 +107,7 @@ export async function startPatch(packageSpec) {
     const existingPatchDir = match ? match[1] : null
 
     if (existingPatchDir) {
-      logger.log(
-        `\nExisting patch directory found: ${existingPatchDir}`,
-      )
+      logger.log(`\nExisting patch directory found: ${existingPatchDir}`)
       const shouldOverwrite = await promptYesNo(
         'Overwrite existing patch directory?',
         false,
@@ -230,10 +228,7 @@ export async function createPatch(patchDef) {
     // Commit the patch.
     await commitPatch(patchPath, packageName)
   } catch (error) {
-    logger.error(
-      `Error creating patch for ${packageName}:`,
-      error.message,
-    )
+    logger.error(`Error creating patch for ${packageName}:`, error.message)
     // Cleanup temp directory on error.
     if (patchPath && existsSync(patchPath)) {
       rmSync(patchPath, { force: true, recursive: true })
