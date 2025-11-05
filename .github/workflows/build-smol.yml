@@ -400,16 +400,32 @@ jobs:
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform == 'win32' && steps.ninja-cache-windows.outputs.cache-hit != 'true'
         run: choco install ninja
 
-      - name: Install patch (Windows)
+      - name: Ensure Git for Windows is installed
+        if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform == 'win32'
+        shell: pwsh
+        run: |
+          # GitHub Actions runners come with Git for Windows pre-installed.
+          # Verify it exists and is accessible.
+          $gitPath = "C:\Program Files\Git"
+          if (-not (Test-Path $gitPath)) {
+            Write-Host "Git for Windows not found at $gitPath"
+            Write-Host "Installing Git for Windows via Chocolatey..."
+            choco install git -y --no-progress
+            refreshenv
+          } else {
+            Write-Host "Git for Windows found at $gitPath"
+          }
+
+      - name: Add Git Unix tools to PATH (Windows)
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform == 'win32'
         shell: bash
         run: |
-          # Git for Windows includes patch, add it to PATH.
+          # Git for Windows includes patch in usr/bin.
           export PATH="/c/Program Files/Git/usr/bin:$PATH"
           echo "/c/Program Files/Git/usr/bin" >> $GITHUB_PATH
           echo "Verifying patch command:"
-          which patch || echo "patch not found in PATH"
-          patch --version || echo "patch command failed"
+          which patch
+          patch --version
 
       - name: Build smol binary (Standard platforms)
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform != 'alpine'
