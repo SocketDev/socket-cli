@@ -8,7 +8,7 @@ import { safeMkdirSync } from '@socketsecurity/lib/fs'
 
 import ENV from '../../constants/env.mts'
 import { homePath } from '../../constants/paths.mts'
-import { getBashrcDetails } from '../../utils/cli/completion.mjs'
+import { getBashrcDetails } from '../../utils/cli/completion.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)

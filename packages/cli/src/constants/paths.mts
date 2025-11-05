@@ -38,12 +38,15 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // Static Base Paths (eagerly computed)
-// In unified build, this file is bundled into dist/cli.js, so __dirname will be the dist directory.
+// In unified build, this file is bundled into dist/cli.js or build/cli.js, so __dirname will be the dist or build directory.
 // In normal build, this file stays in src/constants, so __dirname is src/constants.
 export const srcPath = path.resolve(__dirname, '..')
-// If srcPath ends with 'dist', we're in the bundled CLI, so rootPath is one level up from dist.
+// If __dirname ends with 'dist' or 'build', we're in the bundled CLI, so rootPath is srcPath (one level up from dist/build).
 // Otherwise, we're in source code where srcPath is 'src', so rootPath is one level up from src.
-export const rootPath = path.resolve(srcPath, '..')
+export const rootPath =
+  __dirname.endsWith('dist') || __dirname.endsWith('build')
+    ? srcPath
+    : path.resolve(srcPath, '..')
 export const distPath = path.join(rootPath, 'dist')
 export const configPath = path.join(rootPath, '.config')
 export const externalPath = path.join(rootPath, 'external')
