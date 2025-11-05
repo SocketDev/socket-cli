@@ -40,7 +40,7 @@ const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-internal/logger', () => ({
   logger: mockLogger,
   getDefaultLogger: () => mockLogger,
 }))
