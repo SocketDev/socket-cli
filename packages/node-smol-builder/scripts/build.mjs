@@ -1508,8 +1508,8 @@ async function main() {
     logger.log('::group::Compiling Node.js with Ninja (this will take a while...)')
 
     try {
-      // Resolve full path to ninja on Windows since we use shell: false.
-      const ninjaCommand = WIN32 ? whichBinSync('ninja') : 'ninja'
+      // Resolve full path to ninja since we use shell: false.
+      const ninjaCommand = whichBinSync('ninja')
       await exec(ninjaCommand, ['-C', 'out/Release', `-j${CPU_COUNT}`], {
         cwd: NODE_DIR,
         env: process.env,
