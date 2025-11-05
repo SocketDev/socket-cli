@@ -561,30 +561,39 @@ jobs:
           # ───────────────────────────────────────────────────────────────────
           # STEP 3-5: Capture environment before/after running vcvarsall.bat
           # ───────────────────────────────────────────────────────────────────
-          # TECHNIQUE: Run three commands in sequence, separated by form feeds (0x0C):
+          # TECHNIQUE: Run three commands in sequence, separated by cls (clear screen):
           #
           #   ┌──────────────────────────────────────────────────────────────┐
-          #   │  cmd.exe /c "set && echo \f && vcvarsall.bat && echo \f && set"
+          #   │  cmd.exe /c "set && cls && vcvarsall.bat arch && cls && set" │
           #   │                                                                │
-          #   │  Output sections (split by \f):                               │
+          #   │  Output sections (split by cls):                              │
           #   │  ┌─────────────┐     ┌──────────────┐     ┌────────────────┐│
-          #   │  │ Section [0] │ \f  │ Section [1]  │ \f  │  Section [2]   ││
+          #   │  │ Section [0] │ cls │ Section [1]  │ cls │  Section [2]   ││
           #   │  │ (env BEFORE)│     │ (vcvars msgs)│     │  (env AFTER)   ││
           #   │  └─────────────┘     └──────────────┘     └────────────────┘│
           #   └──────────────────────────────────────────────────────────────┘
           #
-          # Form feed (\f = 0x0C) is chosen because it's rare in environment variables.
+          # cls (clear screen) outputs form feed (0x0C), making it a reliable delimiter.
           #
           $arch = "${{ matrix.arch }}"
           Write-Host "Setting up MSVC environment for: $arch"
 
-          $output = & cmd.exe /c "`"set && echo `$([char]0x0C) && `"$vcvarsallPath`" $arch && echo `$([char]0x0C) && set`""
+          # Build the command string with proper quoting for paths with spaces.
+          # Must wrap the entire command in outer quotes for cmd.exe /c.
+          $cmdString = "set && cls && `"$vcvarsallPath`" $arch && cls && set"
 
-          # Split output by form feed character (0x0C = \f).
+          # Invoke cmd.exe and capture output.
+          $output = & cmd.exe /c $cmdString 2>&1
+
+          # Split output by form feed character (0x0C produced by cls).
           $sections = ($output -join "`n") -split "`f"
 
           if ($sections.Count -lt 3) {
-            Write-Error "Failed to parse vcvarsall.bat output (expected 3 sections, got $($sections.Count))"
+            Write-Host "ERROR: Failed to parse vcvarsall.bat output"
+            Write-Host "Expected 3 sections (before, messages, after), got $($sections.Count)"
+            Write-Host ""
+            Write-Host "Raw output:"
+            Write-Host $output
             exit 1
           }
 
