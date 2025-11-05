@@ -1428,8 +1428,32 @@ async function main() {
   const configureCommand = WIN32 ? 'python' : './configure'
   const configureArgs = WIN32 ? ['configure.py', ...configureFlags] : configureFlags
 
+  // DEBUG: Verify environment is being passed to subprocess.
+  if (WIN32) {
+    logger.log('')
+    logger.log('DEBUG: Checking environment before exec():')
+    const criticalVars = ['VCINSTALLDIR', 'WindowsSDKVersion', 'INCLUDE', 'LIB']
+    for (const varName of criticalVars) {
+      const value = process.env[varName]
+      if (value) {
+        logger.log(`  ${colors.green('✓')} ${varName} = ${value.substring(0, 60)}...`)
+      } else {
+        logger.log(`  ${colors.red('✗')} ${varName} is NOT SET`)
+      }
+    }
+    logger.log('')
+  }
+
   logger.log(`::group::Running ${WIN32 ? 'python configure.py' : './configure'}`)
-  await exec(configureCommand, configureArgs, { cwd: NODE_DIR, env: process.env })
+
+  // On Windows, explicitly pass environment to subprocess.
+  const execOptions = { cwd: NODE_DIR }
+  if (WIN32) {
+    execOptions.env = process.env
+    logger.log(`DEBUG: Passing env option with ${Object.keys(process.env).length} variables`)
+  }
+
+  await exec(configureCommand, configureArgs, execOptions)
   logger.log('::endgroup::')
   logger.log(`${colors.green('✓')} Configuration complete`)
   logger.log('')
