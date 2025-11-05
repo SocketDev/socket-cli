@@ -131,8 +131,16 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
     let binaryExists = false
 
     beforeAll(async () => {
+      // Log which binary we're testing.
+      logger.log('')
+      logger.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
+      logger.log(`Testing: ${binary.name}`)
+      logger.log(`Path: ${binary.path}`)
+      logger.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
+
       // Check if binary exists.
       binaryExists = existsSync(binary.path)
+      logger.log(`Binary exists: ${binaryExists}`)
 
       if (!binaryExists) {
         logger.log('')
@@ -191,6 +199,11 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         }
 
         logger.log(`Binary built successfully: ${binary.path}`)
+        logger.log('')
+      } else {
+        // Binary already exists.
+        logger.log('')
+        logger.log(`✓ Binary found and ready for testing`)
         logger.log('')
       }
 
