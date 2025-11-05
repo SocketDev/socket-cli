@@ -23,9 +23,7 @@ try {
   if (result.metafile) {
     const outputSize = Object.values(result.metafile.outputs)[0]?.bytes
     if (outputSize) {
-      logger.log(
-        `✓ Bundle size: ${(outputSize / 1024 / 1024).toFixed(2)} MB`,
-      )
+      logger.log(`✓ Bundle size: ${(outputSize / 1024 / 1024).toFixed(2)} MB`)
     }
   }
 

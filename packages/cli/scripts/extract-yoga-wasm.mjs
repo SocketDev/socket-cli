@@ -43,9 +43,7 @@ if (
 if (!existsSync(yogaWasmFile) || !existsSync(yogaJsFile)) {
   // Graceful fallback: Generate placeholder for CI builds without WASM.
   const logger = getDefaultLogger()
-  logger.warn(
-    'yoga-layout WASM not built yet, generating placeholder',
-  )
+  logger.warn('yoga-layout WASM not built yet, generating placeholder')
 
   const placeholderContent = `/**
  * Synchronous yoga-layout with embedded WASM binary (Placeholder).

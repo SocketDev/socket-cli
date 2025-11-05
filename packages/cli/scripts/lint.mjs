@@ -14,6 +14,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { printHeader } from '@socketsecurity/lib/stdio/header'
 
+const logger = getDefaultLogger()
+
 // Files that trigger a full lint when changed
 const CORE_FILES = new Set([
   'src/constants.ts',
@@ -158,7 +160,6 @@ async function runLintOnFiles(files, options = {}) {
   const { fix = false, quiet = false } = options
 
   if (!files.length) {
-    const logger = getDefaultLogger()
     logger.substep('No files to lint')
     return 0
   }
@@ -398,25 +399,15 @@ async function main() {
       logger.log('  --help         Show this help message')
       logger.log('  --fix          Automatically fix problems')
       logger.log('  --all          Lint all files')
-      logger.log(
-        '  --changed      Lint changed files (default behavior)',
-      )
+      logger.log('  --changed      Lint changed files (default behavior)')
       logger.log('  --staged       Lint staged files')
       logger.log('  --quiet, --silent  Suppress progress messages')
       logger.log('\nExamples:')
-      logger.log(
-        '  pnpm lint                   # Lint changed files (default)',
-      )
-      logger.log(
-        '  pnpm lint --fix             # Fix issues in changed files',
-      )
+      logger.log('  pnpm lint                   # Lint changed files (default)')
+      logger.log('  pnpm lint --fix             # Fix issues in changed files')
       logger.log('  pnpm lint --all             # Lint all files')
-      logger.log(
-        '  pnpm lint --staged --fix    # Fix issues in staged files',
-      )
-      logger.log(
-        '  pnpm lint src/index.ts      # Lint specific file(s)',
-      )
+      logger.log('  pnpm lint --staged --fix    # Fix issues in staged files')
+      logger.log('  pnpm lint src/index.ts      # Lint specific file(s)')
       process.exitCode = 0
       return
     }

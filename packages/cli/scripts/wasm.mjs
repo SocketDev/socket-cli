@@ -133,24 +133,14 @@ async function exec(command, args, options = {}) {
 async function buildWasm() {
   const isDev = process.argv.includes('--dev')
 
-  logger.info(
-    '╔═══════════════════════════════════════════════════╗',
-  )
+  logger.info('╔═══════════════════════════════════════════════════╗')
   if (isDev) {
-    logger.info(
-      '║   Building WASM Bundle (Dev Mode)                ║',
-    )
-    logger.info(
-      '║   3-5x faster builds with minimal optimization   ║',
-    )
+    logger.info('║   Building WASM Bundle (Dev Mode)                ║')
+    logger.info('║   3-5x faster builds with minimal optimization   ║')
   } else {
-    logger.info(
-      '║   Building WASM Bundle from Source               ║',
-    )
+    logger.info('║   Building WASM Bundle from Source               ║')
   }
-  logger.info(
-    '╚═══════════════════════════════════════════════════╝\n',
-  )
+  logger.info('╚═══════════════════════════════════════════════════╝\n')
 
   const convertScript = path.join(__dirname, 'wasm', 'convert-codet5.mjs')
   const buildScript = path.join(__dirname, 'wasm', 'build-unified-wasm.mjs')
@@ -186,20 +176,12 @@ async function buildWasm() {
   }
 
   const stats = await fs.stat(outputFile)
-  logger.info(
-    '\n╔═══════════════════════════════════════════════════╗',
-  )
-  logger.info(
-    '║   Build Complete                                  ║',
-  )
-  logger.info(
-    '╚═══════════════════════════════════════════════════╝\n',
-  )
+  logger.info('\n╔═══════════════════════════════════════════════════╗')
+  logger.info('║   Build Complete                                  ║')
+  logger.info('╚═══════════════════════════════════════════════════╝\n')
   logger.done(' WASM bundle built successfully')
   logger.info(`✓ Output: ${outputFile}`)
-  logger.info(
-    `✓ Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB\n`,
-  )
+  logger.info(`✓ Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB\n`)
 }
 
 /**
@@ -260,9 +242,7 @@ async function getLatestWasmRelease() {
 async function downloadFile(url, outputPath, expectedSize) {
   logger.progress(' Downloading from GitHub...')
   logger.substep(`URL: ${url}`)
-  logger.substep(
-    `Size: ${(expectedSize / 1024 / 1024).toFixed(2)} MB\n`,
-  )
+  logger.substep(`Size: ${(expectedSize / 1024 / 1024).toFixed(2)} MB\n`)
 
   try {
     const response = await fetch(url, {
@@ -280,9 +260,7 @@ async function downloadFile(url, outputPath, expectedSize) {
     await fs.writeFile(outputPath, Buffer.from(buffer))
 
     const stats = await fs.stat(outputPath)
-    logger.info(
-      `✓ Downloaded ${(stats.size / 1024 / 1024).toFixed(2)} MB`,
-    )
+    logger.info(`✓ Downloaded ${(stats.size / 1024 / 1024).toFixed(2)} MB`)
     logger.info(`✓ Saved to ${outputPath}\n`)
   } catch (e) {
     logger.error(' Download failed')
@@ -297,24 +275,16 @@ async function downloadFile(url, outputPath, expectedSize) {
  * Download pre-built WASM bundle from GitHub releases.
  */
 async function downloadWasm() {
-  logger.info(
-    '╔═══════════════════════════════════════════════════╗',
-  )
-  logger.info(
-    '║   Downloading Pre-built WASM Bundle               ║',
-  )
-  logger.info(
-    '╚═══════════════════════════════════════════════════╝\n',
-  )
+  logger.info('╔═══════════════════════════════════════════════════╗')
+  logger.info('║   Downloading Pre-built WASM Bundle               ║')
+  logger.info('╚═══════════════════════════════════════════════════╝\n')
 
   // Check if output file already exists.
   if (existsSync(outputFile)) {
     const stats = await fs.stat(outputFile)
     logger.warn(' WASM bundle already exists:')
     logger.substep(`${outputFile}`)
-    logger.substep(
-      `Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB\n`,
-    )
+    logger.substep(`Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB\n`)
 
     // Ask user if they want to overwrite (simple y/n).
     logger.info('Overwrite? (y/N): ')
@@ -343,15 +313,9 @@ async function downloadWasm() {
   // Download the file.
   await downloadFile(release.url, outputFile, release.asset.size)
 
-  logger.info(
-    '╔═══════════════════════════════════════════════════╗',
-  )
-  logger.info(
-    '║   Download Complete                               ║',
-  )
-  logger.info(
-    '╚═══════════════════════════════════════════════════╝\n',
-  )
+  logger.info('╔═══════════════════════════════════════════════════╗')
+  logger.info('║   Download Complete                               ║')
+  logger.info('╚═══════════════════════════════════════════════════╝\n')
   logger.done(' WASM bundle downloaded successfully')
   logger.info(`✓ Output: ${outputFile}\n`)
 }

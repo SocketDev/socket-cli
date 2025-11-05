@@ -50,9 +50,7 @@ if (
 if (!existsSync(onnxWasmFile) || !existsSync(onnxJsFile)) {
   // Graceful fallback: Generate placeholder for CI builds without WASM.
   const logger = getDefaultLogger()
-  logger.warn(
-    'ONNX Runtime WASM not built yet, generating placeholder',
-  )
+  logger.warn('ONNX Runtime WASM not built yet, generating placeholder')
 
   const placeholderContent = `/**
  * Synchronous ONNX Runtime with embedded WASM binary (Placeholder).

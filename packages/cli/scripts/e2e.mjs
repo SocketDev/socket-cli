@@ -52,24 +52,16 @@ async function checkBinaryExists(binaryType) {
     const binaryPath = BINARY_PATHS[binaryType]
     if (!existsSync(binaryPath)) {
       const logger = getDefaultLogger()
-      logger.error(
-        `${colors.red('✗')} Binary not found: ${binaryPath}`,
-      )
+      logger.error(`${colors.red('✗')} Binary not found: ${binaryPath}`)
       logger.log('')
-      logger.log(
-        'The binary must be built before running e2e tests.',
-      )
+      logger.log('The binary must be built before running e2e tests.')
       logger.log('Build commands:')
       if (binaryType === 'js') {
         logger.log('  pnpm run build')
       } else if (binaryType === 'sea') {
-        logger.log(
-          '  pnpm --filter @socketbin/node-sea-builder run build',
-        )
+        logger.log('  pnpm --filter @socketbin/node-sea-builder run build')
       } else if (binaryType === 'smol') {
-        logger.log(
-          '  pnpm --filter @socketbin/node-smol-builder run build',
-        )
+        logger.log('  pnpm --filter @socketbin/node-smol-builder run build')
       }
       logger.log('')
       return false
@@ -141,9 +133,7 @@ async function main() {
     logger.log('  node scripts/e2e.mjs --js     # Test JS binary')
     logger.log('  node scripts/e2e.mjs --sea    # Test SEA binary')
     logger.log('  node scripts/e2e.mjs --smol   # Test smol binary')
-    logger.log(
-      '  node scripts/e2e.mjs --all    # Test all binaries',
-    )
+    logger.log('  node scripts/e2e.mjs --all    # Test all binaries')
     logger.log('')
     process.exit(1)
   }

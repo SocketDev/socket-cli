@@ -5,6 +5,8 @@ import { setupSdk } from '../../utils/socket/sdk.mjs'
 
 import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 
+const logger = getDefaultLogger()
+
 export type StreamScanOptions = {
   file?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
@@ -25,7 +27,6 @@ export async function streamScan(
   }
   const sockSdk = sockSdkCResult.data
 
-  const logger = getDefaultLogger()
   logger.info('Requesting data from API...')
 
   // Note: This will write to stdout or target file. It is not a noop.

@@ -19,6 +19,7 @@ import type {
 } from '../../utils/cli/with-subcommands.mjs'
 
 const require = createRequire(import.meta.url)
+const logger = getDefaultLogger()
 
 const CMD_NAME = NPX
 
@@ -72,7 +73,6 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    const logger = getDefaultLogger()
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }

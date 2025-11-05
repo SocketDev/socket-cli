@@ -9,6 +9,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { printFooter, printHeader } from '@socketsecurity/lib/stdio/header'
 
+const logger = getDefaultLogger()
+
 /**
  * Run ESLint check via lint script.
  */
@@ -21,7 +23,6 @@ async function runEslintCheck(options = {}) {
   } = options
 
   if (!quiet) {
-    const logger = getDefaultLogger()
     logger.progress('Checking ESLint')
   }
 
@@ -152,28 +153,16 @@ async function main() {
       logger.log('  --help         Show this help message')
       logger.log('  --lint         Run ESLint check only')
       logger.log('  --types        Run TypeScript check only')
-      logger.log(
-        '  --all          Check all files (passes to lint)',
-      )
-      logger.log(
-        '  --staged       Check staged files (passes to lint)',
-      )
-      logger.log(
-        '  --changed      Check changed files (passes to lint)',
-      )
+      logger.log('  --all          Check all files (passes to lint)')
+      logger.log('  --staged       Check staged files (passes to lint)')
+      logger.log('  --changed      Check changed files (passes to lint)')
       logger.log('  --quiet, --silent  Suppress progress messages')
       logger.log('\nExamples:')
-      logger.log(
-        '  pnpm check             # Run all checks on changed files',
-      )
-      logger.log(
-        '  pnpm check --all       # Run all checks on all files',
-      )
+      logger.log('  pnpm check             # Run all checks on changed files')
+      logger.log('  pnpm check --all       # Run all checks on all files')
       logger.log('  pnpm check --lint      # Run ESLint only')
       logger.log('  pnpm check --types     # Run TypeScript only')
-      logger.log(
-        '  pnpm check --lint --staged  # Run ESLint on staged files',
-      )
+      logger.log('  pnpm check --lint --staged  # Run ESLint on staged files')
       process.exitCode = 0
       return
     }

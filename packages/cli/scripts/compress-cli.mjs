@@ -56,8 +56,6 @@ const checksumPath = path.join(distPath, 'cli.js.bz.sha256')
 writeFileSync(checksumPath, `${sha256}  cli.js.bz\n`)
 
 logger.success(`SHA256: ${sha256}`)
-logger.log(
-  `Checksum written to: ${path.relative(rootPath, checksumPath)}`,
-)
+logger.log(`Checksum written to: ${path.relative(rootPath, checksumPath)}`)
 
 logger.log('')

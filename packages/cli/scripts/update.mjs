@@ -83,9 +83,7 @@ async function main() {
         if (apply) {
           printError('Failed to update dependencies')
         } else {
-          logger.info(
-            'Updates available. Run with --apply to update',
-          )
+          logger.info('Updates available. Run with --apply to update')
         }
       }
       process.exitCode = apply ? 1 : 0

@@ -305,15 +305,11 @@ async function main() {
 
   logger.info('\n--- Summary ---')
   logger.info(`Total test files: ${testFiles.length}`)
-  logger.info(
-    `Passed: ${results.filter(r => r.issues.length === 0).length}`,
-  )
+  logger.info(`Passed: ${results.filter(r => r.issues.length === 0).length}`)
   logger.info(
     `With warnings: ${results.filter(r => r.hasWarnings && !r.hasErrors).length}`,
   )
-  logger.info(
-    `With errors: ${results.filter(r => r.hasErrors).length}`,
-  )
+  logger.info(`With errors: ${results.filter(r => r.hasErrors).length}`)
 
   if (errors.length > 0) {
     logger.fail(`\n${errors.length} error(s) found`)
