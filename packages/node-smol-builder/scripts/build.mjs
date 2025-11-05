@@ -1452,11 +1452,20 @@ async function main() {
   // propagate environment variables to subprocesses.
   const execOptions = {
     cwd: NODE_DIR,
-    env: process.env,
+    env: WIN32
+      ? {
+          ...process.env,
+          // Tell gyp to use VS 2022, bypassing auto-detection.
+          // https://github.com/nodejs/node/blob/main/BUILDING.md#windows
+          // https://github.com/nodejs/node/blob/main/tools/gyp/pylib/gyp/MSVSVersion.py
+          GYP_MSVS_VERSION: '2022',
+        }
+      : process.env,
     shell: false,
   }
   if (WIN32) {
-    logger.log(`DEBUG: Passing env with ${Object.keys(process.env).length} variables (shell: false)`)
+    logger.log(`DEBUG: Passing env with ${Object.keys(execOptions.env).length} variables (shell: false)`)
+    logger.log(`DEBUG: GYP_MSVS_VERSION = ${execOptions.env.GYP_MSVS_VERSION}`)
   }
 
   await exec(configureCommand, configureArgs, execOptions)
