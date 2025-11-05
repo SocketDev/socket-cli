@@ -20,12 +20,15 @@ import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+const logger = getDefaultLogger()
+
 /**
  * Print a header message.
  */
 function printHeader(message) {
-  const logger = getDefaultLogger()
-  logger.error('\n═══════════════════════════════════════════════════════')
+  logger.error(
+    '\n═══════════════════════════════════════════════════════',
+  )
   logger.error(`  ${message}`)
   logger.error('═══════════════════════════════════════════════════════\n')
 }

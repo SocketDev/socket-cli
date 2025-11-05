@@ -89,6 +89,11 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov', 'clover'],
+      // Prevent v8 coverage segfaults by processing in smaller chunks.
+      processingConcurrency: 1,
+      // Use less memory-intensive options.
+      reportOnFailure: true,
+      reportsDirectory: './coverage',
       exclude: [
         '**/*.config.*',
         '**/node_modules/**',
