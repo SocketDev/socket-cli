@@ -15,8 +15,11 @@ import { getDefaultApiToken } from '../../../src/utils/socket/sdk.mts'
 import { executeCliCommand } from '../../helpers/cli-execution.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
 const ROOT_DIR = path.resolve(__dirname, '../../..')
 const MONOREPO_ROOT = path.resolve(ROOT_DIR, '../..')
+
+const logger = getDefaultLogger()
 
 /**
  * Binary types and their paths.
@@ -73,7 +76,6 @@ const BINARIES = {
 async function buildBinary(
   binaryType: keyof typeof BINARIES,
 ): Promise<boolean> {
-  const logger = getDefaultLogger()
   const binary = BINARIES[binaryType]
 
   if (!binary.buildCommand) {
@@ -129,8 +131,6 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
     let binaryExists = false
 
     beforeAll(async () => {
-      const logger = getDefaultLogger()
-
       // Check if binary exists.
       binaryExists = existsSync(binary.path)
 
