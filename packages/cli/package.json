@@ -56,7 +56,7 @@
     "test:prepare": "dotenvx -q run -f .env.test -- pnpm build && del-cli 'test/**/node_modules'",
     "test:unit": "dotenvx -q run -f .env.test -- vitest run",
     "test:unit:update": "dotenvx -q run -f .env.test -- vitest run --update",
-    "test:unit:coverage": "dotenvx -q run -f .env.test -- vitest run --coverage",
+    "test:unit:coverage": "NODE_OPTIONS='--max-old-space-size=8192' dotenvx -q run -f .env.test -- vitest run --coverage",
     "test:validate": "node --import=./scripts/load.mjs scripts/validate-tests.mjs",
     "test:wrapper": "node --import=./scripts/load.mjs scripts/test-wrapper.mjs",
     "test-ci": "run-s test:*",
