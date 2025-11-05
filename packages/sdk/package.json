@@ -60,7 +60,7 @@
     "@eslint/compat": "catalog:",
     "@eslint/js": "catalog:",
     "@socketregistry/packageurl-js": "catalog:",
-    "@socketsecurity/lib": "workspace:*",
+    "@socketsecurity/lib-internal": "workspace:*",
     "@types/babel__traverse": "catalog:",
     "@types/node": "catalog:",
     "@typescript/native-preview": "catalog:",

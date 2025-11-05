@@ -50,7 +50,7 @@
     "socket-yarn": "dist/bootstrap.js"
   },
   "devDependencies": {
-    "@socketsecurity/lib": "workspace:*",
+    "@socketsecurity/lib-internal": "workspace:*",
     "esbuild": "catalog:"
   }
 }
