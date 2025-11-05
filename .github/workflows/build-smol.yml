@@ -747,7 +747,7 @@ jobs:
           Write-Host "✓ GITHUB_ENV worked - variables persisted correctly"
 
       - name: Build smol binary (Standard platforms)
-        if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform != 'alpine'
+        if: steps.check-platform.outputs.should-run == 'true' && (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform != 'alpine'
         run: pnpm --filter @socketbin/node-smol-builder run build
 
       - name: Set up Docker Buildx (Alpine)
