@@ -1428,6 +1428,30 @@ async function main() {
   const configureCommand = WIN32 ? 'python' : './configure'
   const configureArgs = WIN32 ? ['configure.py', ...configureFlags] : configureFlags
 
+  // DEBUG: Check if VS environment variables are present (Windows only).
+  if (WIN32) {
+    logger.log('')
+    logger.log('Verifying MSVC environment variables in build script:')
+    const criticalVars = ['VCINSTALLDIR', 'WindowsSDKVersion', 'INCLUDE', 'LIB']
+    let allPresent = true
+    for (const varName of criticalVars) {
+      const value = process.env[varName]
+      if (value) {
+        logger.log(`  ${colors.green('✓')} ${varName} is set`)
+      } else {
+        logger.log(`  ${colors.red('✗')} ${varName} is NOT SET`)
+        allPresent = false
+      }
+    }
+    if (!allPresent) {
+      logger.error('VS environment variables are missing!')
+      logger.log('configure.py will fail with "Could not locate Visual Studio installation"')
+      logger.log('This means GITHUB_ENV did not properly pass variables to this process.')
+      throw new Error('Missing VS environment variables')
+    }
+    logger.log('')
+  }
+
   logger.log(`::group::Running ${WIN32 ? 'python configure.py' : './configure'}`)
   await exec(configureCommand, configureArgs, { cwd: NODE_DIR })
   logger.log('::endgroup::')
