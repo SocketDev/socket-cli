@@ -24,6 +24,7 @@ import { spawn } from '@socketsecurity/lib/spawn'
 
 import seaConfig from './esbuild.bootstrap.config.mjs'
 
+const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageRoot = path.resolve(__dirname, '..')
 const monorepoRoot = path.resolve(packageRoot, '../..')
@@ -39,7 +40,6 @@ async function ensureBootstrapPackageBuilt() {
     'packages/bootstrap/dist/bootstrap-npm.js'
   )
 
-  const logger = getDefaultLogger()
   logger.group('Checking bootstrap package')
 
   // Check if bootstrap source and dist exist.

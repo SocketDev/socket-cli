@@ -14,56 +14,42 @@
 # never gets added to the protocol config object by init_defaults().
 #
 # Solution:
-# 1. Modify Protocol.__init__() to accept config_file parameter
-# 2. Compute protocol path from config file location when missing
-# 3. Add the path to config.protocol so main() can use it
+# 1. Compute protocol path in main() before creating Protocol object
+# 2. Add path to config.protocol namedtuple using _replace()
+# 3. Pass updated config to Protocol.__init__()
+# 4. Use protocol.config.protocol.path in main() for inputs
 #
 # Original error:
 # AttributeError: 'X' object has no attribute 'path'
-# At: code_generator.py:365 in Protocol.__init__
+# At: code_generator.py:365 in Protocol.__init__() and line 635 in main()
 #
 # References:
 # - Node.js v24 gyp build system Windows argument passing
 # - tools/v8_gypfiles/v8.gyp protocol_generated_sources action
 
+diff --git a/deps/v8/third_party/inspector_protocol/code_generator.py b/deps/v8/third_party/inspector_protocol/code_generator.py
+index b1bedb58..c702516a 100755
 --- a/deps/v8/third_party/inspector_protocol/code_generator.py
 +++ b/deps/v8/third_party/inspector_protocol/code_generator.py
-@@ -357,12 +357,27 @@
- 
- class Protocol(object):
- 
--  def __init__(self, config):
-+  def __init__(self, config, config_file=None):
-     self.config = config
-     self.json_api = {"domains": []}
-     self.imported_domains = []
-     self.exported_domains = []
--    self.generate_domains = self.read_protocol_file(config.protocol.path)
-+    # Windows gyp-win-tool may fail to pass --config_value correctly.
-+    # Fall back to computing the path from the config file location.
-+    if hasattr(config.protocol, 'path'):
-+      protocol_path = config.protocol.path
-+    else:
-+      # Compute path from config file: deps/v8/src/inspector -> deps/v8/include
-+      if config_file:
-+        config_dir = os.path.dirname(config_file)
-+        protocol_path = os.path.normpath(os.path.join(config_dir, '../../include/js_protocol.pdl'))
-+      else:
-+        raise Exception("config.protocol.path not set and config_file not provided")
-+      # Add path to config so main() can use it later.
-+      protocol_obj = config.protocol._replace(path=protocol_path)
-+      config = config._replace(protocol=protocol_obj)
-+      self.config = config
-+    self.generate_domains = self.read_protocol_file(protocol_path)
- 
-     if config.protocol.options:
-       self.generate_domains = [rule.domain for rule in config.protocol.options]
-@@ -604,7 +619,7 @@
+@@ -604,8 +604,20 @@ class Protocol(object):
  def main():
    jinja_dir, config_file, config = read_config()
- 
+
 -  protocol = Protocol(config)
-+  protocol = Protocol(config, config_file)
- 
++  # Windows gyp-win-tool may fail to pass --config_value correctly.
++  # Fall back to computing the path from the config file location.
++  if not hasattr(config.protocol, 'path'):
++    # Compute path from config file: deps/v8/src/inspector -> deps/v8/include
++    if config_file:
++      config_dir = os.path.dirname(config_file)
++      protocol_path = os.path.normpath(os.path.join(config_dir, '../../include/js_protocol.pdl'))
++      # Add path to config.protocol so Protocol.__init__() and later code can use it
++      protocol_obj = config.protocol._replace(path=protocol_path) if hasattr(config.protocol, '_replace') else config.protocol
++      config = config._replace(protocol=protocol_obj) if hasattr(config, '_replace') else config
++    else:
++      raise Exception("config.protocol.path not set and config_file not provided")
+
++  protocol = Protocol(config)
++
    if not config.exported and len(protocol.exported_domains):
      sys.stderr.write(("Domains [%s] are exported, but config is missing export "
