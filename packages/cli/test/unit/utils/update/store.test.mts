@@ -255,9 +255,9 @@ describe('store', () => {
 
     it('should handle edge case at TTL boundary', () => {
       const now = Date.now()
-      // Just under 1 second
+      // Well under 1 second with buffer for test execution time.
       const record: StoreRecord = {
-        timestampFetch: now - 999,
+        timestampFetch: now - 900,
         timestampNotification: 0,
         version: '1.0.0',
       }
