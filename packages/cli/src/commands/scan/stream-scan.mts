@@ -25,7 +25,8 @@ export async function streamScan(
   }
   const sockSdk = sockSdkCResult.data
 
-  getDefaultLogger().info('Requesting data from API...')
+  const logger = getDefaultLogger()
+  logger.info('Requesting data from API...')
 
   // Note: This will write to stdout or target file. It is not a noop.
   return await handleApiCall<'getOrgFullScan'>(

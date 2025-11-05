@@ -22,8 +22,9 @@ const distPath = path.join(rootPath, 'dist')
 const cliPath = path.join(buildPath, 'cli.js')
 const cliBzPath = path.join(distPath, 'cli.js.bz')
 
-getDefaultLogger().log('')
-getDefaultLogger().step('Compressing CLI with brotli...')
+const logger = getDefaultLogger()
+logger.log('')
+logger.step('Compressing CLI with brotli...')
 
 // Ensure dist/ directory exists.
 mkdirSync(distPath, { recursive: true })
@@ -44,8 +45,8 @@ const compressedSize = compressed.length
 writeFileSync(cliBzPath, compressed)
 
 const compressionRatio = ((1 - compressedSize / originalSize) * 100).toFixed(1)
-getDefaultLogger().success(
+logger.success(
   `Compressed: ${(originalSize / 1024 / 1024).toFixed(2)} MB → ${(compressedSize / 1024 / 1024).toFixed(2)} MB (${compressionRatio}% reduction)`,
 )
 
-getDefaultLogger().log('')
+logger.log('')

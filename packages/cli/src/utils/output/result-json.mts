@@ -30,7 +30,8 @@ export function serializeResultJson(data: CResult<unknown>): string {
     const message =
       'There was a problem converting the data set to JSON. Please try again without --json'
 
-    getDefaultLogger().fail(message)
+    const logger = getDefaultLogger()
+    logger.fail(message)
     debugNs('error', 'JSON serialization failed')
     debugDirNs('error', e)
 

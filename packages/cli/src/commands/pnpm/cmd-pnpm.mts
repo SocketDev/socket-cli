@@ -20,6 +20,7 @@ import type {
 } from '../../utils/cli/with-subcommands.mjs'
 
 const require = createRequire(import.meta.url)
+const logger = getDefaultLogger()
 
 export const CMD_NAME = PNPM
 
@@ -76,7 +77,7 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

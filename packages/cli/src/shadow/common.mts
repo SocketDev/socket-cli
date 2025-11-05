@@ -180,7 +180,8 @@ export async function scanPackagesAndLogAlerts(
           : `\nAccept risks - Rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.`
       }`.trim()
 
-      getDefaultLogger().error(errorMessage)
+      const logger = getDefaultLogger()
+      logger.error(errorMessage)
       return { alertsMap, shouldExit: true }
     }
   } catch (e) {

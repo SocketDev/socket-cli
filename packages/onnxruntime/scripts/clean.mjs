@@ -14,16 +14,17 @@ const ROOT_DIR = path.join(__dirname, '..')
 const BUILD_DIR = path.join(ROOT_DIR, 'build')
 
 async function clean() {
-  getDefaultLogger().info('Cleaning onnxruntime build artifacts...')
+  const logger = getDefaultLogger()
+  logger.info('Cleaning onnxruntime build artifacts...')
 
   await safeDelete(BUILD_DIR)
-  getDefaultLogger().success('Build directory cleaned')
+  logger.success('Build directory cleaned')
 
   await cleanCheckpoint('onnxruntime')
-  getDefaultLogger().success('Checkpoints cleaned')
+  logger.success('Checkpoints cleaned')
 }
 
 clean().catch(e => {
-  getDefaultLogger().error(e.message)
+  logger.error(e.message)
   process.exit(1)
 })

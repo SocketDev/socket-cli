@@ -21,23 +21,24 @@ const packageDir = path.join(__dirname, '..')
  * Main entry point.
  */
 async function main() {
-  getDefaultLogger().log('🧹 Cleaning MiniLM Builder')
-  getDefaultLogger().log('='.repeat(50))
+  const logger = getDefaultLogger()
+  logger.log('🧹 Cleaning MiniLM Builder')
+  logger.log('='.repeat(50))
 
   const buildDir = path.join(packageDir, 'build')
 
   if (existsSync(buildDir)) {
-    getDefaultLogger().log(`\nRemoving: ${buildDir}`)
+    logger.log(`\nRemoving: ${buildDir}`)
     await fs.rm(buildDir, { recursive: true, force: true })
-    getDefaultLogger().log('✓ Build directory removed')
+    logger.log('✓ Build directory removed')
   } else {
-    getDefaultLogger().log('\n✓ Nothing to clean')
+    logger.log('\n✓ Nothing to clean')
   }
 
-  getDefaultLogger().log(`\n${colors.green('✓')} Clean complete!`)
+  logger.log(`\n${colors.green('✓')} Clean complete!`)
 }
 
 main().catch(error => {
-  getDefaultLogger().error('\n✗ Clean failed:', error.message)
+  logger.error('\n✗ Clean failed:', error.message)
   process.exit(1)
 })

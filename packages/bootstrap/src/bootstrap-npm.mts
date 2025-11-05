@@ -24,6 +24,7 @@ main()
     process.exit(exitCode)
   })
   .catch((e) => {
-    getDefaultLogger().error(`Bootstrap error: ${e instanceof Error ? e.message : String(e)}`)
+    const logger = getDefaultLogger()
+    logger.error(`Bootstrap error: ${e instanceof Error ? e.message : String(e)}`)
     process.exit(1)
   })

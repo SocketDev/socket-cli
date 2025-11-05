@@ -86,86 +86,87 @@ async function main() {
     'build/sea/cli-modified.js',
   )
 
-  getDefaultLogger().log('SEA Transformation Verification')
-  getDefaultLogger().log('================================\n')
-  getDefaultLogger().log(`Analyzing: ${modifiedCliPath}\n`)
+  const logger = getDefaultLogger()
+  logger.log('SEA Transformation Verification')
+  logger.log('================================\n')
+  logger.log(`Analyzing: ${modifiedCliPath}\n`)
 
   let code
   try {
     code = readFileSync(modifiedCliPath, 'utf8')
   } catch (error) {
-    getDefaultLogger().error(`${colors.red('✗')} Could not read modified CLI file`)
-    getDefaultLogger().error(`   Path: ${modifiedCliPath}`)
-    getDefaultLogger().error(`   Error: ${error.message}`)
+    logger.error(`${colors.red('✗')} Could not read modified CLI file`)
+    logger.error(`   Path: ${modifiedCliPath}`)
+    logger.error(`   Error: ${error.message}`)
     process.exit(1)
   }
 
   // Check 1: Polyfill presence.
-  getDefaultLogger().log('Check 1: Polyfill Presence')
-  getDefaultLogger().log('--------------------------')
+  logger.log('Check 1: Polyfill Presence')
+  logger.log('--------------------------')
   const polyfillCheck = verifyPolyfill(code)
   if (polyfillCheck.present) {
-    getDefaultLogger().log(`${colors.green('✓')} Polyfill found (${polyfillCheck.position})`)
+    logger.log(`${colors.green('✓')} Polyfill found (${polyfillCheck.position})`)
   } else {
-    getDefaultLogger().log(`${colors.red('✗')} Polyfill NOT found`)
+    logger.log(`${colors.red('✗')} Polyfill NOT found`)
   }
-  getDefaultLogger().log('')
+  logger.log('')
 
   // Check 2: Unsafe patterns.
-  getDefaultLogger().log('Check 2: Unsafe require.resolve.paths Patterns')
-  getDefaultLogger().log('-----------------------------------------------')
+  logger.log('Check 2: Unsafe require.resolve.paths Patterns')
+  logger.log('-----------------------------------------------')
   const issues = findUnsafeResolvePathsAccess(code)
 
   if (issues.length === 0) {
-    getDefaultLogger().log(`${colors.green('✓')} No unsafe patterns found`)
-    getDefaultLogger().log('   All require.resolve.paths accesses have defensive checks')
+    logger.log(`${colors.green('✓')} No unsafe patterns found`)
+    logger.log('   All require.resolve.paths accesses have defensive checks')
   } else {
-    getDefaultLogger().log(`${colors.red('✗')} Found ${issues.length} unsafe pattern(s):\n`)
+    logger.log(`${colors.red('✗')} Found ${issues.length} unsafe pattern(s):\n`)
     for (const issue of issues) {
-      getDefaultLogger().log(`   Line ${issue.line}: ${issue.type}`)
-      getDefaultLogger().log(`   Code: ${issue.code}`)
-      getDefaultLogger().log(`   Reason: ${issue.reason}`)
-      getDefaultLogger().log('')
+      logger.log(`   Line ${issue.line}: ${issue.type}`)
+      logger.log(`   Code: ${issue.code}`)
+      logger.log(`   Reason: ${issue.reason}`)
+      logger.log('')
     }
   }
-  getDefaultLogger().log('')
+  logger.log('')
 
   // Check 3: Sentinel obscuration.
-  getDefaultLogger().log('Check 3: Sentinel Obscuration')
-  getDefaultLogger().log('------------------------------')
+  logger.log('Check 3: Sentinel Obscuration')
+  logger.log('------------------------------')
   const directSentinel = code.includes('NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2')
   const obscuredSentinel = code.includes('NODE_SEA" + "_FUSE_fce680ab2cc467b6e072b8b5df1996b2')
 
   if (!directSentinel && obscuredSentinel) {
-    getDefaultLogger().log(`${colors.green('✓')} Sentinel properly obscured`)
-    getDefaultLogger().log('   Direct sentinel: NOT FOUND (good)')
-    getDefaultLogger().log('   Obscured sentinel: FOUND (good)')
+    logger.log(`${colors.green('✓')} Sentinel properly obscured`)
+    logger.log('   Direct sentinel: NOT FOUND (good)')
+    logger.log('   Obscured sentinel: FOUND (good)')
   } else if (directSentinel) {
-    getDefaultLogger().log(`${colors.yellow('⚠')} Direct sentinel still present`)
-    getDefaultLogger().log('   This may cause postject issues')
+    logger.log(`${colors.yellow('⚠')} Direct sentinel still present`)
+    logger.log('   This may cause postject issues')
   } else {
-    getDefaultLogger().log(`${colors.blue('ℹ')} Sentinel status unclear`)
+    logger.log(`${colors.blue('ℹ')} Sentinel status unclear`)
   }
-  getDefaultLogger().log('')
+  logger.log('')
 
   // Summary.
-  getDefaultLogger().log('Summary')
-  getDefaultLogger().log('-------')
+  logger.log('Summary')
+  logger.log('-------')
   const allChecksPass =
     polyfillCheck.present && issues.length === 0 && !directSentinel
 
   if (allChecksPass) {
-    getDefaultLogger().log(`${colors.green('✓')} All SEA compatibility checks passed!`)
-    getDefaultLogger().log('   The binary is ready for testing')
+    logger.log(`${colors.green('✓')} All SEA compatibility checks passed!`)
+    logger.log('   The binary is ready for testing')
     process.exit(0)
   } else {
-    getDefaultLogger().log(`${colors.red('✗')} Some checks failed`)
-    getDefaultLogger().log('   Review the issues above before deploying')
+    logger.log(`${colors.red('✗')} Some checks failed`)
+    logger.log('   Review the issues above before deploying')
     process.exit(1)
   }
 }
 
 main().catch((error) => {
-  getDefaultLogger().error('Verification failed:', error)
+  logger.error('Verification failed:', error)
   process.exit(1)
 })

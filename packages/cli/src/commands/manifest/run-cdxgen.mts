@@ -145,7 +145,8 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     if (outputPath) {
       const fullOutputPath = path.join(process.cwd(), outputPath)
       if (existsSync(fullOutputPath)) {
-        getDefaultLogger().log(colors.cyanBright(`${outputPath} created!`))
+        const logger = getDefaultLogger()
+        logger.log(colors.cyanBright(`${outputPath} created!`))
       }
     }
   })

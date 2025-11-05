@@ -11,6 +11,8 @@ import {
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import { handleCreateNewScan } from '../scan/handle-create-new-scan.mts'
 
+const logger = getDefaultLogger()
+
 export async function handleCi(autoManifest: boolean): Promise<void> {
   debug('Starting CI scan')
   debugDir({ autoManifest })
@@ -21,7 +23,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
     debugDir({ orgSlugCResult })
     process.exitCode = orgSlugCResult.code ?? 1
     // Always assume json mode.
-    getDefaultLogger().log(serializeResultJson(orgSlugCResult))
+    logger.log(serializeResultJson(orgSlugCResult))
     return
   }
 

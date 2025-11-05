@@ -17,6 +17,8 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 
+const logger = getDefaultLogger()
+
 const config: CliCommandConfig = {
   commandName: 'list',
   description: 'Show all local CLI config items and their values',
@@ -77,7 +79,7 @@ async function run(
   }
 
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

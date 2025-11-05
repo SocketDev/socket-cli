@@ -153,7 +153,8 @@ export default async function shadowPnpmBin(
                     : `\nAccept risks - Rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.`
                 }`.trim()
 
-                getDefaultLogger().error(errorMessage)
+                const logger = getDefaultLogger()
+                logger.error(errorMessage)
                 // eslint-disable-next-line n/no-process-exit
                 process.exit(1)
                 // This line is never reached in production, but helps tests.

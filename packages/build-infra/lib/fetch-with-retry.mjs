@@ -36,7 +36,8 @@ export async function fetchWithRetry(url, options = {}, retryOptions = {}) {
       // Success!
       if (response.ok) {
         if (attempt > 1 && !silent) {
-          getDefaultLogger().log(`✓ Request succeeded on attempt ${attempt}`)
+          const logger = getDefaultLogger()
+          logger.log(`✓ Request succeeded on attempt ${attempt}`)
         }
         return response
       }
@@ -63,10 +64,10 @@ export async function fetchWithRetry(url, options = {}, retryOptions = {}) {
       if (attempt < retries) {
         const delay = Math.min(initialDelay * 2 ** (attempt - 1), maxDelay)
         if (!silent) {
-          getDefaultLogger().warn(
+          logger.warn(
             `✗ Attempt ${attempt}/${retries} failed: ${response.status} ${response.statusText}`,
           )
-          getDefaultLogger().log(`  Retrying in ${delay}ms...`)
+          logger.log(`  Retrying in ${delay}ms...`)
         }
         await sleep(delay)
       }
@@ -79,8 +80,8 @@ export async function fetchWithRetry(url, options = {}, retryOptions = {}) {
         if (attempt < retries) {
           const delay = Math.min(initialDelay * 2 ** (attempt - 1), maxDelay)
           if (!silent) {
-            getDefaultLogger().warn(`✗ Attempt ${attempt}/${retries} failed: ${error.message}`)
-            getDefaultLogger().log(`  Retrying in ${delay}ms...`)
+            logger.warn(`✗ Attempt ${attempt}/${retries} failed: ${error.message}`)
+            logger.log(`  Retrying in ${delay}ms...`)
           }
           await sleep(delay)
           continue

@@ -569,8 +569,9 @@ async function main() {
   const totalStart = Date.now()
 
   printHeader('🤖 Building minilm models')
-  getDefaultLogger().info('MiniLM model conversion and optimization')
-  getDefaultLogger().info('')
+  const logger = getDefaultLogger()
+  logger.info('MiniLM model conversion and optimization')
+  logger.info('')
 
   // Pre-flight checks.
   printHeader('Pre-flight Checks')
@@ -604,20 +605,20 @@ async function main() {
   const totalDuration = formatDuration(Date.now() - totalStart)
 
   printHeader('🎉 Build Complete!')
-  getDefaultLogger().success(`Total time: ${totalDuration}`)
-  getDefaultLogger().success(`Output: ${MODELS_DIR}`)
-  getDefaultLogger().info('')
-  getDefaultLogger().info('Models ready for use:')
+  logger.success(`Total time: ${totalDuration}`)
+  logger.success(`Output: ${MODELS_DIR}`)
+  logger.info('')
+  logger.info('Models ready for use:')
   for (const model of MODELS) {
-    getDefaultLogger().info(`  - ${model.outputName}.onnx`)
-    getDefaultLogger().info(`  - ${model.outputName}-tokenizer/`)
+    logger.info(`  - ${model.outputName}.onnx`)
+    logger.info(`  - ${model.outputName}-tokenizer/`)
   }
-  getDefaultLogger().info('')
+  logger.info('')
 }
 
 // Run build.
 main().catch((e) => {
   printError('Build Failed')
-  getDefaultLogger().error(e.message)
+  logger.error(e.message)
   throw e
 })

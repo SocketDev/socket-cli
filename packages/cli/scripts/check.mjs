@@ -21,7 +21,8 @@ async function runEslintCheck(options = {}) {
   } = options
 
   if (!quiet) {
-    getDefaultLogger().progress('Checking ESLint')
+    const logger = getDefaultLogger()
+    logger.progress('Checking ESLint')
   }
 
   const args = ['run', 'lint']
@@ -42,21 +43,21 @@ async function runEslintCheck(options = {}) {
 
   if (result.code !== 0) {
     if (!quiet) {
-      getDefaultLogger().error('ESLint check failed')
+      logger.error('ESLint check failed')
     }
     if (result.stdout) {
-      getDefaultLogger().log(result.stdout)
+      logger.log(result.stdout)
     }
     if (result.stderr) {
-      getDefaultLogger().error(result.stderr)
+      logger.error(result.stderr)
     }
     return result.code
   }
 
   if (!quiet) {
-    getDefaultLogger().clearLine().done('ESLint check passed')
+    logger.clearLine().done('ESLint check passed')
     // Add newline after message (use error to write to same stream)
-    getDefaultLogger().error('')
+    logger.error('')
   }
 
   return 0
@@ -69,7 +70,7 @@ async function runTypeCheck(options = {}) {
   const { quiet = false } = options
 
   if (!quiet) {
-    getDefaultLogger().progress('Checking TypeScript')
+    logger.progress('Checking TypeScript')
   }
 
   const result = await spawn('pnpm', ['run', 'type'], {
@@ -81,21 +82,21 @@ async function runTypeCheck(options = {}) {
 
   if (result.code !== 0) {
     if (!quiet) {
-      getDefaultLogger().error('TypeScript check failed')
+      logger.error('TypeScript check failed')
     }
     if (result.stdout) {
-      getDefaultLogger().log(result.stdout)
+      logger.log(result.stdout)
     }
     if (result.stderr) {
-      getDefaultLogger().error(result.stderr)
+      logger.error(result.stderr)
     }
     return result.code
   }
 
   if (!quiet) {
-    getDefaultLogger().clearLine().done('TypeScript check passed')
+    logger.clearLine().done('TypeScript check passed')
     // Add newline after message (use error to write to same stream)
-    getDefaultLogger().error('')
+    logger.error('')
   }
 
   return 0
@@ -145,32 +146,32 @@ async function main() {
 
     // Show help if requested
     if (values.help) {
-      getDefaultLogger().log('Check Runner')
-      getDefaultLogger().log('\nUsage: pnpm check [options]')
-      getDefaultLogger().log('\nOptions:')
-      getDefaultLogger().log('  --help         Show this help message')
-      getDefaultLogger().log('  --lint         Run ESLint check only')
-      getDefaultLogger().log('  --types        Run TypeScript check only')
-      getDefaultLogger().log(
+      logger.log('Check Runner')
+      logger.log('\nUsage: pnpm check [options]')
+      logger.log('\nOptions:')
+      logger.log('  --help         Show this help message')
+      logger.log('  --lint         Run ESLint check only')
+      logger.log('  --types        Run TypeScript check only')
+      logger.log(
         '  --all          Check all files (passes to lint)',
       )
-      getDefaultLogger().log(
+      logger.log(
         '  --staged       Check staged files (passes to lint)',
       )
-      getDefaultLogger().log(
+      logger.log(
         '  --changed      Check changed files (passes to lint)',
       )
-      getDefaultLogger().log('  --quiet, --silent  Suppress progress messages')
-      getDefaultLogger().log('\nExamples:')
-      getDefaultLogger().log(
+      logger.log('  --quiet, --silent  Suppress progress messages')
+      logger.log('\nExamples:')
+      logger.log(
         '  pnpm check             # Run all checks on changed files',
       )
-      getDefaultLogger().log(
+      logger.log(
         '  pnpm check --all       # Run all checks on all files',
       )
-      getDefaultLogger().log('  pnpm check --lint      # Run ESLint only')
-      getDefaultLogger().log('  pnpm check --types     # Run TypeScript only')
-      getDefaultLogger().log(
+      logger.log('  pnpm check --lint      # Run ESLint only')
+      logger.log('  pnpm check --types     # Run TypeScript only')
+      logger.log(
         '  pnpm check --lint --staged  # Run ESLint on staged files',
       )
       process.exitCode = 0
@@ -182,7 +183,7 @@ async function main() {
 
     if (!quiet) {
       printHeader('Check Runner')
-      getDefaultLogger().step('Running code quality checks')
+      logger.step('Running code quality checks')
     }
 
     let exitCode = 0
@@ -197,7 +198,7 @@ async function main() {
       })
       if (exitCode !== 0) {
         if (!quiet) {
-          getDefaultLogger().error('Checks failed')
+          logger.error('Checks failed')
         }
         process.exitCode = exitCode
         return
@@ -209,7 +210,7 @@ async function main() {
       exitCode = await runTypeCheck({ quiet })
       if (exitCode !== 0) {
         if (!quiet) {
-          getDefaultLogger().error('Checks failed')
+          logger.error('Checks failed')
         }
         process.exitCode = exitCode
         return
@@ -217,16 +218,16 @@ async function main() {
     }
 
     if (!quiet) {
-      getDefaultLogger().success('All checks passed')
+      logger.success('All checks passed')
       printFooter()
     }
   } catch (error) {
-    getDefaultLogger().error(`Check runner failed: ${error.message}`)
+    logger.error(`Check runner failed: ${error.message}`)
     process.exitCode = 1
   }
 }
 
 main().catch(e => {
-  getDefaultLogger().error(e)
+  logger.error(e)
   process.exitCode = 1
 })

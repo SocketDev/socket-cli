@@ -26,60 +26,61 @@ async function fileExists(filePath) {
  * Main validation function.
  */
 async function validate() {
-  getDefaultLogger().log('')
-  getDefaultLogger().log('='.repeat(60))
-  getDefaultLogger().log(`${colors.blue('Socket Package Validation')}`)
-  getDefaultLogger().log('='.repeat(60))
-  getDefaultLogger().log('')
+  const logger = getDefaultLogger()
+  logger.log('')
+  logger.log('='.repeat(60))
+  logger.log(`${colors.blue('Socket Package Validation')}`)
+  logger.log('='.repeat(60))
+  logger.log('')
 
   const errors = []
 
   // Check package.json exists.
-  getDefaultLogger().info('Checking package.json...')
+  logger.info('Checking package.json...')
   const pkgPath = path.join(packageRoot, 'package.json')
   if (!(await fileExists(pkgPath))) {
     errors.push('package.json does not exist')
   } else {
-    getDefaultLogger().success('package.json exists')
+    logger.success('package.json exists')
   }
 
   // Check dist/bootstrap.js exists.
-  getDefaultLogger().info('Checking dist/bootstrap.js...')
+  logger.info('Checking dist/bootstrap.js...')
   const bootstrapPath = path.join(packageRoot, 'dist', 'bootstrap.js')
   if (!(await fileExists(bootstrapPath))) {
     errors.push('dist/bootstrap.js does not exist')
   } else {
-    getDefaultLogger().success('dist/bootstrap.js exists')
+    logger.success('dist/bootstrap.js exists')
   }
 
   // Print summary.
-  getDefaultLogger().log('')
-  getDefaultLogger().log('='.repeat(60))
-  getDefaultLogger().log(`${colors.blue('Validation Summary')}`)
-  getDefaultLogger().log('='.repeat(60))
-  getDefaultLogger().log('')
+  logger.log('')
+  logger.log('='.repeat(60))
+  logger.log(`${colors.blue('Validation Summary')}`)
+  logger.log('='.repeat(60))
+  logger.log('')
 
   if (errors.length > 0) {
-    getDefaultLogger().log(`${colors.red('Errors:')}`)
-    getDefaultLogger().log('')
+    logger.log(`${colors.red('Errors:')}`)
+    logger.log('')
     for (const err of errors) {
-      getDefaultLogger().fail(err)
+      logger.fail(err)
     }
-    getDefaultLogger().log('')
-    getDefaultLogger().fail('Package validation FAILED')
-    getDefaultLogger().log('')
+    logger.log('')
+    logger.fail('Package validation FAILED')
+    logger.log('')
     process.exit(1)
   }
 
-  getDefaultLogger().success('Package validation PASSED')
-  getDefaultLogger().log('')
+  logger.success('Package validation PASSED')
+  logger.log('')
   process.exit(0)
 }
 
 // Run validation.
 validate().catch(e => {
-  getDefaultLogger().error('')
-  getDefaultLogger().fail(`Unexpected error: ${e.message}`)
-  getDefaultLogger().error('')
+  logger.error('')
+  logger.fail(`Unexpected error: ${e.message}`)
+  logger.error('')
   process.exit(1)
 })

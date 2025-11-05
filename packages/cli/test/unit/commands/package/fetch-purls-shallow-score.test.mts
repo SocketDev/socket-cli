@@ -39,8 +39,12 @@ import {
 // Mock the dependencies.
 const mockHandleApiCall = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
-const mockGetDefaultLogger = vi.hoisted(() => vi.fn())
-const _mockInfo = vi.hoisted(() => vi.fn())
+const mockInfo = vi.hoisted(() => vi.fn())
+const mockGetDefaultLogger = vi.hoisted(() =>
+  vi.fn(() => ({
+    info: mockInfo,
+  })),
+)
 
 vi.mock('../../../../src/utils/socket/api.mts', () => ({
   handleApiCall: mockHandleApiCall,

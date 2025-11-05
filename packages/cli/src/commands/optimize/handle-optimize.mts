@@ -77,7 +77,7 @@ export async function handleOptimize({
     return
   }
 
-  getDefaultLogger().info(
+  logger.info(
     `Optimizing packages for ${agent} v${agentVersion}.\n`,
   )
 

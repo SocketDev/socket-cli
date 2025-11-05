@@ -54,30 +54,31 @@ async function checkBinaryExists(binaryType) {
   if (binaryType === 'js' || binaryType === 'sea' || binaryType === 'smol') {
     const binaryPath = BINARY_PATHS[binaryType]
     if (!existsSync(binaryPath)) {
-      getDefaultLogger().error(
+      const logger = getDefaultLogger()
+      logger.error(
         `${colors.red('✗')} Binary not found: ${binaryPath}`,
       )
-      getDefaultLogger().log('')
-      getDefaultLogger().log(
+      logger.log('')
+      logger.log(
         'The binary must be built before running e2e tests.',
       )
-      getDefaultLogger().log('Build commands:')
+      logger.log('Build commands:')
       if (binaryType === 'js') {
-        getDefaultLogger().log('  pnpm run build')
+        logger.log('  pnpm run build')
       } else if (binaryType === 'sea') {
-        getDefaultLogger().log(
+        logger.log(
           '  pnpm --filter @socketbin/node-sea-builder run build',
         )
       } else if (binaryType === 'smol') {
-        getDefaultLogger().log(
+        logger.log(
           '  pnpm --filter @socketbin/node-smol-builder run build',
         )
       }
-      getDefaultLogger().log('')
+      logger.log('')
       return false
     }
-    getDefaultLogger().log(`${colors.green('✓')} Binary found: ${binaryPath}`)
-    getDefaultLogger().log('')
+    logger.log(`${colors.green('✓')} Binary found: ${binaryPath}`)
+    logger.log('')
   }
 
   // For 'all', we'll skip missing binaries (handled by test suite).
@@ -86,10 +87,10 @@ async function checkBinaryExists(binaryType) {
 
 async function runVitest(binaryType) {
   const envVars = BINARY_FLAGS[binaryType]
-  getDefaultLogger().log(
+  logger.log(
     `${colors.blue('ℹ')} Running distribution integration tests for ${binaryType}...`,
   )
-  getDefaultLogger().log('')
+  logger.log('')
 
   // Check if binary exists when explicitly requested.
   const binaryExists = await checkBinaryExists(binaryType)
@@ -138,22 +139,22 @@ async function main() {
   const flag = args.find(arg => arg.startsWith('--'))?.slice(2)
 
   if (!flag || !BINARY_FLAGS[flag]) {
-    getDefaultLogger().error('Invalid or missing flag')
-    getDefaultLogger().log('')
-    getDefaultLogger().log('Usage:')
-    getDefaultLogger().log(
+    logger.error('Invalid or missing flag')
+    logger.log('')
+    logger.log('Usage:')
+    logger.log(
       '  node scripts/integration.mjs --js     # Test JS distribution',
     )
-    getDefaultLogger().log(
+    logger.log(
       '  node scripts/integration.mjs --sea    # Test SEA binary',
     )
-    getDefaultLogger().log(
+    logger.log(
       '  node scripts/integration.mjs --smol   # Test smol binary',
     )
-    getDefaultLogger().log(
+    logger.log(
       '  node scripts/integration.mjs --all    # Test all distributions',
     )
-    getDefaultLogger().log('')
+    logger.log('')
     process.exit(1)
   }
 
@@ -161,6 +162,6 @@ async function main() {
 }
 
 main().catch(e => {
-  getDefaultLogger().error('Integration test runner failed:', e)
+  logger.error('Integration test runner failed:', e)
   process.exit(1)
 })

@@ -42,8 +42,9 @@ export async function runPreflightChecks(options = {}) {
   const failures = []
 
   if (!quiet) {
-    getDefaultLogger().step('Running preflight checks')
-    getDefaultLogger().log('')
+    const logger = getDefaultLogger()
+    logger.step('Running preflight checks')
+    logger.log('')
   }
 
   // Check disk space.
@@ -96,10 +97,10 @@ export async function runPreflightChecks(options = {}) {
   if (!quiet) {
     if (!failures.length) {
       printSuccess('All preflight checks passed')
-      getDefaultLogger().log('')
+      logger.log('')
     } else {
       printError(`${failures.length} preflight check(s) failed`)
-      getDefaultLogger().log('')
+      logger.log('')
     }
   }
 
@@ -120,9 +121,9 @@ export async function runPreflightChecksOrExit(options = {}) {
 
   if (!result.passed) {
     if (!options.quiet) {
-      getDefaultLogger().error('Preflight checks failed')
+      logger.error('Preflight checks failed')
       for (const failure of result.failures) {
-        getDefaultLogger().error(`  - ${failure}`)
+        logger.error(`  - ${failure}`)
       }
     }
     process.exit(1)
