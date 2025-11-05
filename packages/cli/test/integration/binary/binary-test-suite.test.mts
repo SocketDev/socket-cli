@@ -25,10 +25,12 @@ const BINARIES = {
   __proto__: null,
   js: {
     buildCommand: null,
-    enabled:
-      !process.env.TEST_SEA_BINARY &&
-      !process.env.TEST_SMOL_BINARY &&
-      !process.env.TEST_JS_BINARY
+    // In CI: always enabled. Locally: controlled by env vars (defaults to true).
+    enabled: process.env.CI
+      ? true
+      : !process.env.TEST_SEA_BINARY &&
+          !process.env.TEST_SMOL_BINARY &&
+          !process.env.TEST_JS_BINARY
         ? true
         : !!process.env.TEST_JS_BINARY,
     name: 'JS Distribution (dist/index.js)',
@@ -42,7 +44,8 @@ const BINARIES = {
       'run',
       'build',
     ],
-    enabled: !!process.env.TEST_SEA_BINARY,
+    // In CI: always enabled. Locally: only if TEST_SEA_BINARY is set.
+    enabled: process.env.CI ? true : !!process.env.TEST_SEA_BINARY,
     name: 'SEA Binary (Single Executable Application)',
     path: path.join(MONOREPO_ROOT, 'packages/node-sea-builder/dist/socket-sea'),
   },
@@ -54,7 +57,8 @@ const BINARIES = {
       'run',
       'build',
     ],
-    enabled: !!process.env.TEST_SMOL_BINARY,
+    // In CI: always enabled. Locally: only if TEST_SMOL_BINARY is set.
+    enabled: process.env.CI ? true : !!process.env.TEST_SMOL_BINARY,
     name: 'Smol Binary',
     path: path.join(
       MONOREPO_ROOT,
