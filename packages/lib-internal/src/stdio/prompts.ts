@@ -3,6 +3,11 @@
  * Provides inquirer.js integration with spinner support, context handling, and theming.
  */
 
+import confirm from '@inquirer/confirm'
+import input from '@inquirer/input'
+import password from '@inquirer/password'
+import search from '@inquirer/search'
+import select, { Separator } from '@inquirer/select'
 import { getAbortSignal, getSpinner } from '#constants/process'
 import type { ColorValue } from '../spinner'
 import { getTheme } from '../themes/context'
@@ -259,18 +264,13 @@ export function wrapPrompt<T = unknown>(
   }
 }
 
-// c8 ignore start - Third-party inquirer library requires and exports not testable in isolation.
-const confirmExport = /*@__PURE__*/ require('@inquirer/confirm')
-const inputExport = /*@__PURE__*/ require('@inquirer/input')
-const passwordExport = /*@__PURE__*/ require('@inquirer/password')
-const searchExport = /*@__PURE__*/ require('@inquirer/search')
-const selectExport = /*@__PURE__*/ require('@inquirer/select')
-const confirmRaw = confirmExport.default ?? confirmExport
-const inputRaw = inputExport.default ?? inputExport
-const passwordRaw = passwordExport.default ?? passwordExport
-const searchRaw = searchExport.default ?? searchExport
-const selectRaw = selectExport.default ?? selectExport
-const ActualSeparator = selectExport.Separator
+// c8 ignore start - Third-party inquirer library imports not testable in isolation.
+const confirmRaw = confirm
+const inputRaw = input
+const passwordRaw = password
+const searchRaw = search
+const selectRaw = select
+const ActualSeparator = Separator
 // c8 ignore stop
 
 /**

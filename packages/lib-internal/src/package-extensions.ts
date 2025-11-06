@@ -5,9 +5,9 @@
  * to fix compatibility issues, missing peer dependencies, etc.
  */
 
-const { freeze: ObjectFreeze } = Object
+import yarnPkgExtensions from '@yarnpkg/extensions'
 
-const yarnPkgExtensions = require('@yarnpkg/extensions')
+const { freeze: ObjectFreeze } = Object
 
 export default ObjectFreeze(
   [
