@@ -28,6 +28,7 @@ import { WIN32 } from '@socketsecurity/lib-internal/constants/platform'
 import { spawn } from '@socketsecurity/lib-internal/spawn'
 
 import { commonFlags } from '../../flags.mts'
+import { spawnNode } from '../../utils/spawn/spawn-node.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { resolveSfw } from '../../utils/dlx/resolve-binary.mjs'
 import { filterFlags } from '../../utils/process/cmd.mts'
@@ -108,7 +109,7 @@ async function run(
   // Use local sfw if available, otherwise use pnpm dlx.
   const result =
     resolution.type === 'local'
-      ? await spawn('node', [resolution.path, 'pip', ...argsToForward], {
+      ? await spawnNode([resolution.path, 'pip', ...argsToForward], {
           shell: WIN32,
           stdio: 'inherit',
         })
