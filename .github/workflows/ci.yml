@@ -36,8 +36,11 @@ jobs:
     uses: SocketDev/socket-registry/.github/workflows/ci.yml@1a96ced97aaa85d61543351b90d6f463b983c46c # main
     with:
       test-setup-script: 'pnpm --filter @socketsecurity/cli... run build'
+      # The check script runs both lint and type checking, so we need dependencies built.
+      lint-setup-script: 'pnpm --filter @socketsecurity/cli... run build'
       lint-script: 'pnpm --filter @socketsecurity/cli run check'
-      type-check-script: 'pnpm --filter @socketsecurity/cli run type'
+      # Skip redundant type-check since check script already runs it.
+      run-type-check: false
       run-test: false  # Tests run in separate sharded job below.
       node-versions: ${{ inputs.node-versions || '["24.10.0"]' }}
       os-versions: '["ubuntu-latest"]'

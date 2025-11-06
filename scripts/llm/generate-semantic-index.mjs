@@ -19,7 +19,7 @@
  * - Pure JavaScript, runs anywhere
  *
  * USAGE:
- * At runtime, `socket ask` can match user queries against this index using
+ * At runtime, user queries can be matched against this index using
  * simple word overlap + synonym matching. Example:
  *   Query: "repair vulnerabilities" → matches "fix" (synonym expansion)
  *   Query: "check my deps" → matches "scan" (deps = dependencies = package)
