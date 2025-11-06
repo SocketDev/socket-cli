@@ -1,5 +1,3 @@
-import { createRequire } from 'node:module'
-
 import { NPM } from '@socketsecurity/lib-internal/constants/agents'
 import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
@@ -9,8 +7,8 @@ import {
   FLAG_HELP,
   FLAG_JSON,
 } from '../../constants/cli.mts'
-import { getShadowNpmBinPath } from '../../constants/paths.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
+import shadowNpmBin from '../../shadow/npm/bin.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
 import { filterFlags } from '../../utils/process/cmd.mts'
@@ -20,7 +18,6 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 
-const require = createRequire(import.meta.url)
 const logger = getDefaultLogger()
 
 export const CMD_NAME = NPM
@@ -81,8 +78,6 @@ async function run(
     return
   }
 
-  const shadowNpmBin = /*@__PURE__*/ require(getShadowNpmBinPath())
-
   process.exitCode = 1
 
   // Filter Socket flags from argv but keep --json for npm.
@@ -94,7 +89,7 @@ async function run(
   })
 
   // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on(
+  ;(spawnPromise as any).process.on(
     'exit',
     (code: string | null, signalName: NodeJS.Signals | null) => {
       if (signalName) {
