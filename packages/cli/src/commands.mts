@@ -1,11 +1,9 @@
 #!/usr/bin/env node
 
 import { cmdAnalytics } from './commands/analytics/cmd-analytics.mts'
-import { cmdAsk } from './commands/ask/cmd-ask.mts'
 import { cmdAuditLog } from './commands/audit-log/cmd-audit-log.mts'
 import { cmdCI } from './commands/ci/cmd-ci.mts'
 import { cmdConfig } from './commands/config/cmd-config.mts'
-import { cmdConsole } from './commands/console/cmd-console.mts'
 import { cmdFix } from './commands/fix/cmd-fix.mts'
 import { cmdInstall } from './commands/install/cmd-install.mts'
 import { cmdJson } from './commands/json/cmd-json.mts'
@@ -39,12 +37,10 @@ import { isSeaBinary } from './utils/sea/detect.mts'
 
 export const rootCommands = {
   analytics: cmdAnalytics,
-  ask: cmdAsk,
   'audit-log': cmdAuditLog,
   ci: cmdCI,
   cdxgen: cmdManifestCdxgen,
   config: cmdConfig,
-  console: cmdConsole,
   dependencies: cmdOrganizationDependencies,
   fix: cmdFix,
   install: cmdInstall,
