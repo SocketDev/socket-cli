@@ -1,14 +1,13 @@
-import { createRequire } from 'node:module'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
-import { PNPM } from '@socketsecurity/lib-internal/constants/agents'
-import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
-
+import { PNPM } from '../../constants/agents.mts'
 import {
   DRY_RUN_BAILING_NOW,
   FLAG_DRY_RUN,
   FLAG_HELP,
 } from '../../constants/cli.mts'
-import { getShadowPnpmBinPath } from '../../constants/paths.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
@@ -19,7 +18,6 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 
-const require = createRequire(import.meta.url)
 const logger = getDefaultLogger()
 
 export const CMD_NAME = PNPM
@@ -81,14 +79,13 @@ async function run(
     return
   }
 
-  const shadowPnpmBin = /*@__PURE__*/ require(getShadowPnpmBinPath())
-
   process.exitCode = 1
 
   // Filter Socket flags from argv.
   const filteredArgv = filterFlags(argv, config.flags)
 
-  const { spawnPromise } = await shadowPnpmBin(filteredArgv, {
+  const spawnPromise = spawn(PNPM, filteredArgv, {
+    shell: WIN32,
     stdio: 'inherit',
   })
 
