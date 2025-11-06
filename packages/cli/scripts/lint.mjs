@@ -42,25 +42,42 @@ const CONFIG_PATTERNS = [
  */
 function getBiomeExcludePatterns() {
   try {
-    const biomeConfigPath = path.join(process.cwd(), 'biome.json')
-    if (!existsSync(biomeConfigPath)) {
+    // Look for biome.json in current directory or parent directories.
+    let currentDir = process.cwd()
+    let biomeConfigPath = null
+
+    // Search up to 3 levels up for biome.json.
+    for (let i = 0; i < 3; i++) {
+      const testPath = path.join(currentDir, 'biome.json')
+      if (existsSync(testPath)) {
+        biomeConfigPath = testPath
+        break
+      }
+      const parentDir = path.dirname(currentDir)
+      if (parentDir === currentDir) {
+        break
+      }
+      currentDir = parentDir
+    }
+
+    if (!biomeConfigPath) {
       return []
     }
 
     const biomeConfig = JSON.parse(readFileSync(biomeConfigPath, 'utf8'))
     const includes = biomeConfig['files']?.['includes'] ?? []
 
-    // Extract patterns that start with '!' (exclude patterns)
+    // Extract patterns that start with '!' (exclude patterns).
     return (
       includes
         .filter(
           pattern => typeof pattern === 'string' && pattern.startsWith('!'),
         )
-        // Remove the '!' prefix
+        // Remove the '!' prefix.
         .map(pattern => pattern.slice(1))
     )
   } catch {
-    // If we can't read biome.json, return empty array
+    // If we can't read biome.json, return empty array.
     return []
   }
 }
@@ -70,15 +87,17 @@ function getBiomeExcludePatterns() {
  */
 function isExcludedByBiome(file, excludePatterns) {
   for (const pattern of excludePatterns) {
-    // Convert glob pattern to regex-like matching
-    // Support **/ for directory wildcards and * for filename wildcards
-    const regexPattern = pattern
-      // **/ matches any directory
-      .replace(/\*\*\//g, '.*')
-      // * matches any characters except /
-      .replace(/\*/g, '[^/]*')
-      // Escape dots
+    // Convert glob pattern to regex-like matching.
+    // Support **/ for directory wildcards and * for filename wildcards.
+    let regexPattern = pattern
+      // Replace **/ with placeholder to avoid * being replaced later.
+      .replace(/\*\*\//g, '__SOCKETCLI_GLOBSTAR__')
+      // Escape dots for literal matching.
       .replace(/\./g, '\\.')
+      // * matches any characters except /.
+      .replace(/\*/g, '[^/]*')
+      // Replace placeholder with regex that matches any path or nothing.
+      .replace(/__SOCKETCLI_GLOBSTAR__/g, '(?:.*/)?' )
 
     const regex = new RegExp(`^${regexPattern}$`)
     if (regex.test(file)) {
