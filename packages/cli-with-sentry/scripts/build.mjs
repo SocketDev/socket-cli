@@ -61,17 +61,17 @@ async function main() {
     }
     logger.success('Built shadow npm inject')
 
-    // Compress CLI.
-    logger.info('Compressing CLI...')
-    result = await spawn('node', ['scripts/compress-cli.mjs'], {
+    // Copy CLI to dist.
+    logger.info('Copying CLI to dist...')
+    result = await spawn('node', ['scripts/copy-cli.mjs'], {
       shell: WIN32,
       stdio: 'inherit',
       cwd: rootPath,
     })
     if (result.code !== 0) {
-      throw new Error(`CLI compression failed with exit code ${result.code}`)
+      throw new Error(`CLI copy failed with exit code ${result.code}`)
     }
-    logger.success('Compressed CLI')
+    logger.success('Copied CLI to dist')
 
     // Copy data directory from packages/cli.
     logger.info('Copying data/ from packages/cli...')

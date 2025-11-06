@@ -1,6 +1,6 @@
 /**
  * esbuild configuration for Socket CLI index loader.
- * Builds the brotli decompression loader that executes the compressed CLI.
+ * Builds the loader that executes the CLI bundle.
  */
 
 import path from 'node:path'

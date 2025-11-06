@@ -179,9 +179,9 @@ async function main() {
         args: ['.config/esbuild.inject.config.mjs'],
       },
       {
-        name: 'Compress CLI',
+        name: 'Copy CLI to Dist',
         command: 'node',
-        args: ['scripts/compress-cli.mjs'],
+        args: ['scripts/copy-cli.mjs'],
       },
     ]
 
