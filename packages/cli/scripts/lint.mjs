@@ -9,7 +9,10 @@ import path from 'node:path'
 import { isQuiet } from '@socketsecurity/lib-external/argv/flags'
 import { parseArgs } from '@socketsecurity/lib-external/argv/parse'
 import { WIN32 } from '@socketsecurity/lib-external/constants/platform'
-import { getChangedFiles, getStagedFiles } from '@socketsecurity/lib-external/git'
+import {
+  getChangedFiles,
+  getStagedFiles,
+} from '@socketsecurity/lib-external/git'
 import { getDefaultLogger } from '@socketsecurity/lib-external/logger'
 import { spawn } from '@socketsecurity/lib-external/spawn'
 import { printHeader } from '@socketsecurity/lib-external/stdio/header'
@@ -89,7 +92,7 @@ function isExcludedByBiome(file, excludePatterns) {
   for (const pattern of excludePatterns) {
     // Convert glob pattern to regex-like matching.
     // Support **/ for directory wildcards and * for filename wildcards.
-    let regexPattern = pattern
+    const regexPattern = pattern
       // Replace **/ with placeholder to avoid * being replaced later.
       .replace(/\*\*\//g, '__SOCKETCLI_GLOBSTAR__')
       // Escape dots for literal matching.
@@ -97,7 +100,7 @@ function isExcludedByBiome(file, excludePatterns) {
       // * matches any characters except /.
       .replace(/\*/g, '[^/]*')
       // Replace placeholder with regex that matches any path or nothing.
-      .replace(/__SOCKETCLI_GLOBSTAR__/g, '(?:.*/)?' )
+      .replace(/__SOCKETCLI_GLOBSTAR__/g, '(?:.*/)?')
 
     const regex = new RegExp(`^${regexPattern}$`)
     if (regex.test(file)) {

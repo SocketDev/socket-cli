@@ -7,7 +7,10 @@ import { parseArgs } from '@socketsecurity/lib-external/argv/parse'
 import { WIN32 } from '@socketsecurity/lib-external/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-external/logger'
 import { spawn } from '@socketsecurity/lib-external/spawn'
-import { printFooter, printHeader } from '@socketsecurity/lib-external/stdio/header'
+import {
+  printFooter,
+  printHeader,
+} from '@socketsecurity/lib-external/stdio/header'
 
 const logger = getDefaultLogger()
 

@@ -123,7 +123,9 @@ describe('ghsa-tracker', () => {
 
   describe('saveGhsaTracker', () => {
     it('saves tracker to file', async () => {
-      const { safeMkdir, writeJson } = await import('@socketsecurity/lib-internal/fs')
+      const { safeMkdir, writeJson } = await import(
+        '@socketsecurity/lib-internal/fs'
+      )
       const tracker: GhsaTracker = {
         version: 1,
         fixed: [
@@ -149,7 +151,9 @@ describe('ghsa-tracker', () => {
 
   describe('markGhsaFixed', () => {
     it('adds new GHSA fix record', async () => {
-      const { readJson, writeJson } = await import('@socketsecurity/lib-internal/fs')
+      const { readJson, writeJson } = await import(
+        '@socketsecurity/lib-internal/fs'
+      )
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [],
@@ -176,7 +180,9 @@ describe('ghsa-tracker', () => {
     })
 
     it('replaces existing GHSA fix record', async () => {
-      const { readJson, writeJson } = await import('@socketsecurity/lib-internal/fs')
+      const { readJson, writeJson } = await import(
+        '@socketsecurity/lib-internal/fs'
+      )
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [
@@ -213,7 +219,9 @@ describe('ghsa-tracker', () => {
     })
 
     it('sorts records by fixedAt descending', async () => {
-      const { readJson, writeJson } = await import('@socketsecurity/lib-internal/fs')
+      const { readJson, writeJson } = await import(
+        '@socketsecurity/lib-internal/fs'
+      )
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [

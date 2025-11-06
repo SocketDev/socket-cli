@@ -1,7 +1,10 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { safeReadFileSync, safeStatsSync } from '@socketsecurity/lib-internal/fs'
+import {
+  safeReadFileSync,
+  safeStatsSync,
+} from '@socketsecurity/lib-internal/fs'
 import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { REDACTED } from '../../constants/cli.mts'

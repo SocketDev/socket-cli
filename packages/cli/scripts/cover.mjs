@@ -26,9 +26,7 @@ const logger = getDefaultLogger()
  * Print a header message.
  */
 function printHeader(message) {
-  logger.error(
-    '\n═══════════════════════════════════════════════════════',
-  )
+  logger.error('\n═══════════════════════════════════════════════════════')
   logger.error(`  ${message}`)
   logger.error('═══════════════════════════════════════════════════════\n')
 }

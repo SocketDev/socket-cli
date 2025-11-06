@@ -1,7 +1,11 @@
 import { joinAnd } from '@socketsecurity/lib-internal/arrays'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib-internal/constants/socket'
 import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
-import { confirm, password, select } from '@socketsecurity/lib-internal/stdio/prompts'
+import {
+  confirm,
+  password,
+  select,
+} from '@socketsecurity/lib-internal/stdio/prompts'
 
 import { applyLogin } from './apply-login.mts'
 import {
