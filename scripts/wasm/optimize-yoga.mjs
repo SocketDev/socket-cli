@@ -1,15 +1,11 @@
 /**
- * Optimize Third-Party WASM Files Before Embedding
+ * Optimize Yoga Layout WASM Before Embedding
  *
- * Optimizes ONNX Runtime, Yoga Layout, and other WASM files
- * BEFORE they're embedded into the unified bundle.
- *
- * This is where the real savings happen - optimizing the 95% of
- * the bundle that's pre-built third-party code.
+ * Optimizes Yoga Layout WASM file before embedding into the bundle.
  *
  * USAGE:
- *   node scripts/wasm/optimize-embedded-wasm.mjs
- *   node scripts/wasm/optimize-embedded-wasm.mjs --aggressive
+ *   node scripts/wasm/optimize-yoga.mjs
+ *   node scripts/wasm/optimize-yoga.mjs --aggressive
  */
 
 import { existsSync, promises as fs } from 'node:fs'
@@ -154,60 +150,33 @@ async function main() {
   // Ensure cache directory exists.
   await fs.mkdir(cacheDir, { recursive: true })
 
-  logger.info('\nOptimizing third-party WASM files:\n')
+  logger.info('\nOptimizing Yoga Layout WASM:\n')
 
-  let totalOriginal = 0
-  let totalOptimized = 0
+  // Yoga WASM file to optimize.
+  const inputFile = path.join(cacheDir, 'yoga.wasm')
+  const outputFile = path.join(cacheDir, 'yoga-optimized.wasm')
 
-  // List of WASM files to optimize.
-  const wasmFiles = [
-    {
-      input: path.join(cacheDir, 'ort-wasm-simd.wasm'),
-      name: 'ONNX Runtime (SIMD only)',
-      output: path.join(cacheDir, 'ort-wasm-simd-optimized.wasm'),
-    },
-    {
-      input: path.join(cacheDir, 'yoga.wasm'),
-      name: 'Yoga Layout',
-      output: path.join(cacheDir, 'yoga-optimized.wasm'),
-    },
-  ]
-
-  // Optimize each file.
-  for (const file of wasmFiles) {
-    if (!existsSync(file.input)) {
-      logger.warn(`Skipping ${file.name} (not found)`)
-      continue
-    }
-
-    const originalSize = Number.parseFloat(await getFileSizeMB(file.input))
-    await optimizeWasmFile(file.input, file.output, {
-      aggressive: isAggressive,
-      name: file.name,
-    })
-    const optimizedSize = Number.parseFloat(await getFileSizeMB(file.output))
-
-    totalOriginal += originalSize
-    totalOptimized += optimizedSize
-
-    logger.log('') // Spacing.
+  if (!existsSync(inputFile)) {
+    logger.error('Yoga WASM not found')
+    logger.substep('Please run: node scripts/wasm/extract-yoga.mjs')
+    process.exit(1)
   }
+
+  const originalSize = Number.parseFloat(await getFileSizeMB(inputFile))
+  await optimizeWasmFile(inputFile, outputFile, {
+    aggressive: isAggressive,
+    name: 'Yoga Layout',
+  })
+  const optimizedSize = Number.parseFloat(await getFileSizeMB(outputFile))
 
   // Summary.
-  if (totalOriginal > 0) {
-    const totalSavings = ((1 - totalOptimized / totalOriginal) * 100).toFixed(1)
-    logger.success('Optimization Complete')
-    logger.info(`Total original: ${totalOriginal.toFixed(2)} MB`)
-    logger.info(`Total optimized: ${totalOptimized.toFixed(2)} MB`)
-    logger.info(`Total savings: ${totalSavings}%`)
-    logger.info(
-      `\nSaved ${(totalOriginal - totalOptimized).toFixed(2)} MB across all files`,
-    )
-  }
-
-  logger.info('\nNext steps:')
-  logger.info('1. Update Rust code to use optimized files')
-  logger.info('2. Rebuild WASM bundle: pnpm wasm:build')
+  const totalSavings = ((1 - optimizedSize / originalSize) * 100).toFixed(1)
+  logger.log('')
+  logger.success('Optimization Complete')
+  logger.info(`Original: ${originalSize.toFixed(2)} MB`)
+  logger.info(`Optimized: ${optimizedSize.toFixed(2)} MB`)
+  logger.info(`Savings: ${totalSavings}%`)
+  logger.info(`\nSaved ${(originalSize - optimizedSize).toFixed(2)} MB`)
 }
 
 main().catch(e => {
