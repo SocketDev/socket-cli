@@ -27,12 +27,14 @@
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { password } from '@socketsecurity/registry/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { isUrl } from '@socketsecurity/registry/lib/url'
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
 import { getConfigValueOrUndef } from './config.mts'
+import { debugApiRequest, debugApiResponse } from './debug.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
@@ -40,6 +42,7 @@ import constants, {
 } from '../constants.mts'
 
 import type { CResult } from '../types.mts'
+import type { RequestInfo, ResponseInfo } from '@socketsecurity/sdk'
 
 const TOKEN_PREFIX = 'sktsec_'
 const TOKEN_PREFIX_LENGTH = TOKEN_PREFIX.length
@@ -141,17 +144,47 @@ export async function setupSdk(
     ? HttpProxyAgent
     : HttpsProxyAgent
 
+  const sdkOptions = {
+    ...(apiProxy ? { agent: new ProxyAgent({ proxy: apiProxy }) } : {}),
+    ...(apiBaseUrl ? { baseUrl: apiBaseUrl } : {}),
+    timeout: constants.ENV.SOCKET_CLI_API_TIMEOUT,
+    userAgent: createUserAgentFromPkgJson({
+      name: constants.ENV.INLINED_SOCKET_CLI_NAME,
+      version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
+      homepage: constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE,
+    }),
+    // Add HTTP request hooks for debugging if SOCKET_CLI_DEBUG is enabled.
+    ...(constants.ENV.SOCKET_CLI_DEBUG
+      ? {
+          hooks: {
+            onRequest: (info: RequestInfo) => {
+              debugApiRequest(info.method, info.url, info.timeout)
+            },
+            onResponse: (info: ResponseInfo) => {
+              debugApiResponse(
+                info.method,
+                info.url,
+                info.status,
+                info.error,
+                info.duration,
+                info.headers,
+              )
+            },
+          },
+        }
+      : {}),
+  }
+
+  if (constants.ENV.SOCKET_CLI_DEBUG) {
+    logger.info(
+      `[DEBUG] ${new Date().toISOString()} SDK options: ${JSON.stringify(sdkOptions)}`,
+    )
+  }
+
+  const sdk = new SocketSdk(apiToken, sdkOptions)
+
   return {
     ok: true,
-    data: new SocketSdk(apiToken, {
-      ...(apiProxy ? { agent: new ProxyAgent({ proxy: apiProxy }) } : {}),
-      ...(apiBaseUrl ? { baseUrl: apiBaseUrl } : {}),
-      timeout: constants.ENV.SOCKET_CLI_API_TIMEOUT,
-      userAgent: createUserAgentFromPkgJson({
-        name: constants.ENV.INLINED_SOCKET_CLI_NAME,
-        version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
-        homepage: constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE,
-      }),
-    }),
+    data: sdk,
   }
 }

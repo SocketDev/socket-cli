@@ -16,6 +16,7 @@ import { confirm, select } from '@socketsecurity/registry/lib/prompts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import constants from '../../constants.mts'
+import { debugApiRequest, debugApiResponse } from '../../utils/debug.mts'
 import { formatErrorWithDetail } from '../../utils/errors.mts'
 import { isReportSupportedFile } from '../../utils/glob.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
@@ -390,12 +391,20 @@ async function downloadManifestFile({
   const fileUrl = `${repoApiUrl}/contents/${file}?ref=${defaultBranch}`
   debugDir('inspect', { fileUrl })
 
-  const downloadUrlResponse = await fetch(fileUrl, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${githubToken}`,
-    },
-  })
+  debugApiRequest('GET', fileUrl)
+  let downloadUrlResponse: Response
+  try {
+    downloadUrlResponse = await fetch(fileUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${githubToken}`,
+      },
+    })
+    debugApiResponse('GET', fileUrl, downloadUrlResponse.status)
+  } catch (e) {
+    debugApiResponse('GET', fileUrl, undefined, e)
+    throw e
+  }
   debugFn('notice', 'complete: request')
 
   const downloadUrlText = await downloadUrlResponse.text()
@@ -448,7 +457,9 @@ async function streamDownloadWithFetch(
   let response // Declare response here to access it in catch if needed
 
   try {
+    debugApiRequest('GET', downloadUrl)
     response = await fetch(downloadUrl)
+    debugApiResponse('GET', downloadUrl, response.status)
 
     if (!response.ok) {
       const errorMsg = `Download failed due to bad server response: ${response.status} ${response.statusText} for ${downloadUrl}`
@@ -483,6 +494,9 @@ async function streamDownloadWithFetch(
     // It resolves when the piping is fully complete and fileStream is closed.
     return { ok: true, data: localPath }
   } catch (e) {
+    if (!response) {
+      debugApiResponse('GET', downloadUrl, undefined, e)
+    }
     logger.fail(
       'An error was thrown while trying to download a manifest file... url:',
       downloadUrl,
@@ -542,11 +556,19 @@ async function getLastCommitDetails({
   const commitApiUrl = `${repoApiUrl}/commits?sha=${defaultBranch}&per_page=1`
   debugFn('inspect', 'url: commit', commitApiUrl)
 
-  const commitResponse = await fetch(commitApiUrl, {
-    headers: {
-      Authorization: `Bearer ${githubToken}`,
-    },
-  })
+  debugApiRequest('GET', commitApiUrl)
+  let commitResponse: Response
+  try {
+    commitResponse = await fetch(commitApiUrl, {
+      headers: {
+        Authorization: `Bearer ${githubToken}`,
+      },
+    })
+    debugApiResponse('GET', commitApiUrl, commitResponse.status)
+  } catch (e) {
+    debugApiResponse('GET', commitApiUrl, undefined, e)
+    throw e
+  }
 
   const commitText = await commitResponse.text()
   debugFn('inspect', 'response: commit', commitText)
@@ -646,12 +668,20 @@ async function getRepoDetails({
   const repoApiUrl = `${githubApiUrl}/repos/${orgGithub}/${repoSlug}`
   debugDir('inspect', { repoApiUrl })
 
-  const repoDetailsResponse = await fetch(repoApiUrl, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${githubToken}`,
-    },
-  })
+  let repoDetailsResponse: Response
+  try {
+    debugApiRequest('GET', repoApiUrl)
+    repoDetailsResponse = await fetch(repoApiUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${githubToken}`,
+      },
+    })
+    debugApiResponse('GET', repoApiUrl, repoDetailsResponse.status)
+  } catch (e) {
+    debugApiResponse('GET', repoApiUrl, undefined, e)
+    throw e
+  }
   logger.success(`Request completed.`)
 
   const repoDetailsText = await repoDetailsResponse.text()
@@ -702,12 +732,20 @@ async function getRepoBranchTree({
   const treeApiUrl = `${repoApiUrl}/git/trees/${defaultBranch}?recursive=1`
   debugFn('inspect', 'url: tree', treeApiUrl)
 
-  const treeResponse = await fetch(treeApiUrl, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${githubToken}`,
-    },
-  })
+  let treeResponse: Response
+  try {
+    debugApiRequest('GET', treeApiUrl)
+    treeResponse = await fetch(treeApiUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${githubToken}`,
+      },
+    })
+    debugApiResponse('GET', treeApiUrl, treeResponse.status)
+  } catch (e) {
+    debugApiResponse('GET', treeApiUrl, undefined, e)
+    throw e
+  }
 
   const treeText = await treeResponse.text()
   debugFn('inspect', 'response: tree', treeText)

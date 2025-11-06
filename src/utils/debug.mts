@@ -18,25 +18,62 @@
  */
 
 import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
+import { logger } from '@socketsecurity/registry/lib/logger'
+
+import constants from '../constants.mts'
 
 /**
- * Debug an API response.
+ * Debug an API request start.
+ * Logs essential info without exposing sensitive data.
+ */
+export function debugApiRequest(
+  method: string,
+  endpoint: string,
+  timeout?: number | undefined,
+): void {
+  if (constants.ENV.SOCKET_CLI_DEBUG) {
+    const timeoutStr = timeout !== undefined ? ` (timeout: ${timeout}ms)` : ''
+    logger.info(
+      `[DEBUG] ${new Date().toISOString()} request started: ${method} ${endpoint}${timeoutStr}`,
+    )
+  }
+}
+
+/**
+ * Debug an API response end.
  * Logs essential info without exposing sensitive data.
  */
 export function debugApiResponse(
+  method: string,
   endpoint: string,
   status?: number | undefined,
   error?: unknown | undefined,
+  duration?: number | undefined,
+  headers?: Record<string, string> | undefined,
 ): void {
+  if (!constants.ENV.SOCKET_CLI_DEBUG) {
+    return
+  }
+
   if (error) {
-    debugDir('error', {
-      endpoint,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    })
-  } else if (status && status >= 400) {
-    debugFn('warn', `API ${endpoint}: HTTP ${status}`)
-  } else if (isDebug('notice')) {
-    debugFn('notice', `API ${endpoint}: ${status || 'pending'}`)
+    logger.fail(
+      `[DEBUG] ${new Date().toISOString()} request error: ${method} ${endpoint} - ${error instanceof Error ? error.message : 'Unknown error'}${duration !== undefined ? ` (${duration}ms)` : ''}`,
+    )
+    if (headers) {
+      logger.info(
+        `[DEBUG] response headers: ${JSON.stringify(headers, null, 2)}`,
+      )
+    }
+  } else {
+    const durationStr = duration !== undefined ? ` (${duration}ms)` : ''
+    logger.info(
+      `[DEBUG] ${new Date().toISOString()} request ended: ${method} ${endpoint}: HTTP ${status}${durationStr}`,
+    )
+    if (headers && status && status >= 400) {
+      logger.info(
+        `[DEBUG] response headers: ${JSON.stringify(headers, null, 2)}`,
+      )
+    }
   }
 }
 
