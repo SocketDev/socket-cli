@@ -100,11 +100,6 @@ Supports version 2 format with `projectIgnorePaths` for excluding files from rep
 
 ## Contributing
 
-**New to Socket CLI development?**
-
-- **Quick Start (10 min)**: [Getting Started Guide](docs/getting-started.md) — Essential setup and first contribution
-- **Detailed Guide**: [Development Getting Started](docs/development/getting-started.md) — Complete end-to-end onboarding
-
 **Quick setup:**
 
 ```bash
@@ -114,16 +109,6 @@ pnpm install
 pnpm run build
 pnpm exec socket --version
 ```
-
-### Building locally
-
-Socket CLI uses an **intelligent build system with automatic caching** that only rebuilds packages when their source files change. The build system ensures packages are built in the correct dependency order:
-
-1. **Yoga WASM** - Terminal layout engine (tables, progress bars)
-2. **CLI Package** - TypeScript compilation and bundling
-3. **SEA Binary** - Node.js Single Executable Application
-
-> **Note**: ONNX Runtime WASM is temporarily disabled due to build issues. AI features use pre-built assets.
 
 #### Quick start (easiest)
 
@@ -221,9 +206,6 @@ pnpm run build --platforms --parallel
 Build individual packages directly with pnpm filters:
 
 ```bash
-# Build ONNX Runtime WASM (for AI features)
-pnpm --filter @socketsecurity/onnxruntime run build
-
 # Build Yoga WASM (for terminal layouts)
 pnpm --filter @socketsecurity/yoga run build
 
@@ -239,8 +221,6 @@ pnpm --filter @socketbin/node-sea-builder-builder run build
 ```bash
 pnpm run build --help
 ```
-
-See [docs/development/](docs/development/) for detailed development guides.
 
 ### Development environment variables
 
@@ -435,7 +415,6 @@ try {
 
 - [Socket API Reference](https://docs.socket.dev/reference)
 - [Socket GitHub App](https://github.com/apps/socket-security)
-- [`@socketsecurity/sdk`](https://github.com/SocketDev/socket-sdk-js)
 
 [Socket.dev]: https://socket.dev/
 
