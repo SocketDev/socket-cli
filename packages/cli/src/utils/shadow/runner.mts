@@ -1,29 +1,17 @@
 /** @fileoverview Shadow bin runner with IPC support and error handling. */
 
-import { createRequire } from 'node:module'
-
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 import { Spinner as createSpinner } from '@socketsecurity/lib/spinner'
 
-import { NPM, PNPM, YARN } from '../../constants/agents.mts'
 import { FLAG_SILENT } from '../../constants/cli.mts'
 import {
-  PACKAGE_LOCK_JSON,
-  PNPM_LOCK_YAML,
-  YARN_LOCK,
-} from '../../constants/packages.mts'
-import {
-  getShadowNpmBinPath,
-  getShadowNpxBinPath,
-  getShadowPnpmBinPath,
-  getShadowYarnBinPath,
   SOCKET_CLI_SHADOW_ACCEPT_RISKS,
   SOCKET_CLI_SHADOW_API_TOKEN,
   SOCKET_CLI_SHADOW_SILENT,
 } from '../../constants/shadow.mts'
+import shadowNpmBin from '../../shadow/npm/bin.mts'
+import shadowNpxBin from '../../shadow/npx/bin.mts'
 import { getErrorCause } from '../error/errors.mts'
-import { findUp } from '../fs/find-up.mts'
-import { isYarnBerry } from '../yarn/version.mts'
 
 import type { IpcObject } from '../../constants/shadow.mts'
 import type {
@@ -34,10 +22,7 @@ import type { CResult } from '../../types.mts'
 import type { SpawnExtra } from '@socketsecurity/lib/spawn'
 import type { Spinner } from '@socketsecurity/lib/spinner'
 
-const require = createRequire(import.meta.url)
-
 export type ShadowRunnerOptions = {
-  agent?: 'npm' | 'pnpm' | 'yarn' | undefined
   bufferOutput?: boolean | undefined
   cwd?: string | undefined
   env?: Record<string, string> | undefined
@@ -48,39 +33,9 @@ export type ShadowRunnerOptions = {
 }
 
 /**
- * Auto-detect package manager based on lockfiles.
- */
-export async function detectPackageManager(
-  cwd?: string | undefined,
-): Promise<'npm' | 'pnpm' | 'yarn'> {
-  const pnpmLockPath = await findUp(PNPM_LOCK_YAML, {
-    cwd,
-    onlyFiles: true,
-  })
-  const yarnLockPath = pnpmLockPath
-    ? undefined
-    : await findUp(YARN_LOCK, { cwd, onlyFiles: true })
-  const npmLockPath =
-    pnpmLockPath || yarnLockPath
-      ? undefined
-      : await findUp(PACKAGE_LOCK_JSON, { cwd, onlyFiles: true })
-
-  if (pnpmLockPath) {
-    return PNPM
-  }
-  if (yarnLockPath) {
-    return YARN
-  }
-  if (npmLockPath) {
-    return NPM
-  }
-  // Default to npm if no lockfile found.
-  return NPM
-}
-
-/**
- * Run a command via package manager dlx/npx with shadow bin wrapping.
+ * Run a command via npx with shadow bin wrapping.
  * Handles IPC for secure config passing and provides unified error handling.
+ * Note: Only supports npm/npx. For pnpm/yarn, use the direct commands instead.
  */
 export async function runShadowCommand(
   packageSpec: string,
@@ -89,7 +44,6 @@ export async function runShadowCommand(
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
   const opts = { __proto__: null, ...options } as ShadowRunnerOptions
-  const agent = opts.agent ?? (await detectPackageManager(opts.cwd))
 
   const shadowOpts: ShadowBinOptions = {
     cwd: opts.cwd,
@@ -116,30 +70,11 @@ export async function runShadowCommand(
       spinner.start(opts.spinnerMessage)
     }
 
-    let result: ShadowBinResult
-
-    if (agent === PNPM) {
-      const shadowPnpmBin = /*@__PURE__*/ require(getShadowPnpmBinPath())
-      result = await shadowPnpmBin(
-        ['dlx', FLAG_SILENT, packageSpec, ...args],
-        shadowOpts,
-        finalSpawnExtra,
-      )
-    } else if (agent === YARN && isYarnBerry()) {
-      const shadowYarnBin = /*@__PURE__*/ require(getShadowYarnBinPath())
-      result = await shadowYarnBin(
-        ['dlx', '--quiet', packageSpec, ...args],
-        shadowOpts,
-        finalSpawnExtra,
-      )
-    } else {
-      const shadowNpxBin = /*@__PURE__*/ require(getShadowNpxBinPath())
-      result = await shadowNpxBin(
-        ['--yes', '--force', FLAG_SILENT, packageSpec, ...args],
-        shadowOpts,
-        finalSpawnExtra,
-      )
-    }
+    const result: ShadowBinResult = await shadowNpxBin(
+      ['--yes', '--force', FLAG_SILENT, packageSpec, ...args],
+      shadowOpts,
+      finalSpawnExtra,
+    )
 
     if (spinner) {
       spinner.stop()
@@ -196,7 +131,6 @@ export async function runShadowNpm(
       spinner.start(opts.spinnerMessage)
     }
 
-    const shadowNpmBin = /*@__PURE__*/ require(getShadowNpmBinPath())
     const result: ShadowBinResult = await shadowNpmBin(
       args,
       shadowOpts,
