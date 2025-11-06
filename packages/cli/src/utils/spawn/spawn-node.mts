@@ -21,7 +21,7 @@
 
 import { which } from '@socketsecurity/lib/bin'
 import { getExecPath } from '@socketsecurity/lib/constants/node'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { spawn, spawnSync } from '@socketsecurity/lib/spawn'
 
 import { ensureIpcInStdio } from '../../shadow/stdio-ipc.mjs'
 import { sendBootstrapHandshake } from '../sea/boot.mjs'
@@ -161,6 +161,8 @@ export async function findSystemNodejs(): Promise<string | undefined> {
  *
  * Note: IPC handshake is not supported in synchronous mode,
  * so this should only be used when IPC is not required.
+ * Also note that SEA system Node.js detection is not available
+ * in synchronous mode - falls back to getExecPath().
  *
  * @param args - Arguments to pass to Node.js
  * @param options - Spawn options (ipc field is ignored)
@@ -170,7 +172,6 @@ export function spawnNodeSync(
   args: string[] | readonly string[],
   options?: Omit<SpawnNodeOptions, 'ipc'>,
 ): ReturnType<typeof import('@socketsecurity/lib/spawn').spawnSync> {
-  const { spawnSync } = require('@socketsecurity/lib/spawn')
-  const nodePath = getNodeExecutablePath()
+  const nodePath = getExecPath()
   return spawnSync(nodePath, args, options)
 }
