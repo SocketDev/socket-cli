@@ -16,6 +16,7 @@ import { getSocketHomePath } from '@socketsecurity/lib/paths'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import ENV from '../../constants/env.mts'
+import { NODE_SEA_FUSE } from './constants/NODE_SEA_FUSE.mts'
 
 const logger = getDefaultLogger()
 
@@ -442,7 +443,7 @@ export async function injectSeaBlob(
         'NODE_SEA_BLOB',
         blobPath,
         '--sentinel-fuse',
-        /*@__INLINE__*/ require('./constants/NODE_SEA_FUSE'),
+        NODE_SEA_FUSE,
         '--macho-segment-name',
         'NODE_SEA',
       ],
@@ -467,7 +468,7 @@ export async function injectSeaBlob(
         'NODE_SEA_BLOB',
         blobPath,
         '--sentinel-fuse',
-        /*@__INLINE__*/ require('./constants/NODE_SEA_FUSE'),
+        NODE_SEA_FUSE,
       ],
       { stdio: 'inherit' },
     )
@@ -483,7 +484,7 @@ export async function injectSeaBlob(
         'NODE_SEA_BLOB',
         blobPath,
         '--sentinel-fuse',
-        /*@__INLINE__*/ require('./constants/NODE_SEA_FUSE'),
+        NODE_SEA_FUSE,
       ],
       { stdio: 'inherit' },
     )
