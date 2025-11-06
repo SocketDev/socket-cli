@@ -16,9 +16,9 @@
 
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 import { dlxPackage } from '@socketsecurity/lib/dlx-package'
-import { spawn } from '@socketsecurity/lib/spawn'
 
 import { resolveCdxgen, resolveCoana } from './resolve-binary.mjs'
+import { spawnNode } from '../spawn/spawn-node.mts'
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
 import ENV from '../../constants/env.mts'
 import {
@@ -133,7 +133,7 @@ export async function spawnCoanaDlx(
         ...mixinsEnv,
         ...spawnEnv,
       }
-      const spawnResult = await spawn('node', [resolution.path, ...args], {
+      const spawnResult = await spawnNode([resolution.path, ...args], {
         cwd: dlxOptions.cwd,
         env: finalEnv,
         stdio: spawnExtra?.['stdio'] || 'inherit',
@@ -202,7 +202,7 @@ export async function spawnCdxgenDlx(
       ...options,
     } as DlxOptions
 
-    const spawnResult = spawn('node', [resolution.path, ...args], {
+    const spawnResult = spawnNode([resolution.path, ...args], {
       cwd: dlxOptions.cwd,
       env: {
         ...process.env,
