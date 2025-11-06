@@ -3,10 +3,10 @@
  *
  * This single file handles all Socket CLI commands by detecting how it was invoked:
  * - socket (main CLI)
- * - socket-npm (npm wrapper)
- * - socket-npx (npx wrapper)
- * - socket-pnpm (pnpm wrapper)
- * - socket-yarn (yarn wrapper)
+ * - socket-npm (calls socket npm command directly)
+ * - socket-npx (calls socket npx command directly)
+ * - socket-pnpm (calls socket pnpm command directly)
+ * - socket-yarn (calls socket yarn command directly)
  *
  * Perfect for SEA packaging and single-file distribution.
  *
@@ -20,6 +20,10 @@ import path from 'node:path'
 
 import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
+import { cmdNpm } from './commands/npm/cmd-npm.mts'
+import { cmdNpx } from './commands/npx/cmd-npx.mts'
+import { cmdPnpm } from './commands/pnpm/cmd-pnpm.mts'
+import { cmdYarn } from './commands/yarn/cmd-yarn.mts'
 import { waitForBootstrapHandshake } from './utils/sea/boot.mjs'
 
 const logger = getDefaultLogger()
@@ -102,28 +106,37 @@ async function main() {
   // Import and run the appropriate CLI function.
   switch (mode) {
     case 'npm': {
-      const { default: runNpmCli } = await import('./npm-cli.mjs')
-      await runNpmCli()
+      // Call socket npm command directly.
+      await cmdNpm.run(process.argv.slice(2), import.meta, {
+        parentName: 'socket',
+      })
       break
     }
 
     case 'npx': {
-      const { default: runNpxCli } = await import('./npx-cli.mjs')
-      await runNpxCli()
+      // Call socket npx command directly.
+      await cmdNpx.run(process.argv.slice(2), import.meta, {
+        parentName: 'socket',
+      })
       break
     }
 
     case 'pnpm': {
-      const { default: runPnpmCli } = await import('./pnpm-cli.mjs')
-      await runPnpmCli()
+      // Call socket pnpm command directly.
+      await cmdPnpm.run(process.argv.slice(2), import.meta, {
+        parentName: 'socket',
+      })
       break
     }
 
     case 'yarn': {
-      const { default: runYarnCli } = await import('./yarn-cli.mjs')
-      await runYarnCli()
+      // Call socket yarn command directly.
+      await cmdYarn.run(process.argv.slice(2), import.meta, {
+        parentName: 'socket',
+      })
       break
     }
+
     default:
       await import('./cli-entry.mjs')
       break
