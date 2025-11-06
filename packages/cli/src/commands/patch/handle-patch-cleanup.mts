@@ -1,14 +1,14 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { UTF8 } from '@socketsecurity/lib/constants/encoding'
+import { UTF8 } from '@socketsecurity/lib-internal/constants/encoding'
 import {
   DOT_SOCKET_DIR,
   MANIFEST_JSON,
-} from '@socketsecurity/lib/constants/paths'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { normalizePath } from '@socketsecurity/lib/path'
-import { pluralize } from '@socketsecurity/lib/words'
+} from '@socketsecurity/lib-internal/constants/paths'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { normalizePath } from '@socketsecurity/lib-internal/path'
+import { pluralize } from '@socketsecurity/lib-internal/words'
 
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchCleanupResult } from './output-patch-cleanup-result.mts'
@@ -19,7 +19,7 @@ import {
 } from '../../utils/manifest/patch-backup.mts'
 
 import type { OutputKind } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib-internal/spinner'
 const logger = getDefaultLogger()
 
 export interface PatchCleanupData {

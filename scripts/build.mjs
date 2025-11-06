@@ -23,9 +23,9 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { WIN32 } from '@socketsecurity/lib-external/constants/platform'
+import { getDefaultLogger } from '@socketsecurity/lib-external/logger'
+import { spawn } from '@socketsecurity/lib-external/spawn'
 import colors from 'yoctocolors-cjs'
 
 
@@ -75,6 +75,16 @@ const BUILD_PACKAGES = [
   //   filter: '@socketsecurity/onnxruntime',
   //   outputCheck: 'packages/onnxruntime/dist/ort-wasm-simd.wasm',
   // },
+  {
+    name: 'Lib Internal',
+    filter: '@socketsecurity/lib-internal',
+    outputCheck: 'packages/lib-internal/dist/logger.js',
+  },
+  {
+    name: 'SDK',
+    filter: '@socketsecurity/sdk',
+    outputCheck: 'packages/sdk/dist/index.js',
+  },
   {
     name: 'Yoga WASM',
     filter: '@socketsecurity/yoga',
@@ -160,9 +170,11 @@ function showHelp() {
   logger.log('  pnpm run build --help                    # Show this help')
   logger.log('')
   logger.log('Default Build Order:')
-  logger.log('  1. Yoga WASM (terminal layouts)')
-  logger.log('  2. CLI Package (TypeScript compilation + bundling)')
-  logger.log('  3. SEA Binary (Node.js Single Executable)')
+  logger.log('  1. Lib Internal (shared utilities)')
+  logger.log('  2. SDK (Socket SDK)')
+  logger.log('  3. Yoga WASM (terminal layouts)')
+  logger.log('  4. CLI Package (TypeScript compilation + bundling)')
+  logger.log('  5. SEA Binary (Node.js Single Executable)')
   logger.log('')
   logger.log('Note: ONNX Runtime WASM temporarily disabled (build issues)')
   logger.log('')

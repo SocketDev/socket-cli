@@ -47,7 +47,7 @@ const mockLog = mockLogger.log
 const mockFail = mockLogger.fail
 const mockWarn = mockLogger.warn
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-internal/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))

@@ -1,4 +1,4 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { handlePurlsShallowScore } from './handle-purls-shallow-score.mts'
 import { parsePackageSpecifiers } from './parse-package-specifiers.mts'

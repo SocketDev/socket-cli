@@ -1,4 +1,4 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { applyLogout } from './apply-logout.mts'
 import { isConfigFromFlag } from '../../utils/config.mts'

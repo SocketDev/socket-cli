@@ -1,15 +1,15 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { UTF8 } from '@socketsecurity/lib/constants/encoding'
+import { UTF8 } from '@socketsecurity/lib-internal/constants/encoding'
 import {
   DOT_SOCKET_DIR,
   MANIFEST_JSON,
-} from '@socketsecurity/lib/constants/paths'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { normalizePath } from '@socketsecurity/lib/path'
-import { select } from '@socketsecurity/lib/stdio/prompts'
-import { pluralize } from '@socketsecurity/lib/words'
+} from '@socketsecurity/lib-internal/constants/paths'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { normalizePath } from '@socketsecurity/lib-internal/path'
+import { select } from '@socketsecurity/lib-internal/stdio/prompts'
+import { pluralize } from '@socketsecurity/lib-internal/words'
 
 import { handlePatchApply } from './handle-patch-apply.mts'
 import { PatchManifestSchema } from './manifest-schema.mts'
@@ -18,7 +18,7 @@ import { getErrorCause } from '../../utils/error/errors.mjs'
 import { getPurlObject } from '../../utils/purl/parse.mjs'
 
 import type { OutputKind } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib-internal/spinner'
 const logger = getDefaultLogger()
 
 export interface PatchListEntry {

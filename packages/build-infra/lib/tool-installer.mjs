@@ -5,9 +5,9 @@
  * using platform-specific package managers (brew, apt, choco, etc.).
  */
 
-import binPkg from '@socketsecurity/lib/bin'
-import platformPkg from '@socketsecurity/lib/constants/platform'
-import spawnPkg from '@socketsecurity/lib/spawn'
+import binPkg from '@socketsecurity/lib-external/bin'
+import platformPkg from '@socketsecurity/lib-external/constants/platform'
+import spawnPkg from '@socketsecurity/lib-external/spawn'
 
 const { whichBinSync } = binPkg
 const { WIN32 } = platformPkg

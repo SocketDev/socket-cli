@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { stripAnsi } from '@socketsecurity/lib/strings'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { stripAnsi } from '@socketsecurity/lib-internal/strings'
 
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()

@@ -11,10 +11,10 @@ import path from 'node:path'
 
 import colors from 'yoctocolors-cjs'
 
-import { detectPackageManager } from '@socketsecurity/lib/env/package-manager'
-import { safeMkdir } from '@socketsecurity/lib/fs'
-import { getIpcStubPath } from '@socketsecurity/lib/ipc'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { detectPackageManager } from '@socketsecurity/lib-internal/env/package-manager'
+import { safeMkdir } from '@socketsecurity/lib-internal/fs'
+import { getIpcStubPath } from '@socketsecurity/lib-internal/ipc'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { outputSelfUpdate } from './output-self-update.mts'
 import ENV from '../../constants/env.mts'

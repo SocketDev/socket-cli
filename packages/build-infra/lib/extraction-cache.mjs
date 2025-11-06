@@ -11,7 +11,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import loggerPkg from '@socketsecurity/lib/logger'
+import loggerPkg from '@socketsecurity/lib-external/logger'
 const { getDefaultLogger } = loggerPkg
 
 /**

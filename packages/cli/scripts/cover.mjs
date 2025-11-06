@@ -14,11 +14,11 @@
  *   --summary    Show only coverage summary (hide detailed output)
  */
 
-import { isQuiet, isVerbose } from '@socketsecurity/lib/argv/flags'
-import { parseArgs } from '@socketsecurity/lib/argv/parse'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { isQuiet, isVerbose } from '@socketsecurity/lib-external/argv/flags'
+import { parseArgs } from '@socketsecurity/lib-external/argv/parse'
+import { WIN32 } from '@socketsecurity/lib-external/constants/platform'
+import { getDefaultLogger } from '@socketsecurity/lib-external/logger'
+import { spawn } from '@socketsecurity/lib-external/spawn'
 
 const logger = getDefaultLogger()
 

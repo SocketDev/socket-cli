@@ -73,14 +73,14 @@ const {
 const mockDebugLog = vi.hoisted(() => vi.fn())
 const mockIsDebug = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock('@socketsecurity/lib-internal/debug', () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
   debugLog: mockDebugLog,
   isDebug: mockIsDebug,
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-internal/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))

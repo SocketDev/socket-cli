@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module'
 
-import { NPX } from '@socketsecurity/lib/constants/agents'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { NPX } from '@socketsecurity/lib-internal/constants/agents'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import {
   DRY_RUN_BAILING_NOW,

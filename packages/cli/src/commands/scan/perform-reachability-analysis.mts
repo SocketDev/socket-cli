@@ -15,7 +15,7 @@ import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult } from '../../types.mts'
 import type { PURL_Type } from '../../utils/ecosystem/types.mjs'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib-internal/spinner'
 
 export type ReachabilityOptions = {
   reachAnalysisTimeout: number

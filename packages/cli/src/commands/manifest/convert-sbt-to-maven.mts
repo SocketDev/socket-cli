@@ -1,7 +1,7 @@
-import { getSpinner } from '@socketsecurity/lib/constants/process'
-import { safeReadFile } from '@socketsecurity/lib/fs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { getSpinner } from '@socketsecurity/lib-internal/constants/process'
+import { safeReadFile } from '@socketsecurity/lib-internal/fs'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { spawn } from '@socketsecurity/lib-internal/spawn'
 
 import type { ManifestResult } from './output-manifest.mts'
 import type { CResult, OutputKind } from '../../types.mts'

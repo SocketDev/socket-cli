@@ -1,12 +1,12 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { arrayUnique } from '@socketsecurity/lib/arrays'
+import { arrayUnique } from '@socketsecurity/lib-internal/arrays'
 import {
   DOT_SOCKET_DIR,
   MANIFEST_JSON,
-} from '@socketsecurity/lib/constants/paths'
-import { getSpinner } from '@socketsecurity/lib/constants/process'
+} from '@socketsecurity/lib-internal/constants/paths'
+import { getSpinner } from '@socketsecurity/lib-internal/constants/process'
 
 import { handlePatchApply } from './handle-patch-apply.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'

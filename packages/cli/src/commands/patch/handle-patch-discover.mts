@@ -1,5 +1,5 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { pluralize } from '@socketsecurity/lib/words'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { pluralize } from '@socketsecurity/lib-internal/words'
 
 import { handlePatchDownload } from './handle-patch-download.mts'
 import { outputPatchDiscoverResult } from './output-patch-discover-result.mts'
@@ -11,7 +11,7 @@ import { fetchCreateOrgFullScan } from '../scan/fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
 
 import type { OutputKind } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib-internal/spinner'
 import type { SocketSdk } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 

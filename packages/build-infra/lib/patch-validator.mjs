@@ -7,8 +7,8 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import platformPkg from '@socketsecurity/lib/constants/platform'
-import spawnPkg from '@socketsecurity/lib/spawn'
+import platformPkg from '@socketsecurity/lib-external/constants/platform'
+import spawnPkg from '@socketsecurity/lib-external/spawn'
 
 const { WIN32 } = platformPkg
 const { spawn } = spawnPkg

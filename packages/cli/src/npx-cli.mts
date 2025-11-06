@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import shadowNpxBin from './shadow/npx/bin.mts'
 

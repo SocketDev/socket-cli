@@ -2,7 +2,7 @@ import { render } from 'ink'
 import { createElement } from 'react'
 import colors from 'yoctocolors-cjs'
 
-import { spawn } from '@socketsecurity/lib/spawn'
+import { spawn } from '@socketsecurity/lib-internal/spawn'
 
 import {
   createFileDiff,

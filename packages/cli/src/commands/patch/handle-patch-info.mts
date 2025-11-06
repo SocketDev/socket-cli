@@ -1,13 +1,13 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { UTF8 } from '@socketsecurity/lib/constants/encoding'
+import { UTF8 } from '@socketsecurity/lib-internal/constants/encoding'
 import {
   DOT_SOCKET_DIR,
   MANIFEST_JSON,
-} from '@socketsecurity/lib/constants/paths'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { normalizePath } from '@socketsecurity/lib/path'
+} from '@socketsecurity/lib-internal/constants/paths'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { normalizePath } from '@socketsecurity/lib-internal/path'
 
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchInfoResult } from './output-patch-info-result.mts'
@@ -16,7 +16,7 @@ import { normalizePurl } from '../../utils/purl/parse.mjs'
 
 import type { PatchRecord } from './manifest-schema.mts'
 import type { OutputKind } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib-internal/spinner'
 
 export interface PatchInfoData {
   description: string | undefined

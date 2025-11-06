@@ -1,13 +1,13 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { UTF8 } from '@socketsecurity/lib/constants/encoding'
+import { UTF8 } from '@socketsecurity/lib-internal/constants/encoding'
 import {
   DOT_SOCKET_DIR,
   MANIFEST_JSON,
-} from '@socketsecurity/lib/constants/paths'
-import { safeMkdir } from '@socketsecurity/lib/fs'
-import { normalizePath } from '@socketsecurity/lib/path'
+} from '@socketsecurity/lib-internal/constants/paths'
+import { safeMkdir } from '@socketsecurity/lib-internal/fs'
+import { normalizePath } from '@socketsecurity/lib-internal/path'
 
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchGetResult } from './output-patch-get-result.mts'
@@ -15,7 +15,7 @@ import { getErrorCause, InputError } from '../../utils/error/errors.mjs'
 import { normalizePurl } from '../../utils/purl/parse.mjs'
 
 import type { OutputKind } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib-internal/spinner'
 
 export interface PatchGetData {
   files: string[]

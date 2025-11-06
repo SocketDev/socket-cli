@@ -47,7 +47,7 @@ const mockSerializeResultJson = vi.hoisted(() =>
 const mockOpenDefault = vi.hoisted(() => vi.fn())
 const mockConfirmFn = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-internal/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
@@ -68,7 +68,7 @@ vi.mock('terminal-link', () => ({
   default: vi.fn((text: string, url: string) => `[${text}](${url})`),
 }))
 
-vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
+vi.mock('@socketsecurity/lib-internal/stdio/prompts', () => ({
   confirm: mockConfirmFn,
 }))
 

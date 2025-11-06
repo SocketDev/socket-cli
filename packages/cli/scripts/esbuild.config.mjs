@@ -7,7 +7,7 @@ import { brotliCompressSync } from 'node:zlib'
 
 import { build } from 'esbuild'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-external/logger'
 
 import config from './esbuild.cli.config.mjs'
 

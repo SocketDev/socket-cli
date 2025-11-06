@@ -6,8 +6,8 @@
 
 import { cpus } from 'node:os'
 
-import platformPkg from '@socketsecurity/lib/constants/platform'
-import spawnPkg from '@socketsecurity/lib/spawn'
+import platformPkg from '@socketsecurity/lib-external/constants/platform'
+import spawnPkg from '@socketsecurity/lib-external/spawn'
 
 const { WIN32 } = platformPkg
 const { spawn } = spawnPkg

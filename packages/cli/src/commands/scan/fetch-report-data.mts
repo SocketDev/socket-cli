@@ -1,6 +1,6 @@
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
+import { debug, debugDir } from '@socketsecurity/lib-internal/debug'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { getDefaultSpinner } from '@socketsecurity/lib-internal/spinner'
 
 const logger = getDefaultLogger()
 const spinner = getDefaultSpinner()

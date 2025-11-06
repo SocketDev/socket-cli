@@ -1,6 +1,6 @@
 import type { OutputKind } from '../../types.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib-internal/spinner'
 
 export type FixConfig = {
   applyFixes: boolean

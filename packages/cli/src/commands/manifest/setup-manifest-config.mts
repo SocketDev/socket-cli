@@ -1,9 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { debugDir } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { input, select } from '@socketsecurity/lib/stdio/prompts'
+import { debugDir } from '@socketsecurity/lib-internal/debug'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
+import { input, select } from '@socketsecurity/lib-internal/stdio/prompts'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'

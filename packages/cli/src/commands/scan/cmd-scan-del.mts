@@ -1,4 +1,4 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { handleDeleteScan } from './handle-delete-scan.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'

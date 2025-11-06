@@ -39,7 +39,7 @@ const mockLogger = vi.hoisted(() => ({
 const mockQueryApiSafeJson = vi.hoisted(() => vi.fn())
 const mockGetDefaultApiToken = vi.hoisted(() => vi.fn(() => 'test-token'))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-internal/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))

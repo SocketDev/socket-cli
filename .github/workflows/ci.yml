@@ -35,7 +35,7 @@ jobs:
     name: Run CI Pipeline
     uses: SocketDev/socket-registry/.github/workflows/ci.yml@1a96ced97aaa85d61543351b90d6f463b983c46c # main
     with:
-      test-setup-script: 'pnpm --filter @socketsecurity/cli run build'
+      test-setup-script: 'pnpm --filter @socketsecurity/cli... run build'
       lint-script: 'pnpm --filter @socketsecurity/cli run check'
       type-check-script: 'pnpm --filter @socketsecurity/cli run type'
       run-test: false  # Tests run in separate sharded job below.
@@ -64,9 +64,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Build CLI
-        working-directory: packages/cli
-        run: pnpm run build
+      - name: Build dependencies and CLI
+        run: pnpm --filter @socketsecurity/cli... run build
 
       - name: Run unit tests (shard ${{ matrix.shard }})
         working-directory: packages/cli
@@ -88,9 +87,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Build CLI
-        working-directory: packages/cli
-        run: pnpm run build
+      - name: Build dependencies and CLI
+        run: pnpm --filter @socketsecurity/cli... run build
 
       - name: Generate cache keys for binary distributions
         id: cache-keys
@@ -220,9 +218,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Build CLI
-        working-directory: packages/cli
-        run: pnpm run build
+      - name: Build dependencies and CLI
+        run: pnpm --filter @socketsecurity/cli... run build
 
       - name: Run e2e tests
         working-directory: packages/cli

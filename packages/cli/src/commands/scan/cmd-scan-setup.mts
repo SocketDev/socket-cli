@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-internal/logger'
 
 import { handleScanConfig } from './handle-scan-config.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'

@@ -1,7 +1,7 @@
 import path from 'node:path'
 
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { readJson, safeMkdir, writeJson } from '@socketsecurity/lib/fs'
+import { debug, debugDir } from '@socketsecurity/lib-internal/debug'
+import { readJson, safeMkdir, writeJson } from '@socketsecurity/lib-internal/fs'
 
 import { getSocketFixBranchName } from './git.mts'
 

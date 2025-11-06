@@ -1,6 +1,6 @@
-import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { isNonEmptyString } from '@socketsecurity/lib/strings'
+import { UNKNOWN_VALUE } from '@socketsecurity/lib-internal/constants/core'
+import { debug, debugDir } from '@socketsecurity/lib-internal/debug'
+import { isNonEmptyString } from '@socketsecurity/lib-internal/strings'
 
 import {
   getSocketFixBranchPattern,
@@ -26,7 +26,7 @@ import {
 import { createPrProvider } from '../../utils/git/provider-factory.mts'
 
 import type { OctokitResponse } from '@octokit/types'
-import type { JsonContent } from '@socketsecurity/lib/fs'
+import type { JsonContent } from '@socketsecurity/lib-internal/fs'
 
 export type OpenSocketFixPrOptions = {
   baseBranch?: string | undefined

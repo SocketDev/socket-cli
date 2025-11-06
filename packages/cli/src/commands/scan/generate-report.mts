@@ -1,4 +1,4 @@
-import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
+import { UNKNOWN_VALUE } from '@socketsecurity/lib-internal/constants/core'
 
 import {
   FOLD_SETTING_FILE,
@@ -17,7 +17,7 @@ import { getSocketDevPackageOverviewUrlFromPurl } from '../../utils/socket/url.m
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib-internal/spinner'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 type AlertKey = string
