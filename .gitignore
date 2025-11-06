@@ -8,6 +8,7 @@ Thumbs.db
 /.rollup.cache
 /.vscode
 /external
+/.node-version
 /npm-debug.log
 /yarn.lock
 /yarn.log
