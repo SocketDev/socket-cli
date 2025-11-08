@@ -26,7 +26,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { getConfigValueOrUndef } from './config.mts'
-import { debugApiResponse } from './debug.mts'
+import { debugApiRequest, debugApiResponse } from './debug.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
   EMPTY_VALUE,
@@ -166,9 +166,6 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     }
     if (description) {
       logger.fail(`An error was thrown while requesting ${description}`)
-      debugApiResponse(description, undefined, e)
-    } else {
-      debugApiResponse('Socket API', undefined, e)
     }
     debugDir('inspect', { socketSdkErrorResult })
     return socketSdkErrorResult
@@ -177,7 +174,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   // Note: TS can't narrow down the type of result due to generics.
   if (sdkResult.success === false) {
     const endpoint = description || 'Socket API'
-    debugApiResponse(endpoint, sdkResult.status as number)
+    debugApiResponse('API', endpoint, sdkResult.status as number)
     debugDir('inspect', { sdkResult })
 
     const errCResult = sdkResult as SocketSdkErrorResult<T>
@@ -263,18 +260,20 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
   }
 }
 
-export async function queryApi(path: string, apiToken: string) {
+async function queryApi(path: string, apiToken: string) {
   const baseUrl = getDefaultApiBaseUrl()
   if (!baseUrl) {
     throw new Error('Socket API base URL is not configured.')
   }
 
-  return await fetch(`${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`, {
+  const url = `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`
+  const result = await fetch(url, {
     method: 'GET',
     headers: {
       Authorization: `Basic ${btoa(`${apiToken}:`)}`,
     },
   })
+  return result
 }
 
 /**
@@ -299,21 +298,34 @@ export async function queryApiSafeText(
 
   if (description) {
     spinner.start(`Requesting ${description} from API...`)
+    debugApiRequest('GET', path, constants.ENV.SOCKET_CLI_API_TIMEOUT)
   }
 
   let result
+  const startTime = Date.now()
   try {
     result = await queryApi(path, apiToken)
+    const duration = Date.now() - startTime
+    debugApiResponse(
+      'GET',
+      path,
+      result.status,
+      undefined,
+      duration,
+      Object.fromEntries(result.headers.entries()),
+    )
     if (description) {
       spinner.successAndStop(
         `Received Socket API response (after requesting ${description}).`,
       )
     }
   } catch (e) {
+    const duration = Date.now() - startTime
     if (description) {
       spinner.failAndStop(
         `An error was thrown while requesting ${description}.`,
       )
+      debugApiResponse('GET', path, undefined, e, duration)
     }
 
     debugFn('error', 'Query API request failed')

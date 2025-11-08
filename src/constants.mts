@@ -154,6 +154,7 @@ export type ENV = Remap<
       npm_config_user_agent: string
       PATH: string
       SOCKET_CLI_ACCEPT_RISKS: boolean
+      SOCKET_CLI_DEBUG: boolean
       SOCKET_CLI_API_BASE_URL: string
       SOCKET_CLI_API_PROXY: string
       SOCKET_CLI_API_TIMEOUT: number
@@ -574,6 +575,8 @@ const LAZY_ENV = () => {
     PATH: envAsString(env['PATH']),
     // Accept risks of a Socket wrapped npm/npx run.
     SOCKET_CLI_ACCEPT_RISKS: envAsBoolean(env[SOCKET_CLI_ACCEPT_RISKS]),
+    // Enable debug logging in Socket CLI.
+    SOCKET_CLI_DEBUG: envAsBoolean(env['SOCKET_CLI_DEBUG']),
     // Change the base URL for Socket API calls.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
     SOCKET_CLI_API_BASE_URL:

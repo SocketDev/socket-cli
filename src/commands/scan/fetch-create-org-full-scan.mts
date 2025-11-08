@@ -1,3 +1,9 @@
+import fs from 'node:fs'
+import path from 'node:path'
+
+import { logger } from '@socketsecurity/registry/lib/logger'
+
+import constants from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
@@ -50,6 +56,19 @@ export async function fetchCreateOrgFullScan(
     return sockSdkCResult
   }
   const sockSdk = sockSdkCResult.data
+
+  if (constants.ENV.SOCKET_CLI_DEBUG) {
+    const fileInfo = await Promise.all(
+      packagePaths.map(async p => {
+        const absPath = path.resolve(process.cwd(), p)
+        const stat = await fs.promises.stat(absPath)
+        return { path: absPath, size: stat.size }
+      }),
+    )
+    logger.info(
+      `[DEBUG] ${new Date().toISOString()} Uploading full scan manifests: ${JSON.stringify(fileInfo)}`,
+    )
+  }
 
   return await handleApiCall(
     sockSdk.createOrgFullScan(orgSlug, packagePaths, cwd, {
