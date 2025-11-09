@@ -3,6 +3,11 @@ name: Publish to npm registry
 on:
   workflow_dispatch:
     inputs:
+      dist-tag:
+        description: 'npm dist-tag (latest, next, beta, canary, backport, etc.)'
+        required: false
+        default: 'latest'
+        type: string
       debug:
         description: 'Enable debug output'
         required: false
@@ -26,7 +31,7 @@ jobs:
           scope: '@socketsecurity'
       - run: pnpm install
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
-      - run: pnpm publish --provenance --access public --no-git-checks
+      - run: pnpm publish --provenance --access public --no-git-checks --tag ${{ inputs.dist-tag }}
         continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -34,7 +39,7 @@ jobs:
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: pnpm publish --provenance --access public --no-git-checks
+      - run: pnpm publish --provenance --access public --no-git-checks --tag ${{ inputs.dist-tag }}
         continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -42,7 +47,7 @@ jobs:
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: pnpm publish --provenance --access public --no-git-checks
+      - run: pnpm publish --provenance --access public --no-git-checks --tag ${{ inputs.dist-tag }}
         continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
