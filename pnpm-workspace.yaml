@@ -25,7 +25,7 @@ catalog:
   '@inquirer/password': 4.0.18
   '@inquirer/search': 3.1.1
   '@inquirer/select': 4.3.2
-  '@npmcli/package-json': 7.0.0
+  '@npmcli/package-json': 7.0.1
   '@npmcli/promise-spawn': 8.0.3
   '@socketregistry/is-unicode-supported': 1.0.5
   '@typescript/native-preview': 7.0.0-dev.20250920.1
