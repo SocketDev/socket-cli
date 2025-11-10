@@ -29,7 +29,7 @@ catalog:
   '@npmcli/promise-spawn': 8.0.3
   '@socketregistry/is-unicode-supported': 1.0.5
   '@typescript/native-preview': 7.0.0-dev.20250920.1
-  '@vitest/ui': 4.0.3
+  '@vitest/ui': 4.0.6
   '@yarnpkg/extensions': 2.0.6
   cacache: 20.0.1
   debug: 4.4.3
