@@ -13,7 +13,7 @@ catalog:
   '@babel/runtime': 7.28.4
   '@babel/traverse': 7.28.4
   '@babel/types': 7.28.5
-  '@biomejs/biome': 2.2.4
+  '@biomejs/biome': 2.3.2
   '@coana-tech/cli': 14.12.51
   '@cyclonedx/cdxgen': 11.10.0
   '@dotenvx/dotenvx': 1.49.0
