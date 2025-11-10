@@ -94,8 +94,8 @@ catalogs:
       specifier: 22.0.0
       version: 22.0.0
     '@octokit/types':
-      specifier: 14.1.0
-      version: 14.1.0
+      specifier: 16.0.0
+      version: 16.0.0
     '@pnpm/dependency-path':
       specifier: 1001.1.0
       version: 1001.1.0
@@ -543,7 +543,7 @@ importers:
         version: 22.0.0
       '@octokit/types':
         specifier: 'catalog:'
-        version: 14.1.0
+        version: 16.0.0
       '@pnpm/dependency-path':
         specifier: 'catalog:'
         version: 1001.1.0
@@ -2159,6 +2159,9 @@ packages:
   '@octokit/openapi-types@26.0.0':
     resolution: {integrity: sha512-7AtcfKtpo77j7Ts73b4OWhOZHTKo/gGY8bB3bNBQz4H+GRSWqx2yvj8TXRsbdTE0eRmYmXOEY66jM7mJ7LzfsA==}
 
+  '@octokit/openapi-types@27.0.0':
+    resolution: {integrity: sha512-whrdktVs1h6gtR+09+QsNk2+FO+49j6ga1c55YZudfEG+oKJVvJLQi3zkOm5JjiUXAagWK2tI2kTGKJ2Ys7MGA==}
+
   '@octokit/plugin-paginate-rest@13.2.1':
     resolution: {integrity: sha512-Tj4PkZyIL6eBMYcG/76QGsedF0+dWVeLhYprTmuFVVxzDW7PQh23tM0TP0z+1MvSkxB29YFZwnUX+cXfTiSdyw==}
     engines: {node: '>= 20'}
@@ -2194,6 +2197,9 @@ packages:
 
   '@octokit/types@15.0.2':
     resolution: {integrity: sha512-rR+5VRjhYSer7sC51krfCctQhVTmjyUMAaShfPB8mscVa8tSoLyon3coxQmXu0ahJoLVWl8dSGD/3OGZlFV44Q==}
+
+  '@octokit/types@16.0.0':
+    resolution: {integrity: sha512-sKq+9r1Mm4efXW1FCk7hFSeJo4QKreL/tTbR0rz/qx/r1Oa2VV83LTA/H/MuCOX7uCIJmQVRKBcbmWoySjAnSg==}
 
   '@open-draft/deferred-promise@2.2.0':
     resolution: {integrity: sha512-CecwLWx3rhxVQF6V4bAgPS5t+So2sTbPgAzafKkVizyi7tlwpcFpdFqq+wqF2OwNBmqFuu6tOyouTuxgpMfzmA==}
@@ -7682,6 +7688,8 @@ snapshots:
 
   '@octokit/openapi-types@26.0.0': {}
 
+  '@octokit/openapi-types@27.0.0': {}
+
   '@octokit/plugin-paginate-rest@13.2.1(@octokit/core@7.0.5)':
     dependencies:
       '@octokit/core': 7.0.5
@@ -7722,6 +7730,10 @@ snapshots:
   '@octokit/types@15.0.2':
     dependencies:
       '@octokit/openapi-types': 26.0.0
+
+  '@octokit/types@16.0.0':
+    dependencies:
+      '@octokit/openapi-types': 27.0.0
 
   '@open-draft/deferred-promise@2.2.0': {}
 
@@ -8634,10 +8646,10 @@ snapshots:
 
   '@types/yargs-parser@21.0.3': {}
 
-  '@typescript-eslint/eslint-plugin@8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)':
+  '@typescript-eslint/eslint-plugin@8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
-      '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/scope-manager': 8.44.1
       '@typescript-eslint/type-utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
@@ -12286,7 +12298,7 @@ snapshots:
 
   typescript-eslint@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2):
     dependencies:
-      '@typescript-eslint/eslint-plugin': 8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
+      '@typescript-eslint/eslint-plugin': 8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/typescript-estree': 8.44.1(typescript@5.9.2)
       '@typescript-eslint/utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
