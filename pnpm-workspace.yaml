@@ -50,7 +50,7 @@ catalog:
   spdx-expression-parse: 4.0.0
   streaming-iterables: 8.0.1
   typescript: 5.9.2
-  validate-npm-package-name: 6.0.2
+  validate-npm-package-name: 7.0.0
   vite-tsconfig-paths: 5.1.4
   which: 5.0.0
   '@iarna/toml': ^2.2.5
