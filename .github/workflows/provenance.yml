@@ -43,7 +43,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           autocrlf: false
-      - uses: SocketDev/socket-registry/.github/actions/setup@1a96ced97aaa85d61543351b90d6f463b983c46c # main
+      - uses: SocketDev/socket-registry/.github/actions/setup@e145a6b355d614054e4df3d49ba5218812f42b3e # main
         with:
           scope: '@socketsecurity'
       - name: Cache yoga-layout WASM

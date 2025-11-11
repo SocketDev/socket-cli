@@ -33,7 +33,7 @@ permissions:
 jobs:
   ci:
     name: Run CI Pipeline
-    uses: SocketDev/socket-registry/.github/workflows/ci.yml@1a96ced97aaa85d61543351b90d6f463b983c46c # main
+    uses: SocketDev/socket-registry/.github/workflows/ci.yml@e145a6b355d614054e4df3d49ba5218812f42b3e # main
     with:
       test-setup-script: 'pnpm --filter @socketsecurity/cli... run build'
       lint-script: 'pnpm --filter @socketsecurity/cli run check'
@@ -60,7 +60,7 @@ jobs:
         node-version: ${{ fromJSON(inputs.node-versions || '["24.10.0"]') }}
         shard: [1, 2, 3]
     steps:
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@1a96ced97aaa85d61543351b90d6f463b983c46c # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@e145a6b355d614054e4df3d49ba5218812f42b3e # main
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -83,7 +83,7 @@ jobs:
       matrix:
         node-version: ['24.10.0']
     steps:
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@1a96ced97aaa85d61543351b90d6f463b983c46c # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@e145a6b355d614054e4df3d49ba5218812f42b3e # main
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -214,7 +214,7 @@ jobs:
         node-version: ['24.10.0']
         os: [ubuntu-latest]
     steps:
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@1a96ced97aaa85d61543351b90d6f463b983c46c # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@e145a6b355d614054e4df3d49ba5218812f42b3e # main
         with:
           node-version: ${{ matrix.node-version }}
 
