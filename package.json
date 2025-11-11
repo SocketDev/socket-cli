@@ -1,6 +1,7 @@
 {
   "name": "socket-cli-monorepo",
   "version": "0.0.0",
+  "packageManager": "pnpm@>=10.21.0",
   "private": true,
   "devDependencies": {
     "@babel/core": "catalog:",
