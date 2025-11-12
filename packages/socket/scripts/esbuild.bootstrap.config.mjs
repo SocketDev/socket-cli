@@ -6,6 +6,8 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import semver from 'semver'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageRoot = path.resolve(__dirname, '..')
 const monorepoRoot = path.resolve(packageRoot, '../..')
@@ -16,6 +18,12 @@ const nodeVersionPath = path.join(bootstrapPackage, 'node-version.json')
 const nodeVersionConfig = JSON.parse(readFileSync(nodeVersionPath, 'utf8'))
 const minNodeVersion = nodeVersionConfig.versionSemver
 
+// Read Socket CLI version from package.json.
+const packageJsonPath = path.join(packageRoot, 'package.json')
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
+const cliVersion = packageJson.version
+const cliVersionMajor = String(semver.major(cliVersion))
+
 export default {
   banner: {
     js: '#!/usr/bin/env node',
@@ -23,6 +31,8 @@ export default {
   bundle: true,
   define: {
     __MIN_NODE_VERSION__: JSON.stringify(minNodeVersion),
+    __SOCKET_CLI_VERSION__: JSON.stringify(cliVersion),
+    __SOCKET_CLI_VERSION_MAJOR__: JSON.stringify(cliVersionMajor),
   },
   entryPoints: [path.join(bootstrapPackage, 'src', 'bootstrap-npm.mts')],
   external: [],
