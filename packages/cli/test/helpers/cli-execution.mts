@@ -95,7 +95,7 @@ export async function executeCliCommand(
 
   return {
     code: result.code,
-    error: result.error,
+    ...(result.error && { error: result.error }),
     output: `${result.stdout}\n${result.stderr}`.trim(),
     status: result.status,
     stderr: result.stderr,

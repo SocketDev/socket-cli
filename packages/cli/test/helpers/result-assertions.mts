@@ -8,7 +8,11 @@ import type { CResult } from '../../src/types.mts'
  * Fluent assertion builder for CResult validation
  */
 export class ResultAssertion<T> {
-  constructor(private readonly result: CResult<T>) {}
+  private readonly result: CResult<T>
+
+  constructor(result: CResult<T>) {
+    this.result = result
+  }
 
   /**
    * Assert result is successful (ok: true)
@@ -293,7 +297,7 @@ export function expectResultHasProperties<T>(
   const data = (result as { data: T }).data
 
   for (const prop of expectedProps) {
-    expect(data).toHaveProperty(prop)
+    expect(data).toHaveProperty(prop as string)
   }
 }
 

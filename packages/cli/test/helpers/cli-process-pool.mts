@@ -41,6 +41,8 @@ interface ExecuteResult {
 }
 
 class CliProcessPool {
+  maxPoolSize: number
+  processTimeout: number
   private pool: Map<string, PooledProcess[]> = new Map()
 
   constructor(maxPoolSize = 4, processTimeout = 30_000) {
@@ -105,19 +107,42 @@ class CliProcessPool {
       return {
         status: true,
         code: 0,
-        stdout: this._cleanOutput(output.stdout),
-        stderr: this._cleanOutput(output.stderr),
+        stdout: this._cleanOutput(
+          typeof output.stdout === 'string'
+            ? output.stdout
+            : output.stdout.toString(),
+        ),
+        stderr: this._cleanOutput(
+          typeof output.stderr === 'string'
+            ? output.stderr
+            : output.stderr.toString(),
+        ),
       }
     } catch (e: unknown) {
+      const error = e as {
+        code?: number
+        message?: string
+        stack?: string
+        stdout?: Buffer | string
+        stderr?: Buffer | string
+      }
       return {
         status: false,
-        code: typeof e?.code === 'number' ? e.code : 1,
+        code: typeof error.code === 'number' ? error.code : 1,
         error: {
-          message: e?.message || '',
-          stack: e?.stack || '',
+          message: error.message || '',
+          stack: error.stack || '',
         },
-        stdout: this._cleanOutput(e?.stdout || ''),
-        stderr: this._cleanOutput(e?.stderr || ''),
+        stdout: this._cleanOutput(
+          typeof error.stdout === 'string'
+            ? error.stdout
+            : error.stdout?.toString() || '',
+        ),
+        stderr: this._cleanOutput(
+          typeof error.stderr === 'string'
+            ? error.stderr
+            : error.stderr?.toString() || '',
+        ),
       }
     }
   }

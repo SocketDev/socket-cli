@@ -10,9 +10,8 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
 import { build } from 'esbuild'
-
-import { unicodeTransformPlugin } from '@socketsecurity/build-infra/lib/esbuild-plugin-unicode-transform'
 
 import { getLocalPackageAliases } from '../scripts/utils/get-local-package-aliases.mjs'
 
@@ -39,14 +38,15 @@ try {
 } catch {}
 
 // Get dependency versions from package.json devDependencies.
-const coanaVersion = packageJson.devDependencies?.['@coana-tech/cli'] || ''
 const cdxgenVersion = packageJson.devDependencies?.['@cyclonedx/cdxgen'] || ''
 const synpVersion = packageJson.devDependencies?.['synp'] || ''
 
 // Get external tool versions from package.json externalTools (non-npm packages).
-const pythonVersion = packageJson.externalTools?.['python'] || ''
-const pythonBuildTag = packageJson.externalTools?.['pythonBuildTag'] || ''
+const coanaVersion = packageJson.externalTools?.['coana'] || ''
 const pyCliVersion = packageJson.externalTools?.['socketcli'] || ''
+const pythonBuildTag = packageJson.externalTools?.['pythonBuildTag'] || ''
+const pythonVersion = packageJson.externalTools?.['python'] || ''
+const sfwVersion = packageJson.externalTools?.['sfw'] || ''
 
 // Build-time constants that can be overridden by environment variables.
 const publishedBuild = process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'] === '1'
@@ -225,12 +225,12 @@ const config = {
       INLINED_SOCKET_CLI_VERSION_HASH: JSON.stringify(versionHash),
       INLINED_SOCKET_CLI_NAME: JSON.stringify(packageJson.name),
       INLINED_SOCKET_CLI_HOMEPAGE: JSON.stringify(packageJson.homepage),
-      INLINED_SOCKET_CLI_AI_VERSION: JSON.stringify(socketPackageJson.version),
       INLINED_SOCKET_CLI_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
       INLINED_SOCKET_CLI_COANA_VERSION: JSON.stringify(coanaVersion),
       INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION:
         JSON.stringify(cdxgenVersion),
       INLINED_SOCKET_CLI_PYCLI_VERSION: JSON.stringify(pyCliVersion),
+      INLINED_SOCKET_CLI_SFW_VERSION: JSON.stringify(sfwVersion),
       INLINED_SOCKET_CLI_SYNP_VERSION: JSON.stringify(synpVersion),
       INLINED_SOCKET_CLI_PUBLISHED_BUILD: JSON.stringify(
         publishedBuild ? '1' : '',
@@ -253,12 +253,12 @@ const config = {
       INLINED_SOCKET_CLI_VERSION_HASH: JSON.stringify(versionHash),
       INLINED_SOCKET_CLI_NAME: JSON.stringify(packageJson.name),
       INLINED_SOCKET_CLI_HOMEPAGE: JSON.stringify(packageJson.homepage),
-      INLINED_SOCKET_CLI_AI_VERSION: JSON.stringify(socketPackageJson.version),
       INLINED_SOCKET_CLI_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
       INLINED_SOCKET_CLI_COANA_VERSION: JSON.stringify(coanaVersion),
       INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION:
         JSON.stringify(cdxgenVersion),
       INLINED_SOCKET_CLI_PYCLI_VERSION: JSON.stringify(pyCliVersion),
+      INLINED_SOCKET_CLI_SFW_VERSION: JSON.stringify(sfwVersion),
       INLINED_SOCKET_CLI_SYNP_VERSION: JSON.stringify(synpVersion),
       INLINED_SOCKET_CLI_PUBLISHED_BUILD: JSON.stringify(
         publishedBuild ? '1' : '',

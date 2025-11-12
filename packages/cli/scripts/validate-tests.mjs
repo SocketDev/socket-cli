@@ -254,10 +254,11 @@ function formatResults(results) {
       const message = `${result.file}: ${issue.message}`
       if (issue.severity === 'error') {
         errors.push(message)
-        getDefaultLogger().fail(message)
+        const logger = getDefaultLogger()
+        logger.fail(message)
       } else if (issue.severity === 'warning') {
         warnings.push(message)
-        getDefaultLogger().warn(message)
+        logger.warn(message)
       } else {
         infos.push(message)
       }
@@ -271,15 +272,15 @@ function formatResults(results) {
  * Main validation flow.
  */
 async function main() {
-  getDefaultLogger().info('Starting test validation...\n')
+  logger.info('Starting test validation...\n')
 
   // Validate build artifacts first.
   const buildIssues = await validateBuildArtifacts()
   if (buildIssues.some(issue => issue.severity === 'error')) {
     for (const issue of buildIssues) {
-      getDefaultLogger().fail(issue.message)
+      logger.fail(issue.message)
     }
-    getDefaultLogger().fail(
+    logger.fail(
       '\nBuild artifacts validation failed. Run build before testing.',
     )
     process.exitCode = 1
@@ -287,7 +288,7 @@ async function main() {
   }
 
   const testFiles = await getTestFiles()
-  getDefaultLogger().info(`Found ${testFiles.length} test files to validate\n`)
+  logger.info(`Found ${testFiles.length} test files to validate\n`)
 
   const results = []
   await pEach(
@@ -299,39 +300,35 @@ async function main() {
     { concurrency: 10 },
   )
 
-  getDefaultLogger().info('\n--- Validation Results ---\n')
+  logger.info('\n--- Validation Results ---\n')
   const { errors, infos, warnings } = formatResults(results)
 
-  getDefaultLogger().info('\n--- Summary ---')
-  getDefaultLogger().info(`Total test files: ${testFiles.length}`)
-  getDefaultLogger().info(
-    `Passed: ${results.filter(r => r.issues.length === 0).length}`,
-  )
-  getDefaultLogger().info(
+  logger.info('\n--- Summary ---')
+  logger.info(`Total test files: ${testFiles.length}`)
+  logger.info(`Passed: ${results.filter(r => r.issues.length === 0).length}`)
+  logger.info(
     `With warnings: ${results.filter(r => r.hasWarnings && !r.hasErrors).length}`,
   )
-  getDefaultLogger().info(
-    `With errors: ${results.filter(r => r.hasErrors).length}`,
-  )
+  logger.info(`With errors: ${results.filter(r => r.hasErrors).length}`)
 
   if (errors.length > 0) {
-    getDefaultLogger().fail(`\n${errors.length} error(s) found`)
+    logger.fail(`\n${errors.length} error(s) found`)
     process.exitCode = 1
   } else if (warnings.length > 0) {
-    getDefaultLogger().warn(`\n${warnings.length} warning(s) found`)
+    logger.warn(`\n${warnings.length} warning(s) found`)
     if (infos.length > 0) {
-      getDefaultLogger().info(`${infos.length} info message(s)`)
+      logger.info(`${infos.length} info message(s)`)
     }
   } else {
-    getDefaultLogger().success('\nAll tests validated successfully!')
+    logger.success('\nAll tests validated successfully!')
     if (infos.length > 0) {
-      getDefaultLogger().info(`${infos.length} info message(s)`)
+      logger.info(`${infos.length} info message(s)`)
     }
   }
 }
 
 main().catch(e => {
-  getDefaultLogger().fail(`Validation failed: ${e.message}`)
-  getDefaultLogger().fail(e.stack)
+  logger.fail(`Validation failed: ${e.message}`)
+  logger.fail(e.stack)
   process.exitCode = 1
 })

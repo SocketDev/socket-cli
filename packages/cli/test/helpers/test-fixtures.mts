@@ -2,6 +2,8 @@ import { promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
+import { safeDelete } from '@socketsecurity/lib/fs'
+
 /**
  * Creates a temporary copy of a fixture directory for testing.
  * The temporary directory is automatically cleaned up when tests complete.
@@ -30,7 +32,7 @@ export async function createTempFixture(
   if (cleanupHook) {
     cleanupHook(async () => {
       try {
-        await fs.rm(tempDir, { recursive: true, force: true })
+        await safeDelete(tempDir)
       } catch {
         // Ignore cleanup errors in tests.
       }
@@ -66,7 +68,7 @@ export async function createTempFixtures(
     cleanupHook(async () => {
       await Promise.all(
         tempDirs.map(dir =>
-          fs.rm(dir, { recursive: true, force: true }).catch(() => {
+          safeDelete(dir).catch(() => {
             // Ignore cleanup errors.
           }),
         ),
@@ -92,7 +94,7 @@ export async function withTempFixture(fixturePath: string): Promise<{
 
   const cleanup = async () => {
     try {
-      await fs.rm(tempDir, { recursive: true, force: true })
+      await safeDelete(tempDir)
     } catch {
       // Ignore cleanup errors.
     }
