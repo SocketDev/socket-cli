@@ -1,4 +1,4 @@
-name: 🔧 Socket Fix Auto Pull Request
+name: ⚡ Fix PR
 
 on:
   schedule:
@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   socket-auto-pr:
-    uses: SocketDev/socket-registry/.github/workflows/socket-auto-pr.yml@1a96ced97aaa85d61543351b90d6f463b983c46c # main
+    uses: SocketDev/socket-registry/.github/workflows/socket-auto-pr.yml@e145a6b355d614054e4df3d49ba5218812f42b3e # main
     with:
       debug: ${{ inputs.debug }}
       autopilot: true
