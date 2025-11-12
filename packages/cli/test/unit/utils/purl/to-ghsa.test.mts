@@ -43,10 +43,6 @@ vi.mock('../../../../src/utils/error/errors.mts', () => ({
 
 describe('convertPurlToGhsas', () => {
   it('returns error for invalid PURL format', async () => {
-    const { getPurlObject } = await import(
-      '../../../../../src/utils/purl/parse.mts'
-    )
-
     mockGetPurlObject.mockReturnValue(null)
 
     const result = await convertPurlToGhsas('invalid-purl')
@@ -58,10 +54,6 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('returns error for unsupported ecosystem', async () => {
-    const { getPurlObject } = await import(
-      '../../../../../src/utils/purl/parse.mts'
-    )
-
     mockGetPurlObject.mockReturnValue({
       name: 'some-package',
       type: 'unsupported-ecosystem',
@@ -79,13 +71,6 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('converts npm PURL to GHSA IDs', async () => {
-    const { getPurlObject } = await import(
-      '../../../../../src/utils/purl/parse.mts'
-    )
-    const { cacheFetch, getOctokit } = await import(
-      '../../../../../src/utils/git/github.mts'
-    )
-
     mockGetPurlObject.mockReturnValue({
       name: 'lodash',
       type: 'npm',
@@ -123,13 +108,6 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('converts pypi PURL to pip ecosystem', async () => {
-    const { getPurlObject } = await import(
-      '../../../../../src/utils/purl/parse.mts'
-    )
-    const { cacheFetch, getOctokit } = await import(
-      '../../../../../src/utils/git/github.mts'
-    )
-
     mockGetPurlObject.mockReturnValue({
       name: 'requests',
       type: 'pypi',
@@ -162,13 +140,6 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('handles PURL without version', async () => {
-    const { getPurlObject } = await import(
-      '../../../../../src/utils/purl/parse.mts'
-    )
-    const { cacheFetch, getOctokit } = await import(
-      '../../../../../src/utils/git/github.mts'
-    )
-
     mockGetPurlObject.mockReturnValue({
       name: 'express',
       type: 'npm',
@@ -204,13 +175,6 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('maps cargo to rust ecosystem', async () => {
-    const { getPurlObject } = await import(
-      '../../../../../src/utils/purl/parse.mts'
-    )
-    const { cacheFetch, getOctokit } = await import(
-      '../../../../../src/utils/git/github.mts'
-    )
-
     mockGetPurlObject.mockReturnValue({
       name: 'tokio',
       type: 'cargo',
@@ -242,13 +206,6 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('maps gem to rubygems ecosystem', async () => {
-    const { getPurlObject } = await import(
-      '../../../../../src/utils/purl/parse.mts'
-    )
-    const { cacheFetch, getOctokit } = await import(
-      '../../../../../src/utils/git/github.mts'
-    )
-
     mockGetPurlObject.mockReturnValue({
       name: 'rails',
       type: 'gem',
@@ -280,13 +237,6 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('handles API errors gracefully', async () => {
-    const { getPurlObject } = await import(
-      '../../../../../src/utils/purl/parse.mts'
-    )
-    const { cacheFetch, getOctokit } = await import(
-      '../../../../../src/utils/git/github.mts'
-    )
-
     mockGetPurlObject.mockReturnValue({
       name: 'package',
       type: 'npm',
@@ -305,13 +255,6 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('returns empty array when no advisories found', async () => {
-    const { getPurlObject } = await import(
-      '../../../../../src/utils/purl/parse.mts'
-    )
-    const { cacheFetch, getOctokit } = await import(
-      '../../../../../src/utils/git/github.mts'
-    )
-
     mockGetPurlObject.mockReturnValue({
       name: 'safe-package',
       type: 'npm',
@@ -330,13 +273,6 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('supports all ecosystem mappings', async () => {
-    const { getPurlObject } = await import(
-      '../../../../../src/utils/purl/parse.mts'
-    )
-    const { cacheFetch, getOctokit } = await import(
-      '../../../../../src/utils/git/github.mts'
-    )
-
     const ecosystemMappings = [
       { purl: 'golang', github: 'go' },
       { purl: 'maven', github: 'maven' },

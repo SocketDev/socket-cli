@@ -8,6 +8,10 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
+const logger = getDefaultLogger()
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 
@@ -142,7 +146,7 @@ async function main() {
 
     process.exitCode = 1
   } else {
-    console.log('✓ No link: dependencies found')
+    logger.success('No link: dependencies found')
   }
 }
 
