@@ -1,11 +1,9 @@
 import path from 'node:path'
-
 import terminalLink from 'terminal-link'
 
 import { arrayUnique, joinOr } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { handleFix } from './handle-fix.mts'
 import constants, {
   ERROR_UNABLE_RESOLVE_ORG,
   FLAG_ID,
@@ -21,6 +19,7 @@ import {
 } from '../../utils/output-formatting.mts'
 import { RangeStyles } from '../../utils/semver.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
+import { handleFix } from './handle-fix.mts'
 
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
 import type {
@@ -60,6 +59,22 @@ const generalFlags: MeowFlags = {
       'Compute fixes only, do not apply them. Logs what upgrades would be applied. If combined with --output-file, the output file will contain the upgrades that would be applied.',
     // Hidden to allow custom documenting of the negated `--no-apply-fixes` variant.
     hidden: true,
+  },
+  exclude: {
+    type: 'string',
+    default: [],
+    description:
+      'Exclude workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags',
+    isMultiple: true,
+    hidden: false,
+  },
+  include: {
+    type: 'string',
+    default: [],
+    description:
+      'Include workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags',
+    isMultiple: true,
+    hidden: false,
   },
   majorUpdates: {
     type: 'boolean',
@@ -131,22 +146,7 @@ const hiddenFlags: MeowFlags = {
     ...generalFlags['id'],
     hidden: true,
   } as MeowFlag,
-  exclude: {
-    type: 'string',
-    default: [],
-    description:
-      'Exclude workspaces matching these patterns. Can be provided as comma separated values or as multiple flags',
-    isMultiple: true,
-    hidden: true,
-  },
-  include: {
-    type: 'string',
-    default: [],
-    description:
-      'Include workspaces matching these patterns. Can be provided as comma separated values or as multiple flags',
-    isMultiple: true,
-    hidden: true,
-  },
+
   maxSatisfying: {
     type: 'boolean',
     default: true,

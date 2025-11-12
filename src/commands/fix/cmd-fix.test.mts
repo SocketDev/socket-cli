@@ -1,5 +1,4 @@
 import path from 'node:path'
-
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -172,11 +171,13 @@ describe('socket fix', async () => {
           Options
             --autopilot         Enable auto-merge for pull requests that Socket opens.
                                 See GitHub documentation (https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository) for managing auto-merge for pull requests in your repository.
+            --exclude           Exclude workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags
             --id                Provide a list of vulnerability identifiers to compute fixes for:
                                     - GHSA IDs (https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids) (e.g., GHSA-xxxx-xxxx-xxxx)
                                     - CVE IDs (https://cve.mitre.org/cve/identifiers/) (e.g., CVE-2025-1234) - automatically converted to GHSA
                                     - PURLs (https://github.com/package-url/purl-spec) (e.g., pkg:npm/package@1.0.0) - automatically converted to GHSA
                                     Can be provided as comma separated values or as multiple flags
+            --include           Include workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags
             --json              Output as JSON
             --limit             The number of fixes to attempt at a time (default 10)
             --markdown          Output as Markdown
