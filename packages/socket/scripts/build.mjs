@@ -24,6 +24,7 @@ import seaConfig from './esbuild.bootstrap.config.mjs'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageRoot = path.resolve(__dirname, '..')
 const monorepoRoot = path.resolve(packageRoot, '../..')
+const logger = getDefaultLogger()
 
 // Ensure bootstrap package is built before building socket wrapper.
 async function ensureBootstrapPackageBuilt() {
@@ -35,8 +36,6 @@ async function ensureBootstrapPackageBuilt() {
     monorepoRoot,
     'packages/bootstrap/dist/bootstrap-npm.js'
   )
-
-  const logger = getDefaultLogger()
   logger.group('Checking bootstrap package')
 
   // Check if bootstrap source and dist exist.
@@ -139,6 +138,13 @@ async function buildBootstrap() {
       if (outputSize) {
         logger.substep(`Bundle size: ${(outputSize / 1024).toFixed(2)} KB`)
       }
+    }
+
+    // Make bootstrap.js executable on Unix systems.
+    if (!WIN32) {
+      const bootstrapFile = path.join(packageRoot, 'dist', 'bootstrap.js')
+      await fs.chmod(bootstrapFile, 0o755)
+      logger.substep('Made bootstrap.js executable')
     }
 
     logger.groupEnd()

@@ -1,7 +1,7 @@
 {
   "name": "socket",
   "version": "2.1.0",
-  "description": "CLI for Socket.dev",
+  "description": "Socket CLI for Socket.dev",
   "private": true,
   "homepage": "https://github.com/SocketDev/socket-cli",
   "license": "MIT",
@@ -21,7 +21,6 @@
     "CHANGELOG.md",
     "LICENSE",
     "dist/**",
-    "!dist/bootstrap.js",
     "logo-dark.png",
     "logo-light.png"
   ],
@@ -43,11 +42,7 @@
     "verify": "pnpm run build && node scripts/verify-package.mjs"
   },
   "bin": {
-    "socket": "dist/bootstrap.js",
-    "socket-npm": "dist/bootstrap.js",
-    "socket-npx": "dist/bootstrap.js",
-    "socket-pnpm": "dist/bootstrap.js",
-    "socket-yarn": "dist/bootstrap.js"
+    "socket": "./dist/bootstrap.js"
   },
   "devDependencies": {
     "@socketsecurity/lib": "catalog:",
