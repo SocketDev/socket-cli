@@ -1,9 +1,11 @@
 import path from 'node:path'
+
 import terminalLink from 'terminal-link'
 
 import { arrayUnique, joinOr } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { handleFix } from './handle-fix.mts'
 import constants, {
   ERROR_UNABLE_RESOLVE_ORG,
   FLAG_ID,
@@ -19,7 +21,6 @@ import {
 } from '../../utils/output-formatting.mts'
 import { RangeStyles } from '../../utils/semver.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
-import { handleFix } from './handle-fix.mts'
 
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
 import type {

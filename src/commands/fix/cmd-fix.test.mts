@@ -1,4 +1,5 @@
 import path from 'node:path'
+
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

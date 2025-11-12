@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.27](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.27) - 2025-11-12
+
+### Added
+- Backported `--exclude` and `--include` flags for `socket fix` command from v2
+
 ## [1.1.26](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.26) - 2025-11-08
 
 ### Added
