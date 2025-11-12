@@ -2,6 +2,8 @@
 
 [![Socket Badge](https://socket.dev/api/badge/npm/package/socket)](https://socket.dev/npm/package/socket)
 [![CI](https://github.com/SocketDev/socket-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/SocketDev/socket-cli/actions/workflows/ci.yml)
+![Code Coverage](https://img.shields.io/badge/code--coverage-37.17%25-yellow)
+![Type Coverage](https://img.shields.io/badge/type--coverage-98.16%25-brightgreen)
 
 [![Follow @SocketSecurity](https://img.shields.io/twitter/follow/SocketSecurity?style=social)](https://twitter.com/SocketSecurity)
 
@@ -98,7 +100,10 @@ Supports version 2 format with `projectIgnorePaths` for excluding files from rep
 
 ## Contributing
 
-**New to Socket CLI development?** Start with our [Getting Started Guide](docs/development/getting-started.md) for complete setup instructions.
+**New to Socket CLI development?**
+
+- **Quick Start (10 min)**: [Getting Started Guide](docs/getting-started.md) — Essential setup and first contribution
+- **Detailed Guide**: [Development Getting Started](docs/development/getting-started.md) — Complete end-to-end onboarding
 
 **Quick setup:**
 
@@ -120,119 +125,13 @@ Socket CLI uses an **intelligent build system with automatic caching** that only
 
 > **Note**: ONNX Runtime WASM is temporarily disabled due to build issues. AI features use pre-built assets.
 
-#### Quick start (easiest)
-
-The default build command automatically skips packages that are already up-to-date:
+#### Build Commands
 
 ```bash
-# Build only what changed (recommended for development)
-pnpm run build
-```
-
-**How it works:**
-- Checks if output files exist (e.g., `packages/yoga/dist/yoga.wasm`)
-- Skips building if output is present and up-to-date
-- Shows which packages were built vs. skipped
-- Displays build time summary
-
-**Example output:**
-```
-============================================================
-Socket CLI Build System
-============================================================
-
-→ Yoga WASM: skipped (up to date)
-→ CLI Package: building...
-✓ CLI Package: built (12.3s)
-→ SEA Binary: building...
-✓ SEA Binary: built (45.1s)
-
-============================================================
-Build Summary
-============================================================
-
-Built:    2
-Skipped:  1
-Total:    57.4s
-
-✓ Build completed successfully
-```
-
-#### Force rebuild
-
-To rebuild everything from scratch (ignoring cache):
-
-```bash
-# Force rebuild all packages
-pnpm run build --force
-```
-
-#### Single target builds
-
-For fast iteration during development:
-
-```bash
-# Build only CLI package
-pnpm run build --target cli
-
-# Build SEA binary
-pnpm run build --target sea
-
-# Build specific platform binary (combined syntax)
-pnpm run build --target darwin-arm64
-
-# Build specific platform binary (separate flags - matches node-sea-builder)
-pnpm run build --platform darwin --arch arm64
-```
-
-#### Multiple target builds
-
-Build multiple packages at once:
-
-```bash
-# Build multiple specific targets sequentially
-pnpm run build --targets cli,sea,darwin-arm64
-
-# Build multiple targets in parallel (faster)
-pnpm run build --targets cli,sea,darwin-arm64 --parallel
-```
-
-#### Platform binaries
-
-Build all platform binaries (8 platforms):
-
-```bash
-# Build all platforms sequentially (safer for limited resources)
-pnpm run build --platforms
-
-# Build all platforms in parallel (much faster, requires more CPU/RAM)
-pnpm run build --platforms --parallel
-```
-
-**Platform targets:** alpine-arm64, alpine-x64, darwin-arm64, darwin-x64, linux-arm64, linux-x64, win32-arm64, win32-x64
-
-#### Advanced: Direct package builds
-
-Build individual packages directly with pnpm filters:
-
-```bash
-# Build ONNX Runtime WASM (for AI features)
-pnpm --filter @socketsecurity/onnxruntime run build
-
-# Build Yoga WASM (for terminal layouts)
-pnpm --filter @socketsecurity/yoga run build
-
-# Build CLI package (TypeScript + bundling)
-pnpm --filter @socketsecurity/cli run build
-
-# Build SEA binary (Node.js Single Executable)
-pnpm --filter @socketbin/node-sea-builder-builder run build
-```
-
-#### All build options
-
-```bash
-pnpm run build --help
+pnpm run build                    # Smart incremental build
+pnpm run build --force            # Full rebuild
+pnpm run build --target cli       # Single target
+pnpm run build --help             # All options
 ```
 
 See [docs/development/](docs/development/) for detailed development guides.
