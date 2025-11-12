@@ -15,7 +15,7 @@ ALLOWED_PUBLIC_KEY="sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api"
 ERRORS=0
 
 # Get files in this commit (for security checks).
-COMMITTED_FILES=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || echo "")
+COMMITTED_FILES=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || printf "\n")
 
 # Quick checks for critical issues in committed files.
 if [ -n "$COMMITTED_FILES" ]; then
@@ -24,7 +24,7 @@ if [ -n "$COMMITTED_FILES" ]; then
       # Check for Socket API keys (except allowed).
       if grep -E 'sktsec_[a-zA-Z0-9_-]+' "$file" 2>/dev/null | grep -v "$ALLOWED_PUBLIC_KEY" | grep -v 'your_api_key_here' | grep -v 'fake-token' | grep -v 'test-token' | grep -v '\.example' | grep -q .; then
         echo "${RED}✗ SECURITY: Potential API key detected in commit!${NC}"
-        echo "File: $file"
+        printf "File: %s\n" "$file"
         ERRORS=$((ERRORS + 1))
       fi
 
