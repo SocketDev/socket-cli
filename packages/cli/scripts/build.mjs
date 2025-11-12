@@ -9,7 +9,9 @@
  *   --quiet      Suppress progress output
  *   --verbose    Show detailed output
  *   --sea        Build SEA binaries (delegates to build-sea.mjs)
- *   --no-minify  Build without minification for debugging
+ *   --prod       Build for production (includes compression)
+ *   --force      Force rebuild (clean dist first)
+ *   --watch      Watch mode for development
  */
 
 import { promises as fs } from 'node:fs'
@@ -62,12 +64,7 @@ async function main() {
   const sea = process.argv.includes('--sea')
   const watch = process.argv.includes('--watch')
   const force = process.argv.includes('--force')
-  const noMinify = process.argv.includes('--no-minify')
-
-  // Pass --no-minify flag via environment variable to esbuild config.
-  if (noMinify) {
-    process.env.SOCKET_CLI_NO_MINIFY = '1'
-  }
+  const prod = process.argv.includes('--prod')
 
   // Pass --force flag via environment variable.
   if (force) {
@@ -181,8 +178,8 @@ async function main() {
         command: 'node',
         args: [...NODE_MEMORY_FLAGS, '.config/esbuild.inject.config.mjs'],
       },
-      // Skip compression in debug builds (--no-minify).
-      ...(!noMinify
+      // Only compress for production builds (--prod).
+      ...(prod
         ? [
             {
               name: 'Compress CLI',
