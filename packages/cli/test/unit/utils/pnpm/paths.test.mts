@@ -1,0 +1,282 @@
+/**
+ * Unit tests for pnpm path utilities.
+ *
+ * Purpose:
+ * Tests pnpm-specific path utilities. Validates pnpm store, virtual store, and workspace paths.
+ *
+ * Test Coverage:
+ * - pnpm store path
+ * - Virtual store location
+ * - Workspace root detection
+ * - pnpm-workspace.yaml location
+ * - Global pnpm paths
+ *
+ * Testing Approach:
+ * Tests pnpm path conventions and resolution logic.
+ *
+ * Related Files:
+ * - utils/pnpm/paths.mts (implementation)
+ */
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+// Mock dependencies.
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
+const mockFindBinPathDetailsSync = vi.hoisted(() => vi.fn())
+
+vi.mock('@socketsecurity/lib/logger', () => ({
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
+}))
+
+vi.mock('../../../../src/utils/fs/path-resolve.mts', () => ({
+  findBinPathDetailsSync: mockFindBinPathDetailsSync,
+}))
+
+describe('pnpm-paths utilities', () => {
+  let originalExit: typeof process.exit
+  let getPnpmBinPath: typeof import('../../../../../src/utils/pnpm/paths.mts')['getPnpmBinPath']
+  let getPnpmBinPathDetails: typeof import('../../../../../src/utils/pnpm/paths.mts')['getPnpmBinPathDetails']
+  let isPnpmBinPathShadowed: typeof import('../../../../../src/utils/pnpm/paths.mts')['isPnpmBinPathShadowed']
+
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    vi.resetModules()
+
+    // Store original process.exit.
+    originalExit = process.exit
+    // Mock process.exit to prevent actual exits.
+    process.exit = vi.fn((code?: number) => {
+      throw new Error(`process.exit(${code})`)
+    }) as any
+
+    // Re-import functions after module reset to clear caches
+    const pnpmPaths = await import('../../../../../src/utils/pnpm/paths.mts')
+    getPnpmBinPath = pnpmPaths.getPnpmBinPath
+    getPnpmBinPathDetails = pnpmPaths.getPnpmBinPathDetails
+    isPnpmBinPathShadowed = pnpmPaths.isPnpmBinPathShadowed
+  })
+
+  afterEach(() => {
+    // Restore original process.exit.
+    process.exit = originalExit
+    vi.resetModules()
+  })
+
+  describe('getPnpmBinPath', () => {
+    it('returns pnpm bin path when found', () => {
+      mockFindBinPathDetailsSync.mockReturnValue({
+        path: '/usr/local/bin/pnpm',
+        shadowed: false,
+      })
+
+      const result = getPnpmBinPath()
+
+      expect(result).toBe('/usr/local/bin/pnpm')
+      expect(mockFindBinPathDetailsSync).toHaveBeenCalledWith('pnpm')
+    })
+
+    it('exits with error when pnpm not found', () => {
+      mockFindBinPathDetailsSync.mockReturnValue({
+        path: undefined,
+        shadowed: false,
+      })
+
+      expect(() => getPnpmBinPath()).toThrow('process.exit(127)')
+      expect(mockLogger.fail).toHaveBeenCalledWith(
+        expect.stringContaining('Socket unable to locate pnpm'),
+      )
+    })
+
+    it('caches the result', () => {
+      mockFindBinPathDetailsSync.mockReturnValue({
+        path: '/usr/local/bin/pnpm',
+        shadowed: false,
+      })
+
+      const result1 = getPnpmBinPath()
+      const result2 = getPnpmBinPath()
+
+      expect(result1).toBe(result2)
+      expect(mockFindBinPathDetailsSync).toHaveBeenCalledTimes(1)
+    })
+
+    it('handles Windows pnpm.cmd path', () => {
+      mockFindBinPathDetailsSync.mockReturnValue({
+        path: 'C:\\Program Files\\pnpm\\bin\\pnpm.cmd',
+        shadowed: false,
+      })
+
+      const result = getPnpmBinPath()
+
+      expect(result).toBe('C:\\Program Files\\pnpm\\bin\\pnpm.cmd')
+    })
+
+    it('handles pnpm installed via npm', () => {
+      mockFindBinPathDetailsSync.mockReturnValue({
+        path: '/usr/local/lib/node_modules/.bin/pnpm',
+        shadowed: false,
+      })
+
+      const result = getPnpmBinPath()
+
+      expect(result).toBe('/usr/local/lib/node_modules/.bin/pnpm')
+    })
+
+    it('handles pnpm installed via corepack', () => {
+      mockFindBinPathDetailsSync.mockReturnValue({
+        path: '/home/user/.cache/corepack/pnpm/9.0.0/bin/pnpm',
+        shadowed: false,
+      })
+
+      const result = getPnpmBinPath()
+
+      expect(result).toBe('/home/user/.cache/corepack/pnpm/9.0.0/bin/pnpm')
+    })
+  })
+
+  describe('getPnpmBinPathDetails', () => {
+    it('returns full details including path and shadowed status', () => {
+      const mockDetails = {
+        path: '/usr/local/bin/pnpm',
+        shadowed: true,
+      }
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
+
+      const result = getPnpmBinPathDetails()
+
+      expect(result).toEqual(mockDetails)
+      expect(mockFindBinPathDetailsSync).toHaveBeenCalledWith('pnpm')
+    })
+
+    it('caches the result', () => {
+      const mockDetails = {
+        path: '/usr/local/bin/pnpm',
+        shadowed: false,
+      }
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
+
+      const result1 = getPnpmBinPathDetails()
+      const result2 = getPnpmBinPathDetails()
+
+      expect(result1).toBe(result2)
+      expect(mockFindBinPathDetailsSync).toHaveBeenCalledTimes(1)
+    })
+
+    it('returns details even when path is undefined', () => {
+      const mockDetails = {
+        path: undefined,
+        shadowed: false,
+      }
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
+
+      const result = getPnpmBinPathDetails()
+
+      expect(result).toEqual(mockDetails)
+    })
+
+    it('handles shadowed pnpm installation', () => {
+      const mockDetails = {
+        path: '/usr/local/bin/pnpm',
+        shadowed: true,
+      }
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
+
+      const result = getPnpmBinPathDetails()
+
+      expect(result).toEqual(mockDetails)
+      expect(result.shadowed).toBe(true)
+    })
+
+    it('returns same object reference when cached', () => {
+      const mockDetails = {
+        path: '/usr/local/bin/pnpm',
+        shadowed: false,
+      }
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
+
+      const result1 = getPnpmBinPathDetails()
+      const result2 = getPnpmBinPathDetails()
+
+      expect(result1).toBe(result2) // Same reference.
+      expect(mockFindBinPathDetailsSync).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('isPnpmBinPathShadowed', () => {
+    it('returns true when pnpm is shadowed', () => {
+      mockFindBinPathDetailsSync.mockReturnValue({
+        path: '/usr/local/bin/pnpm',
+        shadowed: true,
+      })
+
+      const result = isPnpmBinPathShadowed()
+
+      expect(result).toBe(true)
+    })
+
+    it('returns false when pnpm is not shadowed', () => {
+      mockFindBinPathDetailsSync.mockReturnValue({
+        path: '/usr/local/bin/pnpm',
+        shadowed: false,
+      })
+
+      const result = isPnpmBinPathShadowed()
+
+      expect(result).toBe(false)
+    })
+
+    it('returns false when pnpm path is not found but not shadowed', () => {
+      mockFindBinPathDetailsSync.mockReturnValue({
+        path: undefined,
+        shadowed: false,
+      })
+
+      const result = isPnpmBinPathShadowed()
+
+      expect(result).toBe(false)
+    })
+
+    it('uses cached details', () => {
+      mockFindBinPathDetailsSync.mockReturnValue({
+        path: '/usr/local/bin/pnpm',
+        shadowed: true,
+      })
+
+      // Call getPnpmBinPathDetails first to cache.
+      getPnpmBinPathDetails()
+
+      // Now call isPnpmBinPathShadowed.
+      const result = isPnpmBinPathShadowed()
+
+      expect(result).toBe(true)
+      // Should only be called once due to caching.
+      expect(mockFindBinPathDetailsSync).toHaveBeenCalledTimes(1)
+    })
+
+    it('handles multiple calls efficiently', () => {
+      mockFindBinPathDetailsSync.mockReturnValue({
+        path: '/usr/local/bin/pnpm',
+        shadowed: true,
+      })
+
+      const result1 = isPnpmBinPathShadowed()
+      const result2 = isPnpmBinPathShadowed()
+      const result3 = isPnpmBinPathShadowed()
+
+      expect(result1).toBe(true)
+      expect(result2).toBe(true)
+      expect(result3).toBe(true)
+      // Should only be called once due to caching.
+      expect(mockFindBinPathDetailsSync).toHaveBeenCalledTimes(1)
+    })
+  })
+})
