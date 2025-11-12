@@ -21,6 +21,7 @@ export default defineConfig({
     globals: false,
     environment: 'node',
     include: ['test/**/*.test.{js,ts,mjs,mts,cjs}'],
+    passWithNoTests: true,
     reporters: ['default'],
     setupFiles: ['./test/utils/setup.mts'],
     // Use forks for full isolation

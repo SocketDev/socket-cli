@@ -7,10 +7,11 @@ import { fileURLToPath } from 'node:url'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { pEach } from '@socketsecurity/lib/promises'
 
-import constants from './constants.mjs'
+const logger = getDefaultLogger()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const TEST_DIR = path.join(constants.rootPath, 'test')
+const rootPath = path.join(__dirname, '..')
+const TEST_DIR = path.join(rootPath, 'test')
 
 const VALIDATION_CHECKS = {
   __proto__: null,
@@ -53,7 +54,7 @@ async function getTestFiles() {
  */
 async function validateTestStructure(testFile) {
   const issues = []
-  const relativePath = path.relative(constants.rootPath, testFile)
+  const relativePath = path.relative(rootPath, testFile)
 
   // Check naming convention.
   if (!testFile.endsWith('.test.mts')) {
@@ -87,7 +88,7 @@ async function validateTestStructure(testFile) {
  */
 async function validateImportSyntax(testFile) {
   const issues = []
-  const relativePath = path.relative(constants.rootPath, testFile)
+  const relativePath = path.relative(rootPath, testFile)
 
   try {
     const content = await fs.readFile(testFile, 'utf8')
@@ -145,7 +146,7 @@ async function validateImportSyntax(testFile) {
  */
 async function validateSnapshotFiles(testFile) {
   const issues = []
-  const relativePath = path.relative(constants.rootPath, testFile)
+  const relativePath = path.relative(rootPath, testFile)
   const snapshotDir = path.join(path.dirname(testFile), '__snapshots__')
 
   if (!existsSync(snapshotDir)) {
@@ -178,7 +179,7 @@ async function validateSnapshotFiles(testFile) {
  */
 async function validateBuildArtifacts() {
   const issues = []
-  const distPath = path.join(constants.rootPath, 'dist')
+  const distPath = path.join(rootPath, 'dist')
 
   if (!existsSync(distPath)) {
     issues.push({
@@ -191,15 +192,13 @@ async function validateBuildArtifacts() {
 
   // Check for key entry points.
   const requiredArtifacts = [
-    'dist/cli.js',
-    'dist/npm-cli.js',
-    'dist/npx-cli.js',
-    'dist/pnpm-cli.js',
-    'dist/yarn-cli.js',
+    'dist/index.js',
+    'dist/shadow-npm-inject.js',
+    'dist/cli.js.bz',
   ]
 
   for (const artifact of requiredArtifacts) {
-    const fullPath = path.join(constants.rootPath, artifact)
+    const fullPath = path.join(rootPath, artifact)
     if (!existsSync(fullPath)) {
       issues.push({
         type: VALIDATION_CHECKS.BUILD_ARTIFACTS,
@@ -230,7 +229,7 @@ async function validateTestFile(testFile) {
   }
 
   return {
-    file: path.relative(constants.rootPath, testFile),
+    file: path.relative(rootPath, testFile),
     issues: allIssues,
     hasErrors: allIssues.some(issue => issue.severity === 'error'),
     hasWarnings: allIssues.some(issue => issue.severity === 'warning'),

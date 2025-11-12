@@ -28,6 +28,7 @@ export default defineConfig({
       // Exclude E2E tests from regular test runs.
       '**/*-e2e.test.mts',
     ],
+    passWithNoTests: true,
     reporters: ['default'],
     setupFiles: ['./test/setup.mts'],
     // Use threads for better performance

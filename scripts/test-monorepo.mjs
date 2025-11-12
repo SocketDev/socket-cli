@@ -7,6 +7,8 @@ import { isQuiet } from '@socketsecurity/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { getChangedFiles, getStagedFiles } from '@socketsecurity/lib/git'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { onExit } from '@socketsecurity/lib/signal-exit'
+import { ProgressBar } from '@socketsecurity/lib/stdio/progress'
 import { printHeader } from '@socketsecurity/lib/stdio/header'
 import colors from 'yoctocolors-cjs'
 
@@ -15,7 +17,7 @@ import {
   getPackagesWithScript,
 } from './utils/monorepo-helper.mjs'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
 
 
 const logger = getDefaultLogger()
@@ -72,26 +74,45 @@ async function getPackagesToTest(options) {
 /**
  * Run tests on a specific package with pretty output.
  */
-async function runPackageTest(pkg, testArgs = [], quiet = false) {
+async function runPackageTest(pkg, testArgs = [], quiet = false, showProgress = true) {
   const displayName = pkg.displayName || pkg.name
 
-  if (!quiet) {
+  if (!quiet && showProgress) {
     logger.progress(`${displayName}: running tests`)
   }
 
-  const result = await spawn(
-    'pnpm',
-    ['--filter', pkg.name, 'run', 'test', ...testArgs],
-    {
-      cwd: process.cwd(),
-      encoding: 'utf8',
-      shell: WIN32,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    },
-  )
+  let result
+  try {
+    result = await spawn(
+      'pnpm',
+      ['--filter', pkg.name, 'run', 'test', ...testArgs],
+      {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        shell: WIN32,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      },
+    )
+  } catch (e) {
+    if (!quiet && showProgress) {
+      logger.clearLine()
+      logger.log(`${colors.red('✗')} ${displayName}`)
+    }
+    if (isSpawnError(e)) {
+      if (e.stdout) {
+        logger.log(e.stdout)
+      }
+      if (e.stderr) {
+        logger.error(e.stderr)
+      }
+      return e.code
+    }
+    logger.error(`Failed to spawn test command: ${e.message}`)
+    return 1
+  }
 
   if (result.code !== 0) {
-    if (!quiet) {
+    if (!quiet && showProgress) {
       logger.clearLine()
       logger.log(`${colors.red('✗')} ${displayName}`)
     }
@@ -104,7 +125,7 @@ async function runPackageTest(pkg, testArgs = [], quiet = false) {
     return result.code
   }
 
-  if (!quiet) {
+  if (!quiet && showProgress) {
     logger.clearLine()
     logger.log(`${colors.green('✓')} ${displayName}`)
   }
@@ -175,14 +196,56 @@ async function main() {
       logger.error('') // Blank line.
     }
 
+    // Setup progress bar.
+    let progressBar = null
+    if (!quiet && packages.length > 1) {
+      progressBar = new ProgressBar(packages.length, {
+        format: ':bar :percent :current/:total :pkg',
+        width: 30,
+        color: 'cyan',
+      })
+
+      // Setup signal exit handler for cleanup.
+      onExit(() => {
+        if (progressBar) {
+          progressBar.terminate()
+        }
+      })
+
+      // Initialize progress bar with first package.
+      const firstPkg = packages[0]?.displayName || packages[0]?.name || ''
+      progressBar.update(0, { pkg: colors.cyan(firstPkg) })
+    }
+
     // Run tests across affected packages.
     let exitCode = 0
+    let completedCount = 0
+    const useProgressBar = !!progressBar
     for (const pkg of packages) {
-      const result = await runPackageTest(pkg, positionals, quiet)
+      const displayName = pkg.displayName || pkg.name
+
+      // Show what we're testing.
+      if (progressBar) {
+        progressBar.update(completedCount, { pkg: colors.cyan(displayName) })
+      }
+
+      const result = await runPackageTest(pkg, positionals, quiet, !useProgressBar)
+
+      if (progressBar) {
+        completedCount++
+        const status = result === 0 ? colors.green('✓') : colors.red('✗')
+        progressBar.update(completedCount, { pkg: `${status} ${displayName}` })
+      }
+
       if (result !== 0) {
         exitCode = result
         break
       }
+    }
+
+    // Ensure progress bar is terminated.
+    if (progressBar) {
+      progressBar.terminate()
     }
 
     if (exitCode !== 0) {
