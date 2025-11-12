@@ -141,12 +141,15 @@ describe('resolve-binary', () => {
       })
     })
 
-    it('should return npx type when SOCKET_CLI_SFW_LOCAL_PATH is not set', () => {
+    it('should return dlx type when SOCKET_CLI_SFW_LOCAL_PATH is not set', () => {
       delete process.env['SOCKET_CLI_SFW_LOCAL_PATH']
 
-      const result = resolveSfw()
+      const result = resolveSfw() as Extract<BinaryResolution, { type: 'dlx' }>
 
-      expect(result).toEqual({ type: 'npx' })
+      expect(result.type).toBe('dlx')
+      expect(result.details.name).toBe('sfw')
+      expect(result.details.binaryName).toBe('sfw')
+      expect(result.details.version).toBeDefined()
     })
   })
 
