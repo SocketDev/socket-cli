@@ -19,6 +19,8 @@ import { fileURLToPath } from 'node:url'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+
+const logger = getDefaultLogger()
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const ROOT_DIR = join(__dirname, '..')
@@ -86,7 +88,7 @@ async function execCapture(command, args = [], options = {}) {
  * Run tests with specific Node binary.
  */
 async function runTests(nodePath, testFiles, label, isCustomNode = false) {
-  getDefaultLogger().step(`Running ${label}...`)
+  logger.step(`Running ${label}...`)
 
   const startTime = Date.now()
 
@@ -123,11 +125,11 @@ async function runTests(nodePath, testFiles, label, isCustomNode = false) {
   const seconds = Math.floor((duration % 60_000) / 1000)
 
   if (result.code === 0) {
-    getDefaultLogger().success(`${label} passed in ${minutes}m ${seconds}s`)
+    logger.success(`${label} passed in ${minutes}m ${seconds}s`)
     return { success: true, duration }
   }
 
-  getDefaultLogger().fail(`${label} failed after ${minutes}m ${seconds}s`)
+  logger.fail(`${label} failed after ${minutes}m ${seconds}s`)
   return { success: false, duration }
 }
 
@@ -135,15 +137,15 @@ async function runTests(nodePath, testFiles, label, isCustomNode = false) {
  * Verify custom Node binary exists.
  */
 function verifyCustomNode() {
-  getDefaultLogger().step('Verifying custom Node binary...')
+  logger.step('Verifying custom Node binary...')
 
   if (!existsSync(CUSTOM_NODE_PATH)) {
-    getDefaultLogger().fail(`Custom Node binary not found: ${CUSTOM_NODE_PATH}`)
-    getDefaultLogger().substep('Run: node packages/node-smol-builder/scripts/build.mjs')
+    logger.fail(`Custom Node binary not found: ${CUSTOM_NODE_PATH}`)
+    logger.substep('Run: node packages/node-smol-builder/scripts/build.mjs')
     process.exit(1)
   }
 
-  getDefaultLogger().success(`Custom Node binary found: ${CUSTOM_NODE_PATH}`)
+  logger.success(`Custom Node binary found: ${CUSTOM_NODE_PATH}`)
   return true
 }
 
@@ -164,20 +166,20 @@ async function getNodeVersion(nodePath, isCustomNode = false) {
  * Main function.
  */
 async function main() {
-  getDefaultLogger().log(`🧪 Testing Socket CLI with Custom Node.js ${NODE_VERSION}`)
-  getDefaultLogger().logNewline()
+  logger.log(`🧪 Testing Socket CLI with Custom Node.js ${NODE_VERSION}`)
+  logger.logNewline()
 
   // Step 1: Verify custom Node exists.
   verifyCustomNode()
 
   // Step 2: Check versions.
-  getDefaultLogger().step('Checking Node versions...')
+  logger.step('Checking Node versions...')
   const customVersion = await getNodeVersion(CUSTOM_NODE_PATH, true)
   const systemVersion = await getNodeVersion('node', false)
 
-  getDefaultLogger().success(`Custom Node: ${customVersion}`)
-  getDefaultLogger().success(`System Node: ${systemVersion}`)
-  getDefaultLogger().logNewline()
+  logger.success(`Custom Node: ${customVersion}`)
+  logger.success(`System Node: ${systemVersion}`)
+  logger.logNewline()
 
   // Step 3: Run tests.
   let testFiles = SMOKE_TESTS
@@ -197,9 +199,9 @@ async function main() {
     testLabel = 'Core Tests'
   }
 
-  getDefaultLogger().step(`Test mode: ${testLabel}`)
-  getDefaultLogger().substep(`Files: ${testFiles.length || 'all'}`)
-  getDefaultLogger().logNewline()
+  logger.step(`Test mode: ${testLabel}`)
+  logger.substep(`Files: ${testFiles.length || 'all'}`)
+  logger.logNewline()
 
   // Run with custom Node.
   const customResult = await runTests(
@@ -211,7 +213,7 @@ async function main() {
 
   // Compare mode: also run with system Node.
   if (COMPARE_MODE) {
-    getDefaultLogger().logNewline()
+    logger.logNewline()
     const systemResult = await runTests(
       'node',
       testFiles,
@@ -219,52 +221,52 @@ async function main() {
       false,
     )
 
-    getDefaultLogger().logNewline()
-    getDefaultLogger().log('━'.repeat(60))
-    getDefaultLogger().step('Comparison Summary')
+    logger.logNewline()
+    logger.log('━'.repeat(60))
+    logger.step('Comparison Summary')
 
     if (customResult.success && systemResult.success) {
-      getDefaultLogger().success('Both Node versions passed all tests')
+      logger.success('Both Node versions passed all tests')
       const diff = customResult.duration - systemResult.duration
       const pct = ((diff / systemResult.duration) * 100).toFixed(1)
       if (Math.abs(diff) < 1000) {
-        getDefaultLogger().info('Performance: Similar (within 1 second)')
+        logger.info('Performance: Similar (within 1 second)')
       } else if (diff > 0) {
-        getDefaultLogger().warn(`Performance: Custom Node ${pct}% slower`)
+        logger.warn(`Performance: Custom Node ${pct}% slower`)
       } else {
-        getDefaultLogger().success(`Performance: Custom Node ${Math.abs(pct)}% faster`)
+        logger.success(`Performance: Custom Node ${Math.abs(pct)}% faster`)
       }
     } else if (customResult.success && !systemResult.success) {
-      getDefaultLogger().success('Custom Node passed, System Node failed (!)')
+      logger.success('Custom Node passed, System Node failed (!)')
     } else if (!customResult.success && systemResult.success) {
-      getDefaultLogger().fail('Custom Node failed, System Node passed')
-      getDefaultLogger().substep('Custom Node binary may have issues')
+      logger.fail('Custom Node failed, System Node passed')
+      logger.substep('Custom Node binary may have issues')
     } else {
-      getDefaultLogger().fail('Both Node versions failed')
+      logger.fail('Both Node versions failed')
     }
   }
 
-  getDefaultLogger().logNewline()
-  getDefaultLogger().log('━'.repeat(60))
-  getDefaultLogger().logNewline()
+  logger.logNewline()
+  logger.log('━'.repeat(60))
+  logger.logNewline()
 
   if (customResult.success) {
-    getDefaultLogger().success('Custom Node binary works correctly with Socket CLI!')
-    getDefaultLogger().logNewline()
+    logger.success('Custom Node binary works correctly with Socket CLI!')
+    logger.logNewline()
     process.exit(0)
   }
 
-  getDefaultLogger().fail('Custom Node binary has issues')
-  getDefaultLogger().substep('Review test output above for details')
-  getDefaultLogger().substep(
+  logger.fail('Custom Node binary has issues')
+  logger.substep('Review test output above for details')
+  logger.substep(
     'Consider rebuilding: node packages/node-smol-builder/scripts/build.mjs --clean',
   )
-  getDefaultLogger().logNewline()
+  logger.logNewline()
   process.exit(1)
 }
 
 main().catch(e => {
-  getDefaultLogger().fail(`Test script failed: ${e.message}`)
-  getDefaultLogger().error(e.stack)
+  logger.fail(`Test script failed: ${e.message}`)
+  logger.error(e.stack)
   process.exit(1)
 })

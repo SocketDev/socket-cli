@@ -5,17 +5,21 @@
 
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { execSync } from 'node:child_process'
+
+import { spawn } from '@socketsecurity/lib/spawn'
 
 const SOCKET_PKG_PATH = resolve('packages/socket/package.json')
 
 async function getLatestVersion(packageName) {
   try {
-    const result = execSync(`npm view ${packageName} version`, {
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
+    const result = await spawn('npm', ['view', packageName, 'version'], {
+      stdioString: true,
+      stripAnsi: true,
     })
-    return result.trim()
+    if (result.code !== 0) {
+      throw new Error(result.stderr || 'npm view command failed')
+    }
+    return result.stdout.trim()
   } catch (error) {
     console.error(`Failed to get version for ${packageName}:`, error.message)
     return null

@@ -25,7 +25,7 @@
  * const regex = /[a-zA-Z0-9]+/
  */
 
-import { unicodePropertyMap } from '@socketsecurity/build-infra/lib/unicode-property-escape-transform'
+import { unicodePropertyMap } from 'build-infra/lib/unicode-property-escape-transform'
 
 /**
  * Helper Functions (injected at runtime via Babel template.ast):

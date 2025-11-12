@@ -11,9 +11,9 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import loggerPkg from '@socketsecurity/lib/logger';
+import { getDefaultLogger } from '@socketsecurity/lib/logger';
 
-const logger = loggerPkg.getDefaultLogger();
+const logger = getDefaultLogger();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootPath = path.join(__dirname, '..');

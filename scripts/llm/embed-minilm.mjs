@@ -30,36 +30,36 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '../..')
 const cacheDir = path.join(rootPath, '.cache/models')
 
-getDefaultLogger().log('╔═══════════════════════════════════════════════════╗')
-getDefaultLogger().log('║   Embed MiniLM Model for Socket CLI              ║')
-getDefaultLogger().log('╚═══════════════════════════════════════════════════╝\n')
+logger.log('╔═══════════════════════════════════════════════════╗')
+logger.log('║   Embed MiniLM Model for Socket CLI              ║')
+logger.log('╚═══════════════════════════════════════════════════╝\n')
 
 // Read tokenizer vocabulary.
-getDefaultLogger().log('📖 Reading tokenizer.json...')
+logger.log('📖 Reading tokenizer.json...')
 const tokenizerPath = path.join(cacheDir, 'tokenizer.json')
 const tokenizerData = readFileSync(tokenizerPath)
 const tokenizerCompressed = brotliCompressSync(tokenizerData)
 const tokenizerBase64 = tokenizerCompressed.toString('base64')
-getDefaultLogger().log(`   ✓ Read ${tokenizerData.length} bytes`)
-getDefaultLogger().log(
+logger.log(`   ✓ Read ${tokenizerData.length} bytes`)
+logger.log(
   `   ✓ Brotli compressed: ${tokenizerCompressed.length} bytes (${((tokenizerCompressed.length / tokenizerData.length) * 100).toFixed(1)}%)`,
 )
-getDefaultLogger().log(`   ✓ Base64 encoded: ${tokenizerBase64.length} bytes\n`)
+logger.log(`   ✓ Base64 encoded: ${tokenizerBase64.length} bytes\n`)
 
 // Read ONNX model.
-getDefaultLogger().log('📖 Reading model_quantized.onnx...')
+logger.log('📖 Reading model_quantized.onnx...')
 const modelPath = path.join(cacheDir, 'model_quantized.onnx')
 const modelData = readFileSync(modelPath)
 const modelCompressed = brotliCompressSync(modelData)
 const modelBase64 = modelCompressed.toString('base64')
-getDefaultLogger().log(`   ✓ Read ${modelData.length} bytes`)
-getDefaultLogger().log(
+logger.log(`   ✓ Read ${modelData.length} bytes`)
+logger.log(
   `   ✓ Brotli compressed: ${modelCompressed.length} bytes (${((modelCompressed.length / modelData.length) * 100).toFixed(1)}%)`,
 )
-getDefaultLogger().log(`   ✓ Base64 encoded: ${modelBase64.length} bytes\n`)
+logger.log(`   ✓ Base64 encoded: ${modelBase64.length} bytes\n`)
 
 // Generate minilm-sync.mjs.
-getDefaultLogger().log('📝 Generating external/minilm-sync.mjs...')
+logger.log('📝 Generating external/minilm-sync.mjs...')
 
 const syncContent = `/**
  * Synchronous MiniLM Model Loader
@@ -83,6 +83,8 @@ import { brotliDecompressSync } from 'node:zlib'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
+
+const logger = getDefaultLogger()
 /**
  * Embedded tokenizer vocabulary (brotli-compressed, base64-encoded).
  */
@@ -155,14 +157,14 @@ export function getEmbeddedSizes() {
 const outputPath = path.join(rootPath, 'external/minilm-sync.mjs')
 writeFileSync(outputPath, syncContent, 'utf-8')
 
-getDefaultLogger().log(`   ✓ Generated ${outputPath}`)
-getDefaultLogger().log(
+logger.log(`   ✓ Generated ${outputPath}`)
+logger.log(
   `   ✓ File size: ${(syncContent.length / 1024 / 1024).toFixed(2)} MB\n`,
 )
 
-getDefaultLogger().log('╔═══════════════════════════════════════════════════╗')
-getDefaultLogger().log('║   Embedding Complete                              ║')
-getDefaultLogger().log('╚═══════════════════════════════════════════════════╝\n')
+logger.log('╔═══════════════════════════════════════════════════╗')
+logger.log('║   Embedding Complete                              ║')
+logger.log('╚═══════════════════════════════════════════════════╝\n')
 
 const originalSizeMB = (
   (tokenizerData.length + modelData.length) /
@@ -180,16 +182,16 @@ const base64SizeMB = (
   1024
 ).toFixed(2)
 
-getDefaultLogger().log('📊 Compression Results:')
-getDefaultLogger().log(`   Original:    ${originalSizeMB} MB`)
-getDefaultLogger().log(
+logger.log('📊 Compression Results:')
+logger.log(`   Original:    ${originalSizeMB} MB`)
+logger.log(
   `   Compressed:  ${compressedSizeMB} MB (${(((tokenizerCompressed.length + modelCompressed.length) / (tokenizerData.length + modelData.length)) * 100).toFixed(1)}%)`,
 )
-getDefaultLogger().log(`   Base64:      ${base64SizeMB} MB`)
-getDefaultLogger().log('')
-getDefaultLogger().log(
+logger.log(`   Base64:      ${base64SizeMB} MB`)
+logger.log('')
+logger.log(
   `   Total savings: ${(originalSizeMB - base64SizeMB).toFixed(2)} MB (${(100 - (base64SizeMB / originalSizeMB) * 100).toFixed(1)}% reduction)`,
 )
-getDefaultLogger().log('\nNext steps:')
-getDefaultLogger().log('  1. Run build: pnpm run build')
-getDefaultLogger().log('  2. Test LLM features in src/commands/ask/handle-ask.mts')
+logger.log('\nNext steps:')
+logger.log('  1. Run build: pnpm run build')
+logger.log('  2. Test LLM features in src/commands/ask/handle-ask.mts')

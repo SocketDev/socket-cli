@@ -17,6 +17,8 @@ import {
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+
+const logger = getDefaultLogger()
 /**
  * Get packages to test and determine affected packages.
  */
@@ -74,7 +76,7 @@ async function runPackageTest(pkg, testArgs = [], quiet = false) {
   const displayName = pkg.displayName || pkg.name
 
   if (!quiet) {
-    getDefaultLogger().progress(`${displayName}: running tests`)
+    logger.progress(`${displayName}: running tests`)
   }
 
   const result = await spawn(
@@ -90,21 +92,21 @@ async function runPackageTest(pkg, testArgs = [], quiet = false) {
 
   if (result.code !== 0) {
     if (!quiet) {
-      getDefaultLogger().clearLine()
-      getDefaultLogger().log(`${colors.red('✗')} ${displayName}`)
+      logger.clearLine()
+      logger.log(`${colors.red('✗')} ${displayName}`)
     }
     if (result.stdout) {
-      getDefaultLogger().log(result.stdout)
+      logger.log(result.stdout)
     }
     if (result.stderr) {
-      getDefaultLogger().error(result.stderr)
+      logger.error(result.stderr)
     }
     return result.code
   }
 
   if (!quiet) {
-    getDefaultLogger().clearLine()
-    getDefaultLogger().log(`${colors.green('✓')} ${displayName}`)
+    logger.clearLine()
+    logger.log(`${colors.green('✓')} ${displayName}`)
   }
 
   return 0
@@ -128,19 +130,19 @@ async function main() {
 
     // Show help if requested.
     if (values.help) {
-      getDefaultLogger().log('Monorepo Test Runner')
-      getDefaultLogger().log('\nUsage: pnpm test [options] [test-args...]')
-      getDefaultLogger().log('\nOptions:')
-      getDefaultLogger().log('  --help         Show this help message')
-      getDefaultLogger().log('  --all          Test all packages')
-      getDefaultLogger().log('  --changed      Test packages with changed files (default)')
-      getDefaultLogger().log('  --staged       Test packages with staged files')
-      getDefaultLogger().log('  --quiet, --silent  Suppress progress messages')
-      getDefaultLogger().log('\nExamples:')
-      getDefaultLogger().log('  pnpm test                # Test changed packages (default)')
-      getDefaultLogger().log('  pnpm test --all          # Test all packages')
-      getDefaultLogger().log('  pnpm test --staged       # Test staged packages')
-      getDefaultLogger().log('  pnpm test -- --coverage  # Pass args to test runner')
+      logger.log('Monorepo Test Runner')
+      logger.log('\nUsage: pnpm test [options] [test-args...]')
+      logger.log('\nOptions:')
+      logger.log('  --help         Show this help message')
+      logger.log('  --all          Test all packages')
+      logger.log('  --changed      Test packages with changed files (default)')
+      logger.log('  --staged       Test packages with staged files')
+      logger.log('  --quiet, --silent  Suppress progress messages')
+      logger.log('\nExamples:')
+      logger.log('  pnpm test                # Test changed packages (default)')
+      logger.log('  pnpm test --all          # Test all packages')
+      logger.log('  pnpm test --staged       # Test staged packages')
+      logger.log('  pnpm test -- --coverage  # Pass args to test runner')
       process.exitCode = 0
       return
     }
@@ -149,7 +151,7 @@ async function main() {
 
     if (!quiet) {
       printHeader('Monorepo Test Runner')
-      getDefaultLogger().log('')
+      logger.log('')
     }
 
     // Get packages to test.
@@ -157,8 +159,8 @@ async function main() {
 
     if (!packages.length) {
       if (!quiet) {
-        getDefaultLogger().step('Skipping tests')
-        getDefaultLogger().substep(reason)
+        logger.step('Skipping tests')
+        logger.substep(reason)
       }
       process.exitCode = 0
       return
@@ -167,10 +169,10 @@ async function main() {
     // Display what we're testing.
     if (!quiet) {
       const modeText = mode === 'all' ? 'all packages' : `${mode} packages`
-      getDefaultLogger().step(
+      logger.step(
         `Testing ${modeText} (${packages.length} package${packages.length > 1 ? 's' : ''})`,
       )
-      getDefaultLogger().error('') // Blank line.
+      logger.error('') // Blank line.
     }
 
     // Run tests across affected packages.
@@ -185,23 +187,23 @@ async function main() {
 
     if (exitCode !== 0) {
       if (!quiet) {
-        getDefaultLogger().error('')
-        getDefaultLogger().log('Tests failed')
+        logger.error('')
+        logger.log('Tests failed')
       }
       process.exitCode = exitCode
     } else {
       if (!quiet) {
-        getDefaultLogger().error('')
-        getDefaultLogger().success('All tests passed!')
+        logger.error('')
+        logger.success('All tests passed!')
       }
     }
   } catch (error) {
-    getDefaultLogger().error(`Test runner failed: ${error.message}`)
+    logger.error(`Test runner failed: ${error.message}`)
     process.exitCode = 1
   }
 }
 
 main().catch(e => {
-  getDefaultLogger().error(e)
+  logger.error(e)
   process.exitCode = 1
 })
