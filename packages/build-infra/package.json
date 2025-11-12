@@ -8,6 +8,7 @@
     "./lib/esbuild-plugin-unicode-transform": "./lib/esbuild-plugin-unicode-transform.mjs",
     "./lib/extraction-cache": "./lib/extraction-cache.mjs",
     "./lib/script-runner": "./lib/script-runner.mjs",
+    "./lib/setup-helpers": "./lib/setup-helpers.mjs",
     "./lib/unicode-property-escape-transform": "./lib/unicode-property-escape-transform.mjs"
   },
   "dependencies": {

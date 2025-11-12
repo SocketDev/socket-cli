@@ -387,16 +387,7 @@ See: [Build Quick Start](../build/build-quick-start.md)
 
 ## Linking to Local Dependencies
 
-For developing with local versions of Socket dependencies:
-
-```bash
-# Link to local socket-registry and socket-sdk-js
-node scripts/setup-links.mjs
-
-# This enables hot-reloading from sibling repositories
-```
-
-See: [Development Linking](./linking.md)
+For developing with local versions of Socket dependencies, see: [Development Linking](./linking.md)
 
 ## Troubleshooting
 

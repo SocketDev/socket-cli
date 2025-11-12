@@ -19,6 +19,7 @@
     "build:smol": "node scripts/build-binaries.mjs --smol",
     "build:wasm": "node scripts/build-binaries.mjs --wasm",
     "dev": "pnpm run build:watch",
+    "prebuild": "node scripts/setup.mjs --restore-cache --quiet",
     "// Quality Checks": "",
     "check": "node scripts/check.mjs",
     "check:all": "node scripts/check.mjs --all",
@@ -51,6 +52,8 @@
     "// Publishing": "",
     "publish": "node scripts/publish.mjs",
     "// Setup": "",
+    "setup": "node scripts/setup.mjs",
+    "postinstall": "node scripts/setup.mjs --install --quiet",
     "prepare": "husky",
     "pretest": "pnpm run build:cli"
   },
