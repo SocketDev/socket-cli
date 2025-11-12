@@ -13,6 +13,8 @@
 import { spawn } from 'node:child_process'
 import { parseArgs } from 'node:util'
 
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+
 const { values } = parseArgs({
   options: {
     wasm: { type: 'boolean' },
@@ -73,7 +75,7 @@ async function runTask(task) {
   return new Promise((resolve, reject) => {
     const proc = spawn(task.cmd, task.args, {
       stdio: 'inherit',
-      shell: true,
+      shell: WIN32,
     })
 
     proc.on('close', (code) => {

@@ -18,9 +18,11 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+const logger = getDefaultLogger()
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
@@ -75,13 +77,13 @@ const PACKAGES = [
  * Build a specific package.
  */
 async function buildPackage(pkg) {
-  getDefaultLogger().step(`Building ${pkg.name}`)
-  getDefaultLogger().info(`  ${pkg.description}`)
-  getDefaultLogger().info('')
+  logger.step(`Building ${pkg.name}`)
+  logger.info(`  ${pkg.description}`)
+  logger.info('')
 
   if (!pkg.build) {
-    getDefaultLogger().info(`  Skipping ${pkg.name} (no build needed)`)
-    getDefaultLogger().info('')
+    logger.info(`  Skipping ${pkg.name} (no build needed)`)
+    logger.info('')
     return
   }
 
@@ -98,7 +100,7 @@ async function buildPackage(pkg) {
   try {
     const result = await spawn(buildArgs[0], buildArgs.slice(1), {
       cwd: packageDir,
-      shell: true,
+      shell: WIN32,
       stdio: 'inherit',
     })
 
@@ -107,10 +109,10 @@ async function buildPackage(pkg) {
     }
 
     const duration = Math.round((Date.now() - startTime) / 1000)
-    getDefaultLogger().success(`${pkg.name} built successfully in ${duration}s`)
-    getDefaultLogger().info('')
+    logger.success(`${pkg.name} built successfully in ${duration}s`)
+    logger.info('')
   } catch (e) {
-    getDefaultLogger().fail(`Failed to build ${pkg.name}: ${e.message}`)
+    logger.fail(`Failed to build ${pkg.name}: ${e.message}`)
     throw e
   }
 }
@@ -121,13 +123,13 @@ async function buildPackage(pkg) {
 async function main() {
   const totalStart = Date.now()
 
-  getDefaultLogger().log('')
-  getDefaultLogger().log('🔨 Building All From-Source Packages')
-  getDefaultLogger().log('')
+  logger.log('')
+  logger.log('🔨 Building All From-Source Packages')
+  logger.log('')
 
   if (FORCE_BUILD) {
-    getDefaultLogger().warn('Force rebuild enabled (ignoring checkpoints)')
-    getDefaultLogger().log('')
+    logger.warn('Force rebuild enabled (ignoring checkpoints)')
+    logger.log('')
   }
 
   // Filter packages if specific package requested.
@@ -136,25 +138,25 @@ async function main() {
   if (specificPackage) {
     const pkg = PACKAGES.find((p) => p.name === specificPackage)
     if (!pkg) {
-      getDefaultLogger().fail(`Unknown package: ${specificPackage}`)
-      getDefaultLogger().info('')
-      getDefaultLogger().info('Available packages:')
+      logger.fail(`Unknown package: ${specificPackage}`)
+      logger.info('')
+      logger.info('Available packages:')
       for (const p of PACKAGES) {
-        getDefaultLogger().info(`  - ${p.name}: ${p.description}`)
+        logger.info(`  - ${p.name}: ${p.description}`)
       }
       process.exit(1)
     }
     packagesToBuild = [pkg]
-    getDefaultLogger().info(`Building specific package: ${pkg.name}`)
-    getDefaultLogger().info('')
+    logger.info(`Building specific package: ${pkg.name}`)
+    logger.info('')
   } else {
-    getDefaultLogger().info('Building all packages in order:')
+    logger.info('Building all packages in order:')
     for (const pkg of PACKAGES) {
       if (pkg.build) {
-        getDefaultLogger().info(`  ${pkg.name} - ${pkg.description}`)
+        logger.info(`  ${pkg.name} - ${pkg.description}`)
       }
     }
-    getDefaultLogger().info('')
+    logger.info('')
   }
 
   // Build packages in order.
@@ -167,27 +169,27 @@ async function main() {
   const totalMinutes = Math.floor(totalDuration / 60)
   const totalSeconds = totalDuration % 60
 
-  getDefaultLogger().log('━'.repeat(60))
-  getDefaultLogger().log('')
-  getDefaultLogger().success('🎉 All packages built successfully!')
-  getDefaultLogger().log('')
-  getDefaultLogger().info(`Total time: ${totalMinutes}m ${totalSeconds}s`)
-  getDefaultLogger().log('')
-  getDefaultLogger().info('Build artifacts:')
-  getDefaultLogger().info('  node-smol-builder:      packages/node-smol-builder/build/out/Release/node')
-  getDefaultLogger().info('  onnx-runtime:   packages/onnx-runtime/build/wasm/')
-  getDefaultLogger().info('  codet5-models:  packages/codet5-models/build/models/')
-  getDefaultLogger().info('  yoga-layout:    packages/yoga-layout/build/wasm/')
-  getDefaultLogger().log('')
-  getDefaultLogger().info('Next steps:')
-  getDefaultLogger().info('  1. Test built artifacts')
-  getDefaultLogger().info('  2. Integrate with Socket CLI build')
-  getDefaultLogger().info('  3. Run Socket CLI build: pnpm run build')
-  getDefaultLogger().log('')
+  logger.log('━'.repeat(60))
+  logger.log('')
+  logger.success('🎉 All packages built successfully!')
+  logger.log('')
+  logger.info(`Total time: ${totalMinutes}m ${totalSeconds}s`)
+  logger.log('')
+  logger.info('Build artifacts:')
+  logger.info('  node-smol-builder:      packages/node-smol-builder/build/out/Release/node')
+  logger.info('  onnx-runtime:   packages/onnx-runtime/build/wasm/')
+  logger.info('  codet5-models:  packages/codet5-models/build/models/')
+  logger.info('  yoga-layout:    packages/yoga-layout/build/wasm/')
+  logger.log('')
+  logger.info('Next steps:')
+  logger.info('  1. Test built artifacts')
+  logger.info('  2. Integrate with Socket CLI build')
+  logger.info('  3. Run Socket CLI build: pnpm run build')
+  logger.log('')
 }
 
 // Run main function.
 main().catch((e) => {
-  getDefaultLogger().fail(`Build failed: ${e.message}`)
+  logger.fail(`Build failed: ${e.message}`)
   process.exit(1)
 })
