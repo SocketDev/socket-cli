@@ -26,7 +26,7 @@ fi
 ERRORS=0
 
 # Check for .DS_Store files.
-echo "Checking for .DS_Store files..."
+printf "Checking for .DS_Store files...\n"
 if echo "$STAGED_FILES" | grep -q '\.DS_Store'; then
   echo "${RED}✗ ERROR: .DS_Store file detected!${NC}"
   echo "$STAGED_FILES" | grep '\.DS_Store'
@@ -34,7 +34,7 @@ if echo "$STAGED_FILES" | grep -q '\.DS_Store'; then
 fi
 
 # Check for log files.
-echo "Checking for log files..."
+printf "Checking for log files...\n"
 if echo "$STAGED_FILES" | grep -E '\.log$' | grep -v 'test.*\.log'; then
   echo "${RED}✗ ERROR: Log file detected!${NC}"
   echo "$STAGED_FILES" | grep -E '\.log$' | grep -v 'test.*\.log'
@@ -42,16 +42,16 @@ if echo "$STAGED_FILES" | grep -E '\.log$' | grep -v 'test.*\.log'; then
 fi
 
 # Check for .env files.
-echo "Checking for .env files..."
+printf "Checking for .env files...\n"
 if echo "$STAGED_FILES" | grep -E '^\.env(\.local)?$'; then
   echo "${RED}✗ ERROR: .env or .env.local file detected!${NC}"
   echo "$STAGED_FILES" | grep -E '^\.env(\.local)?$'
-  echo "These files should never be committed. Use .env.example instead."
+  printf "These files should never be committed. Use .env.example instead.\n"
   ERRORS=$((ERRORS + 1))
 fi
 
 # Check for hardcoded user paths (generic detection).
-echo "Checking for hardcoded personal paths..."
+printf "Checking for hardcoded personal paths...\n"
 for file in $STAGED_FILES; do
   if [ -f "$file" ]; then
     # Skip test files and hook scripts.
@@ -63,26 +63,26 @@ for file in $STAGED_FILES; do
     if grep -E '(/Users/[^/\s]+/|/home/[^/\s]+/|C:\\Users\\[^\\]+\\)' "$file" 2>/dev/null | grep -q .; then
       echo "${RED}✗ ERROR: Hardcoded personal path found in: $file${NC}"
       grep -n -E '(/Users/[^/\s]+/|/home/[^/\s]+/|C:\\Users\\[^\\]+\\)' "$file" | head -3
-      echo "Replace with relative paths or environment variables."
+      printf "Replace with relative paths or environment variables.\n"
       ERRORS=$((ERRORS + 1))
     fi
   fi
 done
 
 # Check for Socket API keys.
-echo "Checking for API keys..."
+printf "Checking for API keys...\n"
 for file in $STAGED_FILES; do
   if [ -f "$file" ]; then
     if grep -E 'sktsec_[a-zA-Z0-9_-]+' "$file" 2>/dev/null | grep -v "$ALLOWED_PUBLIC_KEY" | grep -v 'your_api_key_here' | grep -v 'SOCKET_SECURITY_API_KEY=' | grep -v 'fake-token' | grep -v 'test-token' | grep -q .; then
       echo "${YELLOW}⚠ WARNING: Potential API key found in: $file${NC}"
       grep -n 'sktsec_' "$file" | grep -v "$ALLOWED_PUBLIC_KEY" | grep -v 'your_api_key_here' | grep -v 'fake-token' | grep -v 'test-token' | head -3
-      echo "If this is a real API key, DO NOT COMMIT IT."
+      printf "If this is a real API key, DO NOT COMMIT IT.\n"
     fi
   fi
 done
 
 # Check for common secret patterns.
-echo "Checking for potential secrets..."
+printf "Checking for potential secrets...\n"
 for file in $STAGED_FILES; do
   if [ -f "$file" ]; then
     # Skip test files, example files, and hook scripts.
@@ -113,9 +113,9 @@ for file in $STAGED_FILES; do
 done
 
 if [ $ERRORS -gt 0 ]; then
-  echo ""
+  printf "\n"
   echo "${RED}✗ Security check failed with $ERRORS error(s).${NC}"
-  echo "Fix the issues above and try again."
+  printf "Fix the issues above and try again.\n"
   exit 1
 fi
 
