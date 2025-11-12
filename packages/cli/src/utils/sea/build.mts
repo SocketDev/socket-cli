@@ -118,6 +118,21 @@ export async function buildTarget(
 /**
  * Download Node.js binary for a specific platform.
  * Caches downloads in ~/.socket/node-binaries/.
+ *
+ * Defaults to nodejs.org releases (archives). Configure SOCKET_CLI_NODE_DOWNLOAD_URL to use:
+ * - socket-btm smol releases: Set to 'socket-btm' (pre-compiled binaries, no extraction).
+ * - Custom URL: Set to any base URL (e.g., internal mirror).
+ *
+ * @example
+ * // Default: nodejs.org (extracts from archive)
+ * downloadNodeBinary('22.0.0', 'linux', 'x64')
+ * // Fetches: https://nodejs.org/download/release/v22.0.0/node-v22.0.0-linux-x64.tar.gz
+ *
+ * @example
+ * // socket-btm smol releases (pre-compiled binary)
+ * process.env.SOCKET_CLI_NODE_DOWNLOAD_URL = 'socket-btm'
+ * downloadNodeBinary('1.0.0', 'darwin', 'arm64')
+ * // Fetches: https://github.com/SocketDev/socket-btm/releases/download/node-smol-v1.0.0/node-compiled-darwin-arm64
  */
 export async function downloadNodeBinary(
   version: string,
@@ -137,9 +152,7 @@ export async function downloadNodeBinary(
     return nodePath
   }
 
-  // Construct download URL.
-  const baseUrl =
-    ENV.SOCKET_CLI_NODE_DOWNLOAD_URL || 'https://nodejs.org/download/release'
+  // Arch and platform mappings.
   const archMap = {
     __proto__: null,
     arm64: 'arm64',
@@ -155,15 +168,59 @@ export async function downloadNodeBinary(
 
   const nodePlatform = platformMap[platform]
   const nodeArch = archMap[arch]
-  const tarName = `node-v${version}-${nodePlatform}-${nodeArch}`
-  const extension = isPlatWin ? '.zip' : '.tar.gz'
-  const downloadUrl = `${baseUrl}/v${version}/${tarName}${extension}`
 
-  // Download the archive.
+  let downloadUrl: string
+  let assetName: string
+
+  // Determine download source.
+  if (ENV.SOCKET_CLI_NODE_DOWNLOAD_URL === 'socket-btm') {
+    // Use socket-btm smol binaries from GitHub releases.
+    // Tag format: node-smol-v{VERSION}
+    // Asset format: node-compiled-{PLATFORM}-{ARCH}[.exe]
+    // URL pattern: https://github.com/SocketDev/socket-btm/releases/download/node-smol-v{VERSION}/node-compiled-{PLATFORM}-{ARCH}[.exe]
+    const tag = `node-smol-v${version}`
+    const binaryName = `node-compiled-${nodePlatform}-${nodeArch}${isPlatWin ? '.exe' : ''}`
+    assetName = binaryName
+    downloadUrl = `https://github.com/SocketDev/socket-btm/releases/download/${tag}/${binaryName}`
+    logger.log(`Downloading Node.js smol from socket-btm ${tag}...`)
+  } else {
+    // Use nodejs.org or custom base URL.
+    const tarName = `node-v${version}-${nodePlatform}-${nodeArch}`
+    const extension = isPlatWin ? '.zip' : '.tar.gz'
+    assetName = `${tarName}${extension}`
+    const baseUrl =
+      ENV.SOCKET_CLI_NODE_DOWNLOAD_URL || 'https://nodejs.org/download/release'
+    downloadUrl = `${baseUrl}/v${version}/${assetName}`
+  }
+
+  // Download the binary/archive.
   const response = await httpRequest(downloadUrl)
   if (!response.ok) {
-    throw new Error(`Failed to download Node.js: ${response.statusText}`)
+    throw new Error(
+      `Failed to download Node.js from ${downloadUrl}: ${response.statusText}`,
+    )
   }
+
+  // Ensure target directory exists.
+  const targetDir = path.dirname(nodePath)
+  await safeMkdir(targetDir, { recursive: true })
+
+  // Handle socket-btm pre-compiled binaries (no extraction needed).
+  if (ENV.SOCKET_CLI_NODE_DOWNLOAD_URL === 'socket-btm') {
+    // Write binary directly to final location.
+    await fs.writeFile(nodePath, response.body)
+
+    // Make executable on Unix.
+    if (!isPlatWin) {
+      await fs.chmod(nodePath, 0o755)
+    }
+
+    return nodePath
+  }
+
+  // Handle nodejs.org archives (requires extraction).
+  const extension = isPlatWin ? '.zip' : '.tar.gz'
+  const tarName = `node-v${version}-${nodePlatform}-${nodeArch}`
 
   // Create temp directory.
   const tempDir = normalizePath(
@@ -229,11 +286,7 @@ export async function downloadNodeBinary(
       path.join(extractedDir, platform === 'win32' ? 'node.exe' : 'bin/node'),
     )
 
-    // Ensure target directory exists.
-    const targetDir = path.dirname(nodePath)
-    await safeMkdir(targetDir, { recursive: true })
-
-    // Move binary to final location.
+    // Copy binary to final location.
     await fs.copyFile(extractedBinary, nodePath)
 
     // Make executable on Unix.
