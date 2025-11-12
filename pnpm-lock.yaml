@@ -60,9 +60,6 @@ catalogs:
     '@gitbeaker/rest':
       specifier: 43.7.0
       version: 43.7.0
-    '@iarna/toml':
-      specifier: ^2.2.5
-      version: 2.2.5
     '@npmcli/arborist':
       specifier: 9.1.4
       version: 9.1.4
@@ -168,9 +165,6 @@ catalogs:
     '@yao-pkg/pkg':
       specifier: 6.8.0
       version: 6.8.0
-    '@yarnpkg/parsers':
-      specifier: ^3.0.3
-      version: 3.0.3
     ajv-dist:
       specifier: 8.17.1
       version: 8.17.1
@@ -216,9 +210,6 @@ catalogs:
     fast-glob:
       specifier: 3.3.3
       version: 3.3.3
-    fast-xml-parser:
-      specifier: ^5.3.1
-      version: 5.3.1
     globals:
       specifier: 16.4.0
       version: 16.4.0
@@ -800,28 +791,6 @@ importers:
       '@sentry/node':
         specifier: 'catalog:'
         version: 8.0.0
-
-  packages/sbom-generator:
-    dependencies:
-      '@iarna/toml':
-        specifier: 'catalog:'
-        version: 2.2.5
-      '@socketsecurity/lib':
-        specifier: 3.3.1
-        version: 3.3.1(typescript@5.9.3)
-      '@yarnpkg/parsers':
-        specifier: 'catalog:'
-        version: 3.0.3
-      fast-xml-parser:
-        specifier: 'catalog:'
-        version: 5.3.1
-      yaml:
-        specifier: 2.8.1
-        version: 2.8.1
-    devDependencies:
-      vitest:
-        specifier: 'catalog:'
-        version: 4.0.3(@types/debug@4.1.12)(@types/node@24.9.2)(jiti@2.6.1)(yaml@2.8.1)
 
   packages/socket:
     devDependencies:
@@ -2861,10 +2830,6 @@ packages:
   '@yarnpkg/lockfile@1.1.0':
     resolution: {integrity: sha512-GpSwvyXOcOOlV70vbnzjj4fW5xW/FdUF6nQEt1ENy7m4ZCczi1+/buVUPAqmGfqznsORNFzUMjctTIp8a9tuCQ==}
 
-  '@yarnpkg/parsers@3.0.3':
-    resolution: {integrity: sha512-mQZgUSgFurUtA07ceMjxrWkYz8QtDuYkvPlu0ZqncgjopQ0t6CNEo/OSealkmnagSUx8ZD5ewvezUwUuMqutQg==}
-    engines: {node: '>=18.12.0'}
-
   '@zkochan/js-yaml@0.0.10':
     resolution: {integrity: sha512-pSVOuIjRa7PjIaCmL54Qaz68C3zvwdSxp0qMI5twIt1aw2c/PUVb2M46xnnLWsd2AEgsTbGNcOgHXsM9cENhjA==}
     hasBin: true
@@ -2955,9 +2920,6 @@ packages:
   ansis@4.2.0:
     resolution: {integrity: sha512-HqZ5rWlFjGiV0tDm3UxxgNRqsOTniqoKZu0pIAfh7TZQMGuZK+hH0drySty0si0QXj1ieop4+SkSfPZBPPkHig==}
     engines: {node: '>=14'}
-
-  argparse@1.0.10:
-    resolution: {integrity: sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==}
 
   argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
@@ -3655,11 +3617,6 @@ packages:
     resolution: {integrity: sha512-j6PAQ2uUr79PZhBjP5C5fhl8e39FmRnOjsD5lGnWrFU8i2G776tBK7+nP8KuQUTTyAZUwfQqXAgrVH5MbH9CYQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  esprima@4.0.1:
-    resolution: {integrity: sha512-eGuFFw7Upda+g4p+QHvnW0RyTX/SVeJBDM/gCtMARO0cLuT2HcEKnTPvhjV6aGeqrCB/sbNop0Kszm0jsaWU4A==}
-    engines: {node: '>=4'}
-    hasBin: true
-
   esquery@1.6.0:
     resolution: {integrity: sha512-ca9pw9fomFcKPvFLXhBKUK90ZvGibiGOvRJNbjljY7s7uq/5YO4BOzcYtJqExdx99rF6aAcnRxHmcUHcz6sQsg==}
     engines: {node: '>=0.10'}
@@ -3728,10 +3685,6 @@ packages:
 
   fast-uri@3.1.0:
     resolution: {integrity: sha512-iPeeDKJSWf4IEOasVVrknXpaBV0IApz/gp7S2bb7Z4Lljbl2MGJRqInZiUrQwV16cpzw/D3S5j5Julj/gT52AA==}
-
-  fast-xml-parser@5.3.1:
-    resolution: {integrity: sha512-jbNkWiv2Ec1A7wuuxk0br0d0aTMUtQ4IkL+l/i1r9PRf6pLXjDgsBsWwO+UyczmQlnehi4Tbc8/KIvxGQe+I/A==}
-    hasBin: true
 
   fastq@1.19.1:
     resolution: {integrity: sha512-GwLTyxkCXjXbxqIhTsMI2Nui8huMPtnxg7krajPJAjnEG/iiOS7i+zCtWGZR9G0NBKbXKh6X9m9UIsYX/N6vvQ==}
@@ -4182,10 +4135,6 @@ packages:
 
   js-tokens@9.0.1:
     resolution: {integrity: sha512-mxa9E9ITFOt0ban3j6L5MpjwegGz6lBQmM1IJkWeBZGcMxto50+eWdjC/52xDbS2vy0k7vIMK0Fe2wfL9OQSpQ==}
-
-  js-yaml@3.14.1:
-    resolution: {integrity: sha512-okMH7OXXJ7YrN9Ok3/SXrnu4iX9yOk+25nqX4imS2npuvTYDmo/QEZoqwZkYaIDk3jVvBOTOIEgEhaLOynBS9g==}
-    hasBin: true
 
   js-yaml@4.1.0:
     resolution: {integrity: sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==}
@@ -5336,9 +5285,6 @@ packages:
   split2@3.2.2:
     resolution: {integrity: sha512-9NThjpgZnifTkJpzTZ7Eue85S49QwpNhZTq6GRJwObb6jnLFNGB7Qm73V5HewTROPyxD0C29xqmaI68bQtV+hg==}
 
-  sprintf-js@1.0.3:
-    resolution: {integrity: sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==}
-
   sprintf-js@1.1.3:
     resolution: {integrity: sha512-Oo+0REFV59/rz3gfJNKQiBlwfHaSESl1pcGyABQsnnIfWOFt6JNj5gCog2U6MLZ//IGYD+nA8nI+mTShREReaA==}
 
@@ -5431,9 +5377,6 @@ packages:
   strip-json-comments@3.1.1:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
-
-  strnum@2.1.1:
-    resolution: {integrity: sha512-7ZvoFTiCnGxBtDqJ//Cu6fWtZtc7Y3x+QOirG15wztbdngGSkht27o2pyGWrVy0b4WAy3jbKmnoK6g5VlVNUUw==}
 
   suffix-thumb@5.0.2:
     resolution: {integrity: sha512-I5PWXAFKx3FYnI9a+dQMWNqTxoRt6vdBdb0O+BJ1sxXCWtSoQCusc13E58f+9p4MYx/qCnEMkD5jac6K2j3dgA==}
@@ -8165,11 +8108,6 @@ snapshots:
 
   '@yarnpkg/lockfile@1.1.0': {}
 
-  '@yarnpkg/parsers@3.0.3':
-    dependencies:
-      js-yaml: 3.14.1
-      tslib: 2.8.1
-
   '@zkochan/js-yaml@0.0.10':
     dependencies:
       argparse: 2.0.1
@@ -8243,10 +8181,6 @@ snapshots:
   ansi-styles@6.2.3: {}
 
   ansis@4.2.0: {}
-
-  argparse@1.0.10:
-    dependencies:
-      sprintf-js: 1.0.3
 
   argparse@2.0.1: {}
 
@@ -9059,8 +8993,6 @@ snapshots:
       acorn-jsx: 5.3.2(acorn@8.15.0)
       eslint-visitor-keys: 4.2.1
 
-  esprima@4.0.1: {}
-
   esquery@1.6.0:
     dependencies:
       estraverse: 5.3.0
@@ -9136,10 +9068,6 @@ snapshots:
   fast-safe-stringify@2.1.1: {}
 
   fast-uri@3.1.0: {}
-
-  fast-xml-parser@5.3.1:
-    dependencies:
-      strnum: 2.1.1
 
   fastq@1.19.1:
     dependencies:
@@ -9598,11 +9526,6 @@ snapshots:
   js-tokens@4.0.0: {}
 
   js-tokens@9.0.1: {}
-
-  js-yaml@3.14.1:
-    dependencies:
-      argparse: 1.0.10
-      esprima: 4.0.1
 
   js-yaml@4.1.0:
     dependencies:
@@ -10823,8 +10746,6 @@ snapshots:
     dependencies:
       readable-stream: 3.6.2
 
-  sprintf-js@1.0.3: {}
-
   sprintf-js@1.1.3: {}
 
   ssri@10.0.5:
@@ -10906,8 +10827,6 @@ snapshots:
   strip-json-comments@2.0.1: {}
 
   strip-json-comments@3.1.1: {}
-
-  strnum@2.1.1: {}
 
   suffix-thumb@5.0.2: {}
 

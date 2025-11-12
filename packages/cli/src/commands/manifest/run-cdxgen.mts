@@ -148,7 +148,10 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
       const cwd = process.cwd()
       const fullOutputPath = path.resolve(cwd, outputPath)
       // Validate that the resolved path is within the current working directory.
-      if (!fullOutputPath.startsWith(cwd + path.sep) && fullOutputPath !== cwd) {
+      if (
+        !fullOutputPath.startsWith(cwd + path.sep) &&
+        fullOutputPath !== cwd
+      ) {
         logger.error(
           `Output path "${outputPath}" resolves outside the current working directory`,
         )
