@@ -26,6 +26,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageRoot = path.resolve(__dirname, '..')
 const repoRoot = path.resolve(__dirname, '../../..')
 
+// Node options for memory allocation.
+const NODE_MEMORY_FLAGS = ['--max-old-space-size=8192']
+
 // Simple CLI helpers without registry dependencies.
 const isQuiet = () => process.argv.includes('--quiet')
 const isVerbose = () => process.argv.includes('--verbose')
@@ -80,7 +83,7 @@ async function main() {
     // First extract yoga WASM.
     const extractResult = await spawn(
       'node',
-      ['scripts/extract-yoga-wasm.mjs'],
+      [...NODE_MEMORY_FLAGS, 'scripts/extract-yoga-wasm.mjs'],
       {
         shell: WIN32,
         stdio: 'inherit',
@@ -97,7 +100,7 @@ async function main() {
     // Then start esbuild in watch mode.
     const watchResult = await spawn(
       'node',
-      ['.config/esbuild.cli.build.mjs', '--watch'],
+      [...NODE_MEMORY_FLAGS, '.config/esbuild.cli.build.mjs', '--watch'],
       {
         shell: WIN32,
         stdio: 'inherit',
@@ -116,7 +119,7 @@ async function main() {
     const seaArgs = process.argv.filter(arg => arg !== '--sea')
     const result = await spawn(
       'node',
-      ['scripts/build-sea.mjs', ...seaArgs.slice(2)],
+      [...NODE_MEMORY_FLAGS, 'scripts/build-sea.mjs', ...seaArgs.slice(2)],
       {
         shell: WIN32,
         stdio: 'inherit',
@@ -161,22 +164,22 @@ async function main() {
       {
         name: 'Extract Yoga WASM',
         command: 'node',
-        args: ['scripts/extract-yoga-wasm.mjs'],
+        args: [...NODE_MEMORY_FLAGS, 'scripts/extract-yoga-wasm.mjs'],
       },
       {
         name: 'Build CLI Bundle',
         command: 'node',
-        args: ['.config/esbuild.cli.build.mjs'],
+        args: [...NODE_MEMORY_FLAGS, '.config/esbuild.cli.build.mjs'],
       },
       {
         name: 'Build Index Loader',
         command: 'node',
-        args: ['.config/esbuild.index.config.mjs'],
+        args: [...NODE_MEMORY_FLAGS, '.config/esbuild.index.config.mjs'],
       },
       {
         name: 'Build Shadow NPM Inject',
         command: 'node',
-        args: ['.config/esbuild.inject.config.mjs'],
+        args: [...NODE_MEMORY_FLAGS, '.config/esbuild.inject.config.mjs'],
       },
       // Skip compression in debug builds (--no-minify).
       ...(!noMinify
@@ -184,7 +187,7 @@ async function main() {
             {
               name: 'Compress CLI',
               command: 'node',
-              args: ['scripts/compress-cli.mjs'],
+              args: [...NODE_MEMORY_FLAGS, 'scripts/compress-cli.mjs'],
             },
           ]
         : []),
