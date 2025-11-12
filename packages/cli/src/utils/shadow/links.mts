@@ -100,3 +100,15 @@ export async function installNpxLinks(shadowBinPath: string): Promise<string> {
   }
   return binPath
 }
+
+export async function installPnpmLinks(_shadowBinPath: string): Promise<string> {
+  // pnpm no longer uses shadow binaries.
+  // It now delegates directly to Socket Firewall (sfw) via dlx.
+  return 'pnpm'
+}
+
+export async function installYarnLinks(_shadowBinPath: string): Promise<string> {
+  // yarn no longer uses shadow binaries.
+  // It now delegates directly to Socket Firewall (sfw) via dlx.
+  return 'yarn'
+}

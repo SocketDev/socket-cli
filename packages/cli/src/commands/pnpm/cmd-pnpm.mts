@@ -109,7 +109,8 @@ async function run(
 
   // Handle exit codes and signals using event-based pattern.
   // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on(
+  const { process: childProcess } = spawnPromise as any
+  childProcess.on(
     'exit',
     (code: number | null, signalName: NodeJS.Signals | null) => {
       if (signalName) {

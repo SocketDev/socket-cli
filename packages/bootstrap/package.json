@@ -1,13 +1,12 @@
 {
   "name": "@socketsecurity/bootstrap",
   "version": "1.0.0",
-  "description": "Shared bootstrap for Socket CLI npm wrapper and smol binary",
+  "description": "Shared bootstrap for Socket CLI npm wrapper and SEA binary",
   "private": true,
   "exports": {
     ".": "./dist/index.js",
     "./bootstrap-npm.js": "./dist/bootstrap-npm.js",
     "./bootstrap-sea.js": "./dist/bootstrap-sea.js",
-    "./bootstrap-smol.js": "./dist/bootstrap-smol.js",
     "./node-version.json": "./node-version.json"
   },
   "scripts": {

@@ -106,29 +106,6 @@ The Socket CLI documentation is **well-organized** using a 3-tier hierarchy syst
 | `test/fixtures/commands/patch/README.md` | 123 | Test fixtures | Small |
 | `.claude/python-dlx-refactor-plan.md` | 103 | **Workspace-local plan** | TODO file |
 
-#### node-smol-builder Package
-| File | Lines | Purpose |
-|------|-------|---------|
-| `README.md` | ~66 | Package overview |
-| `COMPRESSION-GUIDE.md` | ? | Compression guide |
-| `docs/README.md` | ? | Docs index |
-| `docs/binary-compression-distribution.md` | ? | Distribution strategy |
-| `docs/compression-quick-start.md` | ? | Quick start |
-| `docs/compression-test-results.md` | ? | Test results |
-| `docs/self-extracting-binary-architecture.md` | ? | SEA architecture |
-| `patches/README.md` | ? | Patches directory |
-
-#### sbom-generator Package
-| File | Purpose |
-|------|---------|
-| `README.md` | Package overview |
-| `docs/README.md` | Docs index |
-| `docs/architecture.md` | Architecture |
-| `docs/ecosystems.md` | Supported ecosystems |
-| `docs/fidelity-analysis.md` | Fidelity analysis |
-| `docs/implementation.md` | Implementation details |
-| `docs/lock-step-compliance.md` | Compliance tracking |
-
 #### Other Packages with Docs
 - `yoga-layout/` - WASM builder docs + research/
 - `onnxruntime/` - ONNX Runtime docs
@@ -262,7 +239,6 @@ However, the following items should be considered for cleanup:
 #### 2. Unindexed Documentation
 - `/packages/yoga-layout/research/` has 3 markdown files but no README
 - `/packages/cli/.claude/` contains work-in-progress (shouldn't be in source)
-- `/packages/sbom-generator/` multiple docs but unclear entry point
 
 #### 3. Inconsistent Structure
 - Some packages have `docs/README.md` index, others don't
@@ -442,7 +418,6 @@ However, the following items should be considered for cleanup:
 **Action:**
 - Add README.md to `/packages/yoga-layout/research/` (currently 3 orphaned docs)
 - Verify all package `docs/` folders have index files
-- Create missing indices for `/packages/sbom-generator/docs/`
 
 ---
 

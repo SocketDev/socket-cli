@@ -5,9 +5,6 @@
  * 1. Ensures @socketsecurity/bootstrap package is built
  * 2. Builds bootstrap.js for npm package
  * 3. Copies LICENSE, CHANGELOG.md, and logo images from repo root
- *
- * Note: bootstrap-smol.js is built by @socketsecurity/bootstrap package
- * and used directly by the smol+node builder. It is NOT part of this package.
  */
 
 import { existsSync, mkdirSync } from 'node:fs'
