@@ -105,15 +105,45 @@ Supports version 2 format with `projectIgnorePaths` for excluding files from rep
 - **Quick Start (10 min)**: [Getting Started Guide](docs/getting-started.md) — Essential setup and first contribution
 - **Detailed Guide**: [Development Getting Started](docs/development/getting-started.md) — Complete end-to-end onboarding
 
-**Quick setup:**
+**Quick Development Workflow:**
 
 ```bash
+# 1. Clone and install
 git clone https://github.com/SocketDev/socket-cli.git
 cd socket-cli
 pnpm install
+
+# 2. Run setup (checks prereqs and restores cache)
+pnpm run setup
+
+# 3. Build (smart caching - ~30s first time, <1s cached)
 pnpm run build
+
+# 4. Test your changes
 pnpm exec socket --version
+pnpm test:unit
+
+# 5. Watch mode for rapid iteration
+pnpm run build:watch  # Auto-rebuilds on file changes
 ```
+
+**Setup script** checks for Node.js, pnpm, and gh CLI, then attempts to restore build cache from CI if available.
+
+**Linking to local dependencies** (optional, only if developing @socketsecurity/registry or @socketsecurity/sdk):
+
+Create `.pnpmfile.cjs` (gitignored) in project root:
+
+```javascript
+function readPackage(pkg) {
+  if (pkg.dependencies?.['@socketsecurity/registry']) {
+    pkg.dependencies['@socketsecurity/registry'] = 'link:../socket-registry/registry'
+  }
+  return pkg
+}
+module.exports = { hooks: { readPackage } }
+```
+
+Then run `pnpm install`. See [Development Linking](docs/development/linking.md) for details.
 
 ### Building locally
 

@@ -23,6 +23,7 @@
     "build": "node --max-old-space-size=8192 --import=./scripts/load.mjs scripts/build.mjs",
     "build:force": "node --max-old-space-size=8192 --import=./scripts/load.mjs scripts/build.mjs --force",
     "build:watch": "node --max-old-space-size=8192 --import=./scripts/load.mjs scripts/build.mjs --watch",
+    "restore-cache": "node --import=./scripts/load.mjs scripts/restore-cache.mjs",
     "build:sea:internal:bootstrap": "node --max-old-space-size=8192 .config/esbuild.sea-bootstrap.build.mjs",
     "build:js": "node --max-old-space-size=8192 scripts/extract-yoga-wasm.mjs && node --max-old-space-size=8192 .config/esbuild.cli.build.mjs",
     "dev:watch": "pnpm run build:watch",
