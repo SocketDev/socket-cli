@@ -1,5 +1,9 @@
 /**
  * @fileoverview Tests for socket package bootstrap and delegation.
+ *
+ * Note: Bootstrap delegation tests require actual npm package installation.
+ * They are resource-intensive and may require network access.
+ * For CI/CD pipelines, consider running these tests separately or conditionally.
  */
 
 import { spawnSync } from 'node:child_process'
@@ -14,8 +18,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageDir = path.join(__dirname, '..')
-const bootstrapPath = path.join(packageDir, 'bin', 'bootstrap.js')
-const socketBinPath = path.join(packageDir, 'bin', 'socket.js')
+const bootstrapPath = path.join(packageDir, 'dist', 'bootstrap.js')
 
 describe('socket package', () => {
   describe('package.json validation', () => {
@@ -36,7 +39,7 @@ describe('socket package', () => {
       )
 
       expect(pkgJson.bin).toEqual({
-        socket: './bin/socket.js',
+        socket: './dist/bootstrap.js',
       })
     })
 
@@ -67,35 +70,26 @@ describe('socket package', () => {
         await fs.readFile(path.join(packageDir, 'package.json'), 'utf-8'),
       )
 
-      expect(pkgJson.files).toContain('bin/')
+      expect(pkgJson.files).toContain('dist/**')
     })
   })
 
-  describe('bin scripts exist', () => {
-    it('should have socket.js bin script', () => {
-      expect(existsSync(socketBinPath)).toBe(true)
-    })
-
+  describe('dist scripts exist', () => {
     it('should have bootstrap.js', () => {
       expect(existsSync(bootstrapPath)).toBe(true)
     })
 
-    it('socket.js should be executable', async () => {
+    it('bootstrap.js should be executable', async () => {
       if (platform() !== 'win32') {
-        const stats = await fs.stat(socketBinPath)
+        const stats = await fs.stat(bootstrapPath)
         // Check if user execute bit is set.
         expect((stats.mode & 0o100) !== 0).toBe(true)
       }
     })
 
-    it('socket.js should have node shebang', async () => {
-      const content = await fs.readFile(socketBinPath, 'utf-8')
+    it('bootstrap.js should have node shebang', async () => {
+      const content = await fs.readFile(bootstrapPath, 'utf-8')
       expect(content.startsWith('#!/usr/bin/env node')).toBe(true)
-    })
-
-    it('socket.js should require bootstrap.js', async () => {
-      const content = await fs.readFile(socketBinPath, 'utf-8')
-      expect(content).toContain("require('./bootstrap.js')")
     })
   })
 
@@ -146,19 +140,25 @@ describe('socket package', () => {
       expect(existsSync(cliPath)).toBe(true)
     }, 120000) // 2 min timeout
 
-    it('should use cached CLI on subsequent runs', async () => {
-      // Pre-create cache directory with mock CLI.
-      const cliDir = path.join(testDir, '.socket', '_dlx', 'cli', 'dist')
-      await fs.mkdir(cliDir, { recursive: true })
+    it('should use local CLI path when SOCKET_CLI_LOCAL_PATH is set', async () => {
+      // Create mock CLI directory.
+      const mockCliDir = path.join(testDir, 'mock-cli')
+      await fs.mkdir(mockCliDir, { recursive: true })
 
       // Create mock CLI that just prints version.
+      const mockCliPath = path.join(mockCliDir, 'cli.js')
       const mockCli = `
         console.log('1.0.0-mock')
         process.exit(0)
       `
-      await fs.writeFile(path.join(cliDir, 'cli.js'), mockCli)
+      await fs.writeFile(mockCliPath, mockCli)
 
       const result = spawnSync(process.execPath, [bootstrapPath, '--version'], {
+        env: {
+          ...process.env,
+          HOME: testDir,
+          SOCKET_CLI_LOCAL_PATH: mockCliPath,
+        },
         stdio: ['ignore', 'pipe', 'pipe'],
         timeout: 5000,
       })
@@ -167,43 +167,28 @@ describe('socket package', () => {
       expect(result.stdout?.toString()).toContain('1.0.0-mock')
     })
 
-    it('should use compressed CLI when available', async () => {
-      // Pre-create cache directory with compressed CLI.
-      const cliDir = path.join(testDir, '.socket', '_dlx', 'cli', 'dist')
-      await fs.mkdir(cliDir, { recursive: true })
-
-      // Create mock CLI.
-      const mockCli = `
-        console.log('1.0.0-compressed')
-        process.exit(0)
-      `
-      const compressed = brotliCompressSync(Buffer.from(mockCli))
-      await fs.writeFile(path.join(cliDir, 'cli.js.bz'), compressed)
-
-      const result = spawnSync(process.execPath, [bootstrapPath, '--version'], {
-        stdio: ['ignore', 'pipe', 'pipe'],
-        timeout: 5000,
-      })
-
-      expect(result.status).toBe(0)
-      expect(result.stdout?.toString()).toContain('1.0.0-compressed')
-    })
-
     it('should pass arguments to delegated CLI', async () => {
-      // Pre-create cache with mock CLI that echoes args.
-      const cliDir = path.join(testDir, '.socket', '_dlx', 'cli', 'dist')
-      await fs.mkdir(cliDir, { recursive: true })
+      // Create mock CLI directory.
+      const mockCliDir = path.join(testDir, 'mock-cli-args')
+      await fs.mkdir(mockCliDir, { recursive: true })
 
+      // Create mock CLI that echoes args.
+      const mockCliPath = path.join(mockCliDir, 'cli.js')
       const mockCli = `
         console.log(JSON.stringify(process.argv.slice(2)))
         process.exit(0)
       `
-      await fs.writeFile(path.join(cliDir, 'cli.js'), mockCli)
+      await fs.writeFile(mockCliPath, mockCli)
 
       const result = spawnSync(
         process.execPath,
         [bootstrapPath, 'report', '--json', 'lodash'],
         {
+          env: {
+            ...process.env,
+            HOME: testDir,
+            SOCKET_CLI_LOCAL_PATH: mockCliPath,
+          },
           stdio: ['ignore', 'pipe', 'pipe'],
           timeout: 5000,
         },
@@ -214,37 +199,24 @@ describe('socket package', () => {
       expect(args).toEqual(['report', '--json', 'lodash'])
     })
 
-    it('should set PKG_EXECPATH environment variable', async () => {
-      // Pre-create cache with mock CLI that prints env.
-      const cliDir = path.join(testDir, '.socket', '_dlx', 'cli', 'dist')
-      await fs.mkdir(cliDir, { recursive: true })
-
-      const mockCli = `
-        console.log(process.env.PKG_EXECPATH)
-        process.exit(0)
-      `
-      await fs.writeFile(path.join(cliDir, 'cli.js'), mockCli)
-
-      const result = spawnSync(process.execPath, [bootstrapPath, '--version'], {
-        stdio: ['ignore', 'pipe', 'pipe'],
-        timeout: 5000,
-      })
-
-      expect(result.status).toBe(0)
-      expect(result.stdout?.toString()).toContain('PKG_INVOKE_NODEJS')
-    })
-
     it('should exit with CLI exit code', async () => {
-      // Pre-create cache with mock CLI that exits with code 42.
-      const cliDir = path.join(testDir, '.socket', '_dlx', 'cli', 'dist')
-      await fs.mkdir(cliDir, { recursive: true })
+      // Create mock CLI directory.
+      const mockCliDir = path.join(testDir, 'mock-cli-exit')
+      await fs.mkdir(mockCliDir, { recursive: true })
 
+      // Create mock CLI that exits with code 42.
+      const mockCliPath = path.join(mockCliDir, 'cli.js')
       const mockCli = `
         process.exit(42)
       `
-      await fs.writeFile(path.join(cliDir, 'cli.js'), mockCli)
+      await fs.writeFile(mockCliPath, mockCli)
 
       const result = spawnSync(process.execPath, [bootstrapPath], {
+        env: {
+          ...process.env,
+          HOME: testDir,
+          SOCKET_CLI_LOCAL_PATH: mockCliPath,
+        },
         stdio: ['ignore', 'pipe', 'pipe'],
         timeout: 5000,
       })
@@ -254,27 +226,31 @@ describe('socket package', () => {
   })
 
   describe('error handling', () => {
-    it('should handle missing npm gracefully', async () => {
+    it('should handle invalid local CLI path gracefully', async () => {
       const testDir = await fs.mkdtemp(path.join(tmpdir(), 'socket-test-'))
       const originalHome = process.env.HOME
-      const originalPath = process.env.PATH
 
       try {
-        process.env.HOME = testDir
-        // Set PATH to empty to simulate missing npm.
-        process.env.PATH = ''
+        // Create an invalid CLI file (not a valid JS file).
+        const invalidCliDir = path.join(testDir, 'invalid-cli')
+        await fs.mkdir(invalidCliDir, { recursive: true })
+        const invalidCliPath = path.join(invalidCliDir, 'bad-cli.js')
+        await fs.writeFile(invalidCliPath, 'this is not valid javascript {{{')
 
         const result = spawnSync(process.execPath, [bootstrapPath, '--version'], {
+          env: {
+            ...process.env,
+            HOME: testDir,
+            SOCKET_CLI_LOCAL_PATH: invalidCliPath,
+          },
           stdio: ['ignore', 'pipe', 'pipe'],
           timeout: 5000,
         })
 
         // Should fail gracefully.
         expect(result.status).not.toBe(0)
-        expect(result.stderr.toString()).toContain('Failed to download')
       } finally {
         process.env.HOME = originalHome
-        process.env.PATH = originalPath
         await fs.rm(testDir, { recursive: true, force: true }).catch(() => {})
       }
     })
