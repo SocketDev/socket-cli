@@ -15,8 +15,6 @@ import {
 import {
   getShadowNpmBinPath,
   getShadowNpxBinPath,
-  getShadowPnpmBinPath,
-  getShadowYarnBinPath,
   SOCKET_CLI_SHADOW_ACCEPT_RISKS,
   SOCKET_CLI_SHADOW_API_TOKEN,
   SOCKET_CLI_SHADOW_SILENT,
@@ -118,17 +116,15 @@ export async function runShadowCommand(
 
     let result: ShadowBinResult
 
-    if (agent === PNPM) {
-      const shadowPnpmBin = /*@__PURE__*/ require(getShadowPnpmBinPath())
-      result = await shadowPnpmBin(
-        ['dlx', FLAG_SILENT, packageSpec, ...args],
-        shadowOpts,
-        finalSpawnExtra,
-      )
-    } else if (agent === YARN && isYarnBerry()) {
-      const shadowYarnBin = /*@__PURE__*/ require(getShadowYarnBinPath())
-      result = await shadowYarnBin(
-        ['dlx', '--quiet', packageSpec, ...args],
+    // Note: pnpm and yarn no longer use shadow binaries.
+    // They use dlx directly without interception.
+    // Only npm/npx still use shadow binaries for legacy compatibility.
+    if (agent === PNPM || (agent === YARN && isYarnBerry())) {
+      // For pnpm and yarn, use npx as fallback since they don't have shadow binaries.
+      // In practice, callers of runShadowCommand should migrate to direct dlx calls.
+      const shadowNpxBin = /*@__PURE__*/ require(getShadowNpxBinPath())
+      result = await shadowNpxBin(
+        ['--yes', '--force', FLAG_SILENT, packageSpec, ...args],
         shadowOpts,
         finalSpawnExtra,
       )

@@ -56,6 +56,7 @@ import ENV from '../../constants/env.mts'
 import { PYTHON_MIN_VERSION } from '../../constants/packages.mts'
 import { resolvePyCli } from '../dlx/resolve-binary.mjs'
 import { getErrorCause, InputError } from '../error/errors.mts'
+import { spawnNode } from '../spawn/spawn-node.mjs'
 
 import type { CResult } from '../../types.mjs'
 
@@ -388,7 +389,7 @@ export async function spawnSocketPython(
 
     // Use local Python CLI if available.
     if (resolution.type === 'local') {
-      const spawnResult = await spawn('node', [resolution.path, ...args], {
+      const spawnResult = await spawnNode([resolution.path, ...args], {
         cwd: options?.cwd,
         env: finalEnv,
         shell: WIN32,

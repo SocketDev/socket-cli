@@ -106,7 +106,8 @@ export async function runExternalCommand(
 
     // If buffered and has output, log it.
     if (bufferOutput && stdout) {
-      getDefaultLogger().log(stdout)
+      const logger = getDefaultLogger()
+      logger.log(stdout)
     }
 
     return {

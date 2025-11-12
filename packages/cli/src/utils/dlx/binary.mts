@@ -29,7 +29,7 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { generateCacheKey } from '@socketsecurity/lib/dlx'
-import { readJson, safeMkdir } from '@socketsecurity/lib/fs'
+import { readJson, safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { getSocketDlxDir } from '@socketsecurity/lib/paths'
 import { spawn } from '@socketsecurity/lib/spawn'
@@ -309,7 +309,7 @@ export async function cleanDlxCache(
       if (age > maxAge) {
         // Remove entire cache entry directory.
         // eslint-disable-next-line no-await-in-loop
-        await fs.rm(entryPath, { recursive: true, force: true })
+        await safeDelete(entryPath)
         cleaned += 1
       }
     } catch {
@@ -320,7 +320,7 @@ export async function cleanDlxCache(
         if (!contents.length) {
           // Remove empty directory.
           // eslint-disable-next-line no-await-in-loop
-          await fs.rm(entryPath, { recursive: true, force: true })
+          await safeDelete(entryPath)
           cleaned += 1
         }
       } catch {}

@@ -4,6 +4,7 @@
  */
 
 import ENV from '../../constants/env.mts'
+import { getSwfVersion } from '../../env/sfw-version.mts'
 
 import type { DlxPackageSpec } from './spawn.mjs'
 
@@ -73,14 +74,20 @@ export function resolvePyCli(): BinaryResolution | { type: 'python' } {
  * Resolve path for Socket Firewall (sfw) binary.
  * Checks SOCKET_CLI_SFW_LOCAL_PATH environment variable first.
  */
-export function resolveSfw(): BinaryResolution | { type: 'npx' } {
+export function resolveSfw(): BinaryResolution {
   const localPath = ENV.SOCKET_CLI_SFW_LOCAL_PATH
   if (localPath) {
     return { type: 'local', path: localPath }
   }
 
-  // Socket Firewall uses npx, not dlx.
-  return { type: 'npx' }
+  return {
+    type: 'dlx',
+    details: {
+      name: 'sfw',
+      version: getSwfVersion(),
+      binaryName: 'sfw',
+    },
+  }
 }
 
 /**

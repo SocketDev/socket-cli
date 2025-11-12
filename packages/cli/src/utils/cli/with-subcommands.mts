@@ -46,6 +46,8 @@ import type { MeowFlag, MeowFlags } from '../../flags.mts'
 import type { Options, Result } from '../../meow.mts'
 import type { HeaderTheme } from '../terminal/ascii-header.mts'
 
+const logger = getDefaultLogger()
+
 export interface CliAlias {
   description: string
   argv: readonly string[]
@@ -341,7 +343,7 @@ export function emitBanner(
   //       and pipe the result to other tools. By emitting the banner over stderr
   //       you can do something like `socket scan view xyz | jq | process`.
   //       The spinner also emits over stderr for example.
-  getDefaultLogger().error(getAsciiHeader(name, orgFlag, compactMode, flags))
+  logger.error(getAsciiHeader(name, orgFlag, compactMode, flags))
 }
 
 // For debugging. Whenever you call meowOrExit it will store the command here
@@ -403,7 +405,7 @@ export async function meowWithSubcommands(
   // Try to support `socket <purl>` as a shorthand for `socket package score <purl>`.
   if (!isRootCommand) {
     if (commandOrAliasName?.startsWith('pkg:')) {
-      getDefaultLogger().info('Invoking `socket package score`.')
+      logger.info('Invoking `socket package score`.')
       return await meowWithSubcommands(
         { name, argv: ['package', 'deep', ...argv], importMeta, subcommands },
         options,
@@ -412,7 +414,7 @@ export async function meowWithSubcommands(
     // Support `socket npm/lodash` or whatever as a shorthand, too.
     // Accept any ecosystem and let the remote sort it out.
     if (/^[a-z]+\//.test(commandOrAliasName || '')) {
-      getDefaultLogger().info('Invoking `socket package score`.')
+      logger.info('Invoking `socket package score`.')
       return await meowWithSubcommands(
         {
           name,
@@ -546,9 +548,9 @@ export async function meowWithSubcommands(
     if (!shouldSuppressBanner(cli1.flags)) {
       emitBanner(name, orgFlag, compactMode, cli1.flags)
       // Add newline in stderr.
-      getDefaultLogger().error('')
+      logger.error('')
     }
-    getDefaultLogger().fail(configOverrideResult.message)
+    logger.fail(configOverrideResult.message)
     process.exitCode = 2
     return
   }
@@ -589,7 +591,7 @@ export async function meowWithSubcommands(
       const suggestion = findBestCommandMatch(commandName, subcommands, aliases)
       if (suggestion) {
         process.exitCode = 2
-        getDefaultLogger().fail(
+        logger.fail(
           `Unknown command "${commandName}". Did you mean "${suggestion}"?`,
         )
         return
@@ -673,11 +675,11 @@ export async function meowWithSubcommands(
         if (commands.has(name)) {
           commands.delete(name)
         } else {
-          getDefaultLogger().fail('Received an unknown command:', name)
+          logger.fail('Received an unknown command:', name)
         }
       })
     if (commands.size) {
-      getDefaultLogger().fail(
+      logger.fail(
         'Found commands in the list that were not marked as public or not defined at all:',
         // Node < 22 will print 'Object (n)' before the array. So to have consistent
         // test snapshots we use joinAnd.
@@ -856,7 +858,7 @@ export async function meowWithSubcommands(
     // Meow will add newline so don't add stderr spacing here.
   }
   if (!helpFlag && dryRun) {
-    getDefaultLogger().log(`${DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
+    logger.log(`${DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
     // Exit immediately to prevent tests from hanging waiting for stdin.
     // eslint-disable-next-line n/no-process-exit -- Required for dry-run mode.
     process.exit(0)
@@ -950,7 +952,7 @@ export function meowOrExit(
     emitBanner(command, orgFlag, compactMode, cli.flags)
     // Add newline in stderr.
     // Meow help adds a newline too so we do it here.
-    getDefaultLogger().error('')
+    logger.error('')
   }
 
   // As per https://github.com/sindresorhus/meow/issues/178
@@ -977,7 +979,6 @@ export function meowOrExit(
 
   // Meow doesn't detect 'version' as an unknown flag, so we do the leg work here.
   if (versionFlag && !hasOwn(cliConfig.flags, 'version')) {
-    const logger = getDefaultLogger()
     logger.error('Unknown flag\n--version')
     // eslint-disable-next-line n/no-process-exit
     process.exit(2)
