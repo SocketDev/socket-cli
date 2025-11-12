@@ -2,11 +2,10 @@
 /**
  * Build script for Socket bootstrap package.
  *
- * Builds three versions + inflater:
+ * Builds two versions + inflater:
  * 1. bootstrap-npm.js - Standard version for npm wrapper
  * 2. bootstrap-sea.js - Standard version for SEA binary
- * 3. bootstrap-smol.js - Transformed version for smol binary
- * 4. index.js - Brotli inflater that loads compressed bootstraps
+ * 3. index.js - Brotli inflater that loads compressed bootstraps
  *
  * Each bootstrap is also compressed to .br for reduced package size.
  */
@@ -22,7 +21,6 @@ import colors from 'yoctocolors-cjs'
 import indexConfig from '../.config/esbuild.index.config.mjs'
 import npmConfig from '../.config/esbuild.npm.config.mjs'
 import seaConfig from '../.config/esbuild.sea.config.mjs'
-import smolConfig from '../.config/esbuild.smol.config.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageRoot = path.resolve(__dirname, '..')
@@ -98,29 +96,6 @@ try {
 
   // Compress SEA bootstrap.
   compressFile(seaConfig.outfile)
-
-  // Build smol version.
-  console.log('\\n→ Building smol bootstrap...')
-  const smolResult = await build(smolConfig)
-
-  // Write the transformed output (build had write: false).
-  if (smolResult.outputFiles && smolResult.outputFiles.length > 0) {
-    for (const output of smolResult.outputFiles) {
-      writeFileSync(output.path, output.contents)
-    }
-  }
-
-  console.log(`${colors.green('✓')} ${smolConfig.outfile}`)
-
-  if (smolResult.metafile) {
-    const outputSize = Object.values(smolResult.metafile.outputs)[0]?.bytes
-    if (outputSize) {
-      console.log(`  Size: ${(outputSize / 1024).toFixed(2)} KB`)
-    }
-  }
-
-  // Compress smol bootstrap.
-  compressFile(smolConfig.outfile)
 
   // Build index.js inflater.
   console.log('\\n→ Building index.js inflater...')

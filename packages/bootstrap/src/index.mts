@@ -56,16 +56,6 @@ module.exports = {
     return loadBootstrap('bootstrap-sea.js')
   },
 
-  /**
-   * Load smol bootstrap (for smol Node.js binary - also available compressed).
-   * Note: This is also embedded in base64 in the Node.js binary via
-   * packages/node-smol-builder, but providing compressed version for consistency.
-   * @returns {any} Bootstrap exports
-   */
-  loadSmolBootstrap() {
-    return loadBootstrap('bootstrap-smol.js')
-  },
-
   // Re-export the loader function for custom usage.
   loadBootstrap,
 }
