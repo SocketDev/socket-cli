@@ -16,7 +16,6 @@
 
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 import { dlxPackage } from '@socketsecurity/lib/dlx-package'
-import { spawn } from '@socketsecurity/lib/spawn'
 
 import { resolveCdxgen, resolveCoana } from './resolve-binary.mjs'
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
@@ -26,8 +25,9 @@ import {
   SOCKET_CLI_SHADOW_API_TOKEN,
   SOCKET_CLI_SHADOW_SILENT,
 } from '../../constants/shadow.mts'
-import { getErrorCause } from '../error/errors.mts'
+import { getErrorCause, InputError } from '../error/errors.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
+import { spawnNode } from '../spawn/spawn-node.mjs'
 
 import type {
   ShadowBinOptions,
@@ -49,6 +49,29 @@ export type DlxPackageSpec = {
 }
 
 /**
+ * Validate package name to prevent command injection.
+ * Package names must follow npm naming rules.
+ */
+function validatePackageName(name: string): void {
+  // Basic validation: no shell metacharacters, must be valid npm package name.
+  // npm package names can contain: lowercase letters, numbers, hyphens, underscores, dots, and @ for scopes.
+  const validNamePattern = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
+
+  if (!validNamePattern.test(name)) {
+    throw new InputError(
+      `Invalid package name "${name}". Package names must contain only lowercase letters, numbers, hyphens, underscores, dots, and optionally a scope (@org/package).`,
+    )
+  }
+
+  // Check for path traversal attempts.
+  if (name.includes('..') || name.includes('/') && !name.startsWith('@')) {
+    throw new InputError(
+      `Invalid package name "${name}". Package names cannot contain path traversal sequences.`,
+    )
+  }
+}
+
+/**
  * Spawns a package using Socket's dlx implementation.
  * Installs packages to ~/.socket/_dlx and executes them directly.
  */
@@ -59,6 +82,9 @@ export async function spawnDlx(
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<ShadowBinResult> {
   const { force = false, ...shadowOptions } = options ?? {}
+
+  // Validate package name for security.
+  validatePackageName(packageSpec.name)
 
   const packageString = `${packageSpec.name}@${packageSpec.version}`
 
@@ -133,7 +159,7 @@ export async function spawnCoanaDlx(
         ...mixinsEnv,
         ...spawnEnv,
       }
-      const spawnResult = await spawn('node', [resolution.path, ...args], {
+      const spawnResult = await spawnNode([resolution.path, ...args], {
         cwd: dlxOptions.cwd,
         env: finalEnv,
         stdio: spawnExtra?.['stdio'] || 'inherit',
@@ -202,7 +228,7 @@ export async function spawnCdxgenDlx(
       ...options,
     } as DlxOptions
 
-    const spawnResult = spawn('node', [resolution.path, ...args], {
+    const spawnResult = spawnNode([resolution.path, ...args], {
       cwd: dlxOptions.cwd,
       env: {
         ...process.env,

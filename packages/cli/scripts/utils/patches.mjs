@@ -90,7 +90,8 @@ async function promptYesNo(question, defaultAnswer = false) {
  * @returns {Promise<string>} Path to temporary patch directory.
  */
 export async function startPatch(packageSpec) {
-  getDefaultLogger().log(`Starting patch for ${packageSpec}...`)
+  const logger = getDefaultLogger()
+  logger.log(`Starting patch for ${packageSpec}...`)
 
   // First, try to run pnpm patch to see if directory already exists.
   let result = await spawn('pnpm', ['patch', packageSpec], {
@@ -106,9 +107,7 @@ export async function startPatch(packageSpec) {
     const existingPatchDir = match ? match[1] : null
 
     if (existingPatchDir) {
-      getDefaultLogger().log(
-        `\nExisting patch directory found: ${existingPatchDir}`,
-      )
+      logger.log(`\nExisting patch directory found: ${existingPatchDir}`)
       const shouldOverwrite = await promptYesNo(
         'Overwrite existing patch directory?',
         false,
@@ -119,7 +118,7 @@ export async function startPatch(packageSpec) {
       }
 
       // Remove existing patch directory.
-      getDefaultLogger().log('Removing existing patch directory...')
+      logger.log('Removing existing patch directory...')
       rmSync(existingPatchDir, { force: true, recursive: true })
 
       // Try pnpm patch again.
@@ -160,7 +159,7 @@ export async function startPatch(packageSpec) {
  * @param {string} packageName - Package name for logging.
  */
 export async function commitPatch(patchPath, packageName) {
-  getDefaultLogger().log(`Committing patch for ${packageName}...`)
+  logger.log(`Committing patch for ${packageName}...`)
   const result = await spawn('pnpm', ['patch-commit', patchPath], {
     shell: WIN32,
     stdio: 'inherit',
@@ -170,7 +169,7 @@ export async function commitPatch(patchPath, packageName) {
     throw new Error(`Failed to commit patch for ${packageName}`)
   }
 
-  getDefaultLogger().log(`✓ Patch created for ${packageName}`)
+  logger.log(`✓ Patch created for ${packageName}`)
 }
 
 /**
@@ -188,8 +187,8 @@ export async function createPatch(patchDef) {
   const { description, files, packageName, transform, version } = patchDef
   const packageSpec = `${packageName}@${version}`
 
-  getDefaultLogger().log(`\n=== Creating patch: ${packageName} ===`)
-  getDefaultLogger().log(`Description: ${description}`)
+  logger.log(`\n=== Creating patch: ${packageName} ===`)
+  logger.log(`Description: ${description}`)
 
   let patchPath
   try {
@@ -207,18 +206,18 @@ export async function createPatch(patchDef) {
 
     let hasChanges = false
     for (const file of files) {
-      getDefaultLogger().log(`Transforming ${file}...`)
+      logger.log(`Transforming ${file}...`)
       const changed = await transform(file, utils)
       if (changed) {
         hasChanges = true
-        getDefaultLogger().log(`✓ Transformed ${file}`)
+        logger.log(`✓ Transformed ${file}`)
       } else {
-        getDefaultLogger().log(`- No changes needed for ${file}`)
+        logger.log(`- No changes needed for ${file}`)
       }
     }
 
     if (!hasChanges) {
-      getDefaultLogger().log('No changes made, skipping patch commit')
+      logger.log('No changes made, skipping patch commit')
       // Cleanup temp directory.
       if (existsSync(patchPath)) {
         rmSync(patchPath, { force: true, recursive: true })
@@ -229,10 +228,7 @@ export async function createPatch(patchDef) {
     // Commit the patch.
     await commitPatch(patchPath, packageName)
   } catch (error) {
-    getDefaultLogger().error(
-      `Error creating patch for ${packageName}:`,
-      error.message,
-    )
+    logger.error(`Error creating patch for ${packageName}:`, error.message)
     // Cleanup temp directory on error.
     if (patchPath && existsSync(patchPath)) {
       rmSync(patchPath, { force: true, recursive: true })

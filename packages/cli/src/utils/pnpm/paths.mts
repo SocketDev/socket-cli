@@ -20,7 +20,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { findBinPathDetailsSync } from '../fs/path-resolve.mjs'
 
 function exitWithBinPathError(binName: string): never {
-  getDefaultLogger().fail(
+  const logger = getDefaultLogger()
+  logger.fail(
     `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable`,
   )
   // The exit code 127 indicates that the command or binary being executed

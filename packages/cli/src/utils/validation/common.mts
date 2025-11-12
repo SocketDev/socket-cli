@@ -138,7 +138,8 @@ export function runStandardValidations(options: ValidationOptions): boolean {
 
   // Handle dry run
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+    const logger = getDefaultLogger()
+    logger.log(DRY_RUN_BAILING_NOW)
     return false
   }
 

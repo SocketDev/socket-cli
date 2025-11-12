@@ -147,7 +147,8 @@ export async function getAlertsMapFromPurls(
         )
       } else {
         spinner?.stop()
-        getDefaultLogger().fail(
+        const logger = getDefaultLogger()
+        logger.fail(
           `Received a ${batchResult.status} response from Socket API which we consider a permanent failure:`,
           batchResult.error,
           batchResult.cause ? `( ${batchResult.cause} )` : '',
