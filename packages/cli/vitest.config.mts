@@ -61,7 +61,9 @@ export default defineConfig({
         // Use CPU count for better hardware utilization.
         // Reduce threads on macOS CI to prevent memory exhaustion (SIGABRT).
         maxThreads: getMaxThreads(),
-        minThreads: isCoverageEnabled ? 1 : Math.min(2, Math.floor(getMaxThreads() / 2)),
+        minThreads: isCoverageEnabled
+          ? 1
+          : Math.min(2, Math.floor(getMaxThreads() / 2)),
         // IMPORTANT: Changed to isolate: true to fix worker thread termination issues.
         //
         // Previous configuration (isolate: false) caused "Terminating worker thread"

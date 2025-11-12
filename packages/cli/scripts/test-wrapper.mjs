@@ -10,19 +10,28 @@
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import fastGlob from 'fast-glob'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import constants from './constants.mjs'
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const rootPath = path.join(__dirname, '..')
+const rootNodeModulesBinPath = path.join(
+  rootPath,
+  '..',
+  '..',
+  'node_modules',
+  '.bin',
+)
 
 /**
  * Check if dist directory exists with required artifacts.
  */
 function checkBuildArtifacts() {
-  const distPath = path.join(constants.rootPath, 'dist')
+  const distPath = path.join(rootPath, 'dist')
   if (!existsSync(distPath)) {
     const logger = getDefaultLogger()
     logger.error('dist/ directory not found')
@@ -30,9 +39,9 @@ function checkBuildArtifacts() {
     return false
   }
 
-  const requiredArtifacts = ['dist/cli.js']
+  const requiredArtifacts = ['dist/index.js']
   for (const artifact of requiredArtifacts) {
-    const fullPath = path.join(constants.rootPath, artifact)
+    const fullPath = path.join(rootPath, artifact)
     if (!existsSync(fullPath)) {
       logger.error(`Required build artifact missing: ${artifact}`)
       logger.error('Run `pnpm run build:cli` before running tests')
@@ -100,14 +109,14 @@ async function main() {
 
     // Handle Windows vs Unix for vitest executable.
     const vitestCmd = WIN32 ? 'vitest.cmd' : 'vitest'
-    const vitestPath = path.join(constants.rootNodeModulesBinPath, vitestCmd)
+    const vitestPath = path.join(rootNodeModulesBinPath, vitestCmd)
 
     // Expand glob patterns in arguments.
     const expandedArgs = []
     for (const arg of args) {
       // Check if argument looks like a glob pattern.
       if (arg.includes('*') && !arg.startsWith('-')) {
-        const files = fastGlob.sync(arg, { cwd: constants.rootPath })
+        const files = fastGlob.sync(arg, { cwd: rootPath })
         if (files.length === 0) {
           logger.warn(`No files matched pattern: ${arg}`)
         }
@@ -122,7 +131,7 @@ async function main() {
 
     // On Windows, .cmd files need shell: true.
     const spawnOptions = {
-      cwd: constants.rootPath,
+      cwd: rootPath,
       env: spawnEnv,
       stdio: 'inherit',
       ...(WIN32 ? { shell: true } : {}),
