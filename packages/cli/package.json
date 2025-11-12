@@ -92,7 +92,7 @@
     "pnpm": ">=10.16.0"
   },
   "externalTools": {
-    "coana": "14.12.51",
+    "@coana-tech/cli": "14.12.76",
     "python": "3.10.18",
     "pythonBuildTag": "20250918",
     "sfw": "2.0.4",

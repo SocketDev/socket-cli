@@ -71,12 +71,6 @@ describe('shadow-links', () => {
 
   describe('installNpmLinks', () => {
     it('should return bin path when shouldSkipShadow is true', async () => {
-      const { shouldSkipShadow } = await import(
-        '../../../../../src/utils/dlx/detection.mts'
-      )
-      const { getNpmBinPath } = await import(
-        '../../../../../src/utils/npm/paths.mts'
-      )
       const mockShouldSkip = mockShouldSkipShadow
       const mockGetBin = mockGetNpmBinPath
 

@@ -42,7 +42,7 @@ const cdxgenVersion = packageJson.devDependencies?.['@cyclonedx/cdxgen'] || ''
 const synpVersion = packageJson.devDependencies?.['synp'] || ''
 
 // Get external tool versions from package.json externalTools (non-npm packages).
-const coanaVersion = packageJson.externalTools?.['coana'] || ''
+const coanaVersion = packageJson.externalTools?.['@coana-tech/cli'] || ''
 const pyCliVersion = packageJson.externalTools?.['socketcli'] || ''
 const pythonBuildTag = packageJson.externalTools?.['pythonBuildTag'] || ''
 const pythonVersion = packageJson.externalTools?.['python'] || ''
