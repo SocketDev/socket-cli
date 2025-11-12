@@ -104,7 +104,8 @@
     "data/**",
     "dist/**",
     "logo-dark.png",
-    "logo-light.png"
+    "logo-light.png",
+    "src/**"
   ],
   "lint-staged": {
     "*.{cjs,cts,js,json,md,mjs,mts,ts}": [

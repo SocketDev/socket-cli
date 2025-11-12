@@ -55,7 +55,8 @@ export type DlxPackageSpec = {
 function validatePackageName(name: string): void {
   // Basic validation: no shell metacharacters, must be valid npm package name.
   // npm package names can contain: lowercase letters, numbers, hyphens, underscores, dots, and @ for scopes.
-  const validNamePattern = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
+  const validNamePattern =
+    /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
 
   if (!validNamePattern.test(name)) {
     throw new InputError(
@@ -64,7 +65,7 @@ function validatePackageName(name: string): void {
   }
 
   // Check for path traversal attempts.
-  if (name.includes('..') || name.includes('/') && !name.startsWith('@')) {
+  if (name.includes('..') || (name.includes('/') && !name.startsWith('@'))) {
     throw new InputError(
       `Invalid package name "${name}". Package names cannot contain path traversal sequences.`,
     )
