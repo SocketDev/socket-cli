@@ -15,12 +15,14 @@ import { fileURLToPath } from 'node:url'
 
 import colors from 'yoctocolors-cjs'
 
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT_DIR = path.resolve(__dirname, '..')
 const MONOREPO_ROOT = path.resolve(ROOT_DIR, '../..')
+const NODE_MODULES_BIN_PATH = path.join(MONOREPO_ROOT, 'node_modules/.bin')
 
 const BINARY_PATHS = {
   __proto__: null,
@@ -49,30 +51,23 @@ async function checkBinaryExists(binaryType) {
   if (binaryType === 'js' || binaryType === 'sea' || binaryType === 'smol') {
     const binaryPath = BINARY_PATHS[binaryType]
     if (!existsSync(binaryPath)) {
-      getDefaultLogger().error(
-        `${colors.red('✗')} Binary not found: ${binaryPath}`,
-      )
-      getDefaultLogger().log('')
-      getDefaultLogger().log(
-        'The binary must be built before running e2e tests.',
-      )
-      getDefaultLogger().log('Build commands:')
+      const logger = getDefaultLogger()
+      logger.error(`${colors.red('✗')} Binary not found: ${binaryPath}`)
+      logger.log('')
+      logger.log('The binary must be built before running e2e tests.')
+      logger.log('Build commands:')
       if (binaryType === 'js') {
-        getDefaultLogger().log('  pnpm run build')
+        logger.log('  pnpm run build')
       } else if (binaryType === 'sea') {
-        getDefaultLogger().log(
-          '  pnpm --filter @socketbin/node-sea-builder run build',
-        )
+        logger.log('  pnpm --filter @socketbin/node-sea-builder run build')
       } else if (binaryType === 'smol') {
-        getDefaultLogger().log(
-          '  pnpm --filter @socketbin/node-smol-builder run build',
-        )
+        logger.log('  pnpm --filter @socketbin/node-smol-builder run build')
       }
-      getDefaultLogger().log('')
+      logger.log('')
       return false
     }
-    getDefaultLogger().log(`${colors.green('✓')} Binary found: ${binaryPath}`)
-    getDefaultLogger().log('')
+    logger.log(`${colors.green('✓')} Binary found: ${binaryPath}`)
+    logger.log('')
   }
 
   // For 'all', we'll skip missing binaries (handled by test suite).
@@ -81,10 +76,10 @@ async function checkBinaryExists(binaryType) {
 
 async function runVitest(binaryType) {
   const envVars = BINARY_FLAGS[binaryType]
-  getDefaultLogger().log(
+  logger.log(
     `${colors.blue('ℹ')} Running e2e tests for ${binaryType} binary...`,
   )
-  getDefaultLogger().log('')
+  logger.log('')
 
   // Check if binary exists when explicitly requested.
   const binaryExists = await checkBinaryExists(binaryType)
@@ -92,15 +87,23 @@ async function runVitest(binaryType) {
     process.exit(1)
   }
 
+  // Use dotenvx to load test environment.
+  const dotenvxCmd = WIN32 ? 'dotenvx.cmd' : 'dotenvx'
+  const dotenvxPath = path.join(NODE_MODULES_BIN_PATH, dotenvxCmd)
+
+  // Resolve vitest path.
+  const vitestCmd = WIN32 ? 'vitest.cmd' : 'vitest'
+  const vitestPath = path.join(NODE_MODULES_BIN_PATH, vitestCmd)
+
   const result = await spawn(
-    'dotenvx',
+    dotenvxPath,
     [
       '-q',
       'run',
       '-f',
       '.env.e2e',
       '--',
-      'vitest',
+      vitestPath,
       'run',
       'test/e2e/binary-test-suite.e2e.test.mts',
       '--config',
@@ -124,16 +127,14 @@ async function main() {
   const flag = args.find(arg => arg.startsWith('--'))?.slice(2)
 
   if (!flag || !BINARY_FLAGS[flag]) {
-    getDefaultLogger().error('Invalid or missing flag')
-    getDefaultLogger().log('')
-    getDefaultLogger().log('Usage:')
-    getDefaultLogger().log('  node scripts/e2e.mjs --js     # Test JS binary')
-    getDefaultLogger().log('  node scripts/e2e.mjs --sea    # Test SEA binary')
-    getDefaultLogger().log('  node scripts/e2e.mjs --smol   # Test smol binary')
-    getDefaultLogger().log(
-      '  node scripts/e2e.mjs --all    # Test all binaries',
-    )
-    getDefaultLogger().log('')
+    logger.error('Invalid or missing flag')
+    logger.log('')
+    logger.log('Usage:')
+    logger.log('  node scripts/e2e.mjs --js     # Test JS binary')
+    logger.log('  node scripts/e2e.mjs --sea    # Test SEA binary')
+    logger.log('  node scripts/e2e.mjs --smol   # Test smol binary')
+    logger.log('  node scripts/e2e.mjs --all    # Test all binaries')
+    logger.log('')
     process.exit(1)
   }
 
@@ -141,6 +142,6 @@ async function main() {
 }
 
 main().catch(e => {
-  getDefaultLogger().error('E2E test runner failed:', e)
+  logger.error('E2E test runner failed:', e)
   process.exit(1)
 })

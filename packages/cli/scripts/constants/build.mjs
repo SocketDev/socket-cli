@@ -9,8 +9,6 @@ export const INSTRUMENT_WITH_SENTRY = 'instrument-with-sentry'
 export const SHADOW_NPM_BIN = 'shadow-npm-bin'
 export const SHADOW_NPM_INJECT = 'shadow-npm-inject'
 export const SHADOW_NPX_BIN = 'shadow-npx-bin'
-export const SHADOW_PNPM_BIN = 'shadow-pnpm-bin'
-export const SHADOW_YARN_BIN = 'shadow-yarn-bin'
 
 // Rollup configuration.
 export const ROLLUP_EXTERNAL_SUFFIX = '?commonjs-external'

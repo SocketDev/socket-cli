@@ -17,13 +17,13 @@
     "type": "tsc --noEmit"
   },
   "dependencies": {
-    "@iarna/toml": "^2.2.5",
+    "@iarna/toml": "catalog:",
     "@socketsecurity/lib": "catalog:",
-    "@yarnpkg/parsers": "^3.0.3",
-    "fast-xml-parser": "^5.3.1",
-    "yaml": "^2.8.1"
+    "@yarnpkg/parsers": "catalog:",
+    "fast-xml-parser": "catalog:",
+    "yaml": "catalog:"
   },
   "devDependencies": {
-    "vitest": "^4.0.6"
+    "vitest": "catalog:"
   }
 }

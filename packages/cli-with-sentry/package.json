@@ -27,6 +27,7 @@
     "LICENSE",
     "data/**",
     "dist/**",
+    "!dist/cli.js",
     "logo-dark.png",
     "logo-light.png"
   ],
@@ -48,7 +49,7 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@sentry/node": "8.0.0"
+    "@sentry/node": "catalog:"
   },
   "publishConfig": {
     "access": "public",

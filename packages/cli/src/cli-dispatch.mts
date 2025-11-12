@@ -5,8 +5,6 @@
  * - socket (main CLI)
  * - socket-npm (npm wrapper)
  * - socket-npx (npx wrapper)
- * - socket-pnpm (pnpm wrapper)
- * - socket-yarn (yarn wrapper)
  *
  * Perfect for SEA packaging and single-file distribution.
  *
@@ -100,34 +98,9 @@ async function main() {
   process.env['SOCKET_CLI_MODE'] = mode
 
   // Import and run the appropriate CLI function.
-  switch (mode) {
-    case 'npm': {
-      const { default: runNpmCli } = await import('./npm-cli.mjs')
-      await runNpmCli()
-      break
-    }
-
-    case 'npx': {
-      const { default: runNpxCli } = await import('./npx-cli.mjs')
-      await runNpxCli()
-      break
-    }
-
-    case 'pnpm': {
-      const { default: runPnpmCli } = await import('./pnpm-cli.mjs')
-      await runPnpmCli()
-      break
-    }
-
-    case 'yarn': {
-      const { default: runYarnCli } = await import('./yarn-cli.mjs')
-      await runYarnCli()
-      break
-    }
-    default:
-      await import('./cli-entry.mjs')
-      break
-  }
+  // All wrapper modes now route through the main CLI entry with the mode set.
+  // The CLI will detect the mode and run the appropriate command.
+  await import('./cli-entry.mjs')
 }
 
 // Run the appropriate CLI.

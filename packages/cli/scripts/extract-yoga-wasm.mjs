@@ -14,7 +14,8 @@ import {
   ensureOutputDir,
   generateHashComment,
   shouldExtract,
-} from '@socketsecurity/build-infra/lib/extraction-cache'
+} from 'build-infra/lib/extraction-cache'
+
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -42,9 +43,8 @@ if (
 // Check if yoga-layout WASM files exist.
 if (!existsSync(yogaWasmFile) || !existsSync(yogaJsFile)) {
   // Graceful fallback: Generate placeholder for CI builds without WASM.
-  getDefaultLogger().warn(
-    'yoga-layout WASM not built yet, generating placeholder',
-  )
+  const logger = getDefaultLogger()
+  logger.warn('yoga-layout WASM not built yet, generating placeholder')
 
   const placeholderContent = `/**
  * Synchronous yoga-layout with embedded WASM binary (Placeholder).
@@ -74,7 +74,7 @@ export default yoga
 
   ensureOutputDir(outputPath)
   writeFileSync(outputPath, placeholderContent, 'utf-8')
-  getDefaultLogger().log(`✓ Generated placeholder ${outputPath}`)
+  logger.log(`✓ Generated placeholder ${outputPath}`)
   process.exit(0)
 }
 
@@ -88,7 +88,7 @@ const yogaJsContent = readFileSync(yogaJsFile, 'utf-8')
 // Compute source hash for cache validation.
 const sourceHashComment = await generateHashComment([yogaWasmFile, yogaJsFile])
 
-getDefaultLogger().log(
+logger.log(
   `✓ Extracted ${wasmBinary.length} bytes of WASM data from custom yoga-layout`,
 )
 
@@ -132,5 +132,5 @@ export default yoga
 ensureOutputDir(outputPath)
 writeFileSync(outputPath, yogaSyncContent, 'utf-8')
 
-getDefaultLogger().log(`✓ Generated ${outputPath}`)
-getDefaultLogger().log(`✓ yoga-sync.mjs size: ${yogaSyncContent.length} bytes`)
+logger.log(`✓ Generated ${outputPath}`)
+logger.log(`✓ yoga-sync.mjs size: ${yogaSyncContent.length} bytes`)

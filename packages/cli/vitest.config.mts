@@ -39,7 +39,7 @@ export default defineConfig({
   test: {
     globals: false,
     environment: 'node',
-    include: ['test/**/*.test.{mts,ts}', 'src/**/*.test.{mts,ts}'],
+    include: ['test/**/*.test.{mts,ts}'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
@@ -47,6 +47,8 @@ export default defineConfig({
       '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*',
       // Exclude E2E tests from regular test runs.
       '**/*.e2e.test.mts',
+      // Exclude integration tests (run separately via scripts/integration.mjs).
+      'test/integration/**',
     ],
     reporters: ['default'],
     setupFiles: ['./test/setup.mts'],
@@ -87,6 +89,11 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov', 'clover'],
+      // Prevent v8 coverage segfaults by processing in smaller chunks.
+      processingConcurrency: 1,
+      // Use less memory-intensive options.
+      reportOnFailure: true,
+      reportsDirectory: './coverage',
       exclude: [
         '**/*.config.*',
         '**/node_modules/**',

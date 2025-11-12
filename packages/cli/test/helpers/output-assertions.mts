@@ -8,7 +8,11 @@ import type { CliExecutionResult } from './cli-execution.mts'
  * Fluent assertion builder for CLI output validation
  */
 export class OutputAssertion {
-  constructor(private readonly result: CliExecutionResult) {}
+  private readonly result: CliExecutionResult
+
+  constructor(result: CliExecutionResult) {
+    this.result = result
+  }
 
   /**
    * Assert stdout contains expected text

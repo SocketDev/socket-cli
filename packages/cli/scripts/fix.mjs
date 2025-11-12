@@ -20,6 +20,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { printHeader } from '@socketsecurity/lib/stdio/header'
 
+const logger = getDefaultLogger()
+
 async function main() {
   const { values } = parseArgs({
     options: {
@@ -39,7 +41,8 @@ async function main() {
   try {
     if (!quiet) {
       printHeader('Running Auto-fix')
-      getDefaultLogger().log('')
+      const logger = getDefaultLogger()
+      logger.log('')
     }
 
     // Build lint command arguments.
@@ -62,27 +65,27 @@ async function main() {
 
     if (result.code !== 0) {
       if (!quiet) {
-        getDefaultLogger().error('Some fixes could not be applied')
+        logger.error('Some fixes could not be applied')
       }
       process.exitCode = 1
     } else {
       if (!quiet) {
-        getDefaultLogger().log('')
-        getDefaultLogger().success('Auto-fix completed!')
+        logger.log('')
+        logger.success('Auto-fix completed!')
       }
     }
   } catch (error) {
     if (!quiet) {
-      getDefaultLogger().error(`Fix failed: ${error.message}`)
+      logger.error(`Fix failed: ${error.message}`)
     }
     if (verbose) {
-      getDefaultLogger().error(error)
+      logger.error(error)
     }
     process.exitCode = 1
   }
 }
 
 main().catch(e => {
-  getDefaultLogger().error(e)
+  logger.error(e)
   process.exitCode = 1
 })

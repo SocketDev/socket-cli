@@ -3,10 +3,14 @@
 import { cmdAnalytics } from './commands/analytics/cmd-analytics.mts'
 import { cmdAsk } from './commands/ask/cmd-ask.mts'
 import { cmdAuditLog } from './commands/audit-log/cmd-audit-log.mts'
+import { cmdBundler } from './commands/bundler/cmd-bundler.mts'
+import { cmdCargo } from './commands/cargo/cmd-cargo.mts'
 import { cmdCI } from './commands/ci/cmd-ci.mts'
 import { cmdConfig } from './commands/config/cmd-config.mts'
 import { cmdConsole } from './commands/console/cmd-console.mts'
 import { cmdFix } from './commands/fix/cmd-fix.mts'
+import { cmdGem } from './commands/gem/cmd-gem.mts'
+import { cmdGo } from './commands/go/cmd-go.mts'
 import { cmdInstall } from './commands/install/cmd-install.mts'
 import { cmdJson } from './commands/json/cmd-json.mts'
 import { cmdLogin } from './commands/login/cmd-login.mts'
@@ -15,6 +19,7 @@ import { cmdManifestCdxgen } from './commands/manifest/cmd-manifest-cdxgen.mts'
 import { cmdManifest } from './commands/manifest/cmd-manifest.mts'
 import { cmdNpm } from './commands/npm/cmd-npm.mts'
 import { cmdNpx } from './commands/npx/cmd-npx.mts'
+import { cmdNuget } from './commands/nuget/cmd-nuget.mts'
 import { cmdOops } from './commands/oops/cmd-oops.mts'
 import { cmdOptimize } from './commands/optimize/cmd-optimize.mts'
 import { cmdOrganizationDependencies } from './commands/organization/cmd-organization-dependencies.mts'
@@ -32,6 +37,7 @@ import { cmdScan } from './commands/scan/cmd-scan.mts'
 import { cmdSelfUpdate } from './commands/self-update/cmd-self-update.mts'
 import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed.mts'
 import { cmdUninstall } from './commands/uninstall/cmd-uninstall.mts'
+import { cmdUv } from './commands/uv/cmd-uv.mts'
 import { cmdWhoami } from './commands/whoami/cmd-whoami.mts'
 import { cmdWrapper } from './commands/wrapper/cmd-wrapper.mts'
 import { cmdYarn } from './commands/yarn/cmd-yarn.mts'
@@ -41,12 +47,16 @@ export const rootCommands = {
   analytics: cmdAnalytics,
   ask: cmdAsk,
   'audit-log': cmdAuditLog,
-  ci: cmdCI,
+  bundler: cmdBundler,
+  cargo: cmdCargo,
   cdxgen: cmdManifestCdxgen,
+  ci: cmdCI,
   config: cmdConfig,
   console: cmdConsole,
   dependencies: cmdOrganizationDependencies,
   fix: cmdFix,
+  gem: cmdGem,
+  go: cmdGo,
   install: cmdInstall,
   json: cmdJson,
   license: cmdOrganizationPolicyLicense,
@@ -55,13 +65,14 @@ export const rootCommands = {
   manifest: cmdManifest,
   npm: cmdNpm,
   npx: cmdNpx,
-  pnpm: cmdPnpm,
+  nuget: cmdNuget,
   oops: cmdOops,
   optimize: cmdOptimize,
   organization: cmdOrganization,
   package: cmdPackage,
   patch: cmdPatch,
   pip: cmdPip,
+  pnpm: cmdPnpm,
   'raw-npm': cmdRawNpm,
   'raw-npx': cmdRawNpx,
   repository: cmdRepository,
@@ -70,6 +81,7 @@ export const rootCommands = {
   ...(isSeaBinary() ? { 'self-update': cmdSelfUpdate } : {}),
   'threat-feed': cmdThreatFeed,
   uninstall: cmdUninstall,
+  uv: cmdUv,
   whoami: cmdWhoami,
   wrapper: cmdWrapper,
   yarn: cmdYarn,

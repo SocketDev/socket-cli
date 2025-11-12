@@ -24,8 +24,9 @@ import constants from './constants.mjs'
 function checkBuildArtifacts() {
   const distPath = path.join(constants.rootPath, 'dist')
   if (!existsSync(distPath)) {
-    getDefaultLogger().error('dist/ directory not found')
-    getDefaultLogger().error('Run `pnpm run build:cli` before running tests')
+    const logger = getDefaultLogger()
+    logger.error('dist/ directory not found')
+    logger.error('Run `pnpm run build:cli` before running tests')
     return false
   }
 
@@ -33,8 +34,8 @@ function checkBuildArtifacts() {
   for (const artifact of requiredArtifacts) {
     const fullPath = path.join(constants.rootPath, artifact)
     if (!existsSync(fullPath)) {
-      getDefaultLogger().error(`Required build artifact missing: ${artifact}`)
-      getDefaultLogger().error('Run `pnpm run build:cli` before running tests')
+      logger.error(`Required build artifact missing: ${artifact}`)
+      logger.error('Run `pnpm run build:cli` before running tests')
       return false
     }
   }
@@ -71,13 +72,13 @@ async function main() {
     ]
     const foundEnvVars = problematicEnvVars.filter(v => process.env[v])
     if (foundEnvVars.length > 0) {
-      getDefaultLogger().warn(
+      logger.warn(
         `Detected environment variable(s) that may cause snapshot test failures: ${foundEnvVars.join(', ')}`,
       )
-      getDefaultLogger().warn(
+      logger.warn(
         'These will be cleared for the test run to ensure consistent snapshots.',
       )
-      getDefaultLogger().warn(
+      logger.warn(
         'Tests use .env.test configuration which should not include real API tokens.',
       )
     }
@@ -108,7 +109,7 @@ async function main() {
       if (arg.includes('*') && !arg.startsWith('-')) {
         const files = fastGlob.sync(arg, { cwd: constants.rootPath })
         if (files.length === 0) {
-          getDefaultLogger().warn(`No files matched pattern: ${arg}`)
+          logger.warn(`No files matched pattern: ${arg}`)
         }
         expandedArgs.push(...files)
       } else {
@@ -134,13 +135,13 @@ async function main() {
     })
 
     child.on('error', e => {
-      getDefaultLogger().error('Failed to spawn test process:', e)
+      logger.error('Failed to spawn test process:', e)
       process.exitCode = 1
     })
   } catch {}
 }
 
 main().catch(e => {
-  getDefaultLogger().error('Unexpected error:', e)
+  logger.error('Unexpected error:', e)
   process.exitCode = 1
 })

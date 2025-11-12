@@ -11,7 +11,8 @@
  *   --apply    Apply updates (default is check-only)
  */
 
-import { runParallel } from '@socketsecurity/build-infra/lib/script-runner'
+import { runParallel } from 'build-infra/lib/script-runner'
+
 import { isQuiet, isVerbose } from '@socketsecurity/lib/argv/flags'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import {
@@ -37,11 +38,12 @@ async function main() {
     if (apply) {
       tazeArgs.push('-w')
       if (!quiet) {
-        getDefaultLogger().progress('Updating dependencies...')
+        const logger = getDefaultLogger()
+        logger.progress('Updating dependencies...')
       }
     } else {
       if (!quiet) {
-        getDefaultLogger().progress('Checking for updates...')
+        logger.progress('Checking for updates...')
       }
     }
 
@@ -82,9 +84,7 @@ async function main() {
         if (apply) {
           printError('Failed to update dependencies')
         } else {
-          getDefaultLogger().info(
-            'Updates available. Run with --apply to update',
-          )
+          logger.info('Updates available. Run with --apply to update')
         }
       }
       process.exitCode = apply ? 1 : 0
@@ -103,13 +103,13 @@ async function main() {
       printError(`Update failed: ${error.message}`)
     }
     if (verbose) {
-      getDefaultLogger().error(error)
+      logger.error(error)
     }
     process.exitCode = 1
   }
 }
 
 main().catch(e => {
-  getDefaultLogger().error(e)
+  logger.error(e)
   process.exitCode = 1
 })

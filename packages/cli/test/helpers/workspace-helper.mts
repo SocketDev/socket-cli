@@ -4,7 +4,7 @@ import { promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { safeMkdir } from '@socketsecurity/lib/fs'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 
 /**
  * File content specification for workspace setup
@@ -159,9 +159,9 @@ export async function createTestWorkspace(
 
     cleanup: async () => {
       try {
-        await fs.rm(workspacePath, { force: true, recursive: true })
+        await safeDelete(workspacePath)
       } catch {
-        // Ignore cleanup errors
+        // Ignore cleanup errors.
       }
     },
 
@@ -370,11 +370,19 @@ export async function setupPackageJson(
   }
 
   if (dependencies) {
-    pkg.dependencies = { ...pkg.dependencies, ...dependencies }
+    pkg['dependencies'] = {
+      ...(typeof pkg['dependencies'] === 'object' ? pkg['dependencies'] : {}),
+      ...dependencies,
+    }
   }
 
   if (devDependencies) {
-    pkg.devDependencies = { ...pkg.devDependencies, ...devDependencies }
+    pkg['devDependencies'] = {
+      ...(typeof pkg['devDependencies'] === 'object'
+        ? pkg['devDependencies']
+        : {}),
+      ...devDependencies,
+    }
   }
 
   await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2), 'utf8')

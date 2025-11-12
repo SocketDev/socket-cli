@@ -11,25 +11,24 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import config from './esbuild.cli.config.mjs'
 
-getDefaultLogger().log('Building Socket CLI with esbuild...\n')
+const logger = getDefaultLogger()
+logger.log('Building Socket CLI with esbuild...\n')
 
 try {
   const result = await build(config)
 
-  getDefaultLogger().log('✓ Build completed successfully')
-  getDefaultLogger().log(`✓ Output: ${config.outfile}`)
+  logger.log('✓ Build completed successfully')
+  logger.log(`✓ Output: ${config.outfile}`)
 
   if (result.metafile) {
     const outputSize = Object.values(result.metafile.outputs)[0]?.bytes
     if (outputSize) {
-      getDefaultLogger().log(
-        `✓ Bundle size: ${(outputSize / 1024 / 1024).toFixed(2)} MB`,
-      )
+      logger.log(`✓ Bundle size: ${(outputSize / 1024 / 1024).toFixed(2)} MB`)
     }
   }
 
   // Compress with brotli.
-  getDefaultLogger().log('\n🗜️  Compressing with brotli...')
+  logger.log('\n🗜️  Compressing with brotli...')
   const jsCode = readFileSync(config.outfile)
   const compressed = brotliCompressSync(jsCode, {
     params: {
@@ -48,12 +47,12 @@ try {
     1,
   )
 
-  getDefaultLogger().log(`✓ Compressed: ${bzPath}`)
-  getDefaultLogger().log(`✓ Original size: ${originalSize.toFixed(2)} MB`)
-  getDefaultLogger().log(`✓ Compressed size: ${compressedSize.toFixed(2)} MB`)
-  getDefaultLogger().log(`✓ Compression ratio: ${compressionRatio}%`)
+  logger.log(`✓ Compressed: ${bzPath}`)
+  logger.log(`✓ Original size: ${originalSize.toFixed(2)} MB`)
+  logger.log(`✓ Compressed size: ${compressedSize.toFixed(2)} MB`)
+  logger.log(`✓ Compression ratio: ${compressionRatio}%`)
 } catch (error) {
-  getDefaultLogger().error('Build failed:', error)
+  logger.error('Build failed:', error)
 
   process.exit(1)
 }

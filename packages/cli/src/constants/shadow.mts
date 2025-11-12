@@ -12,8 +12,6 @@ export { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib/constants/socket'
 // Shadow Binary Names
 export const SHADOW_NPM_BIN = 'shadow-npm-bin'
 export const SHADOW_NPX_BIN = 'shadow-npx-bin'
-export const SHADOW_PNPM_BIN = 'shadow-pnpm-bin'
-export const SHADOW_YARN_BIN = 'shadow-yarn-bin'
 export const SHADOW_NPM_INJECT = 'shadow-npm-inject'
 export const INSTRUMENT_WITH_SENTRY = 'instrument-with-sentry'
 
@@ -40,20 +38,6 @@ export function getShadowNpmBinPath(): string {
  */
 export function getShadowNpxBinPath(): string {
   return path.join(distPath, 'shadow/npx/bin.mjs')
-}
-
-/**
- * Get the path to the shadow pnpm binary.
- */
-export function getShadowPnpmBinPath(): string {
-  return path.join(distPath, 'shadow/pnpm/bin.mjs')
-}
-
-/**
- * Get the path to the shadow yarn binary.
- */
-export function getShadowYarnBinPath(): string {
-  return path.join(distPath, 'shadow/yarn/bin.mjs')
 }
 
 // IpcObject type for shadow operations

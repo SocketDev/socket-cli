@@ -1,7 +1,6 @@
 /** @fileoverview Environment variable constants for Socket CLI build. */
 
 // Build metadata environment variable names.
-export const INLINED_SOCKET_CLI_AI_VERSION = 'INLINED_SOCKET_CLI_AI_VERSION'
 export const INLINED_SOCKET_CLI_COANA_VERSION =
   'INLINED_SOCKET_CLI_COANA_VERSION'
 export const INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION =

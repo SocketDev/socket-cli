@@ -39,24 +39,25 @@ async function ensureBootstrapPackageBuilt() {
     'packages/bootstrap/dist/bootstrap-npm.js'
   )
 
-  getDefaultLogger().group('Checking bootstrap package')
+  const logger = getDefaultLogger()
+  logger.group('Checking bootstrap package')
 
   // Check if bootstrap source and dist exist.
   if (!existsSync(bootstrapSource)) {
-    getDefaultLogger().groupEnd()
-    getDefaultLogger().error('Bootstrap source not found:', bootstrapSource)
+    logger.groupEnd()
+    logger.error('Bootstrap source not found:', bootstrapSource)
     process.exit(1)
   }
 
   // If dist exists, assume it's up to date.
   if (existsSync(bootstrapDist)) {
-    getDefaultLogger().substep('Bootstrap package already built')
-    getDefaultLogger().groupEnd()
+    logger.substep('Bootstrap package already built')
+    logger.groupEnd()
     return
   }
 
-  getDefaultLogger().substep('Bootstrap package needs building')
-  getDefaultLogger().groupEnd()
+  logger.substep('Bootstrap package needs building')
+  logger.groupEnd()
 
   const result = await withSpinner({
     message: 'Building @socketsecurity/bootstrap package',
@@ -81,7 +82,7 @@ async function ensureBootstrapPackageBuilt() {
   })
 
   if (result.code !== 0) {
-    getDefaultLogger().error('Failed to build @socketsecurity/bootstrap')
+    logger.error('Failed to build @socketsecurity/bootstrap')
     process.exit(1)
   }
 }
@@ -98,7 +99,7 @@ async function copyFilesFromRepoRoot() {
     message: 'Copying files from repo root',
     spinner: Spinner({ shimmer: { dir: 'ltr' } }),
     operation: async () => {
-      getDefaultLogger().group('Copying assets')
+      logger.group('Copying assets')
 
       for (const file of filesToCopy) {
         const srcPath = path.join(monorepoRoot, file)
@@ -106,24 +107,24 @@ async function copyFilesFromRepoRoot() {
 
         try {
           await fs.cp(srcPath, destPath)
-          getDefaultLogger().substep(`Copied ${file}`)
+          logger.substep(`Copied ${file}`)
         } catch (error) {
-          getDefaultLogger().groupEnd()
+          logger.groupEnd()
           throw new Error(`Failed to copy ${file}: ${error.message}`)
         }
       }
 
-      getDefaultLogger().groupEnd()
+      logger.groupEnd()
     },
   })
 }
 
 async function buildBootstrap() {
-  getDefaultLogger().group('Building bootstrap bundle')
+  logger.group('Building bootstrap bundle')
 
   try {
     // Create dist directory.
-    getDefaultLogger().substep('Creating dist directory')
+    logger.substep('Creating dist directory')
     mkdirSync(path.join(packageRoot, 'dist'), { recursive: true })
 
     // Build bootstrap.js for npm package.
@@ -139,31 +140,31 @@ async function buildBootstrap() {
     if (seaResult.metafile) {
       const outputSize = Object.values(seaResult.metafile.outputs)[0]?.bytes
       if (outputSize) {
-        getDefaultLogger().substep(`Bundle size: ${(outputSize / 1024).toFixed(2)} KB`)
+        logger.substep(`Bundle size: ${(outputSize / 1024).toFixed(2)} KB`)
       }
     }
 
-    getDefaultLogger().groupEnd()
+    logger.groupEnd()
   } catch (error) {
-    getDefaultLogger().groupEnd()
-    getDefaultLogger().error('Bootstrap build failed:', error)
+    logger.groupEnd()
+    logger.error('Bootstrap build failed:', error)
     throw error
   }
 }
 
 async function main() {
-  getDefaultLogger().group('Socket Package Build')
+  logger.group('Socket Package Build')
 
   try {
     await ensureBootstrapPackageBuilt()
     await buildBootstrap()
     await copyFilesFromRepoRoot()
 
-    getDefaultLogger().groupEnd()
-    getDefaultLogger().success('Build completed successfully')
+    logger.groupEnd()
+    logger.success('Build completed successfully')
   } catch (error) {
-    getDefaultLogger().groupEnd()
-    getDefaultLogger().error('Build failed:', error)
+    logger.groupEnd()
+    logger.error('Build failed:', error)
     process.exit(1)
   }
 }

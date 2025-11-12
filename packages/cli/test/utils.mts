@@ -288,19 +288,42 @@ export async function spawnSocketCli(
     return {
       status: true,
       code: 0,
-      stdout: cleanOutput(output.stdout),
-      stderr: cleanOutput(output.stderr),
+      stdout: cleanOutput(
+        typeof output.stdout === 'string'
+          ? output.stdout
+          : output.stdout.toString(),
+      ),
+      stderr: cleanOutput(
+        typeof output.stderr === 'string'
+          ? output.stderr
+          : output.stderr.toString(),
+      ),
     }
   } catch (e: unknown) {
+    const error = e as {
+      code?: number
+      message?: string
+      stack?: string
+      stdout?: Buffer | string
+      stderr?: Buffer | string
+    }
     return {
       status: false,
-      code: typeof e?.code === 'number' ? e.code : 1,
+      code: typeof error.code === 'number' ? error.code : 1,
       error: {
-        message: e?.message || '',
-        stack: e?.stack || '',
+        message: error.message || '',
+        stack: error.stack || '',
       },
-      stdout: cleanOutput(e?.stdout ?? ''),
-      stderr: cleanOutput(e?.stderr ?? ''),
+      stdout: cleanOutput(
+        typeof error.stdout === 'string'
+          ? error.stdout
+          : error.stdout?.toString() || '',
+      ),
+      stderr: cleanOutput(
+        typeof error.stderr === 'string'
+          ? error.stderr
+          : error.stderr?.toString() || '',
+      ),
     }
   }
 }
