@@ -143,24 +143,33 @@ export async function executeCli(cliPath, args) {
   const systemNode = await findSystemNode()
   const nodePath = systemNode ?? process.execPath
 
-  // Always use IPC channel and send handshake.
-  // System Node.js will ignore the handshake message.
-  // SEA subprocess will use it to skip bootstrap.
-  const result = await spawn(nodePath, [cliPath, ...args], {
-    stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
-  })
-
-  // Send IPC handshake to subprocess.
-  if (result.process && typeof result.process.send === 'function') {
-    result.process.send({
-      [SOCKET_IPC_HANDSHAKE]: {
-        subprocess: true,
-        parent_pid: process.pid,
-      },
+  try {
+    // Always use IPC channel and send handshake.
+    // System Node.js will ignore the handshake message.
+    // SEA subprocess will use it to skip bootstrap.
+    const result = await spawn(nodePath, [cliPath, ...args], {
+      stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
     })
-  }
 
-  return result.code ?? 0
+    // Send IPC handshake to subprocess.
+    if (result.process && typeof result.process.send === 'function') {
+      result.process.send({
+        [SOCKET_IPC_HANDSHAKE]: {
+          subprocess: true,
+          parent_pid: process.pid,
+        },
+      })
+    }
+
+    return result.code ?? 0
+  } catch (e) {
+    // Spawn throws when child exits with non-zero code.
+    // Extract the exit code from the error.
+    if (e && typeof e === 'object' && 'code' in e && typeof e.code === 'number') {
+      return e.code
+    }
+    throw e
+  }
 }
 
 /**
@@ -213,6 +222,12 @@ export async function downloadCli() {
  * Returns exit code from CLI execution.
  */
 export async function findAndExecuteCli(args) {
+  // Check if using local CLI path override (for testing).
+  const localCliPath = process.env.SOCKET_CLI_LOCAL_PATH
+  if (localCliPath && existsSync(localCliPath)) {
+    return await executeCli(localCliPath, args)
+  }
+
   // Download CLI if needed.
   const result = await downloadCli()
   const cliPackageDir = result.packageDir
