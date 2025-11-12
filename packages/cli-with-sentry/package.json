@@ -1,6 +1,6 @@
 {
   "name": "@socketsecurity/cli-with-sentry",
-  "version": "0.0.0-copied-from-packages-socket",
+  "version": "2.1.0",
   "description": "Socket CLI with Sentry telemetry for enhanced error reporting",
   "private": true,
   "homepage": "https://github.com/SocketDev/socket-cli",
@@ -16,15 +16,16 @@
     "url": "https://socket.dev"
   },
   "bin": {
-    "socket-with-sentry": "dist/index.js",
-    "socket-with-sentry-npm": "dist/index.js",
-    "socket-with-sentry-npx": "dist/index.js",
-    "socket-with-sentry-pnpm": "dist/index.js",
-    "socket-with-sentry-yarn": "dist/index.js"
+    "socket": "bin/cli.js",
+    "socket-npm": "bin/npm-cli.js",
+    "socket-npx": "bin/npx-cli.js",
+    "socket-pnpm": "bin/pnpm-cli.js",
+    "socket-yarn": "bin/yarn-cli.js"
   },
   "files": [
     "CHANGELOG.md",
     "LICENSE",
+    "bin/**",
     "data/**",
     "dist/**",
     "!dist/cli.js",
@@ -49,7 +50,12 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@socketsecurity/cli": "workspace:*",
     "@sentry/node": "catalog:"
+  },
+  "devDependencies": {
+    "@sentry/node": "catalog:",
+    "esbuild": "catalog:"
   },
   "publishConfig": {
     "access": "public",

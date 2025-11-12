@@ -23,15 +23,15 @@ async function main() {
     // Build CLI bundle.
     const logger = getDefaultLogger()
     logger.info('Building CLI bundle...')
-    let result = await spawn('node', ['.config/esbuild.config.mjs'], {
-      shell: WIN32,
-      stdio: 'inherit',
-      cwd: rootPath,
-      env: {
-        ...process.env,
-        INLINED_SOCKET_CLI_SENTRY_BUILD: '1',
+    let result = await spawn(
+      'node',
+      ['.config/esbuild.cli-sentry.build.mjs'],
+      {
+        shell: WIN32,
+        stdio: 'inherit',
+        cwd: rootPath,
       },
-    })
+    )
     if (result.code !== 0) {
       throw new Error(`CLI bundle build failed with exit code ${result.code}`)
     }
