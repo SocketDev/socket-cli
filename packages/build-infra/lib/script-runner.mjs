@@ -3,13 +3,9 @@
  * Provides DRY helpers for running pnpm scripts, commands, and sequences.
  */
 
-import platformPkg from '@socketsecurity/lib/constants/platform'
-import loggerPkg from '@socketsecurity/lib/logger'
-import spawnPkg from '@socketsecurity/lib/spawn'
-
-const { WIN32 } = platformPkg
-const { getDefaultLogger } = loggerPkg
-const { spawn } = spawnPkg
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 /**
  * Run a pnpm script in a specific package.
