@@ -5,7 +5,7 @@
  * for --with-intl=none compatibility. Used by both CLI and bootstrap builds.
  *
  * @example
- * import { unicodeTransformPlugin } from '@socketsecurity/build-infra/lib/esbuild-plugin-unicode-transform'
+ * import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
  *
  * export default {
  *   plugins: [unicodeTransformPlugin()],

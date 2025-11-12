@@ -19,6 +19,7 @@ import type {
 } from '../../utils/cli/with-subcommands.mjs'
 
 const require = createRequire(import.meta.url)
+const logger = getDefaultLogger()
 
 const CMD_NAME = NPX
 
@@ -72,7 +73,7 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
@@ -85,7 +86,7 @@ async function run(
   // See https://nodejs.org/api/child_process.html#event-exit.
   spawnPromise.process.on(
     'exit',
-    (code: string | null, signalName: NodeJS.Signals | null) => {
+    (code: number | null, signalName: NodeJS.Signals | null) => {
       if (signalName) {
         process.kill(process.pid, signalName)
       } else if (typeof code === 'number') {

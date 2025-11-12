@@ -69,7 +69,8 @@ export async function handleScanReach({
     return
   }
 
-  getDefaultLogger().success(
+  const logger = getDefaultLogger()
+  logger.success(
     `Found ${packagePaths.length} local ${pluralize('file', { count: packagePaths.length })}`,
   )
 

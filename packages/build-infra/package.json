@@ -1,25 +1,13 @@
 {
-  "name": "@socketsecurity/build-infra",
+  "name": "build-infra",
   "version": "1.0.0",
-  "description": "Shared build infrastructure for building third-party dependencies from source",
+  "description": "Shared build infrastructure utilities for Socket CLI",
   "type": "module",
   "private": true,
   "exports": {
-    "./lib/build-env": "./lib/build-env.mjs",
-    "./lib/build-helpers": "./lib/build-helpers.mjs",
-    "./lib/build-output": "./lib/build-output.mjs",
-    "./lib/checkpoint-manager": "./lib/checkpoint-manager.mjs",
-    "./lib/cmake-builder": "./lib/cmake-builder.mjs",
-    "./lib/emscripten-builder": "./lib/emscripten-builder.mjs",
     "./lib/esbuild-plugin-unicode-transform": "./lib/esbuild-plugin-unicode-transform.mjs",
-    "./lib/cache-key": "./lib/cache-key.mjs",
     "./lib/extraction-cache": "./lib/extraction-cache.mjs",
-    "./lib/fetch-with-retry": "./lib/fetch-with-retry.mjs",
-    "./lib/patch-validator": "./lib/patch-validator.mjs",
-    "./lib/preflight-checks": "./lib/preflight-checks.mjs",
-    "./lib/rust-builder": "./lib/rust-builder.mjs",
     "./lib/script-runner": "./lib/script-runner.mjs",
-    "./lib/tool-installer": "./lib/tool-installer.mjs",
     "./lib/unicode-property-escape-transform": "./lib/unicode-property-escape-transform.mjs"
   },
   "dependencies": {

@@ -12,7 +12,7 @@ import path from 'node:path'
 import colors from 'yoctocolors-cjs'
 
 import { detectPackageManager } from '@socketsecurity/lib/env/package-manager'
-import { safeMkdir } from '@socketsecurity/lib/fs'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { getIpcStubPath } from '@socketsecurity/lib/ipc'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
@@ -49,7 +49,7 @@ function getSocketCliUpdaterStagingDir(): string {
 // Helper function for removing files.
 async function remove(filePath: string): Promise<void> {
   try {
-    await fs.rm(filePath, { recursive: true, force: true })
+    await safeDelete(filePath)
   } catch {
     // Ignore errors.
   }
@@ -454,7 +454,7 @@ Examples
   } finally {
     // Clean up temporary directory.
     try {
-      await fs.rm(tempDir, { recursive: true, force: true })
+      await safeDelete(tempDir)
     } catch {
       // Cleanup failure is not critical.
     }

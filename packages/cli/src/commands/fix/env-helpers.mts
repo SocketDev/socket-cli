@@ -110,7 +110,8 @@ export async function getFixEnv(): Promise<FixEnv> {
     // CI is set but other required vars are missing.
     const missingExceptCi = envCheck.missing.filter(v => v !== 'CI')
     if (missingExceptCi.length) {
-      getDefaultLogger().warn(
+      const logger = getDefaultLogger()
+      logger.warn(
         'CI mode detected, but pull request creation is disabled due to missing environment variables:\n' +
           `  Missing: ${joinAnd(missingExceptCi)}\n` +
           '  Set these variables to enable automatic pull request creation.',

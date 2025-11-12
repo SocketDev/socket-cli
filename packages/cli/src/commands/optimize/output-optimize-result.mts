@@ -24,19 +24,19 @@ export async function outputOptimizeResult(
   }
 
   if (outputKind === 'json') {
-    getDefaultLogger().log(serializeResultJson(result))
+    logger.log(serializeResultJson(result))
     return
   }
 
   if (outputKind === 'markdown') {
     if (!result.ok) {
-      getDefaultLogger().log(mdError(result.message, result.cause))
+      logger.log(mdError(result.message, result.cause))
       return
     }
 
     const data = result.data
-    getDefaultLogger().log(mdHeader('Optimize Complete'))
-    getDefaultLogger().log('')
+    logger.log(mdHeader('Optimize Complete'))
+    logger.log('')
 
     if (data.pkgJsonChanged) {
       const changes = []
@@ -48,16 +48,16 @@ export async function outputOptimizeResult(
         const addedText = `**Added**: ${data.addedCount} ${pluralize('override', { count: data.addedCount })}${data.addedInWorkspaces ? ` in ${data.addedInWorkspaces} ${pluralize('workspace', { count: data.addedInWorkspaces })}` : ''}`
         changes.push(addedText)
       }
-      getDefaultLogger().log(mdList(changes))
-      getDefaultLogger().log('\n✓ Finished!')
+      logger.log(mdList(changes))
+      logger.log('\n✓ Finished!')
     } else {
-      getDefaultLogger().log('No Socket.dev optimized overrides applied.')
+      logger.log('No Socket.dev optimized overrides applied.')
     }
     return
   }
 
   if (!result.ok) {
-    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -77,9 +77,9 @@ export async function outputOptimizeResult(
     logger?.log('Scan complete. No Socket.dev optimized overrides applied.')
   }
 
-  getDefaultLogger().log('')
-  getDefaultLogger().success('Finished!')
-  getDefaultLogger().log('')
+  logger.log('')
+  logger.success('Finished!')
+  logger.log('')
 }
 
 function createActionMessage(

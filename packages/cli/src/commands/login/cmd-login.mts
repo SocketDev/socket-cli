@@ -16,6 +16,8 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 
+const logger = getDefaultLogger()
+
 export const CMD_NAME = 'login'
 
 const description = 'Setup Socket CLI with an API token and defaults'
@@ -78,7 +80,7 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

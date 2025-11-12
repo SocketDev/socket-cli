@@ -4,6 +4,8 @@ import { queryApiSafeJson } from '../../utils/socket/api.mjs'
 
 import type { CResult } from '../../types.mts'
 
+const logger = getDefaultLogger()
+
 export interface PurlDataResponse {
   purl: string
   self: {
@@ -56,7 +58,7 @@ export interface PurlDataResponse {
 export async function fetchPurlDeepScore(
   purl: string,
 ): Promise<CResult<PurlDataResponse>> {
-  getDefaultLogger().info(`Requesting deep score data for this purl: ${purl}`)
+  logger.info(`Requesting deep score data for this purl: ${purl}`)
 
   return await queryApiSafeJson<PurlDataResponse>(
     `purl/score/${encodeURIComponent(purl)}`,

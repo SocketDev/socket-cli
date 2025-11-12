@@ -31,6 +31,7 @@ import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { resolveSfw } from '../../utils/dlx/resolve-binary.mjs'
 import { filterFlags } from '../../utils/process/cmd.mts'
+import { spawnNode } from '../../utils/spawn/spawn-node.mjs'
 
 import type {
   CliCommandConfig,
@@ -58,7 +59,7 @@ export const cmdPip = {
  * 2. Filter out Socket CLI flags (--config, --org, etc.)
  * 3. Forward remaining arguments to Socket Firewall via npx
  * 4. Socket Firewall proxies the pip command with security scanning
- * 5. Exit with the same code as the pip command
+ * 5. Exit with the same code or signal as the pip command
  *
  * @param argv - Command arguments (after "pip")
  * @param importMeta - Import metadata for meow
@@ -104,20 +105,44 @@ async function run(
 
   const resolution = resolveSfw()
 
-  // Forward arguments to sfw (Socket Firewall).
-  // Use local sfw if available, otherwise use pnpm dlx.
-  const result =
-    resolution.type === 'local'
-      ? await spawn('node', [resolution.path, 'pip', ...argsToForward], {
-          shell: WIN32,
-          stdio: 'inherit',
-        })
-      : await spawn('pnpm', ['dlx', 'sfw', 'pip', ...argsToForward], {
-          shell: WIN32,
-          stdio: 'inherit',
-        })
+  // Set default exit code to 1 (failure). Will be overwritten on success.
+  process.exitCode = 1
 
-  if (result.code !== 0) {
-    process.exitCode = result.code || 1
-  }
+  // Forward arguments to sfw (Socket Firewall).
+  // Use local sfw if available, otherwise use pnpm dlx with pinned version.
+  const spawnPromise =
+    resolution.type === 'local'
+      ? spawnNode([resolution.path, 'pip', ...argsToForward], {
+          shell: WIN32,
+          stdio: 'inherit',
+        })
+      : spawn(
+          'pnpm',
+          [
+            'dlx',
+            `${resolution.details.name}@${resolution.details.version}`,
+            'pip',
+            ...argsToForward,
+          ],
+          {
+            shell: WIN32,
+            stdio: 'inherit',
+          },
+        )
+
+  // Handle exit codes and signals using event-based pattern.
+  // See https://nodejs.org/api/child_process.html#event-exit.
+  spawnPromise.process.on(
+    'exit',
+    (code: number | null, signalName: NodeJS.Signals | null) => {
+      if (signalName) {
+        process.kill(process.pid, signalName)
+      } else if (typeof code === 'number') {
+        // eslint-disable-next-line n/no-process-exit
+        process.exit(code)
+      }
+    },
+  )
+
+  await spawnPromise
 }

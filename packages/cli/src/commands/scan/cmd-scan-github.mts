@@ -24,6 +24,8 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 
+const logger = getDefaultLogger()
+
 export const CMD_NAME = 'github'
 
 const DEFAULT_GITHUB_URL = 'https://api.github.com'
@@ -251,7 +253,7 @@ async function run(
 
   // Note exiting earlier to skirt a hidden auth requirement
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

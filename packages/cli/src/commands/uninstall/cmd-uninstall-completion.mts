@@ -11,6 +11,8 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 
+const logger = getDefaultLogger()
+
 const config: CliCommandConfig = {
   commandName: 'completion',
   description: 'Uninstall bash completion for Socket CLI',
@@ -60,7 +62,7 @@ export async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

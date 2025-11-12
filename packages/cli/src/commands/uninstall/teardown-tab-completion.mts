@@ -5,7 +5,7 @@ import { homePath } from '../../constants/paths.mts'
 import {
   COMPLETION_CMD_PREFIX,
   getBashrcDetails,
-} from '../../utils/cli/completion.mjs'
+} from '../../utils/cli/completion.mts'
 
 import type { CResult } from '../../types.mts'
 

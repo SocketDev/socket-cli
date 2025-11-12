@@ -6,7 +6,8 @@ import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 export async function suggestOrgSlug(): Promise<string | undefined> {
   const orgsCResult = await fetchOrganization()
   if (!orgsCResult.ok) {
-    getDefaultLogger().fail(
+    const logger = getDefaultLogger()
+    logger.fail(
       'Failed to lookup organization list from API, unable to suggest',
     )
     return undefined
