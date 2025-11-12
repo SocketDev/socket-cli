@@ -4,6 +4,8 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult } from '../../types.mts'
 
+const logger = getDefaultLogger()
+
 export interface WhoamiStatus {
   authenticated: boolean
   token: string | null
@@ -15,5 +17,5 @@ export function outputWhoami(status: WhoamiStatus): void {
     ok: true,
     data: status,
   }
-  getDefaultLogger().log(serializeResultJson(result))
+  logger.log(serializeResultJson(result))
 }

@@ -15,12 +15,12 @@
     "clean": "del-cli dist"
   },
   "devDependencies": {
-    "@babel/core": "7.28.4",
-    "@babel/generator": "^7.28.5",
+    "@babel/core": "catalog:",
+    "@babel/generator": "catalog:",
     "@babel/parser": "catalog:",
     "@babel/traverse": "catalog:",
-    "@babel/types": "^7.28.5",
-    "@socketsecurity/build-infra": "workspace:*",
+    "@babel/types": "catalog:",
+    "build-infra": "workspace:*",
     "@socketsecurity/cli": "workspace:*",
     "@socketsecurity/lib": "catalog:",
     "del-cli": "catalog:",

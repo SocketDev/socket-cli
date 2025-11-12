@@ -26,6 +26,8 @@ import { isYarnBerry } from '../../utils/yarn/version.mts'
 import type { ShadowBinResult } from '../../shadow/npm/bin.mts'
 import type { DlxOptions } from '../../utils/dlx/spawn.mjs'
 
+const logger = getDefaultLogger()
+
 const nodejsPlatformTypes = new Set([
   'javascript',
   'js',
@@ -143,9 +145,17 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
 
     const outputPath = argvMutable['output'] as string
     if (outputPath) {
-      const fullOutputPath = path.join(process.cwd(), outputPath)
+      const cwd = process.cwd()
+      const fullOutputPath = path.resolve(cwd, outputPath)
+      // Validate that the resolved path is within the current working directory.
+      if (!fullOutputPath.startsWith(cwd + path.sep) && fullOutputPath !== cwd) {
+        logger.error(
+          `Output path "${outputPath}" resolves outside the current working directory`,
+        )
+        return
+      }
       if (existsSync(fullOutputPath)) {
-        getDefaultLogger().log(colors.cyanBright(`${outputPath} created!`))
+        logger.log(colors.cyanBright(`${outputPath} created!`))
       }
     }
   })

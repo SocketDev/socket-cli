@@ -22,6 +22,8 @@ import type {
 } from '../../utils/cli/with-subcommands.mjs'
 import type { LocalConfig } from '../../utils/config.mts'
 
+const logger = getDefaultLogger()
+
 export const CMD_NAME = 'unset'
 
 const description = 'Clear the value of a local CLI config item'
@@ -102,7 +104,7 @@ ${getSupportedConfigEntries()
   }
 
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

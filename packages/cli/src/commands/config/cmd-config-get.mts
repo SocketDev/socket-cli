@@ -22,6 +22,8 @@ import type {
 } from '../../utils/cli/with-subcommands.mjs'
 import type { LocalConfig } from '../../utils/config.mts'
 
+const logger = getDefaultLogger()
+
 const config: CliCommandConfig = {
   commandName: 'get',
   description: 'Get the value of a local CLI config item',
@@ -96,7 +98,7 @@ async function run(
   }
 
   if (dryRun) {
-    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

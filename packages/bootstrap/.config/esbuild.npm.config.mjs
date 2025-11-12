@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url'
 import { build } from 'esbuild'
 import semver from 'semver'
 
-import { unicodeTransformPlugin } from '@socketsecurity/build-infra/lib/esbuild-plugin-unicode-transform'
+import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
 
 import nodeVersionConfig from '../node-version.json' with { type: 'json' }
 import socketPackageJson from '../../socket/package.json' with { type: 'json' }

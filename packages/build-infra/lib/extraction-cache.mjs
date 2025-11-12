@@ -73,7 +73,8 @@ export async function shouldExtract({
     }
 
     // Cache hit!
-    getDefaultLogger().log(`✓ Using cached ${outputPath}`)
+    const logger = getDefaultLogger()
+    logger.log(`✓ Using cached ${outputPath}`)
     return false
   } catch {
     // Any error, regenerate.
