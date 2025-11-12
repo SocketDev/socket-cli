@@ -1,77 +1,131 @@
-.DS_Store
+# ============================================================================
+# OS-specific files
+# ============================================================================
+.*.sw?
 ._.DS_Store
+.DS_Store
 Thumbs.db
-.claude/
-/.env
+
+# ============================================================================
+# Environment and secrets
+# ============================================================================
+.env
+.env.*
+!.env.example
 /.env.local
-/.pnpmfile.cjs
+
+# ============================================================================
+# Node.js dependencies and configuration
+# ============================================================================
+.node-version
 /.nvm
-/.rollup.cache
-/.vscode
-/external
+/.pnpmfile.cjs
+.npmrc.local
+**/node_modules/
 /npm-debug.log
+pnpm-debug.log*
 /yarn.lock
 /yarn.log
+yarn-error.log*
 /.yarnrc.yml
-*.log
-**/build/*.log
-**/.cache
-**/coverage
-**/.type-coverage
-**/build
-!docs/build
-**/dist
-**/node_modules
-.build-checkpoints
+
+# ============================================================================
+# Build outputs and artifacts
+# ============================================================================
+**/.build-checkpoints
+**/.cache/
+/.rollup.cache
+**/.type-coverage/
+**/build/
+!docs/build/
+**/coverage/
+**/dist/
+/external/
+**/html/
 *.d.ts
 *.d.ts.map
-**/*.tmp
 *.tsbuildinfo
+**/*.tmp
+*.tmp
 
-# Backup and temporary files.
+# ============================================================================
+# Language-specific build artifacts
+# ============================================================================
+
+## Rust builds
+**/target/
+
+## WASM builds
+**/wasm-bundle/
+
+# ============================================================================
+# Editor and IDE files
+# ============================================================================
+.idea/
+/.vscode/
+*.old
+*.sw?
+*.swo
+*.swp
+*~
+
+# ============================================================================
+# Development and debugging
+# ============================================================================
+*.log
+**/build/*.log
+**/.claude/
+
+# ============================================================================
+# Backup and temporary files
+# ============================================================================
 *.backup
 *.bak
 **/*.tmp.bak*
 *.old
 *~
-*.swp
-*.swo
-*.sw?
-.*.sw?
 
-# Build artifacts: All build/, dist/, coverage/, and html/ directories are gitignored.
-
-# Yarn PnP files (tests may create these)
-/.yarn
+# ============================================================================
+# Yarn PnP files
+# ============================================================================
 /.pnp.cjs
 /.pnp.loader.mjs
+/.yarn/
 
-# Allow specific files
-!src/types/**/*.d.ts
-!/.vscode/extensions.json
+# ============================================================================
+# Archive directories
+# ============================================================================
+**/docs/archive/
 
-# Ignore platform binary build artifacts
+# ============================================================================
+# Workspace-specific patterns
+# ============================================================================
+
+## Platform binary build artifacts
 packages/socketbin-*/bin/
 
-# Ignore downloaded build sources
-packages/*/.yoga-source
-packages/*/.yoga-tests
-packages/*/.onnx-source
-packages/*/.minilm-source
-**/html
+## Downloaded build sources
+packages/*/.minilm-source/
+packages/*/.onnx-source/
+packages/*/.yoga-source/
+packages/*/.yoga-tests/
 
-# Ignore WASM and Rust build artifacts
-**/wasm-bundle
-**/target
-
-# Workspace ignores
+## Workspace-generated files
 packages/cli/CHANGELOG.md
 packages/cli/LICENSE
 packages/cli/*.png
-packages/cli-with-sentry/data/
 packages/cli-with-sentry/CHANGELOG.md
+packages/cli-with-sentry/data/
 packages/cli-with-sentry/LICENSE
 packages/cli-with-sentry/*.png
 packages/socket/CHANGELOG.md
 packages/socket/LICENSE
 packages/socket/*.png
+
+# ============================================================================
+# Allow specific files (negation patterns)
+# ============================================================================
+!.env.example
+!/.vscode/extensions.json
+!docs/build/
+!src/types/**/*.d.ts
