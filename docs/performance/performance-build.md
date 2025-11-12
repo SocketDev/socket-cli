@@ -392,12 +392,62 @@ hyperfine 'pnpm exec socket --version'
 node --prof packages/cli/dist/cli.js --version
 ```
 
+## Node.js Binary Optimizations
+
+Socket CLI also optimizes the underlying Node.js binary used for standalone distributions:
+
+### Binary Size Reduction
+```
+Standard Node.js:    102MB (with debug symbols)
+Optimized Binary:    35MB  (66% smaller)
+
+Optimizations applied:
+├─ V8 Lite Mode:     -23MB (removes JIT tiers)
+├─ ICU Removal:      -8MB  (no i18n support needed)
+├─ SEA Removal:      -2MB  (we use yao-pkg instead)
+└─ GNU Strip:        -3MB  (aggressive symbol removal)
+```
+
+### Build Performance
+```
+Build System:  Ninja (17% faster than Make)
+Clean Build:   15-18 minutes
+Incremental:   2-4 minutes
+
+Future optimizations:
+├─ Parallel Brotli:  50-70% faster compression
+├─ Compression cache: 80-90% faster rebuilds
+└─ Resume checkpoint: Avoid full rebuilds on failure
+```
+
+### Runtime Performance
+```
+Startup Time:   No degradation (actually 8% faster)
+JS Execution:   10-20% slower (acceptable for CLI)
+WASM:           No degradation (Liftoff intact)
+I/O Operations: No degradation
+
+Real-world impact: <5% slower on CLI commands
+Reason: CLI is I/O bound, not CPU bound
+```
+
+**See [../node-smol-builder/optimizations.md](../node-smol-builder/optimizations.md) for complete details.**
+
+---
+
 ## Summary
 
-Socket CLI's esbuild-based build system prioritizes:
-- **Speed**: Sub-second builds for rapid development
-- **Reliability**: No template literal corruption
-- **Performance**: Optimized for fast CLI startup
-- **Developer experience**: Watch mode, clear errors, fast iteration
+Socket CLI's build system optimizes at two levels:
 
-The combination of esbuild's speed and Brotli compression delivers both fast development cycles and compact distribution artifacts.
+**1. CLI Bundle (esbuild)**
+- Sub-second builds for rapid development
+- Tree-shaking and minification
+- Brotli compression (77% size reduction)
+- Fast startup times
+
+**2. Node.js Binary (smol-builder)**
+- 66% smaller binaries (35MB vs 102MB)
+- 17% faster builds with Ninja
+- Negligible runtime impact for CLI workloads
+
+The combination delivers both fast development cycles and compact, performant distribution artifacts.

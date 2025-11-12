@@ -2,11 +2,13 @@
 
 ## New to Socket CLI Development?
 
-**Start here:** [Getting Started Guide](development/getting-started.md)
+**Choose your path:**
 
-Complete end-to-end onboarding for new contributors:
+- **[Quick Start (10 min)](getting-started.md)** — Essential setup and first contribution
+- **[Detailed Guide](development/getting-started.md)** — Complete end-to-end onboarding with troubleshooting
+
+The detailed guide includes:
 - Prerequisites and installation
-- 5-minute quick start
 - Development workflow
 - Testing strategies
 - Troubleshooting guide
