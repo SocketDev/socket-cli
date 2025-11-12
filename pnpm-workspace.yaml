@@ -1,6 +1,9 @@
 packages:
   - packages/*
 
+# Trust policy - prevent downgrade attacks
+trustPolicy: no-downgrade
+
 catalog:
   '@babel/core': 7.28.4
   '@babel/generator': 7.28.5
