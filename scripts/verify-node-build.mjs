@@ -22,6 +22,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import colors from 'yoctocolors-cjs'
 
+
+const logger = getDefaultLogger()
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
@@ -63,7 +65,7 @@ async function execCapture(command, args = [], options = {}) {
  * Log error.
  */
 function error(message) {
-  getDefaultLogger().error(`${colors.red('✗')} ${message}`)
+  logger.error(`${colors.red('✗')} ${message}`)
   hasErrors = true
 }
 
@@ -71,7 +73,7 @@ function error(message) {
  * Log warning.
  */
 function warn(message) {
-  getDefaultLogger().warn(`${colors.yellow('⚠')}  ${message}`)
+  logger.warn(`${colors.yellow('⚠')}  ${message}`)
   hasWarnings = true
 }
 
@@ -79,14 +81,14 @@ function warn(message) {
  * Log success.
  */
 function success(message) {
-  getDefaultLogger().log(`${colors.green('✓')} ${message}`)
+  logger.log(`${colors.green('✓')} ${message}`)
 }
 
 /**
  * Log info.
  */
 function info(message) {
-  getDefaultLogger().log(`ℹ️  ${message}`)
+  logger.log(`ℹ️  ${message}`)
 }
 
 /**
@@ -333,7 +335,7 @@ async function testBinary() {
   // Test 2: Execute simple script.
   const execResult = await execCapture(
     nodeBinary,
-    ['-e', 'getDefaultLogger().log("OK")'],
+    ['-e', 'logger.log("OK")'],
     {
       env: { ...process.env, PKG_EXECPATH: '' },
     },
@@ -350,7 +352,7 @@ async function testBinary() {
   // Test 3: SEA detection.
   const seaScript = `
     const sea = require('node:sea');
-    getDefaultLogger().log(sea.isSea() ? 'SEA_YES' : 'SEA_NO');
+    logger.log(sea.isSea() ? 'SEA_YES' : 'SEA_NO');
   `
 
   const seaResult = await execCapture(nodeBinary, ['-e', seaScript], {
@@ -433,8 +435,8 @@ async function verifySignature() {
  * Main verification function.
  */
 async function main() {
-  getDefaultLogger().log(`🔍 Verifying Socket Node.js ${NODE_VERSION} Build`)
-  getDefaultLogger().log('')
+  logger.log(`🔍 Verifying Socket Node.js ${NODE_VERSION} Build`)
+  logger.log('')
 
   // Run all verifications.
   const checks = [
@@ -448,7 +450,7 @@ async function main() {
   ]
 
   for (const [_name, check] of checks) {
-    getDefaultLogger().log('')
+    logger.log('')
     const result = await check()
     if (!result) {
       // Continue checking other items even if one fails.
@@ -456,36 +458,36 @@ async function main() {
   }
 
   // Summary.
-  getDefaultLogger().log('')
-  getDefaultLogger().log('━'.repeat(60))
-  getDefaultLogger().log('')
+  logger.log('')
+  logger.log('━'.repeat(60))
+  logger.log('')
 
   if (hasErrors) {
-    getDefaultLogger().error(`${colors.red('✗')} VERIFICATION FAILED`)
-    getDefaultLogger().error('')
-    getDefaultLogger().error(
+    logger.error(`${colors.red('✗')} VERIFICATION FAILED`)
+    logger.error('')
+    logger.error(
       'Critical issues were found. Please fix them before using this build.',
     )
-    getDefaultLogger().error('')
-    getDefaultLogger().error('To rebuild:')
-    getDefaultLogger().error('  node packages/node-smol-builder/scripts/build.mjs')
-    getDefaultLogger().error('')
+    logger.error('')
+    logger.error('To rebuild:')
+    logger.error('  node packages/node-smol-builder/scripts/build.mjs')
+    logger.error('')
     process.exitCode = 1
   } else if (hasWarnings) {
-    getDefaultLogger().warn(`${colors.yellow('⚠')}  VERIFICATION PASSED WITH WARNINGS`)
-    getDefaultLogger().warn('')
-    getDefaultLogger().warn('Build is functional but has non-critical issues.')
-    getDefaultLogger().warn('')
+    logger.warn(`${colors.yellow('⚠')}  VERIFICATION PASSED WITH WARNINGS`)
+    logger.warn('')
+    logger.warn('Build is functional but has non-critical issues.')
+    logger.warn('')
   } else {
-    getDefaultLogger().log(`${colors.green('✓')} ALL VERIFICATIONS PASSED`)
-    getDefaultLogger().log('')
-    getDefaultLogger().log('Node.js binary is correctly built and ready for use with pkg.')
-    getDefaultLogger().log('')
+    logger.log(`${colors.green('✓')} ALL VERIFICATIONS PASSED`)
+    logger.log('')
+    logger.log('Node.js binary is correctly built and ready for use with pkg.')
+    logger.log('')
   }
 }
 
 // Run main function.
 main().catch(e => {
-  getDefaultLogger().error(`${colors.red('✗')} Verification failed:`, e.message)
+  logger.error(`${colors.red('✗')} Verification failed:`, e.message)
   process.exitCode = 1
 })
