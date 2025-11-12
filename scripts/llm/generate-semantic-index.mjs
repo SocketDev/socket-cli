@@ -31,6 +31,8 @@ import { fileURLToPath } from 'node:url'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
+
+const logger = getDefaultLogger()
 // Get the directory of this script file.
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -38,7 +40,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const homeDir = process.env.HOME || process.env.USERPROFILE
 const skillDir = path.join(homeDir, '.claude/skills/socket-cli')
 
-getDefaultLogger().log('🔤 Generating semantic index (no ML models)...')
+logger.log('🔤 Generating semantic index (no ML models)...')
 
 // Load commands.
 const commandsPath = path.join(skillDir, 'commands.json')
@@ -161,10 +163,10 @@ const semanticIndex = {
   },
 }
 
-getDefaultLogger().log('📊 Building semantic index...')
+logger.log('📊 Building semantic index...')
 
 for (const [commandName, commandData] of Object.entries(commands.commands)) {
-  getDefaultLogger().log(`  → ${commandName}`)
+  logger.log(`  → ${commandName}`)
 
   // Extract all relevant words for this command.
   const commandWords = new Set()
@@ -194,10 +196,10 @@ for (const [commandName, commandData] of Object.entries(commands.commands)) {
 const outputPath = path.join(skillDir, 'semantic-index.json')
 writeFileSync(outputPath, JSON.stringify(semanticIndex, null, 2), 'utf-8')
 
-getDefaultLogger().log('')
-getDefaultLogger().success(`Generated ${outputPath}`)
-getDefaultLogger().success(`Indexed ${Object.keys(semanticIndex.commands).length} commands`)
-getDefaultLogger().success(
+logger.log('')
+logger.success(`Generated ${outputPath}`)
+logger.success(`Indexed ${Object.keys(semanticIndex.commands).length} commands`)
+logger.success(
   `File size: ${(JSON.stringify(semanticIndex).length / 1024).toFixed(2)} KB`,
 )
-getDefaultLogger().success('Zero runtime overhead - pure JavaScript!')
+logger.success('Zero runtime overhead - pure JavaScript!')

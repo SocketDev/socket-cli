@@ -17,6 +17,8 @@ import {
   runPackageScript,
 } from './utils/monorepo-helper.mjs'
 
+const logger = getDefaultLogger()
+
 /**
  * Run ESLint check via lint script on affected packages.
  */
@@ -29,7 +31,7 @@ async function runEslintCheck(options = {}) {
   } = options
 
   if (!quiet) {
-    getDefaultLogger().step('Running ESLint checks')
+    logger.step('Running ESLint checks')
   }
 
   // Determine which packages to check.
@@ -51,8 +53,8 @@ async function runEslintCheck(options = {}) {
 
     if (!changedFiles.length) {
       if (!quiet) {
-        getDefaultLogger().substep('No changed files, skipping ESLint')
-        getDefaultLogger().error('')
+        logger.substep('No changed files, skipping ESLint')
+        logger.error('')
       }
       return 0
     }
@@ -61,8 +63,8 @@ async function runEslintCheck(options = {}) {
 
     if (!packages.length) {
       if (!quiet) {
-        getDefaultLogger().substep('No affected packages, skipping ESLint')
-        getDefaultLogger().error('')
+        logger.substep('No affected packages, skipping ESLint')
+        logger.error('')
       }
       return 0
     }
@@ -77,7 +79,7 @@ async function runEslintCheck(options = {}) {
   }
 
   if (!quiet) {
-    getDefaultLogger().error('')
+    logger.error('')
   }
 
   return 0
@@ -90,15 +92,15 @@ async function runTypeCheck(options = {}) {
   const { quiet = false } = options
 
   if (!quiet) {
-    getDefaultLogger().step('Running TypeScript checks')
+    logger.step('Running TypeScript checks')
   }
 
   const packages = getPackagesWithScript('type')
 
   if (!packages.length) {
     if (!quiet) {
-      getDefaultLogger().substep('No packages with type checking')
-      getDefaultLogger().error('')
+      logger.substep('No packages with type checking')
+      logger.error('')
     }
     return 0
   }
@@ -108,7 +110,7 @@ async function runTypeCheck(options = {}) {
     const displayName = pkg.displayName || pkg.name
 
     if (!quiet) {
-      getDefaultLogger().progress(`${displayName}: checking types`)
+      logger.progress(`${displayName}: checking types`)
     }
 
     const result = await spawn(
@@ -124,32 +126,32 @@ async function runTypeCheck(options = {}) {
 
     if (result.code !== 0) {
       if (!quiet) {
-        getDefaultLogger().clearLine()
-        getDefaultLogger().log(`${colors.red('✗')} ${displayName}`)
-        getDefaultLogger().error('')
+        logger.clearLine()
+        logger.log(`${colors.red('✗')} ${displayName}`)
+        logger.error('')
       }
       // Always show type errors (even in quiet mode) since they're the actual errors.
       if (result.stdout) {
-        getDefaultLogger().log(result.stdout)
+        logger.log(result.stdout)
       }
       if (result.stderr) {
-        getDefaultLogger().error(result.stderr)
+        logger.error(result.stderr)
       }
       if (!quiet) {
-        getDefaultLogger().error('')
-        getDefaultLogger().error('Type check failed')
+        logger.error('')
+        logger.error('Type check failed')
       }
       return result.code
     }
 
     if (!quiet) {
-      getDefaultLogger().clearLine()
-      getDefaultLogger().log(`${colors.green('✓')} ${displayName}`)
+      logger.clearLine()
+      logger.log(`${colors.green('✓')} ${displayName}`)
     }
   }
 
   if (!quiet) {
-    getDefaultLogger().error('')
+    logger.error('')
   }
 
   return 0
@@ -175,22 +177,22 @@ async function main() {
 
     // Show help if requested.
     if (values.help) {
-      getDefaultLogger().log('Monorepo Check Runner')
-      getDefaultLogger().log('\nUsage: pnpm check [options]')
-      getDefaultLogger().log('\nOptions:')
-      getDefaultLogger().log('  --help         Show this help message')
-      getDefaultLogger().log('  --lint         Run ESLint check only')
-      getDefaultLogger().log('  --types        Run TypeScript check only')
-      getDefaultLogger().log('  --all          Check all packages')
-      getDefaultLogger().log('  --staged       Check packages with staged files')
-      getDefaultLogger().log('  --changed      Check packages with changed files')
-      getDefaultLogger().log('  --quiet, --silent  Suppress progress messages')
-      getDefaultLogger().log('\nExamples:')
-      getDefaultLogger().log('  pnpm check             # Run all checks on changed packages')
-      getDefaultLogger().log('  pnpm check --all       # Run all checks on all packages')
-      getDefaultLogger().log('  pnpm check --lint      # Run ESLint only')
-      getDefaultLogger().log('  pnpm check --types     # Run TypeScript only')
-      getDefaultLogger().log('  pnpm check --lint --staged  # Run ESLint on staged packages')
+      logger.log('Monorepo Check Runner')
+      logger.log('\nUsage: pnpm check [options]')
+      logger.log('\nOptions:')
+      logger.log('  --help         Show this help message')
+      logger.log('  --lint         Run ESLint check only')
+      logger.log('  --types        Run TypeScript check only')
+      logger.log('  --all          Check all packages')
+      logger.log('  --staged       Check packages with staged files')
+      logger.log('  --changed      Check packages with changed files')
+      logger.log('  --quiet, --silent  Suppress progress messages')
+      logger.log('\nExamples:')
+      logger.log('  pnpm check             # Run all checks on changed packages')
+      logger.log('  pnpm check --all       # Run all checks on all packages')
+      logger.log('  pnpm check --lint      # Run ESLint only')
+      logger.log('  pnpm check --types     # Run TypeScript only')
+      logger.log('  pnpm check --lint --staged  # Run ESLint on staged packages')
       process.exitCode = 0
       return
     }
@@ -200,7 +202,7 @@ async function main() {
 
     if (!quiet) {
       printHeader('Monorepo Check Runner')
-      getDefaultLogger().log('')
+      logger.log('')
     }
 
     let exitCode = 0
@@ -215,7 +217,7 @@ async function main() {
       })
       if (exitCode !== 0) {
         if (!quiet) {
-          getDefaultLogger().error('Checks failed')
+          logger.error('Checks failed')
         }
         process.exitCode = exitCode
         return
@@ -227,7 +229,7 @@ async function main() {
       exitCode = await runTypeCheck({ quiet })
       if (exitCode !== 0) {
         if (!quiet) {
-          getDefaultLogger().error('Checks failed')
+          logger.error('Checks failed')
         }
         process.exitCode = exitCode
         return
@@ -237,7 +239,7 @@ async function main() {
     // Run link: validation check
     if (runAll) {
       if (!quiet) {
-        getDefaultLogger().step('Validating no link: dependencies')
+        logger.step('Validating no link: dependencies')
       }
       const validateResult = await spawn(
         'node',
@@ -249,20 +251,20 @@ async function main() {
       )
       if (validateResult.code !== 0) {
         if (!quiet) {
-          getDefaultLogger().error('Validation failed')
+          logger.error('Validation failed')
         }
         process.exitCode = validateResult.code
         return
       }
       if (!quiet) {
-        getDefaultLogger().error('')
+        logger.error('')
       }
     }
 
     // Run bundle dependencies validation check
     if (runAll) {
       if (!quiet) {
-        getDefaultLogger().step('Validating bundle dependencies')
+        logger.step('Validating bundle dependencies')
       }
       const bundleResult = await spawn(
         'node',
@@ -274,20 +276,20 @@ async function main() {
       )
       if (bundleResult.code !== 0) {
         if (!quiet) {
-          getDefaultLogger().error('Bundle validation failed')
+          logger.error('Bundle validation failed')
         }
         process.exitCode = bundleResult.code
         return
       }
       if (!quiet) {
-        getDefaultLogger().error('')
+        logger.error('')
       }
     }
 
     // Run CDN references validation check
     if (runAll) {
       if (!quiet) {
-        getDefaultLogger().step('Validating no CDN references')
+        logger.step('Validating no CDN references')
       }
       const cdnResult = await spawn(
         'node',
@@ -299,20 +301,20 @@ async function main() {
       )
       if (cdnResult.code !== 0) {
         if (!quiet) {
-          getDefaultLogger().error('CDN references validation failed')
+          logger.error('CDN references validation failed')
         }
         process.exitCode = cdnResult.code
         return
       }
       if (!quiet) {
-        getDefaultLogger().error('')
+        logger.error('')
       }
     }
 
     // Run markdown filenames validation check
     if (runAll) {
       if (!quiet) {
-        getDefaultLogger().step('Validating markdown filenames')
+        logger.step('Validating markdown filenames')
       }
       const markdownResult = await spawn(
         'node',
@@ -324,20 +326,20 @@ async function main() {
       )
       if (markdownResult.code !== 0) {
         if (!quiet) {
-          getDefaultLogger().error('Markdown filenames validation failed')
+          logger.error('Markdown filenames validation failed')
         }
         process.exitCode = markdownResult.code
         return
       }
       if (!quiet) {
-        getDefaultLogger().error('')
+        logger.error('')
       }
     }
 
     // Run file size validation check
     if (runAll) {
       if (!quiet) {
-        getDefaultLogger().step('Validating file sizes')
+        logger.step('Validating file sizes')
       }
       const sizeResult = await spawn(
         'node',
@@ -349,20 +351,20 @@ async function main() {
       )
       if (sizeResult.code !== 0) {
         if (!quiet) {
-          getDefaultLogger().error('File size validation failed')
+          logger.error('File size validation failed')
         }
         process.exitCode = sizeResult.code
         return
       }
       if (!quiet) {
-        getDefaultLogger().error('')
+        logger.error('')
       }
     }
 
     // Run file count validation check
     if (runAll) {
       if (!quiet) {
-        getDefaultLogger().step('Validating file count')
+        logger.step('Validating file count')
       }
       const countResult = await spawn(
         'node',
@@ -374,27 +376,27 @@ async function main() {
       )
       if (countResult.code !== 0) {
         if (!quiet) {
-          getDefaultLogger().error('File count validation failed')
+          logger.error('File count validation failed')
         }
         process.exitCode = countResult.code
         return
       }
       if (!quiet) {
-        getDefaultLogger().error('')
+        logger.error('')
       }
     }
 
     if (!quiet) {
-      getDefaultLogger().success('All checks passed')
+      logger.success('All checks passed')
       printFooter()
     }
   } catch (error) {
-    getDefaultLogger().error(`Check runner failed: ${error.message}`)
+    logger.error(`Check runner failed: ${error.message}`)
     process.exitCode = 1
   }
 }
 
 main().catch(e => {
-  getDefaultLogger().error(e)
+  logger.error(e)
   process.exitCode = 1
 })

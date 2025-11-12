@@ -3,10 +3,10 @@
  * @fileoverview Validates that markdown files follow naming conventions.
  *
  * Special files (allowed anywhere):
- * - README.md, LICENSE
+ * - README.md, CHANGELOG.md, LICENSE
  *
  * Allowed SCREAMING_CASE (all caps) files (root, docs/, or .claude/ only):
- * - AUTHORS.md, CHANGELOG.md, CITATION.md, CLAUDE.md
+ * - AUTHORS.md, CITATION.md, CLAUDE.md
  * - CODE_OF_CONDUCT.md, CONTRIBUTORS.md, CONTRIBUTING.md
  * - COPYING, CREDITS.md, GOVERNANCE.md, MAINTAINERS.md
  * - NOTICE.md, SECURITY.md, SUPPORT.md, TRADEMARK.md
@@ -20,9 +20,9 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import loggerPkg from '@socketsecurity/lib/logger';
+import { getDefaultLogger } from '@socketsecurity/lib/logger';
 
-const logger = loggerPkg.getDefaultLogger();
+const logger = getDefaultLogger();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootPath = path.join(__dirname, '..');
@@ -155,6 +155,16 @@ function isInAllowedLocationForRegularMd(filePath) {
     return true
   }
 
+  // Allow package-level docs/ (packages/*/docs/)
+  if (dir.match(/^packages\/[^/]+\/docs($|\/)/)) {
+    return true
+  }
+
+  // Allow package-level .claude/ (packages/*/.claude/)
+  if (dir.match(/^packages\/[^/]+\/\.claude($|\/)/)) {
+    return true
+  }
+
   return false
 }
 
@@ -166,8 +176,8 @@ function validateFilename(filePath) {
   const nameWithoutExt = filename.replace(/\.(md|MD)$/, '')
   const relativePath = path.relative(rootPath, filePath)
 
-  // README.md and LICENSE are special - allowed anywhere
-  if (nameWithoutExt === 'README' || nameWithoutExt === 'LICENSE') {
+  // README.md, CHANGELOG.md, and LICENSE are special - allowed anywhere
+  if (nameWithoutExt === 'README' || nameWithoutExt === 'CHANGELOG' || nameWithoutExt === 'LICENSE') {
     return null // Valid - allowed in any location
   }
 
@@ -265,10 +275,10 @@ async function main() {
     logger.fail('Markdown filename violations found');
     logger.log('');
     logger.log('Special files (allowed anywhere):');
-    logger.log('  README.md, LICENSE');
+    logger.log('  README.md, CHANGELOG.md, LICENSE');
     logger.log('');
     logger.log('Allowed SCREAMING_CASE files (root, docs/, or .claude/ only):');
-    logger.log('  AUTHORS.md, CHANGELOG.md, CITATION.md, CLAUDE.md,');
+    logger.log('  AUTHORS.md, CITATION.md, CLAUDE.md,');
     logger.log('  CODE_OF_CONDUCT.md, CONTRIBUTORS.md, CONTRIBUTING.md,');
     logger.log('  COPYING, CREDITS.md, GOVERNANCE.md, MAINTAINERS.md,');
     logger.log('  NOTICE.md, SECURITY.md, SUPPORT.md, TRADEMARK.md');

@@ -11,6 +11,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import colors from 'yoctocolors-cjs'
 
+
+const logger = getDefaultLogger()
 /**
  * Get all packages in the monorepo with specific scripts.
  * @param {string} scriptName - Script name to check for
@@ -113,7 +115,7 @@ export async function runPackageScript(pkg, scriptName, args = [], quiet = false
   const displayName = pkg.displayName || pkg.name
 
   if (!quiet) {
-    getDefaultLogger().progress(`${displayName}: running ${scriptName}`)
+    logger.progress(`${displayName}: running ${scriptName}`)
   }
 
   const result = await spawn(
@@ -129,21 +131,21 @@ export async function runPackageScript(pkg, scriptName, args = [], quiet = false
 
   if (result.code !== 0) {
     if (!quiet) {
-      getDefaultLogger().clearLine()
-      getDefaultLogger().log(`${colors.red('✗')} ${displayName}`)
+      logger.clearLine()
+      logger.log(`${colors.red('✗')} ${displayName}`)
     }
     if (result.stdout) {
-      getDefaultLogger().log(result.stdout)
+      logger.log(result.stdout)
     }
     if (result.stderr) {
-      getDefaultLogger().error(result.stderr)
+      logger.error(result.stderr)
     }
     return result.code
   }
 
   if (!quiet) {
-    getDefaultLogger().clearLine()
-    getDefaultLogger().log(`${colors.green('✓')} ${displayName}`)
+    logger.clearLine()
+    logger.log(`${colors.green('✓')} ${displayName}`)
   }
 
   return 0
@@ -160,7 +162,7 @@ export async function runPackageScript(pkg, scriptName, args = [], quiet = false
 export async function runAcrossPackages(packages, scriptName, args = [], quiet = false) {
   if (!packages.length) {
     if (!quiet) {
-      getDefaultLogger().substep('No packages to process')
+      logger.substep('No packages to process')
     }
     return 0
   }

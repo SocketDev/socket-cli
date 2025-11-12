@@ -11,6 +11,8 @@ import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+
+const logger = getDefaultLogger()
 const TARGET_PACKAGES = {
   __proto__: null,
   all: './packages/**',
@@ -45,15 +47,15 @@ for (let i = 0; i < args.length; i++) {
 async function main() {
   const packageFilter = TARGET_PACKAGES[target]
   if (!packageFilter) {
-    getDefaultLogger().error(`Unknown publish target: ${target}`)
-    getDefaultLogger().error(`Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`)
+    logger.error(`Unknown publish target: ${target}`)
+    logger.error(`Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`)
     process.exit(1)
   }
 
   // Special handling for 'all' target.
   if (target === 'all') {
-    getDefaultLogger().log('Publishing all packages...')
-    getDefaultLogger().log('Note: Packages are published in dependency order by pnpm')
+    logger.log('Publishing all packages...')
+    logger.log('Note: Packages are published in dependency order by pnpm')
   }
 
   const pnpmArgs = [
@@ -63,9 +65,9 @@ async function main() {
     ...publishArgs
   ]
 
-  getDefaultLogger().log(`Publishing ${target}...`)
-  getDefaultLogger().log(`Command: pnpm ${pnpmArgs.join(' ')}`)
-  getDefaultLogger().log('')
+  logger.log(`Publishing ${target}...`)
+  logger.log(`Command: pnpm ${pnpmArgs.join(' ')}`)
+  logger.log('')
 
   const result = await spawn('pnpm', pnpmArgs, {
     shell: WIN32,
@@ -73,17 +75,17 @@ async function main() {
   })
 
   if (result.code === 0) {
-    getDefaultLogger().log('')
-    getDefaultLogger().success(`Successfully published ${target}`)
+    logger.log('')
+    logger.success(`Successfully published ${target}`)
   } else {
-    getDefaultLogger().log('')
-    getDefaultLogger().error(`Failed to publish ${target}`)
+    logger.log('')
+    logger.error(`Failed to publish ${target}`)
   }
 
   process.exit(result.code ?? 1)
 }
 
 main().catch(e => {
-  getDefaultLogger().error(e)
+  logger.error(e)
   process.exit(1)
 })

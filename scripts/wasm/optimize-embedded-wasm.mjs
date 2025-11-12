@@ -19,6 +19,8 @@ import { fileURLToPath } from 'node:url'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+
+const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '../..')
 const cacheDir = path.join(rootPath, '.cache/models')
@@ -70,13 +72,13 @@ async function optimizeWasmFile(inputPath, outputPath, options = {}) {
   const { name, aggressive = false } = options
 
   if (!existsSync(inputPath)) {
-    getDefaultLogger().warn(`File not found: ${inputPath}`)
+    logger.warn(`File not found: ${inputPath}`)
     return false
   }
 
   const originalSize = await getFileSizeMB(inputPath)
-  getDefaultLogger().progress(`Optimizing ${name || path.basename(inputPath)}`)
-  getDefaultLogger().substep(`Original: ${originalSize} MB`)
+  logger.progress(`Optimizing ${name || path.basename(inputPath)}`)
+  logger.substep(`Original: ${originalSize} MB`)
 
   // Build optimization flags.
   const flags = [
@@ -113,15 +115,15 @@ async function optimizeWasmFile(inputPath, outputPath, options = {}) {
     if (result.code === 0) {
       const optimizedSize = await getFileSizeMB(outputPath)
       const savings = ((1 - optimizedSize / originalSize) * 100).toFixed(1)
-      getDefaultLogger().done(`Optimized: ${optimizedSize} MB (${savings}% smaller)`)
+      logger.done(`Optimized: ${optimizedSize} MB (${savings}% smaller)`)
       return true
     }
 
-    getDefaultLogger().warn('wasm-opt failed, copying original')
+    logger.warn('wasm-opt failed, copying original')
     await fs.copyFile(inputPath, outputPath)
     return false
   } catch (e) {
-    getDefaultLogger().warn(`Optimization failed: ${e.message}`)
+    logger.warn(`Optimization failed: ${e.message}`)
     await fs.copyFile(inputPath, outputPath)
     return false
   }
@@ -131,28 +133,28 @@ async function optimizeWasmFile(inputPath, outputPath, options = {}) {
  * Main entry point.
  */
 async function main() {
-  getDefaultLogger().step('Optimize Embedded WASM Files')
+  logger.step('Optimize Embedded WASM Files')
 
   if (isAggressive) {
-    getDefaultLogger().substep('Mode: Aggressive (maximum optimization)')
+    logger.substep('Mode: Aggressive (maximum optimization)')
   } else {
-    getDefaultLogger().substep('Mode: Standard (balanced optimization)')
+    logger.substep('Mode: Standard (balanced optimization)')
   }
 
   // Check if wasm-opt is available.
   if (!checkWasmOpt()) {
-    getDefaultLogger().error('wasm-opt not found')
-    getDefaultLogger().substep('Install binaryen:')
-    getDefaultLogger().substep('  macOS:   brew install binaryen')
-    getDefaultLogger().substep('  Linux:   sudo apt-get install binaryen')
-    getDefaultLogger().substep('  Windows: choco install binaryen')
+    logger.error('wasm-opt not found')
+    logger.substep('Install binaryen:')
+    logger.substep('  macOS:   brew install binaryen')
+    logger.substep('  Linux:   sudo apt-get install binaryen')
+    logger.substep('  Windows: choco install binaryen')
     process.exit(1)
   }
 
   // Ensure cache directory exists.
   await fs.mkdir(cacheDir, { recursive: true })
 
-  getDefaultLogger().info('\nOptimizing third-party WASM files:\n')
+  logger.info('\nOptimizing third-party WASM files:\n')
 
   let totalOriginal = 0
   let totalOptimized = 0
@@ -174,7 +176,7 @@ async function main() {
   // Optimize each file.
   for (const file of wasmFiles) {
     if (!existsSync(file.input)) {
-      getDefaultLogger().warn(`Skipping ${file.name} (not found)`)
+      logger.warn(`Skipping ${file.name} (not found)`)
       continue
     }
 
@@ -188,27 +190,27 @@ async function main() {
     totalOriginal += originalSize
     totalOptimized += optimizedSize
 
-    getDefaultLogger().log('') // Spacing.
+    logger.log('') // Spacing.
   }
 
   // Summary.
   if (totalOriginal > 0) {
     const totalSavings = ((1 - totalOptimized / totalOriginal) * 100).toFixed(1)
-    getDefaultLogger().success('Optimization Complete')
-    getDefaultLogger().info(`Total original: ${totalOriginal.toFixed(2)} MB`)
-    getDefaultLogger().info(`Total optimized: ${totalOptimized.toFixed(2)} MB`)
-    getDefaultLogger().info(`Total savings: ${totalSavings}%`)
-    getDefaultLogger().info(
+    logger.success('Optimization Complete')
+    logger.info(`Total original: ${totalOriginal.toFixed(2)} MB`)
+    logger.info(`Total optimized: ${totalOptimized.toFixed(2)} MB`)
+    logger.info(`Total savings: ${totalSavings}%`)
+    logger.info(
       `\nSaved ${(totalOriginal - totalOptimized).toFixed(2)} MB across all files`,
     )
   }
 
-  getDefaultLogger().info('\nNext steps:')
-  getDefaultLogger().info('1. Update Rust code to use optimized files')
-  getDefaultLogger().info('2. Rebuild WASM bundle: pnpm wasm:build')
+  logger.info('\nNext steps:')
+  logger.info('1. Update Rust code to use optimized files')
+  logger.info('2. Rebuild WASM bundle: pnpm wasm:build')
 }
 
 main().catch(e => {
-  getDefaultLogger().error('Optimization failed:', e)
+  logger.error('Optimization failed:', e)
   process.exit(1)
 })

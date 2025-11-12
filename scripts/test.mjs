@@ -16,8 +16,10 @@ import { printHeader } from '@socketsecurity/lib/stdio/header'
 
 import { getTestsToRun } from './utils/changed-test-mapper.mjs'
 
-const WIN32 = process.platform === 'win32'
+const logger = getDefaultLogger()
 const spinner = getDefaultSpinner()
+
+const WIN32 = process.platform === 'win32'
 
 // Suppress non-fatal worker termination unhandled rejections
 process.on('unhandledRejection', (reason, _promise) => {
@@ -77,7 +79,7 @@ const removeExitHandler = onExit((_code, signal) => {
   }
 
   if (signal) {
-    getDefaultLogger().log(`\nReceived ${signal}, cleaning up...`)
+    logger.log(`\nReceived ${signal}, cleaning up...`)
     // Let onExit handle the exit with proper code
     process.exitCode = 128 + (signal === 'SIGINT' ? 2 : 15)
   }
@@ -142,7 +144,7 @@ async function runCommandWithOutput(command, args = [], options = {}) {
 }
 
 async function runCheck() {
-  getDefaultLogger().step('Running checks')
+  logger.step('Running checks')
 
   // Run fix (auto-format) quietly since it has its own output
   spinner.start('Formatting code...')
@@ -151,13 +153,13 @@ async function runCheck() {
   })
   if (exitCode !== 0) {
     spinner.stop()
-    getDefaultLogger().error('Formatting failed')
+    logger.error('Formatting failed')
     // Re-run with output to show errors
     await runCommand('pnpm', ['run', 'fix'])
     return exitCode
   }
   spinner.stop()
-  getDefaultLogger().success('Code formatted')
+  logger.success('Code formatted')
 
   // Run ESLint to check for remaining issues
   spinner.start('Running ESLint...')
@@ -175,7 +177,7 @@ async function runCheck() {
   )
   if (exitCode !== 0) {
     spinner.stop()
-    getDefaultLogger().error('ESLint failed')
+    logger.error('ESLint failed')
     // Re-run with output to show errors
     await runCommand('eslint', [
       '--config',
@@ -186,7 +188,7 @@ async function runCheck() {
     return exitCode
   }
   spinner.stop()
-  getDefaultLogger().success('ESLint passed')
+  logger.success('ESLint passed')
 
   // Run TypeScript check
   const tsConfigPath = getTsConfigPath()
@@ -200,13 +202,13 @@ async function runCheck() {
   )
   if (exitCode !== 0) {
     spinner.stop()
-    getDefaultLogger().error('TypeScript check failed')
+    logger.error('TypeScript check failed')
     // Re-run with output to show errors
     await runCommand('tsgo', ['--noEmit', '-p', tsConfigPath])
     return exitCode
   }
   spinner.stop()
-  getDefaultLogger().success('TypeScript check passed')
+  logger.success('TypeScript check passed')
 
   return exitCode
 }
@@ -214,7 +216,7 @@ async function runCheck() {
 async function runBuild() {
   const distIndexPath = path.join(rootPath, 'dist', 'index.js')
   if (!existsSync(distIndexPath)) {
-    getDefaultLogger().step('Building project')
+    logger.step('Building project')
     return runCommand('pnpm', ['run', 'build'])
   }
   return 0
@@ -230,7 +232,7 @@ async function runTests(options, positionals = []) {
 
   // No tests needed
   if (testsToRun === null) {
-    getDefaultLogger().substep('No relevant changes detected, skipping tests')
+    logger.substep('No relevant changes detected, skipping tests')
     return 0
   }
 
@@ -252,11 +254,11 @@ async function runTests(options, positionals = []) {
 
   // Add test patterns if not running all
   if (testsToRun === 'all') {
-    getDefaultLogger().step(`Running all tests (${reason})`)
+    logger.step(`Running all tests (${reason})`)
   } else {
     const modeText = mode === 'staged' ? 'staged' : 'changed'
-    getDefaultLogger().step(`Running tests for ${modeText} files:`)
-    testsToRun.forEach(test => getDefaultLogger().substep(test))
+    logger.step(`Running tests for ${modeText} files:`)
+    testsToRun.forEach(test => logger.substep(test))
     vitestArgs.push(...testsToRun)
   }
 
@@ -382,30 +384,30 @@ async function main() {
 
     // Show help if requested
     if (values.help) {
-      getDefaultLogger().log('Test Runner')
-      getDefaultLogger().log('\nUsage: pnpm test [options] [-- vitest-args...]')
-      getDefaultLogger().log('\nOptions:')
-      getDefaultLogger().log('  --help              Show this help message')
-      getDefaultLogger().log(
+      logger.log('Test Runner')
+      logger.log('\nUsage: pnpm test [options] [-- vitest-args...]')
+      logger.log('\nOptions:')
+      logger.log('  --help              Show this help message')
+      logger.log(
         '  --fast, --quick     Skip lint/type checks for faster execution',
       )
-      getDefaultLogger().log('  --cover, --coverage Run tests with code coverage')
-      getDefaultLogger().log('  --update            Update test snapshots')
-      getDefaultLogger().log('  --all, --force      Run all tests regardless of changes')
-      getDefaultLogger().log('  --staged            Run tests affected by staged changes')
-      getDefaultLogger().log('  --skip-build        Skip the build step')
-      getDefaultLogger().log('\nExamples:')
-      getDefaultLogger().log(
+      logger.log('  --cover, --coverage Run tests with code coverage')
+      logger.log('  --update            Update test snapshots')
+      logger.log('  --all, --force      Run all tests regardless of changes')
+      logger.log('  --staged            Run tests affected by staged changes')
+      logger.log('  --skip-build        Skip the build step')
+      logger.log('\nExamples:')
+      logger.log(
         '  pnpm test                  # Run checks, build, and tests for changed files',
       )
-      getDefaultLogger().log('  pnpm test --all            # Run all tests')
-      getDefaultLogger().log(
+      logger.log('  pnpm test --all            # Run all tests')
+      logger.log(
         '  pnpm test --fast           # Skip checks for quick testing',
       )
-      getDefaultLogger().log('  pnpm test --cover          # Run with coverage report')
-      getDefaultLogger().log('  pnpm test --fast --cover   # Quick test with coverage')
-      getDefaultLogger().log('  pnpm test --update         # Update test snapshots')
-      getDefaultLogger().log('  pnpm test -- --reporter=dot # Pass args to vitest')
+      logger.log('  pnpm test --cover          # Run with coverage report')
+      logger.log('  pnpm test --fast --cover   # Quick test with coverage')
+      logger.log('  pnpm test --update         # Update test snapshots')
+      logger.log('  pnpm test -- --reporter=dot # Pass args to vitest')
       process.exitCode = 0
       return
     }
@@ -422,18 +424,18 @@ async function main() {
     if (!skipChecks) {
       exitCode = await runCheck()
       if (exitCode !== 0) {
-        getDefaultLogger().error('Checks failed')
+        logger.error('Checks failed')
         process.exitCode = exitCode
         return
       }
-      getDefaultLogger().success('All checks passed')
+      logger.success('All checks passed')
     }
 
     // Run build unless skipped
     if (!values['skip-build']) {
       exitCode = await runBuild()
       if (exitCode !== 0) {
-        getDefaultLogger().error('Build failed')
+        logger.error('Build failed')
         process.exitCode = exitCode
         return
       }
@@ -446,17 +448,17 @@ async function main() {
     )
 
     if (exitCode !== 0) {
-      getDefaultLogger().error('Tests failed')
+      logger.error('Tests failed')
       process.exitCode = exitCode
     } else {
-      getDefaultLogger().success('All tests passed!')
+      logger.success('All tests passed!')
     }
   } catch (error) {
     // Ensure spinner is stopped
     try {
       spinner.stop()
     } catch {}
-    getDefaultLogger().error(`Test runner failed: ${error.message}`)
+    logger.error(`Test runner failed: ${error.message}`)
     process.exitCode = 1
   } finally {
     // Ensure spinner is stopped
@@ -470,6 +472,6 @@ async function main() {
 }
 
 main().catch(e => {
-  getDefaultLogger().error(e)
+  logger.error(e)
   process.exit(1)
 })

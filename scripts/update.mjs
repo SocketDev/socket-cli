@@ -12,13 +12,9 @@
  */
 
 import { isQuiet, isVerbose } from '@socketsecurity/lib/argv/flags'
-import loggerPkg from '@socketsecurity/lib/logger'
-import platformPkg from '@socketsecurity/lib/constants/platform'
-import spawnPkg from '@socketsecurity/lib/spawn'
-
-const { getDefaultLogger } = loggerPkg
-const { WIN32 } = platformPkg
-const { spawn } = spawnPkg
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 async function main() {
   const quiet = isQuiet()

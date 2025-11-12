@@ -18,6 +18,10 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
+const logger = getDefaultLogger()
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '../..')
 const cacheDir = path.join(rootPath, '.cache/models')
@@ -88,8 +92,8 @@ const FILES = [
  * Download file with progress.
  */
 async function downloadFile(url, outputPath, description) {
-  getDefaultLogger().info(`📦 Downloading ${description}...`)
-  getDefaultLogger().substep(`URL: ${url}`)
+  logger.info(`📦 Downloading ${description}...`)
+  logger.substep(`URL: ${url}`)
 
   const response = await fetch(url)
 
@@ -102,8 +106,8 @@ async function downloadFile(url, outputPath, description) {
   await fs.writeFile(outputPath, Buffer.from(buffer))
 
   const sizeMB = (buffer.byteLength / 1024 / 1024).toFixed(2)
-  getDefaultLogger().substep(`✓ Downloaded ${sizeMB} MB`)
-  getDefaultLogger().substep(`✓ Saved to ${outputPath}\n`)
+  logger.substep(`✓ Downloaded ${sizeMB} MB`)
+  logger.substep(`✓ Saved to ${outputPath}\n`)
 
   return buffer.byteLength
 }
@@ -112,8 +116,8 @@ async function downloadFile(url, outputPath, description) {
  * Copy file from source to dest.
  */
 async function copyFile(source, dest, description) {
-  getDefaultLogger().info(`📋 Copying ${description}...`)
-  getDefaultLogger().substep(`From: ${source}`)
+  logger.info(`📋 Copying ${description}...`)
+  logger.substep(`From: ${source}`)
 
   const fullSource = path.join(rootPath, source)
 
@@ -125,8 +129,8 @@ async function copyFile(source, dest, description) {
   await fs.writeFile(dest, buffer)
 
   const sizeKB = (buffer.length / 1024).toFixed(2)
-  getDefaultLogger().substep(`✓ Copied ${sizeKB} KB`)
-  getDefaultLogger().substep(`✓ Saved to ${dest}\n`)
+  logger.substep(`✓ Copied ${sizeKB} KB`)
+  logger.substep(`✓ Saved to ${dest}\n`)
 
   return buffer.length
 }
@@ -135,7 +139,7 @@ async function copyFile(source, dest, description) {
  * Extract yoga WASM from base64-encoded file.
  */
 async function extractYogaWasm(dest, description) {
-  getDefaultLogger().info(`📦 Extracting ${description}...`)
+  logger.info(`📦 Extracting ${description}...`)
 
   const yogaBase64File = path.join(
     rootPath,
@@ -166,8 +170,8 @@ async function extractYogaWasm(dest, description) {
   await fs.writeFile(dest, wasmBuffer)
 
   const sizeKB = (wasmBuffer.length / 1024).toFixed(2)
-  getDefaultLogger().substep(`✓ Extracted ${sizeKB} KB`)
-  getDefaultLogger().substep(`✓ Saved to ${dest}\n`)
+  logger.substep(`✓ Extracted ${sizeKB} KB`)
+  logger.substep(`✓ Saved to ${dest}\n`)
 
   return wasmBuffer.length
 }
@@ -176,13 +180,13 @@ async function extractYogaWasm(dest, description) {
  * Main download logic.
  */
 export async function downloadModels() {
-  getDefaultLogger().info('╔═══════════════════════════════════════════════════╗')
-  getDefaultLogger().info('║   Download Model Assets                           ║')
-  getDefaultLogger().info('╚═══════════════════════════════════════════════════╝\n')
+  logger.info('╔═══════════════════════════════════════════════════╗')
+  logger.info('║   Download Model Assets                           ║')
+  logger.info('╚═══════════════════════════════════════════════════╝\n')
 
   // Create cache directory.
   await fs.mkdir(cacheDir, { recursive: true })
-  getDefaultLogger().info(`✓ Cache directory: ${cacheDir}\n`)
+  logger.info(`✓ Cache directory: ${cacheDir}\n`)
 
   let totalBytes = 0
   const missing = []
@@ -196,8 +200,8 @@ export async function downloadModels() {
       await fs.access(outputPath)
       const stats = await fs.stat(outputPath)
       const sizeMB = (stats.size / 1024 / 1024).toFixed(2)
-      getDefaultLogger().info(`✓ ${file.description} already exists (${sizeMB} MB)`)
-      getDefaultLogger().substep(`${outputPath}\n`)
+      logger.info(`✓ ${file.description} already exists (${sizeMB} MB)`)
+      logger.substep(`${outputPath}\n`)
       totalBytes += stats.size
       continue
     } catch {
@@ -214,8 +218,8 @@ export async function downloadModels() {
         )
         totalBytes += bytes
       } catch (e) {
-        getDefaultLogger().error(`✗ Failed to copy: ${e.message}`)
-        getDefaultLogger().error(
+        logger.error(`✗ Failed to copy: ${e.message}`)
+        logger.error(
           '   Please ensure dependencies are installed: pnpm install\n',
         )
         missing.push(file.name)
@@ -229,8 +233,8 @@ export async function downloadModels() {
         const bytes = await extractYogaWasm(outputPath, file.description)
         totalBytes += bytes
       } catch (e) {
-        getDefaultLogger().error(`✗ Failed to extract: ${e.message}`)
-        getDefaultLogger().error(
+        logger.error(`✗ Failed to extract: ${e.message}`)
+        logger.error(
           '   Please ensure yoga-layout is installed: pnpm install\n',
         )
         missing.push(file.name)
@@ -240,9 +244,9 @@ export async function downloadModels() {
 
     // Check if URL is provided.
     if (!file.url) {
-      getDefaultLogger().info(`⚠ ${file.description} needs manual setup`)
-      getDefaultLogger().substep(`File: ${file.name}`)
-      getDefaultLogger().substep('Run: node scripts/wasm/convert-codet5.mjs\n')
+      logger.info(`⚠ ${file.description} needs manual setup`)
+      logger.substep(`File: ${file.name}`)
+      logger.substep('Run: node scripts/wasm/convert-codet5.mjs\n')
       missing.push(file.name)
       continue
     }
@@ -252,28 +256,28 @@ export async function downloadModels() {
       const bytes = await downloadFile(file.url, outputPath, file.description)
       totalBytes += bytes
     } catch (e) {
-      getDefaultLogger().error(`✗ Download failed: ${e.message}\n`)
+      logger.error(`✗ Download failed: ${e.message}\n`)
       missing.push(file.name)
     }
   }
 
-  getDefaultLogger().info('╔═══════════════════════════════════════════════════╗')
-  getDefaultLogger().info('║   Download Summary                                ║')
-  getDefaultLogger().info('╚═══════════════════════════════════════════════════╝\n')
-  getDefaultLogger().info(`Total size: ${(totalBytes / 1024 / 1024).toFixed(2)} MB`)
+  logger.info('╔═══════════════════════════════════════════════════╗')
+  logger.info('║   Download Summary                                ║')
+  logger.info('╚═══════════════════════════════════════════════════╝\n')
+  logger.info(`Total size: ${(totalBytes / 1024 / 1024).toFixed(2)} MB`)
 
   if (missing.length > 0) {
-    getDefaultLogger().info(`\n⚠ Missing files (${missing.length}):`)
+    logger.info(`\n⚠ Missing files (${missing.length}):`)
     for (const file of missing) {
-      getDefaultLogger().substep(`- ${file}`)
+      logger.substep(`- ${file}`)
     }
-    getDefaultLogger().info('\nNext steps:')
-    getDefaultLogger().info('  1. For CodeT5 models: node scripts/wasm/convert-codet5.mjs')
-    getDefaultLogger().info('  2. For node_modules files: pnpm install')
+    logger.info('\nNext steps:')
+    logger.info('  1. For CodeT5 models: node scripts/wasm/convert-codet5.mjs')
+    logger.info('  2. For node_modules files: pnpm install')
     return false
   }
 
-  getDefaultLogger().info('\n✓ All files downloaded successfully')
+  logger.info('\n✓ All files downloaded successfully')
   return true
 }
 

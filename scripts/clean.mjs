@@ -14,6 +14,8 @@ import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { createSectionHeader } from '@socketsecurity/lib/stdio/header'
 
+const logger = getDefaultLogger()
+
 const rootPath = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
@@ -30,7 +32,7 @@ async function cleanDirectories(tasks, options = {}) {
     const patternsToDelete = patterns || [pattern]
 
     if (!quiet) {
-      getDefaultLogger().progress(`Cleaning ${name}`)
+      logger.progress(`Cleaning ${name}`)
     }
 
     try {
@@ -48,15 +50,15 @@ async function cleanDirectories(tasks, options = {}) {
 
       if (!quiet) {
         if (files.length > 0) {
-          getDefaultLogger().done(`Cleaned ${name} (${files.length} items)`)
+          logger.done(`Cleaned ${name} (${files.length} items)`)
         } else {
-          getDefaultLogger().done(`Cleaned ${name} (already clean)`)
+          logger.done(`Cleaned ${name} (already clean)`)
         }
       }
     } catch (error) {
       if (!quiet) {
-        getDefaultLogger().error(`Failed to clean ${name}`)
-        getDefaultLogger().error(error.message)
+        logger.error(`Failed to clean ${name}`)
+        logger.error(error.message)
       }
       return 1
     }
@@ -113,26 +115,26 @@ async function main() {
 
     // Show help if requested
     if (values.help) {
-      getDefaultLogger().log('Clean Runner')
-      getDefaultLogger().log('\nUsage: pnpm clean [options]')
-      getDefaultLogger().log('\nOptions:')
-      getDefaultLogger().log('  --help              Show this help message')
-      getDefaultLogger().log(
+      logger.log('Clean Runner')
+      logger.log('\nUsage: pnpm clean [options]')
+      logger.log('\nOptions:')
+      logger.log('  --help              Show this help message')
+      logger.log(
         '  --all               Clean everything (default if no flags)',
       )
-      getDefaultLogger().log('  --cache             Clean cache directories')
-      getDefaultLogger().log('  --coverage          Clean coverage reports')
-      getDefaultLogger().log('  --dist              Clean build output')
-      getDefaultLogger().log('  --types             Clean TypeScript declarations only')
-      getDefaultLogger().log('  --modules           Clean node_modules')
-      getDefaultLogger().log('  --quiet, --silent   Suppress progress messages')
-      getDefaultLogger().log('\nExamples:')
-      getDefaultLogger().log(
+      logger.log('  --cache             Clean cache directories')
+      logger.log('  --coverage          Clean coverage reports')
+      logger.log('  --dist              Clean build output')
+      logger.log('  --types             Clean TypeScript declarations only')
+      logger.log('  --modules           Clean node_modules')
+      logger.log('  --quiet, --silent   Suppress progress messages')
+      logger.log('\nExamples:')
+      logger.log(
         '  pnpm clean                  # Clean everything except node_modules',
       )
-      getDefaultLogger().log('  pnpm clean --dist           # Clean build output only')
-      getDefaultLogger().log('  pnpm clean --cache --coverage  # Clean cache and coverage')
-      getDefaultLogger().log(
+      logger.log('  pnpm clean --dist           # Clean build output only')
+      logger.log('  pnpm clean --cache --coverage  # Clean cache and coverage')
+      logger.log(
         '  pnpm clean --all --modules  # Clean everything including node_modules',
       )
       process.exitCode = 0
@@ -177,17 +179,17 @@ async function main() {
     // Check if there's anything to clean
     if (tasks.length === 0) {
       if (!quiet) {
-        getDefaultLogger().info('Nothing to clean')
+        logger.info('Nothing to clean')
       }
       process.exitCode = 0
       return
     }
 
     if (!quiet) {
-      getDefaultLogger().log(
+      logger.log(
         createSectionHeader('Clean Runner', { width: 56, borderChar: '=' }),
       )
-      getDefaultLogger().step('Cleaning project directories')
+      logger.step('Cleaning project directories')
     }
 
     // Clean directories
@@ -195,21 +197,21 @@ async function main() {
 
     if (exitCode !== 0) {
       if (!quiet) {
-        getDefaultLogger().error('Clean failed')
+        logger.error('Clean failed')
       }
       process.exitCode = exitCode
     } else {
       if (!quiet) {
-        getDefaultLogger().success('Clean completed successfully!')
+        logger.success('Clean completed successfully!')
       }
     }
   } catch (error) {
-    getDefaultLogger().error(`Clean runner failed: ${error.message}`)
+    logger.error(`Clean runner failed: ${error.message}`)
     process.exitCode = 1
   }
 }
 
 main().catch(e => {
-  getDefaultLogger().error(e)
+  logger.error(e)
   process.exitCode = 1
 })

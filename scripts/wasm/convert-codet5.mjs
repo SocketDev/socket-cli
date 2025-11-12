@@ -58,24 +58,24 @@ const rootPath = path.join(__dirname, '../..')
 const modelsPath = path.join(rootPath, '.cache', 'models')
 
 // Step 1: Check Python.
-getDefaultLogger().substep('Step Checking Python installation...\n')
+logger.substep('Step Checking Python installation...\n')
 
 let pythonCmd = 'python3'
 let pythonVersion = ''
 try {
   const pythonResult = await exec(pythonCmd, ['--version'])
   pythonVersion = pythonResult.stdout.trim()
-  getDefaultLogger().info(`✓ Found ${pythonVersion}`)
+  logger.info(`✓ Found ${pythonVersion}`)
 } catch (_e) {
   // Try 'python' as fallback.
   try {
     const pythonResult = await exec('python', ['--version'])
     pythonVersion = pythonResult.stdout.trim()
     pythonCmd = 'python'
-    getDefaultLogger().info(`✓ Found ${pythonVersion}`)
+    logger.info(`✓ Found ${pythonVersion}`)
   } catch {
-    getDefaultLogger().error(' Python 3 not found')
-    getDefaultLogger().error(
+    logger.error(' Python 3 not found')
+    logger.error(
       '   Please install Python 3.8+: https://www.python.org/downloads/',
     )
     process.exit(1)
@@ -89,15 +89,15 @@ if (versionMatch) {
   const minor = Number.parseInt(versionMatch[2], 10)
 
   if (major < 3 || (major === 3 && minor < 8)) {
-    getDefaultLogger().error(`❌ Python 3.8+ required, found ${pythonVersion}`)
-    getDefaultLogger().error('Please upgrade: https://www.python.org/downloads/')
+    logger.error(`❌ Python 3.8+ required, found ${pythonVersion}`)
+    logger.error('Please upgrade: https://www.python.org/downloads/')
     process.exit(1)
   }
 }
-getDefaultLogger().info()
+logger.info()
 
 // Step 2: Check and install required packages.
-getDefaultLogger().substep('Step Checking required packages...\n')
+logger.substep('Step Checking required packages...\n')
 
 const REQUIRED_PACKAGES = [
   { import: 'optimum', package: 'optimum[onnxruntime]' },
@@ -113,49 +113,49 @@ const missingPackages = []
 for (const { import: importName, package: packageName } of REQUIRED_PACKAGES) {
   try {
     await exec(pythonCmd, ['-c', `import ${importName}`])
-    getDefaultLogger().info(`✓ ${importName} installed`)
+    logger.info(`✓ ${importName} installed`)
   } catch {
-    getDefaultLogger().info(`❌ ${importName} not found`)
+    logger.info(`❌ ${importName} not found`)
     missingPackages.push(packageName)
   }
 }
 
 // Install missing packages.
 if (missingPackages.length > 0) {
-  getDefaultLogger().info(`\n📦 Installing missing packages: ${missingPackages.join(', ')}`)
-  getDefaultLogger().substep('This may take a few minutes...\n')
+  logger.info(`\n📦 Installing missing packages: ${missingPackages.join(', ')}`)
+  logger.substep('This may take a few minutes...\n')
 
   try {
     const pipCmd = pythonCmd === 'python3' ? 'pip3' : 'pip'
     await exec(pipCmd, ['install', ...missingPackages], { stdio: 'inherit' })
-    getDefaultLogger().info('\n✓ Packages installed successfully\n')
+    logger.info('\n✓ Packages installed successfully\n')
 
     // Check for NumPy 2.x compatibility issue.
     try {
       await exec(pythonCmd, ['-c', 'import numpy; import torch'])
     } catch {
-      getDefaultLogger().info(
+      logger.info(
         '⚠ NumPy 2.x detected, downgrading to 1.x for PyTorch compatibility...',
       )
       await exec(pipCmd, ['install', 'numpy<2'], { stdio: 'inherit' })
-      getDefaultLogger().done(' NumPy downgraded\n')
+      logger.done(' NumPy downgraded\n')
     }
   } catch (e) {
-    getDefaultLogger().error('\n❌ Package installation failed')
-    getDefaultLogger().error(`Error: ${e.message}`)
-    getDefaultLogger().error(
+    logger.error('\n❌ Package installation failed')
+    logger.error(`Error: ${e.message}`)
+    logger.error(
       '   Please install manually: pip install optimum[onnxruntime] torch transformers onnx onnxruntime',
     )
     process.exit(1)
   }
 } else {
-  getDefaultLogger().info('\n✓ All required packages are installed\n')
+  logger.info('\n✓ All required packages are installed\n')
 }
 
 // Step 3: Create output directory.
-getDefaultLogger().substep('Step Creating output directory...\n')
+logger.substep('Step Creating output directory...\n')
 await fs.mkdir(modelsPath, { recursive: true })
-getDefaultLogger().info(`✓ Created ${modelsPath}\n`)
+logger.info(`✓ Created ${modelsPath}\n`)
 
 // Step 4: Check if models already exist.
 const encoderPath = path.join(modelsPath, 'codet5-encoder-int4.onnx')
@@ -167,26 +167,26 @@ if (
   existsSync(decoderPath) &&
   existsSync(tokenizerPath)
 ) {
-  getDefaultLogger().done(' CodeT5 models already exist:')
-  getDefaultLogger().substep(`- ${encoderPath}`)
-  getDefaultLogger().substep(`- ${decoderPath}`)
-  getDefaultLogger().substep(`- ${tokenizerPath}\n`)
+  logger.done(' CodeT5 models already exist:')
+  logger.substep(`- ${encoderPath}`)
+  logger.substep(`- ${decoderPath}`)
+  logger.substep(`- ${tokenizerPath}\n`)
 
   const stats = await fs.stat(encoderPath)
-  getDefaultLogger().substep(`Encoder size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`)
+  logger.substep(`Encoder size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`)
   const decoderStats = await fs.stat(decoderPath)
-  getDefaultLogger().info(
+  logger.info(
     `   Decoder size: ${(decoderStats.size / 1024 / 1024).toFixed(2)} MB\n`,
   )
 
-  getDefaultLogger().done(' Conversion not needed (models already exist)\n')
+  logger.done(' Conversion not needed (models already exist)\n')
   process.exit(0)
 }
 
 // Step 5: Convert models using Python script.
-getDefaultLogger().substep('Step Converting CodeT5 models...\n')
-getDefaultLogger().progress(' This will download ~240MB from HuggingFace')
-getDefaultLogger().info(
+logger.substep('Step Converting CodeT5 models...\n')
+logger.progress(' This will download ~240MB from HuggingFace')
+logger.info(
   '   and convert to ~90MB ONNX int4 format (50% smaller than int8)\n',
 )
 
@@ -270,6 +270,8 @@ with open(tokenizer_path, "w") as f:
 
 # Cleanup temporary files.
 import shutil
+
+const logger = getDefaultLogger()
 shutil.rmtree(TEMP_DIR)
 
 print("\\n✓ Conversion complete!")
@@ -282,26 +284,26 @@ print("\\n   Expected size: ~90MB total (50% smaller than INT8)")
 try {
   await exec(pythonCmd, ['-c', pythonScript], { stdio: 'inherit' })
 } catch (_e) {
-  getDefaultLogger().error('\n❌ Conversion failed')
-  getDefaultLogger().error('Please check the error messages above\n')
+  logger.error('\n❌ Conversion failed')
+  logger.error('Please check the error messages above\n')
   process.exit(1)
 }
 
 // Step 6: Verify output files.
-getDefaultLogger().info('\nStep 5: Verifying output files...\n')
+logger.info('\nStep 5: Verifying output files...\n')
 
 if (!existsSync(encoderPath)) {
-  getDefaultLogger().error(`❌ Encoder not found: ${encoderPath}`)
+  logger.error(`❌ Encoder not found: ${encoderPath}`)
   process.exit(1)
 }
 
 if (!existsSync(decoderPath)) {
-  getDefaultLogger().error(`❌ Decoder not found: ${decoderPath}`)
+  logger.error(`❌ Decoder not found: ${decoderPath}`)
   process.exit(1)
 }
 
 if (!existsSync(tokenizerPath)) {
-  getDefaultLogger().error(`❌ Tokenizer not found: ${tokenizerPath}`)
+  logger.error(`❌ Tokenizer not found: ${tokenizerPath}`)
   process.exit(1)
 }
 
@@ -309,11 +311,11 @@ const encoderStats = await fs.stat(encoderPath)
 const decoderStats = await fs.stat(decoderPath)
 const tokenizerStats = await fs.stat(tokenizerPath)
 
-getDefaultLogger().done(' All files created successfully:')
-getDefaultLogger().substep(`Encoder: ${(encoderStats.size / 1024 / 1024).toFixed(2)} MB`)
-getDefaultLogger().substep(`Decoder: ${(decoderStats.size / 1024 / 1024).toFixed(2)} MB`)
-getDefaultLogger().substep(`Tokenizer: ${(tokenizerStats.size / 1024).toFixed(2)} KB\n`)
+logger.done(' All files created successfully:')
+logger.substep(`Encoder: ${(encoderStats.size / 1024 / 1024).toFixed(2)} MB`)
+logger.substep(`Decoder: ${(decoderStats.size / 1024 / 1024).toFixed(2)} MB`)
+logger.substep(`Tokenizer: ${(tokenizerStats.size / 1024).toFixed(2)} KB\n`)
 
-getDefaultLogger().info('Next steps:')
-getDefaultLogger().info('  1. Run: node scripts/wasm/build-unified-wasm.mjs')
-getDefaultLogger().info('  2. The models will be embedded in the unified WASM bundle\n')
+logger.info('Next steps:')
+logger.info('  1. Run: node scripts/wasm/build-unified-wasm.mjs')
+logger.info('  2. The models will be embedded in the unified WASM bundle\n')
