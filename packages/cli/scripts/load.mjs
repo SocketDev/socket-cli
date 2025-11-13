@@ -1,14 +1,16 @@
 /**
- * @fileoverview Deprecated - use register.mjs instead.
+ * @fileoverview ESM loader stub for CLI build scripts.
  *
- * This file is kept for backward compatibility but should not be used.
- * Use register.mjs with --import flag instead.
+ * This file is used with --import flag for Node.js module loading.
+ * Previously handled local package aliasing, now isolated to use published packages only.
  *
- * New usage:
- *   node --import=./scripts/register.mjs script.mjs
- *
- * Wrapper usage (recommended):
- *   node scripts/load script-name
+ * Usage:
+ *   node --import=./scripts/load.mjs script.mjs
  */
 
-export { resolve } from './utils/alias-loader.mjs'
+// Export a no-op resolve function for compatibility.
+// Node.js --import expects this export to exist.
+export function resolve(specifier, context, nextResolve) {
+  // Pass through to default resolver - no custom aliasing.
+  return nextResolve(specifier, context)
+}

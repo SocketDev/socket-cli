@@ -13,8 +13,6 @@ import { fileURLToPath } from 'node:url'
 import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
 import { build } from 'esbuild'
 
-import { getLocalPackageAliases } from '../scripts/utils/get-local-package-aliases.mjs'
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 
@@ -125,16 +123,9 @@ function envVarReplacementPlugin(envVars) {
   }
 }
 
-// Get local Socket package paths using canonical helper.
-// rootPath is packages/cli, so go up to socket-cli root for getLocalPackageAliases.
-const socketCliRoot = path.join(rootPath, '..', '..')
-const distAliases = getLocalPackageAliases(socketCliRoot)
-
-// Convert dist paths to package roots (remove /dist suffix).
+// CLI build must use published packages only - no local sibling directories.
+// This ensures the CLI is properly isolated and doesn't depend on local dev setup.
 const socketPackages = {}
-for (const [packageName, distPath] of Object.entries(distAliases)) {
-  socketPackages[packageName] = path.dirname(distPath)
-}
 
 // Resolve subpath from package.json exports.
 function resolvePackageSubpath(packagePath, subpath) {
