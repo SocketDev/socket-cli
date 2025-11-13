@@ -178,15 +178,18 @@ const config = {
   format: 'cjs',
 
   // With platform: 'node', esbuild automatically externalizes all Node.js built-ins.
-  // node-gyp is not external because:
-  // 1. It's optionally resolved (returns undefined if not found).
-  // 2. Users who need it will have it in their project dependencies.
-  // 3. The published package should have zero runtime dependencies.
   external: [],
 
   // Suppress warnings for intentional CommonJS compatibility code.
   logOverride: {
     'commonjs-variable-in-esm': 'silent',
+    // Suppress warnings about require.resolve for node-gyp (it's external).
+    'require-resolve-not-external': 'silent',
+  },
+
+  // Add loader for .cs files (node-gyp on Windows).
+  loader: {
+    '.cs': 'empty',
   },
 
   // Add shebang.
@@ -205,6 +208,9 @@ const config = {
 
   // Plugin needs to transform output.
   write: false,
+
+  // Generate metafile for debugging.
+  metafile: true,
 
   // Define environment variables and import.meta.
   define: {
@@ -453,9 +459,27 @@ const config = {
     {
       name: 'ignore-unsupported-files',
       setup(build) {
-        // Ignore .cs files and other non-JS files.
-        build.onResolve({ filter: /\.(cs|node-gyp)$/ }, () => {
-          return { path: '/dev/null', external: true }
+        // Prevent bundling @npmcli/arborist from workspace node_modules.
+        // It should only use the bundled version from socket-lib/dist/external/@npmcli/arborist.js.
+        build.onResolve({ filter: /^@npmcli\/arborist$/ }, args => {
+          // Only redirect if it's not already coming from socket-lib's external bundle.
+          if (args.importer.includes('/socket-lib/dist/')) {
+            return null
+          }
+          return { path: args.path, external: true }
+        })
+
+        // Stub .cs files (node-gyp on Windows) before esbuild tries to analyze them.
+        build.onLoad({ filter: /\.cs$/ }, () => {
+          return {
+            contents: 'module.exports = {}',
+            loader: 'js',
+          }
+        })
+
+        // Mark node-gyp as external (used by arborist but optionally resolved).
+        build.onResolve({ filter: /node-gyp/ }, () => {
+          return { path: 'node-gyp', external: true }
         })
       },
     },

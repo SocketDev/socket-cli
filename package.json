@@ -1,11 +1,11 @@
 {
   "name": "socket-cli-monorepo",
   "version": "0.0.0",
-  "packageManager": "pnpm@10.21.0",
+  "packageManager": "pnpm@10.22.0",
   "private": true,
   "engines": {
     "node": ">=18",
-    "pnpm": ">=10.21.0"
+    "pnpm": ">=10.22.0"
   },
   "scripts": {
     "// Build": "",
@@ -69,8 +69,6 @@
     "@babel/runtime": "catalog:",
     "@babel/traverse": "catalog:",
     "@biomejs/biome": "catalog:",
-    "@coana-tech/cli": "catalog:",
-    "@cyclonedx/cdxgen": "catalog:",
     "@dotenvx/dotenvx": "catalog:",
     "@eslint/compat": "catalog:",
     "@eslint/js": "catalog:",
