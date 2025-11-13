@@ -1,12 +1,6 @@
 /**
- * @fileoverview Unified e2e test runner
- * Runs pre-e2e build check, then executes vitest with appropriate binary flags.
- *
- * Usage:
- *   node scripts/e2e.mjs --js     # Test JS binary only
- *   node scripts/e2e.mjs --sea    # Test SEA binary only
- *   node scripts/e2e.mjs --smol   # Test smol binary only
- *   node scripts/e2e.mjs --all    # Test all binaries
+ * E2E test runner.
+ * Options: --js, --sea, --all
  */
 
 import { existsSync } from 'node:fs'
@@ -28,27 +22,22 @@ const BINARY_PATHS = {
   __proto__: null,
   js: path.join(ROOT_DIR, 'bin/cli.js'),
   sea: path.join(MONOREPO_ROOT, 'packages/node-sea-builder/dist/socket-sea'),
-  smol: path.join(MONOREPO_ROOT, 'packages/node-smol-builder/dist/socket-smol'),
 }
 
 const BINARY_FLAGS = {
   __proto__: null,
   all: {
     TEST_SEA_BINARY: '1',
-    TEST_SMOL_BINARY: '1',
   },
   js: {},
   sea: {
     TEST_SEA_BINARY: '1',
   },
-  smol: {
-    TEST_SMOL_BINARY: '1',
-  },
 }
 
 async function checkBinaryExists(binaryType) {
-  // For explicit binary requests (js, sea, smol), require binary to exist.
-  if (binaryType === 'js' || binaryType === 'sea' || binaryType === 'smol') {
+  // For explicit binary requests (js, sea), require binary to exist.
+  if (binaryType === 'js' || binaryType === 'sea') {
     const binaryPath = BINARY_PATHS[binaryType]
     if (!existsSync(binaryPath)) {
       const logger = getDefaultLogger()
@@ -60,8 +49,6 @@ async function checkBinaryExists(binaryType) {
         logger.log('  pnpm run build')
       } else if (binaryType === 'sea') {
         logger.log('  pnpm --filter @socketbin/node-sea-builder run build')
-      } else if (binaryType === 'smol') {
-        logger.log('  pnpm --filter @socketbin/node-smol-builder run build')
       }
       logger.log('')
       return false
@@ -132,7 +119,6 @@ async function main() {
     logger.log('Usage:')
     logger.log('  node scripts/e2e.mjs --js     # Test JS binary')
     logger.log('  node scripts/e2e.mjs --sea    # Test SEA binary')
-    logger.log('  node scripts/e2e.mjs --smol   # Test smol binary')
     logger.log('  node scripts/e2e.mjs --all    # Test all binaries')
     logger.log('')
     process.exit(1)

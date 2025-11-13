@@ -1,12 +1,6 @@
 /**
- * @fileoverview Distribution integration test runner
- * Runs pre-test build check, then executes vitest with appropriate distribution flags.
- *
- * Usage:
- *   node scripts/integration.mjs --js     # Test JS distribution only
- *   node scripts/integration.mjs --sea    # Test SEA binary only
- *   node scripts/integration.mjs --smol   # Test smol binary only
- *   node scripts/integration.mjs --all    # Test all distributions
+ * Integration test runner.
+ * Options: --js, --sea, --all
  */
 
 import { existsSync } from 'node:fs'
@@ -29,7 +23,6 @@ const BINARY_PATHS = {
   __proto__: null,
   js: path.join(ROOT_DIR, 'dist/index.js'),
   sea: path.join(MONOREPO_ROOT, 'packages/node-sea-builder/dist/socket-sea'),
-  smol: path.join(MONOREPO_ROOT, 'packages/node-smol-builder/dist/socket-smol'),
 }
 
 const BINARY_FLAGS = {
@@ -37,7 +30,6 @@ const BINARY_FLAGS = {
   all: {
     TEST_JS_BINARY: '1',
     TEST_SEA_BINARY: '1',
-    TEST_SMOL_BINARY: '1',
   },
   js: {
     TEST_JS_BINARY: '1',
@@ -45,26 +37,21 @@ const BINARY_FLAGS = {
   sea: {
     TEST_SEA_BINARY: '1',
   },
-  smol: {
-    TEST_SMOL_BINARY: '1',
-  },
 }
 
 async function checkBinaryExists(binaryType) {
-  // For explicit binary requests (js, sea, smol), require binary to exist.
-  if (binaryType === 'js' || binaryType === 'sea' || binaryType === 'smol') {
+  // For explicit binary requests (js, sea), require binary to exist.
+  if (binaryType === 'js' || binaryType === 'sea') {
     const binaryPath = BINARY_PATHS[binaryType]
     if (!existsSync(binaryPath)) {
       logger.error(`${colors.red('✗')} Binary not found: ${binaryPath}`)
       logger.log('')
-      logger.log('The binary must be built before running e2e tests.')
+      logger.log('The binary must be built before running integration tests.')
       logger.log('Build commands:')
       if (binaryType === 'js') {
         logger.log('  pnpm run build')
       } else if (binaryType === 'sea') {
         logger.log('  pnpm --filter @socketbin/node-sea-builder run build')
-      } else if (binaryType === 'smol') {
-        logger.log('  pnpm --filter @socketbin/node-smol-builder run build')
       }
       logger.log('')
       return false
@@ -136,7 +123,6 @@ async function main() {
     logger.log('Usage:')
     logger.log('  node scripts/integration.mjs --js     # Test JS distribution')
     logger.log('  node scripts/integration.mjs --sea    # Test SEA binary')
-    logger.log('  node scripts/integration.mjs --smol   # Test smol binary')
     logger.log(
       '  node scripts/integration.mjs --all    # Test all distributions',
     )

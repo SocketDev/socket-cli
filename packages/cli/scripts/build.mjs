@@ -1,17 +1,6 @@
 /**
- * @fileoverview Unified build script for Socket CLI.
- * Runs esbuild to build distribution files.
- *
- * Usage:
- *   node scripts/build.mjs [options]
- *
- * Options:
- *   --quiet      Suppress progress output
- *   --verbose    Show detailed output
- *   --sea        Build SEA binaries (delegates to build-sea.mjs)
- *   --prod       Build for production (includes compression)
- *   --force      Force rebuild (clean dist first)
- *   --watch      Watch mode for development
+ * Build script for Socket CLI.
+ * Options: --quiet, --verbose, --prod, --force, --watch
  */
 
 import { promises as fs } from 'node:fs'
@@ -61,7 +50,6 @@ const printError = msg => {
 async function main() {
   const quiet = isQuiet()
   const verbose = isVerbose()
-  const sea = process.argv.includes('--sea')
   const watch = process.argv.includes('--watch')
   const force = process.argv.includes('--force')
   const prod = process.argv.includes('--prod')
@@ -107,25 +95,6 @@ async function main() {
     if (watchResult.code !== 0) {
       process.exitCode = watchResult.code
       throw new Error(`Watch mode failed with exit code ${watchResult.code}`)
-    }
-    return
-  }
-
-  // Delegate to build-sea.mjs if --sea flag is present.
-  if (sea) {
-    const seaArgs = process.argv.filter(arg => arg !== '--sea')
-    const result = await spawn(
-      'node',
-      [...NODE_MEMORY_FLAGS, 'scripts/build-sea.mjs', ...seaArgs.slice(2)],
-      {
-        shell: WIN32,
-        stdio: 'inherit',
-      },
-    )
-
-    if (result.code !== 0) {
-      process.exitCode = result.code
-      throw new Error(`SEA build failed with exit code ${result.code}`)
     }
     return
   }
