@@ -1,0 +1,9 @@
+{
+  "name": "e2e-test-js",
+  "version": "1.0.0",
+  "description": "E2E test fixture with known vulnerabilities",
+  "main": "index.js",
+  "dependencies": {
+    "lodash": "4.17.20"
+  }
+}

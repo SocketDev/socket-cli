@@ -15,5 +15,7 @@ Thumbs.db
 *.d.ts
 *.d.ts.map
 *.tsbuildinfo
+test/fixtures/commands/fix/e2e-test-js-temp-*
+test/fixtures/commands/fix/e2e-test-py-temp-*
 
 !/.vscode/extensions.json
