@@ -177,12 +177,12 @@ const config = {
   target: 'node18',
   format: 'cjs',
 
-  // With platform: 'node', esbuild automatically externalizes all Node.js
-  // built-ins. The explicit external array with builtinModules is redundant
-  // (but doesn't hurt as extra safety).
-  external: [
-    'node-gyp', // Required for require.resolve('node-gyp/package.json')
-  ],
+  // With platform: 'node', esbuild automatically externalizes all Node.js built-ins.
+  // node-gyp is not external because:
+  // 1. It's optionally resolved (returns undefined if not found).
+  // 2. Users who need it will have it in their project dependencies.
+  // 3. The published package should have zero runtime dependencies.
+  external: [],
 
   // Suppress warnings for intentional CommonJS compatibility code.
   logOverride: {
