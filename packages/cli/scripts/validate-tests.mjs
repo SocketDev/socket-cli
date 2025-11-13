@@ -192,9 +192,9 @@ async function validateBuildArtifacts() {
 
   // Check for key entry points.
   const requiredArtifacts = [
+    'build/cli.js',
     'dist/index.js',
     'dist/shadow-npm-inject.js',
-    'dist/cli.js.bz',
   ]
 
   for (const artifact of requiredArtifacts) {

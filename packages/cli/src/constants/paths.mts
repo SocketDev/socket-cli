@@ -89,7 +89,8 @@ export function getBinCliPath(): string {
   // Allow overriding CLI binary path for testing built binaries (SEA, yao-pkg, etc).
   const binPath = ENV.SOCKET_CLI_BIN_PATH
   if (binPath) {
-    return binPath
+    // Resolve relative paths against project root to support cwd changes in tests.
+    return path.isAbsolute(binPath) ? binPath : path.join(rootPath, binPath)
   }
   return path.join(rootPath, 'dist/index.js')
 }
