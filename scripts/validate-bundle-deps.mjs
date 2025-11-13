@@ -3,7 +3,7 @@
  *
  * Rules:
  * - Bundled packages (code copied into dist/) should be in devDependencies
- * - External packages (require() calls in dist/) should be in dependencies or peerDependencies
+ * - External packages (in esbuild external array) should be in dependencies or peerDependencies
  * - Packages used only for building should be in devDependencies
  *
  * This ensures consumers install only what they need.
@@ -20,11 +20,18 @@ const logger = getDefaultLogger()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
+const cliPackagePath = path.join(rootPath, 'packages/cli')
 
-// Node.js builtins to ignore (including node: prefix variants)
+// Node.js builtins to ignore (including node: prefix variants).
 const BUILTIN_MODULES = new Set([
   ...builtinModules,
   ...builtinModules.map(m => `node:${m}`),
+])
+
+// Packages that are marked external but are excused from validation.
+// These are packages referenced in bundled code that's never actually called.
+const EXCUSED_EXTERNALS = new Set([
+  'node-gyp',
 ])
 
 /**
@@ -55,105 +62,6 @@ async function findDistFiles(distPath) {
   }
 
   return files
-}
-
-/**
- * Check if a string is a valid package specifier.
- */
-function isValidPackageSpecifier(specifier) {
-  // Relative imports
-  if (specifier.startsWith('.') || specifier.startsWith('/')) {
-    return false
-  }
-
-  // Subpath imports (Node.js internal imports starting with #)
-  if (specifier.startsWith('#')) {
-    return false
-  }
-
-  // Filter out invalid patterns
-  if (
-    specifier.includes('${') ||
-    specifier.includes('"}') ||
-    specifier.includes('`') ||
-    specifier === 'true' ||
-    specifier === 'false' ||
-    specifier === 'null' ||
-    specifier === 'undefined' ||
-    specifier === 'name' ||
-    specifier === 'dependencies' ||
-    specifier === 'devDependencies' ||
-    specifier === 'peerDependencies' ||
-    specifier === 'version' ||
-    specifier === 'description' ||
-    specifier.length === 0 ||
-    // Filter out strings that look like code fragments
-    specifier.includes('\n') ||
-    specifier.includes(';') ||
-    specifier.includes('function') ||
-    specifier.includes('const ') ||
-    specifier.includes('let ') ||
-    specifier.includes('var ')
-  ) {
-    return false
-  }
-
-  return true
-}
-
-/**
- * Extract external package names from require() and import statements in built files.
- */
-async function extractExternalPackages(filePath) {
-  const content = await fs.readFile(filePath, 'utf8')
-  const externals = new Set()
-
-  // Match require('package') or require("package")
-  const requirePattern = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g
-  // Match import from 'package' or import from "package"
-  const importPattern = /(?:from|import)\s+['"]([^'"]+)['"]/g
-  // Match dynamic import() calls
-  const dynamicImportPattern = /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g
-
-  let match
-
-  // Extract from require()
-  while ((match = requirePattern.exec(content)) !== null) {
-    const specifier = match[1]
-    // Skip internal src/external/ wrapper paths (used by socket-lib pattern)
-    if (specifier.includes('/external/')) {
-      continue
-    }
-    if (isValidPackageSpecifier(specifier)) {
-      externals.add(specifier)
-    }
-  }
-
-  // Extract from import statements
-  while ((match = importPattern.exec(content)) !== null) {
-    const specifier = match[1]
-    // Skip internal src/external/ wrapper paths (used by socket-lib pattern)
-    if (specifier.includes('/external/')) {
-      continue
-    }
-    if (isValidPackageSpecifier(specifier)) {
-      externals.add(specifier)
-    }
-  }
-
-  // Extract from dynamic import()
-  while ((match = dynamicImportPattern.exec(content)) !== null) {
-    const specifier = match[1]
-    // Skip internal src/external/ wrapper paths (used by socket-lib pattern)
-    if (specifier.includes('/external/')) {
-      continue
-    }
-    if (isValidPackageSpecifier(specifier)) {
-      externals.add(specifier)
-    }
-  }
-
-  return externals
 }
 
 /**
@@ -272,48 +180,70 @@ function getPackageName(specifier) {
 }
 
 /**
- * Read and parse package.json.
+ * Extract external packages from esbuild config files.
  */
-async function readPackageJson() {
-  const packageJsonPath = path.join(rootPath, 'package.json')
-  const content = await fs.readFile(packageJsonPath, 'utf8')
-  return JSON.parse(content)
+async function extractExternalsFromConfigs() {
+  const externals = new Set()
+  const configFiles = [
+    path.join(cliPackagePath, '.config/esbuild.cli.build.mjs'),
+    path.join(cliPackagePath, '.config/esbuild.inject.config.mjs'),
+    path.join(cliPackagePath, '.config/esbuild.index.config.mjs'),
+  ]
+
+  for (const configFile of configFiles) {
+    try {
+      const content = await fs.readFile(configFile, 'utf8')
+      // Extract external array from config.
+      // Look for: external: [...] pattern.
+      const externalMatch = content.match(/external\s*:\s*\[([\s\S]*?)\]/m)
+      if (externalMatch) {
+        const externalContent = externalMatch[1]
+        // Extract quoted strings from the array.
+        const packageMatches = externalContent.matchAll(/['"]([^'"]+)['"]/g)
+        for (const match of packageMatches) {
+          const packageName = getPackageName(match[1])
+          if (packageName && !BUILTIN_MODULES.has(packageName)) {
+            externals.add(packageName)
+          }
+        }
+      }
+    } catch (e) {
+      // Config file doesn't exist or can't be read.
+      continue
+    }
+  }
+
+  return externals
 }
 
 /**
  * Validate bundle dependencies.
  */
 async function validateBundleDeps() {
-  const distPath = path.join(rootPath, 'dist')
-  const pkg = await readPackageJson()
+  const distPath = path.join(cliPackagePath, 'build')
+  const packageJsonPath = path.join(cliPackagePath, 'package.json')
+  const pkg = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'))
 
   const dependencies = new Set(Object.keys(pkg.dependencies || {}))
   const devDependencies = new Set(Object.keys(pkg.devDependencies || {}))
   const peerDependencies = new Set(Object.keys(pkg.peerDependencies || {}))
 
-  // Find all dist files
+  // Find all dist files.
   const distFiles = await findDistFiles(distPath)
 
   if (distFiles.length === 0) {
-    logger.info('No dist files found - run build first')
+    logger.info('No build files found - run build first')
     return { violations: [], warnings: [] }
   }
 
-  // Collect all external and bundled packages
-  const allExternals = new Set()
+  // Get external packages from esbuild configs.
+  const allExternals = await extractExternalsFromConfigs()
+
+  // Collect bundled packages from dist files.
   const allBundled = new Set()
 
   for (const file of distFiles) {
-    const externals = await extractExternalPackages(file)
     const bundled = await extractBundledPackages(file)
-
-    for (const ext of externals) {
-      const packageName = getPackageName(ext)
-      if (packageName && !BUILTIN_MODULES.has(packageName)) {
-        allExternals.add(packageName)
-      }
-    }
-
     for (const bun of bundled) {
       allBundled.add(bun)
     }
@@ -322,8 +252,11 @@ async function validateBundleDeps() {
   const violations = []
   const warnings = []
 
-  // Validate external packages are in dependencies or peerDependencies
+  // Validate external packages are in dependencies or peerDependencies.
   for (const packageName of allExternals) {
+    if (EXCUSED_EXTERNALS.has(packageName)) {
+      continue
+    }
     if (!dependencies.has(packageName) && !peerDependencies.has(packageName)) {
       violations.push({
         type: 'external-not-in-deps',
@@ -336,7 +269,7 @@ async function validateBundleDeps() {
     }
   }
 
-  // Validate bundled packages are in devDependencies (not dependencies)
+  // Validate bundled packages are in devDependencies (not dependencies).
   for (const packageName of allBundled) {
     if (dependencies.has(packageName)) {
       violations.push({

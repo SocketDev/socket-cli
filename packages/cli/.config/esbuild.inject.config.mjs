@@ -24,9 +24,11 @@ const config = {
   format: 'cjs',
 
   // With platform: 'node', esbuild automatically externalizes all Node.js built-ins.
-  external: [
-    'node-gyp', // Required for require.resolve('node-gyp/package.json')
-  ],
+  // node-gyp is not external because:
+  // 1. It's optionally resolved (returns undefined if not found).
+  // 2. Users who need it will have it in their project dependencies.
+  // 3. The published package should have zero runtime dependencies.
+  external: [],
 
   // Suppress warnings for intentional CommonJS compatibility code.
   logOverride: {
