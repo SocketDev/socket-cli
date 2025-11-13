@@ -5,6 +5,7 @@
  * - Memory optimization for RegExp-heavy tests
  * - Cross-platform compatibility (Windows/Unix)
  * - Build validation before running tests
+ * - Environment variable loading from .env.test
  */
 
 import { spawn } from 'node:child_process'
@@ -17,6 +18,7 @@ import fastGlob from 'fast-glob'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 const rootNodeModulesBinPath = path.join(
@@ -28,23 +30,15 @@ const rootNodeModulesBinPath = path.join(
 )
 
 /**
- * Check if dist directory exists with required artifacts.
+ * Check if required build artifacts exist.
  */
 function checkBuildArtifacts() {
-  const distPath = path.join(rootPath, 'dist')
-  if (!existsSync(distPath)) {
-    const logger = getDefaultLogger()
-    logger.error('dist/ directory not found')
-    logger.error('Run `pnpm run build:cli` before running tests')
-    return false
-  }
-
-  const requiredArtifacts = ['dist/index.js']
+  const requiredArtifacts = ['build/cli.js', 'dist/index.js']
   for (const artifact of requiredArtifacts) {
     const fullPath = path.join(rootPath, artifact)
     if (!existsSync(fullPath)) {
       logger.error(`Required build artifact missing: ${artifact}`)
-      logger.error('Run `pnpm run build:cli` before running tests')
+      logger.error('Run `pnpm build` before running tests')
       return false
     }
   }
@@ -107,6 +101,10 @@ async function main() {
       SOCKET_SECURITY_API_TOKEN: undefined,
     }
 
+    // Use dotenvx to load .env.test configuration.
+    const dotenvxCmd = WIN32 ? 'dotenvx.cmd' : 'dotenvx'
+    const dotenvxPath = path.join(rootNodeModulesBinPath, dotenvxCmd)
+
     // Handle Windows vs Unix for vitest executable.
     const vitestCmd = WIN32 ? 'vitest.cmd' : 'vitest'
     const vitestPath = path.join(rootNodeModulesBinPath, vitestCmd)
@@ -126,8 +124,9 @@ async function main() {
       }
     }
 
-    // Pass remaining arguments to vitest.
-    const vitestArgs = ['run', ...expandedArgs]
+    // Wrap vitest with dotenvx to load .env.test.
+    // Command: dotenvx -q run -f .env.test -- vitest run [args].
+    const dotenvxArgs = ['-q', 'run', '-f', '.env.test', '--', vitestPath, 'run', ...expandedArgs]
 
     // On Windows, .cmd files need shell: true.
     const spawnOptions = {
@@ -137,7 +136,7 @@ async function main() {
       ...(WIN32 ? { shell: true } : {}),
     }
 
-    const child = spawn(vitestPath, vitestArgs, spawnOptions)
+    const child = spawn(dotenvxPath, dotenvxArgs, spawnOptions)
 
     child.on('exit', code => {
       process.exitCode = code || 0
