@@ -84,6 +84,7 @@ jobs:
           key: cli-build-${{ runner.os }}-${{ steps.cli-cache-key.outputs.hash }}
           restore-keys: |
             cli-build-${{ runner.os }}-
+          lookup-only: true
 
       - name: Build CLI
         if: steps.cli-build-cache.outputs.cache-hit != 'true'
@@ -130,6 +131,7 @@ jobs:
           key: cli-build-${{ runner.os }}-${{ steps.cli-cache-key.outputs.hash }}
           restore-keys: |
             cli-build-${{ runner.os }}-
+          lookup-only: true
 
       - name: Build CLI
         if: steps.cli-build-cache.outputs.cache-hit != 'true'
@@ -177,8 +179,8 @@ jobs:
           echo "Setting up cached binaries for integration tests..."
           echo ""
           echo "Cache restoration status:"
-          echo "  SEA cache hit: ${{ steps.sea-cache.outputs.cache-hit }}"
-          echo "  Smol cache hit: ${{ steps.smol-cache.outputs.cache-hit }}"
+          echo "  SEA cache hit: ${STEPS_SEA_CACHE_OUTPUTS_CACHE_HIT}"
+          echo "  Smol cache hit: ${STEPS_SMOL_CACHE_OUTPUTS_CACHE_HIT}"
           echo ""
 
           # Debug: List cache directories.
@@ -200,7 +202,7 @@ jobs:
             echo "sea=true" >> $GITHUB_OUTPUT
           else
             echo "✗ SEA binary not found in cache (expected: $SEA_CACHED)"
-            if [ "${{ steps.sea-cache.outputs.cache-hit }}" = "true" ]; then
+            if [ "${STEPS_SEA_CACHE_OUTPUTS_CACHE_HIT}" = "true" ]; then
               echo "  Cache was restored but binary not at expected location"
               echo "  Available files in packages/node-sea-builder/dist/:"
               find packages/node-sea-builder/dist/ -type f 2>/dev/null || echo "  (no files found)"
@@ -222,7 +224,7 @@ jobs:
             echo "smol=true" >> $GITHUB_OUTPUT
           else
             echo "✗ Smol binary not found in cache (expected: $SMOL_CACHED)"
-            if [ "${{ steps.smol-cache.outputs.cache-hit }}" = "true" ]; then
+            if [ "${STEPS_SMOL_CACHE_OUTPUTS_CACHE_HIT}" = "true" ]; then
               echo "  Cache was restored but binary not at expected location"
               echo "  Available files in packages/node-smol-builder/dist/:"
               find packages/node-smol-builder/dist/ -type f 2>/dev/null || echo "  (no files found)"
@@ -244,6 +246,9 @@ jobs:
 
           echo ""
           echo "Integration tests will run against all available distributions."
+        env:
+          STEPS_SEA_CACHE_OUTPUTS_CACHE_HIT: ${{ steps.sea-cache.outputs.cache-hit }}
+          STEPS_SMOL_CACHE_OUTPUTS_CACHE_HIT: ${{ steps.smol-cache.outputs.cache-hit }}
 
       - name: Run integration tests (all available distributions)
         working-directory: packages/cli
@@ -284,6 +289,7 @@ jobs:
           key: cli-build-${{ runner.os }}-${{ steps.cli-cache-key.outputs.hash }}
           restore-keys: |
             cli-build-${{ runner.os }}-
+          lookup-only: true
 
       - name: Build CLI
         if: steps.cli-build-cache.outputs.cache-hit != 'true'
