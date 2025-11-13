@@ -43,6 +43,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           autocrlf: false
+          persist-credentials: false
       - uses: SocketDev/socket-registry/.github/actions/setup@e145a6b355d614054e4df3d49ba5218812f42b3e # main
         with:
           scope: '@socketsecurity'
@@ -119,7 +120,7 @@ jobs:
       # Build and publish '@socketsecurity/cli' package (legacy).
       - name: Prepare @socketsecurity/cli package for publishing
         if: ${{ inputs.publish-cli != false }}
-        run: node scripts/prepare-package-for-publish.mjs packages/cli ${{ env.SOCKET_VERSION }}
+        run: node scripts/prepare-package-for-publish.mjs packages/cli ${SOCKET_VERSION}
       - name: Build @socketsecurity/cli package
         if: ${{ inputs.publish-cli != false }}
         run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build
@@ -139,7 +140,7 @@ jobs:
       # Build and publish '@socketsecurity/cli-with-sentry' package.
       - name: Prepare @socketsecurity/cli-with-sentry package for publishing
         if: ${{ inputs.publish-cli-sentry != false }}
-        run: node scripts/prepare-package-for-publish.mjs packages/cli-with-sentry ${{ env.SOCKET_VERSION }}
+        run: node scripts/prepare-package-for-publish.mjs packages/cli-with-sentry ${SOCKET_VERSION}
       - name: Build @socketsecurity/cli-with-sentry package
         if: ${{ inputs.publish-cli-sentry != false }}
         run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build --target cli-sentry

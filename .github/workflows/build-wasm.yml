@@ -78,6 +78,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
@@ -190,6 +192,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
@@ -244,13 +248,15 @@ jobs:
           # Hash includes script files and package.json.
           HASH=$(find packages/models -type f \( -name "*.mjs" -o -name "package.json" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           # Include quantization level in cache key.
-          QUANT_LEVEL="${{ inputs.models-quant-level || 'INT4' }}"
+          QUANT_LEVEL="${INPUTS_MODELS_QUANT_LEVEL}"
           FULL_HASH="${HASH}-${MODELS_VERSION}-${QUANT_LEVEL}"
           echo "hash=$FULL_HASH" >> $GITHUB_OUTPUT
           echo "quant-level=${QUANT_LEVEL}" >> $GITHUB_OUTPUT
           echo "suffix=$(echo ${QUANT_LEVEL} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
           echo "Models version: v$MODELS_VERSION"
           echo "Quantization level: $QUANT_LEVEL"
+        env:
+          INPUTS_MODELS_QUANT_LEVEL: ${{ inputs.models-quant-level || 'INT4' }}
 
       - name: Restore models cache
         id: models-cache
@@ -264,7 +270,7 @@ jobs:
       - name: Verify cached artifacts
         id: models-cache-valid
         run: |
-          SUFFIX="${{ steps.models-cache-key.outputs.suffix }}"
+          SUFFIX="${STEPS_MODELS_CACHE_KEY_OUTPUTS_SUFFIX}"
           # Check for both MiniLM and CodeT5 models.
           if [ -f "packages/models/dist/minilm-l6-${SUFFIX}.onnx" ] && \
              [ -f "packages/models/dist/codet5-encoder-${SUFFIX}.onnx" ] && \
@@ -281,6 +287,8 @@ jobs:
             echo "  - codet5-decoder-${SUFFIX}.onnx"
             ls -lh packages/models/dist/ 2>/dev/null || echo "Directory does not exist"
           fi
+        env:
+          STEPS_MODELS_CACHE_KEY_OUTPUTS_SUFFIX: ${{ steps.models-cache-key.outputs.suffix }}
 
       - name: Check workflow status before build
         if: steps.models-cache-valid.outputs.valid != 'true' || inputs.force
@@ -297,7 +305,7 @@ jobs:
       - name: Build AI models
         if: steps.models-cache-valid.outputs.valid != 'true' || inputs.force
         run: |
-          QUANT_LEVEL="${{ steps.models-cache-key.outputs.quant-level }}"
+          QUANT_LEVEL="${STEPS_MODELS_CACHE_KEY_OUTPUTS_QUANT_LEVEL}"
           echo "::group::Building ${QUANT_LEVEL}-quantized AI models"
 
           # Build command with quantization flag and --all for both models.
@@ -318,10 +326,12 @@ jobs:
           echo "Checking for build artifacts..."
           ls -lh packages/models/dist/ || echo "dist directory not found"
           echo "::endgroup::"
+        env:
+          STEPS_MODELS_CACHE_KEY_OUTPUTS_QUANT_LEVEL: ${{ steps.models-cache-key.outputs.quant-level }}
 
       - name: Verify build artifacts
         run: |
-          SUFFIX="${{ steps.models-cache-key.outputs.suffix }}"
+          SUFFIX="${STEPS_MODELS_CACHE_KEY_OUTPUTS_SUFFIX}"
           echo "=== AI Models Build Artifacts ==="
           if [ ! -f "packages/models/dist/minilm-l6-${SUFFIX}.onnx" ]; then
             echo "ERROR: minilm-l6-${SUFFIX}.onnx not found!"
@@ -343,6 +353,8 @@ jobs:
           echo "minilm-l6-${SUFFIX}.onnx size: $(du -h packages/models/dist/minilm-l6-${SUFFIX}.onnx | cut -f1)"
           echo "codet5-encoder-${SUFFIX}.onnx size: $(du -h packages/models/dist/codet5-encoder-${SUFFIX}.onnx | cut -f1)"
           echo "codet5-decoder-${SUFFIX}.onnx size: $(du -h packages/models/dist/codet5-decoder-${SUFFIX}.onnx | cut -f1)"
+        env:
+          STEPS_MODELS_CACHE_KEY_OUTPUTS_SUFFIX: ${{ steps.models-cache-key.outputs.suffix }}
 
       - name: Upload models artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -359,6 +371,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
@@ -513,9 +527,9 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
 
           # Check status of builds.
-          YOGA_STATUS="${{ needs.build-yoga-layout.result }}"
-          MODELS_STATUS="${{ needs.build-models.result }}"
-          ONNX_STATUS="${{ needs.build-onnx-runtime.result }}"
+          YOGA_STATUS="${NEEDS_BUILD_YOGA_LAYOUT_RESULT}"
+          MODELS_STATUS="${NEEDS_BUILD_MODELS_RESULT}"
+          ONNX_STATUS="${NEEDS_BUILD_ONNX_RUNTIME_RESULT}"
 
           # Determine overall status.
           if [ "$YOGA_STATUS" = "failure" ] || [ "$MODELS_STATUS" = "failure" ] || [ "$ONNX_STATUS" = "failure" ]; then
@@ -591,3 +605,8 @@ jobs:
             echo "- Check build logs for error details" >> $GITHUB_STEP_SUMMARY
             echo "- Fix issues and re-run workflow" >> $GITHUB_STEP_SUMMARY
           fi
+
+        env:
+          NEEDS_BUILD_YOGA_LAYOUT_RESULT: ${{ needs.build-yoga-layout.result }}
+          NEEDS_BUILD_MODELS_RESULT: ${{ needs.build-models.result }}
+          NEEDS_BUILD_ONNX_RUNTIME_RESULT: ${{ needs.build-onnx-runtime.result }}

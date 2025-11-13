@@ -37,8 +37,13 @@ on:
         type: boolean
         default: false
 
+permissions:
+  contents: read
+
 jobs:
   build-binaries:
+    permissions:
+      contents: read
     name: Build ${{ matrix.platform }}-${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
     strategy:
@@ -115,6 +120,7 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           autocrlf: false
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
@@ -177,12 +183,14 @@ jobs:
           # Generate hash from patches and build scripts (matches build-smol.yml).
           if [ "${{ matrix.os }}" = "windows" ]; then
             PATCHES_HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f \( -name "*.patch" -o -name "*.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-            COMBINED_HASH=$(echo "$PATCHES_HASH-${{ steps.smol-deps-cache-key.outputs.deps-hash }}" | sha256sum | cut -d' ' -f1)
+            COMBINED_HASH=$(echo "$PATCHES_HASH-${STEPS_SMOL_DEPS_CACHE_KEY_OUTPUTS_DEPS_HASH}" | sha256sum | cut -d' ' -f1)
           else
             PATCHES_HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f \( -name "*.patch" -o -name "*.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
-            COMBINED_HASH=$(echo "$PATCHES_HASH-${{ steps.smol-deps-cache-key.outputs.deps-hash }}" | shasum -a 256 | cut -d' ' -f1)
+            COMBINED_HASH=$(echo "$PATCHES_HASH-${STEPS_SMOL_DEPS_CACHE_KEY_OUTPUTS_DEPS_HASH}" | shasum -a 256 | cut -d' ' -f1)
           fi
           echo "hash=$COMBINED_HASH" >> $GITHUB_OUTPUT
+        env:
+          STEPS_SMOL_DEPS_CACHE_KEY_OUTPUTS_DEPS_HASH: ${{ steps.smol-deps-cache-key.outputs.deps-hash }}
 
       - name: Restore smol binary cache
         if: inputs.method == 'smol' || inputs.method == 'smol-sea'
@@ -260,8 +268,10 @@ jobs:
             SEA_HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
           fi
           # Include bootstrap/socket/cli dependencies in cache key (matches build-sea.yml).
-          COMBINED_HASH=$(echo "$SEA_HASH-${{ steps.deps-cache-key.outputs.deps-hash }}" | sha256sum | cut -d' ' -f1 || echo "$SEA_HASH-${{ steps.deps-cache-key.outputs.deps-hash }}" | shasum -a 256 | cut -d' ' -f1)
+          COMBINED_HASH=$(echo "$SEA_HASH-${STEPS_DEPS_CACHE_KEY_OUTPUTS_DEPS_HASH}" | sha256sum | cut -d' ' -f1 || echo "$SEA_HASH-${STEPS_DEPS_CACHE_KEY_OUTPUTS_DEPS_HASH}" | shasum -a 256 | cut -d' ' -f1)
           echo "hash=$COMBINED_HASH" >> $GITHUB_OUTPUT
+        env:
+          STEPS_DEPS_CACHE_KEY_OUTPUTS_DEPS_HASH: ${{ steps.deps-cache-key.outputs.deps-hash }}
 
       - name: Restore SEA binary cache
         if: inputs.method == 'sea' || inputs.method == 'smol-sea'
@@ -333,6 +343,7 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           autocrlf: false
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
@@ -354,7 +365,7 @@ jobs:
       - name: Determine version
         id: version
         run: |
-          VERSION="${{ inputs.version }}"
+          VERSION="${INPUTS_VERSION}"
           if [ -z "$VERSION" ]; then
             # Read base version from socketbin package and extract X.Y.Z using semver
             PKG_VERSION=$(jq -r '.version' packages/socketbin-cli-linux-x64/package.json)
@@ -368,11 +379,15 @@ jobs:
             echo "Using provided version: $VERSION"
           fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        env:
+          INPUTS_VERSION: ${{ inputs.version }}
 
       - name: Check version consistency
         run: |
-          echo "🔍 Checking version consistency for v${{ steps.version.outputs.version }}..."
-          node scripts/check-version-consistency.mjs ${{ steps.version.outputs.version }}
+          echo "🔍 Checking version consistency for v${STEPS_VERSION_OUTPUTS_VERSION}..."
+          node scripts/check-version-consistency.mjs ${STEPS_VERSION_OUTPUTS_VERSION}
+        env:
+          STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
 
       - name: Download all binaries
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
@@ -390,8 +405,10 @@ jobs:
         run: |
           node scripts/prepublish-socketbin.mjs \
             --platform=linux --arch=x64 \
-            --version=${{ steps.version.outputs.version }} \
+            --version=${STEPS_VERSION_OUTPUTS_VERSION} \
             --method=${{ inputs.method }}
+        env:
+          STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
 
       - name: Publish Linux x64
         if: ${{ !inputs.dry-run }}
@@ -404,77 +421,91 @@ jobs:
         run: |
           node scripts/prepublish-socketbin.mjs \
             --platform=linux --arch=arm64 \
-            --version=${{ steps.version.outputs.version }} \
+            --version=${STEPS_VERSION_OUTPUTS_VERSION} \
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-linux-arm64
           npm publish --provenance --access public --tag latest --tag latest
+        env:
+          STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
 
       - name: Prepare and publish Alpine x64
         if: ${{ !inputs.dry-run }}
         run: |
           node scripts/prepublish-socketbin.mjs \
             --platform=alpine --arch=x64 \
-            --version=${{ steps.version.outputs.version }} \
+            --version=${STEPS_VERSION_OUTPUTS_VERSION} \
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-alpine-x64
           npm publish --provenance --access public --tag latest --tag latest
+        env:
+          STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
 
       - name: Prepare and publish Alpine ARM64
         if: ${{ !inputs.dry-run }}
         run: |
           node scripts/prepublish-socketbin.mjs \
             --platform=alpine --arch=arm64 \
-            --version=${{ steps.version.outputs.version }} \
+            --version=${STEPS_VERSION_OUTPUTS_VERSION} \
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-alpine-arm64
           npm publish --provenance --access public --tag latest
+        env:
+          STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
 
       - name: Prepare and publish macOS x64
         if: ${{ !inputs.dry-run }}
         run: |
           node scripts/prepublish-socketbin.mjs \
             --platform=darwin --arch=x64 \
-            --version=${{ steps.version.outputs.version }} \
+            --version=${STEPS_VERSION_OUTPUTS_VERSION} \
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-darwin-x64
           npm publish --provenance --access public --tag latest
+        env:
+          STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
 
       - name: Prepare and publish macOS ARM64
         if: ${{ !inputs.dry-run }}
         run: |
           node scripts/prepublish-socketbin.mjs \
             --platform=darwin --arch=arm64 \
-            --version=${{ steps.version.outputs.version }} \
+            --version=${STEPS_VERSION_OUTPUTS_VERSION} \
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-darwin-arm64
           npm publish --provenance --access public --tag latest
+        env:
+          STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
 
       - name: Prepare and publish Windows x64
         if: ${{ !inputs.dry-run }}
         run: |
           node scripts/prepublish-socketbin.mjs \
             --platform=win32 --arch=x64 \
-            --version=${{ steps.version.outputs.version }} \
+            --version=${STEPS_VERSION_OUTPUTS_VERSION} \
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-win32-x64
           npm publish --provenance --access public --tag latest
+        env:
+          STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
 
       - name: Prepare and publish Windows ARM64
         if: ${{ !inputs.dry-run }}
         run: |
           node scripts/prepublish-socketbin.mjs \
             --platform=win32 --arch=arm64 \
-            --version=${{ steps.version.outputs.version }} \
+            --version=${STEPS_VERSION_OUTPUTS_VERSION} \
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-win32-arm64
           npm publish --provenance --access public --tag latest
+        env:
+          STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
 
       - name: Prime npm cache for CI (dry-run)
         if: ${{ inputs.dry-run }}

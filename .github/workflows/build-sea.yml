@@ -65,6 +65,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
@@ -193,6 +195,8 @@ jobs:
       - name: Checkout
         if: steps.check-platform.outputs.should-run == 'true'
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
 
       - name: Download build artifacts
         if: steps.check-platform.outputs.should-run == 'true'
@@ -278,8 +282,8 @@ jobs:
         shell: bash
         run: |
           echo "=== Yoga Layout Cache Verification ==="
-          echo "Cache restore result: ${{ steps.yoga-cache.outputs.cache-hit }}"
-          echo "Cache key used: yoga-wasm-${{ steps.wasm-cache-keys.outputs.yoga-hash }}"
+          echo "Cache restore result: ${STEPS_YOGA_CACHE_OUTPUTS_CACHE_HIT}"
+          echo "Cache key used: yoga-wasm-${STEPS_WASM_CACHE_KEYS_OUTPUTS_YOGA_HASH}"
           echo "Checking for files..."
           ls -lah packages/yoga-layout/build/wasm/ 2>&1 || echo "Directory does not exist"
           echo ""
@@ -292,6 +296,11 @@ jobs:
             echo "✗ Yoga Layout cache invalid or missing"
             echo "Missing files - will trigger rebuild"
           fi
+
+        env:
+          STEPS_YOGA_CACHE_OUTPUTS_CACHE_HIT: ${{ steps.yoga-cache.outputs.cache-hit }}
+
+          STEPS_WASM_CACHE_KEYS_OUTPUTS_YOGA_HASH: ${{ steps.wasm-cache-keys.outputs.yoga-hash }}
 
       # - name: Verify AI models cache
       #   if: steps.check-platform.outputs.should-run == 'true'
@@ -375,8 +384,8 @@ jobs:
           echo ""
 
           # Install Emscripten if needed for Yoga.
-          if [ "${{ steps.yoga-cache-valid.outputs.valid }}" != "true" ]; then
-            if [ "${{ steps.emsdk-cache.outputs.cache-hit }}" != "true" ]; then
+          if [ "${STEPS_YOGA_CACHE_VALID_OUTPUTS_VALID}" != "true" ]; then
+            if [ "${STEPS_EMSDK_CACHE_OUTPUTS_CACHE_HIT}" != "true" ]; then
               echo "::group::Installing Emscripten"
               git clone https://github.com/emscripten-core/emsdk.git
               cd emsdk
@@ -406,7 +415,7 @@ jobs:
           fi
 
           # # Install Python deps if needed for AI models.
-          # if [ "${{ steps.ai-cache-valid.outputs.valid }}" != "true" ]; then
+          # if [ "${STEPS_AI_CACHE_VALID_OUTPUTS_VALID}" != "true" ]; then
           #   echo "::group::Installing Python dependencies"
           #   python3 -m pip install --upgrade pip
           #   python3 -m pip install transformers torch "optimum[onnxruntime]" "onnxruntime>=1.21.0"
@@ -414,7 +423,7 @@ jobs:
           # fi
 
           # Build missing WASM assets.
-          if [ "${{ steps.yoga-cache-valid.outputs.valid }}" != "true" ]; then
+          if [ "${STEPS_YOGA_CACHE_VALID_OUTPUTS_VALID}" != "true" ]; then
             echo "::group::Building Yoga Layout WASM"
             if [ "${{ inputs.force }}" = "true" ]; then
               pnpm --filter @socketsecurity/yoga-layout run build -- --force
@@ -424,7 +433,7 @@ jobs:
             echo "::endgroup::"
           fi
 
-          # if [ "${{ steps.ai-cache-valid.outputs.valid }}" != "true" ]; then
+          # if [ "${STEPS_AI_CACHE_VALID_OUTPUTS_VALID}" != "true" ]; then
           #   echo "::group::Building AI models (10-15 minutes)"
           #   if [ "${{ inputs.force }}" = "true" ]; then
           #     pnpm --filter @socketbin/cli-ai run build -- --force
@@ -434,7 +443,7 @@ jobs:
           #   echo "::endgroup::"
           # fi
 
-          #           if [ "${{ steps.onnx-cache-valid.outputs.valid }}" != "true" ]; then
+          #           if [ "${STEPS_ONNX_CACHE_VALID_OUTPUTS_VALID}" != "true" ]; then
           #             echo "::group::Building ONNX Runtime (20-30 minutes)"
           #             if [ "${{ inputs.force }}" = "true" ]; then
           #               pnpm --filter @socketsecurity/onnxruntime run build -- --force
@@ -445,6 +454,11 @@ jobs:
           #           fi
 
           echo "✓ WASM assets built successfully"
+        env:
+          STEPS_YOGA_CACHE_VALID_OUTPUTS_VALID: ${{ steps.yoga-cache-valid.outputs.valid }}
+          STEPS_EMSDK_CACHE_OUTPUTS_CACHE_HIT: ${{ steps.emsdk-cache.outputs.cache-hit }}
+          STEPS_AI_CACHE_VALID_OUTPUTS_VALID: ${{ steps.ai-cache-valid.outputs.valid }}
+          STEPS_ONNX_CACHE_VALID_OUTPUTS_VALID: ${{ steps.onnx-cache-valid.outputs.valid }}
 
       - name: Generate SEA build cache key
         if: steps.check-platform.outputs.should-run == 'true'
@@ -453,8 +467,10 @@ jobs:
         run: |
           SEA_HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           # Include bootstrap/socket/cli dependencies in cache key to invalidate when they change.
-          COMBINED_HASH=$(echo "$SEA_HASH-${{ needs.build-deps.outputs.deps-hash }}" | sha256sum | cut -d' ' -f1)
+          COMBINED_HASH=$(echo "$SEA_HASH-${NEEDS_BUILD_DEPS_OUTPUTS_DEPS_HASH}" | sha256sum | cut -d' ' -f1)
           echo "hash=$COMBINED_HASH" >> $GITHUB_OUTPUT
+        env:
+          NEEDS_BUILD_DEPS_OUTPUTS_DEPS_HASH: ${{ needs.build-deps.outputs.deps-hash }}
 
       - name: Restore SEA binary cache
         if: steps.check-platform.outputs.should-run == 'true' && inputs.force != true
@@ -552,8 +568,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
 
           # Check status of dependencies.
-          DEPS_STATUS="${{ needs.build-deps.result }}"
-          BUILD_STATUS="${{ needs.build-sea.result }}"
+          DEPS_STATUS="${NEEDS_BUILD_DEPS_RESULT}"
+          BUILD_STATUS="${NEEDS_BUILD_SEA_RESULT}"
 
           if [ "$DEPS_STATUS" = "failure" ] || [ "$BUILD_STATUS" = "failure" ]; then
             echo "## ✗ Build Failed" >> $GITHUB_STEP_SUMMARY
@@ -600,3 +616,7 @@ jobs:
             echo "- Check build logs for error details" >> $GITHUB_STEP_SUMMARY
             echo "- Fix issues and re-run workflow" >> $GITHUB_STEP_SUMMARY
           fi
+
+        env:
+          NEEDS_BUILD_DEPS_RESULT: ${{ needs.build-deps.result }}
+          NEEDS_BUILD_SEA_RESULT: ${{ needs.build-sea.result }}
