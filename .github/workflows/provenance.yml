@@ -44,7 +44,7 @@ jobs:
         with:
           autocrlf: false
           persist-credentials: false
-      - uses: SocketDev/socket-registry/.github/actions/setup@e145a6b355d614054e4df3d49ba5218812f42b3e # main
+      - uses: SocketDev/socket-registry/.github/actions/setup@63ad52562c1f2d007a1833b2b22cffc3001e1cc2 # main
         with:
           scope: '@socketsecurity'
       - name: Cache yoga-layout WASM
