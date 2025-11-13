@@ -1,0 +1,35 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+    tags: ['*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-tests:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: true
+      matrix:
+        node-version: [20, 22, 24]
+        os: [ubuntu-latest]
+        # os: [ubuntu-latest, windows-latest] - Windows tests disbaled (see project https://linear.app/socketdev/project/autofixes-windows-support-fc2f2a45f759)
+    steps:
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@51be85d39d3b4a42dd9d4712948b9d30a2e04794
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Run e2e tests
+        env:
+          SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_CLI_API_TOKEN }}
+        run: pnpm run e2e-tests
