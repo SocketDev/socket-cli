@@ -9,9 +9,11 @@
  * - Homebrew (if needed for installations)
  *
  * Actions:
- * - Auto-installs missing optional tools (gh CLI) if --install flag provided
- * - Attempts to restore build cache from CI (if gh CLI available)
- * - Reports missing required tools with installation instructions
+ * - Checks for required tools (Node.js, pnpm) and fails if missing
+ * - Auto-installs optional tools (gh CLI, brew/choco) if --install flag provided
+ * - Verifies installed tools are actually available in PATH before proceeding
+ * - Attempts to restore build cache from CI (only if gh CLI available)
+ * - Reports missing tools with installation instructions
  *
  * Usage:
  *   pnpm run setup                # Check prerequisites and restore cache
@@ -245,9 +247,15 @@ async function ensureGhCli() {
     log.step('Installing gh CLI with Chocolatey...')
     const installed = await installWithChocolatey('gh')
     if (installed) {
-      const version = await getVersion('gh')
-      log.success(`gh CLI ${version} installed!`)
-      return true
+      // Verify gh is actually available after installation.
+      if (await hasCommand('gh')) {
+        const version = await getVersion('gh')
+        log.success(`gh CLI ${version} installed!`)
+        return true
+      }
+      log.warn('gh CLI installed but not available in PATH')
+      log.info('You may need to restart your shell or run: pnpm run setup')
+      return false
     }
 
     log.warn('Could not install gh CLI')
@@ -271,9 +279,15 @@ async function ensureGhCli() {
   log.step('Installing gh CLI with Homebrew...')
   const installed = await installWithHomebrew('gh')
   if (installed) {
-    const version = await getVersion('gh')
-    log.success(`gh CLI ${version} installed!`)
-    return true
+    // Verify gh is actually available after installation.
+    if (await hasCommand('gh')) {
+      const version = await getVersion('gh')
+      log.success(`gh CLI ${version} installed!`)
+      return true
+    }
+    log.warn('gh CLI installed but not available in PATH')
+    log.info('You may need to restart your shell or run: pnpm run setup')
+    return false
   }
 
   log.warn('Could not install gh CLI')
@@ -314,6 +328,7 @@ async function checkPrerequisite({ command, minVersion, name, required = true })
  * Restore build cache if possible.
  */
 async function restoreCache(hasGh) {
+  // Skip entirely if gh CLI not available.
   if (!hasGh) {
     log.info('Skipping cache restoration (gh CLI not available)')
     return false
