@@ -189,7 +189,7 @@ export async function downloadCli() {
   try {
     const result = await withSpinner({
       message: 'Socket powering up…',
-      spinner: Spinner({ shimmer: { dir: 'random' } }),
+      spinner: Spinner(),
       operation: async () =>
         // Download and cache @socketsecurity/cli package.
         // Uses caret range (^) to auto-update within same major version.
