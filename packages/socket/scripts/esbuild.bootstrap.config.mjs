@@ -46,7 +46,7 @@ export default {
   minifySyntax: false,
   outfile: path.join(packageRoot, 'dist', 'bootstrap.js'),
   platform: 'node',
-  plugins: [deadCodeEliminationPlugin()],
+  plugins: [],
   target: 'node18',
   treeShaking: true,
   write: false,

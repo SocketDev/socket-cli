@@ -13,11 +13,10 @@
  */
 
 import { parse } from '@babel/parser'
-import traverseDefault from '@babel/traverse'
+import { default as traverseImport } from '@babel/traverse'
 import MagicString from 'magic-string'
 
-// Handle default export from @babel/traverse.
-const traverse = traverseDefault.default || traverseDefault
+const traverse = typeof traverseImport === 'function' ? traverseImport : traverseImport.default
 
 /**
  * Evaluate a test expression to determine if it's a constant boolean.
@@ -65,7 +64,7 @@ function removeDeadCode(code) {
             // Remove braces from else block.
             const start = alternate.start + 1
             const end = alternate.end - 1
-            const elseContent = code.slice(start, end).trim()
+            const elseContent = code.slice(start, end)
             nodesToRemove.push({
               start: path.node.start,
               end: path.node.end,
@@ -95,7 +94,7 @@ function removeDeadCode(code) {
           // Remove braces from consequent block.
           const start = consequent.start + 1
           const end = consequent.end - 1
-          const consequentContent = code.slice(start, end).trim()
+          const consequentContent = code.slice(start, end)
           nodesToRemove.push({
             start: path.node.start,
             end: path.node.end,
