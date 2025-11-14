@@ -99,259 +99,27 @@ Supports version 2 format with `projectIgnorePaths` for excluding files from rep
 
 ## Contributing
 
-**New to Socket CLI development?**
-
-- **Quick Start (10 min)**: [Getting Started Guide](docs/getting-started.md) — Essential setup and first contribution
-- **Detailed Guide**: [Development Getting Started](docs/development/getting-started.md) — Complete end-to-end onboarding
-
-**Quick Development Workflow:**
+See [Getting Started](docs/development/getting-started.md) for setup instructions.
 
 ```bash
-# 1. Clone and install
 git clone https://github.com/SocketDev/socket-cli.git
 cd socket-cli
 pnpm install
-
-# 2. Run setup (checks prereqs and restores cache)
-pnpm run setup
-
-# 3. Build (smart caching - ~30s first time, <1s cached)
 pnpm run build
-
-# 4. Test your changes
-pnpm exec socket --version
 pnpm test
-
-# 5. Watch mode for rapid iteration
-pnpm run build:watch  # Auto-rebuilds on file changes
 ```
 
-**Setup script** checks for Node.js, pnpm, and gh CLI, then attempts to restore build cache from CI if available.
-
-**Linking to local dependencies** (optional, only if developing @socketsecurity/registry or @socketsecurity/sdk):
-
-Create `.pnpmfile.cjs` (gitignored) in project root:
-
-```javascript
-function readPackage(pkg) {
-  if (pkg.dependencies?.['@socketsecurity/registry']) {
-    pkg.dependencies['@socketsecurity/registry'] = 'link:../socket-registry/registry'
-  }
-  return pkg
-}
-module.exports = { hooks: { readPackage } }
-```
-
-Then run `pnpm install`. See [Development Linking](docs/development/linking.md) for details.
-
-### Building locally
-
-Socket CLI uses an **intelligent build system with automatic caching** that only rebuilds packages when their source files change. The build system ensures packages are built in the correct dependency order:
-
-1. **Yoga WASM** - Terminal layout engine (tables, progress bars)
-2. **CLI Package** - TypeScript compilation and bundling
-3. **SEA Binary** - Node.js Single Executable Application
-
-> **Note**: ONNX Runtime WASM is temporarily disabled due to build issues. AI features use pre-built assets.
-
-#### Build Commands
+For local dependency linking, see [Development Linking](docs/development/linking.md).
 
 ```bash
-pnpm run build                    # Smart incremental build
-pnpm run build --force            # Full rebuild
-pnpm run build --target cli       # Single target
-pnpm run build --help             # All options
+pnpm run build                    # Smart build
+pnpm run build --force            # Force rebuild
 ```
 
-See [docs/development/](docs/development/) for detailed development guides.
-
-### Development environment variables
-
-- `SOCKET_CLI_API_BASE_URL` - API base URL (default: `https://api.socket.dev/v0/`)
-- `SOCKET_CLI_API_PROXY` - Proxy for API requests (aliases: `HTTPS_PROXY`, `https_proxy`, `HTTP_PROXY`, `http_proxy`)
-- `SOCKET_CLI_API_TIMEOUT` - API request timeout in milliseconds
-- `SOCKET_CLI_CACHE_ENABLED` - Enable API response caching (default: `false`)
-- `SOCKET_CLI_CACHE_TTL` - Cache TTL in milliseconds (default: `300000` = 5 minutes)
-- `SOCKET_CLI_DEBUG` - Enable debug logging
-- `DEBUG` - Enable [`debug`](https://socket.dev/npm/package/debug) package logging
-
-### Debug logging categories
-
-The CLI supports granular debug logging via the `DEBUG` environment variable:
-
-**Default categories** (shown with `SOCKET_CLI_DEBUG=1`):
-- `error` - Critical errors that prevent operation
-- `warn` - Important warnings that may affect behavior
-- `notice` - Notable events and state changes
-- `silly` - Very verbose debugging info
-
-**Opt-in categories** (require explicit `DEBUG='category'`):
-- `cache` - Cache hit/miss operations
-- `network` - HTTP requests with timing
-- `command` - External command execution
-- `auth` - Authentication flow
-- `perf` - Performance timing
-- `spinner` - Spinner state changes
-- `inspect` - Detailed object inspection
-- `stdio` - Command execution logs
-
-**Examples:**
+**Debug logging:**
 ```bash
-DEBUG=cache socket scan              # Cache debugging only
-DEBUG=network,cache socket scan      # Multiple categories
-DEBUG=* socket scan                  # All categories
-SOCKET_CLI_DEBUG=1 socket scan       # Default categories
-```
-
-## Developer API
-
-### Progress indicators
-
-Track long-running operations with visual progress bars:
-
-```typescript
-import { startSpinner, updateSpinnerProgress } from './src/utils/spinner.mts'
-
-const stop = startSpinner('Processing files')
-for (let i = 0; i < files.length; i++) {
-  updateSpinnerProgress(i + 1, files.length, 'files')
-  await processFile(files[i])
-}
-stop()
-// Output: ⠋ Processing files ████████████░░░░░░░░ 60% (12/20 files)
-```
-
-### Table formatting
-
-Display structured data with professional table formatting:
-
-```typescript
-import { formatTable, formatSimpleTable } from './src/utils/output-formatting.mts'
-import colors from 'yoctocolors-cjs'
-
-// Bordered table with box-drawing characters
-const data = [
-  { name: 'lodash', version: '4.17.21', issues: 0 },
-  { name: 'react', version: '18.2.0', issues: 2 }
-]
-const columns = [
-  { key: 'name', header: 'Package' },
-  { key: 'version', header: 'Version', align: 'center' },
-  {
-    key: 'issues',
-    header: 'Issues',
-    align: 'right',
-    color: (v) => v === '0' ? colors.green(v) : colors.red(v)
-  }
-]
-console.log(formatTable(data, columns))
-// Output:
-// ┌─────────┬─────────┬────────┐
-// │ Package │ Version │ Issues │
-// ├─────────┼─────────┼────────┤
-// │ lodash  │ 4.17.21 │      0 │
-// │ react   │ 18.2.0  │      2 │
-// └─────────┴─────────┴────────┘
-
-// Simple table without borders
-console.log(formatSimpleTable(data, columns))
-// Output:
-// Package  Version  Issues
-// ───────  ───────  ──────
-// lodash   4.17.21       0
-// react    18.2.0        2
-```
-
-### Performance monitoring
-
-Track and optimize CLI performance with comprehensive monitoring utilities:
-
-```typescript
-import { perfTimer, measure, perfCheckpoint, printPerformanceSummary } from './src/utils/performance.mts'
-
-// Simple operation timing
-const stop = perfTimer('fetch-packages')
-await fetchPackages()
-stop({ count: 50 })
-
-// Function measurement
-const { result, duration } = await measure('parse-manifest', async () => {
-  return parseManifest(file)
-})
-console.log(`Parsed in ${duration}ms`)
-
-// Track complex operation progress
-perfCheckpoint('start-scan')
-perfCheckpoint('analyze-dependencies', { count: 100 })
-perfCheckpoint('detect-issues', { issueCount: 5 })
-perfCheckpoint('end-scan')
-
-// Print performance summary
-printPerformanceSummary()
-// Performance Summary:
-// fetch-packages: 1 calls, avg 234ms (min 234ms, max 234ms, total 234ms)
-// parse-manifest: 5 calls, avg 12ms (min 8ms, max 20ms, total 60ms)
-```
-
-**Enable with:** `DEBUG=perf socket <command>`
-
-### Intelligent caching strategies
-
-Optimize API performance with smart caching based on data volatility:
-
-```typescript
-import { getCacheStrategy, getRecommendedTtl, warmCaches } from './src/utils/cache-strategies.mts'
-
-// Get recommended TTL for an endpoint
-const ttl = getRecommendedTtl('/npm/lodash/4.17.21/score')
-// Returns: 900000 (15 minutes for stable package info)
-
-// Check cache strategy
-const strategy = getCacheStrategy('/scans/abc123')
-// Returns: { ttl: 120000, volatile: true } (2 minutes for active scans)
-
-// Warm critical caches on startup
-await warmCaches(sdk, [
-  '/users/me',
-  '/organizations/my-org/settings'
-])
-```
-
-**Built-in strategies:**
-- Package info: 15min (stable data)
-- Package issues: 5min (moderate volatility)
-- Scan results: 2min (high volatility)
-- Org settings: 30min (very stable)
-- User info: 1hr (most stable)
-
-### Enhanced error handling
-
-Handle errors with actionable recovery suggestions:
-
-```typescript
-import { InputError, AuthError, getRecoverySuggestions } from './src/utils/errors.mts'
-
-// Throw errors with recovery suggestions
-throw new InputError('Invalid package name', 'Must be in format: @scope/name', [
-  'Use npm package naming conventions',
-  'Check for typos in the package name'
-])
-
-throw new AuthError('Token expired', [
-  'Run `socket login` to re-authenticate',
-  'Generate a new token at https://socket.dev/dashboard'
-])
-
-// Extract and display recovery suggestions
-try {
-  await operation()
-} catch (error) {
-  const suggestions = getRecoverySuggestions(error)
-  if (suggestions.length > 0) {
-    console.error('How to fix:')
-    suggestions.forEach(s => console.error(`  - ${s}`))
-  }
-}
+SOCKET_CLI_DEBUG=1 socket <command>    # Enable debug output
+DEBUG=network socket <command>         # Specific category
 ```
 
 ## See also
