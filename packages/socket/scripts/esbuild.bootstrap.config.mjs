@@ -33,6 +33,7 @@ export default {
     __MIN_NODE_VERSION__: JSON.stringify(minNodeVersion),
     __SOCKET_CLI_VERSION__: JSON.stringify(cliVersion),
     __SOCKET_CLI_VERSION_MAJOR__: JSON.stringify(cliVersionMajor),
+    'INLINED_SOCKET_BOOTSTRAP_PUBLISHED_BUILD': 'true',
   },
   entryPoints: [path.join(bootstrapPackage, 'src', 'bootstrap-npm.mts')],
   external: [],
