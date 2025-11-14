@@ -95,16 +95,12 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 - **🚨 FORBIDDEN**: NO AI attribution in commits (see SHARED STANDARDS)
 
 ### Running the CLI locally
-- **Dev mode (no build)**: `pnpm dev` (runs TypeScript source directly using Node.js 22.6+ native TypeScript support)
-  - `pnpm dev <args>` - Run main CLI (e.g., `pnpm dev whoami`)
-  - `pnpm dev:npm <args>` - Test npm wrapper mode
-  - `pnpm dev:npx <args>` - Test npx wrapper mode
+- **Watch mode**: `pnpm dev` (auto-rebuilds on file changes)
 - **Build and run**: `pnpm build && pnpm exec socket`
-- **Quick build + run**: `pnpm bs <args>` (builds first, then runs socket)
-- **Run built version**: `pnpm s <args>` (requires prior build)
+- **Run built version**: `pnpm exec socket <args>` (requires prior build)
 
 ### Package Management
-- **Package Manager**: This project uses pnpm (v10.16.0+)
+- **Package Manager**: This project uses pnpm (v10.22.0+)
 - **Install dependencies**: `pnpm install`
 - **Add dependency**: `pnpm add <package>`
 - **Add dev dependency**: `pnpm add -D <package>`
