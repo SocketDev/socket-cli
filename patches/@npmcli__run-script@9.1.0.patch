@@ -1,0 +1,13 @@
+diff --git a/lib/make-spawn-args.js b/lib/make-spawn-args.js
+index 1c9f02c062f72645b75947204a53457e181384e4..1bcef1c83fc07641edd4d33430d6b7eb5a26af26 100644
+--- a/lib/make-spawn-args.js
++++ b/lib/make-spawn-args.js
+@@ -26,7 +26,7 @@ const makeSpawnArgs = options => {
+     npm_config_node_gyp = env.npm_config_node_gyp
+   } else {
+     // default
+-    npm_config_node_gyp = require.resolve('node-gyp/bin/node-gyp.js')
++    npm_config_node_gyp = require.resolve('node-' + 'gyp/bin/node-gyp.js')
+   }
+
+   const spawnEnv = setPATH(path, binPaths, {

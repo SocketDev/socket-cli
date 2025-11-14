@@ -460,8 +460,8 @@ const config = {
       name: 'ignore-unsupported-files',
       setup(build) {
         // Prevent bundling @npmcli/arborist from workspace node_modules.
-        // It should only use the bundled version from socket-lib/dist/external/@npmcli/arborist.js.
-        build.onResolve({ filter: /^@npmcli\/arborist$/ }, args => {
+        // This includes the main package and all subpaths like /lib/edge.js.
+        build.onResolve({ filter: /@npmcli\/arborist/ }, args => {
           // Only redirect if it's not already coming from socket-lib's external bundle.
           if (args.importer.includes('/socket-lib/dist/')) {
             return null
@@ -469,17 +469,9 @@ const config = {
           return { path: args.path, external: true }
         })
 
-        // Stub .cs files (node-gyp on Windows) before esbuild tries to analyze them.
-        build.onLoad({ filter: /\.cs$/ }, () => {
-          return {
-            contents: 'module.exports = {}',
-            loader: 'js',
-          }
-        })
-
         // Mark node-gyp as external (used by arborist but optionally resolved).
-        build.onResolve({ filter: /node-gyp/ }, () => {
-          return { path: 'node-gyp', external: true }
+        build.onResolve({ filter: /node-gyp/ }, args => {
+          return { path: args.path, external: true }
         })
       },
     },
