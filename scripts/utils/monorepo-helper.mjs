@@ -109,13 +109,15 @@ export function getAffectedPackages(changedFiles) {
  * @param {string} scriptName - Script to run
  * @param {string[]} args - Additional arguments
  * @param {boolean} quiet - Suppress output
+ * @param {string} [progressMessage] - Optional custom progress message
  * @returns {Promise<number>} Exit code
  */
-export async function runPackageScript(pkg, scriptName, args = [], quiet = false) {
+export async function runPackageScript(pkg, scriptName, args = [], quiet = false, progressMessage = '') {
   const displayName = pkg.displayName || pkg.name
 
   if (!quiet) {
-    logger.progress(`${displayName}: running ${scriptName}`)
+    const message = progressMessage || `${displayName}: running ${scriptName}`
+    logger.progress(message)
   }
 
   const result = await spawn(
@@ -145,7 +147,7 @@ export async function runPackageScript(pkg, scriptName, args = [], quiet = false
 
   if (!quiet) {
     logger.clearLine()
-    logger.log(`${colors.green('✓')} ${displayName}`)
+    logger.success(`${displayName}: ${scriptName} passed`)
   }
 
   return 0
@@ -157,9 +159,10 @@ export async function runPackageScript(pkg, scriptName, args = [], quiet = false
  * @param {string} scriptName - Script to run
  * @param {string[]} args - Additional arguments
  * @param {boolean} quiet - Suppress output
+ * @param {string} [sectionTitle] - Optional section title to use as progress message
  * @returns {Promise<number>} Exit code (0 if all succeed, first failure code otherwise)
  */
-export async function runAcrossPackages(packages, scriptName, args = [], quiet = false) {
+export async function runAcrossPackages(packages, scriptName, args = [], quiet = false, sectionTitle = '') {
   if (!packages.length) {
     if (!quiet) {
       logger.substep('No packages to process')
@@ -168,7 +171,8 @@ export async function runAcrossPackages(packages, scriptName, args = [], quiet =
   }
 
   for (const pkg of packages) {
-    const exitCode = await runPackageScript(pkg, scriptName, args, quiet)
+    const progressMessage = sectionTitle || `${pkg.displayName || pkg.name}: running ${scriptName}`
+    const exitCode = await runPackageScript(pkg, scriptName, args, quiet, progressMessage)
     if (exitCode !== 0) {
       return exitCode
     }
