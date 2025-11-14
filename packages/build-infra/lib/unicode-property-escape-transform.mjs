@@ -6,11 +6,10 @@
  */
 
 import { parse } from '@babel/parser'
-import traverseModule from '@babel/traverse'
+import { default as traverseImport } from '@babel/traverse'
 import MagicString from 'magic-string'
 
-// Handle CommonJS default export.
-const traverse = traverseModule.default || traverseModule
+const traverse = typeof traverseImport === 'function' ? traverseImport : traverseImport.default
 
 /**
  * Map of Unicode property escapes to explicit character ranges.
