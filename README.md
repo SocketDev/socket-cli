@@ -120,7 +120,7 @@ pnpm run build
 
 # 4. Test your changes
 pnpm exec socket --version
-pnpm test:unit
+pnpm test
 
 # 5. Watch mode for rapid iteration
 pnpm run build:watch  # Auto-rebuilds on file changes

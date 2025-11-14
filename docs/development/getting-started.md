@@ -8,8 +8,8 @@ Before starting, ensure you have:
 
 | Requirement | Minimum Version | Check Command |
 |-------------|----------------|---------------|
-| Node.js | 18.0.0+ | `node --version` |
-| pnpm | 10.16.0+ | `pnpm --version` |
+| Node.js | 18+ | `node --version` |
+| pnpm | 10.22+ | `pnpm --version` |
 | Git | 2.0+ | `git --version` |
 | Disk Space | ~5 GB | `df -h .` |
 
@@ -28,7 +28,7 @@ nvm install 20
 choco install nodejs-lts
 ```
 
-**pnpm 10.16+:**
+**pnpm 10.22+:**
 ```bash
 # Using npm (comes with Node.js)
 npm install -g pnpm
@@ -41,7 +41,7 @@ corepack enable
 corepack prepare pnpm@latest --activate
 
 # Verify installation
-pnpm --version  # Should be 10.16.0 or higher
+pnpm --version  # Should be 10.22.0 or higher
 ```
 
 ## Quick Start (5 Minutes)

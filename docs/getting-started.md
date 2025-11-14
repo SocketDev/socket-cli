@@ -4,8 +4,8 @@ Quick start for Socket CLI development.
 
 ## Prerequisites
 
-- Node.js 20+
-- pnpm 9+
+- Node.js 18+
+- pnpm 10.22+
 - Git
 
 ## Setup
