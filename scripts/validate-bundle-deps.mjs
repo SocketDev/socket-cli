@@ -217,6 +217,72 @@ async function extractExternalsFromConfigs() {
 }
 
 /**
+ * Check if a package is a direct dependency (not transitive).
+ */
+async function isDirectDependency(packageName, devDependencies) {
+  // If it's in devDependencies, it's direct.
+  if (devDependencies.has(packageName)) {
+    return true
+  }
+
+  // Check if it's imported in source files.
+  try {
+    const srcPath = path.join(cliPackagePath, 'src')
+    const srcFiles = await findSourceFiles(srcPath)
+
+    for (const file of srcFiles) {
+      const content = await fs.readFile(file, 'utf8')
+      // Check for direct imports: from 'package-name' or from "package-name"
+      // For scoped packages: from '@scope/package' or from "@scope/package"
+      const importPattern = new RegExp(
+        `from\\s+['"]${packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:['"/]|$)`,
+        'm'
+      )
+      if (importPattern.test(content)) {
+        return true
+      }
+    }
+  } catch {
+    // If we can't determine, assume it's direct to be safe.
+    return true
+  }
+
+  return false
+}
+
+/**
+ * Find all source files in a directory.
+ */
+async function findSourceFiles(srcPath) {
+  const files = []
+
+  try {
+    const entries = await fs.readdir(srcPath, { withFileTypes: true })
+
+    for (const entry of entries) {
+      const fullPath = path.join(srcPath, entry.name)
+
+      if (entry.isDirectory()) {
+        files.push(...(await findSourceFiles(fullPath)))
+      } else if (
+        entry.name.endsWith('.ts') ||
+        entry.name.endsWith('.mts') ||
+        entry.name.endsWith('.cts') ||
+        entry.name.endsWith('.js') ||
+        entry.name.endsWith('.mjs') ||
+        entry.name.endsWith('.cjs')
+      ) {
+        files.push(fullPath)
+      }
+    }
+  } catch {
+    return []
+  }
+
+  return files
+}
+
+/**
  * Validate bundle dependencies.
  */
 async function validateBundleDeps() {
@@ -281,12 +347,17 @@ async function validateBundleDeps() {
     }
 
     if (!devDependencies.has(packageName) && !dependencies.has(packageName)) {
-      warnings.push({
-        type: 'bundled-not-declared',
-        package: packageName,
-        message: `Bundled package "${packageName}" is not declared in devDependencies`,
-        fix: `Add "${packageName}" to devDependencies`,
-      })
+      // Only warn about direct dependencies that are missing.
+      // Transitive dependencies are expected to be bundled but not declared.
+      const isDirect = await isDirectDependency(packageName, devDependencies)
+      if (isDirect) {
+        warnings.push({
+          type: 'bundled-not-declared',
+          package: packageName,
+          message: `Bundled package "${packageName}" is not declared in devDependencies`,
+          fix: `Add "${packageName}" to devDependencies`,
+        })
+      }
     }
   }
 
