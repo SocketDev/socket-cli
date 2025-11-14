@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url'
 
 import semver from 'semver'
 
+import { deadCodeEliminationPlugin } from 'build-infra/lib/esbuild-plugin-dead-code-elimination'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageRoot = path.resolve(__dirname, '..')
 const monorepoRoot = path.resolve(packageRoot, '../..')
@@ -44,6 +46,8 @@ export default {
   minifySyntax: false,
   outfile: path.join(packageRoot, 'dist', 'bootstrap.js'),
   platform: 'node',
+  plugins: [deadCodeEliminationPlugin()],
   target: 'node18',
   treeShaking: true,
+  write: false,
 }
