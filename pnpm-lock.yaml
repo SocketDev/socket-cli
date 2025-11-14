@@ -322,9 +322,9 @@ catalogs:
 overrides:
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
-  '@socketsecurity/lib': 3.3.8
+  '@socketsecurity/lib': 3.3.10
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
-  ansi-regex: 6.1.0
+  ansi-regex: 6.2.2
   brace-expansion: 2.0.2
   emoji-regex: 10.6.0
   es-define-property: npm:@socketregistry/es-define-property@^1.0.7
@@ -354,6 +354,8 @@ overrides:
   side-channel: npm:@socketregistry/side-channel@^1.0.10
   string_decoder: 0.10.31
   string-width: 8.1.0
+  strip-ansi: 7.1.2
+  wrap-ansi: 9.0.2
   tiny-colors: 2.1.3
   typedarray: npm:@socketregistry/typedarray@^1.0.8
   undici: 6.21.3
@@ -474,8 +476,8 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 3.3.8
-        version: 3.3.8(typescript@5.9.3)
+        specifier: 3.3.10
+        version: 3.3.10(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.2(typescript@5.9.3)
@@ -708,8 +710,8 @@ importers:
         specifier: workspace:*
         version: link:../cli
       '@socketsecurity/lib':
-        specifier: 3.3.8
-        version: 3.3.8(typescript@5.9.3)
+        specifier: 3.3.10
+        version: 3.3.10(typescript@5.9.3)
       build-infra:
         specifier: workspace:*
         version: link:../build-infra
@@ -735,8 +737,8 @@ importers:
         specifier: 'catalog:'
         version: 7.28.4
       '@socketsecurity/lib':
-        specifier: 3.3.8
-        version: 3.3.8(typescript@5.9.3)
+        specifier: 3.3.10
+        version: 3.3.10(typescript@5.9.3)
       magic-string:
         specifier: 'catalog:'
         version: 0.30.19
@@ -792,8 +794,8 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 3.3.8
-        version: 3.3.8(typescript@5.9.3)
+        specifier: 3.3.10
+        version: 3.3.10(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.2(typescript@5.9.3)
@@ -804,8 +806,8 @@ importers:
         specifier: 'catalog:'
         version: 8.17.1
       ansi-regex:
-        specifier: 6.1.0
-        version: 6.1.0
+        specifier: 6.2.2
+        version: 6.2.2
       brace-expansion:
         specifier: 2.0.2
         version: 2.0.2
@@ -931,8 +933,8 @@ importers:
   packages/socket:
     devDependencies:
       '@socketsecurity/lib':
-        specifier: 3.3.8
-        version: 3.3.8(typescript@5.9.3)
+        specifier: 3.3.10
+        version: 3.3.10(typescript@5.9.3)
       build-infra:
         specifier: workspace:*
         version: link:../build-infra
@@ -2295,8 +2297,8 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/lib@3.3.8':
-    resolution: {integrity: sha512-MgAS8WisvsV1f7sk4SyiXa7f5saVogzb3WxlKYN3y6QE3bKCUX5KmBphFqtBMNf6dLjgy1vTlfHPmoXyWehK6Q==}
+  '@socketsecurity/lib@3.3.10':
+    resolution: {integrity: sha512-6Bz3FTi6WtoyjWPZ+7nnzaJkSmixBAlYhSbkBEpT87QmMoxf+inGsZTlfPNmpztuWKYXerbksVyzhkCxiEVgsA==}
     engines: {node: '>=22', pnpm: '>=10.22.0'}
     peerDependencies:
       typescript: '>=5.0.0'
@@ -2778,8 +2780,8 @@ packages:
     resolution: {integrity: sha512-g6LhBsl+GBPRWGWsBtutpzBYuIIdBkLEvad5C/va/74Db018+5TZiyA26cZJAr3Rft5lprVqOIPxf5Vid6tqAw==}
     engines: {node: '>=18'}
 
-  ansi-regex@6.1.0:
-    resolution: {integrity: sha512-7HSX4QQb4CspciLpVFwyRe79O3xsIZDDLER21kERQ71oaPodF8jL725AgJMFAYbooIqolJoRLuM81SpeUkpkvA==}
+  ansi-regex@6.2.2:
+    resolution: {integrity: sha512-Bq3SmSpyFHaWjPk8If9yc6svM8c56dB5BAtW4Qbw5jHTwwXXcTLoRMkpDJp6VL0XzlWaCHTXrkFURMYmD0sLqg==}
     engines: {node: '>=12'}
 
   ansi-styles@3.2.1:
@@ -4851,10 +4853,6 @@ packages:
   string_decoder@0.10.31:
     resolution: {integrity: sha512-ev2QzSzWPYmy9GuqfIVildA4OdcGLeFZQrq5ys6RtiuF+RQQiZWr8TZNyAcuVXyQRYfEO+MsoB/1BuQVhOJuoQ==}
 
-  strip-ansi@5.2.0:
-    resolution: {integrity: sha512-DuRs1gKbBqsMKIZlrffwlug8MHkcnpjs5VPmL1PAh+mA30U0DTotfDZ0d2UUsXpPmPmMMJ6W773MaA3J+lbiWA==}
-    engines: {node: '>=6'}
-
   strip-ansi@6.0.1:
     resolution: {integrity: sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==}
     engines: {node: '>=8'}
@@ -5247,10 +5245,6 @@ packages:
   wrap-ansi@7.0.0:
     resolution: {integrity: sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==}
     engines: {node: '>=10'}
-
-  wrap-ansi@8.1.0:
-    resolution: {integrity: sha512-si7QWI6zUMq56bESFvagtmzMdGOtoxfR+Sez11Mobfc7tm+VkUckk9bW2UeffTGVUbOksxmSw0AA2gs8g71NCQ==}
-    engines: {node: '>=12'}
 
   wrap-ansi@9.0.2:
     resolution: {integrity: sha512-42AtmgqjV+X1VpdOfyTGOYRi0/zsoLqtXQckTmqTeybT+BDIbM/Guxo7x3pE2vtpr1ok6xRqM9OpBe+Jyoqyww==}
@@ -5869,7 +5863,7 @@ snapshots:
       string-width-cjs: string-width@4.2.3
       strip-ansi: 7.1.2
       strip-ansi-cjs: strip-ansi@6.0.1
-      wrap-ansi: 8.1.0
+      wrap-ansi: 9.0.2
       wrap-ansi-cjs: wrap-ansi@7.0.0
 
   '@isaacs/fs-minipass@4.0.1':
@@ -6822,7 +6816,7 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/lib@3.3.8(typescript@5.9.3)':
+  '@socketsecurity/lib@3.3.10(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 
@@ -7367,7 +7361,7 @@ snapshots:
     dependencies:
       environment: 1.1.0
 
-  ansi-regex@6.1.0: {}
+  ansi-regex@6.2.2: {}
 
   ansi-styles@3.2.1:
     dependencies:
@@ -7572,7 +7566,7 @@ snapshots:
   chalk-table@1.0.2:
     dependencies:
       chalk: 2.4.2
-      strip-ansi: 5.2.0
+      strip-ansi: 7.1.2
 
   chalk@2.4.2:
     dependencies:
@@ -7622,8 +7616,8 @@ snapshots:
   cliui@7.0.4:
     dependencies:
       string-width: 8.1.0
-      strip-ansi: 6.0.1
-      wrap-ansi: 7.0.0
+      strip-ansi: 7.1.2
+      wrap-ansi: 9.0.2
 
   cmd-shim@7.0.0: {}
 
@@ -9551,7 +9545,7 @@ snapshots:
     dependencies:
       emoji-regex: 10.6.0
       is-fullwidth-code-point: 3.0.0
-      strip-ansi: 6.0.1
+      strip-ansi: 7.1.2
 
   string-width@8.1.0:
     dependencies:
@@ -9560,17 +9554,13 @@ snapshots:
 
   string_decoder@0.10.31: {}
 
-  strip-ansi@5.2.0:
-    dependencies:
-      ansi-regex: 6.1.0
-
   strip-ansi@6.0.1:
     dependencies:
-      ansi-regex: 6.1.0
+      ansi-regex: 6.2.2
 
   strip-ansi@7.1.2:
     dependencies:
-      ansi-regex: 6.1.0
+      ansi-regex: 6.2.2
 
   strip-bom@4.0.0: {}
 
@@ -9997,12 +9987,6 @@ snapshots:
   wrap-ansi@7.0.0:
     dependencies:
       ansi-styles: 4.3.0
-      string-width: 8.1.0
-      strip-ansi: 6.0.1
-
-  wrap-ansi@8.1.0:
-    dependencies:
-      ansi-styles: 6.2.3
       string-width: 8.1.0
       strip-ansi: 7.1.2
 

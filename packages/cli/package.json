@@ -187,6 +187,8 @@
       "side-channel": "catalog:",
       "string_decoder": "catalog:",
       "string-width": "catalog:",
+      "strip-ansi": "catalog:",
+      "wrap-ansi": "catalog:",
       "tiny-colors": "catalog:",
       "typedarray": "catalog:",
       "undici": "catalog:",

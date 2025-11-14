@@ -39,7 +39,7 @@ catalog:
   '@socketregistry/packageurl-js': 1.3.5
   '@socketregistry/yocto-spinner': 1.0.25
   '@socketsecurity/config': 3.0.1
-  '@socketsecurity/lib': 3.3.5
+  '@socketsecurity/lib': 3.3.10
   '@socketsecurity/registry': 2.0.2
   '@socketsecurity/sdk': 3.1.3
   '@types/cmd-shim': 5.0.2
@@ -62,7 +62,7 @@ catalog:
   '@yarnpkg/parsers': ^3.0.3
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ajv-dist: 8.17.1
-  ansi-regex: 6.1.0
+  ansi-regex: 6.2.2
   brace-expansion: 2.0.2
   browserslist: 4.25.4
   chalk-table: 1.0.2
@@ -130,7 +130,9 @@ catalog:
   side-channel: npm:@socketregistry/side-channel@^1.0.10
   ssri: 12.0.0
   string-width: 8.1.0
+  wrap-ansi: 9.0.2
   string_decoder: 0.10.31
+  strip-ansi: 7.1.2
   synp: 1.9.14
   tar-stream: 3.1.7
   taze: 19.6.0
