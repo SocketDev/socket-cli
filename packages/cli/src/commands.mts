@@ -118,6 +118,11 @@ export const rootAliases = {
     hidden: false,
     argv: ['threat-feed'],
   },
+  pip3: {
+    description: `${cmdPip.description} (alias)`,
+    hidden: true,
+    argv: ['pip'],
+  },
   org: {
     description: `${cmdOrganization.description} (alias)`,
     hidden: false,
