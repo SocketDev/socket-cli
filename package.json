@@ -35,6 +35,7 @@
     "// Testing": "",
     "test": "node scripts/test-monorepo.mjs",
     "test:all": "node scripts/test-monorepo.mjs --all",
+    "test:unit": "pnpm --filter @socketsecurity/cli run test:unit",
     "pretest:all": "pnpm run build && pnpm --filter '@socketsecurity/bootstrap' run build && pnpm --filter 'socket' run build && pnpm --filter '@socketsecurity/cli-with-sentry' run build",
     "testu": "pnpm --filter @socketsecurity/cli run test:unit:update",
     "cover": "pnpm --filter @socketsecurity/cli run test:unit:coverage --",

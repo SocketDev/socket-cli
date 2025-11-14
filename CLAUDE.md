@@ -67,8 +67,8 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 - **Build**: `npm run build` (alias for `npm run build:dist`)
 - **Build source**: `npm run build:dist:src` or `pnpm build:dist:src`
 - **Build types**: `npm run build:dist:types`
-- **Test**: `npm run test` (runs check + all tests)
-- **Test unit only**: `npm run test:unit` or `pnpm test:unit`
+- **Test**: `pnpm test` (runs check + all tests from monorepo root)
+- **Test unit only**: `pnpm --filter @socketsecurity/cli run test:unit`
 - **Lint**: `npm run check:lint` (uses eslint)
 - **Type check**: `npm run check:tsc` (uses tsgo)
 - **Check all**: `npm run check` (lint + typecheck)
@@ -77,18 +77,20 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 
 ### Testing Best Practices - CRITICAL: NO -- FOR FILE PATHS
 - **🚨 NEVER USE `--` BEFORE TEST FILE PATHS** - This runs ALL tests, not just your specified files!
-- **Always build before testing**: Run `pnpm build:dist:src` before running tests to ensure dist files are up to date
-- **Test single file**: ✅ CORRECT: `pnpm test:unit src/commands/specific/cmd-file.test.mts`
-  - ❌ WRONG: `pnpm test:unit -- src/commands/specific/cmd-file.test.mts` (runs ALL tests!)
-- **Test multiple files**: ✅ CORRECT: `pnpm test:unit file1.test.mts file2.test.mts`
-- **Test with pattern**: ✅ CORRECT: `pnpm test:unit src/commands/specific/cmd-file.test.mts -t "pattern"`
-  - ❌ WRONG: `pnpm test:unit -- src/commands/specific/cmd-file.test.mts -t "pattern"`
+- **Always build before testing**: Run `pnpm build:dist:src` before running tests to ensure dist files are up to date.
+- **Test all**: ✅ CORRECT: `pnpm test` (from monorepo root)
+- **Test single file**: ✅ CORRECT: `pnpm --filter @socketsecurity/cli run test:unit src/commands/specific/cmd-file.test.mts`
+  - ❌ WRONG: `pnpm test:unit src/commands/specific/cmd-file.test.mts` (command not found at root!)
+  - ❌ WRONG: `pnpm --filter @socketsecurity/cli run test:unit -- src/commands/specific/cmd-file.test.mts` (runs ALL tests!)
+- **Test multiple files**: ✅ CORRECT: `pnpm --filter @socketsecurity/cli run test:unit file1.test.mts file2.test.mts`
+- **Test with pattern**: ✅ CORRECT: `pnpm --filter @socketsecurity/cli run test:unit src/commands/specific/cmd-file.test.mts -t "pattern"`
+  - ❌ WRONG: `pnpm --filter @socketsecurity/cli run test:unit -- src/commands/specific/cmd-file.test.mts -t "pattern"`
 - **Update snapshots**:
   - All tests: `pnpm testu` (builds first, then updates all snapshots)
   - Single file: ✅ CORRECT: `pnpm testu src/commands/specific/cmd-file.test.mts`
   - ❌ WRONG: `pnpm testu -- src/commands/specific/cmd-file.test.mts` (updates ALL snapshots!)
-- **Update with --update flag**: `pnpm test:unit src/commands/specific/cmd-file.test.mts --update`
-- **Timeout for long tests**: Use `timeout` command or specify in test file
+- **Update with --update flag**: `pnpm --filter @socketsecurity/cli run test:unit src/commands/specific/cmd-file.test.mts --update`
+- **Timeout for long tests**: Use `timeout` command or specify in test file.
 
 ### Git Commit Guidelines
 - Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) style
@@ -100,7 +102,7 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 - **Run built version**: `pnpm exec socket <args>` (requires prior build)
 
 ### Package Management
-- **Package Manager**: This project uses pnpm (v10.22.0+)
+- **Package Manager**: This project uses pnpm (v10.22+)
 - **Install dependencies**: `pnpm install`
 - **Add dependency**: `pnpm add <package>`
 - **Add dev dependency**: `pnpm add -D <package>`

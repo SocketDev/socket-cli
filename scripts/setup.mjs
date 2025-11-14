@@ -16,15 +16,17 @@
  * - Reports missing tools with installation instructions
  *
  * Usage:
- *   pnpm run setup                # Check prerequisites and restore cache
- *   pnpm run setup --install      # Check and auto-install optional tools, then restore cache
- *   pnpm run setup --restore-cache # Only restore cache (skip prerequisite checks)
- *   pnpm run setup --quiet        # Minimal output (for postinstall)
+ *   pnpm run setup                      # Check prerequisites and restore GitHub cache
+ *   pnpm run setup --install            # Check and auto-install optional tools, then restore cache
+ *   pnpm run setup --skip-prereqs       # Only restore GitHub cache (skip prerequisite checks)
+ *   pnpm run setup --skip-gh-cache      # Check prerequisites but skip GitHub cache restoration
+ *   pnpm run setup --quiet              # Minimal output (for postinstall)
  *
  * Flags:
- *   --install       Auto-install missing optional tools (gh CLI)
- *   --restore-cache Only restore cache, skip prerequisite checks
- *   --quiet         Minimal output
+ *   --install            Auto-install missing optional tools (gh CLI)
+ *   --skip-prereqs       Skip prerequisite checks (for CI use; still attempts cache restoration)
+ *   --skip-gh-cache      Skip GitHub cache restoration (useful when cache is corrupt)
+ *   --quiet              Minimal output
  *
  * Note: Setup helpers are also exported in build-infra/lib/setup-helpers
  * for reuse in other build scripts.
@@ -35,21 +37,36 @@ import { mkdir } from 'node:fs/promises'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import colors from 'yoctocolors-cjs'
 
 const logger = getDefaultLogger()
 
 const autoInstall = process.argv.includes('--install')
 const quiet = process.argv.includes('--quiet')
-const restoreCacheOnly = process.argv.includes('--restore-cache')
+const skipPrereqs = process.argv.includes('--skip-prereqs')
+const skipGhCache = process.argv.includes('--skip-gh-cache')
 
-// Use synchronous console for clean output.
-const log = {
-  error: (msg) => console.log(colors.red(`✗ ${msg}`)),
-  info: (msg) => !quiet && console.log(colors.blue(`ℹ ${msg}`)),
-  step: (msg) => !quiet && console.log(colors.cyan(`→ ${msg}`)),
-  success: (msg) => !quiet && console.log(colors.green(`✔ ${msg}`)),
-  warn: (msg) => console.log(colors.yellow(`⚠ ${msg}`)),
+// Handle --help flag.
+if (process.argv.includes('--help') || process.argv.includes('-h')) {
+  logger.log(`
+Socket CLI Developer Setup
+
+Usage:
+  pnpm run setup [options]
+
+Options:
+  --install          Auto-install missing optional tools (gh CLI)
+  --skip-prereqs     Skip prerequisite checks (for CI use)
+  --skip-gh-cache    Skip GitHub cache restoration (useful when cache is corrupt)
+  --quiet            Minimal output
+  --help, -h         Show this help message
+
+Examples:
+  pnpm run setup                      # Check prerequisites and restore cache
+  pnpm run setup --install            # Auto-install optional tools
+  pnpm run setup --skip-gh-cache      # Skip cache (useful if cache is corrupt)
+  pnpm run setup --skip-prereqs       # Skip checks, only restore cache
+`)
+  process.exit(0)
 }
 
 /**
@@ -217,14 +234,14 @@ async function installWithChocolatey(packageName) {
 async function ensureGhCli() {
   if (await hasCommand('gh')) {
     const version = await getVersion('gh')
-    log.success(`gh CLI ${version} (optional)`)
+    logger.log(`gh CLI ${version} (optional)`)
     return true
   }
 
   if (!autoInstall) {
-    log.info('gh CLI not found (optional - enables cache restoration)')
-    log.info('Install from: https://cli.github.com/')
-    log.info('Or run: pnpm run setup --install')
+    logger.info('gh CLI not found (optional - enables cache restoration)')
+    logger.info('Install from: https://cli.github.com/')
+    logger.info('Or run: pnpm run setup --install')
     return false
   }
 
@@ -232,66 +249,66 @@ async function ensureGhCli() {
   if (WIN32) {
     // Windows: Try Chocolatey.
     if (!await hasCommand('choco')) {
-      log.info('Chocolatey not found (needed for auto-install on Windows)')
-      log.step('Attempting to install Chocolatey...')
+      logger.info('Chocolatey not found (needed for auto-install on Windows)')
+      logger.log('Attempting to install Chocolatey...')
       const installed = await installChocolatey()
       if (!installed) {
-        log.warn('Could not install Chocolatey')
-        log.info('Install gh CLI manually from: https://cli.github.com/')
-        log.info('Or install Chocolatey from: https://chocolatey.org/install')
+        logger.warn('Could not install Chocolatey')
+        logger.info('Install gh CLI manually from: https://cli.github.com/')
+        logger.info('Or install Chocolatey from: https://chocolatey.org/install')
         return false
       }
     }
 
     // Install gh CLI with Chocolatey.
-    log.step('Installing gh CLI with Chocolatey...')
+    logger.log('Installing gh CLI with Chocolatey...')
     const installed = await installWithChocolatey('gh')
     if (installed) {
       // Verify gh is actually available after installation.
       if (await hasCommand('gh')) {
         const version = await getVersion('gh')
-        log.success(`gh CLI ${version} installed!`)
+        logger.log(`gh CLI ${version} installed!`)
         return true
       }
-      log.warn('gh CLI installed but not available in PATH')
-      log.info('You may need to restart your shell or run: pnpm run setup')
+      logger.warn('gh CLI installed but not available in PATH')
+      logger.info('You may need to restart your shell or run: pnpm run setup')
       return false
     }
 
-    log.warn('Could not install gh CLI')
-    log.info('Install manually from: https://cli.github.com/')
+    logger.warn('Could not install gh CLI')
+    logger.info('Install manually from: https://cli.github.com/')
     return false
   }
 
   // macOS/Linux: Try Homebrew.
   if (!await hasCommand('brew')) {
-    log.info('Homebrew not found (needed for auto-install)')
-    log.step('Attempting to install Homebrew...')
+    logger.info('Homebrew not found (needed for auto-install)')
+    logger.log('Attempting to install Homebrew...')
     const installed = await installHomebrew()
     if (!installed) {
-      log.warn('Could not install Homebrew')
-      log.info('Install gh CLI manually from: https://cli.github.com/')
+      logger.warn('Could not install Homebrew')
+      logger.info('Install gh CLI manually from: https://cli.github.com/')
       return false
     }
   }
 
   // Install gh CLI with Homebrew.
-  log.step('Installing gh CLI with Homebrew...')
+  logger.log('Installing gh CLI with Homebrew...')
   const installed = await installWithHomebrew('gh')
   if (installed) {
     // Verify gh is actually available after installation.
     if (await hasCommand('gh')) {
       const version = await getVersion('gh')
-      log.success(`gh CLI ${version} installed!`)
+      logger.log(`gh CLI ${version} installed!`)
       return true
     }
-    log.warn('gh CLI installed but not available in PATH')
-    log.info('You may need to restart your shell or run: pnpm run setup')
+    logger.warn('gh CLI installed but not available in PATH')
+    logger.info('You may need to restart your shell or run: pnpm run setup')
     return false
   }
 
-  log.warn('Could not install gh CLI')
-  log.info('Install manually from: https://cli.github.com/')
+  logger.warn('Could not install gh CLI')
+  logger.info('Install manually from: https://cli.github.com/')
   return false
 }
 
@@ -302,25 +319,25 @@ async function checkPrerequisite({ command, minVersion, name, required = true })
   const version = await getVersion(command)
 
   if (!version) {
-    log.error(`${name} not found`)
+    logger.error(`${name} not found`)
     return false
   }
 
   if (minVersion) {
     const current = parseVersion(version)
     if (!current) {
-      log.warn(`Could not parse ${name} version: ${version}`)
+      logger.warn(`Could not parse ${name} version: ${version}`)
       return !required
     }
 
     if (compareVersions(current, minVersion) < 0) {
       const minVersionStr = `${minVersion.major}.${minVersion.minor}.${minVersion.patch}`
-      log.error(`${name} ${version} found, but >=${minVersionStr} required`)
+      logger.error(`${name} ${version} found, but >=${minVersionStr} required`)
       return false
     }
   }
 
-  log.success(`${name} ${version}`)
+  logger.log(`${name} ${version}`)
   return true
 }
 
@@ -330,22 +347,22 @@ async function checkPrerequisite({ command, minVersion, name, required = true })
 async function restoreCache(hasGh) {
   // Skip entirely if gh CLI not available.
   if (!hasGh) {
-    log.info('Skipping cache restoration (gh CLI not available)')
+    logger.info('Skipping cache restoration (gh CLI not available)')
     return false
   }
 
   // Check if already built.
   if (existsSync('packages/cli/build') && existsSync('packages/cli/dist')) {
-    log.info('Build artifacts already exist, skipping cache restoration')
+    logger.info('Build artifacts already exist, skipping cache restoration')
     return true
   }
 
   // Ensure directories exist.
-  log.step('Ensuring build directories exist...')
+  logger.log('Ensuring build directories exist...')
   await mkdir('packages/cli/build', { recursive: true })
   await mkdir('packages/cli/dist', { recursive: true })
 
-  log.step('Attempting to restore build cache from CI...')
+  logger.log('Attempting to restore build cache from CI...')
 
   const result = await spawn(
     'pnpm',
@@ -356,11 +373,11 @@ async function restoreCache(hasGh) {
   )
 
   if (result.code === 0) {
-    log.success('Build cache restored!')
+    logger.log('Build cache restored!')
     return true
   }
 
-  log.info('Cache not available for this commit (will build from scratch)')
+  logger.info('Cache not available for this commit (will build from scratch)')
   return false
 }
 
@@ -368,49 +385,54 @@ async function restoreCache(hasGh) {
  * Main entry point.
  */
 async function main() {
-  // Handle --restore-cache: only restore cache, skip prerequisite checks.
-  if (restoreCacheOnly) {
+  // Handle --skip-prereqs: skip prerequisite checks, proceed to cache restoration.
+  if (skipPrereqs) {
     if (!quiet) {
-      console.log('')
-      console.log('Socket CLI Cache Restoration')
-      console.log('============================')
-      console.log('')
+      logger.log('')
+      logger.log('Socket CLI Cache Restoration')
+      logger.log('============================')
+      logger.log('')
+      logger.info('Skipping prerequisite checks (--skip-prereqs)')
+      logger.log('')
     }
 
-    const hasGh = await hasCommand('gh')
-    if (!hasGh) {
-      log.error('gh CLI not found (required for cache restoration)')
-      log.info('Install from: https://cli.github.com/')
-      log.info('Or run: pnpm run setup --install')
-      return 1
+    // Cache restoration respects --skip-gh-cache flag.
+    if (!skipGhCache) {
+      const hasGh = await hasCommand('gh')
+      if (!hasGh) {
+        logger.error('gh CLI not found (required for cache restoration)')
+        logger.info('Install from: https://cli.github.com/')
+        return 1
+      }
+      await restoreCache(hasGh)
+    } else if (!quiet) {
+      logger.info('Skipping GitHub cache restoration (--skip-gh-cache)')
     }
 
-    await restoreCache(hasGh)
-
     if (!quiet) {
-      console.log('')
-      log.success('Cache restoration complete!')
-      console.log('')
+      logger.log('')
+      logger.log('Setup complete!')
+      logger.log('')
     }
     return 0
   }
 
   // Normal setup flow: check prerequisites and restore cache.
   if (!quiet) {
-    console.log('')
-    console.log('Socket CLI Developer Setup')
-    console.log('==========================')
-    console.log('')
+    logger.log('')
+    logger.log('Socket CLI Developer Setup')
+    logger.log('==========================')
+    logger.log('')
 
     if (autoInstall) {
-      log.info('Auto-install mode enabled (--install)')
-      console.log('')
+      logger.info('Auto-install mode enabled (--install)')
+      logger.log('')
     }
   }
 
-  log.step('Checking prerequisites...')
+  logger.log('Checking prerequisites...')
   if (!quiet) {
-    console.log('')
+    logger.log('')
   }
 
   // Check Node.js.
@@ -433,40 +455,44 @@ async function main() {
   const ghOk = await ensureGhCli()
 
   if (!quiet) {
-    console.log('')
+    logger.log('')
   }
 
   if (!nodeOk || !pnpmOk) {
-    log.error('Required prerequisites missing. Please install and try again.')
+    logger.error('Required prerequisites missing. Please install and try again.')
     if (!quiet) {
-      console.log('')
+      logger.log('')
     }
     if (!nodeOk) {
-      log.info('Node.js: https://nodejs.org/')
+      logger.info('Node.js: https://nodejs.org/')
     }
     if (!pnpmOk) {
-      log.info('pnpm: npm install -g pnpm')
+      logger.info('pnpm: npm install -g pnpm')
     }
     return 1
   }
 
-  log.success('All required prerequisites met!')
+  logger.log('All required prerequisites met!')
   if (!quiet) {
-    console.log('')
+    logger.log('')
   }
 
-  // Always restore cache after prerequisite checks.
-  await restoreCache(ghOk)
+  // Always restore cache after prerequisite checks (unless --skip-gh-cache).
+  if (!skipGhCache) {
+    await restoreCache(ghOk)
+  } else if (!quiet) {
+    logger.info('Skipping GitHub cache restoration (--skip-gh-cache)')
+  }
 
   if (!quiet) {
-    console.log('')
-    log.success('Setup complete!')
-    console.log('')
-    console.log('Next steps:')
-    console.log('  pnpm run build    # Build the CLI')
-    console.log('  pnpm test:unit    # Run tests')
-    console.log('  pnpm exec socket  # Run the CLI')
-    console.log('')
+    logger.log('')
+    logger.log('Setup complete!')
+    logger.log('')
+    logger.log('Next steps:')
+    logger.log('  pnpm run build    # Build the CLI')
+    logger.log('  pnpm test         # Run tests')
+    logger.log('  pnpm exec socket  # Run the CLI')
+    logger.log('')
   }
 
   return 0
@@ -475,6 +501,6 @@ async function main() {
 main().then(code => {
   process.exit(code)
 }).catch(error => {
-  log.error(error.message)
+  logger.error(error.message)
   process.exit(1)
 })
