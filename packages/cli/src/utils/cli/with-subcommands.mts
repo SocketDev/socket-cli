@@ -82,6 +82,7 @@ export interface CliCommandConfig {
 export interface CliCommandContext {
   parentName: string
   rawArgv?: string[] | readonly string[]
+  invokedAs?: string
 }
 
 export interface MeowConfig {
@@ -569,9 +570,11 @@ export async function meowWithSubcommands(
     if (commandDefinition) {
       // Extract the original command arguments from the full argv
       // by skipping the command name
-      return await commandDefinition.run(commandArgv, importMeta, {
-        parentName: name,
-      })
+      const context: CliCommandContext = { parentName: name }
+      if (alias) {
+        context.invokedAs = commandOrAliasName
+      }
+      return await commandDefinition.run(commandArgv, importMeta, context)
     }
 
     // If no command found but defaultSub exists, use it as the command.
