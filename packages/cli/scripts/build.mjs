@@ -47,6 +47,51 @@ const printError = msg => {
   logger.log('')
 }
 
+/**
+ * Post-process bundled files to break node-gyp require.resolve strings.
+ * This prevents esbuild from trying to bundle node-gyp during the build.
+ *
+ * @param {string} dir - Directory to process
+ * @param {object} options - Options
+ * @param {boolean} options.quiet - Suppress output
+ * @param {boolean} options.verbose - Show detailed output
+ */
+async function fixNodeGypStrings(dir, options = {}) {
+  const { quiet = false, verbose = false } = options
+
+  // Find all .js files in build directory.
+  const files = await fs.readdir(dir, { withFileTypes: true })
+
+  for (const file of files) {
+    const filePath = path.join(dir, file.name)
+
+    if (file.isDirectory()) {
+      // Recursively process subdirectories.
+      await fixNodeGypStrings(filePath, options)
+    } else if (file.name.endsWith('.js')) {
+      // Read file contents.
+      const contents = await fs.readFile(filePath, 'utf8')
+
+      // Check if file contains the problematic pattern.
+      if (contents.includes('node-gyp/bin/node-gyp.js')) {
+        // Replace literal string with concatenated version.
+        const fixed = contents.replace(
+          /["']node-gyp\/bin\/node-gyp\.js["']/g,
+          '"node-" + "gyp/bin/node-gyp.js"',
+        )
+
+        await fs.writeFile(filePath, fixed, 'utf8')
+
+        if (!quiet && verbose) {
+          log.info(
+            `Fixed node-gyp string in ${path.relative(packageRoot, filePath)}`,
+          )
+        }
+      }
+    }
+  }
+}
+
 async function main() {
   const quiet = isQuiet()
   const verbose = isVerbose()
@@ -188,6 +233,15 @@ async function main() {
       if (!quiet && verbose) {
         log.success(`${name} completed`)
       }
+    }
+
+    // Post-process: Fix node-gyp strings to prevent bundler issues.
+    if (!quiet && verbose) {
+      log.info('Post-processing build output...')
+    }
+    await fixNodeGypStrings(path.join(packageRoot, 'build'), { quiet, verbose })
+    if (!quiet && verbose) {
+      log.success('Build output post-processed')
     }
 
     // Copy files from repo root.

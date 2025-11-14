@@ -126,7 +126,16 @@ async function main() {
 
     // Wrap vitest with dotenvx to load .env.test.
     // Command: dotenvx -q run -f .env.test -- vitest run [args].
-    const dotenvxArgs = ['-q', 'run', '-f', '.env.test', '--', vitestPath, 'run', ...expandedArgs]
+    const dotenvxArgs = [
+      '-q',
+      'run',
+      '-f',
+      '.env.test',
+      '--',
+      vitestPath,
+      'run',
+      ...expandedArgs,
+    ]
 
     // On Windows, .cmd files need shell: true.
     const spawnOptions = {

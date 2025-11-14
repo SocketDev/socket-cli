@@ -89,7 +89,7 @@
     "@socketregistry/packageurl-js": "catalog:",
     "@socketregistry/yocto-spinner": "catalog:",
     "@socketsecurity/config": "catalog:",
-    "@socketsecurity/lib": "catalog:",
+    "@socketsecurity/lib": "3.3.6",
     "@socketsecurity/registry": "catalog:",
     "@socketsecurity/sdk": "catalog:",
     "@types/cmd-shim": "catalog:",
@@ -151,6 +151,7 @@
     "terminal-link": "catalog:",
     "trash": "catalog:",
     "type-coverage": "catalog:",
+    "typescript": "catalog:",
     "typescript-eslint": "catalog:",
     "unplugin-purge-polyfills": "catalog:",
     "vitest": "catalog:",
@@ -164,7 +165,7 @@
     "overrides": {
       "@octokit/graphql": "catalog:",
       "@octokit/request-error": "catalog:",
-      "@socketsecurity/lib": "catalog:",
+      "@socketsecurity/lib": "3.3.6",
       "aggregate-error": "catalog:",
       "ansi-regex": "catalog:",
       "brace-expansion": "catalog:",
@@ -205,7 +206,11 @@
       "yargs-parser": "catalog:"
     },
     "patchedDependencies": {
-      "ink@6.3.1": "patches/ink@6.3.1.patch"
+      "@npmcli/run-script@9.1.0": "patches/@npmcli__run-script@9.1.0.patch",
+      "ink@6.3.1": "patches/ink@6.3.1.patch",
+      "node-gyp@11.5.0": "patches/node-gyp@11.5.0.patch",
+      "node-gyp@12.1.0": "patches/node-gyp@12.1.0.patch",
+      "@npmcli/run-script@10.0.3": "patches/@npmcli__run-script@10.0.3.patch"
     }
   },
   "lint-staged": {
