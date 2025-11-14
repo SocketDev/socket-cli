@@ -3,86 +3,91 @@
  * Runs code quality checks: ESLint and TypeScript type checking across packages.
  */
 
+import { isQuiet } from '@socketsecurity/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getChangedFiles, getStagedFiles } from '@socketsecurity/lib/git'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { printFooter, printHeader } from '@socketsecurity/lib/stdio/header'
-import colors from 'yoctocolors-cjs'
 
 import {
   getAffectedPackages,
   getPackagesWithScript,
-  runPackageScript,
+  runAcrossPackages,
 } from './utils/monorepo-helper.mjs'
 
 const logger = getDefaultLogger()
 
 /**
+ * Get files to check and determine affected packages.
+ */
+async function getFilesToCheck(options) {
+  const { all, changed, staged } = options
+
+  // If --all, return all packages.
+  if (all) {
+    return {
+      mode: 'all',
+      packages: getPackagesWithScript('lint'),
+      reason: 'all flag specified',
+    }
+  }
+
+  // Get changed files.
+  let changedFiles = []
+  let mode = 'changed'
+
+  if (staged) {
+    mode = 'staged'
+    changedFiles = await getStagedFiles({ absolute: false })
+    if (!changedFiles.length) {
+      return { mode, packages: [], reason: 'no staged files' }
+    }
+  } else if (changed) {
+    mode = 'changed'
+    changedFiles = await getChangedFiles({ absolute: false })
+    if (!changedFiles.length) {
+      return { mode, packages: [], reason: 'no changed files' }
+    }
+  } else {
+    // Default to changed files if no specific flag.
+    mode = 'changed'
+    changedFiles = await getChangedFiles({ absolute: false })
+    if (!changedFiles.length) {
+      return { mode, packages: [], reason: 'no changed files' }
+    }
+  }
+
+  // Determine affected packages.
+  const affectedPackages = getAffectedPackages(changedFiles)
+
+  if (!affectedPackages.length) {
+    return { mode, packages: [], reason: 'no lintable packages affected' }
+  }
+
+  return { mode, packages: affectedPackages, reason: null }
+}
+
+/**
  * Run ESLint check via lint script on affected packages.
  */
 async function runEslintCheck(options = {}) {
-  const {
-    all = false,
-    changed = false,
-    quiet = false,
-    staged = false,
-  } = options
+  const { quiet = false } = options
 
-  if (!quiet) {
-    logger.step('Running ESLint checks')
+  // Get files to check and affected packages.
+  const { packages } = await getFilesToCheck(options)
+
+  if (!packages.length) {
+    if (!quiet) {
+      logger.step('Running ESLint checks')
+      logger.substep('No packages to check, skipping ESLint')
+    }
+    return 0
   }
 
-  // Determine which packages to check.
-  let packages = []
-
-  if (all) {
-    packages = getPackagesWithScript('lint')
-  } else {
-    // Get changed files to determine affected packages.
-    let changedFiles = []
-
-    if (staged) {
-      changedFiles = await getStagedFiles({ absolute: false })
-    } else if (changed) {
-      changedFiles = await getChangedFiles({ absolute: false })
-    } else {
-      changedFiles = await getChangedFiles({ absolute: false })
-    }
-
-    if (!changedFiles.length) {
-      if (!quiet) {
-        logger.substep('No changed files, skipping ESLint')
-        logger.error('')
-      }
-      return 0
-    }
-
-    packages = getAffectedPackages(changedFiles)
-
-    if (!packages.length) {
-      if (!quiet) {
-        logger.substep('No affected packages, skipping ESLint')
-        logger.error('')
-      }
-      return 0
-    }
-  }
-
-  // Run lint on each package.
-  for (const pkg of packages) {
-    const exitCode = await runPackageScript(pkg, 'lint', [], quiet)
-    if (exitCode !== 0) {
-      return exitCode
-    }
-  }
-
-  if (!quiet) {
-    logger.error('')
-  }
-
-  return 0
+  // Run lint across affected packages.
+  return await runAcrossPackages(packages, 'lint', [], quiet, 'Running ESLint checks')
 }
 
 /**
@@ -91,70 +96,18 @@ async function runEslintCheck(options = {}) {
 async function runTypeCheck(options = {}) {
   const { quiet = false } = options
 
-  if (!quiet) {
-    logger.step('Running TypeScript checks')
-  }
-
   const packages = getPackagesWithScript('type')
 
   if (!packages.length) {
     if (!quiet) {
+      logger.step('Running TypeScript checks')
       logger.substep('No packages with type checking')
-      logger.error('')
     }
     return 0
   }
 
-  // Run type check on each package.
-  for (const pkg of packages) {
-    const displayName = pkg.displayName || pkg.name
-
-    if (!quiet) {
-      logger.progress(`${displayName}: checking types`)
-    }
-
-    const result = await spawn(
-      'pnpm',
-      ['--filter', pkg.name, 'run', 'type'],
-      {
-        cwd: process.cwd(),
-        shell: WIN32,
-        stdio: 'pipe',
-        stdioString: true,
-      },
-    )
-
-    if (result.code !== 0) {
-      if (!quiet) {
-        logger.clearLine()
-        logger.log(`${colors.red('✗')} ${displayName}`)
-        logger.error('')
-      }
-      // Always show type errors (even in quiet mode) since they're the actual errors.
-      if (result.stdout) {
-        logger.log(result.stdout)
-      }
-      if (result.stderr) {
-        logger.error(result.stderr)
-      }
-      if (!quiet) {
-        logger.error('')
-        logger.error('Type check failed')
-      }
-      return result.code
-    }
-
-    if (!quiet) {
-      logger.clearLine()
-      logger.log(`${colors.green('✓')} ${displayName}`)
-    }
-  }
-
-  if (!quiet) {
-    logger.error('')
-  }
-
-  return 0
+  // Run type check across packages.
+  return await runAcrossPackages(packages, 'type', [], quiet, 'Running TypeScript checks')
 }
 
 async function main() {
@@ -197,18 +150,20 @@ async function main() {
       return
     }
 
-    const quiet = values.quiet || values.silent
+    const quiet = isQuiet(values)
     const runAll = !values.lint && !values.types
 
     if (!quiet) {
       printHeader('Monorepo Check Runner')
-      logger.log('')
     }
 
     let exitCode = 0
 
     // Run ESLint check if requested or running all.
     if (runAll || values.lint) {
+      if (!quiet) {
+        logger.log('')
+      }
       exitCode = await runEslintCheck({
         all: values.all,
         changed: values.changed,
@@ -226,6 +181,9 @@ async function main() {
 
     // Run TypeScript check if requested or running all.
     if (runAll || values.types) {
+      if (!quiet) {
+        logger.log('')
+      }
       exitCode = await runTypeCheck({ quiet })
       if (exitCode !== 0) {
         if (!quiet) {
@@ -236,157 +194,224 @@ async function main() {
       }
     }
 
-    // Run link: validation check
+    // Run link: validation check.
     if (runAll) {
       if (!quiet) {
-        logger.step('Validating no link: dependencies')
+        logger.log('')
+        logger.progress('Validating no link: dependencies')
       }
       const validateResult = await spawn(
         'node',
         ['scripts/validate-no-link-deps.mjs'],
         {
           shell: WIN32,
-          stdio: quiet ? 'pipe' : 'inherit',
+          stdio: 'pipe',
+          stdioString: true,
         },
       )
       if (validateResult.code !== 0) {
         if (!quiet) {
+          logger.clearLine()
           logger.error('Validation failed')
+        }
+        // Show the actual error output.
+        if (validateResult.stdout) {
+          logger.log(validateResult.stdout)
+        }
+        if (validateResult.stderr) {
+          logger.error(validateResult.stderr)
         }
         process.exitCode = validateResult.code
         return
       }
       if (!quiet) {
-        logger.error('')
+        logger.clearLine()
+        logger.success('No link: dependencies found')
       }
     }
 
-    // Run bundle dependencies validation check
+    // Run bundle dependencies validation check.
     if (runAll) {
       if (!quiet) {
-        logger.step('Validating bundle dependencies')
+        logger.log('')
+        logger.progress('Validating bundle dependencies')
       }
       const bundleResult = await spawn(
         'node',
         ['scripts/validate-bundle-deps.mjs'],
         {
           shell: WIN32,
-          stdio: quiet ? 'pipe' : 'inherit',
+          stdio: 'pipe',
+          stdioString: true,
         },
       )
       if (bundleResult.code !== 0) {
         if (!quiet) {
+          logger.clearLine()
           logger.error('Bundle validation failed')
+        }
+        // Show the actual error output.
+        if (bundleResult.stdout) {
+          logger.log(bundleResult.stdout)
+        }
+        if (bundleResult.stderr) {
+          logger.error(bundleResult.stderr)
         }
         process.exitCode = bundleResult.code
         return
       }
       if (!quiet) {
-        logger.error('')
+        logger.clearLine()
+        logger.success('Bundle dependencies validation passed')
       }
     }
 
-    // Run CDN references validation check
+    // Run CDN references validation check.
     if (runAll) {
       if (!quiet) {
-        logger.step('Validating no CDN references')
+        logger.log('')
+        logger.progress('Validating no CDN references')
       }
       const cdnResult = await spawn(
         'node',
         ['scripts/validate-no-cdn-refs.mjs'],
         {
           shell: WIN32,
-          stdio: quiet ? 'pipe' : 'inherit',
+          stdio: 'pipe',
+          stdioString: true,
         },
       )
       if (cdnResult.code !== 0) {
         if (!quiet) {
+          logger.clearLine()
           logger.error('CDN references validation failed')
+        }
+        // Show the actual error output.
+        if (cdnResult.stdout) {
+          logger.log(cdnResult.stdout)
+        }
+        if (cdnResult.stderr) {
+          logger.error(cdnResult.stderr)
         }
         process.exitCode = cdnResult.code
         return
       }
       if (!quiet) {
-        logger.error('')
+        logger.clearLine()
+        logger.success('No CDN references found')
       }
     }
 
-    // Run markdown filenames validation check
+    // Run markdown filenames validation check.
     if (runAll) {
       if (!quiet) {
-        logger.step('Validating markdown filenames')
+        logger.log('')
+        logger.progress('Validating markdown filenames')
       }
       const markdownResult = await spawn(
         'node',
         ['scripts/validate-markdown-filenames.mjs'],
         {
           shell: WIN32,
-          stdio: quiet ? 'pipe' : 'inherit',
+          stdio: 'pipe',
+          stdioString: true,
         },
       )
       if (markdownResult.code !== 0) {
         if (!quiet) {
+          logger.clearLine()
           logger.error('Markdown filenames validation failed')
+        }
+        // Show the actual error output.
+        if (markdownResult.stdout) {
+          logger.log(markdownResult.stdout)
+        }
+        if (markdownResult.stderr) {
+          logger.error(markdownResult.stderr)
         }
         process.exitCode = markdownResult.code
         return
       }
       if (!quiet) {
-        logger.error('')
+        logger.clearLine()
+        logger.success('All markdown filenames follow conventions')
       }
     }
 
-    // Run file size validation check
+    // Run file size validation check.
     if (runAll) {
       if (!quiet) {
-        logger.step('Validating file sizes')
+        logger.log('')
+        logger.progress('Validating file sizes')
       }
       const sizeResult = await spawn(
         'node',
         ['scripts/validate-file-size.mjs'],
         {
           shell: WIN32,
-          stdio: quiet ? 'pipe' : 'inherit',
+          stdio: 'pipe',
+          stdioString: true,
         },
       )
       if (sizeResult.code !== 0) {
         if (!quiet) {
+          logger.clearLine()
           logger.error('File size validation failed')
+        }
+        // Show the actual error output.
+        if (sizeResult.stdout) {
+          logger.log(sizeResult.stdout)
+        }
+        if (sizeResult.stderr) {
+          logger.error(sizeResult.stderr)
         }
         process.exitCode = sizeResult.code
         return
       }
       if (!quiet) {
-        logger.error('')
+        logger.clearLine()
+        logger.success('All files are within size limits')
       }
     }
 
-    // Run file count validation check
+    // Run file count validation check.
     if (runAll) {
       if (!quiet) {
-        logger.step('Validating file count')
+        logger.log('')
+        logger.progress('Validating file count')
       }
       const countResult = await spawn(
         'node',
         ['scripts/validate-file-count.mjs'],
         {
           shell: WIN32,
-          stdio: quiet ? 'pipe' : 'inherit',
+          stdio: 'pipe',
+          stdioString: true,
         },
       )
       if (countResult.code !== 0) {
         if (!quiet) {
+          logger.clearLine()
           logger.error('File count validation failed')
+        }
+        // Show the actual error output.
+        if (countResult.stdout) {
+          logger.log(countResult.stdout)
+        }
+        if (countResult.stderr) {
+          logger.error(countResult.stderr)
         }
         process.exitCode = countResult.code
         return
       }
       if (!quiet) {
-        logger.error('')
+        logger.clearLine()
+        logger.success('Commit size is acceptable')
       }
     }
 
     if (!quiet) {
+      logger.log('')
       logger.success('All checks passed')
       printFooter()
     }
