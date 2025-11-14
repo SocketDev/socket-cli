@@ -229,7 +229,7 @@ Symptoms: `enhanced: false` in capabilities
 
 Solutions:
 - Install onnxruntime-node: `npm install onnxruntime-node`
-- Check platform support (Node.js 18+, x64/arm64)
+- Check platform support (Node.js 24.10+, x64/arm64)
 - Verify WASM support: `node --experimental-wasm-modules`
 
 ### Models Not Found

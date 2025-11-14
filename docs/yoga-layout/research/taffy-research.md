@@ -126,7 +126,7 @@ This approach mirrors Socket's successful use of pure Rust for other WASM module
 
 - **Rust 1.70+**: [Install Rust](https://www.rust-lang.org/tools/install)
 - **wasm-opt**: [Install Binaryen](https://github.com/WebAssembly/binaryen)
-- **Node.js 18+**: For building and testing
+- **Node.js 24.10+**
 
 ### Building from Source
 

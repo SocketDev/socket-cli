@@ -4,9 +4,8 @@ Quick start for Socket CLI development.
 
 ## Prerequisites
 
-- Node.js 18+ ([download](https://nodejs.org/))
-- pnpm 10.22+ (`npm install -g pnpm` or `corepack enable`)
-- Git 2.0+
+- Node.js 24.10+
+- pnpm 10.22+
 
 ## Setup
 
