@@ -46,6 +46,7 @@
   },
   "devDependencies": {
     "@socketsecurity/lib": "catalog:",
+    "build-infra": "workspace:*",
     "esbuild": "catalog:"
   }
 }

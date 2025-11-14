@@ -933,6 +933,9 @@ importers:
       '@socketsecurity/lib':
         specifier: 3.3.7
         version: 3.3.7(typescript@5.9.3)
+      build-infra:
+        specifier: workspace:*
+        version: link:../build-infra
       esbuild:
         specifier: 'catalog:'
         version: 0.25.11

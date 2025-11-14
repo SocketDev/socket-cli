@@ -7,7 +7,7 @@
  * 3. Copies LICENSE, CHANGELOG.md, and logo images from repo root
  */
 
-import { existsSync, mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -129,6 +129,14 @@ async function buildBootstrap() {
       spinner: Spinner({ shimmer: { dir: 'ltr' } }),
       operation: async () => {
         const result = await build(seaConfig)
+
+        // Write output files (plugins need write: false to transform).
+        if (result.outputFiles && result.outputFiles.length > 0) {
+          for (const output of result.outputFiles) {
+            writeFileSync(output.path, output.contents)
+          }
+        }
+
         return result
       },
     })
