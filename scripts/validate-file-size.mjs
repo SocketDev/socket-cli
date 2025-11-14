@@ -36,6 +36,7 @@ const SKIP_DIRS = new Set([
   '.vercel',
   '.vscode',
   'tmp',
+  'external',
 ]);
 
 /**

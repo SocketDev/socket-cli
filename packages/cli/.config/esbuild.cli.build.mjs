@@ -358,6 +358,60 @@ const config = {
           return null
         })
 
+        // Resolve relative ./external/ paths from socket-lib (e.g., require("./external/@npmcli/arborist")).
+        // This handles both static imports and dynamic requires.
+        build.onResolve({ filter: /^\.\/external\// }, args => {
+          // Only handle imports from socket-lib's dist directory.
+          if (!args.importer.includes('@socketsecurity/lib/dist/')) {
+            return null
+          }
+
+          const socketLibPath = findSocketLibPath(args.importer)
+          if (!socketLibPath) {
+            return null
+          }
+
+          // Extract the package path after ./external/ and remove .js extension if present.
+          const externalPath = args.path
+            .replace(/^\.\/external\//, '')
+            .replace(/\.js$/, '')
+
+          // Build the resolved path to socket-lib's bundled external.
+          let resolvedPath = null
+          if (externalPath.startsWith('@')) {
+            // Scoped package like @npmcli/arborist.
+            const [scope, name] = externalPath.split('/')
+            const scopedPath = path.join(
+              socketLibPath,
+              'dist',
+              'external',
+              scope,
+              `${name}.js`,
+            )
+            if (existsSync(scopedPath)) {
+              resolvedPath = scopedPath
+            }
+          } else {
+            // Regular package.
+            const packageName = externalPath.split('/')[0]
+            const regularPath = path.join(
+              socketLibPath,
+              'dist',
+              'external',
+              `${packageName}.js`,
+            )
+            if (existsSync(regularPath)) {
+              resolvedPath = regularPath
+            }
+          }
+
+          if (resolvedPath) {
+            return { path: resolvedPath }
+          }
+
+          return null
+        })
+
         // Resolve external dependencies that socket-lib bundles in dist/external/.
         // Automatically handles any bundled dependency (e.g., @inquirer/*, zod, semver).
         build.onResolve({ filter: /^(@[^/]+\/[^/]+|[^./][^/]*)/ }, args => {
