@@ -91,7 +91,7 @@
     "@socketregistry/packageurl-js": "catalog:",
     "@socketregistry/yocto-spinner": "catalog:",
     "@socketsecurity/config": "catalog:",
-    "@socketsecurity/lib": "3.3.7",
+    "@socketsecurity/lib": "3.3.8",
     "@socketsecurity/registry": "catalog:",
     "@socketsecurity/sdk": "catalog:",
     "@types/cmd-shim": "catalog:",
@@ -167,7 +167,7 @@
     "overrides": {
       "@octokit/graphql": "catalog:",
       "@octokit/request-error": "catalog:",
-      "@socketsecurity/lib": "3.3.7",
+      "@socketsecurity/lib": "3.3.8",
       "aggregate-error": "catalog:",
       "ansi-regex": "catalog:",
       "brace-expansion": "catalog:",
