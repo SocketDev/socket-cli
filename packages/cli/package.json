@@ -15,9 +15,9 @@
     "url": "https://socket.dev"
   },
   "bin": {
-    "socket": "src/cli-dispatch.mts",
-    "socket-npm": "src/cli-dispatch.mts",
-    "socket-npx": "src/cli-dispatch.mts"
+    "socket": "dist/index.js",
+    "socket-npm": "dist/index.js",
+    "socket-npx": "dist/index.js"
   },
   "scripts": {
     "build": "node --max-old-space-size=8192 --import=./scripts/load.mjs scripts/build.mjs",
@@ -128,8 +128,8 @@
     "zod": "catalog:"
   },
   "engines": {
-    "node": ">=22.6.0",
-    "pnpm": ">=10.16.0"
+    "node": ">=24.10.0",
+    "pnpm": ">=10.22.0"
   },
   "externalTools": {
     "@coana-tech/cli": "14.12.76",
@@ -144,8 +144,7 @@
     "data/**",
     "dist/**",
     "logo-dark.png",
-    "logo-light.png",
-    "src/**"
+    "logo-light.png"
   ],
   "lint-staged": {
     "*.{cjs,cts,js,json,md,mjs,mts,ts}": [
