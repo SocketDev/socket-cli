@@ -208,10 +208,15 @@ export async function downloadCli() {
     logger.error('Failed to download Socket CLI')
     logger.error(`   Error: ${e instanceof Error ? e.message : String(e)}`)
     logger.error('')
-    logger.error('For local development, set SOCKET_CLI_LOCAL_PATH to your CLI build:')
-    logger.error(`   export SOCKET_CLI_LOCAL_PATH=/path/to/socket-cli/packages/cli/dist/index.js`)
-    logger.error('')
-    logger.error('Or try:')
+    // @ts-expect-error - Injected by esbuild define.
+    if (!INLINED_SOCKET_BOOTSTRAP_PUBLISHED_BUILD) {
+      logger.error('For local development, set SOCKET_CLI_LOCAL_PATH to your CLI build:')
+      logger.error(`   export SOCKET_CLI_LOCAL_PATH=/path/to/socket-cli/packages/cli/dist/index.js`)
+      logger.error('')
+      logger.error('Or try:')
+    } else {
+      logger.error('Please try:')
+    }
     logger.error('  1. Check internet connection')
     logger.error('  2. Try running command again')
     logger.error(`  3. Report issue: ${SOCKET_CLI_ISSUES_URL}`)
