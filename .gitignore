@@ -2,6 +2,7 @@
 ._.DS_Store
 Thumbs.db
 /.env
+/.env.local
 /.nvm
 /.rollup.cache
 /.type-coverage
