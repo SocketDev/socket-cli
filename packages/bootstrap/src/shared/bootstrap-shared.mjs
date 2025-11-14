@@ -208,11 +208,13 @@ export async function downloadCli() {
     logger.error('Failed to download Socket CLI')
     logger.error(`   Error: ${e instanceof Error ? e.message : String(e)}`)
     logger.error('')
-    logger.error('This may be a temporary issue. Please try:')
-    logger.error('  1. Check your internet connection')
-    logger.error('  2. Try running the command again')
-    logger.error(`  3. Manually create directory: mkdir -p "${SOCKET_DLX_DIR}"`)
-    logger.error(`  4. Report issue at: ${SOCKET_CLI_ISSUES_URL}`)
+    logger.error('For local development, set SOCKET_CLI_LOCAL_PATH to your CLI build:')
+    logger.error(`   export SOCKET_CLI_LOCAL_PATH=/path/to/socket-cli/packages/cli/dist/index.js`)
+    logger.error('')
+    logger.error('Or try:')
+    logger.error('  1. Check internet connection')
+    logger.error('  2. Try running command again')
+    logger.error(`  3. Report issue: ${SOCKET_CLI_ISSUES_URL}`)
     process.exit(1)
   }
 }

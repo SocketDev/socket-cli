@@ -38,9 +38,10 @@ const cacheDir = path.join(getSocketHomePath(), 'yoga-cache')
  * Generate placeholder stub when yoga WASM is not available.
  */
 function generatePlaceholderStub() {
-  logger.warn(
-    'yoga-sync.js not found in socket-btm releases, generating placeholder stub',
-  )
+  // Only warn once about placeholder usage.
+  if (!existsSync(outputPath)) {
+    logger.warn('Using placeholder yoga (affects table rendering)')
+  }
 
   const placeholderContent = `/**
  * Synchronous yoga-layout with embedded WASM binary (Placeholder).
@@ -70,7 +71,6 @@ export default yoga
 `
 
   writeFileSync(outputPath, placeholderContent, 'utf-8')
-  logger.success(`Generated placeholder ${outputPath}`)
   process.exit(0)
 }
 
@@ -90,20 +90,15 @@ async function downloadYogaSync() {
 
     // Download if not cached.
     if (!existsSync(cachedPath)) {
-      logger.log(
-        `Downloading ${YOGA_SYNC_ASSET_NAME} from ${YOGA_RELEASE_TAG}...`,
-      )
       const response = await httpRequest(downloadUrl)
       if (!response.ok) {
-        logger.warn(`Failed to download yoga-sync.js: ${response.statusText}`)
         return null
       }
       writeFileSync(cachedPath, response.body, 'utf-8')
     }
 
     return { cachedPath, version: YOGA_RELEASE_TAG }
-  } catch (e) {
-    logger.warn(`Error downloading yoga-sync.js: ${e.message}`)
+  } catch {
     return null
   }
 }
@@ -154,7 +149,6 @@ async function main() {
 
   // Check if extraction needed.
   if (!(await shouldExtract(cachedPath, outputPath))) {
-    logger.success('yoga-sync.mjs is up to date')
     process.exit(0)
   }
 
@@ -163,8 +157,6 @@ async function main() {
 
   // Compute source hash for cache validation.
   const sourceHash = createHash('sha256').update(syncContent).digest('hex')
-
-  logger.success(`Extracted yoga-sync.js from socket-btm ${version}`)
 
   // Convert to .mjs format (just add source hash comment and change to ES module).
   const mjsContent = `/**
@@ -182,9 +174,6 @@ ${syncContent}
 `
 
   writeFileSync(outputPath, mjsContent, 'utf-8')
-
-  logger.success(`Generated ${outputPath}`)
-  logger.success(`yoga-sync.mjs size: ${mjsContent.length} bytes`)
 }
 
 main().catch(e => {
