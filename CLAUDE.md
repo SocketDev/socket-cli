@@ -170,7 +170,6 @@ Each command follows a consistent pattern:
 - **`eslint.config.js`** - ESLint configuration
 - **`tsconfig.json`** - Main TypeScript configuration
 - **`tsconfig.dts.json`** - TypeScript configuration for type definitions
-- **`knip.json`** - Knip unused code detection configuration
 
 ### Shadow Binaries
 - **`shadow-bin/`** - Contains wrapper scripts for npm/npx commands
