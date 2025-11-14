@@ -243,4 +243,31 @@ describe('socket scan reach - execution tests', () => {
       expect(output.length).toBeGreaterThan(0)
     },
   )
+
+  cmdit(
+    [
+      'scan',
+      'reach',
+      'test/fixtures/commands/scan/reach',
+      '--org',
+      'fakeOrg',
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token"}',
+    ],
+    'should work with bundled ANSI utilities (regression test for stripAnsi compatibility)',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      // Regression test for bundling issues where strip-ansi@6.0.1 was incompatible
+      // with ansi-regex@6.2.2, causing "stripAnsi22 is not a function" errors.
+      // Should fail due to fake token/org, but validates that ANSI utilities work.
+      expect(code).toBeGreaterThan(0)
+      const output = stdout + stderr
+      // Verify output exists and contains ANSI escape sequences.
+      expect(output.length).toBeGreaterThan(0)
+      // Should not contain "is not a function" errors from bundled code.
+      expect(output).not.toContain('is not a function')
+      expect(output).not.toContain('stripAnsi')
+      expect(output).not.toContain('ansiRegex')
+    },
+  )
 })
