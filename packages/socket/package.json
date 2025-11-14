@@ -15,7 +15,8 @@
     "url": "https://socket.dev"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=24.10.0",
+    "pnpm": ">=10.22.0"
   },
   "files": [
     "CHANGELOG.md",
