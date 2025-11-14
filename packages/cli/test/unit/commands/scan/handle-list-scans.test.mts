@@ -82,16 +82,21 @@ describe('handleListScans', () => {
 
     await handleListScans(params)
 
-    expect(mockFetch).toHaveBeenCalledWith({
-      branch: 'main',
-      direction: 'desc',
-      from_time: '2025-01-01',
-      orgSlug: 'test-org',
-      page: 1,
-      perPage: 20,
-      repo: 'test-repo',
-      sort: 'created_at',
-    })
+    expect(mockFetch).toHaveBeenCalledWith(
+      {
+        branch: 'main',
+        direction: 'desc',
+        from_time: '2025-01-01',
+        orgSlug: 'test-org',
+        page: 1,
+        perPage: 20,
+        repo: 'test-repo',
+        sort: 'created_at',
+      },
+      {
+        commandPath: 'socket scan list',
+      },
+    )
     expect(mockOutput).toHaveBeenCalledWith(mockData, 'json')
   })
 
@@ -148,6 +153,9 @@ describe('handleListScans', () => {
         page: 5,
         perPage: 50,
       }),
+      {
+        commandPath: 'socket scan list',
+      },
     )
   })
 
@@ -201,9 +209,12 @@ describe('handleListScans', () => {
     expect(mockFetch).toHaveBeenCalledWith(
       expect.objectContaining({
         branch: 'feature/new-feature',
-        repo: 'specific-repo',
         from_time: '2025-01-15',
+        repo: 'specific-repo',
       }),
+      {
+        commandPath: 'socket scan list',
+      },
     )
   })
 })

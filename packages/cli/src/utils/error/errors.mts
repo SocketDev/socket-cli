@@ -357,6 +357,36 @@ export function formatErrorWithDetail(
  * await buildErrorCause(400, 'Bad request', 'Invalid parameter')
  * // Returns: "Bad request (reason: Invalid parameter)"
  */
+/**
+ * Calculate similarity ratio between two strings using word overlap.
+ * Returns a value between 0 (no overlap) and 1 (identical).
+ */
+function calculateStringSimilarity(str1: string, str2: string): number {
+  if (str1 === str2) return 1
+
+  const words1 = new Set(
+    str1
+      .toLowerCase()
+      .split(/\W+/)
+      .filter((w) => w.length > 2),
+  )
+  const words2 = new Set(
+    str2
+      .toLowerCase()
+      .split(/\W+/)
+      .filter((w) => w.length > 2),
+  )
+
+  if (words1.size === 0 || words2.size === 0) return 0
+
+  let overlap = 0
+  for (const word of words1) {
+    if (words2.has(word)) overlap++
+  }
+
+  return (2 * overlap) / (words1.size + words2.size)
+}
+
 export async function buildErrorCause(
   status: number,
   message: string,
@@ -379,9 +409,16 @@ export async function buildErrorCause(
     return quotaMessage
   }
 
-  return reason && message !== reason
-    ? `${message} (reason: ${reason})`
-    : message
+  // Skip adding reason if it's too similar to message (avoid redundancy).
+  // Threshold of 0.7 means >70% word overlap indicates redundancy.
+  if (reason && message !== reason) {
+    const similarity = calculateStringSimilarity(message, reason)
+    if (similarity < 0.7) {
+      return `${message} (reason: ${reason})`
+    }
+  }
+
+  return message
 }
 
 /**

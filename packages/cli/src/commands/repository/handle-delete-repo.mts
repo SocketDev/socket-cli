@@ -8,7 +8,9 @@ export async function handleDeleteRepo(
   repoName: string,
   outputKind: OutputKind,
 ) {
-  const data = await fetchDeleteRepo(orgSlug, repoName)
+  const data = await fetchDeleteRepo(orgSlug, repoName, {
+    commandPath: 'socket repository del',
+  })
 
   await outputDeleteRepo(data, repoName, outputKind)
 }

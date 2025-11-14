@@ -78,7 +78,9 @@ describe('handlePurlsShallowScore', () => {
       purls,
     })
 
-    expect(fetchPurlsShallowScore).toHaveBeenCalledWith(purls)
+    expect(fetchPurlsShallowScore).toHaveBeenCalledWith(purls, {
+      commandPath: 'socket package shallow',
+    })
     expect(outputPurlsShallowScore).toHaveBeenCalledWith(
       purls,
       mockData,
@@ -99,7 +101,9 @@ describe('handlePurlsShallowScore', () => {
       purls,
     })
 
-    expect(fetchPurlsShallowScore).toHaveBeenCalledWith(purls)
+    expect(fetchPurlsShallowScore).toHaveBeenCalledWith(purls, {
+      commandPath: 'socket package shallow',
+    })
     expect(outputPurlsShallowScore).toHaveBeenCalledWith(
       purls,
       mockError,
@@ -139,7 +143,9 @@ describe('handlePurlsShallowScore', () => {
       purls: [],
     })
 
-    expect(fetchPurlsShallowScore).toHaveBeenCalledWith([])
+    expect(fetchPurlsShallowScore).toHaveBeenCalledWith([], {
+      commandPath: 'socket package shallow',
+    })
     expect(outputPurlsShallowScore).toHaveBeenCalledWith([], mockData, 'json')
   })
 
@@ -201,7 +207,9 @@ describe('handlePurlsShallowScore', () => {
       purls,
     })
 
-    expect(fetchPurlsShallowScore).toHaveBeenCalledWith(purls)
+    expect(fetchPurlsShallowScore).toHaveBeenCalledWith(purls, {
+      commandPath: 'socket package shallow',
+    })
     expect(outputPurlsShallowScore).toHaveBeenCalledWith(
       purls,
       mockData,

@@ -14,6 +14,7 @@ export type FetchAuditLogsConfig = {
 }
 
 export type FetchAuditLogOptions = {
+  commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
 
@@ -21,7 +22,10 @@ export async function fetchAuditLog(
   config: FetchAuditLogsConfig,
   options?: FetchAuditLogOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>> {
-  const { sdkOpts } = { __proto__: null, ...options } as FetchAuditLogOptions
+  const { commandPath, sdkOpts } = {
+    __proto__: null,
+    ...options,
+  } as FetchAuditLogOptions
 
   const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
@@ -45,6 +49,9 @@ export async function fetchAuditLog(
       page,
       per_page: perPage,
     }),
-    { description: `audit log for ${orgSlug}` },
+    {
+      commandPath,
+      description: `audit log for ${orgSlug}`,
+    },
   )
 }

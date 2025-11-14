@@ -152,7 +152,10 @@ async function run(
   }
 
   if (json && stream) {
-    await streamScan(orgSlug, scanId, { file })
+    await streamScan(orgSlug, scanId, {
+      commandPath: 'socket scan view',
+      file,
+    })
   } else {
     await handleScanView(orgSlug, scanId, file, outputKind)
   }

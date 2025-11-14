@@ -56,7 +56,9 @@ describe('handleDeleteScan', () => {
 
     await handleDeleteScan('test-org', 'scan-123', 'json')
 
-    expect(mockFetch).toHaveBeenCalledWith('test-org', 'scan-123')
+    expect(mockFetch).toHaveBeenCalledWith('test-org', 'scan-123', {
+      commandPath: 'socket scan del',
+    })
     expect(mockOutput).toHaveBeenCalledWith(mockResult, 'json')
   })
 
@@ -72,7 +74,9 @@ describe('handleDeleteScan', () => {
 
     await handleDeleteScan('test-org', 'nonexistent-scan', 'text')
 
-    expect(mockFetch).toHaveBeenCalledWith('test-org', 'nonexistent-scan')
+    expect(mockFetch).toHaveBeenCalledWith('test-org', 'nonexistent-scan', {
+      commandPath: 'socket scan del',
+    })
     expect(mockOutput).toHaveBeenCalledWith(mockError, 'text')
   })
 
@@ -105,7 +109,9 @@ describe('handleDeleteScan', () => {
     for (const scanId of scanIds) {
       // eslint-disable-next-line no-await-in-loop
       await handleDeleteScan('test-org', scanId, 'json')
-      expect(mockFetch).toHaveBeenCalledWith('test-org', scanId)
+      expect(mockFetch).toHaveBeenCalledWith('test-org', scanId, {
+        commandPath: 'socket scan del',
+      })
     }
   })
 

@@ -203,14 +203,15 @@ export async function handleCreateNewScan({
     scanPaths,
     orgSlug,
     {
+      branchName,
       commitHash,
       commitMessage,
       committers,
       pullRequest,
       repoName,
-      branchName,
     },
     {
+      commandPath: 'socket scan create',
       cwd,
       defaultBranch,
       pendingHead,

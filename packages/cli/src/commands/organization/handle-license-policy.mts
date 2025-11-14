@@ -7,7 +7,9 @@ export async function handleLicensePolicy(
   orgSlug: string,
   outputKind: OutputKind,
 ): Promise<void> {
-  const data = await fetchLicensePolicy(orgSlug)
+  const data = await fetchLicensePolicy(orgSlug, {
+    commandPath: 'socket organization policy license',
+  })
 
   await outputLicensePolicy(data, outputKind)
 }

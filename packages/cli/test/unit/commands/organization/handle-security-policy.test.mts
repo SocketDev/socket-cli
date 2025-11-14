@@ -77,7 +77,9 @@ describe('handleSecurityPolicy', () => {
 
     await handleSecurityPolicy('test-org', 'json')
 
-    expect(fetchSecurityPolicy).toHaveBeenCalledWith('test-org')
+    expect(fetchSecurityPolicy).toHaveBeenCalledWith('test-org', {
+      commandPath: 'socket organization policy security',
+    })
     expect(outputSecurityPolicy).toHaveBeenCalledWith(mockPolicy, 'json')
   })
 
@@ -87,7 +89,9 @@ describe('handleSecurityPolicy', () => {
 
     await handleSecurityPolicy('invalid-org', 'text')
 
-    expect(fetchSecurityPolicy).toHaveBeenCalledWith('invalid-org')
+    expect(fetchSecurityPolicy).toHaveBeenCalledWith('invalid-org', {
+      commandPath: 'socket organization policy security',
+    })
     expect(outputSecurityPolicy).toHaveBeenCalledWith(mockError, 'text')
   })
 
@@ -114,7 +118,9 @@ describe('handleSecurityPolicy', () => {
       mockFetchSecurityPolicy.mockResolvedValue(createSuccessResult({}))
       // eslint-disable-next-line no-await-in-loop
       await handleSecurityPolicy(orgSlug, 'json')
-      expect(fetchSecurityPolicy).toHaveBeenCalledWith(orgSlug)
+      expect(fetchSecurityPolicy).toHaveBeenCalledWith(orgSlug, {
+        commandPath: 'socket organization policy security',
+      })
     }
   })
 

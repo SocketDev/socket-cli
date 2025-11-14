@@ -6,6 +6,7 @@ import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchDeleteOrgFullScanOptions = {
+  commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
 
@@ -14,7 +15,7 @@ export async function fetchDeleteOrgFullScan(
   scanId: string,
   options?: FetchDeleteOrgFullScanOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'deleteFullScan'>['data']>> {
-  const { sdkOpts } = {
+  const { commandPath, sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchDeleteOrgFullScanOptions
@@ -28,6 +29,7 @@ export async function fetchDeleteOrgFullScan(
   return await handleApiCall<'deleteFullScan'>(
     sockSdk.deleteFullScan(orgSlug, scanId),
     {
+      commandPath,
       description: 'to delete a scan',
     },
   )

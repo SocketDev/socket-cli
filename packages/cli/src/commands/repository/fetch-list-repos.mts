@@ -14,6 +14,7 @@ export type FetchListReposConfig = {
 }
 
 export type FetchListReposOptions = {
+  commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
 
@@ -26,7 +27,7 @@ export async function fetchListRepos(
     ...config,
   } as FetchListReposConfig
 
-  const { sdkOpts } = {
+  const { commandPath, sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchListReposOptions
@@ -44,6 +45,9 @@ export async function fetchListRepos(
       per_page: perPage,
       page,
     }),
-    { description: 'list of repositories' },
+    {
+      commandPath,
+      description: 'list of repositories',
+    },
   )
 }

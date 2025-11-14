@@ -25,9 +25,13 @@ export async function handleAnalytics({
     | SocketSdkSuccessResult<'getRepoAnalytics'>['data']
   >
   if (scope === 'org') {
-    result = await fetchOrgAnalyticsData(time)
+    result = await fetchOrgAnalyticsData(time, {
+      commandPath: 'socket analytics',
+    })
   } else if (repo) {
-    result = await fetchRepoAnalyticsData(repo, time)
+    result = await fetchRepoAnalyticsData(repo, time, {
+      commandPath: 'socket analytics',
+    })
   } else {
     result = {
       ok: false,

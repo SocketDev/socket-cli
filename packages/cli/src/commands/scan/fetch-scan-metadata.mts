@@ -6,6 +6,7 @@ import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchScanMetadataOptions = {
+  commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
 
@@ -14,7 +15,7 @@ export async function fetchScanMetadata(
   scanId: string,
   options?: FetchScanMetadataOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getFullScanMetadata'>['data']>> {
-  const { sdkOpts } = {
+  const { commandPath, sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchScanMetadataOptions
@@ -28,6 +29,7 @@ export async function fetchScanMetadata(
   return await handleApiCall<'getFullScanMetadata'>(
     sockSdk.getFullScanMetadata(orgSlug, scanId),
     {
+      commandPath,
       description: 'meta data for a full scan',
     },
   )

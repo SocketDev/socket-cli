@@ -72,14 +72,19 @@ describe('handleCreateRepo', () => {
       'json',
     )
 
-    expect(mockFetchCreateRepo).toHaveBeenCalledWith({
-      orgSlug: 'test-org',
-      repoName: 'my-repo',
-      description: 'Test repository',
-      homepage: 'https://example.com',
-      defaultBranch: 'main',
-      visibility: 'private',
-    })
+    expect(mockFetchCreateRepo).toHaveBeenCalledWith(
+      {
+        orgSlug: 'test-org',
+        repoName: 'my-repo',
+        description: 'Test repository',
+        homepage: 'https://example.com',
+        defaultBranch: 'main',
+        visibility: 'private',
+      },
+      {
+        commandPath: 'socket repository create',
+      },
+    )
     expect(mockOutputCreateRepo).toHaveBeenCalledWith(
       mockData,
       'my-repo',
@@ -109,6 +114,9 @@ describe('handleCreateRepo', () => {
     expect(mockFetchCreateRepo).toHaveBeenCalledWith(
       expect.objectContaining({
         repoName: 'existing-repo',
+      }),
+      expect.objectContaining({
+        commandPath: 'socket repository create',
       }),
     )
     expect(mockOutputCreateRepo).toHaveBeenCalledWith(
@@ -220,6 +228,9 @@ describe('handleCreateRepo', () => {
 
       expect(mockFetchCreateRepo).toHaveBeenCalledWith(
         expect.objectContaining({ visibility }),
+        expect.objectContaining({
+          commandPath: 'socket repository create',
+        }),
       )
     }
   })
@@ -242,13 +253,18 @@ describe('handleCreateRepo', () => {
       'json',
     )
 
-    expect(mockFetchCreateRepo).toHaveBeenCalledWith({
-      orgSlug: 'org',
-      repoName: 'minimal-repo',
-      description: '',
-      homepage: '',
-      defaultBranch: 'main',
-      visibility: 'public',
-    })
+    expect(mockFetchCreateRepo).toHaveBeenCalledWith(
+      {
+        orgSlug: 'org',
+        repoName: 'minimal-repo',
+        description: '',
+        homepage: '',
+        defaultBranch: 'main',
+        visibility: 'public',
+      },
+      {
+        commandPath: 'socket repository create',
+      },
+    )
   })
 })

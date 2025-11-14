@@ -34,14 +34,19 @@ export async function handleCreateRepo(
     outputKind,
   })
 
-  const data = await fetchCreateRepo({
-    defaultBranch,
-    description,
-    homepage,
-    orgSlug,
-    repoName,
-    visibility,
-  })
+  const data = await fetchCreateRepo(
+    {
+      defaultBranch,
+      description,
+      homepage,
+      orgSlug,
+      repoName,
+      visibility,
+    },
+    {
+      commandPath: 'socket repository create',
+    },
+  )
 
   debug(`Repository creation ${data.ok ? 'succeeded' : 'failed'}`)
   debugDir({ data })

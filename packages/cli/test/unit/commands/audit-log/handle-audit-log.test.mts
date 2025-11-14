@@ -82,13 +82,18 @@ describe('handleAuditLog', () => {
       perPage: 10,
     })
 
-    expect(fetchAuditLog).toHaveBeenCalledWith({
-      logType: 'security',
-      orgSlug: 'test-org',
-      outputKind: 'json',
-      page: 1,
-      perPage: 10,
-    })
+    expect(fetchAuditLog).toHaveBeenCalledWith(
+      {
+        logType: 'security',
+        orgSlug: 'test-org',
+        outputKind: 'json',
+        page: 1,
+        perPage: 10,
+      },
+      {
+        commandPath: 'socket audit-log',
+      },
+    )
     expect(outputAuditLog).toHaveBeenCalledWith(mockLogs, {
       logType: 'security',
       orgSlug: 'test-org',
@@ -117,13 +122,18 @@ describe('handleAuditLog', () => {
       perPage: 50,
     })
 
-    expect(fetchAuditLog).toHaveBeenCalledWith({
-      logType: 'all',
-      orgSlug: 'test-org',
-      outputKind: 'text',
-      page: 5,
-      perPage: 50,
-    })
+    expect(fetchAuditLog).toHaveBeenCalledWith(
+      {
+        logType: 'all',
+        orgSlug: 'test-org',
+        outputKind: 'text',
+        page: 5,
+        perPage: 50,
+      },
+      {
+        commandPath: 'socket audit-log',
+      },
+    )
     expect(outputAuditLog).toHaveBeenCalledWith(mockLogs, {
       logType: 'all',
       orgSlug: 'test-org',
@@ -154,13 +164,18 @@ describe('handleAuditLog', () => {
       perPage: 20,
     })
 
-    expect(fetchAuditLog).toHaveBeenCalledWith({
-      logType: 'config',
-      orgSlug: 'my-org',
-      outputKind: 'markdown',
-      page: 1,
-      perPage: 20,
-    })
+    expect(fetchAuditLog).toHaveBeenCalledWith(
+      {
+        logType: 'config',
+        orgSlug: 'my-org',
+        outputKind: 'markdown',
+        page: 1,
+        perPage: 20,
+      },
+      {
+        commandPath: 'socket audit-log',
+      },
+    )
     expect(outputAuditLog).toHaveBeenCalledWith(mockLogs, {
       logType: 'config',
       orgSlug: 'my-org',
@@ -235,6 +250,7 @@ describe('handleAuditLog', () => {
 
       expect(fetchAuditLog).toHaveBeenCalledWith(
         expect.objectContaining({ logType }),
+        expect.objectContaining({ commandPath: 'socket audit-log' }),
       )
     }
   })

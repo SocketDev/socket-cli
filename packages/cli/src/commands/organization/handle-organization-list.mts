@@ -11,7 +11,9 @@ export async function handleOrganizationList(
   debug('Fetching organization list')
   debugDir({ outputKind })
 
-  const data = await fetchOrganization()
+  const data = await fetchOrganization({
+    commandPath: 'socket organization list',
+  })
 
   debug(
     `Organization list ${data.ok ? 'fetched successfully' : 'fetch failed'}`,

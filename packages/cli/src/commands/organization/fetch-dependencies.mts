@@ -11,6 +11,7 @@ export type FetchDependenciesConfig = {
 }
 
 export type FetchDependenciesOptions = {
+  commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
 
@@ -18,7 +19,7 @@ export async function fetchDependencies(
   config: FetchDependenciesConfig,
   options?: FetchDependenciesOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'searchDependencies'>['data']>> {
-  const { sdkOpts } = {
+  const { commandPath, sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchDependenciesOptions
@@ -37,6 +38,7 @@ export async function fetchDependencies(
   return await handleApiCall<'searchDependencies'>(
     sockSdk.searchDependencies({ limit, offset }),
     {
+      commandPath,
       description: 'organization dependencies',
     },
   )
