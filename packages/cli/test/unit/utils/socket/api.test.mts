@@ -30,6 +30,8 @@ const mockFail = vi.hoisted(() => vi.fn())
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
   fail: mockFail,
+  group: vi.fn(),
+  groupEnd: vi.fn(),
   info: vi.fn(),
   log: vi.fn(),
   success: vi.fn(),
@@ -51,6 +53,7 @@ import {
   getErrorMessageForHttpStatusCode,
   handleApiCall,
   handleApiCallNoSpinner,
+  logPermissionsFor403,
 } from '../../../../../src/utils/socket/api.mts'
 
 describe('api utilities', () => {
@@ -214,6 +217,82 @@ describe('api utilities', () => {
 
       const result = await handleApiCallNoSpinner(mockApiPromise)
       expect(result.ok).toBe(true)
+    })
+  })
+
+  describe('logPermissionsFor403', () => {
+    it('logs specific permissions when command requirements are found', () => {
+      logPermissionsFor403('socket fix')
+
+      // Verify logger.group was called with permissions header.
+      expect(mockLogger.group).toHaveBeenCalledWith(
+        '🔐 Required API Permissions:',
+      )
+
+      // Verify permissions were logged.
+      expect(mockLogger.error).toHaveBeenCalledWith('full-scans:create')
+      expect(mockLogger.error).toHaveBeenCalledWith('packages:list')
+
+      // Verify groupEnd was called.
+      expect(mockLogger.groupEnd).toHaveBeenCalled()
+
+      // Verify fix instructions.
+      expect(mockLogger.group).toHaveBeenCalledWith('💡 To fix this:')
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Visit https://socket.dev/settings/api-tokens',
+      )
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Edit your API token to grant the permissions listed above',
+      )
+      expect(mockLogger.error).toHaveBeenCalledWith('Re-run your command')
+    })
+
+    it('logs general guidance when command requirements not found', () => {
+      logPermissionsFor403('socket unknown')
+
+      // Verify general permission message.
+      expect(mockLogger.group).toHaveBeenCalledWith(
+        '🔐 Permission Requirements:',
+      )
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Your API token lacks the required permissions for this operation.',
+      )
+
+      // Verify general fix instructions.
+      expect(mockLogger.group).toHaveBeenCalledWith('💡 To fix this:')
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Visit https://socket.dev/settings/api-tokens',
+      )
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Check your API token has the necessary permissions',
+      )
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Run `socket unknown --help` to see required permissions',
+      )
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Re-run your command after updating permissions',
+      )
+    })
+
+    it('handles undefined cmdPath gracefully', () => {
+      logPermissionsFor403(undefined)
+
+      // Should show general guidance.
+      expect(mockLogger.group).toHaveBeenCalledWith(
+        '🔐 Permission Requirements:',
+      )
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Run `socket help --help` to see required permissions',
+      )
+    })
+
+    it('logs permissions for scan:create command', () => {
+      logPermissionsFor403('socket scan:create')
+
+      expect(mockLogger.group).toHaveBeenCalledWith(
+        '🔐 Required API Permissions:',
+      )
+      expect(mockLogger.error).toHaveBeenCalledWith('full-scans:create')
     })
   })
 })

@@ -16,7 +16,9 @@ export async function handlePurlsShallowScore({
   debug(`Fetching shallow scores for ${purls.length} packages`)
   debugDir({ purls, outputKind })
 
-  const packageData = await fetchPurlsShallowScore(purls)
+  const packageData = await fetchPurlsShallowScore(purls, {
+    commandPath: 'socket package shallow',
+  })
 
   debug(
     `Shallow scores ${packageData.ok ? 'fetched successfully' : 'fetch failed'}`,

@@ -9,6 +9,7 @@ import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchPurlsShallowScoreOptions = {
+  commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
 
@@ -16,7 +17,7 @@ export async function fetchPurlsShallowScore(
   purls: string[],
   options?: FetchPurlsShallowScoreOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'batchPackageFetch'>>> {
-  const { sdkOpts } = {
+  const { commandPath, sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchPurlsShallowScoreOptions
@@ -43,7 +44,10 @@ export async function fetchPurlsShallowScore(
         alerts: 'true',
       },
     ),
-    { description: 'looking up package' },
+    {
+      commandPath,
+      description: 'looking up package',
+    },
   )
   if (!batchPackageCResult.ok) {
     return batchPackageCResult

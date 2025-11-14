@@ -8,7 +8,9 @@ export async function handleOrgScanMetadata(
   scanId: string,
   outputKind: OutputKind,
 ): Promise<void> {
-  const data = await fetchScanMetadata(orgSlug, scanId)
+  const data = await fetchScanMetadata(orgSlug, scanId, {
+    commandPath: 'socket scan metadata',
+  })
 
   await outputScanMetadata(data, scanId, outputKind)
 }

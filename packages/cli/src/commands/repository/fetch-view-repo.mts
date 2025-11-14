@@ -6,6 +6,7 @@ import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchViewRepoOptions = {
+  commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
 
@@ -14,7 +15,10 @@ export async function fetchViewRepo(
   repoName: string,
   options?: FetchViewRepoOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getRepository'>['data']>> {
-  const { sdkOpts } = { __proto__: null, ...options } as FetchViewRepoOptions
+  const { commandPath, sdkOpts } = {
+    __proto__: null,
+    ...options,
+  } as FetchViewRepoOptions
 
   const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
@@ -25,6 +29,7 @@ export async function fetchViewRepo(
   return await handleApiCall<'getRepository'>(
     sockSdk.getRepository(orgSlug, repoName),
     {
+      commandPath,
       description: 'repository data',
     },
   )

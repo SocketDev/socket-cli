@@ -48,7 +48,9 @@ describe('handleDeleteRepo', () => {
 
     await handleDeleteRepo('test-org', 'test-repo', 'json')
 
-    expect(mockFetchDeleteRepo).toHaveBeenCalledWith('test-org', 'test-repo')
+    expect(mockFetchDeleteRepo).toHaveBeenCalledWith('test-org', 'test-repo', {
+      commandPath: 'socket repository del',
+    })
     expect(mockOutputDeleteRepo).toHaveBeenCalledWith(
       mockResult,
       'test-repo',
@@ -68,6 +70,9 @@ describe('handleDeleteRepo', () => {
     expect(mockFetchDeleteRepo).toHaveBeenCalledWith(
       'test-org',
       'nonexistent-repo',
+      {
+        commandPath: 'socket repository del',
+      },
     )
     expect(mockOutputDeleteRepo).toHaveBeenCalledWith(
       mockResult,
@@ -100,7 +105,9 @@ describe('handleDeleteRepo', () => {
       mockFetchDeleteRepo.mockResolvedValue(createSuccessResult({}))
       // eslint-disable-next-line no-await-in-loop
       await handleDeleteRepo('test-org', repoName, 'json')
-      expect(mockFetchDeleteRepo).toHaveBeenCalledWith('test-org', repoName)
+      expect(mockFetchDeleteRepo).toHaveBeenCalledWith('test-org', repoName, {
+        commandPath: 'socket repository del',
+      })
     }
   })
 

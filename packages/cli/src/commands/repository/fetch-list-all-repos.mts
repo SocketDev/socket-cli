@@ -6,6 +6,7 @@ import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchListAllReposOptions = {
+  commandPath?: string | undefined
   direction?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
   sort?: string | undefined
@@ -15,7 +16,7 @@ export async function fetchListAllRepos(
   orgSlug: string,
   options?: FetchListAllReposOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'listRepositories'>['data']>> {
-  const { direction, sdkOpts, sort } = {
+  const { commandPath, direction, sdkOpts, sort } = {
     __proto__: null,
     ...options,
   } as FetchListAllReposOptions
@@ -45,7 +46,10 @@ export async function fetchListAllRepos(
         per_page: 100, // max
         page: nextPage,
       }),
-      { description: 'list of repositories' },
+      {
+        commandPath,
+        description: 'list of repositories',
+      },
     )
     if (!orgRepoListCResult.ok) {
       return orgRepoListCResult

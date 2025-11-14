@@ -8,7 +8,9 @@ export async function handleDeleteScan(
   scanId: string,
   outputKind: OutputKind,
 ): Promise<void> {
-  const data = await fetchDeleteOrgFullScan(orgSlug, scanId)
+  const data = await fetchDeleteOrgFullScan(orgSlug, scanId, {
+    commandPath: 'socket scan del',
+  })
 
   await outputDeleteScan(data, outputKind)
 }

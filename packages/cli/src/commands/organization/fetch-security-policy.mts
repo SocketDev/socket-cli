@@ -6,6 +6,7 @@ import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchSecurityPolicyOptions = {
+  commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
 
@@ -13,7 +14,7 @@ export async function fetchSecurityPolicy(
   orgSlug: string,
   options?: FetchSecurityPolicyOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']>> {
-  const { sdkOpts } = {
+  const { commandPath, sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchSecurityPolicyOptions
@@ -27,6 +28,7 @@ export async function fetchSecurityPolicy(
   return await handleApiCall<'getOrgSecurityPolicy'>(
     sockSdk.getOrgSecurityPolicy(orgSlug),
     {
+      commandPath,
       description: 'organization security policy',
     },
   )

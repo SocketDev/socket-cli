@@ -15,6 +15,7 @@ export type FetchCreateRepoConfig = {
 }
 
 export type FetchCreateRepoOptions = {
+  commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
 
@@ -31,7 +32,7 @@ export async function fetchCreateRepo(
     visibility,
   } = config
 
-  const { sdkOpts } = {
+  const { commandPath, sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchCreateRepoOptions
@@ -50,6 +51,9 @@ export async function fetchCreateRepo(
       name: repoName,
       visibility,
     }),
-    { description: 'to create a repository' },
+    {
+      commandPath,
+      description: 'to create a repository',
+    },
   )
 }

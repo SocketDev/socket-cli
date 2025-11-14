@@ -21,14 +21,19 @@ export async function handleUpdateRepo(
   },
   outputKind: OutputKind,
 ): Promise<void> {
-  const data = await fetchUpdateRepo({
-    defaultBranch,
-    description,
-    homepage,
-    orgSlug,
-    repoName,
-    visibility,
-  })
+  const data = await fetchUpdateRepo(
+    {
+      defaultBranch,
+      description,
+      homepage,
+      orgSlug,
+      repoName,
+      visibility,
+    },
+    {
+      commandPath: 'socket repository update',
+    },
+  )
 
   await outputUpdateRepo(data, repoName, outputKind)
 }

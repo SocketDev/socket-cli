@@ -61,7 +61,9 @@ describe('handleUpdateRepo', () => {
 
     await handleUpdateRepo(params, 'json')
 
-    expect(mockFetchUpdateRepo).toHaveBeenCalledWith(params)
+    expect(mockFetchUpdateRepo).toHaveBeenCalledWith(params, {
+      commandPath: 'socket repository update',
+    })
     expect(mockOutputUpdateRepo).toHaveBeenCalledWith(
       mockResult,
       'test-repo',
@@ -87,7 +89,9 @@ describe('handleUpdateRepo', () => {
 
     await handleUpdateRepo(params, 'text')
 
-    expect(mockFetchUpdateRepo).toHaveBeenCalledWith(params)
+    expect(mockFetchUpdateRepo).toHaveBeenCalledWith(params, {
+      commandPath: 'socket repository update',
+    })
     expect(mockOutputUpdateRepo).toHaveBeenCalledWith(
       mockError,
       'nonexistent',
@@ -138,6 +142,7 @@ describe('handleUpdateRepo', () => {
 
       expect(mockFetchUpdateRepo).toHaveBeenCalledWith(
         expect.objectContaining({ visibility }),
+        expect.objectContaining({ commandPath: 'socket repository update' }),
       )
     }
   })
@@ -163,6 +168,7 @@ describe('handleUpdateRepo', () => {
       expect.objectContaining({
         defaultBranch: 'develop',
       }),
+      expect.objectContaining({ commandPath: 'socket repository update' }),
     )
     expect(mockOutputUpdateRepo).toHaveBeenCalledWith(
       expect.objectContaining({

@@ -64,7 +64,9 @@ describe('handleOrgScanMetadata', () => {
 
     await handleOrgScanMetadata('test-org', 'scan-123', 'json')
 
-    expect(mockFetch).toHaveBeenCalledWith('test-org', 'scan-123')
+    expect(mockFetch).toHaveBeenCalledWith('test-org', 'scan-123', {
+      commandPath: 'socket scan metadata',
+    })
     expect(mockOutput).toHaveBeenCalledWith(mockMetadata, 'scan-123', 'json')
   })
 
@@ -83,7 +85,9 @@ describe('handleOrgScanMetadata', () => {
 
     await handleOrgScanMetadata('test-org', 'invalid-scan', 'text')
 
-    expect(mockFetch).toHaveBeenCalledWith('test-org', 'invalid-scan')
+    expect(mockFetch).toHaveBeenCalledWith('test-org', 'invalid-scan', {
+      commandPath: 'socket scan metadata',
+    })
     expect(mockOutput).toHaveBeenCalledWith(mockError, 'invalid-scan', 'text')
   })
 
@@ -134,7 +138,9 @@ describe('handleOrgScanMetadata', () => {
       mockFetch.mockResolvedValue(createSuccessResult({}))
       // eslint-disable-next-line no-await-in-loop
       await handleOrgScanMetadata('test-org', scanId, 'json')
-      expect(mockFetch).toHaveBeenCalledWith('test-org', scanId)
+      expect(mockFetch).toHaveBeenCalledWith('test-org', scanId, {
+        commandPath: 'socket scan metadata',
+      })
     }
   })
 

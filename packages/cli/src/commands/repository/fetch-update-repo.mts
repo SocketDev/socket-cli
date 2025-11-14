@@ -15,6 +15,7 @@ export type FetchUpdateRepoConfig = {
 }
 
 export type FetchUpdateRepoOptions = {
+  commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
 
@@ -31,7 +32,7 @@ export async function fetchUpdateRepo(
     visibility,
   } = { __proto__: null, ...config } as FetchUpdateRepoConfig
 
-  const { sdkOpts } = {
+  const { commandPath, sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchUpdateRepoOptions
@@ -51,6 +52,9 @@ export async function fetchUpdateRepo(
       orgSlug,
       visibility,
     }),
-    { description: 'to update a repository' },
+    {
+      commandPath,
+      description: 'to update a repository',
+    },
   )
 }

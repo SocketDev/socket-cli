@@ -7,7 +7,9 @@ export async function handleSecurityPolicy(
   orgSlug: string,
   outputKind: OutputKind,
 ): Promise<void> {
-  const data = await fetchSecurityPolicy(orgSlug)
+  const data = await fetchSecurityPolicy(orgSlug, {
+    commandPath: 'socket organization policy security',
+  })
 
   await outputSecurityPolicy(data, outputKind)
 }

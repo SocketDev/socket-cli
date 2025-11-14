@@ -6,6 +6,7 @@ import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchDeleteRepoOptions = {
+  commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
 
@@ -14,7 +15,7 @@ export async function fetchDeleteRepo(
   repoName: string,
   options?: FetchDeleteRepoOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'deleteRepository'>['data']>> {
-  const { sdkOpts } = {
+  const { commandPath, sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchDeleteRepoOptions
@@ -28,6 +29,7 @@ export async function fetchDeleteRepo(
   return await handleApiCall<'deleteRepository'>(
     sockSdk.deleteRepository(orgSlug, repoName),
     {
+      commandPath,
       description: 'to delete a repository',
     },
   )

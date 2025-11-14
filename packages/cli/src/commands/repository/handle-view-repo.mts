@@ -8,7 +8,9 @@ export async function handleViewRepo(
   repoName: string,
   outputKind: OutputKind,
 ): Promise<void> {
-  const data = await fetchViewRepo(orgSlug, repoName)
+  const data = await fetchViewRepo(orgSlug, repoName, {
+    commandPath: 'socket repository view',
+  })
 
   await outputViewRepo(data, outputKind)
 }

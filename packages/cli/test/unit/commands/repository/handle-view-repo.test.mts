@@ -51,7 +51,9 @@ describe('handleViewRepo', () => {
 
     await handleViewRepo('test-org', 'test-repo', 'json')
 
-    expect(mockFetchViewRepo).toHaveBeenCalledWith('test-org', 'test-repo')
+    expect(mockFetchViewRepo).toHaveBeenCalledWith('test-org', 'test-repo', {
+      commandPath: 'socket repository view',
+    })
     expect(mockOutputViewRepo).toHaveBeenCalledWith(mockRepoData, 'json')
   })
 
@@ -69,6 +71,9 @@ describe('handleViewRepo', () => {
     expect(mockFetchViewRepo).toHaveBeenCalledWith(
       'test-org',
       'nonexistent-repo',
+      {
+        commandPath: 'socket repository view',
+      },
     )
     expect(mockOutputViewRepo).toHaveBeenCalledWith(mockError, 'text')
   })
@@ -123,7 +128,9 @@ describe('handleViewRepo', () => {
       mockFetchViewRepo.mockResolvedValue(createSuccessResult({}))
       // eslint-disable-next-line no-await-in-loop
       await handleViewRepo(org, repo, 'json')
-      expect(mockFetchViewRepo).toHaveBeenCalledWith(org, repo)
+      expect(mockFetchViewRepo).toHaveBeenCalledWith(org, repo, {
+        commandPath: 'socket repository view',
+      })
     }
   })
 })

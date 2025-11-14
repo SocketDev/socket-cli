@@ -17,6 +17,7 @@ export type FetchOrgFullScanListConfig = {
 }
 
 export type FetchOrgFullScanListOptions = {
+  commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
 
@@ -24,7 +25,7 @@ export async function fetchOrgFullScanList(
   config: FetchOrgFullScanListConfig,
   options?: FetchOrgFullScanListOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'listFullScans'>['data']>> {
-  const { sdkOpts } = {
+  const { commandPath, sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchOrgFullScanListOptions
@@ -50,6 +51,9 @@ export async function fetchOrgFullScanList(
       page,
       per_page: perPage,
     }),
-    { description: 'list of scans' },
+    {
+      commandPath,
+      description: 'list of scans',
+    },
   )
 }

@@ -17,7 +17,12 @@ export async function handleDependencies({
   debug(`Fetching dependencies with limit=${limit}, offset=${offset}`)
   debugDir({ limit, offset, outputKind })
 
-  const result = await fetchDependencies({ limit, offset })
+  const result = await fetchDependencies(
+    { limit, offset },
+    {
+      commandPath: 'socket organization dependencies',
+    },
+  )
 
   debug(`Dependencies ${result.ok ? 'fetched successfully' : 'fetch failed'}`)
   debugDir({ result })

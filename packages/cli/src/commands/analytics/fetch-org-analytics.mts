@@ -6,6 +6,7 @@ import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchOrgAnalyticsDataOptions = {
+  commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
 
@@ -13,7 +14,7 @@ export async function fetchOrgAnalyticsData(
   time: number,
   options?: FetchOrgAnalyticsDataOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getOrgAnalytics'>['data']>> {
-  const { sdkOpts } = {
+  const { commandPath, sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchOrgAnalyticsDataOptions
@@ -27,6 +28,7 @@ export async function fetchOrgAnalyticsData(
   return await handleApiCall<'getOrgAnalytics'>(
     sockSdk.getOrgAnalytics(time.toString()),
     {
+      commandPath,
       description: 'analytics data',
     },
   )

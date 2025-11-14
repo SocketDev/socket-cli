@@ -16,13 +16,18 @@ export async function handleAuditLog({
   page: number
   perPage: number
 }): Promise<void> {
-  const auditLogs = await fetchAuditLog({
-    logType,
-    orgSlug,
-    outputKind,
-    page,
-    perPage,
-  })
+  const auditLogs = await fetchAuditLog(
+    {
+      logType,
+      orgSlug,
+      outputKind,
+      page,
+      perPage,
+    },
+    {
+      commandPath: 'socket audit-log',
+    },
+  )
 
   await outputAuditLog(auditLogs, {
     logType,

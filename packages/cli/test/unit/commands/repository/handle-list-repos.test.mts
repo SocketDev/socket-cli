@@ -68,6 +68,7 @@ describe('handleListRepos', () => {
     })
 
     expect(mockFetchListAllRepos).toHaveBeenCalledWith('test-org', {
+      commandPath: 'socket repository list',
       direction: 'asc',
       sort: 'name',
     })
@@ -105,13 +106,18 @@ describe('handleListRepos', () => {
       sort: 'updated',
     })
 
-    expect(mockFetchListRepos).toHaveBeenCalledWith({
-      direction: 'desc',
-      orgSlug: 'test-org',
-      page: 1,
-      perPage: 10,
-      sort: 'updated',
-    })
+    expect(mockFetchListRepos).toHaveBeenCalledWith(
+      {
+        direction: 'desc',
+        orgSlug: 'test-org',
+        page: 1,
+        perPage: 10,
+        sort: 'updated',
+      },
+      {
+        commandPath: 'socket repository list',
+      },
+    )
     expect(mockOutputListRepos).toHaveBeenCalledWith(
       mockData,
       'text',
@@ -232,6 +238,7 @@ describe('handleListRepos', () => {
 
       expect(mockFetchListRepos).toHaveBeenCalledWith(
         expect.objectContaining({ sort }),
+        expect.objectContaining({ commandPath: 'socket repository list' }),
       )
     }
   })
@@ -255,6 +262,7 @@ describe('handleListRepos', () => {
 
     expect(mockFetchListRepos).toHaveBeenCalledWith(
       expect.objectContaining({ perPage: 100 }),
+      expect.objectContaining({ commandPath: 'socket repository list' }),
     )
     expect(mockOutputListRepos).toHaveBeenCalledWith(
       mockData,

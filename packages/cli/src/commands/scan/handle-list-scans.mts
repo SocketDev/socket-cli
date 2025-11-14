@@ -24,16 +24,21 @@ export async function handleListScans({
   repo: string
   sort: string
 }): Promise<void> {
-  const data = await fetchOrgFullScanList({
-    branch,
-    direction,
-    from_time,
-    orgSlug,
-    page,
-    perPage,
-    repo,
-    sort,
-  })
+  const data = await fetchOrgFullScanList(
+    {
+      branch,
+      direction,
+      from_time,
+      orgSlug,
+      page,
+      perPage,
+      repo,
+      sort,
+    },
+    {
+      commandPath: 'socket scan list',
+    },
+  )
 
   await outputListScans(data, outputKind)
 }

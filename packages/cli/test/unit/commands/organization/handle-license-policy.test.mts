@@ -64,7 +64,9 @@ describe('handleLicensePolicy', () => {
 
     await handleLicensePolicy('test-org', 'json')
 
-    expect(fetchLicensePolicy).toHaveBeenCalledWith('test-org')
+    expect(fetchLicensePolicy).toHaveBeenCalledWith('test-org', {
+      commandPath: 'socket organization policy license',
+    })
     expect(outputLicensePolicy).toHaveBeenCalledWith(mockResult, 'json')
   })
 
@@ -74,7 +76,9 @@ describe('handleLicensePolicy', () => {
 
     await handleLicensePolicy('test-org', 'text')
 
-    expect(fetchLicensePolicy).toHaveBeenCalledWith('test-org')
+    expect(fetchLicensePolicy).toHaveBeenCalledWith('test-org', {
+      commandPath: 'socket organization policy license',
+    })
     expect(outputLicensePolicy).toHaveBeenCalledWith(mockResult, 'text')
   })
 

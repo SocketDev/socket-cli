@@ -72,7 +72,9 @@ describe('handleAnalytics', () => {
       time: 30,
     })
 
-    expect(fetchOrgAnalyticsData).toHaveBeenCalledWith(30)
+    expect(fetchOrgAnalyticsData).toHaveBeenCalledWith(30, {
+      commandPath: 'socket analytics',
+    })
     expect(outputAnalytics).toHaveBeenCalledWith(
       createSuccessResult(mockData),
       {
@@ -97,7 +99,9 @@ describe('handleAnalytics', () => {
       time: 7,
     })
 
-    expect(fetchRepoAnalyticsData).toHaveBeenCalledWith('test-repo', 7)
+    expect(fetchRepoAnalyticsData).toHaveBeenCalledWith('test-repo', 7, {
+      commandPath: 'socket analytics',
+    })
     expect(outputAnalytics).toHaveBeenCalledWith(
       createSuccessResult(mockData),
       {

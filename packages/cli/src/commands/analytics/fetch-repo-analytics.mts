@@ -6,6 +6,7 @@ import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type RepoAnalyticsDataOptions = {
+  commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
 
@@ -14,7 +15,7 @@ export async function fetchRepoAnalyticsData(
   time: number,
   options?: RepoAnalyticsDataOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getRepoAnalytics'>['data']>> {
-  const { sdkOpts } = {
+  const { commandPath, sdkOpts } = {
     __proto__: null,
     ...options,
   } as RepoAnalyticsDataOptions
@@ -28,6 +29,7 @@ export async function fetchRepoAnalyticsData(
   return await handleApiCall<'getRepoAnalytics'>(
     sockSdk.getRepoAnalytics(repo, time.toString()),
     {
+      commandPath,
       description: 'analytics data',
     },
   )

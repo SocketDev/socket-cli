@@ -8,6 +8,7 @@ import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 const logger = getDefaultLogger()
 
 export type StreamScanOptions = {
+  commandPath?: string | undefined
   file?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
@@ -17,7 +18,7 @@ export async function streamScan(
   scanId: string,
   options?: StreamScanOptions | undefined,
 ) {
-  const { file, sdkOpts } = {
+  const { commandPath, file, sdkOpts } = {
     __proto__: null,
     ...options,
   } as StreamScanOptions
@@ -34,6 +35,9 @@ export async function streamScan(
     sockSdk.streamFullScan(orgSlug, scanId, {
       output: file === '-' ? undefined : file,
     }),
-    { description: 'a scan' },
+    {
+      commandPath,
+      description: 'a scan',
+    },
   )
 }

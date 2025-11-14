@@ -23,7 +23,11 @@ export async function handleListRepos({
   sort: string
 }): Promise<void> {
   if (all) {
-    const data = await fetchListAllRepos(orgSlug, { direction, sort })
+    const data = await fetchListAllRepos(orgSlug, {
+      commandPath: 'socket repository list',
+      direction,
+      sort,
+    })
 
     await outputListRepos(
       data,
@@ -35,13 +39,18 @@ export async function handleListRepos({
       direction,
     )
   } else {
-    const data = await fetchListRepos({
-      direction,
-      orgSlug,
-      page,
-      perPage,
-      sort,
-    })
+    const data = await fetchListRepos(
+      {
+        direction,
+        orgSlug,
+        page,
+        perPage,
+        sort,
+      },
+      {
+        commandPath: 'socket repository list',
+      },
+    )
 
     if (!data.ok) {
       await outputListRepos(data, outputKind, 0, 0, '', 0, direction)

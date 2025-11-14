@@ -80,7 +80,12 @@ describe('handleDependencies', () => {
       outputKind: 'json',
     })
 
-    expect(fetchDependencies).toHaveBeenCalledWith({ limit: 10, offset: 0 })
+    expect(fetchDependencies).toHaveBeenCalledWith(
+      { limit: 10, offset: 0 },
+      {
+        commandPath: 'socket organization dependencies',
+      },
+    )
     expect(outputDependencies).toHaveBeenCalledWith(mockResult, {
       limit: 10,
       offset: 0,
@@ -103,7 +108,12 @@ describe('handleDependencies', () => {
       outputKind: 'table',
     })
 
-    expect(fetchDependencies).toHaveBeenCalledWith({ limit: 20, offset: 10 })
+    expect(fetchDependencies).toHaveBeenCalledWith(
+      { limit: 20, offset: 10 },
+      {
+        commandPath: 'socket organization dependencies',
+      },
+    )
     expect(outputDependencies).toHaveBeenCalledWith(mockResult, {
       limit: 20,
       offset: 10,
@@ -142,10 +152,15 @@ describe('handleDependencies', () => {
       outputKind: 'json',
     })
 
-    expect(fetchDependencies).toHaveBeenCalledWith({
-      limit: 100,
-      offset: 500,
-    })
+    expect(fetchDependencies).toHaveBeenCalledWith(
+      {
+        limit: 100,
+        offset: 500,
+      },
+      {
+        commandPath: 'socket organization dependencies',
+      },
+    )
     expect(outputDependencies).toHaveBeenCalledWith(mockResult, {
       limit: 100,
       offset: 500,

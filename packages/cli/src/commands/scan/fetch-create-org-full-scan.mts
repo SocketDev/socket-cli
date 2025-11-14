@@ -16,6 +16,7 @@ export type FetchCreateOrgFullScanConfigs = {
 }
 
 export type FetchCreateOrgFullScanOptions = {
+  commandPath?: string | undefined
   cwd?: string | undefined
   defaultBranch?: boolean | undefined
   pendingHead?: boolean | undefined
@@ -40,6 +41,7 @@ export async function fetchCreateOrgFullScan(
   } = { __proto__: null, ...config } as FetchCreateOrgFullScanConfigs
 
   const {
+    commandPath,
     cwd = process.cwd(),
     defaultBranch,
     pendingHead,
@@ -72,6 +74,7 @@ export async function fetchCreateOrgFullScan(
       ...(tmp !== undefined ? { tmp: Boolean(tmp) } : {}),
     } as any),
     {
+      commandPath,
       description: 'to create a scan',
       spinner,
     },
