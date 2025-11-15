@@ -115,7 +115,12 @@ export async function spawnDlx(
   let spawnArgs: string[]
 
   if (pm === PNPM) {
-    spawnArgs = ['dlx']
+    spawnArgs = []
+    // The --silent flag must come before dlx, not after.
+    if (silent) {
+      spawnArgs.push(FLAG_SILENT)
+    }
+    spawnArgs.push('dlx')
     if (force) {
       // For pnpm, set dlx-cache-max-age to 0 via env to force fresh download.
       // This ensures we always get the latest version within the range.
@@ -129,9 +134,6 @@ export async function spawnDlx(
           npm_config_dlx_cache_max_age: '0',
         },
       }
-    }
-    if (silent) {
-      spawnArgs.push(FLAG_SILENT)
     }
     spawnArgs.push(packageString, ...args)
 
