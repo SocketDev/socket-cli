@@ -322,7 +322,7 @@ catalogs:
 overrides:
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
-  '@socketsecurity/lib': 3.4.0
+  '@socketsecurity/lib': 3.5.0
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ansi-regex: 6.2.2
   brace-expansion: 2.0.2
@@ -350,7 +350,7 @@ overrides:
   safer-buffer: npm:@socketregistry/safer-buffer@^1.0.10
   semver: 7.7.2
   set-function-length: npm:@socketregistry/set-function-length@^1.0.10
-  shell-quote: npm:shell-quote@^1.8.3
+  shell-quote: 1.8.3
   side-channel: npm:@socketregistry/side-channel@^1.0.10
   string_decoder: 0.10.31
   string-width: 8.1.0
@@ -476,8 +476,8 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 3.4.0
-        version: 3.4.0(typescript@5.9.3)
+        specifier: 3.5.0
+        version: 3.5.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.2(typescript@5.9.3)
@@ -710,8 +710,8 @@ importers:
         specifier: workspace:*
         version: link:../cli
       '@socketsecurity/lib':
-        specifier: 3.4.0
-        version: 3.4.0(typescript@5.9.3)
+        specifier: 3.5.0
+        version: 3.5.0(typescript@5.9.3)
       build-infra:
         specifier: workspace:*
         version: link:../build-infra
@@ -737,8 +737,8 @@ importers:
         specifier: 'catalog:'
         version: 7.28.4
       '@socketsecurity/lib':
-        specifier: 3.4.0
-        version: 3.4.0(typescript@5.9.3)
+        specifier: 3.5.0
+        version: 3.5.0(typescript@5.9.3)
       magic-string:
         specifier: 'catalog:'
         version: 0.30.19
@@ -794,8 +794,8 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 3.4.0
-        version: 3.4.0(typescript@5.9.3)
+        specifier: 3.5.0
+        version: 3.5.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.2(typescript@5.9.3)
@@ -933,8 +933,8 @@ importers:
   packages/socket:
     devDependencies:
       '@socketsecurity/lib':
-        specifier: 3.4.0
-        version: 3.4.0(typescript@5.9.3)
+        specifier: 3.5.0
+        version: 3.5.0(typescript@5.9.3)
       build-infra:
         specifier: workspace:*
         version: link:../build-infra
@@ -2297,8 +2297,8 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/lib@3.4.0':
-    resolution: {integrity: sha512-D86ui36CZkAfYtz8gkYDWafuakCnBS17ln1Y+HbE0YZjMnZv5vFUxYeGcb44pK7C2Pb6P5oT1WE0iIC7TWGUwQ==}
+  '@socketsecurity/lib@3.5.0':
+    resolution: {integrity: sha512-O8QKkl0F/9CBv4l2Hkqh5Eq4X5GrNT2HZSNg6okgVV/gR39d3/r8DLIF8pB2bUlL353qLFYAZZCOIkPMQ5rbsg==}
     engines: {node: '>=22', pnpm: '>=10.22.0'}
     peerDependencies:
       typescript: '>=5.0.0'
@@ -6816,7 +6816,7 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/lib@3.4.0(typescript@5.9.3)':
+  '@socketsecurity/lib@3.5.0(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 

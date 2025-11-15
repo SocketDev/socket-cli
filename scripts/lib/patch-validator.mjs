@@ -3,8 +3,9 @@
  *
  * Validates patches before applying to prevent build failures.
  */
+import { promises as fs } from 'node:fs'
 
-import { readFile } from 'node:fs/promises'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 /**
  * Parse patch metadata from header comments.
@@ -110,7 +111,7 @@ function compareVersions(v1, v2) {
  */
 export async function validatePatch(patchPath, nodeVersion) {
   try {
-    const content = await readFile(patchPath, 'utf8')
+    const content = await fs.readFile(patchPath, 'utf8')
 
     // Parse metadata.
     const metadata = parsePatchMetadata(content)
@@ -265,8 +266,6 @@ export async function testPatchApplication(
   targetDir,
   stripLevel = 1,
 ) {
-  const { spawn } = await import('@socketsecurity/lib/spawn')
-
   try {
     // Use /bin/sh wrapper to ensure patch command is found in PATH.
     // This matches the pattern used in the build script for applying patches.
