@@ -101,7 +101,7 @@ const log = {
   substep: msg => logger.log(`  ${msg}`),
   progress: msg => {
     process.stdout.write('\r\x1b[K')
-    process.stdout.write(`  ∴ ${msg}`)
+    logger.progress(msg)
   },
   done: msg => {
     process.stdout.write('\r\x1b[K')
