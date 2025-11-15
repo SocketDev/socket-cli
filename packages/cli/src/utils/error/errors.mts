@@ -362,26 +362,26 @@ export function formatErrorWithDetail(
  * Returns a value between 0 (no overlap) and 1 (identical).
  */
 function calculateStringSimilarity(str1: string, str2: string): number {
-  if (str1 === str2) return 1
+  if (str1 === str2) {return 1}
 
   const words1 = new Set(
     str1
       .toLowerCase()
       .split(/\W+/)
-      .filter((w) => w.length > 2),
+      .filter(w => w.length > 2),
   )
   const words2 = new Set(
     str2
       .toLowerCase()
       .split(/\W+/)
-      .filter((w) => w.length > 2),
+      .filter(w => w.length > 2),
   )
 
-  if (words1.size === 0 || words2.size === 0) return 0
+  if (words1.size === 0 || words2.size === 0) {return 0}
 
   let overlap = 0
   for (const word of words1) {
-    if (words2.has(word)) overlap++
+    if (words2.has(word)) {overlap++}
   }
 
   return (2 * overlap) / (words1.size + words2.size)
