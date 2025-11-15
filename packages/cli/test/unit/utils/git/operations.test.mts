@@ -41,6 +41,11 @@ vi.mock('@socketsecurity/lib/spawn', () => ({
   isSpawnError: vi.fn(e => e?.isSpawnError),
 }))
 
+// Mock which().
+vi.mock('@socketsecurity/lib/bin', () => ({
+  which: vi.fn().mockResolvedValue('git'),
+}))
+
 vi.mock('../../../../../src/constants/cli.mts', () => ({
   FLAG_QUIET: '--quiet',
 }))

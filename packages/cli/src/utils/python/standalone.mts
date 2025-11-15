@@ -46,7 +46,7 @@ import path from 'node:path'
 
 import semver from 'semver'
 
-import { whichBin } from '@socketsecurity/lib/bin'
+import { which, whichBin } from '@socketsecurity/lib/bin'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib/dlx-binary'
 import { safeMkdir } from '@socketsecurity/lib/fs'
@@ -260,9 +260,11 @@ async function downloadPython(pythonDir: string): Promise<void> {
     })
 
     // Extract the tarball to pythonDir.
-    await spawn('tar', ['-xzf', result.binaryPath, '-C', pythonDir], {
-      shell: WIN32,
-    })
+    const tarPath = await which('tar', { nothrow: true })
+    if (!tarPath || Array.isArray(tarPath)) {
+      throw new InputError('tar is required to extract Python. Please install tar for your system.')
+    }
+    await spawn(tarPath, ['-xzf', result.binaryPath, '-C', pythonDir], {})
   } catch (error) {
     throw new InputError(
       `Failed to download Python: ${error instanceof Error ? error.message : String(error)}`,

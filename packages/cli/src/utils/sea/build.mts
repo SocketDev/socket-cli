@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import { which } from '@socketsecurity/lib/bin'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { httpRequest } from '@socketsecurity/lib/http-request'
@@ -253,29 +254,27 @@ export async function downloadNodeBinary(
         )
       } else {
         // On Unix building for Windows, check for unzip availability.
-        try {
-          await spawn('which', ['unzip'], { stdio: 'ignore' })
-        } catch {
+        const unzipPath = await which('unzip', { nothrow: true })
+        if (!unzipPath || Array.isArray(unzipPath)) {
           throw new Error(
             'unzip is required to extract Windows Node.js binaries on Unix systems.\n' +
               'Please install unzip: apt-get install unzip (Debian/Ubuntu) or brew install unzip (macOS)',
           )
         }
-        await spawn('unzip', ['-q', archivePath, '-d', tempDir], {
+        await spawn(unzipPath, ['-q', archivePath, '-d', tempDir], {
           stdio: 'ignore',
         })
       }
     } else {
       // Check for tar availability on Unix systems.
-      try {
-        await spawn('which', ['tar'], { stdio: 'ignore' })
-      } catch {
+      const tarPath = await which('tar', { nothrow: true })
+      if (!tarPath || Array.isArray(tarPath)) {
         throw new Error(
           'tar is required to extract Node.js archives.\n' +
             'Please install tar for your system.',
         )
       }
-      await spawn('tar', ['-xzf', archivePath, '-C', tempDir], {
+      await spawn(tarPath, ['-xzf', archivePath, '-C', tempDir], {
         stdio: 'ignore',
       })
     }
@@ -465,13 +464,10 @@ export async function injectSeaBlob(
 
   if (process.platform === 'darwin') {
     // Check for codesign availability on macOS.
-    let codesignAvailable = false
-    try {
-      await spawn('which', ['codesign'], { stdio: 'ignore' })
-      codesignAvailable = true
-    } catch {
-      // codesign not available.
-    }
+    const codesignPath = await which('codesign', { nothrow: true })
+    const codesignAvailable =
+      codesignPath && !Array.isArray(codesignPath) ? codesignPath : null
+
     if (!codesignAvailable) {
       logger.warn(
         'Warning: codesign not found. The binary may not work correctly on macOS.\n' +
@@ -479,7 +475,7 @@ export async function injectSeaBlob(
       )
     } else {
       // On macOS, remove signature before injection.
-      await spawn('codesign', ['--remove-signature', outputPath], {
+      await spawn(codesignAvailable, ['--remove-signature', outputPath], {
         stdio: 'inherit',
       })
     }
@@ -504,7 +500,7 @@ export async function injectSeaBlob(
 
     // Re-sign the binary if codesign is available.
     if (codesignAvailable) {
-      await spawn('codesign', ['--sign', '-', outputPath], {
+      await spawn(codesignAvailable, ['--sign', '-', outputPath], {
         stdio: 'inherit',
       })
     }
