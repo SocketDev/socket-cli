@@ -253,6 +253,8 @@ async function scanOneRepo(
       reachDisableAnalytics: false,
       reachAnalysisTimeout: 0,
       reachAnalysisMemoryLimit: 0,
+      reachConcurrency: 1,
+      reachDisableAnalysisSplitting: false,
       reachEcosystems: [],
       reachExcludePaths: [],
       reachSkipCache: false,

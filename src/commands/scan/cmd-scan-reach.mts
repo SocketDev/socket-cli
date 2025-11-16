@@ -111,6 +111,8 @@ async function run(
     org: orgFlag,
     reachAnalysisMemoryLimit,
     reachAnalysisTimeout,
+    reachConcurrency,
+    reachDisableAnalysisSplitting,
     reachDisableAnalytics,
     reachSkipCache,
   } = cli.flags as {
@@ -121,7 +123,9 @@ async function run(
     org: string
     reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
+    reachConcurrency: number
     reachDisableAnalytics: boolean
+    reachDisableAnalysisSplitting: boolean
     reachSkipCache: boolean
   }
 
@@ -202,7 +206,9 @@ async function run(
     reachabilityOptions: {
       reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
+      reachConcurrency: Number(reachConcurrency),
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
+      reachDisableAnalysisSplitting: Boolean(reachDisableAnalysisSplitting),
       reachEcosystems,
       reachExcludePaths,
       reachSkipCache: Boolean(reachSkipCache),

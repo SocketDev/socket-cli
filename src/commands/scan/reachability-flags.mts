@@ -13,11 +13,23 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.',
   },
+  reachConcurrency: {
+    type: 'number',
+    default: 1,
+    description:
+      'Set the maximum number of concurrent reachability analysis runs. It is recommended to choose a concurrency level that ensures each analysis run has at least the --reach-analysis-memory-limit amount of memory available. NPM reachability analysis does not support concurrent execution, so the concurrency level is ignored for NPM.',
+  },
   reachDisableAnalytics: {
     type: 'boolean',
     default: false,
     description:
       'Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.',
+  },
+  reachDisableAnalysisSplitting: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Limits Coana to at most 1 reachability analysis run per workspace.',
   },
   reachEcosystems: {
     type: 'string',
