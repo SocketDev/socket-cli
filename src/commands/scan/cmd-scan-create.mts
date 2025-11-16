@@ -238,6 +238,8 @@ async function run(
     reach,
     reachAnalysisMemoryLimit,
     reachAnalysisTimeout,
+    reachConcurrency,
+    reachDisableAnalysisSplitting,
     reachDisableAnalytics,
     reachSkipCache,
     readOnly,
@@ -263,7 +265,9 @@ async function run(
     reach: boolean
     reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
+    reachConcurrency: number
     reachDisableAnalytics: boolean
+    reachDisableAnalysisSplitting: boolean
     reachSkipCache: boolean
   }
 
@@ -430,6 +434,9 @@ async function run(
   const isUsingNonDefaultTimeout =
     reachAnalysisTimeout !== reachabilityFlags['reachAnalysisTimeout']?.default
 
+  const isUsingNonDefaultConcurrency =
+    reachConcurrency !== reachabilityFlags['reachConcurrency']?.default
+
   const isUsingNonDefaultAnalytics =
     reachDisableAnalytics !==
     reachabilityFlags['reachDisableAnalytics']?.default
@@ -437,10 +444,12 @@ async function run(
   const isUsingAnyReachabilityFlags =
     isUsingNonDefaultMemoryLimit ||
     isUsingNonDefaultTimeout ||
+    isUsingNonDefaultConcurrency ||
     isUsingNonDefaultAnalytics ||
     hasReachEcosystems ||
     hasReachExcludePaths ||
-    reachSkipCache
+    reachSkipCache ||
+    reachDisableAnalysisSplitting
 
   const wasValidInput = checkCommandInput(
     outputKind,
@@ -513,6 +522,8 @@ async function run(
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
       reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
+      reachConcurrency: Number(reachConcurrency),
+      reachDisableAnalysisSplitting: Boolean(reachDisableAnalysisSplitting),
       reachEcosystems,
       reachExcludePaths,
       reachSkipCache: Boolean(reachSkipCache),

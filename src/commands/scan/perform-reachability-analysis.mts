@@ -16,7 +16,9 @@ import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 export type ReachabilityOptions = {
   reachAnalysisTimeout: number
   reachAnalysisMemoryLimit: number
+  reachConcurrency: number
   reachDisableAnalytics: boolean
+  reachDisableAnalysisSplitting: boolean
   reachEcosystems: PURL_Type[]
   reachExcludePaths: string[]
   reachSkipCache: boolean
@@ -146,8 +148,14 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachAnalysisMemoryLimit
       ? ['--memory-limit', `${reachabilityOptions.reachAnalysisMemoryLimit}`]
       : []),
+    ...(reachabilityOptions.reachConcurrency
+      ? ['--concurrency', `${reachabilityOptions.reachConcurrency}`]
+      : []),
     ...(reachabilityOptions.reachDisableAnalytics
       ? ['--disable-analytics-sharing']
+      : []),
+    ...(reachabilityOptions.reachDisableAnalysisSplitting
+      ? ['--disable-analysis-splitting']
       : []),
     ...(tarHash
       ? ['--run-without-docker', '--manifests-tar-hash', tarHash]
