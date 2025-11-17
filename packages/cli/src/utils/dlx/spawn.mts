@@ -17,7 +17,7 @@
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 import { dlxPackage } from '@socketsecurity/lib/dlx-package'
 
-import { resolveCdxgen, resolveCoana } from './resolve-binary.mjs'
+import { resolveCdxgen, resolveCoana, resolveSfw } from './resolve-binary.mjs'
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
 import ENV from '../../constants/env.mts'
 import {
@@ -102,7 +102,7 @@ export async function spawnDlx(
   )
 
   return {
-    spawnPromise: result.spawnPromise as unknown as Promise<SpawnResult>,
+    spawnPromise: result.spawnPromise as unknown as SpawnResult,
   }
 }
 
@@ -160,7 +160,7 @@ export async function spawnCoanaDlx(
         ...mixinsEnv,
         ...spawnEnv,
       }
-      const spawnResult = await spawnNode([resolution.path, ...args], {
+      const spawnPromise = spawnNode([resolution.path, ...args], {
         cwd: dlxOptions.cwd,
         env: finalEnv,
         stdio: spawnExtra?.['stdio'] || 'inherit',
@@ -168,7 +168,7 @@ export async function spawnCoanaDlx(
 
       return {
         ok: true,
-        data: spawnResult.stdout?.toString() ?? '',
+        data: spawnPromise.process.stdout?.toString() ?? '',
       }
     }
 
@@ -229,7 +229,7 @@ export async function spawnCdxgenDlx(
       ...options,
     } as DlxOptions
 
-    const spawnResult = spawnNode([resolution.path, ...args], {
+    const spawnPromise = spawnNode([resolution.path, ...args], {
       cwd: dlxOptions.cwd,
       env: {
         ...process.env,
@@ -239,7 +239,7 @@ export async function spawnCdxgenDlx(
     })
 
     return {
-      spawnPromise: spawnResult as unknown as Promise<SpawnResult>,
+      spawnPromise,
     }
   }
 
@@ -265,6 +265,48 @@ export async function spawnSynpDlx(
       name: 'synp',
       version: `${ENV.INLINED_SOCKET_CLI_SYNP_VERSION}`,
     },
+    args,
+    { force: false, ...options },
+    spawnExtra,
+  )
+}
+
+/**
+ * Helper to spawn Socket Firewall (sfw) with dlx.
+ * If SOCKET_CLI_SFW_LOCAL_PATH environment variable is set, uses the local
+ * sfw binary at that path instead of downloading from npm.
+ */
+export async function spawnSfwDlx(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<ShadowBinResult> {
+  const resolution = resolveSfw()
+
+  // Use local sfw if available.
+  if (resolution.type === 'local') {
+    const { env: spawnEnv, ...dlxOptions } = {
+      __proto__: null,
+      ...options,
+    } as DlxOptions
+
+    const spawnPromise = spawnNode([resolution.path, ...args], {
+      cwd: dlxOptions.cwd,
+      env: {
+        ...process.env,
+        ...spawnEnv,
+      },
+      stdio: spawnExtra?.['stdio'] || 'inherit',
+    })
+
+    return {
+      spawnPromise,
+    }
+  }
+
+  // Use dlx version.
+  return await spawnDlx(
+    resolution.details,
     args,
     { force: false, ...options },
     spawnExtra,

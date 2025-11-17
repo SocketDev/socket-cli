@@ -57,6 +57,7 @@ describe('resolve-binary', () => {
 
     it('should return dlx package spec when SOCKET_CLI_COANA_LOCAL_PATH is not set', () => {
       delete process.env['SOCKET_CLI_COANA_LOCAL_PATH']
+      process.env['INLINED_SOCKET_CLI_COANA_VERSION'] = '1.0.0'
 
       const result = resolveCoana() as Extract<
         BinaryResolution,
@@ -65,7 +66,7 @@ describe('resolve-binary', () => {
 
       expect(result.type).toBe('dlx')
       expect(result.details.name).toBe('@coana-tech/cli')
-      expect(result.details.version).toContain('~')
+      expect(result.details.version).toBe('1.0.0')
       expect(result.details.binaryName).toBe('coana')
     })
 

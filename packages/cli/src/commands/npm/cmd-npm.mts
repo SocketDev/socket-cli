@@ -91,6 +91,7 @@ async function run(
   // Handle exit codes and signals using event-based pattern.
   // See https://nodejs.org/api/child_process.html#event-exit.
   const { process: childProcess } = spawnPromise
+  // @ts-expect-error - ChildProcessType doesn't include EventEmitter methods in types, but they exist at runtime.
   childProcess.on(
     'exit',
     (code: number | null, signalName: NodeJS.Signals | null) => {

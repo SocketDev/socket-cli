@@ -21,7 +21,7 @@
  * - Inject script loading (--require)
  *
  * Testing Approach:
- * - Mock spawnNode, findSystemNodejs, link installers
+ * - Mock spawnNode, findSystemNodejsSync, link installers
  * - Mock constants (paths, shadow, env, node)
  * - Validate spawn arguments and options
  * - Test IPC data structure
@@ -43,7 +43,8 @@ import type { ShadowBinOptions } from '../../../src/shadow/npm-base.mts'
 
 // Mock all dependencies.
 const mockSpawnNode = vi.hoisted(() => vi.fn())
-const mockFindSystemNodejs = vi.hoisted(() => vi.fn())
+const mockFindSystemNodejsSync = vi.hoisted(() => vi.fn())
+const mockIsSeaBinary = vi.hoisted(() => vi.fn())
 const mockInstallNpmLinks = vi.hoisted(() => vi.fn())
 const mockInstallNpxLinks = vi.hoisted(() => vi.fn())
 const mockGetPublicApiToken = vi.hoisted(() => vi.fn())
@@ -61,7 +62,11 @@ vi.mock('node:fs', async importOriginal => {
 
 vi.mock('../../../src/utils/spawn/spawn-node.mts', () => ({
   spawnNode: mockSpawnNode,
-  findSystemNodejs: mockFindSystemNodejs,
+  findSystemNodejsSync: mockFindSystemNodejsSync,
+}))
+
+vi.mock('../../../src/utils/sea/detect.mts', () => ({
+  isSeaBinary: mockIsSeaBinary,
 }))
 
 vi.mock('../../../src/utils/shadow/links.mts', () => ({
@@ -129,7 +134,8 @@ describe('shadowNpmBase', () => {
 
     // Default mock implementations.
     mockSpawnNode.mockReturnValue(mockSpawnResult)
-    mockFindSystemNodejs.mockResolvedValue('/usr/bin/node')
+    mockFindSystemNodejsSync.mockReturnValue('/usr/bin/node')
+    mockIsSeaBinary.mockReturnValue(false)
     mockInstallNpmLinks.mockResolvedValue('/usr/bin/npm')
     mockInstallNpxLinks.mockResolvedValue('/usr/bin/npx')
     mockGetPublicApiToken.mockReturnValue('test-token')
@@ -331,5 +337,38 @@ describe('shadowNpmBase', () => {
       SOCKET_CLI_SHADOW_BIN: 'npm',
       SOCKET_CLI_SHADOW_PROGRESS: false,
     })
+  })
+
+  it('should not require system Node.js when not a SEA binary', async () => {
+    mockIsSeaBinary.mockReturnValue(false)
+    mockFindSystemNodejsSync.mockReturnValue(undefined)
+
+    // Should not throw even though findSystemNodejsSync returns undefined.
+    await expect(shadowNpmBase(NPM, ['install'])).resolves.toBeDefined()
+
+    // findSystemNodejsSync should not have been called since we're not a SEA binary.
+    expect(mockFindSystemNodejsSync).not.toHaveBeenCalled()
+  })
+
+  it('should require system Node.js when running as SEA binary', async () => {
+    mockIsSeaBinary.mockReturnValue(true)
+    mockFindSystemNodejsSync.mockReturnValue('/usr/bin/node')
+
+    // Should succeed when system Node.js is found.
+    await expect(shadowNpmBase(NPM, ['install'])).resolves.toBeDefined()
+
+    expect(mockFindSystemNodejsSync).toHaveBeenCalled()
+  })
+
+  it('should throw error when SEA binary and no system Node.js found', async () => {
+    mockIsSeaBinary.mockReturnValue(true)
+    mockFindSystemNodejsSync.mockReturnValue(undefined)
+
+    // Should throw when running as SEA and no system Node.js is found.
+    await expect(shadowNpmBase(NPM, ['install'])).rejects.toThrow(
+      'System Node.js not found. npm/npx require Node.js to be installed.',
+    )
+
+    expect(mockFindSystemNodejsSync).toHaveBeenCalled()
   })
 })

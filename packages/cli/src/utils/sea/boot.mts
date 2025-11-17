@@ -168,17 +168,6 @@ export function waitForBootstrapHandshake(
   return new Promise((resolve, reject) => {
     let resolved = false
 
-    const timeout = setTimeout(() => {
-      if (!resolved) {
-        resolved = true
-        reject(
-          new Error(
-            'IPC handshake timeout: expected SOCKET_IPC_HANDSHAKE message',
-          ),
-        )
-      }
-    }, timeoutMs)
-
     const handler = (message: unknown) => {
       if (resolved) {
         return
@@ -208,6 +197,18 @@ export function waitForBootstrapHandshake(
         }
       }
     }
+
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true
+        process.off('message', handler)
+        reject(
+          new Error(
+            'IPC handshake timeout: expected SOCKET_IPC_HANDSHAKE message',
+          ),
+        )
+      }
+    }, timeoutMs)
 
     process.on('message', handler)
   })

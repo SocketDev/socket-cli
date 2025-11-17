@@ -1,5 +1,3 @@
-import { createRequire } from 'node:module'
-
 import { NPX } from '@socketsecurity/lib/constants/agents'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
@@ -8,8 +6,8 @@ import {
   FLAG_DRY_RUN,
   FLAG_HELP,
 } from '../../constants/cli.mts'
-import { getShadowNpxBinPath } from '../../constants/paths.mts'
 import { commonFlags } from '../../flags.mts'
+import shadowNpxBin from '../../shadow/npx/bin.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
 
@@ -18,7 +16,6 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 
-const require = createRequire(import.meta.url)
 const logger = getDefaultLogger()
 
 const CMD_NAME = NPX
@@ -77,14 +74,14 @@ async function run(
     return
   }
 
-  const shadowNpxBin = /*@__PURE__*/ require(getShadowNpxBinPath())
-
   process.exitCode = 1
 
   const { spawnPromise } = await shadowNpxBin(argv, { stdio: 'inherit' })
 
+  // Handle exit codes and signals using event-based pattern.
   // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on(
+  const { process: childProcess } = spawnPromise as any
+  childProcess.on(
     'exit',
     (code: number | null, signalName: NodeJS.Signals | null) => {
       if (signalName) {

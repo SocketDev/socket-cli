@@ -2,10 +2,6 @@
  * Shadow mode and instrumentation constants for Socket CLI.
  */
 
-import path from 'node:path'
-
-import { distPath } from './paths.mts'
-
 // Re-export SOCKET_IPC_HANDSHAKE from registry
 export { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib/constants/socket'
 
@@ -25,20 +21,6 @@ export const SOCKET_CLI_SHADOW_SILENT = 'SOCKET_CLI_SHADOW_SILENT'
 // Other CLI Environment Variables
 export const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
 export const SOCKET_CLI_VIEW_ALL_RISKS = 'SOCKET_CLI_VIEW_ALL_RISKS'
-
-/**
- * Get the path to the shadow npm binary.
- */
-export function getShadowNpmBinPath(): string {
-  return path.join(distPath, 'shadow/npm/bin.mjs')
-}
-
-/**
- * Get the path to the shadow npx binary.
- */
-export function getShadowNpxBinPath(): string {
-  return path.join(distPath, 'shadow/npx/bin.mjs')
-}
 
 // IpcObject type for shadow operations
 export type IpcObject = Readonly<{

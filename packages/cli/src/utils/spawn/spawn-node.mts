@@ -19,9 +19,9 @@
  * ```
  */
 
-import { whichReal } from '@socketsecurity/lib/bin'
+import { whichRealSync } from '@socketsecurity/lib/bin'
 import { getExecPath } from '@socketsecurity/lib/constants/node'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { spawn, spawnSync } from '@socketsecurity/lib/spawn'
 
 import { ensureIpcInStdio } from '../../shadow/stdio-ipc.mjs'
 import { sendBootstrapHandshake } from '../sea/boot.mjs'
@@ -73,15 +73,15 @@ export interface SpawnNodeOptions extends SpawnOptions {
  * @param extra - Extra spawn options (from @socketsecurity/lib/spawn)
  * @returns Spawn result with process handle
  */
-export async function spawnNode(
+export function spawnNode(
   args: string[] | readonly string[],
   options?: SpawnNodeOptions,
   extra?: SpawnExtra,
-): Promise<SpawnResult> {
+): SpawnResult {
   const { ipc, ...spawnOpts } = options ?? {}
 
   // Get the Node.js executable path to use.
-  const nodePath = await getNodeExecutablePath()
+  const nodePath = getNodeExecutablePathSync()
 
   // Always ensure stdio includes 'ipc' for handshake.
   // System Node.js will ignore the handshake message.
@@ -107,40 +107,15 @@ export async function spawnNode(
 }
 
 /**
- * Get the Node.js executable path to use for spawning.
- *
- * Priority:
- * 1. System Node.js (if we're a SEA and system Node.js exists)
- * 2. Current execPath (process.execPath)
- *
- * @returns Path to Node.js executable
- */
-async function getNodeExecutablePath(): Promise<string> {
-  // If not a SEA, use standard getExecPath().
-  if (!isSeaBinary()) {
-    return getExecPath()
-  }
-
-  // For SEA binaries, try to find system Node.js.
-  const systemNode = await findSystemNodejs()
-  if (systemNode) {
-    return systemNode
-  }
-
-  // Fall back to SEA binary itself (will use IPC handshake).
-  return process.execPath
-}
-
-/**
  * Find system Node.js binary in PATH (excluding the current SEA binary).
  *
  * Returns the path to system Node.js if found, undefined otherwise.
  *
  * @returns Path to system Node.js, or undefined
  */
-export async function findSystemNodejs(): Promise<string | undefined> {
+export function findSystemNodejsSync(): string | undefined {
   // Use which to find 'node' in PATH (returns all matches).
-  const nodePath = await whichReal('node', { all: true, nothrow: true })
+  const nodePath = whichRealSync('node', { all: true, nothrow: true })
 
   if (!nodePath) {
     return undefined
@@ -157,6 +132,31 @@ export async function findSystemNodejs(): Promise<string | undefined> {
 }
 
 /**
+ * Get the Node.js executable path to use for spawning.
+ *
+ * Priority:
+ * 1. System Node.js (if we're a SEA and system Node.js exists)
+ * 2. Current execPath (process.execPath)
+ *
+ * @returns Path to Node.js executable
+ */
+export function getNodeExecutablePathSync(): string {
+  // If not a SEA, use standard getExecPath().
+  if (!isSeaBinary()) {
+    return getExecPath()
+  }
+
+  // For SEA binaries, try to find system Node.js.
+  const systemNode = findSystemNodejsSync()
+  if (systemNode) {
+    return systemNode
+  }
+
+  // Fall back to SEA binary itself (will use IPC handshake).
+  return process.execPath
+}
+
+/**
  * Synchronous version of spawnNode using spawnSync.
  *
  * Note: IPC handshake is not supported in synchronous mode,
@@ -170,7 +170,6 @@ export function spawnNodeSync(
   args: string[] | readonly string[],
   options?: Omit<SpawnNodeOptions, 'ipc'>,
 ): ReturnType<typeof import('@socketsecurity/lib/spawn').spawnSync> {
-  const { spawnSync } = require('@socketsecurity/lib/spawn')
-  const nodePath = getNodeExecutablePath()
+  const nodePath = getNodeExecutablePathSync()
   return spawnSync(nodePath, args, options)
 }

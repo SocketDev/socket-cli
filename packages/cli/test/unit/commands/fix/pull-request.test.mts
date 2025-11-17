@@ -124,8 +124,10 @@ describe('pull-request', () => {
         { baseBranch: 'main' },
       )
 
-      expect(result).toBeDefined()
-      expect(result!.data.number).toBe(123)
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.pr.data.number).toBe(123)
+      }
       expect(mockProvider.createPr).toHaveBeenCalledTimes(1)
       expect(mockOctokit.pulls.get).toHaveBeenCalledTimes(1)
     })
@@ -158,8 +160,10 @@ describe('pull-request', () => {
         { baseBranch: 'main', retries: 3 },
       )
 
-      expect(result).toBeDefined()
-      expect(result!.data.number).toBe(456)
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.pr.data.number).toBe(456)
+      }
     })
 
     it('does not retry on 422 validation error', async () => {
@@ -178,7 +182,10 @@ describe('pull-request', () => {
         { baseBranch: 'main', retries: 3 },
       )
 
-      expect(result).toBeUndefined()
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.reason).toBe('unknown')
+      }
     })
 
     it('respects custom retry count', async () => {
@@ -197,7 +204,10 @@ describe('pull-request', () => {
         { baseBranch: 'main', retries: 5 },
       )
 
-      expect(result).toBeUndefined()
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.reason).toBe('unknown')
+      }
     })
 
     it('returns undefined after all retries exhausted', async () => {
@@ -214,7 +224,10 @@ describe('pull-request', () => {
         { baseBranch: 'main', retries: 3 },
       )
 
-      expect(result).toBeUndefined()
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.reason).toBe('unknown')
+      }
     })
 
     it('uses exponential backoff for retries', async () => {
@@ -244,7 +257,7 @@ describe('pull-request', () => {
         { baseBranch: 'main', retries: 3 },
       )
 
-      expect(result).toBeDefined()
+      expect(result.ok).toBe(true)
     })
 
     it('passes GHSA details to PR body generator', async () => {

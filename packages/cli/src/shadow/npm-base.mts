@@ -35,9 +35,10 @@ import {
 } from '../constants/shadow.mts'
 import { findUp } from '../utils/fs/find-up.mjs'
 import { cmdFlagsToString } from '../utils/process/cmd.mts'
+import { isSeaBinary } from '../utils/sea/detect.mjs'
 import { installNpmLinks, installNpxLinks } from '../utils/shadow/links.mts'
 import { getPublicApiToken } from '../utils/socket/sdk.mjs'
-import { findSystemNodejs, spawnNode } from '../utils/spawn/spawn-node.mjs'
+import { findSystemNodejsSync, spawnNode } from '../utils/spawn/spawn-node.mjs'
 
 import type { IpcObject } from '../constants/shadow.mts'
 import type {
@@ -52,7 +53,7 @@ export type ShadowBinOptions = SpawnOptions & {
 }
 
 export type ShadowBinResult = {
-  spawnPromise: Promise<SpawnResult>
+  spawnPromise: SpawnResult
 }
 
 export default async function shadowNpmBase(
@@ -148,17 +149,19 @@ export default async function shadowNpmBase(
     ? await installNpmLinks(shadowBinPath)
     : await installNpxLinks(shadowBinPath)
 
-  // If we're forwarding to npm, then npm exists on the system,
-  // which means Node.js must also exist. Use system Node.js with --require.
-  const systemNode = await findSystemNodejs()
-  if (!systemNode) {
-    throw new Error(
-      'System Node.js not found. npm/npx require Node.js to be installed.',
-    )
+  // If we're a SEA binary forwarding to npm/npx, we need system Node.js.
+  // For regular Node.js scripts, we can use the current Node.js process.
+  if (isSeaBinary()) {
+    const systemNode = findSystemNodejsSync()
+    if (!systemNode) {
+      throw new Error(
+        'System Node.js not found. npm/npx require Node.js to be installed.',
+      )
+    }
   }
 
   // Use spawnNode() to handle spawning with IPC handshake.
-  // Since we know system Node.js exists, we can always use --require.
+  // spawnNode() will automatically select the appropriate Node.js binary.
   const spawnPromise = spawnNode(
     [
       ...getNodeNoWarningsFlags(),

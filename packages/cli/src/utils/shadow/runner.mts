@@ -1,7 +1,5 @@
 /** @fileoverview Shadow bin runner with IPC support and error handling. */
 
-import { createRequire } from 'node:module'
-
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 import { Spinner as createSpinner } from '@socketsecurity/lib/spinner'
 
@@ -13,12 +11,12 @@ import {
   YARN_LOCK,
 } from '../../constants/packages.mts'
 import {
-  getShadowNpmBinPath,
-  getShadowNpxBinPath,
   SOCKET_CLI_SHADOW_ACCEPT_RISKS,
   SOCKET_CLI_SHADOW_API_TOKEN,
   SOCKET_CLI_SHADOW_SILENT,
 } from '../../constants/shadow.mts'
+import shadowNpmBin from '../../shadow/npm/bin.mts'
+import shadowNpxBin from '../../shadow/npx/bin.mts'
 import { getErrorCause } from '../error/errors.mts'
 import { findUp } from '../fs/find-up.mts'
 import { isYarnBerry } from '../yarn/version.mts'
@@ -31,8 +29,6 @@ import type {
 import type { CResult } from '../../types.mts'
 import type { SpawnExtra } from '@socketsecurity/lib/spawn'
 import type { Spinner } from '@socketsecurity/lib/spinner'
-
-const require = createRequire(import.meta.url)
 
 export type ShadowRunnerOptions = {
   agent?: 'npm' | 'pnpm' | 'yarn' | undefined
@@ -122,14 +118,12 @@ export async function runShadowCommand(
     if (agent === PNPM || (agent === YARN && isYarnBerry())) {
       // For pnpm and yarn, use npx as fallback since they don't have shadow binaries.
       // In practice, callers of runShadowCommand should migrate to direct dlx calls.
-      const shadowNpxBin = /*@__PURE__*/ require(getShadowNpxBinPath())
       result = await shadowNpxBin(
         ['--yes', '--force', FLAG_SILENT, packageSpec, ...args],
         shadowOpts,
         finalSpawnExtra,
       )
     } else {
-      const shadowNpxBin = /*@__PURE__*/ require(getShadowNpxBinPath())
       result = await shadowNpxBin(
         ['--yes', '--force', FLAG_SILENT, packageSpec, ...args],
         shadowOpts,
@@ -192,7 +186,6 @@ export async function runShadowNpm(
       spinner.start(opts.spinnerMessage)
     }
 
-    const shadowNpmBin = /*@__PURE__*/ require(getShadowNpmBinPath())
     const result: ShadowBinResult = await shadowNpmBin(
       args,
       shadowOpts,
