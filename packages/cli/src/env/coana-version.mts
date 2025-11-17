@@ -6,19 +6,8 @@
  * This is critical for embedding version info into the binary.
  */
 
-import { createRequire } from 'node:module'
 import process from 'node:process'
 
-const require = createRequire(import.meta.url)
-
-function getPackageJsonExternalToolVersion(toolName: string): string {
-  const packageJson = require('../../package.json')
-  return packageJson.externalTools?.[toolName] ?? ''
-}
-
 export function getCoanaVersion(): string {
-  return (
-    process.env['INLINED_SOCKET_CLI_COANA_VERSION'] ??
-    getPackageJsonExternalToolVersion('coana')
-  )
+  return process.env['INLINED_SOCKET_CLI_COANA_VERSION'] ?? ''
 }

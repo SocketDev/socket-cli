@@ -264,7 +264,8 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
     // Fall back to which.
     const whichRealResult = await whichReal(binName, { nothrow: true })
     return (
-      (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ?? binName
+      (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ??
+      binName
     )
   }
   if (binName === PNPM) {
@@ -276,11 +277,15 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
     // Fall back to which.
     const whichRealResult = await whichReal(binName, { nothrow: true })
     return (
-      (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ?? binName
+      (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ??
+      binName
     )
   }
   const whichRealResult = await whichReal(binName, { nothrow: true })
-  return (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ?? binName
+  return (
+    (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ??
+    binName
+  )
 }
 
 async function getAgentVersion(

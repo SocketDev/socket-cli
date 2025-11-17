@@ -14,9 +14,9 @@ import {
   getNodeNoWarningsFlags,
   supportsNodePermissionFlag,
 } from '@socketsecurity/lib/constants/node'
-import { NODE_MODULES } from '@socketsecurity/lib/paths/dirnames'
 import { isDebug } from '@socketsecurity/lib/debug'
 import { getOwn } from '@socketsecurity/lib/objects'
+import { NODE_MODULES } from '@socketsecurity/lib/paths/dirnames'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { spawnSync } from '@socketsecurity/lib/spawn'
 

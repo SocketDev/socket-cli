@@ -5,13 +5,23 @@
  * when spawning npm with shadow arborist.
  */
 
+import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { build } from 'esbuild'
 
+import {
+  createDefineEntries,
+  envVarReplacementPlugin,
+  getInlinedEnvVars,
+} from '../scripts/esbuild-shared.mjs'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
+
+// Get all inlined environment variables from shared utility.
+const inlinedEnvVars = getInlinedEnvVars()
 
 const config = {
   entryPoints: [path.join(rootPath, 'src/shadow/npm/inject.mts')],
@@ -46,23 +56,34 @@ const config = {
   // Keep names for better stack traces.
   keepNames: true,
 
-  // Write directly to disk.
-  write: true,
+  // Plugin needs to transform output.
+  write: false,
 
   // Define environment variables and import.meta.
   define: {
     'process.env.NODE_ENV': '"production"',
     'import.meta.url': '__importMetaUrl',
+    // Inject build metadata using shared utility.
+    ...createDefineEntries(inlinedEnvVars),
   },
 
   // Inject import.meta.url polyfill for CJS.
   inject: [path.join(__dirname, 'esbuild-inject-import-meta.mjs')],
+
+  // Handle special cases with plugins.
+  plugins: [envVarReplacementPlugin(inlinedEnvVars)],
 }
 
 // Run build if invoked directly.
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
   build(config)
-    .then(() => {
+    .then(result => {
+      // Write the transformed output (build had write: false).
+      if (result.outputFiles && result.outputFiles.length > 0) {
+        for (const output of result.outputFiles) {
+          writeFileSync(output.path, output.contents)
+        }
+      }
       console.log('Built shadow-npm-inject.js')
     })
     .catch(error => {

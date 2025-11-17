@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { DOT_SOCKET_DIR } from '@socketsecurity/lib/paths/dirnames'
 import { MANIFEST_JSON } from '@socketsecurity/lib/paths/filenames'
 
@@ -113,7 +113,7 @@ async function run(
     )
   }
 
-  const spinner = getDefaultSpinner()
+  const spinner = getSpinner()
 
   await handlePatchInfo({
     cwd,

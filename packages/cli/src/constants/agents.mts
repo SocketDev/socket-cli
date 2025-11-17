@@ -68,7 +68,10 @@ export async function getNpmExecPath(): Promise<string> {
   }
   // Fall back to whichReal.
   const whichRealResult = await whichReal(NPM, { nothrow: true })
-  return (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ?? NPM
+  return (
+    (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ??
+    NPM
+  )
 }
 
 /**
@@ -79,5 +82,8 @@ export async function getNpmExecPath(): Promise<string> {
  */
 export async function getPnpmExecPath(): Promise<string> {
   const whichRealResult = await whichReal(PNPM, { nothrow: true })
-  return (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ?? PNPM
+  return (
+    (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ??
+    PNPM
+  )
 }

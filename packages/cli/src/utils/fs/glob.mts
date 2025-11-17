@@ -6,10 +6,10 @@ import ignore from 'ignore'
 import micromatch from 'micromatch'
 import { parse as yamlParse } from 'yaml'
 
-import { NODE_MODULES } from '@socketsecurity/lib/paths/dirnames'
 import { isDirSync, safeReadFile } from '@socketsecurity/lib/fs'
 import { defaultIgnore } from '@socketsecurity/lib/globs'
 import { readPackageJson } from '@socketsecurity/lib/packages'
+import { NODE_MODULES } from '@socketsecurity/lib/paths/dirnames'
 import { transform } from '@socketsecurity/lib/streams'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
