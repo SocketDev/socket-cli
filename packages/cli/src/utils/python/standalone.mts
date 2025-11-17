@@ -393,12 +393,13 @@ export async function spawnSocketPython(
 
     // Use local Python CLI if available.
     if (resolution.type === 'local') {
-      const spawnResult = await spawnNode([resolution.path, ...args], {
-        cwd: options?.cwd,
+      const spawnNodeOpts: any = {
+        ...(options?.cwd ? { cwd: options.cwd } : {}),
         env: finalEnv,
         shell: WIN32,
         stdio: options?.stdio || 'inherit',
-      })
+      }
+      const spawnResult = await spawnNode([resolution.path, ...args], spawnNodeOpts)
 
       return {
         ok: true,

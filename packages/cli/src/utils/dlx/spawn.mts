@@ -14,17 +14,11 @@
  * - Executes binaries directly without package manager commands
  */
 
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 import { dlxPackage } from '@socketsecurity/lib/dlx-package'
 
 import { resolveCdxgen, resolveCoana, resolveSfw } from './resolve-binary.mjs'
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
 import ENV from '../../constants/env.mts'
-import {
-  SOCKET_CLI_SHADOW_ACCEPT_RISKS,
-  SOCKET_CLI_SHADOW_API_TOKEN,
-  SOCKET_CLI_SHADOW_SILENT,
-} from '../../constants/shadow.mts'
 import { getErrorCause, InputError } from '../error/errors.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
 import { spawnNode } from '../spawn/spawn-node.mjs'
@@ -121,7 +115,6 @@ export async function spawnCoanaDlx(
 ): Promise<CResult<string>> {
   const {
     env: spawnEnv,
-    ipc,
     ...dlxOptions
   } = {
     __proto__: null,
@@ -161,7 +154,7 @@ export async function spawnCoanaDlx(
         ...spawnEnv,
       }
       const spawnPromise = spawnNode([resolution.path, ...args], {
-        cwd: dlxOptions.cwd,
+        ...dlxOptions,
         env: finalEnv,
         stdio: spawnExtra?.['stdio'] || 'inherit',
       })
@@ -183,13 +176,7 @@ export async function spawnCoanaDlx(
           ...process.env,
           ...mixinsEnv,
           ...spawnEnv,
-        },
-        ipc: {
-          [SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
-          [SOCKET_CLI_SHADOW_API_TOKEN]: SOCKET_PUBLIC_API_TOKEN,
-          [SOCKET_CLI_SHADOW_SILENT]: true,
-          ...ipc,
-        },
+        }
       },
       spawnExtra,
     )
@@ -230,7 +217,7 @@ export async function spawnCdxgenDlx(
     } as DlxOptions
 
     const spawnPromise = spawnNode([resolution.path, ...args], {
-      cwd: dlxOptions.cwd,
+      ...dlxOptions,
       env: {
         ...process.env,
         ...spawnEnv,
@@ -291,7 +278,7 @@ export async function spawnSfwDlx(
     } as DlxOptions
 
     const spawnPromise = spawnNode([resolution.path, ...args], {
-      cwd: dlxOptions.cwd,
+      ...dlxOptions,
       env: {
         ...process.env,
         ...spawnEnv,

@@ -1,15 +1,12 @@
 import { PNPM } from '@socketsecurity/lib/constants/agents'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
 
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { resolveSfw } from '../../utils/dlx/resolve-binary.mjs'
+import { spawnSfwDlx } from '../../utils/dlx/spawn.mjs'
 import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
 import { filterFlags } from '../../utils/process/cmd.mts'
-import { spawnNode } from '../../utils/spawn/spawn-node.mjs'
 
 import type {
   CliCommandConfig,
@@ -80,32 +77,13 @@ async function run(
   // Filter Socket flags from argv.
   const filteredArgv = filterFlags(argv, config.flags)
 
-  const resolution = resolveSfw()
-
   // Set default exit code to 1 (failure). Will be overwritten on success.
   process.exitCode = 1
 
-  // Forward arguments to sfw (Socket Firewall).
-  // Use local sfw if available, otherwise use pnpm dlx with pinned version.
-  const spawnPromise =
-    resolution.type === 'local'
-      ? spawnNode([resolution.path, 'pnpm', ...filteredArgv], {
-          shell: WIN32,
-          stdio: 'inherit',
-        })
-      : spawn(
-          'pnpm',
-          [
-            'dlx',
-            `${resolution.details.name}@${resolution.details.version}`,
-            'pnpm',
-            ...filteredArgv,
-          ],
-          {
-            shell: WIN32,
-            stdio: 'inherit',
-          },
-        )
+  // Forward arguments to sfw (Socket Firewall) using Socket's dlx.
+  const { spawnPromise } = await spawnSfwDlx(['pnpm', ...filteredArgv], {
+    stdio: 'inherit',
+  })
 
   // Handle exit codes and signals using event-based pattern.
   // See https://nodejs.org/api/child_process.html#event-exit.

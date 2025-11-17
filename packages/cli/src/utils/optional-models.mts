@@ -50,7 +50,7 @@ interface ModelInfo {
  * Load optional models from npm package.
  *
  * TODO: Implement dlx-based loading (follow @coana-tech/cli pattern).
- * - Use runShadowCommand() with package manager dlx (npm/pnpm/yarn)
+ * - Use dlxPackage() from @socketsecurity/lib/dlx-package
  * - Package manager caches in node_modules for future use
  * - Resolve package location after dlx execution
  * - Return paths to model files
@@ -73,7 +73,7 @@ export async function loadOptionalModel(
     `Total size: ${(modelInfo.totalSize / 1024 / 1024).toFixed(1)} MB`,
   )
 
-  // TODO: Implement dlx-based loading (follow @coana-tech/cli pattern).
+  // TODO: Implement dlx-based loading using dlxPackage().
   throw new Error('dlx-based model loading not yet implemented')
 }
 

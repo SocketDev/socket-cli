@@ -75,33 +75,38 @@ export interface SpawnNodeOptions extends SpawnOptions {
  */
 export function spawnNode(
   args: string[] | readonly string[],
-  options?: SpawnNodeOptions,
-  extra?: SpawnExtra,
+  options?: SpawnNodeOptions | undefined,
+  extra?: SpawnExtra | undefined,
 ): SpawnResult {
-  const { ipc, ...spawnOpts } = options ?? {}
+  const { ipc, ...spawnOpts } = { __proto__: null, ...options } as SpawnNodeOptions
 
   // Get the Node.js executable path to use.
   const nodePath = getNodeExecutablePathSync()
 
-  // Always ensure stdio includes 'ipc' for handshake.
-  // System Node.js will ignore the handshake message.
-  // SEA subprocess will use it to skip bootstrap.
-  const finalOptions = {
-    ...spawnOpts,
-    stdio: ensureIpcInStdio(spawnOpts.stdio),
-  }
-
   // Spawn the Node.js process.
-  const spawnResult = spawn(nodePath, args, finalOptions, extra)
+  const spawnResult = spawn(
+    nodePath, 
+    args, 
+    {
+      ...spawnOpts as SpawnOptions,
+      // Always ensure stdio includes 'ipc' for handshake.
+      // System Node.js will ignore the handshake message.
+      // SEA subprocess will use it to skip bootstrap.
+      stdio: ensureIpcInStdio((spawnOpts as SpawnOptions).stdio),
+    }, 
+    extra
+  )
 
-  // Always send IPC handshake with bootstrap indicators + custom data.
-  const handshakeData = {
-    subprocess: true,
-    parent_pid: process.pid,
-    // Custom IPC data in extra field to avoid collision with standard fields.
-    ...(ipc ? { extra: { ...ipc } } : {}),
-  }
-  sendBootstrapHandshake(spawnResult.process, handshakeData)
+  sendBootstrapHandshake(
+    spawnResult.process, 
+    // Always send IPC handshake with bootstrap indicators + custom data.
+    {
+      subprocess: true,
+      parent_pid: process.pid,
+      // Custom IPC data in extra field to avoid collision with standard fields.
+      ...(ipc ? { extra: { ...ipc } } : {}),
+    }
+  )
 
   return spawnResult
 }

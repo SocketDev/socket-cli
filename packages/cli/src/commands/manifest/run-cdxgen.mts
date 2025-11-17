@@ -4,7 +4,6 @@ import path from 'node:path'
 import colors from 'yoctocolors-cjs'
 
 import { NPM, PNPM, YARN } from '@socketsecurity/lib/constants/agents'
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 import { safeDeleteSync } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
@@ -14,11 +13,6 @@ import {
   PNPM_LOCK_YAML,
   YARN_LOCK,
 } from '../../constants/paths.mts'
-import {
-  SOCKET_CLI_SHADOW_ACCEPT_RISKS,
-  SOCKET_CLI_SHADOW_API_TOKEN,
-  SOCKET_CLI_SHADOW_SILENT,
-} from '../../constants/shadow.mjs'
 import { spawnCdxgenDlx, spawnSynpDlx } from '../../utils/dlx/spawn.mjs'
 import { findUp } from '../../utils/fs/find-up.mjs'
 import { isYarnBerry } from '../../utils/yarn/version.mts'
@@ -79,11 +73,6 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   const argvMutable = { __proto__: null, ...argvObj } as ArgvObject
 
   const shadowOpts: DlxOptions = {
-    ipc: {
-      [SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
-      [SOCKET_CLI_SHADOW_API_TOKEN]: SOCKET_PUBLIC_API_TOKEN,
-      [SOCKET_CLI_SHADOW_SILENT]: true,
-    },
     stdio: 'inherit',
   }
 

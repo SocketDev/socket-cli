@@ -28,14 +28,11 @@
  */
 
 import { whichReal } from '@socketsecurity/lib/bin'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { spawn } from '@socketsecurity/lib/spawn'
 
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { resolveSfw } from '../../utils/dlx/resolve-binary.mjs'
+import { spawnSfwDlx } from '../../utils/dlx/spawn.mjs'
 import { filterFlags } from '../../utils/process/cmd.mts'
-import { spawnNode } from '../../utils/spawn/spawn-node.mjs'
 
 import type {
   CliCommandConfig,
@@ -142,35 +139,16 @@ async function run(
   // Filter out Socket CLI flags before forwarding to sfw
   const argsToForward = filterFlags(argv, commonFlags, [])
 
-  const resolution = resolveSfw()
-
   // Determine which pip binary to use (pip or pip3) with auto-detection.
   const pipBinName = await getPipBinName(invokedAs)
 
   // Set default exit code to 1 (failure). Will be overwritten on success.
   process.exitCode = 1
 
-  // Forward arguments to sfw (Socket Firewall).
-  // Use local sfw if available, otherwise use pnpm dlx with pinned version.
-  const spawnPromise =
-    resolution.type === 'local'
-      ? spawnNode([resolution.path, pipBinName, ...argsToForward], {
-          shell: WIN32,
-          stdio: 'inherit',
-        })
-      : spawn(
-          'pnpm',
-          [
-            'dlx',
-            `${resolution.details.name}@${resolution.details.version}`,
-            pipBinName,
-            ...argsToForward,
-          ],
-          {
-            shell: WIN32,
-            stdio: 'inherit',
-          },
-        )
+  // Forward arguments to sfw (Socket Firewall) using Socket's dlx.
+  const { spawnPromise } = await spawnSfwDlx([pipBinName, ...argsToForward], {
+    stdio: 'inherit',
+  })
 
   // Handle exit codes and signals using event-based pattern.
   // See https://nodejs.org/api/child_process.html#event-exit.

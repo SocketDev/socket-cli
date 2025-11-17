@@ -1,9 +1,10 @@
 /** @fileoverview Coana CLI spawn utilities for Socket CLI. */
 
+import { dlxPackage } from '@socketsecurity/lib/dlx-package'
+
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mts'
 import ENV from '../../constants/env.mts'
 import { getErrorCause } from '../error/errors.mts'
-import { runShadowCommand } from '../shadow/runner.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mts'
 import { spawnNode } from '../spawn/spawn-node.mjs'
 
@@ -11,9 +12,7 @@ import type { ShadowBinOptions } from '../../shadow/npm-base.mjs'
 import type { CResult } from '../../types.mjs'
 import type { SpawnExtra } from '@socketsecurity/lib/spawn'
 
-export type CoanaSpawnOptions = ShadowBinOptions & {
-  agent?: 'npm' | 'pnpm' | 'yarn' | undefined
-}
+export type CoanaSpawnOptions = ShadowBinOptions
 
 /**
  * Helper to spawn coana with package manager dlx commands.
@@ -28,12 +27,7 @@ export async function spawnCoana(
   options?: CoanaSpawnOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
-  const {
-    agent,
-    env: spawnEnv,
-    ipc,
-    ...shadowOptions
-  } = {
+  const { env: spawnEnv, ...shadowOptions } = {
     __proto__: null,
     ...options,
   } as CoanaSpawnOptions
@@ -64,14 +58,13 @@ export async function spawnCoana(
     const localCoanaPath = ENV.SOCKET_CLI_COANA_LOCAL_PATH
     // Use local Coana CLI if path is provided.
     if (localCoanaPath) {
-      const finalEnv = {
-        ...process.env,
-        ...mixinsEnv,
-        ...spawnEnv,
-      }
       const spawnResult = await spawnNode([localCoanaPath, ...args], {
-        cwd: shadowOptions.cwd,
-        env: finalEnv,
+        ...shadowOptions,
+        env: {
+          ...process.env,
+          ...mixinsEnv,
+          ...spawnEnv,
+        },
         stdio: spawnExtra?.['stdio'] || 'inherit',
       })
 
@@ -81,7 +74,7 @@ export async function spawnCoana(
       }
     }
 
-    // Use npm/dlx version via runner.
+    // Use dlx version.
     const coanaVersion = ENV.INLINED_SOCKET_CLI_COANA_VERSION
     const packageSpec = `@coana-tech/cli@~${coanaVersion}`
 
@@ -91,19 +84,30 @@ export async function spawnCoana(
       ...spawnEnv,
     }
 
-    const result = await runShadowCommand(packageSpec, args, {
-      agent,
-      cwd:
-        typeof shadowOptions.cwd === 'string'
-          ? shadowOptions.cwd
-          : shadowOptions.cwd?.toString(),
-      env: finalEnv as Record<string, string>,
-      ipc,
-      stdio:
-        (spawnExtra?.['stdio'] as 'inherit' | 'pipe' | undefined) || 'inherit',
-    })
+    const result = await dlxPackage(
+      args,
+      {
+        package: packageSpec,
+        force: true,
+        spawnOptions: {
+          cwd:
+            typeof shadowOptions.cwd === 'string'
+              ? shadowOptions.cwd
+              : shadowOptions.cwd?.toString(),
+          env: finalEnv as Record<string, string>,
+          stdio:
+            (spawnExtra?.['stdio'] as 'inherit' | 'pipe' | undefined) ||
+            'inherit',
+        },
+      },
+      spawnExtra,
+    )
 
-    return result
+    const output = await result.spawnPromise
+    return {
+      ok: true,
+      data: output.stdout?.toString() ?? '',
+    }
   } catch (e) {
     const stderr = (e as { stderr?: unknown })?.stderr
     const cause = getErrorCause(e)
