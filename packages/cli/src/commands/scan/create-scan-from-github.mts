@@ -79,11 +79,11 @@ export async function createScanFromGithub({
 
   // Non-interactive or explicitly requested; just do it.
   if (interactive && targetRepos.length > 1 && !all && !repos) {
-    const which = await selectFocus(targetRepos)
-    if (!which.ok) {
-      return which
+    const result = await selectFocus(targetRepos)
+    if (!result.ok) {
+      return result
     }
-    targetRepos = which.data
+    targetRepos = result.data
   }
 
   // 10 is an arbitrary number. Maybe confirm whenever count>1 ?

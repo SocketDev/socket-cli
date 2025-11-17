@@ -10,7 +10,7 @@ import {
   getChangedFilesSync,
   getStagedFilesSync,
 } from '@socketsecurity/lib/git'
-import { normalizePath } from '@socketsecurity/lib/path'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 
 const rootPath = path.resolve(process.cwd())
 

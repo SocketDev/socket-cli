@@ -46,7 +46,7 @@ import path from 'node:path'
 
 import semver from 'semver'
 
-import { which, whichBin } from '@socketsecurity/lib/bin'
+import { whichReal } from '@socketsecurity/lib/bin'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib/dlx-binary'
 import { safeMkdir } from '@socketsecurity/lib/fs'
@@ -162,13 +162,13 @@ function getPythonBinPath(pythonDir: string): string {
 export async function checkSystemPython(): Promise<string | null> {
   try {
     // Try python3 first, then python
-    let pythonPath: string | string[] | null | undefined = await whichBin(
+    let pythonPath: string | string[] | null | undefined = await whichReal(
       'python3',
       { nothrow: true },
     )
 
     if (!pythonPath) {
-      pythonPath = await whichBin('python', { nothrow: true })
+      pythonPath = await whichReal('python', { nothrow: true })
     }
 
     if (!pythonPath) {
@@ -260,9 +260,11 @@ async function downloadPython(pythonDir: string): Promise<void> {
     })
 
     // Extract the tarball to pythonDir.
-    const tarPath = await which('tar', { nothrow: true })
+    const tarPath = await whichReal('tar', { nothrow: true })
     if (!tarPath || Array.isArray(tarPath)) {
-      throw new InputError('tar is required to extract Python. Please install tar for your system.')
+      throw new InputError(
+        'tar is required to extract Python. Please install tar for your system.',
+      )
     }
     await spawn(tarPath, ['-xzf', result.binaryPath, '-C', pythonDir], {})
   } catch (error) {

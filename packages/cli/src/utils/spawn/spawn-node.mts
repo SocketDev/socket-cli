@@ -19,7 +19,7 @@
  * ```
  */
 
-import { which } from '@socketsecurity/lib/bin'
+import { whichReal } from '@socketsecurity/lib/bin'
 import { getExecPath } from '@socketsecurity/lib/constants/node'
 import { spawn } from '@socketsecurity/lib/spawn'
 
@@ -140,7 +140,7 @@ async function getNodeExecutablePath(): Promise<string> {
  */
 export async function findSystemNodejs(): Promise<string | undefined> {
   // Use which to find 'node' in PATH (returns all matches).
-  const nodePath = await which('node', { all: true, nothrow: true })
+  const nodePath = await whichReal('node', { all: true, nothrow: true })
 
   if (!nodePath) {
     return undefined

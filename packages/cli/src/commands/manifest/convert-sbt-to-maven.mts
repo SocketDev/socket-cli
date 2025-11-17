@@ -1,4 +1,4 @@
-import { getSpinner } from '@socketsecurity/lib/constants/process'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { safeReadFile } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
@@ -31,7 +31,7 @@ export async function convertSbtToMaven({
     logger.groupEnd()
   }
 
-  const spinner = isTextMode ? getSpinner() : undefined
+  const spinner = isTextMode ? getDefaultSpinner() : undefined
   try {
     spinner?.start(`Converting sbt to maven from \`${bin}\` on \`${cwd}\`...`)
 

@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { getSpinner } from '@socketsecurity/lib/constants/process'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 
 import { handlePatchDiscover } from './handle-patch-discover.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
@@ -125,6 +125,6 @@ async function run(
     interactive,
     outputKind,
     ...(scan ? { scanId: scan } : {}),
-    spinner: getSpinner() ?? undefined,
+    spinner: getDefaultSpinner() ?? undefined,
   })
 }

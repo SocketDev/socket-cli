@@ -41,9 +41,9 @@ vi.mock('@socketsecurity/lib/spawn', () => ({
   isSpawnError: vi.fn(e => e?.isSpawnError),
 }))
 
-// Mock which().
+// Mock whichReal().
 vi.mock('@socketsecurity/lib/bin', () => ({
-  which: vi.fn().mockResolvedValue('git'),
+  whichReal: vi.fn().mockResolvedValue('git'),
 }))
 
 vi.mock('../../../../../src/constants/cli.mts', () => ({

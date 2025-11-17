@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { getSpinner } from '@socketsecurity/lib/constants/process'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
@@ -157,7 +157,7 @@ async function execGradleWithSpinner(
   showSpinner: boolean,
 ): Promise<{ code: number; stdout: string; stderr: string }> {
   let pass = false
-  const spinner = showSpinner ? getSpinner() : undefined
+  const spinner = showSpinner ? getDefaultSpinner() : undefined
   try {
     if (showSpinner) {
       logger.info(

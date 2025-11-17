@@ -7,13 +7,13 @@ import { createHash } from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { which } from '@socketsecurity/lib/bin'
+import { whichReal } from '@socketsecurity/lib/bin'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { httpRequest } from '@socketsecurity/lib/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { normalizePath } from '@socketsecurity/lib/path'
-import { getSocketHomePath } from '@socketsecurity/lib/paths'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
+import { getSocketHomePath } from '@socketsecurity/lib/paths/socket'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import ENV from '../../constants/env.mts'
@@ -254,7 +254,7 @@ export async function downloadNodeBinary(
         )
       } else {
         // On Unix building for Windows, check for unzip availability.
-        const unzipPath = await which('unzip', { nothrow: true })
+        const unzipPath = await whichReal('unzip', { nothrow: true })
         if (!unzipPath || Array.isArray(unzipPath)) {
           throw new Error(
             'unzip is required to extract Windows Node.js binaries on Unix systems.\n' +
@@ -267,7 +267,7 @@ export async function downloadNodeBinary(
       }
     } else {
       // Check for tar availability on Unix systems.
-      const tarPath = await which('tar', { nothrow: true })
+      const tarPath = await whichReal('tar', { nothrow: true })
       if (!tarPath || Array.isArray(tarPath)) {
         throw new Error(
           'tar is required to extract Node.js archives.\n' +
@@ -464,7 +464,7 @@ export async function injectSeaBlob(
 
   if (process.platform === 'darwin') {
     // Check for codesign availability on macOS.
-    const codesignPath = await which('codesign', { nothrow: true })
+    const codesignPath = await whichReal('codesign', { nothrow: true })
     const codesignAvailable =
       codesignPath && !Array.isArray(codesignPath) ? codesignPath : null
 

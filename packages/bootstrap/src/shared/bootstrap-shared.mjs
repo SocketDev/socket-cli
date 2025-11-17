@@ -7,7 +7,7 @@ import { existsSync, mkdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
 
-import { which } from '@socketsecurity/lib/bin'
+import { whichReal } from '@socketsecurity/lib/bin'
 import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib/constants/socket'
 import { downloadPackage } from '@socketsecurity/lib/dlx-package'
 import { envAsBoolean } from '@socketsecurity/lib/env'
@@ -80,7 +80,7 @@ export function hasModernNode() {
  */
 export async function detectSystemNode() {
   try {
-    const nodePath = await which('node', { nothrow: true })
+    const nodePath = await whichReal('node', { nothrow: true })
     return nodePath || null
   } catch {
     return null
@@ -116,7 +116,7 @@ export async function shouldForwardToSystemNode() {
  */
 async function findSystemNode() {
   try {
-    const nodePath = await which('node', { all: true, nothrow: true })
+    const nodePath = await whichReal('node', { all: true, nothrow: true })
 
     if (!nodePath) {
       return undefined

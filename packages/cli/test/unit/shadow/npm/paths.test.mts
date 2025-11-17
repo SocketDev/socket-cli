@@ -45,7 +45,7 @@ vi.mock('../../../../src/utils/npm/paths.mts', () => ({
   getNpmRequire: mockGetNpmRequire,
 }))
 
-vi.mock('@socketsecurity/lib/path', () => ({
+vi.mock('@socketsecurity/lib/paths/normalize', () => ({
   normalizePath: mockNormalizePath,
 }))
 

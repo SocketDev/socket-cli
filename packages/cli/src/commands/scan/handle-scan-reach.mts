@@ -1,4 +1,4 @@
-import { getSpinner } from '@socketsecurity/lib/constants/process'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
@@ -30,7 +30,7 @@ export async function handleScanReach({
   reachabilityOptions,
   targets,
 }: HandleScanReachConfig) {
-  const spinner = getSpinner()
+  const spinner = getDefaultSpinner()
 
   // Get supported file names
   const supportedFilesCResult = await fetchSupportedScanFileNames({

@@ -27,7 +27,7 @@
  *   - Python CLI: src/utils/python/standalone.mts
  */
 
-import { which } from '@socketsecurity/lib/bin'
+import { whichReal } from '@socketsecurity/lib/bin'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { spawn } from '@socketsecurity/lib/spawn'
 
@@ -72,13 +72,13 @@ async function getPipBinName(invokedAs?: string): Promise<string> {
   const fallback = requested === 'pip' ? 'pip3' : 'pip'
 
   // Check if the requested binary is available.
-  const requestedPath = await which(requested, { nothrow: true })
+  const requestedPath = await whichReal(requested, { nothrow: true })
   if (requestedPath) {
     return requested
   }
 
   // Requested binary not found, check if fallback exists.
-  const fallbackPath = await which(fallback, { nothrow: true })
+  const fallbackPath = await whichReal(fallback, { nothrow: true })
   if (fallbackPath) {
     return fallback
   }

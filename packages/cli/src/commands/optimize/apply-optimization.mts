@@ -1,4 +1,4 @@
-import { getSpinner } from '@socketsecurity/lib/constants/process'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { addOverrides } from './add-overrides.mts'
@@ -26,7 +26,7 @@ export async function applyOptimization(
   }>
 > {
   const logger = getDefaultLogger()
-  const spinner = getSpinner()
+  const spinner = getDefaultSpinner()
 
   spinner?.start()
 

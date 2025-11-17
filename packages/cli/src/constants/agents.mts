@@ -6,7 +6,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { whichBin } from '@socketsecurity/lib/bin'
+import { whichReal } from '@socketsecurity/lib/bin'
 import {
   BUN,
   NPM,
@@ -55,7 +55,7 @@ export function getMinimumVersionByAgent(agent: Agent): string {
 
 /**
  * Get the execution path for npm.
- * Checks in order: node directory, PATH via whichBin.
+ * Checks in order: node directory, PATH via which.
  *
  * @returns The npm executable path
  */
@@ -66,18 +66,18 @@ export async function getNpmExecPath(): Promise<string> {
   if (existsSync(npmInNodeDir)) {
     return npmInNodeDir
   }
-  // Fall back to whichBin.
-  const whichResult = await whichBin(NPM, { nothrow: true })
-  return (Array.isArray(whichResult) ? whichResult[0] : whichResult) ?? NPM
+  // Fall back to whichReal.
+  const whichRealResult = await whichReal(NPM, { nothrow: true })
+  return (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ?? NPM
 }
 
 /**
  * Get the execution path for pnpm.
- * Uses whichBin to locate pnpm in PATH.
+ * Uses whichReal to locate pnpm in PATH.
  *
  * @returns The pnpm executable path
  */
 export async function getPnpmExecPath(): Promise<string> {
-  const whichResult = await whichBin(PNPM, { nothrow: true })
-  return (Array.isArray(whichResult) ? whichResult[0] : whichResult) ?? PNPM
+  const whichRealResult = await whichReal(PNPM, { nothrow: true })
+  return (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ?? PNPM
 }

@@ -4,7 +4,7 @@ import colors from 'yoctocolors-cjs'
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getOwn, hasOwn, toSortedObject } from '@socketsecurity/lib/objects'
-import { normalizePath } from '@socketsecurity/lib/path'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { naturalCompare } from '@socketsecurity/lib/sorts'
 import { indentString, trimNewlines } from '@socketsecurity/lib/strings'
 

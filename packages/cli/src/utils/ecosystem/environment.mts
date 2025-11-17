@@ -31,7 +31,7 @@ import browserslist from 'browserslist'
 import semver from 'semver'
 
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
-import { whichBin } from '@socketsecurity/lib/bin'
+import { whichReal } from '@socketsecurity/lib/bin'
 import {
   BUN,
   BUN_LOCK,
@@ -261,10 +261,10 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
     if (existsSync(npmPath)) {
       return npmPath
     }
-    // Fall back to whichBin.
-    const whichResult = await whichBin(binName, { nothrow: true })
+    // Fall back to which.
+    const whichRealResult = await whichReal(binName, { nothrow: true })
     return (
-      (Array.isArray(whichResult) ? whichResult[0] : whichResult) ?? binName
+      (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ?? binName
     )
   }
   if (binName === PNPM) {
@@ -273,14 +273,14 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
     if (existsSync(pnpmPath)) {
       return pnpmPath
     }
-    // Fall back to whichBin.
-    const whichResult = await whichBin(binName, { nothrow: true })
+    // Fall back to which.
+    const whichRealResult = await whichReal(binName, { nothrow: true })
     return (
-      (Array.isArray(whichResult) ? whichResult[0] : whichResult) ?? binName
+      (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ?? binName
     )
   }
-  const whichResult = await whichBin(binName, { nothrow: true })
-  return (Array.isArray(whichResult) ? whichResult[0] : whichResult) ?? binName
+  const whichRealResult = await whichReal(binName, { nothrow: true })
+  return (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ?? binName
 }
 
 async function getAgentVersion(

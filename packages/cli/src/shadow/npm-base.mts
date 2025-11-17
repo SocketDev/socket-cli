@@ -14,10 +14,10 @@ import {
   getNodeNoWarningsFlags,
   supportsNodePermissionFlag,
 } from '@socketsecurity/lib/constants/node'
-import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
+import { NODE_MODULES } from '@socketsecurity/lib/paths/dirnames'
 import { isDebug } from '@socketsecurity/lib/debug'
 import { getOwn } from '@socketsecurity/lib/objects'
-import { normalizePath } from '@socketsecurity/lib/path'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { spawnSync } from '@socketsecurity/lib/spawn'
 
 import { NPM, type NPX } from '../constants/agents.mts'

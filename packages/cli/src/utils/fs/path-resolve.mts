@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { resolveBinPathSync, whichBinSync } from '@socketsecurity/lib/bin'
+import { resolveRealBinSync, whichRealSync } from '@socketsecurity/lib/bin'
 import { NPM } from '@socketsecurity/lib/constants/agents'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { isDirSync } from '@socketsecurity/lib/fs'
@@ -23,11 +23,11 @@ export function findBinPathDetailsSync(binName: string): {
   shadowed: boolean
 } {
   const rawBinPaths =
-    whichBinSync(binName, {
+    whichRealSync(binName, {
       all: true,
       nothrow: true,
     }) ?? []
-  // whichBinSync may return a string when only one result is found, even with all: true.
+  // whichRealSync may return a string when only one result is found, even with all: true.
   // This handles both the current published version and future versions.
   const binPaths = Array.isArray(rawBinPaths)
     ? rawBinPaths
@@ -42,7 +42,7 @@ export function findBinPathDetailsSync(binName: string): {
     if (path.dirname(binPath) === shadowBinPath) {
       shadowIndex = i
     } else {
-      theBinPath = resolveBinPathSync(binPath)
+      theBinPath = resolveRealBinSync(binPath)
       break
     }
   }

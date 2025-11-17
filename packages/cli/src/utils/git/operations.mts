@@ -25,9 +25,9 @@
  * - gitBranch: Get current branch or commit hash
  */
 
-import { which } from '@socketsecurity/lib/bin'
+import { whichReal } from '@socketsecurity/lib/bin'
 import { debug, debugDir, isDebug } from '@socketsecurity/lib/debug'
-import { normalizePath } from '@socketsecurity/lib/path'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
 
 import { FLAG_QUIET } from '../../constants/cli.mts'
@@ -47,7 +47,7 @@ let _gitPath: string | null = null
 
 async function getGitPath(): Promise<string> {
   if (!_gitPath) {
-    const result = await which('git', { nothrow: true })
+    const result = await whichReal('git', { nothrow: true })
     if (!result || Array.isArray(result)) {
       throw new Error('git not found in PATH')
     }
@@ -111,7 +111,9 @@ export async function getRepoInfo(
   let info: any
   try {
     const gitPath = await getGitPath()
-    const result = await spawn(gitPath, ['remote', 'get-url', 'origin'], { cwd })
+    const result = await spawn(gitPath, ['remote', 'get-url', 'origin'], {
+      cwd,
+    })
     const remoteUrl =
       typeof result.stdout === 'string'
         ? result.stdout
@@ -421,7 +423,7 @@ export async function gitEnsureIdentity(
         }
         try {
           const gitPath = await getGitPath()
-    await spawn(gitPath, ['config', prop, value], stdioIgnoreOptions)
+          await spawn(gitPath, ['config', prop, value], stdioIgnoreOptions)
         } catch (e) {
           debug(`Failed to set git config: ${prop}`)
           debugDir(e)

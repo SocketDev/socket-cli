@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url'
 
 import { httpRequest } from '@socketsecurity/lib/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { getSocketHomePath } from '@socketsecurity/lib/paths'
+import { getSocketHomePath } from '@socketsecurity/lib/paths/socket'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')

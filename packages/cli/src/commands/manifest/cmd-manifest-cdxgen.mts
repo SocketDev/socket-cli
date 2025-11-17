@@ -3,7 +3,7 @@ import yargsParse from 'yargs-parser'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { isPath } from '@socketsecurity/lib/path'
+import { isPath } from '@socketsecurity/lib/paths/normalize'
 import { pluralize } from '@socketsecurity/lib/words'
 
 import { runCdxgen } from './run-cdxgen.mts'

@@ -21,7 +21,7 @@
 
 import { messageWithCauses } from 'pony-cause'
 
-import { getSpinner } from '@socketsecurity/lib/constants/process'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
@@ -381,7 +381,7 @@ export async function queryApiSafeText(
     }
   }
 
-  const spinner = getSpinner()
+  const spinner = getDefaultSpinner()
 
   if (description) {
     spinner?.start(`Requesting ${description} from API...`)
@@ -541,7 +541,7 @@ export async function sendApiRequest<T>(
     __proto__: null,
     ...options,
   } as SendApiRequestOptions
-  const spinner = getSpinner()
+  const spinner = getDefaultSpinner()
 
   if (description) {
     spinner?.start(`Requesting ${description} from API...`)

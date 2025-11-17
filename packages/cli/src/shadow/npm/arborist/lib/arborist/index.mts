@@ -3,7 +3,7 @@
 // @ts-expect-error
 import UntypedArborist from '@npmcli/arborist/lib/arborist/index.js'
 
-import { getSpinner } from '@socketsecurity/lib/constants/process'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
@@ -131,7 +131,7 @@ export class SafeArborist extends Arborist {
       acceptRisks || options['dryRun'] || options['yes']
     const silent = !!options['silent']
     const spinnerInstance =
-      silent || !shadowProgress ? undefined : (getSpinner() ?? undefined)
+      silent || !shadowProgress ? undefined : (getDefaultSpinner() ?? undefined)
 
     const isShadowNpx = binName === NPX
     const hasExisting = await findUp(NODE_MODULES, {

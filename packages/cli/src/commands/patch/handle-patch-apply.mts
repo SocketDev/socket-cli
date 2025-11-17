@@ -7,16 +7,13 @@ import fastGlob from 'fast-glob'
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { NPM } from '@socketsecurity/lib/constants/agents'
 import { UTF8 } from '@socketsecurity/lib/constants/encoding'
-import {
-  DOT_SOCKET_DIR,
-  MANIFEST_JSON,
-  NODE_MODULES,
-} from '@socketsecurity/lib/constants/paths'
+import { DOT_SOCKET_DIR, NODE_MODULES } from '@socketsecurity/lib/paths/dirnames'
+import { MANIFEST_JSON } from '@socketsecurity/lib/paths/filenames'
 import { debugDirNs } from '@socketsecurity/lib/debug'
 import { readDirNames } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { readPackageJson } from '@socketsecurity/lib/packages'
-import { normalizePath } from '@socketsecurity/lib/path'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 import { pluralize } from '@socketsecurity/lib/words'
 

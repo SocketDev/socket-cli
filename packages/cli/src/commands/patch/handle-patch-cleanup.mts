@@ -2,12 +2,10 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { UTF8 } from '@socketsecurity/lib/constants/encoding'
-import {
-  DOT_SOCKET_DIR,
-  MANIFEST_JSON,
-} from '@socketsecurity/lib/constants/paths'
+import { DOT_SOCKET_DIR } from '@socketsecurity/lib/paths/dirnames'
+import { MANIFEST_JSON } from '@socketsecurity/lib/paths/filenames'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { normalizePath } from '@socketsecurity/lib/path'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { pluralize } from '@socketsecurity/lib/words'
 
 import { PatchManifestSchema } from './manifest-schema.mts'

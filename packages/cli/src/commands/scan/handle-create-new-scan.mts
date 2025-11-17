@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { getSpinner } from '@socketsecurity/lib/constants/process'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
@@ -104,7 +104,7 @@ export async function handleCreateNewScan({
     logger.info('Auto-generation finished. Proceeding with Scan creation.')
   }
 
-  const spinner = getSpinner()
+  const spinner = getDefaultSpinner()
   const supportedFilesCResult = await fetchSupportedScanFileNames({
     spinner: spinner ?? undefined,
   })

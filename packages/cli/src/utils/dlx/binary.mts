@@ -30,8 +30,8 @@ import path from 'node:path'
 
 import { generateCacheKey } from '@socketsecurity/lib/dlx'
 import { readJson, safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
-import { normalizePath } from '@socketsecurity/lib/path'
-import { getSocketDlxDir } from '@socketsecurity/lib/paths'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
+import { getSocketDlxDir } from '@socketsecurity/lib/paths/socket'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import { DLX_BINARY_CACHE_TTL } from '../../constants/cache.mjs'

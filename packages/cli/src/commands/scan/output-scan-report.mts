@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
-import { getSpinner } from '@socketsecurity/lib/constants/process'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { generateReport } from './generate-report.mts'
@@ -64,7 +64,7 @@ export async function outputScanReport(
     return
   }
 
-  const spinner = getSpinner()!
+  const spinner = getDefaultSpinner()!
   const scanReport = generateReport(
     result.data.scan,
     result.data.securityPolicy,

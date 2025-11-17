@@ -1,7 +1,7 @@
 import open from 'open'
 import terminalLink from 'terminal-link'
 
-import { getSpinner } from '@socketsecurity/lib/constants/process'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { confirm } from '@socketsecurity/lib/stdio/prompts'
 
@@ -27,7 +27,7 @@ export async function outputCreateNewScan(
   const {
     interactive = false,
     outputKind = 'text',
-    spinner = getSpinner(),
+    spinner = getDefaultSpinner(),
   } = { __proto__: null, ...options } as CreateNewScanOptions
 
   if (!result.ok) {

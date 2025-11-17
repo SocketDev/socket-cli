@@ -17,8 +17,7 @@ export async function runRawNpx(
   })
 
   // See https://nodejs.org/api/child_process.html#event-exit.
-  // @ts-expect-error - process.on method exists at runtime
-  spawnPromise.process.on?.(
+  spawnPromise.process.on(
     'exit',
     (code: number | null, signalName: string | null) => {
       if (signalName) {

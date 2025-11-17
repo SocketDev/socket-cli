@@ -22,7 +22,7 @@
  * - Ensures package manager commands work correctly
  */
 
-import { normalizePath } from '@socketsecurity/lib/path'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 
 import ENV from '../../constants/env.mts'
 

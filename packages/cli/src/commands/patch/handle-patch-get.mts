@@ -2,12 +2,10 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { UTF8 } from '@socketsecurity/lib/constants/encoding'
-import {
-  DOT_SOCKET_DIR,
-  MANIFEST_JSON,
-} from '@socketsecurity/lib/constants/paths'
+import { DOT_SOCKET_DIR } from '@socketsecurity/lib/paths/dirnames'
+import { MANIFEST_JSON } from '@socketsecurity/lib/paths/filenames'
 import { safeMkdir } from '@socketsecurity/lib/fs'
-import { normalizePath } from '@socketsecurity/lib/path'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchGetResult } from './output-patch-get-result.mts'

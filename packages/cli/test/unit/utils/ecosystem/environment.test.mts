@@ -50,7 +50,7 @@ vi.mock('browserslist', () => ({
 
 const mockWhichBin = vi.hoisted(() => vi.fn())
 vi.mock('@socketsecurity/lib/bin', () => ({
-  whichBin: mockWhichBin,
+  whichReal: mockWhichBin,
 }))
 
 const mockReadFileBinary = vi.hoisted(() => vi.fn())

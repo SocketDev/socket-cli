@@ -28,7 +28,7 @@ import {
 import type { default as ENV } from '../../../../src/constants/env.mts'
 
 // Mock the dependencies.
-vi.mock('@socketsecurity/lib/path', () => ({
+vi.mock('@socketsecurity/lib/paths/normalize', () => ({
   normalizePath: vi.fn((p: string) => p.replace(/\\/g, '/')),
 }))
 

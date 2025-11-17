@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { debug, debugDir, debugNs } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { normalizePath } from '@socketsecurity/lib/path'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import { PNPM } from '../../constants/agents.mts'
