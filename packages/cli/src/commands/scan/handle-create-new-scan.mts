@@ -1,8 +1,8 @@
 import path from 'node:path'
 
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { pluralize } from '@socketsecurity/lib/words'
 
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'

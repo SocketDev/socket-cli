@@ -1,8 +1,8 @@
 import open from 'open'
 import terminalLink from 'terminal-link'
 
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { confirm } from '@socketsecurity/lib/stdio/prompts'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'

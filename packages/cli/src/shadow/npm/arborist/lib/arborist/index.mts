@@ -3,8 +3,8 @@
 // @ts-expect-error
 import UntypedArborist from '@npmcli/arborist/lib/arborist/index.js'
 
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 
 import { NPX } from '../../../../../constants/agents.mts'
 import ENV from '../../../../../constants/env.mts'

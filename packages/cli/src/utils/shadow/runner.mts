@@ -1,6 +1,5 @@
 /** @fileoverview Shadow bin runner with IPC support and error handling. */
 
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 import { Spinner as createSpinner } from '@socketsecurity/lib/spinner'
 
 import { NPM, PNPM, YARN } from '../../constants/agents.mts'
@@ -17,6 +16,7 @@ import {
 import shadowNpmBin from '../../shadow/npm/bin.mts'
 import { getErrorCause } from '../error/errors.mts'
 import { findUp } from '../fs/find-up.mts'
+import { getDefaultApiToken } from '../socket/sdk.mts'
 
 import type { IpcObject } from '../../constants/shadow.mts'
 import type {
@@ -84,7 +84,7 @@ export async function runShadowNpm(
     env: opts.env,
     ipc: {
       [SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
-      [SOCKET_CLI_SHADOW_API_TOKEN]: SOCKET_PUBLIC_API_TOKEN,
+      [SOCKET_CLI_SHADOW_API_TOKEN]: getDefaultApiToken(),
       [SOCKET_CLI_SHADOW_SILENT]: true,
       ...opts.ipc,
     },

@@ -78,34 +78,37 @@ export function spawnNode(
   options?: SpawnNodeOptions | undefined,
   extra?: SpawnExtra | undefined,
 ): SpawnResult {
-  const { ipc, ...spawnOpts } = { __proto__: null, ...options } as SpawnNodeOptions
+  const { ipc, ...spawnOpts } = {
+    __proto__: null,
+    ...options,
+  } as SpawnNodeOptions
 
   // Get the Node.js executable path to use.
   const nodePath = getNodeExecutablePathSync()
 
   // Spawn the Node.js process.
   const spawnResult = spawn(
-    nodePath, 
-    args, 
+    nodePath,
+    args,
     {
-      ...spawnOpts as SpawnOptions,
+      ...(spawnOpts as SpawnOptions),
       // Always ensure stdio includes 'ipc' for handshake.
       // System Node.js will ignore the handshake message.
       // SEA subprocess will use it to skip bootstrap.
       stdio: ensureIpcInStdio((spawnOpts as SpawnOptions).stdio),
-    }, 
-    extra
+    },
+    extra,
   )
 
   sendBootstrapHandshake(
-    spawnResult.process, 
+    spawnResult.process,
     // Always send IPC handshake with bootstrap indicators + custom data.
     {
       subprocess: true,
       parent_pid: process.pid,
       // Custom IPC data in extra field to avoid collision with standard fields.
       ...(ipc ? { extra: { ...ipc } } : {}),
-    }
+    },
   )
 
   return spawnResult

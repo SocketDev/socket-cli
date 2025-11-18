@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { DOT_SOCKET_DIR } from '@socketsecurity/lib/paths/dirnames'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 
 import { handlePatchDownload } from './handle-patch-download.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
@@ -131,7 +131,7 @@ async function run(
     )
   }
 
-  const spinner = getSpinner()
+  const spinner = getDefaultSpinner()
 
   await handlePatchDownload({
     cwd,

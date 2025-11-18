@@ -51,7 +51,8 @@ export function shadowNpmInstall(
   const terminatorPos = args.indexOf('--')
   const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
   const binArgs = rawBinArgs.filter(
-    (a: string) => !isNpmAuditFlag(a) && !isNpmFundFlag(a) && !isNpmProgressFlag(a),
+    (a: string) =>
+      !isNpmAuditFlag(a) && !isNpmFundFlag(a) && !isNpmProgressFlag(a),
   )
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const progressArg = rawBinArgs.findLast(isNpmProgressFlag) !== '--no-progress'

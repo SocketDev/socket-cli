@@ -113,10 +113,7 @@ export async function spawnCoanaDlx(
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
-  const {
-    env: spawnEnv,
-    ...dlxOptions
-  } = {
+  const { env: spawnEnv, ...dlxOptions } = {
     __proto__: null,
     ...options,
   } as DlxOptions
@@ -176,7 +173,7 @@ export async function spawnCoanaDlx(
           ...process.env,
           ...mixinsEnv,
           ...spawnEnv,
-        }
+        },
       },
       spawnExtra,
     )

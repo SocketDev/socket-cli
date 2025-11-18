@@ -21,9 +21,9 @@
 
 import { messageWithCauses } from 'pony-cause'
 
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import { getDefaultApiToken } from './sdk.mts'

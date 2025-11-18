@@ -399,7 +399,10 @@ export async function spawnSocketPython(
         shell: WIN32,
         stdio: options?.stdio || 'inherit',
       }
-      const spawnResult = await spawnNode([resolution.path, ...args], spawnNodeOpts)
+      const spawnResult = await spawnNode(
+        [resolution.path, ...args],
+        spawnNodeOpts,
+      )
 
       return {
         ok: true,

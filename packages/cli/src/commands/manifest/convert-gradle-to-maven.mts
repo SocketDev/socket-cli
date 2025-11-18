@@ -1,9 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 
 import { distPath } from '../../constants/paths.mjs'
 
