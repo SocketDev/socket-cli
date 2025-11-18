@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.30](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.30) - 2025-11-18
+
+### Changed
+- Enhanced `SOCKET_CLI_COANA_LOCAL_PATH` to support compiled Coana CLI binaries alongside Node.js script files
+
+### Fixed
+- Resolved PR creation workflow to properly recreate pull requests after closing or merging
+- Corrected API token selection to honor `SOCKET_CLI_API_TOKEN` environment variable in package alert requests
+
 ## [1.1.29](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.29) - 2025-11-16
 
 ### Added
