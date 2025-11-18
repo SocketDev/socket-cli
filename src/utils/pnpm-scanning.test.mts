@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getAlertsMapFromPnpmLockfile } from './alerts-map.mts'
 import { extractPurlsFromPnpmLockfile, parsePnpmLockfile } from './pnpm.mts'
 
-// Mock all dependencies with vi.hoisted for better type safety
+// Mock all dependencies with vi.hoisted for better type safety.
 const mockGetPublicApiToken = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
 const mockFindSocketYmlSync = vi.hoisted(() => vi.fn())
@@ -31,7 +31,7 @@ describe('PNPM Lockfile PURL Scanning', () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
-    // Setup default mock implementations
+    // Setup default mock implementations.
     mockGetPublicApiToken.mockReturnValue('test-token')
     mockFindSocketYmlSync.mockReturnValue({ ok: false, data: undefined })
     mockAddArtifactToAlertsMap.mockResolvedValue(undefined)
