@@ -14,21 +14,6 @@ Quick reference for using shared configurations in socket-cli monorepo packages.
 }
 ```
 
-### With Custom Paths
-
-```json
-{
-  "extends": "../../.config/tsconfig.base.json",
-  "compilerOptions": {
-    "paths": {
-      "@socketsecurity/lib": ["../../socket-lib/dist/index.d.ts"]
-    }
-  },
-  "include": ["src/**/*.mts"],
-  "exclude": ["src/**/*.test.mts", "dist/**"]
-}
-```
-
 ### For Build Output
 
 ```json

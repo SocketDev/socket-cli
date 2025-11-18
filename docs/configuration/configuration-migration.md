@@ -48,24 +48,6 @@ The monorepo now has shared configuration files in `.config/` at the root level.
 }
 ```
 
-#### With Custom Paths
-
-For packages that need path mappings (like CLI with local dependencies):
-
-```json
-{
-  "extends": "../../.config/tsconfig.base.json",
-  "compilerOptions": {
-    "paths": {
-      "@socketsecurity/lib": ["../../socket-lib/dist/index.d.ts"],
-      "@socketsecurity/registry": ["../../socket-registry/registry/dist/index.d.ts"]
-    }
-  },
-  "include": ["src/**/*.mts"],
-  "exclude": ["src/**/*.test.mts", "dist/**"]
-}
-```
-
 ### Vitest Configuration
 
 #### Before (Duplicated Config)

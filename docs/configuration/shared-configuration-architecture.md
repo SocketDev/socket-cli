@@ -165,25 +165,7 @@ export default mergeConfig(
 )
 ```
 
-### Pattern 2: Package with Custom Paths
-
-TypeScript path mappings for local dependencies:
-
-**tsconfig.json**:
-```json
-{
-  "extends": "../../.config/tsconfig.base.json",
-  "compilerOptions": {
-    "paths": {
-      "@socketsecurity/lib": ["../../socket-lib/dist/index.d.ts"]
-    }
-  },
-  "include": ["src/**/*.mts"],
-  "exclude": ["src/**/*.test.mts", "dist/**"]
-}
-```
-
-### Pattern 3: Package with Custom Coverage
+### Pattern 2: Package with Custom Coverage
 
 Override coverage thresholds:
 
@@ -210,7 +192,7 @@ export default mergeConfig(
 )
 ```
 
-### Pattern 4: Package with Build-Specific Configs
+### Pattern 3: Package with Build-Specific Configs
 
 Separate configs for different purposes:
 

@@ -63,23 +63,6 @@ Packages should extend the base config and specify their own include/exclude:
 }
 ```
 
-### TypeScript - Type Checking Config
-
-For type checking with custom paths (like packages/cli):
-
-```json
-{
-  "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "paths": {
-      "@socketsecurity/lib": ["../../socket-lib/dist/index.d.ts"]
-    }
-  },
-  "include": ["../src/**/*.mts"],
-  "exclude": ["../src/**/*.test.mts"]
-}
-```
-
 ### Vitest - Package Config
 
 Packages should merge the base config with their specific settings:
