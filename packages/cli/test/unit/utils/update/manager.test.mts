@@ -216,6 +216,8 @@ describe('update-manager', () => {
 
     it('should handle TTL boundary conditions', () => {
       const now = Date.now()
+      const spy = vi.spyOn(Date, 'now').mockReturnValue(now)
+
       const record: StoreRecord = {
         timestampFetch: now - 999,
         timestampNotification: 0,
@@ -233,6 +235,8 @@ describe('update-manager', () => {
 
       // Just over 1 second old with 1 second TTL
       expect(testStore.isFresh(expiredRecord, 1000)).toBe(false)
+
+      spy.mockRestore()
     })
   })
 
