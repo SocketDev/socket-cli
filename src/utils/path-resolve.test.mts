@@ -1,3 +1,4 @@
+import { existsSync, lstatSync, readdirSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -23,6 +24,36 @@ const __dirname = path.dirname(__filename)
 const rootNmPath = path.join(__dirname, '../..', NODE_MODULES)
 const mockFixturePath = normalizePath(path.join(__dirname, 'mock'))
 const mockNmPath = normalizePath(rootNmPath)
+
+// Remove broken symlinks in node_modules before loading to prevent mock-fs errors.
+function cleanupBrokenSymlinks(dirPath: string): void {
+  try {
+    if (!existsSync(dirPath)) {
+      return
+    }
+    const entries = readdirSync(dirPath, { withFileTypes: true })
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name)
+      try {
+        if (entry.isSymbolicLink() && !existsSync(fullPath)) {
+          // Symlink exists but target does not, remove it.
+          rmSync(fullPath, { force: true })
+        } else if (entry.isDirectory()) {
+          // Recursively check subdirectories.
+          cleanupBrokenSymlinks(fullPath)
+        }
+      } catch {
+        // Ignore errors for individual entries.
+      }
+    }
+  } catch {
+    // If we cannot read the directory, skip cleanup.
+  }
+}
+
+// Clean up broken symlinks before loading node_modules.
+cleanupBrokenSymlinks(rootNmPath)
+
 const mockedNmCallback = mockFs.load(rootNmPath)
 
 function mockTestFs(config: FileSystem.DirectoryItems) {
