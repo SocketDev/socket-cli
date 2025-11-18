@@ -35,13 +35,26 @@ export type OpenSocketFixPrOptions = {
   ghsaDetails?: Map<string, GhsaDetails> | undefined
 }
 
+export type OpenPrResult =
+  | { ok: true; pr: OctokitResponse<Pr> }
+  | { ok: false; reason: 'already_exists'; error: RequestError }
+  | {
+      ok: false
+      reason: 'validation_error'
+      error: RequestError
+      details: string
+    }
+  | { ok: false; reason: 'permission_denied'; error: RequestError }
+  | { ok: false; reason: 'network_error'; error: RequestError }
+  | { ok: false; reason: 'unknown'; error: Error }
+
 export async function openSocketFixPr(
   owner: string,
   repo: string,
   branch: string,
   ghsaIds: string[],
   options?: OpenSocketFixPrOptions | undefined,
-): Promise<OctokitResponse<Pr> | undefined> {
+): Promise<OpenPrResult> {
   const { baseBranch = 'main', ghsaDetails } = {
     __proto__: null,
     ...options,
@@ -59,25 +72,51 @@ export async function openSocketFixPr(
       body: getSocketFixPullRequestBody(ghsaIds, ghsaDetails),
     }
     debugDir('inspect', { octokitPullsCreateParams })
-    return await octokit.pulls.create(octokitPullsCreateParams)
+    const pr = await octokit.pulls.create(octokitPullsCreateParams)
+    return { ok: true, pr }
   } catch (e) {
-    let message = `Failed to open pull request`
-    const errors =
-      e instanceof RequestError
-        ? (e.response?.data as any)?.['errors']
-        : undefined
-    if (Array.isArray(errors) && errors.length) {
-      const details = errors
-        .map(
-          d =>
-            `- ${d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`}`,
+    // Handle RequestError from Octokit.
+    if (e instanceof RequestError) {
+      const errors = (e.response?.data as any)?.['errors']
+      const errorMessages = Array.isArray(errors)
+        ? errors.map(
+            d => d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`,
+          )
+        : []
+
+      // Check for "PR already exists" error.
+      if (
+        errorMessages.some(msg =>
+          msg.toLowerCase().includes('pull request already exists'),
         )
-        .join('\n')
-      message += `:\n${details}`
+      ) {
+        debugFn('error', 'Failed to open pull request: already exists')
+        return { ok: false, reason: 'already_exists', error: e }
+      }
+
+      // Check for validation errors (e.g., no commits between branches).
+      if (errors && errors.length > 0) {
+        const details = errorMessages.map(d => `- ${d}`).join('\n')
+        debugFn('error', `Failed to open pull request:\n${details}`)
+        return { ok: false, reason: 'validation_error', error: e, details }
+      }
+
+      // Check HTTP status codes.
+      if (e.status === 403 || e.status === 401) {
+        debugFn('error', 'Failed to open pull request: permission denied')
+        return { ok: false, reason: 'permission_denied', error: e }
+      }
+
+      if (e.status && e.status >= 500) {
+        debugFn('error', 'Failed to open pull request: network error')
+        return { ok: false, reason: 'network_error', error: e }
+      }
     }
-    debugFn('error', message)
+
+    // Unknown error.
+    debugFn('error', `Failed to open pull request: ${e}`)
+    return { ok: false, reason: 'unknown', error: e as Error }
   }
-  return undefined
 }
 
 export type GQL_MERGE_STATE_STATUS =
