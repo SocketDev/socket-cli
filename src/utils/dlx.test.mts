@@ -66,7 +66,7 @@ describe('utils/dlx', () => {
     it('should place --silent before dlx for pnpm', async () => {
       const packageSpec: DlxPackageSpec = {
         name: '@coana-tech/cli',
-        version: '~1.0.0',
+        version: '1.0.0',
       }
 
       await spawnDlx(packageSpec, ['run', '/some/path'], {
@@ -125,7 +125,7 @@ describe('utils/dlx', () => {
     it('should place --silent after --yes for npm', async () => {
       const packageSpec: DlxPackageSpec = {
         name: '@coana-tech/cli',
-        version: '~1.0.0',
+        version: '1.0.0',
       }
 
       await spawnDlx(packageSpec, ['run', '/some/path'], {
