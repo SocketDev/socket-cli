@@ -80,7 +80,7 @@ describe('utils/dlx', () => {
       // Verify that --silent comes before dlx.
       expect(spawnArgs[0]).toBe('--silent')
       expect(spawnArgs[1]).toBe('dlx')
-      expect(spawnArgs[2]).toBe('@coana-tech/cli@~1.0.0')
+      expect(spawnArgs[2]).toBe('@coana-tech/cli@1.0.0')
       expect(spawnArgs[3]).toBe('run')
       expect(spawnArgs[4]).toBe('/some/path')
     })
@@ -139,7 +139,7 @@ describe('utils/dlx', () => {
       // For npm/npx, --yes comes first, then --silent.
       expect(spawnArgs[0]).toBe('--yes')
       expect(spawnArgs[1]).toBe('--silent')
-      expect(spawnArgs[2]).toBe('@coana-tech/cli@~1.0.0')
+      expect(spawnArgs[2]).toBe('@coana-tech/cli@1.0.0')
       expect(spawnArgs[3]).toBe('run')
       expect(spawnArgs[4]).toBe('/some/path')
     })

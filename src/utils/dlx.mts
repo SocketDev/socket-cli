@@ -235,7 +235,7 @@ export async function spawnCoanaDlx(
     const result = await spawnDlx(
       {
         name: '@coana-tech/cli',
-        version: `~${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}`,
+        version: constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION,
       },
       args,
       {
