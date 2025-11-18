@@ -216,13 +216,17 @@ export async function spawnCoanaDlx(
     const localCoanaPath = process.env['SOCKET_CLI_COANA_LOCAL_PATH']
     // Use local Coana CLI if path is provided.
     if (localCoanaPath) {
+      const isBinary = !localCoanaPath.endsWith('.js') && !localCoanaPath.endsWith('.mjs');
+
       const finalEnv = {
         ...process.env,
         ...constants.processEnv,
         ...mixinsEnv,
         ...spawnEnv,
       }
-      const spawnResult = await spawn('node', [localCoanaPath, ...args], {
+
+      const spawnArgs = isBinary ? args : [localCoanaPath, ...args];
+      const spawnResult = await spawn(isBinary ? localCoanaPath : 'node', spawnArgs, {
         cwd: dlxOptions.cwd,
         env: finalEnv,
         stdio: spawnExtra?.['stdio'] || 'inherit',
