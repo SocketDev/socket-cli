@@ -27,7 +27,7 @@ import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { findSocketYmlSync } from './config.mts'
 import { toFilterConfig } from './filter-config.mts'
 import { extractPurlsFromPnpmLockfile } from './pnpm.mts'
-import { getPublicApiToken, setupSdk } from './sdk.mts'
+import { setupSdk } from './sdk.mts'
 import { addArtifactToAlertsMap } from './socket-package-alert.mts'
 
 import type { CompactSocketArtifact } from './alert/artifact.mts'
@@ -91,7 +91,7 @@ export async function getAlertsMapFromPurls(
     opts.filter.fixable = true
   }
 
-  const { apiToken = getPublicApiToken(), spinner } = opts
+  const { apiToken, spinner } = opts
 
   const getText = () => `Looking up data for ${remaining} packages`
 
