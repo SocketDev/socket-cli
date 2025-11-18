@@ -5,12 +5,13 @@ import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
-const logger = getDefaultLogger()
 
 import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
+
+const logger = getDefaultLogger()
 
 const config: CliCommandConfig = {
   commandName: 'oops',

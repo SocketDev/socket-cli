@@ -3,8 +3,6 @@ import path from 'node:path'
 import { debugDir } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-const logger = getDefaultLogger()
-
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
@@ -18,6 +16,8 @@ import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
+
+const logger = getDefaultLogger()
 
 const config: CliCommandConfig = {
   commandName: 'auto',

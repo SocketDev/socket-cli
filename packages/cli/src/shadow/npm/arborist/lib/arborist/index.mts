@@ -6,8 +6,6 @@ import UntypedArborist from '@npmcli/arborist/lib/arborist/index.js'
 import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-const logger = getDefaultLogger()
-
 import { NPX } from '../../../../../constants/agents.mts'
 import ENV from '../../../../../constants/env.mts'
 import { NODE_MODULES } from '../../../../../constants/packages.mts'
@@ -33,6 +31,8 @@ import type {
   ArboristReifyOptions,
   NodeClass,
 } from '../../types.mts'
+
+const logger = getDefaultLogger()
 
 export const SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
   __proto__: null,

@@ -30,8 +30,6 @@ import { safeMkdirSync, safeReadFileSync } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { naturalCompare } from '@socketsecurity/lib/sorts'
 
-const logger = getDefaultLogger()
-
 import { debugConfig } from './debug.mts'
 import {
   CONFIG_KEY_API_BASE_URL,
@@ -47,6 +45,8 @@ import { getErrorCause } from './error/errors.mts'
 
 import type { CResult } from '../types.mts'
 import type { SocketYml } from '@socketsecurity/config'
+
+const logger = getDefaultLogger()
 
 export interface LocalConfig {
   apiBaseUrl?: string | null | undefined

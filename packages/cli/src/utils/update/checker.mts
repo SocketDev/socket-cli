@@ -27,9 +27,9 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { onExit } from '@socketsecurity/lib/signal-exit'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
-const logger = getDefaultLogger()
-
 import { UPDATE_NOTIFIER_TIMEOUT } from '../../constants/cache.mts'
+
+const logger = getDefaultLogger()
 
 export interface AuthInfo {
   token: string

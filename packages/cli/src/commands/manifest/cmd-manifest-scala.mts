@@ -14,12 +14,13 @@ import { getFlagListOutput } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-const logger = getDefaultLogger()
 
 import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
+
+const logger = getDefaultLogger()
 
 const config: CliCommandConfig = {
   commandName: 'scala',

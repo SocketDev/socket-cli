@@ -37,11 +37,6 @@ import lookupRegistryUrl from 'registry-url'
 import { debug as debugNs, debugDir } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-const logger = getDefaultLogger()
-
-// Debug logger for manifest operations
-const debug = debugNs
-
 import { rootAliases, rootCommands } from './commands.mts'
 import ENV from './constants/env.mts'
 import { SOCKET_CLI_BIN_NAME } from './constants/packages.mts'
@@ -59,6 +54,11 @@ import { isSeaBinary } from './utils/sea/detect.mts'
 import { scheduleUpdateCheck } from './utils/update/manager.mts'
 
 import { dlxManifest } from '@socketsecurity/lib/dlx-manifest'
+
+const logger = getDefaultLogger()
+
+// Debug logger for manifest operations.
+const debug = debugNs
 
 const __filename = fileURLToPath(import.meta.url)
 

@@ -2,9 +2,6 @@ import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 
-const logger = getDefaultLogger()
-const spinner = getDefaultSpinner()
-
 import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
 import {
   handleApiCallNoSpinner,
@@ -16,6 +13,9 @@ import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+
+const logger = getDefaultLogger()
+const spinner = getDefaultSpinner()
 
 export type FetchScanData = {
   includeLicensePolicy?: boolean | undefined

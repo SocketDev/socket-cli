@@ -15,12 +15,13 @@ import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { mailtoLink } from '../../utils/terminal/link.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-const logger = getDefaultLogger()
 
 import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
+
+const logger = getDefaultLogger()
 
 export const CMD_NAME = 'threat-feed'
 

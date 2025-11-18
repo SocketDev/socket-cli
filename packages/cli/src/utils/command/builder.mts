@@ -4,13 +4,14 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../cli/with-subcommands.mjs'
-const logger = getDefaultLogger()
 
 import type { MeowFlags } from '../../flags.mts'
 import type {
   CliCommandConfig,
   CliSubcommand,
 } from '../cli/with-subcommands.mjs'
+
+const logger = getDefaultLogger()
 
 /**
  * Options for building a CLI command

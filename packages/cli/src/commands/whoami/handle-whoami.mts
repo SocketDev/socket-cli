@@ -1,7 +1,5 @@
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-const logger = getDefaultLogger()
-
 import { outputWhoami } from './output-whoami.mts'
 import { CONFIG_KEY_API_TOKEN } from '../../constants/config.mjs'
 import ENV from '../../constants/env.mts'
@@ -19,6 +17,8 @@ import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
+
+const logger = getDefaultLogger()
 
 export async function handleWhoami(
   argv: string[] | readonly string[],

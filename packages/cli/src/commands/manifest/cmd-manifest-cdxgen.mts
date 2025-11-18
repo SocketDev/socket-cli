@@ -11,12 +11,13 @@ import { DRY_RUN_BAILING_NOW, FLAG_HELP } from '../../constants/cli.mjs'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { filterFlags, isHelpFlag } from '../../utils/process/cmd.mts'
-const logger = getDefaultLogger()
 
 import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
+
+const logger = getDefaultLogger()
 
 // Technical debt: cdxgen uses yargs for arg parsing internally. Converting to
 // Socket CLI's custom meow implementation would provide consistency with other

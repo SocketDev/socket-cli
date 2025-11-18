@@ -26,8 +26,6 @@ import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
-const logger = getDefaultLogger()
-
 import { getDefaultApiToken } from './sdk.mts'
 import { CONFIG_KEY_API_BASE_URL } from '../../constants/config.mts'
 import ENV from '../../constants/env.mts'
@@ -64,6 +62,8 @@ import type {
   SocketSdkOperations,
   SocketSdkSuccessResult,
 } from '@socketsecurity/sdk'
+
+const logger = getDefaultLogger()
 
 const NO_ERROR_MESSAGE = 'No error message returned'
 
