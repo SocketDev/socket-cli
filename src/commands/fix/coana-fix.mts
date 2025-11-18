@@ -9,6 +9,12 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import {
+  cleanupErrorBranches,
+  cleanupFailedPrBranches,
+  cleanupStaleBranch,
+  cleanupSuccessfulPrLocalBranch,
+} from './branch-cleanup.mts'
+import {
   checkCiEnvVars,
   getCiEnvInstructions,
   getFixEnv,
@@ -341,10 +347,39 @@ export async function coanaFix(
     const branch = getSocketFixBranchName(ghsaId)
 
     try {
-      // Check if branch already exists.
+      // Check if an open PR already exists for this GHSA.
+      // eslint-disable-next-line no-await-in-loop
+      const existingOpenPrs = await getSocketFixPrs(
+        fixEnv.repoInfo.owner,
+        fixEnv.repoInfo.repo,
+        { ghsaId, states: GQL_PR_STATE_OPEN },
+      )
+
+      if (existingOpenPrs.length > 0) {
+        const prNum = existingOpenPrs[0]!.number
+        logger.info(`PR #${prNum} already exists for ${ghsaId}, skipping.`)
+        debugFn('notice', `skip: open PR #${prNum} exists for ${ghsaId}`)
+        continue ghsaLoop
+      }
+
+      // If branch exists but no open PR, delete the stale branch.
+      // This handles cases where PR creation failed but branch was pushed.
       // eslint-disable-next-line no-await-in-loop
       if (await gitRemoteBranchExists(branch, cwd)) {
-        debugFn('notice', `skip: remote branch "${branch}" exists`)
+        // eslint-disable-next-line no-await-in-loop
+        const shouldContinue = await cleanupStaleBranch(branch, ghsaId, cwd)
+        if (!shouldContinue) {
+          continue ghsaLoop
+        }
+      }
+
+      // Check for GitHub token before doing any git operations.
+      if (!fixEnv.githubToken) {
+        logger.error(
+          'Cannot create pull request: SOCKET_CLI_GITHUB_TOKEN environment variable is not set.\n' +
+            'Set SOCKET_CLI_GITHUB_TOKEN or GITHUB_TOKEN to enable PR creation.',
+        )
+        debugFn('error', `skip: missing GitHub token for ${ghsaId}`)
         continue ghsaLoop
       }
 
@@ -386,19 +421,6 @@ export async function coanaFix(
       }
 
       // Set up git remote.
-      if (!fixEnv.githubToken) {
-        logger.error(
-          'Cannot create pull request: SOCKET_CLI_GITHUB_TOKEN environment variable is not set.\n' +
-            'Set SOCKET_CLI_GITHUB_TOKEN or GITHUB_TOKEN to enable PR creation.',
-        )
-        // eslint-disable-next-line no-await-in-loop
-        await gitResetAndClean(fixEnv.baseBranch, cwd)
-        // eslint-disable-next-line no-await-in-loop
-        await gitCheckoutBranch(fixEnv.baseBranch, cwd)
-        // eslint-disable-next-line no-await-in-loop
-        await gitDeleteBranch(branch, cwd)
-        continue ghsaLoop
-      }
       // eslint-disable-next-line no-await-in-loop
       await setGitRemoteGithubRepoUrl(
         fixEnv.repoInfo.owner,
@@ -408,7 +430,7 @@ export async function coanaFix(
       )
 
       // eslint-disable-next-line no-await-in-loop
-      const prResponse = await openSocketFixPr(
+      const prResult = await openSocketFixPr(
         fixEnv.repoInfo.owner,
         fixEnv.repoInfo.repo,
         branch,
@@ -421,8 +443,8 @@ export async function coanaFix(
         },
       )
 
-      if (prResponse) {
-        const { data } = prResponse
+      if (prResult.ok) {
+        const { data } = prResult.pr
         const prRef = `PR #${data.number}`
 
         logger.success(`Opened ${prRef} for ${ghsaId}.`)
@@ -443,11 +465,47 @@ export async function coanaFix(
           logger.dedent()
           spinner?.dedent()
         }
+
+        // Clean up local branch only - keep remote branch for PR merge.
+        // eslint-disable-next-line no-await-in-loop
+        await cleanupSuccessfulPrLocalBranch(branch, cwd)
+      } else {
+        // Handle PR creation failures.
+        if (prResult.reason === 'already_exists') {
+          logger.info(
+            `PR already exists for ${ghsaId} (this should not happen due to earlier check).`,
+          )
+          // Don't delete branch - PR exists and needs it.
+        } else if (prResult.reason === 'validation_error') {
+          logger.error(
+            `Failed to create PR for ${ghsaId}:\n${prResult.details}`,
+          )
+          // eslint-disable-next-line no-await-in-loop
+          await cleanupFailedPrBranches(branch, cwd)
+        } else if (prResult.reason === 'permission_denied') {
+          logger.error(
+            `Failed to create PR for ${ghsaId}: Permission denied. Check SOCKET_CLI_GITHUB_TOKEN permissions.`,
+          )
+          // eslint-disable-next-line no-await-in-loop
+          await cleanupFailedPrBranches(branch, cwd)
+        } else if (prResult.reason === 'network_error') {
+          logger.error(
+            `Failed to create PR for ${ghsaId}: Network error. Please try again.`,
+          )
+          // eslint-disable-next-line no-await-in-loop
+          await cleanupFailedPrBranches(branch, cwd)
+        } else {
+          logger.error(
+            `Failed to create PR for ${ghsaId}: ${prResult.error.message}`,
+          )
+          // eslint-disable-next-line no-await-in-loop
+          await cleanupFailedPrBranches(branch, cwd)
+        }
       }
 
       // Reset back to base branch for next iteration.
       // eslint-disable-next-line no-await-in-loop
-      await gitResetAndClean(branch, cwd)
+      await gitResetAndClean(fixEnv.baseBranch, cwd)
       // eslint-disable-next-line no-await-in-loop
       await gitCheckoutBranch(fixEnv.baseBranch, cwd)
     } catch (e) {
@@ -455,6 +513,11 @@ export async function coanaFix(
         `Unexpected condition: Push failed for ${ghsaId}, skipping PR creation.`,
       )
       debugDir('error', e)
+      // Clean up branches (push may have succeeded before error).
+      // eslint-disable-next-line no-await-in-loop
+      const remoteBranchExists = await gitRemoteBranchExists(branch, cwd)
+      // eslint-disable-next-line no-await-in-loop
+      await cleanupErrorBranches(branch, cwd, remoteBranchExists)
       // eslint-disable-next-line no-await-in-loop
       await gitResetAndClean(fixEnv.baseBranch, cwd)
       // eslint-disable-next-line no-await-in-loop
