@@ -60,9 +60,13 @@ export function getSocketFixPullRequestBody(
     if (!details) {
       return body
     }
-    const packages = details.vulnerabilities.nodes.map(
-      v => `${v.package.name} (${v.package.ecosystem})`,
-    )
+    const packages = [
+      ...new Set(
+        details.vulnerabilities.nodes.map(
+          v => `${v.package.name} (${v.package.ecosystem})`,
+        ),
+      ),
+    ]
     return [
       body,
       '',
@@ -82,9 +86,13 @@ export function getSocketFixPullRequestBody(
       const details = ghsaDetails?.get(id)
       const item = `- [${id}](${GITHUB_ADVISORIES_URL}/${id})`
       if (details) {
-        const packages = details.vulnerabilities.nodes.map(
-          v => `${v.package.name}`,
-        )
+        const packages = [
+          ...new Set(
+            details.vulnerabilities.nodes.map(
+              v => `${v.package.name} (${v.package.ecosystem})`,
+            ),
+          ),
+        ]
         return `${item} - ${details.summary} (${joinAnd(packages)})`
       }
       return item

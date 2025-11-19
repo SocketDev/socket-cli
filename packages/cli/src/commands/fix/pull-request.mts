@@ -25,6 +25,7 @@ import {
 } from '../../utils/git/github.mts'
 import { createPrProvider } from '../../utils/git/provider-factory.mts'
 
+import type { RequestError } from '@octokit/request-error'
 import type { OctokitResponse } from '@octokit/types'
 import type { JsonContent } from '@socketsecurity/lib/fs'
 
@@ -35,13 +36,26 @@ export type OpenSocketFixPrOptions = {
   retries?: number | undefined
 }
 
+export type OpenPrResult =
+  | { ok: true; pr: OctokitResponse<Pr> }
+  | { ok: false; reason: 'already_exists'; error: RequestError }
+  | {
+      ok: false
+      reason: 'validation_error'
+      error: RequestError
+      details: string
+    }
+  | { ok: false; reason: 'permission_denied'; error: RequestError }
+  | { ok: false; reason: 'network_error'; error: RequestError }
+  | { ok: false; reason: 'unknown'; error: Error }
+
 export async function openSocketFixPr(
   owner: string,
   repo: string,
   branch: string,
   ghsaIds: string[],
   options?: OpenSocketFixPrOptions | undefined,
-): Promise<OctokitResponse<Pr> | undefined> {
+): Promise<OpenPrResult> {
   const {
     baseBranch = 'main',
     ghsaDetails,
@@ -72,11 +86,59 @@ export async function openSocketFixPr(
       pull_number: result.number,
     })
 
-    return prDetails
+    return { ok: true, pr: prDetails }
   } catch (e) {
     debug(formatErrorWithDetail('Failed to create pull request', e))
     debugDir(e)
-    return undefined
+
+    // Handle RequestError from Octokit/provider.
+    if (e && typeof e === 'object' && 'status' in e) {
+      const reqError = e as RequestError
+      const errors = (reqError.response?.data as any)?.['errors']
+      const errorMessages = Array.isArray(errors)
+        ? errors.map(
+            (d: any) =>
+              d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`,
+          )
+        : []
+
+      // Check for "PR already exists" error.
+      if (
+        errorMessages.some((msg: string) =>
+          msg.toLowerCase().includes('pull request already exists'),
+        )
+      ) {
+        debug('Failed to create pull request: already exists')
+        return { ok: false, reason: 'already_exists', error: reqError }
+      }
+
+      // Check for validation errors (e.g., no commits between branches).
+      if (errors && errors.length > 0) {
+        const details = errorMessages.map((d: string) => `- ${d}`).join('\n')
+        debug(`Failed to create pull request:\n${details}`)
+        return {
+          ok: false,
+          reason: 'validation_error',
+          error: reqError,
+          details,
+        }
+      }
+
+      // Check HTTP status codes.
+      if (reqError.status === 403 || reqError.status === 401) {
+        debug('Failed to create pull request: permission denied')
+        return { ok: false, reason: 'permission_denied', error: reqError }
+      }
+
+      if (reqError.status && reqError.status >= 500) {
+        debug('Failed to create pull request: network error')
+        return { ok: false, reason: 'network_error', error: reqError }
+      }
+    }
+
+    // Unknown error.
+    debug(`Failed to create pull request: ${e}`)
+    return { ok: false, reason: 'unknown', error: e as Error }
   }
 }
 
