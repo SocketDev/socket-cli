@@ -6,6 +6,19 @@ import type { GhsaDetails } from '../../utils/github.mts'
 
 const GITHUB_ADVISORIES_URL = 'https://github.com/advisories'
 
+/**
+ * Extract unique package names with ecosystems from vulnerability details.
+ */
+function getUniquePackages(details: GhsaDetails): string[] {
+  return [
+    ...new Set(
+      details.vulnerabilities.nodes.map(
+        v => `${v.package.name} (${v.package.ecosystem})`,
+      ),
+    ),
+  ]
+}
+
 export type SocketFixBranchParser = (
   branch: string,
 ) => SocketFixBranchParseResult | undefined
@@ -60,13 +73,7 @@ export function getSocketFixPullRequestBody(
     if (!details) {
       return body
     }
-    const packages = [
-      ...new Set(
-        details.vulnerabilities.nodes.map(
-          v => `${v.package.name} (${v.package.ecosystem})`,
-        ),
-      ),
-    ]
+    const packages = getUniquePackages(details)
     return [
       body,
       '',
@@ -86,13 +93,7 @@ export function getSocketFixPullRequestBody(
       const details = ghsaDetails?.get(id)
       const item = `- [${id}](${GITHUB_ADVISORIES_URL}/${id})`
       if (details) {
-        const packages = [
-          ...new Set(
-            details.vulnerabilities.nodes.map(
-              v => `${v.package.name} (${v.package.ecosystem})`,
-            ),
-          ),
-        ]
+        const packages = getUniquePackages(details)
         return `${item} - ${details.summary} (${joinAnd(packages)})`
       }
       return item
