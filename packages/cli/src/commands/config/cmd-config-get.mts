@@ -1,109 +1,15 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
+import { createConfigCommand } from './config-command-factory.mts'
 import { handleConfigGet } from './handle-config-get.mts'
-import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-} from '../../constants/cli.mjs'
-import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import {
-  getSupportedConfigEntries,
-  isSupportedConfigKey,
-} from '../../utils/config.mts'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
-import type { LocalConfig } from '../../utils/config.mts'
-
-const logger = getDefaultLogger()
-
-const config: CliCommandConfig = {
+export const cmdConfigGet = createConfigCommand({
   commandName: 'get',
   description: 'Get the value of a local CLI config item',
   hidden: false,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-  },
-  help: (command, config) => `
-    Usage
-      $ ${command} [options] KEY
-
-    Retrieve the value for given KEY at this time. If you have overridden the
+  helpUsage: 'KEY',
+  helpDescription: `Retrieve the value for given KEY at this time. If you have overridden the
     config then the value will come from that override.
 
-    Options
-      ${getFlagListOutput(config.flags)}
-
-    KEY is an enum. Valid keys:
-
-${getSupportedConfigEntries()
-  .map(({ 0: key, 1: description }) => `     - ${key} -- ${description}`)
-  .join('\n')}
-
-    Examples
-      $ ${command} defaultOrg
-  `,
-}
-
-export const cmdConfigGet = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: CliCommandContext,
-): Promise<void> {
-  const cli = meowOrExit({
-    argv,
-    config,
-    importMeta,
-    parentName,
-  })
-
-  const { json, markdown } = cli.flags
-
-  const dryRun = !!cli.flags['dryRun']
-
-  const [key = ''] = cli.input
-
-  const outputKind = getOutputKind(json, markdown)
-
-  const wasValidInput = checkCommandInput(
-    outputKind,
-    {
-      test: key === 'test' || isSupportedConfigKey(key),
-      message: 'Config key should be the first arg',
-      fail: key ? 'invalid config key' : 'missing',
-    },
-    {
-      nook: true,
-      test: !json || !markdown,
-      message: `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
-      fail: 'bad',
-    },
-  )
-  if (!wasValidInput) {
-    return
-  }
-
-  if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
-
-  await handleConfigGet({
-    key: key as keyof LocalConfig,
-    outputKind,
-  })
-}
+    KEY is an enum. Valid keys:`,
+  helpExamples: ['defaultOrg'],
+  handler: handleConfigGet,
+})

@@ -1,171 +1,50 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleCreateRepo } from './handle-create-repo.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
-import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mjs'
-import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import {
-  getFlagApiRequirementsOutput,
-  getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
-import { webLink } from '../../utils/terminal/link.mts'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
-
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import { createRepositoryCommand } from './repository-command-factory.mts'
 
 export const CMD_NAME = 'create'
 
-const description = 'Create a repository in an organization'
-
-const hidden = false
-
-export const cmdRepositoryCreate = {
-  description,
-  hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: CliCommandContext,
-): Promise<void> {
-  const config: CliCommandConfig = {
-    commandName: CMD_NAME,
-    description,
-    hidden,
-    flags: {
-      ...commonFlags,
-      ...outputFlags,
-      defaultBranch: {
-        type: 'string',
-        default: 'main',
-        description: 'Repository default branch. Defaults to "main"',
-      },
-      homepage: {
-        type: 'string',
-        default: '',
-        description: 'Repository url',
-      },
-      interactive: {
-        type: 'boolean',
-        default: true,
-        description:
-          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
-      },
-      org: {
-        type: 'string',
-        description:
-          'Force override the organization slug, overrides the default org from config',
-      },
-      repoDescription: {
-        type: 'string',
-        default: '',
-        description: 'Repository description',
-      },
-      visibility: {
-        type: 'string',
-        default: 'private',
-        description: 'Repository visibility (Default Private)',
-      },
+export const cmdRepositoryCreate = createRepositoryCommand({
+  commandName: CMD_NAME,
+  description: 'Create a repository in an organization',
+  extraFlags: {
+    defaultBranch: {
+      default: 'main',
+      description: 'Repository default branch. Defaults to "main"',
+      type: 'string',
     },
-    help: (command, config) => `
-    Usage
-      $ ${command} [options] <REPO>
-
-    API Token Requirements
-      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
-
-    The REPO name should be a "slug". Follows the same naming convention as GitHub.
-
-    Options
-      ${getFlagListOutput(config.flags)}
-
-    Examples
-      $ ${command} test-repo
-      $ ${command} our-repo --homepage=socket.dev --default-branch=trunk
-  `,
-  }
-
-  const cli = meowOrExit({
-    argv,
-    config,
-    parentName,
-    importMeta,
-  })
-
-  const { json, markdown, org: orgFlag } = cli.flags
-
-  const dryRun = !!cli.flags['dryRun']
-
-  const interactive = !!cli.flags['interactive']
-
-  const noLegacy = !cli.flags['repoName']
-
-  const [repoName = ''] = cli.input
-
-  const hasApiToken = hasDefaultApiToken()
-
-  const { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
-    interactive,
-    dryRun,
-  )
-
-  const outputKind = getOutputKind(json, markdown)
-
-  const wasValidInput = checkCommandInput(
-    outputKind,
-    {
-      nook: true,
-      test: !!orgSlug,
-      message: 'Org name by default setting, --org, or auto-discovered',
-      fail: 'missing',
+    homepage: {
+      default: '',
+      description: 'Repository url',
+      type: 'string',
     },
-    {
-      nook: true,
-      test: noLegacy,
-      message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
-      fail: 'received legacy flags',
+    repoDescription: {
+      default: '',
+      description: 'Repository description',
+      type: 'string',
     },
-    {
-      test: !!repoName,
-      message: 'Repository name as first argument',
-      fail: 'missing',
+    visibility: {
+      default: 'private',
+      description: 'Repository visibility (Default Private)',
+      type: 'string',
     },
-    {
-      nook: true,
-      test: hasApiToken,
-      message: 'This command requires a Socket API token for access',
-      fail: 'try `socket login`',
-    },
-  )
-  if (!wasValidInput) {
-    return
-  }
-
-  if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
-
-  await handleCreateRepo(
-    {
-      orgSlug,
-      repoName: String(repoName),
-      description: String(cli.flags['repoDescription'] || ''),
-      homepage: String(cli.flags['homepage'] || ''),
-      defaultBranch: String(cli.flags['defaultBranch'] || ''),
-      visibility: String(cli.flags['visibility'] || 'private'),
-    },
-    outputKind,
-  )
-}
+  },
+  handler: async ({ flags, orgSlug, outputKind, repoName }) => {
+    await handleCreateRepo(
+      {
+        defaultBranch: String(flags['defaultBranch'] || ''),
+        description: String(flags['repoDescription'] || ''),
+        homepage: String(flags['homepage'] || ''),
+        orgSlug,
+        repoName: String(repoName),
+        visibility: String(flags['visibility'] || 'private'),
+      },
+      outputKind,
+    )
+  },
+  helpDescription:
+    'The REPO name should be a "slug". Follows the same naming convention as GitHub.',
+  helpExamples: [
+    'test-repo',
+    'our-repo --homepage=socket.dev --default-branch=trunk',
+  ],
+})

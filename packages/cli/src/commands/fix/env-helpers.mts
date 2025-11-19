@@ -69,29 +69,19 @@ export function checkCiEnvVars(): MissingEnvVars {
   const missing: string[] = []
   const present: string[] = []
 
-  if (CI) {
-    present.push('CI')
-  } else {
-    missing.push('CI')
+  // Helper to categorize env var as present or missing.
+  const checkVar = (value: unknown, name: string) => {
+    if (value) {
+      present.push(name)
+    } else {
+      missing.push(name)
+    }
   }
 
-  if (SOCKET_CLI_GIT_USER_EMAIL) {
-    present.push('SOCKET_CLI_GIT_USER_EMAIL')
-  } else {
-    missing.push('SOCKET_CLI_GIT_USER_EMAIL')
-  }
-
-  if (SOCKET_CLI_GIT_USER_NAME) {
-    present.push('SOCKET_CLI_GIT_USER_NAME')
-  } else {
-    missing.push('SOCKET_CLI_GIT_USER_NAME')
-  }
-
-  if (SOCKET_CLI_GITHUB_TOKEN) {
-    present.push('SOCKET_CLI_GITHUB_TOKEN')
-  } else {
-    missing.push('SOCKET_CLI_GITHUB_TOKEN (or GITHUB_TOKEN)')
-  }
+  checkVar(CI, 'CI')
+  checkVar(SOCKET_CLI_GIT_USER_EMAIL, 'SOCKET_CLI_GIT_USER_EMAIL')
+  checkVar(SOCKET_CLI_GIT_USER_NAME, 'SOCKET_CLI_GIT_USER_NAME')
+  checkVar(SOCKET_CLI_GITHUB_TOKEN, 'SOCKET_CLI_GITHUB_TOKEN (or GITHUB_TOKEN)')
 
   return { missing, present }
 }

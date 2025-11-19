@@ -12,9 +12,13 @@ export async function handleConfigSet({
   value,
 }: {
   key: keyof LocalConfig
+  value?: string
   outputKind: OutputKind
-  value: string
 }) {
+  if (value === undefined) {
+    throw new Error('Value is required for config set')
+  }
+
   debug(`Setting config ${key} = ${value}`)
   debugDir({ key, value, outputKind })
 

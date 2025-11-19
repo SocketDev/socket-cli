@@ -55,6 +55,17 @@ import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()
 
+/**
+ * Safely delete a temporary file, ignoring errors.
+ */
+async function cleanupTempFile(filePath: string): Promise<void> {
+  try {
+    await fs.unlink(filePath)
+  } catch (_e) {
+    // Ignore cleanup errors.
+  }
+}
+
 export async function coanaFix(
   fixConfig: FixConfig,
 ): Promise<CResult<{ data?: unknown; fixed: boolean }>> {
@@ -213,11 +224,7 @@ export async function coanaFix(
       return { ok: true, data: { data: fixesResultJson, fixed: true } }
     } finally {
       // Clean up the temporary file.
-      try {
-        await fs.unlink(tmpFile)
-      } catch (_e) {
-        // Ignore cleanup errors.
-      }
+      await cleanupTempFile(tmpFile)
     }
   }
 
@@ -293,11 +300,7 @@ export async function coanaFix(
       }
 
       // Clean up discovery temp file.
-      try {
-        await fs.unlink(discoverTmpFile)
-      } catch (_e) {
-        // Ignore cleanup errors.
-      }
+      await cleanupTempFile(discoverTmpFile)
     } catch (e) {
       debug('Failed to discover vulnerabilities')
       debugDir(e)
