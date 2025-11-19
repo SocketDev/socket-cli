@@ -47,7 +47,7 @@ export function runPreflightDownloads(): void {
 
       // 1. @coana-tech/cli preflight.
       const coanaVersion = ENV.INLINED_SOCKET_CLI_COANA_VERSION
-      const coanaSpec = `@coana-tech/cli@~${coanaVersion}`
+      const coanaSpec = `@coana-tech/cli@${coanaVersion}`
       await downloadPackage({
         package: coanaSpec,
         binaryName: 'coana',
@@ -59,7 +59,7 @@ export function runPreflightDownloads(): void {
 
       // 2. @cyclonedx/cdxgen preflight.
       const cdxgenVersion = ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION
-      const cdxgenSpec = `@cyclonedx/cdxgen@~${cdxgenVersion}`
+      const cdxgenSpec = `@cyclonedx/cdxgen@${cdxgenVersion}`
       await downloadPackage({
         package: cdxgenSpec,
         binaryName: 'cdxgen',

@@ -76,7 +76,7 @@ export async function spawnCoana(
 
     // Use dlx version.
     const coanaVersion = ENV.INLINED_SOCKET_CLI_COANA_VERSION
-    const packageSpec = `@coana-tech/cli@~${coanaVersion}`
+    const packageSpec = `@coana-tech/cli@${coanaVersion}`
 
     const finalEnv = {
       ...process.env,

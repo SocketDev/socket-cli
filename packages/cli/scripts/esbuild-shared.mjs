@@ -94,15 +94,18 @@ export function getInlinedEnvVars() {
   } catch {}
 
   // Get dependency versions from package.json devDependencies.
-  const cdxgenVersion = packageJson.devDependencies?.['@cyclonedx/cdxgen'] || ''
   const synpVersion = packageJson.devDependencies?.['synp'] || ''
 
-  // Get external tool versions from package.json externalTools (non-npm packages).
-  const coanaVersion = packageJson.externalTools?.['@coana-tech/cli'] || ''
-  const pyCliVersion = packageJson.externalTools?.['socketcli'] || ''
-  const pythonBuildTag = packageJson.externalTools?.['pythonBuildTag'] || ''
-  const pythonVersion = packageJson.externalTools?.['python'] || ''
-  const sfwVersion = packageJson.externalTools?.['sfw'] || ''
+  // Get external tool versions from package.json externalTools.
+  const cdxgenVersion =
+    packageJson.externalTools?.['@cyclonedx/cdxgen']?.version || ''
+  const coanaVersion =
+    packageJson.externalTools?.['@coana-tech/cli']?.version || ''
+  const pyCliVersion =
+    packageJson.externalTools?.['socketsecurity']?.version || ''
+  const pythonBuildTag = packageJson.externalTools?.['python']?.buildTag || ''
+  const pythonVersion = packageJson.externalTools?.['python']?.version || ''
+  const sfwVersion = packageJson.externalTools?.['sfw']?.version || ''
 
   // Build-time constants that can be overridden by environment variables.
   const publishedBuild =

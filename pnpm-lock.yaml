@@ -42,9 +42,6 @@ catalogs:
     '@biomejs/biome':
       specifier: 2.2.4
       version: 2.2.4
-    '@coana-tech/cli':
-      specifier: 14.12.51
-      version: 14.12.51
     '@dotenvx/dotenvx':
       specifier: 1.49.0
       version: 1.49.0
@@ -757,9 +754,6 @@ importers:
       '@babel/types':
         specifier: 'catalog:'
         version: 7.28.5
-      '@coana-tech/cli':
-        specifier: 'catalog:'
-        version: 14.12.51
       '@gitbeaker/rest':
         specifier: 'catalog:'
         version: 43.7.0
@@ -1223,10 +1217,6 @@ packages:
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [win32]
-
-  '@coana-tech/cli@14.12.51':
-    resolution: {integrity: sha512-EyMo/RBN/qqH23UjiqP96xlv/C7J6MQ2KnxChssTU+1kaDnoVA8pZH2dzwdjecL82p6E2COWtQLtjQUIKCdWTA==}
-    hasBin: true
 
   '@dotenvx/dotenvx@1.49.0':
     resolution: {integrity: sha512-M1cyP6YstFQCjih54SAxCqHLMMi8QqV8tenpgGE48RTXWD7vfMYJiw/6xcCDpS2h28AcLpTsFCZA863Ge9yxzA==}
@@ -5661,8 +5651,6 @@ snapshots:
 
   '@biomejs/cli-win32-x64@2.2.4':
     optional: true
-
-  '@coana-tech/cli@14.12.51': {}
 
   '@dotenvx/dotenvx@1.49.0':
     dependencies:
