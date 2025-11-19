@@ -123,6 +123,8 @@ async function run(
     output: outputPath,
     reachAnalysisMemoryLimit,
     reachAnalysisTimeout,
+    reachConcurrency,
+    reachDisableAnalysisSplitting,
     reachDisableAnalytics,
     reachMinSeverity,
     reachSkipCache,
@@ -134,9 +136,11 @@ async function run(
     markdown: boolean
     org: string
     output: string
-    reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
+    reachAnalysisTimeout: number
+    reachConcurrency: number
     reachDisableAnalytics: boolean
+    reachDisableAnalysisSplitting: boolean
     reachMinSeverity: string
     reachSkipCache: boolean
     reachUseUnreachableFromPrecomputation: boolean
@@ -275,9 +279,11 @@ async function run(
     outputKind,
     outputPath,
     reachabilityOptions: {
-      reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
+      reachAnalysisTimeout: Number(reachAnalysisTimeout),
+      reachConcurrency: Number(reachConcurrency),
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
+      reachDisableAnalysisSplitting: Boolean(reachDisableAnalysisSplitting),
       reachEcosystems,
       reachExcludePaths,
       reachMinSeverity,

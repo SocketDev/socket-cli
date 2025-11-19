@@ -242,6 +242,8 @@ async function run(
     reach,
     reachAnalysisMemoryLimit,
     reachAnalysisTimeout,
+    reachConcurrency,
+    reachDisableAnalysisSplitting,
     reachDisableAnalytics,
     reachMinSeverity,
     reachSkipCache,
@@ -267,9 +269,11 @@ async function run(
     tmp: boolean
     // Reachability flags.
     reach: boolean
-    reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
+    reachAnalysisTimeout: number
+    reachConcurrency: number
     reachDisableAnalytics: boolean
+    reachDisableAnalysisSplitting: boolean
     reachMinSeverity: string
     reachSkipCache: boolean
     reachUseUnreachableFromPrecomputation: boolean
@@ -449,6 +453,9 @@ async function run(
   const isUsingNonDefaultTimeout =
     reachAnalysisTimeout !== reachabilityFlags['reachAnalysisTimeout']?.default
 
+  const isUsingNonDefaultConcurrency =
+    reachConcurrency !== reachabilityFlags['reachConcurrency']?.default
+
   const isUsingNonDefaultAnalytics =
     reachDisableAnalytics !==
     reachabilityFlags['reachDisableAnalytics']?.default
@@ -456,10 +463,12 @@ async function run(
   const isUsingAnyReachabilityFlags =
     isUsingNonDefaultMemoryLimit ||
     isUsingNonDefaultTimeout ||
+    isUsingNonDefaultConcurrency ||
     isUsingNonDefaultAnalytics ||
     hasReachEcosystems ||
     hasReachExcludePaths ||
-    reachSkipCache
+    reachSkipCache ||
+    reachDisableAnalysisSplitting
 
   // Validate target constraints when --reach is enabled.
   let reachTargetValid = true
@@ -582,9 +591,11 @@ async function run(
     pullRequest: Number(pullRequest),
     reach: {
       runReachabilityAnalysis: Boolean(reach),
-      reachDisableAnalytics: Boolean(reachDisableAnalytics),
-      reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
+      reachAnalysisTimeout: Number(reachAnalysisTimeout),
+      reachConcurrency: Number(reachConcurrency),
+      reachDisableAnalytics: Boolean(reachDisableAnalytics),
+      reachDisableAnalysisSplitting: Boolean(reachDisableAnalysisSplitting),
       reachEcosystems,
       reachExcludePaths,
       reachMinSeverity,
