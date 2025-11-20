@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.33](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.33) - 2025-11-20
+
+### Changed
+- Updated @coana-tech/cli to 14.12.94
+
+### Fixed
+- Enhanced error badge visibility with improved text color contrast
+
 ## [1.1.32](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.32) - 2025-11-20
 
 ### Changed
