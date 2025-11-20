@@ -183,7 +183,7 @@ export async function coanaFix(
           '--manifests-tar-hash',
           tarHash,
           '--apply-fixes-to',
-          ...(isAll ? ['all'] : ghsas),
+          ...ids,
           ...(fixConfig.rangeStyle
             ? ['--range-style', fixConfig.rangeStyle]
             : []),
