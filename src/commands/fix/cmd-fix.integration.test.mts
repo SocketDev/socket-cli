@@ -1,9 +1,9 @@
+import { existsSync, promises as fs } from 'node:fs'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
-
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import trash from 'trash'
+import { describe, expect } from 'vitest'
 
 import constants, {
   FLAG_CONFIG,
@@ -18,47 +18,41 @@ import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/fix')
 const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
-async function revertFixtureChanges() {
-  // Reset only the lockfiles that fix command might modify.
-  try {
-    await spawn('git', ['checkout', 'HEAD', '--', 'monorepo/pnpm-lock.yaml'], {
-      cwd: pnpmFixtureDir,
-      stdio: 'ignore',
-    })
-  } catch (e) {
-    // Log warning but continue - lockfile might not exist or have no changes.
-    logger.warn('Failed to revert lockfile:', e)
+async function copyDirectory(src: string, dest: string): Promise<void> {
+  await fs.mkdir(dest, { recursive: true })
+  const entries = await fs.readdir(src, { withFileTypes: true })
+
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name)
+    const destPath = path.join(dest, entry.name)
+
+    if (entry.isDirectory()) {
+      // eslint-disable-next-line no-await-in-loop
+      await copyDirectory(srcPath, destPath)
+    } else {
+      // eslint-disable-next-line no-await-in-loop
+      await fs.copyFile(srcPath, destPath)
+    }
   }
-  // Clean up any untracked files (node_modules, etc.).
-  try {
-    await spawn('git', ['clean', '-fd', '.'], {
-      cwd: pnpmFixtureDir,
-      stdio: 'ignore',
-    })
-  } catch (e) {
-    logger.warn('Failed to clean untracked files:', e)
-  }
+}
+
+async function createTempFixture(sourceDir: string): Promise<string> {
+  // Create a temporary directory with a unique name.
+  const tempDir = path.join(
+    tmpdir(),
+    `socket-fix-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  )
+
+  // Copy the fixture directory to the temp directory.
+  await copyDirectory(sourceDir, tempDir)
+
+  return tempDir
 }
 
 describe('socket fix', async () => {
   const { binCliPath } = constants
   // Increase timeout for CI environments and Windows where operations can be slower.
   const testTimeout = constants.ENV.CI || constants.WIN32 ? 60_000 : 30_000
-
-  beforeAll(async () => {
-    // Ensure fixtures are in clean state before tests.
-    await revertFixtureChanges()
-  })
-
-  afterEach(async () => {
-    // Revert all changes after each test using git.
-    await revertFixtureChanges()
-  })
-
-  afterAll(async () => {
-    // Clean up once after all tests.
-    await revertFixtureChanges()
-  })
 
   describe('environment variable handling', () => {
     // Note: The warning messages about missing env vars are only shown when:
