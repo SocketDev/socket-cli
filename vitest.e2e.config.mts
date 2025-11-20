@@ -5,7 +5,7 @@ export default defineConfig({
     preserveSymlinks: false,
   },
   test: {
-    include: ['**/*-e2e.test.mts'],
+    include: ['**/*.e2e.test.mts'],
     coverage: {
       exclude: [
         '**/{eslint,vitest}.config.*',
