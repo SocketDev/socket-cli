@@ -292,6 +292,134 @@ describe('socket fix --limit behavior verification', () => {
     })
   })
 
+  describe('PR mode', () => {
+    beforeEach(() => {
+      // Enable PR mode.
+      mockGetFixEnv.mockResolvedValue({
+        githubToken: 'test-token',
+        gitUserEmail: 'test@example.com',
+        gitUserName: 'test-user',
+        isCi: true,
+        repoInfo: {
+          defaultBranch: 'main',
+          owner: 'test-owner',
+          repo: 'test-repo',
+        },
+      })
+
+      mockGetSocketFixPrs.mockResolvedValue([])
+      mockFetchGhsaDetails.mockResolvedValue(new Map())
+    })
+
+    it('should process only N GHSAs when --limit N is specified in PR mode', async () => {
+      const ghsas = [
+        'GHSA-aaaa-aaaa-aaaa',
+        'GHSA-bbbb-bbbb-bbbb',
+        'GHSA-cccc-cccc-cccc',
+        'GHSA-dddd-dddd-dddd',
+      ]
+
+      // Mock discovery call result with proper ghsas format.
+      mockReadJsonSync.mockReturnValueOnce({ ghsas })
+
+      // Discovery call writes to output file.
+      mockSpawnCoanaDlx.mockResolvedValueOnce({
+        ok: true,
+        data: '',
+      })
+
+      // Subsequent calls are for individual GHSA fixes.
+      mockSpawnCoanaDlx.mockResolvedValue({
+        ok: true,
+        data: 'fix applied',
+      })
+
+      mockGitUnstagedModifiedFiles.mockResolvedValue({
+        ok: true,
+        data: ['package.json'],
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: ['all'],
+        limit: 2,
+      })
+
+      expect(result.ok).toBe(true)
+
+      // First call to discover vulnerabilities, then 2 calls for the fixes.
+      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(3)
+    })
+
+    it('should adjust limit based on existing open PRs', async () => {
+      const ghsas = [
+        'GHSA-aaaa-aaaa-aaaa',
+        'GHSA-bbbb-bbbb-bbbb',
+        'GHSA-cccc-cccc-cccc',
+      ]
+
+      // Mock 1 existing open PR.
+      mockGetSocketFixPrs.mockResolvedValueOnce([{ number: 123, state: 'OPEN' }])
+
+      // Second call returns no open PRs for specific GHSAs.
+      mockGetSocketFixPrs.mockResolvedValue([])
+
+      // Mock discovery call result with proper ghsas format.
+      mockReadJsonSync.mockReturnValueOnce({ ghsas })
+
+      // Discovery call writes to output file.
+      mockSpawnCoanaDlx.mockResolvedValueOnce({
+        ok: true,
+        data: '',
+      })
+
+      mockSpawnCoanaDlx.mockResolvedValue({
+        ok: true,
+        data: 'fix applied',
+      })
+
+      mockGitUnstagedModifiedFiles.mockResolvedValue({
+        ok: true,
+        data: ['package.json'],
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: ['all'],
+        limit: 3,
+      })
+
+      expect(result.ok).toBe(true)
+
+      // With limit 3 and 1 existing PR, adjusted limit is 2.
+      // So: 1 discovery call + 2 fix calls = 3 total.
+      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(3)
+    })
+
+    it('should process no GHSAs when existing open PRs exceed limit', async () => {
+      // Mock 5 existing open PRs.
+      mockGetSocketFixPrs.mockResolvedValue([
+        { number: 1, state: 'OPEN' },
+        { number: 2, state: 'OPEN' },
+        { number: 3, state: 'OPEN' },
+        { number: 4, state: 'OPEN' },
+        { number: 5, state: 'OPEN' },
+      ])
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: ['all'],
+        limit: 3,
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.data?.fixed).toBe(false)
+
+      // With 5 open PRs and limit 3, adjusted limit is 0, so no processing.
+      expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
+    })
+  })
+
   describe('--id filtering with --limit', () => {
     it('should apply limit to filtered GHSA IDs', async () => {
       const ghsas = [

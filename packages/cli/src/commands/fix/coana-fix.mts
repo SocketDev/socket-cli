@@ -8,7 +8,7 @@ import { readJsonSync } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
-import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/packages.mts'
+import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
 
 import {
   cleanupErrorBranches,

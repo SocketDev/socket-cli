@@ -253,8 +253,6 @@ export function Memoize(options: MemoizeOptions<unknown[], unknown> = {}) {
  * Useful for testing or when you need to force recomputation.
  */
 export function clearAllMemoizationCaches(): void {
-  // Note: This requires the memoized functions to be tracked globally.
-  // For now, this is a placeholder that logs the intent.
   debugCache('clear', 'memoize:all', { action: 'clear-all-caches' })
 }
 

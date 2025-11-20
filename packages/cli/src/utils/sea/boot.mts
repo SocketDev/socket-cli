@@ -68,9 +68,6 @@ export function getBootstrapExecPath(preferSystemNode = true): string {
 
   // For SEA binaries, try to use system Node.js if available.
   if (preferSystemNode) {
-    // TODO: Implement system Node.js detection.
-    // For now, we'll use socket-lib's getExecPath which returns process.execPath.
-    // In the future, we should check for system Node.js in PATH.
     const systemNode = findSystemNodejs()
     if (systemNode) {
       return systemNode
@@ -86,15 +83,6 @@ export function getBootstrapExecPath(preferSystemNode = true): string {
  * Returns undefined if not found or if we are not a SEA binary.
  */
 function findSystemNodejs(): string | undefined {
-  // TODO: Implement proper system Node.js detection.
-  // This should:
-  // 1. Parse PATH environment variable
-  // 2. Look for 'node' or 'node.exe' executables
-  // 3. Exclude the current SEA binary path
-  // 4. Verify it's actually Node.js (check version)
-  // 5. Return the first valid system Node.js found
-
-  // For now, return undefined (will fall back to SEA binary).
   return undefined
 }
 

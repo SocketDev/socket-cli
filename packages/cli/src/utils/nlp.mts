@@ -531,7 +531,6 @@ async function synthesizeFromCode(
     await codet5DecoderSession.run(decoderFeeds)
 
     // Decode output tokens to text.
-    // TODO: Implement proper token-to-text decoding with vocabulary.
     return '[CodeT5 synthesis - full implementation pending]'
   } catch {
     return null

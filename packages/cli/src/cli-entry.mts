@@ -1,8 +1,5 @@
 #!/usr/bin/env node
 
-// Load Intl polyfill for --with-intl=none builds.
-import './polyfills/intl-stub.mts'
-
 // Set global Socket theme for consistent CLI branding.
 import { setTheme } from '@socketsecurity/lib/themes'
 setTheme('socket')

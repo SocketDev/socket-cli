@@ -516,22 +516,6 @@ const InteractiveConsoleAppComponent = function InteractiveConsoleApp({
 
   const { consoleHeight, inputHeight } = heights
 
-  // TODO: Mouse click detection for focus switching.
-  // Current challenge: When we enable ANSI mouse tracking escape codes,
-  // the terminal sends mouse events as escape sequences on stdin (e.g., \x1b[<0;17;35M).
-  // Both our stdin.on('data') handler AND Ink's useInput see the same data.
-  // Ink doesn't recognize these as mouse events, so it treats them as text input,
-  // causing escape sequences to appear in the input field.
-  //
-  // Potential solutions:
-  // 1. Fork Ink to add native mouse support
-  // 2. Use stdin.setRawMode(true) and handle ALL input ourselves (major refactor)
-  // 3. Pre-filter stdin before Ink sees it (requires patching Node.js stream)
-  // 4. Use a blessed/blessed-contrib approach with complete terminal control
-  //
-  // For now: Use Tab key to switch focus (works perfectly).
-  // Future: Implement proper mouse support when we have time for the refactor.
-
   // Callbacks for InputArea (memoized to prevent re-renders).
   const handleInputHeightChange = useCallback((lineCount: number) => {
     setInputLineCount(prevCount => {

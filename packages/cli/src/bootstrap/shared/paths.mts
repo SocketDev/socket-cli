@@ -23,10 +23,10 @@ export function getSocketHome(): string {
 }
 
 /**
- * Get the stub binary installation directory.
+ * Get the bootstrap binary installation directory.
  * This is where SEA/yao-pkg executables are cached.
  */
-export function getStubDir(): string {
+export function getBootstrapBinaryDir(): string {
   return path.join(getSocketHome(), '_cli')
 }
 

@@ -1,9 +1,6 @@
 /** @fileoverview Test builder utilities to DRY out repetitive test patterns */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-// Test stubs commented out - need to be reimplemented locally.
-// import { spawn } from '@socketsecurity/registry/test/stubs/child-process'
-// import { stubLoggerLog } from '@socketsecurity/registry/test/stubs/console'
 
 import type { Mock } from 'vitest'
 
@@ -31,7 +28,6 @@ export function setupCommandTest(options: TestSetupOptions) {
   } = options
 
   const stubs = {
-    // spawn: spawn as Mock, // Commented out - stub not available.
     loggerLog: null as Mock | null,
     sdk: {} as any,
     config: mockConfig,
@@ -49,9 +45,6 @@ export function setupCommandTest(options: TestSetupOptions) {
     // Reset mock SDK for each test
     stubs.sdk = {} as any
     ;(global as any).mockSdk = stubs.sdk
-
-    // Mock logger - commented out, stub not available.
-    // stubs.loggerLog = stubLoggerLog()
 
     // Mock SDK if needed
     if (mockSdk) {

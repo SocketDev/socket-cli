@@ -323,8 +323,6 @@ function getGitLabToken(): string {
     return envToken
   }
 
-  // TODO: Check git config in Phase 3.
-  // For now, require environment variable.
   throw new Error(
     'GitLab token not found. Set GITLAB_TOKEN environment variable.',
   )

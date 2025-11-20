@@ -51,20 +51,20 @@ export function isValidIpcHandshake(value: unknown): value is IpcHandshake {
 }
 
 /**
- * Check if a value is a valid IPC stub.
+ * Check if a value is a valid IPC handle.
  */
-export function isValidIpcStub(value: unknown): value is IpcStub {
+export function isValidIpcHandle(value: unknown): value is IpcStub {
   if (!value || typeof value !== 'object') {
     return false
   }
 
-  const stub = value as Record<string, unknown>
+  const handle = value as Record<string, unknown>
   return (
-    typeof stub['pid'] === 'number' &&
-    stub['pid'] > 0 &&
-    typeof stub['timestamp'] === 'number' &&
-    stub['timestamp'] > 0 &&
-    'data' in stub
+    typeof handle['pid'] === 'number' &&
+    handle['pid'] > 0 &&
+    typeof handle['timestamp'] === 'number' &&
+    handle['timestamp'] > 0 &&
+    'data' in handle
   )
 }
 

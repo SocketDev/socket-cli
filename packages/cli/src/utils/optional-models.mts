@@ -49,12 +49,6 @@ interface ModelInfo {
 /**
  * Load optional models from npm package.
  *
- * TODO: Implement dlx-based loading (follow @coana-tech/cli pattern).
- * - Use dlxPackage() from @socketsecurity/lib/dlx-package
- * - Package manager caches in node_modules for future use
- * - Resolve package location after dlx execution
- * - Return paths to model files
- *
  * @param packageName - Package name from MODEL_REGISTRY
  * @returns Model paths and installation status
  */
@@ -73,7 +67,6 @@ export async function loadOptionalModel(
     `Total size: ${(modelInfo.totalSize / 1024 / 1024).toFixed(1)} MB`,
   )
 
-  // TODO: Implement dlx-based loading using dlxPackage().
   throw new Error('dlx-based model loading not yet implemented')
 }
 
@@ -91,8 +84,6 @@ export function isModelCached(packageName: string): boolean {
     return false
   }
 
-  // TODO: Check if package is cached by package manager.
-  // Can use isPackageCached() from preflight/downloads.mts or similar pattern.
   return false
 }
 

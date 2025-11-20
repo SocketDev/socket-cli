@@ -925,7 +925,6 @@ export function meowOrExit(
     autoVersion: false,
     // We want to detect whether a bool flag is given at all.
     booleanDefault: undefined,
-    // collectUnknownFlags: true, // TODO: This option doesn't exist in current meow types
     description: cliConfig.description,
     flags: cliConfig.flags,
     help: trimNewlines(cliConfig.help(command, cliConfig)),
