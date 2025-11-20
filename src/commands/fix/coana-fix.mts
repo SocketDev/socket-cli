@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants.mts'
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { readJsonSync } from '@socketsecurity/registry/lib/fs'
@@ -88,8 +89,13 @@ export async function coanaFix(
   const scanFilepaths = await getPackageFilesForScan(['.'], supportedFiles, {
     cwd,
   })
+  // Exclude any .socket.facts.json files that happen to be in the scan
+  // folder before the analysis was run.
+  const filepathsToUpload = scanFilepaths.filter(
+    p => path.basename(p).toLowerCase() !== DOT_SOCKET_DOT_FACTS_JSON,
+  )
   const uploadCResult = await handleApiCall(
-    sockSdk.uploadManifestFiles(orgSlug, scanFilepaths),
+    sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload),
     {
       description: 'upload manifests',
       spinner,
