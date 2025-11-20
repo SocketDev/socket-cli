@@ -925,4 +925,290 @@ describe('socket fix', async () => {
       },
     )
   })
+
+  describe('--limit flag behavior', () => {
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '0',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --limit with value 0',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '1',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --limit with value 1',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '100',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --limit with large value',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      ['fix', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
+      'should use default limit of 10 when --limit is not specified',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      ['fix', '--limit', '0', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+      'should handle --limit 0 in non-dry-run mode',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain(
+          'Unable to resolve a Socket account organization',
+        )
+        expect(code, 'should exit with non-zero code').not.toBe(0)
+      },
+    )
+  })
+
+  describe('--id flag behavior', () => {
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        FLAG_ID,
+        'GHSA-1234-5678-9abc',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept single GHSA ID with --id flag',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        FLAG_ID,
+        'CVE-2021-12345',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept single CVE ID with --id flag',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        FLAG_ID,
+        'pkg:npm/lodash@4.17.20',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept single PURL with --id flag',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        FLAG_ID,
+        'GHSA-1234-5678-9abc,GHSA-abcd-efgh-ijkl',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept comma-separated GHSA IDs',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        FLAG_ID,
+        'GHSA-1234-5678-9abc',
+        FLAG_ID,
+        'CVE-2021-12345',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept multiple --id flags with different ID types',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+  })
+
+  describe('--limit and --id combination', () => {
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '1',
+        FLAG_ID,
+        'GHSA-1234-5678-9abc',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept both --limit and --id flags together',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '5',
+        FLAG_ID,
+        'GHSA-1234-5678-9abc,CVE-2021-12345,pkg:npm/lodash@4.17.20',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --limit with multiple vulnerability IDs',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '1',
+        FLAG_ID,
+        'GHSA-1234-5678-9abc',
+        '--autopilot',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --limit, --id, and --autopilot together',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        '--limit',
+        '2',
+        FLAG_ID,
+        'GHSA-1234-5678-9abc,GHSA-abcd-efgh-ijkl',
+        FLAG_CONFIG,
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle --limit and --id in non-dry-run mode',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain(
+          'Unable to resolve a Socket account organization',
+        )
+        expect(code, 'should exit with non-zero code').not.toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '3',
+        FLAG_ID,
+        'GHSA-1234-5678-9abc',
+        FLAG_JSON,
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --limit, --id, and --json output format together',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '10',
+        FLAG_ID,
+        'CVE-2021-12345',
+        FLAG_MARKDOWN,
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --limit, --id, and --markdown output format together',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+  })
 })

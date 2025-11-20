@@ -47,6 +47,63 @@ import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-n
 
 import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+
+type DiscoverGhsaIdsOptions = {
+  cwd?: string | undefined
+  limit?: number | undefined
+  spinner?: Spinner | undefined
+}
+
+/**
+ * Discovers GHSA IDs by running coana without applying fixes.
+ * Returns a list of GHSA IDs, optionally limited.
+ */
+async function discoverGhsaIds(
+  orgSlug: string,
+  tarHash: string,
+  fixConfig: FixConfig,
+  options?: DiscoverGhsaIdsOptions | undefined,
+): Promise<string[]> {
+  const {
+    cwd = process.cwd(),
+    limit,
+    spinner,
+  } = {
+    __proto__: null,
+    ...options,
+  } as DiscoverGhsaIdsOptions
+
+  const foundCResult = await spawnCoanaDlx(
+    [
+      'compute-fixes-and-upgrade-purls',
+      cwd,
+      '--manifests-tar-hash',
+      tarHash,
+      ...(fixConfig.rangeStyle ? ['--range-style', fixConfig.rangeStyle] : []),
+      ...(fixConfig.minimumReleaseAge
+        ? ['--minimum-release-age', fixConfig.minimumReleaseAge]
+        : []),
+      ...(fixConfig.include.length ? ['--include', ...fixConfig.include] : []),
+      ...(fixConfig.exclude.length ? ['--exclude', ...fixConfig.exclude] : []),
+      ...(fixConfig.disableMajorUpdates ? ['--disable-major-updates'] : []),
+      ...(fixConfig.showAffectedDirectDependencies
+        ? ['--show-affected-direct-dependencies']
+        : []),
+      ...fixConfig.unknownFlags,
+    ],
+    orgSlug,
+    { cwd, spinner },
+  )
+
+  if (foundCResult.ok) {
+    const foundIds = cmdFlagValueToArray(
+      /(?<=Vulnerabilities found:).*/.exec(foundCResult.data),
+    )
+    return limit !== undefined ? foundIds.slice(0, limit) : foundIds
+  }
+  return []
+}
 
 export async function coanaFix(
   fixConfig: FixConfig,
@@ -138,8 +195,20 @@ export async function coanaFix(
       }
     }
 
-    const ids = isAll ? ['all'] : ghsas.slice(0, limit)
-    if (!ids.length) {
+    let ids: string[]
+    if (isAll && limit > 0) {
+      ids = await discoverGhsaIds(orgSlug, tarHash, fixConfig, {
+        cwd,
+        limit,
+        spinner,
+      })
+    } else if (limit > 0) {
+      ids = ghsas.slice(0, limit)
+    } else {
+      ids = []
+    }
+
+    if (limit < 1 || ids.length === 0) {
       spinner?.stop()
       return { ok: true, data: { fixed: false } }
     }
@@ -156,7 +225,7 @@ export async function coanaFix(
           '--manifests-tar-hash',
           tarHash,
           '--apply-fixes-to',
-          ...(isAll ? ['all'] : ghsas),
+          ...ids,
           ...(fixConfig.rangeStyle
             ? ['--range-style', fixConfig.rangeStyle]
             : []),
@@ -199,7 +268,7 @@ export async function coanaFix(
       // Clean up the temporary file.
       try {
         await fs.unlink(tmpFile)
-      } catch (e) {
+      } catch {
         // Ignore cleanup errors.
       }
     }
@@ -234,35 +303,11 @@ export async function coanaFix(
   let ids: string[] | undefined
 
   if (shouldSpawnCoana && isAll) {
-    const foundCResult = await spawnCoanaDlx(
-      [
-        'compute-fixes-and-upgrade-purls',
-        cwd,
-        '--manifests-tar-hash',
-        tarHash,
-        ...(fixConfig.rangeStyle
-          ? ['--range-style', fixConfig.rangeStyle]
-          : []),
-        ...(minimumReleaseAge
-          ? ['--minimum-release-age', minimumReleaseAge]
-          : []),
-        ...(include.length ? ['--include', ...include] : []),
-        ...(exclude.length ? ['--exclude', ...exclude] : []),
-        ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
-        ...(showAffectedDirectDependencies
-          ? ['--show-affected-direct-dependencies']
-          : []),
-        ...fixConfig.unknownFlags,
-      ],
-      fixConfig.orgSlug,
-      { cwd, spinner },
-    )
-    if (foundCResult.ok) {
-      const foundIds = cmdFlagValueToArray(
-        /(?<=Vulnerabilities found:).*/.exec(foundCResult.data),
-      )
-      ids = foundIds.slice(0, adjustedLimit)
-    }
+    ids = await discoverGhsaIds(orgSlug, tarHash, fixConfig, {
+      cwd,
+      limit: adjustedLimit,
+      spinner,
+    })
   } else if (shouldSpawnCoana) {
     ids = ghsas.slice(0, adjustedLimit)
   }
