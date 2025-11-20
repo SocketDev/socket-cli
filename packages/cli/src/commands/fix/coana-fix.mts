@@ -8,6 +8,8 @@ import { readJsonSync } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
+import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/packages.mts'
+
 import {
   cleanupErrorBranches,
   cleanupFailedPrBranches,
@@ -113,9 +115,15 @@ export async function coanaFix(
     cwd,
   })
 
+  // Exclude any .socket.facts.json files that happen to be in the scan
+  // folder before the analysis was run.
+  const filepathsToUpload = scanFilepaths.filter(
+    p => path.basename(p).toLowerCase() !== DOT_SOCKET_DOT_FACTS_JSON,
+  )
+
   // SDK v3.0 automatically validates file readability via onFileValidation callback.
   const uploadCResult = (await handleApiCall(
-    sockSdk.uploadManifestFiles(orgSlug, scanFilepaths),
+    sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload),
     {
       commandPath: 'socket fix',
       description: 'upload manifests',
