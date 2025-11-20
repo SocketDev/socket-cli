@@ -2,7 +2,6 @@ import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants.mts'
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { readJsonSync } from '@socketsecurity/registry/lib/fs'
@@ -22,7 +21,11 @@ import {
 } from './env-helpers.mts'
 import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
 import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
-import { FLAG_DRY_RUN, GQL_PR_STATE_OPEN } from '../../constants.mts'
+import {
+  DOT_SOCKET_DOT_FACTS_JSON,
+  FLAG_DRY_RUN,
+  GQL_PR_STATE_OPEN,
+} from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { spawnCoanaDlx } from '../../utils/dlx.mts'
