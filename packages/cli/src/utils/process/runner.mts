@@ -7,6 +7,11 @@ import { Spinner as createSpinner } from '@socketsecurity/lib/spinner'
 import { ensureIpcInStdio } from '../../shadow/stdio-ipc.mjs'
 import { debugNs } from '../debug.mts'
 import { formatExternalCliError } from '../error/display.mts'
+import {
+  trackSubprocessComplete,
+  trackSubprocessError,
+  trackSubprocessStart,
+} from '../telemetry/integration.mts'
 
 import type { IpcObject } from '../../constants/shadow.mts'
 import type { CResult } from '../../types.mjs'
@@ -57,6 +62,9 @@ export async function runExternalCommand(
 
   let spinner: Spinner | undefined
 
+  // Track subprocess start for telemetry.
+  const subprocessStartTime = await trackSubprocessStart(command)
+
   try {
     // Start spinner if requested.
     if (showSpinner) {
@@ -104,6 +112,30 @@ export async function runExternalCommand(
 
     debugNs('stdio', `Command completed with exit code: ${exitCode}`)
 
+    // Track subprocess completion or error based on exit code.
+    if (exitCode !== 0) {
+      // Non-zero exit code is an error.
+      const error = new Error(
+        `Command failed with exit code ${exitCode}: ${command} ${args.join(' ')}`,
+      )
+      await trackSubprocessError(
+        command,
+        subprocessStartTime,
+        error,
+        exitCode,
+        {
+          stderr_length: stderr.length,
+          stdout_length: stdout.length,
+        },
+      )
+    } else {
+      // Zero exit code is success.
+      await trackSubprocessComplete(command, subprocessStartTime, exitCode, {
+        stderr_length: stderr.length,
+        stdout_length: stdout.length,
+      })
+    }
+
     // If buffered and has output, log it.
     if (bufferOutput && stdout) {
       const logger = getDefaultLogger()
@@ -131,6 +163,9 @@ export async function runExternalCommand(
       e && typeof e === 'object' && 'code' in e
         ? Number((e as { code: unknown }).code)
         : 1
+
+    // Track subprocess error for telemetry.
+    await trackSubprocessError(command, subprocessStartTime, e, exitCode)
 
     const errorMessage = formatExternalCliError(command, e, {
       verbose: false,

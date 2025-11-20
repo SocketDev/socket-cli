@@ -18,6 +18,9 @@ export default async function runNpxCli() {
   if (result.signal) {
     process.kill(process.pid, result.signal)
   } else if (typeof result.code === 'number') {
+    console.log(
+      `process.exit called at npx-cli.mts:22 with code ${result.code}`,
+    )
     // eslint-disable-next-line n/no-process-exit
     process.exit(result.code)
   }
@@ -27,6 +30,7 @@ export default async function runNpxCli() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   runNpxCli().catch(error => {
     logger.error('Socket npx wrapper error:', error)
+    console.log('process.exit called at npx-cli.mts:31')
     // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   })

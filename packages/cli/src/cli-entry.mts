@@ -2,6 +2,7 @@
 
 // Set global Socket theme for consistent CLI branding.
 import { setTheme } from '@socketsecurity/lib/themes'
+
 setTheme('socket')
 
 import path from 'node:path'
@@ -48,6 +49,12 @@ import { failMsgWithBadge } from './utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from './utils/output/result-json.mts'
 import { runPreflightDownloads } from './utils/preflight/downloads.mts'
 import { isSeaBinary } from './utils/sea/detect.mts'
+import {
+  finalizeTelemetry,
+  trackCliComplete,
+  trackCliError,
+  trackCliStart,
+} from './utils/telemetry/integration.mts'
 import { scheduleUpdateCheck } from './utils/update/manager.mts'
 
 import { dlxManifest } from '@socketsecurity/lib/dlx-manifest'
@@ -104,6 +111,54 @@ async function writeBootstrapManifestEntry(): Promise<void> {
   }
 }
 
+/**
+ * Global start time for CLI execution.
+ * Used by global error handlers to calculate duration.
+ */
+let globalCliStartTime: number = Date.now()
+
+/**
+ * Global exception handler for uncaught errors.
+ * Tracks telemetry and exits with error code.
+ */
+process.on('uncaughtException', (error: Error) => {
+  logger.error('\n')
+  logger.error('Uncaught exception:')
+  logger.error(stackWithCauses(error))
+
+  // Track error with telemetry using global start time.
+  trackCliError(process.argv, globalCliStartTime, error, 1)
+    .then(() => finalizeTelemetry())
+    .catch(telemetryError => {
+      // Silently ignore telemetry errors in exception handler.
+      debug(`Failed to track uncaught exception: ${telemetryError}`)
+    })
+})
+
+/**
+ * Global handler for unhandled promise rejections.
+ * Tracks telemetry and exits with error code.
+ */
+process.on('unhandledRejection', (reason: unknown) => {
+  const error = reason instanceof Error ? reason : new Error(String(reason))
+
+  logger.error('\n')
+  logger.error('Unhandled promise rejection:')
+  logger.error(stackWithCauses(error))
+
+  // Track error with telemetry using global start time.
+  trackCliError(process.argv, globalCliStartTime, error, 1)
+    .then(() => finalizeTelemetry())
+    .catch(telemetryError => {
+      // Silently ignore telemetry errors in rejection handler.
+      debug(`Failed to track unhandled rejection: ${telemetryError}`)
+    })
+    .finally(() => {
+      // eslint-disable-next-line n/no-process-exit
+      process.exit(1)
+    })
+})
+
 void (async () => {
   // Skip update checks in test environments or when explicitly disabled.
   // Note: Update checks create HTTP connections that may delay process exit by up to 30s
@@ -132,6 +187,11 @@ void (async () => {
     runPreflightDownloads()
   }
 
+  // Track CLI start with argv for telemetry.
+  const cliCommandStartTime = await trackCliStart(process.argv)
+  // Update global start time for error handlers.
+  globalCliStartTime = cliCommandStartTime
+
   try {
     await meowWithSubcommands(
       {
@@ -142,10 +202,24 @@ void (async () => {
       },
       { aliases: rootAliases },
     )
+
+    // Track completion or error based on exit code.
+    const exitCode = process.exitCode ?? 0
+    if (exitCode !== 0) {
+      // Non-zero exit code without exception.
+      const error = new Error(`CLI exited with code ${exitCode}`)
+      await trackCliError(process.argv, cliCommandStartTime, error, exitCode)
+    } else {
+      // Success.
+      await trackCliComplete(process.argv, cliCommandStartTime, exitCode)
+    }
   } catch (e) {
     process.exitCode = 1
     debug('CLI uncaught error')
     debugDir(e)
+
+    // Track CLI error for exceptions.
+    await trackCliError(process.argv, cliCommandStartTime, e, process.exitCode)
 
     let errorBody: string | undefined
     let errorTitle: string
@@ -196,5 +270,22 @@ void (async () => {
     }
 
     await captureException(e)
+  } finally {
+    // Finalize telemetry to ensure all events are sent.
+    // This runs on both success and error paths.
+    await finalizeTelemetry()
   }
-})()
+})().catch(async err => {
+  // Fatal error in main async function.
+  console.error('Fatal error:', err)
+
+  // Try to finalize telemetry even on fatal errors.
+  try {
+    await finalizeTelemetry()
+  } catch (_telemetryErr) {
+    // Silently ignore telemetry errors in fatal error handler.
+  }
+
+  // eslint-disable-next-line n/no-process-exit
+  process.exit(1)
+})

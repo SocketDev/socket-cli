@@ -20,6 +20,9 @@ export default async function runNpmCli() {
   if (result.signal) {
     process.kill(process.pid, result.signal)
   } else if (typeof result.code === 'number') {
+    console.log(
+      `process.exit called at npm-cli.mts:24 with code ${result.code}`,
+    )
     // eslint-disable-next-line n/no-process-exit
     process.exit(result.code)
   }
@@ -29,6 +32,7 @@ export default async function runNpmCli() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   runNpmCli().catch(error => {
     logger.error('Socket npm wrapper error:', error)
+    console.log('process.exit called at npm-cli.mts:33')
     // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   })

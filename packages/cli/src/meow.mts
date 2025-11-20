@@ -177,12 +177,14 @@ export default function meow<
 
   const showHelp = (exitCode = 2) => {
     logger.log(fullHelp)
+    console.log(`process.exit called at meow.mts:181 with code ${exitCode}`)
     // eslint-disable-next-line n/no-process-exit -- Required for CLI exit behavior.
     process.exit(exitCode)
   }
 
   const showVersion = () => {
     logger.log(pkg['version'] || '0.0.0')
+    console.log('process.exit called at meow.mts:187 with code 0')
     // eslint-disable-next-line n/no-process-exit -- Required for CLI exit behavior.
     process.exit(0)
   }

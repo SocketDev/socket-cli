@@ -10,6 +10,10 @@ import { commonFlags } from '../../flags.mts'
 import shadowNpxBin from '../../shadow/npx/bin.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
+import {
+  trackSubprocessExit,
+  trackSubprocessStart,
+} from '../../utils/telemetry/integration.mjs'
 
 import type {
   CliCommandConfig,
@@ -76,6 +80,9 @@ async function run(
 
   process.exitCode = 1
 
+  // Track subprocess start.
+  const subprocessStartTime = await trackSubprocessStart(CMD_NAME)
+
   const { spawnPromise } = await shadowNpxBin(argv, { stdio: 'inherit' })
 
   // Handle exit codes and signals using event-based pattern.
@@ -83,7 +90,9 @@ async function run(
   const { process: childProcess } = spawnPromise as any
   childProcess.on(
     'exit',
-    (code: number | null, signalName: NodeJS.Signals | null) => {
+    async (code: number | null, signalName: NodeJS.Signals | null) => {
+      await trackSubprocessExit(CMD_NAME, subprocessStartTime, code)
+
       if (signalName) {
         process.kill(process.pid, signalName)
       } else if (typeof code === 'number') {

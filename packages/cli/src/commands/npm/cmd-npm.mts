@@ -12,6 +12,10 @@ import shadowNpmBin from '../../shadow/npm/bin.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
 import { filterFlags } from '../../utils/process/cmd.mts'
+import {
+  trackSubprocessExit,
+  trackSubprocessStart,
+} from '../../utils/telemetry/integration.mts'
 
 import type {
   CliCommandConfig,
@@ -84,6 +88,10 @@ async function run(
   const argsToForward = filterFlags(argv, { ...commonFlags, ...outputFlags }, [
     FLAG_JSON,
   ])
+
+  // Track subprocess start.
+  const subprocessStartTime = await trackSubprocessStart(NPM)
+
   const { spawnPromise } = await shadowNpmBin(argsToForward, {
     stdio: 'inherit',
   })
@@ -92,7 +100,10 @@ async function run(
   // See https://nodejs.org/api/child_process.html#event-exit.
   spawnPromise.process.on(
     'exit',
-    (code: number | null, signalName: NodeJS.Signals | null) => {
+    async (code: number | null, signalName: NodeJS.Signals | null) => {
+      // Track subprocess exit and flush telemetry.
+      await trackSubprocessExit(NPM, subprocessStartTime, code)
+
       if (signalName) {
         process.kill(process.pid, signalName)
       } else if (typeof code === 'number') {

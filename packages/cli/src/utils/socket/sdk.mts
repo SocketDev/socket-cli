@@ -43,9 +43,15 @@ import {
 import ENV from '../../constants/env.mts'
 import { TOKEN_PREFIX_LENGTH } from '../../constants/socket.mts'
 import { getConfigValueOrUndef } from '../config.mts'
+import { trackCliEvent } from '../telemetry/integration.mts'
 
 import type { CResult } from '../../types.mts'
-import type { FileValidationResult } from '@socketsecurity/sdk'
+import type {
+  FileValidationResult,
+  RequestInfo,
+  ResponseInfo,
+} from '@socketsecurity/sdk'
+
 const logger = getDefaultLogger()
 
 const TOKEN_VISIBLE_LENGTH = 5
@@ -182,6 +188,39 @@ export async function setupSdk(
         version: ENV.INLINED_SOCKET_CLI_VERSION || '0.0.0',
         homepage: ENV.INLINED_SOCKET_CLI_HOMEPAGE || 'https://socket.dev/cli',
       }),
+      hooks: {
+        onRequest: (info: RequestInfo) => {
+          // Track API request event.
+          void trackCliEvent('api_request', process.argv, {
+            method: info.method,
+            timeout: info.timeout,
+            url: info.url,
+          })
+        },
+        onResponse: (info: ResponseInfo) => {
+          // Track API response event.
+          const metadata = {
+            duration: info.duration,
+            method: info.method,
+            status: info.status,
+            statusText: info.statusText,
+            url: info.url,
+            headers: info.headers,
+          }
+
+          if (info.error) {
+            // Track as error event if request failed.
+            void trackCliEvent('api_error', process.argv, {
+              ...metadata,
+              error_message: info.error.message,
+              error_type: info.error.constructor.name,
+            })
+          } else {
+            // Track as successful response.
+            void trackCliEvent('api_response', process.argv, metadata)
+          }
+        },
+      },
     }),
   }
 }

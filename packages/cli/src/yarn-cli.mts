@@ -24,6 +24,7 @@ export default async function runYarnCli() {
       if (signalName) {
         process.kill(process.pid, signalName)
       } else if (typeof code === 'number') {
+        console.log(`process.exit called at yarn-cli.mts:28 with code ${code}`)
         // eslint-disable-next-line n/no-process-exit
         process.exit(code)
       }
@@ -37,6 +38,7 @@ export default async function runYarnCli() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   runYarnCli().catch(error => {
     logger.error('Socket yarn wrapper error:', error)
+    console.log('process.exit called at yarn-cli.mts:41')
     // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   })

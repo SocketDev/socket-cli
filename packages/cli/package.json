@@ -85,7 +85,8 @@
     "@socketsecurity/config": "catalog:",
     "@socketsecurity/lib": "catalog:",
     "@socketsecurity/registry": "catalog:",
-    "@socketsecurity/sdk": "catalog:",
+
+        "@socketsecurity/sdk":"file:///Users/billli/code/socketdev/socket-sdk-js/socketsecurity-sdk-3.1.3.tgz",
     "@types/react": "^19.2.2",
     "ajv-dist": "catalog:",
     "ansi-regex": "catalog:",

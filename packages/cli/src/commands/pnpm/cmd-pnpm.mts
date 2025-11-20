@@ -7,6 +7,10 @@ import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { spawnSfwDlx } from '../../utils/dlx/spawn.mjs'
 import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
 import { filterFlags } from '../../utils/process/cmd.mts'
+import {
+  trackSubprocessExit,
+  trackSubprocessStart,
+} from '../../utils/telemetry/integration.mjs'
 
 import type {
   CliCommandConfig,
@@ -80,6 +84,9 @@ async function run(
   // Set default exit code to 1 (failure). Will be overwritten on success.
   process.exitCode = 1
 
+  // Track subprocess start.
+  const subprocessStartTime = await trackSubprocessStart(CMD_NAME)
+
   // Forward arguments to sfw (Socket Firewall) using Socket's dlx.
   const { spawnPromise } = await spawnSfwDlx(['pnpm', ...filteredArgv], {
     stdio: 'inherit',
@@ -90,7 +97,10 @@ async function run(
   const { process: childProcess } = spawnPromise as any
   childProcess.on(
     'exit',
-    (code: number | null, signalName: NodeJS.Signals | null) => {
+    async (code: number | null, signalName: NodeJS.Signals | null) => {
+      // Track subprocess exit and flush telemetry.
+      await trackSubprocessExit(CMD_NAME, subprocessStartTime, code)
+
       if (signalName) {
         process.kill(process.pid, signalName)
       } else if (typeof code === 'number') {
