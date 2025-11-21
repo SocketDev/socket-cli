@@ -141,6 +141,27 @@ describe('Path Resolve', () => {
       ])
     })
 
+    it('should handle a directory path input', async () => {
+      const subDirPath = normalizePath(path.join(mockFixturePath, 'subdir'))
+      mockTestFs({
+        [`${mockFixturePath}/package.json`]: '{}',
+        [`${subDirPath}/package.json`]: '{}',
+        [`${subDirPath}/nested/package.json`]: '{}',
+      })
+
+      const actual = await sortedGetPackageFilesFullScans(
+        [subDirPath],
+        globPatterns,
+        {
+          cwd: mockFixturePath,
+        },
+      )
+      expect(actual.map(normalizePath)).toEqual([
+        `${subDirPath}/nested/package.json`,
+        `${subDirPath}/package.json`,
+      ])
+    })
+
     it('should respect ignores from socket config', async () => {
       mockTestFs({
         [`${mockFixturePath}/bar/package-lock.json`]: '{}',

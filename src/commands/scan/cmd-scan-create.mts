@@ -8,6 +8,7 @@ import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { reachabilityFlags } from './reachability-flags.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
+import { validateReachabilityTarget } from './validate-reachability-target.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
@@ -451,6 +452,16 @@ async function run(
     reachSkipCache ||
     reachDisableAnalysisSplitting
 
+  // Validate target constraints when --reach is enabled.
+  const reachTargetValidation = reach
+    ? await validateReachabilityTarget(targets, cwd)
+    : {
+        isDirectory: false,
+        isInsideCwd: false,
+        isValid: true,
+        targetExists: false,
+      }
+
   const wasValidInput = checkCommandInput(
     outputKind,
     {
@@ -493,6 +504,33 @@ async function run(
       test: reach || !isUsingAnyReachabilityFlags,
       message: 'Reachability analysis flags require --reach to be enabled',
       fail: 'add --reach flag to use --reach-* options',
+    },
+    {
+      nook: true,
+      test: !reach || reachTargetValidation.isValid,
+      message:
+        'Reachability analysis requires exactly one target directory when --reach is enabled',
+      fail: 'provide exactly one directory path',
+    },
+    {
+      nook: true,
+      test: !reach || reachTargetValidation.isDirectory,
+      message:
+        'Reachability analysis target must be a directory when --reach is enabled',
+      fail: 'provide a directory path, not a file',
+    },
+    {
+      nook: true,
+      test: !reach || reachTargetValidation.targetExists,
+      message: 'Target directory must exist when --reach is enabled',
+      fail: 'provide an existing directory path',
+    },
+    {
+      nook: true,
+      test: !reach || reachTargetValidation.isInsideCwd,
+      message:
+        'Target directory must be inside the current working directory when --reach is enabled',
+      fail: 'provide a path inside the working directory',
     },
   )
   if (!wasValidInput) {
