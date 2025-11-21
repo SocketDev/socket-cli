@@ -5,7 +5,7 @@ import ignore from 'ignore'
 import micromatch from 'micromatch'
 import { parse as yamlParse } from 'yaml'
 
-import { safeReadFile } from '@socketsecurity/registry/lib/fs'
+import { isDirSync, safeReadFile } from '@socketsecurity/registry/lib/fs'
 import { defaultIgnore } from '@socketsecurity/registry/lib/globs'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { transform } from '@socketsecurity/registry/lib/streams'
@@ -289,7 +289,19 @@ export function isReportSupportedFile(
 
 export function pathsToGlobPatterns(
   paths: string[] | readonly string[],
+  cwd?: string | undefined,
 ): string[] {
   // TODO: Does not support `~/` paths.
-  return paths.map(p => (p === '.' || p === './' ? '**/*' : p))
+  return paths.map(p => {
+    // Convert current directory references to glob patterns.
+    if (p === '.' || p === './') {
+      return '**/*'
+    }
+    const absolutePath = path.isAbsolute(p) ? p : path.resolve(cwd ?? process.cwd(), p)
+    // If the path is a directory, scan it recursively for all files.
+    if (isDirSync(absolutePath)) {
+      return `${p}/**/*`
+    }
+    return p
+  })
 }

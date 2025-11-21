@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+
+## [1.1.34](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.33) - 2025-11-21
+
+### Fixed
+- The target path is now properly considered when conducting reachability analysis: `socket scan reach <target>` and `socket scan create --reach <target>`.
+- Fixed a bug where manifest files `<target>` were not included in a scan when the target was pointing to a directory.
+
 ## [1.1.33](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.33) - 2025-11-20
 
 ### Changed

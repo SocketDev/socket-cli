@@ -114,7 +114,7 @@ export async function getPackageFilesForScan(
     ...options,
   } as PackageFilesForScanOptions
 
-  const filepaths = await globWithGitIgnore(pathsToGlobPatterns(inputPaths), {
+  const filepaths = await globWithGitIgnore(pathsToGlobPatterns(inputPaths, options?.cwd), {
     cwd,
     socketConfig,
   })

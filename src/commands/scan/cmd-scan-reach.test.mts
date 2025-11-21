@@ -779,7 +779,7 @@ describe('socket scan reach', async () => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
         expect(output).toMatch(
-          /no eligible files|file.*dir.*must contain|not.*found/i,
+          /Target directory must exist|no eligible files|file.*dir.*must contain|not.*found/i,
         )
         expect(code).toBeGreaterThan(0)
       },

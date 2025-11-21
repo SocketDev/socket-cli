@@ -6,6 +6,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleScanReach } from './handle-scan-reach.mts'
 import { reachabilityFlags } from './reachability-flags.mts'
 import { suggestTarget } from './suggest_target.mts'
+import { validateReachabilityTarget } from './validate-reachability-target.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
@@ -156,7 +157,7 @@ async function run(
       : processCwd
 
   // Accept zero or more paths. Default to cwd() if none given.
-  let targets = cli.input || [cwd]
+  let targets = cli.input.length ? cli.input : [cwd]
 
   // Use suggestTarget if no targets specified and in interactive mode
   if (!targets.length && !dryRun && interactive) {
@@ -168,6 +169,9 @@ async function run(
   const hasApiToken = hasDefaultApiToken()
 
   const outputKind = getOutputKind(json, markdown)
+
+  // Validate target constraints for reachability analysis.
+  const targetValidation = await validateReachabilityTarget(targets, cwd)
 
   const wasValidInput = checkCommandInput(
     outputKind,
@@ -188,6 +192,30 @@ async function run(
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       fail: 'omit one',
+    },
+    {
+      nook: true,
+      test: targetValidation.isValid,
+      message: 'Reachability analysis requires exactly one target directory',
+      fail: 'provide exactly one directory path',
+    },
+    {
+      nook: true,
+      test: targetValidation.isDirectory,
+      message: 'Reachability analysis target must be a directory',
+      fail: 'provide a directory path, not a file',
+    },
+    {
+      nook: true,
+      test: targetValidation.targetExists,
+      message: 'Target directory must exist',
+      fail: 'provide an existing directory path',
+    },
+    {
+      nook: true,
+      test: targetValidation.isInsideCwd,
+      message: 'Target directory must be inside the current working directory',
+      fail: 'provide a path inside the working directory',
     },
   )
   if (!wasValidInput) {
