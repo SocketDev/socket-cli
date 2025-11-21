@@ -1,9 +1,9 @@
+import { existsSync, promises as fs } from 'node:fs'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
-
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import trash from 'trash'
+import { describe, expect } from 'vitest'
 
 import constants, {
   FLAG_CONFIG,
@@ -18,47 +18,41 @@ import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/fix')
 const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
-async function revertFixtureChanges() {
-  // Reset only the lockfiles that fix command might modify.
-  try {
-    await spawn('git', ['checkout', 'HEAD', '--', 'monorepo/pnpm-lock.yaml'], {
-      cwd: pnpmFixtureDir,
-      stdio: 'ignore',
-    })
-  } catch (e) {
-    // Log warning but continue - lockfile might not exist or have no changes.
-    logger.warn('Failed to revert lockfile:', e)
+async function copyDirectory(src: string, dest: string): Promise<void> {
+  await fs.mkdir(dest, { recursive: true })
+  const entries = await fs.readdir(src, { withFileTypes: true })
+
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name)
+    const destPath = path.join(dest, entry.name)
+
+    if (entry.isDirectory()) {
+      // eslint-disable-next-line no-await-in-loop
+      await copyDirectory(srcPath, destPath)
+    } else {
+      // eslint-disable-next-line no-await-in-loop
+      await fs.copyFile(srcPath, destPath)
+    }
   }
-  // Clean up any untracked files (node_modules, etc.).
-  try {
-    await spawn('git', ['clean', '-fd', '.'], {
-      cwd: pnpmFixtureDir,
-      stdio: 'ignore',
-    })
-  } catch (e) {
-    logger.warn('Failed to clean untracked files:', e)
-  }
+}
+
+async function createTempFixture(sourceDir: string): Promise<string> {
+  // Create a temporary directory with a unique name.
+  const tempDir = path.join(
+    tmpdir(),
+    `socket-fix-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  )
+
+  // Copy the fixture directory to the temp directory.
+  await copyDirectory(sourceDir, tempDir)
+
+  return tempDir
 }
 
 describe('socket fix', async () => {
   const { binCliPath } = constants
   // Increase timeout for CI environments and Windows where operations can be slower.
   const testTimeout = constants.ENV.CI || constants.WIN32 ? 60_000 : 30_000
-
-  beforeAll(async () => {
-    // Ensure fixtures are in clean state before tests.
-    await revertFixtureChanges()
-  })
-
-  afterEach(async () => {
-    // Revert all changes after each test using git.
-    await revertFixtureChanges()
-  })
-
-  afterAll(async () => {
-    // Clean up once after all tests.
-    await revertFixtureChanges()
-  })
 
   describe('environment variable handling', () => {
     // Note: The warning messages about missing env vars are only shown when:
@@ -922,6 +916,292 @@ describe('socket fix', async () => {
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
+      },
+    )
+  })
+
+  describe('--limit flag behavior', () => {
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '0',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --limit with value 0',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '1',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --limit with value 1',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '100',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --limit with large value',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      ['fix', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
+      'should use default limit of 10 when --limit is not specified',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      ['fix', '--limit', '0', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+      'should handle --limit 0 in non-dry-run mode',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain(
+          'Unable to resolve a Socket account organization',
+        )
+        expect(code, 'should exit with non-zero code').not.toBe(0)
+      },
+    )
+  })
+
+  describe('--id flag behavior', () => {
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        FLAG_ID,
+        'GHSA-1234-5678-9abc',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept single GHSA ID with --id flag',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        FLAG_ID,
+        'CVE-2021-12345',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept single CVE ID with --id flag',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        FLAG_ID,
+        'pkg:npm/lodash@4.17.20',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept single PURL with --id flag',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        FLAG_ID,
+        'GHSA-1234-5678-9abc,GHSA-abcd-efgh-ijkl',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept comma-separated GHSA IDs',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        FLAG_ID,
+        'GHSA-1234-5678-9abc',
+        FLAG_ID,
+        'CVE-2021-12345',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept multiple --id flags with different ID types',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+  })
+
+  describe('--limit and --id combination', () => {
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '1',
+        FLAG_ID,
+        'GHSA-1234-5678-9abc',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept both --limit and --id flags together',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '5',
+        FLAG_ID,
+        'GHSA-1234-5678-9abc,CVE-2021-12345,pkg:npm/lodash@4.17.20',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --limit with multiple vulnerability IDs',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '1',
+        FLAG_ID,
+        'GHSA-1234-5678-9abc',
+        '--autopilot',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --limit, --id, and --autopilot together',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        '--limit',
+        '2',
+        FLAG_ID,
+        'GHSA-1234-5678-9abc,GHSA-abcd-efgh-ijkl',
+        FLAG_CONFIG,
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle --limit and --id in non-dry-run mode',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain(
+          'Unable to resolve a Socket account organization',
+        )
+        expect(code, 'should exit with non-zero code').not.toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '3',
+        FLAG_ID,
+        'GHSA-1234-5678-9abc',
+        FLAG_JSON,
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --limit, --id, and --json output format together',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '10',
+        FLAG_ID,
+        'CVE-2021-12345',
+        FLAG_MARKDOWN,
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --limit, --id, and --markdown output format together',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
       },
     )
   })

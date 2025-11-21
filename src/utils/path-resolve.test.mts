@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, readdirSync, rmSync } from 'node:fs'
+import { existsSync, readdirSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -54,7 +54,18 @@ function cleanupBrokenSymlinks(dirPath: string): void {
 // Clean up broken symlinks before loading node_modules.
 cleanupBrokenSymlinks(rootNmPath)
 
-const mockedNmCallback = mockFs.load(rootNmPath)
+// Load node_modules with error handling for any remaining issues.
+const mockedNmCallback = (() => {
+  try {
+    return mockFs.load(rootNmPath)
+  } catch (e) {
+    // If loading fails due to broken symlinks or missing files, return empty mock.
+    console.warn(
+      `Warning: Failed to load node_modules for mock-fs: ${e instanceof Error ? e.message : String(e)}`,
+    )
+    return {}
+  }
+})()
 
 function mockTestFs(config: FileSystem.DirectoryItems) {
   return mockFs({

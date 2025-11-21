@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.33](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.33) - 2025-11-20
+
+### Changed
+- Updated @coana-tech/cli to 14.12.94
+
+### Fixed
+- Enhanced error badge visibility with improved text color contrast
+
+## [1.1.32](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.32) - 2025-11-20
+
+### Changed
+- Updated @coana-tech/cli to 14.12.90
+- Updated @cyclonedx/cdxgen to 11.11.0
+
+### Fixed
+- Resolved `--limit` flag behavior to correctly restrict vulnerability processing in `socket fix` local mode
+- Exclude `.socket.facts.json` files from `socket fix` manifest uploads
+
+## [1.1.31](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.31) - 2025-11-19
+
+### Fixed
+- Enhanced pull request descriptions to remove duplicate package listings for cleaner, more readable output
+
 ## [1.1.30](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.30) - 2025-11-18
 
 ### Changed

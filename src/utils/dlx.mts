@@ -292,7 +292,7 @@ export async function spawnCdxgenDlx(
   return await spawnDlx(
     {
       name: '@cyclonedx/cdxgen',
-      version: `${constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
+      version: constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION,
     },
     args,
     { force: false, silent: true, ...options },
