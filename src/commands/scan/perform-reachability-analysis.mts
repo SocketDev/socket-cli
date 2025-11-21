@@ -17,6 +17,7 @@ export type ReachabilityOptions = {
   reachAnalysisTimeout: number
   reachAnalysisMemoryLimit: number
   reachConcurrency: number
+  reachDebug: boolean
   reachDisableAnalytics: boolean
   reachDisableAnalysisSplitting: boolean
   reachEcosystems: PURL_Type[]
@@ -151,6 +152,7 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachConcurrency
       ? ['--concurrency', `${reachabilityOptions.reachConcurrency}`]
       : []),
+    ...(reachabilityOptions.reachDebug ? ['--debug'] : []),
     ...(reachabilityOptions.reachDisableAnalytics
       ? ['--disable-analytics-sharing']
       : []),

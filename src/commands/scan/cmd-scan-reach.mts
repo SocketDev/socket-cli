@@ -112,6 +112,7 @@ async function run(
     reachAnalysisMemoryLimit,
     reachAnalysisTimeout,
     reachConcurrency,
+    reachDebug,
     reachDisableAnalysisSplitting,
     reachDisableAnalytics,
     reachSkipCache,
@@ -124,6 +125,7 @@ async function run(
     reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
     reachConcurrency: number
+    reachDebug: boolean
     reachDisableAnalytics: boolean
     reachDisableAnalysisSplitting: boolean
     reachSkipCache: boolean
@@ -207,6 +209,7 @@ async function run(
       reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
       reachConcurrency: Number(reachConcurrency),
+      reachDebug: Boolean(reachDebug),
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
       reachDisableAnalysisSplitting: Boolean(reachDisableAnalysisSplitting),
       reachEcosystems,
