@@ -4,22 +4,22 @@
   "description": "Socket CLI binary (musl libc - for Alpine Linux and musl-based systems)",
   "private": true,
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SocketDev/socket-cli.git"
-  },
   "bin": {
     "socket": "bin/socket"
   },
+  "files": [
+    "bin/socket"
+  ],
   "os": [
     "linux"
   ],
   "cpu": [
     "x64"
   ],
-  "files": [
-    "bin/socket"
-  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git"
+  },
   "publishConfig": {
     "access": "public"
   }

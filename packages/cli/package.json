@@ -3,22 +3,20 @@
   "version": "0.0.0-copied-from-packages-socket",
   "description": "CLI for Socket.dev",
   "private": true,
-  "homepage": "https://github.com/SocketDev/socket-cli",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SocketDev/socket-cli.git"
-  },
-  "author": {
-    "name": "Socket Inc",
-    "email": "eng@socket.dev",
-    "url": "https://socket.dev"
-  },
   "bin": {
     "socket": "dist/index.js",
     "socket-npm": "dist/index.js",
     "socket-npx": "dist/index.js"
   },
+  "files": [
+    "CHANGELOG.md",
+    "LICENSE",
+    "data/**",
+    "dist/**",
+    "logo-dark.png",
+    "logo-light.png"
+  ],
   "scripts": {
     "build": "node --max-old-space-size=8192 --import=./scripts/load.mjs scripts/build.mjs",
     "build:force": "node --max-old-space-size=8192 --import=./scripts/load.mjs scripts/build.mjs --force",
@@ -131,6 +129,16 @@
     "node": ">=24.10.0",
     "pnpm": ">=10.22.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git"
+  },
+  "author": {
+    "name": "Socket Inc",
+    "email": "eng@socket.dev",
+    "url": "https://socket.dev"
+  },
+  "homepage": "https://github.com/SocketDev/socket-cli",
   "externalTools": {
     "@coana-tech/cli": {
       "description": "Coana CLI for static analysis and reachability detection",
@@ -163,14 +171,6 @@
       "version": "2.0.4"
     }
   },
-  "files": [
-    "CHANGELOG.md",
-    "LICENSE",
-    "data/**",
-    "dist/**",
-    "logo-dark.png",
-    "logo-light.png"
-  ],
   "lint-staged": {
     "*.{cjs,cts,js,json,md,mjs,mts,ts}": [
       "biome check --write --unsafe --no-errors-on-unmatched --files-ignore-unknown=true --colors=off"

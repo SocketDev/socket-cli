@@ -3,20 +3,9 @@
   "version": "2.1.0",
   "description": "Socket CLI for Socket.dev",
   "private": true,
-  "homepage": "https://github.com/SocketDev/socket-cli",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SocketDev/socket-cli.git"
-  },
-  "author": {
-    "name": "Socket Inc",
-    "email": "eng@socket.dev",
-    "url": "https://socket.dev"
-  },
-  "engines": {
-    "node": ">=24.10.0",
-    "pnpm": ">=10.22.0"
+  "bin": {
+    "socket": "dist/bootstrap.js"
   },
   "files": [
     "CHANGELOG.md",
@@ -25,6 +14,18 @@
     "logo-dark.png",
     "logo-light.png"
   ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "verify": "pnpm run build && node scripts/verify-package.mjs"
+  },
+  "devDependencies": {
+    "@socketsecurity/lib": "catalog:",
+    "build-infra": "workspace:*",
+    "esbuild": "catalog:"
+  },
   "optionalDependencies": {
     "@socketbin/cli-alpine-arm64": "0.0.0-replaced-by-provenance",
     "@socketbin/cli-alpine-x64": "0.0.0-replaced-by-provenance",
@@ -35,19 +36,18 @@
     "@socketbin/cli-win32-arm64": "0.0.0-replaced-by-provenance",
     "@socketbin/cli-win32-x64": "0.0.0-replaced-by-provenance"
   },
-  "scripts": {
-    "build": "node scripts/build.mjs",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest",
-    "verify": "pnpm run build && node scripts/verify-package.mjs"
+  "engines": {
+    "node": ">=24.10.0",
+    "pnpm": ">=10.22.0"
   },
-  "bin": {
-    "socket": "./dist/bootstrap.js"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git"
   },
-  "devDependencies": {
-    "@socketsecurity/lib": "catalog:",
-    "build-infra": "workspace:*",
-    "esbuild": "catalog:"
-  }
+  "author": {
+    "name": "Socket Inc",
+    "email": "eng@socket.dev",
+    "url": "https://socket.dev"
+  },
+  "homepage": "https://github.com/SocketDev/socket-cli"
 }
