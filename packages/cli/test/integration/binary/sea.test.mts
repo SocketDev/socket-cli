@@ -5,7 +5,7 @@ import path from 'node:path'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import {
-  MONOREPO_ROOT,
+  ROOT_DIR,
   logger,
   prepareBinary,
   type BinaryConfig,
@@ -15,17 +15,11 @@ import { getDefaultApiToken } from '../../../src/utils/socket/sdk.mts'
 import { executeCliCommand } from '../../helpers/cli-execution.mts'
 
 const BINARY: BinaryConfig = {
-  buildCommand: [
-    'pnpm',
-    '--filter',
-    '@socketbin/node-sea-builder',
-    'run',
-    'build',
-  ],
+  buildCommand: ['pnpm', '--filter', '@socketsecurity/cli', 'run', 'build:sea'],
   // In CI: always enabled. Locally: only if TEST_SEA_BINARY is set.
   enabled: process.env.CI ? true : !!process.env.TEST_SEA_BINARY,
   name: 'SEA Binary (Single Executable Application)',
-  path: path.join(MONOREPO_ROOT, 'packages/node-sea-builder/dist/socket-sea'),
+  path: path.join(ROOT_DIR, 'dist/sea/socket-sea'),
 }
 
 if (BINARY.enabled) {

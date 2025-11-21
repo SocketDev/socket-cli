@@ -5,6 +5,7 @@
   "type": "module",
   "private": true,
   "exports": {
+    "./lib/esbuild-helpers": "./lib/esbuild-helpers.mjs",
     "./lib/esbuild-plugin-dead-code-elimination": "./lib/esbuild-plugin-dead-code-elimination.mjs",
     "./lib/esbuild-plugin-unicode-transform": "./lib/esbuild-plugin-unicode-transform.mjs",
     "./lib/extraction-cache": "./lib/extraction-cache.mjs",

@@ -8,6 +8,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { IMPORT_META_URL_BANNER } from 'build-infra/lib/esbuild-helpers'
 import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
 import { build } from 'esbuild'
 
@@ -109,11 +110,6 @@ const config = {
     '.cs': 'empty',
   },
 
-  // Add shebang.
-  banner: {
-    js: '#!/usr/bin/env node\n"use strict";',
-  },
-
   // Source maps off for production.
   sourcemap: false,
 
@@ -137,8 +133,10 @@ const config = {
     ...createDefineEntries(inlinedEnvVars),
   },
 
-  // Inject import.meta.url polyfill for CJS.
-  inject: [path.join(__dirname, 'esbuild-inject-import-meta.mjs')],
+  // Add shebang and import.meta.url polyfill at top of bundle.
+  banner: {
+    js: `#!/usr/bin/env node\n"use strict";\n${IMPORT_META_URL_BANNER.js}`,
+  },
 
   // Handle special cases with plugins.
   plugins: [
@@ -351,7 +349,7 @@ const config = {
         // Redirect yoga-layout to our custom synchronous implementation.
         build.onResolve({ filter: /^yoga-layout$/ }, () => {
           return {
-            path: path.join(rootPath, 'build/yoga-sync.mjs'),
+            path: path.join(rootPath, 'build/yoga-sync.js'),
           }
         })
       },

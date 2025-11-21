@@ -178,6 +178,11 @@ async function main() {
         args: [...NODE_MEMORY_FLAGS, 'scripts/extract-yoga-wasm.mjs'],
       },
       {
+        name: 'Extract AI Models',
+        command: 'node',
+        args: [...NODE_MEMORY_FLAGS, 'scripts/extract-models.mjs'],
+      },
+      {
         name: 'Build CLI Bundle',
         command: 'node',
         args: [...NODE_MEMORY_FLAGS, '.config/esbuild.cli.build.mjs'],

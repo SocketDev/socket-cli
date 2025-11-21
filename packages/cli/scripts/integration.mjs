@@ -22,7 +22,7 @@ const NODE_MODULES_BIN_PATH = path.join(MONOREPO_ROOT, 'node_modules/.bin')
 const BINARY_PATHS = {
   __proto__: null,
   js: path.join(ROOT_DIR, 'dist/index.js'),
-  sea: path.join(MONOREPO_ROOT, 'packages/node-sea-builder/dist/socket-sea'),
+  sea: path.join(ROOT_DIR, 'dist/sea/socket-sea'),
 }
 
 const BINARY_FLAGS = {
@@ -51,7 +51,7 @@ async function checkBinaryExists(binaryType) {
       if (binaryType === 'js') {
         logger.log('  pnpm run build')
       } else if (binaryType === 'sea') {
-        logger.log('  pnpm --filter @socketbin/node-sea-builder run build')
+        logger.log('  pnpm --filter @socketsecurity/cli run build:sea')
       }
       logger.log('')
       return false

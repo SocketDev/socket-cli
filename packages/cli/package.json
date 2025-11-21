@@ -24,6 +24,7 @@
     "build:force": "node --max-old-space-size=8192 --import=./scripts/load.mjs scripts/build.mjs --force",
     "build:watch": "node --max-old-space-size=8192 --import=./scripts/load.mjs scripts/build.mjs --watch",
     "restore-cache": "node --import=./scripts/load.mjs scripts/restore-cache.mjs",
+    "build:sea": "node --max-old-space-size=8192 --import=./scripts/load.mjs scripts/build-sea.mjs",
     "build:sea:internal:bootstrap": "node --max-old-space-size=8192 .config/esbuild.sea-bootstrap.build.mjs",
     "build:js": "node scripts/build-js.mjs",
     "dev:watch": "pnpm run build:watch",

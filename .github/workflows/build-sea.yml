@@ -136,14 +136,14 @@ jobs:
             platform: linux
             arch: arm64
 
-          # Alpine Linux builds - use musl binaries from unofficial-builds.nodejs.org.
+          # Alpine Linux builds - use musl binaries.
           - runner: ubuntu-latest
             os: linux
-            platform: alpine
+            platform: linux-musl
             arch: x64
           - runner: ubuntu-24.04-arm
             os: linux
-            platform: alpine
+            platform: linux-musl
             arch: arm64
 
           # macOS builds.
@@ -172,7 +172,7 @@ jobs:
         shell: bash
         run: |
           SHOULD_RUN="false"
-          if [ "${{ matrix.platform }}" = "linux" ] || [ "${{ matrix.platform }}" = "alpine" ]; then
+          if [ "${{ matrix.platform }}" = "linux" ] || [ "${{ matrix.platform }}" = "linux-musl" ]; then
             if [ "${{ inputs.build-linux }}" != "false" ]; then
               SHOULD_RUN="true"
             fi
@@ -345,10 +345,10 @@ jobs:
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           # Use 3.11 to match Alpine 3.19 (Docker builds) which ships Python 3.11.14.
-          # Python 3.13 breaks gyp with: TypeError: Strings must be encoded before hashing
-          # At: tools/gyp/pylib/gyp/generator/ninja.py:813 hashlib.md5(outputs[0])
+          # Python 3.13 breaks gyp with: TypeError: Strings must be encoded before hashing.
+          # At: tools/gyp/pylib/gyp/generator/ninja.py:813 hashlib.md5(outputs[0]).
           # Python 3.13 requires .encode() for hashlib, but gyp doesn't support it yet.
-          # Using 3.11 ensures consistency across standard and Alpine builds.
+          # Using 3.11 ensures consistency across standard and musl libc builds.
           python-version: '3.11'
 
       - name: Cache Emscripten SDK (non-Windows)
@@ -465,7 +465,7 @@ jobs:
         id: sea-cache-key
         shell: bash
         run: |
-          SEA_HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          SEA_HASH=$(find packages/cli/src packages/cli/scripts/build-sea.mjs -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           # Include bootstrap/socket/cli dependencies in cache key to invalidate when they change.
           COMBINED_HASH=$(echo "$SEA_HASH-${NEEDS_BUILD_DEPS_OUTPUTS_DEPS_HASH}" | sha256sum | cut -d' ' -f1)
           echo "hash=$COMBINED_HASH" >> $GITHUB_OUTPUT
@@ -477,7 +477,7 @@ jobs:
         id: sea-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          path: packages/node-sea-builder/dist/sea/
+          path: packages/cli/dist/sea/
           key: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.sea-cache-key.outputs.hash }}
           restore-keys: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-
 
@@ -515,44 +515,74 @@ jobs:
 
       - name: Build SEA binary
         if: steps.check-platform.outputs.should-run == 'true' && (steps.sea-cache.outputs.cache-hit != 'true' || inputs.force)
-        run: pnpm --filter @socketbin/node-sea-builder run build -- --platform=${{ matrix.platform }} --arch=${{ matrix.arch }}
+        run: pnpm --filter @socketsecurity/cli run build:sea -- --platform=${{ matrix.platform }} --arch=${{ matrix.arch }}
 
       - name: Verify SEA binary
         if: steps.check-platform.outputs.should-run == 'true'
         shell: bash
         run: |
           echo "=== SEA Binary Build Artifacts ==="
-          mkdir -p packages/node-sea-builder/dist/sea
-          ls -lh packages/node-sea-builder/dist/sea/ || true
+          mkdir -p packages/cli/dist/sea
+          ls -lh packages/cli/dist/sea/ || true
           echo ""
 
-          # Determine binary name based on platform
+          # Determine binary name based on platform (Node.js official naming).
           if [ "${{ matrix.platform }}" = "win32" ]; then
             BINARY_NAME="socket-win-${{ matrix.arch }}.exe"
           elif [ "${{ matrix.platform }}" = "darwin" ]; then
-            BINARY_NAME="socket-macos-${{ matrix.arch }}"
+            BINARY_NAME="socket-darwin-${{ matrix.arch }}"
+          elif [ "${{ matrix.platform }}" = "linux-musl" ]; then
+            BINARY_NAME="socket-linux-${{ matrix.arch }}-musl"
           else
             BINARY_NAME="socket-${{ matrix.platform }}-${{ matrix.arch }}"
           fi
 
-          BINARY_PATH="packages/node-sea-builder/dist/sea/$BINARY_NAME"
+          BINARY_PATH="packages/cli/dist/sea/$BINARY_NAME"
           if [ -f "$BINARY_PATH" ]; then
             echo "$BINARY_NAME size: $(du -h $BINARY_PATH | cut -f1)"
           else
             echo "⚠️  Binary not found at expected path: $BINARY_PATH"
             echo "Contents of dist/sea:"
-            ls -la packages/node-sea-builder/dist/sea/ || echo "Directory does not exist"
+            ls -la packages/cli/dist/sea/ || echo "Directory does not exist"
           fi
+
+      - name: Copy binary to socketbin package
+        if: steps.check-platform.outputs.should-run == 'true'
+        shell: bash
+        run: |
+          # Determine binary name and target package (Node.js official naming).
+          if [ "${{ matrix.platform }}" = "win32" ]; then
+            BINARY_NAME="socket-win-${{ matrix.arch }}.exe"
+            PACKAGE_NAME="socketbin-cli-win32-${{ matrix.arch }}"
+            TARGET_NAME="socket.exe"
+          elif [ "${{ matrix.platform }}" = "darwin" ]; then
+            BINARY_NAME="socket-darwin-${{ matrix.arch }}"
+            PACKAGE_NAME="socketbin-cli-darwin-${{ matrix.arch }}"
+            TARGET_NAME="socket"
+          elif [ "${{ matrix.platform }}" = "linux-musl" ]; then
+            BINARY_NAME="socket-linux-${{ matrix.arch }}-musl"
+            PACKAGE_NAME="socketbin-cli-linux-musl-${{ matrix.arch }}"
+            TARGET_NAME="socket"
+          else
+            BINARY_NAME="socket-${{ matrix.platform }}-${{ matrix.arch }}"
+            PACKAGE_NAME="socketbin-cli-${{ matrix.platform }}-${{ matrix.arch }}"
+            TARGET_NAME="socket"
+          fi
+
+          # Copy binary to package bin directory.
+          mkdir -p "packages/$PACKAGE_NAME/bin"
+          cp "packages/cli/dist/sea/$BINARY_NAME" "packages/$PACKAGE_NAME/bin/$TARGET_NAME"
+          chmod +x "packages/$PACKAGE_NAME/bin/$TARGET_NAME"
+
+          echo "✓ Copied $BINARY_NAME to packages/$PACKAGE_NAME/bin/$TARGET_NAME"
+          ls -lh "packages/$PACKAGE_NAME/bin/$TARGET_NAME"
 
       - name: Upload SEA binary
         if: steps.check-platform.outputs.should-run == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: socket-sea-${{ matrix.platform }}-${{ matrix.arch }}
-          path: |
-            packages/node-sea-builder/dist/sea/socket-win-${{ matrix.arch }}.exe
-            packages/node-sea-builder/dist/sea/socket-macos-${{ matrix.arch }}
-            packages/node-sea-builder/dist/sea/socket-${{ matrix.platform }}-${{ matrix.arch }}
+          path: packages/cli/dist/sea/socket-*
           retention-days: 7
           if-no-files-found: warn
 

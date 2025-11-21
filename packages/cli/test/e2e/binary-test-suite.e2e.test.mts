@@ -35,13 +35,13 @@ const BINARIES = {
     buildCommand: [
       'pnpm',
       '--filter',
-      '@socketbin/node-sea-builder',
+      '@socketsecurity/cli',
       'run',
-      'build',
+      'build:sea',
     ],
     enabled: !!process.env.TEST_SEA_BINARY,
     name: 'SEA Binary (Single Executable Application)',
-    path: path.join(MONOREPO_ROOT, 'packages/node-sea-builder/dist/socket-sea'),
+    path: path.join(ROOT_DIR, 'dist/sea/socket-sea'),
   },
   smol: {
     buildCommand: [

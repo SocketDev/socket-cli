@@ -9,6 +9,7 @@ import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { IMPORT_META_URL_BANNER } from 'build-infra/lib/esbuild-helpers'
 import { build } from 'esbuild'
 
 import {
@@ -67,8 +68,8 @@ const config = {
     ...createDefineEntries(inlinedEnvVars),
   },
 
-  // Inject import.meta.url polyfill for CJS.
-  inject: [path.join(__dirname, 'esbuild-inject-import-meta.mjs')],
+  // Inject import.meta.url polyfill at top of bundle.
+  banner: IMPORT_META_URL_BANNER,
 
   // Handle special cases with plugins.
   plugins: [envVarReplacementPlugin(inlinedEnvVars)],

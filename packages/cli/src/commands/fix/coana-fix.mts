@@ -8,8 +8,6 @@ import { readJsonSync } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
-import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
-
 import {
   cleanupErrorBranches,
   cleanupFailedPrBranches,
@@ -31,6 +29,7 @@ import {
 } from './pull-request.mts'
 import { FLAG_DRY_RUN } from '../../constants/cli.mts'
 import { GQL_PR_STATE_OPEN } from '../../constants/github.mts'
+import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
 import { spawnCoanaDlx } from '../../utils/dlx/spawn.mjs'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'

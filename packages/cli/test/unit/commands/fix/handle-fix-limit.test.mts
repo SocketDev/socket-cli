@@ -51,9 +51,12 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', () => ({
   setupSdk: mockSetupSdk,
 }))
 
-vi.mock('../../../../src/commands/scan/fetch-supported-scan-file-names.mts', () => ({
-  fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
-}))
+vi.mock(
+  '../../../../src/commands/scan/fetch-supported-scan-file-names.mts',
+  () => ({
+    fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
+  }),
+)
 
 vi.mock('../../../../src/utils/fs/path-resolve.mjs', () => ({
   getPackageFilesForScan: mockGetPackageFilesForScan,
@@ -359,7 +362,9 @@ describe('socket fix --limit behavior verification', () => {
       ]
 
       // Mock 1 existing open PR.
-      mockGetSocketFixPrs.mockResolvedValueOnce([{ number: 123, state: 'OPEN' }])
+      mockGetSocketFixPrs.mockResolvedValueOnce([
+        { number: 123, state: 'OPEN' },
+      ])
 
       // Second call returns no open PRs for specific GHSAs.
       mockGetSocketFixPrs.mockResolvedValue([])

@@ -120,20 +120,21 @@ export async function buildTarget(
  * Download Node.js binary for a specific platform.
  * Caches downloads in ~/.socket/node-binaries/.
  *
- * Defaults to nodejs.org releases (archives). Configure SOCKET_CLI_NODE_DOWNLOAD_URL to use:
- * - socket-btm smol releases: Set to 'socket-btm' (pre-compiled binaries, no extraction).
+ * Defaults to socket-btm smol releases (pre-compiled binaries, no extraction).
+ * Configure PREBUILT_NODE_DOWNLOAD_URL to use:
+ * - nodejs.org releases: Set to 'https://nodejs.org/download/release' (extracts from archive).
  * - Custom URL: Set to any base URL (e.g., internal mirror).
  *
  * @example
- * // Default: nodejs.org (extracts from archive)
- * downloadNodeBinary('22.0.0', 'linux', 'x64')
- * // Fetches: https://nodejs.org/download/release/v22.0.0/node-v22.0.0-linux-x64.tar.gz
- *
- * @example
- * // socket-btm smol releases (pre-compiled binary)
- * process.env.SOCKET_CLI_NODE_DOWNLOAD_URL = 'socket-btm'
+ * // Default: socket-btm (pre-compiled binary)
  * downloadNodeBinary('1.0.0', 'darwin', 'arm64')
  * // Fetches: https://github.com/SocketDev/socket-btm/releases/download/node-smol-v1.0.0/node-compiled-darwin-arm64
+ *
+ * @example
+ * // nodejs.org releases (extracts from archive)
+ * process.env.PREBUILT_NODE_DOWNLOAD_URL = 'https://nodejs.org/download/release'
+ * downloadNodeBinary('22.0.0', 'linux', 'x64')
+ * // Fetches: https://nodejs.org/download/release/v22.0.0/node-v22.0.0-linux-x64.tar.gz
  */
 export async function downloadNodeBinary(
   version: string,
@@ -164,6 +165,7 @@ export async function downloadNodeBinary(
     __proto__: null,
     darwin: 'darwin',
     linux: 'linux',
+    'linux-musl': 'linux-musl',
     win32: 'win',
   } as unknown as Record<string, string | undefined>
 
@@ -174,8 +176,8 @@ export async function downloadNodeBinary(
   let assetName: string
 
   // Determine download source.
-  if (ENV.SOCKET_CLI_NODE_DOWNLOAD_URL === 'socket-btm') {
-    // Use socket-btm smol binaries from GitHub releases.
+  if (ENV.PREBUILT_NODE_DOWNLOAD_URL === 'socket-btm') {
+    // Use socket-btm smol binaries from GitHub releases (pre-compiled).
     // Tag format: node-smol-v{VERSION}
     // Asset format: node-compiled-{PLATFORM}-{ARCH}[.exe]
     // URL pattern: https://github.com/SocketDev/socket-btm/releases/download/node-smol-v{VERSION}/node-compiled-{PLATFORM}-{ARCH}[.exe]
@@ -190,7 +192,7 @@ export async function downloadNodeBinary(
     const extension = isPlatWin ? '.zip' : '.tar.gz'
     assetName = `${tarName}${extension}`
     const baseUrl =
-      ENV.SOCKET_CLI_NODE_DOWNLOAD_URL || 'https://nodejs.org/download/release'
+      ENV.PREBUILT_NODE_DOWNLOAD_URL || 'https://nodejs.org/download/release'
     downloadUrl = `${baseUrl}/v${version}/${assetName}`
   }
 
@@ -207,7 +209,7 @@ export async function downloadNodeBinary(
   await safeMkdir(targetDir, { recursive: true })
 
   // Handle socket-btm pre-compiled binaries (no extraction needed).
-  if (ENV.SOCKET_CLI_NODE_DOWNLOAD_URL === 'socket-btm') {
+  if (ENV.PREBUILT_NODE_DOWNLOAD_URL === 'socket-btm') {
     // Write binary directly to final location.
     await fs.writeFile(nodePath, response.body)
 
@@ -354,13 +356,13 @@ export async function getBuildTargets(): Promise<BuildTargetOptions[]> {
     {
       arch: 'arm64',
       nodeVersion: defaultNodeVersion,
-      outputName: 'socket-macos-arm64',
+      outputName: 'socket-darwin-arm64',
       platform: 'darwin',
     },
     {
       arch: 'x64',
       nodeVersion: defaultNodeVersion,
-      outputName: 'socket-macos-x64',
+      outputName: 'socket-darwin-x64',
       platform: 'darwin',
     },
     {
@@ -374,6 +376,18 @@ export async function getBuildTargets(): Promise<BuildTargetOptions[]> {
       nodeVersion: defaultNodeVersion,
       outputName: 'socket-linux-x64',
       platform: 'linux',
+    },
+    {
+      arch: 'arm64',
+      nodeVersion: defaultNodeVersion,
+      outputName: 'socket-linux-arm64-musl',
+      platform: 'linux-musl',
+    },
+    {
+      arch: 'x64',
+      nodeVersion: defaultNodeVersion,
+      outputName: 'socket-linux-x64-musl',
+      platform: 'linux-musl',
     },
   ]
 }

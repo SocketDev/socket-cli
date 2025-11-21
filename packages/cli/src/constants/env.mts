@@ -29,6 +29,7 @@ import { NODE_ENV } from '../env/node-env.mts'
 import { NODE_OPTIONS } from '../env/node-options.mts'
 import { npm_config_cache } from '../env/npm-config-cache.mts'
 import { npm_config_user_agent } from '../env/npm-config-user-agent.mts'
+import { PREBUILT_NODE_DOWNLOAD_URL } from '../env/prebuilt-node-download-url.mts'
 import { getPyCliVersion } from '../env/pycli-version.mts'
 import { getPythonBuildTag } from '../env/python-build-tag.mts'
 import { getPythonVersion } from '../env/python-version.mts'
@@ -55,7 +56,6 @@ import { SOCKET_CLI_LOCAL_PATH } from '../env/socket-cli-local-path.mts'
 import { SOCKET_CLI_MODE } from '../env/socket-cli-mode.mts'
 import { SOCKET_CLI_MODELS_PATH } from '../env/socket-cli-models-path.mts'
 import { SOCKET_CLI_NO_API_TOKEN } from '../env/socket-cli-no-api-token.mts'
-import { SOCKET_CLI_NODE_DOWNLOAD_URL } from '../env/socket-cli-node-download-url.mts'
 import { SOCKET_CLI_NPM_PATH } from '../env/socket-cli-npm-path.mts'
 import { SOCKET_CLI_OPTIMIZE } from '../env/socket-cli-optimize.mts'
 import { SOCKET_CLI_ORG_SLUG } from '../env/socket-cli-org-slug.mts'
@@ -90,6 +90,8 @@ export {
   NODE_OPTIONS,
   npm_config_cache,
   npm_config_user_agent,
+  PREBUILT_NODE_DOWNLOAD_URL,
+  RUN_E2E_TESTS,
   SOCKET_CLI_ACCEPT_RISKS,
   SOCKET_CLI_API_BASE_URL,
   SOCKET_CLI_API_PROXY,
@@ -110,7 +112,6 @@ export {
   SOCKET_CLI_LOCAL_PATH,
   SOCKET_CLI_MODE,
   SOCKET_CLI_MODELS_PATH,
-  SOCKET_CLI_NODE_DOWNLOAD_URL,
   SOCKET_CLI_NO_API_TOKEN,
   SOCKET_CLI_NPM_PATH,
   SOCKET_CLI_OPTIMIZE,
@@ -119,7 +120,6 @@ export {
   SOCKET_CLI_SEA_NODE_VERSION,
   SOCKET_CLI_SFW_LOCAL_PATH,
   SOCKET_CLI_VIEW_ALL_RISKS,
-  RUN_E2E_TESTS,
   TEMP,
   TERM,
   TMP,
@@ -169,6 +169,8 @@ const envSnapshot = {
   NODE_OPTIONS,
   npm_config_cache,
   npm_config_user_agent,
+  PREBUILT_NODE_DOWNLOAD_URL,
+  RUN_E2E_TESTS,
   SOCKET_CLI_ACCEPT_RISKS,
   SOCKET_CLI_API_BASE_URL,
   SOCKET_CLI_API_PROXY,
@@ -189,7 +191,6 @@ const envSnapshot = {
   SOCKET_CLI_LOCAL_PATH,
   SOCKET_CLI_MODE,
   SOCKET_CLI_MODELS_PATH,
-  SOCKET_CLI_NODE_DOWNLOAD_URL,
   SOCKET_CLI_NO_API_TOKEN,
   SOCKET_CLI_NPM_PATH,
   SOCKET_CLI_OPTIMIZE,
@@ -198,7 +199,6 @@ const envSnapshot = {
   SOCKET_CLI_SEA_NODE_VERSION,
   SOCKET_CLI_SFW_LOCAL_PATH,
   SOCKET_CLI_VIEW_ALL_RISKS,
-  RUN_E2E_TESTS,
   TEMP,
   TERM,
   TMP,

@@ -3,46 +3,38 @@
  * This is a pre-built synchronous yoga-layout with embedded WASM binary.
  *
  * Source: https://github.com/SocketDev/socket-btm/releases
- * Format: yoga-layout-v{VERSION} tag with yoga-v{VERSION}-sync.js asset
  * Fallback: Generates placeholder stub if release is not available.
  *
  * Idempotent: Skips regeneration if cached file hasn't changed.
  */
 
-import { createHash } from 'node:crypto'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { mkdir } from 'node:fs/promises'
+import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { httpRequest } from '@socketsecurity/lib/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { getSocketHomePath } from '@socketsecurity/lib/paths/socket'
+
+import {
+  computeFileHash,
+  downloadAsset,
+  findAsset,
+  generateHeader,
+  getCacheDir,
+  getLatestRelease,
+  needsExtraction,
+} from './utils/socket-btm-releases.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 const logger = getDefaultLogger()
 
-const outputPath = path.join(rootPath, 'build/yoga-sync.mjs')
-
-// GitHub release configuration.
-const YOGA_RELEASE_REPO = 'SocketDev/socket-btm'
-const YOGA_VERSION = '3.1.0'
-const YOGA_RELEASE_TAG = `yoga-layout-v${YOGA_VERSION}`
-const YOGA_SYNC_ASSET_NAME = `yoga-v${YOGA_VERSION}-sync.js`
-
-// Cache directory for downloaded releases.
-const cacheDir = path.join(getSocketHomePath(), 'yoga-cache')
+const outputPath = path.join(rootPath, 'build/yoga-sync.js')
+const cacheDir = getCacheDir('yoga', rootPath)
 
 /**
  * Generate placeholder stub when yoga WASM is not available.
  */
 function generatePlaceholderStub() {
-  // Only warn once about placeholder usage.
-  if (!existsSync(outputPath)) {
-    logger.warn('Using placeholder yoga (affects table rendering)')
-  }
-
   const placeholderContent = `/**
  * Synchronous yoga-layout with embedded WASM binary (Placeholder).
  *
@@ -71,112 +63,78 @@ export default yoga
 `
 
   writeFileSync(outputPath, placeholderContent, 'utf-8')
+  logger.warn('Using placeholder yoga (affects table rendering)')
   process.exit(0)
-}
-
-/**
- * Download yoga-sync.js from GitHub releases.
- */
-async function downloadYogaSync() {
-  try {
-    // Construct direct download URL.
-    // URL pattern: https://github.com/SocketDev/socket-btm/releases/download/{TAG}/{ASSET_NAME}
-    const downloadUrl = `https://github.com/${YOGA_RELEASE_REPO}/releases/download/${YOGA_RELEASE_TAG}/${YOGA_SYNC_ASSET_NAME}`
-
-    // Ensure cache directory exists.
-    await mkdir(cacheDir, { recursive: true })
-
-    const cachedPath = path.join(cacheDir, YOGA_SYNC_ASSET_NAME)
-
-    // Download if not cached.
-    if (!existsSync(cachedPath)) {
-      const response = await httpRequest(downloadUrl)
-      if (!response.ok) {
-        return null
-      }
-      writeFileSync(cachedPath, response.body, 'utf-8')
-    }
-
-    return { cachedPath, version: YOGA_RELEASE_TAG }
-  } catch {
-    return null
-  }
-}
-
-/**
- * Check if extraction is needed based on content hash.
- */
-async function shouldExtract(sourcePath, outputPath) {
-  if (!existsSync(outputPath)) {
-    return true
-  }
-
-  // Check if output is still valid.
-  const outputContent = readFileSync(outputPath, 'utf-8')
-  if (
-    !outputContent.includes('yoga-layout') ||
-    !outputContent.includes('export default')
-  ) {
-    return true
-  }
-
-  // Compare hashes.
-  const sourceContent = readFileSync(sourcePath, 'utf-8')
-  const sourceHash = createHash('sha256').update(sourceContent).digest('hex')
-
-  const hashMatch = outputContent.match(/Source hash: ([a-f0-9]{64})/)
-  if (!hashMatch || hashMatch[1] !== sourceHash) {
-    return true
-  }
-
-  return false
 }
 
 /**
  * Main extraction logic.
  */
 async function main() {
-  // Try to download from GitHub releases.
-  const syncFile = await downloadYogaSync()
+  try {
+    // Fetch latest yoga-layout release.
+    const release = await getLatestRelease(
+      'yoga-layout-',
+      'SOCKET_BTM_YOGA_TAG',
+    )
+    if (!release) {
+      generatePlaceholderStub()
+      return
+    }
 
-  if (!syncFile) {
-    // Fall back to placeholder stub.
-    generatePlaceholderStub()
-    return
-  }
+    const { release: releaseData, tag } = release
 
-  const { cachedPath, version } = syncFile
+    // Find yoga-sync asset.
+    const assetName = findAsset(releaseData, 'yoga-sync')
+    if (!assetName) {
+      generatePlaceholderStub()
+      return
+    }
 
-  // Check if extraction needed.
-  if (!(await shouldExtract(cachedPath, outputPath))) {
-    process.exit(0)
-  }
+    // Download asset with caching.
+    const cachedPath = await downloadAsset({ assetName, cacheDir, tag })
 
-  // Read the downloaded yoga-sync.js file.
-  const syncContent = readFileSync(cachedPath, 'utf-8')
+    // Check if extraction needed.
+    const extractNeeded = await needsExtraction(
+      cachedPath,
+      outputPath,
+      content =>
+        content.includes('yoga-layout') && content.includes('export default'),
+    )
 
-  // Compute source hash for cache validation.
-  const sourceHash = createHash('sha256').update(syncContent).digest('hex')
+    if (!extractNeeded) {
+      process.exit(0)
+    }
 
-  // Convert to .mjs format (just add source hash comment and change to ES module).
-  const mjsContent = `/**
- * Synchronous yoga-layout with embedded WASM binary.
- *
- * This file is AUTO-GENERATED by scripts/extract-yoga-wasm.mjs
- * DO NOT EDIT MANUALLY - changes will be overwritten on next build.
- *
- * Source: socket-btm GitHub releases (${version})
- * Asset: ${YOGA_SYNC_ASSET_NAME}
- * Source hash: ${sourceHash}
- */
+    // Read the downloaded yoga-sync.js file.
+    const syncContent = readFileSync(cachedPath, 'utf-8')
+
+    // Compute source hash for cache validation.
+    const sourceHash = await computeFileHash(cachedPath)
+
+    // Generate output file with header.
+    const header = generateHeader({
+      assetName,
+      scriptName: 'scripts/extract-yoga-wasm.mjs',
+      sourceHash,
+      tag,
+    })
+
+    // Add ES module export for esbuild bundling (ink uses ES imports).
+    const jsContent = `${header}
 
 ${syncContent}
+
+// ES module export for esbuild.
+export default yoga;
 `
 
-  writeFileSync(outputPath, mjsContent, 'utf-8')
+    writeFileSync(outputPath, jsContent, 'utf-8')
+    logger.success(`Generated ${outputPath}`)
+  } catch (e) {
+    logger.error(`Unexpected error: ${e.message}`)
+    generatePlaceholderStub()
+  }
 }
 
-main().catch(e => {
-  logger.error(`Unexpected error: ${e.message}`)
-  generatePlaceholderStub()
-})
+main()
