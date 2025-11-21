@@ -1,40 +1,11 @@
-/**
- * Unit tests for analytics output formatting functions.
- *
- * Tests the data transformation and output formatting for analytics data.
- * These tests use fixture data and snapshot testing for markdown rendering.
- *
- * Test Coverage:
- * - Repository data formatting (formatDataRepo)
- * - Organization data formatting (formatDataOrg)
- * - Markdown rendering (renderMarkdown)
- * - Alert type aggregation (dynamicRequire, envVars, filesystemAccess, etc.)
- * - Time series data formatting (critical, high, medium, low alerts)
- * - Alert counts by severity level
- * - Top 5 alert types ranking
- *
- * Testing Approach:
- * - Load analytics-fixture.json for realistic test data
- * - Use inline snapshots to verify formatting output
- * - Test both org-level and repo-level data transformations
- * - Verify markdown table generation with proper headers and formatting
- *
- * Related Files:
- * - src/commands/analytics/output-analytics.mts - Implementation
- * - src/commands/analytics/analytics-fixture.json - Test fixture data
- * - src/commands/analytics/handle-analytics.mts - Handler that uses output functions
- */
-
 import { describe, expect, it } from 'vitest'
 
-import FIXTURE from '../../../../src/commands/analytics/analytics-fixture.json' with {
-  type: 'json',
-}
+import FIXTURE from './analytics-fixture.json' with { type: 'json' }
 import {
   formatDataOrg,
   formatDataRepo,
   renderMarkdown,
-} from '../../../../src/commands/analytics/output-analytics.mts'
+} from './output-analytics.mts'
 
 describe('output-analytics', () => {
   describe('format data', () => {
@@ -51,63 +22,75 @@ describe('output-analytics', () => {
             "unmaintained": 133,
           },
           "total_critical_added": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
           "total_critical_alerts": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
           "total_critical_prevented": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
           "total_high_added": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
           "total_high_alerts": {
-            "Apr 18": 13,
+            "Apr 19": 13,
             "Apr 20": 13,
+            "Apr 21": 13,
             "Apr 22": 10,
           },
           "total_high_prevented": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
           "total_low_added": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
           "total_low_alerts": {
-            "Apr 18": 1054,
+            "Apr 19": 1054,
             "Apr 20": 1060,
+            "Apr 21": 1066,
             "Apr 22": 1059,
           },
           "total_low_prevented": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
           "total_medium_added": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
           "total_medium_alerts": {
-            "Apr 18": 206,
+            "Apr 19": 206,
             "Apr 20": 207,
+            "Apr 21": 209,
             "Apr 22": 206,
           },
           "total_medium_prevented": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
         }
@@ -127,63 +110,75 @@ describe('output-analytics', () => {
             "unmaintained": 532,
           },
           "total_critical_added": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
           "total_critical_alerts": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
           "total_critical_prevented": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
           "total_high_added": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
           "total_high_alerts": {
-            "Apr 18": 13,
-            "Apr 20": 26,
+            "Apr 19": 13,
+            "Apr 20": 13,
+            "Apr 21": 13,
             "Apr 22": 10,
           },
           "total_high_prevented": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
           "total_low_added": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
           "total_low_alerts": {
-            "Apr 18": 1054,
-            "Apr 20": 2126,
+            "Apr 19": 1054,
+            "Apr 20": 1060,
+            "Apr 21": 1066,
             "Apr 22": 1059,
           },
           "total_low_prevented": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
           "total_medium_added": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
           "total_medium_alerts": {
-            "Apr 18": 206,
-            "Apr 20": 416,
+            "Apr 19": 206,
+            "Apr 20": 207,
+            "Apr 21": 209,
             "Apr 22": 206,
           },
           "total_medium_prevented": {
-            "Apr 18": 0,
+            "Apr 19": 0,
             "Apr 20": 0,
+            "Apr 21": 0,
             "Apr 22": 0,
           },
         }
@@ -205,7 +200,8 @@ describe('output-analytics', () => {
 
         | Date   | Counts |
         | ------ | ------ |
-        | Apr 18 |      0 |
+        | Apr 19 |      0 |
+        | Apr 21 |      0 |
         | Apr 20 |      0 |
         | Apr 22 |      0 |
         | ------ | ------ |
@@ -214,7 +210,8 @@ describe('output-analytics', () => {
 
         | Date   | Counts |
         | ------ | ------ |
-        | Apr 18 |     13 |
+        | Apr 19 |     13 |
+        | Apr 21 |     13 |
         | Apr 20 |     13 |
         | Apr 22 |     10 |
         | ------ | ------ |
@@ -223,7 +220,8 @@ describe('output-analytics', () => {
 
         | Date   | Counts |
         | ------ | ------ |
-        | Apr 18 |      0 |
+        | Apr 19 |      0 |
+        | Apr 21 |      0 |
         | Apr 20 |      0 |
         | Apr 22 |      0 |
         | ------ | ------ |
@@ -232,7 +230,8 @@ describe('output-analytics', () => {
 
         | Date   | Counts |
         | ------ | ------ |
-        | Apr 18 |      0 |
+        | Apr 19 |      0 |
+        | Apr 21 |      0 |
         | Apr 20 |      0 |
         | Apr 22 |      0 |
         | ------ | ------ |
@@ -241,7 +240,8 @@ describe('output-analytics', () => {
 
         | Date   | Counts |
         | ------ | ------ |
-        | Apr 18 |      0 |
+        | Apr 19 |      0 |
+        | Apr 21 |      0 |
         | Apr 20 |      0 |
         | Apr 22 |      0 |
         | ------ | ------ |
@@ -250,7 +250,8 @@ describe('output-analytics', () => {
 
         | Date   | Counts |
         | ------ | ------ |
-        | Apr 18 |      0 |
+        | Apr 19 |      0 |
+        | Apr 21 |      0 |
         | Apr 20 |      0 |
         | Apr 22 |      0 |
         | ------ | ------ |
@@ -259,7 +260,8 @@ describe('output-analytics', () => {
 
         | Date   | Counts |
         | ------ | ------ |
-        | Apr 18 |      0 |
+        | Apr 19 |      0 |
+        | Apr 21 |      0 |
         | Apr 20 |      0 |
         | Apr 22 |      0 |
         | ------ | ------ |
@@ -268,7 +270,8 @@ describe('output-analytics', () => {
 
         | Date   | Counts |
         | ------ | ------ |
-        | Apr 18 |      0 |
+        | Apr 19 |      0 |
+        | Apr 21 |      0 |
         | Apr 20 |      0 |
         | Apr 22 |      0 |
         | ------ | ------ |
