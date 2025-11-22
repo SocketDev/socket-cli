@@ -1,0 +1,18 @@
+{
+  "cmake": "3.30.5",
+  "emsdk": "4.0.18",
+  "gh": "2.62.0",
+  "ninja": "1.12.1",
+  "node": {
+    "description": "Node.js runtime",
+    "minimumVersion": "24.10.0",
+    "recommendedVersion": "24.10.0"
+  },
+  "pnpm": {
+    "description": "pnpm package manager",
+    "minimumVersion": "10.22.0",
+    "recommendedVersion": "10.22.0"
+  },
+  "python": "3.11",
+  "rust": "1.82.0"
+}

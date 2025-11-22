@@ -139,38 +139,6 @@
     "url": "https://socket.dev"
   },
   "homepage": "https://github.com/SocketDev/socket-cli",
-  "externalTools": {
-    "@coana-tech/cli": {
-      "description": "Coana CLI for static analysis and reachability detection",
-      "type": "npm",
-      "package": "@coana-tech/cli",
-      "version": "14.12.94"
-    },
-    "@cyclonedx/cdxgen": {
-      "description": "CycloneDX SBOM generator for software bill of materials",
-      "type": "npm",
-      "package": "@cyclonedx/cdxgen",
-      "version": "11.11.0"
-    },
-    "python": {
-      "description": "Python runtime from python-build-standalone",
-      "type": "github-release",
-      "repository": "astral-sh/python-build-standalone",
-      "version": "3.10.18",
-      "buildTag": "20250918"
-    },
-    "socketsecurity": {
-      "description": "Socket Python CLI (socket-python-cli)",
-      "type": "pypi",
-      "package": "socketsecurity",
-      "version": "^2.2.15"
-    },
-    "sfw": {
-      "description": "Socket Firewall (sfw)",
-      "type": "standalone",
-      "version": "2.0.4"
-    }
-  },
   "lint-staged": {
     "*.{cjs,cts,js,json,md,mjs,mts,ts}": [
       "biome check --write --unsafe --no-errors-on-unmatched --files-ignore-unknown=true --colors=off"

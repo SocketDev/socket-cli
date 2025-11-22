@@ -25,21 +25,39 @@ on:
         description: 'Node.js versions to test (JSON array)'
         required: false
         type: string
+        # Default should match packages/build-infra/external-tools.json -> node.recommendedVersion.
         default: '["24.10.0"]'
 
 permissions:
   contents: read
 
 jobs:
+  versions:
+    name: Load Tool Versions
+    runs-on: ubuntu-latest
+    outputs:
+      node: ${{ steps.versions.outputs.node }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Load Node.js version from external-tools.json
+        id: versions
+        run: |
+          NODE_VERSION=$(jq -r '.node.recommendedVersion' packages/build-infra/external-tools.json)
+          echo "node=[\"$NODE_VERSION\"]" >> $GITHUB_OUTPUT
+          echo "Loaded Node.js: $NODE_VERSION"
+
   ci:
     name: Run CI Pipeline
+    needs: versions
     uses: SocketDev/socket-registry/.github/workflows/ci.yml@4709a2443e5a036bb0cd94e5d1559f138f05994c # main
     with:
       test-setup-script: 'pnpm --filter @socketsecurity/cli run build'
       lint-script: 'pnpm --filter @socketsecurity/cli run check'
       type-check-script: 'pnpm --filter @socketsecurity/cli run type'
       run-test: false  # Tests run in separate sharded job below.
-      node-versions: ${{ inputs.node-versions || '["24.10.0"]' }}
+      node-versions: ${{ inputs.node-versions || needs.versions.outputs.node }}
       os-versions: '["ubuntu-latest"]'
       fail-fast: false
       max-parallel: 4
@@ -50,14 +68,14 @@ jobs:
   # Runs on Linux only to optimize CI runtime and build requirements.
   test-sharded:
     name: Unit Tests (Shard ${{ matrix.shard }}/3)
-    needs: ci
+    needs: [ci, versions]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
       fail-fast: false
       max-parallel: 4
       matrix:
-        node-version: ${{ fromJSON(inputs.node-versions || '["24.10.0"]') }}
+        node-version: ${{ fromJSON(inputs.node-versions || needs.versions.outputs.node) }}
         shard: [1, 2, 3]
     steps:
       - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4709a2443e5a036bb0cd94e5d1559f138f05994c # main
@@ -99,13 +117,13 @@ jobs:
   # Tests the JS distribution and optionally SEA/smol if cached binaries are available.
   integration:
     name: Integration Tests
-    needs: ci
+    needs: [ci, versions]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        node-version: ['24.10.0']
+        node-version: ${{ fromJSON(inputs.node-versions || needs.versions.outputs.node) }}
     steps:
       - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4709a2443e5a036bb0cd94e5d1559f138f05994c # main
         with:
@@ -256,13 +274,13 @@ jobs:
 
   e2e:
     name: E2E Tests
-    needs: ci
+    needs: [ci, versions]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:
       fail-fast: true
       matrix:
-        node-version: ['24.10.0']
+        node-version: ${{ fromJSON(inputs.node-versions || needs.versions.outputs.node) }}
         os: [ubuntu-latest]
     steps:
       - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4709a2443e5a036bb0cd94e5d1559f138f05994c # main

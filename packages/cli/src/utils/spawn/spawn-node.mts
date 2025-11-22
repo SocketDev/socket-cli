@@ -57,7 +57,7 @@ export interface SpawnNodeOptions extends SpawnOptions {
    * System Node.js will ignore the handshake message.
    * SEA subprocess will use it to skip bootstrap.
    */
-  ipc?: Record<string, unknown>
+  ipc?: Record<string, unknown> | undefined
 }
 
 /**

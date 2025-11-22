@@ -68,15 +68,24 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Load tool versions
+        id: tools
+        run: |
+          # Load versions from packages/build-infra/external-tools.json
+          NODE_VERSION=$(jq -r '.node.recommendedVersion' packages/build-infra/external-tools.json)
+          PNPM_VERSION=$(jq -r '.pnpm.recommendedVersion' packages/build-infra/external-tools.json)
+          echo "node-version=$NODE_VERSION" >> $GITHUB_OUTPUT
+          echo "pnpm-version=$PNPM_VERSION" >> $GITHUB_OUTPUT
+
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
-          node-version: 24.10.0
+          node-version: ${{ steps.tools.outputs.node-version }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1 # v4.2.0
         with:
-          version: 10.20.0
+          version: ${{ steps.tools.outputs.pnpm-version }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -217,17 +226,27 @@ jobs:
           echo ""
           echo "✓ Bootstrap artifacts verified"
 
+      - name: Load tool versions
+        if: steps.check-platform.outputs.should-run == 'true'
+        id: tools
+        run: |
+          # Load versions from packages/build-infra/external-tools.json
+          NODE_VERSION=$(jq -r '.node.recommendedVersion' packages/build-infra/external-tools.json)
+          PNPM_VERSION=$(jq -r '.pnpm.recommendedVersion' packages/build-infra/external-tools.json)
+          echo "node-version=$NODE_VERSION" >> $GITHUB_OUTPUT
+          echo "pnpm-version=$PNPM_VERSION" >> $GITHUB_OUTPUT
+
       - name: Setup Node.js
         if: steps.check-platform.outputs.should-run == 'true'
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
-          node-version: 24.10.0
+          node-version: ${{ steps.tools.outputs.node-version }}
 
       - name: Setup pnpm
         if: steps.check-platform.outputs.should-run == 'true'
         uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1 # v4.2.0
         with:
-          version: 10.20.0
+          version: ${{ steps.tools.outputs.pnpm-version }}
 
       - name: Install dependencies
         if: steps.check-platform.outputs.should-run == 'true'
@@ -349,6 +368,7 @@ jobs:
           # At: tools/gyp/pylib/gyp/generator/ninja.py:813 hashlib.md5(outputs[0]).
           # Python 3.13 requires .encode() for hashlib, but gyp doesn't support it yet.
           # Using 3.11 ensures consistency across standard and musl libc builds.
+          # Version from packages/build-infra/external-tools.json
           python-version: '3.11'
 
       - name: Cache Emscripten SDK (non-Windows)
@@ -357,7 +377,8 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: emsdk
-          key: emsdk-${{ runner.os }}-3.1.69
+          # Version from packages/build-infra/external-tools.json
+          key: emsdk-${{ runner.os }}-4.0.18
           restore-keys: emsdk-${{ runner.os }}-
 
       # - name: Cache pip packages
@@ -389,6 +410,7 @@ jobs:
               echo "::group::Installing Emscripten"
               git clone https://github.com/emscripten-core/emsdk.git
               cd emsdk
+              # Version from packages/build-infra/external-tools.json
               ./emsdk install 4.0.18
               ./emsdk activate 4.0.18
               cd ..
@@ -396,6 +418,7 @@ jobs:
             else
               echo "::group::Activating Emscripten (from cache)"
               cd emsdk
+              # Version from packages/build-infra/external-tools.json
               ./emsdk activate 4.0.18
               cd ..
               echo "::endgroup::"
