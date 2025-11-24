@@ -1,32 +1,32 @@
-import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
+import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleScanReach } from './handle-scan-reach.mts'
 import { reachabilityFlags } from './reachability-flags.mts'
 import { suggestTarget } from './suggest_target.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { validateReachabilityTarget } from './validate-reachability-target.mts'
+import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mjs'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mts'
+import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mts'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
+import { getOutputKind } from '../../utils/output/mode.mts'
 import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
-import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
+import { determineOrgSlug } from '../../utils/socket/org-slug.mts'
+import { hasDefaultApiToken } from '../../utils/socket/sdk.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
 import type { MeowFlags } from '../../flags.mts'
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
-import type { PURL_Type } from '../../utils/ecosystem/types.mjs'
+} from '../../utils/cli/with-subcommands.mts'
+import type { PURL_Type } from '../../utils/ecosystem/types.mts'
 
 export const CMD_NAME = 'reach'
 
@@ -47,13 +47,6 @@ const generalFlags: MeowFlags = {
     default: '',
     description:
       'Force override the organization slug, overrides the default org from config',
-  },
-  output: {
-    type: 'string',
-    default: '',
-    description:
-      'Path to write the reachability report to (must end with .json). Defaults to .socket.facts.json in the current working directory.',
-    shortFlag: 'o',
   },
 }
 
@@ -91,8 +84,7 @@ async function run(
       ${getFlagListOutput(reachabilityFlags)}
 
     Runs the Socket reachability analysis without creating a scan in Socket.
-    The output is written to .socket.facts.json in the current working directory
-    unless the --output flag is specified.
+    The output is written to .socket.facts.json in the current working directory.
 
     Note: Manifest files are uploaded to Socket's backend services because the
     reachability analysis requires creating a Software Bill of Materials (SBOM)
@@ -102,8 +94,6 @@ async function run(
       $ ${command}
       $ ${command} ./proj
       $ ${command} ./proj --reach-ecosystems npm,pypi
-      $ ${command} --output custom-report.json
-      $ ${command} ./proj --output ./reports/analysis.json
   `,
   }
 
@@ -120,7 +110,6 @@ async function run(
     json,
     markdown,
     org: orgFlag,
-    output: outputPath,
     reachAnalysisMemoryLimit,
     reachAnalysisTimeout,
     reachConcurrency,
@@ -136,9 +125,8 @@ async function run(
     json: boolean
     markdown: boolean
     org: string
-    output: string
-    reachAnalysisMemoryLimit: number
     reachAnalysisTimeout: number
+    reachAnalysisMemoryLimit: number
     reachConcurrency: number
     reachDebug: boolean
     reachDisableAnalytics: boolean
@@ -166,17 +154,6 @@ async function run(
     reachEcosystems.push(ecosystem as PURL_Type)
   }
 
-  // Validate severity value if provided.
-  const validSeverities = ['info', 'low', 'moderate', 'high', 'critical']
-  if (
-    reachMinSeverity &&
-    !validSeverities.includes(reachMinSeverity.toLowerCase())
-  ) {
-    throw new Error(
-      `Invalid severity: "${reachMinSeverity}". Valid values are: ${joinAnd(validSeverities)}`,
-    )
-  }
-
   const processCwd = process.cwd()
   const cwd =
     cwdOverride && cwdOverride !== '.' && cwdOverride !== processCwd
@@ -184,7 +161,7 @@ async function run(
       : processCwd
 
   // Accept zero or more paths. Default to cwd() if none given.
-  let targets: string[] = cli.input.length ? [...cli.input] : [cwd]
+  let targets = cli.input.length ? [...cli.input] : [cwd]
 
   // Use suggestTarget if no targets specified and in interactive mode
   if (!targets.length && !dryRun && interactive) {
@@ -197,21 +174,8 @@ async function run(
 
   const outputKind = getOutputKind(json, markdown)
 
-  // Resolve target path to absolute for validation.
-  const targetPath = path.isAbsolute(targets[0]!)
-    ? targets[0]!
-    : path.resolve(cwd, targets[0]!)
-
-  // Check if target is inside cwd.
-  const relativePath = path.relative(cwd, targetPath)
-  const isInsideCwd =
-    !relativePath.startsWith('..') && !path.isAbsolute(relativePath)
-
-  let isDirectory = false
-  if (existsSync(targetPath)) {
-    const targetStat = await fs.stat(targetPath)
-    isDirectory = targetStat.isDirectory()
-  }
+  // Validate target constraints for reachability analysis.
+  const targetValidation = await validateReachabilityTarget(targets, cwd)
 
   const wasValidInput = checkCommandInput(
     outputKind,
@@ -235,31 +199,25 @@ async function run(
     },
     {
       nook: true,
-      test: !outputPath || outputPath.endsWith('.json'),
-      message: 'The --output path must end with .json',
-      fail: 'use a path ending with .json',
-    },
-    {
-      nook: true,
-      test: targets.length === 1,
+      test: targetValidation.isValid,
       message: 'Reachability analysis requires exactly one target directory',
       fail: 'provide exactly one directory path',
     },
     {
       nook: true,
-      test: isDirectory,
+      test: targetValidation.isDirectory,
       message: 'Reachability analysis target must be a directory',
       fail: 'provide a directory path, not a file',
     },
     {
       nook: true,
-      test: existsSync(targetPath),
+      test: targetValidation.targetExists,
       message: 'Target directory must exist',
       fail: 'provide an existing directory path',
     },
     {
       nook: true,
-      test: isInsideCwd,
+      test: targetValidation.isInsideCwd,
       message: 'Target directory must be inside the current working directory',
       fail: 'provide a path inside the working directory',
     },
@@ -269,17 +227,16 @@ async function run(
   }
 
   if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
+    logger.log(constants.DRY_RUN_BAILING_NOW)
     return
   }
 
   await handleScanReach({
     cwd,
-    interactive,
     orgSlug,
     outputKind,
-    outputPath,
+    targets,
+    interactive,
     reachabilityOptions: {
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
       reachAnalysisTimeout: Number(reachAnalysisTimeout),
@@ -289,12 +246,11 @@ async function run(
       reachDisableAnalysisSplitting: Boolean(reachDisableAnalysisSplitting),
       reachEcosystems,
       reachExcludePaths,
-      reachMinSeverity,
+      reachMinSeverity: String(reachMinSeverity),
       reachSkipCache: Boolean(reachSkipCache),
       reachUseUnreachableFromPrecomputation: Boolean(
         reachUseUnreachableFromPrecomputation,
       ),
     },
-    targets,
   })
 }
