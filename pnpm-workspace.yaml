@@ -90,7 +90,7 @@ catalog:
   '@types/yargs-parser': 21.0.3
   '@typescript-eslint/parser': 8.44.1
   '@vitest/coverage-v8': 4.0.3
-  '@yao-pkg/pkg': 6.8.0
+  '@yao-pkg/pkg': 6.10.1
   '@yarnpkg/parsers': ^3.0.3
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ajv-dist: 8.17.1

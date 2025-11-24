@@ -193,8 +193,8 @@ catalogs:
       specifier: 4.0.3
       version: 4.0.3
     '@yao-pkg/pkg':
-      specifier: 6.8.0
-      version: 6.8.0
+      specifier: 6.10.1
+      version: 6.10.1
     '@yarnpkg/extensions':
       specifier: 2.0.6
       version: 2.0.6
@@ -633,7 +633,7 @@ importers:
         version: 4.0.3(vitest@4.0.3)
       '@yao-pkg/pkg':
         specifier: 'catalog:'
-        version: 6.8.0(encoding@0.1.13)
+        version: 6.10.1(encoding@0.1.13)
       browserslist:
         specifier: 'catalog:'
         version: 4.25.4
@@ -3272,12 +3272,12 @@ packages:
   '@vitest/utils@4.0.3':
     resolution: {integrity: sha512-qV6KJkq8W3piW6MDIbGOmn1xhvcW4DuA07alqaQ+vdx7YA49J85pnwnxigZVQFQw3tWnQNRKWwhz5wbP6iv/GQ==}
 
-  '@yao-pkg/pkg-fetch@3.5.28':
-    resolution: {integrity: sha512-0dTu0yFgAuOp3OJBiwSZVkTMuGmvExwmG9mHKQhHkaNate5BWh6rBTzfQ0WId9DHXmg7GiT/kIyejEV0G3EHUQ==}
+  '@yao-pkg/pkg-fetch@3.5.30':
+    resolution: {integrity: sha512-OrXQlsR3vE/IvwXSk8R5ETYbcxAFtUPmLkeepbG+ArN82TvlIwcUJ65tEWxLG3Tl89VRbmOupuhkXfmuaO05+Q==}
     hasBin: true
 
-  '@yao-pkg/pkg@6.8.0':
-    resolution: {integrity: sha512-QQcMbQHlaw7dFy3Nk7XQ7Gm8DlczTBcgSQB1V068L5/2rSZ3TO4CMc7rU7DeIOOR0Pm+mb5TDR3yH4jT6nfkpw==}
+  '@yao-pkg/pkg@6.10.1':
+    resolution: {integrity: sha512-M/eqDg0Iir2nmyZ06Q9ospIPv1Yk7K1du5iLiaYrfMogQcI6bqf82A026MVYngyLH8jZsquZvjNAbvgbW4Uwkw==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -8634,10 +8634,10 @@ snapshots:
 
   '@types/yargs-parser@21.0.3': {}
 
-  '@typescript-eslint/eslint-plugin@8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)':
+  '@typescript-eslint/eslint-plugin@8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
-      '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/scope-manager': 8.44.1
       '@typescript-eslint/type-utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
@@ -8967,7 +8967,7 @@ snapshots:
       '@vitest/pretty-format': 4.0.3
       tinyrainbow: 3.0.3
 
-  '@yao-pkg/pkg-fetch@3.5.28(encoding@0.1.13)':
+  '@yao-pkg/pkg-fetch@3.5.30(encoding@0.1.13)':
     dependencies:
       https-proxy-agent: 7.0.6
       node-fetch: 2.7.0(encoding@0.1.13)
@@ -8983,12 +8983,12 @@ snapshots:
       - react-native-b4a
       - supports-color
 
-  '@yao-pkg/pkg@6.8.0(encoding@0.1.13)':
+  '@yao-pkg/pkg@6.10.1(encoding@0.1.13)':
     dependencies:
       '@babel/generator': 7.28.5
       '@babel/parser': 7.28.5
       '@babel/types': 7.28.5
-      '@yao-pkg/pkg-fetch': 3.5.28(encoding@0.1.13)
+      '@yao-pkg/pkg-fetch': 3.5.30(encoding@0.1.13)
       into-stream: 6.0.0
       minimist: 1.2.8
       multistream: 4.1.0
@@ -12286,7 +12286,7 @@ snapshots:
 
   typescript-eslint@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2):
     dependencies:
-      '@typescript-eslint/eslint-plugin': 8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
+      '@typescript-eslint/eslint-plugin': 8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/typescript-estree': 8.44.1(typescript@5.9.2)
       '@typescript-eslint/utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
