@@ -6,7 +6,6 @@
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-
 const logger = getDefaultLogger()
 /**
  * Print section header.

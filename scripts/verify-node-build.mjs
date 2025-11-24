@@ -18,10 +18,10 @@ import { platform } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
 import colors from 'yoctocolors-cjs'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 const logger = getDefaultLogger()
 const __filename = fileURLToPath(import.meta.url)
@@ -333,13 +333,9 @@ async function testBinary() {
   success(`Binary version: ${version}`)
 
   // Test 2: Execute simple script.
-  const execResult = await execCapture(
-    nodeBinary,
-    ['-e', 'logger.log("OK")'],
-    {
-      env: { ...process.env, PKG_EXECPATH: '' },
-    },
-  )
+  const execResult = await execCapture(nodeBinary, ['-e', 'logger.log("OK")'], {
+    env: { ...process.env, PKG_EXECPATH: '' },
+  })
 
   if (execResult.code !== 0 || execResult.stdout !== 'OK') {
     error('Binary failed to execute simple script')
@@ -424,7 +420,8 @@ async function verifySignature() {
   if (result.code !== 0) {
     warn('Binary is not signed (may cause issues on macOS)')
     warn('Run: codesign --sign - --force out/Release/node')
-    return true // Not fatal.
+    // Not fatal.
+    return true
   }
 
   success('Binary is properly signed for macOS')

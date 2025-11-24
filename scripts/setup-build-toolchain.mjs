@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Automatic Build Toolchain Setup Script
  *
@@ -29,9 +28,10 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { homedir, platform as osPlatform, tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import colors from 'yoctocolors-cjs'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
 const __filename = fileURLToPath(import.meta.url)
@@ -40,10 +40,14 @@ const __dirname = path.dirname(__filename)
 // Parse arguments.
 const args = process.argv.slice(2)
 const CHECK_ONLY = args.includes('--check-only')
-const INSTALL_EMSCRIPTEN = args.includes('--emscripten') || !args.some(a => a.startsWith('--'))
-const INSTALL_RUST = args.includes('--rust') || !args.some(a => a.startsWith('--'))
-const INSTALL_PYTHON = args.includes('--python') || !args.some(a => a.startsWith('--'))
-const INSTALL_COMPILER = args.includes('--compiler') || !args.some(a => a.startsWith('--'))
+const INSTALL_EMSCRIPTEN =
+  args.includes('--emscripten') || !args.some(a => a.startsWith('--'))
+const INSTALL_RUST =
+  args.includes('--rust') || !args.some(a => a.startsWith('--'))
+const INSTALL_PYTHON =
+  args.includes('--python') || !args.some(a => a.startsWith('--'))
+const INSTALL_COMPILER =
+  args.includes('--compiler') || !args.some(a => a.startsWith('--'))
 const FORCE_INSTALL = args.includes('--force')
 const QUIET = args.includes('--quiet')
 
@@ -62,7 +66,7 @@ const PLATFORM = osPlatform()
  * Log with color support.
  */
 function log(message, color = '') {
-  if (QUIET && !color.includes('red')) return
+  if (QUIET && !color.includes('red')) {return}
 
   const colors = {
     red: '\x1b[31m',
@@ -155,7 +159,7 @@ function checkEmscripten() {
   for (const emsdkPath of possiblePaths) {
     const emsdkEnv = path.join(
       emsdkPath,
-      PLATFORM === 'win32' ? 'emsdk_env.bat' : 'emsdk_env.sh'
+      PLATFORM === 'win32' ? 'emsdk_env.bat' : 'emsdk_env.sh',
     )
 
     if (existsSync(emsdkEnv)) {
@@ -181,7 +185,8 @@ async function installEmscripten() {
   logInfo('Installing Emscripten SDK...')
 
   const emsdkPath = path.join(homedir(), '.emsdk')
-  const emsdkVersion = '3.1.70' // Pinned version for reproducibility.
+  // Pinned version for reproducibility.
+  const emsdkVersion = '3.1.70'
 
   try {
     // Clone emsdk if not exists.
@@ -189,7 +194,7 @@ async function installEmscripten() {
       logInfo(`Cloning emsdk to ${emsdkPath}...`)
       if (
         !exec(
-          `git clone https://github.com/emscripten-core/emsdk.git "${emsdkPath}"`
+          `git clone https://github.com/emscripten-core/emsdk.git "${emsdkPath}"`,
         )
       ) {
         logError('Failed to clone emsdk')
@@ -200,7 +205,7 @@ async function installEmscripten() {
     // Install and activate specific version.
     const emsdkCmd = path.join(
       emsdkPath,
-      PLATFORM === 'win32' ? 'emsdk.bat' : 'emsdk'
+      PLATFORM === 'win32' ? 'emsdk.bat' : 'emsdk',
     )
 
     logInfo(`Installing Emscripten ${emsdkVersion}...`)
@@ -220,7 +225,7 @@ async function installEmscripten() {
     await writeFile(
       activateScript,
       `#!/bin/bash\nsource "${emsdkPath}/emsdk_env.sh"\n`,
-      { mode: 0o755 }
+      { mode: 0o755 },
     )
 
     logSuccess('Emscripten SDK installed successfully')
@@ -311,7 +316,7 @@ async function installRust() {
       if (PLATFORM === 'win32') {
         logInfo('Download Rust from: https://rustup.rs/')
         logError(
-          'Automatic Rust installation not supported on Windows via script'
+          'Automatic Rust installation not supported on Windows via script',
         )
         logInfo('Please install manually and run this script again')
         return false
@@ -320,7 +325,7 @@ async function installRust() {
       logInfo('Installing Rust via rustup...')
       if (
         !exec(
-          'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y'
+          'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y',
         )
       ) {
         logError('Failed to install Rust')
@@ -347,7 +352,7 @@ async function installRust() {
         exec('brew install wasm-pack')
       } else if (
         !exec(
-          'curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh'
+          'curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh',
         )
       ) {
         logError('Failed to install wasm-pack')
@@ -430,7 +435,8 @@ async function installPackageManager() {
       log('')
 
       // Install Homebrew using official installation script.
-      const installCmd = '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+      const installCmd =
+        '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
 
       if (!exec(installCmd)) {
         logError('Failed to install Homebrew')
@@ -456,11 +462,14 @@ async function installPackageManager() {
       log('')
 
       // Install Chocolatey using official PowerShell script.
-      const installCmd = 'powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString(\'https://community.chocolatey.org/install.ps1\'))"'
+      const installCmd =
+        'powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString(\'https://community.chocolatey.org/install.ps1\'))"'
 
       if (!exec(installCmd)) {
         logError('Failed to install Chocolatey')
-        logInfo('Visit https://chocolatey.org/install for manual installation instructions')
+        logInfo(
+          'Visit https://chocolatey.org/install for manual installation instructions',
+        )
         return false
       }
 
@@ -473,7 +482,7 @@ async function installPackageManager() {
 
     if (PLATFORM === 'linux') {
       logError('Linux package managers (apt-get/yum) should be pre-installed')
-      logInfo('Please install your distribution\'s package manager manually')
+      logInfo("Please install your distribution's package manager manually")
       return false
     }
 
@@ -742,7 +751,7 @@ async function installCompiler() {
 
       logError('Chocolatey not found')
       logInfo(
-        'Install Visual Studio Build Tools from: https://visualstudio.microsoft.com/downloads/'
+        'Install Visual Studio Build Tools from: https://visualstudio.microsoft.com/downloads/',
       )
       return false
     }
@@ -895,7 +904,6 @@ async function installBuildTools() {
   }
 }
 
-
 /**
  * Main entry point.
  */
@@ -906,8 +914,8 @@ async function main() {
 
   logInfo(`Platform: ${PLATFORM}`)
   logInfo(`CI Environment: ${IS_CI ? 'Yes' : 'No'}`)
-  if (IS_GITHUB_ACTIONS) logInfo('GitHub Actions detected')
-  if (IS_DOCKER) logInfo('Docker environment detected')
+  if (IS_GITHUB_ACTIONS) {logInfo('GitHub Actions detected')}
+  if (IS_DOCKER) {logInfo('Docker environment detected')}
   log('')
 
   // Check package manager FIRST - required for all subsequent installations.

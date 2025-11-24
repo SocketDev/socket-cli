@@ -37,7 +37,8 @@ const originalSize = cliCode.length
 // Compress with brotli (max quality for best compression).
 const compressed = brotliCompressSync(cliCode, {
   params: {
-    [0]: 11, // BROTLI_PARAM_QUALITY: 11 (max quality).
+    // BROTLI_PARAM_QUALITY: 11 (max quality).
+    [0]: 11,
   },
 })
 const compressedSize = compressed.length

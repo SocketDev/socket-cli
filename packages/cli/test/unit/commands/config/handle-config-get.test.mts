@@ -143,7 +143,6 @@ describe('handleConfigGet', () => {
   })
 
   it('handles empty config value', async () => {
-    const { getConfigValue } = await import('../../../../src/utils/config.mts')
     const { outputConfigGet } = await import(
       '../../../../src/commands/config/output-config-get.mts'
     )
@@ -160,7 +159,6 @@ describe('handleConfigGet', () => {
   })
 
   it('handles undefined config value', async () => {
-    const { getConfigValue } = await import('../../../../src/utils/config.mts')
     const { outputConfigGet } = await import(
       '../../../../src/commands/config/output-config-get.mts'
     )

@@ -6,11 +6,11 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
+import colors from 'yoctocolors-cjs'
+
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
-import colors from 'yoctocolors-cjs'
-
 
 const logger = getDefaultLogger()
 /**
@@ -112,7 +112,13 @@ export function getAffectedPackages(changedFiles) {
  * @param {string} [progressMessage] - Optional custom progress message
  * @returns {Promise<number>} Exit code
  */
-export async function runPackageScript(pkg, scriptName, args = [], quiet = false, progressMessage = '') {
+export async function runPackageScript(
+  pkg,
+  scriptName,
+  args = [],
+  quiet = false,
+  progressMessage = '',
+) {
   const displayName = pkg.displayName || pkg.name
 
   if (!quiet) {
@@ -162,7 +168,13 @@ export async function runPackageScript(pkg, scriptName, args = [], quiet = false
  * @param {string} [sectionTitle] - Optional section title to use as progress message
  * @returns {Promise<number>} Exit code (0 if all succeed, first failure code otherwise)
  */
-export async function runAcrossPackages(packages, scriptName, args = [], quiet = false, sectionTitle = '') {
+export async function runAcrossPackages(
+  packages,
+  scriptName,
+  args = [],
+  quiet = false,
+  sectionTitle = '',
+) {
   if (!packages.length) {
     if (!quiet) {
       logger.substep('No packages to process')
@@ -171,8 +183,15 @@ export async function runAcrossPackages(packages, scriptName, args = [], quiet =
   }
 
   for (const pkg of packages) {
-    const progressMessage = sectionTitle || `${pkg.displayName || pkg.name}: running ${scriptName}`
-    const exitCode = await runPackageScript(pkg, scriptName, args, quiet, progressMessage)
+    const progressMessage =
+      sectionTitle || `${pkg.displayName || pkg.name}: running ${scriptName}`
+    const exitCode = await runPackageScript(
+      pkg,
+      scriptName,
+      args,
+      quiet,
+      progressMessage,
+    )
     if (exitCode !== 0) {
       return exitCode
     }

@@ -13,10 +13,10 @@
 import { existsSync } from 'node:fs'
 import { platform } from 'node:os'
 
-import { spawn } from '@socketsecurity/lib/spawn'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 const logger = getDefaultLogger()
 const IS_MACOS = platform() === 'darwin'
@@ -70,7 +70,8 @@ async function checkDiskSpace() {
       const lines = result.stdout.trim().split('\n')
       if (lines.length > 1) {
         const parts = lines[1].split(/\s+/)
-        return parts[3] // Available space
+        // Available space
+        return parts[3]
       }
     }
   } catch {
@@ -164,7 +165,9 @@ async function main() {
   const gcc = await commandExists('gcc')
   const gccVersion = gcc ? await getVersion('gcc') : null
   checks.push({ name: 'gcc', required: true, found: gcc, version: gccVersion })
-  logger.log(`   ${gcc ? `${colors.green('✓')}` : `${colors.red('✗')}`} gcc: ${gccVersion || 'not found'}`)
+  logger.log(
+    `   ${gcc ? `${colors.green('✓')}` : `${colors.red('✗')}`} gcc: ${gccVersion || 'not found'}`,
+  )
   if (!gcc) {
     hasErrors = true
   }
@@ -172,7 +175,9 @@ async function main() {
   const gxx = await commandExists('g++')
   const gxxVersion = gxx ? await getVersion('g++') : null
   checks.push({ name: 'g++', required: true, found: gxx, version: gxxVersion })
-  logger.log(`   ${gxx ? `${colors.green('✓')}` : `${colors.red('✗')}`} g++: ${gxxVersion || 'not found'}`)
+  logger.log(
+    `   ${gxx ? `${colors.green('✓')}` : `${colors.red('✗')}`} g++: ${gxxVersion || 'not found'}`,
+  )
   if (!gxx) {
     hasErrors = true
   }
@@ -185,7 +190,9 @@ async function main() {
     found: make,
     version: makeVersion,
   })
-  logger.log(`   ${make ? `${colors.green('✓')}` : `${colors.red('✗')}`} make: ${makeVersion || 'not found'}`)
+  logger.log(
+    `   ${make ? `${colors.green('✓')}` : `${colors.red('✗')}`} make: ${makeVersion || 'not found'}`,
+  )
   if (!make) {
     hasErrors = true
   }
@@ -208,7 +215,9 @@ async function main() {
   const git = await commandExists('git')
   const gitVersion = git ? await getVersion('git') : null
   checks.push({ name: 'git', required: true, found: git, version: gitVersion })
-  logger.log(`   ${git ? `${colors.green('✓')}` : `${colors.red('✗')}`} git: ${gitVersion || 'not found'}`)
+  logger.log(
+    `   ${git ? `${colors.green('✓')}` : `${colors.red('✗')}`} git: ${gitVersion || 'not found'}`,
+  )
   if (!git) {
     hasErrors = true
   }
@@ -225,12 +234,12 @@ async function main() {
   if (IS_MACOS) {
     logger.log('   ℹ️  UPX: not used on macOS (incompatible with code signing)')
   } else {
-    logger.log(`   ${upx ? `${colors.green('✓')}` : `${colors.yellow('⚠')} `} upx: ${upxVersion || 'not found'}`)
+    logger.log(
+      `   ${upx ? `${colors.green('✓')}` : `${colors.yellow('⚠')} `} upx: ${upxVersion || 'not found'}`,
+    )
     if (!upx) {
       hasWarnings = true
-      logger.log(
-        '      UPX enables 30-50% binary compression on Linux/Windows',
-      )
+      logger.log('      UPX enables 30-50% binary compression on Linux/Windows')
       logger.log(
         '      Build will succeed without UPX but produce larger binaries',
       )
@@ -247,9 +256,7 @@ async function main() {
   logger.log('')
 
   // Check existing build
-  const nodeBuilt = existsSync(
-    'build/node-smol/out/Release/node',
-  )
+  const nodeBuilt = existsSync('build/node-smol/out/Release/node')
   if (nodeBuilt) {
     logger.log(`${colors.green('✓')} Custom Node.js binary already built`)
     logger.log('   Location: build/node-smol/out/Release/node')
@@ -297,9 +304,7 @@ async function main() {
       logger.log('')
     } else if (IS_WINDOWS) {
       logger.log('   Windows (Chocolatey):')
-      logger.log(
-        '   $ choco install visualstudio2022buildtools python git upx',
-      )
+      logger.log('   $ choco install visualstudio2022buildtools python git upx')
       logger.log('')
       logger.log('   Or use WSL2 (recommended):')
       logger.log('   $ wsl --install -d Ubuntu')

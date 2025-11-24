@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Build separate WASM model packages for npm distribution.
  *
@@ -16,17 +15,21 @@
  */
 
 import { execSync } from 'node:child_process'
-import { existsSync, mkdirSync, promises as fs } from 'node:fs'
+import { existsSync, promises as fs, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import colors from 'yoctocolors-cjs'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '../..')
-const wasmBundlePath = path.join(rootPath, 'packages/node-smol-builder/wasm-bundle')
+const wasmBundlePath = path.join(
+  rootPath,
+  'packages/node-smol-builder/wasm-bundle',
+)
 const packagesPath = path.join(rootPath, 'packages')
 
 // Parse command line arguments.
@@ -96,7 +99,7 @@ async function buildWasm(modelName, feature) {
   // Copy built WASM.
   const wasmSource = path.join(
     wasmBundlePath,
-    'target/wasm32-unknown-unknown/release/socket_ai.wasm'
+    'target/wasm32-unknown-unknown/release/socket_ai.wasm',
   )
   const wasmBuild = path.join(buildDir, `${modelName}.wasm`)
 
@@ -128,14 +131,19 @@ async function optimizeWasm(inputPath, modelName) {
   const optimizedPath = path.join(buildDir, `${modelName}.optimized.wasm`)
 
   exec(
-    `wasm-opt -Oz --enable-simd --enable-bulk-memory ${inputPath} -o ${optimizedPath}`
+    `wasm-opt -Oz --enable-simd --enable-bulk-memory ${inputPath} -o ${optimizedPath}`,
   )
 
   const originalSize = (await fs.stat(inputPath)).size
   const optimizedSize = (await fs.stat(optimizedPath)).size
-  const reduction = (((originalSize - optimizedSize) / originalSize) * 100).toFixed(1)
+  const reduction = (
+    ((originalSize - optimizedSize) / originalSize) *
+    100
+  ).toFixed(1)
 
-  logger.log(`  Optimized: ${(optimizedSize / (1024 * 1024)).toFixed(1)} MB (${reduction}% reduction)`)
+  logger.log(
+    `  Optimized: ${(optimizedSize / (1024 * 1024)).toFixed(1)} MB (${reduction}% reduction)`,
+  )
 
   return optimizedPath
 }
@@ -181,7 +189,9 @@ async function main() {
     logger.log('  - packages/socketbin-minilm-wasm/')
     logger.log('  - packages/socketbin-codet5-wasm/')
     logger.log('\nNext steps:')
-    logger.log('  1. Test locally: cd packages/socketbin-minilm-wasm && npm pack')
+    logger.log(
+      '  1. Test locally: cd packages/socketbin-minilm-wasm && npm pack',
+    )
     logger.log('  2. Publish: npm publish')
   } catch (error) {
     logger.error(`\n${colors.red('✗')} Build failed:`, error.message)

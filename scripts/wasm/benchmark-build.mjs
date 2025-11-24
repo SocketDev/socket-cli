@@ -12,12 +12,11 @@
 
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { performance } from 'node:perf_hooks'
+import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
-
 
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -158,10 +157,7 @@ async function displaySizes() {
 
   const wasmMB = (sizes.wasmSize / 1024 / 1024).toFixed(2)
   const syncMB = (sizes.syncSize / 1024 / 1024).toFixed(2)
-  const compressionRatio = (
-    (sizes.syncSize / sizes.wasmSize) *
-    100
-  ).toFixed(1)
+  const compressionRatio = ((sizes.syncSize / sizes.wasmSize) * 100).toFixed(1)
 
   logger.log(`  WASM (raw):        ${wasmMB} MB`)
   logger.log(`  JS (compressed):   ${syncMB} MB`)
@@ -195,7 +191,8 @@ async function main() {
   // Run prod build.
   if (!devOnly) {
     if (devResult) {
-      logger.log('') // Spacing.
+      // Spacing.
+      logger.log('')
     }
     prodResult = await benchmarkBuild('production')
     if (!prodResult) {

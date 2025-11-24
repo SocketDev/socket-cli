@@ -1,4 +1,3 @@
-import os from 'node:os'
 import path from 'node:path'
 
 import fastGlob from 'fast-glob'
@@ -6,14 +5,13 @@ import ignore from 'ignore'
 import micromatch from 'micromatch'
 import { parse as yamlParse } from 'yaml'
 
-import { isDirSync, safeReadFile } from '@socketsecurity/lib/fs'
-import { defaultIgnore } from '@socketsecurity/lib/globs'
-import { readPackageJson } from '@socketsecurity/lib/packages'
-import { NODE_MODULES } from '@socketsecurity/lib/paths/dirnames'
-import { transform } from '@socketsecurity/lib/streams'
-import { isNonEmptyString } from '@socketsecurity/lib/strings'
+import { isDirSync, safeReadFile } from '@socketsecurity/registry/lib/fs'
+import { defaultIgnore } from '@socketsecurity/registry/lib/globs'
+import { readPackageJson } from '@socketsecurity/registry/lib/packages'
+import { transform } from '@socketsecurity/registry/lib/streams'
+import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
-import { PNPM } from '../../constants/agents.mjs'
+import { NODE_MODULES, PNPM } from '../../constants.mts'
 
 import type { Agent } from '../ecosystem/environment.mts'
 import type { SocketYml } from '@socketsecurity/config'
@@ -46,23 +44,19 @@ async function getWorkspaceGlobs(
   agent: Agent,
   cwd = process.cwd(),
 ): Promise<string[]> {
-  let workspacePatterns: string[] | undefined
+  let workspacePatterns: unknown
   if (agent === PNPM) {
     const workspacePath = path.join(cwd, 'pnpm-workspace.yaml')
     const yml = await safeReadFile(workspacePath)
     if (yml) {
       try {
-        const ymlStr = typeof yml === 'string' ? yml : yml.toString('utf8')
-        workspacePatterns = yamlParse(ymlStr)?.packages
+        workspacePatterns = yamlParse(yml)?.packages
       } catch {}
     }
   } else {
-    const pkgWorkspaces = (await readPackageJson(cwd, { throws: false }))
-      ?.workspaces
-    // Workspaces can be an array or an object with a packages property.
-    workspacePatterns = Array.isArray(pkgWorkspaces)
-      ? pkgWorkspaces
-      : pkgWorkspaces?.packages
+    workspacePatterns = (await readPackageJson(cwd, { throws: false }))?.[
+      'workspaces'
+    ]
   }
   return Array.isArray(workspacePatterns)
     ? workspacePatterns
@@ -79,8 +73,8 @@ function ignoreFileLinesToGlobPatterns(
   const base = path.relative(cwd, path.dirname(filepath)).replace(/\\/g, '/')
   const patterns = []
   for (let i = 0, { length } = lines; i < length; i += 1) {
-    const pattern = lines[i]?.trim()
-    if (pattern && pattern.length > 0 && pattern.charCodeAt(0) !== 35 /*'#'*/) {
+    const pattern = lines[i]!.trim()
+    if (pattern.length > 0 && pattern.charCodeAt(0) !== 35 /*'#'*/) {
       patterns.push(
         ignorePatternToMinimatch(
           pattern.length && pattern.charCodeAt(0) === 33 /*'!'*/
@@ -176,12 +170,8 @@ export function getSupportedFilePatterns(
   const patterns: string[] = []
   for (const key of Object.keys(supportedFiles)) {
     const supported = supportedFiles[key]
-    if (supported && typeof supported === 'object') {
-      patterns.push(
-        ...(Object.values(supported) as Array<{ pattern: string }>).map(
-          p => `**/${p.pattern}`,
-        ),
-      )
+    if (supported) {
+      patterns.push(...Object.values(supported).map(p => `**/${p.pattern}`))
     }
   }
   return patterns
@@ -221,16 +211,13 @@ export async function globWithGitIgnore(
     ignore: DEFAULT_IGNORE_FOR_GIT_IGNORE,
   })
   for await (const ignorePatterns of transform(
-    gitIgnoreStream as AsyncIterable<string>,
-    async (filepath: string) => {
-      const content = await safeReadFile(filepath)
-      const contentStr = content
-        ? typeof content === 'string'
-          ? content
-          : content.toString('utf8')
-        : ''
-      return ignoreFileToGlobPatterns(contentStr, filepath, cwd)
-    },
+    gitIgnoreStream,
+    async (filepath: string) =>
+      ignoreFileToGlobPatterns(
+        (await safeReadFile(filepath)) ?? '',
+        filepath,
+        cwd,
+      ),
     { concurrency: 8 },
   )) {
     for (const p of ignorePatterns) {
@@ -246,13 +233,14 @@ export async function globWithGitIgnore(
     }
   }
 
-  const globOptions: GlobOptions = {
+  const globOptions = {
+    __proto__: null,
     absolute: true,
     cwd,
     dot: true,
-    ignore: hasNegatedPattern ? [...defaultIgnore] : [...ignores],
+    ignore: hasNegatedPattern ? defaultIgnore : [...ignores],
     ...additionalOptions,
-  }
+  } as GlobOptions
 
   if (!hasNegatedPattern) {
     return await fastGlob.glob(patterns as string[], globOptions)
@@ -286,7 +274,7 @@ export async function globWorkspace(
     ? await fastGlob.glob(workspaceGlobs, {
         absolute: true,
         cwd,
-        ignore: [...defaultIgnore],
+        ignore: defaultIgnore,
       })
     : []
 }
@@ -299,31 +287,23 @@ export function isReportSupportedFile(
   return micromatch.some(filepath, patterns)
 }
 
-/**
- * Expand tilde (~) to home directory.
- */
-function expandTildePath(p: string): string {
-  if (p === '~' || p.startsWith('~/') || p.startsWith('~\\')) {
-    const homeDir = os.homedir()
-    return p === '~' ? homeDir : path.join(homeDir, p.slice(2))
-  }
-  return p
-}
-
 export function pathsToGlobPatterns(
   paths: string[] | readonly string[],
+  cwd?: string | undefined,
 ): string[] {
+  // TODO: Does not support `~/` paths.
   return paths.map(p => {
-    // Expand tilde paths.
-    const expanded = expandTildePath(p)
     // Convert current directory references to glob patterns.
-    if (expanded === '.' || expanded === './') {
+    if (p === '.' || p === './') {
       return '**/*'
     }
+    const absolutePath = path.isAbsolute(p)
+      ? p
+      : path.resolve(cwd ?? process.cwd(), p)
     // If the path is a directory, scan it recursively for all files.
-    if (isDirSync(expanded)) {
-      return `${expanded}/**/*`
+    if (isDirSync(absolutePath)) {
+      return `${p}/**/*`
     }
-    return expanded
+    return p
   })
 }

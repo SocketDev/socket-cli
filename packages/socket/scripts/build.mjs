@@ -7,17 +7,17 @@
  * 3. Copies LICENSE, CHANGELOG.md, and logo images from repo root
  */
 
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs, mkdirSync, writeFileSync  } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { build } from 'esbuild'
-import { getSpinner } from '@socketsecurity/lib/constants/process'
+
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { Spinner, withSpinner } from '@socketsecurity/lib/spinner'
 import { spawn } from '@socketsecurity/lib/spawn'
+import { Spinner, withSpinner } from '@socketsecurity/lib/spinner'
 
 import seaConfig from './esbuild.bootstrap.config.mjs'
 
@@ -30,11 +30,11 @@ const logger = getDefaultLogger()
 async function ensureBootstrapPackageBuilt() {
   const bootstrapSource = path.join(
     monorepoRoot,
-    'packages/bootstrap/src/bootstrap-npm.mts'
+    'packages/bootstrap/src/bootstrap-npm.mts',
   )
   const bootstrapDist = path.join(
     monorepoRoot,
-    'packages/bootstrap/dist/bootstrap-npm.js'
+    'packages/bootstrap/dist/bootstrap-npm.js',
   )
   logger.group('Checking bootstrap package')
 
@@ -66,7 +66,7 @@ async function ensureBootstrapPackageBuilt() {
           cwd: monorepoRoot,
           shell: WIN32,
           stdio: 'pipe',
-        }
+        },
       )
 
       if (spawnResult.code !== 0) {

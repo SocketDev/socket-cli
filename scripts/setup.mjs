@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * @fileoverview Developer setup script - checks prerequisites and prepares environment.
  *
@@ -34,9 +33,10 @@
 
 import { existsSync } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
-import { spawn } from '@socketsecurity/lib/spawn'
+
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 const logger = getDefaultLogger()
 
@@ -105,7 +105,7 @@ async function getVersion(command, args = ['--version']) {
  */
 function parseVersion(versionString) {
   const match = versionString.match(/(\d+)\.(\d+)\.(\d+)/)
-  if (!match) return null
+  if (!match) {return null}
   return {
     major: Number.parseInt(match[1], 10),
     minor: Number.parseInt(match[2], 10),
@@ -118,9 +118,9 @@ function parseVersion(versionString) {
  * Returns: -1 if a < b, 0 if a === b, 1 if a > b
  */
 function compareVersions(a, b) {
-  if (a.major !== b.major) return a.major < b.major ? -1 : 1
-  if (a.minor !== b.minor) return a.minor < b.minor ? -1 : 1
-  if (a.patch !== b.patch) return a.patch < b.patch ? -1 : 1
+  if (a.major !== b.major) {return a.major < b.major ? -1 : 1}
+  if (a.minor !== b.minor) {return a.minor < b.minor ? -1 : 1}
+  if (a.patch !== b.patch) {return a.patch < b.patch ? -1 : 1}
   return 0
 }
 
@@ -136,7 +136,8 @@ async function installHomebrew() {
   logger.step('Installing Homebrew...')
   logger.info('This requires sudo access and may take a few minutes')
 
-  const installScript = '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+  const installScript =
+    '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
 
   const result = await spawn('bash', ['-c', installScript], {
     stdio: 'inherit',
@@ -163,7 +164,8 @@ async function installChocolatey() {
   logger.step('Installing Chocolatey...')
   logger.info('This requires admin access and may take a few minutes')
 
-  const installScript = 'Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString(\'https://community.chocolatey.org/install.ps1\'))'
+  const installScript =
+    "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
 
   const result = await spawn('powershell', ['-Command', installScript], {
     stdio: 'inherit',
@@ -183,7 +185,7 @@ async function installChocolatey() {
  * Install a package using Homebrew (macOS/Linux).
  */
 async function installWithHomebrew(packageName) {
-  if (!await hasCommand('brew')) {
+  if (!(await hasCommand('brew'))) {
     logger.error('Homebrew not available')
     return false
   }
@@ -207,7 +209,7 @@ async function installWithHomebrew(packageName) {
  * Install a package using Chocolatey (Windows).
  */
 async function installWithChocolatey(packageName) {
-  if (!await hasCommand('choco')) {
+  if (!(await hasCommand('choco'))) {
     logger.error('Chocolatey not available')
     return false
   }
@@ -248,14 +250,16 @@ async function ensureGhCli() {
   // Auto-install mode.
   if (WIN32) {
     // Windows: Try Chocolatey.
-    if (!await hasCommand('choco')) {
+    if (!(await hasCommand('choco'))) {
       logger.info('Chocolatey not found (needed for auto-install on Windows)')
       logger.log('Attempting to install Chocolatey...')
       const installed = await installChocolatey()
       if (!installed) {
         logger.warn('Could not install Chocolatey')
         logger.info('Install gh CLI manually from: https://cli.github.com/')
-        logger.info('Or install Chocolatey from: https://chocolatey.org/install')
+        logger.info(
+          'Or install Chocolatey from: https://chocolatey.org/install',
+        )
         return false
       }
     }
@@ -281,7 +285,7 @@ async function ensureGhCli() {
   }
 
   // macOS/Linux: Try Homebrew.
-  if (!await hasCommand('brew')) {
+  if (!(await hasCommand('brew'))) {
     logger.info('Homebrew not found (needed for auto-install)')
     logger.log('Attempting to install Homebrew...')
     const installed = await installHomebrew()
@@ -315,7 +319,12 @@ async function ensureGhCli() {
 /**
  * Check prerequisite.
  */
-async function checkPrerequisite({ command, minVersion, name, required = true }) {
+async function checkPrerequisite({
+  command,
+  minVersion,
+  name,
+  required = true,
+}) {
   const version = await getVersion(command)
 
   if (!version) {
@@ -369,7 +378,7 @@ async function restoreCache(hasGh) {
     ['--filter', '@socketsecurity/cli', 'run', 'restore-cache', '--quiet'],
     {
       stdio: 'inherit',
-    }
+    },
   )
 
   if (result.code === 0) {
@@ -459,7 +468,9 @@ async function main() {
   }
 
   if (!nodeOk || !pnpmOk) {
-    logger.error('Required prerequisites missing. Please install and try again.')
+    logger.error(
+      'Required prerequisites missing. Please install and try again.',
+    )
     if (!quiet) {
       logger.log('')
     }
@@ -498,9 +509,11 @@ async function main() {
   return 0
 }
 
-main().then(code => {
-  process.exit(code)
-}).catch(error => {
-  logger.error(error.message)
-  process.exit(1)
-})
+main()
+  .then(code => {
+    process.exit(code)
+  })
+  .catch(error => {
+    logger.error(error.message)
+    process.exit(1)
+  })

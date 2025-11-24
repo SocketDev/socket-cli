@@ -219,8 +219,10 @@ async function main() {
     // Combine and clean output - remove ANSI color codes and spinner artifacts
     const ansiRegex = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g')
     const output = (codeCoverageResult.stdout + codeCoverageResult.stderr)
-      .replace(ansiRegex, '') // Remove ANSI color codes
-      .replace(/(?:✧|︎|⚡)\s*/g, '') // Remove spinner artifacts
+      // Remove ANSI color codes
+      .replace(ansiRegex, '')
+      // Remove spinner artifacts
+      .replace(/(?:✧|︎|⚡)\s*/g, '')
       .trim()
 
     // Extract test summary (Test Files ... Duration)
@@ -254,11 +256,16 @@ async function main() {
       if (coverageHeaderMatch && allFilesMatch) {
         if (!values.summary) {
           logger.log(' % Coverage report from v8')
-          logger.log(coverageHeaderMatch[1]) // Top border
-          logger.log(coverageHeaderMatch[2]) // Header row
-          logger.log(coverageHeaderMatch[1]) // Middle border
-          logger.log(allFilesMatch[0]) // All files row
-          logger.log(coverageHeaderMatch[1]) // Bottom border
+          // Top border
+          logger.log(coverageHeaderMatch[1])
+          // Header row
+          logger.log(coverageHeaderMatch[2])
+          // Middle border
+          logger.log(coverageHeaderMatch[1])
+          // All files row
+          logger.log(allFilesMatch[0])
+          // Bottom border
+          logger.log(coverageHeaderMatch[1])
           logger.log('')
         }
 

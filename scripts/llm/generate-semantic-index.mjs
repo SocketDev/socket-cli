@@ -28,9 +28,10 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import colors from 'yoctocolors-cjs'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
 // Get the directory of this script file.
@@ -148,7 +149,8 @@ function extractWords(text) {
     .toLowerCase()
     .replace(/[^\w\s-]/g, '')
     .split(/\s+/)
-    .filter(w => w.length > 2) // Filter short words.
+    // Filter short words.
+    .filter(w => w.length > 2)
 
   // Canonicalize.
   return words.map(canonicalize)

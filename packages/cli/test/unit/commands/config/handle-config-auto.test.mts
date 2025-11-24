@@ -97,9 +97,6 @@ describe('handleConfigAuto', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { discoverConfigValue } = await import(
-      '../../../../src/commands/config/discover-config-value.mts'
-    )
     const { outputConfigAuto } = await import(
       '../../../../src/commands/config/output-config-auto.mts'
     )
@@ -133,9 +130,6 @@ describe('handleConfigAuto', () => {
   })
 
   it('handles text output format', async () => {
-    const { discoverConfigValue } = await import(
-      '../../../../src/commands/config/discover-config-value.mts'
-    )
     const { outputConfigAuto } = await import(
       '../../../../src/commands/config/output-config-auto.mts'
     )

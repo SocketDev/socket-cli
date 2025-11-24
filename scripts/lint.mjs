@@ -126,8 +126,11 @@ async function main() {
     // Display what we're linting.
     if (!quiet) {
       const modeText = mode === 'all' ? 'all packages' : `${mode} packages`
-      logger.step(`Linting ${modeText} (${packages.length} package${packages.length > 1 ? 's' : ''})`)
-      logger.error('') // Blank line.
+      logger.step(
+        `Linting ${modeText} (${packages.length} package${packages.length > 1 ? 's' : ''})`,
+      )
+      // Blank line.
+      logger.error('')
     }
 
     // Run lint across affected packages.

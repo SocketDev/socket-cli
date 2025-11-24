@@ -97,7 +97,6 @@ describe('ghsa-tracker', () => {
     })
 
     it('creates new tracker when file does not exist', async () => {
-      const { readJson } = await import('@socketsecurity/lib/fs')
       mockReadJson.mockRejectedValue(new Error('ENOENT'))
 
       const result = await loadGhsaTracker(mockCwd)
@@ -109,7 +108,6 @@ describe('ghsa-tracker', () => {
     })
 
     it('handles null tracker data', async () => {
-      const { readJson } = await import('@socketsecurity/lib/fs')
       mockReadJson.mockResolvedValue(null)
 
       const result = await loadGhsaTracker(mockCwd)
@@ -149,7 +147,7 @@ describe('ghsa-tracker', () => {
 
   describe('markGhsaFixed', () => {
     it('adds new GHSA fix record', async () => {
-      const { readJson, writeJson } = await import('@socketsecurity/lib/fs')
+      const { writeJson } = await import('@socketsecurity/lib/fs')
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [],
@@ -176,7 +174,7 @@ describe('ghsa-tracker', () => {
     })
 
     it('replaces existing GHSA fix record', async () => {
-      const { readJson, writeJson } = await import('@socketsecurity/lib/fs')
+      const { writeJson } = await import('@socketsecurity/lib/fs')
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [
@@ -213,7 +211,6 @@ describe('ghsa-tracker', () => {
     })
 
     it('sorts records by fixedAt descending', async () => {
-      const { readJson, writeJson } = await import('@socketsecurity/lib/fs')
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [
@@ -237,7 +234,6 @@ describe('ghsa-tracker', () => {
     })
 
     it('handles errors gracefully', async () => {
-      const { readJson } = await import('@socketsecurity/lib/fs')
       mockReadJson.mockRejectedValue(new Error('Permission denied'))
 
       // Should not throw.
@@ -249,7 +245,6 @@ describe('ghsa-tracker', () => {
 
   describe('isGhsaFixed', () => {
     it('returns true for fixed GHSA', async () => {
-      const { readJson } = await import('@socketsecurity/lib/fs')
       const tracker: GhsaTracker = {
         version: 1,
         fixed: [
@@ -270,7 +265,6 @@ describe('ghsa-tracker', () => {
     })
 
     it('returns false for unfixed GHSA', async () => {
-      const { readJson } = await import('@socketsecurity/lib/fs')
       const tracker: GhsaTracker = {
         version: 1,
         fixed: [],
@@ -284,7 +278,6 @@ describe('ghsa-tracker', () => {
     })
 
     it('returns false on error', async () => {
-      const { readJson } = await import('@socketsecurity/lib/fs')
       mockReadJson.mockRejectedValue(new Error('Read error'))
 
       const result = await isGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab')
@@ -295,7 +288,6 @@ describe('ghsa-tracker', () => {
 
   describe('getFixedGhsas', () => {
     it('returns all fixed GHSA records', async () => {
-      const { readJson } = await import('@socketsecurity/lib/fs')
       const tracker: GhsaTracker = {
         version: 1,
         fixed: [
@@ -323,7 +315,6 @@ describe('ghsa-tracker', () => {
     })
 
     it('returns empty array on error', async () => {
-      const { readJson } = await import('@socketsecurity/lib/fs')
       mockReadJson.mockRejectedValue(new Error('Read error'))
 
       const result = await getFixedGhsas(mockCwd)

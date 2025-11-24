@@ -23,15 +23,11 @@ async function main() {
     // Build CLI bundle.
     const logger = getDefaultLogger()
     logger.info('Building CLI bundle...')
-    let result = await spawn(
-      'node',
-      ['.config/esbuild.cli-sentry.build.mjs'],
-      {
-        shell: WIN32,
-        stdio: 'inherit',
-        cwd: rootPath,
-      },
-    )
+    let result = await spawn('node', ['.config/esbuild.cli-sentry.build.mjs'], {
+      shell: WIN32,
+      stdio: 'inherit',
+      cwd: rootPath,
+    })
     if (result.code !== 0) {
       throw new Error(`CLI bundle build failed with exit code ${result.code}`)
     }
@@ -57,7 +53,9 @@ async function main() {
       cwd: rootPath,
     })
     if (result.code !== 0) {
-      throw new Error(`Shadow npm inject build failed with exit code ${result.code}`)
+      throw new Error(
+        `Shadow npm inject build failed with exit code ${result.code}`,
+      )
     }
     logger.success('Built shadow npm inject')
 

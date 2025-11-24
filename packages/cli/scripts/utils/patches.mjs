@@ -96,7 +96,8 @@ export async function startPatch(packageSpec) {
   // First, try to run pnpm patch to see if directory already exists.
   let result = await spawn('pnpm', ['patch', packageSpec], {
     shell: WIN32,
-    stdio: ['inherit', 'pipe', 'pipe'], // Capture stdout and stderr.
+    // Capture stdout and stderr.
+    stdio: ['inherit', 'pipe', 'pipe'],
     stdioString: true,
   })
 

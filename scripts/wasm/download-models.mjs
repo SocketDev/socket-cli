@@ -52,21 +52,25 @@ const FILES = [
 
   // CodeT5 (needs manual conversion first - see convert-codet5.mjs).
   {
-    copyFrom: null, // Set after conversion
+    // Set after conversion
+    copyFrom: null,
     description: 'CodeT5 encoder (int4)',
     name: 'codet5-encoder-int4.onnx',
-    url: null, // Needs conversion first
+    // Needs conversion first
+    url: null,
   },
   {
     copyFrom: null,
     description: 'CodeT5 decoder (int4)',
     name: 'codet5-decoder-int4.onnx',
-    url: null, // Needs conversion first
+    // Needs conversion first
+    url: null,
   },
   {
     description: 'CodeT5 tokenizer',
     name: 'codet5-tokenizer.json',
-    url: null, // Will be created by convert-codet5.mjs
+    // Will be created by convert-codet5.mjs
+    url: null,
   },
 
   // ONNX Runtime WASM (from node_modules).

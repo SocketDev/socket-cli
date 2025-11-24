@@ -7,14 +7,16 @@ import { existsSync, mkdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
 
+import { gte } from 'semver'
+
 import { whichReal } from '@socketsecurity/lib/bin'
 import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib/constants/socket'
 import { downloadPackage } from '@socketsecurity/lib/dlx-package'
 import { envAsBoolean } from '@socketsecurity/lib/env'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { Spinner, withSpinner } from '@socketsecurity/lib/spinner'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { gte } from 'semver'
+import { Spinner, withSpinner } from '@socketsecurity/lib/spinner'
+
 import { SOCKET_CLI_ISSUES_URL } from '../../../cli/src/constants/socket.mts'
 
 const logger = getDefaultLogger()
@@ -26,7 +28,7 @@ export const SOCKET_DLX_DIR = path.join(homedir(), '.socket', '_dlx')
  * Set to '1', 'true', or 'yes' to disable forwarding (useful for e2e testing).
  */
 const SOCKET_CLI_DISABLE_NODE_FORWARDING = envAsBoolean(
-  process.env.SOCKET_CLI_DISABLE_NODE_FORWARDING
+  process.env.SOCKET_CLI_DISABLE_NODE_FORWARDING,
 )
 
 /**
@@ -53,7 +55,14 @@ export function getCliPaths(cliPackageDir) {
     throw new Error('CLI package directory not initialized')
   }
   return {
-    cliEntry: path.join(cliPackageDir, 'node_modules', '@socketsecurity', 'cli', 'dist', 'index.js'),
+    cliEntry: path.join(
+      cliPackageDir,
+      'node_modules',
+      '@socketsecurity',
+      'cli',
+      'dist',
+      'index.js',
+    ),
   }
 }
 
@@ -165,7 +174,12 @@ export async function executeCli(cliPath, args) {
   } catch (e) {
     // Spawn throws when child exits with non-zero code.
     // Extract the exit code from the error.
-    if (e && typeof e === 'object' && 'code' in e && typeof e.code === 'number') {
+    if (
+      e &&
+      typeof e === 'object' &&
+      'code' in e &&
+      typeof e.code === 'number'
+    ) {
       return e.code
     }
     throw e
@@ -210,8 +224,12 @@ export async function downloadCli() {
     logger.error('')
     // @ts-expect-error - Injected by esbuild define.
     if (!INLINED_SOCKET_BOOTSTRAP_PUBLISHED_BUILD) {
-      logger.error('For local development, set SOCKET_CLI_LOCAL_PATH to your CLI build:')
-      logger.error(`   export SOCKET_CLI_LOCAL_PATH=/path/to/socket-cli/packages/cli/dist/index.js`)
+      logger.error(
+        'For local development, set SOCKET_CLI_LOCAL_PATH to your CLI build:',
+      )
+      logger.error(
+        `   export SOCKET_CLI_LOCAL_PATH=/path/to/socket-cli/packages/cli/dist/index.js`,
+      )
       logger.error('')
       logger.error('Or try:')
     } else {

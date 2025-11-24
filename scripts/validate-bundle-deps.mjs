@@ -30,9 +30,7 @@ const BUILTIN_MODULES = new Set([
 
 // Packages that are marked external but are excused from validation.
 // These are packages referenced in bundled code that's never actually called.
-const EXCUSED_EXTERNALS = new Set([
-  'node-gyp',
-])
+const EXCUSED_EXTERNALS = new Set(['node-gyp'])
 
 /**
  * Find all JavaScript files in dist directory.
@@ -236,7 +234,7 @@ async function isDirectDependency(packageName, devDependencies) {
       // For scoped packages: from '@scope/package' or from "@scope/package"
       const importPattern = new RegExp(
         `from\\s+['"]${packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:['"/]|$)`,
-        'm'
+        'm',
       )
       if (importPattern.test(content)) {
         return true

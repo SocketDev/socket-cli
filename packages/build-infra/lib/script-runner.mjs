@@ -16,7 +16,12 @@ import { spawn } from '@socketsecurity/lib/spawn'
  * @param {object} options - Spawn options
  * @returns {Promise<{code: number, stdout?: string, stderr?: string}>}
  */
-export async function runPnpmScript(packageName, scriptName, args = [], options = {}) {
+export async function runPnpmScript(
+  packageName,
+  scriptName,
+  args = [],
+  options = {},
+) {
   const pnpmArgs = ['--filter', packageName, 'run', scriptName, ...args]
 
   return spawn('pnpm', pnpmArgs, {

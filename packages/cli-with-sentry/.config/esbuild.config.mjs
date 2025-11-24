@@ -3,10 +3,11 @@
  * Builds a Sentry-enabled version of the CLI with error reporting.
  */
 
-import { build } from 'esbuild'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import { build } from 'esbuild'
 
 // Import base esbuild config from main CLI.
 import baseConfig from '../../cli/.config/esbuild.cli.build.mjs'

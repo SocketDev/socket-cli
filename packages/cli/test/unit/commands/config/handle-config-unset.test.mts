@@ -147,9 +147,6 @@ describe('handleConfigUnset', () => {
   })
 
   it('handles text output', async () => {
-    const { updateConfigValue } = await import(
-      '../../../../src/utils/config.mts'
-    )
     const { outputConfigUnset } = await import(
       '../../../../src/commands/config/output-config-unset.mts'
     )

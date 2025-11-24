@@ -2,8 +2,7 @@
  * @fileoverview Tests for @socketsecurity/cli-with-sentry package structure and configuration.
  */
 
-import { existsSync } from 'node:fs'
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs  } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -117,18 +116,12 @@ describe('@socketsecurity/cli-with-sentry package', () => {
     })
 
     it('should have esbuild config', () => {
-      const esbuildPath = path.join(
-        configDir,
-        'esbuild.cli-sentry.build.mjs',
-      )
+      const esbuildPath = path.join(configDir, 'esbuild.cli-sentry.build.mjs')
       expect(existsSync(esbuildPath)).toBe(true)
     })
 
     it('esbuild config should import base config', async () => {
-      const esbuildPath = path.join(
-        configDir,
-        'esbuild.cli-sentry.build.mjs',
-      )
+      const esbuildPath = path.join(configDir, 'esbuild.cli-sentry.build.mjs')
       const content = await fs.readFile(esbuildPath, 'utf-8')
 
       expect(content).toContain(
@@ -137,10 +130,7 @@ describe('@socketsecurity/cli-with-sentry package', () => {
     })
 
     it('esbuild config should enable Sentry build flag', async () => {
-      const esbuildPath = path.join(
-        configDir,
-        'esbuild.cli-sentry.build.mjs',
-      )
+      const esbuildPath = path.join(configDir, 'esbuild.cli-sentry.build.mjs')
       const content = await fs.readFile(esbuildPath, 'utf-8')
 
       expect(content).toContain('INLINED_SOCKET_CLI_SENTRY_BUILD')
@@ -148,20 +138,14 @@ describe('@socketsecurity/cli-with-sentry package', () => {
     })
 
     it('esbuild config should use CLI dispatch with Sentry entry point', async () => {
-      const esbuildPath = path.join(
-        configDir,
-        'esbuild.cli-sentry.build.mjs',
-      )
+      const esbuildPath = path.join(configDir, 'esbuild.cli-sentry.build.mjs')
       const content = await fs.readFile(esbuildPath, 'utf-8')
 
       expect(content).toContain('cli-dispatch-with-sentry.mts')
     })
 
     it('esbuild config should call build() when run', async () => {
-      const esbuildPath = path.join(
-        configDir,
-        'esbuild.cli-sentry.build.mjs',
-      )
+      const esbuildPath = path.join(configDir, 'esbuild.cli-sentry.build.mjs')
       const content = await fs.readFile(esbuildPath, 'utf-8')
 
       expect(content).toContain('build(config)')
@@ -246,9 +230,7 @@ describe('@socketsecurity/cli-with-sentry package', () => {
 
       expect(pkgJson.publishConfig).toBeDefined()
       expect(pkgJson.publishConfig.access).toBe('public')
-      expect(pkgJson.publishConfig.registry).toBe(
-        'https://registry.npmjs.org/',
-      )
+      expect(pkgJson.publishConfig.registry).toBe('https://registry.npmjs.org/')
     })
   })
 

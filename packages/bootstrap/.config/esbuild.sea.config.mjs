@@ -6,13 +6,13 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
 import { build } from 'esbuild'
 import semver from 'semver'
 
-import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
 
-import nodeVersionConfig from '../node-version.json' with { type: 'json' }
 import socketPackageJson from '../../socket/package.json' with { type: 'json' }
+import nodeVersionConfig from '../node-version.json' with { type: 'json' }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.resolve(__dirname, '..')
@@ -25,7 +25,9 @@ const config = {
   define: {
     __MIN_NODE_VERSION__: JSON.stringify(nodeVersionConfig.versionSemver),
     __SOCKET_CLI_VERSION__: JSON.stringify(socketPackageJson.version),
-    __SOCKET_CLI_VERSION_MAJOR__: JSON.stringify(semver.major(socketPackageJson.version)),
+    __SOCKET_CLI_VERSION_MAJOR__: JSON.stringify(
+      semver.major(socketPackageJson.version),
+    ),
   },
   entryPoints: [path.join(rootPath, 'src', 'bootstrap-sea.mts')],
   external: [],
@@ -39,7 +41,8 @@ const config = {
   plugins: [unicodeTransformPlugin()],
   target: 'node18',
   treeShaking: true,
-  write: false, // Plugin needs to transform output.
+  // Plugin needs to transform output.
+  write: false,
 }
 
 // Run build if invoked directly.

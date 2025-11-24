@@ -9,7 +9,6 @@ import { spawn } from '@socketsecurity/lib/spawn'
 
 import { saveBuildLog } from './build-helpers.mjs'
 
-
 const logger = getDefaultLogger()
 /**
  * Execute a command and stream output.

@@ -119,9 +119,7 @@ async function main() {
       logger.log('\nUsage: pnpm clean [options]')
       logger.log('\nOptions:')
       logger.log('  --help              Show this help message')
-      logger.log(
-        '  --all               Clean everything (default if no flags)',
-      )
+      logger.log('  --all               Clean everything (default if no flags)')
       logger.log('  --cache             Clean cache directories')
       logger.log('  --coverage          Clean coverage reports')
       logger.log('  --dist              Clean build output')

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * Unified publish script router.
@@ -10,7 +9,6 @@ import process from 'node:process'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
-
 
 const logger = getDefaultLogger()
 const TARGET_PACKAGES = {
@@ -28,7 +26,7 @@ const TARGET_PACKAGES = {
   sea: '@socketbin/node-sea-builder-builder',
   socket: 'socket',
   'win32-arm64': '@socketbin/cli-win32-arm64',
-  'win32-x64': '@socketbin/cli-win32-x64'
+  'win32-x64': '@socketbin/cli-win32-x64',
 }
 
 const args = process.argv.slice(2)
@@ -48,7 +46,9 @@ async function main() {
   const packageFilter = TARGET_PACKAGES[target]
   if (!packageFilter) {
     logger.error(`Unknown publish target: ${target}`)
-    logger.error(`Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`)
+    logger.error(
+      `Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`,
+    )
     process.exit(1)
   }
 
@@ -58,12 +58,7 @@ async function main() {
     logger.log('Note: Packages are published in dependency order by pnpm')
   }
 
-  const pnpmArgs = [
-    '--filter',
-    packageFilter,
-    'publish',
-    ...publishArgs
-  ]
+  const pnpmArgs = ['--filter', packageFilter, 'publish', ...publishArgs]
 
   logger.log(`Publishing ${target}...`)
   logger.log(`Command: pnpm ${pnpmArgs.join(' ')}`)

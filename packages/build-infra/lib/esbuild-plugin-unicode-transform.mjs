@@ -23,7 +23,7 @@ export function unicodeTransformPlugin() {
   return {
     name: 'unicode-transform',
     setup(build) {
-      build.onEnd((result) => {
+      build.onEnd(result => {
         const outputs = result.outputFiles
         if (!outputs || outputs.length === 0) {
           return

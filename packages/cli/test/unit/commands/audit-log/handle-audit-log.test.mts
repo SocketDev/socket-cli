@@ -186,9 +186,7 @@ describe('handleAuditLog', () => {
   })
 
   it('handles empty audit logs', async () => {
-    const { fetchAuditLog } = await import(
-      '../../../../src/commands/audit-log/fetch-audit-log.mts'
-    )
+    await import('../../../../src/commands/audit-log/fetch-audit-log.mts')
     const { outputAuditLog } = await import(
       '../../../../src/commands/audit-log/output-audit-log.mts'
     )
@@ -208,9 +206,7 @@ describe('handleAuditLog', () => {
   })
 
   it('handles fetch errors', async () => {
-    const { fetchAuditLog } = await import(
-      '../../../../src/commands/audit-log/fetch-audit-log.mts'
-    )
+    await import('../../../../src/commands/audit-log/fetch-audit-log.mts')
     const { outputAuditLog } = await import(
       '../../../../src/commands/audit-log/output-audit-log.mts'
     )

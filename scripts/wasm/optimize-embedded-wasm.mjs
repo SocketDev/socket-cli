@@ -19,7 +19,6 @@ import { fileURLToPath } from 'node:url'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
-
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '../..')
@@ -69,7 +68,7 @@ async function getFileSizeMB(filePath) {
  * Optimize a single WASM file.
  */
 async function optimizeWasmFile(inputPath, outputPath, options = {}) {
-  const { name, aggressive = false } = options
+  const { aggressive = false, name } = options
 
   if (!existsSync(inputPath)) {
     logger.warn(`File not found: ${inputPath}`)
@@ -82,7 +81,8 @@ async function optimizeWasmFile(inputPath, outputPath, options = {}) {
 
   // Build optimization flags.
   const flags = [
-    '-Oz', // Optimize for size
+    // Optimize for size
+    '-Oz',
     '--enable-simd',
     '--enable-bulk-memory',
     '--enable-sign-ext',
@@ -97,7 +97,8 @@ async function optimizeWasmFile(inputPath, outputPath, options = {}) {
       '--flatten',
       '--rereloop',
       '--vacuum',
-      '--dce', // Dead code elimination
+      // Dead code elimination
+      '--dce',
       '--remove-unused-names',
       '--remove-unused-module-elements',
       '--strip-debug',
@@ -108,9 +109,13 @@ async function optimizeWasmFile(inputPath, outputPath, options = {}) {
   }
 
   try {
-    const result = await exec('wasm-opt', [...flags, inputPath, '-o', outputPath], {
-      stdio: 'pipe',
-    })
+    const result = await exec(
+      'wasm-opt',
+      [...flags, inputPath, '-o', outputPath],
+      {
+        stdio: 'pipe',
+      },
+    )
 
     if (result.code === 0) {
       const optimizedSize = await getFileSizeMB(outputPath)
@@ -190,7 +195,8 @@ async function main() {
     totalOriginal += originalSize
     totalOptimized += optimizedSize
 
-    logger.log('') // Spacing.
+    // Spacing.
+    logger.log('')
   }
 
   // Summary.

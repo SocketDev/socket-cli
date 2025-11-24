@@ -18,10 +18,10 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { spawn } from '@socketsecurity/lib/spawn'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 const logger = getDefaultLogger()
 const __filename = fileURLToPath(import.meta.url)
@@ -40,7 +40,9 @@ if (!versionArg) {
 
 const NODE_VERSION = versionArg.split('=')[1]
 if (!NODE_VERSION.startsWith('v')) {
-  logger.error(`${colors.red('✗')} Version must start with "v" (e.g., v24.10.0)`)
+  logger.error(
+    `${colors.red('✗')} Version must start with "v" (e.g., v24.10.0)`,
+  )
   process.exit(1)
 }
 
@@ -269,7 +271,9 @@ async function main() {
     logger.log('   3. Update SOCKET_PATCHES array with new filenames')
     logger.log('   4. Test the build')
   } else {
-    logger.log(`${colors.yellow('⚠')}  No patches were generated (no changes detected)`)
+    logger.log(
+      `${colors.yellow('⚠')}  No patches were generated (no changes detected)`,
+    )
   }
 
   logger.log('')

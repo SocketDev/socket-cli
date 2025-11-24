@@ -31,7 +31,7 @@ const ROOT_DIR = path.join(__dirname, '..')
 // Parse arguments.
 const args = process.argv.slice(2)
 const FORCE_BUILD = args.includes('--force')
-const specificPackage = args.find((arg) => !arg.startsWith('--'))
+const specificPackage = args.find(arg => !arg.startsWith('--'))
 
 // Build packages in order (dependencies first).
 const PACKAGES = [
@@ -39,7 +39,8 @@ const PACKAGES = [
     name: 'build-infra',
     description: 'Shared build infrastructure',
     path: 'packages/build-infra',
-    build: false, // No build needed (utilities only)
+    // No build needed (utilities only)
+    build: false,
   },
   {
     name: 'node-smol-builder',
@@ -136,7 +137,7 @@ async function main() {
   let packagesToBuild = PACKAGES
 
   if (specificPackage) {
-    const pkg = PACKAGES.find((p) => p.name === specificPackage)
+    const pkg = PACKAGES.find(p => p.name === specificPackage)
     if (!pkg) {
       logger.fail(`Unknown package: ${specificPackage}`)
       logger.info('')
@@ -176,7 +177,9 @@ async function main() {
   logger.info(`Total time: ${totalMinutes}m ${totalSeconds}s`)
   logger.log('')
   logger.info('Build artifacts:')
-  logger.info('  node-smol-builder:      packages/node-smol-builder/build/out/Release/node')
+  logger.info(
+    '  node-smol-builder:      packages/node-smol-builder/build/out/Release/node',
+  )
   logger.info('  onnx-runtime:   packages/onnx-runtime/build/wasm/')
   logger.info('  codet5-models:  packages/codet5-models/build/models/')
   logger.info('  yoga-layout:    packages/yoga-layout/build/wasm/')
@@ -189,7 +192,7 @@ async function main() {
 }
 
 // Run main function.
-main().catch((e) => {
+main().catch(e => {
   logger.fail(`Build failed: ${e.message}`)
   process.exit(1)
 })

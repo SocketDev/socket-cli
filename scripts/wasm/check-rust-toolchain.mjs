@@ -18,7 +18,6 @@ import path from 'node:path'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
-
 const logger = getDefaultLogger()
 /**
  * Execute command and wait for completion.

@@ -1,6 +1,11 @@
 {
   "extends": "../../.config/tsconfig.base.json",
-  "include": ["src/**/*.mts", "src/**/*.d.ts", "src/**/*.tsx", "test/helpers/**/*.mts"],
+  "include": [
+    "src/**/*.mts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "test/helpers/**/*.mts"
+  ],
   "exclude": [
     ".cache/**",
     ".claude/**",
@@ -14,6 +19,6 @@
     "src/commands/analytics/output-analytics.mts",
     "src/commands/audit-log/output-audit-log.mts",
     "src/commands/threat-feed/output-threat-feed.mts",
-    "test/helpers/**/*.test.mts",
+    "test/helpers/**/*.test.mts"
   ]
 }

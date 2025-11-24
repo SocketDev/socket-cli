@@ -19,12 +19,14 @@ async function main() {
 
 // Run the bootstrap.
 main()
-  .then((exitCode) => {
+  .then(exitCode => {
     // Exit with the code returned by the CLI.
     process.exit(exitCode)
   })
-  .catch((e) => {
+  .catch(e => {
     const logger = getDefaultLogger()
-    logger.error(`Bootstrap error: ${e instanceof Error ? e.message : String(e)}`)
+    logger.error(
+      `Bootstrap error: ${e instanceof Error ? e.message : String(e)}`,
+    )
     process.exit(1)
   })

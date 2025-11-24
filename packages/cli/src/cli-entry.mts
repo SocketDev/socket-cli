@@ -105,11 +105,14 @@ async function writeBootstrapManifestEntry(): Promise<void> {
 }
 
 void (async () => {
-  // Skip update checks in test environments.
-  if (!ENV.VITEST && !ENV.CI) {
+  // Skip update checks in test environments or when explicitly disabled.
+  // Note: Update checks create HTTP connections that may delay process exit by up to 30s
+  // due to keep-alive timeouts. Set SOCKET_CLI_SKIP_UPDATE_CHECK=1 to disable.
+  if (!ENV.VITEST && !ENV.CI && !ENV.SOCKET_CLI_SKIP_UPDATE_CHECK) {
     const registryUrl = lookupRegistryUrl()
     // Unified update notifier handles both SEA and npm automatically.
-    await scheduleUpdateCheck({
+    // Fire-and-forget: Don't await to avoid blocking on HTTP keep-alive timeouts.
+    scheduleUpdateCheck({
       authInfo: lookupRegistryAuthToken(registryUrl, { recursive: true }),
       name: isSeaBinary()
         ? SOCKET_CLI_BIN_NAME
@@ -120,7 +123,8 @@ void (async () => {
 
     // Write manifest entry if launched via bootstrap (SEA/smol).
     // Bootstrap passes spec and cache dir via env vars.
-    await writeBootstrapManifestEntry()
+    // Fire-and-forget: Don't await to avoid blocking.
+    writeBootstrapManifestEntry()
 
     // Background preflight downloads for optional dependencies.
     // This silently downloads @coana-tech/cli and @socketbin/cli-ai in the

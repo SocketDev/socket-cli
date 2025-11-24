@@ -123,8 +123,11 @@ export function memoize<Args extends unknown[], Result>(
  *
  * @example
  * const fetchUser = memoizeAsync(async (id: string) => {
- *   const response = await fetch(`/api/users/${id}`)
- *   return response.json()
+ *   const https = await import('node:https')
+ *   const response = await new Promise((resolve, reject) => {
+ *     https.request(`https://api.example.com/users/${id}`, {agent: false}, resolve).on('error', reject).end()
+ *   })
+ *   return response
  * }, { ttl: 300000, name: 'fetchUser' })
  *
  * await fetchUser('123') // Fetches from API
