@@ -127,9 +127,7 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles empty data result', async () => {
-    const { setupManifestConfig } = await import(
-      '../../../../src/commands/manifest/setup-manifest-config.mts'
-    )
+    await import('../../../../src/commands/manifest/setup-manifest-config.mts')
     const { outputManifestSetup } = await import(
       '../../../../src/commands/manifest/output-manifest-setup.mts'
     )
@@ -146,9 +144,7 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles async errors', async () => {
-    const { setupManifestConfig } = await import(
-      '../../../../src/commands/manifest/setup-manifest-config.mts'
-    )
+    await import('../../../../src/commands/manifest/setup-manifest-config.mts')
 
     mockSetupManifestConfig.mockRejectedValue(new Error('Async error'))
 
