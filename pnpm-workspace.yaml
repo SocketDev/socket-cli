@@ -34,7 +34,7 @@ catalog:
   cacache: 20.0.1
   debug: 4.4.3
   del: 8.0.1
-  eslint-plugin-unicorn: 61.0.2
+  eslint-plugin-unicorn: 62.0.0
   fast-sort: 3.4.1
   get-east-asian-width: 1.3.0
   libnpmexec: 10.1.8
