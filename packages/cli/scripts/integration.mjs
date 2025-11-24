@@ -103,7 +103,8 @@ async function runVitest(binaryType) {
       cwd: ROOT_DIR,
       env: {
         ...process.env,
-        RUN_INTEGRATION_TESTS: '1', // Automatically enable tests when explicitly running integration.mjs.
+        // Automatically enable tests when explicitly running integration.mjs.
+        RUN_INTEGRATION_TESTS: '1',
         ...envVars,
       },
       stdio: 'inherit',

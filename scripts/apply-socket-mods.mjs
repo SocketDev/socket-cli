@@ -11,9 +11,10 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import colors from 'yoctocolors-cjs'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
 const __filename = fileURLToPath(import.meta.url)
@@ -95,7 +96,9 @@ async function fixV8IncludePaths() {
         await writeFile(filePath, content, 'utf8')
       }
     } catch (e) {
-      logger.warn(`   ${colors.yellow('⚠')}  Could not fix ${file}: ${e.message}`)
+      logger.warn(
+        `   ${colors.yellow('⚠')}  Could not fix ${file}: ${e.message}`,
+      )
     }
   }
 
@@ -128,7 +131,9 @@ const { getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = inter
       logger.log('   ℹ️  lib/sea.js already modified or structure changed')
     }
   } catch (e) {
-    logger.warn(`   ${colors.yellow('⚠')}  Could not modify lib/sea.js: ${e.message}`)
+    logger.warn(
+      `   ${colors.yellow('⚠')}  Could not modify lib/sea.js: ${e.message}`,
+    )
   }
 
   logger.log(`${colors.green('✓')} SEA detection enabled`)
@@ -155,6 +160,9 @@ async function main() {
 
 // Run main function
 main().catch(error => {
-  logger.error(`${colors.red('✗')} Failed to apply modifications:`, error.message)
+  logger.error(
+    `${colors.red('✗')} Failed to apply modifications:`,
+    error.message,
+  )
   process.exitCode = 1
 })

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Binary Size Optimization Script
  *
@@ -20,11 +19,11 @@ import { platform as osPlatform } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import colors from 'yoctocolors-cjs'
+
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
-
-import colors from 'yoctocolors-cjs'
 
 
 const logger = getDefaultLogger()
@@ -121,7 +120,7 @@ async function optimizeDarwin(binaryPath) {
   // strip and llvm-strip already handle this well.
 
   const afterSize = await getFileSizeMB(binaryPath)
-  const savings = ((beforeSize - afterSize) / beforeSize * 100).toFixed(1)
+  const savings = (((beforeSize - afterSize) / beforeSize) * 100).toFixed(1)
   logger.log(`\n  After: ${afterSize} MB (${savings}% reduction)`)
 
   // Re-sign binary if on macOS ARM64 (required).
@@ -130,7 +129,11 @@ async function optimizeDarwin(binaryPath) {
     await exec('codesign', ['--force', '--sign', '-', binaryPath])
   }
 
-  return { before: parseFloat(beforeSize), after: parseFloat(afterSize), savings: parseFloat(savings) }
+  return {
+    before: parseFloat(beforeSize),
+    after: parseFloat(afterSize),
+    savings: parseFloat(savings),
+  }
 }
 
 /**
@@ -168,10 +171,14 @@ async function optimizeLinux(binaryPath) {
   }
 
   const afterSize = await getFileSizeMB(binaryPath)
-  const savings = ((beforeSize - afterSize) / beforeSize * 100).toFixed(1)
+  const savings = (((beforeSize - afterSize) / beforeSize) * 100).toFixed(1)
   logger.log(`\n  After: ${afterSize} MB (${savings}% reduction)`)
 
-  return { before: parseFloat(beforeSize), after: parseFloat(afterSize), savings: parseFloat(savings) }
+  return {
+    before: parseFloat(beforeSize),
+    after: parseFloat(afterSize),
+    savings: parseFloat(savings),
+  }
 }
 
 /**
@@ -195,10 +202,14 @@ async function optimizeWindows(binaryPath) {
   }
 
   const afterSize = await getFileSizeMB(binaryPath)
-  const savings = ((beforeSize - afterSize) / beforeSize * 100).toFixed(1)
+  const savings = (((beforeSize - afterSize) / beforeSize) * 100).toFixed(1)
   logger.log(`\n  After: ${afterSize} MB (${savings}% reduction)`)
 
-  return { before: parseFloat(beforeSize), after: parseFloat(afterSize), savings: parseFloat(savings) }
+  return {
+    before: parseFloat(beforeSize),
+    after: parseFloat(afterSize),
+    savings: parseFloat(savings),
+  }
 }
 
 /**
@@ -268,7 +279,12 @@ async function optimizeAllBinaries() {
 
     for (const pkg of packages) {
       if (pkg.startsWith('socketbin-cli-')) {
-        const binPath = path.join(packagesDir, pkg, 'bin', file.replace('*', ''))
+        const binPath = path.join(
+          packagesDir,
+          pkg,
+          'bin',
+          file.replace('*', ''),
+        )
         if (existsSync(binPath)) {
           const stats = await fs.stat(binPath)
           // Only process actual binaries (>1MB), not placeholders.
@@ -305,7 +321,7 @@ async function optimizeAllBinaries() {
  */
 async function main() {
   logger.log('⚡ Socket CLI Binary Size Optimizer')
-  logger.log('=' .repeat(50))
+  logger.log('='.repeat(50))
 
   let results = []
 
@@ -319,11 +335,17 @@ async function main() {
   } else {
     logger.error(`\n${colors.red('✗')} Error: No binary specified`)
     logger.log('\nUsage:')
-    logger.log('  node scripts/optimize-binary-size.mjs <binary-path> [--platform=<platform>]')
+    logger.log(
+      '  node scripts/optimize-binary-size.mjs <binary-path> [--platform=<platform>]',
+    )
     logger.log('  node scripts/optimize-binary-size.mjs --all')
     logger.log('\nExamples:')
-    logger.log('  node scripts/optimize-binary-size.mjs packages/socketbin-cli-darwin-arm64/bin/socket')
-    logger.log('  node scripts/optimize-binary-size.mjs build/out/Release/node --platform=linux')
+    logger.log(
+      '  node scripts/optimize-binary-size.mjs packages/socketbin-cli-darwin-arm64/bin/socket',
+    )
+    logger.log(
+      '  node scripts/optimize-binary-size.mjs build/out/Release/node --platform=linux',
+    )
     logger.log('  node scripts/optimize-binary-size.mjs --all')
     process.exit(1)
   }
@@ -338,22 +360,29 @@ async function main() {
     let totalBefore = 0
     let totalAfter = 0
 
-    for (const { path: binPath, before, after, savings } of results) {
+    for (const { after, before, path: binPath, savings } of results) {
       totalBefore += before
       totalAfter += after
       logger.log(`  ${path.basename(binPath)}:`)
       logger.log(`    Before: ${before.toFixed(2)} MB`)
       logger.log(`    After:  ${after.toFixed(2)} MB`)
-      logger.log(`    Saved:  ${(before - after).toFixed(2)} MB (${savings.toFixed(1)}%)`)
+      logger.log(
+        `    Saved:  ${(before - after).toFixed(2)} MB (${savings.toFixed(1)}%)`,
+      )
       logger.log('')
     }
 
     if (results.length > 1) {
-      const totalSavings = ((totalBefore - totalAfter) / totalBefore * 100).toFixed(1)
+      const totalSavings = (
+        ((totalBefore - totalAfter) / totalBefore) *
+        100
+      ).toFixed(1)
       logger.log('  Total:')
       logger.log(`    Before: ${totalBefore.toFixed(2)} MB`)
       logger.log(`    After:  ${totalAfter.toFixed(2)} MB`)
-      logger.log(`    Saved:  ${(totalBefore - totalAfter).toFixed(2)} MB (${totalSavings}%)`)
+      logger.log(
+        `    Saved:  ${(totalBefore - totalAfter).toFixed(2)} MB (${totalSavings}%)`,
+      )
     }
 
     logger.log(`\n${colors.green('✓')} All optimizations complete!`)

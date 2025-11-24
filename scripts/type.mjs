@@ -3,16 +3,16 @@
  * Runs type checking across packages with pretty UI.
  */
 
+import colors from 'yoctocolors-cjs'
+
 import { isQuiet } from '@socketsecurity/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { printFooter, printHeader } from '@socketsecurity/lib/stdio/header'
-import colors from 'yoctocolors-cjs'
 
 import { getPackagesWithScript } from './utils/monorepo-helper.mjs'
-
 
 const logger = getDefaultLogger()
 /**
@@ -25,16 +25,12 @@ async function runPackageTypeCheck(pkg, quiet = false) {
     logger.progress(`${displayName}: checking types`)
   }
 
-  const result = await spawn(
-    'pnpm',
-    ['--filter', pkg.name, 'run', 'type'],
-    {
-      cwd: process.cwd(),
-      shell: WIN32,
-      stdio: 'pipe',
-      stdioString: true,
-    },
-  )
+  const result = await spawn('pnpm', ['--filter', pkg.name, 'run', 'type'], {
+    cwd: process.cwd(),
+    shell: WIN32,
+    stdio: 'pipe',
+    stdioString: true,
+  })
 
   if (result.code !== 0) {
     if (!quiet) {
@@ -109,7 +105,8 @@ async function main() {
       logger.step(
         `Type checking ${packages.length} package${packages.length > 1 ? 's' : ''}`,
       )
-      logger.error('') // Blank line.
+      // Blank line.
+      logger.error('')
     }
 
     // Run type check across all packages.

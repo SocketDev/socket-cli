@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * @fileoverview Validates that no package.json files contain link: dependencies.
  * Link dependencies are prohibited - use workspace: or catalog: instead.

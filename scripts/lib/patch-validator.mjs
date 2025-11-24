@@ -20,9 +20,10 @@ export function parsePatchMetadata(patchContent) {
   }
 
   for (const line of lines) {
+    // Stop at first non-comment
     if (!line.startsWith('#')) {
       break
-    } // Stop at first non-comment
+    }
 
     // Parse metadata directives.
     if (line.includes('@node-versions:')) {

@@ -2,9 +2,10 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import colors from 'yoctocolors-cjs'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
 const __filename = fileURLToPath(import.meta.url)
@@ -41,7 +42,9 @@ async function checkVersionConsistency() {
     // Only check root package.json if the expected version looks like a socketbin version
     // (contains timestamp like YYYYMMDD.HHmmss) or if root package version matches.
     const isSocketbinVersion = /\d{8}\.\d{6}/.test(cleanVersion)
-    const shouldCheckRoot = isSocketbinVersion ? mainPkg.version === cleanVersion : true
+    const shouldCheckRoot = isSocketbinVersion
+      ? mainPkg.version === cleanVersion
+      : true
 
     if (shouldCheckRoot) {
       checked.push({

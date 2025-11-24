@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * Comprehensive build script with intelligent caching.
@@ -23,11 +22,11 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
+import colors from 'yoctocolors-cjs'
+
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
-import colors from 'yoctocolors-cjs'
-
 
 const logger = getDefaultLogger()
 const __filename = fileURLToPath(import.meta.url)
@@ -50,7 +49,7 @@ const TARGET_PACKAGES = {
   sea: '@socketbin/node-sea-builder-builder',
   socket: 'socket',
   'win32-arm64': '@socketbin/cli-win32-arm64',
-  'win32-x64': '@socketbin/cli-win32-x64'
+  'win32-x64': '@socketbin/cli-win32-x64',
 }
 
 const PLATFORM_TARGETS = [
@@ -61,7 +60,7 @@ const PLATFORM_TARGETS = [
   'linux-arm64',
   'linux-x64',
   'win32-arm64',
-  'win32-x64'
+  'win32-x64',
 ]
 
 /**
@@ -139,7 +138,17 @@ function parseArgs() {
     target = `${platform}-${arch}`
   }
 
-  return { arch, buildArgs, force, help, parallel, platform, platforms, target, targets }
+  return {
+    arch,
+    buildArgs,
+    force,
+    help,
+    parallel,
+    platform,
+    platforms,
+    target,
+    targets,
+  }
 }
 
 /**
@@ -150,13 +159,25 @@ function showHelp() {
   logger.log(`${colors.blue('Socket CLI Build System')}`)
   logger.log('')
   logger.log('Usage:')
-  logger.log('  pnpm run build                           # Smart build (skips unchanged)')
+  logger.log(
+    '  pnpm run build                           # Smart build (skips unchanged)',
+  )
   logger.log('  pnpm run build --force                   # Force rebuild all')
-  logger.log('  pnpm run build --target <name>           # Build specific target')
-  logger.log('  pnpm run build --platform <p> --arch <a> # Build specific platform/arch')
-  logger.log('  pnpm run build --targets <t1,t2,...>     # Build multiple targets')
-  logger.log('  pnpm run build --platforms               # Build all platform binaries')
-  logger.log('  pnpm run build --platforms --parallel    # Build platforms in parallel')
+  logger.log(
+    '  pnpm run build --target <name>           # Build specific target',
+  )
+  logger.log(
+    '  pnpm run build --platform <p> --arch <a> # Build specific platform/arch',
+  )
+  logger.log(
+    '  pnpm run build --targets <t1,t2,...>     # Build multiple targets',
+  )
+  logger.log(
+    '  pnpm run build --platforms               # Build all platform binaries',
+  )
+  logger.log(
+    '  pnpm run build --platforms --parallel    # Build platforms in parallel',
+  )
   logger.log('  pnpm run build --help                    # Show this help')
   logger.log('')
   logger.log('Default Build Order:')
@@ -205,7 +226,9 @@ async function buildPackage(pkg, force) {
   const skip = !needsBuild(pkg, force)
 
   if (skip) {
-    logger.log(`${colors.cyan('→')} ${pkg.name}: ${colors.gray('skipped (up to date)')}`)
+    logger.log(
+      `${colors.cyan('→')} ${pkg.name}: ${colors.gray('skipped (up to date)')}`,
+    )
     return { success: true, skipped: true }
   }
 
@@ -222,11 +245,15 @@ async function buildPackage(pkg, force) {
   const duration = ((Date.now() - startTime) / 1000).toFixed(1)
 
   if (result.code !== 0) {
-    logger.log(`${colors.red('✗')} ${pkg.name}: ${colors.red('failed')} (${duration}s)`)
+    logger.log(
+      `${colors.red('✗')} ${pkg.name}: ${colors.red('failed')} (${duration}s)`,
+    )
     return { success: false, skipped: false }
   }
 
-  logger.log(`${colors.green('✓')} ${pkg.name}: ${colors.green('built')} (${duration}s)`)
+  logger.log(
+    `${colors.green('✓')} ${pkg.name}: ${colors.green('built')} (${duration}s)`,
+  )
   return { success: true, skipped: false }
 }
 
@@ -301,17 +328,13 @@ async function runTargetedBuild(target, buildArgs) {
   const packageFilter = TARGET_PACKAGES[target]
   if (!packageFilter) {
     logger.error(`Unknown build target: ${target}`)
-    logger.error(`Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`)
+    logger.error(
+      `Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`,
+    )
     process.exit(1)
   }
 
-  const pnpmArgs = [
-    '--filter',
-    packageFilter,
-    'run',
-    'build',
-    ...buildArgs
-  ]
+  const pnpmArgs = ['--filter', packageFilter, 'run', 'build', ...buildArgs]
 
   const result = await spawn('pnpm', pnpmArgs, {
     shell: WIN32,
@@ -333,13 +356,7 @@ async function buildTarget(target, buildArgs) {
   const startTime = Date.now()
   logger.log(`${colors.cyan('→')} [${target}] Starting build...`)
 
-  const pnpmArgs = [
-    '--filter',
-    packageFilter,
-    'run',
-    'build',
-    ...buildArgs
-  ]
+  const pnpmArgs = ['--filter', packageFilter, 'run', 'build', ...buildArgs]
 
   const result = await spawn('pnpm', pnpmArgs, {
     shell: WIN32,
@@ -349,7 +366,9 @@ async function buildTarget(target, buildArgs) {
   const duration = ((Date.now() - startTime) / 1000).toFixed(1)
 
   if (result.code === 0) {
-    logger.log(`${colors.green('✓')} [${target}] Build succeeded (${duration}s)`)
+    logger.log(
+      `${colors.green('✓')} [${target}] Build succeeded (${duration}s)`,
+    )
     return { success: true, target, duration }
   }
 
@@ -367,7 +386,9 @@ async function buildTarget(target, buildArgs) {
 async function runParallelBuilds(targetsToBuild, buildArgs) {
   logger.log('')
   logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Building ' + targetsToBuild.length + ' targets in parallel')}`)
+  logger.log(
+    `${colors.blue('Building ' + targetsToBuild.length + ' targets in parallel')}`,
+  )
   logger.log('='.repeat(60))
   logger.log('')
   logger.log(`Targets: ${targetsToBuild.join(', ')}`)
@@ -375,7 +396,7 @@ async function runParallelBuilds(targetsToBuild, buildArgs) {
 
   const startTime = Date.now()
   const results = await Promise.allSettled(
-    targetsToBuild.map(target => buildTarget(target, buildArgs))
+    targetsToBuild.map(target => buildTarget(target, buildArgs)),
   )
 
   const totalDuration = ((Date.now() - startTime) / 1000).toFixed(1)
@@ -386,8 +407,13 @@ async function runParallelBuilds(targetsToBuild, buildArgs) {
   logger.log('='.repeat(60))
   logger.log('')
 
-  const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length
-  const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)).length
+  const successful = results.filter(
+    r => r.status === 'fulfilled' && r.value.success,
+  ).length
+  const failed = results.filter(
+    r =>
+      r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success),
+  ).length
 
   logger.log(`${colors.green('Succeeded:')} ${successful}`)
   logger.log(`${colors.red('Failed:')}    ${failed}`)
@@ -411,7 +437,9 @@ async function runParallelBuilds(targetsToBuild, buildArgs) {
 async function runSequentialBuilds(targetsToBuild, buildArgs) {
   logger.log('')
   logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Building ' + targetsToBuild.length + ' targets sequentially')}`)
+  logger.log(
+    `${colors.blue('Building ' + targetsToBuild.length + ' targets sequentially')}`,
+  )
   logger.log('='.repeat(60))
   logger.log('')
   logger.log(`Targets: ${targetsToBuild.join(', ')}`)
@@ -446,7 +474,9 @@ async function runSequentialBuilds(targetsToBuild, buildArgs) {
   logger.log('')
 
   if (failed > 0) {
-    logger.log(`${colors.red('✗')} Build failed at target: ${results.find(r => !r.success)?.target}`)
+    logger.log(
+      `${colors.red('✗')} Build failed at target: ${results.find(r => !r.success)?.target}`,
+    )
     logger.log('')
     process.exit(1)
   }

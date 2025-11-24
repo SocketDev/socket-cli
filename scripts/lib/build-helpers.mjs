@@ -7,10 +7,10 @@
 import { promises as fs, statfsSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { spawn } from '@socketsecurity/lib/spawn'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 const logger = getDefaultLogger()
 /**
@@ -47,7 +47,8 @@ export async function checkDiskSpace(path) {
     return {
       availableGB: Math.floor(availableGB),
       availableBytes,
-      sufficient: availableGB >= 5, // Need 5GB for build.
+      // Need 5GB for build.
+      sufficient: availableGB >= 5,
     }
   } catch (e) {
     // If we can't check, assume it's fine (don't block builds).
@@ -358,7 +359,8 @@ export function estimateBuildTime(cpuCount) {
   // 4 cores: ~60 min
   // 2 cores: ~90 min
 
-  const baseTime = 300 // 300 seconds for 10 cores.
+  // 300 seconds for 10 cores.
+  const baseTime = 300
   const adjustedTime = (baseTime * 10) / cpuCount
   const minutes = Math.round(adjustedTime / 60)
 
@@ -430,11 +432,9 @@ export async function smokeTestBinary(binaryPath, env = {}) {
     }
 
     // Test 2: Execute simple JS.
-    const jsResult = await execCapture(
-      binaryPath,
-      ['-e', 'logger.log("OK")'],
-      { env },
-    )
+    const jsResult = await execCapture(binaryPath, ['-e', 'logger.log("OK")'], {
+      env,
+    })
     if (jsResult.code !== 0 || jsResult.stdout !== 'OK') {
       return { passed: false, reason: 'JS execution failed' }
     }
@@ -498,7 +498,9 @@ export async function installHomebrew(exec) {
     logger.log('')
     return true
   } catch (e) {
-    logger.error(`${colors.red('✗')} Homebrew installation failed: ${e.message}`)
+    logger.error(
+      `${colors.red('✗')} Homebrew installation failed: ${e.message}`,
+    )
     logger.error('Install manually: https://brew.sh')
     logger.error()
     return false
@@ -523,7 +525,9 @@ export async function installBrewPackage(packageName, exec) {
     logger.log('')
     return true
   } catch (e) {
-    logger.error(`${colors.red('✗')} ${packageName} installation failed: ${e.message}`)
+    logger.error(
+      `${colors.red('✗')} ${packageName} installation failed: ${e.message}`,
+    )
     logger.error(`Try manually: brew install ${packageName}`)
     logger.error()
     return false

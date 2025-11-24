@@ -19,6 +19,9 @@
  * - Version compatibility checks
  */
 
+import https from 'node:https'
+import { URL } from 'node:url'
+
 import semver from 'semver'
 
 import { NPM_REGISTRY_URL } from '@socketsecurity/lib/constants/agents'
@@ -90,7 +93,9 @@ function isUpdateAvailable(current: string, latest: string): boolean {
  */
 const NetworkUtils = {
   /**
-   * Fetch package information from npm registry.
+   * Fetch package information from npm registry using https.request().
+   * Uses Node.js built-in https module to avoid keep-alive connection pooling
+   * that causes 30-second delays in process exit.
    */
   async fetch(
     url: string,
@@ -103,76 +108,86 @@ const NetworkUtils = {
 
     const { authInfo } = { __proto__: null, ...options } as FetchOptions
 
-    const headers = new Headers({
+    const parsedUrl = new URL(url)
+    const headers: Record<string, string> = {
       Accept:
         'application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*',
       'User-Agent': 'socket-cli-updater/1.0',
-    })
+    }
 
     if (
       authInfo &&
       isNonEmptyString(authInfo.token) &&
       isNonEmptyString(authInfo.type)
     ) {
-      headers.set('Authorization', `${authInfo.type} ${authInfo.token}`)
+      headers['Authorization'] = `${authInfo.type} ${authInfo.token}`
     }
 
-    const aborter = new AbortController()
-    const signal = aborter.signal
+    return new Promise((resolve, reject) => {
+      const req = https.request(
+        {
+          agent: false, // Disable connection pooling.
+          headers,
+          hostname: parsedUrl.hostname,
+          method: 'GET',
+          path: parsedUrl.pathname + parsedUrl.search,
+          port: parsedUrl.port,
+          timeout: timeoutMs,
+        },
+        res => {
+          let data = ''
 
-    // Set up timeout.
-    const timeout = setTimeout(() => {
-      aborter.abort()
-    }, timeoutMs)
+          res.on('data', chunk => {
+            data += chunk
+          })
 
-    // Also listen for process exit.
-    const exitHandler = () => aborter.abort()
-    onExit(exitHandler)
+          res.on('end', () => {
+            try {
+              if (res.statusCode !== 200) {
+                reject(
+                  new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`),
+                )
+                return
+              }
 
-    try {
-      const request = await fetch(url, {
-        headers,
-        signal,
-        // Additional fetch options for reliability.
-        redirect: 'follow',
-        keepalive: false,
+              const json = JSON.parse(data) as unknown
+
+              if (!json || typeof json !== 'object') {
+                reject(new Error('Invalid JSON response from registry'))
+                return
+              }
+
+              resolve(json as { version?: string })
+            } catch (parseError) {
+              const contentType = res.headers['content-type']
+              if (!contentType || !contentType.includes('application/json')) {
+                debug(`Unexpected content type: ${contentType}`)
+              }
+              reject(
+                new Error(
+                  `Failed to parse JSON response: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+                ),
+              )
+            }
+          })
+        },
+      )
+
+      req.on('timeout', () => {
+        req.destroy()
+        reject(new Error(`Request timed out after ${timeoutMs}ms`))
       })
 
-      if (!request.ok) {
-        throw new Error(`HTTP ${request.status}: ${request.statusText}`)
-      }
+      req.on('error', error => {
+        reject(new Error(`Network request failed: ${error.message}`))
+      })
 
-      const contentType = request.headers.get('content-type')
-      let json: unknown
+      // Also listen for process exit.
+      const exitHandler = () => req.destroy()
+      onExit(exitHandler)
 
-      try {
-        json = await request.json()
-      } catch (parseError) {
-        // Only warn about content type if JSON parsing actually fails.
-        if (!contentType || !contentType.includes('application/json')) {
-          debug(`Unexpected content type: ${contentType}`)
-        }
-        throw new Error(
-          `Failed to parse JSON response: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
-        )
-      }
-
-      if (!json || typeof json !== 'object') {
-        throw new Error('Invalid JSON response from registry')
-      }
-
-      return json as { version?: string }
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          throw new Error(`Request timed out after ${timeoutMs}ms`)
-        }
-        throw new Error(`Network request failed: ${error.message}`)
-      }
-      throw new Error(`Unknown network error: ${String(error)}`)
-    } finally {
-      clearTimeout(timeout)
-    }
+      req.end()
+    })
   },
 
   /**

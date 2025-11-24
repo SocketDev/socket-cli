@@ -14,10 +14,10 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { spawn } from '@socketsecurity/lib/spawn'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 const logger = getDefaultLogger()
 const __filename = fileURLToPath(import.meta.url)
@@ -180,7 +180,10 @@ async function main() {
   try {
     patches.push(await generateV8IncludePathsPatch())
   } catch (e) {
-    logger.error(`${colors.red('✗')} Failed to generate V8 include paths patch:`, e.message)
+    logger.error(
+      `${colors.red('✗')} Failed to generate V8 include paths patch:`,
+      e.message,
+    )
   }
 
   try {
@@ -199,9 +202,7 @@ async function main() {
   logger.log('')
   logger.log('📝 Next steps:')
   logger.log('   1. Review the generated patches')
-  logger.log(
-    '   2. Update build-yao-pkg-node.mjs to reference new patch files',
-  )
+  logger.log('   2. Update build-yao-pkg-node.mjs to reference new patch files')
   logger.log('   3. Test the build with new patches')
   logger.log('')
 }

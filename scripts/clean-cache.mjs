@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Clean stale caches across all packages.
  *
@@ -10,8 +9,8 @@
 
 import { readdirSync, rmSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
+import { parseArgs } from 'node:util'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const ROOT_DIR = join(__dirname, '..')
@@ -70,7 +69,9 @@ function analyzeCacheDir(cacheDir) {
           path: itemPath,
           size: getDirSize(itemPath),
           mtime: stats.mtime,
-          ageD: Math.floor((Date.now() - stats.mtime.getTime()) / (1000 * 60 * 60 * 24)),
+          ageD: Math.floor(
+            (Date.now() - stats.mtime.getTime()) / (1000 * 60 * 60 * 24),
+          ),
         })
       }
     }
@@ -107,9 +108,10 @@ function getDirSize(dir) {
  * Format bytes to human readable.
  */
 function formatSize(bytes) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  if (bytes < 1024) {return `${bytes} B`}
+  if (bytes < 1024 * 1024) {return `${(bytes / 1024).toFixed(1)} KB`}
+  if (bytes < 1024 * 1024 * 1024)
+    {return `${(bytes / (1024 * 1024)).toFixed(1)} MB`}
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
 }
 
@@ -120,7 +122,9 @@ if (!cacheDirs.length) {
   process.exit(0)
 }
 
-console.log(`Found ${cacheDirs.length} cache director${cacheDirs.length === 1 ? 'y' : 'ies'}:\n`)
+console.log(
+  `Found ${cacheDirs.length} cache director${cacheDirs.length === 1 ? 'y' : 'ies'}:\n`,
+)
 
 let totalDeleted = 0
 let totalSize = 0
@@ -138,7 +142,9 @@ for (const { package: pkg, path: cacheDir } of cacheDirs) {
   if (cleanAll) {
     // Delete everything.
     for (const entry of entries) {
-      console.log(`  ${dryRun ? '[DRY RUN]' : '✗'} ${entry.name} (${formatSize(entry.size)}, ${entry.ageD}d old)`)
+      console.log(
+        `  ${dryRun ? '[DRY RUN]' : '✗'} ${entry.name} (${formatSize(entry.size)}, ${entry.ageD}d old)`,
+      )
       if (!dryRun) {
         rmSync(entry.path, { recursive: true, force: true })
       }
@@ -149,10 +155,14 @@ for (const { package: pkg, path: cacheDir } of cacheDirs) {
     // Keep most recent, delete older ones.
     const [latest, ...older] = entries
 
-    console.log(`  ✓ ${latest.name} (${formatSize(latest.size)}, ${latest.ageD}d old) - KEEP`)
+    console.log(
+      `  ✓ ${latest.name} (${formatSize(latest.size)}, ${latest.ageD}d old) - KEEP`,
+    )
 
     for (const entry of older) {
-      console.log(`  ${dryRun ? '[DRY RUN]' : '✗'} ${entry.name} (${formatSize(entry.size)}, ${entry.ageD}d old)`)
+      console.log(
+        `  ${dryRun ? '[DRY RUN]' : '✗'} ${entry.name} (${formatSize(entry.size)}, ${entry.ageD}d old)`,
+      )
       if (!dryRun) {
         rmSync(entry.path, { recursive: true, force: true })
       }

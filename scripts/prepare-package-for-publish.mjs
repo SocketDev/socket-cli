@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * @fileoverview Helper script to prepare package.json for publishing.
  * Handles removing private field and optionally setting version.
@@ -12,7 +11,9 @@ const packagePath = args[0]
 const version = args[1]
 
 if (!packagePath) {
-  console.error('Usage: prepare-package-for-publish.mjs <package-path> [version]')
+  console.error(
+    'Usage: prepare-package-for-publish.mjs <package-path> [version]',
+  )
   process.exit(1)
 }
 

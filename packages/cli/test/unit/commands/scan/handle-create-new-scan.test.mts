@@ -150,9 +150,7 @@ describe('handleCreateNewScan', () => {
     const { getPackageFilesForScan } = await import(
       '../../../../src/utils/fs/path-resolve.mts'
     )
-    const { checkCommandInput } = await import(
-      '../../../../src/utils/validation/check-input.mts'
-    )
+    await import('../../../../src/utils/validation/check-input.mts')
     const { fetchCreateOrgFullScan } = await import(
       '../../../../src/commands/scan/fetch-create-org-full-scan.mts'
     )
@@ -202,15 +200,13 @@ describe('handleCreateNewScan', () => {
     const { generateAutoManifest } = await import(
       '../../../../src/commands/manifest/generate_auto_manifest.mts'
     )
-    const { fetchSupportedScanFileNames } = await import(
+    await import(
       '../../../../src/commands/scan/fetch-supported-scan-file-names.mts'
     )
     const { getPackageFilesForScan } = await import(
       '../../../../src/utils/fs/path-resolve.mts'
     )
-    const { checkCommandInput } = await import(
-      '../../../../src/utils/validation/check-input.mts'
-    )
+    await import('../../../../src/utils/validation/check-input.mts')
 
     mockReadOrDefaultSocketJson.mockReturnValue({})
     mockDetectManifestActions.mockResolvedValue({ detected: true })
@@ -298,12 +294,8 @@ describe('handleCreateNewScan', () => {
     const { getPackageFilesForScan } = await import(
       '../../../../src/utils/fs/path-resolve.mts'
     )
-    const { checkCommandInput } = await import(
-      '../../../../src/utils/validation/check-input.mts'
-    )
-    const { fetchCreateOrgFullScan } = await import(
-      '../../../../src/commands/scan/fetch-create-org-full-scan.mts'
-    )
+    await import('../../../../src/utils/validation/check-input.mts')
+    await import('../../../../src/commands/scan/fetch-create-org-full-scan.mts')
     const { finalizeTier1Scan } = await import(
       '../../../../src/commands/scan/finalize-tier1-scan.mts'
     )
@@ -339,18 +331,12 @@ describe('handleCreateNewScan', () => {
   })
 
   it('handles scan report generation', async () => {
-    const { fetchSupportedScanFileNames } = await import(
+    await import(
       '../../../../src/commands/scan/fetch-supported-scan-file-names.mts'
     )
-    const { getPackageFilesForScan } = await import(
-      '../../../../src/utils/fs/path-resolve.mts'
-    )
-    const { checkCommandInput } = await import(
-      '../../../../src/utils/validation/check-input.mts'
-    )
-    const { fetchCreateOrgFullScan } = await import(
-      '../../../../src/commands/scan/fetch-create-org-full-scan.mts'
-    )
+    await import('../../../../src/utils/fs/path-resolve.mts')
+    await import('../../../../src/utils/validation/check-input.mts')
+    await import('../../../../src/commands/scan/fetch-create-org-full-scan.mts')
     const { handleScanReport } = await import(
       '../../../../src/commands/scan/handle-scan-report.mts'
     )
@@ -379,7 +365,7 @@ describe('handleCreateNewScan', () => {
   })
 
   it('handles fetch supported files failure', async () => {
-    const { fetchSupportedScanFileNames } = await import(
+    await import(
       '../../../../src/commands/scan/fetch-supported-scan-file-names.mts'
     )
     const { outputCreateNewScan } = await import(

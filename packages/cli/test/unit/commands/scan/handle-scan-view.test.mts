@@ -101,9 +101,7 @@ describe('handleScanView', () => {
   })
 
   it('handles markdown output', async () => {
-    const { fetchScan } = await import(
-      '../../../../../src/commands/scan/fetch-scan.mts'
-    )
+    await import('../../../../../src/commands/scan/fetch-scan.mts')
     const { outputScanView } = await import(
       '../../../../../src/commands/scan/output-scan-view.mts'
     )
@@ -130,9 +128,7 @@ describe('handleScanView', () => {
   })
 
   it('handles empty file path', async () => {
-    const { fetchScan } = await import(
-      '../../../../../src/commands/scan/fetch-scan.mts'
-    )
+    await import('../../../../../src/commands/scan/fetch-scan.mts')
     const { outputScanView } = await import(
       '../../../../../src/commands/scan/output-scan-view.mts'
     )
@@ -155,9 +151,7 @@ describe('handleScanView', () => {
   })
 
   it('handles different scan statuses', async () => {
-    const { fetchScan } = await import(
-      '../../../../../src/commands/scan/fetch-scan.mts'
-    )
+    await import('../../../../../src/commands/scan/fetch-scan.mts')
     const { outputScanView } = await import(
       '../../../../../src/commands/scan/output-scan-view.mts'
     )

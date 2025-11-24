@@ -87,7 +87,13 @@ async function runEslintCheck(options = {}) {
   }
 
   // Run lint across affected packages.
-  return await runAcrossPackages(packages, 'lint', [], quiet, 'Running ESLint checks')
+  return await runAcrossPackages(
+    packages,
+    'lint',
+    [],
+    quiet,
+    'Running ESLint checks',
+  )
 }
 
 /**
@@ -107,7 +113,13 @@ async function runTypeCheck(options = {}) {
   }
 
   // Run type check across packages.
-  return await runAcrossPackages(packages, 'type', [], quiet, 'Running TypeScript checks')
+  return await runAcrossPackages(
+    packages,
+    'type',
+    [],
+    quiet,
+    'Running TypeScript checks',
+  )
 }
 
 async function main() {
@@ -141,11 +153,15 @@ async function main() {
       logger.log('  --changed      Check packages with changed files')
       logger.log('  --quiet, --silent  Suppress progress messages')
       logger.log('\nExamples:')
-      logger.log('  pnpm check             # Run all checks on changed packages')
+      logger.log(
+        '  pnpm check             # Run all checks on changed packages',
+      )
       logger.log('  pnpm check --all       # Run all checks on all packages')
       logger.log('  pnpm check --lint      # Run ESLint only')
       logger.log('  pnpm check --types     # Run TypeScript only')
-      logger.log('  pnpm check --lint --staged  # Run ESLint on staged packages')
+      logger.log(
+        '  pnpm check --lint --staged  # Run ESLint on staged packages',
+      )
       process.exitCode = 0
       return
     }

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * @fileoverview Update optionalDependencies in socket package.json with latest @socketbin/* versions from npm.
  */
@@ -69,9 +68,7 @@ async function main() {
     })
 
     pkg.optionalDependencies[packageName] = latestVersion
-    console.log(
-      `  ${packageName}: ${currentVersion} → ${latestVersion}`,
-    )
+    console.log(`  ${packageName}: ${currentVersion} → ${latestVersion}`)
   }
 
   // Write updated package.json.

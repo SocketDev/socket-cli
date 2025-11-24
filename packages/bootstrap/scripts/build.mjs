@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Build script for Socket bootstrap package.
  *
@@ -12,8 +11,8 @@
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { brotliCompressSync, constants as zlibConstants } from 'node:zlib'
 import { fileURLToPath } from 'node:url'
+import { brotliCompressSync, constants as zlibConstants } from 'node:zlib'
 
 import { build } from 'esbuild'
 import colors from 'yoctocolors-cjs'
@@ -41,8 +40,13 @@ function compressFile(filePath) {
   const brPath = `${filePath}.br`
   writeFileSync(brPath, compressed)
 
-  const reductionPercent = ((1 - compressed.length / uncompressed.length) * 100).toFixed(1)
-  console.log(`  Compressed: ${(compressed.length / 1024).toFixed(2)} KB (${reductionPercent}% reduction)`)
+  const reductionPercent = (
+    (1 - compressed.length / uncompressed.length) *
+    100
+  ).toFixed(1)
+  console.log(
+    `  Compressed: ${(compressed.length / 1024).toFixed(2)} KB (${reductionPercent}% reduction)`,
+  )
 }
 
 console.log('Building Socket bootstrap with esbuild...\\n')

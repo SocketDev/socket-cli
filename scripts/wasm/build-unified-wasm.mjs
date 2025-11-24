@@ -127,7 +127,8 @@ async function installBinaryen() {
 
     // Fallback: Download from GitHub releases (all platforms).
     logger.substep('Downloading pre-built binaryen from GitHub')
-    const version = 'version_119' // Latest stable as of implementation.
+    // Latest stable as of implementation.
+    const version = 'version_119'
     let platformSuffix = ''
 
     if (isWindows) {
@@ -246,19 +247,27 @@ const buildEnv = {
 // Add RUSTFLAGS for additional optimizations (if not already set).
 if (!buildEnv.RUSTFLAGS) {
   const rustFlags = [
-    '-C target-feature=+simd128', // Enable WASM SIMD (73% browser support)
-    '-C target-feature=+bulk-memory', // Bulk memory operations (faster copies)
-    '-C target-feature=+mutable-globals', // Mutable globals support
-    '-C target-feature=+sign-ext', // Sign extension operations
+    // Enable WASM SIMD (73% browser support)
+    '-C target-feature=+simd128',
+    // Bulk memory operations (faster copies)
+    '-C target-feature=+bulk-memory',
+    // Mutable globals support
+    '-C target-feature=+mutable-globals',
+    // Sign extension operations
+    '-C target-feature=+sign-ext',
   ]
 
   // Production-only optimizations.
   if (!isDev) {
     rustFlags.push(
-      '-C link-arg=--strip-debug', // Strip debug info
-      '-C link-arg=--strip-all', // Strip all symbols
-      '-C link-arg=-zstack-size=131_072', // Smaller stack size (128KB)
-      '-C embed-bitcode=yes', // Embed bitcode for LTO
+      // Strip debug info
+      '-C link-arg=--strip-debug',
+      // Strip all symbols
+      '-C link-arg=--strip-all',
+      // Smaller stack size (128KB)
+      '-C link-arg=-zstack-size=131_072',
+      // Embed bitcode for LTO
+      '-C embed-bitcode=yes',
     )
   }
 
@@ -310,22 +319,37 @@ try {
 
   // Aggressive optimization flags (no backward compat needed).
   const wasmOptFlags = [
-    '-Oz', // Optimize for size
-    '--enable-simd', // Enable SIMD operations
-    '--enable-bulk-memory', // Enable bulk memory
-    '--enable-sign-ext', // Enable sign extension
-    '--enable-mutable-globals', // Enable mutable globals
-    '--enable-nontrapping-float-to-int', // Non-trapping float conversions
-    '--enable-reference-types', // Enable reference types
-    '--low-memory-unused', // Optimize for low memory usage
-    '--flatten', // Flatten IR for better optimization
-    '--rereloop', // Optimize control flow
-    '--vacuum', // Remove unused code
+    // Optimize for size
+    '-Oz',
+    // Enable SIMD operations
+    '--enable-simd',
+    // Enable bulk memory
+    '--enable-bulk-memory',
+    // Enable sign extension
+    '--enable-sign-ext',
+    // Enable mutable globals
+    '--enable-mutable-globals',
+    // Non-trapping float conversions
+    '--enable-nontrapping-float-to-int',
+    // Enable reference types
+    '--enable-reference-types',
+    // Optimize for low memory usage
+    '--low-memory-unused',
+    // Flatten IR for better optimization
+    '--flatten',
+    // Optimize control flow
+    '--rereloop',
+    // Remove unused code
+    '--vacuum',
   ]
 
-  const optResult = await exec('wasm-opt', [...wasmOptFlags, wasmFile, '-o', wasmFile], {
-    stdio: 'inherit',
-  })
+  const optResult = await exec(
+    'wasm-opt',
+    [...wasmOptFlags, wasmFile, '-o', wasmFile],
+    {
+      stdio: 'inherit',
+    },
+  )
 
   if (optResult.code === 0) {
     stats = await fs.stat(wasmFile)
@@ -348,7 +372,9 @@ try {
 
 // Report final size.
 if (!optimizationSucceeded) {
-  logger.info(`Final size: ${(originalSize / 1024 / 1024).toFixed(2)} MB (unoptimized)`)
+  logger.info(
+    `Final size: ${(originalSize / 1024 / 1024).toFixed(2)} MB (unoptimized)`,
+  )
 }
 
 // Step 5: Embed as base64 in JavaScript.
@@ -362,10 +388,14 @@ logger.progress('Compressing with brotli (quality 11 - maximum)')
 const { constants } = await import('node:zlib')
 const wasmCompressed = brotliCompressSync(wasmData, {
   params: {
-    [constants.BROTLI_PARAM_QUALITY]: 11, // Maximum quality (0-11)
-    [constants.BROTLI_PARAM_SIZE_HINT]: wasmData.length, // Hint for better compression
-    [constants.BROTLI_PARAM_LGWIN]: 24, // Maximum window size (10-24)
-    [constants.BROTLI_PARAM_MODE]: constants.BROTLI_MODE_GENERIC, // Generic mode for binary data
+    // Maximum quality (0-11)
+    [constants.BROTLI_PARAM_QUALITY]: 11,
+    // Hint for better compression
+    [constants.BROTLI_PARAM_SIZE_HINT]: wasmData.length,
+    // Maximum window size (10-24)
+    [constants.BROTLI_PARAM_LGWIN]: 24,
+    // Generic mode for binary data
+    [constants.BROTLI_PARAM_MODE]: constants.BROTLI_MODE_GENERIC,
   },
 })
 const compressionRatio = (

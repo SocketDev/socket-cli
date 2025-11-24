@@ -1,9 +1,11 @@
 import path from 'node:path'
 
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { pluralize } from '@socketsecurity/lib/words'
+
+const logger = getDefaultLogger()
 
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
@@ -11,9 +13,11 @@ import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
 import { handleScanReport } from './handle-scan-report.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
-import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
-import { FOLD_SETTING_VERSION } from '../../constants/reporting.mjs'
-import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
+import {
+  DOT_SOCKET_DOT_FACTS_JSON,
+  FOLD_SETTING_VERSION,
+} from '../../constants.mts'
+import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 import { socketDocsLink } from '../../utils/terminal/link.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
@@ -24,7 +28,6 @@ import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
 import type { Remap } from '@socketsecurity/lib/objects'
-const logger = getDefaultLogger()
 
 export type HandleCreateNewScanConfig = {
   autoManifest: boolean
@@ -73,8 +76,8 @@ export async function handleCreateNewScan({
   targets,
   tmp,
 }: HandleCreateNewScanConfig): Promise<void> {
-  debug(`Creating new scan for ${orgSlug}/${repoName}`)
-  debugDir({
+  debug('notice', `Creating new scan for ${orgSlug}/${repoName}`)
+  debugDir('inspect', {
     autoManifest,
     branchName,
     commitHash,
@@ -91,10 +94,10 @@ export async function handleCreateNewScan({
 
   if (autoManifest) {
     logger.info('Auto-generating manifest files ...')
-    debug('Auto-manifest mode enabled')
+    debug('notice', 'Auto-manifest mode enabled')
     const sockJson = readOrDefaultSocketJson(cwd)
     const detected = await detectManifestActions(sockJson, cwd)
-    debugDir({ detected })
+    debugDir('inspect', { detected })
     await generateAutoManifest({
       detected,
       cwd,
@@ -105,28 +108,32 @@ export async function handleCreateNewScan({
   }
 
   const spinner = getDefaultSpinner()
-  const supportedFilesCResult = await fetchSupportedScanFileNames({
-    spinner: spinner ?? undefined,
-  })
+
+  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
   if (!supportedFilesCResult.ok) {
-    debug('Failed to fetch supported scan file names')
-    debugDir({ supportedFilesCResult })
+    debug('warn', 'Failed to fetch supported scan file names')
+    debugDir('inspect', { supportedFilesCResult })
     await outputCreateNewScan(supportedFilesCResult, {
       interactive,
       outputKind,
     })
     return
   }
-  debug(`Fetched ${supportedFilesCResult.data['size']} supported file types`)
+  debug(
+    'notice',
+    `Fetched ${supportedFilesCResult.data['size']} supported file types`,
+  )
 
-  spinner?.start('Searching for local files to include in scan...')
+  spinner.start('Searching for local files to include in scan...')
 
   const supportedFiles = supportedFilesCResult.data
   const packagePaths = await getPackageFilesForScan(targets, supportedFiles, {
     cwd,
   })
 
-  spinner?.successAndStop('Finished searching for local files.')
+  spinner.successAndStop(
+    `Found ${packagePaths.length} ${pluralize('file', { count: packagePaths.length })} to include in scan.`,
+  )
 
   const wasValidInput = checkCommandInput(outputKind, {
     nook: true,
@@ -136,15 +143,19 @@ export async function handleCreateNewScan({
       'TARGET (file/dir) must contain matching / supported file types for a scan',
   })
   if (!wasValidInput) {
-    debug('No eligible files found to scan')
+    debug('warn', 'No eligible files found to scan')
     return
   }
 
-  debugDir({ packagePaths })
+  logger.success(
+    `Found ${packagePaths.length} local ${pluralize('file', { count: packagePaths.length })}`,
+  )
+
+  debugDir('inspect', { packagePaths })
 
   if (readOnly) {
     logger.log('[ReadOnly] Bailing now')
-    debug('Read-only mode, exiting early')
+    debug('notice', 'Read-only mode, exiting early')
     return
   }
 
@@ -155,10 +166,10 @@ export async function handleCreateNewScan({
   if (reach.runReachabilityAnalysis) {
     logger.error('')
     logger.info('Starting reachability analysis...')
-    debug('Reachability analysis enabled')
-    debugDir({ reachabilityOptions: reach })
+    debug('notice', 'Reachability analysis enabled')
+    debugDir('inspect', { reachabilityOptions: reach })
 
-    spinner?.start()
+    spinner.start()
 
     const reachResult = await performReachabilityAnalysis({
       branchName,
@@ -167,11 +178,11 @@ export async function handleCreateNewScan({
       packagePaths,
       reachabilityOptions: reach,
       repoName,
-      spinner: spinner ?? undefined,
+      spinner,
       target: targets[0]!,
     })
 
-    spinner?.stop()
+    spinner.stop()
 
     if (!reachResult.ok) {
       await outputCreateNewScan(reachResult, { interactive, outputKind })
@@ -194,24 +205,18 @@ export async function handleCreateNewScan({
     tier1ReachabilityScanId = reachResult.data?.tier1ReachabilityScanId
   }
 
-  // Display final file count after all modifications.
-  logger.success(
-    `Found ${scanPaths.length} ${pluralize('file', { count: scanPaths.length })} to include in scan`,
-  )
-
   const fullScanCResult = await fetchCreateOrgFullScan(
     scanPaths,
     orgSlug,
     {
-      branchName,
       commitHash,
       commitMessage,
       committers,
       pullRequest,
       repoName,
+      branchName,
     },
     {
-      commandPath: 'socket scan create',
       cwd,
       defaultBranch,
       pendingHead,
@@ -252,7 +257,7 @@ export async function handleCreateNewScan({
       )
     }
   } else {
-    spinner?.stop()
+    spinner.stop()
 
     await outputCreateNewScan(fullScanCResult, { interactive, outputKind })
   }

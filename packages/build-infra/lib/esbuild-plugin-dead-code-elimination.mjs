@@ -16,7 +16,8 @@ import { parse } from '@babel/parser'
 import { default as traverseImport } from '@babel/traverse'
 import MagicString from 'magic-string'
 
-const traverse = typeof traverseImport === 'function' ? traverseImport : traverseImport.default
+const traverse =
+  typeof traverseImport === 'function' ? traverseImport : traverseImport.default
 
 /**
  * Evaluate a test expression to determine if it's a constant boolean.
@@ -129,7 +130,7 @@ export function deadCodeEliminationPlugin() {
   return {
     name: 'dead-code-elimination',
     setup(build) {
-      build.onEnd((result) => {
+      build.onEnd(result => {
         const outputs = result.outputFiles
         if (!outputs || outputs.length === 0) {
           return

@@ -41,12 +41,8 @@ vi.mock('../../../../src/commands/scan/output-scan-metadata.mts', () => ({
 
 describe('handleOrgScanMetadata', () => {
   it('fetches and outputs scan metadata successfully', async () => {
-    const { fetchScanMetadata } = await import(
-      '../../../../src/commands/scan/fetch-scan-metadata.mts'
-    )
-    const { outputScanMetadata } = await import(
-      '../../../../src/commands/scan/output-scan-metadata.mts'
-    )
+    await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
+    await import('../../../../src/commands/scan/output-scan-metadata.mts')
     const mockFetch = mockFetchScanMetadata
     const mockOutput = mockOutputScanMetadata
 
@@ -71,12 +67,8 @@ describe('handleOrgScanMetadata', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchScanMetadata } = await import(
-      '../../../../src/commands/scan/fetch-scan-metadata.mts'
-    )
-    const { outputScanMetadata } = await import(
-      '../../../../src/commands/scan/output-scan-metadata.mts'
-    )
+    await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
+    await import('../../../../src/commands/scan/output-scan-metadata.mts')
     const mockFetch = mockFetchScanMetadata
     const mockOutput = mockOutputScanMetadata
 
@@ -92,12 +84,8 @@ describe('handleOrgScanMetadata', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { fetchScanMetadata } = await import(
-      '../../../../src/commands/scan/fetch-scan-metadata.mts'
-    )
-    const { outputScanMetadata } = await import(
-      '../../../../src/commands/scan/output-scan-metadata.mts'
-    )
+    await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
+    await import('../../../../src/commands/scan/output-scan-metadata.mts')
     const mockFetch = mockFetchScanMetadata
     const mockOutput = mockOutputScanMetadata
 
@@ -118,12 +106,8 @@ describe('handleOrgScanMetadata', () => {
   })
 
   it('handles different scan IDs', async () => {
-    const { fetchScanMetadata } = await import(
-      '../../../../src/commands/scan/fetch-scan-metadata.mts'
-    )
-    const { outputScanMetadata } = await import(
-      '../../../../src/commands/scan/output-scan-metadata.mts'
-    )
+    await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
+    await import('../../../../src/commands/scan/output-scan-metadata.mts')
     const mockFetch = mockFetchScanMetadata
     const _mockOutput = mockOutputScanMetadata
 
@@ -145,12 +129,8 @@ describe('handleOrgScanMetadata', () => {
   })
 
   it('handles text output with detailed metadata', async () => {
-    const { fetchScanMetadata } = await import(
-      '../../../../src/commands/scan/fetch-scan-metadata.mts'
-    )
-    const { outputScanMetadata } = await import(
-      '../../../../src/commands/scan/output-scan-metadata.mts'
-    )
+    await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
+    await import('../../../../src/commands/scan/output-scan-metadata.mts')
     const mockFetch = mockFetchScanMetadata
     const mockOutput = mockOutputScanMetadata
 

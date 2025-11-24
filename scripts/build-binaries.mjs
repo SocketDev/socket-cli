@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Build Socket binaries (WASM, SEA, smol) without running tests.
  *
@@ -37,11 +36,19 @@ const tasks = []
 
 // Build bootstrap first (required for all binaries).
 console.log('\n🔨 Building bootstrap...\n')
-tasks.push({ name: 'bootstrap', cmd: 'pnpm', args: ['--filter', '@socketsecurity/bootstrap', 'run', 'build'] })
+tasks.push({
+  name: 'bootstrap',
+  cmd: 'pnpm',
+  args: ['--filter', '@socketsecurity/bootstrap', 'run', 'build'],
+})
 
 // Build CLI (required for binaries).
 console.log('🔨 Building CLI...\n')
-tasks.push({ name: 'cli', cmd: 'pnpm', args: ['--filter', '@socketsecurity/cli', 'run', 'build'] })
+tasks.push({
+  name: 'cli',
+  cmd: 'pnpm',
+  args: ['--filter', '@socketsecurity/cli', 'run', 'build'],
+})
 
 // Build WASM (slowest, optional).
 if (buildWasm) {
@@ -52,20 +59,30 @@ if (buildWasm) {
 
 // Build SEA binary.
 if (buildSea) {
-  const seaArgs = ['--filter', '@socketsecurity/node-sea-builder', 'run', 'build']
-  if (values.dev) seaArgs.push('--dev')
-  if (values.prod) seaArgs.push('--prod')
-  if (values.clean) seaArgs.push('--clean')
+  const seaArgs = [
+    '--filter',
+    '@socketsecurity/node-sea-builder',
+    'run',
+    'build',
+  ]
+  if (values.dev) {seaArgs.push('--dev')}
+  if (values.prod) {seaArgs.push('--prod')}
+  if (values.clean) {seaArgs.push('--clean')}
   console.log('🔨 Building SEA binary...\n')
   tasks.push({ name: 'sea', cmd: 'pnpm', args: seaArgs })
 }
 
 // Build smol binary.
 if (buildSmol) {
-  const smolArgs = ['--filter', '@socketsecurity/node-smol-builder', 'run', 'build']
-  if (values.dev) smolArgs.push('--dev')
-  if (values.prod) smolArgs.push('--prod')
-  if (values.clean) smolArgs.push('--clean')
+  const smolArgs = [
+    '--filter',
+    '@socketsecurity/node-smol-builder',
+    'run',
+    'build',
+  ]
+  if (values.dev) {smolArgs.push('--dev')}
+  if (values.prod) {smolArgs.push('--prod')}
+  if (values.clean) {smolArgs.push('--clean')}
   console.log('🔨 Building smol binary...\n')
   tasks.push({ name: 'smol', cmd: 'pnpm', args: smolArgs })
 }
@@ -78,7 +95,7 @@ async function runTask(task) {
       shell: WIN32,
     })
 
-    proc.on('close', (code) => {
+    proc.on('close', code => {
       if (code === 0) {
         resolve()
       } else {
@@ -88,7 +105,7 @@ async function runTask(task) {
   })
 }
 
-(async () => {
+;(async () => {
   const startTime = Date.now()
 
   for (const task of tasks) {

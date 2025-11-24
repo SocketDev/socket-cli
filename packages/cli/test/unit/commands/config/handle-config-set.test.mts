@@ -137,9 +137,6 @@ describe('handleConfigSet', () => {
 
   it('logs debug information', async () => {
     const { debug, debugDir } = await import('@socketsecurity/lib/debug')
-    const { updateConfigValue } = await import(
-      '../../../../src/utils/config.mts'
-    )
 
     mockUpdateConfigValue.mockReturnValue(createSuccessResult('debug-value'))
 
@@ -162,9 +159,6 @@ describe('handleConfigSet', () => {
 
   it('logs debug information on failure', async () => {
     const { debug } = await import('@socketsecurity/lib/debug')
-    const { updateConfigValue } = await import(
-      '../../../../src/utils/config.mts'
-    )
 
     mockUpdateConfigValue.mockReturnValue(createErrorResult('Failed'))
 

@@ -192,7 +192,7 @@ describe('fetchListRepos', () => {
   })
 
   it('handles empty results on specific page', async () => {
-    const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
+    await setupSdkMockSuccess('listRepositories', {
       results: [],
       nextPage: null,
     })

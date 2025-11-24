@@ -3,21 +3,22 @@
  * Runs tests across affected packages based on changed files.
  */
 
+import colors from 'yoctocolors-cjs'
+
 import { isQuiet } from '@socketsecurity/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getChangedFiles, getStagedFiles } from '@socketsecurity/lib/git'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { onExit } from '@socketsecurity/lib/signal-exit'
-import { ProgressBar } from '@socketsecurity/lib/stdio/progress'
+import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
 import { printHeader } from '@socketsecurity/lib/stdio/header'
-import colors from 'yoctocolors-cjs'
+import { ProgressBar } from '@socketsecurity/lib/stdio/progress'
 
 import {
   getAffectedPackages,
   getPackagesWithScript,
 } from './utils/monorepo-helper.mjs'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
 
 
 const logger = getDefaultLogger()
@@ -74,7 +75,12 @@ async function getPackagesToTest(options) {
 /**
  * Run tests on a specific package with pretty output.
  */
-async function runPackageTest(pkg, testArgs = [], quiet = false, showProgress = true) {
+async function runPackageTest(
+  pkg,
+  testArgs = [],
+  quiet = false,
+  showProgress = true,
+) {
   const displayName = pkg.displayName || pkg.name
 
   if (!quiet && showProgress) {
@@ -193,7 +199,8 @@ async function main() {
       logger.step(
         `Testing ${modeText} (${packages.length} package${packages.length > 1 ? 's' : ''})`,
       )
-      logger.error('') // Blank line.
+      // Blank line.
+      logger.error('')
     }
 
     // Setup progress bar.
@@ -229,7 +236,12 @@ async function main() {
         progressBar.update(completedCount, { pkg: colors.cyan(displayName) })
       }
 
-      const result = await runPackageTest(pkg, positionals, quiet, !useProgressBar)
+      const result = await runPackageTest(
+        pkg,
+        positionals,
+        quiet,
+        !useProgressBar,
+      )
 
       if (progressBar) {
         completedCount++

@@ -7,14 +7,13 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs  } from 'node:fs'
 import { homedir, platform, tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { brotliCompressSync } from 'node:zlib'
 
-import { describe, expect, it, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageDir = path.join(__dirname, '..')
@@ -61,7 +60,9 @@ describe('socket package', () => {
 
       expect(pkgJson.optionalDependencies).toBeDefined()
       for (const platformPkg of expectedPlatforms) {
-        expect(pkgJson.optionalDependencies[platformPkg]).toMatch(/^\^?\d+\.\d+\.\d+/)
+        expect(pkgJson.optionalDependencies[platformPkg]).toMatch(
+          /^\^?\d+\.\d+\.\d+/,
+        )
       }
     })
 
@@ -125,7 +126,8 @@ describe('socket package', () => {
 
       const result = spawnSync(process.execPath, [bootstrapPath, '--version'], {
         stdio: ['ignore', 'pipe', 'pipe'],
-        timeout: 60000, // 60s for npm download.
+        // 60s for npm download.
+        timeout: 60_000,
       })
 
       // Should succeed.
@@ -136,9 +138,17 @@ describe('socket package', () => {
       expect(stdout).toMatch(/\d+\.\d+\.\d+/)
 
       // Should have cached CLI.
-      const cliPath = path.join(testDir, '.socket', '_dlx', 'cli', 'dist', 'cli.js')
+      const cliPath = path.join(
+        testDir,
+        '.socket',
+        '_dlx',
+        'cli',
+        'dist',
+        'cli.js',
+      )
       expect(existsSync(cliPath)).toBe(true)
-    }, 120000) // 2 min timeout
+      // 2 min timeout
+    }, 120_000)
 
     it('should use local CLI path when SOCKET_CLI_LOCAL_PATH is set', async () => {
       // Create mock CLI directory.
@@ -237,15 +247,19 @@ describe('socket package', () => {
         const invalidCliPath = path.join(invalidCliDir, 'bad-cli.js')
         await fs.writeFile(invalidCliPath, 'this is not valid javascript {{{')
 
-        const result = spawnSync(process.execPath, [bootstrapPath, '--version'], {
-          env: {
-            ...process.env,
-            HOME: testDir,
-            SOCKET_CLI_LOCAL_PATH: invalidCliPath,
+        const result = spawnSync(
+          process.execPath,
+          [bootstrapPath, '--version'],
+          {
+            env: {
+              ...process.env,
+              HOME: testDir,
+              SOCKET_CLI_LOCAL_PATH: invalidCliPath,
+            },
+            stdio: ['ignore', 'pipe', 'pipe'],
+            timeout: 5000,
           },
-          stdio: ['ignore', 'pipe', 'pipe'],
-          timeout: 5000,
-        })
+        )
 
         // Should fail gracefully.
         expect(result.status).not.toBe(0)

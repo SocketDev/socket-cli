@@ -108,7 +108,10 @@ function mapSourceToTests(filepath) {
   }
 
   // External or fixtures changes
-  if (normalized.startsWith('external/') || normalized.startsWith('fixtures/')) {
+  if (
+    normalized.startsWith('external/') ||
+    normalized.startsWith('fixtures/')
+  ) {
     return ['packages/cli/test/integration/']
   }
 

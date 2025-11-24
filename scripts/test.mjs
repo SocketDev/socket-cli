@@ -46,7 +46,13 @@ const nodeModulesBinPath = path.join(rootPath, 'node_modules', '.bin')
  */
 function hasExternalRepos() {
   const libPath = path.join(rootPath, '..', 'socket-lib', 'package.json')
-  const registryPath = path.join(rootPath, '..', 'socket-registry', 'registry', 'package.json')
+  const registryPath = path.join(
+    rootPath,
+    '..',
+    'socket-registry',
+    'registry',
+    'package.json',
+  )
   return existsSync(libPath) || existsSync(registryPath)
 }
 
@@ -193,13 +199,9 @@ async function runCheck() {
   // Run TypeScript check
   const tsConfigPath = getTsConfigPath()
   spinner.start('Checking TypeScript...')
-  exitCode = await runCommand(
-    'tsgo',
-    ['--noEmit', '-p', tsConfigPath],
-    {
-      stdio: 'pipe',
-    },
-  )
+  exitCode = await runCommand('tsgo', ['--noEmit', '-p', tsConfigPath], {
+    stdio: 'pipe',
+  })
   if (exitCode !== 0) {
     spinner.stop()
     logger.error('TypeScript check failed')
@@ -401,9 +403,7 @@ async function main() {
         '  pnpm test                  # Run checks, build, and tests for changed files',
       )
       logger.log('  pnpm test --all            # Run all tests')
-      logger.log(
-        '  pnpm test --fast           # Skip checks for quick testing',
-      )
+      logger.log('  pnpm test --fast           # Skip checks for quick testing')
       logger.log('  pnpm test --cover          # Run with coverage report')
       logger.log('  pnpm test --fast --cover   # Quick test with coverage')
       logger.log('  pnpm test --update         # Update test snapshots')

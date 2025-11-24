@@ -1,7 +1,9 @@
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
+const logger = getDefaultLogger()
 
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'

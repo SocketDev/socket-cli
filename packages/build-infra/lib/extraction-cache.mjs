@@ -27,9 +27,9 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
  * @returns {Promise<boolean>} True if extraction needed, false if cached
  */
 export async function shouldExtract({
-  sourcePaths,
-  outputPath,
   hashPattern = /Source hash: ([a-f0-9]{64})/,
+  outputPath,
+  sourcePaths,
   validateOutput,
 }) {
   // Normalize to array.

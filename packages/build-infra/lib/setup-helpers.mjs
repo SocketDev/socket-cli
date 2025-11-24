@@ -3,9 +3,9 @@
  * Provides helpers for checking and installing required development tools.
  */
 
-import { spawn } from '@socketsecurity/lib/spawn'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 const logger = getDefaultLogger()
 
@@ -55,7 +55,7 @@ export async function getVersion(command, args = ['--version']) {
  */
 export function parseVersion(versionString) {
   const match = versionString.match(/(\d+)\.(\d+)\.(\d+)/)
-  if (!match) return null
+  if (!match) {return null}
   return {
     major: Number.parseInt(match[1], 10),
     minor: Number.parseInt(match[2], 10),
@@ -71,9 +71,9 @@ export function parseVersion(versionString) {
  * @returns {number} -1 if a < b, 0 if a === b, 1 if a > b
  */
 export function compareVersions(a, b) {
-  if (a.major !== b.major) return a.major < b.major ? -1 : 1
-  if (a.minor !== b.minor) return a.minor < b.minor ? -1 : 1
-  if (a.patch !== b.patch) return a.patch < b.patch ? -1 : 1
+  if (a.major !== b.major) {return a.major < b.major ? -1 : 1}
+  if (a.minor !== b.minor) {return a.minor < b.minor ? -1 : 1}
+  if (a.patch !== b.patch) {return a.patch < b.patch ? -1 : 1}
   return 0
 }
 
@@ -110,7 +110,8 @@ export async function installHomebrew() {
   logger.step('Installing Homebrew...')
   logger.info('This requires sudo access and may take a few minutes')
 
-  const installScript = '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+  const installScript =
+    '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
 
   const result = await spawn('bash', ['-c', installScript], {
     stdio: 'inherit',
@@ -140,7 +141,8 @@ export async function installChocolatey() {
   logger.step('Installing Chocolatey...')
   logger.info('This requires admin access and may take a few minutes')
 
-  const installScript = 'Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString(\'https://community.chocolatey.org/install.ps1\'))'
+  const installScript =
+    "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
 
   const result = await spawn('powershell', ['-Command', installScript], {
     stdio: 'inherit',
@@ -163,7 +165,7 @@ export async function installChocolatey() {
  * @returns {Promise<boolean>} True if installation succeeded
  */
 export async function installWithHomebrew(packageName) {
-  if (!await hasHomebrew()) {
+  if (!(await hasHomebrew())) {
     logger.error('Homebrew not available')
     return false
   }
@@ -190,7 +192,7 @@ export async function installWithHomebrew(packageName) {
  * @returns {Promise<boolean>} True if installation succeeded
  */
 export async function installWithChocolatey(packageName) {
-  if (!await hasChocolatey()) {
+  if (!(await hasChocolatey())) {
     logger.error('Chocolatey not available')
     return false
   }
@@ -232,8 +234,10 @@ export async function installGhCli({ autoInstall = false } = {}) {
 
   // Windows: Try Chocolatey.
   if (WIN32) {
-    if (!await hasChocolatey()) {
-      logger.info('Chocolatey not found. Install Chocolatey first to auto-install gh CLI.')
+    if (!(await hasChocolatey())) {
+      logger.info(
+        'Chocolatey not found. Install Chocolatey first to auto-install gh CLI.',
+      )
       logger.info('Chocolatey: https://chocolatey.org/install')
       logger.info('gh CLI: https://cli.github.com/')
       return false
@@ -242,8 +246,10 @@ export async function installGhCli({ autoInstall = false } = {}) {
   }
 
   // macOS/Linux: Try Homebrew.
-  if (!await hasHomebrew()) {
-    logger.info('Homebrew not found. Install Homebrew first to auto-install gh CLI.')
+  if (!(await hasHomebrew())) {
+    logger.info(
+      'Homebrew not found. Install Homebrew first to auto-install gh CLI.',
+    )
     logger.info('Homebrew: https://brew.sh/')
     logger.info('gh CLI: https://cli.github.com/')
     return false

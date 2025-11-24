@@ -8,11 +8,11 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { parseArgs } from '@socketsecurity/lib/argv/parse'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import semver from 'semver'
 import colors from 'yoctocolors-cjs'
 
+import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -25,11 +25,18 @@ const rootDir = path.join(__dirname, '..')
  */
 function generateDatetimeVersion(platform, arch, tool = 'cli') {
   // Read base version from the current package being generated.
-  const basePackagePath = path.join(rootDir, 'packages', `socketbin-${tool}-${platform}-${arch}`, 'package.json')
+  const basePackagePath = path.join(
+    rootDir,
+    'packages',
+    `socketbin-${tool}-${platform}-${arch}`,
+    'package.json',
+  )
   let baseVersion = '0.0.0'
 
   try {
-    const basePackage = JSON.parse(require('fs').readFileSync(basePackagePath, 'utf-8'))
+    const basePackage = JSON.parse(
+      require('node:fs').readFileSync(basePackagePath, 'utf-8'),
+    )
     const version = basePackage.version || '0.0.0'
     // Extract just the core version (X.Y.Z), ignoring any prerelease/placeholder text.
     const versionMatch = version.match(/^(\d+\.\d+\.\d+)/)
@@ -63,11 +70,11 @@ const { values } = parseArgs({
 
 const {
   arch,
+  method: buildMethod = 'smol',
   outdir,
   platform,
   tool = 'cli',
   version: providedVersion,
-  method: buildMethod = 'smol',
 } = values
 
 if (!platform || !arch) {

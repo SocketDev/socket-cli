@@ -182,6 +182,7 @@ describe('handleScanReach', () => {
     expect(mockOutput).toHaveBeenCalledWith(mockError, {
       cwd: '/project',
       outputKind: 'text',
+      outputPath: '',
     })
   })
 
@@ -237,6 +238,7 @@ describe('handleScanReach', () => {
     expect(mockOutput).toHaveBeenCalledWith(analysisError, {
       cwd: '/project',
       outputKind: 'markdown',
+      outputPath: '',
     })
   })
 })

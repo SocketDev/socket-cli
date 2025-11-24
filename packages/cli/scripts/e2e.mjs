@@ -99,7 +99,8 @@ async function runVitest(binaryType) {
     {
       env: {
         ...process.env,
-        RUN_E2E_TESTS: '1', // Automatically enable tests when explicitly running e2e.mjs.
+        // Automatically enable tests when explicitly running e2e.mjs.
+        RUN_E2E_TESTS: '1',
         ...envVars,
       },
       stdio: 'inherit',
