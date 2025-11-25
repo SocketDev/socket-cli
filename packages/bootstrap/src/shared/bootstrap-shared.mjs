@@ -166,6 +166,9 @@ export async function executeCli(cliPath, args) {
         [SOCKET_IPC_HANDSHAKE]: {
           subprocess: true,
           parent_pid: process.pid,
+          extra: {
+            bootstrapBinaryPath: process.argv[1] || process.execPath,
+          },
         },
       })
     }

@@ -3,6 +3,9 @@
  *
  * This implements the actual self-update functionality using npm registry
  * to download @socketbin packages with rollback capabilities.
+ *
+ * When launched via a bootstrap wrapper (e.g., npx socket), this will update
+ * both the main CLI binary and the bootstrap binary wrapper.
  */
 
 import { existsSync, promises as fs } from 'node:fs'
@@ -13,13 +16,13 @@ import colors from 'yoctocolors-cjs'
 
 import { detectPackageManager } from '@socketsecurity/lib/env/package-manager'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
-import { getIpcStubPath } from '@socketsecurity/lib/ipc'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { outputSelfUpdate } from './output-self-update.mts'
 import ENV from '../../constants/env.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getBootstrapBinaryPath } from '../../utils/ipc.mts'
 import {
   clearQuarantine,
   ensureExecutable,
@@ -114,47 +117,47 @@ async function replaceBinary(
 }
 
 /**
- * Update bootstrap stub binary using npm registry.
- * Returns true if stub was updated, false if no update needed.
+ * Update bootstrap binary using npm registry.
+ * Returns true if bootstrap binary was updated, false if no update needed.
  */
-async function updateStubBinary(
+async function updateBootstrapBinary(
   latestVersion: string,
   dryRun: boolean,
 ): Promise<boolean> {
-  const stubPath = getIpcStubPath('socket-cli')
+  const bootstrapPath = getBootstrapBinaryPath()
 
-  // Only proceed if we have a stub path from IPC.
-  if (!stubPath) {
-    logger.info('No stub path received - CLI not launched via bootstrap stub')
+  // Only proceed if we have a bootstrap binary path from IPC.
+  if (!bootstrapPath) {
+    logger.info('No bootstrap binary path received - CLI not launched via bootstrap wrapper')
     return false
   }
 
-  if (!existsSync(stubPath)) {
-    logger.warn(`Stub path from IPC does not exist: ${stubPath}`)
+  if (!existsSync(bootstrapPath)) {
+    logger.warn(`Bootstrap binary path from IPC does not exist: ${bootstrapPath}`)
     return false
   }
 
-  logger.info(`Checking bootstrap stub for updates: ${stubPath}`)
+  logger.info(`Checking bootstrap binary for updates: ${bootstrapPath}`)
 
   if (dryRun) {
-    logger.info('[DRY RUN] Would download and update stub')
+    logger.info('[DRY RUN] Would download and update bootstrap binary')
     return false
   }
 
   try {
-    // Fetch stub package metadata from npm registry.
-    const stubPackageName = getSocketbinPackageName()
+    // Fetch package metadata from npm registry.
+    const packageName = getSocketbinPackageName()
     logger.info(
-      `Fetching stub package metadata: ${stubPackageName}@${latestVersion}`,
+      `Fetching bootstrap package metadata: ${packageName}@${latestVersion}`,
     )
 
-    const metadata = await fetchPackageMetadata(stubPackageName, latestVersion)
+    const metadata = await fetchPackageMetadata(packageName, latestVersion)
 
     if (!metadata.dist?.tarball || !metadata.dist?.integrity) {
       throw new Error('Invalid package metadata from npm registry')
     }
 
-    logger.info('Downloading new stub package...')
+    logger.info('Downloading new bootstrap package...')
 
     const downloadsDir = getSocketCliUpdaterDownloadsDir()
     const stagingDir = getSocketCliUpdaterStagingDir()
@@ -163,8 +166,8 @@ async function updateStubBinary(
     await safeMkdir(stagingDir, { recursive: true })
 
     const timestamp = Date.now()
-    const tarballPath = path.join(downloadsDir, `stub-${timestamp}.tgz`)
-    const stagingPath = path.join(stagingDir, `stub-${timestamp}`)
+    const tarballPath = path.join(downloadsDir, `bootstrap-${timestamp}.tgz`)
+    const stagingPath = path.join(stagingDir, `bootstrap-${timestamp}`)
 
     try {
       // Download tarball.
@@ -178,11 +181,11 @@ async function updateStubBinary(
 
       if (!isValid) {
         throw new Error(
-          'Stub package integrity verification failed - file may be corrupted or tampered with',
+          'Bootstrap package integrity verification failed - file may be corrupted or tampered with',
         )
       }
 
-      // Extract stub binary from tarball.
+      // Extract bootstrap binary from tarball.
       const binaryRelativePath = getBinaryRelativePath()
       const extractedPath = await extractBinaryFromTarball(
         tarballPath,
@@ -190,24 +193,24 @@ async function updateStubBinary(
         stagingPath,
       )
 
-      // Create backup of current stub.
-      const backupPath = await createBackup(stubPath)
-      logger.info(`Created stub backup: ${backupPath}`)
+      // Create backup of current bootstrap binary.
+      const backupPath = await createBackup(bootstrapPath)
+      logger.info(`Created bootstrap binary backup: ${backupPath}`)
 
       try {
-        // Replace the stub binary.
-        await replaceBinary(extractedPath, stubPath)
+        // Replace the bootstrap binary.
+        await replaceBinary(extractedPath, bootstrapPath)
 
-        logger.info(`${colors.green('✓')} Bootstrap stub updated successfully!`)
+        logger.info(`${colors.green('✓')} Bootstrap binary updated successfully!`)
         return true
       } catch (error) {
         // Restore from backup on failure.
         try {
-          await fs.copyFile(backupPath, stubPath)
-          logger.info('Restored stub from backup after update failure')
+          await fs.copyFile(backupPath, bootstrapPath)
+          logger.info('Restored bootstrap binary from backup after update failure')
         } catch (restoreError) {
           logger.error(
-            `Failed to restore stub from backup: ${restoreError instanceof Error ? restoreError.message : String(restoreError)}`,
+            `Failed to restore bootstrap binary from backup: ${restoreError instanceof Error ? restoreError.message : String(restoreError)}`,
           )
         }
         throw error
@@ -227,7 +230,7 @@ async function updateStubBinary(
     }
   } catch (error) {
     logger.error(
-      `Failed to update stub: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to update bootstrap binary: ${error instanceof Error ? error.message : String(error)}`,
     )
     return false
   }
@@ -357,10 +360,10 @@ Examples
       dryRun,
     })
 
-    // Even if CLI is up to date, check if stub needs updating.
-    const stubUpdated = await updateStubBinary(latestVersion, dryRun)
-    if (stubUpdated) {
-      logger.info('Bootstrap stub has been updated to match CLI version.')
+    // Even if CLI is up to date, check if bootstrap binary needs updating.
+    const bootstrapUpdated = await updateBootstrapBinary(latestVersion, dryRun)
+    if (bootstrapUpdated) {
+      logger.info('Bootstrap binary has been updated to match CLI version.')
     }
 
     return
@@ -430,11 +433,11 @@ Examples
       logger.info(`${colors.green('✓')} Update completed successfully!`)
       logger.info(`Backup saved to: ${backupPath}`)
 
-      // Check and update stub if launched via bootstrap.
-      const stubUpdated = await updateStubBinary(latestVersion, dryRun)
-      if (stubUpdated) {
+      // Check and update bootstrap binary if launched via bootstrap wrapper.
+      const bootstrapUpdated = await updateBootstrapBinary(latestVersion, dryRun)
+      if (bootstrapUpdated) {
         logger.info(
-          'Both CLI and bootstrap stub have been updated successfully!',
+          'Both CLI and bootstrap binary have been updated successfully!',
         )
       }
 
