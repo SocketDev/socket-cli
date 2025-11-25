@@ -4,8 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.35](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.35) - 2025-11-25
 
-## [1.1.34](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.33) - 2025-11-21
+### Changed
+- Updated @coana-tech/cli to 14.12.100
+
+## [1.1.34](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.34) - 2025-11-21
 
 ### Fixed
 - The target path is now properly considered when conducting reachability analysis: `socket scan reach <target>` and `socket scan create --reach <target>`.
