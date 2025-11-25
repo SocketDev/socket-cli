@@ -7,6 +7,10 @@ import { commonFlags } from '../../flags.mts'
 import { filterFlags } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagApiRequirementsOutput } from '../../utils/output-formatting.mts'
+import {
+  trackSubprocessExit,
+  trackSubprocessStart,
+} from '../../utils/telemetry/integration.mts'
 
 import type {
   CliCommandConfig,
@@ -81,10 +85,29 @@ async function run(
   // Filter Socket flags from argv.
   const filteredArgv = filterFlags(argv, config.flags)
 
+  // Track subprocess start.
+  const subprocessStartTime = await trackSubprocessStart(YARN)
+
   const { spawnPromise } = await shadowYarnBin(filteredArgv, {
     stdio: 'inherit',
   })
 
+  // Handle exit codes and signals using event-based pattern.
+  // See https://nodejs.org/api/child_process.html#event-exit.
+  spawnPromise.process.on(
+    'exit',
+    async (code: number | null, signalName: NodeJS.Signals | null) => {
+      // Track subprocess exit and flush telemetry.
+      await trackSubprocessExit(YARN, subprocessStartTime, code)
+
+      if (signalName) {
+        process.kill(process.pid, signalName)
+      } else if (typeof code === 'number') {
+        // eslint-disable-next-line n/no-process-exit
+        process.exit(code)
+      }
+    },
+  )
+
   await spawnPromise
-  process.exitCode = 0
 }

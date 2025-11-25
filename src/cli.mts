@@ -18,11 +18,20 @@ import { AuthError, InputError, captureException } from './utils/errors.mts'
 import { failMsgWithBadge } from './utils/fail-msg-with-badge.mts'
 import { meowWithSubcommands } from './utils/meow-with-subcommands.mts'
 import { serializeResultJson } from './utils/serialize-result-json.mts'
+import {
+  finalizeTelemetry,
+  trackCliComplete,
+  trackCliError,
+  trackCliStart,
+} from './utils/telemetry/integration.mts'
 import { socketPackageLink } from './utils/terminal-link.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 
 void (async () => {
+  // Track CLI start for telemetry.
+  const cliStartTime = await trackCliStart(process.argv)
+
   const registryUrl = lookupRegistryUrl()
   await updateNotifier({
     authInfo: lookupRegistryAuthToken(registryUrl, { recursive: true }),
@@ -50,8 +59,14 @@ void (async () => {
       },
       { aliases: rootAliases },
     )
+
+    // Track successful CLI completion.
+    await trackCliComplete(process.argv, cliStartTime, process.exitCode)
   } catch (e) {
     process.exitCode = 1
+
+    // Track CLI error for telemetry.
+    await trackCliError(process.argv, cliStartTime, e, process.exitCode)
     debugFn('error', 'CLI uncaught error')
     debugDir('error', e)
 
@@ -104,5 +119,50 @@ void (async () => {
     }
 
     await captureException(e)
+  } finally {
+    // Finalize telemetry to ensure all events are sent.
+    // This runs on both success and error paths.
+    await finalizeTelemetry()
   }
-})()
+})().catch(async err => {
+  // Fatal error in main async function.
+  console.error('Fatal error:', err)
+
+  // Track CLI error for fatal exceptions.
+  await trackCliError(process.argv, Date.now(), err, 1)
+
+  // Finalize telemetry before fatal exit.
+  await finalizeTelemetry()
+
+  // eslint-disable-next-line n/no-process-exit
+  process.exit(1)
+})
+
+// Handle uncaught exceptions.
+process.on('uncaughtException', async err => {
+  console.error('Uncaught exception:', err)
+
+  // Track CLI error for uncaught exception.
+  await trackCliError(process.argv, Date.now(), err, 1)
+
+  // Finalize telemetry before exit.
+  await finalizeTelemetry()
+
+  // eslint-disable-next-line n/no-process-exit
+  process.exit(1)
+})
+
+// Handle unhandled promise rejections.
+process.on('unhandledRejection', async (reason, promise) => {
+  console.error('Unhandled rejection at:', promise, 'reason:', reason)
+
+  // Track CLI error for unhandled rejection.
+  const error = reason instanceof Error ? reason : new Error(String(reason))
+  await trackCliError(process.argv, Date.now(), error, 1)
+
+  // Finalize telemetry before exit.
+  await finalizeTelemetry()
+
+  // eslint-disable-next-line n/no-process-exit
+  process.exit(1)
+})
