@@ -4,8 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.35](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.35) - 2025-11-25
 
-## [1.1.34](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.33) - 2025-11-21
+### Added
+- Added `--reach-debug` flag to enable verbose logging in the reachability Coana CLI
+
+### Changed
+- Updated `@coana-tech/cli` to 14.12.100
+
+## [1.1.34](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.34) - 2025-11-21
 
 ### Fixed
 - The target path is now properly considered when conducting reachability analysis: `socket scan reach <target>` and `socket scan create --reach <target>`.
@@ -14,7 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.1.33](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.33) - 2025-11-20
 
 ### Changed
-- Updated @coana-tech/cli to 14.12.94
+- Updated `@coana-tech/cli` to 14.12.94
 
 ### Fixed
 - Enhanced error badge visibility with improved text color contrast
@@ -22,8 +29,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.1.32](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.32) - 2025-11-20
 
 ### Changed
-- Updated @coana-tech/cli to 14.12.90
-- Updated @cyclonedx/cdxgen to 11.11.0
+- Updated `@coana-tech/cli` to 14.12.90
+- Updated `@cyclonedx/cdxgen` to 11.11.0
 
 ### Fixed
 - Resolved `--limit` flag behavior to correctly restrict vulnerability processing in `socket fix` local mode
