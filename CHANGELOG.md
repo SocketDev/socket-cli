@@ -4,7 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.1.36](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.35) - 2025-11-26
+## [1.1.37](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.37) - 2025-11-26
+
+### Fixed
+- Fix a bug where setting target path could cause incorrect manifest file paths for commands `socket scan reach <target>`, `socket scan create --reach <target>`, and `socket fix <target>`.
+
+## [1.1.36](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.36) - 2025-11-26
 
 ### Fixed
 - Fix a bug where the reachability analysis would hang on runs with analysis errors.
