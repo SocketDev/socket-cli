@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.36](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.35) - 2025-11-26
+
+### Fixed
+- Fix a bug where the reachability analysis would hang on runs with analysis errors.
+
+### Changed
+- Updated `@coana-tech/cli` to 14.12.100
+
 ## [1.1.35](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.35) - 2025-11-25
 
 ### Added
