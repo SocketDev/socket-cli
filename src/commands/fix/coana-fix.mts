@@ -155,7 +155,7 @@ export async function coanaFix(
     p => path.basename(p).toLowerCase() !== DOT_SOCKET_DOT_FACTS_JSON,
   )
   const uploadCResult = await handleApiCall(
-    sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload),
+    sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload, cwd),
     {
       description: 'upload manifests',
       spinner,
