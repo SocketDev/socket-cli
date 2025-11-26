@@ -297,7 +297,9 @@ export function pathsToGlobPatterns(
     if (p === '.' || p === './') {
       return '**/*'
     }
-    const absolutePath = path.isAbsolute(p) ? p : path.resolve(cwd ?? process.cwd(), p)
+    const absolutePath = path.isAbsolute(p)
+      ? p
+      : path.resolve(cwd ?? process.cwd(), p)
     // If the path is a directory, scan it recursively for all files.
     if (isDirSync(absolutePath)) {
       return `${p}/**/*`
