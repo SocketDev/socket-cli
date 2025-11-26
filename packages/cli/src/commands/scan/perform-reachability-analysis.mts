@@ -113,8 +113,11 @@ export async function performReachabilityAnalysis(
 
     spinner?.start('Uploading manifests for reachability analysis...')
 
+    // Ensure uploaded manifest files are relative to analysis target as coana resolves SBOM manifest files relative to this path.
     const uploadCResult = (await handleApiCall(
-      sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload),
+      sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload, {
+        pathsRelativeTo: path.resolve(cwd, analysisTarget),
+      }),
       {
         description: 'upload manifests',
         spinner,

@@ -119,10 +119,10 @@ export async function coanaFix(
   const filepathsToUpload = scanFilepaths.filter(
     p => path.basename(p).toLowerCase() !== DOT_SOCKET_DOT_FACTS_JSON,
   )
-
-  // SDK v3.0 automatically validates file readability via onFileValidation callback.
   const uploadCResult = (await handleApiCall(
-    sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload),
+    sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload, {
+      pathsRelativeTo: cwd,
+    }),
     {
       commandPath: 'socket fix',
       description: 'upload manifests',
