@@ -29,6 +29,7 @@ export type ReachabilityAnalysisOptions = {
   branchName?: string | undefined
   cwd?: string | undefined
   orgSlug?: string | undefined
+  outputPath?: string | undefined
   packagePaths?: string[] | undefined
   reachabilityOptions: ReachabilityOptions
   repoName?: string | undefined
@@ -49,6 +50,7 @@ export async function performReachabilityAnalysis(
     branchName,
     cwd = process.cwd(),
     orgSlug,
+    outputPath,
     packagePaths,
     reachabilityOptions,
     repoName,
@@ -147,14 +149,15 @@ export async function performReachabilityAnalysis(
   spinner?.start()
   spinner?.infoAndStop('Running reachability analysis with Coana...')
 
+  const outputFilePath = outputPath || constants.DOT_SOCKET_DOT_FACTS_JSON
   // Build Coana arguments.
   const coanaArgs = [
     'run',
     analysisTarget,
     '--output-dir',
-    cwd,
+    path.dirname(outputFilePath),
     '--socket-mode',
-    constants.DOT_SOCKET_DOT_FACTS_JSON,
+    outputFilePath,
     '--disable-report-submission',
     ...(reachabilityOptions.reachAnalysisTimeout
       ? ['--analysis-timeout', `${reachabilityOptions.reachAnalysisTimeout}`]
@@ -212,11 +215,10 @@ export async function performReachabilityAnalysis(
     ? {
         ok: true,
         data: {
-          // Use the DOT_SOCKET_DOT_FACTS_JSON file for the scan.
-          reachabilityReport: constants.DOT_SOCKET_DOT_FACTS_JSON,
-          tier1ReachabilityScanId: extractTier1ReachabilityScanId(
-            constants.DOT_SOCKET_DOT_FACTS_JSON,
-          ),
+          // Use the actual output filename for the scan.
+          reachabilityReport: outputFilePath,
+          tier1ReachabilityScanId:
+            extractTier1ReachabilityScanId(outputFilePath),
         },
       }
     : coanaResult
