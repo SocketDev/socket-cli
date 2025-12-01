@@ -22,7 +22,7 @@ catalog:
   '@gitbeaker/rest': 43.7.0
   '@inquirer/confirm': 5.1.16
   '@inquirer/input': 4.2.2
-  '@inquirer/password': 4.0.18
+  '@inquirer/password': 5.0.1
   '@inquirer/search': 3.1.1
   '@inquirer/select': 4.3.2
   '@npmcli/package-json': 7.0.0
