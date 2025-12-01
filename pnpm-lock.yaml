@@ -58,8 +58,8 @@ catalogs:
       specifier: 9.35.0
       version: 9.35.0
     '@gitbeaker/rest':
-      specifier: 43.7.0
-      version: 43.7.0
+      specifier: 43.8.0
+      version: 43.8.0
     '@inquirer/confirm':
       specifier: 5.1.16
       version: 5.1.16
@@ -858,7 +858,7 @@ importers:
         version: 14.12.51
       '@gitbeaker/rest':
         specifier: 'catalog:'
-        version: 43.7.0
+        version: 43.8.0
       '@socketsecurity/build-infra':
         specifier: workspace:*
         version: link:../build-infra
@@ -1864,16 +1864,16 @@ packages:
     resolution: {integrity: sha512-Z5kJ+wU3oA7MMIqVR9tyZRtjYPr4OC004Q4Rw7pgOKUOKkJfZ3O24nz3WYfGRpMDNmcOi3TwQOmgm7B7Tpii0w==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@gitbeaker/core@43.7.0':
-    resolution: {integrity: sha512-quls2OE8U9aovreuqm7Vtdo9X8WXJfQO6j0kBUi6oY/Htm5pc5euOBwbcG7wgzvPTfYbgE2c4aAHXK8jsR/yAg==}
+  '@gitbeaker/core@43.8.0':
+    resolution: {integrity: sha512-H+LfKuf4dExBinb79c+CXViRBvTVQNf5BYLNSizm2SiqdED5JruhKX88payefleY0szp7G/mySlFSXPyGRH1dQ==}
     engines: {node: '>=18.20.0'}
 
-  '@gitbeaker/requester-utils@43.7.0':
-    resolution: {integrity: sha512-Rw2j4WSe+uPYN5EEUgW8Xk7HJJNFk2/hyW8tJ0oNchkmcwouEvRCJd8lwNR2O3FkT06WitsKg3qycyxZQOGHyA==}
+  '@gitbeaker/requester-utils@43.8.0':
+    resolution: {integrity: sha512-d/SiJdxijc+aH5ZBQOw83XLxNSXqsBZNm5k3nPu1EHxGxK0fajXmxdMl0/vNXbKRggnIquFCxURkrQSEzfjqxQ==}
     engines: {node: '>=18.20.0'}
 
-  '@gitbeaker/rest@43.7.0':
-    resolution: {integrity: sha512-CqTP1uRcz1K5KRm95mo3H0Q/KaJfm85LPXbH72sA2ZFoYpdH87hWudurgOa726a80ePKGupKtB4em7l+4NCcaQ==}
+  '@gitbeaker/rest@43.8.0':
+    resolution: {integrity: sha512-xxqsNsUXaFang9b2e/NTIgqUeuUlifA2Opy1mOVqTDuJZZNIOTgUNyziwBJoleBhMC0XuvY3JNVMWthufcVjRw==}
     engines: {node: '>=18.20.0'}
 
   '@humanfs/core@0.19.1':
@@ -7247,23 +7247,23 @@ snapshots:
       '@eslint/core': 0.15.2
       levn: 0.4.1
 
-  '@gitbeaker/core@43.7.0':
+  '@gitbeaker/core@43.8.0':
     dependencies:
-      '@gitbeaker/requester-utils': 43.7.0
+      '@gitbeaker/requester-utils': 43.8.0
       qs: 6.14.0
       xcase: 2.0.1
 
-  '@gitbeaker/requester-utils@43.7.0':
+  '@gitbeaker/requester-utils@43.8.0':
     dependencies:
       picomatch-browser: 2.2.6
       qs: 6.14.0
       rate-limiter-flexible: 8.1.0
       xcase: 2.0.1
 
-  '@gitbeaker/rest@43.7.0':
+  '@gitbeaker/rest@43.8.0':
     dependencies:
-      '@gitbeaker/core': 43.7.0
-      '@gitbeaker/requester-utils': 43.7.0
+      '@gitbeaker/core': 43.8.0
+      '@gitbeaker/requester-utils': 43.8.0
 
   '@humanfs/core@0.19.1': {}
 
@@ -8634,10 +8634,10 @@ snapshots:
 
   '@types/yargs-parser@21.0.3': {}
 
-  '@typescript-eslint/eslint-plugin@8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)':
+  '@typescript-eslint/eslint-plugin@8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
-      '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/scope-manager': 8.44.1
       '@typescript-eslint/type-utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
@@ -12286,7 +12286,7 @@ snapshots:
 
   typescript-eslint@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2):
     dependencies:
-      '@typescript-eslint/eslint-plugin': 8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
+      '@typescript-eslint/eslint-plugin': 8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/typescript-estree': 8.44.1(typescript@5.9.2)
       '@typescript-eslint/utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
