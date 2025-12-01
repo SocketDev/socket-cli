@@ -36,7 +36,6 @@ export async function handleScanReach({
   const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
   if (!supportedFilesCResult.ok) {
     await outputScanReach(supportedFilesCResult, {
-      cwd,
       outputKind,
       outputPath,
     })
@@ -86,5 +85,5 @@ export async function handleScanReach({
 
   spinner.stop()
 
-  await outputScanReach(result, { cwd, outputKind, outputPath })
+  await outputScanReach(result, { outputKind, outputPath })
 }
