@@ -56,6 +56,7 @@ type DiscoverGhsaIdsOptions = {
   cwd?: string | undefined
   limit?: number | undefined
   spinner?: Spinner | undefined
+  coanaVersion?: string | undefined
 }
 
 /**
@@ -79,7 +80,7 @@ async function discoverGhsaIds(
   const foundCResult = await spawnCoanaDlx(
     ['find-vulnerabilities', cwd, '--manifests-tar-hash', tarHash],
     orgSlug,
-    { cwd, spinner },
+    { cwd, spinner, coanaVersion: options?.coanaVersion  },
     { stdio: 'pipe' },
   )
 
@@ -103,6 +104,7 @@ export async function coanaFix(
   const {
     applyFixes,
     autopilot,
+    coanaVersion,
     cwd,
     disableMajorUpdates,
     exclude,
@@ -198,6 +200,7 @@ export async function coanaFix(
         cwd,
         limit,
         spinner,
+        coanaVersion,
       })
     } else if (limit > 0) {
       ids = ghsas.slice(0, limit)
@@ -241,7 +244,7 @@ export async function coanaFix(
           ...fixConfig.unknownFlags,
         ],
         fixConfig.orgSlug,
-        { cwd, spinner, stdio: 'inherit' },
+        { coanaVersion, cwd, spinner, stdio: 'inherit' },
       )
 
       spinner?.stop()
@@ -304,6 +307,7 @@ export async function coanaFix(
       cwd,
       limit: adjustedLimit,
       spinner,
+      coanaVersion,
     })
   } else if (shouldSpawnCoana) {
     ids = ghsas.slice(0, adjustedLimit)
@@ -362,7 +366,7 @@ export async function coanaFix(
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
-      { cwd, spinner, stdio: 'inherit' },
+      { coanaVersion, cwd, spinner, stdio: 'inherit' },
     )
 
     if (!fixCResult.ok) {

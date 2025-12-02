@@ -244,15 +244,16 @@ async function run(
     reachDisableAnalysisSplitting,
     reachDisableAnalytics,
     reachSkipCache,
+    reachVersion,
     readOnly,
     reportLevel,
     setAsAlertsPage: pendingHeadFlag,
     tmp,
   } = cli.flags as {
-    cwd: string
     commitHash: string
     commitMessage: string
     committers: string
+    cwd: string
     defaultBranch: boolean
     interactive: boolean
     json: boolean
@@ -265,13 +266,14 @@ async function run(
     tmp: boolean
     // Reachability flags.
     reach: boolean
-    reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
+    reachAnalysisTimeout: number
     reachConcurrency: number
     reachDebug: boolean
-    reachDisableAnalytics: boolean
     reachDisableAnalysisSplitting: boolean
+    reachDisableAnalytics: boolean
     reachSkipCache: boolean
+    reachVersion: string | undefined
   }
 
   // Validate ecosystem values.
@@ -444,15 +446,19 @@ async function run(
     reachDisableAnalytics !==
     reachabilityFlags['reachDisableAnalytics']?.default
 
+  const isUsingNonDefaultVersion =
+    reachVersion !== reachabilityFlags['reachVersion']?.default
+
   const isUsingAnyReachabilityFlags =
-    isUsingNonDefaultMemoryLimit ||
-    isUsingNonDefaultTimeout ||
-    isUsingNonDefaultConcurrency ||
-    isUsingNonDefaultAnalytics ||
     hasReachEcosystems ||
     hasReachExcludePaths ||
-    reachSkipCache ||
-    reachDisableAnalysisSplitting
+    isUsingNonDefaultAnalytics ||
+    isUsingNonDefaultConcurrency ||
+    isUsingNonDefaultMemoryLimit ||
+    isUsingNonDefaultTimeout ||
+    isUsingNonDefaultVersion ||
+    reachDisableAnalysisSplitting ||
+    reachSkipCache
 
   // Validate target constraints when --reach is enabled.
   const reachTargetValidation = reach
@@ -558,16 +564,17 @@ async function run(
     pendingHead: Boolean(pendingHead),
     pullRequest: Number(pullRequest),
     reach: {
-      runReachabilityAnalysis: Boolean(reach),
-      reachDisableAnalytics: Boolean(reachDisableAnalytics),
-      reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
+      reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachConcurrency: Number(reachConcurrency),
       reachDebug: Boolean(reachDebug),
       reachDisableAnalysisSplitting: Boolean(reachDisableAnalysisSplitting),
+      reachDisableAnalytics: Boolean(reachDisableAnalytics),
       reachEcosystems,
       reachExcludePaths,
       reachSkipCache: Boolean(reachSkipCache),
+      reachVersion,
+      runReachabilityAnalysis: Boolean(reach),
     },
     readOnly: Boolean(readOnly),
     repoName,

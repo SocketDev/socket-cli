@@ -52,6 +52,10 @@ const generalFlags: MeowFlags = {
       'https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository',
     )} for managing auto-merge for pull requests in your repository.`,
   },
+  fixVersion: {
+    type: 'string',
+    description: `Override the version of @coana-tech/cli used for fix analysis. Default: ${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}.`,
+  },
   applyFixes: {
     aliases: ['onlyCompute'],
     type: 'boolean',
@@ -258,6 +262,7 @@ async function run(
     applyFixes,
     autopilot,
     exclude,
+    fixVersion,
     include,
     json,
     limit,
@@ -276,6 +281,7 @@ async function run(
     applyFixes: boolean
     autopilot: boolean
     exclude: string[]
+    fixVersion: string | undefined
     include: string[]
     json: boolean
     limit: number
@@ -353,6 +359,7 @@ async function run(
   await handleFix({
     applyFixes,
     autopilot,
+    coanaVersion: fixVersion,
     cwd,
     disableMajorUpdates,
     exclude: excludePatterns,

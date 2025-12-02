@@ -167,6 +167,10 @@ export async function spawnDlx(
   }
 }
 
+export type CoanaDlxOptions = DlxOptions & {
+  coanaVersion?: string | undefined
+}
+
 /**
  * Helper to spawn coana with dlx.
  * Automatically uses force and silent when version is not pinned exactly.
@@ -178,17 +182,18 @@ export async function spawnDlx(
 export async function spawnCoanaDlx(
   args: string[] | readonly string[],
   orgSlug?: string,
-  options?: DlxOptions | undefined,
+  options?: CoanaDlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
   const {
+    coanaVersion,
     env: spawnEnv,
     ipc,
     ...dlxOptions
   } = {
     __proto__: null,
     ...options,
-  } as DlxOptions
+  } as CoanaDlxOptions
 
   const mixinsEnv: Record<string, string> = {
     SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
@@ -244,7 +249,8 @@ export async function spawnCoanaDlx(
     const result = await spawnDlx(
       {
         name: '@coana-tech/cli',
-        version: constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION,
+        version:
+          coanaVersion || constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION,
       },
       args,
       {
