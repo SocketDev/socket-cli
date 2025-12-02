@@ -284,7 +284,7 @@ describe('socket fix --limit behavior verification', () => {
       // First call returns the IDs to process.
       mockSpawnCoanaDlx.mockResolvedValueOnce({
         ok: true,
-        data: JSON.stringify(ghsas.join(',')),
+        data: JSON.stringify(ghsas),
       })
 
       // Subsequent calls are for individual GHSA fixes.
@@ -327,7 +327,7 @@ describe('socket fix --limit behavior verification', () => {
 
       mockSpawnCoanaDlx.mockResolvedValueOnce({
         ok: true,
-        data: JSON.stringify(ghsas.join(',')),
+        data: JSON.stringify(ghsas),
       })
 
       mockSpawnCoanaDlx.mockResolvedValue({
