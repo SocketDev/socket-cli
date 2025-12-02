@@ -97,7 +97,7 @@ async function discoverGhsaIds(
       ...fixConfig.unknownFlags,
     ],
     orgSlug,
-    { cwd, spinner },
+    { coanaVersion: fixConfig.coanaVersion, cwd, spinner },
   )
 
   if (foundCResult.ok) {
@@ -115,6 +115,7 @@ export async function coanaFix(
   const {
     applyFixes,
     autopilot,
+    coanaVersion,
     cwd,
     disableMajorUpdates,
     exclude,
@@ -253,7 +254,7 @@ export async function coanaFix(
           ...fixConfig.unknownFlags,
         ],
         fixConfig.orgSlug,
-        { cwd, spinner, stdio: 'inherit' },
+        { coanaVersion, cwd, spinner, stdio: 'inherit' },
       )
 
       spinner?.stop()
@@ -374,7 +375,7 @@ export async function coanaFix(
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
-      { cwd, spinner, stdio: 'inherit' },
+      { coanaVersion, cwd, spinner, stdio: 'inherit' },
     )
 
     if (!fixCResult.ok) {

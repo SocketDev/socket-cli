@@ -63,6 +63,7 @@ describe('socket scan create', async () => {
             --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
             --reach-exclude-paths  List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.
             --reach-skip-cache  Skip caching-based optimizations. By default, the reachability analysis will use cached configurations from previous runs to speed up the analysis.
+            --reach-version     Override the version of @coana-tech/cli used for reachability analysis. Default: <coana-version>.
 
           Uploads the specified dependency manifest files for Go, Gradle, JavaScript,
           Kotlin, Python, and Scala. Files like "package.json" and "requirements.txt".
@@ -102,9 +103,9 @@ describe('socket scan create', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan create\`, cwd: <redacted>"
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.40
+          |__   | * |  _| '_| -_|  _|     | token: (not set), org: (not set)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan create\`, cwd: ~/socket/socket-cli"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -136,9 +137,9 @@ describe('socket scan create', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan create\`, cwd: <redacted>"
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.40
+          |__   | * |  _| '_| -_|  _|     | token: en*** (--config flag), org: fakeOrg (--org flag)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan create\`, cwd: ~/socket/socket-cli"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

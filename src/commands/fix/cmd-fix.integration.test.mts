@@ -167,6 +167,7 @@ describe('socket fix', async () => {
             --autopilot         Enable auto-merge for pull requests that Socket opens.
                                 See GitHub documentation (https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository) for managing auto-merge for pull requests in your repository.
             --exclude           Exclude workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags
+            --fix-version       Override the version of @coana-tech/cli used for fix analysis. Default: <coana-version>.
             --id                Provide a list of vulnerability identifiers to compute fixes for:
                                     - GHSA IDs (https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids) (e.g., GHSA-xxxx-xxxx-xxxx)
                                     - CVE IDs (https://cve.mitre.org/cve/identifiers/) (e.g., CVE-2025-1234) - automatically converted to GHSA

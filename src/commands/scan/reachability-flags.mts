@@ -1,6 +1,12 @@
+import constants from '../../constants.mts'
+
 import type { MeowFlags } from '../../flags.mts'
 
 export const reachabilityFlags: MeowFlags = {
+  reachVersion: {
+    type: 'string',
+    description: `Override the version of @coana-tech/cli used for reachability analysis. Default: ${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}.`,
+  },
   reachAnalysisMemoryLimit: {
     type: 'number',
     default: 8192,

@@ -14,15 +14,16 @@ import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export type ReachabilityOptions = {
-  reachAnalysisTimeout: number
   reachAnalysisMemoryLimit: number
+  reachAnalysisTimeout: number
   reachConcurrency: number
   reachDebug: boolean
-  reachDisableAnalytics: boolean
   reachDisableAnalysisSplitting: boolean
+  reachDisableAnalytics: boolean
   reachEcosystems: PURL_Type[]
   reachExcludePaths: string[]
   reachSkipCache: boolean
+  reachVersion: string | undefined
 }
 
 export type ReachabilityAnalysisOptions = {
@@ -201,6 +202,7 @@ export async function performReachabilityAnalysis(
 
   // Run Coana with the manifests tar hash.
   const coanaResult = await spawnCoanaDlx(coanaArgs, orgSlug, {
+    coanaVersion: reachabilityOptions.reachVersion,
     cwd,
     env: coanaEnv,
     spinner,

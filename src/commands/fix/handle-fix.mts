@@ -17,6 +17,7 @@ const CVE_FORMAT_REGEXP = /^CVE-\d{4}-\d{4,}$/
 export type HandleFixConfig = Remap<
   FixConfig & {
     applyFixes: boolean
+    coanaVersion?: string | undefined
     ghsas: string[]
     orgSlug: string
     outputKind: OutputKind
@@ -98,6 +99,7 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
 export async function handleFix({
   applyFixes,
   autopilot,
+  coanaVersion,
   cwd,
   disableMajorUpdates,
   exclude,
@@ -119,6 +121,7 @@ export async function handleFix({
   debugDir('inspect', {
     applyFixes,
     autopilot,
+    coanaVersion,
     cwd,
     disableMajorUpdates,
     exclude,
@@ -139,6 +142,7 @@ export async function handleFix({
     await coanaFix({
       applyFixes,
       autopilot,
+      coanaVersion,
       cwd,
       disableMajorUpdates,
       exclude,

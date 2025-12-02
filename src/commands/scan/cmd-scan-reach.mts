@@ -128,6 +128,7 @@ async function run(
     reachDisableAnalysisSplitting,
     reachDisableAnalytics,
     reachSkipCache,
+    reachVersion,
   } = cli.flags as {
     cwd: string
     interactive: boolean
@@ -135,13 +136,14 @@ async function run(
     markdown: boolean
     org: string
     output: string
-    reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
+    reachAnalysisTimeout: number
     reachConcurrency: number
     reachDebug: boolean
-    reachDisableAnalytics: boolean
     reachDisableAnalysisSplitting: boolean
+    reachDisableAnalytics: boolean
     reachSkipCache: boolean
+    reachVersion: string | undefined
   }
 
   const dryRun = !!cli.flags['dryRun']
@@ -252,15 +254,16 @@ async function run(
     outputKind,
     outputPath: outputPath || '',
     reachabilityOptions: {
-      reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
+      reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachConcurrency: Number(reachConcurrency),
       reachDebug: Boolean(reachDebug),
-      reachDisableAnalytics: Boolean(reachDisableAnalytics),
       reachDisableAnalysisSplitting: Boolean(reachDisableAnalysisSplitting),
+      reachDisableAnalytics: Boolean(reachDisableAnalytics),
       reachEcosystems,
       reachExcludePaths,
       reachSkipCache: Boolean(reachSkipCache),
+      reachVersion,
     },
     targets,
   })
