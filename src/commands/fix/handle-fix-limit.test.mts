@@ -223,7 +223,7 @@ describe('socket fix --limit behavior verification', () => {
       // First call is for discovery (returns vulnerability IDs).
       mockSpawnCoanaDlx.mockResolvedValueOnce({
         ok: true,
-        data: 'Vulnerabilities found: GHSA-aaaa-aaaa-aaaa,GHSA-bbbb-bbbb-bbbb',
+        data: JSON.stringify(['GHSA-aaaa-aaaa-aaaa', 'GHSA-bbbb-bbbb-bbbb']),
       })
 
       // Second call is to apply fixes to the discovered IDs.
@@ -245,7 +245,7 @@ describe('socket fix --limit behavior verification', () => {
 
       // First call is discovery (no --apply-fixes-to).
       const discoveryArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
-      expect(discoveryArgs).toContain('compute-fixes-and-upgrade-purls')
+      expect(discoveryArgs).toContain('find-vulnerabilities')
       expect(discoveryArgs).not.toContain('--apply-fixes-to')
 
       // Second call applies fixes to discovered IDs.
@@ -284,7 +284,7 @@ describe('socket fix --limit behavior verification', () => {
       // First call returns the IDs to process.
       mockSpawnCoanaDlx.mockResolvedValueOnce({
         ok: true,
-        data: `Vulnerabilities found: ${ghsas.join(',')}`,
+        data: JSON.stringify(ghsas),
       })
 
       // Subsequent calls are for individual GHSA fixes.
@@ -327,7 +327,7 @@ describe('socket fix --limit behavior verification', () => {
 
       mockSpawnCoanaDlx.mockResolvedValueOnce({
         ok: true,
-        data: `Vulnerabilities found: ${ghsas.join(',')}`,
+        data: JSON.stringify(ghsas),
       })
 
       mockSpawnCoanaDlx.mockResolvedValue({
