@@ -27,7 +27,6 @@ import {
   GQL_PR_STATE_OPEN,
 } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
-import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { getErrorCause } from '../../utils/errors.mts'
 import {
@@ -57,6 +56,7 @@ type DiscoverGhsaIdsOptions = {
   cwd?: string | undefined
   limit?: number | undefined
   spinner?: Spinner | undefined
+  coanaVersion?: string | undefined
 }
 
 /**
@@ -66,7 +66,6 @@ type DiscoverGhsaIdsOptions = {
 async function discoverGhsaIds(
   orgSlug: string,
   tarHash: string,
-  fixConfig: FixConfig,
   options?: DiscoverGhsaIdsOptions | undefined,
 ): Promise<string[]> {
   const {
@@ -79,31 +78,21 @@ async function discoverGhsaIds(
   } as DiscoverGhsaIdsOptions
 
   const foundCResult = await spawnCoanaDlx(
-    [
-      'compute-fixes-and-upgrade-purls',
-      cwd,
-      '--manifests-tar-hash',
-      tarHash,
-      ...(fixConfig.rangeStyle ? ['--range-style', fixConfig.rangeStyle] : []),
-      ...(fixConfig.minimumReleaseAge
-        ? ['--minimum-release-age', fixConfig.minimumReleaseAge]
-        : []),
-      ...(fixConfig.include.length ? ['--include', ...fixConfig.include] : []),
-      ...(fixConfig.exclude.length ? ['--exclude', ...fixConfig.exclude] : []),
-      ...(fixConfig.disableMajorUpdates ? ['--disable-major-updates'] : []),
-      ...(fixConfig.showAffectedDirectDependencies
-        ? ['--show-affected-direct-dependencies']
-        : []),
-      ...fixConfig.unknownFlags,
-    ],
+    ['find-vulnerabilities', cwd, '--manifests-tar-hash', tarHash],
     orgSlug,
-    { coanaVersion: fixConfig.coanaVersion, cwd, spinner },
+    { cwd, spinner, coanaVersion: options?.coanaVersion  },
+    { stdio: 'pipe' },
   )
 
   if (foundCResult.ok) {
-    const foundIds = cmdFlagValueToArray(
-      /(?<=Vulnerabilities found:).*/.exec(foundCResult.data),
-    )
+    // Coana prints ghsaIds as json-formatted string on the final line of the output
+    const foundIds: string[] = []
+    try {
+      const ghsaIdsRaw = foundCResult.data.trim().split('\n').pop()
+      if (ghsaIdsRaw) {
+        foundIds.push(...JSON.parse(ghsaIdsRaw))
+      }
+    } catch {}
     return limit !== undefined ? foundIds.slice(0, limit) : foundIds
   }
   return []
@@ -207,10 +196,11 @@ export async function coanaFix(
 
     let ids: string[]
     if (isAll && limit > 0) {
-      ids = await discoverGhsaIds(orgSlug, tarHash, fixConfig, {
+      ids = await discoverGhsaIds(orgSlug, tarHash, {
         cwd,
         limit,
         spinner,
+        coanaVersion,
       })
     } else if (limit > 0) {
       ids = ghsas.slice(0, limit)
@@ -313,10 +303,11 @@ export async function coanaFix(
   let ids: string[] | undefined
 
   if (shouldSpawnCoana && isAll) {
-    ids = await discoverGhsaIds(orgSlug, tarHash, fixConfig, {
+    ids = await discoverGhsaIds(orgSlug, tarHash, {
       cwd,
       limit: adjustedLimit,
       spinner,
+      coanaVersion,
     })
   } else if (shouldSpawnCoana) {
     ids = ghsas.slice(0, adjustedLimit)
