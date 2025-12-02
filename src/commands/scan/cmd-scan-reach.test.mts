@@ -66,9 +66,9 @@ describe('socket scan reach', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.40
-          |__   | * |  _| '_| -_|  _|     | token: (not set), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan reach\`, cwd: ~/socket/socket-cli"
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan reach\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -95,9 +95,9 @@ describe('socket scan reach', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.40
-          |__   | * |  _| '_| -_|  _|     | token: en*** (--config flag), org: fakeOrg (--org flag)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan reach\`, cwd: ~/socket/socket-cli"
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan reach\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
