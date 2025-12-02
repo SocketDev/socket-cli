@@ -85,7 +85,9 @@ async function discoverGhsaIds(
 
   if (foundCResult.ok) {
     // Coana prints ghsaIds as json-formatted string on the final line of the output
-    const foundIds = JSON.parse(foundCResult.data.split('\n').pop() || '[]')
+    const foundIds = JSON.parse(
+      foundCResult.data.trim().split('\n').pop() || '[]',
+    )
     return limit !== undefined ? foundIds.slice(0, limit) : foundIds
   }
   return []
