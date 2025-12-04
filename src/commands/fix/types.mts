@@ -1,3 +1,4 @@
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
@@ -7,15 +8,16 @@ export type FixConfig = {
   coanaVersion: string | undefined
   cwd: string
   disableMajorUpdates: boolean
+  ecosystems: PURL_Type[]
   exclude: string[]
   ghsas: string[]
   include: string[]
-  limit: number
   minimumReleaseAge: string
   minSatisfying: boolean
   orgSlug: string
   outputFile: string
   prCheck: boolean
+  prLimit: number
   rangeStyle: RangeStyle
   showAffectedDirectDependencies: boolean
   spinner: Spinner | undefined

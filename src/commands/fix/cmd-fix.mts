@@ -2,7 +2,11 @@ import path from 'node:path'
 
 import terminalLink from 'terminal-link'
 
-import { arrayUnique, joinOr } from '@socketsecurity/registry/lib/arrays'
+import {
+  arrayUnique,
+  joinAnd,
+  joinOr,
+} from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleFix } from './handle-fix.mts'
@@ -13,6 +17,7 @@ import constants, {
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
+import { getEcosystemChoicesForMeow } from '../../utils/ecosystem.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
@@ -23,6 +28,7 @@ import { RangeStyles } from '../../utils/semver.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type {
   CliCommandConfig,
   CliCommandContext,
@@ -108,10 +114,10 @@ const generalFlags: MeowFlags = {
     Can be provided as comma separated values or as multiple flags`,
     isMultiple: true,
   },
-  limit: {
+  prLimit: {
     type: 'number',
     default: DEFAULT_LIMIT,
-    description: `The number of fixes to attempt at a time (default ${DEFAULT_LIMIT})`,
+    description: `Maximum number of pull requests to create in CI mode (default ${DEFAULT_LIMIT}). Has no effect in local mode.`,
   },
   rangeStyle: {
     type: 'string',
@@ -134,6 +140,13 @@ Available styles:
     description:
       'Set a minimum age requirement for suggested upgrade versions (e.g., 1h, 2d, 3w). A higher age requirement reduces the risk of upgrading to malicious versions. For example, setting the value to 1 week (1w) gives ecosystem maintainers one week to remove potentially malicious versions.',
   },
+  ecosystems: {
+    type: 'string',
+    default: [],
+    description:
+      'Limit fix analysis to specific ecosystems. Can be provided as comma separated values or as multiple flags. Defaults to all ecosystems.',
+    isMultiple: true,
+  },
   showAffectedDirectDependencies: {
     type: 'boolean',
     default: false,
@@ -151,7 +164,10 @@ const hiddenFlags: MeowFlags = {
     ...generalFlags['id'],
     hidden: true,
   } as MeowFlag,
-
+  limit: {
+    ...generalFlags['prLimit'],
+    hidden: true,
+  } as MeowFlag,
   maxSatisfying: {
     type: 'boolean',
     default: true,
@@ -261,17 +277,18 @@ async function run(
   const {
     applyFixes,
     autopilot,
+    ecosystems,
     exclude,
     fixVersion,
     include,
     json,
-    limit,
     majorUpdates,
     markdown,
     maxSatisfying,
     minimumReleaseAge,
     outputFile,
     prCheck,
+    prLimit,
     rangeStyle,
     showAffectedDirectDependencies,
     // We patched in this feature with `npx custompatch meow` at
@@ -280,11 +297,11 @@ async function run(
   } = cli.flags as {
     applyFixes: boolean
     autopilot: boolean
+    ecosystems: string[]
     exclude: string[]
     fixVersion: string | undefined
     include: string[]
     json: boolean
-    limit: number
     majorUpdates: boolean
     markdown: boolean
     maxSatisfying: boolean
@@ -292,6 +309,7 @@ async function run(
     minimumReleaseAge: string
     outputFile: string
     prCheck: boolean
+    prLimit: number
     rangeStyle: RangeStyle
     showAffectedDirectDependencies: boolean
     unknownFlags?: string[]
@@ -305,6 +323,23 @@ async function run(
   const disableMajorUpdates = !majorUpdates
 
   const outputKind = getOutputKind(json, markdown)
+
+  // Process comma-separated values for ecosystems flag.
+  const ecosystemsRaw = cmdFlagValueToArray(ecosystems)
+
+  // Validate ecosystem values early, before dry-run check.
+  const validatedEcosystems: PURL_Type[] = []
+  const validEcosystemChoices = getEcosystemChoicesForMeow()
+  for (const ecosystem of ecosystemsRaw) {
+    if (!validEcosystemChoices.includes(ecosystem)) {
+      logger.fail(
+        `Invalid ecosystem: "${ecosystem}". Valid values are: ${joinAnd(validEcosystemChoices)}`,
+      )
+      process.exitCode = 1
+      return
+    }
+    validatedEcosystems.push(ecosystem as PURL_Type)
+  }
 
   const wasValidInput = checkCommandInput(
     outputKind,
@@ -362,16 +397,17 @@ async function run(
     coanaVersion: fixVersion,
     cwd,
     disableMajorUpdates,
+    ecosystems: validatedEcosystems,
     exclude: excludePatterns,
     ghsas,
     include: includePatterns,
-    limit,
     minimumReleaseAge,
     minSatisfying,
     orgSlug,
     outputFile,
     outputKind,
     prCheck,
+    prLimit,
     rangeStyle,
     showAffectedDirectDependencies,
     spinner,

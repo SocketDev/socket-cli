@@ -166,6 +166,7 @@ describe('socket fix', async () => {
           Options
             --autopilot         Enable auto-merge for pull requests that Socket opens.
                                 See GitHub documentation (https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository) for managing auto-merge for pull requests in your repository.
+            --ecosystems        Limit fix analysis to specific ecosystems. Can be provided as comma separated values or as multiple flags. Defaults to all ecosystems.
             --exclude           Exclude workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags
             --fix-version       Override the version of @coana-tech/cli used for fix analysis. Default: <coana-version>.
             --id                Provide a list of vulnerability identifiers to compute fixes for:
@@ -175,12 +176,12 @@ describe('socket fix', async () => {
                                     Can be provided as comma separated values or as multiple flags
             --include           Include workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags
             --json              Output as JSON
-            --limit             The number of fixes to attempt at a time (default 10)
             --markdown          Output as Markdown
             --minimum-release-age  Set a minimum age requirement for suggested upgrade versions (e.g., 1h, 2d, 3w). A higher age requirement reduces the risk of upgrading to malicious versions. For example, setting the value to 1 week (1w) gives ecosystem maintainers one week to remove potentially malicious versions.
             --no-apply-fixes    Compute fixes only, do not apply them. Logs what upgrades would be applied. If combined with --output-file, the output file will contain the upgrades that would be applied.
             --no-major-updates  Do not suggest or apply fixes that require major version updates of direct or transitive dependencies
             --output-file       Path to store upgrades as a JSON file at this path.
+            --pr-limit          Maximum number of pull requests to create in CI mode (default 10). Has no effect in local mode.
             --range-style       Define how dependency version ranges are updated in package.json (default 'preserve').
                                 Available styles:
                                   * pin - Use the exact version (e.g. 1.2.3)
@@ -921,17 +922,17 @@ describe('socket fix', async () => {
     )
   })
 
-  describe('--limit flag behavior', () => {
+  describe('--pr-limit flag behavior', () => {
     cmdit(
       [
         'fix',
         FLAG_DRY_RUN,
-        '--limit',
+        '--pr-limit',
         '0',
         FLAG_CONFIG,
         '{"apiToken":"fakeToken"}',
       ],
-      'should accept --limit with value 0',
+      'should accept --pr-limit with value 0',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
         expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
@@ -943,12 +944,12 @@ describe('socket fix', async () => {
       [
         'fix',
         FLAG_DRY_RUN,
-        '--limit',
+        '--pr-limit',
         '1',
         FLAG_CONFIG,
         '{"apiToken":"fakeToken"}',
       ],
-      'should accept --limit with value 1',
+      'should accept --pr-limit with value 1',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
         expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
@@ -960,12 +961,12 @@ describe('socket fix', async () => {
       [
         'fix',
         FLAG_DRY_RUN,
-        '--limit',
+        '--pr-limit',
         '100',
         FLAG_CONFIG,
         '{"apiToken":"fakeToken"}',
       ],
-      'should accept --limit with large value',
+      'should accept --pr-limit with large value',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
         expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
@@ -975,7 +976,7 @@ describe('socket fix', async () => {
 
     cmdit(
       ['fix', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
-      'should use default limit of 10 when --limit is not specified',
+      'should use default pr-limit of 10 when --pr-limit is not specified',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
         expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
@@ -984,14 +985,104 @@ describe('socket fix', async () => {
     )
 
     cmdit(
-      ['fix', '--limit', '0', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
-      'should handle --limit 0 in non-dry-run mode',
+      ['fix', '--pr-limit', '0', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+      'should handle --pr-limit 0 in non-dry-run mode',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
         expect(output).toContain(
           'Unable to resolve a Socket account organization',
         )
+        expect(code, 'should exit with non-zero code').not.toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '5',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --limit as hidden alias for --pr-limit',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+  })
+
+  describe('--ecosystems flag behavior', () => {
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--ecosystems',
+        'npm',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --ecosystems with single ecosystem',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--ecosystems',
+        'npm,pypi',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --ecosystems with comma-separated values',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--ecosystems',
+        'npm',
+        '--ecosystems',
+        'pypi',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept multiple --ecosystems flags',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--ecosystems',
+        'invalid-ecosystem',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should fail with invalid ecosystem value',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain('Invalid ecosystem')
         expect(code, 'should exit with non-zero code').not.toBe(0)
       },
     )
@@ -1086,19 +1177,19 @@ describe('socket fix', async () => {
     )
   })
 
-  describe('--limit and --id combination', () => {
+  describe('--pr-limit and --id combination', () => {
     cmdit(
       [
         'fix',
         FLAG_DRY_RUN,
-        '--limit',
+        '--pr-limit',
         '1',
         FLAG_ID,
         'GHSA-1234-5678-9abc',
         FLAG_CONFIG,
         '{"apiToken":"fakeToken"}',
       ],
-      'should accept both --limit and --id flags together',
+      'should accept both --pr-limit and --id flags together',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
         expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
@@ -1110,14 +1201,14 @@ describe('socket fix', async () => {
       [
         'fix',
         FLAG_DRY_RUN,
-        '--limit',
+        '--pr-limit',
         '5',
         FLAG_ID,
         'GHSA-1234-5678-9abc,CVE-2021-12345,pkg:npm/lodash@4.17.20',
         FLAG_CONFIG,
         '{"apiToken":"fakeToken"}',
       ],
-      'should accept --limit with multiple vulnerability IDs',
+      'should accept --pr-limit with multiple vulnerability IDs',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
         expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
@@ -1129,7 +1220,7 @@ describe('socket fix', async () => {
       [
         'fix',
         FLAG_DRY_RUN,
-        '--limit',
+        '--pr-limit',
         '1',
         FLAG_ID,
         'GHSA-1234-5678-9abc',
@@ -1137,7 +1228,7 @@ describe('socket fix', async () => {
         FLAG_CONFIG,
         '{"apiToken":"fakeToken"}',
       ],
-      'should accept --limit, --id, and --autopilot together',
+      'should accept --pr-limit, --id, and --autopilot together',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
         expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
@@ -1148,14 +1239,14 @@ describe('socket fix', async () => {
     cmdit(
       [
         'fix',
-        '--limit',
+        '--pr-limit',
         '2',
         FLAG_ID,
         'GHSA-1234-5678-9abc,GHSA-abcd-efgh-ijkl',
         FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
-      'should handle --limit and --id in non-dry-run mode',
+      'should handle --pr-limit and --id in non-dry-run mode',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
@@ -1170,7 +1261,7 @@ describe('socket fix', async () => {
       [
         'fix',
         FLAG_DRY_RUN,
-        '--limit',
+        '--pr-limit',
         '3',
         FLAG_ID,
         'GHSA-1234-5678-9abc',
@@ -1178,7 +1269,7 @@ describe('socket fix', async () => {
         FLAG_CONFIG,
         '{"apiToken":"fakeToken"}',
       ],
-      'should accept --limit, --id, and --json output format together',
+      'should accept --pr-limit, --id, and --json output format together',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
         expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
@@ -1190,7 +1281,7 @@ describe('socket fix', async () => {
       [
         'fix',
         FLAG_DRY_RUN,
-        '--limit',
+        '--pr-limit',
         '10',
         FLAG_ID,
         'CVE-2021-12345',
@@ -1198,7 +1289,7 @@ describe('socket fix', async () => {
         FLAG_CONFIG,
         '{"apiToken":"fakeToken"}',
       ],
-      'should accept --limit, --id, and --markdown output format together',
+      'should accept --pr-limit, --id, and --markdown output format together',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
         expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)

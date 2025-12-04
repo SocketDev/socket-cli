@@ -50,13 +50,14 @@ import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-n
 
 import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 type DiscoverGhsaIdsOptions = {
-  cwd?: string | undefined
-  limit?: number | undefined
-  spinner?: Spinner | undefined
   coanaVersion?: string | undefined
+  cwd?: string | undefined
+  ecosystems?: PURL_Type[] | undefined
+  spinner?: Spinner | undefined
 }
 
 /**
@@ -70,7 +71,7 @@ async function discoverGhsaIds(
 ): Promise<string[]> {
   const {
     cwd = process.cwd(),
-    limit,
+    ecosystems,
     spinner,
   } = {
     __proto__: null,
@@ -78,22 +79,26 @@ async function discoverGhsaIds(
   } as DiscoverGhsaIdsOptions
 
   const foundCResult = await spawnCoanaDlx(
-    ['find-vulnerabilities', cwd, '--manifests-tar-hash', tarHash],
+    [
+      'find-vulnerabilities',
+      cwd,
+      '--manifests-tar-hash',
+      tarHash,
+      ...(ecosystems?.length ? ['--purl-types', ...ecosystems] : []),
+    ],
     orgSlug,
-    { cwd, spinner, coanaVersion: options?.coanaVersion  },
+    { cwd, spinner, coanaVersion: options?.coanaVersion },
     { stdio: 'pipe' },
   )
 
   if (foundCResult.ok) {
-    // Coana prints ghsaIds as json-formatted string on the final line of the output
-    const foundIds: string[] = []
     try {
+      // Coana prints ghsaIds as json-formatted string on the final line of the output.
       const ghsaIdsRaw = foundCResult.data.trim().split('\n').pop()
       if (ghsaIdsRaw) {
-        foundIds.push(...JSON.parse(ghsaIdsRaw))
+        return JSON.parse(ghsaIdsRaw)
       }
     } catch {}
-    return limit !== undefined ? foundIds.slice(0, limit) : foundIds
   }
   return []
 }
@@ -107,13 +112,14 @@ export async function coanaFix(
     coanaVersion,
     cwd,
     disableMajorUpdates,
+    ecosystems,
     exclude,
     ghsas,
     include,
-    limit,
     minimumReleaseAge,
     orgSlug,
     outputFile,
+    prLimit,
     showAffectedDirectDependencies,
     spinner,
   } = fixConfig
@@ -167,9 +173,7 @@ export async function coanaFix(
     }
   }
 
-  const isAll =
-    !ghsas.length ||
-    (ghsas.length === 1 && (ghsas[0] === 'all' || ghsas[0] === 'auto'))
+  const shouldDiscoverGhsaIds = !ghsas.length
 
   const shouldOpenPrs = fixEnv.isCi && fixEnv.repoInfo
 
@@ -194,21 +198,17 @@ export async function coanaFix(
       }
     }
 
-    let ids: string[]
-    if (isAll && limit > 0) {
-      ids = await discoverGhsaIds(orgSlug, tarHash, {
-        cwd,
-        limit,
-        spinner,
-        coanaVersion,
-      })
-    } else if (limit > 0) {
-      ids = ghsas.slice(0, limit)
-    } else {
-      ids = []
-    }
+    // In local mode, process all discovered/provided IDs (no limit).
+    const ids: string[] = shouldDiscoverGhsaIds
+      ? await discoverGhsaIds(orgSlug, tarHash, {
+          coanaVersion,
+          cwd,
+          ecosystems,
+          spinner,
+        })
+      : ghsas
 
-    if (limit < 1 || ids.length === 0) {
+    if (ids.length === 0) {
       spinner?.stop()
       return { ok: true, data: { fixed: false } }
     }
@@ -234,6 +234,7 @@ export async function coanaFix(
             : []),
           ...(include.length ? ['--include', ...include] : []),
           ...(exclude.length ? ['--exclude', ...exclude] : []),
+          ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
           ...(!applyFixes ? [FLAG_DRY_RUN] : []),
           '--output-file',
           tmpFile,
@@ -274,8 +275,8 @@ export async function coanaFix(
     }
   }
 
-  // Adjust limit based on open Socket Fix PRs.
-  let adjustedLimit = limit
+  // Adjust PR limit based on open Socket Fix PRs.
+  let adjustedPrLimit = prLimit
   if (shouldOpenPrs && fixEnv.repoInfo) {
     try {
       const openPrs = await getSocketFixPrs(
@@ -285,11 +286,11 @@ export async function coanaFix(
       )
       const openPrCount = openPrs.length
       // Reduce limit by number of open PRs to avoid creating too many.
-      adjustedLimit = Math.max(0, limit - openPrCount)
+      adjustedPrLimit = Math.max(0, prLimit - openPrCount)
       if (openPrCount > 0) {
         debugFn(
           'notice',
-          `limit: adjusted from ${limit} to ${adjustedLimit} (${openPrCount} open Socket Fix ${pluralize('PR', openPrCount)}`,
+          `prLimit: adjusted from ${prLimit} to ${adjustedPrLimit} (${openPrCount} open Socket Fix ${pluralize('PR', openPrCount)}`,
         )
       }
     } catch (e) {
@@ -298,19 +299,21 @@ export async function coanaFix(
     }
   }
 
-  const shouldSpawnCoana = adjustedLimit > 0
+  const shouldSpawnCoana = adjustedPrLimit > 0
 
   let ids: string[] | undefined
 
-  if (shouldSpawnCoana && isAll) {
-    ids = await discoverGhsaIds(orgSlug, tarHash, {
-      cwd,
-      limit: adjustedLimit,
-      spinner,
-      coanaVersion,
-    })
-  } else if (shouldSpawnCoana) {
-    ids = ghsas.slice(0, adjustedLimit)
+  if (shouldSpawnCoana) {
+    ids = (
+      shouldDiscoverGhsaIds
+        ? await discoverGhsaIds(orgSlug, tarHash, {
+            coanaVersion,
+            cwd,
+            ecosystems,
+            spinner,
+          })
+        : ghsas
+    ).slice(0, adjustedPrLimit)
   }
 
   if (!ids?.length) {
@@ -359,6 +362,7 @@ export async function coanaFix(
           : []),
         ...(include.length ? ['--include', ...include] : []),
         ...(exclude.length ? ['--exclude', ...exclude] : []),
+        ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
         ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
         ...(showAffectedDirectDependencies
           ? ['--show-affected-direct-dependencies']
@@ -573,9 +577,9 @@ export async function coanaFix(
     count += 1
     debugFn(
       'notice',
-      `increment: count ${count}/${Math.min(adjustedLimit, ids.length)}`,
+      `increment: count ${count}/${Math.min(adjustedPrLimit, ids.length)}`,
     )
-    if (count >= adjustedLimit) {
+    if (count >= adjustedPrLimit) {
       break ghsaLoop
     }
   }

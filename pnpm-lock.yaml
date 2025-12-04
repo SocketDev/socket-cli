@@ -124,8 +124,8 @@ importers:
         specifier: 2.2.4
         version: 2.2.4
       '@coana-tech/cli':
-        specifier: 14.12.110
-        version: 14.12.110
+        specifier: 14.12.113
+        version: 14.12.113
       '@cyclonedx/cdxgen':
         specifier: 11.11.0
         version: 11.11.0
@@ -677,8 +677,8 @@ packages:
   '@bufbuild/protobuf@2.6.3':
     resolution: {integrity: sha512-w/gJKME9mYN7ZoUAmSMAWXk4hkVpxRKvEJCb3dV5g9wwWdxTJJ0ayOJAVcNxtdqaxDyFuC0uz4RSGVacJ030PQ==}
 
-  '@coana-tech/cli@14.12.110':
-    resolution: {integrity: sha512-I+SAm9VKoZpLsI0yz4qTIKJIGkN5qbTtp/fxhWaOgjC01riCcAdm0cIqsJZJZgp6xYlR401G86efeauIsSlQsA==}
+  '@coana-tech/cli@14.12.113':
+    resolution: {integrity: sha512-YWxLoHcCKjjbXhlf8qxhVdvd4BbUIjQ934SJdMgBBDbnNrlc26nsRTCM9sHdFc8r4MESBIkXIY3rfENLmFJEtg==}
     hasBin: true
 
   '@colors/colors@1.5.0':
@@ -5315,7 +5315,7 @@ snapshots:
   '@bufbuild/protobuf@2.6.3':
     optional: true
 
-  '@coana-tech/cli@14.12.110': {}
+  '@coana-tech/cli@14.12.113': {}
 
   '@colors/colors@1.5.0':
     optional: true

@@ -4,7 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.1.41](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.40) - 2025-12-02
+## [1.1.42](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.42) - 2025-12-04
+
+### Added
+- Added `--ecosystems` flag to `socket fix`.
+
+### Changed
+- Updated the Coana CLI to v `14.12.113`.
+- Rename `--limit` flag to `--pr-limit` for `socket fix`, but keep old flag as an alias. Note: `--pr-limit` has no effect in local mode, use `--id` options instead.
+- Process all vulnerabilities with `socket fix` when no `--id` options are provided.
+
+## [1.1.41](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.41) - 2025-12-02
 
 ### Added
 - Added `--reach-version` flag to `socket scan create` and `socket scan reach` to override the @coana-tech/cli version used for reachability analysis.
