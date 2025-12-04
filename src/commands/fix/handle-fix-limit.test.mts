@@ -70,21 +70,23 @@ vi.mock('./branch-cleanup.mts', () => ({
   cleanupSuccessfulPrLocalBranch: vi.fn(),
 }))
 
-describe('socket fix --limit behavior verification', () => {
+describe('socket fix --pr-limit behavior verification', () => {
   const baseConfig: FixConfig = {
     applyFixes: true,
     autopilot: false,
+    coanaVersion: undefined,
     cwd: '/test/cwd',
     disableMajorUpdates: false,
+    ecosystems: [],
     exclude: [],
     ghsas: [],
     include: [],
-    limit: 10,
     minSatisfying: false,
     minimumReleaseAge: '',
     orgSlug: 'test-org',
     outputFile: '',
     prCheck: true,
+    prLimit: 10,
     rangeStyle: 'preserve',
     showAffectedDirectDependencies: false,
     spinner: undefined,
@@ -132,7 +134,7 @@ describe('socket fix --limit behavior verification', () => {
   })
 
   describe('local mode (no PRs)', () => {
-    it('should process only N GHSAs when --limit N is specified', async () => {
+    it('should process all GHSAs in local mode (no limit)', async () => {
       const ghsas = [
         'GHSA-1111-1111-1111',
         'GHSA-2222-2222-2222',
@@ -150,12 +152,12 @@ describe('socket fix --limit behavior verification', () => {
       const result = await coanaFix({
         ...baseConfig,
         ghsas,
-        limit: 3,
+        prLimit: 3, // prLimit should have no effect in local mode.
       })
 
       expect(result.ok).toBe(true)
 
-      // Verify spawnCoanaDlx was called once with only the first 3 GHSAs.
+      // Verify spawnCoanaDlx was called once with all GHSAs (local mode has no limit).
       expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
       const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
       expect(callArgs).toContain('--apply-fixes-to')
@@ -166,14 +168,17 @@ describe('socket fix --limit behavior verification', () => {
         .slice(applyFixesIndex + 1)
         .filter(arg => arg.startsWith('GHSA-'))
 
+      // All 5 GHSAs should be processed in local mode.
       expect(ghsaArgs).toEqual([
         'GHSA-1111-1111-1111',
         'GHSA-2222-2222-2222',
         'GHSA-3333-3333-3333',
+        'GHSA-4444-4444-4444',
+        'GHSA-5555-5555-5555',
       ])
     })
 
-    it('should process all GHSAs when limit exceeds GHSA count', async () => {
+    it('should process all provided GHSAs in local mode', async () => {
       const ghsas = ['GHSA-1111-1111-1111', 'GHSA-2222-2222-2222']
 
       mockSpawnCoanaDlx.mockResolvedValue({
@@ -184,7 +189,6 @@ describe('socket fix --limit behavior verification', () => {
       const result = await coanaFix({
         ...baseConfig,
         ghsas,
-        limit: 10,
       })
 
       expect(result.ok).toBe(true)
@@ -199,24 +203,23 @@ describe('socket fix --limit behavior verification', () => {
       expect(ghsaArgs).toEqual(['GHSA-1111-1111-1111', 'GHSA-2222-2222-2222'])
     })
 
-    it('should process no GHSAs when --limit 0 is specified', async () => {
-      const ghsas = [
-        'GHSA-1111-1111-1111',
-        'GHSA-2222-2222-2222',
-        'GHSA-3333-3333-3333',
-      ]
+    it('should return early when no GHSAs are provided and none are discovered', async () => {
+      // Discovery returns empty array.
+      mockSpawnCoanaDlx.mockResolvedValueOnce({
+        ok: true,
+        data: JSON.stringify([]),
+      })
 
       const result = await coanaFix({
         ...baseConfig,
-        ghsas,
-        limit: 0,
+        ghsas: [],
       })
 
       expect(result.ok).toBe(true)
       expect(result.data?.fixed).toBe(false)
 
-      // spawnCoanaDlx should not be called at all with limit 0.
-      expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
+      // Only discovery call, no fix call since no GHSAs found.
+      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
     })
 
     it('should discover vulnerabilities when no GHSAs are provided', async () => {
@@ -235,7 +238,6 @@ describe('socket fix --limit behavior verification', () => {
       const result = await coanaFix({
         ...baseConfig,
         ghsas: [],
-        limit: 10,
       })
 
       expect(result.ok).toBe(true)
@@ -258,9 +260,10 @@ describe('socket fix --limit behavior verification', () => {
     beforeEach(() => {
       // Enable PR mode.
       mockGetFixEnv.mockResolvedValue({
+        baseBranch: 'main',
         githubToken: 'test-token',
-        gitUserEmail: 'test@example.com',
-        gitUserName: 'test-user',
+        gitEmail: 'test@example.com',
+        gitUser: 'test-user',
         isCi: true,
         repoInfo: {
           defaultBranch: 'main',
@@ -273,7 +276,7 @@ describe('socket fix --limit behavior verification', () => {
       mockFetchGhsaDetails.mockResolvedValue(new Map())
     })
 
-    it('should process only N GHSAs when --limit N is specified in PR mode', async () => {
+    it('should process only N GHSAs when --pr-limit N is specified in PR mode', async () => {
       const ghsas = [
         'GHSA-aaaa-aaaa-aaaa',
         'GHSA-bbbb-bbbb-bbbb',
@@ -281,7 +284,7 @@ describe('socket fix --limit behavior verification', () => {
         'GHSA-dddd-dddd-dddd',
       ]
 
-      // First call returns the IDs to process.
+      // First call discovers vulnerabilities.
       mockSpawnCoanaDlx.mockResolvedValueOnce({
         ok: true,
         data: JSON.stringify(ghsas),
@@ -300,8 +303,8 @@ describe('socket fix --limit behavior verification', () => {
 
       const result = await coanaFix({
         ...baseConfig,
-        ghsas: ['all'],
-        limit: 2,
+        ghsas: [], // Empty to trigger discovery.
+        prLimit: 2,
       })
 
       expect(result.ok).toBe(true)
@@ -310,7 +313,7 @@ describe('socket fix --limit behavior verification', () => {
       expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(3)
     })
 
-    it('should adjust limit based on existing open PRs', async () => {
+    it('should adjust prLimit based on existing open PRs', async () => {
       const ghsas = [
         'GHSA-aaaa-aaaa-aaaa',
         'GHSA-bbbb-bbbb-bbbb',
@@ -342,18 +345,18 @@ describe('socket fix --limit behavior verification', () => {
 
       const result = await coanaFix({
         ...baseConfig,
-        ghsas: ['all'],
-        limit: 3,
+        ghsas: [], // Empty to trigger discovery.
+        prLimit: 3,
       })
 
       expect(result.ok).toBe(true)
 
-      // With limit 3 and 1 existing PR, adjusted limit is 2.
+      // With prLimit 3 and 1 existing PR, adjusted limit is 2.
       // So: 1 discovery call + 2 fix calls = 3 total.
       expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(3)
     })
 
-    it('should process no GHSAs when existing open PRs exceed limit', async () => {
+    it('should process no GHSAs when existing open PRs exceed prLimit', async () => {
       // Mock 5 existing open PRs.
       mockGetSocketFixPrs.mockResolvedValue([
         { number: 1, state: 'OPEN' },
@@ -365,20 +368,20 @@ describe('socket fix --limit behavior verification', () => {
 
       const result = await coanaFix({
         ...baseConfig,
-        ghsas: ['all'],
-        limit: 3,
+        ghsas: [], // Empty to trigger discovery.
+        prLimit: 3,
       })
 
       expect(result.ok).toBe(true)
       expect(result.data?.fixed).toBe(false)
 
-      // With 5 open PRs and limit 3, adjusted limit is 0, so no processing.
+      // With 5 open PRs and prLimit 3, adjusted limit is 0, so no processing.
       expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
     })
   })
 
-  describe('--id filtering with --limit', () => {
-    it('should apply limit to filtered GHSA IDs', async () => {
+  describe('--id filtering in local mode', () => {
+    it('should process all provided GHSA IDs in local mode (prLimit ignored)', async () => {
       const ghsas = [
         'GHSA-1111-1111-1111',
         'GHSA-2222-2222-2222',
@@ -395,12 +398,12 @@ describe('socket fix --limit behavior verification', () => {
       const result = await coanaFix({
         ...baseConfig,
         ghsas,
-        limit: 2,
+        prLimit: 2, // Should be ignored in local mode.
       })
 
       expect(result.ok).toBe(true)
 
-      // Should only process first 2 GHSAs.
+      // Should process all 5 GHSAs in local mode (prLimit is ignored).
       expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
       const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
       const applyFixesIndex = callArgs.indexOf('--apply-fixes-to')
@@ -408,11 +411,17 @@ describe('socket fix --limit behavior verification', () => {
         .slice(applyFixesIndex + 1)
         .filter(arg => arg.startsWith('GHSA-'))
 
-      expect(ghsaArgs).toHaveLength(2)
-      expect(ghsaArgs).toEqual(['GHSA-1111-1111-1111', 'GHSA-2222-2222-2222'])
+      expect(ghsaArgs).toHaveLength(5)
+      expect(ghsaArgs).toEqual([
+        'GHSA-1111-1111-1111',
+        'GHSA-2222-2222-2222',
+        'GHSA-3333-3333-3333',
+        'GHSA-4444-4444-4444',
+        'GHSA-5555-5555-5555',
+      ])
     })
 
-    it('should handle limit 1 with single GHSA ID', async () => {
+    it('should handle single GHSA ID in local mode', async () => {
       const ghsas = ['GHSA-1111-1111-1111']
 
       mockSpawnCoanaDlx.mockResolvedValue({
@@ -423,7 +432,6 @@ describe('socket fix --limit behavior verification', () => {
       const result = await coanaFix({
         ...baseConfig,
         ghsas,
-        limit: 1,
       })
 
       expect(result.ok).toBe(true)
