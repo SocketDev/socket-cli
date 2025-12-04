@@ -1013,6 +1013,43 @@ describe('socket fix', async () => {
         expect(code, 'should exit with code 0').toBe(0)
       },
     )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '15',
+        '--autopilot',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --limit alias in combination with other flags',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--limit',
+        '7',
+        FLAG_ID,
+        'GHSA-1234-5678-9abc',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --limit alias with --id flag',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
   })
 
   describe('--ecosystems flag behavior', () => {

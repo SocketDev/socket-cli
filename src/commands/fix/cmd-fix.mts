@@ -115,6 +115,7 @@ const generalFlags: MeowFlags = {
     isMultiple: true,
   },
   prLimit: {
+    aliases: ['limit'],
     type: 'number',
     default: DEFAULT_LIMIT,
     description: `Maximum number of pull requests to create in CI mode (default ${DEFAULT_LIMIT}). Has no effect in local mode.`,
@@ -162,10 +163,6 @@ const hiddenFlags: MeowFlags = {
   } as MeowFlag,
   ghsa: {
     ...generalFlags['id'],
-    hidden: true,
-  } as MeowFlag,
-  limit: {
-    ...generalFlags['prLimit'],
     hidden: true,
   } as MeowFlag,
   maxSatisfying: {
