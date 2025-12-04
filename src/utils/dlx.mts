@@ -250,7 +250,8 @@ export async function spawnCoanaDlx(
       {
         name: '@coana-tech/cli',
         version:
-          coanaVersion || constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION,
+          coanaVersion ||
+          constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION,
       },
       args,
       {

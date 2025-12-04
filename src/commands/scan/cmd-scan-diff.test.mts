@@ -87,8 +87,7 @@ describe('socket scan diff', async () => {
 
           \\xd7 Specify two Scan IDs. (missing both Scan IDs)
             A Scan ID looks like \`aaa0aa0a-aaaa-0000-0a0a-0000000a00a0\`.
-          \\xd7 Org name by default setting, --org, or auto-discovered (missing)
-          \\xd7 This command requires a Socket API token for access (try \`socket login\`)"
+          \\xd7 Org name by default setting, --org, or auto-discovered (missing)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)

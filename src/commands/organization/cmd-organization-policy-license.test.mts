@@ -63,7 +63,7 @@ describe('socket organization policy license', async () => {
     'should reject dry run without proper args',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
@@ -75,13 +75,10 @@ describe('socket organization policy license', async () => {
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
-        \\xd7 Skipping auto-discovery of org in dry-run mode
-        \\xd7  Input error:  Please review the input requirements and try again
-
-          \\xd7 This command requires a Socket API token for access (try \`socket login\`)"
+        \\xd7 Skipping auto-discovery of org in dry-run mode"
       `)
 
-      expect(code, 'dry-run should exit with code 2 if input bad').toBe(2)
+      expect(code, 'dry-run should exit with code 0').toBe(0)
     },
   )
 

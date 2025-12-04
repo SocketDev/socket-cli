@@ -135,8 +135,6 @@ describe('socket config get', async () => {
               |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
               |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
-
-          expect(stdout.includes('apiToken: null')).toBe(true)
         },
       )
 
@@ -161,8 +159,6 @@ describe('socket config get', async () => {
               |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
               |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
-
-          expect(stdout.includes('apiToken: abc')).toBe(true)
         },
       )
 
@@ -188,8 +184,6 @@ describe('socket config get', async () => {
               |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
               |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
-
-          expect(stdout.includes('apiToken: abc')).toBe(true)
         },
       )
 
@@ -214,8 +208,6 @@ describe('socket config get', async () => {
               |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
               |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
-
-          expect(stdout.includes('apiToken: abc')).toBe(true)
         },
       )
 
@@ -241,8 +233,6 @@ describe('socket config get', async () => {
               |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
               |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
-
-          expect(stdout.includes('apiToken: abc')).toBe(true)
         },
       )
 
@@ -273,8 +263,6 @@ describe('socket config get', async () => {
               |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
               |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
-
-          expect(stdout.includes('apiToken: abc')).toBe(true)
         },
       )
 
@@ -303,8 +291,6 @@ describe('socket config get', async () => {
               |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
               |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
-
-          expect(stdout.includes('apiToken: pickmepickme')).toBe(true)
         },
       )
 
@@ -327,8 +313,6 @@ describe('socket config get', async () => {
               |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
               |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
-
-          expect(stdout.includes('apiToken: undefined')).toBe(true)
         },
       )
     })

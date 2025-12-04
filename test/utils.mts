@@ -2,9 +2,10 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { it } from 'vitest'
+
 import { SpawnOptions, spawn } from '@socketsecurity/registry/lib/spawn'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
-import { it } from 'vitest'
 
 import constants, { FLAG_HELP, FLAG_VERSION } from '../src/constants.mts'
 
@@ -153,11 +154,30 @@ export async function spawnSocketCli(
     ...options,
   } as SpawnOptions
   try {
+    // Exclude Socket auth credentials to ensure tests run unauthenticated.
+    const {
+      SOCKET_CLI_API_BASE_URL: unusedApiBaseUrl,
+      SOCKET_CLI_API_KEY: unusedCliApiKey,
+      SOCKET_CLI_API_TOKEN: unusedCliApiToken,
+      SOCKET_CLI_ORG_SLUG: unusedOrgSlug,
+      SOCKET_SECURITY_API_KEY: unusedApiKey,
+      SOCKET_SECURITY_API_TOKEN: unusedSecurityApiToken,
+      ...cleanEnv
+    } = process.env
+    const {
+      SOCKET_CLI_API_BASE_URL: unusedProcessApiBaseUrl,
+      SOCKET_CLI_API_KEY: unusedProcessCliApiKey,
+      SOCKET_CLI_API_TOKEN: unusedProcessCliApiToken,
+      SOCKET_CLI_ORG_SLUG: unusedProcessOrgSlug,
+      SOCKET_SECURITY_API_KEY: unusedProcessApiKey,
+      SOCKET_SECURITY_API_TOKEN: unusedProcessSecurityApiToken,
+      ...cleanProcessEnv
+    } = constants.processEnv
     const output = await spawn(constants.execPath, [entryPath, ...args], {
       cwd,
       env: {
-        ...process.env,
-        ...constants.processEnv,
+        ...cleanEnv,
+        ...cleanProcessEnv,
         ...spawnEnv,
       },
     })

@@ -70,21 +70,16 @@ describe('socket analytics', async () => {
     'should report missing token with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | CLI: <redacted>
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
-
-        \\xd7  Input error:  Please review the input requirements and try again
-
-          \\u221a The time filter must either be 7, 30 or 90
-          \\xd7 This command requires a Socket API token for access (try \`socket login\`)"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
       `)
 
-      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
+      expect(code, 'dry-run should exit with code 0').toBe(0)
     },
   )
 
@@ -291,7 +286,7 @@ describe('socket analytics', async () => {
           \\u221a The time filter must either be 7, 30 or 90"
       `)
 
-      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
+      expect(code, 'dry-run should reject legacy flags with code 2').toBe(2)
     },
   )
 

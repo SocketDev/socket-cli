@@ -63,7 +63,7 @@ describe('socket organization policy security', async () => {
     'should reject dry run without proper args',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       // expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       //   "
       //      _____         _       _        /---------------
@@ -81,7 +81,7 @@ describe('socket organization policy security', async () => {
       //   "
       // `)
 
-      expect(code, 'dry-run should exit with code 2 if input bad').toBe(2)
+      expect(code, 'dry-run should exit with code 0').toBe(0)
     },
   )
 

@@ -146,7 +146,7 @@ describe('socket audit-log', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>"
       `)
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, 'dry-run should exit with code 0 on success').toBe(0)
     },
   )
 
@@ -171,7 +171,7 @@ describe('socket audit-log', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>"
       `)
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, 'dry-run should exit with code 0').toBe(0)
     },
   )
 })

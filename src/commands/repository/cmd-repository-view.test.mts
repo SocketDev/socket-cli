@@ -74,8 +74,7 @@ describe('socket repository view', async () => {
         \\xd7  Input error:  Please review the input requirements and try again
 
           \\xd7 Org name by default setting, --org, or auto-discovered (missing)
-          \\xd7 Repository name as first argument (missing)
-          \\xd7 This command requires a Socket API token for access (try \`socket login\`)"
+          \\xd7 Repository name as first argument (missing)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -106,7 +105,7 @@ describe('socket repository view', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository view\`, cwd: <redacted>"
       `)
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, 'dry-run should exit with code 0').toBe(0)
     },
   )
 
@@ -224,7 +223,7 @@ describe('socket repository view', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository view\`, cwd: <redacted>"
       `)
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, 'dry-run should exit with code 0 on success').toBe(0)
     },
   )
 })

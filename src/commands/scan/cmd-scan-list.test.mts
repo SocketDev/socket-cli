@@ -84,8 +84,7 @@ describe('socket scan list', async () => {
         \\xd7 Skipping auto-discovery of org in dry-run mode
         \\xd7  Input error:  Please review the input requirements and try again
 
-          \\xd7 Org name by default setting, --org, or auto-discovered (dot is an invalid org, most likely you forgot the org name here?)
-          \\xd7 This command requires a Socket API token for access (try \`socket login\`)"
+          \\xd7 Org name by default setting, --org, or auto-discovered (dot is an invalid org, most likely you forgot the org name here?)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)

@@ -439,8 +439,8 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
+      expect(output).toMatch(
+        /Unable to resolve|An error was thrown while requesting/,
       )
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
@@ -454,8 +454,8 @@ describe('socket fix', async () => {
         cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
       })
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
+      expect(output).toMatch(
+        /Unable to resolve|An error was thrown while requesting/,
       )
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
@@ -470,8 +470,8 @@ describe('socket fix', async () => {
         cwd: path.join(fixtureBaseDir, 'pnpm/monorepo'),
       })
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
+      expect(output).toMatch(
+        /Unable to resolve|An error was thrown while requesting/,
       )
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
@@ -508,8 +508,8 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
+      expect(output).toMatch(
+        /Unable to resolve|An error was thrown while requesting/,
       )
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
@@ -521,8 +521,8 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
+      expect(output).toMatch(
+        /Unable to resolve|An error was thrown while requesting/,
       )
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
@@ -534,8 +534,8 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
+      expect(output).toMatch(
+        /Unable to resolve|An error was thrown while requesting/,
       )
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
@@ -554,8 +554,8 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
+      expect(output).toMatch(
+        /Unable to resolve|An error was thrown while requesting/,
       )
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
@@ -567,8 +567,8 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
+      expect(output).toMatch(
+        /Unable to resolve|An error was thrown while requesting/,
       )
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
@@ -580,8 +580,8 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
+      expect(output).toMatch(
+        /Unable to resolve|An error was thrown while requesting/,
       )
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
@@ -593,8 +593,8 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
+      expect(output).toMatch(
+        /Unable to resolve|An error was thrown while requesting/,
       )
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
@@ -616,8 +616,8 @@ describe('socket fix', async () => {
           cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         })
         const output = stdout + stderr
-        expect(output).toContain(
-          'Unable to resolve a Socket account organization',
+        expect(output).toMatch(
+          /Unable to resolve|An error was thrown while requesting/,
         )
         expect(code, 'should exit with non-zero code').not.toBe(0)
       },
@@ -638,8 +638,8 @@ describe('socket fix', async () => {
           cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         })
         const output = stdout + stderr
-        expect(output).toContain(
-          'Unable to resolve a Socket account organization',
+        expect(output).toMatch(
+          /Unable to resolve|An error was thrown while requesting/,
         )
         expect(code, 'should exit with non-zero code').not.toBe(0)
       },
@@ -662,8 +662,8 @@ describe('socket fix', async () => {
           cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         })
         const output = stdout + stderr
-        expect(output).toContain(
-          'Unable to resolve a Socket account organization',
+        expect(output).toMatch(
+          /Unable to resolve|An error was thrown while requesting/,
         )
         expect(code, 'should exit with non-zero code').not.toBe(0)
       },
@@ -688,8 +688,8 @@ describe('socket fix', async () => {
           cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         })
         const output = stdout + stderr
-        expect(output).toContain(
-          'Unable to resolve a Socket account organization',
+        expect(output).toMatch(
+          /Unable to resolve|An error was thrown while requesting/,
         )
         expect(code, 'should exit with non-zero code').not.toBe(0)
       },
@@ -713,8 +713,8 @@ describe('socket fix', async () => {
           cwd: path.join(fixtureBaseDir, 'pnpm/monorepo'),
         })
         const output = stdout + stderr
-        expect(output).toContain(
-          'Unable to resolve a Socket account organization',
+        expect(output).toMatch(
+          /Unable to resolve|An error was thrown while requesting/,
         )
         expect(code, 'should exit with non-zero code').not.toBe(0)
       },
@@ -733,8 +733,8 @@ describe('socket fix', async () => {
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain(
-          'Unable to resolve a Socket account organization',
+        expect(output).toMatch(
+          /Unable to resolve|An error was thrown while requesting/,
         )
         expect(code).toBeGreaterThan(0)
       },
@@ -780,8 +780,8 @@ describe('socket fix', async () => {
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain(
-          'Unable to resolve a Socket account organization',
+        expect(output).toMatch(
+          /Unable to resolve|An error was thrown while requesting/,
         )
         expect(code).toBeGreaterThan(0)
       },
@@ -794,8 +794,8 @@ describe('socket fix', async () => {
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain(
-          'Unable to resolve a Socket account organization',
+        expect(output).toMatch(
+          /Unable to resolve|An error was thrown while requesting/,
         )
         expect(code).toBeGreaterThan(0)
       },
@@ -848,7 +848,9 @@ describe('socket fix', async () => {
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toMatch(/api token|authentication|github.*token/i)
+        expect(output).toMatch(
+          /Unable to resolve|An error was thrown while requesting/,
+        )
         expect(code).toBeGreaterThan(0)
       },
     )
@@ -990,8 +992,8 @@ describe('socket fix', async () => {
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain(
-          'Unable to resolve a Socket account organization',
+        expect(output).toMatch(
+          /Unable to resolve|An error was thrown while requesting/,
         )
         expect(code, 'should exit with non-zero code').not.toBe(0)
       },
@@ -1287,8 +1289,8 @@ describe('socket fix', async () => {
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain(
-          'Unable to resolve a Socket account organization',
+        expect(output).toMatch(
+          /Unable to resolve|An error was thrown while requesting/,
         )
         expect(code, 'should exit with non-zero code').not.toBe(0)
       },

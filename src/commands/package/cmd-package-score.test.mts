@@ -88,8 +88,7 @@ describe('socket package score', async () => {
         \\xd7  Input error:  Please review the input requirements and try again
 
           \\xd7 First parameter must be an ecosystem or the whole purl (bad)
-          \\xd7 Expecting at least one package (missing)
-          \\xd7 This command requires a Socket API token for access (try \`socket login\`)"
+          \\xd7 Expecting at least one package (missing)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)

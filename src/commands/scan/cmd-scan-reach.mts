@@ -197,7 +197,7 @@ async function run(
     },
     {
       nook: true,
-      test: hasApiToken,
+      test: dryRun || hasApiToken,
       message: 'This command requires an API token for access',
       fail: 'try `socket login`',
     },
