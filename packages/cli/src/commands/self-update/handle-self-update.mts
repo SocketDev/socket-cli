@@ -128,12 +128,16 @@ async function updateBootstrapBinary(
 
   // Only proceed if we have a bootstrap binary path from IPC.
   if (!bootstrapPath) {
-    logger.info('No bootstrap binary path received - CLI not launched via bootstrap wrapper')
+    logger.info(
+      'No bootstrap binary path received - CLI not launched via bootstrap wrapper',
+    )
     return false
   }
 
   if (!existsSync(bootstrapPath)) {
-    logger.warn(`Bootstrap binary path from IPC does not exist: ${bootstrapPath}`)
+    logger.warn(
+      `Bootstrap binary path from IPC does not exist: ${bootstrapPath}`,
+    )
     return false
   }
 
@@ -201,13 +205,17 @@ async function updateBootstrapBinary(
         // Replace the bootstrap binary.
         await replaceBinary(extractedPath, bootstrapPath)
 
-        logger.info(`${colors.green('✓')} Bootstrap binary updated successfully!`)
+        logger.info(
+          `${colors.green('✓')} Bootstrap binary updated successfully!`,
+        )
         return true
       } catch (error) {
         // Restore from backup on failure.
         try {
           await fs.copyFile(backupPath, bootstrapPath)
-          logger.info('Restored bootstrap binary from backup after update failure')
+          logger.info(
+            'Restored bootstrap binary from backup after update failure',
+          )
         } catch (restoreError) {
           logger.error(
             `Failed to restore bootstrap binary from backup: ${restoreError instanceof Error ? restoreError.message : String(restoreError)}`,
@@ -434,7 +442,10 @@ Examples
       logger.info(`Backup saved to: ${backupPath}`)
 
       // Check and update bootstrap binary if launched via bootstrap wrapper.
-      const bootstrapUpdated = await updateBootstrapBinary(latestVersion, dryRun)
+      const bootstrapUpdated = await updateBootstrapBinary(
+        latestVersion,
+        dryRun,
+      )
       if (bootstrapUpdated) {
         logger.info(
           'Both CLI and bootstrap binary have been updated successfully!',

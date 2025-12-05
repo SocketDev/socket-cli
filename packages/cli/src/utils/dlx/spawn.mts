@@ -9,12 +9,12 @@
  * - spawnSynpDlx: Execute Synp converter via dlx
  *
  * Implementation:
- * - Uses @socketsecurity/lib/dlx-package for direct package installation
+ * - Uses @socketsecurity/lib/dlx/package for direct package installation
  * - Installs packages to ~/.socket/_dlx directory
  * - Executes binaries directly without package manager commands
  */
 
-import { dlxPackage } from '@socketsecurity/lib/dlx-package'
+import { dlxPackage } from '@socketsecurity/lib/dlx/package'
 
 import { resolveCdxgen, resolveCoana, resolveSfw } from './resolve-binary.mjs'
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'

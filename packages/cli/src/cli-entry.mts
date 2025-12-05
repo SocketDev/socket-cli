@@ -50,7 +50,7 @@ import { runPreflightDownloads } from './utils/preflight/downloads.mts'
 import { isSeaBinary } from './utils/sea/detect.mts'
 import { scheduleUpdateCheck } from './utils/update/manager.mts'
 
-import { dlxManifest } from '@socketsecurity/lib/dlx-manifest'
+import { dlxManifest } from '@socketsecurity/lib/dlx/manifest'
 
 const logger = getDefaultLogger()
 

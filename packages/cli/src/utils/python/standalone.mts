@@ -48,7 +48,7 @@ import semver from 'semver'
 
 import { whichReal } from '@socketsecurity/lib/bin'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib/dlx-binary'
+import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib/dlx/binary'
 import { safeMkdir } from '@socketsecurity/lib/fs'
 import { spawn } from '@socketsecurity/lib/spawn'
 

@@ -28,7 +28,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { generateCacheKey } from '@socketsecurity/lib/dlx'
+import { generateCacheKey } from '@socketsecurity/lib/dlx/cache'
 import { readJson, safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { getSocketDlxDir } from '@socketsecurity/lib/paths/socket'

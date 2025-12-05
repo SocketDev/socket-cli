@@ -1,6 +1,6 @@
 /** @fileoverview Coana CLI spawn utilities for Socket CLI. */
 
-import { dlxPackage } from '@socketsecurity/lib/dlx-package'
+import { dlxPackage } from '@socketsecurity/lib/dlx/package'
 
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mts'
 import ENV from '../../constants/env.mts'

@@ -102,12 +102,10 @@ function getConfigValues(): LocalConfig {
     if (socketAppDataPath) {
       const configFilePath = path.join(socketAppDataPath, 'config.json')
       const raw = safeReadFileSync(configFilePath)
-      if (raw) {
+      if (raw !== undefined) {
         try {
-          const decoded =
-            typeof raw === 'string'
-              ? Buffer.from(raw, 'base64').toString()
-              : Buffer.from(raw.toString(), 'base64').toString()
+          const rawString = Buffer.isBuffer(raw) ? raw.toString('utf8') : raw
+          const decoded = Buffer.from(rawString, 'base64').toString('utf8')
           Object.assign(_cachedConfig, JSON.parse(decoded))
           debugConfig(configFilePath, true)
         } catch (e) {
@@ -167,9 +165,9 @@ export function findSocketYmlSync(
       ymlPath = path.join(dir, SOCKET_YAML)
       yml = safeReadFileSync(ymlPath)
     }
-    if (typeof yml === 'string' || Buffer.isBuffer(yml)) {
+    if (yml !== undefined) {
       try {
-        const ymlString = typeof yml === 'string' ? yml : yml.toString('utf8')
+        const ymlString = Buffer.isBuffer(yml) ? yml.toString('utf8') : yml
         return {
           ok: true,
           data: {

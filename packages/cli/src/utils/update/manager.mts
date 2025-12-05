@@ -25,7 +25,7 @@
  * - User-triggered update checks
  */
 
-import { dlxManifest } from '@socketsecurity/lib/dlx-manifest'
+import { dlxManifest } from '@socketsecurity/lib/dlx/manifest'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
@@ -37,7 +37,7 @@ import {
 import { UPDATE_CHECK_TTL } from '../../constants/cache.mts'
 
 import type { AuthInfo } from './checker.mts'
-import type { StoreRecord } from '@socketsecurity/lib/dlx-manifest'
+import type { StoreRecord } from '@socketsecurity/lib/dlx/manifest'
 
 const logger = getDefaultLogger()
 
