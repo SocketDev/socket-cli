@@ -79,7 +79,7 @@ catalog:
   eslint-plugin-sort-destructure-keys: 2.0.0
   eslint-plugin-unicorn: 56.0.1
   fast-glob: 3.3.3
-  fast-xml-parser: ^5.3.1
+  fast-xml-parser: ^5.3.2
   function-bind: npm:@socketregistry/function-bind@^1.0.7
   globals: 16.4.0
   globalthis: npm:@socketregistry/globalthis@^1.0.8

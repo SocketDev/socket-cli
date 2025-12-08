@@ -1,7 +1,7 @@
 {
   "name": "socket-cli-monorepo",
   "version": "0.0.0",
-  "packageManager": "pnpm@10.22.0",
+  "packageManager": "pnpm@10.25.0",
   "private": true,
   "engines": {
     "node": ">=24.10.0",
@@ -149,7 +149,7 @@
     "semver": "catalog:",
     "ssri": "catalog:",
     "synp": "catalog:",
-    "taze": "catalog:",
+    "taze": "19.9.2",
     "terminal-link": "catalog:",
     "trash": "catalog:",
     "type-coverage": "catalog:",
@@ -200,11 +200,11 @@
       "string_decoder": "catalog:",
       "string-width": "catalog:",
       "strip-ansi": "catalog:",
-      "wrap-ansi": "catalog:",
       "tiny-colors": "catalog:",
       "typedarray": "catalog:",
       "undici": "catalog:",
       "vite": "catalog:",
+      "wrap-ansi": "catalog:",
       "xml2js": "catalog:",
       "yaml": "catalog:",
       "yargs-parser": "catalog:"

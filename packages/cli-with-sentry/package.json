@@ -29,8 +29,8 @@
     "verify": "node scripts/verify-package.mjs"
   },
   "dependencies": {
-    "@socketsecurity/cli": "workspace:*",
-    "@sentry/node": "catalog:"
+    "@sentry/node": "catalog:",
+    "@socketsecurity/cli": "workspace:*"
   },
   "devDependencies": {
     "@sentry/node": "catalog:",
