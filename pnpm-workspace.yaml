@@ -54,7 +54,7 @@ catalog:
   vite-tsconfig-paths: 5.1.4
   which: 5.0.0
   '@iarna/toml': ^2.2.5
-  '@npmcli/arborist': 9.1.4
+  '@npmcli/arborist': 9.1.8
   '@npmcli/config': 10.4.0
   '@octokit/graphql': 9.0.1
   '@octokit/openapi-types': 25.1.0
