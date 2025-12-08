@@ -72,6 +72,7 @@ vi.mock('./branch-cleanup.mts', () => ({
 
 describe('socket fix --pr-limit behavior verification', () => {
   const baseConfig: FixConfig = {
+    all: false,
     applyFixes: true,
     autopilot: false,
     coanaVersion: undefined,

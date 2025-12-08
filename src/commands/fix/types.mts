@@ -3,6 +3,7 @@ import type { RangeStyle } from '../../utils/semver.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export type FixConfig = {
+  all: boolean
   applyFixes: boolean
   autopilot: boolean
   coanaVersion: string | undefined

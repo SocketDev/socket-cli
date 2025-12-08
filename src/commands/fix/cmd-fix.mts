@@ -95,6 +95,12 @@ const generalFlags: MeowFlags = {
     // Hidden to allow custom documenting of the negated `--no-major-updates` variant.
     hidden: true,
   },
+  all: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Process all discovered vulnerabilities in local mode. Cannot be used with --id.',
+  },
   id: {
     type: 'string',
     default: [],
@@ -111,7 +117,7 @@ const generalFlags: MeowFlags = {
       'PURLs',
       'https://github.com/package-url/purl-spec',
     )} (e.g., pkg:npm/package@1.0.0) - automatically converted to GHSA
-    Can be provided as comma separated values or as multiple flags`,
+    Can be provided as comma separated values or as multiple flags. Cannot be used with --all.`,
     isMultiple: true,
   },
   prLimit: {
@@ -272,6 +278,7 @@ async function run(
   )
 
   const {
+    all,
     applyFixes,
     autopilot,
     ecosystems,
@@ -292,6 +299,7 @@ async function run(
     // socket-cli/patches/meow#13.2.0.patch.
     unknownFlags = [],
   } = cli.flags as {
+    all: boolean
     applyFixes: boolean
     autopilot: boolean
     ecosystems: string[]
@@ -338,6 +346,13 @@ async function run(
     validatedEcosystems.push(ecosystem as PURL_Type)
   }
 
+  // Collect ghsas early to validate --all and --id mutual exclusivity.
+  const ghsas = arrayUnique([
+    ...cmdFlagValueToArray(cli.flags['id']),
+    ...cmdFlagValueToArray(cli.flags['ghsa']),
+    ...cmdFlagValueToArray(cli.flags['purl']),
+  ])
+
   const wasValidInput = checkCommandInput(
     outputKind,
     {
@@ -349,6 +364,12 @@ async function run(
       nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
+      fail: 'omit one',
+    },
+    {
+      nook: true,
+      test: !all || !ghsas.length,
+      message: 'The --all and --id flags cannot be used together',
       fail: 'omit one',
     },
   )
@@ -379,16 +400,11 @@ async function run(
 
   const { spinner } = constants
 
-  const ghsas = arrayUnique([
-    ...cmdFlagValueToArray(cli.flags['id']),
-    ...cmdFlagValueToArray(cli.flags['ghsa']),
-    ...cmdFlagValueToArray(cli.flags['purl']),
-  ])
-
   const includePatterns = cmdFlagValueToArray(include)
   const excludePatterns = cmdFlagValueToArray(exclude)
 
   await handleFix({
+    all,
     applyFixes,
     autopilot,
     coanaVersion: fixVersion,
