@@ -141,7 +141,7 @@ catalog:
   micromatch: 4.0.8
   mock-fs: 5.5.0
   nanotar: 0.2.0
-  npm-package-arg: 13.0.0
+  npm-package-arg: 13.0.2
   npm-run-all2: 8.0.4
   onnxruntime-web: 1.23.0
   open: 10.2.0

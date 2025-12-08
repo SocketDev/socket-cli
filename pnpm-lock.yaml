@@ -438,7 +438,7 @@ overrides:
   is-core-module: npm:@socketregistry/is-core-module@^1.0.11
   isarray: npm:@socketregistry/isarray@^1.0.8
   lodash: 4.17.21
-  npm-package-arg: 13.0.0
+  npm-package-arg: 13.0.2
   packageurl-js: npm:@socketregistry/packageurl-js@^1.3.5
   path-parse: npm:@socketregistry/path-parse@^1.0.8
   safe-buffer: npm:@socketregistry/safe-buffer@^1.0.9
@@ -713,8 +713,8 @@ importers:
         specifier: 'catalog:'
         version: 14.0.10
       npm-package-arg:
-        specifier: 13.0.0
-        version: 13.0.0
+        specifier: 13.0.2
+        version: 13.0.2
       npm-run-all2:
         specifier: 'catalog:'
         version: 8.0.4
@@ -1040,8 +1040,8 @@ importers:
         specifier: 'catalog:'
         version: 8.0.0
       npm-package-arg:
-        specifier: 13.0.0
-        version: 13.0.0
+        specifier: 13.0.2
+        version: 13.0.2
       pacote:
         specifier: 'catalog:'
         version: 21.0.1
@@ -5209,8 +5209,8 @@ packages:
     resolution: {integrity: sha512-CJi3OS4JLsNMmr2u07OJlhcrPxCeOeP/4xq67aWNai6TNWWbTrlNDgl8NcFKVlcBKp18GPj+EzbNIgrBfZhsag==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
-  npm-package-arg@13.0.0:
-    resolution: {integrity: sha512-+t2etZAGcB7TbbLHfDwooV9ppB2LhhcT6A+L9cahsf9mEUAoQ6CktLEVvEnpD0N5CkX7zJqnPGaFtoQDy9EkHQ==}
+  npm-package-arg@13.0.2:
+    resolution: {integrity: sha512-IciCE3SY3uE84Ld8WZU23gAPPV9rIYod4F+rc+vJ7h7cwAJt9Vk6TVsK60ry7Uj3SRS3bqRRIGuTp9YVlk6WNA==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
   npm-packlist@10.0.3:
@@ -6337,6 +6337,10 @@ packages:
     resolution: {integrity: sha512-IUoow1YUtvoBBC06dXs8bR8B9vuA3aJfmQNKMoaPG/OFsPmoQvw8xh+6Ye25Gx9DQhoEom3Pcu9MKHerm/NpUQ==}
     engines: {node: ^18.17.0 || >=20.5.0}
 
+  validate-npm-package-name@7.0.0:
+    resolution: {integrity: sha512-bwVk/OK+Qu108aJcMAEiU4yavHUI7aN20TgZNBj9MR2iU1zPUl1Z1Otr7771ExfYTPTvfN8ZJ1pbr5Iklgt4xg==}
+    engines: {node: ^20.17.0 || >=22.9.0}
+
   validator@13.15.20:
     resolution: {integrity: sha512-KxPOq3V2LmfQPP4eqf3Mq/zrT0Dqp2Vmx2Bn285LwVahLc+CsxOM0crBHczm8ijlcjZ0Q5Xd6LW3z3odTPnlrw==}
     engines: {node: '>= 0.10'}
@@ -7027,7 +7031,7 @@ snapshots:
       minimatch: 10.0.3
       node-stream-zip: 1.15.0
       npm-install-checks: 7.1.2
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.2
       npm-pick-manifest: 11.0.1
       packageurl-js: '@socketregistry/packageurl-js@1.3.5'
       parse-conflict-json: 4.0.0
@@ -7462,7 +7466,7 @@ snapshots:
       minimatch: 9.0.5
       nopt: 8.1.0
       npm-install-checks: 7.1.2
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.2
       npm-pick-manifest: 10.0.0
       npm-registry-fetch: 18.0.2
       pacote: 21.0.3
@@ -7501,7 +7505,7 @@ snapshots:
       minimatch: 10.1.1
       nopt: 8.1.0
       npm-install-checks: 7.1.2
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.2
       npm-pick-manifest: 11.0.3
       npm-registry-fetch: 19.1.0
       pacote: 21.0.3
@@ -8634,10 +8638,10 @@ snapshots:
 
   '@types/yargs-parser@21.0.3': {}
 
-  '@typescript-eslint/eslint-plugin@8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)':
+  '@typescript-eslint/eslint-plugin@8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
-      '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/scope-manager': 8.44.1
       '@typescript-eslint/type-utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
@@ -10691,7 +10695,7 @@ snapshots:
       '@npmcli/package-json': 7.0.1
       '@npmcli/run-script': 10.0.2
       ci-info: 4.3.1
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.2
       pacote: 21.0.3
       proc-log: 5.0.0
       promise-retry: 2.0.1
@@ -10706,7 +10710,7 @@ snapshots:
     dependencies:
       '@npmcli/arborist': 9.1.6
       '@npmcli/run-script': 10.0.2
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.2
       pacote: 21.0.3
     transitivePeerDependencies:
       - supports-color
@@ -11116,12 +11120,12 @@ snapshots:
 
   npm-normalize-package-bin@5.0.0: {}
 
-  npm-package-arg@13.0.0:
+  npm-package-arg@13.0.2:
     dependencies:
       hosted-git-info: 9.0.2
-      proc-log: 5.0.0
+      proc-log: 6.0.0
       semver: 7.7.2
-      validate-npm-package-name: 6.0.2
+      validate-npm-package-name: 7.0.0
 
   npm-packlist@10.0.3:
     dependencies:
@@ -11132,21 +11136,21 @@ snapshots:
     dependencies:
       npm-install-checks: 7.1.2
       npm-normalize-package-bin: 4.0.0
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.2
       semver: 7.7.2
 
   npm-pick-manifest@11.0.1:
     dependencies:
       npm-install-checks: 7.1.2
       npm-normalize-package-bin: 4.0.0
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.2
       semver: 7.7.2
 
   npm-pick-manifest@11.0.3:
     dependencies:
       npm-install-checks: 8.0.0
       npm-normalize-package-bin: 5.0.0
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.2
       semver: 7.7.2
 
   npm-registry-fetch@18.0.2:
@@ -11157,7 +11161,7 @@ snapshots:
       minipass: 7.1.2
       minipass-fetch: 4.0.1
       minizlib: 3.1.0
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.2
       proc-log: 5.0.0
     transitivePeerDependencies:
       - supports-color
@@ -11170,7 +11174,7 @@ snapshots:
       minipass: 7.1.2
       minipass-fetch: 4.0.1
       minizlib: 3.1.0
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.2
       proc-log: 5.0.0
     transitivePeerDependencies:
       - supports-color
@@ -11332,7 +11336,7 @@ snapshots:
       cacache: 20.0.1
       fs-minipass: 3.0.3
       minipass: 7.1.2
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.2
       npm-packlist: 10.0.3
       npm-pick-manifest: 10.0.0
       npm-registry-fetch: 19.1.0
@@ -11354,7 +11358,7 @@ snapshots:
       cacache: 20.0.1
       fs-minipass: 3.0.3
       minipass: 7.1.2
-      npm-package-arg: 13.0.0
+      npm-package-arg: 13.0.2
       npm-packlist: 10.0.3
       npm-pick-manifest: 11.0.3
       npm-registry-fetch: 19.1.0
@@ -12286,7 +12290,7 @@ snapshots:
 
   typescript-eslint@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2):
     dependencies:
-      '@typescript-eslint/eslint-plugin': 8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
+      '@typescript-eslint/eslint-plugin': 8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/typescript-estree': 8.44.1(typescript@5.9.2)
       '@typescript-eslint/utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
@@ -12422,6 +12426,8 @@ snapshots:
       spdx-expression-parse: 3.0.1
 
   validate-npm-package-name@6.0.2: {}
+
+  validate-npm-package-name@7.0.0: {}
 
   validator@13.15.20:
     optional: true
