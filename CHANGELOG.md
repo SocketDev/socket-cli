@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.43](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.43) - 2025-12-08
+
+### Added
+- Added `--all` flag to `socket fix` for explicitly processing all vulnerabilities in local mode. Cannot be used with `--id`.
+
+### Deprecated
+- Running `socket fix` in local mode without `--all` or `--id` is deprecated. A warning is shown when neither flag is provided. In a future release, one of these flags will be required.
+
 ## [1.1.42](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.42) - 2025-12-04
 
 ### Added

@@ -107,6 +107,7 @@ export async function coanaFix(
   fixConfig: FixConfig,
 ): Promise<CResult<{ data?: unknown; fixed: boolean }>> {
   const {
+    all,
     applyFixes,
     autopilot,
     coanaVersion,
@@ -173,11 +174,18 @@ export async function coanaFix(
     }
   }
 
-  const shouldDiscoverGhsaIds = !ghsas.length
+  const shouldDiscoverGhsaIds = all || !ghsas.length
 
   const shouldOpenPrs = fixEnv.isCi && fixEnv.repoInfo
 
   if (!shouldOpenPrs) {
+    // In local mode, if neither --all nor --id is provided, show deprecation warning.
+    if (shouldDiscoverGhsaIds && !all) {
+      logger.warn(
+        'Implicit --all is deprecated in local mode and will be removed in a future release. Please use --all explicitly.',
+      )
+    }
+
     // Inform user about local mode when fixes will be applied.
     if (applyFixes && ghsas.length) {
       const envCheck = checkCiEnvVars()
