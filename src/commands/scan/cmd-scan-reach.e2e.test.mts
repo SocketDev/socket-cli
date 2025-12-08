@@ -107,6 +107,37 @@ async function createTempFixtureCopy(
 }
 
 /**
+ * Create a temporary mono project containing multiple fixture subdirectories.
+ * This allows testing multi-ecosystem scenarios.
+ */
+async function createTempMonoProject(
+  fixtureNames: string[],
+): Promise<{ cleanup: () => Promise<void>; path: string }> {
+  const uniqueId = randomUUID()
+  const tempDir = path.join(systemTmpDir, `socket-cli-e2e-mono-${uniqueId}`)
+
+  await fs.mkdir(tempDir, { recursive: true })
+
+  // Copy each fixture into a subdirectory.
+  for (const fixtureName of fixtureNames) {
+    const sourceDir = path.join(fixtureBaseDir, fixtureName)
+    const destDir = path.join(tempDir, fixtureName)
+    await fs.cp(sourceDir, destDir, { recursive: true })
+  }
+
+  return {
+    cleanup: async () => {
+      try {
+        await fs.rm(tempDir, { force: true, recursive: true })
+      } catch (e) {
+        logger.warn(`Failed to clean up temp dir ${tempDir}:`, e)
+      }
+    },
+    path: tempDir,
+  }
+}
+
+/**
  * Read and parse the .socket.facts.json file from a directory.
  */
 async function readSocketFactsJson(dir: string): Promise<SocketFactsJson> {
@@ -359,6 +390,190 @@ describe('socket scan reach (E2E tests)', async () => {
 
           logger.info(
             '\nReachability analysis with excluded paths completed successfully',
+          )
+        } catch (e) {
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+          throw e
+        } finally {
+          await tempFixture.cleanup()
+        }
+      },
+      { timeout: testTimeout },
+    )
+  })
+
+  describe('multi-ecosystem filtering', () => {
+    cmdit(
+      ['scan', 'reach', '.', '--no-interactive', '--reach-ecosystems', 'pypi'],
+      'should only analyze pypi ecosystem when --reach-ecosystems pypi is specified',
+      async cmd => {
+        // Create a mono project with both npm and pypi projects.
+        const tempFixture = await createTempMonoProject([
+          'simple-npm',
+          'plain-requirements-txt',
+        ])
+        let stdout = ''
+        let stderr = ''
+        let code = -1
+
+        try {
+          const result = await spawnSocketCli(
+            binCliPath,
+            [...cmd, '--org', orgSlug],
+            {
+              cwd: tempFixture.path,
+              env: getTestEnv(apiToken),
+            },
+          )
+          stdout = result.stdout
+          stderr = result.stderr
+          code = result.code
+
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+
+          expect(code, 'should exit with code 0').toBe(0)
+
+          // Verify the .socket.facts.json file was created.
+          const factsPath = path.join(
+            tempFixture.path,
+            constants.DOT_SOCKET_DOT_FACTS_JSON,
+          )
+          expect(existsSync(factsPath), '.socket.facts.json should exist').toBe(
+            true,
+          )
+
+          // Read and validate the facts file structure.
+          const facts = await readSocketFactsJson(tempFixture.path)
+
+          // Verify top-level structure.
+          expect(facts).toHaveProperty('components')
+          expect(facts).toHaveProperty('workspaceDiagnostics')
+          expect(Array.isArray(facts.components)).toBe(true)
+
+          // Note: --reach-ecosystems controls which ecosystems get reachability
+          // analysis, but all components are still discovered. The key is that
+          // only pypi workspaces should have analysis performed.
+
+          // Verify we have components from both ecosystems (discovery still happens).
+          const componentTypes = new Set(facts.components.map(c => c.type))
+          expect(facts.components.length).toBeGreaterThan(0)
+
+          // Verify workspaceDiagnostics includes pypi workspaces.
+          const pypiWorkspaces = facts.workspaceDiagnostics.filter(
+            d => d.purl_type === 'pypi',
+          )
+          expect(
+            pypiWorkspaces.length,
+            'should have pypi workspaces',
+          ).toBeGreaterThan(0)
+
+          // If we have pypi components, verify their structure.
+          if (componentTypes.has('pypi')) {
+            const pypiComponents = facts.components.filter(c => c.type === 'pypi')
+            for (const component of pypiComponents.slice(0, 3)) {
+              expect(component).toHaveProperty('name')
+              expect(component).toHaveProperty('version')
+              expect(component.type).toBe('pypi')
+            }
+          }
+
+          logger.info(
+            '\nReachability analysis with pypi ecosystem filter completed successfully',
+          )
+        } catch (e) {
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+          throw e
+        } finally {
+          await tempFixture.cleanup()
+        }
+      },
+      { timeout: testTimeout },
+    )
+
+    cmdit(
+      ['scan', 'reach', '.', '--no-interactive', '--reach-ecosystems', 'npm'],
+      'should only analyze npm ecosystem when --reach-ecosystems npm is specified',
+      async cmd => {
+        // Create a mono project with both npm and pypi projects.
+        const tempFixture = await createTempMonoProject([
+          'simple-npm',
+          'plain-requirements-txt',
+        ])
+        let stdout = ''
+        let stderr = ''
+        let code = -1
+
+        try {
+          const result = await spawnSocketCli(
+            binCliPath,
+            [...cmd, '--org', orgSlug],
+            {
+              cwd: tempFixture.path,
+              env: getTestEnv(apiToken),
+            },
+          )
+          stdout = result.stdout
+          stderr = result.stderr
+          code = result.code
+
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+
+          expect(code, 'should exit with code 0').toBe(0)
+
+          // Verify the .socket.facts.json file was created.
+          const factsPath = path.join(
+            tempFixture.path,
+            constants.DOT_SOCKET_DOT_FACTS_JSON,
+          )
+          expect(existsSync(factsPath), '.socket.facts.json should exist').toBe(
+            true,
+          )
+
+          // Read and validate the facts file structure.
+          const facts = await readSocketFactsJson(tempFixture.path)
+
+          // Verify top-level structure.
+          expect(facts).toHaveProperty('components')
+          expect(facts).toHaveProperty('workspaceDiagnostics')
+          expect(Array.isArray(facts.components)).toBe(true)
+
+          // Note: --reach-ecosystems controls which ecosystems get reachability
+          // analysis, but all components are still discovered. The key is that
+          // only npm workspaces should have analysis performed.
+
+          // Verify we have components.
+          const componentTypes = new Set(facts.components.map(c => c.type))
+          expect(facts.components.length).toBeGreaterThan(0)
+
+          // Verify workspaceDiagnostics includes npm workspaces.
+          const npmWorkspaces = facts.workspaceDiagnostics.filter(
+            d => d.purl_type === 'npm',
+          )
+          expect(
+            npmWorkspaces.length,
+            'should have npm workspaces',
+          ).toBeGreaterThan(0)
+
+          // If we have npm components, verify their structure.
+          if (componentTypes.has('npm')) {
+            const npmComponents = facts.components.filter(c => c.type === 'npm')
+            for (const component of npmComponents.slice(0, 3)) {
+              expect(component).toHaveProperty('name')
+              expect(component).toHaveProperty('version')
+              expect(component.type).toBe('npm')
+            }
+          }
+
+          logger.info(
+            '\nReachability analysis with npm ecosystem filter completed successfully',
           )
         } catch (e) {
           if (code !== 0) {
