@@ -1,4 +1,6 @@
+import { randomUUID } from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 import { describe, expect } from 'vitest'
@@ -9,6 +11,7 @@ import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 import constants, { FLAG_ID } from '../../constants.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/fix')
+const systemTmpDir = tmpdir()
 
 /**
  * Get environment variables for E2E test subprocess.
@@ -30,17 +33,21 @@ function getTestEnv(apiToken: string): Record<string, string | undefined> {
 /**
  * Create a temporary copy of a fixture directory for testing.
  * This allows tests to modify the fixture without affecting the original.
+ * Uses system temp directory with a unique identifier.
  */
 async function createTempFixtureCopy(
   fixtureName: string,
-): Promise<{ path: string; cleanup: () => Promise<void> }> {
+): Promise<{ cleanup: () => Promise<void>; path: string }> {
   const sourceDir = path.join(fixtureBaseDir, fixtureName)
-  const tempDir = path.join(fixtureBaseDir, `${fixtureName}-temp-${Date.now()}`)
+  const uniqueId = randomUUID()
+  const tempDir = path.join(
+    systemTmpDir,
+    `socket-cli-e2e-${fixtureName}-${uniqueId}`,
+  )
 
   await fs.cp(sourceDir, tempDir, { recursive: true })
 
   return {
-    path: tempDir,
     cleanup: async () => {
       try {
         await fs.rm(tempDir, { force: true, recursive: true })
@@ -48,6 +55,7 @@ async function createTempFixtureCopy(
         logger.warn(`Failed to clean up temp dir ${tempDir}:`, e)
       }
     },
+    path: tempDir,
   }
 }
 
