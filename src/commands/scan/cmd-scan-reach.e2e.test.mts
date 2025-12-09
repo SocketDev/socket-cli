@@ -484,6 +484,421 @@ describe('socket scan reach (E2E tests)', async () => {
     )
   })
 
+  describe('target and cwd flags', () => {
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'packages/package-a',
+        '--no-interactive',
+        '--reach-disable-analytics',
+      ],
+      'should only scan files within the target directory',
+      async cmd => {
+        const tempFixture = await createTempFixtureCopy(
+          'npm-test-workspace-mono',
+        )
+        let stdout = ''
+        let stderr = ''
+        let code = -1
+
+        try {
+          const result = await spawnSocketCli(
+            binCliPath,
+            [...cmd, '--org', orgSlug],
+            {
+              cwd: tempFixture.path,
+              env: getTestEnv(apiToken),
+            },
+          )
+          stdout = result.stdout
+          stderr = result.stderr
+          code = result.code
+
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+
+          expect(code, 'should exit with code 0').toBe(0)
+
+          // Verify the .socket.facts.json file was created.
+          const factsPath = path.join(
+            tempFixture.path,
+            constants.DOT_SOCKET_DOT_FACTS_JSON,
+          )
+          expect(existsSync(factsPath), '.socket.facts.json should exist').toBe(
+            true,
+          )
+
+          // Read and validate the facts file structure.
+          const facts = await readSocketFactsJson(tempFixture.path)
+
+          // Verify top-level structure.
+          expect(facts).toHaveProperty('components')
+          expect(facts).toHaveProperty('workspaceDiagnostics')
+
+          // When target is packages/package-a, only that subproject should be analyzed.
+          // The workspaceDiagnostics should only include package-a, not package-b or root.
+          const subprojectPaths = facts.workspaceDiagnostics.map(
+            d => d.subprojectPath,
+          )
+          expect(
+            subprojectPaths,
+            'should have . representing the package-a subproject',
+          ).toContain('.')
+          expect(
+            subprojectPaths,
+            'should NOT have packages/package-b when targeting package-a',
+          ).not.toContain('packages/package-b')
+          expect(
+            subprojectPaths,
+            "should NOT have packages/package-a since it's represented by the . subproject",
+          ).not.toContain('packages/packaga-a')
+
+          // Verify we have components.
+          expect(
+            facts.components.length,
+            'should have components from package-a',
+          ).toBeGreaterThan(0)
+
+          // When targeting packages/package-a, we should NOT find lodash@3.10.1
+          // which is only a dependency of package-b (not package-a).
+          // package-a depends on lodash@4, not lodash@3.10.1.
+          const lodash3 = findComponent(facts, 'lodash', '3.10.1')
+          expect(
+            lodash3,
+            'lodash@3.10.1 (from package-b) should NOT be present when targeting package-a',
+          ).toBeUndefined()
+
+          // package-a depends on lodash@4, so we should find a lodash version starting with 4.
+          const lodash4Components = facts.components.filter(
+            c => c.name === 'lodash' && c.version.startsWith('4'),
+          )
+          expect(
+            lodash4Components.length,
+            'should have lodash@4.x from package-a',
+          ).toBeGreaterThan(0)
+
+          logger.info(
+            '\nReachability analysis with target restriction completed successfully',
+          )
+        } catch (e) {
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+          throw e
+        } finally {
+          await tempFixture.cleanup()
+        }
+      },
+      { timeout: testTimeout },
+    )
+
+    cmdit(
+      ['scan', 'reach', '.', '--no-interactive', '--reach-disable-analytics'],
+      'should use --cwd to set the working directory',
+      async cmd => {
+        const tempFixture = await createTempFixtureCopy(
+          'npm-test-workspace-mono',
+        )
+        let stdout = ''
+        let stderr = ''
+        let code = -1
+
+        try {
+          // Run from system temp dir but point --cwd to the fixture.
+          const result = await spawnSocketCli(
+            binCliPath,
+            [...cmd, '--org', orgSlug, '--cwd', tempFixture.path],
+            {
+              cwd: systemTmpDir,
+              env: getTestEnv(apiToken),
+            },
+          )
+          stdout = result.stdout
+          stderr = result.stderr
+          code = result.code
+
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+
+          expect(code, 'should exit with code 0').toBe(0)
+
+          // Verify the .socket.facts.json file was created in the --cwd directory, not process.cwd().
+          const factsInCwd = path.join(
+            tempFixture.path,
+            constants.DOT_SOCKET_DOT_FACTS_JSON,
+          )
+
+          expect(
+            existsSync(factsInCwd),
+            '.socket.facts.json should exist in --cwd directory',
+          ).toBe(true)
+
+          // Read and validate the facts file structure.
+          const facts = await readSocketFactsJson(tempFixture.path)
+
+          // Verify all workspace subprojects are found when using --cwd.
+          const subprojectPaths = facts.workspaceDiagnostics.map(
+            d => d.subprojectPath,
+          )
+          expect(subprojectPaths).toContain('.')
+          expect(subprojectPaths).toContain('packages/package-a')
+          expect(subprojectPaths).toContain('packages/package-b')
+
+          // Verify we have components.
+          expect(facts.components.length).toBeGreaterThan(100)
+
+          logger.info(
+            '\nReachability analysis with --cwd flag completed successfully',
+          )
+        } catch (e) {
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+          throw e
+        } finally {
+          await tempFixture.cleanup()
+        }
+      },
+      { timeout: testTimeout },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'packages/package-b',
+        '--no-interactive',
+        '--reach-disable-analytics',
+      ],
+      'should work with --cwd and target together',
+      async cmd => {
+        const tempFixture = await createTempFixtureCopy(
+          'npm-test-workspace-mono',
+        )
+        let stdout = ''
+        let stderr = ''
+        let code = -1
+
+        try {
+          // Run from system temp dir but point --cwd to the fixture.
+          // Target is relative to --cwd.
+          const result = await spawnSocketCli(
+            binCliPath,
+            [...cmd, '--org', orgSlug, '--cwd', tempFixture.path],
+            {
+              cwd: systemTmpDir,
+              env: getTestEnv(apiToken),
+            },
+          )
+          stdout = result.stdout
+          stderr = result.stderr
+          code = result.code
+
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+
+          expect(code, 'should exit with code 0').toBe(0)
+
+          // Verify the .socket.facts.json file was created in the --cwd directory.
+          const factsPath = path.join(
+            tempFixture.path,
+            constants.DOT_SOCKET_DOT_FACTS_JSON,
+          )
+          expect(
+            existsSync(factsPath),
+            '.socket.facts.json should exist in --cwd directory',
+          ).toBe(true)
+
+          // Read and validate the facts file structure.
+          const facts = await readSocketFactsJson(tempFixture.path)
+
+          // When target is packages/package-b with --cwd, only that subproject should be analyzed.
+          const subprojectPaths = facts.workspaceDiagnostics.map(
+            d => d.subprojectPath,
+          )
+          expect(
+            subprojectPaths,
+            'should have . representing the package-b subproject',
+          ).toContain('.')
+          expect(
+            subprojectPaths,
+            'should NOT have packages/package-a when targeting package-b',
+          ).not.toContain('packages/package-a')
+          expect(
+            subprojectPaths,
+            "should NOT have packages/package-b since it's represented by the . subproject",
+          ).not.toContain('packages/package-b')
+
+          // Verify we have components.
+          expect(
+            facts.components.length,
+            'should have components when using --cwd and target together',
+          ).toBeGreaterThan(0)
+
+          // Verify lodash@3.10.1 (from package-b) IS present.
+          // This confirms that package-b was scanned when using target with --cwd.
+          const lodash3 = findComponent(facts, 'lodash', '3.10.1')
+          expect(
+            lodash3,
+            'lodash@3.10.1 should be present when targeting package-b',
+          ).toBeDefined()
+
+          logger.info(
+            '\nReachability analysis with --cwd and target completed successfully',
+          )
+        } catch (e) {
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+          throw e
+        } finally {
+          await tempFixture.cleanup()
+        }
+      },
+      { timeout: testTimeout },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        '../outside-dir',
+        '--no-interactive',
+        '--reach-disable-analytics',
+      ],
+      'should fail when target is outside cwd',
+      async cmd => {
+        const tempFixture = await createTempFixtureCopy(
+          'npm-test-workspace-mono',
+        )
+        let code = -1
+
+        try {
+          const result = await spawnSocketCli(
+            binCliPath,
+            [...cmd, '--org', orgSlug],
+            {
+              cwd: tempFixture.path,
+              env: getTestEnv(apiToken),
+            },
+          )
+          code = result.code
+
+          // Should fail with a non-zero exit code.
+          expect(
+            code,
+            'should exit with non-zero code when target is outside cwd',
+          ).not.toBe(0)
+
+          // Verify no .socket.facts.json file was created.
+          const factsPath = path.join(
+            tempFixture.path,
+            constants.DOT_SOCKET_DOT_FACTS_JSON,
+          )
+          expect(
+            existsSync(factsPath),
+            '.socket.facts.json should NOT exist when target validation fails',
+          ).toBe(false)
+
+          // Check that the error message mentions the target constraint.
+          expect(
+            result.stderr + result.stdout,
+            'should mention target must be inside working directory',
+          ).toMatch(/inside.*working|working.*directory|target.*directory/i)
+
+          logger.info('\nTarget outside cwd correctly rejected')
+        } finally {
+          await tempFixture.cleanup()
+        }
+      },
+      { timeout: testTimeout },
+    )
+
+    cmdit(
+      ['scan', 'reach', '.', '--no-interactive', '--reach-disable-analytics'],
+      'should write output to cwd when running from subdirectory',
+      async cmd => {
+        const tempFixture = await createTempFixtureCopy(
+          'npm-test-workspace-mono',
+        )
+        let stdout = ''
+        let stderr = ''
+        let code = -1
+
+        try {
+          // Run from packages/package-a subdirectory with target '.'.
+          const targetPath = path.join(tempFixture.path, 'packages/package-a')
+          const result = await spawnSocketCli(
+            binCliPath,
+            [...cmd, '--org', orgSlug],
+            {
+              cwd: targetPath,
+              env: getTestEnv(apiToken),
+            },
+          )
+          stdout = result.stdout
+          stderr = result.stderr
+          code = result.code
+
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+
+          expect(code, 'should exit with code 0').toBe(0)
+
+          // Verify the .socket.facts.json file was created in the cwd (packages/package-a).
+          const factsPath = path.join(
+            targetPath,
+            constants.DOT_SOCKET_DOT_FACTS_JSON,
+          )
+          expect(
+            existsSync(factsPath),
+            '.socket.facts.json should exist in cwd directory',
+          ).toBe(true)
+
+          // Read and validate the facts file structure.
+          const facts = await readSocketFactsJson(targetPath)
+
+          // When running from packages/package-a subdirectory with target '.', the
+          // workspaceDiagnostics should show '.' as the subprojectPath.
+          const subprojectPaths = facts.workspaceDiagnostics.map(
+            d => d.subprojectPath,
+          )
+          expect(
+            subprojectPaths,
+            'should have current directory as subproject',
+          ).toContain('.')
+          expect(
+            facts.workspaceDiagnostics.length,
+            'should only have one workspace diagnostic entry',
+          ).toBe(1)
+
+          // Verify we have components.
+          expect(
+            facts.components.length,
+            'should have components',
+          ).toBeGreaterThan(0)
+
+          logger.info(
+            '\nReachability analysis output location verified successfully',
+          )
+        } catch (e) {
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+          throw e
+        } finally {
+          await tempFixture.cleanup()
+        }
+      },
+      { timeout: testTimeout },
+    )
+  })
+
   describe('multi-ecosystem filtering', () => {
     cmdit(
       [
