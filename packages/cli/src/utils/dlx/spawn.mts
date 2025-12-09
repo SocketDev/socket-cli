@@ -145,20 +145,30 @@ export async function spawnCoanaDlx(
 
     // Use local Coana CLI if available.
     if (resolution.type === 'local') {
+      const isBinary =
+        !resolution.path.endsWith('.js') && !resolution.path.endsWith('.mjs')
+
       const finalEnv = {
         ...process.env,
         ...mixinsEnv,
         ...spawnEnv,
       }
-      const spawnPromise = spawnNode([resolution.path, ...args], {
+
+      const spawnArgs = isBinary ? args : [resolution.path, ...args]
+      const spawnCommand = isBinary ? resolution.path : 'node'
+
+      const { spawn } = await import('@socketsecurity/lib/spawn')
+      const spawnPromise = spawn(spawnCommand, spawnArgs, {
         ...dlxOptions,
         env: finalEnv,
         stdio: spawnExtra?.['stdio'] || 'inherit',
       })
 
+      const output = await spawnPromise
+
       return {
         ok: true,
-        data: spawnPromise.process.stdout?.toString() ?? '',
+        data: output.stdout?.toString() ?? '',
       }
     }
 
