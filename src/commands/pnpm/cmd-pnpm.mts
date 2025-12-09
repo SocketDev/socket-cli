@@ -96,16 +96,17 @@ async function run(
   // See https://nodejs.org/api/child_process.html#event-exit.
   spawnPromise.process.on(
     'exit',
-    async (code: number | null, signalName: NodeJS.Signals | null) => {
-      // Track subprocess exit and flush telemetry.
-      await trackSubprocessExit(PNPM, subprocessStartTime, code)
-
-      if (signalName) {
-        process.kill(process.pid, signalName)
-      } else if (typeof code === 'number') {
-        // eslint-disable-next-line n/no-process-exit
-        process.exit(code)
-      }
+    (code: number | null, signalName: NodeJS.Signals | null) => {
+      // Track subprocess exit and flush telemetry before exiting.
+      // Use .then() to ensure telemetry completes before process.exit().
+      void trackSubprocessExit(PNPM, subprocessStartTime, code).then(() => {
+        if (signalName) {
+          process.kill(process.pid, signalName)
+        } else if (typeof code === 'number') {
+          // eslint-disable-next-line n/no-process-exit
+          process.exit(code)
+        }
+      })
     },
   )
 

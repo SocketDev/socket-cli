@@ -8,8 +8,8 @@
  * Features:
  * - Singleton pattern (one instance per process)
  * - Organization-scoped tracking (required)
- * - Event batching (configurable batch size)
- * - Periodic flush (configurable interval)
+ * - Event batching (auto-flush at batch size)
+ * - Exit handlers (auto-flush on process exit)
  * - Automatic session ID assignment
  * - Explicit finalization via destroy() for controlled cleanup
  * - Graceful degradation (errors don't block CLI)
@@ -32,7 +32,8 @@
  *   }
  * })
  *
- * // Flush is automatic on batch size, but can be called manually
+ * // Flush happens automatically on batch size and exit
+ * // Can also be called manually if needed
  * await telemetry.flush()
  *
  * // Always call destroy() before exit to flush remaining events
@@ -86,8 +87,7 @@ const DEFAULT_TELEMETRY_CONFIG = {
  * Static configuration for telemetry service behavior.
  */
 const TELEMETRY_SERVICE_CONFIG = {
-  batch_size: 10,
-  flush_interval: 500, // 0.5 second.
+  batch_size: 10, // Auto-flush when queue reaches this size.
   flush_timeout: 2_000, // 2 second maximum for flush operations.
 } as const
 
@@ -147,7 +147,6 @@ export class TelemetryService {
   private readonly orgSlug: string
   private config: TelemetryConfig | null = null
   private eventQueue: TelemetryEvent[] = []
-  private flushTimer: NodeJS.Timeout | null = null
   private isDestroyed = false
 
   /**
@@ -229,6 +228,7 @@ export class TelemetryService {
   /**
    * Track a telemetry event.
    * Adds event to queue for batching and eventual submission.
+   * Auto-flushes when batch size is reached.
    *
    * @param event - Telemetry event to track (session_id is optional and will be auto-set).
    */
@@ -256,9 +256,6 @@ export class TelemetryService {
 
     this.eventQueue.push(completeEvent)
 
-    // Start periodic flush if not already running and we have events.
-    this.startPeriodicFlush()
-
     // Auto-flush if batch size reached.
     const batchSize = TELEMETRY_SERVICE_CONFIG.batch_size
     if (this.eventQueue.length >= batchSize) {
@@ -279,15 +276,12 @@ export class TelemetryService {
     }
 
     if (this.eventQueue.length === 0) {
-      // Stop periodic flush when queue is empty to reduce unnecessary timer calls.
-      this.stopPeriodicFlush()
       return
     }
 
     if (!this.config?.telemetry.enabled) {
       debug('Telemetry disabled, clearing queue without sending')
       this.eventQueue = []
-      this.stopPeriodicFlush()
       return
     }
 
@@ -327,11 +321,6 @@ export class TelemetryService {
         debug(`Failed to send ${eventsToSend.length} events due to error`)
       }
       // Events are discarded on error to prevent infinite growth.
-    }
-
-    // Stop periodic flush after sending if queue is now empty.
-    if (this.eventQueue.length === 0) {
-      this.stopPeriodicFlush()
     }
   }
 
@@ -406,9 +395,6 @@ export class TelemetryService {
     // Mark as destroyed immediately to prevent concurrent destroy() calls.
     this.isDestroyed = true
 
-    // Stop periodic flush.
-    this.stopPeriodicFlush()
-
     // Flush remaining events with timeout.
     const eventsToFlush = [...this.eventQueue]
     this.eventQueue = []
@@ -455,43 +441,5 @@ export class TelemetryService {
     telemetryServiceInstance.current = null
 
     debug(`Telemetry service destroyed for org: ${this.orgSlug}`)
-  }
-
-  /**
-   * Start periodic flush timer.
-   * Only starts if not already running and telemetry is enabled.
-   */
-  private startPeriodicFlush(): void {
-    if (this.flushTimer) {
-      return
-    }
-
-    if (!this.config?.telemetry.enabled) {
-      return
-    }
-
-    const flushInterval = TELEMETRY_SERVICE_CONFIG.flush_interval
-
-    this.flushTimer = setInterval(() => {
-      debug('Periodic flush triggered')
-      void this.flush()
-    }, flushInterval)
-
-    // Don't keep process alive for telemetry.
-    this.flushTimer.unref()
-
-    debug(`Periodic flush started with interval: ${flushInterval}ms`)
-  }
-
-  /**
-   * Stop periodic flush timer.
-   * Clears the interval timer to prevent unnecessary flush attempts when queue is empty.
-   */
-  private stopPeriodicFlush(): void {
-    if (this.flushTimer) {
-      clearInterval(this.flushTimer)
-      this.flushTimer = null
-      debug('Periodic flush stopped (queue empty)')
-    }
   }
 }

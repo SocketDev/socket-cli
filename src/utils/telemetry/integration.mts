@@ -5,6 +5,9 @@
  * Usage:
  * ```typescript
  * import {
+ *   setupTelemetryExitHandlers,
+ *   finalizeTelemetry,
+ *   finalizeTelemetrySync,
  *   trackCliStart,
  *   trackCliEvent,
  *   trackCliComplete,
@@ -13,6 +16,9 @@
  *   trackSubprocessComplete,
  *   trackSubprocessError
  * } from './utils/telemetry/integration.mts'
+ *
+ * // Set up exit handlers once during CLI initialization.
+ * setupTelemetryExitHandlers()
  *
  * // Track main CLI execution.
  * const startTime = await trackCliStart(process.argv)
@@ -27,12 +33,17 @@
  *
  * // On subprocess error.
  * await trackSubprocessError('npm', subStart, error, 1)
+ *
+ * // Manual finalization (usually not needed if exit handlers are set up).
+ * await finalizeTelemetry() // Async version.
+ * finalizeTelemetrySync()    // Sync version (best-effort).
  * ```
  */
 import { homedir } from 'node:os'
 import process from 'node:process'
 
 import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
 import { TelemetryService } from './service.mts'
 import constants, { CONFIG_KEY_DEFAULT_ORG } from '../../constants.mts'
@@ -48,8 +59,9 @@ const debug = (message: string): void => {
 }
 
 /**
- * Finalize telemetry and clean up resources.
+ * Finalize telemetry and clean up resources (async version).
  * This should be called before process.exit to ensure telemetry is sent and resources are cleaned up.
+ * Use this in async contexts like beforeExit handlers.
  *
  * @returns Promise that resolves when finalization completes.
  */
@@ -59,6 +71,79 @@ export async function finalizeTelemetry(): Promise<void> {
     debug('Flushing telemetry')
     await instance.flush()
   }
+}
+
+/**
+ * Finalize telemetry synchronously (best-effort).
+ * This triggers a flush without awaiting it.
+ * Use this in synchronous contexts like signal handlers where async operations are not possible.
+ *
+ * Note: This is best-effort only. Events may be lost if the process exits before flush completes.
+ * Prefer finalizeTelemetry() (async version) when possible.
+ */
+export function finalizeTelemetrySync(): void {
+  const instance = TelemetryService.getCurrentInstance()
+  if (instance) {
+    debug('Triggering sync flush (best-effort)')
+    void instance.flush()
+  }
+}
+
+// Track whether exit handlers have been set up to prevent duplicate registration.
+let exitHandlersRegistered = false
+
+/**
+ * Set up exit handlers for telemetry finalization.
+ * This registers handlers for both normal exits (beforeExit) and common fatal signals.
+ *
+ * Flushing strategy:
+ * - Batch-based: Auto-flush when queue reaches 10 events.
+ * - beforeExit: Async handler for clean shutdowns (when event loop empties).
+ * - Fatal signals (SIGINT, SIGTERM, SIGHUP): Best-effort sync flush.
+ * - Accepts that forced exits (SIGKILL, process.exit()) may lose final events.
+ *
+ * Call this once during CLI initialization to ensure telemetry is flushed on exit.
+ * Safe to call multiple times - only registers handlers once.
+ *
+ * @example
+ * ```typescript
+ * // In src/cli.mts
+ * setupTelemetryExitHandlers()
+ * ```
+ */
+export function setupTelemetryExitHandlers(): void {
+  // Prevent duplicate handler registration.
+  if (exitHandlersRegistered) {
+    debug('Telemetry exit handlers already registered, skipping')
+    return
+  }
+
+  exitHandlersRegistered = true
+
+  // Use beforeExit for async finalization during clean shutdowns.
+  // This fires when the event loop empties but before process actually exits.
+  process.on('beforeExit', () => {
+    debug('beforeExit handler triggered')
+    void finalizeTelemetry()
+  })
+
+  // Register handlers for common fatal signals as best-effort fallback.
+  // These are synchronous contexts, so we can only trigger flush without awaiting.
+  const fatalSignals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP']
+
+  for (const signal of fatalSignals) {
+    try {
+      process.on(signal, () => {
+        debug(`Signal ${signal} received, attempting sync flush`)
+        finalizeTelemetrySync()
+      })
+    } catch (e) {
+      // Some signals may not be available on all platforms.
+      debug(`Failed to register handler for signal ${signal}: ${e}`)
+    }
+  }
+
+  debug('Telemetry exit handlers registered (beforeExit + common signals)')
 }
 
 /**
@@ -200,7 +285,7 @@ function sanitizeArgv(argv: string[]): string[] {
     // Remove user home directory from file paths.
     const homeDir = homedir()
     if (homeDir) {
-      return arg.replace(new RegExp(homeDir, 'g'), '~')
+      return arg.replace(new RegExp(escapeRegExp(homeDir), 'g'), '~')
     }
 
     return arg
@@ -222,7 +307,7 @@ function sanitizeErrorAttribute(input: string | undefined): string | undefined {
   // Remove user home directory.
   const homeDir = homedir()
   if (homeDir) {
-    return input.replace(new RegExp(homeDir, 'g'), '~')
+    return input.replace(new RegExp(escapeRegExp(homeDir), 'g'), '~')
   }
 
   return input
@@ -230,7 +315,10 @@ function sanitizeErrorAttribute(input: string | undefined): string | undefined {
 
 /**
  * Generic event tracking function.
- * Tracks any telemetry event with optional error details and flush.
+ * Tracks any telemetry event with optional error details and explicit flush.
+ *
+ * Events are automatically flushed via batch size or exit handlers.
+ * Use the flush option only when immediate submission is required.
  *
  * @param eventType Type of event to track.
  * @param context Event context.
@@ -324,6 +412,7 @@ export async function trackCliEvent(
 /**
  * Track CLI completion event.
  * Should be called on successful CLI exit.
+ * Flushes immediately since this is typically the last event before process exit.
  *
  * @param argv
  * @param startTime Start timestamp from trackCliStart.
@@ -352,6 +441,7 @@ export async function trackCliComplete(
 /**
  * Track CLI error event.
  * Should be called when CLI exits with an error.
+ * Flushes immediately since this is typically the last event before process exit.
  *
  * @param argv
  * @param startTime Start timestamp from trackCliStart.

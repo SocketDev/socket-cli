@@ -20,6 +20,7 @@ import { meowWithSubcommands } from './utils/meow-with-subcommands.mts'
 import { serializeResultJson } from './utils/serialize-result-json.mts'
 import {
   finalizeTelemetry,
+  setupTelemetryExitHandlers,
   trackCliComplete,
   trackCliError,
   trackCliStart,
@@ -28,9 +29,15 @@ import { socketPackageLink } from './utils/terminal-link.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 
+// Capture CLI start time at module level for global error handlers.
+const cliStartTime = Date.now()
+
+// Set up telemetry exit handlers early to catch all exit scenarios.
+setupTelemetryExitHandlers()
+
 void (async () => {
   // Track CLI start for telemetry.
-  const cliStartTime = await trackCliStart(process.argv)
+  await trackCliStart(process.argv)
 
   const registryUrl = lookupRegistryUrl()
   await updateNotifier({
@@ -119,17 +126,13 @@ void (async () => {
     }
 
     await captureException(e)
-  } finally {
-    // Finalize telemetry to ensure all events are sent.
-    // This runs on both success and error paths.
-    await finalizeTelemetry()
   }
 })().catch(async err => {
   // Fatal error in main async function.
   console.error('Fatal error:', err)
 
   // Track CLI error for fatal exceptions.
-  await trackCliError(process.argv, Date.now(), err, 1)
+  await trackCliError(process.argv, cliStartTime, err, 1)
 
   // Finalize telemetry before fatal exit.
   await finalizeTelemetry()
@@ -143,7 +146,7 @@ process.on('uncaughtException', async err => {
   console.error('Uncaught exception:', err)
 
   // Track CLI error for uncaught exception.
-  await trackCliError(process.argv, Date.now(), err, 1)
+  await trackCliError(process.argv, cliStartTime, err, 1)
 
   // Finalize telemetry before exit.
   await finalizeTelemetry()
@@ -158,7 +161,7 @@ process.on('unhandledRejection', async (reason, promise) => {
 
   // Track CLI error for unhandled rejection.
   const error = reason instanceof Error ? reason : new Error(String(reason))
-  await trackCliError(process.argv, Date.now(), error, 1)
+  await trackCliError(process.argv, cliStartTime, error, 1)
 
   // Finalize telemetry before exit.
   await finalizeTelemetry()
