@@ -208,6 +208,7 @@ export async function coanaFix(
             : []),
           ...(include.length ? ['--include', ...include] : []),
           ...(exclude.length ? ['--exclude', ...exclude] : []),
+          ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
           ...(!applyFixes ? [FLAG_DRY_RUN] : []),
           '--output-file',
           tmpFile,
@@ -276,7 +277,13 @@ export async function coanaFix(
   if (shouldSpawnCoana && shouldDiscoverGhsaIds) {
     try {
       const discoverCResult = await spawnCoanaDlx(
-        ['find-vulnerabilities', cwd, '--manifests-tar-hash', tarHash],
+        [
+          'find-vulnerabilities',
+          cwd,
+          '--manifests-tar-hash',
+          tarHash,
+          ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
+        ],
         fixConfig.orgSlug,
         { coanaVersion, cwd, spinner },
         { stdio: 'pipe' },
@@ -396,6 +403,7 @@ export async function coanaFix(
           : []),
         ...(include.length ? ['--include', ...include] : []),
         ...(exclude.length ? ['--exclude', ...exclude] : []),
+        ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
         ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
         ...(showAffectedDirectDependencies
           ? ['--show-affected-direct-dependencies']
