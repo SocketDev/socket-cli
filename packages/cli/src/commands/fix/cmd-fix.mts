@@ -126,6 +126,20 @@ Available styles:
     description:
       'List the direct dependencies responsible for introducing transitive vulnerabilities and list the updates required to resolve the vulnerabilities',
   },
+  exclude: {
+    type: 'string',
+    default: [],
+    description:
+      'Exclude workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags',
+    isMultiple: true,
+  },
+  include: {
+    type: 'string',
+    default: [],
+    description:
+      'Include workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags',
+    isMultiple: true,
+  },
 }
 
 const hiddenFlags: MeowFlags = {
@@ -137,22 +151,6 @@ const hiddenFlags: MeowFlags = {
     ...generalFlags['id'],
     hidden: true,
   } as MeowFlag,
-  exclude: {
-    type: 'string',
-    default: [],
-    description:
-      'Exclude workspaces matching these patterns. Can be provided as comma separated values or as multiple flags',
-    isMultiple: true,
-    hidden: true,
-  },
-  include: {
-    type: 'string',
-    default: [],
-    description:
-      'Include workspaces matching these patterns. Can be provided as comma separated values or as multiple flags',
-    isMultiple: true,
-    hidden: true,
-  },
   maxSatisfying: {
     type: 'boolean',
     default: true,
