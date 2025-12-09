@@ -208,7 +208,7 @@ describe('socket fix --limit behavior verification', () => {
       const result = await coanaFix({
         ...baseConfig,
         ghsas,
-        limit: 3,
+        prLimit: 3,
       })
 
       expect(result.ok).toBe(true)
@@ -242,7 +242,7 @@ describe('socket fix --limit behavior verification', () => {
       const result = await coanaFix({
         ...baseConfig,
         ghsas,
-        limit: 10,
+        prLimit: 10,
       })
 
       expect(result.ok).toBe(true)
@@ -267,7 +267,7 @@ describe('socket fix --limit behavior verification', () => {
       const result = await coanaFix({
         ...baseConfig,
         ghsas,
-        limit: 0,
+        prLimit: 0,
       })
 
       expect(result.ok).toBe(true)
@@ -286,7 +286,7 @@ describe('socket fix --limit behavior verification', () => {
       const result = await coanaFix({
         ...baseConfig,
         ghsas: ['all'],
-        limit: 10,
+        prLimit: 10,
       })
 
       expect(result.ok).toBe(true)
@@ -325,13 +325,10 @@ describe('socket fix --limit behavior verification', () => {
         'GHSA-dddd-dddd-dddd',
       ]
 
-      // Mock discovery call result with proper ghsas format.
-      mockReadJsonSync.mockReturnValueOnce({ ghsas })
-
-      // Discovery call writes to output file.
+      // Mock discovery call result with JSON output on last line.
       mockSpawnCoanaDlx.mockResolvedValueOnce({
         ok: true,
-        data: '',
+        data: `Some discovery output\n${JSON.stringify(ghsas)}`,
       })
 
       // Subsequent calls are for individual GHSA fixes.
@@ -345,10 +342,12 @@ describe('socket fix --limit behavior verification', () => {
         data: ['package.json'],
       })
 
+      mockReadJsonSync.mockReturnValue({ fixed: true })
+
       const result = await coanaFix({
         ...baseConfig,
         ghsas: ['all'],
-        limit: 2,
+        prLimit: 2,
       })
 
       expect(result.ok).toBe(true)
@@ -372,13 +371,10 @@ describe('socket fix --limit behavior verification', () => {
       // Second call returns no open PRs for specific GHSAs.
       mockGetSocketFixPrs.mockResolvedValue([])
 
-      // Mock discovery call result with proper ghsas format.
-      mockReadJsonSync.mockReturnValueOnce({ ghsas })
-
-      // Discovery call writes to output file.
+      // Mock discovery call result with JSON output on last line.
       mockSpawnCoanaDlx.mockResolvedValueOnce({
         ok: true,
-        data: '',
+        data: `Some discovery output\n${JSON.stringify(ghsas)}`,
       })
 
       mockSpawnCoanaDlx.mockResolvedValue({
@@ -391,10 +387,12 @@ describe('socket fix --limit behavior verification', () => {
         data: ['package.json'],
       })
 
+      mockReadJsonSync.mockReturnValue({ fixed: true })
+
       const result = await coanaFix({
         ...baseConfig,
         ghsas: ['all'],
-        limit: 3,
+        prLimit: 3,
       })
 
       expect(result.ok).toBe(true)
@@ -417,7 +415,7 @@ describe('socket fix --limit behavior verification', () => {
       const result = await coanaFix({
         ...baseConfig,
         ghsas: ['all'],
-        limit: 3,
+        prLimit: 3,
       })
 
       expect(result.ok).toBe(true)
@@ -446,7 +444,7 @@ describe('socket fix --limit behavior verification', () => {
       const result = await coanaFix({
         ...baseConfig,
         ghsas,
-        limit: 2,
+        prLimit: 2,
       })
 
       expect(result.ok).toBe(true)
@@ -474,7 +472,7 @@ describe('socket fix --limit behavior verification', () => {
       const result = await coanaFix({
         ...baseConfig,
         ghsas,
-        limit: 1,
+        prLimit: 1,
       })
 
       expect(result.ok).toBe(true)

@@ -148,7 +148,7 @@ export async function coanaFix(
     }
   }
 
-  const shouldDiscoverGhsaIds = all || !ghsas.length
+  const shouldDiscoverGhsaIds = all || !ghsas.length || (ghsas.length === 1 && ghsas[0] === 'all')
 
   const shouldOpenPrs = fixEnv.isCi && fixEnv.repoInfo
 
@@ -180,9 +180,9 @@ export async function coanaFix(
       }
     }
 
-    // In local mode, process all discovered/provided IDs (no limit).
-    const ids = shouldDiscoverGhsaIds ? ['all'] : ghsas
-    if (!ids.length) {
+    // In local mode, apply limit to provided IDs.
+    const idsToProcess = shouldDiscoverGhsaIds ? ['all'] : ghsas.slice(0, prLimit)
+    if (!idsToProcess.length) {
       spinner?.stop()
       return { ok: true, data: { fixed: false } }
     }
@@ -199,7 +199,7 @@ export async function coanaFix(
           '--manifests-tar-hash',
           tarHash,
           '--apply-fixes-to',
-          ...ids,
+          ...idsToProcess,
           ...(fixConfig.rangeStyle
             ? ['--range-style', fixConfig.rangeStyle]
             : []),
@@ -271,52 +271,31 @@ export async function coanaFix(
 
   let ids: string[] | undefined
 
-  // When shouldDiscoverGhsaIds is true, discover vulnerabilities by running coana with --output-file.
+  // When shouldDiscoverGhsaIds is true, discover vulnerabilities using find-vulnerabilities command.
   // This gives us the GHSA IDs needed to create individual PRs in CI mode.
   if (shouldSpawnCoana && shouldDiscoverGhsaIds) {
-    const discoverTmpFile = path.join(
-      os.tmpdir(),
-      `socket-discover-${Date.now()}.json`,
-    )
-
     try {
       const discoverCResult = await spawnCoanaDlx(
-        [
-          'compute-fixes-and-upgrade-purls',
-          cwd,
-          '--manifests-tar-hash',
-          tarHash,
-          '--show-affected-direct-dependencies',
-          '--output-file',
-          discoverTmpFile,
-          ...(fixConfig.rangeStyle
-            ? ['--range-style', fixConfig.rangeStyle]
-            : []),
-          ...(minimumReleaseAge
-            ? ['--minimum-release-age', minimumReleaseAge]
-            : []),
-          ...(include.length ? ['--include', ...include] : []),
-          ...(exclude.length ? ['--exclude', ...exclude] : []),
-          ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
-          ...fixConfig.unknownFlags,
-        ],
+        ['find-vulnerabilities', cwd, '--manifests-tar-hash', tarHash],
         fixConfig.orgSlug,
-        { coanaVersion, cwd, spinner, stdio: coanaStdio },
+        { coanaVersion, cwd, spinner },
+        { stdio: 'pipe' },
       )
 
       if (discoverCResult.ok) {
-        const discoverResult = readJsonSync(discoverTmpFile, { throws: false })
-        // Extract GHSA IDs from the discovery result.
-        // When compute-fixes-and-upgrade-purls is called without --apply-fixes-to,
-        // it returns { type: 'no-ghsas-fix-requested', ghsas: [...] }
-        const discoveredIds = Array.isArray((discoverResult as any)?.ghsas)
-          ? (discoverResult as any).ghsas
-          : []
+        // Coana prints ghsaIds as json-formatted string on the final line of the output.
+        const discoveredIds: string[] = []
+        try {
+          const ghsaIdsRaw = discoverCResult.data.trim().split('\n').pop()
+          if (ghsaIdsRaw) {
+            discoveredIds.push(...JSON.parse(ghsaIdsRaw))
+          }
+        } catch (e) {
+          debug('Failed to parse GHSA IDs from find-vulnerabilities output')
+          debugDir(e)
+        }
         ids = discoveredIds.slice(0, adjustedLimit)
       }
-
-      // Clean up discovery temp file.
-      await cleanupTempFile(discoverTmpFile)
     } catch (e) {
       debug('Failed to discover vulnerabilities')
       debugDir(e)
