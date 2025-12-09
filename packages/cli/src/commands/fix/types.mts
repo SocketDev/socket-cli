@@ -7,6 +7,7 @@ export type FixConfig = {
   all: boolean
   applyFixes: boolean
   autopilot: boolean
+  coanaVersion: string | undefined
   cwd: string
   disableMajorUpdates: boolean
   ecosystems: PURL_Type[]

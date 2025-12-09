@@ -126,6 +126,7 @@ describe('socket fix --limit behavior verification', () => {
     all: false,
     applyFixes: true,
     autopilot: false,
+    coanaVersion: undefined,
     cwd: '/test/cwd',
     disableMajorUpdates: false,
     ecosystems: [],

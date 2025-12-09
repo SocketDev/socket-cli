@@ -6,6 +6,7 @@ import { arrayUnique, joinAnd, joinOr } from '@socketsecurity/lib/arrays'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleFix } from './handle-fix.mts'
+import * as constants from '../../constants.mts'
 import { DRY_RUN_NOT_SAVING, FLAG_ID } from '../../constants/cli.mts'
 import { ERROR_UNABLE_RESOLVE_ORG } from '../../constants/errors.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
@@ -89,6 +90,10 @@ const generalFlags: MeowFlags = {
     description:
       'Limit fix analysis to specific ecosystems. Can be provided as comma separated values or as multiple flags. Defaults to all ecosystems.',
     isMultiple: true,
+  },
+  fixVersion: {
+    type: 'string',
+    description: `Override the version of @coana-tech/cli used for fix analysis. Default: ${constants.ENV.INLINED_SOCKET_CLI_COANA_VERSION}.`,
   },
   id: {
     type: 'string',
@@ -279,6 +284,7 @@ async function run(
     autopilot,
     ecosystems,
     exclude,
+    fixVersion,
     include,
     json,
     majorUpdates,
@@ -299,6 +305,7 @@ async function run(
     autopilot: boolean
     ecosystems: string[]
     exclude: string[]
+    fixVersion: string | undefined
     include: string[]
     json: boolean
     majorUpdates: boolean
@@ -400,6 +407,7 @@ async function run(
     all,
     applyFixes,
     autopilot,
+    coanaVersion: fixVersion,
     cwd,
     disableMajorUpdates,
     ecosystems: validatedEcosystems,

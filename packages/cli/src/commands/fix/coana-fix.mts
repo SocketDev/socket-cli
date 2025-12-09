@@ -74,6 +74,7 @@ export async function coanaFix(
     all,
     applyFixes,
     autopilot,
+    coanaVersion,
     cwd,
     disableMajorUpdates,
     ecosystems,
@@ -217,7 +218,7 @@ export async function coanaFix(
           ...fixConfig.unknownFlags,
         ],
         fixConfig.orgSlug,
-        { cwd, spinner, stdio: coanaStdio },
+        { coanaVersion, cwd, spinner, stdio: coanaStdio },
       )
 
       spinner?.stop()
@@ -300,7 +301,7 @@ export async function coanaFix(
           ...fixConfig.unknownFlags,
         ],
         fixConfig.orgSlug,
-        { cwd, spinner, stdio: coanaStdio },
+        { coanaVersion, cwd, spinner, stdio: coanaStdio },
       )
 
       if (discoverCResult.ok) {
@@ -423,7 +424,7 @@ export async function coanaFix(
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
-      { cwd, spinner, stdio: coanaStdio },
+      { coanaVersion, cwd, spinner, stdio: coanaStdio },
     )
 
     if (!fixCResult.ok) {

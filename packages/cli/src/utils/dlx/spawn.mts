@@ -36,6 +36,10 @@ export type DlxOptions = ShadowBinOptions & {
   silent?: boolean | undefined
 }
 
+export type CoanaDlxOptions = DlxOptions & {
+  coanaVersion?: string | undefined
+}
+
 export type DlxPackageSpec = {
   binaryName?: string | undefined
   name: string
@@ -110,13 +114,13 @@ export async function spawnDlx(
 export async function spawnCoanaDlx(
   args: string[] | readonly string[],
   orgSlug?: string,
-  options?: DlxOptions | undefined,
+  options?: CoanaDlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
-  const { env: spawnEnv, ...dlxOptions } = {
+  const { coanaVersion, env: spawnEnv, ...dlxOptions } = {
     __proto__: null,
     ...options,
-  } as DlxOptions
+  } as CoanaDlxOptions
 
   const mixinsEnv: Record<string, string> = {
     SOCKET_CLI_VERSION: ENV.INLINED_SOCKET_CLI_VERSION || '',
@@ -174,7 +178,10 @@ export async function spawnCoanaDlx(
 
     // Use dlx version.
     const result = await spawnDlx(
-      resolution.details,
+      {
+        ...resolution.details,
+        version: coanaVersion || resolution.details.version,
+      },
       args,
       {
         force: true,
