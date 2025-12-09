@@ -26,11 +26,26 @@ TOTAL_ERRORS=0
 while read local_ref local_sha remote_ref remote_sha; do
   # Get the range of commits being pushed.
   if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
-    # New branch - check all commits.
-    range="$local_sha"
+    # New branch - find the latest published release tag to limit scope.
+    latest_release=$(git tag --list 'v*' --sort=-version:refname --merged "$local_sha" | head -1)
+    if [ -n "$latest_release" ]; then
+      # Check commits since the latest published release.
+      range="$latest_release..$local_sha"
+    else
+      # No release tags found - check all commits.
+      range="$local_sha"
+    fi
   else
-    # Existing branch - check new commits.
-    range="$remote_sha..$local_sha"
+    # Existing branch - check new commits since remote.
+    # Limit scope to commits after the latest published release on this branch.
+    latest_release=$(git tag --list 'v*' --sort=-version:refname --merged "$remote_sha" | head -1)
+    if [ -n "$latest_release" ]; then
+      # Only check commits after the latest release that are being pushed.
+      range="$latest_release..$local_sha"
+    else
+      # No release tags found - check new commits only.
+      range="$remote_sha..$local_sha"
+    fi
   fi
 
   ERRORS=0
