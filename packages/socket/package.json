@@ -5,7 +5,7 @@
   "private": true,
   "license": "MIT",
   "bin": {
-    "socket": "dist/bootstrap.js"
+    "socket": "./dist/bootstrap.js"
   },
   "files": [
     "CHANGELOG.md",

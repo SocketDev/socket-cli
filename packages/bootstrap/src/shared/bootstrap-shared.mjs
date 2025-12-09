@@ -11,7 +11,7 @@ import { gte } from 'semver'
 
 import { whichReal } from '@socketsecurity/lib/bin'
 import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib/constants/socket'
-import { downloadPackage } from '@socketsecurity/lib/dlx-package'
+import { downloadPackage } from '@socketsecurity/lib/dlx/package'
 import { envAsBoolean } from '@socketsecurity/lib/env'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'

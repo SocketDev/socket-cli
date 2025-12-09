@@ -14,7 +14,6 @@ import { fileURLToPath } from 'node:url'
 import { build } from 'esbuild'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { Spinner, withSpinner } from '@socketsecurity/lib/spinner'

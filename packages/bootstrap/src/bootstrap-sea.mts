@@ -8,9 +8,6 @@
  * SEA bootstrap runs as the main application entry point.
  */
 
-// Load Intl polyfill FIRST for ICU-disabled builds (if SEA uses minimal Node.js).
-import '@socketsecurity/cli/src/polyfills/intl-stub/index.mts'
-
 import {
   findAndExecuteCli,
   getArgs,
