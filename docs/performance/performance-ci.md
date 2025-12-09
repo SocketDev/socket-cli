@@ -400,7 +400,7 @@ describe('validation', { timeout: 60_000 }, () => {
 
 ## Related Documentation
 
-- Build system: `/Users/jdalton/projects/socket-cli/docs/build-system-summary.md`
-- Local testing: `/Users/jdalton/projects/socket-cli/docs/local-testing.md`
-- Configuration: `/Users/jdalton/projects/socket-cli/docs/configuration-summary.md`
-- Socket registry standards: `/Users/jdalton/projects/socket-registry/CLAUDE.md`
+- Build system: `docs/build-system-summary.md`
+- Local testing: `docs/local-testing.md`
+- Configuration: `docs/configuration-summary.md`
+- Socket registry standards: `../socket-registry/CLAUDE.md`

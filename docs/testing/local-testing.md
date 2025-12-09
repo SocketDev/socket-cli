@@ -80,7 +80,7 @@ pnpm s patch discover --debug
 
 ```bash
 # Set up test API token for a free-tier org
-export SOCKET_CLI_API_TOKEN=sktsec_test_free_xxxxx
+export SOCKET_CLI_API_TOKEN=your-free-tier-token-here
 
 # Run patch discover
 pnpm s patch discover
@@ -96,7 +96,7 @@ Expected behavior:
 
 ```bash
 # Set up test API token for an enterprise org
-export SOCKET_CLI_API_TOKEN=sktsec_test_enterprise_xxxxx
+export SOCKET_CLI_API_TOKEN=your-enterprise-token-here
 
 # Run patch discover
 pnpm s patch discover
@@ -210,7 +210,7 @@ Tests will auto-detect the local server and run, or skip if not available.
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `SOCKET_CLI_API_BASE_URL` | API server URL | `http://localhost:8866` |
-| `SOCKET_CLI_API_TOKEN` | API authentication token | `sktsec_test_xxxxx` |
+| `SOCKET_CLI_API_TOKEN` | API authentication token | `your-api-token-here` |
 | `SOCKET_CLI_API_PROXY` | HTTP proxy URL | `http://proxy:8080` |
 | `SOCKET_CLI_API_TIMEOUT` | Request timeout in ms | `30000` |
 
