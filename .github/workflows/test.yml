@@ -2,10 +2,10 @@ name: Tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, v1.x]
     tags: ['*']
   pull_request:
-    branches: [main]
+    branches: [main, v1.x]
   workflow_dispatch:
 
 permissions:

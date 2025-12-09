@@ -9,7 +9,7 @@ import constants, {
 } from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 
-const fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan/reach')
+const fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan/simple-npm')
 
 describe('socket scan reach', async () => {
   const { binCliPath } = constants
@@ -559,7 +559,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'test/fixtures/commands/scan/simple-npm',
         '--org',
         'fakeOrg',
         FLAG_CONFIG,
@@ -579,7 +579,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'test/fixtures/commands/scan/simple-npm',
         '--reach-ecosystems',
         'npm',
         '--org',
@@ -600,7 +600,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'test/fixtures/commands/scan/simple-npm',
         '--reach-analysis-memory-limit',
         '2048',
         '--org',
@@ -621,7 +621,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'test/fixtures/commands/scan/simple-npm',
         '--reach-analysis-timeout',
         '1800',
         '--org',
@@ -642,7 +642,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'test/fixtures/commands/scan/simple-npm',
         '--reach-exclude-paths',
         'node_modules,dist',
         '--org',
@@ -663,7 +663,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'test/fixtures/commands/scan/simple-npm',
         '--reach-disable-analytics',
         '--org',
         'fakeOrg',
@@ -683,7 +683,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'test/fixtures/commands/scan/simple-npm',
         '--reach-skip-cache',
         '--org',
         'fakeOrg',
@@ -703,7 +703,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'test/fixtures/commands/scan/simple-npm',
         '--json',
         '--org',
         'fakeOrg',
@@ -724,7 +724,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'test/fixtures/commands/scan/simple-npm',
         '--markdown',
         '--org',
         'fakeOrg',
@@ -745,7 +745,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'test/fixtures/commands/scan/simple-npm',
         '--reach-ecosystems',
         'npm',
         '--reach-analysis-memory-limit',
@@ -1033,7 +1033,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'test/fixtures/commands/scan/simple-npm',
         '--reach-analysis-memory-limit',
         '999999999',
         '--org',
@@ -1054,7 +1054,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'test/fixtures/commands/scan/simple-npm',
         '--reach-exclude-paths',
         '',
         '--org',
@@ -1095,7 +1095,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'test/fixtures/commands/scan/simple-npm',
         '--reach-ecosystems',
         'npm,invalid-ecosystem,pypi',
         '--org',
@@ -1116,7 +1116,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'test/fixtures/commands/scan/simple-npm',
         '--reach-exclude-paths',
         '/absolute/path,relative/path,../parent/path',
         '--org',
@@ -1137,7 +1137,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'test/fixtures/commands/scan/simple-npm',
         FLAG_CONFIG,
         '{"apiToken":"invalid-token-with-special-chars-!@#$%^&*()"}',
         '--org',
@@ -1156,7 +1156,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'test/fixtures/commands/scan/simple-npm',
         '--reach-ecosystems',
         'npm',
         '--reach-ecosystems',
