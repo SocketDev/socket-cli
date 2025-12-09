@@ -135,11 +135,13 @@ async function createTempMonoProject(
   await fs.mkdir(tempDir, { recursive: true })
 
   // Copy each fixture into a subdirectory.
-  for (const fixtureName of fixtureNames) {
-    const sourceDir = path.join(fixtureBaseDir, fixtureName)
-    const destDir = path.join(tempDir, fixtureName)
-    await fs.cp(sourceDir, destDir, { recursive: true })
-  }
+  await Promise.all(
+    fixtureNames.map(async fixtureName => {
+      const sourceDir = path.join(fixtureBaseDir, fixtureName)
+      const destDir = path.join(tempDir, fixtureName)
+      await fs.cp(sourceDir, destDir, { recursive: true })
+    }),
+  )
 
   return {
     cleanup: async () => {
@@ -208,7 +210,9 @@ function findReachabilityForGhsa(
   if (!component.reachability) {
     return undefined
   }
-  const ghsaReachability = component.reachability.find(r => r.ghsa_id === ghsaId)
+  const ghsaReachability = component.reachability.find(
+    r => r.ghsa_id === ghsaId,
+  )
   if (!ghsaReachability) {
     return undefined
   }
@@ -231,18 +235,15 @@ describe('socket scan reach (E2E tests)', async () => {
   const { binCliPath } = constants
   const testTimeout = 120_000
   const apiToken = process.env['SOCKET_CLI_API_TOKEN']
-  const orgSlug = process.env['SOCKET_ORG'] || 'SocketDev'
+  const orgSlug = process.env['SOCKET_ORG'] ?? 'SocketDev'
 
   if (!apiToken) {
-    logger.warn(
-      'Skipping E2E tests: SOCKET_CLI_API_TOKEN environment variable not set',
-    )
-    return
+    throw new Error('SOCKET_CLI_API_TOKEN environment variable not set')
   }
 
   describe('npm-test-workspace-mono', () => {
     cmdit(
-      ['scan', 'reach', '.', '--no-interactive'],
+      ['scan', 'reach', '.', '--no-interactive', '--reach-disable-analytics'],
       'should run reachability analysis on workspace mono project',
       async cmd => {
         const tempFixture = await createTempFixtureCopy(
@@ -364,7 +365,6 @@ describe('socket scan reach (E2E tests)', async () => {
             'GHSA-35jh-r3h4-6jhm should be unreachable in packages/package-b',
           ).toBe('unreachable')
 
-
           // Verify component structure.
           for (const component of facts.components.slice(0, 5)) {
             expect(component).toHaveProperty('id')
@@ -393,6 +393,7 @@ describe('socket scan reach (E2E tests)', async () => {
         'reach',
         '.',
         '--no-interactive',
+        '--reach-disable-analytics',
         '--reach-exclude-paths',
         'packages/package-b',
       ],
@@ -485,7 +486,15 @@ describe('socket scan reach (E2E tests)', async () => {
 
   describe('multi-ecosystem filtering', () => {
     cmdit(
-      ['scan', 'reach', '.', '--no-interactive', '--reach-ecosystems', 'pypi'],
+      [
+        'scan',
+        'reach',
+        '.',
+        '--no-interactive',
+        '--reach-ecosystems',
+        'pypi',
+        '--reach-disable-analytics',
+      ],
       'should only analyze pypi ecosystem when --reach-ecosystems pypi is specified',
       async cmd => {
         // Create a mono project with both npm and pypi projects.
@@ -552,7 +561,9 @@ describe('socket scan reach (E2E tests)', async () => {
 
           // If we have pypi components, verify their structure.
           if (componentTypes.has('pypi')) {
-            const pypiComponents = facts.components.filter(c => c.type === 'pypi')
+            const pypiComponents = facts.components.filter(
+              c => c.type === 'pypi',
+            )
             for (const component of pypiComponents.slice(0, 3)) {
               expect(component).toHaveProperty('name')
               expect(component).toHaveProperty('version')
@@ -576,7 +587,15 @@ describe('socket scan reach (E2E tests)', async () => {
     )
 
     cmdit(
-      ['scan', 'reach', '.', '--no-interactive', '--reach-ecosystems', 'npm'],
+      [
+        'scan',
+        'reach',
+        '.',
+        '--no-interactive',
+        '--reach-ecosystems',
+        'npm',
+        '--reach-disable-analytics',
+      ],
       'should only analyze npm ecosystem when --reach-ecosystems npm is specified',
       async cmd => {
         // Create a mono project with both npm and pypi projects.
