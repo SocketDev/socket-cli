@@ -71,6 +71,7 @@ export async function coanaFix(
   fixConfig: FixConfig,
 ): Promise<CResult<{ data?: unknown; fixed: boolean }>> {
   const {
+    all,
     applyFixes,
     autopilot,
     cwd,
@@ -145,13 +146,18 @@ export async function coanaFix(
     }
   }
 
-  const isAll =
-    !ghsas.length ||
-    (ghsas.length === 1 && (ghsas[0] === 'all' || ghsas[0] === 'auto'))
+  const shouldDiscoverGhsaIds = all || !ghsas.length
 
   const shouldOpenPrs = fixEnv.isCi && fixEnv.repoInfo
 
   if (!shouldOpenPrs) {
+    // In local mode, if neither --all nor --id is provided, show deprecation warning.
+    if (shouldDiscoverGhsaIds && !all) {
+      logger.warn(
+        'Implicit --all is deprecated in local mode and will be removed in a future release. Please use --all explicitly.',
+      )
+    }
+
     // Inform user about local mode when fixes will be applied.
     if (applyFixes && ghsas.length) {
       const envCheck = checkCiEnvVars()
@@ -172,7 +178,7 @@ export async function coanaFix(
       }
     }
 
-    const ids = isAll ? ['all'] : ghsas.slice(0, limit)
+    const ids = shouldDiscoverGhsaIds ? ['all'] : ghsas.slice(0, limit)
     if (!ids.length) {
       spinner?.stop()
       return { ok: true, data: { fixed: false } }
@@ -262,9 +268,9 @@ export async function coanaFix(
 
   let ids: string[] | undefined
 
-  // When isAll is true, discover vulnerabilities by running coana with --output-file.
+  // When shouldDiscoverGhsaIds is true, discover vulnerabilities by running coana with --output-file.
   // This gives us the GHSA IDs needed to create individual PRs in CI mode.
-  if (shouldSpawnCoana && isAll) {
+  if (shouldSpawnCoana && shouldDiscoverGhsaIds) {
     const discoverTmpFile = path.join(
       os.tmpdir(),
       `socket-discover-${Date.now()}.json`,

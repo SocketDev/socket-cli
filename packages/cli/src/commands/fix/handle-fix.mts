@@ -103,6 +103,7 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
 }
 
 export async function handleFix({
+  all,
   applyFixes,
   autopilot,
   cwd,
@@ -124,6 +125,7 @@ export async function handleFix({
 }: HandleFixConfig) {
   debug(`Starting fix command for ${orgSlug}`)
   debugDir({
+    all,
     applyFixes,
     autopilot,
     cwd,
@@ -144,6 +146,7 @@ export async function handleFix({
 
   await outputFixResult(
     await coanaFix({
+      all,
       applyFixes,
       autopilot,
       cwd,

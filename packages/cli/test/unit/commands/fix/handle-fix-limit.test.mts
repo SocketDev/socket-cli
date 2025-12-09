@@ -123,6 +123,7 @@ vi.mock('node:fs', () => ({
 
 describe('socket fix --limit behavior verification', () => {
   const baseConfig: FixConfig = {
+    all: false,
     applyFixes: true,
     autopilot: false,
     cwd: '/test/cwd',
