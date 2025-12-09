@@ -59,6 +59,24 @@ function sanitizeHeaders(
 }
 
 /**
+ * Debug an API request start.
+ * Logs essential info without exposing sensitive data.
+ */
+export function debugApiRequest(
+  method: string,
+  endpoint: string,
+  timeout?: number | undefined,
+): void {
+  if (isDebugNs('silly')) {
+    const timeoutStr = timeout !== undefined ? ` (timeout: ${timeout}ms)` : ''
+    debugNs(
+      'silly',
+      `[${new Date().toISOString()}] request started: ${method} ${endpoint}${timeoutStr}`,
+    )
+  }
+}
+
+/**
  * Debug an API response with detailed request information.
  * Logs essential info without exposing sensitive data.
  *

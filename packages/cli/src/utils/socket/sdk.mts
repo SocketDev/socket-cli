@@ -43,9 +43,14 @@ import {
 import ENV from '../../constants/env.mts'
 import { TOKEN_PREFIX_LENGTH } from '../../constants/socket.mts'
 import { getConfigValueOrUndef } from '../config.mts'
+import { debugApiRequest, debugApiResponse } from '../debug.mts'
 
 import type { CResult } from '../../types.mts'
-import type { FileValidationResult } from '@socketsecurity/sdk'
+import type {
+  FileValidationResult,
+  RequestInfo,
+  ResponseInfo,
+} from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
 const TOKEN_VISIBLE_LENGTH = 5
@@ -148,40 +153,68 @@ export async function setupSdk(
 
   const timeout = ENV.SOCKET_CLI_API_TIMEOUT || undefined
 
+  const sdkOptions = {
+    ...(apiProxy ? { agent: new ProxyAgent({ proxy: apiProxy }) } : {}),
+    ...(apiBaseUrl ? { baseUrl: apiBaseUrl } : {}),
+    ...(timeout ? { timeout } : {}),
+    // Add HTTP request hooks for debugging if SOCKET_CLI_DEBUG is enabled.
+    ...(ENV.SOCKET_CLI_DEBUG
+      ? {
+          hooks: {
+            onRequest: (info: RequestInfo) => {
+              debugApiRequest(info.method, info.url, info.timeout)
+            },
+            onResponse: (info: ResponseInfo) => {
+              debugApiResponse(info.url, info.status, info.error, {
+                method: info.method,
+                url: info.url,
+                durationMs: info.duration,
+                headers: info.headers,
+              })
+            },
+          },
+        }
+      : {}),
+    onFileValidation: (
+      _validPaths: string[],
+      invalidPaths: string[],
+      _context: {
+        operation:
+          | 'createDependenciesSnapshot'
+          | 'createFullScan'
+          | 'uploadManifestFiles'
+        orgSlug?: string | undefined
+        [key: string]: unknown
+      },
+    ): FileValidationResult => {
+      if (invalidPaths.length > 0) {
+        logger.warn(
+          `Skipped ${invalidPaths.length} ${pluralize('file', { count: invalidPaths.length })} that could not be read`,
+        )
+        logger.substep(
+          'This may occur with Yarn Berry PnP virtual filesystem or pnpm symlinks',
+        )
+      }
+      // Continue with valid files.
+      return { shouldContinue: true }
+    },
+    userAgent: createUserAgentFromPkgJson({
+      name: ENV.INLINED_SOCKET_CLI_NAME || 'socket',
+      version: ENV.INLINED_SOCKET_CLI_VERSION || '0.0.0',
+      homepage: ENV.INLINED_SOCKET_CLI_HOMEPAGE || 'https://socket.dev/cli',
+    }),
+  }
+
+  if (ENV.SOCKET_CLI_DEBUG) {
+    logger.info(
+      `[DEBUG] ${new Date().toISOString()} SDK options: ${JSON.stringify(sdkOptions)}`,
+    )
+  }
+
+  const sdk = new SocketSdk(apiToken, sdkOptions)
+
   return {
     ok: true,
-    data: new SocketSdk(apiToken, {
-      ...(apiProxy ? { agent: new ProxyAgent({ proxy: apiProxy }) } : {}),
-      ...(apiBaseUrl ? { baseUrl: apiBaseUrl } : {}),
-      ...(timeout ? { timeout } : {}),
-      onFileValidation: (
-        _validPaths: string[],
-        invalidPaths: string[],
-        _context: {
-          operation:
-            | 'createDependenciesSnapshot'
-            | 'createFullScan'
-            | 'uploadManifestFiles'
-          orgSlug?: string | undefined
-          [key: string]: unknown
-        },
-      ): FileValidationResult => {
-        if (invalidPaths.length > 0) {
-          logger.warn(
-            `Skipped ${invalidPaths.length} ${pluralize('file', { count: invalidPaths.length })} that could not be read`,
-          )
-          logger.substep(
-            'This may occur with Yarn Berry PnP virtual filesystem or pnpm symlinks',
-          )
-        }
-        // Continue with valid files.
-        return { shouldContinue: true }
-      },
-      userAgent: createUserAgentFromPkgJson({
-        name: ENV.INLINED_SOCKET_CLI_NAME || 'socket',
-        version: ENV.INLINED_SOCKET_CLI_VERSION || '0.0.0',
-        homepage: ENV.INLINED_SOCKET_CLI_HOMEPAGE || 'https://socket.dev/cli',
-      }),
-    }),
+    data: sdk,
   }
 }
