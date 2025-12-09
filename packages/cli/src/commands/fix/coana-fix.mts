@@ -148,7 +148,8 @@ export async function coanaFix(
     }
   }
 
-  const shouldDiscoverGhsaIds = all || !ghsas.length || (ghsas.length === 1 && ghsas[0] === 'all')
+  const shouldDiscoverGhsaIds =
+    all || !ghsas.length || (ghsas.length === 1 && ghsas[0] === 'all')
 
   const shouldOpenPrs = fixEnv.isCi && fixEnv.repoInfo
 
@@ -181,7 +182,9 @@ export async function coanaFix(
     }
 
     // In local mode, apply limit to provided IDs.
-    const idsToProcess = shouldDiscoverGhsaIds ? ['all'] : ghsas.slice(0, prLimit)
+    const idsToProcess = shouldDiscoverGhsaIds
+      ? ['all']
+      : ghsas.slice(0, prLimit)
     if (!idsToProcess.length) {
       spinner?.stop()
       return { ok: true, data: { fixed: false } }

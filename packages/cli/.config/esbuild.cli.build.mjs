@@ -24,6 +24,11 @@ const rootPath = path.join(__dirname, '..')
 // Get all inlined environment variables from shared utility.
 const inlinedEnvVars = getInlinedEnvVars()
 
+// Regex pattern for matching relative paths to socket-lib's external/ directory.
+// Matches ./external/, ../external/, ../../external/, etc.
+// Supports both forward slashes (Unix/Mac) and backslashes (Windows).
+const socketLibExternalPathRegExp = /^(?:\.[/\\]|(?:\.\.[/\\])+)external[/\\]/
+
 // Helper to find socket-lib directory (either local sibling or node_modules).
 function findSocketLibPath(importerPath) {
   // Try to extract socket-lib base path from the importer.
@@ -235,9 +240,11 @@ const config = {
           return null
         })
 
-        // Resolve relative ./external/ paths from socket-lib (e.g., require("./external/@npmcli/arborist")).
-        // This handles both static imports and dynamic requires.
-        build.onResolve({ filter: /^\.\/external\// }, args => {
+        // Resolve relative paths to socket-lib's external/ directory.
+        // Handles ./external/, ../external/, ../../external/, etc.
+        // Supports both forward slashes and backslashes for cross-platform compatibility.
+        // This supports any nesting depth in socket-lib's dist/ directory structure.
+        build.onResolve({ filter: socketLibExternalPathRegExp }, args => {
           // Only handle imports from socket-lib's dist directory.
           if (!args.importer.includes('@socketsecurity/lib/dist/')) {
             return null
@@ -248,9 +255,10 @@ const config = {
             return null
           }
 
-          // Extract the package path after ./external/ and remove .js extension if present.
+          // Extract the package path after the relative prefix and external/, and remove .js extension.
+          // Handles both forward slashes and backslashes.
           const externalPath = args.path
-            .replace(/^\.\/external\//, '')
+            .replace(socketLibExternalPathRegExp, '')
             .replace(/\.js$/, '')
 
           // Build the resolved path to socket-lib's bundled external.

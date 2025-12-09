@@ -6,12 +6,12 @@ import { arrayUnique, joinAnd, joinOr } from '@socketsecurity/lib/arrays'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleFix } from './handle-fix.mts'
-import * as constants from '../../constants.mts'
 import { DRY_RUN_NOT_SAVING, FLAG_ID } from '../../constants/cli.mts'
 import { ERROR_UNABLE_RESOLVE_ORG } from '../../constants/errors.mts'
+import * as constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mts'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
@@ -22,12 +22,12 @@ import { RangeStyles } from '../../utils/semver.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 
-import type { PURL_Type } from '../../utils/ecosystem/types.mts'
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
 import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
+import type { PURL_Type } from '../../utils/ecosystem/types.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
 const logger = getDefaultLogger()
 
