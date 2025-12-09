@@ -553,7 +553,7 @@ describe('socket scan reach (E2E tests)', async () => {
           expect(
             subprojectPaths,
             "should NOT have packages/package-a since it's represented by the . subproject",
-          ).not.toContain('packages/packaga-a')
+          ).not.toContain('packages/package-a')
 
           // Verify we have components.
           expect(
