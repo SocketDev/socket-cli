@@ -2,13 +2,14 @@ import path from 'node:path'
 
 import terminalLink from 'terminal-link'
 
-import { arrayUnique, joinOr } from '@socketsecurity/lib/arrays'
+import { arrayUnique, joinAnd, joinOr } from '@socketsecurity/lib/arrays'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleFix } from './handle-fix.mts'
 import { DRY_RUN_NOT_SAVING, FLAG_ID } from '../../constants/cli.mts'
 import { ERROR_UNABLE_RESOLVE_ORG } from '../../constants/errors.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
+import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
@@ -20,6 +21,7 @@ import { RangeStyles } from '../../utils/semver.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 
+import type { PURL_Type } from '../../utils/ecosystem/types.mts'
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
 import type {
   CliCommandConfig,
@@ -81,6 +83,13 @@ const generalFlags: MeowFlags = {
     description:
       'Process all discovered vulnerabilities in local mode. Cannot be used with --id.',
   },
+  ecosystems: {
+    type: 'string',
+    default: [],
+    description:
+      'Limit fix analysis to specific ecosystems. Can be provided as comma separated values or as multiple flags. Defaults to all ecosystems.',
+    isMultiple: true,
+  },
   id: {
     type: 'string',
     default: [],
@@ -100,10 +109,10 @@ const generalFlags: MeowFlags = {
     Can be provided as comma separated values or as multiple flags. Cannot be used with --all.`,
     isMultiple: true,
   },
-  limit: {
+  prLimit: {
     type: 'number',
     default: DEFAULT_LIMIT,
-    description: `The number of fixes to attempt at a time (default ${DEFAULT_LIMIT})`,
+    description: `Maximum number of pull requests to create in CI mode (default ${DEFAULT_LIMIT}). Has no effect in local mode.`,
   },
   rangeStyle: {
     type: 'string',
@@ -267,16 +276,17 @@ async function run(
     all,
     applyFixes,
     autopilot,
+    ecosystems,
     exclude,
     include,
     json,
-    limit,
     majorUpdates,
     markdown,
     maxSatisfying,
     minimumReleaseAge,
     outputFile,
     prCheck,
+    prLimit,
     rangeStyle,
     showAffectedDirectDependencies,
     // We patched in this feature with `npx custompatch meow` at
@@ -286,10 +296,10 @@ async function run(
     all: boolean
     applyFixes: boolean
     autopilot: boolean
+    ecosystems: string[]
     exclude: string[]
     include: string[]
     json: boolean
-    limit: number
     majorUpdates: boolean
     markdown: boolean
     maxSatisfying: boolean
@@ -297,6 +307,7 @@ async function run(
     minimumReleaseAge: string
     outputFile: string
     prCheck: boolean
+    prLimit: number
     rangeStyle: RangeStyle
     showAffectedDirectDependencies: boolean
     unknownFlags?: string[]
@@ -310,6 +321,23 @@ async function run(
   const disableMajorUpdates = !majorUpdates
 
   const outputKind = getOutputKind(json, markdown)
+
+  // Process comma-separated values for ecosystems flag.
+  const ecosystemsRaw = cmdFlagValueToArray(ecosystems)
+
+  // Validate ecosystem values early, before dry-run check.
+  const validatedEcosystems: PURL_Type[] = []
+  const validEcosystemChoices = getEcosystemChoicesForMeow()
+  for (const ecosystem of ecosystemsRaw) {
+    if (!validEcosystemChoices.includes(ecosystem)) {
+      logger.fail(
+        `Invalid ecosystem: "${ecosystem}". Valid values are: ${joinAnd(validEcosystemChoices)}`,
+      )
+      process.exitCode = 1
+      return
+    }
+    validatedEcosystems.push(ecosystem as PURL_Type)
+  }
 
   const ghsas = arrayUnique([
     ...cmdFlagValueToArray(cli.flags['id']),
@@ -373,16 +401,17 @@ async function run(
     autopilot,
     cwd,
     disableMajorUpdates,
+    ecosystems: validatedEcosystems,
     exclude: excludePatterns,
     ghsas,
     include: includePatterns,
-    limit,
     minimumReleaseAge,
     minSatisfying,
     orgSlug,
     outputFile,
     outputKind,
     prCheck,
+    prLimit,
     rangeStyle,
     showAffectedDirectDependencies,
     spinner,

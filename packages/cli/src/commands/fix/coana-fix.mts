@@ -76,14 +76,15 @@ export async function coanaFix(
     autopilot,
     cwd,
     disableMajorUpdates,
+    ecosystems,
     exclude,
     ghsas,
     include,
-    limit,
     minimumReleaseAge,
     orgSlug,
     outputFile,
     outputKind,
+    prLimit,
     showAffectedDirectDependencies,
     spinner,
   } = fixConfig
@@ -178,7 +179,8 @@ export async function coanaFix(
       }
     }
 
-    const ids = shouldDiscoverGhsaIds ? ['all'] : ghsas.slice(0, limit)
+    // In local mode, process all discovered/provided IDs (no limit).
+    const ids = shouldDiscoverGhsaIds ? ['all'] : ghsas
     if (!ids.length) {
       spinner?.stop()
       return { ok: true, data: { fixed: false } }
@@ -241,8 +243,8 @@ export async function coanaFix(
     }
   }
 
-  // Adjust limit based on open Socket Fix PRs.
-  let adjustedLimit = limit
+  // Adjust PR limit based on open Socket Fix PRs.
+  let adjustedLimit = prLimit
   if (shouldOpenPrs && fixEnv.repoInfo) {
     try {
       const openPrs = await getSocketFixPrs(
@@ -252,10 +254,10 @@ export async function coanaFix(
       )
       const openPrCount = openPrs.length
       // Reduce limit by number of open PRs to avoid creating too many.
-      adjustedLimit = Math.max(0, limit - openPrCount)
+      adjustedLimit = Math.max(0, prLimit - openPrCount)
       if (openPrCount > 0) {
         debug(
-          `limit: adjusted from ${limit} to ${adjustedLimit} (${openPrCount} open Socket Fix ${pluralize('PR', { count: openPrCount })}`,
+          `prLimit: adjusted from ${prLimit} to ${adjustedLimit} (${openPrCount} open Socket Fix ${pluralize('PR', { count: openPrCount })}`,
         )
       }
     } catch (e) {
