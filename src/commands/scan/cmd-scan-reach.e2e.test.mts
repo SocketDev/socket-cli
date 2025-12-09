@@ -233,7 +233,10 @@ function logCommandOutput(code: number, stdout: string, stderr: string): void {
 
 describe('socket scan reach (E2E tests)', async () => {
   const { binCliPath } = constants
+  // Standard timeout for most tests.
   const testTimeout = 120_000
+  // Longer timeout for full workspace scans which are more resource-intensive.
+  const longTestTimeout = 300_000
   const apiToken = process.env['SOCKET_CLI_API_TOKEN']
   const orgSlug = process.env['SOCKET_ORG'] ?? 'SocketDev'
 
@@ -384,7 +387,7 @@ describe('socket scan reach (E2E tests)', async () => {
           await tempFixture.cleanup()
         }
       },
-      { timeout: testTimeout },
+      { timeout: longTestTimeout },
     )
 
     cmdit(
