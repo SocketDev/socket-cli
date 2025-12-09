@@ -21,6 +21,30 @@ type Vulnerability = {
   reachabilityData?: unknown
 }
 
+type ReachabilityEntry = {
+  type: 'reachable' | 'unreachable' | string
+  workspacePath: string
+  subprojectPath: string
+  affectedPurls?: Array<{ type: string; name: string; version: string }>
+  analysisLevel?: string
+  matches?: Array<
+    Array<{
+      package: string
+      sourceLocation: {
+        start: { line: number; column: number }
+        end: { line: number; column: number }
+        filename: string
+      }
+      confidence: number
+    }>
+  >
+}
+
+type ComponentReachability = {
+  ghsa_id: string
+  reachability: ReachabilityEntry[]
+}
+
 type Component = {
   id: string
   name: string
@@ -32,15 +56,7 @@ type Component = {
   dependencies: string[]
   manifestFiles: Array<{ file: string; start: number; end: number }>
   vulnerabilities?: Vulnerability[]
-  reachability?: Array<{
-    ghsa_id: string
-    reachability: Array<{
-      type: string
-      affectedPurls: string[]
-      workspacePath: string
-      subprojectPath: string
-    }>
-  }>
+  reachability?: ComponentReachability[]
 }
 
 type WorkspaceDiagnostic = {
@@ -182,6 +198,26 @@ function findComponent(
 }
 
 /**
+ * Find reachability entry for a specific GHSA ID and workspace path.
+ */
+function findReachabilityForGhsa(
+  component: Component,
+  ghsaId: string,
+  workspacePath: string,
+): ReachabilityEntry | undefined {
+  if (!component.reachability) {
+    return undefined
+  }
+  const ghsaReachability = component.reachability.find(r => r.ghsa_id === ghsaId)
+  if (!ghsaReachability) {
+    return undefined
+  }
+  return ghsaReachability.reachability.find(
+    r => r.workspacePath === workspacePath,
+  )
+}
+
+/**
  * Helper to log command output for debugging.
  * Logs stdout and stderr to help diagnose test failures.
  */
@@ -275,16 +311,59 @@ describe('socket scan reach (E2E tests)', async () => {
           // Verify specific known vulnerabilities are detected.
           const ghsaIds = getAllGhsaIds(facts)
 
-          // lodash@3.10.1 in package-b should have GHSA-35jh-r3h4-6jhm.
-          expect(ghsaIds).toContain('GHSA-35jh-r3h4-6jhm')
+          // lodash@3.10.1 in package-b should have GHSA-fvqr-27wr-82fm.
+          expect(ghsaIds).toContain('GHSA-fvqr-27wr-82fm')
 
           // Verify lodash@3.10.1 is present and has vulnerabilities.
-          const lodash = findComponent(facts, 'lodash', '3.10.1')
-          expect(lodash, 'lodash@3.10.1 should be present').toBeDefined()
+          const lodash3 = findComponent(facts, 'lodash', '3.10.1')
+          expect(lodash3, 'lodash@3.10.1 should be present').toBeDefined()
           expect(
-            lodash?.vulnerabilities?.length,
+            lodash3?.vulnerabilities?.length,
             'lodash@3.10.1 should have vulnerabilities',
           ).toBeGreaterThan(0)
+
+          // Verify reachability analysis was performed on lodash@3.10.1.
+          expect(
+            lodash3?.reachability,
+            'lodash@3.10.1 should have reachability data',
+          ).toBeDefined()
+          expect(
+            lodash3?.reachability?.length,
+            'lodash@3.10.1 should have reachability entries',
+          ).toBeGreaterThan(0)
+
+          // Verify GHSA-fvqr-27wr-82fm is reachable in packages/package-b.
+          const ghsaFvqrReachabilityPkgB = findReachabilityForGhsa(
+            lodash3!,
+            'GHSA-fvqr-27wr-82fm',
+            'packages/package-b',
+          )
+          expect(
+            ghsaFvqrReachabilityPkgB,
+            'GHSA-fvqr-27wr-82fm should have reachability data for packages/package-b',
+          ).toBeDefined()
+          expect(
+            ghsaFvqrReachabilityPkgB?.type,
+            'GHSA-fvqr-27wr-82fm should be reachable in packages/package-b',
+          ).toBe('reachable')
+          expect(ghsaFvqrReachabilityPkgB?.analysisLevel).toBe('function-level')
+          expect(ghsaFvqrReachabilityPkgB?.matches).toBeDefined()
+
+          // Verify GHSA-35jh-r3h4-6jhm is unreachable in packages/package-b.
+          const ghsaFvqrReachabilityPkgA = findReachabilityForGhsa(
+            lodash3!,
+            'GHSA-35jh-r3h4-6jhm',
+            'packages/package-b',
+          )
+          expect(
+            ghsaFvqrReachabilityPkgA,
+            'GHSA-35jh-r3h4-6jhm should have reachability data for packages/package-b',
+          ).toBeDefined()
+          expect(
+            ghsaFvqrReachabilityPkgA?.type,
+            'GHSA-35jh-r3h4-6jhm should be unreachable in packages/package-b',
+          ).toBe('unreachable')
+
 
           // Verify component structure.
           for (const component of facts.components.slice(0, 5)) {
