@@ -3,7 +3,7 @@
     "description": "Coana CLI for static analysis and reachability detection",
     "type": "npm",
     "package": "@coana-tech/cli",
-    "version": "14.12.103"
+    "version": "14.12.122"
   },
   "@cyclonedx/cdxgen": {
     "description": "CycloneDX SBOM generator for software bill of materials",
