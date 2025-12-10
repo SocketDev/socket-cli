@@ -247,6 +247,7 @@ async function run(
     reachDisableAnalytics,
     reachMinSeverity,
     reachSkipCache,
+    reachUseOnlyPregeneratedSboms,
     reachUseUnreachableFromPrecomputation,
     readOnly,
     reportLevel,
@@ -277,6 +278,7 @@ async function run(
     reachDisableAnalysisSplitting: boolean
     reachMinSeverity: string
     reachSkipCache: boolean
+    reachUseOnlyPregeneratedSboms: boolean
     reachUseUnreachableFromPrecomputation: boolean
   }
 
@@ -575,6 +577,7 @@ async function run(
       reachExcludePaths,
       reachMinSeverity: String(reachMinSeverity),
       reachSkipCache: Boolean(reachSkipCache),
+      reachUseOnlyPregeneratedSboms: Boolean(reachUseOnlyPregeneratedSboms),
       reachUseUnreachableFromPrecomputation: Boolean(
         reachUseUnreachableFromPrecomputation,
       ),

@@ -28,6 +28,7 @@ export type ReachabilityOptions = {
   reachExcludePaths: string[]
   reachMinSeverity: string
   reachSkipCache: boolean
+  reachUseOnlyPregeneratedSboms: boolean
   reachUseUnreachableFromPrecomputation: boolean
 }
 
@@ -194,6 +195,9 @@ export async function performReachabilityAnalysis(
       ? ['--min-severity', reachabilityOptions.reachMinSeverity]
       : []),
     ...(reachabilityOptions.reachSkipCache ? ['--skip-cache-usage'] : []),
+    ...(reachabilityOptions.reachUseOnlyPregeneratedSboms
+      ? ['--use-only-pregenerated-sboms']
+      : []),
     ...(reachabilityOptions.reachUseUnreachableFromPrecomputation
       ? ['--use-unreachable-from-precomputation']
       : []),

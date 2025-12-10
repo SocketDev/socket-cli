@@ -120,6 +120,7 @@ async function run(
     reachDisableAnalytics,
     reachMinSeverity,
     reachSkipCache,
+    reachUseOnlyPregeneratedSboms,
     reachUseUnreachableFromPrecomputation,
   } = cli.flags as unknown as {
     cwd: string
@@ -135,6 +136,7 @@ async function run(
     reachDisableAnalysisSplitting: boolean
     reachMinSeverity: string
     reachSkipCache: boolean
+    reachUseOnlyPregeneratedSboms: boolean
     reachUseUnreachableFromPrecomputation: boolean
   }
 
@@ -250,6 +252,7 @@ async function run(
       reachExcludePaths,
       reachMinSeverity: String(reachMinSeverity),
       reachSkipCache: Boolean(reachSkipCache),
+      reachUseOnlyPregeneratedSboms: Boolean(reachUseOnlyPregeneratedSboms),
       reachUseUnreachableFromPrecomputation: Boolean(
         reachUseUnreachableFromPrecomputation,
       ),
