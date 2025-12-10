@@ -6,6 +6,7 @@
 import { createHash } from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { whichReal } from '@socketsecurity/lib/bin'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
@@ -468,7 +469,10 @@ function getBinjectPath(): string {
     throw new Error(`Unsupported platform: ${platform}`)
   }
 
-  return path.join(PATHS.rootPath, 'build/binject', binaryName)
+  // Compute package root path (src/utils/sea -> packages/cli).
+  const __dirname = path.dirname(fileURLToPath(import.meta.url))
+  const rootPath = path.join(__dirname, '../../..')
+  return path.join(rootPath, 'build/binject', binaryName)
 }
 
 /**
