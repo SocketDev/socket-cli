@@ -183,6 +183,11 @@ async function main() {
         args: [...NODE_MEMORY_FLAGS, 'scripts/extract-models.mjs'],
       },
       {
+        name: 'Extract binject',
+        command: 'node',
+        args: [...NODE_MEMORY_FLAGS, 'scripts/extract-binject.mjs'],
+      },
+      {
         name: 'Build CLI Bundle',
         command: 'node',
         args: [...NODE_MEMORY_FLAGS, '.config/esbuild.cli.build.mjs'],

@@ -28,7 +28,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 const logger = getDefaultLogger()
 
-const outputPath = path.join(rootPath, 'build/yoga-sync.js')
+const outputPath = path.join(rootPath, 'build/yoga-sync.mjs')
 const cacheDir = getCacheDir('yoga', rootPath)
 
 /**
@@ -84,8 +84,11 @@ async function main() {
 
     const { release: releaseData, tag } = release
 
-    // Find yoga-sync asset.
-    const assetName = findAsset(releaseData, 'yoga-sync')
+    // Find yoga-sync.mjs asset (ES module version).
+    const assetName = findAsset(
+      releaseData,
+      a => a.name.startsWith('yoga-sync') && a.name.endsWith('.mjs'),
+    )
     if (!assetName) {
       generatePlaceholderStub()
       return
@@ -120,13 +123,11 @@ async function main() {
       tag,
     })
 
-    // Add ES module export for esbuild bundling (ink uses ES imports).
+    // The .mjs file from socket-btm should already have proper ES module exports.
+    // Just add our header and use the content as-is.
     const jsContent = `${header}
 
 ${syncContent}
-
-// ES module export for esbuild.
-export default yoga;
 `
 
     writeFileSync(outputPath, jsContent, 'utf-8')

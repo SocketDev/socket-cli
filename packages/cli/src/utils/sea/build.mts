@@ -451,6 +451,27 @@ export async function getLatestCurrentRelease(): Promise<string> {
 }
 
 /**
+ * Get path to binject binary from build directory.
+ */
+function getBinjectPath(): string {
+  const platform = process.platform
+  const arch = process.arch
+
+  let binaryName: string
+  if (platform === 'darwin') {
+    binaryName = `binject-darwin-${arch}`
+  } else if (platform === 'linux') {
+    binaryName = `binject-linux-musl-${arch}`
+  } else if (platform === 'win32') {
+    binaryName = `binject-win-${arch}.exe`
+  } else {
+    throw new Error(`Unsupported platform: ${platform}`)
+  }
+
+  return path.join(PATHS.rootPath, 'build/binject', binaryName)
+}
+
+/**
  * Inject SEA blob into Node binary.
  */
 export async function injectSeaBlob(
@@ -458,18 +479,14 @@ export async function injectSeaBlob(
   blobPath: string,
   outputPath: string,
 ): Promise<void> {
-  // Check if postject is available.
-  try {
-    const result = await spawn('pnpm', ['exec', 'which', 'postject'], {
-      stdio: 'pipe',
-    })
-    if (result.code !== 0) {
-      throw new Error('postject not found')
-    }
-  } catch {
+  // Get binject binary path.
+  const binjectPath = getBinjectPath()
+
+  // Check if binject is available.
+  if (!existsSync(binjectPath)) {
     throw new Error(
-      'postject is required to inject the SEA blob into the Node.js binary.\n' +
-        'Please install it: pnpm add -D postject',
+      `binject binary not found at ${binjectPath}\n` +
+        'Please run the build script first to download binject from socket-btm releases.',
     )
   }
 
@@ -494,20 +511,18 @@ export async function injectSeaBlob(
       })
     }
 
-    // Inject with macOS-specific flags.
-    // Following Node.js SEA documentation: https://nodejs.org/api/single-executable-applications.html
+    // Inject with SEA section.
+    // Using binject from socket-btm releases.
     await spawn(
-      'pnpm',
+      binjectPath,
       [
-        'exec',
-        'postject',
+        'inject',
+        '--executable',
         outputPath,
-        'NODE_SEA_BLOB',
+        '--resource',
         blobPath,
-        '--sentinel-fuse',
-        /*@__INLINE__*/ require('./constants/NODE_SEA_FUSE'),
-        '--macho-segment-name',
-        'NODE_SEA',
+        '--sea',
+        '--overwrite',
       ],
       { stdio: 'inherit' },
     )
@@ -520,33 +535,33 @@ export async function injectSeaBlob(
     }
   } else if (process.platform === 'win32') {
     // Windows injection.
-    // Following Node.js SEA documentation: https://nodejs.org/api/single-executable-applications.html
+    // Using binject from socket-btm releases.
     await spawn(
-      'pnpm',
+      binjectPath,
       [
-        'exec',
-        'postject',
+        'inject',
+        '--executable',
         outputPath,
-        'NODE_SEA_BLOB',
+        '--resource',
         blobPath,
-        '--sentinel-fuse',
-        /*@__INLINE__*/ require('./constants/NODE_SEA_FUSE'),
+        '--sea',
+        '--overwrite',
       ],
       { stdio: 'inherit' },
     )
   } else {
     // Linux injection.
-    // Following Node.js SEA documentation: https://nodejs.org/api/single-executable-applications.html
+    // Using binject from socket-btm releases.
     await spawn(
-      'pnpm',
+      binjectPath,
       [
-        'exec',
-        'postject',
+        'inject',
+        '--executable',
         outputPath,
-        'NODE_SEA_BLOB',
+        '--resource',
         blobPath,
-        '--sentinel-fuse',
-        /*@__INLINE__*/ require('./constants/NODE_SEA_FUSE'),
+        '--sea',
+        '--overwrite',
       ],
       { stdio: 'inherit' },
     )
