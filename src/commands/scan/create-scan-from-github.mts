@@ -258,6 +258,7 @@ async function scanOneRepo(
       reachEcosystems: [],
       reachExcludePaths: [],
       reachSkipCache: false,
+      reachUseOnlyPregeneratedSboms: false,
       reachVersion: undefined,
       runReachabilityAnalysis: false,
     },

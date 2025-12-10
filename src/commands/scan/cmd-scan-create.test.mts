@@ -63,6 +63,7 @@ describe('socket scan create', async () => {
             --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
             --reach-exclude-paths  List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.
             --reach-skip-cache  Skip caching-based optimizations. By default, the reachability analysis will use cached configurations from previous runs to speed up the analysis.
+            --reach-use-only-pregenerated-sboms  When using this option, the scan is created based only on pre-generated CDX and SPDX files in your project.
             --reach-version     Override the version of @coana-tech/cli used for reachability analysis. Default: <coana-version>.
 
           Uploads the specified dependency manifest files for Go, Gradle, JavaScript,

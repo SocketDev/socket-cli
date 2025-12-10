@@ -61,4 +61,10 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'Skip caching-based optimizations. By default, the reachability analysis will use cached configurations from previous runs to speed up the analysis.',
   },
+  reachUseOnlyPregeneratedSboms: {
+    type: 'boolean',
+    default: false,
+    description:
+      'When using this option, the scan is created based only on pre-generated CDX and SPDX files in your project.',
+  },
 }

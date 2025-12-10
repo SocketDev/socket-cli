@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [1.1.45](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.43) - 2025-12-10
+
+### Changed
+- Updated the Coana CLI to v `14.12.122`.
+
+### Added
+- Added `--reach-use-only-pregenerated-sboms` to run the Tier 1 reachability based only on pre-computed CDX and SPDX SBOMs (all other manifests are excluded).
+
 ## [1.1.44](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.43) - 2025-12-09
 
 ### Changed
