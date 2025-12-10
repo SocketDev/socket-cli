@@ -244,6 +244,7 @@ async function run(
     reachDisableAnalysisSplitting,
     reachDisableAnalytics,
     reachSkipCache,
+    reachUseOnlyPregeneratedSboms,
     reachVersion,
     readOnly,
     reportLevel,
@@ -273,6 +274,7 @@ async function run(
     reachDisableAnalysisSplitting: boolean
     reachDisableAnalytics: boolean
     reachSkipCache: boolean
+    reachUseOnlyPregeneratedSboms: boolean
     reachVersion: string | undefined
   }
 
@@ -458,7 +460,8 @@ async function run(
     isUsingNonDefaultTimeout ||
     isUsingNonDefaultVersion ||
     reachDisableAnalysisSplitting ||
-    reachSkipCache
+    reachSkipCache ||
+    reachUseOnlyPregeneratedSboms
 
   // Validate target constraints when --reach is enabled.
   const reachTargetValidation = reach
@@ -573,6 +576,7 @@ async function run(
       reachEcosystems,
       reachExcludePaths,
       reachSkipCache: Boolean(reachSkipCache),
+      reachUseOnlyPregeneratedSboms: Boolean(reachUseOnlyPregeneratedSboms),
       reachVersion,
       runReachabilityAnalysis: Boolean(reach),
     },

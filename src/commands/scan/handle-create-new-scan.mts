@@ -1,5 +1,7 @@
 import path from 'node:path'
 
+import micromatch from 'micromatch'
+
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
@@ -22,6 +24,41 @@ import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+
+// Keys for CDX and SPDX in the supported files response.
+const CDX_SPDX_KEYS = ['cdx', 'spdx']
+
+function getCdxSpdxPatterns(
+  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
+): string[] {
+  const patterns: string[] = []
+  for (const key of CDX_SPDX_KEYS) {
+    const supported = supportedFiles[key]
+    if (supported) {
+      for (const entry of Object.values(supported)) {
+        patterns.push(`**/${entry.pattern}`)
+      }
+    }
+  }
+  return patterns
+}
+
+function filterToCdxSpdxAndFactsFiles(
+  filepaths: string[],
+  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
+): string[] {
+  const patterns = getCdxSpdxPatterns(supportedFiles)
+  return filepaths.filter(filepath => {
+    const basename = path.basename(filepath).toLowerCase()
+    // Include .socket.facts.json files.
+    if (basename === constants.DOT_SOCKET_DOT_FACTS_JSON) {
+      return true
+    }
+    // Include CDX and SPDX files.
+    return micromatch.some(filepath, patterns)
+  })
+}
 
 export type HandleCreateNewScanConfig = {
   autoManifest: boolean
@@ -187,14 +224,20 @@ export async function handleCreateNewScan({
 
     const reachabilityReport = reachResult.data?.reachabilityReport
 
+    // Ensure the .socket.facts.json isn't duplicated in case it happened
+    // to be in the scan folder before the analysis was run.
+    const filteredPackagePaths = packagePaths.filter(
+      p =>
+        path.basename(p).toLowerCase() !== constants.DOT_SOCKET_DOT_FACTS_JSON,
+    )
+
+    // When using pregenerated SBOMs only, filter to CDX/SPDX files.
+    const pathsForScan = reach.reachUseOnlyPregeneratedSboms
+      ? filterToCdxSpdxAndFactsFiles(filteredPackagePaths, supportedFiles)
+      : filteredPackagePaths
+
     scanPaths = [
-      ...packagePaths.filter(
-        // Ensure the .socket.facts.json isn't duplicated in case it happened
-        // to be in the scan folder before the analysis was run.
-        p =>
-          path.basename(p).toLowerCase() !==
-          constants.DOT_SOCKET_DOT_FACTS_JSON,
-      ),
+      ...pathsForScan,
       ...(reachabilityReport ? [reachabilityReport] : []),
     ]
 

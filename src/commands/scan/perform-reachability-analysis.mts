@@ -23,6 +23,7 @@ export type ReachabilityOptions = {
   reachEcosystems: PURL_Type[]
   reachExcludePaths: string[]
   reachSkipCache: boolean
+  reachUseOnlyPregeneratedSboms: boolean
   reachVersion: string | undefined
 }
 
@@ -187,6 +188,9 @@ export async function performReachabilityAnalysis(
       ? ['--exclude-dirs', ...reachabilityOptions.reachExcludePaths]
       : []),
     ...(reachabilityOptions.reachSkipCache ? ['--skip-cache-usage'] : []),
+    ...(reachabilityOptions.reachUseOnlyPregeneratedSboms
+      ? ['--use-only-pregenerated-sboms']
+      : []),
   ]
 
   // Build environment variables.
