@@ -44,6 +44,18 @@ jobs:
         with:
           autocrlf: false
           persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version-file: .node-version
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - uses: SocketDev/socket-registry/.github/actions/setup@4709a2443e5a036bb0cd94e5d1559f138f05994c # main
         with:
           scope: '@socketsecurity'
