@@ -18,7 +18,6 @@
     "build": "node scripts/build.mjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest",
     "verify": "pnpm run build && node scripts/verify-package.mjs"
   },
   "devDependencies": {

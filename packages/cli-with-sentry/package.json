@@ -25,7 +25,6 @@
     "build": "node scripts/build.mjs",
     "clean:dist": "del-cli 'dist'",
     "test": "vitest run",
-    "test:watch": "vitest",
     "verify": "node scripts/verify-package.mjs"
   },
   "dependencies": {
