@@ -112,6 +112,7 @@ export async function coanaFix(
     autopilot,
     coanaVersion,
     cwd,
+    debug,
     disableMajorUpdates,
     ecosystems,
     exclude,
@@ -246,6 +247,7 @@ export async function coanaFix(
           ...(!applyFixes ? [FLAG_DRY_RUN] : []),
           '--output-file',
           tmpFile,
+          ...(debug ? ['--debug'] : []),
           ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
           ...(showAffectedDirectDependencies
             ? ['--show-affected-direct-dependencies']
@@ -371,6 +373,7 @@ export async function coanaFix(
         ...(include.length ? ['--include', ...include] : []),
         ...(exclude.length ? ['--exclude', ...exclude] : []),
         ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
+        ...(debug ? ['--debug'] : []),
         ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
         ...(showAffectedDirectDependencies
           ? ['--show-affected-direct-dependencies']
