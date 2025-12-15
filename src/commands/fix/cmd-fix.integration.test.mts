@@ -167,6 +167,7 @@ describe('socket fix', async () => {
             --all               Process all discovered vulnerabilities in local mode. Cannot be used with --id.
             --autopilot         Enable auto-merge for pull requests that Socket opens.
                                 See GitHub documentation (https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository) for managing auto-merge for pull requests in your repository.
+            --debug             Enable debug logging.
             --ecosystems        Limit fix analysis to specific ecosystems. Can be provided as comma separated values or as multiple flags. Defaults to all ecosystems.
             --exclude           Exclude workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags
             --fix-version       Override the version of @coana-tech/cli used for fix analysis. Default: <coana-version>.

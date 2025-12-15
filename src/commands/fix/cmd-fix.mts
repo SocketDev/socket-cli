@@ -147,6 +147,12 @@ Available styles:
     description:
       'Set a minimum age requirement for suggested upgrade versions (e.g., 1h, 2d, 3w). A higher age requirement reduces the risk of upgrading to malicious versions. For example, setting the value to 1 week (1w) gives ecosystem maintainers one week to remove potentially malicious versions.',
   },
+  debug: {
+    type: 'boolean',
+    default: false,
+    description: 'Enable debug logging.',
+    shortFlag: 'd',
+  },
   ecosystems: {
     type: 'string',
     default: [],
@@ -281,6 +287,7 @@ async function run(
     all,
     applyFixes,
     autopilot,
+    debug,
     ecosystems,
     exclude,
     fixVersion,
@@ -302,6 +309,7 @@ async function run(
     all: boolean
     applyFixes: boolean
     autopilot: boolean
+    debug: boolean
     ecosystems: string[]
     exclude: string[]
     fixVersion: string | undefined
@@ -409,6 +417,7 @@ async function run(
     autopilot,
     coanaVersion: fixVersion,
     cwd,
+    debug,
     disableMajorUpdates,
     ecosystems: validatedEcosystems,
     exclude: excludePatterns,
