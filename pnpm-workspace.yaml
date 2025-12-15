@@ -38,7 +38,7 @@ catalog:
   fast-sort: 3.4.1
   get-east-asian-width: 1.3.0
   libnpmexec: 10.1.8
-  libnpmpack: 9.0.9
+  libnpmpack: 9.0.11
   lint-staged: 15.2.11
   make-fetch-happen: 15.0.2
   nock: 14.0.10
