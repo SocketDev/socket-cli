@@ -43,7 +43,7 @@ catalog:
   make-fetch-happen: 15.0.2
   nock: 14.0.10
   normalize-package-data: 8.0.0
-  openapi-typescript: 6.7.6
+  openapi-typescript: 7.10.1
   pacote: 21.0.1
   picomatch: 2.3.1
   spdx-correct: 3.2.0
