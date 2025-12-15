@@ -150,7 +150,8 @@ Available styles:
   debug: {
     type: 'boolean',
     default: false,
-    description: 'Enable debug logging.',
+    description:
+      'Enable debug logging in the Coana-based Socket Fix CLI invocation.',
     shortFlag: 'd',
   },
   ecosystems: {
