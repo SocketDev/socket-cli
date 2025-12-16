@@ -40,6 +40,7 @@ import constants, {
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
 } from '../constants.mts'
+import { trackCliEvent } from './telemetry/integration.mts'
 
 import type { CResult } from '../types.mts'
 import type { RequestInfo, ResponseInfo } from '@socketsecurity/sdk'
@@ -66,6 +67,7 @@ export function getDefaultProxyUrl(): string | undefined {
 
 // This Socket API token should be stored globally for the duration of the CLI execution.
 let _defaultToken: string | undefined
+
 export function getDefaultApiToken(): string | undefined {
   if (constants.ENV.SOCKET_CLI_NO_API_TOKEN) {
     _defaultToken = undefined
@@ -153,26 +155,65 @@ export async function setupSdk(
       version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
       homepage: constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE,
     }),
-    // Add HTTP request hooks for debugging if SOCKET_CLI_DEBUG is enabled.
-    ...(constants.ENV.SOCKET_CLI_DEBUG
-      ? {
-          hooks: {
-            onRequest: (info: RequestInfo) => {
-              debugApiRequest(info.method, info.url, info.timeout)
-            },
-            onResponse: (info: ResponseInfo) => {
-              debugApiResponse(
-                info.method,
-                info.url,
-                info.status,
-                info.error,
-                info.duration,
-                info.headers,
-              )
-            },
-          },
+    // Add HTTP request hooks for telemetry and debugging.
+    hooks: {
+      onRequest: (info: RequestInfo) => {
+        // Skip tracking for telemetry submission endpoints to prevent infinite loop.
+        const isTelemetryEndpoint = info.url.includes('/telemetry')
+
+        if (constants.ENV.SOCKET_CLI_DEBUG) {
+          // Debug logging.
+          debugApiRequest(info.method, info.url, info.timeout)
         }
-      : {}),
+        if (!isTelemetryEndpoint) {
+          // Track API request event.
+          void trackCliEvent('api_request', process.argv, {
+            method: info.method,
+            timeout: info.timeout,
+            url: info.url,
+          })
+        }
+      },
+      onResponse: (info: ResponseInfo) => {
+        // Skip tracking for telemetry submission endpoints to prevent infinite loop.
+        const isTelemetryEndpoint = info.url.includes('/telemetry')
+
+        if (!isTelemetryEndpoint) {
+          // Track API response event.
+          const metadata = {
+            duration: info.duration,
+            method: info.method,
+            status: info.status,
+            statusText: info.statusText,
+            url: info.url,
+          }
+
+          if (info.error) {
+            // Track as error event if request failed.
+            void trackCliEvent('api_error', process.argv, {
+              ...metadata,
+              error_message: info.error.message,
+              error_type: info.error.constructor.name,
+            })
+          } else {
+            // Track as successful response.
+            void trackCliEvent('api_response', process.argv, metadata)
+          }
+        }
+
+        if (constants.ENV.SOCKET_CLI_DEBUG) {
+          // Debug logging.
+          debugApiResponse(
+            info.method,
+            info.url,
+            info.status,
+            info.error,
+            info.duration,
+            info.headers,
+          )
+        }
+      },
+    },
   }
 
   if (constants.ENV.SOCKET_CLI_DEBUG) {

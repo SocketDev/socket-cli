@@ -208,8 +208,8 @@ importers:
         specifier: 1.1.17
         version: 1.1.17
       '@socketsecurity/sdk':
-        specifier: 1.4.94
-        version: 1.4.94
+        specifier: 1.4.95
+        version: 1.4.95
       '@types/blessed':
         specifier: 0.1.25
         version: 0.1.25
@@ -1741,8 +1741,8 @@ packages:
     resolution: {integrity: sha512-5j0eH6JaBZlcvnbdu+58Sw8c99AK25PTp0Z/lwP7HknHdJ0TMMoTzNIBbp7WCTZKoGrPgBWchi0udN1ObZ53VQ==}
     engines: {node: '>=18'}
 
-  '@socketsecurity/sdk@1.4.94':
-    resolution: {integrity: sha512-GVriiYWEx69WOfsP1NZ4/el8CrOeDEmSsa8M8uZRXhCweHSBMSy7ElZ2aARLgJj5ju9TY++pUTBFmYtKpLK6PQ==}
+  '@socketsecurity/sdk@1.4.95':
+    resolution: {integrity: sha512-rUqo8UYHsH8MQxO8EKnIAsU8AhArz0A3H2hfDgZPrfpY2O7ligUUBaLkk/zEm9DP6k8JjWSR6gxdvnY6KgWQJQ==}
     engines: {node: '>=18'}
 
   '@stroncium/procfs@1.2.1':
@@ -6375,7 +6375,7 @@ snapshots:
 
   '@socketsecurity/registry@1.1.17': {}
 
-  '@socketsecurity/sdk@1.4.94':
+  '@socketsecurity/sdk@1.4.95':
     dependencies:
       '@socketsecurity/registry': 1.1.17
 

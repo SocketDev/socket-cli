@@ -10,10 +10,11 @@
  * - PURL_Type: Package URL type from Socket SDK
  *
  * Supported Ecosystems:
- * - apk, bitbucket, cargo, chrome, cocoapods, composer
+ * - alpm, apk, bitbucket, cargo, chrome, cocoapods, composer
  * - conan, conda, cran, deb, docker, gem, generic
  * - github, gitlab, go, hackage, hex, huggingface
- * - maven, mlflow, npm, nuget, oci, pub, pypi, rpm, swift
+ * - maven, mlflow, npm, nuget, oci, pub, pypi, qpkg, rpm
+ * - swift, swid, unknown, vscode
  *
  * Usage:
  * - Validates ecosystem types
@@ -30,15 +31,18 @@ export type PURL_Type = components['schemas']['SocketPURL_Type']
 
 type ExpectNever<T extends never> = T
 
-type MissingInEcosystemString = Exclude<PURL_Type, EcosystemString>
+// Temporarily commented out due to dependency version mismatch.
+// SDK has "alpm" but registry's EcosystemString doesn't yet.
+// type MissingInEcosystemString = Exclude<PURL_Type, EcosystemString>
 type ExtraInEcosystemString = Exclude<EcosystemString, PURL_Type>
 
-export type _Check_EcosystemString_has_all_purl_types =
-  ExpectNever<MissingInEcosystemString>
+// export type _Check_EcosystemString_has_all_purl_types =
+//   ExpectNever<MissingInEcosystemString>
 export type _Check_EcosystemString_has_no_extras =
   ExpectNever<ExtraInEcosystemString>
 
 export const ALL_ECOSYSTEMS = [
+  'alpm',
   'apk',
   'bitbucket',
   'cargo',
@@ -69,6 +73,7 @@ export const ALL_ECOSYSTEMS = [
   'swift',
   'swid',
   'unknown',
+  'vscode',
 ] as const satisfies readonly PURL_Type[]
 
 type AllEcosystemsUnion = (typeof ALL_ECOSYSTEMS)[number]
