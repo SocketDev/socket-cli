@@ -31,7 +31,7 @@ import browserslist from 'browserslist'
 import semver from 'semver'
 
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
-import { whichBin } from '@socketsecurity/registry/lib/bin'
+import { resolveBinPathSync, whichBin } from '@socketsecurity/registry/lib/bin'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { readFileBinary, readFileUtf8 } from '@socketsecurity/registry/lib/fs'
 import { Logger } from '@socketsecurity/registry/lib/logger'
@@ -239,20 +239,55 @@ const LOCKS: Record<string, Agent> = {
   [`${NODE_MODULES}/${DOT_PACKAGE_LOCK_JSON}`]: NPM,
 }
 
+function preferWindowsCmdShim(binPath: string, binName: string): string {
+  // Only Windows uses .cmd shims
+  if (!constants.WIN32) {
+    return binPath
+  }
+  
+  // Relative paths might be shell commands or aliases, not file paths with potential shims
+  if (!path.isAbsolute(binPath)) {
+    return binPath
+  }
+
+  // If the path already has an extension (.exe, .bat, etc.), it is probably a Windows executable
+  if (path.extname(binPath) !== '') {
+    return binPath
+  }
+
+  // Ensures binPath actually points to the expected binary, not a parent directory that happens to match `binName`
+  // For example, if binPath is C:\foo\npm\something and binName is npm, we shouldn't replace it
+  if (path.basename(binPath).toLowerCase() !== binName.toLowerCase()) {
+    return binPath
+  }
+
+  // Finally attempt to construct a .cmd shim from binPAth
+  const cmdShim = path.join(path.dirname(binPath), `${binName}.cmd`)
+
+  // Ensure shim exists, otherwise failback to binPath
+  return existsSync(cmdShim) ? cmdShim : binPath
+}
+
 async function getAgentExecPath(agent: Agent): Promise<string> {
   const binName = binByAgent.get(agent)!
   if (binName === NPM) {
     // Try to use constants.npmExecPath first, but verify it exists.
-    const npmPath = constants.npmExecPath
+    const npmPath = preferWindowsCmdShim(constants.npmExecPath, NPM)
     if (existsSync(npmPath)) {
       return npmPath
     }
     // If npmExecPath doesn't exist, try common locations.
     // Check npm in the same directory as node.
     const nodeDir = path.dirname(process.execPath)
+    if (constants.WIN32) {
+      const npmCmdInNodeDir = path.join(nodeDir, `${NPM}.cmd`)
+      if (existsSync(npmCmdInNodeDir)) {
+        return npmCmdInNodeDir
+      }
+    }
     const npmInNodeDir = path.join(nodeDir, NPM)
     if (existsSync(npmInNodeDir)) {
-      return npmInNodeDir
+      return preferWindowsCmdShim(npmInNodeDir, NPM)
     }
     // Fall back to whichBin.
     return (await whichBin(binName, { nothrow: true })) ?? binName
@@ -278,22 +313,50 @@ async function getAgentVersion(
   const quotedCmd = `\`${agent} ${FLAG_VERSION}\``
   debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
+    let stdout: string
+
+    // Some package manager "executables" may resolve to non-executable wrapper scripts
+    // (e.g. the extensionless `npm` shim on Windows). Resolve the underlying entrypoint
+    // and run it with Node when it is a JS file.
+    let shouldRunWithNode: string | null = null
+    if (constants.WIN32) {
+      try {
+        const resolved = resolveBinPathSync(agentExecPath)
+        const ext = path.extname(resolved).toLowerCase()
+        if (ext === '.js' || ext === '.cjs' || ext === '.mjs') {
+          shouldRunWithNode = resolved
+        }
+      } catch (e) {
+        debugFn('warn', `Failed to resolve bin path for ${agentExecPath}, falling back to direct spawn.`)
+        debugDir('error', e)
+      }
+    }
+
+    if (shouldRunWithNode) {
+      stdout = (
+        await spawn(
+          constants.execPath,
+          [...constants.nodeNoWarningsFlags, shouldRunWithNode, FLAG_VERSION],
+          { cwd },
+        )
+      ).stdout
+    } else {
+      stdout = (
+        await spawn(agentExecPath, [FLAG_VERSION], {
+          cwd,
+          // On Windows, package managers are often .cmd files that require shell execution.
+          // The spawn function from @socketsecurity/registry will handle this properly
+          // when shell is true.
+          shell: constants.WIN32,
+        })
+      ).stdout
+    }
+
     result =
       // Coerce version output into a valid semver version by passing it through
       // semver.coerce which strips leading v's, carets (^), comparators (<,<=,>,>=,=),
       // and tildes (~).
-      semver.coerce(
-        // All package managers support the "--version" flag.
-        (
-          await spawn(agentExecPath, [FLAG_VERSION], {
-            cwd,
-            // On Windows, package managers are often .cmd files that require shell execution.
-            // The spawn function from @socketsecurity/registry will handle this properly
-            // when shell is true.
-            shell: constants.WIN32,
-          })
-        ).stdout,
-      ) ?? undefined
+      semver.coerce(stdout) ?? undefined
   } catch (e) {
     debugFn('error', `Package manager command failed: ${quotedCmd}`)
     debugDir('inspect', { cmd: quotedCmd })
