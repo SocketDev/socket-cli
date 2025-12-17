@@ -27,6 +27,7 @@ import path from 'node:path'
 import config from '@socketsecurity/config'
 import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
 import { safeMkdirSync, safeReadFileSync } from '@socketsecurity/lib/fs'
+import { getEditableJsonClass } from '@socketsecurity/lib/json/edit'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { naturalCompare } from '@socketsecurity/lib/sorts'
 
@@ -246,6 +247,16 @@ let _cachedConfig: LocalConfig | undefined
 // When using --config or SOCKET_CLI_CONFIG, do not persist the config.
 let _configFromFlag = false
 
+/**
+ * Reset config cache for testing purposes.
+ * This allows tests to start with a fresh config state.
+ * @internal
+ */
+export function resetConfigForTesting(): void {
+  _cachedConfig = undefined
+  _configFromFlag = false
+}
+
 export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   debugNs('notice', 'override: full config (not stored)')
 
@@ -346,9 +357,26 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
       if (socketAppDataPath) {
         safeMkdirSync(socketAppDataPath, { recursive: true })
         const configFilePath = path.join(socketAppDataPath, 'config.json')
+        // Read existing file to preserve formatting, then update with new values.
+        const existingRaw = safeReadFileSync(configFilePath)
+        const EditableJson = getEditableJsonClass<LocalConfig>()
+        const editor = new EditableJson()
+        if (existingRaw !== undefined) {
+          const rawString = Buffer.isBuffer(existingRaw)
+            ? existingRaw.toString('utf8')
+            : existingRaw
+          try {
+            const decoded = Buffer.from(rawString, 'base64').toString('utf8')
+            editor.fromJSON(decoded)
+          } catch {
+            // If decoding fails, start fresh.
+          }
+        }
+        editor.update(localConfig)
+        const jsonContent = JSON.stringify(editor.content)
         writeFileSync(
           configFilePath,
-          Buffer.from(JSON.stringify(localConfig)).toString('base64'),
+          Buffer.from(jsonContent).toString('base64'),
         )
       }
     })

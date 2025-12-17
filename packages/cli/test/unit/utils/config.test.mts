@@ -10,6 +10,7 @@
  * - Environment variable overrides
  * - Config merging and precedence
  * - Validation and schema checking
+ * - Non-destructive config saving
  *
  * Testing Approach:
  * Uses temporary config files and environment variable mocking.
@@ -18,17 +19,19 @@
  * - utils/config.mts (implementation)
  */
 
-import { mkdtempSync, promises as fs, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { safeMkdirSync } from '@socketsecurity/lib/fs'
+import { safeDelete, safeMkdirSync } from '@socketsecurity/lib/fs'
 
 import {
   findSocketYmlSync,
+  getConfigValue,
   overrideCachedConfig,
+  resetConfigForTesting,
   updateConfigValue,
 } from '../../../src/utils/config.mts'
 import { testPath } from '../../../test/utils.mts'
@@ -100,7 +103,7 @@ describe('utils/config', () => {
         expect(result.data?.path).toBe(socketYmlPath)
       } finally {
         // Clean up the temporary directory.
-        await fs.rm(tmpDir, { force: true, recursive: true })
+        await safeDelete(tmpDir, { recursive: true })
       }
     })
 
@@ -113,7 +116,7 @@ describe('utils/config', () => {
       // This ensures no parent directories contain socket.yml.
       const tmpDir = mkdtempSync(path.join(os.tmpdir(), 'socket-test-'))
       const isolatedDir = path.join(tmpDir, 'deep', 'nested', 'directory')
-      await fs.mkdir(isolatedDir, { recursive: true })
+      safeMkdirSync(isolatedDir, { recursive: true })
 
       try {
         const result = findSocketYmlSync(isolatedDir)
@@ -123,8 +126,142 @@ describe('utils/config', () => {
         expect(result.data).toBe(undefined)
       } finally {
         // Clean up the temporary directory.
-        await fs.rm(tmpDir, { force: true, recursive: true })
+        await safeDelete(tmpDir, { recursive: true })
       }
+    })
+  })
+
+  describe('non-destructive config saving', () => {
+    let tmpDir: string
+    let originalEnvValue: string | undefined
+    // getSocketAppDataPath() uses LOCALAPPDATA on Windows, XDG_DATA_HOME elsewhere.
+    const isWin32 = process.platform === 'win32'
+    const envKey = isWin32 ? 'LOCALAPPDATA' : 'XDG_DATA_HOME'
+
+    beforeEach(() => {
+      // Create temp directory for config storage.
+      tmpDir = mkdtempSync(path.join(os.tmpdir(), 'socket-config-test-'))
+      // Save original env value.
+      originalEnvValue = process.env[envKey]
+      // Point config to temp directory.
+      // getSocketAppDataPath() appends 'socket/settings' to the data home.
+      process.env[envKey] = tmpDir
+      // Reset config cache so it reads from the new location.
+      resetConfigForTesting()
+    })
+
+    afterEach(async () => {
+      // Restore original env value.
+      if (originalEnvValue === undefined) {
+        delete process.env[envKey]
+      } else {
+        process.env[envKey] = originalEnvValue
+      }
+      // Reset config cache.
+      resetConfigForTesting()
+      // Clean up temp directory.
+      await safeDelete(tmpDir)
+    })
+
+    it('should preserve existing properties when updating config', async () => {
+      // Create the settings directory structure.
+      const settingsDir = path.join(tmpDir, 'socket', 'settings')
+      safeMkdirSync(settingsDir)
+      const configFilePath = path.join(settingsDir, 'config.json')
+
+      // Create initial config with multiple properties (base64 encoded).
+      const initialConfig = {
+        apiToken: 'existing-token',
+        defaultOrg: 'existing-org',
+      }
+      const initialJson = JSON.stringify(initialConfig)
+      writeFileSync(configFilePath, Buffer.from(initialJson).toString('base64'))
+
+      // Reset cache so it reads the file we just created.
+      resetConfigForTesting()
+
+      // Update only one property using the actual updateConfigValue function.
+      const result = updateConfigValue('apiToken', 'new-token')
+      expect(result.ok).toBe(true)
+
+      // Wait for nextTick to complete the async write.
+      await new Promise(resolve => process.nextTick(resolve))
+
+      // Read and verify all properties are preserved.
+      const finalRaw = readFileSync(configFilePath, 'utf8')
+      const finalDecoded = Buffer.from(finalRaw, 'base64').toString('utf8')
+      const finalConfig = JSON.parse(finalDecoded)
+
+      // The updated property should have the new value.
+      expect(finalConfig.apiToken).toBe('new-token')
+      // Existing properties should be preserved.
+      expect(finalConfig.defaultOrg).toBe('existing-org')
+    })
+
+    it('should preserve JSON key order when updating config', async () => {
+      // Create the settings directory structure.
+      const settingsDir = path.join(tmpDir, 'socket', 'settings')
+      safeMkdirSync(settingsDir)
+      const configFilePath = path.join(settingsDir, 'config.json')
+
+      // Create config with specific key order (base64 encoded).
+      // Using valid config keys: defaultOrg comes before apiToken alphabetically,
+      // but we write them in reverse order to test preservation.
+      const initialJson = '{"defaultOrg":"org1","apiToken":"token1"}'
+      writeFileSync(configFilePath, Buffer.from(initialJson).toString('base64'))
+
+      // Reset cache so it reads the file we just created.
+      resetConfigForTesting()
+
+      // Update one property.
+      const result = updateConfigValue('apiToken', 'token2')
+      expect(result.ok).toBe(true)
+
+      // Wait for nextTick to complete the async write.
+      await new Promise(resolve => process.nextTick(resolve))
+
+      // Verify key order is preserved.
+      const finalRaw = readFileSync(configFilePath, 'utf8')
+      const finalDecoded = Buffer.from(finalRaw, 'base64').toString('utf8')
+      const keys = Object.keys(JSON.parse(finalDecoded))
+
+      // Keys should maintain original order: defaultOrg first, then apiToken.
+      expect(keys).toEqual(['defaultOrg', 'apiToken'])
+    })
+
+    it('should create config file when it does not exist', async () => {
+      // Don't create any initial config file.
+      // Reset cache.
+      resetConfigForTesting()
+
+      // Update a property - this should create the config file.
+      const result = updateConfigValue('defaultOrg', 'new-org')
+      expect(result.ok).toBe(true)
+
+      // Wait for nextTick to complete the async write.
+      await new Promise(resolve => process.nextTick(resolve))
+
+      // Verify the config file was created.
+      const settingsDir = path.join(tmpDir, 'socket', 'settings')
+      const configFilePath = path.join(settingsDir, 'config.json')
+      const finalRaw = readFileSync(configFilePath, 'utf8')
+      const finalDecoded = Buffer.from(finalRaw, 'base64').toString('utf8')
+      const finalConfig = JSON.parse(finalDecoded)
+
+      expect(finalConfig.defaultOrg).toBe('new-org')
+    })
+
+    it('should read config value after setting it', async () => {
+      // Reset cache.
+      resetConfigForTesting()
+
+      // Set a config value.
+      updateConfigValue('defaultOrg', 'test-org')
+
+      // Read it back immediately (from cache).
+      const result = getConfigValue('defaultOrg')
+      expect(result.ok).toBe(true)
+      expect(result.data).toBe('test-org')
     })
   })
 })
