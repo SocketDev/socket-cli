@@ -11,7 +11,7 @@ void (async () => {
 
   process.exitCode = 1
 
-  const { spawnPromise } = await shadowNpmBin('npm', process.argv.slice(2), {
+  const { spawnPromise } = await shadowNpmBin(process.argv.slice(2), {
     stdio: 'inherit',
   })
 

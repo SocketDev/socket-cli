@@ -7,11 +7,11 @@ void (async () => {
   const rootPath = path.join(__dirname, '..')
   Module.enableCompileCache?.(path.join(rootPath, '.cache'))
 
-  const shadowNpmBin = require(path.join(rootPath, 'dist/shadow-npm-bin.js'))
+  const shadowNpxBin = require(path.join(rootPath, 'dist/shadow-npx-bin.js'))
 
   process.exitCode = 1
 
-  const { spawnPromise } = await shadowNpmBin('npx', process.argv.slice(2), {
+  const { spawnPromise } = await shadowNpxBin(process.argv.slice(2), {
     stdio: 'inherit',
   })
 
