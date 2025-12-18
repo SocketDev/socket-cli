@@ -314,6 +314,64 @@ export async function setGitRemoteGithubRepoUrl(
 }
 
 /**
+ * Check if a GraphQL error is a rate limit error.
+ */
+export function isGraphqlRateLimitError(e: unknown): boolean {
+  if (e instanceof GraphqlResponseError && Array.isArray(e.errors)) {
+    return e.errors.some(
+      err =>
+        err.type === 'RATE_LIMITED' ||
+        err.message?.toLowerCase().includes('rate limit'),
+    )
+  }
+  return false
+}
+
+/**
+ * Convert GraphQL errors to user-friendly CResult failures.
+ * Handles rate limits and authentication errors with actionable messages.
+ */
+export function handleGraphqlError(
+  e: unknown,
+  context: string,
+): CResult<never> {
+  debugNs('error', formatErrorWithDetail(`GraphQL error: ${context}`, e))
+  debugDirNs('error', e)
+
+  if (e instanceof GraphqlResponseError) {
+    const errorMessages = Array.isArray(e.errors)
+      ? e.errors.map(err => err.message).filter(Boolean)
+      : []
+
+    // Check for rate limit errors.
+    if (isGraphqlRateLimitError(e)) {
+      return {
+        ok: false,
+        message: 'GitHub GraphQL rate limit exceeded',
+        cause:
+          `GitHub GraphQL rate limit exceeded while ${context}. ` +
+          'Try again in a few minutes.\n\n' +
+          'To increase your rate limit:\n' +
+          '- Set GITHUB_TOKEN environment variable with a valid token\n' +
+          '- In GitHub Actions, GITHUB_TOKEN is automatically available',
+      }
+    }
+
+    // Return the GraphQL error details.
+    return {
+      ok: false,
+      message: 'GitHub GraphQL error',
+      cause:
+        `GitHub GraphQL error while ${context}` +
+        (errorMessages.length ? `:\n- ${errorMessages.join('\n- ')}` : ''),
+    }
+  }
+
+  // Fall back to REST error handler for non-GraphQL errors.
+  return handleGitHubApiError(e, context)
+}
+
+/**
  * Convert GitHub API errors to user-friendly CResult failures.
  * Handles rate limits, authentication, and network errors with actionable messages.
  */

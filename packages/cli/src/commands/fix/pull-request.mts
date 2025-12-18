@@ -1,3 +1,5 @@
+import { RequestError } from '@octokit/request-error'
+
 import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
@@ -20,12 +22,12 @@ import {
   type GhsaDetails,
   getOctokit,
   getOctokitGraphql,
+  handleGraphqlError,
   type Pr,
+  withGitHubRetry,
   writeCache,
 } from '../../utils/git/github.mts'
 import { createPrProvider } from '../../utils/git/provider-factory.mts'
-
-import type { RequestError } from '@octokit/request-error'
 import type { OctokitResponse } from '@octokit/types'
 import type { JsonContent } from '@socketsecurity/lib/fs'
 
@@ -80,21 +82,32 @@ export async function openSocketFixPr(
 
     // Convert provider response to Octokit format for backward compatibility.
     const octokit = getOctokit()
-    const prDetails = await octokit.pulls.get({
-      owner,
-      repo,
-      pull_number: result.number,
-    })
+    const prDetailsResult = await withGitHubRetry(
+      () =>
+        octokit.pulls.get({
+          owner,
+          repo,
+          pull_number: result.number,
+        }),
+      `fetching PR #${result.number} details`,
+    )
 
-    return { ok: true, pr: prDetails }
+    if (!prDetailsResult.ok) {
+      return {
+        ok: false,
+        reason: 'network_error',
+        error: new Error(prDetailsResult.cause || prDetailsResult.message) as RequestError,
+      }
+    }
+
+    return { ok: true, pr: prDetailsResult.data }
   } catch (e) {
     debug(formatErrorWithDetail('Failed to create pull request', e))
     debugDir(e)
 
     // Handle RequestError from Octokit/provider.
-    if (e && typeof e === 'object' && 'status' in e) {
-      const reqError = e as RequestError
-      const errors = (reqError.response?.data as any)?.['errors']
+    if (e instanceof RequestError) {
+      const errors = (e.response?.data as any)?.['errors']
       const errorMessages = Array.isArray(errors)
         ? errors.map(
             (d: any) =>
@@ -109,7 +122,7 @@ export async function openSocketFixPr(
         )
       ) {
         debug('Failed to create pull request: already exists')
-        return { ok: false, reason: 'already_exists', error: reqError }
+        return { ok: false, reason: 'already_exists', error: e }
       }
 
       // Check for validation errors (e.g., no commits between branches).
@@ -119,20 +132,21 @@ export async function openSocketFixPr(
         return {
           ok: false,
           reason: 'validation_error',
-          error: reqError,
+          error: e,
           details,
         }
       }
 
-      // Check HTTP status codes.
-      if (reqError.status === 403 || reqError.status === 401) {
+      // Check HTTP status codes for permission errors.
+      if (e.status === 403 || e.status === 401) {
         debug('Failed to create pull request: permission denied')
-        return { ok: false, reason: 'permission_denied', error: reqError }
+        return { ok: false, reason: 'permission_denied', error: e }
       }
 
-      if (reqError.status && reqError.status >= 500) {
+      // Check for server errors.
+      if (e.status && e.status >= 500) {
         debug('Failed to create pull request: network error')
-        return { ok: false, reason: 'network_error', error: reqError }
+        return { ok: false, reason: 'network_error', error: e }
       }
     }
 
@@ -428,8 +442,15 @@ async function getSocketFixPrsWithContext(
       }
     }
   } catch (e) {
-    debug(`GraphQL pagination failed for ${owner}/${repo}`)
-    debugDir(e)
+    // Use centralized error handling for better error messages.
+    const errorResult = handleGraphqlError(
+      e,
+      `listing PRs for ${owner}/${repo}`,
+    )
+    // errorResult is always ok: false from handleGraphqlError.
+    if (!errorResult.ok) {
+      debug(errorResult.cause ?? errorResult.message)
+    }
   }
 
   return contextualMatches

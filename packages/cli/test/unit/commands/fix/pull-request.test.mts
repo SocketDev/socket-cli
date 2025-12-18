@@ -45,6 +45,13 @@ const mockGetSocketFixPullRequestBody = vi.hoisted(() =>
   vi.fn(() => 'Mock PR body'),
 )
 
+const mockWithGitHubRetry = vi.hoisted(() =>
+  vi.fn(async (operation: () => Promise<unknown>) => {
+    const result = await operation()
+    return { ok: true, data: result }
+  }),
+)
+
 // Mock dependencies.
 vi.mock('../../../../src/commands/fix/git.mts', () => ({
   getSocketFixPullRequestTitle: mockGetSocketFixPullRequestTitle,
@@ -53,6 +60,17 @@ vi.mock('../../../../src/commands/fix/git.mts', () => ({
 
 vi.mock('../../../../src/utils/git/github.mts', () => ({
   getOctokit: mockGetOctokit,
+  handleGitHubApiError: vi.fn((e: unknown, context: string) => ({
+    ok: false,
+    message: 'GitHub API error',
+    cause: `Error while ${context}: ${e instanceof Error ? e.message : String(e)}`,
+  })),
+  handleGraphqlError: vi.fn((e: unknown, context: string) => ({
+    ok: false,
+    message: 'GitHub GraphQL error',
+    cause: `GraphQL error while ${context}`,
+  })),
+  withGitHubRetry: mockWithGitHubRetry,
 }))
 
 vi.mock('../../../../src/utils/git/provider-factory.mts', () => ({

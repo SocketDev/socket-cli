@@ -28,6 +28,12 @@ const mockGetOctokit = vi.hoisted(() => vi.fn())
 const mockGetOctokitGraphql = vi.hoisted(() => vi.fn())
 const mockCacheFetch = vi.hoisted(() => vi.fn())
 const mockGitDeleteRemoteBranch = vi.hoisted(() => vi.fn())
+const mockWithGitHubRetry = vi.hoisted(() =>
+  vi.fn(async (operation: () => Promise<unknown>) => {
+    const result = await operation()
+    return { ok: true, data: result }
+  }),
+)
 
 // Mock dependencies.
 const mockCacheDir = path.join(os.tmpdir(), 'socket-cache')
@@ -37,9 +43,20 @@ vi.mock('../../../../src/constants/paths.mts', () => ({
 }))
 
 vi.mock('../../../../src/utils/git/github.mts', () => ({
+  cacheFetch: mockCacheFetch,
   getOctokit: mockGetOctokit,
   getOctokitGraphql: mockGetOctokitGraphql,
-  cacheFetch: mockCacheFetch,
+  handleGitHubApiError: vi.fn((e: unknown, context: string) => ({
+    ok: false,
+    message: 'GitHub API error',
+    cause: `Error while ${context}: ${e instanceof Error ? e.message : String(e)}`,
+  })),
+  handleGraphqlError: vi.fn((e: unknown, context: string) => ({
+    ok: false,
+    message: 'GitHub GraphQL error',
+    cause: `GraphQL error while ${context}`,
+  })),
+  withGitHubRetry: mockWithGitHubRetry,
 }))
 
 vi.mock('../../../../src/utils/git/operations.mts', () => ({

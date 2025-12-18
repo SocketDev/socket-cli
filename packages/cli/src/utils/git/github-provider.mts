@@ -1,10 +1,13 @@
-import { RequestError } from '@octokit/request-error'
-
 import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
-import { cacheFetch, getOctokit, getOctokitGraphql } from './github.mts'
+import {
+  cacheFetch,
+  getOctokit,
+  getOctokitGraphql,
+  withGitHubRetry,
+} from './github.mts'
 import { gitDeleteRemoteBranch } from './operations.mts'
 import {
   GQL_PAGE_SENTINEL,
@@ -66,69 +69,32 @@ export class GitHubProvider implements PrProvider {
     const { base, body, head, owner, repo, retries = 3, title } = options
 
     const octokit = getOctokit()
+    const octokitPullsCreateParams = { base, body, head, owner, repo, title }
+    debugDir({ octokitPullsCreateParams })
 
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        const octokitPullsCreateParams = {
-          base,
-          body,
-          head,
-          owner,
-          repo,
-          title,
-        }
-        debugDir({ attempt, octokitPullsCreateParams })
-        // eslint-disable-next-line no-await-in-loop
+    const result = await withGitHubRetry(
+      async () => {
         const response = await octokit.pulls.create(octokitPullsCreateParams)
-        return {
-          number: response.data.number,
-          state: response.data.merged_at
-            ? 'merged'
-            : response.data.state === 'closed'
-              ? 'closed'
-              : 'open',
-          url: response.data.html_url,
-        }
-      } catch (e) {
-        let message = `Failed to open pull request (attempt ${attempt}/${retries})`
-        const errors =
-          e instanceof RequestError
-            ? (e.response?.data as any)?.errors
-            : undefined
+        return response
+      },
+      `creating pull request for ${owner}/${repo}`,
+      retries,
+    )
 
-        if (Array.isArray(errors) && errors.length) {
-          const details = errors
-            .map(
-              d =>
-                `- ${d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`}`,
-            )
-            .join('\n')
-          message += `:\n${details}`
-        } else if (e instanceof Error) {
-          message += `: ${e.message}`
-        }
-
-        debug(message)
-        debugDir(e)
-
-        // Don't retry on validation errors (422).
-        if (e instanceof RequestError && e.status === 422) {
-          break
-        }
-
-        // Retry on 5xx errors or network failures.
-        if (attempt < retries) {
-          const delay = Math.min(1000 * 2 ** (attempt - 1), 10_000)
-          debug(`pr: retrying in ${delay}ms...`)
-          // eslint-disable-next-line no-await-in-loop
-          await sleep(delay)
-        }
-      }
+    if (!result.ok) {
+      throw new Error(result.cause ?? result.message)
     }
 
-    throw new Error(
-      `Failed to create pull request after ${retries} attempts: ${owner}/${repo}#${head}`,
-    )
+    const response = result.data
+    return {
+      number: response.data.number,
+      state: response.data.merged_at
+        ? 'merged'
+        : response.data.state === 'closed'
+          ? 'closed'
+          : 'open',
+      url: response.data.html_url,
+    }
   }
 
   async updatePr(options: UpdatePrOptions): Promise<void> {
@@ -136,45 +102,62 @@ export class GitHubProvider implements PrProvider {
 
     const octokit = getOctokit()
 
-    try {
-      // Merge the base branch into the head branch to update the PR.
-      await octokit.repos.merge({
-        // The target branch (source).
-        head: base,
-        owner,
-        repo,
-        // The PR branch (destination).
-        base: head,
-      })
-      debug(`pr: updating stale PR #${prNumber}`)
-
-      // Check if update resulted in conflicts.
-      const prDetails = await octokit.pulls.get({
-        owner,
-        pull_number: prNumber,
-        repo,
-      })
-
-      if (prDetails.data.mergeable_state === 'dirty') {
-        debug(`pr: PR #${prNumber} has conflicts after update`)
-
-        // Add comment explaining conflict.
-        await octokit.issues.createComment({
-          body:
-            'This PR has merge conflicts after updating from the base branch. ' +
-            'Please resolve conflicts manually or close this PR and re-run `socket fix` ' +
-            'to generate a new fix.',
-          issue_number: prNumber,
+    // Merge the base branch into the head branch to update the PR.
+    const mergeResult = await withGitHubRetry(
+      () =>
+        octokit.repos.merge({
+          // The target branch (source).
+          head: base,
           owner,
           repo,
-        })
+          // The PR branch (destination).
+          base: head,
+        }),
+      `updating PR #${prNumber}`,
+    )
 
+    if (!mergeResult.ok) {
+      throw new Error(mergeResult.cause || mergeResult.message)
+    }
+
+    debug(`pr: updating stale PR #${prNumber}`)
+
+    // Check if update resulted in conflicts.
+    const prDetailsResult = await withGitHubRetry(
+      () =>
+        octokit.pulls.get({
+          owner,
+          pull_number: prNumber,
+          repo,
+        }),
+      `fetching PR #${prNumber} details`,
+    )
+
+    if (!prDetailsResult.ok) {
+      throw new Error(prDetailsResult.cause || prDetailsResult.message)
+    }
+
+    if (prDetailsResult.data.data.mergeable_state === 'dirty') {
+      debug(`pr: PR #${prNumber} has conflicts after update`)
+
+      // Add comment explaining conflict.
+      const commentResult = await withGitHubRetry(
+        () =>
+          octokit.issues.createComment({
+            body:
+              'This PR has merge conflicts after updating from the base branch. ' +
+              'Please resolve conflicts manually or close this PR and re-run `socket fix` ' +
+              'to generate a new fix.',
+            issue_number: prNumber,
+            owner,
+            repo,
+          }),
+        `adding conflict comment to PR #${prNumber}`,
+      )
+
+      if (commentResult.ok) {
         debug(`pr: added conflict comment to PR #${prNumber}`)
       }
-    } catch (e) {
-      throw new Error(
-        formatErrorWithDetail(`Failed to update PR #${prNumber}`, e),
-      )
     }
   }
 
@@ -299,19 +282,23 @@ export class GitHubProvider implements PrProvider {
   async addComment(options: AddCommentOptions): Promise<void> {
     const { body, owner, prNumber, repo } = options
     const octokit = getOctokit()
-    try {
-      await octokit.issues.createComment({
-        body,
-        issue_number: prNumber,
-        owner,
-        repo,
-      })
-      debug(`pr: added comment to PR #${prNumber}`)
-    } catch (e) {
-      throw new Error(
-        formatErrorWithDetail(`Failed to add comment to PR #${prNumber}`, e),
-      )
+
+    const result = await withGitHubRetry(
+      () =>
+        octokit.issues.createComment({
+          body,
+          issue_number: prNumber,
+          owner,
+          repo,
+        }),
+      `adding comment to PR #${prNumber}`,
+    )
+
+    if (!result.ok) {
+      throw new Error(result.cause || result.message)
     }
+
+    debug(`pr: added comment to PR #${prNumber}`)
   }
 
   getProviderName(): 'github' {
@@ -321,8 +308,4 @@ export class GitHubProvider implements PrProvider {
   supportsGraphQL(): boolean {
     return true
   }
-}
-
-async function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
 }
