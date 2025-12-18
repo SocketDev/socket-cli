@@ -31,6 +31,7 @@ import {
   GraphqlResponseError,
   graphql as OctokitGraphql,
 } from '@octokit/graphql'
+import { RequestError } from '@octokit/request-error'
 import { Octokit } from '@octokit/rest'
 
 import {
@@ -52,6 +53,7 @@ import ENV from '../../constants/env.mts'
 import { getGithubCachePath } from '../../constants/paths.mts'
 import { formatErrorWithDetail } from '../error/errors.mts'
 
+import type { CResult } from '../../types.mts'
 import type { components } from '@octokit/openapi-types'
 import type { JsonContent } from '@socketsecurity/lib/fs'
 import type { SpawnOptions } from '@socketsecurity/lib/spawn'
@@ -309,4 +311,206 @@ export async function setGitRemoteGithubRepoUrl(
     debugDirNs('error', e)
   }
   return false
+}
+
+/**
+ * Convert GitHub API errors to user-friendly CResult failures.
+ * Handles rate limits, authentication, and network errors with actionable messages.
+ */
+export function handleGitHubApiError(
+  e: unknown,
+  context: string,
+): CResult<never> {
+  debugNs('error', formatErrorWithDetail(`GitHub API error: ${context}`, e))
+  debugDirNs('error', e)
+
+  if (e instanceof RequestError) {
+    const { status } = e
+
+    // Rate limit errors (403 with rate limit message or 429).
+    if (status === 429 || (status === 403 && e.message.includes('rate limit'))) {
+      const retryAfter = e.response?.headers?.['retry-after']
+      const resetHeader = e.response?.headers?.['x-ratelimit-reset']
+      let waitTime: number | undefined
+
+      if (retryAfter) {
+        waitTime = parseInt(String(retryAfter), 10)
+      } else if (resetHeader) {
+        const resetTimestamp = parseInt(String(resetHeader), 10)
+        waitTime = Math.max(0, resetTimestamp - Math.floor(Date.now() / 1000))
+      }
+
+      return {
+        ok: false,
+        message: 'GitHub rate limit exceeded',
+        cause:
+          `GitHub API rate limit exceeded while ${context}. ` +
+          (waitTime
+            ? `Try again in ${waitTime} seconds.`
+            : 'Try again in a few minutes.') +
+          '\n\n' +
+          'To increase your rate limit:\n' +
+          '- Set GITHUB_TOKEN environment variable with a valid token\n' +
+          '- In GitHub Actions, GITHUB_TOKEN is automatically available\n' +
+          '- Personal access tokens provide higher rate limits than unauthenticated requests',
+      }
+    }
+
+    // Secondary rate limit (abuse detection).
+    if (status === 403 && e.message.includes('secondary rate limit')) {
+      return {
+        ok: false,
+        message: 'GitHub secondary rate limit triggered',
+        cause:
+          `GitHub secondary rate limit triggered while ${context}. ` +
+          'This happens when making too many requests in a short period. ' +
+          'Wait a few minutes before retrying.\n\n' +
+          'To avoid this:\n' +
+          '- Reduce the number of concurrent operations\n' +
+          '- Add delays between bulk operations',
+      }
+    }
+
+    // Authentication errors.
+    if (status === 401) {
+      return {
+        ok: false,
+        message: 'GitHub authentication failed',
+        cause:
+          `GitHub authentication failed while ${context}. ` +
+          'Your token may be invalid, expired, or missing required permissions.\n\n' +
+          'To resolve:\n' +
+          '- Verify your GitHub token is valid and not expired\n' +
+          '- Set GITHUB_TOKEN environment variable\n' +
+          '- Ensure the token has required scopes (repo, read:org)',
+      }
+    }
+
+    // Permission denied (valid token but insufficient permissions).
+    if (status === 403 && !e.message.includes('rate limit')) {
+      return {
+        ok: false,
+        message: 'GitHub permission denied',
+        cause:
+          `GitHub permission denied while ${context}. ` +
+          'Your token does not have access to this resource.\n\n' +
+          'Ensure your token has the required scopes:\n' +
+          '- repo: Full control of private repositories\n' +
+          '- read:org: Read org membership (for org repos)',
+      }
+    }
+
+    // Not found errors.
+    if (status === 404) {
+      return {
+        ok: false,
+        message: 'GitHub resource not found',
+        cause:
+          `GitHub resource not found while ${context}. ` +
+          'The repository, branch, or file may not exist, or you may not have access to it.\n\n' +
+          'Verify:\n' +
+          '- The repository name and owner are correct\n' +
+          '- The branch exists\n' +
+          '- Your token has access to the repository',
+      }
+    }
+
+    // Server errors (5xx).
+    if (status >= 500) {
+      return {
+        ok: false,
+        message: 'GitHub server error',
+        cause:
+          `GitHub server error (${status}) while ${context}. ` +
+          'GitHub may be experiencing issues.\n\n' +
+          'To resolve:\n' +
+          '- Check https://www.githubstatus.com for service status\n' +
+          '- Try again in a few moments',
+      }
+    }
+
+    // Other request errors.
+    return {
+      ok: false,
+      message: `GitHub API error (${status})`,
+      cause: `GitHub API error while ${context}: ${e.message}`,
+    }
+  }
+
+  // Network errors (ECONNREFUSED, ETIMEDOUT, etc.).
+  if (e instanceof Error) {
+    const code = (e as NodeJS.ErrnoException).code
+    if (code === 'ECONNREFUSED' || code === 'ETIMEDOUT' || code === 'ENOTFOUND') {
+      return {
+        ok: false,
+        message: 'Network error connecting to GitHub',
+        cause:
+          `Network error while ${context}: ${e.message}\n\n` +
+          'To resolve:\n' +
+          '- Check your internet connection\n' +
+          '- Verify GitHub API is accessible from your network\n' +
+          '- Check if a proxy or firewall is blocking the connection',
+      }
+    }
+  }
+
+  // Generic fallback.
+  return {
+    ok: false,
+    message: 'GitHub API error',
+    cause: `Unexpected error while ${context}: ${e instanceof Error ? e.message : String(e)}`,
+  }
+}
+
+/**
+ * Execute a GitHub API call with retry logic for transient failures.
+ * Retries on 5xx errors and network failures with exponential backoff.
+ */
+export async function withGitHubRetry<T>(
+  operation: () => Promise<T>,
+  context: string,
+  maxRetries = 3,
+): Promise<CResult<T>> {
+  let lastError: unknown
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      const result = await operation()
+      return { ok: true, data: result }
+    } catch (e) {
+      lastError = e
+      debugNs(
+        'notice',
+        `GitHub API attempt ${attempt}/${maxRetries} failed for ${context}`,
+      )
+      debugDirNs('error', e)
+
+      // Don't retry on client errors (4xx) except rate limits.
+      if (e instanceof RequestError) {
+        const { status } = e
+        // Rate limits: return immediately with helpful message.
+        if (
+          status === 429 ||
+          (status === 403 && e.message.includes('rate limit'))
+        ) {
+          return handleGitHubApiError(e, context)
+        }
+        // Don't retry other 4xx errors.
+        if (status >= 400 && status < 500) {
+          return handleGitHubApiError(e, context)
+        }
+      }
+
+      // Retry on 5xx or network errors.
+      if (attempt < maxRetries) {
+        const delay = Math.min(1000 * 2 ** (attempt - 1), 10_000)
+        debugNs('notice', `Retrying in ${delay}ms...`)
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+  }
+
+  return handleGitHubApiError(lastError, context)
 }

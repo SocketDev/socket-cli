@@ -18,6 +18,10 @@ import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mjs'
 import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
 import { isReportSupportedFile } from '../../utils/fs/glob.mts'
+import {
+  getOctokit,
+  withGitHubRetry,
+} from '../../utils/git/github.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -161,8 +165,6 @@ async function scanRepo(
 async function scanOneRepo(
   repoSlug: string,
   {
-    githubApiUrl,
-    githubToken,
     orgGithub,
     orgSlug,
     outputKind,
@@ -178,22 +180,20 @@ async function scanOneRepo(
   const repoResult = await getRepoDetails({
     orgGithub,
     repoSlug,
-    githubApiUrl,
-    githubToken,
+    githubApiUrl: '',
+    githubToken: '',
   })
   if (!repoResult.ok) {
     return repoResult
   }
-  const { defaultBranch, repoApiUrl } = repoResult.data
+  const { defaultBranch } = repoResult.data
 
   logger.info(`Default branch: \`${defaultBranch}\``)
 
   const treeResult = await getRepoBranchTree({
     defaultBranch,
-    githubToken,
     orgGithub,
     repoSlug,
-    repoApiUrl,
   })
   if (!treeResult.ok) {
     return treeResult
@@ -211,24 +211,20 @@ async function scanOneRepo(
   debug(`init: temp dir for scan root ${tmpDir}`)
 
   const downloadResult = await testAndDownloadManifestFiles({
-    files,
-    tmpDir,
-    repoSlug,
     defaultBranch,
+    files,
     orgGithub,
-    repoApiUrl,
-    githubToken,
+    repoSlug,
+    tmpDir,
   })
   if (!downloadResult.ok) {
     return downloadResult
   }
 
   const commitResult = await getLastCommitDetails({
+    defaultBranch,
     orgGithub,
     repoSlug,
-    defaultBranch,
-    repoApiUrl,
-    githubToken,
   })
   if (!commitResult.ok) {
     return commitResult
@@ -281,19 +277,15 @@ async function scanOneRepo(
 async function testAndDownloadManifestFiles({
   defaultBranch,
   files,
-  githubToken,
   orgGithub,
-  repoApiUrl,
   repoSlug,
   tmpDir,
 }: {
-  files: string[]
-  tmpDir: string
-  repoSlug: string
   defaultBranch: string
+  files: string[]
   orgGithub: string
-  repoApiUrl: string
-  githubToken: string
+  repoSlug: string
+  tmpDir: string
 }): Promise<CResult<unknown>> {
   logger.info(
     `File tree for ${defaultBranch} contains`,
@@ -302,15 +294,15 @@ async function testAndDownloadManifestFiles({
   )
   logger.group()
   let fileCount = 0
-  let firstFailureResult: any
+  let firstFailureResult: CResult<never> | undefined
   for (const file of files) {
     // eslint-disable-next-line no-await-in-loop
     const result = await testAndDownloadManifestFile({
-      file,
-      tmpDir,
       defaultBranch,
-      repoApiUrl,
-      githubToken,
+      file,
+      orgGithub,
+      repoSlug,
+      tmpDir,
     })
     if (result.ok) {
       if (result.data.isManifest) {
@@ -343,15 +335,15 @@ async function testAndDownloadManifestFiles({
 async function testAndDownloadManifestFile({
   defaultBranch,
   file,
-  githubToken,
-  repoApiUrl,
+  orgGithub,
+  repoSlug,
   tmpDir,
 }: {
-  file: string
-  tmpDir: string
   defaultBranch: string
-  repoApiUrl: string
-  githubToken: string
+  file: string
+  orgGithub: string
+  repoSlug: string
+  tmpDir: string
 }): Promise<CResult<{ isManifest: boolean }>> {
   debug(`testing: file ${file}`)
 
@@ -369,11 +361,11 @@ async function testAndDownloadManifestFile({
   debug(`found: manifest file, going to attempt to download it; ${file}`)
 
   const result = await downloadManifestFile({
-    file,
-    tmpDir,
     defaultBranch,
-    repoApiUrl,
-    githubToken,
+    file,
+    orgGithub,
+    repoSlug,
+    tmpDir,
   })
 
   return result.ok ? { ok: true, data: { isManifest: true } } : result
@@ -382,58 +374,72 @@ async function testAndDownloadManifestFile({
 async function downloadManifestFile({
   defaultBranch,
   file,
-  githubToken,
-  repoApiUrl,
+  orgGithub,
+  repoSlug,
   tmpDir,
 }: {
-  file: string
-  tmpDir: string
   defaultBranch: string
-  repoApiUrl: string
-  githubToken: string
+  file: string
+  orgGithub: string
+  repoSlug: string
+  tmpDir: string
 }): Promise<CResult<undefined>> {
-  debug('request: download url from GitHub')
+  debug('request: file content from GitHub')
 
-  const fileUrl = `${repoApiUrl}/contents/${file}?ref=${defaultBranch}`
-  debugDir({ fileUrl })
+  const octokit = getOctokit()
 
-  const downloadUrlResponse = await fetch(fileUrl, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${githubToken}`,
+  const result = await withGitHubRetry(
+    async () => {
+      const { data } = await octokit.repos.getContent({
+        owner: orgGithub,
+        repo: repoSlug,
+        path: file,
+        ref: defaultBranch,
+      })
+      return data
     },
-  })
+    `fetching file content for ${file} in ${orgGithub}/${repoSlug}`,
+  )
+
+  if (!result.ok) {
+    logger.fail(`Failed to get file content for: ${file}`)
+    return result
+  }
+
+  const fileData = result.data
   debug('complete: request')
+  debugDir({ fileData: { type: (fileData as any).type, size: (fileData as any).size } })
 
-  const downloadUrlText = await downloadUrlResponse.text()
-  debug(`response: raw download url ${downloadUrlText}`)
-
-  let downloadUrl: any
-  try {
-    downloadUrl = JSON.parse(downloadUrlText).download_url
-  } catch {
-    logger.fail(
-      `GitHub response contained invalid JSON for download url for: ${file}`,
-    )
-
+  // Check if it's a file (not a directory).
+  if (Array.isArray(fileData) || (fileData as any).type !== 'file') {
     return {
       ok: false,
-      message: 'Invalid JSON response',
-      cause: `Server responded with invalid JSON for download url ${downloadUrl}`,
+      message: 'Not a file',
+      cause: `Path ${file} is not a file in ${orgGithub}/${repoSlug}.`,
+    }
+  }
+
+  const downloadUrl = (fileData as any).download_url
+  if (!downloadUrl) {
+    return {
+      ok: false,
+      message: 'Missing download URL',
+      cause:
+        `GitHub did not provide a download URL for ${file} in ${orgGithub}/${repoSlug}. ` +
+        'The file may be too large or in an unsupported format.',
     }
   }
 
   const localPath = path.join(tmpDir, file)
   debug(`download: manifest file started ${downloadUrl} -> ${localPath}`)
 
-  // Now stream the file to that file...
-  const result = await streamDownloadWithFetch(localPath, downloadUrl)
-  if (!result.ok) {
-    // Do we proceed? Bail? Hrm...
+  // Now stream the file to that file.
+  const downloadResult = await streamDownloadWithFetch(localPath, downloadUrl)
+  if (!downloadResult.ok) {
     logger.fail(
       `Failed to download manifest file, skipping to next file. File: ${file}`,
     )
-    return result
+    return downloadResult
   }
 
   debug('download: manifest file completed')
@@ -520,75 +526,75 @@ async function streamDownloadWithFetch(
 
 async function getLastCommitDetails({
   defaultBranch,
-  githubToken,
   orgGithub,
-  repoApiUrl,
   repoSlug,
 }: {
+  defaultBranch: string
   orgGithub: string
   repoSlug: string
-  defaultBranch: string
-  repoApiUrl: string
-  githubToken: string
 }): Promise<
   CResult<{
+    lastCommitMessage: string
     lastCommitSha: string
     lastCommitter: string | undefined
-    lastCommitMessage: string
   }>
 > {
   logger.info(
     `Requesting last commit for default branch ${defaultBranch} for ${orgGithub}/${repoSlug}...`,
   )
 
-  const commitApiUrl = `${repoApiUrl}/commits?sha=${defaultBranch}&per_page=1`
-  debug(`url: commit ${commitApiUrl}`)
+  const octokit = getOctokit()
 
-  const commitResponse = await fetch(commitApiUrl, {
-    headers: {
-      Authorization: `Bearer ${githubToken}`,
+  const result = await withGitHubRetry(
+    async () => {
+      const { data } = await octokit.repos.listCommits({
+        owner: orgGithub,
+        repo: repoSlug,
+        sha: defaultBranch,
+        per_page: 1,
+      })
+      return data
     },
-  })
+    `fetching latest commit SHA for ${orgGithub}/${repoSlug}`,
+  )
 
-  const commitText = await commitResponse.text()
-  debug(`response: commit ${commitText}`)
+  if (!result.ok) {
+    return result
+  }
 
-  let lastCommit: any
-  try {
-    lastCommit = JSON.parse(commitText)?.[0]
-  } catch {
-    logger.fail('GitHub response contained invalid JSON for last commit')
-    logger.error(commitText)
+  const commits = result.data
+  debugDir({ commits })
+
+  if (!commits.length) {
     return {
       ok: false,
-      message: 'Invalid JSON response',
-      cause: `Server responded with invalid JSON for last commit of repo ${repoSlug}`,
+      message: 'No commits found',
+      cause:
+        `No commits found on branch ${defaultBranch} for ${orgGithub}/${repoSlug}. ` +
+        'The repository may be empty.',
     }
   }
 
+  const lastCommit = commits[0]!
   const lastCommitSha = lastCommit.sha
-  const lastCommitter = Array.from(
-    new Set([lastCommit.commit.author.name, lastCommit.commit.committer.name]),
-  )[0]
-  const lastCommitMessage = lastCommit.message
 
   if (!lastCommitSha) {
     return {
       ok: false,
       message: 'Missing commit SHA',
-      cause: 'Unable to get last commit for repo',
+      cause:
+        `Unable to get last commit SHA for ${orgGithub}/${repoSlug}. ` +
+        'The GitHub API response was missing the SHA field.',
     }
   }
 
-  if (!lastCommitter) {
-    return {
-      ok: false,
-      message: 'Missing committer',
-      cause: 'Last commit does not have information about who made the commit',
-    }
-  }
+  // Extract committer information.
+  const authorName = lastCommit.commit?.author?.name
+  const committerName = lastCommit.commit?.committer?.name
+  const lastCommitter = authorName || committerName
+  const lastCommitMessage = lastCommit.commit?.message || ''
 
-  return { ok: true, data: { lastCommitSha, lastCommitter, lastCommitMessage } }
+  return { ok: true, data: { lastCommitMessage, lastCommitSha, lastCommitter } }
 }
 
 async function selectFocus(repos: string[]): Promise<CResult<string[]>> {
@@ -633,8 +639,6 @@ async function makeSure(count: number): Promise<CResult<undefined>> {
 }
 
 async function getRepoDetails({
-  githubApiUrl,
-  githubToken,
   orgGithub,
   repoSlug,
 }: {
@@ -643,120 +647,101 @@ async function getRepoDetails({
   githubApiUrl: string
   githubToken: string
 }): Promise<
-  CResult<{ defaultBranch: string; repoDetails: unknown; repoApiUrl: string }>
+  CResult<{ defaultBranch: string; repoDetails: unknown }>
 > {
-  const repoApiUrl = `${githubApiUrl}/repos/${orgGithub}/${repoSlug}`
-  debugDir({ repoApiUrl })
+  const octokit = getOctokit()
 
-  const repoDetailsResponse = await fetch(repoApiUrl, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${githubToken}`,
+  const result = await withGitHubRetry(
+    async () => {
+      const { data } = await octokit.repos.get({
+        owner: orgGithub,
+        repo: repoSlug,
+      })
+      return data
     },
-  })
-  logger.success('Request completed.')
+    `fetching repository details for ${orgGithub}/${repoSlug}`,
+  )
 
-  const repoDetailsText = await repoDetailsResponse.text()
-  debug(`response: repo ${repoDetailsText}`)
-
-  let repoDetails: any
-  try {
-    repoDetails = JSON.parse(repoDetailsText)
-  } catch {
-    logger.fail(`GitHub response contained invalid JSON for repo ${repoSlug}`)
-    logger.error(repoDetailsText)
-    return {
-      ok: false,
-      message: 'Invalid JSON response',
-      cause: `Server responded with invalid JSON for repo ${repoSlug}`,
-    }
+  if (!result.ok) {
+    return result
   }
+
+  const repoDetails = result.data
+  logger.success('Request completed.')
+  debugDir({ repoDetails })
 
   const defaultBranch = repoDetails.default_branch
   if (!defaultBranch) {
     return {
       ok: false,
-      message: 'Default Branch Not Found',
-      cause: `Repo ${repoSlug} does not have a default branch set or it was not reported`,
+      message: 'Default branch not found',
+      cause:
+        `Repository ${orgGithub}/${repoSlug} does not have a default branch set. ` +
+        'This can happen with empty repositories or misconfigured repo settings.',
     }
   }
 
-  return { ok: true, data: { defaultBranch, repoDetails, repoApiUrl } }
+  return { ok: true, data: { defaultBranch, repoDetails } }
 }
 
 async function getRepoBranchTree({
   defaultBranch,
-  githubToken,
   orgGithub,
-  repoApiUrl,
   repoSlug,
 }: {
   defaultBranch: string
-  githubToken: string
   orgGithub: string
-  repoApiUrl: string
   repoSlug: string
 }): Promise<CResult<string[]>> {
   logger.info(
     `Requesting default branch file tree; branch \`${defaultBranch}\`, repo \`${orgGithub}/${repoSlug}\`...`,
   )
 
-  const treeApiUrl = `${repoApiUrl}/git/trees/${defaultBranch}?recursive=1`
-  debug(`url: tree ${treeApiUrl}`)
+  const octokit = getOctokit()
 
-  const treeResponse = await fetch(treeApiUrl, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${githubToken}`,
+  const result = await withGitHubRetry(
+    async () => {
+      const { data } = await octokit.git.getTree({
+        owner: orgGithub,
+        repo: repoSlug,
+        tree_sha: defaultBranch,
+        recursive: 'true',
+      })
+      return data
     },
-  })
+    `fetching file tree for branch ${defaultBranch} in ${orgGithub}/${repoSlug}`,
+  )
 
-  const treeText = await treeResponse.text()
-  debug(`response: tree ${treeText}`)
-
-  let treeDetails: any
-  try {
-    treeDetails = JSON.parse(treeText)
-  } catch {
-    logger.fail(
-      `GitHub response contained invalid JSON for default branch of repo ${repoSlug}`,
-    )
-    logger.error(treeText)
-    return {
-      ok: false,
-      message: 'Invalid JSON response',
-      cause: `Server responded with invalid JSON for repo ${repoSlug}`,
-    }
-  }
-
-  if (treeDetails.message) {
-    if (treeDetails.message === 'Git Repository is empty.') {
+  if (!result.ok) {
+    // Check if it's an empty repo error (404 with specific message).
+    if (result.message === 'GitHub resource not found') {
       logger.warn(
-        `GitHub reports the default branch of repo ${repoSlug} to be empty. Moving on to next repo.`,
+        `GitHub reports the default branch of repo ${repoSlug} may be empty or not found. Moving on to next repo.`,
       )
       return { ok: true, data: [] }
     }
-
-    logger.fail('Negative response from GitHub:', treeDetails.message)
-    return {
-      ok: false,
-      message: 'Unexpected error response',
-      cause: `GitHub responded with an unexpected error while asking for details on the default branch: ${treeDetails.message}`,
-    }
+    return result
   }
+
+  const treeDetails = result.data
+  debugDir({ treeDetails })
 
   if (!treeDetails.tree || !Array.isArray(treeDetails.tree)) {
     debugDir({ treeDetails: { tree: treeDetails.tree } })
 
     return {
       ok: false,
-      message: `Tree response for default branch ${defaultBranch} for ${orgGithub}/${repoSlug} was not a list`,
+      message: 'Invalid tree response',
+      cause:
+        `Tree response for default branch ${defaultBranch} for ${orgGithub}/${repoSlug} was not a list. ` +
+        'The repository may be empty or in an unexpected state.',
     }
   }
 
-  const files = (treeDetails.tree as Array<{ type: string; path: string }>)
+  const files = treeDetails.tree
     .filter(obj => obj.type === 'blob')
-    .map(obj => obj.path)
+    .map(obj => obj.path!)
+    .filter(Boolean)
 
   return { ok: true, data: files }
 }
