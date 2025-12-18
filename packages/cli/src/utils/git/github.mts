@@ -385,7 +385,22 @@ export function handleGitHubApiError(
   if (e instanceof RequestError) {
     const { status } = e
 
-    // Rate limit errors (403 with rate limit message or 429).
+    // Abuse detection rate limit - check first since it's more specific than standard rate limit.
+    if (status === 403 && e.message.includes('secondary rate limit')) {
+      return {
+        ok: false,
+        message: 'GitHub abuse detection triggered',
+        cause:
+          `GitHub abuse detection triggered while ${context}. ` +
+          'This happens when making too many requests in a short period. ' +
+          'Wait a few minutes before retrying.\n\n' +
+          'To avoid this:\n' +
+          '- Reduce the number of concurrent operations\n' +
+          '- Add delays between bulk operations',
+      }
+    }
+
+    // Standard rate limit errors (403 with rate limit message or 429).
     if (status === 429 || (status === 403 && e.message.includes('rate limit'))) {
       const retryAfter = e.response?.headers?.['retry-after']
       const resetHeader = e.response?.headers?.['x-ratelimit-reset']
@@ -411,21 +426,6 @@ export function handleGitHubApiError(
           '- Set GITHUB_TOKEN environment variable with a valid token\n' +
           '- In GitHub Actions, GITHUB_TOKEN is automatically available\n' +
           '- Personal access tokens provide higher rate limits than unauthenticated requests',
-      }
-    }
-
-    // Secondary rate limit (abuse detection).
-    if (status === 403 && e.message.includes('secondary rate limit')) {
-      return {
-        ok: false,
-        message: 'GitHub secondary rate limit triggered',
-        cause:
-          `GitHub secondary rate limit triggered while ${context}. ` +
-          'This happens when making too many requests in a short period. ' +
-          'Wait a few minutes before retrying.\n\n' +
-          'To avoid this:\n' +
-          '- Reduce the number of concurrent operations\n' +
-          '- Add delays between bulk operations',
       }
     }
 
