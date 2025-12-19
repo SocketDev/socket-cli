@@ -122,25 +122,14 @@ jobs:
           autocrlf: false
           persist-credentials: false
 
-      - name: Load tool versions
-        id: tools
-        run: |
-          # Load versions from packages/build-infra/external-tools.json
-          NODE_VERSION=$(jq -r '.node.recommendedVersion' packages/build-infra/external-tools.json)
-          PNPM_VERSION=$(jq -r '.pnpm.recommendedVersion' packages/build-infra/external-tools.json)
-          echo "node-version=$NODE_VERSION" >> $GITHUB_OUTPUT
-          echo "pnpm-version=$PNPM_VERSION" >> $GITHUB_OUTPUT
-
       - name: Setup Node.js
         uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
-          node-version: ${{ steps.tools.outputs.node-version }}
+          node-version-file: .node-version
           registry-url: 'https://registry.npmjs.org'
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
-        with:
-          version: ${{ steps.tools.outputs.pnpm-version }}
+        uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -354,25 +343,14 @@ jobs:
           autocrlf: false
           persist-credentials: false
 
-      - name: Load tool versions
-        id: tools
-        run: |
-          # Load versions from packages/build-infra/external-tools.json
-          NODE_VERSION=$(jq -r '.node.recommendedVersion' packages/build-infra/external-tools.json)
-          PNPM_VERSION=$(jq -r '.pnpm.recommendedVersion' packages/build-infra/external-tools.json)
-          echo "node-version=$NODE_VERSION" >> $GITHUB_OUTPUT
-          echo "pnpm-version=$PNPM_VERSION" >> $GITHUB_OUTPUT
-
       - name: Setup Node.js
         uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
-          node-version: ${{ steps.tools.outputs.node-version }}
+          node-version-file: .node-version
           registry-url: 'https://registry.npmjs.org'
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
-        with:
-          version: ${{ steps.tools.outputs.pnpm-version }}
+        uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
 
       - name: Install latest npm
         run: npm install -g npm@latest

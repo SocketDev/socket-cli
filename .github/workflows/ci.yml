@@ -25,8 +25,8 @@ on:
         description: 'Node.js versions to test (JSON array)'
         required: false
         type: string
-        # Default should match packages/build-infra/external-tools.json -> node.recommendedVersion.
-        default: '["24.10.0"]'
+        # Default should match .node-version file.
+        default: '["24"]'
 
 permissions:
   contents: read
@@ -41,21 +41,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
-      - name: Setup Node.js
-        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
-        with:
-          node-version-file: .node-version
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Load Node.js version from external-tools.json
+      - name: Load Node.js version from .node-version
         id: versions
         run: |
-          NODE_VERSION=$(jq -r '.node.recommendedVersion' packages/build-infra/external-tools.json)
+          NODE_VERSION=$(cat .node-version)
           echo "node=[\"$NODE_VERSION\"]" >> $GITHUB_OUTPUT
           echo "Loaded Node.js: $NODE_VERSION"
 
