@@ -41,7 +41,7 @@ permissions:
   contents: read
 
 jobs:
-  build-binaries:
+  build-sea:
     permissions:
       contents: read
     name: Build ${{ matrix.platform }}-${{ matrix.arch }}
@@ -330,7 +330,7 @@ jobs:
 
   publish-packages:
     name: Publish to npm
-    needs: build-binaries
+    needs: build-sea
     runs-on: ubuntu-latest
     permissions:
       contents: read
