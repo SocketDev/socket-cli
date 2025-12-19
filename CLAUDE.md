@@ -64,16 +64,25 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 ## Commands
 
 ### Development Commands
-- **Build**: `npm run build` (alias for `npm run build:dist`)
-- **Build source**: `npm run build:dist:src` or `pnpm build:dist:src`
-- **Build types**: `npm run build:dist:types`
+- **Build**: `pnpm run build` (smart build, skips unchanged)
+- **Build force**: `pnpm run build --force` (force rebuild CLI + SEA for current platform)
+- **Build SEA**: `pnpm run build:sea` (build SEA binaries for all platforms)
+- **Build source**: `pnpm build:dist:src` (CLI package only)
+- **Build types**: `pnpm run build:dist:types`
 - **Test**: `pnpm test` (runs check + all tests from monorepo root)
 - **Test unit only**: `pnpm --filter @socketsecurity/cli run test:unit`
-- **Lint**: `npm run check:lint` (uses eslint)
-- **Type check**: `npm run check:tsc` (uses tsgo)
-- **Check all**: `npm run check` (lint + typecheck)
-- **Fix linting**: `npm run lint:fix`
+- **Lint**: `pnpm run check:lint` (uses eslint)
+- **Type check**: `pnpm run check:tsc` (uses tsgo)
+- **Check all**: `pnpm run check` (lint + typecheck)
+- **Fix linting**: `pnpm run lint:fix`
 - **Commit without tests**: `git commit --no-verify` (skips pre-commit hooks including tests)
+
+### Binary Build Notes
+- **Node-smol binaries**: Downloaded from socket-btm releases (not built locally)
+- **Yoga WASM**: Downloaded from socket-btm releases (not built locally)
+- **SEA binaries**: Built by injecting CLI blob into downloaded node-smol binaries
+- **Output location**: `packages/cli/dist/sea/socket-<platform>-<arch>`
+- **Cache location**: `~/.socket/` directory
 
 ### Testing Best Practices - CRITICAL: NO -- FOR FILE PATHS
 - **🚨 NEVER USE `--` BEFORE TEST FILE PATHS** - This runs ALL tests, not just your specified files!

@@ -4,13 +4,14 @@
  *
  * Builds packages in the correct order:
  * 1. CLI package (TypeScript compilation and bundling)
+ * 2. SEA binary for current platform (only with --force)
  *
- * Note: Yoga WASM is downloaded from socket-btm during CLI build.
- * Binary builds use separate scripts: pnpm run build:binaries
+ * Note: Yoga WASM and node-smol binaries are downloaded from socket-btm during CLI build.
  *
  * Usage:
  *   pnpm run build                           # Smart build (skips unchanged)
- *   pnpm run build --force                   # Force rebuild all
+ *   pnpm run build --force                   # Force rebuild all + SEA for current platform
+ *   pnpm run build:sea                       # Build SEA binaries for all platforms
  *   pnpm run build --target <name>           # Build specific target
  *   pnpm run build --targets <t1,t2,...>     # Build multiple targets
  *   pnpm run build --platforms               # Build all platform binaries
@@ -146,7 +147,8 @@ function showHelp() {
   logger.log(
     '  pnpm run build                           # Smart build (skips unchanged)',
   )
-  logger.log('  pnpm run build --force                   # Force rebuild all')
+  logger.log('  pnpm run build --force                   # Force rebuild all + SEA for current platform')
+  logger.log('  pnpm run build:sea                       # Build SEA binaries for all platforms')
   logger.log(
     '  pnpm run build --target <name>           # Build specific target',
   )
@@ -166,9 +168,10 @@ function showHelp() {
   logger.log('')
   logger.log('Default Build Order:')
   logger.log('  1. CLI Package (TypeScript compilation + bundling)')
+  logger.log('  2. SEA Binary for current platform (only with --force)')
   logger.log('')
-  logger.log('Note: Yoga WASM is downloaded from socket-btm during CLI build')
-  logger.log('      Binaries use separate script: pnpm run build:binaries')
+  logger.log('Note: Yoga WASM and node-smol binaries are downloaded from socket-btm')
+  logger.log('      All pre-built binaries are cached in ~/.socket/ directory')
   logger.log('')
   logger.log('Platform Targets:')
   for (const target of PLATFORM_TARGETS) {
@@ -241,6 +244,48 @@ async function buildPackage(pkg, force) {
 }
 
 /**
+ * Build SEA binary for current platform.
+ */
+async function buildCurrentPlatformSea() {
+  const { arch, platform } = await import('node:os')
+  const currentPlatform = platform()
+  const currentArch = arch()
+
+  logger.log('')
+  logger.log(`${colors.cyan('→')} Building SEA binary for ${currentPlatform}-${currentArch}...`)
+
+  const startTime = Date.now()
+  const result = await spawn(
+    'pnpm',
+    [
+      '--filter',
+      '@socketsecurity/cli',
+      'run',
+      'build:sea',
+      `--platform=${currentPlatform}`,
+      `--arch=${currentArch}`,
+    ],
+    {
+      shell: WIN32,
+      stdio: 'inherit',
+    },
+  )
+  const duration = ((Date.now() - startTime) / 1000).toFixed(1)
+
+  if (result.code !== 0) {
+    logger.log(
+      `${colors.red('✗')} SEA build failed (${duration}s)`,
+    )
+    return { success: false }
+  }
+
+  logger.log(
+    `${colors.green('✓')} SEA binary built (${duration}s)`,
+  )
+  return { success: true }
+}
+
+/**
  * Run the default smart build with caching.
  */
 async function runSmartBuild(force) {
@@ -271,6 +316,20 @@ async function runSmartBuild(force) {
 
     if (!result.success) {
       break
+    }
+  }
+
+  // If force build and CLI built successfully, also build SEA binary for current platform.
+  if (force && results.every(r => r.success)) {
+    const startTime = Date.now()
+    const seaResult = await buildCurrentPlatformSea()
+    const duration = Date.now() - startTime
+
+    if (!seaResult.success) {
+      results.push({ success: false, skipped: false, pkg: { name: 'SEA Binary' } })
+    } else {
+      totalTime += duration
+      results.push({ success: true, skipped: false, pkg: { name: 'SEA Binary' } })
     }
   }
 
