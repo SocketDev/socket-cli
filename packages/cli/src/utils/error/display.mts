@@ -5,7 +5,7 @@ import colors from 'yoctocolors-cjs'
 import { LOG_SYMBOLS } from '@socketsecurity/lib/logger'
 import { stripAnsi } from '@socketsecurity/lib/strings'
 
-import { debugNs, isDebugNs } from '../debug.mts'
+import { debugDirNs, debugNs, isDebugNs } from '../debug.mts'
 import {
   AuthError,
   ConfigError,
@@ -261,7 +261,8 @@ export function formatExternalCliError(
   }
 
   if (opts.verbose ?? isDebugNs('error')) {
-    debugNs('error', `External CLI error details: ${command}`, error)
+    debugNs('error', `External CLI error details: ${command}`)
+    debugDirNs('error', error)
   }
 
   return lines.join('\n')

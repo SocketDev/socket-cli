@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 
-import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { debug, debugDir, debugDirNs } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { readPackageJson } from '@socketsecurity/lib/packages'
 
@@ -151,7 +151,7 @@ export async function scanPackagesAndLogAlerts(
   }
 
   debugScan('start', packagePurls.length)
-  debugDir('inspect', { packagePurls })
+  debugDirNs('inspect', { packagePurls })
 
   try {
     const alertsMap = await getAlertsMapFromPurls(packagePurls, {
@@ -195,7 +195,7 @@ export async function scanPackagesAndLogAlerts(
   }
 
   debugScan('complete', packagePurls.length)
-  debugDir('inspect', { args: rawArgs.slice(1) })
+  debugDirNs('inspect', { args: rawArgs.slice(1) })
 
   return { shouldExit: false }
 }

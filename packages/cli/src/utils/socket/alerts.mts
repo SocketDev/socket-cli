@@ -19,7 +19,7 @@
  */
 
 import { arrayUnique } from '@socketsecurity/lib/arrays'
-import { debugDir } from '@socketsecurity/lib/debug'
+import { debugDirNs } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getOwn } from '@socketsecurity/lib/objects'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
@@ -70,7 +70,7 @@ export async function getAlertsMapFromPurls(
   options?: GetAlertsMapFromPurlsOptions | undefined,
 ): Promise<AlertsByPurl> {
   const uniqPurls = arrayUnique(purls)
-  debugDir('silly', { purls: uniqPurls })
+  debugDirNs('silly', { purls: uniqPurls })
 
   let { length: remaining } = uniqPurls
   const alertsByPurl: AlertsByPurl = new Map()
@@ -153,7 +153,7 @@ export async function getAlertsMapFromPurls(
           batchResult.error,
           batchResult.cause ? `( ${batchResult.cause} )` : '',
         )
-        debugDir('inspect', { batchResult })
+        debugDirNs('inspect', { batchResult })
         break
       }
       remaining -= 1

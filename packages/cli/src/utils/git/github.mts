@@ -34,12 +34,7 @@ import {
 import { RequestError } from '@octokit/request-error'
 import { Octokit } from '@octokit/rest'
 
-import {
-  debugDir,
-  debugDirNs,
-  debugNs,
-  isDebugNs,
-} from '@socketsecurity/lib/debug'
+import { debugDirNs, debugNs, isDebugNs } from '@socketsecurity/lib/debug'
 import {
   readJson,
   safeMkdir,
@@ -198,7 +193,7 @@ export function getOctokit(): Octokit {
       ...(SOCKET_CLI_GITHUB_TOKEN ? { auth: SOCKET_CLI_GITHUB_TOKEN } : {}),
       ...(ENV.GITHUB_API_URL ? { baseUrl: ENV.GITHUB_API_URL } : {}),
     }
-    debugDir('inspect', { octokitOptions })
+    debugDirNs('inspect', { octokitOptions })
     _octokit = new Octokit(octokitOptions)
   }
   return _octokit
@@ -292,7 +287,7 @@ export async function setGitRemoteGithubRepoUrl(
   const host = urlObj?.host
   if (!host) {
     debugNs('error', 'invalid: GITHUB_SERVER_URL env var')
-    debugDir('inspect', { GITHUB_SERVER_URL })
+    debugDirNs('inspect', { GITHUB_SERVER_URL })
     return false
   }
   const url = `https://x-access-token:${token}@${host}/${owner}/${repo}`

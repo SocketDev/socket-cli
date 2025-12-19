@@ -21,7 +21,7 @@
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { debugDir, debugNs } from '@socketsecurity/lib/debug'
+import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
@@ -138,7 +138,7 @@ export async function readSocketJson(
     if (defaultOnError) {
       logger.warn(`Failed to read ${SOCKET_JSON}, using default`)
       debugNs('warn', `Failed to read ${SOCKET_JSON}`)
-      debugDir('warn', e as any)
+      debugDirNs('warn', e)
       return { ok: true, data: getDefaultSocketJson() }
     }
     const cause = formatErrorWithDetail(
@@ -146,7 +146,7 @@ export async function readSocketJson(
       e,
     )
     debugNs('error', `Failed to read ${SOCKET_JSON}`)
-    debugDir('error', e as any)
+    debugDirNs('error', e)
     return {
       ok: false,
       message: `Failed to read ${SOCKET_JSON}`,
@@ -159,8 +159,8 @@ export async function readSocketJson(
     obj = JSON.parse(json)
   } catch (e) {
     debugNs('error', `Failed to parse ${SOCKET_JSON} as JSON`)
-    debugDir('inspect', { json } as any)
-    debugDir('error', e as any)
+    debugDirNs('inspect', { json })
+    debugDirNs('error', e)
     if (defaultOnError) {
       logger.warn(`Failed to parse ${SOCKET_JSON}, using default`)
       return { ok: true, data: getDefaultSocketJson() }
@@ -198,7 +198,7 @@ export function readSocketJsonSync(
     if (defaultOnError) {
       logger.warn(`Failed to read ${SOCKET_JSON}, using default`)
       debugNs('warn', `Failed to read ${SOCKET_JSON} sync`)
-      debugDir('warn', e as any)
+      debugDirNs('warn', e)
       return { ok: true, data: getDefaultSocketJson() }
     }
     const cause = formatErrorWithDetail(
@@ -206,7 +206,7 @@ export function readSocketJsonSync(
       e,
     )
     debugNs('error', `Failed to read ${SOCKET_JSON} sync`)
-    debugDir('error', e as any)
+    debugDirNs('error', e)
     return {
       ok: false,
       message: `Failed to read ${SOCKET_JSON}`,
@@ -219,8 +219,8 @@ export function readSocketJsonSync(
     jsonObj = JSON.parse(jsonContent)
   } catch (e) {
     debugNs('error', `Failed to parse ${SOCKET_JSON} as JSON (sync)`)
-    debugDir('inspect', { jsonContent } as any)
-    debugDir('error', e as any)
+    debugDirNs('inspect', { jsonContent })
+    debugDirNs('error', e)
     if (defaultOnError) {
       logger.warn(`Failed to parse ${SOCKET_JSON}, using default`)
       return { ok: true, data: getDefaultSocketJson() }
@@ -251,8 +251,8 @@ export async function writeSocketJson(
     jsonContent = JSON.stringify(sockJson, null, 2)
   } catch (e) {
     debugNs('error', `Failed to serialize ${SOCKET_JSON} to JSON`)
-    debugDir('inspect', { sockJson } as any)
-    debugDir('error', e as any)
+    debugDirNs('inspect', { sockJson })
+    debugDirNs('error', e)
     return {
       ok: false,
       message: 'Failed to serialize to JSON',

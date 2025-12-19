@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { debugDir } from '@socketsecurity/lib/debug'
+import { debugDirNs } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { input, select } from '@socketsecurity/lib/stdio/prompts'
 
@@ -22,7 +22,7 @@ export async function setupManifestConfig(
   defaultOnReadError = false,
 ): Promise<CResult<unknown>> {
   const detected = await detectManifestActions(null, cwd)
-  debugDir('inspect', { detected })
+  debugDirNs('inspect', { detected })
 
   // - repeat
   //   - give the user an option to configure one of the supported targets

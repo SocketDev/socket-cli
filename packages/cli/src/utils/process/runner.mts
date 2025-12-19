@@ -5,7 +5,7 @@ import { spawn } from '@socketsecurity/lib/spawn'
 import { Spinner as createSpinner } from '@socketsecurity/lib/spinner'
 
 import { ensureIpcInStdio } from '../../shadow/stdio-ipc.mjs'
-import { debugNs } from '../debug.mts'
+import { debugDirNs, debugNs } from '../debug.mts'
 import { formatExternalCliError } from '../error/display.mts'
 
 import type { IpcObject } from '../../constants/shadow.mts'
@@ -124,7 +124,8 @@ export async function runExternalCommand(
       spinner.stop()
     }
 
-    debugNs('error', `Command failed: ${command}`, e)
+    debugNs('error', `Command failed: ${command}`)
+    debugDirNs('error', e)
 
     // Extract error details.
     const exitCode =
