@@ -11,10 +11,10 @@
  *   --apply    Apply updates (default is check-only)
  */
 
-import { runParallel } from 'build-infra/lib/script-runner'
-
 import { isQuiet, isVerbose } from '@socketsecurity/lib/argv/flags'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 import {
   printError,
   printFooter,
@@ -71,7 +71,15 @@ async function main() {
       })
     }
 
-    const results = await runParallel(commands)
+    // Run commands in parallel.
+    const promises = commands.map(({ args, command, options = {} }) =>
+      spawn(command, args, {
+        shell: WIN32,
+        stdio: 'inherit',
+        ...options,
+      }),
+    )
+    const results = await Promise.all(promises)
     const exitCode = results.some(r => r.code !== 0) ? 1 : 0
 
     // Clear progress line.
