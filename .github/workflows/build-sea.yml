@@ -478,9 +478,153 @@ jobs:
         if: steps.check-platform.outputs.should-run == 'true' && (steps.sea-cache.outputs.cache-hit != 'true' || inputs.force)
         run: pnpm --filter @socketsecurity/cli run build
 
-      - name: Build SEA binary
+      - name: Download binject from socket-btm
         if: steps.check-platform.outputs.should-run == 'true' && (steps.sea-cache.outputs.cache-hit != 'true' || inputs.force)
-        run: pnpm --filter @socketsecurity/cli run build:sea -- --platform=${{ matrix.platform }} --arch=${{ matrix.arch }}
+        id: binject
+        shell: bash
+        run: |
+          echo "::group::Downloading binject from socket-btm"
+
+          # Determine platform suffix for binject binary.
+          if [ "${{ matrix.os }}" = "darwin" ]; then
+            BINJECT_SUFFIX="darwin-${{ matrix.arch }}"
+          elif [ "${{ matrix.os }}" = "windows" ]; then
+            BINJECT_SUFFIX="win-${{ matrix.arch }}.exe"
+          elif [ "${{ matrix.platform }}" = "linux-musl" ]; then
+            BINJECT_SUFFIX="linux-musl-${{ matrix.arch }}"
+          else
+            BINJECT_SUFFIX="linux-${{ matrix.arch }}"
+          fi
+
+          # Find latest binject release.
+          RELEASE_DATA=$(curl -sL "https://api.github.com/repos/SocketDev/socket-btm/releases" | \
+            jq -r '[.[] | select(.tag_name | startswith("binject-"))] | first')
+
+          if [ "$RELEASE_DATA" = "null" ] || [ -z "$RELEASE_DATA" ]; then
+            echo "::error::No binject release found in socket-btm"
+            exit 1
+          fi
+
+          TAG=$(echo "$RELEASE_DATA" | jq -r '.tag_name')
+          echo "Found binject release: $TAG"
+
+          # Download binject binary.
+          mkdir -p .cache/binject
+          BINJECT_PATH=".cache/binject/binject"
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            BINJECT_PATH=".cache/binject/binject.exe"
+          fi
+
+          curl -sL "https://github.com/SocketDev/socket-btm/releases/download/${TAG}/binject-${BINJECT_SUFFIX}" \
+            -o "$BINJECT_PATH"
+          chmod +x "$BINJECT_PATH"
+
+          echo "binject-path=$BINJECT_PATH" >> $GITHUB_OUTPUT
+          echo "✓ Downloaded binject-${BINJECT_SUFFIX}"
+          ls -lh "$BINJECT_PATH"
+
+          echo "::endgroup::"
+
+      - name: Download node-smol from socket-btm
+        if: steps.check-platform.outputs.should-run == 'true' && (steps.sea-cache.outputs.cache-hit != 'true' || inputs.force)
+        id: node-smol
+        shell: bash
+        run: |
+          echo "::group::Downloading node-smol from socket-btm"
+
+          # Determine platform suffix for node-smol binary.
+          if [ "${{ matrix.os }}" = "darwin" ]; then
+            NODE_SUFFIX="darwin-${{ matrix.arch }}"
+          elif [ "${{ matrix.os }}" = "windows" ]; then
+            NODE_SUFFIX="win-${{ matrix.arch }}.exe"
+          elif [ "${{ matrix.platform }}" = "linux-musl" ]; then
+            NODE_SUFFIX="linux-${{ matrix.arch }}-musl"
+          else
+            NODE_SUFFIX="linux-${{ matrix.arch }}"
+          fi
+
+          # Find latest node-smol release.
+          RELEASE_DATA=$(curl -sL "https://api.github.com/repos/SocketDev/socket-btm/releases" | \
+            jq -r '[.[] | select(.tag_name | startswith("node-smol-"))] | first')
+
+          if [ "$RELEASE_DATA" = "null" ] || [ -z "$RELEASE_DATA" ]; then
+            echo "::error::No node-smol release found in socket-btm"
+            exit 1
+          fi
+
+          TAG=$(echo "$RELEASE_DATA" | jq -r '.tag_name')
+          echo "Found node-smol release: $TAG"
+
+          # Download node-smol binary.
+          mkdir -p .cache/node-smol
+          NODE_PATH=".cache/node-smol/node"
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            NODE_PATH=".cache/node-smol/node.exe"
+          fi
+
+          curl -sL "https://github.com/SocketDev/socket-btm/releases/download/${TAG}/node-${NODE_SUFFIX}" \
+            -o "$NODE_PATH"
+          chmod +x "$NODE_PATH"
+
+          echo "node-path=$NODE_PATH" >> $GITHUB_OUTPUT
+          echo "✓ Downloaded node-${NODE_SUFFIX}"
+          ls -lh "$NODE_PATH"
+
+          echo "::endgroup::"
+
+      - name: Build SEA binary with binject
+        if: steps.check-platform.outputs.should-run == 'true' && (steps.sea-cache.outputs.cache-hit != 'true' || inputs.force)
+        shell: bash
+        run: |
+          echo "::group::Building SEA binary with binject"
+
+          BINJECT="${STEPS_BINJECT_OUTPUTS_BINJECT_PATH}"
+          NODE_BINARY="${STEPS_NODE_SMOL_OUTPUTS_NODE_PATH}"
+
+          # Determine output binary name.
+          if [ "${{ matrix.platform }}" = "win32" ]; then
+            OUTPUT_NAME="socket-win-${{ matrix.arch }}.exe"
+          elif [ "${{ matrix.platform }}" = "darwin" ]; then
+            OUTPUT_NAME="socket-darwin-${{ matrix.arch }}"
+          elif [ "${{ matrix.platform }}" = "linux-musl" ]; then
+            OUTPUT_NAME="socket-linux-${{ matrix.arch }}-musl"
+          else
+            OUTPUT_NAME="socket-${{ matrix.platform }}-${{ matrix.arch }}"
+          fi
+
+          mkdir -p packages/cli/dist/sea
+
+          # Generate SEA config (paths relative to packages/cli).
+          cat > packages/cli/sea-config.json << 'SEACONFIG'
+{
+  "main": "dist/cli.mjs",
+  "output": "dist/sea-prep.blob",
+  "disableExperimentalSEAWarning": true,
+  "useSnapshot": false,
+  "useCodeCache": true
+}
+SEACONFIG
+
+          # Use binject to inject SEA blob into node-smol binary.
+          # binject --sea with .json runs: node --experimental-sea-config <path>
+          cd packages/cli
+          echo "Running: $BINJECT inject -e $NODE_BINARY --sea sea-config.json -o dist/sea/$OUTPUT_NAME"
+
+          "../../$BINJECT" inject \
+            -e "../../$NODE_BINARY" \
+            --sea sea-config.json \
+            -o "dist/sea/$OUTPUT_NAME"
+
+          cd ../..
+
+          chmod +x "packages/cli/dist/sea/$OUTPUT_NAME"
+          echo "✓ Built SEA binary: $OUTPUT_NAME"
+          ls -lh "packages/cli/dist/sea/$OUTPUT_NAME"
+
+          echo "::endgroup::"
+        env:
+          STEPS_BINJECT_OUTPUTS_BINJECT_PATH: ${{ steps.binject.outputs.binject-path }}
+          STEPS_NODE_SMOL_OUTPUTS_NODE_PATH: ${{ steps.node-smol.outputs.node-path }}
 
       - name: Verify SEA binary
         if: steps.check-platform.outputs.should-run == 'true'
