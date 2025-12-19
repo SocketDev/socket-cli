@@ -123,6 +123,7 @@
     "@socketsecurity/config": "3.0.1",
     "@socketsecurity/registry": "1.1.17",
     "@socketsecurity/sdk": "1.4.95",
+    "@socketsecurity/socket-patch": "1.0.0",
     "@types/blessed": "0.1.25",
     "@types/cmd-shim": "5.0.2",
     "@types/js-yaml": "4.0.9",

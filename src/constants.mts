@@ -167,6 +167,7 @@ export type ENV = Remap<
       SOCKET_CLI_NPM_PATH: string
       SOCKET_CLI_ORG_SLUG: string
       SOCKET_CLI_VIEW_ALL_RISKS: boolean
+      SOCKET_PATCH_PROXY_URL: string
       TERM: string
       XDG_DATA_HOME: string
     }>
@@ -646,6 +647,8 @@ const LAZY_ENV = () => {
       envAsString(env['SOCKET_ORG_SLUG']),
     // View all risks of a Socket wrapped npm/npx run.
     SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(env[SOCKET_CLI_VIEW_ALL_RISKS]),
+    // Override the public patch API proxy URL for socket-patch.
+    SOCKET_PATCH_PROXY_URL: envAsString(env['SOCKET_PATCH_PROXY_URL']),
     // Specifies the type of terminal or terminal emulator being used by the process.
     TERM: envAsString(env['TERM']),
     // Redefine registryConstants.ENV.VITEST to account for the
