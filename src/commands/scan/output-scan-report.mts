@@ -87,6 +87,11 @@ export async function outputScanReport(
     return
   }
 
+  if (!scanReport.data.healthy) {
+    // When report contains healthy: false, process should exit with non-zero code.
+    process.exitCode = 1
+  }
+
   // I don't think we emit the default error message with banner for an unhealthy report, do we?
   // if (!scanReport.data.healthy) {
   //   logger.fail(failMsgWithBadge(scanReport.message, scanReport.cause))
