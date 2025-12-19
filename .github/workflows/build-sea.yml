@@ -45,8 +45,6 @@ on:
         required: false
         type: boolean
         default: true
-  # Removed push/pull_request triggers to prevent automatic builds.
-  # Run manually via workflow_dispatch or via workflow_call from build-socketbin.yml.
 
 permissions:
   contents: read
@@ -55,81 +53,14 @@ concurrency:
   group: build-sea-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  SOCKET_BTM_REPO: SocketDev/socket-btm
+
 jobs:
-  build-deps:
-    name: ⚡ Socket Dependencies
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    outputs:
-      deps-hash: ${{ steps.deps-cache-key.outputs.hash }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-        with:
-          persist-credentials: false
-
-      - name: Load tool versions
-        id: tools
-        run: |
-          # Load versions from packages/build-infra/external-tools.json
-          NODE_VERSION=$(jq -r '.node.recommendedVersion' packages/build-infra/external-tools.json)
-          PNPM_VERSION=$(jq -r '.pnpm.recommendedVersion' packages/build-infra/external-tools.json)
-          echo "node-version=$NODE_VERSION" >> $GITHUB_OUTPUT
-          echo "pnpm-version=$PNPM_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Setup Node.js
-        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
-        with:
-          node-version: ${{ steps.tools.outputs.node-version }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
-        with:
-          version: ${{ steps.tools.outputs.pnpm-version }}
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate build-deps cache key
-        id: deps-cache-key
-        shell: bash
-        run: |
-          # Include pnpm-lock.yaml to detect dependency changes (e.g., @socketsecurity/lib updates).
-          HASH=$(find packages/bootstrap packages/socket -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" -o -name "*.json" \) ! -path "*/node_modules/*" ! -path "*/dist/*" ! -path "*/build/*" | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          LOCK_HASH=$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)
-          COMBINED_HASH=$(echo "$HASH-$LOCK_HASH" | sha256sum | cut -d' ' -f1)
-          echo "hash=$COMBINED_HASH" >> $GITHUB_OUTPUT
-
-      - name: Restore build-deps cache
-        id: deps-cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: |
-            packages/bootstrap/dist/
-            packages/socket/dist/
-          key: build-deps-sea-${{ steps.deps-cache-key.outputs.hash }}
-          restore-keys: build-deps-sea-
-
-      - name: Build bootstrap package
-        if: steps.deps-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter @socketsecurity/bootstrap run build
-
-      - name: Build socket package bootstrap
-        if: steps.deps-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter socket run build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
-        with:
-          name: build-deps-${{ github.sha }}
-          path: packages/
-          retention-days: 1
-
   build-sea:
-    name: ⚡ SEA - ${{ matrix.platform }}-${{ matrix.arch }}
-    needs: build-deps
+    name: 🌊 SEA - ${{ matrix.platform }}-${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 60
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       max-parallel: 8
@@ -165,7 +96,7 @@ jobs:
             platform: darwin
             arch: arm64
 
-          # Windows builds - use x64 runner to build both x64 and arm64.
+          # Windows builds.
           - runner: windows-latest
             os: windows
             platform: win32
@@ -203,7 +134,7 @@ jobs:
 
       - name: Checkout
         if: steps.check-platform.outputs.should-run == 'true'
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
 
@@ -215,271 +146,18 @@ jobs:
 
       - name: Setup pnpm
         if: steps.check-platform.outputs.should-run == 'true'
-        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
+        uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
 
       - name: Install dependencies
         if: steps.check-platform.outputs.should-run == 'true'
         run: pnpm install --frozen-lockfile
 
-      - name: Download build artifacts
+      - name: Build CLI
         if: steps.check-platform.outputs.should-run == 'true'
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0.1.8
-        with:
-          name: build-deps-${{ github.sha }}
-          path: packages/
-
-      - name: Verify build artifacts
-        if: steps.check-platform.outputs.should-run == 'true'
-        shell: bash
-        run: |
-          echo "=== Verifying downloaded build artifacts ==="
-          echo ""
-          echo "Checking for required files:"
-          ls -lh packages/bootstrap/dist/bootstrap-npm.js && echo "✓ bootstrap-npm.js present" || (echo "❌ bootstrap-npm.js missing" && exit 1)
-          ls -lh packages/socket/dist/bootstrap.js && echo "✓ socket bootstrap.js present" || (echo "❌ socket bootstrap.js missing" && exit 1)
-          echo ""
-          echo "✓ Bootstrap artifacts verified"
-
-      - name: Load tool versions
-        if: steps.check-platform.outputs.should-run == 'true'
-        id: tools
-        run: |
-          # Load versions from packages/build-infra/external-tools.json
-          NODE_VERSION=$(jq -r '.node.recommendedVersion' packages/build-infra/external-tools.json)
-          PNPM_VERSION=$(jq -r '.pnpm.recommendedVersion' packages/build-infra/external-tools.json)
-          echo "node-version=$NODE_VERSION" >> $GITHUB_OUTPUT
-          echo "pnpm-version=$PNPM_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Setup Node.js
-        if: steps.check-platform.outputs.should-run == 'true'
-        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
-        with:
-          node-version: ${{ steps.tools.outputs.node-version }}
-
-      - name: Setup pnpm
-        if: steps.check-platform.outputs.should-run == 'true'
-        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
-        with:
-          version: ${{ steps.tools.outputs.pnpm-version }}
-
-      - name: Install dependencies
-        if: steps.check-platform.outputs.should-run == 'true'
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate WASM cache keys
-        if: steps.check-platform.outputs.should-run == 'true'
-        id: wasm-cache-keys
-        shell: bash
-        run: |
-          YOGA_HASH=$(find packages/yoga-layout -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.mjs" -o -name "CMakeLists.txt" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          echo "yoga-hash=$YOGA_HASH" >> $GITHUB_OUTPUT
-
-          # AI_HASH=$(find packages/socketbin-cli-ai -type f \( -name "*.mjs" -o -name "*.ts" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          # echo "ai-hash=$AI_HASH" >> $GITHUB_OUTPUT
-
-          # ONNX_HASH=$(find packages/onnxruntime -type f \( -name "*.mjs" -o -name "*.patch" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          # echo "onnx-hash=$ONNX_HASH" >> $GITHUB_OUTPUT
-
-      - name: Restore Yoga Layout WASM cache
-        if: steps.check-platform.outputs.should-run == 'true'
-        id: yoga-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: packages/yoga-layout/build/wasm
-          key: yoga-wasm-${{ steps.wasm-cache-keys.outputs.yoga-hash }}
-          restore-keys: yoga-wasm-
-          enableCrossOsArchive: true
-
-      # - name: Restore AI models cache
-      #   if: steps.check-platform.outputs.should-run == 'true'
-      #   id: ai-cache
-      #   uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-      #   with:
-      #     path: packages/socketbin-cli-ai/dist
-      #     key: ai-models-${{ steps.wasm-cache-keys.outputs.ai-hash }}
-      #     restore-keys: ai-models-
-      #     enableCrossOsArchive: true
-
-      # - name: Restore ONNX Runtime cache
-      #   id: onnx-cache
-      #   uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-      #   with:
-      #     path: packages/onnxruntime/dist
-      #     key: onnx-runtime-${{ steps.wasm-cache-keys.outputs.onnx-hash }}
-      #     restore-keys: onnx-runtime-
-      #     enableCrossOsArchive: true
-
-      - name: Verify Yoga Layout cache
-        if: steps.check-platform.outputs.should-run == 'true'
-        id: yoga-cache-valid
-        shell: bash
-        run: |
-          echo "=== Yoga Layout Cache Verification ==="
-          echo "Cache restore result: ${STEPS_YOGA_CACHE_OUTPUTS_CACHE_HIT}"
-          echo "Cache key used: yoga-wasm-${STEPS_WASM_CACHE_KEYS_OUTPUTS_YOGA_HASH}"
-          echo "Checking for files..."
-          ls -lah packages/yoga-layout/build/wasm/ 2>&1 || echo "Directory does not exist"
-          echo ""
-
-          if [ -f "packages/yoga-layout/build/wasm/yoga.wasm" ] && [ -f "packages/yoga-layout/build/wasm/yoga.js" ]; then
-            echo "valid=true" >> $GITHUB_OUTPUT
-            echo "✓ Yoga Layout cache valid"
-          else
-            echo "valid=false" >> $GITHUB_OUTPUT
-            echo "✗ Yoga Layout cache invalid or missing"
-            echo "Missing files - will trigger rebuild"
-          fi
-
-        env:
-          STEPS_YOGA_CACHE_OUTPUTS_CACHE_HIT: ${{ steps.yoga-cache.outputs.cache-hit }}
-
-          STEPS_WASM_CACHE_KEYS_OUTPUTS_YOGA_HASH: ${{ steps.wasm-cache-keys.outputs.yoga-hash }}
-
-      # - name: Verify AI models cache
-      #   if: steps.check-platform.outputs.should-run == 'true'
-      #   id: ai-cache-valid
-      #   shell: bash
-      #   run: |
-      #     if [ -f "packages/socketbin-cli-ai/dist/ai.bz" ] && [ -f "packages/socketbin-cli-ai/dist/ai.js" ]; then
-      #       echo "valid=true" >> $GITHUB_OUTPUT
-      #       echo "✓ AI models cache valid"
-      #     else
-      #       echo "valid=false" >> $GITHUB_OUTPUT
-      #       echo "✗ AI models cache invalid or missing"
-      #     fi
-
-      #       - name: Verify ONNX Runtime cache
-      #         id: onnx-cache-valid
-      #         shell: bash
-      #         run: |
-      #           if [ -f "packages/onnxruntime/dist/onnxruntime-web.wasm" ]; then
-      #             echo "valid=true" >> $GITHUB_OUTPUT
-      #             echo "✓ ONNX Runtime cache valid"
-      #           else
-      #             echo "valid=false" >> $GITHUB_OUTPUT
-      #             echo "✗ ONNX Runtime cache invalid or missing"
-      #           fi
-
-      - name: Check WASM cache status (Windows)
-        if: steps.check-platform.outputs.should-run == 'true' && matrix.os == 'windows' && steps.yoga-cache-valid.outputs.valid != 'true'
-        run: |
-          echo "::warning::WASM assets not cached. Build will use baseline features only."
-          echo "For enhanced NLP features, run fetch-wasm.yml workflow first to prime the cache."
-          echo ""
-          echo "Progressive enhancement tiers:"
-          echo "  ✓ Tier 1 (Baseline): Pure JS with compromise - always available"
-          echo "  ✗ Tier 2 (Enhanced): MiniLM + ONNX Runtime - requires WASM"
-          echo "  ✗ Tier 3 (Full): CodeT5 - requires WASM + models"
-          echo ""
-          echo "The CLI will work normally with baseline features."
-
-      # Python and Emscripten no longer needed - we download pre-built WASM from socket-btm.
-
-      - name: Download WASM from socket-btm on cache miss (non-Windows)
-        if: steps.check-platform.outputs.should-run == 'true' && steps.yoga-cache-valid.outputs.valid != 'true' && matrix.os != 'windows'
-        shell: bash
-        run: |
-          echo "⚠️  WASM cache miss detected - downloading from socket-btm"
-          echo "This will take ~1-2 minutes. Consider running fetch-wasm.yml workflow to prime cache."
-          echo ""
-          echo "Cache status:"
-          echo "  Yoga Layout: ${{ steps.yoga-cache-valid.outputs.valid == 'true' && '✓ cached' || '✗ missing' }}"
-          echo ""
-
-          # Download Yoga Layout WASM from socket-btm if missing.
-          if [ "${STEPS_YOGA_CACHE_VALID_OUTPUTS_VALID}" != "true" ]; then
-            echo "::group::Downloading Yoga Layout WASM from socket-btm"
-
-            # Find latest yoga-layout release.
-            RELEASE_DATA=$(curl -sL "https://api.github.com/repos/SocketDev/socket-btm/releases" | \
-              jq -r '[.[] | select(.tag_name | startswith("yoga-layout-"))] | first')
-
-            if [ "$RELEASE_DATA" = "null" ] || [ -z "$RELEASE_DATA" ]; then
-              echo "::warning::No yoga-layout release found in socket-btm. Build will proceed with baseline features."
-            else
-              TAG=$(echo "$RELEASE_DATA" | jq -r '.tag_name')
-              echo "Found yoga-layout release: $TAG"
-
-              mkdir -p packages/yoga-layout/build/wasm
-
-              # Download yoga.wasm.
-              curl -sL "https://github.com/SocketDev/socket-btm/releases/download/${TAG}/yoga-${TAG}.wasm" \
-                -o packages/yoga-layout/build/wasm/yoga.wasm
-
-              # Download yoga.js (sync version).
-              curl -sL "https://github.com/SocketDev/socket-btm/releases/download/${TAG}/yoga-sync-${TAG}.mjs" \
-                -o packages/yoga-layout/build/wasm/yoga.js
-
-              if [ -f "packages/yoga-layout/build/wasm/yoga.wasm" ]; then
-                echo "✓ Downloaded yoga.wasm"
-                ls -lh packages/yoga-layout/build/wasm/
-              else
-                echo "::warning::Failed to download yoga.wasm"
-              fi
-            fi
-
-            echo "::endgroup::"
-          fi
-
-          echo "✓ WASM assets download complete"
-        env:
-          STEPS_YOGA_CACHE_VALID_OUTPUTS_VALID: ${{ steps.yoga-cache-valid.outputs.valid }}
-
-      - name: Generate SEA build cache key
-        if: steps.check-platform.outputs.should-run == 'true'
-        id: sea-cache-key
-        shell: bash
-        run: |
-          SEA_HASH=$(find packages/cli/src packages/cli/scripts/build-sea.mjs -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          # Include bootstrap/socket/cli dependencies in cache key to invalidate when they change.
-          COMBINED_HASH=$(echo "$SEA_HASH-${NEEDS_BUILD_DEPS_OUTPUTS_DEPS_HASH}" | sha256sum | cut -d' ' -f1)
-          echo "hash=$COMBINED_HASH" >> $GITHUB_OUTPUT
-        env:
-          NEEDS_BUILD_DEPS_OUTPUTS_DEPS_HASH: ${{ needs.build-deps.outputs.deps-hash }}
-
-      - name: Restore SEA binary cache
-        if: steps.check-platform.outputs.should-run == 'true' && inputs.force != true
-        id: sea-cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: packages/cli/dist/sea/
-          key: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.sea-cache-key.outputs.hash }}
-          restore-keys: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-
-
-      - name: Verify WASM assets before CLI build
-        if: steps.check-platform.outputs.should-run == 'true' && (steps.sea-cache.outputs.cache-hit != 'true' || inputs.force)
-        shell: bash
-        run: |
-          echo "=== Checking WASM asset availability ==="
-          echo "Yoga Layout:"
-          ls -lh packages/yoga-layout/build/wasm/ 2>/dev/null || echo "  ❌ Directory not found"
-          echo ""
-          #           echo "AI Models:"
-          #           ls -lh packages/socketbin-cli-ai/dist/ 2>/dev/null || echo "  ❌ Directory not found"
-          #           echo ""
-          #           echo "ONNX Runtime:"
-          #           ls -lh packages/onnxruntime/dist/ 2>/dev/null || echo "  ❌ Directory not found"
-          echo ""
-
-          # Check if Yoga Layout WASM is available (optional with graceful fallback).
-          if [ ! -f "packages/yoga-layout/build/wasm/yoga.wasm" ]; then
-            echo "::warning::Yoga Layout WASM not found. Build will proceed with baseline features."
-            echo "For enhanced NLP features, run fetch-wasm.yml workflow to prime cache."
-            echo ""
-            echo "Progressive enhancement:"
-            echo "  ✓ Tier 1 (Baseline): Pure JS - CLI will work normally"
-            echo "  ✗ Tier 2 (Enhanced): MiniLM + ONNX Runtime - requires WASM"
-            echo "  ✗ Tier 3 (Full): CodeT5 - requires WASM + models"
-          else
-            echo "✓ Yoga Layout WASM available - enhanced features enabled"
-          fi
-
-      - name: Build CLI (required for SEA)
-        if: steps.check-platform.outputs.should-run == 'true' && (steps.sea-cache.outputs.cache-hit != 'true' || inputs.force)
         run: pnpm --filter @socketsecurity/cli run build
 
       - name: Download binject from socket-btm
-        if: steps.check-platform.outputs.should-run == 'true' && (steps.sea-cache.outputs.cache-hit != 'true' || inputs.force)
+        if: steps.check-platform.outputs.should-run == 'true'
         id: binject
         shell: bash
         run: |
@@ -497,7 +175,7 @@ jobs:
           fi
 
           # Find latest binject release.
-          RELEASE_DATA=$(curl -sL "https://api.github.com/repos/SocketDev/socket-btm/releases" | \
+          RELEASE_DATA=$(curl -sL "https://api.github.com/repos/${SOCKET_BTM_REPO}/releases" | \
             jq -r '[.[] | select(.tag_name | startswith("binject-"))] | first')
 
           if [ "$RELEASE_DATA" = "null" ] || [ -z "$RELEASE_DATA" ]; then
@@ -515,7 +193,7 @@ jobs:
             BINJECT_PATH=".cache/binject/binject.exe"
           fi
 
-          curl -sL "https://github.com/SocketDev/socket-btm/releases/download/${TAG}/binject-${BINJECT_SUFFIX}" \
+          curl -sL "https://github.com/${SOCKET_BTM_REPO}/releases/download/${TAG}/binject-${BINJECT_SUFFIX}" \
             -o "$BINJECT_PATH"
           chmod +x "$BINJECT_PATH"
 
@@ -526,7 +204,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Download node-smol from socket-btm
-        if: steps.check-platform.outputs.should-run == 'true' && (steps.sea-cache.outputs.cache-hit != 'true' || inputs.force)
+        if: steps.check-platform.outputs.should-run == 'true'
         id: node-smol
         shell: bash
         run: |
@@ -544,7 +222,7 @@ jobs:
           fi
 
           # Find latest node-smol release.
-          RELEASE_DATA=$(curl -sL "https://api.github.com/repos/SocketDev/socket-btm/releases" | \
+          RELEASE_DATA=$(curl -sL "https://api.github.com/repos/${SOCKET_BTM_REPO}/releases" | \
             jq -r '[.[] | select(.tag_name | startswith("node-smol-"))] | first')
 
           if [ "$RELEASE_DATA" = "null" ] || [ -z "$RELEASE_DATA" ]; then
@@ -562,7 +240,7 @@ jobs:
             NODE_PATH=".cache/node-smol/node.exe"
           fi
 
-          curl -sL "https://github.com/SocketDev/socket-btm/releases/download/${TAG}/node-${NODE_SUFFIX}" \
+          curl -sL "https://github.com/${SOCKET_BTM_REPO}/releases/download/${TAG}/node-${NODE_SUFFIX}" \
             -o "$NODE_PATH"
           chmod +x "$NODE_PATH"
 
@@ -573,7 +251,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Build SEA binary with binject
-        if: steps.check-platform.outputs.should-run == 'true' && (steps.sea-cache.outputs.cache-hit != 'true' || inputs.force)
+        if: steps.check-platform.outputs.should-run == 'true'
         shell: bash
         run: |
           echo "::group::Building SEA binary with binject"
@@ -608,7 +286,7 @@ SEACONFIG
           # Use binject to inject SEA blob into node-smol binary.
           # binject --sea with .json runs: node --experimental-sea-config <path>
           cd packages/cli
-          echo "Running: $BINJECT inject -e $NODE_BINARY --sea sea-config.json -o dist/sea/$OUTPUT_NAME"
+          echo "Running: binject inject -e node-smol --sea sea-config.json -o dist/sea/$OUTPUT_NAME"
 
           "../../$BINJECT" inject \
             -e "../../$NODE_BINARY" \
@@ -630,12 +308,9 @@ SEACONFIG
         if: steps.check-platform.outputs.should-run == 'true'
         shell: bash
         run: |
-          echo "=== SEA Binary Build Artifacts ==="
-          mkdir -p packages/cli/dist/sea
-          ls -lh packages/cli/dist/sea/ || true
-          echo ""
+          echo "=== SEA Binary Artifacts ==="
 
-          # Determine binary name based on platform (Node.js official naming).
+          # Determine binary name.
           if [ "${{ matrix.platform }}" = "win32" ]; then
             BINARY_NAME="socket-win-${{ matrix.arch }}.exe"
           elif [ "${{ matrix.platform }}" = "darwin" ]; then
@@ -648,18 +323,17 @@ SEACONFIG
 
           BINARY_PATH="packages/cli/dist/sea/$BINARY_NAME"
           if [ -f "$BINARY_PATH" ]; then
-            echo "$BINARY_NAME size: $(du -h $BINARY_PATH | cut -f1)"
+            echo "✓ $BINARY_NAME: $(du -h $BINARY_PATH | cut -f1)"
           else
-            echo "⚠️  Binary not found at expected path: $BINARY_PATH"
-            echo "Contents of dist/sea:"
-            ls -la packages/cli/dist/sea/ || echo "Directory does not exist"
+            echo "::error::Binary not found: $BINARY_PATH"
+            exit 1
           fi
 
       - name: Copy binary to socketbin package
         if: steps.check-platform.outputs.should-run == 'true'
         shell: bash
         run: |
-          # Determine binary name and target package (Node.js official naming).
+          # Determine binary name and target package.
           if [ "${{ matrix.platform }}" = "win32" ]; then
             BINARY_NAME="socket-win-${{ matrix.arch }}.exe"
             PACKAGE_NAME="socketbin-cli-win32-${{ matrix.arch }}"
@@ -683,79 +357,50 @@ SEACONFIG
           cp "packages/cli/dist/sea/$BINARY_NAME" "packages/$PACKAGE_NAME/bin/$TARGET_NAME"
           chmod +x "packages/$PACKAGE_NAME/bin/$TARGET_NAME"
 
-          echo "✓ Copied $BINARY_NAME to packages/$PACKAGE_NAME/bin/$TARGET_NAME"
-          ls -lh "packages/$PACKAGE_NAME/bin/$TARGET_NAME"
+          echo "✓ Copied to packages/$PACKAGE_NAME/bin/$TARGET_NAME"
 
       - name: Upload SEA binary
         if: steps.check-platform.outputs.should-run == 'true'
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: socket-sea-${{ matrix.platform }}-${{ matrix.arch }}
           path: packages/cli/dist/sea/socket-*
           retention-days: 7
-          if-no-files-found: warn
 
   summary:
-    name: 📊 🌊 SEA Node Build Summary
-    needs: [build-deps, build-sea]
+    name: 📊 SEA Build Summary
+    needs: [build-sea]
     if: always() && !cancelled()
     runs-on: ubuntu-latest
     steps:
       - name: Generate summary
         run: |
-          echo "# 🌊 SEA Node Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "# 🌊 SEA Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Check status of dependencies.
-          DEPS_STATUS="${NEEDS_BUILD_DEPS_RESULT}"
           BUILD_STATUS="${NEEDS_BUILD_SEA_RESULT}"
 
-          if [ "$DEPS_STATUS" = "failure" ] || [ "$BUILD_STATUS" = "failure" ]; then
+          if [ "$BUILD_STATUS" = "failure" ]; then
             echo "## ✗ Build Failed" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "One or more builds failed. Check the logs above for details." >> $GITHUB_STEP_SUMMARY
-          elif [ "$DEPS_STATUS" = "skipped" ] && [ "$BUILD_STATUS" = "skipped" ]; then
-            echo "## ⊘ Builds Skipped" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "All builds were skipped (likely due to workflow inputs)." >> $GITHUB_STEP_SUMMARY
+            echo "One or more builds failed. Check the logs for details." >> $GITHUB_STEP_SUMMARY
           elif [ "$BUILD_STATUS" = "skipped" ]; then
             echo "## ⊘ Builds Skipped" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Builds were skipped (platform builds disabled by workflow inputs)." >> $GITHUB_STEP_SUMMARY
           else
             echo "## ✓ Build Complete" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "SEA (Single Executable Application) binaries built successfully and cached." >> $GITHUB_STEP_SUMMARY
+            echo "SEA binaries built using pre-built node-smol + binject from socket-btm." >> $GITHUB_STEP_SUMMARY
           fi
 
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📦 Build Method" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Method | Description | Size |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------------|------|" >> $GITHUB_STEP_SUMMARY
-          echo "| 🌊 SEA | Single Executable Application | ~70 MB |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🎯 Platforms" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- Linux (x64, arm64)" >> $GITHUB_STEP_SUMMARY
-          echo "- macOS (x64, arm64)" >> $GITHUB_STEP_SUMMARY
-          echo "- Windows (x64, arm64)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### → Next Steps" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          if [ "$BUILD_STATUS" = "success" ]; then
-            echo "- Binaries cached for E2E tests" >> $GITHUB_STEP_SUMMARY
-            echo "- Use \`publish-socketbin.yml\` to publish" >> $GITHUB_STEP_SUMMARY
-            echo "- Cache invalidated on source changes" >> $GITHUB_STEP_SUMMARY
-          elif [ "$BUILD_STATUS" = "skipped" ]; then
-            echo "- Re-run workflow with platform builds enabled" >> $GITHUB_STEP_SUMMARY
-            echo "- Or use \`workflow_dispatch\` to trigger specific platforms" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- Check build logs for error details" >> $GITHUB_STEP_SUMMARY
-            echo "- Fix issues and re-run workflow" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "| Platform | Architecture |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux | x64, arm64 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux (musl) | x64, arm64 |" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS | x64, arm64 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Windows | x64, arm64 |" >> $GITHUB_STEP_SUMMARY
 
         env:
-          NEEDS_BUILD_DEPS_RESULT: ${{ needs.build-deps.result }}
           NEEDS_BUILD_SEA_RESULT: ${{ needs.build-sea.result }}
