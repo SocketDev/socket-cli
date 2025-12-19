@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.50](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.50) - 2025-12-19
+
+### Fixed
+- Fixed exit code when blocking alerts are found
+
 ## [1.1.49](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.49) - 2025-12-17
 
 ### Added
