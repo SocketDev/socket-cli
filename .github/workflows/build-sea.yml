@@ -364,7 +364,7 @@ jobs:
         if: steps.check-platform.outputs.should-run == 'true' && matrix.os == 'windows' && steps.yoga-cache-valid.outputs.valid != 'true'
         run: |
           echo "::warning::WASM assets not cached. Build will use baseline features only."
-          echo "For enhanced NLP features, run build-wasm.yml workflow first to prime the cache."
+          echo "For enhanced NLP features, run fetch-wasm.yml workflow first to prime the cache."
           echo ""
           echo "Progressive enhancement tiers:"
           echo "  ✓ Tier 1 (Baseline): Pure JS with compromise - always available"
@@ -373,129 +373,57 @@ jobs:
           echo ""
           echo "The CLI will work normally with baseline features."
 
-      - name: Setup Python for WASM builds (non-Windows)
-        if: steps.check-platform.outputs.should-run == 'true' && steps.yoga-cache-valid.outputs.valid != 'true' && matrix.os != 'windows'
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
-        with:
-          # Use 3.11 to match Alpine 3.19 (Docker builds) which ships Python 3.11.14.
-          # Python 3.13 breaks gyp with: TypeError: Strings must be encoded before hashing.
-          # At: tools/gyp/pylib/gyp/generator/ninja.py:813 hashlib.md5(outputs[0]).
-          # Python 3.13 requires .encode() for hashlib, but gyp doesn't support it yet.
-          # Using 3.11 ensures consistency across standard and musl libc builds.
-          # Version from packages/build-infra/external-tools.json
-          python-version: '3.11'
+      # Python and Emscripten no longer needed - we download pre-built WASM from socket-btm.
 
-      - name: Cache Emscripten SDK (non-Windows)
-        if: steps.check-platform.outputs.should-run == 'true' && steps.yoga-cache-valid.outputs.valid != 'true' && matrix.os != 'windows'
-        id: emsdk-cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: emsdk
-          # Version from packages/build-infra/external-tools.json
-          key: emsdk-${{ runner.os }}-4.0.18
-          restore-keys: emsdk-${{ runner.os }}-
-
-      # - name: Cache pip packages
-      #   if: steps.check-platform.outputs.should-run == 'true' && steps.ai-cache-valid.outputs.valid != 'true'
-      #   uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-      #   with:
-      #     path: ~/.cache/pip
-      #     key: pip-${{ runner.os }}-py3.11-${{ hashFiles('**/requirements*.txt') }}-onnx-torch
-      #     restore-keys: |
-      #       pip-${{ runner.os }}-py3.11-
-      #       pip-${{ runner.os }}-
-
-      - name: Build WASM assets on cache miss (non-Windows)
+      - name: Download WASM from socket-btm on cache miss (non-Windows)
         if: steps.check-platform.outputs.should-run == 'true' && steps.yoga-cache-valid.outputs.valid != 'true' && matrix.os != 'windows'
         shell: bash
         run: |
-          echo "⚠️  WASM cache miss detected - building from source"
-          echo "This will take 30-60 minutes. Consider running build-wasm.yml workflow to prime cache."
+          echo "⚠️  WASM cache miss detected - downloading from socket-btm"
+          echo "This will take ~1-2 minutes. Consider running fetch-wasm.yml workflow to prime cache."
           echo ""
           echo "Cache status:"
           echo "  Yoga Layout: ${{ steps.yoga-cache-valid.outputs.valid == 'true' && '✓ cached' || '✗ missing' }}"
           echo ""
-          echo "Note: Windows builds skip WASM compilation and use baseline features only."
-          echo ""
 
-          # Install Emscripten if needed for Yoga.
+          # Download Yoga Layout WASM from socket-btm if missing.
           if [ "${STEPS_YOGA_CACHE_VALID_OUTPUTS_VALID}" != "true" ]; then
-            if [ "${STEPS_EMSDK_CACHE_OUTPUTS_CACHE_HIT}" != "true" ]; then
-              echo "::group::Installing Emscripten"
-              git clone https://github.com/emscripten-core/emsdk.git
-              cd emsdk
-              # Version from packages/build-infra/external-tools.json
-              ./emsdk install 4.0.18
-              ./emsdk activate 4.0.18
-              cd ..
-              echo "::endgroup::"
+            echo "::group::Downloading Yoga Layout WASM from socket-btm"
+
+            # Find latest yoga-layout release.
+            RELEASE_DATA=$(curl -sL "https://api.github.com/repos/SocketDev/socket-btm/releases" | \
+              jq -r '[.[] | select(.tag_name | startswith("yoga-layout-"))] | first')
+
+            if [ "$RELEASE_DATA" = "null" ] || [ -z "$RELEASE_DATA" ]; then
+              echo "::warning::No yoga-layout release found in socket-btm. Build will proceed with baseline features."
             else
-              echo "::group::Activating Emscripten (from cache)"
-              cd emsdk
-              # Version from packages/build-infra/external-tools.json
-              ./emsdk activate 4.0.18
-              cd ..
-              echo "::endgroup::"
+              TAG=$(echo "$RELEASE_DATA" | jq -r '.tag_name')
+              echo "Found yoga-layout release: $TAG"
+
+              mkdir -p packages/yoga-layout/build/wasm
+
+              # Download yoga.wasm.
+              curl -sL "https://github.com/SocketDev/socket-btm/releases/download/${TAG}/yoga-${TAG}.wasm" \
+                -o packages/yoga-layout/build/wasm/yoga.wasm
+
+              # Download yoga.js (sync version).
+              curl -sL "https://github.com/SocketDev/socket-btm/releases/download/${TAG}/yoga-sync-${TAG}.mjs" \
+                -o packages/yoga-layout/build/wasm/yoga.js
+
+              if [ -f "packages/yoga-layout/build/wasm/yoga.wasm" ]; then
+                echo "✓ Downloaded yoga.wasm"
+                ls -lh packages/yoga-layout/build/wasm/
+              else
+                echo "::warning::Failed to download yoga.wasm"
+              fi
             fi
 
-            # Source emsdk environment
-            cd emsdk
-            if [ "$RUNNER_OS" = "Windows" ]; then
-              # On Windows with Git Bash, we need to explicitly set PATH
-              source ./emsdk_env.sh
-              # Also add upstream/bin to PATH for wasm-opt
-              export PATH="$(pwd)/upstream/bin:$PATH"
-            else
-              source ./emsdk_env.sh
-            fi
-            cd ..
-          fi
-
-          # # Install Python deps if needed for AI models.
-          # if [ "${STEPS_AI_CACHE_VALID_OUTPUTS_VALID}" != "true" ]; then
-          #   echo "::group::Installing Python dependencies"
-          #   python3 -m pip install --upgrade pip
-          #   python3 -m pip install transformers torch "optimum[onnxruntime]" "onnxruntime>=1.21.0"
-          #   echo "::endgroup::"
-          # fi
-
-          # Build missing WASM assets.
-          if [ "${STEPS_YOGA_CACHE_VALID_OUTPUTS_VALID}" != "true" ]; then
-            echo "::group::Building Yoga Layout WASM"
-            if [ "${{ inputs.force }}" = "true" ]; then
-              pnpm --filter @socketsecurity/yoga-layout run build -- --force
-            else
-              pnpm --filter @socketsecurity/yoga-layout run build
-            fi
             echo "::endgroup::"
           fi
 
-          # if [ "${STEPS_AI_CACHE_VALID_OUTPUTS_VALID}" != "true" ]; then
-          #   echo "::group::Building AI models (10-15 minutes)"
-          #   if [ "${{ inputs.force }}" = "true" ]; then
-          #     pnpm --filter @socketbin/cli-ai run build -- --force
-          #   else
-          #     pnpm --filter @socketbin/cli-ai run build
-          #   fi
-          #   echo "::endgroup::"
-          # fi
-
-          #           if [ "${STEPS_ONNX_CACHE_VALID_OUTPUTS_VALID}" != "true" ]; then
-          #             echo "::group::Building ONNX Runtime (20-30 minutes)"
-          #             if [ "${{ inputs.force }}" = "true" ]; then
-          #               pnpm --filter @socketsecurity/onnxruntime run build -- --force
-          #             else
-          #               pnpm --filter @socketsecurity/onnxruntime run build
-          #             fi
-          #             echo "::endgroup::"
-          #           fi
-
-          echo "✓ WASM assets built successfully"
+          echo "✓ WASM assets download complete"
         env:
           STEPS_YOGA_CACHE_VALID_OUTPUTS_VALID: ${{ steps.yoga-cache-valid.outputs.valid }}
-          STEPS_EMSDK_CACHE_OUTPUTS_CACHE_HIT: ${{ steps.emsdk-cache.outputs.cache-hit }}
-          STEPS_AI_CACHE_VALID_OUTPUTS_VALID: ${{ steps.ai-cache-valid.outputs.valid }}
-          STEPS_ONNX_CACHE_VALID_OUTPUTS_VALID: ${{ steps.onnx-cache-valid.outputs.valid }}
 
       - name: Generate SEA build cache key
         if: steps.check-platform.outputs.should-run == 'true'
@@ -533,10 +461,10 @@ jobs:
           #           ls -lh packages/onnxruntime/dist/ 2>/dev/null || echo "  ❌ Directory not found"
           echo ""
 
-          # Check if Yoga Layout WASM is available (optional with graceful fallback)
+          # Check if Yoga Layout WASM is available (optional with graceful fallback).
           if [ ! -f "packages/yoga-layout/build/wasm/yoga.wasm" ]; then
             echo "::warning::Yoga Layout WASM not found. Build will proceed with baseline features."
-            echo "For enhanced NLP features, run build-wasm.yml workflow to prime cache."
+            echo "For enhanced NLP features, run fetch-wasm.yml workflow to prime cache."
             echo ""
             echo "Progressive enhancement:"
             echo "  ✓ Tier 1 (Baseline): Pure JS - CLI will work normally"
