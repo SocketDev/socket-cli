@@ -72,12 +72,15 @@ export default yoga
  */
 async function main() {
   try {
+    logger.group('Extracting yoga-layout from socket-btm releases...')
+
     // Fetch latest yoga-layout release.
     const release = await getLatestRelease(
       'yoga-layout-',
       'SOCKET_BTM_YOGA_TAG',
     )
     if (!release) {
+      logger.groupEnd()
       generatePlaceholderStub()
       return
     }
@@ -90,6 +93,7 @@ async function main() {
       a => a.name.startsWith('yoga-sync') && a.name.endsWith('.mjs'),
     )
     if (!assetName) {
+      logger.groupEnd()
       generatePlaceholderStub()
       return
     }
@@ -106,6 +110,10 @@ async function main() {
     )
 
     if (!extractNeeded) {
+      logger.info('yoga-layout already up to date')
+      logger.groupEnd()
+      logger.log('')
+      logger.success('yoga-layout extraction complete')
       process.exit(0)
     }
 
@@ -131,8 +139,11 @@ ${syncContent}
 `
 
     writeFileSync(outputPath, jsContent, 'utf-8')
-    logger.success(`Generated ${outputPath}`)
+    logger.groupEnd()
+    logger.log('')
+    logger.success('yoga-layout extraction complete')
   } catch (e) {
+    logger.groupEnd()
     logger.error(`Unexpected error: ${e.message}`)
     generatePlaceholderStub()
   }

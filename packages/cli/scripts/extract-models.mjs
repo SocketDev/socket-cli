@@ -45,9 +45,10 @@ async function extractModels(tarGzPath, releaseTag) {
       logger.info('Models already up to date')
       return
     }
+    logger.info('Models out of date, re-extracting...')
+  } else {
+    logger.info('Extracting models (this may take a minute)...')
   }
-
-  logger.info('Extracting models (this may take a minute)...')
 
   // Extract tar.gz using tar command.
   const { spawn } = await import('@socketsecurity/lib/spawn')
@@ -62,8 +63,6 @@ async function extractModels(tarGzPath, releaseTag) {
 
   // Write marker file with release tag.
   await writeFile(markerPath, releaseTag, 'utf-8')
-
-  logger.success(`Extracted models to ${outputDir}`)
 }
 
 /**
@@ -71,11 +70,12 @@ async function extractModels(tarGzPath, releaseTag) {
  */
 async function main() {
   try {
-    logger.info('Extracting models from socket-btm releases...')
+    logger.group('Extracting models from socket-btm releases...')
 
     // Fetch latest models release.
     const release = await getLatestRelease('models-', 'SOCKET_BTM_MODELS_TAG')
     if (!release) {
+      logger.groupEnd()
       logger.warn('Models not available - skipping')
       process.exit(0)
     }
@@ -85,6 +85,7 @@ async function main() {
     // Find tar.gz asset.
     const assetName = findAsset(releaseData, a => a.name.endsWith('.tar.gz'))
     if (!assetName) {
+      logger.groupEnd()
       logger.warn('Models tar.gz not found - skipping')
       process.exit(0)
     }
@@ -95,8 +96,11 @@ async function main() {
     // Extract to output directory.
     await extractModels(cachedPath, tag)
 
+    logger.groupEnd()
+    logger.log('')
     logger.success('Models extraction complete')
   } catch (e) {
+    logger.groupEnd()
     logger.error(`Unexpected error: ${e.message}`)
     process.exit(1)
   }

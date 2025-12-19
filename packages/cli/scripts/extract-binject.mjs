@@ -101,11 +101,12 @@ async function extractBinary(cachedPath, assetName) {
  */
 async function main() {
   try {
-    logger.info('Extracting binject binary from socket-btm releases...')
+    logger.group('Extracting binject binary from socket-btm releases...')
 
     // Fetch latest binject release.
     const release = await getLatestRelease('binject-', 'SOCKET_BTM_BINJECT_TAG')
     if (!release) {
+      logger.groupEnd()
       logger.warn('binject binary not available - skipping')
       process.exit(0)
     }
@@ -119,8 +120,11 @@ async function main() {
     // Extract to output directory.
     await extractBinary(cachedPath, assetName)
 
+    logger.groupEnd()
+    logger.log('')
     logger.success('binject extraction complete')
   } catch (e) {
+    logger.groupEnd()
     logger.error(`Unexpected error: ${e.message}`)
     process.exit(1)
   }
