@@ -297,7 +297,6 @@ node scripts/extract-yoga-wasm.mjs
 ## Related Documentation
 
 - [Build/Dist Structure](build-dist-structure.md) - Output directory structure
-- [Caching Strategy](caching-strategy.md) - How caching works
 - [WASM Build Guide](wasm-build-guide.md) - Building WASM packages
 - [Node.js Build Quick Reference](node-build-quick-reference.md) - Building custom Node.js
 - [Node.js Patch Creation Guide](node-patch-creation-guide.md) - Creating Node.js patches

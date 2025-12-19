@@ -1,6 +1,6 @@
 /**
- * Download AI models from socket-btm GitHub releases.
- * This provides production AI models optimized with INT4 quantization.
+ * Download models from socket-btm GitHub releases.
+ * This provides production models optimized with INT4 quantization.
  *
  * Source: https://github.com/SocketDev/socket-btm/releases
  * Models included: MiniLM-L6-v2, CodeT5
@@ -71,12 +71,12 @@ async function extractModels(tarGzPath, releaseTag) {
  */
 async function main() {
   try {
-    logger.info('Extracting AI models from socket-btm releases...')
+    logger.info('Extracting models from socket-btm releases...')
 
     // Fetch latest models release.
     const release = await getLatestRelease('models-', 'SOCKET_BTM_MODELS_TAG')
     if (!release) {
-      logger.warn('AI models not available - skipping')
+      logger.warn('Models not available - skipping')
       process.exit(0)
     }
 
@@ -85,7 +85,7 @@ async function main() {
     // Find tar.gz asset.
     const assetName = findAsset(releaseData, a => a.name.endsWith('.tar.gz'))
     if (!assetName) {
-      logger.warn('AI models tar.gz not found - skipping')
+      logger.warn('Models tar.gz not found - skipping')
       process.exit(0)
     }
 
@@ -95,7 +95,7 @@ async function main() {
     // Extract to output directory.
     await extractModels(cachedPath, tag)
 
-    logger.success('AI models extraction complete')
+    logger.success('Models extraction complete')
   } catch (e) {
     logger.error(`Unexpected error: ${e.message}`)
     process.exit(1)

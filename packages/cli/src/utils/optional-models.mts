@@ -1,7 +1,7 @@
 /**
  * Optional Model Distribution System.
  *
- * Manages lazy-loading of AI models via npm packages (installed on first use).
+ * Manages lazy-loading of models via npm packages (installed on first use).
  * Models are published to npm registry under @socketbin/ scope.
  *
  * Architecture:

@@ -39,7 +39,6 @@ The Socket CLI documentation is **well-organized** using a 3-tier hierarchy syst
 |------|-------|------|---------|
 | `README.md` | 367 | ~12KB | Build system overview (INDEX) |
 | `build-dist-structure.md` | ? | ~5.4KB | Output directory structure |
-| `caching-strategy.md` | 241 | ~7.5KB | Build caching mechanics |
 | `node-build-order-explained.md` | 287 | ~8.0KB | Patch application order |
 | `node-build-quick-reference.md` | 449 | ~10KB | Custom Node.js troubleshooting |
 | `node-patch-creation-guide.md` | 562 | ~13KB | Socket patch creation |
@@ -594,7 +593,6 @@ docs/ (estimate: 9,000-10,500 lines, 25-30% reduction)
 ├── build/
 │   ├── README.md
 │   ├── build-dist-structure.md
-│   ├── caching-strategy.md
 │   ├── node-build-system.md (1,000-1,200 lines - consolidated)
 │   ├── node-build-quick-reference.md (keep)
 │   └── wasm-build-guide.md

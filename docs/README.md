@@ -40,7 +40,6 @@ The detailed guide includes:
 ### Build System
 - [Build System Guide](build/README.md) - **Start here** - Complete build system overview
 - [Build/dist structure](build/build-dist-structure.md) - Output directory structure
-- [Caching strategy](build/caching-strategy.md) - How build caching works
 - [WASM build guide](build/wasm-build-guide.md) - Building WASM packages
 - [Node.js build quick reference](build/node-build-quick-reference.md) - Troubleshooting custom Node.js builds
 - [Node.js patch creation guide](build/node-patch-creation-guide.md) - Creating Socket patches for Node.js
