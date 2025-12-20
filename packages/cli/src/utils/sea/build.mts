@@ -34,18 +34,21 @@ export interface SeaBuildOptions {
 
 /**
  * Build SEA blob.
+ * Uses the current Node.js process instead of the target binary to avoid issues
+ * with cross-platform builds and potentially corrupted downloaded binaries.
  */
 // c8 ignore start - Requires spawning node binary with experimental SEA config.
-export async function buildSeaBlob(
-  nodeBinary: string,
-  configPath: string,
-): Promise<string> {
+export async function buildSeaBlob(configPath: string): Promise<string> {
   const config = JSON.parse(await fs.readFile(configPath, 'utf8'))
   const blobPath = config.output
 
-  // Generate the blob using the Node binary.
+  // Generate the blob using the current Node.js process.
+  // We use process.execPath (the current Node) instead of the target binary because:
+  // 1. The blob format is platform-independent
+  // 2. Downloaded node-smol binaries may have issues running on the host system
+  // 3. Cross-platform builds wouldn't work (e.g., building Windows binary on macOS)
   const spawnPromise = spawn(
-    nodeBinary,
+    process.execPath,
     ['--experimental-sea-config', configPath],
     { stdio: 'inherit' },
   )
@@ -96,8 +99,8 @@ export async function buildTarget(
   const configPath = await generateSeaConfig(entryPoint, outputPath)
 
   try {
-    // Build SEA blob using the downloaded Node binary.
-    const blobPath = await buildSeaBlob(nodeBinary, configPath)
+    // Build SEA blob using the current Node.js process.
+    const blobPath = await buildSeaBlob(configPath)
 
     // Inject blob into Node binary.
     await injectSeaBlob(nodeBinary, blobPath, outputPath)
@@ -173,17 +176,13 @@ export async function downloadNodeBinary(
   const nodePlatform = platformMap[platform]
   const nodeArch = archMap[arch]
 
-  let downloadUrl: string
-  let assetName: string
-
   // Use socket-btm smol binaries from GitHub releases.
   // Tag format: node-smol-YYYYMMDD-HASH (e.g., node-smol-20251213-7cf90d2)
   // Asset format: node-{PLATFORM}-{ARCH}[.exe]
   // URL pattern: https://github.com/SocketDev/socket-btm/releases/download/node-smol-YYYYMMDD-HASH/node-{PLATFORM}-{ARCH}[.exe]
   const tag = `node-smol-${version}`
   const binaryName = `node-${nodePlatform}-${nodeArch}${isPlatWin ? '.exe' : ''}`
-  assetName = binaryName
-  downloadUrl = `https://github.com/SocketDev/socket-btm/releases/download/${tag}/${binaryName}`
+  const downloadUrl = `https://github.com/SocketDev/socket-btm/releases/download/${tag}/${binaryName}`
   logger.log(`Downloading Node.js smol from socket-btm ${tag}...`)
 
   // Download the binary/archive.
