@@ -121,7 +121,6 @@ async function main() {
     await extractBinary(cachedPath, assetName)
 
     logger.groupEnd()
-    logger.log('')
     logger.success('binject extraction complete')
   } catch (e) {
     logger.groupEnd()

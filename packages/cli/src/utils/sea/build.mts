@@ -176,26 +176,15 @@ export async function downloadNodeBinary(
   let downloadUrl: string
   let assetName: string
 
-  // Determine download source.
-  if (ENV.PREBUILT_NODE_DOWNLOAD_URL === 'socket-btm') {
-    // Use socket-btm smol binaries from GitHub releases (pre-compiled).
-    // Tag format: node-smol-v{VERSION}
-    // Asset format: node-compiled-{PLATFORM}-{ARCH}[.exe]
-    // URL pattern: https://github.com/SocketDev/socket-btm/releases/download/node-smol-v{VERSION}/node-compiled-{PLATFORM}-{ARCH}[.exe]
-    const tag = `node-smol-v${version}`
-    const binaryName = `node-compiled-${nodePlatform}-${nodeArch}${isPlatWin ? '.exe' : ''}`
-    assetName = binaryName
-    downloadUrl = `https://github.com/SocketDev/socket-btm/releases/download/${tag}/${binaryName}`
-    logger.log(`Downloading Node.js smol from socket-btm ${tag}...`)
-  } else {
-    // Use nodejs.org or custom base URL.
-    const tarName = `node-v${version}-${nodePlatform}-${nodeArch}`
-    const extension = isPlatWin ? '.zip' : '.tar.gz'
-    assetName = `${tarName}${extension}`
-    const baseUrl =
-      ENV.PREBUILT_NODE_DOWNLOAD_URL || 'https://nodejs.org/download/release'
-    downloadUrl = `${baseUrl}/v${version}/${assetName}`
-  }
+  // Use socket-btm smol binaries from GitHub releases.
+  // Tag format: node-smol-YYYYMMDD-HASH (e.g., node-smol-20251213-7cf90d2)
+  // Asset format: node-{PLATFORM}-{ARCH}[.exe]
+  // URL pattern: https://github.com/SocketDev/socket-btm/releases/download/node-smol-YYYYMMDD-HASH/node-{PLATFORM}-{ARCH}[.exe]
+  const tag = `node-smol-${version}`
+  const binaryName = `node-${nodePlatform}-${nodeArch}${isPlatWin ? '.exe' : ''}`
+  assetName = binaryName
+  downloadUrl = `https://github.com/SocketDev/socket-btm/releases/download/${tag}/${binaryName}`
+  logger.log(`Downloading Node.js smol from socket-btm ${tag}...`)
 
   // Download the binary/archive.
   const response = await httpRequest(downloadUrl)
@@ -395,10 +384,54 @@ export async function getBuildTargets(): Promise<BuildTargetOptions[]> {
 
 /**
  * Get the default Node.js version for SEA builds.
- * Prefers SOCKET_CLI_SEA_NODE_VERSION env var, falls back to latest Current release.
+ * Returns the socket-btm tag suffix (e.g., "20251213-7cf90d2").
+ * Prefers SOCKET_CLI_SEA_NODE_VERSION env var, falls back to latest socket-btm release.
  */
 export async function getDefaultNodeVersion(): Promise<string> {
-  return ENV.SOCKET_CLI_SEA_NODE_VERSION || (await getLatestCurrentRelease())
+  if (ENV.SOCKET_CLI_SEA_NODE_VERSION) {
+    return ENV.SOCKET_CLI_SEA_NODE_VERSION
+  }
+
+  // Fetch the latest node-smol release tag from socket-btm.
+  return await getLatestSocketBtmNodeRelease()
+}
+
+/**
+ * Fetch the latest node-smol release tag from socket-btm.
+ * Returns the tag suffix (e.g., "20251213-7cf90d2").
+ * @throws {Error} When socket-btm releases cannot be fetched.
+ */
+export async function getLatestSocketBtmNodeRelease(): Promise<string> {
+  try {
+    const response = await httpRequest(
+      'https://api.github.com/repos/SocketDev/socket-btm/releases',
+    )
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch socket-btm releases: ${response.statusText}`,
+      )
+    }
+
+    const releases = JSON.parse(response.body.toString('utf8')) as Array<{
+      tag_name: string
+    }>
+
+    // Find the latest node-smol release.
+    const nodeSmolRelease = releases.find(release =>
+      release.tag_name.startsWith('node-smol-'),
+    )
+
+    if (!nodeSmolRelease) {
+      throw new Error('No node-smol release found in socket-btm')
+    }
+
+    // Extract the tag suffix (e.g., "node-smol-20251213-7cf90d2" -> "20251213-7cf90d2").
+    return nodeSmolRelease.tag_name.replace('node-smol-', '')
+  } catch (e: any) {
+    throw new Error('Failed to fetch latest socket-btm node-smol release', {
+      cause: e,
+    })
+  }
 }
 
 /**
@@ -494,81 +527,12 @@ export async function injectSeaBlob(
     )
   }
 
-  // Copy the Node binary.
-  await fs.copyFile(nodeBinary, outputPath)
-
-  if (process.platform === 'darwin') {
-    // Check for codesign availability on macOS.
-    const codesignPath = await whichReal('codesign', { nothrow: true })
-    const codesignAvailable =
-      codesignPath && !Array.isArray(codesignPath) ? codesignPath : null
-
-    if (!codesignAvailable) {
-      logger.warn(
-        'Warning: codesign not found. The binary may not work correctly on macOS.\n' +
-          'Install Xcode Command Line Tools: xcode-select --install',
-      )
-    } else {
-      // On macOS, remove signature before injection.
-      await spawn(codesignAvailable, ['--remove-signature', outputPath], {
-        stdio: 'inherit',
-      })
-    }
-
-    // Inject with SEA section.
-    // Using binject from socket-btm releases.
-    await spawn(
-      binjectPath,
-      [
-        'inject',
-        '--executable',
-        outputPath,
-        '--resource',
-        blobPath,
-        '--sea',
-        '--overwrite',
-      ],
-      { stdio: 'inherit' },
-    )
-
-    // Re-sign the binary if codesign is available.
-    if (codesignAvailable) {
-      await spawn(codesignAvailable, ['--sign', '-', outputPath], {
-        stdio: 'inherit',
-      })
-    }
-  } else if (process.platform === 'win32') {
-    // Windows injection.
-    // Using binject from socket-btm releases.
-    await spawn(
-      binjectPath,
-      [
-        'inject',
-        '--executable',
-        outputPath,
-        '--resource',
-        blobPath,
-        '--sea',
-        '--overwrite',
-      ],
-      { stdio: 'inherit' },
-    )
-  } else {
-    // Linux injection.
-    // Using binject from socket-btm releases.
-    await spawn(
-      binjectPath,
-      [
-        'inject',
-        '--executable',
-        outputPath,
-        '--resource',
-        blobPath,
-        '--sea',
-        '--overwrite',
-      ],
-      { stdio: 'inherit' },
-    )
-  }
+  // Inject SEA blob into Node binary.
+  // binject handles signature removal, injection, and re-signing automatically.
+  await spawn(
+    binjectPath,
+    ['inject', '--executable', nodeBinary, '--output', outputPath, '--sea', blobPath],
+    { stdio: 'inherit' },
+  )
 }
 // c8 ignore stop

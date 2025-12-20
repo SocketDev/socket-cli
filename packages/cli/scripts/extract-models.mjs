@@ -97,7 +97,6 @@ async function main() {
     await extractModels(cachedPath, tag)
 
     logger.groupEnd()
-    logger.log('')
     logger.success('Models extraction complete')
   } catch (e) {
     logger.groupEnd()
