@@ -350,10 +350,11 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
 
   if (!_pendingSave) {
     _pendingSave = true
-    // Capture the current config state to save.
-    const configToSave = { ...localConfig }
     process.nextTick(() => {
       _pendingSave = false
+      // Capture the config state at write time, not at schedule time.
+      // This ensures all updates in the same tick are included.
+      const configToSave = { ...localConfig }
       const { socketAppDataPath } = constants
       if (socketAppDataPath) {
         mkdirSync(socketAppDataPath, { recursive: true })
@@ -377,17 +378,45 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
           editor.create(configFilePath)
         }
         // Update with the captured config state.
-        editor.update(configToSave)
-        // Get content with formatting symbols stripped.
-        const contentToSave = Object.fromEntries(
-          Object.entries(editor.content).filter(
-            ([key]) => typeof key === 'string',
-          ),
+        // Note: We need to handle deletions explicitly since editor.update() only merges.
+        // First, get all keys from the existing content.
+        const existingKeys = new Set(
+          Object.keys(editor.content).filter(k => typeof k === 'string')
         )
-        const jsonContent = JSON.stringify(contentToSave)
+        const newKeys = new Set(Object.keys(configToSave))
+
+        // Delete keys that are in existing but not in new config.
+        for (const key of existingKeys) {
+          if (!newKeys.has(key)) {
+            delete (editor.content as any)[key]
+          }
+        }
+
+        // Now update with new values.
+        editor.update(configToSave)
+        // Use the editor's internal stringify which preserves formatting.
+        // We need to extract the content without symbols and then stringify
+        // with the formatting metadata.
+        const { getEditableJsonClass: _, ...contentWithoutImport } = editor.content as any
+        const INDENT_SYMBOL = Symbol.for('indent')
+        const NEWLINE_SYMBOL = Symbol.for('newline')
+        const indent = (editor.content as any)[INDENT_SYMBOL] ?? 2
+        const newline = (editor.content as any)[NEWLINE_SYMBOL] ?? '\n'
+
+        // Strip formatting symbols from content.
+        const contentToSave: Record<string, unknown> = {}
+        for (const [key, val] of Object.entries(editor.content)) {
+          if (typeof key === 'string') {
+            contentToSave[key] = val
+          }
+        }
+
+        // Stringify with formatting preserved.
+        const jsonContent = JSON.stringify(contentToSave, undefined, indent)
+          .replace(/\n/g, newline)
         writeFileSync(
           configFilePath,
-          Buffer.from(jsonContent).toString('base64'),
+          Buffer.from(jsonContent + newline).toString('base64'),
         )
       }
     })

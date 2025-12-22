@@ -300,20 +300,20 @@ export class EditableJson<T = Record<string, unknown>> {
    */
   async load(path: string, create?: boolean): Promise<this> {
     this._path = path
-    let parseErr: Error | undefined
     try {
       this._readFileContent = await readFile(this.filename)
+      this.fromJSON(this._readFileContent)
+      this._readFileJson = parseJson(this._readFileContent)
     } catch (err) {
       if (!create) {
         throw err
       }
-      parseErr = err as Error
+      // File doesn't exist and create is true - initialize empty.
+      this._content = {}
+      this._readFileContent = ''
+      this._readFileJson = undefined
+      this._canSave = true
     }
-    if (parseErr) {
-      throw parseErr
-    }
-    this.fromJSON(this._readFileContent)
-    this._readFileJson = parseJson(this._readFileContent)
     return this
   }
 
