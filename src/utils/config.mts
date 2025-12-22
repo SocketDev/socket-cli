@@ -381,7 +381,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
         // Note: We need to handle deletions explicitly since editor.update() only merges.
         // First, get all keys from the existing content.
         const existingKeys = new Set(
-          Object.keys(editor.content).filter(k => typeof k === 'string')
+          Object.keys(editor.content).filter(k => typeof k === 'string'),
         )
         const newKeys = new Set(Object.keys(configToSave))
 
@@ -410,8 +410,11 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
         }
 
         // Stringify with formatting preserved.
-        const jsonContent = JSON.stringify(contentToSave, undefined, indent)
-          .replace(/\n/g, newline)
+        const jsonContent = JSON.stringify(
+          contentToSave,
+          undefined,
+          indent,
+        ).replace(/\n/g, newline)
         writeFileSync(
           configFilePath,
           Buffer.from(jsonContent + newline).toString('base64'),

@@ -1,9 +1,9 @@
 import {
+  promises as fs,
   mkdtempSync,
   readFileSync,
   rmSync,
   writeFileSync,
-  promises as fs,
 } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'

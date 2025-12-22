@@ -61,7 +61,6 @@ function detectNewline(json: string): string {
   return match ? match[0] : '\n'
 }
 
-
 /**
  * Sort object keys alphabetically.
  * Creates a new object with sorted keys (does not mutate input).
@@ -159,12 +158,13 @@ async function retryWrite(
 ): Promise<void> {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
+      // eslint-disable-next-line no-await-in-loop
       await fs.writeFile(filepath, content)
       if (process.platform === 'win32') {
+        // eslint-disable-next-line no-await-in-loop
         await setTimeout(50)
         let accessRetries = 0
         const maxAccessRetries = 5
-        // eslint-disable-next-line no-await-in-loop
         while (accessRetries < maxAccessRetries) {
           try {
             // eslint-disable-next-line no-await-in-loop
@@ -211,6 +211,7 @@ async function readFile(filepath: string): Promise<string> {
   const maxRetries = process.platform === 'win32' ? 5 : 1
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
+      // eslint-disable-next-line no-await-in-loop
       return await fs.readFile(filepath, 'utf8')
     } catch (err) {
       const isLastAttempt = attempt === maxRetries
