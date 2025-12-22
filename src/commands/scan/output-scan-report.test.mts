@@ -1,9 +1,21 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { toJsonReport, toMarkdownReport } from './output-scan-report.mts'
+import {
+  outputScanReport,
+  toJsonReport,
+  toMarkdownReport,
+} from './output-scan-report.mts'
 import { SOCKET_WEBSITE_URL } from '../../constants.mjs'
 
 import type { ScanReport } from './generate-report.mts'
+
+const { mockGenerateReport } = vi.hoisted(() => ({
+  mockGenerateReport: vi.fn(),
+}))
+
+vi.mock('./generate-report.mts', () => ({
+  generateReport: mockGenerateReport,
+}))
 
 describe('output-scan-report', () => {
   describe('toJsonReport', () => {
@@ -133,6 +145,71 @@ describe('output-scan-report', () => {
         | ------ | ---------- | ------- | ------------- | ------------------------------------------- | ----------------- |
         "
       `)
+    })
+  })
+
+  describe('outputScanReport exit code behavior', () => {
+    const originalExitCode = process.exitCode
+
+    beforeEach(() => {
+      process.exitCode = undefined
+      vi.clearAllMocks()
+    })
+
+    afterEach(() => {
+      process.exitCode = originalExitCode
+    })
+
+    it('sets exit code to 1 when report is unhealthy', async () => {
+      mockGenerateReport.mockReturnValue({
+        ok: true,
+        data: getUnhealthyReport(),
+      })
+
+      await outputScanReport(
+        {
+          ok: true,
+          data: { scan: [], securityPolicy: {} },
+        } as any,
+        {
+          orgSlug: 'test-org',
+          scanId: 'test-scan',
+          includeLicensePolicy: false,
+          outputKind: 'json',
+          filepath: '-',
+          fold: 'none',
+          reportLevel: 'error',
+          short: false,
+        },
+      )
+
+      expect(process.exitCode).toBe(1)
+    })
+
+    it('does not set exit code when report is healthy', async () => {
+      mockGenerateReport.mockReturnValue({
+        ok: true,
+        data: getHealthyReport(),
+      })
+
+      await outputScanReport(
+        {
+          ok: true,
+          data: { scan: [], securityPolicy: {} },
+        } as any,
+        {
+          orgSlug: 'test-org',
+          scanId: 'test-scan',
+          includeLicensePolicy: false,
+          outputKind: 'json',
+          filepath: '-',
+          fold: 'none',
+          reportLevel: 'error',
+          short: false,
+        },
+      )
+
+      expect(process.exitCode).toBeUndefined()
     })
   })
 })
