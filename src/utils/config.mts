@@ -395,9 +395,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
         // Now update with new values.
         editor.update(configToSave)
         // Use the editor's internal stringify which preserves formatting.
-        // We need to extract the content without symbols and then stringify
-        // with the formatting metadata.
-        const { getEditableJsonClass: _, ...contentWithoutImport } = editor.content as any
+        // Extract the formatting symbols from the content.
         const INDENT_SYMBOL = Symbol.for('indent')
         const NEWLINE_SYMBOL = Symbol.for('newline')
         const indent = (editor.content as any)[INDENT_SYMBOL] ?? 2

@@ -42,7 +42,7 @@ interface EditableJsonSaveOptions {
  */
 function detectIndent(json: string): string | number {
   const match = json.match(/^[{[][\r\n]+(\s+)/m)
-  if (!match) {
+  if (!match || !match[1]) {
     return 2
   }
   const indent = match[1]
@@ -61,15 +61,6 @@ function detectNewline(json: string): string {
   return match ? match[0] : '\n'
 }
 
-/**
- * Get default formatting for JSON files.
- */
-function getDefaultFormatting(): JsonFormatting {
-  return {
-    indent: 2,
-    newline: '\n',
-  }
-}
 
 /**
  * Sort object keys alphabetically.
@@ -289,8 +280,9 @@ export class EditableJson<T = Record<string, unknown>> {
     const parsed = parseJson(data)
     const indent = detectIndent(data)
     const newline = detectNewline(data)
-    parsed[INDENT_SYMBOL] = indent
-    parsed[NEWLINE_SYMBOL] = newline
+    // Use type assertion to allow symbol indexing.
+    ;(parsed as any)[INDENT_SYMBOL] = indent
+    ;(parsed as any)[NEWLINE_SYMBOL] = newline
     this._content = parsed as Record<string | symbol, unknown>
     return this
   }
