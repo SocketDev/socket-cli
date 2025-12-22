@@ -153,7 +153,7 @@ jobs:
       - name: Restore build-deps cache for smol
         if: inputs.method == 'smol' || inputs.method == 'smol-sea'
         id: smol-deps-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
         with:
           path: |
             packages/bootstrap/dist/
@@ -187,7 +187,7 @@ jobs:
       - name: Restore smol binary cache
         if: inputs.method == 'smol' || inputs.method == 'smol-sea'
         id: smol-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
         with:
           path: packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.os == 'windows' && '.exe' || '' }}
           key: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.smol-cache-key.outputs.hash }}
@@ -233,7 +233,7 @@ jobs:
       - name: Restore build-deps cache
         if: inputs.method == 'sea' || inputs.method == 'smol-sea'
         id: deps-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
         with:
           path: |
             packages/bootstrap/dist/
@@ -266,7 +266,7 @@ jobs:
       - name: Restore SEA binary cache
         if: inputs.method == 'sea' || inputs.method == 'smol-sea'
         id: sea-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
         with:
           path: packages/node-sea-builder/dist/sea/
           key: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.sea-cache-key.outputs.hash }}
