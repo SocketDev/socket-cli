@@ -31,6 +31,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
 import { debugConfig } from './debug.mts'
+import { getEditableJsonClass } from './editable-json.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
@@ -98,17 +99,18 @@ function getConfigValues(): LocalConfig {
     _cachedConfig = {} as LocalConfig
     const { socketAppDataPath } = constants
     if (socketAppDataPath) {
-      const raw = safeReadFileSync(socketAppDataPath)
+      const configFilePath = path.join(socketAppDataPath, 'config.json')
+      const raw = safeReadFileSync(configFilePath)
       if (raw) {
         try {
           Object.assign(
             _cachedConfig,
             JSON.parse(Buffer.from(raw, 'base64').toString()),
           )
-          debugConfig(socketAppDataPath, true)
+          debugConfig(configFilePath, true)
         } catch (e) {
-          logger.warn(`Failed to parse config at ${socketAppDataPath}`)
-          debugConfig(socketAppDataPath, false, e)
+          logger.warn(`Failed to parse config at ${configFilePath}`)
+          debugConfig(configFilePath, false, e)
         }
         // Normalize apiKey to apiToken and persist it.
         // This is a one time migration per user.
@@ -118,7 +120,7 @@ function getConfigValues(): LocalConfig {
           updateConfigValue(CONFIG_KEY_API_TOKEN, token)
         }
       } else {
-        mkdirSync(path.dirname(socketAppDataPath), { recursive: true })
+        mkdirSync(socketAppDataPath, { recursive: true })
       }
     }
   }
@@ -243,6 +245,16 @@ let _cachedConfig: LocalConfig | undefined
 // When using --config or SOCKET_CLI_CONFIG, do not persist the config.
 let _configFromFlag = false
 
+/**
+ * Reset config cache for testing purposes.
+ * This allows tests to start with a fresh config state.
+ * @internal
+ */
+export function resetConfigForTesting(): void {
+  _cachedConfig = undefined
+  _configFromFlag = false
+}
+
 export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   debugFn('notice', 'override: full config (not stored)')
 
@@ -340,11 +352,72 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     _pendingSave = true
     process.nextTick(() => {
       _pendingSave = false
+      // Capture the config state at write time, not at schedule time.
+      // This ensures all updates in the same tick are included.
+      const configToSave = { ...localConfig }
       const { socketAppDataPath } = constants
       if (socketAppDataPath) {
+        mkdirSync(socketAppDataPath, { recursive: true })
+        const configFilePath = path.join(socketAppDataPath, 'config.json')
+        // Read existing file to preserve formatting, then update with new values.
+        const existingRaw = safeReadFileSync(configFilePath)
+        const EditableJson = getEditableJsonClass<LocalConfig>()
+        const editor = new EditableJson()
+        if (existingRaw !== undefined) {
+          const rawString = Buffer.isBuffer(existingRaw)
+            ? existingRaw.toString('utf8')
+            : existingRaw
+          try {
+            const decoded = Buffer.from(rawString, 'base64').toString('utf8')
+            editor.fromJSON(decoded)
+          } catch {
+            // If decoding fails, start fresh.
+          }
+        } else {
+          // Initialize empty editor for new file.
+          editor.create(configFilePath)
+        }
+        // Update with the captured config state.
+        // Note: We need to handle deletions explicitly since editor.update() only merges.
+        // First, get all keys from the existing content.
+        const existingKeys = new Set(
+          Object.keys(editor.content).filter(k => typeof k === 'string'),
+        )
+        const newKeys = new Set(Object.keys(configToSave))
+
+        // Delete keys that are in existing but not in new config.
+        for (const key of existingKeys) {
+          if (!newKeys.has(key)) {
+            delete (editor.content as any)[key]
+          }
+        }
+
+        // Now update with new values.
+        editor.update(configToSave)
+        // Use the editor's internal stringify which preserves formatting.
+        // Extract the formatting symbols from the content.
+        const INDENT_SYMBOL = Symbol.for('indent')
+        const NEWLINE_SYMBOL = Symbol.for('newline')
+        const indent = (editor.content as any)[INDENT_SYMBOL] ?? 2
+        const newline = (editor.content as any)[NEWLINE_SYMBOL] ?? '\n'
+
+        // Strip formatting symbols from content.
+        const contentToSave: Record<string, unknown> = {}
+        for (const [key, val] of Object.entries(editor.content)) {
+          if (typeof key === 'string') {
+            contentToSave[key] = val
+          }
+        }
+
+        // Stringify with formatting preserved.
+        const jsonContent = JSON.stringify(
+          contentToSave,
+          undefined,
+          indent,
+        ).replace(/\n/g, newline)
         writeFileSync(
-          socketAppDataPath,
-          Buffer.from(JSON.stringify(localConfig)).toString('base64'),
+          configFilePath,
+          Buffer.from(jsonContent + newline).toString('base64'),
         )
       }
     })
