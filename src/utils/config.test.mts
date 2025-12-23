@@ -1,8 +1,14 @@
-import { promises as fs, mkdtempSync } from 'node:fs'
+import {
+  promises as fs,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import {
   findSocketYmlSync,
@@ -80,7 +86,7 @@ describe('utils/config', () => {
         expect(result.data).toBe(undefined)
       } finally {
         // Clean up the temporary directory.
-        await fs.rm(tmpDir, { force: true, recursive: true })
+        rmSync(tmpDir, { force: true, recursive: true })
       }
     })
   })
