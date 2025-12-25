@@ -13,7 +13,7 @@ import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { httpRequest } from '@socketsecurity/lib/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { normalizePath } from '@socketsecurity/lib/paths/normalize'
+import { normalizePath, toUnixPath } from '@socketsecurity/lib/paths/normalize'
 import { getSocketHomePath } from '@socketsecurity/lib/paths/socket'
 import { spawn } from '@socketsecurity/lib/spawn'
 
@@ -265,9 +265,16 @@ export async function downloadNodeBinary(
             'Please install tar for your system.',
         )
       }
-      await spawn(tarPath, ['-xzf', archivePath, '-C', tempDir], {
-        stdio: 'ignore',
-      })
+      // Convert Windows paths to Unix format for Git Bash tar compatibility.
+      // Git Bash tar interprets D: as a hostname, so we need /d/path format.
+      const toTarPath = (p: string): string => (WIN32 ? toUnixPath(p) : p)
+      await spawn(
+        tarPath,
+        ['-xzf', toTarPath(archivePath), '-C', toTarPath(tempDir)],
+        {
+          stdio: 'ignore',
+        },
+      )
     }
 
     // Find and move the Node binary.
