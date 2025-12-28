@@ -537,7 +537,15 @@ export async function injectSeaBlob(
   // binject handles signature removal, injection, and re-signing automatically.
   await spawn(
     binjectPath,
-    ['inject', '--executable', nodeBinary, '--output', outputPath, '--sea', blobPath],
+    [
+      'inject',
+      '--executable',
+      nodeBinary,
+      '--output',
+      outputPath,
+      '--sea',
+      blobPath,
+    ],
     { stdio: 'inherit' },
   )
 }

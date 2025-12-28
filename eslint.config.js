@@ -268,7 +268,7 @@ module.exports = [
       // a slightly more comprehensive stack trace upon promise rejection.
       '@typescript-eslint/return-await': ['error', 'always'],
       // Disable the following rules because they don't play well with TypeScript.
-      'n/hashbang': 'off',
+      'n/hashbang': 'error',
       'n/no-extraneous-import': 'off',
       'n/no-missing-import': 'off',
       'no-redeclare': 'off',
