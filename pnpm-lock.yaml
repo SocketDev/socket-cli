@@ -102,6 +102,9 @@ catalogs:
     '@socketsecurity/config':
       specifier: 3.0.1
       version: 3.0.1
+    '@socketsecurity/lib':
+      specifier: 5.1.1
+      version: 5.1.1
     '@socketsecurity/registry':
       specifier: 2.0.2
       version: 2.0.2
@@ -316,7 +319,7 @@ catalogs:
 overrides:
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
-  '@socketsecurity/lib': 5.1.0
+  '@socketsecurity/lib': 5.1.1
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ansi-regex: 6.2.2
   brace-expansion: 2.0.2
@@ -470,8 +473,8 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 5.1.0
-        version: 5.1.0(typescript@5.9.3)
+        specifier: 'catalog:'
+        version: 5.1.1(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.2(typescript@5.9.3)
@@ -704,8 +707,8 @@ importers:
         specifier: workspace:*
         version: link:../cli
       '@socketsecurity/lib':
-        specifier: 5.1.0
-        version: 5.1.0(typescript@5.9.3)
+        specifier: 'catalog:'
+        version: 5.1.1(typescript@5.9.3)
       build-infra:
         specifier: workspace:*
         version: link:../build-infra
@@ -731,8 +734,8 @@ importers:
         specifier: 'catalog:'
         version: 7.28.4
       '@socketsecurity/lib':
-        specifier: 5.1.0
-        version: 5.1.0(typescript@5.9.3)
+        specifier: 'catalog:'
+        version: 5.1.1(typescript@5.9.3)
       magic-string:
         specifier: 'catalog:'
         version: 0.30.19
@@ -785,8 +788,8 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 5.1.0
-        version: 5.1.0(typescript@5.9.3)
+        specifier: 'catalog:'
+        version: 5.1.1(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.2(typescript@5.9.3)
@@ -927,14 +930,39 @@ importers:
   packages/socket:
     devDependencies:
       '@socketsecurity/lib':
-        specifier: 5.1.0
-        version: 5.1.0(typescript@5.9.3)
+        specifier: 'catalog:'
+        version: 5.1.1(typescript@5.9.3)
       build-infra:
         specifier: workspace:*
         version: link:../build-infra
       esbuild:
         specifier: 'catalog:'
         version: 0.25.11
+    optionalDependencies:
+      '@socketbin/cli-alpine-arm64':
+        specifier: 0.0.0-replaced-by-provenance
+        version: 0.0.0-20251103.61247
+      '@socketbin/cli-alpine-x64':
+        specifier: 0.0.0-replaced-by-provenance
+        version: 0.0.0-20251103.61247
+      '@socketbin/cli-darwin-arm64':
+        specifier: 0.0.0-replaced-by-provenance
+        version: 0.0.0-20251103.61247
+      '@socketbin/cli-darwin-x64':
+        specifier: 0.0.0-replaced-by-provenance
+        version: 0.0.0-20251103.61247
+      '@socketbin/cli-linux-arm64':
+        specifier: 0.0.0-replaced-by-provenance
+        version: 0.0.0-20251103.61247
+      '@socketbin/cli-linux-x64':
+        specifier: 0.0.0-replaced-by-provenance
+        version: 0.0.0-20251103.61247
+      '@socketbin/cli-win32-arm64':
+        specifier: 0.0.0-replaced-by-provenance
+        version: 0.0.0-20251103.61247
+      '@socketbin/cli-win32-x64':
+        specifier: 0.0.0-replaced-by-provenance
+        version: 0.0.0-20251103.61247
 
   packages/socketbin-cli-darwin-arm64: {}
 
@@ -2226,6 +2254,54 @@ packages:
     resolution: {integrity: sha512-LtoMMhxAlorcGhmFYI+LhPgbPZCkgP6ra1YL604EeF6U98pLlQ3iWIGMdWSC+vWmPBWBNgmDBAhnAobLROJmwg==}
     engines: {node: '>=18'}
 
+  '@socketbin/cli-alpine-arm64@0.0.0-20251103.61247':
+    resolution: {integrity: sha512-O6TYqctGvs+C3CBAzzqjKf4WNR18YxXqoMaVDRXUyrKas9sFeFFBamMyua+9U426pFF6afB3XZRtayDIg7CkdQ==}
+    cpu: [arm64]
+    os: [linux]
+    hasBin: true
+
+  '@socketbin/cli-alpine-x64@0.0.0-20251103.61247':
+    resolution: {integrity: sha512-huyaQRhWbFnHNLZWaSRr2uOoybe610xtyToEhYK3zKy18meeLJo+i2vxKuX2eXJlzA5Zb2Izt9teWUkZrXMgtQ==}
+    cpu: [x64]
+    os: [linux]
+    hasBin: true
+
+  '@socketbin/cli-darwin-arm64@0.0.0-20251103.61247':
+    resolution: {integrity: sha512-Gvf1dg3/5pp4MfaNHCM2DZDckXQ3KMOZwor2oOrnCOs9+RIGacrrmHA7oWtQSfyKvnn+PcXigZ8jcSCKR1rH/Q==}
+    cpu: [arm64]
+    os: [darwin]
+    hasBin: true
+
+  '@socketbin/cli-darwin-x64@0.0.0-20251103.61247':
+    resolution: {integrity: sha512-2T3V40X8fDP1wjvkaPmgsAcCAXUHagGdTLQMu/jEkuyb4p5xHld7jj/Fl41N5Lq1YN4LJ8IHmTRPbmD+K0fiIQ==}
+    cpu: [x64]
+    os: [darwin]
+    hasBin: true
+
+  '@socketbin/cli-linux-arm64@0.0.0-20251103.61247':
+    resolution: {integrity: sha512-KOMFzDzvYKjk71R2j/ieh/D7mFD1rmwvqObedVLmV66vqvcNHogE3litR3dDr8CcWI70ShFTw9iOt3vQJokYQQ==}
+    cpu: [arm64]
+    os: [linux]
+    hasBin: true
+
+  '@socketbin/cli-linux-x64@0.0.0-20251103.61247':
+    resolution: {integrity: sha512-NmKcXDyqLrGVn/g+XpIhhVneAysGd2rRTB/9thzMByrjSgPLDdsPBPSuV8w6Anyn2SNQ3PknqETlqGI+U4TLQQ==}
+    cpu: [x64]
+    os: [linux]
+    hasBin: true
+
+  '@socketbin/cli-win32-arm64@0.0.0-20251103.61247':
+    resolution: {integrity: sha512-OhkEdzM5+wI0hw/yoDwkME5yUNXOaBJzJbJRB4Qdtd/Irm9EE8J1DMNSsolYxvuTMz4pRD1PM6e2LOQNC3btDQ==}
+    cpu: [arm64]
+    os: [win32]
+    hasBin: true
+
+  '@socketbin/cli-win32-x64@0.0.0-20251103.61247':
+    resolution: {integrity: sha512-z8D6vsDfNhyLumj6z0MCuDhg7pLpjCv4pBMjSW+huYCkEpCGAkAfuQgaCPme5YJ4gfKSJTMZ9oGlKxpiU8u3/Q==}
+    cpu: [x64]
+    os: [win32]
+    hasBin: true
+
   '@socketregistry/es-set-tostringtag@1.0.10':
     resolution: {integrity: sha512-btXmvw1JpA8WtSoXx9mTapo9NAyIDKRRzK84i48d8zc0X09M6ORfobVnHbgwhXf7CFhkRzhYrHG9dqbI9vpELQ==}
     engines: {node: '>=18'}
@@ -2283,8 +2359,8 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/lib@5.1.0':
-    resolution: {integrity: sha512-ov573ezuhJmD6ZUWdBlqusbZW8fMXFGx0sdkERv3hrNf8vw+q0uDjwQKhsZiNAT/gR7zrD2IOZwa67ocoPn6aw==}
+  '@socketsecurity/lib@5.1.1':
+    resolution: {integrity: sha512-q82J+eUGmS5R0huqWyhKG2ptPITSVTHh7nt8Fpo2oMW/vZ/prz8Aa/NnqcVWvBBhg7fCY76espc7HjRGINXkkg==}
     engines: {node: '>=22', pnpm: '>=10.25.0'}
     peerDependencies:
       typescript: '>=5.0.0'
@@ -6782,6 +6858,30 @@ snapshots:
 
   '@sindresorhus/merge-streams@2.3.0': {}
 
+  '@socketbin/cli-alpine-arm64@0.0.0-20251103.61247':
+    optional: true
+
+  '@socketbin/cli-alpine-x64@0.0.0-20251103.61247':
+    optional: true
+
+  '@socketbin/cli-darwin-arm64@0.0.0-20251103.61247':
+    optional: true
+
+  '@socketbin/cli-darwin-x64@0.0.0-20251103.61247':
+    optional: true
+
+  '@socketbin/cli-linux-arm64@0.0.0-20251103.61247':
+    optional: true
+
+  '@socketbin/cli-linux-x64@0.0.0-20251103.61247':
+    optional: true
+
+  '@socketbin/cli-win32-arm64@0.0.0-20251103.61247':
+    optional: true
+
+  '@socketbin/cli-win32-x64@0.0.0-20251103.61247':
+    optional: true
+
   '@socketregistry/es-set-tostringtag@1.0.10': {}
 
   '@socketregistry/hasown@1.0.7': {}
@@ -6817,7 +6917,7 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/lib@5.1.0(typescript@5.9.3)':
+  '@socketsecurity/lib@5.1.1(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 
@@ -6828,7 +6928,7 @@ snapshots:
   '@socketsecurity/sdk@3.2.0(typescript@5.9.3)':
     dependencies:
       '@socketregistry/packageurl-js': 1.3.5
-      '@socketsecurity/lib': 5.1.0(typescript@5.9.3)
+      '@socketsecurity/lib': 5.1.1(typescript@5.9.3)
       form-data: 4.0.5
     transitivePeerDependencies:
       - typescript
