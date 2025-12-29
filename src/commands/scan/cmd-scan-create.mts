@@ -462,6 +462,7 @@ async function run(
     isUsingNonDefaultTimeout ||
     isUsingNonDefaultVersion ||
     reachDisableAnalysisSplitting ||
+    reachLazyMode ||
     reachSkipCache ||
     reachUseOnlyPregeneratedSboms
 
