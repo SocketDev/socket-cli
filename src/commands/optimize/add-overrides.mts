@@ -109,21 +109,13 @@ export async function addOverrides(
 
   const depAliasMap = new Map<string, string>()
   const depEntries = getDependencyEntries(pkgEnvDetails)
-  const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) =>
-    semver.satisfies(
-      // Roughly check Node range as semver.coerce will strip leading
-      // v's, carets (^), comparators (<,<=,>,>=,=), and tildes (~).
-      semver.coerce(data.engines.node)!,
-      pkgEnvDetails.pkgRequirements.node,
-    ),
-  )
 
   const addingText = `Adding overrides to ${workspace}...`
   let loggedAddingText = false
 
   // Chunk package names to process them in parallel 3 at a time.
   await pEach(
-    manifestEntries,
+    manifestNpmOverrides,
     async ({ 1: data }) => {
       const { name: sockRegPkgName, package: origPkgName, version } = data
       const major = getMajor(version)!
