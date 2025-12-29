@@ -2,9 +2,8 @@
  * Shared utilities for fetching GitHub releases.
  */
 
-import { Octokit } from 'octokit'
-
 import { safeMkdir } from '@socketsecurity/lib/fs'
+import { httpDownload, httpRequest } from '@socketsecurity/lib/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { pRetry } from '@socketsecurity/lib/promises'
 
@@ -22,15 +21,23 @@ const REPO = 'socket-btm'
  * @returns {Promise<string|null>} - Latest release tag or null if not found.
  */
 export async function getLatestRelease(tool, { quiet = false } = {}) {
-  const octokit = new Octokit()
-
   return await pRetry(
     async () => {
-      const { data: releases } = await octokit.rest.repos.listReleases({
-        owner: OWNER,
-        per_page: 100,
-        repo: REPO,
-      })
+      const response = await httpRequest(
+        `https://api.github.com/repos/${OWNER}/${REPO}/releases?per_page=100`,
+        {
+          headers: {
+            Accept: 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
+          },
+        },
+      )
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch releases: ${response.status}`)
+      }
+
+      const releases = JSON.parse(response.body)
 
       // Find the first release matching the tool prefix.
       for (const release of releases) {
@@ -82,15 +89,23 @@ export async function getReleaseAssetUrl(
   assetName,
   { quiet = false } = {},
 ) {
-  const octokit = new Octokit()
-
   return await pRetry(
     async () => {
-      const { data: release } = await octokit.rest.repos.getReleaseByTag({
-        owner: OWNER,
-        repo: REPO,
-        tag,
-      })
+      const response = await httpRequest(
+        `https://api.github.com/repos/${OWNER}/${REPO}/releases/tags/${tag}`,
+        {
+          headers: {
+            Accept: 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
+          },
+        },
+      )
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch release ${tag}: ${response.status}`)
+      }
+
+      const release = JSON.parse(response.body)
 
       // Find the matching asset.
       const asset = release.assets.find(a => a.name === assetName)
@@ -120,10 +135,11 @@ export async function getReleaseAssetUrl(
 }
 
 /**
- * Download a release asset directly using Octokit.
+ * Download a specific release asset.
  *
- * Handles GitHub's redirect mechanism automatically via Octokit API.
- * Use this instead of httpDownload + getReleaseAssetUrl to avoid HTTP 302 redirect issues.
+ * Uses browser_download_url to avoid consuming GitHub API quota.
+ * The httpDownload function from @socketsecurity/lib@5.1.3+ automatically
+ * follows HTTP redirects, eliminating the need for Octokit's getReleaseAsset API.
  *
  * @param {string} tag - Release tag name.
  * @param {string} assetName - Asset name to download.
@@ -138,63 +154,24 @@ export async function downloadReleaseAsset(
   outputPath,
   { quiet = false } = {},
 ) {
-  const { promises: fs } = await import('node:fs')
   const path = await import('node:path')
 
-  const octokit = new Octokit()
+  // Get the browser_download_url for the asset (doesn't consume API quota for download)
+  const downloadUrl = await getReleaseAssetUrl(tag, assetName, { quiet })
 
-  await pRetry(
-    async () => {
-      const { data: release } = await octokit.rest.repos.getReleaseByTag({
-        owner: OWNER,
-        repo: REPO,
-        tag,
-      })
+  if (!downloadUrl) {
+    throw new Error(`Asset ${assetName} not found in release ${tag}`)
+  }
 
-      // Find the matching asset.
-      const asset = release.assets.find(a => a.name === assetName)
+  // Create output directory
+  await safeMkdir(path.dirname(outputPath))
 
-      if (!asset) {
-        throw new Error(`Asset ${assetName} not found in release ${tag}`)
-      }
-
-      if (!quiet) {
-        logger.info(`  Found asset: ${assetName}`)
-      }
-
-      // Download asset data via Octokit (handles redirects automatically).
-      const { data } = await octokit.rest.repos.getReleaseAsset({
-        asset_id: asset.id,
-        headers: {
-          accept: 'application/octet-stream',
-        },
-        owner: OWNER,
-        repo: REPO,
-      })
-
-      // Create output directory.
-      await safeMkdir(path.dirname(outputPath))
-
-      // Write to file.
-      // Octokit returns data as ArrayBuffer, convert to Buffer for Node.js.
-      const buffer = Buffer.from(data)
-      await fs.writeFile(outputPath, buffer)
-
-      if (!quiet) {
-        const sizeMB = (buffer.length / 1024 / 1024).toFixed(2)
-        logger.success(`Downloaded ${assetName} (${sizeMB} MB)`)
-      }
-    },
-    {
-      backoffFactor: 1,
-      baseDelayMs: 5000,
-      onRetry: (attempt, error) => {
-        if (!quiet) {
-          logger.info(`  Retry attempt ${attempt + 1}/3 for asset download...`)
-          logger.warn(`  Attempt ${attempt + 1}/3 failed: ${error.message}`)
-        }
-      },
-      retries: 2,
-    },
-  )
+  // Download using httpDownload which supports redirects and retries
+  // This avoids consuming GitHub API quota for the actual download
+  await httpDownload(downloadUrl, outputPath, {
+    logger: quiet ? undefined : logger,
+    progressInterval: 10,
+    retries: 2,
+    retryDelay: 5000,
+  })
 }
