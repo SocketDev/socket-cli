@@ -28,6 +28,7 @@ import {
   writeCache,
 } from '../../utils/git/github.mts'
 import { createPrProvider } from '../../utils/git/provider-factory.mts'
+
 import type { OctokitResponse } from '@octokit/types'
 import type { JsonContent } from '@socketsecurity/lib/fs'
 
@@ -96,7 +97,9 @@ export async function openSocketFixPr(
       return {
         ok: false,
         reason: 'network_error',
-        error: new Error(prDetailsResult.cause || prDetailsResult.message) as RequestError,
+        error: new Error(
+          prDetailsResult.cause || prDetailsResult.message,
+        ) as RequestError,
       }
     }
 

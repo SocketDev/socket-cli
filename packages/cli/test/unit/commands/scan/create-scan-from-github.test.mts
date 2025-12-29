@@ -73,12 +73,15 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 }))
 
 // Mock other dependencies to isolate the functions under test.
-vi.mock('../../../../src/commands/scan/fetch-supported-scan-file-names.mts', () => ({
-  fetchSupportedScanFileNames: vi.fn().mockResolvedValue({
-    ok: true,
-    data: ['package.json', 'package-lock.json', 'yarn.lock'],
+vi.mock(
+  '../../../../src/commands/scan/fetch-supported-scan-file-names.mts',
+  () => ({
+    fetchSupportedScanFileNames: vi.fn().mockResolvedValue({
+      ok: true,
+      data: ['package.json', 'package-lock.json', 'yarn.lock'],
+    }),
   }),
-}))
+)
 
 vi.mock('../../../../src/commands/scan/handle-create-new-scan.mts', () => ({
   handleCreateNewScan: vi.fn().mockResolvedValue({ ok: true, data: undefined }),
@@ -112,16 +115,13 @@ describe('GitHub scan API interactions', () => {
       })
 
       // Call the mock to simulate the behavior.
-      const result = await mockWithGitHubRetry(
-        async () => {
-          const { data } = await mockOctokit.repos.get({
-            owner: 'org',
-            repo: 'test-repo',
-          })
-          return data
-        },
-        'fetching repository details for org/test-repo',
-      )
+      const result = await mockWithGitHubRetry(async () => {
+        const { data } = await mockOctokit.repos.get({
+          owner: 'org',
+          repo: 'test-repo',
+        })
+        return data
+      }, 'fetching repository details for org/test-repo')
 
       expect(result.ok).toBe(true)
       if (result.ok) {
@@ -169,7 +169,8 @@ describe('GitHub scan API interactions', () => {
       })
 
       const result = await mockWithGitHubRetry(
-        async () => mockOctokit.repos.get({ owner: 'org', repo: 'nonexistent' }),
+        async () =>
+          mockOctokit.repos.get({ owner: 'org', repo: 'nonexistent' }),
         'fetching repository details',
       )
 
@@ -193,18 +194,15 @@ describe('GitHub scan API interactions', () => {
         },
       })
 
-      const result = await mockWithGitHubRetry(
-        async () => {
-          const { data } = await mockOctokit.git.getTree({
-            owner: 'org',
-            repo: 'test-repo',
-            tree_sha: 'main',
-            recursive: 'true',
-          })
-          return data
-        },
-        'fetching file tree for branch main in org/test-repo',
-      )
+      const result = await mockWithGitHubRetry(async () => {
+        const { data } = await mockOctokit.git.getTree({
+          owner: 'org',
+          repo: 'test-repo',
+          tree_sha: 'main',
+          recursive: 'true',
+        })
+        return data
+      }, 'fetching file tree for branch main in org/test-repo')
 
       expect(result.ok).toBe(true)
       if (result.ok) {
@@ -243,18 +241,15 @@ describe('GitHub scan API interactions', () => {
         },
       })
 
-      const result = await mockWithGitHubRetry(
-        async () => {
-          const { data } = await mockOctokit.git.getTree({
-            owner: 'org',
-            repo: 'empty-repo',
-            tree_sha: 'main',
-            recursive: 'true',
-          })
-          return data
-        },
-        'fetching file tree',
-      )
+      const result = await mockWithGitHubRetry(async () => {
+        const { data } = await mockOctokit.git.getTree({
+          owner: 'org',
+          repo: 'empty-repo',
+          tree_sha: 'main',
+          recursive: 'true',
+        })
+        return data
+      }, 'fetching file tree')
 
       expect(result.ok).toBe(true)
       if (result.ok) {
@@ -278,18 +273,15 @@ describe('GitHub scan API interactions', () => {
         ],
       })
 
-      const result = await mockWithGitHubRetry(
-        async () => {
-          const { data } = await mockOctokit.repos.listCommits({
-            owner: 'org',
-            repo: 'test-repo',
-            sha: 'main',
-            per_page: 1,
-          })
-          return data
-        },
-        'fetching latest commit SHA for org/test-repo',
-      )
+      const result = await mockWithGitHubRetry(async () => {
+        const { data } = await mockOctokit.repos.listCommits({
+          owner: 'org',
+          repo: 'test-repo',
+          sha: 'main',
+          per_page: 1,
+        })
+        return data
+      }, 'fetching latest commit SHA for org/test-repo')
 
       expect(result.ok).toBe(true)
       if (result.ok) {
@@ -327,18 +319,15 @@ describe('GitHub scan API interactions', () => {
         data: [],
       })
 
-      const result = await mockWithGitHubRetry(
-        async () => {
-          const { data } = await mockOctokit.repos.listCommits({
-            owner: 'org',
-            repo: 'empty-repo',
-            sha: 'main',
-            per_page: 1,
-          })
-          return data
-        },
-        'fetching latest commit',
-      )
+      const result = await mockWithGitHubRetry(async () => {
+        const { data } = await mockOctokit.repos.listCommits({
+          owner: 'org',
+          repo: 'empty-repo',
+          sha: 'main',
+          per_page: 1,
+        })
+        return data
+      }, 'fetching latest commit')
 
       expect(result.ok).toBe(true)
       if (result.ok) {
@@ -354,23 +343,21 @@ describe('GitHub scan API interactions', () => {
         data: {
           type: 'file',
           content: Buffer.from('{"name": "test"}').toString('base64'),
-          download_url: 'https://raw.githubusercontent.com/org/repo/main/package.json',
+          download_url:
+            'https://raw.githubusercontent.com/org/repo/main/package.json',
           size: 16,
         },
       })
 
-      const result = await mockWithGitHubRetry(
-        async () => {
-          const { data } = await mockOctokit.repos.getContent({
-            owner: 'org',
-            repo: 'test-repo',
-            path: 'package.json',
-            ref: 'main',
-          })
-          return data
-        },
-        'fetching file content for package.json in org/test-repo',
-      )
+      const result = await mockWithGitHubRetry(async () => {
+        const { data } = await mockOctokit.repos.getContent({
+          owner: 'org',
+          repo: 'test-repo',
+          path: 'package.json',
+          ref: 'main',
+        })
+        return data
+      }, 'fetching file content for package.json in org/test-repo')
 
       expect(result.ok).toBe(true)
       if (result.ok) {

@@ -396,15 +396,18 @@ export function handleGitHubApiError(
     }
 
     // Standard rate limit errors (403 with rate limit message or 429).
-    if (status === 429 || (status === 403 && e.message.includes('rate limit'))) {
+    if (
+      status === 429 ||
+      (status === 403 && e.message.includes('rate limit'))
+    ) {
       const retryAfter = e.response?.headers?.['retry-after']
       const resetHeader = e.response?.headers?.['x-ratelimit-reset']
       let waitTime: number | undefined
 
       if (retryAfter) {
-        waitTime = parseInt(String(retryAfter), 10)
+        waitTime = Number.parseInt(String(retryAfter), 10)
       } else if (resetHeader) {
-        const resetTimestamp = parseInt(String(resetHeader), 10)
+        const resetTimestamp = Number.parseInt(String(resetHeader), 10)
         waitTime = Math.max(0, resetTimestamp - Math.floor(Date.now() / 1000))
       }
 
@@ -493,7 +496,11 @@ export function handleGitHubApiError(
   // Network errors (ECONNREFUSED, ETIMEDOUT, etc.).
   if (e instanceof Error) {
     const code = (e as NodeJS.ErrnoException).code
-    if (code === 'ECONNREFUSED' || code === 'ETIMEDOUT' || code === 'ENOTFOUND') {
+    if (
+      code === 'ECONNREFUSED' ||
+      code === 'ETIMEDOUT' ||
+      code === 'ENOTFOUND'
+    ) {
       return {
         ok: false,
         message: 'Network error connecting to GitHub',

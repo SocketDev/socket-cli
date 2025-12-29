@@ -18,10 +18,7 @@ import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mjs'
 import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
 import { isReportSupportedFile } from '../../utils/fs/glob.mts'
-import {
-  getOctokit,
-  withGitHubRetry,
-} from '../../utils/git/github.mts'
+import { getOctokit, withGitHubRetry } from '../../utils/git/github.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -388,18 +385,15 @@ async function downloadManifestFile({
 
   const octokit = getOctokit()
 
-  const result = await withGitHubRetry(
-    async () => {
-      const { data } = await octokit.repos.getContent({
-        owner: orgGithub,
-        repo: repoSlug,
-        path: file,
-        ref: defaultBranch,
-      })
-      return data
-    },
-    `fetching file content for ${file} in ${orgGithub}/${repoSlug}`,
-  )
+  const result = await withGitHubRetry(async () => {
+    const { data } = await octokit.repos.getContent({
+      owner: orgGithub,
+      repo: repoSlug,
+      path: file,
+      ref: defaultBranch,
+    })
+    return data
+  }, `fetching file content for ${file} in ${orgGithub}/${repoSlug}`)
 
   if (!result.ok) {
     logger.fail(`Failed to get file content for: ${file}`)
@@ -408,7 +402,9 @@ async function downloadManifestFile({
 
   const fileData = result.data
   debug('complete: request')
-  debugDir({ fileData: { type: (fileData as any).type, size: (fileData as any).size } })
+  debugDir({
+    fileData: { type: (fileData as any).type, size: (fileData as any).size },
+  })
 
   // Check if it's a file (not a directory).
   if (Array.isArray(fileData) || (fileData as any).type !== 'file') {
@@ -545,18 +541,15 @@ async function getLastCommitDetails({
 
   const octokit = getOctokit()
 
-  const result = await withGitHubRetry(
-    async () => {
-      const { data } = await octokit.repos.listCommits({
-        owner: orgGithub,
-        repo: repoSlug,
-        sha: defaultBranch,
-        per_page: 1,
-      })
-      return data
-    },
-    `fetching latest commit SHA for ${orgGithub}/${repoSlug}`,
-  )
+  const result = await withGitHubRetry(async () => {
+    const { data } = await octokit.repos.listCommits({
+      owner: orgGithub,
+      repo: repoSlug,
+      sha: defaultBranch,
+      per_page: 1,
+    })
+    return data
+  }, `fetching latest commit SHA for ${orgGithub}/${repoSlug}`)
 
   if (!result.ok) {
     return result
@@ -646,21 +639,16 @@ async function getRepoDetails({
   repoSlug: string
   githubApiUrl: string
   githubToken: string
-}): Promise<
-  CResult<{ defaultBranch: string; repoDetails: unknown }>
-> {
+}): Promise<CResult<{ defaultBranch: string; repoDetails: unknown }>> {
   const octokit = getOctokit()
 
-  const result = await withGitHubRetry(
-    async () => {
-      const { data } = await octokit.repos.get({
-        owner: orgGithub,
-        repo: repoSlug,
-      })
-      return data
-    },
-    `fetching repository details for ${orgGithub}/${repoSlug}`,
-  )
+  const result = await withGitHubRetry(async () => {
+    const { data } = await octokit.repos.get({
+      owner: orgGithub,
+      repo: repoSlug,
+    })
+    return data
+  }, `fetching repository details for ${orgGithub}/${repoSlug}`)
 
   if (!result.ok) {
     return result
@@ -699,18 +687,15 @@ async function getRepoBranchTree({
 
   const octokit = getOctokit()
 
-  const result = await withGitHubRetry(
-    async () => {
-      const { data } = await octokit.git.getTree({
-        owner: orgGithub,
-        repo: repoSlug,
-        tree_sha: defaultBranch,
-        recursive: 'true',
-      })
-      return data
-    },
-    `fetching file tree for branch ${defaultBranch} in ${orgGithub}/${repoSlug}`,
-  )
+  const result = await withGitHubRetry(async () => {
+    const { data } = await octokit.git.getTree({
+      owner: orgGithub,
+      repo: repoSlug,
+      tree_sha: defaultBranch,
+      recursive: 'true',
+    })
+    return data
+  }, `fetching file tree for branch ${defaultBranch} in ${orgGithub}/${repoSlug}`)
 
   if (!result.ok) {
     // Check if it's an empty repo error (404 with specific message).

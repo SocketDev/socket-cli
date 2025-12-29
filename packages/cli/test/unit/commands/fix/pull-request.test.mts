@@ -65,7 +65,7 @@ vi.mock('../../../../src/utils/git/github.mts', () => ({
     message: 'GitHub API error',
     cause: `Error while ${context}: ${e instanceof Error ? e.message : String(e)}`,
   })),
-  handleGraphqlError: vi.fn((e: unknown, context: string) => ({
+  handleGraphqlError: vi.fn((_e: unknown, context: string) => ({
     ok: false,
     message: 'GitHub GraphQL error',
     cause: `GraphQL error while ${context}`,

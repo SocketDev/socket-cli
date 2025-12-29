@@ -222,7 +222,9 @@ describe('handleGitHubApiError', () => {
 
   describe('network errors', () => {
     it('handles ECONNREFUSED error', () => {
-      const error = new Error('connect ECONNREFUSED 127.0.0.1:443') as NodeJS.ErrnoException
+      const error = new Error(
+        'connect ECONNREFUSED 127.0.0.1:443',
+      ) as NodeJS.ErrnoException
       error.code = 'ECONNREFUSED'
       const result = handleGitHubApiError(error, 'connecting to API')
 
@@ -242,7 +244,9 @@ describe('handleGitHubApiError', () => {
     })
 
     it('handles ENOTFOUND error', () => {
-      const error = new Error('getaddrinfo ENOTFOUND api.github.com') as NodeJS.ErrnoException
+      const error = new Error(
+        'getaddrinfo ENOTFOUND api.github.com',
+      ) as NodeJS.ErrnoException
       error.code = 'ENOTFOUND'
       const result = handleGitHubApiError(error, 'resolving host')
 
@@ -449,7 +453,7 @@ describe('withGitHubRetry', () => {
       .mockRejectedValueOnce(createRequestError(500, 'Error'))
       .mockResolvedValue({ data: 'success' })
 
-    const startTime = Date.now()
+    const _startTime = Date.now()
     const resultPromise = withGitHubRetry(operation, 'backoff test', 4)
 
     // First retry after 1s.

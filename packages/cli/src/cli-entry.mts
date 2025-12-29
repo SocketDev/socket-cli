@@ -31,7 +31,11 @@ import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import lookupRegistryAuthToken from 'registry-auth-token'
 import lookupRegistryUrl from 'registry-url'
 
-import { debug as debugNs, debugDir, debugDirNs } from '@socketsecurity/lib/debug'
+import {
+  debug as debugNs,
+  debugDir,
+  debugDirNs,
+} from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { rootAliases, rootCommands } from './commands.mts'
