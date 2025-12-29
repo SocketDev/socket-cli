@@ -1,5 +1,6 @@
-import constants from '../../constants.mts'
 import { runPatch } from '@socketsecurity/socket-patch/run'
+
+import constants from '../../constants.mts'
 
 import type { CliCommandContext } from '../../utils/meow-with-subcommands.mts'
 
