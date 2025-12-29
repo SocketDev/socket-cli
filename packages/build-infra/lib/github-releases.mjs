@@ -13,6 +13,23 @@ const OWNER = 'SocketDev'
 const REPO = 'socket-btm'
 
 /**
+ * Get GitHub authentication headers if token is available.
+ *
+ * @returns {object} - Headers object with Authorization if token exists.
+ */
+function getAuthHeaders() {
+  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+  return headers
+}
+
+/**
  * Get latest release tag for a tool with retry logic.
  *
  * @param {string} tool - Tool name (e.g., 'lief', 'binpress').
@@ -26,10 +43,7 @@ export async function getLatestRelease(tool, { quiet = false } = {}) {
       const response = await httpRequest(
         `https://api.github.com/repos/${OWNER}/${REPO}/releases?per_page=100`,
         {
-          headers: {
-            Accept: 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28',
-          },
+          headers: getAuthHeaders(),
         },
       )
 
@@ -94,10 +108,7 @@ export async function getReleaseAssetUrl(
       const response = await httpRequest(
         `https://api.github.com/repos/${OWNER}/${REPO}/releases/tags/${tag}`,
         {
-          headers: {
-            Accept: 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28',
-          },
+          headers: getAuthHeaders(),
         },
       )
 
