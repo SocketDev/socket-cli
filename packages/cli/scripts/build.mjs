@@ -202,13 +202,16 @@ async function main() {
         command: 'node',
         args: [...NODE_MEMORY_FLAGS, '.config/esbuild.inject.config.mjs'],
       },
-      // Only compress for production builds (--prod).
+      // Copy CLI to dist for production builds.
       ...(prod
         ? [
             {
-              name: 'Compress CLI',
+              name: 'Copy CLI to dist',
               command: 'node',
-              args: [...NODE_MEMORY_FLAGS, 'scripts/compress-cli.mjs'],
+              args: [
+                '-e',
+                'require("fs").copyFileSync("build/cli.js", "dist/cli.js")',
+              ],
             },
           ]
         : []),

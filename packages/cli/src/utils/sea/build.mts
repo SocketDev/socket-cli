@@ -3,18 +3,16 @@
  * Provides comprehensive tools for building cross-platform SEA binaries.
  */
 
-import { createHash } from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { whichReal } from '@socketsecurity/lib/bin'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { downloadReleaseAsset } from 'build-infra/lib/github-releases'
+
 import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { httpRequest } from '@socketsecurity/lib/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { normalizePath, toUnixPath } from '@socketsecurity/lib/paths/normalize'
-import { getSocketHomePath } from '@socketsecurity/lib/paths/socket'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import ENV from '../../constants/env.mts'
@@ -121,24 +119,22 @@ export async function buildTarget(
 }
 
 /**
+ * Get the root path of the CLI package (packages/cli).
+ */
+function getRootPath(): string {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url))
+  return path.join(__dirname, '../../..')
+}
+
+/**
  * Download Node.js binary for a specific platform.
- * Caches downloads in ~/.socket/node-binaries/.
+ * Caches downloads in build/node-smol/.
  *
- * Defaults to socket-btm smol releases (pre-compiled binaries, no extraction).
- * Configure PREBUILT_NODE_DOWNLOAD_URL to use:
- * - nodejs.org releases: Set to 'https://nodejs.org/download/release' (extracts from archive).
- * - Custom URL: Set to any base URL (e.g., internal mirror).
+ * Uses socket-btm smol releases (pre-compiled binaries).
  *
  * @example
- * // Default: socket-btm (pre-compiled binary)
- * downloadNodeBinary('1.0.0', 'darwin', 'arm64')
- * // Fetches: https://github.com/SocketDev/socket-btm/releases/download/node-smol-v1.0.0/node-compiled-darwin-arm64
- *
- * @example
- * // nodejs.org releases (extracts from archive)
- * process.env.PREBUILT_NODE_DOWNLOAD_URL = 'https://nodejs.org/download/release'
- * downloadNodeBinary('22.0.0', 'linux', 'x64')
- * // Fetches: https://nodejs.org/download/release/v22.0.0/node-v22.0.0-linux-x64.tar.gz
+ * downloadNodeBinary('20251213-7cf90d2', 'darwin', 'arm64')
+ * // Fetches: https://github.com/SocketDev/socket-btm/releases/download/node-smol-20251213-7cf90d2/node-darwin-arm64
  */
 export async function downloadNodeBinary(
   version: string,
@@ -146,7 +142,8 @@ export async function downloadNodeBinary(
   arch: string,
 ): Promise<string> {
   const isPlatWin = platform === 'win32'
-  const nodeDir = normalizePath(path.join(getSocketHomePath(), 'node-binaries'))
+  const rootPath = getRootPath()
+  const nodeDir = normalizePath(path.join(rootPath, 'build/node-smol'))
   const platformArch = `${platform}-${arch}`
   const nodeFilename = platform === 'win32' ? 'node.exe' : 'node'
   const nodePath = normalizePath(
@@ -169,7 +166,7 @@ export async function downloadNodeBinary(
     __proto__: null,
     darwin: 'darwin',
     linux: 'linux',
-    'linux-musl': 'linux-musl',
+    'linux-musl': 'linux',
     win32: 'win',
   } as unknown as Record<string, string | undefined>
 
@@ -178,124 +175,26 @@ export async function downloadNodeBinary(
 
   // Use socket-btm smol binaries from GitHub releases.
   // Tag format: node-smol-YYYYMMDD-HASH (e.g., node-smol-20251213-7cf90d2)
-  // Asset format: node-{PLATFORM}-{ARCH}[.exe]
-  // URL pattern: https://github.com/SocketDev/socket-btm/releases/download/node-smol-YYYYMMDD-HASH/node-{PLATFORM}-{ARCH}[.exe]
+  // Asset format: node-{PLATFORM}-{ARCH}[-musl][.exe]
   const tag = `node-smol-${version}`
-  const binaryName = `node-${nodePlatform}-${nodeArch}${isPlatWin ? '.exe' : ''}`
-  const downloadUrl = `https://github.com/SocketDev/socket-btm/releases/download/${tag}/${binaryName}`
-  logger.log(`Downloading Node.js smol from socket-btm ${tag}...`)
+  const muslSuffix = platform === 'linux-musl' ? '-musl' : ''
+  const binaryName = `node-${nodePlatform}-${nodeArch}${muslSuffix}${isPlatWin ? '.exe' : ''}`
 
-  // Download the binary/archive.
-  const response = await httpRequest(downloadUrl)
-  if (!response.ok) {
-    throw new Error(
-      `Failed to download Node.js from ${downloadUrl}: ${response.statusText}`,
-    )
-  }
+  logger.log(`Downloading Node.js smol from socket-btm ${tag}...`)
 
   // Ensure target directory exists.
   const targetDir = path.dirname(nodePath)
   await safeMkdir(targetDir, { recursive: true })
 
-  // Handle socket-btm pre-compiled binaries (no extraction needed).
-  if (ENV.PREBUILT_NODE_DOWNLOAD_URL === 'socket-btm') {
-    // Write binary directly to final location.
-    await fs.writeFile(nodePath, response.body)
+  // Download using github-releases helper (handles HTTP 302 redirects automatically).
+  await downloadReleaseAsset(tag, binaryName, nodePath)
 
-    // Make executable on Unix.
-    if (!isPlatWin) {
-      await fs.chmod(nodePath, 0o755)
-    }
-
-    return nodePath
+  // Make executable on Unix.
+  if (!isPlatWin) {
+    await fs.chmod(nodePath, 0o755)
   }
 
-  // Handle nodejs.org archives (requires extraction).
-  const extension = isPlatWin ? '.zip' : '.tar.gz'
-  const tarName = `node-v${version}-${nodePlatform}-${nodeArch}`
-
-  // Create temp directory.
-  const tempDir = normalizePath(
-    path.join(
-      nodeDir,
-      'tmp',
-      createHash('sha256').update(downloadUrl).digest('hex'),
-    ),
-  )
-  await safeMkdir(tempDir, { recursive: true })
-
-  try {
-    // Save archive.
-    const archivePath = normalizePath(path.join(tempDir, `node${extension}`))
-    await fs.writeFile(archivePath, response.body)
-
-    // Extract archive.
-    if (isPlatWin) {
-      // For Windows binaries, use unzip if available, otherwise skip.
-      // Note: We're building cross-platform, so we may be on macOS/Linux building for Windows.
-      if (WIN32) {
-        // On Windows, use PowerShell.
-        await spawn(
-          'powershell',
-          [
-            '-Command',
-            `Expand-Archive -Path '${archivePath}' -DestinationPath '${tempDir}'`,
-          ],
-          { stdio: 'ignore' },
-        )
-      } else {
-        // On Unix building for Windows, check for unzip availability.
-        const unzipPath = await whichReal('unzip', { nothrow: true })
-        if (!unzipPath || Array.isArray(unzipPath)) {
-          throw new Error(
-            'unzip is required to extract Windows Node.js binaries on Unix systems.\n' +
-              'Please install unzip: apt-get install unzip (Debian/Ubuntu) or brew install unzip (macOS)',
-          )
-        }
-        await spawn(unzipPath, ['-q', archivePath, '-d', tempDir], {
-          stdio: 'ignore',
-        })
-      }
-    } else {
-      // Check for tar availability on Unix systems.
-      const tarPath = await whichReal('tar', { nothrow: true })
-      if (!tarPath || Array.isArray(tarPath)) {
-        throw new Error(
-          'tar is required to extract Node.js archives.\n' +
-            'Please install tar for your system.',
-        )
-      }
-      // Convert Windows paths to Unix format for Git Bash tar compatibility.
-      // Git Bash tar interprets D: as a hostname, so we need /d/path format.
-      const toTarPath = (p: string): string => (WIN32 ? toUnixPath(p) : p)
-      await spawn(
-        tarPath,
-        ['-xzf', toTarPath(archivePath), '-C', toTarPath(tempDir)],
-        {
-          stdio: 'ignore',
-        },
-      )
-    }
-
-    // Find and move the Node binary.
-    const extractedDir = normalizePath(path.join(tempDir, tarName))
-    const extractedBinary = normalizePath(
-      path.join(extractedDir, platform === 'win32' ? 'node.exe' : 'bin/node'),
-    )
-
-    // Copy binary to final location.
-    await fs.copyFile(extractedBinary, nodePath)
-
-    // Make executable on Unix.
-    if (!isPlatWin) {
-      await fs.chmod(nodePath, 0o755)
-    }
-
-    return nodePath
-  } finally {
-    // Clean up the temp directory.
-    await safeDelete(tempDir).catch(() => {})
-  }
+  return nodePath
 }
 
 /**
@@ -441,56 +340,6 @@ export async function getLatestSocketBtmNodeRelease(): Promise<string> {
 }
 
 /**
- * Fetch the latest stable Node.js "Current" release version.
- * Based on Node.js release schedule: https://nodejs.org/en/about/previous-releases
- * Returns the latest even-numbered major version (e.g., v24, v26, v28).
- * @throws {Error} When Node.js releases cannot be fetched.
- */
-export async function getLatestCurrentRelease(): Promise<string> {
-  try {
-    const response = await httpRequest('https://nodejs.org/dist/index.json')
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch Node.js releases: ${response.statusText}`,
-      )
-    }
-
-    const releases = JSON.parse(response.body.toString('utf8')) as Array<{
-      version: string
-    }>
-
-    // Find the latest Current release (even-numbered major version).
-    // Current releases are even-numbered (e.g., v24.x, v26.x, v28.x).
-    // Filter for v24+ to ensure good SEA support.
-    const latestCurrent = releases
-      .filter(release => {
-        const match = release.version.match(/^v(\d+)\./)
-        if (!match?.[1]) {
-          return false
-        }
-        const major = Number.parseInt(match[1], 10)
-        // Even-numbered and >= 24.
-        return major >= 24 && major % 2 === 0
-      })
-      .sort((a, b) =>
-        b.version.localeCompare(a.version, undefined, { numeric: true }),
-      )[0]
-
-    if (latestCurrent) {
-      // Remove 'v' prefix.
-      return latestCurrent.version.slice(1)
-    }
-
-    // Fallback to hardcoded version if no suitable version found.
-    return '24.8.0'
-  } catch (e: any) {
-    throw new Error('Failed to fetch latest Node.js Current release', {
-      cause: e,
-    })
-  }
-}
-
-/**
  * Get path to binject binary from build directory.
  */
 function getBinjectPath(): string {
@@ -545,6 +394,7 @@ export async function injectSeaBlob(
       outputPath,
       '--sea',
       blobPath,
+      '--vfs-compat',
     ],
     { stdio: 'inherit' },
   )

@@ -37,8 +37,8 @@ This package optionally depends on platform-specific native binaries:
 - `@socketbin/cli-darwin-x64` - macOS Intel
 - `@socketbin/cli-linux-arm64` - Linux ARM64
 - `@socketbin/cli-linux-x64` - Linux x64
-- `@socketbin/cli-alpine-arm64` - Alpine Linux ARM64
-- `@socketbin/cli-alpine-x64` - Alpine Linux x64
+- `@socketbin/cli-linux-arm64-musl` - Linux ARM64 (musl)
+- `@socketbin/cli-linux-x64-musl` - Linux x64 (musl)
 - `@socketbin/cli-win32-arm64` - Windows ARM64
 - `@socketbin/cli-win32-x64` - Windows x64
 

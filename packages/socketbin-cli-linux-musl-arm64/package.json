@@ -1,5 +1,5 @@
 {
-  "name": "@socketbin/cli-linux-musl-arm64",
+  "name": "@socketbin/cli-linux-arm64-musl",
   "version": "0.0.0-replaced-by-prepublish-socketbin",
   "description": "Socket CLI binary (musl libc - for Alpine Linux and musl-based systems)",
   "private": true,

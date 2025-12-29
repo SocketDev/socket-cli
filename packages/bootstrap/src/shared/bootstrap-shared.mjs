@@ -7,12 +7,9 @@ import { existsSync, mkdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
 
-import { gte } from 'semver'
-
 import { whichReal } from '@socketsecurity/lib/bin'
 import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib/constants/socket'
 import { downloadPackage } from '@socketsecurity/lib/dlx/package'
-import { envAsBoolean } from '@socketsecurity/lib/env'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { Spinner, withSpinner } from '@socketsecurity/lib/spinner'
@@ -22,22 +19,6 @@ import { SOCKET_CLI_ISSUES_URL } from '../../../cli/src/constants/socket.mts'
 const logger = getDefaultLogger()
 
 export const SOCKET_DLX_DIR = path.join(homedir(), '.socket', '_dlx')
-
-/**
- * Environment variable to disable node forwarding and use stub instead.
- * Set to '1', 'true', or 'yes' to disable forwarding (useful for e2e testing).
- */
-const SOCKET_CLI_DISABLE_NODE_FORWARDING = envAsBoolean(
-  process.env.SOCKET_CLI_DISABLE_NODE_FORWARDING,
-)
-
-/**
- * Minimum Node.js version with SEA support.
- * This constant is injected at build time by esbuild from .config/node-version.mjs.
- * @type {string}
- */
-// @ts-expect-error - Injected by esbuild define.
-const MIN_NODE_VERSION = __MIN_NODE_VERSION__
 
 /**
  * Socket CLI version.
@@ -71,53 +52,6 @@ export function getCliPaths(cliPackageDir) {
  */
 export function getArgs() {
   return process.argv ? process.argv.slice(2) : []
-}
-
-/**
- * Check if system has modern Node.js (>=24.10.0) with SEA support.
- */
-export function hasModernNode() {
-  try {
-    return gte(process.version, MIN_NODE_VERSION)
-  } catch {
-    return false
-  }
-}
-
-/**
- * Detect if Node.js is available on the system.
- */
-export async function detectSystemNode() {
-  try {
-    const nodePath = await whichReal('node', { nothrow: true })
-    return nodePath || null
-  } catch {
-    return null
-  }
-}
-
-/**
- * Check if we should forward to system Node.js.
- * Returns false if SOCKET_CLI_DISABLE_NODE_FORWARDING is set (for e2e testing).
- */
-export async function shouldForwardToSystemNode() {
-  if (SOCKET_CLI_DISABLE_NODE_FORWARDING) {
-    return false
-  }
-  const nodePath = await detectSystemNode()
-  if (!nodePath) {
-    return false
-  }
-  // Check if system node meets minimum version requirements.
-  try {
-    const result = await spawn(nodePath, ['--version'], {
-      stdio: 'pipe',
-    })
-    const version = result.stdout.trim()
-    return gte(version, MIN_NODE_VERSION)
-  } catch {
-    return false
-  }
 }
 
 /**

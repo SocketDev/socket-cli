@@ -1,3 +1,3 @@
-# @socketbin/cli-alpine-x64
+# @socketbin/cli-linux-x64-musl
 
-Native Socket CLI binary for **Alpine Linux x64 (musl)**.
+Native Socket CLI binary for **Linux x64 (musl)**.

@@ -21,7 +21,6 @@ import { GITHUB_REF_TYPE } from '../env/github-ref-type.mts'
 import { GITHUB_REPOSITORY } from '../env/github-repository.mts'
 import { GITHUB_SERVER_URL } from '../env/github-server-url.mts'
 import { HOME } from '../env/home.mts'
-import { isLegacyBuild } from '../env/is-legacy-build.mts'
 import { isPublishedBuild } from '../env/is-published-build.mts'
 import { isSentryBuild } from '../env/is-sentry-build.mts'
 import { LOCALAPPDATA } from '../env/localappdata.mts'
@@ -143,7 +142,6 @@ export {
   getPythonBuildTag,
   getPythonVersion,
   getSynpVersion,
-  isLegacyBuild,
   isPublishedBuild,
   isSentryBuild,
 }
@@ -214,7 +212,6 @@ const envSnapshot = {
   INLINED_SOCKET_CLI_COANA_VERSION: getCoanaVersion(),
   INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: getCdxgenVersion(),
   INLINED_SOCKET_CLI_HOMEPAGE: getCliHomepage(),
-  INLINED_SOCKET_CLI_LEGACY_BUILD: isLegacyBuild(),
   INLINED_SOCKET_CLI_NAME: getCliName(),
   INLINED_SOCKET_CLI_PUBLISHED_BUILD: isPublishedBuild(),
   INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: getPythonBuildTag(),

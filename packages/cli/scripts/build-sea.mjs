@@ -3,7 +3,7 @@
  * Uses pre-compiled Node.js smol binaries from socket-btm releases.
  *
  * Options:
- *   --platform=<platform> - Build for specific platform (darwin, linux, win32, alpine)
+ *   --platform=<platform> - Build for specific platform (darwin, linux, win32, linux-musl)
  *   --arch=<arch>        - Build for specific architecture (x64, arm64)
  *   --all                - Build for all platforms (default if no options)
  *

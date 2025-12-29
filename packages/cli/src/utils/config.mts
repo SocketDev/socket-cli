@@ -51,10 +51,6 @@ const logger = getDefaultLogger()
 
 export interface LocalConfig {
   apiBaseUrl?: string | null | undefined
-  // @deprecated ; use apiToken. when loading a config, if this prop exists it
-  //               is deleted and set to apiToken instead, and then persisted.
-  //               should only happen once for legacy users.
-  apiKey?: string | null | undefined
   apiProxy?: string | null | undefined
   apiToken?: string | null | undefined
   defaultOrg?: string | undefined
@@ -113,13 +109,6 @@ function getConfigValues(): LocalConfig {
           logger.warn(`Failed to parse config at ${configFilePath}`)
           debugConfig(configFilePath, false, e)
         }
-        // Normalize apiKey to apiToken and persist it.
-        // This is a one time migration per user.
-        if (_cachedConfig.apiKey) {
-          const token = _cachedConfig.apiKey
-          delete _cachedConfig.apiKey
-          updateConfigValue(CONFIG_KEY_API_TOKEN, token)
-        }
       } else {
         safeMkdirSync(socketAppDataPath, { recursive: true })
       }
@@ -131,15 +120,8 @@ function getConfigValues(): LocalConfig {
 function normalizeConfigKey(
   key: keyof LocalConfig,
 ): CResult<keyof LocalConfig> {
-  // Note: apiKey was the old name of the token. When we load a config with
-  //       property apiKey, we'll copy that to apiToken and delete the old property.
-  // We added `org` as a convenience alias for `defaultOrg`
-  const normalizedKey =
-    key === 'apiKey'
-      ? CONFIG_KEY_API_TOKEN
-      : key === CONFIG_KEY_ORG
-        ? CONFIG_KEY_DEFAULT_ORG
-        : key
+  // Note: `org` is a convenience alias for `defaultOrg`
+  const normalizedKey = key === CONFIG_KEY_ORG ? CONFIG_KEY_DEFAULT_ORG : key
   if (!isSupportedConfigKey(normalizedKey)) {
     return {
       ok: false,
@@ -288,17 +270,6 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
 
   _cachedConfig = config as LocalConfig
   _configFromFlag = true
-
-  // Normalize apiKey to apiToken.
-  if (_cachedConfig.apiKey) {
-    if (_cachedConfig.apiToken) {
-      logger.warn(
-        'Note: The config override had both apiToken and apiKey. Using the apiToken value. Remove the apiKey to get rid of this message.',
-      )
-    }
-    _cachedConfig.apiToken = _cachedConfig.apiKey
-    delete _cachedConfig.apiKey
-  }
 
   return { ok: true, data: undefined }
 }

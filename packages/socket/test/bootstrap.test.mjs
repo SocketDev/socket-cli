@@ -48,8 +48,8 @@ describe('socket package', () => {
       )
 
       const expectedPlatforms = [
-        '@socketbin/cli-alpine-arm64',
-        '@socketbin/cli-alpine-x64',
+        '@socketbin/cli-linux-arm64-musl',
+        '@socketbin/cli-linux-x64-musl',
         '@socketbin/cli-darwin-arm64',
         '@socketbin/cli-darwin-x64',
         '@socketbin/cli-linux-arm64',

@@ -12,7 +12,6 @@ import semver from 'semver'
 
 
 import socketPackageJson from '../../socket/package.json' with { type: 'json' }
-import nodeVersionConfig from '../node-version.json' with { type: 'json' }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.resolve(__dirname, '..')
@@ -23,7 +22,6 @@ const config = {
   },
   bundle: true,
   define: {
-    __MIN_NODE_VERSION__: JSON.stringify(nodeVersionConfig.versionSemver),
     __SOCKET_CLI_VERSION__: JSON.stringify(socketPackageJson.version),
     __SOCKET_CLI_VERSION_MAJOR__: JSON.stringify(
       semver.major(socketPackageJson.version),
