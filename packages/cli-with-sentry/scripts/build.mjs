@@ -16,12 +16,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 const repoRoot = path.join(__dirname, '../../..')
 
+const logger = getDefaultLogger()
+
 async function main() {
   try {
     const cliPath = path.join(rootPath, '..', 'cli')
 
     // Build CLI bundle.
-    const logger = getDefaultLogger()
     logger.info('Building CLI bundle...')
     let result = await spawn('node', ['.config/esbuild.cli-sentry.build.mjs'], {
       shell: WIN32,

@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@sentry/node": "catalog:",
+    "build-infra": "workspace:*",
     "esbuild": "catalog:"
   },
   "engines": {

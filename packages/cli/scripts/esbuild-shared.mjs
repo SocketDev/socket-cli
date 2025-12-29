@@ -13,6 +13,40 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 
 /**
+ * Create a standard index loader config.
+ * @param {Object} options - Configuration options
+ * @param {string} options.entryPoint - Path to entry point file
+ * @param {string} options.outfile - Path to output file
+ * @param {boolean} [options.minify=false] - Whether to minify output
+ * @returns {Object} esbuild configuration object
+ */
+export function createIndexConfig({ entryPoint, minify = false, outfile }) {
+  const config = {
+    banner: {
+      js: '#!/usr/bin/env node',
+    },
+    bundle: true,
+    entryPoints: [entryPoint],
+    external: [],
+    format: 'cjs',
+    outfile,
+    platform: 'node',
+    target: 'node18',
+    treeShaking: true,
+  }
+
+  if (minify) {
+    config.minify = true
+  } else {
+    config.minifyWhitespace = true
+    config.minifyIdentifiers = true
+    config.minifySyntax = false
+  }
+
+  return config
+}
+
+/**
  * Helper to create both dot and bracket notation define keys.
  * This ensures esbuild can replace both forms of process.env access.
  */
@@ -110,7 +144,6 @@ export function getInlinedEnvVars() {
   // Build-time constants that can be overridden by environment variables.
   const publishedBuild =
     process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'] === '1'
-  const legacyBuild = process.env['INLINED_SOCKET_CLI_LEGACY_BUILD'] === '1'
   const sentryBuild = process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'] === '1'
 
   // Compute version hash (matches Rollup implementation).
@@ -134,7 +167,6 @@ export function getInlinedEnvVars() {
     INLINED_SOCKET_CLI_PUBLISHED_BUILD: JSON.stringify(
       publishedBuild ? '1' : '',
     ),
-    INLINED_SOCKET_CLI_LEGACY_BUILD: JSON.stringify(legacyBuild ? '1' : ''),
     INLINED_SOCKET_CLI_SENTRY_BUILD: JSON.stringify(sentryBuild ? '1' : ''),
     INLINED_SOCKET_CLI_PYTHON_VERSION: JSON.stringify(pythonVersion),
     INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: JSON.stringify(pythonBuildTag),
