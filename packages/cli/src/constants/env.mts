@@ -51,6 +51,7 @@ import { SOCKET_CLI_GIT_USER_EMAIL } from '../env/socket-cli-git-user-email.mts'
 import { SOCKET_CLI_GIT_USER_NAME } from '../env/socket-cli-git-user-name.mts'
 import { SOCKET_CLI_GITHUB_TOKEN } from '../env/socket-cli-github-token.mts'
 import { SOCKET_CLI_JS_PATH } from '../env/socket-cli-js-path.mts'
+import { SOCKET_CLI_LOCAL_NODE_SMOL } from '../env/socket-cli-local-node-smol.mts'
 import { SOCKET_CLI_LOCAL_PATH } from '../env/socket-cli-local-path.mts'
 import { SOCKET_CLI_MODE } from '../env/socket-cli-mode.mts'
 import { SOCKET_CLI_MODELS_PATH } from '../env/socket-cli-models-path.mts'
@@ -109,6 +110,7 @@ export {
   SOCKET_CLI_GIT_USER_NAME,
   SOCKET_CLI_GITHUB_TOKEN,
   SOCKET_CLI_JS_PATH,
+  SOCKET_CLI_LOCAL_NODE_SMOL,
   SOCKET_CLI_LOCAL_PATH,
   SOCKET_CLI_MODE,
   SOCKET_CLI_MODELS_PATH,
@@ -188,6 +190,7 @@ const envSnapshot = {
   SOCKET_CLI_GIT_USER_NAME,
   SOCKET_CLI_GITHUB_TOKEN,
   SOCKET_CLI_JS_PATH,
+  SOCKET_CLI_LOCAL_NODE_SMOL,
   SOCKET_CLI_LOCAL_PATH,
   SOCKET_CLI_MODE,
   SOCKET_CLI_MODELS_PATH,

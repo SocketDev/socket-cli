@@ -80,7 +80,7 @@ export async function buildTarget(
   } as SeaBuildOptions
 
   // Ensure output directory exists.
-  await safeMkdir(outputDir, { recursive: true })
+  await safeMkdir(outputDir)
 
   // Download Node.js binary for target platform.
   const nodeBinary = await downloadNodeBinary(
@@ -91,7 +91,7 @@ export async function buildTarget(
 
   // Generate output path.
   const outputPath = normalizePath(path.join(outputDir, target.outputName))
-  await safeMkdir(outputDir, { recursive: true })
+  await safeMkdir(outputDir)
 
   // Generate SEA configuration.
   const configPath = await generateSeaConfig(entryPoint, outputPath)
@@ -131,6 +131,7 @@ function getRootPath(): string {
  * Caches downloads in build/node-smol/.
  *
  * Uses socket-btm smol releases (pre-compiled binaries).
+ * Supports SOCKET_CLI_LOCAL_NODE_SMOL for local development.
  *
  * @example
  * downloadNodeBinary('20251213-7cf90d2', 'darwin', 'arm64')
@@ -144,34 +145,58 @@ export async function downloadNodeBinary(
   const isPlatWin = platform === 'win32'
   const rootPath = getRootPath()
   const nodeDir = normalizePath(path.join(rootPath, 'build/node-smol'))
-  const platformArch = `${platform}-${arch}`
-  const nodeFilename = platform === 'win32' ? 'node.exe' : 'node'
-  const nodePath = normalizePath(
-    path.join(nodeDir, `v${version}`, platformArch, nodeFilename),
-  )
+  const nodeFilename = isPlatWin ? 'node.exe' : 'node'
+  const nodePath = normalizePath(path.join(nodeDir, nodeFilename))
+  const versionPath = normalizePath(path.join(nodeDir, '.version'))
 
-  // Check if already downloaded.
-  if (existsSync(nodePath)) {
+  // Check if we have a local node-smol override.
+  const localNodeSmol = ENV.SOCKET_CLI_LOCAL_NODE_SMOL
+  if (localNodeSmol && existsSync(localNodeSmol)) {
+    logger.log(`Using local node-smol from: ${localNodeSmol}`)
+    return localNodeSmol
+  }
+
+  if (localNodeSmol && !existsSync(localNodeSmol)) {
+    logger.warn(
+      `⚠️ SOCKET_CLI_LOCAL_NODE_SMOL is set but file not found: ${localNodeSmol}`,
+    )
+    logger.warn('⚠️ Falling back to downloaded node-smol from GitHub releases')
+  }
+
+  // Check if cached version matches requested version.
+  const cachedVersion = existsSync(versionPath)
+    ? (await fs.readFile(versionPath, 'utf8')).trim()
+    : null
+
+  if (cachedVersion === version && existsSync(nodePath)) {
     return nodePath
   }
 
-  // Arch and platform mappings.
-  const archMap = {
-    __proto__: null,
-    arm64: 'arm64',
-    ia32: 'x86',
-    x64: 'x64',
-  } as unknown as Record<string, string | undefined>
-  const platformMap = {
-    __proto__: null,
-    darwin: 'darwin',
-    linux: 'linux',
-    'linux-musl': 'linux',
-    win32: 'win',
-  } as unknown as Record<string, string | undefined>
+  // Clear stale cache.
+  if (existsSync(nodeDir)) {
+    logger.log('Clearing stale node-smol cache...')
+    await safeDelete(nodeDir)
+  }
 
-  const nodePlatform = platformMap[platform]
-  const nodeArch = archMap[arch]
+  // Arch and platform mappings.
+  const archMap = new Map([
+    ['arm64', 'arm64'],
+    ['ia32', 'x86'],
+    ['x64', 'x64'],
+  ])
+  const platformMap = new Map([
+    ['darwin', 'darwin'],
+    ['linux', 'linux'],
+    ['linux-musl', 'linux'],
+    ['win32', 'win'],
+  ])
+
+  const nodePlatform = platformMap.get(platform)
+  const nodeArch = archMap.get(arch)
+
+  if (!nodePlatform || !nodeArch) {
+    throw new Error(`Unsupported platform/arch: ${platform}/${arch}`)
+  }
 
   // Use socket-btm smol binaries from GitHub releases.
   // Tag format: node-smol-YYYYMMDD-HASH (e.g., node-smol-20251213-7cf90d2)
@@ -183,11 +208,13 @@ export async function downloadNodeBinary(
   logger.log(`Downloading Node.js smol from socket-btm ${tag}...`)
 
   // Ensure target directory exists.
-  const targetDir = path.dirname(nodePath)
-  await safeMkdir(targetDir, { recursive: true })
+  await safeMkdir(nodeDir)
 
   // Download using github-releases helper (handles HTTP 302 redirects automatically).
   await downloadReleaseAsset(tag, binaryName, nodePath)
+
+  // Write version file.
+  await fs.writeFile(versionPath, version, 'utf8')
 
   // Make executable on Unix.
   if (!isPlatWin) {
@@ -340,27 +367,118 @@ export async function getLatestSocketBtmNodeRelease(): Promise<string> {
 }
 
 /**
- * Get path to binject binary from build directory.
+ * Download binject binary for the current platform.
+ * Caches downloads in build/binject/.
+ *
+ * @example
+ * downloadBinject('1.0.0')
+ * // Fetches: https://github.com/SocketDev/socket-btm/releases/download/binject-1.0.0/binject-darwin-arm64
  */
-function getBinjectPath(): string {
+export async function downloadBinject(version: string): Promise<string> {
   const platform = process.platform
   const arch = process.arch
+  const isPlatWin = platform === 'win32'
+  const rootPath = getRootPath()
+  const binjectDir = normalizePath(path.join(rootPath, 'build/binject'))
+  const binjectFilename = isPlatWin ? 'binject.exe' : 'binject'
+  const binjectPath = normalizePath(path.join(binjectDir, binjectFilename))
+  const versionPath = normalizePath(path.join(binjectDir, '.version'))
 
-  let binaryName: string
-  if (platform === 'darwin') {
-    binaryName = `binject-darwin-${arch}`
-  } else if (platform === 'linux') {
-    binaryName = `binject-linux-musl-${arch}`
-  } else if (platform === 'win32') {
-    binaryName = `binject-win-${arch}.exe`
-  } else {
-    throw new Error(`Unsupported platform: ${platform}`)
+  // Check if cached version matches requested version.
+  const cachedVersion = existsSync(versionPath)
+    ? (await fs.readFile(versionPath, 'utf8')).trim()
+    : null
+
+  if (cachedVersion === version && existsSync(binjectPath)) {
+    return binjectPath
   }
 
-  // Compute package root path (src/utils/sea -> packages/cli).
-  const __dirname = path.dirname(fileURLToPath(import.meta.url))
-  const rootPath = path.join(__dirname, '../../..')
-  return path.join(rootPath, 'build/binject', binaryName)
+  // Clear stale cache.
+  if (existsSync(binjectDir)) {
+    logger.log('Clearing stale binject cache...')
+    await safeDelete(binjectDir)
+  }
+
+  // Platform mappings for binject naming.
+  const archMap = new Map([
+    ['arm64', 'arm64'],
+    ['ia32', 'x86'],
+    ['x64', 'x64'],
+  ])
+  const platformMap = new Map([
+    ['darwin', 'darwin'],
+    ['linux', 'linux-musl'],
+    ['win32', 'win'],
+  ])
+
+  const binjectPlatform = platformMap.get(platform)
+  const binjectArch = archMap.get(arch)
+
+  if (!binjectPlatform || !binjectArch) {
+    throw new Error(`Unsupported platform/arch: ${platform}/${arch}`)
+  }
+
+  // Use socket-btm binject binaries from GitHub releases.
+  // Tag format: binject-VERSION (e.g., binject-1.0.0)
+  // Asset format: binject-{PLATFORM}-{ARCH}[.exe]
+  const tag = `binject-${version}`
+  const binaryName = `binject-${binjectPlatform}-${binjectArch}${isPlatWin ? '.exe' : ''}`
+
+  logger.log(`Downloading binject from socket-btm ${tag}...`)
+
+  // Ensure target directory exists.
+  await safeMkdir(binjectDir)
+
+  // Download using github-releases helper (handles HTTP 302 redirects automatically).
+  await downloadReleaseAsset(tag, binaryName, binjectPath)
+
+  // Write version file.
+  await fs.writeFile(versionPath, version, 'utf8')
+
+  // Make executable on Unix.
+  if (!isPlatWin) {
+    await fs.chmod(binjectPath, 0o755)
+  }
+
+  return binjectPath
+}
+
+/**
+ * Get the latest binject release version from socket-btm.
+ * Returns the version string (e.g., "1.0.0").
+ * @throws {Error} When socket-btm releases cannot be fetched.
+ */
+export async function getLatestBinjectVersion(): Promise<string> {
+  try {
+    const response = await httpRequest(
+      'https://api.github.com/repos/SocketDev/socket-btm/releases',
+    )
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch socket-btm releases: ${response.statusText}`,
+      )
+    }
+
+    const releases = JSON.parse(response.body.toString('utf8')) as Array<{
+      tag_name: string
+    }>
+
+    // Find the latest binject release.
+    const binjectRelease = releases.find(release =>
+      release.tag_name.startsWith('binject-'),
+    )
+
+    if (!binjectRelease) {
+      throw new Error('No binject release found in socket-btm')
+    }
+
+    // Extract the version (e.g., "binject-1.0.0" -> "1.0.0").
+    return binjectRelease.tag_name.replace('binject-', '')
+  } catch (e: any) {
+    throw new Error('Failed to fetch latest socket-btm binject release', {
+      cause: e,
+    })
+  }
 }
 
 /**
@@ -371,16 +489,17 @@ export async function injectSeaBlob(
   blobPath: string,
   outputPath: string,
 ): Promise<void> {
-  // Get binject binary path.
-  const binjectPath = getBinjectPath()
-
-  // Check if binject is available.
-  if (!existsSync(binjectPath)) {
-    throw new Error(
-      `binject binary not found at ${binjectPath}\n` +
-        'Please run the build script first to download binject from socket-btm releases.',
-    )
+  // Get or download binject binary.
+  let binjectVersion: string
+  try {
+    binjectVersion = await getLatestBinjectVersion()
+  } catch (e) {
+    logger.warn('⚠️ Failed to fetch latest binject version from GitHub')
+    logger.warn('⚠️ Falling back to cached binject if available')
+    throw e
   }
+
+  const binjectPath = await downloadBinject(binjectVersion)
 
   // Inject SEA blob into Node binary.
   // binject handles signature removal, injection, and re-signing automatically.
