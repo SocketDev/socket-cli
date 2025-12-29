@@ -208,6 +208,7 @@ export async function globWithGitIgnore(
   const gitIgnoreStream = fastGlob.globStream(['**/.gitignore'], {
     absolute: true,
     cwd,
+    dot: true,
     ignore: DEFAULT_IGNORE_FOR_GIT_IGNORE,
   })
   for await (const ignorePatterns of transform(
@@ -274,6 +275,7 @@ export async function globWorkspace(
     ? await fastGlob.glob(workspaceGlobs, {
         absolute: true,
         cwd,
+        dot: true,
         ignore: defaultIgnore,
       })
     : []
