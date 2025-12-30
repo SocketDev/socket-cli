@@ -143,8 +143,14 @@ async function main() {
     }
     const target = result.reason?.target || {}
     const targetName = `${target.platform || 'unknown'}-${target.arch || 'unknown'}`
-    logger.fail(`${targetName} failed: ${result.reason?.message || result.reason}`)
-    return { error: result.reason?.message || String(result.reason), success: false, target }
+    logger.fail(
+      `${targetName} failed: ${result.reason?.message || result.reason}`,
+    )
+    return {
+      error: result.reason?.message || String(result.reason),
+      success: false,
+      target,
+    }
   })
 
   logger.log('')

@@ -145,7 +145,9 @@ export async function downloadNodeBinary(
   const isPlatWin = platform === 'win32'
   const rootPath = getRootPath()
   const platformArch = `${platform}-${arch}`
-  const nodeDir = normalizePath(path.join(rootPath, `build/node-smol/${platformArch}`))
+  const nodeDir = normalizePath(
+    path.join(rootPath, `build/node-smol/${platformArch}`),
+  )
   const nodeFilename = isPlatWin ? 'node.exe' : 'node'
   const nodePath = normalizePath(path.join(nodeDir, nodeFilename))
   const versionPath = normalizePath(path.join(nodeDir, '.version'))
