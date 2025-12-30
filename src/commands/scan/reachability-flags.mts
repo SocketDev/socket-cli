@@ -55,6 +55,12 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.',
   },
+  reachLazyMode: {
+    type: 'boolean',
+    default: false,
+    description: 'Enable lazy mode for reachability analysis.',
+    hidden: true,
+  },
   reachSkipCache: {
     type: 'boolean',
     default: false,

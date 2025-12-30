@@ -243,6 +243,7 @@ async function run(
     reachDebug,
     reachDisableAnalysisSplitting,
     reachDisableAnalytics,
+    reachLazyMode,
     reachSkipCache,
     reachUseOnlyPregeneratedSboms,
     reachVersion,
@@ -273,6 +274,7 @@ async function run(
     reachDebug: boolean
     reachDisableAnalysisSplitting: boolean
     reachDisableAnalytics: boolean
+    reachLazyMode: boolean
     reachSkipCache: boolean
     reachUseOnlyPregeneratedSboms: boolean
     reachVersion: string | undefined
@@ -460,6 +462,7 @@ async function run(
     isUsingNonDefaultTimeout ||
     isUsingNonDefaultVersion ||
     reachDisableAnalysisSplitting ||
+    reachLazyMode ||
     reachSkipCache ||
     reachUseOnlyPregeneratedSboms
 
@@ -575,6 +578,7 @@ async function run(
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
       reachEcosystems,
       reachExcludePaths,
+      reachLazyMode: Boolean(reachLazyMode),
       reachSkipCache: Boolean(reachSkipCache),
       reachUseOnlyPregeneratedSboms: Boolean(reachUseOnlyPregeneratedSboms),
       reachVersion,
