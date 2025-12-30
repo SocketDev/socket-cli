@@ -163,6 +163,7 @@
     "overrides": {
       "@octokit/graphql": "catalog:",
       "@octokit/request-error": "catalog:",
+      "@sigstore/sign": "4.1.0",
       "@socketsecurity/lib": "catalog:",
       "aggregate-error": "catalog:",
       "ansi-regex": "catalog:",
@@ -207,10 +208,11 @@
     },
     "patchedDependencies": {
       "@npmcli/run-script@9.1.0": "patches/@npmcli__run-script@9.1.0.patch",
+      "@npmcli/run-script@10.0.3": "patches/@npmcli__run-script@10.0.3.patch",
+      "@sigstore/sign@4.1.0": "patches/@sigstore__sign@4.1.0.patch",
       "ink@6.3.1": "patches/ink@6.3.1.patch",
       "node-gyp@11.5.0": "patches/node-gyp@11.5.0.patch",
-      "node-gyp@12.1.0": "patches/node-gyp@12.1.0.patch",
-      "@npmcli/run-script@10.0.3": "patches/@npmcli__run-script@10.0.3.patch"
+      "node-gyp@12.1.0": "patches/node-gyp@12.1.0.patch"
     }
   },
   "lint-staged": {
