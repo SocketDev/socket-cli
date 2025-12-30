@@ -164,21 +164,6 @@ export async function downloadNodeBinary(
     logger.warn('⚠️ Falling back to downloaded node-smol from GitHub releases')
   }
 
-  // Check if cached version matches requested version.
-  const cachedVersion = existsSync(versionPath)
-    ? (await fs.readFile(versionPath, 'utf8')).trim()
-    : null
-
-  if (cachedVersion === version && existsSync(nodePath)) {
-    return nodePath
-  }
-
-  // Clear stale cache.
-  if (existsSync(nodeDir)) {
-    logger.log('Clearing stale node-smol cache...')
-    await safeDelete(nodeDir)
-  }
-
   // Arch and platform mappings.
   const archMap = new Map([
     ['arm64', 'arm64'],
@@ -203,6 +188,21 @@ export async function downloadNodeBinary(
   // Tag format: node-smol-YYYYMMDD-HASH (e.g., node-smol-20251213-7cf90d2)
   // Asset format: node-{PLATFORM}-{ARCH}[-musl][.exe]
   const tag = `node-smol-${version}`
+
+  // Check if cached version matches requested version.
+  const cachedVersion = existsSync(versionPath)
+    ? (await fs.readFile(versionPath, 'utf8')).trim()
+    : null
+
+  if (cachedVersion === tag && existsSync(nodePath)) {
+    return nodePath
+  }
+
+  // Clear stale cache.
+  if (existsSync(nodeDir)) {
+    logger.log('Clearing stale node-smol cache...')
+    await safeDelete(nodeDir)
+  }
   const muslSuffix = platform === 'linux-musl' ? '-musl' : ''
   const binaryName = `node-${nodePlatform}-${nodeArch}${muslSuffix}${isPlatWin ? '.exe' : ''}`
 
@@ -214,8 +214,8 @@ export async function downloadNodeBinary(
   // Download using github-releases helper (handles HTTP 302 redirects automatically).
   await downloadReleaseAsset(tag, binaryName, nodePath)
 
-  // Write version file.
-  await fs.writeFile(versionPath, version, 'utf8')
+  // Write version file (store full tag for consistency).
+  await fs.writeFile(versionPath, tag, 'utf8')
 
   // Make executable on Unix.
   if (!isPlatWin) {
