@@ -88,7 +88,7 @@ async function main() {
   // Verify CLI bundle exists.
   const entryPoint = path.join(rootPath, 'build/cli.js')
   if (!existsSync(entryPoint)) {
-    logger.error('CLI bundle not found: build/cli.js')
+    logger.fail('CLI bundle not found: build/cli.js')
     logger.log('')
     logger.log('Run build first:')
     logger.log('  pnpm --filter @socketsecurity/cli run build')
@@ -106,7 +106,7 @@ async function main() {
   const targets = filterTargets(allTargets, options)
 
   if (targets.length === 0) {
-    logger.error('No targets match the specified criteria')
+    logger.fail('No targets match the specified criteria')
     logger.log('')
     process.exit(1)
   }
@@ -122,25 +122,32 @@ async function main() {
   // Output directory.
   const outputDir = path.join(rootPath, 'dist/sea')
 
-  // Build each target.
-  const results = []
-  for (const target of targets) {
-    const targetName = `${target.platform}-${target.arch}`
-    logger.log(`Building ${targetName}...`)
+  // Build all targets in parallel.
+  const settled = await Promise.allSettled(
+    targets.map(async target => {
+      const targetName = `${target.platform}-${target.arch}`
+      logger.log(`Building ${targetName}...`)
 
-    try {
       const outputPath = await buildTarget(target, entryPoint, { outputDir })
       logger.success(
         `✓ ${targetName} -> ${path.relative(rootPath, outputPath)}`,
       )
-      results.push({ outputPath, success: true, target })
-    } catch (e) {
-      logger.error(`✗ ${targetName} failed: ${e.message}`)
-      results.push({ error: e.message, success: false, target })
-    }
+      return { outputPath, success: true, target }
+    }),
+  )
 
-    logger.log('')
-  }
+  // Process results from Promise.allSettled.
+  const results = settled.map(result => {
+    if (result.status === 'fulfilled') {
+      return result.value
+    }
+    const target = result.reason?.target || {}
+    const targetName = `${target.platform || 'unknown'}-${target.arch || 'unknown'}`
+    logger.fail(`${targetName} failed: ${result.reason?.message || result.reason}`)
+    return { error: result.reason?.message || String(result.reason), success: false, target }
+  })
+
+  logger.log('')
 
   // Summary.
   logger.log('='.repeat(50))
@@ -152,7 +159,7 @@ async function main() {
   if (failed === 0) {
     logger.success(`All ${successful} builds completed successfully`)
   } else {
-    logger.error(`${failed} build${failed > 1 ? 's' : ''} failed`)
+    logger.fail(`${failed} build${failed > 1 ? 's' : ''} failed`)
     process.exitCode = 1
   }
 
