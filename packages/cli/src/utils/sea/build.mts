@@ -144,7 +144,8 @@ export async function downloadNodeBinary(
 ): Promise<string> {
   const isPlatWin = platform === 'win32'
   const rootPath = getRootPath()
-  const nodeDir = normalizePath(path.join(rootPath, 'build/node-smol'))
+  const platformArch = `${platform}-${arch}`
+  const nodeDir = normalizePath(path.join(rootPath, `build/node-smol/${platformArch}`))
   const nodeFilename = isPlatWin ? 'node.exe' : 'node'
   const nodePath = normalizePath(path.join(nodeDir, nodeFilename))
   const versionPath = normalizePath(path.join(nodeDir, '.version'))
@@ -232,11 +233,12 @@ export async function generateSeaConfig(
   entryPoint: string,
   outputPath: string,
 ): Promise<string> {
+  const outputName = path.basename(outputPath, path.extname(outputPath))
   const configPath = normalizePath(
-    path.join(path.dirname(outputPath), 'sea-config.json'),
+    path.join(path.dirname(outputPath), `sea-config-${outputName}.json`),
   )
   const blobPath = normalizePath(
-    path.join(path.dirname(outputPath), 'sea-blob.blob'),
+    path.join(path.dirname(outputPath), `sea-blob-${outputName}.blob`),
   )
 
   const config = {
