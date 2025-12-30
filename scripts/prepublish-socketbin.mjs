@@ -90,9 +90,14 @@ const cleanVersion = providedVersion
   : generateDatetimeVersion(platform, arch, tool)
 
 // Determine output directory - use tracked socketbin packages
+const muslSuffix = platform === 'linux' && libc === 'musl' ? '-musl' : ''
 const packageDir =
   outdir ||
-  path.join(rootDir, 'packages', `socketbin-${tool}-${platform}-${arch}`)
+  path.join(
+    rootDir,
+    'packages',
+    `socketbin-${tool}-${platform}-${arch}${muslSuffix}`,
+  )
 
 // Platform display names
 const platformNames = {
@@ -139,7 +144,7 @@ async function generatePackage() {
       rootDir,
       'dist',
       'sea',
-      `socket-${platform}-${arch}${platform === 'win32' ? '.exe' : ''}`,
+      `socket-${platform}-${arch}${muslSuffix}${platform === 'win32' ? '.exe' : ''}`,
     )
     const targetBinary = path.join(packageDir, 'bin', binaryName)
 

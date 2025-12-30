@@ -60,14 +60,16 @@ jobs:
             platform: linux
             arch: arm64
 
-          # Alpine Linux builds
+          # Linux musl builds
           - runner: ubuntu-latest
             os: linux
-            platform: alpine
+            platform: linux
+            libc: musl
             arch: x64
           - runner: ubuntu-latest
             os: linux
-            platform: alpine
+            platform: linux
+            libc: musl
             arch: arm64
 
           # macOS builds
@@ -96,7 +98,7 @@ jobs:
         shell: bash
         run: |
           SHOULD_RUN="false"
-          if [ "${{ matrix.platform }}" = "linux" ] || [ "${{ matrix.platform }}" = "alpine" ]; then
+          if [ "${{ matrix.platform }}" = "linux" ]; then
             if [ "${{ inputs.build-linux }}" != "false" ]; then
               SHOULD_RUN="true"
             fi
@@ -291,14 +293,27 @@ jobs:
         shell: bash
         run: |
           echo "Building SEA binary..."
+
+          LIBC_FLAG=""
+          if [ "${{ matrix.libc }}" = "musl" ]; then
+            LIBC_FLAG="--libc=musl"
+          fi
+
           pnpm --filter @socketbin/node-sea-builder run build -- \
             --platform=${{ matrix.platform }} \
-            --arch=${{ matrix.arch }}
+            --arch=${{ matrix.arch }} \
+            ${LIBC_FLAG}
 
       - name: Copy binary to dist/sea for prepublish script
         shell: bash
         run: |
           mkdir -p dist/sea
+
+          # Determine musl suffix
+          MUSL_SUFFIX=""
+          if [ "${{ matrix.libc }}" = "musl" ]; then
+            MUSL_SUFFIX="-musl"
+          fi
 
           # Determine source binary name (from build-sea.yml naming).
           if [ "${{ matrix.platform }}" = "win32" ]; then
@@ -308,8 +323,8 @@ jobs:
             SOURCE_BINARY="packages/node-sea-builder/dist/sea/socket-macos-${{ matrix.arch }}"
             TARGET_BINARY="dist/sea/socket-${{ matrix.platform }}-${{ matrix.arch }}"
           else
-            SOURCE_BINARY="packages/node-sea-builder/dist/sea/socket-${{ matrix.platform }}-${{ matrix.arch }}"
-            TARGET_BINARY="dist/sea/socket-${{ matrix.platform }}-${{ matrix.arch }}"
+            SOURCE_BINARY="packages/node-sea-builder/dist/sea/socket-${{ matrix.platform }}-${{ matrix.arch }}${MUSL_SUFFIX}"
+            TARGET_BINARY="dist/sea/socket-${{ matrix.platform }}-${{ matrix.arch }}${MUSL_SUFFIX}"
           fi
 
           cp "$SOURCE_BINARY" "$TARGET_BINARY"
@@ -425,28 +440,28 @@ jobs:
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
 
-      - name: Prepare and publish Alpine x64
+      - name: Prepare and publish Linux musl x64
         if: ${{ !inputs.dry-run }}
         run: |
           node scripts/prepublish-socketbin.mjs \
-            --platform=alpine --arch=x64 \
+            --platform=linux --arch=x64 --libc=musl \
             --version=${STEPS_VERSION_OUTPUTS_VERSION} \
             --method=${{ inputs.method }}
 
-          cd packages/socketbin-cli-alpine-x64
+          cd packages/socketbin-cli-linux-x64-musl
           npm publish --provenance --access public --tag latest --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
 
-      - name: Prepare and publish Alpine ARM64
+      - name: Prepare and publish Linux musl ARM64
         if: ${{ !inputs.dry-run }}
         run: |
           node scripts/prepublish-socketbin.mjs \
-            --platform=alpine --arch=arm64 \
+            --platform=linux --arch=arm64 --libc=musl \
             --version=${STEPS_VERSION_OUTPUTS_VERSION} \
             --method=${{ inputs.method }}
 
-          cd packages/socketbin-cli-alpine-arm64
+          cd packages/socketbin-cli-linux-arm64-musl
           npm publish --provenance --access public --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}

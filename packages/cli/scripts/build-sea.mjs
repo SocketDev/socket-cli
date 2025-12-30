@@ -3,8 +3,9 @@
  * Uses pre-compiled Node.js smol binaries from socket-btm releases.
  *
  * Options:
- *   --platform=<platform> - Build for specific platform (darwin, linux, win32, linux-musl)
+ *   --platform=<platform> - Build for specific platform (darwin, linux, win32)
  *   --arch=<arch>        - Build for specific architecture (x64, arm64)
+ *   --libc=<libc>        - Build for specific libc (musl, glibc) - Linux only
  *   --all                - Build for all platforms (default if no options)
  *
  * Environment:
@@ -36,6 +37,7 @@ function parseArgs() {
   const options = {
     all: args.includes('--all'),
     arch: null,
+    libc: null,
     platform: null,
   }
 
@@ -44,11 +46,13 @@ function parseArgs() {
       options.platform = arg.split('=')[1]
     } else if (arg.startsWith('--arch=')) {
       options.arch = arg.split('=')[1]
+    } else if (arg.startsWith('--libc=')) {
+      options.libc = arg.split('=')[1]
     }
   }
 
-  // Default to --all if no specific platform/arch specified.
-  if (!options.platform && !options.arch) {
+  // Default to --all if no specific platform/arch/libc specified.
+  if (!options.platform && !options.arch && !options.libc) {
     options.all = true
   }
 
@@ -70,6 +74,14 @@ function filterTargets(targets, options) {
     if (options.arch && target.arch !== options.arch) {
       return false
     }
+    if (options.libc) {
+      // Normalize: undefined/null → 'glibc' (default for Linux)
+      const targetLibc =
+        target.platform === 'linux' && !target.libc ? 'glibc' : target.libc
+      if (targetLibc !== options.libc) {
+        return false
+      }
+    }
     return true
   })
 }
@@ -79,6 +91,16 @@ function filterTargets(targets, options) {
  */
 async function main() {
   const options = parseArgs()
+
+  // Validate libc is Linux-only
+  if (options.libc && options.platform && options.platform !== 'linux') {
+    logger.fail(`Error: --libc parameter is only valid for Linux builds`)
+    logger.fail(
+      `Specified: --platform=${options.platform} --libc=${options.libc}`,
+    )
+    logger.log('')
+    process.exit(1)
+  }
 
   logger.log('')
   logger.log('Socket SEA Builder')

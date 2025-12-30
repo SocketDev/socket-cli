@@ -54,8 +54,9 @@ function getAssetName() {
     return `binject-darwin-${mappedArch}`
   }
   if (platformName === 'linux') {
-    // Default to musl for broader compatibility.
-    return `binject-linux-musl-${mappedArch}`
+    // Default to musl for broader compatibility (musl binaries work on both musl and glibc).
+    // Asset naming: binject-linux-{arch}-musl (musl suffix after arch)
+    return `binject-linux-${mappedArch}-musl`
   }
   if (platformName === 'win32') {
     return `binject-win-${mappedArch}.exe`

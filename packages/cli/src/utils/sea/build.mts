@@ -21,6 +21,7 @@ const logger = getDefaultLogger()
 
 export interface BuildTargetOptions {
   arch: string
+  libc?: 'musl' | 'glibc'
   nodeVersion: string
   outputName: string
   platform: NodeJS.Platform | string
@@ -87,6 +88,7 @@ export async function buildTarget(
     target.nodeVersion,
     target.platform,
     target.arch,
+    target.libc,
   )
 
   // Generate output path.
@@ -141,10 +143,12 @@ export async function downloadNodeBinary(
   version: string,
   platform: NodeJS.Platform | string,
   arch: string,
+  libc?: 'musl' | 'glibc',
 ): Promise<string> {
   const isPlatWin = platform === 'win32'
   const rootPath = getRootPath()
-  const platformArch = `${platform}-${arch}`
+  const muslSuffix = libc === 'musl' ? '-musl' : ''
+  const platformArch = `${platform}-${arch}${muslSuffix}`
   const nodeDir = normalizePath(
     path.join(rootPath, `build/node-smol/${platformArch}`),
   )
@@ -175,7 +179,6 @@ export async function downloadNodeBinary(
   const platformMap = new Map([
     ['darwin', 'darwin'],
     ['linux', 'linux'],
-    ['linux-musl', 'linux'],
     ['win32', 'win'],
   ])
 
@@ -205,7 +208,6 @@ export async function downloadNodeBinary(
     logger.log('Clearing stale node-smol cache...')
     await safeDelete(nodeDir)
   }
-  const muslSuffix = platform === 'linux-musl' ? '-musl' : ''
   const binaryName = `node-${nodePlatform}-${nodeArch}${muslSuffix}${isPlatWin ? '.exe' : ''}`
 
   logger.log(`Downloading Node.js smol from socket-btm ${tag}...`)
@@ -305,15 +307,17 @@ export async function getBuildTargets(): Promise<BuildTargetOptions[]> {
     },
     {
       arch: 'arm64',
+      libc: 'musl',
       nodeVersion: defaultNodeVersion,
       outputName: 'socket-linux-arm64-musl',
-      platform: 'linux-musl',
+      platform: 'linux',
     },
     {
       arch: 'x64',
+      libc: 'musl',
       nodeVersion: defaultNodeVersion,
       outputName: 'socket-linux-x64-musl',
-      platform: 'linux-musl',
+      platform: 'linux',
     },
   ]
 }
@@ -411,7 +415,7 @@ export async function downloadBinject(version: string): Promise<string> {
   ])
   const platformMap = new Map([
     ['darwin', 'darwin'],
-    ['linux', 'linux-musl'],
+    ['linux', 'linux'],
     ['win32', 'win'],
   ])
 
@@ -424,9 +428,11 @@ export async function downloadBinject(version: string): Promise<string> {
 
   // Use socket-btm binject binaries from GitHub releases.
   // Tag format: binject-VERSION (e.g., binject-1.0.0)
-  // Asset format: binject-{PLATFORM}-{ARCH}[.exe]
+  // Asset format: binject-{PLATFORM}-{ARCH}[-musl][.exe]
+  // Linux uses musl variant for broader compatibility (works on both musl and glibc)
   const tag = `binject-${version}`
-  const binaryName = `binject-${binjectPlatform}-${binjectArch}${isPlatWin ? '.exe' : ''}`
+  const muslSuffix = platform === 'linux' ? '-musl' : ''
+  const binaryName = `binject-${binjectPlatform}-${binjectArch}${muslSuffix}${isPlatWin ? '.exe' : ''}`
 
   logger.log(`Downloading binject from socket-btm ${tag}...`)
 
