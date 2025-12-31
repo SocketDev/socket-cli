@@ -16,11 +16,31 @@ const logger = getDefaultLogger()
 const SOCKET_BTM_REPO = 'SocketDev/socket-btm'
 
 /**
+ * Get GitHub authentication headers if token is available.
+ *
+ * @returns {object} - Headers object with Authorization if token exists.
+ */
+function getAuthHeaders() {
+  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+  return headers
+}
+
+/**
  * Fetch releases from socket-btm GitHub repository.
  */
 async function fetchReleases() {
   const response = await httpRequest(
     `https://api.github.com/repos/${SOCKET_BTM_REPO}/releases`,
+    {
+      headers: getAuthHeaders(),
+    },
   )
   if (!response.ok) {
     throw new Error(`Failed to fetch releases: ${response.status}`)
@@ -44,6 +64,9 @@ export async function getLatestRelease(tagPrefix, envVar) {
       try {
         const response = await httpRequest(
           `https://api.github.com/repos/${SOCKET_BTM_REPO}/releases/tags/${envTag}`,
+          {
+            headers: getAuthHeaders(),
+          },
         )
         if (response.ok) {
           return {

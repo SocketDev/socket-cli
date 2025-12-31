@@ -968,11 +968,11 @@ importers:
 
   packages/socketbin-cli-linux-arm64: {}
 
-  packages/socketbin-cli-linux-musl-arm64: {}
-
-  packages/socketbin-cli-linux-musl-x64: {}
+  packages/socketbin-cli-linux-arm64-musl: {}
 
   packages/socketbin-cli-linux-x64: {}
+
+  packages/socketbin-cli-linux-x64-musl: {}
 
   packages/socketbin-cli-win32-arm64: {}
 
