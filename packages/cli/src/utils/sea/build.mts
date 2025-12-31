@@ -25,13 +25,13 @@ const logger = getDefaultLogger()
  * @returns Headers object with Authorization if token exists.
  */
 function getAuthHeaders(): Record<string, string> {
-  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
+  const token = process.env['GH_TOKEN'] || process.env['GITHUB_TOKEN']
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
   }
   if (token) {
-    headers.Authorization = `Bearer ${token}`
+    headers['Authorization'] = `Bearer ${token}`
   }
   return headers
 }
