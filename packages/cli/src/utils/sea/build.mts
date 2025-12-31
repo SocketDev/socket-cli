@@ -20,9 +20,46 @@ import ENV from '../../constants/env.mts'
 const logger = getDefaultLogger()
 
 /**
- * Get GitHub authentication headers if token is available.
+ * Mapping of Node.js architecture identifiers to socket-btm binary naming conventions.
+ */
+const ARCH_MAP = new Map([
+  ['arm64', 'arm64'],
+  ['ia32', 'x86'],
+  ['x64', 'x64'],
+])
+
+/**
+ * Mapping of Node.js platform identifiers to socket-btm binary naming conventions.
+ */
+const PLATFORM_MAP = new Map([
+  ['darwin', 'darwin'],
+  ['linux', 'linux'],
+  ['win32', 'win'],
+])
+
+/**
+ * Get GitHub authentication headers for API requests.
  *
- * @returns Headers object with Authorization if token exists.
+ * Constructs HTTP headers for GitHub API v3 requests, including authentication
+ * if a token is available via environment variables.
+ *
+ * Environment Variables:
+ * - GH_TOKEN: GitHub personal access token (checked first).
+ * - GITHUB_TOKEN: GitHub personal access token (fallback).
+ *
+ * Token Permissions:
+ * - Public repositories: No token required, but recommended to avoid rate limits.
+ * - Private repositories: Token with 'repo' scope required.
+ *
+ * Rate Limits (per hour):
+ * - Authenticated: 5,000 requests.
+ * - Unauthenticated: 60 requests.
+ *
+ * @returns Headers object with Accept, X-GitHub-Api-Version, and optional Authorization.
+ *
+ * @example
+ * const headers = getAuthHeaders()
+ * const response = await httpRequest('https://api.github.com/repos/...', { headers })
  */
 function getAuthHeaders(): Record<string, string> {
   const token = process.env['GH_TOKEN'] || process.env['GITHUB_TOKEN']
@@ -187,20 +224,8 @@ export async function downloadNodeBinary(
     logger.warn('⚠️ Falling back to downloaded node-smol from GitHub releases')
   }
 
-  // Arch and platform mappings.
-  const archMap = new Map([
-    ['arm64', 'arm64'],
-    ['ia32', 'x86'],
-    ['x64', 'x64'],
-  ])
-  const platformMap = new Map([
-    ['darwin', 'darwin'],
-    ['linux', 'linux'],
-    ['win32', 'win'],
-  ])
-
-  const nodePlatform = platformMap.get(platform)
-  const nodeArch = archMap.get(arch)
+  const nodePlatform = PLATFORM_MAP.get(platform)
+  const nodeArch = ARCH_MAP.get(arch)
 
   if (!nodePlatform || !nodeArch) {
     throw new Error(`Unsupported platform/arch: ${platform}/${arch}`)
@@ -366,9 +391,29 @@ export async function getLatestSocketBtmNodeRelease(): Promise<string> {
         headers: getAuthHeaders(),
       },
     )
+
     if (!response.ok) {
+      // Detect specific error types.
+      if (response.status === 401) {
+        throw new Error(
+          'GitHub API authentication failed. Please check your GH_TOKEN or GITHUB_TOKEN environment variable.',
+        )
+      }
+
+      if (response.status === 403) {
+        const rateLimitReset = response.headers['x-ratelimit-reset']
+        const resetTime = rateLimitReset
+          ? new Date(Number(rateLimitReset) * 1_000).toLocaleString()
+          : 'unknown'
+        throw new Error(
+          `GitHub API rate limit exceeded. Resets at: ${resetTime}. ` +
+          'Set GH_TOKEN or GITHUB_TOKEN environment variable to increase rate limits ' +
+          '(unauthenticated: 60/hour, authenticated: 5,000/hour).',
+        )
+      }
+
       throw new Error(
-        `Failed to fetch socket-btm releases: ${response.statusText}`,
+        `Failed to fetch socket-btm releases: ${response.status} ${response.statusText}`,
       )
     }
 
@@ -427,20 +472,8 @@ export async function downloadBinject(version: string): Promise<string> {
     await safeDelete(binjectDir)
   }
 
-  // Platform mappings for binject naming.
-  const archMap = new Map([
-    ['arm64', 'arm64'],
-    ['ia32', 'x86'],
-    ['x64', 'x64'],
-  ])
-  const platformMap = new Map([
-    ['darwin', 'darwin'],
-    ['linux', 'linux'],
-    ['win32', 'win'],
-  ])
-
-  const binjectPlatform = platformMap.get(platform)
-  const binjectArch = archMap.get(arch)
+  const binjectPlatform = PLATFORM_MAP.get(platform)
+  const binjectArch = ARCH_MAP.get(arch)
 
   if (!binjectPlatform || !binjectArch) {
     throw new Error(`Unsupported platform/arch: ${platform}/${arch}`)
@@ -486,9 +519,29 @@ export async function getLatestBinjectVersion(): Promise<string> {
         headers: getAuthHeaders(),
       },
     )
+
     if (!response.ok) {
+      // Detect specific error types.
+      if (response.status === 401) {
+        throw new Error(
+          'GitHub API authentication failed. Please check your GH_TOKEN or GITHUB_TOKEN environment variable.',
+        )
+      }
+
+      if (response.status === 403) {
+        const rateLimitReset = response.headers['x-ratelimit-reset']
+        const resetTime = rateLimitReset
+          ? new Date(Number(rateLimitReset) * 1_000).toLocaleString()
+          : 'unknown'
+        throw new Error(
+          `GitHub API rate limit exceeded. Resets at: ${resetTime}. ` +
+          'Set GH_TOKEN or GITHUB_TOKEN environment variable to increase rate limits ' +
+          '(unauthenticated: 60/hour, authenticated: 5,000/hour).',
+        )
+      }
+
       throw new Error(
-        `Failed to fetch socket-btm releases: ${response.statusText}`,
+        `Failed to fetch socket-btm releases: ${response.status} ${response.statusText}`,
       )
     }
 

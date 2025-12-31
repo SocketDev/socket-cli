@@ -16,9 +16,28 @@ const logger = getDefaultLogger()
 const SOCKET_BTM_REPO = 'SocketDev/socket-btm'
 
 /**
- * Get GitHub authentication headers if token is available.
+ * Get GitHub authentication headers for API requests.
  *
- * @returns {object} - Headers object with Authorization if token exists.
+ * Constructs HTTP headers for GitHub API v3 requests, including authentication
+ * if a token is available via environment variables.
+ *
+ * Environment Variables:
+ * - GH_TOKEN: GitHub personal access token (checked first).
+ * - GITHUB_TOKEN: GitHub personal access token (fallback).
+ *
+ * Token Permissions:
+ * - Public repositories: No token required, but recommended to avoid rate limits.
+ * - Private repositories: Token with 'repo' scope required.
+ *
+ * Rate Limits (per hour):
+ * - Authenticated: 5,000 requests.
+ * - Unauthenticated: 60 requests.
+ *
+ * @returns {object} - Headers object with Accept, X-GitHub-Api-Version, and optional Authorization.
+ *
+ * @example
+ * const headers = getAuthHeaders()
+ * const response = await httpRequest('https://api.github.com/repos/...', { headers })
  */
 function getAuthHeaders() {
   const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
@@ -34,6 +53,8 @@ function getAuthHeaders() {
 
 /**
  * Fetch releases from socket-btm GitHub repository.
+ *
+ * @throws {Error} When releases cannot be fetched or API errors occur.
  */
 async function fetchReleases() {
   const response = await httpRequest(
@@ -42,9 +63,32 @@ async function fetchReleases() {
       headers: getAuthHeaders(),
     },
   )
+
   if (!response.ok) {
-    throw new Error(`Failed to fetch releases: ${response.status}`)
+    // Detect specific error types.
+    if (response.status === 401) {
+      throw new Error(
+        'GitHub API authentication failed. Please check your GH_TOKEN or GITHUB_TOKEN environment variable.',
+      )
+    }
+
+    if (response.status === 403) {
+      const rateLimitReset = response.headers['x-ratelimit-reset']
+      const resetTime = rateLimitReset
+        ? new Date(Number(rateLimitReset) * 1000).toLocaleString()
+        : 'unknown'
+      throw new Error(
+        `GitHub API rate limit exceeded. Resets at: ${resetTime}. ` +
+        'Set GH_TOKEN or GITHUB_TOKEN environment variable to increase rate limits ' +
+        '(unauthenticated: 60/hour, authenticated: 5,000/hour).',
+      )
+    }
+
+    throw new Error(
+      `Failed to fetch releases: ${response.status} ${response.statusText || response.status}`,
+    )
   }
+
   return JSON.parse(response.body)
 }
 
@@ -54,6 +98,7 @@ async function fetchReleases() {
  * @param {string} tagPrefix - Tag prefix to search for (e.g., 'yoga-layout-')
  * @param {string} [envVar] - Environment variable name for override
  * @returns {Promise<{tag: string, release: object} | null>}
+ * @throws {Error} When API errors occur during release fetching.
  */
 export async function getLatestRelease(tagPrefix, envVar) {
   // Check for environment variable override.
@@ -68,13 +113,37 @@ export async function getLatestRelease(tagPrefix, envVar) {
             headers: getAuthHeaders(),
           },
         )
-        if (response.ok) {
+
+        if (!response.ok) {
+          // Detect specific error types.
+          if (response.status === 401) {
+            throw new Error(
+              'GitHub API authentication failed. Please check your GH_TOKEN or GITHUB_TOKEN environment variable.',
+            )
+          }
+
+          if (response.status === 403) {
+            const rateLimitReset = response.headers['x-ratelimit-reset']
+            const resetTime = rateLimitReset
+              ? new Date(Number(rateLimitReset) * 1000).toLocaleString()
+              : 'unknown'
+            throw new Error(
+              `GitHub API rate limit exceeded. Resets at: ${resetTime}. ` +
+              'Set GH_TOKEN or GITHUB_TOKEN environment variable to increase rate limits ' +
+              '(unauthenticated: 60/hour, authenticated: 5,000/hour).',
+            )
+          }
+
+          logger.warn(
+            `Failed to fetch release for ${envVar}=${envTag} (${response.status}), falling back to auto-detect`,
+          )
+        } else {
           return {
             release: JSON.parse(response.body),
             tag: envTag,
           }
         }
-      } catch {
+      } catch (e) {
         logger.warn(
           `Failed to fetch release for ${envVar}=${envTag}, falling back to auto-detect`,
         )
@@ -136,6 +205,17 @@ export async function downloadAsset({ assetName, cacheDir, tag }) {
       throw new Error(`Download failed: ${response.status}`)
     }
     await writeFile(cachedPath, response.body)
+
+    // TODO: Verify SHA256 checksum against release asset checksum.
+    // GitHub releases can include checksum files (e.g., SHA256SUMS) to verify integrity.
+    // Implementation should:
+    // 1. Check if a checksum file exists for this release (e.g., SHA256SUMS.txt).
+    // 2. Download and parse the checksum file.
+    // 3. Compute SHA256 hash of the downloaded asset using computeFileHash().
+    // 4. Compare computed hash with expected hash from checksum file.
+    // 5. Throw error if hashes do not match.
+    logger.info('Note: Checksum verification not yet implemented for downloaded assets.')
+
     logger.success(`Downloaded ${assetName}`)
   } else {
     logger.info(`Using cached ${assetName}`)
