@@ -89,7 +89,11 @@ async function discoverGhsaIds(
       ...(ecosystems?.length ? ['--purl-types', ...ecosystems] : []),
     ],
     orgSlug,
-    { cwd, spinner: silence ? undefined : spinner, coanaVersion: options?.coanaVersion },
+    {
+      cwd,
+      spinner: silence ? undefined : spinner,
+      coanaVersion: options?.coanaVersion,
+    },
     { stdio: 'pipe' },
   )
 
@@ -417,7 +421,9 @@ export async function coanaFix(
 
     if (!fixCResult.ok) {
       if (!silence) {
-        logger.error(`Update failed for ${ghsaId}: ${getErrorCause(fixCResult)}`)
+        logger.error(
+          `Update failed for ${ghsaId}: ${getErrorCause(fixCResult)}`,
+        )
       }
       continue ghsaLoop
     }

@@ -7,7 +7,9 @@ import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 import type { CResult } from '../../types.mts'
 
 // Use the config defaultOrg when set, otherwise discover from remote.
-export async function getDefaultOrgSlug(silence?: boolean): Promise<CResult<string>> {
+export async function getDefaultOrgSlug(
+  silence?: boolean,
+): Promise<CResult<string>> {
   const defaultOrgResult = getConfigValueOrUndef('defaultOrg')
   if (defaultOrgResult) {
     debugFn(

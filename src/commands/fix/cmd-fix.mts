@@ -170,8 +170,7 @@ Available styles:
   silence: {
     type: 'boolean',
     default: false,
-    description:
-      'Silence all output except the final result',
+    description: 'Silence all output except the final result',
   },
 }
 

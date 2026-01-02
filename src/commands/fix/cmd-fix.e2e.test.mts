@@ -454,7 +454,9 @@ describe('socket fix (E2E tests)', async () => {
             'stderr should be empty when --silence is used',
           ).toBe('')
 
-          logger.info('\nSuccessfully verified --silence --json outputs only JSON')
+          logger.info(
+            '\nSuccessfully verified --silence --json outputs only JSON',
+          )
         } catch (e) {
           if (code !== 0) {
             logCommandOutput(code, stdout, stderr)

@@ -15,7 +15,11 @@ export type FetchSupportedScanFileNamesOptions = {
 export async function fetchSupportedScanFileNames(
   options?: FetchSupportedScanFileNamesOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getReportSupportedFiles'>['data']>> {
-  const { sdkOpts, spinner, silence = false } = {
+  const {
+    sdkOpts,
+    spinner,
+    silence = false,
+  } = {
     __proto__: null,
     ...options,
   } as FetchSupportedScanFileNamesOptions

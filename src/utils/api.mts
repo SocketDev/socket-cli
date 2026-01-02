@@ -135,7 +135,12 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   value: Promise<SocketSdkResult<T>>,
   options?: HandleApiCallOptions | undefined,
 ): Promise<ApiCallResult<T>> {
-  const { commandPath, description, spinner, silence = false } = {
+  const {
+    commandPath,
+    description,
+    spinner,
+    silence = false,
+  } = {
     __proto__: null,
     ...options,
   } as HandleApiCallOptions

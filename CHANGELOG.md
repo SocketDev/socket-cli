@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - Added `--silence` flag to `socket fix` to suppress intermediate output and show only the final result.
 
+### Changed
+- Updated the Coana CLI to v `14.12.139`.
+
 ## [1.1.51](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.51) - 2025-12-23
 
 ### Added
