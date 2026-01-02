@@ -6,6 +6,10 @@ on:
     - cron: '0 12 * * *'  # Run daily at noon UTC
   workflow_dispatch:
     inputs:
+      force:
+        description: 'Force rebuild (ignore cache)'
+        type: boolean
+        default: false
       debug:
         description: 'Enable debug output'
         required: false

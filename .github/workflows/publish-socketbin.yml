@@ -3,6 +3,10 @@ name: 📦 Publish CLIs
 on:
   workflow_dispatch:
     inputs:
+      force:
+        description: 'Force rebuild (ignore cache)'
+        type: boolean
+        default: false
       version:
         description: 'Version to publish (semver format: 0.0.0-20250122.143052, auto-generated if omitted)'
         required: false

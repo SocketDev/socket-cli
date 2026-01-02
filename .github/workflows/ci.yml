@@ -21,6 +21,10 @@ on:
       - '.github/workflows/ci.yml'
   workflow_dispatch:
     inputs:
+      force:
+        description: 'Force rebuild (ignore cache)'
+        type: boolean
+        default: false
       node-versions:
         description: 'Node.js versions to test (JSON array)'
         required: false

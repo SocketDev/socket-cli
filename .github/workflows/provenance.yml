@@ -3,6 +3,10 @@ name: 📦 Publish Bins
 on:
   workflow_dispatch:
     inputs:
+      force:
+        description: 'Force rebuild (ignore cache)'
+        type: boolean
+        default: false
       debug:
         description: 'Enable debug output'
         required: false

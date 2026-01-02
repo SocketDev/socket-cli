@@ -4,6 +4,11 @@ on:
   pull_request:
     types: [opened]
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force rebuild (ignore cache)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
