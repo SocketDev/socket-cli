@@ -9,12 +9,13 @@ import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 export type FetchSupportedScanFileNamesOptions = {
   sdkOpts?: SetupSdkOptions | undefined
   spinner?: Spinner | undefined
+  silence?: boolean | undefined
 }
 
 export async function fetchSupportedScanFileNames(
   options?: FetchSupportedScanFileNamesOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getReportSupportedFiles'>['data']>> {
-  const { sdkOpts, spinner } = {
+  const { sdkOpts, spinner, silence = false } = {
     __proto__: null,
     ...options,
   } as FetchSupportedScanFileNamesOptions
@@ -28,5 +29,6 @@ export async function fetchSupportedScanFileNames(
   return await handleApiCall(sockSdk.getSupportedScanFiles(), {
     description: 'supported scan file types',
     spinner,
+    silence,
   })
 }

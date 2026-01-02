@@ -260,7 +260,10 @@ function levenshteinDistance(a: string, b: string): number {
  */
 function shouldSuppressBanner(flags: Record<string, unknown>): boolean {
   return Boolean(
-    flags['json'] || flags['markdown'] || flags['banner'] === false,
+    flags['json'] ||
+      flags['markdown'] ||
+      flags['banner'] === false ||
+      flags['silence'],
   )
 }
 

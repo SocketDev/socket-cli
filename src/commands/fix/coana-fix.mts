@@ -57,6 +57,7 @@ type DiscoverGhsaIdsOptions = {
   coanaVersion?: string | undefined
   cwd?: string | undefined
   ecosystems?: PURL_Type[] | undefined
+  silence?: boolean | undefined
   spinner?: Spinner | undefined
 }
 
@@ -72,6 +73,7 @@ async function discoverGhsaIds(
   const {
     cwd = process.cwd(),
     ecosystems,
+    silence = false,
     spinner,
   } = {
     __proto__: null,
@@ -87,7 +89,7 @@ async function discoverGhsaIds(
       ...(ecosystems?.length ? ['--purl-types', ...ecosystems] : []),
     ],
     orgSlug,
-    { cwd, spinner, coanaVersion: options?.coanaVersion },
+    { cwd, spinner: silence ? undefined : spinner, coanaVersion: options?.coanaVersion },
     { stdio: 'pipe' },
   )
 
@@ -123,13 +125,16 @@ export async function coanaFix(
     outputFile,
     prLimit,
     showAffectedDirectDependencies,
+    silence,
     spinner,
   } = fixConfig
 
   const fixEnv = await getFixEnv()
   debugDir('inspect', { fixEnv })
 
-  spinner?.start()
+  if (!silence) {
+    spinner?.start()
+  }
 
   const sockSdkCResult = await setupSdk()
   if (!sockSdkCResult.ok) {
@@ -138,7 +143,10 @@ export async function coanaFix(
 
   const sockSdk = sockSdkCResult.data
 
-  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
+  const supportedFilesCResult = await fetchSupportedScanFileNames({
+    spinner: silence ? undefined : spinner,
+    silence,
+  })
   if (!supportedFilesCResult.ok) {
     return supportedFilesCResult
   }
@@ -157,6 +165,7 @@ export async function coanaFix(
     {
       description: 'upload manifests',
       spinner,
+      silence,
     },
   )
 
@@ -166,7 +175,9 @@ export async function coanaFix(
 
   const tarHash: string = (uploadCResult as any).data.tarHash
   if (!tarHash) {
-    spinner?.stop()
+    if (!silence) {
+      spinner?.stop()
+    }
     return {
       ok: false,
       message:
@@ -181,14 +192,14 @@ export async function coanaFix(
 
   if (!shouldOpenPrs) {
     // In local mode, if neither --all nor --id is provided, show deprecation warning.
-    if (shouldDiscoverGhsaIds && !all) {
+    if (!silence && shouldDiscoverGhsaIds && !all) {
       logger.warn(
         'Implicit --all is deprecated in local mode and will be removed in a future release. Please use --all explicitly.',
       )
     }
 
     // Inform user about local mode when fixes will be applied.
-    if (applyFixes && ghsas.length) {
+    if (!silence && applyFixes && ghsas.length) {
       const envCheck = checkCiEnvVars()
       if (envCheck.present.length) {
         // Some CI vars are set but not all - show what's missing.
@@ -213,12 +224,15 @@ export async function coanaFix(
           coanaVersion,
           cwd,
           ecosystems,
+          silence,
           spinner,
         })
       : ghsas
 
     if (ids.length === 0) {
-      spinner?.stop()
+      if (!silence) {
+        spinner?.stop()
+      }
       return { ok: true, data: { fixed: false } }
     }
 
@@ -255,10 +269,17 @@ export async function coanaFix(
           ...fixConfig.unknownFlags,
         ],
         fixConfig.orgSlug,
-        { coanaVersion, cwd, spinner, stdio: 'inherit' },
+        {
+          coanaVersion,
+          cwd,
+          spinner: silence ? undefined : spinner,
+          stdio: silence ? 'pipe' : 'inherit',
+        },
       )
 
-      spinner?.stop()
+      if (!silence) {
+        spinner?.stop()
+      }
 
       if (!fixCResult.ok) {
         return fixCResult
@@ -269,7 +290,9 @@ export async function coanaFix(
 
       // Copy to outputFile if provided.
       if (outputFile) {
-        logger.info(`Copying fixes result to ${outputFile}`)
+        if (!silence) {
+          logger.info(`Copying fixes result to ${outputFile}`)
+        }
         const tmpContent = await fs.readFile(tmpFile, 'utf8')
         await fs.writeFile(outputFile, tmpContent, 'utf8')
       }
@@ -320,6 +343,7 @@ export async function coanaFix(
             coanaVersion,
             cwd,
             ecosystems,
+            silence,
             spinner,
           })
         : ghsas
@@ -335,7 +359,9 @@ export async function coanaFix(
   }
 
   if (!ids?.length || !fixEnv.repoInfo) {
-    spinner?.stop()
+    if (!silence) {
+      spinner?.stop()
+    }
     return { ok: true, data: { fixed: false } }
   }
 
@@ -381,11 +407,18 @@ export async function coanaFix(
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
-      { coanaVersion, cwd, spinner, stdio: 'inherit' },
+      {
+        coanaVersion,
+        cwd,
+        spinner: silence ? undefined : spinner,
+        stdio: silence ? 'pipe' : 'inherit',
+      },
     )
 
     if (!fixCResult.ok) {
-      logger.error(`Update failed for ${ghsaId}: ${getErrorCause(fixCResult)}`)
+      if (!silence) {
+        logger.error(`Update failed for ${ghsaId}: ${getErrorCause(fixCResult)}`)
+      }
       continue ghsaLoop
     }
 
@@ -418,7 +451,9 @@ export async function coanaFix(
 
       if (existingOpenPrs.length > 0) {
         const prNum = existingOpenPrs[0]!.number
-        logger.info(`PR #${prNum} already exists for ${ghsaId}, skipping.`)
+        if (!silence) {
+          logger.info(`PR #${prNum} already exists for ${ghsaId}, skipping.`)
+        }
         debugFn('notice', `skip: open PR #${prNum} exists for ${ghsaId}`)
         continue ghsaLoop
       }
@@ -436,10 +471,12 @@ export async function coanaFix(
 
       // Check for GitHub token before doing any git operations.
       if (!fixEnv.githubToken) {
-        logger.error(
-          'Cannot create pull request: SOCKET_CLI_GITHUB_TOKEN environment variable is not set.\n' +
-            'Set SOCKET_CLI_GITHUB_TOKEN or GITHUB_TOKEN to enable PR creation.',
-        )
+        if (!silence) {
+          logger.error(
+            'Cannot create pull request: SOCKET_CLI_GITHUB_TOKEN environment variable is not set.\n' +
+              'Set SOCKET_CLI_GITHUB_TOKEN or GITHUB_TOKEN to enable PR creation.',
+          )
+        }
         debugFn('error', `skip: missing GitHub token for ${ghsaId}`)
         continue ghsaLoop
       }
@@ -471,7 +508,9 @@ export async function coanaFix(
         (await gitPushBranch(branch, cwd))
 
       if (!pushed) {
-        logger.warn(`Push failed for ${ghsaId}, skipping PR creation.`)
+        if (!silence) {
+          logger.warn(`Push failed for ${ghsaId}, skipping PR creation.`)
+        }
         // eslint-disable-next-line no-await-in-loop
         await gitResetAndClean(fixEnv.baseBranch, cwd)
         // eslint-disable-next-line no-await-in-loop
@@ -508,23 +547,29 @@ export async function coanaFix(
         const { data } = prResult.pr
         const prRef = `PR #${data.number}`
 
-        logger.success(`Opened ${prRef} for ${ghsaId}.`)
+        if (!silence) {
+          logger.success(`Opened ${prRef} for ${ghsaId}.`)
+        }
 
         if (autopilot) {
-          logger.indent()
-          spinner?.indent()
+          if (!silence) {
+            logger.indent()
+            spinner?.indent()
+          }
           // eslint-disable-next-line no-await-in-loop
           const { details, enabled } = await enablePrAutoMerge(data)
-          if (enabled) {
-            logger.info(`Auto-merge enabled for ${prRef}.`)
-          } else {
-            const message = `Failed to enable auto-merge for ${prRef}${
-              details ? `:\n${details.map(d => ` - ${d}`).join('\n')}` : '.'
-            }`
-            logger.error(message)
+          if (!silence) {
+            if (enabled) {
+              logger.info(`Auto-merge enabled for ${prRef}.`)
+            } else {
+              const message = `Failed to enable auto-merge for ${prRef}${
+                details ? `:\n${details.map(d => ` - ${d}`).join('\n')}` : '.'
+              }`
+              logger.error(message)
+            }
+            logger.dedent()
+            spinner?.dedent()
           }
-          logger.dedent()
-          spinner?.dedent()
         }
 
         // Clean up local branch only - keep remote branch for PR merge.
@@ -533,32 +578,42 @@ export async function coanaFix(
       } else {
         // Handle PR creation failures.
         if (prResult.reason === 'already_exists') {
-          logger.info(
-            `PR already exists for ${ghsaId} (this should not happen due to earlier check).`,
-          )
+          if (!silence) {
+            logger.info(
+              `PR already exists for ${ghsaId} (this should not happen due to earlier check).`,
+            )
+          }
           // Don't delete branch - PR exists and needs it.
         } else if (prResult.reason === 'validation_error') {
-          logger.error(
-            `Failed to create PR for ${ghsaId}:\n${prResult.details}`,
-          )
+          if (!silence) {
+            logger.error(
+              `Failed to create PR for ${ghsaId}:\n${prResult.details}`,
+            )
+          }
           // eslint-disable-next-line no-await-in-loop
           await cleanupFailedPrBranches(branch, cwd)
         } else if (prResult.reason === 'permission_denied') {
-          logger.error(
-            `Failed to create PR for ${ghsaId}: Permission denied. Check SOCKET_CLI_GITHUB_TOKEN permissions.`,
-          )
+          if (!silence) {
+            logger.error(
+              `Failed to create PR for ${ghsaId}: Permission denied. Check SOCKET_CLI_GITHUB_TOKEN permissions.`,
+            )
+          }
           // eslint-disable-next-line no-await-in-loop
           await cleanupFailedPrBranches(branch, cwd)
         } else if (prResult.reason === 'network_error') {
-          logger.error(
-            `Failed to create PR for ${ghsaId}: Network error. Please try again.`,
-          )
+          if (!silence) {
+            logger.error(
+              `Failed to create PR for ${ghsaId}: Network error. Please try again.`,
+            )
+          }
           // eslint-disable-next-line no-await-in-loop
           await cleanupFailedPrBranches(branch, cwd)
         } else {
-          logger.error(
-            `Failed to create PR for ${ghsaId}: ${prResult.error.message}`,
-          )
+          if (!silence) {
+            logger.error(
+              `Failed to create PR for ${ghsaId}: ${prResult.error.message}`,
+            )
+          }
           // eslint-disable-next-line no-await-in-loop
           await cleanupFailedPrBranches(branch, cwd)
         }
@@ -570,9 +625,11 @@ export async function coanaFix(
       // eslint-disable-next-line no-await-in-loop
       await gitCheckoutBranch(fixEnv.baseBranch, cwd)
     } catch (e) {
-      logger.warn(
-        `Unexpected condition: Push failed for ${ghsaId}, skipping PR creation.`,
-      )
+      if (!silence) {
+        logger.warn(
+          `Unexpected condition: Push failed for ${ghsaId}, skipping PR creation.`,
+        )
+      }
       debugDir('error', e)
       // Clean up branches (push may have succeeded before error).
       // eslint-disable-next-line no-await-in-loop
@@ -595,7 +652,9 @@ export async function coanaFix(
     }
   }
 
-  spinner?.stop()
+  if (!silence) {
+    spinner?.stop()
+  }
 
   return {
     ok: true,

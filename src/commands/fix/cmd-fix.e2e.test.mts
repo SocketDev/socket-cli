@@ -402,6 +402,70 @@ describe('socket fix (E2E tests)', async () => {
       },
       { timeout: testTimeout },
     )
+
+    cmdit(
+      ['fix', '--silence', '--json', '.'],
+      'should output only parseable JSON when --silence and --json flags are used',
+      async cmd => {
+        const tempFixture = await createTempFixtureCopy('e2e-test-js')
+        let stdout = ''
+        let stderr = ''
+        let code = -1
+
+        try {
+          const result = await spawnSocketCli(binCliPath, cmd, {
+            cwd: tempFixture.path,
+            env: getTestEnv(apiToken),
+          })
+          stdout = result.stdout
+          stderr = result.stderr
+          code = result.code
+
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+
+          expect(code, 'should exit with code 0').toBe(0)
+
+          // Verify stdout is valid JSON and nothing else.
+          const trimmedStdout = stdout.trim()
+          expect(
+            trimmedStdout.length,
+            'stdout should not be empty',
+          ).toBeGreaterThan(0)
+
+          let parsedJson: unknown
+          try {
+            parsedJson = JSON.parse(trimmedStdout)
+          } catch {
+            // Log the actual output to help debug what extra content was included.
+            logger.error('stdout is not valid JSON:', trimmedStdout)
+            throw new Error(
+              `Expected stdout to be valid JSON, but got: ${trimmedStdout.slice(0, 200)}...`,
+            )
+          }
+
+          expect(parsedJson).toBeDefined()
+          expect(typeof parsedJson).toBe('object')
+
+          // Verify stderr is empty (no extra logging output).
+          expect(
+            stderr.trim(),
+            'stderr should be empty when --silence is used',
+          ).toBe('')
+
+          logger.info('\nSuccessfully verified --silence --json outputs only JSON')
+        } catch (e) {
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+          throw e
+        } finally {
+          await tempFixture.cleanup()
+        }
+      },
+      { timeout: testTimeout },
+    )
   })
 
   describe('Python projects', () => {

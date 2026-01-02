@@ -120,6 +120,7 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
 export type HandleApiCallOptions = {
   description?: string | undefined
   spinner?: Spinner | undefined
+  silence?: boolean | undefined
   commandPath?: string | undefined
 }
 
@@ -134,27 +135,34 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   value: Promise<SocketSdkResult<T>>,
   options?: HandleApiCallOptions | undefined,
 ): Promise<ApiCallResult<T>> {
-  const { commandPath, description, spinner } = {
+  const { commandPath, description, spinner, silence = false } = {
     __proto__: null,
     ...options,
   } as HandleApiCallOptions
 
-  if (description) {
-    spinner?.start(`Requesting ${description} from API...`)
-  } else {
-    spinner?.start()
+  if (!silence) {
+    if (description) {
+      spinner?.start(`Requesting ${description} from API...`)
+    } else {
+      spinner?.start()
+    }
   }
 
   let sdkResult: SocketSdkResult<T>
   try {
     sdkResult = await value
-    spinner?.stop()
-    if (description) {
+    if (!silence) {
+      spinner?.stop()
+    }
+    // Only log the message if spinner is provided (silence mode passes undefined).
+    if (description && !silence) {
       const message = `Received Socket API response (after requesting ${description}).`
-      if (sdkResult.success) {
-        logger.success(message)
-      } else {
-        logger.info(message)
+      if (!silence) {
+        if (sdkResult.success) {
+          logger.success(message)
+        } else {
+          logger.info(message)
+        }
       }
     }
   } catch (e) {
@@ -164,7 +172,8 @@ export async function handleApiCall<T extends SocketSdkOperations>(
       message: 'Socket API error',
       cause: messageWithCauses(e as Error),
     }
-    if (description) {
+    // Only log the message if spinner is provided (silence mode passes undefined).
+    if (description && !silence) {
       logger.fail(`An error was thrown while requesting ${description}`)
     }
     debugDir('inspect', { socketSdkErrorResult })

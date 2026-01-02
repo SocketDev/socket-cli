@@ -167,6 +167,12 @@ Available styles:
     description:
       'List the direct dependencies responsible for introducing transitive vulnerabilities and list the updates required to resolve the vulnerabilities',
   },
+  silence: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Silence all output except the final result',
+  },
 }
 
 const hiddenFlags: MeowFlags = {
@@ -303,6 +309,7 @@ async function run(
     prLimit,
     rangeStyle,
     showAffectedDirectDependencies,
+    silence,
     // We patched in this feature with `npx custompatch meow` at
     // socket-cli/patches/meow#13.2.0.patch.
     unknownFlags = [],
@@ -326,6 +333,7 @@ async function run(
     prLimit: number
     rangeStyle: RangeStyle
     showAffectedDirectDependencies: boolean
+    silence: boolean
     unknownFlags?: string[]
   }
 
@@ -391,7 +399,7 @@ async function run(
     return
   }
 
-  const orgSlugCResult = await getDefaultOrgSlug()
+  const orgSlugCResult = await getDefaultOrgSlug(silence)
   if (!orgSlugCResult.ok) {
     process.exitCode = orgSlugCResult.code ?? 1
     logger.fail(
@@ -433,6 +441,7 @@ async function run(
     prLimit,
     rangeStyle,
     showAffectedDirectDependencies,
+    silence,
     spinner,
     unknownFlags,
   })
