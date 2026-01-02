@@ -152,12 +152,15 @@ export async function buildTarget(
   // Generate SEA configuration.
   const configPath = await generateSeaConfig(entryPoint, outputPath)
 
+  // Create unique cache ID for parallel builds to prevent extraction cache conflicts.
+  const cacheId = `${target.platform}-${target.arch}${target.libc ? `-${target.libc}` : ''}`
+
   try {
     // Build SEA blob using the current Node.js process.
     const blobPath = await buildSeaBlob(configPath)
 
     // Inject blob into Node binary.
-    await injectSeaBlob(nodeBinary, blobPath, outputPath)
+    await injectSeaBlob(nodeBinary, blobPath, outputPath, cacheId)
 
     // Make executable on Unix.
     if (target.platform !== 'win32') {
@@ -569,11 +572,15 @@ export async function getLatestBinjectVersion(): Promise<string> {
 
 /**
  * Inject SEA blob into Node binary.
+ *
+ * @param cacheId - Unique identifier for this build (e.g., "linux-x64-musl") to prevent
+ *                  parallel builds from interfering with each other's extraction caches.
  */
 export async function injectSeaBlob(
   nodeBinary: string,
   blobPath: string,
   outputPath: string,
+  cacheId?: string,
 ): Promise<void> {
   // Get or download binject binary.
   let binjectVersion: string
@@ -586,6 +593,18 @@ export async function injectSeaBlob(
   }
 
   const binjectPath = await downloadBinject(binjectVersion)
+
+  // Create unique temp directory for this build's extraction cache.
+  // This prevents parallel builds from interfering with each other.
+  const env = { ...process.env }
+  if (cacheId) {
+    const { tmpdir } = await import('node:os')
+    const uniqueCacheDir = normalizePath(
+      path.join(tmpdir(), 'socket-sea-build', cacheId),
+    )
+    await safeMkdir(uniqueCacheDir)
+    env['SOCKET_DLX_DIR'] = uniqueCacheDir
+  }
 
   // Inject SEA blob into Node binary.
   // binject handles signature removal, injection, and re-signing automatically.
@@ -601,7 +620,7 @@ export async function injectSeaBlob(
       blobPath,
       '--vfs-compat',
     ],
-    { stdio: 'inherit' },
+    { env, stdio: 'inherit' },
   )
 
   if (
