@@ -25,11 +25,22 @@ export type HandleFixConfig = Remap<
   }
 >
 
+type ConvertIdsOptions = {
+  silence?: boolean | undefined
+}
+
 /**
  * Converts mixed CVE/GHSA/PURL IDs to GHSA IDs only.
  * Filters out invalid IDs and logs conversion results.
  */
-export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
+export async function convertIdsToGhsas(
+  ids: string[],
+  options?: ConvertIdsOptions | undefined,
+): Promise<string[]> {
+  const { silence = false } = {
+    __proto__: null,
+    ...options,
+  } as ConvertIdsOptions
   debugFn('notice', `Converting ${ids.length} IDs to GHSA format`)
   debugDir('inspect', { ids })
 
@@ -57,19 +68,23 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
       const conversionResult = await convertCveToGhsa(trimmedId)
       if (conversionResult.ok) {
         validGhsas.push(conversionResult.data)
-        logger.info(`Converted ${trimmedId} to ${conversionResult.data}`)
+        if (!silence) {
+          logger.info(`Converted ${trimmedId} to ${conversionResult.data}`)
+        }
       } else {
         errors.push(`${trimmedId}: ${conversionResult.message}`)
       }
     } else if (trimmedId.startsWith('pkg:')) {
-      // Convert PURL to GHSAs
+      // Convert PURL to GHSAs.
       // eslint-disable-next-line no-await-in-loop
       const conversionResult = await convertPurlToGhsas(trimmedId)
       if (conversionResult.ok && conversionResult.data.length) {
         validGhsas.push(...conversionResult.data)
-        logger.info(
-          `Converted ${trimmedId} to ${conversionResult.data.length} GHSA(s): ${joinAnd(conversionResult.data)}`,
-        )
+        if (!silence) {
+          logger.info(
+            `Converted ${trimmedId} to ${conversionResult.data.length} GHSA(s): ${joinAnd(conversionResult.data)}`,
+          )
+        }
       } else {
         errors.push(
           `${trimmedId}: ${conversionResult.message || 'No GHSAs found'}`,
@@ -84,9 +99,11 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
   }
 
   if (errors.length) {
-    logger.warn(
-      `Skipped ${errors.length} invalid IDs:\n${errors.map(e => `  - ${e}`).join('\n')}`,
-    )
+    if (!silence) {
+      logger.warn(
+        `Skipped ${errors.length} invalid IDs:\n${errors.map(e => `  - ${e}`).join('\n')}`,
+      )
+    }
     debugDir('inspect', { errors })
   }
 
@@ -117,6 +134,7 @@ export async function handleFix({
   prLimit,
   rangeStyle,
   showAffectedDirectDependencies,
+  silence,
   spinner,
   unknownFlags,
 }: HandleFixConfig) {
@@ -141,6 +159,7 @@ export async function handleFix({
     prLimit,
     rangeStyle,
     showAffectedDirectDependencies,
+    silence,
     unknownFlags,
   })
 
@@ -156,7 +175,7 @@ export async function handleFix({
       ecosystems,
       exclude,
       // Convert mixed CVE/GHSA/PURL inputs to GHSA IDs only.
-      ghsas: await convertIdsToGhsas(ghsas),
+      ghsas: await convertIdsToGhsas(ghsas, { silence }),
       include,
       minimumReleaseAge,
       minSatisfying,
@@ -166,6 +185,7 @@ export async function handleFix({
       prLimit,
       rangeStyle,
       showAffectedDirectDependencies,
+      silence,
       spinner,
       unknownFlags,
     }),

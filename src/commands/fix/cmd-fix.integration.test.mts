@@ -172,7 +172,7 @@ describe('socket fix', async () => {
             --fix-version       Override the version of @coana-tech/cli used for fix analysis. Default: <coana-version>.
             --id                Provide a list of vulnerability identifiers to compute fixes for:
                                     - GHSA IDs (https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids) (e.g., GHSA-xxxx-xxxx-xxxx)
-                                    - CVE IDs (https://cve.mitre.org/cve/identifiers/) (e.g., CVE-2025-1234) - automatically converted to GHSA
+                                    - CVE IDs (https://cve.mitre.org/cve/identifiers/) (e.g., CVE-2026-1234) - automatically converted to GHSA
                                     - PURLs (https://github.com/package-url/purl-spec) (e.g., pkg:npm/package@1.0.0) - automatically converted to GHSA
                                     Can be provided as comma separated values or as multiple flags. Cannot be used with --all.
             --include           Include workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags
@@ -188,6 +188,7 @@ describe('socket fix', async () => {
                                   * pin - Use the exact version (e.g. 1.2.3)
                                   * preserve - Retain the existing version range style as-is
             --show-affected-direct-dependencies  List the direct dependencies responsible for introducing transitive vulnerabilities and list the updates required to resolve the vulnerabilities
+            --silence           Silence all output except the final result
 
           Environment Variables (for CI/PR mode)
             CI                          Set to enable CI mode
