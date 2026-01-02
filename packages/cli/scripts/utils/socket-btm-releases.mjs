@@ -196,15 +196,37 @@ export async function downloadAsset({ assetName, cacheDir, tag }) {
   await mkdir(cacheDir, { recursive: true })
 
   const cachedPath = path.join(cacheDir, assetName)
+  const tagPath = path.join(cacheDir, '.tag')
   const downloadUrl = `https://github.com/${SOCKET_BTM_REPO}/releases/download/${tag}/${assetName}`
 
-  if (!existsSync(cachedPath)) {
+  let needsDownload = !existsSync(cachedPath)
+
+  // Check if cached file is from a different release.
+  if (!needsDownload && existsSync(tagPath)) {
+    try {
+      const cachedTag = await readFile(tagPath, 'utf8')
+      if (cachedTag.trim() !== tag) {
+        logger.info(`Cached ${assetName} is from ${cachedTag.trim()}, updating to ${tag}...`)
+        needsDownload = true
+      }
+    } catch {
+      // If we can't read the tag file, re-download to be safe.
+      needsDownload = true
+    }
+  } else if (!needsDownload && !existsSync(tagPath)) {
+    // Tag file missing, re-download to ensure we have the right version.
+    logger.info(`Tag file missing for cached ${assetName}, re-downloading...`)
+    needsDownload = true
+  }
+
+  if (needsDownload) {
     logger.info(`Downloading ${assetName} from socket-btm...`)
     const response = await httpRequest(downloadUrl)
     if (!response.ok) {
       throw new Error(`Download failed: ${response.status}`)
     }
     await writeFile(cachedPath, response.body)
+    await writeFile(tagPath, tag, 'utf8')
 
     // TODO: Verify SHA256 checksum against release asset checksum.
     // GitHub releases can include checksum files (e.g., SHA256SUMS) to verify integrity.
@@ -218,7 +240,7 @@ export async function downloadAsset({ assetName, cacheDir, tag }) {
 
     logger.success(`Downloaded ${assetName}`)
   } else {
-    logger.info(`Using cached ${assetName}`)
+    logger.info(`Using cached ${assetName} (${tag})`)
   }
 
   return cachedPath

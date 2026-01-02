@@ -21,7 +21,6 @@ import {
   generateHeader,
   getCacheDir,
   getLatestRelease,
-  needsExtraction,
 } from './utils/socket-btm-releases.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -29,6 +28,7 @@ const rootPath = path.join(__dirname, '..')
 const logger = getDefaultLogger()
 
 const outputPath = path.join(rootPath, 'build/yoga-sync.mjs')
+const versionPath = path.join(rootPath, 'build/yoga.version')
 const cacheDir = getCacheDir('yoga', rootPath)
 
 /**
@@ -101,19 +101,17 @@ async function main() {
     // Download asset with caching.
     const cachedPath = await downloadAsset({ assetName, cacheDir, tag })
 
-    // Check if extraction needed.
-    const extractNeeded = await needsExtraction(
-      cachedPath,
-      outputPath,
-      content =>
-        content.includes('yoga-layout') && content.includes('export default'),
-    )
-
-    if (!extractNeeded) {
-      logger.info('yoga-layout already up to date')
-      logger.groupEnd()
-      logger.success('yoga-layout extraction complete')
-      process.exit(0)
+    // Check if extraction needed by comparing version.
+    const { existsSync } = await import('node:fs')
+    const { readFile: readFileAsync } = await import('node:fs/promises')
+    if (existsSync(versionPath) && existsSync(outputPath)) {
+      const cachedVersion = (await readFileAsync(versionPath, 'utf8')).trim()
+      if (cachedVersion === tag) {
+        logger.info('yoga-layout already up to date')
+        logger.groupEnd()
+        logger.success('yoga-layout extraction complete')
+        process.exit(0)
+      }
     }
 
     // Read the downloaded yoga-sync.js file.
@@ -138,6 +136,10 @@ ${syncContent}
 `
 
     writeFileSync(outputPath, jsContent, 'utf-8')
+
+    // Write version file.
+    writeFileSync(versionPath, tag, 'utf-8')
+
     logger.groupEnd()
     logger.success('yoga-layout extraction complete')
   } catch (e) {

@@ -36,12 +36,12 @@ async function extractModels(tarGzPath, releaseTag) {
   const { mkdir } = await import('node:fs/promises')
   await mkdir(outputDir, { recursive: true })
 
-  const markerPath = path.join(outputDir, '.extracted')
+  const versionPath = path.join(outputDir, '.version')
 
   // Check if already extracted and up to date.
-  if (existsSync(markerPath)) {
-    const markerContent = await readFile(markerPath, 'utf-8')
-    if (markerContent === releaseTag) {
+  if (existsSync(versionPath)) {
+    const cachedVersion = await readFile(versionPath, 'utf-8')
+    if (cachedVersion.trim() === releaseTag) {
       logger.info('Models already up to date')
       return
     }
@@ -61,8 +61,8 @@ async function extractModels(tarGzPath, releaseTag) {
     throw new Error(`tar extraction failed with code ${result.code}`)
   }
 
-  // Write marker file with release tag.
-  await writeFile(markerPath, releaseTag, 'utf-8')
+  // Write version file with release tag.
+  await writeFile(versionPath, releaseTag, 'utf-8')
 }
 
 /**

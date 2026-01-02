@@ -17,7 +17,6 @@ import { fileURLToPath } from 'node:url'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import {
-  computeFileHash,
   downloadAsset,
   getCacheDir,
   getLatestRelease,
@@ -68,18 +67,17 @@ function getAssetName() {
 /**
  * Extract binary to output directory if needed.
  */
-async function extractBinary(cachedPath, assetName) {
+async function extractBinary(cachedPath, assetName, tag) {
   const { mkdir } = await import('node:fs/promises')
   await mkdir(outputDir, { recursive: true })
 
   const outputPath = path.join(outputDir, assetName)
+  const versionPath = path.join(outputDir, '.version')
 
-  // Check if extraction needed by comparing hashes.
-  if (existsSync(outputPath)) {
-    const cachedHash = await computeFileHash(cachedPath)
-    const outputHash = await computeFileHash(outputPath)
-
-    if (cachedHash === outputHash) {
+  // Check if extraction needed by checking version.
+  if (existsSync(versionPath) && existsSync(outputPath)) {
+    const cachedVersion = (await readFile(versionPath, 'utf8')).trim()
+    if (cachedVersion === tag) {
       logger.info(`Binary already up to date: ${outputPath}`)
       return
     }
@@ -93,6 +91,9 @@ async function extractBinary(cachedPath, assetName) {
   if (platform() !== 'win32') {
     await chmod(outputPath, 0o755)
   }
+
+  // Write version file.
+  await writeFile(versionPath, tag, 'utf8')
 
   logger.success(`Extracted binary to ${outputPath}`)
 }
@@ -119,7 +120,7 @@ async function main() {
     const cachedPath = await downloadAsset({ assetName, cacheDir, tag })
 
     // Extract to output directory.
-    await extractBinary(cachedPath, assetName)
+    await extractBinary(cachedPath, assetName, tag)
 
     logger.groupEnd()
     logger.success('binject extraction complete')
