@@ -589,7 +589,7 @@ export async function injectSeaBlob(
 
   // Inject SEA blob into Node binary.
   // binject handles signature removal, injection, and re-signing automatically.
-  await spawn(
+  const result = await spawn(
     binjectPath,
     [
       'inject',
@@ -603,5 +603,14 @@ export async function injectSeaBlob(
     ],
     { stdio: 'inherit' },
   )
+
+  if (
+    result &&
+    typeof result === 'object' &&
+    'exitCode' in result &&
+    result.exitCode !== 0
+  ) {
+    throw new Error(`binject failed with exit code ${result.exitCode}`)
+  }
 }
 // c8 ignore stop
