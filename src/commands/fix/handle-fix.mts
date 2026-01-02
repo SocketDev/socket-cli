@@ -37,7 +37,10 @@ export async function convertIdsToGhsas(
   ids: string[],
   options?: ConvertIdsOptions | undefined,
 ): Promise<string[]> {
-  const { silence = false } = { __proto__: null, ...options } as ConvertIdsOptions
+  const { silence = false } = {
+    __proto__: null,
+    ...options,
+  } as ConvertIdsOptions
   debugFn('notice', `Converting ${ids.length} IDs to GHSA format`)
   debugDir('inspect', { ids })
 
@@ -96,9 +99,11 @@ export async function convertIdsToGhsas(
   }
 
   if (errors.length) {
-    logger.warn(
-      `Skipped ${errors.length} invalid IDs:\n${errors.map(e => `  - ${e}`).join('\n')}`,
-    )
+    if (!silence) {
+      logger.warn(
+        `Skipped ${errors.length} invalid IDs:\n${errors.map(e => `  - ${e}`).join('\n')}`,
+      )
+    }
     debugDir('inspect', { errors })
   }
 
