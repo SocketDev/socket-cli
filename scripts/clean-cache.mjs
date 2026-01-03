@@ -12,6 +12,12 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
+import { getGlobalCacheDirs } from '../packages/cli/scripts/constants/paths.mjs'
+
+const logger = getDefaultLogger()
+
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const ROOT_DIR = join(__dirname, '..')
 
@@ -45,7 +51,7 @@ function findCacheDirs() {
       }
     }
   } catch (error) {
-    console.error(`Error scanning packages: ${error.message}`)
+    logger.error(`Error scanning packages: ${error.message}`)
   }
 
   return cacheDirs
@@ -76,7 +82,7 @@ function analyzeCacheDir(cacheDir) {
       }
     }
   } catch (error) {
-    console.error(`Error analyzing ${cacheDir}: ${error.message}`)
+    logger.error(`Error analyzing ${cacheDir}: ${error.message}`)
   }
 
   return entries.sort((a, b) => b.mtime - a.mtime)
@@ -118,11 +124,11 @@ function formatSize(bytes) {
 const cacheDirs = findCacheDirs()
 
 if (!cacheDirs.length) {
-  console.log('No cache directories found.')
+  logger.log('No cache directories found.')
   process.exit(0)
 }
 
-console.log(
+logger.log(
   `Found ${cacheDirs.length} cache director${cacheDirs.length === 1 ? 'y' : 'ies'}:\n`,
 )
 
@@ -133,16 +139,16 @@ for (const { package: pkg, path: cacheDir } of cacheDirs) {
   const entries = analyzeCacheDir(cacheDir)
 
   if (!entries.length) {
-    console.log(`📦 ${pkg}: Empty cache`)
+    logger.log(`📦 ${pkg}: Empty cache`)
     continue
   }
 
-  console.log(`📦 ${pkg}:`)
+  logger.log(`📦 ${pkg}:`)
 
   if (cleanAll) {
     // Delete everything.
     for (const entry of entries) {
-      console.log(
+      logger.log(
         `  ${dryRun ? '[DRY RUN]' : '✗'} ${entry.name} (${formatSize(entry.size)}, ${entry.ageD}d old)`,
       )
       if (!dryRun) {
@@ -155,12 +161,12 @@ for (const { package: pkg, path: cacheDir } of cacheDirs) {
     // Keep most recent, delete older ones.
     const [latest, ...older] = entries
 
-    console.log(
+    logger.log(
       `  ✓ ${latest.name} (${formatSize(latest.size)}, ${latest.ageD}d old) - KEEP`,
     )
 
     for (const entry of older) {
-      console.log(
+      logger.log(
         `  ${dryRun ? '[DRY RUN]' : '✗'} ${entry.name} (${formatSize(entry.size)}, ${entry.ageD}d old)`,
       )
       if (!dryRun) {
@@ -171,17 +177,40 @@ for (const { package: pkg, path: cacheDir } of cacheDirs) {
     }
   }
 
-  console.log('')
+  logger.log('')
 }
 
 if (totalDeleted > 0) {
-  console.log(
+  logger.log(
     `${dryRun ? 'Would delete' : 'Deleted'} ${totalDeleted} cache entr${totalDeleted === 1 ? 'y' : 'ies'} (${formatSize(totalSize)})`,
   )
 } else {
-  console.log('✓ All caches are current - nothing to delete')
+  logger.log('✓ All caches are current - nothing to delete')
+}
+
+// Clean global caches if --all flag is used.
+if (cleanAll) {
+  logger.log('')
+  logger.log('🌍 Cleaning global caches:')
+
+  const globalCaches = getGlobalCacheDirs()
+
+  for (const { name, path } of globalCaches) {
+    try {
+      const stats = statSync(path)
+      const size = stats.isDirectory() ? getDirSize(path) : stats.size
+      logger.log(
+        `  ${dryRun ? '[DRY RUN]' : '✗'} ${name} (${formatSize(size)})`,
+      )
+      if (!dryRun) {
+        rmSync(path, { recursive: true, force: true })
+      }
+    } catch {
+      // Cache doesn't exist, skip.
+    }
+  }
 }
 
 if (dryRun) {
-  console.log('\nRun without --dry-run to actually delete.')
+  logger.log('\nRun without --dry-run to actually delete.')
 }

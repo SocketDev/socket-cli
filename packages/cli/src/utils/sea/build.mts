@@ -15,6 +15,7 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+import { SOCKET_CLI_SEA_BUILD_DIR } from '../../../scripts/constants/paths.mjs'
 import ENV from '../../constants/env.mts'
 
 const logger = getDefaultLogger()
@@ -598,10 +599,7 @@ export async function injectSeaBlob(
   // This prevents parallel builds from interfering with each other.
   const env = { ...process.env }
   if (cacheId) {
-    const { tmpdir } = await import('node:os')
-    const uniqueCacheDir = normalizePath(
-      path.join(tmpdir(), 'socket-sea-build', cacheId),
-    )
+    const uniqueCacheDir = normalizePath(path.join(SOCKET_CLI_SEA_BUILD_DIR, cacheId))
     await safeMkdir(uniqueCacheDir)
     env['SOCKET_DLX_DIR'] = uniqueCacheDir
   }
