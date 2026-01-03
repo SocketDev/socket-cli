@@ -1,0 +1,60 @@
+# Version control
+.git/
+.github/
+.gitignore
+.gitattributes
+
+# Dependencies
+node_modules/
+packages/*/node_modules/
+
+# Build artifacts
+dist/
+build/
+*.log
+*.tgz
+*.tar.gz
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+
+# Caches
+.cache/
+.eslintcache
+.tsbuildinfo
+.rollup.cache/
+pnpm-store/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# CI/CD
+.circleci/
+.travis.yml
+azure-pipelines.yml
+appveyor.yml
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+Thumbs.db
