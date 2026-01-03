@@ -23,7 +23,7 @@ import {
   buildTarget,
   getBuildTargets,
   getDefaultNodeVersion,
-} from '../src/utils/sea/build.mts'
+} from './sea-build-utils.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')

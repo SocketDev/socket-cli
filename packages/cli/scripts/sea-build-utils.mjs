@@ -15,8 +15,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { spawn } from '@socketsecurity/lib/spawn'
 
-import { SOCKET_CLI_SEA_BUILD_DIR } from '../../../scripts/constants/paths.mjs'
-import ENV from '../../constants/env.mts'
+import { SOCKET_CLI_SEA_BUILD_DIR } from './constants/paths.mjs'
+import ENV from '../src/constants/env.mts'
 
 const logger = getDefaultLogger()
 
@@ -62,9 +62,9 @@ const PLATFORM_MAP = new Map([
  * const headers = getAuthHeaders()
  * const response = await httpRequest('https://api.github.com/repos/...', { headers })
  */
-function getAuthHeaders(): Record<string, string> {
+function getAuthHeaders() {
   const token = process.env['GH_TOKEN'] || process.env['GITHUB_TOKEN']
-  const headers: Record<string, string> = {
+  const headers = {
     Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
   }
@@ -74,17 +74,7 @@ function getAuthHeaders(): Record<string, string> {
   return headers
 }
 
-export interface BuildTargetOptions {
-  arch: string
-  libc?: 'musl' | 'glibc'
-  nodeVersion: string
-  outputName: string
-  platform: NodeJS.Platform | string
-}
 
-export interface SeaBuildOptions {
-  outputDir?: string | undefined
-}
 
 /**
  * Build SEA blob.
@@ -92,7 +82,7 @@ export interface SeaBuildOptions {
  * with cross-platform builds and potentially corrupted downloaded binaries.
  */
 // c8 ignore start - Requires spawning node binary with experimental SEA config.
-export async function buildSeaBlob(configPath: string): Promise<string> {
+export async function buildSeaBlob(configPath) {
   const config = JSON.parse(await fs.readFile(configPath, 'utf8'))
   const blobPath = config.output
 
@@ -126,14 +116,14 @@ export async function buildSeaBlob(configPath: string): Promise<string> {
  */
 // c8 ignore start - Requires downloading binaries, building blobs, and binary injection.
 export async function buildTarget(
-  target: BuildTargetOptions,
-  entryPoint: string,
-  options?: SeaBuildOptions | undefined,
-): Promise<string> {
+  target,
+  entryPoint,
+  options,
+) {
   const { outputDir = normalizePath(path.join(process.cwd(), 'dist/sea')) } = {
     __proto__: null,
     ...options,
-  } as SeaBuildOptions
+  }
 
   // Ensure output directory exists.
   await safeMkdir(outputDir)
@@ -181,7 +171,7 @@ export async function buildTarget(
 /**
  * Get the root path of the CLI package (packages/cli).
  */
-function getRootPath(): string {
+function getRootPath() {
   const __dirname = path.dirname(fileURLToPath(import.meta.url))
   return path.join(__dirname, '../../..')
 }
@@ -198,11 +188,11 @@ function getRootPath(): string {
  * // Fetches: https://github.com/SocketDev/socket-btm/releases/download/node-smol-20251213-7cf90d2/node-darwin-arm64
  */
 export async function downloadNodeBinary(
-  version: string,
-  platform: NodeJS.Platform | string,
-  arch: string,
-  libc?: 'musl' | 'glibc',
-): Promise<string> {
+  version,
+  platform,
+  arch,
+  libc,
+) {
   const isPlatWin = platform === 'win32'
   const rootPath = getRootPath()
   const muslSuffix = libc === 'musl' ? '-musl' : ''
@@ -280,9 +270,9 @@ export async function downloadNodeBinary(
  */
 // c8 ignore start - Requires fs.writeFile to write config to disk.
 export async function generateSeaConfig(
-  entryPoint: string,
-  outputPath: string,
-): Promise<string> {
+  entryPoint,
+  outputPath,
+) {
   const outputName = path.basename(outputPath, path.extname(outputPath))
   const configPath = normalizePath(
     path.join(path.dirname(outputPath), `sea-config-${outputName}.json`),
@@ -311,7 +301,7 @@ export async function generateSeaConfig(
 /**
  * Generate build targets for different platforms.
  */
-export async function getBuildTargets(): Promise<BuildTargetOptions[]> {
+export async function getBuildTargets() {
   const defaultNodeVersion = await getDefaultNodeVersion()
 
   return [
@@ -373,7 +363,7 @@ export async function getBuildTargets(): Promise<BuildTargetOptions[]> {
  * Returns the socket-btm tag suffix (e.g., "20251213-7cf90d2").
  * Prefers SOCKET_CLI_SEA_NODE_VERSION env var, falls back to latest socket-btm release.
  */
-export async function getDefaultNodeVersion(): Promise<string> {
+export async function getDefaultNodeVersion() {
   if (ENV.SOCKET_CLI_SEA_NODE_VERSION) {
     return ENV.SOCKET_CLI_SEA_NODE_VERSION
   }
@@ -387,7 +377,7 @@ export async function getDefaultNodeVersion(): Promise<string> {
  * Returns the tag suffix (e.g., "20251213-7cf90d2").
  * @throws {Error} When socket-btm releases cannot be fetched.
  */
-export async function getLatestSocketBtmNodeRelease(): Promise<string> {
+export async function getLatestSocketBtmNodeRelease() {
   try {
     const response = await httpRequest(
       'https://api.github.com/repos/SocketDev/socket-btm/releases',
@@ -421,9 +411,7 @@ export async function getLatestSocketBtmNodeRelease(): Promise<string> {
       )
     }
 
-    const releases = JSON.parse(response.body.toString('utf8')) as Array<{
-      tag_name: string
-    }>
+    const releases = JSON.parse(response.body.toString('utf8'))
 
     // Find the latest node-smol release.
     const nodeSmolRelease = releases.find(release =>
@@ -436,7 +424,7 @@ export async function getLatestSocketBtmNodeRelease(): Promise<string> {
 
     // Extract the tag suffix (e.g., "node-smol-20251213-7cf90d2" -> "20251213-7cf90d2").
     return nodeSmolRelease.tag_name.replace('node-smol-', '')
-  } catch (e: any) {
+  } catch (e) {
     throw new Error('Failed to fetch latest socket-btm node-smol release', {
       cause: e,
     })
@@ -451,7 +439,7 @@ export async function getLatestSocketBtmNodeRelease(): Promise<string> {
  * downloadBinject('1.0.0')
  * // Fetches: https://github.com/SocketDev/socket-btm/releases/download/binject-1.0.0/binject-darwin-arm64
  */
-export async function downloadBinject(version: string): Promise<string> {
+export async function downloadBinject(version) {
   const platform = process.platform
   const arch = process.arch
   const isPlatWin = platform === 'win32'
@@ -468,12 +456,6 @@ export async function downloadBinject(version: string): Promise<string> {
 
   if (cachedVersion === version && existsSync(binjectPath)) {
     return binjectPath
-  }
-
-  // Clear stale cache.
-  if (existsSync(binjectDir)) {
-    logger.log('Clearing stale binject cache...')
-    await safeDelete(binjectDir)
   }
 
   const binjectPlatform = PLATFORM_MAP.get(platform)
@@ -493,7 +475,7 @@ export async function downloadBinject(version: string): Promise<string> {
 
   logger.log(`Downloading binject from socket-btm ${tag}...`)
 
-  // Ensure target directory exists.
+  // Ensure binject directory exists.
   await safeMkdir(binjectDir)
 
   // Download using github-releases helper (handles HTTP 302 redirects automatically).
@@ -515,7 +497,7 @@ export async function downloadBinject(version: string): Promise<string> {
  * Returns the version string (e.g., "1.0.0").
  * @throws {Error} When socket-btm releases cannot be fetched.
  */
-export async function getLatestBinjectVersion(): Promise<string> {
+export async function getLatestBinjectVersion() {
   try {
     const response = await httpRequest(
       'https://api.github.com/repos/SocketDev/socket-btm/releases',
@@ -549,9 +531,7 @@ export async function getLatestBinjectVersion(): Promise<string> {
       )
     }
 
-    const releases = JSON.parse(response.body.toString('utf8')) as Array<{
-      tag_name: string
-    }>
+    const releases = JSON.parse(response.body.toString('utf8'))
 
     // Find the latest binject release.
     const binjectRelease = releases.find(release =>
@@ -564,7 +544,7 @@ export async function getLatestBinjectVersion(): Promise<string> {
 
     // Extract the version (e.g., "binject-1.0.0" -> "1.0.0").
     return binjectRelease.tag_name.replace('binject-', '')
-  } catch (e: any) {
+  } catch (e) {
     throw new Error('Failed to fetch latest socket-btm binject release', {
       cause: e,
     })
@@ -578,13 +558,13 @@ export async function getLatestBinjectVersion(): Promise<string> {
  *                  parallel builds from interfering with each other's extraction caches.
  */
 export async function injectSeaBlob(
-  nodeBinary: string,
-  blobPath: string,
-  outputPath: string,
-  cacheId?: string,
-): Promise<void> {
+  nodeBinary,
+  blobPath,
+  outputPath,
+  cacheId,
+) {
   // Get or download binject binary.
-  let binjectVersion: string
+  let binjectVersion
   try {
     binjectVersion = await getLatestBinjectVersion()
   } catch (e) {
