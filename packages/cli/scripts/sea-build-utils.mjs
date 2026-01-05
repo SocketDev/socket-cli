@@ -74,8 +74,6 @@ function getAuthHeaders() {
   return headers
 }
 
-
-
 /**
  * Build SEA blob.
  * Uses the current Node.js process instead of the target binary to avoid issues
@@ -115,11 +113,7 @@ export async function buildSeaBlob(configPath) {
  * Build a single SEA target.
  */
 // c8 ignore start - Requires downloading binaries, building blobs, and binary injection.
-export async function buildTarget(
-  target,
-  entryPoint,
-  options,
-) {
+export async function buildTarget(target, entryPoint, options) {
   const { outputDir = normalizePath(path.join(process.cwd(), 'dist/sea')) } = {
     __proto__: null,
     ...options,
@@ -178,7 +172,7 @@ function getRootPath() {
 
 /**
  * Download Node.js binary for a specific platform.
- * Caches downloads in build/node-smol/.
+ * Downloads to centralized location: packages/build-infra/build/downloaded/node-smol/{platform-arch}/
  *
  * Uses socket-btm smol releases (pre-compiled binaries).
  * Supports SOCKET_CLI_LOCAL_NODE_SMOL for local development.
@@ -187,18 +181,16 @@ function getRootPath() {
  * downloadNodeBinary('20251213-7cf90d2', 'darwin', 'arm64')
  * // Fetches: https://github.com/SocketDev/socket-btm/releases/download/node-smol-20251213-7cf90d2/node-darwin-arm64
  */
-export async function downloadNodeBinary(
-  version,
-  platform,
-  arch,
-  libc,
-) {
+export async function downloadNodeBinary(version, platform, arch, libc) {
   const isPlatWin = platform === 'win32'
   const rootPath = getRootPath()
   const muslSuffix = libc === 'musl' ? '-musl' : ''
   const platformArch = `${platform}-${arch}${muslSuffix}`
   const nodeDir = normalizePath(
-    path.join(rootPath, `build/node-smol/${platformArch}`),
+    path.join(
+      rootPath,
+      `../build-infra/build/downloaded/node-smol/${platformArch}`,
+    ),
   )
   const nodeFilename = isPlatWin ? 'node.exe' : 'node'
   const nodePath = normalizePath(path.join(nodeDir, nodeFilename))
@@ -269,10 +261,7 @@ export async function downloadNodeBinary(
  * Generate SEA configuration.
  */
 // c8 ignore start - Requires fs.writeFile to write config to disk.
-export async function generateSeaConfig(
-  entryPoint,
-  outputPath,
-) {
+export async function generateSeaConfig(entryPoint, outputPath) {
   const outputName = path.basename(outputPath, path.extname(outputPath))
   const configPath = normalizePath(
     path.join(path.dirname(outputPath), `sea-config-${outputName}.json`),
@@ -401,8 +390,8 @@ export async function getLatestSocketBtmNodeRelease() {
           : 'unknown'
         throw new Error(
           `GitHub API rate limit exceeded. Resets at: ${resetTime}. ` +
-          'Set GH_TOKEN or GITHUB_TOKEN environment variable to increase rate limits ' +
-          '(unauthenticated: 60/hour, authenticated: 5,000/hour).',
+            'Set GH_TOKEN or GITHUB_TOKEN environment variable to increase rate limits ' +
+            '(unauthenticated: 60/hour, authenticated: 5,000/hour).',
         )
       }
 
@@ -433,7 +422,7 @@ export async function getLatestSocketBtmNodeRelease() {
 
 /**
  * Download binject binary for the current platform.
- * Caches downloads in build/binject/.
+ * Downloads to centralized location: packages/build-infra/build/downloaded/binject/{platform-arch}/
  *
  * @example
  * downloadBinject('1.0.0')
@@ -444,7 +433,14 @@ export async function downloadBinject(version) {
   const arch = process.arch
   const isPlatWin = platform === 'win32'
   const rootPath = getRootPath()
-  const binjectDir = normalizePath(path.join(rootPath, 'build/binject'))
+  const muslSuffix = platform === 'linux' ? '-musl' : ''
+  const platformArch = `${platform}-${arch}${muslSuffix}`
+  const binjectDir = normalizePath(
+    path.join(
+      rootPath,
+      `../build-infra/build/downloaded/binject/${platformArch}`,
+    ),
+  )
   const binjectFilename = isPlatWin ? 'binject.exe' : 'binject'
   const binjectPath = normalizePath(path.join(binjectDir, binjectFilename))
   const versionPath = normalizePath(path.join(binjectDir, '.version'))
@@ -470,7 +466,6 @@ export async function downloadBinject(version) {
   // Asset format: binject-{PLATFORM}-{ARCH}[-musl][.exe]
   // Linux uses musl variant for broader compatibility (works on both musl and glibc)
   const tag = `binject-${version}`
-  const muslSuffix = platform === 'linux' ? '-musl' : ''
   const binaryName = `binject-${binjectPlatform}-${binjectArch}${muslSuffix}${isPlatWin ? '.exe' : ''}`
 
   logger.log(`Downloading binject from socket-btm ${tag}...`)
@@ -521,8 +516,8 @@ export async function getLatestBinjectVersion() {
           : 'unknown'
         throw new Error(
           `GitHub API rate limit exceeded. Resets at: ${resetTime}. ` +
-          'Set GH_TOKEN or GITHUB_TOKEN environment variable to increase rate limits ' +
-          '(unauthenticated: 60/hour, authenticated: 5,000/hour).',
+            'Set GH_TOKEN or GITHUB_TOKEN environment variable to increase rate limits ' +
+            '(unauthenticated: 60/hour, authenticated: 5,000/hour).',
         )
       }
 
@@ -557,12 +552,7 @@ export async function getLatestBinjectVersion() {
  * @param cacheId - Unique identifier for this build (e.g., "linux-x64-musl") to prevent
  *                  parallel builds from interfering with each other's extraction caches.
  */
-export async function injectSeaBlob(
-  nodeBinary,
-  blobPath,
-  outputPath,
-  cacheId,
-) {
+export async function injectSeaBlob(nodeBinary, blobPath, outputPath, cacheId) {
   // Get or download binject binary.
   let binjectVersion
   try {
@@ -579,7 +569,9 @@ export async function injectSeaBlob(
   // This prevents parallel builds from interfering with each other.
   const env = { ...process.env }
   if (cacheId) {
-    const uniqueCacheDir = normalizePath(path.join(SOCKET_CLI_SEA_BUILD_DIR, cacheId))
+    const uniqueCacheDir = normalizePath(
+      path.join(SOCKET_CLI_SEA_BUILD_DIR, cacheId),
+    )
     await safeMkdir(uniqueCacheDir)
     env['SOCKET_DLX_DIR'] = uniqueCacheDir
   }

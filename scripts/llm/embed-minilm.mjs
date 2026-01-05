@@ -28,7 +28,10 @@ import { brotliCompressSync } from 'node:zlib'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '../..')
-const cacheDir = path.join(rootPath, '.cache/models')
+const cacheDir = path.join(
+  rootPath,
+  'packages/build-infra/build/downloaded/models',
+)
 
 logger.log('╔═══════════════════════════════════════════════════╗')
 logger.log('║   Embed MiniLM Model for Socket CLI              ║')

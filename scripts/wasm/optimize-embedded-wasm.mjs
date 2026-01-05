@@ -22,7 +22,16 @@ import { spawn } from '@socketsecurity/lib/spawn'
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '../..')
-const cacheDir = path.join(rootPath, '.cache/models')
+const downloadedDir = path.join(rootPath, 'packages/build-infra/build/downloaded')
+
+// Map of WASM files to their directories
+const wasmFiles = {
+  'ort-wasm-simd.wasm': path.join(downloadedDir, 'onnxruntime'),
+  'yoga.wasm': path.join(downloadedDir, 'yoga-layout'),
+  'minilm-int8.onnx': path.join(downloadedDir, 'models'),
+  'codet5-encoder-int4.onnx': path.join(downloadedDir, 'models'),
+  'codet5-decoder-int4.onnx': path.join(downloadedDir, 'models'),
+}
 
 const isAggressive = process.argv.includes('--aggressive')
 
@@ -49,7 +58,7 @@ async function exec(command, args, options = {}) {
  */
 function checkWasmOpt() {
   try {
-    const result = exec('wasm-opt', ['--version'])
+    const _result = exec('wasm-opt', ['--version'])
     return true
   } catch {
     return false

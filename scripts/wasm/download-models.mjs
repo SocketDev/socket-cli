@@ -11,7 +11,9 @@
  * 7. Yoga Layout WASM (~95KB) - copied from node_modules
  *
  * OUTPUT:
- * All files saved to .cache/models/
+ * - MiniLM/CodeT5: packages/build-infra/build/downloaded/models/
+ * - ONNX Runtime: packages/build-infra/build/downloaded/onnxruntime/
+ * - Yoga Layout: packages/build-infra/build/downloaded/yoga-layout/
  */
 
 import { existsSync, promises as fs } from 'node:fs'
@@ -24,7 +26,21 @@ const logger = getDefaultLogger()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '../..')
-const cacheDir = path.join(rootPath, '.cache/models')
+const downloadedDir = path.join(
+  rootPath,
+  'packages/build-infra/build/downloaded',
+)
+
+// Directory mapping by file type
+const dirMap = {
+  'minilm-int8.onnx': 'models',
+  'minilm-tokenizer.json': 'models',
+  'codet5-encoder-int4.onnx': 'models',
+  'codet5-decoder-int4.onnx': 'models',
+  'codet5-tokenizer.json': 'models',
+  'ort-wasm-simd.wasm': 'onnxruntime',
+  'yoga.wasm': 'yoga-layout',
+}
 
 // Model sources.
 const MINILM_REPO = 'Xenova/paraphrase-MiniLM-L3-v2'
@@ -188,16 +204,15 @@ export async function downloadModels() {
   logger.info('║   Download Model Assets                           ║')
   logger.info('╚═══════════════════════════════════════════════════╝\n')
 
-  // Create cache directory.
-  await fs.mkdir(cacheDir, { recursive: true })
-  logger.info(`✓ Cache directory: ${cacheDir}\n`)
-
   let totalBytes = 0
   const missing = []
 
   // Download/copy each file.
   for (const file of FILES) {
-    const outputPath = path.join(cacheDir, file.name)
+    // Determine target directory based on file type
+    const targetDir = path.join(downloadedDir, dirMap[file.name])
+    await fs.mkdir(targetDir, { recursive: true })
+    const outputPath = path.join(targetDir, file.name)
 
     // Check if file already exists.
     try {

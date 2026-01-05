@@ -20,8 +20,8 @@
  * - Vocab size: 30,522 tokens
  *
  * OUTPUT:
- * - .cache/models/tokenizer.json
- * - .cache/models/model_quantized.onnx
+ * - packages/build-infra/build/downloaded/models/tokenizer.json
+ * - packages/build-infra/build/downloaded/models/model_quantized.onnx
  */
 
 import { promises as fs } from 'node:fs'
@@ -35,7 +35,10 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '../..')
-const cacheDir = path.join(rootPath, '.cache/models')
+const cacheDir = path.join(
+  rootPath,
+  'packages/build-infra/build/downloaded/models',
+)
 
 // Hugging Face model repository.
 const MODEL_REPO = 'Xenova/paraphrase-MiniLM-L3-v2'

@@ -8,7 +8,6 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import * as ort from 'onnxruntime-node'
-import colors from 'yoctocolors-cjs'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
@@ -18,7 +17,10 @@ const skillDir = path.join(
   path.dirname(__dirname),
   '../.claude/skills/socket-cli',
 )
-const cacheDir = path.join(path.dirname(__dirname), '.cache/models')
+const cacheDir = path.join(
+  path.dirname(__dirname),
+  'packages/build-infra/build/downloaded/models',
+)
 
 logger.log(
   '🧠 Computing semantic embeddings (pure ONNX, no transformers.js)...',

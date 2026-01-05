@@ -79,8 +79,8 @@ async function fetchReleases() {
         : 'unknown'
       throw new Error(
         `GitHub API rate limit exceeded. Resets at: ${resetTime}. ` +
-        'Set GH_TOKEN or GITHUB_TOKEN environment variable to increase rate limits ' +
-        '(unauthenticated: 60/hour, authenticated: 5,000/hour).',
+          'Set GH_TOKEN or GITHUB_TOKEN environment variable to increase rate limits ' +
+          '(unauthenticated: 60/hour, authenticated: 5,000/hour).',
       )
     }
 
@@ -129,8 +129,8 @@ export async function getLatestRelease(tagPrefix, envVar) {
               : 'unknown'
             throw new Error(
               `GitHub API rate limit exceeded. Resets at: ${resetTime}. ` +
-              'Set GH_TOKEN or GITHUB_TOKEN environment variable to increase rate limits ' +
-              '(unauthenticated: 60/hour, authenticated: 5,000/hour).',
+                'Set GH_TOKEN or GITHUB_TOKEN environment variable to increase rate limits ' +
+                '(unauthenticated: 60/hour, authenticated: 5,000/hour).',
             )
           }
 
@@ -143,7 +143,7 @@ export async function getLatestRelease(tagPrefix, envVar) {
             tag: envTag,
           }
         }
-      } catch (e) {
+      } catch (_e) {
         logger.warn(
           `Failed to fetch release for ${envVar}=${envTag}, falling back to auto-detect`,
         )
@@ -206,7 +206,9 @@ export async function downloadAsset({ assetName, cacheDir, tag }) {
     try {
       const cachedTag = await readFile(tagPath, 'utf8')
       if (cachedTag.trim() !== tag) {
-        logger.info(`Cached ${assetName} is from ${cachedTag.trim()}, updating to ${tag}...`)
+        logger.info(
+          `Cached ${assetName} is from ${cachedTag.trim()}, updating to ${tag}...`,
+        )
         needsDownload = true
       }
     } catch {
@@ -236,7 +238,9 @@ export async function downloadAsset({ assetName, cacheDir, tag }) {
     // 3. Compute SHA256 hash of the downloaded asset using computeFileHash().
     // 4. Compare computed hash with expected hash from checksum file.
     // 5. Throw error if hashes do not match.
-    logger.info('Note: Checksum verification not yet implemented for downloaded assets.')
+    logger.info(
+      'Note: Checksum verification not yet implemented for downloaded assets.',
+    )
 
     logger.success(`Downloaded ${assetName}`)
   } else {
@@ -318,11 +322,12 @@ export function generateHeader({ assetName, scriptName, sourceHash, tag }) {
 
 /**
  * Get cache directory for a specific asset type.
+ * Downloads to centralized location: packages/build-infra/build/downloaded/{name}/
  *
  * @param {string} name - Cache directory name
- * @param {string} rootPath - Project root path
+ * @param {string} rootPath - Project root path (packages/cli)
  * @returns {string} - Full cache directory path
  */
 export function getCacheDir(name, rootPath) {
-  return path.join(rootPath, 'build', '.cache', name)
+  return path.join(rootPath, '../../build-infra/build/downloaded', name)
 }

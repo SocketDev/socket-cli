@@ -19,16 +19,15 @@
  * - Fully supported by ONNX Runtime
  *
  * OUTPUT:
- * - .cache/models/codet5-encoder-int4.onnx (~30MB)
- * - .cache/models/codet5-decoder-int4.onnx (~60MB)
- * - .cache/models/codet5-tokenizer.json (~500KB)
+ * - packages/build-infra/build/downloaded/models/wasm/codet5-encoder-int4.onnx (~30MB)
+ * - packages/build-infra/build/downloaded/models/wasm/codet5-decoder-int4.onnx (~60MB)
+ * - packages/build-infra/build/downloaded/models/wasm/codet5-tokenizer.json (~500KB)
  */
 
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 /**
@@ -55,7 +54,10 @@ async function exec(command, args, options = {}) {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '../..')
-const modelsPath = path.join(rootPath, '.cache', 'models')
+const modelsPath = path.join(
+  rootPath,
+  'packages/build-infra/build/downloaded/models',
+)
 
 // Step 1: Check Python.
 logger.substep('Step Checking Python installation...\n')

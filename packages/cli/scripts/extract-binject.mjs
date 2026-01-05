@@ -27,7 +27,8 @@ const rootPath = path.join(__dirname, '..')
 const logger = getDefaultLogger()
 
 const cacheDir = getCacheDir('binject', rootPath)
-const outputDir = path.join(rootPath, 'build/binject')
+// Extract to centralized location: packages/build-infra/build/downloaded/binject/{platform-arch}/
+const outputDir = getCacheDir('binject', rootPath)
 
 /**
  * Get the appropriate binary asset name for the current platform.

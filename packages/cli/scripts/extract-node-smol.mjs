@@ -27,7 +27,8 @@ const rootPath = path.join(__dirname, '..')
 const logger = getDefaultLogger()
 
 const cacheDir = getCacheDir('node-smol', rootPath)
-const outputDir = path.join(rootPath, 'build/node-smol')
+// Extract to centralized location: packages/build-infra/build/downloaded/node-smol/{platform-arch}/
+const outputDir = getCacheDir('node-smol', rootPath)
 
 /**
  * Get the appropriate binary asset name for the current platform.
