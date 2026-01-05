@@ -44,7 +44,7 @@ catalog:
   nock: 14.0.10
   normalize-package-data: 8.0.0
   openapi-typescript: 6.7.6
-  pacote: 21.0.1
+  pacote: 21.0.4
   picomatch: 2.3.1
   spdx-correct: 3.2.0
   spdx-expression-parse: 4.0.0
