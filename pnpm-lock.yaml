@@ -187,8 +187,8 @@ catalogs:
       specifier: 7.0.0-dev.20250920.1
       version: 7.0.0-dev.20250920.1
     '@vitest/coverage-v8':
-      specifier: 4.0.3
-      version: 4.0.3
+      specifier: 4.0.16
+      version: 4.0.16
     '@vitest/ui':
       specifier: 4.0.3
       version: 4.0.3
@@ -630,7 +630,7 @@ importers:
         version: 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3)
       '@vitest/coverage-v8':
         specifier: 'catalog:'
-        version: 4.0.3(vitest@4.0.3)
+        version: 4.0.16(vitest@4.0.3)
       '@yao-pkg/pkg':
         specifier: 'catalog:'
         version: 6.8.0(encoding@0.1.13)
@@ -966,7 +966,7 @@ importers:
         version: 7.0.0-dev.20250920.1
       '@vitest/coverage-v8':
         specifier: 'catalog:'
-        version: 4.0.3(vitest@4.0.3)
+        version: 4.0.16(vitest@4.0.3)
       '@vitest/ui':
         specifier: 'catalog:'
         version: 4.0.3(vitest@4.0.3)
@@ -1153,7 +1153,7 @@ importers:
         version: 7.0.0-dev.20250920.1
       '@vitest/coverage-v8':
         specifier: 'catalog:'
-        version: 4.0.3(vitest@4.0.3)
+        version: 4.0.16(vitest@4.0.3)
       del:
         specifier: 'catalog:'
         version: 8.0.1
@@ -3229,11 +3229,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@vitest/coverage-v8@4.0.3':
-    resolution: {integrity: sha512-I+MlLwyJRBjmJr1kFYSxoseINbIdpxIAeK10jmXgB0FUtIfdYsvM3lGAvBu5yk8WPyhefzdmbCHCc1idFbNRcg==}
+  '@vitest/coverage-v8@4.0.16':
+    resolution: {integrity: sha512-2rNdjEIsPRzsdu6/9Eq0AYAzYdpP6Bx9cje9tL3FE5XzXRQF1fNU9pe/1yE8fCrS0HD+fBtt6gLPh6LI57tX7A==}
     peerDependencies:
-      '@vitest/browser': 4.0.3
-      vitest: 4.0.3
+      '@vitest/browser': 4.0.16
+      vitest: 4.0.16
     peerDependenciesMeta:
       '@vitest/browser':
         optional: true
@@ -3252,6 +3252,9 @@ packages:
       vite:
         optional: true
 
+  '@vitest/pretty-format@4.0.16':
+    resolution: {integrity: sha512-eNCYNsSty9xJKi/UdVD8Ou16alu7AYiS2fCPRs0b1OdhJiV89buAXQLpTbe+X8V9L6qrs9CqyvU7OaAopJYPsA==}
+
   '@vitest/pretty-format@4.0.3':
     resolution: {integrity: sha512-N7gly/DRXzxa9w9sbDXwD9QNFYP2hw90LLLGDobPNwiWgyW95GMxsCt29/COIKKh3P7XJICR38PSDePenMBtsw==}
 
@@ -3268,6 +3271,9 @@ packages:
     resolution: {integrity: sha512-HURRrgGVzz2GQ2Imurp55FA+majHXgCXMzcwtojUZeRsAXyHNgEvxGRJf4QQY4kJeVakiugusGYeUqBgZ/xylg==}
     peerDependencies:
       vitest: 4.0.3
+
+  '@vitest/utils@4.0.16':
+    resolution: {integrity: sha512-h8z9yYhV3e1LEfaQ3zdypIrnAg/9hguReGZoS7Gl0aBG5xgA410zBqECqmaF/+RkTggRsfnzc1XaAHA6bmUufA==}
 
   '@vitest/utils@4.0.3':
     resolution: {integrity: sha512-qV6KJkq8W3piW6MDIbGOmn1xhvcW4DuA07alqaQ+vdx7YA49J85pnwnxigZVQFQw3tWnQNRKWwhz5wbP6iv/GQ==}
@@ -4877,8 +4883,8 @@ packages:
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
-  magicast@0.3.5:
-    resolution: {integrity: sha512-L0WhttDl+2BOsybvEOLK7fW3UA0OQ0IQ2d6Zl2x/a6vVRs3bAY0ECOSHHeL5jD+SbOpOCUEi0y1DgHEn9Qn1AQ==}
+  magicast@0.5.1:
+    resolution: {integrity: sha512-xrHS24IxaLrvuo613F719wvOIv9xPHFWQHuvGUBmPnCA/3MQxKI3b+r7n1jAoDHmsbC5bRhTZYR77invLAxVnw==}
 
   make-dir@4.0.0:
     resolution: {integrity: sha512-hXdUTZYIVOt1Ex//jAQi+wTZZpUpwBj/0QsOzqegb3rGMMeJiSEu5xLHnYfBrRV4RH2+OCSOO95Is/7x1WJ4bw==}
@@ -5267,6 +5273,9 @@ packages:
   object-treeify@1.1.33:
     resolution: {integrity: sha512-EFVjAYfzWqWsBMRHPMAXLCDIJnpMhdWAqR7xG6M6a2cs6PMFpl/+Z20w9zDW4vkxOFfddegBKq9Rehd0bxWE7A==}
     engines: {node: '>= 10'}
+
+  obug@2.1.1:
+    resolution: {integrity: sha512-uTqF9MuPraAQ+IsnPf366RG4cP9RtUi7MLO1N3KEc+wb0a6yKpeL0lmk2IB1jY5KHPAlTc6T/JRdC/YqxHNwkQ==}
 
   ofetch@1.5.0:
     resolution: {integrity: sha512-A7llJ7eZyziA5xq9//3ZurA8OhFqtS99K5/V1sLBJ5j137CM/OAjlbA/TEJXBuOWwOfLqih+oH5U3ran4za1FQ==}
@@ -6440,6 +6449,7 @@ packages:
   whatwg-encoding@3.1.1:
     resolution: {integrity: sha512-6qN4hJdMwfYBtE3YBTTHhoeuUrDBPZmbQaxWAqSALV/MeEnR5z1xd8UKud2RAkFoPkmB+hli1TZSnyi84xz1vQ==}
     engines: {node: '>=18'}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-mimetype@4.0.0:
     resolution: {integrity: sha512-QaKxh0eNIi2mE9p2vEdzfagOKHCcj1pJ56EEHGQOVxp8r9/iszLUUV7v89x9O1p/T+NlTM5W7jW6+cz4Fq1YVg==}
@@ -8634,10 +8644,10 @@ snapshots:
 
   '@types/yargs-parser@21.0.3': {}
 
-  '@typescript-eslint/eslint-plugin@8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)':
+  '@typescript-eslint/eslint-plugin@8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
-      '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/scope-manager': 8.44.1
       '@typescript-eslint/type-utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
@@ -8900,17 +8910,17 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
 
-  '@vitest/coverage-v8@4.0.3(vitest@4.0.3)':
+  '@vitest/coverage-v8@4.0.16(vitest@4.0.3)':
     dependencies:
       '@bcoe/v8-coverage': 1.0.2
-      '@vitest/utils': 4.0.3
+      '@vitest/utils': 4.0.16
       ast-v8-to-istanbul: 0.3.8
-      debug: 4.4.3
       istanbul-lib-coverage: 3.2.2
       istanbul-lib-report: 3.0.1
       istanbul-lib-source-maps: 5.0.6
       istanbul-reports: 3.2.0
-      magicast: 0.3.5
+      magicast: 0.5.1
+      obug: 2.1.1
       std-env: 3.10.0
       tinyrainbow: 3.0.3
       vitest: 4.0.3(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/ui@4.0.3)(jiti@2.6.1)(yaml@2.8.1)
@@ -8933,6 +8943,10 @@ snapshots:
       magic-string: 0.30.21
     optionalDependencies:
       vite: 7.1.12(@types/node@24.9.2)(jiti@2.6.1)(yaml@2.8.1)
+
+  '@vitest/pretty-format@4.0.16':
+    dependencies:
+      tinyrainbow: 3.0.3
 
   '@vitest/pretty-format@4.0.3':
     dependencies:
@@ -8961,6 +8975,11 @@ snapshots:
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
       vitest: 4.0.3(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/ui@4.0.3)(jiti@2.6.1)(yaml@2.8.1)
+
+  '@vitest/utils@4.0.16':
+    dependencies:
+      '@vitest/pretty-format': 4.0.16
+      tinyrainbow: 3.0.3
 
   '@vitest/utils@4.0.3':
     dependencies:
@@ -10785,7 +10804,7 @@ snapshots:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  magicast@0.3.5:
+  magicast@0.5.1:
     dependencies:
       '@babel/parser': 7.28.5
       '@babel/types': 7.28.5
@@ -11209,6 +11228,8 @@ snapshots:
   object-hash@2.2.0: {}
 
   object-treeify@1.1.33: {}
+
+  obug@2.1.1: {}
 
   ofetch@1.5.0:
     dependencies:
@@ -12286,7 +12307,7 @@ snapshots:
 
   typescript-eslint@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2):
     dependencies:
-      '@typescript-eslint/eslint-plugin': 8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
+      '@typescript-eslint/eslint-plugin': 8.44.1(@typescript-eslint/parser@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2))(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/parser': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
       '@typescript-eslint/typescript-estree': 8.44.1(typescript@5.9.2)
       '@typescript-eslint/utils': 8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.2)
