@@ -22,6 +22,7 @@ export type FixConfig = {
   prLimit: number
   rangeStyle: RangeStyle
   showAffectedDirectDependencies: boolean
+  silence: boolean
   spinner: Spinner | undefined
   unknownFlags: string[]
 }

@@ -244,7 +244,7 @@ function preferWindowsCmdShim(binPath: string, binName: string): string {
   if (!constants.WIN32) {
     return binPath
   }
-  
+
   // Relative paths might be shell commands or aliases, not file paths with potential shims
   if (!path.isAbsolute(binPath)) {
     return binPath
@@ -327,7 +327,10 @@ async function getAgentVersion(
           shouldRunWithNode = resolved
         }
       } catch (e) {
-        debugFn('warn', `Failed to resolve bin path for ${agentExecPath}, falling back to direct spawn.`)
+        debugFn(
+          'warn',
+          `Failed to resolve bin path for ${agentExecPath}, falling back to direct spawn.`,
+        )
         debugDir('error', e)
       }
     }

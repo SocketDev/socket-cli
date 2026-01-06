@@ -246,7 +246,14 @@ describe('socket scan reach (E2E tests)', async () => {
 
   describe('npm-test-workspace-mono', () => {
     cmdit(
-      ['scan', 'reach', '.', '--no-interactive', '--reach-disable-analytics'],
+      [
+        'scan',
+        'reach',
+        '.',
+        '--reach-debug',
+        '--no-interactive',
+        '--reach-disable-analytics',
+      ],
       'should run reachability analysis on workspace mono project',
       async cmd => {
         const tempFixture = await createTempFixtureCopy(
@@ -395,6 +402,7 @@ describe('socket scan reach (E2E tests)', async () => {
         'scan',
         'reach',
         '.',
+        '--reach-debug',
         '--no-interactive',
         '--reach-disable-analytics',
         '--reach-exclude-paths',
@@ -493,6 +501,7 @@ describe('socket scan reach (E2E tests)', async () => {
         'scan',
         'reach',
         'packages/package-a',
+        '--reach-debug',
         '--no-interactive',
         '--reach-disable-analytics',
       ],
@@ -598,7 +607,14 @@ describe('socket scan reach (E2E tests)', async () => {
     )
 
     cmdit(
-      ['scan', 'reach', '.', '--no-interactive', '--reach-disable-analytics'],
+      [
+        'scan',
+        'reach',
+        '.',
+        '--reach-debug',
+        '--no-interactive',
+        '--reach-disable-analytics',
+      ],
       'should use --cwd to set the working directory',
       async cmd => {
         const tempFixture = await createTempFixtureCopy(
@@ -673,6 +689,7 @@ describe('socket scan reach (E2E tests)', async () => {
         'scan',
         'reach',
         'packages/package-b',
+        '--reach-debug',
         '--no-interactive',
         '--reach-disable-analytics',
       ],
@@ -770,6 +787,7 @@ describe('socket scan reach (E2E tests)', async () => {
         'scan',
         'reach',
         '../outside-dir',
+        '--reach-debug',
         '--no-interactive',
         '--reach-disable-analytics',
       ],
@@ -822,7 +840,14 @@ describe('socket scan reach (E2E tests)', async () => {
     )
 
     cmdit(
-      ['scan', 'reach', '.', '--no-interactive', '--reach-disable-analytics'],
+      [
+        'scan',
+        'reach',
+        '.',
+        '--reach-debug',
+        '--no-interactive',
+        '--reach-disable-analytics',
+      ],
       'should write output to cwd when running from subdirectory',
       async cmd => {
         const tempFixture = await createTempFixtureCopy(
@@ -908,6 +933,7 @@ describe('socket scan reach (E2E tests)', async () => {
         'scan',
         'reach',
         '.',
+        '--reach-debug',
         '--no-interactive',
         '--reach-ecosystems',
         'pypi',
@@ -1009,6 +1035,7 @@ describe('socket scan reach (E2E tests)', async () => {
         'scan',
         'reach',
         '.',
+        '--reach-debug',
         '--no-interactive',
         '--reach-ecosystems',
         'npm',
