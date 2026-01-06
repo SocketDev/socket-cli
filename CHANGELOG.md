@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.53](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.53) - 2026-01-06
+
+### Changed
+- The `scan_type` query argument is now set to `'socket_tier1'` when running `socket scan create --reach`.
+This change ensures Tier 1 alerts from scans are ingested into the organization-level alerts correctly.
+
 ## [1.1.52](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.52) - 2026-01-02
 
 ### Added

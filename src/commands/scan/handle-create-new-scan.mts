@@ -254,6 +254,9 @@ export async function handleCreateNewScan({
       pullRequest,
       repoName,
       branchName,
+      scanType: reach.runReachabilityAnalysis
+        ? constants.SCAN_TYPE_SOCKET_TIER1
+        : constants.SCAN_TYPE_SOCKET,
     },
     {
       cwd,
