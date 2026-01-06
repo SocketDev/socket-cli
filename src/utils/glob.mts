@@ -161,7 +161,7 @@ export function filterBySupportedScanFiles(
   supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
 ): string[] {
   const patterns = getSupportedFilePatterns(supportedFiles)
-  return filepaths.filter(p => micromatch.some(p, patterns))
+  return filepaths.filter(p => micromatch.some(p, patterns, { dot: true }))
 }
 
 export function getSupportedFilePatterns(
@@ -208,6 +208,7 @@ export async function globWithGitIgnore(
   const gitIgnoreStream = fastGlob.globStream(['**/.gitignore'], {
     absolute: true,
     cwd,
+    dot: true,
     ignore: DEFAULT_IGNORE_FOR_GIT_IGNORE,
   })
   for await (const ignorePatterns of transform(
@@ -274,6 +275,7 @@ export async function globWorkspace(
     ? await fastGlob.glob(workspaceGlobs, {
         absolute: true,
         cwd,
+        dot: true,
         ignore: defaultIgnore,
       })
     : []
@@ -284,7 +286,7 @@ export function isReportSupportedFile(
   supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
 ) {
   const patterns = getSupportedFilePatterns(supportedFiles)
-  return micromatch.some(filepath, patterns)
+  return micromatch.some(filepath, patterns, { dot: true })
 }
 
 export function pathsToGlobPatterns(
