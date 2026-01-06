@@ -1913,7 +1913,8 @@ async function executeParallel(tasks, workers = 3) {
     }
   }
 
-  return Promise.allSettled(results)
+  const settled = await Promise.allSettled(results)
+  return settled.map(r => (r.status === 'fulfilled' ? r.value : undefined))
 }
 
 /**
