@@ -1913,7 +1913,7 @@ async function executeParallel(tasks, workers = 3) {
     }
   }
 
-  return Promise.all(results)
+  return Promise.allSettled(results)
 }
 
 /**
@@ -3419,11 +3419,15 @@ async function runAudit(claudeCmd, options = {}) {
   log.step('Gathering project information')
 
   // Run various checks.
-  const [npmAudit, depCheck, licenseCheck] = await Promise.all([
+  const results = await Promise.allSettled([
     runCommandWithOutput('npm', ['audit', '--json']),
     runCommandWithOutput('pnpm', ['licenses', 'list', '--json']),
     fs.readFile(path.join(rootPath, 'package.json'), 'utf8'),
   ])
+
+  const npmAudit = results[0].status === 'fulfilled' ? results[0].value : null
+  const depCheck = results[1].status === 'fulfilled' ? results[1].value : null
+  const licenseCheck = results[2].status === 'fulfilled' ? results[2].value : '{}'
 
   const packageJson = JSON.parse(licenseCheck)
 

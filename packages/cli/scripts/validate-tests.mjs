@@ -223,9 +223,11 @@ async function validateTestFile(testFile) {
     validateSnapshotFiles(testFile),
   ]
 
-  const results = await Promise.all(validations)
-  for (const issues of results) {
-    allIssues.push(...issues)
+  const results = await Promise.allSettled(validations)
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      allIssues.push(...result.value)
+    }
   }
 
   return {

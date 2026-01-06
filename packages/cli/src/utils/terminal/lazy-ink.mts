@@ -10,7 +10,14 @@ const logger = getDefaultLogger()
 export async function loadInk(): Promise<{ ink: any; React: any }> {
   try {
     // Dynamic import to create a separate chunk
-    const [ink, React] = await Promise.all([import('ink'), import('react')])
+    const results = await Promise.allSettled([import('ink'), import('react')])
+    const ink = results[0].status === 'fulfilled' ? results[0].value : null
+    const React = results[1].status === 'fulfilled' ? results[1].value : null
+
+    if (!ink || !React) {
+      throw new Error('Failed to load Ink/React modules')
+    }
+
     return { ink, React }
   } catch (error) {
     logger.error('Failed to load Ink/React components')

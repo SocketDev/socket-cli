@@ -66,7 +66,7 @@ export async function createTempFixtures(
   // Register cleanup for all temp directories.
   if (cleanupHook) {
     cleanupHook(async () => {
-      await Promise.all(
+      await Promise.allSettled(
         tempDirs.map(dir =>
           safeDelete(dir).catch(() => {
             // Ignore cleanup errors.
