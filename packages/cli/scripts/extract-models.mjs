@@ -9,31 +9,24 @@
  */
 
 import { existsSync } from 'node:fs'
-import { readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
-import {
-  downloadAsset,
-  findAsset,
-  getCacheDir,
-  getLatestRelease,
-} from './utils/socket-btm-releases.mjs'
+import { downloadSocketBtmRelease } from '@socketsecurity/lib/releases/socket-btm'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 const logger = getDefaultLogger()
 
-const cacheDir = getCacheDir('models', rootPath)
 const outputDir = path.join(rootPath, 'build/models')
 
 /**
  * Extract tar.gz to output directory if needed.
  */
 async function extractModels(tarGzPath, releaseTag) {
-  const { mkdir } = await import('node:fs/promises')
   await mkdir(outputDir, { recursive: true })
 
   const versionPath = path.join(outputDir, '.version')
@@ -51,8 +44,6 @@ async function extractModels(tarGzPath, releaseTag) {
   }
 
   // Extract tar.gz using tar command.
-  const { spawn } = await import('@socketsecurity/lib/spawn')
-
   const result = await spawn('tar', ['-xzf', tarGzPath, '-C', outputDir], {
     stdio: 'inherit',
   })
@@ -72,29 +63,34 @@ async function main() {
   try {
     logger.group('Extracting models from socket-btm releases...')
 
-    // Fetch latest models release.
-    const release = await getLatestRelease('models-', 'SOCKET_BTM_MODELS_TAG')
-    if (!release) {
+    let assetPath
+    try {
+      // Download models tar.gz asset using @socketsecurity/lib helper.
+      // This handles version caching automatically.
+      // Asset name pattern: models-{DATE}-{COMMIT}.tar.gz
+      assetPath = await downloadSocketBtmRelease({
+        asset: 'models-20260106-ca41aa0.tar.gz',
+        cwd: rootPath,
+        downloadDir: '../../build-infra/build/downloaded',
+        envVar: 'SOCKET_BTM_MODELS_TAG',
+        quiet: false,
+        tool: 'models',
+      })
+    } catch (e) {
       logger.groupEnd()
-      logger.warn('Models not available - skipping')
+      logger.warn(`Models not available: ${e.message}`)
       process.exit(0)
     }
 
-    const { release: releaseData, tag } = release
-
-    // Find tar.gz asset.
-    const assetName = findAsset(releaseData, a => a.name.endsWith('.tar.gz'))
-    if (!assetName) {
-      logger.groupEnd()
-      logger.warn('Models tar.gz not found - skipping')
-      process.exit(0)
-    }
-
-    // Download asset with caching.
-    const cachedPath = await downloadAsset({ assetName, cacheDir, tag })
+    // Get tag from source version file.
+    const assetDir = path.dirname(assetPath)
+    const sourceVersionPath = path.join(assetDir, '.version')
+    const tag = existsSync(sourceVersionPath)
+      ? (await readFile(sourceVersionPath, 'utf8')).trim()
+      : 'unknown'
 
     // Extract to output directory.
-    await extractModels(cachedPath, tag)
+    await extractModels(assetPath, tag)
 
     logger.groupEnd()
     logger.success('Models extraction complete')

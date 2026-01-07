@@ -1,91 +1,10 @@
 /**
- * Shared utilities for downloading assets from socket-btm GitHub releases.
- * Provides common patterns for fetching, caching, and extracting release assets.
+ * Shared utilities for socket-cli build scripts that extract socket-btm assets.
+ * Contains socket-cli-specific utilities for header generation and file hashing.
  */
 
 import { createHash } from 'node:crypto'
-import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
-import path from 'node:path'
-
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import {
-  downloadGitHubRelease,
-  getLatestRelease as getLatestReleaseFromLib,
-  SOCKET_BTM_REPO,
-} from '@socketsecurity/lib/releases/github'
-
-const logger = getDefaultLogger()
-
-/**
- * Find the latest release matching a tag prefix.
- *
- * @param {string} tool - Tool/asset prefix (e.g., 'yoga-layout')
- * @param {object} [options] - Options
- * @param {string} [options.envVar] - Environment variable name for override
- * @param {boolean} [options.quiet] - Suppress info logging
- * @returns {Promise<{tag: string, release: object} | null>}
- * @throws {Error} When API errors occur during release fetching.
- */
-export async function getLatestRelease(tool, { envVar, quiet = false } = {}) {
-  const result = await getLatestReleaseFromLib(tool, SOCKET_BTM_REPO, {
-    envVar,
-    quiet,
-  })
-  if (!result) {
-    return null
-  }
-  return {
-    release: result.release,
-    tag: result.tag,
-  }
-}
-
-/**
- * Find asset in release by name pattern.
- *
- * @param {object} release - GitHub release object
- * @param {string | RegExp | function} pattern - Asset name pattern
- * @returns {string | null} - Asset name or null
- */
-export function findAsset(release, pattern) {
-  const matcher =
-    typeof pattern === 'function'
-      ? pattern
-      : typeof pattern === 'string'
-        ? a => a.name.includes(pattern)
-        : a => pattern.test(a.name)
-
-  const asset = release.assets.find(matcher)
-  return asset ? asset.name : null
-}
-
-/**
- * Download asset from GitHub release with caching.
- *
- * @param {object} options - Download options
- * @param {string} options.tag - Release tag
- * @param {string} options.assetName - Asset filename
- * @param {string} options.cacheDir - Cache directory path
- * @param {boolean} [options.quiet] - Suppress info logging
- * @returns {Promise<string>} - Path to cached file
- */
-export async function downloadAsset({
-  assetName,
-  cacheDir,
-  quiet = false,
-  tag,
-}) {
-  await downloadGitHubRelease({
-    asset: assetName,
-    outputPath: path.join(cacheDir, assetName),
-    quiet,
-    repoConfig: SOCKET_BTM_REPO,
-    tag,
-  })
-
-  return path.join(cacheDir, assetName)
-}
 
 /**
  * Compute SHA256 hash of file content.
@@ -98,42 +17,6 @@ export async function computeFileHash(filePath) {
   return createHash('sha256').update(content).digest('hex')
 }
 
-/**
- * Check if cached file is up to date by comparing hashes.
- *
- * @param {string} sourcePath - Path to source file
- * @param {string} outputPath - Path to output file
- * @param {function} [validateOutput] - Optional output validation function
- * @returns {Promise<boolean>} - True if extraction needed
- */
-export async function needsExtraction(sourcePath, outputPath, validateOutput) {
-  if (!existsSync(outputPath)) {
-    return true
-  }
-
-  // Validate output if function provided.
-  if (validateOutput) {
-    try {
-      const outputContent = await readFile(outputPath, 'utf-8')
-      if (!validateOutput(outputContent)) {
-        return true
-      }
-    } catch {
-      return true
-    }
-  }
-
-  // Compare hashes.
-  const sourceHash = await computeFileHash(sourcePath)
-  const outputContent = await readFile(outputPath, 'utf-8')
-  const hashMatch = outputContent.match(/Source hash: ([a-f0-9]{64})/)
-
-  if (!hashMatch || hashMatch[1] !== sourceHash) {
-    return true
-  }
-
-  return false
-}
 
 /**
  * Generate file header with metadata.
@@ -157,14 +40,3 @@ export function generateHeader({ assetName, scriptName, sourceHash, tag }) {
  */`
 }
 
-/**
- * Get cache directory for a specific asset type.
- * Downloads to centralized location: packages/build-infra/build/downloaded/{name}/
- *
- * @param {string} name - Cache directory name
- * @param {string} rootPath - Project root path (packages/cli)
- * @returns {string} - Full cache directory path
- */
-export function getCacheDir(name, rootPath) {
-  return path.join(rootPath, '../../build-infra/build/downloaded', name)
-}

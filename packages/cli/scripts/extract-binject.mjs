@@ -8,96 +8,15 @@
  * Idempotent: Skips download if cached file matches expected hash.
  */
 
-import { existsSync } from 'node:fs'
-import { chmod, readFile, writeFile } from 'node:fs/promises'
-import { arch, platform } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
-import {
-  downloadAsset,
-  getCacheDir,
-  getLatestRelease,
-} from './utils/socket-btm-releases.mjs'
+import { downloadSocketBtmRelease } from '@socketsecurity/lib/releases/socket-btm'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 const logger = getDefaultLogger()
-
-const cacheDir = getCacheDir('binject', rootPath)
-// Extract to centralized location: packages/build-infra/build/downloaded/binject/{platform-arch}/
-const outputDir = getCacheDir('binject', rootPath)
-
-/**
- * Get the appropriate binary asset name for the current platform.
- */
-function getAssetName() {
-  const platformName = platform()
-  const archName = arch()
-
-  // Map Node.js arch names to asset names.
-  const archMap = {
-    __proto__: null,
-    arm64: 'arm64',
-    x64: 'x64',
-  }
-
-  const mappedArch = archMap[archName]
-  if (!mappedArch) {
-    throw new Error(`Unsupported architecture: ${archName}`)
-  }
-
-  // Map platform names to asset names.
-  if (platformName === 'darwin') {
-    return `binject-darwin-${mappedArch}`
-  }
-  if (platformName === 'linux') {
-    // Default to musl for broader compatibility (musl binaries work on both musl and glibc).
-    // Asset naming: binject-linux-{arch}-musl (musl suffix after arch)
-    return `binject-linux-${mappedArch}-musl`
-  }
-  if (platformName === 'win32') {
-    return `binject-win-${mappedArch}.exe`
-  }
-
-  throw new Error(`Unsupported platform: ${platformName}`)
-}
-
-/**
- * Extract binary to output directory if needed.
- */
-async function extractBinary(cachedPath, assetName, tag) {
-  const { mkdir } = await import('node:fs/promises')
-  await mkdir(outputDir, { recursive: true })
-
-  const outputPath = path.join(outputDir, assetName)
-  const versionPath = path.join(outputDir, '.version')
-
-  // Check if extraction needed by checking version.
-  if (existsSync(versionPath) && existsSync(outputPath)) {
-    const cachedVersion = (await readFile(versionPath, 'utf8')).trim()
-    if (cachedVersion === tag) {
-      logger.info(`Binary already up to date: ${outputPath}`)
-      return
-    }
-  }
-
-  // Copy binary to output directory.
-  const content = await readFile(cachedPath)
-  await writeFile(outputPath, content)
-
-  // Make executable on Unix-like systems.
-  if (platform() !== 'win32') {
-    await chmod(outputPath, 0o755)
-  }
-
-  // Write version file.
-  await writeFile(versionPath, tag, 'utf8')
-
-  logger.success(`Extracted binary to ${outputPath}`)
-}
 
 /**
  * Main extraction logic.
@@ -106,22 +25,17 @@ async function main() {
   try {
     logger.group('Extracting binject binary from socket-btm releases...')
 
-    // Fetch latest binject release.
-    const release = await getLatestRelease('binject-', 'SOCKET_BTM_BINJECT_TAG')
-    if (!release) {
-      logger.groupEnd()
-      logger.warn('binject binary not available - skipping')
-      process.exit(0)
-    }
+    // Download binject binary using @socketsecurity/lib helper.
+    // This handles version caching, platform detection, and file permissions automatically.
+    const binaryPath = await downloadSocketBtmRelease({
+      cwd: rootPath,
+      downloadDir: '../../build-infra/build/downloaded',
+      envVar: 'SOCKET_BTM_BINJECT_TAG',
+      quiet: false,
+      tool: 'binject',
+    })
 
-    const { tag } = release
-    const assetName = getAssetName()
-
-    // Download asset with caching.
-    const cachedPath = await downloadAsset({ assetName, cacheDir, tag })
-
-    // Extract to output directory.
-    await extractBinary(cachedPath, assetName, tag)
+    logger.info(`Downloaded to ${binaryPath}`)
 
     logger.groupEnd()
     logger.success('binject extraction complete')

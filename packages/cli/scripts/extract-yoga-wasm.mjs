@@ -8,20 +8,15 @@
  * Idempotent: Skips regeneration if cached file hasn't changed.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
+import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { downloadSocketBtmRelease } from '@socketsecurity/lib/releases/socket-btm'
 
-import {
-  computeFileHash,
-  downloadAsset,
-  findAsset,
-  generateHeader,
-  getCacheDir,
-  getLatestRelease,
-} from './utils/socket-btm-releases.mjs'
+import { computeFileHash, generateHeader } from './utils/socket-btm-releases.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -29,12 +24,11 @@ const logger = getDefaultLogger()
 
 const outputPath = path.join(rootPath, 'build/yoga-sync.mjs')
 const versionPath = path.join(rootPath, 'build/yoga.version')
-const cacheDir = getCacheDir('yoga', rootPath)
 
 /**
  * Generate placeholder stub when yoga WASM is not available.
  */
-function generatePlaceholderStub() {
+async function generatePlaceholderStub() {
   const placeholderContent = `/**
  * Synchronous yoga-layout with embedded WASM binary (Placeholder).
  *
@@ -62,7 +56,7 @@ const yoga = {
 export default yoga
 `
 
-  writeFileSync(outputPath, placeholderContent, 'utf-8')
+  await writeFile(outputPath, placeholderContent, 'utf-8')
   logger.warn('Using placeholder yoga (affects table rendering)')
   process.exit(0)
 }
@@ -74,39 +68,35 @@ async function main() {
   try {
     logger.group('Extracting yoga-layout from socket-btm releases...')
 
-    // Fetch latest yoga-layout release.
-    const release = await getLatestRelease(
-      'yoga-layout-',
-      'SOCKET_BTM_YOGA_TAG',
-    )
-    if (!release) {
+    let assetPath
+    try {
+      // Download yoga-sync.mjs asset using @socketsecurity/lib helper.
+      // This handles version caching automatically.
+      // Asset name pattern: yoga-sync-{DATE}-{COMMIT}.mjs
+      assetPath = await downloadSocketBtmRelease({
+        asset: 'yoga-sync-20260106-a39285c.mjs',
+        cwd: rootPath,
+        downloadDir: '../../build-infra/build/downloaded',
+        envVar: 'SOCKET_BTM_YOGA_TAG',
+        quiet: false,
+        tool: 'yoga-layout',
+      })
+    } catch (e) {
       logger.groupEnd()
-      generatePlaceholderStub()
+      logger.warn(`yoga-layout not available: ${e.message}`)
+      await generatePlaceholderStub()
       return
     }
-
-    const { release: releaseData, tag } = release
-
-    // Find yoga-sync.mjs asset (ES module version).
-    const assetName = findAsset(
-      releaseData,
-      a => a.name.startsWith('yoga-sync') && a.name.endsWith('.mjs'),
-    )
-    if (!assetName) {
-      logger.groupEnd()
-      generatePlaceholderStub()
-      return
-    }
-
-    // Download asset with caching.
-    const cachedPath = await downloadAsset({ assetName, cacheDir, tag })
 
     // Check if extraction needed by comparing version.
-    const { existsSync } = await import('node:fs')
-    const { readFile: readFileAsync } = await import('node:fs/promises')
-    if (existsSync(versionPath) && existsSync(outputPath)) {
-      const cachedVersion = (await readFileAsync(versionPath, 'utf8')).trim()
-      if (cachedVersion === tag) {
+    // Read the version from the downloaded file's directory.
+    const assetDir = path.dirname(assetPath)
+    const sourceVersionPath = path.join(assetDir, '.version')
+
+    if (existsSync(versionPath) && existsSync(outputPath) && existsSync(sourceVersionPath)) {
+      const cachedVersion = (await readFile(versionPath, 'utf8')).trim()
+      const sourceVersion = (await readFile(sourceVersionPath, 'utf8')).trim()
+      if (cachedVersion === sourceVersion) {
         logger.info('yoga-layout already up to date')
         logger.groupEnd()
         logger.success('yoga-layout extraction complete')
@@ -115,14 +105,19 @@ async function main() {
     }
 
     // Read the downloaded yoga-sync.js file.
-    const syncContent = readFileSync(cachedPath, 'utf-8')
+    const syncContent = await readFile(assetPath, 'utf-8')
 
     // Compute source hash for cache validation.
-    const sourceHash = await computeFileHash(cachedPath)
+    const sourceHash = await computeFileHash(assetPath)
+
+    // Get tag from source version file.
+    const tag = existsSync(sourceVersionPath)
+      ? (await readFile(sourceVersionPath, 'utf8')).trim()
+      : 'unknown'
 
     // Generate output file with header.
     const header = generateHeader({
-      assetName,
+      assetName: path.basename(assetPath),
       scriptName: 'scripts/extract-yoga-wasm.mjs',
       sourceHash,
       tag,
@@ -135,17 +130,17 @@ async function main() {
 ${syncContent}
 `
 
-    writeFileSync(outputPath, jsContent, 'utf-8')
+    await writeFile(outputPath, jsContent, 'utf-8')
 
     // Write version file.
-    writeFileSync(versionPath, tag, 'utf-8')
+    await writeFile(versionPath, tag, 'utf-8')
 
     logger.groupEnd()
     logger.success('yoga-layout extraction complete')
   } catch (e) {
     logger.groupEnd()
     logger.error(`Unexpected error: ${e.message}`)
-    generatePlaceholderStub()
+    await generatePlaceholderStub()
   }
 }
 
