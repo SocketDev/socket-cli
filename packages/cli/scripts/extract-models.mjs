@@ -17,6 +17,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { downloadSocketBtmRelease } from '@socketsecurity/lib/releases/socket-btm'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+import { findAsset } from './utils/socket-btm-releases.mjs'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 const logger = getDefaultLogger()
@@ -65,11 +67,14 @@ async function main() {
 
     let assetPath
     try {
+      // Find the latest models asset dynamically.
+      // Asset name pattern: models-{DATE}-{COMMIT}.tar.gz
+      const assetName = await findAsset('models', 'models-', '.tar.gz')
+
       // Download models tar.gz asset using @socketsecurity/lib helper.
       // This handles version caching automatically.
-      // Asset name pattern: models-{DATE}-{COMMIT}.tar.gz
       assetPath = await downloadSocketBtmRelease({
-        asset: 'models-20260106-ca41aa0.tar.gz',
+        asset: assetName,
         cwd: rootPath,
         downloadDir: '../../build-infra/build/downloaded',
         envVar: 'SOCKET_BTM_MODELS_TAG',
