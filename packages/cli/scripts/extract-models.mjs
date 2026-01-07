@@ -70,7 +70,7 @@ async function main() {
       // The pattern is resolved automatically to find the latest matching asset.
       // This handles version caching automatically.
       assetPath = await downloadSocketBtmRelease({
-        asset: { prefix: 'models-', suffix: '.tar.gz' },
+        asset: 'models-*.tar.gz',
         cwd: rootPath,
         downloadDir: '../../build-infra/build/downloaded',
         quiet: false,

@@ -78,7 +78,7 @@ async function main() {
       // The pattern is resolved automatically to find the latest matching asset.
       // This handles version caching automatically.
       assetPath = await downloadSocketBtmRelease({
-        asset: { prefix: 'yoga-sync-', suffix: '.mjs' },
+        asset: 'yoga-sync-*.mjs',
         cwd: rootPath,
         downloadDir: '../../build-infra/build/downloaded',
         quiet: false,
