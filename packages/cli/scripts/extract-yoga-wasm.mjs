@@ -18,6 +18,7 @@ import { downloadSocketBtmRelease } from '@socketsecurity/lib/releases/socket-bt
 
 import {
   computeFileHash,
+  findAsset,
   generateHeader,
 } from './utils/socket-btm-releases.mjs'
 
@@ -73,11 +74,14 @@ async function main() {
 
     let assetPath
     try {
+      // Find the latest yoga-sync asset dynamically.
+      // Asset name pattern: yoga-sync-{DATE}-{COMMIT}.mjs
+      const assetName = await findAsset('yoga-layout', 'yoga-sync-', '.mjs')
+
       // Download yoga-sync.mjs asset using @socketsecurity/lib helper.
       // This handles version caching automatically.
-      // Asset name pattern: yoga-sync-{DATE}-{COMMIT}.mjs
       assetPath = await downloadSocketBtmRelease({
-        asset: 'yoga-sync-20260106-a39285c.mjs',
+        asset: assetName,
         cwd: rootPath,
         downloadDir: '../../build-infra/build/downloaded',
         envVar: 'SOCKET_BTM_YOGA_TAG',
