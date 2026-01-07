@@ -14,13 +14,12 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import {
-  findReleaseAsset,
-  SOCKET_BTM_REPO,
-} from '@socketsecurity/lib/releases/github'
 import { downloadSocketBtmRelease } from '@socketsecurity/lib/releases/socket-btm'
 
-import { computeFileHash, generateHeader } from './utils/socket-btm-releases.mjs'
+import {
+  computeFileHash,
+  generateHeader,
+} from './utils/socket-btm-releases.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -74,25 +73,12 @@ async function main() {
 
     let assetPath
     try {
-      // Find the latest yoga-sync asset dynamically.
-      // Asset name pattern: yoga-sync-{DATE}-{COMMIT}.mjs
-      const result = await findReleaseAsset(
-        'yoga-layout-',
-        { prefix: 'yoga-sync-', suffix: '.mjs' },
-        SOCKET_BTM_REPO,
-        { quiet: false },
-      )
-
-      if (!result) {
-        throw new Error('No yoga-layout release with matching asset found')
-      }
-
-      const { assetName } = result
-
       // Download yoga-sync.mjs asset using @socketsecurity/lib helper.
+      // Asset name pattern: yoga-sync-{DATE}-{COMMIT}.mjs
+      // The pattern is resolved automatically to find the latest matching asset.
       // This handles version caching automatically.
       assetPath = await downloadSocketBtmRelease({
-        asset: assetName,
+        asset: { prefix: 'yoga-sync-', suffix: '.mjs' },
         cwd: rootPath,
         downloadDir: '../../build-infra/build/downloaded',
         quiet: false,
