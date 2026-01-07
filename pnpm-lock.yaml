@@ -970,11 +970,7 @@ importers:
 
   packages/socketbin-cli-linux-arm64: {}
 
-  packages/socketbin-cli-linux-arm64-musl: {}
-
   packages/socketbin-cli-linux-x64: {}
-
-  packages/socketbin-cli-linux-x64-musl: {}
 
   packages/socketbin-cli-win32-arm64: {}
 
