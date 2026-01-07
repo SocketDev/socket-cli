@@ -7,6 +7,10 @@ import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { spawnSfwDlx } from '../../utils/dlx/spawn.mjs'
 import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
 import { filterFlags } from '../../utils/process/cmd.mts'
+import {
+  trackSubprocessExit,
+  trackSubprocessStart,
+} from '../../utils/telemetry/integration.mts'
 
 import type {
   CliCommandConfig,
@@ -80,6 +84,9 @@ async function run(
   // Set default exit code to 1 (failure). Will be overwritten on success.
   process.exitCode = 1
 
+  // Track subprocess start.
+  const subprocessStartTime = await trackSubprocessStart(PNPM)
+
   // Forward arguments to sfw (Socket Firewall) using Socket's dlx.
   const { spawnPromise } = await spawnSfwDlx(['pnpm', ...filteredArgv], {
     stdio: 'inherit',
@@ -91,12 +98,16 @@ async function run(
   childProcess.on(
     'exit',
     (code: number | null, signalName: NodeJS.Signals | null) => {
-      if (signalName) {
-        process.kill(process.pid, signalName)
-      } else if (typeof code === 'number') {
-        // eslint-disable-next-line n/no-process-exit
-        process.exit(code)
-      }
+      // Track subprocess exit and flush telemetry before exiting.
+      // Use .then() to ensure telemetry completes before process.exit().
+      void trackSubprocessExit(PNPM, subprocessStartTime, code).then(() => {
+        if (signalName) {
+          process.kill(process.pid, signalName)
+        } else if (typeof code === 'number') {
+          // eslint-disable-next-line n/no-process-exit
+          process.exit(code)
+        }
+      })
     },
   )
 
