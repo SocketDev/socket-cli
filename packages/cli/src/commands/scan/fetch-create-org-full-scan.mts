@@ -13,6 +13,7 @@ export type FetchCreateOrgFullScanConfigs = {
   committers: string
   pullRequest: number
   repoName: string
+  scanType: string | undefined
 }
 
 export type FetchCreateOrgFullScanOptions = {
@@ -38,6 +39,7 @@ export async function fetchCreateOrgFullScan(
     committers,
     pullRequest,
     repoName,
+    scanType,
   } = { __proto__: null, ...config } as FetchCreateOrgFullScanConfigs
 
   const {
@@ -68,6 +70,7 @@ export async function fetchCreateOrgFullScan(
         : {}),
       ...(pullRequest ? { pull_request: String(pullRequest) } : {}),
       ...(repoName ? { repo: repoName } : {}),
+      ...(scanType ? { scan_type: scanType } : {}),
       ...(pendingHead !== undefined
         ? { set_as_pending_head: Boolean(pendingHead) }
         : {}),

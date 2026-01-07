@@ -16,6 +16,8 @@ import { performReachabilityAnalysis } from './perform-reachability-analysis.mts
 import {
   DOT_SOCKET_DOT_FACTS_JSON,
   FOLD_SETTING_VERSION,
+  SCAN_TYPE_SOCKET,
+  SCAN_TYPE_SOCKET_TIER1,
 } from '../../constants.mts'
 import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
@@ -215,6 +217,9 @@ export async function handleCreateNewScan({
       pullRequest,
       repoName,
       branchName,
+      scanType: reach.runReachabilityAnalysis
+        ? SCAN_TYPE_SOCKET_TIER1
+        : SCAN_TYPE_SOCKET,
     },
     {
       cwd,
