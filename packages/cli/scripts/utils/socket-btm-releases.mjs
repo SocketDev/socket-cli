@@ -11,7 +11,6 @@ import path from 'node:path'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import {
   downloadGitHubRelease,
-  findReleaseAsset,
   getLatestRelease as getLatestReleaseFromLib,
   SOCKET_BTM_REPO,
 } from '@socketsecurity/lib/releases/github'
@@ -50,7 +49,15 @@ export async function getLatestRelease(tool, { envVar, quiet = false } = {}) {
  * @returns {string | null} - Asset name or null
  */
 export function findAsset(release, pattern) {
-  return findReleaseAsset(release, pattern)
+  const matcher =
+    typeof pattern === 'function'
+      ? pattern
+      : typeof pattern === 'string'
+        ? a => a.name.includes(pattern)
+        : a => pattern.test(a.name)
+
+  const asset = release.assets.find(matcher)
+  return asset ? asset.name : null
 }
 
 /**
