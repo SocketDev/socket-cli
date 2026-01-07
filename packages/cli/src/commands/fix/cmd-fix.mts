@@ -141,11 +141,23 @@ Available styles:
     description:
       'Set a minimum age requirement for suggested upgrade versions (e.g., 1h, 2d, 3w). A higher age requirement reduces the risk of upgrading to malicious versions. For example, setting the value to 1 week (1w) gives ecosystem maintainers one week to remove potentially malicious versions.',
   },
+  debug: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Enable debug logging in the Coana-based Socket Fix CLI invocation.',
+    shortFlag: 'd',
+  },
   showAffectedDirectDependencies: {
     type: 'boolean',
     default: false,
     description:
       'List the direct dependencies responsible for introducing transitive vulnerabilities and list the updates required to resolve the vulnerabilities',
+  },
+  silence: {
+    type: 'boolean',
+    default: false,
+    description: 'Silence all output except the final result',
   },
   exclude: {
     type: 'string',
@@ -282,6 +294,7 @@ async function run(
     all,
     applyFixes,
     autopilot,
+    debug,
     ecosystems,
     exclude,
     fixVersion,
@@ -296,6 +309,7 @@ async function run(
     prLimit,
     rangeStyle,
     showAffectedDirectDependencies,
+    silence,
     // We patched in this feature with `npx custompatch meow` at
     // socket-cli/patches/meow#13.2.0.patch.
     unknownFlags = [],
@@ -303,6 +317,7 @@ async function run(
     all: boolean
     applyFixes: boolean
     autopilot: boolean
+    debug: boolean
     ecosystems: string[]
     exclude: string[]
     fixVersion: string | undefined
@@ -318,6 +333,7 @@ async function run(
     prLimit: number
     rangeStyle: RangeStyle
     showAffectedDirectDependencies: boolean
+    silence: boolean
     unknownFlags?: string[]
   }
 
@@ -382,7 +398,7 @@ async function run(
     return
   }
 
-  const orgSlugCResult = await getDefaultOrgSlug()
+  const orgSlugCResult = await getDefaultOrgSlug(silence)
   if (!orgSlugCResult.ok) {
     process.exitCode = orgSlugCResult.code ?? 1
     logger.fail(
@@ -409,6 +425,7 @@ async function run(
     autopilot,
     coanaVersion: fixVersion,
     cwd,
+    debug,
     disableMajorUpdates,
     ecosystems: validatedEcosystems,
     exclude: excludePatterns,
@@ -423,6 +440,7 @@ async function run(
     prLimit,
     rangeStyle,
     showAffectedDirectDependencies,
+    silence,
     spinner,
     unknownFlags,
   })

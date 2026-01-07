@@ -9,6 +9,7 @@ export type FixConfig = {
   autopilot: boolean
   coanaVersion: string | undefined
   cwd: string
+  debug: boolean
   disableMajorUpdates: boolean
   ecosystems: PURL_Type[]
   exclude: string[]
@@ -23,6 +24,7 @@ export type FixConfig = {
   prLimit: number
   rangeStyle: RangeStyle
   showAffectedDirectDependencies: boolean
+  silence: boolean
   spinner: Spinner | undefined
   unknownFlags: string[]
 }
