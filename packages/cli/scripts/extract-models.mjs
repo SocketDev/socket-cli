@@ -14,10 +14,12 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import {
+  findReleaseAsset,
+  SOCKET_BTM_REPO,
+} from '@socketsecurity/lib/releases/github'
 import { downloadSocketBtmRelease } from '@socketsecurity/lib/releases/socket-btm'
 import { spawn } from '@socketsecurity/lib/spawn'
-
-import { findAsset } from './utils/socket-btm-releases.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -69,7 +71,18 @@ async function main() {
     try {
       // Find the latest models asset dynamically.
       // Asset name pattern: models-{DATE}-{COMMIT}.tar.gz
-      const assetName = await findAsset('models', 'models-', '.tar.gz')
+      const result = await findReleaseAsset(
+        'models-',
+        { prefix: 'models-', suffix: '.tar.gz' },
+        SOCKET_BTM_REPO,
+        { quiet: false },
+      )
+
+      if (!result) {
+        throw new Error('No models release with matching asset found')
+      }
+
+      const { assetName } = result
 
       // Download models tar.gz asset using @socketsecurity/lib helper.
       // This handles version caching automatically.
@@ -77,7 +90,6 @@ async function main() {
         asset: assetName,
         cwd: rootPath,
         downloadDir: '../../build-infra/build/downloaded',
-        envVar: 'SOCKET_BTM_MODELS_TAG',
         quiet: false,
         tool: 'models',
       })

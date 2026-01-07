@@ -6,41 +6,6 @@
 import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 
-import { fetchGitHub } from '@socketsecurity/lib/github'
-
-/**
- * Find the latest asset in a socket-btm release that matches a prefix and suffix.
- *
- * @param {string} tool - Tool name (e.g., 'yoga-layout', 'models')
- * @param {string} prefix - Asset name prefix (e.g., 'yoga-sync-', 'models-')
- * @param {string} suffix - Asset name suffix (e.g., '.mjs', '.tar.gz')
- * @returns {Promise<string>} - Asset name
- */
-export async function findAsset(tool, prefix, suffix) {
-  // Get all releases using fetchGitHub from @socketsecurity/lib.
-  const releases = await fetchGitHub(
-    'https://api.github.com/repos/SocketDev/socket-btm/releases?per_page=100',
-  )
-
-  // Find the latest release for this tool (tag starts with tool name).
-  const release = releases.find((r) => r.tag_name.startsWith(`${tool}-`))
-  if (!release) {
-    throw new Error(`No release found for tool: ${tool}`)
-  }
-
-  // Find the asset matching the prefix and suffix.
-  const asset = release.assets.find(
-    (a) => a.name.startsWith(prefix) && a.name.endsWith(suffix),
-  )
-  if (!asset) {
-    throw new Error(
-      `No asset found matching ${prefix}*${suffix} in release ${release.tag_name}`,
-    )
-  }
-
-  return asset.name
-}
-
 /**
  * Compute SHA256 hash of file content.
  *
