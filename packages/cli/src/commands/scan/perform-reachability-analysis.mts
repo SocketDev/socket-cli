@@ -26,6 +26,7 @@ export type ReachabilityOptions = {
   reachDisableAnalysisSplitting: boolean
   reachEcosystems: PURL_Type[]
   reachExcludePaths: string[]
+  reachLazyMode: boolean
   reachMinSeverity: string
   reachSkipCache: boolean
   reachUseOnlyPregeneratedSboms: boolean
@@ -191,6 +192,7 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachExcludePaths.length
       ? ['--exclude-dirs', ...reachabilityOptions.reachExcludePaths]
       : []),
+    ...(reachabilityOptions.reachLazyMode ? ['--lazy-mode'] : []),
     ...(reachabilityOptions.reachMinSeverity
       ? ['--min-severity', reachabilityOptions.reachMinSeverity]
       : []),

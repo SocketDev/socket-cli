@@ -245,6 +245,7 @@ async function run(
     reachDebug,
     reachDisableAnalysisSplitting,
     reachDisableAnalytics,
+    reachLazyMode,
     reachMinSeverity,
     reachSkipCache,
     reachUseOnlyPregeneratedSboms,
@@ -276,6 +277,7 @@ async function run(
     reachDebug: boolean
     reachDisableAnalytics: boolean
     reachDisableAnalysisSplitting: boolean
+    reachLazyMode: boolean
     reachMinSeverity: string
     reachSkipCache: boolean
     reachUseOnlyPregeneratedSboms: boolean
@@ -459,6 +461,7 @@ async function run(
     isUsingNonDefaultAnalytics ||
     hasReachEcosystems ||
     hasReachExcludePaths ||
+    reachLazyMode ||
     reachSkipCache ||
     reachDisableAnalysisSplitting
 
@@ -575,6 +578,7 @@ async function run(
       reachDisableAnalysisSplitting: Boolean(reachDisableAnalysisSplitting),
       reachEcosystems,
       reachExcludePaths,
+      reachLazyMode: Boolean(reachLazyMode),
       reachMinSeverity: String(reachMinSeverity),
       reachSkipCache: Boolean(reachSkipCache),
       reachUseOnlyPregeneratedSboms: Boolean(reachUseOnlyPregeneratedSboms),
