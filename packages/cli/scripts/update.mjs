@@ -80,7 +80,11 @@ async function main() {
       }),
     )
     const results = await Promise.allSettled(promises)
-    const exitCode = results.some(r => r.status === 'fulfilled' && r.value.code !== 0) ? 1 : 0
+    const exitCode = results.some(
+      r => r.status === 'fulfilled' && r.value.code !== 0,
+    )
+      ? 1
+      : 0
 
     // Clear progress line.
     if (!quiet) {

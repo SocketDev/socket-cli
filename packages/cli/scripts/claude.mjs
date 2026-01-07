@@ -3428,7 +3428,8 @@ async function runAudit(claudeCmd, options = {}) {
 
   const npmAudit = results[0].status === 'fulfilled' ? results[0].value : null
   const depCheck = results[1].status === 'fulfilled' ? results[1].value : null
-  const licenseCheck = results[2].status === 'fulfilled' ? results[2].value : '{}'
+  const licenseCheck =
+    results[2].status === 'fulfilled' ? results[2].value : '{}'
 
   const packageJson = JSON.parse(licenseCheck)
 

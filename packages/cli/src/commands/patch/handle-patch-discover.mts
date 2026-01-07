@@ -172,6 +172,7 @@ export async function handlePatchDiscover({
           committers: '',
           pullRequest: 0,
           repoName: 'patch-discover',
+          scanType: undefined,
         },
         {
           cwd,

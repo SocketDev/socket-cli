@@ -24,6 +24,7 @@ export type HandleFixConfig = Remap<
     unknownFlags: string[]
     outputFile: string
     minimumReleaseAge: string
+    silence: boolean
   }
 >
 
@@ -123,6 +124,7 @@ export async function handleFix({
   prLimit,
   rangeStyle,
   showAffectedDirectDependencies,
+  silence,
   spinner,
   unknownFlags,
 }: HandleFixConfig) {
@@ -173,6 +175,7 @@ export async function handleFix({
       prLimit,
       rangeStyle,
       showAffectedDirectDependencies,
+      silence,
       spinner,
       unknownFlags,
     }),

@@ -17,7 +17,6 @@ export async function computeFileHash(filePath) {
   return createHash('sha256').update(content).digest('hex')
 }
 
-
 /**
  * Generate file header with metadata.
  *
@@ -39,4 +38,3 @@ export function generateHeader({ assetName, scriptName, sourceHash, tag }) {
  * Asset: ${assetName}${hashLine}
  */`
 }
-

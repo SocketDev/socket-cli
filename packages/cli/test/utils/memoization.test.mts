@@ -160,7 +160,9 @@ describe('memoizeAsync', () => {
     // Fire off multiple concurrent calls
     const results = await Promise.allSettled([fn(5), fn(5), fn(5)])
 
-    expect(results.map(r => r.status === 'fulfilled' ? r.value : null)).toEqual([10, 10, 10])
+    expect(
+      results.map(r => (r.status === 'fulfilled' ? r.value : null)),
+    ).toEqual([10, 10, 10])
     // Only computed once despite concurrent calls
     expect(callCount).toBe(1)
   })

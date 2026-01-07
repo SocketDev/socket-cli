@@ -68,16 +68,13 @@ import {
 import { FLAG_VERSION } from '../../constants/cli.mts'
 import ENV from '../../constants/env.mts'
 import {
-  execPath,
-  nodeNoWarningsFlags,
-} from '../../constants/paths.mts'
-import {
   EXT_LOCK,
   EXT_LOCKB,
   NODE_MODULES,
   NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
   PACKAGE_JSON,
 } from '../../constants/packages.mts'
+import { execPath, nodeNoWarningsFlags } from '../../constants/paths.mts'
 import { findUp } from '../fs/find-up.mts'
 import { cmdPrefixMessage } from '../process/cmd.mts'
 
@@ -273,10 +270,11 @@ function resolveBinPathSync(binPath: string): string {
     const nodePathMatch = content.match(
       /(?:node\s+["']|"%dp0%\\)([^"'\s]+(?:npm-cli|pnpm|yarn)\.(?:c?js|mjs))["'\s]/i,
     )
-    if (nodePathMatch) {
-      const resolvedPath = path.isAbsolute(nodePathMatch[1])
-        ? nodePathMatch[1]
-        : path.resolve(path.dirname(binPath), nodePathMatch[1])
+    if (nodePathMatch?.[1]) {
+      const matchedPath = nodePathMatch[1]
+      const resolvedPath = path.isAbsolute(matchedPath)
+        ? matchedPath
+        : path.resolve(path.dirname(binPath), matchedPath)
       return resolvedPath
     }
   } catch {
@@ -399,7 +397,10 @@ async function getAgentVersion(
         [...nodeNoWarningsFlags, shouldRunWithNode, FLAG_VERSION],
         { cwd },
       )
-      stdout = typeof result.stdout === 'string' ? result.stdout : result.stdout.toString()
+      stdout =
+        typeof result.stdout === 'string'
+          ? result.stdout
+          : result.stdout.toString()
     } else {
       const result = await spawn(agentExecPath, [FLAG_VERSION], {
         cwd,
@@ -408,7 +409,10 @@ async function getAgentVersion(
         // when shell is true.
         shell: WIN32,
       })
-      stdout = typeof result.stdout === 'string' ? result.stdout : result.stdout.toString()
+      stdout =
+        typeof result.stdout === 'string'
+          ? result.stdout
+          : result.stdout.toString()
     }
 
     result =

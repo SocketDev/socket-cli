@@ -94,7 +94,7 @@ async function main() {
 
   // Validate libc is Linux-only
   if (options.libc && options.platform && options.platform !== 'linux') {
-    logger.fail(`Error: --libc parameter is only valid for Linux builds`)
+    logger.fail('Error: --libc parameter is only valid for Linux builds')
     logger.fail(
       `Specified: --platform=${options.platform} --libc=${options.libc}`,
     )

@@ -16,7 +16,10 @@ import { fileURLToPath } from 'node:url'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { downloadSocketBtmRelease } from '@socketsecurity/lib/releases/socket-btm'
 
-import { computeFileHash, generateHeader } from './utils/socket-btm-releases.mjs'
+import {
+  computeFileHash,
+  generateHeader,
+} from './utils/socket-btm-releases.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -93,7 +96,11 @@ async function main() {
     const assetDir = path.dirname(assetPath)
     const sourceVersionPath = path.join(assetDir, '.version')
 
-    if (existsSync(versionPath) && existsSync(outputPath) && existsSync(sourceVersionPath)) {
+    if (
+      existsSync(versionPath) &&
+      existsSync(outputPath) &&
+      existsSync(sourceVersionPath)
+    ) {
       const cachedVersion = (await readFile(versionPath, 'utf8')).trim()
       const sourceVersion = (await readFile(sourceVersionPath, 'utf8')).trim()
       if (cachedVersion === sourceVersion) {

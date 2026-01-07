@@ -42,8 +42,8 @@
 import { homedir } from 'node:os'
 import process from 'node:process'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
-import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
+import { debugNs } from '@socketsecurity/lib/debug'
+import { escapeRegExp } from '@socketsecurity/lib/regexps'
 
 import { TelemetryService } from './service.mts'
 import constants, { CONFIG_KEY_DEFAULT_ORG } from '../../constants.mts'
@@ -55,7 +55,7 @@ import type { TelemetryContext } from './types.mts'
  * Debug wrapper for telemetry integration.
  */
 const debug = (message: string): void => {
-  debugFn('socket:telemetry:integration', message)
+  debugNs('socket:telemetry:integration', message)
 }
 
 /**

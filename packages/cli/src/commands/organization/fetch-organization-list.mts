@@ -36,7 +36,6 @@ export async function fetchOrganization(
     description = 'organization list',
     sdk,
     sdkOpts,
-    silence = false,
   } = {
     __proto__: null,
     ...options,
@@ -56,7 +55,6 @@ export async function fetchOrganization(
     {
       commandPath,
       description,
-      silence,
     },
   )
   if (!orgsCResult.ok) {

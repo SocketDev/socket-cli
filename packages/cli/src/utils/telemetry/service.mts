@@ -43,9 +43,10 @@
 
 import { randomUUID } from 'node:crypto'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
+import type { InspectOptions } from '@socketsecurity/lib/debug'
 
-import { setupSdk } from '../sdk.mts'
+import { setupSdk } from '../socket/sdk.mts'
 
 import type { TelemetryEvent } from './types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -54,17 +55,17 @@ type TelemetryConfig = SocketSdkSuccessResult<'getOrgTelemetryConfig'>['data']
 
 /**
  * Debug wrapper for telemetry service.
- * Wraps debugFn to provide a simpler API.
+ * Wraps debugNs to provide a simpler API.
  */
 const debug = (message: string): void => {
-  debugFn('socket:telemetry:service', message)
+  debugNs('socket:telemetry:service', message)
 }
 
 /**
  * DebugDir wrapper for telemetry service.
  */
-const debugDirWrapper = (obj: unknown): void => {
-  debugDir('socket:telemetry:service', obj)
+const debugDirWrapper = (obj: unknown, inspectOpts?: InspectOptions): void => {
+  debugDirNs('socket:telemetry:service', obj, inspectOpts)
 }
 
 /**
