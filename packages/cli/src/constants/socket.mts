@@ -24,6 +24,10 @@ export const SOCKET_YML = 'socket.yml'
 export const SOCKET_DEFAULT_BRANCH = 'socket-default-branch'
 export const SOCKET_DEFAULT_REPOSITORY = 'socket-default-repository'
 
+// Socket Scan Types
+export const SCAN_TYPE_SOCKET = 'socket'
+export const SCAN_TYPE_SOCKET_TIER1 = 'socket_tier1'
+
 // Token
 export const TOKEN_PREFIX = 'sktsec_'
 export const TOKEN_PREFIX_LENGTH = TOKEN_PREFIX.length

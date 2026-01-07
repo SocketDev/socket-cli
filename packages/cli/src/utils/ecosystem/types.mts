@@ -10,10 +10,10 @@
  * - PURL_Type: Package URL type from Socket SDK
  *
  * Supported Ecosystems:
- * - apk, bitbucket, cargo, chrome, cocoapods, composer
+ * - alpm, apk, bitbucket, cargo, chrome, cocoapods, composer
  * - conan, conda, cran, deb, docker, gem, generic
  * - github, gitlab, go, hackage, hex, huggingface
- * - maven, mlflow, npm, nuget, oci, pub, pypi, rpm, swift
+ * - maven, mlflow, npm, nuget, oci, pub, pypi, rpm, swift, vscode
  *
  * Usage:
  * - Validates ecosystem types
@@ -39,6 +39,7 @@ export type PURL_Type = components['schemas']['SocketPURL_Type']
 //   ExpectNever<ExtraInEcosystemString>
 
 export const ALL_ECOSYSTEMS = [
+  'alpm',
   'apk',
   'bitbucket',
   'cargo',
@@ -67,6 +68,7 @@ export const ALL_ECOSYSTEMS = [
   'pypi',
   'rpm',
   'swift',
+  'vscode',
   // The following are in EcosystemString but not in PURL_Type:
   // 'qpkg',
   // 'swid',
