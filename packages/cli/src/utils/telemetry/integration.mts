@@ -248,7 +248,7 @@ function buildContext(argv: string[]): TelemetryContext {
  * @returns Sanitized argv array.
  *
  * @example
- * // Input: ['node', 'socket', 'npm', 'install', '@my/private-package', '--token', 'sktsec_abc123']
+ * // Input: ['node', 'socket', 'npm', 'install', '@my/private-package', '--token', 'fake-token']
  * // Output: ['npm', 'install']
  */
 function sanitizeArgv(argv: string[]): string[] {
