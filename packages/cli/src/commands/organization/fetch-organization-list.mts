@@ -10,6 +10,7 @@ export type FetchOrganizationOptions = {
   description?: string | undefined
   sdk?: SocketSdk | undefined
   sdkOpts?: SetupSdkOptions | undefined
+  silence?: boolean | undefined
 }
 
 export type EnterpriseOrganization = Omit<Organization, 'plan'> & {
@@ -35,6 +36,7 @@ export async function fetchOrganization(
     description = 'organization list',
     sdk,
     sdkOpts,
+    silence = false,
   } = {
     __proto__: null,
     ...options,
@@ -54,6 +56,7 @@ export async function fetchOrganization(
     {
       commandPath,
       description,
+      silence,
     },
   )
   if (!orgsCResult.ok) {
