@@ -10,7 +10,6 @@ export type FetchOrganizationOptions = {
   description?: string | undefined
   sdk?: SocketSdk | undefined
   sdkOpts?: SetupSdkOptions | undefined
-  silence?: boolean | undefined
 }
 
 export type EnterpriseOrganization = Omit<Organization, 'plan'> & {
