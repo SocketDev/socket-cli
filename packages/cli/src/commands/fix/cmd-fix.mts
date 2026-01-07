@@ -398,7 +398,7 @@ async function run(
     return
   }
 
-  const orgSlugCResult = await getDefaultOrgSlug(silence)
+  const orgSlugCResult = await getDefaultOrgSlug()
   if (!orgSlugCResult.ok) {
     process.exitCode = orgSlugCResult.code ?? 1
     logger.fail(
