@@ -1,3 +1,0 @@
-# metadata-files
-
-See root README.md for primary documentation.
