@@ -351,6 +351,30 @@ async function checkPrerequisite({
 }
 
 /**
+ * Generate cli-with-sentry package from template.
+ */
+async function generateCliSentryPackage() {
+  if (!quiet) {
+    logger.log('Generating cli-with-sentry package from template...')
+  }
+
+  const scriptPath = new URL('./generate-cli-sentry-package.mjs', import.meta.url)
+  const result = await spawn('node', [scriptPath.pathname], {
+    stdio: quiet ? 'pipe' : 'inherit',
+  })
+
+  if (result.code === 0) {
+    if (!quiet) {
+      logger.log('cli-with-sentry package generated!')
+    }
+    return true
+  }
+
+  logger.warn('Failed to generate cli-with-sentry package')
+  return false
+}
+
+/**
  * Generate socketbin packages from template.
  */
 async function generateSocketbinPackages() {
@@ -512,7 +536,12 @@ async function main() {
     logger.log('')
   }
 
-  // Generate socketbin packages from template.
+  // Generate packages from templates.
+  await generateCliSentryPackage()
+  if (!quiet) {
+    logger.log('')
+  }
+
   await generateSocketbinPackages()
 
   if (!quiet) {
