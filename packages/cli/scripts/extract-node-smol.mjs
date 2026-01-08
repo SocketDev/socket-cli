@@ -30,7 +30,7 @@ async function main() {
     const binaryPath = await downloadSocketBtmRelease({
       bin: 'node',
       cwd: rootPath,
-      downloadDir: '../../build-infra/build/downloaded',
+      downloadDir: '../../packages/build-infra/build/downloaded',
       envVar: 'SOCKET_BTM_NODE_SMOL_TAG',
       quiet: false,
       tool: 'node-smol',

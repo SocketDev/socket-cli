@@ -279,15 +279,17 @@ jobs:
         run: node scripts/integration.mjs --all
 
   e2e:
-    name: E2E Tests
+    name: E2E Tests (Shard ${{ matrix.shard }}/2)
     needs: [ci, versions]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    timeout-minutes: 15
     strategy:
-      fail-fast: true
+      fail-fast: false
+      max-parallel: 4
       matrix:
         node-version: ${{ fromJSON(inputs.node-versions || needs.versions.outputs.node) }}
         os: [ubuntu-latest]
+        shard: [1, 2]
     steps:
       - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4709a2443e5a036bb0cd94e5d1559f138f05994c # main
         with:
@@ -320,8 +322,8 @@ jobs:
         working-directory: packages/cli
         run: pnpm run build
 
-      - name: Run e2e tests
+      - name: Run e2e tests (shard ${{ matrix.shard }})
         working-directory: packages/cli
         env:
           SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_CLI_API_TOKEN }}
-        run: pnpm run e2e-tests
+        run: pnpm run e2e-tests --shard=${{ matrix.shard }}/2

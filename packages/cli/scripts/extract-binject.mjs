@@ -29,7 +29,7 @@ async function main() {
     // This handles version caching, platform detection, and file permissions automatically.
     const binaryPath = await downloadSocketBtmRelease({
       cwd: rootPath,
-      downloadDir: '../../build-infra/build/downloaded',
+      downloadDir: '../../packages/build-infra/build/downloaded',
       envVar: 'SOCKET_BTM_BINJECT_TAG',
       quiet: false,
       tool: 'binject',

@@ -74,13 +74,13 @@ async function main() {
     let assetPath
     try {
       // Download yoga-sync.mjs asset using @socketsecurity/lib helper.
-      // This handles version caching automatically.
       // Asset name pattern: yoga-sync-{DATE}-{COMMIT}.mjs
+      // The pattern is resolved automatically to find the latest matching asset.
+      // This handles version caching automatically.
       assetPath = await downloadSocketBtmRelease({
-        asset: 'yoga-sync-20260106-a39285c.mjs',
+        asset: 'yoga-sync-*.mjs',
         cwd: rootPath,
-        downloadDir: '../../build-infra/build/downloaded',
-        envVar: 'SOCKET_BTM_YOGA_TAG',
+        downloadDir: '../../packages/build-infra/build/downloaded',
         quiet: false,
         tool: 'yoga-layout',
       })
