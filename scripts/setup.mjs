@@ -375,6 +375,30 @@ async function generateCliSentryPackage() {
 }
 
 /**
+ * Generate socket package from template.
+ */
+async function generateSocketPackage() {
+  if (!quiet) {
+    logger.log('Generating socket package from template...')
+  }
+
+  const scriptPath = new URL('./generate-socket-package.mjs', import.meta.url)
+  const result = await spawn('node', [scriptPath.pathname], {
+    stdio: quiet ? 'pipe' : 'inherit',
+  })
+
+  if (result.code === 0) {
+    if (!quiet) {
+      logger.log('socket package generated!')
+    }
+    return true
+  }
+
+  logger.warn('Failed to generate socket package')
+  return false
+}
+
+/**
  * Generate socketbin packages from template.
  */
 async function generateSocketbinPackages() {
@@ -538,6 +562,11 @@ async function main() {
 
   // Generate packages from templates.
   await generateCliSentryPackage()
+  if (!quiet) {
+    logger.log('')
+  }
+
+  await generateSocketPackage()
   if (!quiet) {
     logger.log('')
   }

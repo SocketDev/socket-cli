@@ -103,6 +103,7 @@ yarn-error.log*
 
 ## Generated packages (generated from templates/)
 packages/cli-with-sentry/
+packages/socket/
 packages/socketbin-cli-*/
 
 ## Downloaded build sources
