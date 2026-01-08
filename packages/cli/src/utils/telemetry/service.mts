@@ -44,11 +44,12 @@
 import { randomUUID } from 'node:crypto'
 
 import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
-import type { InspectOptions } from '@socketsecurity/lib/debug'
+
 
 import { setupSdk } from '../socket/sdk.mts'
 
 import type { TelemetryEvent } from './types.mts'
+import type { InspectOptions } from '@socketsecurity/lib/debug'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 type TelemetryConfig = SocketSdkSuccessResult<'getOrgTelemetryConfig'>['data']

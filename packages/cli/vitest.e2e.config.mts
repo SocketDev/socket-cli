@@ -32,5 +32,7 @@ export default defineConfig({
     // E2E tests need longer timeouts for spawning processes.
     testTimeout: 60_000,
     hookTimeout: 60_000,
+    // Enable sharding for parallel E2E execution.
+    fileParallelism: true,
   },
 })
