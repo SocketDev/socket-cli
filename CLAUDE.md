@@ -27,7 +27,7 @@ This is a reference to shared Socket standards. See `../socket-registry/CLAUDE.m
 3. Run the actual commands to confirm functionality
 4. Never claim "Done" without verification
 
-## CRITICAL RULES
+## Critical Rules
 
 ### Fix ALL Issues
 - **Fix ALL issues when asked** - Never dismiss issues as "pre-existing" or "not caused by my changes"
