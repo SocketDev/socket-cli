@@ -1,5 +1,5 @@
 packages:
-  - packages/generate/build/*
+  - packages/package-builder/build/*
   - packages/*
 
 catalog:

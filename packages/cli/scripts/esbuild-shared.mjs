@@ -116,7 +116,7 @@ export function getInlinedEnvVars() {
   // Read version from socket package (the published package).
   const socketPackageJson = JSON.parse(
     readFileSync(
-      path.join(rootPath, '../generate/build/socket/package.json'),
+      path.join(rootPath, '../package-builder/build/socket/package.json'),
       'utf-8',
     ),
   )
