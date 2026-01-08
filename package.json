@@ -172,7 +172,7 @@
       "es-define-property": "catalog:",
       "es-set-tostringtag": "catalog:",
       "function-bind": "catalog:",
-      "glob": ">=11.1.0",
+      "glob": ">=13.0.0",
       "globalthis": "catalog:",
       "gopd": "catalog:",
       "graceful-fs": "catalog:",
