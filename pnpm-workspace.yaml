@@ -1,4 +1,5 @@
 packages:
+  - generated-packages/*
   - packages/*
 
 catalog:

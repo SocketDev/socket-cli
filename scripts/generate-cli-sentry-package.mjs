@@ -34,7 +34,7 @@ async function main() {
   logger.log('')
 
   const templatePath = path.join(rootPath, 'templates/cli-sentry-package')
-  const packagePath = path.join(rootPath, 'packages/cli-with-sentry')
+  const packagePath = path.join(rootPath, 'generated-packages/cli-with-sentry')
 
   // Copy entire template directory.
   await copyDirectory(templatePath, packagePath)

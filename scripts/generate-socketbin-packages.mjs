@@ -56,7 +56,7 @@ async function processTemplate(templatePath, replacements) {
 async function generatePackage(config) {
   const { arch, binExt, cpu, os, platform } = config
   const packageName = `socketbin-cli-${platform}-${arch}`
-  const packagePath = path.join(rootPath, 'packages', packageName)
+  const packagePath = path.join(rootPath, 'generated-packages', packageName)
   const templatePath = path.join(rootPath, 'templates/socketbin-package')
 
   const description = PLATFORM_DESCRIPTIONS[`${platform}-${arch}`] || `${platform} ${arch}`
