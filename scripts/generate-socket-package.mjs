@@ -34,7 +34,7 @@ async function main() {
   logger.log('')
 
   const templatePath = path.join(rootPath, 'templates/socket-package')
-  const packagePath = path.join(rootPath, 'packages/socket')
+  const packagePath = path.join(rootPath, 'generated-packages/socket')
 
   // Copy entire template directory.
   await copyDirectory(templatePath, packagePath)
