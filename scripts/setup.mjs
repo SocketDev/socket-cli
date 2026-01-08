@@ -358,7 +358,7 @@ async function generateCliSentryPackage() {
     logger.log('Generating cli-with-sentry package from template...')
   }
 
-  const scriptPath = new URL('./generate-cli-sentry-package.mjs', import.meta.url)
+  const scriptPath = new URL('../packages/generate/scripts/generate-cli-sentry-package.mjs', import.meta.url)
   const result = await spawn('node', [scriptPath.pathname], {
     stdio: quiet ? 'pipe' : 'inherit',
   })
@@ -382,7 +382,7 @@ async function generateSocketPackage() {
     logger.log('Generating socket package from template...')
   }
 
-  const scriptPath = new URL('./generate-socket-package.mjs', import.meta.url)
+  const scriptPath = new URL('../packages/generate/scripts/generate-socket-package.mjs', import.meta.url)
   const result = await spawn('node', [scriptPath.pathname], {
     stdio: quiet ? 'pipe' : 'inherit',
   })
@@ -406,7 +406,7 @@ async function generateSocketbinPackages() {
     logger.log('Generating socketbin packages from template...')
   }
 
-  const scriptPath = new URL('./generate-socketbin-packages.mjs', import.meta.url)
+  const scriptPath = new URL('../packages/generate/scripts/generate-socketbin-packages.mjs', import.meta.url)
   const result = await spawn('node', [scriptPath.pathname], {
     stdio: quiet ? 'pipe' : 'inherit',
   })
