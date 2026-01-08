@@ -80,7 +80,7 @@
     "@socketregistry/packageurl-js": "catalog:",
     "@socketregistry/yocto-spinner": "catalog:",
     "@socketsecurity/config": "catalog:",
-    "@socketsecurity/lib": "link:../socket-lib",
+    "@socketsecurity/lib": "catalog:",
     "@socketsecurity/registry": "catalog:",
     "@socketsecurity/sdk": "catalog:",
     "@types/cmd-shim": "catalog:",
