@@ -66,13 +66,13 @@ async function main() {
     let assetPath
     try {
       // Download models tar.gz asset using @socketsecurity/lib helper.
-      // This handles version caching automatically.
       // Asset name pattern: models-{DATE}-{COMMIT}.tar.gz
+      // The pattern is resolved automatically to find the latest matching asset.
+      // This handles version caching automatically.
       assetPath = await downloadSocketBtmRelease({
-        asset: 'models-20260106-ca41aa0.tar.gz',
+        asset: 'models-*.tar.gz',
         cwd: rootPath,
-        downloadDir: '../../build-infra/build/downloaded',
-        envVar: 'SOCKET_BTM_MODELS_TAG',
+        downloadDir: '../../packages/build-infra/build/downloaded',
         quiet: false,
         tool: 'models',
       })
