@@ -351,6 +351,30 @@ async function checkPrerequisite({
 }
 
 /**
+ * Generate socketbin packages from template.
+ */
+async function generateSocketbinPackages() {
+  if (!quiet) {
+    logger.log('Generating socketbin packages from template...')
+  }
+
+  const scriptPath = new URL('./generate-socketbin-packages.mjs', import.meta.url)
+  const result = await spawn('node', [scriptPath.pathname], {
+    stdio: quiet ? 'pipe' : 'inherit',
+  })
+
+  if (result.code === 0) {
+    if (!quiet) {
+      logger.log('Socketbin packages generated!')
+    }
+    return true
+  }
+
+  logger.warn('Failed to generate socketbin packages')
+  return false
+}
+
+/**
  * Restore build cache if possible.
  */
 async function restoreCache(hasGh) {
@@ -484,6 +508,13 @@ async function main() {
   }
 
   logger.log('All required prerequisites met!')
+  if (!quiet) {
+    logger.log('')
+  }
+
+  // Generate socketbin packages from template.
+  await generateSocketbinPackages()
+
   if (!quiet) {
     logger.log('')
   }

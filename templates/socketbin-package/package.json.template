@@ -1,20 +1,20 @@
 {
-  "name": "@socketbin/cli-win32-arm64",
+  "name": "@socketbin/cli-{{PLATFORM}}-{{ARCH}}",
   "version": "0.0.0-replaced-by-prepublish-socketbin",
   "description": "Socket CLI binary",
   "private": true,
   "license": "MIT",
   "bin": {
-    "socket": "bin/socket.exe"
+    "socket": "bin/socket{{BIN_EXT}}"
   },
   "files": [
-    "bin/socket.exe"
+    "bin/socket{{BIN_EXT}}"
   ],
   "os": [
-    "win32"
+    "{{OS}}"
   ],
   "cpu": [
-    "arm64"
+    "{{CPU}}"
   ],
   "repository": {
     "type": "git",
