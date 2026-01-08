@@ -1,10 +1,10 @@
 /**
- * Generate socket package directory from template.
- * Creates the socket npm wrapper package that will be used
- * for publishing the CLI with optional binary dependencies.
+ * Generate cli-with-sentry package directory from template.
+ * Creates the @socketsecurity/cli-with-sentry package that will be used
+ * for publishing the CLI with Sentry telemetry integration.
  *
  * Usage:
- *   node scripts/generate-socket-package.mjs
+ *   node scripts/generate-cli-sentry-package.mjs
  */
 
 import { promises as fs } from 'node:fs'
@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootPath = path.join(__dirname, '..')
+const generatePath = path.join(__dirname, '..')
 const logger = getDefaultLogger()
 
 /**
@@ -29,17 +29,17 @@ async function copyDirectory(src, dest) {
  */
 async function main() {
   logger.log('')
-  logger.log('Generating socket package from template...')
+  logger.log('Generating cli-with-sentry package from template...')
   logger.log('='.repeat(50))
   logger.log('')
 
-  const templatePath = path.join(rootPath, 'templates/socket-package')
-  const packagePath = path.join(rootPath, 'generated-packages/socket')
+  const templatePath = path.join(generatePath, 'templates/cli-sentry-package')
+  const packagePath = path.join(generatePath, 'build/cli-with-sentry')
 
   // Copy entire template directory.
   await copyDirectory(templatePath, packagePath)
 
-  logger.success('Generated socket package')
+  logger.success('Generated @socketsecurity/cli-with-sentry package')
   logger.log('')
 }
 

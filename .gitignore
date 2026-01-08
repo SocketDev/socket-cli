@@ -102,7 +102,7 @@ yarn-error.log*
 # ============================================================================
 
 ## Generated packages (from templates/)
-/generated-packages/
+packages/generate/build/
 
 ## Downloaded build sources
 packages/*/.minilm-source/

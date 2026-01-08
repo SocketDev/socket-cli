@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootPath = path.join(__dirname, '..')
+const generatePath = path.join(__dirname, '..')
 const logger = getDefaultLogger()
 
 const PLATFORM_DESCRIPTIONS = {
@@ -56,8 +56,8 @@ async function processTemplate(templatePath, replacements) {
 async function generatePackage(config) {
   const { arch, binExt, cpu, os, platform } = config
   const packageName = `socketbin-cli-${platform}-${arch}`
-  const packagePath = path.join(rootPath, 'generated-packages', packageName)
-  const templatePath = path.join(rootPath, 'templates/socketbin-package')
+  const packagePath = path.join(generatePath, 'build', packageName)
+  const templatePath = path.join(generatePath, 'templates/socketbin-package')
 
   const description = PLATFORM_DESCRIPTIONS[`${platform}-${arch}`] || `${platform} ${arch}`
 
@@ -119,7 +119,7 @@ async function main() {
   logger.log('')
 
   // Verify template directory exists.
-  const templatePath = path.join(rootPath, 'templates/socketbin-package')
+  const templatePath = path.join(generatePath, 'templates/socketbin-package')
   if (!existsSync(templatePath)) {
     logger.error(`Template directory not found: ${templatePath}`)
     process.exit(1)
