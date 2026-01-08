@@ -72,7 +72,7 @@ async function main() {
       assetPath = await downloadSocketBtmRelease({
         asset: 'models-*.tar.gz',
         cwd: rootPath,
-        downloadDir: '../../build-infra/build/downloaded',
+        downloadDir: '../../packages/build-infra/build/downloaded',
         quiet: false,
         tool: 'models',
       })

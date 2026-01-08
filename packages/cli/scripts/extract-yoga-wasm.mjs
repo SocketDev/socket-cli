@@ -80,7 +80,7 @@ async function main() {
       assetPath = await downloadSocketBtmRelease({
         asset: 'yoga-sync-*.mjs',
         cwd: rootPath,
-        downloadDir: '../../build-infra/build/downloaded',
+        downloadDir: '../../packages/build-infra/build/downloaded',
         quiet: false,
         tool: 'yoga-layout',
       })
