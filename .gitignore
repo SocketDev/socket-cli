@@ -101,8 +101,8 @@ yarn-error.log*
 # Workspace-specific patterns
 # ============================================================================
 
-## Platform binary build artifacts
-packages/socketbin-*/bin/
+## Generated packages (from templates/)
+packages/package-builder/build/
 
 ## Downloaded build sources
 packages/*/.minilm-source/

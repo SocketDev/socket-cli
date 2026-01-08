@@ -115,7 +115,10 @@ export function getInlinedEnvVars() {
 
   // Read version from socket package (the published package).
   const socketPackageJson = JSON.parse(
-    readFileSync(path.join(rootPath, '../socket/package.json'), 'utf-8'),
+    readFileSync(
+      path.join(rootPath, '../package-builder/build/socket/package.json'),
+      'utf-8',
+    ),
   )
 
   // Get current git commit hash.

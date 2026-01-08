@@ -917,64 +917,45 @@ importers:
         specifier: 'catalog:'
         version: 4.1.8
 
-  packages/cli-with-sentry:
+  packages/package-builder/build/cli-with-sentry:
     dependencies:
       '@sentry/node':
         specifier: 'catalog:'
         version: 8.0.0
       '@socketsecurity/cli':
         specifier: workspace:*
-        version: link:../cli
+        version: link:../../../cli
     devDependencies:
       build-infra:
         specifier: workspace:*
-        version: link:../build-infra
+        version: link:../../../build-infra
       esbuild:
         specifier: 'catalog:'
         version: 0.25.11
 
-  packages/socket:
+  packages/package-builder/build/socket:
     devDependencies:
       '@socketsecurity/lib':
-        specifier: link:../../../socket-lib
-        version: link:../../../socket-lib
+        specifier: link:../../../../../socket-lib
+        version: link:../../../../../socket-lib
       build-infra:
         specifier: workspace:*
-        version: link:../build-infra
+        version: link:../../../build-infra
       esbuild:
         specifier: 'catalog:'
         version: 0.25.11
-    optionalDependencies:
-      '@socketbin/cli-darwin-arm64':
-        specifier: 0.0.0-replaced-by-provenance
-        version: 0.0.0-20251103.61247
-      '@socketbin/cli-darwin-x64':
-        specifier: 0.0.0-replaced-by-provenance
-        version: 0.0.0-20251103.61247
-      '@socketbin/cli-linux-arm64':
-        specifier: 0.0.0-replaced-by-provenance
-        version: 0.0.0-20251103.61247
-      '@socketbin/cli-linux-x64':
-        specifier: 0.0.0-replaced-by-provenance
-        version: 0.0.0-20251103.61247
-      '@socketbin/cli-win32-arm64':
-        specifier: 0.0.0-replaced-by-provenance
-        version: 0.0.0-20251103.61247
-      '@socketbin/cli-win32-x64':
-        specifier: 0.0.0-replaced-by-provenance
-        version: 0.0.0-20251103.61247
 
-  packages/socketbin-cli-darwin-arm64: {}
+  packages/package-builder/build/socketbin-cli-darwin-arm64: {}
 
-  packages/socketbin-cli-darwin-x64: {}
+  packages/package-builder/build/socketbin-cli-darwin-x64: {}
 
-  packages/socketbin-cli-linux-arm64: {}
+  packages/package-builder/build/socketbin-cli-linux-arm64: {}
 
-  packages/socketbin-cli-linux-x64: {}
+  packages/package-builder/build/socketbin-cli-linux-x64: {}
 
-  packages/socketbin-cli-win32-arm64: {}
+  packages/package-builder/build/socketbin-cli-win32-arm64: {}
 
-  packages/socketbin-cli-win32-x64: {}
+  packages/package-builder/build/socketbin-cli-win32-x64: {}
 
 packages:
 
@@ -2245,42 +2226,6 @@ packages:
   '@sindresorhus/merge-streams@2.3.0':
     resolution: {integrity: sha512-LtoMMhxAlorcGhmFYI+LhPgbPZCkgP6ra1YL604EeF6U98pLlQ3iWIGMdWSC+vWmPBWBNgmDBAhnAobLROJmwg==}
     engines: {node: '>=18'}
-
-  '@socketbin/cli-darwin-arm64@0.0.0-20251103.61247':
-    resolution: {integrity: sha512-Gvf1dg3/5pp4MfaNHCM2DZDckXQ3KMOZwor2oOrnCOs9+RIGacrrmHA7oWtQSfyKvnn+PcXigZ8jcSCKR1rH/Q==}
-    cpu: [arm64]
-    os: [darwin]
-    hasBin: true
-
-  '@socketbin/cli-darwin-x64@0.0.0-20251103.61247':
-    resolution: {integrity: sha512-2T3V40X8fDP1wjvkaPmgsAcCAXUHagGdTLQMu/jEkuyb4p5xHld7jj/Fl41N5Lq1YN4LJ8IHmTRPbmD+K0fiIQ==}
-    cpu: [x64]
-    os: [darwin]
-    hasBin: true
-
-  '@socketbin/cli-linux-arm64@0.0.0-20251103.61247':
-    resolution: {integrity: sha512-KOMFzDzvYKjk71R2j/ieh/D7mFD1rmwvqObedVLmV66vqvcNHogE3litR3dDr8CcWI70ShFTw9iOt3vQJokYQQ==}
-    cpu: [arm64]
-    os: [linux]
-    hasBin: true
-
-  '@socketbin/cli-linux-x64@0.0.0-20251103.61247':
-    resolution: {integrity: sha512-NmKcXDyqLrGVn/g+XpIhhVneAysGd2rRTB/9thzMByrjSgPLDdsPBPSuV8w6Anyn2SNQ3PknqETlqGI+U4TLQQ==}
-    cpu: [x64]
-    os: [linux]
-    hasBin: true
-
-  '@socketbin/cli-win32-arm64@0.0.0-20251103.61247':
-    resolution: {integrity: sha512-OhkEdzM5+wI0hw/yoDwkME5yUNXOaBJzJbJRB4Qdtd/Irm9EE8J1DMNSsolYxvuTMz4pRD1PM6e2LOQNC3btDQ==}
-    cpu: [arm64]
-    os: [win32]
-    hasBin: true
-
-  '@socketbin/cli-win32-x64@0.0.0-20251103.61247':
-    resolution: {integrity: sha512-z8D6vsDfNhyLumj6z0MCuDhg7pLpjCv4pBMjSW+huYCkEpCGAkAfuQgaCPme5YJ4gfKSJTMZ9oGlKxpiU8u3/Q==}
-    cpu: [x64]
-    os: [win32]
-    hasBin: true
 
   '@socketregistry/es-set-tostringtag@1.0.10':
     resolution: {integrity: sha512-btXmvw1JpA8WtSoXx9mTapo9NAyIDKRRzK84i48d8zc0X09M6ORfobVnHbgwhXf7CFhkRzhYrHG9dqbI9vpELQ==}
@@ -6784,24 +6729,6 @@ snapshots:
 
   '@sindresorhus/merge-streams@2.3.0': {}
 
-  '@socketbin/cli-darwin-arm64@0.0.0-20251103.61247':
-    optional: true
-
-  '@socketbin/cli-darwin-x64@0.0.0-20251103.61247':
-    optional: true
-
-  '@socketbin/cli-linux-arm64@0.0.0-20251103.61247':
-    optional: true
-
-  '@socketbin/cli-linux-x64@0.0.0-20251103.61247':
-    optional: true
-
-  '@socketbin/cli-win32-arm64@0.0.0-20251103.61247':
-    optional: true
-
-  '@socketbin/cli-win32-x64@0.0.0-20251103.61247':
-    optional: true
-
   '@socketregistry/es-set-tostringtag@1.0.10': {}
 
   '@socketregistry/hasown@1.0.7': {}
@@ -6865,12 +6792,12 @@ snapshots:
 
   '@types/accepts@1.3.7':
     dependencies:
-      '@types/node': 24.3.1
+      '@types/node': 24.9.2
 
   '@types/body-parser@1.19.6':
     dependencies:
       '@types/connect': 3.4.38
-      '@types/node': 24.3.1
+      '@types/node': 24.9.2
 
   '@types/braces@3.0.5': {}
 
@@ -6887,11 +6814,11 @@ snapshots:
 
   '@types/connect@3.4.36':
     dependencies:
-      '@types/node': 24.3.1
+      '@types/node': 24.9.2
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 24.3.1
+      '@types/node': 24.9.2
 
   '@types/content-disposition@0.5.9': {}
 
@@ -6900,7 +6827,7 @@ snapshots:
       '@types/connect': 3.4.38
       '@types/express': 5.0.5
       '@types/keygrip': 1.0.6
-      '@types/node': 24.3.1
+      '@types/node': 24.9.2
 
   '@types/debug@4.1.12':
     dependencies:
@@ -6913,7 +6840,7 @@ snapshots:
 
   '@types/express-serve-static-core@5.1.0':
     dependencies:
-      '@types/node': 24.3.1
+      '@types/node': 24.9.2
       '@types/qs': 6.14.0
       '@types/range-parser': 1.2.7
       '@types/send': 1.2.1
@@ -6957,7 +6884,7 @@ snapshots:
       '@types/http-errors': 2.0.5
       '@types/keygrip': 1.0.6
       '@types/koa-compose': 3.2.9
-      '@types/node': 24.3.1
+      '@types/node': 24.9.2
 
   '@types/koa__router@12.0.3':
     dependencies:
@@ -6980,7 +6907,7 @@ snapshots:
 
   '@types/mysql@2.15.22':
     dependencies:
-      '@types/node': 24.3.1
+      '@types/node': 24.9.2
 
   '@types/node-fetch@2.6.13':
     dependencies:
@@ -7039,7 +6966,7 @@ snapshots:
 
   '@types/pg@8.6.1':
     dependencies:
-      '@types/node': 24.3.1
+      '@types/node': 24.9.2
       pg-protocol: 1.10.3
       pg-types: 2.2.0
 
@@ -7062,16 +6989,16 @@ snapshots:
   '@types/send@0.17.6':
     dependencies:
       '@types/mime': 1.3.5
-      '@types/node': 24.3.1
+      '@types/node': 24.9.2
 
   '@types/send@1.2.1':
     dependencies:
-      '@types/node': 24.3.1
+      '@types/node': 24.9.2
 
   '@types/serve-static@1.15.10':
     dependencies:
       '@types/http-errors': 2.0.5
-      '@types/node': 24.3.1
+      '@types/node': 24.9.2
       '@types/send': 0.17.6
 
   '@types/shimmer@1.2.0': {}
