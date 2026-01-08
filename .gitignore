@@ -101,7 +101,8 @@ yarn-error.log*
 # Workspace-specific patterns
 # ============================================================================
 
-## Generated socketbin packages (generated from templates/)
+## Generated packages (generated from templates/)
+packages/cli-with-sentry/
 packages/socketbin-cli-*/
 
 ## Downloaded build sources
