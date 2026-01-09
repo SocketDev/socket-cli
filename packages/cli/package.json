@@ -18,6 +18,7 @@
     "logo-light.png"
   ],
   "scripts": {
+    "prebuild": "node scripts/generate-packages.mjs",
     "build": "node --max-old-space-size=8192 --import=./scripts/load.mjs scripts/build.mjs",
     "build:force": "node --max-old-space-size=8192 --import=./scripts/load.mjs scripts/build.mjs --force",
     "build:watch": "node --max-old-space-size=8192 --import=./scripts/load.mjs scripts/build.mjs --watch",
