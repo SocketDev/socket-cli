@@ -615,7 +615,26 @@ export async function meowWithSubcommands(
 
   // If first arg is a flag (starts with --), try Python CLI forwarding.
   // This enables: socket --repo owner/repo --target-path .
-  if (commandOrAliasName?.startsWith('--')) {
+  // Exception: Don't forward Node.js CLI built-in flags (help, version, etc).
+  const nodeCliFlags = new Set([
+    '--help',
+    '--version',
+    '--config',
+    '--compact-header',
+    '--dry-run',
+    '--json',
+    '--markdown',
+    '--org',
+    '--spinner',
+    '--no-spinner',
+    '--nobanner',
+    '--no-banner',
+    '--help-full',
+  ])
+  if (
+    commandOrAliasName?.startsWith('--') &&
+    !nodeCliFlags.has(commandOrAliasName)
+  ) {
     const pythonResult = await spawnSocketPython(argv, {
       stdio: 'inherit',
     })
