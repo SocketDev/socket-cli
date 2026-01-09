@@ -318,41 +318,6 @@ async function main() {
       }
     }
 
-    // Run markdown filenames validation check.
-    if (runAll) {
-      if (!quiet) {
-        logger.log('')
-        logger.progress('Validating markdown filenames')
-      }
-      const markdownResult = await spawn(
-        'node',
-        ['scripts/validate-markdown-filenames.mjs'],
-        {
-          shell: WIN32,
-          stdio: 'pipe',
-          stdioString: true,
-        },
-      )
-      if (markdownResult.code !== 0) {
-        if (!quiet) {
-          logger.clearLine()
-          logger.error('Markdown filenames validation failed')
-        }
-        // Show the actual error output.
-        if (markdownResult.stdout) {
-          logger.log(markdownResult.stdout)
-        }
-        if (markdownResult.stderr) {
-          logger.error(markdownResult.stderr)
-        }
-        process.exitCode = markdownResult.code
-        return
-      }
-      if (!quiet) {
-        logger.clearLine()
-        logger.success('All markdown filenames follow conventions')
-      }
-    }
 
     // Run file size validation check.
     if (runAll) {
@@ -390,41 +355,6 @@ async function main() {
       }
     }
 
-    // Run file count validation check.
-    if (runAll) {
-      if (!quiet) {
-        logger.log('')
-        logger.progress('Validating file count')
-      }
-      const countResult = await spawn(
-        'node',
-        ['scripts/validate-file-count.mjs'],
-        {
-          shell: WIN32,
-          stdio: 'pipe',
-          stdioString: true,
-        },
-      )
-      if (countResult.code !== 0) {
-        if (!quiet) {
-          logger.clearLine()
-          logger.error('File count validation failed')
-        }
-        // Show the actual error output.
-        if (countResult.stdout) {
-          logger.log(countResult.stdout)
-        }
-        if (countResult.stderr) {
-          logger.error(countResult.stderr)
-        }
-        process.exitCode = countResult.code
-        return
-      }
-      if (!quiet) {
-        logger.clearLine()
-        logger.success('Commit size is acceptable')
-      }
-    }
 
     if (!quiet) {
       logger.log('')

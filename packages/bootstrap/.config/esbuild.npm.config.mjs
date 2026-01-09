@@ -11,7 +11,7 @@ import { build } from 'esbuild'
 import semver from 'semver'
 
 
-import socketPackageJson from '../../socket/package.json' with { type: 'json' }
+import socketPackageJson from '../../cli/package.json' with { type: 'json' }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.resolve(__dirname, '..')

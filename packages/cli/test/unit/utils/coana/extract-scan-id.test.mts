@@ -32,6 +32,7 @@ vi.mock('@socketsecurity/lib/fs', () => ({
 describe('coana utilities', () => {
   describe('extractTier1ReachabilityScanId', () => {
     it('extracts scan ID from valid socket facts file', async () => {
+      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
       const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
       mockReadJsonSync.mockReturnValue({
         tier1ReachabilityScanId: 'scan-123-abc',
@@ -49,6 +50,7 @@ describe('coana utilities', () => {
     })
 
     it('returns undefined when tier1ReachabilityScanId is missing', async () => {
+      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
       const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
       mockReadJsonSync.mockReturnValue({
         otherField: 'value',
@@ -62,6 +64,7 @@ describe('coana utilities', () => {
     })
 
     it('returns undefined when tier1ReachabilityScanId is empty string', async () => {
+      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
       const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
       mockReadJsonSync.mockReturnValue({
         tier1ReachabilityScanId: '',
@@ -75,6 +78,7 @@ describe('coana utilities', () => {
     })
 
     it('returns undefined when tier1ReachabilityScanId is whitespace only', async () => {
+      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
       const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
       mockReadJsonSync.mockReturnValue({
         tier1ReachabilityScanId: '   \t\n  ',
@@ -88,6 +92,7 @@ describe('coana utilities', () => {
     })
 
     it('trims whitespace from scan ID', async () => {
+      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
       const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
       mockReadJsonSync.mockReturnValue({
         tier1ReachabilityScanId: '  scan-456-def  \n',
@@ -101,6 +106,7 @@ describe('coana utilities', () => {
     })
 
     it('converts non-string values to string', async () => {
+      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
       const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
       mockReadJsonSync.mockReturnValue({
         tier1ReachabilityScanId: 12345,
@@ -114,6 +120,7 @@ describe('coana utilities', () => {
     })
 
     it('handles null tier1ReachabilityScanId', async () => {
+      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
       const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
       mockReadJsonSync.mockReturnValue({
         tier1ReachabilityScanId: null,
@@ -127,6 +134,7 @@ describe('coana utilities', () => {
     })
 
     it('handles undefined tier1ReachabilityScanId', async () => {
+      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
       const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
       mockReadJsonSync.mockReturnValue({
         tier1ReachabilityScanId: undefined,
@@ -140,6 +148,7 @@ describe('coana utilities', () => {
     })
 
     it('returns undefined when JSON parsing fails', async () => {
+      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
       const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
       mockReadJsonSync.mockReturnValue(undefined)
 
@@ -149,6 +158,7 @@ describe('coana utilities', () => {
     })
 
     it('returns undefined when readJsonSync returns null', async () => {
+      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
       const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
       mockReadJsonSync.mockReturnValue(null)
 
@@ -158,6 +168,7 @@ describe('coana utilities', () => {
     })
 
     it('handles boolean values', async () => {
+      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
       const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
       mockReadJsonSync.mockReturnValue({
         tier1ReachabilityScanId: true,
@@ -171,6 +182,7 @@ describe('coana utilities', () => {
     })
 
     it('handles array values', async () => {
+      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
       const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
       mockReadJsonSync.mockReturnValue({
         tier1ReachabilityScanId: ['scan', '123'],
@@ -184,6 +196,7 @@ describe('coana utilities', () => {
     })
 
     it('handles object values', async () => {
+      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
       const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
       mockReadJsonSync.mockReturnValue({
         tier1ReachabilityScanId: { id: 'scan-789' },

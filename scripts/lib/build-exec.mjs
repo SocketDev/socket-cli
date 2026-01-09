@@ -40,26 +40,6 @@ export async function exec(command, args = [], options = {}) {
 }
 
 /**
- * Execute a command and capture output.
- */
-export async function execCapture(command, args = [], options = {}) {
-  const { cwd = process.cwd(), env = process.env } = options
-
-  const result = await spawn(command, args, {
-    cwd,
-    env,
-    stdio: 'pipe',
-    shell: false,
-  })
-
-  if (result.code !== 0) {
-    throw new Error(`Command failed: ${command} ${args.join(' ')}`)
-  }
-
-  return result.stdout ? result.stdout.trim() : ''
-}
-
-/**
  * Execute a command silently (no output).
  */
 export async function execSilent(command, args = [], options = {}) {
