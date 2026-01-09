@@ -202,19 +202,15 @@ async function main() {
         command: 'node',
         args: [...NODE_MEMORY_FLAGS, '.config/esbuild.inject.config.mjs'],
       },
-      // Copy CLI to dist for production builds.
-      ...(prod
-        ? [
-            {
-              name: 'Copy CLI to dist',
-              command: 'node',
-              args: [
-                '-e',
-                'require("fs").copyFileSync("build/cli.js", "dist/cli.js")',
-              ],
-            },
-          ]
-        : []),
+      // Copy CLI to dist (required for dist/index.js to work).
+      {
+        name: 'Copy CLI to dist',
+        command: 'node',
+        args: [
+          '-e',
+          'require("fs").copyFileSync("build/cli.js", "dist/cli.js")',
+        ],
+      },
     ]
 
     // Run build steps sequentially.
