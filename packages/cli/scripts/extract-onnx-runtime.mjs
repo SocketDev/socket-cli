@@ -11,11 +11,11 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import {
-  ensureOutputDir,
   generateHashComment,
   shouldExtract,
 } from 'build-infra/lib/extraction-cache'
 
+import { safeMkdirSync } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -78,7 +78,7 @@ export const Tensor = ort.Tensor
 export default ort
 `
 
-  ensureOutputDir(outputPath)
+  safeMkdirSync(path.dirname(outputPath))
   writeFileSync(outputPath, placeholderContent, 'utf-8')
   logger.log(`✓ Generated placeholder ${outputPath}`)
   process.exit(0)
@@ -138,7 +138,7 @@ export const Tensor = ort.Tensor
 export default ort
 `
 
-ensureOutputDir(outputPath)
+safeMkdirSync(path.dirname(outputPath))
 writeFileSync(outputPath, onnxSyncContent, 'utf-8')
 
 logger.log(`✓ Generated ${outputPath}`)

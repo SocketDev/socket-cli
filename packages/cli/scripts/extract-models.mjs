@@ -9,10 +9,11 @@
  */
 
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { safeMkdir } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { downloadSocketBtmRelease } from '@socketsecurity/lib/releases/socket-btm'
 import { spawn } from '@socketsecurity/lib/spawn'
@@ -27,7 +28,7 @@ const outputDir = path.join(rootPath, 'build/models')
  * Extract tar.gz to output directory if needed.
  */
 async function extractModels(tarGzPath, releaseTag) {
-  await mkdir(outputDir, { recursive: true })
+  await safeMkdir(outputDir)
 
   const versionPath = path.join(outputDir, '.version')
 
