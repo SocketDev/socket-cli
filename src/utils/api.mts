@@ -138,8 +138,8 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   const {
     commandPath,
     description,
-    spinner,
     silence = false,
+    spinner,
   } = {
     __proto__: null,
     ...options,
