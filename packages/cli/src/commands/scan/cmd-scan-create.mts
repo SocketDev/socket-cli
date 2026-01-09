@@ -169,7 +169,6 @@ async function run(
       ...generalFlags,
       ...reachabilityFlags,
     },
-    // TODO: Your project's "socket.yml" file's "projectIgnorePaths".
     help: command => `
     Usage
       $ ${command} [options] [TARGET...]
@@ -195,7 +194,8 @@ async function run(
     - If it is a dir, the dir is scanned for any supported manifest files
     - Dirs MUST be within the current dir (cwd), you can use --cwd to change it
     - Supports globbing such as "**/package.json", "**/${REQUIREMENTS_TXT}", etc.
-    - Ignores any file specified in your project's ".gitignore"
+    - Ignores files specified in your project's ".gitignore"
+    - Ignores files specified in your "socket.yml" file's "projectIgnorePaths"
     - Also a sensible set of default ignores from the "ignore-by-default" module
 
     The --repo and --branch flags tell Socket to associate this Scan with that

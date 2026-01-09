@@ -13,6 +13,8 @@ import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+import { formatBytes } from './lib/build-helpers.mjs'
+
 const logger = getDefaultLogger()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -39,17 +41,6 @@ const SKIP_DIRS = new Set([
   'tmp',
   'external',
 ])
-
-/**
- * Format bytes to human-readable size.
- */
-function formatBytes(bytes) {
-  if (bytes === 0) {return '0 B'}
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`
-}
 
 /**
  * Recursively scan directory for files exceeding size limit.

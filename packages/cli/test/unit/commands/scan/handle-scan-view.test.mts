@@ -40,6 +40,7 @@ describe('handleScanView', () => {
   })
 
   it('fetches and outputs scan view successfully', async () => {
+    // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
     const { fetchScan } = await import(
       '../../../../../src/commands/scan/fetch-scan.mts'
     )
@@ -75,6 +76,7 @@ describe('handleScanView', () => {
   })
 
   it('handles fetch failure', async () => {
+    // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
     const { fetchScan } = await import(
       '../../../../../src/commands/scan/fetch-scan.mts'
     )
@@ -180,6 +182,7 @@ describe('handleScanView', () => {
   })
 
   it('handles text output format', async () => {
+    // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
     const { fetchScan } = await import(
       '../../../../../src/commands/scan/fetch-scan.mts'
     )
@@ -209,6 +212,7 @@ describe('handleScanView', () => {
   })
 
   it('handles async errors', async () => {
+    // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
     const { fetchScan } = await import(
       '../../../../../src/commands/scan/fetch-scan.mts'
     )

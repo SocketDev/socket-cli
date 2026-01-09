@@ -163,10 +163,3 @@ export function getLogger(commandName: string): CommandLogger {
   }
   return instances.get(commandName)!
 }
-
-/**
- * Clear all cached loggers.
- */
-export function clearLoggers(): void {
-  instances.clear()
-}

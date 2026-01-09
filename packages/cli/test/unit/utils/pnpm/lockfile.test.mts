@@ -182,6 +182,7 @@ packages: {}`
     })
 
     it('returns undefined for non-existent lockfile', async () => {
+      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
       const { existsSync } = await import('node:fs')
 
       mockExistsSync.mockReturnValue(false)

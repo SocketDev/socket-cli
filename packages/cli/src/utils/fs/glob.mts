@@ -11,6 +11,7 @@ import { readPackageJson } from '@socketsecurity/lib/packages'
 import { transform } from '@socketsecurity/lib/streams'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
+import { homePath } from '../../constants/paths.mts'
 import { NODE_MODULES, PNPM } from '../../constants.mts'
 
 import type { Agent } from '../ecosystem/environment.mts'
@@ -293,19 +294,25 @@ export function pathsToGlobPatterns(
   paths: string[] | readonly string[],
   cwd?: string | undefined,
 ): string[] {
-  // TODO: Does not support `~/` paths.
   return paths.map(p => {
     // Convert current directory references to glob patterns.
     if (p === '.' || p === './') {
       return '**/*'
     }
-    const absolutePath = path.isAbsolute(p)
-      ? p
-      : path.resolve(cwd ?? process.cwd(), p)
+    // Expand tilde to home directory.
+    let resolvedPath = p
+    if (p.startsWith('~/')) {
+      resolvedPath = path.join(homePath, p.slice(2))
+    } else if (p === '~') {
+      resolvedPath = homePath
+    }
+    const absolutePath = path.isAbsolute(resolvedPath)
+      ? resolvedPath
+      : path.resolve(cwd ?? process.cwd(), resolvedPath)
     // If the path is a directory, scan it recursively for all files.
     if (isDirSync(absolutePath)) {
-      return `${p}/**/*`
+      return `${resolvedPath}/**/*`
     }
-    return p
+    return resolvedPath
   })
 }

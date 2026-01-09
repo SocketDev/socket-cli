@@ -109,6 +109,20 @@ async function checkPackageJson(filePath) {
     }
   }
 
+  // Check pnpm.overrides.
+  if (pkg.pnpm?.overrides) {
+    for (const [name, version] of Object.entries(pkg.pnpm.overrides)) {
+      if (typeof version === 'string' && version.startsWith('link:')) {
+        violations.push({
+          file: filePath,
+          field: 'pnpm.overrides',
+          package: name,
+          value: version,
+        })
+      }
+    }
+  }
+
   return violations
 }
 

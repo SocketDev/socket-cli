@@ -126,33 +126,7 @@ const yargsConfig = {
     type: arrayToLower,
   },
   default: {
-    //author: ['OWASP Foundation'],
-    //'auto-compositions': true,
-    //babel: true,
-    //banner: false, // hidden
-    //'deps-slices-file': 'deps.slices.json', // hidden
-    //evidence: false,
-    //'exclude-type': [],
-    //'export-proto': false,
-    //'fail-on-error': isSecureMode,
-    //'feature-flags': [], // hidden
-    //'include-crypto': false,
-    //'include-formulation': false,
-    //'install-deps': !isSecureMode
-    //lifecycle: 'build', // hidden
-    //'min-confidence': '0',
-    //output: 'bom.json',
-    //profile: 'generic',
-    //'project-version': '',
-    //'proto-bin-file': 'bom.cdx',
-    //recurse: true,
-    //'skip-dt-tls-check': false,
-    //'semantics-slices-file': 'semantics.slices.json',
-    //'server-host': '127.0.0.1',
-    //'server-port': '9090',
-    //'spec-version': '1.6',
     type: ['js'],
-    //validate: true,
   },
   alias: {
     help: ['h'],
