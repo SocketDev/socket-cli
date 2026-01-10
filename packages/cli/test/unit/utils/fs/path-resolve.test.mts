@@ -39,7 +39,7 @@ const PACKAGE_JSON = 'package.json'
 
 // Hoisted mocks for better CI reliability.
 const mockWhichRealSync = vi.hoisted(() => vi.fn())
-const mockResolveBinPathSync = vi.hoisted(() => vi.fn((p: string) => p))
+const mockResolveRealBinSync = vi.hoisted(() => vi.fn((p: string) => p))
 
 // Mock dependencies for new tests.
 vi.mock('@socketsecurity/lib/bin', async () => {
@@ -48,7 +48,7 @@ vi.mock('@socketsecurity/lib/bin', async () => {
   >('@socketsecurity/lib/bin')
   return {
     ...actual,
-    resolveBinPathSync: mockResolveBinPathSync,
+    resolveRealBinSync: mockResolveRealBinSync,
     whichRealSync: mockWhichRealSync,
   }
 })
