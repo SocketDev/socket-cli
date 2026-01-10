@@ -207,7 +207,8 @@
       "@sigstore/sign@4.1.0": "patches/@sigstore__sign@4.1.0.patch",
       "ink@6.3.1": "patches/ink@6.3.1.patch",
       "node-gyp@11.5.0": "patches/node-gyp@11.5.0.patch",
-      "node-gyp@12.1.0": "patches/node-gyp@12.1.0.patch"
+      "node-gyp@12.1.0": "patches/node-gyp@12.1.0.patch",
+      "@socketsecurity/lib@5.3.0": "patches/@socketsecurity__lib@5.3.0.patch"
     }
   },
   "lint-staged": {
