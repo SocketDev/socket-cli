@@ -164,6 +164,14 @@ export function filterBySupportedScanFiles(
   return filepaths.filter(p => micromatch.some(p, patterns, { dot: true }))
 }
 
+export function createSupportedFilesFilter(
+  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
+): (filepath: string) => boolean {
+  const patterns = getSupportedFilePatterns(supportedFiles)
+  return (filepath: string) =>
+    micromatch.some(filepath, patterns, { dot: true })
+}
+
 export function getSupportedFilePatterns(
   supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
 ): string[] {
@@ -178,6 +186,10 @@ export function getSupportedFilePatterns(
 }
 
 type GlobWithGitIgnoreOptions = GlobOptions & {
+  // Optional filter function to apply during streaming.
+  // When provided, only files passing this filter are accumulated.
+  // This is critical for memory efficiency when scanning large monorepos.
+  filter?: ((filepath: string) => boolean) | undefined
   socketConfig?: SocketYml | undefined
 }
 
@@ -187,6 +199,7 @@ export async function globWithGitIgnore(
 ): Promise<string[]> {
   const {
     cwd = process.cwd(),
+    filter,
     socketConfig,
     ...additionalOptions
   } = { __proto__: null, ...options } as GlobWithGitIgnoreOptions
@@ -243,27 +256,39 @@ export async function globWithGitIgnore(
     ...additionalOptions,
   } as GlobOptions
 
-  if (!hasNegatedPattern) {
+  // When no filter is provided and no negated patterns exist, use the fast path.
+  if (!hasNegatedPattern && !filter) {
     return await fastGlob.glob(patterns as string[], globOptions)
   }
-
   // Add support for negated "ignore" patterns which many globbing libraries,
   // including 'fast-glob', 'globby', and 'tinyglobby', lack support for.
-  const filtered: string[] = []
-  const ig = ignore().add([...ignores])
+  // Use streaming to avoid unbounded memory accumulation.
+  // This is critical for large monorepos with 100k+ files.
+  const results: string[] = []
+  const ig = hasNegatedPattern ? ignore().add([...ignores]) : null
   const stream = fastGlob.globStream(
     patterns as string[],
     globOptions,
   ) as AsyncIterable<string>
   for await (const p of stream) {
-    // Note: the input files must be INSIDE the cwd. If you get strange looking
-    // relative path errors here, most likely your path is outside the given cwd.
-    const relPath = globOptions.absolute ? path.relative(cwd, p) : p
-    if (!ig.ignores(relPath)) {
-      filtered.push(p)
+    // Check gitignore patterns with negation support.
+    if (ig) {
+      // Note: the input files must be INSIDE the cwd. If you get strange looking
+      // relative path errors here, most likely your path is outside the given cwd.
+      const relPath = globOptions.absolute ? path.relative(cwd, p) : p
+      if (ig.ignores(relPath)) {
+        continue
+      }
     }
+    // Apply the optional filter to reduce memory usage.
+    // When scanning large monorepos, this filters early (e.g., to manifest files only)
+    // instead of accumulating all 100k+ files and filtering later.
+    if (filter && !filter(p)) {
+      continue
+    }
+    results.push(p)
   }
-  return filtered
+  return results
 }
 
 export async function globWorkspace(
