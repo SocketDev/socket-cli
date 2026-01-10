@@ -94,17 +94,73 @@ async function main() {
 
     let assetPath
     try {
-      // Download yoga-sync.mjs asset using @socketsecurity/lib helper.
-      // Asset name pattern: yoga-sync-{DATE}-{COMMIT}.mjs
-      // The pattern is resolved automatically to find the latest matching asset.
-      // This handles version caching automatically.
-      assetPath = await downloadSocketBtmRelease({
-        asset: 'yoga-sync-*.mjs',
-        cwd: rootPath,
-        downloadDir: '../../packages/build-infra/build/downloaded',
-        quiet: false,
-        tool: 'yoga-layout',
-      })
+      // Since lib 5.3.0 doesn't support glob patterns, we need to find the exact
+      // asset name from the GitHub release before downloading.
+      const downloadDir = path.join(
+        rootPath,
+        '../../packages/build-infra/build/downloaded',
+      )
+      const assetsDir = path.join(downloadDir, 'yoga-layout', 'assets')
+
+      // Check if we already have cached assets first.
+      const { readdirSync } = await import('node:fs')
+      if (existsSync(assetsDir)) {
+        const yogaFiles = readdirSync(assetsDir).filter(f =>
+          f.match(/^yoga-sync-.*\.mjs$/),
+        )
+        if (yogaFiles.length) {
+          assetPath = path.join(assetsDir, yogaFiles[0])
+          logger.info('Using cached yoga-layout (assets)')
+        }
+      }
+
+      // If not cached, fetch release info from GitHub API to get exact asset name.
+      if (!assetPath) {
+        // Use GitHub token if available (required in CI to avoid rate limiting).
+        const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
+        const headers = {
+          Accept: 'application/vnd.github.v3+json',
+          'User-Agent': 'socket-cli',
+        }
+        if (token) {
+          headers.Authorization = `Bearer ${token}`
+        }
+
+        const response = await fetch(
+          'https://api.github.com/repos/SocketDev/socket-btm/releases',
+          { headers },
+        )
+        if (!response.ok) {
+          throw new Error(`GitHub API error: ${response.status}`)
+        }
+
+        const releases = await response.json()
+        const yogaRelease = releases.find(r =>
+          r.tag_name.startsWith('yoga-layout-'),
+        )
+
+        if (!yogaRelease) {
+          throw new Error('No yoga-layout release found on GitHub')
+        }
+
+        // Find the yoga-sync-*.mjs asset.
+        const yogaAsset = yogaRelease.assets.find(
+          a => a.name.startsWith('yoga-sync-') && a.name.endsWith('.mjs'),
+        )
+
+        if (!yogaAsset) {
+          throw new Error('No yoga-sync-*.mjs asset found in release')
+        }
+
+        // Now download using the exact asset name.
+        assetPath = await downloadSocketBtmRelease({
+          asset: yogaAsset.name,
+          cwd: rootPath,
+          downloadDir,
+          quiet: false,
+          tool: 'yoga-layout',
+        })
+      }
     } catch (e) {
       logger.groupEnd()
       logger.warn(`yoga-layout not available: ${e.message}`)

@@ -97,7 +97,7 @@ async function main() {
   const verbose = isVerbose()
   const watch = process.argv.includes('--watch')
   const force = process.argv.includes('--force')
-  const prod = process.argv.includes('--prod')
+  const _prod = process.argv.includes('--prod')
 
   // Pass --force flag via environment variable.
   if (force) {

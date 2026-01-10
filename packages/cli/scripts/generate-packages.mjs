@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Generate template-based packages required for CLI build.
  * Runs the package generation scripts from package-builder.
@@ -13,7 +12,6 @@ const scripts = [
 ]
 
 for (const script of scripts) {
-  // eslint-disable-next-line no-await-in-loop
   const result = await spawn('node', [script], { stdio: 'inherit' })
   if (result.code !== 0) {
     process.exit(result.code)
