@@ -14,6 +14,7 @@ const scripts = [
 for (const script of scripts) {
   const result = await spawn('node', [script], { stdio: 'inherit' })
   if (result.code !== 0) {
-    process.exit(result.code)
+    // Use nullish coalescing to handle signal-killed processes (code is null).
+    process.exit(result.code ?? 1)
   }
 }

@@ -631,9 +631,11 @@ export async function meowWithSubcommands(
     '--spinner',
     '--version',
   ])
+  // Extract base flag name for --flag=value syntax (e.g., '--config=/path' -> '--config').
+  const baseFlagName = commandOrAliasName?.split('=')[0]
   if (
     commandOrAliasName?.startsWith('--') &&
-    !nodeCliFlags.has(commandOrAliasName)
+    !nodeCliFlags.has(baseFlagName ?? '')
   ) {
     const pythonResult = await spawnSocketPython(argv, {
       stdio: 'inherit',
