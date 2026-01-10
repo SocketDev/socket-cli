@@ -1,8 +1,9 @@
 /**
  * Build script for Socket CLI.
- * Options: --quiet, --verbose, --prod, --force, --watch
+ * Options: --quiet, --verbose, --force, --watch
  */
 
+import { copyFileSync } from 'node:fs'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -97,7 +98,6 @@ async function main() {
   const verbose = isVerbose()
   const watch = process.argv.includes('--watch')
   const force = process.argv.includes('--force')
-  const prod = process.argv.includes('--prod')
 
   // Pass --force flag via environment variable.
   if (force) {
@@ -202,19 +202,6 @@ async function main() {
         command: 'node',
         args: [...NODE_MEMORY_FLAGS, '.config/esbuild.inject.config.mjs'],
       },
-      // Copy CLI to dist for production builds.
-      ...(prod
-        ? [
-            {
-              name: 'Copy CLI to dist',
-              command: 'node',
-              args: [
-                '-e',
-                'require("fs").copyFileSync("build/cli.js", "dist/cli.js")',
-              ],
-            },
-          ]
-        : []),
     ]
 
     // Run build steps sequentially.
@@ -247,6 +234,9 @@ async function main() {
         log.success(`${name} completed`)
       }
     }
+
+    // Copy CLI bundle to dist (required for dist/index.js to work).
+    copyFileSync('build/cli.js', 'dist/cli.js')
 
     // Post-process: Fix node-gyp strings to prevent bundler issues.
     if (!quiet && verbose) {
