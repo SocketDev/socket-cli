@@ -17,8 +17,8 @@ export async function fetchSupportedScanFileNames(
 ): Promise<CResult<SocketSdkSuccessResult<'getReportSupportedFiles'>['data']>> {
   const {
     sdkOpts,
-    spinner,
     silence = false,
+    spinner,
   } = {
     __proto__: null,
     ...options,

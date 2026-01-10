@@ -9,7 +9,7 @@ import { isDirSync } from '@socketsecurity/registry/lib/fs'
 
 import constants, { NODE_MODULES, NPM } from '../constants.mts'
 import {
-  filterBySupportedScanFiles,
+  createSupportedFilesFilter,
   globWithGitIgnore,
   pathsToGlobPatterns,
 } from './glob.mts'
@@ -114,13 +114,17 @@ export async function getPackageFilesForScan(
     ...options,
   } as PackageFilesForScanOptions
 
-  const filepaths = await globWithGitIgnore(
+  // Apply the supported files filter during streaming to avoid accumulating
+  // all files in memory. This is critical for large monorepos with 100k+ files
+  // where accumulating all paths before filtering causes OOM errors.
+  const filter = createSupportedFilesFilter(supportedFiles)
+
+  return await globWithGitIgnore(
     pathsToGlobPatterns(inputPaths, options?.cwd),
     {
       cwd,
+      filter,
       socketConfig,
     },
   )
-
-  return filterBySupportedScanFiles(filepaths!, supportedFiles)
 }
