@@ -202,6 +202,7 @@
       "yargs-parser": "catalog:"
     },
     "patchedDependencies": {
+      "@socketsecurity/lib@5.4.0": "patches/@socketsecurity__lib@5.4.0.patch",
       "@npmcli/run-script@9.1.0": "patches/@npmcli__run-script@9.1.0.patch",
       "@npmcli/run-script@10.0.3": "patches/@npmcli__run-script@10.0.3.patch",
       "@sigstore/sign@4.1.0": "patches/@sigstore__sign@4.1.0.patch",
