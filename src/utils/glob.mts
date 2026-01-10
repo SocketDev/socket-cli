@@ -260,7 +260,8 @@ export async function globWithGitIgnore(
   if (!hasNegatedPattern && !filter) {
     return await fastGlob.glob(patterns as string[], globOptions)
   }
-
+  // Add support for negated "ignore" patterns which many globbing libraries,
+  // including 'fast-glob', 'globby', and 'tinyglobby', lack support for.
   // Use streaming to avoid unbounded memory accumulation.
   // This is critical for large monorepos with 100k+ files.
   const results: string[] = []
