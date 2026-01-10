@@ -108,10 +108,8 @@ jobs:
           key: cli-build-${{ runner.os }}-${{ steps.cli-cache-key.outputs.hash }}
           restore-keys: |
             cli-build-${{ runner.os }}-
-          lookup-only: true
 
       - name: Build CLI
-        if: steps.cli-build-cache.outputs.cache-hit != 'true'
         working-directory: packages/cli
         run: pnpm run build
 
@@ -155,10 +153,8 @@ jobs:
           key: cli-build-${{ runner.os }}-${{ steps.cli-cache-key.outputs.hash }}
           restore-keys: |
             cli-build-${{ runner.os }}-
-          lookup-only: true
 
       - name: Build CLI
-        if: steps.cli-build-cache.outputs.cache-hit != 'true'
         working-directory: packages/cli
         run: pnpm run build
 
@@ -315,10 +311,8 @@ jobs:
           key: cli-build-${{ runner.os }}-${{ steps.cli-cache-key.outputs.hash }}
           restore-keys: |
             cli-build-${{ runner.os }}-
-          lookup-only: true
 
       - name: Build CLI
-        if: steps.cli-build-cache.outputs.cache-hit != 'true'
         working-directory: packages/cli
         run: pnpm run build
 
