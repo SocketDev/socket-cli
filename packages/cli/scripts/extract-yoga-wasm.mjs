@@ -9,7 +9,7 @@
  */
 
 import { existsSync } from 'node:fs'
-import { readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -29,9 +29,18 @@ const outputPath = path.join(rootPath, 'build/yoga-sync.mjs')
 const versionPath = path.join(rootPath, 'build/yoga.version')
 
 /**
+ * Ensure the build directory exists.
+ */
+async function ensureBuildDir() {
+  const buildDir = path.dirname(outputPath)
+  await mkdir(buildDir, { recursive: true })
+}
+
+/**
  * Generate placeholder stub when yoga WASM is not available.
  */
 async function generatePlaceholderStub() {
+  await ensureBuildDir()
   const placeholderContent = `/**
  * Synchronous yoga-layout with embedded WASM binary (Placeholder).
  *
@@ -137,6 +146,8 @@ async function main() {
 ${syncContent}
 `
 
+    // Ensure build directory exists before writing.
+    await ensureBuildDir()
     await writeFile(outputPath, jsContent, 'utf-8')
 
     // Write version file.
