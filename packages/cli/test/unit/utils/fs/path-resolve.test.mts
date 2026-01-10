@@ -37,6 +37,10 @@ import { createTestWorkspace } from '../../../helpers/workspace-helper.mts'
 
 const PACKAGE_JSON = 'package.json'
 
+// Hoisted mocks for better CI reliability.
+const mockWhichRealSync = vi.hoisted(() => vi.fn())
+const mockResolveBinPathSync = vi.hoisted(() => vi.fn((p: string) => p))
+
 // Mock dependencies for new tests.
 vi.mock('@socketsecurity/lib/bin', async () => {
   const actual = await vi.importActual<
@@ -44,8 +48,8 @@ vi.mock('@socketsecurity/lib/bin', async () => {
   >('@socketsecurity/lib/bin')
   return {
     ...actual,
-    resolveBinPathSync: vi.fn(p => p),
-    whichRealSync: vi.fn(),
+    resolveBinPathSync: mockResolveBinPathSync,
+    whichRealSync: mockWhichRealSync,
   }
 })
 
@@ -382,11 +386,8 @@ describe('Path Resolve', () => {
       vi.clearAllMocks()
     })
 
-    it('finds bin path when available', async () => {
-      const { whichRealSync } = vi.mocked(
-        await import('@socketsecurity/lib/bin'),
-      )
-      whichRealSync.mockReturnValue(['/usr/local/bin/npm'])
+    it('finds bin path when available', () => {
+      mockWhichRealSync.mockReturnValue(['/usr/local/bin/npm'])
 
       const result = findBinPathDetailsSync('npm')
 
@@ -400,10 +401,7 @@ describe('Path Resolve', () => {
     it('handles shadowed bin paths', async () => {
       const constants = await import('../../../../src/constants.mts')
       const shadowBinPath = constants.default.shadowBinPath
-      const { whichRealSync } = vi.mocked(
-        await import('@socketsecurity/lib/bin'),
-      )
-      whichRealSync.mockReturnValue([
+      mockWhichRealSync.mockReturnValue([
         `${shadowBinPath}/npm`,
         '/usr/local/bin/npm',
       ])
@@ -417,11 +415,8 @@ describe('Path Resolve', () => {
       })
     })
 
-    it('handles no bin path found', async () => {
-      const { whichRealSync } = vi.mocked(
-        await import('@socketsecurity/lib/bin'),
-      )
-      whichRealSync.mockReturnValue(null)
+    it('handles no bin path found', () => {
+      mockWhichRealSync.mockReturnValue(null)
 
       const result = findBinPathDetailsSync('nonexistent')
 
@@ -432,11 +427,8 @@ describe('Path Resolve', () => {
       })
     })
 
-    it('handles empty array result', async () => {
-      const { whichRealSync } = vi.mocked(
-        await import('@socketsecurity/lib/bin'),
-      )
-      whichRealSync.mockReturnValue([])
+    it('handles empty array result', () => {
+      mockWhichRealSync.mockReturnValue([])
 
       const result = findBinPathDetailsSync('npm')
 
@@ -447,11 +439,8 @@ describe('Path Resolve', () => {
       })
     })
 
-    it('handles single string result', async () => {
-      const { whichRealSync } = vi.mocked(
-        await import('@socketsecurity/lib/bin'),
-      )
-      whichRealSync.mockReturnValue('/usr/local/bin/npm' as any)
+    it('handles single string result', () => {
+      mockWhichRealSync.mockReturnValue('/usr/local/bin/npm' as any)
 
       const result = findBinPathDetailsSync('npm')
 
@@ -465,10 +454,7 @@ describe('Path Resolve', () => {
     it('handles only shadow bin in path', async () => {
       const constants = await import('../../../../src/constants.mts')
       const shadowBinPath = constants.default.shadowBinPath
-      const { whichRealSync } = vi.mocked(
-        await import('@socketsecurity/lib/bin'),
-      )
-      whichRealSync.mockReturnValue([`${shadowBinPath}/npm`])
+      mockWhichRealSync.mockReturnValue([`${shadowBinPath}/npm`])
 
       const result = findBinPathDetailsSync('npm')
 
