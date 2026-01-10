@@ -95,6 +95,11 @@ vi.mock('../../../../src/constants/cli.mts', () => ({
   FLAG_LOGLEVEL: '--loglevel',
 }))
 
+// Mock isDebug to always return false so --loglevel args are added.
+vi.mock('@socketsecurity/lib/debug', () => ({
+  isDebug: vi.fn(() => false),
+}))
+
 describe('shadowNpmInstall', () => {
   const mockProcess = {
     send: vi.fn(),

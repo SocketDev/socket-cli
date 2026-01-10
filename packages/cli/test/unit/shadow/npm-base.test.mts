@@ -117,6 +117,11 @@ vi.mock('@socketsecurity/lib/constants/node', () => ({
   supportsNodePermissionFlag: vi.fn(() => true),
 }))
 
+// Mock isDebug to always return false so --loglevel args are added.
+vi.mock('@socketsecurity/lib/debug', () => ({
+  isDebug: vi.fn(() => false),
+}))
+
 describe('shadowNpmBase', () => {
   const mockSpawnResult = Promise.resolve({
     success: true,
