@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.57](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.57) - 2026-01-10
+
+### Changed
+- Updated `@socketsecurity/socket-patch` to v1.2.0, which includes:
+  - Progress spinner for scan command
+  - Improved test coverage
+
 ## [1.1.56](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.56) - 2026-01-10
 
 ### Fixed
