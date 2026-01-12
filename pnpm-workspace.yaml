@@ -63,7 +63,7 @@ catalog:
   ajv-dist: 8.17.1
   ansi-regex: 6.2.2
   brace-expansion: 2.0.2
-  browserslist: 4.25.4
+  browserslist: 4.28.1
   chalk-table: 1.0.2
   cmd-shim: 7.0.0
   compromise: 14.14.4
