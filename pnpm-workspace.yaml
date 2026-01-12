@@ -141,7 +141,7 @@ catalog:
   type-coverage: 2.29.7
   typedarray: npm:@socketregistry/typedarray@^1.0.8
   typescript: 5.9.3
-  typescript-eslint: 8.44.1
+  typescript-eslint: 8.51.0
   undici: 6.21.3
   unplugin-purge-polyfills: 0.1.0
   vite: 7.1.12
