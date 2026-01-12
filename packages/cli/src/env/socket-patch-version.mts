@@ -8,15 +8,9 @@
 
 import process from 'node:process'
 
-import { VITEST } from './vitest.mts'
-
 export function getSocketPatchVersion(): string {
   const version = process.env['INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION']
   if (!version) {
-    // In test mode, return empty string instead of throwing.
-    if (VITEST) {
-      return ''
-    }
     throw new Error(
       'INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION not found. Please ensure socket-patch is properly configured in external-tools.json.',
     )

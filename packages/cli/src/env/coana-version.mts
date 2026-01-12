@@ -8,15 +8,9 @@
 
 import process from 'node:process'
 
-import { VITEST } from './vitest.mts'
-
 export function getCoanaVersion(): string {
   const version = process.env['INLINED_SOCKET_CLI_COANA_VERSION']
   if (!version) {
-    // In test mode, return empty string instead of throwing.
-    if (VITEST) {
-      return ''
-    }
     throw new Error(
       'INLINED_SOCKET_CLI_COANA_VERSION not found. Please ensure @coana-tech/cli is properly configured in external-tools.json.',
     )
