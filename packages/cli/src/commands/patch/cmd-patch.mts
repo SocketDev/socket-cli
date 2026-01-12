@@ -62,21 +62,16 @@ async function run(
   process.exitCode = 1
 
   // Forward all arguments to socket-patch via DLX.
-  const { spawnPromise } = await spawnSocketPatchDlx([...argv])
+  const { spawnPromise } = await spawnSocketPatchDlx([...argv], {
+    stdio: 'inherit',
+  })
 
-  // Handle exit codes and signals using event-based pattern.
-  // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on(
-    'exit',
-    (code: number | null, signalName: NodeJS.Signals | null) => {
-      if (signalName) {
-        process.kill(process.pid, signalName)
-      } else if (typeof code === 'number') {
-        // eslint-disable-next-line n/no-process-exit
-        process.exit(code)
-      }
-    },
-  )
+  // Wait for the spawn to complete and set exit code.
+  const result = await spawnPromise
 
-  await spawnPromise
+  if (result.code !== null && result.code !== 0) {
+    process.exitCode = result.code
+  } else if (result.code === 0) {
+    process.exitCode = 0
+  }
 }
