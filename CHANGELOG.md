@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - Updated Coana CLI to v14.12.148.
+- Updated to @socketsecurity/socket-patch@1.2.0.
 
 ### Fixed
 - Prevent heap overflow in large monorepo scans by using streaming-based filtering to avoid accumulating all file paths in memory before filtering.

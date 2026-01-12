@@ -9,5 +9,11 @@
 import process from 'node:process'
 
 export function getSwfVersion(): string {
-  return process.env['INLINED_SOCKET_CLI_SFW_VERSION'] ?? ''
+  const version = process.env['INLINED_SOCKET_CLI_SFW_VERSION']
+  if (!version) {
+    throw new Error(
+      'INLINED_SOCKET_CLI_SFW_VERSION not found. Please ensure sfw is properly configured in external-tools.json.',
+    )
+  }
+  return version
 }
