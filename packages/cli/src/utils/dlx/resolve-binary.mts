@@ -4,6 +4,7 @@
  */
 
 import ENV from '../../constants/env.mts'
+import { getSocketPatchVersion } from '../../env/socket-patch-version.mts'
 import { getSwfVersion } from '../../env/sfw-version.mts'
 
 import type { DlxPackageSpec } from './spawn.mjs'
@@ -86,6 +87,26 @@ export function resolveSfw(): BinaryResolution {
       name: 'sfw',
       version: getSwfVersion(),
       binaryName: 'sfw',
+    },
+  }
+}
+
+/**
+ * Resolve path for Socket Patch binary.
+ * Checks SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH environment variable first.
+ */
+export function resolveSocketPatch(): BinaryResolution {
+  const localPath = ENV.SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH
+  if (localPath) {
+    return { type: 'local', path: localPath }
+  }
+
+  return {
+    type: 'dlx',
+    details: {
+      name: '@socketsecurity/socket-patch',
+      version: getSocketPatchVersion(),
+      binaryName: 'socket-patch',
     },
   }
 }

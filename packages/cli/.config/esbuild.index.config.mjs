@@ -3,6 +3,7 @@
  * Builds the index loader that executes the CLI.
  */
 
+import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -20,10 +21,19 @@ const config = createIndexConfig({
 
 // Run build if invoked directly.
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
-  build(config).catch(error => {
-    console.error('Index loader build failed:', error)
-    process.exitCode = 1
-  })
+  build(config)
+    .then(result => {
+      // Write the transformed output (build had write: false).
+      if (result.outputFiles && result.outputFiles.length > 0) {
+        for (const output of result.outputFiles) {
+          writeFileSync(output.path, output.contents)
+        }
+      }
+    })
+    .catch(error => {
+      console.error('Index loader build failed:', error)
+      process.exitCode = 1
+    })
 }
 
 export default config

@@ -8,6 +8,18 @@
 
 import process from 'node:process'
 
+import { VITEST } from './vitest.mts'
+
 export function getSwfVersion(): string {
-  return process.env['INLINED_SOCKET_CLI_SFW_VERSION'] ?? ''
+  const version = process.env['INLINED_SOCKET_CLI_SFW_VERSION']
+  if (!version) {
+    // In test mode, return empty string instead of throwing.
+    if (VITEST) {
+      return ''
+    }
+    throw new Error(
+      'INLINED_SOCKET_CLI_SFW_VERSION not found. Please ensure sfw is properly configured in external-tools.json.',
+    )
+  }
+  return version
 }

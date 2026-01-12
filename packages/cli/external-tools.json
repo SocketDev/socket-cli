@@ -24,6 +24,12 @@
     "package": "socketsecurity",
     "version": "^2.2.15"
   },
+  "socket-patch": {
+    "description": "Socket Patch CLI for applying security patches",
+    "type": "npm",
+    "package": "@socketsecurity/socket-patch",
+    "version": "1.2.0"
+  },
   "sfw": {
     "description": "Socket Firewall (sfw)",
     "type": "standalone",

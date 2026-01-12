@@ -3,6 +3,8 @@
  * Orchestrates extraction, building, and validation.
  */
 
+import { copyFileSync } from 'node:fs'
+
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
@@ -34,7 +36,10 @@ async function main() {
       return
     }
 
-    // Step 3: Validate bundle.
+    // Step 3: Copy bundle to dist/.
+    copyFileSync('build/cli.js', 'dist/cli.js')
+
+    // Step 4: Validate bundle.
     logger.step('Validating bundle')
     const validateResult = await spawn(
       'node',

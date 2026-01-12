@@ -6,6 +6,8 @@
  * - spawnCdxgenDlx: Execute CycloneDX generator via dlx
  * - spawnCoanaDlx: Execute Coana CLI tool via dlx
  * - spawnDlx: Execute packages using Socket's dlx
+ * - spawnSfwDlx: Execute Socket Firewall via dlx
+ * - spawnSocketPatchDlx: Execute Socket Patch via dlx
  * - spawnSynpDlx: Execute Synp converter via dlx
  *
  * Implementation:
@@ -16,7 +18,12 @@
 
 import { dlxPackage } from '@socketsecurity/lib/dlx/package'
 
-import { resolveCdxgen, resolveCoana, resolveSfw } from './resolve-binary.mjs'
+import {
+  resolveCdxgen,
+  resolveCoana,
+  resolveSocketPatch,
+  resolveSfw,
+} from './resolve-binary.mjs'
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
 import ENV from '../../constants/env.mts'
 import { getErrorCause, InputError } from '../error/errors.mts'
@@ -289,6 +296,48 @@ export async function spawnSfwDlx(
   const resolution = resolveSfw()
 
   // Use local sfw if available.
+  if (resolution.type === 'local') {
+    const { env: spawnEnv, ...dlxOptions } = {
+      __proto__: null,
+      ...options,
+    } as DlxOptions
+
+    const spawnPromise = spawnNode([resolution.path, ...args], {
+      ...dlxOptions,
+      env: {
+        ...process.env,
+        ...spawnEnv,
+      },
+      stdio: spawnExtra?.['stdio'] || 'inherit',
+    })
+
+    return {
+      spawnPromise,
+    }
+  }
+
+  // Use dlx version.
+  return await spawnDlx(
+    resolution.details,
+    args,
+    { force: false, ...options },
+    spawnExtra,
+  )
+}
+
+/**
+ * Helper to spawn Socket Patch with dlx.
+ * If SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH environment variable is set, uses the local
+ * socket-patch binary at that path instead of downloading from npm.
+ */
+export async function spawnSocketPatchDlx(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<ShadowBinResult> {
+  const resolution = resolveSocketPatch()
+
+  // Use local socket-patch if available.
   if (resolution.type === 'local') {
     const { env: spawnEnv, ...dlxOptions } = {
       __proto__: null,
