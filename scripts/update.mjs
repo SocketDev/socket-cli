@@ -49,8 +49,8 @@ async function main() {
       process.stdout.write('\r\x1b[K')
     }
 
-    // If applying updates, also update Socket packages.
-    if (apply && result.code === 0) {
+    // Always update Socket packages when applying (bypass taze maturity period).
+    if (apply) {
       if (!quiet) {
         logger.progress('Updating Socket packages...')
       }
