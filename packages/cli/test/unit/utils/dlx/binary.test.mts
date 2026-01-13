@@ -14,17 +14,11 @@ import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
+import { cleanDlxCache, getDlxCachePath, listDlxCache } from '@socketsecurity/lib/dlx/binary'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
-
-import {
-  cleanDlxCache,
-  getDlxCachePath,
-  getSocketHomePath,
-  listDlxCache,
-} from '../../../../src/utils/dlx/binary.mts'
-import { InputError } from '../../../../src/utils/error/errors.mts'
+import { getSocketHomePath } from '@socketsecurity/lib/paths/socket'
 
 describe('binary', () => {
   describe('getSocketHomePath', () => {
@@ -32,17 +26,6 @@ describe('binary', () => {
       const result = normalizePath(getSocketHomePath())
       const expected = normalizePath(path.join(os.homedir(), '.socket'))
       expect(result).toBe(expected)
-    })
-
-    it('should throw error when home directory cannot be determined', () => {
-      const originalHomedir = os.homedir
-      os.homedir = vi.fn(() => '')
-
-      expect(() => getSocketHomePath()).toThrow(
-        new InputError('Unable to determine home directory'),
-      )
-
-      os.homedir = originalHomedir
     })
   })
 

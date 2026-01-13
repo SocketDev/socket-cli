@@ -26,9 +26,9 @@ import { fileURLToPath } from 'node:url'
 import cmdShim from 'cmd-shim'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { shouldSkipShadow } from '@socketsecurity/lib/shadow'
 
 import { getDistPath } from '../../constants/paths.mts'
-import { shouldSkipShadow } from '../dlx/detection.mts'
 import {
   getNpmBinPath,
   getNpxBinPath,

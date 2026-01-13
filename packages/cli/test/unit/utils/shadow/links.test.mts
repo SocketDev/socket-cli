@@ -46,7 +46,7 @@ vi.mock('@socketsecurity/lib/constants/platform', async () => {
 vi.mock('../../../../src/constants/paths.mts', () => ({
   getDistPath: mockGetDistPath,
 }))
-vi.mock('../../../../src/utils/dlx/detection.mts', () => ({
+vi.mock('@socketsecurity/lib/shadow', () => ({
   shouldSkipShadow: mockShouldSkipShadow,
 }))
 vi.mock('../../../../src/utils/npm/paths.mts', () => ({
