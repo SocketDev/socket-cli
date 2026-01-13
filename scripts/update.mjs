@@ -27,16 +27,13 @@ async function main() {
       logger.log('\n🔨 Monorepo Dependency Update\n')
     }
 
-    // Build taze command with appropriate flags for monorepo.
-    const tazeArgs = ['exec', 'taze', '-r']
+    // Build taze command with appropriate flags for monorepo
+    const tazeArgs = ['exec', 'taze', '-r', '-w']
 
-    if (apply) {
-      tazeArgs.push('-w')
-      if (!quiet) {
+    if (!quiet) {
+      if (apply) {
         logger.progress('Updating dependencies across monorepo...')
-      }
-    } else {
-      if (!quiet) {
+      } else {
         logger.progress('Checking for updates across monorepo...')
       }
     }
