@@ -952,96 +952,76 @@ if (BINARY.enabled) {
       )
 
       it.skipIf(!ENV.RUN_INTEGRATION_TESTS)(
-        'should display patch info help',
+        'should display patch scan help',
         async () => {
           if (!binaryExists) {
             return
           }
 
-          const result = await executeCliCommand(['patch', 'info', '--help'], {
+          const result = await executeCliCommand(['patch', 'scan', '--help'], {
             binPath: BINARY.path,
             isolateConfig: false,
           })
 
           expect(result.code).toBe(0)
-          expect(result.stdout).toContain('info')
+          expect(result.stdout).toContain('scan')
         },
       )
 
       it.skipIf(!ENV.RUN_INTEGRATION_TESTS)(
-        'should display patch discover help',
+        'should display patch get help',
         async () => {
           if (!binaryExists) {
             return
           }
 
-          const result = await executeCliCommand(
-            ['patch', 'discover', '--help'],
-            {
-              binPath: BINARY.path,
-              isolateConfig: false,
-            },
-          )
-
-          expect(result.code).toBe(0)
-          expect(result.stdout).toContain('discover')
-        },
-      )
-
-      it.skipIf(!ENV.RUN_INTEGRATION_TESTS)(
-        'should display patch download help',
-        async () => {
-          if (!binaryExists) {
-            return
-          }
-
-          const result = await executeCliCommand(
-            ['patch', 'download', '--help'],
-            {
-              binPath: BINARY.path,
-              isolateConfig: false,
-            },
-          )
-
-          expect(result.code).toBe(0)
-          expect(result.stdout).toContain('download')
-        },
-      )
-
-      it.skipIf(!ENV.RUN_INTEGRATION_TESTS)(
-        'should display patch cleanup help',
-        async () => {
-          if (!binaryExists) {
-            return
-          }
-
-          const result = await executeCliCommand(
-            ['patch', 'cleanup', '--help'],
-            {
-              binPath: BINARY.path,
-              isolateConfig: false,
-            },
-          )
-
-          expect(result.code).toBe(0)
-          expect(result.stdout).toContain('cleanup')
-        },
-      )
-
-      it.skipIf(!ENV.RUN_INTEGRATION_TESTS)(
-        'should display patch rm help',
-        async () => {
-          if (!binaryExists) {
-            return
-          }
-
-          const result = await executeCliCommand(['patch', 'rm', '--help'], {
+          const result = await executeCliCommand(['patch', 'get', '--help'], {
             binPath: BINARY.path,
             isolateConfig: false,
           })
 
           expect(result.code).toBe(0)
-          expect(result.stdout).toContain('rm')
+          expect(result.stdout).toContain('get')
+        },
+      )
+
+      it.skipIf(!ENV.RUN_INTEGRATION_TESTS)(
+        'should display patch repair help',
+        async () => {
+          if (!binaryExists) {
+            return
+          }
+
+          const result = await executeCliCommand(
+            ['patch', 'repair', '--help'],
+            {
+              binPath: BINARY.path,
+              isolateConfig: false,
+            },
+          )
+
+          expect(result.code).toBe(0)
+          expect(result.stdout).toContain('repair')
+        },
+      )
+
+      it.skipIf(!ENV.RUN_INTEGRATION_TESTS)(
+        'should display patch remove help',
+        async () => {
+          if (!binaryExists) {
+            return
+          }
+
+          const result = await executeCliCommand(
+            ['patch', 'remove', '--help'],
+            {
+              binPath: BINARY.path,
+              isolateConfig: false,
+            },
+          )
+
+          expect(result.code).toBe(0)
+          expect(result.stdout).toContain('remove')
         },
       )
     })

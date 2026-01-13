@@ -6,6 +6,8 @@
  * - spawnCdxgenDlx: Execute CycloneDX generator via dlx
  * - spawnCoanaDlx: Execute Coana CLI tool via dlx
  * - spawnDlx: Execute packages using Socket's dlx
+ * - spawnSfwDlx: Execute Socket Firewall via dlx
+ * - spawnSocketPatchDlx: Execute Socket Patch via dlx
  * - spawnSynpDlx: Execute Synp converter via dlx
  *
  * Implementation:
@@ -15,13 +17,19 @@
  */
 
 import { dlxPackage } from '@socketsecurity/lib/dlx/package'
+import { detectExecutableType } from '@socketsecurity/lib/dlx/detect'
+import { spawn } from '@socketsecurity/lib/spawn'
 
-import { resolveCdxgen, resolveCoana, resolveSfw } from './resolve-binary.mjs'
+import {
+  resolveCdxgen,
+  resolveCoana,
+  resolveSocketPatch,
+  resolveSfw,
+} from './resolve-binary.mjs'
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
 import ENV from '../../constants/env.mts'
 import { getErrorCause, InputError } from '../error/errors.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
-import { spawnNode } from '../spawn/spawn-node.mjs'
 
 import type {
   ShadowBinOptions,
@@ -153,8 +161,7 @@ export async function spawnCoanaDlx(
 
     // Use local Coana CLI if available.
     if (resolution.type === 'local') {
-      const isBinary =
-        !resolution.path.endsWith('.js') && !resolution.path.endsWith('.mjs')
+      const detection = detectExecutableType(resolution.path)
 
       const finalEnv = {
         ...process.env,
@@ -162,10 +169,11 @@ export async function spawnCoanaDlx(
         ...spawnEnv,
       }
 
-      const spawnArgs = isBinary ? args : [resolution.path, ...args]
-      const spawnCommand = isBinary ? resolution.path : 'node'
+      const spawnArgs =
+        detection.type === 'binary' ? args : [resolution.path, ...args]
+      const spawnCommand =
+        detection.type === 'binary' ? resolution.path : 'node'
 
-      const { spawn } = await import('@socketsecurity/lib/spawn')
       const spawnPromise = spawn(spawnCommand, spawnArgs, {
         ...dlxOptions,
         env: finalEnv,
@@ -229,12 +237,17 @@ export async function spawnCdxgenDlx(
 
   // Use local cdxgen if available.
   if (resolution.type === 'local') {
+    const detection = detectExecutableType(resolution.path)
     const { env: spawnEnv, ...dlxOptions } = {
       __proto__: null,
       ...options,
     } as DlxOptions
 
-    const spawnPromise = spawnNode([resolution.path, ...args], {
+    const spawnArgs =
+      detection.type === 'binary' ? args : [resolution.path, ...args]
+    const spawnCommand = detection.type === 'binary' ? resolution.path : 'node'
+
+    const spawnPromise = spawn(spawnCommand, spawnArgs, {
       ...dlxOptions,
       env: {
         ...process.env,
@@ -290,12 +303,64 @@ export async function spawnSfwDlx(
 
   // Use local sfw if available.
   if (resolution.type === 'local') {
+    const detection = detectExecutableType(resolution.path)
     const { env: spawnEnv, ...dlxOptions } = {
       __proto__: null,
       ...options,
     } as DlxOptions
 
-    const spawnPromise = spawnNode([resolution.path, ...args], {
+    const spawnArgs =
+      detection.type === 'binary' ? args : [resolution.path, ...args]
+    const spawnCommand = detection.type === 'binary' ? resolution.path : 'node'
+
+    const spawnPromise = spawn(spawnCommand, spawnArgs, {
+      ...dlxOptions,
+      env: {
+        ...process.env,
+        ...spawnEnv,
+      },
+      stdio: spawnExtra?.['stdio'] || 'inherit',
+    })
+
+    return {
+      spawnPromise,
+    }
+  }
+
+  // Use dlx version.
+  return await spawnDlx(
+    resolution.details,
+    args,
+    { force: false, ...options },
+    spawnExtra,
+  )
+}
+
+/**
+ * Helper to spawn Socket Patch with dlx.
+ * If SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH environment variable is set, uses the local
+ * socket-patch binary at that path instead of downloading from npm.
+ */
+export async function spawnSocketPatchDlx(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<ShadowBinResult> {
+  const resolution = resolveSocketPatch()
+
+  // Use local socket-patch if available.
+  if (resolution.type === 'local') {
+    const detection = detectExecutableType(resolution.path)
+    const { env: spawnEnv, ...dlxOptions } = {
+      __proto__: null,
+      ...options,
+    } as DlxOptions
+
+    const spawnArgs =
+      detection.type === 'binary' ? args : [resolution.path, ...args]
+    const spawnCommand = detection.type === 'binary' ? resolution.path : 'node'
+
+    const spawnPromise = spawn(spawnCommand, spawnArgs, {
       ...dlxOptions,
       env: {
         ...process.env,

@@ -1,5 +1,5 @@
 /**
- * Coana version getter function.
+ * Socket Patch version getter function.
  * Uses direct process.env access so esbuild define can inline values.
  * IMPORTANT: esbuild's define plugin can only replace direct process.env['KEY'] references.
  * If we imported from env modules, esbuild couldn't inline the values at build time.
@@ -8,11 +8,11 @@
 
 import process from 'node:process'
 
-export function getCoanaVersion(): string {
-  const version = process.env['INLINED_SOCKET_CLI_COANA_VERSION']
+export function getSocketPatchVersion(): string {
+  const version = process.env['INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_SOCKET_CLI_COANA_VERSION not found. Please ensure @coana-tech/cli is properly configured in external-tools.json.',
+      'INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION not found. Please ensure socket-patch is properly configured in external-tools.json.',
     )
   }
   return version

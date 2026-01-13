@@ -3,8 +3,7 @@
  * Options: --quiet, --verbose, --force, --watch
  */
 
-import { copyFileSync } from 'node:fs'
-import { promises as fs } from 'node:fs'
+import { copyFileSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 

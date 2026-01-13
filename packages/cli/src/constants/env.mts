@@ -63,7 +63,9 @@ import { SOCKET_CLI_PYCLI_LOCAL_PATH } from '../env/socket-cli-pycli-local-path.
 import { SOCKET_CLI_SEA_NODE_VERSION } from '../env/socket-cli-sea-node-version.mts'
 import { SOCKET_CLI_SFW_LOCAL_PATH } from '../env/socket-cli-sfw-local-path.mts'
 import { SOCKET_CLI_SKIP_UPDATE_CHECK } from '../env/socket-cli-skip-update-check.mts'
+import { SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH } from '../env/socket-cli-socket-patch-local-path.mts'
 import { SOCKET_CLI_VIEW_ALL_RISKS } from '../env/socket-cli-view-all-risks.mts'
+import { getSocketPatchVersion } from '../env/socket-patch-version.mts'
 import { getSynpVersion } from '../env/synp-version.mts'
 import { TEMP } from '../env/temp.mts'
 import { TERM } from '../env/term.mts'
@@ -122,6 +124,7 @@ export {
   SOCKET_CLI_SEA_NODE_VERSION,
   SOCKET_CLI_SFW_LOCAL_PATH,
   SOCKET_CLI_SKIP_UPDATE_CHECK,
+  SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH,
   SOCKET_CLI_VIEW_ALL_RISKS,
   TEMP,
   TERM,
@@ -143,6 +146,7 @@ export {
   getPyCliVersion,
   getPythonBuildTag,
   getPythonVersion,
+  getSocketPatchVersion,
   getSynpVersion,
   isPublishedBuild,
   isSentryBuild,
@@ -202,6 +206,7 @@ const envSnapshot = {
   SOCKET_CLI_SEA_NODE_VERSION,
   SOCKET_CLI_SFW_LOCAL_PATH,
   SOCKET_CLI_SKIP_UPDATE_CHECK,
+  SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH,
   SOCKET_CLI_VIEW_ALL_RISKS,
   TEMP,
   TERM,
@@ -222,6 +227,7 @@ const envSnapshot = {
   INLINED_SOCKET_CLI_PYCLI_VERSION: getPyCliVersion(),
   INLINED_SOCKET_CLI_SENTRY_BUILD: isSentryBuild(),
   INLINED_SOCKET_CLI_SFW_VERSION: getSwfVersion(),
+  INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION: getSocketPatchVersion(),
   INLINED_SOCKET_CLI_SYNP_VERSION: getSynpVersion(),
   INLINED_SOCKET_CLI_VERSION: getCliVersion(),
   INLINED_SOCKET_CLI_VERSION_HASH: getCliVersionHash(),

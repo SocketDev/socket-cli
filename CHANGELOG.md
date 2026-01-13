@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- Updated to @socketsecurity/socket-patch@1.2.0.
 - Updated Coana CLI to v14.12.148.
 
 ### Fixed

@@ -1,15 +1,13 @@
-import { cmdPatchApply } from './cmd-patch-apply.mts'
-import { cmdPatchCleanup } from './cmd-patch-cleanup.mts'
-import { cmdPatchDiscover } from './cmd-patch-discover.mts'
-import { cmdPatchDownload } from './cmd-patch-download.mts'
-import { cmdPatchGet } from './cmd-patch-get.mts'
-import { cmdPatchInfo } from './cmd-patch-info.mts'
-import { cmdPatchList } from './cmd-patch-list.mts'
-import { cmdPatchRm } from './cmd-patch-rm.mts'
-import { cmdPatchStatus } from './cmd-patch-status.mts'
-import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
+import { spawnSocketPatchDlx } from '../../utils/dlx/spawn.mjs'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 
-import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+  CliSubcommand,
+} from '../../utils/cli/with-subcommands.mjs'
+
+export const CMD_NAME = 'patch'
 
 const description = 'Manage CVE patches for dependencies'
 
@@ -18,28 +16,62 @@ const hidden = false
 export const cmdPatch: CliSubcommand = {
   description,
   hidden,
-  async run(argv, importMeta, { parentName }) {
-    await meowWithSubcommands(
-      {
-        argv,
-        name: `${parentName} patch`,
-        importMeta,
-        subcommands: {
-          apply: cmdPatchApply,
-          cleanup: cmdPatchCleanup,
-          discover: cmdPatchDiscover,
-          download: cmdPatchDownload,
-          get: cmdPatchGet,
-          info: cmdPatchInfo,
-          list: cmdPatchList,
-          rm: cmdPatchRm,
-          status: cmdPatchStatus,
-        },
-      },
-      {
-        defaultSub: 'discover',
-        description,
-      },
-    )
-  },
+  run,
+}
+
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  context: CliCommandContext,
+): Promise<void> {
+  const { parentName } = { __proto__: null, ...context } as CliCommandContext
+
+  // Check if there are any non-flag arguments (subcommands).
+  const hasSubcommand = argv.some(arg => !arg.startsWith('-'))
+
+  // Only show Socket CLI help if no subcommand is provided.
+  // If a subcommand is present (like 'list', 'info'), forward to socket-patch.
+  if (!hasSubcommand) {
+    const config: CliCommandConfig = {
+      commandName: CMD_NAME,
+      description,
+      hidden,
+      flags: {},
+      help: command => `
+    Usage
+      $ ${command} ...
+
+    Note: All arguments are forwarded to socket-patch.
+
+    Examples
+      $ ${command} list
+      $ ${command} get <package>
+      $ ${command} apply
+    `,
+    }
+
+    // Parse arguments to handle --help for patch-level help.
+    meowOrExit({
+      argv,
+      config,
+      importMeta,
+      parentName,
+    })
+  }
+
+  process.exitCode = 1
+
+  // Forward all arguments to socket-patch via DLX.
+  const { spawnPromise } = await spawnSocketPatchDlx([...argv], {
+    stdio: 'inherit',
+  })
+
+  // Wait for the spawn to complete and set exit code.
+  const result = await spawnPromise
+
+  if (result.code !== null && result.code !== 0) {
+    process.exitCode = result.code
+  } else if (result.code === 0) {
+    process.exitCode = 0
+  }
 }

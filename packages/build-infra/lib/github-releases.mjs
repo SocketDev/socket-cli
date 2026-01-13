@@ -2,6 +2,7 @@
  * Shared utilities for fetching GitHub releases.
  */
 
+import { createTtlCache } from '@socketsecurity/lib/cache-with-ttl'
 import { safeMkdir } from '@socketsecurity/lib/fs'
 import { httpDownload, httpRequest } from '@socketsecurity/lib/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
@@ -11,6 +12,13 @@ const logger = getDefaultLogger()
 
 const OWNER = 'SocketDev'
 const REPO = 'socket-btm'
+
+// Cache GitHub API responses for 1 hour to avoid rate limiting.
+const cache = createTtlCache({
+  memoize: true,
+  prefix: 'github-releases',
+  ttl: 60 * 60 * 1000, // 1 hour.
+})
 
 /**
  * Get GitHub authentication headers if token is available.
@@ -38,52 +46,56 @@ function getAuthHeaders() {
  * @returns {Promise<string|null>} - Latest release tag or null if not found.
  */
 export async function getLatestRelease(tool, { quiet = false } = {}) {
-  return await pRetry(
-    async () => {
-      const response = await httpRequest(
-        `https://api.github.com/repos/${OWNER}/${REPO}/releases?per_page=100`,
-        {
-          headers: getAuthHeaders(),
-        },
-      )
+  const cacheKey = `latest-release:${tool}`
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch releases: ${response.status}`)
-      }
+  return await cache.getOrFetch(cacheKey, async () => {
+    return await pRetry(
+      async () => {
+        const response = await httpRequest(
+          `https://api.github.com/repos/${OWNER}/${REPO}/releases?per_page=100`,
+          {
+            headers: getAuthHeaders(),
+          },
+        )
 
-      const releases = JSON.parse(response.body)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch releases: ${response.status}`)
+        }
 
-      // Find the first release matching the tool prefix.
-      for (const release of releases) {
-        const { tag_name: tag } = release
-        if (tag.startsWith(`${tool}-`)) {
-          if (!quiet) {
-            logger.info(`  Found release: ${tag}`)
+        const releases = JSON.parse(response.body)
+
+        // Find the first release matching the tool prefix.
+        for (const release of releases) {
+          const { tag_name: tag } = release
+          if (tag.startsWith(`${tool}-`)) {
+            if (!quiet) {
+              logger.info(`  Found release: ${tag}`)
+            }
+            return tag
           }
-          return tag
         }
-      }
 
-      // No matching release found in the list.
-      if (!quiet) {
-        logger.info(`  No ${tool} release found in latest 100 releases`)
-      }
-      return null
-    },
-    {
-      backoffFactor: 1,
-      baseDelayMs: 5000,
-      onRetry: (attempt, error) => {
+        // No matching release found in the list.
         if (!quiet) {
-          logger.info(
-            `  Retry attempt ${attempt + 1}/3 for ${tool} release list...`,
-          )
-          logger.warn(`  Attempt ${attempt + 1}/3 failed: ${error.message}`)
+          logger.info(`  No ${tool} release found in latest 100 releases`)
         }
+        return null
       },
-      retries: 2,
-    },
-  )
+      {
+        backoffFactor: 1,
+        baseDelayMs: 5000,
+        onRetry: (attempt, error) => {
+          if (!quiet) {
+            logger.info(
+              `  Retry attempt ${attempt + 1}/3 for ${tool} release list...`,
+            )
+            logger.warn(`  Attempt ${attempt + 1}/3 failed: ${error.message}`)
+          }
+        },
+        retries: 2,
+      },
+    )
+  })
 }
 
 /**
@@ -103,46 +115,50 @@ export async function getReleaseAssetUrl(
   assetName,
   { quiet = false } = {},
 ) {
-  return await pRetry(
-    async () => {
-      const response = await httpRequest(
-        `https://api.github.com/repos/${OWNER}/${REPO}/releases/tags/${tag}`,
-        {
-          headers: getAuthHeaders(),
-        },
-      )
+  const cacheKey = `asset-url:${tag}:${assetName}`
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch release ${tag}: ${response.status}`)
-      }
+  return await cache.getOrFetch(cacheKey, async () => {
+    return await pRetry(
+      async () => {
+        const response = await httpRequest(
+          `https://api.github.com/repos/${OWNER}/${REPO}/releases/tags/${tag}`,
+          {
+            headers: getAuthHeaders(),
+          },
+        )
 
-      const release = JSON.parse(response.body)
-
-      // Find the matching asset.
-      const asset = release.assets.find(a => a.name === assetName)
-
-      if (!asset) {
-        throw new Error(`Asset ${assetName} not found in release ${tag}`)
-      }
-
-      if (!quiet) {
-        logger.info(`  Found asset: ${assetName}`)
-      }
-
-      return asset.browser_download_url
-    },
-    {
-      backoffFactor: 1,
-      baseDelayMs: 5000,
-      onRetry: (attempt, error) => {
-        if (!quiet) {
-          logger.info(`  Retry attempt ${attempt + 1}/3 for asset URL...`)
-          logger.warn(`  Attempt ${attempt + 1}/3 failed: ${error.message}`)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch release ${tag}: ${response.status}`)
         }
+
+        const release = JSON.parse(response.body)
+
+        // Find the matching asset.
+        const asset = release.assets.find(a => a.name === assetName)
+
+        if (!asset) {
+          throw new Error(`Asset ${assetName} not found in release ${tag}`)
+        }
+
+        if (!quiet) {
+          logger.info(`  Found asset: ${assetName}`)
+        }
+
+        return asset.browser_download_url
       },
-      retries: 2,
-    },
-  )
+      {
+        backoffFactor: 1,
+        baseDelayMs: 5000,
+        onRetry: (attempt, error) => {
+          if (!quiet) {
+            logger.info(`  Retry attempt ${attempt + 1}/3 for asset URL...`)
+            logger.warn(`  Attempt ${attempt + 1}/3 failed: ${error.message}`)
+          }
+        },
+        retries: 2,
+      },
+    )
+  })
 }
 
 /**

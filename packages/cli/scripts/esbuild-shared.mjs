@@ -21,6 +21,9 @@ const rootPath = path.join(__dirname, '..')
  * @returns {Object} esbuild configuration object
  */
 export function createIndexConfig({ entryPoint, minify = false, outfile }) {
+  // Get inlined environment variables for build-time constant replacement.
+  const inlinedEnvVars = getInlinedEnvVars()
+
   const config = {
     banner: {
       js: '#!/usr/bin/env node',
@@ -33,6 +36,15 @@ export function createIndexConfig({ entryPoint, minify = false, outfile }) {
     platform: 'node',
     target: 'node18',
     treeShaking: true,
+    // Define environment variables for inlining.
+    define: {
+      'process.env.NODE_ENV': '"production"',
+      ...createDefineEntries(inlinedEnvVars),
+    },
+    // Add plugin for post-bundle env var replacement.
+    plugins: [envVarReplacementPlugin(inlinedEnvVars)],
+    // Plugin needs to transform output.
+    write: false,
   }
 
   if (minify) {
@@ -137,12 +149,30 @@ export function getInlinedEnvVars() {
   const externalTools = JSON.parse(
     readFileSync(path.join(rootPath, 'external-tools.json'), 'utf-8'),
   )
-  const cdxgenVersion = externalTools['@cyclonedx/cdxgen']?.version || ''
-  const coanaVersion = externalTools['@coana-tech/cli']?.version || ''
-  const pyCliVersion = externalTools['socketsecurity']?.version || ''
-  const pythonBuildTag = externalTools['python']?.buildTag || ''
-  const pythonVersion = externalTools['python']?.version || ''
-  const sfwVersion = externalTools['sfw']?.version || ''
+
+  function getExternalToolVersion(key, field = 'version') {
+    const tool = externalTools[key]
+    if (!tool) {
+      throw new Error(
+        `External tool "${key}" not found in external-tools.json. Please add it to the configuration.`,
+      )
+    }
+    const value = tool[field]
+    if (!value) {
+      throw new Error(
+        `External tool "${key}" is missing required field "${field}" in external-tools.json.`,
+      )
+    }
+    return value
+  }
+
+  const cdxgenVersion = getExternalToolVersion('@cyclonedx/cdxgen')
+  const coanaVersion = getExternalToolVersion('@coana-tech/cli')
+  const pyCliVersion = getExternalToolVersion('socketsecurity')
+  const pythonBuildTag = getExternalToolVersion('python', 'buildTag')
+  const pythonVersion = getExternalToolVersion('python')
+  const sfwVersion = getExternalToolVersion('sfw')
+  const socketPatchVersion = getExternalToolVersion('socket-patch')
 
   // Build-time constants that can be overridden by environment variables.
   const publishedBuild =
@@ -166,6 +196,7 @@ export function getInlinedEnvVars() {
     INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
     INLINED_SOCKET_CLI_PYCLI_VERSION: JSON.stringify(pyCliVersion),
     INLINED_SOCKET_CLI_SFW_VERSION: JSON.stringify(sfwVersion),
+    INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION: JSON.stringify(socketPatchVersion),
     INLINED_SOCKET_CLI_SYNP_VERSION: JSON.stringify(synpVersion),
     INLINED_SOCKET_CLI_PUBLISHED_BUILD: JSON.stringify(
       publishedBuild ? '1' : '',
