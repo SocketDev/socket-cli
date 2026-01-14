@@ -31,6 +31,12 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'Enable debug mode for reachability analysis. Provides verbose logging from the reachability CLI.',
   },
+  reachDetailedAnalysisLogFile: {
+    type: 'boolean',
+    default: false,
+    description:
+      'A log file with detailed analysis logs is written to root of each analyzed workspace.',
+  },
   reachDisableAnalytics: {
     type: 'boolean',
     default: false,
