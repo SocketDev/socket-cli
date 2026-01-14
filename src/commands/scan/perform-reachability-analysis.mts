@@ -18,7 +18,7 @@ export type ReachabilityOptions = {
   reachAnalysisTimeout: number
   reachConcurrency: number
   reachDebug: boolean
-  reachDisableAnalysisSplitting: boolean
+  reachEnableAnalysisSplitting: boolean
   reachDisableAnalytics: boolean
   reachEcosystems: PURL_Type[]
   reachExcludePaths: string[]
@@ -175,9 +175,9 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachDisableAnalytics
       ? ['--disable-analytics-sharing']
       : []),
-    ...(reachabilityOptions.reachDisableAnalysisSplitting
-      ? ['--disable-analysis-splitting']
-      : []),
+    ...(reachabilityOptions.reachEnableAnalysisSplitting
+      ? []
+      : ['--disable-analysis-splitting']),
     ...(tarHash
       ? ['--run-without-docker', '--manifests-tar-hash', tarHash]
       : []),

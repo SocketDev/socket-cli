@@ -40,8 +40,15 @@ export const reachabilityFlags: MeowFlags = {
   reachDisableAnalysisSplitting: {
     type: 'boolean',
     default: false,
+    hidden: true,
     description:
-      'Limits Coana to at most 1 reachability analysis run per workspace.',
+      'Deprecated: Analysis splitting is now disabled by default. This flag is a no-op.',
+  },
+  reachEnableAnalysisSplitting: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Allow the reachability analysis to partition CVEs into buckets that are processed in separate analysis runs. May improve accuracy, but not recommended by default.',
   },
   reachEcosystems: {
     type: 'string',

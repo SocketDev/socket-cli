@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.58](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.58) - 2026-01-14
+
+### Changed
+- Analysis splitting is now disabled by default for reachability scans.
+- Added `--reach-enable-analysis-splitting` flag to opt-in to multiple analysis runs per workspace when needed.
+- Deprecated `--reach-disable-analysis-splitting` flag (now a no-op for backwards compatibility).
+
 ## [1.1.57](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.57) - 2026-01-10
 
 ### Changed

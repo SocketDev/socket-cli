@@ -76,6 +76,7 @@ describe('socket root command', async () => {
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
+           \\xd7 Received an unknown command: patch
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | CLI: <redacted>
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
