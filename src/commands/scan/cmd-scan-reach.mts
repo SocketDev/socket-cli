@@ -125,8 +125,10 @@ async function run(
     reachAnalysisTimeout,
     reachConcurrency,
     reachDebug,
-    reachDisableAnalysisSplitting,
+    reachDetailedAnalysisLogFile,
+    reachDisableAnalysisSplitting: _reachDisableAnalysisSplitting,
     reachDisableAnalytics,
+    reachEnableAnalysisSplitting,
     reachLazyMode,
     reachSkipCache,
     reachUseOnlyPregeneratedSboms,
@@ -142,8 +144,10 @@ async function run(
     reachAnalysisTimeout: number
     reachConcurrency: number
     reachDebug: boolean
+    reachDetailedAnalysisLogFile: boolean
     reachDisableAnalysisSplitting: boolean
     reachDisableAnalytics: boolean
+    reachEnableAnalysisSplitting: boolean
     reachLazyMode: boolean
     reachSkipCache: boolean
     reachUseOnlyPregeneratedSboms: boolean
@@ -262,9 +266,10 @@ async function run(
       reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachConcurrency: Number(reachConcurrency),
       reachDebug: Boolean(reachDebug),
-      reachDisableAnalysisSplitting: Boolean(reachDisableAnalysisSplitting),
+      reachDetailedAnalysisLogFile: Boolean(reachDetailedAnalysisLogFile),
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
       reachEcosystems,
+      reachEnableAnalysisSplitting: Boolean(reachEnableAnalysisSplitting),
       reachExcludePaths,
       reachLazyMode: Boolean(reachLazyMode),
       reachSkipCache: Boolean(reachSkipCache),

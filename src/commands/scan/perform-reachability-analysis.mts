@@ -18,9 +18,10 @@ export type ReachabilityOptions = {
   reachAnalysisTimeout: number
   reachConcurrency: number
   reachDebug: boolean
-  reachDisableAnalysisSplitting: boolean
+  reachDetailedAnalysisLogFile: boolean
   reachDisableAnalytics: boolean
   reachEcosystems: PURL_Type[]
+  reachEnableAnalysisSplitting: boolean
   reachExcludePaths: string[]
   reachLazyMode: boolean
   reachSkipCache: boolean
@@ -172,12 +173,15 @@ export async function performReachabilityAnalysis(
       ? ['--concurrency', `${reachabilityOptions.reachConcurrency}`]
       : []),
     ...(reachabilityOptions.reachDebug ? ['--debug'] : []),
+    ...(reachabilityOptions.reachDetailedAnalysisLogFile
+      ? ['--print-analysis-log-file']
+      : []),
     ...(reachabilityOptions.reachDisableAnalytics
       ? ['--disable-analytics-sharing']
       : []),
-    ...(reachabilityOptions.reachDisableAnalysisSplitting
-      ? ['--disable-analysis-splitting']
-      : []),
+    ...(reachabilityOptions.reachEnableAnalysisSplitting
+      ? []
+      : ['--disable-analysis-splitting']),
     ...(tarHash
       ? ['--run-without-docker', '--manifests-tar-hash', tarHash]
       : []),

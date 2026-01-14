@@ -41,9 +41,10 @@ describe('socket scan reach', async () => {
             --reach-analysis-timeout  Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.
             --reach-concurrency  Set the maximum number of concurrent reachability analysis runs. It is recommended to choose a concurrency level that ensures each analysis run has at least the --reach-analysis-memory-limit amount of memory available. NPM reachability analysis does not support concurrent execution, so the concurrency level is ignored for NPM.
             --reach-debug       Enable debug mode for reachability analysis. Provides verbose logging from the reachability CLI.
-            --reach-disable-analysis-splitting  Limits Coana to at most 1 reachability analysis run per workspace.
+            --reach-detailed-analysis-log-file  A log file with detailed analysis logs is written to root of each analyzed workspace.
             --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
             --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
+            --reach-enable-analysis-splitting  Allow the reachability analysis to partition CVEs into buckets that are processed in separate analysis runs. May improve accuracy, but not recommended by default.
             --reach-exclude-paths  List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.
             --reach-skip-cache  Skip caching-based optimizations. By default, the reachability analysis will use cached configurations from previous runs to speed up the analysis.
             --reach-use-only-pregenerated-sboms  When using this option, the scan is created based only on pre-generated CDX and SPDX files in your project.
@@ -195,7 +196,26 @@ describe('socket scan reach', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should accept --reach-disable-analysis-splitting flag',
+    'should accept deprecated --reach-disable-analysis-splitting flag (noop)',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'reach',
+      FLAG_DRY_RUN,
+      '--reach-enable-analysis-splitting',
+      '--org',
+      'fakeOrg',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should accept --reach-enable-analysis-splitting flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
@@ -319,7 +339,7 @@ describe('socket scan reach', async () => {
       '3600',
       '--reach-concurrency',
       '2',
-      '--reach-disable-analysis-splitting',
+      '--reach-enable-analysis-splitting',
       '--reach-ecosystems',
       'npm,pypi',
       '--reach-exclude-paths',
