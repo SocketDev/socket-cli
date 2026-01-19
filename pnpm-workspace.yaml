@@ -3,7 +3,7 @@ packages:
   - packages/*
 
 catalog:
-  '@babel/core': 7.28.4
+  '@babel/core': 7.28.5
   '@babel/generator': 7.28.5
   '@babel/parser': 7.28.4
   '@babel/plugin-proposal-export-default-from': 7.27.1
