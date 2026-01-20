@@ -32,7 +32,6 @@ vi.mock('@socketsecurity/lib/fs', () => ({
 describe('coana utilities', () => {
   describe('extractTier1ReachabilityScanId', () => {
     it('extracts scan ID from valid socket facts file', async () => {
-      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
       const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
       mockReadJsonSync.mockReturnValue({
         tier1ReachabilityScanId: 'scan-123-abc',

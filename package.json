@@ -1,7 +1,7 @@
 {
   "name": "socket-cli-monorepo",
   "version": "0.0.0",
-  "packageManager": "pnpm@10.28.0",
+  "packageManager": "pnpm@10.28.1",
   "private": true,
   "engines": {
     "node": ">=24.10.0",
@@ -188,6 +188,7 @@
       "semver": "catalog:",
       "set-function-length": "catalog:",
       "shell-quote": "catalog:",
+      "signal-exit": "4.1.0",
       "side-channel": "catalog:",
       "string_decoder": "catalog:",
       "string-width": "catalog:",
@@ -205,6 +206,8 @@
       "@npmcli/run-script@9.1.0": "patches/@npmcli__run-script@9.1.0.patch",
       "@npmcli/run-script@10.0.3": "patches/@npmcli__run-script@10.0.3.patch",
       "@sigstore/sign@4.1.0": "patches/@sigstore__sign@4.1.0.patch",
+      "execa@2.1.0": "patches/execa@2.1.0.patch",
+      "execa@5.1.1": "patches/execa@5.1.1.patch",
       "ink@6.3.1": "patches/ink@6.3.1.patch",
       "node-gyp@11.5.0": "patches/node-gyp@11.5.0.patch",
       "node-gyp@12.1.0": "patches/node-gyp@12.1.0.patch"

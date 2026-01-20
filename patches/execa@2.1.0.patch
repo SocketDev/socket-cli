@@ -1,0 +1,12 @@
+diff --git a/lib/kill.js b/lib/kill.js
+index dc1c77c38407a9157cfc847c78deaac17b8898bb..998d34578b1d3a360c2a0c7a2dc0acb6d5c15ea0 100644
+--- a/lib/kill.js
++++ b/lib/kill.js
+@@ -1,6 +1,6 @@
+ 'use strict';
+ const os = require('os');
+-const onExit = require('signal-exit');
++const { onExit } = require('signal-exit');
+ const pFinally = require('p-finally');
+
+ const DEFAULT_FORCE_KILL_TIMEOUT = 1000 * 5;

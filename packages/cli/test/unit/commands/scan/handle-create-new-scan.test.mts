@@ -144,11 +144,9 @@ describe('handleCreateNewScan', () => {
   })
 
   it('creates scan successfully with found files', async () => {
-    // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
     const { fetchSupportedScanFileNames } = await import(
       '../../../../src/commands/scan/fetch-supported-scan-file-names.mts'
     )
-    // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
     const { getPackageFilesForScan } = await import(
       '../../../../src/utils/fs/path-resolve.mts'
     )
@@ -231,15 +229,12 @@ describe('handleCreateNewScan', () => {
   })
 
   it('handles no eligible files found', async () => {
-    // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
     const { fetchSupportedScanFileNames } = await import(
       '../../../../src/commands/scan/fetch-supported-scan-file-names.mts'
     )
-    // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
     const { getPackageFilesForScan } = await import(
       '../../../../src/utils/fs/path-resolve.mts'
     )
-    // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
     const { checkCommandInput } = await import(
       '../../../../src/utils/validation/check-input.mts'
     )

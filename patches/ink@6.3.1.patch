@@ -1,3 +1,16 @@
+diff --git a/build/ink.js b/build/ink.js
+index 5c3dd7e8e3b3a77fe2bbf6e3e94d67f5820e2076..7a6d8e5f9d9c6f0da9b41f6b6d7f9e8e9a0a1b2b3 100644
+--- a/build/ink.js
++++ b/build/ink.js
+@@ -4,7 +4,7 @@ import { throttle } from 'es-toolkit/compat';
+ import ansiEscapes from 'ansi-escapes';
+ import isInCi from 'is-in-ci';
+ import autoBind from 'auto-bind';
+-import signalExit from 'signal-exit';
++import { onExit as signalExit } from 'signal-exit';
+ import patchConsole from 'patch-console';
+ import { LegacyRoot } from 'react-reconciler/constants.js';
+ import Yoga from 'yoga-layout';
 diff --git a/build/reconciler.js b/build/reconciler.js
 index dbcad54d70b0870a469eb5767bae375f6804eb36..c9013afef1c67e820dc3595a4b2d648d0456c2fb 100644
 --- a/build/reconciler.js

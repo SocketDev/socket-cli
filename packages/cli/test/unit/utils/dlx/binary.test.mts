@@ -16,7 +16,11 @@ import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { cleanDlxCache, getDlxCachePath, listDlxCache } from '@socketsecurity/lib/dlx/binary'
+import {
+  cleanDlxCache,
+  getDlxCachePath,
+  listDlxCache,
+} from '@socketsecurity/lib/dlx/binary'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { getSocketHomePath } from '@socketsecurity/lib/paths/socket'
 
