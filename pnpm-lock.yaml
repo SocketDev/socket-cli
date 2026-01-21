@@ -384,6 +384,9 @@ patchedDependencies:
   node-gyp@12.1.0:
     hash: 140ba43d43d74f7d3577feb3f8a6efad544dbb0059784102b144a0e2daa437f9
     path: patches/node-gyp@12.1.0.patch
+  restore-cursor@4.0.0:
+    hash: 10fb78d4d6ee21399e462f324212aa1093e7cf1b9ebd7518539215fcd443dc13
+    path: patches/restore-cursor@4.0.0.patch
 
 importers:
 
@@ -7485,7 +7488,7 @@ snapshots:
 
   cli-cursor@4.0.0:
     dependencies:
-      restore-cursor: 4.0.0
+      restore-cursor: 4.0.0(patch_hash=10fb78d4d6ee21399e462f324212aa1093e7cf1b9ebd7518539215fcd443dc13)
 
   cli-cursor@5.0.0:
     dependencies:
@@ -9220,7 +9223,7 @@ snapshots:
       path-parse: '@socketregistry/path-parse@1.0.8'
       supports-preserve-symlinks-flag: 1.0.0
 
-  restore-cursor@4.0.0:
+  restore-cursor@4.0.0(patch_hash=10fb78d4d6ee21399e462f324212aa1093e7cf1b9ebd7518539215fcd443dc13):
     dependencies:
       onetime: 5.1.2
       signal-exit: 4.1.0

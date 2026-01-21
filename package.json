@@ -210,7 +210,8 @@
       "execa@5.1.1": "patches/execa@5.1.1.patch",
       "ink@6.3.1": "patches/ink@6.3.1.patch",
       "node-gyp@11.5.0": "patches/node-gyp@11.5.0.patch",
-      "node-gyp@12.1.0": "patches/node-gyp@12.1.0.patch"
+      "node-gyp@12.1.0": "patches/node-gyp@12.1.0.patch",
+      "restore-cursor@4.0.0": "patches/restore-cursor@4.0.0.patch"
     }
   },
   "lint-staged": {

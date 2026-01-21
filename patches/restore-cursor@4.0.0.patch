@@ -1,0 +1,16 @@
+diff --git a/index.js b/index.js
+index 0c117e9ad6090501d9e37081db67a9155eb5d1b7..4c87ff9d12b452f4cf1b96b80a8c5f6d4c475d6d 100644
+--- a/index.js
++++ b/index.js
+@@ -1,9 +1,9 @@
+ import process from 'node:process';
+ import onetime from 'onetime';
+-import signalExit from 'signal-exit';
++import { onExit } from 'signal-exit';
+ 
+ const restoreCursor = onetime(() => {
+-	signalExit(() => {
++	onExit(() => {
+ 		process.stderr.write('\u001B[?25h');
+ 	}, {alwaysLast: true});
+ });
