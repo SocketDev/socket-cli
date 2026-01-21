@@ -132,7 +132,6 @@ catalog:
   string-width: 8.1.0
   string_decoder: 0.10.31
   strip-ansi: 7.1.2
-  synp: 1.9.14
   tar-stream: 3.1.7
   taze: 19.6.0
   terminal-link: 2.1.1

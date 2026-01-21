@@ -142,9 +142,6 @@ export function getInlinedEnvVars() {
     }).trim()
   } catch {}
 
-  // Get dependency versions from package.json devDependencies.
-  const synpVersion = packageJson.devDependencies?.['synp'] || ''
-
   // Get external tool versions from external-tools.json.
   const externalTools = JSON.parse(
     readFileSync(path.join(rootPath, 'external-tools.json'), 'utf-8'),
@@ -173,6 +170,7 @@ export function getInlinedEnvVars() {
   const pythonVersion = getExternalToolVersion('python')
   const sfwVersion = getExternalToolVersion('sfw')
   const socketPatchVersion = getExternalToolVersion('socket-patch')
+  const synpVersion = getExternalToolVersion('synp')
 
   // Build-time constants that can be overridden by environment variables.
   const publishedBuild =

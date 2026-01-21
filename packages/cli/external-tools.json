@@ -34,5 +34,11 @@
     "description": "Socket Firewall (sfw)",
     "type": "standalone",
     "version": "2.0.4"
+  },
+  "synp": {
+    "description": "Tool for converting between yarn.lock and package-lock.json",
+    "type": "npm",
+    "package": "synp",
+    "version": "1.9.14"
   }
 }
