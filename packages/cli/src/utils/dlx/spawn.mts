@@ -271,25 +271,6 @@ export async function spawnCdxgenDlx(
 }
 
 /**
- * Helper to spawn synp with dlx.
- */
-export async function spawnSynpDlx(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<ShadowBinResult> {
-  return await spawnDlx(
-    {
-      name: 'synp',
-      version: `${ENV.INLINED_SOCKET_CLI_SYNP_VERSION}`,
-    },
-    args,
-    { force: false, ...options },
-    spawnExtra,
-  )
-}
-
-/**
  * Helper to spawn Socket Firewall (sfw) with dlx.
  * If SOCKET_CLI_SFW_LOCAL_PATH environment variable is set, uses the local
  * sfw binary at that path instead of downloading from npm.
@@ -377,6 +358,25 @@ export async function spawnSocketPatchDlx(
   // Use dlx version.
   return await spawnDlx(
     resolution.details,
+    args,
+    { force: false, ...options },
+    spawnExtra,
+  )
+}
+
+/**
+ * Helper to spawn synp with dlx.
+ */
+export async function spawnSynpDlx(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<ShadowBinResult> {
+  return await spawnDlx(
+    {
+      name: 'synp',
+      version: `${ENV.INLINED_SOCKET_CLI_SYNP_VERSION}`,
+    },
     args,
     { force: false, ...options },
     spawnExtra,
