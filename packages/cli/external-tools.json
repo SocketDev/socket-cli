@@ -3,13 +3,13 @@
     "description": "Coana CLI for static analysis and reachability detection",
     "type": "npm",
     "package": "@coana-tech/cli",
-    "version": "14.12.148"
+    "version": "14.12.165"
   },
   "@cyclonedx/cdxgen": {
     "description": "CycloneDX SBOM generator for software bill of materials",
     "type": "npm",
     "package": "@cyclonedx/cdxgen",
-    "version": "11.11.0"
+    "version": "12.0.0"
   },
   "python": {
     "description": "Python runtime from python-build-standalone",
@@ -22,7 +22,7 @@
     "description": "Socket Python CLI (socket-python-cli)",
     "type": "pypi",
     "package": "socketsecurity",
-    "version": "^2.2.15"
+    "version": "2.2.70"
   },
   "socket-patch": {
     "description": "Socket Patch CLI for applying security patches",
