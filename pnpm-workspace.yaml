@@ -102,7 +102,7 @@ catalog:
   is-core-module: npm:@socketregistry/is-core-module@^1.0.11
   isarray: npm:@socketregistry/isarray@^1.0.8
   js-yaml: npm:@zkochan/js-yaml@0.0.10
-  lint-staged: 16.1.6
+  lint-staged: 16.2.7
   lodash: 4.17.21
   magic-string: 0.30.19
   micromatch: 4.0.8
