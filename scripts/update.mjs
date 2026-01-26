@@ -49,40 +49,38 @@ async function main() {
       process.stdout.write('\r\x1b[K')
     }
 
-    // Always update Socket packages when applying (bypass taze maturity period).
-    if (apply) {
+    // Always update Socket packages (bypass taze maturity period).
+    if (!quiet) {
+      logger.progress('Updating Socket packages...')
+    }
+
+    const socketResult = await spawn(
+      'pnpm',
+      [
+        'update',
+        '@socketsecurity/*',
+        '@socketregistry/*',
+        '@socketbin/*',
+        '--latest',
+        '-r',
+      ],
+      {
+        shell: WIN32,
+        stdio: quiet ? 'pipe' : 'inherit',
+      },
+    )
+
+    // Clear progress line.
+    if (!quiet) {
+      process.stdout.write('\r\x1b[K')
+    }
+
+    if (socketResult.code !== 0) {
       if (!quiet) {
-        logger.progress('Updating Socket packages...')
+        logger.fail('Failed to update Socket packages')
       }
-
-      const socketResult = await spawn(
-        'pnpm',
-        [
-          'update',
-          '@socketsecurity/*',
-          '@socketregistry/*',
-          '@socketbin/*',
-          '--latest',
-          '-r',
-        ],
-        {
-          shell: WIN32,
-          stdio: quiet ? 'pipe' : 'inherit',
-        },
-      )
-
-      // Clear progress line.
-      if (!quiet) {
-        process.stdout.write('\r\x1b[K')
-      }
-
-      if (socketResult.code !== 0) {
-        if (!quiet) {
-          logger.fail('Failed to update Socket packages')
-        }
-        process.exitCode = 1
-        return
-      }
+      process.exitCode = 1
+      return
     }
 
     if (result.code !== 0) {
