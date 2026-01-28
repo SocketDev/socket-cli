@@ -57,7 +57,7 @@ Note: Include the blank line after the changelog entry.
 
 ### 6. Push and Create PR
 - Push the branch to origin with `-u` flag.
-- Create a PR using `gh pr create` targeting the `main` branch with:
+- Create a PR using `gh pr create` targeting the `v1.x` branch with:
   - Title: `upgrading coana to version COANA_VERSION`
   - Body using the format below.
 
