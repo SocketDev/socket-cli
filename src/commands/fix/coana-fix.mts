@@ -111,7 +111,7 @@ async function discoverGhsaIds(
 
 export async function coanaFix(
   fixConfig: FixConfig,
-): Promise<CResult<{ fixedAll: boolean; ghsaDetails: Record<string, unknown> }>> {
+): Promise<CResult<{ fixedAll: boolean; ghsaDetails: unknown[] }>> {
   const {
     all,
     applyFixes,
@@ -237,7 +237,7 @@ export async function coanaFix(
       if (!silence) {
         spinner?.stop()
       }
-      return { ok: true, data: { fixedAll: false, ghsaDetails: {} } }
+      return { ok: true, data: { fixedAll: false, ghsaDetails: [] } }
     }
 
     // Create a temporary file for the output.
@@ -290,7 +290,10 @@ export async function coanaFix(
       }
 
       // Read the temporary file to get the actual fixes result.
-      const fixesResultJson = readJsonSync(tmpFile, { throws: false })
+      const fixesResultJson = readJsonSync(tmpFile, { throws: false }) as
+        | { fixes?: Record<string, unknown> }
+        | null
+        | undefined
 
       // Copy to outputFile if provided.
       if (outputFile) {
@@ -305,7 +308,7 @@ export async function coanaFix(
         ok: true,
         data: {
           fixedAll: true,
-          ghsaDetails: (fixesResultJson as Record<string, unknown>) ?? {},
+          ghsaDetails: fixesResultJson ? [fixesResultJson] : [],
         },
       }
     } finally {
@@ -372,7 +375,7 @@ export async function coanaFix(
     if (!silence) {
       spinner?.stop()
     }
-    return { ok: true, data: { fixedAll: false, ghsaDetails: {} } }
+    return { ok: true, data: { fixedAll: false, ghsaDetails: [] } }
   }
 
   debugFn('notice', `fetch: ${ids.length} GHSA details for ${joinAnd(ids)}`)
@@ -384,10 +387,7 @@ export async function coanaFix(
 
   let count = 0
   let overallFixed = false
-  const ghsaFixResults: Record<string, unknown> = { __proto__: null } as Record<
-    string,
-    unknown
-  >
+  const ghsaFixResults: unknown[] = []
 
   // Process each GHSA ID individually.
   ghsaLoop: for (let i = 0, { length } = ids; i < length; i += 1) {
@@ -462,6 +462,13 @@ export async function coanaFix(
 
     if (!modifiedFiles.length) {
       debugFn('notice', `skip: no changes for ${ghsaId}`)
+      // Clean up temp file before continuing.
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await fs.unlink(tmpFile)
+      } catch {
+        // Ignore cleanup errors.
+      }
       continue ghsaLoop
     }
 
@@ -577,22 +584,13 @@ export async function coanaFix(
         const prRef = `PR #${data.number}`
 
         // Read the fix result JSON and merge with PR data.
-        const fixResultJson = readJsonSync(tmpFile, { throws: false }) as
-          | { fixes?: Record<string, unknown> }
-          | null
-          | undefined
+        const fixResultJson = readJsonSync(tmpFile, { throws: false })
         if (fixResultJson && typeof fixResultJson === 'object') {
-          // Extract GHSA IDs from the fixes object.
-          const fixes = fixResultJson.fixes
-          if (fixes && typeof fixes === 'object') {
-            for (const ghsaKey of Object.keys(fixes)) {
-              ghsaFixResults[ghsaKey] = {
-                ...fixResultJson,
-                pullRequestLink: data.html_url,
-                pullRequestNumber: data.number,
-              }
-            }
-          }
+          ghsaFixResults.push({
+            ...(fixResultJson as object),
+            pullRequestLink: data.html_url,
+            pullRequestNumber: data.number,
+          })
         }
 
         if (!silence) {
