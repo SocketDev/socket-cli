@@ -111,7 +111,7 @@ async function discoverGhsaIds(
 
 export async function coanaFix(
   fixConfig: FixConfig,
-): Promise<CResult<{ data?: unknown; fixed: boolean }>> {
+): Promise<CResult<{ fixedAll: boolean; ghsaDetails: Record<string, unknown> }>> {
   const {
     all,
     applyFixes,
@@ -237,7 +237,7 @@ export async function coanaFix(
       if (!silence) {
         spinner?.stop()
       }
-      return { ok: true, data: { fixed: false } }
+      return { ok: true, data: { fixedAll: false, ghsaDetails: {} } }
     }
 
     // Create a temporary file for the output.
@@ -301,7 +301,13 @@ export async function coanaFix(
         await fs.writeFile(outputFile, tmpContent, 'utf8')
       }
 
-      return { ok: true, data: { data: fixesResultJson, fixed: true } }
+      return {
+        ok: true,
+        data: {
+          fixedAll: true,
+          ghsaDetails: (fixesResultJson as Record<string, unknown>) ?? {},
+        },
+      }
     } finally {
       // Clean up the temporary file.
       try {
@@ -366,7 +372,7 @@ export async function coanaFix(
     if (!silence) {
       spinner?.stop()
     }
-    return { ok: true, data: { fixed: false } }
+    return { ok: true, data: { fixedAll: false, ghsaDetails: {} } }
   }
 
   debugFn('notice', `fetch: ${ids.length} GHSA details for ${joinAnd(ids)}`)
@@ -378,11 +384,19 @@ export async function coanaFix(
 
   let count = 0
   let overallFixed = false
+  const ghsaFixResults: Record<string, unknown> = { __proto__: null } as Record<
+    string,
+    unknown
+  >
 
   // Process each GHSA ID individually.
   ghsaLoop: for (let i = 0, { length } = ids; i < length; i += 1) {
     const ghsaId = ids[i]!
     debugFn('notice', `check: ${ghsaId}`)
+
+    // Create a temporary file for Coana output.
+    const tmpDir = os.tmpdir()
+    const tmpFile = path.join(tmpDir, `socket-fix-${ghsaId}-${Date.now()}.json`)
 
     // Apply fix for single GHSA ID.
     // eslint-disable-next-line no-await-in-loop
@@ -408,6 +422,8 @@ export async function coanaFix(
         ...(showAffectedDirectDependencies
           ? ['--show-affected-direct-dependencies']
           : []),
+        '--output-file',
+        tmpFile,
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
@@ -424,6 +440,13 @@ export async function coanaFix(
         logger.error(
           `Update failed for ${ghsaId}: ${getErrorCause(fixCResult)}`,
         )
+      }
+      // Clean up temp file on failure.
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await fs.unlink(tmpFile)
+      } catch {
+        // Ignore cleanup errors.
       }
       continue ghsaLoop
     }
@@ -553,6 +576,25 @@ export async function coanaFix(
         const { data } = prResult.pr
         const prRef = `PR #${data.number}`
 
+        // Read the fix result JSON and merge with PR data.
+        const fixResultJson = readJsonSync(tmpFile, { throws: false }) as
+          | { fixes?: Record<string, unknown> }
+          | null
+          | undefined
+        if (fixResultJson && typeof fixResultJson === 'object') {
+          // Extract GHSA IDs from the fixes object.
+          const fixes = fixResultJson.fixes
+          if (fixes && typeof fixes === 'object') {
+            for (const ghsaKey of Object.keys(fixes)) {
+              ghsaFixResults[ghsaKey] = {
+                ...fixResultJson,
+                pullRequestLink: data.html_url,
+                pullRequestNumber: data.number,
+              }
+            }
+          }
+        }
+
         if (!silence) {
           logger.success(`Opened ${prRef} for ${ghsaId}.`)
         }
@@ -646,6 +688,14 @@ export async function coanaFix(
       await gitResetAndClean(fixEnv.baseBranch, cwd)
       // eslint-disable-next-line no-await-in-loop
       await gitCheckoutBranch(fixEnv.baseBranch, cwd)
+    } finally {
+      // Clean up temp file.
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await fs.unlink(tmpFile)
+      } catch {
+        // Ignore cleanup errors.
+      }
     }
 
     count += 1
@@ -664,6 +714,6 @@ export async function coanaFix(
 
   return {
     ok: true,
-    data: { fixed: overallFixed },
+    data: { fixedAll: overallFixed, ghsaDetails: ghsaFixResults },
   }
 }
