@@ -111,7 +111,9 @@ async function discoverGhsaIds(
 
 export async function coanaFix(
   fixConfig: FixConfig,
-): Promise<CResult<{ fixedAll: boolean; ghsaDetails: Record<string, unknown> }>> {
+): Promise<
+  CResult<{ fixedAll: boolean; ghsaDetails: Record<string, unknown> }>
+> {
   const {
     all,
     applyFixes,
@@ -290,7 +292,10 @@ export async function coanaFix(
       }
 
       // Read the temporary file to get the actual fixes result.
-      const fixesResultJson = readJsonSync(tmpFile, { throws: false })
+      const fixesResultJson = readJsonSync(tmpFile, { throws: false }) as
+        | { fixes?: Record<string, unknown> }
+        | null
+        | undefined
 
       // Copy to outputFile if provided.
       if (outputFile) {
@@ -301,11 +306,24 @@ export async function coanaFix(
         await fs.writeFile(outputFile, tmpContent, 'utf8')
       }
 
+      // Transform to GHSA-keyed map format for consistency with PR mode.
+      const ghsaDetails: Record<string, unknown> = {
+        __proto__: null,
+      } as Record<string, unknown>
+      if (fixesResultJson && typeof fixesResultJson === 'object') {
+        const fixes = fixesResultJson.fixes
+        if (fixes && typeof fixes === 'object') {
+          for (const ghsaKey of Object.keys(fixes)) {
+            ghsaDetails[ghsaKey] = fixesResultJson
+          }
+        }
+      }
+
       return {
         ok: true,
         data: {
           fixedAll: true,
-          ghsaDetails: (fixesResultJson as Record<string, unknown>) ?? {},
+          ghsaDetails,
         },
       }
     } finally {
@@ -462,6 +480,13 @@ export async function coanaFix(
 
     if (!modifiedFiles.length) {
       debugFn('notice', `skip: no changes for ${ghsaId}`)
+      // Clean up temp file before continuing.
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await fs.unlink(tmpFile)
+      } catch {
+        // Ignore cleanup errors.
+      }
       continue ghsaLoop
     }
 
