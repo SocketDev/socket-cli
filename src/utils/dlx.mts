@@ -25,12 +25,10 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
 import constants, {
-  CI,
   FLAG_QUIET,
   FLAG_SILENT,
   NPM,
   PNPM,
-  VITEST,
   YARN,
 } from '../constants.mts'
 import { getErrorCause } from './errors.mts'
@@ -43,6 +41,24 @@ import type { CResult } from '../types.mts'
 import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
 
 const require = createRequire(import.meta.url)
+
+/**
+ * Logs spawn output when running in e2e-tests workflow for debugging.
+ */
+function logSpawnOutput(
+  stdout: string | undefined,
+  stderr: string | undefined,
+): void {
+  // Only log when running e2e-tests in CI.
+  if (constants.ENV.CI && constants.ENV.VITEST) {
+    if (stdout) {
+      console.log(stdout)
+    }
+    if (stderr) {
+      console.error(stderr)
+    }
+  }
+}
 
 const { PACKAGE_LOCK_JSON, PNPM_LOCK_YAML, YARN_LOCK } = constants
 
@@ -277,28 +293,12 @@ export async function spawnCoanaDlx(
       spawnExtra,
     )
     const output = await result.spawnPromise
-    // Print output when running in e2e-tests workflow for debugging.
-    if (CI && VITEST) {
-      if (output.stdout) {
-        console.log(output.stdout)
-      }
-      if (output.stderr) {
-        console.error(output.stderr)
-      }
-    }
+    logSpawnOutput(output.stdout, output.stderr)
     return { ok: true, data: output.stdout }
   } catch (e) {
     const stdout = (e as any)?.stdout
     const stderr = (e as any)?.stderr
-    // Print output when running in e2e-tests workflow for debugging.
-    if (CI && VITEST) {
-      if (stdout) {
-        console.log(stdout)
-      }
-      if (stderr) {
-        console.error(stderr)
-      }
-    }
+    logSpawnOutput(stdout, stderr)
     const cause = getErrorCause(e)
     const message = stderr || cause
     return {
