@@ -278,7 +278,8 @@ export async function spawnCoanaDlx(
     )
     const output = await result.spawnPromise
     // Print output when running in e2e-tests workflow for debugging.
-    if (CI && VITEST) {
+    // Respect the silent option from the caller.
+    if (CI && VITEST && !dlxOptions.silent) {
       if (output.stdout) {
         console.log(output.stdout)
       }
@@ -291,7 +292,8 @@ export async function spawnCoanaDlx(
     const stdout = (e as any)?.stdout
     const stderr = (e as any)?.stderr
     // Print output when running in e2e-tests workflow for debugging.
-    if (CI && VITEST) {
+    // Respect the silent option from the caller.
+    if (CI && VITEST && !dlxOptions.silent) {
       if (stdout) {
         console.log(stdout)
       }
