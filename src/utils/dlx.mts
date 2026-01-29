@@ -25,10 +25,12 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
 import constants, {
+  CI,
   FLAG_QUIET,
   FLAG_SILENT,
   NPM,
   PNPM,
+  VITEST,
   YARN,
 } from '../constants.mts'
 import { getErrorCause } from './errors.mts'
@@ -275,9 +277,28 @@ export async function spawnCoanaDlx(
       spawnExtra,
     )
     const output = await result.spawnPromise
+    // Print output when running in e2e-tests workflow for debugging.
+    if (CI && VITEST) {
+      if (output.stdout) {
+        console.log(output.stdout)
+      }
+      if (output.stderr) {
+        console.error(output.stderr)
+      }
+    }
     return { ok: true, data: output.stdout }
   } catch (e) {
+    const stdout = (e as any)?.stdout
     const stderr = (e as any)?.stderr
+    // Print output when running in e2e-tests workflow for debugging.
+    if (CI && VITEST) {
+      if (stdout) {
+        console.log(stdout)
+      }
+      if (stderr) {
+        console.error(stderr)
+      }
+    }
     const cause = getErrorCause(e)
     const message = stderr || cause
     return {
