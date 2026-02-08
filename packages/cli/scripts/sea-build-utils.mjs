@@ -576,30 +576,54 @@ export async function injectSeaBlob(nodeBinary, blobPath, outputPath, cacheId) {
     env['SOCKET_DLX_DIR'] = uniqueCacheDir
   }
 
-  // Inject SEA blob into Node binary.
-  // binject handles signature removal, injection, and re-signing automatically.
-  const result = await spawn(
-    binjectPath,
-    [
-      'inject',
-      '--executable',
-      nodeBinary,
-      '--output',
-      outputPath,
-      '--sea',
-      blobPath,
-      '--vfs-compat',
-    ],
-    { env, stdio: 'inherit' },
+  // Generate update-config.json for embedded update checking.
+  const updateConfigPath = normalizePath(
+    path.join(path.dirname(blobPath), 'update-config.json'),
   )
+  const updateConfig = {
+    url: 'https://api.github.com/repos/SocketDev/socket-cli/releases',
+    tag: 'socket-cli-*',
+    binname: 'socket',
+    command: 'self-update',
+    skip_env: 'SOCKET_SKIP_UPDATE_CHECK',
+    interval: 86_400_000,
+    notify_interval: 86_400_000,
+    prompt: false,
+    prompt_default: 'n',
+  }
+  await fs.writeFile(updateConfigPath, JSON.stringify(updateConfig, null, 2))
 
-  if (
-    result &&
-    typeof result === 'object' &&
-    'exitCode' in result &&
-    result.exitCode !== 0
-  ) {
-    throw new Error(`binject failed with exit code ${result.exitCode}`)
+  try {
+    // Inject SEA blob into Node binary.
+    // binject handles signature removal, injection, and re-signing automatically.
+    const result = await spawn(
+      binjectPath,
+      [
+        'inject',
+        '--executable',
+        nodeBinary,
+        '--output',
+        outputPath,
+        '--sea',
+        blobPath,
+        '--vfs-compat',
+        '--update-config',
+        updateConfigPath,
+      ],
+      { env, stdio: 'inherit' },
+    )
+
+    if (
+      result &&
+      typeof result === 'object' &&
+      'exitCode' in result &&
+      result.exitCode !== 0
+    ) {
+      throw new Error(`binject failed with exit code ${result.exitCode}`)
+    }
+  } finally {
+    // Clean up update config file.
+    await safeDelete(updateConfigPath).catch(() => {})
   }
 }
 // c8 ignore stop

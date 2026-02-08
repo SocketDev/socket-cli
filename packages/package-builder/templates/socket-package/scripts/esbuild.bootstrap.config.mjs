@@ -2,23 +2,47 @@
  * esbuild configuration for Socket npm wrapper bootstrap.
  */
 
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { deadCodeEliminationPlugin } from 'build-infra/lib/esbuild-plugin-dead-code-elimination'
 import semver from 'semver'
 
+/**
+ * Find monorepo root by searching upward for .node-version file.
+ */
+function findMonorepoRoot(startDir) {
+  let currentDir = startDir
+  const rootDir = path.parse(currentDir).root
+  while (currentDir !== rootDir) {
+    if (existsSync(path.join(currentDir, '.node-version'))) {
+      return currentDir
+    }
+    const parentDir = path.dirname(currentDir)
+    if (parentDir === currentDir) {
+      break
+    }
+    currentDir = parentDir
+  }
+  throw new Error(
+    `Could not find monorepo root (searched upward from ${startDir} for .node-version)`,
+  )
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageRoot = path.resolve(__dirname, '..')
-const monorepoRoot = path.resolve(packageRoot, '../..')
+const monorepoRoot = findMonorepoRoot(packageRoot)
 const bootstrapPackage = path.join(monorepoRoot, 'packages/bootstrap')
 
-// Read Node.js version from config.
-const nodeVersionPath = path.join(bootstrapPackage, 'node-version.json')
-const nodeVersionConfig = JSON.parse(readFileSync(nodeVersionPath, 'utf8'))
-const minNodeVersion = nodeVersionConfig.versionSemver
+// Read Node.js version from .node-version file.
+const nodeVersionPath = path.join(monorepoRoot, '.node-version')
+const minNodeVersion = readFileSync(nodeVersionPath, 'utf8').trim()
+if (!minNodeVersion || !/^\d+\.\d+\.\d+$/.test(minNodeVersion)) {
+  throw new Error(
+    `Invalid Node version in .node-version: "${minNodeVersion}" (expected semver format)`,
+  )
+}
 
 // Read Socket CLI version from package.json.
 const packageJsonPath = path.join(packageRoot, 'package.json')

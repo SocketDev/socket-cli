@@ -1,5 +1,5 @@
-import { spawnSocketPatchDlx } from '../../utils/dlx/spawn.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { spawnSocketPatchDlx } from '../../utils/dlx/spawn.mjs'
 
 import type {
   CliCommandConfig,

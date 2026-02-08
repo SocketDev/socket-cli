@@ -30,7 +30,9 @@ function cleanupQueryStdout(stdout: string): string {
     // fallback to "_id" and then "pkgid".
     // `vlt ls --view json` results always have a "name" property.
     const fallback = _id ?? pkgid ?? ''
-    const resolvedName = name ?? fallback.slice(0, fallback.indexOf('@', 1))
+    const atIndex = fallback.indexOf('@', 1)
+    const resolvedName =
+      name ?? (atIndex === -1 ? fallback : fallback.slice(0, atIndex))
     // Add package names, except for those under the `@types` scope as those
     // are known to only be dev dependencies.
     if (resolvedName && !resolvedName.startsWith('@types/')) {

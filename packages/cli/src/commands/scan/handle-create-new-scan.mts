@@ -166,6 +166,17 @@ export async function handleCreateNewScan({
 
   // If reachability is enabled, perform reachability analysis.
   if (reach.runReachabilityAnalysis) {
+    if (!targets.length) {
+      logger.fail('Reachability analysis requires at least one target')
+      return
+    }
+
+    const [firstTarget] = targets
+    if (!firstTarget) {
+      logger.fail('Reachability analysis requires at least one valid target')
+      return
+    }
+
     logger.error('')
     logger.info('Starting reachability analysis...')
     debug('notice', 'Reachability analysis enabled')
@@ -181,7 +192,7 @@ export async function handleCreateNewScan({
       reachabilityOptions: reach,
       repoName,
       spinner,
-      target: targets[0]!,
+      target: firstTarget,
     })
 
     spinner.stop()

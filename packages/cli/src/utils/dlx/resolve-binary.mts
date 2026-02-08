@@ -4,8 +4,8 @@
  */
 
 import ENV from '../../constants/env.mts'
-import { getSocketPatchVersion } from '../../env/socket-patch-version.mts'
 import { getSwfVersion } from '../../env/sfw-version.mts'
+import { getSocketPatchVersion } from '../../env/socket-patch-version.mts'
 
 import type { DlxPackageSpec } from './spawn.mjs'
 

@@ -10,13 +10,14 @@ on:
         type: boolean
         default: false
 
-permissions:
-  contents: read
-  id-token: write
-  pull-requests: read
+permissions: {}
 
 jobs:
   auto-review:
+    permissions:
+      contents: read # Read repository contents for code review analysis.
+      id-token: write # Mint OIDC tokens for authentication with external services.
+      pull-requests: read # Read PR metadata and comments for review context.
     uses: SocketDev/socket-registry/.github/workflows/claude-auto-review.yml@4709a2443e5a036bb0cd94e5d1559f138f05994c # main
     secrets:
       anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}

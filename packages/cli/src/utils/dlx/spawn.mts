@@ -16,8 +16,8 @@
  * - Executes binaries directly without package manager commands
  */
 
-import { dlxPackage } from '@socketsecurity/lib/dlx/package'
 import { detectExecutableType } from '@socketsecurity/lib/dlx/detect'
+import { dlxPackage } from '@socketsecurity/lib/dlx/package'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import {

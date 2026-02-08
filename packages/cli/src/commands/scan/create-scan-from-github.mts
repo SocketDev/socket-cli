@@ -569,8 +569,8 @@ async function getLastCommitDetails({
     }
   }
 
-  const lastCommit = commits[0]!
-  const lastCommitSha = lastCommit.sha
+  const [lastCommit] = commits
+  const lastCommitSha = lastCommit?.sha
 
   if (!lastCommitSha) {
     return {
@@ -583,10 +583,10 @@ async function getLastCommitDetails({
   }
 
   // Extract committer information.
-  const authorName = lastCommit.commit?.author?.name
-  const committerName = lastCommit.commit?.committer?.name
+  const authorName = lastCommit?.commit?.author?.name
+  const committerName = lastCommit?.commit?.committer?.name
   const lastCommitter = authorName || committerName
-  const lastCommitMessage = lastCommit.commit?.message || ''
+  const lastCommitMessage = lastCommit?.commit?.message || ''
 
   return { ok: true, data: { lastCommitMessage, lastCommitSha, lastCommitter } }
 }
@@ -726,8 +726,8 @@ async function getRepoBranchTree({
 
   const files = treeDetails.tree
     .filter(obj => obj.type === 'blob')
-    .map(obj => obj.path!)
-    .filter(Boolean)
+    .map(obj => obj.path)
+    .filter((p): p is string => typeof p === 'string' && p.length > 0)
 
   return { ok: true, data: files }
 }

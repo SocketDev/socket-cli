@@ -39,7 +39,10 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     }
   }
 
-  const slug = (organizations as any)[keys[0]!]?.name ?? undefined
+  const [firstKey] = keys
+  const slug = firstKey
+    ? ((organizations as any)[firstKey]?.name ?? undefined)
+    : undefined
   if (!slug) {
     return {
       ok: false,

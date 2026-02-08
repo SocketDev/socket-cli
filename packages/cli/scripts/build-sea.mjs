@@ -99,7 +99,8 @@ async function main() {
       `Specified: --platform=${options.platform} --libc=${options.libc}`,
     )
     logger.log('')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   logger.log('')
@@ -115,7 +116,8 @@ async function main() {
     logger.log('Run build first:')
     logger.log('  pnpm --filter @socketsecurity/cli run build')
     logger.log('')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   // Get Node.js version.
@@ -130,7 +132,8 @@ async function main() {
   if (targets.length === 0) {
     logger.fail('No targets match the specified criteria')
     logger.log('')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   logger.log(

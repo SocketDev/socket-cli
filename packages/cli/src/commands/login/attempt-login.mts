@@ -68,6 +68,15 @@ export async function attemptLogin(
 
   const orgSlugs = getOrgSlugs(organizations)
 
+  if (!orgSlugs.length) {
+    logger.fail('No organizations found for this account')
+    return {
+      ok: false,
+      message:
+        'No organizations found. Please contact Socket support to set up your account.',
+    }
+  }
+
   logger.success(`API token verified: ${joinAnd(orgSlugs)}`)
 
   const enterpriseOrgs = getEnterpriseOrgs(organizations)
@@ -99,18 +108,18 @@ export async function attemptLogin(
       enforcedOrgs = [id]
     }
   } else if (enforcedChoices.length) {
-    const shouldEnforce = await confirm({
-      message: `Should Socket enforce ${(enforcedChoices[0] as OrgChoice)?.name}'s security policies system-wide?`,
-      default: true,
-    })
-    if (shouldEnforce === undefined) {
-      logger.fail('Canceled by user')
-      return { ok: false, message: 'Canceled', cause: 'Canceled by user' }
-    }
-    if (shouldEnforce) {
-      const existing = enforcedChoices[0] as OrgChoice
-      if (existing) {
-        enforcedOrgs = [existing.value]
+    const [firstChoice] = enforcedChoices
+    if (firstChoice?.name) {
+      const shouldEnforce = await confirm({
+        message: `Should Socket enforce ${firstChoice.name}'s security policies system-wide?`,
+        default: true,
+      })
+      if (shouldEnforce === undefined) {
+        logger.fail('Canceled by user')
+        return { ok: false, message: 'Canceled', cause: 'Canceled by user' }
+      }
+      if (shouldEnforce && firstChoice.value) {
+        enforcedOrgs = [firstChoice.value]
       }
     }
   }

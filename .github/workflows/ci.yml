@@ -30,15 +30,16 @@ on:
         required: false
         type: string
         # Default should match .node-version file.
-        default: '["24"]'
+        default: '["25"]'
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   versions:
     name: Load Tool Versions
     runs-on: ubuntu-latest
+    permissions:
+      contents: read # Read .node-version file from repository.
     outputs:
       node: ${{ steps.versions.outputs.node }}
     steps:
@@ -57,6 +58,8 @@ jobs:
   ci:
     name: Run CI Pipeline
     needs: versions
+    permissions:
+      contents: read # Read repository contents for CI checks and build operations.
     uses: SocketDev/socket-registry/.github/workflows/ci.yml@4709a2443e5a036bb0cd94e5d1559f138f05994c # main
     with:
       test-setup-script: 'pnpm --filter @socketsecurity/cli run build'
@@ -77,6 +80,8 @@ jobs:
     needs: [ci, versions]
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read # Read repository contents for unit test execution.
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -108,6 +113,7 @@ jobs:
           key: cli-build-${{ runner.os }}-${{ steps.cli-cache-key.outputs.hash }}
           restore-keys: |
             cli-build-${{ runner.os }}-
+          lookup-only: true
 
       - name: Build CLI
         working-directory: packages/cli
@@ -124,6 +130,8 @@ jobs:
     needs: [ci, versions]
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read # Read repository contents for integration test execution.
     strategy:
       fail-fast: false
       matrix:
@@ -153,6 +161,7 @@ jobs:
           key: cli-build-${{ runner.os }}-${{ steps.cli-cache-key.outputs.hash }}
           restore-keys: |
             cli-build-${{ runner.os }}-
+          lookup-only: true
 
       - name: Build CLI
         working-directory: packages/cli
@@ -279,6 +288,8 @@ jobs:
     needs: [ci, versions]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
+    permissions:
+      contents: read # Read repository contents for e2e test execution.
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -311,6 +322,7 @@ jobs:
           key: cli-build-${{ runner.os }}-${{ steps.cli-cache-key.outputs.hash }}
           restore-keys: |
             cli-build-${{ runner.os }}-
+          lookup-only: true
 
       - name: Build CLI
         working-directory: packages/cli

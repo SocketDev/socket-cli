@@ -153,6 +153,32 @@ Each command follows a consistent pattern:
 - **Optimization**: `socket optimize` - Apply Socket registry overrides
 - **Configuration**: `socket config` - Manage CLI configuration
 
+### Update Mechanism
+
+Socket CLI has different update mechanisms depending on installation method:
+
+#### SEA Binaries (Standalone Executables)
+- **Update checking**: Handled by node-smol C stub via embedded `--update-config`
+- **Configuration**: Embedded during build in `packages/cli/scripts/sea-build-utils.mjs`
+- **GitHub releases**: Checks `https://api.github.com/repos/SocketDev/socket-cli/releases`
+- **Tag pattern**: Matches `socket-cli-*` (e.g., `socket-cli-20260127-abc1234`)
+- **Notification**: Shown on CLI exit (non-blocking)
+- **Update command**: `socket self-update` (handled by node-smol, not TypeScript CLI)
+- **Environment variable**: `SOCKET_SKIP_UPDATE_CHECK=1` to disable
+
+#### npm/pnpm/yarn Installations
+- **Update checking**: TypeScript-based in `src/utils/update/manager.mts`
+- **Registry**: Checks npm registry for `@socketsecurity/cli` package
+- **Notification**: Shown on CLI exit (non-blocking)
+- **Update command**: Use package manager (e.g., `npm update -g socket`)
+- **Environment variable**: `SOCKET_CLI_SKIP_UPDATE_CHECK=1` to disable
+
+#### Key Implementation Details
+- `scheduleUpdateCheck()` in `manager.mts` skips when `isSeaBinary()` returns true
+- SEA binaries use embedded update-config.json (1112 bytes)
+- node-smol handles HTTP requests via embedded libcurl
+- Update checks respect CI/TTY detection and rate limiting
+
 ### Build System
 - Uses Rollup for building distribution files
 - TypeScript compilation with tsgo

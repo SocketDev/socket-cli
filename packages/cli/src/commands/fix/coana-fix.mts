@@ -498,9 +498,12 @@ export async function coanaFix(
       )
 
       if (existingOpenPrs.length > 0) {
-        const prNum = existingOpenPrs[0]!.number
-        logger.info(`PR #${prNum} already exists for ${ghsaId}, skipping.`)
-        debug(`skip: open PR #${prNum} exists for ${ghsaId}`)
+        const [firstPr] = existingOpenPrs
+        const prNum = firstPr?.number
+        if (prNum) {
+          logger.info(`PR #${prNum} already exists for ${ghsaId}, skipping.`)
+          debug(`skip: open PR #${prNum} exists for ${ghsaId}`)
+        }
         continue
       }
 

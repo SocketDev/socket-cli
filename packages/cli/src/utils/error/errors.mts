@@ -18,7 +18,7 @@
  * - Log errors to Sentry in production for monitoring
  */
 
-import { setTimeout as wait } from 'node:timers/promises'
+import { setTimeout as sleep } from 'node:timers/promises'
 
 import {
   kInternalsSymbol,
@@ -226,7 +226,7 @@ export async function captureException(
 ): Promise<string> {
   const result = captureExceptionSync(exception, hint)
   // "Sleep" for a second, just in case, hopefully enough time to initiate fetch.
-  await wait(1000)
+  await sleep(1000)
   return result
 }
 

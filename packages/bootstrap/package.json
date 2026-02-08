@@ -6,8 +6,7 @@
   "exports": {
     ".": "./dist/index.js",
     "./bootstrap-npm.js": "./dist/bootstrap-npm.js",
-    "./bootstrap-sea.js": "./dist/bootstrap-sea.js",
-    "./node-version.json": "./node-version.json"
+    "./bootstrap-sea.js": "./dist/bootstrap-sea.js"
   },
   "scripts": {
     "build": "node scripts/build.mjs",

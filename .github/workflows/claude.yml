@@ -16,14 +16,15 @@ on:
         type: boolean
         default: false
 
-permissions:
-  contents: read
-  id-token: write
-  issues: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   claude:
+    permissions:
+      contents: read # Read repository contents for code analysis.
+      id-token: write # Mint OIDC tokens for authentication with external services.
+      issues: write # Create and update issue comments with Claude responses.
+      pull-requests: write # Create and update PR comments with Claude responses.
     uses: SocketDev/socket-registry/.github/workflows/claude.yml@4709a2443e5a036bb0cd94e5d1559f138f05994c # main
     secrets:
       anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}

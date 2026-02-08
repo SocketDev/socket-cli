@@ -355,12 +355,12 @@ async function runSmartBuild(force) {
   if (failed > 0) {
     logger.log(`${colors.red('✗')} Build FAILED`)
     logger.log('')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   logger.log(`${colors.green('✓')} Build completed successfully`)
   logger.log('')
-  process.exit(0)
 }
 
 /**
@@ -373,7 +373,8 @@ async function runTargetedBuild(target, buildArgs) {
     logger.error(
       `Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`,
     )
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   const pnpmArgs = ['--filter', packageFilter, 'run', 'build', ...buildArgs]
@@ -383,7 +384,7 @@ async function runTargetedBuild(target, buildArgs) {
     stdio: 'inherit',
   })
 
-  process.exit(result.code ?? 1)
+  process.exitCode = result.code ?? 1
 }
 
 /**
@@ -465,12 +466,12 @@ async function runParallelBuilds(targetsToBuild, buildArgs) {
   if (failed > 0) {
     logger.log(`${colors.red('✗')} One or more builds failed`)
     logger.log('')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   logger.log(`${colors.green('✓')} All builds completed successfully`)
   logger.log('')
-  process.exit(0)
 }
 
 /**
@@ -520,12 +521,12 @@ async function runSequentialBuilds(targetsToBuild, buildArgs) {
       `${colors.red('✗')} Build failed at target: ${results.find(r => !r.success)?.target}`,
     )
     logger.log('')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   logger.log(`${colors.green('✓')} All builds completed successfully`)
   logger.log('')
-  process.exit(0)
 }
 
 /**
@@ -536,7 +537,7 @@ async function main() {
 
   if (opts.help) {
     showHelp()
-    process.exit(0)
+    return
   }
 
   // Handle platforms build.
@@ -567,5 +568,5 @@ main().catch(e => {
   logger.error('')
   logger.error(`${colors.red('✗')} Unexpected error: ${e.message}`)
   logger.error('')
-  process.exit(1)
+  process.exitCode = 1
 })

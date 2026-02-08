@@ -1,28 +1,28 @@
 /**
- * Update manager for Socket CLI.
- * Orchestrates update checking, caching, and user notifications.
- * Main entry point that coordinates all update-related functionality.
+ * Update manager for Socket CLI (npm/pnpm/yarn installations only).
+ * Orchestrates update checking, caching, and user notifications for package manager installs.
+ *
+ * Note: SEA binaries use node-smol's built-in update checker (via --update-config).
+ * This manager only handles npm registry update checks for non-SEA installations.
  *
  * Key Functions:
- * - checkForUpdates: Complete update check flow with caching
- * - scheduleUpdateCheck: Non-blocking update check with notifications
+ * - checkForUpdates: Complete update check flow with caching (npm only)
+ * - scheduleUpdateCheck: Non-blocking update check with notifications (npm only)
  *
  * Features:
  * - TTL-based caching to avoid excessive registry requests
- * - SEA vs npm aware notifications
  * - Error-resistant implementation
  * - Rate limiting and network timeout handling
  *
  * Architecture:
- * - Uses checker for registry lookups
+ * - Uses checker for npm registry lookups
  * - Uses store for persistent caching
  * - Uses notifier for user messaging
- * - Coordinates between all update utilities
+ * - Skips entirely for SEA binaries (node-smol handles it)
  *
  * Usage:
- * - CLI startup update checks
- * - Background update monitoring
- * - User-triggered update checks
+ * - CLI startup update checks (npm installs only)
+ * - Background update monitoring (npm installs only)
  */
 
 import { dlxManifest } from '@socketsecurity/lib/dlx/manifest'
@@ -35,6 +35,7 @@ import {
   showUpdateNotification,
 } from './notifier.mts'
 import { UPDATE_CHECK_TTL } from '../../constants/cache.mts'
+import { isSeaBinary } from '../sea/detect.mts'
 
 import type { AuthInfo } from './checker.mts'
 import type { StoreRecord } from '@socketsecurity/lib/dlx/manifest'
@@ -104,8 +105,11 @@ export async function checkForUpdates(
   let record: StoreRecord | undefined
   let timestamp: number
 
+  // Include current version in cache key to prevent stale cache after upgrades.
+  const cacheKey = `${name}@${version}`
+
   try {
-    record = dlxManifest.get(name)
+    record = dlxManifest.get(cacheKey)
     timestamp = Date.now()
 
     if (timestamp <= 0) {
@@ -152,7 +156,7 @@ export async function checkForUpdates(
 
       // Update cache with fresh data.
       try {
-        await dlxManifest.set(name, {
+        await dlxManifest.set(cacheKey, {
           timestampFetch: timestamp,
           timestampNotification: record?.timestampNotification ?? 0,
           version: updateResult.latest,
@@ -217,10 +221,18 @@ export async function checkForUpdates(
 /**
  * Schedule a non-blocking update check.
  * This is the recommended way to check for updates during CLI startup.
+ *
+ * Note: Only runs for npm/pnpm/yarn installations. SEA binaries use
+ * node-smol's built-in update checker (embedded via --update-config).
  */
 export async function scheduleUpdateCheck(
   options: UpdateManagerOptions,
 ): Promise<void> {
+  // Skip update checks for SEA binaries - node-smol handles it via embedded update-config.
+  if (isSeaBinary()) {
+    return
+  }
+
   // Set immediate to false to show notification on exit.
   const updateOptions = { ...options, immediate: false }
 

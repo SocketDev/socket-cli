@@ -21,7 +21,7 @@
  * - updateConfigValue: Persist configuration changes
  */
 
-import { writeFileSync } from 'node:fs'
+import { statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import config from '@socketsecurity/config'
@@ -92,27 +92,54 @@ const supportedConfigEntries = [...supportedConfig.entries()].sort((a, b) =>
 const supportedConfigKeys = supportedConfigEntries.map(p => p[0])
 
 function getConfigValues(): LocalConfig {
-  if (_cachedConfig === undefined) {
-    // Order: env var > --config flag > file
-    _cachedConfig = {} as LocalConfig
-    const socketAppDataPath = getSocketAppDataPath()
-    if (socketAppDataPath) {
-      const configFilePath = path.join(socketAppDataPath, 'config.json')
-      const raw = safeReadFileSync(configFilePath)
-      if (raw !== undefined) {
-        try {
-          const rawString = Buffer.isBuffer(raw) ? raw.toString('utf8') : raw
-          const decoded = Buffer.from(rawString, 'base64').toString('utf8')
-          Object.assign(_cachedConfig, JSON.parse(decoded))
-          debugConfig(configFilePath, true)
-        } catch (e) {
-          logger.warn(`Failed to parse config at ${configFilePath}`)
-          debugConfig(configFilePath, false, e)
+  // Order: env var > --config flag > file.
+  // If config is from flag/env override, skip file-based caching.
+  if (_configFromFlag && _cachedConfig !== undefined) {
+    return _cachedConfig
+  }
+
+  const socketAppDataPath = getSocketAppDataPath()
+  if (socketAppDataPath) {
+    const configFilePath = path.join(socketAppDataPath, 'config.json')
+
+    try {
+      const stats = statSync(configFilePath)
+      const currentMtime = stats.mtimeMs
+
+      // Invalidate cache if not yet loaded, file modified, or path changed.
+      // On first run, _cachedConfig is undefined, triggering initial load.
+      if (
+        _cachedConfig === undefined ||
+        _cachedConfigMtime !== currentMtime ||
+        _cachedConfigPath !== configFilePath
+      ) {
+        _cachedConfig = {} as LocalConfig
+        const raw = safeReadFileSync(configFilePath)
+        if (raw !== undefined) {
+          try {
+            const rawString = Buffer.isBuffer(raw) ? raw.toString('utf8') : raw
+            const decoded = Buffer.from(rawString, 'base64').toString('utf8')
+            Object.assign(_cachedConfig, JSON.parse(decoded))
+            debugConfig(configFilePath, true)
+          } catch (e) {
+            logger.warn(`Failed to parse config at ${configFilePath}`)
+            debugConfig(configFilePath, false, e)
+          }
         }
-      } else {
+        _cachedConfigMtime = currentMtime
+        _cachedConfigPath = configFilePath
+      }
+    } catch {
+      // File doesn't exist - clear cache and create directory.
+      if (_cachedConfig === undefined || _cachedConfigPath !== configFilePath) {
+        _cachedConfig = {} as LocalConfig
+        _cachedConfigMtime = undefined
+        _cachedConfigPath = configFilePath
         safeMkdirSync(socketAppDataPath, { recursive: true })
       }
     }
+  } else if (_cachedConfig === undefined) {
+    _cachedConfig = {} as LocalConfig
   }
   return _cachedConfig
 }
@@ -226,6 +253,8 @@ export function isSupportedConfigKey(key: string): key is keyof LocalConfig {
 }
 
 let _cachedConfig: LocalConfig | undefined
+let _cachedConfigMtime: number | undefined
+let _cachedConfigPath: string | undefined
 // When using --config or SOCKET_CLI_CONFIG, do not persist the config.
 let _configFromFlag = false
 
@@ -236,6 +265,8 @@ let _configFromFlag = false
  */
 export function resetConfigForTesting(): void {
   _cachedConfig = undefined
+  _cachedConfigMtime = undefined
+  _cachedConfigPath = undefined
   _configFromFlag = false
 }
 

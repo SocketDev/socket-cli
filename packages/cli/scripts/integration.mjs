@@ -74,7 +74,8 @@ async function runVitest(binaryType) {
   // Check if binary exists when explicitly requested.
   const binaryExists = await checkBinaryExists(binaryType)
   if (!binaryExists) {
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   // Use dotenvx to load test environment.
@@ -111,7 +112,7 @@ async function runVitest(binaryType) {
     },
   )
 
-  process.exit(result.code ?? 0)
+  process.exitCode = result.code ?? 0
 }
 
 async function main() {
@@ -128,7 +129,8 @@ async function main() {
       '  node scripts/integration.mjs --all    # Test all distributions',
     )
     logger.log('')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   await runVitest(flag)
@@ -136,5 +138,5 @@ async function main() {
 
 main().catch(e => {
   logger.error('Integration test runner failed:', e)
-  process.exit(1)
+  process.exitCode = 1
 })
