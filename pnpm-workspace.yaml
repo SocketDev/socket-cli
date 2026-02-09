@@ -55,7 +55,7 @@ catalog:
   '@types/semver': 7.7.1
   '@types/which': 3.0.4
   '@types/yargs-parser': 21.0.3
-  '@typescript-eslint/parser': 8.44.1
+  '@typescript-eslint/parser': 8.54.0
   '@vitest/coverage-v8': 4.0.3
   '@yao-pkg/pkg': 6.8.0
   '@yarnpkg/parsers': ^3.0.3
