@@ -147,7 +147,7 @@ catalog:
   vitest: 4.0.3
   wrap-ansi: 9.0.2
   xml2js: 0.6.2
-  yaml: 2.8.1
+  yaml: 2.8.2
   yargs-parser: 21.1.1
   yoctocolors-cjs: 2.1.3
   yoga-layout: 3.2.1
