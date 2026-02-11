@@ -6,6 +6,38 @@
 
 Command-line interface for Socket.dev supply chain security analysis. Provides security scanning, package manager wrapping, dependency analysis, and CI/CD integration across 11 language ecosystems.
 
+## Table of Contents
+
+- [Architecture Overview](#architecture-overview)
+- [Command Pattern Architecture](#command-pattern-architecture)
+  - [Command Organization](#command-organization)
+- [Shadow Architecture](#shadow-architecture)
+- [Build System](#build-system)
+  - [Build Commands](#build-commands)
+- [Update Mechanism](#update-mechanism)
+- [Utility Modules](#utility-modules)
+- [Core Concepts](#core-concepts)
+  - [Error Handling](#error-handling)
+  - [Output Modes](#output-modes)
+  - [Configuration](#configuration)
+- [Language Ecosystem Support](#language-ecosystem-support)
+- [Testing](#testing)
+- [Development Workflow](#development-workflow)
+- [Key Statistics](#key-statistics)
+- [Performance Features](#performance-features)
+- [API Integration](#api-integration)
+- [Security Features](#security-features)
+- [CI/CD Integration](#cicd-integration)
+- [Documentation](#documentation)
+- [Module Reference](#module-reference)
+  - [Command Modules (src/commands/)](#command-modules-srccommands)
+  - [Utility Modules (src/utils/)](#utility-modules-srcutils)
+- [Constants (src/constants/)](#constants-srcconstants)
+- [Installation](#installation)
+- [License](#license)
+- [Contributing](#contributing)
+- [Support](#support)
+
 ## Architecture Overview
 
 ```

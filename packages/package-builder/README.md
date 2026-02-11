@@ -2,6 +2,49 @@
 
 Automated package generation system for Socket CLI distribution. Transforms templates into publishable npm packages for multiple distribution channels and platforms.
 
+## Table of Contents
+
+- [Architecture](#architecture)
+- [Distribution Strategy](#distribution-strategy)
+  - [Tool Management](#tool-management)
+- [Package Types](#package-types)
+  - [CLI Packages](#cli-packages)
+  - [Socket Wrapper Package](#socket-wrapper-package)
+  - [Socketbin Packages](#socketbin-packages)
+- [Generator Scripts](#generator-scripts)
+  - [generate-cli-packages.mjs](#generate-cli-packagesmjs)
+  - [generate-socket-package.mjs](#generate-socket-packagemjs)
+  - [generate-socketbin-packages.mjs](#generate-socketbin-packagesmjs)
+  - [generate-node-patches.mjs](#generate-node-patchesmjs)
+- [Build Process](#build-process)
+  - [CLI Package Build](#cli-package-build)
+  - [Socket Package Build](#socket-package-build)
+- [Template Structure](#template-structure)
+  - [CLI Package Template](#cli-package-template)
+  - [Socket Package Template](#socket-package-template)
+  - [Socketbin Package Template](#socketbin-package-template)
+- [Package Validation](#package-validation)
+- [Build Output](#build-output)
+- [Integration Points](#integration-points)
+  - [Dependencies on Main CLI](#dependencies-on-main-cli)
+  - [esbuild Configuration](#esbuild-configuration)
+  - [Version Synchronization](#version-synchronization)
+- [Usage](#usage)
+  - [Generate All Packages](#generate-all-packages)
+  - [Generate Individual Package Type](#generate-individual-package-type)
+  - [Build Generated Package](#build-generated-package)
+  - [Verify Generated Package](#verify-generated-package)
+- [Design Patterns](#design-patterns)
+  - [Template-Based Generation](#template-based-generation)
+  - [Platform Abstraction](#platform-abstraction)
+  - [Build Delegation](#build-delegation)
+  - [Optional Binary Dependencies](#optional-binary-dependencies)
+- [Code Quality Observations](#code-quality-observations)
+  - [Strengths](#strengths)
+  - [Patterns](#patterns)
+  - [Potential Improvements](#potential-improvements)
+- [Summary](#summary)
+
 ## Architecture
 
 ```
