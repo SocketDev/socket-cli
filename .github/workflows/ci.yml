@@ -97,9 +97,27 @@ jobs:
         id: cli-cache-key
         shell: bash
         run: |
-          PNPM_LOCK_HASH=$(sha256sum pnpm-lock.yaml 2>/dev/null | cut -d' ' -f1 || echo "none")
-          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) 2>/dev/null | sort | xargs sha256sum 2>/dev/null | sha256sum | cut -d' ' -f1 || echo "none")
-          CLI_CONFIG_HASH=$(sha256sum packages/cli/.config/*.mjs packages/cli/scripts/*.mjs 2>/dev/null | sha256sum | cut -d' ' -f1 || echo "none")
+          # Validate required files exist.
+          if [ ! -f pnpm-lock.yaml ]; then
+            echo "Error: pnpm-lock.yaml not found" >&2
+            exit 1
+          fi
+          if [ ! -d packages/cli/src ]; then
+            echo "Error: packages/cli/src directory not found" >&2
+            exit 1
+          fi
+
+          # Compute hashes with proper error handling.
+          PNPM_LOCK_HASH=$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)
+          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          CLI_CONFIG_HASH=$(sha256sum packages/cli/.config/*.mjs packages/cli/scripts/*.mjs | sha256sum | cut -d' ' -f1)
+
+          # Validate hashes were computed successfully.
+          if [ -z "$PNPM_LOCK_HASH" ] || [ -z "$CLI_SRC_HASH" ] || [ -z "$CLI_CONFIG_HASH" ]; then
+            echo "Error: Failed to compute one or more cache key hashes" >&2
+            exit 1
+          fi
+
           CLI_COMBINED=$(echo "$PNPM_LOCK_HASH-$CLI_SRC_HASH-$CLI_CONFIG_HASH" | sha256sum | cut -d' ' -f1)
           echo "hash=$CLI_COMBINED" >> $GITHUB_OUTPUT
 
@@ -145,9 +163,27 @@ jobs:
         id: cli-cache-key
         shell: bash
         run: |
-          PNPM_LOCK_HASH=$(sha256sum pnpm-lock.yaml 2>/dev/null | cut -d' ' -f1 || echo "none")
-          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) 2>/dev/null | sort | xargs sha256sum 2>/dev/null | sha256sum | cut -d' ' -f1 || echo "none")
-          CLI_CONFIG_HASH=$(sha256sum packages/cli/.config/*.mjs packages/cli/scripts/*.mjs 2>/dev/null | sha256sum | cut -d' ' -f1 || echo "none")
+          # Validate required files exist.
+          if [ ! -f pnpm-lock.yaml ]; then
+            echo "Error: pnpm-lock.yaml not found" >&2
+            exit 1
+          fi
+          if [ ! -d packages/cli/src ]; then
+            echo "Error: packages/cli/src directory not found" >&2
+            exit 1
+          fi
+
+          # Compute hashes with proper error handling.
+          PNPM_LOCK_HASH=$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)
+          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          CLI_CONFIG_HASH=$(sha256sum packages/cli/.config/*.mjs packages/cli/scripts/*.mjs | sha256sum | cut -d' ' -f1)
+
+          # Validate hashes were computed successfully.
+          if [ -z "$PNPM_LOCK_HASH" ] || [ -z "$CLI_SRC_HASH" ] || [ -z "$CLI_CONFIG_HASH" ]; then
+            echo "Error: Failed to compute one or more cache key hashes" >&2
+            exit 1
+          fi
+
           CLI_COMBINED=$(echo "$PNPM_LOCK_HASH-$CLI_SRC_HASH-$CLI_CONFIG_HASH" | sha256sum | cut -d' ' -f1)
           echo "hash=$CLI_COMBINED" >> $GITHUB_OUTPUT
 
@@ -171,16 +207,40 @@ jobs:
         id: cache-keys
         shell: bash
         run: |
+          # Validate required files/directories exist.
+          if [ ! -f pnpm-lock.yaml ]; then
+            echo "Error: pnpm-lock.yaml not found" >&2
+            exit 1
+          fi
+          if [ ! -d packages/node-sea-builder ]; then
+            echo "Error: packages/node-sea-builder directory not found" >&2
+            exit 1
+          fi
+
           # SEA cache key (matches build-sea.yml).
-          SEA_HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) 2>/dev/null | sort | xargs sha256sum 2>/dev/null | sha256sum | cut -d' ' -f1 || echo "none")
-          DEPS_HASH=$(find packages/bootstrap packages/socket -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" -o -name "*.json" \) ! -path "*/node_modules/*" ! -path "*/dist/*" ! -path "*/build/*" 2>/dev/null | sort | xargs sha256sum 2>/dev/null | sha256sum | cut -d' ' -f1 || echo "none")
-          LOCK_HASH=$(sha256sum pnpm-lock.yaml 2>/dev/null | cut -d' ' -f1 || echo "none")
+          SEA_HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          DEPS_HASH=$(find packages/bootstrap packages/socket -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" -o -name "*.json" \) ! -path "*/node_modules/*" ! -path "*/dist/*" ! -path "*/build/*" | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          LOCK_HASH=$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)
+
+          # Validate hashes were computed successfully.
+          if [ -z "$SEA_HASH" ] || [ -z "$DEPS_HASH" ] || [ -z "$LOCK_HASH" ]; then
+            echo "Error: Failed to compute one or more SEA cache key hashes" >&2
+            exit 1
+          fi
+
           SEA_DEPS_HASH=$(echo "$DEPS_HASH-$LOCK_HASH" | sha256sum | cut -d' ' -f1)
           SEA_COMBINED=$(echo "$SEA_HASH-$SEA_DEPS_HASH" | sha256sum | cut -d' ' -f1)
           echo "sea-hash=$SEA_COMBINED" >> $GITHUB_OUTPUT
 
           # Smol cache key (matches build-smol.yml).
-          SMOL_HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f \( -name "*.patch" -o -name "*.template.patch" -o -name "*.mjs" -o -name "*.template.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" \) 2>/dev/null | sort | xargs sha256sum 2>/dev/null | sha256sum | cut -d' ' -f1 || echo "none")
+          SMOL_HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f \( -name "*.patch" -o -name "*.template.patch" -o -name "*.mjs" -o -name "*.template.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+
+          # Validate smol hash was computed successfully.
+          if [ -z "$SMOL_HASH" ]; then
+            echo "Error: Failed to compute SMOL cache key hash" >&2
+            exit 1
+          fi
+
           SMOL_DEPS_HASH=$(echo "$DEPS_HASH-$LOCK_HASH" | sha256sum | cut -d' ' -f1)
           SMOL_COMBINED=$(echo "$SMOL_HASH-$SMOL_DEPS_HASH" | sha256sum | cut -d' ' -f1)
           echo "smol-hash=$SMOL_COMBINED" >> $GITHUB_OUTPUT
@@ -306,9 +366,27 @@ jobs:
         id: cli-cache-key
         shell: bash
         run: |
-          PNPM_LOCK_HASH=$(sha256sum pnpm-lock.yaml 2>/dev/null | cut -d' ' -f1 || echo "none")
-          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) 2>/dev/null | sort | xargs sha256sum 2>/dev/null | sha256sum | cut -d' ' -f1 || echo "none")
-          CLI_CONFIG_HASH=$(sha256sum packages/cli/.config/*.mjs packages/cli/scripts/*.mjs 2>/dev/null | sha256sum | cut -d' ' -f1 || echo "none")
+          # Validate required files exist.
+          if [ ! -f pnpm-lock.yaml ]; then
+            echo "Error: pnpm-lock.yaml not found" >&2
+            exit 1
+          fi
+          if [ ! -d packages/cli/src ]; then
+            echo "Error: packages/cli/src directory not found" >&2
+            exit 1
+          fi
+
+          # Compute hashes with proper error handling.
+          PNPM_LOCK_HASH=$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)
+          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          CLI_CONFIG_HASH=$(sha256sum packages/cli/.config/*.mjs packages/cli/scripts/*.mjs | sha256sum | cut -d' ' -f1)
+
+          # Validate hashes were computed successfully.
+          if [ -z "$PNPM_LOCK_HASH" ] || [ -z "$CLI_SRC_HASH" ] || [ -z "$CLI_CONFIG_HASH" ]; then
+            echo "Error: Failed to compute one or more cache key hashes" >&2
+            exit 1
+          fi
+
           CLI_COMBINED=$(echo "$PNPM_LOCK_HASH-$CLI_SRC_HASH-$CLI_CONFIG_HASH" | sha256sum | cut -d' ' -f1)
           echo "hash=$CLI_COMBINED" >> $GITHUB_OUTPUT
 

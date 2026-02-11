@@ -139,11 +139,69 @@ This is a CLI tool for Socket.dev security analysis, built with TypeScript using
 - **Types**: `src/types.mts` - TypeScript type definitions
 
 ### Command Architecture Pattern
-Each command follows a consistent pattern:
+
+**✅ PREFERRED: Consolidated Pattern for Simple Commands**
+
+For commands with straightforward logic (no subcommands, < 200 lines total), consolidate into a single `cmd-*.mts` file:
+
+```typescript
+// Single cmd-*.mts file structure:
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+// ... other imports
+
+const logger = getDefaultLogger()
+
+export const CMD_NAME = 'command-name'
+const description = 'Command description'
+const hidden = false
+
+// Types.
+interface CommandResult {
+  // Type definitions here.
+}
+
+// Helper functions.
+function helperFunction(): void {
+  // Helper logic here.
+}
+
+// Command handler.
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: CliCommandContext,
+): Promise<void> {
+  const config: CliCommandConfig = { /* ... */ }
+  const cli = meowOrExit({ argv, config, importMeta, parentName })
+
+  // Command logic here.
+}
+
+// Exported command.
+export const cmdCommandName = {
+  description,
+  hidden,
+  run,
+}
+```
+
+**Benefits**:
+- All command logic in one file for easy navigation
+- Clear sections: imports → constants → types → helpers → handler → export
+- Reduced file count (3 files → 1 file)
+- Maintained compatibility with existing meow-based CLI architecture
+
+**Examples**: `whoami`, `logout` (consolidated)
+
+**⚠️ Legacy Pattern for Complex Commands**
+
+Complex commands with subcommands or > 200 lines should keep the modular pattern:
 - `cmd-*.mts` - Command definition and CLI interface
 - `handle-*.mts` - Business logic and processing
 - `output-*.mts` - Output formatting (JSON, markdown, etc.)
 - `fetch-*.mts` - API calls (where applicable)
+
+**Examples**: `scan`, `organization`, `repository` (keep modular)
 
 ### Key Command Categories
 - **npm/npx wrapping**: `socket npm`, `socket npx` - Wraps npm/npx with security scanning

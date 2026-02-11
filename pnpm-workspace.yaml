@@ -1,6 +1,6 @@
 packages:
-  - packages/package-builder/build/*
   - packages/*
+  - '!packages/package-builder/build'
 
 catalog:
   '@babel/core': 7.28.4
