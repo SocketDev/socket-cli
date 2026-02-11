@@ -3,11 +3,14 @@
 // @ts-expect-error
 import UntypedArborist from '@npmcli/arborist/lib/arborist/index.js'
 
+import {
+  getSocketCliAcceptRisks,
+  getSocketCliViewAllRisks,
+} from '@socketsecurity/lib/env/socket-cli'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 
 import { NPX } from '../../../../../constants/agents.mts'
-import ENV from '../../../../../constants/env.mts'
 import { NODE_MODULES } from '../../../../../constants/packages.mts'
 import {
   SOCKET_CLI_ACCEPT_RISKS,
@@ -126,7 +129,7 @@ export class SafeArborist extends Arborist {
     const shadowProgress = !!ipc?.[SOCKET_CLI_SHADOW_PROGRESS]
     const shadowSilent = !!ipc?.[SOCKET_CLI_SHADOW_SILENT]
 
-    const acceptRisks = shadowAcceptRisks || ENV.SOCKET_CLI_ACCEPT_RISKS
+    const acceptRisks = shadowAcceptRisks || getSocketCliAcceptRisks()
     const reportOnlyBlocking =
       acceptRisks || options['dryRun'] || options['yes']
     const silent = !!options['silent']
@@ -163,7 +166,7 @@ export class SafeArborist extends Arborist {
 
     if (alertsMap.size) {
       process.exitCode = 1
-      const viewAllRisks = ENV.SOCKET_CLI_VIEW_ALL_RISKS
+      const viewAllRisks = getSocketCliViewAllRisks()
       logAlertsMap(alertsMap, {
         hideAt: viewAllRisks ? 'none' : 'middle',
         output: process.stderr,

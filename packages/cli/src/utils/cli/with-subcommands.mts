@@ -2,6 +2,12 @@ import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
+import { getCI } from '@socketsecurity/lib/env/ci'
+import {
+  getSocketCliApiToken,
+  getSocketCliConfig,
+  getSocketCliNoApiToken,
+} from '@socketsecurity/lib/env/socket-cli'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getOwn, hasOwn, toSortedObject } from '@socketsecurity/lib/objects'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
@@ -142,10 +148,10 @@ function findBestCommandMatch(
  * Determine the origin of the API token.
  */
 function getTokenOrigin(): string {
-  if (ENV.SOCKET_CLI_NO_API_TOKEN) {
+  if (getSocketCliNoApiToken()) {
     return ''
   }
-  if (ENV.SOCKET_CLI_API_TOKEN) {
+  if (getSocketCliApiToken()) {
     return '(env)'
   }
   const configToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
@@ -177,7 +183,7 @@ function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
  */
 function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
   // Disable animation in CI, tests, or when explicitly disabled.
-  if (ENV.CI || ENV.VITEST || !process.stdout.isTTY || !supportsFullColor()) {
+  if (getCI() || ENV.VITEST || !process.stdout.isTTY || !supportsFullColor()) {
     return false
   }
   // Check flags first.
@@ -216,7 +222,7 @@ function getAsciiHeader(
   // Token display with origin indicator.
   const tokenPrefix = getVisibleTokenPrefix()
   const tokenOrigin = redacting ? '' : getTokenOrigin()
-  const noApiToken = ENV.SOCKET_CLI_NO_API_TOKEN
+  const noApiToken = getSocketCliNoApiToken()
   const shownToken = redacting
     ? REDACTED
     : noApiToken
@@ -512,7 +518,7 @@ export async function meowWithSubcommands(
     spinner: boolean
   }
 
-  const compactMode = !!compactHeaderFlag || !!(ENV.CI && !ENV.VITEST)
+  const compactMode = !!compactHeaderFlag || !!(getCI() && !ENV.VITEST)
   const noSpinner = spinnerFlag === false || isDebug()
 
   // Use CI spinner style when --no-spinner is passed or debug mode is enabled.
@@ -526,18 +532,19 @@ export async function meowWithSubcommands(
   // The env var overrides the --flag, which overrides the persisted config
   // Also, when either of these are used, config updates won't persist.
   let configOverrideResult: any
-  if (ENV.SOCKET_CLI_CONFIG) {
-    configOverrideResult = overrideCachedConfig(ENV.SOCKET_CLI_CONFIG)
+  const socketCliConfig = getSocketCliConfig()
+  if (socketCliConfig) {
+    configOverrideResult = overrideCachedConfig(socketCliConfig)
   } else if (configFlag) {
     configOverrideResult = overrideCachedConfig(configFlag)
   }
 
-  if (ENV.SOCKET_CLI_NO_API_TOKEN) {
+  if (getSocketCliNoApiToken()) {
     // This overrides the config override and even the explicit token env var.
     // The config will be marked as readOnly to prevent persisting it.
     overrideConfigApiToken(undefined)
   } else {
-    const tokenOverride = ENV.SOCKET_CLI_API_TOKEN
+    const tokenOverride = getSocketCliApiToken()
     if (tokenOverride) {
       // This will set the token (even if there was a config override) and
       // set it to readOnly, making sure the temp token won't be persisted.
@@ -966,7 +973,7 @@ export function meowOrExit(
     version: boolean | undefined
   }
 
-  const compactMode = !!compactHeaderFlag || !!(ENV.CI && !ENV.VITEST)
+  const compactMode = !!compactHeaderFlag || !!(getCI() && !ENV.VITEST)
   const noSpinner = spinnerFlag === false || isDebug()
 
   // Use CI spinner style when --no-spinner is passed.

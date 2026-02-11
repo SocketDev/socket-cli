@@ -235,6 +235,11 @@ export async function handleConsole(): Promise<void> {
           stdio: 'pipe',
         })
 
+        if (!result) {
+          addMessage(`${colors.red('✗')} Failed to start command`)
+          return
+        }
+
         // Add stdout output.
         if (result.stdout) {
           const lines = result.stdout?.toString().trim().split('\n') ?? []
@@ -272,6 +277,11 @@ export async function handleConsole(): Promise<void> {
           cwd: process.cwd(),
           stdio: 'pipe',
         })
+
+        if (!result) {
+          addMessage(`${colors.red('✗')} Failed to start command: ${firstArg}`)
+          return
+        }
 
         // Add stdout output.
         if (result.stdout) {

@@ -276,6 +276,12 @@ async function run(
     return
   }
 
+  // Validate numeric pagination parameter.
+  const validatedPerPage = Number(cli.flags['perPage']) || 30
+  if (Number.isNaN(validatedPerPage) || validatedPerPage < 1) {
+    throw new Error(`Invalid value for --per-page: ${cli.flags['perPage']}`)
+  }
+
   await handleThreatFeed({
     direction: String(cli.flags['direction'] || 'desc'),
     ecosystem: ecoFilter,
@@ -283,7 +289,7 @@ async function run(
     outputKind,
     orgSlug,
     page: String(cli.flags['page'] || '1'),
-    perPage: Number(cli.flags['perPage']) || 30,
+    perPage: validatedPerPage,
     pkg: nameFilter,
     version: versionFilter,
   })

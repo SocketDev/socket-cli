@@ -92,7 +92,28 @@ export function stripLeadingPnpmDepPathSlash(depPath: string): string {
   return isPnpmDepPath(depPath) ? depPath.slice(1) : depPath
 }
 
+/**
+ * Strip pnpm peer dependency suffix from dep path.
+ *
+ * PNPM appends peer dependency info in format:
+ * - `package@1.0.0(peer@2.0.0)` - parentheses for peer deps.
+ * - `package@1.0.0_peer@2.0.0` - underscore for peer deps.
+ *
+ * Edge cases to consider:
+ * - Package names with `(` or `_` in legitimate names (rare but valid).
+ * - Scoped packages: `@scope/package` should work correctly.
+ * - Empty or malformed dep paths should return unchanged.
+ *
+ * Current implementation: Find first `(` or `_` and strip everything after.
+ * Limitation: May incorrectly strip if package name contains these chars.
+ * Mitigation: Most package names don't contain `(` or `_`, pnpm format is predictable.
+ */
 export function stripPnpmPeerSuffix(depPath: string): string {
+  // Defensive: Handle empty or invalid inputs.
+  if (!depPath || typeof depPath !== 'string') {
+    return depPath
+  }
+
   const parenIndex = depPath.indexOf('(')
   const index = parenIndex === -1 ? depPath.indexOf('_') : parenIndex
   return index === -1 ? depPath : depPath.slice(0, index)

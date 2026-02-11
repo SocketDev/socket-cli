@@ -141,6 +141,7 @@ describe('handleCi', () => {
     expect(mockDetectDefaultBranch).not.toHaveBeenCalled()
     expect(mockHandleCreateNewScan).toHaveBeenCalledWith({
       autoManifest: false,
+      basics: false,
       branchName: 'feature-branch',
       commitMessage: '',
       commitHash: '',

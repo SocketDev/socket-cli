@@ -6,6 +6,11 @@ export async function suggestBranchSlug(
   repoDefaultBranch: string | undefined,
 ): Promise<string | undefined> {
   const spawnResult = await spawn('git', ['branch', '--show-current'])
+
+  if (!spawnResult) {
+    return undefined
+  }
+
   const stdoutStr =
     typeof spawnResult.stdout === 'string'
       ? spawnResult.stdout

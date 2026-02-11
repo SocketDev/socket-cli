@@ -28,6 +28,13 @@ import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
+import {
+  getSocketCliApiBaseUrl,
+  getSocketCliApiProxy,
+  getSocketCliApiTimeout,
+  getSocketCliApiToken,
+  getSocketCliNoApiToken,
+} from '@socketsecurity/lib/env/socket-cli'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { password } from '@socketsecurity/lib/stdio/prompts'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
@@ -59,7 +66,7 @@ const TOKEN_VISIBLE_LENGTH = 5
 // The Socket API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    ENV.SOCKET_CLI_API_BASE_URL ||
+    getSocketCliApiBaseUrl() ||
     getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL) ||
     undefined
   return isUrl(baseUrl) ? baseUrl : undefined
@@ -68,7 +75,7 @@ export function getDefaultApiBaseUrl(): string | undefined {
 // The Socket API server that should be used for operations.
 export function getDefaultProxyUrl(): string | undefined {
   const apiProxy =
-    ENV.SOCKET_CLI_API_PROXY ||
+    getSocketCliApiProxy() ||
     getConfigValueOrUndef(CONFIG_KEY_API_PROXY) ||
     undefined
   return isUrl(apiProxy) ? apiProxy : undefined
@@ -78,13 +85,13 @@ export function getDefaultProxyUrl(): string | undefined {
 let _defaultToken: string | undefined
 
 export function getDefaultApiToken(): string | undefined {
-  if (ENV.SOCKET_CLI_NO_API_TOKEN) {
+  if (getSocketCliNoApiToken()) {
     _defaultToken = undefined
     return _defaultToken
   }
 
   const key =
-    ENV.SOCKET_CLI_API_TOKEN ||
+    getSocketCliApiToken() ||
     getConfigValueOrUndef(CONFIG_KEY_API_TOKEN) ||
     _defaultToken
 
@@ -94,7 +101,7 @@ export function getDefaultApiToken(): string | undefined {
 
 export function getPublicApiToken(): string {
   return (
-    getDefaultApiToken() || ENV.SOCKET_CLI_API_TOKEN || SOCKET_PUBLIC_API_TOKEN
+    getDefaultApiToken() || getSocketCliApiToken() || SOCKET_PUBLIC_API_TOKEN
   )
 }
 
@@ -153,7 +160,7 @@ export async function setupSdk(
     ? HttpProxyAgent
     : HttpsProxyAgent
 
-  const timeout = ENV.SOCKET_CLI_API_TIMEOUT || undefined
+  const timeout = getSocketCliApiTimeout() || undefined
 
   const sdkOptions = {
     ...(apiProxy ? { agent: new ProxyAgent({ proxy: apiProxy }) } : {}),

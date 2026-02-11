@@ -27,6 +27,11 @@
 
 import { whichReal } from '@socketsecurity/lib/bin'
 import { debug, debugDir, isDebug } from '@socketsecurity/lib/debug'
+import {
+  getGithubBaseRef,
+  getGithubRefName,
+  getGithubRefType,
+} from '@socketsecurity/lib/env/github'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
 
@@ -71,20 +76,27 @@ const COMMON_DEFAULT_BRANCH_NAMES = [
 ]
 
 export async function getBaseBranch(cwd = process.cwd()): Promise<string> {
-  const { GITHUB_BASE_REF, GITHUB_REF_NAME, GITHUB_REF_TYPE } = ENV
   // 1. In a pull request, this is always the base branch.
-  if (GITHUB_BASE_REF) {
-    return GITHUB_BASE_REF
+  const githubBaseRef = getGithubBaseRef()
+  if (githubBaseRef) {
+    return githubBaseRef
   }
   // 2. If it's a branch (not a tag), GITHUB_REF_TYPE should be 'branch'.
-  if (GITHUB_REF_TYPE === 'branch' && GITHUB_REF_NAME) {
-    return GITHUB_REF_NAME
+  const githubRefType = getGithubRefType()
+  const githubRefName = getGithubRefName()
+  if (githubRefType === 'branch' && githubRefName) {
+    return githubRefName
   }
   // 3. Try to resolve the default remote branch using 'git remote show origin'.
   // This handles detached HEADs or workflows triggered by tags/releases.
   try {
     const gitPath = await getGitPath()
     const result = await spawn(gitPath, ['remote', 'show', 'origin'], { cwd })
+
+    if (!result) {
+      return 'main'
+    }
+
     const originDetails =
       typeof result.stdout === 'string'
         ? result.stdout
@@ -114,6 +126,11 @@ export async function getRepoInfo(
     const result = await spawn(gitPath, ['remote', 'get-url', 'origin'], {
       cwd,
     })
+
+    if (!result) {
+      return undefined
+    }
+
     const remoteUrl =
       typeof result.stdout === 'string'
         ? result.stdout

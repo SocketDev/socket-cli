@@ -19,7 +19,9 @@
  * - utils/git/operations.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { resetEnv, setEnv } from '@socketsecurity/lib/env/rewire'
 
 import {
   getBaseBranch,
@@ -58,6 +60,11 @@ vi.mock('../../../../../src/utils/debug.mts', () => ({
 describe('git utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    // Reset environment variable overrides after each test.
+    resetEnv()
   })
 
   describe('parseGitRemoteUrl', () => {
@@ -99,51 +106,20 @@ describe('git utilities', () => {
   })
 
   describe('getBaseBranch', () => {
-    it.skipIf(!!process.env['VITEST'])(
-      'returns GITHUB_BASE_REF when in PR',
-      async () => {
-        process.env['GITHUB_BASE_REF'] = 'main'
+    it('returns GITHUB_BASE_REF when in PR', async () => {
+      setEnv('GITHUB_BASE_REF', 'main')
 
-        const result = await getBaseBranch()
-        expect(result).toBe('main')
+      const result = await getBaseBranch()
+      expect(result).toBe('main')
+    })
 
-        delete process.env['GITHUB_BASE_REF']
-      },
-    )
+    it('returns GITHUB_REF_NAME when it is a branch', async () => {
+      setEnv('GITHUB_REF_TYPE', 'branch')
+      setEnv('GITHUB_REF_NAME', 'feature-branch')
 
-    it.skipIf(!!process.env['VITEST'])(
-      'returns GITHUB_REF_NAME when it is a branch',
-      async () => {
-        const originalBaseRef = process.env['GITHUB_BASE_REF']
-        const originalRefType = process.env['GITHUB_REF_TYPE']
-        const originalRefName = process.env['GITHUB_REF_NAME']
-
-        // Clear GITHUB_BASE_REF so it doesn't take priority.
-        delete process.env['GITHUB_BASE_REF']
-        process.env['GITHUB_REF_TYPE'] = 'branch'
-        process.env['GITHUB_REF_NAME'] = 'feature-branch'
-
-        const result = await getBaseBranch()
-        expect(result).toBe('feature-branch')
-
-        // Restore original values.
-        if (originalBaseRef === undefined) {
-          delete process.env['GITHUB_BASE_REF']
-        } else {
-          process.env['GITHUB_BASE_REF'] = originalBaseRef
-        }
-        if (originalRefType === undefined) {
-          delete process.env['GITHUB_REF_TYPE']
-        } else {
-          process.env['GITHUB_REF_TYPE'] = originalRefType
-        }
-        if (originalRefName === undefined) {
-          delete process.env['GITHUB_REF_NAME']
-        } else {
-          process.env['GITHUB_REF_NAME'] = originalRefName
-        }
-      },
-    )
+      const result = await getBaseBranch()
+      expect(result).toBe('feature-branch')
+    })
 
     it('calls detectDefaultBranch when no GitHub env vars', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))

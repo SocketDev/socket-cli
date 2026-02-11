@@ -1,6 +1,7 @@
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
-import { runRawNpm } from './run-raw-npm.mts'
 import {
   DRY_RUN_BAILING_NOW,
   FLAG_DRY_RUN,
@@ -8,20 +9,65 @@ import {
 } from '../../constants/cli.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getNpmBinPath } from '../../utils/npm/paths.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 
-const config: CliCommandConfig = {
-  commandName: 'raw-npm',
-  description: 'Run npm without the Socket wrapper',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-  },
-  help: command => `
+const logger = getDefaultLogger()
+
+export const CMD_NAME = 'raw-npm'
+
+const description = 'Run npm without the Socket wrapper'
+
+const hidden = false
+
+// Helper functions.
+
+async function runRawNpm(argv: string[] | readonly string[]): Promise<void> {
+  process.exitCode = 1
+
+  const spawnPromise = spawn(getNpmBinPath(), argv as string[], {
+    // On Windows, npm is often a .cmd file that requires shell execution.
+    // The spawn function from @socketsecurity/registry will handle this properly
+    // when shell is true.
+    shell: WIN32,
+    stdio: 'inherit',
+  })
+
+  // See https://nodejs.org/api/child_process.html#event-exit.
+  spawnPromise.process.on(
+    'exit',
+    (code: number | null, signalName: string | null) => {
+      if (signalName) {
+        process.kill(process.pid, signalName)
+      } else if (typeof code === 'number') {
+        // eslint-disable-next-line n/no-process-exit
+        process.exit(code)
+      }
+    },
+  )
+
+  await spawnPromise
+}
+
+// Command handler.
+
+async function run(
+  argv: readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: CliCommandContext,
+): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+    },
+    help: command => `
     Usage
       $ ${command} ...
 
@@ -35,33 +81,29 @@ const config: CliCommandConfig = {
     Examples
       $ ${command} install -g cowsay
   `,
-}
+  }
 
-export const cmdRawNpm = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: CliCommandContext,
-): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
-    parentName,
     importMeta,
+    parentName,
   })
 
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    const logger = getDefaultLogger()
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
   await runRawNpm(argv)
+}
+
+// Exported command.
+
+export const cmdRawNpm = {
+  description,
+  hidden,
+  run,
 }

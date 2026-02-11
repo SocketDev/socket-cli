@@ -1,5 +1,10 @@
 import colors from 'yoctocolors-cjs'
 
+import { getCI } from '@socketsecurity/lib/env/ci'
+import {
+  getSocketCliApiToken,
+  getSocketCliNoApiToken,
+} from '@socketsecurity/lib/env/socket-cli'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 
 import { FLAG_ORG, REDACTED } from '../../constants/cli.mts'
@@ -20,10 +25,10 @@ import type { HeaderTheme } from './ascii-header.mts'
  * Determine the origin of the API token.
  */
 function getTokenOrigin(): string {
-  if (ENV.SOCKET_CLI_NO_API_TOKEN) {
+  if (getSocketCliNoApiToken()) {
     return ''
   }
-  if (ENV.SOCKET_CLI_API_TOKEN) {
+  if (getSocketCliApiToken()) {
     return '(env)'
   }
   const configToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
@@ -55,7 +60,7 @@ function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
  */
 function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
   // Disable animation in CI, tests, or when explicitly disabled.
-  if (ENV.CI || ENV.VITEST || !process.stdout.isTTY || !supportsFullColor()) {
+  if (getCI() || ENV.VITEST || !process.stdout.isTTY || !supportsFullColor()) {
     return false
   }
   // Check flags first.
@@ -84,7 +89,7 @@ export function getAsciiHeader(
 ): string {
   // Note: In tests/CI we redact and remove colors because otherwise snapshots will fail.
   const redacting = ENV.VITEST
-  const inCI = ENV.CI
+  const inCI = getCI()
 
   // Version display: show hash in debug mode, otherwise show semantic version.
   const fullVersion = getCliVersion()
@@ -102,7 +107,7 @@ export function getAsciiHeader(
   // Token display with origin indicator.
   const tokenPrefix = getVisibleTokenPrefix()
   const tokenOrigin = redacting ? '' : getTokenOrigin()
-  const noApiToken = ENV.SOCKET_CLI_NO_API_TOKEN
+  const noApiToken = getSocketCliNoApiToken()
   const shownToken = redacting
     ? REDACTED
     : inCI

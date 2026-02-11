@@ -270,6 +270,9 @@ export class CommandRegistry implements ICommandRegistry {
       switch (flagDef.type) {
         case 'number': {
           value = Number(value)
+          if (Number.isNaN(value)) {
+            throw new Error(`Invalid number value for --${flagName}: ${value}`)
+          }
           break
         }
         case 'boolean': {

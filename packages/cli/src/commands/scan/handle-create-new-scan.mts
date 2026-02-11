@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
@@ -19,6 +20,17 @@ import {
   SCAN_TYPE_SOCKET,
   SCAN_TYPE_SOCKET_TIER1,
 } from '../../constants.mts'
+import { runSocketBasics } from '../../utils/basics/spawn.mts'
+
+/**
+ * Filter out .socket.facts.json files from scan paths to avoid duplicates.
+ *
+ * @param paths - Array of file paths to filter.
+ * @returns Filtered paths without .socket.facts.json files.
+ */
+function excludeFactsJson(paths: string[]): string[] {
+  return paths.filter(p => path.basename(p) !== DOT_SOCKET_DOT_FACTS_JSON)
+}
 import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 import { socketDocsLink } from '../../utils/terminal/link.mts'
@@ -33,6 +45,7 @@ import type { Remap } from '@socketsecurity/lib/objects'
 
 export type HandleCreateNewScanConfig = {
   autoManifest: boolean
+  basics: boolean
   branchName: string
   commitHash: string
   commitMessage: string
@@ -59,6 +72,7 @@ export type HandleCreateNewScanConfig = {
 
 export async function handleCreateNewScan({
   autoManifest,
+  basics,
   branchName,
   commitHash,
   commitMessage,
@@ -207,15 +221,58 @@ export async function handleCreateNewScan({
     const reachabilityReport = reachResult.data?.reachabilityReport
 
     scanPaths = [
-      ...packagePaths.filter(
-        // Ensure the .socket.facts.json isn't duplicated in case it happened
-        // to be in the scan folder before the analysis was run.
-        p => path.basename(p).toLowerCase() !== DOT_SOCKET_DOT_FACTS_JSON,
-      ),
+      ...excludeFactsJson(packagePaths),
       ...(reachabilityReport ? [reachabilityReport] : []),
     ]
 
     tier1ReachabilityScanId = reachResult.data?.tier1ReachabilityScanId
+  }
+
+  // Run socket-basics comprehensive security scanning if --basics flag is set.
+  if (basics) {
+    logger.error('')
+    logger.info('Starting comprehensive security scan (socket-basics)...')
+    debug('notice', 'Socket-basics enabled')
+
+    spinner.start()
+
+    const basicsResult = await runSocketBasics({
+      cwd,
+      orgSlug,
+      repoName,
+      spinner,
+    })
+
+    spinner.stop()
+
+    if (!basicsResult.ok) {
+      logger.warn(
+        'Socket-basics scan failed, continuing without SAST/secrets findings',
+      )
+      debug('error', 'socket-basics error:', basicsResult.message)
+    } else {
+      logger.success('Comprehensive security scan completed successfully')
+
+      const basicsReport = basicsResult.data?.factsPath
+
+      if (basicsReport && existsSync(basicsReport)) {
+        // Add .socket.facts.json from socket-basics to scan paths.
+        scanPaths = [...excludeFactsJson(packagePaths), basicsReport]
+
+        const findings = basicsResult.data?.findings || {}
+        if (findings.sast) {
+          logger.info(`  Found ${findings.sast} SAST issues`)
+        }
+        if (findings.secrets) {
+          logger.info(`  Found ${findings.secrets} exposed secrets`)
+        }
+        if (findings.containers) {
+          logger.info(
+            `  Found ${findings.containers} container vulnerabilities`,
+          )
+        }
+      }
+    }
   }
 
   const fullScanCResult = await fetchCreateOrgFullScan(

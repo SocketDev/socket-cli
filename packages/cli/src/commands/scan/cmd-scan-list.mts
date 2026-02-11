@@ -191,14 +191,25 @@ async function run(
     return
   }
 
+  // Validate numeric pagination parameters.
+  const validatedPage = Number(cli.flags['page'] || 1)
+  const validatedPerPage = Number(cli.flags['perPage'] || 30)
+
+  if (Number.isNaN(validatedPage) || validatedPage < 1) {
+    throw new Error(`Invalid value for --page: ${cli.flags['page']}`)
+  }
+  if (Number.isNaN(validatedPerPage) || validatedPerPage < 1) {
+    throw new Error(`Invalid value for --per-page: ${cli.flags['perPage']}`)
+  }
+
   await handleListScans({
     branch: branch ? String(branch) : '',
     direction: String(cli.flags['direction'] || ''),
     from_time: String(cli.flags['fromTime'] || ''),
     orgSlug,
     outputKind,
-    page: Number(cli.flags['page'] || 1),
-    perPage: Number(cli.flags['perPage'] || 30),
+    page: validatedPage,
+    perPage: validatedPerPage,
     repo: repo ? String(repo) : '',
     sort: String(cli.flags['sort'] || ''),
   })

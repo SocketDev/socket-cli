@@ -237,6 +237,37 @@ async function run(
     return
   }
 
+  // Validate numeric flag conversions.
+  const validatedReachAnalysisMemoryLimit = Number(reachAnalysisMemoryLimit)
+  if (
+    reachAnalysisMemoryLimit !== undefined &&
+    Number.isNaN(validatedReachAnalysisMemoryLimit)
+  ) {
+    throw new Error(
+      `Invalid number value for --reach-analysis-memory-limit: ${reachAnalysisMemoryLimit}`,
+    )
+  }
+
+  const validatedReachAnalysisTimeout = Number(reachAnalysisTimeout)
+  if (
+    reachAnalysisTimeout !== undefined &&
+    Number.isNaN(validatedReachAnalysisTimeout)
+  ) {
+    throw new Error(
+      `Invalid number value for --reach-analysis-timeout: ${reachAnalysisTimeout}`,
+    )
+  }
+
+  const validatedReachConcurrency = Number(reachConcurrency)
+  if (
+    reachConcurrency !== undefined &&
+    Number.isNaN(validatedReachConcurrency)
+  ) {
+    throw new Error(
+      `Invalid number value for --reach-concurrency: ${reachConcurrency}`,
+    )
+  }
+
   await handleScanReach({
     cwd,
     orgSlug,
@@ -244,9 +275,9 @@ async function run(
     targets,
     interactive,
     reachabilityOptions: {
-      reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
-      reachAnalysisTimeout: Number(reachAnalysisTimeout),
-      reachConcurrency: Number(reachConcurrency),
+      reachAnalysisMemoryLimit: validatedReachAnalysisMemoryLimit,
+      reachAnalysisTimeout: validatedReachAnalysisTimeout,
+      reachConcurrency: validatedReachConcurrency,
       reachDebug: Boolean(reachDebug),
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
       reachDisableAnalysisSplitting: Boolean(reachDisableAnalysisSplitting),

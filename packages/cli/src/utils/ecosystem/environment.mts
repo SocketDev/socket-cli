@@ -397,6 +397,11 @@ async function getAgentVersion(
         [...nodeNoWarningsFlags, shouldRunWithNode, FLAG_VERSION],
         { cwd },
       )
+
+      if (!result) {
+        return undefined
+      }
+
       stdout =
         typeof result.stdout === 'string'
           ? result.stdout
@@ -409,6 +414,11 @@ async function getAgentVersion(
         // when shell is true.
         shell: WIN32,
       })
+
+      if (!result) {
+        return undefined
+      }
+
       stdout =
         typeof result.stdout === 'string'
           ? result.stdout

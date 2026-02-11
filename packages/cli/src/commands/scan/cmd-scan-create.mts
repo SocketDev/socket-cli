@@ -55,6 +55,12 @@ const generalFlags: MeowFlags = {
     description:
       'Run `socket manifest auto` before collecting manifest files. This is necessary for languages like Scala, Gradle, and Kotlin, See `socket manifest auto --help`.',
   },
+  basics: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Run comprehensive security scanning (SAST, secrets, containers) via socket-basics. Requires Python, Trivy, TruffleHog, and OpenGrep to be available.',
+  },
   branch: {
     type: 'string',
     default: '',
@@ -298,6 +304,10 @@ async function run(
   }
 
   const dryRun = !!cli.flags['dryRun']
+
+  const { basics } = cli.flags as unknown as {
+    basics?: boolean | undefined
+  }
 
   let {
     autoManifest,
@@ -555,8 +565,45 @@ async function run(
     return
   }
 
+  // Validate numeric flag conversions.
+  const validatedPullRequest = Number(pullRequest)
+  if (pullRequest !== undefined && Number.isNaN(validatedPullRequest)) {
+    throw new Error(`Invalid number value for --pull-request: ${pullRequest}`)
+  }
+
+  const validatedReachAnalysisMemoryLimit = Number(reachAnalysisMemoryLimit)
+  if (
+    reachAnalysisMemoryLimit !== undefined &&
+    Number.isNaN(validatedReachAnalysisMemoryLimit)
+  ) {
+    throw new Error(
+      `Invalid number value for --reach-analysis-memory-limit: ${reachAnalysisMemoryLimit}`,
+    )
+  }
+
+  const validatedReachAnalysisTimeout = Number(reachAnalysisTimeout)
+  if (
+    reachAnalysisTimeout !== undefined &&
+    Number.isNaN(validatedReachAnalysisTimeout)
+  ) {
+    throw new Error(
+      `Invalid number value for --reach-analysis-timeout: ${reachAnalysisTimeout}`,
+    )
+  }
+
+  const validatedReachConcurrency = Number(reachConcurrency)
+  if (
+    reachConcurrency !== undefined &&
+    Number.isNaN(validatedReachConcurrency)
+  ) {
+    throw new Error(
+      `Invalid number value for --reach-concurrency: ${reachConcurrency}`,
+    )
+  }
+
   await handleCreateNewScan({
     autoManifest: Boolean(autoManifest),
+    basics: Boolean(basics),
     branchName: branchName as string,
     commitHash: (commitHash && String(commitHash)) || '',
     commitMessage: (commitMessage && String(commitMessage)) || '',
@@ -567,12 +614,12 @@ async function run(
     orgSlug,
     outputKind,
     pendingHead: Boolean(pendingHead),
-    pullRequest: Number(pullRequest),
+    pullRequest: validatedPullRequest,
     reach: {
       runReachabilityAnalysis: Boolean(reach),
-      reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
-      reachAnalysisTimeout: Number(reachAnalysisTimeout),
-      reachConcurrency: Number(reachConcurrency),
+      reachAnalysisMemoryLimit: validatedReachAnalysisMemoryLimit,
+      reachAnalysisTimeout: validatedReachAnalysisTimeout,
+      reachConcurrency: validatedReachConcurrency,
       reachDebug: Boolean(reachDebug),
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
       reachDisableAnalysisSplitting: Boolean(reachDisableAnalysisSplitting),

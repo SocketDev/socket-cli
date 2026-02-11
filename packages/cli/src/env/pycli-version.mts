@@ -8,6 +8,19 @@
 
 import process from 'node:process'
 
+/**
+ * Get the Socket Python CLI version (socketsecurity package) that should be installed.
+ * This version is inlined at build time from external-tools.json.
+ *
+ * @returns Socket Python CLI version string (e.g., "0.8.0").
+ * @throws Error if version is not inlined at build time.
+ */
 export function getPyCliVersion(): string {
-  return process.env['INLINED_SOCKET_CLI_PYCLI_VERSION']!
+  const version = process.env['INLINED_SOCKET_CLI_PYCLI_VERSION']
+  if (!version) {
+    throw new Error(
+      'INLINED_SOCKET_CLI_PYCLI_VERSION not set - build configuration error. Please rebuild the CLI.',
+    )
+  }
+  return version
 }

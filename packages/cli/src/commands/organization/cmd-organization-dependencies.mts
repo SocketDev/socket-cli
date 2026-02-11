@@ -113,9 +113,20 @@ async function run(
     return
   }
 
+  // Validate numeric pagination parameters.
+  const validatedLimit = Number(limit || 0)
+  const validatedOffset = Number(offset || 0)
+
+  if (Number.isNaN(validatedLimit) || validatedLimit < 0) {
+    throw new Error(`Invalid value for --limit: ${limit}`)
+  }
+  if (Number.isNaN(validatedOffset) || validatedOffset < 0) {
+    throw new Error(`Invalid value for --offset: ${offset}`)
+  }
+
   await handleDependencies({
-    limit: Number(limit || 0) || 0,
-    offset: Number(offset || 0) || 0,
+    limit: validatedLimit,
+    offset: validatedOffset,
     outputKind,
   })
 }

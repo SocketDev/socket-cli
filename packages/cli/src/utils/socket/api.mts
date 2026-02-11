@@ -22,13 +22,13 @@
 import { messageWithCauses } from 'pony-cause'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { getSocketCliApiBaseUrl } from '@socketsecurity/lib/env/socket-cli'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import { getDefaultApiToken } from './sdk.mts'
 import { CONFIG_KEY_API_BASE_URL } from '../../constants/config.mts'
-import ENV from '../../constants/env.mts'
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_FORBIDDEN,
@@ -131,8 +131,7 @@ export function logPermissionsFor403(cmdPath?: string | undefined): void {
 // The Socket API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    ENV.SOCKET_CLI_API_BASE_URL ||
-    getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL)
+    getSocketCliApiBaseUrl() || getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL)
   if (isNonEmptyString(baseUrl)) {
     return baseUrl
   }

@@ -11,8 +11,7 @@
  * - Token validation
  *
  * Related Files:
- * - src/commands/whoami/cmd-whoami.mts - Command definition
- * - src/commands/whoami/handle-whoami.mts - Auth status logic
+ * - src/commands/whoami/cmd-whoami.mts - Complete command implementation
  */
 
 /**

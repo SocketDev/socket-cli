@@ -11,12 +11,18 @@
     "package": "@cyclonedx/cdxgen",
     "version": "12.0.0"
   },
+  "opengrep": {
+    "description": "OpenGrep SAST/code analysis engine (fork of Semgrep)",
+    "type": "github-release",
+    "repository": "opengrep/opengrep",
+    "version": "v1.16.0"
+  },
   "python": {
     "description": "Python runtime from python-build-standalone",
     "type": "github-release",
     "repository": "astral-sh/python-build-standalone",
-    "version": "3.10.18",
-    "buildTag": "20250918"
+    "version": "3.11.14",
+    "buildTag": "20260203"
   },
   "socketsecurity": {
     "description": "Socket Python CLI (socket-python-cli)",
@@ -40,5 +46,17 @@
     "type": "npm",
     "package": "synp",
     "version": "1.9.14"
+  },
+  "trivy": {
+    "description": "Trivy container and filesystem vulnerability scanner",
+    "type": "github-release",
+    "repository": "aquasecurity/trivy",
+    "version": "v0.69.1"
+  },
+  "trufflehog": {
+    "description": "TruffleHog secret and credential detection",
+    "type": "github-release",
+    "repository": "trufflesecurity/trufflehog",
+    "version": "v3.93.1"
   }
 }

@@ -406,9 +406,14 @@ export function handleGitHubApiError(
 
       if (retryAfter) {
         waitTime = Number.parseInt(String(retryAfter), 10)
+        if (Number.isNaN(waitTime) || waitTime < 0) {
+          waitTime = undefined
+        }
       } else if (resetHeader) {
         const resetTimestamp = Number.parseInt(String(resetHeader), 10)
-        waitTime = Math.max(0, resetTimestamp - Math.floor(Date.now() / 1000))
+        if (!Number.isNaN(resetTimestamp)) {
+          waitTime = Math.max(0, resetTimestamp - Math.floor(Date.now() / 1000))
+        }
       }
 
       return {

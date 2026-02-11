@@ -13,44 +13,46 @@ import type {
 
 const logger = getDefaultLogger()
 
-const config: CliCommandConfig = {
-  commandName: 'oops',
-  description: 'Trigger an intentional error (for development)',
-  hidden: true,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-    throw: {
-      type: 'boolean',
-      default: false,
-      description:
-        'Throw an explicit error even if --json or --markdown are set',
-    },
-  },
-  help: (parentName, config) => `
-    Usage
-      $ ${parentName} ${config.commandName}
+export const CMD_NAME = 'oops'
 
-    Don't run me.
-  `,
-}
+const description = 'Trigger an intentional error (for development)'
 
-export const cmdOops = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
+const hidden = true
+
+// Command handler.
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+      throw: {
+        type: 'boolean',
+        default: false,
+        description:
+          'Throw an explicit error even if --json or --markdown are set',
+      },
+    },
+    help: (parentName, config) => `
+    Usage
+      $ ${parentName} ${config.commandName}
+
+    Don't run me.
+  `,
+  }
+
   const cli = meowOrExit({
     argv,
     config,
-    parentName,
     importMeta,
+    parentName,
   })
 
   const { json, markdown, throw: justThrow } = cli.flags
@@ -82,4 +84,12 @@ async function run(
   }
 
   throw new Error('This error was intentionally left blank.')
+}
+
+// Exported command.
+
+export const cmdOops = {
+  description,
+  hidden,
+  run,
 }

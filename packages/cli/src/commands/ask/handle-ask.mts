@@ -3,12 +3,13 @@ import path from 'node:path'
 
 import nlp from 'compromise'
 
+import { getHome } from '@socketsecurity/lib/env/home'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 // Import compromise for NLP text normalization.
 
 import { outputAskCommand } from './output-ask.mts'
-import ENV from '../../constants/env.mts'
+
 const logger = getDefaultLogger()
 
 // Semantic index for fast word-overlap matching (lazy-loaded, ~3KB).
@@ -163,7 +164,7 @@ async function loadSemanticIndex() {
   }
 
   try {
-    const homeDir = ENV.HOME || ENV.USERPROFILE
+    const homeDir = getHome()
     if (!homeDir) {
       return null
     }
@@ -657,6 +658,12 @@ export async function handleAsk(options: HandleAskOptions): Promise<void> {
     stdio: 'inherit',
     cwd: process.cwd(),
   })
+
+  if (!result) {
+    logger.error('Failed to execute command')
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(1)
+  }
 
   if (result.code !== 0) {
     logger.error(`Command failed with exit code ${result.code}`)

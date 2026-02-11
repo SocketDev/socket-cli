@@ -234,6 +234,7 @@ async function scanOneRepo(
 
   await handleCreateNewScan({
     autoManifest: false,
+    basics: false,
     branchName: defaultBranch,
     commitHash: lastCommitSha,
     commitMessage: lastCommitMessage || '',

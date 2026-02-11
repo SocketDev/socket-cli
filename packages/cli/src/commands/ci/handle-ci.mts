@@ -37,6 +37,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
 
   await handleCreateNewScan({
     autoManifest,
+    basics: false,
     branchName,
     commitMessage: '',
     commitHash: '',

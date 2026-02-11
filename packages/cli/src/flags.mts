@@ -58,9 +58,24 @@ function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
       },
       importMeta: { url: import.meta.url } as ImportMeta,
     })
+    const maxOldSpaceSize = Number(cli.flags['maxOldSpaceSize'])
+    const maxSemiSpaceSize = Number(cli.flags['maxSemiSpaceSize'])
+
+    // Validate numeric flags (should be guaranteed by meow type='number', but defensive).
+    if (Number.isNaN(maxOldSpaceSize) || maxOldSpaceSize < 0) {
+      throw new Error(
+        `Invalid value for --max-old-space-size: ${cli.flags['maxOldSpaceSize']}`,
+      )
+    }
+    if (Number.isNaN(maxSemiSpaceSize) || maxSemiSpaceSize < 0) {
+      throw new Error(
+        `Invalid value for --max-semi-space-size: ${cli.flags['maxSemiSpaceSize']}`,
+      )
+    }
+
     _rawSpaceSizeFlags = {
-      maxOldSpaceSize: Number(cli.flags['maxOldSpaceSize']),
-      maxSemiSpaceSize: Number(cli.flags['maxSemiSpaceSize']),
+      maxOldSpaceSize,
+      maxSemiSpaceSize,
     }
   }
   return _rawSpaceSizeFlags!
@@ -74,7 +89,17 @@ export function getMaxOldSpaceSizeFlag(): number {
       const match = /(?<=--max-old-space-size=)\d+/.exec(
         ENV.NODE_OPTIONS || '',
       )?.[0]
-      _maxOldSpaceSizeFlag = match ? Number(match) : 0
+      if (match) {
+        const parsed = Number(match)
+        // Regex guarantees numeric string, but validate defensively.
+        if (Number.isNaN(parsed) || parsed < 0) {
+          _maxOldSpaceSizeFlag = 0
+        } else {
+          _maxOldSpaceSizeFlag = parsed
+        }
+      } else {
+        _maxOldSpaceSizeFlag = 0
+      }
     }
     if (!_maxOldSpaceSizeFlag) {
       // Default value determined by available system memory.
@@ -103,7 +128,17 @@ export function getMaxSemiSpaceSizeFlag(): number {
       const match = /(?<=--max-semi-space-size=)\d+/.exec(
         ENV.NODE_OPTIONS || '',
       )?.[0]
-      _maxSemiSpaceSizeFlag = match ? Number(match) : 0
+      if (match) {
+        const parsed = Number(match)
+        // Regex guarantees numeric string, but validate defensively.
+        if (Number.isNaN(parsed) || parsed < 0) {
+          _maxSemiSpaceSizeFlag = 0
+        } else {
+          _maxSemiSpaceSizeFlag = parsed
+        }
+      } else {
+        _maxSemiSpaceSizeFlag = 0
+      }
     }
     if (!_maxSemiSpaceSizeFlag) {
       const maxOldSpaceSize = getMaxOldSpaceSizeFlag()

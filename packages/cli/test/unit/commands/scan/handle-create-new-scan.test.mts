@@ -237,7 +237,6 @@ describe('handleCreateNewScan', () => {
     const { getPackageFilesForScan } = await import(
       '../../../../src/utils/fs/path-resolve.mts'
     )
-    // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
     const { checkCommandInput } = await import(
       '../../../../src/utils/validation/check-input.mts'
     )

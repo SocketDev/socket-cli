@@ -177,6 +177,10 @@ async function execGradleWithSpinner(
       cwd,
     })
 
+    if (!output) {
+      throw new Error(`Failed to execute gradle: ${bin}`)
+    }
+
     pass = true
     const { code, stderr, stdout } = output
     return {

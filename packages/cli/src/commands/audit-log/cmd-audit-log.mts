@@ -184,11 +184,22 @@ async function run(
     return
   }
 
+  // Validate numeric pagination parameters.
+  const validatedPage = Number(page || 0)
+  const validatedPerPage = Number(perPage || 0)
+
+  if (Number.isNaN(validatedPage) || validatedPage < 0) {
+    throw new Error(`Invalid value for --page: ${page}`)
+  }
+  if (Number.isNaN(validatedPerPage) || validatedPerPage < 0) {
+    throw new Error(`Invalid value for --per-page: ${perPage}`)
+  }
+
   await handleAuditLog({
     orgSlug,
     outputKind,
-    page: Number(page || 0),
-    perPage: Number(perPage || 0),
+    page: validatedPage,
+    perPage: validatedPerPage,
     logType: typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1),
   })
 }

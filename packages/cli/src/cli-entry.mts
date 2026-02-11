@@ -36,6 +36,11 @@ import {
   debugDir,
   debugDirNs,
 } from '@socketsecurity/lib/debug'
+import { getCI } from '@socketsecurity/lib/env/ci'
+import {
+  getSocketCliBootstrapCacheDir,
+  getSocketCliBootstrapSpec,
+} from '@socketsecurity/lib/env/socket-cli'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { rootAliases, rootCommands } from './commands.mts'
@@ -81,8 +86,8 @@ setupTelemetryExitHandlers()
  * Bootstrap passes spec and cache dir via environment variables.
  */
 async function writeBootstrapManifestEntry(): Promise<void> {
-  const spec = ENV.SOCKET_CLI_BOOTSTRAP_SPEC
-  const cacheDir = ENV.SOCKET_CLI_BOOTSTRAP_CACHE_DIR
+  const spec = getSocketCliBootstrapSpec()
+  const cacheDir = getSocketCliBootstrapCacheDir()
 
   if (!spec || !cacheDir) {
     // Not launched via bootstrap, skip.
@@ -128,7 +133,7 @@ void (async () => {
   // Skip update checks in test environments or when explicitly disabled.
   // Note: Update checks create HTTP connections that may delay process exit by up to 30s
   // due to keep-alive timeouts. Set SOCKET_CLI_SKIP_UPDATE_CHECK=1 to disable.
-  if (!ENV.VITEST && !ENV.CI && !ENV.SOCKET_CLI_SKIP_UPDATE_CHECK) {
+  if (!ENV.VITEST && !getCI() && !ENV.SOCKET_CLI_SKIP_UPDATE_CHECK) {
     const registryUrl = lookupRegistryUrl()
     // Unified update notifier handles both SEA and npm automatically.
     // Fire-and-forget: Don't await to avoid blocking on HTTP keep-alive timeouts.

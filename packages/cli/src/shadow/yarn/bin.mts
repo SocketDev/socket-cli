@@ -3,9 +3,12 @@ import { fileURLToPath } from 'node:url'
 import { YARN } from '@socketsecurity/lib/constants/agents'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { debugNs } from '@socketsecurity/lib/debug'
+import {
+  getSocketCliAcceptRisks,
+  getSocketCliViewAllRisks,
+} from '@socketsecurity/lib/env/socket-cli'
 import { spawn } from '@socketsecurity/lib/spawn'
 
-import ENV from '../../constants/env.mts'
 import { shadowBinPath } from '../../constants/paths.mts'
 import {
   SOCKET_CLI_SHADOW_API_TOKEN,
@@ -68,7 +71,7 @@ export default async function shadowYarnBin(
   // Check for package scanning.
   const command = rawYarnArgs[0]
   const scanResult = await scanPackagesAndLogAlerts({
-    acceptRisks: !!ENV.SOCKET_CLI_ACCEPT_RISKS,
+    acceptRisks: getSocketCliAcceptRisks(),
     command,
     cwd,
     dlxCommands: DLX_COMMANDS,
@@ -76,7 +79,7 @@ export default async function shadowYarnBin(
     managerName: YARN,
     rawArgs: rawYarnArgs,
     spinner,
-    viewAllRisks: !!ENV.SOCKET_CLI_VIEW_ALL_RISKS,
+    viewAllRisks: getSocketCliViewAllRisks(),
   })
 
   if (scanResult.shouldExit) {

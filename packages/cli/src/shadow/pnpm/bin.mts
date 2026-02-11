@@ -4,13 +4,16 @@ import { fileURLToPath } from 'node:url'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { debug, debugDir, debugNs } from '@socketsecurity/lib/debug'
+import {
+  getSocketCliAcceptRisks,
+  getSocketCliViewAllRisks,
+} from '@socketsecurity/lib/env/socket-cli'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import { PNPM } from '../../constants/agents.mts'
 import { FLAG_DRY_RUN } from '../../constants/cli.mts'
-import ENV from '../../constants/env.mts'
 import { PNPM_LOCK_YAML } from '../../constants/packages.mts'
 import { shadowBinPath } from '../../constants/paths.mts'
 import {
@@ -92,8 +95,8 @@ export default async function shadowPnpmBin(
   spinner?.start()
 
   if (needsScanning && !rawPnpmArgs.includes(FLAG_DRY_RUN)) {
-    const acceptRisks = !!ENV.SOCKET_CLI_ACCEPT_RISKS
-    const viewAllRisks = !!ENV.SOCKET_CLI_VIEW_ALL_RISKS
+    const acceptRisks = getSocketCliAcceptRisks()
+    const viewAllRisks = getSocketCliViewAllRisks()
 
     // Handle add and dlx commands with shared utility.
     if (isDlxCommand || isAddCommand(command)) {
