@@ -109,20 +109,25 @@ async function main() {
       log.info('Starting watch mode...')
     }
 
-    // First extract yoga WASM.
+    // First download yoga WASM (only needed asset for CLI bundle).
     const extractResult = await spawn(
       'node',
-      [...NODE_MEMORY_FLAGS, 'scripts/extract-yoga-wasm.mjs'],
+      [...NODE_MEMORY_FLAGS, 'scripts/download-assets.mjs', 'yoga'],
       {
         shell: WIN32,
         stdio: 'inherit',
       },
     )
 
+    if (!extractResult) {
+      process.exitCode = 1
+      throw new Error('Failed to start asset download')
+    }
+
     if (extractResult.code !== 0) {
-      process.exitCode = extractResult.code
+      process.exitCode = extractResult.code ?? 1
       throw new Error(
-        `WASM extraction failed with exit code ${extractResult.code}`,
+        `Asset download failed with exit code ${extractResult.code ?? 'unknown'}`,
       )
     }
 
@@ -151,117 +156,148 @@ async function main() {
     // If force build, always clean first.
     const shouldClean = force
 
-    const steps = [
-      ...(shouldClean
-        ? [
-            {
-              name: 'Clean Dist',
-              command: 'pnpm',
-              args: ['run', 'clean:dist'],
-            },
-          ]
-        : []),
-      // {
-      //   name: 'Extract MiniLM Model',
-      //   command: 'node',
-      //   args: ['scripts/extract-minilm-model.mjs'],
-      // },
-      // {
-      //   name: 'Extract ONNX Runtime',
-      //   command: 'node',
-      //   args: ['scripts/extract-onnx-runtime.mjs'],
-      // },
-      {
-        name: 'Extract Yoga WASM',
-        command: 'node',
-        args: [...NODE_MEMORY_FLAGS, 'scripts/extract-yoga-wasm.mjs'],
-      },
-      {
-        name: 'Extract AI Models',
-        command: 'node',
-        args: [...NODE_MEMORY_FLAGS, 'scripts/extract-models.mjs'],
-      },
-      {
-        name: 'Extract binject',
-        command: 'node',
-        args: [...NODE_MEMORY_FLAGS, 'scripts/extract-binject.mjs'],
-      },
-      {
-        name: 'Build CLI Bundle',
-        command: 'node',
-        args: [...NODE_MEMORY_FLAGS, '.config/esbuild.cli.build.mjs'],
-      },
-      {
-        name: 'Build Index Loader',
-        command: 'node',
-        args: [...NODE_MEMORY_FLAGS, '.config/esbuild.index.config.mjs'],
-      },
-      {
-        name: 'Build Shadow NPM Inject',
-        command: 'node',
-        args: [...NODE_MEMORY_FLAGS, '.config/esbuild.inject.config.mjs'],
-      },
-    ]
-
-    // Run build steps sequentially.
-    if (!quiet) {
-      log.step(
-        `Running ${steps.length} build step${steps.length > 1 ? 's' : ''}...`,
-      )
-    }
-
-    for (const { args, command, name } of steps) {
-      if (verbose && !quiet) {
-        log.info(`Running: ${command} ${args.join(' ')}`)
+    // Phase 1: Clean (if needed).
+    if (shouldClean) {
+      if (!quiet) {
+        log.step('Phase 1: Cleaning...')
       }
-
-      const result = await spawn(command, args, {
+      const result = await spawn('pnpm', ['run', 'clean:dist'], {
         shell: WIN32,
         stdio: 'inherit',
       })
-
       if (result.code !== 0) {
         if (!quiet) {
-          log.error(`${name} failed (exit code: ${result.code})`)
+          log.error(`Clean failed (exit code: ${result.code})`)
+          printError('Build failed')
+        }
+        process.exitCode = 1
+        return
+      }
+      if (!quiet && verbose) {
+        log.success('Clean completed')
+      }
+    }
+
+    // Phase 2: Generate packages and download assets in parallel.
+    if (!quiet) {
+      log.step('Phase 2: Preparing build (parallel)...')
+    }
+
+    const parallelPrep = await Promise.all([
+      spawn('node', ['scripts/generate-packages.mjs'], {
+        shell: WIN32,
+        stdio: 'inherit',
+      }),
+      spawn(
+        'node',
+        [...NODE_MEMORY_FLAGS, 'scripts/download-assets.mjs', '--parallel'],
+        {
+          shell: WIN32,
+          stdio: 'inherit',
+        },
+      ),
+    ])
+
+    for (const [index, result] of parallelPrep.entries()) {
+      const stepName = index === 0 ? 'Generate Packages' : 'Download Assets'
+
+      // Check for null spawn result.
+      if (!result) {
+        if (!quiet) {
+          log.error(`${stepName} failed to start`)
           printError('Build failed')
         }
         process.exitCode = 1
         return
       }
 
+      if (result.code !== 0) {
+        if (!quiet) {
+          log.error(`${stepName} failed (exit code: ${result.code})`)
+          printError('Build failed')
+        }
+        process.exitCode = result.code ?? 1
+        return
+      }
+
       if (!quiet && verbose) {
-        log.success(`${name} completed`)
+        log.success(`${stepName} completed`)
       }
     }
 
-    // Copy CLI bundle to dist (required for dist/index.js to work).
-    copyFileSync('build/cli.js', 'dist/cli.js')
-
-    // Post-process: Fix node-gyp strings to prevent bundler issues.
-    if (!quiet && verbose) {
-      log.info('Post-processing build output...')
-    }
-    await fixNodeGypStrings(path.join(packageRoot, 'build'), { quiet, verbose })
-    if (!quiet && verbose) {
-      log.success('Build output post-processed')
+    // Phase 3: Build all variants.
+    if (!quiet) {
+      log.step('Phase 3: Building variants...')
     }
 
-    // Copy files from repo root.
+    // Ensure dist directory exists before building variants.
+    await fs.mkdir(path.join(packageRoot, 'dist'), { recursive: true })
+
+    const buildResult = await spawn(
+      'node',
+      [...NODE_MEMORY_FLAGS, '.config/esbuild.config.mjs', 'all'],
+      {
+        shell: WIN32,
+        stdio: 'inherit',
+      },
+    )
+
+    if (buildResult.code !== 0) {
+      if (!quiet) {
+        log.error(`Build failed (exit code: ${buildResult.code})`)
+        printError('Build failed')
+      }
+      process.exitCode = 1
+      return
+    }
+
     if (!quiet && verbose) {
-      log.info('Copying files from repo root...')
+      log.success('Build completed')
     }
-    const filesToCopy = [
-      'CHANGELOG.md',
-      'LICENSE',
-      'logo-dark.png',
-      'logo-light.png',
-    ]
-    for (const file of filesToCopy) {
-      await fs.cp(path.join(repoRoot, file), path.join(packageRoot, file))
+
+    // Phase 4: Post-processing (parallel).
+    if (!quiet) {
+      log.step('Phase 4: Post-processing (parallel)...')
     }
-    if (!quiet && verbose) {
-      log.success('Files copied from repo root')
-    }
+
+    await Promise.all([
+      // Copy CLI bundle to dist (required for dist/index.js to work).
+      (async () => {
+        copyFileSync('build/cli.js', 'dist/cli.js')
+        if (!quiet && verbose) {
+          log.success('CLI bundle copied')
+        }
+      })(),
+
+      // Fix node-gyp strings to prevent bundler issues.
+      (async () => {
+        await fixNodeGypStrings(path.join(packageRoot, 'build'), {
+          quiet,
+          verbose,
+        })
+        if (!quiet && verbose) {
+          log.success('Build output post-processed')
+        }
+      })(),
+
+      // Copy files from repo root.
+      (async () => {
+        const filesToCopy = [
+          'CHANGELOG.md',
+          'LICENSE',
+          'logo-dark.png',
+          'logo-light.png',
+        ]
+        await Promise.all(
+          filesToCopy.map(file =>
+            fs.cp(path.join(repoRoot, file), path.join(packageRoot, file)),
+          ),
+        )
+        if (!quiet && verbose) {
+          log.success('Files copied from repo root')
+        }
+      })(),
+    ])
 
     if (!quiet) {
       printSuccess('Build completed')

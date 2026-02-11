@@ -47,7 +47,7 @@ async function hasGhCli() {
     const result = await spawn('gh', ['--version'], {
       stdio: 'pipe',
     })
-    return result.code === 0
+    return result !== null && result.code === 0
   } catch {
     return false
   }
@@ -62,7 +62,7 @@ async function getCurrentCommit() {
       cwd: repoRoot,
       stdio: 'pipe',
     })
-    if (result.code !== 0) {
+    if (!result || result.code !== 0) {
       return null
     }
     return result.stdout.trim()
@@ -167,6 +167,12 @@ async function cacheExists(repo, cacheKey) {
     if (result.code !== 0) {
       return false
     }
+
+    // Validate stdout before parsing.
+    if (!result.stdout || result.stdout.trim().length === 0) {
+      return false
+    }
+
     const caches = JSON.parse(result.stdout)
     return Array.isArray(caches) && caches.length > 0
   } catch {
@@ -382,12 +388,12 @@ async function main() {
 
 main()
   .then(code => {
-    process.exit(code)
+    process.exitCode = code
   })
   .catch(error => {
     logger.error(error.message)
     if (isVerbose()) {
       logger.error(error.stack)
     }
-    process.exit(1)
+    process.exitCode = 1
   })

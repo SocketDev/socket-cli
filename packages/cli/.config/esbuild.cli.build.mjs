@@ -4,15 +4,15 @@
  * esbuild is much faster than Rollup and doesn't have template literal corruption issues.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { IMPORT_META_URL_BANNER } from 'build-infra/lib/esbuild-helpers'
 import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
-import { build } from 'esbuild'
 
 import {
+  createBuildRunner,
   createDefineEntries,
   envVarReplacementPlugin,
   getInlinedEnvVars,
@@ -405,22 +405,4 @@ const config = {
   ],
 }
 
-// Run build if invoked directly.
-// Use fileURLToPath to handle Windows paths correctly.
-if (fileURLToPath(import.meta.url) === process.argv[1]) {
-  build(config)
-    .then(result => {
-      // Write the transformed output (build had write: false).
-      if (result.outputFiles && result.outputFiles.length > 0) {
-        for (const output of result.outputFiles) {
-          writeFileSync(output.path, output.contents)
-        }
-      }
-    })
-    .catch(error => {
-      console.error('Build failed:', error)
-      process.exitCode = 1
-    })
-}
-
-export default config
+export default createBuildRunner(config, 'CLI bundle')

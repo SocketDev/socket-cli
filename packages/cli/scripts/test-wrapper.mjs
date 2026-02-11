@@ -6,6 +6,7 @@
  * - Cross-platform compatibility (Windows/Unix)
  * - Build validation before running tests
  * - Environment variable loading from .env.test
+ * - Inlined variable injection from external-tools.json
  */
 
 import { existsSync } from 'node:fs'
@@ -17,6 +18,8 @@ import fastGlob from 'fast-glob'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
+
+import { EnvironmentVariables } from './environment-variables.mjs'
 
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -86,6 +89,10 @@ async function main() {
       )
     }
 
+    // Load external tool versions for INLINED_* env vars.
+    // Delegate to unified EnvironmentVariables module.
+    const externalToolVersions = EnvironmentVariables.getTestVariables()
+
     const spawnEnv = {
       ...process.env,
       // Increase Node.js heap size to prevent out of memory errors.
@@ -99,6 +106,8 @@ async function main() {
       SOCKET_CLI_API_TOKEN: undefined,
       SOCKET_SECURITY_API_KEY: undefined,
       SOCKET_SECURITY_API_TOKEN: undefined,
+      // Inject external tool versions (normally inlined at build time).
+      ...externalToolVersions,
     }
 
     // Use dotenvx to load .env.test configuration.

@@ -9,6 +9,8 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { EnvironmentVariables } from './environment-variables.mjs'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 
@@ -120,87 +122,69 @@ export function envVarReplacementPlugin(envVars) {
  * @returns {Record<string, string>} Object with env var names as keys and JSON-stringified values
  */
 export function getInlinedEnvVars() {
-  // Read package.json for metadata.
-  const packageJson = JSON.parse(
-    readFileSync(path.join(rootPath, 'package.json'), 'utf-8'),
-  )
+  // Delegate to unified EnvironmentVariables module.
+  return EnvironmentVariables.getDefineEntries()
+}
 
-  // Read version from socket package (the published package).
-  const socketPackageJson = JSON.parse(
-    readFileSync(
-      path.join(rootPath, '../package-builder/build/socket/package.json'),
-      'utf-8',
-    ),
-  )
+/**
+ * Create a build runner function that executes esbuild config when run as main module.
+ * This eliminates boilerplate code repeated across all esbuild config files.
+ *
+ * @param {Object} config - esbuild configuration object
+ * @param {string} [description] - Optional description of what this build does
+ * @returns {Object} The same config object (for chaining)
+ *
+ * @example
+ * ```javascript
+ * import { build } from 'esbuild'
+ * import { createBuildRunner } from './esbuild-shared.mjs'
+ *
+ * const config = { ... }
+ * export default createBuildRunner(config, 'CLI bundle')
+ * ```
+ */
+export function createBuildRunner(config, description = 'Build') {
+  // Only run if this file is the main module (executed directly).
+  // This allows configs to be imported without side effects.
+  if (
+    fileURLToPath(import.meta.url) ===
+    process.argv[1]?.replace(/\\/g, '/')
+  ) {
+    ;(async () => {
+      try {
+        // Import esbuild dynamically to avoid loading it during imports.
+        const { build } = await import('esbuild')
 
-  // Get current git commit hash.
-  let gitHash = ''
-  try {
-    gitHash = execSync('git rev-parse --short HEAD', {
-      cwd: rootPath,
-      encoding: 'utf-8',
-    }).trim()
-  } catch {}
+        if (description) {
+          console.log(`Building: ${description}`)
+        }
 
-  // Get external tool versions from external-tools.json.
-  const externalTools = JSON.parse(
-    readFileSync(path.join(rootPath, 'external-tools.json'), 'utf-8'),
-  )
+        const result = await build(config)
 
-  function getExternalToolVersion(key, field = 'version') {
-    const tool = externalTools[key]
-    if (!tool) {
-      throw new Error(
-        `External tool "${key}" not found in external-tools.json. Please add it to the configuration.`,
-      )
-    }
-    const value = tool[field]
-    if (!value) {
-      throw new Error(
-        `External tool "${key}" is missing required field "${field}" in external-tools.json.`,
-      )
-    }
-    return value
+        // If write: false, manually write outputFiles.
+        if (result.outputFiles && result.outputFiles.length > 0) {
+          const { writeFileSync } = await import('node:fs')
+          const { dirname } = await import('node:path')
+          const { mkdirSync } = await import('node:fs')
+
+          for (const output of result.outputFiles) {
+            // Ensure directory exists.
+            mkdirSync(dirname(output.path), { recursive: true })
+            // Write output file.
+            writeFileSync(output.path, output.contents)
+          }
+
+          if (description) {
+            console.log(`✓ ${description} complete`)
+          }
+        }
+      } catch (error) {
+        console.error(`Build failed: ${description || 'Unknown'}`)
+        console.error(error)
+        process.exitCode = 1
+      }
+    })()
   }
 
-  const cdxgenVersion = getExternalToolVersion('@cyclonedx/cdxgen')
-  const coanaVersion = getExternalToolVersion('@coana-tech/cli')
-  const pyCliVersion = getExternalToolVersion('socketsecurity')
-  const pythonBuildTag = getExternalToolVersion('python', 'buildTag')
-  const pythonVersion = getExternalToolVersion('python')
-  const sfwVersion = getExternalToolVersion('sfw')
-  const socketPatchVersion = getExternalToolVersion('socket-patch')
-  const synpVersion = getExternalToolVersion('synp')
-
-  // Build-time constants that can be overridden by environment variables.
-  const publishedBuild =
-    process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'] === '1'
-  const sentryBuild = process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'] === '1'
-
-  // Compute version hash (matches Rollup implementation).
-  const randUuidSegment = randomUUID().split('-')[0]
-  const versionHash = `${packageJson.version}:${gitHash}:${randUuidSegment}${
-    publishedBuild ? '' : ':dev'
-  }`
-
-  // Return all environment variables as JSON-stringified values.
-  return {
-    INLINED_SOCKET_CLI_VERSION: JSON.stringify(socketPackageJson.version),
-    INLINED_SOCKET_CLI_VERSION_HASH: JSON.stringify(versionHash),
-    INLINED_SOCKET_CLI_NAME: JSON.stringify(packageJson.name),
-    INLINED_SOCKET_CLI_HOMEPAGE: JSON.stringify(packageJson.homepage),
-    INLINED_SOCKET_CLI_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
-    INLINED_SOCKET_CLI_COANA_VERSION: JSON.stringify(coanaVersion),
-    INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
-    INLINED_SOCKET_CLI_PYCLI_VERSION: JSON.stringify(pyCliVersion),
-    INLINED_SOCKET_CLI_SFW_VERSION: JSON.stringify(sfwVersion),
-    INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION: JSON.stringify(socketPatchVersion),
-    INLINED_SOCKET_CLI_SYNP_VERSION: JSON.stringify(synpVersion),
-    INLINED_SOCKET_CLI_PUBLISHED_BUILD: JSON.stringify(
-      publishedBuild ? '1' : '',
-    ),
-    INLINED_SOCKET_CLI_SENTRY_BUILD: JSON.stringify(sentryBuild ? '1' : ''),
-    INLINED_SOCKET_CLI_PYTHON_VERSION: JSON.stringify(pythonVersion),
-    INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: JSON.stringify(pythonBuildTag),
-  }
+  return config
 }

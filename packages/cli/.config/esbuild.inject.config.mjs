@@ -5,14 +5,13 @@
  * when spawning npm with shadow arborist.
  */
 
-import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { IMPORT_META_URL_BANNER } from 'build-infra/lib/esbuild-helpers'
-import { build } from 'esbuild'
 
 import {
+  createBuildRunner,
   createDefineEntries,
   envVarReplacementPlugin,
   getInlinedEnvVars,
@@ -75,22 +74,4 @@ const config = {
   plugins: [envVarReplacementPlugin(inlinedEnvVars)],
 }
 
-// Run build if invoked directly.
-if (fileURLToPath(import.meta.url) === process.argv[1]) {
-  build(config)
-    .then(result => {
-      // Write the transformed output (build had write: false).
-      if (result.outputFiles && result.outputFiles.length > 0) {
-        for (const output of result.outputFiles) {
-          writeFileSync(output.path, output.contents)
-        }
-      }
-      console.log('Built shadow-npm-inject.js')
-    })
-    .catch(error => {
-      console.error('Build failed:', error)
-      process.exitCode = 1
-    })
-}
-
-export default config
+export default createBuildRunner(config, 'Shadow npm inject')

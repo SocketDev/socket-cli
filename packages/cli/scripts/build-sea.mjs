@@ -19,11 +19,11 @@ import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+import { buildTarget } from './sea-build-utils/orchestration.mjs'
 import {
-  buildTarget,
   getBuildTargets,
   getDefaultNodeVersion,
-} from './sea-build-utils.mjs'
+} from './sea-build-utils/targets.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')

@@ -7,8 +7,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
-import { build } from 'esbuild'
 import semver from 'semver'
+
+import { createBuildRunner } from '../../cli/scripts/esbuild-shared.mjs'
 
 
 import socketPackageJson from '../../cli/package.json' with { type: 'json' }
@@ -43,12 +44,4 @@ const config = {
   write: false,
 }
 
-// Run build if invoked directly.
-if (fileURLToPath(import.meta.url) === process.argv[1]) {
-  build(config).catch(error => {
-    console.error('SEA bootstrap build failed:', error)
-    process.exitCode = 1
-  })
-}
-
-export default config
+export default createBuildRunner(config, 'Bootstrap SEA')

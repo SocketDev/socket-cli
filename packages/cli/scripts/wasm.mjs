@@ -205,19 +205,42 @@ async function getLatestWasmRelease() {
 
     const releases = await response.json()
 
+    // Validate API response structure.
+    if (!Array.isArray(releases) || releases.length === 0) {
+      throw new Error(
+        'Invalid API response: expected non-empty array of releases',
+      )
+    }
+
     // Find the latest WASM build release (tagged with wasm-build-*).
-    const wasmRelease = releases.find(r => r.tag_name.startsWith('wasm-build-'))
+    const wasmRelease = releases.find(r =>
+      r?.tag_name?.startsWith('wasm-build-'),
+    )
 
     if (!wasmRelease) {
       throw new Error('No WASM build releases found')
     }
 
+    if (!wasmRelease.tag_name) {
+      throw new Error('Invalid release data: missing tag_name')
+    }
+
+    if (!Array.isArray(wasmRelease.assets)) {
+      throw new Error(`Release ${wasmRelease.tag_name} has no assets`)
+    }
+
     // Find the asset.
-    const asset = wasmRelease.assets.find(a => a.name === WASM_ASSET_NAME)
+    const asset = wasmRelease.assets.find(a => a?.name === WASM_ASSET_NAME)
 
     if (!asset) {
       throw new Error(
         `Asset "${WASM_ASSET_NAME}" not found in release ${wasmRelease.tag_name}`,
+      )
+    }
+
+    if (!asset.browser_download_url) {
+      throw new Error(
+        `Asset "${WASM_ASSET_NAME}" missing browser_download_url in release ${wasmRelease.tag_name}`,
       )
     }
 

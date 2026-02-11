@@ -7,7 +7,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { build } from 'esbuild'
+import { createBuildRunner } from '../../cli/scripts/esbuild-shared.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.resolve(__dirname, '..')
@@ -26,12 +26,4 @@ const config = {
   treeShaking: true,
 }
 
-// Run build if invoked directly.
-if (fileURLToPath(import.meta.url) === process.argv[1]) {
-  build(config).catch(error => {
-    console.error('Index loader build failed:', error)
-    process.exitCode = 1
-  })
-}
-
-export default config
+export default createBuildRunner(config, 'Bootstrap index loader')
