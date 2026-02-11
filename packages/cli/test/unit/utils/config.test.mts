@@ -258,6 +258,10 @@ describe('utils/config', () => {
       // Set a config value.
       updateConfigValue('defaultOrg', 'test-org')
 
+      // Wait for nextTick to complete the async write and avoid side effects when
+      // this test's afterEach resets env vars.
+      await new Promise(resolve => process.nextTick(resolve))
+
       // Read it back immediately (from cache).
       const result = getConfigValue('defaultOrg')
       expect(result.ok).toBe(true)

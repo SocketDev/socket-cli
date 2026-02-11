@@ -26,7 +26,11 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
-import { getDefaultApiToken } from './sdk.mts'
+import {
+  getDefaultApiToken,
+  hasOAuthRefreshTokenConfigured,
+  refreshOAuthApiTokenFromConfig,
+} from './sdk.mts'
 import { CONFIG_KEY_API_BASE_URL } from '../../constants/config.mts'
 import ENV from '../../constants/env.mts'
 import {
@@ -66,6 +70,10 @@ import type {
 const logger = getDefaultLogger()
 
 const NO_ERROR_MESSAGE = 'No error message returned'
+
+function getAuthorizationHeaderValue(apiToken: string): string {
+  return `Bearer ${apiToken}`
+}
 
 export type CommandRequirements = {
   permissions?: string[] | undefined
@@ -358,7 +366,7 @@ export async function queryApi(path: string, apiToken: string) {
   return await fetch(`${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`, {
     method: 'GET',
     headers: {
-      Authorization: `Basic ${btoa(`${apiToken}:`)}`,
+      Authorization: getAuthorizationHeaderValue(apiToken),
     },
   })
 }
@@ -444,6 +452,36 @@ export async function queryApiSafeText(
       durationMs,
       headers: { Authorization: '[REDACTED]' },
     })
+    // If OAuth is configured and we got a 401, try one refresh+retry.
+    if (status === 401 && hasOAuthRefreshTokenConfigured()) {
+      const refreshResult = await refreshOAuthApiTokenFromConfig({
+        apiBaseUrl: baseUrl,
+        apiProxy: undefined,
+      })
+      if (refreshResult.ok) {
+        const retriedToken = getDefaultApiToken()
+        if (retriedToken) {
+          try {
+            result = await queryApi(path, retriedToken)
+          } catch {
+            // ignore; fall through to normal handling below
+          }
+          if (result?.ok) {
+            try {
+              const data = await result.text()
+              return { ok: true, data }
+            } catch {
+              return {
+                ok: false,
+                message: 'API request failed',
+                cause: 'Unexpected error reading response text',
+              }
+            }
+          }
+        }
+      }
+    }
+
     // Log required permissions for 403 errors when in a command context.
     if (commandPath && status === 403) {
       logPermissionsFor403(commandPath)
@@ -555,7 +593,7 @@ export async function sendApiRequest<T>(
     const fetchOptions = {
       method,
       headers: {
-        Authorization: `Basic ${btoa(`${apiToken}:`)}`,
+        Authorization: getAuthorizationHeaderValue(apiToken),
         'Content-Type': 'application/json',
       },
       ...(body ? { body: JSON.stringify(body) } : {}),
@@ -626,6 +664,36 @@ export async function sendApiRequest<T>(
         'Content-Type': 'application/json',
       },
     })
+    // If OAuth is configured and we got a 401, try one refresh+retry.
+    if (status === 401 && hasOAuthRefreshTokenConfigured()) {
+      const refreshResult = await refreshOAuthApiTokenFromConfig({
+        apiBaseUrl: baseUrl,
+        apiProxy: undefined,
+      })
+      if (refreshResult.ok) {
+        const retriedToken = getDefaultApiToken()
+        if (retriedToken) {
+          try {
+            const retryFetchOptions = {
+              method,
+              headers: {
+                Authorization: getAuthorizationHeaderValue(retriedToken),
+                'Content-Type': 'application/json',
+              },
+              ...(body ? { body: JSON.stringify(body) } : {}),
+            }
+            const retriedResult = await fetch(fullUrl, retryFetchOptions)
+            if (retriedResult.ok) {
+              const data = await retriedResult.json()
+              return { ok: true, data: data as T }
+            }
+          } catch {
+            // ignore; fall through to normal handling below
+          }
+        }
+      }
+    }
+
     // Log required permissions for 403 errors when in a command context.
     if (commandPath && status === 403) {
       logPermissionsFor403(commandPath)

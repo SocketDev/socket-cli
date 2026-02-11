@@ -229,10 +229,11 @@ describe('handleCreateNewScan', () => {
   })
 
   it('handles no eligible files found', async () => {
-    const { fetchSupportedScanFileNames } = await import(
-      '../../../../src/commands/scan/fetch-supported-scan-file-names.mts'
-    )
-    const { getPackageFilesForScan } = await import(
+    const { fetchSupportedScanFileNames: _fetchSupportedScanFileNames } =
+      await import(
+        '../../../../src/commands/scan/fetch-supported-scan-file-names.mts'
+      )
+    const { getPackageFilesForScan: _getPackageFilesForScan } = await import(
       '../../../../src/utils/fs/path-resolve.mts'
     )
     const { checkCommandInput } = await import(
