@@ -3,10 +3,10 @@
  * Downloads and extracts all required assets from socket-btm GitHub releases.
  *
  * Usage:
- *   node scripts/download-assets.mjs [asset-names...]
- *   node scripts/download-assets.mjs              # Download all assets
- *   node scripts/download-assets.mjs yoga models  # Download specific assets
- *   node scripts/download-assets.mjs --parallel   # Download assets in parallel
+ *   node scripts/download-assets.mjs [asset-names...] [options]
+ *   node scripts/download-assets.mjs                 # Download all assets (parallel)
+ *   node scripts/download-assets.mjs yoga models     # Download specific assets (parallel)
+ *   node scripts/download-assets.mjs --no-parallel   # Download all assets (sequential)
  *
  * Assets:
  *   yoga      - Yoga layout WASM (yoga-sync.mjs)
@@ -276,22 +276,15 @@ ${content}
 }
 
 /**
- * Download multiple assets (sequential or parallel).
+ * Download multiple assets (parallel by default, sequential opt-in).
  *
- * WARNING: Parallel mode may cause race conditions if assets share:
- * - Download directories (version file conflicts).
- * - Output directories (extraction/processing conflicts).
- * - Filesystem caches (concurrent writes).
+ * Parallel mode is optimized for fast builds. Assets are downloaded concurrently
+ * and have isolated subdirectories to minimize race conditions.
  *
- * Recommendation: Use sequential mode (default) unless assets are confirmed independent.
- * Future: Consider implementing mutex/lock mechanism for shared resources.
+ * Use --no-parallel flag for sequential mode if filesystem issues occur.
  */
-async function downloadAssets(assetNames, parallel = false) {
+async function downloadAssets(assetNames, parallel = true) {
   if (parallel) {
-    logger.warn(
-      'Parallel mode enabled - may cause race conditions with shared resources',
-    )
-
     const results = await Promise.all(
       assetNames.map(name => downloadAsset(ASSETS[name])),
     )
@@ -320,7 +313,7 @@ async function downloadAssets(assetNames, parallel = false) {
  */
 async function main() {
   const args = process.argv.slice(2)
-  const parallel = args.includes('--parallel')
+  const parallel = !args.includes('--no-parallel')
   const assetArgs = args.filter(arg => !arg.startsWith('--'))
 
   // Determine which assets to download.

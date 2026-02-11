@@ -188,14 +188,10 @@ async function main() {
         shell: WIN32,
         stdio: 'inherit',
       }),
-      spawn(
-        'node',
-        [...NODE_MEMORY_FLAGS, 'scripts/download-assets.mjs', '--parallel'],
-        {
-          shell: WIN32,
-          stdio: 'inherit',
-        },
-      ),
+      spawn('node', [...NODE_MEMORY_FLAGS, 'scripts/download-assets.mjs'], {
+        shell: WIN32,
+        stdio: 'inherit',
+      }),
     ])
 
     for (const [index, result] of parallelPrep.entries()) {
