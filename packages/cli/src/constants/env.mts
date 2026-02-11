@@ -35,6 +35,7 @@ import { getPythonVersion } from '../env/python-version.mts'
 import { RUN_E2E_TESTS } from '../env/run-e2e-tests.mts'
 import { getSwfVersion } from '../env/sfw-version.mts'
 import { SOCKET_CLI_ACCEPT_RISKS } from '../env/socket-cli-accept-risks.mts'
+import { SOCKET_CLI_AUTH_BASE_URL } from '../env/socket-cli-auth-base-url.mts'
 import { SOCKET_CLI_API_BASE_URL } from '../env/socket-cli-api-base-url.mts'
 import { SOCKET_CLI_API_PROXY } from '../env/socket-cli-api-proxy.mts'
 import { SOCKET_CLI_API_TIMEOUT } from '../env/socket-cli-api-timeout.mts'
@@ -58,6 +59,9 @@ import { SOCKET_CLI_MODELS_PATH } from '../env/socket-cli-models-path.mts'
 import { SOCKET_CLI_NO_API_TOKEN } from '../env/socket-cli-no-api-token.mts'
 import { SOCKET_CLI_NPM_PATH } from '../env/socket-cli-npm-path.mts'
 import { SOCKET_CLI_OPTIMIZE } from '../env/socket-cli-optimize.mts'
+import { SOCKET_CLI_OAUTH_CLIENT_ID } from '../env/socket-cli-oauth-client-id.mts'
+import { SOCKET_CLI_OAUTH_REDIRECT_URI } from '../env/socket-cli-oauth-redirect-uri.mts'
+import { SOCKET_CLI_OAUTH_SCOPES } from '../env/socket-cli-oauth-scopes.mts'
 import { SOCKET_CLI_ORG_SLUG } from '../env/socket-cli-org-slug.mts'
 import { SOCKET_CLI_PYCLI_LOCAL_PATH } from '../env/socket-cli-pycli-local-path.mts'
 import { SOCKET_CLI_SEA_NODE_VERSION } from '../env/socket-cli-sea-node-version.mts'
@@ -96,6 +100,7 @@ export {
   PREBUILT_NODE_DOWNLOAD_URL,
   RUN_E2E_TESTS,
   SOCKET_CLI_ACCEPT_RISKS,
+  SOCKET_CLI_AUTH_BASE_URL,
   SOCKET_CLI_API_BASE_URL,
   SOCKET_CLI_API_PROXY,
   SOCKET_CLI_API_TIMEOUT,
@@ -119,6 +124,9 @@ export {
   SOCKET_CLI_NO_API_TOKEN,
   SOCKET_CLI_NPM_PATH,
   SOCKET_CLI_OPTIMIZE,
+  SOCKET_CLI_OAUTH_CLIENT_ID,
+  SOCKET_CLI_OAUTH_REDIRECT_URI,
+  SOCKET_CLI_OAUTH_SCOPES,
   SOCKET_CLI_ORG_SLUG,
   SOCKET_CLI_PYCLI_LOCAL_PATH,
   SOCKET_CLI_SEA_NODE_VERSION,
@@ -178,6 +186,7 @@ const envSnapshot = {
   PREBUILT_NODE_DOWNLOAD_URL,
   RUN_E2E_TESTS,
   SOCKET_CLI_ACCEPT_RISKS,
+  SOCKET_CLI_AUTH_BASE_URL,
   SOCKET_CLI_API_BASE_URL,
   SOCKET_CLI_API_PROXY,
   SOCKET_CLI_API_TIMEOUT,
@@ -201,6 +210,9 @@ const envSnapshot = {
   SOCKET_CLI_NO_API_TOKEN,
   SOCKET_CLI_NPM_PATH,
   SOCKET_CLI_OPTIMIZE,
+  SOCKET_CLI_OAUTH_CLIENT_ID,
+  SOCKET_CLI_OAUTH_REDIRECT_URI,
+  SOCKET_CLI_OAUTH_SCOPES,
   SOCKET_CLI_ORG_SLUG,
   SOCKET_CLI_PYCLI_LOCAL_PATH,
   SOCKET_CLI_SEA_NODE_VERSION,

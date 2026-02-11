@@ -39,12 +39,22 @@ import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
+  CONFIG_KEY_AUTH_BASE_URL,
+  CONFIG_KEY_OAUTH_CLIENT_ID,
+  CONFIG_KEY_OAUTH_REFRESH_TOKEN,
+  CONFIG_KEY_OAUTH_SCOPES,
+  CONFIG_KEY_OAUTH_TOKEN_EXPIRES_AT,
 } from '../../constants/config.mts'
 import ENV from '../../constants/env.mts'
 import { TOKEN_PREFIX_LENGTH } from '../../constants/socket.mts'
-import { getConfigValueOrUndef } from '../config.mts'
+import { getConfigValueOrUndef, updateConfigValue } from '../config.mts'
 import { debugApiRequest, debugApiResponse } from '../debug.mts'
 import { trackCliEvent } from '../telemetry/integration.mts'
+import {
+  deriveAuthBaseUrlFromApiBaseUrl,
+  fetchOAuthAuthorizationServerMetadata,
+  refreshOAuthAccessToken,
+} from '../auth/oauth.mts'
 
 import type { CResult } from '../../types.mts'
 import type {
@@ -118,6 +128,93 @@ export type SetupSdkOptions = {
   apiToken?: string | undefined
 }
 
+export function hasOAuthRefreshTokenConfigured(): boolean {
+  const refreshToken = getConfigValueOrUndef(CONFIG_KEY_OAUTH_REFRESH_TOKEN)
+  return isNonEmptyString(refreshToken)
+}
+
+export async function refreshOAuthApiTokenFromConfig(params: {
+  apiBaseUrl: string | undefined
+  apiProxy: string | undefined
+}): Promise<CResult<{ accessToken: string }>> {
+  const refreshToken = getConfigValueOrUndef(CONFIG_KEY_OAUTH_REFRESH_TOKEN)
+  const clientId = getConfigValueOrUndef(CONFIG_KEY_OAUTH_CLIENT_ID)
+  const storedAuthBaseUrl = getConfigValueOrUndef(CONFIG_KEY_AUTH_BASE_URL)
+
+  if (!isNonEmptyString(refreshToken) || !isNonEmptyString(clientId)) {
+    return {
+      ok: false,
+      message: 'Auth Error',
+      cause: 'OAuth refresh token is not configured. Run `socket login`.',
+    }
+  }
+
+  const derivedAuthBaseUrl = deriveAuthBaseUrlFromApiBaseUrl(params.apiBaseUrl)
+  const authBaseUrl =
+    (isNonEmptyString(storedAuthBaseUrl) ? storedAuthBaseUrl : undefined) ??
+    derivedAuthBaseUrl
+
+  if (!isNonEmptyString(authBaseUrl)) {
+    return {
+      ok: false,
+      message: 'Auth Error',
+      cause:
+        'OAuth authBaseUrl is not configured. Run `socket login` or set SOCKET_CLI_AUTH_BASE_URL.',
+    }
+  }
+
+  const metaResult = await fetchOAuthAuthorizationServerMetadata({
+    authBaseUrl,
+    apiProxy: params.apiProxy,
+  })
+  if (!metaResult.ok) {
+    return {
+      ok: false,
+      message: metaResult.message,
+      cause: metaResult.cause,
+    }
+  }
+
+  const tokenEndpoint = metaResult.data.token_endpoint
+  const refreshed = await refreshOAuthAccessToken({
+    tokenEndpoint,
+    clientId,
+    refreshToken,
+    apiProxy: params.apiProxy,
+  })
+  if (!refreshed.ok) {
+    return {
+      ok: false,
+      message: refreshed.message,
+      cause:
+        refreshed.cause ||
+        'OAuth refresh failed. Run `socket login` to re-authenticate.',
+    }
+  }
+
+  const nextRefreshToken =
+    refreshed.data.refresh_token &&
+    isNonEmptyString(refreshed.data.refresh_token)
+      ? refreshed.data.refresh_token
+      : refreshToken
+
+  const expiresAt = Date.now() + Math.max(0, refreshed.data.expires_in) * 1000
+
+  updateConfigValue(CONFIG_KEY_API_TOKEN, refreshed.data.access_token)
+  updateConfigValue(CONFIG_KEY_OAUTH_REFRESH_TOKEN, nextRefreshToken)
+  updateConfigValue(CONFIG_KEY_OAUTH_TOKEN_EXPIRES_AT, expiresAt)
+
+  // If scopes were not stored at login time, store whatever the server returned.
+  if (!getConfigValueOrUndef(CONFIG_KEY_OAUTH_SCOPES) && refreshed.data.scope) {
+    updateConfigValue(
+      CONFIG_KEY_OAUTH_SCOPES,
+      refreshed.data.scope.split(' ').filter(Boolean),
+    )
+  }
+
+  return { ok: true, data: { accessToken: refreshed.data.access_token } }
+}
+
 export async function setupSdk(
   options?: SetupSdkOptions | undefined,
 ): Promise<CResult<SocketSdk>> {
@@ -146,6 +243,44 @@ export async function setupSdk(
   }
 
   const { apiBaseUrl = getDefaultApiBaseUrl() } = opts
+
+  const oauthRefreshToken = getConfigValueOrUndef(
+    CONFIG_KEY_OAUTH_REFRESH_TOKEN,
+  )
+  const oauthExpiresAt = getConfigValueOrUndef(
+    CONFIG_KEY_OAUTH_TOKEN_EXPIRES_AT,
+  )
+  const shouldSkipOAuthRefresh =
+    isNonEmptyString(opts.apiToken) ||
+    isNonEmptyString(ENV.SOCKET_CLI_API_TOKEN)
+
+  // If OAuth is configured, treat the persisted `apiToken` as a short-lived access token and
+  // transparently refresh it when expired/near-expiry.
+  if (!shouldSkipOAuthRefresh && isNonEmptyString(oauthRefreshToken)) {
+    const now = Date.now()
+    const expiresAtMs =
+      typeof oauthExpiresAt === 'number' && Number.isFinite(oauthExpiresAt)
+        ? oauthExpiresAt
+        : null
+    const isExpiredOrMissing =
+      !apiToken || !expiresAtMs || expiresAtMs - now <= 60_000
+
+    if (isExpiredOrMissing) {
+      const refreshResult = await refreshOAuthApiTokenFromConfig({
+        apiBaseUrl,
+        apiProxy,
+      })
+      if (!refreshResult.ok) {
+        return {
+          ok: false,
+          message: refreshResult.message,
+          cause: refreshResult.cause,
+        }
+      }
+      apiToken = refreshResult.data.accessToken
+      _defaultToken = apiToken
+    }
+  }
 
   // Usage of HttpProxyAgent vs. HttpsProxyAgent based on the chart at:
   // https://github.com/delvedor/hpagent?tab=readme-ov-file#usage

@@ -36,9 +36,15 @@ import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
+  CONFIG_KEY_AUTH_BASE_URL,
   CONFIG_KEY_DEFAULT_ORG,
   CONFIG_KEY_ENFORCED_ORGS,
   CONFIG_KEY_ORG,
+  CONFIG_KEY_OAUTH_CLIENT_ID,
+  CONFIG_KEY_OAUTH_REDIRECT_URI,
+  CONFIG_KEY_OAUTH_REFRESH_TOKEN,
+  CONFIG_KEY_OAUTH_SCOPES,
+  CONFIG_KEY_OAUTH_TOKEN_EXPIRES_AT,
 } from '../constants/config.mts'
 import { getSocketAppDataPath } from '../constants/paths.mts'
 import { SOCKET_YAML, SOCKET_YML } from '../constants/socket.mts'
@@ -53,8 +59,14 @@ export interface LocalConfig {
   apiBaseUrl?: string | null | undefined
   apiProxy?: string | null | undefined
   apiToken?: string | null | undefined
+  authBaseUrl?: string | null | undefined
   defaultOrg?: string | undefined
   enforcedOrgs?: string[] | readonly string[] | null | undefined
+  oauthClientId?: string | null | undefined
+  oauthRedirectUri?: string | null | undefined
+  oauthRefreshToken?: string | null | undefined
+  oauthScopes?: string[] | readonly string[] | null | undefined
+  oauthTokenExpiresAt?: number | null | undefined
   skipAskToPersistDefaultOrg?: boolean | undefined
   // Convenience alias for defaultOrg.
   org?: string | undefined
@@ -62,6 +74,7 @@ export interface LocalConfig {
 
 const sensitiveConfigKeyLookup: Set<keyof LocalConfig> = new Set([
   CONFIG_KEY_API_TOKEN,
+  CONFIG_KEY_OAUTH_REFRESH_TOKEN,
 ])
 
 const supportedConfig: Map<keyof LocalConfig, string> = new Map([
@@ -72,12 +85,30 @@ const supportedConfig: Map<keyof LocalConfig, string> = new Map([
     'The Socket API token required to access most Socket API endpoints',
   ],
   [
+    CONFIG_KEY_AUTH_BASE_URL,
+    'Base URL of the OAuth authorization server (used by `socket login`)',
+  ],
+  [
     CONFIG_KEY_DEFAULT_ORG,
     'The default org slug to use; usually the org your Socket API token has access to. When set, all orgSlug arguments are implied to be this value.',
   ],
   [
     CONFIG_KEY_ENFORCED_ORGS,
     'Orgs in this list have their security policies enforced on this machine',
+  ],
+  [CONFIG_KEY_OAUTH_CLIENT_ID, 'OAuth client_id used by the Socket CLI'],
+  [
+    CONFIG_KEY_OAUTH_REDIRECT_URI,
+    'OAuth redirect URI used by the Socket CLI (must match the registered client redirect URIs)',
+  ],
+  [CONFIG_KEY_OAUTH_REFRESH_TOKEN, 'OAuth refresh token (sensitive)'],
+  [
+    CONFIG_KEY_OAUTH_SCOPES,
+    'OAuth scopes requested during CLI login (array of scope strings)',
+  ],
+  [
+    CONFIG_KEY_OAUTH_TOKEN_EXPIRES_AT,
+    'OAuth access token expiry timestamp (ms since epoch)',
   ],
   [
     'skipAskToPersistDefaultOrg',
@@ -109,8 +140,6 @@ function getConfigValues(): LocalConfig {
           logger.warn(`Failed to parse config at ${configFilePath}`)
           debugConfig(configFilePath, false, e)
         }
-      } else {
-        safeMkdirSync(socketAppDataPath, { recursive: true })
       }
     }
   }
@@ -348,6 +377,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
         writeFileSync(
           configFilePath,
           Buffer.from(jsonContent).toString('base64'),
+          { mode: 0o600 },
         )
       }
     })

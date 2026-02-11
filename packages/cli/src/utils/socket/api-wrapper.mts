@@ -1,7 +1,11 @@
 /** @fileoverview Simplified API wrapper to DRY out repetitive fetch-*.mts files */
 
 import { handleApiCall } from './api.mts'
-import { setupSdk } from './sdk.mts'
+import {
+  hasOAuthRefreshTokenConfigured,
+  refreshOAuthApiTokenFromConfig,
+  setupSdk,
+} from './sdk.mts'
 
 import type { BaseFetchOptions, CResult } from '../../types.mts'
 import type { SocketSdk } from '@socketsecurity/sdk'
@@ -22,7 +26,26 @@ export async function apiCall<T extends keyof SocketSdk>(
   }
   const sdk = sdkResult.data
 
-  return await handleApiCall((sdk[method] as any)(...args), { description })
+  const run = async (sdkInstance: SocketSdk) =>
+    await handleApiCall((sdkInstance[method] as any)(...args), { description })
+
+  let result = await run(sdk)
+  const code = (result as any)?.data?.code
+
+  if (code === 401 && hasOAuthRefreshTokenConfigured()) {
+    const refreshResult = await refreshOAuthApiTokenFromConfig({
+      apiBaseUrl: options?.sdkOpts?.apiBaseUrl,
+      apiProxy: options?.sdkOpts?.apiProxy,
+    })
+    if (refreshResult.ok) {
+      const refreshedSdkResult = await setupSdk(options?.sdkOpts)
+      if (refreshedSdkResult.ok) {
+        result = await run(refreshedSdkResult.data)
+      }
+    }
+  }
+
+  return result
 }
 
 /**
