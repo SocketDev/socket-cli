@@ -6,22 +6,16 @@
  *   node scripts/generate-cli-packages.mjs
  */
 
-import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+import { copyDirectory } from './utils.mjs'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const generatePath = path.join(__dirname, '..')
 const logger = getDefaultLogger()
-
-/**
- * Copy directory recursively.
- */
-async function copyDirectory(src, dest) {
-  await fs.cp(src, dest, { recursive: true })
-}
 
 /**
  * Package configurations.

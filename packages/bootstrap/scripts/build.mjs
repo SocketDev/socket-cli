@@ -49,7 +49,7 @@ function compressFile(filePath) {
   )
 }
 
-console.log('Building Socket bootstrap with esbuild...\\n')
+console.log('Building Socket bootstrap with esbuild...\n')
 
 try {
   // Create dist directory.
@@ -79,7 +79,7 @@ try {
   compressFile(npmConfig.outfile)
 
   // Build SEA version.
-  console.log('\\n→ Building SEA bootstrap...')
+  console.log('\n→ Building SEA bootstrap...')
   const seaResult = await build(seaConfig)
 
   // Write the transformed output (build had write: false).
@@ -102,7 +102,7 @@ try {
   compressFile(seaConfig.outfile)
 
   // Build index.js inflater.
-  console.log('\\n→ Building index.js inflater...')
+  console.log('\n→ Building index.js inflater...')
   const indexResult = await build(indexConfig)
 
   // Write the transformed output (build had write: false).
@@ -121,8 +121,9 @@ try {
     }
   }
 
-  console.log(`\\n${colors.green('✓')} Build completed successfully`)
+  console.log(`\n${colors.green('✓')} Build completed successfully`)
 } catch (error) {
-  console.error('\\n✗ Build failed:', error)
+  console.log('')
+  console.error('Build failed:', error)
   process.exit(1)
 }
