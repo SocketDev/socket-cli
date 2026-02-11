@@ -9,7 +9,6 @@
  * Test Coverage:
  * - Environment variable instruction generation with exact var names
  * - Instruction formatting and consistency validation
- * - Integration testing placeholder for actual env var checking
  *
  * Testing Approach:
  * Uses direct function invocation without mocks since env-helpers.mts provides pure
@@ -52,20 +51,4 @@ describe('env-helpers', () => {
     })
   })
 
-  describe('checkCiEnvVars (via integration)', () => {
-    it('should identify exact env var names in missing list', () => {
-      // This would test the actual checkCiEnvVars function.
-      // But since it reads from process.env which is cached in ENV,
-      // we rely on the integration tests to verify this behavior.
-
-      // The function should return exact env var names:
-      // - "CI"
-      // - "SOCKET_CLI_GIT_USER_EMAIL"
-      // - "SOCKET_CLI_GIT_USER_NAME"
-      // - "SOCKET_CLI_GITHUB_TOKEN (or GITHUB_TOKEN)"
-
-      // These exact strings should appear in the missing/present arrays.
-      expect(true).toBe(true) // Placeholder - actual testing done in integration.
-    })
-  })
 })

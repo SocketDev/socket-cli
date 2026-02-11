@@ -92,12 +92,6 @@ describe('constants', () => {
     )
   })
 
-  it('respects environment variable overrides', async () => {
-    // Environment overrides are handled at module load time, difficult to test.
-    // Skip this test for now.
-    expect(true).toBe(true)
-  })
-
   it('has correct command constants', async () => {
     const constants = (await import('../../src/constants.mts')).default
 
