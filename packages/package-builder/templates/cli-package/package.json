@@ -1,0 +1,59 @@
+{
+  "name": "@socketsecurity/cli",
+  "version": "2.1.0",
+  "description": "Socket CLI for Socket.dev security analysis",
+  "private": true,
+  "license": "MIT",
+  "bin": {
+    "socket": "bin/cli.js",
+    "socket-npm": "bin/npm-cli.js",
+    "socket-npx": "bin/npx-cli.js",
+    "socket-pnpm": "bin/pnpm-cli.js",
+    "socket-yarn": "bin/yarn-cli.js"
+  },
+  "files": [
+    "CHANGELOG.md",
+    "LICENSE",
+    "bin/**",
+    "data/**",
+    "dist/**",
+    "!dist/cli.js",
+    "logo-dark.png",
+    "logo-light.png"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "clean:dist": "del-cli 'dist'",
+    "test": "vitest run",
+    "verify": "node scripts/verify-package.mjs"
+  },
+  "devDependencies": {
+    "build-infra": "workspace:*",
+    "esbuild": "catalog:"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git",
+    "directory": "packages/cli"
+  },
+  "author": {
+    "name": "Socket Inc",
+    "email": "eng@socket.dev",
+    "url": "https://socket.dev"
+  },
+  "homepage": "https://github.com/SocketDev/socket-cli",
+  "keywords": [
+    "socket",
+    "security",
+    "cli",
+    "supply-chain",
+    "vulnerability"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

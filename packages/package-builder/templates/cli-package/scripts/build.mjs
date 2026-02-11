@@ -1,0 +1,111 @@
+/**
+ * @fileoverview Build script for Socket CLI.
+ * Delegates to esbuild config for actual build.
+ * Copies data/ and images from packages/cli.
+ */
+
+import { promises as fs } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const rootPath = path.join(__dirname, '..')
+const repoRoot = path.join(__dirname, '../../..')
+
+const logger = getDefaultLogger()
+
+async function main() {
+  try {
+    const cliPath = path.join(rootPath, '..', 'cli')
+
+    // Build CLI bundle.
+    logger.info('Building CLI bundle...')
+    let result = await spawn('node', ['.config/esbuild.cli.build.mjs'], {
+      shell: WIN32,
+      stdio: 'inherit',
+      cwd: rootPath,
+    })
+
+    if (!result) {
+      throw new Error('Failed to start CLI bundle build')
+    }
+
+    if (result.code !== 0) {
+      throw new Error(`CLI bundle build failed with exit code ${result.code}`)
+    }
+    logger.success('Built CLI bundle')
+
+    // Build index loader.
+    logger.info('Building index loader...')
+    result = await spawn('node', ['.config/esbuild.index.config.mjs'], {
+      shell: WIN32,
+      stdio: 'inherit',
+      cwd: rootPath,
+    })
+
+    if (!result) {
+      throw new Error('Failed to start index loader build')
+    }
+
+    if (result.code !== 0) {
+      throw new Error(`Index loader build failed with exit code ${result.code}`)
+    }
+    logger.success('Built index loader')
+
+    // Build shadow npm inject.
+    logger.info('Building shadow npm inject...')
+    result = await spawn('node', ['.config/esbuild.inject.config.mjs'], {
+      shell: WIN32,
+      stdio: 'inherit',
+      cwd: rootPath,
+    })
+
+    if (!result) {
+      throw new Error('Failed to start shadow npm inject build')
+    }
+
+    if (result.code !== 0) {
+      throw new Error(
+        `Shadow npm inject build failed with exit code ${result.code}`,
+      )
+    }
+    logger.success('Built shadow npm inject')
+
+    // Copy CLI to dist.
+    logger.info('Copying CLI to dist...')
+    await fs.copyFile(
+      path.join(rootPath, 'build', 'cli.js'),
+      path.join(rootPath, 'dist', 'cli.js'),
+    )
+    logger.success('Copied CLI to dist')
+
+    // Copy data directory from packages/cli.
+    logger.info('Copying data/ from packages/cli...')
+    await fs.cp(path.join(cliPath, 'data'), path.join(rootPath, 'data'), {
+      recursive: true,
+    })
+    logger.success('Copied data/')
+
+    // Copy files from repo root.
+    logger.info('Copying files from repo root...')
+    const filesToCopy = [
+      'CHANGELOG.md',
+      'LICENSE',
+      'logo-dark.png',
+      'logo-light.png',
+    ]
+    for (const file of filesToCopy) {
+      await fs.cp(path.join(repoRoot, file), path.join(rootPath, file))
+    }
+    logger.success('Copied files from repo root')
+  } catch (error) {
+    logger.error(`Build failed: ${error.message}`)
+    process.exitCode = 1
+  }
+}
+
+main()
