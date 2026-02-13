@@ -1,12 +1,12 @@
 ---
 name: quality-scan
-description: Performs comprehensive quality scans across codebase to identify critical bugs, logic errors, caching issues, and workflow problems. Spawns specialized agents for targeted analysis and generates prioritized improvement tasks. Use when improving code quality, before releases, or investigating issues.
+description: Cleans up junk files (SCREAMING_TEXT.md, temp files) and performs comprehensive quality scans across codebase to identify critical bugs, logic errors, caching issues, and workflow problems. Spawns specialized agents for targeted analysis and generates prioritized improvement tasks. Use when improving code quality, before releases, or investigating issues.
 ---
 
 # quality-scan
 
 <task>
-Your task is to perform comprehensive quality scans across the socket-btm codebase using specialized agents to identify critical bugs, logic errors, caching issues, and workflow problems. Generate a prioritized report with actionable improvement tasks.
+Your task is to perform comprehensive quality scans across the socket-btm codebase using specialized agents to identify critical bugs, logic errors, caching issues, and workflow problems. Before scanning, clean up junk files (SCREAMING_TEXT.md files, temporary test files, etc.) to ensure a clean and organized repository. Generate a prioritized report with actionable improvement tasks.
 </task>
 
 <context>
@@ -35,6 +35,7 @@ This is Socket Security's binary tooling manager (BTM) that:
 - Improves code quality systematically
 - Provides actionable fixes with file:line references
 - Prioritizes issues by severity for efficient remediation
+- Cleans up junk files for a well-organized repository
 
 **Agent Prompts:**
 All agent prompts are embedded in `reference.md` with structured <context>, <instructions>, <pattern>, and <output_format> tags following Claude best practices.
@@ -92,7 +93,82 @@ git status
 
 ---
 
-### Phase 2: Determine Scan Scope
+### Phase 2: Repository Cleanup
+
+<action>
+Clean up junk files and organize the repository before scanning:
+</action>
+
+**Cleanup Tasks:**
+
+1. **Remove SCREAMING_TEXT.md files** (all-caps .md files) that are NOT:
+   - Inside `.claude/` directory
+   - Inside `docs/` directory
+   - Named `README.md`, `LICENSE`, or `SECURITY.md`
+
+2. **Remove temporary test files** in wrong locations:
+   - `.test.mjs` or `.test.mts` files outside `test/` or `__tests__/` directories
+   - Temp files: `*.tmp`, `*.temp`, `.DS_Store`, `Thumbs.db`
+   - Editor backups: `*~`, `*.swp`, `*.swo`, `*.bak`
+   - Test artifacts: `*.log` files in root or package directories (not logs/)
+
+```bash
+# Find SCREAMING_TEXT.md files (all caps with .md extension)
+find . -type f -name '*.md' \
+  ! -path './.claude/*' \
+  ! -path './docs/*' \
+  ! -name 'README.md' \
+  ! -name 'LICENSE' \
+  ! -name 'SECURITY.md' \
+  | grep -E '/[A-Z_]+\.md$'
+
+# Find test files in wrong locations
+find . -type f \( -name '*.test.mjs' -o -name '*.test.mts' \) \
+  ! -path '*/test/*' \
+  ! -path '*/__tests__/*' \
+  ! -path '*/node_modules/*'
+
+# Find temp files
+find . -type f \( \
+  -name '*.tmp' -o \
+  -name '*.temp' -o \
+  -name '.DS_Store' -o \
+  -name 'Thumbs.db' -o \
+  -name '*~' -o \
+  -name '*.swp' -o \
+  -name '*.swo' -o \
+  -name '*.bak' \
+\) ! -path '*/node_modules/*'
+
+# Find log files in wrong places (not in logs/ or build/ directories)
+find . -type f -name '*.log' \
+  ! -path '*/logs/*' \
+  ! -path '*/build/*' \
+  ! -path '*/node_modules/*' \
+  ! -path '*/.git/*'
+```
+
+<validation>
+**For each file found:**
+1. Show the file path to user
+2. Explain why it's considered junk
+3. Ask user for confirmation before deleting (use AskUserQuestion)
+4. Delete confirmed files: `git rm` if tracked, `rm` if untracked
+5. Report files removed
+
+**If no junk files found:**
+- Report: "✓ Repository is clean - no junk files found"
+
+**Important:**
+- Always get user confirmation before deleting
+- Show file contents if user is unsure
+- Track deleted files for reporting
+
+</validation>
+
+---
+
+### Phase 3: Determine Scan Scope
 
 <action>
 Ask user which scans to run:
@@ -133,7 +209,7 @@ If user requests non-existent scan type, report error and suggest valid types.
 
 ---
 
-### Phase 3: Execute Scans
+### Phase 4: Execute Scans
 
 <action>
 For each enabled scan type, spawn a specialized agent using Task tool:
@@ -183,16 +259,56 @@ Scan systematically and report all findings. If no issues found, state that expl
 - Documentation scan: reference.md starting at line ~810
 
 <validation>
-For each scan completion:
+**Structured Output Validation:**
+
+After each agent returns, validate output structure before parsing:
+
+```bash
+# 1. Verify agent completed successfully
+if [ -z "$AGENT_OUTPUT" ]; then
+  echo "ERROR: Agent returned no output"
+  exit 1
+fi
+
+# 2. Check for findings or clean report
+if ! echo "$AGENT_OUTPUT" | grep -qE '(File:.*Issue:|No .* issues found|✓ Clean)'; then
+  echo "WARNING: Agent output missing expected format"
+  echo "Agent may have encountered an error or found no issues"
+fi
+
+# 3. Verify severity levels if findings exist
+if echo "$AGENT_OUTPUT" | grep -q "File:"; then
+  if ! echo "$AGENT_OUTPUT" | grep -qE 'Severity: (Critical|High|Medium|Low)'; then
+    echo "WARNING: Findings missing severity classification"
+  fi
+fi
+
+# 4. Verify fix suggestions if findings exist
+if echo "$AGENT_OUTPUT" | grep -q "File:"; then
+  if ! echo "$AGENT_OUTPUT" | grep -q "Fix:"; then
+    echo "WARNING: Findings missing suggested fixes"
+  fi
+fi
+```
+
+**Manual Verification Checklist:**
+- [ ] Agent output includes findings OR explicit "No issues found" statement
+- [ ] All findings include file:line references
+- [ ] All findings include severity level (Critical/High/Medium/Low)
+- [ ] All findings include suggested fixes
+- [ ] Agent output is parseable and structured
+
+**For each scan completion:**
 - Verify agent completed without errors
-- Extract findings from agent output
+- Extract findings from agent output (or confirm "No issues found")
 - Parse into structured format (file, issue, severity, fix)
 - Track scan coverage (files analyzed)
+- Log any validation warnings for debugging
 </validation>
 
 ---
 
-### Phase 4: Aggregate Findings
+### Phase 5: Aggregate Findings
 
 <action>
 Collect all findings from agents and aggregate:
@@ -231,7 +347,7 @@ interface Finding {
 
 ---
 
-### Phase 5: Generate Report
+### Phase 6: Generate Report
 
 <action>
 Create structured quality report with all findings:
@@ -304,7 +420,7 @@ Create structured quality report with all findings:
 
 ---
 
-### Phase 6: Complete
+### Phase 7: Complete
 
 <completion_signal>
 ```xml
@@ -317,11 +433,18 @@ Report these final metrics to the user:
 
 **Quality Scan Complete**
 ========================
+✓ Repository cleanup: N junk files removed
 ✓ Scans completed: [list of scan types]
 ✓ Total findings: N (N critical, N high, N medium, N low)
 ✓ Files scanned: N
 ✓ Report generated: Yes
 ✓ Scan duration: [calculated from start to end]
+
+**Repository Cleanup Summary:**
+- SCREAMING_TEXT.md files removed: N
+- Temporary test files removed: N
+- Temp/backup files removed: N
+- Log files cleaned up: N
 
 **Critical Issues Requiring Immediate Attention:**
 - N critical issues found

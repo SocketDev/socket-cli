@@ -77,10 +77,31 @@ Scan all code files across the monorepo for these critical bug patterns:
 - Buffer operations without size checks
 </pattern>
 
-For each bug found, think through:
-1. Can this actually crash in production?
-2. What input would trigger it?
-3. Is there existing safeguards I'm missing?
+<quality_guidelines>
+For each potential issue found, use explicit chain-of-thought reasoning with `<thinking>` tags:
+
+<thinking>
+1. Can this actually crash/fail in production?
+   - Code path analysis: [describe the execution flow]
+   - Production scenarios: [real-world conditions]
+   - Result: [yes/no with justification]
+
+2. What input would trigger this issue?
+   - Trigger conditions: [specific inputs/states]
+   - Edge cases: [boundary conditions]
+   - Likelihood: [HIGH/MEDIUM/LOW]
+
+3. Are there existing safeguards I'm missing?
+   - Defensive code: [try-catch, validation, guards]
+   - Framework protections: [built-in safety]
+   - Result: [SAFEGUARDED/VULNERABLE]
+
+Overall assessment: [REPORT/SKIP]
+Decision: [If REPORT, include in findings. If SKIP, explain why it's a false positive]
+</thinking>
+
+Only report issues that pass all three checks. Use `<thinking>` tags to show your reasoning explicitly.
+</quality_guidelines>
 </instructions>
 
 <output_format>
@@ -208,10 +229,31 @@ Binary format handling errors:
 - Cross-platform: Windows vs Unix path separators, line endings
 </pattern>
 
-Before reporting, think through:
-1. Does this logic error produce incorrect output?
-2. What specific input would trigger it?
-3. Is the error already handled elsewhere?
+<quality_guidelines>
+For each potential issue found, use explicit chain-of-thought reasoning with `<thinking>` tags:
+
+<thinking>
+1. Can this actually crash/fail in production?
+   - Code path analysis: [describe the execution flow]
+   - Production scenarios: [real-world conditions]
+   - Result: [yes/no with justification]
+
+2. What input would trigger this issue?
+   - Trigger conditions: [specific inputs/states]
+   - Edge cases: [boundary conditions]
+   - Likelihood: [HIGH/MEDIUM/LOW]
+
+3. Are there existing safeguards I'm missing?
+   - Defensive code: [try-catch, validation, guards]
+   - Framework protections: [built-in safety]
+   - Result: [SAFEGUARDED/VULNERABLE]
+
+Overall assessment: [REPORT/SKIP]
+Decision: [If REPORT, include in findings. If SKIP, explain why it's a false positive]
+</thinking>
+
+Only report issues that pass all three checks. Use `<thinking>` tags to show your reasoning explicitly.
+</quality_guidelines>
 </instructions>
 
 <output_format>
@@ -342,10 +384,31 @@ Uncommon scenarios:
 - Permission changes during caching
 </pattern>
 
-Think through each issue:
-1. Can this actually happen in production?
-2. What observable behavior results?
-3. How likely/severe is the impact?
+<quality_guidelines>
+For each potential issue found, use explicit chain-of-thought reasoning with `<thinking>` tags:
+
+<thinking>
+1. Can this actually crash/fail in production?
+   - Code path analysis: [describe the execution flow]
+   - Production scenarios: [real-world conditions]
+   - Result: [yes/no with justification]
+
+2. What input would trigger this issue?
+   - Trigger conditions: [specific inputs/states]
+   - Edge cases: [boundary conditions]
+   - Likelihood: [HIGH/MEDIUM/LOW]
+
+3. Are there existing safeguards I'm missing?
+   - Defensive code: [try-catch, validation, guards]
+   - Framework protections: [built-in safety]
+   - Result: [SAFEGUARDED/VULNERABLE]
+
+Overall assessment: [REPORT/SKIP]
+Decision: [If REPORT, include in findings. If SKIP, explain why it's a false positive]
+</thinking>
+
+Only report issues that pass all three checks. Use `<thinking>` tags to show your reasoning explicitly.
+</quality_guidelines>
 </instructions>
 
 <output_format>
@@ -469,10 +532,31 @@ Documentation and setup:
 - First-time setup: Can a new contributor get started easily?
 </pattern>
 
-For each issue, consider:
-1. Does this actually affect developers or CI?
-2. How often would this be encountered?
-3. Is there a simple fix?
+<quality_guidelines>
+For each potential issue found, use explicit chain-of-thought reasoning with `<thinking>` tags:
+
+<thinking>
+1. Can this actually crash/fail in production?
+   - Code path analysis: [describe the execution flow]
+   - Production scenarios: [real-world conditions]
+   - Result: [yes/no with justification]
+
+2. What input would trigger this issue?
+   - Trigger conditions: [specific inputs/states]
+   - Edge cases: [boundary conditions]
+   - Likelihood: [HIGH/MEDIUM/LOW]
+
+3. Are there existing safeguards I'm missing?
+   - Defensive code: [try-catch, validation, guards]
+   - Framework protections: [built-in safety]
+   - Result: [SAFEGUARDED/VULNERABLE]
+
+Overall assessment: [REPORT/SKIP]
+Decision: [If REPORT, include in findings. If SKIP, explain why it's a false positive]
+</thinking>
+
+Only report issues that pass all three checks. Use `<thinking>` tags to show your reasoning explicitly.
+</quality_guidelines>
 </instructions>
 
 <output_format>
@@ -928,11 +1012,31 @@ Look for:
 - Critical sections (75%+ of package) not mentioned
 </pattern>
 
-For each issue found:
-1. Read the documented information
-2. Read the actual code/config to verify
-3. Determine the discrepancy
-4. Provide the correct information
+<quality_guidelines>
+For each potential issue found, use explicit chain-of-thought reasoning with `<thinking>` tags:
+
+<thinking>
+1. Can this actually crash/fail in production?
+   - Code path analysis: [describe the execution flow]
+   - Production scenarios: [real-world conditions]
+   - Result: [yes/no with justification]
+
+2. What input would trigger this issue?
+   - Trigger conditions: [specific inputs/states]
+   - Edge cases: [boundary conditions]
+   - Likelihood: [HIGH/MEDIUM/LOW]
+
+3. Are there existing safeguards I'm missing?
+   - Defensive code: [try-catch, validation, guards]
+   - Framework protections: [built-in safety]
+   - Result: [SAFEGUARDED/VULNERABLE]
+
+Overall assessment: [REPORT/SKIP]
+Decision: [If REPORT, include in findings. If SKIP, explain why it's a false positive]
+</thinking>
+
+Only report issues that pass all three checks. Use `<thinking>` tags to show your reasoning explicitly.
+</quality_guidelines>
 </instructions>
 
 <output_format>
