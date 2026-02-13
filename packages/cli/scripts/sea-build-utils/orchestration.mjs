@@ -77,9 +77,9 @@ export async function buildTarget(target, entryPoint, options) {
     )
   } catch (e) {
     logger.warn(
-      `⚠️ Failed to download security tools for ${cacheId}: ${e.message}`,
+      `Failed to download security tools for ${cacheId}: ${e.message}`,
     )
-    logger.warn('⚠️ Building without security tools VFS')
+    logger.warn('Building without security tools VFS')
   }
 
   // Generate SEA configuration.
