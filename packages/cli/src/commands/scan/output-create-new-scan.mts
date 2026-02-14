@@ -91,12 +91,13 @@ export async function outputCreateNewScan(
 
   if (
     interactive &&
+    htmlReportUrl &&
     (await confirm({
       message: 'Would you like to open it in your browser?',
       default: false,
     }))
   ) {
-    await open(`${result.data.html_report_url}`)
+    await open(htmlReportUrl)
   }
 
   if (wasSpinning) {

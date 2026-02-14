@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import { promises as fs } from 'node:fs'
 import util from 'node:util'
 
 import colors from 'yoctocolors-cjs'
@@ -88,15 +88,15 @@ async function handleJson(
 
   if (file && file !== '-') {
     logger.log(`Writing json to \`${file}\``)
-    fs.writeFile(file, json, err => {
-      if (err) {
-        logger.fail(`Writing to \`${file}\` failed...`)
-        logger.error(err)
-      } else {
-        logger.success(`Data successfully written to \`${fileLink(file)}\``)
-      }
-      logger.error(dashboardMessage)
-    })
+    try {
+      await fs.writeFile(file, json, 'utf8')
+      logger.success(`Data successfully written to \`${fileLink(file)}\``)
+    } catch (err) {
+      logger.fail(`Writing to \`${file}\` failed...`)
+      logger.error(err)
+      process.exitCode = 1
+    }
+    logger.info(dashboardMessage)
   } else {
     // only .log goes to stdout
     logger.info('\n Diff scan result: \n')
