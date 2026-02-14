@@ -99,7 +99,7 @@ Supports version 2 format with `projectIgnorePaths` for excluding files from rep
 
 ## Contributing
 
-See [Getting Started](docs/development/getting-started.md) for setup instructions.
+**Setup instructions:**
 
 ```bash
 git clone https://github.com/SocketDev/socket-cli.git
@@ -109,7 +109,7 @@ pnpm run build
 pnpm test
 ```
 
-For local dependency linking, see [Development Linking](docs/development/linking.md).
+**Development commands:**
 
 ```bash
 pnpm run build                    # Smart build

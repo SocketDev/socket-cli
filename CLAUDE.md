@@ -74,14 +74,13 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 - **Build**: `pnpm run build` (smart build, skips unchanged)
 - **Build force**: `pnpm run build --force` (force rebuild CLI + SEA for current platform)
 - **Build SEA**: `pnpm run build:sea` (build SEA binaries for all platforms)
-- **Build source**: `pnpm build:dist:src` (CLI package only)
-- **Build types**: `pnpm run build:dist:types`
+- **Build CLI**: `pnpm run build:cli` (CLI package only)
 - **Test**: `pnpm test` (runs check + all tests from monorepo root)
 - **Test unit only**: `pnpm --filter @socketsecurity/cli run test:unit`
-- **Lint**: `pnpm run check:lint` (uses eslint)
-- **Type check**: `pnpm run check:tsc` (uses tsgo)
+- **Lint**: `pnpm run lint` (uses biome and eslint)
+- **Type check**: `pnpm run type` (uses tsc)
 - **Check all**: `pnpm run check` (lint + typecheck)
-- **Fix linting**: `pnpm run lint:fix`
+- **Fix all issues**: `pnpm run fix` (auto-fix linting and formatting)
 - **Commit without tests**: `git commit --no-verify` (skips pre-commit hooks including tests)
 
 ### Binary Build Notes
@@ -93,7 +92,7 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 
 ### Testing Best Practices - CRITICAL: NO -- FOR FILE PATHS
 - **🚨 NEVER USE `--` BEFORE TEST FILE PATHS** - This runs ALL tests, not just your specified files!
-- **Always build before testing**: Run `pnpm build:dist:src` before running tests to ensure dist files are up to date.
+- **Always build before testing**: Run `pnpm run build:cli` before running tests to ensure dist files are up to date.
 - **Test all**: ✅ CORRECT: `pnpm test` (from monorepo root)
 - **Test single file**: ✅ CORRECT: `pnpm --filter @socketsecurity/cli run test:unit src/commands/specific/cmd-file.test.mts`
   - ❌ WRONG: `pnpm test:unit src/commands/specific/cmd-file.test.mts` (command not found at root!)
