@@ -49,7 +49,8 @@ async function main() {
     logger.error(
       `Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`,
     )
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   // Special handling for 'all' target.
@@ -77,10 +78,10 @@ async function main() {
     logger.error(`Failed to publish ${target}`)
   }
 
-  process.exit(result.code ?? 1)
+  process.exitCode = result.code ?? 1
 }
 
 main().catch(e => {
   logger.error(e)
-  process.exit(1)
+  process.exitCode = 1
 })

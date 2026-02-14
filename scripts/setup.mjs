@@ -46,7 +46,8 @@ const skipPrereqs = process.argv.includes('--skip-prereqs')
 const skipGhCache = process.argv.includes('--skip-gh-cache')
 
 // Handle --help flag.
-if (process.argv.includes('--help') || process.argv.includes('-h')) {
+const showHelp = process.argv.includes('--help') || process.argv.includes('-h')
+if (showHelp) {
   logger.log(`
 Socket CLI Developer Setup
 
@@ -66,7 +67,7 @@ Examples:
   pnpm run setup --skip-gh-cache      # Skip cache (useful if cache is corrupt)
   pnpm run setup --skip-prereqs       # Skip checks, only restore cache
 `)
-  process.exit(0)
+  process.exitCode = 0
 }
 
 /**
@@ -377,26 +378,6 @@ async function generateCliSentryPackage() {
 /**
  * Generate socket package from template.
  */
-async function generateSocketPackage() {
-  if (!quiet) {
-    logger.log('Generating socket package from template...')
-  }
-
-  const scriptPath = new URL('../packages/package-builder/scripts/generate-socket-package.mjs', import.meta.url)
-  const result = await spawn('node', [scriptPath.pathname], {
-    stdio: quiet ? 'pipe' : 'inherit',
-  })
-
-  if (result.code === 0) {
-    if (!quiet) {
-      logger.log('socket package generated!')
-    }
-    return true
-  }
-
-  logger.warn('Failed to generate socket package')
-  return false
-}
 
 /**
  * Generate socketbin packages from template.
@@ -566,11 +547,6 @@ async function main() {
     logger.log('')
   }
 
-  await generateSocketPackage()
-  if (!quiet) {
-    logger.log('')
-  }
-
   await generateSocketbinPackages()
 
   if (!quiet) {
@@ -598,11 +574,13 @@ async function main() {
   return 0
 }
 
-main()
-  .then(code => {
-    process.exit(code)
-  })
-  .catch(error => {
-    logger.error(error.message)
-    process.exit(1)
-  })
+if (!showHelp) {
+  main()
+    .then(code => {
+      process.exitCode = code
+    })
+    .catch(error => {
+      logger.error(error.message)
+      process.exitCode = 1
+    })
+}
