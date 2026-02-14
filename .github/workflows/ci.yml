@@ -108,9 +108,9 @@ jobs:
           fi
 
           # Compute hashes with proper error handling.
-          PNPM_LOCK_HASH=$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)
-          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          CLI_CONFIG_HASH=$(sha256sum packages/cli/.config/*.mjs packages/cli/scripts/*.mjs | sha256sum | cut -d' ' -f1)
+          PNPM_LOCK_HASH=$(shasum -a 256 pnpm-lock.yaml | cut -d' ' -f1)
+          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          CLI_CONFIG_HASH=$(shasum -a 256 packages/cli/.config/*.mjs packages/cli/scripts/*.mjs | shasum -a 256 | cut -d' ' -f1)
 
           # Validate hashes were computed successfully.
           if [ -z "$PNPM_LOCK_HASH" ] || [ -z "$CLI_SRC_HASH" ] || [ -z "$CLI_CONFIG_HASH" ]; then
@@ -118,7 +118,7 @@ jobs:
             exit 1
           fi
 
-          CLI_COMBINED=$(echo "$PNPM_LOCK_HASH-$CLI_SRC_HASH-$CLI_CONFIG_HASH" | sha256sum | cut -d' ' -f1)
+          CLI_COMBINED=$(echo "$PNPM_LOCK_HASH-$CLI_SRC_HASH-$CLI_CONFIG_HASH" | shasum -a 256 | cut -d' ' -f1)
           echo "hash=$CLI_COMBINED" >> $GITHUB_OUTPUT
 
       - name: Restore CLI build cache
@@ -174,9 +174,9 @@ jobs:
           fi
 
           # Compute hashes with proper error handling.
-          PNPM_LOCK_HASH=$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)
-          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          CLI_CONFIG_HASH=$(sha256sum packages/cli/.config/*.mjs packages/cli/scripts/*.mjs | sha256sum | cut -d' ' -f1)
+          PNPM_LOCK_HASH=$(shasum -a 256 pnpm-lock.yaml | cut -d' ' -f1)
+          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          CLI_CONFIG_HASH=$(shasum -a 256 packages/cli/.config/*.mjs packages/cli/scripts/*.mjs | shasum -a 256 | cut -d' ' -f1)
 
           # Validate hashes were computed successfully.
           if [ -z "$PNPM_LOCK_HASH" ] || [ -z "$CLI_SRC_HASH" ] || [ -z "$CLI_CONFIG_HASH" ]; then
@@ -184,7 +184,7 @@ jobs:
             exit 1
           fi
 
-          CLI_COMBINED=$(echo "$PNPM_LOCK_HASH-$CLI_SRC_HASH-$CLI_CONFIG_HASH" | sha256sum | cut -d' ' -f1)
+          CLI_COMBINED=$(echo "$PNPM_LOCK_HASH-$CLI_SRC_HASH-$CLI_CONFIG_HASH" | shasum -a 256 | cut -d' ' -f1)
           echo "hash=$CLI_COMBINED" >> $GITHUB_OUTPUT
 
       - name: Restore CLI build cache
@@ -218,9 +218,9 @@ jobs:
           fi
 
           # SEA cache key (matches build-sea.yml).
-          SEA_HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          DEPS_HASH=$(find packages/bootstrap packages/socket -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" -o -name "*.json" \) ! -path "*/node_modules/*" ! -path "*/dist/*" ! -path "*/build/*" | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          LOCK_HASH=$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)
+          SEA_HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          DEPS_HASH=$(find packages/bootstrap packages/socket -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" -o -name "*.json" \) ! -path "*/node_modules/*" ! -path "*/dist/*" ! -path "*/build/*" | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          LOCK_HASH=$(shasum -a 256 pnpm-lock.yaml | cut -d' ' -f1)
 
           # Validate hashes were computed successfully.
           if [ -z "$SEA_HASH" ] || [ -z "$DEPS_HASH" ] || [ -z "$LOCK_HASH" ]; then
@@ -228,12 +228,12 @@ jobs:
             exit 1
           fi
 
-          SEA_DEPS_HASH=$(echo "$DEPS_HASH-$LOCK_HASH" | sha256sum | cut -d' ' -f1)
-          SEA_COMBINED=$(echo "$SEA_HASH-$SEA_DEPS_HASH" | sha256sum | cut -d' ' -f1)
+          SEA_DEPS_HASH=$(echo "$DEPS_HASH-$LOCK_HASH" | shasum -a 256 | cut -d' ' -f1)
+          SEA_COMBINED=$(echo "$SEA_HASH-$SEA_DEPS_HASH" | shasum -a 256 | cut -d' ' -f1)
           echo "sea-hash=$SEA_COMBINED" >> $GITHUB_OUTPUT
 
           # Smol cache key (matches build-smol.yml).
-          SMOL_HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f \( -name "*.patch" -o -name "*.template.patch" -o -name "*.mjs" -o -name "*.template.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          SMOL_HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f \( -name "*.patch" -o -name "*.template.patch" -o -name "*.mjs" -o -name "*.template.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
 
           # Validate smol hash was computed successfully.
           if [ -z "$SMOL_HASH" ]; then
@@ -241,8 +241,8 @@ jobs:
             exit 1
           fi
 
-          SMOL_DEPS_HASH=$(echo "$DEPS_HASH-$LOCK_HASH" | sha256sum | cut -d' ' -f1)
-          SMOL_COMBINED=$(echo "$SMOL_HASH-$SMOL_DEPS_HASH" | sha256sum | cut -d' ' -f1)
+          SMOL_DEPS_HASH=$(echo "$DEPS_HASH-$LOCK_HASH" | shasum -a 256 | cut -d' ' -f1)
+          SMOL_COMBINED=$(echo "$SMOL_HASH-$SMOL_DEPS_HASH" | shasum -a 256 | cut -d' ' -f1)
           echo "smol-hash=$SMOL_COMBINED" >> $GITHUB_OUTPUT
 
       - name: Restore SEA binary cache
@@ -377,9 +377,9 @@ jobs:
           fi
 
           # Compute hashes with proper error handling.
-          PNPM_LOCK_HASH=$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)
-          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          CLI_CONFIG_HASH=$(sha256sum packages/cli/.config/*.mjs packages/cli/scripts/*.mjs | sha256sum | cut -d' ' -f1)
+          PNPM_LOCK_HASH=$(shasum -a 256 pnpm-lock.yaml | cut -d' ' -f1)
+          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          CLI_CONFIG_HASH=$(shasum -a 256 packages/cli/.config/*.mjs packages/cli/scripts/*.mjs | shasum -a 256 | cut -d' ' -f1)
 
           # Validate hashes were computed successfully.
           if [ -z "$PNPM_LOCK_HASH" ] || [ -z "$CLI_SRC_HASH" ] || [ -z "$CLI_CONFIG_HASH" ]; then
@@ -387,7 +387,7 @@ jobs:
             exit 1
           fi
 
-          CLI_COMBINED=$(echo "$PNPM_LOCK_HASH-$CLI_SRC_HASH-$CLI_CONFIG_HASH" | sha256sum | cut -d' ' -f1)
+          CLI_COMBINED=$(echo "$PNPM_LOCK_HASH-$CLI_SRC_HASH-$CLI_CONFIG_HASH" | shasum -a 256 | cut -d' ' -f1)
           echo "hash=$CLI_COMBINED" >> $GITHUB_OUTPUT
 
       - name: Restore CLI build cache
