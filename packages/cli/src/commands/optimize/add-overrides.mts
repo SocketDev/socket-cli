@@ -140,10 +140,15 @@ export async function addOverrides(
             // ...if the spec doesn't start with a valid Socket override.
             !(
               thisSpec.startsWith(sockOverridePrefix) &&
-              // Check the validity of the spec by parsing it with npm-package-arg
-              // and seeing if it will coerce to a version.
-              semver.coerce((safeNpa(thisSpec) as AliasResult).subSpec.rawSpec)
-                ?.version
+              (() => {
+                // Check the validity of the spec by parsing it with npm-package-arg
+                // and seeing if it will coerce to a version.
+                const parsed = safeNpa(thisSpec)
+                if (!parsed || parsed.type !== 'alias') {
+                  return false
+                }
+                return semver.coerce(parsed.subSpec.rawSpec)?.version
+              })()
             )
           ) {
             thisSpec = sockOverrideSpec
@@ -209,9 +214,13 @@ export async function addOverrides(
                       // will strip leading v's, carets (^), comparators (<,<=,>,>=,=),
                       // and tildes (~). If not coerced to a valid version then
                       // default to the manifest entry version.
-                      semver.coerce(
-                        (safeNpa(thisSpec) as AliasResult).subSpec.rawSpec,
-                      )?.version ?? version,
+                      (() => {
+                        const parsed = safeNpa(thisSpec)
+                        if (parsed && parsed.type === 'alias') {
+                          return semver.coerce(parsed.subSpec.rawSpec)?.version ?? version
+                        }
+                        return version
+                      })(),
                     ) !== major
                   ) {
                     const manifest = await fetchPackageManifest(thisSpec)

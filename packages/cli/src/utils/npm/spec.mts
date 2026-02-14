@@ -94,6 +94,12 @@ export function safeParseNpmSpec(
       return { name: pkgSpec, version: undefined }
     }
 
+    // For scoped packages that didn't match regex, atIndex could be 0.
+    // Treat these as invalid specs.
+    if (atIndex === 0) {
+      return undefined
+    }
+
     return {
       name: pkgSpec.slice(0, atIndex),
       version: pkgSpec.slice(atIndex + 1),
