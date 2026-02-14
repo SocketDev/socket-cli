@@ -227,48 +227,90 @@ export class AssetManager {
     // Build full tag (e.g., 'node-smol-20251213-7cf90d2').
     const tag = `${tool}-${version}`
 
-    // Check if cached version matches requested version.
-    const tagPrefix = `${tool}-`
-    const cacheValid = await this.validateCache(versionPath, tag, tagPrefix)
+    // Create lock file to prevent concurrent downloads (TOCTOU mitigation).
+    const lockFile = normalizePath(path.join(toolDir, '.downloading'))
 
-    if (cacheValid && existsSync(binaryPath)) {
-      return binaryPath
-    }
-
-    // Clear stale cache if it exists.
-    if (existsSync(toolDir)) {
-      await this.clearStaleCache(toolDir)
-    }
-
-    // Map platform/arch to socket-btm release asset names.
-    const mappedPlatform = PLATFORM_MAP[platform]
-    const mappedArch = ARCH_MAP[arch]
-
-    if (!mappedPlatform || !mappedArch) {
-      throw new Error(`Unsupported platform/arch: ${platform}/${arch}`)
-    }
-
-    // Build asset filename.
-    // Format: {tool}-{platform}-{arch}[-musl][.exe]
-    const muslSuffix = libc === 'musl' ? '-musl' : ''
-    const assetFilename = `${binaryName}-${mappedPlatform}-${mappedArch}${muslSuffix}${isPlatWin ? '.exe' : ''}`
-
-    this.logger.log(`Downloading ${tool} from socket-btm ${tag}...`)
-
-    // Ensure target directory exists.
     await safeMkdir(toolDir)
 
-    // Download using github-releases helper (handles HTTP 302 redirects automatically).
-    await downloadReleaseAsset(tag, assetFilename, binaryPath)
-
-    // Write version file (store full tag for consistency).
-    await fs.writeFile(versionPath, tag, 'utf8')
-
-    // Make executable on Unix.
-    if (!isPlatWin) {
-      await fs.chmod(binaryPath, 0o755)
+    try {
+      // Try to create lock file atomically (wx = write + exclusive).
+      await fs.writeFile(lockFile, process.pid.toString(), { flag: 'wx' })
+    } catch (e) {
+      if (e.code === 'EEXIST') {
+        // Another process is downloading, wait and check for completion.
+        this.logger.log(`Another process is downloading ${tool}, waiting...`)
+        for (let i = 0; i < 60; i++) {
+          await new Promise(resolve => {
+            setTimeout(resolve, 1_000)
+          })
+          // Check if cached version matches requested version.
+          const tagPrefix = `${tool}-`
+          const cacheValid = await this.validateCache(versionPath, tag, tagPrefix)
+          if (cacheValid && existsSync(binaryPath)) {
+            return binaryPath
+          }
+        }
+        throw new Error(`Timeout waiting for another process to download ${tool}`)
+      }
+      throw e
     }
 
-    return binaryPath
+    try {
+      // Check if cached version matches requested version.
+      const tagPrefix = `${tool}-`
+      const cacheValid = await this.validateCache(versionPath, tag, tagPrefix)
+
+      if (cacheValid && existsSync(binaryPath)) {
+        return binaryPath
+      }
+
+      // Clear stale cache if it exists.
+      if (existsSync(toolDir)) {
+        // Remove version file and binary, but keep lock file.
+        if (existsSync(versionPath)) {
+          await safeDelete(versionPath)
+        }
+        if (existsSync(binaryPath)) {
+          await safeDelete(binaryPath)
+        }
+      }
+
+      // Map platform/arch to socket-btm release asset names.
+      const mappedPlatform = PLATFORM_MAP[platform]
+      const mappedArch = ARCH_MAP[arch]
+
+      if (!mappedPlatform || !mappedArch) {
+        throw new Error(`Unsupported platform/arch: ${platform}/${arch}`)
+      }
+
+      // Build asset filename.
+      // Format: {tool}-{platform}-{arch}[-musl][.exe]
+      const muslSuffix = libc === 'musl' ? '-musl' : ''
+      const assetFilename = `${binaryName}-${mappedPlatform}-${mappedArch}${muslSuffix}${isPlatWin ? '.exe' : ''}`
+
+      this.logger.log(`Downloading ${tool} from socket-btm ${tag}...`)
+
+      // Download using github-releases helper (handles HTTP 302 redirects automatically).
+      await downloadReleaseAsset(tag, assetFilename, binaryPath)
+
+      // Write version file (store full tag for consistency).
+      await fs.writeFile(versionPath, tag, 'utf8')
+
+      // Make executable on Unix.
+      if (!isPlatWin) {
+        await fs.chmod(binaryPath, 0o755)
+      }
+
+      return binaryPath
+    } finally {
+      // Clean up lock file.
+      try {
+        if (existsSync(lockFile)) {
+          await fs.unlink(lockFile)
+        }
+      } catch {
+        // Ignore cleanup errors.
+      }
+    }
   }
 }
