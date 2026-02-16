@@ -20,7 +20,15 @@ async function main() {
     chunks.push(chunk)
   }
   const input = Buffer.concat(chunks).toString('utf8')
-  const data = JSON.parse(input)
+
+  let data
+  try {
+    data = JSON.parse(input)
+  } catch (e) {
+    throw new Error(
+      `Failed to parse JSON input from stdin: ${e instanceof Error ? e.message : String(e)}`,
+    )
+  }
 
   // Dynamic import is needed here because AuditLogApp.tsx gets compiled to .js at build time.
   const { AuditLogApp } = await import(

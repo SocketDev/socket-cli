@@ -71,9 +71,9 @@ export type SocketBasicsResult = {
  * })
  *
  * if (result.ok && result.data.factsPath) {
- *   console.log('Socket facts:', result.data.factsPath)
- *   console.log('SAST findings:', result.data.findings.sast)
- *   console.log('Secrets found:', result.data.findings.secrets)
+ *   logger.log('Socket facts:', result.data.factsPath)
+ *   logger.log('SAST findings:', result.data.findings.sast)
+ *   logger.log('Secrets found:', result.data.findings.secrets)
  * }
  */
 export async function runSocketBasics(

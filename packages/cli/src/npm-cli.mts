@@ -2,14 +2,16 @@
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import shadowNpmBin from './shadow/npm/bin.mts'
+import { spawnSfw } from './utils/dlx/spawn.mjs'
 
 const logger = getDefaultLogger()
 
 export default async function runNpmCli() {
   process.exitCode = 1
 
-  const { spawnPromise } = await shadowNpmBin(process.argv.slice(2), {
+  // Forward to sfw (Socket Firewall).
+  // Auto-detects SEA vs npm CLI mode (VFS extraction vs dlx download).
+  const { spawnPromise } = await spawnSfw(['npm', ...process.argv.slice(2)], {
     stdio: 'inherit',
     cwd: process.cwd(),
     env: { ...process.env },

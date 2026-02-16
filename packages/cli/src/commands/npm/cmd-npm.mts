@@ -8,8 +8,8 @@ import {
   FLAG_JSON,
 } from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import shadowNpmBin from '../../shadow/npm/bin.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { spawnSfw } from '../../utils/dlx/spawn.mjs'
 import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
 import { filterFlags } from '../../utils/process/cmd.mts'
 import {
@@ -26,7 +26,7 @@ const logger = getDefaultLogger()
 
 export const CMD_NAME = NPM
 
-const description = 'Wraps npm with Socket security scanning'
+const description = 'Run npm with Socket Firewall security'
 
 const hidden = false
 
@@ -56,15 +56,15 @@ async function run(
     API Token Requirements
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
-    Note: Everything after "${NPM}" is passed to the ${NPM} command.
-          Only the \`${FLAG_DRY_RUN}\` and \`${FLAG_HELP}\` flags are caught here.
+    Note: Everything after "${CMD_NAME}" is forwarded to Socket Firewall (sfw).
+          Socket Firewall provides real-time security scanning for npm packages.
 
     Use \`socket wrapper on\` to alias this command as \`${NPM}\`.
 
     Examples
       $ ${command}
+      $ ${command} install cowsay
       $ ${command} install -g cowsay
-      $ ${command} exec cowsay
     `,
   }
 
@@ -82,23 +82,25 @@ async function run(
     return
   }
 
-  process.exitCode = 1
+  // Filter Socket flags from argv.
+  const filteredArgv = filterFlags(argv, config.flags)
 
-  // Filter Socket flags from argv but keep --json for npm.
-  const argsToForward = filterFlags(argv, { ...commonFlags, ...outputFlags }, [
-    FLAG_JSON,
-  ])
+  // Set default exit code to 1 (failure). Will be overwritten on success.
+  process.exitCode = 1
 
   // Track subprocess start.
   const subprocessStartTime = await trackSubprocessStart(NPM)
 
-  const { spawnPromise } = await shadowNpmBin(argsToForward, {
+  // Forward arguments to sfw (Socket Firewall).
+  // Auto-detects SEA vs npm CLI mode (VFS extraction vs dlx download).
+  const { spawnPromise } = await spawnSfw(['npm', ...filteredArgv], {
     stdio: 'inherit',
   })
 
   // Handle exit codes and signals using event-based pattern.
   // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on(
+  const { process: childProcess } = spawnPromise as any
+  childProcess.on(
     'exit',
     (code: number | null, signalName: NodeJS.Signals | null) => {
       // Track subprocess exit and flush telemetry before exiting.

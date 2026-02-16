@@ -26,9 +26,15 @@ import {
   resolveSocketPatch,
   resolveSfw,
 } from './resolve-binary.mjs'
+import {
+  areExternalToolsAvailable,
+  extractExternalTools,
+  getToolPaths,
+} from './vfs-extract.mjs'
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
 import ENV from '../../constants/env.mts'
 import { getErrorCause, InputError } from '../error/errors.mts'
+import { isSeaBinary } from '../sea/detect.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
 
 import type {
@@ -36,6 +42,7 @@ import type {
   ShadowBinResult,
 } from '../../shadow/npm-base.mjs'
 import type { CResult } from '../../types.mjs'
+import type { ExternalTool } from './vfs-extract.mjs'
 import type { SpawnExtra, SpawnResult } from '@socketsecurity/lib/spawn'
 
 export type DlxOptions = ShadowBinOptions & {
@@ -381,4 +388,250 @@ export async function spawnSynpDlx(
     { force: false, ...options },
     spawnExtra,
   )
+}
+
+/**
+ * VFS-based spawn functions for SEA binaries.
+ * These extract tools from VFS and execute them directly.
+ */
+
+/**
+ * Helper to spawn a tool from VFS extraction.
+ * Used when running in SEA mode.
+ */
+async function spawnToolVfs(
+  tool: ExternalTool,
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<ShadowBinResult> {
+  if (!areExternalToolsAvailable()) {
+    throw new Error(
+      `Cannot spawn ${tool} from VFS - tools not available in SEA mode`,
+    )
+  }
+
+  // Extract tools from VFS (returns paths directly).
+  const toolPaths = await extractExternalTools()
+  if (!toolPaths) {
+    throw new Error(`Failed to extract ${tool} from VFS`)
+  }
+
+  // Get tool path.
+  const toolPath = toolPaths[tool]
+
+  if (!toolPath) {
+    throw new Error(`Tool path not found for ${tool}`)
+  }
+
+  const { env: spawnEnv, ...dlxOptions } = {
+    __proto__: null,
+    ...options,
+  } as DlxOptions
+
+  // Spawn tool directly.
+  const spawnPromise = spawn(toolPath, args, {
+    ...dlxOptions,
+    env: {
+      ...process.env,
+      ...spawnEnv,
+    },
+    stdio: spawnExtra?.['stdio'] || 'inherit',
+  })
+
+  return {
+    spawnPromise,
+  }
+}
+
+/**
+ * Helper to spawn Socket Firewall (sfw) from VFS.
+ * Used when running in SEA mode.
+ */
+export async function spawnSfwVfs(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<ShadowBinResult> {
+  return await spawnToolVfs('sfw', args, options, spawnExtra)
+}
+
+/**
+ * Helper to spawn cdxgen from VFS.
+ * Used when running in SEA mode.
+ */
+export async function spawnCdxgenVfs(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<ShadowBinResult> {
+  return await spawnToolVfs('cdxgen', args, options, spawnExtra)
+}
+
+/**
+ * Helper to spawn Coana from VFS.
+ * Used when running in SEA mode.
+ */
+export async function spawnCoanaVfs(
+  args: string[] | readonly string[],
+  options?: CoanaDlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<CResult<string>> {
+  const {
+    coanaVersion,
+    env: spawnEnv,
+    ...dlxOptions
+  } = {
+    __proto__: null,
+    ...options,
+  } as CoanaDlxOptions
+
+  const mixinsEnv: Record<string, string> = {
+    SOCKET_CLI_VERSION: ENV.INLINED_SOCKET_CLI_VERSION || '',
+  }
+  const defaultApiToken = getDefaultApiToken()
+  if (defaultApiToken) {
+    mixinsEnv['SOCKET_CLI_API_TOKEN'] = defaultApiToken
+  }
+
+  const orgSlugCResult = await getDefaultOrgSlug()
+  if (orgSlugCResult.ok) {
+    mixinsEnv['SOCKET_ORG_SLUG'] = orgSlugCResult.data
+  }
+
+  const proxyUrl = getDefaultProxyUrl()
+  if (proxyUrl) {
+    mixinsEnv['SOCKET_CLI_API_PROXY'] = proxyUrl
+  }
+
+  try {
+    const result = await spawnToolVfs('coana', args, {
+      ...dlxOptions,
+      env: {
+        ...process.env,
+        ...mixinsEnv,
+        ...spawnEnv,
+      },
+    }, spawnExtra)
+
+    const output = await result.spawnPromise
+    return {
+      ok: true,
+      data: output.stdout?.toString() ?? '',
+    }
+  } catch (e) {
+    const stderr = (e as any)?.stderr
+    const cause = getErrorCause(e)
+    const message = stderr || cause
+    return {
+      ok: false,
+      data: e,
+      message,
+    }
+  }
+}
+
+/**
+ * Helper to spawn Socket Patch from VFS.
+ * Used when running in SEA mode.
+ */
+export async function spawnSocketPatchVfs(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<ShadowBinResult> {
+  return await spawnToolVfs('socket-patch', args, options, spawnExtra)
+}
+
+/**
+ * Helper to spawn synp from VFS.
+ * Used when running in SEA mode.
+ */
+export async function spawnSynpVfs(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<ShadowBinResult> {
+  return await spawnToolVfs('synp', args, options, spawnExtra)
+}
+
+/**
+ * High-level spawn functions that auto-detect SEA vs npm CLI mode.
+ * These choose between VFS extraction (SEA) and dlx download (npm CLI).
+ */
+
+/**
+ * Spawn Socket Firewall (sfw).
+ * Auto-detects SEA mode and uses appropriate spawn method.
+ */
+export async function spawnSfw(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<ShadowBinResult> {
+  if (isSeaBinary() && areExternalToolsAvailable()) {
+    return await spawnSfwVfs(args, options, spawnExtra)
+  }
+  return await spawnSfwDlx(args, options, spawnExtra)
+}
+
+/**
+ * Spawn cdxgen (CycloneDX generator).
+ * Auto-detects SEA mode and uses appropriate spawn method.
+ */
+export async function spawnCdxgen(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<ShadowBinResult> {
+  if (isSeaBinary() && areExternalToolsAvailable()) {
+    return await spawnCdxgenVfs(args, options, spawnExtra)
+  }
+  return await spawnCdxgenDlx(args, options, spawnExtra)
+}
+
+/**
+ * Spawn Coana CLI.
+ * Auto-detects SEA mode and uses appropriate spawn method.
+ */
+export async function spawnCoana(
+  args: string[] | readonly string[],
+  orgSlug?: string,
+  options?: CoanaDlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<CResult<string>> {
+  if (isSeaBinary() && areExternalToolsAvailable()) {
+    return await spawnCoanaVfs(args, options, spawnExtra)
+  }
+  return await spawnCoanaDlx(args, orgSlug, options, spawnExtra)
+}
+
+/**
+ * Spawn Socket Patch.
+ * Auto-detects SEA mode and uses appropriate spawn method.
+ */
+export async function spawnSocketPatch(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<ShadowBinResult> {
+  if (isSeaBinary() && areExternalToolsAvailable()) {
+    return await spawnSocketPatchVfs(args, options, spawnExtra)
+  }
+  return await spawnSocketPatchDlx(args, options, spawnExtra)
+}
+
+/**
+ * Spawn synp (package.json converter).
+ * Auto-detects SEA mode and uses appropriate spawn method.
+ */
+export async function spawnSynp(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<ShadowBinResult> {
+  if (isSeaBinary() && areExternalToolsAvailable()) {
+    return await spawnSynpVfs(args, options, spawnExtra)
+  }
+  return await spawnSynpDlx(args, options, spawnExtra)
 }

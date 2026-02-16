@@ -7,9 +7,10 @@ import {
   FLAG_HELP,
 } from '../../constants/cli.mts'
 import { commonFlags } from '../../flags.mts'
-import shadowNpxBin from '../../shadow/npx/bin.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { spawnSfw } from '../../utils/dlx/spawn.mjs'
 import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
+import { filterFlags } from '../../utils/process/cmd.mts'
 import {
   trackSubprocessExit,
   trackSubprocessStart,
@@ -24,7 +25,7 @@ const logger = getDefaultLogger()
 
 const CMD_NAME = NPX
 
-const description = 'Wraps npx with Socket security scanning'
+const description = 'Run npx with Socket Firewall security'
 
 const hidden = false
 
@@ -46,15 +47,15 @@ async function run(
     flags: {
       ...commonFlags,
     },
-    help: (command, _config) => `
+    help: command => `
     Usage
       $ ${command} ...
 
     API Token Requirements
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
-    Note: Everything after "${NPX}" is passed to the ${NPX} command.
-          Only the \`${FLAG_DRY_RUN}\` and \`${FLAG_HELP}\` flags are caught here.
+    Note: Everything after "${CMD_NAME}" is forwarded to Socket Firewall (sfw).
+          Socket Firewall provides real-time security scanning for npx packages.
 
     Use \`socket wrapper on\` to alias this command as \`${NPX}\`.
 
@@ -78,12 +79,20 @@ async function run(
     return
   }
 
+  // Filter Socket flags from argv.
+  const filteredArgv = filterFlags(argv, config.flags)
+
+  // Set default exit code to 1 (failure). Will be overwritten on success.
   process.exitCode = 1
 
   // Track subprocess start.
   const subprocessStartTime = await trackSubprocessStart(NPX)
 
-  const { spawnPromise } = await shadowNpxBin(argv, { stdio: 'inherit' })
+  // Forward arguments to sfw (Socket Firewall).
+  // Auto-detects SEA vs npm CLI mode (VFS extraction vs dlx download).
+  const { spawnPromise } = await spawnSfw(['npx', ...filteredArgv], {
+    stdio: 'inherit',
+  })
 
   // Handle exit codes and signals using event-based pattern.
   // See https://nodejs.org/api/child_process.html#event-exit.

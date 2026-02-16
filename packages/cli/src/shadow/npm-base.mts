@@ -20,7 +20,8 @@ import { NODE_MODULES } from '@socketsecurity/lib/paths/dirnames'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { spawnSync } from '@socketsecurity/lib/spawn'
 
-import { NPM, type NPX } from '../constants/agents.mts'
+import { NPM } from '../constants/agents.mts'
+import type { NPX } from '../constants/agents.mts'
 import { FLAG_LOGLEVEL } from '../constants/cli.mts'
 import ENV from '../constants/env.mts'
 import {
