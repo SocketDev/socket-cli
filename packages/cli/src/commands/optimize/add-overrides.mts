@@ -147,7 +147,7 @@ export async function addOverrides(
                 if (!parsed || parsed.type !== 'alias') {
                   return false
                 }
-                return semver.coerce(parsed.subSpec.rawSpec)?.version
+                return semver.coerce((parsed as AliasResult).subSpec.rawSpec)?.version
               })()
             )
           ) {
@@ -217,7 +217,7 @@ export async function addOverrides(
                       (() => {
                         const parsed = safeNpa(thisSpec)
                         if (parsed && parsed.type === 'alias') {
-                          return semver.coerce(parsed.subSpec.rawSpec)?.version ?? version
+                          return semver.coerce((parsed as AliasResult).subSpec.rawSpec)?.version ?? version
                         }
                         return version
                       })(),

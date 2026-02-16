@@ -101,7 +101,6 @@ export type ExternalTool = (typeof EXTERNAL_TOOLS)[number]
 // Map of npm package tools to their node_modules/ paths.
 // Standalone binaries (like sfw) are NOT in this map and extract to direct paths.
 const TOOL_NPM_PATHS: Partial<Record<ExternalTool, { packageName: string; binPath: string }>> = {
-  __proto__: null,
   cdxgen: {
     packageName: '@cyclonedx/cdxgen',
     binPath: 'node_modules/@cyclonedx/cdxgen/bin/cdxgen',
@@ -150,8 +149,9 @@ function getNodeSmolBasePath(): string {
 
   try {
     // Try to get hash from process.smol API (if available in future node-smol).
-    if (typeof (process as { smol?: { getHash?: () => string } }).smol?.getHash === 'function') {
-      nodeSmolHash = (process as { smol: { getHash: () => string } }).smol.getHash()
+    const processWithSmol = process as unknown as { smol?: { getHash?: () => string } }
+    if (typeof processWithSmol.smol?.getHash === 'function') {
+      nodeSmolHash = processWithSmol.smol.getHash()
     } else {
       // Fallback: hash based on Node.js version and platform.
       const hashInput = `${process.version}-${process.platform}-${process.arch}`
@@ -359,7 +359,7 @@ export async function extractExternalTools(): Promise<Record<ExternalTool, strin
         if (existsSync(cacheMarker)) {
           debug('notice', 'External tools extracted by another process')
           // Build toolPaths from cache and return.
-          const toolPaths: Partial<Record<ExternalTool, string>> = { __proto__: null }
+          const toolPaths: Partial<Record<ExternalTool, string>> = {}
           for (const tool of EXTERNAL_TOOLS) {
             const npmPath = TOOL_NPM_PATHS[tool]
             const toolPath = npmPath
@@ -380,7 +380,7 @@ export async function extractExternalTools(): Promise<Record<ExternalTool, strin
     // Check if already extracted (cache marker exists).
     if (existsSync(cacheMarker)) {
       debug('notice', 'External tools already extracted (cache marker found)')
-      const toolPaths: Partial<Record<ExternalTool, string>> = { __proto__: null }
+      const toolPaths: Partial<Record<ExternalTool, string>> = {}
       for (const tool of EXTERNAL_TOOLS) {
         const npmPath = TOOL_NPM_PATHS[tool]
         const toolPath = npmPath
@@ -392,7 +392,7 @@ export async function extractExternalTools(): Promise<Record<ExternalTool, strin
       return toolPaths as Record<ExternalTool, string>
     }
 
-    const toolPaths: Partial<Record<ExternalTool, string>> = { __proto__: null }
+    const toolPaths: Partial<Record<ExternalTool, string>> = {}
 
     for (const tool of EXTERNAL_TOOLS) {
       const npmPath = TOOL_NPM_PATHS[tool]
@@ -466,7 +466,7 @@ export function getToolPaths(): Record<ExternalTool, string> {
   const isPlatWin = process.platform === 'win32'
   const nodeSmolBase = getNodeSmolBasePath()
 
-  const paths: Partial<Record<ExternalTool, string>> = { __proto__: null }
+  const paths: Partial<Record<ExternalTool, string>> = {}
 
   for (const tool of EXTERNAL_TOOLS) {
     const npmPath = TOOL_NPM_PATHS[tool]
