@@ -13,15 +13,12 @@ Automated package generation system for Socket CLI distribution. Transforms temp
   - [Socketbin Packages](#socketbin-packages)
 - [Generator Scripts](#generator-scripts)
   - [generate-cli-packages.mjs](#generate-cli-packagesmjs)
-  - [generate-socket-package.mjs](#generate-socket-packagemjs)
   - [generate-socketbin-packages.mjs](#generate-socketbin-packagesmjs)
   - [generate-node-patches.mjs](#generate-node-patchesmjs)
 - [Build Process](#build-process)
   - [CLI Package Build](#cli-package-build)
-  - [Socket Package Build](#socket-package-build)
 - [Template Structure](#template-structure)
   - [CLI Package Template](#cli-package-template)
-  - [Socket Package Template](#socket-package-template)
   - [Socketbin Package Template](#socketbin-package-template)
 - [Package Validation](#package-validation)
 - [Build Output](#build-output)
@@ -78,7 +75,6 @@ Automated package generation system for Socket CLI distribution. Transforms temp
               │  Generated Packages:                     │
               │  • cli/                (npm package)     │
               │  • cli-with-sentry/    (npm package)     │
-              │  • socket/             (npm wrapper)     │
               │  • socketbin-cli-*/    (6 platforms)     │
               └──────────────────────────────────────────┘
 ```
@@ -108,9 +104,9 @@ Socket CLI uses a multi-channel distribution approach with VFS-based tool bundli
 │         Tools cached in ~/.socket/vfs-tools/               │
 │                                                            │
 │  4. socketbin-cli-{platform}-{arch}                        │
-│     └─→ SEA binary with embedded VFS (7 variants)          │
+│     └─→ SEA binary with embedded VFS (6 variants)          │
 │         • darwin-arm64, darwin-x64                         │
-│         • linux-arm64, linux-x64, linux-arm64-musl         │
+│         • linux-arm64, linux-x64                           │
 │         • win32-arm64, win32-x64                           │
 │         Binary contains: CLI code + external tools in VFS  │
 │                                                            │
@@ -157,23 +153,15 @@ Standard Node.js implementations with all CLI functionality.
 
 Installs platform-specific binaries via optionalDependencies.
 
-**socket**
-- npm wrapper that installs correct platform binary automatically.
-- Built from `templates/socket-package/`.
-- Lists `socketbin-cli-*` packages as optionalDependencies.
-- npm installs only the binary matching user's platform/arch.
-- Binary contains CLI + embedded VFS with external tools.
-
 ### Socketbin Packages
 
 Self-contained SEA binaries with embedded VFS.
 
 **socketbin-cli-{platform}-{arch}**
-- 7 packages total (darwin × 2, linux × 3, win32 × 2).
+- 6 packages total (darwin × 2, linux × 2, win32 × 2).
 - Generated from `templates/socketbin-package/`.
 - Contains single executable binary with CLI + VFS.
 - VFS includes: Python, OpenGrep, Trivy, TruffleHog, npm tools.
-- Used as optionalDependencies in socket wrapper.
 - Includes OS and CPU constraints in package.json.
 - First run: Extracts tools from VFS → `~/.socket/vfs-tools/`.
 
@@ -191,19 +179,6 @@ Output: build/cli/
         build/cli-with-sentry/
 
 Action: Recursive directory copy.
-```
-
-### generate-socket-package.mjs
-
-Creates the socket npm wrapper with platform binary dependencies.
-
-```
-Input:  templates/socket-package/
-
-Output: build/socket/
-
-Action: Recursive directory copy.
-        Package includes optionalDependencies for all platform binaries.
 ```
 
 ### generate-socketbin-packages.mjs
@@ -273,24 +248,6 @@ Located in `templates/cli-package/scripts/build.mjs`:
 - `bin/npx-cli.js` - npx wrapper.
 - `bin/pnpm-cli.js` - pnpm wrapper.
 - `bin/yarn-cli.js` - yarn wrapper.
-
-### Socket Package Build
-
-Located in `templates/socket-package/scripts/build.mjs`:
-
-```
-1. Ensure @socketsecurity/bootstrap built
-2. Build bootstrap.js from bootstrap-npm.mts
-3. Copy assets from repo root
-4. Make bootstrap.js executable (Unix)
-```
-
-**Build Configuration:**
-- Uses `esbuild.bootstrap.config.mjs`.
-- Bundles bootstrap package source.
-- Defines: `__MIN_NODE_VERSION__`, `__SOCKET_CLI_VERSION__`.
-- Target: Node.js 18+.
-- Minified identifiers and whitespace.
 
 ## Template Structure
 
@@ -379,7 +336,6 @@ Generated packages appear in `build/` directory:
 build/
 ├── cli/                      # @socketsecurity/cli
 ├── cli-with-sentry/          # @socketsecurity/cli-with-sentry
-├── socket/                   # socket wrapper
 ├── socketbin-cli-darwin-arm64/
 ├── socketbin-cli-darwin-x64/
 ├── socketbin-cli-linux-arm64/
@@ -422,7 +378,6 @@ All packages share version from monorepo:
 ```bash
 # From package-builder directory:
 node scripts/generate-cli-packages.mjs
-node scripts/generate-socket-package.mjs
 node scripts/generate-socketbin-packages.mjs
 ```
 
@@ -431,9 +386,6 @@ node scripts/generate-socketbin-packages.mjs
 ```bash
 # CLI packages only:
 node scripts/generate-cli-packages.mjs
-
-# Socket wrapper only:
-node scripts/generate-socket-package.mjs
 
 # Socketbin packages only:
 node scripts/generate-socketbin-packages.mjs
@@ -518,20 +470,13 @@ pnpm run verify
 4. **ESM Modules:** All scripts use `.mjs` extension.
 5. **Path Resolution:** Proper use of `fileURLToPath` and `path.join`.
 
-### Potential Improvements
+### Recent Improvements
 
-1. **Code Duplication:** `copyDirectory` function repeated in multiple scripts.
-   - Solution: Move to shared utility module.
-
-2. **Template Variable Injection:** Basic regex replacement could use template engine.
-   - Current approach works but limited to simple substitutions.
-
-3. **Build Orchestration:** No top-level script to generate all packages.
-   - Solution: Add `generate-all.mjs` that runs all generators.
-
-4. **No Package.json:** Package-builder itself has no package.json.
-   - Not an issue if always run from monorepo context.
-   - Could add for clarity and dependency tracking.
+1. **Handlebars Template Engine:** Upgraded from regex-based replacement to Handlebars.
+   - Supports conditional logic with `{{#if}}` and loops with `{{#each}}`.
+   - Backward compatible with existing `{{VARIABLE}}` syntax.
+   - Shared `processTemplate()` utility in `scripts/utils.mjs` for reuse.
+   - Enables advanced template features like helpers and partials.
 
 ## Summary
 

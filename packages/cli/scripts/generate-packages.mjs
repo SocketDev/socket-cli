@@ -16,7 +16,6 @@ const packageBuilderScripts = path.resolve(
 
 const scripts = [
   path.join(packageBuilderScripts, 'generate-cli-packages.mjs'),
-  path.join(packageBuilderScripts, 'generate-socket-package.mjs'),
   path.join(packageBuilderScripts, 'generate-socketbin-packages.mjs'),
 ]
 

@@ -8,7 +8,11 @@ import { fileURLToPath } from 'node:url'
 
 import { build } from 'esbuild'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import { createIndexConfig } from '../../cli/scripts/esbuild-shared.mjs'
+
+const logger = getDefaultLogger()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.resolve(__dirname, '..')
@@ -23,7 +27,7 @@ const config = createIndexConfig({
 // Run build if invoked directly.
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
   build(config).catch(error => {
-    console.error('Index loader build failed:', error)
+    logger.error('Index loader build failed:', error)
     process.exitCode = 1
   })
 }

@@ -7,12 +7,13 @@
  *   node scripts/generate-socketbin-packages.mjs
  */
 
-import { existsSync } from 'node:fs'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
+import { processTemplate } from './utils.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const generatePath = path.join(__dirname, '..')
@@ -38,19 +39,6 @@ const PACKAGES = [
 ]
 
 /**
- * Read template file and replace placeholders.
- */
-async function processTemplate(templatePath, replacements) {
-  let content = await readFile(templatePath, 'utf-8')
-
-  for (const { placeholder, value } of replacements) {
-    content = content.replace(new RegExp(`\\{\\{${placeholder}\\}\\}`, 'g'), value)
-  }
-
-  return content
-}
-
-/**
  * Generate a single socketbin package.
  */
 async function generatePackage(config) {
@@ -61,24 +49,25 @@ async function generatePackage(config) {
 
   const description = PLATFORM_DESCRIPTIONS[`${platform}-${arch}`] || `${platform} ${arch}`
 
-  const replacements = [
-    { placeholder: 'PLATFORM', value: platform },
-    { placeholder: 'ARCH', value: arch },
-    { placeholder: 'OS', value: os },
-    { placeholder: 'CPU', value: cpu },
-    { placeholder: 'BIN_EXT', value: binExt },
-    { placeholder: 'DESCRIPTION', value: description },
-  ]
+  // Template context for Handlebars.
+  const context = {
+    ARCH: arch,
+    BIN_EXT: binExt,
+    CPU: cpu,
+    DESCRIPTION: description,
+    OS: os,
+    PLATFORM: platform,
+  }
 
   // Create package directory.
-  await mkdir(packagePath, { recursive: true })
+  await fs.mkdir(packagePath, { recursive: true })
 
   // Generate package.json.
   const packageJsonContent = await processTemplate(
     path.join(templatePath, 'package.json.template'),
-    replacements,
+    context,
   )
-  await writeFile(
+  await fs.writeFile(
     path.join(packagePath, 'package.json'),
     `${packageJsonContent}\n`,
     'utf-8',
@@ -87,20 +76,20 @@ async function generatePackage(config) {
   // Generate README.md.
   const readmeContent = await processTemplate(
     path.join(templatePath, 'README.md.template'),
-    replacements,
+    context,
   )
-  await writeFile(
+  await fs.writeFile(
     path.join(packagePath, 'README.md'),
     readmeContent,
     'utf-8',
   )
 
   // Copy .gitignore.
-  const gitignoreContent = await readFile(
+  const gitignoreContent = await fs.readFile(
     path.join(templatePath, '.gitignore'),
     'utf-8',
   )
-  await writeFile(
+  await fs.writeFile(
     path.join(packagePath, '.gitignore'),
     gitignoreContent,
     'utf-8',
@@ -122,7 +111,8 @@ async function main() {
   const templatePath = path.join(generatePath, 'templates/socketbin-package')
   if (!existsSync(templatePath)) {
     logger.error(`Template directory not found: ${templatePath}`)
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   // Generate all packages.
@@ -137,5 +127,5 @@ async function main() {
 
 main().catch(e => {
   logger.error('Package generation failed:', e)
-  process.exit(1)
+  process.exitCode = 1
 })

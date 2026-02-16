@@ -9,7 +9,11 @@ import { fileURLToPath } from 'node:url'
 
 import { build } from 'esbuild'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import baseConfig from '../../cli/.config/esbuild.cli.build.mjs'
+
+const logger = getDefaultLogger()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -38,7 +42,7 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
       }
     })
     .catch(error => {
-      console.error('Build failed:', error)
+      logger.error('Build failed:', error)
       process.exitCode = 1
     })
 }

@@ -44,7 +44,7 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
       }
     })
     .catch(error => {
-      console.error('Build failed:', error)
+      logger.error('Build failed:', error)
       process.exitCode = 1
     })
 }

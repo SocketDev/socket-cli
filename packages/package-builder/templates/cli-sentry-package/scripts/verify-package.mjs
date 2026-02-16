@@ -10,6 +10,7 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const packageRoot = path.resolve(__dirname, '..')
+const logger = getDefaultLogger()
 
 /**
  * Check if a file exists and is readable.
@@ -27,7 +28,6 @@ async function fileExists(filePath) {
  * Main validation function.
  */
 async function validate() {
-  const logger = getDefaultLogger()
   logger.log('')
   logger.log('='.repeat(60))
   logger.log(`${colors.blue('CLI with Sentry Package Validation')}`)
@@ -150,12 +150,12 @@ async function validate() {
     logger.log('')
     logger.fail('Package validation FAILED')
     logger.log('')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   logger.success('Package validation PASSED')
   logger.log('')
-  process.exit(0)
 }
 
 // Run validation.
@@ -163,5 +163,5 @@ validate().catch(e => {
   logger.error('')
   logger.fail(`Unexpected error: ${e.message}`)
   logger.error('')
-  process.exit(1)
+  process.exitCode = 1
 })

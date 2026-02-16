@@ -9,6 +9,9 @@ import { parse } from '@babel/parser'
 import { default as traverseImport } from '@babel/traverse'
 import MagicString from 'magic-string'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
+const logger = getDefaultLogger()
 const traverse =
   typeof traverseImport === 'function' ? traverseImport : traverseImport.default
 
@@ -202,7 +205,7 @@ export function transformUnicodePropertyEscapes(content) {
     })
   } catch (e) {
     // If parsing fails, return content unchanged.
-    console.warn('Failed to parse code for Unicode transform:', e.message)
+    logger.warn('Failed to parse code for Unicode transform:', e.message)
     return content
   }
 

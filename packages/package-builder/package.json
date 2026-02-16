@@ -12,9 +12,9 @@
     "generate:patches": "node scripts/generate-node-patches.mjs"
   },
   "dependencies": {
-    "@socketsecurity/lib": "workspace:*"
+    "@socketsecurity/lib": "catalog:",
+    "handlebars": "^4.7.8"
   },
-  "devDependencies": {},
   "engines": {
     "node": ">=18.0.0"
   }

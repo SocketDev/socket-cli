@@ -1,4 +1,6 @@
 {
+  "$schema": "External tools configuration for Socket CLI VFS bundling",
+  "$comment": "Build process uses @npmcli/arborist (scripts/sea-build-utils/npm-packages.mjs) to download npm packages with full dependency trees. npm packages are bundled with node_modules/ into VFS alongside security tool binaries.",
   "@coana-tech/cli": {
     "description": "Coana CLI for static analysis and reachability detection",
     "type": "npm",

@@ -10,7 +10,7 @@
  * import { IMPORT_META_URL_BANNER } from 'build-infra/lib/esbuild-helpers'
  *
  * export default {
- *   // ... other config
+ *   // ... other config.
  *   banner: IMPORT_META_URL_BANNER,
  *   define: {
  *     'import.meta.url': '__importMetaUrl',

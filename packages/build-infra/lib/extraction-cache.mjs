@@ -8,10 +8,50 @@
  */
 
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
+/**
+ * Compute SHA256 hash of source file(s).
+ *
+ * For multiple sources, concatenates content and hashes together.
+ *
+ * @param {string[]} sourcePaths - Source file paths to hash
+ * @returns {Promise<string>} SHA256 hash (hex)
+ */
+export async function computeSourceHash(sourcePaths) {
+  const hash = createHash('sha256')
+
+  for (const sourcePath of sourcePaths) {
+    const content = readFileSync(sourcePath, 'utf-8')
+    hash.update(content)
+  }
+
+  return hash.digest('hex')
+}
+
+/**
+ * Ensure output directory exists.
+ *
+ * @param {string} outputPath - Output file path
+ */
+export function ensureOutputDir(outputPath) {
+  mkdirSync(path.dirname(outputPath), { recursive: true })
+}
+
+/**
+ * Generate source hash comment for embedding in output.
+ *
+ * @param {string|string[]} sourcePaths - Source file path(s)
+ * @returns {Promise<string>} Comment with hash (e.g., "Source hash: abc123...")
+ */
+export async function generateHashComment(sourcePaths) {
+  const sources = Array.isArray(sourcePaths) ? sourcePaths : [sourcePaths]
+  const hash = await computeSourceHash(sources)
+  return `Source hash: ${hash}`
+}
 
 /**
  * Check if extraction is needed based on source content hash.
@@ -71,7 +111,7 @@ export async function shouldExtract({
       return true
     }
 
-    // Cache hit!
+    // Cache hit.
     const logger = getDefaultLogger()
     logger.log(`✓ Using cached ${outputPath}`)
     return false
@@ -79,44 +119,4 @@ export async function shouldExtract({
     // Any error, regenerate.
     return true
   }
-}
-
-/**
- * Compute SHA256 hash of source file(s).
- *
- * For multiple sources, concatenates content and hashes together.
- *
- * @param {string[]} sourcePaths - Source file paths to hash
- * @returns {Promise<string>} SHA256 hash (hex)
- */
-export async function computeSourceHash(sourcePaths) {
-  const hash = createHash('sha256')
-
-  for (const sourcePath of sourcePaths) {
-    const content = readFileSync(sourcePath, 'utf-8')
-    hash.update(content)
-  }
-
-  return hash.digest('hex')
-}
-
-/**
- * Generate source hash comment for embedding in output.
- *
- * @param {string|string[]} sourcePaths - Source file path(s)
- * @returns {Promise<string>} Comment with hash (e.g., "Source hash: abc123...")
- */
-export async function generateHashComment(sourcePaths) {
-  const sources = Array.isArray(sourcePaths) ? sourcePaths : [sourcePaths]
-  const hash = await computeSourceHash(sources)
-  return `Source hash: ${hash}`
-}
-
-/**
- * Ensure output directory exists.
- *
- * @param {string} outputPath - Output file path
- */
-export function ensureOutputDir(outputPath) {
-  mkdirSync(path.dirname(outputPath), { recursive: true })
 }

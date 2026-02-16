@@ -12,11 +12,15 @@ import { fileURLToPath } from 'node:url'
 import { IMPORT_META_URL_BANNER } from 'build-infra/lib/esbuild-helpers'
 import { build } from 'esbuild'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import {
   createDefineEntries,
   envVarReplacementPlugin,
   getInlinedEnvVars,
 } from '../../cli/scripts/esbuild-shared.mjs'
+
+const logger = getDefaultLogger()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -86,10 +90,10 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
           writeFileSync(output.path, output.contents)
         }
       }
-      console.log('Built shadow-npm-inject.js')
+      logger.log('Built shadow-npm-inject.js')
     })
     .catch(error => {
-      console.error('Build failed:', error)
+      logger.error('Build failed:', error)
       process.exitCode = 1
     })
 }

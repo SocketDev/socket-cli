@@ -2,6 +2,8 @@
  * Shared utilities for fetching GitHub releases.
  */
 
+import path from 'node:path'
+
 import { createTtlCache } from '@socketsecurity/lib/cache-with-ttl'
 import { safeMkdir } from '@socketsecurity/lib/fs'
 import { httpDownload, httpRequest } from '@socketsecurity/lib/http-request'
@@ -38,6 +40,46 @@ function getAuthHeaders() {
 }
 
 /**
+ * Download a specific release asset.
+ *
+ * Uses browser_download_url to avoid consuming GitHub API quota.
+ * The httpDownload function from @socketsecurity/lib@5.1.3+ automatically
+ * follows HTTP redirects, eliminating the need for Octokit's getReleaseAsset API.
+ *
+ * @param {string} tag - Release tag name.
+ * @param {string} assetName - Asset name to download.
+ * @param {string} outputPath - Path to write the downloaded file.
+ * @param {object} [options] - Options.
+ * @param {boolean} [options.quiet] - Suppress log messages.
+ * @returns {Promise<void>}
+ */
+export async function downloadReleaseAsset(
+  tag,
+  assetName,
+  outputPath,
+  { quiet = false } = {},
+) {
+  // Get the browser_download_url for the asset (doesn't consume API quota for download).
+  const downloadUrl = await getReleaseAssetUrl(tag, assetName, { quiet })
+
+  if (!downloadUrl) {
+    throw new Error(`Asset ${assetName} not found in release ${tag}`)
+  }
+
+  // Create output directory.
+  await safeMkdir(path.dirname(outputPath))
+
+  // Download using httpDownload which supports redirects and retries.
+  // This avoids consuming GitHub API quota for the actual download.
+  await httpDownload(downloadUrl, outputPath, {
+    logger: quiet ? undefined : logger,
+    progressInterval: 10,
+    retries: 2,
+    retryDelay: 5_000,
+  })
+}
+
+/**
  * Get latest release tag for a tool with retry logic.
  *
  * @param {string} tool - Tool name (e.g., 'lief', 'binpress').
@@ -62,7 +104,14 @@ export async function getLatestRelease(tool, { quiet = false } = {}) {
           throw new Error(`Failed to fetch releases: ${response.status}`)
         }
 
-        const releases = JSON.parse(response.body)
+        let releases
+        try {
+          releases = JSON.parse(response.body)
+        } catch (e) {
+          throw new Error(
+            `Failed to parse GitHub API response: ${e instanceof Error ? e.message : String(e)}`,
+          )
+        }
 
         // Find the first release matching the tool prefix.
         for (const release of releases) {
@@ -83,7 +132,7 @@ export async function getLatestRelease(tool, { quiet = false } = {}) {
       },
       {
         backoffFactor: 1,
-        baseDelayMs: 5000,
+        baseDelayMs: 5_000,
         onRetry: (attempt, error) => {
           if (!quiet) {
             logger.info(
@@ -131,7 +180,14 @@ export async function getReleaseAssetUrl(
           throw new Error(`Failed to fetch release ${tag}: ${response.status}`)
         }
 
-        const release = JSON.parse(response.body)
+        let release
+        try {
+          release = JSON.parse(response.body)
+        } catch (e) {
+          throw new Error(
+            `Failed to parse GitHub release ${tag}: ${e instanceof Error ? e.message : String(e)}`,
+          )
+        }
 
         // Find the matching asset.
         const asset = release.assets.find(a => a.name === assetName)
@@ -148,7 +204,7 @@ export async function getReleaseAssetUrl(
       },
       {
         backoffFactor: 1,
-        baseDelayMs: 5000,
+        baseDelayMs: 5_000,
         onRetry: (attempt, error) => {
           if (!quiet) {
             logger.info(`  Retry attempt ${attempt + 1}/3 for asset URL...`)
@@ -158,47 +214,5 @@ export async function getReleaseAssetUrl(
         retries: 2,
       },
     )
-  })
-}
-
-/**
- * Download a specific release asset.
- *
- * Uses browser_download_url to avoid consuming GitHub API quota.
- * The httpDownload function from @socketsecurity/lib@5.1.3+ automatically
- * follows HTTP redirects, eliminating the need for Octokit's getReleaseAsset API.
- *
- * @param {string} tag - Release tag name.
- * @param {string} assetName - Asset name to download.
- * @param {string} outputPath - Path to write the downloaded file.
- * @param {object} [options] - Options.
- * @param {boolean} [options.quiet] - Suppress log messages.
- * @returns {Promise<void>}
- */
-export async function downloadReleaseAsset(
-  tag,
-  assetName,
-  outputPath,
-  { quiet = false } = {},
-) {
-  const path = await import('node:path')
-
-  // Get the browser_download_url for the asset (doesn't consume API quota for download)
-  const downloadUrl = await getReleaseAssetUrl(tag, assetName, { quiet })
-
-  if (!downloadUrl) {
-    throw new Error(`Asset ${assetName} not found in release ${tag}`)
-  }
-
-  // Create output directory
-  await safeMkdir(path.dirname(outputPath))
-
-  // Download using httpDownload which supports redirects and retries
-  // This avoids consuming GitHub API quota for the actual download
-  await httpDownload(downloadUrl, outputPath, {
-    logger: quiet ? undefined : logger,
-    progressInterval: 10,
-    retries: 2,
-    retryDelay: 5000,
   })
 }

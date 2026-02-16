@@ -23,7 +23,7 @@ const logger = getDefaultLogger()
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-// Parse arguments
+// Parse arguments.
 const args = process.argv.slice(2)
 const versionArg = args.find(arg => arg.startsWith('--version='))
 const NODE_VERSION = versionArg ? versionArg.split('=')[1] : 'v24.10.0'
@@ -32,29 +32,6 @@ const ROOT_DIR = join(__dirname, '..')
 const BUILD_DIR = join(ROOT_DIR, 'build')
 const NODE_DIR = join(BUILD_DIR, 'node-smol')
 const PATCHES_OUTPUT_DIR = join(ROOT_DIR, 'build', 'patches', 'socket')
-
-/**
- * Execute a command and capture output
- */
-async function exec(command, args = [], options = {}) {
-  const { cwd = process.cwd() } = options
-
-  logger.log(`$ ${command} ${args.join(' ')}`)
-
-  const result = await spawn(command, args, {
-    cwd,
-    stdio: 'pipe',
-    shell: false,
-  })
-
-  if (result.code !== 0) {
-    throw new Error(
-      `Command failed with exit code ${result.code}: ${result.stderr}`,
-    )
-  }
-
-  return result.stdout
-}
 
 /**
  * Generate fix-v8-include-paths patch
@@ -91,25 +68,37 @@ async function generateV8IncludePathsPatch() {
       continue
     }
 
-    // Create a git diff for this file
-    try {
-      const diff = await exec(
-        'git',
-        ['diff', '--no-index', '/dev/null', file],
-        {
-          cwd: NODE_DIR,
-        },
+    // Create a git diff for this file.
+    logger.log(`$ git diff --no-index /dev/null ${file}`)
+    const result = await spawn(
+      'git',
+      ['diff', '--no-index', '/dev/null', file],
+      {
+        cwd: NODE_DIR,
+        shell: false,
+        stdio: 'pipe',
+      },
+    )
+
+    // git diff returns exit code 1 when files differ, which is expected.
+    // Exit code 0 means files are identical (shouldn't happen with /dev/null).
+    // Any other exit code indicates an error (git not found, permissions, etc.).
+    if (result.code !== 0 && result.code !== 1) {
+      logger.warn(
+        `${colors.yellow('⚠')}  Skipping ${file}: git diff failed with exit code ${result.code}`,
       )
-      patchContent += `\n${diff}`
-    } catch (_e) {
-      // git diff returns non-zero for differences, which is expected.
-      logger.warn(`   Skipping ${file} (no changes or error)`)
+      if (result.stderr) {
+        logger.warn(`   ${result.stderr}`)
+      }
+      continue
     }
+
+    patchContent += `\n${result.stdout}`
   }
 
   const patchFile = join(
     PATCHES_OUTPUT_DIR,
-    `fix-v8-include-paths-${NODE_VERSION.replace('v', 'v')}.patch`,
+    `fix-v8-include-paths-${NODE_VERSION}.patch`,
   )
   await writeFile(patchFile, patchContent)
   logger.log(`${colors.green('✓')} Generated: ${patchFile}`)
@@ -148,7 +137,7 @@ async function generateSeaPatch() {
 
   const patchFile = join(
     PATCHES_OUTPUT_DIR,
-    `enable-sea-for-pkg-binaries-${NODE_VERSION.replace('v', 'v')}.patch`,
+    `enable-sea-for-pkg-binaries-${NODE_VERSION}.patch`,
   )
   await writeFile(patchFile, patchContent)
   logger.log(`${colors.green('✓')} Generated: ${patchFile}`)
@@ -163,7 +152,7 @@ async function main() {
   logger.log(`🔨 Generating Socket patches for Node.js ${NODE_VERSION}`)
   logger.log('')
 
-  // Check if Node.js directory exists
+  // Check if Node.js directory exists.
   if (!existsSync(NODE_DIR)) {
     throw new Error(
       `Node.js source directory not found: ${NODE_DIR}\n` +
@@ -171,10 +160,10 @@ async function main() {
     )
   }
 
-  // Ensure output directory exists
+  // Ensure output directory exists.
   await mkdir(PATCHES_OUTPUT_DIR, { recursive: true })
 
-  // Generate patches
+  // Generate patches.
   const patches = []
 
   try {
@@ -207,7 +196,7 @@ async function main() {
   logger.log('')
 }
 
-// Run main function
+// Run main function.
 main().catch(error => {
   logger.error(`${colors.red('✗')} Patch generation failed:`, error.message)
   process.exitCode = 1

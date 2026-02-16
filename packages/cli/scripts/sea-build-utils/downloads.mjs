@@ -37,7 +37,7 @@ export const logger = getDefaultLogger()
  * Contains version info, GitHub repos, and download metadata for security tools.
  */
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const externalToolsPath = path.join(__dirname, '../external-tools.json')
+const externalToolsPath = path.join(__dirname, '../../external-tools.json')
 export const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
 
 /**
@@ -237,9 +237,9 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
       logger.warn(
         `Cached tar.gz is too small (${stats.size} bytes), rebuilding...`,
       )
-      await fs.rm(tarGzPath, { force: true })
+      await safeDelete(tarGzPath)
     } else {
-      logger.log(`Security tools tar.gz already exists: ${tarGzPath}`)
+      logger.log(`External-tools tar.gz already exists: ${tarGzPath}`)
       return tarGzPath
     }
   }
@@ -271,11 +271,11 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
 
   const toolsForPlatform = PLATFORM_MAP_TOOLS[platformArch]
   if (!toolsForPlatform) {
-    logger.warn(`No security tools available for platform: ${platformArch}`)
+    logger.warn(`No external-tools available for platform: ${platformArch}`)
     return null
   }
 
-  logger.log(`Downloading security tools for ${platformArch}...`)
+  logger.log(`Downloading external-tools for ${platformArch}...`)
   await safeMkdir(toolsDir)
 
   // Download and extract each tool.
@@ -453,12 +453,12 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
   ])
 
   if (tarResult && tarResult.exitCode !== 0) {
-    throw new Error('Failed to create security tools tar.gz')
+    throw new Error('Failed to create external-tools tar.gz')
   }
 
   const tarStats = await fs.stat(tarGzPath)
-  logger.log(
-    `✓ Security tools packaged: ${(tarStats.size / 1_024 / 1_024).toFixed(2)} MB`,
+  logger.success(
+    `External-tools packaged: ${(tarStats.size / 1_024 / 1_024).toFixed(2)} MB`,
   )
 
   return tarGzPath

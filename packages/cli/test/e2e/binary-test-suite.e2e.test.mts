@@ -1,4 +1,31 @@
-/** @fileoverview Comprehensive E2E test suite for all Socket CLI binary types. Tests JS binary, smol Node.js binary, and SEA binary with caching support. */
+/**
+ * @fileoverview Comprehensive E2E test suite for all Socket CLI binary types.
+ *
+ * Tests ALL 73 CLI commands across 3 binary types:
+ * - JS binary (npm CLI) - Always tested
+ * - SEA binary (Single Executable Application) - Optional via TEST_SEA_BINARY=1
+ * - Smol binary - Optional via TEST_SMOL_BINARY=1
+ *
+ * Auto-build feature:
+ * - Missing binaries are automatically built without prompting (CI and local)
+ * - All builds use prebuilt binaries from socket-btm + binject (fast)
+ *
+ * Coverage:
+ * - Core commands (15): analytics, ask, audit-log, ci, console, fix, json, login, logout, oops, optimize, patch, threat-feed, whoami, wrapper
+ * - Config commands (6): config, config auto, config get, config list, config set, config unset
+ * - Install commands (4): install, install completion, uninstall, uninstall completion
+ * - Manifest commands (8): manifest, manifest auto, manifest cdxgen, manifest conda, manifest gradle, manifest kotlin, manifest scala, manifest setup
+ * - Organization commands (7): organization, organization dependencies, organization list, organization policy, organization policy license, organization policy security, organization quota
+ * - Package commands (3): package, package score, package shallow
+ * - Package manager wrappers (13): bundler, cargo, gem, go, npm, npx, nuget, pip, pnpm, raw-npm, raw-npx, uv, yarn
+ * - Repository commands (6): repository, repository create, repository del, repository list, repository update, repository view
+ * - Scan commands (11): scan, scan create, scan del, scan diff, scan github, scan list, scan metadata, scan reach, scan report, scan setup, scan view
+ *
+ * Test strategy:
+ * - Minimum test per command: --help (validates command loads without auth)
+ * - Auth-required commands: Basic execution test (with Socket API token)
+ * - Performance validation: Help commands execute within 5 seconds
+ */
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'
@@ -8,7 +35,6 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { confirm } from '@socketsecurity/lib/stdio/prompts'
 
 import ENV from '../../src/constants/env.mts'
 import { getDefaultApiToken } from '../../src/utils/socket/sdk.mts'
@@ -26,10 +52,10 @@ const MONOREPO_ROOT = path.resolve(ROOT_DIR, '../..')
 const BINARIES = {
   __proto__: null,
   js: {
-    buildCommand: null,
+    buildCommand: ['pnpm', '--filter', '@socketsecurity/cli', 'run', 'build:js'],
     enabled: true,
     name: 'JS Binary (dist/cli.js)',
-    path: path.join(ROOT_DIR, 'bin/cli.js'),
+    path: path.join(ROOT_DIR, 'dist/cli.js'),
   },
   sea: {
     buildCommand: [
@@ -126,31 +152,9 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         logger.log('')
         logger.warn(`Binary not found: ${binary.path}`)
 
-        // In CI: Skip building (rely on cache).
-        if (process.env.CI) {
-          logger.log('Running in CI - skipping build (binary not in cache)')
-          logger.log(
-            'To prime cache, run: gh workflow run publish-socketbin.yml --field dry-run=true',
-          )
-          logger.log('')
-          return
-        }
+        // All builds are fast (use prebuilt binaries from socket-btm + binject).
+        logger.log(`Auto-building ${binary.name}...`)
 
-        // Locally: Prompt user to build.
-        const timeWarning = binaryType === 'smol' ? ' (may take 30-60 min)' : ''
-        const shouldBuild = await confirm({
-          default: true,
-          message: `Build ${binary.name}?${timeWarning}`,
-        })
-
-        if (!shouldBuild) {
-          logger.log('Skipping build. Tests will be skipped.')
-          logger.log(`To build manually, run: ${binary.buildCommand.join(' ')}`)
-          logger.log('')
-          return
-        }
-
-        logger.log('Building binary...')
         const buildSuccess = await buildBinary(binaryType)
 
         if (buildSuccess) {
@@ -219,40 +223,295 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         expect(result.stdout).toContain('socket')
         expect(result.stdout).toContain('Main commands')
       })
+    })
 
-      it.skipIf(!ENV.RUN_E2E_TESTS)(
-        'should display scan command help',
-        async () => {
-          if (!binaryExists) {
-            return
-          }
+    describe('Core command help (no auth required)', () => {
+      const commands = [
+        'analytics',
+        'ask',
+        'audit-log',
+        'ci',
+        'console',
+        'fix',
+        'json',
+        'login',
+        'logout',
+        'oops',
+        'optimize',
+        'patch',
+        'threat-feed',
+        'whoami',
+        'wrapper',
+      ]
 
-          const result = await executeCliCommand(['scan', '--help'], {
-            binPath: binary.path,
-            isolateConfig: false,
-          })
+      commands.forEach(cmd => {
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd} command help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
 
-          expect(result.code).toBe(0)
-          expect(result.stdout).toContain('scan')
-        },
-      )
+            const result = await executeCliCommand([cmd, '--help'], {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
 
-      it.skipIf(!ENV.RUN_E2E_TESTS)(
-        'should display package command help',
-        async () => {
-          if (!binaryExists) {
-            return
-          }
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
+      })
+    })
 
-          const result = await executeCliCommand(['package', '--help'], {
-            binPath: binary.path,
-            isolateConfig: false,
-          })
+    describe('Config command help (no auth required)', () => {
+      const commands = [
+        ['config', '--help'],
+        ['config', 'auto', '--help'],
+        ['config', 'get', '--help'],
+        ['config', 'list', '--help'],
+        ['config', 'set', '--help'],
+        ['config', 'unset', '--help'],
+      ]
 
-          expect(result.code).toBe(0)
-          expect(result.stdout).toContain('package')
-        },
-      )
+      commands.forEach(cmd => {
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd.join(' ')} help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
+
+            const result = await executeCliCommand(cmd, {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
+
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
+      })
+    })
+
+    describe('Install/Uninstall command help (no auth required)', () => {
+      const commands = [
+        ['install', '--help'],
+        ['install', 'completion', '--help'],
+        ['uninstall', '--help'],
+        ['uninstall', 'completion', '--help'],
+      ]
+
+      commands.forEach(cmd => {
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd.join(' ')} help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
+
+            const result = await executeCliCommand(cmd, {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
+
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
+      })
+    })
+
+    describe('Manifest command help (no auth required)', () => {
+      const commands = [
+        ['manifest', '--help'],
+        ['manifest', 'auto', '--help'],
+        ['manifest', 'cdxgen', '--help'],
+        ['manifest', 'conda', '--help'],
+        ['manifest', 'gradle', '--help'],
+        ['manifest', 'kotlin', '--help'],
+        ['manifest', 'scala', '--help'],
+        ['manifest', 'setup', '--help'],
+      ]
+
+      commands.forEach(cmd => {
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd.join(' ')} help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
+
+            const result = await executeCliCommand(cmd, {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
+
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
+      })
+    })
+
+    describe('Organization command help (no auth required)', () => {
+      const commands = [
+        ['organization', '--help'],
+        ['organization', 'dependencies', '--help'],
+        ['organization', 'list', '--help'],
+        ['organization', 'policy', '--help'],
+        ['organization', 'policy', 'license', '--help'],
+        ['organization', 'policy', 'security', '--help'],
+        ['organization', 'quota', '--help'],
+      ]
+
+      commands.forEach(cmd => {
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd.join(' ')} help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
+
+            const result = await executeCliCommand(cmd, {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
+
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
+      })
+    })
+
+    describe('Package command help (no auth required)', () => {
+      const commands = [
+        ['package', '--help'],
+        ['package', 'score', '--help'],
+        ['package', 'shallow', '--help'],
+      ]
+
+      commands.forEach(cmd => {
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd.join(' ')} help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
+
+            const result = await executeCliCommand(cmd, {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
+
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
+      })
+    })
+
+    describe('Package manager wrapper command help (no auth required)', () => {
+      const commands = [
+        'bundler',
+        'cargo',
+        'gem',
+        'go',
+        'npm',
+        'npx',
+        'nuget',
+        'pip',
+        'pnpm',
+        'raw-npm',
+        'raw-npx',
+        'uv',
+        'yarn',
+      ]
+
+      commands.forEach(cmd => {
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd} command help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
+
+            const result = await executeCliCommand([cmd, '--help'], {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
+
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
+      })
+    })
+
+    describe('Repository command help (no auth required)', () => {
+      const commands = [
+        ['repository', '--help'],
+        ['repository', 'create', '--help'],
+        ['repository', 'del', '--help'],
+        ['repository', 'list', '--help'],
+        ['repository', 'update', '--help'],
+        ['repository', 'view', '--help'],
+      ]
+
+      commands.forEach(cmd => {
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd.join(' ')} help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
+
+            const result = await executeCliCommand(cmd, {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
+
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
+      })
+    })
+
+    describe('Scan command help (no auth required)', () => {
+      const commands = [
+        ['scan', '--help'],
+        ['scan', 'create', '--help'],
+        ['scan', 'del', '--help'],
+        ['scan', 'diff', '--help'],
+        ['scan', 'github', '--help'],
+        ['scan', 'list', '--help'],
+        ['scan', 'metadata', '--help'],
+        ['scan', 'reach', '--help'],
+        ['scan', 'report', '--help'],
+        ['scan', 'setup', '--help'],
+        ['scan', 'view', '--help'],
+      ]
+
+      commands.forEach(cmd => {
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd.join(' ')} help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
+
+            const result = await executeCliCommand(cmd, {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
+
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
+      })
     })
 
     describe('Auth-required commands', () => {

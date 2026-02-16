@@ -56,7 +56,7 @@ function removeDeadCode(code) {
       const testValue = evaluateTest(path.node.test)
 
       if (testValue === false) {
-        // if (false) { ... } [else { ... }]
+        // if (false) { ... } [else { ... }].
         // Remove entire if statement, keep else block if present.
         if (path.node.alternate) {
           // Replace if statement with else block content.
@@ -88,7 +88,7 @@ function removeDeadCode(code) {
           })
         }
       } else if (testValue === true) {
-        // if (true) { ... } [else { ... }]
+        // if (true) { ... } [else { ... }].
         // Keep consequent, remove else block.
         const { consequent } = path.node
         if (consequent.type === 'BlockStatement') {
@@ -132,7 +132,7 @@ export function deadCodeEliminationPlugin() {
     setup(build) {
       build.onEnd(result => {
         const outputs = result.outputFiles
-        if (!outputs || outputs.length === 0) {
+        if (!outputs || !outputs.length) {
           return
         }
 

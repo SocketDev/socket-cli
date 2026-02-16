@@ -39,5 +39,5 @@ async function main() {
 
 main().catch(e => {
   logger.error('Package generation failed:', e)
-  process.exit(1)
+  process.exitCode = 1
 })

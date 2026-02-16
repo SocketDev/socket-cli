@@ -25,7 +25,7 @@ export function unicodeTransformPlugin() {
     setup(build) {
       build.onEnd(result => {
         const outputs = result.outputFiles
-        if (!outputs || outputs.length === 0) {
+        if (!outputs || !outputs.length) {
           return
         }
 

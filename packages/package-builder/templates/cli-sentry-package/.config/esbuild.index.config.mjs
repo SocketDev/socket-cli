@@ -23,7 +23,7 @@ const config = createIndexConfig({
 // Run build if invoked directly.
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
   build(config).catch(error => {
-    console.error('Index loader build failed:', error)
+    logger.error('Index loader build failed:', error)
     process.exitCode = 1
   })
 }

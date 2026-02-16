@@ -2,7 +2,7 @@
  * @fileoverview Tests for @socketsecurity/cli-with-sentry package structure and configuration.
  */
 
-import { existsSync, promises as fs  } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 

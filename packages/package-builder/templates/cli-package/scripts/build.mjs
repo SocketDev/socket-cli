@@ -102,8 +102,8 @@ async function main() {
       await fs.cp(path.join(repoRoot, file), path.join(rootPath, file))
     }
     logger.success('Copied files from repo root')
-  } catch (error) {
-    logger.error(`Build failed: ${error.message}`)
+  } catch (e) {
+    logger.error(`Build failed: ${e.message}`)
     process.exitCode = 1
   }
 }
