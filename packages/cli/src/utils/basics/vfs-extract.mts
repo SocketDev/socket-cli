@@ -322,8 +322,8 @@ export async function extractSecurityTools(
  * const toolsDir = await extractSecurityTools()
  * if (toolsDir) {
  *   const paths = getToolPaths(toolsDir)
- *   console.log('Python:', paths.python)
- *   console.log('Trivy:', paths.trivy)
+ *   logger.log('Python:', paths.python)
+ *   logger.log('Trivy:', paths.trivy)
  * }
  */
 export function getToolPaths(toolsDir: string): {
