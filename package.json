@@ -1,7 +1,7 @@
 {
   "name": "socket-cli-monorepo",
   "version": "0.0.0",
-  "packageManager": "pnpm@10.28.2",
+  "packageManager": "pnpm@10.29.3",
   "private": true,
   "engines": {
     "node": ">=25.5.0",
@@ -164,7 +164,7 @@
       "es-define-property": "catalog:",
       "es-set-tostringtag": "catalog:",
       "function-bind": "catalog:",
-      "glob": ">=13.0.0",
+      "glob": ">=13.0.3",
       "globalthis": "catalog:",
       "gopd": "catalog:",
       "graceful-fs": "catalog:",
@@ -181,7 +181,7 @@
       "npm-package-arg": "catalog:",
       "packageurl-js": "catalog:",
       "path-parse": "catalog:",
-      "qs": ">=6.14.1",
+      "qs": ">=6.14.2",
       "safe-buffer": "catalog:",
       "safer-buffer": "catalog:",
       "semver": "catalog:",

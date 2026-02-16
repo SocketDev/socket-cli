@@ -87,7 +87,7 @@
     "@socketsecurity/lib": "catalog:",
     "@socketsecurity/registry": "catalog:",
     "@socketsecurity/sdk": "catalog:",
-    "@types/react": "^19.2.9",
+    "@types/react": "^19.2.14",
     "ajv-dist": "catalog:",
     "ansi-regex": "catalog:",
     "brace-expansion": "catalog:",
