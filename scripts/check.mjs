@@ -3,6 +3,9 @@
  * Runs code quality checks: ESLint and TypeScript type checking across packages.
  */
 
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { isQuiet } from '@socketsecurity/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
@@ -16,6 +19,9 @@ import {
   getPackagesWithScript,
   runAcrossPackages,
 } from './utils/monorepo-helper.mjs'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const scriptsDir = __dirname
 
 const logger = getDefaultLogger()
 
@@ -218,7 +224,7 @@ async function main() {
       }
       const validateResult = await spawn(
         'node',
-        ['scripts/validate-no-link-deps.mjs'],
+        [path.join(scriptsDir, 'validate-no-link-deps.mjs')],
         {
           shell: WIN32,
           stdio: 'pipe',
@@ -254,7 +260,7 @@ async function main() {
       }
       const bundleResult = await spawn(
         'node',
-        ['scripts/validate-bundle-deps.mjs'],
+        [path.join(scriptsDir, 'validate-bundle-deps.mjs')],
         {
           shell: WIN32,
           stdio: 'pipe',
@@ -290,7 +296,7 @@ async function main() {
       }
       const cdnResult = await spawn(
         'node',
-        ['scripts/validate-no-cdn-refs.mjs'],
+        [path.join(scriptsDir, 'validate-no-cdn-refs.mjs')],
         {
           shell: WIN32,
           stdio: 'pipe',
@@ -327,7 +333,7 @@ async function main() {
       }
       const sizeResult = await spawn(
         'node',
-        ['scripts/validate-file-size.mjs'],
+        [path.join(scriptsDir, 'validate-file-size.mjs')],
         {
           shell: WIN32,
           stdio: 'pipe',
