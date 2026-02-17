@@ -525,11 +525,8 @@ CI pipeline issues:
 
 <pattern name="developer_experience">
 Documentation and setup:
-- README: Setup instructions clear and complete?
 - Common errors: Are frequent issues documented with solutions?
-- Required tools: List of prerequisites (Node.js version, pnpm, etc.)?
 - Environment variables: Are required env vars documented?
-- First-time setup: Can a new contributor get started easily?
 </pattern>
 
 <quality_guidelines>
@@ -933,7 +930,6 @@ Systematically verify all README files and documentation against the actual code
    - API examples match actual exported functions/types
    - Configuration examples match actual schema/validation
    - Version numbers are current (not outdated)
-   - Prerequisites are accurate (correct tool versions)
 
 3. **Check against actual code**:
    - Read package.json to verify names, scripts, dependencies
