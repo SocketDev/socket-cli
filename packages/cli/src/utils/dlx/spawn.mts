@@ -29,7 +29,6 @@ import {
 import {
   areExternalToolsAvailable,
   extractExternalTools,
-  getToolPaths,
 } from './vfs-extract.mjs'
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
 import ENV from '../../constants/env.mts'

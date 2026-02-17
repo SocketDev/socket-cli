@@ -63,15 +63,15 @@ async function downloadCli(): Promise<void> {
     )
 
     let tarballName = ''
-    npmPackProcess.stdout?.on('data', data => {
+    npmPackProcess.process.stdout?.on('data', (data: Buffer) => {
       tarballName += data.toString()
     })
 
-    npmPackProcess.on('error', e => {
+    npmPackProcess.process.on('error', (e: Error) => {
       reject(new Error(`Failed to run npm pack: ${e}`))
     })
 
-    npmPackProcess.on('exit', async code => {
+    npmPackProcess.process.on('exit', async (code: number | null) => {
       if (code !== 0) {
         reject(new Error(`npm pack exited with code ${code}`))
         return
@@ -90,11 +90,11 @@ async function downloadCli(): Promise<void> {
           },
         )
 
-        tarExtractProcess.on('error', e => {
+        tarExtractProcess.process.on('error', (e: Error) => {
           reject(new Error(`Failed to extract tarball: ${e}`))
         })
 
-        tarExtractProcess.on('exit', async extractCode => {
+        tarExtractProcess.process.on('exit', async (extractCode: number | null) => {
           if (extractCode !== 0) {
             reject(new Error(`tar extraction exited with code ${extractCode}`))
             return
@@ -143,13 +143,13 @@ async function main(): Promise<void> {
     },
   )
 
-  child.on('error', error => {
+  child.process.on('error', (error: Error) => {
     logger.error('Failed to spawn CLI:', error)
     // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   })
 
-  child.on('exit', (code, signal) => {
+  child.process.on('exit', (code: number | null, signal: NodeJS.Signals | null) => {
     // eslint-disable-next-line n/no-process-exit
     process.exit(code ?? (signal ? 1 : 0))
   })

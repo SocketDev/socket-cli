@@ -1,11 +1,7 @@
 import { NPX } from '@socketsecurity/lib/constants/agents'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_DRY_RUN,
-  FLAG_HELP,
-} from '../../constants/cli.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { spawnSfw } from '../../utils/dlx/spawn.mjs'
