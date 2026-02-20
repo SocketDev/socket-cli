@@ -42,7 +42,6 @@ import {
 import { isDebug } from '../debug.mts'
 import { tildify } from '../fs/home-path.mts'
 import { getFlagListOutput, getHelpListOutput } from '../output/formatting.mts'
-import { spawnSocketPyCli } from '../python/standalone.mts'
 import { getVisibleTokenPrefix } from '../socket/sdk.mjs'
 import {
   renderLogoWithFallback,
@@ -609,51 +608,14 @@ export async function meowWithSubcommands(
         return
       }
 
-      // Try forwarding to socket-python CLI for unrecognized commands.
-      // This enables commands like: socket report, socket purl, etc.
-      const pythonResult = await spawnSocketPyCli(commandArgv, {
-        stdio: 'inherit',
-      })
-      if (pythonResult.ok) {
-        // Successfully handled by Python CLI.
-        return
-      }
-      // If Python CLI also failed, fall through to show help.
-    }
-  }
-
-  // If first arg is a flag (starts with --), try Python CLI forwarding.
-  // This enables: socket --repo owner/repo --target-path .
-  // Exception: Don't forward Node.js CLI built-in flags (help, version, etc).
-  const nodeCliFlags = new Set([
-    '--compact-header',
-    '--config',
-    '--dry-run',
-    '--help',
-    '--help-full',
-    '--json',
-    '--markdown',
-    '--no-banner',
-    '--no-spinner',
-    '--nobanner',
-    '--org',
-    '--spinner',
-    '--version',
-  ])
-  // Extract base flag name for --flag=value syntax (e.g., '--config=/path' -> '--config').
-  const baseFlagName = commandOrAliasName?.split('=')[0]
-  if (
-    commandOrAliasName?.startsWith('--') &&
-    !nodeCliFlags.has(baseFlagName ?? '')
-  ) {
-    const pythonResult = await spawnSocketPyCli(argv, {
-      stdio: 'inherit',
-    })
-    if (pythonResult.ok) {
-      // Successfully handled by Python CLI.
+      // Unknown command with no suggestion - show error and fall through to help.
+      process.exitCode = 2
+      logger.fail(`Unknown command "${commandName}".`)
+      logger.info(
+        'Tip: Use `socket pycli` to invoke the Python CLI directly.',
+      )
       return
     }
-    // If Python CLI failed, fall through to show help.
   }
 
   const lines = ['', 'Usage', `  $ ${name} <command>`]
@@ -695,6 +657,7 @@ export async function meowWithSubcommands(
       'patch',
       'pip',
       // PNPM,
+      'pycli',
       'raw-npm',
       'raw-npx',
       'repository',
@@ -754,6 +717,7 @@ export async function meowWithSubcommands(
       `  manifest                    ${description(subcommands['manifest'])}`,
       `  npm                         ${description(subcommands[NPM])}`,
       `  npx                         ${description(subcommands[NPX])}`,
+      `  pycli                       ${description(subcommands['pycli'])}`,
       `  raw-npm                     ${description(subcommands['raw-npm'])}`,
       `  raw-npx                     ${description(subcommands['raw-npx'])}`,
       '',
