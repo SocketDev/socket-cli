@@ -16,9 +16,13 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
-  getDefaultLogger: () => mockLogger,
-}))
+vi.mock('@socketsecurity/lib/logger', async importOriginal => {
+  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  return {
+    ...actual,
+    getDefaultLogger: () => mockLogger,
+  }
+})
 
 // Mock outputConfigList.
 const mockOutputConfigList = vi.hoisted(() => vi.fn())
@@ -97,6 +101,29 @@ describe('cmd-config-list', () => {
         full: false,
         outputKind: 'markdown',
       })
+    })
+
+    it('should support combined --full and --json flags', async () => {
+      await cmdConfigList.run(['--full', '--json'], importMeta, context)
+
+      expect(mockOutputConfigList).toHaveBeenCalledWith({
+        full: true,
+        outputKind: 'json',
+      })
+    })
+
+    it('should reject conflicting --json and --markdown flags', async () => {
+      await cmdConfigList.run(['--json', '--markdown'], importMeta, context)
+
+      // Exit code 2 = invalid usage/validation failure.
+      expect(process.exitCode).toBe(2)
+      expect(mockOutputConfigList).not.toHaveBeenCalled()
+    })
+
+    it('should call outputConfigList exactly once per run', async () => {
+      await cmdConfigList.run([], importMeta, context)
+
+      expect(mockOutputConfigList).toHaveBeenCalledTimes(1)
     })
   })
 })
