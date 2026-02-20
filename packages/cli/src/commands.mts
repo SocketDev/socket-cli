@@ -30,6 +30,7 @@ import { cmdPackage } from './commands/package/cmd-package.mts'
 import { cmdPatch } from './commands/patch/cmd-patch.mts'
 import { cmdPip } from './commands/pip/cmd-pip.mts'
 import { cmdPnpm } from './commands/pnpm/cmd-pnpm.mts'
+import { cmdPyCli } from './commands/pycli/cmd-pycli.mts'
 import { cmdRawNpm } from './commands/raw-npm/cmd-raw-npm.mts'
 import { cmdRawNpx } from './commands/raw-npx/cmd-raw-npx.mts'
 import { cmdRepository } from './commands/repository/cmd-repository.mts'
@@ -71,6 +72,7 @@ export const rootCommands = {
   patch: cmdPatch,
   pip: cmdPip,
   pnpm: cmdPnpm,
+  pycli: cmdPyCli,
   'raw-npm': cmdRawNpm,
   'raw-npx': cmdRawNpx,
   repository: cmdRepository,
