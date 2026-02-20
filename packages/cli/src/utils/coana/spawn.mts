@@ -10,11 +10,13 @@ import { getErrorCause } from '../error/errors.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mts'
 import { spawnNode } from '../spawn/spawn-node.mjs'
 
-import type { ShadowBinOptions } from '../../shadow/npm-base.mjs'
+import type { IpcObject } from '../../constants/shadow.mts'
 import type { CResult } from '../../types.mjs'
-import type { SpawnExtra } from '@socketsecurity/lib/spawn'
+import type { SpawnExtra, SpawnOptions } from '@socketsecurity/lib/spawn'
 
-export type CoanaSpawnOptions = ShadowBinOptions
+export type CoanaSpawnOptions = SpawnOptions & {
+  ipc?: IpcObject | undefined
+}
 
 /**
  * Helper to spawn coana with package manager dlx commands.

@@ -6,7 +6,6 @@
  *   node .config/esbuild.config.mjs [variant]
  *   node .config/esbuild.config.mjs cli      # Build CLI bundle
  *   node .config/esbuild.config.mjs index    # Build entry point
- *   node .config/esbuild.config.mjs inject   # Build npm inject hook
  *   node .config/esbuild.config.mjs all      # Build all variants
  */
 
@@ -16,7 +15,6 @@ import { fileURLToPath } from 'node:url'
 
 import cliConfig from './esbuild.cli.build.mjs'
 import indexConfig from './esbuild.index.config.mjs'
-import injectConfig from './esbuild.inject.config.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -27,7 +25,6 @@ export const CONFIGS = {
   __proto__: null,
   cli: cliConfig,
   index: indexConfig,
-  inject: injectConfig,
 }
 
 /**
@@ -38,7 +35,6 @@ const VARIANT_FILES = {
   all: null, // Special variant to build all.
   cli: path.join(__dirname, 'esbuild.cli.build.mjs'),
   index: path.join(__dirname, 'esbuild.index.config.mjs'),
-  inject: path.join(__dirname, 'esbuild.inject.config.mjs'),
 }
 
 /**
@@ -62,7 +58,7 @@ async function buildVariant(name, configPath) {
  * Build all variants in parallel.
  */
 async function buildAll() {
-  const variants = ['cli', 'index', 'inject']
+  const variants = ['cli', 'index']
   const results = await Promise.all(
     variants.map(name => buildVariant(name, VARIANT_FILES[name])),
   )
