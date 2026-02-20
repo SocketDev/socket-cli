@@ -35,6 +35,7 @@ import { cmdRawNpm } from './commands/raw-npm/cmd-raw-npm.mts'
 import { cmdRawNpx } from './commands/raw-npx/cmd-raw-npx.mts'
 import { cmdRepository } from './commands/repository/cmd-repository.mts'
 import { cmdScan } from './commands/scan/cmd-scan.mts'
+import { cmdSfw } from './commands/sfw/cmd-sfw.mts'
 import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed.mts'
 import { cmdUninstall } from './commands/uninstall/cmd-uninstall.mts'
 import { cmdUv } from './commands/uv/cmd-uv.mts'
@@ -78,6 +79,7 @@ export const rootCommands = {
   repository: cmdRepository,
   scan: cmdScan,
   security: cmdOrganizationPolicySecurity,
+  sfw: cmdSfw,
   'threat-feed': cmdThreatFeed,
   uninstall: cmdUninstall,
   uv: cmdUv,
@@ -116,6 +118,11 @@ export const rootAliases = {
     description: `${cmdThreatFeed.description} (alias)`,
     hidden: false,
     argv: ['threat-feed'],
+  },
+  firewall: {
+    description: `${cmdSfw.description} (alias)`,
+    hidden: false,
+    argv: ['sfw'],
   },
   pip3: {
     description: `${cmdPip.description} (alias)`,
