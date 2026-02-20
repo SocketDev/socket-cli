@@ -7,6 +7,7 @@
  * - spawnCoanaDlx: Execute Coana CLI tool via dlx
  * - spawnDlx: Execute packages using Socket's dlx
  * - spawnSfwDlx: Execute Socket Firewall via dlx
+ * - spawnSocketPyCli: Execute Socket Python CLI
  * - spawnSocketPatchDlx: Execute Socket Patch via dlx
  * - spawnSynpDlx: Execute Synp converter via dlx
  *
@@ -16,13 +17,21 @@
  * - Executes binaries directly without package manager commands
  */
 
+import { existsSync, promises as fs } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib/dlx/binary'
 import { detectExecutableType } from '@socketsecurity/lib/dlx/detect'
 import { dlxPackage } from '@socketsecurity/lib/dlx/package'
+import { safeMkdir } from '@socketsecurity/lib/fs'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import {
   resolveCdxgen,
   resolveCoana,
+  resolvePyCli,
   resolveSocketPatch,
   resolveSfw,
 } from './resolve-binary.mjs'
@@ -30,10 +39,21 @@ import {
   areExternalToolsAvailable,
   extractExternalTools,
 } from './vfs-extract.mjs'
+import {
+  areSecurityToolsAvailable,
+  extractSecurityTools,
+  getToolPaths as getSecurityToolPaths,
+} from '../basics/vfs-extract.mts'
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
-import ENV from '../../constants/env.mts'
+import { getCliVersion } from '../../env/cli-version.mts'
+import { getPyCliVersion } from '../../env/pycli-version.mts'
+import { getPythonBuildTag } from '../../env/python-build-tag.mts'
+import { getPythonVersion } from '../../env/python-version.mts'
+import { SOCKET_CLI_PYTHON_PATH } from '../../env/socket-cli-python-path.mts'
+import { getSynpVersion } from '../../env/synp-version.mts'
 import { getErrorCause, InputError } from '../error/errors.mts'
 import { isSeaBinary } from '../sea/detect.mts'
+import { spawnNode } from '../spawn/spawn-node.mjs'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
 
 import type {
@@ -141,7 +161,7 @@ export async function spawnCoanaDlx(
   } as CoanaDlxOptions
 
   const mixinsEnv: Record<string, string> = {
-    SOCKET_CLI_VERSION: ENV.INLINED_SOCKET_CLI_VERSION || '',
+    SOCKET_CLI_VERSION: getCliVersion(),
   }
   const defaultApiToken = getDefaultApiToken()
   if (defaultApiToken) {
@@ -381,7 +401,7 @@ export async function spawnSynpDlx(
   return await spawnDlx(
     {
       name: 'synp',
-      version: `${ENV.INLINED_SOCKET_CLI_SYNP_VERSION}`,
+      version: getSynpVersion(),
     },
     args,
     { force: false, ...options },
@@ -486,7 +506,7 @@ export async function spawnCoanaVfs(
   } as CoanaDlxOptions
 
   const mixinsEnv: Record<string, string> = {
-    SOCKET_CLI_VERSION: ENV.INLINED_SOCKET_CLI_VERSION || '',
+    SOCKET_CLI_VERSION: getCliVersion(),
   }
   const defaultApiToken = getDefaultApiToken()
   if (defaultApiToken) {
@@ -633,4 +653,418 @@ export async function spawnSynp(
     return await spawnSynpVfs(args, options, spawnExtra)
   }
   return await spawnSynpDlx(args, options, spawnExtra)
+}
+
+/**
+ * Python CLI spawn utilities.
+ * These use bundled Python from SEA VFS or download portable Python via DLX.
+ */
+
+/**
+ * Get the download URL for python-build-standalone based on platform and architecture.
+ */
+function getPythonStandaloneUrl(): string {
+  const version = getPythonVersion()
+  const tag = getPythonBuildTag()
+  const platform = os.platform()
+  const arch = os.arch()
+
+  let platformTriple: string
+
+  if (platform === 'darwin') {
+    platformTriple =
+      arch === 'arm64' ? 'aarch64-apple-darwin' : 'x86_64-apple-darwin'
+  } else if (platform === 'linux') {
+    platformTriple =
+      arch === 'arm64'
+        ? 'aarch64-unknown-linux-gnu'
+        : 'x86_64-unknown-linux-gnu'
+  } else if (platform === 'win32') {
+    platformTriple = 'x86_64-pc-windows-msvc'
+  } else {
+    throw new InputError(`Unsupported platform: ${platform}`)
+  }
+
+  // URL encoding for the '+' in version string.
+  const encodedVersion = `${version}%2B${tag}`
+  return `https://github.com/astral-sh/python-build-standalone/releases/download/${tag}/cpython-${encodedVersion}-${platformTriple}-install_only.tar.gz`
+}
+
+/**
+ * Get the path to the cached Python installation directory.
+ */
+function getPythonCachePath(): string {
+  const version = getPythonVersion()
+  const tag = getPythonBuildTag()
+  const platform = os.platform()
+  const arch = os.arch()
+
+  return path.join(
+    getDlxCachePath(),
+    'python',
+    `${version}-${tag}-${platform}-${arch}`,
+  )
+}
+
+/**
+ * Get the path to the Python executable within the installation.
+ */
+function getPythonBinPath(pythonDir: string): string {
+  if (WIN32) {
+    return path.join(pythonDir, 'python', 'python.exe')
+  }
+  return path.join(pythonDir, 'python', 'bin', 'python3')
+}
+
+/**
+ * Download and extract Python from python-build-standalone using downloadBinary.
+ */
+async function downloadPython(pythonDir: string): Promise<void> {
+  const url = getPythonStandaloneUrl()
+  const tarballName = 'python-standalone.tar.gz'
+
+  await safeMkdir(pythonDir, { recursive: true })
+
+  const result = await downloadBinary({
+    name: tarballName,
+    url,
+  })
+
+  // Extract the tarball to pythonDir.
+  const { whichReal } = await import('@socketsecurity/lib/bin')
+  const tarPath = await whichReal('tar', { nothrow: true })
+  if (!tarPath || Array.isArray(tarPath)) {
+    throw new InputError(
+      'tar is required to extract Python. Please install tar for your system.',
+    )
+  }
+  await spawn(tarPath, ['-xzf', result.binaryPath, '-C', pythonDir], {})
+}
+
+/**
+ * Ensure Python is available (local override, SEA bundled, or DLX downloaded).
+ * Returns the path to the Python executable.
+ *
+ * Resolution order:
+ * 1. SOCKET_CLI_PYTHON_PATH environment variable (local development)
+ * 2. Bundled Python from SEA VFS (SEA binary installations)
+ * 3. Portable Python download via DLX (npm/pnpm/yarn installations)
+ */
+export async function ensurePython(): Promise<string> {
+  // Check for local Python path override.
+  if (SOCKET_CLI_PYTHON_PATH) {
+    return SOCKET_CLI_PYTHON_PATH
+  }
+
+  // Use bundled Python from VFS in SEA mode.
+  if (isSeaBinary() && areSecurityToolsAvailable()) {
+    const toolsDir = await extractSecurityTools()
+    if (toolsDir) {
+      const toolPaths = getSecurityToolPaths(toolsDir)
+      return toolPaths.python
+    }
+  }
+
+  // Fallback to DLX-downloaded Python.
+  return await ensurePythonDlx()
+}
+
+/**
+ * Ensure Python is available via DLX download.
+ * Returns the path to the Python executable.
+ */
+export async function ensurePythonDlx(): Promise<string> {
+  const pythonDir = getPythonCachePath()
+  const pythonBin = getPythonBinPath(pythonDir)
+
+  if (!existsSync(pythonBin)) {
+    await downloadPython(pythonDir)
+
+    if (!existsSync(pythonBin)) {
+      throw new InputError(
+        `Python binary not found after extraction: ${pythonBin}`,
+      )
+    }
+
+    // Make executable on POSIX.
+    if (!WIN32) {
+      await fs.chmod(pythonBin, 0o755)
+    }
+  }
+
+  return pythonBin
+}
+
+/**
+ * Check if socketcli is installed in the Python environment.
+ */
+async function isSocketPyCliInstalled(pythonBin: string): Promise<boolean> {
+  try {
+    const result = await spawn(
+      pythonBin,
+      ['-c', 'import socketsecurity.socketcli'],
+      { shell: WIN32 },
+    )
+    return result.code === 0
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Convert npm caret range (^2.2.15) to pip version specifier (>=2.2.15,<3.0.0).
+ */
+function convertCaretToPipRange(caretRange: string): string {
+  if (!caretRange) {
+    return ''
+  }
+
+  if (!caretRange.startsWith('^')) {
+    return `==${caretRange}`
+  }
+
+  const version = caretRange.slice(1) // Remove '^'.
+  const parts = version.split('.')
+  const major = Number.parseInt(parts[0] || '0', 10)
+  const nextMajor = major + 1
+
+  return `>=${version},<${nextMajor}.0.0`
+}
+
+/**
+ * Install socketsecurity package into the Python environment.
+ */
+export async function ensureSocketPyCli(pythonBin: string): Promise<void> {
+  if (await isSocketPyCliInstalled(pythonBin)) {
+    return
+  }
+
+  const pyCliVersion = getPyCliVersion()
+  const versionSpec = convertCaretToPipRange(pyCliVersion)
+  const packageSpec = versionSpec
+    ? `socketsecurity${versionSpec}`
+    : 'socketsecurity'
+
+  await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', packageSpec], {
+    shell: WIN32,
+    stdio: 'inherit',
+  })
+}
+
+export type SocketPyCliDlxOptions = DlxOptions
+
+/**
+ * Spawn socketcli via bundled Python from SEA VFS.
+ * Uses the same Python as socket-basics for consistency.
+ */
+export async function spawnSocketPyCliVfs(
+  args: string[] | readonly string[],
+  options?: SocketPyCliDlxOptions | undefined,
+): Promise<CResult<string>> {
+  const { env: spawnEnv, ...dlxOptions } = {
+    __proto__: null,
+    ...options,
+  } as SocketPyCliDlxOptions
+
+  try {
+    const toolsDir = await extractSecurityTools()
+    if (!toolsDir) {
+      return {
+        data: new Error('Failed to extract security tools from VFS'),
+        message: 'Failed to extract security tools from VFS',
+        ok: false,
+      }
+    }
+
+    const toolPaths = getSecurityToolPaths(toolsDir)
+    const pythonBin = toolPaths.python
+
+    // Ensure socketsecurity package is installed.
+    const pyCliVersion = getPyCliVersion()
+    await spawn(
+      pythonBin,
+      ['-m', 'pip', 'install', '--quiet', `socketsecurity==${pyCliVersion}`],
+      { stdio: 'pipe' },
+    )
+
+    // Run socketcli with isolated PATH.
+    const spawnResult = await spawn(
+      pythonBin,
+      ['-m', 'socketsecurity.socketcli', ...args],
+      {
+        ...dlxOptions,
+        env: {
+          ...process.env,
+          ...spawnEnv,
+          // Isolate PATH to bundled tools only.
+          PATH: `${path.dirname(pythonBin)}:${toolsDir}`,
+        },
+        shell: WIN32,
+        stdio: 'inherit',
+      },
+    )
+
+    return {
+      data: spawnResult.stdout?.toString() ?? '',
+      ok: true,
+    }
+  } catch (e) {
+    const cause = getErrorCause(e)
+    return {
+      data: e,
+      message: cause,
+      ok: false,
+    }
+  }
+}
+
+/**
+ * Spawn socketcli via DLX-downloaded Python.
+ * Downloads portable Python from python-build-standalone and installs socketsecurity.
+ */
+export async function spawnSocketPyCliDlx(
+  args: string[] | readonly string[],
+  options?: SocketPyCliDlxOptions | undefined,
+): Promise<CResult<string>> {
+  const { env: spawnEnv, ...dlxOptions } = {
+    __proto__: null,
+    ...options,
+  } as SocketPyCliDlxOptions
+
+  const resolution = resolvePyCli()
+
+  const finalEnv: Record<string, string | undefined> = {
+    ...process.env,
+    ...spawnEnv,
+  }
+
+  try {
+    // Use local Python CLI if available.
+    if (resolution.type === 'local') {
+      const spawnNodeOpts: any = {
+        ...(dlxOptions.cwd ? { cwd: dlxOptions.cwd } : {}),
+        env: finalEnv,
+        shell: WIN32,
+        stdio: 'inherit',
+      }
+      const spawnResult = await spawnNode([resolution.path, ...args], spawnNodeOpts)
+
+      return {
+        data: spawnResult.stdout?.toString() ?? '',
+        ok: true,
+      }
+    }
+
+    // Download portable Python via DLX infrastructure.
+    const pythonBin = await ensurePythonDlx()
+
+    // Ensure socketsecurity is installed.
+    await ensureSocketPyCli(pythonBin)
+
+    // Run socketcli via python -m.
+    const spawnResult = await spawn(
+      pythonBin,
+      ['-m', 'socketsecurity.socketcli', ...args],
+      {
+        ...dlxOptions,
+        env: finalEnv,
+        shell: WIN32,
+        stdio: 'inherit',
+      },
+    )
+
+    return {
+      data: spawnResult.stdout?.toString() ?? '',
+      ok: true,
+    }
+  } catch (e) {
+    const cause = getErrorCause(e)
+    return {
+      data: e,
+      message: cause,
+      ok: false,
+    }
+  }
+}
+
+/**
+ * Spawn socketcli (Socket Python CLI).
+ * Ensures Python is available (SEA bundled or DLX downloaded) before spawning.
+ *
+ * Resolution order:
+ * 1. SOCKET_CLI_PYCLI_LOCAL_PATH environment variable (local development)
+ * 2. Bundled Python from SEA VFS (SEA binary installations)
+ * 3. Portable Python download via DLX (npm/pnpm/yarn installations)
+ */
+export async function spawnSocketPyCli(
+  args: string[] | readonly string[],
+  options?: SocketPyCliDlxOptions | undefined,
+): Promise<CResult<string>> {
+  const { env: spawnEnv, ...dlxOptions } = {
+    __proto__: null,
+    ...options,
+  } as SocketPyCliDlxOptions
+
+  const finalEnv: Record<string, string | undefined> = {
+    ...process.env,
+    ...spawnEnv,
+  }
+
+  try {
+    // Check for local path override first.
+    const resolution = resolvePyCli()
+    if (resolution.type === 'local') {
+      const spawnNodeOpts: any = {
+        ...(dlxOptions.cwd ? { cwd: dlxOptions.cwd } : {}),
+        env: finalEnv,
+        shell: WIN32,
+        stdio: 'inherit',
+      }
+      const spawnResult = await spawnNode([resolution.path, ...args], spawnNodeOpts)
+
+      return {
+        data: spawnResult.stdout?.toString() ?? '',
+        ok: true,
+      }
+    }
+
+    // Ensure Python is available (SEA bundled or DLX downloaded).
+    const pythonBin = await ensurePython()
+
+    // Ensure socketsecurity package is installed.
+    await ensureSocketPyCli(pythonBin)
+
+    // Build environment - isolate PATH for SEA mode.
+    const spawnEnvFinal = isSeaBinary() && areSecurityToolsAvailable()
+      ? {
+          ...finalEnv,
+          // Isolate PATH to bundled tools directory for SEA.
+          PATH: `${path.dirname(pythonBin)}:${path.dirname(path.dirname(pythonBin))}`,
+        }
+      : finalEnv
+
+    // Run socketcli via python -m.
+    const spawnResult = await spawn(
+      pythonBin,
+      ['-m', 'socketsecurity.socketcli', ...args],
+      {
+        ...dlxOptions,
+        env: spawnEnvFinal,
+        shell: WIN32,
+        stdio: 'inherit',
+      },
+    )
+
+    return {
+      data: spawnResult.stdout?.toString() ?? '',
+      ok: true,
+    }
+  } catch (e) {
+    const cause = getErrorCause(e)
+    return {
+      data: e,
+      message: cause,
+      ok: false,
+    }
+  }
 }

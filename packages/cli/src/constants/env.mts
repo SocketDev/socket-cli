@@ -60,6 +60,7 @@ import { SOCKET_CLI_NPM_PATH } from '../env/socket-cli-npm-path.mts'
 import { SOCKET_CLI_OPTIMIZE } from '../env/socket-cli-optimize.mts'
 import { SOCKET_CLI_ORG_SLUG } from '../env/socket-cli-org-slug.mts'
 import { SOCKET_CLI_PYCLI_LOCAL_PATH } from '../env/socket-cli-pycli-local-path.mts'
+import { SOCKET_CLI_PYTHON_PATH } from '../env/socket-cli-python-path.mts'
 import { SOCKET_CLI_SEA_NODE_VERSION } from '../env/socket-cli-sea-node-version.mts'
 import { SOCKET_CLI_SFW_LOCAL_PATH } from '../env/socket-cli-sfw-local-path.mts'
 import { SOCKET_CLI_SKIP_UPDATE_CHECK } from '../env/socket-cli-skip-update-check.mts'
@@ -121,6 +122,7 @@ export {
   SOCKET_CLI_OPTIMIZE,
   SOCKET_CLI_ORG_SLUG,
   SOCKET_CLI_PYCLI_LOCAL_PATH,
+  SOCKET_CLI_PYTHON_PATH,
   SOCKET_CLI_SEA_NODE_VERSION,
   SOCKET_CLI_SFW_LOCAL_PATH,
   SOCKET_CLI_SKIP_UPDATE_CHECK,
@@ -203,6 +205,7 @@ const envSnapshot = {
   SOCKET_CLI_OPTIMIZE,
   SOCKET_CLI_ORG_SLUG,
   SOCKET_CLI_PYCLI_LOCAL_PATH,
+  SOCKET_CLI_PYTHON_PATH,
   SOCKET_CLI_SEA_NODE_VERSION,
   SOCKET_CLI_SFW_LOCAL_PATH,
   SOCKET_CLI_SKIP_UPDATE_CHECK,

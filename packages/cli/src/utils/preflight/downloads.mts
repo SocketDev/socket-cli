@@ -14,8 +14,12 @@ import { setTimeout as sleep } from 'node:timers/promises'
 
 import { downloadPackage } from '@socketsecurity/lib/dlx/package'
 
-import ENV from '../../constants/env.mts'
-import { ensurePython, ensureSocketPythonCli } from '../python/standalone.mts'
+import { getCI } from '@socketsecurity/lib/env/ci'
+
+import { getCoanaVersion } from '../../env/coana-version.mts'
+import { getCdxgenVersion } from '../../env/cdxgen-version.mts'
+import { VITEST } from '../../env/vitest.mts'
+import { ensurePythonDlx, ensureSocketPyCli } from '../python/standalone.mts'
 
 /**
  * Track if preflight downloads have already been initiated.
@@ -35,7 +39,7 @@ export function runPreflightDownloads(): void {
   preflightRunning = true
 
   // Don't run in test/CI environments.
-  if (ENV.CI || ENV.VITEST) {
+  if (getCI() || VITEST) {
     return
   }
 
@@ -46,7 +50,7 @@ export function runPreflightDownloads(): void {
       // Order: coana → delay → cdxgen → delay → Python → socketsecurity.
 
       // 1. @coana-tech/cli preflight.
-      const coanaVersion = ENV.INLINED_SOCKET_CLI_COANA_VERSION
+      const coanaVersion = getCoanaVersion()
       const coanaSpec = `@coana-tech/cli@${coanaVersion}`
       await downloadPackage({
         package: coanaSpec,
@@ -58,7 +62,7 @@ export function runPreflightDownloads(): void {
       await sleep(1000 + Math.random() * 2000)
 
       // 2. @cyclonedx/cdxgen preflight.
-      const cdxgenVersion = ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION
+      const cdxgenVersion = getCdxgenVersion()
       const cdxgenSpec = `@cyclonedx/cdxgen@${cdxgenVersion}`
       await downloadPackage({
         package: cdxgenSpec,
@@ -70,8 +74,8 @@ export function runPreflightDownloads(): void {
       await sleep(1000 + Math.random() * 2000)
 
       // 3. Python + socketsecurity (socket-python-cli) preflight.
-      const pythonBin = await ensurePython()
-      await ensureSocketPythonCli(pythonBin)
+      const pythonBin = await ensurePythonDlx()
+      await ensureSocketPyCli(pythonBin)
     } catch {}
   })()
 }

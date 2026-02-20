@@ -6,46 +6,35 @@
  *
  * Test Coverage:
  * - Binary path resolution
- * - node_modules/.bin lookup
- * - Global binary search
+ * - Local path override detection
+ * - DLX package spec generation
  * - Fallback logic
- * - Platform-specific binaries
  *
  * Testing Approach:
- * Tests binary resolution algorithms for dlx execution.
+ * Uses vi.mock() to mock env modules since they export constants at module load time.
  *
  * Related Files:
  * - utils/dlx/resolve-binary.mts (implementation)
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-
-import {
-  resolveCdxgen,
-  resolveCoana,
-  resolvePyCli,
-  resolveSfw,
-  resolveSynp,
-} from '../../../../src/utils/dlx/resolve-binary.mjs'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { BinaryResolution } from '../../../../src/utils/dlx/resolve-binary.mjs'
 
 describe('resolve-binary', () => {
-  const originalEnv = process.env
-
   beforeEach(() => {
-    // Reset environment before each test.
-    process.env = { ...originalEnv }
-  })
-
-  afterEach(() => {
-    // Restore original environment.
-    process.env = originalEnv
+    vi.resetModules()
   })
 
   describe('resolveCoana', () => {
-    it('should return local path when SOCKET_CLI_COANA_LOCAL_PATH is set', () => {
-      process.env['SOCKET_CLI_COANA_LOCAL_PATH'] = '/custom/path/to/coana'
+    it('should return local path when SOCKET_CLI_COANA_LOCAL_PATH is set', async () => {
+      vi.doMock('../../../../src/env/socket-cli-coana-local-path.mts', () => ({
+        SOCKET_CLI_COANA_LOCAL_PATH: '/custom/path/to/coana',
+      }))
+
+      const { resolveCoana } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mjs'
+      )
 
       const result = resolveCoana()
 
@@ -55,9 +44,17 @@ describe('resolve-binary', () => {
       })
     })
 
-    it('should return dlx package spec when SOCKET_CLI_COANA_LOCAL_PATH is not set', () => {
-      delete process.env['SOCKET_CLI_COANA_LOCAL_PATH']
-      process.env['INLINED_SOCKET_CLI_COANA_VERSION'] = '1.0.0'
+    it('should return dlx package spec when SOCKET_CLI_COANA_LOCAL_PATH is not set', async () => {
+      vi.doMock('../../../../src/env/socket-cli-coana-local-path.mts', () => ({
+        SOCKET_CLI_COANA_LOCAL_PATH: undefined,
+      }))
+      vi.doMock('../../../../src/env/coana-version.mts', () => ({
+        getCoanaVersion: () => '1.0.0',
+      }))
+
+      const { resolveCoana } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mjs'
+      )
 
       const result = resolveCoana() as Extract<
         BinaryResolution,
@@ -70,9 +67,14 @@ describe('resolve-binary', () => {
       expect(result.details.binaryName).toBe('coana')
     })
 
-    it('should prefer local path over dlx when both available', () => {
-      process.env['SOCKET_CLI_COANA_LOCAL_PATH'] = '/local/coana'
-      process.env['INLINED_SOCKET_CLI_COANA_VERSION'] = '1.0.0'
+    it('should prefer local path over dlx when both available', async () => {
+      vi.doMock('../../../../src/env/socket-cli-coana-local-path.mts', () => ({
+        SOCKET_CLI_COANA_LOCAL_PATH: '/local/coana',
+      }))
+
+      const { resolveCoana } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mjs'
+      )
 
       const result = resolveCoana()
 
@@ -84,8 +86,14 @@ describe('resolve-binary', () => {
   })
 
   describe('resolveCdxgen', () => {
-    it('should return local path when SOCKET_CLI_CDXGEN_LOCAL_PATH is set', () => {
-      process.env['SOCKET_CLI_CDXGEN_LOCAL_PATH'] = '/custom/path/to/cdxgen'
+    it('should return local path when SOCKET_CLI_CDXGEN_LOCAL_PATH is set', async () => {
+      vi.doMock('../../../../src/env/socket-cli-cdxgen-local-path.mts', () => ({
+        SOCKET_CLI_CDXGEN_LOCAL_PATH: '/custom/path/to/cdxgen',
+      }))
+
+      const { resolveCdxgen } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mjs'
+      )
 
       const result = resolveCdxgen()
 
@@ -95,8 +103,17 @@ describe('resolve-binary', () => {
       })
     })
 
-    it('should return dlx package spec when SOCKET_CLI_CDXGEN_LOCAL_PATH is not set', () => {
-      delete process.env['SOCKET_CLI_CDXGEN_LOCAL_PATH']
+    it('should return dlx package spec when SOCKET_CLI_CDXGEN_LOCAL_PATH is not set', async () => {
+      vi.doMock('../../../../src/env/socket-cli-cdxgen-local-path.mts', () => ({
+        SOCKET_CLI_CDXGEN_LOCAL_PATH: undefined,
+      }))
+      vi.doMock('../../../../src/env/cdxgen-version.mts', () => ({
+        getCdxgenVersion: () => '10.0.0',
+      }))
+
+      const { resolveCdxgen } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mjs'
+      )
 
       const result = resolveCdxgen() as Extract<
         BinaryResolution,
@@ -110,8 +127,14 @@ describe('resolve-binary', () => {
   })
 
   describe('resolvePyCli', () => {
-    it('should return local path when SOCKET_CLI_PYCLI_LOCAL_PATH is set', () => {
-      process.env['SOCKET_CLI_PYCLI_LOCAL_PATH'] = '/custom/path/to/pycli'
+    it('should return local path when SOCKET_CLI_PYCLI_LOCAL_PATH is set', async () => {
+      vi.doMock('../../../../src/env/socket-cli-pycli-local-path.mts', () => ({
+        SOCKET_CLI_PYCLI_LOCAL_PATH: '/custom/path/to/pycli',
+      }))
+
+      const { resolvePyCli } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mjs'
+      )
 
       const result = resolvePyCli()
 
@@ -121,8 +144,14 @@ describe('resolve-binary', () => {
       })
     })
 
-    it('should return python type when SOCKET_CLI_PYCLI_LOCAL_PATH is not set', () => {
-      delete process.env['SOCKET_CLI_PYCLI_LOCAL_PATH']
+    it('should return python type when SOCKET_CLI_PYCLI_LOCAL_PATH is not set', async () => {
+      vi.doMock('../../../../src/env/socket-cli-pycli-local-path.mts', () => ({
+        SOCKET_CLI_PYCLI_LOCAL_PATH: undefined,
+      }))
+
+      const { resolvePyCli } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mjs'
+      )
 
       const result = resolvePyCli()
 
@@ -131,8 +160,14 @@ describe('resolve-binary', () => {
   })
 
   describe('resolveSfw', () => {
-    it('should return local path when SOCKET_CLI_SFW_LOCAL_PATH is set', () => {
-      process.env['SOCKET_CLI_SFW_LOCAL_PATH'] = '/custom/path/to/sfw'
+    it('should return local path when SOCKET_CLI_SFW_LOCAL_PATH is set', async () => {
+      vi.doMock('../../../../src/env/socket-cli-sfw-local-path.mts', () => ({
+        SOCKET_CLI_SFW_LOCAL_PATH: '/custom/path/to/sfw',
+      }))
+
+      const { resolveSfw } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mjs'
+      )
 
       const result = resolveSfw()
 
@@ -142,29 +177,36 @@ describe('resolve-binary', () => {
       })
     })
 
-    it('should return dlx type when SOCKET_CLI_SFW_LOCAL_PATH is not set', () => {
-      delete process.env['SOCKET_CLI_SFW_LOCAL_PATH']
+    it('should return dlx type when SOCKET_CLI_SFW_LOCAL_PATH is not set', async () => {
+      vi.doMock('../../../../src/env/socket-cli-sfw-local-path.mts', () => ({
+        SOCKET_CLI_SFW_LOCAL_PATH: undefined,
+      }))
+      vi.doMock('../../../../src/env/sfw-version.mts', () => ({
+        getSwfVersion: () => '2.0.0',
+      }))
+
+      const { resolveSfw } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mjs'
+      )
 
       const result = resolveSfw() as Extract<BinaryResolution, { type: 'dlx' }>
 
       expect(result.type).toBe('dlx')
       expect(result.details.name).toBe('sfw')
       expect(result.details.binaryName).toBe('sfw')
-      expect(result.details.version).toBeDefined()
+      expect(result.details.version).toBe('2.0.0')
     })
   })
 
   describe('resolveSynp', () => {
-    it('should always return dlx package spec', () => {
-      const result = resolveSynp() as Extract<BinaryResolution, { type: 'dlx' }>
+    it('should always return dlx package spec', async () => {
+      vi.doMock('../../../../src/env/synp-version.mts', () => ({
+        getSynpVersion: () => '1.0.0',
+      }))
 
-      expect(result.type).toBe('dlx')
-      expect(result.details.name).toBe('synp')
-      expect(result.details.binaryName).toBe('synp')
-    })
-
-    it('should return dlx even if environment variables are set', () => {
-      process.env['SOCKET_CLI_SYNP_LOCAL_PATH'] = '/custom/path/to/synp'
+      const { resolveSynp } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mjs'
+      )
 
       const result = resolveSynp() as Extract<BinaryResolution, { type: 'dlx' }>
 
@@ -175,8 +217,17 @@ describe('resolve-binary', () => {
   })
 
   describe('integration scenarios', () => {
-    it('should handle empty string as no local path', () => {
-      process.env['SOCKET_CLI_COANA_LOCAL_PATH'] = ''
+    it('should handle empty string as no local path', async () => {
+      vi.doMock('../../../../src/env/socket-cli-coana-local-path.mts', () => ({
+        SOCKET_CLI_COANA_LOCAL_PATH: '',
+      }))
+      vi.doMock('../../../../src/env/coana-version.mts', () => ({
+        getCoanaVersion: () => '1.0.0',
+      }))
+
+      const { resolveCoana } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mjs'
+      )
 
       const result = resolveCoana()
 
@@ -184,8 +235,14 @@ describe('resolve-binary', () => {
       expect(result.type).toBe('dlx')
     })
 
-    it('should handle relative paths', () => {
-      process.env['SOCKET_CLI_CDXGEN_LOCAL_PATH'] = './local/cdxgen.js'
+    it('should handle relative paths', async () => {
+      vi.doMock('../../../../src/env/socket-cli-cdxgen-local-path.mts', () => ({
+        SOCKET_CLI_CDXGEN_LOCAL_PATH: './local/cdxgen.js',
+      }))
+
+      const { resolveCdxgen } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mjs'
+      )
 
       const result = resolveCdxgen()
 
@@ -195,8 +252,14 @@ describe('resolve-binary', () => {
       })
     })
 
-    it('should handle absolute paths', () => {
-      process.env['SOCKET_CLI_SFW_LOCAL_PATH'] = '/usr/local/bin/sfw'
+    it('should handle absolute paths', async () => {
+      vi.doMock('../../../../src/env/socket-cli-sfw-local-path.mts', () => ({
+        SOCKET_CLI_SFW_LOCAL_PATH: '/usr/local/bin/sfw',
+      }))
+
+      const { resolveSfw } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mjs'
+      )
 
       const result = resolveSfw()
 

@@ -56,10 +56,8 @@ vi.mock('../../../../src/utils/fs/path-resolve.mts', () => ({
   findNpmDirPathSync: vi.fn(),
 }))
 
-vi.mock('../../../../src/constants/env.mts', () => ({
-  default: {
-    SOCKET_CLI_NPM_PATH: undefined,
-  },
+vi.mock('../../../../src/env/socket-cli-npm-path.mts', () => ({
+  SOCKET_CLI_NPM_PATH: undefined,
 }))
 
 vi.mock('../../../../src/constants/github.mts', () => ({
@@ -180,10 +178,8 @@ describe('npm-paths utilities', () => {
     it('uses SOCKET_CLI_NPM_PATH when npm dir not found', async () => {
       // Set up the environment variable mock before importing.
       vi.resetModules()
-      vi.doMock('../../../../src/constants/env.mts', () => ({
-        default: {
-          SOCKET_CLI_NPM_PATH: '/custom/npm/path',
-        },
+      vi.doMock('../../../../src/env/socket-cli-npm-path.mts', () => ({
+        SOCKET_CLI_NPM_PATH: '/custom/npm/path',
       }))
 
       const { findBinPathDetailsSync, findNpmDirPathSync } = vi.mocked(
@@ -206,6 +202,11 @@ describe('npm-paths utilities', () => {
     })
 
     it('exits with error when npm directory not found', async () => {
+      vi.resetModules()
+      vi.doMock('../../../../src/env/socket-cli-npm-path.mts', () => ({
+        SOCKET_CLI_NPM_PATH: undefined,
+      }))
+
       const { findBinPathDetailsSync, findNpmDirPathSync } = vi.mocked(
         await import('../../../../src/utils/fs/path-resolve.mts'),
       )
@@ -215,14 +216,12 @@ describe('npm-paths utilities', () => {
       })
       findNpmDirPathSync.mockReturnValue(undefined)
 
-      const ENV = vi.mocked(
-        await import('../../../../src/constants/env.mts'),
-      ).default
-      ENV.SOCKET_CLI_NPM_PATH = undefined
-
       vi.mocked(await import('@socketsecurity/lib/logger'))
 
-      expect(() => getNpmDirPath()).toThrow('process.exit(127)')
+      const { getNpmDirPath: localGetNpmDirPath } = await import(
+        '../../../../src/utils/npm/paths.mts'
+      )
+      expect(() => localGetNpmDirPath()).toThrow('process.exit(127)')
       expect(mockLogger.fail).toHaveBeenCalledWith(
         expect.stringContaining('Unable to find npm CLI install directory'),
       )

@@ -2,43 +2,25 @@
  * Unit tests for standalone Python utilities.
  *
  * Purpose:
- * Tests standalone Python utilities. Validates Python binary detection and requirement parsing.
+ * Tests standalone Python utilities. Validates Python binary detection.
  *
  * Test Coverage:
- * - Python binary detection
- * - requirements.txt parsing
- * - virtualenv detection
- * - Python version checking
- * - pip command execution
+ * - ensurePython function
+ * - Python binary availability
  *
  * Testing Approach:
- * Tests Python ecosystem utilities with mocked subprocess calls.
+ * Tests Python ecosystem utilities.
  *
  * Related Files:
  * - utils/python/standalone.mts (implementation)
+ * - utils/dlx/spawn.mts (actual implementation)
  */
 
 import { describe, expect, it } from 'vitest'
 
-import {
-  checkSystemPython,
-  ensurePython,
-} from '../../../../src/utils/python/standalone.mts'
+import { ensurePython } from '../../../../src/utils/python/standalone.mts'
 
 describe('python-standalone', () => {
-  describe('checkSystemPython', () => {
-    it('should check for system Python', async () => {
-      const result = await checkSystemPython()
-      // Result can be null or a path string
-      if (result) {
-        expect(typeof result).toBe('string')
-        expect(result).toContain('python')
-      } else {
-        expect(result).toBe(null)
-      }
-    })
-  })
-
   describe('ensurePython', () => {
     it('should ensure Python is available or throw error', async () => {
       try {
@@ -47,11 +29,11 @@ describe('python-standalone', () => {
         expect(pythonBin.length).toBeGreaterThan(0)
         expect(pythonBin).toContain('python')
       } catch (error) {
-        // In test environment without proper constants, download might fail
-        // This is expected and not a test failure
+        // In test environment without proper constants, download might fail.
+        // This is expected and not a test failure.
         expect(error).toBeDefined()
       }
-      // Give it 60 seconds for potential download
-    }, 60000)
+      // Give it 60 seconds for potential download.
+    }, 60_000)
   })
 })

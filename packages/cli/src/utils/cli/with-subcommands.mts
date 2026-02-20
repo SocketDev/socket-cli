@@ -27,7 +27,9 @@ import {
   CONFIG_KEY_API_TOKEN,
   CONFIG_KEY_DEFAULT_ORG,
 } from '../../constants/config.mts'
-import ENV, { getCliVersion, getCliVersionHash } from '../../constants/env.mts'
+import { getCliVersion } from '../../env/cli-version.mts'
+import { getCliVersionHash } from '../../env/cli-version-hash.mts'
+import { VITEST } from '../../env/vitest.mts'
 import { API_V0_URL } from '../../constants/socket.mts'
 import { commonFlags } from '../../flags.mts'
 import meow from '../../meow.mts'
@@ -40,7 +42,7 @@ import {
 import { isDebug } from '../debug.mts'
 import { tildify } from '../fs/home-path.mts'
 import { getFlagListOutput, getHelpListOutput } from '../output/formatting.mts'
-import { spawnSocketPython } from '../python/standalone.mts'
+import { spawnSocketPyCli } from '../python/standalone.mts'
 import { getVisibleTokenPrefix } from '../socket/sdk.mjs'
 import {
   renderLogoWithFallback,
@@ -183,7 +185,7 @@ function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
  */
 function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
   // Disable animation in CI, tests, or when explicitly disabled.
-  if (getCI() || ENV.VITEST || !process.stdout.isTTY || !supportsFullColor()) {
+  if (getCI() || VITEST || !process.stdout.isTTY || !supportsFullColor()) {
     return false
   }
   // Check flags first.
@@ -204,7 +206,7 @@ function getAsciiHeader(
   flags?: Record<string, unknown>,
 ) {
   // Note: In tests we return <redacted> because otherwise snapshots will fail.
-  const redacting = ENV.VITEST
+  const redacting = VITEST
 
   // Version display: show hash in debug mode, otherwise show semantic version.
   const fullVersion = getCliVersion()
@@ -518,7 +520,7 @@ export async function meowWithSubcommands(
     spinner: boolean
   }
 
-  const compactMode = !!compactHeaderFlag || !!(getCI() && !ENV.VITEST)
+  const compactMode = !!compactHeaderFlag || !!(getCI() && !VITEST)
   const noSpinner = spinnerFlag === false || isDebug()
 
   // Use CI spinner style when --no-spinner is passed or debug mode is enabled.
@@ -609,7 +611,7 @@ export async function meowWithSubcommands(
 
       // Try forwarding to socket-python CLI for unrecognized commands.
       // This enables commands like: socket report, socket purl, etc.
-      const pythonResult = await spawnSocketPython(commandArgv, {
+      const pythonResult = await spawnSocketPyCli(commandArgv, {
         stdio: 'inherit',
       })
       if (pythonResult.ok) {
@@ -644,7 +646,7 @@ export async function meowWithSubcommands(
     commandOrAliasName?.startsWith('--') &&
     !nodeCliFlags.has(baseFlagName ?? '')
   ) {
-    const pythonResult = await spawnSocketPython(argv, {
+    const pythonResult = await spawnSocketPyCli(argv, {
       stdio: 'inherit',
     })
     if (pythonResult.ok) {
@@ -973,7 +975,7 @@ export function meowOrExit(
     version: boolean | undefined
   }
 
-  const compactMode = !!compactHeaderFlag || !!(getCI() && !ENV.VITEST)
+  const compactMode = !!compactHeaderFlag || !!(getCI() && !VITEST)
   const noSpinner = spinnerFlag === false || isDebug()
 
   // Use CI spinner style when --no-spinner is passed.
