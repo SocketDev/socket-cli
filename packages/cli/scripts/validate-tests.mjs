@@ -194,7 +194,6 @@ async function validateBuildArtifacts() {
   const requiredArtifacts = [
     'build/cli.js',
     'dist/index.js',
-    'dist/shadow-npm-inject.js',
   ]
 
   for (const artifact of requiredArtifacts) {

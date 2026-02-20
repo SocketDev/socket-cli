@@ -56,13 +56,18 @@ import { isSeaBinary } from '../sea/detect.mts'
 import { spawnNode } from '../spawn/spawn-node.mjs'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
 
-import type {
-  ShadowBinOptions,
-  ShadowBinResult,
-} from '../../shadow/npm-base.mjs'
+import type { IpcObject } from '../../constants/shadow.mts'
 import type { CResult } from '../../types.mjs'
 import type { ExternalTool } from './vfs-extract.mjs'
-import type { SpawnExtra, SpawnResult } from '@socketsecurity/lib/spawn'
+import type { SpawnExtra, SpawnOptions, SpawnResult } from '@socketsecurity/lib/spawn'
+
+export type ShadowBinOptions = SpawnOptions & {
+  ipc?: IpcObject | undefined
+}
+
+export type ShadowBinResult = {
+  spawnPromise: SpawnResult
+}
 
 export type DlxOptions = ShadowBinOptions & {
   agent?: 'npm' | 'pnpm' | 'yarn' | undefined

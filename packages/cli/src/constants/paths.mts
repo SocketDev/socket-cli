@@ -118,16 +118,11 @@ export function getShadowBinPath(): string {
 // Export shadowBinPath as a constant for backward compatibility.
 export const shadowBinPath = path.join(rootPath, 'shadow-bin')
 
-export function getShadowNpmInjectPath(): string {
-  return path.join(distPath, 'shadow-npm-inject.js')
-}
-
 export function getInstrumentWithSentryPath(): string {
   return path.join(distPath, 'instrument-with-sentry.js')
 }
 
-// Export as constants for backward compatibility.
-export const shadowNpmInjectPath = path.join(distPath, 'shadow-npm-inject.js')
+// Export as constant for backward compatibility.
 export const instrumentWithSentryPath = path.join(
   distPath,
   'instrument-with-sentry.js',

@@ -17,8 +17,7 @@ import { spawnCdxgenDlx, spawnSynpDlx } from '../../utils/dlx/spawn.mjs'
 import { findUp } from '../../utils/fs/find-up.mjs'
 import { isYarnBerry } from '../../utils/yarn/version.mts'
 
-import type { ShadowBinResult } from '../../shadow/npm/bin.mts'
-import type { DlxOptions } from '../../utils/dlx/spawn.mjs'
+import type { DlxOptions, ShadowBinResult } from '../../utils/dlx/spawn.mjs'
 
 const logger = getDefaultLogger()
 

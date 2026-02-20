@@ -6,13 +6,12 @@
  * - runAgentInstall: Execute package installation with detected agent
  *
  * Supported Agents:
- * - npm: Node Package Manager with shadow installation
+ * - npm: Node Package Manager
  * - pnpm: Fast, disk space efficient package manager
  * - yarn: Alternative package manager
  *
  * Features:
  * - Automatic agent detection
- * - Shadow installation for security scanning
  * - Spinner support for progress indication
  * - CI-mode configuration for non-interactive execution
  */
@@ -27,7 +26,6 @@ import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getOwn } from '@socketsecurity/lib/objects'
 import { spawn } from '@socketsecurity/lib/spawn'
 
-import { shadowNpmInstall } from '../../shadow/npm/install.mts'
 import { cmdFlagsToString } from '../../utils/process/cmd.mts'
 
 import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
@@ -54,34 +52,37 @@ export function runAgentInstall(
   const isNpm = agent === NPM
   const isPnpm = agent === PNPM
 
-  // Use shadow installation for npm to enable security scanning.
-  if (isNpm) {
-    return shadowNpmInstall({
-      agentExecPath,
-      cwd: pkgPath,
-      ...options,
-    })
-  }
-
   const {
     args = [],
     spinner,
     ...spawnOpts
   } = { __proto__: null, ...options } as AgentInstallOptions
 
+  // Skip harden flags for older pnpm versions.
   const skipNodeHardenFlags = isPnpm && pkgEnvDetails.agentVersion.major < 11
 
   // Configure package manager specific install arguments.
-  const installArgs = isPnpm
-    ? [
-        'install',
-        // Prevent interactive prompts in CI environments.
-        '--config.confirmModulesPurge=false',
-        // Allow lockfile updates (required for optimization).
-        '--no-frozen-lockfile',
-        ...args,
-      ]
-    : ['install', ...args]
+  let installArgs: string[]
+  if (isNpm) {
+    installArgs = [
+      'install',
+      // Avoid code paths for 'audit' and 'fund'.
+      '--no-audit',
+      '--no-fund',
+      ...args,
+    ]
+  } else if (isPnpm) {
+    installArgs = [
+      'install',
+      // Prevent interactive prompts in CI environments.
+      '--config.confirmModulesPurge=false',
+      // Allow lockfile updates (required for optimization).
+      '--no-frozen-lockfile',
+      ...args,
+    ]
+  } else {
+    installArgs = ['install', ...args]
+  }
 
   return spawn(agentExecPath, installArgs, {
     cwd: pkgPath,

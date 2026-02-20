@@ -8,7 +8,6 @@ export { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib/constants/socket'
 // Shadow Binary Names
 export const SHADOW_NPM_BIN = 'shadow-npm-bin'
 export const SHADOW_NPX_BIN = 'shadow-npx-bin'
-export const SHADOW_NPM_INJECT = 'shadow-npm-inject'
 export const INSTRUMENT_WITH_SENTRY = 'instrument-with-sentry'
 
 // Shadow Environment Variables
