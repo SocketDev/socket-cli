@@ -44,8 +44,11 @@ import {
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { rootAliases, rootCommands } from './commands.mts'
-import ENV from './constants/env.mts'
 import { SOCKET_CLI_BIN_NAME } from './constants/packages.mts'
+import { getCliName } from './env/cli-name.mts'
+import { getCliVersion } from './env/cli-version.mts'
+import { SOCKET_CLI_SKIP_UPDATE_CHECK } from './env/socket-cli-skip-update-check.mts'
+import { VITEST } from './env/vitest.mts'
 import meow from './meow.mts'
 import { meowWithSubcommands } from './utils/cli/with-subcommands.mts'
 import {
@@ -133,7 +136,7 @@ void (async () => {
   // Skip update checks in test environments or when explicitly disabled.
   // Note: Update checks create HTTP connections that may delay process exit by up to 30s
   // due to keep-alive timeouts. Set SOCKET_CLI_SKIP_UPDATE_CHECK=1 to disable.
-  if (!ENV.VITEST && !getCI() && !ENV.SOCKET_CLI_SKIP_UPDATE_CHECK) {
+  if (!VITEST && !getCI() && !SOCKET_CLI_SKIP_UPDATE_CHECK) {
     const registryUrl = lookupRegistryUrl()
     // Unified update notifier handles both SEA and npm automatically.
     // Fire-and-forget: Don't await to avoid blocking on HTTP keep-alive timeouts.
@@ -141,9 +144,9 @@ void (async () => {
       authInfo: lookupRegistryAuthToken(registryUrl, { recursive: true }),
       name: isSeaBinary()
         ? SOCKET_CLI_BIN_NAME
-        : ENV.INLINED_SOCKET_CLI_NAME || SOCKET_CLI_BIN_NAME,
+        : getCliName() || SOCKET_CLI_BIN_NAME,
       registryUrl,
-      version: ENV.INLINED_SOCKET_CLI_VERSION || '0.0.0',
+      version: getCliVersion() || '0.0.0',
     })
 
     // Write manifest entry if launched via bootstrap (SEA/smol).

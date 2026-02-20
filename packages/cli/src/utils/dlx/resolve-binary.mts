@@ -3,9 +3,16 @@
  * Determines whether to use local path overrides or download from npm.
  */
 
-import ENV from '../../constants/env.mts'
+import { getCdxgenVersion } from '../../env/cdxgen-version.mts'
+import { getCoanaVersion } from '../../env/coana-version.mts'
+import { SOCKET_CLI_CDXGEN_LOCAL_PATH } from '../../env/socket-cli-cdxgen-local-path.mts'
+import { SOCKET_CLI_COANA_LOCAL_PATH } from '../../env/socket-cli-coana-local-path.mts'
+import { SOCKET_CLI_PYCLI_LOCAL_PATH } from '../../env/socket-cli-pycli-local-path.mts'
+import { SOCKET_CLI_SFW_LOCAL_PATH } from '../../env/socket-cli-sfw-local-path.mts'
+import { SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH } from '../../env/socket-cli-socket-patch-local-path.mts'
 import { getSwfVersion } from '../../env/sfw-version.mts'
 import { getSocketPatchVersion } from '../../env/socket-patch-version.mts'
+import { getSynpVersion } from '../../env/synp-version.mts'
 
 import type { DlxPackageSpec } from './spawn.mjs'
 
@@ -22,16 +29,15 @@ export type BinaryResolution =
  * Checks SOCKET_CLI_COANA_LOCAL_PATH environment variable first.
  */
 export function resolveCoana(): BinaryResolution {
-  const localPath = ENV.SOCKET_CLI_COANA_LOCAL_PATH
-  if (localPath) {
-    return { type: 'local', path: localPath }
+  if (SOCKET_CLI_COANA_LOCAL_PATH) {
+    return { type: 'local', path: SOCKET_CLI_COANA_LOCAL_PATH }
   }
 
   return {
     type: 'dlx',
     details: {
       name: '@coana-tech/cli',
-      version: `${ENV.INLINED_SOCKET_CLI_COANA_VERSION}`,
+      version: getCoanaVersion(),
       binaryName: 'coana',
     },
   }
@@ -42,16 +48,15 @@ export function resolveCoana(): BinaryResolution {
  * Checks SOCKET_CLI_CDXGEN_LOCAL_PATH environment variable first.
  */
 export function resolveCdxgen(): BinaryResolution {
-  const localPath = ENV.SOCKET_CLI_CDXGEN_LOCAL_PATH
-  if (localPath) {
-    return { type: 'local', path: localPath }
+  if (SOCKET_CLI_CDXGEN_LOCAL_PATH) {
+    return { type: 'local', path: SOCKET_CLI_CDXGEN_LOCAL_PATH }
   }
 
   return {
     type: 'dlx',
     details: {
       name: '@cyclonedx/cdxgen',
-      version: ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION,
+      version: getCdxgenVersion(),
       binaryName: 'cdxgen',
     },
   }
@@ -62,9 +67,8 @@ export function resolveCdxgen(): BinaryResolution {
  * Checks SOCKET_CLI_PYCLI_LOCAL_PATH environment variable first.
  */
 export function resolvePyCli(): BinaryResolution | { type: 'python' } {
-  const localPath = ENV.SOCKET_CLI_PYCLI_LOCAL_PATH
-  if (localPath) {
-    return { type: 'local', path: localPath }
+  if (SOCKET_CLI_PYCLI_LOCAL_PATH) {
+    return { type: 'local', path: SOCKET_CLI_PYCLI_LOCAL_PATH }
   }
 
   // Python CLI uses managed Python + pip install, not dlx.
@@ -76,9 +80,8 @@ export function resolvePyCli(): BinaryResolution | { type: 'python' } {
  * Checks SOCKET_CLI_SFW_LOCAL_PATH environment variable first.
  */
 export function resolveSfw(): BinaryResolution {
-  const localPath = ENV.SOCKET_CLI_SFW_LOCAL_PATH
-  if (localPath) {
-    return { type: 'local', path: localPath }
+  if (SOCKET_CLI_SFW_LOCAL_PATH) {
+    return { type: 'local', path: SOCKET_CLI_SFW_LOCAL_PATH }
   }
 
   return {
@@ -96,9 +99,8 @@ export function resolveSfw(): BinaryResolution {
  * Checks SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH environment variable first.
  */
 export function resolveSocketPatch(): BinaryResolution {
-  const localPath = ENV.SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH
-  if (localPath) {
-    return { type: 'local', path: localPath }
+  if (SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH) {
+    return { type: 'local', path: SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH }
   }
 
   return {
@@ -120,7 +122,7 @@ export function resolveSynp(): BinaryResolution {
     type: 'dlx',
     details: {
       name: 'synp',
-      version: ENV.INLINED_SOCKET_CLI_SYNP_VERSION,
+      version: getSynpVersion(),
       binaryName: 'synp',
     },
   }

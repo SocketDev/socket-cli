@@ -3,7 +3,9 @@
 import { dlxPackage } from '@socketsecurity/lib/dlx/package'
 
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mts'
-import ENV from '../../constants/env.mts'
+import { getCliVersion } from '../../env/cli-version.mts'
+import { getCoanaVersion } from '../../env/coana-version.mts'
+import { SOCKET_CLI_COANA_LOCAL_PATH } from '../../env/socket-cli-coana-local-path.mts'
 import { getErrorCause } from '../error/errors.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mts'
 import { spawnNode } from '../spawn/spawn-node.mjs'
@@ -33,7 +35,7 @@ export async function spawnCoana(
   } as CoanaSpawnOptions
 
   const mixinsEnv: Record<string, string> = {
-    SOCKET_CLI_VERSION: ENV.INLINED_SOCKET_CLI_VERSION || '',
+    SOCKET_CLI_VERSION: getCliVersion(),
   }
   const defaultApiToken = getDefaultApiToken()
   if (defaultApiToken) {
@@ -55,10 +57,9 @@ export async function spawnCoana(
   }
 
   try {
-    const localCoanaPath = ENV.SOCKET_CLI_COANA_LOCAL_PATH
     // Use local Coana CLI if path is provided.
-    if (localCoanaPath) {
-      const spawnResult = await spawnNode([localCoanaPath, ...args], {
+    if (SOCKET_CLI_COANA_LOCAL_PATH) {
+      const spawnResult = await spawnNode([SOCKET_CLI_COANA_LOCAL_PATH, ...args], {
         ...shadowOptions,
         env: {
           ...process.env,
@@ -75,7 +76,7 @@ export async function spawnCoana(
     }
 
     // Use dlx version.
-    const coanaVersion = ENV.INLINED_SOCKET_CLI_COANA_VERSION
+    const coanaVersion = getCoanaVersion()
     const packageSpec = `@coana-tech/cli@${coanaVersion}`
 
     const finalEnv = {

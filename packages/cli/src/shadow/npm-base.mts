@@ -23,12 +23,12 @@ import { spawnSync } from '@socketsecurity/lib/spawn'
 import { NPM } from '../constants/agents.mts'
 import type { NPX } from '../constants/agents.mts'
 import { FLAG_LOGLEVEL } from '../constants/cli.mts'
-import ENV from '../constants/env.mts'
 import {
   getInstrumentWithSentryPath,
   getShadowNpmInjectPath,
   shadowBinPath,
 } from '../constants/paths.mts'
+import { isSentryBuild } from '../env/is-sentry-build.mts'
 import {
   SOCKET_CLI_SHADOW_API_TOKEN,
   SOCKET_CLI_SHADOW_BIN,
@@ -170,7 +170,7 @@ export default async function shadowNpmBase(
       ...getNodeDisableSigusr1Flags(),
       // Memory flags commented out.
       // ...constants.nodeMemoryFlags,
-      ...(ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
+      ...(isSentryBuild()
         ? ['--require', getInstrumentWithSentryPath()]
         : []),
       '--require',

@@ -7,7 +7,7 @@ import {
   OUTPUT_MARKDOWN,
   REDACTED,
 } from '../../constants/cli.mts'
-import ENV from '../../constants/env.mts'
+import { VITEST } from '../../env/vitest.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdTable } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
@@ -92,7 +92,7 @@ export async function outputAsJson(
     ok: true,
     data: {
       desc: 'Audit logs for given query',
-      generated: ENV.VITEST ? REDACTED : new Date().toISOString(),
+      generated: VITEST ? REDACTED : new Date().toISOString(),
       logType,
       nextPage: auditLogs.data.nextPage,
       org: orgSlug,
@@ -154,7 +154,7 @@ These are the Socket.dev audit logs as per requested query.
 - page: ${page}
 - next page: ${auditLogs.nextPage}
 - per page: ${perPage}
-- generated: ${ENV.VITEST ? REDACTED : new Date().toISOString()}
+- generated: ${VITEST ? REDACTED : new Date().toISOString()}
 
 ${table}
 `

@@ -5,14 +5,15 @@ import { getSocketCliGithubToken } from '@socketsecurity/lib/env/socket-cli'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { getSocketFixPrs } from './pull-request.mts'
-import ENV from '../../constants/env.mts'
+import { GITHUB_REPOSITORY } from '../../env/github-repository.mts'
+import { SOCKET_CLI_GIT_USER_EMAIL } from '../../env/socket-cli-git-user-email.mts'
+import { SOCKET_CLI_GIT_USER_NAME } from '../../env/socket-cli-git-user-name.mts'
 import { getBaseBranch, getRepoInfo } from '../../utils/git/operations.mjs'
 
 import type { PrMatch } from './pull-request.mts'
 import type { RepoInfo } from '../../utils/git/operations.mjs'
 
 function ciRepoInfo(): RepoInfo | undefined {
-  const { GITHUB_REPOSITORY } = ENV
   if (!GITHUB_REPOSITORY) {
     debug('miss: GITHUB_REPOSITORY env var')
     return undefined
@@ -61,13 +62,6 @@ export function getCiEnvInstructions(): string {
  * Returns lists of missing and present variables.
  */
 export function checkCiEnvVars(): MissingEnvVars {
-  const {
-    CI,
-    SOCKET_CLI_GIT_USER_EMAIL,
-    SOCKET_CLI_GIT_USER_NAME,
-    SOCKET_CLI_GITHUB_TOKEN,
-  } = ENV
-
   const missing: string[] = []
   const present: string[] = []
 
@@ -80,18 +74,18 @@ export function checkCiEnvVars(): MissingEnvVars {
     }
   }
 
-  checkVar(CI, 'CI')
+  checkVar(getCI(), 'CI')
   checkVar(SOCKET_CLI_GIT_USER_EMAIL, 'SOCKET_CLI_GIT_USER_EMAIL')
   checkVar(SOCKET_CLI_GIT_USER_NAME, 'SOCKET_CLI_GIT_USER_NAME')
-  checkVar(SOCKET_CLI_GITHUB_TOKEN, 'SOCKET_CLI_GITHUB_TOKEN (or GITHUB_TOKEN)')
+  checkVar(getSocketCliGithubToken(), 'SOCKET_CLI_GITHUB_TOKEN (or GITHUB_TOKEN)')
 
   return { missing, present }
 }
 
 export async function getFixEnv(): Promise<FixEnv> {
   const baseBranch = await getBaseBranch()
-  const gitEmail = ENV.SOCKET_CLI_GIT_USER_EMAIL
-  const gitUser = ENV.SOCKET_CLI_GIT_USER_NAME
+  const gitEmail = SOCKET_CLI_GIT_USER_EMAIL
+  const gitUser = SOCKET_CLI_GIT_USER_NAME
   const githubToken = getSocketCliGithubToken()
   const isCi = !!(getCI() && gitEmail && gitUser && githubToken)
 

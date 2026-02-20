@@ -47,7 +47,10 @@ import {
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
 } from '../../constants/config.mts'
-import ENV from '../../constants/env.mts'
+import { getCliHomepage } from '../../env/cli-homepage.mts'
+import { getCliName } from '../../env/cli-name.mts'
+import { getCliVersion } from '../../env/cli-version.mts'
+import { SOCKET_CLI_DEBUG } from '../../env/socket-cli-debug.mts'
 import { TOKEN_PREFIX_LENGTH } from '../../constants/socket.mts'
 import { getConfigValueOrUndef } from '../config.mts'
 import { debugApiRequest, debugApiResponse } from '../debug.mts'
@@ -172,7 +175,7 @@ export async function setupSdk(
         // Skip tracking for telemetry submission endpoints to prevent infinite loop.
         const isTelemetryEndpoint = info.url.includes('/telemetry')
 
-        if (ENV.SOCKET_CLI_DEBUG) {
+        if (SOCKET_CLI_DEBUG) {
           // Debug logging.
           debugApiRequest(info.method, info.url, info.timeout)
         }
@@ -212,7 +215,7 @@ export async function setupSdk(
           }
         }
 
-        if (ENV.SOCKET_CLI_DEBUG) {
+        if (SOCKET_CLI_DEBUG) {
           // Debug logging.
           debugApiResponse(info.url, info.status, info.error, {
             method: info.method,
@@ -247,13 +250,13 @@ export async function setupSdk(
       return { shouldContinue: true }
     },
     userAgent: createUserAgentFromPkgJson({
-      name: ENV.INLINED_SOCKET_CLI_NAME || 'socket',
-      version: ENV.INLINED_SOCKET_CLI_VERSION || '0.0.0',
-      homepage: ENV.INLINED_SOCKET_CLI_HOMEPAGE || 'https://socket.dev/cli',
+      name: getCliName(),
+      version: getCliVersion(),
+      homepage: getCliHomepage(),
     }),
   }
 
-  if (ENV.SOCKET_CLI_DEBUG) {
+  if (SOCKET_CLI_DEBUG) {
     logger.info(
       `[DEBUG] ${new Date().toISOString()} SDK options: ${JSON.stringify(sdkOptions)}`,
     )

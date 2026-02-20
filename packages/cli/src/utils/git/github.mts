@@ -44,7 +44,10 @@ import {
 import { spawn } from '@socketsecurity/lib/spawn'
 import { parseUrl } from '@socketsecurity/lib/url'
 
-import ENV from '../../constants/env.mts'
+import { DISABLE_GITHUB_CACHE } from '../../env/disable-github-cache.mts'
+import { GITHUB_API_URL } from '../../env/github-api-url.mts'
+import { GITHUB_SERVER_URL } from '../../env/github-server-url.mts'
+import { SOCKET_CLI_GITHUB_TOKEN } from '../../env/socket-cli-github-token.mts'
 import { getGithubCachePath } from '../../constants/paths.mts'
 import { formatErrorWithDetail } from '../error/errors.mts'
 
@@ -90,7 +93,7 @@ export async function cacheFetch<T>(
   ttlMs?: number | undefined,
 ): Promise<T> {
   // Optionally disable cache.
-  if (ENV.DISABLE_GITHUB_CACHE) {
+  if (DISABLE_GITHUB_CACHE) {
     return await fetcher()
   }
   let data = (await readCache(key, ttlMs)) as T
@@ -185,13 +188,12 @@ export async function fetchGhsaDetails(
 let _octokit: Octokit | undefined
 export function getOctokit(): Octokit {
   if (_octokit === undefined) {
-    const { SOCKET_CLI_GITHUB_TOKEN } = ENV
     if (!SOCKET_CLI_GITHUB_TOKEN) {
       debugNs('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
     }
     const octokitOptions = {
       ...(SOCKET_CLI_GITHUB_TOKEN ? { auth: SOCKET_CLI_GITHUB_TOKEN } : {}),
-      ...(ENV.GITHUB_API_URL ? { baseUrl: ENV.GITHUB_API_URL } : {}),
+      ...(GITHUB_API_URL ? { baseUrl: GITHUB_API_URL } : {}),
     }
     debugDirNs('inspect', { octokitOptions })
     _octokit = new Octokit(octokitOptions)
@@ -202,7 +204,6 @@ export function getOctokit(): Octokit {
 let _octokitGraphql: typeof OctokitGraphql | undefined
 export function getOctokitGraphql(): typeof OctokitGraphql {
   if (!_octokitGraphql) {
-    const { SOCKET_CLI_GITHUB_TOKEN } = ENV
     if (!SOCKET_CLI_GITHUB_TOKEN) {
       debugNs('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
     }
@@ -282,7 +283,6 @@ export async function setGitRemoteGithubRepoUrl(
   token: string,
   cwd = process.cwd(),
 ): Promise<boolean> {
-  const { GITHUB_SERVER_URL } = ENV
   const urlObj = parseUrl(GITHUB_SERVER_URL || '')
   const host = urlObj?.host
   if (!host) {

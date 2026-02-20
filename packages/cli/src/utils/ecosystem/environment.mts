@@ -66,7 +66,7 @@ import {
   getPnpmExecPath,
 } from '../../constants/agents.mts'
 import { FLAG_VERSION } from '../../constants/cli.mts'
-import ENV from '../../constants/env.mts'
+import { VITEST } from '../../env/vitest.mts'
 import {
   EXT_LOCK,
   EXT_LOCKB,
@@ -713,7 +713,7 @@ export async function detectAndValidatePackageEnvironment(
     logger?.warn(
       cmdPrefixMessage(
         cmdName,
-        `Package ${lockName} found at ${ENV.VITEST ? '[REDACTED]' : details.lockPath}`,
+        `Package ${lockName} found at ${VITEST ? '[REDACTED]' : details.lockPath}`,
       ),
     )
   }

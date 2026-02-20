@@ -26,7 +26,6 @@ import {
 } from '@socketsecurity/lib/constants/core'
 import { debugNs } from '@socketsecurity/lib/debug'
 
-import ENV from '../../constants/env.mts'
 import {
   SOCKET_DASHBOARD_URL,
   SOCKET_PRICING_URL,
@@ -34,7 +33,7 @@ import {
 } from '../../constants/socket.mts'
 
 // Access internals via kInternalsSymbol.
-const constants = { ENV, [kInternalsSymbol]: {} as { getSentry?: () => any } }
+const constants = { [kInternalsSymbol]: {} as { getSentry?: () => any } }
 const internals = constants[kInternalsSymbol]
 const getSentry = internals.getSentry
 

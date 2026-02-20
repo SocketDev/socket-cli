@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { debug } from '@socketsecurity/lib/debug'
 import { safeMkdirSync } from '@socketsecurity/lib/fs'
 
-import ENV from '../../constants/env.mts'
+import { getCliVersionHash } from '../../env/cli-version-hash.mts'
 import { homePath } from '../../constants/paths.mts'
 import { getBashrcDetails } from '../../utils/cli/completion.mts'
 
@@ -122,7 +122,7 @@ export function updateInstalledTabCompletionScript(
     targetPath,
     content.data.replaceAll(
       '%SOCKET_VERSION_TOKEN%',
-      ENV.INLINED_SOCKET_CLI_VERSION_HASH || '',
+      getCliVersionHash(),
     ),
     'utf8',
   )

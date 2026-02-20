@@ -1,7 +1,7 @@
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { CONFIG_KEY_API_TOKEN } from '../../constants/config.mjs'
-import ENV from '../../constants/env.mts'
+import { SOCKET_CLI_API_TOKEN } from '../../env/socket-cli-api-token.mts'
 import { TOKEN_PREFIX } from '../../constants/socket.mjs'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
@@ -39,7 +39,7 @@ interface WhoamiStatus {
 
 function getTokenLocation(): string {
   // Check environment variable first.
-  if (ENV.SOCKET_CLI_API_TOKEN) {
+  if (SOCKET_CLI_API_TOKEN) {
     return 'Environment variable (SOCKET_SECURITY_API_KEY)'
   }
 

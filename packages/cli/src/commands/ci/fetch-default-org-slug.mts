@@ -1,6 +1,6 @@
 import { debug } from '@socketsecurity/lib/debug'
 
-import ENV from '../../constants/env.mts'
+import { SOCKET_CLI_ORG_SLUG } from '../../env/socket-cli-org-slug.mts'
 import { getConfigValueOrUndef } from '../../utils/config.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
@@ -16,12 +16,11 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     return { ok: true, data: defaultOrgResult }
   }
 
-  const envOrgSlug = ENV.SOCKET_CLI_ORG_SLUG
-  if (envOrgSlug) {
+  if (SOCKET_CLI_ORG_SLUG) {
     debug(
-      `use: org from SOCKET_CLI_ORG_SLUG environment variable: ${envOrgSlug}`,
+      `use: org from SOCKET_CLI_ORG_SLUG environment variable: ${SOCKET_CLI_ORG_SLUG}`,
     )
-    return { ok: true, data: envOrgSlug }
+    return { ok: true, data: SOCKET_CLI_ORG_SLUG }
   }
 
   const orgsCResult = await fetchOrganization()

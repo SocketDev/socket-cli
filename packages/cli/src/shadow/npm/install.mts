@@ -10,7 +10,7 @@ import { spawn } from '@socketsecurity/lib/spawn'
 
 import { NPM } from '../../constants/agents.mts'
 import { FLAG_LOGLEVEL } from '../../constants/cli.mts'
-import ENV, { processEnv } from '../../constants/env.mts'
+import { isSentryBuild } from '../../env/is-sentry-build.mts'
 import {
   execPath,
   instrumentWithSentryPath,
@@ -81,7 +81,7 @@ export function shadowNpmInstall(
       ...nodeHardenFlags,
       // Memory flags commented out.
       // ...constants.nodeMemoryFlags,
-      ...(ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
+      ...(isSentryBuild()
         ? ['--require', instrumentWithSentryPath]
         : []),
       '--require',
@@ -103,7 +103,6 @@ export function shadowNpmInstall(
       ...spawnOpts,
       env: {
         ...process.env,
-        ...processEnv,
         // @ts-expect-error - getOwn may return undefined, but spread handles it
         ...getOwn(spawnOpts, 'env'),
       },

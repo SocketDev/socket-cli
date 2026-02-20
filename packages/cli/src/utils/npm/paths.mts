@@ -5,7 +5,7 @@ import path from 'node:path'
 import { NPM } from '@socketsecurity/lib/constants/agents'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import ENV from '../../constants/env.mts'
+import { SOCKET_CLI_NPM_PATH } from '../../env/socket-cli-npm-path.mts'
 import { NODE_MODULES } from '../../constants/packages.mts'
 import { SOCKET_CLI_ISSUES_URL } from '../../constants/socket.mts'
 import {
@@ -52,7 +52,7 @@ export function getNpmDirPath() {
     const npmBinPath = getNpmBinPath()
     _npmDirPath = npmBinPath ? findNpmDirPathSync(npmBinPath) : undefined
     if (!_npmDirPath) {
-      _npmDirPath = ENV.SOCKET_CLI_NPM_PATH || undefined
+      _npmDirPath = SOCKET_CLI_NPM_PATH || undefined
     }
     if (!_npmDirPath) {
       let message = 'Unable to find npm CLI install directory.'

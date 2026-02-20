@@ -1,6 +1,6 @@
 import os from 'node:os'
 
-import ENV from './constants/env.mts'
+import { NODE_OPTIONS } from './env/node-options.mts'
 import meow from './meow.mts'
 
 import type { MeowFlag as Flag } from './meow.mts'
@@ -87,7 +87,7 @@ export function getMaxOldSpaceSizeFlag(): number {
     _maxOldSpaceSizeFlag = getRawSpaceSizeFlags().maxOldSpaceSize
     if (!_maxOldSpaceSizeFlag) {
       const match = /(?<=--max-old-space-size=)\d+/.exec(
-        ENV.NODE_OPTIONS || '',
+        NODE_OPTIONS ?? '',
       )?.[0]
       if (match) {
         const parsed = Number(match)
@@ -126,7 +126,7 @@ export function getMaxSemiSpaceSizeFlag(): number {
     _maxSemiSpaceSizeFlag = getRawSpaceSizeFlags().maxSemiSpaceSize
     if (!_maxSemiSpaceSizeFlag) {
       const match = /(?<=--max-semi-space-size=)\d+/.exec(
-        ENV.NODE_OPTIONS || '',
+        NODE_OPTIONS ?? '',
       )?.[0]
       if (match) {
         const parsed = Number(match)

@@ -12,7 +12,9 @@ import {
   CONFIG_KEY_API_TOKEN,
   CONFIG_KEY_DEFAULT_ORG,
 } from '../../constants/config.mts'
-import ENV, { getCliVersion, getCliVersionHash } from '../../constants/env.mts'
+import { getCliVersion } from '../../env/cli-version.mts'
+import { getCliVersionHash } from '../../env/cli-version-hash.mts'
+import { VITEST } from '../../env/vitest.mts'
 import { getConfigValueOrUndef, isConfigFromFlag } from '../config.mts'
 import { isDebug } from '../debug.mts'
 import { renderLogoWithFallback, supportsFullColor } from './ascii-header.mts'
@@ -60,7 +62,7 @@ function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
  */
 function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
   // Disable animation in CI, tests, or when explicitly disabled.
-  if (getCI() || ENV.VITEST || !process.stdout.isTTY || !supportsFullColor()) {
+  if (getCI() || VITEST || !process.stdout.isTTY || !supportsFullColor()) {
     return false
   }
   // Check flags first.
@@ -88,7 +90,7 @@ export function getAsciiHeader(
   flags?: Record<string, unknown>,
 ): string {
   // Note: In tests/CI we redact and remove colors because otherwise snapshots will fail.
-  const redacting = ENV.VITEST
+  const redacting = VITEST
   const inCI = getCI()
 
   // Version display: show hash in debug mode, otherwise show semantic version.

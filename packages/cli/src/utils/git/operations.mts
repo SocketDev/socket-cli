@@ -36,7 +36,8 @@ import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
 
 import { FLAG_QUIET } from '../../constants/cli.mts'
-import ENV from '../../constants/env.mts'
+import { SOCKET_CLI_GIT_USER_EMAIL } from '../../env/socket-cli-git-user-email.mts'
+import { SOCKET_CLI_GIT_USER_NAME } from '../../env/socket-cli-git-user-name.mts'
 import {
   SOCKET_DEFAULT_BRANCH,
   SOCKET_DEFAULT_REPOSITORY,
@@ -324,8 +325,8 @@ export async function gitCommit(
   }
   const {
     cwd = process.cwd(),
-    email = ENV.SOCKET_CLI_GIT_USER_EMAIL,
-    user = ENV.SOCKET_CLI_GIT_USER_NAME,
+    email = SOCKET_CLI_GIT_USER_EMAIL,
+    user = SOCKET_CLI_GIT_USER_NAME,
   } = { __proto__: null, ...options } as GitCreateAndPushBranchOptions
 
   await gitEnsureIdentity(user || '', email || '', cwd)
