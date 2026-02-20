@@ -7,7 +7,6 @@ import { cmdBundler } from './commands/bundler/cmd-bundler.mts'
 import { cmdCargo } from './commands/cargo/cmd-cargo.mts'
 import { cmdCI } from './commands/ci/cmd-ci.mts'
 import { cmdConfig } from './commands/config/cmd-config.mts'
-import { cmdConsole } from './commands/console/cmd-console.mts'
 import { cmdFix } from './commands/fix/cmd-fix.mts'
 import { cmdGem } from './commands/gem/cmd-gem.mts'
 import { cmdGo } from './commands/go/cmd-go.mts'
@@ -52,7 +51,6 @@ export const rootCommands = {
   cdxgen: cmdManifestCdxgen,
   ci: cmdCI,
   config: cmdConfig,
-  console: cmdConsole,
   dependencies: cmdOrganizationDependencies,
   fix: cmdFix,
   gem: cmdGem,

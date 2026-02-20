@@ -4,13 +4,13 @@ Complete reference for all Socket CLI commands, subcommands, and their integrati
 
 ## Command Hierarchy
 
-### 77 Total Commands
-- 40 Root commands (including parent commands)
+### 76 Total Commands
+- 39 Root commands (including parent commands)
 - 37 Subcommands
 
-## Root Commands (40)
+## Root Commands (39)
 
-### Core Commands (15)
+### Core Commands (14)
 
 | Command | Module | Integrates With | Subcommands |
 |---------|--------|-----------------|-------------|
@@ -18,7 +18,6 @@ Complete reference for all Socket CLI commands, subcommands, and their integrati
 | ask | `ask/cmd-ask.mts` | Socket AI Assistant API | - |
 | audit-log | `audit-log/cmd-audit-log.mts` | Socket Audit Log API | - |
 | ci | `ci/cmd-ci.mts` | CI/CD Integration (Socket API) | - |
-| console | `console/cmd-console.mts` | Interactive TUI console | - |
 | fix | `fix/cmd-fix.mts` | Socket Fix API (security patches) | - |
 | json | `json/cmd-json.mts` | JSON output formatter wrapper | - |
 | login | `login/cmd-login.mts` | Socket Authentication API | - |
@@ -189,7 +188,6 @@ src/commands/package/
 
 | Integration | Commands Using It |
 |-------------|-------------------|
-| Interactive TUI | console |
 | File System (~/.socket/) | config get/set/unset/list/auto |
 | GitHub API | scan github |
 | Shell Completion | install completion, uninstall completion |
