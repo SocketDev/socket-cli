@@ -1,28 +1,64 @@
 /**
- * Unit tests for CLI flag definitions and memory management.
+ * @fileoverview Unit tests for CLI flag definitions and memory management.
  *
  * Tests the flag system including common flags, output flags, validation flags,
  * and dynamic memory configuration based on system resources.
  *
  * Test Coverage:
- * - getMaxOldSpaceSizeFlag: Default based on system memory (75% of RAM), NODE_OPTIONS override, CLI flag override, low memory systems
- * - getMaxSemiSpaceSizeFlag: Calculation based on old space size, NODE_OPTIONS override, CLI flag override, scaling for small/large heaps
+ * - getMaxOldSpaceSizeFlag: Default based on system memory (75% of RAM), CLI flag override
+ * - getMaxSemiSpaceSizeFlag: Calculation based on old space size, CLI flag override
  * - commonFlags: Banner, compactHeader, config, dryRun, help, helpFull, maxOldSpaceSize, maxSemiSpaceSize, spinner flags
  * - outputFlags: JSON and markdown output format flags
  * - validationFlags: All and strict validation mode flags
  * - Flag structure validation (type, description, shortFlag properties)
  *
  * Testing Approach:
- * - Mock meow, node:os, and constants modules
+ * - Mock meow to control CLI flag parsing
  * - Test flag calculations with various memory configurations
  * - Validate flag metadata and structure
- * - Test NODE_OPTIONS and CLI argument parsing
  *
  * Related Files:
  * - src/flags.mts - Flag definitions and memory management
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+// Store mock values that can be changed per test.
+const mockValues = vi.hoisted(() => ({
+  maxOldSpaceSize: 0,
+  maxSemiSpaceSize: 0,
+  nodeOptions: '',
+  totalMem: 8 * 1024 * 1024 * 1024, // 8GB default.
+}))
+
+// Mock meow to return controlled flag values.
+vi.mock('../../src/meow.mts', () => ({
+  default: vi.fn(() => ({
+    flags: {
+      maxOldSpaceSize: mockValues.maxOldSpaceSize,
+      maxSemiSpaceSize: mockValues.maxSemiSpaceSize,
+    },
+  })),
+}))
+
+// Mock node:os to control total memory.
+vi.mock('node:os', async importOriginal => {
+  const original = await importOriginal<typeof import('node:os')>()
+  return {
+    ...original,
+    default: {
+      ...original.default,
+      totalmem: () => mockValues.totalMem,
+    },
+  }
+})
+
+// Mock NODE_OPTIONS to be controllable.
+vi.mock('../../src/env/node-options.mts', () => ({
+  get NODE_OPTIONS() {
+    return mockValues.nodeOptions
+  },
+}))
 
 import {
   commonFlags,
@@ -33,45 +69,19 @@ import {
   validationFlags,
 } from '../../src/flags.mts'
 
-// Mock dependencies.
-vi.mock('meow', () => ({
-  default: vi.fn(() => ({
-    flags: {
-      maxOldSpaceSize: 0,
-      maxSemiSpaceSize: 0,
-    },
-  })),
-}))
-
-vi.mock('node:os', () => ({
-  default: {
-    totalmem: vi.fn(() => 8 * 1024 * 1024 * 1024), // 8GB.
-  },
-}))
-
-vi.mock('./constants.mts', () => ({
-  default: {
-    ENV: {
-      NODE_OPTIONS: '',
-    },
-  },
-}))
-
 describe('flags', () => {
-  let originalArgv: string[]
-
   beforeEach(() => {
     vi.clearAllMocks()
     resetFlagCache()
-    // Save original argv and reset NODE_OPTIONS for clean state.
-    originalArgv = process.argv
-    process.env.NODE_OPTIONS = ''
+    // Reset mock values to defaults.
+    mockValues.maxOldSpaceSize = 0
+    mockValues.maxSemiSpaceSize = 0
+    mockValues.nodeOptions = ''
+    mockValues.totalMem = 8 * 1024 * 1024 * 1024 // 8GB.
   })
 
   afterEach(() => {
-    // Restore original state.
-    process.argv = originalArgv
-    delete process.env.NODE_OPTIONS
+    resetFlagCache()
   })
 
   describe('getMaxOldSpaceSizeFlag', () => {
@@ -84,97 +94,88 @@ describe('flags', () => {
     })
 
     it('respects NODE_OPTIONS', () => {
-      process.env.NODE_OPTIONS = '--max-old-space-size=512'
+      mockValues.nodeOptions = '--max-old-space-size=512'
       resetFlagCache()
 
       const result = getMaxOldSpaceSizeFlag()
       expect(result).toBe(512)
-
-      // Cleanup.
-      delete process.env.NODE_OPTIONS
     })
 
     it('respects user-provided flag', () => {
-      const originalArgv = process.argv
-      process.argv = ['node', 'script.js', '--max-old-space-size=1024']
+      mockValues.maxOldSpaceSize = 1024
       resetFlagCache()
 
       const result = getMaxOldSpaceSizeFlag()
       expect(result).toBe(1024)
-
-      // Cleanup.
-      process.argv = originalArgv
     })
 
     it('handles low memory systems', () => {
-      const originalArgv = process.argv
-      process.argv = ['node', 'script.js', '--max-old-space-size=256']
+      mockValues.maxOldSpaceSize = 256
       resetFlagCache()
 
       const result = getMaxOldSpaceSizeFlag()
       // Should respect the explicitly set low value.
       expect(result).toBe(256)
+    })
 
-      // Cleanup.
-      process.argv = originalArgv
+    it('calculates for 4GB system', () => {
+      mockValues.totalMem = 4 * 1024 * 1024 * 1024 // 4GB.
+      resetFlagCache()
+
+      const result = getMaxOldSpaceSizeFlag()
+      // Should be 75% of 4GB in MiB = 3072.
+      expect(result).toBe(3072)
     })
   })
 
   describe('getMaxSemiSpaceSizeFlag', () => {
     it('calculates based on old space size for small heaps', () => {
+      // With default 8GB, old space is 6144 MiB, so semi should be 64.
       const result = getMaxSemiSpaceSizeFlag()
-
-      // With 6144 MiB old space, should be 64 MiB semi space.
       expect(result).toBe(64)
     })
 
     it('respects NODE_OPTIONS', () => {
-      process.env.NODE_OPTIONS = '--max-semi-space-size=16'
+      mockValues.nodeOptions = '--max-semi-space-size=16'
       resetFlagCache()
 
       const result = getMaxSemiSpaceSizeFlag()
       expect(result).toBe(16)
-
-      // Cleanup.
-      delete process.env.NODE_OPTIONS
     })
 
     it('respects user-provided flag', () => {
-      const originalArgv = process.argv
-      process.argv = ['node', 'script.js', '--max-semi-space-size=32']
+      mockValues.maxSemiSpaceSize = 32
       resetFlagCache()
 
       const result = getMaxSemiSpaceSizeFlag()
       expect(result).toBe(32)
-
-      // Cleanup.
-      process.argv = originalArgv
     })
 
     it('scales for very small heaps', () => {
-      const originalArgv = process.argv
-      process.argv = ['node', 'script.js', '--max-old-space-size=512']
+      mockValues.maxOldSpaceSize = 512
       resetFlagCache()
 
       const result = getMaxSemiSpaceSizeFlag()
       // 512 MiB heap should use 4 MiB semi-space.
       expect(result).toBe(4)
-
-      // Cleanup.
-      process.argv = originalArgv
     })
 
     it('scales for large heaps', () => {
-      const originalArgv = process.argv
-      process.argv = ['node', 'script.js', '--max-old-space-size=16384']
+      mockValues.maxOldSpaceSize = 16384
       resetFlagCache()
 
       const result = getMaxSemiSpaceSizeFlag()
       // 16384 MiB (16 GiB) heap: log2(16384) = 14, 14 * 8 = 112.
       expect(result).toBe(112)
+    })
 
-      // Cleanup.
-      process.argv = originalArgv
+    it('scales for medium heaps', () => {
+      mockValues.maxOldSpaceSize = 2048
+      resetFlagCache()
+
+      const result = getMaxSemiSpaceSizeFlag()
+      // 2048 MiB heap should use 16 MiB semi-space.
+      expect(result).toBe(16)
     })
   })
 
