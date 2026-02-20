@@ -3,7 +3,7 @@
  * Just outputs version to verify the binary works.
  */
 
-console.log('Socket CLI SEA Test with Bundled Security Tools')
+console.log('Socket CLI SEA Test with Bundled External Tools')
 console.log('Version: test-v1.0.0')
 console.log(`Platform: ${process.platform}-${process.arch}`)
 
@@ -17,7 +17,7 @@ if (process.argv[1] === process.execPath) {
       const tools = ['trivy', 'trufflehog', 'opengrep']
       for (const tool of tools) {
         try {
-          const assetBuffer = getAsset(`security-tools/${tool}`)
+          const assetBuffer = getAsset(`external-tools/${tool}`)
           const sizeMB = (assetBuffer.byteLength / 1024 / 1024).toFixed(2)
           console.log(`  ✓ ${tool}: ${sizeMB} MB`)
         } catch (_e) {

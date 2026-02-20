@@ -207,11 +207,11 @@ export async function getLatestBinjectVersion() {
  *
  * @example
  * const tarGzPath = await downloadExternalTools('darwin', 'arm64')
- * // Returns: '../build-infra/build/security-tools/darwin-arm64.tar.gz'
+ * // Returns: '../build-infra/build/external-tools/darwin-arm64.tar.gz'
  *
  * @example
  * const tarGzPath = await downloadExternalTools('linux', 'x64', true)
- * // Returns: '../build-infra/build/security-tools/linux-x64-musl.tar.gz'
+ * // Returns: '../build-infra/build/external-tools/linux-x64-musl.tar.gz'
  */
 export async function downloadExternalTools(platform, arch, isMusl = false) {
   const rootPath = getRootPath()
@@ -219,12 +219,12 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
   const platformArch = `${platform}-${arch}${muslSuffix}`
 
   const toolsDir = normalizePath(
-    path.join(rootPath, `../build-infra/build/security-tools/${platformArch}`),
+    path.join(rootPath, `packages/build-infra/build/external-tools/${platformArch}`),
   )
   const tarGzPath = normalizePath(
     path.join(
       rootPath,
-      `../build-infra/build/security-tools/${platformArch}.tar.gz`,
+      `packages/build-infra/build/external-tools/${platformArch}.tar.gz`,
     ),
   )
 

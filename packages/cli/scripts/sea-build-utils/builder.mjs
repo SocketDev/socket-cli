@@ -177,7 +177,7 @@ export async function buildSeaBlob(configPath) {
  *   'dist/sea/sea-config-socket-darwin-arm64.json',
  *   'dist/sea/socket-darwin-arm64',
  *   'socket-darwin-arm64-abc123',
- *   'build-infra/build/security-tools/darwin-arm64.tar.gz'
+ *   'build-infra/build/external-tools/darwin-arm64.tar.gz'
  * )
  * // Creates: dist/sea/socket-darwin-arm64 with CLI + compressed VFS
  *
@@ -211,7 +211,7 @@ export async function injectSeaBlob(
     const binjectDir = normalizePath(
       path.join(
         rootPath,
-        `../build-infra/build/downloaded/binject/${platformArch}`,
+        `packages/build-infra/build/downloaded/binject/${platformArch}`,
       ),
     )
     const versionPath = normalizePath(path.join(binjectDir, '.version'))

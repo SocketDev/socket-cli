@@ -405,4 +405,4 @@ const config = {
   ],
 }
 
-export default createBuildRunner(config, 'CLI bundle')
+export default createBuildRunner(config, 'CLI bundle', import.meta)

@@ -13,9 +13,9 @@ import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import {
-  areSecurityToolsAvailable,
-  extractSecurityTools,
-  getToolPaths,
+  areBasicsToolsAvailable,
+  extractBasicsTools,
+  getBasicsToolPaths,
 } from './vfs-extract.mts'
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants.mts'
 import { getPyCliVersion } from '../../env/pycli-version.mts'
@@ -92,31 +92,31 @@ export async function runSocketBasics(
     timeout = 600_000, // 10 minutes default.
   } = options
 
-  // Check if security tools are available.
-  const toolsAvailable = areSecurityToolsAvailable()
+  // Check if basics tools are available.
+  const toolsAvailable = areBasicsToolsAvailable()
   if (!toolsAvailable) {
     return {
       ok: false,
-      message: 'Security tools not available',
+      message: 'Basics tools not available',
       cause:
         'Socket-basics requires Python, Trivy, TruffleHog, and OpenGrep to be bundled in the SEA binary',
     }
   }
 
-  // Extract security tools from VFS.
+  // Extract basics tools from VFS.
   // Pass cacheDir to isolate parallel builds.
-  spinner?.start('Extracting security tools...')
-  const toolsDir = await extractSecurityTools(cacheDir)
+  spinner?.start('Extracting basics tools...')
+  const toolsDir = await extractBasicsTools(cacheDir)
   if (!toolsDir) {
-    spinner?.fail('Failed to extract security tools')
+    spinner?.fail('Failed to extract basics tools')
     return {
       ok: false,
-      message: 'Failed to extract security tools from VFS',
+      message: 'Failed to extract basics tools from VFS',
       cause: 'VFS extraction returned null',
     }
   }
 
-  const toolPaths = getToolPaths(toolsDir)
+  const toolPaths = getBasicsToolPaths(toolsDir)
 
   // Verify Python is available.
   if (!existsSync(toolPaths.python)) {
@@ -221,10 +221,10 @@ export async function runSocketBasics(
   debug('notice', `Socket Python CLI version verified: ${installedVersion}`)
 
   // Construct socket-basics command.
-  // socket-basics is a module within the socketsecurity package.
+  // socket-basics is a separate PyPI package (socket_basics).
   const args = [
     '-m',
-    'socketsecurity.basics',
+    'socket_basics',
     '--org',
     orgSlug,
     '--repo',

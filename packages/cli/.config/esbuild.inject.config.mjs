@@ -74,4 +74,4 @@ const config = {
   plugins: [envVarReplacementPlugin(inlinedEnvVars)],
 }
 
-export default createBuildRunner(config, 'Shadow npm inject')
+export default createBuildRunner(config, 'Shadow npm inject', import.meta)
