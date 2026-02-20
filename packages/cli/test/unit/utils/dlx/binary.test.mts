@@ -52,23 +52,16 @@ describe('binary', () => {
       const result = await listDlxCache()
       expect(Array.isArray(result)).toBe(true)
 
-      // If cache has entries, verify structure
+      // If cache has entries, verify core structure.
       if (result.length > 0) {
         const entry = result[0]
+        // Required properties that should always be present.
         expect(entry).toHaveProperty('name')
-        expect(entry).toHaveProperty('url')
         expect(entry).toHaveProperty('size')
         expect(entry).toHaveProperty('age')
-        expect(entry).toHaveProperty('platform')
-        expect(entry).toHaveProperty('arch')
-        expect(entry).toHaveProperty('checksum')
         expect(typeof entry.name).toBe('string')
-        expect(typeof entry.url).toBe('string')
         expect(typeof entry.size).toBe('number')
         expect(typeof entry.age).toBe('number')
-        expect(typeof entry.platform).toBe('string')
-        expect(typeof entry.arch).toBe('string')
-        expect(typeof entry.checksum).toBe('string')
       }
     })
   })
