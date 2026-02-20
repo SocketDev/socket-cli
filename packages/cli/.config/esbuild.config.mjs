@@ -5,8 +5,8 @@
  * Usage:
  *   node .config/esbuild.config.mjs [variant]
  *   node .config/esbuild.config.mjs cli      # Build CLI bundle
- *   node .config/esbuild.config.mjs index    # Build index loader
- *   node .config/esbuild.config.mjs inject   # Build shadow npm inject
+ *   node .config/esbuild.config.mjs index    # Build entry point
+ *   node .config/esbuild.config.mjs inject   # Build npm inject hook
  *   node .config/esbuild.config.mjs all      # Build all variants
  */
 

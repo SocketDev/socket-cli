@@ -19,4 +19,4 @@ const config = createIndexConfig({
   outfile: path.join(rootPath, 'dist', 'index.js'),
 })
 
-export default createBuildRunner(config, 'Index loader', import.meta)
+export default createBuildRunner(config, 'Entry point', import.meta)
