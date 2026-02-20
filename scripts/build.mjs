@@ -30,6 +30,12 @@ import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+import {
+  PLATFORM_TARGETS,
+  formatPlatformTarget,
+  parsePlatformTarget,
+} from '../packages/build-infra/lib/platform-targets.mjs'
+
 const logger = getDefaultLogger()
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -38,32 +44,13 @@ const rootDir = path.resolve(__dirname, '..')
 const TARGET_PACKAGES = {
   __proto__: null,
   all: './packages/**',
-  'alpine-arm64': '@socketbin/cli-alpine-arm64',
-  'alpine-x64': '@socketbin/cli-alpine-x64',
   bootstrap: '@socketsecurity/bootstrap',
   cli: '@socketsecurity/cli',
   'cli-sentry': '@socketsecurity/cli-with-sentry',
-  'darwin-arm64': '@socketbin/cli-darwin-arm64',
-  'darwin-x64': '@socketbin/cli-darwin-x64',
-  'linux-arm64': '@socketbin/cli-linux-arm64',
-  'linux-x64': '@socketbin/cli-linux-x64',
   node: '@socketbin/node-smol-builder-builder',
   sea: '@socketbin/node-sea-builder-builder',
   socket: 'socket',
-  'win32-arm64': '@socketbin/cli-win32-arm64',
-  'win32-x64': '@socketbin/cli-win32-x64',
 }
-
-const PLATFORM_TARGETS = [
-  'alpine-arm64',
-  'alpine-x64',
-  'darwin-arm64',
-  'darwin-x64',
-  'linux-arm64',
-  'linux-x64',
-  'win32-arm64',
-  'win32-x64',
-]
 
 /**
  * Build configuration for each package in the default build order.
@@ -364,9 +351,72 @@ async function runSmartBuild(force) {
 }
 
 /**
- * Run a targeted build for a specific package.
+ * Build SEA binary for a specific platform.
+ *
+ * @param {string} platform - Platform (darwin, linux, win32).
+ * @param {string} arch - Architecture (arm64, x64).
+ * @param {string} [libc] - Optional libc (musl).
+ */
+async function buildPlatformSea(platform, arch, libc) {
+  const targetName = formatPlatformTarget(platform, arch, libc)
+
+  logger.log('')
+  logger.log(`${colors.cyan('→')} Building SEA binary for ${targetName}...`)
+
+  const seaArgs = [
+    '--filter',
+    '@socketsecurity/cli',
+    'run',
+    'build:sea',
+    `--platform=${platform}`,
+    `--arch=${arch}`,
+  ]
+
+  if (libc) {
+    seaArgs.push(`--libc=${libc}`)
+  }
+
+  const startTime = Date.now()
+  const result = await spawn('pnpm', seaArgs, {
+    shell: WIN32,
+    stdio: 'inherit',
+  })
+  const duration = ((Date.now() - startTime) / 1000).toFixed(1)
+
+  if (result.code !== 0) {
+    logger.log(`${colors.red('✗')} SEA build for ${targetName} failed (${duration}s)`)
+    return { success: false }
+  }
+
+  logger.log(`${colors.green('✓')} SEA binary for ${targetName} built (${duration}s)`)
+  return { success: true }
+}
+
+/**
+ * Run a targeted build for a specific package or platform.
  */
 async function runTargetedBuild(target, buildArgs) {
+  // Check if this is a platform target (e.g., darwin-arm64).
+  const platformInfo = parsePlatformTarget(target)
+  if (platformInfo) {
+    // Ensure CLI is built first.
+    const cliOutputPath = path.join(rootDir, 'packages/cli/dist/index.js')
+    if (!existsSync(cliOutputPath)) {
+      logger.log(`${colors.cyan('→')} Building CLI first...`)
+      const cliResult = await buildPackage(BUILD_PACKAGES[0], false)
+      if (!cliResult.success) {
+        process.exitCode = 1
+        return
+      }
+    }
+
+    // Build SEA for the specified platform.
+    const result = await buildPlatformSea(platformInfo.platform, platformInfo.arch, platformInfo.libc)
+    process.exitCode = result.success ? 0 : 1
+    return
+  }
+
+  // Not a platform target, use pnpm filter for package builds.
   const packageFilter = TARGET_PACKAGES[target]
   if (!packageFilter) {
     logger.error(`Unknown build target: ${target}`)
@@ -391,13 +441,50 @@ async function runTargetedBuild(target, buildArgs) {
  * Build a single target (for parallel/sequential builds).
  */
 async function buildTarget(target, buildArgs) {
+  const startTime = Date.now()
+  logger.log(`${colors.cyan('→')} [${target}] Starting build...`)
+
+  // Check if this is a platform target (e.g., darwin-arm64).
+  const platformInfo = parsePlatformTarget(target)
+  if (platformInfo) {
+    const seaArgs = [
+      '--filter',
+      '@socketsecurity/cli',
+      'run',
+      'build:sea',
+      `--platform=${platformInfo.platform}`,
+      `--arch=${platformInfo.arch}`,
+    ]
+
+    if (platformInfo.libc) {
+      seaArgs.push(`--libc=${platformInfo.libc}`)
+    }
+
+    const result = await spawn('pnpm', seaArgs, {
+      shell: WIN32,
+      stdio: 'pipe',
+    })
+
+    const duration = ((Date.now() - startTime) / 1000).toFixed(1)
+
+    if (result.code === 0) {
+      logger.log(`${colors.green('✓')} [${target}] Build succeeded (${duration}s)`)
+      return { duration, success: true, target }
+    }
+
+    logger.error(`${colors.red('✗')} [${target}] Build failed (${duration}s)`)
+    if (result.stderr) {
+      logger.error(`${colors.red('✗')} [${target}] Error output:`)
+      logger.error(result.stderr)
+    }
+    return { duration, success: false, target }
+  }
+
+  // Not a platform target, use pnpm filter for package builds.
   const packageFilter = TARGET_PACKAGES[target]
   if (!packageFilter) {
     throw new Error(`Unknown build target: ${target}`)
   }
-
-  const startTime = Date.now()
-  logger.log(`${colors.cyan('→')} [${target}] Starting build...`)
 
   const pnpmArgs = ['--filter', packageFilter, 'run', 'build', ...buildArgs]
 
@@ -412,7 +499,7 @@ async function buildTarget(target, buildArgs) {
     logger.log(
       `${colors.green('✓')} [${target}] Build succeeded (${duration}s)`,
     )
-    return { success: true, target, duration }
+    return { duration, success: true, target }
   }
 
   logger.error(`${colors.red('✗')} [${target}] Build failed (${duration}s)`)
@@ -420,7 +507,7 @@ async function buildTarget(target, buildArgs) {
     logger.error(`${colors.red('✗')} [${target}] Error output:`)
     logger.error(result.stderr)
   }
-  return { success: false, target, duration }
+  return { duration, success: false, target }
 }
 
 /**
@@ -436,6 +523,21 @@ async function runParallelBuilds(targetsToBuild, buildArgs) {
   logger.log('')
   logger.log(`Targets: ${targetsToBuild.join(', ')}`)
   logger.log('')
+
+  // Check if any targets are platform targets that need CLI built first.
+  const hasPlatformTargets = targetsToBuild.some(t => parsePlatformTarget(t) !== null)
+  if (hasPlatformTargets) {
+    const cliOutputPath = path.join(rootDir, 'packages/cli/dist/index.js')
+    if (!existsSync(cliOutputPath)) {
+      logger.log(`${colors.cyan('→')} Building CLI first...`)
+      const cliResult = await buildPackage(BUILD_PACKAGES[0], false)
+      if (!cliResult.success) {
+        process.exitCode = 1
+        return
+      }
+      logger.log('')
+    }
+  }
 
   const startTime = Date.now()
   const results = await Promise.allSettled(
@@ -487,6 +589,21 @@ async function runSequentialBuilds(targetsToBuild, buildArgs) {
   logger.log('')
   logger.log(`Targets: ${targetsToBuild.join(', ')}`)
   logger.log('')
+
+  // Check if any targets are platform targets that need CLI built first.
+  const hasPlatformTargets = targetsToBuild.some(t => parsePlatformTarget(t) !== null)
+  if (hasPlatformTargets) {
+    const cliOutputPath = path.join(rootDir, 'packages/cli/dist/index.js')
+    if (!existsSync(cliOutputPath)) {
+      logger.log(`${colors.cyan('→')} Building CLI first...`)
+      const cliResult = await buildPackage(BUILD_PACKAGES[0], false)
+      if (!cliResult.success) {
+        process.exitCode = 1
+        return
+      }
+      logger.log('')
+    }
+  }
 
   const startTime = Date.now()
   const results = []

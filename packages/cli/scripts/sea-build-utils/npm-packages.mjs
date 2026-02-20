@@ -123,7 +123,7 @@ async function downloadNpmPackage(packageSpec, targetDir) {
 export async function downloadNpmPackages() {
   const rootPath = getRootPath()
   const npmPackagesDir = normalizePath(
-    path.join(rootPath, '../build-infra/build/npm-packages'),
+    path.join(rootPath, 'packages/build-infra/build/npm-packages'),
   )
   const tarGzPath = normalizePath(
     path.join(npmPackagesDir, 'npm-packages.tar.gz'),
@@ -211,11 +211,11 @@ export async function downloadNpmPackages() {
 }
 
 /**
- * Combine npm packages and security tools into a single VFS archive.
+ * Combine npm packages and external tools into a single VFS archive.
  *
  * Creates a unified tar.gz containing both:
  * - node_modules/ with npm packages and dependencies.
- * - Security tool binaries (Python, Trivy, TruffleHog, OpenGrep).
+ * - External tool binaries (Python, Trivy, TruffleHog, OpenGrep).
  *
  * The combined archive is used by binject for VFS embedding into SEA binaries.
  *
@@ -231,7 +231,7 @@ export async function downloadNpmPackages() {
  * ./opengrep                         # OpenGrep binary
  *
  * @param {string} npmPackagesTarGz - Path to npm packages tar.gz.
- * @param {string} securityToolsTarGz - Path to security tools tar.gz.
+ * @param {string} externalToolsTarGz - Path to external tools tar.gz.
  * @param {string} platform - Platform identifier (darwin, linux, win32).
  * @param {string} arch - Architecture identifier (arm64, x64).
  * @param {boolean} [isMusl=false] - Whether this is musl libc (Linux only).
@@ -240,7 +240,7 @@ export async function downloadNpmPackages() {
  * @example
  * const combined = await combineVfsArchives(
  *   '../build-infra/build/npm-packages/npm-packages.tar.gz',
- *   '../build-infra/build/security-tools/darwin-arm64.tar.gz',
+ *   '../build-infra/build/external-tools/darwin-arm64.tar.gz',
  *   'darwin',
  *   'arm64'
  * )
@@ -248,7 +248,7 @@ export async function downloadNpmPackages() {
  */
 export async function combineVfsArchives(
   npmPackagesTarGz,
-  securityToolsTarGz,
+  externalToolsTarGz,
   platform,
   arch,
   isMusl = false,
@@ -258,10 +258,10 @@ export async function combineVfsArchives(
   const platformArch = `${platform}-${arch}${muslSuffix}`
 
   const vfsDir = normalizePath(
-    path.join(rootPath, `../build-infra/build/vfs/${platformArch}`),
+    path.join(rootPath, `packages/build-infra/build/vfs/${platformArch}`),
   )
   const combinedTarGz = normalizePath(
-    path.join(rootPath, `../build-infra/build/vfs/${platformArch}.tar.gz`),
+    path.join(rootPath, `packages/build-infra/build/vfs/${platformArch}.tar.gz`),
   )
 
   // Check if combined tar.gz already exists and is valid.
@@ -280,7 +280,7 @@ export async function combineVfsArchives(
     }
   }
 
-  logger.step('Combining npm packages and security tools into VFS archive')
+  logger.step('Combining npm packages and external tools into VFS archive')
 
   // Create temporary directory for extraction and combination.
   await safeMkdir(vfsDir)
@@ -295,17 +295,17 @@ export async function combineVfsArchives(
       }
     }
 
-    // Extract security tools tar.gz.
-    if (securityToolsTarGz && existsSync(securityToolsTarGz)) {
-      logger.substep('Extracting security tools')
+    // Extract external tools tar.gz.
+    if (externalToolsTarGz && existsSync(externalToolsTarGz)) {
+      logger.substep('Extracting external tools')
       const tarResult = await spawn('tar', [
         '-xzf',
-        securityToolsTarGz,
+        externalToolsTarGz,
         '-C',
         vfsDir,
       ])
       if (tarResult && tarResult.exitCode !== 0) {
-        throw new Error('Failed to extract security tools tar.gz')
+        throw new Error('Failed to extract external tools tar.gz')
       }
     }
 

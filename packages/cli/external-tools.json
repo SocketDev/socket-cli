@@ -26,6 +26,12 @@
     "version": "3.11.14",
     "buildTag": "20260203"
   },
+  "socket-basics": {
+    "description": "Socket Basics - integrated SAST, secret scanning, and container analysis",
+    "type": "pypi",
+    "package": "socket_basics",
+    "version": "1.0.29"
+  },
   "socketsecurity": {
     "description": "Socket Python CLI (socket-python-cli)",
     "type": "pypi",

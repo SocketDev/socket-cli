@@ -1,5 +1,5 @@
 /**
- * Test script to download security tools for VFS bundling proof-of-concept.
+ * Test script to download external tools for VFS bundling proof-of-concept.
  * Downloads Trivy, TruffleHog, and OpenGrep for the current platform.
  */
 
@@ -14,7 +14,7 @@ import { spawn } from '@socketsecurity/lib/spawn'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const logger = getDefaultLogger()
 
-// Map current platform to security tool binary names.
+// Map current platform to external tool binary names.
 const PLATFORM_MAP = {
   __proto__: null,
   'darwin-arm64': {
@@ -138,7 +138,7 @@ async function extractFromTarGz(archivePath, outputPath, binaryName) {
 }
 
 /**
- * Download and extract a security tool.
+ * Download and extract an external tool.
  */
 async function downloadTool(toolName, platform) {
   const config = TOOL_REPOS[toolName]
@@ -151,7 +151,7 @@ async function downloadTool(toolName, platform) {
 
   const outputDir = path.join(
     __dirname,
-    '../../../build-infra/build/security-tools-test',
+    '../../build-infra/build/external-tools-test',
     platform,
   )
   await safeMkdir(outputDir)
@@ -190,7 +190,7 @@ async function downloadTool(toolName, platform) {
 async function main() {
   const platform = getCurrentPlatform()
 
-  logger.log(`Testing security tool download for platform: ${platform}`)
+  logger.log(`Testing external tool download for platform: ${platform}`)
   logger.log('')
 
   const tools = ['trivy', 'trufflehog', 'opengrep']
@@ -224,7 +224,7 @@ async function main() {
   // Create a mapping file for build script.
   const mappingPath = path.join(
     __dirname,
-    '../../../build-infra/build/security-tools-test',
+    '../../build-infra/build/external-tools-test',
     platform,
     'tool-paths.json',
   )

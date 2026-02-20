@@ -132,6 +132,7 @@ export function getInlinedEnvVars() {
  *
  * @param {Object} config - esbuild configuration object
  * @param {string} [description] - Optional description of what this build does
+ * @param {ImportMeta} importMeta - The import.meta from the calling config file
  * @returns {Object} The same config object (for chaining)
  *
  * @example
@@ -140,15 +141,15 @@ export function getInlinedEnvVars() {
  * import { createBuildRunner } from './esbuild-shared.mjs'
  *
  * const config = { ... }
- * export default createBuildRunner(config, 'CLI bundle')
+ * export default createBuildRunner(config, 'CLI bundle', import.meta)
  * ```
  */
-export function createBuildRunner(config, description = 'Build') {
-  // Only run if this file is the main module (executed directly).
+export function createBuildRunner(config, description = 'Build', importMeta) {
+  // Only run if the caller's file is the main module (executed directly).
   // This allows configs to be imported without side effects.
   if (
-    fileURLToPath(import.meta.url) ===
-    process.argv[1]?.replace(/\\/g, '/')
+    importMeta &&
+    fileURLToPath(importMeta.url) === process.argv[1]?.replace(/\\/g, '/')
   ) {
     ;(async () => {
       try {

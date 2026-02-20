@@ -68,14 +68,14 @@ async function loadToolPaths() {
   const platform = `${process.platform}-${process.arch}`
   const toolPathsFile = path.join(
     __dirname,
-    '../../../build-infra/build/security-tools-test',
+    '../../build-infra/build/external-tools-test',
     platform,
     'tool-paths.json',
   )
 
   if (!existsSync(toolPathsFile)) {
     console.error(`Tool paths not found: ${toolPathsFile}`)
-    console.error('Run: node scripts/test-download-security-tools.mjs')
+    console.error('Run: node scripts/test-download-external-tools.mjs')
     process.exit(1)
   }
 
@@ -87,7 +87,7 @@ async function loadToolPaths() {
  * Display tool information.
  */
 async function displayToolInfo(toolPaths) {
-  console.log('Security tools to bundle:')
+  console.log('External tools to bundle:')
   let totalToolSize = 0
   for (const [toolName, toolPath] of Object.entries(toolPaths)) {
     if (existsSync(toolPath)) {
@@ -125,7 +125,7 @@ async function generateSeaConfig(entryPoint, outputPath, toolPaths, mode) {
           Object.entries(toolPaths)
             .filter(([, toolPath]) => existsSync(toolPath))
             .map(([toolName, toolPath]) => [
-              `security-tools/${toolName}`,
+              `external-tools/${toolName}`,
               toolPath,
             ]),
         )
@@ -274,14 +274,14 @@ async function runVfsMode(platform) {
   console.log('')
 
   const outputDir = path.join(__dirname, '../dist/sea-test')
-  const vfsTarGz = path.join(outputDir, 'security-tools.tar.gz')
+  const vfsTarGz = path.join(outputDir, 'external-tools.tar.gz')
   const outputPath = path.join(outputDir, `socket-vfs-${platform}`)
 
   // Check that tar.gz exists.
   if (!existsSync(vfsTarGz)) {
     console.error(`VFS tar.gz not found: ${vfsTarGz}`)
     console.error(
-      'Create it with: tar -czf packages/cli/dist/sea-test/security-tools.tar.gz -C build-infra/build/security-tools-test/darwin-arm64 trivy trufflehog opengrep',
+      'Create it with: tar -czf packages/cli/dist/sea-test/external-tools.tar.gz -C build-infra/build/external-tools-test/darwin-arm64 trivy trufflehog opengrep',
     )
     process.exit(1)
   }
@@ -327,7 +327,7 @@ async function runVfsMode(platform) {
   console.log('Injecting blob + VFS with binject...')
   const binjectPath = path.join(
     __dirname,
-    `../../../build-infra/build/downloaded/binject/${platform}/binject`,
+    `../../build-infra/build/downloaded/binject/${platform}/binject`,
   )
 
   if (!existsSync(binjectPath)) {
@@ -453,7 +453,7 @@ async function runWithToolsMode(platform, toolPaths) {
   const assets = { __proto__: null }
   for (const [toolName, toolPath] of Object.entries(toolPaths)) {
     if (existsSync(toolPath)) {
-      assets[`security-tools/${toolName}`] = toolPath
+      assets[`external-tools/${toolName}`] = toolPath
       const stats = await fs.stat(toolPath)
       logger.log(
         `  Including ${toolName}: ${(stats.size / 1024 / 1024).toFixed(2)} MB`,

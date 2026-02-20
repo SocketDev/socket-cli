@@ -40,9 +40,9 @@ import {
   extractExternalTools,
 } from './vfs-extract.mjs'
 import {
-  areSecurityToolsAvailable,
-  extractSecurityTools,
-  getToolPaths as getSecurityToolPaths,
+  areBasicsToolsAvailable,
+  extractBasicsTools,
+  getBasicsToolPaths,
 } from '../basics/vfs-extract.mts'
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
 import { getCliVersion } from '../../env/cli-version.mts'
@@ -757,10 +757,10 @@ export async function ensurePython(): Promise<string> {
   }
 
   // Use bundled Python from VFS in SEA mode.
-  if (isSeaBinary() && areSecurityToolsAvailable()) {
-    const toolsDir = await extractSecurityTools()
+  if (isSeaBinary() && areBasicsToolsAvailable()) {
+    const toolsDir = await extractBasicsTools()
     if (toolsDir) {
-      const toolPaths = getSecurityToolPaths(toolsDir)
+      const toolPaths = getBasicsToolPaths(toolsDir)
       return toolPaths.python
     }
   }
@@ -867,16 +867,16 @@ export async function spawnSocketPyCliVfs(
   } as SocketPyCliDlxOptions
 
   try {
-    const toolsDir = await extractSecurityTools()
+    const toolsDir = await extractBasicsTools()
     if (!toolsDir) {
       return {
-        data: new Error('Failed to extract security tools from VFS'),
-        message: 'Failed to extract security tools from VFS',
+        data: new Error('Failed to extract basics tools from VFS'),
+        message: 'Failed to extract basics tools from VFS',
         ok: false,
       }
     }
 
-    const toolPaths = getSecurityToolPaths(toolsDir)
+    const toolPaths = getBasicsToolPaths(toolsDir)
     const pythonBin = toolPaths.python
 
     // Ensure socketsecurity package is installed.
@@ -1035,7 +1035,7 @@ export async function spawnSocketPyCli(
     await ensureSocketPyCli(pythonBin)
 
     // Build environment - isolate PATH for SEA mode.
-    const spawnEnvFinal = isSeaBinary() && areSecurityToolsAvailable()
+    const spawnEnvFinal = isSeaBinary() && areBasicsToolsAvailable()
       ? {
           ...finalEnv,
           // Isolate PATH to bundled tools directory for SEA.

@@ -14,7 +14,6 @@ Automated package generation system for Socket CLI distribution. Transforms temp
 - [Generator Scripts](#generator-scripts)
   - [generate-cli-packages.mjs](#generate-cli-packagesmjs)
   - [generate-socketbin-packages.mjs](#generate-socketbin-packagesmjs)
-  - [generate-node-patches.mjs](#generate-node-patchesmjs)
 - [Build Process](#build-process)
   - [CLI Package Build](#cli-package-build)
 - [Template Structure](#template-structure)
@@ -206,25 +205,6 @@ linux-arm64   → Linux ARM64
 linux-x64     → Linux x64
 win32-arm64   → Windows ARM64 (.exe)
 win32-x64     → Windows x64 (.exe)
-```
-
-### generate-node-patches.mjs
-
-Generates patches for Node.js source modifications.
-
-```
-Purpose: Create Socket-specific Node.js patches.
-
-Patches:
-1. fix-v8-include-paths-{version}.patch
-   - Fixes incorrect V8 include paths.
-   - Removes 'src/' prefix from V8 headers.
-
-2. enable-sea-for-pkg-binaries-{version}.patch
-   - Makes isSea() return true for pkg binaries.
-   - Enables SEA detection consistency.
-
-Usage:  node generate-node-patches.mjs [--version=v24.10.0]
 ```
 
 ## Build Process

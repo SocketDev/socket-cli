@@ -3,6 +3,7 @@
  * Uses pre-compiled Node.js smol binaries from socket-btm releases.
  *
  * Options:
+ *   --target=<target>    - Build for specific target (darwin-arm64, linux-x64-musl, etc.)
  *   --platform=<platform> - Build for specific platform (darwin, linux, win32)
  *   --arch=<arch>        - Build for specific architecture (x64, arm64)
  *   --libc=<libc>        - Build for specific libc (musl, glibc) - Linux only
@@ -19,6 +20,8 @@ import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+import { parsePlatformArgs } from 'build-infra/lib/platform-targets'
+
 import { buildTarget } from './sea-build-utils/orchestration.mjs'
 import {
   getBuildTargets,
@@ -34,21 +37,13 @@ const logger = getDefaultLogger()
  */
 function parseArgs() {
   const args = process.argv.slice(2)
+  const platformArgs = parsePlatformArgs(args)
+
   const options = {
     all: args.includes('--all'),
-    arch: null,
-    libc: null,
-    platform: null,
-  }
-
-  for (const arg of args) {
-    if (arg.startsWith('--platform=')) {
-      options.platform = arg.split('=')[1]
-    } else if (arg.startsWith('--arch=')) {
-      options.arch = arg.split('=')[1]
-    } else if (arg.startsWith('--libc=')) {
-      options.libc = arg.split('=')[1]
-    }
+    arch: platformArgs.arch,
+    libc: platformArgs.libc,
+    platform: platformArgs.platform,
   }
 
   // Default to --all if no specific platform/arch/libc specified.

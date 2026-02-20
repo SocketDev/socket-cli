@@ -1,10 +1,18 @@
 /**
- * VFS extraction utilities for security tools bundled in SEA binaries.
+ * VFS extraction utilities for socket-basics tools bundled in SEA binaries.
  *
  * Extracts Python, Trivy, TruffleHog, and OpenGrep from the VFS (Virtual File System)
  * embedded in SEA binaries and caches them for socket-basics execution.
+ *
+ * Extraction paths (all under ~/.socket/_dlx/<hash>/):
+ * - python/                           # Python runtime
+ * - python/lib/python3.11/site-packages/  # Python packages (socketsecurity)
+ * - trivy                             # Standalone binary
+ * - trufflehog                        # Standalone binary
+ * - opengrep                          # Standalone binary
  */
 
+import { createHash } from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import { createRequire } from 'node:module'
 import { homedir } from 'node:os'
@@ -16,8 +24,10 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+import { UPDATE_STORE_DIR } from '../../constants/paths.mts'
 import { getOpengrepVersion } from '../../env/opengrep-version.mts'
 import { getPyCliVersion } from '../../env/pycli-version.mts'
+import { getPythonMajorMinor } from '../../env/python-version.mts'
 import { getTrivyVersion } from '../../env/trivy-version.mts'
 import { getTrufflehogVersion } from '../../env/trufflehog-version.mts'
 import { isSeaBinary } from '../sea/detect.mts'
@@ -35,22 +45,68 @@ try {
 
 const logger = getDefaultLogger()
 
-// VFS asset path prefix for security tools.
-const VFS_ASSET_PREFIX = 'security-tools'
+// VFS asset path prefix for basics tools (Python, Trivy, TruffleHog, OpenGrep).
+const VFS_ASSET_PREFIX = 'basics-tools'
 
-// Security tool names bundled in VFS.
-const SECURITY_TOOLS = ['python', 'trivy', 'trufflehog', 'opengrep'] as const
+// Basics tool names bundled in VFS.
+const BASICS_TOOLS = ['python', 'trivy', 'trufflehog', 'opengrep'] as const
 
 /**
- * Check if security tools are available for socket-basics.
+ * Get the base dlx directory path for node-smol.
+ * This is the shared extraction directory: ~/.socket/_dlx/<node-smol-hash>/
+ *
+ * @returns Path to node-smol's dlx directory.
+ */
+function getNodeSmolBasePath(): string {
+  let nodeSmolHash = 'node-smol-placeholder'
+
+  try {
+    // Try to get hash from process.smol API (if available in future node-smol).
+    const processWithSmol = process as unknown as {
+      smol?: { getHash?: () => string }
+    }
+    if (typeof processWithSmol.smol?.getHash === 'function') {
+      nodeSmolHash = processWithSmol.smol.getHash()
+    } else {
+      // Fallback: hash based on Node.js version and platform.
+      const hashInput = `${process.version}-${process.platform}-${process.arch}`
+      const hash = createHash('sha256').update(hashInput).digest('hex')
+      nodeSmolHash = hash.slice(0, 16)
+    }
+  } catch {
+    // Fallback to versioned hash.
+    const hashInput = `${process.version}-${process.platform}-${process.arch}`
+    const hash = createHash('sha256').update(hashInput).digest('hex')
+    nodeSmolHash = hash.slice(0, 16)
+  }
+
+  return normalizePath(path.join(homedir(), UPDATE_STORE_DIR, nodeSmolHash))
+}
+
+/**
+ * Get the Python site-packages path for extracting Python packages.
+ * Path: ~/.socket/_dlx/<hash>/python/lib/python{major.minor}/site-packages/
+ *
+ * @returns Path to site-packages directory.
+ */
+export function getPythonSitePackagesPath(): string {
+  const basePath = getNodeSmolBasePath()
+  const pythonMajorMinor = getPythonMajorMinor()
+  return normalizePath(
+    path.join(basePath, 'python', 'lib', `python${pythonMajorMinor}`, 'site-packages'),
+  )
+}
+
+/**
+ * Check if basics tools are available for socket-basics.
  *
  * Returns true if:
  * 1. Running in SEA mode with VFS assets, OR
  * 2. Tools are available in system PATH
  *
- * @returns True if security tools are available for socket-basics.
+ * @returns True if basics tools are available for socket-basics.
  */
-export function areSecurityToolsAvailable(): boolean {
+export function areBasicsToolsAvailable(): boolean {
   // Check if running in SEA mode with VFS assets.
   if (isSeaBinary() && getAsset) {
     try {
@@ -70,37 +126,40 @@ export function areSecurityToolsAvailable(): boolean {
 }
 
 /**
- * Extract security tools from VFS to a cache directory.
+ * Extract basics tools from VFS to the node-smol dlx directory.
  *
  * Extracts Python, Trivy, TruffleHog, and OpenGrep binaries from the SEA's VFS
- * and writes them to a cache directory. The cache is persistent across runs.
+ * to ~/.socket/_dlx/<hash>/. The cache is persistent across runs.
  *
- * @param cacheDir - Directory to extract tools to (default: ~/.socket/security-tools).
+ * Extraction paths:
+ * - python/bin/python - Python runtime
+ * - python/lib/python3.11/site-packages/ - Python packages (socketsecurity)
+ * - trivy - Standalone binary at root
+ * - trufflehog - Standalone binary at root
+ * - opengrep - Standalone binary at root
+ *
+ * @param cacheDir - Directory to extract tools to (default: ~/.socket/_dlx/<hash>/).
  * @returns Path to the extracted tools directory, or null if extraction failed.
  *
  * @example
- * const toolsDir = await extractSecurityTools()
+ * const toolsDir = await extractBasicsTools()
  * if (toolsDir) {
  *   const pythonPath = path.join(toolsDir, 'python', 'bin', 'python')
  *   const trivyPath = path.join(toolsDir, 'trivy')
+ *   const sitePackages = getPythonSitePackagesPath() // For Python packages
  * }
  */
-export async function extractSecurityTools(
+export async function extractBasicsTools(
   cacheDir?: string,
 ): Promise<string | null> {
   if (!isSeaBinary() || !getAsset) {
-    logger.warn('Not running in SEA mode - cannot extract VFS tools')
+    logger.warn('Not running in SEA mode - cannot extract basics tools')
     return null
   }
 
-  // Default cache directory: ~/.socket/security-tools/{platform}-{arch}.
-  // Include platform and architecture for cross-platform cache isolation.
-  // Use os.homedir() for security (don't trust environment variables).
-  const platformArch = `${process.platform}-${process.arch}`
-  const defaultCacheDir = normalizePath(
-    path.join(homedir(), '.socket', 'security-tools', platformArch),
-  )
-  const extractDir = cacheDir || defaultCacheDir
+  // Default extraction directory: ~/.socket/_dlx/<node-smol-hash>/
+  // This is shared with other VFS-extracted tools (external-tools).
+  const extractDir = cacheDir || getNodeSmolBasePath()
 
   // Get current tool versions for cache validation.
   const toolVersions = {
@@ -125,7 +184,7 @@ export async function extractSecurityTools(
         cachedVersions.trufflehog === toolVersions.trufflehog
 
       if (versionsMatch) {
-        debug('notice', `Security tools already extracted to: ${extractDir}`)
+        debug('notice', `Basics tools already extracted to: ${extractDir}`)
         return extractDir
       }
 
@@ -149,27 +208,27 @@ export async function extractSecurityTools(
     const error = e as NodeJS.ErrnoException
     if (error.code === 'EEXIST') {
       // Another process is extracting, wait and check for completion.
-      logger.info('Another process is extracting security tools, waiting...')
+      logger.info('Another process is extracting basics tools, waiting...')
       for (let i = 0; i < 60; i++) {
         // Wait up to 60 seconds.
         // eslint-disable-next-line no-await-in-loop
         await new Promise(resolve => setTimeout(resolve, 1_000))
         if (existsSync(cacheMarker)) {
-          debug('notice', 'Security tools extracted by another process')
+          debug('notice', 'Basics tools extracted by another process')
           return extractDir
         }
       }
       throw new Error(
-        'Timeout waiting for another process to extract security tools',
+        'Timeout waiting for another process to extract basics tools',
       )
     }
     throw e
   }
 
-  logger.info('Extracting security tools from VFS...')
+  logger.info('Extracting basics tools from VFS...')
 
   const isPlatWin = process.platform === 'win32'
-  const tools = SECURITY_TOOLS
+  const tools = BASICS_TOOLS
   const extractedTools: string[] = []
 
   try {
@@ -229,12 +288,12 @@ export async function extractSecurityTools(
     if (extractedTools.length !== tools.length) {
       const missingTools = tools.filter(t => !extractedTools.includes(t))
       throw new Error(
-        `Failed to extract all security tools. Missing: ${missingTools.join(', ')}`,
+        `Failed to extract all basics tools. Missing: ${missingTools.join(', ')}`,
       )
     }
 
     // Validate all extracted binaries work after extraction.
-    logger.info('Validating extracted security tools...')
+    logger.info('Validating extracted basics tools...')
 
     const pythonExe = isPlatWin ? 'python.exe' : 'python'
     const pythonPath = normalizePath(
@@ -292,7 +351,7 @@ export async function extractSecurityTools(
       // Ignore errors (file might already be deleted).
     })
 
-    logger.success(`Security tools extracted to: ${extractDir}`)
+    logger.success(`Basics tools extracted to: ${extractDir}`)
     return extractDir
   } catch (e) {
     // Cleanup on failure.
@@ -313,20 +372,20 @@ export async function extractSecurityTools(
 }
 
 /**
- * Get paths to extracted security tools.
+ * Get paths to extracted basics tools.
  *
  * @param toolsDir - Directory containing extracted tools.
  * @returns Object with paths to each tool binary.
  *
  * @example
- * const toolsDir = await extractSecurityTools()
+ * const toolsDir = await extractBasicsTools()
  * if (toolsDir) {
  *   const paths = getToolPaths(toolsDir)
  *   logger.log('Python:', paths.python)
  *   logger.log('Trivy:', paths.trivy)
  * }
  */
-export function getToolPaths(toolsDir: string): {
+export function getBasicsToolPaths(toolsDir: string): {
   opengrep: string
   python: string
   trivy: string

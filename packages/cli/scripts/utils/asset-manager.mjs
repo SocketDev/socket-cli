@@ -77,7 +77,7 @@ export class AssetManager {
     const rootPath = getRootPath()
     this.downloadDir =
       downloadDir ||
-      normalizePath(path.join(rootPath, '../build-infra/build/downloaded'))
+      normalizePath(path.join(rootPath, 'packages/build-infra/build/downloaded'))
   }
 
   /**
