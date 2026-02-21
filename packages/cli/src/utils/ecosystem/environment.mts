@@ -470,7 +470,8 @@ export async function detectPackageEnvironment({
     // A valid "packageManager" field value is "<package manager name>@<version>".
     // https://nodejs.org/api/packages.html#packagemanager
     const atSignIndex = pkgManager.lastIndexOf('@')
-    if (atSignIndex !== -1) {
+    // Use > 0 to ensure there's a name before the @.
+    if (atSignIndex > 0) {
       const name = pkgManager.slice(0, atSignIndex) as Agent
       const version = pkgManager.slice(atSignIndex + 1)
       if (version && AGENTS.includes(name)) {

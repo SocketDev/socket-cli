@@ -108,6 +108,12 @@ export async function cacheFetch<T>(
 
   let data = (await readCache(key, ttlMs)) as T
   if (!data) {
+    // Re-check inflight after async readCache to prevent race.
+    const inflightAfterRead = inflightRequests.get(key)
+    if (inflightAfterRead) {
+      return inflightAfterRead as Promise<T>
+    }
+
     const fetchPromise = (async () => {
       try {
         const result = await fetcher()
