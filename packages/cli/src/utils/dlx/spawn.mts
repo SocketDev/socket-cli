@@ -56,20 +56,20 @@ import { isSeaBinary } from '../sea/detect.mts'
 import { spawnNode } from '../spawn/spawn-node.mjs'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
 
-import type { IpcObject } from '../../constants/shadow.mts'
+import type { IpcObject } from '../ipc.mts'
 import type { CResult } from '../../types.mjs'
 import type { ExternalTool } from './vfs-extract.mjs'
 import type { SpawnExtra, SpawnOptions, SpawnResult } from '@socketsecurity/lib/spawn'
 
-export type ShadowBinOptions = SpawnOptions & {
+export type DlxSpawnOptions = SpawnOptions & {
   ipc?: IpcObject | undefined
 }
 
-export type ShadowBinResult = {
+export type DlxSpawnResult = {
   spawnPromise: SpawnResult
 }
 
-export type DlxOptions = ShadowBinOptions & {
+export type DlxOptions = DlxSpawnOptions & {
   agent?: 'npm' | 'pnpm' | 'yarn' | undefined
   force?: boolean | undefined
   silent?: boolean | undefined
@@ -118,8 +118,8 @@ export async function spawnDlx(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
-): Promise<ShadowBinResult> {
-  const { force = false, ...shadowOptions } = options ?? {}
+): Promise<DlxSpawnResult> {
+  const { force = false, ...spawnOpts } = options ?? {}
 
   // Validate package name for security.
   validatePackageName(packageSpec.name)
@@ -133,7 +133,7 @@ export async function spawnDlx(
       package: packageString,
       binaryName: packageSpec.binaryName,
       force,
-      spawnOptions: shadowOptions,
+      spawnOptions: spawnOpts,
     },
     spawnExtra,
   )
@@ -263,7 +263,7 @@ export async function spawnCdxgenDlx(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
-): Promise<ShadowBinResult> {
+): Promise<DlxSpawnResult> {
   const resolution = resolveCdxgen()
 
   // Use local cdxgen if available.
@@ -310,7 +310,7 @@ export async function spawnSfwDlx(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
-): Promise<ShadowBinResult> {
+): Promise<DlxSpawnResult> {
   const resolution = resolveSfw()
 
   // Use local sfw if available.
@@ -357,7 +357,7 @@ export async function spawnSocketPatchDlx(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
-): Promise<ShadowBinResult> {
+): Promise<DlxSpawnResult> {
   const resolution = resolveSocketPatch()
 
   // Use local socket-patch if available.
@@ -402,7 +402,7 @@ export async function spawnSynpDlx(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
-): Promise<ShadowBinResult> {
+): Promise<DlxSpawnResult> {
   return await spawnDlx(
     {
       name: 'synp',
@@ -428,7 +428,7 @@ async function spawnToolVfs(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
-): Promise<ShadowBinResult> {
+): Promise<DlxSpawnResult> {
   if (!areExternalToolsAvailable()) {
     throw new Error(
       `Cannot spawn ${tool} from VFS - tools not available in SEA mode`,
@@ -476,7 +476,7 @@ export async function spawnSfwVfs(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
-): Promise<ShadowBinResult> {
+): Promise<DlxSpawnResult> {
   return await spawnToolVfs('sfw', args, options, spawnExtra)
 }
 
@@ -488,7 +488,7 @@ export async function spawnCdxgenVfs(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
-): Promise<ShadowBinResult> {
+): Promise<DlxSpawnResult> {
   return await spawnToolVfs('cdxgen', args, options, spawnExtra)
 }
 
@@ -563,7 +563,7 @@ export async function spawnSocketPatchVfs(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
-): Promise<ShadowBinResult> {
+): Promise<DlxSpawnResult> {
   return await spawnToolVfs('socket-patch', args, options, spawnExtra)
 }
 
@@ -575,7 +575,7 @@ export async function spawnSynpVfs(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
-): Promise<ShadowBinResult> {
+): Promise<DlxSpawnResult> {
   return await spawnToolVfs('synp', args, options, spawnExtra)
 }
 
@@ -592,7 +592,7 @@ export async function spawnSfw(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
-): Promise<ShadowBinResult> {
+): Promise<DlxSpawnResult> {
   if (isSeaBinary() && areExternalToolsAvailable()) {
     return await spawnSfwVfs(args, options, spawnExtra)
   }
@@ -607,7 +607,7 @@ export async function spawnCdxgen(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
-): Promise<ShadowBinResult> {
+): Promise<DlxSpawnResult> {
   if (isSeaBinary() && areExternalToolsAvailable()) {
     return await spawnCdxgenVfs(args, options, spawnExtra)
   }
@@ -638,7 +638,7 @@ export async function spawnSocketPatch(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
-): Promise<ShadowBinResult> {
+): Promise<DlxSpawnResult> {
   if (isSeaBinary() && areExternalToolsAvailable()) {
     return await spawnSocketPatchVfs(args, options, spawnExtra)
   }
@@ -653,7 +653,7 @@ export async function spawnSynp(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
-): Promise<ShadowBinResult> {
+): Promise<DlxSpawnResult> {
   if (isSeaBinary() && areExternalToolsAvailable()) {
     return await spawnSynpVfs(args, options, spawnExtra)
   }

@@ -22,7 +22,7 @@
  *
  * Related Files:
  * - src/commands/wrapper/npm.mts - npm wrapper implementation
- * - src/shadow/npm/ - Shadow npm implementation for security scanning
+ * - src/utils/dlx/spawn.mts - Socket Firewall (sfw) spawn utilities
  * - test/integration/cli/cmd-npm-malware.test.mts - Malware-specific npm tests
  * - test/integration/cli/cmd-raw-npm.test.mts - Unwrapped npm tests
  */

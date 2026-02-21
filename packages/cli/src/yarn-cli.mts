@@ -2,35 +2,29 @@
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import shadowYarnBin from './shadow/yarn/bin.mts'
-
-import type { ChildProcess } from 'node:child_process'
+import { spawnSfw } from './utils/dlx/spawn.mjs'
 
 const logger = getDefaultLogger()
 
 export default async function runYarnCli() {
   process.exitCode = 1
 
-  const { spawnPromise } = await shadowYarnBin(process.argv.slice(2), {
+  // Forward to sfw (Socket Firewall).
+  // Auto-detects SEA vs npm CLI mode (VFS extraction vs dlx download).
+  const { spawnPromise } = await spawnSfw(['yarn', ...process.argv.slice(2)], {
     stdio: 'inherit',
     cwd: process.cwd(),
     env: { ...process.env },
   })
 
-  // See https://nodejs.org/api/child_process.html#event-exit.
-  ;(spawnPromise.process as ChildProcess).on(
-    'exit',
-    (code: number | null, signalName: string | null) => {
-      if (signalName) {
-        process.kill(process.pid, signalName)
-      } else if (typeof code === 'number') {
-        // eslint-disable-next-line n/no-process-exit
-        process.exit(code)
-      }
-    },
-  )
-
-  await spawnPromise
+  // Wait for the spawn promise to resolve and handle the result.
+  const result = await spawnPromise
+  if (result.signal) {
+    process.kill(process.pid, result.signal)
+  } else if (typeof result.code === 'number') {
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(result.code)
+  }
 }
 
 // Run if invoked directly (not as a module).

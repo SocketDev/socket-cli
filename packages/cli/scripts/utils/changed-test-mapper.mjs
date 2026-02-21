@@ -292,9 +292,6 @@ function mapSourceToTests(filepath) {
     if (normalized.includes('src/utils/semver.mts')) {
       return ['src/utils/semver.test.mts']
     }
-    if (normalized.includes('src/utils/shadow/links.mts')) {
-      return ['src/utils/shadow/links.test.mts']
-    }
     if (normalized.includes('src/utils/socket/alerts.mts')) {
       return ['src/utils/socket/alerts.test.mts']
     }

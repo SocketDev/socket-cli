@@ -39,6 +39,3 @@ export function getYarnBinPathDetails(): ReturnType<
   return _yarnBinPathDetails
 }
 
-export function isYarnBinPathShadowed(): boolean {
-  return getYarnBinPathDetails().shadowed
-}

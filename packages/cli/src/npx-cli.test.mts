@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock shadow/npx/bin module.
-vi.mock('./shadow/npx/bin.mts', () => ({
-  default: vi.fn(),
+// Mock spawnSfw from dlx/spawn.
+vi.mock('./utils/dlx/spawn.mts', () => ({
+  spawnSfw: vi.fn(),
 }))
 
 // Import modules after mocks are set up.
 const { default: runNpxCli } = await import('./npx-cli.mts')
-const shadowNpxBinModule = await import('./shadow/npx/bin.mts')
-const mockShadowNpxBin = vi.mocked(shadowNpxBinModule.default)
+const spawnModule = await import('./utils/dlx/spawn.mts')
+const mockSpawnSfw = vi.mocked(spawnModule.spawnSfw)
 
 // Mock process methods.
 const mockProcessExit = vi
@@ -38,7 +38,7 @@ describe('npx-cli', () => {
     process.exitCode = undefined
 
     // Setup default mock implementations.
-    mockShadowNpxBin.mockResolvedValue(createMockSpawnResult(0))
+    mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
     mockChildProcess.on.mockImplementation(() => {
       // No-op by default.
     })
@@ -57,15 +57,15 @@ describe('npx-cli', () => {
     }
   })
 
-  it('should call shadowNpxBin with correct arguments', async () => {
+  it('should call spawnSfw with correct arguments', async () => {
     const originalArgv = process.argv
     process.argv = ['node', 'npx-cli.mts', 'create-next-app@latest', 'my-app']
 
     try {
       await runNpxCli()
 
-      expect(mockShadowNpxBin).toHaveBeenCalledWith(
-        ['create-next-app@latest', 'my-app'],
+      expect(mockSpawnSfw).toHaveBeenCalledWith(
+        ['npx', 'create-next-app@latest', 'my-app'],
         {
           stdio: 'inherit',
         },
@@ -80,7 +80,7 @@ describe('npx-cli', () => {
     process.argv = ['node', 'npx-cli.mts', 'eslint', '.']
 
     // Mock spawn result with exit code 1.
-    mockShadowNpxBin.mockResolvedValue(createMockSpawnResult(1))
+    mockSpawnSfw.mockResolvedValue(createMockSpawnResult(1))
 
     try {
       await runNpxCli()
@@ -96,7 +96,7 @@ describe('npx-cli', () => {
     process.argv = ['node', 'npx-cli.mts', 'webpack-dev-server']
 
     // Mock spawn result with signal.
-    mockShadowNpxBin.mockResolvedValue({
+    mockSpawnSfw.mockResolvedValue({
       spawnPromise: Promise.resolve({
         success: false,
         code: null,
@@ -120,7 +120,7 @@ describe('npx-cli', () => {
     try {
       await runNpxCli()
 
-      expect(mockShadowNpxBin).toHaveBeenCalledWith([], {
+      expect(mockSpawnSfw).toHaveBeenCalledWith(['npx'], {
         stdio: 'inherit',
       })
     } finally {
@@ -135,8 +135,8 @@ describe('npx-cli', () => {
     try {
       await runNpxCli()
 
-      expect(mockShadowNpxBin).toHaveBeenCalledWith(
-        ['typescript', '--version'],
+      expect(mockSpawnSfw).toHaveBeenCalledWith(
+        ['npx', 'typescript', '--version'],
         expect.objectContaining({
           stdio: 'inherit',
         }),
@@ -154,7 +154,7 @@ describe('npx-cli', () => {
       await runNpxCli()
 
       // The spawn promise should be awaited.
-      expect(mockShadowNpxBin).toHaveBeenCalled()
+      expect(mockSpawnSfw).toHaveBeenCalled()
     } finally {
       process.argv = originalArgv
     }

@@ -20,7 +20,7 @@
  *
  * Related Files:
  * - src/commands/wrapper/npx.mts - npx wrapper implementation
- * - src/shadow/npx/ - Shadow npx implementation
+ * - src/utils/dlx/spawn.mts - Socket Firewall (sfw) spawn utilities
  * - test/integration/cli/cmd-npx-malware.test.mts - Malware-specific tests
  */
 

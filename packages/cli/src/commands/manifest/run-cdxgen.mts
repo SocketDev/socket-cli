@@ -17,7 +17,7 @@ import { spawnCdxgenDlx, spawnSynpDlx } from '../../utils/dlx/spawn.mjs'
 import { findUp } from '../../utils/fs/find-up.mjs'
 import { isYarnBerry } from '../../utils/yarn/version.mts'
 
-import type { DlxOptions, ShadowBinResult } from '../../utils/dlx/spawn.mjs'
+import type { DlxOptions, DlxSpawnResult } from '../../utils/dlx/spawn.mjs'
 
 const logger = getDefaultLogger()
 
@@ -68,10 +68,10 @@ function argvObjectToArray(argvObj: ArgvObject): string[] {
   return result
 }
 
-export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
+export async function runCdxgen(argvObj: ArgvObject): Promise<DlxSpawnResult> {
   const argvMutable = { __proto__: null, ...argvObj } as ArgvObject
 
-  const shadowOpts: DlxOptions = {
+  const dlxOpts: DlxOptions = {
     stdio: 'inherit',
   }
 
@@ -104,7 +104,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
         const synpResult = await spawnSynpDlx(
           ['--source-file', `./${YARN_LOCK}`],
           {
-            ...shadowOpts,
+            ...dlxOpts,
             agent,
           },
         )
@@ -116,13 +116,13 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   }
 
   // Use appropriate package manager for cdxgen.
-  const shadowResult = await spawnCdxgenDlx(argvObjectToArray(argvMutable), {
-    ...shadowOpts,
+  const cdxgenResult = await spawnCdxgenDlx(argvObjectToArray(argvMutable), {
+    ...dlxOpts,
     agent,
   })
 
   // Use finally handler for cleanup instead of process.on('exit').
-  shadowResult.spawnPromise.finally(() => {
+  cdxgenResult.spawnPromise.finally(() => {
     if (cleanupPackageLock) {
       try {
         // This removes the temporary package-lock.json we created for cdxgen.
@@ -151,5 +151,5 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     }
   })
 
-  return shadowResult
+  return cdxgenResult
 }

@@ -2,14 +2,12 @@
  * Unit tests for yarn path utilities.
  *
  * Purpose:
- * Tests yarn-specific path utilities. Validates yarn cache, global, and workspace paths.
+ * Tests yarn-specific path utilities. Validates yarn bin path resolution.
  *
  * Test Coverage:
- * - yarn cache path
- * - yarn global directory
- * - Workspace root detection
- * - yarn.lock location
- * - PnP (Plug'n'Play) paths
+ * - yarn bin path resolution
+ * - Path caching
+ * - Error handling when yarn not found
  *
  * Testing Approach:
  * Tests yarn path conventions and resolution logic.
@@ -30,24 +28,21 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
+const mockFindBinPathDetailsSync = vi.hoisted(() => vi.fn())
+
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
 vi.mock('../../../../src/utils/fs/path-resolve.mts', () => ({
-  findBinPathDetailsSync: vi.fn(),
-}))
-
-vi.mock('../../../../src/constants/packages.mts', () => ({
-  YARN: 'yarn',
+  findBinPathDetailsSync: mockFindBinPathDetailsSync,
 }))
 
 describe('yarn-paths utilities', () => {
   let originalExit: typeof process.exit
   let getYarnBinPath: typeof import('../../../../../src/utils/yarn/paths.mts')['getYarnBinPath']
   let getYarnBinPathDetails: typeof import('../../../../../src/utils/yarn/paths.mts')['getYarnBinPathDetails']
-  let isYarnBinPathShadowed: typeof import('../../../../../src/utils/yarn/paths.mts')['isYarnBinPathShadowed']
 
   beforeEach(async () => {
     vi.clearAllMocks()
@@ -60,11 +55,10 @@ describe('yarn-paths utilities', () => {
       throw new Error(`process.exit(${code})`)
     }) as any
 
-    // Re-import functions after module reset to clear caches
+    // Re-import functions after module reset to clear caches.
     const yarnPaths = await import('../../../../../src/utils/yarn/paths.mts')
     getYarnBinPath = yarnPaths.getYarnBinPath
     getYarnBinPathDetails = yarnPaths.getYarnBinPathDetails
-    isYarnBinPathShadowed = yarnPaths.isYarnBinPathShadowed
   })
 
   afterEach(() => {
@@ -74,28 +68,20 @@ describe('yarn-paths utilities', () => {
   })
 
   describe('getYarnBinPath', () => {
-    it('returns yarn bin path when found', async () => {
-      const { findBinPathDetailsSync } = vi.mocked(
-        await import('../../../../../src/utils/fs/path-resolve.mts'),
-      )
-      findBinPathDetailsSync.mockReturnValue({
+    it('returns yarn bin path when found', () => {
+      mockFindBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/yarn',
-        shadowed: false,
       })
 
       const result = getYarnBinPath()
 
       expect(result).toBe('/usr/local/bin/yarn')
-      expect(findBinPathDetailsSync).toHaveBeenCalledWith('yarn/classic')
+      expect(mockFindBinPathDetailsSync).toHaveBeenCalledWith('yarn/classic')
     })
 
-    it('exits with error when yarn not found', async () => {
-      const { findBinPathDetailsSync } = vi.mocked(
-        await import('../../../../../src/utils/fs/path-resolve.mts'),
-      )
-      findBinPathDetailsSync.mockReturnValue({
+    it('exits with error when yarn not found', () => {
+      mockFindBinPathDetailsSync.mockReturnValue({
         path: undefined,
-        shadowed: false,
       })
 
       expect(() => getYarnBinPath()).toThrow('process.exit(127)')
@@ -104,29 +90,21 @@ describe('yarn-paths utilities', () => {
       )
     })
 
-    it('caches the result', async () => {
-      const { findBinPathDetailsSync } = vi.mocked(
-        await import('../../../../../src/utils/fs/path-resolve.mts'),
-      )
-      findBinPathDetailsSync.mockReturnValue({
+    it('caches the result', () => {
+      mockFindBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/yarn',
-        shadowed: false,
       })
 
       const result1 = getYarnBinPath()
       const result2 = getYarnBinPath()
 
       expect(result1).toBe(result2)
-      expect(findBinPathDetailsSync).toHaveBeenCalledTimes(1)
+      expect(mockFindBinPathDetailsSync).toHaveBeenCalledTimes(1)
     })
 
-    it('handles Windows yarn.cmd path', async () => {
-      const { findBinPathDetailsSync } = vi.mocked(
-        await import('../../../../../src/utils/fs/path-resolve.mts'),
-      )
-      findBinPathDetailsSync.mockReturnValue({
+    it('handles Windows yarn.cmd path', () => {
+      mockFindBinPathDetailsSync.mockReturnValue({
         path: 'C:\\Program Files\\Yarn\\bin\\yarn.cmd',
-        shadowed: false,
       })
 
       const result = getYarnBinPath()
@@ -134,132 +112,75 @@ describe('yarn-paths utilities', () => {
       expect(result).toBe('C:\\Program Files\\Yarn\\bin\\yarn.cmd')
     })
 
-    it('handles yarn installed via npm', async () => {
-      const { findBinPathDetailsSync } = vi.mocked(
-        await import('../../../../../src/utils/fs/path-resolve.mts'),
-      )
-      findBinPathDetailsSync.mockReturnValue({
+    it('handles yarn installed via npm', () => {
+      mockFindBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/lib/node_modules/.bin/yarn',
-        shadowed: false,
       })
 
       const result = getYarnBinPath()
 
       expect(result).toBe('/usr/local/lib/node_modules/.bin/yarn')
     })
+
+    it('handles yarn installed via corepack', () => {
+      mockFindBinPathDetailsSync.mockReturnValue({
+        path: '/home/user/.cache/corepack/yarn/1.22.0/bin/yarn',
+      })
+
+      const result = getYarnBinPath()
+
+      expect(result).toBe('/home/user/.cache/corepack/yarn/1.22.0/bin/yarn')
+    })
   })
 
   describe('getYarnBinPathDetails', () => {
-    it('returns full details including path and shadowed status', async () => {
-      const { findBinPathDetailsSync } = vi.mocked(
-        await import('../../../../../src/utils/fs/path-resolve.mts'),
-      )
+    it('returns full details including path', () => {
       const mockDetails = {
         path: '/usr/local/bin/yarn',
-        shadowed: true,
       }
-      findBinPathDetailsSync.mockReturnValue(mockDetails)
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
 
       const result = getYarnBinPathDetails()
 
       expect(result).toEqual(mockDetails)
-      expect(findBinPathDetailsSync).toHaveBeenCalledWith('yarn/classic')
+      expect(mockFindBinPathDetailsSync).toHaveBeenCalledWith('yarn/classic')
     })
 
-    it('caches the result', async () => {
-      const { findBinPathDetailsSync } = vi.mocked(
-        await import('../../../../../src/utils/fs/path-resolve.mts'),
-      )
+    it('caches the result', () => {
       const mockDetails = {
         path: '/usr/local/bin/yarn',
-        shadowed: false,
       }
-      findBinPathDetailsSync.mockReturnValue(mockDetails)
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
 
       const result1 = getYarnBinPathDetails()
       const result2 = getYarnBinPathDetails()
 
       expect(result1).toBe(result2)
-      expect(findBinPathDetailsSync).toHaveBeenCalledTimes(1)
+      expect(mockFindBinPathDetailsSync).toHaveBeenCalledTimes(1)
     })
 
-    it('returns details even when path is undefined', async () => {
-      const { findBinPathDetailsSync } = vi.mocked(
-        await import('../../../../../src/utils/fs/path-resolve.mts'),
-      )
+    it('returns details even when path is undefined', () => {
       const mockDetails = {
         path: undefined,
-        shadowed: false,
       }
-      findBinPathDetailsSync.mockReturnValue(mockDetails)
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
 
       const result = getYarnBinPathDetails()
 
       expect(result).toEqual(mockDetails)
     })
-  })
 
-  describe('isYarnBinPathShadowed', () => {
-    it('returns true when yarn is shadowed', async () => {
-      const { findBinPathDetailsSync } = vi.mocked(
-        await import('../../../../../src/utils/fs/path-resolve.mts'),
-      )
-      findBinPathDetailsSync.mockReturnValue({
+    it('returns same object reference when cached', () => {
+      const mockDetails = {
         path: '/usr/local/bin/yarn',
-        shadowed: true,
-      })
+      }
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
 
-      const result = isYarnBinPathShadowed()
+      const result1 = getYarnBinPathDetails()
+      const result2 = getYarnBinPathDetails()
 
-      expect(result).toBe(true)
-    })
-
-    it('returns false when yarn is not shadowed', async () => {
-      const { findBinPathDetailsSync } = vi.mocked(
-        await import('../../../../../src/utils/fs/path-resolve.mts'),
-      )
-      findBinPathDetailsSync.mockReturnValue({
-        path: '/usr/local/bin/yarn',
-        shadowed: false,
-      })
-
-      const result = isYarnBinPathShadowed()
-
-      expect(result).toBe(false)
-    })
-
-    it('returns false when yarn path is not found but not shadowed', async () => {
-      const { findBinPathDetailsSync } = vi.mocked(
-        await import('../../../../../src/utils/fs/path-resolve.mts'),
-      )
-      findBinPathDetailsSync.mockReturnValue({
-        path: undefined,
-        shadowed: false,
-      })
-
-      const result = isYarnBinPathShadowed()
-
-      expect(result).toBe(false)
-    })
-
-    it('uses cached details', async () => {
-      const { findBinPathDetailsSync } = vi.mocked(
-        await import('../../../../../src/utils/fs/path-resolve.mts'),
-      )
-      findBinPathDetailsSync.mockReturnValue({
-        path: '/usr/local/bin/yarn',
-        shadowed: true,
-      })
-
-      // Call getYarnBinPathDetails first to cache.
-      getYarnBinPathDetails()
-
-      // Now call isYarnBinPathShadowed.
-      const result = isYarnBinPathShadowed()
-
-      expect(result).toBe(true)
-      // Should only be called once due to caching.
-      expect(findBinPathDetailsSync).toHaveBeenCalledTimes(1)
+      expect(result1).toBe(result2) // Same reference.
+      expect(mockFindBinPathDetailsSync).toHaveBeenCalledTimes(1)
     })
   })
 })

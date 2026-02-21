@@ -2,14 +2,12 @@
  * Unit tests for pnpm path utilities.
  *
  * Purpose:
- * Tests pnpm-specific path utilities. Validates pnpm store, virtual store, and workspace paths.
+ * Tests pnpm-specific path utilities. Validates pnpm bin path resolution.
  *
  * Test Coverage:
- * - pnpm store path
- * - Virtual store location
- * - Workspace root detection
- * - pnpm-workspace.yaml location
- * - Global pnpm paths
+ * - pnpm bin path resolution
+ * - Path caching
+ * - Error handling when pnpm not found
  *
  * Testing Approach:
  * Tests pnpm path conventions and resolution logic.
@@ -45,7 +43,6 @@ describe('pnpm-paths utilities', () => {
   let originalExit: typeof process.exit
   let getPnpmBinPath: typeof import('../../../../../src/utils/pnpm/paths.mts')['getPnpmBinPath']
   let getPnpmBinPathDetails: typeof import('../../../../../src/utils/pnpm/paths.mts')['getPnpmBinPathDetails']
-  let isPnpmBinPathShadowed: typeof import('../../../../../src/utils/pnpm/paths.mts')['isPnpmBinPathShadowed']
 
   beforeEach(async () => {
     vi.clearAllMocks()
@@ -58,11 +55,10 @@ describe('pnpm-paths utilities', () => {
       throw new Error(`process.exit(${code})`)
     }) as any
 
-    // Re-import functions after module reset to clear caches
+    // Re-import functions after module reset to clear caches.
     const pnpmPaths = await import('../../../../../src/utils/pnpm/paths.mts')
     getPnpmBinPath = pnpmPaths.getPnpmBinPath
     getPnpmBinPathDetails = pnpmPaths.getPnpmBinPathDetails
-    isPnpmBinPathShadowed = pnpmPaths.isPnpmBinPathShadowed
   })
 
   afterEach(() => {
@@ -75,7 +71,6 @@ describe('pnpm-paths utilities', () => {
     it('returns pnpm bin path when found', () => {
       mockFindBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/pnpm',
-        shadowed: false,
       })
 
       const result = getPnpmBinPath()
@@ -87,7 +82,6 @@ describe('pnpm-paths utilities', () => {
     it('exits with error when pnpm not found', () => {
       mockFindBinPathDetailsSync.mockReturnValue({
         path: undefined,
-        shadowed: false,
       })
 
       expect(() => getPnpmBinPath()).toThrow('process.exit(127)')
@@ -99,7 +93,6 @@ describe('pnpm-paths utilities', () => {
     it('caches the result', () => {
       mockFindBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/pnpm',
-        shadowed: false,
       })
 
       const result1 = getPnpmBinPath()
@@ -112,7 +105,6 @@ describe('pnpm-paths utilities', () => {
     it('handles Windows pnpm.cmd path', () => {
       mockFindBinPathDetailsSync.mockReturnValue({
         path: 'C:\\Program Files\\pnpm\\bin\\pnpm.cmd',
-        shadowed: false,
       })
 
       const result = getPnpmBinPath()
@@ -123,7 +115,6 @@ describe('pnpm-paths utilities', () => {
     it('handles pnpm installed via npm', () => {
       mockFindBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/lib/node_modules/.bin/pnpm',
-        shadowed: false,
       })
 
       const result = getPnpmBinPath()
@@ -134,7 +125,6 @@ describe('pnpm-paths utilities', () => {
     it('handles pnpm installed via corepack', () => {
       mockFindBinPathDetailsSync.mockReturnValue({
         path: '/home/user/.cache/corepack/pnpm/9.0.0/bin/pnpm',
-        shadowed: false,
       })
 
       const result = getPnpmBinPath()
@@ -144,10 +134,9 @@ describe('pnpm-paths utilities', () => {
   })
 
   describe('getPnpmBinPathDetails', () => {
-    it('returns full details including path and shadowed status', () => {
+    it('returns full details including path', () => {
       const mockDetails = {
         path: '/usr/local/bin/pnpm',
-        shadowed: true,
       }
       mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
 
@@ -160,7 +149,6 @@ describe('pnpm-paths utilities', () => {
     it('caches the result', () => {
       const mockDetails = {
         path: '/usr/local/bin/pnpm',
-        shadowed: false,
       }
       mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
 
@@ -174,32 +162,17 @@ describe('pnpm-paths utilities', () => {
     it('returns details even when path is undefined', () => {
       const mockDetails = {
         path: undefined,
-        shadowed: false,
       }
       mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
 
       const result = getPnpmBinPathDetails()
 
       expect(result).toEqual(mockDetails)
-    })
-
-    it('handles shadowed pnpm installation', () => {
-      const mockDetails = {
-        path: '/usr/local/bin/pnpm',
-        shadowed: true,
-      }
-      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
-
-      const result = getPnpmBinPathDetails()
-
-      expect(result).toEqual(mockDetails)
-      expect(result.shadowed).toBe(true)
     })
 
     it('returns same object reference when cached', () => {
       const mockDetails = {
         path: '/usr/local/bin/pnpm',
-        shadowed: false,
       }
       mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
 
@@ -207,75 +180,6 @@ describe('pnpm-paths utilities', () => {
       const result2 = getPnpmBinPathDetails()
 
       expect(result1).toBe(result2) // Same reference.
-      expect(mockFindBinPathDetailsSync).toHaveBeenCalledTimes(1)
-    })
-  })
-
-  describe('isPnpmBinPathShadowed', () => {
-    it('returns true when pnpm is shadowed', () => {
-      mockFindBinPathDetailsSync.mockReturnValue({
-        path: '/usr/local/bin/pnpm',
-        shadowed: true,
-      })
-
-      const result = isPnpmBinPathShadowed()
-
-      expect(result).toBe(true)
-    })
-
-    it('returns false when pnpm is not shadowed', () => {
-      mockFindBinPathDetailsSync.mockReturnValue({
-        path: '/usr/local/bin/pnpm',
-        shadowed: false,
-      })
-
-      const result = isPnpmBinPathShadowed()
-
-      expect(result).toBe(false)
-    })
-
-    it('returns false when pnpm path is not found but not shadowed', () => {
-      mockFindBinPathDetailsSync.mockReturnValue({
-        path: undefined,
-        shadowed: false,
-      })
-
-      const result = isPnpmBinPathShadowed()
-
-      expect(result).toBe(false)
-    })
-
-    it('uses cached details', () => {
-      mockFindBinPathDetailsSync.mockReturnValue({
-        path: '/usr/local/bin/pnpm',
-        shadowed: true,
-      })
-
-      // Call getPnpmBinPathDetails first to cache.
-      getPnpmBinPathDetails()
-
-      // Now call isPnpmBinPathShadowed.
-      const result = isPnpmBinPathShadowed()
-
-      expect(result).toBe(true)
-      // Should only be called once due to caching.
-      expect(mockFindBinPathDetailsSync).toHaveBeenCalledTimes(1)
-    })
-
-    it('handles multiple calls efficiently', () => {
-      mockFindBinPathDetailsSync.mockReturnValue({
-        path: '/usr/local/bin/pnpm',
-        shadowed: true,
-      })
-
-      const result1 = isPnpmBinPathShadowed()
-      const result2 = isPnpmBinPathShadowed()
-      const result3 = isPnpmBinPathShadowed()
-
-      expect(result1).toBe(true)
-      expect(result2).toBe(true)
-      expect(result3).toBe(true)
-      // Should only be called once due to caching.
       expect(mockFindBinPathDetailsSync).toHaveBeenCalledTimes(1)
     })
   })

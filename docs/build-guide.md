@@ -91,8 +91,7 @@ Phase 2: Prepare (parallel)
 
 Phase 3: Build variants (parallel)
     ├── CLI bundle (esbuild → build/cli.js)
-    ├── Index loader (esbuild → dist/index.js)
-    └── Shadow npm inject (esbuild → dist/shadow-npm-inject.js)
+    └── Index loader (esbuild → dist/index.js)
 
 Phase 4: Post-processing (parallel)
     ├── Copy cli.js to dist/
@@ -284,7 +283,6 @@ Located in `packages/cli/.config/`:
 |--------|--------|-------------|
 | `esbuild.cli.build.mjs` | `build/cli.js` | Main CLI bundle |
 | `esbuild.index.config.mjs` | `dist/index.js` | Entry point loader |
-| `esbuild.inject.config.mjs` | `dist/shadow-npm-inject.js` | Shadow npm hook |
 
 ### Build Variants
 

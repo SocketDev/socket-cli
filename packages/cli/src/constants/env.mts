@@ -154,8 +154,7 @@ export {
   isSentryBuild,
 }
 
-// Export processEnv for backward compatibility with shadow npm integration.
-// This provides access to process.env for spawned processes.
+// Export processEnv for spawned processes that need environment access.
 export const processEnv = env
 
 // Legacy default export for backward compatibility.

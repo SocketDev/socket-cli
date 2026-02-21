@@ -53,6 +53,3 @@ export function getPnpmBinPathDetails(): ReturnType<
   return _pnpmBinPathDetails
 }
 
-export function isPnpmBinPathShadowed(): boolean {
-  return getPnpmBinPathDetails().shadowed
-}

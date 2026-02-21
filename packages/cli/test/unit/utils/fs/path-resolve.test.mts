@@ -394,24 +394,6 @@ describe('Path Resolve', () => {
       expect(result).toEqual({
         name: 'npm',
         path: '/usr/local/bin/npm',
-        shadowed: false,
-      })
-    })
-
-    it('handles shadowed bin paths', async () => {
-      const constants = await import('../../../../src/constants.mts')
-      const shadowBinPath = constants.default.shadowBinPath
-      mockWhichRealSync.mockReturnValue([
-        `${shadowBinPath}/npm`,
-        '/usr/local/bin/npm',
-      ])
-
-      const result = findBinPathDetailsSync('npm')
-
-      expect(result).toEqual({
-        name: 'npm',
-        path: '/usr/local/bin/npm',
-        shadowed: true,
       })
     })
 
@@ -423,7 +405,6 @@ describe('Path Resolve', () => {
       expect(result).toEqual({
         name: 'nonexistent',
         path: undefined,
-        shadowed: false,
       })
     })
 
@@ -435,7 +416,6 @@ describe('Path Resolve', () => {
       expect(result).toEqual({
         name: 'npm',
         path: undefined,
-        shadowed: false,
       })
     })
 
@@ -447,21 +427,6 @@ describe('Path Resolve', () => {
       expect(result).toEqual({
         name: 'npm',
         path: '/usr/local/bin/npm',
-        shadowed: false,
-      })
-    })
-
-    it('handles only shadow bin in path', async () => {
-      const constants = await import('../../../../src/constants.mts')
-      const shadowBinPath = constants.default.shadowBinPath
-      mockWhichRealSync.mockReturnValue([`${shadowBinPath}/npm`])
-
-      const result = findBinPathDetailsSync('npm')
-
-      expect(result).toEqual({
-        name: 'npm',
-        path: undefined,
-        shadowed: true,
       })
     })
   })

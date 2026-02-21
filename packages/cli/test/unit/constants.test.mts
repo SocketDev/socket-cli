@@ -14,7 +14,6 @@
  * - Encoding constants (UTF8)
  * - Socket-specific constants (SOCKET_CLI_ISSUES_URL, SOCKET_DEFAULT_BRANCH)
  * - Socket file constants (SOCKET_JSON, SOCKET_YAML, SOCKET_YML)
- * - Shadow directories configuration (shadowBinPath)
  *
  * Testing Approach:
  * - Mock environment variables using vi.stubEnv before module import
@@ -151,13 +150,6 @@ describe('constants', () => {
     expect(constants.SOCKET_JSON).toBe('socket.json')
     expect(constants.SOCKET_YAML).toBe('socket.yaml')
     expect(constants.SOCKET_YML).toBe('socket.yml')
-  })
-
-  it('has shadow directories configuration', async () => {
-    const constants = (await import('../../src/constants.mts')).default
-
-    expect(constants.shadowBinPath).toBeDefined()
-    expect(constants.shadowBinPath).toContain('shadow-bin')
   })
 
   it('ENV object contains expected environment variables', async () => {

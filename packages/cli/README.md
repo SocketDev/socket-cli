@@ -11,7 +11,7 @@ Command-line interface for Socket.dev supply chain security analysis. Provides s
 - [Architecture Overview](#architecture-overview)
 - [Command Pattern Architecture](#command-pattern-architecture)
   - [Command Organization](#command-organization)
-- [Shadow Architecture](#shadow-architecture)
+- [Socket Firewall Architecture](#socket-firewall-architecture)
 - [Build System](#build-system)
   - [Build Commands](#build-commands)
 - [Update Mechanism](#update-mechanism)
@@ -65,11 +65,11 @@ Command-line interface for Socket.dev supply chain security analysis. Provides s
 │  └───┬───┘     └───┬───┘     └───┬────┘                       │
 │      │             │             │                              │
 │  ┌───▼────┐    ┌───▼────┐    ┌───▼─────┐                      │
-│  │ handle │    │ shadow │    │ getters │  Handlers & business  │
+│  │ handle │    │  sfw   │    │ getters │  Handlers & business  │
 │  └───┬────┘    └───┬────┘    └───┬─────┘  logic               │
 │      │             │             │                              │
 │  ┌───▼────┐    ┌───▼────┐    ┌───▼─────┐                      │
-│  │ output │    │arborist│    │ setters │  Output formatters   │
+│  │ output │    │firewall│    │ setters │  Output formatters   │
 │  └────────┘    └────────┘    └─────────┘                       │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
@@ -128,13 +128,13 @@ src/commands/
 └── ... (25 more commands)
 ```
 
-## Shadow Architecture
+## Socket Firewall Architecture
 
-Package manager wrapping intercepts package operations for security scanning:
+Package manager wrapping uses Socket Firewall (sfw) for security scanning:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Shadow System                            │
+│                Socket Firewall (sfw)                        │
 │                                                             │
 │  User runs: socket npm install express                     │
 │                     │                                       │
@@ -143,27 +143,27 @@ Package manager wrapping intercepts package operations for security scanning:
 │              └──────┬──────┘                               │
 │                     │                                       │
 │          ┌──────────▼──────────┐                           │
-│          │   shadowNpmBase     │  Core shadow logic        │
+│          │     spawnSfw()      │  Socket Firewall spawn    │
 │          └──────────┬──────────┘                           │
 │                     │                                       │
 │     ┌───────────────┼───────────────┐                      │
 │     │               │               │                      │
 │  ┌──▼──┐      ┌─────▼─────┐   ┌────▼────┐                │
-│  │ IPC │      │ Arborist  │   │ Inject  │                 │
-│  │Hooks│      │  Wrapper  │   │ Paths   │                 │
+│  │ DLX │      │ Security  │   │Registry │                 │
+│  │Spawn│      │ Scanning  │   │Override │                 │
 │  └──┬──┘      └─────┬─────┘   └────┬────┘                │
 │     │               │               │                      │
 │  ┌──▼───────────────▼───────────────▼────┐                │
-│  │    Real npm with injected logic       │                │
-│  │    + Socket security scanning          │                │
+│  │    Package manager with Socket        │                │
+│  │    security scanning integration       │                │
 │  └────────────────────────────────────────┘                │
 │                                                             │
 │  Features:                                                  │
 │  - Pre-install security scanning                           │
 │  - Blocking on critical vulnerabilities                    │
 │  - Registry override injection                             │
-│  - IPC communication for progress                          │
-│  - Arborist hooks for deep integration                     │
+│  - SEA and DLX execution modes                             │
+│  - VFS extraction for bundled tools                        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -262,7 +262,7 @@ src/utils/
 ├── purl/                Package URL parsing
 ├── python/              Python standalone runtime
 ├── sea/                 SEA binary detection
-├── shadow/              Shadow system for package managers
+├── sfw/                 Socket Firewall integration
 ├── socket/              Socket API integration
 ├── telemetry/           Analytics and error reporting
 ├── terminal/            Terminal UI (colors, spinners, tables)
@@ -376,8 +376,8 @@ pnpm build && pnpm exec socket scan
 pnpm dev scan create
 
 # Specific modes
-pnpm dev:npm install express      # Test npm shadow
-pnpm dev:npx cowsay hello         # Test npx shadow
+pnpm dev:npm install express      # Test npm with Socket Firewall
+pnpm dev:npx cowsay hello         # Test npx with Socket Firewall
 ```
 
 ## Key Statistics
@@ -578,7 +578,6 @@ Features:
 - `packages.mts` - Package name constants
 - `paths.mts` - Path constants
 - `reporting.mts` - Report configuration
-- `shadow.mts` - Shadow system constants
 - `socket.mts` - Socket API URLs
 - `types.mts` - Type constants
 

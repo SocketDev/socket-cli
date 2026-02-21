@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock shadow/yarn/bin module.
-vi.mock('./shadow/yarn/bin.mts', () => ({
-  default: vi.fn(),
+// Mock spawnSfw from dlx/spawn.
+vi.mock('./utils/dlx/spawn.mts', () => ({
+  spawnSfw: vi.fn(),
 }))
 
 // Import modules after mocks are set up.
 const { default: runYarnCli } = await import('./yarn-cli.mts')
-const shadowYarnBinModule = await import('./shadow/yarn/bin.mts')
-const mockShadowYarnBin = vi.mocked(shadowYarnBinModule.default)
+const spawnModule = await import('./utils/dlx/spawn.mts')
+const mockSpawnSfw = vi.mocked(spawnModule.spawnSfw)
 
 // Mock process methods.
 const mockProcessExit = vi
@@ -23,18 +23,13 @@ describe('yarn-cli', () => {
   }
 
   // Create a proper promise-like object for spawnPromise.
-  const createMockSpawnResult = (exitCode = 0, signal?: string) => {
-    const promise = Promise.resolve({
+  const createMockSpawnResult = (exitCode = 0) => ({
+    spawnPromise: Promise.resolve({
       success: exitCode === 0,
-      code: signal ? null : exitCode,
-      signal,
-    })
-    // Attach the process property to the promise itself.
-    Object.assign(promise, { process: mockChildProcess })
-    return {
-      spawnPromise: promise,
-    }
-  }
+      code: exitCode,
+      signal: undefined,
+    }).then(result => Object.assign(result, { process: mockChildProcess })),
+  })
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -43,16 +38,9 @@ describe('yarn-cli', () => {
     process.exitCode = undefined
 
     // Setup default mock implementations.
-    mockShadowYarnBin.mockResolvedValue(createMockSpawnResult(0))
-
-    // Mock the .on() method to immediately trigger the event handler.
-    mockChildProcess.on.mockImplementation((event, callback) => {
-      if (event === 'exit') {
-        // Store the callback to be called later when needed.
-        // In default case (success), trigger with code 0.
-        Promise.resolve().then(() => callback(0, null))
-      }
-      return mockChildProcess as any
+    mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
+    mockChildProcess.on.mockImplementation(() => {
+      // No-op by default.
     })
   })
 
@@ -69,15 +57,15 @@ describe('yarn-cli', () => {
     }
   })
 
-  it('should call shadowYarnBin with correct arguments', async () => {
+  it('should call spawnSfw with correct arguments', async () => {
     const originalArgv = process.argv
     process.argv = ['node', 'yarn-cli.mts', 'add', 'react', 'react-dom']
 
     try {
       await runYarnCli()
 
-      expect(mockShadowYarnBin).toHaveBeenCalledWith(
-        ['add', 'react', 'react-dom'],
+      expect(mockSpawnSfw).toHaveBeenCalledWith(
+        ['yarn', 'add', 'react', 'react-dom'],
         {
           stdio: 'inherit',
           cwd: process.cwd(),
@@ -94,15 +82,7 @@ describe('yarn-cli', () => {
     process.argv = ['node', 'yarn-cli.mts', 'build']
 
     // Mock spawn result with exit code 1.
-    mockShadowYarnBin.mockResolvedValue(createMockSpawnResult(1))
-
-    // Override the .on() mock to trigger exit with code 1.
-    mockChildProcess.on.mockImplementation((event, callback) => {
-      if (event === 'exit') {
-        Promise.resolve().then(() => callback(1, null))
-      }
-      return mockChildProcess as any
-    })
+    mockSpawnSfw.mockResolvedValue(createMockSpawnResult(1))
 
     try {
       await runYarnCli()
@@ -118,23 +98,12 @@ describe('yarn-cli', () => {
     process.argv = ['node', 'yarn-cli.mts', 'start']
 
     // Mock spawn result with signal.
-    const promise = Promise.resolve({
-      success: false,
-      code: null,
-      signal: 'SIGTERM',
-    })
-    // Attach the process property to the promise itself.
-    Object.assign(promise, { process: mockChildProcess })
-    mockShadowYarnBin.mockResolvedValue({
-      spawnPromise: promise,
-    })
-
-    // Override the .on() mock to trigger exit with signal.
-    mockChildProcess.on.mockImplementation((event, callback) => {
-      if (event === 'exit') {
-        Promise.resolve().then(() => callback(null, 'SIGTERM'))
-      }
-      return mockChildProcess as any
+    mockSpawnSfw.mockResolvedValue({
+      spawnPromise: Promise.resolve({
+        success: false,
+        code: null,
+        signal: 'SIGTERM',
+      }).then(result => Object.assign(result, { process: mockChildProcess })),
     })
 
     try {
@@ -153,7 +122,7 @@ describe('yarn-cli', () => {
     try {
       await runYarnCli()
 
-      expect(mockShadowYarnBin).toHaveBeenCalledWith([], {
+      expect(mockSpawnSfw).toHaveBeenCalledWith(['yarn'], {
         stdio: 'inherit',
         cwd: process.cwd(),
         env: { ...process.env },
@@ -172,7 +141,7 @@ describe('yarn-cli', () => {
     try {
       await runYarnCli()
 
-      expect(mockShadowYarnBin).toHaveBeenCalledWith(['workspace', 'list'], {
+      expect(mockSpawnSfw).toHaveBeenCalledWith(['yarn', 'workspace', 'list'], {
         stdio: 'inherit',
         cwd: process.cwd(),
         env: expect.objectContaining({ YARN_CACHE_FOLDER: '/tmp/yarn-cache' }),
@@ -191,7 +160,7 @@ describe('yarn-cli', () => {
       await runYarnCli()
 
       // The spawn promise should be awaited.
-      expect(mockShadowYarnBin).toHaveBeenCalled()
+      expect(mockSpawnSfw).toHaveBeenCalled()
     } finally {
       process.argv = originalArgv
     }

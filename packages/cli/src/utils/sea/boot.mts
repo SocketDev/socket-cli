@@ -13,8 +13,9 @@
  * ensuring proper bootstrap delegation for SEA binaries.
  */
 
+import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib/constants/socket'
+
 import { isSeaBinary } from './detect.mts'
-import { SOCKET_IPC_HANDSHAKE } from '../../constants/shadow.mts'
 
 import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
@@ -105,8 +106,7 @@ export function prepareBootstrapSpawnOptions(
   // If we're spawning a SEA binary as a subprocess, ensure IPC channel.
   if (isSeaBinary() && ipcData) {
     // Ensure stdio includes 'ipc' for IPC channel.
-    // This is handled by ensureIpcInStdio in shadow/stdio-ipc.mts.
-    // We'll document that callers should use that utility.
+    // Callers should configure stdio appropriately for IPC communication.
   }
 
   return opts
@@ -141,7 +141,7 @@ export function sendBootstrapHandshake(
  *
  * The returned IPC data includes:
  * - Bootstrap indicators: subprocess, parent_pid
- * - Custom data: shadow config, application settings, etc.
+ * - Custom data: wrapper config, application settings, etc.
  *
  * @param timeoutMs - Timeout in milliseconds (default: 5000)
  */

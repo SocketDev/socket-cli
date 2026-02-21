@@ -23,15 +23,32 @@ import { whichRealSync } from '@socketsecurity/lib/bin'
 import { getExecPath } from '@socketsecurity/lib/constants/node'
 import { spawn, spawnSync } from '@socketsecurity/lib/spawn'
 
-import { ensureIpcInStdio } from '../../shadow/stdio-ipc.mjs'
 import { sendBootstrapHandshake } from '../sea/boot.mjs'
 import { isSeaBinary } from '../sea/detect.mjs'
 
+import type { StdioOptions } from 'node:child_process'
 import type {
   SpawnOptions,
   SpawnResult,
   SpawnExtra,
 } from '@socketsecurity/lib/spawn'
+
+/**
+ * Ensures stdio configuration includes IPC channel for process communication.
+ * Converts various stdio formats to include 'ipc' as the fourth element.
+ */
+function ensureIpcInStdio(stdio: StdioOptions | undefined): StdioOptions {
+  if (typeof stdio === 'string') {
+    return [stdio, stdio, stdio, 'ipc']
+  }
+  if (Array.isArray(stdio)) {
+    if (!stdio.includes('ipc')) {
+      return stdio.concat('ipc')
+    }
+    return stdio.slice()
+  }
+  return ['pipe', 'pipe', 'pipe', 'ipc']
+}
 
 /**
  * Options for spawnNode, extending SpawnOptions with IPC handshake data.
@@ -51,7 +68,7 @@ export interface SpawnNodeOptions extends SpawnOptions {
    * }
    *
    * Use this to pass custom configuration to the subprocess:
-   * - Shadow npm/pnpm/yarn settings (API token, bin name, etc.)
+   * - Socket Firewall settings (API token, bin name, etc.)
    * - Custom application data
    *
    * System Node.js will ignore the handshake message.

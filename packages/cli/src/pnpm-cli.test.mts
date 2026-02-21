@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock shadow/pnpm/bin module.
-vi.mock('./shadow/pnpm/bin.mts', () => ({
-  default: vi.fn(),
+// Mock spawnSfw from dlx/spawn.
+vi.mock('./utils/dlx/spawn.mts', () => ({
+  spawnSfw: vi.fn(),
 }))
 
 // Import modules after mocks are set up.
 const { default: runPnpmCli } = await import('./pnpm-cli.mts')
-const shadowPnpmBinModule = await import('./shadow/pnpm/bin.mts')
-const mockShadowPnpmBin = vi.mocked(shadowPnpmBinModule.default)
+const spawnModule = await import('./utils/dlx/spawn.mts')
+const mockSpawnSfw = vi.mocked(spawnModule.spawnSfw)
 
 // Mock process methods.
 const mockProcessExit = vi
@@ -38,7 +38,7 @@ describe('pnpm-cli', () => {
     process.exitCode = undefined
 
     // Setup default mock implementations.
-    mockShadowPnpmBin.mockResolvedValue(createMockSpawnResult(0))
+    mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
     mockChildProcess.on.mockImplementation(() => {
       // No-op by default.
     })
@@ -57,14 +57,14 @@ describe('pnpm-cli', () => {
     }
   })
 
-  it('should call shadowPnpmBin with correct arguments', async () => {
+  it('should call spawnSfw with correct arguments', async () => {
     const originalArgv = process.argv
     process.argv = ['node', 'pnpm-cli.mts', 'add', 'lodash']
 
     try {
       await runPnpmCli()
 
-      expect(mockShadowPnpmBin).toHaveBeenCalledWith(['add', 'lodash'], {
+      expect(mockSpawnSfw).toHaveBeenCalledWith(['pnpm', 'add', 'lodash'], {
         stdio: 'inherit',
         cwd: process.cwd(),
         env: { ...process.env },
@@ -79,7 +79,7 @@ describe('pnpm-cli', () => {
     process.argv = ['node', 'pnpm-cli.mts', 'test']
 
     // Mock spawn result with exit code 2.
-    mockShadowPnpmBin.mockResolvedValue(createMockSpawnResult(2))
+    mockSpawnSfw.mockResolvedValue(createMockSpawnResult(2))
 
     try {
       await runPnpmCli()
@@ -95,7 +95,7 @@ describe('pnpm-cli', () => {
     process.argv = ['node', 'pnpm-cli.mts', 'dev']
 
     // Mock spawn result with signal.
-    mockShadowPnpmBin.mockResolvedValue({
+    mockSpawnSfw.mockResolvedValue({
       spawnPromise: Promise.resolve({
         success: false,
         code: null,
@@ -119,7 +119,7 @@ describe('pnpm-cli', () => {
     try {
       await runPnpmCli()
 
-      expect(mockShadowPnpmBin).toHaveBeenCalledWith([], {
+      expect(mockSpawnSfw).toHaveBeenCalledWith(['pnpm'], {
         stdio: 'inherit',
         cwd: process.cwd(),
         env: { ...process.env },
@@ -138,7 +138,7 @@ describe('pnpm-cli', () => {
     try {
       await runPnpmCli()
 
-      expect(mockShadowPnpmBin).toHaveBeenCalledWith(['run', 'lint'], {
+      expect(mockSpawnSfw).toHaveBeenCalledWith(['pnpm', 'run', 'lint'], {
         stdio: 'inherit',
         cwd: process.cwd(),
         env: expect.objectContaining({ PNPM_HOME: '/custom/path' }),
@@ -157,7 +157,7 @@ describe('pnpm-cli', () => {
       await runPnpmCli()
 
       // The spawn promise should be awaited.
-      expect(mockShadowPnpmBin).toHaveBeenCalled()
+      expect(mockSpawnSfw).toHaveBeenCalled()
     } finally {
       process.argv = originalArgv
     }

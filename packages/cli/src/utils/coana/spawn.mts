@@ -10,7 +10,7 @@ import { getErrorCause } from '../error/errors.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mts'
 import { spawnNode } from '../spawn/spawn-node.mjs'
 
-import type { IpcObject } from '../../constants/shadow.mts'
+import type { IpcObject } from '../ipc.mts'
 import type { CResult } from '../../types.mjs'
 import type { SpawnExtra, SpawnOptions } from '@socketsecurity/lib/spawn'
 
@@ -31,7 +31,7 @@ export async function spawnCoana(
   options?: CoanaSpawnOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
-  const { env: spawnEnv, ...shadowOptions } = {
+  const { env: spawnEnv, ...spawnOpts } = {
     __proto__: null,
     ...options,
   } as CoanaSpawnOptions
@@ -62,7 +62,7 @@ export async function spawnCoana(
     // Use local Coana CLI if path is provided.
     if (SOCKET_CLI_COANA_LOCAL_PATH) {
       const spawnResult = await spawnNode([SOCKET_CLI_COANA_LOCAL_PATH, ...args], {
-        ...shadowOptions,
+        ...spawnOpts,
         env: {
           ...process.env,
           ...mixinsEnv,
@@ -94,9 +94,9 @@ export async function spawnCoana(
         force: true,
         spawnOptions: {
           cwd:
-            typeof shadowOptions.cwd === 'string'
-              ? shadowOptions.cwd
-              : shadowOptions.cwd?.toString(),
+            typeof spawnOpts.cwd === 'string'
+              ? spawnOpts.cwd
+              : spawnOpts.cwd?.toString(),
           env: finalEnv as Record<string, string>,
           stdio:
             (spawnExtra?.['stdio'] as 'inherit' | 'pipe' | undefined) ||
