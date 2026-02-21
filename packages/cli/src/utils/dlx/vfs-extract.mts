@@ -450,6 +450,27 @@ export async function extractExternalTools(): Promise<Record<ExternalTool, strin
           }
         }
       }
+      // Final check before throwing timeout - extraction may have completed just now.
+      if (existsSync(cacheMarker)) {
+        debug('notice', 'External tools extracted just before timeout')
+        const toolPaths: Partial<Record<ExternalTool, string>> = {}
+        let allValid = true
+        for (const tool of EXTERNAL_TOOLS) {
+          const npmPath = TOOL_NPM_PATHS[tool]
+          const toolPath = npmPath
+            ? normalizePath(path.join(nodeSmolBase, npmPath.binPath))
+            : normalizePath(path.join(nodeSmolBase, tool))
+          const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
+          if (!existsSync(toolPathWithExt)) {
+            allValid = false
+            break
+          }
+          toolPaths[tool] = toolPathWithExt
+        }
+        if (allValid) {
+          return toolPaths as Record<ExternalTool, string>
+        }
+      }
       throw new Error('Timeout waiting for another process to extract external tools')
     }
     throw e
@@ -460,15 +481,31 @@ export async function extractExternalTools(): Promise<Record<ExternalTool, strin
     if (existsSync(cacheMarker)) {
       debug('notice', 'External tools already extracted (cache marker found)')
       const toolPaths: Partial<Record<ExternalTool, string>> = {}
+      let allValid = true
       for (const tool of EXTERNAL_TOOLS) {
         const npmPath = TOOL_NPM_PATHS[tool]
         const toolPath = npmPath
           ? normalizePath(path.join(nodeSmolBase, npmPath.binPath))
           : normalizePath(path.join(nodeSmolBase, tool))
         const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
+        // Validate tool exists before adding to paths.
+        if (!existsSync(toolPathWithExt)) {
+          debug('notice', `Cached tool ${tool} missing at ${toolPathWithExt}`)
+          allValid = false
+          break
+        }
         toolPaths[tool] = toolPathWithExt
       }
-      return toolPaths as Record<ExternalTool, string>
+      if (allValid) {
+        return toolPaths as Record<ExternalTool, string>
+      }
+      // Cache marker exists but tools missing, remove marker and re-extract.
+      debug('notice', 'Cache validation failed, re-extracting...')
+      try {
+        await fs.unlink(cacheMarker)
+      } catch {
+        // Ignore cleanup errors.
+      }
     }
 
     const toolPaths: Partial<Record<ExternalTool, string>> = {}

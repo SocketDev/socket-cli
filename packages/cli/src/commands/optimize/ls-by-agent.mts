@@ -20,7 +20,10 @@ function cleanupQueryStdout(stdout: string): string {
   let pkgs: any
   try {
     pkgs = JSON.parse(stdout)
-  } catch {}
+  } catch {
+    // Malformed JSON from package manager, return empty.
+    return ''
+  }
   if (!Array.isArray(pkgs) || !pkgs.length) {
     return ''
   }

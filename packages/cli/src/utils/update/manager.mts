@@ -105,8 +105,10 @@ export async function checkForUpdates(
   let record: StoreRecord | undefined
   let timestamp: number
 
-  // Include current version in cache key to prevent stale cache after upgrades.
-  const cacheKey = `${name}@${version}`
+  // Include current version and registry in cache key to prevent stale cache.
+  // Different registries may have different latest versions.
+  const registrySuffix = registryUrl ? `:${registryUrl}` : ''
+  const cacheKey = `${name}@${version}${registrySuffix}`
 
   try {
     record = dlxManifest.get(cacheKey)
