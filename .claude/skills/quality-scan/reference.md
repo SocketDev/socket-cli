@@ -1172,3 +1172,58 @@ Scan all README.md files in the repository and report all documentation inaccura
 - **Impact**: Confusion about which component caches
 ```
 
+---
+
+## Known False Positives
+
+These patterns should NOT be flagged as issues - they have been verified as correct:
+
+### Array Access After Length Check
+
+**Pattern:** `if (arr.length === 1) { const item = arr[0]! }`
+
+**Why it's safe:** When `arr.length === 1`, `arr[0]` is guaranteed to exist. The non-null assertion is valid.
+
+**Example:**
+```typescript
+const vulnCount = ghsaIds.length
+if (vulnCount === 1) {
+  const ghsaId = ghsaIds[0]!  // Safe: length === 1 guarantees [0] exists
+}
+```
+
+### Split After StartsWith Check
+
+**Pattern:** `if (str.startsWith('-')) { indent = str.split('-')[0] }`
+
+**Why it's safe:** If `startsWith('-')` is true, the string contains '-', so `split('-')[0]` returns the prefix before the first '-' (possibly empty string, but never undefined).
+
+**Example:**
+```typescript
+if (trimmed.startsWith('-')) {
+  indent = `${line.split('-')[0]}-`  // Safe: startsWith guarantees '-' exists
+}
+```
+
+### Timestamp After Network Fetch
+
+**Pattern:** `await fetchData(); cache.set({ timestamp: Date.now() })`
+
+**Why it's correct:** The timestamp should reflect when data was received, not when the request started. This is intentional behavior.
+
+### Mtime-Only Cache Invalidation
+
+**Pattern:** `_cachedConfigMtime = undefined` (without clearing `_cachedConfig`)
+
+**Why it's correct:** Setting mtime to undefined triggers reload on next access. The in-memory cache is also updated in the same operation, so staleness is not possible.
+
+### Package Name "socket"
+
+**Fact:** The npm package name is `socket`, NOT `@socketsecurity/cli`. The scoped name `@socketsecurity/cli` is used internally but the published package is `socket`.
+
+**Correct installation:**
+```bash
+pnpm install -g socket
+npm install -g socket
+```
+
