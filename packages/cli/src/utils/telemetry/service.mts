@@ -121,10 +121,15 @@ function withTimeout<T>(
   timeoutMs: number,
   errorMessage: string,
 ): Promise<T> {
+  let timeoutId: NodeJS.Timeout | undefined
   return Promise.race([
-    promise,
+    promise.finally(() => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }),
     new Promise<T>((_, reject) => {
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         reject(new Error(errorMessage))
       }, timeoutMs)
     }),

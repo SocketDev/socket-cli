@@ -262,7 +262,10 @@ export class CommandRegistry implements ICommandRegistry {
         // --flag format for boolean
         value = true
       } else {
-        // --flag value format
+        // --flag value format.
+        if (i + 1 >= args.length) {
+          throw new Error(`Missing value for flag --${flagName}`)
+        }
         value = args[++i]
       }
 
