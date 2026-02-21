@@ -67,31 +67,31 @@
       "emoji": "⚠️"
     },
     "deprecatedException": {
-      "description": "(Experimental) Contains a known deprecated SPDX license exception.",
+      "description": "Contains a known deprecated SPDX license exception.",
       "suggestion": "Fix the license so that it no longer contains deprecated SPDX license exceptions.",
       "title": "Deprecated SPDX exception",
       "emoji": "⚠️"
     },
     "explicitlyUnlicensedItem": {
-      "description": "(Experimental) Something was found which is explicitly marked as unlicensed.",
+      "description": "Something was found which is explicitly marked as unlicensed.",
       "suggestion": "Manually review your policy on such materials",
       "title": "Explicitly Unlicensed Item",
       "emoji": "⚠️"
     },
     "unidentifiedLicense": {
-      "description": "(Experimental) Something that seems like a license was found, but its contents could not be matched with a known license.",
+      "description": "Something that seems like a license was found, but its contents could not be matched with a known license.",
       "suggestion": "Manually review the license contents.",
       "title": "Unidentified License",
       "emoji": "⚠️"
     },
     "noLicenseFound": {
-      "description": "(Experimental) License information could not be found.",
+      "description": "License information could not be found.",
       "suggestion": "Manually review the licensing",
       "title": "No License Found",
       "emoji": "⚠️"
     },
     "copyleftLicense": {
-      "description": "(Experimental) Copyleft license information was found.",
+      "description": "Copyleft license information was found.",
       "suggestion": "Determine whether use of copyleft material works for you",
       "title": "Copyleft License",
       "emoji": "⚠️"
@@ -103,19 +103,19 @@
       "emoji": "⚠️"
     },
     "nonpermissiveLicense": {
-      "description": "(Experimental) A license not known to be considered permissive was found.",
+      "description": "A license not known to be considered permissive was found.",
       "suggestion": "Determine whether use of material not offered under a known permissive license works for you",
       "title": "Non-permissive License",
       "emoji": "⚠️"
     },
     "miscLicenseIssues": {
-      "description": "(Experimental) A package's licensing information has fine-grained problems.",
+      "description": "A package's licensing information has fine-grained problems.",
       "suggestion": "Consult the alert's description and location information for more information",
       "title": "Misc. License Issues",
       "emoji": "⚠️"
     },
     "deprecatedLicense": {
-      "description": "(Experimental) License is deprecated which may have legal implications regarding the package's use.",
+      "description": "License is deprecated which may have legal implications regarding the package's use.",
       "suggestion": "Update or change the license to a well-known or updated license.",
       "title": "Deprecated license",
       "emoji": "⚠️"
@@ -247,13 +247,13 @@
       "emoji": "⚠️"
     },
     "licenseChange": {
-      "description": "(Experimental) Package license has recently changed.",
+      "description": "Package license has recently changed.",
       "suggestion": "License changes should be reviewed carefully to inform ongoing use. Packages should avoid making major changes to their license type.",
       "title": "License change",
       "emoji": "⚠️"
     },
     "licenseException": {
-      "description": "(Experimental) Contains an SPDX license exception.",
+      "description": "Contains an SPDX license exception.",
       "suggestion": "License exceptions should be carefully reviewed.",
       "title": "License exception",
       "emoji": "⚠️"
@@ -319,31 +319,31 @@
       "emoji": "⚠️"
     },
     "missingLicense": {
-      "description": "(Experimental) Package does not have a license and consumption legal status is unknown.",
+      "description": "Package does not have a license and consumption legal status is unknown.",
       "suggestion": "A new version of the package should be published that includes a valid SPDX license in a license file, package.json license field or mentioned in the README.",
       "title": "Missing license",
       "emoji": "⚠️"
     },
     "mixedLicense": {
-      "description": "(Experimental) Package contains multiple licenses.",
+      "description": "Package contains multiple licenses.",
       "suggestion": "A new version of the package should be published that includes a single license. Consumers may seek clarification from the package author. Ensure that the license details are consistent across the LICENSE file, package.json license field and license details mentioned in the README.",
       "title": "Mixed license",
       "emoji": "⚠️"
     },
     "ambiguousClassifier": {
-      "description": "(Experimental) An ambiguous license classifier was found.",
+      "description": "An ambiguous license classifier was found.",
       "suggestion": "A specific license or licenses should be identified",
       "title": "Ambiguous License Classifier",
       "emoji": "⚠️"
     },
     "modifiedException": {
-      "description": "(Experimental) Package contains a modified version of an SPDX license exception. Please read carefully before using this code.",
+      "description": "Package contains a modified version of an SPDX license exception. Please read carefully before using this code.",
       "suggestion": "Packages should avoid making modifications to standard license exceptions.",
       "title": "Modified license exception",
       "emoji": "⚠️"
     },
     "modifiedLicense": {
-      "description": "(Experimental) Package contains a modified version of an SPDX license. Please read carefully before using this code.",
+      "description": "Package contains a modified version of an SPDX license. Please read carefully before using this code.",
       "suggestion": "Packages should avoid making modifications to standard licenses.",
       "title": "Modified license",
       "emoji": "⚠️"
@@ -403,25 +403,25 @@
       "emoji": "⚠️"
     },
     "nonFSFLicense": {
-      "description": "(Experimental) Package has a non-FSF-approved license.",
+      "description": "Package has a non-FSF-approved license.",
       "title": "Non FSF license",
       "suggestion": "Consider the terms of the license for your given use case.",
       "emoji": "⚠️"
     },
     "nonOSILicense": {
-      "description": "(Experimental) Package has a non-OSI-approved license.",
+      "description": "Package has a non-OSI-approved license.",
       "title": "Non OSI license",
       "suggestion": "Consider the terms of the license for your given use case.",
       "emoji": "⚠️"
     },
     "nonSPDXLicense": {
-      "description": "(Experimental) Package contains a non-standard license somewhere. Please read carefully before using.",
+      "description": "Package contains a non-standard license somewhere. Please read carefully before using.",
       "suggestion": "Package should adopt a standard SPDX license consistently across all license locations (LICENSE files, package.json license fields, and READMEs).",
       "title": "Non SPDX license",
       "emoji": "⚠️"
     },
     "notice": {
-      "description": "(Experimental) Package contains a legal notice. This could increase your exposure to legal risk when using this project.",
+      "description": "Package contains a legal notice. This could increase your exposure to legal risk when using this project.",
       "title": "Legal notice",
       "suggestion": "Consider the implications of the legal notice for your given use case.",
       "emoji": "⚠️"
@@ -553,7 +553,7 @@
       "emoji": "🕵️"
     },
     "unsafeCopyright": {
-      "description": "(Experimental) Package contains a copyright but no license. Using this package may expose you to legal risk.",
+      "description": "Package contains a copyright but no license. Using this package may expose you to legal risk.",
       "suggestion": "Clarify the license type by adding a license field to package.json and a LICENSE file.",
       "title": "Unsafe copyright",
       "emoji": "⚠️"
