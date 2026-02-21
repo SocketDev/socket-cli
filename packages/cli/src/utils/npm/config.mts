@@ -8,8 +8,14 @@ import {
 
 import { getNpmDirPath } from './paths.mts'
 
-import type { ArboristOptions } from '../../shadow/npm/arborist/types.mjs'
 import type { SemVer } from 'semver'
+
+// Flat npm config options returned by @npmcli/config.
+export type NpmFlatConfig = Record<string, unknown> & {
+  nodeVersion?: string | undefined
+  npmCommand?: string | undefined
+  npmVersion?: string | undefined
+}
 
 export type NpmConfigOptions = {
   cwd?: string | undefined
@@ -24,7 +30,7 @@ export type NpmConfigOptions = {
 
 export async function getNpmConfig(
   options?: NpmConfigOptions | undefined,
-): Promise<ArboristOptions> {
+): Promise<NpmFlatConfig> {
   const {
     cwd = process.cwd(),
     env = process.env,
@@ -47,7 +53,7 @@ export async function getNpmConfig(
     shorthands: npmConfigShorthands,
   })
   await config.load()
-  const flatConfig = { __proto__: null, ...config.flat } as ArboristOptions
+  const flatConfig = { __proto__: null, ...config.flat } as NpmFlatConfig
 
   if (nodeVersion) {
     flatConfig.nodeVersion = nodeVersion

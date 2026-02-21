@@ -270,12 +270,6 @@ Socket CLI has different update mechanisms depending on installation method:
 - **`tsconfig.json`** - Main TypeScript configuration
 - **`tsconfig.dts.json`** - TypeScript configuration for type definitions
 
-### Shadow Binaries
-- **`shadow-bin/`** - Contains wrapper scripts for npm/npx commands
-  - `shadow-bin/npm` - Wraps npm with Socket security scanning
-  - `shadow-bin/npx` - Wraps npx with Socket security scanning
-  - These enable `socket npm` and `socket npx` functionality
-
 ### Package Structure
 - **Binary entries**: `socket`, `socket-npm`, `socket-npx` (in `bin/` directory)
 - **Distribution**: Built files go to `dist/` directory

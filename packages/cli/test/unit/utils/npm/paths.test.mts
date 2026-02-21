@@ -74,8 +74,6 @@ describe('npm-paths utilities', () => {
   let getNpmDirPath: typeof import('../../../../src/utils/npm/paths.mts')['getNpmDirPath']
   let getNpmRequire: typeof import('../../../../src/utils/npm/paths.mts')['getNpmRequire']
   let getNpxBinPath: typeof import('../../../../src/utils/npm/paths.mts')['getNpxBinPath']
-  let isNpmBinPathShadowed: typeof import('../../../../src/utils/npm/paths.mts')['isNpmBinPathShadowed']
-  let isNpxBinPathShadowed: typeof import('../../../../src/utils/npm/paths.mts')['isNpxBinPathShadowed']
 
   beforeEach(async () => {
     vi.clearAllMocks()
@@ -88,14 +86,12 @@ describe('npm-paths utilities', () => {
       throw new Error(`process.exit(${code})`)
     }) as any
 
-    // Re-import functions after module reset to clear caches
+    // Re-import functions after module reset to clear caches.
     const npmPaths = await import('../../../../src/utils/npm/paths.mts')
     getNpmBinPath = npmPaths.getNpmBinPath
     getNpmDirPath = npmPaths.getNpmDirPath
     getNpmRequire = npmPaths.getNpmRequire
     getNpxBinPath = npmPaths.getNpxBinPath
-    isNpmBinPathShadowed = npmPaths.isNpmBinPathShadowed
-    isNpxBinPathShadowed = npmPaths.isNpxBinPathShadowed
   })
 
   afterEach(() => {
@@ -111,7 +107,6 @@ describe('npm-paths utilities', () => {
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npm',
-        shadowed: false,
       })
 
       const result = getNpmBinPath()
@@ -127,7 +122,6 @@ describe('npm-paths utilities', () => {
       )
       findBinPathDetailsSync.mockReturnValue({
         path: undefined,
-        shadowed: false,
       })
 
       vi.mocked(await import('@socketsecurity/lib/logger'))
@@ -144,7 +138,6 @@ describe('npm-paths utilities', () => {
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npm',
-        shadowed: false,
       })
 
       const result1 = getNpmBinPath()
@@ -162,7 +155,6 @@ describe('npm-paths utilities', () => {
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npm',
-        shadowed: false,
       })
       findNpmDirPathSync.mockReturnValue('/usr/local/lib/node_modules/npm')
 
@@ -187,7 +179,6 @@ describe('npm-paths utilities', () => {
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npm',
-        shadowed: false,
       })
       findNpmDirPathSync.mockReturnValue(undefined)
 
@@ -212,7 +203,6 @@ describe('npm-paths utilities', () => {
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npm',
-        shadowed: false,
       })
       findNpmDirPathSync.mockReturnValue(undefined)
 
@@ -235,7 +225,6 @@ describe('npm-paths utilities', () => {
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npm',
-        shadowed: false,
       })
       findNpmDirPathSync.mockReturnValue('/usr/local/lib/node_modules/npm')
 
@@ -262,7 +251,6 @@ describe('npm-paths utilities', () => {
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npm',
-        shadowed: false,
       })
       findNpmDirPathSync.mockReturnValue('/usr/local/lib/node_modules/npm')
 
@@ -291,7 +279,6 @@ describe('npm-paths utilities', () => {
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npx',
-        shadowed: false,
       })
 
       const result = getNpxBinPath()
@@ -307,7 +294,6 @@ describe('npm-paths utilities', () => {
       )
       findBinPathDetailsSync.mockReturnValue({
         path: undefined,
-        shadowed: false,
       })
 
       vi.mocked(await import('@socketsecurity/lib/logger'))
@@ -324,7 +310,6 @@ describe('npm-paths utilities', () => {
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npx',
-        shadowed: false,
       })
 
       const result1 = getNpxBinPath()
@@ -335,63 +320,4 @@ describe('npm-paths utilities', () => {
     })
   })
 
-  describe('isNpmBinPathShadowed', () => {
-    it('returns true when npm is shadowed', async () => {
-      const { findBinPathDetailsSync } = vi.mocked(
-        await import('../../../../src/utils/fs/path-resolve.mts'),
-      )
-      findBinPathDetailsSync.mockReturnValue({
-        path: '/usr/local/bin/npm',
-        shadowed: true,
-      })
-
-      const result = isNpmBinPathShadowed()
-
-      expect(result).toBe(true)
-    })
-
-    it('returns false when npm is not shadowed', async () => {
-      const { findBinPathDetailsSync } = vi.mocked(
-        await import('../../../../src/utils/fs/path-resolve.mts'),
-      )
-      findBinPathDetailsSync.mockReturnValue({
-        path: '/usr/local/bin/npm',
-        shadowed: false,
-      })
-
-      const result = isNpmBinPathShadowed()
-
-      expect(result).toBe(false)
-    })
-  })
-
-  describe('isNpxBinPathShadowed', () => {
-    it('returns true when npx is shadowed', async () => {
-      const { findBinPathDetailsSync } = vi.mocked(
-        await import('../../../../src/utils/fs/path-resolve.mts'),
-      )
-      findBinPathDetailsSync.mockReturnValue({
-        path: '/usr/local/bin/npx',
-        shadowed: true,
-      })
-
-      const result = isNpxBinPathShadowed()
-
-      expect(result).toBe(true)
-    })
-
-    it('returns false when npx is not shadowed', async () => {
-      const { findBinPathDetailsSync } = vi.mocked(
-        await import('../../../../src/utils/fs/path-resolve.mts'),
-      )
-      findBinPathDetailsSync.mockReturnValue({
-        path: '/usr/local/bin/npx',
-        shadowed: false,
-      })
-
-      const result = isNpxBinPathShadowed()
-
-      expect(result).toBe(false)
-    })
-  })
 })

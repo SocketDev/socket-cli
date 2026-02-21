@@ -76,14 +76,6 @@ function mapSourceToTests(filepath) {
       return ['packages/cli/test/integration/']
     }
 
-    if (normalized.includes('packages/cli/src/shadow/')) {
-      // Shadow files have tests in shadow directory
-      const shadowTest = normalized.replace('.mts', '.test.mts')
-      if (existsSync(path.join(rootPath, shadowTest))) {
-        return [shadowTest]
-      }
-    }
-
     // Check helpers and utils
     if (normalized.includes('packages/cli/src/helpers/')) {
       const helperName = basename

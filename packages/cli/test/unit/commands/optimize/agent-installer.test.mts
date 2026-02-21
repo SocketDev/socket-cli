@@ -13,14 +13,14 @@
  * - Option merging (args, env, stdio)
  *
  * npm Behavior (NOT tested here):
- * - npm uses shadowNpmInstall for security scanning
+ * - npm uses Socket Firewall (sfw) for security scanning
  * - This cannot be reliably mocked due to ESM module resolution issues
  * - npm behavior is tested via integration tests at:
  *   test/integration/cli/cmd-optimize.test.mts
  *
  * Related Files:
  * - src/commands/optimize/agent-installer.mts - Implementation
- * - src/shadow/npm/install.mts - npm shadow installation
+ * - src/utils/dlx/spawn.mts - Socket Firewall (sfw) spawn utilities
  * - test/integration/cli/cmd-optimize.test.mts - Integration tests for full optimize flow
  */
 
@@ -78,7 +78,7 @@ describe('agent installer utilities', () => {
   })
 
   describe('runAgentInstall', () => {
-    // Note: npm agent behavior (shadowNpmInstall) is covered by integration tests.
+    // Note: npm agent behavior is covered by integration tests.
     // The mock-based test was removed due to ESM module resolution issues that
     // prevented proper interception. The 6 tests below cover pnpm/yarn/unknown agents.
 

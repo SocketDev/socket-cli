@@ -111,23 +111,6 @@ export function getPackageJsonPath(): string {
   return path.join(rootPath, 'package.json')
 }
 
-export function getShadowBinPath(): string {
-  return path.join(rootPath, 'shadow-bin')
-}
-
-// Export shadowBinPath as a constant for backward compatibility.
-export const shadowBinPath = path.join(rootPath, 'shadow-bin')
-
-export function getInstrumentWithSentryPath(): string {
-  return path.join(distPath, 'instrument-with-sentry.js')
-}
-
-// Export as constant for backward compatibility.
-export const instrumentWithSentryPath = path.join(
-  distPath,
-  'instrument-with-sentry.js',
-)
-
 export function getBlessedPath(): string {
   return path.join(externalPath, 'blessed')
 }

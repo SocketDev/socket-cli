@@ -12,7 +12,6 @@ import {
   pathsToGlobPatterns,
 } from './glob.mts'
 import { NODE_MODULES } from '../../constants/packages.mts'
-import { shadowBinPath } from '../../constants/paths.mts'
 
 import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -20,7 +19,6 @@ import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 export function findBinPathDetailsSync(binName: string): {
   name: string
   path: string | undefined
-  shadowed: boolean
 } {
   const rawBinPaths =
     whichRealSync(binName, {
@@ -34,19 +32,13 @@ export function findBinPathDetailsSync(binName: string): {
     : typeof rawBinPaths === 'string'
       ? [rawBinPaths]
       : []
-  let shadowIndex = -1
   let theBinPath: string | undefined
   for (let i = 0, { length } = binPaths; i < length; i += 1) {
     const binPath = binPaths[i]!
-    // Skip our bin directory if it's in the front.
-    if (path.dirname(binPath) === shadowBinPath) {
-      shadowIndex = i
-    } else {
-      theBinPath = resolveRealBinSync(binPath)
-      break
-    }
+    theBinPath = resolveRealBinSync(binPath)
+    break
   }
-  return { name: binName, path: theBinPath, shadowed: shadowIndex !== -1 }
+  return { name: binName, path: theBinPath }
 }
 
 export function findNpmDirPathSync(npmBinPath: string): string | undefined {

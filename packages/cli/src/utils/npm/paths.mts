@@ -108,10 +108,3 @@ function getNpxBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
   return _npxBinPathDetails
 }
 
-export function isNpmBinPathShadowed() {
-  return getNpmBinPathDetails().shadowed
-}
-
-export function isNpxBinPathShadowed() {
-  return getNpxBinPathDetails().shadowed
-}

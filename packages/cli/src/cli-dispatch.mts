@@ -82,7 +82,7 @@ function getInvocationMode(): string {
 async function main() {
   // If we're a subprocess with IPC, wait for handshake.
   // This validates we're running in the correct context.
-  // Note: The handshake is used by shadow npm/pnpm/yarn operations to pass
+  // Note: The handshake is used by Socket Firewall (sfw) operations to pass
   // configuration (API token, bin name, etc.) to the subprocess.
   try {
     await waitForBootstrapHandshake(1000) // 1 second timeout.

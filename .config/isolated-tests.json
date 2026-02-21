@@ -5,7 +5,6 @@
     "packages/cli/src/npm-cli.test.mts",
     "packages/cli/src/npx-cli.test.mts",
     "packages/cli/src/pnpm-cli.test.mts",
-    "packages/cli/src/shadow/npm/paths.test.mts",
     "packages/cli/src/utils/alert/translations.test.mts",
     "packages/cli/src/utils/dlx/detection.test.mts",
     "packages/cli/src/utils/git/github.test.mts",

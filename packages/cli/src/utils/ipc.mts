@@ -1,14 +1,18 @@
 /**
- * IPC data handling for shadow npm processes.
+ * IPC data handling for subprocess communication.
  *
  * Provides access to IPC data passed via bootstrap handshake.
- * The handshake includes shadow configuration like API tokens,
- * bin names, and other settings needed by the arborist.
+ * The handshake includes configuration like fix/optimize modes
+ * and other settings needed by spawned processes.
  */
 
 import { waitForBootstrapHandshake } from './sea/boot.mjs'
 
-import type { IpcObject } from '../constants/shadow.mts'
+// IpcObject type for subprocess IPC data.
+export type IpcObject = Readonly<{
+  SOCKET_CLI_FIX?: string | undefined
+  SOCKET_CLI_OPTIMIZE?: boolean | undefined
+}>
 
 // Store for IPC extra data received via handshake.
 let ipcExtra: IpcObject | undefined
@@ -48,9 +52,9 @@ export async function initializeIpc(): Promise<void> {
         bootstrapBinaryPath = extra['bootstrapBinaryPath']
       }
 
-      // Extract shadow IPC data (excluding bootstrap metadata).
-      const { bootstrapBinaryPath: _, ...shadowData } = extra
-      ipcExtra = shadowData as IpcObject
+      // Extract IPC data (excluding bootstrap metadata).
+      const { bootstrapBinaryPath: _, ...ipcData } = extra
+      ipcExtra = ipcData as IpcObject
     }
   } catch {
     // No handshake - running without IPC.

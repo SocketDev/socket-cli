@@ -637,7 +637,6 @@ export async function meowWithSubcommands(
       'cdxgen',
       'ci',
       'config',
-      'console',
       'dependencies',
       'fix',
       'gem',
@@ -852,9 +851,15 @@ export async function meowWithSubcommands(
     help: lines.map(l => indentString(l, { count: HELP_INDENT })).join('\n'),
   })
 
-  const { dryRun, help: helpFlag } = cli2.flags as {
+  const { dryRun, help: helpFlag, version: versionFlag } = cli2.flags as {
     dryRun: boolean
     help: boolean
+    version: boolean
+  }
+
+  // Handle --version flag at root level.
+  if (versionFlag) {
+    cli2.showVersion()
   }
 
   // ...else we provide basic instructions and help.

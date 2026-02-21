@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock shadow/npm/bin module.
-vi.mock('./shadow/npm/bin.mts', () => ({
-  default: vi.fn(),
+// Mock spawnSfw from dlx/spawn.
+vi.mock('./utils/dlx/spawn.mts', () => ({
+  spawnSfw: vi.fn(),
 }))
 
 // Import modules after mocks are set up.
 const { default: runNpmCli } = await import('./npm-cli.mts')
-const shadowNpmBinModule = await import('./shadow/npm/bin.mts')
-const mockShadowNpmBin = vi.mocked(shadowNpmBinModule.default)
+const spawnModule = await import('./utils/dlx/spawn.mts')
+const mockSpawnSfw = vi.mocked(spawnModule.spawnSfw)
 
 // Mock process methods.
 const mockProcessExit = vi
@@ -38,7 +38,7 @@ describe('npm-cli', () => {
     process.exitCode = undefined
 
     // Setup default mock implementations.
-    mockShadowNpmBin.mockResolvedValue(createMockSpawnResult(0))
+    mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
     mockChildProcess.on.mockImplementation(() => {
       // No-op by default.
     })
@@ -57,14 +57,14 @@ describe('npm-cli', () => {
     }
   })
 
-  it('should call shadowNpmBin with correct arguments', async () => {
+  it('should call spawnSfw with correct arguments', async () => {
     const originalArgv = process.argv
     process.argv = ['node', 'npm-cli.mts', 'install', 'lodash']
 
     try {
       await runNpmCli()
 
-      expect(mockShadowNpmBin).toHaveBeenCalledWith(['install', 'lodash'], {
+      expect(mockSpawnSfw).toHaveBeenCalledWith(['npm', 'install', 'lodash'], {
         stdio: 'inherit',
         cwd: process.cwd(),
         env: { ...process.env },
@@ -79,7 +79,7 @@ describe('npm-cli', () => {
     process.argv = ['node', 'npm-cli.mts', 'install']
 
     // Mock spawn result with exit code 1.
-    mockShadowNpmBin.mockResolvedValue(createMockSpawnResult(1))
+    mockSpawnSfw.mockResolvedValue(createMockSpawnResult(1))
 
     try {
       await runNpmCli()
@@ -95,7 +95,7 @@ describe('npm-cli', () => {
     process.argv = ['node', 'npm-cli.mts', 'test']
 
     // Mock spawn result with signal.
-    mockShadowNpmBin.mockResolvedValue({
+    mockSpawnSfw.mockResolvedValue({
       spawnPromise: Promise.resolve({
         success: false,
         code: null,
@@ -119,7 +119,7 @@ describe('npm-cli', () => {
     try {
       await runNpmCli()
 
-      expect(mockShadowNpmBin).toHaveBeenCalledWith([], {
+      expect(mockSpawnSfw).toHaveBeenCalledWith(['npm'], {
         stdio: 'inherit',
         cwd: process.cwd(),
         env: { ...process.env },
@@ -138,7 +138,7 @@ describe('npm-cli', () => {
     try {
       await runNpmCli()
 
-      expect(mockShadowNpmBin).toHaveBeenCalledWith(['run', 'build'], {
+      expect(mockSpawnSfw).toHaveBeenCalledWith(['npm', 'run', 'build'], {
         stdio: 'inherit',
         cwd: process.cwd(),
         env: expect.objectContaining({ CUSTOM_VAR: 'test-value' }),
@@ -157,7 +157,7 @@ describe('npm-cli', () => {
       await runNpmCli()
 
       // The spawn promise should be awaited.
-      expect(mockShadowNpmBin).toHaveBeenCalled()
+      expect(mockSpawnSfw).toHaveBeenCalled()
     } finally {
       process.argv = originalArgv
     }

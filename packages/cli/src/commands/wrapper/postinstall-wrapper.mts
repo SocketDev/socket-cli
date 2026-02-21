@@ -20,7 +20,7 @@ export async function postinstallWrapper() {
     (existsSync(zshRcPath) && checkSocketWrapperSetup(zshRcPath))
 
   if (!socketWrapperEnabled) {
-    await setupShadowNpm(
+    await setupSocketWrapper(
       `
 The Socket CLI is now successfully installed! 🎉
 
@@ -61,7 +61,7 @@ Do you want to install the Socket npm wrapper (this will create an alias to the 
   }
 }
 
-async function setupShadowNpm(query: string): Promise<void> {
+async function setupSocketWrapper(query: string): Promise<void> {
   logger.log(`
  _____         _       _
 |   __|___ ___| |_ ___| |_

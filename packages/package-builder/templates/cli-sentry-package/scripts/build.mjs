@@ -46,20 +46,6 @@ async function main() {
     }
     logger.success('Built index loader')
 
-    // Build shadow npm inject.
-    logger.info('Building shadow npm inject...')
-    result = await spawn('node', ['.config/esbuild.inject.config.mjs'], {
-      shell: WIN32,
-      stdio: 'inherit',
-      cwd: rootPath,
-    })
-    if (result.code !== 0) {
-      throw new Error(
-        `Shadow npm inject build failed with exit code ${result.code}`,
-      )
-    }
-    logger.success('Built shadow npm inject')
-
     // Copy CLI to dist.
     logger.info('Copying CLI to dist...')
     await fs.copyFile(
