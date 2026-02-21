@@ -384,7 +384,7 @@ pnpm dev:npx cowsay hello         # Test npx with Socket Firewall
 ## Key Statistics
 
 - **Total Lines**: 57,000+ lines of TypeScript
-- **Commands**: 36 root commands, 75 command files
+- **Commands**: 41 root commands, 75 command files
 - **Subcommands**: 160+ total (including nested)
 - **Utility Modules**: 28 categories, 100+ files
 - **Test Coverage**: 100+ test files

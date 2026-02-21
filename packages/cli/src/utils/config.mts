@@ -119,7 +119,15 @@ function getConfigValues(): LocalConfig {
           try {
             const rawString = Buffer.isBuffer(raw) ? raw.toString('utf8') : raw
             const decoded = Buffer.from(rawString, 'base64').toString('utf8')
-            Object.assign(_cachedConfig, JSON.parse(decoded))
+            const parsed = JSON.parse(decoded)
+            // Only copy supported config keys to prevent prototype pollution.
+            if (parsed && typeof parsed === 'object') {
+              for (const key of Object.keys(parsed)) {
+                if (isSupportedConfigKey(key)) {
+                  ;(_cachedConfig as Record<string, unknown>)[key] = parsed[key]
+                }
+              }
+            }
             debugConfig(configFilePath, true)
           } catch (e) {
             logger.warn(`Failed to parse config at ${configFilePath}`)
@@ -299,7 +307,13 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
     }
   }
 
-  _cachedConfig = config as LocalConfig
+  // Only copy supported config keys to prevent prototype pollution.
+  _cachedConfig = {} as LocalConfig
+  for (const key of Object.keys(config)) {
+    if (isSupportedConfigKey(key)) {
+      ;(_cachedConfig as Record<string, unknown>)[key] = config[key]
+    }
+  }
   _configFromFlag = true
 
   return { ok: true, data: undefined }

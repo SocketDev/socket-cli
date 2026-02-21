@@ -31,7 +31,11 @@ function renderBarChart(data: Record<string, number>): string {
     return '(no data)'
   }
 
-  const maxValue = Math.max(...entries.map(({ 1: v }) => v))
+  const values = entries.map(({ 1: v }) => v).filter(v => Number.isFinite(v))
+  if (!values.length) {
+    return '(no numeric data)'
+  }
+  const maxValue = Math.max(...values)
   const maxBarLength = 40
 
   return entries
@@ -55,10 +59,14 @@ function renderLineChartSummary(
     return `${title}: (no data)`
   }
 
-  const total = entries.reduce((sum, { 1: v }) => sum + v, 0)
-  const avg = Math.round(total / entries.length)
-  const max = Math.max(...entries.map(({ 1: v }) => v))
-  const min = Math.min(...entries.map(({ 1: v }) => v))
+  const values = entries.map(({ 1: v }) => v).filter(v => Number.isFinite(v))
+  if (!values.length) {
+    return `${title}: (no numeric data)`
+  }
+  const total = values.reduce((sum, v) => sum + v, 0)
+  const avg = Math.round(total / values.length)
+  const max = Math.max(...values)
+  const min = Math.min(...values)
 
   return `${title}:\n  Total: ${total} | Avg: ${avg} | Max: ${max} | Min: ${min}`
 }
