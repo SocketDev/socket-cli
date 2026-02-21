@@ -298,8 +298,9 @@ export async function coanaFix(
         // Coana prints ghsaIds as json-formatted string on the final line of the output.
         const discoveredIds: string[] = []
         try {
-          const ghsaIdsRaw = discoverCResult.data.trim().split('\n').pop()
-          if (ghsaIdsRaw) {
+          const lines = discoverCResult.data.trim().split('\n')
+          const ghsaIdsRaw = lines.length > 0 ? lines[lines.length - 1] : ''
+          if (ghsaIdsRaw && ghsaIdsRaw.trim()) {
             discoveredIds.push(...JSON.parse(ghsaIdsRaw))
           }
         } catch (e) {

@@ -87,6 +87,9 @@ export async function writeCache(
   await writeJson(cacheJsonPath, data as JsonContent)
 }
 
+// In-memory promise cache to prevent concurrent fetches for the same key.
+const inflightRequests = new Map<string, Promise<unknown>>()
+
 export async function cacheFetch<T>(
   key: string,
   fetcher: () => Promise<T>,
@@ -96,10 +99,27 @@ export async function cacheFetch<T>(
   if (DISABLE_GITHUB_CACHE) {
     return await fetcher()
   }
+
+  // Check if already fetching this key to prevent TOCTOU race.
+  const inflight = inflightRequests.get(key)
+  if (inflight) {
+    return inflight as Promise<T>
+  }
+
   let data = (await readCache(key, ttlMs)) as T
   if (!data) {
-    data = await fetcher()
-    await writeCache(key, data as JsonContent)
+    const fetchPromise = (async () => {
+      try {
+        const result = await fetcher()
+        await writeCache(key, result as JsonContent)
+        return result
+      } finally {
+        inflightRequests.delete(key)
+      }
+    })()
+
+    inflightRequests.set(key, fetchPromise)
+    data = await fetchPromise
   }
   return data
 }

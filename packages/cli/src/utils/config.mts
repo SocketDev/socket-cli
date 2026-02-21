@@ -343,6 +343,11 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     }
     localConfig[key] = value
   }
+
+  // Invalidate mtime cache to force reload on next read.
+  // This prevents stale reads during concurrent updates.
+  _cachedConfigMtime = undefined
+
   if (_configFromFlag) {
     return {
       ok: true,

@@ -88,31 +88,25 @@ export async function fetchScanData(
 
     // This is nd-json; each line is a json object.
     const lines = ndJsonString.split('\n').filter(Boolean)
-    let ok = true
-    const data = lines.map(line => {
+    const data: SocketArtifact[] = []
+    for (const line of lines) {
       try {
-        return JSON.parse(line)
+        data.push(JSON.parse(line))
       } catch (e) {
-        ok = false
         debug('Failed to parse report data line as JSON')
         debugDir({ error: e, line })
-        return
+        updateScan('received invalid JSON response')
+        return {
+          ok: false,
+          message: 'Invalid Socket API response',
+          cause:
+            'The Socket API responded with at least one line that was not valid JSON. Please report if this persists.',
+        }
       }
-    }) as unknown as SocketArtifact[]
-
-    if (ok) {
-      updateScan('success')
-      return { ok: true, data }
     }
 
-    updateScan('received invalid JSON response')
-
-    return {
-      ok: false,
-      message: 'Invalid Socket API response',
-      cause:
-        'The Socket API responded with at least one line that was not valid JSON. Please report if this persists.',
-    }
+    updateScan('success')
+    return { ok: true, data }
   }
 
   async function fetchSecurityPolicy(): Promise<

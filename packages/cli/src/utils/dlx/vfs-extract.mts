@@ -349,6 +349,42 @@ export async function extractExternalTools(): Promise<Record<ExternalTool, strin
   } catch (e: unknown) {
     const error = e as NodeJS.ErrnoException
     if (error.code === 'EEXIST') {
+      // Check if lock is stale by reading PID and checking if process exists.
+      let isStale = false
+      try {
+        const lockPid = await fs.readFile(lockFile, 'utf8')
+        const pid = Number.parseInt(lockPid.trim(), 10)
+        if (!Number.isNaN(pid) && pid > 0) {
+          try {
+            // Signal 0 checks if process exists without killing it.
+            process.kill(pid, 0)
+            // Process exists, lock is valid.
+          } catch {
+            // Process doesn't exist, lock is stale.
+            isStale = true
+            debug('notice', `Stale lock file detected (PID ${pid} not running)`)
+          }
+        } else {
+          // Invalid PID in lock file, treat as stale.
+          isStale = true
+        }
+      } catch {
+        // Can't read lock file, treat as stale.
+        isStale = true
+      }
+
+      if (isStale) {
+        // Clean up stale lock and partial extraction.
+        logger.warn('Cleaning up stale extraction lock...')
+        try {
+          await fs.unlink(lockFile)
+        } catch {
+          // Ignore cleanup errors.
+        }
+        // Retry extraction by calling ourselves recursively.
+        return await extractExternalTools()
+      }
+
       // Another process is extracting, wait and check for completion.
       logger.info('Another process is extracting external tools, waiting...')
       for (let i = 0; i < 60; i++) {
@@ -358,17 +394,60 @@ export async function extractExternalTools(): Promise<Record<ExternalTool, strin
         })
         if (existsSync(cacheMarker)) {
           debug('notice', 'External tools extracted by another process')
-          // Build toolPaths from cache and return.
+          // Build and validate toolPaths from cache.
           const toolPaths: Partial<Record<ExternalTool, string>> = {}
+          let allValid = true
           for (const tool of EXTERNAL_TOOLS) {
             const npmPath = TOOL_NPM_PATHS[tool]
             const toolPath = npmPath
               ? normalizePath(path.join(nodeSmolBase, npmPath.binPath))
               : normalizePath(path.join(nodeSmolBase, tool))
             const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
+            // Validate tool exists and is executable.
+            if (!existsSync(toolPathWithExt)) {
+              allValid = false
+              debug('notice', `Tool ${tool} missing after extraction by other process`)
+              break
+            }
             toolPaths[tool] = toolPathWithExt
           }
-          return toolPaths as Record<ExternalTool, string>
+          if (allValid) {
+            return toolPaths as Record<ExternalTool, string>
+          }
+          // Extraction incomplete, clean up and retry.
+          debug('notice', 'Incomplete extraction detected, cleaning up...')
+          try {
+            await fs.unlink(cacheMarker)
+            await fs.unlink(lockFile)
+          } catch {
+            // Ignore cleanup errors.
+          }
+          return await extractExternalTools()
+        }
+
+        // Check if lock process is still alive every 5 iterations.
+        if (i % 5 === 4) {
+          try {
+            const lockPid = await fs.readFile(lockFile, 'utf8')
+            const pid = Number.parseInt(lockPid.trim(), 10)
+            if (!Number.isNaN(pid) && pid > 0) {
+              try {
+                process.kill(pid, 0)
+              } catch {
+                // Process died, lock is stale.
+                debug('notice', `Lock holder (PID ${pid}) died during wait`)
+                try {
+                  await fs.unlink(lockFile)
+                } catch {
+                  // Ignore.
+                }
+                return await extractExternalTools()
+              }
+            }
+          } catch {
+            // Lock file gone, retry.
+            return await extractExternalTools()
+          }
         }
       }
       throw new Error('Timeout waiting for another process to extract external tools')
