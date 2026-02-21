@@ -170,7 +170,7 @@ jobs:
             packages/bootstrap/dist/
             packages/socket/dist/
           key: build-deps-smol-${{ steps.smol-deps-cache-key.outputs.deps-hash }}
-          restore-keys: build-deps-smol-
+          # Note: restore-keys removed to prevent cache poisoning attacks.
 
       - name: Build bootstrap package for smol
         if: (inputs.method == 'smol' || inputs.method == 'smol-sea') && steps.smol-deps-cache.outputs.cache-hit != 'true'
@@ -204,7 +204,7 @@ jobs:
         with:
           path: packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.os == 'windows' && '.exe' || '' }}
           key: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.smol-cache-key.outputs.hash }}
-          restore-keys: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-
+          # Note: restore-keys removed to prevent cache poisoning attacks.
 
       - name: Build smol Node.js binary
         id: build-smol
@@ -252,7 +252,7 @@ jobs:
             packages/bootstrap/dist/
             packages/socket/dist/
           key: build-deps-sea-${{ steps.deps-cache-key.outputs.deps-hash }}
-          restore-keys: build-deps-sea-
+          # Note: restore-keys removed to prevent cache poisoning attacks.
 
       - name: Build bootstrap package
         if: (inputs.method == 'sea' || inputs.method == 'smol-sea') && steps.deps-cache.outputs.cache-hit != 'true'
@@ -285,7 +285,7 @@ jobs:
         with:
           path: packages/node-sea-builder/dist/sea/
           key: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.sea-cache-key.outputs.hash }}
-          restore-keys: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-
+          # Note: restore-keys removed to prevent cache poisoning attacks.
 
       - name: Build CLI (required for SEA)
         if: (inputs.method == 'sea' || inputs.method == 'smol-sea') && steps.sea-cache.outputs.cache-hit != 'true'
@@ -401,8 +401,8 @@ jobs:
 
       - name: Check version consistency
         run: |
-          echo "🔍 Checking version consistency for v${STEPS_VERSION_OUTPUTS_VERSION}..."
-          node scripts/check-version-consistency.mjs ${STEPS_VERSION_OUTPUTS_VERSION}
+          echo "🔍 Checking version consistency for v$STEPS_VERSION_OUTPUTS_VERSION..."
+          node scripts/check-version-consistency.mjs "$STEPS_VERSION_OUTPUTS_VERSION"
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
 
@@ -422,7 +422,7 @@ jobs:
         run: |
           node scripts/prepublish-socketbin.mjs \
             --platform=linux --arch=x64 \
-            --version=${STEPS_VERSION_OUTPUTS_VERSION} \
+            --version="$STEPS_VERSION_OUTPUTS_VERSION" \
             --method=${{ inputs.method }}
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
@@ -431,18 +431,18 @@ jobs:
         if: ${{ !inputs.dry-run }}
         run: |
           cd packages/socketbin-cli-linux-x64
-          npm publish --provenance --access public --tag latest --tag latest
+          npm publish --provenance --access public --tag latest
 
       - name: Prepare and publish Linux ARM64
         if: ${{ !inputs.dry-run }}
         run: |
           node scripts/prepublish-socketbin.mjs \
             --platform=linux --arch=arm64 \
-            --version=${STEPS_VERSION_OUTPUTS_VERSION} \
+            --version="$STEPS_VERSION_OUTPUTS_VERSION" \
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-linux-arm64
-          npm publish --provenance --access public --tag latest --tag latest
+          npm publish --provenance --access public --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
 
@@ -451,11 +451,11 @@ jobs:
         run: |
           node scripts/prepublish-socketbin.mjs \
             --platform=linux --arch=x64 --libc=musl \
-            --version=${STEPS_VERSION_OUTPUTS_VERSION} \
+            --version="$STEPS_VERSION_OUTPUTS_VERSION" \
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-linux-x64-musl
-          npm publish --provenance --access public --tag latest --tag latest
+          npm publish --provenance --access public --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
 
@@ -464,7 +464,7 @@ jobs:
         run: |
           node scripts/prepublish-socketbin.mjs \
             --platform=linux --arch=arm64 --libc=musl \
-            --version=${STEPS_VERSION_OUTPUTS_VERSION} \
+            --version="$STEPS_VERSION_OUTPUTS_VERSION" \
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-linux-arm64-musl
@@ -477,7 +477,7 @@ jobs:
         run: |
           node scripts/prepublish-socketbin.mjs \
             --platform=darwin --arch=x64 \
-            --version=${STEPS_VERSION_OUTPUTS_VERSION} \
+            --version="$STEPS_VERSION_OUTPUTS_VERSION" \
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-darwin-x64
@@ -490,7 +490,7 @@ jobs:
         run: |
           node scripts/prepublish-socketbin.mjs \
             --platform=darwin --arch=arm64 \
-            --version=${STEPS_VERSION_OUTPUTS_VERSION} \
+            --version="$STEPS_VERSION_OUTPUTS_VERSION" \
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-darwin-arm64
@@ -503,7 +503,7 @@ jobs:
         run: |
           node scripts/prepublish-socketbin.mjs \
             --platform=win32 --arch=x64 \
-            --version=${STEPS_VERSION_OUTPUTS_VERSION} \
+            --version="$STEPS_VERSION_OUTPUTS_VERSION" \
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-win32-x64
@@ -516,7 +516,7 @@ jobs:
         run: |
           node scripts/prepublish-socketbin.mjs \
             --platform=win32 --arch=arm64 \
-            --version=${STEPS_VERSION_OUTPUTS_VERSION} \
+            --version="$STEPS_VERSION_OUTPUTS_VERSION" \
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-win32-arm64
