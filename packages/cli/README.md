@@ -189,9 +189,10 @@ Build Pipeline
 └── Targets
     ├── darwin-arm64  (macOS Apple Silicon)
     ├── darwin-x64    (macOS Intel)
-    ├── linux-arm64   (Linux ARM64)
-    ├── linux-x64     (Linux AMD64)
-    ├── linux-x64-musl (Alpine Linux)
+    ├── linux-arm64      (Linux ARM64)
+    ├── linux-arm64-musl (Alpine Linux ARM64)
+    ├── linux-x64        (Linux AMD64)
+    ├── linux-x64-musl   (Alpine Linux)
     ├── win32-arm64   (Windows ARM64)
     └── win32-x64     (Windows AMD64)
 

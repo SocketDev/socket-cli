@@ -168,9 +168,10 @@ export async function checkForUpdates(
       })
 
       // Update cache with fresh data.
+      // Capture timestamp right before write to avoid staleness from network delays.
       try {
         await dlxManifest.set(cacheKey, {
-          timestampFetch: timestamp,
+          timestampFetch: Date.now(),
           timestampNotification: record?.timestampNotification ?? 0,
           version: updateResult.latest,
         })

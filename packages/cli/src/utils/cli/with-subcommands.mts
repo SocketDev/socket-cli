@@ -797,7 +797,7 @@ export async function meowWithSubcommands(
         'Environment variables',
         '  SOCKET_CLI_API_TOKEN        Set the Socket API token',
         '  SOCKET_CLI_CONFIG           A JSON stringified Socket configuration object',
-        '  SOCKET_CLI_GITHUB_API_URL   Change the base URL for GitHub REST API calls',
+        '  GITHUB_API_URL              Change the base URL for GitHub REST API calls',
         '  SOCKET_CLI_GIT_USER_EMAIL   The git config `user.email` used by Socket CLI',
         `                              ${colors.italic('Defaults:')} github-actions[bot]@users.noreply.github.com`,
         '  SOCKET_CLI_GIT_USER_NAME    The git config `user.name` used by Socket CLI',
