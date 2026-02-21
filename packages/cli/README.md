@@ -315,7 +315,7 @@ Hierarchical configuration system:
 ```
 Priority (highest to lowest):
 1. Command-line flags (--org, --config)
-2. Environment variables (SOCKET_SECURITY_API_KEY)
+2. Environment variables (SOCKET_CLI_API_TOKEN)
 3. Config file (~/.config/socket/config.toml)
 4. Default values
 

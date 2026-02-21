@@ -247,29 +247,39 @@ void (async () => {
 
 // Handle uncaught exceptions.
 process.on('uncaughtException', async err => {
-  console.error('Uncaught exception:', err)
+  try {
+    console.error('Uncaught exception:', err)
 
-  // Track CLI error for uncaught exception.
-  await trackCliError(process.argv, cliStartTime, err, 1)
+    // Track CLI error for uncaught exception.
+    await trackCliError(process.argv, cliStartTime, err, 1)
 
-  // Finalize telemetry before exit.
-  await finalizeTelemetry()
-
-  // eslint-disable-next-line n/no-process-exit
-  process.exit(1)
+    // Finalize telemetry before exit.
+    await finalizeTelemetry()
+  } catch (e) {
+    // Prevent double unhandled rejection in error handler.
+    console.error('Error in uncaughtException handler:', e)
+  } finally {
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(1)
+  }
 })
 
 // Handle unhandled promise rejections.
 process.on('unhandledRejection', async (reason, promise) => {
-  console.error('Unhandled rejection at:', promise, 'reason:', reason)
+  try {
+    console.error('Unhandled rejection at:', promise, 'reason:', reason)
 
-  // Track CLI error for unhandled rejection.
-  const error = reason instanceof Error ? reason : new Error(String(reason))
-  await trackCliError(process.argv, cliStartTime, error, 1)
+    // Track CLI error for unhandled rejection.
+    const error = reason instanceof Error ? reason : new Error(String(reason))
+    await trackCliError(process.argv, cliStartTime, error, 1)
 
-  // Finalize telemetry before exit.
-  await finalizeTelemetry()
-
-  // eslint-disable-next-line n/no-process-exit
-  process.exit(1)
+    // Finalize telemetry before exit.
+    await finalizeTelemetry()
+  } catch (e) {
+    // Prevent double unhandled rejection in error handler.
+    console.error('Error in unhandledRejection handler:', e)
+  } finally {
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(1)
+  }
 })
