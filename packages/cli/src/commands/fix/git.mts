@@ -49,8 +49,17 @@ export function getSocketFixBranchName(ghsaId: string): string {
   return `socket/fix/${ghsaId}`
 }
 
+// GHSA ID pattern: GHSA-xxxx-xxxx-xxxx (4 alphanumeric segments).
+const GHSA_ID_PATTERN = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/i
+
 export function getSocketFixBranchPattern(ghsaId?: string | undefined): RegExp {
-  return new RegExp(`^socket/fix/(${ghsaId ?? '.+'})$`)
+  // Escape special regex characters to prevent ReDoS attacks.
+  const pattern = ghsaId
+    ? GHSA_ID_PATTERN.test(ghsaId)
+      ? ghsaId
+      : ghsaId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    : '.+'
+  return new RegExp(`^socket/fix/(${pattern})$`)
 }
 
 export function getSocketFixCommitMessage(

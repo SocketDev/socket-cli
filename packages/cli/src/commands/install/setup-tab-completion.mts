@@ -55,10 +55,14 @@ export async function setupTabCompletion(targetName: string): Promise<
   const foundBashrc = Boolean(bashrcPath && fs.existsSync(bashrcPath))
 
   if (foundBashrc) {
-    const content = fs.readFileSync(bashrcPath, 'utf8')
-    if (!content.includes(sourcingCommand)) {
-      fs.appendFileSync(bashrcPath, toAddToBashrc)
-      bashrcUpdated = true
+    try {
+      const content = fs.readFileSync(bashrcPath, 'utf8')
+      if (!content.includes(sourcingCommand)) {
+        fs.appendFileSync(bashrcPath, toAddToBashrc)
+        bashrcUpdated = true
+      }
+    } catch {
+      // File may have been deleted or become unreadable between check and read.
     }
   }
 
