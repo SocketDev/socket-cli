@@ -158,9 +158,8 @@ async function runVitest(binaryType) {
     },
   )
 
-  // Pass through vitest's exit code immediately to signal test success/failure to CI.
-  // eslint-disable-next-line n/no-process-exit
-  process.exit(result.code ?? 0)
+  // Pass through vitest's exit code to signal test success/failure to CI.
+  process.exitCode = result.code ?? 0
 }
 
 async function main() {

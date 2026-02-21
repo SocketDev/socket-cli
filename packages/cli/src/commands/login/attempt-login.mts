@@ -160,7 +160,10 @@ export async function attemptLogin(
     }
   }
 
-  updateConfigValue(CONFIG_KEY_DEFAULT_ORG, orgSlugs[0])
+  const defaultOrg = orgSlugs[0]?.trim()
+  if (defaultOrg) {
+    updateConfigValue(CONFIG_KEY_DEFAULT_ORG, defaultOrg)
+  }
 
   const previousPersistedToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
   try {

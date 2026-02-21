@@ -88,7 +88,7 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 - **Yoga WASM**: Downloaded from socket-btm releases (not built locally)
 - **SEA binaries**: Built by injecting CLI blob into downloaded node-smol binaries
 - **Output location**: `packages/cli/dist/sea/socket-<platform>-<arch>`
-- **Cache location**: `~/.socket/` directory
+- **Cache location**: Build assets in `packages/build-infra/build/downloaded/`, DLX manifests in `~/.socket/_dlx/`
 
 ### Testing Best Practices - CRITICAL: NO -- FOR FILE PATHS
 - **🚨 NEVER USE `--` BEFORE TEST FILE PATHS** - This runs ALL tests, not just your specified files!
@@ -273,7 +273,7 @@ Socket CLI has different update mechanisms depending on installation method:
 ### Package Structure
 - **Binary entries**: `socket`, `socket-npm`, `socket-npx` (defined in package.json `bin` field, pointing to `dist/index.js`)
 - **Distribution**: Built files go to `dist/` directory
-- **External dependencies**: Bundled in `external/` directory
+- **External dependencies**: Bundled into `dist/cli.js` via esbuild
 - **Test fixtures**: Located in `test/fixtures/`
 
 ### Dependency Management

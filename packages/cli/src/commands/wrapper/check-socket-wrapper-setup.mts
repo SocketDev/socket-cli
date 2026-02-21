@@ -4,7 +4,14 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 const logger = getDefaultLogger()
 
 export function checkSocketWrapperSetup(file: string): boolean {
-  const fileContent = fs.readFileSync(file, 'utf8')
+  let fileContent: string
+  try {
+    fileContent = fs.readFileSync(file, 'utf8')
+  } catch {
+    // File may have been deleted or become unreadable.
+    return false
+  }
+
   const linesWithSocketAlias = fileContent
     .split('\n')
     .filter(
