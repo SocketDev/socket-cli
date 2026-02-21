@@ -115,6 +115,17 @@ export async function checkForUpdates(
     if (timestamp <= 0) {
       loggerLocal.warn('Invalid system time, using cached data only')
       if (record) {
+        // Validate cached record has a valid timestamp before using.
+        if (
+          !record.timestampFetch ||
+          record.timestampFetch <= 0 ||
+          !record.version
+        ) {
+          loggerLocal.warn(
+            'Cached data has invalid timestamp or version, skipping update check',
+          )
+          return false
+        }
         // Use cached data for notification.
         const updateAvailable = version !== record.version
         if (updateAvailable) {

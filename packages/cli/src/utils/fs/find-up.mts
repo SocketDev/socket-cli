@@ -46,7 +46,9 @@ export async function findUp(
   let dir = path.resolve(cwd)
   const { root } = path.parse(dir)
   const names = [name].flat()
-  while (dir && dir !== root) {
+  // Use do-while to check current directory before continuing up the tree.
+  // This ensures root directory is checked when cwd is root.
+  do {
     for (const name of names) {
       if (signal?.aborted) {
         return undefined
@@ -63,7 +65,10 @@ export async function findUp(
         }
       } catch {}
     }
+    if (dir === root) {
+      break
+    }
     dir = path.dirname(dir)
-  }
+  } while (dir)
   return undefined
 }

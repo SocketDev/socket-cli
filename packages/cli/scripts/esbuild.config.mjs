@@ -53,6 +53,5 @@ try {
   logger.log(`✓ Compression ratio: ${compressionRatio}%`)
 } catch (error) {
   logger.error('Build failed:', error)
-
-  process.exit(1)
+  process.exitCode = 1
 }
