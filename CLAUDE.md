@@ -227,7 +227,7 @@ Socket CLI has different update mechanisms depending on installation method:
 - **Update checking**: TypeScript-based in `src/utils/update/manager.mts`
 - **Registry**: Checks npm registry for `@socketsecurity/cli` package
 - **Notification**: Shown on CLI exit (non-blocking)
-- **Update command**: Use package manager (e.g., `npm update -g socket`)
+- **Update command**: Use package manager (e.g., `npm update -g socket` or `npm update -g @socketsecurity/cli`)
 - **Environment variable**: `SOCKET_CLI_SKIP_UPDATE_CHECK=1` to disable
 
 #### Key Implementation Details
@@ -271,7 +271,7 @@ Socket CLI has different update mechanisms depending on installation method:
 - **`tsconfig.dts.json`** - TypeScript configuration for type definitions
 
 ### Package Structure
-- **Binary entries**: `socket`, `socket-npm`, `socket-npx` (in `bin/` directory)
+- **Binary entries**: `socket`, `socket-npm`, `socket-npx` (defined in package.json `bin` field, pointing to `dist/index.js`)
 - **Distribution**: Built files go to `dist/` directory
 - **External dependencies**: Bundled in `external/` directory
 - **Test fixtures**: Located in `test/fixtures/`

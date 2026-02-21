@@ -326,7 +326,20 @@ async function extractTool(tool: ExternalTool): Promise<string> {
  *   const cdxgenPath = toolPaths.cdxgen  // ~/.socket/_dlx/<hash>/node_modules/@cyclonedx/cdxgen/bin/cdxgen
  * }
  */
-export async function extractExternalTools(): Promise<Record<ExternalTool, string> | null> {
+// Maximum recursion depth for extraction retries.
+const MAX_EXTRACTION_DEPTH = 5
+
+export async function extractExternalTools(
+  depth = 0,
+): Promise<Record<ExternalTool, string> | null> {
+  // Prevent unbounded recursion from pathological scenarios.
+  if (depth >= MAX_EXTRACTION_DEPTH) {
+    logger.error(
+      `Max extraction retry limit (${MAX_EXTRACTION_DEPTH}) exceeded`,
+    )
+    return null
+  }
+
   if (!isSeaBinary() || !getAsset) {
     debug('notice', 'Not running in SEA mode - cannot extract VFS tools')
     return null
@@ -382,7 +395,7 @@ export async function extractExternalTools(): Promise<Record<ExternalTool, strin
           // Ignore cleanup errors.
         }
         // Retry extraction by calling ourselves recursively.
-        return await extractExternalTools()
+        return await extractExternalTools(depth + 1)
       }
 
       // Another process is extracting, wait and check for completion.
@@ -422,7 +435,7 @@ export async function extractExternalTools(): Promise<Record<ExternalTool, strin
           } catch {
             // Ignore cleanup errors.
           }
-          return await extractExternalTools()
+          return await extractExternalTools(depth + 1)
         }
 
         // Check if lock process is still alive every 5 iterations.
@@ -441,12 +454,12 @@ export async function extractExternalTools(): Promise<Record<ExternalTool, strin
                 } catch {
                   // Ignore.
                 }
-                return await extractExternalTools()
+                return await extractExternalTools(depth + 1)
               }
             }
           } catch {
             // Lock file gone, retry.
-            return await extractExternalTools()
+            return await extractExternalTools(depth + 1)
           }
         }
       }

@@ -777,23 +777,57 @@ export async function ensurePython(): Promise<string> {
 /**
  * Ensure Python is available via DLX download.
  * Returns the path to the Python executable.
+ * Uses lock file to prevent concurrent downloads (TOCTOU protection).
  */
 export async function ensurePythonDlx(): Promise<string> {
   const pythonDir = getPythonCachePath()
   const pythonBin = getPythonBinPath(pythonDir)
+  const lockFile = path.join(pythonDir, '.downloading')
 
   if (!existsSync(pythonBin)) {
-    await downloadPython(pythonDir)
+    await safeMkdir(pythonDir, { recursive: true })
 
-    if (!existsSync(pythonBin)) {
-      throw new InputError(
-        `Python binary not found after extraction: ${pythonBin}`,
-      )
+    // Try to acquire lock atomically.
+    try {
+      await fs.writeFile(lockFile, process.pid.toString(), { flag: 'wx' })
+    } catch (e: unknown) {
+      const error = e as NodeJS.ErrnoException
+      if (error.code === 'EEXIST') {
+        // Another process is downloading, wait for completion.
+        for (let i = 0; i < 60; i++) {
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise(resolve => {
+            setTimeout(resolve, 1_000)
+          })
+          if (existsSync(pythonBin)) {
+            return pythonBin
+          }
+        }
+        throw new InputError('Timeout waiting for Python download by another process')
+      }
+      throw e
     }
 
-    // Make executable on POSIX.
-    if (!WIN32) {
-      await fs.chmod(pythonBin, 0o755)
+    try {
+      await downloadPython(pythonDir)
+
+      if (!existsSync(pythonBin)) {
+        throw new InputError(
+          `Python binary not found after extraction: ${pythonBin}`,
+        )
+      }
+
+      // Make executable on POSIX.
+      if (!WIN32) {
+        await fs.chmod(pythonBin, 0o755)
+      }
+    } finally {
+      // Clean up lock file.
+      try {
+        await fs.unlink(lockFile)
+      } catch {
+        // Ignore cleanup errors.
+      }
     }
   }
 
