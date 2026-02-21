@@ -198,9 +198,7 @@ Build Pipeline
 
 Build Artifacts
 ├── dist/index.js              CLI entry point
-├── dist/cli-entry.js          Main CLI logic
-├── dist/commands/**/*.js      74 command modules
-├── dist/utils/**/*.js         180+ utility modules
+├── dist/cli.js                Bundled CLI (all commands + utilities)
 └── dist/sea/socket-*          Platform-specific binaries
 ```
 

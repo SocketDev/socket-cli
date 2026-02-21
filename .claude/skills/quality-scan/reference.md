@@ -1227,3 +1227,10 @@ pnpm install -g socket
 npm install -g socket
 ```
 
+### Non-Existent Commands
+
+**Fact:** There is NO `socket console` command. Do not flag it as missing documentation.
+
+Commands that do NOT exist:
+- `socket console` - This command does not exist in the codebase
+

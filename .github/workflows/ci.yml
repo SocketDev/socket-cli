@@ -129,8 +129,7 @@ jobs:
             packages/cli/build/
             packages/cli/dist/
           key: cli-build-${{ runner.os }}-${{ steps.cli-cache-key.outputs.hash }}
-          restore-keys: |
-            cli-build-${{ runner.os }}-
+          # Note: restore-keys removed to prevent cache poisoning attacks.
           lookup-only: true
 
       - name: Build CLI
@@ -195,8 +194,7 @@ jobs:
             packages/cli/build/
             packages/cli/dist/
           key: cli-build-${{ runner.os }}-${{ steps.cli-cache-key.outputs.hash }}
-          restore-keys: |
-            cli-build-${{ runner.os }}-
+          # Note: restore-keys removed to prevent cache poisoning attacks.
           lookup-only: true
 
       - name: Build CLI
@@ -398,8 +396,7 @@ jobs:
             packages/cli/build/
             packages/cli/dist/
           key: cli-build-${{ runner.os }}-${{ steps.cli-cache-key.outputs.hash }}
-          restore-keys: |
-            cli-build-${{ runner.os }}-
+          # Note: restore-keys removed to prevent cache poisoning attacks.
           lookup-only: true
 
       - name: Build CLI

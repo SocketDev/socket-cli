@@ -515,10 +515,7 @@ export function logAlertsMap(
       const neededCount = MIN_ABOVE_THE_FOLD_ALERT_COUNT - viewableAlerts.length
       let removedHiddenAlerts: SocketPackageAlert[] | undefined
       if (hiddenAlerts.length - neededCount > 0) {
-        removedHiddenAlerts = hiddenAlerts.splice(
-          0,
-          MIN_ABOVE_THE_FOLD_ALERT_COUNT,
-        )
+        removedHiddenAlerts = hiddenAlerts.splice(0, neededCount)
       } else {
         removedHiddenAlerts = hiddenAlerts
         hiddenAlertsByPurl.delete(purl)
