@@ -44,7 +44,7 @@ function checkNodeVersion() {
     logger.error(' Node.js version 18 or higher is required')
     logger.error(`Current version: ${nodeVersion}`)
     logger.error('Please upgrade: https://nodejs.org/')
-    process.exit(1)
+    throw new Error('Node.js version 18 or higher is required')
   }
 }
 
@@ -152,7 +152,7 @@ async function buildWasm() {
   } catch (e) {
     logger.error('\n❌ CodeT5 conversion failed')
     logger.error(`Error: ${e.message}`)
-    process.exit(1)
+    throw new Error('CodeT5 conversion failed')
   }
 
   // Step 2: Build unified WASM bundle.
@@ -166,13 +166,13 @@ async function buildWasm() {
   } catch (e) {
     logger.error('\n❌ WASM bundle build failed')
     logger.error(`Error: ${e.message}`)
-    process.exit(1)
+    throw new Error('WASM bundle build failed')
   }
 
   // Verify output file exists.
   if (!existsSync(outputFile)) {
     logger.error(`\n❌ Output file not found: ${outputFile}`)
-    process.exit(1)
+    throw new Error(`Output file not found: ${outputFile}`)
   }
 
   const stats = await fs.stat(outputFile)
@@ -255,7 +255,7 @@ async function getLatestWasmRelease() {
     logger.error(`Error: ${e.message}`)
     logger.error('\nTry building from source instead:')
     logger.error('node scripts/wasm.mjs --build\n')
-    process.exit(1)
+    throw new Error('Failed to fetch release information')
   }
 }
 
@@ -290,7 +290,7 @@ async function downloadFile(url, outputPath, expectedSize) {
     logger.error(`Error: ${e.message}`)
     logger.error('\nTry building from source instead:')
     logger.error('node scripts/wasm.mjs --build\n')
-    process.exit(1)
+    throw new Error('Download failed')
   }
 }
 
@@ -369,10 +369,10 @@ async function main() {
 
   logger.error(' Unknown command\n')
   showHelp()
-  process.exit(1)
+  throw new Error('Unknown command')
 }
 
 main().catch(e => {
   logger.error(' Unexpected error:', e)
-  process.exit(1)
+  process.exitCode = 1
 })

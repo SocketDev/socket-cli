@@ -127,12 +127,11 @@ async function validate() {
     logger.log('')
     logger.fail('Package validation FAILED')
     logger.log('')
-    process.exit(1)
+    throw new Error('Package validation failed')
   }
 
   logger.success('Package validation PASSED')
   logger.log('')
-  process.exit(0)
 }
 
 // Run validation.
@@ -140,5 +139,5 @@ validate().catch(e => {
   logger.error('')
   logger.fail(`Unexpected error: ${e.message}`)
   logger.error('')
-  process.exit(1)
+  process.exitCode = 1
 })

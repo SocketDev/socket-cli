@@ -115,7 +115,7 @@ async function runVitest(binaryType) {
   // Check if binary exists when explicitly requested.
   const binaryExists = await checkBinaryExists(binaryType)
   if (!binaryExists) {
-    process.exit(1)
+    throw new Error('Binary not found')
   }
 
   // Load external tool versions for INLINED_* env vars.
@@ -158,6 +158,8 @@ async function runVitest(binaryType) {
     },
   )
 
+  // Pass through vitest's exit code immediately to signal test success/failure to CI.
+  // eslint-disable-next-line n/no-process-exit
   process.exit(result.code ?? 0)
 }
 
@@ -173,7 +175,7 @@ async function main() {
     logger.log('  node scripts/e2e.mjs --sea    # Test SEA binary')
     logger.log('  node scripts/e2e.mjs --all    # Test all binaries')
     logger.log('')
-    process.exit(1)
+    throw new Error('Invalid or missing flag')
   }
 
   await runVitest(flag)
@@ -181,5 +183,5 @@ async function main() {
 
 main().catch(e => {
   logger.error('E2E test runner failed:', e)
-  process.exit(1)
+  process.exitCode = 1
 })
