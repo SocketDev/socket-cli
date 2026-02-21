@@ -57,25 +57,30 @@ describe('PromiseQueue', () => {
     expect(queue.pendingCount).toBe(0)
   })
 
-  it('should limit queue size when maxQueueLength is set', () => {
+  it('should limit queue size when maxQueueLength is set', async () => {
     const queue = new PromiseQueue(1, 2)
 
-    // Add one running task
+    // Add one running task.
     queue.add(() => new Promise(resolve => setTimeout(resolve, 100)))
 
-    // Queue should be empty initially
+    // Queue should be empty initially.
     expect(queue.pendingCount).toBe(0)
 
-    // Add 3 tasks to queue (max 2, so oldest will be dropped)
-    queue.add(() => Promise.resolve())
+    // Add 3 tasks to queue (max 2, so oldest will be dropped).
+    const promise1 = queue.add(() => Promise.resolve())
     expect(queue.pendingCount).toBe(1)
 
     queue.add(() => Promise.resolve())
     expect(queue.pendingCount).toBe(2)
 
     queue.add(() => Promise.resolve())
-    // Should still be 2 because oldest was dropped
+    // Should still be 2 because oldest was dropped.
     expect(queue.pendingCount).toBe(2)
+
+    // Verify the dropped task was rejected.
+    await expect(promise1).rejects.toThrow(
+      'Task dropped: queue exceeded max length',
+    )
   })
 
   it('should wait for all tasks to complete with onIdle', async () => {
@@ -104,15 +109,24 @@ describe('PromiseQueue', () => {
         setTimeout(resolve, 50)
       })
 
-    queue.add(task('a'))
-    queue.add(task('b'))
-    queue.add(task('c'))
+    // Task 'a' starts immediately (concurrency=1).
+    const promiseA = queue.add(task('a'))
+    // Tasks 'b' and 'c' are queued.
+    const promiseB = queue.add(task('b'))
+    const promiseC = queue.add(task('c'))
 
+    // Clear rejects pending tasks (b and c).
     queue.clear()
 
+    // Verify pending tasks are rejected.
+    await expect(promiseB).rejects.toThrow('Task cancelled: queue cleared')
+    await expect(promiseC).rejects.toThrow('Task cancelled: queue cleared')
+
+    // Wait for running task to complete.
+    await promiseA
     await queue.onIdle()
 
-    // Only the first task should have run
+    // Only the first task should have run.
     expect(results).toEqual(['a'])
   })
 

@@ -77,6 +77,8 @@ export async function renderFramedHeader(
     process.exit(0)
   })
 
-  // Keep process alive.
-  await new Promise(() => {})
+  // Keep process alive until interrupted.
+  await new Promise<void>(resolve => {
+    process.once('SIGTERM', resolve)
+  })
 }

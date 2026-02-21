@@ -102,7 +102,7 @@ describe('convertPurlToGhsas', () => {
       data: ['GHSA-1234-5678-9abc', 'GHSA-abcd-efgh-ijkl'],
     })
     expect(mockCacheFetch).toHaveBeenCalledWith(
-      'purl-to-ghsa-npm-lodash-4.17.20',
+      'purl-to-ghsa::npm::lodash::4.17.20',
       expect.any(Function),
     )
   })
@@ -169,7 +169,7 @@ describe('convertPurlToGhsas', () => {
       affects: 'express',
     })
     expect(mockCacheFetch).toHaveBeenCalledWith(
-      'purl-to-ghsa-npm-express-latest',
+      'purl-to-ghsa::npm::express::latest',
       expect.any(Function),
     )
   })

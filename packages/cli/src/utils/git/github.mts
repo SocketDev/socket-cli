@@ -161,7 +161,8 @@ export async function fetchGhsaDetails(
 
   const octokitGraphql = getOctokitGraphql()
   try {
-    const gqlCacheKey = `${ids.join('-')}-graphql-snapshot`
+    // Use '::' delimiter to avoid collisions (GHSA IDs contain hyphens).
+    const gqlCacheKey = `${ids.join('::')}-graphql-snapshot`
 
     const aliases = ids
       .map(

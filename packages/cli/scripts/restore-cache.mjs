@@ -27,6 +27,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { safeDelete } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
@@ -267,7 +268,7 @@ async function restoreCache(repo, cacheKey) {
     return false
   } finally {
     // Clean up temp directory.
-    await fs.rm(tempDir, { recursive: true, force: true })
+    await safeDelete(tempDir)
   }
 }
 

@@ -339,5 +339,7 @@ export async function borderedMenu(
   )
   rl.close()
 
-  return Number.parseInt(answer, 10) || 0
+  // Validate input is a positive integer (options are numbered 1-N).
+  const parsed = Number.parseInt(answer, 10)
+  return Number.isNaN(parsed) || parsed < 1 ? 0 : parsed
 }
