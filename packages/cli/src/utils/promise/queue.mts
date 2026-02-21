@@ -41,8 +41,11 @@ export class PromiseQueue {
       const task: QueuedTask<T> = { fn, resolve, reject }
 
       if (this.maxQueueLength && this.queue.length >= this.maxQueueLength) {
-        // Drop oldest task to prevent memory buildup
-        this.queue.shift()
+        // Drop oldest task to prevent memory buildup.
+        const droppedTask = this.queue.shift()
+        if (droppedTask) {
+          droppedTask.reject(new Error('Task dropped: queue exceeded max length'))
+        }
       }
 
       this.queue.push(task as QueuedTask<unknown>)
@@ -103,9 +106,13 @@ export class PromiseQueue {
   }
 
   /**
-   * Clear all pending tasks from the queue (does not affect running tasks)
+   * Clear all pending tasks from the queue (does not affect running tasks).
+   * All pending tasks are rejected with an error.
    */
   clear(): void {
+    for (const task of this.queue) {
+      task.reject(new Error('Task cancelled: queue cleared'))
+    }
     this.queue = []
   }
 }

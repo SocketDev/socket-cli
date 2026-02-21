@@ -13,10 +13,11 @@ The Socket CLI has two main build outputs:
 
 ## Prerequisites
 
-| Requirement | Version |
-|-------------|---------|
-| Node.js | >= 25.5.0 |
-| pnpm | >= 10.22.0 |
+| Requirement | Version | Notes |
+|-------------|---------|-------|
+| Node.js | >= 25.5.0 | Development/building |
+| Node.js | >= 18 | Running published package |
+| pnpm | >= 10.22.0 | Package manager |
 
 ## Quick Reference
 

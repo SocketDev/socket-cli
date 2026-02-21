@@ -7,7 +7,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { safeMkdir } from '@socketsecurity/lib/fs'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
@@ -129,7 +129,7 @@ async function extractFromTarGz(archivePath, outputPath, binaryName) {
   }
 
   // Cleanup.
-  await fs.rm(tempDir, { recursive: true, force: true })
+  await safeDelete(tempDir)
 
   const stats = await fs.stat(outputPath)
   logger.log(

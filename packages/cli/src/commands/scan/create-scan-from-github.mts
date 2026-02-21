@@ -69,7 +69,7 @@ export async function createScanFromGithub({
   logger.info(`Have ${targetRepos.length} repo names to Scan!`)
   logger.log('')
 
-  if (!targetRepos.filter(Boolean).length) {
+  if (!targetRepos.length) {
     return {
       ok: false,
       message: 'No repo found',
