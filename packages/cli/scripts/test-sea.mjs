@@ -55,7 +55,7 @@ function parseArgs() {
 
   if (!['standalone', 'vfs', 'with-tools'].includes(mode)) {
     console.error('Invalid mode. Use: standalone, vfs, or with-tools')
-    process.exit(1)
+    throw new Error('Invalid mode')
   }
 
   return { mode }
@@ -76,7 +76,7 @@ async function loadToolPaths() {
   if (!existsSync(toolPathsFile)) {
     console.error(`Tool paths not found: ${toolPathsFile}`)
     console.error('Run: node scripts/test-download-external-tools.mjs')
-    process.exit(1)
+    throw new Error('Tool paths not found')
   }
 
   const toolPathsData = JSON.parse(await fs.readFile(toolPathsFile, 'utf8'))
@@ -283,7 +283,7 @@ async function runVfsMode(platform) {
     console.error(
       'Create it with: tar -czf packages/cli/dist/sea-test/external-tools.tar.gz -C build-infra/build/external-tools-test/darwin-arm64 trivy trufflehog opengrep',
     )
-    process.exit(1)
+    throw new Error('VFS tar.gz not found')
   }
 
   const vfsStats = await fs.stat(vfsTarGz)
@@ -333,7 +333,7 @@ async function runVfsMode(platform) {
   if (!existsSync(binjectPath)) {
     console.error(`binject not found: ${binjectPath}`)
     console.error('Run build or download binject first')
-    process.exit(1)
+    throw new Error('binject not found')
   }
 
   const injectResult = await spawn(
@@ -574,5 +574,5 @@ async function main() {
 
 main().catch(e => {
   console.error(e)
-  process.exit(1)
+  process.exitCode = 1
 })
