@@ -13,6 +13,8 @@ import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+import { EnvironmentVariables } from './environment-variables.mjs'
+
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT_DIR = path.resolve(__dirname, '..')
@@ -86,6 +88,9 @@ async function runVitest(binaryType) {
   const vitestCmd = WIN32 ? 'vitest.cmd' : 'vitest'
   const vitestPath = path.join(NODE_MODULES_BIN_PATH, vitestCmd)
 
+  // Load external tool versions for INLINED_* env vars.
+  const externalToolVersions = EnvironmentVariables.getTestVariables()
+
   const result = await spawn(
     dotenvxPath,
     [
@@ -106,6 +111,8 @@ async function runVitest(binaryType) {
         ...process.env,
         // Automatically enable tests when explicitly running integration.mjs.
         RUN_INTEGRATION_TESTS: '1',
+        // Inject external tool versions (normally inlined at build time).
+        ...externalToolVersions,
         ...envVars,
       },
       stdio: 'inherit',
