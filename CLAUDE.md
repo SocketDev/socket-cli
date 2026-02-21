@@ -250,7 +250,8 @@ Socket CLI has different update mechanisms depending on installation method:
 - Coverage reporting available
 
 ### External Dependencies
-- Bundles external dependencies in `external/` directory
+- Vendored modules in `src/external/` (e.g., ink-table)
+- Dependencies bundled into `dist/cli.js` via esbuild
 - Uses Socket registry overrides for security
 - Custom patches applied to dependencies in `patches/`
 

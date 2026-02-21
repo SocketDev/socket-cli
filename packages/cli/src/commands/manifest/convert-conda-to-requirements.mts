@@ -24,20 +24,32 @@ export async function convertCondaToRequirements(
 
     const strings: string[] = []
     content = await new Promise((resolve, reject) => {
-      process.stdin.on('data', chunk => {
-        const input = chunk.toString()
-        strings.push(input)
-      })
-      process.stdin.on('end', () => {
+      const cleanup = () => {
+        process.stdin.off('data', dataHandler)
+        process.stdin.off('end', endHandler)
+        process.stdin.off('error', errorHandler)
+        process.stdin.off('close', closeHandler)
+      }
+
+      const dataHandler = (chunk: Buffer) => {
+        strings.push(chunk.toString())
+      }
+
+      const endHandler = () => {
+        cleanup()
         resolve(prepareContent(strings.join('')))
-      })
-      process.stdin.on('error', e => {
+      }
+
+      const errorHandler = (e: Error) => {
+        cleanup()
         if (verbose) {
           logger.error('Unexpected error while reading from stdin:', e)
         }
         reject(e)
-      })
-      process.stdin.on('close', () => {
+      }
+
+      const closeHandler = () => {
+        cleanup()
         if (strings.length) {
           if (verbose) {
             logger.error(
@@ -51,7 +63,12 @@ export async function convertCondaToRequirements(
           }
           reject(new Error('No data received from stdin'))
         }
-      })
+      }
+
+      process.stdin.on('data', dataHandler)
+      process.stdin.on('end', endHandler)
+      process.stdin.on('error', errorHandler)
+      process.stdin.on('close', closeHandler)
     })
 
     if (!content) {

@@ -59,17 +59,19 @@ function generateDatetimeVersion(platform, arch, tool = 'cli') {
 
 const { values } = parseArgs({
   options: {
-    platform: { type: 'string' },
     arch: { type: 'string' },
-    version: { type: 'string' },
-    tool: { type: 'string', default: 'cli' },
-    outdir: { type: 'string' },
+    libc: { type: 'string' },
     method: { type: 'string', default: 'smol' },
+    outdir: { type: 'string' },
+    platform: { type: 'string' },
+    tool: { type: 'string', default: 'cli' },
+    version: { type: 'string' },
   },
 })
 
 const {
   arch,
+  libc,
   method: buildMethod = 'smol',
   outdir,
   platform,
