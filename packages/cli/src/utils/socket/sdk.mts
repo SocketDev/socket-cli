@@ -170,7 +170,8 @@ export async function setupSdk(
     hooks: {
       onRequest: (info: RequestInfo) => {
         // Skip tracking for telemetry submission endpoints to prevent infinite loop.
-        const isTelemetryEndpoint = info.url.includes('/telemetry')
+        const isTelemetryEndpoint =
+          info.url.includes('/telemetry') || info.url.includes('/events')
 
         if (ENV.SOCKET_CLI_DEBUG) {
           // Debug logging.
@@ -187,7 +188,8 @@ export async function setupSdk(
       },
       onResponse: (info: ResponseInfo) => {
         // Skip tracking for telemetry submission endpoints to prevent infinite loop.
-        const isTelemetryEndpoint = info.url.includes('/telemetry')
+        const isTelemetryEndpoint =
+          info.url.includes('/telemetry') || info.url.includes('/events')
 
         if (!isTelemetryEndpoint) {
           // Track API response event.
