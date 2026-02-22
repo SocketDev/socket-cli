@@ -131,9 +131,9 @@ export function scheduleExitNotification(
   try {
     const notificationLogger = () => showUpdateNotification(options)
     onExit(notificationLogger)
-  } catch (error) {
+  } catch (e) {
     logger.warn(
-      `Failed to schedule exit notification: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to schedule exit notification: ${e instanceof Error ? e.message : String(e)}`,
     )
   }
 }

@@ -123,7 +123,7 @@ async function writeBootstrapManifestEntry(): Promise<void> {
     await dlxManifest.setPackageEntry(spec, cacheKey, {
       installed_version: installedVersion,
     })
-  } catch (error) {
+  } catch (e) {
     // Silently ignore manifest write errors - not critical
     debug(`Failed to write bootstrap manifest entry: ${error}`)
   }

@@ -134,11 +134,11 @@ export class CommandRegistry implements ICommandRegistry {
     let flags: FlagValues
     try {
       flags = await this.parseFlags(command, args)
-    } catch (error) {
+    } catch (e) {
       return {
         ok: false,
-        message: error instanceof Error ? error.message : String(error),
-        cause: error instanceof Error ? error.stack : undefined,
+        message: e instanceof Error ? e.message : String(e),
+        cause: e instanceof Error ? e.stack : undefined,
       }
     }
 
@@ -168,11 +168,11 @@ export class CommandRegistry implements ICommandRegistry {
       // If handler returned a result, we'd have it in context
       // For now, return success
       return { ok: true, data: undefined }
-    } catch (error) {
+    } catch (e) {
       return {
         ok: false,
-        message: error instanceof Error ? error.message : String(error),
-        cause: error instanceof Error ? error.stack : undefined,
+        message: e instanceof Error ? e.message : String(e),
+        cause: e instanceof Error ? e.stack : undefined,
       }
     }
   }
