@@ -157,8 +157,8 @@ export {
 // Export processEnv for spawned processes that need environment access.
 export const processEnv = env
 
-// Legacy default export for backward compatibility.
-// This should be avoided in new code - use the named exports instead.
+// Legacy default export.
+// Note: Use named exports (processEnv) for new code.
 
 // Create a snapshot of environment variables for production use.
 const envSnapshot = {
