@@ -268,7 +268,7 @@ pnpm clean
 | Variable | Description |
 |----------|-------------|
 | `GH_TOKEN` | GitHub token for higher API rate limits |
-| `GITHUB_TOKEN` | Alternative to GH_TOKEN |
+| `GITHUB_TOKEN` | GitHub token (recognized by Socket CLI, fallback for `SOCKET_CLI_GITHUB_TOKEN`) |
 | `SOCKET_CLI_LOCAL_NODE_SMOL` | Use local node-smol binary |
 | `SOCKET_CLI_FORCE_BUILD` | Force rebuild (set by --force) |
 
