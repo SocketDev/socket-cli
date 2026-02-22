@@ -125,7 +125,7 @@ async function writeBootstrapManifestEntry(): Promise<void> {
     })
   } catch (e) {
     // Silently ignore manifest write errors - not critical
-    debug(`Failed to write bootstrap manifest entry: ${error}`)
+    debug(`Failed to write bootstrap manifest entry: ${e}`)
   }
 }
 

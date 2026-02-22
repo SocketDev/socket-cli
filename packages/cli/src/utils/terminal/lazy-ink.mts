@@ -21,7 +21,7 @@ export async function loadInk(): Promise<{ ink: any; React: any }> {
     return { ink, React }
   } catch (e) {
     logger.error('Failed to load Ink/React components')
-    throw error
+    throw e
   }
 }
 
@@ -34,7 +34,7 @@ export async function loadInkTable() {
     return Table
   } catch (e) {
     logger.error('Failed to load ink-table component')
-    throw error
+    throw e
   }
 }
 
