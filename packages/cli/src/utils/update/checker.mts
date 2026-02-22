@@ -245,21 +245,21 @@ const NetworkUtils = {
         }
 
         return json.version
-      } catch (error) {
+      } catch (e) {
         attempts++
         const isLastAttempt = attempts === maxAttempts
 
         if (isLastAttempt) {
           logger.warn(
-            `Failed to fetch version after ${maxAttempts} attempts: ${error instanceof Error ? error.message : String(error)}`,
+            `Failed to fetch version after ${maxAttempts} attempts: ${e instanceof Error ? e.message : String(e)}`,
           )
-          throw error
+          throw e
         }
 
         // Exponential backoff.
         const delay = baseDelay * 2 ** (attempts - 1)
         logger.log(
-          `Attempt ${attempts} failed, retrying in ${delay}ms: ${error instanceof Error ? error.message : String(error)}`,
+          `Attempt ${attempts} failed, retrying in ${delay}ms: ${e instanceof Error ? e.message : String(e)}`,
         )
 
         // eslint-disable-next-line no-await-in-loop
@@ -308,11 +308,11 @@ async function checkForUpdates(
       latest,
       updateAvailable,
     }
-  } catch (error) {
+  } catch (e) {
     logger.log(
-      `Failed to check for updates: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to check for updates: ${e instanceof Error ? e.message : String(e)}`,
     )
-    throw error
+    throw e
   }
 }
 

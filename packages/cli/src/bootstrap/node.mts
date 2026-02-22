@@ -123,7 +123,7 @@ async function main(): Promise<void> {
     logger.error('Socket CLI not installed yet.')
     try {
       await downloadCli()
-    } catch (error) {
+    } catch (e) {
       logger.error('Failed to download Socket CLI:', error)
       // eslint-disable-next-line n/no-process-exit
       process.exit(1)

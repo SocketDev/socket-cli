@@ -37,7 +37,7 @@ import {
 import { UPDATE_CHECK_TTL } from '../../constants/cache.mts'
 import { isSeaBinary } from '../sea/detect.mts'
 
-import type { AuthInfo } from './checker.mts'
+import type { AuthInfo, UpdateCheckResult } from './checker.mts'
 import type { StoreRecord } from '@socketsecurity/lib/dlx/manifest'
 
 const logger = getDefaultLogger()
@@ -157,9 +157,9 @@ export async function checkForUpdates(
       }
       return false
     }
-  } catch (error) {
+  } catch (e) {
     loggerLocal.warn(
-      `Failed to access cache: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to access cache: ${e instanceof Error ? e.message : String(e)}`,
     )
     record = undefined
   }
@@ -168,7 +168,7 @@ export async function checkForUpdates(
   const isFresh = record && record.timestampFetch
     ? timestamp - record.timestampFetch < ttl
     : false
-  let updateResult: any
+  let updateResult: UpdateCheckResult
 
   if (!isFresh) {
     // Need to fetch fresh data from registry.
@@ -188,15 +188,15 @@ export async function checkForUpdates(
           timestampNotification: record?.timestampNotification ?? 0,
           version: updateResult.latest,
         })
-      } catch (error) {
+      } catch (e) {
         loggerLocal.warn(
-          `Failed to update cache: ${error instanceof Error ? error.message : String(error)}`,
+          `Failed to update cache: ${e instanceof Error ? e.message : String(e)}`,
         )
         // Continue anyway - cache update failure is not critical.
       }
-    } catch (error) {
+    } catch (e) {
       loggerLocal.log(
-        `Failed to fetch latest version: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to fetch latest version: ${e instanceof Error ? e.message : String(e)}`,
       )
 
       // Use cached version if available.
@@ -234,9 +234,9 @@ export async function checkForUpdates(
       } else {
         scheduleExitNotification(notificationOptions)
       }
-    } catch (error) {
+    } catch (e) {
       loggerLocal.warn(
-        `Failed to set up notification: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to set up notification: ${e instanceof Error ? e.message : String(e)}`,
       )
       // Notification failure is not critical - update is still available.
     }
@@ -265,10 +265,10 @@ export async function scheduleUpdateCheck(
 
   try {
     await checkForUpdates(updateOptions)
-  } catch (error) {
+  } catch (e) {
     // Silent failure - update checks should never block the main CLI.
     logger.log(
-      `Update check failed: ${error instanceof Error ? error.message : String(error)}`,
+      `Update check failed: ${e instanceof Error ? e.message : String(e)}`,
     )
   }
 }
