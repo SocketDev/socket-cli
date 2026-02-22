@@ -348,7 +348,7 @@ Socket CLI integrates with various third-party tools and services:
 
 ### Debugging and Troubleshooting
 - **CI vs Local Differences**: CI uses published npm packages, not local versions. Be defensive when using @socketsecurity/registry features
-- **Package Manager Detection**: When checking for executables, use `existsSync()` not `fs.access()` for consistency
+- **File Existence Checks**: ALWAYS use `existsSync()` from `node:fs`, NEVER use `fs.access()` or `fs.promises.access()` for file/directory existence checks. `existsSync()` is synchronous, more direct, and the established pattern in this codebase for consistency
 
 ### Formatting
 - **Linting**: Uses ESLint with TypeScript support and import/export rules
