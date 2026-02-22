@@ -254,7 +254,7 @@ Assets are downloaded from [socket-btm](https://github.com/SocketDev/socket-btm)
 
 ```bash
 # Clear download cache
-rm -rf packages/build-infra/build/downloaded/
+pnpm run clean-cache
 
 # Clear CLI build cache
 pnpm --filter @socketsecurity/cli run clean

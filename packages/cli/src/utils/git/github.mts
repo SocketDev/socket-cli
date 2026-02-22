@@ -38,7 +38,6 @@ import { debugDirNs, debugNs, isDebugNs } from '@socketsecurity/lib/debug'
 import {
   readJson,
   safeMkdir,
-  safeStatsSync,
   writeJson,
 } from '@socketsecurity/lib/fs'
 import { spawn } from '@socketsecurity/lib/spawn'
@@ -58,6 +57,11 @@ import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 export type Pr = components['schemas']['pull-request']
 
+interface CacheEntry {
+  timestamp: number
+  data: JsonContent
+}
+
 async function readCache(
   key: string,
   // 5 minute in milliseconds time to live (TTL).
@@ -65,12 +69,21 @@ async function readCache(
 ): Promise<JsonContent | undefined> {
   const githubCachePath = getGithubCachePath()
   const cacheJsonPath = path.join(githubCachePath, `${key}.json`)
-  const stat = safeStatsSync(cacheJsonPath)
-  if (stat) {
-    const isExpired = Date.now() - Number(stat.mtimeMs) > ttlMs
-    if (!isExpired) {
-      return await readJson(cacheJsonPath)
+
+  try {
+    const entry = (await readJson(cacheJsonPath)) as CacheEntry | JsonContent
+    // Handle both new format (with timestamp) and legacy format (without).
+    if (entry && typeof entry === 'object' && 'timestamp' in entry && 'data' in entry) {
+      const isExpired = Date.now() - (entry.timestamp as number) > ttlMs
+      if (!isExpired) {
+        return entry.data
+      }
+    } else {
+      // Legacy format without timestamp - treat as expired.
+      return undefined
     }
+  } catch {
+    return undefined
   }
   return undefined
 }
@@ -83,9 +96,15 @@ export async function writeCache(
   const cacheJsonPath = path.join(githubCachePath, `${key}.json`)
   // Create directory with recursive flag that doesn't fail if exists.
   await safeMkdir(githubCachePath, { recursive: true })
+
+  const entry: CacheEntry = {
+    timestamp: Date.now(),
+    data,
+  }
+
   // Use atomic write pattern to prevent multi-process race conditions.
   const tmpPath = `${cacheJsonPath}.tmp.${process.pid}`
-  await writeJson(tmpPath, data as JsonContent)
+  await writeJson(tmpPath, entry)
   await fs.rename(tmpPath, cacheJsonPath)
 }
 
@@ -128,6 +147,9 @@ export async function cacheFetch<T>(
 
     inflightRequests.set(key, fetchPromise)
     data = await fetchPromise
+  } else {
+    // Clear from inflight map on cache hit to prevent accumulation.
+    inflightRequests.delete(key)
   }
   return data
 }
