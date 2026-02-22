@@ -72,6 +72,9 @@ export async function checkForUpdates(
 
   const loggerLocal = getDefaultLogger()
 
+  // Capture timestamp immediately for accurate TTL calculations.
+  const timestamp = Date.now()
+
   // Validate required parameters.
   if (!isNonEmptyString(name)) {
     loggerLocal.warn('Package name must be a non-empty string')
@@ -103,7 +106,6 @@ export async function checkForUpdates(
   }
 
   let record: StoreRecord | undefined
-  let timestamp: number
 
   // Include current version and registry in cache key to prevent stale cache.
   // Different registries may have different latest versions.
@@ -121,7 +123,6 @@ export async function checkForUpdates(
 
   try {
     record = dlxManifest.get(cacheKey)
-    timestamp = Date.now()
 
     if (timestamp <= 0) {
       loggerLocal.warn('Invalid system time, using cached data only')
@@ -160,7 +161,6 @@ export async function checkForUpdates(
     loggerLocal.warn(
       `Failed to access cache: ${error instanceof Error ? error.message : String(error)}`,
     )
-    timestamp = Date.now()
     record = undefined
   }
 
