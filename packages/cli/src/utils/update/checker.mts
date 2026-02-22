@@ -124,6 +124,14 @@ const NetworkUtils = {
     }
 
     return new Promise((resolve, reject) => {
+      // Cleanup function to remove exit handler and prevent memory leak.
+      const exitHandler = () => req.destroy()
+      const removeExitHandler = onExit(exitHandler)
+
+      const cleanup = () => {
+        removeExitHandler()
+      }
+
       const req = https.request(
         {
           agent: false, // Disable connection pooling.
@@ -142,6 +150,7 @@ const NetworkUtils = {
           })
 
           res.on('end', () => {
+            cleanup()
             try {
               if (res.statusCode !== 200) {
                 reject(
@@ -174,17 +183,15 @@ const NetworkUtils = {
       )
 
       req.on('timeout', () => {
+        cleanup()
         req.destroy()
         reject(new Error(`Request timed out after ${timeoutMs}ms`))
       })
 
       req.on('error', error => {
+        cleanup()
         reject(new Error(`Network request failed: ${error.message}`))
       })
-
-      // Also listen for process exit.
-      const exitHandler = () => req.destroy()
-      onExit(exitHandler)
 
       req.end()
     })

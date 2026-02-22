@@ -162,8 +162,11 @@ export async function extractBasicsTools(
   const extractDir = cacheDir || getNodeSmolBasePath()
 
   // Get current tool versions for cache validation.
+  // Include platform/arch to prevent serving wrong binaries after architecture change.
   const toolVersions = {
+    arch: process.arch,
     opengrep: getOpengrepVersion(),
+    platform: process.platform,
     pycli: getPyCliVersion(),
     trivy: getTrivyVersion(),
     trufflehog: getTrufflehogVersion(),
@@ -178,7 +181,9 @@ export async function extractBasicsTools(
       const cachedVersionsJson = await fs.readFile(cacheMetadata, 'utf8')
       const cachedVersions = JSON.parse(cachedVersionsJson)
       const versionsMatch =
+        cachedVersions.arch === toolVersions.arch &&
         cachedVersions.opengrep === toolVersions.opengrep &&
+        cachedVersions.platform === toolVersions.platform &&
         cachedVersions.pycli === toolVersions.pycli &&
         cachedVersions.trivy === toolVersions.trivy &&
         cachedVersions.trufflehog === toolVersions.trufflehog

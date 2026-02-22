@@ -1,3 +1,4 @@
+import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
@@ -55,6 +56,7 @@ export async function saveGhsaTracker(
 /**
  * Mark a GHSA as fixed in the tracker.
  * Removes any existing record for the same GHSA before adding the new one.
+ * Uses file locking to prevent race conditions with concurrent operations.
  */
 export async function markGhsaFixed(
   cwd: string,
@@ -62,6 +64,31 @@ export async function markGhsaFixed(
   prNumber?: number,
   branch?: string,
 ): Promise<void> {
+  const trackerPath = path.join(cwd, TRACKER_FILE)
+  const lockFile = `${trackerPath}.lock`
+
+  // Acquire lock with exponential backoff.
+  let lockAcquired = false
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      await fs.writeFile(lockFile, String(process.pid), { flag: 'wx' })
+      lockAcquired = true
+      break
+    } catch (e) {
+      const err = e as NodeJS.ErrnoException
+      if (err.code === 'EEXIST' && attempt < 4) {
+        // Lock exists, wait with exponential backoff.
+        await new Promise(resolve =>
+          setTimeout(resolve, 100 * Math.pow(2, attempt)),
+        )
+        continue
+      }
+      // If not EEXIST or last attempt, proceed without lock.
+      debug(`ghsa-tracker: could not acquire lock, proceeding anyway`)
+      break
+    }
+  }
+
   try {
     const tracker = await loadGhsaTracker(cwd)
 
@@ -87,6 +114,15 @@ export async function markGhsaFixed(
   } catch (e) {
     debug(`ghsa-tracker: failed to mark ${ghsaId} as fixed`)
     debugDir(e)
+  } finally {
+    // Release lock.
+    if (lockAcquired) {
+      try {
+        await fs.unlink(lockFile)
+      } catch {
+        // Ignore cleanup errors.
+      }
+    }
   }
 }
 

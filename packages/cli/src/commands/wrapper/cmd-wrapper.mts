@@ -118,7 +118,7 @@ async function run(
   if (enable) {
     if (existsSync(bashRcPath)) {
       if (!checkSocketWrapperSetup(bashRcPath)) {
-        addSocketWrapper(bashRcPath)
+        await addSocketWrapper(bashRcPath)
         modifiedFiles.push(bashRcPath)
       } else {
         skippedFiles.push(bashRcPath)
@@ -126,7 +126,7 @@ async function run(
     }
     if (existsSync(zshRcPath)) {
       if (!checkSocketWrapperSetup(zshRcPath)) {
-        addSocketWrapper(zshRcPath)
+        await addSocketWrapper(zshRcPath)
         modifiedFiles.push(zshRcPath)
       } else {
         skippedFiles.push(zshRcPath)

@@ -291,6 +291,13 @@ async function testAndDownloadManifestFiles({
     files.length,
     'entries. Searching for supported manifest files...',
   )
+
+  // Fetch supported files once for all file checks (avoid repeated API calls).
+  const supportedFilesCResult = await fetchSupportedScanFileNames()
+  const supportedFiles = supportedFilesCResult.ok
+    ? supportedFilesCResult.data
+    : undefined
+
   logger.group()
   let fileCount = 0
   let firstFailureResult: CResult<never> | undefined
@@ -301,6 +308,7 @@ async function testAndDownloadManifestFiles({
       file,
       orgGithub,
       repoSlug,
+      supportedFiles,
       tmpDir,
     })
     if (result.ok) {
@@ -336,20 +344,17 @@ async function testAndDownloadManifestFile({
   file,
   orgGithub,
   repoSlug,
+  supportedFiles,
   tmpDir,
 }: {
   defaultBranch: string
   file: string
   orgGithub: string
   repoSlug: string
+  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'] | undefined
   tmpDir: string
 }): Promise<CResult<{ isManifest: boolean }>> {
   debug(`testing: file ${file}`)
-
-  const supportedFilesCResult = await fetchSupportedScanFileNames()
-  const supportedFiles = supportedFilesCResult.ok
-    ? supportedFilesCResult.data
-    : undefined
 
   if (!supportedFiles || !isReportSupportedFile(file, supportedFiles)) {
     debug('skip: not a known pattern')

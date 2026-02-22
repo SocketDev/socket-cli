@@ -31,7 +31,7 @@ export class CommandRegistry implements ICommandRegistry {
 
     this.commands.set(command.name, command)
 
-    // Register aliases
+    // Register aliases.
     if (command.aliases) {
       for (const alias of command.aliases) {
         if (this.commands.has(alias)) {
@@ -39,10 +39,33 @@ export class CommandRegistry implements ICommandRegistry {
             `Alias "${alias}" conflicts with existing command "${this.commands.get(alias)?.name}"`,
           )
         }
-        // Store alias pointing to main command
+        // Store alias pointing to main command.
         this.commands.set(alias, command)
       }
     }
+  }
+
+  /**
+   * Unregister a command by name.
+   * Also removes any aliases associated with the command.
+   */
+  unregister(commandName: string): boolean {
+    const command = this.commands.get(commandName)
+    if (!command) {
+      return false
+    }
+
+    // Remove the command itself.
+    this.commands.delete(command.name)
+
+    // Remove all aliases.
+    if (command.aliases) {
+      for (const alias of command.aliases) {
+        this.commands.delete(alias)
+      }
+    }
+
+    return true
   }
 
   /**

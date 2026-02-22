@@ -102,25 +102,31 @@ jobs:
         shell: bash
         run: |
           SHOULD_RUN="false"
-          if [ "${{ matrix.platform }}" = "linux" ]; then
-            if [ "${{ inputs.build-linux }}" != "false" ]; then
+          if [ "$MATRIX_PLATFORM" = "linux" ]; then
+            if [ "$BUILD_LINUX" != "false" ]; then
               SHOULD_RUN="true"
             fi
-          elif [ "${{ matrix.platform }}" = "darwin" ]; then
-            if [ "${{ inputs.build-macos }}" != "false" ]; then
+          elif [ "$MATRIX_PLATFORM" = "darwin" ]; then
+            if [ "$BUILD_MACOS" != "false" ]; then
               SHOULD_RUN="true"
             fi
-          elif [ "${{ matrix.platform }}" = "win32" ]; then
-            if [ "${{ inputs.build-windows }}" != "false" ]; then
+          elif [ "$MATRIX_PLATFORM" = "win32" ]; then
+            if [ "$BUILD_WINDOWS" != "false" ]; then
               SHOULD_RUN="true"
             fi
           fi
           echo "should-run=$SHOULD_RUN" >> $GITHUB_OUTPUT
           if [ "$SHOULD_RUN" = "true" ]; then
-            echo "✓ Building ${{ matrix.platform }}-${{ matrix.arch }}"
+            echo "✓ Building ${MATRIX_PLATFORM}-${MATRIX_ARCH}"
           else
-            echo "⊘ Skipping ${{ matrix.platform }}-${{ matrix.arch }} (disabled by inputs)"
+            echo "⊘ Skipping ${MATRIX_PLATFORM}-${MATRIX_ARCH} (disabled by inputs)"
           fi
+        env:
+          MATRIX_PLATFORM: ${{ matrix.platform }}
+          MATRIX_ARCH: ${{ matrix.arch }}
+          BUILD_LINUX: ${{ inputs.build-linux }}
+          BUILD_MACOS: ${{ inputs.build-macos }}
+          BUILD_WINDOWS: ${{ inputs.build-windows }}
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -236,11 +242,12 @@ jobs:
           if [ "${{ matrix.os }}" = "windows" ]; then
             HASH=$(find packages/bootstrap packages/socket -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" -o -name "*.json" \) ! -path "*/node_modules/*" ! -path "*/dist/*" ! -path "*/build/*" | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
             LOCK_HASH=$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)
+            COMBINED_HASH=$(echo "$HASH-$LOCK_HASH" | sha256sum | cut -d' ' -f1)
           else
             HASH=$(find packages/bootstrap packages/socket -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" -o -name "*.json" \) ! -path "*/node_modules/*" ! -path "*/dist/*" ! -path "*/build/*" | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
             LOCK_HASH=$(shasum -a 256 pnpm-lock.yaml | cut -d' ' -f1)
+            COMBINED_HASH=$(echo "$HASH-$LOCK_HASH" | shasum -a 256 | cut -d' ' -f1)
           fi
-          COMBINED_HASH=$(echo "$HASH-$LOCK_HASH" | sha256sum | cut -d' ' -f1 || echo "$HASH-$LOCK_HASH" | shasum -a 256 | cut -d' ' -f1)
           echo "deps-hash=$COMBINED_HASH" >> $GITHUB_OUTPUT
 
       - name: Restore build-deps cache
@@ -267,13 +274,14 @@ jobs:
         id: sea-cache-key
         shell: bash
         run: |
+          # Include bootstrap/socket/cli dependencies in cache key (matches build-sea.yml).
           if [ "${{ matrix.os }}" = "windows" ]; then
             SEA_HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+            COMBINED_HASH=$(echo "$SEA_HASH-${STEPS_DEPS_CACHE_KEY_OUTPUTS_DEPS_HASH}" | sha256sum | cut -d' ' -f1)
           else
             SEA_HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+            COMBINED_HASH=$(echo "$SEA_HASH-${STEPS_DEPS_CACHE_KEY_OUTPUTS_DEPS_HASH}" | shasum -a 256 | cut -d' ' -f1)
           fi
-          # Include bootstrap/socket/cli dependencies in cache key (matches build-sea.yml).
-          COMBINED_HASH=$(echo "$SEA_HASH-${STEPS_DEPS_CACHE_KEY_OUTPUTS_DEPS_HASH}" | sha256sum | cut -d' ' -f1 || echo "$SEA_HASH-${STEPS_DEPS_CACHE_KEY_OUTPUTS_DEPS_HASH}" | shasum -a 256 | cut -d' ' -f1)
           echo "hash=$COMBINED_HASH" >> $GITHUB_OUTPUT
         env:
           STEPS_DEPS_CACHE_KEY_OUTPUTS_DEPS_HASH: ${{ steps.deps-cache-key.outputs.deps-hash }}
@@ -384,15 +392,20 @@ jobs:
         run: |
           VERSION="${INPUTS_VERSION}"
           if [ -z "$VERSION" ]; then
-            # Read base version from socketbin package and extract X.Y.Z using semver
-            PKG_VERSION=$(jq -r '.version' packages/socketbin-cli-linux-x64/package.json)
-            BASE_VERSION=$(node -e "const semver = require('semver'); const v = semver.parse('$PKG_VERSION'); console.log(v ? \`\${v.major}.\${v.minor}.\${v.patch}\` : '0.0.0');")
-            # Auto-generate version in semver format: X.Y.Z-YYYYMMDD.HHmmss
+            # Read base version from socketbin package using Node.js directly (avoids shell injection).
+            BASE_VERSION=$(node -e "const pkg = require('./packages/socketbin-cli-linux-x64/package.json'); const semver = require('semver'); const v = semver.parse(pkg.version); console.log(v ? \`\${v.major}.\${v.minor}.\${v.patch}\` : '0.0.0');")
+            # Auto-generate version in semver format: X.Y.Z-YYYYMMDD.HHmmss.
             VERSION="${BASE_VERSION}-$(date -u +'%Y%m%d.%H%M%S')"
             echo "Generated version: $VERSION"
           else
-            # Remove 'v' prefix if present
+            # Remove 'v' prefix if present.
             VERSION="${VERSION#v}"
+            # Validate user-provided version is valid semver (pass as argv to avoid injection).
+            VALID=$(node -e "const semver = require('semver'); console.log(semver.valid(process.argv[1]) ? 'true' : 'false');" "$VERSION")
+            if [ "$VALID" != "true" ]; then
+              echo "::error::Invalid version format: $VERSION (must be valid semver)"
+              exit 1
+            fi
             echo "Using provided version: $VERSION"
           fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
@@ -528,13 +541,6 @@ jobs:
         if: ${{ inputs.dry-run }}
         run: |
           echo "🔄 Priming npm cache for CI e2e tests..."
-
-          # Prime cache for @coana-tech/cli
-          if [ -n "$INLINED_SOCKET_CLI_COANA_VERSION" ]; then
-            echo "Priming @coana-tech/cli@~$INLINED_SOCKET_CLI_COANA_VERSION..."
-            npx --yes @coana-tech/cli@~$INLINED_SOCKET_CLI_COANA_VERSION --help || true
-          fi
-
           echo "✓ Cache priming complete"
 
       - name: Dry run summary

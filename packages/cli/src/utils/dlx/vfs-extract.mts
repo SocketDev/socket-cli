@@ -425,7 +425,16 @@ export async function extractExternalTools(
             toolPaths[tool] = toolPathWithExt
           }
           if (allValid) {
-            return toolPaths as Record<ExternalTool, string>
+            // TOCTOU mitigation: Final atomic verification pass.
+            const stillValid = EXTERNAL_TOOLS.every(tool => {
+              const p = toolPaths[tool]
+              return p && existsSync(p)
+            })
+            if (stillValid) {
+              return toolPaths as Record<ExternalTool, string>
+            }
+            debug('notice', 'Tool(s) disappeared during validation')
+            allValid = false
           }
           // Extraction incomplete, clean up and retry.
           debug('notice', 'Incomplete extraction detected, cleaning up...')
@@ -440,6 +449,12 @@ export async function extractExternalTools(
 
         // Check if lock process is still alive every 5 iterations.
         if (i % 5 === 4) {
+          // Check if extraction completed first before PID validation.
+          if (existsSync(cacheMarker)) {
+            debug('notice', 'Extraction completed during wait')
+            return await extractExternalTools(depth + 1)
+          }
+          // Then check if lock holder is still alive.
           try {
             const lockPid = await fs.readFile(lockFile, 'utf8')
             const pid = Number.parseInt(lockPid.trim(), 10)
@@ -481,7 +496,14 @@ export async function extractExternalTools(
           toolPaths[tool] = toolPathWithExt
         }
         if (allValid) {
-          return toolPaths as Record<ExternalTool, string>
+          // TOCTOU mitigation: Final atomic verification pass.
+          const stillValid = EXTERNAL_TOOLS.every(tool => {
+            const p = toolPaths[tool]
+            return p && existsSync(p)
+          })
+          if (stillValid) {
+            return toolPaths as Record<ExternalTool, string>
+          }
         }
       }
       throw new Error('Timeout waiting for another process to extract external tools')
@@ -510,7 +532,23 @@ export async function extractExternalTools(
         toolPaths[tool] = toolPathWithExt
       }
       if (allValid) {
-        return toolPaths as Record<ExternalTool, string>
+        // TOCTOU mitigation: Final atomic verification pass.
+        // Re-check all tools still exist right before returning to minimize race window.
+        const stillValid = EXTERNAL_TOOLS.every(tool => {
+          const p = toolPaths[tool]
+          return p && existsSync(p)
+        })
+        if (stillValid) {
+          return toolPaths as Record<ExternalTool, string>
+        }
+        // Tools disappeared during validation - cleanup and retry extraction.
+        debug('notice', 'Tool(s) disappeared during validation, re-extracting...')
+        try {
+          await fs.unlink(cacheMarker)
+        } catch {
+          // Ignore cleanup errors.
+        }
+        return await extractExternalTools(depth + 1)
       }
       // Cache marker exists but tools missing, remove marker and re-extract.
       debug('notice', 'Cache validation failed, re-extracting...')

@@ -218,13 +218,14 @@ export function formatDataRepo(
     formattedData[metric] = {}
   }
 
+  // Aggregate alert counts: sum across time entries (consistent with formatDataOrg).
   for (const entry of data) {
     const topFiveAlertTypes = entry.top_five_alert_types
     for (const type of Object.keys(topFiveAlertTypes)) {
       const count = topFiveAlertTypes[type] ?? 0
-      if (!totalTopAlerts[type]) {
-        totalTopAlerts[type] = count
-      } else if (count > (totalTopAlerts[type] ?? 0)) {
+      if (totalTopAlerts[type]) {
+        totalTopAlerts[type] += count
+      } else {
         totalTopAlerts[type] = count
       }
     }
@@ -297,5 +298,10 @@ export function formatDataOrg(
 }
 
 function formatDate(date: string): string {
-  return `${Months[new Date(date).getMonth()]} ${new Date(date).getDate()}`
+  const dateObj = new Date(date)
+  const month = dateObj.getMonth()
+  if (Number.isNaN(month) || month < 0 || month > 11) {
+    return date.slice(0, 10)
+  }
+  return `${Months[month]} ${dateObj.getDate()}`
 }

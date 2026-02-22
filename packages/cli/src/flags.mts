@@ -84,8 +84,11 @@ function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
 let _maxOldSpaceSizeFlag: number | undefined
 export function getMaxOldSpaceSizeFlag(): number {
   if (_maxOldSpaceSizeFlag === undefined) {
-    _maxOldSpaceSizeFlag = getRawSpaceSizeFlags().maxOldSpaceSize
-    if (!_maxOldSpaceSizeFlag) {
+    const rawFlag = getRawSpaceSizeFlags().maxOldSpaceSize
+    // Use nullish check to allow explicit 0 values.
+    if (rawFlag != null) {
+      _maxOldSpaceSizeFlag = rawFlag
+    } else {
       const match = /(?<=--max-old-space-size=)\d+/.exec(
         NODE_OPTIONS ?? '',
       )?.[0]
@@ -97,11 +100,10 @@ export function getMaxOldSpaceSizeFlag(): number {
         } else {
           _maxOldSpaceSizeFlag = parsed
         }
-      } else {
-        _maxOldSpaceSizeFlag = 0
       }
     }
-    if (!_maxOldSpaceSizeFlag) {
+    // Only apply default if no value was set (null/undefined, not 0).
+    if (_maxOldSpaceSizeFlag == null) {
       // Default value determined by available system memory.
       _maxOldSpaceSizeFlag = Math.floor(
         // Total system memory in MiB.

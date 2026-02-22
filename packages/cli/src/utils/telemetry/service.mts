@@ -130,6 +130,8 @@ function withTimeout<T>(
     }),
     new Promise<T>((_, reject) => {
       timeoutId = setTimeout(() => {
+        // Clear reference before rejecting to prevent stale handle retention.
+        timeoutId = undefined
         reject(new Error(errorMessage))
       }, timeoutMs)
     }),

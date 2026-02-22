@@ -40,7 +40,9 @@ function renderBarChart(data: Record<string, number>): string {
 
   return entries
     .map(({ 0: label, 1: value }) => {
-      const barLength = Math.round((value / maxValue) * maxBarLength)
+      // Handle case where all values are 0 to avoid division by zero.
+      const barLength =
+        maxValue === 0 ? 0 : Math.round((value / maxValue) * maxBarLength)
       const bar = '█'.repeat(barLength)
       return `${label.padEnd(30)} ${bar} ${value}`
     })

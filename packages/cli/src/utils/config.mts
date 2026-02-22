@@ -399,6 +399,14 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
           configFilePath,
           Buffer.from(jsonContent).toString('base64'),
         )
+        // Update mtime AFTER write to prevent race condition.
+        try {
+          const stats = statSync(configFilePath)
+          _cachedConfigMtime = stats.mtimeMs
+          _cachedConfigPath = configFilePath
+        } catch {
+          // Keep mtime undefined if stat fails.
+        }
       }
     })
   }

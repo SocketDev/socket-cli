@@ -260,7 +260,7 @@ export async function injectSeaBlob(
     notify_interval: 86_400_000,
     prompt: false,
     prompt_default: 'n',
-    skip_env: 'SOCKET_SKIP_UPDATE_CHECK',
+    skip_env: 'SOCKET_CLI_SKIP_UPDATE_CHECK',
     tag: 'socket-cli-*',
     url: 'https://api.github.com/repos/SocketDev/socket-cli/releases',
   }

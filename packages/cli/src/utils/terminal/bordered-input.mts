@@ -208,8 +208,9 @@ export class BorderedOutput {
     // Top border with title
     if (this.title) {
       const titleStr = ` ${this.title} `
-      const leftPad = Math.floor((innerWidth - titleStr.length) / 2)
-      const rightPad = innerWidth - titleStr.length - leftPad
+      // Guard against negative values when title exceeds border width.
+      const leftPad = Math.max(0, Math.floor((innerWidth - titleStr.length) / 2))
+      const rightPad = Math.max(0, innerWidth - titleStr.length - leftPad)
 
       stdout.write(
         `${this.color(
@@ -297,8 +298,9 @@ export async function borderedMenu(
 
   // Draw top border with title
   const titleStr = ` ${title} `
-  const leftPad = Math.floor((innerWidth - titleStr.length) / 2)
-  const rightPad = innerWidth - titleStr.length - leftPad
+  // Guard against negative values when title exceeds border width.
+  const leftPad = Math.max(0, Math.floor((innerWidth - titleStr.length) / 2))
+  const rightPad = Math.max(0, innerWidth - titleStr.length - leftPad)
 
   stdout.write(color(border.topLeft + border.horizontal.repeat(leftPad)))
   stdout.write(colors.bold(colors.white(titleStr)))
@@ -339,7 +341,7 @@ export async function borderedMenu(
   )
   rl.close()
 
-  // Validate input is a positive integer (options are numbered 1-N).
+  // Validate input is within valid range (options are numbered 1-N).
   const parsed = Number.parseInt(answer, 10)
-  return Number.isNaN(parsed) || parsed < 1 ? 0 : parsed
+  return Number.isNaN(parsed) || parsed < 1 || parsed > options.length ? 0 : parsed
 }

@@ -109,7 +109,7 @@ jobs:
 
           # Compute hashes with proper error handling.
           PNPM_LOCK_HASH=$(shasum -a 256 pnpm-lock.yaml | cut -d' ' -f1)
-          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) -print0 | sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
           CLI_CONFIG_HASH=$(shasum -a 256 packages/cli/.config/*.mjs packages/cli/scripts/*.mjs | shasum -a 256 | cut -d' ' -f1)
 
           # Validate hashes were computed successfully.
@@ -174,7 +174,7 @@ jobs:
 
           # Compute hashes with proper error handling.
           PNPM_LOCK_HASH=$(shasum -a 256 pnpm-lock.yaml | cut -d' ' -f1)
-          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) -print0 | sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
           CLI_CONFIG_HASH=$(shasum -a 256 packages/cli/.config/*.mjs packages/cli/scripts/*.mjs | shasum -a 256 | cut -d' ' -f1)
 
           # Validate hashes were computed successfully.
@@ -334,8 +334,8 @@ jobs:
           echo ""
           echo "Integration tests will run against all available distributions."
         env:
-          STEPS_SEA_CACHE_OUTPUTS_CACHE_HIT: ${{ steps.sea-cache.outputs.cache-hit }}
-          STEPS_SMOL_CACHE_OUTPUTS_CACHE_HIT: ${{ steps.smol-cache.outputs.cache-hit }}
+          STEPS_SEA_CACHE_OUTPUTS_CACHE_HIT: ${{ steps.sea-cache.outputs.cache-hit || 'false' }}
+          STEPS_SMOL_CACHE_OUTPUTS_CACHE_HIT: ${{ steps.smol-cache.outputs.cache-hit || 'false' }}
 
       - name: Run integration tests (all available distributions)
         working-directory: packages/cli
@@ -376,7 +376,7 @@ jobs:
 
           # Compute hashes with proper error handling.
           PNPM_LOCK_HASH=$(shasum -a 256 pnpm-lock.yaml | cut -d' ' -f1)
-          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) -print0 | sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
           CLI_CONFIG_HASH=$(shasum -a 256 packages/cli/.config/*.mjs packages/cli/scripts/*.mjs | shasum -a 256 | cut -d' ' -f1)
 
           # Validate hashes were computed successfully.

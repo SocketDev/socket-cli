@@ -2,7 +2,7 @@
 
 [![Socket Badge](https://socket.dev/api/badge/npm/package/socket)](https://socket.dev/npm/package/socket)
 [![CI](https://github.com/SocketDev/socket-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/SocketDev/socket-cli/actions/workflows/ci.yml)
-![Coverage](https://img.shields.io/badge/coverage-37.17%25-yellow)
+![Coverage](https://img.shields.io/badge/coverage-41.97%25-yellow)
 
 [![Follow @SocketSecurity](https://img.shields.io/twitter/follow/SocketSecurity?style=social)](https://twitter.com/SocketSecurity)
 
@@ -66,16 +66,15 @@ All aliases support the flags and arguments of the commands they alias.
 
 ### Output flags
 
+These flags are available on data-retrieval commands (scan, package, organization, etc.):
+
 - `--json` - Output as JSON
 - `--markdown` - Output as Markdown
 
 ### Other flags
 
 - `--dry-run` - Run without uploading
-- `--debug` - Show debug output
 - `--help` - Show help
-- `--max-old-space-size` - Set Node.js memory limit
-- `--max-semi-space-size` - Set Node.js heap size
 - `--version` - Show version
 
 ## Configuration files
@@ -95,6 +94,7 @@ Supports version 2 format with `projectIgnorePaths` for excluding files from rep
 - `SOCKET_CLI_NPM_PATH` - Path to npm directory
 - `SOCKET_CLI_ORG_SLUG` - Socket organization slug
 - `SOCKET_CLI_ACCEPT_RISKS` - Accept npm/npx risks
+- `SOCKET_CLI_SKIP_UPDATE_CHECK` - Disable update checking
 - `SOCKET_CLI_VIEW_ALL_RISKS` - Show all npm/npx risks
 
 ## Contributing
