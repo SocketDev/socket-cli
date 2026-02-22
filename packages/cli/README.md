@@ -409,7 +409,6 @@ pnpm dev:npx cowsay hello         # Test npx with Socket Firewall
 
 - **Smart caching**: DLX manifest with TTL (15min default)
 - **Streaming operations**: Memory-efficient large file handling
-- **Lazy loading**: Dynamic imports for optional features
 - **Parallel operations**: Concurrent API calls with queuing
 - **Incremental builds**: Only rebuild changed modules
 
@@ -465,7 +464,7 @@ Features:
 ## Documentation
 
 - [Official docs](https://docs.socket.dev/)
-- [API reference](https://api.socket.dev/docs)
+- [API reference](https://docs.socket.dev/reference)
 - [CLAUDE.md](../../CLAUDE.md) - Development guidelines
 - [CHANGELOG.md](./CHANGELOG.md) - Version history
 
@@ -608,9 +607,6 @@ pnpm add -g socket
 
 # yarn
 yarn global add socket
-
-# Standalone binary
-curl -L https://socket.dev/cli/install.sh | bash
 ```
 
 ## License

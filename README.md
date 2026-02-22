@@ -10,16 +10,17 @@ CLI for [Socket.dev] security analysis
 
 ## Quick Start
 
-**Install via curl:**
-
-```bash
-curl -fsSL https://socket.dev/cli/install.sh | bash
-```
-
-**Or install via package manager:**
+**Install via package manager:**
 
 ```bash
 pnpm install -g socket
+socket --help
+```
+
+**Or install via npm:**
+
+```bash
+npm install -g socket
 socket --help
 ```
 
@@ -33,7 +34,7 @@ socket --help
 - `socket fix` - Fix CVEs in dependencies
 - `socket optimize` - Optimize dependencies with [`@socketregistry`](https://github.com/SocketDev/socket-registry) overrides
 - `socket manifest [command]` - Generate and manage SBOMs for multiple ecosystems
-  - `socket cdxgen [command]` - Alias for `socket manifest cdxgen` - Run [cdxgen](https://cyclonedx.github.io/cdxgen/#/?id=getting-started) for SBOM generation
+  - `socket cdxgen [command]` - Alias for `socket manifest cdxgen` - Run [cdxgen](https://github.com/cyclonedx/cdxgen) for SBOM generation
 
 ## Organization & Repository Management
 
