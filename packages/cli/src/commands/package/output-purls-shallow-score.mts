@@ -226,20 +226,20 @@ export function preProcess(
         // Unreachable; Satisfy TS.
         continue
       }
-      if ((artifact.score?.supplyChain || 100) < row.score.supplyChain) {
-        row.score.supplyChain = artifact.score?.supplyChain || 100
+      if ((artifact.score?.supplyChain ?? 100) < row.score.supplyChain) {
+        row.score.supplyChain = artifact.score?.supplyChain ?? 100
       }
-      if ((artifact.score?.maintenance || 100) < row.score.maintenance) {
-        row.score.maintenance = artifact.score?.maintenance || 100
+      if ((artifact.score?.maintenance ?? 100) < row.score.maintenance) {
+        row.score.maintenance = artifact.score?.maintenance ?? 100
       }
-      if ((artifact.score?.quality || 100) < row.score.quality) {
-        row.score.quality = artifact.score?.quality || 100
+      if ((artifact.score?.quality ?? 100) < row.score.quality) {
+        row.score.quality = artifact.score?.quality ?? 100
       }
-      if ((artifact.score?.vulnerability || 100) < row.score.vulnerability) {
-        row.score.vulnerability = artifact.score?.vulnerability || 100
+      if ((artifact.score?.vulnerability ?? 100) < row.score.vulnerability) {
+        row.score.vulnerability = artifact.score?.vulnerability ?? 100
       }
-      if ((artifact.score?.license || 100) < row.score.license) {
-        row.score.license = artifact.score?.license || 100
+      if ((artifact.score?.license ?? 100) < row.score.license) {
+        row.score.license = artifact.score?.license ?? 100
       }
 
       artifact.alerts?.forEach((alert: any) => {
@@ -265,11 +265,11 @@ export function preProcess(
         name: artifact.name!,
         version: artifact.version || '',
         score: {
-          supplyChain: artifact.score?.supplyChain || 100,
-          maintenance: artifact.score?.maintenance || 100,
-          quality: artifact.score?.quality || 100,
-          vulnerability: artifact.score?.vulnerability || 100,
-          license: artifact.score?.license || 100,
+          supplyChain: artifact.score?.supplyChain ?? 100,
+          maintenance: artifact.score?.maintenance ?? 100,
+          quality: artifact.score?.quality ?? 100,
+          vulnerability: artifact.score?.vulnerability ?? 100,
+          license: artifact.score?.license ?? 100,
         },
         alerts,
       })

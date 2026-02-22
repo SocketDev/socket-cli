@@ -107,7 +107,16 @@ export async function checkForUpdates(
 
   // Include current version and registry in cache key to prevent stale cache.
   // Different registries may have different latest versions.
-  const registrySuffix = registryUrl ? `:${registryUrl}` : ''
+  // Normalize registry URL to prevent duplicate cache entries for equivalent URLs.
+  let normalizedRegistry = ''
+  if (registryUrl) {
+    try {
+      normalizedRegistry = new URL(registryUrl).href
+    } catch {
+      normalizedRegistry = registryUrl
+    }
+  }
+  const registrySuffix = normalizedRegistry ? `:${normalizedRegistry}` : ''
   const cacheKey = `${name}@${version}${registrySuffix}`
 
   try {

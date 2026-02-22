@@ -98,16 +98,19 @@ async function run(
   childProcess.on(
     'exit',
     (code: number | null, signalName: NodeJS.Signals | null) => {
-      // Track subprocess exit and flush telemetry before exiting.
-      // Use .then() to ensure telemetry completes before process.exit().
-      void trackSubprocessExit(NPM, subprocessStartTime, code).then(() => {
+      const exitProcess = () => {
         if (signalName) {
           process.kill(process.pid, signalName)
         } else if (typeof code === 'number') {
           // eslint-disable-next-line n/no-process-exit
           process.exit(code)
         }
-      })
+      }
+      // Track subprocess exit and flush telemetry before exiting.
+      // Use .then()/.catch() to ensure process exits even if telemetry fails.
+      void trackSubprocessExit(NPM, subprocessStartTime, code)
+        .then(exitProcess)
+        .catch(exitProcess)
     },
   )
 

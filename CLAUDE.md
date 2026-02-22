@@ -88,7 +88,7 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 - **Yoga WASM**: Downloaded from socket-btm releases (not built locally)
 - **SEA binaries**: Built by injecting CLI blob into downloaded node-smol binaries
 - **Output location**: `packages/cli/dist/sea/socket-<platform>-<arch>`
-- **Cache location**: Build assets in `packages/build-infra/build/downloaded/`, DLX manifests in `~/.socket/_dlx/`
+- **Cache location**: Build assets in `packages/build-infra/build/downloaded/`, DLX packages and VFS-extracted tools in `~/.socket/_dlx/`
 
 ### Testing Best Practices - CRITICAL: NO -- FOR FILE PATHS
 - **🚨 NEVER USE `--` BEFORE TEST FILE PATHS** - This runs ALL tests, not just your specified files!
@@ -216,18 +216,18 @@ Socket CLI has different update mechanisms depending on installation method:
 
 #### SEA Binaries (Standalone Executables)
 - **Update checking**: Handled by node-smol C stub via embedded `--update-config`
-- **Configuration**: Embedded during build in `packages/cli/scripts/sea-build-utils.mjs`
+- **Configuration**: Embedded during build in `packages/cli/scripts/sea-build-utils/builder.mjs`
 - **GitHub releases**: Checks `https://api.github.com/repos/SocketDev/socket-cli/releases`
 - **Tag pattern**: Matches `socket-cli-*` (e.g., `socket-cli-20260127-abc1234`)
 - **Notification**: Shown on CLI exit (non-blocking)
 - **Update command**: `socket self-update` (handled by node-smol, not TypeScript CLI)
-- **Environment variable**: `SOCKET_SKIP_UPDATE_CHECK=1` to disable
+- **Environment variable**: `SOCKET_CLI_SKIP_UPDATE_CHECK=1` to disable
 
 #### npm/pnpm/yarn Installations
 - **Update checking**: TypeScript-based in `src/utils/update/manager.mts`
-- **Registry**: Checks npm registry for `@socketsecurity/cli` package
+- **Registry**: Checks npm registry for `socket` package
 - **Notification**: Shown on CLI exit (non-blocking)
-- **Update command**: Use package manager (e.g., `npm update -g socket` or `npm update -g @socketsecurity/cli`)
+- **Update command**: Use package manager (e.g., `npm update -g socket`)
 - **Environment variable**: `SOCKET_CLI_SKIP_UPDATE_CHECK=1` to disable
 
 #### Key Implementation Details
@@ -237,10 +237,10 @@ Socket CLI has different update mechanisms depending on installation method:
 - Update checks respect CI/TTY detection and rate limiting
 
 ### Build System
-- Uses Rollup for building distribution files
+- Uses esbuild for building distribution files
 - TypeScript compilation with tsgo
-- Multiple environment configs (.env.local, .env.test, .env.dist)
-- Dual linting with oxlint and eslint
+- Environment config (.env.test for testing)
+- Dual linting with Biome and ESLint
 - Formatting with Biome
 
 ### Testing
@@ -258,11 +258,7 @@ Socket CLI has different update mechanisms depending on installation method:
 ## Environment and Configuration
 
 ### Environment Files
-- **`.env.local`** - Local development environment
 - **`.env.test`** - Test environment configuration
-- **`.env.testu`** - Test update environment
-- **`.env.dist`** - Distribution build environment
-- **`.env.external`** - External dependencies environment
 
 ### Configuration Files
 - **`biome.json`** - Biome formatter and linter configuration
@@ -309,7 +305,7 @@ Socket CLI integrates with various third-party tools and services:
 - **Variables**: Use camelCase for variables and functions
 
 ### 🏗️ Code Structure (CRITICAL PATTERNS)
-- **Command pattern**: 🚨 MANDATORY - Each command MUST have `cmd-*.mts`, `handle-*.mts`, and `output-*.mts` files
+- **Command pattern**: Complex commands use modular pattern (`cmd-*.mts`, `handle-*.mts`, `output-*.mts`); simple commands use consolidated single `cmd-*.mts` file
 - **Type definitions**: 🚨 ALWAYS use `import type` for better tree-shaking
 - **Flags**: 🚨 MUST use `MeowFlags` type with descriptive help text
 - **Error handling**: 🚨 REQUIRED - Use custom error types `AuthError` and `InputError`

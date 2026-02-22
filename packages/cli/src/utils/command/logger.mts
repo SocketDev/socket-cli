@@ -163,3 +163,20 @@ export function getLogger(commandName: string): CommandLogger {
   }
   return instances.get(commandName)!
 }
+
+/**
+ * Clear a specific logger from the cache.
+ *
+ * @param commandName - The command name to clear
+ */
+export function clearLogger(commandName: string): void {
+  instances.delete(commandName)
+}
+
+/**
+ * Clear all loggers from the cache.
+ * Useful for cleanup in long-running processes.
+ */
+export function clearAllLoggers(): void {
+  instances.clear()
+}

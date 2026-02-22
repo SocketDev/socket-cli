@@ -21,11 +21,10 @@ export function getPythonVersion(): string {
  */
 export function getPythonMajorMinor(): string {
   const version = getPythonVersion()
-  const parts = version.split('.')
+  const parts = version?.split('.') ?? []
   if (parts.length < 2 || !parts[0] || !parts[1]) {
-    throw new Error(
-      `Invalid Python version format: ${version}. Expected "major.minor.patch"`,
-    )
+    // Return safe default instead of crashing CLI on startup.
+    return '3.11'
   }
   return `${parts[0]}.${parts[1]}`
 }

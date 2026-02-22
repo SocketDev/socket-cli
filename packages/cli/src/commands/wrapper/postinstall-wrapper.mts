@@ -79,10 +79,10 @@ async function setupSocketWrapper(query: string): Promise<void> {
     const zshRcPath = getZshRcPath()
     try {
       if (existsSync(bashRcPath)) {
-        addSocketWrapper(bashRcPath)
+        await addSocketWrapper(bashRcPath)
       }
       if (existsSync(zshRcPath)) {
-        addSocketWrapper(zshRcPath)
+        await addSocketWrapper(zshRcPath)
       }
     } catch (e) {
       throw new Error(

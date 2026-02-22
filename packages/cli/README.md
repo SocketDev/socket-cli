@@ -1,7 +1,7 @@
 # Socket CLI
 
-[![Socket Badge](https://socket.dev/api/badge/npm/package/@socketsecurity/cli)](https://socket.dev/npm/package/@socketsecurity/cli)
-[![npm version](https://img.shields.io/npm/v/@socketsecurity/cli.svg)](https://www.npmjs.com/package/@socketsecurity/cli)
+[![Socket Badge](https://socket.dev/api/badge/npm/package/socket)](https://socket.dev/npm/package/socket)
+[![npm version](https://img.shields.io/npm/v/socket.svg)](https://www.npmjs.com/package/socket)
 [![CI](https://github.com/SocketDev/socket-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/SocketDev/socket-cli/actions/workflows/ci.yml)
 
 Command-line interface for Socket.dev supply chain security analysis. Provides security scanning, package manager wrapping, dependency analysis, and CI/CD integration across 11 language ecosystems.
@@ -82,7 +82,9 @@ Command-line interface for Socket.dev supply chain security analysis. Provides s
 
 ## Command Pattern Architecture
 
-Every command follows a consistent 3-layer pattern:
+Commands use two patterns based on complexity:
+
+**Complex commands** (with subcommands or >200 lines) use a 3-layer pattern:
 
 ```
 cmd-{name}.mts       Command definition, flags, CLI interface
@@ -96,11 +98,15 @@ cmd-{name}.mts       Command definition, flags, CLI interface
      └─> output-{name}.mts    Output formatting (JSON/Markdown/Text)
 
 Example: scan create command
-├── cmd-scan-create.mts        74 lines  (CLI flags, help text)
-├── handle-create-new-scan.mts 300+ lines (main logic)
-├── fetch-create-org-full-scan.mts      (Socket API calls)
-└── output-create-new-scan.mts          (format output)
+├── cmd-scan-create.mts           (CLI flags, help text)
+├── handle-create-new-scan.mts    (main logic)
+├── fetch-create-org-full-scan.mts (Socket API calls)
+└── output-create-new-scan.mts    (format output)
 ```
+
+**Simple commands** (single purpose, <200 lines) use a consolidated single-file pattern:
+- Examples: `whoami`, `logout`, `login`
+- All logic in one `cmd-*.mts` file
 
 ### Command Organization
 
@@ -112,11 +118,15 @@ src/commands/
 │   ├── cmd-scan-reach.mts   Reachability analysis
 │   └── ... (8 more)
 ├── organization/      Org management (5 subcommands)
-├── npm/              npm wrapper with security
-├── npx/              npx wrapper with security
+├── npm/              npm wrapper with Socket Firewall
+├── npx/              npx wrapper with Socket Firewall
+├── raw-npm/          Raw npm passthrough (no firewall)
+├── raw-npx/          Raw npx passthrough (no firewall)
 ├── pnpm/             pnpm wrapper
 ├── yarn/             yarn wrapper
 ├── pip/              Python pip wrapper
+├── pycli/            Python CLI integration
+├── sfw/              Socket Firewall management
 ├── cargo/            Rust cargo wrapper
 ├── gem/              Ruby gem wrapper
 ├── go/               Go module wrapper
@@ -230,9 +240,9 @@ Dual update system based on installation method:
 │  npm/pnpm/yarn Installation                                 │
 │  ┌────────────────────────────────────────────────────┐    │
 │  │ TypeScript manager.mts checks npm registry         │    │
-│  │ Package: @socketsecurity/cli                       │    │
+│  │ Package: socket                                    │    │
 │  │ Notification shown on CLI exit (non-blocking)      │    │
-│  │ Update: npm update -g @socketsecurity/cli          │    │
+│  │ Update: npm update -g socket                       │    │
 │  └────────────────────────────────────────────────────┘    │
 │                                                             │
 │  Environment Variables                                      │
@@ -349,11 +359,16 @@ Each ecosystem module provides:
 ## Testing
 
 ```bash
+# From packages/cli/ directory:
 pnpm test                         # Full test suite
 pnpm test:unit                    # Unit tests only
 pnpm test:unit file.test.mts      # Single test file
 pnpm test:unit --update           # Update snapshots
 pnpm test:unit --coverage         # Coverage report
+
+# Or from monorepo root:
+pnpm --filter @socketsecurity/cli run test:unit
+pnpm --filter @socketsecurity/cli run test:unit file.test.mts
 ```
 
 Test structure:
@@ -382,7 +397,7 @@ pnpm dev:npx cowsay hello         # Test npx with Socket Firewall
 ## Key Statistics
 
 - **Total Lines**: 57,000+ lines of TypeScript
-- **Commands**: 41 root commands, 75 command files
+- **Commands**: 41 root commands, 235 command files
 - **Subcommands**: 160+ total (including nested)
 - **Utility Modules**: 28 categories, 100+ files
 - **Test Coverage**: 100+ test files
@@ -437,7 +452,7 @@ Built-in security scanning and enforcement:
 # GitHub Actions example
 - name: Socket Security
   run: |
-    npm install -g @socketsecurity/cli
+    npm install -g socket
     socket ci
 ```
 
@@ -451,7 +466,7 @@ Features:
 
 - [Official docs](https://docs.socket.dev/)
 - [API reference](https://api.socket.dev/docs)
-- [CLAUDE.md](./CLAUDE.md) - Development guidelines
+- [CLAUDE.md](../../CLAUDE.md) - Development guidelines
 - [CHANGELOG.md](./CHANGELOG.md) - Version history
 
 ## Module Reference
@@ -460,8 +475,11 @@ Features:
 
 - `scan/` - Security scanning with 11 subcommands (create, report, reach, diff, view, list, delete, metadata, setup, github)
 - `organization/` - Organization management (dependencies, quota, policies)
-- `npm/npx/pnpm/yarn/` - JavaScript package manager wrappers
+- `npm/npx/pnpm/yarn/` - JavaScript package manager wrappers with Socket Firewall
+- `raw-npm/raw-npx/` - Raw npm/npx passthrough without Socket Firewall
 - `pip/uv/` - Python package manager wrappers
+- `pycli/` - Python CLI integration for security analysis
+- `sfw/` - Socket Firewall management
 - `cargo/` - Rust package manager wrapper
 - `gem/bundler/` - Ruby package manager wrappers
 - `go/` - Go module wrapper
@@ -583,13 +601,13 @@ Features:
 
 ```bash
 # npm
-npm install -g @socketsecurity/cli
+npm install -g socket
 
 # pnpm
-pnpm add -g @socketsecurity/cli
+pnpm add -g socket
 
 # yarn
-yarn global add @socketsecurity/cli
+yarn global add socket
 
 # Standalone binary
 curl -L https://socket.dev/cli/install.sh | bash
@@ -601,7 +619,7 @@ MIT - See [LICENSE](./LICENSE) for details.
 
 ## Contributing
 
-See [CLAUDE.md](./CLAUDE.md) for development guidelines and code standards.
+See [CLAUDE.md](../../CLAUDE.md) for development guidelines and code standards.
 
 ## Support
 

@@ -63,9 +63,12 @@ export async function outputScanView(
   }
 
   const display = result.data.map(art => {
-    const author = Array.isArray(art.author)
-      ? `${art.author[0]}${art.author.length > 1 ? ' et.al.' : ''}`
-      : art.author
+    const author =
+      Array.isArray(art.author) && art.author.length > 0
+        ? `${art.author[0]}${art.author.length > 1 ? ' et.al.' : ''}`
+        : Array.isArray(art.author)
+          ? ''
+          : art.author
     return {
       type: art.type,
       name: art.name,

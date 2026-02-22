@@ -94,6 +94,13 @@ export class MultiProgress {
   }
 
   /**
+   * Remove a task from tracking to prevent unbounded Map growth.
+   */
+  removeTask(id: string): void {
+    this.tasks.delete(id)
+  }
+
+  /**
    * Start rendering
    */
   private start(): void {
@@ -101,7 +108,14 @@ export class MultiProgress {
       this.stream.write('\x1B[?25l') // Hide cursor
     }
 
-    this.renderInterval = setInterval(() => this.render(), 100)
+    this.renderInterval = setInterval(() => {
+      try {
+        this.render()
+      } catch {
+        // Stop interval on render error to prevent error spam.
+        this.stop()
+      }
+    }, 100)
   }
 
   /**
@@ -153,8 +167,11 @@ export class MultiProgress {
    * Render a single task
    */
   private renderTask(task: TaskProgress): string {
+    // Clamp percentage to 0-100 to prevent negative repeat counts.
     const percentage =
-      task.total > 0 ? Math.floor((task.current / task.total) * 100) : 0
+      task.total > 0
+        ? Math.min(100, Math.floor((task.current / task.total) * 100))
+        : 0
     const barLength = 30
     const filledLength = Math.floor((percentage / 100) * barLength)
 
@@ -201,10 +218,15 @@ export class Spinner {
 
   start(): void {
     this.interval = setInterval(() => {
-      this.stream.write(
-        `\r${colors.cyan(this.frames[this.current]!)} ${this.message}`,
-      )
-      this.current = (this.current + 1) % this.frames.length
+      try {
+        this.stream.write(
+          `\r${colors.cyan(this.frames[this.current]!)} ${this.message}`,
+        )
+        this.current = (this.current + 1) % this.frames.length
+      } catch {
+        // Stop interval on write error to prevent error spam.
+        this.stop()
+      }
     }, 80)
   }
 

@@ -73,8 +73,7 @@ jobs:
         with:
           path: packages/yoga-layout/build/wasm
           key: yoga-wasm-${{ hashFiles('packages/yoga-layout/package.json', 'packages/yoga-layout/yoga/**') }}
-          restore-keys: |
-            yoga-wasm-
+          # Note: restore-keys removed to prevent cache poisoning attacks.
       - name: Verify yoga-layout WASM cache
         run: |
           if [ ! -f packages/yoga-layout/build/wasm/yoga.wasm ]; then
@@ -128,7 +127,9 @@ jobs:
           echo "✓ Smoke test passed"
 
           # Cleanup.
-          rm -rf "$TEMP_DIR"
+          if [ -n "$TEMP_DIR" ] && [ -d "$TEMP_DIR" ]; then
+            rm -rf "$TEMP_DIR"
+          fi
       - name: Publish socket package
         if: ${{ inputs.publish-socket != false }}
         working-directory: packages/socket

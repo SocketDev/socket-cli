@@ -24,7 +24,7 @@
  * - Support for GitHub Actions environment variables
  */
 
-import { existsSync } from 'node:fs'
+import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import {
@@ -81,10 +81,12 @@ export async function writeCache(
 ): Promise<void> {
   const githubCachePath = getGithubCachePath()
   const cacheJsonPath = path.join(githubCachePath, `${key}.json`)
-  if (!existsSync(githubCachePath)) {
-    await safeMkdir(githubCachePath, { recursive: true })
-  }
-  await writeJson(cacheJsonPath, data as JsonContent)
+  // Create directory with recursive flag that doesn't fail if exists.
+  await safeMkdir(githubCachePath, { recursive: true })
+  // Use atomic write pattern to prevent multi-process race conditions.
+  const tmpPath = `${cacheJsonPath}.tmp.${process.pid}`
+  await writeJson(tmpPath, data as JsonContent)
+  await fs.rename(tmpPath, cacheJsonPath)
 }
 
 // In-memory promise cache to prevent concurrent fetches for the same key.

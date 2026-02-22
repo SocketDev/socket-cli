@@ -69,16 +69,27 @@ export async function renderFramedHeader(
   // Render frames in a loop.
   const interval = setInterval(renderFrame, frameDelay)
 
-  // Handle cleanup on interrupt.
-  process.once('SIGINT', () => {
+  const cleanup = () => {
     clearInterval(interval)
     process.stdout.write('\x1B[?25h')
+  }
+
+  // Handle cleanup on interrupt.
+  process.once('SIGINT', () => {
+    cleanup()
     // eslint-disable-next-line n/no-process-exit
     process.exit(0)
   })
 
-  // Keep process alive until interrupted.
+  // Keep process alive until interrupted or process exits.
   await new Promise<void>(resolve => {
-    process.once('SIGTERM', resolve)
+    process.once('SIGTERM', () => {
+      cleanup()
+      resolve()
+    })
+    process.once('exit', () => {
+      cleanup()
+      resolve()
+    })
   })
 }

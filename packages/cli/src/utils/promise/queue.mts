@@ -72,23 +72,33 @@ export class PromiseQueue {
       .finally(() => {
         this.running--
         this.runNext()
+        this.notifyIdle()
       })
   }
 
+  private idleResolvers: Array<() => void> = []
+
   /**
-   * Wait for all queued and running tasks to complete
+   * Wait for all queued and running tasks to complete.
    */
   async onIdle(): Promise<void> {
+    // Already idle - resolve immediately.
+    if (this.running === 0 && this.queue.length === 0) {
+      return
+    }
+    // Wait for idle state via resolver queue (no polling).
     return new Promise<void>(resolve => {
-      const check = () => {
-        if (this.running === 0 && this.queue.length === 0) {
-          resolve()
-        } else {
-          setImmediate(check)
-        }
-      }
-      check()
+      this.idleResolvers.push(resolve)
     })
+  }
+
+  private notifyIdle(): void {
+    if (this.running === 0 && this.queue.length === 0) {
+      for (const resolve of this.idleResolvers) {
+        resolve()
+      }
+      this.idleResolvers = []
+    }
   }
 
   /**

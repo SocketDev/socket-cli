@@ -20,28 +20,24 @@ export async function fetchScan(
 
   const jsonsString = result.data
 
-  // This is nd-json; each line is a json object
+  // This is nd-json; each line is a json object.
   const lines = jsonsString.split('\n').filter(Boolean)
-  let ok = true
-  const data = lines.map(line => {
+  const data: SocketArtifact[] = []
+
+  for (const line of lines) {
     try {
-      return JSON.parse(line)
+      data.push(JSON.parse(line))
     } catch (e) {
-      ok = false
       debug('Failed to parse scan result line as JSON')
       debugDir({ error: e, line })
-      return undefined
+      return {
+        ok: false,
+        message: 'Invalid Socket API response',
+        cause:
+          'The Socket API responded with at least one line that was not valid JSON. Please report if this persists.',
+      }
     }
-  }) as unknown as SocketArtifact[]
-
-  if (ok) {
-    return { ok: true, data }
   }
 
-  return {
-    ok: false,
-    message: 'Invalid Socket API response',
-    cause:
-      'The Socket API responded with at least one line that was not valid JSON. Please report if this persists.',
-  }
+  return { ok: true, data }
 }

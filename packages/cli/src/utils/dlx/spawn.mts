@@ -872,22 +872,63 @@ function convertCaretToPipRange(caretRange: string): string {
 
 /**
  * Install socketsecurity package into the Python environment.
+ * Uses lock file to prevent race conditions when multiple processes
+ * try to install simultaneously.
  */
 export async function ensureSocketPyCli(pythonBin: string): Promise<void> {
   if (await isSocketPyCliInstalled(pythonBin)) {
     return
   }
 
-  const pyCliVersion = getPyCliVersion()
-  const versionSpec = convertCaretToPipRange(pyCliVersion)
-  const packageSpec = versionSpec
-    ? `socketsecurity${versionSpec}`
-    : 'socketsecurity'
+  // Create lock file to prevent concurrent installation.
+  const pythonDir = path.dirname(pythonBin)
+  const lockFile = path.join(pythonDir, '.installing-socketcli')
 
-  await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', packageSpec], {
-    shell: WIN32,
-    stdio: 'inherit',
-  })
+  try {
+    await fs.writeFile(lockFile, process.pid.toString(), { flag: 'wx' })
+  } catch (e: unknown) {
+    const error = e as NodeJS.ErrnoException
+    if (error.code === 'EEXIST') {
+      // Another process is installing, wait for completion.
+      for (let i = 0; i < 30; i++) {
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise(resolve => {
+          setTimeout(resolve, 1_000)
+        })
+        // eslint-disable-next-line no-await-in-loop
+        if (await isSocketPyCliInstalled(pythonBin)) {
+          return
+        }
+        // Check if lock holder is still alive.
+        if (!existsSync(lockFile)) {
+          break
+        }
+      }
+      // Retry if lock disappeared or timeout.
+      return ensureSocketPyCli(pythonBin)
+    }
+    throw e
+  }
+
+  try {
+    const pyCliVersion = getPyCliVersion()
+    const versionSpec = convertCaretToPipRange(pyCliVersion)
+    const packageSpec = versionSpec
+      ? `socketsecurity${versionSpec}`
+      : 'socketsecurity'
+
+    await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', packageSpec], {
+      shell: WIN32,
+      stdio: 'inherit',
+    })
+  } finally {
+    // Clean up lock file.
+    try {
+      await fs.unlink(lockFile)
+    } catch {
+      // Ignore cleanup errors.
+    }
+  }
 }
 
 export type SocketPyCliDlxOptions = DlxOptions

@@ -237,7 +237,7 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
     return alertsByPurl
   }
   const purl = `pkg:${ecosystem}/${name}@${version}`
-  const major = getMajor(version)!
+  const major = getMajor(version)
   if (consolidate) {
     type HighestVersionByMajor = Map<
       number,
@@ -258,14 +258,14 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
         const patchedMajor = firstPatchedVersionIdentifier
           ? getMajor(firstPatchedVersionIdentifier)
           : null
-        if (typeof patchedMajor === 'number') {
+        if (typeof patchedMajor === 'number' && firstPatchedVersionIdentifier) {
           // Consolidate to the highest "first patched version" by each major
           // version number.
           const highest = highestForCve.get(patchedMajor)?.version ?? '0.0.0'
-          if (semver.gt(firstPatchedVersionIdentifier!, highest)) {
+          if (semver.gt(firstPatchedVersionIdentifier, highest)) {
             highestForCve.set(patchedMajor, {
               alert: sockPkgAlert,
-              version: firstPatchedVersionIdentifier!,
+              version: firstPatchedVersionIdentifier,
             })
           }
         } else {
@@ -274,9 +274,14 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
       } else if (fixType === ALERT_FIX_TYPE.upgrade) {
         // For Socket Optimize upgrades we assume the highest version available
         // is compatible. This may change in the future.
-        const highest = highestForUpgrade.get(major)?.version ?? '0.0.0'
-        if (semver.gt(version, highest)) {
-          highestForUpgrade.set(major, { alert: sockPkgAlert, version })
+        if (typeof major === 'number') {
+          const highest = highestForUpgrade.get(major)?.version ?? '0.0.0'
+          if (semver.gt(version, highest)) {
+            highestForUpgrade.set(major, { alert: sockPkgAlert, version })
+          }
+        } else {
+          // Can't parse major version, treat as unfixable.
+          unfixableAlerts.push(sockPkgAlert)
         }
       } else {
         unfixableAlerts.push(sockPkgAlert)
@@ -514,10 +519,14 @@ export function logAlertsMap(
     if (viewableAlerts.length < MIN_ABOVE_THE_FOLD_ALERT_COUNT) {
       const neededCount = MIN_ABOVE_THE_FOLD_ALERT_COUNT - viewableAlerts.length
       let removedHiddenAlerts: SocketPackageAlert[] | undefined
-      if (hiddenAlerts.length - neededCount > 0) {
+      if (hiddenAlerts.length >= neededCount) {
         removedHiddenAlerts = hiddenAlerts.splice(0, neededCount)
+        // Delete from map if we emptied the array.
+        if (!hiddenAlerts.length) {
+          hiddenAlertsByPurl.delete(purl)
+        }
       } else {
-        removedHiddenAlerts = hiddenAlerts
+        removedHiddenAlerts = [...hiddenAlerts]
         hiddenAlertsByPurl.delete(purl)
       }
       viewableAlertsByPurl.set(purl, [

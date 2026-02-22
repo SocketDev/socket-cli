@@ -75,8 +75,9 @@ export function getSocketFixPullRequestBody(
   ghsaDetails?: Map<string, GhsaDetails> | undefined,
 ): string {
   const vulnCount = ghsaIds.length
-  if (vulnCount === 1) {
-    const ghsaId = ghsaIds[0]!
+  const firstGhsa = ghsaIds[0]
+  if (vulnCount === 1 && firstGhsa) {
+    const ghsaId = firstGhsa
     const details = ghsaDetails?.get(ghsaId)
     const body = `[Socket](${SOCKET_WEBSITE_URL}) fix for [${ghsaId}](${GITHUB_ADVISORIES_URL}/${ghsaId}).`
     if (!details) {
@@ -112,7 +113,8 @@ export function getSocketFixPullRequestBody(
 
 export function getSocketFixPullRequestTitle(ghsaIds: string[]): string {
   const vulnCount = ghsaIds.length
-  return vulnCount === 1
-    ? `Fix for ${ghsaIds[0]}`
+  const firstGhsa = ghsaIds[0]
+  return vulnCount === 1 && firstGhsa
+    ? `Fix for ${firstGhsa}`
     : `Fixes for ${vulnCount} GHSAs`
 }
