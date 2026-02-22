@@ -127,31 +127,34 @@ export async function cacheFetch<T>(
     return inflight as Promise<T>
   }
 
-  let data = (await readCache(key, ttlMs)) as T
-  if (!data) {
-    // Re-check inflight after async readCache to prevent race.
-    const inflightAfterRead = inflightRequests.get(key)
-    if (inflightAfterRead) {
-      return inflightAfterRead as Promise<T>
-    }
-
-    const fetchPromise = (async () => {
-      try {
-        const result = await fetcher()
-        await writeCache(key, result as JsonContent)
-        return result
-      } finally {
-        inflightRequests.delete(key)
+  try {
+    let data = (await readCache(key, ttlMs)) as T
+    if (!data) {
+      // Re-check inflight after async readCache to prevent race.
+      const inflightAfterRead = inflightRequests.get(key)
+      if (inflightAfterRead) {
+        return inflightAfterRead as Promise<T>
       }
-    })()
 
-    inflightRequests.set(key, fetchPromise)
-    data = await fetchPromise
-  } else {
-    // Clear from inflight map on cache hit to prevent accumulation.
+      const fetchPromise = (async () => {
+        try {
+          const result = await fetcher()
+          await writeCache(key, result as JsonContent)
+          return result
+        } finally {
+          inflightRequests.delete(key)
+        }
+      })()
+
+      inflightRequests.set(key, fetchPromise)
+      data = await fetchPromise
+    }
+    return data
+  } catch (e) {
+    // Cleanup inflight entry on error (fetch promise handles its own cleanup).
     inflightRequests.delete(key)
+    throw e
   }
-  return data
 }
 
 export type GhsaDetails = {
