@@ -1,6 +1,13 @@
 # Optional checks - can be bypassed with --no-verify for fast local commits.
 # Mandatory security checks run in pre-push hook.
 
+# Check prerequisites.
+if ! command -v pnpm >/dev/null 2>&1; then
+  printf "Error: pnpm not found in PATH\n" >&2
+  printf "Install from: https://pnpm.io/installation\n" >&2
+  exit 1
+fi
+
 if [ -z "${DISABLE_PRECOMMIT_LINT}" ]; then
   pnpm lint --staged
 else
@@ -8,6 +15,11 @@ else
 fi
 
 if [ -z "${DISABLE_PRECOMMIT_TEST}" ]; then
+  if ! command -v dotenvx >/dev/null 2>&1; then
+    printf "Error: dotenvx not found in PATH\n" >&2
+    printf "Install with: pnpm i\n" >&2
+    exit 1
+  fi
   dotenvx -q run -f .env.precommit -- pnpm test --staged
 else
   printf "Skipping testing due to DISABLE_PRECOMMIT_TEST env var\n"
