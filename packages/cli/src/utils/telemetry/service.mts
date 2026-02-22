@@ -108,6 +108,12 @@ const telemetryServiceInstance: TelemetryServiceInstance = {
 }
 
 /**
+ * Inflight initialization tracker.
+ * Prevents duplicate initialization when multiple concurrent calls occur.
+ */
+const inflightInit = new Map<string, Promise<TelemetryService>>()
+
+/**
  * Wrap a promise with a timeout.
  * Rejects if promise doesn't resolve within timeout.
  *
@@ -197,40 +203,58 @@ export class TelemetryService {
       return telemetryServiceInstance.current
     }
 
-    const instance = new TelemetryService(orgSlug)
-
-    try {
-      const sdkResult = await setupSdk()
-      if (!sdkResult.ok) {
-        debug('Failed to setup SDK for telemetry, using default config')
-        instance.config = DEFAULT_TELEMETRY_CONFIG
-        telemetryServiceInstance.current = instance
-        return instance
-      }
-
-      const sdk = sdkResult.data
-      const configResult = await sdk.getOrgTelemetryConfig(orgSlug)
-
-      if (configResult.success) {
-        instance.config = configResult.data
-        debug(
-          `Telemetry configuration fetched successfully: enabled=${instance.config.telemetry.enabled}`,
-        )
-        debugDirWrapper({ config: instance.config })
-
-        // Periodic flush will start automatically when first event is tracked.
-      } else {
-        debug(`Failed to fetch telemetry config: ${configResult.error}`)
-        instance.config = DEFAULT_TELEMETRY_CONFIG
-      }
-    } catch (e) {
-      debug(`Error initializing telemetry: ${e}`)
-      instance.config = DEFAULT_TELEMETRY_CONFIG
+    // Check if initialization is already in progress.
+    const inflight = inflightInit.get(orgSlug)
+    if (inflight) {
+      debug(`Telemetry initialization already in progress for org: ${orgSlug}, waiting...`)
+      return inflight
     }
 
-    // Only set singleton instance after full initialization.
-    telemetryServiceInstance.current = instance
-    return instance
+    // Start initialization and track it.
+    const initPromise = (async () => {
+      try {
+        const instance = new TelemetryService(orgSlug)
+
+        try {
+          const sdkResult = await setupSdk()
+          if (!sdkResult.ok) {
+            debug('Failed to setup SDK for telemetry, using default config')
+            instance.config = DEFAULT_TELEMETRY_CONFIG
+            telemetryServiceInstance.current = instance
+            return instance
+          }
+
+          const sdk = sdkResult.data
+          const configResult = await sdk.getOrgTelemetryConfig(orgSlug)
+
+          if (configResult.success) {
+            instance.config = configResult.data
+            debug(
+              `Telemetry configuration fetched successfully: enabled=${instance.config.telemetry.enabled}`,
+            )
+            debugDirWrapper({ config: instance.config })
+
+            // Periodic flush will start automatically when first event is tracked.
+          } else {
+            debug(`Failed to fetch telemetry config: ${configResult.error}`)
+            instance.config = DEFAULT_TELEMETRY_CONFIG
+          }
+        } catch (e) {
+          debug(`Error initializing telemetry: ${e}`)
+          instance.config = DEFAULT_TELEMETRY_CONFIG
+        }
+
+        // Only set singleton instance after full initialization.
+        telemetryServiceInstance.current = instance
+        return instance
+      } finally {
+        // Clean up inflight tracking.
+        inflightInit.delete(orgSlug)
+      }
+    })()
+
+    inflightInit.set(orgSlug, initPromise)
+    return initPromise
   }
 
   /**

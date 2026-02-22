@@ -222,6 +222,35 @@ export async function extractBasicsTools(
           debug('notice', 'Basics tools extracted by another process')
           return extractDir
         }
+
+        // Check if lock holder is still alive every 5 iterations.
+        if (i % 5 === 4) {
+          try {
+            // eslint-disable-next-line no-await-in-loop
+            const lockPid = await fs.readFile(lockFile, 'utf8')
+            const pid = Number.parseInt(lockPid.trim(), 10)
+            if (!Number.isNaN(pid) && pid > 0) {
+              try {
+                // Signal 0 checks process existence.
+                process.kill(pid, 0)
+              } catch (pidError) {
+                const pidErr = pidError as NodeJS.ErrnoException
+                // EPERM means process exists but no permission (treat as alive).
+                // ESRCH means process doesn't exist (dead).
+                if (pidErr.code !== 'EPERM') {
+                  // Lock holder died, clean up and retry.
+                  debug('warn', 'Stale lock detected, removing and retrying...')
+                  // eslint-disable-next-line no-await-in-loop
+                  await fs.unlink(lockFile).catch(() => {})
+                  return extractBasicsTools(cacheDir)
+                }
+              }
+            }
+          } catch {
+            // Lock file gone, retry extraction.
+            return extractBasicsTools(cacheDir)
+          }
+        }
       }
       throw new Error(
         'Timeout waiting for another process to extract basics tools',

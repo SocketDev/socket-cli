@@ -793,7 +793,39 @@ export async function ensurePythonDlx(): Promise<string> {
     } catch (e: unknown) {
       const error = e as NodeJS.ErrnoException
       if (error.code === 'EEXIST') {
-        // Another process is downloading, wait for completion.
+        // Check if lock is stale by reading PID.
+        let isStale = false
+        try {
+          const lockPid = await fs.readFile(lockFile, 'utf8')
+          const pid = Number.parseInt(lockPid.trim(), 10)
+          if (!Number.isNaN(pid) && pid > 0) {
+            try {
+              // Signal 0 checks process existence without sending actual signal.
+              process.kill(pid, 0)
+              // Process exists, lock is valid.
+            } catch (pidError) {
+              const pidErr = pidError as NodeJS.ErrnoException
+              // EPERM means process exists but no permission (treat as alive).
+              // ESRCH means process doesn't exist (dead).
+              if (pidErr.code !== 'EPERM') {
+                isStale = true
+              }
+            }
+          } else {
+            isStale = true
+          }
+        } catch {
+          // Could not read lock file, may have been removed.
+          isStale = true
+        }
+
+        if (isStale) {
+          // Stale lock detected, remove and retry.
+          await fs.unlink(lockFile).catch(() => {})
+          return ensurePythonDlx()
+        }
+
+        // Lock is valid, wait for download to complete.
         for (let i = 0; i < 60; i++) {
           // eslint-disable-next-line no-await-in-loop
           await new Promise(resolve => {
@@ -889,7 +921,39 @@ export async function ensureSocketPyCli(pythonBin: string): Promise<void> {
   } catch (e: unknown) {
     const error = e as NodeJS.ErrnoException
     if (error.code === 'EEXIST') {
-      // Another process is installing, wait for completion.
+      // Check if lock is stale by reading PID.
+      let isStale = false
+      try {
+        const lockPid = await fs.readFile(lockFile, 'utf8')
+        const pid = Number.parseInt(lockPid.trim(), 10)
+        if (!Number.isNaN(pid) && pid > 0) {
+          try {
+            // Signal 0 checks process existence.
+            process.kill(pid, 0)
+            // Process exists, lock is valid.
+          } catch (pidError) {
+            const pidErr = pidError as NodeJS.ErrnoException
+            // EPERM means process exists but no permission (treat as alive).
+            // ESRCH means process doesn't exist (dead).
+            if (pidErr.code !== 'EPERM') {
+              isStale = true
+            }
+          }
+        } else {
+          isStale = true
+        }
+      } catch {
+        // Could not read lock file, may have been removed.
+        isStale = true
+      }
+
+      if (isStale) {
+        // Stale lock detected, remove and retry immediately.
+        await fs.unlink(lockFile).catch(() => {})
+        return ensureSocketPyCli(pythonBin)
+      }
+
+      // Lock is valid, wait for installation to complete.
       for (let i = 0; i < 30; i++) {
         // eslint-disable-next-line no-await-in-loop
         await new Promise(resolve => {
@@ -899,12 +963,32 @@ export async function ensureSocketPyCli(pythonBin: string): Promise<void> {
         if (await isSocketPyCliInstalled(pythonBin)) {
           return
         }
-        // Check if lock holder is still alive.
-        if (!existsSync(lockFile)) {
-          break
+        // Periodically re-check if lock holder is still alive.
+        if (i % 5 === 4) {
+          try {
+            // eslint-disable-next-line no-await-in-loop
+            const lockPid = await fs.readFile(lockFile, 'utf8')
+            const pid = Number.parseInt(lockPid.trim(), 10)
+            if (!Number.isNaN(pid) && pid > 0) {
+              try {
+                process.kill(pid, 0)
+              } catch (pidError) {
+                const pidErr = pidError as NodeJS.ErrnoException
+                if (pidErr.code !== 'EPERM') {
+                  // Lock holder died during wait, retry.
+                  // eslint-disable-next-line no-await-in-loop
+                  await fs.unlink(lockFile).catch(() => {})
+                  return ensureSocketPyCli(pythonBin)
+                }
+              }
+            }
+          } catch {
+            // Lock file gone, retry.
+            return ensureSocketPyCli(pythonBin)
+          }
         }
       }
-      // Retry if lock disappeared or timeout.
+      // Timeout after 30 seconds, retry anyway.
       return ensureSocketPyCli(pythonBin)
     }
     throw e
