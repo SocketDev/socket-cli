@@ -91,7 +91,9 @@ const supportedConfigEntries = [...supportedConfig.entries()].sort((a, b) =>
 )
 const supportedConfigKeys = supportedConfigEntries.map(p => p[0])
 
-function getConfigValues(): LocalConfig {
+const MAX_CONFIG_READ_RETRIES = 3
+
+function getConfigValues(retryCount = 0): LocalConfig {
   // Order: env var > --config flag > file.
   // If config is from flag/env override, skip file-based caching.
   if (_configFromFlag && _cachedConfig !== undefined) {
@@ -119,8 +121,14 @@ function getConfigValues(): LocalConfig {
         // Verify mtime hasn't changed during read to prevent TOCTOU race.
         const statsAfter = statSync(configFilePath)
         if (statsAfter.mtimeMs !== currentMtime) {
-          // File was modified during read, retry.
-          return getConfigValues()
+          // File was modified during read, retry with limit.
+          if (retryCount >= MAX_CONFIG_READ_RETRIES) {
+            logger.warn(
+              `Config file modified ${retryCount} times during read, using potentially stale data`,
+            )
+          } else {
+            return getConfigValues(retryCount + 1)
+          }
         }
 
         if (raw !== undefined) {

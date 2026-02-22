@@ -6,6 +6,23 @@ import { readJson, safeMkdir, writeJson } from '@socketsecurity/lib/fs'
 
 import { getSocketFixBranchName } from './git.mts'
 
+/**
+ * Check if a process with the given PID is still running.
+ */
+function isPidAlive(pid: number): boolean {
+  try {
+    // Signal 0 checks process existence without sending actual signal.
+    process.kill(pid, 0)
+    return true
+  } catch (e) {
+    const err = e as NodeJS.ErrnoException
+    // EPERM means process exists but no permission (treat as alive).
+    // ESRCH means process doesn't exist (dead).
+    // All other errors (EINVAL, etc.) treat as dead to be safe.
+    return err.code === 'EPERM'
+  }
+}
+
 export type GhsaFixRecord = {
   branch: string
   fixedAt: string // ISO 8601
@@ -67,7 +84,7 @@ export async function markGhsaFixed(
   const trackerPath = path.join(cwd, TRACKER_FILE)
   const lockFile = `${trackerPath}.lock`
 
-  // Acquire lock with exponential backoff.
+  // Acquire lock with exponential backoff and stale lock detection.
   let lockAcquired = false
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
@@ -77,7 +94,23 @@ export async function markGhsaFixed(
     } catch (e) {
       const err = e as NodeJS.ErrnoException
       if (err.code === 'EEXIST' && attempt < 4) {
-        // Lock exists, wait with exponential backoff.
+        // Lock exists, check if it's stale.
+        try {
+          const lockContent = await fs.readFile(lockFile, 'utf8')
+          const lockPid = Number.parseInt(lockContent.trim(), 10)
+          if (!Number.isNaN(lockPid) && !isPidAlive(lockPid)) {
+            // Stale lock detected, remove and retry immediately.
+            debug(
+              `ghsa-tracker: removing stale lock from dead process ${lockPid}`,
+            )
+            await fs.unlink(lockFile).catch(() => {})
+            continue
+          }
+        } catch {
+          // Could not read lock file, may have been removed.
+        }
+        // Lock exists and process is alive, wait with exponential backoff.
+        // Delays: 100ms (attempt 0), 200ms (attempt 1), 400ms (attempt 2), 800ms (attempt 3).
         await new Promise(resolve =>
           setTimeout(resolve, 100 * Math.pow(2, attempt)),
         )
