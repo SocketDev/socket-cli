@@ -1234,3 +1234,36 @@ npm install -g socket
 Commands that do NOT exist:
 - `socket console` - This command does not exist in the codebase
 
+### Interactive Test Runner Exception
+
+**Fact:** The `scripts/test.mjs` file uses `process.exit()` intentionally.
+
+This is an exception to the CLAUDE.md convention because:
+- Interactive test runner spawns child processes that keep the event loop alive
+- Explicit exit is required to prevent hanging after tests complete
+- The code includes comments documenting this exception
+
+### Config Write Mechanism
+
+**Fact:** The config write using `process.nextTick` in `config.mts` is NOT a race condition.
+
+Why it's safe:
+- `localConfig` (which IS `_cachedConfig`) is always updated synchronously (line 358)
+- `process.nextTick` only batches the disk write operation
+- If multiple updates happen before nextTick fires, all values are already in `_cachedConfig`
+- The single pending write persists all accumulated changes correctly
+
+### Cache Implementation Patterns
+
+**Fact:** Several cache patterns flagged as issues are actually working correctly:
+
+1. **GitHub cache TTL using file mtime**: Acceptable for 5-minute TTL use case. System clock changes are rare edge cases that don't justify adding timestamp inside JSON payload.
+
+2. **GitHub cache TOCTOU race**: Already mitigated with double-check pattern after async readCache (lines 112-115 in github.mts).
+
+3. **Unbounded inflightRequests Map**: Properly cleaned up in finally block (line 123). Entries are always deleted when promises complete.
+
+4. **Update cache key missing platform**: npm registry returns the same latest version regardless of platform. Platform-specific binaries are handled via optionalDependencies.
+
+5. **Parallel cache writes in pull-request.mts**: Map keys are unique, so no duplicate writes occur.
+

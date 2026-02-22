@@ -177,7 +177,7 @@ Build Pipeline
 │   ├── TypeScript compilation (.mts → .js)
 │   ├── Bundle external dependencies
 │   ├── Code injection (constants/env vars)
-│   └── Output: dist/*.js (57,000+ lines)
+│   └── Output: dist/*.js (273,000+ lines bundled)
 │
 ├── SEA Build (Single Executable Application)
 │   ├── Download node-smol binaries
@@ -357,7 +357,7 @@ pnpm test:unit --coverage         # Coverage report
 ```
 
 Test structure:
-- `test/unit/` - Unit tests (~100+ test files)
+- `test/unit/` - Unit tests (~270+ test files)
 - `test/fixtures/` - Test fixtures and mock data
 - `test/helpers/` - Test utilities and helpers
 - Vitest framework with snapshot testing
@@ -482,7 +482,6 @@ Features:
 - `wrapper/` - Generic command wrapper
 - `ask/` - AI-powered security questions
 - `json/` - JSON utilities
-- `console/` - Open Socket web console
 - `oops/` - Error recovery
 
 ### Utility Modules (src/utils/)
