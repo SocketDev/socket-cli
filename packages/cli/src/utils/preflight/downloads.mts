@@ -58,8 +58,8 @@ export function runPreflightDownloads(): void {
         force: false,
       })
 
-      // Delay before next download (1-3 seconds).
-      await sleep(1000 + Math.random() * 2000)
+      // Delay before next download to avoid resource contention.
+      await sleep(2000)
 
       // 2. @cyclonedx/cdxgen preflight.
       const cdxgenVersion = getCdxgenVersion()
@@ -70,8 +70,8 @@ export function runPreflightDownloads(): void {
         force: false,
       })
 
-      // Delay before next download (1-3 seconds).
-      await sleep(1000 + Math.random() * 2000)
+      // Delay before next download to avoid resource contention.
+      await sleep(2000)
 
       // 3. Python + socketsecurity (socket-python-cli) preflight.
       const pythonBin = await ensurePythonDlx()
