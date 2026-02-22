@@ -255,7 +255,13 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
   // Filter by type === 'github-release' to include all GitHub-released tools.
   for (const [toolName, toolConfig] of Object.entries(externalTools)) {
     if (toolConfig.type === 'github-release') {
-      const [owner, repo] = toolConfig.repository.split('/')
+      const parts = toolConfig.repository.split('/')
+      if (parts.length !== 2 || !parts[0] || !parts[1]) {
+        throw new Error(
+          `Invalid repository format for ${toolName}: expected 'owner/repo', got '${toolConfig.repository}'`,
+        )
+      }
+      const [owner, repo] = parts
       TOOL_REPOS[toolName] = {
         owner,
         repo,
@@ -398,7 +404,13 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
         extractedBinaryPath !== binaryPath &&
         existsSync(extractedBinaryPath)
       ) {
-        await fs.rename(extractedBinaryPath, binaryPath)
+        try {
+          await fs.rename(extractedBinaryPath, binaryPath)
+        } catch (e) {
+          // Fallback to copy + delete for cross-device moves.
+          await fs.copyFile(extractedBinaryPath, binaryPath)
+          await fs.unlink(extractedBinaryPath)
+        }
       } else if (!existsSync(binaryPath)) {
         throw new Error(
           `Binary not found after extraction: ${extractedBinaryPath}`,
@@ -421,7 +433,13 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
         extractedBinaryPath !== binaryPath &&
         existsSync(extractedBinaryPath)
       ) {
-        await fs.rename(extractedBinaryPath, binaryPath)
+        try {
+          await fs.rename(extractedBinaryPath, binaryPath)
+        } catch (e) {
+          // Fallback to copy + delete for cross-device moves.
+          await fs.copyFile(extractedBinaryPath, binaryPath)
+          await fs.unlink(extractedBinaryPath)
+        }
       } else if (!existsSync(binaryPath)) {
         throw new Error(
           `Binary not found after extraction: ${extractedBinaryPath}`,
