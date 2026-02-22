@@ -300,8 +300,9 @@ export function formatDataOrg(
 function formatDate(date: string): string {
   const dateObj = new Date(date)
   const month = dateObj.getMonth()
-  if (Number.isNaN(month) || month < 0 || month > 11) {
+  const day = dateObj.getDate()
+  if (Number.isNaN(month) || month < 0 || month > 11 || Number.isNaN(day)) {
     return date.slice(0, 10)
   }
-  return `${Months[month]} ${dateObj.getDate()}`
+  return `${Months[month]} ${day}`
 }

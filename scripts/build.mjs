@@ -44,7 +44,6 @@ const rootDir = path.resolve(__dirname, '..')
 const TARGET_PACKAGES = {
   __proto__: null,
   all: './packages/**',
-  bootstrap: '@socketsecurity/bootstrap',
   cli: '@socketsecurity/cli',
   'cli-sentry': '@socketsecurity/cli-with-sentry',
   node: '@socketbin/node-smol-builder-builder',
