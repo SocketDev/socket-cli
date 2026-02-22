@@ -54,31 +54,31 @@ describe('ms-at-home utilities', () => {
     })
 
     it('returns hours ago for times between 1 and 24 hours ago', () => {
-      // 2.5 hours ago.
+      // 2.5 hours ago (rounds to 3).
       const timestamp = new Date('2024-01-15T09:30:00Z').toISOString()
       const result = msAtHome(timestamp)
-      expect(result).toBe('2.5 hr. ago')
+      expect(result).toBe('3 hr. ago')
     })
 
     it('returns hours ago for times just under 24 hours', () => {
-      // 23.5 hours ago.
+      // 23.5 hours ago (rounds to 24).
       const timestamp = new Date('2024-01-14T12:30:00Z').toISOString()
       const result = msAtHome(timestamp)
-      expect(result).toBe('23.5 hr. ago')
+      expect(result).toBe('24 hr. ago')
     })
 
     it('returns days ago for times between 1 and 7 days ago', () => {
-      // 3.5 days ago.
+      // 3.5 days ago (rounds to 4).
       const timestamp = new Date('2024-01-12T00:00:00Z').toISOString()
       const result = msAtHome(timestamp)
-      expect(result).toBe('3.5 days ago')
+      expect(result).toBe('4 days ago')
     })
 
     it('returns days ago for times just under 7 days', () => {
-      // 6.5 days ago.
+      // 6.5 days ago (rounds to 7).
       const timestamp = new Date('2024-01-09T00:00:00Z').toISOString()
       const result = msAtHome(timestamp)
-      expect(result).toBe('6.5 days ago')
+      expect(result).toBe('7 days ago')
     })
 
     it('returns date string for times 7 or more days ago', () => {
