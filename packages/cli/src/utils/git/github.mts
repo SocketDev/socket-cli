@@ -33,6 +33,7 @@ import {
 } from '@octokit/graphql'
 import { RequestError } from '@octokit/request-error'
 import { Octokit } from '@octokit/rest'
+import { LRUCache } from 'lru-cache'
 
 import { debugDirNs, debugNs, isDebugNs } from '@socketsecurity/lib/debug'
 import {
@@ -109,7 +110,8 @@ export async function writeCache(
 }
 
 // In-memory promise cache to prevent concurrent fetches for the same key.
-const inflightRequests = new Map<string, Promise<unknown>>()
+// LRU cache with max size to prevent unbounded memory growth.
+const inflightRequests = new LRUCache<string, Promise<unknown>>({ max: 100 })
 
 export async function cacheFetch<T>(
   key: string,

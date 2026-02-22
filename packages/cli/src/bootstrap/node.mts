@@ -124,7 +124,7 @@ async function main(): Promise<void> {
     try {
       await downloadCli()
     } catch (e) {
-      logger.error('Failed to download Socket CLI:', error)
+      logger.error('Failed to download Socket CLI:', e)
       // eslint-disable-next-line n/no-process-exit
       process.exit(1)
     }

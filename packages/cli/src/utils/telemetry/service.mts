@@ -43,6 +43,8 @@
 
 import { randomUUID } from 'node:crypto'
 
+import { LRUCache } from 'lru-cache'
+
 import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
 
 import { setupSdk } from '../socket/sdk.mts'
@@ -110,8 +112,9 @@ const telemetryServiceInstance: TelemetryServiceInstance = {
 /**
  * Inflight initialization tracker.
  * Prevents duplicate initialization when multiple concurrent calls occur.
+ * LRU cache with max size to prevent unbounded memory growth.
  */
-const inflightInit = new Map<string, Promise<TelemetryService>>()
+const inflightInit = new LRUCache<string, Promise<TelemetryService>>({ max: 10 })
 
 /**
  * Wrap a promise with a timeout.
