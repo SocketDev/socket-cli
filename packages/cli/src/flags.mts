@@ -85,8 +85,8 @@ let _maxOldSpaceSizeFlag: number | undefined
 export function getMaxOldSpaceSizeFlag(): number {
   if (_maxOldSpaceSizeFlag === undefined) {
     const rawFlag = getRawSpaceSizeFlags().maxOldSpaceSize
-    // Use nullish check to allow explicit 0 values.
-    if (rawFlag != null) {
+    // Check if flag was explicitly set (> 0).
+    if (rawFlag > 0) {
       _maxOldSpaceSizeFlag = rawFlag
     } else {
       const match = /(?<=--max-old-space-size=)\d+/.exec(
