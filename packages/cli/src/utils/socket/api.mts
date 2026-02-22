@@ -359,6 +359,7 @@ export async function queryApi(path: string, apiToken: string) {
     headers: {
       Authorization: `Basic ${btoa(`${apiToken}:`)}`,
     },
+    signal: AbortSignal.timeout(30_000),
   })
 }
 
@@ -557,6 +558,7 @@ export async function sendApiRequest<T>(
         Authorization: `Basic ${btoa(`${apiToken}:`)}`,
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(60_000),
       ...(body ? { body: JSON.stringify(body) } : {}),
     }
 

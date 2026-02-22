@@ -459,7 +459,10 @@ async function streamDownloadWithFetch(
   let response: Response | undefined
 
   try {
-    response = await fetch(downloadUrl)
+    // Use longer timeout for file downloads (5 minutes).
+    response = await fetch(downloadUrl, {
+      signal: AbortSignal.timeout(300_000),
+    })
 
     if (!response.ok) {
       const errorMsg = `Download failed due to bad server response: ${response.status} ${response.statusText} for ${downloadUrl}`
