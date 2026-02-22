@@ -83,7 +83,7 @@ if (!platform || !arch) {
   logger.error(
     'Usage: prepublish-socketbin.mjs --platform=darwin --arch=arm64 [--version=0.0.0-20250122.143052] [--method=smol]',
   )
-  process.exit(1)
+  process.exitCode = 1
 }
 
 // Clean version (remove 'v' prefix if present) or generate if not provided
@@ -168,8 +168,10 @@ async function generatePackage() {
     )
   } catch (error) {
     logger.error('Error generating package:', error)
-    process.exit(1)
+    process.exitCode = 1
   }
 }
 
-generatePackage()
+if (!process.exitCode) {
+  generatePackage()
+}

@@ -249,7 +249,8 @@ export class FileProgress {
 
   next(file: string): void {
     this.processed++
-    const percentage = Math.floor((this.processed / this.total) * 100)
+    const percentage =
+      this.total > 0 ? Math.floor((this.processed / this.total) * 100) : 0
     const elapsed = ((Date.now() - this.startTime) / 1000).toFixed(1)
 
     process.stderr.write(

@@ -33,7 +33,8 @@ async function main() {
 
   if (!pkg.optionalDependencies) {
     console.error('❌ No optionalDependencies found in socket package.json')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   // Get all @socketbin/* packages.
@@ -43,7 +44,8 @@ async function main() {
 
   if (!socketbinPackages.length) {
     console.error('❌ No @socketbin/* packages found in optionalDependencies')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   console.log(
@@ -58,7 +60,8 @@ async function main() {
 
     if (!latestVersion) {
       console.error(`❌ Failed to get latest version for ${packageName}`)
-      process.exit(1)
+      process.exitCode = 1
+      return
     }
 
     updates.push({
@@ -80,5 +83,5 @@ async function main() {
 
 main().catch(error => {
   console.error('Error:', error)
-  process.exit(1)
+  process.exitCode = 1
 })

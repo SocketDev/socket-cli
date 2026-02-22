@@ -466,12 +466,14 @@ async function main() {
       spinner.stop()
     } catch {}
     removeExitHandler()
-    // Explicitly exit to prevent hanging
-    process.exit(process.exitCode || 0)
+    // Note: Explicit exit required to prevent hanging from child processes.
+    // This is an intentional exception to the CLAUDE.md convention against process.exit().
+    process.exit(process.exitCode || 0) // eslint-disable-line n/no-process-exit
   }
 }
 
 main().catch(e => {
   logger.error(e)
-  process.exit(1)
+  // Note: Explicit exit required to ensure proper exit code on uncaught errors.
+  process.exit(1) // eslint-disable-line n/no-process-exit
 })
