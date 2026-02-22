@@ -101,7 +101,7 @@ Supports version 2 format with `projectIgnorePaths` for excluding files from rep
 - `SOCKET_CLI_FIX` - Enable fix mode
 - `SOCKET_CLI_GIT_USER_EMAIL` - Git user email (default: `github-actions[bot]@users.noreply.github.com`)
 - `SOCKET_CLI_GIT_USER_NAME` - Git user name (default: `github-actions[bot]`)
-- `SOCKET_CLI_GITHUB_TOKEN` - GitHub token with repo access (`GITHUB_TOKEN` also recognized)
+- `SOCKET_CLI_GITHUB_TOKEN` - GitHub token with repo access (`GITHUB_TOKEN` and `GH_TOKEN` also recognized as fallbacks)
 - `SOCKET_CLI_JS_PATH` - Path to JavaScript runtime
 - `SOCKET_CLI_LOCAL_NODE_SMOL` - Path to local node-smol binary
 - `SOCKET_CLI_LOCAL_PATH` - Local CLI path
