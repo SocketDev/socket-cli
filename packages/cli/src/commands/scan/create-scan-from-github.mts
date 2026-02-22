@@ -501,14 +501,14 @@ async function streamDownloadWithFetch(
     debugDir(e)
 
     // If an error occurs and fileStream was created, attempt to clean up.
-    if (existsSync(localPath)) {
-      // Check if fileStream was even opened before trying to delete
-      // This check might be too simplistic depending on when error occurs
-      try {
-        await fs.unlink(localPath)
-      } catch (e) {
+    try {
+      await fs.unlink(localPath)
+    } catch (e) {
+      const error = e as NodeJS.ErrnoException
+      // Only log non-ENOENT errors - file not existing is fine.
+      if (error.code !== 'ENOENT') {
         logger.fail(
-          formatErrorWithDetail(`Error deleting partial file ${localPath}`, e),
+          formatErrorWithDetail(`Error deleting partial file ${localPath}`, error),
         )
       }
     }
