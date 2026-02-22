@@ -151,8 +151,7 @@ export async function cacheFetch<T>(
     }
     return data
   } catch (e) {
-    // Cleanup inflight entry on error (fetch promise handles its own cleanup).
-    inflightRequests.delete(key)
+    // Fetch promise's finally block handles cleanup - no action needed here.
     throw e
   }
 }

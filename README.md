@@ -34,7 +34,7 @@ socket --help
 - `socket fix` - Fix CVEs in dependencies
 - `socket optimize` - Optimize dependencies with [`@socketregistry`](https://github.com/SocketDev/socket-registry) overrides
 - `socket manifest [command]` - Generate and manage SBOMs for multiple ecosystems
-  - `socket cdxgen [command]` - Alias for `socket manifest cdxgen` - Run [cdxgen](https://github.com/cyclonedx/cdxgen) for SBOM generation
+  - `socket cdxgen [command]` - Alias for `socket manifest cdxgen` - Run [cdxgen](https://github.com/cdxgen/cdxgen) for SBOM generation
 
 ## Organization & Repository Management
 
