@@ -202,7 +202,10 @@ export async function runSocketBasics(
 
   const output = String(verifyResult.stdout || '')
   const versionMatch = output.match(/^Version:\s*(.+)$/m)
-  const installedVersion = versionMatch?.[1]?.trim()
+  const installedVersion =
+    versionMatch && versionMatch.length > 1 && versionMatch[1]
+      ? versionMatch[1].trim()
+      : undefined
 
   if (installedVersion !== pyCliVersion) {
     if (spinner) {

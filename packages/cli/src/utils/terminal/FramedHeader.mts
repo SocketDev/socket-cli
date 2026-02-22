@@ -81,13 +81,21 @@ export async function renderFramedHeader(
     process.exit(0)
   })
 
+  // Maximum animation duration to prevent runaway intervals.
+  const MAX_ANIMATION_TIME = 30_000 // 30 seconds
+  const timeoutId = setTimeout(() => {
+    cleanup()
+  }, MAX_ANIMATION_TIME)
+
   // Keep process alive until interrupted or process exits.
   await new Promise<void>(resolve => {
     process.once('SIGTERM', () => {
+      clearTimeout(timeoutId)
       cleanup()
       resolve()
     })
-    process.once('exit', () => {
+    process.once('beforeExit', () => {
+      clearTimeout(timeoutId)
       cleanup()
       resolve()
     })
