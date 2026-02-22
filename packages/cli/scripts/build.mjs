@@ -120,15 +120,20 @@ async function main() {
     )
 
     if (!extractResult) {
+      const error = new Error('Failed to start asset download process')
+      logger.error(error.message)
       process.exitCode = 1
-      throw new Error('Failed to start asset download')
+      throw error
     }
 
     if (extractResult.code !== 0) {
-      process.exitCode = extractResult.code ?? 1
-      throw new Error(
+      const exitCode = extractResult.code ?? 1
+      const error = new Error(
         `Asset download failed with exit code ${extractResult.code ?? 'unknown'}`,
       )
+      logger.error(error.message)
+      process.exitCode = exitCode
+      throw error
     }
 
     // Then start esbuild in watch mode.

@@ -84,7 +84,6 @@ jobs:
             echo "✓ yoga-layout WASM found in cache"
           fi
       - run: npm install -g npm@latest
-      - run: pnpm install
 
       # Build and publish 'socket' package (default).
       - name: Update socketbin versions in socket package
