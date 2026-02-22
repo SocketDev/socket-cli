@@ -5,6 +5,8 @@
  * Ensures type safety for inter-process communication.
  */
 
+import { randomBytes } from 'node:crypto'
+
 import type { IpcHandshake, IpcMessage, IpcStub } from '@socketsecurity/lib/ipc'
 
 /**
@@ -70,13 +72,14 @@ export function isValidIpcHandle(value: unknown): value is IpcStub {
 
 /**
  * Create a valid IPC message with current timestamp.
+ * Uses cryptographically secure random ID generation.
  */
 export function createIpcMessage<T = unknown>(
   type: string,
   data: T,
 ): IpcMessage<T> {
   return {
-    id: `${process.pid}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    id: `${process.pid}-${Date.now()}-${randomBytes(4).toString('hex')}`,
     timestamp: Date.now(),
     type,
     data,
