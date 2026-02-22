@@ -119,7 +119,7 @@ export class MultiProgress {
   }
 
   /**
-   * Stop all progress tracking
+   * Stop all progress tracking and cleanup tasks.
    */
   stop(): void {
     if (this.renderInterval) {
@@ -132,6 +132,9 @@ export class MultiProgress {
     if (this.options.hideCursor) {
       this.stream.write('\x1B[?25h') // Show cursor
     }
+
+    // Clear all tasks to prevent memory leaks in long-running processes.
+    this.tasks.clear()
   }
 
   /**

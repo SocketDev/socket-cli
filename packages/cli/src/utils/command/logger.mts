@@ -1,6 +1,9 @@
 /** @fileoverview Command-scoped logger for Socket CLI. Provides logging with automatic command context for better debugging and filtering. */
 
+import { LRUCache } from 'lru-cache'
+
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 const logger = getDefaultLogger()
 
 /**
@@ -147,9 +150,10 @@ export function createDebugLogger(namespace: string): (...args: any[]) => void {
 }
 
 /**
- * Logger factory for creating consistent command loggers.
+ * Logger factory with LRU cache to prevent unbounded growth.
+ * Limits to 100 command loggers in memory.
  */
-const instances = new Map<string, CommandLogger>()
+const instances = new LRUCache<string, CommandLogger>({ max: 100 })
 
 /**
  * Get or create a command logger.
@@ -158,10 +162,12 @@ const instances = new Map<string, CommandLogger>()
  * @returns A cached or new command logger
  */
 export function getLogger(commandName: string): CommandLogger {
-  if (!instances.has(commandName)) {
-    instances.set(commandName, createCommandLogger(commandName))
+  let logger = instances.get(commandName)
+  if (!logger) {
+    logger = createCommandLogger(commandName)
+    instances.set(commandName, logger)
   }
-  return instances.get(commandName)!
+  return logger
 }
 
 /**
