@@ -132,17 +132,29 @@ export function parsePlatformArgs(args) {
 
   for (const arg of args) {
     if (arg.startsWith('--platform=')) {
-      result.platform = arg.split('=')[1]
+      const parts = arg.split('=')
+      if (parts.length >= 2) {
+        result.platform = parts[1]
+      }
     } else if (arg.startsWith('--arch=')) {
-      result.arch = arg.split('=')[1]
+      const parts = arg.split('=')
+      if (parts.length >= 2) {
+        result.arch = parts[1]
+      }
     } else if (arg.startsWith('--libc=')) {
-      result.libc = arg.split('=')[1]
+      const parts = arg.split('=')
+      if (parts.length >= 2) {
+        result.libc = parts[1]
+      }
     } else if (arg.startsWith('--target=')) {
-      const parsed = parsePlatformTarget(arg.split('=')[1])
-      if (parsed) {
-        result.platform = parsed.platform
-        result.arch = parsed.arch
-        result.libc = parsed.libc ?? null
+      const parts = arg.split('=')
+      if (parts.length >= 2) {
+        const parsed = parsePlatformTarget(parts[1])
+        if (parsed) {
+          result.platform = parsed.platform
+          result.arch = parsed.arch
+          result.libc = parsed.libc ?? null
+        }
       }
     }
   }
