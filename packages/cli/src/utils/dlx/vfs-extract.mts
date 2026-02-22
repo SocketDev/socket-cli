@@ -608,11 +608,13 @@ export async function extractExternalTools(
   } finally {
     // Clean up lock file.
     try {
-      if (existsSync(lockFile)) {
-        await fs.unlink(lockFile)
+      await fs.unlink(lockFile)
+    } catch (e) {
+      // Only ignore ENOENT (file doesn't exist), log other errors.
+      const error = e as NodeJS.ErrnoException
+      if (error.code !== 'ENOENT') {
+        logger.warn(`Failed to cleanup lock file ${lockFile}: ${error.message}`)
       }
-    } catch {
-      // Ignore cleanup errors.
     }
   }
 }

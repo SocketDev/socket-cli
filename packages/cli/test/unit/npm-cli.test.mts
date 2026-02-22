@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock spawnSfw from dlx/spawn.
-vi.mock('./utils/dlx/spawn.mts', () => ({
+vi.mock('../../src/utils/dlx/spawn.mts', () => ({
   spawnSfw: vi.fn(),
 }))
 
 // Import modules after mocks are set up.
-const { default: runNpmCli } = await import('./npm-cli.mts')
-const spawnModule = await import('./utils/dlx/spawn.mts')
+const { default: runNpmCli } = await import('../../src/npm-cli.mts')
+const spawnModule = await import('../../src/utils/dlx/spawn.mts')
 const mockSpawnSfw = vi.mocked(spawnModule.spawnSfw)
 
 // Mock process methods.
