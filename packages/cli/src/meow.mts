@@ -167,7 +167,7 @@ export default function meow<
   if (collectUnknownFlags) {
     for (const arg of argv) {
       if (typeof arg === 'string' && arg.startsWith('-')) {
-        const flagName = arg.replace(/^-+/, '').split('=')[0]
+        const flagName = arg.replace(/^-+/, '').split('=')[0] || ''
         if (flagName && !(flagName in flags)) {
           unknownFlags.push(arg)
         }

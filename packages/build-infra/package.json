@@ -18,5 +18,9 @@
     "@babel/traverse": "catalog:",
     "@socketsecurity/lib": "catalog:",
     "magic-string": "catalog:"
+  },
+  "engines": {
+    "node": ">=25.5.0",
+    "pnpm": ">=10.22.0"
   }
 }

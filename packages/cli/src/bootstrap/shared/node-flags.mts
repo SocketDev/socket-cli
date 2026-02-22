@@ -14,7 +14,7 @@ function getNodeMajorVersion(): number {
  * Get Node minor version number.
  */
 function getNodeMinorVersion(): number {
-  return Number.parseInt(process.version.split('.')[1] || '0', 10)
+  return Number.parseInt(process.version.slice(1).split('.')[1] || '0', 10)
 }
 
 /**
