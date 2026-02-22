@@ -17,11 +17,11 @@ describe('output-analytics', () => {
       expect(str).toMatchInlineSnapshot(`
         {
           "top_five_alert_types": {
-            "dynamicRequire": 71,
-            "envVars": 636,
-            "filesystemAccess": 129,
-            "networkAccess": 109,
-            "unmaintained": 133,
+            "dynamicRequire": 274,
+            "envVars": 2533,
+            "filesystemAccess": 514,
+            "networkAccess": 434,
+            "unmaintained": 532,
           },
           "total_critical_added": {
             "Apr 19": 0,
@@ -282,11 +282,11 @@ describe('output-analytics', () => {
 
         | Name             | Counts |
         | ---------------- | ------ |
-        | envVars          |    636 |
-        | unmaintained     |    133 |
-        | filesystemAccess |    129 |
-        | networkAccess    |    109 |
-        | dynamicRequire   |     71 |
+        | envVars          |   2533 |
+        | unmaintained     |    532 |
+        | filesystemAccess |    514 |
+        | networkAccess    |    434 |
+        | dynamicRequire   |    274 |
         | ---------------- | ------ |
         "
       `)
