@@ -115,6 +115,14 @@ function getConfigValues(): LocalConfig {
       ) {
         _cachedConfig = {} as LocalConfig
         const raw = safeReadFileSync(configFilePath)
+
+        // Verify mtime hasn't changed during read to prevent TOCTOU race.
+        const statsAfter = statSync(configFilePath)
+        if (statsAfter.mtimeMs !== currentMtime) {
+          // File was modified during read, retry.
+          return getConfigValues()
+        }
+
         if (raw !== undefined) {
           try {
             const rawString = Buffer.isBuffer(raw) ? raw.toString('utf8') : raw

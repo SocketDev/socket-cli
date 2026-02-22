@@ -84,17 +84,38 @@ Supports version 2 format with `projectIgnorePaths` for excluding files from rep
 
 ## Environment variables
 
+- `GITHUB_API_URL` - GitHub API base URL (default: `https://api.github.com`, set for GitHub Enterprise)
+- `SOCKET_CLI_ACCEPT_RISKS` - Accept npm/npx risks
+- `SOCKET_CLI_API_BASE_URL` - Override Socket API endpoint (default: `api.socket.dev`)
+- `SOCKET_CLI_API_PROXY` - HTTP proxy for API calls
+- `SOCKET_CLI_API_TIMEOUT` - API request timeout in milliseconds
 - `SOCKET_CLI_API_TOKEN` - Socket API token
+- `SOCKET_CLI_BIN_PATH` - Path to CLI binary
+- `SOCKET_CLI_BOOTSTRAP_CACHE_DIR` - Bootstrap cache directory
+- `SOCKET_CLI_BOOTSTRAP_SPEC` - Bootstrap specification
+- `SOCKET_CLI_CDXGEN_LOCAL_PATH` - Local path to cdxgen tool
+- `SOCKET_CLI_COANA_LOCAL_PATH` - Local path to Coana tool
 - `SOCKET_CLI_CONFIG` - JSON configuration object
-- `GITHUB_API_URL` - GitHub API base URL
+- `SOCKET_CLI_DEBUG` - Enable debug logging (set to `1`)
+- `SOCKET_CLI_FIX` - Enable fix mode
 - `SOCKET_CLI_GIT_USER_EMAIL` - Git user email (default: `github-actions[bot]@users.noreply.github.com`)
 - `SOCKET_CLI_GIT_USER_NAME` - Git user name (default: `github-actions[bot]`)
-- `SOCKET_CLI_GITHUB_TOKEN` - GitHub token with repo access (alias: `GITHUB_TOKEN`)
+- `SOCKET_CLI_GITHUB_TOKEN` - GitHub token with repo access (`GITHUB_TOKEN` also recognized)
+- `SOCKET_CLI_JS_PATH` - Path to JavaScript runtime
+- `SOCKET_CLI_LOCAL_NODE_SMOL` - Path to local node-smol binary
+- `SOCKET_CLI_LOCAL_PATH` - Local CLI path
+- `SOCKET_CLI_MODE` - CLI operation mode
+- `SOCKET_CLI_MODELS_PATH` - Path to AI models
 - `SOCKET_CLI_NO_API_TOKEN` - Disable default API token
 - `SOCKET_CLI_NPM_PATH` - Path to npm directory
+- `SOCKET_CLI_OPTIMIZE` - Enable optimize mode
 - `SOCKET_CLI_ORG_SLUG` - Socket organization slug
-- `SOCKET_CLI_ACCEPT_RISKS` - Accept npm/npx risks
+- `SOCKET_CLI_PYCLI_LOCAL_PATH` - Local path to Python CLI tool
+- `SOCKET_CLI_PYTHON_PATH` - Path to Python interpreter
+- `SOCKET_CLI_SEA_NODE_VERSION` - Node version for SEA builds
+- `SOCKET_CLI_SFW_LOCAL_PATH` - Local path to SFW tool
 - `SOCKET_CLI_SKIP_UPDATE_CHECK` - Disable update checking
+- `SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH` - Local path to socket-patch tool
 - `SOCKET_CLI_VIEW_ALL_RISKS` - Show all npm/npx risks
 
 ## Contributing

@@ -491,7 +491,7 @@ Features:
 - `login/logout/whoami/` - Authentication
 - `ci/` - CI/CD integration
 - `fix/` - Auto-fix security issues
-- `manifest/` - Generate SBOMs via cdxgen
+- `manifest/` - Generate and manage SBOMs via cdxgen (includes auto, setup, gradle, kotlin, scala, conda subcommands)
 - `analytics/` - Package analytics
 - `audit-log/` - Organization audit logs
 - `threat-feed/` - Security threat intelligence

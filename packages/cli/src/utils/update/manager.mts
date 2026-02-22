@@ -161,9 +161,13 @@ export async function checkForUpdates(
       `Failed to access cache: ${error instanceof Error ? error.message : String(error)}`,
     )
     timestamp = Date.now()
+    record = undefined
   }
 
-  const isFresh = dlxManifest.isFresh(record, ttl)
+  // Check freshness inline to avoid potential double-read.
+  const isFresh = record && record.timestampFetch
+    ? timestamp - record.timestampFetch < ttl
+    : false
   let updateResult: any
 
   if (!isFresh) {
