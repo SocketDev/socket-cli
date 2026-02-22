@@ -778,8 +778,19 @@ export async function ensurePython(): Promise<string> {
  * Ensure Python is available via DLX download.
  * Returns the path to the Python executable.
  * Uses lock file to prevent concurrent downloads (TOCTOU protection).
+ *
+ * @param retryCount Internal retry counter to prevent unbounded recursion.
  */
-export async function ensurePythonDlx(): Promise<string> {
+export async function ensurePythonDlx(retryCount = 0): Promise<string> {
+  const MAX_RETRIES = 3
+
+  if (retryCount >= MAX_RETRIES) {
+    throw new InputError(
+      `Failed to acquire Python installation lock after ${MAX_RETRIES} retries. ` +
+        'Please check for filesystem issues or competing processes.',
+    )
+  }
+
   const pythonDir = getPythonCachePath()
   const pythonBin = getPythonBinPath(pythonDir)
   const lockFile = path.join(pythonDir, '.downloading')
@@ -822,7 +833,7 @@ export async function ensurePythonDlx(): Promise<string> {
         if (isStale) {
           // Stale lock detected, remove and retry.
           await fs.unlink(lockFile).catch(() => {})
-          return ensurePythonDlx()
+          return ensurePythonDlx(retryCount + 1)
         }
 
         // Lock is valid, wait for download to complete.
@@ -906,8 +917,23 @@ function convertCaretToPipRange(caretRange: string): string {
  * Install socketsecurity package into the Python environment.
  * Uses lock file to prevent race conditions when multiple processes
  * try to install simultaneously.
+ *
+ * @param pythonBin Path to Python executable.
+ * @param retryCount Internal retry counter to prevent unbounded recursion.
  */
-export async function ensureSocketPyCli(pythonBin: string): Promise<void> {
+export async function ensureSocketPyCli(
+  pythonBin: string,
+  retryCount = 0,
+): Promise<void> {
+  const MAX_RETRIES = 3
+
+  if (retryCount >= MAX_RETRIES) {
+    throw new InputError(
+      `Failed to acquire Socket Python CLI installation lock after ${MAX_RETRIES} retries. ` +
+        'Please check for filesystem issues or competing processes.',
+    )
+  }
+
   if (await isSocketPyCliInstalled(pythonBin)) {
     return
   }
@@ -950,7 +976,7 @@ export async function ensureSocketPyCli(pythonBin: string): Promise<void> {
       if (isStale) {
         // Stale lock detected, remove and retry immediately.
         await fs.unlink(lockFile).catch(() => {})
-        return ensureSocketPyCli(pythonBin)
+        return ensureSocketPyCli(pythonBin, retryCount + 1)
       }
 
       // Lock is valid, wait for installation to complete.
@@ -978,18 +1004,18 @@ export async function ensureSocketPyCli(pythonBin: string): Promise<void> {
                   // Lock holder died during wait, retry.
                   // eslint-disable-next-line no-await-in-loop
                   await fs.unlink(lockFile).catch(() => {})
-                  return ensureSocketPyCli(pythonBin)
+                  return ensureSocketPyCli(pythonBin, retryCount + 1)
                 }
               }
             }
           } catch {
             // Lock file gone, retry.
-            return ensureSocketPyCli(pythonBin)
+            return ensureSocketPyCli(pythonBin, retryCount + 1)
           }
         }
       }
       // Timeout after 30 seconds, retry anyway.
-      return ensureSocketPyCli(pythonBin)
+      return ensureSocketPyCli(pythonBin, retryCount + 1)
     }
     throw e
   }

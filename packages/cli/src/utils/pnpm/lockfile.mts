@@ -15,7 +15,10 @@ import type { SemVer } from 'semver'
 export function extractOverridesFromPnpmLockSrc(lockfileContent: any): string {
   let match: any
   if (typeof lockfileContent === 'string') {
-    match = /^overrides:(?:\r?\n {2}.+)+(?:\r?\n)*/m.exec(lockfileContent)?.[0]
+    // Use non-greedy match to prevent catastrophic backtracking from nested quantifiers.
+    match = /^overrides:(?:\r?\n {2}[^\n]+)*(?:\r?\n)*/m.exec(
+      lockfileContent,
+    )?.[0]
   }
   return match ?? ''
 }
