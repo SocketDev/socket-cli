@@ -233,7 +233,12 @@ void (async () => {
   }
 })().catch(async err => {
   // Fatal error in main async function.
-  console.error('Fatal error:', err)
+  try {
+    logger.error('Fatal error:', err)
+  } catch {
+    // Fallback to console if logger fails.
+    console.error('Fatal error:', err)
+  }
 
   // Track CLI error for fatal exceptions.
   await trackCliError(process.argv, cliStartTime, err, 1)
@@ -248,7 +253,12 @@ void (async () => {
 // Handle uncaught exceptions.
 process.on('uncaughtException', async err => {
   try {
-    console.error('Uncaught exception:', err)
+    try {
+      logger.error('Uncaught exception:', err)
+    } catch {
+      // Fallback to console if logger fails.
+      console.error('Uncaught exception:', err)
+    }
 
     // Track CLI error for uncaught exception.
     await trackCliError(process.argv, cliStartTime, err, 1)
@@ -257,7 +267,11 @@ process.on('uncaughtException', async err => {
     await finalizeTelemetry()
   } catch (e) {
     // Prevent double unhandled rejection in error handler.
-    console.error('Error in uncaughtException handler:', e)
+    try {
+      logger.error('Error in uncaughtException handler:', e)
+    } catch {
+      console.error('Error in uncaughtException handler:', e)
+    }
   } finally {
     // eslint-disable-next-line n/no-process-exit
     process.exit(1)
@@ -267,7 +281,12 @@ process.on('uncaughtException', async err => {
 // Handle unhandled promise rejections.
 process.on('unhandledRejection', async (reason, promise) => {
   try {
-    console.error('Unhandled rejection at:', promise, 'reason:', reason)
+    try {
+      logger.error('Unhandled rejection at:', promise, 'reason:', reason)
+    } catch {
+      // Fallback to console if logger fails.
+      console.error('Unhandled rejection at:', promise, 'reason:', reason)
+    }
 
     // Track CLI error for unhandled rejection.
     const error = reason instanceof Error ? reason : new Error(String(reason))
@@ -277,7 +296,11 @@ process.on('unhandledRejection', async (reason, promise) => {
     await finalizeTelemetry()
   } catch (e) {
     // Prevent double unhandled rejection in error handler.
-    console.error('Error in unhandledRejection handler:', e)
+    try {
+      logger.error('Error in unhandledRejection handler:', e)
+    } catch {
+      console.error('Error in unhandledRejection handler:', e)
+    }
   } finally {
     // eslint-disable-next-line n/no-process-exit
     process.exit(1)

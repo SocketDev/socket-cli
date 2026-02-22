@@ -2,7 +2,11 @@
 
 import colors from 'yoctocolors-cjs'
 
+import { onExit } from '@socketsecurity/lib/signal-exit'
+
 import type { Writable } from 'node:stream'
+
+const MAX_CONCURRENT_TASKS = 100
 
 interface MultiProgressOptions {
   stream?: Writable
@@ -39,6 +43,24 @@ export class MultiProgress {
    * Add a new task to track
    */
   addTask(id: string, name: string, total: number): void {
+    // Prevent unbounded Map growth by enforcing max concurrent tasks.
+    if (this.tasks.size >= MAX_CONCURRENT_TASKS) {
+      // Remove oldest completed/failed task to make room.
+      for (const [taskId, task] of this.tasks) {
+        if (task.status === 'done' || task.status === 'failed') {
+          this.tasks.delete(taskId)
+          break
+        }
+      }
+      // If still at max (all tasks are pending/running), remove oldest task.
+      if (this.tasks.size >= MAX_CONCURRENT_TASKS) {
+        const oldestId = this.tasks.keys().next().value
+        if (oldestId) {
+          this.tasks.delete(oldestId)
+        }
+      }
+    }
+
     this.tasks.set(id, {
       id,
       name,
@@ -116,6 +138,10 @@ export class MultiProgress {
         this.stop()
       }
     }, 100)
+
+    // Ensure interval is cleared on process exit to prevent leaks.
+    const cleanup = () => this.stop()
+    onExit(cleanup)
   }
 
   /**
@@ -231,6 +257,10 @@ export class Spinner {
         this.stop()
       }
     }, 80)
+
+    // Ensure interval is cleared on process exit to prevent leaks.
+    const cleanup = () => this.stop()
+    onExit(cleanup)
   }
 
   update(message: string): void {

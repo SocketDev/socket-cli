@@ -104,7 +104,7 @@ export async function getBaseBranch(cwd = process.cwd()): Promise<string> {
         : result.stdout.toString('utf8')
 
     const match = /(?<=HEAD branch: ).+/.exec(originDetails)
-    if (match?.[0]) {
+    if (match && match.length > 0 && match[0]) {
       return match[0].trim()
     }
   } catch {}

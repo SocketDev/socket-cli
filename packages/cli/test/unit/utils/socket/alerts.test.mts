@@ -151,8 +151,8 @@ describe('alerts-map utilities', () => {
           nothrow: false,
         })
         expect.fail('Should have thrown')
-      } catch (error) {
-        expect(error).toBeDefined()
+      } catch (e) {
+        expect(e).toBeDefined()
       }
     })
   })

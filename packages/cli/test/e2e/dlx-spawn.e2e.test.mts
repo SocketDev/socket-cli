@@ -95,9 +95,9 @@ describe('dlx e2e tests', () => {
               stdio: 'pipe',
             })
           }).toThrow()
-        } catch (error) {
+        } catch (e) {
           // If pnpm is not available globally, skip this part.
-          console.log('Could not run direct pnpm test:', error.message)
+          console.log('Could not run direct pnpm test:', e.message)
         }
       },
       15000,
@@ -225,7 +225,7 @@ describe('dlx e2e tests', () => {
         try {
           const spawnResult = await result.spawnPromise
           expect(spawnResult.code).toBeGreaterThan(0) // Should fail with non-zero exit code
-        } catch (error) {
+        } catch (e) {
           // Command failed as expected - this is valid behavior
           expect(error).toBeDefined()
         }

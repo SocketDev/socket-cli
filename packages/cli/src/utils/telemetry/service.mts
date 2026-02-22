@@ -135,12 +135,17 @@ function withTimeout<T>(
     promise.finally(() => {
       if (timeoutId) {
         clearTimeout(timeoutId)
+        timeoutId = undefined
       }
     }),
     new Promise<T>((_, reject) => {
       timeoutId = setTimeout(() => {
-        // Clear reference before rejecting to prevent stale handle retention.
+        const id = timeoutId
         timeoutId = undefined
+        // Explicitly clear the timeout even though it just fired.
+        if (id) {
+          clearTimeout(id)
+        }
         reject(new Error(errorMessage))
       }, timeoutMs)
     }),

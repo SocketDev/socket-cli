@@ -196,9 +196,9 @@ export async function executeCliJson<T = unknown>(
   try {
     const data = JSON.parse(result.stdout) as T
     return { data, result }
-  } catch (error) {
+  } catch (e) {
     throw new Error(
-      `Failed to parse JSON from CLI output\nCommand: ${args.join(' ')}\nstdout: ${result.stdout}\nError: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to parse JSON from CLI output\nCommand: ${args.join(' ')}\nstdout: ${result.stdout}\nError: ${e instanceof Error ? e.message : String(e)}`,
     )
   }
 }
@@ -232,8 +232,8 @@ export async function executeCliWithRetry(
     try {
       // eslint-disable-next-line no-await-in-loop
       return await executeCliCommand(args, options)
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error))
+    } catch (e) {
+      lastError = e instanceof Error ? e : new Error(String(e))
 
       if (attempts < maxRetries) {
         // Wait before retrying

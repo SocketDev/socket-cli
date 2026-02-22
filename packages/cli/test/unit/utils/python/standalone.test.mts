@@ -28,10 +28,10 @@ describe('python-standalone', () => {
         expect(typeof pythonBin).toBe('string')
         expect(pythonBin.length).toBeGreaterThan(0)
         expect(pythonBin).toContain('python')
-      } catch (error) {
+      } catch (e) {
         // In test environment without proper constants, download might fail.
         // This is expected and not a test failure.
-        expect(error).toBeDefined()
+        expect(e).toBeDefined()
       }
       // Give it 60 seconds for potential download.
     }, 60_000)

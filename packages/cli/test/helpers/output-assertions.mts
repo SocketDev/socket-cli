@@ -375,9 +375,9 @@ export function expectOrderedPatterns(
 export function expectValidJson<T = unknown>(output: string): T {
   try {
     return JSON.parse(output) as T
-  } catch (error) {
+  } catch (e) {
     throw new Error(
-      `Expected valid JSON but got parse error: ${error instanceof Error ? error.message : String(error)}\nOutput: ${output}`,
+      `Expected valid JSON but got parse error: ${e instanceof Error ? e.message : String(e)}\nOutput: ${output}`,
     )
   }
 }

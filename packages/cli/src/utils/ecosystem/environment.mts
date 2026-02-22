@@ -270,7 +270,7 @@ function resolveBinPathSync(binPath: string): string {
     const nodePathMatch = content.match(
       /(?:node\s+["']|"%dp0%\\)([^"'\s]+(?:npm-cli|pnpm|yarn)\.(?:c?js|mjs))["'\s]/i,
     )
-    if (nodePathMatch?.[1]) {
+    if (nodePathMatch && nodePathMatch.length > 1 && nodePathMatch[1]) {
       const matchedPath = nodePathMatch[1]
       const resolvedPath = path.isAbsolute(matchedPath)
         ? matchedPath
