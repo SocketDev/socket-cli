@@ -28,6 +28,18 @@ import type {
 
 const logger = getDefaultLogger()
 
+// Flags interface for type safety.
+interface CondaFlags {
+  dryRun: boolean
+  file: string
+  json: boolean
+  markdown: boolean
+  out: string
+  stdin: boolean | undefined
+  stdout: boolean | undefined
+  verbose: boolean | undefined
+}
+
 const config: CliCommandConfig = {
   commandName: 'conda',
   description: `[beta] Convert a Conda ${ENVIRONMENT_YML} file to a python ${REQUIREMENTS_TXT}`,
@@ -99,11 +111,7 @@ async function run(
     parentName,
   })
 
-  const { dryRun, json, markdown } = cli.flags as unknown as {
-    dryRun: boolean
-    json: boolean
-    markdown: boolean
-  }
+  const { dryRun, json, markdown } = cli.flags as CondaFlags
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
@@ -118,13 +126,7 @@ async function run(
     stdin,
     stdout,
     verbose,
-  } = cli.flags as unknown as {
-    file: string
-    out: string
-    stdin: boolean | undefined
-    stdout: boolean | undefined
-    verbose: boolean | undefined
-  }
+  } = cli.flags as CondaFlags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (

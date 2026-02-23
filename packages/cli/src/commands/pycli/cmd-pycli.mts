@@ -31,6 +31,11 @@ import type {
 
 const logger = getDefaultLogger()
 
+// Flags interface for type safety.
+interface PycliFlags {
+  dryRun: boolean
+}
+
 const config: CliCommandConfig = {
   commandName: 'pycli',
   description: 'Run Socket Python CLI (socketsecurity) directly',
@@ -112,7 +117,7 @@ async function run(
     parentName,
   })
 
-  const { dryRun } = cli.flags as unknown as { dryRun: boolean }
+  const { dryRun } = cli.flags as PycliFlags
 
   if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)

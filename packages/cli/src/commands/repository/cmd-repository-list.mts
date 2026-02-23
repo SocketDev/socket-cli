@@ -23,6 +23,20 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 
+// Flags interface for type safety.
+interface RepositoryListFlags {
+  all: boolean
+  direction: Direction
+  dryRun: boolean
+  interactive: boolean
+  json: boolean
+  markdown: boolean
+  org: string
+  page: number
+  perPage: number
+  sort: string
+}
+
 export const CMD_NAME = 'list'
 
 const description = 'List repositories in an organization'
@@ -123,18 +137,7 @@ async function run(
     page,
     perPage,
     sort,
-  } = cli.flags as unknown as {
-    all: boolean
-    direction: Direction
-    dryRun: boolean
-    interactive: boolean
-    json: boolean
-    markdown: boolean
-    org: string
-    page: number
-    perPage: number
-    sort: string
-  }
+  } = cli.flags as RepositoryListFlags
 
   const hasApiToken = hasDefaultApiToken()
 

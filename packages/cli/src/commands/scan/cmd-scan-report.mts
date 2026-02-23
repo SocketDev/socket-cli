@@ -21,6 +21,15 @@ import type {
   CliSubcommand,
 } from '../../utils/cli/with-subcommands.mjs'
 
+// Flags interface for type safety.
+interface ScanReportFlags {
+  fold: FOLD_SETTING
+  json: boolean
+  markdown: boolean
+  org: string
+  reportLevel: REPORT_LEVEL
+}
+
 export const CMD_NAME = 'report'
 
 const description =
@@ -126,17 +135,14 @@ async function run(
     parentName,
   })
 
-  const { json, markdown, org: orgFlag } = cli.flags
+  const { fold, json, markdown, org: orgFlag, reportLevel } =
+    cli.flags as ScanReportFlags
 
   const dryRun = !!cli.flags['dryRun']
-
-  const fold = cli.flags['fold'] as unknown as FOLD_SETTING
 
   const interactive = !!cli.flags['interactive']
 
   const includeLicensePolicy = !!cli.flags['license']
-
-  const reportLevel = cli.flags['reportLevel'] as unknown as REPORT_LEVEL
 
   const short = !!cli.flags['short']
 

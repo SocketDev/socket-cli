@@ -31,6 +31,31 @@ import type { PURL_Type } from '../../utils/ecosystem/types.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
 const logger = getDefaultLogger()
 
+// Flags interface for type safety.
+interface FixFlags {
+  all: boolean
+  applyFixes: boolean
+  autopilot: boolean
+  debug: boolean
+  ecosystems: string[]
+  exclude: string[]
+  fixVersion: string | undefined
+  include: string[]
+  json: boolean
+  majorUpdates: boolean
+  markdown: boolean
+  maxSatisfying: boolean
+  minSatisfying: boolean
+  minimumReleaseAge: string
+  outputFile: string
+  prCheck: boolean
+  prLimit: number
+  rangeStyle: RangeStyle
+  showAffectedDirectDependencies: boolean
+  silence: boolean
+  unknownFlags?: string[]
+}
+
 export const CMD_NAME = 'fix'
 
 const DEFAULT_LIMIT = 10
@@ -313,34 +338,11 @@ async function run(
     // We patched in this feature with `npx custompatch meow` at
     // socket-cli/patches/meow#13.2.0.patch.
     unknownFlags = [],
-  } = cli.flags as unknown as {
-    all: boolean
-    applyFixes: boolean
-    autopilot: boolean
-    debug: boolean
-    ecosystems: string[]
-    exclude: string[]
-    fixVersion: string | undefined
-    include: string[]
-    json: boolean
-    majorUpdates: boolean
-    markdown: boolean
-    maxSatisfying: boolean
-    minSatisfying: boolean
-    minimumReleaseAge: string
-    outputFile: string
-    prCheck: boolean
-    prLimit: number
-    rangeStyle: RangeStyle
-    showAffectedDirectDependencies: boolean
-    silence: boolean
-    unknownFlags?: string[]
-  }
+  } = cli.flags as FixFlags
 
   const dryRun = !!cli.flags['dryRun']
 
-  const minSatisfying =
-    (cli.flags['minSatisfying'] as unknown as boolean) || !maxSatisfying
+  const minSatisfying = (cli.flags as FixFlags).minSatisfying || !maxSatisfying
 
   const disableMajorUpdates = !majorUpdates
 

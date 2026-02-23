@@ -25,6 +25,11 @@ import type {
 
 const logger = getDefaultLogger()
 
+// Flags interface for type safety.
+interface SfwFlags {
+  dryRun: boolean
+}
+
 const config: CliCommandConfig = {
   commandName: 'sfw',
   description: 'Run Socket Firewall directly (alias: firewall)',
@@ -97,7 +102,8 @@ async function run(
     parentName,
   })
 
-  const { dryRun } = cli.flags as unknown as { dryRun: boolean }
+  // Extract typed flags (commonFlags defines dryRun as boolean).
+  const { dryRun } = cli.flags as SfwFlags
 
   if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)

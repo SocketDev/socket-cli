@@ -23,6 +23,16 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 
+// Flags interface for type safety.
+interface ScanDiffFlags {
+  depth: number
+  dryRun: boolean
+  file: string
+  json: boolean
+  markdown: boolean
+  org: string
+}
+
 export const CMD_NAME = 'diff'
 
 const description = 'See what changed between two Scans'
@@ -113,14 +123,7 @@ async function run(
     json,
     markdown,
     org: orgFlag,
-  } = cli.flags as unknown as {
-    depth: number
-    dryRun: boolean
-    file: string
-    json: boolean
-    markdown: boolean
-    org: string
-  }
+  } = cli.flags as ScanDiffFlags
 
   const interactive = !!cli.flags['interactive']
 
