@@ -43,7 +43,7 @@ function getHighestEntryIndex(
   entries: Array<[string | symbol, any]>,
   keys: Array<string | symbol>,
 ) {
-  return getEntryIndexes(entries, keys).at(-1) ?? -1
+  return getEntryIndexes(entries, keys)?.at(-1) ?? -1
 }
 
 function updatePkgJsonField(
