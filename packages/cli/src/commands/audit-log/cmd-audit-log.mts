@@ -124,7 +124,7 @@ async function run(
     org: orgFlag,
     page,
     perPage,
-  } = cli.flags as AuditLogFlags
+  } = cli.flags as unknown as AuditLogFlags
 
   const dryRun = !!cli.flags['dryRun']
 

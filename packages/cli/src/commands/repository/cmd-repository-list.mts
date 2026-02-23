@@ -137,7 +137,7 @@ async function run(
     page,
     perPage,
     sort,
-  } = cli.flags as RepositoryListFlags
+  } = cli.flags as unknown as RepositoryListFlags
 
   const hasApiToken = hasDefaultApiToken()
 

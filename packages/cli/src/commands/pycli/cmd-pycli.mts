@@ -117,7 +117,7 @@ async function run(
     parentName,
   })
 
-  const { dryRun } = cli.flags as PycliFlags
+  const { dryRun } = cli.flags as unknown as PycliFlags
 
   if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)

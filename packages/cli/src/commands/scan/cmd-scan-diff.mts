@@ -123,7 +123,7 @@ async function run(
     json,
     markdown,
     org: orgFlag,
-  } = cli.flags as ScanDiffFlags
+  } = cli.flags as unknown as ScanDiffFlags
 
   const interactive = !!cli.flags['interactive']
 

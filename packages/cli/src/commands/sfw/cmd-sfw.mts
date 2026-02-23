@@ -103,7 +103,7 @@ async function run(
   })
 
   // Extract typed flags (commonFlags defines dryRun as boolean).
-  const { dryRun } = cli.flags as SfwFlags
+  const { dryRun } = cli.flags as unknown as SfwFlags
 
   if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)

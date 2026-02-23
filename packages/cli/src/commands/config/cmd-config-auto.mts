@@ -82,7 +82,7 @@ ${getSupportedConfigEntries()
     parentName,
   })
 
-  const { json, markdown } = cli.flags as ConfigAutoFlags
+  const { json, markdown } = cli.flags as unknown as ConfigAutoFlags
 
   const dryRun = !!cli.flags['dryRun']
 

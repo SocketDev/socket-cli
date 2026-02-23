@@ -125,7 +125,7 @@ async function run(
     file: filepath,
     json,
     markdown,
-  } = cli.flags as AnalyticsFlags
+  } = cli.flags as unknown as AnalyticsFlags
 
   const dryRun = !!cli.flags['dryRun']
 
