@@ -190,8 +190,8 @@ catalogs:
       specifier: 4.16.1
       version: 4.16.1
     eslint-plugin-n:
-      specifier: 17.21.3
-      version: 17.21.3
+      specifier: 17.24.0
+      version: 17.24.0
     eslint-plugin-sort-destructure-keys:
       specifier: 2.0.0
       version: 2.0.0
@@ -565,7 +565,7 @@ importers:
         version: 4.16.1(@typescript-eslint/utils@8.44.1(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.35.0(jiti@2.6.1))
       eslint-plugin-n:
         specifier: 'catalog:'
-        version: 17.21.3(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3)
+        version: 17.24.0(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3)
       eslint-plugin-sort-destructure-keys:
         specifier: 'catalog:'
         version: 2.0.0(eslint@9.35.0(jiti@2.6.1))
@@ -2869,8 +2869,8 @@ packages:
       eslint-import-resolver-node:
         optional: true
 
-  eslint-plugin-n@17.21.3:
-    resolution: {integrity: sha512-MtxYjDZhMQgsWRm/4xYLL0i2EhusWT7itDxlJ80l1NND2AL2Vi5Mvneqv/ikG9+zpran0VsVRXTEHrpLmUZRNw==}
+  eslint-plugin-n@17.24.0:
+    resolution: {integrity: sha512-/gC7/KAYmfNnPNOb3eu8vw+TdVnV0zhdQwexsw6FLXbhzroVj20vRn2qL8lDWDGnAQ2J8DhdfvXxX9EoxvERvw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: '>=8.23.0'
@@ -6877,7 +6877,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-n@17.21.3(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3):
+  eslint-plugin-n@17.24.0(eslint@9.35.0(jiti@2.6.1))(typescript@5.9.3):
     dependencies:
       '@eslint-community/eslint-utils': 4.9.0(eslint@9.35.0(jiti@2.6.1))
       enhanced-resolve: 5.18.3
