@@ -30,6 +30,13 @@ async function main() {
     )
   }
 
+  // Validate structure.
+  if (!data || typeof data !== 'object' || !data.data) {
+    throw new Error(
+      'Invalid analytics data structure: expected object with "data" property',
+    )
+  }
+
   // Dynamic import is needed here because AnalyticsApp.tsx gets compiled to .js at build time.
   const { AnalyticsApp } = await import(
     pathToFileURL(new URL('./AnalyticsApp.js', import.meta.url).pathname).href

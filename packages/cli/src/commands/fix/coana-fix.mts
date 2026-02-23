@@ -304,7 +304,11 @@ export async function coanaFix(
             .filter(line => line.trim())
           const ghsaIdsRaw = lines.length > 0 ? lines[lines.length - 1] : ''
           if (ghsaIdsRaw && ghsaIdsRaw.trim()) {
-            discoveredIds.push(...JSON.parse(ghsaIdsRaw))
+            const parsed = JSON.parse(ghsaIdsRaw)
+            if (!Array.isArray(parsed)) {
+              throw new Error('Expected array of GHSA IDs from coana output')
+            }
+            discoveredIds.push(...parsed)
           }
         } catch (e) {
           debug('Failed to parse GHSA IDs from find-vulnerabilities output')

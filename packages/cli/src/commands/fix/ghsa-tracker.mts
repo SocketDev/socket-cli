@@ -110,9 +110,9 @@ export async function markGhsaFixed(
           // Could not read lock file, may have been removed.
         }
         // Lock exists and process is alive, wait with exponential backoff.
-        // Delays: 100ms (attempt 0), 200ms (attempt 1), 400ms (attempt 2), 800ms (attempt 3).
+        // Delays: 100ms, 200ms, 400ms, 800ms, capped at 10s to prevent overflow.
         await new Promise(resolve =>
-          setTimeout(resolve, 100 * Math.pow(2, attempt)),
+          setTimeout(resolve, Math.min(100 * Math.pow(2, attempt), 10_000)),
         )
         continue
       }

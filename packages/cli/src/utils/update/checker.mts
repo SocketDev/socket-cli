@@ -256,8 +256,8 @@ const NetworkUtils = {
           throw e
         }
 
-        // Exponential backoff.
-        const delay = baseDelay * 2 ** (attempts - 1)
+        // Exponential backoff with cap to prevent integer overflow.
+        const delay = Math.min(baseDelay * 2 ** (attempts - 1), 60_000)
         logger.log(
           `Attempt ${attempts} failed, retrying in ${delay}ms: ${e instanceof Error ? e.message : String(e)}`,
         )

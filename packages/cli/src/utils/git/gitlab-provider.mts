@@ -84,9 +84,11 @@ export class GitLabProvider implements PrProvider {
           }
         }
 
-        // Retry on 5xx errors or network failures.
+        // Retry on 5xx errors or network failures with exponential backoff.
         if (attempt < retries) {
-          const delay = Math.min(1000 * 2 ** (attempt - 1), 10_000)
+          // Cap attempt to prevent overflow before Math.min.
+          const safeAttempt = Math.min(attempt, 14)
+          const delay = Math.min(1000 * 2 ** (safeAttempt - 1), 10_000)
           debug(`mr: retrying in ${delay}ms...`)
           // eslint-disable-next-line no-await-in-loop
           await sleep(delay)
