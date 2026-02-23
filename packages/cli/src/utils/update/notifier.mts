@@ -20,6 +20,8 @@
  * - User experience messaging
  */
 
+import process from 'node:process'
+
 import colors from 'yoctocolors-cjs'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
@@ -87,7 +89,7 @@ export function formatUpdateMessage(options: UpdateNotificationOptions): {
 export function showUpdateNotification(
   options: UpdateNotificationOptions,
 ): void {
-  if (!globalThis.process?.stdout?.isTTY) {
+  if (!process.stdout?.isTTY) {
     return // Probably piping stdout.
   }
 
@@ -124,7 +126,7 @@ export function showUpdateNotification(
 export function scheduleExitNotification(
   options: UpdateNotificationOptions,
 ): void {
-  if (!globalThis.process?.stdout?.isTTY) {
+  if (!process.stdout?.isTTY) {
     return // Probably piping stdout.
   }
 
