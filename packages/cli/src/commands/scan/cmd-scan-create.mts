@@ -295,7 +295,7 @@ async function run(
     reportLevel,
     setAsAlertsPage: pendingHeadFlag,
     tmp,
-  } = cli.flags as ScanCreateFlags
+  } = cli.flags as unknown as ScanCreateFlags
 
   // Validate ecosystem values.
   const reachEcosystems: PURL_Type[] = []
@@ -312,14 +312,14 @@ async function run(
 
   const dryRun = !!cli.flags['dryRun']
 
-  const { basics } = cli.flags as ScanCreateFlags
+  const { basics } = cli.flags as unknown as ScanCreateFlags
 
   let {
     autoManifest,
     branch: branchName,
     repo: repoName,
     report,
-  } = cli.flags as ScanCreateFlags
+  } = cli.flags as unknown as ScanCreateFlags
 
   let { 0: orgSlug } = await determineOrgSlug(
     String(orgFlag || ''),

@@ -338,11 +338,11 @@ async function run(
     // We patched in this feature with `npx custompatch meow` at
     // socket-cli/patches/meow#13.2.0.patch.
     unknownFlags = [],
-  } = cli.flags as FixFlags
+  } = cli.flags as unknown as FixFlags
 
   const dryRun = !!cli.flags['dryRun']
 
-  const minSatisfying = (cli.flags as FixFlags).minSatisfying || !maxSatisfying
+  const minSatisfying = (cli.flags as unknown as FixFlags).minSatisfying || !maxSatisfying
 
   const disableMajorUpdates = !majorUpdates
 

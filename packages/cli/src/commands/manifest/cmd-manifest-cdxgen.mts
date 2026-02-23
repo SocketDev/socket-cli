@@ -235,7 +235,7 @@ async function run(
     parentName,
   })
 
-  const { dryRun } = cli.flags as CdxgenFlags
+  const { dryRun } = cli.flags as unknown as CdxgenFlags
 
   // Filter Socket flags from argv but keep --no-banner and --help for cdxgen.
   const argsToProcess = filterFlags(argv, { ...commonFlags, ...outputFlags }, [

@@ -133,7 +133,7 @@ async function run(
 
   debug(`override: ${SOCKET_JSON} sbt: ${sockJson?.defaults?.manifest?.sbt}`)
 
-  let { bin, out, sbtOpts, stdout, verbose } = cli.flags as ScalaFlags
+  let { bin, out, sbtOpts, stdout, verbose } = cli.flags as unknown as ScalaFlags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {

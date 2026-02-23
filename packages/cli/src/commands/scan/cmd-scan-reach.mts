@@ -143,7 +143,7 @@ async function run(
     reachSkipCache,
     reachUseOnlyPregeneratedSboms,
     reachUseUnreachableFromPrecomputation,
-  } = cli.flags as ScanReachFlags
+  } = cli.flags as unknown as ScanReachFlags
 
   const dryRun = !!cli.flags['dryRun']
 

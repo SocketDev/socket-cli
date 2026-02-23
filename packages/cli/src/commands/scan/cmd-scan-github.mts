@@ -147,11 +147,11 @@ async function run(
     json,
     markdown,
     org: orgFlag,
-  } = cli.flags as ScanGithubFlags
+  } = cli.flags as unknown as ScanGithubFlags
 
   const dryRun = !!cli.flags['dryRun']
 
-  let { all, githubApiUrl, orgGithub, repos } = cli.flags as ScanGithubFlags
+  let { all, githubApiUrl, orgGithub, repos } = cli.flags as unknown as ScanGithubFlags
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:

@@ -120,7 +120,7 @@ async function run(
     `override: ${SOCKET_JSON} gradle: ${sockJson?.defaults?.manifest?.gradle}`,
   )
 
-  let { bin, gradleOpts, verbose } = cli.flags as GradleFlags
+  let { bin, gradleOpts, verbose } = cli.flags as unknown as GradleFlags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {
