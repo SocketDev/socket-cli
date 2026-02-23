@@ -28,11 +28,10 @@
     "verify": "node scripts/verify-package.mjs"
   },
   "dependencies": {
-    "@sentry/node": "catalog:",
-    "@socketsecurity/cli": "workspace:*"
+    "@sentry/node": "catalog:"
   },
   "devDependencies": {
-    "@sentry/node": "catalog:",
+    "@socketsecurity/cli": "workspace:*",
     "build-infra": "workspace:*",
     "esbuild": "catalog:"
   },
