@@ -18,6 +18,12 @@ import type {
 
 const logger = getDefaultLogger()
 
+// Flags interface for type safety.
+interface LoginFlags {
+  apiBaseUrl?: string | undefined
+  apiProxy?: string | undefined
+}
+
 export const CMD_NAME = 'login'
 
 const description = 'Setup Socket CLI with an API token and defaults'
@@ -90,10 +96,7 @@ async function run(
     )
   }
 
-  const { apiBaseUrl, apiProxy } = cli.flags as unknown as {
-    apiBaseUrl?: string | undefined
-    apiProxy?: string | undefined
-  }
+  const { apiBaseUrl, apiProxy } = cli.flags as LoginFlags
 
   await attemptLogin(apiBaseUrl, apiProxy)
 }

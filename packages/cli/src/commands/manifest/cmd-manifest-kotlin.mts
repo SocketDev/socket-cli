@@ -22,6 +22,13 @@ import type {
 
 const logger = getDefaultLogger()
 
+// Flags interface for type safety.
+interface KotlinFlags {
+  bin: string | undefined
+  gradleOpts: string | undefined
+  verbose: boolean | undefined
+}
+
 // Design note: Gradle language commands (gradle, kotlin, scala) share similar code
 // but maintain separate commands for clarity. This allows language-specific help text
 // and clearer user experience (e.g., "socket manifest kotlin" shows Kotlin-specific
@@ -118,11 +125,7 @@ async function run(
     `override: ${SOCKET_JSON} gradle: ${sockJson?.defaults?.manifest?.gradle}`,
   )
 
-  let { bin, gradleOpts, verbose } = cli.flags as unknown as {
-    bin: string | undefined
-    gradleOpts: string | undefined
-    verbose: boolean | undefined
-  }
+  let { bin, gradleOpts, verbose } = cli.flags as KotlinFlags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {

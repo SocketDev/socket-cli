@@ -19,6 +19,11 @@ import type {
 
 const logger = getDefaultLogger()
 
+// Flags interface for type safety.
+interface CdxgenFlags {
+  dryRun: boolean
+}
+
 // Technical debt: cdxgen uses yargs for arg parsing internally. Converting to
 // Socket CLI's custom meow implementation would provide consistency with other
 // commands but requires significant work to map all cdxgen flags and maintain
@@ -230,7 +235,7 @@ async function run(
     parentName,
   })
 
-  const { dryRun } = cli.flags as unknown as { dryRun: boolean }
+  const { dryRun } = cli.flags as CdxgenFlags
 
   // Filter Socket flags from argv but keep --no-banner and --help for cdxgen.
   const argsToProcess = filterFlags(argv, { ...commonFlags, ...outputFlags }, [

@@ -26,6 +26,19 @@ import type {
 
 const logger = getDefaultLogger()
 
+// Flags interface for type safety.
+interface ScanGithubFlags {
+  all: boolean | undefined
+  githubApiUrl: string
+  githubToken: string
+  interactive: boolean
+  json: boolean
+  markdown: boolean
+  org: string
+  orgGithub: string
+  repos: string
+}
+
 export const CMD_NAME = 'github'
 
 const DEFAULT_GITHUB_URL = 'https://api.github.com'
@@ -134,23 +147,11 @@ async function run(
     json,
     markdown,
     org: orgFlag,
-  } = cli.flags as unknown as {
-    githubToken: string
-    interactive: boolean
-    json: boolean
-    markdown: boolean
-    org: string
-    orgGithub: string
-  }
+  } = cli.flags as ScanGithubFlags
 
   const dryRun = !!cli.flags['dryRun']
 
-  let { all, githubApiUrl, orgGithub, repos } = cli.flags as unknown as {
-    all: boolean | undefined
-    githubApiUrl: string
-    orgGithub: string
-    repos: string
-  }
+  let { all, githubApiUrl, orgGithub, repos } = cli.flags as ScanGithubFlags
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:

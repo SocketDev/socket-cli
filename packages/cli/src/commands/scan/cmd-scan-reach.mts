@@ -30,6 +30,26 @@ import type {
 } from '../../utils/cli/with-subcommands.mts'
 import type { PURL_Type } from '../../utils/ecosystem/types.mts'
 
+// Flags interface for type safety.
+interface ScanReachFlags {
+  cwd: string
+  interactive: boolean
+  json: boolean
+  markdown: boolean
+  org: string
+  reachAnalysisMemoryLimit: number
+  reachAnalysisTimeout: number
+  reachConcurrency: number
+  reachDebug: boolean
+  reachDisableAnalysisSplitting: boolean
+  reachDisableAnalytics: boolean
+  reachLazyMode: boolean
+  reachMinSeverity: string
+  reachSkipCache: boolean
+  reachUseOnlyPregeneratedSboms: boolean
+  reachUseUnreachableFromPrecomputation: boolean
+}
+
 export const CMD_NAME = 'reach'
 
 const description = 'Compute tier 1 reachability'
@@ -123,24 +143,7 @@ async function run(
     reachSkipCache,
     reachUseOnlyPregeneratedSboms,
     reachUseUnreachableFromPrecomputation,
-  } = cli.flags as unknown as {
-    cwd: string
-    interactive: boolean
-    json: boolean
-    markdown: boolean
-    org: string
-    reachAnalysisTimeout: number
-    reachAnalysisMemoryLimit: number
-    reachConcurrency: number
-    reachDebug: boolean
-    reachDisableAnalytics: boolean
-    reachDisableAnalysisSplitting: boolean
-    reachLazyMode: boolean
-    reachMinSeverity: string
-    reachSkipCache: boolean
-    reachUseOnlyPregeneratedSboms: boolean
-    reachUseUnreachableFromPrecomputation: boolean
-  }
+  } = cli.flags as ScanReachFlags
 
   const dryRun = !!cli.flags['dryRun']
 

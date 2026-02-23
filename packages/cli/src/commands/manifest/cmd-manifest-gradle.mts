@@ -22,6 +22,13 @@ import type {
 
 const logger = getDefaultLogger()
 
+// Flags interface for type safety.
+interface GradleFlags {
+  bin: string | undefined
+  gradleOpts: string | undefined
+  verbose: boolean | undefined
+}
+
 const config: CliCommandConfig = {
   commandName: 'gradle',
   description:
@@ -113,11 +120,7 @@ async function run(
     `override: ${SOCKET_JSON} gradle: ${sockJson?.defaults?.manifest?.gradle}`,
   )
 
-  let { bin, gradleOpts, verbose } = cli.flags as unknown as {
-    bin: string | undefined
-    gradleOpts: string | undefined
-    verbose: boolean | undefined
-  }
+  let { bin, gradleOpts, verbose } = cli.flags as GradleFlags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {

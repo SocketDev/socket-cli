@@ -22,6 +22,15 @@ import type {
 
 const logger = getDefaultLogger()
 
+// Flags interface for type safety.
+interface ScalaFlags {
+  bin: string | undefined
+  out: string | undefined
+  sbtOpts: string | undefined
+  stdout: boolean | undefined
+  verbose: boolean | undefined
+}
+
 const config: CliCommandConfig = {
   commandName: 'scala',
   description:
@@ -124,13 +133,7 @@ async function run(
 
   debug(`override: ${SOCKET_JSON} sbt: ${sockJson?.defaults?.manifest?.sbt}`)
 
-  let { bin, out, sbtOpts, stdout, verbose } = cli.flags as unknown as {
-    bin: string | undefined
-    out: string | undefined
-    sbtOpts: string | undefined
-    stdout: boolean | undefined
-    verbose: boolean | undefined
-  }
+  let { bin, out, sbtOpts, stdout, verbose } = cli.flags as ScalaFlags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {

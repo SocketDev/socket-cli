@@ -24,6 +24,16 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 
+// Flags interface for type safety.
+interface AuditLogFlags {
+  interactive: boolean
+  json: boolean
+  markdown: boolean
+  org: string
+  page: number
+  perPage: number
+}
+
 export const CMD_NAME = 'audit-log'
 
 const description = 'Look up the audit log for an organization'
@@ -114,14 +124,7 @@ async function run(
     org: orgFlag,
     page,
     perPage,
-  } = cli.flags as unknown as {
-    interactive: boolean
-    json: boolean
-    markdown: boolean
-    org: string
-    page: number
-    perPage: number
-  }
+  } = cli.flags as AuditLogFlags
 
   const dryRun = !!cli.flags['dryRun']
 

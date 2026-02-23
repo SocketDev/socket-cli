@@ -25,6 +25,13 @@ import type {
 
 const logger = getDefaultLogger()
 
+// Flags interface for type safety.
+interface AnalyticsFlags {
+  file: string
+  json: boolean
+  markdown: boolean
+}
+
 export const CMD_NAME = 'analytics'
 
 const description = 'Look up analytics data'
@@ -118,7 +125,7 @@ async function run(
     file: filepath,
     json,
     markdown,
-  } = cli.flags as unknown as { file: string; json: boolean; markdown: boolean }
+  } = cli.flags as AnalyticsFlags
 
   const dryRun = !!cli.flags['dryRun']
 

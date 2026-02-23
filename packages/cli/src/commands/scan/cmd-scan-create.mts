@@ -41,6 +41,41 @@ import type {
 } from '../../utils/cli/with-subcommands.mts'
 import type { PURL_Type } from '../../utils/ecosystem/types.mts'
 
+// Flags interface for type safety.
+interface ScanCreateFlags {
+  autoManifest?: boolean | undefined
+  basics?: boolean | undefined
+  branch: string
+  commitHash: string
+  commitMessage: string
+  committers: string
+  cwd: string
+  defaultBranch: boolean
+  interactive: boolean
+  json: boolean
+  markdown: boolean
+  org: string
+  pullRequest: number
+  reach: boolean
+  reachAnalysisMemoryLimit: number
+  reachAnalysisTimeout: number
+  reachConcurrency: number
+  reachDebug: boolean
+  reachDisableAnalysisSplitting: boolean
+  reachDisableAnalytics: boolean
+  reachLazyMode: boolean
+  reachMinSeverity: string
+  reachSkipCache: boolean
+  reachUseOnlyPregeneratedSboms: boolean
+  reachUseUnreachableFromPrecomputation: boolean
+  readOnly: boolean
+  repo: string
+  report?: boolean | undefined
+  reportLevel: REPORT_LEVEL
+  setAsAlertsPage: boolean
+  tmp: boolean
+}
+
 export const CMD_NAME = 'create'
 
 const description = 'Create a new Socket scan and report'
@@ -260,35 +295,7 @@ async function run(
     reportLevel,
     setAsAlertsPage: pendingHeadFlag,
     tmp,
-  } = cli.flags as unknown as {
-    cwd: string
-    commitHash: string
-    commitMessage: string
-    committers: string
-    defaultBranch: boolean
-    interactive: boolean
-    json: boolean
-    markdown: boolean
-    org: string
-    pullRequest: number
-    readOnly: boolean
-    reportLevel: REPORT_LEVEL
-    setAsAlertsPage: boolean
-    tmp: boolean
-    // Reachability flags.
-    reach: boolean
-    reachAnalysisTimeout: number
-    reachAnalysisMemoryLimit: number
-    reachConcurrency: number
-    reachDebug: boolean
-    reachDisableAnalytics: boolean
-    reachDisableAnalysisSplitting: boolean
-    reachLazyMode: boolean
-    reachMinSeverity: string
-    reachSkipCache: boolean
-    reachUseOnlyPregeneratedSboms: boolean
-    reachUseUnreachableFromPrecomputation: boolean
-  }
+  } = cli.flags as ScanCreateFlags
 
   // Validate ecosystem values.
   const reachEcosystems: PURL_Type[] = []
@@ -305,21 +312,14 @@ async function run(
 
   const dryRun = !!cli.flags['dryRun']
 
-  const { basics } = cli.flags as unknown as {
-    basics?: boolean | undefined
-  }
+  const { basics } = cli.flags as ScanCreateFlags
 
   let {
     autoManifest,
     branch: branchName,
     repo: repoName,
     report,
-  } = cli.flags as unknown as {
-    autoManifest?: boolean | undefined
-    branch: string
-    repo: string
-    report?: boolean | undefined
-  }
+  } = cli.flags as ScanCreateFlags
 
   let { 0: orgSlug } = await determineOrgSlug(
     String(orgFlag || ''),

@@ -24,6 +24,12 @@ import type { LocalConfig } from '../../utils/config.mts'
 
 const logger = getDefaultLogger()
 
+// Flags interface for type safety.
+interface ConfigAutoFlags {
+  json: boolean
+  markdown: boolean
+}
+
 export const CMD_NAME = 'auto'
 
 const description =
@@ -76,10 +82,7 @@ ${getSupportedConfigEntries()
     parentName,
   })
 
-  const { json, markdown } = cli.flags as unknown as {
-    json: boolean
-    markdown: boolean
-  }
+  const { json, markdown } = cli.flags as ConfigAutoFlags
 
   const dryRun = !!cli.flags['dryRun']
 
