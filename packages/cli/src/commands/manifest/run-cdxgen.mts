@@ -136,9 +136,12 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<DlxSpawnResult> {
       const cwd = process.cwd()
       const fullOutputPath = path.resolve(cwd, outputPath)
       // Validate that the resolved path is within the current working directory.
+      // Normalize both paths to handle edge cases and ensure proper comparison.
+      const normalizedOutput = path.normalize(fullOutputPath)
+      const normalizedCwd = path.normalize(cwd)
       if (
-        !fullOutputPath.startsWith(cwd + path.sep) &&
-        fullOutputPath !== cwd
+        !normalizedOutput.startsWith(normalizedCwd + path.sep) &&
+        normalizedOutput !== normalizedCwd
       ) {
         logger.error(
           `Output path "${outputPath}" resolves outside the current working directory`,
