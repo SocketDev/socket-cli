@@ -11,6 +11,12 @@ export function msAtHome(isoTimeStamp: string): string {
   })
 
   const delta = timeEnd - timeStart
+
+  // Handle negative delta (future timestamps).
+  if (delta < 0) {
+    return isoTimeStamp.slice(0, 10)
+  }
+
   if (delta < 60 * 60 * 1000) {
     return rtf.format(-Math.round(delta / (60 * 1000)), 'minute')
   }
