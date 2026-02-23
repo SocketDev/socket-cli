@@ -93,7 +93,61 @@ git status
 
 ---
 
-### Phase 2: Repository Cleanup
+### Phase 2: Update Dependencies
+
+<action>
+Update dependencies across Socket Security repositories to ensure latest versions:
+</action>
+
+**Target Repositories:**
+1. **socket-cli** (current repository)
+2. **socket-btm** (`../socket-btm/`)
+3. **socket-sbom-generator** (`../socket-sbom-generator/`)
+4. **ultrathink** (`../ultrathink/`)
+
+**Update Process:**
+
+For each repository, run dependency updates:
+
+```bash
+# socket-cli (current repo)
+pnpm run update
+
+# socket-btm
+cd ../socket-btm && pnpm run update && cd -
+
+# socket-sbom-generator
+cd ../socket-sbom-generator && pnpm run update && cd -
+
+# ultrathink
+cd ../ultrathink && pnpm run update && cd -
+```
+
+<validation>
+**For each repository:**
+1. Check if directory exists (skip if not found)
+2. Run `pnpm run update` command
+3. Report success or failure
+4. Track updated packages count
+5. Continue even if some repos fail
+
+**Expected Results:**
+- Dependencies updated in available repositories
+- Report number of packages updated per repository
+- Note any repositories that were skipped (not found)
+- Continue with scan even if updates fail
+
+**Track for reporting:**
+- Repositories updated: N/4
+- Total packages updated: N
+- Failed updates: N (continue with warnings)
+- Skipped repositories: [list]
+
+</validation>
+
+---
+
+### Phase 3: Repository Cleanup
 
 <action>
 Clean up junk files and organize the repository before scanning:
@@ -168,7 +222,7 @@ find . -type f -name '*.log' \
 
 ---
 
-### Phase 3: Determine Scan Scope
+### Phase 4: Determine Scan Scope
 
 <action>
 Ask user which scans to run:
@@ -209,7 +263,7 @@ If user requests non-existent scan type, report error and suggest valid types.
 
 ---
 
-### Phase 4: Execute Scans
+### Phase 5: Execute Scans
 
 <action>
 For each enabled scan type, spawn a specialized agent using Task tool:
@@ -308,7 +362,7 @@ fi
 
 ---
 
-### Phase 5: Aggregate Findings
+### Phase 6: Aggregate Findings
 
 <action>
 Collect all findings from agents and aggregate:
@@ -347,7 +401,7 @@ interface Finding {
 
 ---
 
-### Phase 6: Generate Report
+### Phase 7: Generate Report
 
 <action>
 Create structured quality report with all findings:
@@ -420,7 +474,7 @@ Create structured quality report with all findings:
 
 ---
 
-### Phase 7: Complete
+### Phase 8: Complete
 
 <completion_signal>
 ```xml
