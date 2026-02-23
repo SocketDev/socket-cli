@@ -48,12 +48,18 @@
  *         ├── package.json
  *         └── node_modules/
  *
- * TODO: Runtime directory tree extraction
- * Currently extracts only single binary files. Need to:
- * - Extract entire directory trees from VFS (not just binaries)
- * - Use process.smol VFS APIs that support directory extraction
- * - Preserve file permissions and directory structure
- * - Handle node_modules/ dependencies at runtime
+ * PLANNED ENHANCEMENT: Runtime directory tree extraction
+ * Currently extracts only single binary files. Full directory tree extraction is a
+ * planned optimization documented in socket-btm/docs/vfs-configuration-plan.md.
+ *
+ * VFS APIs (getAsset, getAssetKeys) already exist in node-smol. When implemented:
+ * - Extract entire directory trees from VFS (not just binaries).
+ * - Use process.smol VFS APIs that support directory extraction.
+ * - Preserve file permissions and directory structure.
+ * - Handle node_modules/ dependencies at runtime.
+ *
+ * Current workaround: Extract only the binary with a warning when dependencies are
+ * missing (see line 296-302). This limitation does not block current functionality.
  */
 
 import { createHash } from 'node:crypto'
@@ -225,14 +231,15 @@ async function isNpmPackageExtracted(packagePath: string): Promise<boolean> {
  *
  * Current implementation: Extracts only the binary file as a temporary solution.
  *
- * TODO: Full directory tree extraction once binject/node-smol VFS APIs are available:
- * 1. Check if binject auto-extracted the VFS to node-smol base directory
- * 2. If not, use VFS directory extraction APIs to extract full package trees
- * 3. Preserve file permissions and directory structure
- * 4. Handle symlinks properly (binLinks from Arborist)
+ * PLANNED ENHANCEMENT: Full directory tree extraction (see socket-btm/docs/vfs-configuration-plan.md)
+ * VFS APIs already exist in node-smol. When this optimization is implemented:
+ * 1. Check if binject auto-extracted the VFS to node-smol base directory.
+ * 2. If not, use VFS directory extraction APIs to extract full package trees.
+ * 3. Preserve file permissions and directory structure.
+ * 4. Handle symlinks properly (binLinks from Arborist).
  *
- * Workaround: For now, we extract only the binary. Full packages with dependencies
- * will need to be extracted when proper directory VFS APIs are implemented.
+ * Current workaround: Extract only the binary with warning (see line 296-302).
+ * Full packages with dependencies will need directory VFS extraction to work correctly.
  *
  * @param tool - Name of the tool to extract.
  * @returns Path to the extracted tool binary.
