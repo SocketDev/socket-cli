@@ -49,6 +49,7 @@ export async function outputListScans(
             year: 'numeric',
             month: 'numeric',
             day: 'numeric',
+            timeZone: 'UTC',
           })
         : '',
       repo: d.repo,
