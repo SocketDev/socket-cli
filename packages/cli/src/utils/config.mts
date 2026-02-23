@@ -135,6 +135,10 @@ function getConfigValues(retryCount = 0): LocalConfig {
           try {
             const rawString = Buffer.isBuffer(raw) ? raw.toString('utf8') : raw
             const decoded = Buffer.from(rawString, 'base64').toString('utf8')
+            // Check for invalid UTF-8 sequences (replacement character).
+            if (decoded.includes('\ufffd')) {
+              throw new Error('Invalid UTF-8 in base64-encoded config')
+            }
             const parsed = JSON.parse(decoded)
             // Only copy supported config keys to prevent prototype pollution.
             if (parsed && typeof parsed === 'object') {

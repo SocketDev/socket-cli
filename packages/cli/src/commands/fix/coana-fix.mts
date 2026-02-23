@@ -350,8 +350,7 @@ export async function coanaFix(
 
   // Filter out already-fixed GHSAs to avoid duplicate work.
   const unprocessedIds: string[] = []
-  for (let i = 0, { length } = ids; i < length; i += 1) {
-    const ghsaId = ids[i]!
+  for (const ghsaId of ids) {
     // eslint-disable-next-line no-await-in-loop
     const alreadyFixed = await isGhsaFixed(cwd, ghsaId)
     if (!alreadyFixed) {
