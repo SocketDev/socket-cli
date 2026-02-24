@@ -6,41 +6,42 @@
 
 **Mission**: Identify critical bugs that could cause crashes, data corruption, or security vulnerabilities.
 
-**Scan Targets**: All `.mts` files in `src/`
+**Scan Targets**: All `.mts` files in `packages/cli/src/`
 
 **Prompt Template:**
 ```
-Your task is to perform a critical bug scan on socket-btm, a monorepo containing Node.js binary tooling written in TypeScript (.mts/.mjs), C/C++, and shell scripts. Identify bugs that could cause build failures, data corruption, or security vulnerabilities.
+Your task is to perform a critical bug scan on socket-cli, Socket Security's CLI tool written in TypeScript (.mts extension). Identify bugs that could cause crashes, data corruption, or security vulnerabilities.
 
 <context>
-This is Socket Security's Binary Tooling Manager (BTM) monorepo with multiple packages:
-- **node-smol-builder**: Builds Node.js from source with Socket Security patches
-- **binject**: Binary injection library (C/C++ with LIEF integration)
-- **bin-infra**: Binary infrastructure utilities (compression, format handling)
-- **build-infra**: Build infrastructure utilities (tar, gzip, file I/O)
-- **binsuite**: Binary suite tools
+This is Socket Security's CLI tool:
+- **@socketsecurity/cli**: Main CLI package in `packages/cli/`
+- TypeScript codebase with .mts extensions
+- Commands for security scanning, package analysis, npm wrapping
+- Integrates with Socket API for vulnerability data
+- Wraps npm/npx/pnpm/yarn with security checks
+- VFS extraction for external tools (cdxgen, coana, synp, socket-patch)
+- Handles GitHub integration, pull requests, CI workflows
+- React/Ink for terminal UI components
+- Recently updated VFS extraction to use process.smol.mount()
 
 Key characteristics:
-- Uses TypeScript with .mts/.mjs extension for build scripts
-- C/C++ code for binary manipulation and injection
-- Manages Node.js version synchronization and patch application
-- Processes external source code and applies unified diff patches
-- Handles cross-platform compilation (macOS, Linux, Windows)
-- Manages build checkpoints and caching for performance
-- Must handle patch failures and build errors gracefully
+- Uses meow for CLI parsing
+- Extensive test coverage with Vitest
+- Socket API integration for security data
+- GitHub API integration for PR/issue management
+- File system operations for npm package analysis
+- Telemetry with Sentry (optional build variant)
 </context>
 
 <instructions>
-Scan all code files across the monorepo for these critical bug patterns:
-- TypeScript/JavaScript: packages/*/scripts/**/*.{mjs,mts}, packages/*/src/**/*.{mjs,mts}
-- C/C++: packages/*/src/**/*.{c,cc,cpp,h}
-- Focus on:
+Scan code files in packages/cli/src/ for these critical bug patterns:
 
 <pattern name="null_undefined_access">
 - Property access without optional chaining when value might be null/undefined
 - Array access without length validation (arr[0], arr[arr.length-1])
 - JSON.parse() without try-catch
 - Object destructuring without null checks
+- Socket API responses assumed to have data without null checks
 </pattern>
 
 <pattern name="unhandled_promises">
@@ -48,13 +49,16 @@ Scan all code files across the monorepo for these critical bug patterns:
 - Promise.then() chains without .catch() handlers
 - Fire-and-forget promises that could reject
 - Missing error handling in async/await blocks
+- GitHub API calls without error handling
+- Socket API calls without error handling
 </pattern>
 
 <pattern name="race_conditions">
 - Concurrent file system operations without coordination
-- Parallel cache reads/writes without synchronization
 - Check-then-act patterns without atomic operations
 - Shared state modifications in Promise.all()
+- VFS extraction race conditions
+- Cache access without synchronization
 </pattern>
 
 <pattern name="type_coercion">
@@ -65,10 +69,11 @@ Scan all code files across the monorepo for these critical bug patterns:
 </pattern>
 
 <pattern name="resource_leaks">
-- File handles opened but not closed (missing .close() or using())
+- File handles opened but not closed
 - Timers created but not cleared (setTimeout/setInterval)
 - Event listeners added but not removed
-- Memory accumulation in long-running processes
+- React/Ink component unmount issues
+- Process spawning without cleanup
 </pattern>
 
 <pattern name="buffer_overflow">
@@ -107,7 +112,7 @@ Only report issues that pass all three checks. Use `<thinking>` tags to show you
 <output_format>
 For each finding, report:
 
-File: src/path/to/file.mts:lineNumber
+File: packages/cli/src/path/to/file.mts:lineNumber
 Issue: [One-line description of the bug]
 Severity: Critical
 Pattern: [The problematic code snippet]
@@ -116,66 +121,68 @@ Fix: [Specific code change to fix it]
 Impact: [What happens if this bug is triggered]
 
 Example:
-File: packages/node-smol-builder/scripts/binary-released/shared/apply-patches.mjs:145
-Issue: Unhandled promise rejection in patch application
+File: packages/cli/src/commands/scan/fetch-scan.mts:145
+Issue: Unhandled promise rejection in Socket API call
 Severity: Critical
-Pattern: `applyPatch(patchFile, targetPath)`
-Trigger: When patch file contains malformed unified diff format
-Fix: `await applyPatch(patchFile, targetPath).catch(err => { log.error(err); throw new Error(\`Patch failed: \${err.message}\`) })`
-Impact: Uncaught exception crashes build process, leaving Node.js source in inconsistent state
+Pattern: `fetchScanData(scanId)`
+Trigger: When Socket API returns 500 error or network timeout
+Fix: `await fetchScanData(scanId).catch(err => { logger.error(err); throw new InputError(\`Failed to fetch scan: \${err.message}\`) })`
+Impact: Uncaught exception crashes CLI process, leaving user without error message
 
-Example (C/C++):
-File: packages/binject/src/socketsecurity/binject/binject.c:234
-Issue: Potential null pointer dereference after malloc
+Example:
+File: packages/cli/src/utils/dlx/vfs-extract.mts:234
+Issue: Potential null pointer access when extracting VFS tools
 Severity: Critical
-Pattern: `uint8_t* buffer = malloc(size); memcpy(buffer, data, size);`
-Trigger: When malloc fails due to insufficient memory
-Fix: `uint8_t* buffer = malloc(size); if (!buffer) return BINJECT_ERROR_MEMORY; memcpy(buffer, data, size);`
-Impact: Segmentation fault crashes binary injection process
+Pattern: `const packageDir = process.smol.mount(vfsPath); const toolPath = path.join(packageDir, 'bin/tool')`
+Trigger: When process.smol.mount() returns undefined (not in SEA mode)
+Fix: `if (!processWithSmol.smol?.mount) throw new Error('VFS mount not available'); const packageDir = processWithSmol.smol.mount(vfsPath); if (!packageDir) throw new Error('Failed to mount VFS path');`
+Impact: TypeError crashes CLI when running outside SEA binary
 </output_format>
 
 <quality_guidelines>
 - Only report actual bugs, not style issues or minor improvements
 - Verify bugs are not already handled by surrounding code
-- Prioritize bugs affecting build reliability and binary correctness
-- For C/C++: Focus on memory safety, null checks, buffer overflows
-- For TypeScript: Focus on promise handling, type guards, external input validation
+- Prioritize bugs affecting CLI reliability and user data integrity
+- Focus on promise handling, type guards, external API validation
 - Skip false positives (TypeScript type guards are sufficient in many cases)
-- Scan across all packages: node-smol-builder, binject, bin-infra, build-infra, binsuite
+- Pay special attention to Socket API and GitHub API error handling
+- VFS extraction code is recently updated - check process.smol.mount() usage
 </quality_guidelines>
 
-Scan systematically through all packages/ directories and report all critical bugs found. If no critical bugs are found, state that explicitly.
+Scan systematically through packages/cli/src/ and report all critical bugs found. If no critical bugs are found, state that explicitly with "✓ No critical issues found".
 ```
 
 ---
 
 ### Logic Scan Agent
 
-**Mission**: Detect logical errors in build scripts, patch algorithms, and binary manipulation that could produce incorrect builds or corrupted binaries.
+**Mission**: Detect logical errors in CLI commands, parsers, and data processing that could produce incorrect output or unexpected behavior.
 
-**Scan Targets**: All packages in the monorepo
+**Scan Targets**: packages/cli/src/
 
 **Prompt Template:**
 ```
-Your task is to detect logic errors in socket-btm's build scripts, patch application logic, and binary manipulation code that could produce incorrect builds or corrupted binaries. Focus on algorithm correctness, edge case handling, and data validation.
+Your task is to detect logic errors in socket-cli's command handling, data parsing, and API integration that could produce incorrect output or unexpected behavior.
 
 <context>
-socket-btm is a monorepo for Node.js binary tooling:
-- **node-smol-builder**: Build orchestration, patch application, checkpoint management
-- **binject**: Binary injection logic, ELF/Mach-O/PE format handling
-- **bin-infra**: Binary compression, format detection, segment management
-- **build-infra**: File I/O, tar creation, gzip compression
+socket-cli is Socket Security's CLI tool:
+- **Commands**: scan, npm, npx, pnpm, yarn, optimize, fix, wrapper, package, organization, repository
+- **Parsers**: Package manifests (package.json, package-lock.json, pnpm-lock.yaml, yarn.lock)
+- **API Integration**: Socket API for security data, GitHub API for PR/issue management
+- **Data Processing**: SBOM generation, dependency analysis, vulnerability scoring
+- **Output Formats**: Terminal (React/Ink), JSON, Markdown
 
 Critical operations:
-- Patch parsing and application (unified diff format)
-- Binary format detection and manipulation (ELF/Mach-O/PE)
-- Checkpoint creation and restoration (tar.gz archives)
-- Cross-platform path handling and file operations
-- Version comparison and Node.js synchronization
+- Package manifest parsing and validation
+- Dependency resolution and analysis
+- Security score calculation
+- GitHub PR creation and management
+- Socket registry override application
+- VFS tool extraction and execution
 </context>
 
 <instructions>
-Analyze all packages for these logic error patterns:
+Analyze packages/cli/src/ for these logic error patterns:
 
 <pattern name="off_by_one">
 Off-by-one errors in loops and slicing:
@@ -191,6 +198,7 @@ Insufficient type validation:
 - `if (arr.length)` crashes if arr is undefined - check existence first
 - `typeof x === 'object'` true for null and arrays - use Array.isArray() or null check
 - Missing validation before destructuring or property access
+- Socket API responses assumed to match TypeScript types without runtime validation
 </pattern>
 
 <pattern name="edge_cases">
@@ -204,36 +212,36 @@ Unhandled edge cases in string/array operations:
 
 <pattern name="algorithm_correctness">
 Algorithm implementation issues:
-- Patch parsing: Hunk header line counts not validated, @@ parsing errors
+- Dependency resolution: Missing transitive dependencies
 - Version comparison: Failing on semver edge cases (prerelease, build metadata)
 - Path resolution: Symlink handling, relative vs absolute path logic
-- File ordering: Incorrect dependency ordering in build sequences
-- Deduplication: Missing deduplication of duplicate files/patches
+- Deduplication: Missing deduplication of duplicate packages/dependencies
+- Score calculation: Incorrect weighting or aggregation
 </pattern>
 
-<pattern name="patch_handling">
-Patch application logic errors:
-- Unified diff parsing: Line offset calculation errors, context matching failures
-- Hunk application: Off-by-one in line number calculations
-- Patch validation: Missing validation of patch format (malformed hunks)
-- Backup/restore: Not properly handling patch failures mid-application
-- Independent patches: Assumptions about patch ordering or dependencies
+<pattern name="api_integration">
+Socket API and GitHub API integration errors:
+- Pagination: Not handling paginated responses correctly
+- Rate limiting: Not respecting rate limit headers
+- Error codes: Not handling all error response codes
+- Data transformation: Incorrect mapping between API response and CLI data model
+- Authentication: Token validation missing or incorrect
 </pattern>
 
-<pattern name="binary_format">
-Binary format handling errors:
-- Format detection: Misidentifying ELF/Mach-O/PE headers
-- Section/segment: Off-by-one in offset calculations, size validation missing
-- Endianness: Not handling big-endian vs little-endian correctly
-- Alignment: Missing alignment requirements for injected data
-- Cross-platform: Windows vs Unix path separators, line endings
+<pattern name="cli_parsing">
+CLI argument parsing errors:
+- Flag validation: Accepting invalid flag combinations
+- Required flags: Not enforcing required flags
+- Flag types: Not validating flag value types (number, boolean, string)
+- Default values: Incorrect or missing defaults
+- Help text: Mismatched help text and actual behavior
 </pattern>
 
 <quality_guidelines>
 For each potential issue found, use explicit chain-of-thought reasoning with `<thinking>` tags:
 
 <thinking>
-1. Can this actually crash/fail in production?
+1. Can this actually produce wrong output in production?
    - Code path analysis: [describe the execution flow]
    - Production scenarios: [real-world conditions]
    - Result: [yes/no with justification]
@@ -259,7 +267,7 @@ Only report issues that pass all three checks. Use `<thinking>` tags to show you
 <output_format>
 For each finding, report:
 
-File: src/path/to/file.mts:lineNumber
+File: packages/cli/src/path/to/file.mts:lineNumber
 Issue: [One-line description]
 Severity: High | Medium
 Edge Case: [Specific input that triggers the error]
@@ -268,127 +276,113 @@ Fix: [Corrected code]
 Impact: [What incorrect output is produced]
 
 Example:
-File: packages/node-smol-builder/scripts/binary-released/shared/apply-patches.mjs:89
-Issue: Off-by-one in patch hunk line counting
+File: packages/cli/src/commands/package/handle-purl-score.mts:89
+Issue: Off-by-one in vulnerability count aggregation
 Severity: High
-Edge Case: When patch hunk has trailing context lines
-Pattern: `for (let i = 0; i < hunkLines.length - 1; i++)`
-Fix: `for (let i = 0; i < hunkLines.length; i++)`
-Impact: Last line of patch hunk is silently omitted, causing patch application to fail or produce incorrect output
+Edge Case: When package has exactly 1 vulnerability
+Pattern: `for (let i = 0; i < vulns.length - 1; i++)`
+Fix: `for (let i = 0; i < vulns.length; i++)`
+Impact: Last vulnerability is silently omitted from score calculation, producing incorrect security score
 
-Example (C code):
-File: packages/binject/src/socketsecurity/binject/elf_inject.c:234
-Issue: Incorrect section size calculation with alignment
+Example:
+File: packages/cli/src/utils/socket/api.mts:234
+Issue: Incorrect pagination handling for Socket API
 Severity: High
-Edge Case: When injecting data into sections requiring alignment
-Pattern: `new_size = existing_size + data_size;`
-Fix: `new_size = ALIGN_UP(existing_size + data_size, section_alignment);`
-Impact: Injected data misaligned, causing segfault when binary loads section
+Edge Case: When response has more than 100 results requiring pagination
+Pattern: `const results = await fetchData(url); return results;`
+Fix: `const allResults = []; let nextUrl = url; while (nextUrl) { const { data, nextPage } = await fetchData(nextUrl); allResults.push(...data); nextUrl = nextPage; } return allResults;`
+Impact: Only first page of results returned, missing packages/vulnerabilities in subsequent pages
 </output_format>
 
 <quality_guidelines>
-- Prioritize code handling external data (patches, binary files, build configs)
-- Focus on errors affecting build correctness and binary integrity
+- Prioritize code handling external data (Socket API, GitHub API, package manifests)
+- Focus on errors affecting CLI correctness and data accuracy
 - Verify logic errors aren't false alarms due to type narrowing
-- Consider real-world edge cases: malformed patches, unusual binary formats, cross-platform paths
-- Pay special attention to C/C++ pointer arithmetic and buffer calculations
+- Consider real-world edge cases: malformed manifests, API errors, rate limits
+- Pay special attention to recently modified VFS extraction code
 </quality_guidelines>
 
-Analyze systematically across all packages and report all logic errors found. If no errors are found, state that explicitly.
+Analyze systematically across packages/cli/src/ and report all logic errors found. If no errors are found, state that explicitly with "✓ No logic errors found".
 ```
 
 ---
 
 ### Cache Scan Agent
 
-**Mission**: Identify caching bugs that cause stale builds, checkpoint corruption, or incorrect behavior.
+**Mission**: Identify caching bugs that cause stale data, race conditions, or incorrect behavior.
 
-**Scan Targets**: Build checkpoint system and caching logic across all packages
+**Scan Targets**: Caching logic in packages/cli/src/
 
 **Prompt Template:**
 ```
-Your task is to analyze socket-btm's checkpoint and caching implementation for correctness, staleness bugs, and performance issues. Focus on checkpoint corruption, cache invalidation failures, and race conditions.
+Your task is to analyze socket-cli's caching implementation for correctness, staleness bugs, and race conditions.
 
 <context>
-socket-btm uses a multi-stage checkpoint system to speed up builds:
-- **Checkpoint stages**: source-copied, source-patched, configured, compiled, stripped, compressed, final
-- **Storage**: tar.gz archives stored in build/checkpoints/{platform}-{arch}/
-- **Invalidation**: Based on cache keys (hashes of patches, config, source version)
-- **Progressive builds**: Can restore from any checkpoint and continue
-- **Cross-platform**: Must work on Windows, macOS, Linux (ARM64, x64)
-- **Critical**: Stale checkpoints cause incorrect builds that are hard to debug
+socket-cli uses multiple caching layers:
+- **GitHub cache**: Caches GitHub API responses (5-minute TTL) in ~/.socket/_github/
+- **Update cache**: Caches npm registry version checks (24-hour TTL) in ~/.socket/_update/
+- **Config cache**: In-memory cache for config file (validated by mtime)
+- **VFS extraction cache**: Caches extracted tools in ~/.socket/_dlx/
 
 Caching locations:
-- packages/node-smol-builder/scripts/common/shared/checkpoints.mjs
-- packages/node-smol-builder/build/checkpoints/
-- Cache key generation and validation logic
+- packages/cli/src/utils/git/github.mts (GitHub API cache)
+- packages/cli/src/utils/update/checker.mts (update check cache)
+- packages/cli/src/utils/config.mts (config file cache)
+- packages/cli/src/utils/dlx/vfs-extract.mts (VFS extraction cache)
 </context>
 
 <instructions>
 Analyze caching implementation for these issue categories:
 
 <pattern name="cache_invalidation">
-Stale checkpoints from incorrect invalidation:
-- Patch changes: Are patch file hashes included in cache key?
-- Source version: Is Node.js version properly included in cache key?
-- Config changes: Are build flags (debug/release, ICU settings) in cache key?
-- Cross-platform: Are platform/arch properly isolated (darwin-arm64 vs linux-x64)?
-- Restoration: Is checkpoint validated before restoration (corrupted archives)?
-- Race: Checkpoint modified/deleted between validation and restoration?
+Stale cache from incorrect invalidation:
+- GitHub cache: Are API response etags/timestamps properly checked?
+- Update cache: Is 24-hour TTL properly enforced?
+- Config cache: Is file mtime properly validated?
+- VFS cache: Is node-smol hash included in cache key?
+- Restoration: Is cache validated before use (corrupted files)?
+- Race: Cache modified/deleted between validation and use?
 </pattern>
 
 <pattern name="cache_keys">
-Checkpoint key generation correctness:
-- Hash collisions: Is hash function sufficient for patch content?
-- Patch ordering: Does key depend on patch application order?
-- Platform isolation: Are Windows/macOS/Linux checkpoints properly separated?
-- Arch isolation: Are ARM64/x64 checkpoints kept separate?
-- Additions: Are build-infra/binject changes invalidating checkpoints?
-- Environment: Are env vars (NODE_OPTIONS, etc.) affecting builds included?
+Cache key generation correctness:
+- GitHub cache: Are org slug and endpoint properly separated?
+- Update cache: Is platform/arch included in cache key?
+- VFS cache: Are tool name and platform properly isolated?
+- Hash collisions: Is hash function sufficient?
+- Environment: Are env vars affecting cache included in key?
 </pattern>
 
-<pattern name="checkpoint_corruption">
-Checkpoint archive corruption:
-- Partial writes: tar.gz creation interrupted, incomplete archive
-- Disk full: Archive truncated due to disk space issues
-- Extraction failures: Corrupted archive extracted partially
-- Overwrite races: Concurrent builds overwriting same checkpoint
-- Cleanup races: Checkpoint deleted while being restored
+<pattern name="cache_corruption">
+Cache file corruption:
+- Partial writes: JSON file creation interrupted, incomplete data
+- Disk full: File truncated due to disk space issues
+- Concurrent writes: Multiple processes writing same cache file
+- Invalid JSON: Corrupted cache file not handled gracefully
 </pattern>
 
 <pattern name="concurrency">
-Race conditions in checkpoint operations:
-- Creation races: Multiple builds creating same checkpoint simultaneously
-- Restoration races: Checkpoint deleted/modified during restoration
-- Validation races: Checkpoint validated then corrupted before use
-- Directory conflicts: Concurrent builds using same build directory
-- Lock files: Missing lock files allowing concurrent checkpoint access
+Race conditions in cache operations:
+- Creation races: Multiple processes creating same cache file simultaneously
+- TOCTOU: Cache validated then corrupted before use
+- In-flight deduplication: Multiple concurrent requests for same data
+- Lock files: Missing lock files allowing concurrent cache access
 </pattern>
 
-<pattern name="stale_checkpoints">
-Scenarios producing stale/incorrect checkpoints:
-- Patch modified but checkpoint not invalidated (hash not updated)
-- Platform mismatch: Restoring darwin checkpoint on linux
-- Arch mismatch: Restoring arm64 checkpoint for x64 build
-- Version mismatch: Node.js version changed but checkpoint reused
-- Additions changed: build-infra/binject updated but checkpoint not invalidated
-- Environment drift: Build flags changed but cache key unchanged
-</pattern>
-
-<pattern name="edge_cases">
-Uncommon scenarios:
-- Empty files (zero bytes) - cached correctly?
-- File deletion while cached - stale entry persists?
-- Rapid successive reads/writes (stress testing)
-- Very large files exceeding maxEntrySize
-- Permission changes during caching
+<pattern name="stale_caches">
+Scenarios producing stale/incorrect caches:
+- GitHub data modified but cache not invalidated
+- Update check showing old version (24-hour delay)
+- Config file changed but in-memory cache not refreshed
+- VFS tools updated but cache not invalidated
+- Platform mismatch: Using wrong platform cache
 </pattern>
 
 <quality_guidelines>
 For each potential issue found, use explicit chain-of-thought reasoning with `<thinking>` tags:
 
 <thinking>
-1. Can this actually crash/fail in production?
+1. Can this actually cause stale data in production?
    - Code path analysis: [describe the execution flow]
    - Production scenarios: [real-world conditions]
    - Result: [yes/no with justification]
@@ -414,7 +408,7 @@ Only report issues that pass all three checks. Use `<thinking>` tags to show you
 <output_format>
 For each finding, report:
 
-File: packages/node-smol-builder/scripts/common/shared/checkpoints.mjs:lineNumber
+File: packages/cli/src/utils/cache/file-cache.mts:lineNumber
 Issue: [One-line description]
 Severity: High | Medium
 Scenario: [Step-by-step sequence showing how bug manifests]
@@ -423,52 +417,61 @@ Fix: [Specific code change]
 Impact: [Observable effect - wrong output, performance, crash]
 
 Example:
-File: packages/node-smol-builder/scripts/common/shared/checkpoints.mjs:145
-Issue: Cache key missing patch content hashes
+File: packages/cli/src/utils/update/checker.mts:145
+Issue: Cache key missing platform, causing cross-platform cache pollution
 Severity: High
-Scenario: 1) Build with patch v1, creates checkpoint. 2) Patch file modified to v2 (same filename). 3) Build restores v1 checkpoint. 4) Produces binary with v1 patches but v2 expected
-Pattern: `const cacheKey = \`\${nodeVersion}-\${platform}-\${arch}\``
-Fix: `const patchHashes = await hashAllPatches(); const cacheKey = \`\${nodeVersion}-\${platform}-\${arch}-\${patchHashes}\``
-Impact: Stale checkpoints produce incorrect Node.js binaries with wrong patches applied
+Scenario: 1) Check for updates on macOS, caches "1.2.3". 2) Run on Linux, reads macOS cache. 3) Shows "1.2.3" even though Linux latest is "1.2.4"
+Pattern: `const cacheKey = \`socket-cli-\${currentVersion}\``
+Fix: `const cacheKey = \`socket-cli-\${currentVersion}-\${process.platform}-\${process.arch}\``
+Impact: Cross-platform users see incorrect "no updates available" message
+
+Example:
+File: packages/cli/src/utils/git/github.mts:89
+Issue: TOCTOU race between cache validation and read
+Severity: Medium
+Scenario: 1) Check cache exists and is fresh. 2) Cache deleted/corrupted. 3) Read cache, throws error
+Pattern: `if (existsSync(cachePath) && isFresh(cachePath)) { return readCache(cachePath); }`
+Fix: `try { const data = readCache(cachePath); if (isFresh(data.timestamp)) return data; } catch { /* cache miss */ }`
+Impact: Rare race condition causes CLI to crash instead of gracefully fetching fresh data
 </output_format>
 
 <quality_guidelines>
-- Focus on correctness issues that produce wrong builds or corrupted checkpoints
-- Consider cross-platform differences (Windows, macOS, Linux)
-- Evaluate checkpoint invalidation scenarios (patches changed, additions changed)
-- Prioritize issues causing silent build incorrectness over performance
+- Focus on correctness issues that produce stale or wrong data
+- Consider concurrent CLI invocations (multiple terminals)
+- Evaluate cache invalidation scenarios (data changed, files updated)
+- Prioritize issues causing silent incorrectness over performance
 - Verify issues aren't prevented by existing cache key generation
+- Known safe patterns: Config write batching with nextTick, GitHub cache TOCTOU double-check
 </quality_guidelines>
 
-Analyze the checkpoint implementation thoroughly across all checkpoint stages and report all issues found. If the implementation is sound, state that explicitly.
+Analyze the caching implementation thoroughly and report all issues found. If the implementation is sound, state that explicitly with "✓ No cache issues found".
 ```
 
 ---
 
 ### Workflow Scan Agent
 
-**Mission**: Detect problems in build scripts, CI configuration, git hooks, and developer workflows across the socket-btm monorepo.
+**Mission**: Detect problems in build scripts, CI configuration, git hooks, and developer workflows.
 
-**Scan Targets**: All `scripts/`, `package.json`, `.git-hooks/*`, `.github/workflows/*` across packages
+**Scan Targets**: `scripts/`, `package.json`, `.husky/`, `.github/workflows/`
 
 **Prompt Template:**
 ```
-Your task is to identify issues in socket-btm's development workflows, build scripts, and CI configuration that could cause build failures, test flakiness, or poor developer experience.
+Your task is to identify issues in socket-cli's development workflows, build scripts, and CI configuration that could cause build failures, test flakiness, or poor developer experience.
 
 <context>
-socket-btm is a pnpm monorepo with:
-- **Build scripts**: packages/*/scripts/**/*.{mjs,mts} (ESM, cross-platform Node.js)
-- **Package manager**: pnpm workspaces with scripts in each package.json
-- **Git hooks**: .git-hooks/* for pre-commit, pre-push validation
+socket-cli is a pnpm monorepo with:
+- **Build scripts**: scripts/*.mjs (ESM, cross-platform Node.js)
+- **Package manager**: pnpm workspaces with scripts in package.json
+- **Git hooks**: .husky/* for pre-commit, commit-msg, pre-push validation
 - **CI**: GitHub Actions (.github/workflows/)
 - **Platforms**: Must work on Windows, macOS, Linux (ARM64, x64)
-- **CLAUDE.md**: Defines conventions (no process.exit(), no backward compat, etc.)
-- **Critical**: Build scripts compile C/C++ code and apply patches - must handle errors gracefully
+- **CLAUDE.md**: Defines conventions (no process.exit() in most code, no backward compat, etc.)
 
 Packages:
-- node-smol-builder: Main build orchestration
-- binject: C/C++ binary injection library
-- bin-infra, build-infra: Utilities used by node-smol-builder
+- @socketsecurity/cli: Main CLI package in packages/cli/
+- build-infra: Build utilities for SEA binary generation
+- package-builder: Template-based package generation
 </context>
 
 <instructions>
@@ -485,55 +488,58 @@ Cross-platform compatibility in scripts/*.mjs:
 
 <pattern name="scripts_errors">
 Error handling in scripts:
-- process.exit() usage: CLAUDE.md forbids this - should throw errors instead
+- process.exit() usage: CLAUDE.md forbids this in most code - should throw errors instead
 - Missing try-catch: Async operations without error handling
 - Exit codes: Non-zero exit on failure for CI detection
 - Error messages: Are they helpful for debugging?
 - Dependency checks: Do scripts check for required tools before use?
 
-**Note on file existence checks**: existsSync() is ACCEPTABLE and actually PREFERRED over async fs.access() for synchronous file checks. Node.js has quirks where the synchronous check is more reliable for immediate validation. Do NOT flag existsSync() as an issue.
+**Note on file existence checks**: existsSync() is ACCEPTABLE and PREFERRED over async fs.access() for synchronous file checks.
+
+**Exception**: Interactive test runner scripts/test.mjs intentionally uses process.exit() (documented exception).
 </pattern>
 
 <pattern name="package_json_scripts">
 package.json script correctness:
 - Script chaining: Use && (fail fast) not ; (continue on error) when errors matter
-- Platform-specific: Commands that don't work cross-platform (grep, find, etc.)
-- Convention compliance: Match patterns in CLAUDE.md (e.g., `pnpm run foo --flag` not `foo:bar`)
+- Platform-specific: Commands that don't work cross-platform
+- Convention compliance: Match patterns in CLAUDE.md
 - Missing scripts: Standard scripts like build, test, lint documented?
+- Test file paths: Using -- before paths runs ALL tests (incorrect)
 </pattern>
 
 <pattern name="git_hooks">
-Git hooks configuration:
+Git hooks configuration in .husky/:
 - Pre-commit: Does it run linting/formatting? Is it fast (<10s)?
-- Pre-push: Does it run tests to prevent broken pushes?
+- Commit-msg: Does it strip AI attribution?
+- Pre-push: Does it validate commits and secrets?
 - False positives: Do hooks block legitimate commits?
 - Error messages: Are hook failures clearly explained?
-- Hook installation: Is setup documented in README?
+- Syntax: Are hooks compatible with all shells (bash, zsh, etc.)?
 </pattern>
 
 <pattern name="ci_configuration">
-CI pipeline issues:
+CI pipeline issues in .github/workflows/:
 - Build order: Are steps in correct sequence (install → build → test)?
 - Cross-platform: Are Windows/macOS/Linux builds all tested?
-- C/C++ compilation: Are compiler toolchains (clang, gcc, MSVC) properly configured?
-- Build artifacts: Are Node.js binaries uploaded for each platform?
-- Checkpoint caching: Are build checkpoints cached across CI runs?
+- SEA binary: Are standalone executable builds tested?
+- Build artifacts: Are binaries uploaded for each platform?
 - Failure notifications: Are build failures clearly visible?
-- Node.js versions: Are upstream Node.js version updates tested?
-- Patch validation: Are patch files validated before application?
+- Security: Template injection vulnerabilities in workflows?
 </pattern>
 
 <pattern name="developer_experience">
 Documentation and setup:
 - Common errors: Are frequent issues documented with solutions?
 - Environment variables: Are required env vars documented?
+- Setup instructions: Are they accurate and complete?
 </pattern>
 
 <quality_guidelines>
 For each potential issue found, use explicit chain-of-thought reasoning with `<thinking>` tags:
 
 <thinking>
-1. Can this actually crash/fail in production?
+1. Can this actually cause build/test failures in production?
    - Code path analysis: [describe the execution flow]
    - Production scenarios: [real-world conditions]
    - Result: [yes/no with justification]
@@ -559,7 +565,7 @@ Only report issues that pass all three checks. Use `<thinking>` tags to show you
 <output_format>
 For each finding, report:
 
-File: [scripts/foo.mjs:line OR package.json:scripts.build OR .github/workflows/ci.yml:line]
+File: [scripts/foo.mjs:line OR package.json:scripts.build OR .husky/pre-push:line]
 Issue: [One-line description]
 Severity: Medium | Low
 Impact: [How this affects developers or CI]
@@ -576,11 +582,19 @@ Fix: `throw new Error('Build failed: ...')`
 
 Example:
 File: package.json:scripts.test
-Issue: Script chaining uses semicolon instead of &&
+Issue: Script uses -- before file path, running ALL tests instead of specific file
 Severity: Medium
-Impact: Tests run even if build fails, masking build issues
-Pattern: `"test": "pnpm build ; pnpm vitest"`
-Fix: `"test": "pnpm build && pnpm vitest"`
+Impact: "pnpm test:unit -- file.test.mts" runs entire test suite, not just one file
+Pattern: `"test:unit": "vitest run -- "`
+Fix: `"test:unit": "vitest run"` (no trailing -- needed)
+
+Example:
+File: .husky/pre-push:70
+Issue: Process substitution syntax not compatible with all shells
+Severity: Medium
+Impact: Hook fails on some systems with "syntax error near unexpected token"
+Pattern: `done < <(git rev-list "$range")`
+Fix: `git rev-list "$range" | while read; do ... done`
 </output_format>
 
 <quality_guidelines>
@@ -588,154 +602,15 @@ Fix: `"test": "pnpm build && pnpm vitest"`
 - Consider cross-platform scenarios (Windows, macOS, Linux)
 - Verify conventions match CLAUDE.md requirements
 - Prioritize developer experience issues (confusing errors, missing docs)
+- Note documented exceptions (test runner using process.exit)
 </quality_guidelines>
 
-Analyze workflow files systematically and report all issues found. If workflows are well-configured, state that explicitly.
+Analyze workflow files systematically and report all issues found. If workflows are well-configured, state that explicitly with "✓ No workflow issues found".
 ```
 
 ---
 
-## Scan Configuration
-
-### Severity Levels
-
-| Level | Description | Action Required |
-|-------|-------------|-----------------|
-| **Critical** | Crashes, security vulnerabilities, data corruption | Fix immediately |
-| **High** | Logic errors, incorrect output, resource leaks | Fix before release |
-| **Medium** | Performance issues, edge case bugs | Fix in next sprint |
-| **Low** | Code smells, minor inconsistencies | Fix when convenient |
-
-### Scan Priority Order
-
-1. **critical** - Most important, run first
-2. **logic** - Parser correctness critical for SBOM accuracy
-3. **cache** - Performance and correctness
-4. **workflow** - Developer experience
-
-### Coverage Targets
-
-- **critical**: All src/ files
-- **logic**: src/parsers/ (19 ecosystems) + src/utils/
-- **cache**: src/utils/file-cache.mts + related
-- **workflow**: scripts/, package.json, .git-hooks/, CI
-
----
-
-## Report Format
-
-### Structured Findings
-
-Each finding should include:
-```typescript
-{
-  file: "src/utils/file-cache.mts:89",
-  issue: "Potential race condition in cache update",
-  severity: "High",
-  scanType: "cache",
-  pattern: "if (cached) { /* check-then-act */ }",
-  suggestion: "Use atomic operations or locking",
-  impact: "Could return stale data under concurrent access"
-}
-```
-
-### Example Report Output
-
-```markdown
-# Quality Scan Report
-
-**Date:** 2026-02-05
-**Scans:** critical, logic, cache, workflow
-**Files Scanned:** 127
-**Findings:** 2 critical, 5 high, 8 medium, 3 low
-
-## Critical Issues (Priority 1) - 2 found
-
-### src/utils/file-cache.mts:89
-- **Issue**: Potential null pointer access on cache miss
-- **Pattern**: `const stats = await fs.stat(normalizedPath)`
-- **Fix**: Add try-catch or check file existence first
-- **Impact**: Crashes when file deleted between cache check and stat
-
-### src/parsers/npm/index.mts:234
-- **Issue**: Unhandled promise rejection
-- **Pattern**: `parsePackageJson(path)` without await or .catch()
-- **Fix**: Add await or .catch() handler
-- **Impact**: Uncaught exception crashes process
-
-## High Issues (Priority 2) - 5 found
-
-### src/parsers/pypi/index.mts:512
-- **Issue**: Off-by-one error in bracket depth calculation
-- **Pattern**: `bracketDepth - 1` can go negative
-- **Fix**: Use `Math.max(0, bracketDepth - 1)`
-- **Impact**: Incorrect dependency parsing for malformed files
-
-...
-
-## Scan Coverage
-- **Critical scan**: 127 files analyzed in src/
-- **Logic scan**: 19 parsers + 15 utils analyzed
-- **Cache scan**: 1 file + related code paths
-- **Workflow scan**: 12 scripts + package.json + 3 hooks
-
-## Recommendations
-1. Address 2 critical issues immediately before next release
-2. Review 5 high-severity logic errors in parsers
-3. Schedule medium issues for next sprint
-4. Low-priority items can be addressed during refactoring
-```
-
----
-
-## Edge Cases
-
-### No Findings
-
-If scan finds no issues:
-```markdown
-# Quality Scan Report
-
-**Result**: ✓ No issues found
-
-All scans completed successfully with no findings.
-
-- Critical scan: ✓ Clean
-- Logic scan: ✓ Clean
-- Cache scan: ✓ Clean
-- Workflow scan: ✓ Clean
-
-**Code quality**: Excellent
-```
-
-### Scan Failures
-
-If an agent fails or times out:
-```markdown
-## Scan Errors
-
-- **critical scan**: ✗ Failed (agent timeout)
-  - Retry recommended
-  - Check agent prompt size
-
-- **logic scan**: ✓ Completed
-- **cache scan**: ✓ Completed
-- **workflow scan**: ✓ Completed
-```
-
-### Partial Scans
-
-User can request specific scan types:
-```bash
-# Only run critical and logic scans
-quality-scan --types critical,logic
-```
-
-Report only includes requested scan types and notes which were skipped.
-
----
-
-## Security Scan Agent
+### Security Scan Agent
 
 **Mission**: Scan GitHub Actions workflows for security vulnerabilities using zizmor.
 
@@ -811,7 +686,7 @@ chmod +x /usr/local/bin/zizmor
 Look for findings like:
 - `info[template-injection]` or `error[template-injection]`
 - Code injection via template expansion in run blocks
-- Unsanitized use of `${{ }}` syntax in dangerous contexts
+- Unsanitized use of `\${{ }}` syntax in dangerous contexts
 - User-controlled input used in shell commands
 </pattern>
 
@@ -833,17 +708,15 @@ Look for findings like:
 <output_format>
 For each finding, output in this structured format:
 
-{
-  file: ".github/workflows/workflow-name.yml:123",
-  issue: "Template injection vulnerability in run block",
-  severity: "High",
-  scanType: "security",
-  pattern: "run: echo ${{ github.event.comment.body }}",
-  trigger: "Untrusted user input from PR comment",
-  fix: "Use environment variables: env: COMMENT: ${{ github.event.comment.body }} then echo \"$COMMENT\"",
-  impact: "Attacker can execute arbitrary code in CI environment",
-  autofix: true
-}
+File: .github/workflows/workflow-name.yml:123
+Issue: [Vulnerability description]
+Severity: High | Medium | Low
+Pattern: [The problematic code]
+Trigger: [What attack vector this enables]
+Fix: [Specific remediation]
+Impact: [Security consequences]
+Auto-fix: [Yes/No]
+Confidence: [High/Medium/Low from zizmor]
 
 Group findings by severity (Error → High → Medium → Low → Info)
 </output_format>
@@ -856,45 +729,21 @@ Group findings by severity (Error → High → Medium → Low → Info)
 - If no findings, explicitly state the workflows are secure
 - Report suppressed findings separately
 </quality_guidelines>
-```
 
-### Example Security Scan Output
-
-```markdown
-## Security Issues - 2 found
-
-### .github/workflows/ci.yml:45
-- **Issue**: Template injection in run block
-- **Severity**: High
-- **Pattern**: `echo "User comment: ${{ github.event.comment.body }}"`
-- **Trigger**: Untrusted PR comment body injected into shell command
-- **Fix**: Use environment variable: `env: COMMENT: ${{ github.event.comment.body }}` then `echo "User comment: $COMMENT"`
-- **Impact**: Attacker can execute arbitrary commands in CI by crafting malicious PR comment
-- **Auto-fix**: Available (`zizmor --fix`)
-- **Confidence**: High
-
-### .github/workflows/release.yml:89
-- **Issue**: Cache poisoning vulnerability when publishing artifacts
-- **Severity**: Medium
-- **Pattern**: `actions/setup-node@v4` with `cache: 'npm'` in release workflow
-- **Trigger**: Dependency cache enabled in workflow that publishes release artifacts
-- **Fix**: Disable cache: `cache: ''` or remove cache parameter when publishing
-- **Impact**: Attacker could poison dependency cache and inject malicious code into releases
-- **Auto-fix**: Not available
-- **Confidence**: Low
+Run zizmor scanner and report all findings. If zizmor is not installed, report that and provide installation instructions.
 ```
 
 ---
 
-## Documentation Scan Agent
+### Documentation Scan Agent
 
-**Mission**: Verify documentation accuracy by checking README files, code comments, and examples against actual codebase implementation.
+**Mission**: Verify documentation accuracy by checking README files against actual codebase implementation.
 
-**Scan Targets**: All README.md files, documentation files, and inline code examples
+**Scan Targets**: All README.md files
 
 **Prompt Template:**
 ```
-Your task is to verify documentation accuracy across all README files and documentation by comparing documented behavior, examples, commands, and API descriptions against the actual codebase implementation.
+Your task is to verify documentation accuracy across all README files by comparing documented behavior, examples, commands, and API descriptions against the actual codebase implementation.
 
 <context>
 Documentation accuracy is critical for:
@@ -906,7 +755,6 @@ Documentation accuracy is critical for:
 Common documentation issues:
 - Package names that don't match package.json
 - Command examples with incorrect flags or options
-- API documentation showing methods that don't exist
 - File paths that are incorrect or outdated
 - Build outputs documented in wrong locations
 - Configuration examples using deprecated formats
@@ -915,11 +763,11 @@ Common documentation issues:
 </context>
 
 <instructions>
-Systematically verify all README files and documentation against the actual code:
+Systematically verify all README files against the actual code:
 
 1. **Find all documentation files**:
    ```bash
-   find . -name "README.md" -o -name "*.md" -path "*/docs/*"
+   find . -name "README.md" -path "*/packages/*" -o -name "*.md" -path "*/docs/*"
    ```
 
 2. **For each README, verify**:
@@ -927,13 +775,12 @@ Systematically verify all README files and documentation against the actual code
    - Command examples use correct flags (check --help output or source)
    - File paths exist and match actual structure
    - Build output paths match actual build script outputs
-   - API examples match actual exported functions/types
    - Configuration examples match actual schema/validation
    - Version numbers are current (not outdated)
 
 3. **Check against actual code**:
    - Read package.json to verify names, scripts, dependencies
-   - Read source files to verify APIs, exports, types
+   - Read source files to verify CLI commands exist
    - Check build scripts to verify output paths
    - Verify CLI --help matches documented flags
    - Check tests to see what's actually supported
@@ -942,19 +789,19 @@ Systematically verify all README files and documentation against the actual code
 
 <pattern name="package_names">
 Look for:
-- README showing @scope/package when package.json has no scope
-- README showing package-name when package.json shows different name
-- Installation instructions with wrong package names
+- README showing @socketsecurity/cli when npm package is "socket"
 - Import examples using wrong package names
+- Installation instructions with wrong package names
 </pattern>
 
 <pattern name="command_examples">
 Look for:
-- Commands with flags that don't exist (check --help)
+   - Commands with flags that don't exist (check --help)
 - Missing required flags in examples
 - Deprecated flags still documented
 - Examples that would error if run as-is
-- Wrong command names (typos or renamed commands)
+- Wrong command names
+- Non-existent commands (e.g., "socket console")
 </pattern>
 
 <pattern name="file_paths">
@@ -965,73 +812,51 @@ Look for:
 - Source file references that are outdated
 </pattern>
 
-<pattern name="api_documentation">
-Look for:
-- Functions/methods documented that don't exist in exports
-- Parameter types that don't match actual implementation
-- Return types incorrectly documented
-- Missing required parameters in examples
-- Examples using deprecated APIs
-</pattern>
-
 <pattern name="configuration">
 Look for:
 - Config examples using wrong keys or structure
 - Documented options that aren't validated in code
 - Missing required config fields
 - Wrong default values documented
-- Obsolete configuration formats
 </pattern>
 
 <pattern name="build_outputs">
 Look for:
 - Build output paths that don't match actual outputs
-- File sizes that are significantly outdated
-- Checkpoint names that don't match actual implementation
-- Binary names that are incorrect
-- Missing intermediate build stages
-</pattern>
-
-<pattern name="version_information">
-Look for:
-- Outdated version numbers in examples
-- Dependency versions that don't match package.json
-- Tool version requirements that are incorrect
-- Patch counts that don't match actual patches
+- SEA binary names that are incorrect
+- Missing build artifacts
 </pattern>
 
 <pattern name="missing_documentation">
 Look for:
-- Public APIs/exports not documented in README
+- Public commands not documented in README
 - Important environment variables not documented
 - New features added but not documented
-- Critical sections (75%+ of package) not mentioned
 </pattern>
 
 <quality_guidelines>
 For each potential issue found, use explicit chain-of-thought reasoning with `<thinking>` tags:
 
 <thinking>
-1. Can this actually crash/fail in production?
-   - Code path analysis: [describe the execution flow]
-   - Production scenarios: [real-world conditions]
-   - Result: [yes/no with justification]
+1. Is this actually incorrect documentation?
+   - Verification: [check against code/package.json/--help]
+   - Evidence: [what the actual code shows]
+   - Result: [INCORRECT/CORRECT]
 
-2. What input would trigger this issue?
-   - Trigger conditions: [specific inputs/states]
-   - Edge cases: [boundary conditions]
-   - Likelihood: [HIGH/MEDIUM/LOW]
+2. What confusion would this cause?
+   - User impact: [what happens if user follows docs]
+   - Severity: [HIGH/MEDIUM/LOW]
 
-3. Are there existing safeguards I'm missing?
-   - Defensive code: [try-catch, validation, guards]
-   - Framework protections: [built-in safety]
-   - Result: [SAFEGUARDED/VULNERABLE]
+3. Is there a reason for the discrepancy?
+   - Legacy reasons: [historical context]
+   - Multiple packages: [scoped vs unscoped names]
+   - Result: [REPORT/SKIP]
 
 Overall assessment: [REPORT/SKIP]
-Decision: [If REPORT, include in findings. If SKIP, explain why it's a false positive]
+Decision: [If REPORT, include in findings. If SKIP, explain why]
 </thinking>
 
-Only report issues that pass all three checks. Use `<thinking>` tags to show your reasoning explicitly.
+Only report issues that are actual documentation errors.
 </quality_guidelines>
 </instructions>
 
@@ -1052,124 +877,47 @@ Severity Guidelines:
 - Low: Minor inaccuracies or missing non-critical information
 
 Example:
-File: packages/binject/README.md:46
-Issue: Incorrect description of NODE_SEA section compression format
+File: packages/cli/README.md:25
+Issue: Incorrect package name in installation command
 Severity: High
-Pattern: "NODE_SEA - Compressed application code (Brotli, ~70-80% reduction)"
-Actual: NODE_SEA contains uncompressed blobs generated by Node.js itself, not Brotli-compressed data
-Fix: Change to: "NODE_SEA - Single Executable Application code (generated by Node.js)"
-Impact: Misleads developers about the actual format, causing confusion when inspecting binaries
+Pattern: "npm install -g @socketsecurity/cli"
+Actual: Package name is "socket" (not "@socketsecurity/cli")
+Fix: Change to: "npm install -g socket"
+Impact: Installation command will fail with "package not found" error
 
 Example:
-File: README.md:25
-Issue: Incorrect package name in build command
+File: README.md:89
+Issue: Documents non-existent "socket console" command
 Severity: High
-Pattern: "pnpm --filter @socketbin/node-smol-builder run build"
-Actual: package.json shows "name": "node-smol-builder" without @socketbin scope
-Fix: Change to: "pnpm --filter node-smol-builder run build"
-Impact: Command will fail with "No projects matched" error
+Pattern: "socket console - Interactive console for Socket API"
+Actual: No "console" command exists in packages/cli/src/commands/
+Fix: Remove "socket console" from command list
+Impact: Users will get "unknown command" error when trying to use it
 
 Example:
-File: packages/build-infra/README.md:14
-Issue: References non-existent module name
+File: docs/build-guide.md:45
+Issue: Incorrect SEA binary output path
 Severity: Medium
-Pattern: "paths - Standard directory structure"
-Actual: Module is exported as "path-builder" in package.json exports
-Fix: Change to: "path-builder - Standard directory structure"
-Impact: Developers looking for "paths" module will not find it
-
-Example:
-File: packages/binject/README.md:227
-Issue: Incorrect config size documented
-Severity: Low
-Pattern: "Config stored in binary format (1112 bytes)"
-Actual: Config is 1176 bytes (verified in source code)
-Fix: Change to: "Config stored in binary format (1176 bytes)"
-Impact: Minor inaccuracy in technical specification
+Pattern: "Outputs to dist/socket-darwin-arm64"
+Actual: SEA binaries output to packages/cli/dist/sea/socket-darwin-arm64
+Fix: Change to: "packages/cli/dist/sea/socket-darwin-arm64"
+Impact: Developers won't find built binaries at documented location
 </output_format>
 
 <quality_guidelines>
 - Verify every claim against actual code - don't assume documentation is correct
 - Read package.json files to check names, scripts, versions
-- Run --help commands to verify CLI flags when possible
-- Check exports in source files to verify APIs
+- Check src/commands/ to verify CLI commands exist
 - Look at build script outputs to verify paths
 - Focus on high-impact errors first (wrong commands, non-existent APIs)
-- Report missing documentation for major features (not every minor detail)
-- Group related issues (e.g., "5 packages using @scope incorrectly")
 - Provide exact fixes, not vague suggestions
-- If a README is mostly missing (75%+ of package undocumented), report as single high-severity issue
+- Known facts:
+  - npm package name is "socket", NOT "@socketsecurity/cli"
+  - "socket console" command does NOT exist
+  - Interactive test runner using process.exit() is a documented exception
 </quality_guidelines>
 
-Scan all README.md files in the repository and report all documentation inaccuracies found. If documentation is accurate, state that explicitly.
-```
-
-### Example Documentation Scan Output
-
-```markdown
-## Documentation Issues - 8 found
-
-### High Severity - 3 issues
-
-#### README.md:25
-- **Issue**: Incorrect package name in build command
-- **Pattern**: `pnpm --filter @socketbin/node-smol-builder run build`
-- **Actual**: package.json shows `"name": "node-smol-builder"` without scope
-- **Fix**: Change to: `pnpm --filter node-smol-builder run build`
-- **Impact**: Command fails with "No projects matched" error
-
-#### packages/binject/README.md:100
-- **Issue**: Documents obsolete --update-config flag
-- **Pattern**: `binject inject -e ./node-smol -o ./my-app --sea app.blob --update-config update-config.json`
-- **Actual**: Flag was removed, config now embedded via sea-config.json smol.update section
-- **Fix**: Remove --update-config example, document sea-config.json approach instead
-- **Impact**: Users will get "unknown flag" error, approach no longer works
-
-#### packages/build-infra/README.md:12
-- **Issue**: Documents non-existent "c-package" builder
-- **Pattern**: "*-builder - Build strategies (cmake, rust, emscripten, c-package)"
-- **Actual**: No c-package-builder.mjs exists; actual builders are: cmake, rust, emscripten, docker, clean
-- **Fix**: List actual builders: "cmake, rust, emscripten, docker, clean"
-- **Impact**: Users looking for c-package builder will be confused
-
-### Medium Severity - 3 issues
-
-#### packages/binject/README.md:62
-- **Issue**: Output path missing build mode variants
-- **Pattern**: "Outputs to `build/prod/out/Final/binject`"
-- **Actual**: Build system supports both dev and prod modes: `build/{dev|prod}/out/Final/binject`
-- **Fix**: Change to: "Outputs to `build/{dev|prod}/out/Final/binject`"
-- **Impact**: Confusing for developers doing dev builds
-
-#### packages/node-smol-builder/README.md:182
-- **Issue**: Incorrect patch count
-- **Pattern**: "Applies 13 patches to Node.js source"
-- **Actual**: Only 12 patches in patches/source-patched/ directory
-- **Fix**: Change to: "Applies 12 patches to Node.js source"
-- **Impact**: Minor discrepancy in technical details
-
-#### packages/bin-infra/README.md:1-21
-- **Issue**: Missing 75% of package contents in documentation
-- **Pattern**: Only documents src/ and make/, omits lib/, test/, scripts/, upstream/, patches/
-- **Actual**: Package has extensive JavaScript API (lib/), test utilities, build scripts, and upstream dependencies
-- **Fix**: Add comprehensive documentation of all 17 C files, 3 JS modules with API examples, test helpers, scripts, and upstream submodules
-- **Impact**: Developers unaware of most package functionality
-
-### Low Severity - 2 issues
-
-#### packages/binject/README.md:227
-- **Issue**: Incorrect config size
-- **Pattern**: "1112 bytes"
-- **Actual**: Config is 1176 bytes (verified in source)
-- **Fix**: Change all occurrences to: "1176 bytes"
-- **Impact**: Minor technical inaccuracy
-
-#### packages/binflate/README.md:18
-- **Issue**: Claims caching functionality
-- **Pattern**: "Uses cache at ~/.socket/_dlx/"
-- **Actual**: binflate only extracts; self-extracting stubs (not binflate) implement caching
-- **Fix**: Clarify that binflate extracts only, stubs handle caching
-- **Impact**: Confusion about which component caches
+Scan all README.md files in the repository and report all documentation inaccuracies found. If documentation is accurate, state that explicitly with "✓ No documentation issues found".
 ```
 
 ---
@@ -1184,55 +932,25 @@ These patterns should NOT be flagged as issues - they have been verified as corr
 
 **Why it's safe:** When `arr.length === 1`, `arr[0]` is guaranteed to exist. The non-null assertion is valid.
 
-**Example:**
-```typescript
-const vulnCount = ghsaIds.length
-if (vulnCount === 1) {
-  const ghsaId = ghsaIds[0]!  // Safe: length === 1 guarantees [0] exists
-}
-```
-
 ### Split After StartsWith Check
 
 **Pattern:** `if (str.startsWith('-')) { indent = str.split('-')[0] }`
 
-**Why it's safe:** If `startsWith('-')` is true, the string contains '-', so `split('-')[0]` returns the prefix before the first '-' (possibly empty string, but never undefined).
-
-**Example:**
-```typescript
-if (trimmed.startsWith('-')) {
-  indent = `${line.split('-')[0]}-`  // Safe: startsWith guarantees '-' exists
-}
-```
-
-### Timestamp After Network Fetch
-
-**Pattern:** `await fetchData(); cache.set({ timestamp: Date.now() })`
-
-**Why it's correct:** The timestamp should reflect when data was received, not when the request started. This is intentional behavior.
-
-### Mtime-Only Cache Invalidation
-
-**Pattern:** `_cachedConfigMtime = undefined` (without clearing `_cachedConfig`)
-
-**Why it's correct:** Setting mtime to undefined triggers reload on next access. The in-memory cache is also updated in the same operation, so staleness is not possible.
+**Why it's safe:** If `startsWith('-')` is true, `split('-')[0]` returns the prefix before the first '-' (possibly empty string, but never undefined).
 
 ### Package Name "socket"
 
-**Fact:** The npm package name is `socket`, NOT `@socketsecurity/cli`. The scoped name `@socketsecurity/cli` is used internally but the published package is `socket`.
+**Fact:** The npm package name is `socket`, NOT `@socketsecurity/cli`. The scoped name is used internally but the published package is `socket`.
 
 **Correct installation:**
 ```bash
-pnpm install -g socket
 npm install -g socket
+pnpm install -g socket
 ```
 
 ### Non-Existent Commands
 
 **Fact:** There is NO `socket console` command. Do not flag it as missing documentation.
-
-Commands that do NOT exist:
-- `socket console` - This command does not exist in the codebase
 
 ### Interactive Test Runner Exception
 
@@ -1248,22 +966,25 @@ This is an exception to the CLAUDE.md convention because:
 **Fact:** The config write using `process.nextTick` in `config.mts` is NOT a race condition.
 
 Why it's safe:
-- `localConfig` (which IS `_cachedConfig`) is always updated synchronously (line 358)
+- `localConfig` (which IS `_cachedConfig`) is always updated synchronously
 - `process.nextTick` only batches the disk write operation
 - If multiple updates happen before nextTick fires, all values are already in `_cachedConfig`
 - The single pending write persists all accumulated changes correctly
 
-### Cache Implementation Patterns
+### VFS Extraction Using process.smol.mount()
 
-**Fact:** Several cache patterns flagged as issues are actually working correctly:
+**Fact:** VFS extraction was recently updated to use `process.smol.mount()` for full directory extraction.
 
-1. **GitHub cache TTL using file mtime**: Acceptable for 5-minute TTL use case. System clock changes are rare edge cases that don't justify adding timestamp inside JSON payload.
+The code correctly:
+- Checks if `process.smol.mount` is available
+- Mounts entire npm package directories with dependencies
+- Mounts standalone binaries from VFS root
+- No longer needs manual getAsset() + fs.writeFile() pattern
 
-2. **GitHub cache TOCTOU race**: Already mitigated with double-check pattern after async readCache (lines 112-115 in github.mts).
+### GitHub Cache Implementation
 
-3. **Unbounded inflightRequests Map**: Properly cleaned up in finally block (line 123). Entries are always deleted when promises complete.
+**Fact:** GitHub cache using file mtime for TTL is acceptable for 5-minute TTL use case. TOCTOU race is mitigated with double-check pattern.
 
-4. **Update cache key missing platform**: npm registry returns the same latest version regardless of platform. Platform-specific binaries are handled via optionalDependencies.
+### Update Cache Platform Independence
 
-5. **Parallel cache writes in pull-request.mts**: Map keys are unique, so no duplicate writes occur.
-
+**Fact:** npm registry returns the same latest version regardless of platform. Platform-specific binaries are handled via optionalDependencies, so update cache doesn't need platform in key.
