@@ -14,7 +14,6 @@
 
 import { createHash } from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
-import { createRequire } from 'node:module'
 import { homedir } from 'node:os'
 import path from 'node:path'
 
@@ -32,24 +31,19 @@ import { getTrivyVersion } from '../../env/trivy-version.mts'
 import { getTrufflehogVersion } from '../../env/trufflehog-version.mts'
 import { isSeaBinary } from '../sea/detect.mts'
 
-const require = createRequire(import.meta.url)
-
-// Conditionally load node:sea module (Node.js 24+ only).
-let getAsset: ((key: string) => ArrayBuffer) | undefined
-try {
-  const sea = require('node:sea')
-  getAsset = sea.getAsset
-} catch {
-  // node:sea not available (Node.js < 24 or not in SEA context).
-}
-
 const logger = getDefaultLogger()
 
-// VFS asset path prefix for basics tools (Python, Trivy, TruffleHog, OpenGrep).
-const VFS_ASSET_PREFIX = 'basics-tools'
-
 // Basics tool names bundled in VFS.
-const BASICS_TOOLS = ['python', 'trivy', 'trufflehog', 'opengrep'] as const
+const BASICS_TOOLS = ['opengrep', 'python', 'trivy', 'trufflehog'] as const
+
+// VFS paths for basics tools (relative to /snapshot/).
+// These are mounted from the VFS filesystem embedded in the SEA binary.
+const BASICS_TOOL_VFS_PATHS: Record<(typeof BASICS_TOOLS)[number], string> = {
+  opengrep: 'opengrep',
+  python: 'python',
+  trivy: 'trivy',
+  trufflehog: 'trufflehog',
+}
 
 /**
  * Get the base dlx directory path for node-smol.
@@ -101,237 +95,109 @@ export function getPythonSitePackagesPath(): string {
  * Check if basics tools are available for socket-basics.
  *
  * Returns true if:
- * 1. Running in SEA mode with VFS assets, OR
- * 2. Tools are available in system PATH
+ * 1. Running in SEA mode with VFS filesystem containing tools, OR
+ * 2. Tools are available in system PATH (not implemented yet)
  *
  * @returns True if basics tools are available for socket-basics.
  */
 export function areBasicsToolsAvailable(): boolean {
-  // Check if running in SEA mode with VFS assets.
-  if (isSeaBinary() && getAsset) {
-    try {
-      // Check if at least Python is available in VFS.
-      getAsset(`${VFS_ASSET_PREFIX}/python`)
-      return true
-    } catch {
-      debug('notice', 'SEA mode but VFS assets not available')
-      return false
-    }
+  // Check if running in SEA mode with process.smol API.
+  if (!isSeaBinary()) {
+    debug('notice', 'Not in SEA mode - security tools not available')
+    return false
   }
 
-  // Not in SEA mode - would need to check system PATH.
-  // For now, return false (tools must be bundled in SEA).
-  debug('notice', 'Not in SEA mode - security tools not available')
-  return false
+  // Check if process.smol.mount is available.
+  const processWithSmol = process as unknown as {
+    smol?: { mount?: (vfsPath: string) => string }
+  }
+
+  if (typeof processWithSmol.smol?.mount !== 'function') {
+    debug('notice', 'SEA mode but process.smol.mount not available')
+    return false
+  }
+
+  // Try to check if at least one tool exists in VFS.
+  try {
+    processWithSmol.smol.mount('/snapshot/python')
+    return true
+  } catch {
+    debug('notice', 'SEA mode but VFS tools not available')
+    return false
+  }
 }
 
 /**
- * Extract basics tools from VFS to the node-smol dlx directory.
+ * Extract basics tools from VFS using process.smol.mount().
  *
- * Extracts Python, Trivy, TruffleHog, and OpenGrep binaries from the SEA's VFS
- * to ~/.socket/_dlx/<hash>/. The cache is persistent across runs.
+ * Extracts Python, Trivy, TruffleHog, and OpenGrep binaries from the SEA's VFS.
+ * process.smol.mount() handles caching, locking, and extraction automatically.
  *
- * Extraction paths:
- * - python/bin/python - Python runtime
- * - python/lib/python3.11/site-packages/ - Python packages (socketsecurity)
- * - trivy - Standalone binary at root
- * - trufflehog - Standalone binary at root
- * - opengrep - Standalone binary at root
+ * Extraction is managed by node-smol and tools are cached persistently.
  *
- * @param cacheDir - Directory to extract tools to (default: ~/.socket/_dlx/<hash>/).
- * @returns Path to the extracted tools directory, or null if extraction failed.
+ * @param _cacheDir - Unused, kept for API compatibility. process.smol.mount() manages paths.
+ * @returns Path to the extracted Python directory, or null if extraction failed.
  *
  * @example
  * const toolsDir = await extractBasicsTools()
  * if (toolsDir) {
- *   const pythonPath = path.join(toolsDir, 'python', 'bin', 'python')
- *   const trivyPath = path.join(toolsDir, 'trivy')
- *   const sitePackages = getPythonSitePackagesPath() // For Python packages
+ *   const paths = getBasicsToolPaths(toolsDir)
+ *   // Use paths.python, paths.trivy, etc.
  * }
  */
 export async function extractBasicsTools(
-  cacheDir?: string,
+  _cacheDir?: string,
 ): Promise<string | null> {
-  if (!isSeaBinary() || !getAsset) {
+  if (!isSeaBinary()) {
     logger.warn('Not running in SEA mode - cannot extract basics tools')
     return null
   }
 
-  // Default extraction directory: ~/.socket/_dlx/<node-smol-hash>/
-  // This is shared with other VFS-extracted tools (external-tools).
-  const extractDir = cacheDir || getNodeSmolBasePath()
-
-  // Get current tool versions for cache validation.
-  // Include platform/arch to prevent serving wrong binaries after architecture change.
-  const toolVersions = {
-    arch: process.arch,
-    opengrep: getOpengrepVersion(),
-    platform: process.platform,
-    pycli: getPyCliVersion(),
-    trivy: getTrivyVersion(),
-    trufflehog: getTrufflehogVersion(),
+  // Check if process.smol.mount is available.
+  const processWithSmol = process as unknown as {
+    smol?: { mount?: (vfsPath: string) => string }
   }
 
-  // Check if already extracted (cache hit).
-  const cacheMarker = normalizePath(path.join(extractDir, '.extracted'))
-  const cacheMetadata = normalizePath(path.join(extractDir, '.version'))
-
-  if (existsSync(cacheMarker) && existsSync(cacheMetadata)) {
-    try {
-      const cachedVersionsJson = await fs.readFile(cacheMetadata, 'utf8')
-      const cachedVersions = JSON.parse(cachedVersionsJson)
-      const versionsMatch =
-        cachedVersions.arch === toolVersions.arch &&
-        cachedVersions.opengrep === toolVersions.opengrep &&
-        cachedVersions.platform === toolVersions.platform &&
-        cachedVersions.pycli === toolVersions.pycli &&
-        cachedVersions.trivy === toolVersions.trivy &&
-        cachedVersions.trufflehog === toolVersions.trufflehog
-
-      if (versionsMatch) {
-        debug('notice', `Basics tools already extracted to: ${extractDir}`)
-        return extractDir
-      }
-
-      debug('notice', 'Tool versions changed, re-extracting...')
-      await safeDelete(extractDir)
-    } catch (_e) {
-      // Corrupted metadata, re-extract.
-      debug('warn', 'Cache metadata corrupted, re-extracting...')
-      await safeDelete(extractDir)
-    }
+  if (typeof processWithSmol.smol?.mount !== 'function') {
+    logger.warn('process.smol.mount not available - cannot extract basics tools')
+    return null
   }
 
-  // Create lock file to prevent concurrent extraction (TOCTOU mitigation).
-  const lockFile = normalizePath(path.join(extractDir, '.extracting'))
-  await safeMkdir(extractDir)
-
-  try {
-    // Try to create lock file atomically (wx = write + exclusive).
-    await fs.writeFile(lockFile, process.pid.toString(), { flag: 'wx' })
-  } catch (e: unknown) {
-    const error = e as NodeJS.ErrnoException
-    if (error.code === 'EEXIST') {
-      // Another process is extracting, wait and check for completion.
-      logger.info('Another process is extracting basics tools, waiting...')
-      for (let i = 0; i < 60; i++) {
-        // Wait up to 60 seconds.
-        // eslint-disable-next-line no-await-in-loop
-        await new Promise(resolve => setTimeout(resolve, 1_000))
-        if (existsSync(cacheMarker)) {
-          debug('notice', 'Basics tools extracted by another process')
-          return extractDir
-        }
-
-        // Check if lock holder is still alive every 5 iterations.
-        if (i % 5 === 4) {
-          try {
-            // eslint-disable-next-line no-await-in-loop
-            const lockPid = await fs.readFile(lockFile, 'utf8')
-            const pid = Number.parseInt(lockPid.trim(), 10)
-            if (!Number.isNaN(pid) && pid > 0) {
-              try {
-                // Signal 0 checks process existence.
-                process.kill(pid, 0)
-              } catch (pidError) {
-                const pidErr = pidError as NodeJS.ErrnoException
-                // EPERM means process exists but no permission (treat as alive).
-                // ESRCH means process doesn't exist (dead).
-                if (pidErr.code !== 'EPERM') {
-                  // Lock holder died, clean up and retry.
-                  debug('warn', 'Stale lock detected, removing and retrying...')
-                  // eslint-disable-next-line no-await-in-loop
-                  await fs.unlink(lockFile).catch(() => {})
-                  return extractBasicsTools(cacheDir)
-                }
-              }
-            }
-          } catch {
-            // Lock file gone, retry extraction.
-            return extractBasicsTools(cacheDir)
-          }
-        }
-      }
-      throw new Error(
-        'Timeout waiting for another process to extract basics tools',
-      )
-    }
-    throw e
-  }
-
-  logger.info('Extracting basics tools from VFS...')
+  logger.group('Extracting basics tools from VFS...')
 
   const isPlatWin = process.platform === 'win32'
   const tools = BASICS_TOOLS
-  const extractedTools: string[] = []
+  const extractedPaths: Record<string, string> = {}
 
   try {
+    // Extract all tools using process.smol.mount().
+    // mount() manages caching, locking, and extraction automatically.
     for (const tool of tools) {
-      const assetKey = `${VFS_ASSET_PREFIX}/${tool}`
-      const assetBuffer = getAsset(assetKey)
+      const vfsRelativePath = BASICS_TOOL_VFS_PATHS[tool]
+      const vfsPath = `/snapshot/${vfsRelativePath}`
 
-      // Python is a directory, others are single binaries.
-      if (tool === 'python') {
-        // Python extraction requires special handling - it's a tar.gz archive.
-        // For now, we'll extract the entire python directory from VFS.
-        // The VFS should already have the python directory structure.
-        const pythonDir = normalizePath(path.join(extractDir, 'python'))
-        // eslint-disable-next-line no-await-in-loop
-        await safeMkdir(pythonDir)
+      // eslint-disable-next-line no-await-in-loop
+      const mountedPath = processWithSmol.smol.mount(vfsPath)
 
-        const pythonBinDir = normalizePath(path.join(pythonDir, 'bin'))
-        // eslint-disable-next-line no-await-in-loop
-        await safeMkdir(pythonBinDir)
-
-        const pythonExe = isPlatWin ? 'python.exe' : 'python'
-        const pythonBinPath = normalizePath(path.join(pythonBinDir, pythonExe))
-
-        // Write Python binary.
-        // eslint-disable-next-line no-await-in-loop
-        await fs.writeFile(pythonBinPath, Buffer.from(assetBuffer))
-
-        // Make executable on Unix.
-        if (!isPlatWin) {
-          // eslint-disable-next-line no-await-in-loop
-          await fs.chmod(pythonBinPath, 0o755)
-        }
-
-        logger.info(`  ✓ Extracted ${tool}`)
-        extractedTools.push(tool)
-      } else {
-        // Regular tool (single binary).
-        const toolExe = isPlatWin ? `${tool}.exe` : tool
-        const toolPath = normalizePath(path.join(extractDir, toolExe))
-
-        // Write tool binary.
-        // eslint-disable-next-line no-await-in-loop
-        await fs.writeFile(toolPath, Buffer.from(assetBuffer))
-
-        // Make executable on Unix.
-        if (!isPlatWin) {
-          // eslint-disable-next-line no-await-in-loop
-          await fs.chmod(toolPath, 0o755)
-        }
-
-        logger.info(`  ✓ Extracted ${tool}`)
-        extractedTools.push(tool)
-      }
+      logger.success(`${tool}`)
+      extractedPaths[tool] = mountedPath
     }
+    logger.groupEnd()
 
-    // Only write cache marker if ALL tools extracted successfully.
-    if (extractedTools.length !== tools.length) {
-      const missingTools = tools.filter(t => !extractedTools.includes(t))
+    // Verify all tools were extracted.
+    const missingTools = tools.filter(t => !extractedPaths[t])
+    if (missingTools.length) {
       throw new Error(
         `Failed to extract all basics tools. Missing: ${missingTools.join(', ')}`,
       )
     }
 
     // Validate all extracted binaries work after extraction.
-    logger.info('Validating extracted basics tools...')
+    logger.group('Validating extracted basics tools...')
 
-    const pythonExe = isPlatWin ? 'python.exe' : 'python'
+    const pythonExe = isPlatWin ? 'python3.exe' : 'python3'
     const pythonPath = normalizePath(
-      path.join(extractDir, 'python', 'bin', pythonExe),
+      path.join(extractedPaths.python, 'bin', pythonExe),
     )
 
     const validateResult = await spawn(pythonPath, ['--version'], {
@@ -346,13 +212,13 @@ export async function extractBasicsTools(
     }
 
     const pythonVersion = String(validateResult.stdout || '').trim()
-    debug('notice', `Python validated: ${pythonVersion}`)
+    logger.success(`Python: ${pythonVersion}`)
 
     // Validate other security tools.
     const toolsToValidate = ['trivy', 'trufflehog', 'opengrep'] as const
     for (const tool of toolsToValidate) {
-      const toolExe = isPlatWin ? `${tool}.exe` : tool
-      const toolPath = normalizePath(path.join(extractDir, toolExe))
+      const toolPath = extractedPaths[tool]
+      if (!toolPath) continue
 
       // eslint-disable-next-line no-await-in-loop
       const toolValidateResult = await spawn(toolPath, ['--version'], {
@@ -367,40 +233,15 @@ export async function extractBasicsTools(
       }
 
       const toolVersion = String(toolValidateResult.stdout || '').trim()
-      debug('notice', `${tool} validated: ${toolVersion}`)
+      logger.success(`${tool}: ${toolVersion}`)
     }
+    logger.groupEnd()
 
-    // Write version metadata file before cache marker.
-    await fs.writeFile(
-      cacheMetadata,
-      JSON.stringify(toolVersions, null, 2),
-      'utf8',
-    )
-
-    // Write cache marker.
-    await fs.writeFile(cacheMarker, new Date().toISOString(), 'utf8')
-
-    // Remove lock file.
-    await fs.unlink(lockFile).catch(() => {
-      // Ignore errors (file might already be deleted).
-    })
-
-    logger.success(`Basics tools extracted to: ${extractDir}`)
-    return extractDir
+    logger.success('Basics tools extracted and validated')
+    // Return the Python directory path for backward compatibility.
+    return extractedPaths.python
   } catch (e) {
-    // Cleanup on failure.
-    logger.error('VFS extraction failed, cleaning up...')
-
-    // Remove lock file.
-    await fs.unlink(lockFile).catch(() => {
-      // Ignore errors.
-    })
-
-    // Remove extraction directory.
-    await safeDelete(extractDir).catch(() => {
-      // Ignore cleanup errors.
-    })
-
+    logger.error('VFS extraction failed')
     throw e
   }
 }
@@ -408,13 +249,17 @@ export async function extractBasicsTools(
 /**
  * Get paths to extracted basics tools.
  *
- * @param toolsDir - Directory containing extracted tools.
+ * Note: toolsDir is expected to be the Python directory path returned by extractBasicsTools().
+ * For standalone binaries (trivy, trufflehog, opengrep), this function constructs paths
+ * based on the Python directory's parent structure.
+ *
+ * @param toolsDir - Python directory path from extractBasicsTools().
  * @returns Object with paths to each tool binary.
  *
  * @example
  * const toolsDir = await extractBasicsTools()
  * if (toolsDir) {
- *   const paths = getToolPaths(toolsDir)
+ *   const paths = getBasicsToolPaths(toolsDir)
  *   logger.log('Python:', paths.python)
  *   logger.log('Trivy:', paths.trivy)
  * }
@@ -426,18 +271,22 @@ export function getBasicsToolPaths(toolsDir: string): {
   trufflehog: string
 } {
   const isPlatWin = process.platform === 'win32'
-  const pythonExe = isPlatWin ? 'python.exe' : 'python'
+  const pythonExe = isPlatWin ? 'python3.exe' : 'python3'
+
+  // toolsDir is the Python directory from process.smol.mount().
+  // Standalone binaries are extracted to sibling directories by process.smol.mount().
+  const baseDlxDir = path.dirname(toolsDir)
 
   return {
     opengrep: normalizePath(
-      path.join(toolsDir, isPlatWin ? 'opengrep.exe' : 'opengrep'),
+      path.join(baseDlxDir, 'opengrep', isPlatWin ? 'opengrep.exe' : 'opengrep'),
     ),
-    python: normalizePath(path.join(toolsDir, 'python', 'bin', pythonExe)),
+    python: normalizePath(path.join(toolsDir, 'bin', pythonExe)),
     trivy: normalizePath(
-      path.join(toolsDir, isPlatWin ? 'trivy.exe' : 'trivy'),
+      path.join(baseDlxDir, 'trivy', isPlatWin ? 'trivy.exe' : 'trivy'),
     ),
     trufflehog: normalizePath(
-      path.join(toolsDir, isPlatWin ? 'trufflehog.exe' : 'trufflehog'),
+      path.join(baseDlxDir, 'trufflehog', isPlatWin ? 'trufflehog.exe' : 'trufflehog'),
     ),
   }
 }
