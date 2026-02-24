@@ -46,8 +46,9 @@
   },
   "sfw": {
     "description": "Socket Firewall (sfw)",
-    "type": "standalone",
-    "version": "2.0.4"
+    "type": "github-release",
+    "repository": "SocketDev/sfw-free",
+    "version": "v1.6.0"
   },
   "synp": {
     "description": "Tool for converting between yarn.lock and package-lock.json",

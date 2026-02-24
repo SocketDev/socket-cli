@@ -316,9 +316,35 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
       retryDelay: 5000,
     })
 
-    // Extract binary.
-    logger.log(`  Extracting ${toolName}...`)
+    // Extract binary (or handle standalone binaries).
     const isZip = assetName.endsWith('.zip')
+    const isTarGz = assetName.endsWith('.tar.gz') || assetName.endsWith('.tgz')
+    const isStandalone = !isZip && !isTarGz
+
+    if (isStandalone) {
+      // Standalone binary (e.g., sfw) - already downloaded, just rename if needed.
+      logger.log(`  Preparing ${toolName}...`)
+      if (archivePath !== binaryPath) {
+        try {
+          await fs.rename(archivePath, binaryPath)
+        } catch (e) {
+          // Fallback to copy + delete for cross-device moves.
+          await fs.copyFile(archivePath, binaryPath)
+          await fs.unlink(archivePath)
+        }
+      }
+
+      // Make executable on Unix.
+      if (!isPlatWin) {
+        await fs.chmod(binaryPath, 0o755)
+      }
+
+      toolNames.push(binaryName)
+      logger.log(`  ✓ ${toolName} ready`)
+      continue
+    }
+
+    logger.log(`  Extracting ${toolName}...`)
 
     if (isZip) {
       // Use unzip command.
