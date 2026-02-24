@@ -1,5 +1,9 @@
 name: 📦 Publish Bins
 
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
 on:
   workflow_dispatch:
     inputs:
@@ -40,11 +44,12 @@ permissions: {}
 
 jobs:
   build:
+    name: Build and Publish Package with Provenance
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
-      id-token: write
+      id-token: write  # Required for npm provenance generation (OIDC token)
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
