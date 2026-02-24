@@ -48,23 +48,23 @@
  *         ├── package.json
  *         └── node_modules/
  *
- * PLANNED ENHANCEMENT: Runtime directory tree extraction
- * Currently extracts only single binary files. Full directory tree extraction is a
- * planned optimization documented in socket-btm/docs/vfs-configuration-plan.md.
+ * VFS Extraction with Full Directory Support:
+ * Uses process.smol.mount() API from node-smol to extract both single files and
+ * complete directory trees with dependencies from the embedded VFS.
  *
- * VFS APIs (getAsset, getAssetKeys) already exist in node-smol. When implemented:
- * - Extract entire directory trees from VFS (not just binaries).
- * - Use process.smol VFS APIs that support directory extraction.
- * - Preserve file permissions and directory structure.
- * - Handle node_modules/ dependencies at runtime.
+ * For npm packages:
+ * - Extracts entire package directory (node_modules/@package/name/)
+ * - Includes all production dependencies and subdirectories
+ * - Preserves file permissions and directory structure
  *
- * Current workaround: Extract only the binary with a warning when dependencies are
- * missing (see line 296-302). This limitation does not block current functionality.
+ * For standalone binaries:
+ * - Extracts individual binary file from VFS root
+ *
+ * See socket-btm/docs/vfs-runtime-api.md for full documentation.
  */
 
 import { createHash } from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
-import { createRequire } from 'node:module'
 import { homedir } from 'node:os'
 import path from 'node:path'
 
@@ -76,21 +76,7 @@ import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { UPDATE_STORE_DIR } from '../../constants/paths.mts'
 import { isSeaBinary } from '../sea/detect.mts'
 
-const require = createRequire(import.meta.url)
-
-// Conditionally load node:sea module (Node.js 24+ only).
-let getAsset: ((key: string) => ArrayBuffer) | undefined
-try {
-  const sea = require('node:sea')
-  getAsset = sea.getAsset
-} catch {
-  // node:sea not available (Node.js < 24 or not in SEA context).
-}
-
 const logger = getDefaultLogger()
-
-// VFS asset path prefix for external tools.
-const VFS_ASSET_PREFIX = 'external-tools'
 
 // External tool names bundled in VFS.
 // Includes both npm packages and standalone binaries.
@@ -178,21 +164,18 @@ function getNodeSmolBasePath(): string {
  * Check if external tools are available in VFS.
  *
  * Returns true if:
- * 1. Running in SEA mode with VFS assets
+ * 1. Running in SEA mode with process.smol.mount available
  *
  * @returns True if external tools are available in VFS.
  */
 export function areExternalToolsAvailable(): boolean {
-  // Check if running in SEA mode with VFS assets.
-  if (isSeaBinary() && getAsset) {
-    try {
-      // Check if at least sfw is available in VFS.
-      getAsset(`${VFS_ASSET_PREFIX}/sfw`)
-      return true
-    } catch {
-      debug('notice', 'SEA mode but VFS assets not available for external tools')
-      return false
-    }
+  const processWithSmol = process as unknown as {
+    smol?: { mount?: (vfsPath: string) => string }
+  }
+
+  // Check if running in SEA mode with process.smol.mount available.
+  if (isSeaBinary() && processWithSmol.smol?.mount) {
+    return true
   }
 
   // Not in SEA mode - tools will be downloaded via dlx.
@@ -226,27 +209,26 @@ async function isNpmPackageExtracted(packagePath: string): Promise<boolean> {
 }
 
 /**
- * Extract a single external tool from VFS to node-smol's dlx directory.
+ * Extract a single external tool from VFS to node-smol's dlx directory using process.smol.mount().
  * Extracts to ~/.socket/_dlx/<node-smol-hash>/node_modules/{packageName}/bin/{binaryName}
  *
- * Current implementation: Extracts only the binary file as a temporary solution.
- *
- * PLANNED ENHANCEMENT: Full directory tree extraction (see socket-btm/docs/vfs-configuration-plan.md)
- * VFS APIs already exist in node-smol. When this optimization is implemented:
- * 1. Check if binject auto-extracted the VFS to node-smol base directory.
- * 2. If not, use VFS directory extraction APIs to extract full package trees.
- * 3. Preserve file permissions and directory structure.
- * 4. Handle symlinks properly (binLinks from Arborist).
- *
- * Current workaround: Extract only the binary with warning (see line 296-302).
- * Full packages with dependencies will need directory VFS extraction to work correctly.
+ * Implementation:
+ * - npm packages: Uses process.smol.mount() to extract entire directory with dependencies
+ * - Standalone binaries: Uses process.smol.mount() to extract single file
+ * - Automatically handles file permissions and directory structure
+ * - Supports caching to avoid re-extraction
  *
  * @param tool - Name of the tool to extract.
  * @returns Path to the extracted tool binary.
  */
 async function extractTool(tool: ExternalTool): Promise<string> {
-  if (!getAsset) {
-    throw new Error('getAsset not available - not in SEA mode')
+  // Check if process.smol.mount is available.
+  const processWithSmol = process as unknown as {
+    smol?: { mount?: (vfsPath: string) => string }
+  }
+
+  if (!processWithSmol.smol?.mount) {
+    throw new Error('process.smol.mount not available - not in node-smol SEA mode')
   }
 
   const isPlatWin = process.platform === 'win32'
@@ -273,42 +255,35 @@ async function extractTool(tool: ExternalTool): Promise<string> {
     }
   }
 
-  // Extract binary from VFS (works for both npm packages and standalone binaries).
-  const assetKey = `${VFS_ASSET_PREFIX}/${tool}`
-
+  // Extract from VFS using process.smol.mount().
   try {
-    const assetBuffer = getAsset(assetKey)
+    let extractedPath: string
 
-    // For npm packages, extract to node_modules/ path.
-    // For standalone binaries, extract to direct path.
-    const toolPath = npmPath
-      ? normalizePath(path.join(nodeSmolBase, npmPath.binPath))
-      : normalizePath(path.join(nodeSmolBase, tool))
-
-    const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
-
-    // Create directory for the binary.
-    const toolDir = path.dirname(toolPathWithExt)
-    await safeMkdir(toolDir)
-
-    // Write tool binary.
-    await fs.writeFile(toolPathWithExt, Buffer.from(assetBuffer))
-
-    // Make executable on Unix.
-    if (!isPlatWin) {
-      await fs.chmod(toolPathWithExt, 0o755)
-    }
-
-    logger.info(`  ✓ Extracted ${tool} binary to ${toolPathWithExt}`)
-
-    // Warn for npm packages extracted without dependencies.
     if (npmPath) {
-      logger.warn(
-        `  ⚠  ${tool} extracted without dependencies - may not function correctly`,
-      )
+      // Extract entire npm package directory with dependencies.
+      const vfsPackagePath = `/snapshot/node_modules/${npmPath.packageName}`
+      const packageDir = processWithSmol.smol.mount(vfsPackagePath)
+
+      logger.info(`  ✓ Extracted ${tool} package with dependencies to ${packageDir}`)
+
+      // Return path to binary within extracted package.
+      const toolPath = normalizePath(path.join(nodeSmolBase, npmPath.binPath))
+      extractedPath = isPlatWin ? `${toolPath}.exe` : toolPath
+    } else {
+      // Extract standalone binary from VFS root.
+      const vfsBinaryPath = `/snapshot/${tool}`
+      const binaryPath = processWithSmol.smol.mount(vfsBinaryPath)
+
+      logger.info(`  ✓ Extracted ${tool} binary to ${binaryPath}`)
+
+      extractedPath = isPlatWin ? `${binaryPath}.exe` : binaryPath
     }
 
-    return toolPathWithExt
+    if (!existsSync(extractedPath)) {
+      throw new Error(`Extracted tool not found at ${extractedPath}`)
+    }
+
+    return extractedPath
   } catch (e) {
     throw new Error(`Failed to extract ${tool} from VFS: ${e}`)
   }
@@ -347,7 +322,11 @@ export async function extractExternalTools(
     return null
   }
 
-  if (!isSeaBinary() || !getAsset) {
+  const processWithSmol = process as unknown as {
+    smol?: { mount?: (vfsPath: string) => string }
+  }
+
+  if (!isSeaBinary() || !processWithSmol.smol?.mount) {
     debug('notice', 'Not running in SEA mode - cannot extract VFS tools')
     return null
   }
