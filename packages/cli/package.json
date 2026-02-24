@@ -107,7 +107,7 @@
     "ink": "catalog:",
     "ink-table": "catalog:",
     "ink-text-input": "catalog:",
-    "lru-cache": "^11.0.2",
+    "lru-cache": "^11.2.6",
     "micromatch": "catalog:",
     "nanotar": "catalog:",
     "npm-package-arg": "catalog:",
