@@ -58,8 +58,8 @@ catalogs:
       specifier: 9.1.4
       version: 9.1.4
     '@npmcli/config':
-      specifier: 10.4.0
-      version: 10.4.0
+      specifier: 10.7.0
+      version: 10.7.0
     '@octokit/openapi-types':
       specifier: 25.1.0
       version: 25.1.0
@@ -99,9 +99,6 @@ catalogs:
     '@socketsecurity/config':
       specifier: 3.0.1
       version: 3.0.1
-    '@socketsecurity/lib':
-      specifier: 5.7.0
-      version: 5.7.0
     '@socketsecurity/registry':
       specifier: 2.0.2
       version: 2.0.2
@@ -433,7 +430,7 @@ importers:
         version: 9.1.4
       '@npmcli/config':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.7.0
       '@octokit/graphql':
         specifier: 9.0.1
         version: 9.0.1
@@ -480,7 +477,7 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
@@ -699,7 +696,7 @@ importers:
         specifier: 'catalog:'
         version: 7.28.4
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       magic-string:
         specifier: 'catalog:'
@@ -753,7 +750,7 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
@@ -822,7 +819,7 @@ importers:
         specifier: 'catalog:'
         version: 6.0.0(ink@6.3.1(patch_hash=2c35a5c4ac7928567590e764d69a9bbf58d6259c87fe94b3d1a1fc5aa77ca9e5)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)
       lru-cache:
-        specifier: ^11.2.6
+        specifier: ^11.0.2
         version: 11.2.6
       micromatch:
         specifier: 'catalog:'
@@ -885,7 +882,7 @@ importers:
   packages/package-builder:
     dependencies:
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       handlebars:
         specifier: ^4.7.8
@@ -1489,8 +1486,8 @@ packages:
     engines: {node: ^20.17.0 || >=22.9.0}
     hasBin: true
 
-  '@npmcli/config@10.4.0':
-    resolution: {integrity: sha512-0l6f/q/qfB726SWOGIEooh7u6aB1SOgRxGLu7DeJ6Z9Vvq1gG1s3x+Mq+qv9wt0Q0t53mVHIEBokfJZpeaWDyA==}
+  '@npmcli/config@10.7.0':
+    resolution: {integrity: sha512-lG2kQO/eGbj4Bmt1M89GWX4sLw5PkEcCMZMZKRbBVpNfFMuOTH+eMq77o4Fazc1RRjqRCbpndXIXrQWuk+W60g==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
   '@npmcli/fs@4.0.0':
@@ -1519,6 +1516,10 @@ packages:
     resolution: {integrity: sha512-mnuMuibEbkaBTYj9HQ3dMe6L0ylYW+s/gfz7tBDMFY/la0w9Kf44P9aLn4/+/t3aTR3YUHKoT6XQL9rlicIe3Q==}
     engines: {node: ^18.17.0 || >=20.5.0}
 
+  '@npmcli/map-workspaces@5.0.3':
+    resolution: {integrity: sha512-o2grssXo1e774E5OtEwwrgoszYRh0lqkJH+Pb9r78UcqdGJRDRfhpM8DvZPjzNLLNYeD/rNbjOKM3Ss5UABROw==}
+    engines: {node: ^20.17.0 || >=22.9.0}
+
   '@npmcli/metavuln-calculator@9.0.3':
     resolution: {integrity: sha512-94GLSYhLXF2t2LAC7pDwLaM4uCARzxShyAQKsirmlNcpidH89VA4/+K1LbJmRMgz5gy65E/QBBWQdUvGLe2Frg==}
     engines: {node: ^20.17.0 || >=22.9.0}
@@ -1526,6 +1527,10 @@ packages:
   '@npmcli/name-from-folder@3.0.0':
     resolution: {integrity: sha512-61cDL8LUc9y80fXn+lir+iVt8IS0xHqEKwPu/5jCjxQTVoSCmkXvw4vbMrzAMtmghz3/AkiBjhHkDKUH+kf7kA==}
     engines: {node: ^18.17.0 || >=20.5.0}
+
+  '@npmcli/name-from-folder@4.0.0':
+    resolution: {integrity: sha512-qfrhVlOSqmKM8i6rkNdZzABj8MKEITGFAY+4teqBziksCQAOLutiAxM1wY2BKEd8KjUSpWmWCYxvXr0y4VTlPg==}
+    engines: {node: ^20.17.0 || >=22.9.0}
 
   '@npmcli/node-gyp@4.0.0':
     resolution: {integrity: sha512-+t5DZ6mO/QFh78PByMq1fGSAub/agLJZDRfJRMeOSNCt8s9YVlTjmGpIPwPhvXTGUIJk+WszlT0rQa1W33yzNA==}
@@ -4014,10 +4019,6 @@ packages:
     resolution: {integrity: sha512-Azwzvl90HaF0aCz1JrDdXQykFakSSNPaPoiZ9fm5qJIMHioDZEi7OAdRwSm6rSoPtY3Qutnm3L7ogmg3dc+wbQ==}
     engines: {node: ^18.17.0 || >=20.5.0}
 
-  proc-log@6.0.0:
-    resolution: {integrity: sha512-KG/XsTDN901PNfPfAMmj6N/Ywg9tM+bHK8pAz+27fS4N4Pcr+4zoYBOcGSBu6ceXYNPxkLpa4ohtfxV1XcLAfA==}
-    engines: {node: ^20.17.0 || >=22.9.0}
-
   proc-log@6.1.0:
     resolution: {integrity: sha512-iG+GYldRf2BQ0UDUAd6JQ/RwzaQy6mXmsk/IzlYyal4A4SNFw54MeH4/tLkF4I5WoWG9SQwuqWzS99jaFQHBuQ==}
     engines: {node: ^20.17.0 || >=22.9.0}
@@ -5336,7 +5337,7 @@ snapshots:
 
   '@isaacs/fs-minipass@4.0.1':
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   '@isaacs/string-locale-compare@1.1.0': {}
 
@@ -5456,14 +5457,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@npmcli/config@10.4.0':
+  '@npmcli/config@10.7.0':
     dependencies:
-      '@npmcli/map-workspaces': 4.0.2
-      '@npmcli/package-json': 6.2.0
+      '@npmcli/map-workspaces': 5.0.3
+      '@npmcli/package-json': 7.0.2
       ci-info: 4.3.1
-      ini: 5.0.0
-      nopt: 8.1.0
-      proc-log: 5.0.0
+      ini: 6.0.0
+      nopt: 9.0.0
+      proc-log: 6.1.0
       semver: 7.7.2
       walk-up-path: 4.0.0
 
@@ -5488,7 +5489,7 @@ snapshots:
       ini: 6.0.0
       lru-cache: 11.2.6
       npm-pick-manifest: 11.0.3
-      proc-log: 6.0.0
+      proc-log: 6.1.0
       promise-retry: 2.0.1
       semver: 7.7.2
       which: 6.0.0
@@ -5510,17 +5511,26 @@ snapshots:
       glob: 13.0.6
       minimatch: 9.0.5
 
+  '@npmcli/map-workspaces@5.0.3':
+    dependencies:
+      '@npmcli/name-from-folder': 4.0.0
+      '@npmcli/package-json': 7.0.2
+      glob: 13.0.6
+      minimatch: 10.2.2
+
   '@npmcli/metavuln-calculator@9.0.3':
     dependencies:
       cacache: 20.0.1
       json-parse-even-better-errors: 5.0.0
       pacote: 21.0.4
-      proc-log: 6.0.0
+      proc-log: 6.1.0
       semver: 7.7.2
     transitivePeerDependencies:
       - supports-color
 
   '@npmcli/name-from-folder@3.0.0': {}
+
+  '@npmcli/name-from-folder@4.0.0': {}
 
   '@npmcli/node-gyp@4.0.0': {}
 
@@ -5542,7 +5552,7 @@ snapshots:
       glob: 13.0.6
       hosted-git-info: 9.0.2
       json-parse-even-better-errors: 5.0.0
-      proc-log: 6.0.0
+      proc-log: 6.1.0
       semver: 7.7.2
       validate-npm-package-license: 3.0.4
 
@@ -5568,7 +5578,7 @@ snapshots:
       '@npmcli/package-json': 7.0.2
       '@npmcli/promise-spawn': 9.0.1
       node-gyp: 12.1.0(patch_hash=140ba43d43d74f7d3577feb3f8a6efad544dbb0059784102b144a0e2daa437f9)
-      proc-log: 6.0.0
+      proc-log: 6.1.0
       which: 6.0.0
     transitivePeerDependencies:
       - supports-color
@@ -6555,7 +6565,7 @@ snapshots:
       fs-minipass: 3.0.3
       glob: 13.0.6
       lru-cache: 11.2.6
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-collect: 2.0.1
       minipass-flush: 1.0.5
       minipass-pipeline: 1.2.4
@@ -7140,7 +7150,7 @@ snapshots:
 
   fs-minipass@3.0.3:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   fsevents@2.3.3:
     optional: true
@@ -7266,7 +7276,7 @@ snapshots:
 
   ignore-walk@8.0.0:
     dependencies:
-      minimatch: 10.1.1
+      minimatch: 10.2.2
 
   ignore@5.3.2: {}
 
@@ -7588,7 +7598,7 @@ snapshots:
       '@npmcli/agent': 3.0.0
       cacache: 19.0.1
       http-cache-semantics: 4.2.0
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-fetch: 4.0.1
       minipass-flush: 1.0.5
       minipass-pipeline: 1.2.4
@@ -7604,12 +7614,12 @@ snapshots:
       '@npmcli/agent': 4.0.0
       cacache: 20.0.1
       http-cache-semantics: 4.2.0
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-fetch: 5.0.0
       minipass-flush: 1.0.5
       minipass-pipeline: 1.2.4
       negotiator: 1.0.0
-      proc-log: 6.0.0
+      proc-log: 6.1.0
       promise-retry: 2.0.1
       ssri: 13.0.0
     transitivePeerDependencies:
@@ -7687,11 +7697,11 @@ snapshots:
 
   minipass-collect@2.0.1:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   minipass-fetch@4.0.1:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-sized: 1.0.3
       minizlib: 3.1.0
     optionalDependencies:
@@ -7699,7 +7709,7 @@ snapshots:
 
   minipass-fetch@5.0.0:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-sized: 1.0.3
       minizlib: 3.1.0
     optionalDependencies:
@@ -7727,7 +7737,7 @@ snapshots:
 
   minizlib@3.1.0:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   mkdirp-classic@0.5.3: {}
 
@@ -7823,7 +7833,7 @@ snapshots:
       graceful-fs: 4.2.11
       make-fetch-happen: 15.0.3
       nopt: 9.0.0
-      proc-log: 6.0.0
+      proc-log: 6.1.0
       semver: 7.7.2
       tar: 7.5.2
       tinyglobby: 0.2.15
@@ -7891,7 +7901,7 @@ snapshots:
   npm-packlist@10.0.3:
     dependencies:
       ignore-walk: 8.0.0
-      proc-log: 6.0.0
+      proc-log: 6.1.0
 
   npm-pick-manifest@10.0.0:
     dependencies:
@@ -7925,11 +7935,11 @@ snapshots:
       '@npmcli/redact': 4.0.0
       jsonparse: 1.3.1
       make-fetch-happen: 15.0.3
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-fetch: 5.0.0
       minizlib: 3.1.0
       npm-package-arg: 13.0.0
-      proc-log: 6.0.0
+      proc-log: 6.1.0
     transitivePeerDependencies:
       - supports-color
 
@@ -8034,7 +8044,7 @@ snapshots:
       npm-packlist: 10.0.3
       npm-pick-manifest: 11.0.3
       npm-registry-fetch: 19.1.1
-      proc-log: 6.0.0
+      proc-log: 6.1.0
       promise-retry: 2.0.1
       sigstore: 4.0.0
       ssri: 13.0.0
@@ -8145,8 +8155,6 @@ snapshots:
   presentable-error@0.0.1: {}
 
   proc-log@5.0.0: {}
-
-  proc-log@6.0.0: {}
 
   proc-log@6.1.0: {}
 
@@ -8437,7 +8445,7 @@ snapshots:
 
   ssri@10.0.5:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   ssri@12.0.0:
     dependencies:
@@ -8445,7 +8453,7 @@ snapshots:
 
   ssri@13.0.0:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   stable-hash-x@0.2.0: {}
 
@@ -8558,7 +8566,7 @@ snapshots:
     dependencies:
       '@isaacs/fs-minipass': 4.0.1
       chownr: 3.0.0
-      minipass: 7.1.2
+      minipass: 7.1.3
       minizlib: 3.1.0
       yallist: 5.0.0
 
@@ -8662,7 +8670,7 @@ snapshots:
   type-coverage-core@2.29.7(typescript@5.9.3):
     dependencies:
       fast-glob: 3.3.3
-      minimatch: 10.1.1
+      minimatch: 10.2.2
       normalize-path: 3.0.0
       tslib: 2.8.1
       tsutils: 3.21.0(typescript@5.9.3)
