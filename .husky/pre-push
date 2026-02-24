@@ -36,16 +36,8 @@ while read local_ref local_sha remote_ref remote_sha; do
       range="$local_sha"
     fi
   else
-    # Existing branch - check new commits since remote.
-    # Limit scope to commits after the latest published release on this branch.
-    latest_release=$(git tag --list 'v*' --sort=-version:refname --merged "$remote_sha" | head -1)
-    if [ -n "$latest_release" ]; then
-      # Only check commits after the latest release that are being pushed.
-      range="$latest_release..$local_sha"
-    else
-      # No release tags found - check new commits only.
-      range="$remote_sha..$local_sha"
-    fi
+    # Existing branch - check only new commits being pushed.
+    range="$remote_sha..$local_sha"
   fi
 
   ERRORS=0
