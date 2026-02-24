@@ -1,5 +1,9 @@
 name: 📦 Publish CLIs
 
+concurrency:
+  group: publish-socketbin-${{ github.ref }}
+  cancel-in-progress: false
+
 on:
   workflow_dispatch:
     inputs:
@@ -436,9 +440,10 @@ jobs:
           node scripts/prepublish-socketbin.mjs \
             --platform=linux --arch=x64 \
             --version="$STEPS_VERSION_OUTPUTS_VERSION" \
-            --method=${{ inputs.method }}
+            --method="$INPUTS_METHOD"
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
+          INPUTS_METHOD: ${{ inputs.method }}
 
       - name: Publish Linux x64
         if: ${{ !inputs.dry-run }}
@@ -452,12 +457,13 @@ jobs:
           node scripts/prepublish-socketbin.mjs \
             --platform=linux --arch=arm64 \
             --version="$STEPS_VERSION_OUTPUTS_VERSION" \
-            --method=${{ inputs.method }}
+            --method="$INPUTS_METHOD"
 
           cd packages/socketbin-cli-linux-arm64
           npm publish --provenance --access public --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
+          INPUTS_METHOD: ${{ inputs.method }}
 
       - name: Prepare and publish Linux musl x64
         if: ${{ !inputs.dry-run }}
@@ -465,12 +471,13 @@ jobs:
           node scripts/prepublish-socketbin.mjs \
             --platform=linux --arch=x64 --libc=musl \
             --version="$STEPS_VERSION_OUTPUTS_VERSION" \
-            --method=${{ inputs.method }}
+            --method="$INPUTS_METHOD"
 
           cd packages/socketbin-cli-linux-x64-musl
           npm publish --provenance --access public --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
+          INPUTS_METHOD: ${{ inputs.method }}
 
       - name: Prepare and publish Linux musl ARM64
         if: ${{ !inputs.dry-run }}
@@ -478,12 +485,13 @@ jobs:
           node scripts/prepublish-socketbin.mjs \
             --platform=linux --arch=arm64 --libc=musl \
             --version="$STEPS_VERSION_OUTPUTS_VERSION" \
-            --method=${{ inputs.method }}
+            --method="$INPUTS_METHOD"
 
           cd packages/socketbin-cli-linux-arm64-musl
           npm publish --provenance --access public --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
+          INPUTS_METHOD: ${{ inputs.method }}
 
       - name: Prepare and publish macOS x64
         if: ${{ !inputs.dry-run }}
@@ -491,12 +499,13 @@ jobs:
           node scripts/prepublish-socketbin.mjs \
             --platform=darwin --arch=x64 \
             --version="$STEPS_VERSION_OUTPUTS_VERSION" \
-            --method=${{ inputs.method }}
+            --method="$INPUTS_METHOD"
 
           cd packages/socketbin-cli-darwin-x64
           npm publish --provenance --access public --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
+          INPUTS_METHOD: ${{ inputs.method }}
 
       - name: Prepare and publish macOS ARM64
         if: ${{ !inputs.dry-run }}
@@ -504,12 +513,13 @@ jobs:
           node scripts/prepublish-socketbin.mjs \
             --platform=darwin --arch=arm64 \
             --version="$STEPS_VERSION_OUTPUTS_VERSION" \
-            --method=${{ inputs.method }}
+            --method="$INPUTS_METHOD"
 
           cd packages/socketbin-cli-darwin-arm64
           npm publish --provenance --access public --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
+          INPUTS_METHOD: ${{ inputs.method }}
 
       - name: Prepare and publish Windows x64
         if: ${{ !inputs.dry-run }}
@@ -517,12 +527,13 @@ jobs:
           node scripts/prepublish-socketbin.mjs \
             --platform=win32 --arch=x64 \
             --version="$STEPS_VERSION_OUTPUTS_VERSION" \
-            --method=${{ inputs.method }}
+            --method="$INPUTS_METHOD"
 
           cd packages/socketbin-cli-win32-x64
           npm publish --provenance --access public --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
+          INPUTS_METHOD: ${{ inputs.method }}
 
       - name: Prepare and publish Windows ARM64
         if: ${{ !inputs.dry-run }}
@@ -530,12 +541,13 @@ jobs:
           node scripts/prepublish-socketbin.mjs \
             --platform=win32 --arch=arm64 \
             --version="$STEPS_VERSION_OUTPUTS_VERSION" \
-            --method=${{ inputs.method }}
+            --method="$INPUTS_METHOD"
 
           cd packages/socketbin-cli-win32-arm64
           npm publish --provenance --access public --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
+          INPUTS_METHOD: ${{ inputs.method }}
 
       - name: Prime npm cache for CI (dry-run)
         if: ${{ inputs.dry-run }}

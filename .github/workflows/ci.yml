@@ -3,6 +3,10 @@ name: 🚀 CI
 # Dependencies:
 #   - SocketDev/socket-registry/.github/workflows/ci.yml
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 on:
   push:
     branches: [main]
