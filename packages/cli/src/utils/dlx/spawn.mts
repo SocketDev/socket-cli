@@ -906,6 +906,12 @@ function convertCaretToPipRange(caretRange: string): string {
   }
 
   const version = caretRange.slice(1) // Remove '^'.
+
+  // Handle malformed caret range (just "^" with no version).
+  if (!version) {
+    return ''
+  }
+
   const parts = version.split('.')
   const major = Number.parseInt(parts[0] || '0', 10)
   const nextMajor = major + 1

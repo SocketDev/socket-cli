@@ -35,7 +35,7 @@
     "test:unit": "pnpm --filter @socketsecurity/cli run test:unit",
     "pretest:all": "pnpm run build",
     "testu": "pnpm --filter @socketsecurity/cli run test:unit:update",
-    "cover": "pnpm --filter @socketsecurity/cli run test:unit:coverage --",
+    "cover": "pnpm --filter @socketsecurity/cli run test:unit:coverage",
     "cover:all": "pnpm --filter @socketsecurity/cli run cover",
     "// Maintenance": "",
     "clean": "pnpm --filter \"./packages/**\" run clean",

@@ -598,6 +598,12 @@ Features:
 
 ## Installation
 
+**Requirements:**
+- Node.js >= 18.0.0
+- npm/pnpm/yarn package manager
+
+**Note:** The published package name is `socket`. The development package `@socketsecurity/cli` is private and used for local development only.
+
 ```bash
 # npm
 npm install -g socket

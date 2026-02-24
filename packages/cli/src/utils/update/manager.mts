@@ -181,7 +181,9 @@ export async function checkForUpdates(
       })
 
       // Update cache with fresh data.
-      // Capture timestamp right before write to avoid staleness from network delays.
+      // Intentional: Capture timestamp after fetch completes, not before it starts.
+      // This extends TTL by network latency (~seconds) but represents when data
+      // was actually received, making cache entries slightly "fresher".
       try {
         await dlxManifest.set(cacheKey, {
           timestampFetch: Date.now(),

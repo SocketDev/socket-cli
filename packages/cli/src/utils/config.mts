@@ -123,6 +123,9 @@ function getConfigValues(retryCount = 0): LocalConfig {
         if (statsAfter.mtimeMs !== currentMtime) {
           // File was modified during read, retry with limit.
           if (retryCount >= MAX_CONFIG_READ_RETRIES) {
+            // Intentional: After exhausting retries, log warning and continue.
+            // This prevents CLI failure when config file is rapidly changing
+            // (e.g., editor auto-save). Better to warn than hard fail.
             logger.warn(
               `Config file modified ${retryCount} times during read, using potentially stale data`,
             )
