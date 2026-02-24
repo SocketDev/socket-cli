@@ -107,7 +107,7 @@ catalog:
   magic-string: 0.30.19
   micromatch: 4.0.8
   mock-fs: 5.5.0
-  nanotar: 0.2.0
+  nanotar: 0.3.0
   nock: 14.0.10
   npm-package-arg: 13.0.0
   npm-run-all2: 8.0.4
