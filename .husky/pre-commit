@@ -20,6 +20,9 @@ if [ -z "${DISABLE_PRECOMMIT_TEST}" ]; then
     printf "Install with: pnpm i\n" >&2
     exit 1
   fi
+  # Note: .env.precommit is optional and not tracked in git (contains local test config).
+  # If missing, dotenvx will continue without it. Create .env.precommit with test
+  # environment variables to optimize pre-commit test performance.
   dotenvx -q run -f .env.precommit -- pnpm test --staged
 else
   printf "Skipping testing due to DISABLE_PRECOMMIT_TEST env var\n"
