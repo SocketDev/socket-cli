@@ -122,6 +122,11 @@ export async function checkForUpdates(
   const cacheKey = `${name}@${version}${registrySuffix}`
 
   try {
+    // Note: dlxManifest.get() is not lock-protected, which can cause a race condition
+    // where concurrent CLI invocations read stale cache simultaneously and both fetch
+    // fresh data. This only wastes network resources during TTL expiration; no data
+    // corruption occurs since both writes contain the same fresh data. Acceptable tradeoff
+    // for simplicity vs. adding in-memory deduplication layer.
     record = dlxManifest.get(cacheKey)
 
     if (timestamp <= 0) {

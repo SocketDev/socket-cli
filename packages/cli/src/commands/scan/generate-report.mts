@@ -334,19 +334,19 @@ function isStricterPolicy(was: REPORT_LEVEL, is: REPORT_LEVEL): boolean {
     return false
   }
   if (is === REPORT_LEVEL_WARN) {
-    return false
+    return true
   }
   if (was === REPORT_LEVEL_MONITOR) {
     return false
   }
   if (is === REPORT_LEVEL_MONITOR) {
-    return false
+    return true
   }
   if (was === REPORT_LEVEL_IGNORE) {
     return false
   }
   if (is === REPORT_LEVEL_IGNORE) {
-    return false
+    return true
   }
   if (was === REPORT_LEVEL_DEFER) {
     return false
