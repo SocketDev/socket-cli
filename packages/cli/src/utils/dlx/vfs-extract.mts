@@ -79,19 +79,17 @@ import { isSeaBinary } from '../sea/detect.mts'
 const logger = getDefaultLogger()
 
 // External tool names bundled in VFS.
-// Includes both npm packages and standalone binaries.
+// Currently only includes standalone binaries that are packaged in the VFS tarball.
+// npm packages (cdxgen, coana, socket-patch, synp) will be added in future updates.
 export const EXTERNAL_TOOLS = [
   'sfw',
-  'cdxgen',
-  'coana',
-  'socket-patch',
-  'synp',
 ] as const
 
 export type ExternalTool = (typeof EXTERNAL_TOOLS)[number]
 
 // Map of npm package tools to their node_modules/ paths.
-// Standalone binaries (like sfw) are NOT in this map and extract to direct paths.
+// These are full npm packages with dependencies and node_modules/ subdirectories.
+// Standalone binaries (like sfw) are NOT in this map - they use direct file paths.
 const TOOL_NPM_PATHS: Partial<Record<ExternalTool, { packageName: string; binPath: string }>> = {
   cdxgen: {
     packageName: '@cyclonedx/cdxgen',
@@ -109,6 +107,33 @@ const TOOL_NPM_PATHS: Partial<Record<ExternalTool, { packageName: string; binPat
     packageName: 'synp',
     binPath: 'node_modules/synp/bin/synp',
   },
+}
+
+// Map of standalone binary tools to their VFS paths.
+// These tools are stored under node_modules/ for VFS security but are single binaries without dependencies.
+const TOOL_STANDALONE_PATHS: Partial<Record<ExternalTool, string>> = {
+  sfw: 'node_modules/@socketsecurity/sfw-bin/sfw',
+}
+
+/**
+ * Get the file system path for a tool based on its type (npm package or standalone binary).
+ *
+ * @param tool - Tool name.
+ * @param nodeSmolBase - Base dlx directory path.
+ * @returns Path to the tool binary (without .exe extension).
+ */
+function getToolFilePath(tool: ExternalTool, nodeSmolBase: string): string {
+  const npmPath = TOOL_NPM_PATHS[tool]
+  const standalonePath = TOOL_STANDALONE_PATHS[tool]
+
+  // For npm packages, use node_modules/ path with binPath.
+  // For standalone binaries under node_modules/, use standalonePath.
+  // For other standalone binaries, use direct tool name.
+  return npmPath
+    ? normalizePath(path.join(nodeSmolBase, npmPath.binPath))
+    : standalonePath
+      ? normalizePath(path.join(nodeSmolBase, standalonePath))
+      : normalizePath(path.join(nodeSmolBase, tool))
 }
 
 /**
@@ -270,13 +295,23 @@ async function extractTool(tool: ExternalTool): Promise<string> {
       const toolPath = normalizePath(path.join(nodeSmolBase, npmPath.binPath))
       extractedPath = isPlatWin ? `${toolPath}.exe` : toolPath
     } else {
-      // Extract standalone binary from VFS root.
-      const vfsBinaryPath = `/snapshot/${tool}`
+      // Extract standalone binary - check if it's under node_modules/ or VFS root.
+      const standalonePath = TOOL_STANDALONE_PATHS[tool]
+      const vfsBinaryPath = standalonePath ? `/snapshot/${standalonePath}` : `/snapshot/${tool}`
       const binaryPath = processWithSmol.smol.mount(vfsBinaryPath)
 
       logger.info(`  ✓ Extracted ${tool} binary to ${binaryPath}`)
 
       extractedPath = isPlatWin ? `${binaryPath}.exe` : binaryPath
+
+      // Make executable on Unix.
+      if (!isPlatWin && existsSync(extractedPath)) {
+        try {
+          await fs.chmod(extractedPath, 0o755)
+        } catch {
+          // Ignore chmod errors - file might already be executable.
+        }
+      }
     }
 
     if (!existsSync(extractedPath)) {
@@ -397,10 +432,7 @@ export async function extractExternalTools(
           const toolPaths: Partial<Record<ExternalTool, string>> = {}
           let allValid = true
           for (const tool of EXTERNAL_TOOLS) {
-            const npmPath = TOOL_NPM_PATHS[tool]
-            const toolPath = npmPath
-              ? normalizePath(path.join(nodeSmolBase, npmPath.binPath))
-              : normalizePath(path.join(nodeSmolBase, tool))
+            const toolPath = getToolFilePath(tool, nodeSmolBase)
             const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
             // Validate tool exists and is executable.
             if (!existsSync(toolPathWithExt)) {
@@ -470,10 +502,7 @@ export async function extractExternalTools(
         const toolPaths: Partial<Record<ExternalTool, string>> = {}
         let allValid = true
         for (const tool of EXTERNAL_TOOLS) {
-          const npmPath = TOOL_NPM_PATHS[tool]
-          const toolPath = npmPath
-            ? normalizePath(path.join(nodeSmolBase, npmPath.binPath))
-            : normalizePath(path.join(nodeSmolBase, tool))
+          const toolPath = getToolFilePath(tool, nodeSmolBase)
           const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
           if (!existsSync(toolPathWithExt)) {
             allValid = false
@@ -504,10 +533,7 @@ export async function extractExternalTools(
       const toolPaths: Partial<Record<ExternalTool, string>> = {}
       let allValid = true
       for (const tool of EXTERNAL_TOOLS) {
-        const npmPath = TOOL_NPM_PATHS[tool]
-        const toolPath = npmPath
-          ? normalizePath(path.join(nodeSmolBase, npmPath.binPath))
-          : normalizePath(path.join(nodeSmolBase, tool))
+        const toolPath = getToolFilePath(tool, nodeSmolBase)
         const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
         // Validate tool exists before adding to paths.
         if (!existsSync(toolPathWithExt)) {
@@ -548,10 +574,7 @@ export async function extractExternalTools(
     const toolPaths: Partial<Record<ExternalTool, string>> = {}
 
     for (const tool of EXTERNAL_TOOLS) {
-      const npmPath = TOOL_NPM_PATHS[tool]
-      const toolPath = npmPath
-        ? normalizePath(path.join(nodeSmolBase, npmPath.binPath))
-        : normalizePath(path.join(nodeSmolBase, tool))
+      const toolPath = getToolFilePath(tool, nodeSmolBase)
       const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
 
       // Check if tool already exists and is executable.
@@ -624,14 +647,7 @@ export function getToolPaths(): Record<ExternalTool, string> {
   const paths: Partial<Record<ExternalTool, string>> = {}
 
   for (const tool of EXTERNAL_TOOLS) {
-    const npmPath = TOOL_NPM_PATHS[tool]
-
-    // For npm packages, use node_modules/ path.
-    // For standalone binaries, use direct path.
-    const toolPath = npmPath
-      ? normalizePath(path.join(nodeSmolBase, npmPath.binPath))
-      : normalizePath(path.join(nodeSmolBase, tool))
-
+    const toolPath = getToolFilePath(tool, nodeSmolBase)
     paths[tool] = isPlatWin ? `${toolPath}.exe` : toolPath
   }
 

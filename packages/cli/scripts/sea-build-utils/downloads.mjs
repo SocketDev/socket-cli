@@ -322,24 +322,33 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
     const isStandalone = !isZip && !isTarGz
 
     if (isStandalone) {
-      // Standalone binary (e.g., sfw) - already downloaded, just rename if needed.
+      // Standalone binary (e.g., sfw) - create node_modules structure for VFS compatibility.
+      // node-smol VFS requires all files to be under node_modules/ for security.
       logger.log(`  Preparing ${toolName}...`)
-      if (archivePath !== binaryPath) {
+
+      // Create node_modules/@socketsecurity/sfw-bin/ structure.
+      const packageDir = normalizePath(path.join(toolsDir, 'node_modules', '@socketsecurity', `${toolName}-bin`))
+      await safeMkdir(packageDir)
+
+      const packageBinaryPath = normalizePath(path.join(packageDir, binaryName))
+
+      // Move binary into package directory.
+      if (archivePath !== packageBinaryPath) {
         try {
-          await fs.rename(archivePath, binaryPath)
+          await fs.rename(archivePath, packageBinaryPath)
         } catch (e) {
           // Fallback to copy + delete for cross-device moves.
-          await fs.copyFile(archivePath, binaryPath)
+          await fs.copyFile(archivePath, packageBinaryPath)
           await fs.unlink(archivePath)
         }
       }
 
       // Make executable on Unix.
       if (!isPlatWin) {
-        await fs.chmod(binaryPath, 0o755)
+        await fs.chmod(packageBinaryPath, 0o755)
       }
 
-      toolNames.push(binaryName)
+      toolNames.push(`node_modules/@socketsecurity/${toolName}-bin`)
       logger.log(`  ✓ ${toolName} ready`)
       continue
     }
