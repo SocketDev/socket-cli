@@ -95,36 +95,22 @@ export function getPythonSitePackagesPath(): string {
  * Check if basics tools are available for socket-basics.
  *
  * Returns true if:
- * 1. Running in SEA mode with VFS filesystem containing tools, OR
- * 2. Tools are available in system PATH (not implemented yet)
+ * 1. Running in SEA mode with process.smol.mount available
  *
  * @returns True if basics tools are available for socket-basics.
  */
 export function areBasicsToolsAvailable(): boolean {
-  // Check if running in SEA mode with process.smol API.
-  if (!isSeaBinary()) {
-    debug('notice', 'Not in SEA mode - security tools not available')
-    return false
-  }
-
-  // Check if process.smol.mount is available.
   const processWithSmol = process as unknown as {
-    smol?: { mount?: (vfsPath: string) => string }
+    smol?: { mount?: (vfsPath: string) => Promise<string> }
   }
 
-  if (typeof processWithSmol.smol?.mount !== 'function') {
-    debug('notice', 'SEA mode but process.smol.mount not available')
-    return false
-  }
-
-  // Try to check if at least one tool exists in VFS.
-  try {
-    processWithSmol.smol.mount('/snapshot/python')
+  // Check if running in SEA mode with process.smol.mount available.
+  if (isSeaBinary() && processWithSmol.smol?.mount) {
     return true
-  } catch {
-    debug('notice', 'SEA mode but VFS tools not available')
-    return false
   }
+
+  // Not in SEA mode - tools not available.
+  return false
 }
 
 /**
@@ -155,7 +141,7 @@ export async function extractBasicsTools(
 
   // Check if process.smol.mount is available.
   const processWithSmol = process as unknown as {
-    smol?: { mount?: (vfsPath: string) => string }
+    smol?: { mount?: (vfsPath: string) => Promise<string> }
   }
 
   if (typeof processWithSmol.smol?.mount !== 'function') {
@@ -170,14 +156,15 @@ export async function extractBasicsTools(
   const extractedPaths: Record<string, string> = {}
 
   try {
-    // Extract all tools using process.smol.mount().
+    // Extract all tools using async process.smol.mount().
     // mount() manages caching, locking, and extraction automatically.
+    // Async mount() is non-blocking for large extractions (Python with 3000+ files).
     for (const tool of tools) {
       const vfsRelativePath = BASICS_TOOL_VFS_PATHS[tool]
       const vfsPath = `/snapshot/${vfsRelativePath}`
 
       // eslint-disable-next-line no-await-in-loop
-      const mountedPath = processWithSmol.smol.mount(vfsPath)
+      const mountedPath = await processWithSmol.smol.mount(vfsPath)
 
       logger.success(`${tool}`)
       extractedPaths[tool] = mountedPath
