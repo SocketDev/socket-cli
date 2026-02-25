@@ -195,7 +195,7 @@ function getNodeSmolBasePath(): string {
  */
 export function areExternalToolsAvailable(): boolean {
   const processWithSmol = process as unknown as {
-    smol?: { mount?: (vfsPath: string) => string }
+    smol?: { mount?: (vfsPath: string) => Promise<string> }
   }
 
   // Check if running in SEA mode with process.smol.mount available.
@@ -249,7 +249,7 @@ async function isNpmPackageExtracted(packagePath: string): Promise<boolean> {
 async function extractTool(tool: ExternalTool): Promise<string> {
   // Check if process.smol.mount is available.
   const processWithSmol = process as unknown as {
-    smol?: { mount?: (vfsPath: string) => string }
+    smol?: { mount?: (vfsPath: string) => Promise<string> }
   }
 
   if (!processWithSmol.smol?.mount) {
@@ -287,7 +287,7 @@ async function extractTool(tool: ExternalTool): Promise<string> {
     if (npmPath) {
       // Extract entire npm package directory with dependencies.
       const vfsPackagePath = `/snapshot/node_modules/${npmPath.packageName}`
-      const packageDir = processWithSmol.smol.mount(vfsPackagePath)
+      const packageDir = await processWithSmol.smol.mount(vfsPackagePath)
 
       logger.info(`  ✓ Extracted ${tool} package with dependencies to ${packageDir}`)
 
@@ -298,7 +298,7 @@ async function extractTool(tool: ExternalTool): Promise<string> {
       // Extract standalone binary - check if it's under node_modules/ or VFS root.
       const standalonePath = TOOL_STANDALONE_PATHS[tool]
       const vfsBinaryPath = standalonePath ? `/snapshot/${standalonePath}` : `/snapshot/${tool}`
-      const binaryPath = processWithSmol.smol.mount(vfsBinaryPath)
+      const binaryPath = await processWithSmol.smol.mount(vfsBinaryPath)
 
       logger.info(`  ✓ Extracted ${tool} binary to ${binaryPath}`)
 
@@ -358,7 +358,7 @@ export async function extractExternalTools(
   }
 
   const processWithSmol = process as unknown as {
-    smol?: { mount?: (vfsPath: string) => string }
+    smol?: { mount?: (vfsPath: string) => Promise<string> }
   }
 
   if (!isSeaBinary() || !processWithSmol.smol?.mount) {
