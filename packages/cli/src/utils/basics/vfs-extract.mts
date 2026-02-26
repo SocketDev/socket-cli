@@ -13,22 +13,16 @@
  */
 
 import { createHash } from 'node:crypto'
-import { existsSync, promises as fs } from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
 
 import { debug } from '@socketsecurity/lib/debug'
-import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import { UPDATE_STORE_DIR } from '../../constants/paths.mts'
-import { getOpengrepVersion } from '../../env/opengrep-version.mts'
-import { getPyCliVersion } from '../../env/pycli-version.mts'
 import { getPythonMajorMinor } from '../../env/python-version.mts'
-import { getTrivyVersion } from '../../env/trivy-version.mts'
-import { getTrufflehogVersion } from '../../env/trufflehog-version.mts'
 import { isSeaBinary } from '../sea/detect.mts'
 
 const logger = getDefaultLogger()
@@ -167,7 +161,9 @@ export async function extractBasicsTools(
 
   const isPlatWin = process.platform === 'win32'
   const tools = BASICS_TOOLS
-  const extractedPaths: Record<string, string> = {}
+  const extractedPaths: Partial<
+    Record<(typeof BASICS_TOOLS)[number], string>
+  > = {}
 
   try {
     // Extract all tools using process.smol.mount().
@@ -195,9 +191,14 @@ export async function extractBasicsTools(
     // Validate all extracted binaries work after extraction.
     logger.group('Validating extracted basics tools...')
 
+    const pythonRoot = extractedPaths['python']
+    if (!pythonRoot) {
+      throw new Error('Failed to extract python from VFS')
+    }
+
     const pythonExe = isPlatWin ? 'python3.exe' : 'python3'
     const pythonPath = normalizePath(
-      path.join(extractedPaths.python, 'bin', pythonExe),
+      path.join(pythonRoot, 'bin', pythonExe),
     )
 
     const validateResult = await spawn(pythonPath, ['--version'], {
@@ -239,7 +240,7 @@ export async function extractBasicsTools(
 
     logger.success('Basics tools extracted and validated')
     // Return the Python directory path for backward compatibility.
-    return extractedPaths.python
+    return pythonRoot
   } catch (e) {
     logger.error('VFS extraction failed')
     throw e

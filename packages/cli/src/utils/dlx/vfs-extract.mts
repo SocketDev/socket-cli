@@ -79,18 +79,17 @@ import { isSeaBinary } from '../sea/detect.mts'
 const logger = getDefaultLogger()
 
 // External tool names bundled in VFS.
-// Currently only includes standalone binaries that are packaged in the VFS tarball.
-// npm packages (cdxgen, coana, socket-patch, synp) will be added in future updates.
-export const EXTERNAL_TOOLS = [
-  'sfw',
-] as const
+// Includes standalone binaries and npm-packaged tools (with dependencies).
+export const EXTERNAL_TOOLS = ['cdxgen', 'coana', 'sfw', 'socket-patch', 'synp'] as const
 
 export type ExternalTool = (typeof EXTERNAL_TOOLS)[number]
 
 // Map of npm package tools to their node_modules/ paths.
 // These are full npm packages with dependencies and node_modules/ subdirectories.
 // Standalone binaries (like sfw) are NOT in this map - they use direct file paths.
-const TOOL_NPM_PATHS: Partial<Record<ExternalTool, { packageName: string; binPath: string }>> = {
+const TOOL_NPM_PATHS: Partial<
+  Record<ExternalTool, { packageName: string; binPath: string }>
+> = {
   cdxgen: {
     packageName: '@cyclonedx/cdxgen',
     binPath: 'node_modules/@cyclonedx/cdxgen/bin/cdxgen',

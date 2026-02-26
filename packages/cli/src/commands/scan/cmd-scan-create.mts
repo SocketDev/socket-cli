@@ -74,6 +74,7 @@ interface ScanCreateFlags {
   reportLevel: REPORT_LEVEL
   setAsAlertsPage: boolean
   tmp: boolean
+  workspace: string
 }
 
 export const CMD_NAME = 'create'
@@ -164,6 +165,12 @@ const generalFlags: MeowFlags = {
     type: 'string',
     shortFlag: 'r',
     description: 'Repository name',
+  },
+  workspace: {
+    type: 'string',
+    default: '',
+    description:
+      'The workspace in the Socket Organization that the repository is in to associate with the full scan.',
   },
   report: {
     type: 'boolean',
@@ -319,6 +326,7 @@ async function run(
     branch: branchName,
     repo: repoName,
     report,
+    workspace,
   } = cli.flags as unknown as ScanCreateFlags
 
   let { 0: orgSlug } = await determineOrgSlug(
@@ -362,6 +370,10 @@ async function run(
     } else {
       repoName = await getRepoName(cwd)
     }
+  }
+  if (!workspace && sockJson.defaults?.scan?.create?.workspace) {
+    workspace = sockJson.defaults.scan.create.workspace
+    logger.info(`Using default --workspace from ${SOCKET_JSON}:`, workspace)
   }
   if (typeof report !== 'boolean') {
     if (sockJson.defaults?.scan?.create?.report !== undefined) {
@@ -639,5 +651,6 @@ async function run(
     reportLevel,
     targets,
     tmp: Boolean(tmp),
+    workspace: (workspace && String(workspace)) || '',
   })
 }

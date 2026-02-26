@@ -90,6 +90,36 @@ describe('fetchCreateOrgFullScan', () => {
     expect(result.ok).toBe(true)
   })
 
+  it('passes workspace when provided', async () => {
+    const { fetchCreateOrgFullScan } = await import(
+      '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
+    )
+
+    const { mockSdk } = await setupSdkMockSuccess('createFullScan', {})
+
+    const config = {
+      branchName: 'main',
+      commitHash: 'abc123',
+      commitMessage: 'Initial commit',
+      committers: 'john@example.com',
+      pullRequest: 42,
+      repoName: 'test-repo',
+      workspace: 'test-workspace',
+    }
+
+    await fetchCreateOrgFullScan(['/path/to/package.json'], 'test-org', config)
+
+    expect(mockSdk.createFullScan).toHaveBeenCalledWith(
+      'test-org',
+      ['/path/to/package.json'],
+      expect.objectContaining({
+        pathsRelativeTo: process.cwd(),
+        repo: 'test-repo',
+        workspace: 'test-workspace',
+      }),
+    )
+  })
+
   it('handles SDK setup failure', async () => {
     const { fetchCreateOrgFullScan } = await import(
       '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
