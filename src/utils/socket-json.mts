@@ -71,6 +71,7 @@ export interface SocketJson {
         repo?: string | undefined
         report?: boolean | undefined
         branch?: string | undefined
+        workspace?: string | undefined
       }
       github?: {
         all?: boolean | undefined
