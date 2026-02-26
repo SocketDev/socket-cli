@@ -208,8 +208,8 @@ importers:
         specifier: 1.1.17
         version: 1.1.17
       '@socketsecurity/sdk':
-        specifier: 1.4.95
-        version: 1.4.95
+        specifier: 1.4.96
+        version: 1.4.96
       '@socketsecurity/socket-patch':
         specifier: 1.2.0
         version: 1.2.0
@@ -1744,8 +1744,8 @@ packages:
     resolution: {integrity: sha512-5j0eH6JaBZlcvnbdu+58Sw8c99AK25PTp0Z/lwP7HknHdJ0TMMoTzNIBbp7WCTZKoGrPgBWchi0udN1ObZ53VQ==}
     engines: {node: '>=18'}
 
-  '@socketsecurity/sdk@1.4.95':
-    resolution: {integrity: sha512-rUqo8UYHsH8MQxO8EKnIAsU8AhArz0A3H2hfDgZPrfpY2O7ligUUBaLkk/zEm9DP6k8JjWSR6gxdvnY6KgWQJQ==}
+  '@socketsecurity/sdk@1.4.96':
+    resolution: {integrity: sha512-yZn50KLeCerKQRYTUfMzB5m7mraH1Rhr01WDLgzgaw3Do3qEsHy7sdoHI5o1FvyIWd8ebBspK3PJ2xqyrdQejw==}
     engines: {node: '>=18'}
 
   '@socketsecurity/socket-patch@1.2.0':
@@ -6384,7 +6384,7 @@ snapshots:
 
   '@socketsecurity/registry@1.1.17': {}
 
-  '@socketsecurity/sdk@1.4.95':
+  '@socketsecurity/sdk@1.4.96':
     dependencies:
       '@socketsecurity/registry': 1.1.17
 
