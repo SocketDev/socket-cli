@@ -195,8 +195,11 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     const errStr = errCResult.error ? String(errCResult.error).trim() : ''
     const message = errStr || NO_ERROR_MESSAGE
     const reason = errCResult.cause || NO_ERROR_MESSAGE
-    const cause =
+    const baseCause =
       reason && message !== reason ? `${message} (reason: ${reason})` : message
+    const cause = errCResult.url
+      ? `${baseCause} (url: ${errCResult.url})`
+      : baseCause
     const socketSdkErrorResult: ApiCallResult<T> = {
       ok: false,
       message: 'Socket API error',
@@ -254,8 +257,11 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
       : ''
     const message = errStr || NO_ERROR_MESSAGE
     const reason = sdkErrorResult.cause || NO_ERROR_MESSAGE
-    const cause =
+    const baseCause =
       reason && message !== reason ? `${message} (reason: ${reason})` : message
+    const cause = sdkErrorResult.url
+      ? `${baseCause} (url: ${sdkErrorResult.url})`
+      : baseCause
 
     return {
       ok: false,
@@ -348,12 +354,13 @@ export async function queryApiSafeText(
     const errStr = e ? String(e).trim() : ''
     const message = 'API request failed'
     const rawCause = errStr || NO_ERROR_MESSAGE
-    const cause = message !== rawCause ? rawCause : ''
+    const baseCause = message !== rawCause ? rawCause : ''
+    const cause = baseCause ? `${baseCause} (path: ${path})` : `(path: ${path})`
 
     return {
       ok: false,
       message,
-      ...(cause ? { cause } : {}),
+      cause,
     }
   }
 
@@ -366,7 +373,7 @@ export async function queryApiSafeText(
     return {
       ok: false,
       message: 'Socket API error',
-      cause: `${result.statusText} (reason: ${await getErrorMessageForHttpStatusCode(status)})`,
+      cause: `${result.statusText} (reason: ${await getErrorMessageForHttpStatusCode(status)}) (path: ${path})`,
       data: {
         code: status,
       },
@@ -386,7 +393,7 @@ export async function queryApiSafeText(
     return {
       ok: false,
       message: 'API request failed',
-      cause: 'Unexpected error reading response text',
+      cause: `Unexpected error reading response text (path: ${path})`,
     }
   }
 }
@@ -495,12 +502,13 @@ export async function sendApiRequest<T>(
     const errStr = e ? String(e).trim() : ''
     const message = 'API request failed'
     const rawCause = errStr || NO_ERROR_MESSAGE
-    const cause = message !== rawCause ? rawCause : ''
+    const baseCause = message !== rawCause ? rawCause : ''
+    const cause = baseCause ? `${baseCause} (path: ${path})` : `(path: ${path})`
 
     return {
       ok: false,
       message,
-      ...(cause ? { cause } : {}),
+      cause,
     }
   }
 
@@ -513,7 +521,7 @@ export async function sendApiRequest<T>(
     return {
       ok: false,
       message: 'Socket API error',
-      cause: `${result.statusText} (reason: ${await getErrorMessageForHttpStatusCode(status)})`,
+      cause: `${result.statusText} (reason: ${await getErrorMessageForHttpStatusCode(status)}) (path: ${path})`,
       data: {
         code: status,
       },
@@ -532,7 +540,7 @@ export async function sendApiRequest<T>(
     return {
       ok: false,
       message: 'API request failed',
-      cause: 'Unexpected error parsing response JSON',
+      cause: `Unexpected error parsing response JSON (path: ${path})`,
     }
   }
 }

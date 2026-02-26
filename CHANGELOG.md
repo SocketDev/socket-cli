@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.65](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.65) - 2026-02-26
+
+### Changed
+- Improved API error messages to include the request URL, making it easier to debug which endpoint failed
+
 ## [1.1.64](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.64) - 2026-02-25
 
 ### Changed
