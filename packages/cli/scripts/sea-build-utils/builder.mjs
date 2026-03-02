@@ -88,56 +88,18 @@ export async function generateSeaConfig(entryPoint, outputPath) {
 // c8 ignore stop
 
 // =============================================================================
-// Section 2: SEA Blob Generation.
+// Section 2: SEA Blob Generation (handled by binject).
 // =============================================================================
 
-/**
- * Build SEA blob from configuration file.
- * Uses the current Node.js process instead of the target binary to avoid issues
- * with cross-platform builds and potentially corrupted downloaded binaries.
- *
- * The blob format is platform-independent, so we can safely use the host Node.js
- * process to generate blobs for any target platform. This approach:
- * 1. Enables cross-platform builds (e.g., building Windows binary on macOS).
- * 2. Avoids issues with downloaded node-smol binaries that may not run on host.
- * 3. Uses the most reliable Node.js binary available (current process).
- *
- * @param {string} configPath - Absolute path to sea-config.json file.
- * @returns Promise resolving to absolute path of generated blob file.
- *
- * @example
- * const blobPath = await buildSeaBlob('dist/sea/sea-config-socket-darwin-arm64.json')
- * // Returns: dist/sea/sea-blob-socket-darwin-arm64.blob
- */
-// c8 ignore start - Requires spawning node binary with experimental SEA config.
-export async function buildSeaBlob(configPath) {
-  const config = JSON.parse(await fs.readFile(configPath, 'utf8'))
-  const blobPath = config.output
-
-  // Generate the blob using the current Node.js process.
-  // We use process.execPath (the current Node) instead of the target binary because:
-  // 1. The blob format is platform-independent.
-  // 2. Downloaded node-smol binaries may have issues running on the host system.
-  // 3. Cross-platform builds wouldn't work (e.g., building Windows binary on macOS).
-  const spawnPromise = spawn(
-    process.execPath,
-    ['--experimental-sea-config', configPath],
-    { stdio: 'inherit' },
-  )
-
-  const result = await spawnPromise
-  if (
-    result &&
-    typeof result === 'object' &&
-    'exitCode' in result &&
-    result.exitCode !== 0
-  ) {
-    throw new Error(`Failed to generate SEA blob: exit code ${result.exitCode}`)
-  }
-
-  return blobPath
-}
-// c8 ignore stop
+// Blob generation is now handled automatically by binject when --sea points to
+// a .json config file. The previous buildSeaBlob() function has been removed
+// because binject can generate the blob using the target binary's Node.js version,
+// which is critical for useCodeCache support (code cache is version-specific).
+//
+// This eliminates the Node.js version mismatch issue where we were using the host
+// Node.js (e.g., v25.5.0) to generate blobs for node-smol targets (e.g., v24.10.0).
+//
+// See injectSeaBlob() below for the config-based blob generation implementation.
 
 // =============================================================================
 // Section 3: Binary Injection.
