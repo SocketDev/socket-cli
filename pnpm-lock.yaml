@@ -99,9 +99,6 @@ catalogs:
     '@socketsecurity/config':
       specifier: 3.0.1
       version: 3.0.1
-    '@socketsecurity/lib':
-      specifier: 5.7.0
-      version: 5.7.0
     '@socketsecurity/registry':
       specifier: 2.0.2
       version: 2.0.2
@@ -332,7 +329,7 @@ overrides:
   indent-string: npm:@socketregistry/indent-string@^1.0.14
   is-core-module: npm:@socketregistry/is-core-module@^1.0.11
   isarray: npm:@socketregistry/isarray@^1.0.8
-  lodash: 4.17.21
+  lodash: 4.17.23
   npm-package-arg: 13.0.0
   packageurl-js: npm:@socketregistry/packageurl-js@^1.3.5
   path-parse: npm:@socketregistry/path-parse@^1.0.8
@@ -480,7 +477,7 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
@@ -699,7 +696,7 @@ importers:
         specifier: 'catalog:'
         version: 7.28.4
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       magic-string:
         specifier: 'catalog:'
@@ -753,7 +750,7 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
@@ -885,7 +882,7 @@ importers:
   packages/package-builder:
     dependencies:
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       handlebars:
         specifier: ^4.7.8

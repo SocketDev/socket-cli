@@ -103,7 +103,7 @@ catalog:
   isarray: npm:@socketregistry/isarray@^1.0.8
   js-yaml: npm:@zkochan/js-yaml@0.0.10
   lint-staged: 16.1.6
-  lodash: 4.17.21
+  lodash: 4.17.23
   magic-string: 0.30.19
   micromatch: 4.0.8
   mock-fs: 5.5.0
