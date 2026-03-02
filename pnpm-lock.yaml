@@ -49,8 +49,8 @@ catalogs:
       specifier: 1.3.2
       version: 1.3.2
     '@eslint/js':
-      specifier: 9.35.0
-      version: 9.35.0
+      specifier: 10.0.1
+      version: 10.0.1
     '@gitbeaker/rest':
       specifier: 43.7.0
       version: 43.7.0
@@ -99,9 +99,6 @@ catalogs:
     '@socketsecurity/config':
       specifier: 3.0.1
       version: 3.0.1
-    '@socketsecurity/lib':
-      specifier: 5.7.0
-      version: 5.7.0
     '@socketsecurity/registry':
       specifier: 2.0.2
       version: 2.0.2
@@ -427,7 +424,7 @@ importers:
         version: 1.3.2(eslint@9.35.0(jiti@2.6.1))
       '@eslint/js':
         specifier: 'catalog:'
-        version: 9.35.0
+        version: 10.0.1(eslint@9.35.0(jiti@2.6.1))
       '@npmcli/arborist':
         specifier: 'catalog:'
         version: 9.1.4
@@ -480,7 +477,7 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
@@ -699,7 +696,7 @@ importers:
         specifier: 'catalog:'
         version: 7.28.4
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       magic-string:
         specifier: 'catalog:'
@@ -753,7 +750,7 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
@@ -885,7 +882,7 @@ importers:
   packages/package-builder:
     dependencies:
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       handlebars:
         specifier: ^4.7.8
@@ -1370,6 +1367,15 @@ packages:
   '@eslint/eslintrc@3.3.1':
     resolution: {integrity: sha512-gtF186CXhIl1p4pJNGZw8Yc6RlshoePRvE0X91oPGb3vZ8pM3qOS9W9NGPat9LziaBV7XrJWGylNQXkGcnM3IQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@eslint/js@10.0.1':
+    resolution: {integrity: sha512-zeR9k5pd4gxjZ0abRoIaxdc7I3nDktoXZk2qOv9gCNWx3mVwEn32VRhyLaRsDiJjTs0xq/T8mfPtyuXu7GWBcA==}
+    engines: {node: ^20.19.0 || ^22.13.0 || >=24}
+    peerDependencies:
+      eslint: ^10.0.0
+    peerDependenciesMeta:
+      eslint:
+        optional: true
 
   '@eslint/js@9.35.0':
     resolution: {integrity: sha512-30iXE9whjlILfWobBkNerJo+TXYsgVM5ERQwMcMKCHckHflCmf7wXDAHlARoWnh0s1U72WqlbeyE7iAcCzuCPw==}
@@ -5289,6 +5295,10 @@ snapshots:
       strip-json-comments: 3.1.1
     transitivePeerDependencies:
       - supports-color
+
+  '@eslint/js@10.0.1(eslint@9.35.0(jiti@2.6.1))':
+    optionalDependencies:
+      eslint: 9.35.0(jiti@2.6.1)
 
   '@eslint/js@9.35.0': {}
 
