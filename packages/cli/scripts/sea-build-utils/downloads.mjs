@@ -278,7 +278,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
   const toolsForPlatform = PLATFORM_MAP_TOOLS[platformArch]
   if (!toolsForPlatform) {
     logger.warn(`No external-tools available for platform: ${platformArch}`)
-    return null
+    return undefined
   }
 
   logger.log(`Downloading external-tools for ${platformArch}...`)
@@ -384,25 +384,32 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
     let extractedBinaryPath
 
     if (toolName === 'python') {
-      // Python extracts to python/bin/python (symlink to python3.11).
+      // Python extracts to different structures on Windows vs Unix.
       // Unlike other tools, Python requires its entire directory structure (stdlib, lib,
       // include directories) to function. The python-build-standalone package is a
       // complete, self-contained Python installation (~19 MB compressed).
       //
-      // Directory structure after extraction:
+      // Unix directory structure after extraction:
       // python/
       // ├── bin/           # Python executable and symlinks.
       // ├── lib/           # Standard library and site-packages.
       // ├── include/       # C headers for extension modules.
       // └── share/         # Documentation and other resources.
       //
+      // Windows directory structure after extraction:
+      // python/
+      // ├── python.exe     # Python executable at root.
+      // ├── DLLs/          # Python DLLs and extensions.
+      // ├── Lib/           # Standard library and site-packages.
+      // ├── libs/          # Import libraries for linking.
+      // └── include/       # C headers for extension modules.
+      //
       // We keep the entire python/ directory in the VFS for socket-basics to use.
       const pythonBinPath = normalizePath(
         path.join(
           toolsDir,
           'python',
-          'bin',
-          isPlatWin ? 'python.exe' : 'python',
+          isPlatWin ? 'python.exe' : path.join('bin', 'python'),
         ),
       )
 

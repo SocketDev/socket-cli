@@ -38,7 +38,7 @@ export const PLATFORM_MAP_TOOLS = {
     python:
       'cpython-3.11.14+20260203-aarch64-apple-darwin-install_only.tar.gz',
     sfw: 'sfw-free-macos-arm64',
-    trivy: 'trivy_0.69.1_macOS-ARM64.tar.gz',
+    trivy: 'trivy_0.69.2_macOS-ARM64.tar.gz',
     trufflehog: 'trufflehog_3.93.1_darwin_arm64.tar.gz',
   },
 
@@ -49,7 +49,7 @@ export const PLATFORM_MAP_TOOLS = {
     python:
       'cpython-3.11.14+20260203-x86_64-apple-darwin-install_only.tar.gz',
     sfw: 'sfw-free-macos-x86_64',
-    trivy: 'trivy_0.69.1_macOS-64bit.tar.gz',
+    trivy: 'trivy_0.69.2_macOS-64bit.tar.gz',
     trufflehog: 'trufflehog_3.93.1_darwin_amd64.tar.gz',
   },
 
@@ -60,7 +60,7 @@ export const PLATFORM_MAP_TOOLS = {
     python:
       'cpython-3.11.14+20260203-aarch64-unknown-linux-gnu-install_only.tar.gz',
     sfw: 'sfw-free-linux-arm64',
-    trivy: 'trivy_0.69.1_Linux-ARM64.tar.gz',
+    trivy: 'trivy_0.69.2_Linux-ARM64.tar.gz',
     trufflehog: 'trufflehog_3.93.1_linux_arm64.tar.gz',
   },
 
@@ -71,7 +71,7 @@ export const PLATFORM_MAP_TOOLS = {
     python:
       'cpython-3.11.14+20260203-aarch64-unknown-linux-musl-install_only.tar.gz',
     sfw: 'sfw-free-musl-linux-arm64',
-    trivy: 'trivy_0.69.1_Linux-ARM64.tar.gz',
+    trivy: 'trivy_0.69.2_Linux-ARM64.tar.gz',
     trufflehog: 'trufflehog_3.93.1_linux_arm64.tar.gz',
   },
 
@@ -82,7 +82,7 @@ export const PLATFORM_MAP_TOOLS = {
     python:
       'cpython-3.11.14+20260203-x86_64-unknown-linux-gnu-install_only.tar.gz',
     sfw: 'sfw-free-linux-x86_64',
-    trivy: 'trivy_0.69.1_Linux-64bit.tar.gz',
+    trivy: 'trivy_0.69.2_Linux-64bit.tar.gz',
     trufflehog: 'trufflehog_3.93.1_linux_amd64.tar.gz',
   },
 
@@ -93,30 +93,30 @@ export const PLATFORM_MAP_TOOLS = {
     python:
       'cpython-3.11.14+20260203-x86_64-unknown-linux-musl-install_only.tar.gz',
     sfw: 'sfw-free-musl-linux-x86_64',
-    trivy: 'trivy_0.69.1_Linux-64bit.tar.gz',
+    trivy: 'trivy_0.69.2_Linux-64bit.tar.gz',
     trufflehog: 'trufflehog_3.93.1_linux_amd64.tar.gz',
   },
 
   // Windows ARM64 - Python and TruffleHog are native arm64.
   // Trivy, OpenGrep, and sfw use x64 binaries (Windows 11 ARM64 emulates x64).
-  'windows-arm64': {
+  'win32-arm64': {
     __proto__: null,
     opengrep: 'opengrep-core_windows_x86.zip', // x64 emulated.
     python:
       'cpython-3.11.14+20260203-aarch64-pc-windows-msvc-install_only.tar.gz', // native arm64.
     sfw: 'sfw-free-windows-x86_64.exe', // x64 emulated.
-    trivy: 'trivy_0.69.1_windows-64bit.zip', // x64 emulated.
+    trivy: 'trivy_0.69.2_windows-64bit.zip', // x64 emulated.
     trufflehog: 'trufflehog_3.93.1_windows_arm64.tar.gz', // native arm64.
   },
 
   // Windows x86_64 - all native x86_64.
-  'windows-x64': {
+  'win32-x64': {
     __proto__: null,
     opengrep: 'opengrep-core_windows_x86.zip',
     python:
       'cpython-3.11.14+20260203-x86_64-pc-windows-msvc-install_only.tar.gz',
     sfw: 'sfw-free-windows-x86_64.exe',
-    trivy: 'trivy_0.69.1_windows-64bit.zip',
+    trivy: 'trivy_0.69.2_windows-64bit.zip',
     trufflehog: 'trufflehog_3.93.1_windows_amd64.tar.gz',
   },
 }
