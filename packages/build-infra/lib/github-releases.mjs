@@ -12,9 +12,6 @@ import { pRetry } from '@socketsecurity/lib/promises'
 
 const logger = getDefaultLogger()
 
-const OWNER = 'SocketDev'
-const REPO = 'socket-btm'
-
 // Cache GitHub API responses for 1 hour to avoid rate limiting.
 const cache = createTtlCache({
   memoize: true,
@@ -46,6 +43,8 @@ function getAuthHeaders() {
  * The httpDownload function from @socketsecurity/lib@5.1.3+ automatically
  * follows HTTP redirects, eliminating the need for Octokit's getReleaseAsset API.
  *
+ * @param {string} owner - Repository owner.
+ * @param {string} repo - Repository name.
  * @param {string} tag - Release tag name.
  * @param {string} assetName - Asset name to download.
  * @param {string} outputPath - Path to write the downloaded file.
@@ -54,13 +53,17 @@ function getAuthHeaders() {
  * @returns {Promise<void>}
  */
 export async function downloadReleaseAsset(
+  owner,
+  repo,
   tag,
   assetName,
   outputPath,
   { quiet = false } = {},
 ) {
   // Get the browser_download_url for the asset (doesn't consume API quota for download).
-  const downloadUrl = await getReleaseAssetUrl(tag, assetName, { quiet })
+  const downloadUrl = await getReleaseAssetUrl(owner, repo, tag, assetName, {
+    quiet,
+  })
 
   if (!downloadUrl) {
     throw new Error(`Asset ${assetName} not found in release ${tag}`)
@@ -80,21 +83,27 @@ export async function downloadReleaseAsset(
 }
 
 /**
- * Get latest release tag for a tool with retry logic.
+ * Get latest release tag for a repository with retry logic.
  *
- * @param {string} tool - Tool name (e.g., 'lief', 'binpress').
+ * @param {string} owner - Repository owner.
+ * @param {string} repo - Repository name.
  * @param {object} [options] - Options.
+ * @param {string} [options.prefix] - Tag prefix to filter by (for socket-btm tool releases).
  * @param {boolean} [options.quiet] - Suppress log messages.
  * @returns {Promise<string|null>} - Latest release tag or null if not found.
  */
-export async function getLatestRelease(tool, { quiet = false } = {}) {
-  const cacheKey = `latest-release:${tool}`
+export async function getLatestRelease(
+  owner,
+  repo,
+  { prefix, quiet = false } = {},
+) {
+  const cacheKey = `latest-release:${owner}/${repo}:${prefix || 'latest'}`
 
   return await cache.getOrFetch(cacheKey, async () => {
     return await pRetry(
       async () => {
         const response = await httpRequest(
-          `https://api.github.com/repos/${OWNER}/${REPO}/releases?per_page=100`,
+          `https://api.github.com/repos/${owner}/${repo}/releases?per_page=100`,
           {
             headers: getAuthHeaders(),
           },
@@ -113,10 +122,25 @@ export async function getLatestRelease(tool, { quiet = false } = {}) {
           )
         }
 
-        // Find the first release matching the tool prefix.
+        // If no prefix specified, return the first (latest) release.
+        if (!prefix) {
+          if (!releases.length) {
+            if (!quiet) {
+              logger.info(`  No releases found for ${owner}/${repo}`)
+            }
+            return null
+          }
+          const tag = releases[0].tag_name
+          if (!quiet) {
+            logger.info(`  Found latest release: ${tag}`)
+          }
+          return tag
+        }
+
+        // Find the first release matching the prefix.
         for (const release of releases) {
           const { tag_name: tag } = release
-          if (tag.startsWith(`${tool}-`)) {
+          if (tag.startsWith(`${prefix}-`)) {
             if (!quiet) {
               logger.info(`  Found release: ${tag}`)
             }
@@ -126,7 +150,7 @@ export async function getLatestRelease(tool, { quiet = false } = {}) {
 
         // No matching release found in the list.
         if (!quiet) {
-          logger.info(`  No ${tool} release found in latest 100 releases`)
+          logger.info(`  No ${prefix} release found in latest 100 releases`)
         }
         return null
       },
@@ -136,7 +160,7 @@ export async function getLatestRelease(tool, { quiet = false } = {}) {
         onRetry: (attempt, error) => {
           if (!quiet) {
             logger.info(
-              `  Retry attempt ${attempt + 1}/3 for ${tool} release list...`,
+              `  Retry attempt ${attempt + 1}/3 for ${owner}/${repo} release list...`,
             )
             logger.warn(`  Attempt ${attempt + 1}/3 failed: ${error.message}`)
           }
@@ -153,6 +177,8 @@ export async function getLatestRelease(tool, { quiet = false } = {}) {
  * Returns the browser download URL which requires redirect following.
  * For public repositories, this URL returns HTTP 302 redirect to CDN.
  *
+ * @param {string} owner - Repository owner.
+ * @param {string} repo - Repository name.
  * @param {string} tag - Release tag name.
  * @param {string} assetName - Asset name to download.
  * @param {object} [options] - Options.
@@ -160,17 +186,19 @@ export async function getLatestRelease(tool, { quiet = false } = {}) {
  * @returns {Promise<string|null>} - Download URL or null if not found.
  */
 export async function getReleaseAssetUrl(
+  owner,
+  repo,
   tag,
   assetName,
   { quiet = false } = {},
 ) {
-  const cacheKey = `asset-url:${tag}:${assetName}`
+  const cacheKey = `asset-url:${owner}/${repo}:${tag}:${assetName}`
 
   return await cache.getOrFetch(cacheKey, async () => {
     return await pRetry(
       async () => {
         const response = await httpRequest(
-          `https://api.github.com/repos/${OWNER}/${REPO}/releases/tags/${tag}`,
+          `https://api.github.com/repos/${owner}/${repo}/releases/tags/${tag}`,
           {
             headers: getAuthHeaders(),
           },

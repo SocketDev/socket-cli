@@ -291,7 +291,7 @@ export class AssetManager {
       this.logger.log(`Downloading ${tool} from socket-btm ${tag}...`)
 
       // Download using github-releases helper (handles HTTP 302 redirects automatically).
-      await downloadReleaseAsset(tag, assetFilename, binaryPath)
+      await downloadReleaseAsset('SocketDev', 'socket-btm', tag, assetFilename, binaryPath)
 
       // Write version file (store full tag for consistency).
       await fs.writeFile(versionPath, tag, 'utf8')
