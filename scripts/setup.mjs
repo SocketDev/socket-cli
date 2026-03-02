@@ -98,7 +98,7 @@ async function getVersion(command, args = ['--version']) {
   } catch {
     // Ignore.
   }
-  return null
+  return undefined
 }
 
 /**
@@ -106,7 +106,7 @@ async function getVersion(command, args = ['--version']) {
  */
 function parseVersion(versionString) {
   const match = versionString.match(/(\d+)\.(\d+)\.(\d+)/)
-  if (!match) {return null}
+  if (!match) {return undefined}
   return {
     major: Number.parseInt(match[1], 10),
     minor: Number.parseInt(match[2], 10),

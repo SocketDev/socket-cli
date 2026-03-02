@@ -22,13 +22,13 @@
 /**
  * Convert legacy octal literal (0123) to decimal number
  * @param {string} value - The numeric literal string
- * @returns {number|null} Decimal value or null if not octal
+ * @returns {number|undefined} Decimal value or undefined if not octal
  */
 function convertOctalLiteral(value) {
   // Match legacy octal: starts with 0, followed by octal digits (0-7)
   const octalMatch = /^0([0-7]+)$/.exec(value)
   if (!octalMatch) {
-    return null
+    return undefined
   }
 
   const octalDigits = octalMatch[1]

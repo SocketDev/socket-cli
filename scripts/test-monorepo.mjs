@@ -204,7 +204,7 @@ async function main() {
     }
 
     // Setup progress bar.
-    let progressBar = null
+    let progressBar
     if (!quiet && packages.length > 1) {
       progressBar = new ProgressBar(packages.length, {
         format: ':bar :percent :current/:total :pkg',
