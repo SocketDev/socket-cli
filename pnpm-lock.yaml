@@ -73,8 +73,8 @@ catalogs:
       specifier: 1001.1.0
       version: 1001.1.0
     '@pnpm/lockfile.detect-dep-types':
-      specifier: 1001.0.13
-      version: 1001.0.13
+      specifier: 1001.0.25
+      version: 1001.0.25
     '@pnpm/lockfile.fs':
       specifier: 1001.1.17
       version: 1001.1.17
@@ -99,9 +99,6 @@ catalogs:
     '@socketsecurity/config':
       specifier: 3.0.1
       version: 3.0.1
-    '@socketsecurity/lib':
-      specifier: 5.7.0
-      version: 5.7.0
     '@socketsecurity/registry':
       specifier: 2.0.2
       version: 2.0.2
@@ -454,7 +451,7 @@ importers:
         version: 1001.1.0
       '@pnpm/lockfile.detect-dep-types':
         specifier: 'catalog:'
-        version: 1001.0.13
+        version: 1001.0.25
       '@pnpm/lockfile.fs':
         specifier: 'catalog:'
         version: 1001.1.17(@pnpm/logger@1001.0.0)
@@ -480,7 +477,7 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
@@ -699,7 +696,7 @@ importers:
         specifier: 'catalog:'
         version: 7.28.4
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       magic-string:
         specifier: 'catalog:'
@@ -753,7 +750,7 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
@@ -885,7 +882,7 @@ importers:
   packages/package-builder:
     dependencies:
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       handlebars:
         specifier: ^4.7.8
@@ -1656,12 +1653,20 @@ packages:
     resolution: {integrity: sha512-L22sQHDC4VM9cPSbOFi0e+C7JSt3isl/biV1jShz8MG9QjemiwTUMog4h0k0C5HoB1ycUjGkXTqAE4RJu3jLQA==}
     engines: {node: '>=18.12'}
 
+  '@pnpm/crypto.hash@1000.2.2':
+    resolution: {integrity: sha512-W8pLZvXWLlGG5p0Z2nCvtBhlM6uuTcbAbsS15wlGS31jBBJKJW2udLoFeM7qfWPo7E2PqRPGxca7APpVYAjJhw==}
+    engines: {node: '>=18.12'}
+
   '@pnpm/crypto.polyfill@1000.1.0':
     resolution: {integrity: sha512-tNe7a6U4rCpxLMBaR0SIYTdjxGdL0Vwb3G1zY8++sPtHSvy7qd54u8CIB0Z+Y6t5tc9pNYMYCMwhE/wdSY7ltg==}
     engines: {node: '>=18.12'}
 
   '@pnpm/dependency-path@1001.1.0':
     resolution: {integrity: sha512-hOVNtEu25HTNOdi0PkvDd27AQHXBke18njbGSYJ02J4GbyoufazqP8+YDiC/wQ+28rKOpgUylT7pVlZoTmdUsg==}
+    engines: {node: '>=18.12'}
+
+  '@pnpm/dependency-path@1001.1.10':
+    resolution: {integrity: sha512-PNImtV2SmNTDpLi4HdN86tJPmsOeIxm4VhmxgBVsMrJPEBfkNEWFcflR3wU6XVn/26g9qWdvlNHaawtCjeB93Q==}
     engines: {node: '>=18.12'}
 
   '@pnpm/error@1000.0.4':
@@ -1676,8 +1681,12 @@ packages:
     resolution: {integrity: sha512-RvMEliAmcfd/4UoaYQ93DLQcFeqit78jhYmeJJVPxqFGmj0jEcb9Tu0eAOXr7tGP3eJHpgvPbTU4o6pZ1bJhxg==}
     engines: {node: '>=18.12'}
 
-  '@pnpm/lockfile.detect-dep-types@1001.0.13':
-    resolution: {integrity: sha512-CYVsUdxFkfj+V9W/6d/I4GZ/JqlJKIkiZMax+JnEtzPMWl0lPVZsbsVKt3bcVXy8IA5E9S45DQAoAi5X/NY5SQ==}
+  '@pnpm/graceful-fs@1000.1.0':
+    resolution: {integrity: sha512-EsMX4slK0qJN2AR0/AYohY5m0HQNYGMNe+jhN74O994zp22/WbX+PbkIKyw3UQn39yQm2+z6SgwklDxbeapsmQ==}
+    engines: {node: '>=18.12'}
+
+  '@pnpm/lockfile.detect-dep-types@1001.0.25':
+    resolution: {integrity: sha512-bioo4GDF3d/IcgQCdxEugsHzo3h9bR9Nu/YHleRjjZEoNDj3MOfcXNadt/Cs0wonE8lQhmm3xL5DOQGEy6N9Xg==}
     engines: {node: '>=18.12'}
 
   '@pnpm/lockfile.fs@1001.1.17':
@@ -1692,6 +1701,10 @@ packages:
 
   '@pnpm/lockfile.types@1002.0.0':
     resolution: {integrity: sha512-Y1UZAFKviKGmftMF3hk2jxRTWymctSG+x+5XjOAuNAV6mwtdPdrjUVM8zTbLW+om7GoYhaSszyicO7Qn9InRfg==}
+    engines: {node: '>=18.12'}
+
+  '@pnpm/lockfile.types@1002.0.9':
+    resolution: {integrity: sha512-cSdmJAXTab/hJz+RxvlZgWWZxFsP8rCbaUxSfgT7rwj6+1EFV9DcJYr4vh395Da5KgpIPxPceAs1iYO+5/MCqA==}
     engines: {node: '>=18.12'}
 
   '@pnpm/lockfile.utils@1003.0.0':
@@ -1729,8 +1742,16 @@ packages:
     resolution: {integrity: sha512-EGrQzH913uCHtkjIIR06JOUog0x0VlXS4dAD4unTrX6kPpRSPdISKn+LWRujoEJc8i0JBW6KIfUXcNmI0W5q+Q==}
     engines: {node: '>=18.12'}
 
+  '@pnpm/resolver-base@1005.4.1':
+    resolution: {integrity: sha512-47zGgACkbZWLOmM61kaE0nkqxiYx63C6DJ4wzDsdj0iXDZJ9SJEl+T035pkhquHe8XEh3YxvwMg2BRyZSgmZ9Q==}
+    engines: {node: '>=18.12'}
+
   '@pnpm/types@1000.7.0':
     resolution: {integrity: sha512-1s7FvDqmOEIeFGLUj/VO8sF5lGFxeE/1WALrBpfZhDnMXY/x8FbmuygTTE5joWifebcZ8Ww8Kw2CgBoStsIevQ==}
+    engines: {node: '>=18.12'}
+
+  '@pnpm/types@1001.3.0':
+    resolution: {integrity: sha512-NLTXheat/u7OEGg5M5vF6Z85zx8uKUZE0+whtX/sbFV2XL48RdnOWGPTKYuVVkv8M+launaLUTgGEXNs/ess2w==}
     engines: {node: '>=18.12'}
 
   '@pnpm/util.lex-comparator@3.0.2':
@@ -5336,7 +5357,7 @@ snapshots:
 
   '@isaacs/fs-minipass@4.0.1':
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   '@isaacs/string-locale-compare@1.1.0': {}
 
@@ -5677,12 +5698,24 @@ snapshots:
       '@pnpm/graceful-fs': 1000.0.0
       ssri: 10.0.5
 
+  '@pnpm/crypto.hash@1000.2.2':
+    dependencies:
+      '@pnpm/crypto.polyfill': 1000.1.0
+      '@pnpm/graceful-fs': 1000.1.0
+      ssri: 10.0.5
+
   '@pnpm/crypto.polyfill@1000.1.0': {}
 
   '@pnpm/dependency-path@1001.1.0':
     dependencies:
       '@pnpm/crypto.hash': 1000.2.0
       '@pnpm/types': 1000.7.0
+      semver: 7.7.2
+
+  '@pnpm/dependency-path@1001.1.10':
+    dependencies:
+      '@pnpm/crypto.hash': 1000.2.2
+      '@pnpm/types': 1001.3.0
       semver: 7.7.2
 
   '@pnpm/error@1000.0.4':
@@ -5697,11 +5730,15 @@ snapshots:
     dependencies:
       graceful-fs: 4.2.11
 
-  '@pnpm/lockfile.detect-dep-types@1001.0.13':
+  '@pnpm/graceful-fs@1000.1.0':
     dependencies:
-      '@pnpm/dependency-path': 1001.1.0
-      '@pnpm/lockfile.types': 1002.0.0
-      '@pnpm/types': 1000.7.0
+      graceful-fs: 4.2.11
+
+  '@pnpm/lockfile.detect-dep-types@1001.0.25':
+    dependencies:
+      '@pnpm/dependency-path': 1001.1.10
+      '@pnpm/lockfile.types': 1002.0.9
+      '@pnpm/types': 1001.3.0
 
   '@pnpm/lockfile.fs@1001.1.17(@pnpm/logger@1001.0.0)':
     dependencies:
@@ -5737,6 +5774,12 @@ snapshots:
       '@pnpm/patching.types': 1000.1.0
       '@pnpm/resolver-base': 1005.0.0
       '@pnpm/types': 1000.7.0
+
+  '@pnpm/lockfile.types@1002.0.9':
+    dependencies:
+      '@pnpm/patching.types': 1000.1.0
+      '@pnpm/resolver-base': 1005.4.1
+      '@pnpm/types': 1001.3.0
 
   '@pnpm/lockfile.utils@1003.0.0':
     dependencies:
@@ -5778,7 +5821,13 @@ snapshots:
     dependencies:
       '@pnpm/types': 1000.7.0
 
+  '@pnpm/resolver-base@1005.4.1':
+    dependencies:
+      '@pnpm/types': 1001.3.0
+
   '@pnpm/types@1000.7.0': {}
+
+  '@pnpm/types@1001.3.0': {}
 
   '@pnpm/util.lex-comparator@3.0.2': {}
 
@@ -6555,7 +6604,7 @@ snapshots:
       fs-minipass: 3.0.3
       glob: 13.0.6
       lru-cache: 11.2.6
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-collect: 2.0.1
       minipass-flush: 1.0.5
       minipass-pipeline: 1.2.4
@@ -7140,7 +7189,7 @@ snapshots:
 
   fs-minipass@3.0.3:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   fsevents@2.3.3:
     optional: true
@@ -7588,7 +7637,7 @@ snapshots:
       '@npmcli/agent': 3.0.0
       cacache: 19.0.1
       http-cache-semantics: 4.2.0
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-fetch: 4.0.1
       minipass-flush: 1.0.5
       minipass-pipeline: 1.2.4
@@ -7604,7 +7653,7 @@ snapshots:
       '@npmcli/agent': 4.0.0
       cacache: 20.0.1
       http-cache-semantics: 4.2.0
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-fetch: 5.0.0
       minipass-flush: 1.0.5
       minipass-pipeline: 1.2.4
@@ -7687,11 +7736,11 @@ snapshots:
 
   minipass-collect@2.0.1:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   minipass-fetch@4.0.1:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-sized: 1.0.3
       minizlib: 3.1.0
     optionalDependencies:
@@ -7699,7 +7748,7 @@ snapshots:
 
   minipass-fetch@5.0.0:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-sized: 1.0.3
       minizlib: 3.1.0
     optionalDependencies:
@@ -7727,7 +7776,7 @@ snapshots:
 
   minizlib@3.1.0:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   mkdirp-classic@0.5.3: {}
 
@@ -7925,7 +7974,7 @@ snapshots:
       '@npmcli/redact': 4.0.0
       jsonparse: 1.3.1
       make-fetch-happen: 15.0.3
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-fetch: 5.0.0
       minizlib: 3.1.0
       npm-package-arg: 13.0.0
@@ -8437,7 +8486,7 @@ snapshots:
 
   ssri@10.0.5:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   ssri@12.0.0:
     dependencies:
@@ -8445,7 +8494,7 @@ snapshots:
 
   ssri@13.0.0:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   stable-hash-x@0.2.0: {}
 
@@ -8558,7 +8607,7 @@ snapshots:
     dependencies:
       '@isaacs/fs-minipass': 4.0.1
       chownr: 3.0.0
-      minipass: 7.1.2
+      minipass: 7.1.3
       minizlib: 3.1.0
       yallist: 5.0.0
 
