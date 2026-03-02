@@ -179,7 +179,7 @@ export function analyzePatchContent(patchContent) {
   }
 
   const lines = patchContent.split('\n')
-  let currentFile = null
+  let currentFile
 
   for (const line of lines) {
     // Track which files are modified.

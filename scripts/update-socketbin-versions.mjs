@@ -21,7 +21,7 @@ async function getLatestVersion(packageName) {
     return result.stdout.trim()
   } catch (error) {
     console.error(`Failed to get version for ${packageName}:`, error.message)
-    return null
+    return undefined
   }
 }
 

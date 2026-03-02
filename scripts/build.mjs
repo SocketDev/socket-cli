@@ -67,14 +67,14 @@ const BUILD_PACKAGES = [
  */
 function parseArgs() {
   const args = process.argv.slice(2)
-  let target = null
+  let target
   let targets = []
   let platforms = false
   let parallel = false
   let force = false
   let help = false
-  let platform = null
-  let arch = null
+  let platform
+  let arch
   const buildArgs = []
 
   for (let i = 0; i < args.length; i++) {
