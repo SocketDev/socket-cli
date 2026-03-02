@@ -99,9 +99,6 @@ catalogs:
     '@socketsecurity/config':
       specifier: 3.0.1
       version: 3.0.1
-    '@socketsecurity/lib':
-      specifier: 5.7.0
-      version: 5.7.0
     '@socketsecurity/registry':
       specifier: 2.0.2
       version: 2.0.2
@@ -344,7 +341,7 @@ overrides:
   shell-quote: 1.8.3
   side-channel: npm:@socketregistry/side-channel@^1.0.10
   signal-exit: 4.1.0
-  string_decoder: 0.10.31
+  string_decoder: 1.3.0
   string-width: 8.1.0
   strip-ansi: 7.1.2
   tiny-colors: 2.1.3
@@ -480,7 +477,7 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
@@ -699,7 +696,7 @@ importers:
         specifier: 'catalog:'
         version: 7.28.4
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       magic-string:
         specifier: 'catalog:'
@@ -753,7 +750,7 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
@@ -885,7 +882,7 @@ importers:
   packages/package-builder:
     dependencies:
       '@socketsecurity/lib':
-        specifier: 'catalog:'
+        specifier: 5.7.0
         version: 5.7.0(typescript@5.9.3)
       handlebars:
         specifier: ^4.7.8
@@ -4334,8 +4331,8 @@ packages:
     resolution: {integrity: sha512-Kxl3KJGb/gxkaUMOjRsQ8IrXiGW75O4E3RPjFIINOVH8AMl2SQ/yWdTzWwF3FevIX9LcMAjJW+GRwAlAbTSXdg==}
     engines: {node: '>=20'}
 
-  string_decoder@0.10.31:
-    resolution: {integrity: sha512-ev2QzSzWPYmy9GuqfIVildA4OdcGLeFZQrq5ys6RtiuF+RQQiZWr8TZNyAcuVXyQRYfEO+MsoB/1BuQVhOJuoQ==}
+  string_decoder@1.3.0:
+    resolution: {integrity: sha512-hkRX8U1WjJFd8LsDJ2yQ/wWWxaopEsABU1XfkM8A+j0+85JAGppt16cr1Whg6KIbb4okU6Mql6BOj+uup/wKeA==}
 
   strip-ansi@7.1.2:
     resolution: {integrity: sha512-gmBGslpoQJtgnMAvOVqGZpEz9dyoKTCzy2nfz/n8aIFhN/jCE/rCmcxabB6jOOHV+0WNnylOxaxBQPSvcWklhA==}
@@ -8247,13 +8244,13 @@ snapshots:
       isarray: '@socketregistry/isarray@1.0.8'
       process-nextick-args: 2.0.1
       safe-buffer: '@socketregistry/safe-buffer@1.0.9'
-      string_decoder: 0.10.31
+      string_decoder: 1.3.0
       util-deprecate: 1.0.2
 
   readable-stream@3.6.2:
     dependencies:
       inherits: 2.0.4
-      string_decoder: 0.10.31
+      string_decoder: 1.3.0
       util-deprecate: 1.0.2
 
   redent@4.0.0:
@@ -8479,7 +8476,9 @@ snapshots:
       get-east-asian-width: 1.4.0
       strip-ansi: 7.1.2
 
-  string_decoder@0.10.31: {}
+  string_decoder@1.3.0:
+    dependencies:
+      safe-buffer: '@socketregistry/safe-buffer@1.0.9'
 
   strip-ansi@7.1.2:
     dependencies:
