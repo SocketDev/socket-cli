@@ -60,7 +60,7 @@
     "description": "Trivy container and filesystem vulnerability scanner",
     "type": "github-release",
     "repository": "aquasecurity/trivy",
-    "version": "v0.69.1"
+    "version": "v0.69.2"
   },
   "trufflehog": {
     "description": "TruffleHog secret and credential detection",
