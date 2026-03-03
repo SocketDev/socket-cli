@@ -64,7 +64,7 @@ jobs:
     needs: versions
     permissions:
       contents: read # Read repository contents for CI checks and build operations.
-    uses: SocketDev/socket-registry/.github/workflows/ci.yml@4709a2443e5a036bb0cd94e5d1559f138f05994c # main
+    uses: SocketDev/socket-registry/.github/workflows/ci.yml@67a3db92603c23c58031586611c7cc852244c87c # main
     with:
       test-setup-script: 'pnpm --filter @socketsecurity/cli run build'
       lint-script: 'pnpm --filter @socketsecurity/cli run check'
@@ -93,7 +93,7 @@ jobs:
         node-version: ${{ fromJSON(inputs.node-versions || needs.versions.outputs.node) }}
         shard: [1, 2, 3]
     steps:
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4709a2443e5a036bb0cd94e5d1559f138f05994c # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@67a3db92603c23c58031586611c7cc852244c87c # main
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -158,7 +158,7 @@ jobs:
       matrix:
         node-version: ${{ fromJSON(inputs.node-versions || needs.versions.outputs.node) }}
     steps:
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4709a2443e5a036bb0cd94e5d1559f138f05994c # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@67a3db92603c23c58031586611c7cc852244c87c # main
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -360,7 +360,7 @@ jobs:
         os: [ubuntu-latest]
         shard: [1, 2]
     steps:
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4709a2443e5a036bb0cd94e5d1559f138f05994c # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@67a3db92603c23c58031586611c7cc852244c87c # main
         with:
           node-version: ${{ matrix.node-version }}
 
