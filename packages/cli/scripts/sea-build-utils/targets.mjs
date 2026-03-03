@@ -3,6 +3,8 @@
  * Manages the list of supported platforms and Node.js version selection.
  */
 
+import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
+
 import { httpRequest } from '@socketsecurity/lib/http-request'
 
 import { getAuthHeaders } from './downloads.mjs'
@@ -167,6 +169,7 @@ export async function getLatestSocketBtmNodeRelease() {
     // Extract the tag suffix (e.g., "node-smol-20251213-7cf90d2" -> "20251213-7cf90d2").
     return nodeSmolRelease.tag_name.replace('node-smol-', '')
   } catch (e) {
+    await logTransientErrorHelp(e)
     throw new Error('Failed to fetch latest socket-btm node-smol release', {
       cause: e,
     })

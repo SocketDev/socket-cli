@@ -69,13 +69,16 @@ describe('fetchCreateRepo', () => {
       visibility: 'private',
     })
 
-    expect(mockSdk.createRepository).toHaveBeenCalledWith('test-org', {
-      name: 'my-new-repo',
-      homepage: 'https://github.com/test-org/my-new-repo',
-      description: 'A new repository',
-      default_branch: 'main',
-      visibility: 'private',
-    })
+    expect(mockSdk.createRepository).toHaveBeenCalledWith(
+      'test-org',
+      'my-new-repo',
+      {
+        homepage: 'https://github.com/test-org/my-new-repo',
+        description: 'A new repository',
+        default_branch: 'main',
+        visibility: 'private',
+      },
+    )
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
       description: 'to create a repository',
     })
@@ -157,13 +160,16 @@ describe('fetchCreateRepo', () => {
       visibility: 'private',
     })
 
-    expect(mockSdk.createRepository).toHaveBeenCalledWith('simple-org', {
-      name: 'simple-repo',
-      description: '',
-      homepage: '',
-      default_branch: 'main',
-      visibility: 'private',
-    })
+    expect(mockSdk.createRepository).toHaveBeenCalledWith(
+      'simple-org',
+      'simple-repo',
+      {
+        description: '',
+        homepage: '',
+        default_branch: 'main',
+        visibility: 'private',
+      },
+    )
   })
 
   it('handles full repository configuration', async () => {
@@ -180,13 +186,16 @@ describe('fetchCreateRepo', () => {
 
     await fetchCreateRepo(fullConfig)
 
-    expect(mockSdk.createRepository).toHaveBeenCalledWith('config-org', {
-      name: 'full-config-repo',
-      homepage: 'https://github.com/org/full-config-repo',
-      description: 'Repository with full configuration',
-      default_branch: 'main',
-      visibility: 'private',
-    })
+    expect(mockSdk.createRepository).toHaveBeenCalledWith(
+      'config-org',
+      'full-config-repo',
+      {
+        homepage: 'https://github.com/org/full-config-repo',
+        description: 'Repository with full configuration',
+        default_branch: 'main',
+        visibility: 'private',
+      },
+    )
   })
 
   it('uses null prototype for options', async () => {

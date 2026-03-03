@@ -12,6 +12,7 @@ import { existsSync, readFileSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
 import { downloadReleaseAsset } from 'build-infra/lib/github-releases'
 
 import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
@@ -157,6 +158,7 @@ export async function getLatestBinjectVersion() {
     // Extract the version (e.g., "binject-1.0.0" -> "1.0.0").
     return binjectRelease.tag_name.replace('binject-', '')
   } catch (e) {
+    await logTransientErrorHelp(e)
     throw new Error('Failed to fetch latest socket-btm binject release', {
       cause: e,
     })
