@@ -69,7 +69,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - uses: SocketDev/socket-registry/.github/actions/setup@4709a2443e5a036bb0cd94e5d1559f138f05994c # main
+      - uses: SocketDev/socket-registry/.github/actions/setup@67a3db92603c23c58031586611c7cc852244c87c # main
         with:
           scope: '@socketsecurity'
       - name: Cache yoga-layout WASM
