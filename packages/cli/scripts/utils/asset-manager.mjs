@@ -16,6 +16,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
 import { downloadReleaseAsset } from 'build-infra/lib/github-releases'
 
 import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
@@ -291,7 +292,12 @@ export class AssetManager {
       this.logger.log(`Downloading ${tool} from socket-btm ${tag}...`)
 
       // Download using github-releases helper (handles HTTP 302 redirects automatically).
-      await downloadReleaseAsset('SocketDev', 'socket-btm', tag, assetFilename, binaryPath)
+      try {
+        await downloadReleaseAsset('SocketDev', 'socket-btm', tag, assetFilename, binaryPath)
+      } catch (e) {
+        await logTransientErrorHelp(e)
+        throw e
+      }
 
       // Write version file (store full tag for consistency).
       await fs.writeFile(versionPath, tag, 'utf8')

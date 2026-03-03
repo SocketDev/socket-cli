@@ -19,6 +19,8 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
+
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { downloadSocketBtmRelease } from '@socketsecurity/lib/releases/socket-btm'
 import { spawn } from '@socketsecurity/lib/spawn'
@@ -142,6 +144,7 @@ async function downloadAsset(config) {
   } catch (error) {
     logger.groupEnd()
     logger.error(`Failed to extract ${name}: ${error.message}`)
+    await logTransientErrorHelp(error)
     return { error, name, ok: false }
   }
 }
