@@ -63,6 +63,29 @@ function normalizeCoanaVersion(str: string): string {
   return str.replaceAll(coanaVersion, '<coana-version>')
 }
 
+// Normalize CLI banner output for stable snapshots.
+// The banner contains environment-specific values (version, token, org, cwd)
+// that differ across machines and CI environments.
+function normalizeBanner(str: string): string {
+  return (
+    str
+      // Replace CLI version like "v1.1.67" with "<redacted>".
+      .replace(/\| CLI: v[\d.]+/g, '| CLI: <redacted>')
+      // Replace token and org info with "<redacted>".
+      .replace(
+        /\| (?:Node: [^,]+, )?token: [^,]+, (?:org: [^\n"]+)/g,
+        '| token: <redacted>, org: <redacted>',
+      )
+      // Replace cwd path with "<redacted>".
+      .replace(/cwd: [^\n"]+/g, 'cwd: <redacted>')
+      // Strip "Received an unknown command: patch" error line that appears
+      // when socket-patch binary is not available in the test build.
+      // Also consume any leading whitespace on the next line so indentation
+      // stays consistent when the error line is absent.
+      .replace(/[^\n]*Received an unknown command: patch[^\n]*\n\s*/g, '')
+  )
+}
+
 function toAsciiSafeString(str: string): string {
   return str.replace(asciiUnsafeRegexp, m => {
     const code = m.charCodeAt(0)
@@ -74,9 +97,11 @@ function toAsciiSafeString(str: string): string {
 
 export function cleanOutput(output: string): string {
   return toAsciiSafeString(
-    normalizeCoanaVersion(
-      normalizeLogSymbols(
-        normalizeNewlines(stripZeroWidthSpace(stripAnsi(output.trim()))),
+    normalizeBanner(
+      normalizeCoanaVersion(
+        normalizeLogSymbols(
+          normalizeNewlines(stripZeroWidthSpace(stripAnsi(output.trim()))),
+        ),
       ),
     ),
   )
