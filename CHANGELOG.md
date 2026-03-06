@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.67](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.67) - 2026-03-06
+
+### Changed
+- Updated `@socketsecurity/socket-patch` to v2.0.0, now powered by a native Rust binary for faster patch operations
+- The `socket patch` command now directly invokes the platform-specific Rust binary instead of a Node.js wrapper
+- Enhanced `socket patch` documentation with a complete subcommand reference and quick-start guide
+
 ## [1.1.66](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.66) - 2026-03-02
 
 ### Changed
@@ -51,7 +58,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Added `--reach-enable-analysis-splitting` flag to opt-in to multiple analysis runs per workspace when needed.
 - Deprecated `--reach-disable-analysis-splitting` flag (now a no-op for backwards compatibility).
 - Updated the Coana CLI to v `14.12.154`.
-
 
 ## [1.1.57](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.57) - 2026-01-10
 
