@@ -85,6 +85,9 @@ async function run(
   if (result.error) {
     throw result.error
   }
+  if (result.signal) {
+    process.kill(process.pid, result.signal)
+  }
   if (result.status !== null && result.status !== 0) {
     process.exitCode = result.status
   }

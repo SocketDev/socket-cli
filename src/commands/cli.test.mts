@@ -78,9 +78,9 @@ describe('socket root command', async () => {
         "
            \\xd7 Received an unknown command: patch
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.58
-          |__   | * |  _| '_| -_|  _|     | token: (not set), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: /private/tmp/depscan-updatepatchworktree/submodules/socket-cli"
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -99,9 +99,9 @@ describe('socket root command', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.58
-          |__   | * |  _| '_| -_|  _|     | token: en*** (--config flag), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: /private/tmp/depscan-updatepatchworktree/submodules/socket-cli"
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

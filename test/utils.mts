@@ -63,6 +63,24 @@ function normalizeCoanaVersion(str: string): string {
   return str.replaceAll(coanaVersion, '<coana-version>')
 }
 
+// Normalize banner output for stable snapshots.
+function normalizeBanner(str: string): string {
+  return (
+    str
+      // Replace CLI version like "v1.1.58" with "<redacted>".
+      .replace(/\| CLI: v[\d.]+/g, '| CLI: <redacted>')
+      // Replace token and org info with "<redacted>".
+      .replace(
+        /\| (?:Node: [^,]+, )?token: [^,]+, (?:org: [^\n]+)/g,
+        '| token: <redacted>, org: <redacted>',
+      )
+      // Replace cwd path with "<redacted>".
+      .replace(/cwd: [^\n]+/g, 'cwd: <redacted>')
+      // Remove "Received an unknown command: patch" error line.
+      .replace(/\s*\\xd7 Received an unknown command: patch\n/g, '')
+  )
+}
+
 function toAsciiSafeString(str: string): string {
   return str.replace(asciiUnsafeRegexp, m => {
     const code = m.charCodeAt(0)
@@ -74,9 +92,11 @@ function toAsciiSafeString(str: string): string {
 
 export function cleanOutput(output: string): string {
   return toAsciiSafeString(
-    normalizeCoanaVersion(
-      normalizeLogSymbols(
-        normalizeNewlines(stripZeroWidthSpace(stripAnsi(output.trim()))),
+    normalizeBanner(
+      normalizeCoanaVersion(
+        normalizeLogSymbols(
+          normalizeNewlines(stripZeroWidthSpace(stripAnsi(output.trim()))),
+        ),
       ),
     ),
   )
