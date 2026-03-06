@@ -1,4 +1,6 @@
-import { runPatch } from '@socketsecurity/socket-patch/run'
+import { spawnSync } from 'node:child_process'
+import { existsSync } from 'node:fs'
+import path from 'node:path'
 
 import constants from '../../constants.mts'
 
@@ -6,7 +8,8 @@ import type { CliCommandContext } from '../../utils/meow-with-subcommands.mts'
 
 export const CMD_NAME = 'patch'
 
-const description = 'Manage CVE patches for dependencies'
+const description =
+  'Apply, manage, and rollback Socket security patches for vulnerable dependencies'
 
 const hidden = false
 
@@ -16,6 +19,28 @@ export const cmdPatch = {
   run,
 }
 
+// Resolve the path to the socket-patch binary.
+// The @socketsecurity/socket-patch package registers a bin entry that pnpm
+// links into node_modules/.bin/socket-patch. This launcher script finds and
+// executes the platform-specific Rust binary from the optionalDependencies.
+function resolveSocketPatchBin(): string {
+  // Walk up from this file (or dist/) to find the closest node_modules/.bin.
+  let dir = __dirname
+  for (let i = 0; i < 10; i += 1) {
+    const candidate = path.join(dir, 'node_modules', '.bin', 'socket-patch')
+    if (existsSync(candidate)) {
+      return candidate
+    }
+    const parent = path.dirname(dir)
+    if (parent === dir) {
+      break
+    }
+    dir = parent
+  }
+  // Fallback: assume socket-patch is on PATH.
+  return 'socket-patch'
+}
+
 async function run(
   argv: string[] | readonly string[],
   _importMeta: ImportMeta,
@@ -23,35 +48,44 @@ async function run(
 ): Promise<void> {
   const { ENV } = constants
 
-  // Map socket-cli environment to socket-patch options.
-  // Only include properties with defined values (exactOptionalPropertyTypes).
-  const options: Parameters<typeof runPatch>[1] = {}
+  // Build environment variables for the socket-patch binary.
+  const spawnEnv: Record<string, string | undefined> = {
+    ...process.env,
+  }
 
+  // Map socket-cli environment to socket-patch environment variables.
   // Strip /v0/ suffix from API URL if present.
   const apiUrl = ENV.SOCKET_CLI_API_BASE_URL?.replace(/\/v0\/?$/, '')
   if (apiUrl) {
-    options.apiUrl = apiUrl
+    spawnEnv['SOCKET_API_URL'] = apiUrl
   }
   if (ENV.SOCKET_CLI_API_TOKEN) {
-    options.apiToken = ENV.SOCKET_CLI_API_TOKEN
+    spawnEnv['SOCKET_API_TOKEN'] = ENV.SOCKET_CLI_API_TOKEN
   }
   if (ENV.SOCKET_CLI_ORG_SLUG) {
-    options.orgSlug = ENV.SOCKET_CLI_ORG_SLUG
+    spawnEnv['SOCKET_ORG_SLUG'] = ENV.SOCKET_CLI_ORG_SLUG
   }
   if (ENV.SOCKET_PATCH_PROXY_URL) {
-    options.patchProxyUrl = ENV.SOCKET_PATCH_PROXY_URL
+    spawnEnv['SOCKET_PATCH_PROXY_URL'] = ENV.SOCKET_PATCH_PROXY_URL
   }
   if (ENV.SOCKET_CLI_API_PROXY) {
-    options.httpProxy = ENV.SOCKET_CLI_API_PROXY
+    spawnEnv['HTTPS_PROXY'] = ENV.SOCKET_CLI_API_PROXY
   }
   if (ENV.SOCKET_CLI_DEBUG) {
-    options.debug = ENV.SOCKET_CLI_DEBUG
+    spawnEnv['SOCKET_PATCH_DEBUG'] = '1'
   }
 
-  // Forward all arguments to socket-patch.
-  const exitCode = await runPatch([...argv], options)
+  // Resolve and spawn the socket-patch Rust binary.
+  const binPath = resolveSocketPatchBin()
+  const result = spawnSync(binPath, [...argv], {
+    stdio: 'inherit',
+    env: spawnEnv,
+  })
 
-  if (exitCode !== 0) {
-    process.exitCode = exitCode
+  if (result.error) {
+    throw result.error
+  }
+  if (result.status !== null && result.status !== 0) {
+    process.exitCode = result.status
   }
 }

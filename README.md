@@ -22,6 +22,38 @@ socket --help
 
 - `socket cdxgen [command]` - Run [cdxgen](https://cyclonedx.github.io/cdxgen/#/?id=getting-started) for SBOM generation
 
+- `socket patch <command>` - Apply, manage, and rollback Socket security patches for vulnerable dependencies
+
+### Patch subcommands
+
+| Command | Description |
+|---------|-------------|
+| `socket patch scan` | Scan installed packages for available security patches |
+| `socket patch get <uuid> --org <slug>` | Download a patch by UUID and store it locally |
+| `socket patch apply` | Apply downloaded patches to `node_modules` |
+| `socket patch rollback [purl\|uuid]` | Rollback patches and restore original files |
+| `socket patch list [--json]` | List all patches in the local manifest |
+| `socket patch remove <purl\|uuid>` | Remove a patch from the manifest (rolls back by default) |
+| `socket patch setup [--yes]` | Add `socket patch apply` to `postinstall` scripts |
+| `socket patch repair` | Download missing blobs and clean up unused blobs |
+
+**Quick start:**
+
+```bash
+# Scan for available patches, download, and apply.
+socket patch scan
+socket patch apply
+
+# Or download a specific patch by UUID.
+socket patch get <uuid> --org <org-slug>
+socket patch apply
+
+# Add to postinstall so patches reapply on npm install.
+socket patch setup --yes
+```
+
+Free patches work without authentication. For paid patches, set `SOCKET_CLI_API_TOKEN` and `SOCKET_CLI_ORG_SLUG`.
+
 ## Aliases
 
 All aliases support the flags and arguments of the commands they alias.

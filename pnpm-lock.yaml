@@ -211,8 +211,8 @@ importers:
         specifier: 1.4.95
         version: 1.4.95
       '@socketsecurity/socket-patch':
-        specifier: 1.2.0
-        version: 1.2.0
+        specifier: 2.0.0
+        version: 2.0.0
       '@types/blessed':
         specifier: 0.1.25
         version: 0.1.25
@@ -643,24 +643,28 @@ packages:
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@biomejs/cli-linux-arm64@2.2.4':
     resolution: {integrity: sha512-M/Iz48p4NAzMXOuH+tsn5BvG/Jb07KOMTdSVwJpicmhN309BeEyRyQX+n1XDF0JVSlu28+hiTQ2L4rZPvu7nMw==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@biomejs/cli-linux-x64-musl@2.2.4':
     resolution: {integrity: sha512-m41nFDS0ksXK2gwXL6W6yZTYPMH0LughqbsxInSKetoH6morVj43szqKx79Iudkp8WRT5SxSh7qVb8KCUiewGg==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@biomejs/cli-linux-x64@2.2.4':
     resolution: {integrity: sha512-orr3nnf2Dpb2ssl6aihQtvcKtLySLta4E2UcXdp7+RTa7mfJjBgIsbS0B9GC8gVu0hjOu021aU8b3/I1tn+pVQ==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@biomejs/cli-win32-arm64@2.2.4':
     resolution: {integrity: sha512-NXnfTeKHDFUWfxAefa57DiGmu9VyKi0cDqFpdI+1hJWQjGJhJutHPX0b5m+eXvTKOaf+brU+P0JrQAZMb5yYaQ==}
@@ -702,16 +706,19 @@ packages:
     resolution: {integrity: sha512-Nitd3y1yb8Xv2e7ODqki3M8DO6SzWe/gGsioRiA6iNXcQ/JYzg03CyHEaTjCAhJXFO4qraCn4N6OPN2H7c8bew==}
     cpu: [x64]
     os: [linux]
+    libc: glibc
 
   '@cyclonedx/cdxgen-plugins-bin-linux-arm64@1.7.0':
     resolution: {integrity: sha512-/96YdFdwASQVr+MDO1IbUMYbLoHawTDIsGlhyMV4AI47qKZ59Ein5dvdibqqmnxgmWvG4Vqp941gRaCBlCLWag==}
     cpu: [arm64]
     os: [linux]
+    libc: glibc
 
   '@cyclonedx/cdxgen-plugins-bin-linux-arm@1.7.0':
     resolution: {integrity: sha512-eNnS9Kd+j4YDiIotCA3EQWyiHKjx7iZqh5+gyF38zmSJQRssEWvCdv+IPvXPyZw8hh5g9/8IQWPYMFpB3fpopg==}
     cpu: [arm]
     os: [linux]
+    libc: glibc
 
   '@cyclonedx/cdxgen-plugins-bin-linux-ppc64@1.7.0':
     resolution: {integrity: sha512-AWLQ33x/mUtYLfIfCq8tZ8TykXUzzNo6ZLvf1eOmEeEyYw/9Yx6E7KzzaAakGl886lJW/1gzmhvFPXD+ZKEIpA==}
@@ -722,11 +729,13 @@ packages:
     resolution: {integrity: sha512-miYABkiNS+0m0z9L5lfIyiAQezuYthkzzPqX6DgPeMgFT8SfoUng2dtRzkCPLtCUBj8lMyBntXTjZrmH7QOMoA==}
     cpu: [x64]
     os: [linux]
+    libc: musl
 
   '@cyclonedx/cdxgen-plugins-bin-linuxmusl-arm64@1.7.0':
     resolution: {integrity: sha512-Rh8ChTldyY/01EWrciyhnUltC2YNLmdkwaPDZsJT/as1Bu0Q4iOnepMw2WpqwzkaGbZG5PgFtzeuV1kBKjo07Q==}
     cpu: [arm64]
     os: [linux]
+    libc: musl
 
   '@cyclonedx/cdxgen-plugins-bin-windows-amd64@1.7.0':
     resolution: {integrity: sha512-sCeTnlDq3Wojit2+MqErsYhD/Mv7VickLU2PazmamQc4LVZHakZPGxoG4CFUt4oFVux9CoY1+RxkE+Ia+E+fsA==}
@@ -1276,41 +1285,49 @@ packages:
     resolution: {integrity: sha512-TWq+y2psMzbMtZB9USAq2bSA7NV1TMmh9lhAFbMGQ8Yp2YV4BRC/HilD6qF++efQl6shueGBFOv0LVe9BUXaIA==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@oxc-resolver/binding-linux-arm64-musl@11.9.0':
     resolution: {integrity: sha512-8WwGLfXk7yttc6rD6g53+RnYfX5B8xOot1ffthLn8oCXzVRO4cdChlmeHStxwLD/MWx8z8BGeyfyINNrsh9N2w==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@oxc-resolver/binding-linux-ppc64-gnu@11.9.0':
     resolution: {integrity: sha512-ZWiAXfan6actlSzayaFS/kYO2zD6k1k0fmLb1opbujXYMKepEnjjVOvKdzCIYR/zKzudqI39dGc+ywqVdsPIpQ==}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@oxc-resolver/binding-linux-riscv64-gnu@11.9.0':
     resolution: {integrity: sha512-p9mCSb+Bym+eycNo9k+81wQ5SAE31E+/rtfbDmF4/7krPotkEjPsEBSc3rqunRwO+FtsUn7H68JLY7hlai49eQ==}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@oxc-resolver/binding-linux-riscv64-musl@11.9.0':
     resolution: {integrity: sha512-/SePuVxgFhLPciRwsJ8kLVltr+rxh0b6riGFuoPnFXBbHFclKnjNIt3TfqzUj0/vOnslXw3cVGPpmtkm2TgCgg==}
     cpu: [riscv64]
     os: [linux]
+    libc: [musl]
 
   '@oxc-resolver/binding-linux-s390x-gnu@11.9.0':
     resolution: {integrity: sha512-zLuEjlYIzfnr1Ei2UZYQBbCTa/9deh+BEjO9rh1ai8BfEq4uj6RupTtNpgHfgAsEYdqOBVExw9EU1S6SW3RCAw==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@oxc-resolver/binding-linux-x64-gnu@11.9.0':
     resolution: {integrity: sha512-cxdg73WG+aVlPu/k4lEQPRVOhWunYOUglW6OSzclZLJJAXZU0tSZ5ymKaqPRkfTsyNSAafj1cA1XYd+P9UxBgw==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@oxc-resolver/binding-linux-x64-musl@11.9.0':
     resolution: {integrity: sha512-sy5nkVdMvNgqcx9sIY7G6U9TYZUZC4cmMGw/wKhJNuuD2/HFGtbje62ttXSwBAbVbmJ2GgZ4ZUo/S1OMyU+/OA==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@oxc-resolver/binding-wasm32-wasi@11.9.0':
     resolution: {integrity: sha512-dfi/a0Xh6o6nOLbJdaYuy7txncEcwkRHp9DGGZaAP7zxDiepkBZ6ewSJODQrWwhjVmMteXo+XFzEOMjsC7WUtQ==}
@@ -1346,21 +1363,25 @@ packages:
     resolution: {integrity: sha512-8uV0lAbmqp93KTBlJWyCdQWuxTzLn+QrDRidUaCLJjn65uvv8KlRhZJoZoyLh17X6U/cgezYktWTMiMhxX56BA==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@oxlint/linux-arm64-musl@1.15.0':
     resolution: {integrity: sha512-/+hTqh1J29+2GitKrWUHIYjQBM1szWSJ1U7OzQlgL+Uvf8jxg4sn1nV79LcPMXhC2t8lZy5EOXOgwIh92DsdhQ==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@oxlint/linux-x64-gnu@1.15.0':
     resolution: {integrity: sha512-GzeY3AhUd49yV+/76Gw0pjpwUJwxCkwYAJTNe7fFTdWjEQ6M6g8ZzJg5FKtUvgA5sMgmfzHhvSXxvT57YhcXnA==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@oxlint/linux-x64-musl@1.15.0':
     resolution: {integrity: sha512-p/7+juizUOCpGYreFmdfmIOSSSE3+JfsgnXnOHuP8mqlZfiOeXyevyajuXpPNRM60+k0reGvlV7ezp1iFitF7w==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@oxlint/win32-arm64@1.15.0':
     resolution: {integrity: sha512-2LaDLOtCMq+lzIQ63Eir3UJV/hQNlw01xtsij2L8sSxt4gA+zWvubOQJQIOPGMDxEKFcWT1lo/6YEXX/sNnZDA==}
@@ -1564,56 +1585,67 @@ packages:
     resolution: {integrity: sha512-54v4okehwl5TaSIkpp97rAHGp7t3ghinRd/vyC1iXqXMfjYUTm7TfYmCzXDoHUPTTf36L8pr0E7YsD3CfB3ZDg==}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm-musleabihf@4.50.1':
     resolution: {integrity: sha512-p/LaFyajPN/0PUHjv8TNyxLiA7RwmDoVY3flXHPSzqrGcIp/c2FjwPPP5++u87DGHtw+5kSH5bCJz0mvXngYxw==}
     cpu: [arm]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-arm64-gnu@4.50.1':
     resolution: {integrity: sha512-2AbMhFFkTo6Ptna1zO7kAXXDLi7H9fGTbVaIq2AAYO7yzcAsuTNWPHhb2aTA6GPiP+JXh85Y8CiS54iZoj4opw==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm64-musl@4.50.1':
     resolution: {integrity: sha512-Cgef+5aZwuvesQNw9eX7g19FfKX5/pQRIyhoXLCiBOrWopjo7ycfB292TX9MDcDijiuIJlx1IzJz3IoCPfqs9w==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-loongarch64-gnu@4.50.1':
     resolution: {integrity: sha512-RPhTwWMzpYYrHrJAS7CmpdtHNKtt2Ueo+BlLBjfZEhYBhK00OsEqM08/7f+eohiF6poe0YRDDd8nAvwtE/Y62Q==}
     cpu: [loong64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-ppc64-gnu@4.50.1':
     resolution: {integrity: sha512-eSGMVQw9iekut62O7eBdbiccRguuDgiPMsw++BVUg+1K7WjZXHOg/YOT9SWMzPZA+w98G+Fa1VqJgHZOHHnY0Q==}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-gnu@4.50.1':
     resolution: {integrity: sha512-S208ojx8a4ciIPrLgazF6AgdcNJzQE4+S9rsmOmDJkusvctii+ZvEuIC4v/xFqzbuP8yDjn73oBlNDgF6YGSXQ==}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-musl@4.50.1':
     resolution: {integrity: sha512-3Ag8Ls1ggqkGUvSZWYcdgFwriy2lWo+0QlYgEFra/5JGtAd6C5Hw59oojx1DeqcA2Wds2ayRgvJ4qxVTzCHgzg==}
     cpu: [riscv64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-s390x-gnu@4.50.1':
     resolution: {integrity: sha512-t9YrKfaxCYe7l7ldFERE1BRg/4TATxIg+YieHQ966jwvo7ddHJxPj9cNFWLAzhkVsbBvNA4qTbPVNsZKBO4NSg==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-gnu@4.50.1':
     resolution: {integrity: sha512-MCgtFB2+SVNuQmmjHf+wfI4CMxy3Tk8XjA5Z//A0AKD7QXUYFMQcns91K6dEHBvZPCnhJSyDWLApk40Iq/H3tA==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-musl@4.50.1':
     resolution: {integrity: sha512-nEvqG+0jeRmqaUMuwzlfMKwcIVffy/9KGbAGyoa26iu6eSngAYQ512bMXuqqPrlTyfqdlB9FVINs93j534UJrg==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-openharmony-arm64@4.50.1':
     resolution: {integrity: sha512-RDsLm+phmT3MJd9SNxA9MNuEAO/J2fhW8GXk62G/B4G7sLVumNFbRwDL6v5NrESb48k+QMqdGbHgEtfU0LCpbA==}
@@ -1748,8 +1780,58 @@ packages:
     resolution: {integrity: sha512-rUqo8UYHsH8MQxO8EKnIAsU8AhArz0A3H2hfDgZPrfpY2O7ligUUBaLkk/zEm9DP6k8JjWSR6gxdvnY6KgWQJQ==}
     engines: {node: '>=18'}
 
-  '@socketsecurity/socket-patch@1.2.0':
-    resolution: {integrity: sha512-VIuDVRRN5V7iyM+OHK4mYrqHPEHbB0J41gPx8iouivvfERwvhPPjDFm+CNjQ1gmYZd1RaqPG3MLT7fKPyMkddA==}
+  '@socketsecurity/socket-patch-android-arm64@2.0.0':
+    resolution: {integrity: sha512-R/xsoKr0pRpxHeqoIxMj7R4w77mBPQ5Asv4PpNg2UTIEhxUx9XyXW7MVq9XjjrnWIEMpV1TwOptjvBicFTZZAQ==}
+    cpu: [arm64]
+    os: [android]
+
+  '@socketsecurity/socket-patch-darwin-arm64@2.0.0':
+    resolution: {integrity: sha512-Qtra40wpKeH59VggrXIopdxr0OcyDj/1bOlUqHfyNkoKWwFoifZ3IQGb4N2DP5FfTXKRGcc8GkBntHkv2xqnnw==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@socketsecurity/socket-patch-darwin-x64@2.0.0':
+    resolution: {integrity: sha512-ZXpbjqEg6JOD/Kbrd7pN1DgrMCqwRzngheFHjTZ4PCBmF6c631ePWTHgKcxUIFakiTLCU11+hhX97wZ/gZ0Krg==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@socketsecurity/socket-patch-linux-arm64@2.0.0':
+    resolution: {integrity: sha512-kA04/a41J4LrTTidM+kn4FCcViCqccrnhsKOSwdVrhP+d7c8Op0uCtcJZ1HdmT5iwFKQsiHkg/99gIUsJ9vUzQ==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@socketsecurity/socket-patch-linux-arm@2.0.0':
+    resolution: {integrity: sha512-ynXffPV/Ay/T+rT/spcHyexxBhwmrXQ5nTI8z48dHIlnv0utnWsVq2zhC9fffzxRwhLC/949A0pSaBaCIGih+A==}
+    cpu: [arm]
+    os: [linux]
+
+  '@socketsecurity/socket-patch-linux-ia32@2.0.0':
+    resolution: {integrity: sha512-N7rMgHf0q1U0Fl4YQn8/DhheSSsP72uH9+irADyVwtx7BJMAk4jsryynwqBQvBul9556M4ObmcH91AnIqIrvNg==}
+    cpu: [ia32]
+    os: [linux]
+
+  '@socketsecurity/socket-patch-linux-x64@2.0.0':
+    resolution: {integrity: sha512-WpPUqgbYxGGe0OSbxyol+lMbB3F7uhTaH2r7wbyq5ks8qwiHzFn2IXSFjkeJSaeMuqrFfsu2yWrSfgyN1ybP2Q==}
+    cpu: [x64]
+    os: [linux]
+
+  '@socketsecurity/socket-patch-win32-arm64@2.0.0':
+    resolution: {integrity: sha512-Hqp0qKxqHlEkqszOChFPOihnxbqON0Sv0i5G+twCAtMB277KlfwOkEuLVvlFnSHxbwOyQ9MVJ0NpzSIN6ovOlQ==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@socketsecurity/socket-patch-win32-ia32@2.0.0':
+    resolution: {integrity: sha512-WB8suzfmTgyIWbF/4FRLqsMKbNg64pYZsZhMwIRG2Dct3JQH6XK0wVNeH289LOHEQ0+isEpCNYFiQzEdRHfZOg==}
+    cpu: [ia32]
+    os: [win32]
+
+  '@socketsecurity/socket-patch-win32-x64@2.0.0':
+    resolution: {integrity: sha512-TimHyh/FoHYvYao8MDHXnfd69+K1Js9Uak1BjU62Bk2VKSQUS279eOwrMSltyyzZ8LvnJIhMispe+a+12/2VHw==}
+    cpu: [x64]
+    os: [win32]
+
+  '@socketsecurity/socket-patch@2.0.0':
+    resolution: {integrity: sha512-WyKOelgSuE17ReOdcrYQ2fBm6kHvdkDm55b3owHC7WoU1FLNzRnv47J0bkoNgNObB6KedTiQLVzf/ZvbuIl5oQ==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -2006,41 +2088,49 @@ packages:
     resolution: {integrity: sha512-34gw7PjDGB9JgePJEmhEqBhWvCiiWCuXsL9hYphDF7crW7UgI05gyBAi6MF58uGcMOiOqSJ2ybEeCvHcq0BCmQ==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@unrs/resolver-binding-linux-arm64-musl@1.11.1':
     resolution: {integrity: sha512-RyMIx6Uf53hhOtJDIamSbTskA99sPHS96wxVE/bJtePJJtpdKGXO1wY90oRdXuYOGOTuqjT8ACccMc4K6QmT3w==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@unrs/resolver-binding-linux-ppc64-gnu@1.11.1':
     resolution: {integrity: sha512-D8Vae74A4/a+mZH0FbOkFJL9DSK2R6TFPC9M+jCWYia/q2einCubX10pecpDiTmkJVUH+y8K3BZClycD8nCShA==}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@unrs/resolver-binding-linux-riscv64-gnu@1.11.1':
     resolution: {integrity: sha512-frxL4OrzOWVVsOc96+V3aqTIQl1O2TjgExV4EKgRY09AJ9leZpEg8Ak9phadbuX0BA4k8U5qtvMSQQGGmaJqcQ==}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@unrs/resolver-binding-linux-riscv64-musl@1.11.1':
     resolution: {integrity: sha512-mJ5vuDaIZ+l/acv01sHoXfpnyrNKOk/3aDoEdLO/Xtn9HuZlDD6jKxHlkN8ZhWyLJsRBxfv9GYM2utQ1SChKew==}
     cpu: [riscv64]
     os: [linux]
+    libc: [musl]
 
   '@unrs/resolver-binding-linux-s390x-gnu@1.11.1':
     resolution: {integrity: sha512-kELo8ebBVtb9sA7rMe1Cph4QHreByhaZ2QEADd9NzIQsYNQpt9UkM9iqr2lhGr5afh885d/cB5QeTXSbZHTYPg==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@unrs/resolver-binding-linux-x64-gnu@1.11.1':
     resolution: {integrity: sha512-C3ZAHugKgovV5YvAMsxhq0gtXuwESUKc5MhEtjBpLoHPLYM+iuwSj3lflFwK3DPm68660rZ7G8BMcwSro7hD5w==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@unrs/resolver-binding-linux-x64-musl@1.11.1':
     resolution: {integrity: sha512-rV0YSoyhK2nZ4vEswT/QwqzqQXw5I6CjoaYMOX0TqBlWhojUf8P94mvI7nuJTeaCkkds3QE4+zS8Ko+GdXuZtA==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@unrs/resolver-binding-wasm32-wasi@1.11.1':
     resolution: {integrity: sha512-5u4RkfxJm+Ng7IWgkzi3qrFOvLvQYnPBmjmZQ8+szTK/b31fQCnleNl1GgEt7nIsZRIf5PLhPwT0WM+q45x/UQ==}
@@ -4032,6 +4122,7 @@ packages:
   prebuild-install@7.1.3:
     resolution: {integrity: sha512-8Mf2cbV7x1cXPUILADGI3wuhfqWvtiLA1iclTDbFRZkgRQS0NqsPZphna9V+HyTEadheuPmjaJMsbzKQFOzLug==}
     engines: {node: '>=10'}
+    deprecated: No longer maintained. Please contact the author of the relevant native addon; alternatives are available.
     hasBin: true
 
   prelude-ls@1.2.1:
@@ -6387,10 +6478,50 @@ snapshots:
     dependencies:
       '@socketsecurity/registry': 1.1.17
 
-  '@socketsecurity/socket-patch@1.2.0':
+  '@socketsecurity/socket-patch-android-arm64@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-darwin-arm64@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-darwin-x64@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-linux-arm64@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-linux-arm@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-linux-ia32@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-linux-x64@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-win32-arm64@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-win32-ia32@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-win32-x64@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch@2.0.0':
     dependencies:
-      yargs: 17.7.2
       zod: 3.25.76
+    optionalDependencies:
+      '@socketsecurity/socket-patch-android-arm64': 2.0.0
+      '@socketsecurity/socket-patch-darwin-arm64': 2.0.0
+      '@socketsecurity/socket-patch-darwin-x64': 2.0.0
+      '@socketsecurity/socket-patch-linux-arm': 2.0.0
+      '@socketsecurity/socket-patch-linux-arm64': 2.0.0
+      '@socketsecurity/socket-patch-linux-ia32': 2.0.0
+      '@socketsecurity/socket-patch-linux-x64': 2.0.0
+      '@socketsecurity/socket-patch-win32-arm64': 2.0.0
+      '@socketsecurity/socket-patch-win32-ia32': 2.0.0
+      '@socketsecurity/socket-patch-win32-x64': 2.0.0
 
   '@stroncium/procfs@1.2.1': {}
 

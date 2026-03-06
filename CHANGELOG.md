@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.58](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.58) - 2026-03-06
+
+### Changed
+- Updated `@socketsecurity/socket-patch` to v2.0.0, now powered by a native Rust binary for faster patch operations
+- The `socket patch` command now directly invokes the platform-specific Rust binary instead of a Node.js wrapper
+- Enhanced `socket patch` documentation with a complete subcommand reference and quick-start guide
+
 ## [1.1.57](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.57) - 2026-01-10
 
 ### Changed
