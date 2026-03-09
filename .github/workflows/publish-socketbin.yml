@@ -139,7 +139,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.2.0
         with:
           node-version-file: .node-version
           registry-url: 'https://registry.npmjs.org'
@@ -354,7 +354,7 @@ jobs:
           file dist/sea/socket-* || true
 
       - name: Upload binary artifact
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v5.0.0
         with:
           name: binary-${{ matrix.platform }}-${{ matrix.arch }}
           path: dist/sea/socket-*
@@ -376,7 +376,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.2.0
         with:
           node-version-file: .node-version
           registry-url: 'https://registry.npmjs.org'
