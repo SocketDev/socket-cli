@@ -29,6 +29,7 @@ export const cmdRepositoryCreate = createRepositoryCommand({
     },
   },
   handler: async ({ flags, orgSlug, outputKind, repoName }) => {
+    const visibility = String(flags['visibility'] || 'private')
     await handleCreateRepo(
       {
         defaultBranch: String(flags['defaultBranch'] || ''),
@@ -36,7 +37,7 @@ export const cmdRepositoryCreate = createRepositoryCommand({
         homepage: String(flags['homepage'] || ''),
         orgSlug,
         repoName: String(repoName),
-        visibility: String(flags['visibility'] || 'private'),
+        visibility: visibility === 'public' ? 'public' : 'private',
       },
       outputKind,
     )

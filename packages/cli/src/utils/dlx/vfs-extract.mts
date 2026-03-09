@@ -79,10 +79,13 @@ import { isSeaBinary } from '../sea/detect.mts'
 const logger = getDefaultLogger()
 
 // External tool names bundled in VFS.
-// Currently only includes standalone binaries that are packaged in the VFS tarball.
-// npm packages (cdxgen, coana, socket-patch, synp) will be added in future updates.
+// Includes standalone binaries and npm packages that are packaged in the VFS tarball.
 export const EXTERNAL_TOOLS = [
+  'cdxgen',
+  'coana',
   'sfw',
+  'socket-patch',
+  'synp',
 ] as const
 
 export type ExternalTool = (typeof EXTERNAL_TOOLS)[number]

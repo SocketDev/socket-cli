@@ -13,22 +13,15 @@
  */
 
 import { createHash } from 'node:crypto'
-import { existsSync, promises as fs } from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
 
-import { debug } from '@socketsecurity/lib/debug'
-import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import { UPDATE_STORE_DIR } from '../../constants/paths.mts'
-import { getOpengrepVersion } from '../../env/opengrep-version.mts'
-import { getPyCliVersion } from '../../env/pycli-version.mts'
 import { getPythonMajorMinor } from '../../env/python-version.mts'
-import { getTrivyVersion } from '../../env/trivy-version.mts'
-import { getTrufflehogVersion } from '../../env/trufflehog-version.mts'
 import { isSeaBinary } from '../sea/detect.mts'
 
 const logger = getDefaultLogger()
@@ -183,9 +176,11 @@ export async function extractBasicsTools(
     logger.group('Validating extracted basics tools...')
 
     const pythonExe = isPlatWin ? 'python3.exe' : 'python3'
-    const pythonPath = normalizePath(
-      path.join(extractedPaths.python, 'bin', pythonExe),
-    )
+    const pythonDir = extractedPaths['python']
+    if (!pythonDir) {
+      throw new Error('Python extraction path not found')
+    }
+    const pythonPath = normalizePath(path.join(pythonDir, 'bin', pythonExe))
 
     const validateResult = await spawn(pythonPath, ['--version'], {
       stdio: 'pipe',
@@ -226,7 +221,7 @@ export async function extractBasicsTools(
 
     logger.success('Basics tools extracted and validated')
     // Return the Python directory path for backward compatibility.
-    return extractedPaths.python
+    return extractedPaths['python'] ?? null
   } catch (e) {
     logger.error('VFS extraction failed')
     throw e
