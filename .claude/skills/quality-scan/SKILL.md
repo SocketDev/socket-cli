@@ -96,53 +96,26 @@ git status
 ### Phase 2: Update Dependencies
 
 <action>
-Update dependencies across Socket Security repositories to ensure latest versions:
+Update dependencies in the current repository only:
 </action>
-
-**Target Repositories:**
-1. **socket-cli** (current repository)
-2. **socket-btm** (`../socket-btm/`)
-3. **socket-sbom-generator** (`../socket-sbom-generator/`)
-4. **ultrathink** (`../ultrathink/`)
 
 **Update Process:**
 
-For each repository, run dependency updates:
-
 ```bash
-# socket-cli (current repo)
 pnpm run update
-
-# socket-btm
-cd ../socket-btm && pnpm run update && cd -
-
-# socket-sbom-generator
-cd ../socket-sbom-generator && pnpm run update && cd -
-
-# ultrathink
-cd ../ultrathink && pnpm run update && cd -
 ```
 
 <validation>
-**For each repository:**
-1. Check if directory exists (skip if not found)
-2. Run `pnpm run update` command
-3. Report success or failure
-4. Track updated packages count
-5. Continue even if some repos fail
-
 **Expected Results:**
-- Dependencies updated in available repositories
-- Report number of packages updated per repository
-- Note any repositories that were skipped (not found)
-- Continue with scan even if updates fail
+- Dependencies updated in socket-cli
+- Report number of packages updated
+- Continue with scan even if update fails
 
 **Track for reporting:**
-- Repositories updated: N/4
-- Total packages updated: N
-- Failed updates: N (continue with warnings)
-- Skipped repositories: [list]
+- Packages updated: N
+- Update status: Success/Failed (with warning)
 
+**Important:** Only update dependencies in the current repository (socket-cli). Do NOT attempt to update sibling repositories (socket-btm, socket-sbom-generator, ultrathink) as this is out of scope and could have unintended side effects.
 </validation>
 
 ---
