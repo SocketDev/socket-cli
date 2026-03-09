@@ -19,7 +19,7 @@ export async function handleCreateRepo(
     description: string
     homepage: string
     defaultBranch: string
-    visibility: string
+    visibility: 'private' | 'public'
   },
   outputKind: OutputKind,
 ): Promise<void> {

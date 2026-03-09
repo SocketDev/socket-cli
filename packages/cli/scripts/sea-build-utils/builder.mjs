@@ -11,7 +11,7 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
+import { safeMkdir } from '@socketsecurity/lib/fs'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { spawn } from '@socketsecurity/lib/spawn'
 
@@ -51,19 +51,20 @@ import { SOCKET_CLI_SEA_BUILD_DIR } from '../constants/paths.mjs'
  */
 export async function generateSeaConfig(entryPoint, outputPath) {
   const outputName = path.basename(outputPath, path.extname(outputPath))
+  const configDir = path.dirname(outputPath)
   const configPath = normalizePath(
-    path.join(path.dirname(outputPath), `sea-config-${outputName}.json`),
+    path.join(configDir, `sea-config-${outputName}.json`),
   )
-  const blobPath = normalizePath(
-    path.join(path.dirname(outputPath), `sea-blob-${outputName}.blob`),
-  )
+  // Use relative paths in sea-config.json (binject requires relative paths).
+  const blobPathRelative = `sea-blob-${outputName}.blob`
+  const mainPathRelative = path.relative(configDir, entryPoint)
 
   const config = {
     // No assets to minimize size.
     assets: {},
     disableExperimentalSEAWarning: true,
-    main: entryPoint,
-    output: blobPath,
+    main: mainPathRelative,
+    output: blobPathRelative,
     // Enable code cache for ~13% faster startup (~22ms improvement).
     // Pre-compiles JavaScript code during build time for instant execution.
     useCodeCache: true,
@@ -97,7 +98,7 @@ export async function generateSeaConfig(entryPoint, outputPath) {
 // which is critical for useCodeCache support (code cache is version-specific).
 //
 // This eliminates the Node.js version mismatch issue where we were using the host
-// Node.js (e.g., v25.5.0) to generate blobs for node-smol targets (e.g., v24.10.0).
+// Node.js to generate blobs for node-smol targets with different Node.js versions.
 //
 // See injectSeaBlob() below for the config-based blob generation implementation.
 
@@ -109,9 +110,8 @@ export async function generateSeaConfig(entryPoint, outputPath) {
  * Inject SEA blob and optional VFS assets into a Node.js binary using binject.
  *
  * This function performs the core SEA binary build step by:
- * 1. Generating an update-config.json for embedded update checking (binject --update-config).
- * 2. Invoking binject to inject the SEA blob into the Node.js binary.
- * 3. Optionally embedding security tools via VFS compression (binject --vfs).
+ * 1. Invoking binject to inject the SEA blob into the Node.js binary.
+ * 2. Optionally embedding security tools via VFS compression (binject --vfs).
  *
  * Config-Based Blob Generation:
  * Instead of pre-generating the SEA blob with `node --experimental-sea-config`, binject
@@ -122,11 +122,6 @@ export async function generateSeaConfig(entryPoint, outputPath) {
  * If vfsTarGz is provided, binject's --vfs flag embeds the compressed tar.gz of security
  * tools into the binary. This achieves ~70% compression compared to Node.js SEA assets.
  * If vfsTarGz is omitted, --vfs-compat mode is used (no actual VFS bundling).
- *
- * Update Config Embedding:
- * The function generates an update-config.json that node-smol's C stub uses for built-in
- * update checking. This enables SEA binaries to check GitHub releases and notify users of
- * available updates without needing TypeScript-based update checking.
  *
  * @param {string} nodeBinary - Path to the node-smol binary to inject into.
  * @param {string} configPath - Path to the sea-config.json file for config-based blob generation.
@@ -215,72 +210,32 @@ export async function injectSeaBlob(
     env['SOCKET_DLX_DIR'] = uniqueCacheDir
   }
 
-  // Generate update-config.json for embedded update checking.
-  const updateConfigPath = normalizePath(
-    path.join(path.dirname(configPath), 'update-config.json'),
-  )
-  const updateConfig = {
-    binname: 'socket',
-    command: 'self-update',
-    interval: 86_400_000,
-    notify_interval: 86_400_000,
-    prompt: false,
-    prompt_default: 'n',
-    skip_env: 'SOCKET_CLI_SKIP_UPDATE_CHECK',
-    tag: 'socket-cli-*',
-    url: 'https://api.github.com/repos/SocketDev/socket-cli/releases',
+  // Inject SEA blob into Node binary using binject.
+  const args = [
+    'inject',
+    '--executable',
+    nodeBinary,
+    '--output',
+    outputPath,
+    '--sea',
+    configPath,
+  ]
+
+  // Add VFS if provided (compressed tar.gz), otherwise use vfs-compat mode.
+  if (vfsTarGz && existsSync(vfsTarGz)) {
+    args.push('--vfs', vfsTarGz)
+  } else {
+    args.push('--vfs-compat')
   }
-  await fs.writeFile(updateConfigPath, JSON.stringify(updateConfig, null, 2))
 
-  try {
-    // Inject SEA blob into Node binary using binject.
-    //
-    // Config-Based Blob Generation:
-    // When --sea points to a .json file (sea-config.json), binject reads the config
-    // and generates the blob automatically. This is more efficient than pre-generating
-    // with `node --experimental-sea-config`.
-    //
-    // VFS Compression:
-    // If vfsTarGz is provided, we use --vfs to embed compressed security tools.
-    // binject decompresses the tar.gz and injects the files into the binary's VFS.
-    // This achieves ~70% compression (460 MB → 140 MB for security tools).
-    //
-    // Without VFS (vfs-compat mode):
-    // If vfsTarGz is omitted, --vfs-compat mode is used, which injects only the SEA
-    // blob without any additional VFS data. This is useful for minimal CLI-only builds.
-    const args = [
-      'inject',
-      '--executable',
-      nodeBinary,
-      '--output',
-      outputPath,
-      '--sea',
-      configPath,
-    ]
+  const result = await spawn(binjectPath, args, { env, stdio: 'inherit' })
 
-    // Add VFS if provided (compressed tar.gz), otherwise use vfs-compat mode.
-    if (vfsTarGz && existsSync(vfsTarGz)) {
-      args.push('--vfs', vfsTarGz)
-    } else {
-      args.push('--vfs-compat')
-    }
-
-    args.push('--update-config', updateConfigPath)
-
-    const result = await spawn(binjectPath, args, { env, stdio: 'inherit' })
-
-    if (
-      result &&
-      typeof result === 'object' &&
-      'exitCode' in result &&
-      result.exitCode !== 0
-    ) {
-      throw new Error(`binject failed with exit code ${result.exitCode}`)
-    }
-  } finally {
-    // Clean up update config file (keep in debug mode for troubleshooting).
-    if (!process.env['DEBUG']) {
-      await safeDelete(updateConfigPath).catch(() => {})
-    }
+  if (
+    result &&
+    typeof result === 'object' &&
+    'exitCode' in result &&
+    result.exitCode !== 0
+  ) {
+    throw new Error(`binject failed with exit code ${result.exitCode}`)
   }
 }

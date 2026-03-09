@@ -11,7 +11,7 @@ export type FetchCreateRepoConfig = {
   homepage: string
   orgSlug: string
   repoName: string
-  visibility: string
+  visibility: 'private' | 'public'
 }
 
 export type FetchCreateRepoOptions = {
@@ -44,11 +44,10 @@ export async function fetchCreateRepo(
   const sockSdk = sockSdkCResult.data
 
   return await handleApiCall<'createRepository'>(
-    sockSdk.createRepository(orgSlug, {
+    sockSdk.createRepository(orgSlug, repoName, {
       default_branch: defaultBranch,
       description,
       homepage,
-      name: repoName,
       visibility,
     }),
     {

@@ -40,7 +40,7 @@ catalog:
   '@socketsecurity/config': 3.0.1
   '@socketsecurity/lib': 5.7.0
   '@socketsecurity/registry': 2.0.2
-  '@socketsecurity/sdk': 3.3.0
+  '@socketsecurity/sdk': 3.3.1
   '@types/cmd-shim': 5.0.2
   '@types/ink': 2.0.3
   '@types/js-yaml': 4.0.9
@@ -80,7 +80,7 @@ catalog:
   eslint-plugin-sort-destructure-keys: 2.0.0
   eslint-plugin-unicorn: 56.0.1
   fast-glob: 3.3.3
-  fast-xml-parser: ^5.3.7
+  fast-xml-parser: ^5.4.2
   function-bind: npm:@socketregistry/function-bind@^1.0.7
   globals: 16.4.0
   globalthis: npm:@socketregistry/globalthis@^1.0.8
