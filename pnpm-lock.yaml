@@ -101,6 +101,10 @@ patchedDependencies:
 importers:
 
   .:
+    dependencies:
+      '@socketsecurity/socket-patch':
+        specifier: 2.0.0
+        version: 2.0.0
     devDependencies:
       '@babel/core':
         specifier: 7.28.4
@@ -124,8 +128,8 @@ importers:
         specifier: 2.2.4
         version: 2.2.4
       '@coana-tech/cli':
-        specifier: 14.12.189
-        version: 14.12.189
+        specifier: 14.12.191
+        version: 14.12.191
       '@cyclonedx/cdxgen':
         specifier: 11.11.0
         version: 11.11.0
@@ -210,9 +214,6 @@ importers:
       '@socketsecurity/sdk':
         specifier: 1.4.96
         version: 1.4.96
-      '@socketsecurity/socket-patch':
-        specifier: 1.2.0
-        version: 1.2.0
       '@types/blessed':
         specifier: 0.1.25
         version: 0.1.25
@@ -680,8 +681,8 @@ packages:
   '@bufbuild/protobuf@2.6.3':
     resolution: {integrity: sha512-w/gJKME9mYN7ZoUAmSMAWXk4hkVpxRKvEJCb3dV5g9wwWdxTJJ0ayOJAVcNxtdqaxDyFuC0uz4RSGVacJ030PQ==}
 
-  '@coana-tech/cli@14.12.189':
-    resolution: {integrity: sha512-CbailGhglvPJK9DZLB8RsuMYE2SwFLB0MiC0ZdY2VIiSibXTsqdumqWMKDUbfq4gbe5ZlO1eSEAJIXc2H+RacQ==}
+  '@coana-tech/cli@14.12.191':
+    resolution: {integrity: sha512-mc/cMEraWCi4Ox98CZV5kqYMQr+7Za4wyCq7XgM65AuBx7DKeCj0pqFsz4VmnbL/RbVm3tlYCg4961Kx330WTw==}
     hasBin: true
 
   '@colors/colors@1.5.0':
@@ -1748,8 +1749,58 @@ packages:
     resolution: {integrity: sha512-yZn50KLeCerKQRYTUfMzB5m7mraH1Rhr01WDLgzgaw3Do3qEsHy7sdoHI5o1FvyIWd8ebBspK3PJ2xqyrdQejw==}
     engines: {node: '>=18'}
 
-  '@socketsecurity/socket-patch@1.2.0':
-    resolution: {integrity: sha512-VIuDVRRN5V7iyM+OHK4mYrqHPEHbB0J41gPx8iouivvfERwvhPPjDFm+CNjQ1gmYZd1RaqPG3MLT7fKPyMkddA==}
+  '@socketsecurity/socket-patch-android-arm64@2.0.0':
+    resolution: {integrity: sha512-R/xsoKr0pRpxHeqoIxMj7R4w77mBPQ5Asv4PpNg2UTIEhxUx9XyXW7MVq9XjjrnWIEMpV1TwOptjvBicFTZZAQ==}
+    cpu: [arm64]
+    os: [android]
+
+  '@socketsecurity/socket-patch-darwin-arm64@2.0.0':
+    resolution: {integrity: sha512-Qtra40wpKeH59VggrXIopdxr0OcyDj/1bOlUqHfyNkoKWwFoifZ3IQGb4N2DP5FfTXKRGcc8GkBntHkv2xqnnw==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@socketsecurity/socket-patch-darwin-x64@2.0.0':
+    resolution: {integrity: sha512-ZXpbjqEg6JOD/Kbrd7pN1DgrMCqwRzngheFHjTZ4PCBmF6c631ePWTHgKcxUIFakiTLCU11+hhX97wZ/gZ0Krg==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@socketsecurity/socket-patch-linux-arm64@2.0.0':
+    resolution: {integrity: sha512-kA04/a41J4LrTTidM+kn4FCcViCqccrnhsKOSwdVrhP+d7c8Op0uCtcJZ1HdmT5iwFKQsiHkg/99gIUsJ9vUzQ==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@socketsecurity/socket-patch-linux-arm@2.0.0':
+    resolution: {integrity: sha512-ynXffPV/Ay/T+rT/spcHyexxBhwmrXQ5nTI8z48dHIlnv0utnWsVq2zhC9fffzxRwhLC/949A0pSaBaCIGih+A==}
+    cpu: [arm]
+    os: [linux]
+
+  '@socketsecurity/socket-patch-linux-ia32@2.0.0':
+    resolution: {integrity: sha512-N7rMgHf0q1U0Fl4YQn8/DhheSSsP72uH9+irADyVwtx7BJMAk4jsryynwqBQvBul9556M4ObmcH91AnIqIrvNg==}
+    cpu: [ia32]
+    os: [linux]
+
+  '@socketsecurity/socket-patch-linux-x64@2.0.0':
+    resolution: {integrity: sha512-WpPUqgbYxGGe0OSbxyol+lMbB3F7uhTaH2r7wbyq5ks8qwiHzFn2IXSFjkeJSaeMuqrFfsu2yWrSfgyN1ybP2Q==}
+    cpu: [x64]
+    os: [linux]
+
+  '@socketsecurity/socket-patch-win32-arm64@2.0.0':
+    resolution: {integrity: sha512-Hqp0qKxqHlEkqszOChFPOihnxbqON0Sv0i5G+twCAtMB277KlfwOkEuLVvlFnSHxbwOyQ9MVJ0NpzSIN6ovOlQ==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@socketsecurity/socket-patch-win32-ia32@2.0.0':
+    resolution: {integrity: sha512-WB8suzfmTgyIWbF/4FRLqsMKbNg64pYZsZhMwIRG2Dct3JQH6XK0wVNeH289LOHEQ0+isEpCNYFiQzEdRHfZOg==}
+    cpu: [ia32]
+    os: [win32]
+
+  '@socketsecurity/socket-patch-win32-x64@2.0.0':
+    resolution: {integrity: sha512-TimHyh/FoHYvYao8MDHXnfd69+K1Js9Uak1BjU62Bk2VKSQUS279eOwrMSltyyzZ8LvnJIhMispe+a+12/2VHw==}
+    cpu: [x64]
+    os: [win32]
+
+  '@socketsecurity/socket-patch@2.0.0':
+    resolution: {integrity: sha512-WyKOelgSuE17ReOdcrYQ2fBm6kHvdkDm55b3owHC7WoU1FLNzRnv47J0bkoNgNObB6KedTiQLVzf/ZvbuIl5oQ==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -5324,7 +5375,7 @@ snapshots:
   '@bufbuild/protobuf@2.6.3':
     optional: true
 
-  '@coana-tech/cli@14.12.189': {}
+  '@coana-tech/cli@14.12.191': {}
 
   '@colors/colors@1.5.0':
     optional: true
@@ -6388,10 +6439,50 @@ snapshots:
     dependencies:
       '@socketsecurity/registry': 1.1.17
 
-  '@socketsecurity/socket-patch@1.2.0':
+  '@socketsecurity/socket-patch-android-arm64@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-darwin-arm64@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-darwin-x64@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-linux-arm64@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-linux-arm@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-linux-ia32@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-linux-x64@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-win32-arm64@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-win32-ia32@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch-win32-x64@2.0.0':
+    optional: true
+
+  '@socketsecurity/socket-patch@2.0.0':
     dependencies:
-      yargs: 17.7.2
       zod: 3.25.76
+    optionalDependencies:
+      '@socketsecurity/socket-patch-android-arm64': 2.0.0
+      '@socketsecurity/socket-patch-darwin-arm64': 2.0.0
+      '@socketsecurity/socket-patch-darwin-x64': 2.0.0
+      '@socketsecurity/socket-patch-linux-arm': 2.0.0
+      '@socketsecurity/socket-patch-linux-arm64': 2.0.0
+      '@socketsecurity/socket-patch-linux-ia32': 2.0.0
+      '@socketsecurity/socket-patch-linux-x64': 2.0.0
+      '@socketsecurity/socket-patch-win32-arm64': 2.0.0
+      '@socketsecurity/socket-patch-win32-ia32': 2.0.0
+      '@socketsecurity/socket-patch-win32-x64': 2.0.0
 
   '@stroncium/procfs@1.2.1': {}
 
