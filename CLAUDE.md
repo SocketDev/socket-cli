@@ -113,8 +113,10 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 
 ### Running the CLI locally
 - **Watch mode**: `pnpm dev` (auto-rebuilds on file changes)
-- **Build and run**: `pnpm build && pnpm exec socket`
-- **Run built version**: `pnpm exec socket <args>` (requires prior build)
+- **Build and run**: `pnpm build:cli && node packages/cli/dist/index.js`
+- **Run built version**: `node packages/cli/dist/index.js <args>` (requires prior build)
+
+**Note**: Avoid `pnpm exec socket` if you have a global `socket` installation, as it may conflict with the local package.
 
 ### Package Management
 - **Package Manager**: This project uses pnpm (v10.22+)

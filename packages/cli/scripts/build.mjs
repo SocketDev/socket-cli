@@ -23,12 +23,7 @@ const NODE_MEMORY_FLAGS = ['--max-old-space-size=8192']
 // Simple CLI helpers without registry dependencies.
 const isQuiet = () => process.argv.includes('--quiet')
 const isVerbose = () => process.argv.includes('--verbose')
-const log = {
-  info: msg => logger.info(msg),
-  step: msg => logger.step(msg),
-  success: msg => logger.success(msg),
-  error: msg => logger.error(msg),
-}
+
 const printHeader = title => {
   logger.log('')
   logger.log(title)
@@ -83,7 +78,7 @@ async function fixNodeGypStrings(dir, options = {}) {
         await fs.writeFile(filePath, fixed, 'utf8')
 
         if (!quiet && verbose) {
-          log.info(
+          logger.info(
             `Fixed node-gyp string in ${path.relative(packageRoot, filePath)}`,
           )
         }
@@ -106,7 +101,7 @@ async function main() {
   // Delegate to watch mode.
   if (watch) {
     if (!quiet) {
-      log.info('Starting watch mode...')
+      logger.info('Starting watch mode...')
     }
 
     // First download yoga WASM (only needed asset for CLI bundle).
@@ -164,7 +159,7 @@ async function main() {
     // Phase 1: Clean (if needed).
     if (shouldClean) {
       if (!quiet) {
-        log.step('Phase 1: Cleaning...')
+        logger.step('Phase 1: Cleaning...')
       }
       const result = await spawn('pnpm', ['run', 'clean:dist'], {
         shell: WIN32,
@@ -172,20 +167,20 @@ async function main() {
       })
       if (result.code !== 0) {
         if (!quiet) {
-          log.error(`Clean failed (exit code: ${result.code})`)
+          logger.error(`Clean failed (exit code: ${result.code})`)
           printError('Build failed')
         }
         process.exitCode = 1
         return
       }
       if (!quiet && verbose) {
-        log.success('Clean completed')
+        logger.success('Clean completed')
       }
     }
 
     // Phase 2: Generate packages and download assets in parallel.
     if (!quiet) {
-      log.step('Phase 2: Preparing build (parallel)...')
+      logger.step('Phase 2: Preparing build (parallel)...')
     }
 
     const parallelPrep = await Promise.all([
@@ -205,7 +200,7 @@ async function main() {
       // Check for null spawn result.
       if (!result) {
         if (!quiet) {
-          log.error(`${stepName} failed to start`)
+          logger.error(`${stepName} failed to start`)
           printError('Build failed')
         }
         process.exitCode = 1
@@ -214,7 +209,7 @@ async function main() {
 
       if (result.code !== 0) {
         if (!quiet) {
-          log.error(`${stepName} failed (exit code: ${result.code})`)
+          logger.error(`${stepName} failed (exit code: ${result.code})`)
           printError('Build failed')
         }
         process.exitCode = result.code ?? 1
@@ -222,13 +217,13 @@ async function main() {
       }
 
       if (!quiet && verbose) {
-        log.success(`${stepName} completed`)
+        logger.success(`${stepName} completed`)
       }
     }
 
     // Phase 3: Build all variants.
     if (!quiet) {
-      log.step('Phase 3: Building variants...')
+      logger.step('Phase 3: Building variants...')
     }
 
     // Ensure dist directory exists before building variants.
@@ -245,7 +240,7 @@ async function main() {
 
     if (buildResult.code !== 0) {
       if (!quiet) {
-        log.error(`Build failed (exit code: ${buildResult.code})`)
+        logger.error(`Build failed (exit code: ${buildResult.code})`)
         printError('Build failed')
       }
       process.exitCode = 1
@@ -253,12 +248,12 @@ async function main() {
     }
 
     if (!quiet && verbose) {
-      log.success('Build completed')
+      logger.success('Build completed')
     }
 
     // Phase 4: Post-processing (parallel).
     if (!quiet) {
-      log.step('Phase 4: Post-processing (parallel)...')
+      logger.step('Phase 4: Post-processing (parallel)...')
     }
 
     await Promise.all([
@@ -266,7 +261,7 @@ async function main() {
       (async () => {
         copyFileSync('build/cli.js', 'dist/cli.js')
         if (!quiet && verbose) {
-          log.success('CLI bundle copied')
+          logger.success('CLI bundle copied')
         }
       })(),
 
@@ -277,25 +272,18 @@ async function main() {
           verbose,
         })
         if (!quiet && verbose) {
-          log.success('Build output post-processed')
+          logger.success('Build output post-processed')
         }
       })(),
 
-      // Copy files from repo root.
+      // Copy CHANGELOG.md from repo root (LICENSE and logos are already in cli package).
       (async () => {
-        const filesToCopy = [
-          'CHANGELOG.md',
-          'LICENSE',
-          'logo-dark.png',
-          'logo-light.png',
-        ]
-        await Promise.all(
-          filesToCopy.map(file =>
-            fs.cp(path.join(repoRoot, file), path.join(packageRoot, file)),
-          ),
+        await fs.cp(
+          path.join(repoRoot, 'CHANGELOG.md'),
+          path.join(packageRoot, 'CHANGELOG.md'),
         )
         if (!quiet && verbose) {
-          log.success('Files copied from repo root')
+          logger.success('CHANGELOG.md copied from repo root')
         }
       })(),
     ])
