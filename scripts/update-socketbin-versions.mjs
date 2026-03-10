@@ -5,7 +5,10 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
+
+const logger = getDefaultLogger()
 
 const SOCKET_PKG_PATH = resolve('packages/socket/package.json')
 
@@ -20,19 +23,19 @@ async function getLatestVersion(packageName) {
     }
     return result.stdout.trim()
   } catch (error) {
-    console.error(`Failed to get version for ${packageName}:`, error.message)
+    logger.error(`Failed to get version for ${packageName}:`, error.message)
     return undefined
   }
 }
 
 async function main() {
-  console.log('📦 Updating @socketbin/* versions in socket package.json...\n')
+  logger.log('📦 Updating @socketbin/* versions in socket package.json...\n')
 
   // Read package.json.
   const pkg = JSON.parse(readFileSync(SOCKET_PKG_PATH, 'utf-8'))
 
   if (!pkg.optionalDependencies) {
-    console.error('❌ No optionalDependencies found in socket package.json')
+    logger.error('❌ No optionalDependencies found in socket package.json')
     process.exitCode = 1
     return
   }
@@ -43,12 +46,12 @@ async function main() {
   )
 
   if (!socketbinPackages.length) {
-    console.error('❌ No @socketbin/* packages found in optionalDependencies')
+    logger.error('❌ No @socketbin/* packages found in optionalDependencies')
     process.exitCode = 1
     return
   }
 
-  console.log(
+  logger.log(
     `Found ${socketbinPackages.length} @socketbin/* packages to update:\n`,
   )
 
@@ -56,10 +59,11 @@ async function main() {
   const updates = []
   for (const packageName of socketbinPackages) {
     const currentVersion = pkg.optionalDependencies[packageName]
+    // eslint-disable-next-line no-await-in-loop
     const latestVersion = await getLatestVersion(packageName)
 
     if (!latestVersion) {
-      console.error(`❌ Failed to get latest version for ${packageName}`)
+      logger.error(`❌ Failed to get latest version for ${packageName}`)
       process.exitCode = 1
       return
     }
@@ -71,17 +75,17 @@ async function main() {
     })
 
     pkg.optionalDependencies[packageName] = latestVersion
-    console.log(`  ${packageName}: ${currentVersion} → ${latestVersion}`)
+    logger.log(`  ${packageName}: ${currentVersion} → ${latestVersion}`)
   }
 
   // Write updated package.json.
   writeFileSync(SOCKET_PKG_PATH, `${JSON.stringify(pkg, null, 2)}\n`)
 
-  console.log(`\n✓ Updated ${updates.length} package versions`)
-  console.log(`✓ Wrote changes to ${SOCKET_PKG_PATH}`)
+  logger.success(`Updated ${updates.length} package versions`)
+  logger.success(`Wrote changes to ${SOCKET_PKG_PATH}`)
 }
 
 main().catch(error => {
-  console.error('Error:', error)
+  logger.error('Error:', error)
   process.exitCode = 1
 })

@@ -914,6 +914,10 @@ function convertCaretToPipRange(caretRange: string): string {
 
   const parts = version.split('.')
   const major = Number.parseInt(parts[0] || '0', 10)
+  // Handle non-numeric major version (e.g., "^x.2.3").
+  if (Number.isNaN(major)) {
+    return `==${version}`
+  }
   const nextMajor = major + 1
 
   return `>=${version},<${nextMajor}.0.0`
