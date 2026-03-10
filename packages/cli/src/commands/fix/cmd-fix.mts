@@ -426,10 +426,25 @@ async function run(
         type: 'fetch',
         description: 'Scan project dependencies for vulnerabilities',
         target: cwd,
+        details: {
+          organization: orgSlug,
+          ecosystems: validatedEcosystems.length
+            ? validatedEcosystems.join(', ')
+            : 'all',
+        },
       },
       {
         type: 'fetch',
         description: 'Analyze vulnerability fix options',
+        details: {
+          targets: all
+            ? 'all vulnerabilities'
+            : ghsas.length
+              ? ghsas.join(', ')
+              : 'auto-discovered',
+          majorUpdates: disableMajorUpdates ? 'disabled' : 'enabled',
+          rangeStyle,
+        },
       },
     ]
 
@@ -439,9 +454,6 @@ async function run(
         description: 'Update package manifest files with fixes',
         target: 'package.json and lock files',
       })
-    }
-
-    if (spinner) {
       actions.push({
         type: 'execute',
         description: 'Run package manager to install updated dependencies',
