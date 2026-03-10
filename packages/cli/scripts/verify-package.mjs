@@ -45,7 +45,13 @@ async function validate() {
     logger.success('package.json exists')
 
     // Validate files array.
-    const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))
+    let pkg
+    try {
+      pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))
+    } catch (e) {
+      errors.push(`Failed to parse package.json: ${e.message}`)
+      return errors
+    }
     const requiredInFiles = [
       'CHANGELOG.md',
       'LICENSE',
