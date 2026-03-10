@@ -6,12 +6,16 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
+const logger = getDefaultLogger()
+
 const args = process.argv.slice(2)
 const packagePath = args[0]
 const version = args[1]
 
 if (!packagePath) {
-  console.error(
+  logger.error(
     'Usage: prepare-package-for-publish.mjs <package-path> [version]',
   )
   process.exitCode = 1
@@ -27,13 +31,13 @@ if (!packagePath) {
     // Set version if provided.
     if (version) {
       pkg.version = version
-      console.log(`Set ${pkg.name} version to ${version}`)
+      logger.log(`Set ${pkg.name} version to ${version}`)
     }
 
     writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
-    console.log(`Prepared ${pkg.name} for publishing`)
+    logger.success(`Prepared ${pkg.name} for publishing`)
   } catch (error) {
-    console.error(`Error preparing package: ${error.message}`)
+    logger.error(`Error preparing package: ${error.message}`)
     process.exitCode = 1
   }
 }
