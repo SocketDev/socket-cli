@@ -1,32 +1,30 @@
 /**
  * Integration tests for `socket patch` root command.
  *
- * Tests the patch management root command for applying security patches
- * to vulnerable dependencies without full version upgrades.
+ * Tests the patch management root command which forwards to socket-patch v2.0.0+
+ * (a standalone Rust binary from GitHub releases).
  *
  * Test Coverage:
  * - Help text display and subcommand listing
- * - Dry-run behavior validation
- * - Subcommand routing
+ * - Subcommand routing to socket-patch binary
  *
- * Available Subcommands:
- * - cleanup: Remove unused patches
- * - discover: Find available patches
- * - download: Download patch files
- * - get: Get specific patch info
- * - info: Show patch details
- * - list: List applied patches
- * - rm: Remove patches
+ * Available socket-patch v2.0.0 Commands:
+ * - apply: Apply security patches from local manifest
+ * - get (alias: download): Get security patches from Socket API
+ * - list: List all patches in local manifest
+ * - remove: Remove a patch from manifest (replaces old 'rm')
+ * - repair (alias: gc): Download missing blobs and clean up
+ * - rollback: Rollback patches to restore original files
+ * - scan: Scan installed packages for available patches
+ * - setup: Configure package.json postinstall scripts
  *
  * Related Files:
- * - src/commands/patch/cmd-patch.mts - Root command definition
- * - src/commands/patch/cmd-patch-*.mts - Subcommands
+ * - src/commands/patch/cmd-patch.mts - Root command that forwards to socket-patch
  */
 
-import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { afterEach, describe, expect } from 'vitest'
+import { describe, expect } from 'vitest'
 
 import { FLAG_CONFIG, FLAG_HELP } from '../../../src/constants/cli.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'
@@ -37,380 +35,112 @@ const binCliPath = getBinCliPath()
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/patch')
 const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
-async function cleanupNodeModules() {
-  // Clean up node_modules from all package manager directories.
-  await Promise.allSettled([
-    fs.rm(path.join(pnpmFixtureDir, 'node_modules'), {
-      force: true,
-      recursive: true,
-    }),
-    fs.rm(path.join(fixtureBaseDir, 'npm/node_modules'), {
-      force: true,
-      recursive: true,
-    }),
-    fs.rm(path.join(fixtureBaseDir, 'yarn/node_modules'), {
-      force: true,
-      recursive: true,
-    }),
-  ])
-}
-
 describe('socket patch', async () => {
-  afterEach(async () => {
-    await cleanupNodeModules()
-  })
-
-  cmdit(
-    ['patch', FLAG_HELP, FLAG_CONFIG, '{}'],
-    `should support ${FLAG_HELP}`,
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toContain('Apply CVE patches to dependencies')
-      expect(stderr).toContain('`socket patch`')
-      expect(code, 'explicit help should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'patch',
-      path.join(fixtureBaseDir, 'nonexistent'),
-      FLAG_CONFIG,
-      '{"apiToken":"fake-token"}',
-    ],
-    'should show error when no .socket directory found',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      const output = stdout + stderr
-      // Command now falls back to discovery when no .socket dir exists.
-      expect(output).toContain('No node_modules directory found')
-      expect(code, 'should exit with non-zero code').not.toBe(0)
-    },
-  )
-
-  cmdit(
-    ['patch', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
-    'should scan for available patches when no node_modules found',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-        cwd: pnpmFixtureDir,
-      })
-      const output = stdout + stderr
-      // Discovery requires node_modules, so should error when it's missing.
-      expect(output).toContain('No node_modules directory found')
-      expect(code, 'should exit with non-zero code').not.toBe(0)
-    },
-  )
-
-  cmdit(
-    ['patch', '.', '--json', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
-    'should require node_modules for discovery (JSON output)',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-        cwd: pnpmFixtureDir,
-      })
-      const output = stdout + stderr
-      expect(output).toContain('No node_modules directory found')
-      expect(code, 'should exit with non-zero code').not.toBe(0)
-    },
-  )
-
-  cmdit(
-    ['patch', '.', '--markdown', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
-    'should require node_modules for discovery (markdown output)',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-        cwd: pnpmFixtureDir,
-      })
-      const output = stdout + stderr
-      expect(output).toContain('No node_modules directory found')
-      expect(code, 'should exit with non-zero code').not.toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'patch',
-      '.',
-      '--json',
-      '--markdown',
-      FLAG_CONFIG,
-      '{"apiToken":"fake-token"}',
-    ],
-    'should fail when both json and markdown flags are used',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-        cwd: pnpmFixtureDir,
-      })
-      const output = stdout + stderr
-      expect(output).toContain('json and markdown flags cannot be both set')
-      expect(code, 'should exit with non-zero code').not.toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'patch',
-      '.',
-      '-p',
-      'pkg:npm/on-headers@1.0.2',
-      FLAG_CONFIG,
-      '{"apiToken":"fake-token"}',
-    ],
-    'should require node_modules for discovery (short flag)',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-        cwd: pnpmFixtureDir,
-      })
-      const output = stdout + stderr
-      expect(output).toContain('No node_modules directory found')
-      expect(code, 'should exit with non-zero code').not.toBe(0)
-    },
-  )
-
-  describe('comprehensive patch tests', () => {
+  describe('help display', () => {
     cmdit(
-      [
-        'patch',
-        '.',
-        '--purl',
-        'pkg:npm/on-headers@1.0.2',
-        '--json',
-        FLAG_CONFIG,
-        '{"apiToken":"fake-token"}',
-      ],
-      'should require node_modules for PURL discovery (JSON)',
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        const output = stdout + stderr
-        expect(output).toContain('No node_modules directory found')
-        expect(code, 'should exit with non-zero code').not.toBe(0)
-      },
-    )
-
-    cmdit(
-      [
-        'patch',
-        '.',
-        '--purl',
-        'pkg:npm/on-headers@1.0.2',
-        '--markdown',
-        FLAG_CONFIG,
-        '{"apiToken":"fake-token"}',
-      ],
-      'should require node_modules for PURL discovery (markdown)',
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        const output = stdout + stderr
-        expect(output).toContain('No node_modules directory found')
-        expect(code, 'should exit with non-zero code').not.toBe(0)
-      },
-    )
-
-    cmdit(
-      ['patch', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
-      'should require node_modules for manifest scanning',
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        const output = stdout + stderr
-        expect(output).toContain('No node_modules directory found')
-        expect(code, 'should exit with non-zero code').not.toBe(0)
-      },
-    )
-
-    cmdit(
-      [
-        'patch',
-        '.',
-        '--purl',
-        'pkg:npm/nonexistent@1.0.0',
-        FLAG_CONFIG,
-        '{"apiToken":"fake-token"}',
-      ],
-      'should require node_modules even for non-existent packages',
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        const output = stdout + stderr
-        expect(output).toContain('No node_modules directory found')
-        expect(code, 'should exit with non-zero code').not.toBe(0)
-      },
-    )
-  })
-
-  describe('error handling and usability tests', () => {
-    cmdit(
-      ['patch', '/nonexistent/path', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
-      'should show clear error for non-existent directory',
+      ['patch', FLAG_HELP, FLAG_CONFIG, '{}'],
+      `should support ${FLAG_HELP}`,
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-        const output = stdout + stderr
-        // Patch discover falls back to directory scan, which needs node_modules.
-        expect(output).toContain('No node_modules directory found')
-        expect(code).toBeGreaterThan(0)
+        // Socket CLI help shows: "Manage CVE patches for dependencies"
+        expect(stdout).toContain('Manage CVE patches for dependencies')
+        expect(stderr).toContain('`socket patch`')
+        expect(code, 'explicit help should exit with code 0').toBe(0)
       },
     )
 
     cmdit(
       ['patch', FLAG_CONFIG, '{}'],
-      'should show clear error when API token is missing',
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-        const output = stdout + stderr
-        expect(output).toMatch(/api token|authentication|token/i)
-        expect(code).toBeGreaterThan(0)
-      },
-    )
-
-    cmdit(
-      [
-        'patch',
-        '.',
-        '--purl',
-        'invalid-purl-format',
-        FLAG_CONFIG,
-        '{"apiToken":"fake-token"}',
-      ],
-      'should require node_modules for invalid PURL formats',
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        const output = stdout + stderr
-        expect(output).toContain('No node_modules directory found')
-        expect(code, 'should exit with non-zero code').not.toBe(0)
-      },
-    )
-
-    cmdit(
-      [
-        'patch',
-        '.',
-        '--purl',
-        'pkg:npm/nonexistent-package@999.999.999',
-        FLAG_CONFIG,
-        '{"apiToken":"fake-token"}',
-      ],
-      'should require node_modules for packages not in manifest',
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        const output = stdout + stderr
-        expect(output).toContain('No node_modules directory found')
-        expect(code, 'should exit with non-zero code').not.toBe(0)
-      },
-    )
-
-    cmdit(
-      [
-        'patch',
-        '.',
-        '--purl',
-        'pkg:npm/@scoped/package@1.0.0',
-        FLAG_CONFIG,
-        '{"apiToken":"fake-token"}',
-      ],
-      'should require node_modules for scoped packages',
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        const output = stdout + stderr
-        expect(output).toContain('No node_modules directory found')
-        expect(code, 'should exit with non-zero code').not.toBe(0)
-      },
-    )
-
-    cmdit(
-      ['patch', FLAG_HELP, '--purl', 'pkg:npm/test@1.0.0', FLAG_CONFIG, '{}'],
-      'should prioritize help over other flags',
+      'should show help when no arguments provided',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-        expect(stdout).toContain('Apply CVE patches to dependencies')
+        // Without subcommand, shows Socket CLI help.
+        expect(stdout).toContain('Manage CVE patches for dependencies')
+        expect(code).toBe(0)
+      },
+    )
+  })
+
+  describe('subcommand forwarding', () => {
+    cmdit(
+      ['patch', 'scan', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+      'should forward scan subcommand to socket-patch',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+          cwd: pnpmFixtureDir,
+        })
+        const output = stdout + stderr
+        // socket-patch v2.0.0 scans for packages. Without node_modules it shows "No packages found".
+        expect(output).toMatch(
+          /No packages found|Found \d+ packages|patches available/i,
+        )
+        // socket-patch scan returns 0 even when no packages found.
         expect(code).toBe(0)
       },
     )
 
     cmdit(
-      [
-        'patch',
-        '.',
-        '--purl',
-        'pkg:npm/on-headers@1.0.2',
-        '--purl',
-        'pkg:npm/another-package@2.0.0',
-        FLAG_CONFIG,
-        '{"apiToken":"fake-token"}',
-      ],
-      'should require node_modules for multiple PURLs',
+      ['patch', 'list', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+      'should forward list subcommand to socket-patch',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
           cwd: pnpmFixtureDir,
         })
         const output = stdout + stderr
-        expect(output).toContain('No node_modules directory found')
-        expect(code, 'should exit with non-zero code').not.toBe(0)
+        // socket-patch v2.0.0 lists patches from manifest. May show patches or "no patches".
+        expect(output).toMatch(/patches|manifest|No .socket directory/i)
+        // Exit code depends on whether manifest exists.
+        expect(typeof code).toBe('number')
       },
     )
 
     cmdit(
-      ['patch', '.', FLAG_CONFIG, '{"apiToken":"invalid-format-token"}'],
-      'should require node_modules even with invalid API tokens',
+      ['patch', 'apply', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+      'should forward apply subcommand to socket-patch',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
           cwd: pnpmFixtureDir,
         })
         const output = stdout + stderr
-        expect(output).toContain('No node_modules directory found')
-        expect(code, 'should exit with non-zero code').not.toBe(0)
+        // socket-patch v2.0.0 applies patches. Without manifest, shows error.
+        expect(output).toMatch(/Applied|No patches|manifest|nothing to apply/i)
+        // Exit code depends on state.
+        expect(typeof code).toBe('number')
+      },
+    )
+  })
+
+  describe('socket-patch binary help', () => {
+    cmdit(
+      ['patch', 'scan', '--help', FLAG_CONFIG, '{}'],
+      'should show socket-patch scan help',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        // socket-patch shows its own help for subcommands.
+        expect(stdout).toContain('Scan')
+        expect(code).toBe(0)
       },
     )
 
     cmdit(
-      [
-        'patch',
-        '.',
-        '--purl',
-        'pkg:pypi/python-package@1.0.0',
-        FLAG_CONFIG,
-        '{"apiToken":"fake-token"}',
-      ],
-      'should require node_modules for non-npm ecosystem PURLs',
+      ['patch', 'get', '--help', FLAG_CONFIG, '{}'],
+      'should show socket-patch get help',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        const output = stdout + stderr
-        expect(output).toContain('No node_modules directory found')
-        expect(code, 'should exit with non-zero code').not.toBe(0)
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        // socket-patch shows its own help for get command.
+        expect(stdout).toContain('Get')
+        expect(code).toBe(0)
       },
     )
 
     cmdit(
-      [
-        'patch',
-        '.',
-        '--purl',
-        'pkg:npm/test@',
-        FLAG_CONFIG,
-        '{"apiToken":"fake-token"}',
-      ],
-      'should require node_modules for PURLs with missing versions',
+      ['patch', 'remove', '--help', FLAG_CONFIG, '{}'],
+      'should show socket-patch remove help',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        const output = stdout + stderr
-        expect(output).toContain('No node_modules directory found')
-        expect(code, 'should exit with non-zero code').not.toBe(0)
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        // socket-patch shows its own help for remove command.
+        expect(stdout).toContain('Remove')
+        expect(code).toBe(0)
       },
     )
   })

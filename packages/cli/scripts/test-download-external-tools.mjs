@@ -77,7 +77,7 @@ async function downloadFile(url, destPath) {
     stdio: 'pipe',
   })
 
-  if (curlResult.exitCode !== 0) {
+  if (curlResult.code !== 0) {
     throw new Error(`curl failed: ${curlResult.stderr}`)
   }
 
@@ -100,7 +100,7 @@ async function extractFromTarGz(archivePath, outputPath, binaryName) {
     stdio: 'pipe',
   })
 
-  if (tarResult.exitCode !== 0) {
+  if (tarResult.code !== 0) {
     throw new Error(`tar extraction failed: ${tarResult.stderr}`)
   }
 

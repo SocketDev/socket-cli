@@ -91,8 +91,10 @@ async function downloadNpmPackage(packageSpec, targetDir) {
  * npm Packages:
  * - @coana-tech/cli: Static analysis and reachability detection.
  * - @cyclonedx/cdxgen: CycloneDX SBOM generator.
- * - @socketsecurity/socket-patch: Security patch CLI.
  * - synp: yarn.lock to package-lock.json converter.
+ *
+ * Note: socket-patch was migrated from npm to GitHub releases in v2.0.0.
+ * It's now bundled as a standalone Rust binary via downloads.mjs.
  *
  * Directory Structure:
  * <targetDir>/
@@ -103,10 +105,6 @@ async function downloadNpmPackage(packageSpec, targetDir) {
  *       │   └── node_modules/  # Dependencies
  *       ├── @cyclonedx/cdxgen/
  *       │   ├── bin/cdxgen
- *       │   ├── package.json
- *       │   └── node_modules/  # Dependencies
- *       ├── @socketsecurity/socket-patch/
- *       │   ├── bin/socket-patch
  *       │   ├── package.json
  *       │   └── node_modules/  # Dependencies
  *       └── synp/
@@ -194,7 +192,7 @@ export async function downloadNpmPackages() {
       'node_modules',
     ])
 
-    if (tarResult && tarResult.exitCode !== 0) {
+    if (tarResult && tarResult.code !== 0) {
       throw new Error('Failed to create npm packages tar.gz')
     }
 
@@ -215,7 +213,7 @@ export async function downloadNpmPackages() {
  *
  * Creates a unified tar.gz containing both:
  * - node_modules/ with npm packages and dependencies.
- * - External tool binaries (Python, Trivy, TruffleHog, OpenGrep).
+ * - External tool binaries (Python, Trivy, TruffleHog, OpenGrep, socket-patch).
  *
  * The combined archive is used by binject for VFS embedding into SEA binaries.
  *
@@ -223,12 +221,12 @@ export async function downloadNpmPackages() {
  * ./node_modules/                    # npm packages with dependencies
  *   ├── @coana-tech/cli/
  *   ├── @cyclonedx/cdxgen/
- *   ├── @socketsecurity/socket-patch/
  *   └── synp/
  * ./python/                          # Python runtime
  * ./trivy                            # Trivy binary
  * ./trufflehog                       # TruffleHog binary
  * ./opengrep                         # OpenGrep binary
+ * ./socket-patch                     # Socket Patch Rust binary (v2.0.0+)
  *
  * @param {string} npmPackagesTarGz - Path to npm packages tar.gz.
  * @param {string} externalToolsTarGz - Path to external tools tar.gz.
@@ -290,7 +288,7 @@ export async function combineVfsArchives(
     if (npmPackagesTarGz && existsSync(npmPackagesTarGz)) {
       logger.substep('Extracting npm packages')
       const tarResult = await spawn('tar', ['-xzf', npmPackagesTarGz, '-C', vfsDir])
-      if (tarResult && tarResult.exitCode !== 0) {
+      if (tarResult && tarResult.code !== 0) {
         throw new Error('Failed to extract npm packages tar.gz')
       }
     }
@@ -304,7 +302,7 @@ export async function combineVfsArchives(
         '-C',
         vfsDir,
       ])
-      if (tarResult && tarResult.exitCode !== 0) {
+      if (tarResult && tarResult.code !== 0) {
         throw new Error('Failed to extract external tools tar.gz')
       }
     }
@@ -325,7 +323,7 @@ export async function combineVfsArchives(
       ...contents,
     ])
 
-    if (tarResult && tarResult.exitCode !== 0) {
+    if (tarResult && tarResult.code !== 0) {
       throw new Error('Failed to create combined VFS tar.gz')
     }
 

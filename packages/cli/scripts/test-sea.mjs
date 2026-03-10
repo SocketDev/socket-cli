@@ -163,8 +163,8 @@ async function buildBlob(configPath) {
     },
   )
 
-  if (result.exitCode !== 0) {
-    throw new Error(`Failed to generate SEA blob: exit code ${result.exitCode}`)
+  if (result.code !== 0) {
+    throw new Error(`Failed to generate SEA blob: exit code ${result.code}`)
   }
 }
 
@@ -228,7 +228,7 @@ async function runStandaloneMode(platform, toolPaths) {
     { stdio: 'inherit' },
   )
 
-  if (injectResult.exitCode !== 0) {
+  if (injectResult.code !== 0) {
     throw new Error('Postject injection failed')
   }
 
@@ -239,7 +239,7 @@ async function runStandaloneMode(platform, toolPaths) {
     const signResult = await spawn('codesign', ['-s', '-', outputPath], {
       stdio: 'inherit',
     })
-    if (signResult.exitCode !== 0) {
+    if (signResult.code !== 0) {
       throw new Error('Codesign failed')
     }
   }
@@ -359,20 +359,20 @@ async function runVfsMode(platform) {
     { stdio: 'inherit' },
   )
 
-  if (injectResult.exitCode !== 0) {
+  if (injectResult.code !== 0) {
     throw new Error('binject injection failed')
   }
 
   // Check signing (binject may auto-sign).
   if (process.platform === 'darwin') {
     const checkSign = await spawn('codesign', ['-d', outputPath])
-    if (checkSign.exitCode !== 0) {
+    if (checkSign.code !== 0) {
       console.log('')
       console.log('Signing binary (macOS)...')
       const signResult = await spawn('codesign', ['-s', '-', outputPath], {
         stdio: 'inherit',
       })
-      if (signResult.exitCode !== 0) {
+      if (signResult.code !== 0) {
         throw new Error('Codesign failed')
       }
     } else {
@@ -545,7 +545,7 @@ async function testBinary(outputPath) {
   const testResult = await spawn(outputPath, [], { stdio: 'inherit' })
   console.log('-'.repeat(60))
 
-  if (testResult.exitCode === 0) {
+  if (testResult.code === 0) {
     console.log('✅ Binary works!')
   } else {
     console.log('❌ Binary test failed')

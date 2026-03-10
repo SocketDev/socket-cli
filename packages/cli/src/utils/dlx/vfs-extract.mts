@@ -5,8 +5,8 @@
  * and caches them for execution.
  *
  * Tool types:
- * - Standalone binaries (GitHub releases): sfw
- * - npm packages (with dependencies): cdxgen, coana, socket-patch, synp
+ * - Standalone binaries (GitHub releases): sfw, socket-patch
+ * - npm packages (with dependencies): cdxgen, coana, synp
  *
  * Build-time package preparation:
  * npm packages use @npmcli/arborist to download complete packages with node_modules/
@@ -30,6 +30,7 @@
  *
  * VFS structure in SEA binaries:
  *   sfw                               # Standalone binary from GitHub release
+ *   socket-patch                      # Standalone Rust binary from GitHub release
  *   node_modules/
  *     ├── @cyclonedx/cdxgen/        # Full package with dependencies
  *     │   ├── bin/cdxgen
@@ -37,10 +38,6 @@
  *     │   └── node_modules/         # Dependencies
  *     ├── @coana-tech/cli/
  *     │   ├── bin/coana
- *     │   ├── package.json
- *     │   └── node_modules/
- *     ├── @socketsecurity/socket-patch/
- *     │   ├── bin/socket-patch
  *     │   ├── package.json
  *     │   └── node_modules/
  *     └── synp/
@@ -102,10 +99,6 @@ const TOOL_NPM_PATHS: Partial<Record<ExternalTool, { packageName: string; binPat
     packageName: '@coana-tech/cli',
     binPath: 'node_modules/@coana-tech/cli/bin/coana',
   },
-  'socket-patch': {
-    packageName: '@socketsecurity/socket-patch',
-    binPath: 'node_modules/@socketsecurity/socket-patch/bin/socket-patch',
-  },
   synp: {
     packageName: 'synp',
     binPath: 'node_modules/synp/bin/synp',
@@ -113,9 +106,13 @@ const TOOL_NPM_PATHS: Partial<Record<ExternalTool, { packageName: string; binPat
 }
 
 // Map of standalone binary tools to their VFS paths.
-// These tools are stored under node_modules/ for VFS security but are single binaries without dependencies.
+// These tools are single binaries from GitHub releases without npm dependencies.
+// sfw is stored under node_modules/ for VFS structure, socket-patch is at root level.
 const TOOL_STANDALONE_PATHS: Partial<Record<ExternalTool, string>> = {
   sfw: 'node_modules/@socketsecurity/sfw-bin/sfw',
+  // socket-patch is a Rust binary downloaded from GitHub releases.
+  // As of v2.0.0, it's bundled directly (not as an npm package).
+  'socket-patch': 'socket-patch',
 }
 
 /**
@@ -147,15 +144,13 @@ function getToolFilePath(tool: ExternalTool, nodeSmolBase: string): string {
  * ~/.socket/_dlx/<node-smol-hash>/
  *   ├── node/node                    # Node binary
  *   ├── sfw                          # Standalone binary (GitHub release)
+ *   ├── socket-patch                 # Standalone Rust binary (GitHub release)
  *   └── node_modules/                # npm packages with dependencies
  *       ├── @cyclonedx/cdxgen/
  *       │   ├── bin/cdxgen
  *       │   └── node_modules/
  *       ├── @coana-tech/cli/
  *       │   ├── bin/coana
- *       │   └── node_modules/
- *       ├── @socketsecurity/socket-patch/
- *       │   ├── bin/socket-patch
  *       │   └── node_modules/
  *       └── synp/
  *           ├── bin/synp

@@ -7,7 +7,72 @@
  * without modifying existing code.
  */
 
+import { existsSync, readFileSync } from 'node:fs'
+
 import { AssetManager } from './asset-manager.mjs'
+
+// Cache for libc detection (only need to check once per process).
+let cachedLibc
+
+/**
+ * Detect if running on musl libc (Alpine Linux, etc.).
+ * Uses multiple detection methods for reliability.
+ *
+ * @returns {boolean} True if running on musl libc.
+ */
+export function detectMusl() {
+  // Only check on Linux.
+  if (process.platform !== 'linux') {
+    return false
+  }
+
+  // Check cached result.
+  if (cachedLibc !== undefined) {
+    return cachedLibc === 'musl'
+  }
+
+  // Method 1: Check /etc/os-release for Alpine.
+  try {
+    if (existsSync('/etc/os-release')) {
+      const osRelease = readFileSync('/etc/os-release', 'utf8')
+      if (osRelease.includes('Alpine') || osRelease.includes('alpine')) {
+        cachedLibc = 'musl'
+        return true
+      }
+    }
+  } catch {
+    // Ignore errors, try next method.
+  }
+
+  // Method 2: Check if ld-musl dynamic linker exists.
+  try {
+    if (
+      existsSync('/lib/ld-musl-x86_64.so.1') ||
+      existsSync('/lib/ld-musl-aarch64.so.1')
+    ) {
+      cachedLibc = 'musl'
+      return true
+    }
+  } catch {
+    // Ignore errors.
+  }
+
+  // Method 3: Check /proc/version for musl indicators.
+  try {
+    if (existsSync('/proc/version')) {
+      const version = readFileSync('/proc/version', 'utf8')
+      if (version.includes('musl')) {
+        cachedLibc = 'musl'
+        return true
+      }
+    }
+  } catch {
+    // Ignore errors.
+  }
+
+  cachedLibc = 'glibc'
+  return false
+}
 
 /**
  * Shared AssetManager instance for all wrapper functions.
@@ -58,8 +123,8 @@ export async function downloadBinject(version) {
   const platform = process.platform
   const arch = process.arch
 
-  // Linux uses musl variant for broader compatibility (matches downloads.mjs behavior).
-  const libc = platform === 'linux' ? 'musl' : undefined
+  // Detect actual libc on Linux (musl for Alpine, glibc for standard distros).
+  const libc = detectMusl() ? 'musl' : undefined
 
   return assetManager.downloadBinary({
     arch,
