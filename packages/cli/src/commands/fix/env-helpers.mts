@@ -92,7 +92,7 @@ export async function getFixEnv(): Promise<FixEnv> {
   const envCheck = checkCiEnvVars()
 
   // Provide clear feedback about missing environment variables.
-  if (getCI() && envCheck.missing.length > 1) {
+  if (getCI() && envCheck.missing.length) {
     // CI is set but other required vars are missing.
     const missingExceptCi = envCheck.missing.filter(v => v !== 'CI')
     if (missingExceptCi.length) {

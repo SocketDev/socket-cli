@@ -200,7 +200,7 @@ async function main() {
         `Testing ${modeText} (${packages.length} package${packages.length > 1 ? 's' : ''})`,
       )
       // Blank line.
-      logger.error('')
+      logger.log('')
     }
 
     // Setup progress bar.

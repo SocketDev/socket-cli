@@ -144,7 +144,7 @@ async function run(
     outputDryRunFetch('scan details', {
       organization: orgSlug,
       scanId,
-      stream: stream || undefined,
+      stream: !!stream || undefined,
     })
     return
   }
