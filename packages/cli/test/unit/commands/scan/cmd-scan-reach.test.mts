@@ -17,7 +17,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -48,16 +49,22 @@ vi.mock('../../../../src/commands/scan/suggest_target.mts', () => ({
   suggestTarget: mockSuggestTarget,
 }))
 
-vi.mock('../../../../src/commands/scan/validate-reachability-target.mts', () => ({
-  validateReachabilityTarget: mockValidateReachabilityTarget,
-}))
+vi.mock(
+  '../../../../src/commands/scan/validate-reachability-target.mts',
+  () => ({
+    validateReachabilityTarget: mockValidateReachabilityTarget,
+  }),
+)
 
 vi.mock('../../../../src/utils/socket/org-slug.mts', () => ({
   determineOrgSlug: mockDetermineOrgSlug,
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mts', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/socket/sdk.mts')>()
+  const actual =
+    await importOriginal<
+      typeof import('../../../../src/utils/socket/sdk.mts')
+    >()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
@@ -65,9 +72,8 @@ vi.mock('../../../../src/utils/socket/sdk.mts', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdScanReach } = await import(
-  '../../../../src/commands/scan/cmd-scan-reach.mts'
-)
+const { cmdScanReach } =
+  await import('../../../../src/commands/scan/cmd-scan-reach.mts')
 
 describe('cmd-scan-reach', () => {
   beforeEach(() => {
@@ -122,11 +128,7 @@ describe('cmd-scan-reach', () => {
     it('should fail without Socket API token', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(false)
 
-      await cmdScanReach.run(
-        ['--org', 'test-org', '.'],
-        importMeta,
-        context,
-      )
+      await cmdScanReach.run(['--org', 'test-org', '.'], importMeta, context)
 
       // Exit code 2 = invalid usage/validation failure.
       expect(process.exitCode).toBe(2)
@@ -136,11 +138,7 @@ describe('cmd-scan-reach', () => {
     it('should call handleScanReach with valid inputs', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdScanReach.run(
-        ['--org', 'test-org', '.'],
-        importMeta,
-        context,
-      )
+      await cmdScanReach.run(['--org', 'test-org', '.'], importMeta, context)
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -158,13 +156,13 @@ describe('cmd-scan-reach', () => {
       mockDetermineOrgSlug.mockResolvedValueOnce(['custom-org', 'custom-org'])
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdScanReach.run(
-        ['--org', 'custom-org', '.'],
-        importMeta,
-        context,
-      )
+      await cmdScanReach.run(['--org', 'custom-org', '.'], importMeta, context)
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('custom-org', true, false)
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'custom-org',
+        true,
+        false,
+      )
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
           orgSlug: 'custom-org',
@@ -257,9 +255,12 @@ describe('cmd-scan-reach', () => {
 
       await cmdScanReach.run(
         [
-          '--org', 'test-org',
-          '--reach-ecosystems', 'npm,pypi',
-          '--reach-concurrency', '4',
+          '--org',
+          'test-org',
+          '--reach-ecosystems',
+          'npm,pypi',
+          '--reach-concurrency',
+          '4',
           '--reach-debug',
           '.',
         ],
@@ -466,7 +467,13 @@ describe('cmd-scan-reach', () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdScanReach.run(
-        ['--org', 'test-org', '--reach-exclude-paths', 'node_modules,dist', '.'],
+        [
+          '--org',
+          'test-org',
+          '--reach-exclude-paths',
+          'node_modules,dist',
+          '.',
+        ],
         importMeta,
         context,
       )
@@ -502,7 +509,12 @@ describe('cmd-scan-reach', () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdScanReach.run(
-        ['--org', 'test-org', '--reach-use-unreachable-from-precomputation', '.'],
+        [
+          '--org',
+          'test-org',
+          '--reach-use-unreachable-from-precomputation',
+          '.',
+        ],
         importMeta,
         context,
       )
@@ -521,11 +533,19 @@ describe('cmd-scan-reach', () => {
 
       await expect(
         cmdScanReach.run(
-          ['--org', 'test-org', '--reach-analysis-memory-limit', 'invalid', '.'],
+          [
+            '--org',
+            'test-org',
+            '--reach-analysis-memory-limit',
+            'invalid',
+            '.',
+          ],
           importMeta,
           context,
         ),
-      ).rejects.toThrow(/Invalid number value for --reach-analysis-memory-limit/)
+      ).rejects.toThrow(
+        /Invalid number value for --reach-analysis-memory-limit/,
+      )
     })
 
     it('should validate invalid numeric values for timeout', async () => {
@@ -555,11 +575,7 @@ describe('cmd-scan-reach', () => {
     it('should default to current directory if no target specified', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdScanReach.run(
-        ['--org', 'test-org'],
-        importMeta,
-        context,
-      )
+      await cmdScanReach.run(['--org', 'test-org'], importMeta, context)
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -577,7 +593,11 @@ describe('cmd-scan-reach', () => {
         context,
       )
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('test-org', false, false)
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'test-org',
+        false,
+        false,
+      )
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
           interactive: false,
@@ -606,13 +626,17 @@ describe('cmd-scan-reach', () => {
 
       await cmdScanReach.run(
         [
-          '--org', 'test-org',
-          '--reach-ecosystems', 'npm',
-          '--reach-concurrency', '2',
+          '--org',
+          'test-org',
+          '--reach-ecosystems',
+          'npm',
+          '--reach-concurrency',
+          '2',
           '--reach-debug',
           '--reach-lazy-mode',
           '--reach-skip-cache',
-          '--reach-min-severity', 'medium',
+          '--reach-min-severity',
+          'medium',
           '.',
         ],
         importMeta,

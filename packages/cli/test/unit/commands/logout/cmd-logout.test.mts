@@ -72,21 +72,23 @@ const mockMeowOrExit = vi.hoisted(() =>
   }),
 )
 
-vi.mock('../../../../src/utils/cli/with-subcommands.mjs', async importOriginal => {
-  const actual =
-    await importOriginal<
-      typeof import('../../../../src/utils/cli/with-subcommands.mjs')
-    >()
-  return {
-    ...actual,
-    meowOrExit: mockMeowOrExit,
-  }
-})
+vi.mock(
+  '../../../../src/utils/cli/with-subcommands.mjs',
+  async importOriginal => {
+    const actual =
+      await importOriginal<
+        typeof import('../../../../src/utils/cli/with-subcommands.mjs')
+      >()
+    return {
+      ...actual,
+      meowOrExit: mockMeowOrExit,
+    }
+  },
+)
 
 // Import after mocks.
-const { cmdLogout, CMD_NAME } = await import(
-  '../../../../src/commands/logout/cmd-logout.mts'
-)
+const { cmdLogout, CMD_NAME } =
+  await import('../../../../src/commands/logout/cmd-logout.mts')
 
 describe('cmd-logout', () => {
   beforeEach(() => {
@@ -267,7 +269,9 @@ describe('cmd-logout', () => {
           throw new Error('Disk full')
         })
 
-        await expect(cmdLogout.run([], importMeta, context)).resolves.not.toThrow()
+        await expect(
+          cmdLogout.run([], importMeta, context),
+        ).resolves.not.toThrow()
 
         expect(mockLogger.fail).toHaveBeenCalled()
       })

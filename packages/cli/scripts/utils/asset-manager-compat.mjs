@@ -152,8 +152,7 @@ export async function downloadBinject(version) {
 export async function getLatestBinjectVersion() {
   // Delegate to original implementation for now.
   // TODO: Move this to AssetManager in Phase 4.
-  const { getLatestBinjectVersion: getLatest } = await import(
-    '../sea-build-utils/downloads.mjs'
-  )
+  const { getLatestBinjectVersion: getLatest } =
+    await import('../sea-build-utils/downloads.mjs')
   return getLatest()
 }

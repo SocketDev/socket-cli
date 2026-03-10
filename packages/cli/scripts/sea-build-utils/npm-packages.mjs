@@ -259,7 +259,10 @@ export async function combineVfsArchives(
     path.join(rootPath, `packages/build-infra/build/vfs/${platformArch}`),
   )
   const combinedTarGz = normalizePath(
-    path.join(rootPath, `packages/build-infra/build/vfs/${platformArch}.tar.gz`),
+    path.join(
+      rootPath,
+      `packages/build-infra/build/vfs/${platformArch}.tar.gz`,
+    ),
   )
 
   // Check if combined tar.gz already exists and is valid.
@@ -287,7 +290,12 @@ export async function combineVfsArchives(
     // Extract npm packages tar.gz.
     if (npmPackagesTarGz && existsSync(npmPackagesTarGz)) {
       logger.substep('Extracting npm packages')
-      const tarResult = await spawn('tar', ['-xzf', npmPackagesTarGz, '-C', vfsDir])
+      const tarResult = await spawn('tar', [
+        '-xzf',
+        npmPackagesTarGz,
+        '-C',
+        vfsDir,
+      ])
       if (tarResult && tarResult.code !== 0) {
         throw new Error('Failed to extract npm packages tar.gz')
       }

@@ -147,9 +147,8 @@ vi.mock(
 )
 
 // Import after mocks.
-const { CMD_NAME, cmdConfigSet } = await import(
-  '../../../../src/commands/config/cmd-config-set.mts'
-)
+const { CMD_NAME, cmdConfigSet } =
+  await import('../../../../src/commands/config/cmd-config-set.mts')
 
 describe('cmd-config-set', () => {
   beforeEach(() => {
@@ -183,11 +182,7 @@ describe('cmd-config-set', () => {
 
     describe('valid config key and value', () => {
       it('should call handler with correct parameters', async () => {
-        await cmdConfigSet.run(
-          ['defaultOrg', 'my-org'],
-          importMeta,
-          context,
-        )
+        await cmdConfigSet.run(['defaultOrg', 'my-org'], importMeta, context)
 
         expect(mockHandleConfigSet).toHaveBeenCalledWith({
           key: 'defaultOrg',
@@ -408,7 +403,13 @@ describe('cmd-config-set', () => {
 
       it('should show value with spaces in dry-run', async () => {
         await cmdConfigSet.run(
-          ['apiProxy', 'https://proxy.example.com', 'with', 'path', '--dry-run'],
+          [
+            'apiProxy',
+            'https://proxy.example.com',
+            'with',
+            'path',
+            '--dry-run',
+          ],
           importMeta,
           context,
         )

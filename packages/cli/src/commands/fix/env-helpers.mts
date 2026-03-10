@@ -77,7 +77,10 @@ export function checkCiEnvVars(): MissingEnvVars {
   checkVar(getCI(), 'CI')
   checkVar(SOCKET_CLI_GIT_USER_EMAIL, 'SOCKET_CLI_GIT_USER_EMAIL')
   checkVar(SOCKET_CLI_GIT_USER_NAME, 'SOCKET_CLI_GIT_USER_NAME')
-  checkVar(getSocketCliGithubToken(), 'SOCKET_CLI_GITHUB_TOKEN (or GITHUB_TOKEN)')
+  checkVar(
+    getSocketCliGithubToken(),
+    'SOCKET_CLI_GITHUB_TOKEN (or GITHUB_TOKEN)',
+  )
 
   return { missing, present }
 }

@@ -1,6 +1,6 @@
 /**
  * @fileoverview Monorepo-aware check runner with flag-based configuration.
- * Runs code quality checks: ESLint and TypeScript type checking across packages.
+ * Runs code quality checks: Oxlint and TypeScript type checking across packages.
  */
 
 import path from 'node:path'
@@ -76,9 +76,9 @@ async function getFilesToCheck(options) {
 }
 
 /**
- * Run ESLint check via lint script on affected packages.
+ * Run Oxlint check via lint script on affected packages.
  */
-async function runEslintCheck(options = {}) {
+async function runOxlintCheck(options = {}) {
   const { quiet = false } = options
 
   // Get files to check and affected packages.
@@ -86,8 +86,8 @@ async function runEslintCheck(options = {}) {
 
   if (!packages.length) {
     if (!quiet) {
-      logger.step('Running ESLint checks')
-      logger.substep('No packages to check, skipping ESLint')
+      logger.step('Running Oxlint checks')
+      logger.substep('No packages to check, skipping Oxlint')
     }
     return 0
   }
@@ -98,7 +98,7 @@ async function runEslintCheck(options = {}) {
     'lint',
     [],
     quiet,
-    'Running ESLint checks',
+    'Running Oxlint checks',
   )
 }
 
@@ -152,7 +152,7 @@ async function main() {
       logger.log('\nUsage: pnpm check [options]')
       logger.log('\nOptions:')
       logger.log('  --help         Show this help message')
-      logger.log('  --lint         Run ESLint check only')
+      logger.log('  --lint         Run Oxlint check only')
       logger.log('  --types        Run TypeScript check only')
       logger.log('  --all          Check all packages')
       logger.log('  --staged       Check packages with staged files')
@@ -163,10 +163,10 @@ async function main() {
         '  pnpm check             # Run all checks on changed packages',
       )
       logger.log('  pnpm check --all       # Run all checks on all packages')
-      logger.log('  pnpm check --lint      # Run ESLint only')
+      logger.log('  pnpm check --lint      # Run Oxlint only')
       logger.log('  pnpm check --types     # Run TypeScript only')
       logger.log(
-        '  pnpm check --lint --staged  # Run ESLint on staged packages',
+        '  pnpm check --lint --staged  # Run Oxlint on staged packages',
       )
       process.exitCode = 0
       return
@@ -181,12 +181,12 @@ async function main() {
 
     let exitCode = 0
 
-    // Run ESLint check if requested or running all.
+    // Run Oxlint check if requested or running all.
     if (runAll || values.lint) {
       if (!quiet) {
         logger.log('')
       }
-      exitCode = await runEslintCheck({
+      exitCode = await runOxlintCheck({
         all: values.all,
         changed: values.changed,
         quiet,
@@ -324,7 +324,6 @@ async function main() {
       }
     }
 
-
     // Run file size validation check.
     if (runAll) {
       if (!quiet) {
@@ -360,7 +359,6 @@ async function main() {
         logger.success('All files are within size limits')
       }
     }
-
 
     if (!quiet) {
       logger.log('')

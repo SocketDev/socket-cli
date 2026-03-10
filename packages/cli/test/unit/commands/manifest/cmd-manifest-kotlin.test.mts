@@ -21,7 +21,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -33,11 +34,16 @@ const mockConvertGradleToMaven = vi.hoisted(() =>
   vi.fn().mockResolvedValue({ ok: true, data: { files: [] } }),
 )
 const mockOutputManifest = vi.hoisted(() => vi.fn())
-const mockReadOrDefaultSocketJson = vi.hoisted(() => vi.fn().mockReturnValue({}))
+const mockReadOrDefaultSocketJson = vi.hoisted(() =>
+  vi.fn().mockReturnValue({}),
+)
 
-vi.mock('../../../../src/commands/manifest/convert-gradle-to-maven.mts', () => ({
-  convertGradleToMaven: mockConvertGradleToMaven,
-}))
+vi.mock(
+  '../../../../src/commands/manifest/convert-gradle-to-maven.mts',
+  () => ({
+    convertGradleToMaven: mockConvertGradleToMaven,
+  }),
+)
 
 vi.mock('../../../../src/commands/manifest/output-manifest.mts', () => ({
   outputManifest: mockOutputManifest,
@@ -48,9 +54,8 @@ vi.mock('../../../../src/utils/socket/json.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdManifestKotlin } = await import(
-  '../../../../src/commands/manifest/cmd-manifest-kotlin.mts'
-)
+const { cmdManifestKotlin } =
+  await import('../../../../src/commands/manifest/cmd-manifest-kotlin.mts')
 
 describe('cmd-manifest-kotlin', () => {
   beforeEach(() => {
@@ -95,7 +100,11 @@ describe('cmd-manifest-kotlin', () => {
     })
 
     it('should pass custom --bin flag to convertGradleToMaven', async () => {
-      await cmdManifestKotlin.run(['--bin', '/custom/gradle', '.'], importMeta, context)
+      await cmdManifestKotlin.run(
+        ['--bin', '/custom/gradle', '.'],
+        importMeta,
+        context,
+      )
 
       expect(mockConvertGradleToMaven).toHaveBeenCalledWith(
         expect.objectContaining({

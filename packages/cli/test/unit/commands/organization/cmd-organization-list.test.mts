@@ -17,7 +17,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -28,12 +29,18 @@ vi.mock('@socketsecurity/lib/logger', async importOriginal => {
 const mockHandleOrganizationList = vi.hoisted(() => vi.fn())
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false))
 
-vi.mock('../../../../src/commands/organization/handle-organization-list.mts', () => ({
-  handleOrganizationList: mockHandleOrganizationList,
-}))
+vi.mock(
+  '../../../../src/commands/organization/handle-organization-list.mts',
+  () => ({
+    handleOrganizationList: mockHandleOrganizationList,
+  }),
+)
 
 vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/socket/sdk.mjs')>()
+  const actual =
+    await importOriginal<
+      typeof import('../../../../src/utils/socket/sdk.mjs')
+    >()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
@@ -41,9 +48,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdOrganizationList } = await import(
-  '../../../../src/commands/organization/cmd-organization-list.mts'
-)
+const { cmdOrganizationList } =
+  await import('../../../../src/commands/organization/cmd-organization-list.mts')
 
 describe('cmd-organization-list', () => {
   beforeEach(() => {
@@ -53,7 +59,9 @@ describe('cmd-organization-list', () => {
 
   describe('command metadata', () => {
     it('should have correct description', () => {
-      expect(cmdOrganizationList.description).toBe('List organizations associated with the Socket API token')
+      expect(cmdOrganizationList.description).toBe(
+        'List organizations associated with the Socket API token',
+      )
     })
 
     it('should not be hidden', () => {
@@ -68,11 +76,7 @@ describe('cmd-organization-list', () => {
     it('should support --dry-run flag', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdOrganizationList.run(
-        ['--dry-run'],
-        importMeta,
-        context,
-      )
+      await cmdOrganizationList.run(['--dry-run'], importMeta, context)
 
       expect(mockHandleOrganizationList).not.toHaveBeenCalled()
       expect(mockLogger.log).toHaveBeenCalledWith(
@@ -83,11 +87,7 @@ describe('cmd-organization-list', () => {
     it('should fail without Socket API token', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(false)
 
-      await cmdOrganizationList.run(
-        [],
-        importMeta,
-        context,
-      )
+      await cmdOrganizationList.run([], importMeta, context)
 
       // Exit code 2 = invalid usage/validation failure.
       expect(process.exitCode).toBe(2)
@@ -97,11 +97,7 @@ describe('cmd-organization-list', () => {
     it('should call handleOrganizationList with valid token and text output', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdOrganizationList.run(
-        [],
-        importMeta,
-        context,
-      )
+      await cmdOrganizationList.run([], importMeta, context)
 
       expect(mockHandleOrganizationList).toHaveBeenCalledWith('text')
     })
@@ -109,11 +105,7 @@ describe('cmd-organization-list', () => {
     it('should pass --json flag to handleOrganizationList', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdOrganizationList.run(
-        ['--json'],
-        importMeta,
-        context,
-      )
+      await cmdOrganizationList.run(['--json'], importMeta, context)
 
       expect(mockHandleOrganizationList).toHaveBeenCalledWith('json')
     })
@@ -121,11 +113,7 @@ describe('cmd-organization-list', () => {
     it('should pass --markdown flag to handleOrganizationList', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdOrganizationList.run(
-        ['--markdown'],
-        importMeta,
-        context,
-      )
+      await cmdOrganizationList.run(['--markdown'], importMeta, context)
 
       expect(mockHandleOrganizationList).toHaveBeenCalledWith('markdown')
     })
@@ -147,11 +135,7 @@ describe('cmd-organization-list', () => {
     it('should show query parameters in dry-run mode', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdOrganizationList.run(
-        ['--dry-run'],
-        importMeta,
-        context,
-      )
+      await cmdOrganizationList.run(['--dry-run'], importMeta, context)
 
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('[DryRun]: Would fetch organizations'),

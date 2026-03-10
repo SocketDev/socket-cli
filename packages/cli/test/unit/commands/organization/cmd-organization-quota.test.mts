@@ -36,7 +36,9 @@ vi.mock('../../../../src/commands/organization/handle-quota.mts', () => ({
 
 vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
   const actual =
-    await importOriginal<typeof import('../../../../src/utils/socket/sdk.mjs')>()
+    await importOriginal<
+      typeof import('../../../../src/utils/socket/sdk.mjs')
+    >()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
@@ -44,9 +46,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdOrganizationQuota } = await import(
-  '../../../../src/commands/organization/cmd-organization-quota.mts'
-)
+const { cmdOrganizationQuota } =
+  await import('../../../../src/commands/organization/cmd-organization-quota.mts')
 
 describe('cmd-organization-quota', () => {
   beforeEach(() => {

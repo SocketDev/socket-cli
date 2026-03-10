@@ -127,7 +127,9 @@ async function run(
         ]
     outputDryRunWrite(
       files.join(', '),
-      enable ? 'enable Socket npm/npx wrapper' : 'disable Socket npm/npx wrapper',
+      enable
+        ? 'enable Socket npm/npx wrapper'
+        : 'disable Socket npm/npx wrapper',
       changes,
     )
     return

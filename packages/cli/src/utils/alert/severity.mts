@@ -17,7 +17,7 @@ export type SocketSdkAlertList =
   SocketSdkSuccessResult<'getIssuesByNPMPackage'>['data']
 
 export type SocketSdkAlert = SocketSdkAlertList[number]['value'] extends
-  | infer U
+  | (infer U)
   | undefined
   ? U
   : never

@@ -118,19 +118,13 @@ describe('cmd-npx', () => {
         // Verify dry-run message.
         const logCalls = mockLogger.log.mock.calls.flat()
         const hasDryRunMessage = logCalls.some(
-          call =>
-            typeof call === 'string' &&
-            call.includes('Would execute'),
+          call => typeof call === 'string' && call.includes('Would execute'),
         )
         expect(hasDryRunMessage).toBe(true)
       })
 
       it('should show dry-run output with npx command', async () => {
-        await cmdNpx.run(
-          ['--dry-run', 'cowsay', 'hello'],
-          importMeta,
-          context,
-        )
+        await cmdNpx.run(['--dry-run', 'cowsay', 'hello'], importMeta, context)
 
         expect(mockLogger.log).toHaveBeenCalled()
         expect(mockSpawnSfw).not.toHaveBeenCalled()
@@ -231,9 +225,12 @@ describe('cmd-npx', () => {
 
         await cmdNpx.run(['cowsay', 'hello', 'world'], importMeta, context)
 
-        expect(mockSpawnSfw).toHaveBeenCalledWith(['npx', 'cowsay', 'hello', 'world'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfw).toHaveBeenCalledWith(
+          ['npx', 'cowsay', 'hello', 'world'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should forward npx with version specifier', async () => {
@@ -265,7 +262,11 @@ describe('cmd-npx', () => {
       it('should forward npx with --package flag', async () => {
         mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
 
-        await cmdNpx.run(['--package=cowsay', 'cowsay', 'hello'], importMeta, context)
+        await cmdNpx.run(
+          ['--package=cowsay', 'cowsay', 'hello'],
+          importMeta,
+          context,
+        )
 
         expect(mockSpawnSfw).toHaveBeenCalledWith(
           ['npx', '--package=cowsay', 'cowsay', 'hello'],

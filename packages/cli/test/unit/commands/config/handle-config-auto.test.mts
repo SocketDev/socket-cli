@@ -59,12 +59,10 @@ vi.mock('../../../../src/commands/config/output-config-auto.mts', () => ({
 
 describe('handleConfigAuto', () => {
   it('discovers and outputs config value successfully', async () => {
-    const { discoverConfigValue } = await import(
-      '../../../../src/commands/config/discover-config-value.mts'
-    )
-    const { outputConfigAuto } = await import(
-      '../../../../src/commands/config/output-config-auto.mts'
-    )
+    const { discoverConfigValue } =
+      await import('../../../../src/commands/config/discover-config-value.mts')
+    const { outputConfigAuto } =
+      await import('../../../../src/commands/config/output-config-auto.mts')
 
     const mockResult = createSuccessResult('discovered-api-token')
     mockDiscoverConfigValue.mockResolvedValue(mockResult)
@@ -80,12 +78,10 @@ describe('handleConfigAuto', () => {
   })
 
   it('handles discovery failure', async () => {
-    const { discoverConfigValue } = await import(
-      '../../../../src/commands/config/discover-config-value.mts'
-    )
-    const { outputConfigAuto } = await import(
-      '../../../../src/commands/config/output-config-auto.mts'
-    )
+    const { discoverConfigValue } =
+      await import('../../../../src/commands/config/discover-config-value.mts')
+    const { outputConfigAuto } =
+      await import('../../../../src/commands/config/output-config-auto.mts')
 
     const mockResult = createErrorResult('Config not found')
     mockDiscoverConfigValue.mockResolvedValue(mockResult)
@@ -97,9 +93,8 @@ describe('handleConfigAuto', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { outputConfigAuto } = await import(
-      '../../../../src/commands/config/output-config-auto.mts'
-    )
+    const { outputConfigAuto } =
+      await import('../../../../src/commands/config/output-config-auto.mts')
 
     mockDiscoverConfigValue.mockResolvedValue(createSuccessResult('test-value'))
 
@@ -113,9 +108,8 @@ describe('handleConfigAuto', () => {
   })
 
   it('handles different config keys', async () => {
-    const { discoverConfigValue } = await import(
-      '../../../../src/commands/config/discover-config-value.mts'
-    )
+    const { discoverConfigValue } =
+      await import('../../../../src/commands/config/discover-config-value.mts')
 
     const keys = ['apiToken', 'apiUrl', 'orgId', 'orgSlug'] as const
 
@@ -130,9 +124,8 @@ describe('handleConfigAuto', () => {
   })
 
   it('handles text output format', async () => {
-    const { outputConfigAuto } = await import(
-      '../../../../src/commands/config/output-config-auto.mts'
-    )
+    const { outputConfigAuto } =
+      await import('../../../../src/commands/config/output-config-auto.mts')
 
     mockDiscoverConfigValue.mockResolvedValue(
       createSuccessResult('https://api.socket.dev'),

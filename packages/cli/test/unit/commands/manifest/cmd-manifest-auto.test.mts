@@ -24,14 +24,23 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 
 // Mock detectManifestActions and generateAutoManifest.
 const mockDetectManifestActions = vi.hoisted(() =>
-  vi.fn().mockResolvedValue({ count: 0, gradle: false, sbt: false, pip: false }),
+  vi
+    .fn()
+    .mockResolvedValue({ count: 0, gradle: false, sbt: false, pip: false }),
 )
-const mockGenerateAutoManifest = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
-const mockReadOrDefaultSocketJson = vi.hoisted(() => vi.fn().mockReturnValue({}))
+const mockGenerateAutoManifest = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(undefined),
+)
+const mockReadOrDefaultSocketJson = vi.hoisted(() =>
+  vi.fn().mockReturnValue({}),
+)
 
-vi.mock('../../../../src/commands/manifest/detect-manifest-actions.mts', () => ({
-  detectManifestActions: mockDetectManifestActions,
-}))
+vi.mock(
+  '../../../../src/commands/manifest/detect-manifest-actions.mts',
+  () => ({
+    detectManifestActions: mockDetectManifestActions,
+  }),
+)
 
 vi.mock('../../../../src/commands/manifest/generate_auto_manifest.mts', () => ({
   generateAutoManifest: mockGenerateAutoManifest,
@@ -42,9 +51,8 @@ vi.mock('../../../../src/utils/socket/json.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdManifestAuto } = await import(
-  '../../../../src/commands/manifest/cmd-manifest-auto.mts'
-)
+const { cmdManifestAuto } =
+  await import('../../../../src/commands/manifest/cmd-manifest-auto.mts')
 
 describe('cmd-manifest-auto', () => {
   beforeEach(() => {

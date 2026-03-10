@@ -52,4 +52,3 @@ export function getPnpmBinPathDetails(): ReturnType<
   }
   return _pnpmBinPathDetails
 }
-

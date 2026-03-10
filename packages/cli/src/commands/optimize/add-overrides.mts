@@ -147,7 +147,8 @@ export async function addOverrides(
                 if (!parsed || parsed.type !== 'alias') {
                   return false
                 }
-                return semver.coerce((parsed as AliasResult).subSpec.rawSpec)?.version
+                return semver.coerce((parsed as AliasResult).subSpec.rawSpec)
+                  ?.version
               })()
             )
           ) {
@@ -217,7 +218,11 @@ export async function addOverrides(
                       (() => {
                         const parsed = safeNpa(thisSpec)
                         if (parsed && parsed.type === 'alias') {
-                          return semver.coerce((parsed as AliasResult).subSpec.rawSpec)?.version ?? version
+                          return (
+                            semver.coerce(
+                              (parsed as AliasResult).subSpec.rawSpec,
+                            )?.version ?? version
+                          )
                         }
                         return version
                       })(),
@@ -272,15 +277,14 @@ export async function addOverrides(
           'addedInWorkspaces',
           'updated',
           'updatedInWorkspaces',
-        ] satisfies
-          // Here we're just telling TS that we're looping over key names
-          // of the type and that they're all Set<string> props.
-          Array<
-            keyof Pick<
-              AddOverridesState,
-              'added' | 'addedInWorkspaces' | 'updated' | 'updatedInWorkspaces'
-            >
-          >) {
+        ] satisfies // Here we're just telling TS that we're looping over key names
+        // of the type and that they're all Set<string> props.
+        Array<
+          keyof Pick<
+            AddOverridesState,
+            'added' | 'addedInWorkspaces' | 'updated' | 'updatedInWorkspaces'
+          >
+        >) {
           for (const value of otherState[key]) {
             state[key].add(value)
           }

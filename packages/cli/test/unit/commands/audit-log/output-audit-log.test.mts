@@ -28,9 +28,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import FIXTURE from '../../../../src/commands/audit-log/audit-fixture.json' with {
-  type: 'json',
-}
+import FIXTURE from '../../../../src/commands/audit-log/audit-fixture.json' with { type: 'json' }
 import {
   outputAsJson,
   outputAsMarkdown,

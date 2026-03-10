@@ -170,9 +170,10 @@ export async function checkForUpdates(
   }
 
   // Check freshness inline to avoid potential double-read.
-  const isFresh = record && record.timestampFetch
-    ? timestamp - record.timestampFetch < ttl
-    : false
+  const isFresh =
+    record && record.timestampFetch
+      ? timestamp - record.timestampFetch < ttl
+      : false
   let updateResult: UpdateCheckResult
 
   if (!isFresh) {

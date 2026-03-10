@@ -59,9 +59,8 @@ describe('outputLicensePolicy', () => {
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputLicensePolicy } = await import(
-      '../../../../src/commands/organization/output-license-policy.mts'
-    )
+    const { outputLicensePolicy } =
+      await import('../../../../src/commands/organization/output-license-policy.mts')
 
     const result = createSuccessResult({
       license_policy: {
@@ -101,9 +100,8 @@ describe('outputLicensePolicy', () => {
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputLicensePolicy } = await import(
-      '../../../../src/commands/organization/output-license-policy.mts'
-    )
+    const { outputLicensePolicy } =
+      await import('../../../../src/commands/organization/output-license-policy.mts')
 
     const result = createErrorResult('Unauthorized', {
       code: 2,
@@ -140,9 +138,8 @@ describe('outputLicensePolicy', () => {
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputLicensePolicy } = await import(
-      '../../../../src/commands/organization/output-license-policy.mts'
-    )
+    const { outputLicensePolicy } =
+      await import('../../../../src/commands/organization/output-license-policy.mts')
 
     const result = createSuccessResult({
       license_policy: {
@@ -191,9 +188,8 @@ describe('outputLicensePolicy', () => {
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputLicensePolicy } = await import(
-      '../../../../src/commands/organization/output-license-policy.mts'
-    )
+    const { outputLicensePolicy } =
+      await import('../../../../src/commands/organization/output-license-policy.mts')
 
     const result = createErrorResult('Failed to fetch policy', {
       code: 1,
@@ -234,9 +230,8 @@ describe('outputLicensePolicy', () => {
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputLicensePolicy } = await import(
-      '../../../../src/commands/organization/output-license-policy.mts'
-    )
+    const { outputLicensePolicy } =
+      await import('../../../../src/commands/organization/output-license-policy.mts')
 
     const result = createSuccessResult({
       license_policy: {
@@ -276,9 +271,8 @@ describe('outputLicensePolicy', () => {
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputLicensePolicy } = await import(
-      '../../../../src/commands/organization/output-license-policy.mts'
-    )
+    const { outputLicensePolicy } =
+      await import('../../../../src/commands/organization/output-license-policy.mts')
 
     const result = createSuccessResult({
       license_policy: {},
@@ -316,9 +310,8 @@ describe('outputLicensePolicy', () => {
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputLicensePolicy } = await import(
-      '../../../../src/commands/organization/output-license-policy.mts'
-    )
+    const { outputLicensePolicy } =
+      await import('../../../../src/commands/organization/output-license-policy.mts')
 
     const result = createSuccessResult({
       license_policy: null,
@@ -355,9 +348,8 @@ describe('outputLicensePolicy', () => {
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputLicensePolicy } = await import(
-      '../../../../src/commands/organization/output-license-policy.mts'
-    )
+    const { outputLicensePolicy } =
+      await import('../../../../src/commands/organization/output-license-policy.mts')
 
     const result = createErrorResult('Error')
 

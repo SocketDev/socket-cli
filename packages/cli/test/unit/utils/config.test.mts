@@ -45,9 +45,8 @@ describe('utils/config', () => {
     })
 
     it('should return object for applying a change', () => {
-      expect(
-        updateConfigValue('defaultOrg', 'fake_test_org'),
-      ).toMatchInlineSnapshot(`
+      expect(updateConfigValue('defaultOrg', 'fake_test_org'))
+        .toMatchInlineSnapshot(`
         {
           "data": "Change applied but not persisted; current config is overridden through env var or flag",
           "message": "Config key 'defaultOrg' was updated",

@@ -202,6 +202,9 @@ async function run(
     outputKind,
     page: validatedPage,
     perPage: validatedPerPage,
-    logType: typeFilter && typeFilter.length > 0 ? typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1) : '',
+    logType:
+      typeFilter && typeFilter.length > 0
+        ? typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)
+        : '',
   })
 }

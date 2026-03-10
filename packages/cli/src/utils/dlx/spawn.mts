@@ -62,7 +62,11 @@ import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
 import type { IpcObject } from '../ipc.mts'
 import type { CResult } from '../../types.mjs'
 import type { ExternalTool } from './vfs-extract.mjs'
-import type { SpawnExtra, SpawnOptions, SpawnResult } from '@socketsecurity/lib/spawn'
+import type {
+  SpawnExtra,
+  SpawnOptions,
+  SpawnResult,
+} from '@socketsecurity/lib/spawn'
 
 export type DlxSpawnOptions = SpawnOptions & {
   ipc?: IpcObject | undefined
@@ -165,13 +169,7 @@ async function downloadGitHubReleaseBinary(
   const binaryFileName = binaryName + (isPlatWin ? '.exe' : '')
 
   // Cache path: ~/.socket/_dlx/github/{owner}/{repo}/{version}/
-  const cacheDir = path.join(
-    getDlxCachePath(),
-    'github',
-    owner,
-    repo,
-    version,
-  )
+  const cacheDir = path.join(getDlxCachePath(), 'github', owner, repo, version)
   const normalizedCacheDir = path.resolve(cacheDir)
   const binaryPath = path.join(cacheDir, binaryFileName)
   const lockFile = path.join(cacheDir, '.downloading')
@@ -220,7 +218,9 @@ async function downloadGitHubReleaseBinary(
           }
         }
       }
-      throw new InputError('Timeout waiting for another process to download GitHub release')
+      throw new InputError(
+        'Timeout waiting for another process to download GitHub release',
+      )
     }
     throw e
   }
@@ -715,14 +715,19 @@ export async function spawnCoanaVfs(
   }
 
   try {
-    const result = await spawnToolVfs('coana', args, {
-      ...dlxOptions,
-      env: {
-        ...process.env,
-        ...mixinsEnv,
-        ...spawnEnv,
+    const result = await spawnToolVfs(
+      'coana',
+      args,
+      {
+        ...dlxOptions,
+        env: {
+          ...process.env,
+          ...mixinsEnv,
+          ...spawnEnv,
+        },
       },
-    }, spawnExtra)
+      spawnExtra,
+    )
 
     const output = await result.spawnPromise
     return {
@@ -873,9 +878,7 @@ function getPythonStandaloneUrl(): string {
   } else if (platform === 'win32') {
     // Windows ARM64 can use native ARM64 Python for better performance.
     platformTriple =
-      arch === 'arm64'
-        ? 'aarch64-pc-windows-msvc'
-        : 'x86_64-pc-windows-msvc'
+      arch === 'arm64' ? 'aarch64-pc-windows-msvc' : 'x86_64-pc-windows-msvc'
   } else {
     throw new InputError(`Unsupported platform: ${platform}`)
   }
@@ -1036,7 +1039,9 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
             return pythonBin
           }
         }
-        throw new InputError('Timeout waiting for Python download by another process')
+        throw new InputError(
+          'Timeout waiting for Python download by another process',
+        )
       }
       throw e
     }
@@ -1337,7 +1342,10 @@ export async function spawnSocketPyCliDlx(
         shell: WIN32,
         stdio: 'inherit',
       }
-      const spawnResult = await spawnNode([resolution.path, ...args], spawnNodeOpts)
+      const spawnResult = await spawnNode(
+        [resolution.path, ...args],
+        spawnNodeOpts,
+      )
 
       return {
         data: spawnResult.stdout?.toString() ?? '',
@@ -1410,7 +1418,10 @@ export async function spawnSocketPyCli(
         shell: WIN32,
         stdio: 'inherit',
       }
-      const spawnResult = await spawnNode([resolution.path, ...args], spawnNodeOpts)
+      const spawnResult = await spawnNode(
+        [resolution.path, ...args],
+        spawnNodeOpts,
+      )
 
       return {
         data: spawnResult.stdout?.toString() ?? '',
@@ -1425,13 +1436,14 @@ export async function spawnSocketPyCli(
     await ensureSocketPyCli(pythonBin)
 
     // Build environment - isolate PATH for SEA mode.
-    const spawnEnvFinal = isSeaBinary() && areBasicsToolsAvailable()
-      ? {
-          ...finalEnv,
-          // Isolate PATH to bundled tools directory for SEA.
-          PATH: `${path.dirname(pythonBin)}:${path.dirname(path.dirname(pythonBin))}`,
-        }
-      : finalEnv
+    const spawnEnvFinal =
+      isSeaBinary() && areBasicsToolsAvailable()
+        ? {
+            ...finalEnv,
+            // Isolate PATH to bundled tools directory for SEA.
+            PATH: `${path.dirname(pythonBin)}:${path.dirname(path.dirname(pythonBin))}`,
+          }
+        : finalEnv
 
     // Run socketcli via python -m.
     const spawnResult = await spawn(

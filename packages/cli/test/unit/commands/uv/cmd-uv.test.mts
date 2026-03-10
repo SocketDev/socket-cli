@@ -140,10 +140,9 @@ describe('cmd-uv', () => {
 
       await runPromise
 
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
-        ['uv', 'pip', 'sync'],
-        { stdio: 'inherit' },
-      )
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['uv', 'pip', 'sync'], {
+        stdio: 'inherit',
+      })
     })
 
     it('should filter out Socket CLI flags', async () => {
@@ -177,10 +176,9 @@ describe('cmd-uv', () => {
       await runPromise
 
       expect(mockFilterFlags).toHaveBeenCalled()
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
-        ['uv', ...filteredArgs],
-        { stdio: 'inherit' },
-      )
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['uv', ...filteredArgs], {
+        stdio: 'inherit',
+      })
     })
 
     it('should set default exit code to 1', async () => {
@@ -199,7 +197,9 @@ describe('cmd-uv', () => {
 
       mockFilterFlags.mockReturnValue(['pip', 'install', 'flask'])
 
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any)
+      const mockExit = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => {}) as any)
 
       process.exitCode = undefined
 
@@ -243,7 +243,9 @@ describe('cmd-uv', () => {
 
       mockFilterFlags.mockReturnValue(['pip', 'install', 'flask'])
 
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any)
+      const mockExit = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => {}) as any)
 
       cmdUv.run(
         ['pip', 'install', 'flask'],
@@ -285,7 +287,9 @@ describe('cmd-uv', () => {
 
       mockFilterFlags.mockReturnValue(['pip', 'install', 'flask'])
 
-      const mockKill = vi.spyOn(process, 'kill').mockImplementation((() => {}) as any)
+      const mockKill = vi
+        .spyOn(process, 'kill')
+        .mockImplementation((() => {}) as any)
 
       cmdUv.run(
         ['pip', 'install', 'flask'],
@@ -327,13 +331,13 @@ describe('cmd-uv', () => {
 
       mockFilterFlags.mockReturnValue([])
 
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any)
+      const mockExit = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => {}) as any)
 
-      cmdUv.run(
-        [],
-        { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+      cmdUv.run([], { url: import.meta.url } as ImportMeta, {
+        parentName: 'socket',
+      })
 
       // Simulate successful exit.
       mockChildProcess.emit('exit', 0, null)
@@ -364,13 +368,13 @@ describe('cmd-uv', () => {
 
       mockFilterFlags.mockReturnValue(['--version'])
 
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any)
+      const mockExit = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => {}) as any)
 
-      cmdUv.run(
-        ['--version'],
-        { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+      cmdUv.run(['--version'], { url: import.meta.url } as ImportMeta, {
+        parentName: 'socket',
+      })
 
       // Simulate successful exit.
       mockChildProcess.emit('exit', 0, null)

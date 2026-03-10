@@ -124,9 +124,8 @@ vi.mock(
 )
 
 // Import after mocks.
-const { CMD_NAME, cmdRawNpm } = await import(
-  '../../../../src/commands/raw-npm/cmd-raw-npm.mts'
-)
+const { CMD_NAME, cmdRawNpm } =
+  await import('../../../../src/commands/raw-npm/cmd-raw-npm.mts')
 
 describe('cmd-raw-npm', () => {
   beforeEach(() => {

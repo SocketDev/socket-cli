@@ -17,7 +17,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -40,7 +41,10 @@ vi.mock('../../../../src/utils/socket/org-slug.mjs', () => ({
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/socket/sdk.mjs')>()
+  const actual =
+    await importOriginal<
+      typeof import('../../../../src/utils/socket/sdk.mjs')
+    >()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
@@ -48,9 +52,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdRepositoryUpdate } = await import(
-  '../../../../src/commands/repository/cmd-repository-update.mts'
-)
+const { cmdRepositoryUpdate } =
+  await import('../../../../src/commands/repository/cmd-repository-update.mts')
 
 describe('cmd-repository-update', () => {
   beforeEach(() => {
@@ -60,7 +63,9 @@ describe('cmd-repository-update', () => {
 
   describe('command metadata', () => {
     it('should have correct description', () => {
-      expect(cmdRepositoryUpdate.description).toBe('Update a repository in an organization')
+      expect(cmdRepositoryUpdate.description).toBe(
+        'Update a repository in an organization',
+      )
     })
 
     it('should not be hidden', () => {
@@ -122,11 +127,7 @@ describe('cmd-repository-update', () => {
     it('should fail without repository name', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryUpdate.run(
-        ['--no-interactive'],
-        importMeta,
-        context,
-      )
+      await cmdRepositoryUpdate.run(['--no-interactive'], importMeta, context)
 
       // Exit code 2 = invalid usage/validation failure.
       expect(process.exitCode).toBe(2)
@@ -227,7 +228,12 @@ describe('cmd-repository-update', () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdRepositoryUpdate.run(
-        ['test-repo', '--repo-description', 'Updated description', '--no-interactive'],
+        [
+          'test-repo',
+          '--repo-description',
+          'Updated description',
+          '--no-interactive',
+        ],
         importMeta,
         context,
       )
@@ -318,7 +324,11 @@ describe('cmd-repository-update', () => {
         context,
       )
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('custom-org', false, false)
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'custom-org',
+        false,
+        false,
+      )
       expect(mockHandleUpdateRepo).toHaveBeenCalledWith(
         expect.objectContaining({
           orgSlug: 'custom-org',
@@ -422,10 +432,14 @@ describe('cmd-repository-update', () => {
       await cmdRepositoryUpdate.run(
         [
           'my-repo',
-          '--default-branch', 'main',
-          '--homepage', 'https://socket.dev',
-          '--repo-description', 'Updated repository',
-          '--visibility', 'public',
+          '--default-branch',
+          'main',
+          '--homepage',
+          'https://socket.dev',
+          '--repo-description',
+          'Updated repository',
+          '--visibility',
+          'public',
           '--no-interactive',
         ],
         importMeta,
@@ -451,10 +465,14 @@ describe('cmd-repository-update', () => {
       await cmdRepositoryUpdate.run(
         [
           'my-repo',
-          '-b', 'develop',
-          '-h', 'https://example.com',
-          '-d', 'Test description',
-          '-v', 'private',
+          '-b',
+          'develop',
+          '-h',
+          'https://example.com',
+          '-d',
+          'Test description',
+          '-v',
+          'private',
           '--no-interactive',
         ],
         importMeta,
@@ -480,10 +498,14 @@ describe('cmd-repository-update', () => {
       await cmdRepositoryUpdate.run(
         [
           'test-repo',
-          '--default-branch', '',
-          '--homepage', '',
-          '--repo-description', '',
-          '--visibility', '',
+          '--default-branch',
+          '',
+          '--homepage',
+          '',
+          '--repo-description',
+          '',
+          '--visibility',
+          '',
           '--no-interactive',
         ],
         importMeta,

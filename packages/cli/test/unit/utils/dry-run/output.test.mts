@@ -9,9 +9,8 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 }))
 
 // Import after mocking.
-const { outputDryRunFetch } = await import(
-  '../../../../src/utils/dry-run/output.mts'
-)
+const { outputDryRunFetch } =
+  await import('../../../../src/utils/dry-run/output.mts')
 
 describe('dry-run output utilities', () => {
   beforeEach(() => {

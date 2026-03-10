@@ -52,9 +52,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdScanMetadata } = await import(
-  '../../../../src/commands/scan/cmd-scan-metadata.mts'
-)
+const { cmdScanMetadata } =
+  await import('../../../../src/commands/scan/cmd-scan-metadata.mts')
 
 describe('cmd-scan-metadata', () => {
   beforeEach(() => {
@@ -144,11 +143,7 @@ describe('cmd-scan-metadata', () => {
     })
 
     it('should support --markdown output mode', async () => {
-      await cmdScanMetadata.run(
-        [testScanId, '--markdown'],
-        importMeta,
-        context,
-      )
+      await cmdScanMetadata.run([testScanId, '--markdown'], importMeta, context)
 
       expect(mockHandleOrgScanMetadata).toHaveBeenCalledWith(
         'test-org',

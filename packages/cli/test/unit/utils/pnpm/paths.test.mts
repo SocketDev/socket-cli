@@ -41,8 +41,8 @@ vi.mock('../../../../src/utils/fs/path-resolve.mts', () => ({
 
 describe('pnpm-paths utilities', () => {
   let originalExit: typeof process.exit
-  let getPnpmBinPath: typeof import('../../../../../src/utils/pnpm/paths.mts')['getPnpmBinPath']
-  let getPnpmBinPathDetails: typeof import('../../../../../src/utils/pnpm/paths.mts')['getPnpmBinPathDetails']
+  let getPnpmBinPath: (typeof import('../../../../../src/utils/pnpm/paths.mts'))['getPnpmBinPath']
+  let getPnpmBinPathDetails: (typeof import('../../../../../src/utils/pnpm/paths.mts'))['getPnpmBinPathDetails']
 
   beforeEach(async () => {
     vi.clearAllMocks()

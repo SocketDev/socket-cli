@@ -50,5 +50,4 @@ describe('env-helpers', () => {
       expect(lines[4]).toContain('SOCKET_CLI_GIT_USER_EMAIL=')
     })
   })
-
 })

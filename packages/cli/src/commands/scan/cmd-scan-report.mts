@@ -134,8 +134,13 @@ async function run(
     parentName,
   })
 
-  const { fold, json, markdown, org: orgFlag, reportLevel } =
-    cli.flags as unknown as ScanReportFlags
+  const {
+    fold,
+    json,
+    markdown,
+    org: orgFlag,
+    reportLevel,
+  } = cli.flags as unknown as ScanReportFlags
 
   const dryRun = !!cli.flags['dryRun']
 

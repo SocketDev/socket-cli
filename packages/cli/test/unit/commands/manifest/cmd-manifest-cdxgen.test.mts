@@ -43,9 +43,8 @@ vi.mock('../../../../src/commands/manifest/run-cdxgen.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdManifestCdxgen } = await import(
-  '../../../../src/commands/manifest/cmd-manifest-cdxgen.mts'
-)
+const { cmdManifestCdxgen } =
+  await import('../../../../src/commands/manifest/cmd-manifest-cdxgen.mts')
 
 describe('cmd-manifest-cdxgen', () => {
   beforeEach(() => {
@@ -182,7 +181,10 @@ describe('cmd-manifest-cdxgen', () => {
 
     describe('signal handling', () => {
       it('should call process.kill with signal when cdxgen receives SIGTERM', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: null, signal: 'SIGTERM' })
+        const mockSpawnPromise = Promise.resolve({
+          code: null,
+          signal: 'SIGTERM',
+        })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockKill = vi
@@ -196,7 +198,10 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should call process.kill with SIGINT signal', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: null, signal: 'SIGINT' })
+        const mockSpawnPromise = Promise.resolve({
+          code: null,
+          signal: 'SIGINT',
+        })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockKill = vi
@@ -262,7 +267,11 @@ describe('cmd-manifest-cdxgen', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as any)
 
-        await cmdManifestCdxgen.run(['--lifecycle', 'build', '.'], importMeta, context)
+        await cmdManifestCdxgen.run(
+          ['--lifecycle', 'build', '.'],
+          importMeta,
+          context,
+        )
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -286,7 +295,11 @@ describe('cmd-manifest-cdxgen', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as any)
 
-        await cmdManifestCdxgen.run(['--output', 'custom.json', '.'], importMeta, context)
+        await cmdManifestCdxgen.run(
+          ['--output', 'custom.json', '.'],
+          importMeta,
+          context,
+        )
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -387,7 +400,11 @@ describe('cmd-manifest-cdxgen', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as any)
 
-        await cmdManifestCdxgen.run(['--type', 'npm', '--type', 'pypi', '.'], importMeta, context)
+        await cmdManifestCdxgen.run(
+          ['--type', 'npm', '--type', 'pypi', '.'],
+          importMeta,
+          context,
+        )
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -444,7 +461,11 @@ describe('cmd-manifest-cdxgen', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as any)
 
-        await cmdManifestCdxgen.run(['--spec-version', '1.5', '.'], importMeta, context)
+        await cmdManifestCdxgen.run(
+          ['--spec-version', '1.5', '.'],
+          importMeta,
+          context,
+        )
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -503,7 +524,11 @@ describe('cmd-manifest-cdxgen', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as any)
 
-        await cmdManifestCdxgen.run(['./project1', './project2'], importMeta, context)
+        await cmdManifestCdxgen.run(
+          ['./project1', './project2'],
+          importMeta,
+          context,
+        )
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -522,7 +547,11 @@ describe('cmd-manifest-cdxgen', () => {
           .spyOn(process, 'exit')
           .mockImplementation((() => {}) as any)
 
-        await cmdManifestCdxgen.run(['/absolute/path/to/project'], importMeta, context)
+        await cmdManifestCdxgen.run(
+          ['/absolute/path/to/project'],
+          importMeta,
+          context,
+        )
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({

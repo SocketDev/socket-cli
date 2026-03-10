@@ -17,7 +17,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -33,7 +34,10 @@ vi.mock('../../../../src/commands/package/handle-purl-deep-score.mts', () => ({
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/socket/sdk.mjs')>()
+  const actual =
+    await importOriginal<
+      typeof import('../../../../src/utils/socket/sdk.mjs')
+    >()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
@@ -41,9 +45,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdPackageScore } = await import(
-  '../../../../src/commands/package/cmd-package-score.mts'
-)
+const { cmdPackageScore } =
+  await import('../../../../src/commands/package/cmd-package-score.mts')
 
 describe('cmd-package-score', () => {
   beforeEach(() => {
@@ -54,7 +57,7 @@ describe('cmd-package-score', () => {
   describe('command metadata', () => {
     it('should have correct description', () => {
       expect(cmdPackageScore.description).toBe(
-        'Look up score for one package which reflects all of its transitive dependencies as well'
+        'Look up score for one package which reflects all of its transitive dependencies as well',
       )
     })
 
@@ -85,11 +88,7 @@ describe('cmd-package-score', () => {
     it('should fail without Socket API token', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(false)
 
-      await cmdPackageScore.run(
-        ['npm', 'babel-cli'],
-        importMeta,
-        context,
-      )
+      await cmdPackageScore.run(['npm', 'babel-cli'], importMeta, context)
 
       // Exit code 2 = invalid usage/validation failure.
       expect(process.exitCode).toBe(2)
@@ -99,11 +98,7 @@ describe('cmd-package-score', () => {
     it('should fail without package name', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdPackageScore.run(
-        [],
-        importMeta,
-        context,
-      )
+      await cmdPackageScore.run([], importMeta, context)
 
       // Exit code 2 = invalid usage/validation failure.
       expect(process.exitCode).toBe(2)
@@ -113,11 +108,7 @@ describe('cmd-package-score', () => {
     it('should call handlePurlDeepScore with ecosystem and package name', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdPackageScore.run(
-        ['npm', 'babel-cli'],
-        importMeta,
-        context,
-      )
+      await cmdPackageScore.run(['npm', 'babel-cli'], importMeta, context)
 
       expect(mockHandlePurlDeepScore).toHaveBeenCalledWith(
         'pkg:npm/babel-cli',
@@ -143,11 +134,7 @@ describe('cmd-package-score', () => {
     it('should handle purl format without pkg: prefix', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdPackageScore.run(
-        ['npm/babel-cli@1.0.0'],
-        importMeta,
-        context,
-      )
+      await cmdPackageScore.run(['npm/babel-cli@1.0.0'], importMeta, context)
 
       expect(mockHandlePurlDeepScore).toHaveBeenCalledWith(
         'pkg:npm/babel-cli@1.0.0',
@@ -202,11 +189,7 @@ describe('cmd-package-score', () => {
     it('should handle package with version', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdPackageScore.run(
-        ['npm', 'eslint@1.0.0'],
-        importMeta,
-        context,
-      )
+      await cmdPackageScore.run(['npm', 'eslint@1.0.0'], importMeta, context)
 
       expect(mockHandlePurlDeepScore).toHaveBeenCalledWith(
         'pkg:npm/eslint@1.0.0',
@@ -217,11 +200,7 @@ describe('cmd-package-score', () => {
     it('should handle different ecosystems', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdPackageScore.run(
-        ['pypi', 'requests'],
-        importMeta,
-        context,
-      )
+      await cmdPackageScore.run(['pypi', 'requests'], importMeta, context)
 
       expect(mockHandlePurlDeepScore).toHaveBeenCalledWith(
         'pkg:pypi/requests',
@@ -250,7 +229,9 @@ describe('cmd-package-score', () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdPackageScore.run(
-        ['pkg:golang/github.com/steelpoor/tlsproxy@v0.0.0-20250304082521-29051ed19c60'],
+        [
+          'pkg:golang/github.com/steelpoor/tlsproxy@v0.0.0-20250304082521-29051ed19c60',
+        ],
         importMeta,
         context,
       )

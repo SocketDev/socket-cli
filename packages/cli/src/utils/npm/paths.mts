@@ -107,4 +107,3 @@ function getNpxBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
   }
   return _npxBinPathDetails
 }
-

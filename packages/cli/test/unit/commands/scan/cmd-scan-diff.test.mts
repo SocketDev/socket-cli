@@ -52,9 +52,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdScanDiff } = await import(
-  '../../../../src/commands/scan/cmd-scan-diff.mts'
-)
+const { cmdScanDiff } =
+  await import('../../../../src/commands/scan/cmd-scan-diff.mts')
 
 describe('cmd-scan-diff', () => {
   beforeEach(() => {

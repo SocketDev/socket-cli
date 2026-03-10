@@ -46,7 +46,8 @@ vi.mock('../../../../src/utils/process/cmd.mts', () => ({
   filterFlags: mockFilterFlags,
 }))
 
-const { cmdNuget } = await import('../../../../src/commands/nuget/cmd-nuget.mts')
+const { cmdNuget } =
+  await import('../../../../src/commands/nuget/cmd-nuget.mts')
 
 describe('cmd-nuget', () => {
   setupTestEnvironment()
@@ -57,7 +58,9 @@ describe('cmd-nuget', () => {
 
   describe('command metadata', () => {
     it('should have correct description', () => {
-      expect(cmdNuget.description).toBe('Run nuget with Socket Firewall security')
+      expect(cmdNuget.description).toBe(
+        'Run nuget with Socket Firewall security',
+      )
     })
 
     it('should not be hidden', () => {
@@ -140,10 +143,9 @@ describe('cmd-nuget', () => {
 
       await runPromise
 
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
-        ['nuget', 'restore'],
-        { stdio: 'inherit' },
-      )
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['nuget', 'restore'], {
+        stdio: 'inherit',
+      })
     })
 
     it('should filter out Socket CLI flags', async () => {
@@ -177,10 +179,9 @@ describe('cmd-nuget', () => {
       await runPromise
 
       expect(mockFilterFlags).toHaveBeenCalled()
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
-        ['nuget', ...filteredArgs],
-        { stdio: 'inherit' },
-      )
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['nuget', ...filteredArgs], {
+        stdio: 'inherit',
+      })
     })
 
     it('should set default exit code to 1', async () => {
@@ -199,7 +200,9 @@ describe('cmd-nuget', () => {
 
       mockFilterFlags.mockReturnValue(['install', 'Newtonsoft.Json'])
 
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any)
+      const mockExit = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => {}) as any)
 
       process.exitCode = undefined
 
@@ -243,7 +246,9 @@ describe('cmd-nuget', () => {
 
       mockFilterFlags.mockReturnValue(['install', 'Newtonsoft.Json'])
 
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any)
+      const mockExit = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => {}) as any)
 
       cmdNuget.run(
         ['install', 'Newtonsoft.Json'],
@@ -285,7 +290,9 @@ describe('cmd-nuget', () => {
 
       mockFilterFlags.mockReturnValue(['install', 'Newtonsoft.Json'])
 
-      const mockKill = vi.spyOn(process, 'kill').mockImplementation((() => {}) as any)
+      const mockKill = vi
+        .spyOn(process, 'kill')
+        .mockImplementation((() => {}) as any)
 
       cmdNuget.run(
         ['install', 'Newtonsoft.Json'],
@@ -327,13 +334,13 @@ describe('cmd-nuget', () => {
 
       mockFilterFlags.mockReturnValue([])
 
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any)
+      const mockExit = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => {}) as any)
 
-      cmdNuget.run(
-        [],
-        { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+      cmdNuget.run([], { url: import.meta.url } as ImportMeta, {
+        parentName: 'socket',
+      })
 
       // Simulate successful exit.
       mockChildProcess.emit('exit', 0, null)
@@ -343,7 +350,9 @@ describe('cmd-nuget', () => {
         setImmediate(resolve)
       })
 
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['nuget'], { stdio: 'inherit' })
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['nuget'], {
+        stdio: 'inherit',
+      })
 
       mockExit.mockRestore()
     })
@@ -364,13 +373,13 @@ describe('cmd-nuget', () => {
 
       mockFilterFlags.mockReturnValue(['help'])
 
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any)
+      const mockExit = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => {}) as any)
 
-      cmdNuget.run(
-        ['help'],
-        { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+      cmdNuget.run(['help'], { url: import.meta.url } as ImportMeta, {
+        parentName: 'socket',
+      })
 
       // Simulate successful exit.
       mockChildProcess.emit('exit', 0, null)

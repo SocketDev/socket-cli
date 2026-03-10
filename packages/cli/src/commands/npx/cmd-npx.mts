@@ -71,7 +71,11 @@ async function run(
   const filteredArgv = filterFlags(argv, config.flags)
 
   if (dryRun) {
-    outputDryRunExecute('sfw', ['npx', ...filteredArgv], 'npx with Socket security scanning')
+    outputDryRunExecute(
+      'sfw',
+      ['npx', ...filteredArgv],
+      'npx with Socket security scanning',
+    )
     return
   }
 

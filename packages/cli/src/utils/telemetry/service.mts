@@ -114,7 +114,9 @@ const telemetryServiceInstance: TelemetryServiceInstance = {
  * Prevents duplicate initialization when multiple concurrent calls occur.
  * LRU cache with max size to prevent unbounded memory growth.
  */
-const inflightInit = new LRUCache<string, Promise<TelemetryService>>({ max: 10 })
+const inflightInit = new LRUCache<string, Promise<TelemetryService>>({
+  max: 10,
+})
 
 /**
  * Wrap a promise with a timeout.
@@ -214,7 +216,9 @@ export class TelemetryService {
     // Check if initialization is already in progress.
     const inflight = inflightInit.get(orgSlug)
     if (inflight) {
-      debug(`Telemetry initialization already in progress for org: ${orgSlug}, waiting...`)
+      debug(
+        `Telemetry initialization already in progress for org: ${orgSlug}, waiting...`,
+      )
       return inflight
     }
 

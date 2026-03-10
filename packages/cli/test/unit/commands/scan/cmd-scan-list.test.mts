@@ -17,7 +17,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -40,7 +41,10 @@ vi.mock('../../../../src/utils/socket/org-slug.mjs', () => ({
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/socket/sdk.mjs')>()
+  const actual =
+    await importOriginal<
+      typeof import('../../../../src/utils/socket/sdk.mjs')
+    >()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
@@ -48,9 +52,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdScanList } = await import(
-  '../../../../src/commands/scan/cmd-scan-list.mts'
-)
+const { cmdScanList } =
+  await import('../../../../src/commands/scan/cmd-scan-list.mts')
 
 describe('cmd-scan-list', () => {
   beforeEach(() => {
@@ -93,11 +96,16 @@ describe('cmd-scan-list', () => {
       await cmdScanList.run(
         [
           '--dry-run',
-          '--org', 'test-org',
-          '--page', '2',
-          '--per-page', '50',
-          '--sort', 'name',
-          '--direction', 'asc',
+          '--org',
+          'test-org',
+          '--page',
+          '2',
+          '--per-page',
+          '50',
+          '--sort',
+          'name',
+          '--direction',
+          'asc',
         ],
         importMeta,
         context,
@@ -118,11 +126,7 @@ describe('cmd-scan-list', () => {
     it('should fail without Socket API token', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(false)
 
-      await cmdScanList.run(
-        ['--org', 'test-org'],
-        importMeta,
-        context,
-      )
+      await cmdScanList.run(['--org', 'test-org'], importMeta, context)
 
       // Exit code 2 = invalid usage/validation failure.
       expect(process.exitCode).toBe(2)
@@ -132,11 +136,7 @@ describe('cmd-scan-list', () => {
     it('should call handleListScans with valid inputs', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdScanList.run(
-        ['--org', 'test-org'],
-        importMeta,
-        context,
-      )
+      await cmdScanList.run(['--org', 'test-org'], importMeta, context)
 
       expect(mockHandleListScans).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -157,13 +157,13 @@ describe('cmd-scan-list', () => {
       mockDetermineOrgSlug.mockResolvedValueOnce(['custom-org', 'custom-org'])
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdScanList.run(
-        ['--org', 'custom-org'],
-        importMeta,
-        context,
-      )
+      await cmdScanList.run(['--org', 'custom-org'], importMeta, context)
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('custom-org', true, false)
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'custom-org',
+        true,
+        false,
+      )
       expect(mockHandleListScans).toHaveBeenCalledWith(
         expect.objectContaining({
           orgSlug: 'custom-org',
@@ -372,15 +372,10 @@ describe('cmd-scan-list', () => {
       expect(mockHandleListScans).not.toHaveBeenCalled()
     })
 
-
     it('should use default pagination values', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdScanList.run(
-        ['--org', 'test-org'],
-        importMeta,
-        context,
-      )
+      await cmdScanList.run(['--org', 'test-org'], importMeta, context)
 
       expect(mockHandleListScans).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -393,11 +388,7 @@ describe('cmd-scan-list', () => {
     it('should use default sort and direction', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdScanList.run(
-        ['--org', 'test-org'],
-        importMeta,
-        context,
-      )
+      await cmdScanList.run(['--org', 'test-org'], importMeta, context)
 
       expect(mockHandleListScans).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -412,13 +403,19 @@ describe('cmd-scan-list', () => {
 
       await cmdScanList.run(
         [
-          '--org', 'test-org',
+          '--org',
+          'test-org',
           'my-repo',
-          '--branch', 'main',
-          '--page', '2',
-          '--per-page', '25',
-          '--sort', 'created_at',
-          '--direction', 'asc',
+          '--branch',
+          'main',
+          '--page',
+          '2',
+          '--per-page',
+          '25',
+          '--sort',
+          'created_at',
+          '--direction',
+          'asc',
         ],
         importMeta,
         context,
@@ -445,7 +442,11 @@ describe('cmd-scan-list', () => {
         context,
       )
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('test-org', false, false)
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'test-org',
+        false,
+        false,
+      )
       expect(mockHandleListScans).toHaveBeenCalled()
     })
   })

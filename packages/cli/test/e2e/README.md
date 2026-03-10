@@ -17,17 +17,20 @@ All commands have E2E tests that execute real CLI binaries and verify basic func
 ### Coverage Breakdown
 
 **Test Type:**
+
 - ✅ Real binary execution (no mocks)
 - ✅ Process spawning via `executeCliCommand()` → `spawnSocketCli()` → `spawn()`
 - ✅ All tests verified by parallel agent analysis
 
 **Coverage Levels:**
+
 - ✅ **Minimum** (73/73 commands): `--help` flag test for every command
 - ✅ **Enhanced** (2 commands): Functional tests with authentication
   - `whoami` - User identity verification
   - `config list` - Configuration listing
 
 **Binary Types:**
+
 - ✅ **JS Binary** (`dist/cli.js`) - Always tested
 - ✅ **SEA Binary** (`dist/sea/socket-sea`) - Optional via `TEST_SEA_BINARY=1`
 - ✅ **Smol Binary** - Optional via `TEST_SMOL_BINARY=1`
@@ -67,6 +70,7 @@ Missing binaries are automatically built without prompting:
 - ✅ JS and SEA builds complete in seconds
 
 **How it works:**
+
 1. Test suite detects missing binary
 2. Automatically runs appropriate build command
 3. Waits for build to complete
@@ -90,6 +94,7 @@ it('should display <command> help', async () => {
 ```
 
 **What this validates:**
+
 - ✅ Command exists and is registered
 - ✅ CLI binary can be executed
 - ✅ Command loads without crashing
@@ -134,11 +139,13 @@ it('should list config settings', async () => {
 ## Test Quality Metrics
 
 **Performance:**
+
 - ⚡ ~22 seconds for 78 tests (all 73 commands + extras)
 - ⚡ Parallel execution where possible
 - ⚡ Fast auto-builds using prebuilt binaries
 
 **Reliability:**
+
 - ✅ No fake or placeholder tests found
 - ✅ All tests spawn real processes
 - ✅ Meaningful assertions (exit codes + output)
@@ -153,6 +160,7 @@ For complete command documentation including all subcommands, integrations, and 
 **📚 [src/commands/README.md](../../src/commands/README.md)**
 
 The command architecture README includes:
+
 - Complete command hierarchy with subcommands
 - Integration mappings (Socket APIs, third-party tools)
 - Command file structure patterns
@@ -169,6 +177,7 @@ When adding a new command:
 4. **Verify**: Run `node scripts/e2e.mjs --js` to test
 
 Example:
+
 ```typescript
 // In binary-test-suite.e2e.test.mts
 const commands = [

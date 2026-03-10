@@ -20,7 +20,6 @@ import {
   getPackagesWithScript,
 } from './utils/monorepo-helper.mjs'
 
-
 const logger = getDefaultLogger()
 /**
  * Get packages to test and determine affected packages.

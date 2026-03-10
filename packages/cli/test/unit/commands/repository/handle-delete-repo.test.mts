@@ -37,9 +37,8 @@ vi.mock('../../../../src/commands/repository/output-delete-repo.mts', () => ({
   outputDeleteRepo: mockOutputDeleteRepo,
 }))
 
-const { handleDeleteRepo } = await import(
-  '../../../../src/commands/repository/handle-delete-repo.mts'
-)
+const { handleDeleteRepo } =
+  await import('../../../../src/commands/repository/handle-delete-repo.mts')
 
 describe('handleDeleteRepo', () => {
   it('deletes repository and outputs result successfully', async () => {

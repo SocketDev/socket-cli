@@ -105,9 +105,8 @@ vi.mock(
 )
 
 // Import after mocks.
-const { CMD_NAME, cmdOops } = await import(
-  '../../../../src/commands/oops/cmd-oops.mts'
-)
+const { CMD_NAME, cmdOops } =
+  await import('../../../../src/commands/oops/cmd-oops.mts')
 
 describe('cmd-oops', () => {
   beforeEach(() => {
@@ -324,11 +323,7 @@ describe('cmd-oops', () => {
 
       it('should handle all flags together', async () => {
         await expect(
-          cmdOops.run(
-            ['--json', '--markdown', '--throw'],
-            importMeta,
-            context,
-          ),
+          cmdOops.run(['--json', '--markdown', '--throw'], importMeta, context),
         ).rejects.toThrow('This error was intentionally left blank.')
       })
     })

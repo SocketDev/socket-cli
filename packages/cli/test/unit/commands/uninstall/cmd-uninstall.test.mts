@@ -10,18 +10,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // Mock meowWithSubcommands.
 const mockMeowWithSubcommands = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/cli/with-subcommands.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/cli/with-subcommands.mjs')>()
-  return {
-    ...actual,
-    meowWithSubcommands: mockMeowWithSubcommands,
-  }
-})
+vi.mock(
+  '../../../../src/utils/cli/with-subcommands.mjs',
+  async importOriginal => {
+    const actual =
+      await importOriginal<
+        typeof import('../../../../src/utils/cli/with-subcommands.mjs')
+      >()
+    return {
+      ...actual,
+      meowWithSubcommands: mockMeowWithSubcommands,
+    }
+  },
+)
 
 // Import after mocks.
-const { cmdUninstall } = await import(
-  '../../../../src/commands/uninstall/cmd-uninstall.mts'
-)
+const { cmdUninstall } =
+  await import('../../../../src/commands/uninstall/cmd-uninstall.mts')
 
 describe('cmd-uninstall', () => {
   beforeEach(() => {
@@ -30,7 +35,9 @@ describe('cmd-uninstall', () => {
 
   describe('command metadata', () => {
     it('should have correct description', () => {
-      expect(cmdUninstall.description).toBe('Uninstall Socket CLI tab completion')
+      expect(cmdUninstall.description).toBe(
+        'Uninstall Socket CLI tab completion',
+      )
     })
 
     it('should not be hidden', () => {

@@ -38,7 +38,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -61,7 +62,10 @@ vi.mock('../../../../src/utils/socket/org-slug.mjs', () => ({
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/socket/sdk.mjs')>()
+  const actual =
+    await importOriginal<
+      typeof import('../../../../src/utils/socket/sdk.mjs')
+    >()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
@@ -69,9 +73,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdAuditLog } = await import(
-  '../../../../src/commands/audit-log/cmd-audit-log.mts'
-)
+const { cmdAuditLog } =
+  await import('../../../../src/commands/audit-log/cmd-audit-log.mts')
 
 describe('cmd-audit-log', () => {
   beforeEach(() => {
@@ -184,7 +187,11 @@ describe('cmd-audit-log', () => {
 
       await cmdAuditLog.run(['--org', 'custom-org'], importMeta, context)
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('custom-org', true, false)
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'custom-org',
+        true,
+        false,
+      )
       expect(mockHandleAuditLog).toHaveBeenCalledWith(
         expect.objectContaining({
           orgSlug: 'custom-org',
@@ -219,11 +226,7 @@ describe('cmd-audit-log', () => {
     it('should fail if both --json and --markdown are set', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdAuditLog.run(
-        ['--json', '--markdown'],
-        importMeta,
-        context,
-      )
+      await cmdAuditLog.run(['--json', '--markdown'], importMeta, context)
 
       // Exit code 2 = invalid usage/validation failure.
       expect(process.exitCode).toBe(2)
@@ -275,12 +278,7 @@ describe('cmd-audit-log', () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdAuditLog.run(
-        [
-          '--dry-run',
-          'deleteReport',
-          '--page', '2',
-          '--per-page', '10',
-        ],
+        ['--dry-run', 'deleteReport', '--page', '2', '--per-page', '10'],
         importMeta,
         context,
       )
@@ -366,7 +364,10 @@ describe('cmd-audit-log', () => {
     })
 
     it('should handle organization with special characters', async () => {
-      mockDetermineOrgSlug.mockResolvedValueOnce(['org-with-dash', 'org-with-dash'])
+      mockDetermineOrgSlug.mockResolvedValueOnce([
+        'org-with-dash',
+        'org-with-dash',
+      ])
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdAuditLog.run(['--org', 'org-with-dash'], importMeta, context)

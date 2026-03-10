@@ -36,16 +36,19 @@ const mockMeowOrExit = vi.hoisted(() =>
   }),
 )
 
-vi.mock('../../../../src/utils/cli/with-subcommands.mjs', async importOriginal => {
-  const actual =
-    await importOriginal<
-      typeof import('../../../../src/utils/cli/with-subcommands.mjs')
-    >()
-  return {
-    ...actual,
-    meowOrExit: mockMeowOrExit,
-  }
-})
+vi.mock(
+  '../../../../src/utils/cli/with-subcommands.mjs',
+  async importOriginal => {
+    const actual =
+      await importOriginal<
+        typeof import('../../../../src/utils/cli/with-subcommands.mjs')
+      >()
+    return {
+      ...actual,
+      meowOrExit: mockMeowOrExit,
+    }
+  },
+)
 
 // Mock handleScanConfig.
 const mockHandleScanConfig = vi.hoisted(() => vi.fn())
@@ -55,9 +58,8 @@ vi.mock('../../../../src/commands/scan/handle-scan-config.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdScanSetup } = await import(
-  '../../../../src/commands/scan/cmd-scan-setup.mts'
-)
+const { cmdScanSetup } =
+  await import('../../../../src/commands/scan/cmd-scan-setup.mts')
 
 describe('cmd-scan-setup', () => {
   beforeEach(() => {
@@ -211,10 +213,7 @@ describe('cmd-scan-setup', () => {
 
       await cmdScanSetup.run([], importMeta, context)
 
-      expect(mockHandleScanConfig).toHaveBeenCalledWith(
-        process.cwd(),
-        false,
-      )
+      expect(mockHandleScanConfig).toHaveBeenCalledWith(process.cwd(), false)
     })
 
     it('should resolve relative path from cwd', async () => {
@@ -239,10 +238,7 @@ describe('cmd-scan-setup', () => {
 
       await cmdScanSetup.run(['/absolute/path'], importMeta, context)
 
-      expect(mockHandleScanConfig).toHaveBeenCalledWith(
-        '/absolute/path',
-        false,
-      )
+      expect(mockHandleScanConfig).toHaveBeenCalledWith('/absolute/path', false)
     })
 
     it('should resolve parent directory path', async () => {
@@ -267,10 +263,7 @@ describe('cmd-scan-setup', () => {
 
       await cmdScanSetup.run(['.'], importMeta, context)
 
-      expect(mockHandleScanConfig).toHaveBeenCalledWith(
-        process.cwd(),
-        false,
-      )
+      expect(mockHandleScanConfig).toHaveBeenCalledWith(process.cwd(), false)
     })
   })
 
@@ -298,7 +291,11 @@ describe('cmd-scan-setup', () => {
         flags: { defaultOnReadError: true },
       })
 
-      await cmdScanSetup.run(['--default-on-read-error', '.'], importMeta, context)
+      await cmdScanSetup.run(
+        ['--default-on-read-error', '.'],
+        importMeta,
+        context,
+      )
 
       expect(mockHandleScanConfig).toHaveBeenCalledWith(
         expect.any(String),
@@ -409,18 +406,18 @@ describe('cmd-scan-setup', () => {
       const testError = new Error('Config write failed')
       mockHandleScanConfig.mockRejectedValueOnce(testError)
 
-      await expect(cmdScanSetup.run(['.'], importMeta, context)).rejects.toThrow(
-        'Config write failed',
-      )
+      await expect(
+        cmdScanSetup.run(['.'], importMeta, context),
+      ).rejects.toThrow('Config write failed')
     })
 
     it('should propagate errors from handleScanConfig with custom message', async () => {
       const testError = new Error('Permission denied')
       mockHandleScanConfig.mockRejectedValueOnce(testError)
 
-      await expect(cmdScanSetup.run(['.'], importMeta, context)).rejects.toThrow(
-        testError,
-      )
+      await expect(
+        cmdScanSetup.run(['.'], importMeta, context),
+      ).rejects.toThrow(testError)
     })
   })
 })

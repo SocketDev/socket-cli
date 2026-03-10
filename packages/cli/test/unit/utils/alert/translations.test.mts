@@ -51,9 +51,8 @@ describe('translations utilities', () => {
 
   describe('getTranslations', () => {
     it('returns the translations object', async () => {
-      const { getTranslations } = await import(
-        '../../../../../src/utils/alert/translations.mts'
-      )
+      const { getTranslations } =
+        await import('../../../../../src/utils/alert/translations.mts')
 
       const result = getTranslations()
 
@@ -63,9 +62,8 @@ describe('translations utilities', () => {
     })
 
     it('returns consistent results on multiple calls', async () => {
-      const { getTranslations } = await import(
-        '../../../../../src/utils/alert/translations.mts'
-      )
+      const { getTranslations } =
+        await import('../../../../../src/utils/alert/translations.mts')
 
       const result1 = getTranslations()
       const result2 = getTranslations()
@@ -77,9 +75,8 @@ describe('translations utilities', () => {
     })
 
     it('includes alert properties', async () => {
-      const { getTranslations } = await import(
-        '../../../../../src/utils/alert/translations.mts'
-      )
+      const { getTranslations } =
+        await import('../../../../../src/utils/alert/translations.mts')
 
       const result = getTranslations()
 
@@ -94,9 +91,8 @@ describe('translations utilities', () => {
     })
 
     it('has correct structure for alert entries', async () => {
-      const { getTranslations } = await import(
-        '../../../../../src/utils/alert/translations.mts'
-      )
+      const { getTranslations } =
+        await import('../../../../../src/utils/alert/translations.mts')
 
       const result = getTranslations()
       const { badSemver } = result.alerts
@@ -110,9 +106,8 @@ describe('translations utilities', () => {
     })
 
     it('returns alerts object with multiple entries', async () => {
-      const { getTranslations } = await import(
-        '../../../../../src/utils/alert/translations.mts'
-      )
+      const { getTranslations } =
+        await import('../../../../../src/utils/alert/translations.mts')
 
       const result = getTranslations()
 
@@ -122,9 +117,8 @@ describe('translations utilities', () => {
     })
 
     it('handles nested alert structure', async () => {
-      const { getTranslations } = await import(
-        '../../../../../src/utils/alert/translations.mts'
-      )
+      const { getTranslations } =
+        await import('../../../../../src/utils/alert/translations.mts')
 
       const result = getTranslations()
 

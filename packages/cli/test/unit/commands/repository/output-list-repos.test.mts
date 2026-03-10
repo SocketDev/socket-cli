@@ -55,9 +55,8 @@ describe('outputListRepos', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputListRepos } = await import(
-      '../../../../src/commands/repository/output-list-repos.mts'
-    )
+    const { outputListRepos } =
+      await import('../../../../src/commands/repository/output-list-repos.mts')
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
@@ -108,9 +107,8 @@ describe('outputListRepos', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputListRepos } = await import(
-      '../../../../src/commands/repository/output-list-repos.mts'
-    )
+    const { outputListRepos } =
+      await import('../../../../src/commands/repository/output-list-repos.mts')
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createErrorResult('Unauthorized', {
@@ -151,9 +149,8 @@ describe('outputListRepos', () => {
       },
     }))
 
-    const { outputListRepos } = await import(
-      '../../../../src/commands/repository/output-list-repos.mts'
-    )
+    const { outputListRepos } =
+      await import('../../../../src/commands/repository/output-list-repos.mts')
 
     const repos = [
       {
@@ -221,9 +218,8 @@ describe('outputListRepos', () => {
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
-    const { outputListRepos } = await import(
-      '../../../../src/commands/repository/output-list-repos.mts'
-    )
+    const { outputListRepos } =
+      await import('../../../../src/commands/repository/output-list-repos.mts')
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createErrorResult('Failed to fetch repositories', {
@@ -268,9 +264,8 @@ describe('outputListRepos', () => {
       },
     }))
 
-    const { outputListRepos } = await import(
-      '../../../../src/commands/repository/output-list-repos.mts'
-    )
+    const { outputListRepos } =
+      await import('../../../../src/commands/repository/output-list-repos.mts')
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
@@ -319,9 +314,8 @@ describe('outputListRepos', () => {
       },
     }))
 
-    const { outputListRepos } = await import(
-      '../../../../src/commands/repository/output-list-repos.mts'
-    )
+    const { outputListRepos } =
+      await import('../../../../src/commands/repository/output-list-repos.mts')
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
@@ -370,9 +364,8 @@ describe('outputListRepos', () => {
       },
     }))
 
-    const { outputListRepos } = await import(
-      '../../../../src/commands/repository/output-list-repos.mts'
-    )
+    const { outputListRepos } =
+      await import('../../../../src/commands/repository/output-list-repos.mts')
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
@@ -403,9 +396,8 @@ describe('outputListRepos', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputListRepos } = await import(
-      '../../../../src/commands/repository/output-list-repos.mts'
-    )
+    const { outputListRepos } =
+      await import('../../../../src/commands/repository/output-list-repos.mts')
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createErrorResult('Error without code')

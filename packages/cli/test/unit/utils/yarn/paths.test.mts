@@ -41,8 +41,8 @@ vi.mock('../../../../src/utils/fs/path-resolve.mts', () => ({
 
 describe('yarn-paths utilities', () => {
   let originalExit: typeof process.exit
-  let getYarnBinPath: typeof import('../../../../../src/utils/yarn/paths.mts')['getYarnBinPath']
-  let getYarnBinPathDetails: typeof import('../../../../../src/utils/yarn/paths.mts')['getYarnBinPathDetails']
+  let getYarnBinPath: (typeof import('../../../../../src/utils/yarn/paths.mts'))['getYarnBinPath']
+  let getYarnBinPathDetails: (typeof import('../../../../../src/utils/yarn/paths.mts'))['getYarnBinPathDetails']
 
   beforeEach(async () => {
     vi.clearAllMocks()

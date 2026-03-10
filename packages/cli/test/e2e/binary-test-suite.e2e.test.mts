@@ -52,7 +52,13 @@ const MONOREPO_ROOT = path.resolve(ROOT_DIR, '../..')
 const BINARIES = {
   __proto__: null,
   js: {
-    buildCommand: ['pnpm', '--filter', '@socketsecurity/cli', 'run', 'build:js'],
+    buildCommand: [
+      'pnpm',
+      '--filter',
+      '@socketsecurity/cli',
+      'run',
+      'build:js',
+    ],
     enabled: true,
     name: 'JS Binary (dist/cli.js)',
     path: path.join(ROOT_DIR, 'dist/cli.js'),

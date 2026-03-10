@@ -63,10 +63,10 @@ async function run(
     logger.log('')
     logger.log(`${DRY_RUN_LABEL}: Would trigger an intentional error`)
     logger.log('')
-    logger.log('  This command throws an error for development/testing purposes.')
     logger.log(
-      `  Error message: "This error was intentionally left blank."`,
+      '  This command throws an error for development/testing purposes.',
     )
+    logger.log(`  Error message: "This error was intentionally left blank."`)
     logger.log('')
     if (json && !justThrow) {
       logger.log('  Output format: JSON error response')

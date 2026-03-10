@@ -26,27 +26,20 @@ vi.mock('../../../../src/utils/cli/with-subcommands.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdOrganization } = await import(
-  '../../../../src/commands/organization/cmd-organization.mts'
-)
-const { cmdOrganizationDependencies } = await import(
-  '../../../../src/commands/organization/cmd-organization-dependencies.mts'
-)
-const { cmdOrganizationList } = await import(
-  '../../../../src/commands/organization/cmd-organization-list.mts'
-)
-const { cmdOrganizationPolicy } = await import(
-  '../../../../src/commands/organization/cmd-organization-policy.mts'
-)
-const { cmdOrganizationPolicyLicense } = await import(
-  '../../../../src/commands/organization/cmd-organization-policy-license.mts'
-)
-const { cmdOrganizationPolicySecurity } = await import(
-  '../../../../src/commands/organization/cmd-organization-policy-security.mts'
-)
-const { cmdOrganizationQuota } = await import(
-  '../../../../src/commands/organization/cmd-organization-quota.mts'
-)
+const { cmdOrganization } =
+  await import('../../../../src/commands/organization/cmd-organization.mts')
+const { cmdOrganizationDependencies } =
+  await import('../../../../src/commands/organization/cmd-organization-dependencies.mts')
+const { cmdOrganizationList } =
+  await import('../../../../src/commands/organization/cmd-organization-list.mts')
+const { cmdOrganizationPolicy } =
+  await import('../../../../src/commands/organization/cmd-organization-policy.mts')
+const { cmdOrganizationPolicyLicense } =
+  await import('../../../../src/commands/organization/cmd-organization-policy-license.mts')
+const { cmdOrganizationPolicySecurity } =
+  await import('../../../../src/commands/organization/cmd-organization-policy-security.mts')
+const { cmdOrganizationQuota } =
+  await import('../../../../src/commands/organization/cmd-organization-quota.mts')
 
 describe('cmd-organization', () => {
   beforeEach(() => {

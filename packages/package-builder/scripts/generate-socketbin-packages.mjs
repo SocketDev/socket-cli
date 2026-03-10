@@ -35,10 +35,30 @@ const PACKAGES = [
   { arch: 'arm64', binExt: '', cpu: 'arm64', os: 'darwin', platform: 'darwin' },
   { arch: 'x64', binExt: '', cpu: 'x64', os: 'darwin', platform: 'darwin' },
   { arch: 'arm64', binExt: '', cpu: 'arm64', os: 'linux', platform: 'linux' },
-  { arch: 'arm64', binExt: '', cpu: 'arm64', libc: 'musl', os: 'linux', platform: 'linux' },
+  {
+    arch: 'arm64',
+    binExt: '',
+    cpu: 'arm64',
+    libc: 'musl',
+    os: 'linux',
+    platform: 'linux',
+  },
   { arch: 'x64', binExt: '', cpu: 'x64', os: 'linux', platform: 'linux' },
-  { arch: 'x64', binExt: '', cpu: 'x64', libc: 'musl', os: 'linux', platform: 'linux' },
-  { arch: 'arm64', binExt: '.exe', cpu: 'arm64', os: 'win32', platform: 'win32' },
+  {
+    arch: 'x64',
+    binExt: '',
+    cpu: 'x64',
+    libc: 'musl',
+    os: 'linux',
+    platform: 'linux',
+  },
+  {
+    arch: 'arm64',
+    binExt: '.exe',
+    cpu: 'arm64',
+    os: 'win32',
+    platform: 'win32',
+  },
   { arch: 'x64', binExt: '.exe', cpu: 'x64', os: 'win32', platform: 'win32' },
 ]
 

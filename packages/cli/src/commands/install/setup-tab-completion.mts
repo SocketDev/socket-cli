@@ -124,10 +124,7 @@ export function updateInstalledTabCompletionScript(
   // Later, we can call _socket_completion_version to get the installed version.
   fs.writeFileSync(
     targetPath,
-    content.data.replaceAll(
-      '%SOCKET_VERSION_TOKEN%',
-      getCliVersionHash(),
-    ),
+    content.data.replaceAll('%SOCKET_VERSION_TOKEN%', getCliVersionHash()),
     'utf8',
   )
 

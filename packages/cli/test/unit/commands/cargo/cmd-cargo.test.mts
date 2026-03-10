@@ -37,9 +37,8 @@ vi.mock('../../../../src/utils/process/cmd.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdCargo } = await import(
-  '../../../../src/commands/cargo/cmd-cargo.mts'
-)
+const { cmdCargo } =
+  await import('../../../../src/commands/cargo/cmd-cargo.mts')
 
 describe('cmd-cargo', () => {
   setupTestEnvironment()
@@ -84,7 +83,11 @@ describe('cmd-cargo', () => {
 
       mockFilterFlags.mockReturnValue(['install', 'ripgrep'])
 
-      const runPromise = cmdCargo.run(['install', 'ripgrep'], importMeta, context)
+      const runPromise = cmdCargo.run(
+        ['install', 'ripgrep'],
+        importMeta,
+        context,
+      )
 
       // Simulate successful exit.
       setImmediate(() => {

@@ -145,9 +145,8 @@ vi.mock(
 )
 
 // Import after mocks.
-const { cmdConfigGet } = await import(
-  '../../../../src/commands/config/cmd-config-get.mts'
-)
+const { cmdConfigGet } =
+  await import('../../../../src/commands/config/cmd-config-get.mts')
 
 describe('cmd-config-get', () => {
   beforeEach(() => {
@@ -362,9 +361,7 @@ describe('cmd-config-get', () => {
 
     describe('edge cases', () => {
       it('should handle readonly argv array', async () => {
-        const readonlyArgv = Object.freeze([
-          'defaultOrg',
-        ]) as readonly string[]
+        const readonlyArgv = Object.freeze(['defaultOrg']) as readonly string[]
 
         await cmdConfigGet.run(readonlyArgv, importMeta, context)
 

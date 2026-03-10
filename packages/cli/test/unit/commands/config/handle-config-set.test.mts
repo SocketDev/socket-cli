@@ -70,12 +70,10 @@ describe('handleConfigSet', () => {
   })
 
   it('sets config value successfully', async () => {
-    const { updateConfigValue } = await import(
-      '../../../../src/utils/config.mts'
-    )
-    const { outputConfigSet } = await import(
-      '../../../../src/commands/config/output-config-set.mts'
-    )
+    const { updateConfigValue } =
+      await import('../../../../src/utils/config.mts')
+    const { outputConfigSet } =
+      await import('../../../../src/commands/config/output-config-set.mts')
 
     const mockResult = createSuccessResult('new-value')
     mockUpdateConfigValue.mockReturnValue(mockResult)
@@ -94,12 +92,10 @@ describe('handleConfigSet', () => {
   })
 
   it('handles config update failure', async () => {
-    const { updateConfigValue } = await import(
-      '../../../../src/utils/config.mts'
-    )
-    const { outputConfigSet } = await import(
-      '../../../../src/commands/config/output-config-set.mts'
-    )
+    const { updateConfigValue } =
+      await import('../../../../src/utils/config.mts')
+    const { outputConfigSet } =
+      await import('../../../../src/commands/config/output-config-set.mts')
 
     const mockResult = createErrorResult('Config update failed')
     mockUpdateConfigValue.mockReturnValue(mockResult)
@@ -115,12 +111,10 @@ describe('handleConfigSet', () => {
   })
 
   it('handles markdown output', async () => {
-    const { updateConfigValue } = await import(
-      '../../../../src/utils/config.mts'
-    )
-    const { outputConfigSet } = await import(
-      '../../../../src/commands/config/output-config-set.mts'
-    )
+    const { updateConfigValue } =
+      await import('../../../../src/utils/config.mts')
+    const { outputConfigSet } =
+      await import('../../../../src/commands/config/output-config-set.mts')
 
     const mockResult = createSuccessResult('markdown-value')
     mockUpdateConfigValue.mockReturnValue(mockResult)
@@ -172,9 +166,8 @@ describe('handleConfigSet', () => {
   })
 
   it('handles different config keys', async () => {
-    const { updateConfigValue } = await import(
-      '../../../../src/utils/config.mts'
-    )
+    const { updateConfigValue } =
+      await import('../../../../src/utils/config.mts')
 
     const keys = ['apiToken', 'org', 'repoName', 'apiBaseUrl', 'apiProxy']
 

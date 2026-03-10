@@ -164,9 +164,8 @@ describe('dlx e2e tests', () => {
       'verifies coana binary is correctly resolved from package name',
       async () => {
         const { spawnCoanaDlx } = await import('../../src/utils/dlx/spawn.mts')
-        const { resolveCoana } = await import(
-          '../../src/utils/dlx/resolve-binary.mts'
-        )
+        const { resolveCoana } =
+          await import('../../src/utils/dlx/resolve-binary.mts')
 
         // Verify the resolution includes correct binary name.
         const resolution = resolveCoana()

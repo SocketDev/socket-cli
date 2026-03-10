@@ -1,4 +1,3 @@
-
 /**
  * Comprehensive build script with intelligent caching.
  *
@@ -133,8 +132,12 @@ function showHelp() {
   logger.log(
     '  pnpm run build                           # Smart build (skips unchanged)',
   )
-  logger.log('  pnpm run build --force                   # Force rebuild all + SEA for current platform')
-  logger.log('  pnpm run build:sea                       # Build SEA binaries for all platforms')
+  logger.log(
+    '  pnpm run build --force                   # Force rebuild all + SEA for current platform',
+  )
+  logger.log(
+    '  pnpm run build:sea                       # Build SEA binaries for all platforms',
+  )
   logger.log(
     '  pnpm run build --target <name>           # Build specific target',
   )
@@ -156,7 +159,9 @@ function showHelp() {
   logger.log('  1. CLI Package (TypeScript compilation + bundling)')
   logger.log('  2. SEA Binary for current platform (only with --force)')
   logger.log('')
-  logger.log('Note: Yoga WASM and node-smol binaries are downloaded from socket-btm')
+  logger.log(
+    'Note: Yoga WASM and node-smol binaries are downloaded from socket-btm',
+  )
   logger.log('      All pre-built binaries are cached in ~/.socket/ directory')
   logger.log('')
   logger.log('Platform Targets:')
@@ -238,7 +243,9 @@ async function buildCurrentPlatformSea() {
   const currentArch = arch()
 
   logger.log('')
-  logger.log(`${colors.cyan('→')} Building SEA binary for ${currentPlatform}-${currentArch}...`)
+  logger.log(
+    `${colors.cyan('→')} Building SEA binary for ${currentPlatform}-${currentArch}...`,
+  )
 
   const startTime = Date.now()
   const result = await spawn(
@@ -259,15 +266,11 @@ async function buildCurrentPlatformSea() {
   const duration = ((Date.now() - startTime) / 1000).toFixed(1)
 
   if (result.code !== 0) {
-    logger.log(
-      `${colors.red('✗')} SEA build failed (${duration}s)`,
-    )
+    logger.log(`${colors.red('✗')} SEA build failed (${duration}s)`)
     return { success: false }
   }
 
-  logger.log(
-    `${colors.green('✓')} SEA binary built (${duration}s)`,
-  )
+  logger.log(`${colors.green('✓')} SEA binary built (${duration}s)`)
   return { success: true }
 }
 
@@ -312,10 +315,18 @@ async function runSmartBuild(force) {
     const duration = Date.now() - startTime
 
     if (!seaResult.success) {
-      results.push({ success: false, skipped: false, pkg: { name: 'SEA Binary' } })
+      results.push({
+        success: false,
+        skipped: false,
+        pkg: { name: 'SEA Binary' },
+      })
     } else {
       totalTime += duration
-      results.push({ success: true, skipped: false, pkg: { name: 'SEA Binary' } })
+      results.push({
+        success: true,
+        skipped: false,
+        pkg: { name: 'SEA Binary' },
+      })
     }
   }
 
@@ -383,11 +394,15 @@ async function buildPlatformSea(platform, arch, libc) {
   const duration = ((Date.now() - startTime) / 1000).toFixed(1)
 
   if (result.code !== 0) {
-    logger.log(`${colors.red('✗')} SEA build for ${targetName} failed (${duration}s)`)
+    logger.log(
+      `${colors.red('✗')} SEA build for ${targetName} failed (${duration}s)`,
+    )
     return { success: false }
   }
 
-  logger.log(`${colors.green('✓')} SEA binary for ${targetName} built (${duration}s)`)
+  logger.log(
+    `${colors.green('✓')} SEA binary for ${targetName} built (${duration}s)`,
+  )
   return { success: true }
 }
 
@@ -410,7 +425,11 @@ async function runTargetedBuild(target, buildArgs) {
     }
 
     // Build SEA for the specified platform.
-    const result = await buildPlatformSea(platformInfo.platform, platformInfo.arch, platformInfo.libc)
+    const result = await buildPlatformSea(
+      platformInfo.platform,
+      platformInfo.arch,
+      platformInfo.libc,
+    )
     process.exitCode = result.success ? 0 : 1
     return
   }
@@ -467,7 +486,9 @@ async function buildTarget(target, buildArgs) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
 
     if (result.code === 0) {
-      logger.log(`${colors.green('✓')} [${target}] Build succeeded (${duration}s)`)
+      logger.log(
+        `${colors.green('✓')} [${target}] Build succeeded (${duration}s)`,
+      )
       return { duration, success: true, target }
     }
 
@@ -524,7 +545,9 @@ async function runParallelBuilds(targetsToBuild, buildArgs) {
   logger.log('')
 
   // Check if any targets are platform targets that need CLI built first.
-  const hasPlatformTargets = targetsToBuild.some(t => parsePlatformTarget(t) !== null)
+  const hasPlatformTargets = targetsToBuild.some(
+    t => parsePlatformTarget(t) !== null,
+  )
   if (hasPlatformTargets) {
     const cliOutputPath = path.join(rootDir, 'packages/cli/dist/index.js')
     if (!existsSync(cliOutputPath)) {
@@ -590,7 +613,9 @@ async function runSequentialBuilds(targetsToBuild, buildArgs) {
   logger.log('')
 
   // Check if any targets are platform targets that need CLI built first.
-  const hasPlatformTargets = targetsToBuild.some(t => parsePlatformTarget(t) !== null)
+  const hasPlatformTargets = targetsToBuild.some(
+    t => parsePlatformTarget(t) !== null,
+  )
   if (hasPlatformTargets) {
     const cliOutputPath = path.join(rootDir, 'packages/cli/dist/index.js')
     if (!existsSync(cliOutputPath)) {

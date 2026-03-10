@@ -105,6 +105,7 @@ Example: scan create command
 ```
 
 **Simple commands** (single purpose, <200 lines) use a consolidated single-file pattern:
+
 - Examples: `whoami`, `logout`, `login`
 - All logic in one `cmd-*.mts` file
 
@@ -313,8 +314,8 @@ type OutputKind = 'json' | 'markdown' | 'text'
 
 // CResult pattern for JSON output
 type CResult<T> =
-  | { ok: true, data: T, message?: string }
-  | { ok: false, message: string, cause?: string, code?: number }
+  | { ok: true; data: T; message?: string }
+  | { ok: false; message: string; cause?: string; code?: number }
 ```
 
 ### Configuration
@@ -350,6 +351,7 @@ Go                       go modules
 ```
 
 Each ecosystem module provides:
+
 - Package spec parsing (npm-package-arg style)
 - Lockfile parsing
 - Manifest file detection
@@ -372,6 +374,7 @@ pnpm --filter @socketsecurity/cli run test:unit file.test.mts
 ```
 
 Test structure:
+
 - `test/unit/` - Unit tests (~270+ test files)
 - `test/fixtures/` - Test fixtures and mock data
 - `test/helpers/` - Test utilities and helpers
@@ -421,10 +424,9 @@ Socket SDK integration:
 import { SocketSdkClient } from '@socketsecurity/sdk'
 
 // Automatic error handling with spinners
-const result = await handleApiCall(
-  sdk => sdk.createFullScan(params),
-  { cmdPath: 'socket scan:create' }
-)
+const result = await handleApiCall(sdk => sdk.createFullScan(params), {
+  cmdPath: 'socket scan:create',
+})
 
 // Features:
 // - Automatic retry on transient failures
@@ -456,6 +458,7 @@ Built-in security scanning and enforcement:
 ```
 
 Features:
+
 - Exit code 1 on critical issues
 - JSON output for parsing
 - Non-interactive mode detection
@@ -504,49 +507,58 @@ Features:
 ### Utility Modules (src/utils/)
 
 **API & Network**
+
 - `socket/api.mts` - Socket API communication with error handling
 - `socket/sdk.mts` - SDK initialization and configuration
 - `socket/alerts.mts` - Security alert processing
 
 **CLI Framework**
+
 - `cli/with-subcommands.mts` - Subcommand routing (350+ lines)
 - `cli/completion.mts` - Shell completion generation
 - `cli/messages.mts` - User-facing messages
 
 **Data Processing**
+
 - `data/map-to-object.mts` - Map to object conversion
 - `data/objects.mts` - Object utilities
 - `data/strings.mts` - String manipulation
 - `data/walk-nested-map.mts` - Nested map traversal
 
 **Ecosystem Support**
+
 - `ecosystem/types.mts` - PURL types for 11 languages
 - `ecosystem/environment.mts` - Runtime environment detection
 - `ecosystem/requirements.mts` - API requirements lookup
 - `ecosystem/spec.mts` - Package spec parsing
 
 **Error Handling**
+
 - `error/errors.mts` - Error types and diagnostics (560+ lines)
 - `error/fail-msg-with-badge.mts` - Formatted error messages
 
 **File Operations**
+
 - `fs/fs.mts` - Safe file operations
 - `fs/home-path.mts` - Home directory resolution
 - `fs/path-resolve.mts` - Path resolution for scans
 - `fs/find-up.mts` - Find files in parent directories
 
 **Git Integration**
+
 - `git/operations.mts` - Git commands (branch, commit, etc)
 - `git/github.mts` - GitHub API integration
 - `git/providers.mts` - Multi-provider support (GitHub, GitLab, Bitbucket)
 
 **Output Formatting**
+
 - `output/formatting.mts` - Help text and flag formatting
 - `output/result-json.mts` - JSON serialization
 - `output/markdown.mts` - Markdown table generation
 - `output/mode.mts` - Output mode detection
 
 **Package Managers**
+
 - `npm/config.mts` - npm configuration reading
 - `npm/package-arg.mts` - npm package spec parsing
 - `npm/paths.mts` - npm path resolution
@@ -555,26 +567,31 @@ Features:
 - `yarn/paths.mts` - yarn path resolution
 
 **Process & Spawn**
+
 - `process/cmd.mts` - Command-line utilities
 - `process/os.mts` - OS detection
 - `spawn/spawn-node.mts` - Node.js process spawning
 
 **Security Tools**
+
 - `coana/extract-scan-id.mts` - Coana reachability integration
 - `dlx/cdxgen.mts` - SBOM generation
 - `python/standalone.mts` - Python runtime management
 
 **Terminal UI**
+
 - `terminal/ascii-header.mts` - ASCII logo rendering
 - `terminal/colors.mts` - ANSI color utilities
 - `terminal/link.mts` - Hyperlink generation
 - `terminal/rich-progress.mts` - Progress bars
 
 **Update System**
+
 - `update/manager.mts` - Update check orchestration
 - `update/checker.mts` - Version comparison logic
 
 **Validation**
+
 - `validation/check-input.mts` - Input validation
 - `validation/filter-config.mts` - Config validation
 
@@ -599,6 +616,7 @@ Features:
 ## Installation
 
 **Requirements:**
+
 - Node.js >= 24.14.0
 - npm/pnpm/yarn package manager
 

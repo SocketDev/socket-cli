@@ -17,25 +17,27 @@ const mockSpawnSocketPatchDlx = vi.hoisted(() =>
   }),
 )
 
-vi.mock('../../../../src/utils/cli/with-subcommands.mts', async importOriginal => {
-  const actual =
-    await importOriginal<
-      typeof import('../../../../src/utils/cli/with-subcommands.mts')
-    >()
-  return {
-    ...actual,
-    meowOrExit: mockMeowOrExit,
-  }
-})
+vi.mock(
+  '../../../../src/utils/cli/with-subcommands.mts',
+  async importOriginal => {
+    const actual =
+      await importOriginal<
+        typeof import('../../../../src/utils/cli/with-subcommands.mts')
+      >()
+    return {
+      ...actual,
+      meowOrExit: mockMeowOrExit,
+    }
+  },
+)
 
 vi.mock('../../../../src/utils/dlx/spawn.mjs', () => ({
   spawnSocketPatchDlx: mockSpawnSocketPatchDlx,
 }))
 
 // Import after mocks.
-const { cmdPatch, CMD_NAME } = await import(
-  '../../../../src/commands/patch/cmd-patch.mts'
-)
+const { cmdPatch, CMD_NAME } =
+  await import('../../../../src/commands/patch/cmd-patch.mts')
 
 describe('cmd-patch', () => {
   beforeEach(() => {
@@ -204,7 +206,11 @@ describe('cmd-patch', () => {
     })
 
     it('should forward remove subcommand with purl to socket-patch', async () => {
-      await cmdPatch.run(['remove', 'pkg:npm/lodash@4.17.21'], importMeta, context)
+      await cmdPatch.run(
+        ['remove', 'pkg:npm/lodash@4.17.21'],
+        importMeta,
+        context,
+      )
 
       expect(mockMeowOrExit).not.toHaveBeenCalled()
       expect(mockSpawnSocketPatchDlx).toHaveBeenCalledWith(
@@ -358,7 +364,10 @@ describe('cmd-patch', () => {
     })
 
     it('should handle readonly argv array', async () => {
-      const readonlyArgv = Object.freeze(['list', '--json']) as readonly string[]
+      const readonlyArgv = Object.freeze([
+        'list',
+        '--json',
+      ]) as readonly string[]
 
       await cmdPatch.run(readonlyArgv, importMeta, context)
 

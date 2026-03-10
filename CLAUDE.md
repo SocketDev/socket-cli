@@ -22,6 +22,7 @@ This is a reference to shared Socket standards. See `../socket-registry/CLAUDE.m
 ## VERIFICATION PROTOCOL
 
 **MANDATORY**: Before claiming any task is complete:
+
 1. Test the solution end-to-end
 2. Verify all changes work as expected
 3. Run the actual commands to confirm functionality
@@ -30,6 +31,7 @@ This is a reference to shared Socket standards. See `../socket-registry/CLAUDE.m
 ## Critical Rules
 
 ### Fix ALL Issues
+
 - **Fix ALL issues when asked** - Never dismiss issues as "pre-existing" or "not caused by my changes"
 - When asked to fix, lint, or check: fix everything found, regardless of who introduced it
 - Always address all issues found during lint/check operations
@@ -56,6 +58,7 @@ If user repeats instruction 2+ times, ask: "Should I add this to CLAUDE.md?"
 All shared standards (git, testing, code style, cross-platform, CI) defined in socket-registry/CLAUDE.md.
 
 **Quick references**:
+
 - Commits: [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) `<type>(<scope>): <description>` - NO AI attribution
 - Scripts: Prefer `pnpm run foo --flag` over `foo:bar` scripts
 - Docs: Use `docs/` folder, lowercase-with-hyphens.md filenames, pithy writing with visuals
@@ -71,19 +74,21 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 ## Commands
 
 ### Development Commands
+
 - **Build**: `pnpm run build` (smart build, skips unchanged)
 - **Build force**: `pnpm run build --force` (force rebuild CLI + SEA for current platform)
 - **Build SEA**: `pnpm run build:sea` (build SEA binaries for all platforms)
 - **Build CLI**: `pnpm run build:cli` (CLI package only)
 - **Test**: `pnpm test` (runs check + all tests from monorepo root)
 - **Test unit only**: `pnpm --filter @socketsecurity/cli run test:unit`
-- **Lint**: `pnpm run lint` (uses biome and eslint)
+- **Lint**: `pnpm run lint` (uses oxlint)
 - **Type check**: `pnpm run type` (uses tsc)
 - **Check all**: `pnpm run check` (lint + typecheck)
 - **Fix all issues**: `pnpm run fix` (auto-fix linting and formatting)
 - **Commit without tests**: `git commit --no-verify` (skips pre-commit hooks including tests)
 
 ### Binary Build Notes
+
 - **Node-smol binaries**: Downloaded from socket-btm releases (not built locally)
 - **Yoga WASM**: Downloaded from socket-btm releases (not built locally)
 - **SEA binaries**: Built by injecting CLI blob into downloaded node-smol binaries
@@ -91,6 +96,7 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 - **Cache location**: Build assets in `packages/build-infra/build/downloaded/`, DLX packages and VFS-extracted tools in `~/.socket/_dlx/`
 
 ### Testing Best Practices - CRITICAL: NO -- FOR FILE PATHS
+
 - **🚨 NEVER USE `--` BEFORE TEST FILE PATHS** - This runs ALL tests, not just your specified files!
 - **Always build before testing**: Run `pnpm run build:cli` before running tests to ensure dist files are up to date.
 - **Test all**: ✅ CORRECT: `pnpm test` (from monorepo root)
@@ -108,10 +114,12 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 - **Timeout for long tests**: Use `timeout` command or specify in test file.
 
 ### Git Commit Guidelines
+
 - Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) style
 - **🚨 FORBIDDEN**: NO AI attribution in commits (see SHARED STANDARDS)
 
 ### Running the CLI locally
+
 - **Watch mode**: `pnpm dev` (auto-rebuilds on file changes)
 - **Build and run**: `pnpm build:cli && node packages/cli/dist/index.js`
 - **Run built version**: `node packages/cli/dist/index.js <args>` (requires prior build)
@@ -119,6 +127,7 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 **Note**: Avoid `pnpm exec socket` if you have a global `socket` installation, as it may conflict with the local package.
 
 ### Package Management
+
 - **Package Manager**: This project uses pnpm (v10.22+)
 - **Install dependencies**: `pnpm install`
 - **Add dependency**: `pnpm add <package>`
@@ -132,9 +141,10 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 This is a CLI tool for Socket.dev security analysis, built with TypeScript using .mts extensions.
 
 ### Core Structure
+
 - **Entry point**: `src/cli.mts` - Main CLI entry with meow subcommands
 - **Commands**: `src/commands.mts` - Exports all command definitions
-- **Command modules**: `src/commands/*/` - Each feature has its own directory with cmd-*, handle-*, and output-* files
+- **Command modules**: `src/commands/*/` - Each feature has its own directory with cmd-_, handle-_, and output-\* files
 - **Utilities**: `src/utils/` - Shared utilities for API, config, formatting, etc.
 - **Constants**: `src/constants.mts` - Application constants
 - **Types**: `src/types.mts` - TypeScript type definitions
@@ -172,7 +182,9 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = { /* ... */ }
+  const config: CliCommandConfig = {
+    /* ... */
+  }
   const cli = meowOrExit({ argv, config, importMeta, parentName })
 
   // Command logic here.
@@ -187,6 +199,7 @@ export const cmdCommandName = {
 ```
 
 **Benefits**:
+
 - All command logic in one file for easy navigation
 - Clear sections: imports → constants → types → helpers → handler → export
 - Reduced file count (3 files → 1 file)
@@ -197,6 +210,7 @@ export const cmdCommandName = {
 **⚠️ Legacy Pattern for Complex Commands**
 
 Complex commands with subcommands or > 200 lines should keep the modular pattern:
+
 - `cmd-*.mts` - Command definition and CLI interface
 - `handle-*.mts` - Business logic and processing
 - `output-*.mts` - Output formatting (JSON, markdown, etc.)
@@ -205,6 +219,7 @@ Complex commands with subcommands or > 200 lines should keep the modular pattern
 **Examples**: `scan`, `organization`, `repository` (keep modular)
 
 ### Key Command Categories
+
 - **npm/npx wrapping**: `socket npm`, `socket npx` - Wraps npm/npx with security scanning
 - **Scanning**: `socket scan` - Create and manage security scans
 - **Organization management**: `socket organization` - Manage org settings and policies
@@ -217,6 +232,7 @@ Complex commands with subcommands or > 200 lines should keep the modular pattern
 Socket CLI has different update mechanisms depending on installation method:
 
 #### SEA Binaries (Standalone Executables)
+
 - **Update checking**: Handled by node-smol C stub via embedded `--update-config`
 - **Configuration**: Embedded during build in `packages/cli/scripts/sea-build-utils/builder.mjs`
 - **GitHub releases**: Checks `https://api.github.com/repos/SocketDev/socket-cli/releases`
@@ -226,6 +242,7 @@ Socket CLI has different update mechanisms depending on installation method:
 - **Environment variable**: `SOCKET_CLI_SKIP_UPDATE_CHECK=1` to disable
 
 #### npm/pnpm/yarn Installations
+
 - **Update checking**: TypeScript-based in `src/utils/update/manager.mts`
 - **Registry**: Checks npm registry for `socket` package
 - **Notification**: Shown on CLI exit (non-blocking)
@@ -233,25 +250,29 @@ Socket CLI has different update mechanisms depending on installation method:
 - **Environment variable**: `SOCKET_CLI_SKIP_UPDATE_CHECK=1` to disable
 
 #### Key Implementation Details
+
 - `scheduleUpdateCheck()` in `manager.mts` skips when `isSeaBinary()` returns true
 - SEA binaries use embedded update-config.json (1112 bytes)
 - node-smol handles HTTP requests via embedded libcurl
 - Update checks respect CI/TTY detection and rate limiting
 
 ### Build System
+
 - Uses esbuild for building distribution files
 - TypeScript compilation with tsgo
 - Environment config (.env.test for testing)
-- Dual linting with Biome and ESLint
-- Formatting with Biome
+- Linting with Oxlint
+- Formatting with Oxfmt
 
 ### Testing
+
 - Vitest for unit testing
 - Test files use `.test.mts` extension
 - Fixtures in `test/fixtures/`
 - Coverage reporting available
 
 ### External Dependencies
+
 - Vendored modules in `src/external/` (e.g., ink-table)
 - Dependencies bundled into `dist/cli.js` via esbuild
 - Uses Socket registry overrides for security
@@ -260,22 +281,26 @@ Socket CLI has different update mechanisms depending on installation method:
 ## Environment and Configuration
 
 ### Environment Files
+
 - **`.env.test`** - Test environment configuration
 
 ### Configuration Files
-- **`biome.json`** - Biome formatter and linter configuration
+
+- **`.oxfmtrc.json`** - Oxfmt formatter configuration
+- **`.oxlintrc.json`** - Oxlint linter configuration
 - **`vitest.config.mts`** - Vitest test runner configuration
-- **`eslint.config.js`** - ESLint configuration
 - **`tsconfig.json`** - Main TypeScript configuration
 - **`tsconfig.dts.json`** - TypeScript configuration for type definitions
 
 ### Package Structure
+
 - **Binary entries**: `socket`, `socket-npm`, `socket-npx` (defined in package.json `bin` field, pointing to `dist/index.js`)
 - **Distribution**: Built files go to `dist/` directory
 - **External dependencies**: Bundled into `dist/cli.js` via esbuild
 - **Test fixtures**: Located in `test/fixtures/`
 
 ### Dependency Management
+
 - Uses Socket registry overrides for enhanced alternatives
 - Custom patches applied to dependencies via `custompatch`
 - Overrides specified in package.json for enhanced alternatives
@@ -287,6 +312,7 @@ Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format. Include 
 ### Third-Party Integrations
 
 Socket CLI integrates with various third-party tools and services:
+
 - **@coana-tech/cli**: Static analysis tool for reachability analysis and vulnerability detection
 - **cdxgen**: CycloneDX BOM generator for creating software bill of materials
 - **synp**: Tool for converting between yarn.lock and package-lock.json formats
@@ -294,6 +320,7 @@ Socket CLI integrates with various third-party tools and services:
 ## 🔧 Code Style (MANDATORY)
 
 ### 📁 File Organization
+
 - **File extensions**: Use `.mts` for TypeScript module files
 - **Import order**: Node.js built-ins first, then third-party packages, then local imports
 - **Import grouping**: Group imports by source (Node.js, external packages, local modules)
@@ -302,11 +329,13 @@ Socket CLI integrates with various third-party tools and services:
   - ❌ FORBIDDEN: `import { readPackageJson, type PackageJson } from '@socketsecurity/registry/lib/packages'`
 
 ### Naming Conventions
+
 - **Constants**: Use `UPPER_SNAKE_CASE` for constants (e.g., `CMD_NAME`, `REPORT_LEVEL`)
 - **Files**: Use kebab-case for filenames (e.g., `cmd-scan-create.mts`, `handle-create-new-scan.mts`)
 - **Variables**: Use camelCase for variables and functions
 
 ### 🏗️ Code Structure (CRITICAL PATTERNS)
+
 - **Command pattern**: Complex commands use modular pattern (`cmd-*.mts`, `handle-*.mts`, `output-*.mts`); simple commands use consolidated single `cmd-*.mts` file
 - **Type definitions**: 🚨 ALWAYS use `import type` for better tree-shaking
 - **Flags**: 🚨 MUST use `MeowFlags` type with descriptive help text
@@ -316,7 +345,7 @@ Socket CLI integrates with various third-party tools and services:
 - **Sorting**: 🚨 MANDATORY - Always sort lists, exports, and items in documentation headers alphabetically/alphanumerically for consistency
 - **Comment placement**: Place comments on their own line, not to the right of code
 - **Comment formatting**: Use fewer hyphens/dashes and prefer commas, colons, or semicolons for better readability
-- **Await in loops**: When using `await` inside for-loops, add `// eslint-disable-next-line no-await-in-loop` to suppress the ESLint warning when sequential processing is intentional
+- **Await in loops**: When using `await` inside for-loops, sequential processing is acceptable when iterations depend on each other
 - **If statement returns**: Never use single-line return if statements; always use proper block syntax with braces
 - **List formatting**: Use `-` for bullet points in text output, not `•` or other Unicode characters, for better terminal compatibility
 - **Existence checks**: Perform simple existence checks first before complex operations
@@ -332,6 +361,7 @@ Socket CLI integrates with various third-party tools and services:
 - **Number formatting**: 🚨 REQUIRED - Use underscore separators (e.g., `20_000`) for large numeric literals. 🚨 FORBIDDEN - Do NOT modify number values inside strings
 
 ### Error Handling
+
 - **Input validation errors**: Use `InputError` from `src/utils/errors.mts` for user input validation failures (missing files, invalid arguments, etc.)
 - **Authentication errors**: Use `AuthError` from `src/utils/errors.mts` for API authentication issues
 - **CResult pattern**: Use `CResult<T>` type for functions that can fail, following the Result/Either pattern with `ok: true/false`
@@ -344,16 +374,19 @@ Socket CLI integrates with various third-party tools and services:
   - ❌ `process.exit(1)` (bypasses error handling framework)
 
 ### Safe File Operations (SECURITY CRITICAL)
+
 - **File deletion**: See SHARED STANDARDS section
 - 🚨 Use `safeDelete()` from `@socketsecurity/lib/fs` (NEVER `fs.rm/rmSync` or `rm -rf`)
 
 ### Debugging and Troubleshooting
+
 - **CI vs Local Differences**: CI uses published npm packages, not local versions. Be defensive when using @socketsecurity/registry features
 - **File Existence Checks**: ALWAYS use `existsSync()` from `node:fs`, NEVER use `fs.access()` or `fs.promises.access()` for file/directory existence checks. `existsSync()` is synchronous, more direct, and the established pattern in this codebase for consistency
 
 ### Formatting
-- **Linting**: Uses ESLint with TypeScript support and import/export rules
-- **Formatting**: Uses Biome for code formatting with 2-space indentation
+
+- **Linting**: Uses Oxlint with TypeScript and import plugins
+- **Formatting**: Uses Oxfmt for code formatting with 2-space indentation
 - **Line length**: Target 80 character line width where practical
 
 ---

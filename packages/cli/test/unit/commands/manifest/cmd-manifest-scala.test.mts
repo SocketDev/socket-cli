@@ -19,7 +19,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -31,7 +32,9 @@ const mockConvertSbtToMaven = vi.hoisted(() =>
   vi.fn().mockResolvedValue({ ok: true, data: { files: [] } }),
 )
 const mockOutputManifest = vi.hoisted(() => vi.fn())
-const mockReadOrDefaultSocketJson = vi.hoisted(() => vi.fn().mockReturnValue({}))
+const mockReadOrDefaultSocketJson = vi.hoisted(() =>
+  vi.fn().mockReturnValue({}),
+)
 
 vi.mock('../../../../src/commands/manifest/convert-sbt-to-maven.mts', () => ({
   convertSbtToMaven: mockConvertSbtToMaven,
@@ -46,9 +49,8 @@ vi.mock('../../../../src/utils/socket/json.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdManifestScala } = await import(
-  '../../../../src/commands/manifest/cmd-manifest-scala.mts'
-)
+const { cmdManifestScala } =
+  await import('../../../../src/commands/manifest/cmd-manifest-scala.mts')
 
 describe('cmd-manifest-scala', () => {
   beforeEach(() => {
@@ -94,7 +96,11 @@ describe('cmd-manifest-scala', () => {
     })
 
     it('should pass custom --bin flag to convertSbtToMaven', async () => {
-      await cmdManifestScala.run(['--bin', '/custom/sbt', '.'], importMeta, context)
+      await cmdManifestScala.run(
+        ['--bin', '/custom/sbt', '.'],
+        importMeta,
+        context,
+      )
 
       expect(mockConvertSbtToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -104,7 +110,11 @@ describe('cmd-manifest-scala', () => {
     })
 
     it('should pass custom --out flag to convertSbtToMaven', async () => {
-      await cmdManifestScala.run(['--out', '/output/pom.xml', '.'], importMeta, context)
+      await cmdManifestScala.run(
+        ['--out', '/output/pom.xml', '.'],
+        importMeta,
+        context,
+      )
 
       expect(mockConvertSbtToMaven).toHaveBeenCalledWith(
         expect.objectContaining({

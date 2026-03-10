@@ -106,7 +106,9 @@ async function getVersion(command, args = ['--version']) {
  */
 function parseVersion(versionString) {
   const match = versionString.match(/(\d+)\.(\d+)\.(\d+)/)
-  if (!match) {return undefined}
+  if (!match) {
+    return undefined
+  }
   return {
     major: Number.parseInt(match[1], 10),
     minor: Number.parseInt(match[2], 10),
@@ -119,9 +121,15 @@ function parseVersion(versionString) {
  * Returns: -1 if a < b, 0 if a === b, 1 if a > b
  */
 function compareVersions(a, b) {
-  if (a.major !== b.major) {return a.major < b.major ? -1 : 1}
-  if (a.minor !== b.minor) {return a.minor < b.minor ? -1 : 1}
-  if (a.patch !== b.patch) {return a.patch < b.patch ? -1 : 1}
+  if (a.major !== b.major) {
+    return a.major < b.major ? -1 : 1
+  }
+  if (a.minor !== b.minor) {
+    return a.minor < b.minor ? -1 : 1
+  }
+  if (a.patch !== b.patch) {
+    return a.patch < b.patch ? -1 : 1
+  }
   return 0
 }
 
@@ -359,7 +367,10 @@ async function generateCliSentryPackage() {
     logger.log('Generating cli-with-sentry package from template...')
   }
 
-  const scriptPath = new URL('../packages/package-builder/scripts/generate-cli-sentry-package.mjs', import.meta.url)
+  const scriptPath = new URL(
+    '../packages/package-builder/scripts/generate-cli-sentry-package.mjs',
+    import.meta.url,
+  )
   const result = await spawn('node', [scriptPath.pathname], {
     stdio: quiet ? 'pipe' : 'inherit',
   })
@@ -387,7 +398,10 @@ async function generateSocketbinPackages() {
     logger.log('Generating socketbin packages from template...')
   }
 
-  const scriptPath = new URL('../packages/package-builder/scripts/generate-socketbin-packages.mjs', import.meta.url)
+  const scriptPath = new URL(
+    '../packages/package-builder/scripts/generate-socketbin-packages.mjs',
+    import.meta.url,
+  )
   const result = await spawn('node', [scriptPath.pathname], {
     stdio: quiet ? 'pipe' : 'inherit',
   })

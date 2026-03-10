@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import FIXTURE from '../../../../src/commands/analytics/analytics-fixture.json' with {
-  type: 'json',
-}
+import FIXTURE from '../../../../src/commands/analytics/analytics-fixture.json' with { type: 'json' }
 import {
   formatDataOrg,
   formatDataRepo,

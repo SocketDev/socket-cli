@@ -140,9 +140,8 @@ vi.mock(
 )
 
 // Import after mocks.
-const { CMD_NAME, cmdConfigAuto } = await import(
-  '../../../../src/commands/config/cmd-config-auto.mts'
-)
+const { CMD_NAME, cmdConfigAuto } =
+  await import('../../../../src/commands/config/cmd-config-auto.mts')
 
 describe('cmd-config-auto', () => {
   beforeEach(() => {
@@ -353,9 +352,7 @@ describe('cmd-config-auto', () => {
 
     describe('edge cases', () => {
       it('should handle readonly argv array', async () => {
-        const readonlyArgv = Object.freeze([
-          'defaultOrg',
-        ]) as readonly string[]
+        const readonlyArgv = Object.freeze(['defaultOrg']) as readonly string[]
 
         await cmdConfigAuto.run(readonlyArgv, importMeta, context)
 

@@ -12,7 +12,14 @@ import { DRY_RUN_LABEL } from '../../constants/cli.mts'
 const logger = getDefaultLogger()
 
 export interface DryRunAction {
-  type: 'create' | 'delete' | 'execute' | 'fetch' | 'modify' | 'upload' | 'write'
+  type:
+    | 'create'
+    | 'delete'
+    | 'execute'
+    | 'fetch'
+    | 'modify'
+    | 'upload'
+    | 'write'
   description: string
   target?: string
   details?: Record<string, unknown>

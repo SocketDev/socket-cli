@@ -51,9 +51,8 @@ vi.mock('../../../../src/utils/dry-run/output.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdManifestSetup } = await import(
-  '../../../../src/commands/manifest/cmd-manifest-setup.mts'
-)
+const { cmdManifestSetup } =
+  await import('../../../../src/commands/manifest/cmd-manifest-setup.mts')
 
 describe('cmd-manifest-setup', () => {
   beforeEach(() => {
@@ -84,7 +83,11 @@ describe('cmd-manifest-setup', () => {
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
           expect.stringContaining('socket.json'),
           'create or update manifest configuration',
-          ['Detect supported ecosystems', 'Configure manifest generation defaults', 'Enable/disable specific ecosystems'],
+          [
+            'Detect supported ecosystems',
+            'Configure manifest generation defaults',
+            'Enable/disable specific ecosystems',
+          ],
         )
         expect(mockHandleManifestSetup).not.toHaveBeenCalled()
       })
@@ -129,10 +132,7 @@ describe('cmd-manifest-setup', () => {
 
         await cmdManifestSetup.run([], importMeta, context)
 
-        expect(mockHandleManifestSetup).toHaveBeenCalledWith(
-          originalCwd,
-          false,
-        )
+        expect(mockHandleManifestSetup).toHaveBeenCalledWith(originalCwd, false)
       })
 
       it('should not modify absolute paths', async () => {
@@ -149,10 +149,7 @@ describe('cmd-manifest-setup', () => {
 
         await cmdManifestSetup.run(['.'], importMeta, context)
 
-        expect(mockHandleManifestSetup).toHaveBeenCalledWith(
-          originalCwd,
-          false,
-        )
+        expect(mockHandleManifestSetup).toHaveBeenCalledWith(originalCwd, false)
       })
     })
 
@@ -226,11 +223,7 @@ describe('cmd-manifest-setup', () => {
 
     describe('edge cases', () => {
       it('should handle multiple path arguments by using first one', async () => {
-        await cmdManifestSetup.run(
-          ['./first', './second'],
-          importMeta,
-          context,
-        )
+        await cmdManifestSetup.run(['./first', './second'], importMeta, context)
 
         expect(mockHandleManifestSetup).toHaveBeenCalledWith(
           expect.stringMatching(/first$/),
@@ -248,11 +241,7 @@ describe('cmd-manifest-setup', () => {
       })
 
       it('should handle nested relative paths', async () => {
-        await cmdManifestSetup.run(
-          ['./a/b/c/d/e'],
-          importMeta,
-          context,
-        )
+        await cmdManifestSetup.run(['./a/b/c/d/e'], importMeta, context)
 
         expect(mockHandleManifestSetup).toHaveBeenCalledWith(
           expect.stringMatching(/a\/b\/c\/d\/e$/),

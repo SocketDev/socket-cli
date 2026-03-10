@@ -94,19 +94,24 @@ async function downloadCli(): Promise<void> {
           reject(new Error(`Failed to extract tarball: ${e}`))
         })
 
-        tarExtractProcess.process.on('exit', async (extractCode: number | null) => {
-          if (extractCode !== 0) {
-            reject(new Error(`tar extraction exited with code ${extractCode}`))
-            return
-          }
+        tarExtractProcess.process.on(
+          'exit',
+          async (extractCode: number | null) => {
+            if (extractCode !== 0) {
+              reject(
+                new Error(`tar extraction exited with code ${extractCode}`),
+              )
+              return
+            }
 
-          await fs.unlink(tarballPath).catch(() => {
-            // Ignore cleanup errors.
-          })
+            await fs.unlink(tarballPath).catch(() => {
+              // Ignore cleanup errors.
+            })
 
-          logger.error('Socket CLI installed successfully')
-          resolve()
-        })
+            logger.error('Socket CLI installed successfully')
+            resolve()
+          },
+        )
       } catch (e) {
         reject(e)
       }
@@ -149,10 +154,13 @@ async function main(): Promise<void> {
     process.exit(1)
   })
 
-  child.process.on('exit', (code: number | null, signal: NodeJS.Signals | null) => {
-    // eslint-disable-next-line n/no-process-exit
-    process.exit(code ?? (signal ? 1 : 0))
-  })
+  child.process.on(
+    'exit',
+    (code: number | null, signal: NodeJS.Signals | null) => {
+      // eslint-disable-next-line n/no-process-exit
+      process.exit(code ?? (signal ? 1 : 0))
+    },
+  )
 }
 
 // Only run if executed directly (not when loaded as module).

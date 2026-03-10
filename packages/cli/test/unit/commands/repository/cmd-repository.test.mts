@@ -26,24 +26,18 @@ vi.mock('../../../../src/utils/cli/with-subcommands.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdRepository } = await import(
-  '../../../../src/commands/repository/cmd-repository.mts'
-)
-const { cmdRepositoryCreate } = await import(
-  '../../../../src/commands/repository/cmd-repository-create.mts'
-)
-const { cmdRepositoryDel } = await import(
-  '../../../../src/commands/repository/cmd-repository-del.mts'
-)
-const { cmdRepositoryList } = await import(
-  '../../../../src/commands/repository/cmd-repository-list.mts'
-)
-const { cmdRepositoryUpdate } = await import(
-  '../../../../src/commands/repository/cmd-repository-update.mts'
-)
-const { cmdRepositoryView } = await import(
-  '../../../../src/commands/repository/cmd-repository-view.mts'
-)
+const { cmdRepository } =
+  await import('../../../../src/commands/repository/cmd-repository.mts')
+const { cmdRepositoryCreate } =
+  await import('../../../../src/commands/repository/cmd-repository-create.mts')
+const { cmdRepositoryDel } =
+  await import('../../../../src/commands/repository/cmd-repository-del.mts')
+const { cmdRepositoryList } =
+  await import('../../../../src/commands/repository/cmd-repository-list.mts')
+const { cmdRepositoryUpdate } =
+  await import('../../../../src/commands/repository/cmd-repository-update.mts')
+const { cmdRepositoryView } =
+  await import('../../../../src/commands/repository/cmd-repository-view.mts')
 
 describe('cmd-repository', () => {
   beforeEach(() => {
@@ -204,7 +198,11 @@ describe('cmd-repository', () => {
       mockMeowWithSubcommands.mockRejectedValue(testError)
 
       await expect(
-        cmdRepository.run([], { url: 'file:///test' }, { parentName: 'socket' }),
+        cmdRepository.run(
+          [],
+          { url: 'file:///test' },
+          { parentName: 'socket' },
+        ),
       ).rejects.toThrow('Subcommand error')
     })
   })

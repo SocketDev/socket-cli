@@ -48,7 +48,10 @@ async function testAssetManagerCore() {
 
   // Test download directory generation.
   const downloadDir = manager.getDownloadDir('node-smol', 'darwin-arm64')
-  if (!downloadDir.includes('node-smol') || !downloadDir.includes('darwin-arm64')) {
+  if (
+    !downloadDir.includes('node-smol') ||
+    !downloadDir.includes('darwin-arm64')
+  ) {
     throw new Error(`Invalid download directory: ${downloadDir}`)
   }
   logger.success('Download directory generation works')
@@ -60,7 +63,9 @@ async function testAssetManagerCore() {
     'node-smol-',
   )
   if (cacheValid !== false) {
-    throw new Error('Expected cache validation to return false for non-existent file')
+    throw new Error(
+      'Expected cache validation to return false for non-existent file',
+    )
   }
   logger.success('Cache validation works (non-existent file)')
 

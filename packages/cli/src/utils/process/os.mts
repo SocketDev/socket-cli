@@ -155,8 +155,10 @@ function detectMusl(): boolean {
 
   // Method 2: Check if ldd references musl.
   try {
-    if (existsSync('/lib/ld-musl-x86_64.so.1') ||
-        existsSync('/lib/ld-musl-aarch64.so.1')) {
+    if (
+      existsSync('/lib/ld-musl-x86_64.so.1') ||
+      existsSync('/lib/ld-musl-aarch64.so.1')
+    ) {
       cachedLibc = 'musl'
       return true
     }

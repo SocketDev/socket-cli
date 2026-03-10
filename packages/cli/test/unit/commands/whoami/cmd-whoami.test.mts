@@ -40,7 +40,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -110,21 +111,23 @@ vi.mock('../../../../src/constants/socket.mjs', () => ({
 }))
 
 // Mock meowOrExit to prevent actual CLI parsing and process.exit.
-vi.mock('../../../../src/utils/cli/with-subcommands.mjs', async importOriginal => {
-  const actual =
-    await importOriginal<
-      typeof import('../../../../src/utils/cli/with-subcommands.mjs')
-    >()
-  return {
-    ...actual,
-    meowOrExit: mockMeowOrExit,
-  }
-})
+vi.mock(
+  '../../../../src/utils/cli/with-subcommands.mjs',
+  async importOriginal => {
+    const actual =
+      await importOriginal<
+        typeof import('../../../../src/utils/cli/with-subcommands.mjs')
+      >()
+    return {
+      ...actual,
+      meowOrExit: mockMeowOrExit,
+    }
+  },
+)
 
 // Import after mocks.
-const { cmdWhoami } = await import(
-  '../../../../src/commands/whoami/cmd-whoami.mts'
-)
+const { cmdWhoami } =
+  await import('../../../../src/commands/whoami/cmd-whoami.mts')
 
 describe('cmd-whoami', () => {
   beforeEach(() => {
@@ -207,9 +210,7 @@ describe('cmd-whoami', () => {
         expect(mockLogger.success).toHaveBeenCalledWith(
           'Authenticated with Socket',
         )
-        expect(mockLogger.log).toHaveBeenCalledWith(
-          '  Token: test_confi...',
-        )
+        expect(mockLogger.log).toHaveBeenCalledWith('  Token: test_confi...')
         expect(mockLogger.log).toHaveBeenCalledWith(
           '  Source: Config file (~/.config/socket/config.toml)',
         )
@@ -285,7 +286,9 @@ describe('cmd-whoami', () => {
       it('should not display token when unauthenticated', async () => {
         await cmdWhoami.run([], importMeta, context)
 
-        const logCalls = mockLogger.log.mock.calls.map(call => call[0]).join('\n')
+        const logCalls = mockLogger.log.mock.calls
+          .map(call => call[0])
+          .join('\n')
         expect(logCalls).not.toContain('test_')
       })
     })
@@ -312,9 +315,7 @@ describe('cmd-whoami', () => {
 
         await cmdWhoami.run([], importMeta, context)
 
-        expect(mockLogger.log).toHaveBeenCalledWith(
-          '  Token: test_abcde...',
-        )
+        expect(mockLogger.log).toHaveBeenCalledWith('  Token: test_abcde...')
       })
 
       it('should show correct visible prefix length', async () => {
@@ -323,9 +324,7 @@ describe('cmd-whoami', () => {
 
         await cmdWhoami.run([], importMeta, context)
 
-        expect(mockLogger.log).toHaveBeenCalledWith(
-          '  Token: test_xyz98...',
-        )
+        expect(mockLogger.log).toHaveBeenCalledWith('  Token: test_xyz98...')
       })
     })
 

@@ -12,7 +12,7 @@ This test helper library provides a fluent, type-safe API for testing Socket CLI
 import {
   executeCliCommand,
   expectOutput,
-  createTestWorkspace
+  createTestWorkspace,
 } from '../helpers/index.mts'
 
 describe('socket scan', () => {
@@ -20,16 +20,13 @@ describe('socket scan', () => {
     const workspace = await createTestWorkspace({
       packageJson: {
         name: 'test-app',
-        dependencies: { express: '^4.18.0' }
-      }
+        dependencies: { express: '^4.18.0' },
+      },
     })
 
     const result = await executeCliCommand(['scan'], { cwd: workspace.path })
 
-    expectOutput(result)
-      .succeeded()
-      .stdoutContains('express')
-      .stderrEmpty()
+    expectOutput(result).succeeded().stdoutContains('express').stderrEmpty()
 
     await workspace.cleanup()
   })
@@ -43,6 +40,7 @@ describe('socket scan', () => {
 Execute Socket CLI commands with enhanced result handling and automatic configuration isolation.
 
 **Key Functions:**
+
 - `executeCliCommand(args, options)` - Execute CLI with enhanced result
 - `expectCliSuccess(args, options)` - Assert command succeeds
 - `expectCliError(args, expectedCode, options)` - Assert command fails
@@ -52,6 +50,7 @@ Execute Socket CLI commands with enhanced result handling and automatic configur
 - `executeCliWithTiming(args, options)` - Measure execution time
 
 **Example:**
+
 ```typescript
 const { data, result } = await executeCliJson<ScanResult>(['scan', 'create'])
 expect(data.id).toBeDefined()
@@ -62,6 +61,7 @@ expect(data.id).toBeDefined()
 Fluent assertion API for validating CLI output with comprehensive matchers.
 
 **Key Functions:**
+
 - `expectOutput(result)` - Fluent assertion builder
 - `expectStdoutContainsAll(output, expected)` - Validate multiple strings
 - `expectOrderedPatterns(output, patterns)` - Validate pattern order
@@ -70,6 +70,7 @@ Fluent assertion API for validating CLI output with comprehensive matchers.
 - `expectNoAnsiCodes(output)` - Validate plain text
 
 **Example:**
+
 ```typescript
 expectOutput(result)
   .succeeded()
@@ -83,6 +84,7 @@ expectOutput(result)
 Type-safe assertions for Socket's `CResult<T>` pattern used throughout the CLI codebase.
 
 **Key Functions:**
+
 - `expectResult<T>(result)` - Fluent assertion builder
 - `expectSuccess<T>(result)` - Extract data from success result
 - `expectFailure<T>(result)` - Extract error from failure result
@@ -93,6 +95,7 @@ Type-safe assertions for Socket's `CResult<T>` pattern used throughout the CLI c
 - `extractErrorMessages<T>(results)` - Extract all error messages
 
 **Example:**
+
 ```typescript
 expectResult(result)
   .isSuccess()
@@ -108,6 +111,7 @@ expectResult(result)
 Create and manage temporary test workspaces with package manifests, lockfiles, and configurations.
 
 **Key Functions:**
+
 - `createTestWorkspace(config)` - Create temporary workspace
 - `withTestWorkspace(config, testFn)` - Auto-cleanup workspace
 - `createWorkspaceWithLockfile(packageManager, deps)` - Create with lockfile
@@ -116,16 +120,17 @@ Create and manage temporary test workspaces with package manifests, lockfiles, a
 - `setupPackageJson(workspace, deps, devDeps)` - Setup package.json
 
 **Example:**
+
 ```typescript
 await withTestWorkspace(
   {
     packageJson: { name: 'test-app' },
-    files: [{ path: 'index.js', content: 'console.log("hello")' }]
+    files: [{ path: 'index.js', content: 'console.log("hello")' }],
   },
-  async (workspace) => {
+  async workspace => {
     const result = await executeCliCommand(['scan'], { cwd: workspace.path })
     expect(result.status).toBe(true)
-  }
+  },
 )
 ```
 
@@ -145,27 +150,35 @@ The library also re-exports existing helpers:
 
 Typical test savings:
 
-| Pattern | Before | After | Lines Saved |
-|---------|--------|-------|-------------|
-| CLI Execution | 10-15 lines | 2-3 lines | 7-12 lines |
-| Output Validation | 5-8 lines | 1-3 lines | 4-5 lines |
-| Workspace Setup | 15-20 lines | 3-5 lines | 12-15 lines |
-| Result Validation | 3-5 lines | 1-2 lines | 2-3 lines |
+| Pattern           | Before      | After     | Lines Saved |
+| ----------------- | ----------- | --------- | ----------- |
+| CLI Execution     | 10-15 lines | 2-3 lines | 7-12 lines  |
+| Output Validation | 5-8 lines   | 1-3 lines | 4-5 lines   |
+| Workspace Setup   | 15-20 lines | 3-5 lines | 12-15 lines |
+| Result Validation | 3-5 lines   | 1-2 lines | 2-3 lines   |
 
 **Overall: 100-200 lines saved per 10 test files**
 
 ### Improved Readability
 
 **Before:**
+
 ```typescript
 const binPath = path.join(__dirname, '../../bin/cli.js')
-const result = await spawn(process.execPath, [binPath, 'scan', '--json', '--config', '{}'])
+const result = await spawn(process.execPath, [
+  binPath,
+  'scan',
+  '--json',
+  '--config',
+  '{}',
+])
 expect(result.code).toBe(0)
 const json = JSON.parse(stripAnsi(result.stdout.trim()))
 expect(json.id).toBeDefined()
 ```
 
 **After:**
+
 ```typescript
 const { data, result } = await executeCliJson(['scan'])
 expectOutput(result).succeeded()
@@ -175,6 +188,7 @@ expect(data.id).toBeDefined()
 ### Type Safety
 
 All helpers are fully typed with TypeScript, providing:
+
 - Autocomplete in IDEs
 - Type checking for parameters
 - Type inference for results
@@ -183,6 +197,7 @@ All helpers are fully typed with TypeScript, providing:
 ### Error Messages
 
 Improved error messages that show:
+
 - Expected vs actual values
 - Command that was executed
 - Full stdout/stderr output
@@ -197,9 +212,7 @@ describe('socket scan', () => {
   it('should display help', async () => {
     const result = await expectCliSuccess(['scan', '--help'])
 
-    expectOutput(result)
-      .stdoutContains('Usage')
-      .stdoutContains('Options')
+    expectOutput(result).stdoutContains('Usage').stdoutContains('Options')
   })
 })
 ```
@@ -225,18 +238,16 @@ describe('socket scan with workspace', () => {
     await withTestWorkspace(
       {
         packageJson: {
-          dependencies: { express: '^4.18.0' }
-        }
+          dependencies: { express: '^4.18.0' },
+        },
       },
-      async (workspace) => {
+      async workspace => {
         const result = await executeCliCommand(['scan'], {
-          cwd: workspace.path
+          cwd: workspace.path,
         })
 
-        expectOutput(result)
-          .succeeded()
-          .stdoutContains('express')
-      }
+        expectOutput(result).succeeded().stdoutContains('express')
+      },
     )
   })
 })
@@ -249,10 +260,7 @@ describe('SDK API calls', () => {
   it('should validate result', async () => {
     const result = await mockApiCall()
 
-    expectResult(result)
-      .isSuccess()
-      .hasData()
-      .dataContains({ id: 'scan-123' })
+    expectResult(result).isSuccess().hasData().dataContains({ id: 'scan-123' })
   })
 })
 ```
@@ -264,9 +272,7 @@ describe('socket scan errors', () => {
   it('should handle invalid arguments', async () => {
     const result = await expectCliError(['scan'], 1)
 
-    expectOutput(result)
-      .stderrContains('Missing required')
-      .exitCode(1)
+    expectOutput(result).stderrContains('Missing required').exitCode(1)
   })
 })
 ```
@@ -279,7 +285,7 @@ Always use `withTestWorkspace` or explicit cleanup:
 
 ```typescript
 // Good: Auto-cleanup
-await withTestWorkspace(config, async (workspace) => {
+await withTestWorkspace(config, async workspace => {
   // test code
 })
 
@@ -369,6 +375,7 @@ See [examples.md](./examples.md) for detailed migration examples and before/afte
 ## API Documentation
 
 Full API documentation with examples is available in:
+
 - [examples.md](./examples.md) - Comprehensive usage examples
 - Individual module files - JSDoc documentation
 
@@ -390,6 +397,7 @@ Same as Socket CLI (MIT)
 ## Support
 
 For issues or questions:
+
 - Check [examples.md](./examples.md) for usage patterns
 - Review existing tests in `test/` directory
 - Open an issue in the Socket CLI repository

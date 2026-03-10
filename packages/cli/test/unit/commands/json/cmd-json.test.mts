@@ -69,7 +69,9 @@ describe('cmd-json', () => {
     it('should call handleCmdJson with absolute path unchanged', async () => {
       await cmdJson.run(['/absolute/path/to/project'], importMeta, context)
 
-      expect(mockHandleCmdJson).toHaveBeenCalledWith('/absolute/path/to/project')
+      expect(mockHandleCmdJson).toHaveBeenCalledWith(
+        '/absolute/path/to/project',
+      )
     })
 
     it('should handle dot as current directory', async () => {

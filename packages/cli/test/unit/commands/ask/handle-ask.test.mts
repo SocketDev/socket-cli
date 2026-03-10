@@ -166,9 +166,7 @@ describe('parseIntent', () => {
   describe('command building', () => {
     it('should build scan create command', async () => {
       const result = await parseIntent('scan my project')
-      expect(result.command).toEqual(
-        expect.arrayContaining(['scan', 'create']),
-      )
+      expect(result.command).toEqual(expect.arrayContaining(['scan', 'create']))
     })
 
     it('should build fix command with dry-run by default', async () => {

@@ -21,21 +21,25 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 }))
 
 // Mock dependencies.
-const mockHandleInstallCompletion = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
+const mockHandleInstallCompletion = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(undefined),
+)
 const mockOutputDryRunWrite = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/install/handle-install-completion.mts', () => ({
-  handleInstallCompletion: mockHandleInstallCompletion,
-}))
+vi.mock(
+  '../../../../src/commands/install/handle-install-completion.mts',
+  () => ({
+    handleInstallCompletion: mockHandleInstallCompletion,
+  }),
+)
 
 vi.mock('../../../../src/utils/dry-run/output.mts', () => ({
   outputDryRunWrite: mockOutputDryRunWrite,
 }))
 
 // Import after mocks.
-const { cmdInstallCompletion } = await import(
-  '../../../../src/commands/install/cmd-install-completion.mts'
-)
+const { cmdInstallCompletion } =
+  await import('../../../../src/commands/install/cmd-install-completion.mts')
 
 describe('cmd-install-completion', () => {
   const originalEnv = process.env
@@ -54,7 +58,9 @@ describe('cmd-install-completion', () => {
 
   describe('command metadata', () => {
     it('should have correct description', () => {
-      expect(cmdInstallCompletion.description).toBe('Install bash completion for Socket CLI')
+      expect(cmdInstallCompletion.description).toBe(
+        'Install bash completion for Socket CLI',
+      )
     })
 
     it('should not be hidden', () => {
@@ -85,9 +91,15 @@ describe('cmd-install-completion', () => {
     })
 
     it('should handle absolute path as target name', async () => {
-      await cmdInstallCompletion.run(['/usr/local/bin/socket'], importMeta, context)
+      await cmdInstallCompletion.run(
+        ['/usr/local/bin/socket'],
+        importMeta,
+        context,
+      )
 
-      expect(mockHandleInstallCompletion).toHaveBeenCalledWith('/usr/local/bin/socket')
+      expect(mockHandleInstallCompletion).toHaveBeenCalledWith(
+        '/usr/local/bin/socket',
+      )
     })
 
     describe('dry-run mode', () => {
@@ -156,7 +168,9 @@ describe('cmd-install-completion', () => {
         await cmdInstallCompletion.run(['test-cmd'], importMeta, context)
 
         expect(mockHandleInstallCompletion).toHaveBeenCalledWith('test-cmd')
-        expect(typeof mockHandleInstallCompletion.mock.calls[0][0]).toBe('string')
+        expect(typeof mockHandleInstallCompletion.mock.calls[0][0]).toBe(
+          'string',
+        )
       })
     })
 
@@ -176,7 +190,11 @@ describe('cmd-install-completion', () => {
       })
 
       it('should prioritize first input argument as target name', async () => {
-        await cmdInstallCompletion.run(['custom', 'ignored'], importMeta, context)
+        await cmdInstallCompletion.run(
+          ['custom', 'ignored'],
+          importMeta,
+          context,
+        )
 
         expect(mockHandleInstallCompletion).toHaveBeenCalledWith('custom')
       })

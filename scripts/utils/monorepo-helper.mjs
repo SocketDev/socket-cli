@@ -76,8 +76,8 @@ export function getAffectedPackages(changedFiles) {
       !file.startsWith('packages/') &&
       (file.includes('pnpm-lock.yaml') ||
         file.includes('tsconfig') ||
-        file.includes('biome.json') ||
-        file.includes('eslint.config'))
+        file.includes('.oxfmtrc.json') ||
+        file.includes('.oxlintrc.json'))
     ) {
       return packages
     }

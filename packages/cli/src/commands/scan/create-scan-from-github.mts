@@ -351,7 +351,9 @@ async function testAndDownloadManifestFile({
   file: string
   orgGithub: string
   repoSlug: string
-  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'] | undefined
+  supportedFiles:
+    | SocketSdkSuccessResult<'getReportSupportedFiles'>['data']
+    | undefined
   tmpDir: string
 }): Promise<CResult<{ isManifest: boolean }>> {
   debug(`testing: file ${file}`)
@@ -511,7 +513,10 @@ async function streamDownloadWithFetch(
       // Only log non-ENOENT errors - file not existing is fine.
       if (error.code !== 'ENOENT') {
         logger.fail(
-          formatErrorWithDetail(`Error deleting partial file ${localPath}`, error),
+          formatErrorWithDetail(
+            `Error deleting partial file ${localPath}`,
+            error,
+          ),
         )
       }
     }

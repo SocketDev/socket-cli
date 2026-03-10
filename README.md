@@ -140,6 +140,7 @@ pnpm run build --force            # Force rebuild
 ```
 
 **Debug logging:**
+
 ```bash
 SOCKET_CLI_DEBUG=1 socket <command>    # Enable debug output
 DEBUG=network socket <command>         # Specific category

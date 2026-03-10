@@ -1,0 +1,58 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error"
+  },
+  "rules": {
+    "eslint/curly": "off",
+    "eslint/no-await-in-loop": "off",
+    "eslint/no-console": "off",
+    "eslint/no-control-regex": "off",
+    "eslint/no-empty": ["error", { "allowEmptyCatch": true }],
+    "eslint/no-new": "error",
+    "eslint/no-useless-catch": "off",
+    "eslint/no-proto": "error",
+    "eslint/no-shadow": "off",
+    "eslint/no-unused-vars": "off",
+    "eslint/no-var": "error",
+    "eslint/prefer-const": "error",
+    "eslint/preserve-caught-error": "off",
+    "eslint/sort-imports": "off",
+    "import/no-cycle": "off",
+    "import/no-named-as-default": "off",
+    "import/no-named-as-default-member": "off",
+    "import/no-self-import": "error",
+    "import/no-unassigned-import": "off",
+    "typescript/array-type": ["error", { "default": "array-simple" }],
+    "typescript/no-extraneous-class": "off",
+    "typescript/consistent-type-assertions": [
+      "error",
+      { "assertionStyle": "as" }
+    ],
+    "typescript/no-misused-new": "error",
+    "typescript/no-non-null-asserted-optional-chain": "off",
+    "typescript/no-this-alias": ["error", { "allowDestructuring": true }],
+    "unicorn/consistent-function-scoping": "off",
+    "unicorn/no-array-for-each": "off",
+    "unicorn/no-array-sort": "off",
+    "unicorn/no-null": "off",
+    "unicorn/no-array-reverse": "off",
+    "unicorn/no-empty-file": "off",
+    "unicorn/no-useless-fallback-in-spread": "off",
+    "unicorn/prefer-node-protocol": "error",
+    "unicorn/prefer-spread": "off"
+  },
+  "ignorePatterns": [
+    "**/.cache",
+    "**/.claude",
+    "**/coverage",
+    "**/dist",
+    "**/external",
+    "**/node_modules",
+    "**/patches",
+    "**/test/fixtures",
+    "**/test/packages"
+  ]
+}

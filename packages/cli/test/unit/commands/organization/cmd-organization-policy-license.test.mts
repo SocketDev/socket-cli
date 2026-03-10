@@ -17,7 +17,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -31,16 +32,22 @@ const mockDetermineOrgSlug = vi.hoisted(() =>
 )
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false))
 
-vi.mock('../../../../src/commands/organization/handle-license-policy.mts', () => ({
-  handleLicensePolicy: mockHandleLicensePolicy,
-}))
+vi.mock(
+  '../../../../src/commands/organization/handle-license-policy.mts',
+  () => ({
+    handleLicensePolicy: mockHandleLicensePolicy,
+  }),
+)
 
 vi.mock('../../../../src/utils/socket/org-slug.mjs', () => ({
   determineOrgSlug: mockDetermineOrgSlug,
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/socket/sdk.mjs')>()
+  const actual =
+    await importOriginal<
+      typeof import('../../../../src/utils/socket/sdk.mjs')
+    >()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
@@ -48,9 +55,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdOrganizationPolicyLicense } = await import(
-  '../../../../src/commands/organization/cmd-organization-policy-license.mts'
-)
+const { cmdOrganizationPolicyLicense } =
+  await import('../../../../src/commands/organization/cmd-organization-policy-license.mts')
 
 describe('cmd-organization-policy-license', () => {
   beforeEach(() => {
@@ -71,17 +77,15 @@ describe('cmd-organization-policy-license', () => {
   })
 
   describe('run', () => {
-    const importMeta = { url: 'file:///test/cmd-organization-policy-license.mts' }
+    const importMeta = {
+      url: 'file:///test/cmd-organization-policy-license.mts',
+    }
     const context = { parentName: 'socket organization policy' }
 
     it('should support --dry-run flag', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdOrganizationPolicyLicense.run(
-        ['--dry-run'],
-        importMeta,
-        context,
-      )
+      await cmdOrganizationPolicyLicense.run(['--dry-run'], importMeta, context)
 
       expect(mockHandleLicensePolicy).not.toHaveBeenCalled()
       expect(mockLogger.log).toHaveBeenCalledWith(
@@ -125,7 +129,11 @@ describe('cmd-organization-policy-license', () => {
         context,
       )
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('custom-org', false, false)
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'custom-org',
+        false,
+        false,
+      )
       expect(mockHandleLicensePolicy).toHaveBeenCalledWith('custom-org', 'text')
     })
 
@@ -150,7 +158,10 @@ describe('cmd-organization-policy-license', () => {
         context,
       )
 
-      expect(mockHandleLicensePolicy).toHaveBeenCalledWith('test-org', 'markdown')
+      expect(mockHandleLicensePolicy).toHaveBeenCalledWith(
+        'test-org',
+        'markdown',
+      )
     })
 
     it('should fail when both --json and --markdown flags are set', async () => {
@@ -170,14 +181,12 @@ describe('cmd-organization-policy-license', () => {
     it('should show query parameters in dry-run mode', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdOrganizationPolicyLicense.run(
-        ['--dry-run'],
-        importMeta,
-        context,
-      )
+      await cmdOrganizationPolicyLicense.run(['--dry-run'], importMeta, context)
 
       expect(mockLogger.log).toHaveBeenCalledWith(
-        expect.stringContaining('[DryRun]: Would fetch organization license policy'),
+        expect.stringContaining(
+          '[DryRun]: Would fetch organization license policy',
+        ),
       )
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('organization: test-org'),
@@ -240,17 +249,16 @@ describe('cmd-organization-policy-license', () => {
     it('should pass dry-run flag to determineOrgSlug', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdOrganizationPolicyLicense.run(
-        ['--dry-run'],
-        importMeta,
-        context,
-      )
+      await cmdOrganizationPolicyLicense.run(['--dry-run'], importMeta, context)
 
       expect(mockDetermineOrgSlug).toHaveBeenCalledWith('', true, true)
     })
 
     it('should combine org, json, and interactive flags correctly', async () => {
-      mockDetermineOrgSlug.mockResolvedValueOnce(['combined-org', 'combined-org'])
+      mockDetermineOrgSlug.mockResolvedValueOnce([
+        'combined-org',
+        'combined-org',
+      ])
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdOrganizationPolicyLicense.run(
@@ -259,8 +267,15 @@ describe('cmd-organization-policy-license', () => {
         context,
       )
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('combined-org', false, false)
-      expect(mockHandleLicensePolicy).toHaveBeenCalledWith('combined-org', 'json')
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'combined-org',
+        false,
+        false,
+      )
+      expect(mockHandleLicensePolicy).toHaveBeenCalledWith(
+        'combined-org',
+        'json',
+      )
     })
   })
 })

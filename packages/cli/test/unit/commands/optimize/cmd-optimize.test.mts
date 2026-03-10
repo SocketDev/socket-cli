@@ -47,9 +47,8 @@ vi.mock('../../../../src/utils/ecosystem/environment.mjs', () => ({
 }))
 
 // Import after mocks.
-const { cmdOptimize } = await import(
-  '../../../../src/commands/optimize/cmd-optimize.mts'
-)
+const { cmdOptimize } =
+  await import('../../../../src/commands/optimize/cmd-optimize.mts')
 
 describe('cmd-optimize', () => {
   beforeEach(() => {

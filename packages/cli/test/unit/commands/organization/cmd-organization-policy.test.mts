@@ -26,15 +26,12 @@ vi.mock('../../../../src/utils/cli/with-subcommands.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdOrganizationPolicy } = await import(
-  '../../../../src/commands/organization/cmd-organization-policy.mts'
-)
-const { cmdOrganizationPolicyLicense } = await import(
-  '../../../../src/commands/organization/cmd-organization-policy-license.mts'
-)
-const { cmdOrganizationPolicySecurity } = await import(
-  '../../../../src/commands/organization/cmd-organization-policy-security.mts'
-)
+const { cmdOrganizationPolicy } =
+  await import('../../../../src/commands/organization/cmd-organization-policy.mts')
+const { cmdOrganizationPolicyLicense } =
+  await import('../../../../src/commands/organization/cmd-organization-policy-license.mts')
+const { cmdOrganizationPolicySecurity } =
+  await import('../../../../src/commands/organization/cmd-organization-policy-security.mts')
 
 describe('cmd-organization-policy', () => {
   beforeEach(() => {

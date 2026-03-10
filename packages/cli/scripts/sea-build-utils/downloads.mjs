@@ -222,7 +222,10 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
   const platformArch = `${platform}-${arch}${muslSuffix}`
 
   const toolsDir = normalizePath(
-    path.join(rootPath, `packages/build-infra/build/external-tools/${platformArch}`),
+    path.join(
+      rootPath,
+      `packages/build-infra/build/external-tools/${platformArch}`,
+    ),
   )
   const tarGzPath = normalizePath(
     path.join(
@@ -339,7 +342,14 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
       logger.log(`  Preparing ${toolName}...`)
 
       // Create node_modules/@socketsecurity/sfw-bin/ structure.
-      const packageDir = normalizePath(path.join(toolsDir, 'node_modules', '@socketsecurity', `${toolName}-bin`))
+      const packageDir = normalizePath(
+        path.join(
+          toolsDir,
+          'node_modules',
+          '@socketsecurity',
+          `${toolName}-bin`,
+        ),
+      )
       await safeMkdir(packageDir)
 
       const packageBinaryPath = normalizePath(path.join(packageDir, binaryName))

@@ -17,7 +17,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -28,12 +29,18 @@ vi.mock('@socketsecurity/lib/logger', async importOriginal => {
 const mockHandleDependencies = vi.hoisted(() => vi.fn())
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false))
 
-vi.mock('../../../../src/commands/organization/handle-dependencies.mts', () => ({
-  handleDependencies: mockHandleDependencies,
-}))
+vi.mock(
+  '../../../../src/commands/organization/handle-dependencies.mts',
+  () => ({
+    handleDependencies: mockHandleDependencies,
+  }),
+)
 
 vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/socket/sdk.mjs')>()
+  const actual =
+    await importOriginal<
+      typeof import('../../../../src/utils/socket/sdk.mjs')
+    >()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
@@ -41,9 +48,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdOrganizationDependencies } = await import(
-  '../../../../src/commands/organization/cmd-organization-dependencies.mts'
-)
+const { cmdOrganizationDependencies } =
+  await import('../../../../src/commands/organization/cmd-organization-dependencies.mts')
 
 describe('cmd-organization-dependencies', () => {
   beforeEach(() => {
@@ -70,11 +76,7 @@ describe('cmd-organization-dependencies', () => {
     it('should support --dry-run flag', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdOrganizationDependencies.run(
-        ['--dry-run'],
-        importMeta,
-        context,
-      )
+      await cmdOrganizationDependencies.run(['--dry-run'], importMeta, context)
 
       expect(mockHandleDependencies).not.toHaveBeenCalled()
       expect(mockLogger.log).toHaveBeenCalledWith(
@@ -85,11 +87,7 @@ describe('cmd-organization-dependencies', () => {
     it('should fail without Socket API token', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(false)
 
-      await cmdOrganizationDependencies.run(
-        [],
-        importMeta,
-        context,
-      )
+      await cmdOrganizationDependencies.run([], importMeta, context)
 
       // Exit code 2 = invalid usage/validation failure.
       expect(process.exitCode).toBe(2)
@@ -99,11 +97,7 @@ describe('cmd-organization-dependencies', () => {
     it('should call handleDependencies with default parameters', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdOrganizationDependencies.run(
-        [],
-        importMeta,
-        context,
-      )
+      await cmdOrganizationDependencies.run([], importMeta, context)
 
       expect(mockHandleDependencies).toHaveBeenCalledWith({
         limit: 50,
@@ -163,11 +157,7 @@ describe('cmd-organization-dependencies', () => {
     it('should pass --json flag to handleDependencies', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdOrganizationDependencies.run(
-        ['--json'],
-        importMeta,
-        context,
-      )
+      await cmdOrganizationDependencies.run(['--json'], importMeta, context)
 
       expect(mockHandleDependencies).toHaveBeenCalledWith({
         limit: 50,
@@ -179,11 +169,7 @@ describe('cmd-organization-dependencies', () => {
     it('should pass --markdown flag to handleDependencies', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdOrganizationDependencies.run(
-        ['--markdown'],
-        importMeta,
-        context,
-      )
+      await cmdOrganizationDependencies.run(['--markdown'], importMeta, context)
 
       expect(mockHandleDependencies).toHaveBeenCalledWith({
         limit: 50,
@@ -210,11 +196,7 @@ describe('cmd-organization-dependencies', () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await expect(
-        cmdOrganizationDependencies.run(
-          ['--limit', '-1'],
-          importMeta,
-          context,
-        ),
+        cmdOrganizationDependencies.run(['--limit', '-1'], importMeta, context),
       ).rejects.toThrow('Invalid value for --limit: -1')
 
       expect(mockHandleDependencies).not.toHaveBeenCalled()
@@ -265,14 +247,12 @@ describe('cmd-organization-dependencies', () => {
     it('should show query parameters in dry-run mode', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdOrganizationDependencies.run(
-        ['--dry-run'],
-        importMeta,
-        context,
-      )
+      await cmdOrganizationDependencies.run(['--dry-run'], importMeta, context)
 
       expect(mockLogger.log).toHaveBeenCalledWith(
-        expect.stringContaining('[DryRun]: Would fetch organization dependencies'),
+        expect.stringContaining(
+          '[DryRun]: Would fetch organization dependencies',
+        ),
       )
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('limit: 50'),

@@ -37,9 +37,8 @@ vi.mock('../../../../src/utils/process/cmd.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdBundler } = await import(
-  '../../../../src/commands/bundler/cmd-bundler.mts'
-)
+const { cmdBundler } =
+  await import('../../../../src/commands/bundler/cmd-bundler.mts')
 
 describe('cmd-bundler', () => {
   setupTestEnvironment()

@@ -36,11 +36,7 @@ import { Octokit } from '@octokit/rest'
 import { LRUCache } from 'lru-cache'
 
 import { debugDirNs, debugNs, isDebugNs } from '@socketsecurity/lib/debug'
-import {
-  readJson,
-  safeMkdir,
-  writeJson,
-} from '@socketsecurity/lib/fs'
+import { readJson, safeMkdir, writeJson } from '@socketsecurity/lib/fs'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { parseUrl } from '@socketsecurity/lib/url'
 
@@ -74,7 +70,12 @@ async function readCache(
   try {
     const entry = (await readJson(cacheJsonPath)) as CacheEntry | JsonContent
     // Handle both new format (with timestamp) and legacy format (without).
-    if (entry && typeof entry === 'object' && 'timestamp' in entry && 'data' in entry) {
+    if (
+      entry &&
+      typeof entry === 'object' &&
+      'timestamp' in entry &&
+      'data' in entry
+    ) {
       const isExpired = Date.now() - (entry.timestamp as number) > ttlMs
       if (!isExpired) {
         return entry.data

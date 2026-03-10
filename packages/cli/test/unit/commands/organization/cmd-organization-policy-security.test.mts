@@ -17,7 +17,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -31,16 +32,22 @@ const mockDetermineOrgSlug = vi.hoisted(() =>
 )
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false))
 
-vi.mock('../../../../src/commands/organization/handle-security-policy.mts', () => ({
-  handleSecurityPolicy: mockHandleSecurityPolicy,
-}))
+vi.mock(
+  '../../../../src/commands/organization/handle-security-policy.mts',
+  () => ({
+    handleSecurityPolicy: mockHandleSecurityPolicy,
+  }),
+)
 
 vi.mock('../../../../src/utils/socket/org-slug.mjs', () => ({
   determineOrgSlug: mockDetermineOrgSlug,
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/socket/sdk.mjs')>()
+  const actual =
+    await importOriginal<
+      typeof import('../../../../src/utils/socket/sdk.mjs')
+    >()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
@@ -48,9 +55,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdOrganizationPolicySecurity } = await import(
-  '../../../../src/commands/organization/cmd-organization-policy-security.mts'
-)
+const { cmdOrganizationPolicySecurity } =
+  await import('../../../../src/commands/organization/cmd-organization-policy-security.mts')
 
 describe('cmd-organization-policy-security', () => {
   beforeEach(() => {
@@ -71,7 +77,9 @@ describe('cmd-organization-policy-security', () => {
   })
 
   describe('run', () => {
-    const importMeta = { url: 'file:///test/cmd-organization-policy-security.mts' }
+    const importMeta = {
+      url: 'file:///test/cmd-organization-policy-security.mts',
+    }
     const context = { parentName: 'socket organization policy' }
 
     it('should support --dry-run flag', async () => {
@@ -125,8 +133,15 @@ describe('cmd-organization-policy-security', () => {
         context,
       )
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('custom-org', false, false)
-      expect(mockHandleSecurityPolicy).toHaveBeenCalledWith('custom-org', 'text')
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'custom-org',
+        false,
+        false,
+      )
+      expect(mockHandleSecurityPolicy).toHaveBeenCalledWith(
+        'custom-org',
+        'text',
+      )
     })
 
     it('should pass --json flag to handleSecurityPolicy', async () => {
@@ -150,7 +165,10 @@ describe('cmd-organization-policy-security', () => {
         context,
       )
 
-      expect(mockHandleSecurityPolicy).toHaveBeenCalledWith('test-org', 'markdown')
+      expect(mockHandleSecurityPolicy).toHaveBeenCalledWith(
+        'test-org',
+        'markdown',
+      )
     })
 
     it('should fail when both --json and --markdown flags are set', async () => {
@@ -177,7 +195,9 @@ describe('cmd-organization-policy-security', () => {
       )
 
       expect(mockLogger.log).toHaveBeenCalledWith(
-        expect.stringContaining('[DryRun]: Would fetch organization security policy'),
+        expect.stringContaining(
+          '[DryRun]: Would fetch organization security policy',
+        ),
       )
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('organization: test-org'),
@@ -250,7 +270,10 @@ describe('cmd-organization-policy-security', () => {
     })
 
     it('should combine org, json, and interactive flags correctly', async () => {
-      mockDetermineOrgSlug.mockResolvedValueOnce(['combined-org', 'combined-org'])
+      mockDetermineOrgSlug.mockResolvedValueOnce([
+        'combined-org',
+        'combined-org',
+      ])
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdOrganizationPolicySecurity.run(
@@ -259,8 +282,15 @@ describe('cmd-organization-policy-security', () => {
         context,
       )
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('combined-org', false, false)
-      expect(mockHandleSecurityPolicy).toHaveBeenCalledWith('combined-org', 'json')
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'combined-org',
+        false,
+        false,
+      )
+      expect(mockHandleSecurityPolicy).toHaveBeenCalledWith(
+        'combined-org',
+        'json',
+      )
     })
   })
 })

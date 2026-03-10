@@ -17,7 +17,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -40,7 +41,10 @@ vi.mock('../../../../src/utils/socket/org-slug.mjs', () => ({
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/socket/sdk.mjs')>()
+  const actual =
+    await importOriginal<
+      typeof import('../../../../src/utils/socket/sdk.mjs')
+    >()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
@@ -48,9 +52,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdRepositoryDel } = await import(
-  '../../../../src/commands/repository/cmd-repository-del.mts'
-)
+const { cmdRepositoryDel } =
+  await import('../../../../src/commands/repository/cmd-repository-del.mts')
 
 describe('cmd-repository-del', () => {
   beforeEach(() => {
@@ -60,7 +63,9 @@ describe('cmd-repository-del', () => {
 
   describe('command metadata', () => {
     it('should have correct description', () => {
-      expect(cmdRepositoryDel.description).toBe('Delete a repository in an organization')
+      expect(cmdRepositoryDel.description).toBe(
+        'Delete a repository in an organization',
+      )
     })
 
     it('should not be hidden', () => {
@@ -122,11 +127,7 @@ describe('cmd-repository-del', () => {
     it('should fail without repository name', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryDel.run(
-        ['--no-interactive'],
-        importMeta,
-        context,
-      )
+      await cmdRepositoryDel.run(['--no-interactive'], importMeta, context)
 
       // Exit code 2 = invalid usage/validation failure.
       expect(process.exitCode).toBe(2)
@@ -159,7 +160,11 @@ describe('cmd-repository-del', () => {
         context,
       )
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('custom-org', false, false)
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'custom-org',
+        false,
+        false,
+      )
       expect(mockHandleDeleteRepo).toHaveBeenCalledWith(
         'custom-org',
         'test-repo',
@@ -216,11 +221,7 @@ describe('cmd-repository-del', () => {
     it('should show repository identifier in dry-run mode', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryDel.run(
-        ['my-repo', '--dry-run'],
-        importMeta,
-        context,
-      )
+      await cmdRepositoryDel.run(['my-repo', '--dry-run'], importMeta, context)
 
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('test-org/my-repo'),

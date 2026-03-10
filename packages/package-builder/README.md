@@ -115,12 +115,14 @@ Socket CLI uses a multi-channel distribution approach with VFS-based tool bundli
 ### Tool Management
 
 **VFS (Virtual File System) - For Binaries:**
+
 - External tools embedded in binary at build time
 - Tools: Python, OpenGrep, Trivy, TruffleHog, npm packages
 - First run: Extract from VFS → `~/.socket/vfs-tools/`
 - No network required for tool installation
 
 **Lazy Download - For Pure JS Packages:**
+
 - External tools downloaded from GitHub releases on first run
 - Same tools as VFS binaries
 - Cached in `~/.socket/vfs-tools/` (same location)
@@ -133,6 +135,7 @@ Socket CLI uses a multi-channel distribution approach with VFS-based tool bundli
 Standard Node.js implementations with all CLI functionality.
 
 **@socketsecurity/cli**
+
 - Pure JavaScript CLI package (no binaries, no VFS).
 - No telemetry.
 - Built from `templates/cli-package/`.
@@ -141,6 +144,7 @@ Standard Node.js implementations with all CLI functionality.
 - Tools cached in `~/.socket/vfs-tools/`.
 
 **@socketsecurity/cli-with-sentry**
+
 - Pure JavaScript CLI with Sentry error reporting (no binaries, no VFS).
 - Built from `templates/cli-sentry-package/`.
 - Uses `cli-dispatch-with-sentry.mts` entry point.
@@ -157,6 +161,7 @@ Installs platform-specific binaries via optionalDependencies.
 Self-contained SEA binaries with embedded VFS.
 
 **socketbin-cli-{platform}-{arch}**
+
 - 6 packages total (darwin × 2, linux × 2, win32 × 2).
 - Generated from `templates/socketbin-package/`.
 - Contains single executable binary with CLI + VFS.
@@ -198,6 +203,7 @@ Action: Template variable replacement:
 ```
 
 **Platform Configurations:**
+
 ```
 darwin-arm64  → macOS ARM64 (Apple Silicon)
 darwin-x64    → macOS x64 (Intel)
@@ -223,6 +229,7 @@ Located in `templates/cli-package/scripts/build.mjs`:
 ```
 
 **Binary Outputs:**
+
 - `bin/cli.js` - Main CLI entry.
 - `bin/npm-cli.js` - npm wrapper.
 - `bin/npx-cli.js` - npx wrapper.
@@ -270,6 +277,7 @@ socket-package/
 ```
 
 **Key Features:**
+
 - Optional dependencies on all socketbin packages.
 - Bootstrap loader detects platform and downloads binary.
 - Falls back to Node.js implementation if binary unavailable.
@@ -284,6 +292,7 @@ socketbin-package/
 ```
 
 **Template Variables:**
+
 - `{{PLATFORM}}` - OS platform (darwin/linux/win32).
 - `{{ARCH}}` - CPU architecture (arm64/x64).
 - `{{OS}}` - OS constraint for package.json.
@@ -296,6 +305,7 @@ socketbin-package/
 Each template includes verification scripts to validate generated packages.
 
 **Validation Checks:**
+
 - package.json exists and has correct structure.
 - Required files present (LICENSE, CHANGELOG.md).
 - Dist files exist (index.js, cli.js).
@@ -304,6 +314,7 @@ Each template includes verification scripts to validate generated packages.
 - Sentry integration present (for cli-with-sentry).
 
 **Run Validation:**
+
 ```bash
 node scripts/verify-package.mjs
 ```
@@ -331,6 +342,7 @@ Each directory is a complete, publishable npm package.
 ### Dependencies on Main CLI
 
 All generated packages depend on:
+
 - Main CLI source (`packages/cli/`).
 - Bootstrap package (`packages/bootstrap/`).
 - Build infrastructure (`packages/build-infra/`).
@@ -338,6 +350,7 @@ All generated packages depend on:
 ### esbuild Configuration
 
 Templates reference base configurations from main CLI:
+
 ```javascript
 import baseConfig from '../../cli/.config/esbuild.cli.build.mjs'
 ```
@@ -347,6 +360,7 @@ This ensures consistency across all distribution channels.
 ### Version Synchronization
 
 All packages share version from monorepo:
+
 - Read from `.node-version` for Node.js version.
 - Read from `package.json` for CLI version.
 - Injected as build-time constants.
@@ -396,6 +410,7 @@ pnpm run verify
 **Pattern:** Separate templates from generated output.
 
 **Benefits:**
+
 - Templates tracked in version control.
 - Generated packages excluded from git.
 - Clear separation of source and artifacts.
@@ -406,6 +421,7 @@ pnpm run verify
 **Pattern:** Single template generates multiple platform-specific packages.
 
 **Benefits:**
+
 - Reduces duplication.
 - Ensures consistency across platforms.
 - Simplifies platform additions.
@@ -416,6 +432,7 @@ pnpm run verify
 **Pattern:** Generated packages contain their own build scripts.
 
 **Benefits:**
+
 - Packages are self-contained.
 - Can be built independently.
 - Supports incremental builds.
@@ -426,6 +443,7 @@ pnpm run verify
 **Pattern:** Main package lists binaries as optional dependencies.
 
 **Benefits:**
+
 - Graceful fallback to Node.js implementation.
 - Reduces download size.
 - Platform-specific installation.

@@ -118,9 +118,7 @@ describe('cmd-yarn', () => {
         // Verify dry-run message.
         const logCalls = mockLogger.log.mock.calls.flat()
         const hasDryRunMessage = logCalls.some(
-          call =>
-            typeof call === 'string' &&
-            call.includes('Would execute'),
+          call => typeof call === 'string' && call.includes('Would execute'),
         )
         expect(hasDryRunMessage).toBe(true)
       })
@@ -164,9 +162,12 @@ describe('cmd-yarn', () => {
         await cmdYarn.run(['install', 'lodash'], importMeta, context)
 
         // Verify sfw was called with filtered flags.
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['yarn', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['yarn', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should filter out --config flag when forwarding to sfw', async () => {
@@ -179,9 +180,12 @@ describe('cmd-yarn', () => {
         )
 
         // --config should be filtered out.
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['yarn', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['yarn', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should filter out multiple Socket CLI flags', async () => {
@@ -194,9 +198,12 @@ describe('cmd-yarn', () => {
         )
 
         // Both --config and --no-banner should be filtered.
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['yarn', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['yarn', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should preserve yarn flags while filtering Socket flags', async () => {
@@ -227,9 +234,12 @@ describe('cmd-yarn', () => {
         )
 
         // --no-banner should be filtered.
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['yarn', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['yarn', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
     })
 
@@ -239,9 +249,12 @@ describe('cmd-yarn', () => {
 
         await cmdYarn.run(['install', 'lodash'], importMeta, context)
 
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['yarn', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['yarn', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should forward yarn add command', async () => {
@@ -249,9 +262,12 @@ describe('cmd-yarn', () => {
 
         await cmdYarn.run(['add', 'lodash'], importMeta, context)
 
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['yarn', 'add', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['yarn', 'add', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should forward yarn install with version specifier', async () => {
@@ -285,9 +301,12 @@ describe('cmd-yarn', () => {
 
         await cmdYarn.run(['remove', 'lodash'], importMeta, context)
 
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['yarn', 'remove', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['yarn', 'remove', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should forward yarn upgrade command', async () => {
@@ -295,9 +314,12 @@ describe('cmd-yarn', () => {
 
         await cmdYarn.run(['upgrade', 'lodash'], importMeta, context)
 
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['yarn', 'upgrade', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['yarn', 'upgrade', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should forward yarn with no arguments', async () => {
@@ -355,9 +377,12 @@ describe('cmd-yarn', () => {
 
         await cmdYarn.run(['install', 'lodash'], importMeta, context)
 
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['yarn', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['yarn', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
     })
 
@@ -390,9 +415,8 @@ describe('cmd-yarn', () => {
 
     describe('command name constant', () => {
       it('should use YARN constant as command name', async () => {
-        const { CMD_NAME } = await import(
-          '../../../../src/commands/yarn/cmd-yarn.mts'
-        )
+        const { CMD_NAME } =
+          await import('../../../../src/commands/yarn/cmd-yarn.mts')
         expect(CMD_NAME).toBe(YARN)
         expect(CMD_NAME).toBe('yarn')
       })

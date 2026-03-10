@@ -27,11 +27,17 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 // Mock dependencies.
 const mockAddSocketWrapper = vi.hoisted(() => vi.fn())
 const mockRemoveSocketWrapper = vi.hoisted(() => vi.fn())
-const mockCheckSocketWrapperSetup = vi.hoisted(() => vi.fn().mockReturnValue(false))
+const mockCheckSocketWrapperSetup = vi.hoisted(() =>
+  vi.fn().mockReturnValue(false),
+)
 const mockPostinstallWrapper = vi.hoisted(() => vi.fn())
 const mockExistsSync = vi.hoisted(() => vi.fn().mockReturnValue(true))
-const mockGetBashRcPath = vi.hoisted(() => vi.fn().mockReturnValue('/home/user/.bashrc'))
-const mockGetZshRcPath = vi.hoisted(() => vi.fn().mockReturnValue('/home/user/.zshrc'))
+const mockGetBashRcPath = vi.hoisted(() =>
+  vi.fn().mockReturnValue('/home/user/.bashrc'),
+)
+const mockGetZshRcPath = vi.hoisted(() =>
+  vi.fn().mockReturnValue('/home/user/.zshrc'),
+)
 
 vi.mock('node:fs', async importOriginal => {
   const actual = await importOriginal<typeof import('node:fs')>()
@@ -49,16 +55,20 @@ vi.mock('../../../../src/commands/wrapper/remove-socket-wrapper.mts', () => ({
   removeSocketWrapper: mockRemoveSocketWrapper,
 }))
 
-vi.mock('../../../../src/commands/wrapper/check-socket-wrapper-setup.mts', () => ({
-  checkSocketWrapperSetup: mockCheckSocketWrapperSetup,
-}))
+vi.mock(
+  '../../../../src/commands/wrapper/check-socket-wrapper-setup.mts',
+  () => ({
+    checkSocketWrapperSetup: mockCheckSocketWrapperSetup,
+  }),
+)
 
 vi.mock('../../../../src/commands/wrapper/postinstall-wrapper.mts', () => ({
   postinstallWrapper: mockPostinstallWrapper,
 }))
 
 vi.mock('../../../../src/constants/paths.mts', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/constants/paths.mts')>()
+  const actual =
+    await importOriginal<typeof import('../../../../src/constants/paths.mts')>()
   return {
     ...actual,
     getBashRcPath: mockGetBashRcPath,
@@ -67,9 +77,8 @@ vi.mock('../../../../src/constants/paths.mts', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdWrapper } = await import(
-  '../../../../src/commands/wrapper/cmd-wrapper.mts'
-)
+const { cmdWrapper } =
+  await import('../../../../src/commands/wrapper/cmd-wrapper.mts')
 
 describe('cmd-wrapper', () => {
   beforeEach(() => {

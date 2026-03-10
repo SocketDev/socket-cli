@@ -59,10 +59,7 @@
     "@babel/preset-typescript": "catalog:",
     "@babel/runtime": "catalog:",
     "@babel/traverse": "catalog:",
-    "@biomejs/biome": "catalog:",
     "@dotenvx/dotenvx": "catalog:",
-    "@eslint/compat": "catalog:",
-    "@eslint/js": "catalog:",
     "@npmcli/arborist": "catalog:",
     "@npmcli/config": "catalog:",
     "@octokit/graphql": "catalog:",
@@ -97,7 +94,6 @@
     "@types/semver": "catalog:",
     "@types/which": "catalog:",
     "@types/yargs-parser": "catalog:",
-    "@typescript-eslint/parser": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "@yao-pkg/pkg": "catalog:",
     "browserslist": "catalog:",
@@ -106,14 +102,7 @@
     "del-cli": "catalog:",
     "dev-null-cli": "catalog:",
     "esbuild": "catalog:",
-    "eslint": "catalog:",
-    "eslint-import-resolver-typescript": "catalog:",
-    "eslint-plugin-import-x": "catalog:",
-    "eslint-plugin-n": "catalog:",
-    "eslint-plugin-sort-destructure-keys": "catalog:",
-    "eslint-plugin-unicorn": "catalog:",
     "fast-glob": "catalog:",
-    "globals": "catalog:",
     "hpagent": "catalog:",
     "husky": "catalog:",
     "ignore": "catalog:",
@@ -142,7 +131,8 @@
     "trash": "catalog:",
     "type-coverage": "catalog:",
     "typescript": "catalog:",
-    "typescript-eslint": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
     "unplugin-purge-polyfills": "catalog:",
     "vitest": "catalog:",
     "yaml": "catalog:",
@@ -215,7 +205,7 @@
   },
   "lint-staged": {
     "*.{cjs,cts,js,json,md,mjs,mts,ts}": [
-      "biome check --write --unsafe --no-errors-on-unmatched --files-ignore-unknown=true --colors=off"
+      "oxfmt --write"
     ]
   },
   "typeCoverage": {

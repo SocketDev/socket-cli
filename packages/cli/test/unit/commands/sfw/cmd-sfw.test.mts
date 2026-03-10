@@ -64,10 +64,9 @@ describe('cmd-sfw', () => {
 
       await cmdSfw.run(['npm', 'install', 'lodash'], importMeta, context)
 
-      expect(mockSpawnSfw).toHaveBeenCalledWith(
-        ['npm', 'install', 'lodash'],
-        { stdio: 'inherit' },
-      )
+      expect(mockSpawnSfw).toHaveBeenCalledWith(['npm', 'install', 'lodash'], {
+        stdio: 'inherit',
+      })
     })
 
     it('should handle pip install command', async () => {
@@ -86,16 +85,19 @@ describe('cmd-sfw', () => {
 
       await cmdSfw.run(['npx', 'cowsay', 'hello'], importMeta, context)
 
-      expect(mockSpawnSfw).toHaveBeenCalledWith(
-        ['npx', 'cowsay', 'hello'],
-        { stdio: 'inherit' },
-      )
+      expect(mockSpawnSfw).toHaveBeenCalledWith(['npx', 'cowsay', 'hello'], {
+        stdio: 'inherit',
+      })
     })
 
     it('should set exitCode on non-zero exit', async () => {
       mockSpawnSfw.mockResolvedValue(createMockSpawnResult(1))
 
-      await cmdSfw.run(['npm', 'install', 'nonexistent-pkg'], importMeta, context)
+      await cmdSfw.run(
+        ['npm', 'install', 'nonexistent-pkg'],
+        importMeta,
+        context,
+      )
 
       expect(process.exitCode).toBe(1)
     })
@@ -125,11 +127,7 @@ describe('cmd-sfw', () => {
     it('should filter Socket CLI flags', async () => {
       mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
 
-      await cmdSfw.run(
-        ['--dry-run', 'npm', 'install'],
-        importMeta,
-        context,
-      )
+      await cmdSfw.run(['--dry-run', 'npm', 'install'], importMeta, context)
 
       // Dry run should bail early.
       expect(mockSpawnSfw).not.toHaveBeenCalled()
@@ -139,13 +137,23 @@ describe('cmd-sfw', () => {
       mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
 
       // Test various package managers.
-      for (const pm of ['npm', 'pnpm', 'yarn', 'pip', 'cargo', 'go', 'gem', 'bundler', 'nuget', 'uv']) {
+      for (const pm of [
+        'npm',
+        'pnpm',
+        'yarn',
+        'pip',
+        'cargo',
+        'go',
+        'gem',
+        'bundler',
+        'nuget',
+        'uv',
+      ]) {
         vi.clearAllMocks()
         await cmdSfw.run([pm, 'install'], importMeta, context)
-        expect(mockSpawnSfw).toHaveBeenCalledWith(
-          [pm, 'install'],
-          { stdio: 'inherit' },
-        )
+        expect(mockSpawnSfw).toHaveBeenCalledWith([pm, 'install'], {
+          stdio: 'inherit',
+        })
       }
     })
   })

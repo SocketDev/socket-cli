@@ -66,9 +66,8 @@ describe('fetchThreatFeed', () => {
 
     mockQueryApiSafeJson.mockResolvedValue(createSuccessResult(mockData))
 
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
 
     const result = await fetchThreatFeed({
       direction: 'desc',
@@ -102,9 +101,8 @@ describe('fetchThreatFeed', () => {
     })
     mockQueryApiSafeJson.mockResolvedValue(error)
 
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
 
     const result = await fetchThreatFeed({
       direction: 'desc',
@@ -131,9 +129,8 @@ describe('fetchThreatFeed', () => {
       createErrorResult('Threat feed service unavailable', { code: 503 }),
     )
 
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
 
     const result = await fetchThreatFeed({
       direction: 'asc',
@@ -159,9 +156,8 @@ describe('fetchThreatFeed', () => {
 
     mockQueryApiSafeJson.mockResolvedValue(createSuccessResult({}))
 
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
 
     await fetchThreatFeed({
       direction: 'desc',
@@ -189,9 +185,8 @@ describe('fetchThreatFeed', () => {
 
     mockQueryApiSafeJson.mockResolvedValue(createSuccessResult({ threats: [] }))
 
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
 
     await fetchThreatFeed({
       direction: 'desc',
@@ -219,9 +214,8 @@ describe('fetchThreatFeed', () => {
 
     mockQueryApiSafeJson.mockResolvedValue(createSuccessResult({ threats: [] }))
 
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
 
     await fetchThreatFeed({
       direction: 'asc',
@@ -249,9 +243,8 @@ describe('fetchThreatFeed', () => {
 
     mockQueryApiSafeJson.mockResolvedValue(createSuccessResult({ threats: [] }))
 
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
 
     await fetchThreatFeed({
       direction: 'desc',
@@ -279,9 +272,8 @@ describe('fetchThreatFeed', () => {
 
     mockQueryApiSafeJson.mockResolvedValue(createSuccessResult({}))
 
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
 
     // This tests that the function properly uses __proto__: null.
     await fetchThreatFeed({

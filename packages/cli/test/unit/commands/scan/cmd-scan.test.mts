@@ -27,36 +27,26 @@ vi.mock('../../../../src/utils/cli/with-subcommands.mts', () => ({
 
 // Import after mocks.
 const { cmdScan } = await import('../../../../src/commands/scan/cmd-scan.mts')
-const { cmdScanCreate } = await import(
-  '../../../../src/commands/scan/cmd-scan-create.mts'
-)
-const { cmdScanDel } = await import(
-  '../../../../src/commands/scan/cmd-scan-del.mts'
-)
-const { cmdScanDiff } = await import(
-  '../../../../src/commands/scan/cmd-scan-diff.mts'
-)
-const { cmdScanGithub } = await import(
-  '../../../../src/commands/scan/cmd-scan-github.mts'
-)
-const { cmdScanList } = await import(
-  '../../../../src/commands/scan/cmd-scan-list.mts'
-)
-const { cmdScanMetadata } = await import(
-  '../../../../src/commands/scan/cmd-scan-metadata.mts'
-)
-const { cmdScanReach } = await import(
-  '../../../../src/commands/scan/cmd-scan-reach.mts'
-)
-const { cmdScanReport } = await import(
-  '../../../../src/commands/scan/cmd-scan-report.mts'
-)
-const { cmdScanSetup } = await import(
-  '../../../../src/commands/scan/cmd-scan-setup.mts'
-)
-const { cmdScanView } = await import(
-  '../../../../src/commands/scan/cmd-scan-view.mts'
-)
+const { cmdScanCreate } =
+  await import('../../../../src/commands/scan/cmd-scan-create.mts')
+const { cmdScanDel } =
+  await import('../../../../src/commands/scan/cmd-scan-del.mts')
+const { cmdScanDiff } =
+  await import('../../../../src/commands/scan/cmd-scan-diff.mts')
+const { cmdScanGithub } =
+  await import('../../../../src/commands/scan/cmd-scan-github.mts')
+const { cmdScanList } =
+  await import('../../../../src/commands/scan/cmd-scan-list.mts')
+const { cmdScanMetadata } =
+  await import('../../../../src/commands/scan/cmd-scan-metadata.mts')
+const { cmdScanReach } =
+  await import('../../../../src/commands/scan/cmd-scan-reach.mts')
+const { cmdScanReport } =
+  await import('../../../../src/commands/scan/cmd-scan-report.mts')
+const { cmdScanSetup } =
+  await import('../../../../src/commands/scan/cmd-scan-setup.mts')
+const { cmdScanView } =
+  await import('../../../../src/commands/scan/cmd-scan-view.mts')
 
 describe('cmd-scan', () => {
   beforeEach(() => {

@@ -38,7 +38,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -54,7 +55,10 @@ vi.mock('../../../../src/commands/analytics/handle-analytics.mts', () => ({
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/socket/sdk.mjs')>()
+  const actual =
+    await importOriginal<
+      typeof import('../../../../src/utils/socket/sdk.mjs')
+    >()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
@@ -62,9 +66,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdAnalytics } = await import(
-  '../../../../src/commands/analytics/cmd-analytics.mts'
-)
+const { cmdAnalytics } =
+  await import('../../../../src/commands/analytics/cmd-analytics.mts')
 
 describe('cmd-analytics', () => {
   beforeEach(() => {
@@ -263,11 +266,7 @@ describe('cmd-analytics', () => {
     it('should fail if both --json and --markdown are set', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdAnalytics.run(
-        ['--json', '--markdown'],
-        importMeta,
-        context,
-      )
+      await cmdAnalytics.run(['--json', '--markdown'], importMeta, context)
 
       // Exit code 2 = invalid usage/validation failure.
       expect(process.exitCode).toBe(2)

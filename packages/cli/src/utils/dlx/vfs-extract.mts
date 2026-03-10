@@ -90,7 +90,9 @@ export type ExternalTool = (typeof EXTERNAL_TOOLS)[number]
 // Map of npm package tools to their node_modules/ paths.
 // These are full npm packages with dependencies and node_modules/ subdirectories.
 // Standalone binaries (like sfw) are NOT in this map - they use direct file paths.
-const TOOL_NPM_PATHS: Partial<Record<ExternalTool, { packageName: string; binPath: string }>> = {
+const TOOL_NPM_PATHS: Partial<
+  Record<ExternalTool, { packageName: string; binPath: string }>
+> = {
   cdxgen: {
     packageName: '@cyclonedx/cdxgen',
     binPath: 'node_modules/@cyclonedx/cdxgen/bin/cdxgen',
@@ -164,7 +166,9 @@ function getNodeSmolBasePath(): string {
 
   try {
     // Try to get hash from process.smol API (if available in future node-smol).
-    const processWithSmol = process as unknown as { smol?: { getHash?: () => string } }
+    const processWithSmol = process as unknown as {
+      smol?: { getHash?: () => string }
+    }
     if (typeof processWithSmol.smol?.getHash === 'function') {
       nodeSmolHash = processWithSmol.smol.getHash()
     } else {
@@ -251,7 +255,9 @@ async function extractTool(tool: ExternalTool): Promise<string> {
   }
 
   if (!processWithSmol.smol?.mount) {
-    throw new Error('process.smol.mount not available - not in node-smol SEA mode')
+    throw new Error(
+      'process.smol.mount not available - not in node-smol SEA mode',
+    )
   }
 
   const isPlatWin = process.platform === 'win32'
@@ -287,7 +293,9 @@ async function extractTool(tool: ExternalTool): Promise<string> {
       const vfsPackagePath = `/snapshot/node_modules/${npmPath.packageName}`
       const packageDir = await processWithSmol.smol.mount(vfsPackagePath)
 
-      logger.info(`  ✓ Extracted ${tool} package with dependencies to ${packageDir}`)
+      logger.info(
+        `  ✓ Extracted ${tool} package with dependencies to ${packageDir}`,
+      )
 
       // Return path to binary within extracted package.
       const toolPath = normalizePath(path.join(nodeSmolBase, npmPath.binPath))
@@ -295,7 +303,9 @@ async function extractTool(tool: ExternalTool): Promise<string> {
     } else {
       // Extract standalone binary - check if it's under node_modules/ or VFS root.
       const standalonePath = TOOL_STANDALONE_PATHS[tool]
-      const vfsBinaryPath = standalonePath ? `/snapshot/${standalonePath}` : `/snapshot/${tool}`
+      const vfsBinaryPath = standalonePath
+        ? `/snapshot/${standalonePath}`
+        : `/snapshot/${tool}`
       const binaryPath = await processWithSmol.smol.mount(vfsBinaryPath)
 
       logger.info(`  ✓ Extracted ${tool} binary to ${binaryPath}`)
@@ -435,7 +445,10 @@ export async function extractExternalTools(
             // Validate tool exists and is executable.
             if (!existsSync(toolPathWithExt)) {
               allValid = false
-              debug('notice', `Tool ${tool} missing after extraction by other process`)
+              debug(
+                'notice',
+                `Tool ${tool} missing after extraction by other process`,
+              )
               break
             }
             toolPaths[tool] = toolPathWithExt
@@ -519,7 +532,9 @@ export async function extractExternalTools(
           }
         }
       }
-      throw new Error('Timeout waiting for another process to extract external tools')
+      throw new Error(
+        'Timeout waiting for another process to extract external tools',
+      )
     }
     throw e
   }
@@ -552,7 +567,10 @@ export async function extractExternalTools(
           return toolPaths as Record<ExternalTool, string>
         }
         // Tools disappeared during validation - cleanup and retry extraction.
-        debug('notice', 'Tool(s) disappeared during validation, re-extracting...')
+        debug(
+          'notice',
+          'Tool(s) disappeared during validation, re-extracting...',
+        )
         try {
           await fs.unlink(cacheMarker)
         } catch {
@@ -581,12 +599,18 @@ export async function extractExternalTools(
           // Quick validation - check if executable.
           // eslint-disable-next-line no-await-in-loop
           await fs.access(toolPathWithExt, fs.constants.X_OK)
-          debug('notice', `Tool ${tool} already extracted at ${toolPathWithExt}`)
+          debug(
+            'notice',
+            `Tool ${tool} already extracted at ${toolPathWithExt}`,
+          )
           toolPaths[tool] = toolPathWithExt
           continue
         } catch {
           // File exists but not executable or accessible, re-extract.
-          debug('notice', `Tool ${tool} exists but not executable, re-extracting...`)
+          debug(
+            'notice',
+            `Tool ${tool} exists but not executable, re-extracting...`,
+          )
         }
       }
 

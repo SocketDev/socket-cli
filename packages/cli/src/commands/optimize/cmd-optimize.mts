@@ -127,8 +127,12 @@ async function run(
         description: 'Add or update overrides section in package.json',
         target: path.join(pkgPath, 'package.json'),
         details: {
-          pin: pin ? 'Yes - pin to specific versions' : 'No - use version ranges',
-          prod: prod ? 'Yes - production dependencies only' : 'No - all dependencies',
+          pin: pin
+            ? 'Yes - pin to specific versions'
+            : 'No - use version ranges',
+          prod: prod
+            ? 'Yes - production dependencies only'
+            : 'No - all dependencies',
         },
       },
       {

@@ -77,14 +77,17 @@ async function run(
   if (dryRun) {
     const orgSlugCResult = await getDefaultOrgSlug()
     const cwd = process.cwd()
-    const branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
+    const branchName =
+      (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
     const repoName = await getRepoName(cwd)
 
     outputDryRunUpload('CI scan', {
       autoManifest,
       branchName: branchName || '(default)',
       cwd,
-      organizationSlug: orgSlugCResult.ok ? orgSlugCResult.data : '(from API token)',
+      organizationSlug: orgSlugCResult.ok
+        ? orgSlugCResult.data
+        : '(from API token)',
       repoName: repoName || '(auto-detected)',
       report: true,
       targets: ['.'],

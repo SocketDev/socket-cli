@@ -164,9 +164,12 @@ describe('cmd-npm', () => {
         await cmdNpm.run(['install', 'lodash'], importMeta, context)
 
         // Verify sfw was called with filtered flags.
-        expect(mockSpawnSfw).toHaveBeenCalledWith(['npm', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfw).toHaveBeenCalledWith(
+          ['npm', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should filter out --config flag when forwarding to sfw', async () => {
@@ -179,9 +182,12 @@ describe('cmd-npm', () => {
         )
 
         // --config should be filtered out.
-        expect(mockSpawnSfw).toHaveBeenCalledWith(['npm', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfw).toHaveBeenCalledWith(
+          ['npm', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should filter out multiple Socket CLI flags', async () => {
@@ -194,9 +200,12 @@ describe('cmd-npm', () => {
         )
 
         // Both --config and --no-banner should be filtered.
-        expect(mockSpawnSfw).toHaveBeenCalledWith(['npm', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfw).toHaveBeenCalledWith(
+          ['npm', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should preserve npm flags while filtering Socket flags', async () => {
@@ -227,9 +236,12 @@ describe('cmd-npm', () => {
         )
 
         // --no-banner should be filtered.
-        expect(mockSpawnSfw).toHaveBeenCalledWith(['npm', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfw).toHaveBeenCalledWith(
+          ['npm', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
     })
 
@@ -239,9 +251,12 @@ describe('cmd-npm', () => {
 
         await cmdNpm.run(['install', 'lodash'], importMeta, context)
 
-        expect(mockSpawnSfw).toHaveBeenCalledWith(['npm', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfw).toHaveBeenCalledWith(
+          ['npm', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should forward npm install with version specifier', async () => {
@@ -348,9 +363,12 @@ describe('cmd-npm', () => {
 
         await cmdNpm.run(['install', 'lodash'], importMeta, context)
 
-        expect(mockSpawnSfw).toHaveBeenCalledWith(['npm', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfw).toHaveBeenCalledWith(
+          ['npm', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
     })
 
@@ -383,9 +401,8 @@ describe('cmd-npm', () => {
 
     describe('command name constant', () => {
       it('should use NPM constant as command name', async () => {
-        const { CMD_NAME } = await import(
-          '../../../../src/commands/npm/cmd-npm.mts'
-        )
+        const { CMD_NAME } =
+          await import('../../../../src/commands/npm/cmd-npm.mts')
         expect(CMD_NAME).toBe(NPM)
         expect(CMD_NAME).toBe('npm')
       })

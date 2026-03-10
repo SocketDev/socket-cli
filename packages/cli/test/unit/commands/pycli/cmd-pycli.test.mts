@@ -22,7 +22,8 @@ vi.mock('../../../../src/utils/python/standalone.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdPyCli } = await import('../../../../src/commands/pycli/cmd-pycli.mts')
+const { cmdPyCli } =
+  await import('../../../../src/commands/pycli/cmd-pycli.mts')
 
 describe('cmd-pycli', () => {
   beforeEach(() => {
@@ -99,7 +100,11 @@ describe('cmd-pycli', () => {
     it('should log info message when invoking Python CLI', async () => {
       mockSpawnSocketPyCli.mockResolvedValue({ ok: true, data: '' })
 
-      await cmdPyCli.run(['--slack-webhook', 'https://hooks.slack.com/...'], importMeta, context)
+      await cmdPyCli.run(
+        ['--slack-webhook', 'https://hooks.slack.com/...'],
+        importMeta,
+        context,
+      )
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Invoking Socket Python CLI...',
@@ -111,7 +116,9 @@ describe('cmd-pycli', () => {
 
       await cmdPyCli.run([], importMeta, context)
 
-      expect(mockSpawnSocketPyCli).toHaveBeenCalledWith([], { stdio: 'inherit' })
+      expect(mockSpawnSocketPyCli).toHaveBeenCalledWith([], {
+        stdio: 'inherit',
+      })
     })
   })
 })

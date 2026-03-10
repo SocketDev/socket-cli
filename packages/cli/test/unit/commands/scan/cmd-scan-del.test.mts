@@ -52,9 +52,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdScanDel } = await import(
-  '../../../../src/commands/scan/cmd-scan-del.mts'
-)
+const { cmdScanDel } =
+  await import('../../../../src/commands/scan/cmd-scan-del.mts')
 
 describe('cmd-scan-del', () => {
   beforeEach(() => {

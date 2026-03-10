@@ -17,7 +17,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -27,7 +28,9 @@ vi.mock('@socketsecurity/lib/logger', async importOriginal => {
 // Mock dependencies.
 const mockHandleCreateNewScan = vi.hoisted(() => vi.fn())
 const mockOutputCreateNewScan = vi.hoisted(() => vi.fn())
-const mockSuggestOrgSlug = vi.hoisted(() => vi.fn().mockResolvedValue('test-org'))
+const mockSuggestOrgSlug = vi.hoisted(() =>
+  vi.fn().mockResolvedValue('test-org'),
+)
 const mockSuggestTarget = vi.hoisted(() => vi.fn().mockResolvedValue(['.']))
 const mockValidateReachabilityTarget = vi.hoisted(() =>
   vi.fn().mockResolvedValue({
@@ -41,12 +44,16 @@ const mockDetermineOrgSlug = vi.hoisted(() =>
   vi.fn().mockResolvedValue(['test-org', 'test-org']),
 )
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false))
-const mockReadOrDefaultSocketJsonUp = vi.hoisted(() => vi.fn().mockResolvedValue({}))
+const mockReadOrDefaultSocketJsonUp = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({}),
+)
 const mockDetectManifestActions = vi.hoisted(() =>
   vi.fn().mockResolvedValue({ count: 0 }),
 )
 const mockGitBranch = vi.hoisted(() => vi.fn().mockResolvedValue(''))
-const mockDetectDefaultBranch = vi.hoisted(() => vi.fn().mockResolvedValue('main'))
+const mockDetectDefaultBranch = vi.hoisted(() =>
+  vi.fn().mockResolvedValue('main'),
+)
 const mockGetRepoName = vi.hoisted(() => vi.fn().mockResolvedValue('test-repo'))
 
 vi.mock('../../../../src/commands/scan/handle-create-new-scan.mts', () => ({
@@ -65,16 +72,22 @@ vi.mock('../../../../src/commands/scan/suggest_target.mts', () => ({
   suggestTarget: mockSuggestTarget,
 }))
 
-vi.mock('../../../../src/commands/scan/validate-reachability-target.mts', () => ({
-  validateReachabilityTarget: mockValidateReachabilityTarget,
-}))
+vi.mock(
+  '../../../../src/commands/scan/validate-reachability-target.mts',
+  () => ({
+    validateReachabilityTarget: mockValidateReachabilityTarget,
+  }),
+)
 
 vi.mock('../../../../src/utils/socket/org-slug.mts', () => ({
   determineOrgSlug: mockDetermineOrgSlug,
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mts', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/socket/sdk.mts')>()
+  const actual =
+    await importOriginal<
+      typeof import('../../../../src/utils/socket/sdk.mts')
+    >()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
@@ -85,9 +98,12 @@ vi.mock('../../../../src/utils/socket/json.mts', () => ({
   readOrDefaultSocketJsonUp: mockReadOrDefaultSocketJsonUp,
 }))
 
-vi.mock('../../../../src/commands/manifest/detect-manifest-actions.mts', () => ({
-  detectManifestActions: mockDetectManifestActions,
-}))
+vi.mock(
+  '../../../../src/commands/manifest/detect-manifest-actions.mts',
+  () => ({
+    detectManifestActions: mockDetectManifestActions,
+  }),
+)
 
 vi.mock('../../../../src/utils/git/operations.mts', () => ({
   detectDefaultBranch: mockDetectDefaultBranch,
@@ -96,9 +112,8 @@ vi.mock('../../../../src/utils/git/operations.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdScanCreate } = await import(
-  '../../../../src/commands/scan/cmd-scan-create.mts'
-)
+const { cmdScanCreate } =
+  await import('../../../../src/commands/scan/cmd-scan-create.mts')
 
 describe('cmd-scan-create', () => {
   beforeEach(() => {
@@ -108,7 +123,9 @@ describe('cmd-scan-create', () => {
 
   describe('command metadata', () => {
     it('should have correct description', () => {
-      expect(cmdScanCreate.description).toBe('Create a new Socket scan and report')
+      expect(cmdScanCreate.description).toBe(
+        'Create a new Socket scan and report',
+      )
     })
 
     it('should not be hidden', () => {
@@ -186,7 +203,11 @@ describe('cmd-scan-create', () => {
         context,
       )
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('custom-org', false, false)
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'custom-org',
+        false,
+        false,
+      )
       expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
         expect.objectContaining({
           orgSlug: 'custom-org',
@@ -309,10 +330,13 @@ describe('cmd-scan-create', () => {
 
       await cmdScanCreate.run(
         [
-          '--org', 'test-org',
+          '--org',
+          'test-org',
           '--reach',
-          '--reach-ecosystems', 'npm,pypi',
-          '--reach-concurrency', '4',
+          '--reach-ecosystems',
+          'npm,pypi',
+          '--reach-concurrency',
+          '4',
           '--reach-debug',
           '.',
           '--no-interactive',
@@ -337,7 +361,14 @@ describe('cmd-scan-create', () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdScanCreate.run(
-        ['--org', 'test-org', '--reach-concurrency', '4', '.', '--no-interactive'],
+        [
+          '--org',
+          'test-org',
+          '--reach-concurrency',
+          '4',
+          '.',
+          '--no-interactive',
+        ],
         importMeta,
         context,
       )
@@ -397,7 +428,15 @@ describe('cmd-scan-create', () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdScanCreate.run(
-        ['--org', 'test-org', '--branch', 'main', '--default-branch', '.', '--no-interactive'],
+        [
+          '--org',
+          'test-org',
+          '--branch',
+          'main',
+          '--default-branch',
+          '.',
+          '--no-interactive',
+        ],
         importMeta,
         context,
       )
@@ -559,9 +598,12 @@ describe('cmd-scan-create', () => {
 
       await cmdScanCreate.run(
         [
-          '--org', 'test-org',
-          '--branch', 'develop',
-          '--repo', 'cli-repo',
+          '--org',
+          'test-org',
+          '--branch',
+          'develop',
+          '--repo',
+          'cli-repo',
           '--no-auto-manifest',
           '.',
           '--no-interactive',
@@ -584,7 +626,15 @@ describe('cmd-scan-create', () => {
 
       await expect(
         cmdScanCreate.run(
-          ['--org', 'test-org', '--reach', '--reach-ecosystems', 'invalid-ecosystem', '.', '--no-interactive'],
+          [
+            '--org',
+            'test-org',
+            '--reach',
+            '--reach-ecosystems',
+            'invalid-ecosystem',
+            '.',
+            '--no-interactive',
+          ],
           importMeta,
           context,
         ),
@@ -595,7 +645,14 @@ describe('cmd-scan-create', () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdScanCreate.run(
-        ['--org', 'test-org', '--commit-hash', 'abc123', '.', '--no-interactive'],
+        [
+          '--org',
+          'test-org',
+          '--commit-hash',
+          'abc123',
+          '.',
+          '--no-interactive',
+        ],
         importMeta,
         context,
       )
@@ -611,7 +668,14 @@ describe('cmd-scan-create', () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdScanCreate.run(
-        ['--org', 'test-org', '--commit-message', 'fix: bug', '.', '--no-interactive'],
+        [
+          '--org',
+          'test-org',
+          '--commit-message',
+          'fix: bug',
+          '.',
+          '--no-interactive',
+        ],
         importMeta,
         context,
       )

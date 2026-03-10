@@ -29,7 +29,7 @@
     "publish:sea": "node --import=./scripts/load.mjs scripts/publish-sea.mjs",
     "check": "node ../../scripts/check.mjs",
     "check-ci": "pnpm run check",
-    "lint": "node ../../scripts/lint.mjs",
+    "lint": "oxlint -c ../../.oxlintrc.json",
     "lint-ci": "pnpm run lint",
     "type": "tsc --noEmit",
     "type-ci": "pnpm run type",
@@ -40,7 +40,7 @@
     "clean:dist": "del-cli 'dist'",
     "clean:node-smol": "del-cli 'build/node-smol'",
     "clean:node_modules": "del-cli '**/node_modules'",
-    "fix": "node ../../scripts/fix.mjs",
+    "fix": "oxfmt --write . && oxlint --fix -c ../../.oxlintrc.json",
     "lint-staged": "dotenvx -q run -f .env.local -- lint-staged",
     "precommit": "dotenvx -q run -f .env.local -- lint-staged",
     "prepare": "husky",
@@ -146,7 +146,7 @@
   "homepage": "https://github.com/SocketDev/socket-cli",
   "lint-staged": {
     "*.{cjs,cts,js,json,md,mjs,mts,ts}": [
-      "biome check --write --unsafe --no-errors-on-unmatched --files-ignore-unknown=true --colors=off"
+      "oxfmt --write"
     ]
   },
   "pnpm": {

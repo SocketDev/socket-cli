@@ -125,10 +125,18 @@ describe('cmd-go', () => {
         spawnPromise: mockSpawnPromise,
       })
 
-      mockFilterFlags.mockReturnValue(['install', 'golang.org/x/tools/cmd/goimports'])
+      mockFilterFlags.mockReturnValue([
+        'install',
+        'golang.org/x/tools/cmd/goimports',
+      ])
 
       const runPromise = cmdGo.run(
-        ['install', 'golang.org/x/tools/cmd/goimports', '--config', 'socket.config.json'],
+        [
+          'install',
+          'golang.org/x/tools/cmd/goimports',
+          '--config',
+          'socket.config.json',
+        ],
         { url: import.meta.url } as ImportMeta,
         { parentName: 'socket' },
       )
@@ -177,10 +185,9 @@ describe('cmd-go', () => {
       await runPromise
 
       expect(mockFilterFlags).toHaveBeenCalled()
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
-        ['go', ...filteredArgs],
-        { stdio: 'inherit' },
-      )
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['go', ...filteredArgs], {
+        stdio: 'inherit',
+      })
     })
 
     it('should set default exit code to 1', async () => {
@@ -199,15 +206,15 @@ describe('cmd-go', () => {
 
       mockFilterFlags.mockReturnValue(['get', 'package'])
 
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any)
+      const mockExit = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => {}) as any)
 
       process.exitCode = undefined
 
-      cmdGo.run(
-        ['get', 'package'],
-        { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+      cmdGo.run(['get', 'package'], { url: import.meta.url } as ImportMeta, {
+        parentName: 'socket',
+      })
 
       // Check that exit code was set to 1 before child process exits.
       await vi.waitFor(() => {
@@ -243,13 +250,13 @@ describe('cmd-go', () => {
 
       mockFilterFlags.mockReturnValue(['get', 'package'])
 
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any)
+      const mockExit = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => {}) as any)
 
-      cmdGo.run(
-        ['get', 'package'],
-        { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+      cmdGo.run(['get', 'package'], { url: import.meta.url } as ImportMeta, {
+        parentName: 'socket',
+      })
 
       // Wait for event listeners to be registered.
       await new Promise(resolve => {
@@ -285,13 +292,13 @@ describe('cmd-go', () => {
 
       mockFilterFlags.mockReturnValue(['get', 'package'])
 
-      const mockKill = vi.spyOn(process, 'kill').mockImplementation((() => {}) as any)
+      const mockKill = vi
+        .spyOn(process, 'kill')
+        .mockImplementation((() => {}) as any)
 
-      cmdGo.run(
-        ['get', 'package'],
-        { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+      cmdGo.run(['get', 'package'], { url: import.meta.url } as ImportMeta, {
+        parentName: 'socket',
+      })
 
       // Wait for event listeners to be registered.
       await new Promise(resolve => {
@@ -327,13 +334,13 @@ describe('cmd-go', () => {
 
       mockFilterFlags.mockReturnValue([])
 
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any)
+      const mockExit = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => {}) as any)
 
-      cmdGo.run(
-        [],
-        { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+      cmdGo.run([], { url: import.meta.url } as ImportMeta, {
+        parentName: 'socket',
+      })
 
       // Simulate successful exit.
       mockChildProcess.emit('exit', 0, null)
@@ -364,13 +371,13 @@ describe('cmd-go', () => {
 
       mockFilterFlags.mockReturnValue(['version'])
 
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any)
+      const mockExit = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => {}) as any)
 
-      cmdGo.run(
-        ['version'],
-        { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+      cmdGo.run(['version'], { url: import.meta.url } as ImportMeta, {
+        parentName: 'socket',
+      })
 
       // Simulate successful exit.
       mockChildProcess.emit('exit', 0, null)

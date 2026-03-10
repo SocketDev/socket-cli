@@ -91,9 +91,8 @@ describe('provider-factory', () => {
 
   describe('createPrProvider', () => {
     it('returns GitLabProvider when GITLAB_HOST is set', async () => {
-      const providerFactory = await import(
-        '../../../../src/utils/git/provider-factory.mts'
-      )
+      const providerFactory =
+        await import('../../../../src/utils/git/provider-factory.mts')
       vi.spyOn(providerFactory, 'getGitRemoteUrlSync').mockReturnValue(
         'https://github.com/owner/repo.git',
       )
@@ -107,9 +106,8 @@ describe('provider-factory', () => {
     })
 
     it('falls back to GitHubProvider when git command fails', async () => {
-      const providerFactory = await import(
-        '../../../../src/utils/git/provider-factory.mts'
-      )
+      const providerFactory =
+        await import('../../../../src/utils/git/provider-factory.mts')
       vi.spyOn(providerFactory, 'getGitRemoteUrlSync').mockReturnValue('')
 
       const provider = providerFactory.createPrProvider()
@@ -118,9 +116,8 @@ describe('provider-factory', () => {
     })
 
     it('falls back to GitHubProvider for empty remote', async () => {
-      const providerFactory = await import(
-        '../../../../src/utils/git/provider-factory.mts'
-      )
+      const providerFactory =
+        await import('../../../../src/utils/git/provider-factory.mts')
       vi.spyOn(providerFactory, 'getGitRemoteUrlSync').mockReturnValue('')
 
       const provider = providerFactory.createPrProvider()

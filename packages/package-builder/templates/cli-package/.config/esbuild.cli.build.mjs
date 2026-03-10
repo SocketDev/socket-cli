@@ -22,9 +22,7 @@ const rootPath = path.join(__dirname, '..')
 const config = {
   ...baseConfig,
   // Use the standard entry point.
-  entryPoints: [
-    path.join(rootPath, '..', 'cli', 'src', 'cli-dispatch.mts'),
-  ],
+  entryPoints: [path.join(rootPath, '..', 'cli', 'src', 'cli-dispatch.mts')],
   // Output to build directory.
   outfile: path.join(rootPath, 'build/cli.js'),
 }

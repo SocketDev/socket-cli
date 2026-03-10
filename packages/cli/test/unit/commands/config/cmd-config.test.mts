@@ -26,24 +26,18 @@ vi.mock('../../../../src/utils/cli/with-subcommands.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdConfig } = await import(
-  '../../../../src/commands/config/cmd-config.mts'
-)
-const { cmdConfigAuto } = await import(
-  '../../../../src/commands/config/cmd-config-auto.mts'
-)
-const { cmdConfigGet } = await import(
-  '../../../../src/commands/config/cmd-config-get.mts'
-)
-const { cmdConfigList } = await import(
-  '../../../../src/commands/config/cmd-config-list.mts'
-)
-const { cmdConfigSet } = await import(
-  '../../../../src/commands/config/cmd-config-set.mts'
-)
-const { cmdConfigUnset } = await import(
-  '../../../../src/commands/config/cmd-config-unset.mts'
-)
+const { cmdConfig } =
+  await import('../../../../src/commands/config/cmd-config.mts')
+const { cmdConfigAuto } =
+  await import('../../../../src/commands/config/cmd-config-auto.mts')
+const { cmdConfigGet } =
+  await import('../../../../src/commands/config/cmd-config-get.mts')
+const { cmdConfigList } =
+  await import('../../../../src/commands/config/cmd-config-list.mts')
+const { cmdConfigSet } =
+  await import('../../../../src/commands/config/cmd-config-set.mts')
+const { cmdConfigUnset } =
+  await import('../../../../src/commands/config/cmd-config-unset.mts')
 
 describe('cmd-config', () => {
   beforeEach(() => {

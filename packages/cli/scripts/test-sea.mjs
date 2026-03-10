@@ -83,7 +83,9 @@ async function loadToolPaths() {
   try {
     toolPathsData = JSON.parse(await fs.readFile(toolPathsFile, 'utf8'))
   } catch (e) {
-    console.error(`Failed to parse tool paths from ${toolPathsFile}: ${e.message}`)
+    console.error(
+      `Failed to parse tool paths from ${toolPathsFile}: ${e.message}`,
+    )
     console.error('Run: node scripts/test-download-external-tools.mjs')
     throw new Error('Invalid tool paths JSON')
   }
@@ -430,9 +432,7 @@ async function runWithToolsMode(platform, toolPaths) {
   // Dynamic import Socket modules.
   const { getDefaultLogger } = await import('@socketsecurity/lib/logger')
   const { injectSeaBlob } = await import('./sea-build-utils/builder.mjs')
-  const { downloadNodeBinary } = await import(
-    './sea-build-utils/downloads.mjs'
-  )
+  const { downloadNodeBinary } = await import('./sea-build-utils/downloads.mjs')
 
   const logger = getDefaultLogger()
   const totalToolSize = await displayToolInfo(toolPaths)

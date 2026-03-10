@@ -401,9 +401,8 @@ export async function buildErrorCause(
 
   // For 429 errors, preserve the detailed quota information.
   if (status === 429) {
-    const { getErrorMessageForHttpStatusCode } = await import(
-      '../socket/api.mjs'
-    )
+    const { getErrorMessageForHttpStatusCode } =
+      await import('../socket/api.mjs')
     const quotaMessage = await getErrorMessageForHttpStatusCode(429)
     if (reason && reason !== NO_ERROR_MESSAGE) {
       return `${reason}. ${quotaMessage}`

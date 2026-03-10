@@ -73,7 +73,11 @@ async function run(
   const filteredArgv = filterFlags(argv, config.flags)
 
   if (dryRun) {
-    outputDryRunExecute('sfw', ['yarn', ...filteredArgv], 'yarn with Socket security scanning')
+    outputDryRunExecute(
+      'sfw',
+      ['yarn', ...filteredArgv],
+      'yarn with Socket security scanning',
+    )
     return
   }
 

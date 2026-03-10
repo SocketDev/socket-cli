@@ -17,7 +17,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -27,14 +28,16 @@ vi.mock('@socketsecurity/lib/logger', async importOriginal => {
 // Mock dependencies.
 const mockHandlePurlsShallowScore = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/package/handle-purls-shallow-score.mts', () => ({
-  handlePurlsShallowScore: mockHandlePurlsShallowScore,
-}))
+vi.mock(
+  '../../../../src/commands/package/handle-purls-shallow-score.mts',
+  () => ({
+    handlePurlsShallowScore: mockHandlePurlsShallowScore,
+  }),
+)
 
 // Import after mocks.
-const { cmdPackageShallow } = await import(
-  '../../../../src/commands/package/cmd-package-shallow.mts'
-)
+const { cmdPackageShallow } =
+  await import('../../../../src/commands/package/cmd-package-shallow.mts')
 
 describe('cmd-package-shallow', () => {
   beforeEach(() => {
@@ -45,7 +48,7 @@ describe('cmd-package-shallow', () => {
   describe('command metadata', () => {
     it('should have correct description', () => {
       expect(cmdPackageShallow.description).toBe(
-        'Look up info regarding one or more packages but not their transitives'
+        'Look up info regarding one or more packages but not their transitives',
       )
     })
 
@@ -78,11 +81,7 @@ describe('cmd-package-shallow', () => {
     })
 
     it('should fail without package name', async () => {
-      await cmdPackageShallow.run(
-        [],
-        importMeta,
-        context,
-      )
+      await cmdPackageShallow.run([], importMeta, context)
 
       // Exit code 2 = invalid usage/validation failure.
       expect(process.exitCode).toBe(2)
@@ -90,11 +89,7 @@ describe('cmd-package-shallow', () => {
     })
 
     it('should call handlePurlsShallowScore with single package', async () => {
-      await cmdPackageShallow.run(
-        ['npm', 'webtorrent'],
-        importMeta,
-        context,
-      )
+      await cmdPackageShallow.run(['npm', 'webtorrent'], importMeta, context)
 
       expect(mockHandlePurlsShallowScore).toHaveBeenCalledWith({
         outputKind: 'text',
@@ -129,11 +124,7 @@ describe('cmd-package-shallow', () => {
     })
 
     it('should handle purl format without pkg: prefix', async () => {
-      await cmdPackageShallow.run(
-        ['npm/webtorrent@1.9.1'],
-        importMeta,
-        context,
-      )
+      await cmdPackageShallow.run(['npm/webtorrent@1.9.1'], importMeta, context)
 
       expect(mockHandlePurlsShallowScore).toHaveBeenCalledWith({
         outputKind: 'text',

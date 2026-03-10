@@ -191,10 +191,7 @@ async function validateBuildArtifacts() {
   }
 
   // Check for key entry points.
-  const requiredArtifacts = [
-    'build/cli.js',
-    'dist/index.js',
-  ]
+  const requiredArtifacts = ['build/cli.js', 'dist/index.js']
 
   for (const artifact of requiredArtifacts) {
     const fullPath = path.join(rootPath, artifact)

@@ -38,7 +38,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -61,7 +62,10 @@ vi.mock('../../../../src/utils/socket/org-slug.mjs', () => ({
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/socket/sdk.mjs')>()
+  const actual =
+    await importOriginal<
+      typeof import('../../../../src/utils/socket/sdk.mjs')
+    >()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
@@ -69,9 +73,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdThreatFeed } = await import(
-  '../../../../src/commands/threat-feed/cmd-threat-feed.mts'
-)
+const { cmdThreatFeed } =
+  await import('../../../../src/commands/threat-feed/cmd-threat-feed.mts')
 
 describe('cmd-threat-feed', () => {
   beforeEach(() => {
@@ -174,11 +177,7 @@ describe('cmd-threat-feed', () => {
     it('should pass --version flag to handleThreatFeed', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdThreatFeed.run(
-        ['--version', '1.0.0'],
-        importMeta,
-        context,
-      )
+      await cmdThreatFeed.run(['--version', '1.0.0'], importMeta, context)
 
       expect(mockHandleThreatFeed).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -229,7 +228,11 @@ describe('cmd-threat-feed', () => {
 
       await cmdThreatFeed.run(['--org', 'custom-org'], importMeta, context)
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('custom-org', true, false)
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'custom-org',
+        true,
+        false,
+      )
       expect(mockHandleThreatFeed).toHaveBeenCalledWith(
         expect.objectContaining({
           orgSlug: 'custom-org',
@@ -326,11 +329,7 @@ describe('cmd-threat-feed', () => {
     it('should validate per-page as numeric', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdThreatFeed.run(
-        ['--per-page', 'invalid'],
-        importMeta,
-        context,
-      )
+      await cmdThreatFeed.run(['--per-page', 'invalid'], importMeta, context)
 
       expect(mockHandleThreatFeed).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -342,11 +341,7 @@ describe('cmd-threat-feed', () => {
     it('should fail if both --json and --markdown are set', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdThreatFeed.run(
-        ['--json', '--markdown'],
-        importMeta,
-        context,
-      )
+      await cmdThreatFeed.run(['--json', '--markdown'], importMeta, context)
 
       // Exit code 2 = invalid usage/validation failure.
       expect(process.exitCode).toBe(2)
@@ -378,13 +373,20 @@ describe('cmd-threat-feed', () => {
       await cmdThreatFeed.run(
         [
           '--dry-run',
-          '--eco', 'npm',
-          '--filter', 'mal',
-          '--pkg', 'test-pkg',
-          '--version', '1.0.0',
-          '--page', '2',
-          '--per-page', '50',
-          '--direction', 'asc',
+          '--eco',
+          'npm',
+          '--filter',
+          'mal',
+          '--pkg',
+          'test-pkg',
+          '--version',
+          '1.0.0',
+          '--page',
+          '2',
+          '--per-page',
+          '50',
+          '--direction',
+          'asc',
         ],
         importMeta,
         context,

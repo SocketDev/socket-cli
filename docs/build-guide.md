@@ -6,18 +6,18 @@ This document explains the Socket CLI build system and how to create various bui
 
 The Socket CLI has two main build outputs:
 
-| Build Type | Description | Output Location |
-|------------|-------------|-----------------|
-| **CLI Bundle** | JavaScript bundle for npm distribution | `packages/cli/dist/` |
+| Build Type       | Description                                  | Output Location          |
+| ---------------- | -------------------------------------------- | ------------------------ |
+| **CLI Bundle**   | JavaScript bundle for npm distribution       | `packages/cli/dist/`     |
 | **SEA Binaries** | Standalone executables (no Node.js required) | `packages/cli/dist/sea/` |
 
 ## Prerequisites
 
-| Requirement | Version | Notes |
-|-------------|---------|-------|
-| Node.js | >= 25.5.0 | Monorepo development (building, testing) |
-| Node.js | >= 18.0.0 | Running published CLI package |
-| pnpm | >= 10.22.0 | Package manager |
+| Requirement | Version    | Notes                                    |
+| ----------- | ---------- | ---------------------------------------- |
+| Node.js     | >= 25.5.0  | Monorepo development (building, testing) |
+| Node.js     | >= 18.0.0  | Running published CLI package            |
+| pnpm        | >= 10.22.0 | Package manager                          |
 
 ## Quick Reference
 
@@ -122,6 +122,7 @@ pnpm build --force
 **Output**: `packages/cli/dist/index.js` (entry point)
 
 **What it includes**:
+
 - Bundled CLI code (all dependencies inlined)
 - Shadow npm/npx wrappers
 - Terminal rendering (Ink/Yoga)
@@ -146,16 +147,16 @@ pnpm build --platform darwin --arch arm64
 
 #### Supported Platforms
 
-| Target | Platform | Architecture | Notes |
-|--------|----------|--------------|-------|
-| `darwin-arm64` | macOS | Apple Silicon | Native ARM64 |
-| `darwin-x64` | macOS | Intel | Native x86_64 |
-| `linux-arm64` | Linux | ARM64 | glibc |
-| `linux-arm64-musl` | Linux | ARM64 | musl (Alpine) |
-| `linux-x64` | Linux | x86_64 | glibc |
-| `linux-x64-musl` | Linux | x86_64 | musl (Alpine) |
-| `win32-arm64` | Windows | ARM64 | Native |
-| `win32-x64` | Windows | x86_64 | Native |
+| Target             | Platform | Architecture  | Notes         |
+| ------------------ | -------- | ------------- | ------------- |
+| `darwin-arm64`     | macOS    | Apple Silicon | Native ARM64  |
+| `darwin-x64`       | macOS    | Intel         | Native x86_64 |
+| `linux-arm64`      | Linux    | ARM64         | glibc         |
+| `linux-arm64-musl` | Linux    | ARM64         | musl (Alpine) |
+| `linux-x64`        | Linux    | x86_64        | glibc         |
+| `linux-x64-musl`   | Linux    | x86_64        | musl (Alpine) |
+| `win32-arm64`      | Windows  | ARM64         | Native        |
+| `win32-x64`        | Windows  | x86_64        | Native        |
 
 #### SEA Build Process
 
@@ -188,6 +189,7 @@ pnpm build:watch
 ```
 
 **What it does**:
+
 1. Downloads yoga WASM (first time only)
 2. Starts esbuild in watch mode
 3. Rebuilds `build/cli.js` on changes
@@ -200,13 +202,13 @@ pnpm build:watch
 
 ### Monorepo Root Commands
 
-| Command | Description |
-|---------|-------------|
-| `pnpm build` | Smart build (skips unchanged) |
+| Command              | Description                              |
+| -------------------- | ---------------------------------------- |
+| `pnpm build`         | Smart build (skips unchanged)            |
 | `pnpm build --force` | Force rebuild + SEA for current platform |
-| `pnpm build:cli` | Build CLI package only |
-| `pnpm build:sea` | Build SEA for all platforms |
-| `pnpm dev` | Watch mode |
+| `pnpm build:cli`     | Build CLI package only                   |
+| `pnpm build:sea`     | Build SEA for all platforms              |
+| `pnpm dev`           | Watch mode                               |
 
 ### Targeted SEA Builds
 
@@ -229,13 +231,13 @@ pnpm build:sea
 
 Run from `packages/cli/`:
 
-| Command | Description |
-|---------|-------------|
-| `pnpm run build` | Build CLI |
-| `pnpm run build:force` | Force rebuild |
-| `pnpm run build:watch` | Watch mode |
-| `pnpm run build:sea` | Build SEA binaries |
-| `pnpm run build:sea --platform=darwin --arch=arm64` | Specific platform |
+| Command                                             | Description        |
+| --------------------------------------------------- | ------------------ |
+| `pnpm run build`                                    | Build CLI          |
+| `pnpm run build:force`                              | Force rebuild      |
+| `pnpm run build:watch`                              | Watch mode         |
+| `pnpm run build:sea`                                | Build SEA binaries |
+| `pnpm run build:sea --platform=darwin --arch=arm64` | Specific platform  |
 
 ---
 
@@ -243,12 +245,12 @@ Run from `packages/cli/`:
 
 Assets are downloaded from [socket-btm](https://github.com/SocketDev/socket-btm) releases and cached in `packages/build-infra/build/downloaded/`.
 
-| Asset | Purpose | Cache Location |
-|-------|---------|----------------|
-| `node-smol` | Minimal Node.js for SEA | `node-smol/<platform>-<arch>/node` |
-| `binject` | Binary injection tool | `binject/<platform>-<arch>/binject` |
-| `yoga-layout` | Terminal layout WASM | `yoga-layout/assets/yoga-sync-*.mjs` |
-| `models` | AI models for analysis | `models/` |
+| Asset         | Purpose                 | Cache Location                       |
+| ------------- | ----------------------- | ------------------------------------ |
+| `node-smol`   | Minimal Node.js for SEA | `node-smol/<platform>-<arch>/node`   |
+| `binject`     | Binary injection tool   | `binject/<platform>-<arch>/binject`  |
+| `yoga-layout` | Terminal layout WASM    | `yoga-layout/assets/yoga-sync-*.mjs` |
+| `models`      | AI models for analysis  | `models/`                            |
 
 ### Cache Management
 
@@ -265,13 +267,13 @@ pnpm clean
 
 ### Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `SOCKET_CLI_GITHUB_TOKEN` | GitHub token (preferred) |
-| `GITHUB_TOKEN` | GitHub token (fallback if `SOCKET_CLI_GITHUB_TOKEN` not set) |
-| `GH_TOKEN` | GitHub token (fallback if above not set) |
-| `SOCKET_CLI_LOCAL_NODE_SMOL` | Use local node-smol binary |
-| `SOCKET_CLI_FORCE_BUILD` | Force rebuild (set by --force) |
+| Variable                     | Description                                                  |
+| ---------------------------- | ------------------------------------------------------------ |
+| `SOCKET_CLI_GITHUB_TOKEN`    | GitHub token (preferred)                                     |
+| `GITHUB_TOKEN`               | GitHub token (fallback if `SOCKET_CLI_GITHUB_TOKEN` not set) |
+| `GH_TOKEN`                   | GitHub token (fallback if above not set)                     |
+| `SOCKET_CLI_LOCAL_NODE_SMOL` | Use local node-smol binary                                   |
+| `SOCKET_CLI_FORCE_BUILD`     | Force rebuild (set by --force)                               |
 
 ---
 
@@ -281,9 +283,9 @@ pnpm clean
 
 Located in `packages/cli/.config/`:
 
-| Config | Output | Description |
-|--------|--------|-------------|
-| `esbuild.cli.build.mjs` | `build/cli.js` | Main CLI bundle |
+| Config                     | Output          | Description        |
+| -------------------------- | --------------- | ------------------ |
+| `esbuild.cli.build.mjs`    | `build/cli.js`  | Main CLI bundle    |
 | `esbuild.index.config.mjs` | `dist/index.js` | Entry point loader |
 
 ### Build Variants
@@ -373,7 +375,17 @@ jobs:
     needs: build
     strategy:
       matrix:
-        target: [darwin-arm64, darwin-x64, linux-arm64, linux-arm64-musl, linux-x64, linux-x64-musl, win32-arm64, win32-x64]
+        target:
+          [
+            darwin-arm64,
+            darwin-x64,
+            linux-arm64,
+            linux-arm64-musl,
+            linux-x64,
+            linux-x64-musl,
+            win32-arm64,
+            win32-x64,
+          ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -392,12 +404,12 @@ jobs:
 
 ## Summary
 
-| Goal | Command |
-|------|---------|
-| Development build | `pnpm build` |
-| Full rebuild | `pnpm build --force` |
-| Watch mode | `pnpm dev` |
-| All SEA binaries | `pnpm build:sea` |
+| Goal                  | Command                            |
+| --------------------- | ---------------------------------- |
+| Development build     | `pnpm build`                       |
+| Full rebuild          | `pnpm build --force`               |
+| Watch mode            | `pnpm dev`                         |
+| All SEA binaries      | `pnpm build:sea`                   |
 | Specific platform SEA | `pnpm build --target darwin-arm64` |
-| Run tests | `pnpm test` |
-| Clean rebuild | `pnpm clean && pnpm build --force` |
+| Run tests             | `pnpm test`                        |
+| Clean rebuild         | `pnpm clean && pnpm build --force` |

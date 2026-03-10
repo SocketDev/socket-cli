@@ -68,9 +68,8 @@ vi.mock('../../../../src/commands/manifest/cmd-manifest-setup.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdManifest } = await import(
-  '../../../../src/commands/manifest/cmd-manifest.mts'
-)
+const { cmdManifest } =
+  await import('../../../../src/commands/manifest/cmd-manifest.mts')
 
 describe('cmd-manifest', () => {
   beforeEach(() => {

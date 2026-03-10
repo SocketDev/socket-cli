@@ -12,7 +12,7 @@ vi.mock('../../../../src/utils/dlx/spawn.mts', () => ({
 }))
 
 vi.mock('../../../../src/utils/process/cmd.mts', () => ({
-  filterFlags: vi.fn((argv) => argv),
+  filterFlags: vi.fn(argv => argv),
 }))
 
 vi.mock('../../../../src/utils/cli/with-subcommands.mjs', () => ({
@@ -24,7 +24,8 @@ const { cmdPip } = await import('../../../../src/commands/pip/cmd-pip.mts')
 const binModule = await import('@socketsecurity/lib/bin')
 const spawnModule = await import('../../../../src/utils/dlx/spawn.mts')
 const cmdModule = await import('../../../../src/utils/process/cmd.mts')
-const meowModule = await import('../../../../src/utils/cli/with-subcommands.mjs')
+const meowModule =
+  await import('../../../../src/utils/cli/with-subcommands.mjs')
 
 const mockWhichReal = vi.mocked(binModule.whichReal)
 const mockSpawnSfwDlx = vi.mocked(spawnModule.spawnSfwDlx)
@@ -65,7 +66,7 @@ describe('cmd-pip', () => {
     // Setup default mock implementations.
     mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
     mockWhichReal.mockResolvedValue('/usr/bin/pip')
-    mockFilterFlags.mockImplementation((argv) => argv)
+    mockFilterFlags.mockImplementation(argv => argv)
     mockChildProcess.on.mockImplementation((event, handler) => {
       // Simulate immediate successful exit by default.
       if (event === 'exit') {
@@ -155,11 +156,7 @@ describe('cmd-pip', () => {
 
       await cmdPip.run(argv, importMeta, context)
 
-      expect(mockFilterFlags).toHaveBeenCalledWith(
-        argv,
-        expect.any(Object),
-        [],
-      )
+      expect(mockFilterFlags).toHaveBeenCalledWith(argv, expect.any(Object), [])
 
       expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
         ['pip', 'install', 'flask'],
@@ -420,7 +417,10 @@ describe('cmd-pip', () => {
         parentName: 'socket',
       }
 
-      let exitHandler: (code: number | null, signal: NodeJS.Signals | null) => void
+      let exitHandler: (
+        code: number | null,
+        signal: NodeJS.Signals | null,
+      ) => void
       mockChildProcess.on.mockImplementation((event, handler) => {
         if (event === 'exit') {
           exitHandler = handler as any
@@ -450,7 +450,10 @@ describe('cmd-pip', () => {
 
       mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(1))
 
-      let exitHandler: (code: number | null, signal: NodeJS.Signals | null) => void
+      let exitHandler: (
+        code: number | null,
+        signal: NodeJS.Signals | null,
+      ) => void
       mockChildProcess.on.mockImplementation((event, handler) => {
         if (event === 'exit') {
           exitHandler = handler as any
@@ -480,7 +483,10 @@ describe('cmd-pip', () => {
 
       mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0, 'SIGTERM'))
 
-      let exitHandler: (code: number | null, signal: NodeJS.Signals | null) => void
+      let exitHandler: (
+        code: number | null,
+        signal: NodeJS.Signals | null,
+      ) => void
       mockChildProcess.on.mockImplementation((event, handler) => {
         if (event === 'exit') {
           exitHandler = handler as any
@@ -510,7 +516,10 @@ describe('cmd-pip', () => {
 
       mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0, 'SIGINT'))
 
-      let exitHandler: (code: number | null, signal: NodeJS.Signals | null) => void
+      let exitHandler: (
+        code: number | null,
+        signal: NodeJS.Signals | null,
+      ) => void
       mockChildProcess.on.mockImplementation((event, handler) => {
         if (event === 'exit') {
           exitHandler = handler as any

@@ -57,9 +57,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdScanView } = await import(
-  '../../../../src/commands/scan/cmd-scan-view.mts'
-)
+const { cmdScanView } =
+  await import('../../../../src/commands/scan/cmd-scan-view.mts')
 
 describe('cmd-scan-view', () => {
   beforeEach(() => {

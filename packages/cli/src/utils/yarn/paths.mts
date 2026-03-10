@@ -38,4 +38,3 @@ export function getYarnBinPathDetails(): ReturnType<
   }
   return _yarnBinPathDetails
 }
-

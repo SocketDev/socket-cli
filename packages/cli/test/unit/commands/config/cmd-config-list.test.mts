@@ -17,7 +17,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -32,9 +33,8 @@ vi.mock('../../../../src/commands/config/output-config-list.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdConfigList } = await import(
-  '../../../../src/commands/config/cmd-config-list.mts'
-)
+const { cmdConfigList } =
+  await import('../../../../src/commands/config/cmd-config-list.mts')
 
 describe('cmd-config-list', () => {
   beforeEach(() => {

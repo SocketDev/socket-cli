@@ -146,9 +146,8 @@ vi.mock(
 )
 
 // Import after mocks.
-const { CMD_NAME, cmdConfigUnset } = await import(
-  '../../../../src/commands/config/cmd-config-unset.mts'
-)
+const { CMD_NAME, cmdConfigUnset } =
+  await import('../../../../src/commands/config/cmd-config-unset.mts')
 
 describe('cmd-config-unset', () => {
   beforeEach(() => {
@@ -286,11 +285,7 @@ describe('cmd-config-unset', () => {
       it('should construct correct config path in dry-run', async () => {
         process.env['HOME'] = '/custom/home'
 
-        await cmdConfigUnset.run(
-          ['apiToken', '--dry-run'],
-          importMeta,
-          context,
-        )
+        await cmdConfigUnset.run(['apiToken', '--dry-run'], importMeta, context)
 
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
           '/custom/home/.config/socket/config.json',
@@ -300,11 +295,7 @@ describe('cmd-config-unset', () => {
       })
 
       it('should not execute handler in dry-run mode', async () => {
-        await cmdConfigUnset.run(
-          ['apiToken', '--dry-run'],
-          importMeta,
-          context,
-        )
+        await cmdConfigUnset.run(['apiToken', '--dry-run'], importMeta, context)
 
         expect(mockHandleConfigUnset).not.toHaveBeenCalled()
       })
@@ -326,11 +317,7 @@ describe('cmd-config-unset', () => {
       it('should pass json output kind when --json flag provided', async () => {
         mockGetOutputKind.mockReturnValue('json')
 
-        await cmdConfigUnset.run(
-          ['defaultOrg', '--json'],
-          importMeta,
-          context,
-        )
+        await cmdConfigUnset.run(['defaultOrg', '--json'], importMeta, context)
 
         expect(mockGetOutputKind).toHaveBeenCalledWith(true, false)
         expect(mockHandleConfigUnset).toHaveBeenCalledWith({
@@ -395,9 +382,7 @@ describe('cmd-config-unset', () => {
 
     describe('edge cases', () => {
       it('should handle readonly argv array', async () => {
-        const readonlyArgv = Object.freeze([
-          'defaultOrg',
-        ]) as readonly string[]
+        const readonlyArgv = Object.freeze(['defaultOrg']) as readonly string[]
 
         await cmdConfigUnset.run(readonlyArgv, importMeta, context)
 

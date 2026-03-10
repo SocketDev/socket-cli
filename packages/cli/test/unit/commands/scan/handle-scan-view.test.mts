@@ -40,12 +40,10 @@ describe('handleScanView', () => {
   })
 
   it('fetches and outputs scan view successfully', async () => {
-    const { fetchScan } = await import(
-      '../../../../../src/commands/scan/fetch-scan.mts'
-    )
-    const { outputScanView } = await import(
-      '../../../../../src/commands/scan/output-scan-view.mts'
-    )
+    const { fetchScan } =
+      await import('../../../../../src/commands/scan/fetch-scan.mts')
+    const { outputScanView } =
+      await import('../../../../../src/commands/scan/output-scan-view.mts')
 
     const mockData = {
       ok: true,
@@ -75,12 +73,10 @@ describe('handleScanView', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchScan } = await import(
-      '../../../../../src/commands/scan/fetch-scan.mts'
-    )
-    const { outputScanView } = await import(
-      '../../../../../src/commands/scan/output-scan-view.mts'
-    )
+    const { fetchScan } =
+      await import('../../../../../src/commands/scan/fetch-scan.mts')
+    const { outputScanView } =
+      await import('../../../../../src/commands/scan/output-scan-view.mts')
 
     const mockError = {
       ok: false,
@@ -102,9 +98,8 @@ describe('handleScanView', () => {
 
   it('handles markdown output', async () => {
     await import('../../../../../src/commands/scan/fetch-scan.mts')
-    const { outputScanView } = await import(
-      '../../../../../src/commands/scan/output-scan-view.mts'
-    )
+    const { outputScanView } =
+      await import('../../../../../src/commands/scan/output-scan-view.mts')
 
     const mockData = {
       ok: true,
@@ -129,9 +124,8 @@ describe('handleScanView', () => {
 
   it('handles empty file path', async () => {
     await import('../../../../../src/commands/scan/fetch-scan.mts')
-    const { outputScanView } = await import(
-      '../../../../../src/commands/scan/output-scan-view.mts'
-    )
+    const { outputScanView } =
+      await import('../../../../../src/commands/scan/output-scan-view.mts')
 
     const mockData = {
       ok: true,
@@ -152,9 +146,8 @@ describe('handleScanView', () => {
 
   it('handles different scan statuses', async () => {
     await import('../../../../../src/commands/scan/fetch-scan.mts')
-    const { outputScanView } = await import(
-      '../../../../../src/commands/scan/output-scan-view.mts'
-    )
+    const { outputScanView } =
+      await import('../../../../../src/commands/scan/output-scan-view.mts')
 
     const statuses = ['pending', 'in_progress', 'completed', 'failed']
 
@@ -181,12 +174,10 @@ describe('handleScanView', () => {
 
   it('handles text output format', async () => {
     // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
-    const { fetchScan } = await import(
-      '../../../../../src/commands/scan/fetch-scan.mts'
-    )
-    const { outputScanView } = await import(
-      '../../../../../src/commands/scan/output-scan-view.mts'
-    )
+    const { fetchScan } =
+      await import('../../../../../src/commands/scan/fetch-scan.mts')
+    const { outputScanView } =
+      await import('../../../../../src/commands/scan/output-scan-view.mts')
 
     const mockData = {
       ok: true,
@@ -211,9 +202,8 @@ describe('handleScanView', () => {
 
   it('handles async errors', async () => {
     // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
-    const { fetchScan } = await import(
-      '../../../../../src/commands/scan/fetch-scan.mts'
-    )
+    const { fetchScan } =
+      await import('../../../../../src/commands/scan/fetch-scan.mts')
 
     mockFetchScan.mockRejectedValue(new Error('Network error'))
 

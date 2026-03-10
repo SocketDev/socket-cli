@@ -611,9 +611,7 @@ export async function meowWithSubcommands(
       // Unknown command with no suggestion - show error and fall through to help.
       process.exitCode = 2
       logger.fail(`Unknown command "${commandName}".`)
-      logger.info(
-        'Tip: Use `socket pycli` to invoke the Python CLI directly.',
-      )
+      logger.info('Tip: Use `socket pycli` to invoke the Python CLI directly.')
       return
     }
   }
@@ -851,7 +849,11 @@ export async function meowWithSubcommands(
     help: lines.map(l => indentString(l, { count: HELP_INDENT })).join('\n'),
   })
 
-  const { dryRun, help: helpFlag, version: versionFlag } = cli2.flags as {
+  const {
+    dryRun,
+    help: helpFlag,
+    version: versionFlag,
+  } = cli2.flags as {
     dryRun: boolean
     help: boolean
     version: boolean

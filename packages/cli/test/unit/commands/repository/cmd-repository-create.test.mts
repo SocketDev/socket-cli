@@ -17,7 +17,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -40,7 +41,10 @@ vi.mock('../../../../src/utils/socket/org-slug.mjs', () => ({
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/socket/sdk.mjs')>()
+  const actual =
+    await importOriginal<
+      typeof import('../../../../src/utils/socket/sdk.mjs')
+    >()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
@@ -48,9 +52,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdRepositoryCreate } = await import(
-  '../../../../src/commands/repository/cmd-repository-create.mts'
-)
+const { cmdRepositoryCreate } =
+  await import('../../../../src/commands/repository/cmd-repository-create.mts')
 
 describe('cmd-repository-create', () => {
   beforeEach(() => {
@@ -60,7 +63,9 @@ describe('cmd-repository-create', () => {
 
   describe('command metadata', () => {
     it('should have correct description', () => {
-      expect(cmdRepositoryCreate.description).toBe('Create a repository in an organization')
+      expect(cmdRepositoryCreate.description).toBe(
+        'Create a repository in an organization',
+      )
     })
 
     it('should not be hidden', () => {
@@ -122,11 +127,7 @@ describe('cmd-repository-create', () => {
     it('should fail without repository name', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryCreate.run(
-        ['--no-interactive'],
-        importMeta,
-        context,
-      )
+      await cmdRepositoryCreate.run(['--no-interactive'], importMeta, context)
 
       // Exit code 2 = invalid usage/validation failure.
       expect(process.exitCode).toBe(2)
@@ -193,7 +194,12 @@ describe('cmd-repository-create', () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdRepositoryCreate.run(
-        ['test-repo', '--repo-description', 'Test description', '--no-interactive'],
+        [
+          'test-repo',
+          '--repo-description',
+          'Test description',
+          '--no-interactive',
+        ],
         importMeta,
         context,
       )
@@ -250,7 +256,11 @@ describe('cmd-repository-create', () => {
         context,
       )
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('custom-org', false, false)
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'custom-org',
+        false,
+        false,
+      )
       expect(mockHandleCreateRepo).toHaveBeenCalledWith(
         expect.objectContaining({
           orgSlug: 'custom-org',
@@ -354,10 +364,14 @@ describe('cmd-repository-create', () => {
       await cmdRepositoryCreate.run(
         [
           'my-new-repo',
-          '--default-branch', 'develop',
-          '--homepage', 'https://socket.dev',
-          '--repo-description', 'A test repository',
-          '--visibility', 'public',
+          '--default-branch',
+          'develop',
+          '--homepage',
+          'https://socket.dev',
+          '--repo-description',
+          'A test repository',
+          '--visibility',
+          'public',
           '--no-interactive',
         ],
         importMeta,
@@ -383,9 +397,12 @@ describe('cmd-repository-create', () => {
       await cmdRepositoryCreate.run(
         [
           'test-repo',
-          '--default-branch', '',
-          '--homepage', '',
-          '--repo-description', '',
+          '--default-branch',
+          '',
+          '--homepage',
+          '',
+          '--repo-description',
+          '',
           '--no-interactive',
         ],
         importMeta,

@@ -26,15 +26,12 @@ vi.mock('../../../../src/utils/cli/with-subcommands.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdPackage } = await import(
-  '../../../../src/commands/package/cmd-package.mts'
-)
-const { cmdPackageScore } = await import(
-  '../../../../src/commands/package/cmd-package-score.mts'
-)
-const { cmdPackageShallow } = await import(
-  '../../../../src/commands/package/cmd-package-shallow.mts'
-)
+const { cmdPackage } =
+  await import('../../../../src/commands/package/cmd-package.mts')
+const { cmdPackageScore } =
+  await import('../../../../src/commands/package/cmd-package-score.mts')
+const { cmdPackageShallow } =
+  await import('../../../../src/commands/package/cmd-package-shallow.mts')
 
 describe('cmd-package', () => {
   beforeEach(() => {
@@ -165,7 +162,11 @@ describe('cmd-package', () => {
     it('should configure deep alias for score', async () => {
       mockMeowWithSubcommands.mockResolvedValue(undefined)
 
-      await cmdPackage.run([], { url: 'file:///test' }, { parentName: 'socket' })
+      await cmdPackage.run(
+        [],
+        { url: 'file:///test' },
+        { parentName: 'socket' },
+      )
 
       const call = mockMeowWithSubcommands.mock.calls[0]
       const aliases = call[1].aliases
@@ -180,7 +181,11 @@ describe('cmd-package', () => {
     it('should mark deep alias as hidden', async () => {
       mockMeowWithSubcommands.mockResolvedValue(undefined)
 
-      await cmdPackage.run([], { url: 'file:///test' }, { parentName: 'socket' })
+      await cmdPackage.run(
+        [],
+        { url: 'file:///test' },
+        { parentName: 'socket' },
+      )
 
       const call = mockMeowWithSubcommands.mock.calls[0]
       const aliases = call[1].aliases
@@ -204,7 +209,11 @@ describe('cmd-package', () => {
     it('should pass description in options', async () => {
       mockMeowWithSubcommands.mockResolvedValue(undefined)
 
-      await cmdPackage.run([], { url: 'file:///test' }, { parentName: 'socket' })
+      await cmdPackage.run(
+        [],
+        { url: 'file:///test' },
+        { parentName: 'socket' },
+      )
 
       const call = mockMeowWithSubcommands.mock.calls[0]
       const options = call[1]

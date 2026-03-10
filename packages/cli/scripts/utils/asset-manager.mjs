@@ -65,7 +65,11 @@ export class AssetManager {
    * @param {boolean} [options.cacheEnabled] - Enable version caching (default: true).
    */
   constructor(options = {}) {
-    const { cacheEnabled = true, downloadDir, quiet = false } = {
+    const {
+      cacheEnabled = true,
+      downloadDir,
+      quiet = false,
+    } = {
       __proto__: null,
       ...options,
     }
@@ -78,7 +82,9 @@ export class AssetManager {
     const rootPath = getRootPath()
     this.downloadDir =
       downloadDir ||
-      normalizePath(path.join(rootPath, 'packages/build-infra/build/downloaded'))
+      normalizePath(
+        path.join(rootPath, 'packages/build-infra/build/downloaded'),
+      )
   }
 
   /**
@@ -210,7 +216,9 @@ export class AssetManager {
         this.logger.warn(
           `${localOverride} is set but file not found: ${localPath}`,
         )
-        this.logger.warn(`Falling back to downloaded ${tool} from GitHub releases`)
+        this.logger.warn(
+          `Falling back to downloaded ${tool} from GitHub releases`,
+        )
       }
     }
 
@@ -246,12 +254,18 @@ export class AssetManager {
           })
           // Check if cached version matches requested version.
           const tagPrefix = `${tool}-`
-          const cacheValid = await this.validateCache(versionPath, tag, tagPrefix)
+          const cacheValid = await this.validateCache(
+            versionPath,
+            tag,
+            tagPrefix,
+          )
           if (cacheValid && existsSync(binaryPath)) {
             return binaryPath
           }
         }
-        throw new Error(`Timeout waiting for another process to download ${tool}`)
+        throw new Error(
+          `Timeout waiting for another process to download ${tool}`,
+        )
       }
       throw e
     }
@@ -293,7 +307,13 @@ export class AssetManager {
 
       // Download using github-releases helper (handles HTTP 302 redirects automatically).
       try {
-        await downloadReleaseAsset('SocketDev', 'socket-btm', tag, assetFilename, binaryPath)
+        await downloadReleaseAsset(
+          'SocketDev',
+          'socket-btm',
+          tag,
+          assetFilename,
+          binaryPath,
+        )
       } catch (e) {
         await logTransientErrorHelp(e)
         throw e

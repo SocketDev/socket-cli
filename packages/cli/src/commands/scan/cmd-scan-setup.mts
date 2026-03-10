@@ -77,11 +77,11 @@ async function run(
 
   if (dryRun) {
     const socketJsonPath = path.join(cwd, SOCKET_JSON)
-    outputDryRunWrite(
-      socketJsonPath,
-      'create or update scan configuration',
-      ['Set default repository name', 'Set default branch name', 'Configure scan options'],
-    )
+    outputDryRunWrite(socketJsonPath, 'create or update scan configuration', [
+      'Set default repository name',
+      'Set default branch name',
+      'Configure scan options',
+    ])
     return
   }
 

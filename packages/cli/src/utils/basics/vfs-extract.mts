@@ -80,7 +80,13 @@ export function getPythonSitePackagesPath(): string {
   const basePath = getNodeSmolBasePath()
   const pythonMajorMinor = getPythonMajorMinor()
   return normalizePath(
-    path.join(basePath, 'python', 'lib', `python${pythonMajorMinor}`, 'site-packages'),
+    path.join(
+      basePath,
+      'python',
+      'lib',
+      `python${pythonMajorMinor}`,
+      'site-packages',
+    ),
   )
 }
 
@@ -138,7 +144,9 @@ export async function extractBasicsTools(
   }
 
   if (typeof processWithSmol.smol?.mount !== 'function') {
-    logger.warn('process.smol.mount not available - cannot extract basics tools')
+    logger.warn(
+      'process.smol.mount not available - cannot extract basics tools',
+    )
     return null
   }
 
@@ -200,7 +208,7 @@ export async function extractBasicsTools(
     const toolsToValidate = ['trivy', 'trufflehog', 'opengrep'] as const
     for (const tool of toolsToValidate) {
       const toolPath = extractedPaths[tool]
-      if (!toolPath) continue
+      if (!toolPath) {continue}
 
       // eslint-disable-next-line no-await-in-loop
       const toolValidateResult = await spawn(toolPath, ['--version'], {
@@ -261,14 +269,22 @@ export function getBasicsToolPaths(toolsDir: string): {
 
   return {
     opengrep: normalizePath(
-      path.join(baseDlxDir, 'opengrep', isPlatWin ? 'opengrep.exe' : 'opengrep'),
+      path.join(
+        baseDlxDir,
+        'opengrep',
+        isPlatWin ? 'opengrep.exe' : 'opengrep',
+      ),
     ),
     python: normalizePath(path.join(toolsDir, 'bin', pythonExe)),
     trivy: normalizePath(
       path.join(baseDlxDir, 'trivy', isPlatWin ? 'trivy.exe' : 'trivy'),
     ),
     trufflehog: normalizePath(
-      path.join(baseDlxDir, 'trufflehog', isPlatWin ? 'trufflehog.exe' : 'trufflehog'),
+      path.join(
+        baseDlxDir,
+        'trufflehog',
+        isPlatWin ? 'trufflehog.exe' : 'trufflehog',
+      ),
     ),
   }
 }

@@ -17,7 +17,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -40,7 +41,10 @@ vi.mock('../../../../src/utils/socket/org-slug.mjs', () => ({
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/socket/sdk.mjs')>()
+  const actual =
+    await importOriginal<
+      typeof import('../../../../src/utils/socket/sdk.mjs')
+    >()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
@@ -48,9 +52,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdRepositoryList } = await import(
-  '../../../../src/commands/repository/cmd-repository-list.mts'
-)
+const { cmdRepositoryList } =
+  await import('../../../../src/commands/repository/cmd-repository-list.mts')
 
 describe('cmd-repository-list', () => {
   beforeEach(() => {
@@ -60,7 +63,9 @@ describe('cmd-repository-list', () => {
 
   describe('command metadata', () => {
     it('should have correct description', () => {
-      expect(cmdRepositoryList.description).toBe('List repositories in an organization')
+      expect(cmdRepositoryList.description).toBe(
+        'List repositories in an organization',
+      )
     })
 
     it('should not be hidden', () => {
@@ -75,11 +80,7 @@ describe('cmd-repository-list', () => {
     it('should support --dry-run flag', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryList.run(
-        ['--dry-run'],
-        importMeta,
-        context,
-      )
+      await cmdRepositoryList.run(['--dry-run'], importMeta, context)
 
       expect(mockHandleListRepos).not.toHaveBeenCalled()
       expect(mockLogger.log).toHaveBeenCalledWith(
@@ -90,11 +91,7 @@ describe('cmd-repository-list', () => {
     it('should fail without Socket API token', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(false)
 
-      await cmdRepositoryList.run(
-        ['--no-interactive'],
-        importMeta,
-        context,
-      )
+      await cmdRepositoryList.run(['--no-interactive'], importMeta, context)
 
       // Exit code 2 = invalid usage/validation failure.
       expect(process.exitCode).toBe(2)
@@ -105,11 +102,7 @@ describe('cmd-repository-list', () => {
       mockDetermineOrgSlug.mockResolvedValueOnce(['', ''])
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryList.run(
-        ['--no-interactive'],
-        importMeta,
-        context,
-      )
+      await cmdRepositoryList.run(['--no-interactive'], importMeta, context)
 
       // Exit code 2 = invalid usage/validation failure.
       expect(process.exitCode).toBe(2)
@@ -119,11 +112,7 @@ describe('cmd-repository-list', () => {
     it('should call handleListRepos with default parameters', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryList.run(
-        ['--no-interactive'],
-        importMeta,
-        context,
-      )
+      await cmdRepositoryList.run(['--no-interactive'], importMeta, context)
 
       expect(mockHandleListRepos).toHaveBeenCalledWith({
         all: false,
@@ -244,7 +233,11 @@ describe('cmd-repository-list', () => {
         context,
       )
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('custom-org', false, false)
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'custom-org',
+        false,
+        false,
+      )
       expect(mockHandleListRepos).toHaveBeenCalledWith(
         expect.objectContaining({
           orgSlug: 'custom-org',
@@ -301,11 +294,7 @@ describe('cmd-repository-list', () => {
     it('should show query parameters in dry-run mode with default values', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryList.run(
-        ['--dry-run'],
-        importMeta,
-        context,
-      )
+      await cmdRepositoryList.run(['--dry-run'], importMeta, context)
 
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('[DryRun]: Would fetch repositories'),
@@ -330,11 +319,7 @@ describe('cmd-repository-list', () => {
     it('should show query parameters in dry-run mode with --all flag', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryList.run(
-        ['--dry-run', '--all'],
-        importMeta,
-        context,
-      )
+      await cmdRepositoryList.run(['--dry-run', '--all'], importMeta, context)
 
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('all: true'),
@@ -344,11 +329,7 @@ describe('cmd-repository-list', () => {
     it('should pass interactive flag to determineOrgSlug', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryList.run(
-        ['--interactive'],
-        importMeta,
-        context,
-      )
+      await cmdRepositoryList.run(['--interactive'], importMeta, context)
 
       expect(mockDetermineOrgSlug).toHaveBeenCalledWith('', true, false)
     })
@@ -358,10 +339,14 @@ describe('cmd-repository-list', () => {
 
       await cmdRepositoryList.run(
         [
-          '--page', '3',
-          '--per-page', '100',
-          '--sort', 'name',
-          '--direction', 'asc',
+          '--page',
+          '3',
+          '--per-page',
+          '100',
+          '--sort',
+          'name',
+          '--direction',
+          'asc',
           '--no-interactive',
         ],
         importMeta,

@@ -17,7 +17,8 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+  const actual =
+    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -40,7 +41,10 @@ vi.mock('../../../../src/utils/socket/org-slug.mjs', () => ({
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/socket/sdk.mjs')>()
+  const actual =
+    await importOriginal<
+      typeof import('../../../../src/utils/socket/sdk.mjs')
+    >()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
@@ -48,9 +52,8 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
 })
 
 // Import after mocks.
-const { cmdRepositoryView } = await import(
-  '../../../../src/commands/repository/cmd-repository-view.mts'
-)
+const { cmdRepositoryView } =
+  await import('../../../../src/commands/repository/cmd-repository-view.mts')
 
 describe('cmd-repository-view', () => {
   beforeEach(() => {
@@ -60,7 +63,9 @@ describe('cmd-repository-view', () => {
 
   describe('command metadata', () => {
     it('should have correct description', () => {
-      expect(cmdRepositoryView.description).toBe('View repositories in an organization')
+      expect(cmdRepositoryView.description).toBe(
+        'View repositories in an organization',
+      )
     })
 
     it('should not be hidden', () => {
@@ -119,11 +124,7 @@ describe('cmd-repository-view', () => {
     it('should fail without repository name', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryView.run(
-        ['--no-interactive'],
-        importMeta,
-        context,
-      )
+      await cmdRepositoryView.run(['--no-interactive'], importMeta, context)
 
       // Exit code 2 = invalid usage/validation failure.
       expect(process.exitCode).toBe(2)
@@ -156,7 +157,11 @@ describe('cmd-repository-view', () => {
         context,
       )
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('custom-org', false, false)
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'custom-org',
+        false,
+        false,
+      )
       expect(mockHandleViewRepo).toHaveBeenCalledWith(
         'custom-org',
         'test-repo',
@@ -213,11 +218,7 @@ describe('cmd-repository-view', () => {
     it('should show repository identifier in dry-run mode', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryView.run(
-        ['my-repo', '--dry-run'],
-        importMeta,
-        context,
-      )
+      await cmdRepositoryView.run(['my-repo', '--dry-run'], importMeta, context)
 
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('test-org/my-repo'),

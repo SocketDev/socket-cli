@@ -114,12 +114,10 @@ describe('fetchOrganizationList', () => {
   })
 
   it('uses provided SDK instance', async () => {
-    const { handleApiCall } = await import(
-      '../../../../../src/commands/../../../../src/utils/socket/api.mts'
-    )
-    const { createSuccessResult } = await import(
-      '../../../../../src/commands/../../test/helpers/mocks.mts'
-    )
+    const { handleApiCall } =
+      await import('../../../../../src/commands/../../../../src/utils/socket/api.mts')
+    const { createSuccessResult } =
+      await import('../../../../../src/commands/../../test/helpers/mocks.mts')
 
     const mockSdk = {
       listOrganizations: vi.fn().mockResolvedValue({}),

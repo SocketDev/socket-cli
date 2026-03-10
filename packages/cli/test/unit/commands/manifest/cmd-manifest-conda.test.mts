@@ -28,7 +28,9 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 
 // Mock dependencies.
 const mockHandleManifestConda = vi.hoisted(() => vi.fn())
-const mockReadOrDefaultSocketJson = vi.hoisted(() => vi.fn().mockReturnValue({}))
+const mockReadOrDefaultSocketJson = vi.hoisted(() =>
+  vi.fn().mockReturnValue({}),
+)
 
 vi.mock('../../../../src/commands/manifest/handle-manifest-conda.mts', () => ({
   handleManifestConda: mockHandleManifestConda,
@@ -39,9 +41,8 @@ vi.mock('../../../../src/utils/socket/json.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdManifestConda } = await import(
-  '../../../../src/commands/manifest/cmd-manifest-conda.mts'
-)
+const { cmdManifestConda } =
+  await import('../../../../src/commands/manifest/cmd-manifest-conda.mts')
 
 describe('cmd-manifest-conda', () => {
   beforeEach(() => {

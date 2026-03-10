@@ -118,9 +118,7 @@ describe('cmd-pnpm', () => {
         // Verify dry-run message.
         const logCalls = mockLogger.log.mock.calls.flat()
         const hasDryRunMessage = logCalls.some(
-          call =>
-            typeof call === 'string' &&
-            call.includes('Would execute'),
+          call => typeof call === 'string' && call.includes('Would execute'),
         )
         expect(hasDryRunMessage).toBe(true)
       })
@@ -164,9 +162,12 @@ describe('cmd-pnpm', () => {
         await cmdPnpm.run(['install', 'lodash'], importMeta, context)
 
         // Verify sfw was called with filtered flags.
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['pnpm', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should filter out --config flag when forwarding to sfw', async () => {
@@ -179,9 +180,12 @@ describe('cmd-pnpm', () => {
         )
 
         // --config should be filtered out.
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['pnpm', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should filter out multiple Socket CLI flags', async () => {
@@ -194,9 +198,12 @@ describe('cmd-pnpm', () => {
         )
 
         // Both --config and --no-banner should be filtered.
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['pnpm', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should preserve pnpm flags while filtering Socket flags', async () => {
@@ -227,9 +234,12 @@ describe('cmd-pnpm', () => {
         )
 
         // --no-banner should be filtered.
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['pnpm', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
     })
 
@@ -239,9 +249,12 @@ describe('cmd-pnpm', () => {
 
         await cmdPnpm.run(['install', 'lodash'], importMeta, context)
 
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['pnpm', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should forward pnpm add command', async () => {
@@ -249,9 +262,12 @@ describe('cmd-pnpm', () => {
 
         await cmdPnpm.run(['add', 'lodash'], importMeta, context)
 
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['pnpm', 'add', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'add', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should forward pnpm install with version specifier', async () => {
@@ -298,9 +314,12 @@ describe('cmd-pnpm', () => {
 
         await cmdPnpm.run(['update', 'lodash'], importMeta, context)
 
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['pnpm', 'update', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'update', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
 
       it('should forward pnpm with no arguments', async () => {
@@ -358,9 +377,12 @@ describe('cmd-pnpm', () => {
 
         await cmdPnpm.run(['install', 'lodash'], importMeta, context)
 
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['pnpm', 'install', 'lodash'], {
-          stdio: 'inherit',
-        })
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
       })
     })
 
@@ -393,9 +415,8 @@ describe('cmd-pnpm', () => {
 
     describe('command name constant', () => {
       it('should use PNPM constant as command name', async () => {
-        const { CMD_NAME } = await import(
-          '../../../../src/commands/pnpm/cmd-pnpm.mts'
-        )
+        const { CMD_NAME } =
+          await import('../../../../src/commands/pnpm/cmd-pnpm.mts')
         expect(CMD_NAME).toBe(PNPM)
         expect(CMD_NAME).toBe('pnpm')
       })

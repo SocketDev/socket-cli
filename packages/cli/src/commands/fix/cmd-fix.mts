@@ -346,7 +346,8 @@ async function run(
 
   const dryRun = !!cli.flags['dryRun']
 
-  const minSatisfying = (cli.flags as unknown as FixFlags).minSatisfying || !maxSatisfying
+  const minSatisfying =
+    (cli.flags as unknown as FixFlags).minSatisfying || !maxSatisfying
 
   const disableMajorUpdates = !majorUpdates
 

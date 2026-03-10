@@ -61,15 +61,18 @@ export async function spawnCoana(
   try {
     // Use local Coana CLI if path is provided.
     if (SOCKET_CLI_COANA_LOCAL_PATH) {
-      const spawnResult = await spawnNode([SOCKET_CLI_COANA_LOCAL_PATH, ...args], {
-        ...spawnOpts,
-        env: {
-          ...process.env,
-          ...mixinsEnv,
-          ...spawnEnv,
+      const spawnResult = await spawnNode(
+        [SOCKET_CLI_COANA_LOCAL_PATH, ...args],
+        {
+          ...spawnOpts,
+          env: {
+            ...process.env,
+            ...mixinsEnv,
+            ...spawnEnv,
+          },
+          stdio: spawnExtra?.['stdio'] || 'inherit',
         },
-        stdio: spawnExtra?.['stdio'] || 'inherit',
-      })
+      )
 
       return {
         ok: true,

@@ -32,9 +32,8 @@ describe('resolve-binary', () => {
         SOCKET_CLI_COANA_LOCAL_PATH: '/custom/path/to/coana',
       }))
 
-      const { resolveCoana } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mjs'
-      )
+      const { resolveCoana } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
 
       const result = resolveCoana()
 
@@ -52,9 +51,8 @@ describe('resolve-binary', () => {
         getCoanaVersion: () => '1.0.0',
       }))
 
-      const { resolveCoana } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mjs'
-      )
+      const { resolveCoana } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
 
       const result = resolveCoana() as Extract<
         BinaryResolution,
@@ -72,9 +70,8 @@ describe('resolve-binary', () => {
         SOCKET_CLI_COANA_LOCAL_PATH: '/local/coana',
       }))
 
-      const { resolveCoana } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mjs'
-      )
+      const { resolveCoana } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
 
       const result = resolveCoana()
 
@@ -91,9 +88,8 @@ describe('resolve-binary', () => {
         SOCKET_CLI_CDXGEN_LOCAL_PATH: '/custom/path/to/cdxgen',
       }))
 
-      const { resolveCdxgen } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mjs'
-      )
+      const { resolveCdxgen } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
 
       const result = resolveCdxgen()
 
@@ -111,9 +107,8 @@ describe('resolve-binary', () => {
         getCdxgenVersion: () => '10.0.0',
       }))
 
-      const { resolveCdxgen } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mjs'
-      )
+      const { resolveCdxgen } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
 
       const result = resolveCdxgen() as Extract<
         BinaryResolution,
@@ -132,9 +127,8 @@ describe('resolve-binary', () => {
         SOCKET_CLI_PYCLI_LOCAL_PATH: '/custom/path/to/pycli',
       }))
 
-      const { resolvePyCli } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mjs'
-      )
+      const { resolvePyCli } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
 
       const result = resolvePyCli()
 
@@ -149,9 +143,8 @@ describe('resolve-binary', () => {
         SOCKET_CLI_PYCLI_LOCAL_PATH: undefined,
       }))
 
-      const { resolvePyCli } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mjs'
-      )
+      const { resolvePyCli } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
 
       const result = resolvePyCli()
 
@@ -165,9 +158,8 @@ describe('resolve-binary', () => {
         SOCKET_CLI_SFW_LOCAL_PATH: '/custom/path/to/sfw',
       }))
 
-      const { resolveSfw } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mjs'
-      )
+      const { resolveSfw } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
 
       const result = resolveSfw()
 
@@ -185,9 +177,8 @@ describe('resolve-binary', () => {
         getSwfVersion: () => '2.0.0',
       }))
 
-      const { resolveSfw } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mjs'
-      )
+      const { resolveSfw } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
 
       const result = resolveSfw() as Extract<BinaryResolution, { type: 'dlx' }>
 
@@ -204,9 +195,8 @@ describe('resolve-binary', () => {
         getSynpVersion: () => '1.0.0',
       }))
 
-      const { resolveSynp } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mjs'
-      )
+      const { resolveSynp } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
 
       const result = resolveSynp() as Extract<BinaryResolution, { type: 'dlx' }>
 
@@ -225,9 +215,8 @@ describe('resolve-binary', () => {
         getCoanaVersion: () => '1.0.0',
       }))
 
-      const { resolveCoana } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mjs'
-      )
+      const { resolveCoana } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
 
       const result = resolveCoana()
 
@@ -240,9 +229,8 @@ describe('resolve-binary', () => {
         SOCKET_CLI_CDXGEN_LOCAL_PATH: './local/cdxgen.js',
       }))
 
-      const { resolveCdxgen } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mjs'
-      )
+      const { resolveCdxgen } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
 
       const result = resolveCdxgen()
 
@@ -257,9 +245,8 @@ describe('resolve-binary', () => {
         SOCKET_CLI_SFW_LOCAL_PATH: '/usr/local/bin/sfw',
       }))
 
-      const { resolveSfw } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mjs'
-      )
+      const { resolveSfw } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
 
       const result = resolveSfw()
 

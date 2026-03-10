@@ -45,9 +45,8 @@ vi.mock('../../../../src/utils/dry-run/output.mts', () => ({
 }))
 
 // Import after mocks.
-const { cmdLogin, CMD_NAME } = await import(
-  '../../../../src/commands/login/cmd-login.mts'
-)
+const { cmdLogin, CMD_NAME } =
+  await import('../../../../src/commands/login/cmd-login.mts')
 
 describe('cmd-login', () => {
   beforeEach(() => {

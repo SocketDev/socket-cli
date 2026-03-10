@@ -21,21 +21,25 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 }))
 
 // Mock dependencies.
-const mockHandleUninstallCompletion = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
+const mockHandleUninstallCompletion = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(undefined),
+)
 const mockOutputDryRunDelete = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/uninstall/handle-uninstall-completion.mts', () => ({
-  handleUninstallCompletion: mockHandleUninstallCompletion,
-}))
+vi.mock(
+  '../../../../src/commands/uninstall/handle-uninstall-completion.mts',
+  () => ({
+    handleUninstallCompletion: mockHandleUninstallCompletion,
+  }),
+)
 
 vi.mock('../../../../src/utils/dry-run/output.mts', () => ({
   outputDryRunDelete: mockOutputDryRunDelete,
 }))
 
 // Import after mocks.
-const { cmdUninstallCompletion } = await import(
-  '../../../../src/commands/uninstall/cmd-uninstall-completion.mts'
-)
+const { cmdUninstallCompletion } =
+  await import('../../../../src/commands/uninstall/cmd-uninstall-completion.mts')
 
 describe('cmd-uninstall-completion', () => {
   const originalExitCode = process.exitCode
@@ -51,7 +55,9 @@ describe('cmd-uninstall-completion', () => {
 
   describe('command metadata', () => {
     it('should have correct description', () => {
-      expect(cmdUninstallCompletion.description).toBe('Uninstall bash completion for Socket CLI')
+      expect(cmdUninstallCompletion.description).toBe(
+        'Uninstall bash completion for Socket CLI',
+      )
     })
 
     it('should not be hidden', () => {
@@ -93,7 +99,11 @@ describe('cmd-uninstall-completion', () => {
       })
 
       it('should output dry-run message for custom target', async () => {
-        await cmdUninstallCompletion.run(['sd', '--dry-run'], importMeta, context)
+        await cmdUninstallCompletion.run(
+          ['sd', '--dry-run'],
+          importMeta,
+          context,
+        )
 
         expect(mockOutputDryRunDelete).toHaveBeenCalledWith(
           'bash completion',
@@ -116,7 +126,11 @@ describe('cmd-uninstall-completion', () => {
       })
 
       it('should include target file path in dry-run identifier', async () => {
-        await cmdUninstallCompletion.run(['my-cmd', '--dry-run'], importMeta, context)
+        await cmdUninstallCompletion.run(
+          ['my-cmd', '--dry-run'],
+          importMeta,
+          context,
+        )
 
         const [, identifier] = mockOutputDryRunDelete.mock.calls[0]
         expect(identifier).toContain('my-cmd')
@@ -142,7 +156,9 @@ describe('cmd-uninstall-completion', () => {
         await cmdUninstallCompletion.run(['test-cmd'], importMeta, context)
 
         expect(mockHandleUninstallCompletion).toHaveBeenCalledWith('test-cmd')
-        expect(typeof mockHandleUninstallCompletion.mock.calls[0][0]).toBe('string')
+        expect(typeof mockHandleUninstallCompletion.mock.calls[0][0]).toBe(
+          'string',
+        )
       })
     })
 
@@ -162,7 +178,11 @@ describe('cmd-uninstall-completion', () => {
       })
 
       it('should prioritize first input argument as target name', async () => {
-        await cmdUninstallCompletion.run(['custom', 'ignored'], importMeta, context)
+        await cmdUninstallCompletion.run(
+          ['custom', 'ignored'],
+          importMeta,
+          context,
+        )
 
         expect(mockHandleUninstallCompletion).toHaveBeenCalledWith('custom')
       })
@@ -183,9 +203,15 @@ describe('cmd-uninstall-completion', () => {
       })
 
       it('should handle target name with path separators', async () => {
-        await cmdUninstallCompletion.run(['./custom-socket'], importMeta, context)
+        await cmdUninstallCompletion.run(
+          ['./custom-socket'],
+          importMeta,
+          context,
+        )
 
-        expect(mockHandleUninstallCompletion).toHaveBeenCalledWith('./custom-socket')
+        expect(mockHandleUninstallCompletion).toHaveBeenCalledWith(
+          './custom-socket',
+        )
       })
 
       it('should handle target name with special shell characters', async () => {
@@ -197,13 +223,21 @@ describe('cmd-uninstall-completion', () => {
 
     describe('multiple arguments', () => {
       it('should only use first argument as target name', async () => {
-        await cmdUninstallCompletion.run(['first', 'second', 'third'], importMeta, context)
+        await cmdUninstallCompletion.run(
+          ['first', 'second', 'third'],
+          importMeta,
+          context,
+        )
 
         expect(mockHandleUninstallCompletion).toHaveBeenCalledWith('first')
       })
 
       it('should ignore extra arguments after target name', async () => {
-        await cmdUninstallCompletion.run(['socket', '--extra'], importMeta, context)
+        await cmdUninstallCompletion.run(
+          ['socket', '--extra'],
+          importMeta,
+          context,
+        )
 
         expect(mockHandleUninstallCompletion).toHaveBeenCalledWith('socket')
       })

@@ -92,9 +92,8 @@ vi.mock('../../../../src/utils/fs/path-resolve.mjs', () => ({
   getPackageFilesForScan: mockGetPackageFilesForScan,
 }))
 
-const { handleScanReach } = await import(
-  '../../../../src/commands/scan/handle-scan-reach.mts'
-)
+const { handleScanReach } =
+  await import('../../../../src/commands/scan/handle-scan-reach.mts')
 
 describe('handleScanReach', () => {
   beforeEach(() => {

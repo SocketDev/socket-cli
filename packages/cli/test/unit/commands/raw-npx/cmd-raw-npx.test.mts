@@ -124,9 +124,8 @@ vi.mock(
 )
 
 // Import after mocks.
-const { CMD_NAME, cmdRawNpx } = await import(
-  '../../../../src/commands/raw-npx/cmd-raw-npx.mts'
-)
+const { CMD_NAME, cmdRawNpx } =
+  await import('../../../../src/commands/raw-npx/cmd-raw-npx.mts')
 
 describe('cmd-raw-npx', () => {
   beforeEach(() => {
@@ -297,11 +296,7 @@ describe('cmd-raw-npx', () => {
       })
 
       it('should handle multiple arguments', async () => {
-        await cmdRawNpx.run(
-          ['typescript', '--version'],
-          importMeta,
-          context,
-        )
+        await cmdRawNpx.run(['typescript', '--version'], importMeta, context)
 
         expect(mockSpawn).toHaveBeenCalledWith(
           expect.any(String),

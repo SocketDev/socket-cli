@@ -10,18 +10,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // Mock meowWithSubcommands.
 const mockMeowWithSubcommands = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/cli/with-subcommands.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/cli/with-subcommands.mjs')>()
-  return {
-    ...actual,
-    meowWithSubcommands: mockMeowWithSubcommands,
-  }
-})
+vi.mock(
+  '../../../../src/utils/cli/with-subcommands.mjs',
+  async importOriginal => {
+    const actual =
+      await importOriginal<
+        typeof import('../../../../src/utils/cli/with-subcommands.mjs')
+      >()
+    return {
+      ...actual,
+      meowWithSubcommands: mockMeowWithSubcommands,
+    }
+  },
+)
 
 // Import after mocks.
-const { cmdInstall } = await import(
-  '../../../../src/commands/install/cmd-install.mts'
-)
+const { cmdInstall } =
+  await import('../../../../src/commands/install/cmd-install.mts')
 
 describe('cmd-install', () => {
   beforeEach(() => {

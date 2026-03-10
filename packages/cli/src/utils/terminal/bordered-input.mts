@@ -209,7 +209,10 @@ export class BorderedOutput {
     if (this.title) {
       const titleStr = ` ${this.title} `
       // Guard against negative values when title exceeds border width.
-      const leftPad = Math.max(0, Math.floor((innerWidth - titleStr.length) / 2))
+      const leftPad = Math.max(
+        0,
+        Math.floor((innerWidth - titleStr.length) / 2),
+      )
       const rightPad = Math.max(0, innerWidth - titleStr.length - leftPad)
 
       stdout.write(
@@ -343,5 +346,7 @@ export async function borderedMenu(
 
   // Validate input is within valid range (options are numbered 1-N).
   const parsed = Number.parseInt(answer, 10)
-  return Number.isNaN(parsed) || parsed < 1 || parsed > options.length ? 0 : parsed
+  return Number.isNaN(parsed) || parsed < 1 || parsed > options.length
+    ? 0
+    : parsed
 }

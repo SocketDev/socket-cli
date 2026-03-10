@@ -52,8 +52,7 @@ export const PLATFORM_MAP_TOOLS = {
   'darwin-arm64': {
     __proto__: null,
     opengrep: 'opengrep-core_osx_aarch64.tar.gz',
-    python:
-      'cpython-3.11.14+20260203-aarch64-apple-darwin-install_only.tar.gz',
+    python: 'cpython-3.11.14+20260203-aarch64-apple-darwin-install_only.tar.gz',
     sfw: 'sfw-free-macos-arm64',
     'socket-patch': 'socket-patch-aarch64-apple-darwin.tar.gz',
     trivy: 'trivy_0.69.2_macOS-ARM64.tar.gz',
@@ -64,8 +63,7 @@ export const PLATFORM_MAP_TOOLS = {
   'darwin-x64': {
     __proto__: null,
     opengrep: 'opengrep-core_osx_x86.tar.gz',
-    python:
-      'cpython-3.11.14+20260203-x86_64-apple-darwin-install_only.tar.gz',
+    python: 'cpython-3.11.14+20260203-x86_64-apple-darwin-install_only.tar.gz',
     sfw: 'sfw-free-macos-x86_64',
     'socket-patch': 'socket-patch-x86_64-apple-darwin.tar.gz',
     trivy: 'trivy_0.69.2_macOS-64bit.tar.gz',

@@ -86,9 +86,8 @@ describe('fetchScanData', () => {
 
     mockSetupSdk.mockResolvedValue(error)
 
-    const { fetchScanData } = await import(
-      '../../../../src/commands/scan/fetch-report-data.mts'
-    )
+    const { fetchScanData } =
+      await import('../../../../src/commands/scan/fetch-report-data.mts')
 
     const result = await fetchScanData('test-org', 'scan-123')
 
