@@ -55,7 +55,7 @@ Common characteristics to look for:
 
 <instructions>
 Scan all code files for these critical bug patterns:
-- [IF monorepo] TypeScript/JavaScript: packages/*/scripts/**/*.{mjs,mts}, packages/*/src/**/*.{mjs,mts}
+- [IF single package] TypeScript/JavaScript: scripts/**/*.{mjs,mts}, src/**/*.{mjs,mts}
 - [IF single package] TypeScript/JavaScript: src/**/*.{ts,mts,mjs,js}, lib/**/*.{ts,mts,mjs,js}
 - [IF C/C++ code exists] C/C++: src/**/*.{c,cc,cpp,h}
 - Focus on:
@@ -178,13 +178,12 @@ beforeAll(async () => {
 })
 ```
 
-**[SOCKET-BTM SPECIFIC] Where to check:**
-- packages/binpress/test/*.test.mts
-- packages/binflate/test/*.test.mts
-- packages/binject/test/*.test.mts
-- Any test that uses `BINPRESS`, `BINFLATE`, or `BINJECT` as compression input
+**Where to check:**
+- test/**/*.test.ts
+- test/**/*.test.mts
+- Any test that uses external binaries or performs heavy I/O operations
 
-**Impact:** Tests using binsuite tools as input cause Linux CI timeouts (180-360 seconds)
+**Impact:** Tests performing intensive operations can cause CI timeouts
 </pattern>
 
 For each bug found, think through:
@@ -427,17 +426,15 @@ Your task is to analyze caching implementation for correctness, staleness bugs, 
 <context>
 **[SOCKET-BTM SPECIFIC - Adapt for your repository's caching strategy]**
 
-socket-btm uses a multi-stage checkpoint system to speed up builds:
-- **Checkpoint stages**: source-copied, source-patched, configured, compiled, stripped, compressed, final
-- **Storage**: tar.gz archives stored in build/checkpoints/{platform}-{arch}/
-- **Invalidation**: Based on cache keys (hashes of patches, config, source version)
-- **Progressive builds**: Can restore from any checkpoint and continue
-- **Cross-platform**: Must work on Windows, macOS, Linux (ARM64, x64)
-- **Critical**: Stale checkpoints cause incorrect builds that are hard to debug
+This project may use caching for build artifacts or API responses:
+- **Storage**: Cache files or API response caching
+- **Invalidation**: Based on cache keys (content hashes, timestamps, versions)
+- **Cross-platform**: Must work on Windows, macOS, Linux
+- **Critical**: Stale cache can cause incorrect behavior that's hard to debug
 
-Caching locations:
-- packages/node-smol-builder/scripts/common/shared/checkpoints.mjs
-- packages/node-smol-builder/build/checkpoints/
+Caching locations (if applicable):
+- Build cache directories
+- API response caching (nock fixtures for tests)
 - Cache key generation and validation logic
 </context>
 
@@ -463,10 +460,8 @@ Checkpoint key generation correctness:
 - Additions: Are build-infra/binject changes invalidating checkpoints?
 - Environment: Are env vars (NODE_OPTIONS, etc.) affecting builds included?
 
-**[SOCKET-BTM SPECIFIC]** NOTE: SOURCE_PATCHED and SOURCE_COPIED checkpoints intentionally omit platform/arch/libc
-because source patching is platform-agnostic - the same patches apply regardless of
-target platform. Only binary compilation stages (COMPILED, STRIPPED, COMPRESSED, FINALIZED)
-need platform-specific cache keys. Do NOT flag this as an issue.
+**NOTE**: Platform-agnostic operations may share cache keys across platforms,
+while platform-specific operations should include platform/arch in cache keys.
 </pattern>
 
 <pattern name="checkpoint_corruption">
@@ -515,7 +510,7 @@ Think through each issue:
 <output_format>
 For each finding, report:
 
-File: packages/node-smol-builder/scripts/common/shared/checkpoints.mjs:lineNumber
+File: src/path/to/cache-module.ts:lineNumber
 Issue: [One-line description]
 Severity: High | Medium
 Scenario: [Step-by-step sequence showing how bug manifests]
@@ -524,8 +519,8 @@ Fix: [Specific code change]
 Impact: [Observable effect - wrong output, performance, crash]
 
 Example:
-File: packages/node-smol-builder/scripts/common/shared/checkpoints.mjs:145
-Issue: Cache key missing patch content hashes
+File: src/path/to/cache-module.ts:145
+Issue: Cache key missing content hashes
 Severity: High
 Scenario: 1) Build with patch v1, creates checkpoint. 2) Patch file modified to v2 (same filename). 3) Build restores v1 checkpoint. 4) Produces binary with v1 patches but v2 expected
 Pattern: `const cacheKey = \`\${nodeVersion}-\${platform}-\${arch}\``
@@ -558,7 +553,7 @@ Your task is to identify issues in socket-btm's development workflows, build scr
 
 <context>
 socket-btm is a pnpm monorepo with:
-- **Build scripts**: packages/*/scripts/**/*.{mjs,mts} (ESM, cross-platform Node.js)
+- **Build scripts**: scripts/**/*.{mjs,mts} (ESM, cross-platform Node.js)
 - **Package manager**: pnpm workspaces with scripts in each package.json
 - **Git hooks**: .git-hooks/* for pre-commit, pre-push validation
 - **CI**: GitHub Actions (.github/workflows/)
@@ -716,8 +711,8 @@ buildBinSuitePackage({
    - Fix: Use bin-infra/lib/builder for consistent behavior
 
 **Check these files:**
-- packages/*/scripts/build.mjs - Must use buildBinSuitePackage
-- packages/*/Makefile.* - Should not be invoked directly (only via build.mjs)
+- scripts/build.mjs - Build orchestration script
+- Build scripts should be cross-platform compatible
 - README.md files - Should document `pnpm run build`, not direct make
 </pattern>
 
@@ -1453,39 +1448,39 @@ Severity Guidelines:
 - Low: Minor inaccuracies or missing non-critical information
 
 Example:
-File: packages/binject/README.md:46
-Issue: Incorrect description of NODE_SEA section compression format
+File: README.md:46
+Issue: Incorrect description of API method behavior
 Severity: High
-Pattern: "NODE_SEA - Compressed application code (Brotli, ~70-80% reduction)"
-Actual: NODE_SEA contains uncompressed blobs generated by Node.js itself, not Brotli-compressed data
-Fix: Change to: "NODE_SEA - Single Executable Application code (generated by Node.js)"
-Impact: Misleads developers about the actual format, causing confusion when inspecting binaries
+Pattern: "getFullReport() - Returns comprehensive security analysis"
+Actual: Method only returns issues data, not full report with metadata
+Fix: Change to: "getFullReport() - Returns security issues with scores and alerts"
+Impact: Misleads developers about the actual return value structure
 
 Example:
 File: README.md:25
-Issue: Incorrect package name in build command
+Issue: Incorrect package name in installation command
 Severity: High
-Pattern: "pnpm --filter @socketbin/node-smol-builder run build"
-Actual: package.json shows "name": "node-smol-builder" without @socketbin scope
-Fix: Change to: "pnpm --filter node-smol-builder run build"
-Impact: Command will fail with "No projects matched" error
+Pattern: "npm install @socket/sdk-js"
+Actual: package.json shows "name": "@socketsecurity/sdk"
+Fix: Change to: "npm install @socketsecurity/sdk"
+Impact: Installation command will fail with package not found error
 
 Example:
-File: packages/build-infra/README.md:14
-Issue: References non-existent module name
+File: README.md:14
+Issue: References non-existent export name
 Severity: Medium
-Pattern: "paths - Standard directory structure"
-Actual: Module is exported as "path-builder" in package.json exports
-Fix: Change to: "path-builder - Standard directory structure"
-Impact: Developers looking for "paths" module will not find it
+Pattern: "import { SocketClient } from '@socketsecurity/sdk'"
+Actual: Module exports as "SocketSdk" not "SocketClient" in package.json
+Fix: Change to: "import { SocketSdk } from '@socketsecurity/sdk'"
+Impact: Import will fail with module not found error
 
 Example:
-File: packages/binject/README.md:227
-Issue: Incorrect config size documented
+File: README.md:87
+Issue: Incorrect API response size documented
 Severity: Low
-Pattern: "Config stored in binary format (1112 bytes)"
-Actual: Config is 1176 bytes (verified in source code)
-Fix: Change to: "Config stored in binary format (1176 bytes)"
+Pattern: "Response payload limited to 1MB"
+Actual: API limits responses to 5MB (verified in source code)
+Fix: Change to: "Response payload limited to 5MB"
 Impact: Minor inaccuracy in technical specification
 
 **Junior Developer Friendliness Examples:**
@@ -1494,46 +1489,46 @@ Example:
 File: README.md:1-50
 Issue: Missing beginner-friendly introduction explaining project purpose
 Severity: High
-Pattern: Jumps directly to technical architecture without explaining what socket-btm is or why it exists
-Actual: Junior devs need context: "What is BTM?", "Why custom Node.js?", "When would I use this?"
-Fix: Add "What is Socket BTM?" section explaining: (1) Custom Node.js with Socket Security patches, (2) Minimal builds for production, (3) Use cases (CLI tools, serverless, containers)
+Pattern: Jumps directly to API documentation without explaining what the SDK does
+Actual: Junior devs need context: "What does this SDK do?", "When should I use it?", "How does it help?"
+Fix: Add "What is Socket SDK?" section explaining: (1) Programmatic access to Socket.dev API, (2) Security analysis for packages, (3) Use cases (CI/CD, automated scanning, custom tooling)
 Impact: Junior devs confused about project purpose, may not understand if they need it
 
 Example:
-File: packages/binject/README.md:15
-Issue: Assumes knowledge of Node.js SEA without explanation
+File: README.md:15
+Issue: Assumes knowledge of Socket.dev API without explanation
 Severity: Medium
-Pattern: "Injects SEA blobs into Node.js binaries"
-Actual: Junior devs don't know what SEA is or why injection is needed
-Fix: Add: "Single Executable Application (SEA) - bundles your app into a standalone binary. binject handles the low-level binary manipulation to embed your code into Node.js executables."
-Impact: Technical jargon barrier prevents junior devs from understanding tool purpose
+Pattern: "Queries Socket.dev security API for package analysis"
+Actual: Junior devs don't know what Socket.dev is or what security data it provides
+Fix: Add: "Socket.dev API - provides security analysis for npm packages including supply chain risk detection, malware scanning, and vulnerability tracking. This SDK provides programmatic access to all Socket.dev features."
+Impact: Technical jargon barrier prevents junior devs from understanding SDK purpose
 
 Example:
-File: packages/node-smol-builder/README.md:80
-Issue: No troubleshooting section for common build errors
+File: README.md:80
+Issue: No troubleshooting section for common API errors
 Severity: Medium
 Pattern: Documentation shows happy path but no error handling guidance
-Actual: Junior devs hit errors like "Patch failed to apply" or "Checkpoint extraction failed" with no guidance
-Fix: Add "Troubleshooting" section covering: (1) Patch application failures → check upstream version, (2) Checkpoint errors → run clean, (3) Build timeouts → increase TIMEOUT_MS
+Actual: Junior devs hit errors like "401 Unauthorized" or "Rate limit exceeded" with no guidance
+Fix: Add "Troubleshooting" section covering: (1) Authentication failures → check API token, (2) Rate limits → implement retry logic, (3) Timeout errors → increase timeout setting
 Impact: Junior devs stuck when errors occur, need hand-holding for common issues
 
 Example:
 File: CLAUDE.md:125
-Issue: Complex "Source of Truth Architecture" without visual diagram or simple explanation
+Issue: Complex architecture explanation without visual diagram or simple explanation
 Severity: Medium
-Pattern: Dense text explaining package relationships and sync direction
-Actual: Junior devs need visual representation and concrete examples to understand data flow
-Fix: Add ASCII diagram showing: packages/build-infra → additions/source-patched (one-way sync), plus example: "When you fix a bug in build-infra/debug_common.h, you must sync it to node-smol-builder/additions/"
-Impact: Junior contributors may edit wrong files, creating wasted work
+Pattern: Dense text explaining module relationships and data flow
+Actual: Junior devs need visual representation and concrete examples to understand architecture
+Fix: Add ASCII diagram showing: API Request → HTTP Client → Response Parser → Type Validation → Return, plus example: "When you call getFullReport(), the SDK makes a GET request to /v0/report/... endpoint"
+Impact: Junior contributors may struggle to understand internal architecture
 
 Example:
-File: packages/binpress/README.md:1-100
+File: README.md:1-100
 Issue: Missing "Getting Started" section with minimal working example
 Severity: High
 Pattern: Extensive API documentation but no simple end-to-end example
-Actual: Junior devs need: "How do I compress my first binary? Step 1, Step 2, Step 3"
-Fix: Add "Quick Start" section: "(1) Build binpress: pnpm run build, (2) Compress a binary: ./build/dev/out/Final/binpress input.exe output.exe, (3) Verify: ls -lh output.exe"
-Impact: Without concrete starting point, juniors struggle to use tool effectively
+Actual: Junior devs need: "How do I scan my first package? Step 1, Step 2, Step 3"
+Fix: Add "Quick Start" section: "(1) Install: npm install @socketsecurity/sdk, (2) Create client: const sdk = new SocketSdk('your-api-key'), (3) Scan package: const report = await sdk.getIssuesByNPMPackage('lodash', '4.17.21')"
+Impact: Without concrete starting point, juniors struggle to use SDK effectively
 </output_format>
 
 <quality_guidelines>
@@ -1560,63 +1555,63 @@ Scan all README.md files in the repository and report all documentation inaccura
 ### High Severity - 3 issues
 
 #### README.md:25
-- **Issue**: Incorrect package name in build command
-- **Pattern**: `pnpm --filter @socketbin/node-smol-builder run build`
-- **Actual**: package.json shows `"name": "node-smol-builder"` without scope
-- **Fix**: Change to: `pnpm --filter node-smol-builder run build`
-- **Impact**: Command fails with "No projects matched" error
+- **Issue**: Incorrect package name in installation command
+- **Pattern**: `npm install @socket/sdk-js`
+- **Actual**: package.json shows `"name": "@socketsecurity/sdk"`
+- **Fix**: Change to: `npm install @socketsecurity/sdk`
+- **Impact**: Installation fails with package not found error
 
-#### packages/binject/README.md:100
-- **Issue**: Documents obsolete --update-config flag
-- **Pattern**: `binject inject -e ./node-smol -o ./my-app --sea app.blob --update-config update-config.json`
-- **Actual**: Flag was removed, config now embedded via sea-config.json smol.update section
-- **Fix**: Remove --update-config example, document sea-config.json approach instead
-- **Impact**: Users will get "unknown flag" error, approach no longer works
+#### README.md:100
+- **Issue**: Documents obsolete method name
+- **Pattern**: `sdk.getReport(packageName, version)`
+- **Actual**: Method was renamed to `getFullReport()` in v2.0
+- **Fix**: Update all examples to use `getFullReport()`
+- **Impact**: Users will get method not found error
 
-#### packages/build-infra/README.md:12
-- **Issue**: Documents non-existent "c-package" builder
-- **Pattern**: "*-builder - Build strategies (cmake, rust, emscripten, c-package)"
-- **Actual**: No c-package-builder.mjs exists; actual builders are: cmake, rust, emscripten, docker, clean
-- **Fix**: List actual builders: "cmake, rust, emscripten, docker, clean"
-- **Impact**: Users looking for c-package builder will be confused
+#### README.md:12
+- **Issue**: Documents non-existent export
+- **Pattern**: "Import { SocketClient } from '@socketsecurity/sdk'"
+- **Actual**: Export is named "SocketSdk" not "SocketClient"
+- **Fix**: Change to: "import { SocketSdk } from '@socketsecurity/sdk'"
+- **Impact**: Import will fail with module not found error
 
 ### Medium Severity - 3 issues
 
-#### packages/binject/README.md:62
-- **Issue**: Output path missing build mode variants
-- **Pattern**: "Outputs to `build/prod/out/Final/binject`"
-- **Actual**: Build system supports both dev and prod modes: `build/{dev|prod}/out/Final/binject`
-- **Fix**: Change to: "Outputs to `build/{dev|prod}/out/Final/binject`"
-- **Impact**: Confusing for developers doing dev builds
+#### README.md:62
+- **Issue**: Build output path incorrect
+- **Pattern**: "Build outputs to `build/out/`"
+- **Actual**: Build system outputs to `dist/` directory
+- **Fix**: Change to: "Build outputs to `dist/`"
+- **Impact**: Confusing for developers looking for build artifacts
 
-#### packages/node-smol-builder/README.md:182
-- **Issue**: Incorrect patch count
-- **Pattern**: "Applies 15 patches to Node.js source"
-- **Actual**: Only 12 patches in patches/source-patched/ directory
-- **Fix**: Change to: "Applies 12 patches to Node.js source"
-- **Impact**: Minor discrepancy in technical details
+#### README.md:182
+- **Issue**: Incorrect supported Node.js versions
+- **Pattern**: "Supports Node.js 14, 16, 18"
+- **Actual**: Minimum version is Node.js 18.0.0 (verified in package.json engines)
+- **Fix**: Change to: "Supports Node.js 18+"
+- **Impact**: Users may try unsupported Node versions
 
-#### packages/bin-infra/README.md:1-21
-- **Issue**: Missing 75% of package contents in documentation
-- **Pattern**: Only documents src/ and make/, omits lib/, test/, scripts/, upstream/, patches/
-- **Actual**: Package has extensive JavaScript API (lib/), test utilities, build scripts, and upstream dependencies
-- **Fix**: Add comprehensive documentation of all 17 C files, 3 JS modules with API examples, test helpers, scripts, and upstream submodules
-- **Impact**: Developers unaware of most package functionality
+#### README.md:1-21
+- **Issue**: Missing 75% of API methods in documentation
+- **Pattern**: Only documents getFullReport() and getIssues(), omits organization, repository, and settings methods
+- **Actual**: SDK has extensive API covering organizations, repositories, SBOM, npm packages
+- **Fix**: Add comprehensive API documentation for all 30+ methods with examples
+- **Impact**: Developers unaware of most SDK functionality
 
 ### Low Severity - 2 issues
 
-#### packages/binject/README.md:227
-- **Issue**: Incorrect config size
-- **Pattern**: "1112 bytes"
-- **Actual**: Config is 1176 bytes (verified in source)
-- **Fix**: Change all occurrences to: "1176 bytes"
+#### README.md:227
+- **Issue**: Incorrect default timeout value
+- **Pattern**: "Default timeout: 10000ms"
+- **Actual**: Default is 30000ms (verified in source)
+- **Fix**: Change to: "Default timeout: 30000ms"
 - **Impact**: Minor technical inaccuracy
 
-#### packages/binflate/README.md:18
-- **Issue**: Claims caching functionality
-- **Pattern**: "Uses cache at ~/.socket/_dlx/"
-- **Actual**: binflate only extracts; self-extracting stubs (not binflate) implement caching
-- **Fix**: Clarify that binflate extracts only, stubs handle caching
-- **Impact**: Confusion about which component caches
+#### README.md:18
+- **Issue**: Claims automatic retry on rate limit
+- **Pattern**: "SDK automatically retries on rate limit errors"
+- **Actual**: SDK does not retry automatically; users must implement retry logic
+- **Fix**: Remove automatic retry claim, document manual retry approach
+- **Impact**: Users expect automatic behavior that doesn't exist
 ```
 
