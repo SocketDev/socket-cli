@@ -37,6 +37,14 @@ const logger = getDefaultLogger()
 let cachedLibc: string | undefined
 
 /**
+ * Reset the libc detection cache.
+ * This is primarily for testing purposes to allow re-detection.
+ */
+function resetLibcCache(): void {
+  cachedLibc = undefined
+}
+
+/**
  * Platform name mappings for GitHub releases.
  */
 const platformNameByOs = new Map([
@@ -279,14 +287,17 @@ function isPlatformSupported(): boolean {
 
 export {
   clearQuarantine,
+  detectMusl,
   ensureExecutable,
   getArchName,
   getBinaryName,
   getBinaryRelativePath,
   getExpectedAssetName,
+  getLibcSuffix,
   getNpmArch,
   getNpmPlatform,
   getPlatformName,
   getSocketbinPackageName,
   isPlatformSupported,
+  resetLibcCache,
 }

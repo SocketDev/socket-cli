@@ -2,15 +2,163 @@
  * Unit tests for platform detection utilities.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as fs from 'node:fs'
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  detectMusl,
   getBinaryName,
   getBinaryRelativePath,
+  getLibcSuffix,
   getNpmArch,
   getNpmPlatform,
   getSocketbinPackageName,
+  resetLibcCache,
 } from '../../../../src/utils/process/os.mts'
+
+// Mock the fs module.
+vi.mock('node:fs', async () => {
+  const actual = await vi.importActual('node:fs')
+  return {
+    ...actual,
+    existsSync: vi.fn(),
+    readFileSync: vi.fn(),
+  }
+})
+
+describe('detectMusl', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    resetLibcCache()
+  })
+
+  afterEach(() => {
+    resetLibcCache()
+  })
+
+  it('should return false on non-Linux platforms', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
+    expect(detectMusl()).toBe(false)
+  })
+
+  it('should return false on Windows', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
+    expect(detectMusl()).toBe(false)
+  })
+
+  it('should detect Alpine Linux via /etc/os-release', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+      return path === '/etc/os-release'
+    })
+    vi.mocked(fs.readFileSync).mockImplementation((path: unknown) => {
+      if (path === '/etc/os-release') {
+        return 'NAME="Alpine Linux"\nID=alpine\nVERSION_ID=3.18.0'
+      }
+      throw new Error('File not found')
+    })
+    expect(detectMusl()).toBe(true)
+  })
+
+  it('should detect musl via ld-musl dynamic linker (x86_64)', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+      return path === '/lib/ld-musl-x86_64.so.1'
+    })
+    vi.mocked(fs.readFileSync).mockImplementation(() => {
+      throw new Error('File not found')
+    })
+    expect(detectMusl()).toBe(true)
+  })
+
+  it('should detect musl via ld-musl dynamic linker (aarch64)', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+      return path === '/lib/ld-musl-aarch64.so.1'
+    })
+    vi.mocked(fs.readFileSync).mockImplementation(() => {
+      throw new Error('File not found')
+    })
+    expect(detectMusl()).toBe(true)
+  })
+
+  it('should return false for glibc-based Linux', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+      // Only /etc/os-release and /proc/version exist.
+      return path === '/etc/os-release' || path === '/proc/version'
+    })
+    vi.mocked(fs.readFileSync).mockImplementation((path: unknown) => {
+      if (path === '/etc/os-release') {
+        return 'NAME="Ubuntu"\nID=ubuntu\nVERSION_ID="22.04"'
+      }
+      if (path === '/proc/version') {
+        return 'Linux version 5.15.0-91-generic (buildd@ubuntu) (gcc (Ubuntu 11.4.0-1ubuntu1~22.04))'
+      }
+      throw new Error('File not found')
+    })
+    expect(detectMusl()).toBe(false)
+  })
+
+  it('should cache the result', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    let existsSyncCallCount = 0
+    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+      existsSyncCallCount++
+      return path === '/etc/os-release'
+    })
+    vi.mocked(fs.readFileSync).mockImplementation((path: unknown) => {
+      if (path === '/etc/os-release') {
+        return 'NAME="Alpine Linux"'
+      }
+      throw new Error('File not found')
+    })
+
+    // Call twice.
+    detectMusl()
+    detectMusl()
+
+    // existsSync should only be called once (cached after first call).
+    expect(existsSyncCallCount).toBe(1)
+  })
+})
+
+describe('getLibcSuffix', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    resetLibcCache()
+  })
+
+  afterEach(() => {
+    resetLibcCache()
+  })
+
+  it('should return empty string on non-Linux', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
+    expect(getLibcSuffix()).toBe('')
+  })
+
+  it('should return -musl on Alpine', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+      return path === '/etc/os-release'
+    })
+    vi.mocked(fs.readFileSync).mockImplementation((path: unknown) => {
+      if (path === '/etc/os-release') {
+        return 'ID=alpine'
+      }
+      throw new Error('File not found')
+    })
+    expect(getLibcSuffix()).toBe('-musl')
+  })
+
+  it('should return empty string on glibc Linux', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    vi.mocked(fs.existsSync).mockReturnValue(false)
+    expect(getLibcSuffix()).toBe('')
+  })
+})
 
 describe('getNpmPlatform', () => {
   beforeEach(() => {
@@ -52,6 +200,13 @@ describe('getNpmArch', () => {
 describe('getSocketbinPackageName', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    resetLibcCache()
+    // Default mock for non-musl systems.
+    vi.mocked(fs.existsSync).mockReturnValue(false)
+  })
+
+  afterEach(() => {
+    resetLibcCache()
   })
 
   it('should return correct package name for macOS ARM64', () => {
@@ -66,16 +221,34 @@ describe('getSocketbinPackageName', () => {
     expect(getSocketbinPackageName()).toBe('@socketbin/cli-darwin-x64')
   })
 
-  it('should return correct package name for Linux ARM64', () => {
+  it('should return correct package name for Linux ARM64 (glibc)', () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
     vi.spyOn(process, 'arch', 'get').mockReturnValue('arm64')
     expect(getSocketbinPackageName()).toBe('@socketbin/cli-linux-arm64')
   })
 
-  it('should return correct package name for Linux x64', () => {
+  it('should return correct package name for Linux x64 (glibc)', () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
     vi.spyOn(process, 'arch', 'get').mockReturnValue('x64')
     expect(getSocketbinPackageName()).toBe('@socketbin/cli-linux-x64')
+  })
+
+  it('should return correct package name for Linux ARM64 (musl/Alpine)', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('arm64')
+    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+      return path === '/lib/ld-musl-aarch64.so.1'
+    })
+    expect(getSocketbinPackageName()).toBe('@socketbin/cli-linux-arm64-musl')
+  })
+
+  it('should return correct package name for Linux x64 (musl/Alpine)', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('x64')
+    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+      return path === '/lib/ld-musl-x86_64.so.1'
+    })
+    expect(getSocketbinPackageName()).toBe('@socketbin/cli-linux-x64-musl')
   })
 
   it('should return correct package name for Windows x64', () => {
