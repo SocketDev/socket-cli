@@ -21,6 +21,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import AdmZip from 'adm-zip'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib/dlx/binary'
 import { detectExecutableType } from '@socketsecurity/lib/dlx/detect'
@@ -35,6 +36,8 @@ import {
   resolveSocketPatch,
   resolveSfw,
 } from './resolve-binary.mjs'
+
+import type { GitHubReleaseSpec } from './resolve-binary.mjs'
 import {
   areExternalToolsAvailable,
   extractExternalTools,
@@ -144,6 +147,159 @@ export async function spawnDlx(
 }
 
 /**
+ * Download and cache a binary from GitHub releases.
+ * Handles both .tar.gz and .zip archives, extracting the binary to the dlx cache.
+ *
+ * Security:
+ * - Uses lock files to prevent TOCTOU race conditions during concurrent downloads.
+ * - Validates zip entries for path traversal attacks before extraction.
+ *
+ * @param spec - GitHub release specification.
+ * @returns Path to the downloaded binary.
+ */
+async function downloadGitHubReleaseBinary(
+  spec: GitHubReleaseSpec,
+): Promise<string> {
+  const { assetName, binaryName, owner, repo, version } = spec
+  const isPlatWin = os.platform() === 'win32'
+  const binaryFileName = binaryName + (isPlatWin ? '.exe' : '')
+
+  // Cache path: ~/.socket/_dlx/github/{owner}/{repo}/{version}/
+  const cacheDir = path.join(
+    getDlxCachePath(),
+    'github',
+    owner,
+    repo,
+    version,
+  )
+  const normalizedCacheDir = path.resolve(cacheDir)
+  const binaryPath = path.join(cacheDir, binaryFileName)
+  const lockFile = path.join(cacheDir, '.downloading')
+
+  // Check if already downloaded.
+  if (existsSync(binaryPath)) {
+    return binaryPath
+  }
+
+  await safeMkdir(cacheDir)
+
+  // TOCTOU protection: use lock file to prevent concurrent downloads.
+  try {
+    await fs.writeFile(lockFile, process.pid.toString(), { flag: 'wx' })
+  } catch (e: unknown) {
+    const error = e as NodeJS.ErrnoException
+    if (error.code === 'EEXIST') {
+      // Another process is downloading; wait for completion.
+      for (let i = 0; i < 60; i++) {
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise(resolve => {
+          setTimeout(resolve, 1_000)
+        })
+        if (existsSync(binaryPath)) {
+          return binaryPath
+        }
+        // Check if lock holder is still alive.
+        if (i % 5 === 4) {
+          try {
+            // eslint-disable-next-line no-await-in-loop
+            const lockPid = await fs.readFile(lockFile, 'utf8')
+            const pid = Number.parseInt(lockPid.trim(), 10)
+            if (!Number.isNaN(pid) && pid > 0) {
+              try {
+                process.kill(pid, 0)
+              } catch {
+                // Process died, lock is stale - remove and retry.
+                // eslint-disable-next-line no-await-in-loop
+                await fs.unlink(lockFile).catch(() => {})
+                return downloadGitHubReleaseBinary(spec)
+              }
+            }
+          } catch {
+            // Lock file gone, retry.
+            return downloadGitHubReleaseBinary(spec)
+          }
+        }
+      }
+      throw new InputError('Timeout waiting for another process to download GitHub release')
+    }
+    throw e
+  }
+
+  try {
+    // Re-check after acquiring lock (another process may have finished).
+    if (existsSync(binaryPath)) {
+      return binaryPath
+    }
+
+    // Download the archive using downloadBinary (handles caching internally).
+    const url = `https://github.com/${owner}/${repo}/releases/download/${version}/${assetName}`
+
+    const result = await downloadBinary({
+      name: `${owner}-${repo}-${version}-${assetName}`,
+      url,
+    })
+
+    // Extract based on archive type.
+    const isZip = assetName.endsWith('.zip')
+    const isTarGz = assetName.endsWith('.tar.gz') || assetName.endsWith('.tgz')
+
+    if (isZip) {
+      // Extract zip using adm-zip (cross-platform, zero dependencies).
+      const zip = new AdmZip(result.binaryPath)
+
+      // Security: validate all entries for path traversal before extraction.
+      const entries = zip.getEntries()
+      for (const entry of entries) {
+        const entryPath = path.resolve(path.join(cacheDir, entry.entryName))
+        if (!entryPath.startsWith(normalizedCacheDir)) {
+          throw new InputError(
+            `Archive contains path traversal: ${entry.entryName}. ` +
+              `This may indicate a compromised release asset.`,
+          )
+        }
+      }
+
+      zip.extractAllTo(cacheDir, true)
+    } else if (isTarGz) {
+      // Extract tar.gz using system tar.
+      // Note: tar has built-in path traversal protection by default.
+      const { whichReal } = await import('@socketsecurity/lib/bin')
+      const tarPath = await whichReal('tar', { nothrow: true })
+      if (!tarPath || Array.isArray(tarPath)) {
+        throw new InputError(
+          'tar is required to extract GitHub release archives. Please install tar for your system.',
+        )
+      }
+      await spawn(tarPath, ['-xzf', result.binaryPath, '-C', cacheDir], {})
+    } else {
+      throw new InputError(`Unsupported archive format: ${assetName}`)
+    }
+
+    // Verify binary was extracted.
+    if (!existsSync(binaryPath)) {
+      throw new InputError(
+        `Binary ${binaryFileName} not found after extracting ${assetName}. ` +
+          `Expected at: ${binaryPath}`,
+      )
+    }
+
+    // Make executable on Unix.
+    if (!isPlatWin) {
+      await fs.chmod(binaryPath, 0o755)
+    }
+
+    return binaryPath
+  } finally {
+    // Clean up lock file.
+    try {
+      await fs.unlink(lockFile)
+    } catch {
+      // Ignore cleanup errors.
+    }
+  }
+}
+
+/**
  * Helper to spawn Coana with dlx.
  * Returns a CResult with stdout extraction for backward compatibility.
  *
@@ -219,7 +375,10 @@ export async function spawnCoanaDlx(
       }
     }
 
-    // Use dlx version.
+    // Use dlx version (resolveCoana only returns 'local' or 'dlx' types).
+    if (resolution.type !== 'dlx') {
+      throw new Error('Unexpected resolution type for coana')
+    }
     const result = await spawnDlx(
       {
         ...resolution.details,
@@ -292,7 +451,10 @@ export async function spawnCdxgenDlx(
     }
   }
 
-  // Use dlx version.
+  // Use dlx version (resolveCdxgen only returns 'local' or 'dlx' types).
+  if (resolution.type !== 'dlx') {
+    throw new Error('Unexpected resolution type for cdxgen')
+  }
   return await spawnDlx(
     resolution.details,
     args,
@@ -339,7 +501,10 @@ export async function spawnSfwDlx(
     }
   }
 
-  // Use dlx version.
+  // Use dlx version (resolveSfw only returns 'local' or 'dlx' types).
+  if (resolution.type !== 'dlx') {
+    throw new Error('Unexpected resolution type for sfw')
+  }
   return await spawnDlx(
     resolution.details,
     args,
@@ -349,9 +514,12 @@ export async function spawnSfwDlx(
 }
 
 /**
- * Helper to spawn Socket Patch with dlx.
+ * Helper to spawn Socket Patch.
  * If SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH environment variable is set, uses the local
- * socket-patch binary at that path instead of downloading from npm.
+ * socket-patch binary at that path instead of downloading.
+ *
+ * Note: As of v2.0.0, socket-patch is a Rust binary downloaded from GitHub releases,
+ * not an npm package. This function handles both local overrides and GitHub downloads.
  */
 export async function spawnSocketPatchDlx(
   args: string[] | readonly string[],
@@ -359,14 +527,14 @@ export async function spawnSocketPatchDlx(
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<DlxSpawnResult> {
   const resolution = resolveSocketPatch()
+  const { env: spawnEnv, ...dlxOptions } = {
+    __proto__: null,
+    ...options,
+  } as DlxOptions
 
   // Use local socket-patch if available.
   if (resolution.type === 'local') {
     const detection = detectExecutableType(resolution.path)
-    const { env: spawnEnv, ...dlxOptions } = {
-      __proto__: null,
-      ...options,
-    } as DlxOptions
 
     const spawnArgs =
       detection.type === 'binary' ? args : [resolution.path, ...args]
@@ -386,7 +554,25 @@ export async function spawnSocketPatchDlx(
     }
   }
 
-  // Use dlx version.
+  // Download from GitHub releases (socket-patch v2.0.0+).
+  if (resolution.type === 'github-release') {
+    const binaryPath = await downloadGitHubReleaseBinary(resolution.details)
+
+    const spawnPromise = spawn(binaryPath, args, {
+      ...dlxOptions,
+      env: {
+        ...process.env,
+        ...spawnEnv,
+      },
+      stdio: spawnExtra?.['stdio'] || 'inherit',
+    })
+
+    return {
+      spawnPromise,
+    }
+  }
+
+  // Fallback to dlx for npm packages (not used for socket-patch v2.0.0+).
   return await spawnDlx(
     resolution.details,
     args,
@@ -685,7 +871,11 @@ function getPythonStandaloneUrl(): string {
         ? 'aarch64-unknown-linux-gnu'
         : 'x86_64-unknown-linux-gnu'
   } else if (platform === 'win32') {
-    platformTriple = 'x86_64-pc-windows-msvc'
+    // Windows ARM64 can use native ARM64 Python for better performance.
+    platformTriple =
+      arch === 'arm64'
+        ? 'aarch64-pc-windows-msvc'
+        : 'x86_64-pc-windows-msvc'
   } else {
     throw new InputError(`Unsupported platform: ${platform}`)
   }

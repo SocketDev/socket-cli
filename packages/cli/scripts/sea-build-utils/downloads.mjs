@@ -12,6 +12,7 @@ import { existsSync, readFileSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import AdmZip from 'adm-zip'
 import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
 import { downloadReleaseAsset } from 'build-infra/lib/github-releases'
 
@@ -290,6 +291,15 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
   const toolNames = []
   for (const [toolName, assetName] of Object.entries(toolsForPlatform)) {
     const config = TOOL_REPOS[toolName]
+
+    // Validate tool exists in TOOL_REPOS (populated from external-tools.json).
+    if (!config) {
+      throw new Error(
+        `Tool "${toolName}" is defined in platform mappings but not found in TOOL_REPOS. ` +
+          `Ensure "${toolName}" exists in external-tools.json with type "github-release".`,
+      )
+    }
+
     const isPlatWin = platform === 'win32'
     const binaryName = toolName + (isPlatWin ? '.exe' : '')
     const binaryPath = normalizePath(path.join(toolsDir, binaryName))
@@ -358,17 +368,11 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
     logger.log(`  Extracting ${toolName}...`)
 
     if (isZip) {
-      // Use unzip command.
-      const unzipResult = await spawn('unzip', [
-        '-q',
-        '-o',
-        archivePath,
-        '-d',
-        toolsDir,
-      ])
-      if (unzipResult && unzipResult.exitCode !== 0) {
-        throw new Error(`Failed to extract ${assetName}`)
-      }
+      // Extract zip archive using adm-zip.
+      // adm-zip provides cross-platform zip extraction with zero dependencies
+      // and built-in path traversal protection (fixed in v0.4.9, CVE-2018-1002204).
+      const zip = new AdmZip(archivePath)
+      zip.extractAllTo(toolsDir, true)
     } else {
       // Use tar command.
       const tarResult = await spawn('tar', [
