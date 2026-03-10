@@ -126,7 +126,10 @@ async function run(
   }
 
   if (dryRun) {
-    outputDryRunFetch('package information')
+    outputDryRunFetch('package information', {
+      packages: purls.length ? purls.join(', ') : '(none)',
+      count: purls.length,
+    })
     return
   }
 

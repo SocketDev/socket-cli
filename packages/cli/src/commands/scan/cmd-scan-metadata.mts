@@ -128,7 +128,10 @@ async function run(
   }
 
   if (dryRun) {
-    outputDryRunFetch('scan metadata')
+    outputDryRunFetch('scan metadata', {
+      organization: orgSlug,
+      scanId,
+    })
     return
   }
 

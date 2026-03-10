@@ -102,14 +102,17 @@ async function run(
     return
   }
 
-  if (dryRun) {
-    outputDryRunFetch('organization dependencies')
-    return
-  }
-
   // Validate numeric pagination parameters.
   const validatedLimit = Number(limit || 0)
   const validatedOffset = Number(offset || 0)
+
+  if (dryRun) {
+    outputDryRunFetch('organization dependencies', {
+      limit: validatedLimit || 50,
+      offset: validatedOffset,
+    })
+    return
+  }
 
   if (Number.isNaN(validatedLimit) || validatedLimit < 0) {
     throw new Error(`Invalid value for --limit: ${limit}`)

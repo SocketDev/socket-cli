@@ -172,7 +172,14 @@ async function run(
   }
 
   if (dryRun) {
-    outputDryRunFetch('repositories')
+    outputDryRunFetch('repositories', {
+      organization: orgSlug,
+      all: all || undefined,
+      sort,
+      direction,
+      page: all ? undefined : page,
+      perPage: all ? undefined : perPage,
+    })
     return
   }
 

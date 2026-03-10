@@ -62,12 +62,27 @@ export function outputDryRunPreview(preview: DryRunPreview): void {
 
 /**
  * Output a simple dry-run message for commands that just fetch/display data.
- * These commands don't really need dry-run since they're read-only.
+ * These commands don't really need dry-run since they're read-only,
+ * but showing computed query parameters helps users verify their input.
  */
-export function outputDryRunFetch(resourceName: string): void {
+export function outputDryRunFetch(
+  resourceName: string,
+  queryParams?: Record<string, string | number | boolean | undefined>,
+): void {
   logger.log('')
   logger.log(`${DRY_RUN_LABEL}: Would fetch ${resourceName}`)
   logger.log('')
+
+  if (queryParams && Object.keys(queryParams).length > 0) {
+    logger.log('  Query parameters:')
+    for (const [key, value] of Object.entries(queryParams)) {
+      if (value !== undefined && value !== '') {
+        logger.log(`    ${key}: ${value}`)
+      }
+    }
+    logger.log('')
+  }
+
   logger.log('  This is a read-only operation that does not modify any data.')
   logger.log('  Run without --dry-run to fetch and display the data.')
   logger.log('')

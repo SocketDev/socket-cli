@@ -178,7 +178,12 @@ async function run(
   }
 
   if (dryRun) {
-    outputDryRunFetch('scan differences')
+    outputDryRunFetch('scan differences', {
+      organization: orgSlug,
+      scanId1: id1,
+      scanId2: id2,
+      depth,
+    })
     return
   }
 

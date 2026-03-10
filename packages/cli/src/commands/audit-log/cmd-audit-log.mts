@@ -176,14 +176,19 @@ async function run(
     return
   }
 
-  if (dryRun) {
-    outputDryRunFetch('audit log entries')
-    return
-  }
-
   // Validate numeric pagination parameters.
   const validatedPage = Number(page || 0)
   const validatedPerPage = Number(perPage || 0)
+
+  if (dryRun) {
+    outputDryRunFetch('audit log entries', {
+      organization: orgSlug,
+      filter: typeFilter || 'any',
+      page: validatedPage || 1,
+      perPage: validatedPerPage || 30,
+    })
+    return
+  }
 
   if (Number.isNaN(validatedPage) || validatedPage < 0) {
     throw new Error(`Invalid value for --page: ${page}`)

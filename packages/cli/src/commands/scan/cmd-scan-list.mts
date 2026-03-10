@@ -183,14 +183,22 @@ async function run(
     return
   }
 
-  if (dryRun) {
-    outputDryRunFetch('scans')
-    return
-  }
-
   // Validate numeric pagination parameters.
   const validatedPage = Number(cli.flags['page'] || 1)
   const validatedPerPage = Number(cli.flags['perPage'] || 30)
+
+  if (dryRun) {
+    outputDryRunFetch('scans', {
+      organization: orgSlug,
+      repo: repo || undefined,
+      branch: branch || undefined,
+      sort: String(cli.flags['sort'] || 'created_at'),
+      direction: String(cli.flags['direction'] || 'desc'),
+      page: validatedPage,
+      perPage: validatedPerPage,
+    })
+    return
+  }
 
   if (Number.isNaN(validatedPage) || validatedPage < 1) {
     throw new Error(`Invalid value for --page: ${cli.flags['page']}`)

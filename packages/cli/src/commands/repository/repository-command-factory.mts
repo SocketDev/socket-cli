@@ -170,7 +170,10 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
         } else if (spec.commandName === 'del') {
           outputDryRunDelete('repository', identifier)
         } else {
-          outputDryRunFetch(`repository ${identifier}`)
+          outputDryRunFetch(`repository ${identifier}`, {
+            organization: orgSlug,
+            repository: repoName || undefined,
+          })
         }
         return
       }

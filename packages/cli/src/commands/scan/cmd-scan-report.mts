@@ -188,7 +188,14 @@ async function run(
   }
 
   if (dryRun) {
-    outputDryRunFetch('scan report')
+    outputDryRunFetch('scan report', {
+      organization: orgSlug,
+      scanId,
+      fold,
+      reportLevel,
+      includeLicense: includeLicensePolicy,
+      short,
+    })
     return
   }
 

@@ -72,7 +72,9 @@ async function run(
   }
 
   if (dryRun) {
-    outputDryRunFetch('configuration settings')
+    outputDryRunFetch('configuration settings', {
+      showFullTokens: full ? 'yes' : 'no (masked)',
+    })
     return
   }
 

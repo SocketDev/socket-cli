@@ -114,7 +114,9 @@ async function run(
   }
 
   if (dryRun) {
-    outputDryRunFetch('organization license policy')
+    outputDryRunFetch('organization license policy', {
+      organization: orgSlug || '(will be determined)',
+    })
     return
   }
 

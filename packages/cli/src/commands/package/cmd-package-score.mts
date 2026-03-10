@@ -128,7 +128,9 @@ async function run(
   }
 
   if (dryRun) {
-    outputDryRunFetch('package score')
+    outputDryRunFetch('package score', {
+      package: purls[0] || '(invalid)',
+    })
     return
   }
 

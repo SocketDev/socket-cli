@@ -141,7 +141,11 @@ async function run(
   }
 
   if (dryRun) {
-    outputDryRunFetch('scan details')
+    outputDryRunFetch('scan details', {
+      organization: orgSlug,
+      scanId,
+      stream: stream || undefined,
+    })
     return
   }
 

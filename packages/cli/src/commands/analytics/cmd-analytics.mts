@@ -180,7 +180,11 @@ async function run(
   }
 
   if (dryRun) {
-    outputDryRunFetch('analytics data')
+    outputDryRunFetch('analytics data', {
+      scope,
+      repo: repoName || undefined,
+      time: `${time} days`,
+    })
     return
   }
 

@@ -271,13 +271,22 @@ async function run(
     return
   }
 
-  if (dryRun) {
-    outputDryRunFetch('threat feed data')
-    return
-  }
-
   // Validate numeric pagination parameter.
   const validatedPerPage = Number(cli.flags['perPage']) || 30
+
+  if (dryRun) {
+    outputDryRunFetch('threat feed data', {
+      organization: orgSlug,
+      ecosystem: ecoFilter || 'all',
+      type: typeFilter || 'mal (default)',
+      package: nameFilter || undefined,
+      version: versionFilter || undefined,
+      perPage: validatedPerPage,
+      page: String(cli.flags['page'] || '1'),
+      direction: String(cli.flags['direction'] || 'desc'),
+    })
+    return
+  }
   if (Number.isNaN(validatedPerPage) || validatedPerPage < 1) {
     throw new Error(`Invalid value for --per-page: ${cli.flags['perPage']}`)
   }
