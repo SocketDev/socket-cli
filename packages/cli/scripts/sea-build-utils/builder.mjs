@@ -16,6 +16,7 @@ import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import {
+  detectMusl,
   downloadBinject,
   getLatestBinjectVersion,
 } from '../utils/asset-manager-compat.mjs'
@@ -166,7 +167,8 @@ export async function injectSeaBlob(
     // If we can't fetch the latest version, check if we have a cached version.
     const platform = process.platform
     const arch = process.arch
-    const muslSuffix = platform === 'linux' ? '-musl' : ''
+    // Detect actual libc on Linux (musl for Alpine, glibc for standard distros).
+    const muslSuffix = detectMusl() ? '-musl' : ''
     const platformArch = `${platform}-${arch}${muslSuffix}`
     const rootPath = getRootPath()
     const binjectDir = normalizePath(
@@ -233,9 +235,9 @@ export async function injectSeaBlob(
   if (
     result &&
     typeof result === 'object' &&
-    'exitCode' in result &&
-    result.exitCode !== 0
+    'code' in result &&
+    result.code !== 0
   ) {
-    throw new Error(`binject failed with exit code ${result.exitCode}`)
+    throw new Error(`binject failed with exit code ${result.code}`)
   }
 }

@@ -381,7 +381,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
         '-C',
         toolsDir,
       ])
-      if (tarResult && tarResult.exitCode !== 0) {
+      if (tarResult && tarResult.code !== 0) {
         throw new Error(`Failed to extract ${assetName}`)
       }
     }
@@ -518,7 +518,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
     ...toolNames,
   ])
 
-  if (tarResult && tarResult.exitCode !== 0) {
+  if (tarResult && tarResult.code !== 0) {
     throw new Error('Failed to create external-tools tar.gz')
   }
 

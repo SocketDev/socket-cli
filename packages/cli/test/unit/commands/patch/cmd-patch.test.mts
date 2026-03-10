@@ -183,32 +183,52 @@ describe('cmd-patch', () => {
       )
     })
 
-    it('should forward info subcommand to socket-patch', async () => {
-      await cmdPatch.run(['info', 'lodash'], importMeta, context)
+    it('should forward scan subcommand to socket-patch', async () => {
+      await cmdPatch.run(['scan'], importMeta, context)
 
       expect(mockMeowOrExit).not.toHaveBeenCalled()
       expect(mockSpawnSocketPatchDlx).toHaveBeenCalledWith(
-        ['info', 'lodash'],
+        ['scan'],
         expect.objectContaining({ stdio: 'inherit' }),
       )
     })
 
-    it('should forward rm subcommand to socket-patch', async () => {
-      await cmdPatch.run(['rm', 'lodash'], importMeta, context)
+    it('should forward rollback subcommand to socket-patch', async () => {
+      await cmdPatch.run(['rollback'], importMeta, context)
 
       expect(mockMeowOrExit).not.toHaveBeenCalled()
       expect(mockSpawnSocketPatchDlx).toHaveBeenCalledWith(
-        ['rm', 'lodash'],
+        ['rollback'],
         expect.objectContaining({ stdio: 'inherit' }),
       )
     })
 
-    it('should forward cleanup subcommand to socket-patch', async () => {
-      await cmdPatch.run(['cleanup'], importMeta, context)
+    it('should forward remove subcommand with purl to socket-patch', async () => {
+      await cmdPatch.run(['remove', 'pkg:npm/lodash@4.17.21'], importMeta, context)
 
       expect(mockMeowOrExit).not.toHaveBeenCalled()
       expect(mockSpawnSocketPatchDlx).toHaveBeenCalledWith(
-        ['cleanup'],
+        ['remove', 'pkg:npm/lodash@4.17.21'],
+        expect.objectContaining({ stdio: 'inherit' }),
+      )
+    })
+
+    it('should forward setup subcommand to socket-patch', async () => {
+      await cmdPatch.run(['setup'], importMeta, context)
+
+      expect(mockMeowOrExit).not.toHaveBeenCalled()
+      expect(mockSpawnSocketPatchDlx).toHaveBeenCalledWith(
+        ['setup'],
+        expect.objectContaining({ stdio: 'inherit' }),
+      )
+    })
+
+    it('should forward repair subcommand to socket-patch', async () => {
+      await cmdPatch.run(['repair'], importMeta, context)
+
+      expect(mockMeowOrExit).not.toHaveBeenCalled()
+      expect(mockSpawnSocketPatchDlx).toHaveBeenCalledWith(
+        ['repair'],
         expect.objectContaining({ stdio: 'inherit' }),
       )
     })
