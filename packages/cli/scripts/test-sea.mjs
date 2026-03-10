@@ -79,7 +79,14 @@ async function loadToolPaths() {
     throw new Error('Tool paths not found')
   }
 
-  const toolPathsData = JSON.parse(await fs.readFile(toolPathsFile, 'utf8'))
+  let toolPathsData
+  try {
+    toolPathsData = JSON.parse(await fs.readFile(toolPathsFile, 'utf8'))
+  } catch (e) {
+    console.error(`Failed to parse tool paths from ${toolPathsFile}: ${e.message}`)
+    console.error('Run: node scripts/test-download-external-tools.mjs')
+    throw new Error('Invalid tool paths JSON')
+  }
   return { platform, toolPaths: toolPathsData.tools }
 }
 
