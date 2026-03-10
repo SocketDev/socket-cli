@@ -26,11 +26,15 @@
  * - File permission management
  */
 
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs, readFileSync } from 'node:fs'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
+
 const logger = getDefaultLogger()
+
+// Cache for libc detection (only need to check once per process).
+let cachedLibc: string | undefined
 
 /**
  * Platform name mappings for GitHub releases.
@@ -114,13 +118,79 @@ function getNpmArch(): string {
 }
 
 /**
+ * Detect if running on musl libc (Alpine Linux, etc.).
+ * Uses multiple detection methods for reliability.
+ */
+function detectMusl(): boolean {
+  // Only check on Linux.
+  if (process.platform !== 'linux') {
+    return false
+  }
+
+  // Check cached result.
+  if (cachedLibc !== undefined) {
+    return cachedLibc === 'musl'
+  }
+
+  // Method 1: Check /etc/os-release for Alpine.
+  try {
+    if (existsSync('/etc/os-release')) {
+      const osRelease = readFileSync('/etc/os-release', 'utf8')
+      if (osRelease.includes('Alpine') || osRelease.includes('alpine')) {
+        cachedLibc = 'musl'
+        return true
+      }
+    }
+  } catch {
+    // Ignore errors, try next method.
+  }
+
+  // Method 2: Check if ldd references musl.
+  try {
+    if (existsSync('/lib/ld-musl-x86_64.so.1') ||
+        existsSync('/lib/ld-musl-aarch64.so.1')) {
+      cachedLibc = 'musl'
+      return true
+    }
+  } catch {
+    // Ignore errors.
+  }
+
+  // Method 3: Check /proc/version for musl indicators.
+  try {
+    if (existsSync('/proc/version')) {
+      const version = readFileSync('/proc/version', 'utf8')
+      if (version.includes('musl')) {
+        cachedLibc = 'musl'
+        return true
+      }
+    }
+  } catch {
+    // Ignore errors.
+  }
+
+  cachedLibc = 'glibc'
+  return false
+}
+
+/**
+ * Get the libc suffix for package names.
+ * Returns "-musl" on musl systems, empty string otherwise.
+ */
+function getLibcSuffix(): string {
+  return detectMusl() ? '-musl' : ''
+}
+
+/**
  * Get the @socketbin package name for the current platform.
- * Returns package name like "@socketbin/cli-darwin-arm64".
+ * Returns package name like "@socketbin/cli-darwin-arm64" or
+ * "@socketbin/cli-linux-x64-musl" on Alpine.
  */
 function getSocketbinPackageName(): string {
   const platform = getNpmPlatform()
   const arch = getNpmArch()
-  return `@socketbin/cli-${platform}-${arch}`
+  const libcSuffix = getLibcSuffix()
+  return `@socketbin/cli-${platform}-${arch}${libcSuffix}`
 }
 
 /**
