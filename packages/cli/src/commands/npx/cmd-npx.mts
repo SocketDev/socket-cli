@@ -1,10 +1,10 @@
 import { NPX } from '@socketsecurity/lib/constants/agents'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { spawnSfw } from '../../utils/dlx/spawn.mjs'
+import { outputDryRunExecute } from '../../utils/dry-run/output.mts'
 import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
 import { filterFlags } from '../../utils/process/cmd.mts'
 import {
@@ -70,13 +70,13 @@ async function run(
 
   const dryRun = !!cli.flags['dryRun']
 
-  if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
-
   // Filter Socket flags from argv.
   const filteredArgv = filterFlags(argv, config.flags)
+
+  if (dryRun) {
+    outputDryRunExecute('sfw', ['npx', ...filteredArgv], 'npx with Socket security scanning')
+    return
+  }
 
   // Set default exit code to 1 (failure). Will be overwritten on success.
   process.exitCode = 1

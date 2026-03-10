@@ -2,13 +2,10 @@ import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
-import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_DRY_RUN,
-  FLAG_HELP,
-} from '../../constants/cli.mts'
+import { FLAG_DRY_RUN, FLAG_HELP } from '../../constants/cli.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { outputDryRunExecute } from '../../utils/dry-run/output.mts'
 import { getNpxBinPath } from '../../utils/npm/paths.mts'
 
 import type {
@@ -93,7 +90,7 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunExecute(getNpxBinPath(), argv as string[], 'raw npx command')
     return
   }
 

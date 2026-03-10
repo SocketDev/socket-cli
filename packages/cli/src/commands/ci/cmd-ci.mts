@@ -1,9 +1,15 @@
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 import { handleCi } from './handle-ci.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { outputDryRunUpload } from '../../utils/dry-run/output.mts'
+import {
+  detectDefaultBranch,
+  getRepoName,
+  gitBranch,
+} from '../../utils/git/operations.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
 
 import type {
@@ -70,11 +76,25 @@ async function run(
   })
 
   const dryRun = !!cli.flags['dryRun']
+  const autoManifest = Boolean(cli.flags['autoManifest'])
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    const orgSlugCResult = await getDefaultOrgSlug()
+    const cwd = process.cwd()
+    const branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
+    const repoName = await getRepoName(cwd)
+
+    outputDryRunUpload('CI scan', {
+      autoManifest,
+      branchName: branchName || '(default)',
+      cwd,
+      organizationSlug: orgSlugCResult.ok ? orgSlugCResult.data : '(from API token)',
+      repoName: repoName || '(auto-detected)',
+      report: true,
+      targets: ['.'],
+    })
     return
   }
 
-  await handleCi(Boolean(cli.flags['autoManifest']))
+  await handleCi(autoManifest)
 }

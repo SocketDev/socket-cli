@@ -1,6 +1,6 @@
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { DRY_RUN_LABEL } from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
@@ -60,7 +60,24 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    logger.log('')
+    logger.log(`${DRY_RUN_LABEL}: Would trigger an intentional error`)
+    logger.log('')
+    logger.log('  This command throws an error for development/testing purposes.')
+    logger.log(
+      `  Error message: "This error was intentionally left blank."`,
+    )
+    logger.log('')
+    if (json && !justThrow) {
+      logger.log('  Output format: JSON error response')
+    } else if (markdown && !justThrow) {
+      logger.log('  Output format: Markdown error message')
+    } else {
+      logger.log('  Output format: Thrown Error exception')
+    }
+    logger.log('')
+    logger.log('  Run without --dry-run to trigger the error.')
+    logger.log('')
     return
   }
 

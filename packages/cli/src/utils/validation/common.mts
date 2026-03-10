@@ -1,9 +1,6 @@
 /** @fileoverview Common validation patterns to DRY out repetitive checks */
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { checkCommandInput } from './check-input.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { hasDefaultApiToken } from '../socket/sdk.mjs'
 
 import type { OutputKind } from '../../types.mjs'
@@ -137,9 +134,9 @@ export function runStandardValidations(options: ValidationOptions): boolean {
   }
 
   // Handle dry run
+  // Note: Commands should output their own dry-run preview before calling this.
+  // This just returns false to prevent execution.
   if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
     return false
   }
 

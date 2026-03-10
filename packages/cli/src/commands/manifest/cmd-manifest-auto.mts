@@ -5,7 +5,7 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
+import { outputDryRunExecute } from '../../utils/dry-run/output.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
@@ -99,7 +99,15 @@ async function run(
   debugDirNs('inspect', { detected })
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    if (detected.count > 0) {
+      outputDryRunExecute(
+        'manifest generators',
+        [cwd],
+        `auto-detect and generate ${detected.count} manifest file(s)`,
+      )
+    } else {
+      logger.log('No manifest targets detected in the specified directory.')
+    }
     return
   }
 

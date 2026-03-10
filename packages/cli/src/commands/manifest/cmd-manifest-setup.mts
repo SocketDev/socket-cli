@@ -1,10 +1,8 @@
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleManifestSetup } from './handle-manifest-setup.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
+import { outputDryRunWrite } from '../../utils/dry-run/output.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
@@ -13,8 +11,6 @@ import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
-
-const logger = getDefaultLogger()
 
 const config: CliCommandConfig = {
   commandName: 'setup',
@@ -79,7 +75,6 @@ async function run(
   })
 
   const { defaultOnReadError = false } = cli.flags
-
   const dryRun = !!cli.flags['dryRun']
 
   let [cwd = '.'] = cli.input
@@ -88,7 +83,16 @@ async function run(
   cwd = path.resolve(process.cwd(), cwd)
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    const socketJsonPath = path.join(cwd, SOCKET_JSON)
+    outputDryRunWrite(
+      socketJsonPath,
+      'create or update manifest configuration',
+      [
+        'Detect supported ecosystems',
+        'Configure manifest generation defaults',
+        'Enable/disable specific ecosystems',
+      ],
+    )
     return
   }
 

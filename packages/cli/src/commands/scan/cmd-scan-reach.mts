@@ -1,15 +1,12 @@
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
-const logger = getDefaultLogger()
 
 import { handleScanReach } from './handle-scan-reach.mts'
 import { reachabilityFlags } from './reachability-flags.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
-import constants from '../../constants.mts'
+import { outputDryRunExecute } from '../../utils/dry-run/output.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mts'
 import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mts'
@@ -236,7 +233,17 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    const args: string[] = []
+    if (targets[0]) {
+      args.push('--target', targets[0])
+    }
+    if (orgSlug) {
+      args.push('--org', orgSlug)
+    }
+    if (reachEcosystems.length > 0) {
+      args.push('--ecosystems', reachEcosystems.join(','))
+    }
+    outputDryRunExecute('coana', args, 'reachability analysis')
     return
   }
 

@@ -5,9 +5,9 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { convertGradleToMaven } from './convert-gradle-to-maven.mts'
 import { outputManifest } from './output-manifest.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
+import { outputDryRunExecute } from '../../utils/dry-run/output.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
@@ -186,7 +186,14 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    const args = [cwd]
+    if (bin) {
+      args.push('--bin', String(bin))
+    }
+    if (gradleOpts) {
+      args.push('--gradle-opts', String(gradleOpts))
+    }
+    outputDryRunExecute('gradlew', args, 'generate pom.xml from Kotlin project')
     return
   }
 

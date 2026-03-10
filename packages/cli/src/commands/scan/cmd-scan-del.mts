@@ -1,8 +1,6 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleDeleteScan } from './handle-delete-scan.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
+import { outputDryRunDelete } from '../../utils/dry-run/output.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
@@ -120,8 +118,7 @@ async function run(
   }
 
   if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunDelete('scan', `${orgSlug}/${scanId}`)
     return
   }
 

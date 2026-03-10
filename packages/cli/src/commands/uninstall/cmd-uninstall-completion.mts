@@ -1,7 +1,5 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleUninstallCompletion } from './handle-uninstall-completion.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { outputDryRunDelete } from '../../utils/dry-run/output.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
@@ -10,8 +8,6 @@ import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
-
-const logger = getDefaultLogger()
 
 const config: CliCommandConfig = {
   commandName: 'completion',
@@ -60,13 +56,15 @@ export async function run(
     importMeta,
   })
   const dryRun = !!cli.flags['dryRun']
+  const targetName = cli.input[0] || 'socket'
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunDelete(
+      'bash completion',
+      `completion for "${targetName}" from ~/.bashrc`,
+    )
     return
   }
-
-  const targetName = cli.input[0] || 'socket'
 
   await handleUninstallCompletion(String(targetName))
 }

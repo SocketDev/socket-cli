@@ -1,8 +1,7 @@
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { attemptLogin } from './attempt-login.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { outputDryRunWrite } from '../../utils/dry-run/output.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { InputError } from '../../utils/error/errors.mjs'
@@ -15,8 +14,6 @@ import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
-
-const logger = getDefaultLogger()
 
 // Flags interface for type safety.
 interface LoginFlags {
@@ -86,7 +83,15 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    const configPath = `${process.env['HOME']}/.config/socket/config.json`
+    const changes = [
+      'Prompt for Socket API token',
+      'Verify token with Socket API',
+      'Save API token to config',
+      'Optionally set default organization',
+      'Optionally install bash completion',
+    ]
+    outputDryRunWrite(configPath, 'authenticate with Socket API', changes)
     return
   }
 

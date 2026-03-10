@@ -11,10 +11,10 @@
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mts'
 import { spawnSfw } from '../../utils/dlx/spawn.mts'
+import { outputDryRunExecute } from '../../utils/dry-run/output.mts'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
 import { filterFlags, isHelpFlag } from '../../utils/process/cmd.mts'
 
@@ -105,11 +105,6 @@ async function run(
   // Extract typed flags (commonFlags defines dryRun as boolean).
   const { dryRun } = cli.flags as unknown as SfwFlags
 
-  if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
-
   // Filter Socket-specific flags from argv, pass rest to sfw.
   const sfwArgs = filterFlags(argv, commonFlags, [])
 
@@ -118,6 +113,11 @@ async function run(
     logger.info('Usage: socket sfw <package-manager> [args...]')
     logger.info('Example: socket sfw npm install lodash')
     process.exitCode = 2
+    return
+  }
+
+  if (dryRun) {
+    outputDryRunExecute('sfw', sfwArgs, 'Socket Firewall (sfw)')
     return
   }
 

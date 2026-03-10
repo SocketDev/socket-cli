@@ -1,7 +1,7 @@
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleListScans } from './handle-list-scans.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { outputDryRunFetch } from '../../utils/dry-run/output.mts'
 import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
@@ -186,8 +186,7 @@ async function run(
   }
 
   if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunFetch('scans')
     return
   }
 

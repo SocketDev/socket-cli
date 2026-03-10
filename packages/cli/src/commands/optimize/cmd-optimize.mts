@@ -1,11 +1,9 @@
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleOptimize } from './handle-optimize.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { outputDryRunPreview } from '../../utils/dry-run/output.mts'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
@@ -16,6 +14,7 @@ import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
+import type { DryRunAction } from '../../utils/dry-run/output.mts'
 
 export const CMD_NAME = 'optimize'
 
@@ -76,12 +75,6 @@ async function run(
 
   const dryRun = !!cli.flags['dryRun']
 
-  if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
-
   const { json, markdown, pin, prod } = cli.flags
 
   let [cwd = '.'] = cli.input
@@ -90,6 +83,36 @@ async function run(
   cwd = path.resolve(process.cwd(), cwd)
 
   const outputKind = getOutputKind(json, markdown)
+
+  if (dryRun) {
+    const actions: DryRunAction[] = [
+      {
+        type: 'fetch',
+        description: 'Analyze dependencies for @socketregistry overrides',
+        target: cwd,
+      },
+      {
+        type: 'modify',
+        description: 'Add or update overrides section in package.json',
+        target: 'package.json',
+        details: {
+          pin: pin ? 'Yes - pin to specific versions' : 'No - use version ranges',
+          prod: prod ? 'Yes - production dependencies only' : 'No - all dependencies',
+        },
+      },
+      {
+        type: 'execute',
+        description: 'Run package manager to install optimized dependencies',
+      },
+    ]
+
+    outputDryRunPreview({
+      summary: 'Optimize dependencies with @socketregistry overrides',
+      actions,
+      wouldSucceed: true,
+    })
+    return
+  }
 
   await handleOptimize({
     cwd,

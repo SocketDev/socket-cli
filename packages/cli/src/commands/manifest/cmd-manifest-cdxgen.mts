@@ -7,7 +7,8 @@ import { isPath } from '@socketsecurity/lib/paths/normalize'
 import { pluralize } from '@socketsecurity/lib/words'
 
 import { runCdxgen } from './run-cdxgen.mts'
-import { DRY_RUN_BAILING_NOW, FLAG_HELP } from '../../constants/cli.mjs'
+import { FLAG_HELP } from '../../constants/cli.mjs'
+import { outputDryRunExecute } from '../../utils/dry-run/output.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { filterFlags, isHelpFlag } from '../../utils/process/cmd.mts'
@@ -272,7 +273,10 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    const cdxgenArgs = argsToProcess.filter(
+      arg => arg !== '--dry-run' && !arg.startsWith('--dry-run='),
+    )
+    outputDryRunExecute('cdxgen', cdxgenArgs, 'SBOM generation')
     return
   }
 

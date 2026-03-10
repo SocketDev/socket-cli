@@ -1,11 +1,6 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleConfigAuto } from './handle-config-auto.mts'
-import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-} from '../../constants/cli.mts'
+import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
+import { outputDryRunWrite } from '../../utils/dry-run/output.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -21,8 +16,6 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 import type { LocalConfig } from '../../utils/config.mts'
-
-const logger = getDefaultLogger()
 
 // Flags interface for type safety.
 interface ConfigAutoFlags {
@@ -109,7 +102,15 @@ ${getSupportedConfigEntries()
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    const configPath = `${process.env['HOME']}/.config/socket/config.json`
+    outputDryRunWrite(
+      configPath,
+      `auto-discover and set config value for "${key}"`,
+      [
+        `Discover the correct value for config key: ${key}`,
+        `Update config file with discovered value`,
+      ],
+    )
     return
   }
 

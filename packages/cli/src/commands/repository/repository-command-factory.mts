@@ -1,11 +1,10 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
-import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-} from '../../constants/cli.mts'
+import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
 import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
+import {
+  outputDryRunDelete,
+  outputDryRunFetch,
+  outputDryRunUpload,
+} from '../../utils/dry-run/output.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -24,8 +23,6 @@ import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
-
-const logger = getDefaultLogger()
 
 type RepositoryCommandSpec = {
   commandName: string
@@ -159,7 +156,22 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
       }
 
       if (dryRun) {
-        logger.log(DRY_RUN_BAILING_NOW)
+        const identifier = repoName ? `${orgSlug}/${repoName}` : orgSlug
+        if (spec.commandName === 'create') {
+          outputDryRunUpload('repository', {
+            organization: orgSlug,
+            repository: repoName,
+          })
+        } else if (spec.commandName === 'update') {
+          outputDryRunUpload('repository (update)', {
+            organization: orgSlug,
+            repository: repoName,
+          })
+        } else if (spec.commandName === 'del') {
+          outputDryRunDelete('repository', identifier)
+        } else {
+          outputDryRunFetch(`repository ${identifier}`)
+        }
         return
       }
 

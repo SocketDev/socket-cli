@@ -1,7 +1,8 @@
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleScanReport } from './handle-scan-report.mts'
-import { DRY_RUN_BAILING_NOW, FOLD_SETTING_NONE } from '../../constants/cli.mts'
+import { FOLD_SETTING_NONE } from '../../constants/cli.mts'
+import { outputDryRunFetch } from '../../utils/dry-run/output.mts'
 import { REPORT_LEVEL_WARN } from '../../constants/reporting.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
@@ -189,8 +190,7 @@ async function run(
   }
 
   if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunFetch('scan report')
     return
   }
 

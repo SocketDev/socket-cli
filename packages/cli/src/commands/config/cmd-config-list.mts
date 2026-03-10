@@ -1,11 +1,8 @@
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { outputConfigList } from './output-config-list.mts'
-import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-} from '../../constants/cli.mjs'
+import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
+import { outputDryRunFetch } from '../../utils/dry-run/output.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
@@ -79,7 +76,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunFetch('configuration settings')
     return
   }
 

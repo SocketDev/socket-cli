@@ -4,13 +4,15 @@ import terminalLink from 'terminal-link'
 
 import { arrayUnique, joinAnd, joinOr } from '@socketsecurity/lib/arrays'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { pluralize } from '@socketsecurity/lib/words'
 
 import { handleFix } from './handle-fix.mts'
-import { DRY_RUN_NOT_SAVING, FLAG_ID } from '../../constants/cli.mts'
+import { FLAG_ID } from '../../constants/cli.mts'
 import { ERROR_UNABLE_RESOLVE_ORG } from '../../constants/errors.mts'
 import * as constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { outputDryRunPreview } from '../../utils/dry-run/output.mts'
 import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mts'
 import {
   getFlagApiRequirementsOutput,
@@ -21,6 +23,8 @@ import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
 import { RangeStyles } from '../../utils/semver.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
+
+import type { DryRunAction } from '../../utils/dry-run/output.mts'
 
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
 import type {
@@ -395,11 +399,6 @@ async function run(
     return
   }
 
-  if (dryRun) {
-    logger.log(DRY_RUN_NOT_SAVING)
-    return
-  }
-
   const orgSlugCResult = await getDefaultOrgSlug()
   if (!orgSlugCResult.ok) {
     process.exitCode = orgSlugCResult.code ?? 1
@@ -420,6 +419,52 @@ async function run(
 
   const includePatterns = cmdFlagValueToArray(include)
   const excludePatterns = cmdFlagValueToArray(exclude)
+
+  if (dryRun) {
+    const actions: DryRunAction[] = [
+      {
+        type: 'fetch',
+        description: 'Scan project dependencies for vulnerabilities',
+        target: cwd,
+      },
+      {
+        type: 'fetch',
+        description: 'Analyze vulnerability fix options',
+      },
+    ]
+
+    if (applyFixes) {
+      actions.push({
+        type: 'modify',
+        description: 'Update package manifest files with fixes',
+        target: 'package.json and lock files',
+      })
+    }
+
+    if (spinner) {
+      actions.push({
+        type: 'execute',
+        description: 'Run package manager to install updated dependencies',
+      })
+    }
+
+    const targetDescription = all
+      ? 'all vulnerabilities'
+      : ghsas.length
+        ? `${ghsas.length} specified ${pluralize('vulnerability', { count: ghsas.length })}`
+        : 'discovered vulnerabilities'
+
+    const fixModeDescription = applyFixes
+      ? 'compute and apply fixes'
+      : 'compute fixes only (not applying)'
+
+    outputDryRunPreview({
+      summary: `Analyze and ${fixModeDescription} for ${targetDescription}`,
+      actions,
+      wouldSucceed: true,
+    })
+    return
+  }
 
   await handleFix({
     all,

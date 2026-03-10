@@ -1,10 +1,8 @@
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleScanConfig } from './handle-scan-config.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { SOCKET_JSON } from '../../constants/paths.mts'
+import { outputDryRunWrite } from '../../utils/dry-run/output.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
@@ -70,19 +68,22 @@ async function run(
   })
 
   const dryRun = !!cli.flags['dryRun']
-
-  if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
-
   const { defaultOnReadError = false } = cli.flags
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
+
+  if (dryRun) {
+    const socketJsonPath = path.join(cwd, SOCKET_JSON)
+    outputDryRunWrite(
+      socketJsonPath,
+      'create or update scan configuration',
+      ['Set default repository name', 'Set default branch name', 'Configure scan options'],
+    )
+    return
+  }
 
   await handleScanConfig(cwd, Boolean(defaultOnReadError))
 }

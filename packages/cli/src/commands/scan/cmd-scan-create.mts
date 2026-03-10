@@ -12,6 +12,7 @@ import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
+import { outputDryRunUpload } from '../../utils/dry-run/output.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mts'
 import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mts'
@@ -561,7 +562,23 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    const details: Record<string, unknown> = {
+      organization: orgSlug,
+      targets: targets.join(', '),
+    }
+    if (repoName) {
+      details['repository'] = repoName
+    }
+    if (branchName) {
+      details['branch'] = branchName
+    }
+    if (reach) {
+      details['reachabilityAnalysis'] = 'enabled'
+      if (reachEcosystems.length > 0) {
+        details['ecosystems'] = reachEcosystems.join(', ')
+      }
+    }
+    outputDryRunUpload('scan', details)
     return
   }
 

@@ -6,7 +6,7 @@ import { addSocketWrapper } from './add-socket-wrapper.mts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
 import { postinstallWrapper } from './postinstall-wrapper.mts'
 import { removeSocketWrapper } from './remove-socket-wrapper.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
+import { outputDryRunWrite } from '../../utils/dry-run/output.mts'
 import { getBashRcPath, getZshRcPath } from '../../constants/paths.mjs'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
@@ -105,13 +105,33 @@ async function run(
     return
   }
 
-  if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
-
   const bashRcPath = getBashRcPath()
   const zshRcPath = getZshRcPath()
+
+  if (dryRun) {
+    const files = []
+    if (existsSync(bashRcPath)) {
+      files.push(bashRcPath)
+    }
+    if (existsSync(zshRcPath)) {
+      files.push(zshRcPath)
+    }
+    const changes = enable
+      ? [
+          'Add shell aliases/functions to wrap npm/npx commands',
+          'Redirect npm/npx calls to socket npm/socket npx',
+        ]
+      : [
+          'Remove Socket wrapper aliases/functions from shell config',
+          'Restore original npm/npx behavior',
+        ]
+    outputDryRunWrite(
+      files.join(', '),
+      enable ? 'enable Socket npm/npx wrapper' : 'disable Socket npm/npx wrapper',
+      changes,
+    )
+    return
+  }
   const modifiedFiles: string[] = []
   const skippedFiles: string[] = []
 

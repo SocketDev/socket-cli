@@ -1,6 +1,6 @@
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { outputDryRunDelete } from '../../utils/dry-run/output.mts'
 import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
@@ -83,7 +83,8 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    const configPath = `${process.env['HOME']}/.config/socket/config.json`
+    outputDryRunDelete('Socket API credentials', configPath)
     return
   }
 

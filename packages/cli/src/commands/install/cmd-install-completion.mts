@@ -1,7 +1,5 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleInstallCompletion } from './handle-install-completion.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { outputDryRunWrite } from '../../utils/dry-run/output.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
@@ -67,14 +65,20 @@ async function run(
   })
 
   const dryRun = !!cli.flags['dryRun']
+  const targetName = cli.input[0] || 'socket'
 
   if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
+    const bashRcPath = `${process.env['HOME']}/.bashrc`
+    outputDryRunWrite(
+      bashRcPath,
+      `install bash completion for "${targetName}"`,
+      [
+        'Add completion script source command to ~/.bashrc',
+        'Enable tab completion in current shell',
+      ],
+    )
     return
   }
-
-  const targetName = cli.input[0] || 'socket'
 
   await handleInstallCompletion(String(targetName))
 }

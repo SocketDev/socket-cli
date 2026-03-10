@@ -1,13 +1,12 @@
 import path from 'node:path'
 
 import { getSocketCliGithubToken } from '@socketsecurity/lib/env/socket-cli'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleCreateGithubScan } from './handle-create-github-scan.mts'
 import { outputScanGithub } from './output-scan-github.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
+import { outputDryRunUpload } from '../../utils/dry-run/output.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
@@ -23,8 +22,6 @@ import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
-
-const logger = getDefaultLogger()
 
 // Flags interface for type safety.
 interface ScanGithubFlags {
@@ -254,7 +251,17 @@ async function run(
 
   // Note exiting earlier to skirt a hidden auth requirement
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    const details: Record<string, unknown> = {
+      organization: orgSlug,
+      githubOrganization: orgGithub,
+      githubApiUrl,
+    }
+    if (all) {
+      details['scope'] = 'all repositories'
+    } else if (repos) {
+      details['repositories'] = repos
+    }
+    outputDryRunUpload('GitHub scan', details)
     return
   }
 

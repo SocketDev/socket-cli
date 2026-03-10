@@ -3,17 +3,14 @@ import path from 'node:path'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleManifestConda } from './handle-manifest-conda.mts'
-import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-} from '../../constants/cli.mjs'
+import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
 import {
   ENVIRONMENT_YAML,
   ENVIRONMENT_YML,
   REQUIREMENTS_TXT,
 } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
+import { outputDryRunExecute } from '../../utils/dry-run/output.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
@@ -208,7 +205,11 @@ async function run(
   )
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunExecute(
+      'conda converter',
+      [filename, out],
+      `convert Conda ${ENVIRONMENT_YML} to ${REQUIREMENTS_TXT}`,
+    )
     return
   }
 
