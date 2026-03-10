@@ -1,3 +1,3 @@
-# @socketbin/cli-{{PLATFORM}}-{{ARCH}}
+# @socketbin/cli-{{PLATFORM}}-{{ARCH}}{{LIBC_SUFFIX}}
 
 Native Socket CLI binary for **{{DESCRIPTION}}**.

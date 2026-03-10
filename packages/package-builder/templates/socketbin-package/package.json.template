@@ -1,7 +1,7 @@
 {
-  "name": "@socketbin/cli-{{PLATFORM}}-{{ARCH}}",
+  "name": "@socketbin/cli-{{PLATFORM}}-{{ARCH}}{{LIBC_SUFFIX}}",
   "version": "0.0.0-replaced-by-prepublish-socketbin",
-  "description": "Socket CLI binary",
+  "description": "Socket CLI binary ({{DESCRIPTION}})",
   "private": true,
   "license": "MIT",
   "bin": {

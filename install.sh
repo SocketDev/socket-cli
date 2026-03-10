@@ -39,15 +39,44 @@ socket_brand() {
   echo -e "${PURPLE}⚡${NC} $1"
 }
 
+# Detect if running on musl libc (Alpine Linux, etc.).
+detect_musl() {
+  # Check for Alpine in /etc/os-release.
+  if [ -f /etc/os-release ]; then
+    if grep -qi 'alpine' /etc/os-release 2>/dev/null; then
+      return 0
+    fi
+  fi
+
+  # Check for musl dynamic linker.
+  if [ -f /lib/ld-musl-x86_64.so.1 ] || [ -f /lib/ld-musl-aarch64.so.1 ]; then
+    return 0
+  fi
+
+  # Check ldd output for musl.
+  if command -v ldd &> /dev/null; then
+    if ldd --version 2>&1 | grep -qi musl; then
+      return 0
+    fi
+  fi
+
+  return 1
+}
+
 # Detect platform and architecture.
 detect_platform() {
   local os
   local arch
+  local libc_suffix=""
 
   # Detect OS.
   case "$(uname -s)" in
     Linux*)
       os="linux"
+      # Check for musl libc on Linux.
+      if detect_musl; then
+        libc_suffix="-musl"
+      fi
       ;;
     Darwin*)
       os="darwin"
@@ -83,7 +112,7 @@ detect_platform() {
       ;;
   esac
 
-  echo "${os}-${arch}"
+  echo "${os}-${arch}${libc_suffix}"
 }
 
 # Get the latest version from npm registry.
