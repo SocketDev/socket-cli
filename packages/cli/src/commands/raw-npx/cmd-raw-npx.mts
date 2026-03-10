@@ -1,5 +1,4 @@
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import { FLAG_DRY_RUN, FLAG_HELP } from '../../constants/cli.mts'
@@ -12,8 +11,6 @@ import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
-
-const logger = getDefaultLogger()
 
 export const CMD_NAME = 'raw-npx'
 

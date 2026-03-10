@@ -130,3 +130,4 @@ packages/socket/*.png
 !/.vscode/extensions.json
 !docs/build/
 !src/types/**/*.d.ts
+.claude/

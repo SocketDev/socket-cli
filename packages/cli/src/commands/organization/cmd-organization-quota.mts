@@ -1,5 +1,3 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleQuota } from './handle-quota.mts'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'

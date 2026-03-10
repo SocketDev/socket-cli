@@ -1,5 +1,3 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handlePurlsShallowScore } from './handle-purls-shallow-score.mts'
 import { parsePackageSpecifiers } from './parse-package-specifiers.mts'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'

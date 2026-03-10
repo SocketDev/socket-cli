@@ -1,5 +1,3 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { outputConfigList } from './output-config-list.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'
@@ -13,8 +11,6 @@ import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
-
-const logger = getDefaultLogger()
 
 const config: CliCommandConfig = {
   commandName: 'list',

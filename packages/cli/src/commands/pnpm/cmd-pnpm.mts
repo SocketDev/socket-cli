@@ -1,5 +1,4 @@
 import { PNPM } from '@socketsecurity/lib/constants/agents'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
@@ -16,8 +15,6 @@ import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
-
-const logger = getDefaultLogger()
 
 export const CMD_NAME = PNPM
 

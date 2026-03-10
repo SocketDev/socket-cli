@@ -1,9 +1,11 @@
 import path from 'node:path'
 
 import { handleOptimize } from './handle-optimize.mts'
+import { CMD_NAME as CMD_NAME_FULL } from './shared.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { outputDryRunPreview } from '../../utils/dry-run/output.mts'
+import { detectAndValidatePackageEnvironment } from '../../utils/ecosystem/environment.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
@@ -85,16 +87,45 @@ async function run(
   const outputKind = getOutputKind(json, markdown)
 
   if (dryRun) {
+    // Detect package environment to show meaningful dry-run output.
+    const pkgEnvCResult = await detectAndValidatePackageEnvironment(cwd, {
+      cmdName: CMD_NAME_FULL,
+      prod: Boolean(prod),
+    })
+
+    if (!pkgEnvCResult.ok) {
+      outputDryRunPreview({
+        summary: 'Optimize dependencies with @socketregistry overrides',
+        actions: [
+          {
+            type: 'fetch',
+            description: 'Detect package environment',
+            target: cwd,
+          },
+        ],
+        wouldSucceed: false,
+      })
+      return
+    }
+
+    const pkgEnvDetails = pkgEnvCResult.data
+    const { agent, agentVersion, pkgPath } = pkgEnvDetails
+
     const actions: DryRunAction[] = [
       {
         type: 'fetch',
-        description: 'Analyze dependencies for @socketregistry overrides',
-        target: cwd,
+        description: `Detected ${agent} v${agentVersion}`,
+        target: pkgPath,
+      },
+      {
+        type: 'fetch',
+        description: 'Analyze dependencies against @socketregistry overrides',
+        target: 'package.json and lockfile',
       },
       {
         type: 'modify',
         description: 'Add or update overrides section in package.json',
-        target: 'package.json',
+        target: path.join(pkgPath, 'package.json'),
         details: {
           pin: pin ? 'Yes - pin to specific versions' : 'No - use version ranges',
           prod: prod ? 'Yes - production dependencies only' : 'No - all dependencies',
@@ -102,12 +133,12 @@ async function run(
       },
       {
         type: 'execute',
-        description: 'Run package manager to install optimized dependencies',
+        description: `Run ${agent} to install optimized dependencies`,
       },
     ]
 
     outputDryRunPreview({
-      summary: 'Optimize dependencies with @socketregistry overrides',
+      summary: `Optimize dependencies with @socketregistry overrides (${agent} v${agentVersion})`,
       actions,
       wouldSucceed: true,
     })

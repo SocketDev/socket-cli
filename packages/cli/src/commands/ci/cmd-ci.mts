@@ -1,5 +1,3 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 import { handleCi } from './handle-ci.mts'
 import { commonFlags } from '../../flags.mts'
@@ -16,8 +14,6 @@ import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
-
-const logger = getDefaultLogger()
 
 const config: CliCommandConfig = {
   commandName: 'ci',

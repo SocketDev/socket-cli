@@ -1,5 +1,3 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleScanReport } from './handle-scan-report.mts'
 import { FOLD_SETTING_NONE } from '../../constants/cli.mts'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'

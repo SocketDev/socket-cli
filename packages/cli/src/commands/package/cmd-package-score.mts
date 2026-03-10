@@ -1,5 +1,3 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handlePurlDeepScore } from './handle-purl-deep-score.mts'
 import { parsePackageSpecifiers } from './parse-package-specifiers.mts'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'

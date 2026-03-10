@@ -1,5 +1,3 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleAnalytics } from './handle-analytics.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'
@@ -19,8 +17,6 @@ import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
-
-const logger = getDefaultLogger()
 
 // Flags interface for type safety.
 interface AnalyticsFlags {

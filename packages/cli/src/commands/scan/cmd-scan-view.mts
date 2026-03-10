@@ -1,5 +1,3 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleScanView } from './handle-scan-view.mts'
 import { streamScan } from './stream-scan.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'

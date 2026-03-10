@@ -1,5 +1,3 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleAuditLog } from './handle-audit-log.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'

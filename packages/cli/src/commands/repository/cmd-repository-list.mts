@@ -1,5 +1,3 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleListRepos } from './handle-list-repos.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'
