@@ -582,6 +582,54 @@ describe('cmd-scan-create', () => {
       )
     })
 
+    it('should use socket.json defaults for workspace', async () => {
+      mockReadOrDefaultSocketJsonUp.mockResolvedValueOnce({
+        defaults: {
+          scan: {
+            create: {
+              workspace: 'my-workspace',
+            },
+          },
+        },
+      })
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+      await cmdScanCreate.run(
+        ['--org', 'test-org', '.', '--no-interactive'],
+        importMeta,
+        context,
+      )
+
+      expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workspace: 'my-workspace',
+        }),
+      )
+    })
+
+    it('should pass --workspace flag to handleCreateNewScan', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+      await cmdScanCreate.run(
+        [
+          '--org',
+          'test-org',
+          '--workspace',
+          'cli-workspace',
+          '.',
+          '--no-interactive',
+        ],
+        importMeta,
+        context,
+      )
+
+      expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workspace: 'cli-workspace',
+        }),
+      )
+    })
+
     it('should override socket.json defaults with CLI flags', async () => {
       mockReadOrDefaultSocketJsonUp.mockResolvedValueOnce({
         defaults: {
