@@ -28,8 +28,7 @@ export const reachabilityFlags: MeowFlags = {
   reachDisableExternalToolChecks: {
     type: 'boolean',
     default: false,
-    description:
-      'Disable external tool checks during reachability analysis.',
+    description: 'Disable external tool checks during reachability analysis.',
   },
   reachDebug: {
     type: 'boolean',
