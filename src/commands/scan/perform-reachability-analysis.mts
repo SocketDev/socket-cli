@@ -1,5 +1,7 @@
 import path from 'node:path'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import constants from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import { extractTier1ReachabilityScanId } from '../../utils/coana.mts'
@@ -19,6 +21,7 @@ export type ReachabilityOptions = {
   reachConcurrency: number
   reachDebug: boolean
   reachDetailedAnalysisLogFile: boolean
+  reachDisableExternalToolChecks: boolean
   reachDisableAnalytics: boolean
   reachEcosystems: PURL_Type[]
   reachEnableAnalysisSplitting: boolean
@@ -179,6 +182,9 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachDisableAnalytics
       ? ['--disable-analytics-sharing']
       : []),
+    ...(reachabilityOptions.reachDisableExternalToolChecks
+      ? ['--disable-external-tool-checks']
+      : []),
     ...(reachabilityOptions.reachEnableAnalysisSplitting
       ? []
       : ['--disable-analysis-splitting']),
@@ -223,15 +229,25 @@ export async function performReachabilityAnalysis(
     spinner.start()
   }
 
-  return coanaResult.ok
-    ? {
-        ok: true,
-        data: {
-          // Use the actual output filename for the scan.
-          reachabilityReport: outputFilePath,
-          tier1ReachabilityScanId:
-            extractTier1ReachabilityScanId(outputFilePath),
-        },
-      }
-    : coanaResult
+  if (!coanaResult.ok) {
+    const coanaVersion =
+      reachabilityOptions.reachVersion ||
+      constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION
+    logger.error(
+      `Coana reachability analysis failed. Version: ${coanaVersion}, target: ${analysisTarget}, cwd: ${cwd}`,
+    )
+    if (coanaResult.message) {
+      logger.error(`Details: ${coanaResult.message}`)
+    }
+    return coanaResult
+  }
+
+  return {
+    ok: true,
+    data: {
+      // Use the actual output filename for the scan.
+      reachabilityReport: outputFilePath,
+      tier1ReachabilityScanId: extractTier1ReachabilityScanId(outputFilePath),
+    },
+  }
 }

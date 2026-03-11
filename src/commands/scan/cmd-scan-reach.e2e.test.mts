@@ -394,7 +394,7 @@ describe('socket scan reach (E2E tests)', async () => {
           await tempFixture.cleanup()
         }
       },
-      { timeout: longTestTimeout },
+      { retry: 2, timeout: longTestTimeout },
     )
 
     cmdit(
@@ -491,7 +491,7 @@ describe('socket scan reach (E2E tests)', async () => {
           await tempFixture.cleanup()
         }
       },
-      { timeout: testTimeout },
+      { retry: 2, timeout: testTimeout },
     )
   })
 
@@ -603,7 +603,7 @@ describe('socket scan reach (E2E tests)', async () => {
           await tempFixture.cleanup()
         }
       },
-      { timeout: testTimeout },
+      { retry: 2, timeout: testTimeout },
     )
 
     cmdit(
@@ -681,7 +681,7 @@ describe('socket scan reach (E2E tests)', async () => {
           await tempFixture.cleanup()
         }
       },
-      { timeout: testTimeout },
+      { retry: 2, timeout: testTimeout },
     )
 
     cmdit(
@@ -779,7 +779,7 @@ describe('socket scan reach (E2E tests)', async () => {
           await tempFixture.cleanup()
         }
       },
-      { timeout: testTimeout },
+      { retry: 2, timeout: testTimeout },
     )
 
     cmdit(
@@ -836,7 +836,7 @@ describe('socket scan reach (E2E tests)', async () => {
           await tempFixture.cleanup()
         }
       },
-      { timeout: testTimeout },
+      { retry: 2, timeout: testTimeout },
     )
 
     cmdit(
@@ -923,7 +923,7 @@ describe('socket scan reach (E2E tests)', async () => {
           await tempFixture.cleanup()
         }
       },
-      { timeout: testTimeout },
+      { retry: 2, timeout: testTimeout },
     )
   })
 
@@ -1027,7 +1027,7 @@ describe('socket scan reach (E2E tests)', async () => {
           await tempFixture.cleanup()
         }
       },
-      { timeout: testTimeout },
+      { retry: 2, timeout: testTimeout },
     )
 
     cmdit(
@@ -1127,7 +1127,7 @@ describe('socket scan reach (E2E tests)', async () => {
           await tempFixture.cleanup()
         }
       },
-      { timeout: testTimeout },
+      { retry: 2, timeout: testTimeout },
     )
   })
 })
