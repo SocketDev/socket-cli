@@ -12,6 +12,7 @@
     "eslint/no-control-regex": "off",
     "eslint/no-empty": ["error", { "allowEmptyCatch": true }],
     "eslint/no-new": "error",
+    "eslint/no-unmodified-loop-condition": "off",
     "eslint/no-useless-catch": "off",
     "eslint/no-proto": "error",
     "eslint/no-shadow": "off",
@@ -48,11 +49,15 @@
     "**/.cache",
     "**/.claude",
     "**/coverage",
+    "**/coverage-isolated",
     "**/dist",
     "**/external",
     "**/node_modules",
     "**/patches",
     "**/test/fixtures",
-    "**/test/packages"
+    "**/test/packages",
+    "**/*.d.ts",
+    "**/*.d.ts.map",
+    "**/*.tsbuildinfo"
   ]
 }
