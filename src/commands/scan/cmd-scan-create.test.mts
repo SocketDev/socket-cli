@@ -52,6 +52,7 @@ describe('socket scan create', async () => {
             --report-level      Which policy level alerts should be reported (default 'error')
             --set-as-alerts-page  When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.
             --tmp               Set the visibility (true/false) of the scan in your dashboard.
+            --workspace         The workspace in the Socket Organization that the repository is in to associate with the full scan.
 
           Reachability Options (when --reach is used)
             --reach-analysis-memory-limit  The maximum memory in MB to use for the reachability analysis. The default is 8192MB.
