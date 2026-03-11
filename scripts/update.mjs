@@ -1,6 +1,6 @@
 /**
- * @fileoverview Monorepo-aware dependency update script - checks and updates dependencies.
- * Uses taze to check for updates across all packages in the monorepo.
+ * @fileoverview Monorepo-aware dependency update script.
+ * Uses taze to update dependencies across all packages in the monorepo.
  *
  * Usage:
  *   node scripts/update.mjs [options]
@@ -8,7 +8,6 @@
  * Options:
  *   --quiet    Suppress progress output
  *   --verbose  Show detailed output
- *   --apply    Apply updates (default is check-only)
  */
 
 import { isQuiet, isVerbose } from '@socketsecurity/lib/argv/flags'
@@ -19,7 +18,6 @@ import { spawn } from '@socketsecurity/lib/spawn'
 async function main() {
   const quiet = isQuiet()
   const verbose = isVerbose()
-  const apply = process.argv.includes('--apply')
   const logger = getDefaultLogger()
 
   try {
@@ -31,11 +29,7 @@ async function main() {
     const tazeArgs = ['exec', 'taze', '-r', '-w']
 
     if (!quiet) {
-      if (apply) {
-        logger.progress('Updating dependencies...')
-      } else {
-        logger.progress('Checking for updates...')
-      }
+      logger.progress('Updating dependencies...')
     }
 
     // Run taze at root level (recursive flag will check all packages).
@@ -85,20 +79,12 @@ async function main() {
 
     if (result.code !== 0) {
       if (!quiet) {
-        if (apply) {
-          logger.fail('Failed to update dependencies')
-        } else {
-          logger.info('Updates available. Run with --apply to update')
-        }
+        logger.fail('Failed to update dependencies')
       }
-      process.exitCode = apply ? 1 : 0
+      process.exitCode = 1
     } else {
       if (!quiet) {
-        if (apply) {
-          logger.success('Dependencies updated')
-        } else {
-          logger.success('All packages up to date')
-        }
+        logger.success('Dependencies updated')
         logger.log('')
       }
     }
