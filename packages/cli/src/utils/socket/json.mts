@@ -69,9 +69,10 @@ export interface SocketJson {
     scan?: {
       create?: {
         autoManifest?: boolean | undefined
+        branch?: string | undefined
         repo?: string | undefined
         report?: boolean | undefined
-        branch?: string | undefined
+        workspace?: string | undefined
       }
       github?: {
         all?: boolean | undefined

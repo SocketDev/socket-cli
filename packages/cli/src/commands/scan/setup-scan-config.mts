@@ -9,6 +9,7 @@ import { SOCKET_JSON } from '../../constants/paths.mts'
 import {
   detectDefaultBranch,
   getRepoName,
+  getRepoOwner,
   gitBranch,
 } from '../../utils/git/operations.mjs'
 import {
@@ -154,6 +155,21 @@ async function configureScan(
     config.repo = defaultRepoName
   } else {
     delete config.repo
+  }
+
+  const defaultWorkspace = await input({
+    message:
+      '(--workspace) The workspace in the Socket Organization that the repository is in to associate with the full scan.',
+    default: config.workspace || (await getRepoOwner(cwd)) || '',
+    required: false,
+  })
+  if (defaultWorkspace === undefined) {
+    return canceledByUser()
+  }
+  if (defaultWorkspace) {
+    config.workspace = defaultWorkspace
+  } else {
+    delete config.workspace
   }
 
   const defaultBranchName = await input({

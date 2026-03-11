@@ -14,6 +14,7 @@ export type FetchCreateOrgFullScanConfigs = {
   pullRequest: number
   repoName: string
   scanType: string | undefined
+  workspace?: string | undefined
 }
 
 export type FetchCreateOrgFullScanOptions = {
@@ -40,6 +41,7 @@ export async function fetchCreateOrgFullScan(
     pullRequest,
     repoName,
     scanType,
+    workspace,
   } = { __proto__: null, ...config } as FetchCreateOrgFullScanConfigs
 
   const {
@@ -71,6 +73,7 @@ export async function fetchCreateOrgFullScan(
       ...(pullRequest ? { pull_request: String(pullRequest) } : {}),
       ...(repoName ? { repo: repoName } : {}),
       ...(scanType ? { scan_type: scanType } : {}),
+      ...(workspace ? { workspace } : {}),
       ...(pendingHead !== undefined
         ? { set_as_pending_head: Boolean(pendingHead) }
         : {}),

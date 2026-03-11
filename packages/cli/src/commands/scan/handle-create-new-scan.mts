@@ -68,6 +68,7 @@ export type HandleCreateNewScanConfig = {
   reportLevel: REPORT_LEVEL
   targets: string[]
   tmp: boolean
+  workspace?: string | undefined
 }
 
 export async function handleCreateNewScan({
@@ -91,8 +92,12 @@ export async function handleCreateNewScan({
   reportLevel,
   targets,
   tmp,
+  workspace,
 }: HandleCreateNewScanConfig): Promise<void> {
-  debug('notice', `Creating new scan for ${orgSlug}/${repoName}`)
+  debug(
+    'notice',
+    `Creating new scan for ${orgSlug}/${workspace ? `${workspace}/` : ''}${repoName}`,
+  )
   debugDir('inspect', {
     autoManifest,
     branchName,
@@ -106,6 +111,7 @@ export async function handleCreateNewScan({
     reportLevel,
     targets,
     tmp,
+    workspace,
   })
 
   if (autoManifest) {
@@ -288,6 +294,7 @@ export async function handleCreateNewScan({
       scanType: reach.runReachabilityAnalysis
         ? SCAN_TYPE_SOCKET_TIER1
         : SCAN_TYPE_SOCKET,
+      workspace,
     },
     {
       cwd,
