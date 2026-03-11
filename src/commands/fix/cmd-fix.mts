@@ -154,6 +154,11 @@ Available styles:
       'Enable debug logging in the Coana-based Socket Fix CLI invocation.',
     shortFlag: 'd',
   },
+  disableExternalToolChecks: {
+    type: 'boolean',
+    default: false,
+    description: 'Disable external tool checks during fix analysis.',
+  },
   ecosystems: {
     type: 'string',
     default: [],
@@ -294,6 +299,7 @@ async function run(
     applyFixes,
     autopilot,
     debug,
+    disableExternalToolChecks,
     ecosystems,
     exclude,
     fixVersion,
@@ -317,6 +323,7 @@ async function run(
     applyFixes: boolean
     autopilot: boolean
     debug: boolean
+    disableExternalToolChecks: boolean
     ecosystems: string[]
     exclude: string[]
     fixVersion: string | undefined
@@ -426,6 +433,7 @@ async function run(
     coanaVersion: fixVersion,
     cwd,
     debug,
+    disableExternalToolChecks,
     disableMajorUpdates,
     ecosystems: validatedEcosystems,
     exclude: excludePatterns,

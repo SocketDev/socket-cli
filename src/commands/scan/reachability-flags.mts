@@ -25,6 +25,12 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'Set the maximum number of concurrent reachability analysis runs. It is recommended to choose a concurrency level that ensures each analysis run has at least the --reach-analysis-memory-limit amount of memory available. NPM reachability analysis does not support concurrent execution, so the concurrency level is ignored for NPM.',
   },
+  reachDisableExternalToolChecks: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Disable external tool checks during reachability analysis.',
+  },
   reachDebug: {
     type: 'boolean',
     default: false,

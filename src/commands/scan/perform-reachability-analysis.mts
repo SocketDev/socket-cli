@@ -19,6 +19,7 @@ export type ReachabilityOptions = {
   reachConcurrency: number
   reachDebug: boolean
   reachDetailedAnalysisLogFile: boolean
+  reachDisableExternalToolChecks: boolean
   reachDisableAnalytics: boolean
   reachEcosystems: PURL_Type[]
   reachEnableAnalysisSplitting: boolean
@@ -178,6 +179,9 @@ export async function performReachabilityAnalysis(
       : []),
     ...(reachabilityOptions.reachDisableAnalytics
       ? ['--disable-analytics-sharing']
+      : []),
+    ...(reachabilityOptions.reachDisableExternalToolChecks
+      ? ['--disable-external-tool-checks']
       : []),
     ...(reachabilityOptions.reachEnableAnalysisSplitting
       ? []
