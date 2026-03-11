@@ -278,8 +278,21 @@ export async function spawnCoanaDlx(
     return { ok: true, data: output.stdout }
   } catch (e) {
     const stderr = (e as any)?.stderr
+    const exitCode = (e as any)?.code
+    const signal = (e as any)?.signal
     const cause = getErrorCause(e)
-    const message = stderr || cause
+    // Build a descriptive error message with exit code and signal details.
+    const details: string[] = []
+    if (typeof exitCode === 'number') {
+      details.push(`exit code ${exitCode}`)
+    }
+    if (signal) {
+      details.push(`signal ${signal}`)
+    }
+    const detailSuffix = details.length ? ` (${details.join(', ')})` : ''
+    const message = stderr
+      ? `Coana command failed${detailSuffix}: ${stderr}`
+      : `Coana command failed${detailSuffix}: ${cause}`
     return {
       ok: false,
       data: e,
