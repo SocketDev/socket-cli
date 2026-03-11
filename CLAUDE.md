@@ -61,11 +61,36 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 
 - Commits: [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) `<type>(<scope>): <description>` - NO AI attribution
 - Scripts: Prefer `pnpm run foo --flag` over `foo:bar` scripts
-- Docs: Use `docs/` folder, lowercase-with-hyphens.md filenames, pithy writing with visuals
 - Dependencies: After `package.json` edits, run `pnpm install` to update `pnpm-lock.yaml`
 - Backward Compatibility: 🚨 FORBIDDEN to maintain - actively remove when encountered (see canonical CLAUDE.md)
 - Work Safeguards: MANDATORY commit + backup branch before bulk changes
 - Safe Deletion: Use `safeDelete()` from `@socketsecurity/lib/fs` (NEVER `fs.rm/rmSync` or `rm -rf`)
+
+### Documentation Policy
+
+🚨 **CRITICAL**: Do NOT litter the repository with documentation files.
+
+**Allowed documentation locations:**
+- `docs/` - Primary documentation folder (lowercase-with-hyphens.md filenames, pithy writing with visuals)
+- `README.md` - Root project README only
+- `CHANGELOG.md` - Root changelog only
+- `SECURITY.md` - Root security policy only
+- `CLAUDE.md` - Root project instructions only
+- `packages/*/README.md` - Package-specific READMEs only
+- `test/fixtures/*/README.md` - Test fixture explanations only (when fixtures are complex)
+- `test/*/README.md` - Test suite architecture docs only (e.g., `test/e2e/README.md`, `test/helpers/README.md`)
+
+**Forbidden documentation locations:**
+- ❌ `.claude/*.md` - No temporary analysis docs, architectural notes, coverage reports
+- ❌ Root directory clutter - No ad-hoc markdown files
+- ❌ Scattered docs - No documentation outside approved locations
+
+**When creating documentation:**
+1. Ask: Does this belong in `docs/`? (99% of the time, yes)
+2. Use descriptive lowercase-with-hyphens.md filenames
+3. Keep writing pithy and focused
+4. Include visuals where helpful
+5. Never create temporary/scratch documentation files
 
 ---
 
