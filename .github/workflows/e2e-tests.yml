@@ -26,8 +26,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@0f6ec07aafe46cff7a322c837e5ba37d95c82b00
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
       - name: Build
         run: pnpm run build
