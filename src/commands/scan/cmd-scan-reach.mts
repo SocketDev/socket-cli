@@ -128,6 +128,7 @@ async function run(
     reachDetailedAnalysisLogFile,
     reachDisableAnalysisSplitting: _reachDisableAnalysisSplitting,
     reachDisableAnalytics,
+    reachDisableExternalToolChecks,
     reachEnableAnalysisSplitting,
     reachLazyMode,
     reachSkipCache,
@@ -147,6 +148,7 @@ async function run(
     reachDetailedAnalysisLogFile: boolean
     reachDisableAnalysisSplitting: boolean
     reachDisableAnalytics: boolean
+    reachDisableExternalToolChecks: boolean
     reachEnableAnalysisSplitting: boolean
     reachLazyMode: boolean
     reachSkipCache: boolean
@@ -268,6 +270,7 @@ async function run(
       reachDebug: Boolean(reachDebug),
       reachDetailedAnalysisLogFile: Boolean(reachDetailedAnalysisLogFile),
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
+      reachDisableExternalToolChecks: Boolean(reachDisableExternalToolChecks),
       reachEcosystems,
       reachEnableAnalysisSplitting: Boolean(reachEnableAnalysisSplitting),
       reachExcludePaths,

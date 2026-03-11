@@ -119,6 +119,7 @@ export async function coanaFix(
     coanaVersion,
     cwd,
     debug,
+    disableExternalToolChecks,
     disableMajorUpdates,
     ecosystems,
     exclude,
@@ -266,6 +267,9 @@ export async function coanaFix(
           '--output-file',
           tmpFile,
           ...(debug ? ['--debug'] : []),
+          ...(disableExternalToolChecks
+            ? ['--disable-external-tool-checks']
+            : []),
           ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
           ...(showAffectedDirectDependencies
             ? ['--show-affected-direct-dependencies']
@@ -418,6 +422,9 @@ export async function coanaFix(
         ...(exclude.length ? ['--exclude', ...exclude] : []),
         ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
         ...(debug ? ['--debug'] : []),
+        ...(disableExternalToolChecks
+          ? ['--disable-external-tool-checks']
+          : []),
         ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
         ...(showAffectedDirectDependencies
           ? ['--show-affected-direct-dependencies']
