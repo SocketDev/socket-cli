@@ -146,7 +146,7 @@ jobs:
           cache: ''  # Disable automatic caching to prevent cache poisoning.
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -383,7 +383,7 @@ jobs:
           cache: ''  # Disable automatic caching to prevent cache poisoning.
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
 
       - name: Install latest npm
         run: npm install -g npm@latest
