@@ -222,12 +222,6 @@ catalogs:
     open:
       specifier: 10.2.0
       version: 10.2.0
-    oxfmt:
-      specifier: 0.37.0
-      version: 0.37.0
-    oxlint:
-      specifier: 1.52.0
-      version: 1.52.0
     pony-cause:
       specifier: 2.1.11
       version: 2.1.11
@@ -567,10 +561,10 @@ importers:
         specifier: 'catalog:'
         version: 10.2.0
       oxfmt:
-        specifier: 'catalog:'
+        specifier: 0.37.0
         version: 0.37.0
       oxlint:
-        specifier: 'catalog:'
+        specifier: 1.52.0
         version: 1.52.0
       pony-cause:
         specifier: 'catalog:'
