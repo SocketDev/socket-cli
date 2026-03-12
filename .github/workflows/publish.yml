@@ -185,10 +185,6 @@ jobs:
       - name: Build CLI
         run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build
 
-      - name: Update socketbin versions
-        if: ${{ inputs.publish-socket }}
-        run: node scripts/update-socketbin-versions.mjs --prod
-
       - name: Publish socket
         if: ${{ inputs.publish-socket && !inputs.dry-run }}
         env:

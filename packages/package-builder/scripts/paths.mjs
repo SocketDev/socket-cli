@@ -18,7 +18,6 @@ export const PACKAGE_BUILDER_ROOT = join(__dirname, '..')
 export const TEMPLATES_DIR = join(PACKAGE_BUILDER_ROOT, 'templates')
 export const CLI_TEMPLATE_DIR = join(TEMPLATES_DIR, 'cli-package')
 export const CLI_SENTRY_TEMPLATE_DIR = join(TEMPLATES_DIR, 'cli-sentry-package')
-export const SOCKET_TEMPLATE_DIR = join(TEMPLATES_DIR, 'socket-package')
 export const SOCKETBIN_TEMPLATE_DIR = join(TEMPLATES_DIR, 'socketbin-package')
 
 /**

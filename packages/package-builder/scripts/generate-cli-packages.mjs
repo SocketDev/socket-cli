@@ -1,17 +1,19 @@
 /**
  * Generate CLI package directories from templates.
- * Creates both the standard CLI and CLI-with-Sentry packages.
+ * Creates the standard CLI, CLI-with-Sentry, and socket packages.
  *
  * Usage:
  *   node scripts/generate-cli-packages.mjs
  */
+
+import { readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import {
   CLI_SENTRY_TEMPLATE_DIR,
   CLI_TEMPLATE_DIR,
-  SOCKET_TEMPLATE_DIR,
   getPackageOutDir,
 } from './paths.mjs'
 import { copyDirectory } from './utils.mjs'
@@ -33,9 +35,10 @@ const PACKAGES = [
     templateDir: CLI_SENTRY_TEMPLATE_DIR,
   },
   {
+    // socket package is a copy of cli with different name.
     name: 'socket',
     outputDir: 'socket',
-    templateDir: SOCKET_TEMPLATE_DIR,
+    templateDir: CLI_TEMPLATE_DIR,
   },
 ]
 
@@ -53,6 +56,14 @@ async function main() {
 
     // Copy entire template directory.
     await copyDirectory(pkg.templateDir, packagePath)
+
+    // Update package.json name if different from template.
+    const pkgJsonPath = join(packagePath, 'package.json')
+    const pkgJson = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'))
+    if (pkgJson.name !== pkg.name) {
+      pkgJson.name = pkg.name
+      writeFileSync(pkgJsonPath, `${JSON.stringify(pkgJson, null, 2)}\n`)
+    }
 
     logger.success(`Generated ${pkg.name} package`)
   }
