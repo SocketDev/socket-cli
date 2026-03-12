@@ -19,12 +19,8 @@ on:
         description: '@socketsecurity/cli-with-sentry'
         type: boolean
         default: true
-      binaries:
-        description: '@socketbin/* (8 platforms)'
-        type: boolean
-        default: true
       socket:
-        description: 'socket (depends on @socketbin/*)'
+        description: 'socket (includes @socketbin/* for 8 platforms)'
         type: boolean
         default: true
 
@@ -38,7 +34,7 @@ env:
 jobs:
   # Build CLI bundle once (platform-agnostic JS) and generate platform matrix.
   build-cli:
-    if: ${{ inputs.binaries }}
+    if: ${{ inputs.socket }}
     name: Build CLI bundle
     runs-on: ubuntu-latest
     permissions:
@@ -77,7 +73,7 @@ jobs:
 
   # Build SEA binaries for all platforms (only if publishing binaries).
   build-binaries:
-    if: ${{ inputs.binaries }}
+    if: ${{ inputs.socket }}
     needs: [build-cli]
     name: Build ${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.libc && '-musl' || '' }}
     runs-on: ${{ matrix.runner }}
@@ -162,14 +158,14 @@ jobs:
 
       # Download and publish binary packages.
       - name: Download binaries
-        if: ${{ inputs.binaries }}
+        if: ${{ inputs.socket }}
         uses: actions/download-artifact@v4
         with:
           path: artifacts
           pattern: binary-*
 
       - name: Publish binary packages
-        if: ${{ inputs.binaries && !inputs.dry-run }}
+        if: ${{ inputs.socket && !inputs.dry-run }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -265,7 +261,7 @@ jobs:
             echo "**Dry run - nothing was published**" >> $GITHUB_STEP_SUMMARY
           else
             echo "### Published packages:" >> $GITHUB_STEP_SUMMARY
-            if [ "${{ inputs.binaries }}" = "true" ]; then
+            if [ "${{ inputs.socket }}" = "true" ]; then
               echo "- @socketbin/cli-* (8 platforms)" >> $GITHUB_STEP_SUMMARY
             fi
             if [ "${{ inputs.socket }}" = "true" ]; then
