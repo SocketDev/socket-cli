@@ -26,10 +26,14 @@ import { RequestError } from '@octokit/request-error'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  cacheFetch,
+  getOctokit,
+  getOctokitGraphql,
   handleGitHubApiError,
   handleGraphqlError,
   isGraphqlRateLimitError,
   withGitHubRetry,
+  writeCache,
 } from '../../../../src/utils/git/github.mts'
 
 // Mock debug utilities to suppress output during tests.
@@ -508,5 +512,100 @@ describe('withGitHubRetry', () => {
 
     expect(result.ok).toBe(true)
     expect(operation).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('getOctokit', () => {
+  it('returns an Octokit instance', () => {
+    const octokit = getOctokit()
+    expect(octokit).toBeDefined()
+    expect(octokit.pulls).toBeDefined()
+    expect(octokit.repos).toBeDefined()
+  })
+
+  it('returns the same instance on subsequent calls', () => {
+    const octokit1 = getOctokit()
+    const octokit2 = getOctokit()
+    expect(octokit1).toBe(octokit2)
+  })
+})
+
+describe('getOctokitGraphql', () => {
+  it('returns a GraphQL client', () => {
+    const graphql = getOctokitGraphql()
+    expect(graphql).toBeDefined()
+    expect(typeof graphql).toBe('function')
+  })
+
+  it('returns the same instance on subsequent calls', () => {
+    const graphql1 = getOctokitGraphql()
+    const graphql2 = getOctokitGraphql()
+    expect(graphql1).toBe(graphql2)
+  })
+})
+
+describe('cacheFetch', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('calls the fetcher when cache is empty', async () => {
+    const fetcher = vi.fn().mockResolvedValue({ value: 'fetched' })
+    // Use unique key to avoid cache from other tests.
+    const key = `test-fetch-${Date.now()}-${Math.random()}`
+
+    const result = await cacheFetch(key, fetcher)
+
+    expect(result).toEqual({ value: 'fetched' })
+    expect(fetcher).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns cached value on subsequent calls', async () => {
+    const key = `test-cached-${Date.now()}-${Math.random()}`
+    const fetcher = vi.fn().mockResolvedValue({ value: 'cached' })
+
+    // First call populates cache.
+    await cacheFetch(key, fetcher)
+
+    // Second call should use cache.
+    const result = await cacheFetch(key, fetcher)
+
+    expect(result).toEqual({ value: 'cached' })
+    // Fetcher should only be called once.
+    expect(fetcher).toHaveBeenCalledTimes(1)
+  })
+
+  it('prevents concurrent fetches for the same key', async () => {
+    const key = `test-concurrent-${Date.now()}-${Math.random()}`
+    let resolvePromise: (value: { value: string }) => void
+    const slowFetcher = vi.fn().mockReturnValue(
+      new Promise(resolve => {
+        resolvePromise = resolve
+      }),
+    )
+
+    // Start two concurrent fetches.
+    const promise1 = cacheFetch(key, slowFetcher)
+    const promise2 = cacheFetch(key, slowFetcher)
+
+    // Resolve the slow fetcher.
+    resolvePromise!({ value: 'slow-result' })
+
+    const [result1, result2] = await Promise.all([promise1, promise2])
+
+    expect(result1).toEqual({ value: 'slow-result' })
+    expect(result2).toEqual({ value: 'slow-result' })
+    // Fetcher should only be called once.
+    expect(slowFetcher).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('writeCache', () => {
+  it('writes cache data without throwing', async () => {
+    const key = `test-write-${Date.now()}-${Math.random()}`
+    const data = { test: 'data', value: 123 }
+
+    // Should not throw.
+    await expect(writeCache(key, data)).resolves.not.toThrow()
   })
 })
