@@ -120,9 +120,6 @@ const binaryName = platform === 'win32' ? 'socket.exe' : 'socket'
 // Update package directory structure
 async function generatePackage() {
   try {
-    // Ensure bin directory exists
-    await fs.mkdir(path.join(packageDir, 'bin'), { recursive: true })
-
     // Read existing package.json
     const pkgPath = path.join(packageDir, 'package.json')
     const existingPkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))
@@ -141,18 +138,18 @@ async function generatePackage() {
     logger.log(`  Version: ${cleanVersion}`)
     logger.log(`  Build method: ${buildMethod}`)
 
-    // Check if binary exists and copy it
+    // Check if binary exists and copy it to package root (following biome convention).
     const sourceBinary = path.join(
       rootDir,
       'dist',
       'sea',
       `socket-${platform}-${arch}${muslSuffix}${platform === 'win32' ? '.exe' : ''}`,
     )
-    const targetBinary = path.join(packageDir, 'bin', binaryName)
+    const targetBinary = path.join(packageDir, binaryName)
 
     try {
       await fs.copyFile(sourceBinary, targetBinary)
-      // Make executable on Unix
+      // Make executable on Unix.
       if (platform !== 'win32') {
         await fs.chmod(targetBinary, 0o755)
       }
