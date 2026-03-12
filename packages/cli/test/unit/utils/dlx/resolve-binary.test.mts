@@ -206,6 +206,146 @@ describe('resolve-binary', () => {
     })
   })
 
+  describe('resolveSocketPatch', () => {
+    it('should return local path when SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH is set', async () => {
+      vi.doMock(
+        '../../../../src/env/socket-cli-socket-patch-local-path.mts',
+        () => ({
+          SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: '/custom/path/to/socket-patch',
+        }),
+      )
+
+      const { resolveSocketPatch } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
+
+      const result = resolveSocketPatch()
+
+      expect(result).toEqual({
+        type: 'local',
+        path: '/custom/path/to/socket-patch',
+      })
+    })
+
+    it('should return github-release type for darwin-arm64', async () => {
+      vi.doMock(
+        '../../../../src/env/socket-cli-socket-patch-local-path.mts',
+        () => ({
+          SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: undefined,
+        }),
+      )
+      vi.doMock('../../../../src/env/socket-patch-version.mts', () => ({
+        getSocketPatchVersion: () => '2.0.0',
+      }))
+      vi.doMock('node:os', () => ({
+        default: {
+          platform: () => 'darwin',
+          arch: () => 'arm64',
+        },
+      }))
+
+      const { resolveSocketPatch } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
+
+      const result = resolveSocketPatch() as Extract<
+        BinaryResolution,
+        { type: 'github-release' }
+      >
+
+      expect(result.type).toBe('github-release')
+      expect(result.details.owner).toBe('SocketDev')
+      expect(result.details.repo).toBe('socket-patch')
+      expect(result.details.version).toBe('2.0.0')
+      expect(result.details.assetName).toBe(
+        'socket-patch-aarch64-apple-darwin.tar.gz',
+      )
+      expect(result.details.binaryName).toBe('socket-patch')
+    })
+
+    it('should return github-release type for linux-x64', async () => {
+      vi.doMock(
+        '../../../../src/env/socket-cli-socket-patch-local-path.mts',
+        () => ({
+          SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: undefined,
+        }),
+      )
+      vi.doMock('../../../../src/env/socket-patch-version.mts', () => ({
+        getSocketPatchVersion: () => '2.0.0',
+      }))
+      vi.doMock('node:os', () => ({
+        default: {
+          platform: () => 'linux',
+          arch: () => 'x64',
+        },
+      }))
+
+      const { resolveSocketPatch } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
+
+      const result = resolveSocketPatch() as Extract<
+        BinaryResolution,
+        { type: 'github-release' }
+      >
+
+      expect(result.type).toBe('github-release')
+      expect(result.details.assetName).toBe(
+        'socket-patch-x86_64-unknown-linux-musl.tar.gz',
+      )
+    })
+
+    it('should return github-release type for win32-x64', async () => {
+      vi.doMock(
+        '../../../../src/env/socket-cli-socket-patch-local-path.mts',
+        () => ({
+          SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: undefined,
+        }),
+      )
+      vi.doMock('../../../../src/env/socket-patch-version.mts', () => ({
+        getSocketPatchVersion: () => '2.0.0',
+      }))
+      vi.doMock('node:os', () => ({
+        default: {
+          platform: () => 'win32',
+          arch: () => 'x64',
+        },
+      }))
+
+      const { resolveSocketPatch } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
+
+      const result = resolveSocketPatch() as Extract<
+        BinaryResolution,
+        { type: 'github-release' }
+      >
+
+      expect(result.type).toBe('github-release')
+      expect(result.details.assetName).toBe(
+        'socket-patch-x86_64-pc-windows-msvc.zip',
+      )
+    })
+
+    it('should throw error for unsupported platform', async () => {
+      vi.doMock(
+        '../../../../src/env/socket-cli-socket-patch-local-path.mts',
+        () => ({
+          SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: undefined,
+        }),
+      )
+      vi.doMock('node:os', () => ({
+        default: {
+          platform: () => 'freebsd',
+          arch: () => 'x64',
+        },
+      }))
+
+      const { resolveSocketPatch } =
+        await import('../../../../src/utils/dlx/resolve-binary.mjs')
+
+      expect(() => resolveSocketPatch()).toThrow(
+        'socket-patch is not available for platform freebsd-x64',
+      )
+    })
+  })
+
   describe('integration scenarios', () => {
     it('should handle empty string as no local path', async () => {
       vi.doMock('../../../../src/env/socket-cli-coana-local-path.mts', () => ({

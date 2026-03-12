@@ -42,6 +42,7 @@ vi.mock('@socketsecurity/lib/debug', () => ({
 import { debug, debugDir, debugNs } from '@socketsecurity/lib/debug'
 
 import {
+  debugApiRequest,
   debugApiResponse,
   debugConfig,
   debugFileOp,
@@ -54,6 +55,40 @@ describe('debug utilities', () => {
     vi.clearAllMocks()
     mockIsDebug.mockReturnValue(false)
     mockIsDebugNs.mockReturnValue(false)
+  })
+
+  describe('debugApiRequest', () => {
+    it('logs request when silly debug is enabled', () => {
+      mockIsDebugNs.mockReturnValue(true)
+
+      debugApiRequest('GET', '/api/test', 5000)
+
+      expect(debugNs).toHaveBeenCalled()
+      const call = mockDebugNs.mock.calls[0]
+      expect(call?.[0]).toBe('silly')
+      expect(call?.[1]).toContain('GET')
+      expect(call?.[1]).toContain('/api/test')
+      expect(call?.[1]).toContain('5000ms')
+    })
+
+    it('does not log when silly debug is disabled', () => {
+      mockIsDebugNs.mockReturnValue(false)
+
+      debugApiRequest('POST', '/api/scan', 10000)
+
+      expect(debugNs).not.toHaveBeenCalled()
+    })
+
+    it('handles request without timeout', () => {
+      mockIsDebugNs.mockReturnValue(true)
+
+      debugApiRequest('DELETE', '/api/resource')
+
+      expect(debugNs).toHaveBeenCalled()
+      const call = mockDebugNs.mock.calls[0]
+      expect(call?.[1]).toContain('DELETE')
+      expect(call?.[1]).not.toContain('timeout')
+    })
   })
 
   describe('debugApiResponse', () => {
@@ -97,6 +132,61 @@ describe('debug utilities', () => {
         endpoint: '/api/test',
         error: 'Unknown error',
       })
+    })
+
+    it('includes request info in error logging', () => {
+      const error = new Error('Request failed')
+      const requestInfo = {
+        method: 'POST',
+        url: 'https://api.socket.dev/test',
+        durationMs: 1500,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer secret-token',
+        },
+      }
+
+      debugApiResponse('/api/test', undefined, error, requestInfo)
+
+      const calledWith = mockDebugDir.mock.calls[0]?.[0]
+      expect(calledWith.method).toBe('POST')
+      expect(calledWith.url).toBe('https://api.socket.dev/test')
+      expect(calledWith.durationMs).toBe(1500)
+      // Authorization should be redacted.
+      expect(calledWith.headers?.Authorization).toBe('[REDACTED]')
+      expect(calledWith.headers?.['Content-Type']).toBe('application/json')
+    })
+
+    it('includes request info in HTTP error logging', () => {
+      const requestInfo = {
+        method: 'GET',
+        url: 'https://api.socket.dev/resource',
+        durationMs: 500,
+        headers: {
+          'x-api-key': 'my-api-key',
+        },
+      }
+
+      debugApiResponse('/api/resource', 500, undefined, requestInfo)
+
+      const calledWith = mockDebugDir.mock.calls[0]?.[0]
+      expect(calledWith.status).toBe(500)
+      expect(calledWith.method).toBe('GET')
+      // API key should be redacted.
+      expect(calledWith.headers?.['x-api-key']).toBe('[REDACTED]')
+    })
+
+    it('handles partial request info', () => {
+      const requestInfo = {
+        method: 'PUT',
+      }
+
+      debugApiResponse('/api/update', 400, undefined, requestInfo)
+
+      const calledWith = mockDebugDir.mock.calls[0]?.[0]
+      expect(calledWith.method).toBe('PUT')
+      expect(calledWith.url).toBeUndefined()
+      expect(calledWith.headers).toBeUndefined()
     })
   })
 

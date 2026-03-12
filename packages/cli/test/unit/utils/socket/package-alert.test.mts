@@ -22,6 +22,9 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { ALERT_SEVERITY } from '../../../../src/utils/alert/severity.mts'
 import {
+  addArtifactToAlertsMap,
+  ALERT_SEVERITY_COLOR,
+  ALERT_SEVERITY_ORDER,
   alertSeverityComparator,
   alertsHaveBlocked,
   alertsHaveSeverity,
@@ -257,6 +260,67 @@ describe('socket-package-alert', () => {
       expect(getSeverityLabel('critical')).toBe('critical')
       expect(getSeverityLabel('high')).toBe('high')
       expect(getSeverityLabel('low')).toBe('low')
+    })
+  })
+
+  describe('ALERT_SEVERITY_COLOR', () => {
+    it('maps severities to colors', () => {
+      expect(ALERT_SEVERITY_COLOR.critical).toBe('magenta')
+      expect(ALERT_SEVERITY_COLOR.high).toBe('red')
+      expect(ALERT_SEVERITY_COLOR.middle).toBe('yellow')
+      expect(ALERT_SEVERITY_COLOR.low).toBe('white')
+    })
+  })
+
+  describe('ALERT_SEVERITY_ORDER', () => {
+    it('has correct ordering (lower = more severe)', () => {
+      expect(ALERT_SEVERITY_ORDER.critical).toBe(0)
+      expect(ALERT_SEVERITY_ORDER.high).toBe(1)
+      expect(ALERT_SEVERITY_ORDER.middle).toBe(2)
+      expect(ALERT_SEVERITY_ORDER.low).toBe(3)
+      expect(ALERT_SEVERITY_ORDER.none).toBe(4)
+    })
+  })
+
+  describe('addArtifactToAlertsMap', () => {
+    it('returns unchanged map for artifact without alerts', async () => {
+      const alertsMap = new Map()
+      const artifact = {
+        name: 'test-package',
+        version: '1.0.0',
+        type: 'npm',
+        alerts: [],
+      }
+
+      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+
+      expect(result.size).toBe(0)
+    })
+
+    it('returns unchanged map for artifact without name', async () => {
+      const alertsMap = new Map()
+      const artifact = {
+        version: '1.0.0',
+        type: 'npm',
+        alerts: [{ type: 'cve', severity: 'high' }],
+      }
+
+      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+
+      expect(result.size).toBe(0)
+    })
+
+    it('returns unchanged map for artifact without version', async () => {
+      const alertsMap = new Map()
+      const artifact = {
+        name: 'test-package',
+        type: 'npm',
+        alerts: [{ type: 'cve', severity: 'high' }],
+      }
+
+      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+
+      expect(result.size).toBe(0)
     })
   })
 })

@@ -7,15 +7,26 @@ import * as fs from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  clearQuarantine,
   detectMusl,
+  ensureExecutable,
+  getArchName,
   getBinaryName,
   getBinaryRelativePath,
+  getExpectedAssetName,
   getLibcSuffix,
   getNpmArch,
   getNpmPlatform,
+  getPlatformName,
   getSocketbinPackageName,
+  isPlatformSupported,
   resetLibcCache,
 } from '../../../../src/utils/process/os.mts'
+
+// Mock spawn for clearQuarantine tests.
+vi.mock('@socketsecurity/lib/spawn', () => ({
+  spawn: vi.fn(),
+}))
 
 // Mock the fs module.
 vi.mock('node:fs', async () => {
@@ -298,5 +309,182 @@ describe('getBinaryRelativePath', () => {
   it('should return bin/socket.exe on Windows', () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
     expect(getBinaryRelativePath()).toBe('bin/socket.exe')
+  })
+})
+
+describe('getPlatformName', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('should map darwin to macos', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
+    expect(getPlatformName()).toBe('macos')
+  })
+
+  it('should map linux to linux', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    expect(getPlatformName()).toBe('linux')
+  })
+
+  it('should map win32 to win', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
+    expect(getPlatformName()).toBe('win')
+  })
+
+  it('should return unknown platform as-is', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('freebsd' as NodeJS.Platform)
+    expect(getPlatformName()).toBe('freebsd')
+  })
+})
+
+describe('getArchName', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('should map arm64 to arm64', () => {
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('arm64')
+    expect(getArchName()).toBe('arm64')
+  })
+
+  it('should map x64 to x64', () => {
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('x64')
+    expect(getArchName()).toBe('x64')
+  })
+
+  it('should return unknown arch as-is', () => {
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('ia32')
+    expect(getArchName()).toBe('ia32')
+  })
+})
+
+describe('getExpectedAssetName', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('should return correct asset name for macOS ARM64', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('arm64')
+    expect(getExpectedAssetName()).toBe('socket-macos-arm64')
+  })
+
+  it('should return correct asset name for macOS x64', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('x64')
+    expect(getExpectedAssetName()).toBe('socket-macos-x64')
+  })
+
+  it('should return correct asset name for Linux x64', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('x64')
+    expect(getExpectedAssetName()).toBe('socket-linux-x64')
+  })
+
+  it('should return correct asset name for Linux ARM64', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('arm64')
+    expect(getExpectedAssetName()).toBe('socket-linux-arm64')
+  })
+
+  it('should include .exe extension for Windows', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('x64')
+    expect(getExpectedAssetName()).toBe('socket-win-x64.exe')
+  })
+})
+
+describe('isPlatformSupported', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('should return true for macOS ARM64', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('arm64')
+    expect(isPlatformSupported()).toBe(true)
+  })
+
+  it('should return true for macOS x64', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('x64')
+    expect(isPlatformSupported()).toBe(true)
+  })
+
+  it('should return true for Linux x64', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('x64')
+    expect(isPlatformSupported()).toBe(true)
+  })
+
+  it('should return true for Linux ARM64', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('arm64')
+    expect(isPlatformSupported()).toBe(true)
+  })
+
+  it('should return true for Windows x64', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('x64')
+    expect(isPlatformSupported()).toBe(true)
+  })
+
+  it('should return false for Windows ARM64', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('arm64')
+    expect(isPlatformSupported()).toBe(false)
+  })
+
+  it('should return false for unsupported platforms', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('freebsd' as NodeJS.Platform)
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('x64')
+    expect(isPlatformSupported()).toBe(false)
+  })
+
+  it('should return false for unsupported architectures', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    vi.spyOn(process, 'arch', 'get').mockReturnValue('ia32')
+    expect(isPlatformSupported()).toBe(false)
+  })
+})
+
+describe('clearQuarantine', () => {
+  beforeEach(async () => {
+    vi.restoreAllMocks()
+    vi.resetModules()
+  })
+
+  it('should do nothing on non-macOS platforms', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    const spawnModule = await import('@socketsecurity/lib/spawn')
+    const spawnMock = vi.mocked(spawnModule.spawn)
+
+    await clearQuarantine('/path/to/file')
+
+    expect(spawnMock).not.toHaveBeenCalled()
+  })
+
+  it('should do nothing on Windows', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
+    const spawnModule = await import('@socketsecurity/lib/spawn')
+    const spawnMock = vi.mocked(spawnModule.spawn)
+
+    await clearQuarantine('/path/to/file')
+
+    expect(spawnMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('ensureExecutable', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('should do nothing on Windows', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
+
+    // Should not throw.
+    await ensureExecutable('/path/to/file')
   })
 })

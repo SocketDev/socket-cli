@@ -10,9 +10,13 @@
  * Note: Network tests use mock responses to avoid external dependencies.
  */
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-import { isUpdateAvailable } from '../../../../src/utils/update/checker.mts'
+import {
+  checkForUpdates,
+  isUpdateAvailable,
+  NetworkUtils,
+} from '../../../../src/utils/update/checker.mts'
 
 describe('checker', () => {
   describe('isUpdateAvailable', () => {
@@ -145,5 +149,59 @@ describe('checker', () => {
       expect(isUpdateAvailable('2.0.0', '1.9.9')).toBe(false)
       expect(isUpdateAvailable('1.1.23', '1.1.22')).toBe(false)
     })
+  })
+})
+
+describe('NetworkUtils', () => {
+  describe('getLatestVersion', () => {
+    it('should throw error for empty package name', async () => {
+      await expect(NetworkUtils.getLatestVersion('')).rejects.toThrow(
+        'Package name must be a non-empty string',
+      )
+    })
+
+    it('should throw error for invalid registry URL', async () => {
+      await expect(
+        NetworkUtils.getLatestVersion('socket', {
+          registryUrl: 'not-a-valid-url',
+        }),
+      ).rejects.toThrow('Invalid registry URL')
+    })
+
+    it('should throw error for empty registry URL', async () => {
+      await expect(
+        NetworkUtils.getLatestVersion('socket', {
+          registryUrl: '',
+        }),
+      ).rejects.toThrow('Registry URL must be a non-empty string')
+    })
+  })
+
+  describe('fetch', () => {
+    it('should throw error for empty URL', async () => {
+      await expect(NetworkUtils.fetch('')).rejects.toThrow(
+        'Invalid URL provided to fetch',
+      )
+    })
+  })
+})
+
+describe('checkForUpdates', () => {
+  it('should throw error for empty package name', async () => {
+    await expect(
+      checkForUpdates({
+        name: '',
+        version: '1.0.0',
+      }),
+    ).rejects.toThrow('Package name must be a non-empty string')
+  })
+
+  it('should throw error for empty version', async () => {
+    await expect(
+      checkForUpdates({
+        name: 'socket',
+        version: '',
+      }),
+    ).rejects.toThrow('Current version must be a non-empty string')
   })
 })
