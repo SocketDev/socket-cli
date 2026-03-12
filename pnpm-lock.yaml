@@ -779,6 +779,9 @@ importers:
       open:
         specifier: 'catalog:'
         version: 10.2.0
+      package-builder:
+        specifier: workspace:*
+        version: link:../package-builder
       pony-cause:
         specifier: 'catalog:'
         version: 2.1.11

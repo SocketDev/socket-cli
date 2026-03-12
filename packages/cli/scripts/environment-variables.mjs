@@ -19,6 +19,8 @@ import path from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 
+import { getPackageOutDir } from 'package-builder/scripts/paths.mjs'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 
@@ -40,11 +42,9 @@ export class EnvironmentVariables {
     )
 
     // Read version from socket package (the published package).
+    // Uses centralized paths from package-builder.
     const socketPackageJson = JSON.parse(
-      readFileSync(
-        path.join(rootPath, '../package-builder/build/cli/package.json'),
-        'utf-8',
-      ),
+      readFileSync(path.join(getPackageOutDir('cli'), 'package.json'), 'utf-8'),
     )
 
     // Get current git commit hash.

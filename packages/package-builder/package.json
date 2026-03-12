@@ -1,9 +1,12 @@
 {
-  "name": "@socketsecurity/package-builder",
+  "name": "package-builder",
   "version": "1.0.0",
   "description": "Template-based package generation system for Socket CLI distribution",
   "private": true,
   "type": "module",
+  "exports": {
+    "./scripts/*": "./scripts/*"
+  },
   "scripts": {
     "generate:all": "node scripts/generate-all.mjs",
     "generate:cli": "node scripts/generate-cli-packages.mjs",

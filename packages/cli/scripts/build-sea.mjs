@@ -21,6 +21,7 @@ import { fileURLToPath } from 'node:url'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { parsePlatformArgs } from 'build-infra/lib/platform-targets'
+import { getSocketbinBinaryPath } from 'package-builder/scripts/paths.mjs'
 
 import { buildTarget } from './sea-build-utils/orchestration.mjs'
 import {
@@ -139,16 +140,21 @@ async function main() {
   }
   logger.log('')
 
-  // Output directory.
-  const outputDir = path.join(rootPath, 'dist/sea')
-
   // Build all targets in parallel.
+  // Output goes directly to socketbin package directories.
   const settled = await Promise.allSettled(
     targets.map(async target => {
-      const targetName = `${target.platform}-${target.arch}`
+      const targetName = `${target.platform}-${target.arch}${target.libc ? `-${target.libc}` : ''}`
       logger.log(`Building ${targetName}...`)
 
-      const outputPath = await buildTarget(target, entryPoint, { outputDir })
+      // Get output path from socketbin package directory.
+      const outputPath = getSocketbinBinaryPath(
+        target.platform,
+        target.arch,
+        target.libc,
+      )
+
+      await buildTarget(target, entryPoint, { outputPath })
       logger.success(
         `✓ ${targetName} -> ${path.relative(rootPath, outputPath)}`,
       )

@@ -1,36 +1,31 @@
 /**
  * @fileoverview Prepares @socketbin/* binary packages for publishing.
- * Updates package.json with version and buildMethod, removes private field,
- * and copies the binary to the bin/ directory.
+ * Updates package.json with version and buildMethod, removes private field.
+ * Binary is already in place from SEA build (following biome convention).
  */
 
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-import semver from 'semver'
-import colors from 'yoctocolors-cjs'
 
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+import {
+  getSocketbinBinaryPath,
+  getSocketbinPackageDir,
+} from './packages/package-builder/scripts/paths.mjs'
+
 const logger = getDefaultLogger()
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootDir = path.join(__dirname, '..')
 
 /**
  * Generates a datetime-based version string in semver format.
  * Reads base version from the current package's package.json.
  * Format: X.Y.Z-YYYYMMDD.HHmmss
  */
-function generateDatetimeVersion(platform, arch, tool = 'cli') {
+function generateDatetimeVersion(platform, arch, libc) {
   // Read base version from the current package being generated.
-  const basePackagePath = path.join(
-    rootDir,
-    'packages',
-    `socketbin-${tool}-${platform}-${arch}`,
-    'package.json',
-  )
+  const packageDir = getSocketbinPackageDir(platform, arch, libc)
+  const basePackagePath = path.join(packageDir, 'package.json')
   let baseVersion = '0.0.0'
 
   try {
@@ -61,10 +56,8 @@ const { values } = parseArgs({
   options: {
     arch: { type: 'string' },
     libc: { type: 'string' },
-    method: { type: 'string', default: 'smol' },
-    outdir: { type: 'string' },
+    method: { default: 'smol', type: 'string' },
     platform: { type: 'string' },
-    tool: { type: 'string', default: 'cli' },
     version: { type: 'string' },
   },
 })
@@ -73,9 +66,7 @@ const {
   arch,
   libc,
   method: buildMethod = 'smol',
-  outdir,
   platform,
-  tool = 'cli',
   version: providedVersion,
 } = values
 
@@ -86,85 +77,51 @@ if (!platform || !arch) {
   process.exitCode = 1
 }
 
-// Clean version (remove 'v' prefix if present) or generate if not provided
+// Clean version (remove 'v' prefix if present) or generate if not provided.
 const cleanVersion = providedVersion
   ? providedVersion.replace(/^v/, '')
-  : generateDatetimeVersion(platform, arch, tool)
+  : generateDatetimeVersion(platform, arch, libc)
 
-// Determine output directory - use tracked socketbin packages
-const muslSuffix = platform === 'linux' && libc === 'musl' ? '-musl' : ''
-const packageDir =
-  outdir ||
-  path.join(
-    rootDir,
-    'packages',
-    `socketbin-${tool}-${platform}-${arch}${muslSuffix}`,
-  )
+// Get package directory from centralized paths.
+const packageDir = getSocketbinPackageDir(platform, arch, libc)
 
-// Platform display names
-const platformNames = {
-  darwin: 'macOS',
-  linux: 'Linux',
-  win32: 'Windows',
-}
-
-const archNames = {
-  x64: 'x64',
-  arm64: 'ARM64',
-}
-
-// Binary name (with .exe for Windows)
-// Always use 'socket' as the binary name regardless of tool value
-const binaryName = platform === 'win32' ? 'socket.exe' : 'socket'
-
-// Update package directory structure
+// Update package for publishing.
 async function generatePackage() {
   try {
-    // Read existing package.json
+    // Verify binary exists (should be built by SEA build).
+    const binaryPath = getSocketbinBinaryPath(platform, arch, libc)
+    if (!existsSync(binaryPath)) {
+      logger.error(`Binary not found at ${binaryPath}`)
+      logger.error('Run SEA build first: pnpm run build:sea')
+      process.exitCode = 1
+      return
+    }
+
+    // Read existing package.json.
     const pkgPath = path.join(packageDir, 'package.json')
     const existingPkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))
 
-    // Update package.json with new version, buildMethod, and remove private
+    // Update package.json with new version, buildMethod, and remove private.
     const updatedPkg = {
       ...existingPkg,
-      version: cleanVersion,
       buildMethod,
+      version: cleanVersion,
     }
     delete updatedPkg.private
 
-    // Write updated package.json
+    // Write updated package.json.
     await fs.writeFile(pkgPath, `${JSON.stringify(updatedPkg, null, 2)}\n`)
-    logger.log(`Updated: ${packageDir}/package.json`)
+    logger.log(`Updated: ${pkgPath}`)
     logger.log(`  Version: ${cleanVersion}`)
     logger.log(`  Build method: ${buildMethod}`)
+    logger.log(`  Binary: ${binaryPath}`)
 
-    // Check if binary exists and copy it to package root (following biome convention).
-    const sourceBinary = path.join(
-      rootDir,
-      'dist',
-      'sea',
-      `socket-${platform}-${arch}${muslSuffix}${platform === 'win32' ? '.exe' : ''}`,
-    )
-    const targetBinary = path.join(packageDir, binaryName)
-
-    try {
-      await fs.copyFile(sourceBinary, targetBinary)
-      // Make executable on Unix.
-      if (platform !== 'win32') {
-        await fs.chmod(targetBinary, 0o755)
-      }
-      logger.log(`Copied binary: ${sourceBinary} -> ${targetBinary}`)
-    } catch {
-      logger.warn(`Warning: Binary not found at ${sourceBinary}`)
-      logger.warn('Binary should be copied manually or in CI')
-    }
-
-    logger.log(`\nPackage generated successfully at: ${packageDir}`)
+    logger.log(`\nPackage ready for publishing at: ${packageDir}`)
     logger.log(
       `\nTo publish:\n  cd ${packageDir}\n  npm publish --provenance --access public`,
     )
-  } catch (error) {
-    logger.error('Error generating package:', error)
+  } catch (e) {
+    logger.error('Error generating package:', e)
     process.exitCode = 1
   }
 }

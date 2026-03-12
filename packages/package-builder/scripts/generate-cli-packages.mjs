@@ -6,15 +6,15 @@
  *   node scripts/generate-cli-packages.mjs
  */
 
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+import {
+  CLI_SENTRY_TEMPLATE_DIR,
+  CLI_TEMPLATE_DIR,
+  getPackageOutDir,
+} from './paths.mjs'
 import { copyDirectory } from './utils.mjs'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const generatePath = path.join(__dirname, '..')
 const logger = getDefaultLogger()
 
 /**
@@ -23,13 +23,13 @@ const logger = getDefaultLogger()
 const PACKAGES = [
   {
     name: '@socketsecurity/cli',
-    templateDir: 'cli-package',
     outputDir: 'cli',
+    templateDir: CLI_TEMPLATE_DIR,
   },
   {
     name: '@socketsecurity/cli-with-sentry',
-    templateDir: 'cli-sentry-package',
     outputDir: 'cli-with-sentry',
+    templateDir: CLI_SENTRY_TEMPLATE_DIR,
   },
 ]
 
@@ -43,11 +43,10 @@ async function main() {
   logger.log('')
 
   for (const pkg of PACKAGES) {
-    const templatePath = path.join(generatePath, 'templates', pkg.templateDir)
-    const packagePath = path.join(generatePath, 'build', pkg.outputDir)
+    const packagePath = getPackageOutDir(pkg.outputDir)
 
     // Copy entire template directory.
-    await copyDirectory(templatePath, packagePath)
+    await copyDirectory(pkg.templateDir, packagePath)
 
     logger.success(`Generated ${pkg.name} package`)
   }

@@ -29,7 +29,8 @@ import { downloadExternalTools, logger } from './downloads.mjs'
  * @param {string} [target.libc] - Linux libc variant ('musl' for Alpine).
  * @param {string} entryPoint - Absolute path to CLI entry point file.
  * @param {object} [options] - Build options.
- * @param {string} [options.outputDir] - Output directory for SEA binary (default: dist/sea).
+ * @param {string} [options.outputPath] - Full output path for SEA binary.
+ * @param {string} [options.outputDir] - Output directory (deprecated, use outputPath).
  * @returns Promise resolving to absolute path of built SEA binary.
  *
  * @example
@@ -39,18 +40,29 @@ import { downloadExternalTools, logger } from './downloads.mjs'
  *   outputName: 'socket-darwin-arm64',
  *   nodeVersion: '20251213-7cf90d2'
  * }
- * const outputPath = await buildTarget(target, 'dist/cli.js', { outputDir: 'dist/sea' })
- * // Returns: dist/sea/socket-darwin-arm64
+ * const outputPath = await buildTarget(target, 'dist/cli.js', {
+ *   outputPath: 'packages/package-builder/build/dev/out/socketbin-cli-darwin-arm64/socket'
+ * })
  */
 // c8 ignore start - Requires downloading binaries, building blobs, and binary injection.
 export async function buildTarget(target, entryPoint, options) {
-  const { outputDir = normalizePath(path.join(process.cwd(), 'dist/sea')) } = {
+  const { outputDir, outputPath: providedOutputPath } = {
     __proto__: null,
     ...options,
   }
 
+  // Determine output path.
+  let outputPath
+  if (providedOutputPath) {
+    outputPath = normalizePath(providedOutputPath)
+  } else {
+    const dir = outputDir || normalizePath(path.join(process.cwd(), 'dist/sea'))
+    outputPath = normalizePath(path.join(dir, target.outputName))
+  }
+
   // Ensure output directory exists.
-  await safeMkdir(outputDir)
+  const outputDirPath = path.dirname(outputPath)
+  await safeMkdir(outputDirPath)
 
   // Download Node.js binary for target platform.
   const nodeBinary = await downloadNodeBinary(
@@ -59,10 +71,6 @@ export async function buildTarget(target, entryPoint, options) {
     target.arch,
     target.libc,
   )
-
-  // Generate output path.
-  const outputPath = normalizePath(path.join(outputDir, target.outputName))
-  await safeMkdir(outputDir)
 
   // Create unique cache ID for parallel builds to prevent extraction cache conflicts.
   const cacheId = `${target.platform}-${target.arch}${target.libc ? `-${target.libc}` : ''}`
@@ -96,9 +104,11 @@ export async function buildTarget(target, entryPoint, options) {
     }
 
     // Clean up generated blob file.
+    // Blob path in config is relative to config directory.
     const config = JSON.parse(await fs.readFile(configPath, 'utf8'))
     if (config.output) {
-      await safeDelete(config.output).catch(() => {})
+      const blobPath = path.join(path.dirname(configPath), config.output)
+      await safeDelete(blobPath).catch(() => {})
     }
   } finally {
     // Clean up config.

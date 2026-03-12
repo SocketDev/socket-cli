@@ -95,6 +95,7 @@
     "brace-expansion": "catalog:",
     "browserslist": "catalog:",
     "build-infra": "workspace:*",
+    "package-builder": "workspace:*",
     "chalk-table": "catalog:",
     "cmd-shim": "catalog:",
     "compromise": "catalog:",
