@@ -24,18 +24,27 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { resetEnv, setEnv } from '@socketsecurity/lib/env/rewire'
 
 import {
+  detectDefaultBranch,
   getBaseBranch,
+  getRepoInfo,
+  getRepoName,
+  getRepoOwner,
   gitBranch,
   gitCheckoutBranch,
   gitCleanFdx,
   gitCommit,
   gitCreateBranch,
   gitDeleteBranch,
+  gitDeleteRemoteBranch,
   gitEnsureIdentity,
+  gitLocalBranchExists,
   gitPushBranch,
+  gitRemoteBranchExists,
+  gitResetAndClean,
   gitResetHard,
+  gitUnstagedModifiedFiles,
   parseGitRemoteUrl,
-} from '../../../../../src/utils/git/operations.mts'
+} from '../../../../src/utils/git/operations.mts'
 
 // Mock spawn.
 vi.mock('@socketsecurity/lib/spawn', () => ({
@@ -48,12 +57,12 @@ vi.mock('@socketsecurity/lib/bin', () => ({
   whichReal: vi.fn().mockResolvedValue('git'),
 }))
 
-vi.mock('../../../../../src/constants/cli.mts', () => ({
+vi.mock('../../../../src/constants/cli.mts', () => ({
   FLAG_QUIET: '--quiet',
 }))
 
 // Mock debug.
-vi.mock('../../../../../src/utils/debug.mts', () => ({
+vi.mock('../../../../src/utils/debug.mts', () => ({
   debugGit: vi.fn(),
 }))
 
@@ -329,6 +338,240 @@ describe('git utilities', () => {
         ['config', '--get', 'user.name'],
         expect.any(Object),
       )
+    })
+  })
+
+  describe('getRepoInfo', () => {
+    it('returns owner and repo from remote URL', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockResolvedValue({
+        status: 0,
+        stdout: 'git@github.com:socketdev/socket-cli.git',
+        stderr: '',
+      } as any)
+
+      const result = await getRepoInfo('/test/dir')
+      expect(result).toEqual({ owner: 'socketdev', repo: 'socket-cli' })
+    })
+
+    it('returns undefined when spawn fails', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockRejectedValue(new Error('Not a git repo'))
+
+      const result = await getRepoInfo('/test/dir')
+      expect(result).toBeUndefined()
+    })
+
+    it('returns undefined when spawn returns null', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockResolvedValue(null as any)
+
+      const result = await getRepoInfo('/test/dir')
+      expect(result).toBeUndefined()
+    })
+  })
+
+  describe('getRepoName', () => {
+    it('returns repo name from remote URL', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockResolvedValue({
+        status: 0,
+        stdout: 'git@github.com:socketdev/socket-cli.git',
+        stderr: '',
+      } as any)
+
+      const result = await getRepoName('/test/dir')
+      expect(result).toBe('socket-cli')
+    })
+
+    it('returns default when no repo info', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockRejectedValue(new Error('Not a git repo'))
+
+      const result = await getRepoName('/test/dir')
+      // Should return the default repository name.
+      expect(typeof result).toBe('string')
+    })
+  })
+
+  describe('getRepoOwner', () => {
+    it('returns owner from remote URL', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockResolvedValue({
+        status: 0,
+        stdout: 'git@github.com:socketdev/socket-cli.git',
+        stderr: '',
+      } as any)
+
+      const result = await getRepoOwner('/test/dir')
+      expect(result).toBe('socketdev')
+    })
+
+    it('returns undefined when no repo info', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockRejectedValue(new Error('Not a git repo'))
+
+      const result = await getRepoOwner('/test/dir')
+      expect(result).toBeUndefined()
+    })
+  })
+
+  describe('detectDefaultBranch', () => {
+    it('returns main when it exists locally', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+
+      const result = await detectDefaultBranch('/test/dir')
+      expect(result).toBe('main')
+    })
+
+    it('checks common branch names in order', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      // All local branches fail.
+      spawn
+        .mockRejectedValueOnce(new Error('main not found'))
+        .mockRejectedValueOnce(new Error('master not found'))
+        .mockRejectedValueOnce(new Error('develop not found'))
+        .mockRejectedValueOnce(new Error('trunk not found'))
+        .mockRejectedValueOnce(new Error('default not found'))
+        // First remote succeeds.
+        .mockResolvedValueOnce({ status: 0, stdout: 'refs/heads/main', stderr: '' } as any)
+
+      const result = await detectDefaultBranch('/test/dir')
+      expect(result).toBe('main')
+    })
+  })
+
+  describe('gitDeleteRemoteBranch', () => {
+    it('deletes a remote branch', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+
+      const result = await gitDeleteRemoteBranch('old-feature')
+      expect(result).toBe(true)
+      expect(spawn).toHaveBeenCalledWith(
+        'git',
+        ['push', 'origin', '--delete', 'old-feature'],
+        expect.any(Object),
+      )
+    })
+
+    it('returns false when branch does not exist', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockRejectedValue(new Error('Branch not found'))
+
+      const result = await gitDeleteRemoteBranch('nonexistent')
+      expect(result).toBe(false)
+    })
+  })
+
+  describe('gitLocalBranchExists', () => {
+    it('returns true when branch exists', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+
+      const result = await gitLocalBranchExists('main')
+      expect(result).toBe(true)
+      expect(spawn).toHaveBeenCalledWith(
+        'git',
+        ['show-ref', '--quiet', 'refs/heads/main'],
+        expect.any(Object),
+      )
+    })
+
+    it('returns false when branch does not exist', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockRejectedValue(new Error('Branch not found'))
+
+      const result = await gitLocalBranchExists('nonexistent')
+      expect(result).toBe(false)
+    })
+  })
+
+  describe('gitRemoteBranchExists', () => {
+    it('returns true when remote branch exists', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockResolvedValue({
+        status: 0,
+        stdout: 'abc123\trefs/heads/main',
+        stderr: '',
+      } as any)
+
+      const result = await gitRemoteBranchExists('main')
+      expect(result).toBe(true)
+      expect(spawn).toHaveBeenCalledWith(
+        'git',
+        ['ls-remote', '--heads', 'origin', 'main'],
+        expect.any(Object),
+      )
+    })
+
+    it('returns false when remote branch does not exist', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockResolvedValue({
+        status: 0,
+        stdout: '',
+        stderr: '',
+      } as any)
+
+      const result = await gitRemoteBranchExists('nonexistent')
+      expect(result).toBe(false)
+    })
+
+    it('returns false when spawn fails', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockRejectedValue(new Error('Network error'))
+
+      const result = await gitRemoteBranchExists('main')
+      expect(result).toBe(false)
+    })
+  })
+
+  describe('gitResetAndClean', () => {
+    it('calls gitResetHard and gitCleanFdx', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+
+      await gitResetAndClean('main', '/test/dir')
+      expect(spawn).toHaveBeenCalledWith(
+        'git',
+        ['reset', '--hard', 'main'],
+        expect.any(Object),
+      )
+      expect(spawn).toHaveBeenCalledWith(
+        'git',
+        ['clean', '-fdx'],
+        expect.any(Object),
+      )
+    })
+  })
+
+  describe('gitUnstagedModifiedFiles', () => {
+    it('returns list of modified files', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockResolvedValue({
+        status: 0,
+        stdout: 'file1.txt\nfile2.txt\n',
+        stderr: '',
+      } as any)
+
+      const result = await gitUnstagedModifiedFiles('/test/dir')
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data).toContain('file1.txt')
+        expect(result.data).toContain('file2.txt')
+      }
+    })
+
+    it('returns error when spawn fails', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockRejectedValue(new Error('Git error'))
+
+      const result = await gitUnstagedModifiedFiles('/test/dir')
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('Git Error')
+      }
     })
   })
 })
