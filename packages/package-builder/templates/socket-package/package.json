@@ -10,7 +10,9 @@
   "files": [
     "bin/**",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "logo-dark.png",
+    "logo-light.png"
   ],
   "optionalDependencies": {
     "@socketbin/cli-darwin-arm64": "0.0.0-replaced-by-publish",
