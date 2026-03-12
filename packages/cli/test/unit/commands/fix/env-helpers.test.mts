@@ -48,9 +48,53 @@ vi.mock('../../../../src/env/socket-cli-git-user-email.mts', () => mockGitEmail)
 const mockGitUser = vi.hoisted(() => ({ SOCKET_CLI_GIT_USER_NAME: '' }))
 vi.mock('../../../../src/env/socket-cli-git-user-name.mts', () => mockGitUser)
 
+// Mock GITHUB_REPOSITORY.
+const mockGithubRepo = vi.hoisted(() => ({ GITHUB_REPOSITORY: '' }))
+vi.mock('../../../../src/env/github-repository.mts', () => mockGithubRepo)
+
+// Mock git operations.
+const mockGetBaseBranch = vi.hoisted(() =>
+  vi.fn().mockResolvedValue('main'),
+)
+const mockGetRepoInfo = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ owner: 'test-owner', repo: 'test-repo' }),
+)
+vi.mock('../../../../src/utils/git/operations.mts', () => ({
+  getBaseBranch: mockGetBaseBranch,
+  getRepoInfo: mockGetRepoInfo,
+}))
+
+// Mock pull-request functions.
+const mockGetSocketFixPrs = vi.hoisted(() => vi.fn().mockResolvedValue([]))
+vi.mock('../../../../src/commands/fix/pull-request.mts', () => ({
+  getSocketFixPrs: mockGetSocketFixPrs,
+}))
+
+// Mock logger.
+const mockLogger = vi.hoisted(() => ({
+  error: vi.fn(),
+  fail: vi.fn(),
+  info: vi.fn(),
+  log: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+}))
+vi.mock('@socketsecurity/lib/logger', () => ({
+  getDefaultLogger: () => mockLogger,
+}))
+
+// Mock debug.
+const mockDebug = vi.hoisted(() => vi.fn())
+const mockIsDebug = vi.hoisted(() => vi.fn(() => false))
+vi.mock('@socketsecurity/lib/debug', () => ({
+  debug: mockDebug,
+  isDebug: mockIsDebug,
+}))
+
 import {
   checkCiEnvVars,
   getCiEnvInstructions,
+  getFixEnv,
 } from '../../../../src/commands/fix/env-helpers.mts'
 
 describe('env-helpers', () => {
@@ -60,6 +104,11 @@ describe('env-helpers', () => {
     mockGetSocketCliGithubToken.mockReturnValue(undefined)
     mockGitEmail.SOCKET_CLI_GIT_USER_EMAIL = ''
     mockGitUser.SOCKET_CLI_GIT_USER_NAME = ''
+    mockGithubRepo.GITHUB_REPOSITORY = ''
+    mockGetBaseBranch.mockResolvedValue('main')
+    mockGetRepoInfo.mockResolvedValue({ owner: 'test-owner', repo: 'test-repo' })
+    mockGetSocketFixPrs.mockResolvedValue([])
+    mockIsDebug.mockReturnValue(false)
   })
 
   describe('getCiEnvInstructions', () => {
@@ -157,6 +206,158 @@ describe('env-helpers', () => {
 
       expect(result.missing).toHaveLength(0)
       expect(result.present).toHaveLength(4)
+    })
+  })
+
+  describe('getFixEnv', () => {
+    it('should return basic fix env when not in CI', async () => {
+      mockGetCI.mockReturnValue(false)
+
+      const result = await getFixEnv()
+
+      expect(result.isCi).toBe(false)
+      expect(result.baseBranch).toBe('main')
+      expect(result.prs).toEqual([])
+      expect(result.repoInfo).toEqual({ owner: 'test-owner', repo: 'test-repo' })
+    })
+
+    it('should return isCi true when all CI vars are set', async () => {
+      mockGetCI.mockReturnValue(true)
+      mockGetSocketCliGithubToken.mockReturnValue('ghp_test_token')
+      mockGitUser.SOCKET_CLI_GIT_USER_NAME = 'test-user'
+      mockGitEmail.SOCKET_CLI_GIT_USER_EMAIL = 'test@example.com'
+      mockGithubRepo.GITHUB_REPOSITORY = 'owner/repo'
+
+      const result = await getFixEnv()
+
+      expect(result.isCi).toBe(true)
+      expect(result.gitUser).toBe('test-user')
+      expect(result.gitEmail).toBe('test@example.com')
+      expect(result.githubToken).toBe('ghp_test_token')
+    })
+
+    it('should use GITHUB_REPOSITORY env var for repoInfo in CI', async () => {
+      mockGetCI.mockReturnValue(true)
+      mockGetSocketCliGithubToken.mockReturnValue('ghp_test_token')
+      mockGitUser.SOCKET_CLI_GIT_USER_NAME = 'test-user'
+      mockGitEmail.SOCKET_CLI_GIT_USER_EMAIL = 'test@example.com'
+      mockGithubRepo.GITHUB_REPOSITORY = 'my-owner/my-repo'
+
+      const result = await getFixEnv()
+
+      expect(result.repoInfo).toEqual({ owner: 'my-owner', repo: 'my-repo' })
+      // Should not call getRepoInfo when GITHUB_REPOSITORY is valid.
+      expect(mockGetRepoInfo).not.toHaveBeenCalled()
+    })
+
+    it('should fall back to getRepoInfo when GITHUB_REPOSITORY is invalid', async () => {
+      mockGetCI.mockReturnValue(true)
+      mockGetSocketCliGithubToken.mockReturnValue('ghp_test_token')
+      mockGitUser.SOCKET_CLI_GIT_USER_NAME = 'test-user'
+      mockGitEmail.SOCKET_CLI_GIT_USER_EMAIL = 'test@example.com'
+      // Invalid GITHUB_REPOSITORY (no slash).
+      mockGithubRepo.GITHUB_REPOSITORY = 'invalid-repo'
+
+      const result = await getFixEnv()
+
+      expect(result.repoInfo).toEqual({ owner: 'test-owner', repo: 'test-repo' })
+      expect(mockGetRepoInfo).toHaveBeenCalled()
+    })
+
+    it('should fall back to getRepoInfo when GITHUB_REPOSITORY is empty', async () => {
+      mockGetCI.mockReturnValue(true)
+      mockGetSocketCliGithubToken.mockReturnValue('ghp_test_token')
+      mockGitUser.SOCKET_CLI_GIT_USER_NAME = 'test-user'
+      mockGitEmail.SOCKET_CLI_GIT_USER_EMAIL = 'test@example.com'
+      mockGithubRepo.GITHUB_REPOSITORY = ''
+
+      const result = await getFixEnv()
+
+      expect(mockGetRepoInfo).toHaveBeenCalled()
+    })
+
+    it('should warn when CI is set but other vars are missing', async () => {
+      mockGetCI.mockReturnValue(true)
+      // Missing: githubToken, gitUser, gitEmail.
+      mockGetSocketCliGithubToken.mockReturnValue(undefined)
+      mockGitUser.SOCKET_CLI_GIT_USER_NAME = ''
+      mockGitEmail.SOCKET_CLI_GIT_USER_EMAIL = ''
+
+      await getFixEnv()
+
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('CI mode detected'),
+      )
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Missing:'),
+      )
+    })
+
+    it('should not warn when not in CI', async () => {
+      mockGetCI.mockReturnValue(false)
+
+      await getFixEnv()
+
+      expect(mockLogger.warn).not.toHaveBeenCalled()
+    })
+
+    it('should log debug message when not in CI but some vars are set', async () => {
+      mockGetCI.mockReturnValue(false)
+      mockGetSocketCliGithubToken.mockReturnValue('ghp_test_token')
+      mockIsDebug.mockReturnValue(true)
+
+      await getFixEnv()
+
+      expect(mockDebug).toHaveBeenCalledWith(
+        expect.stringContaining('isCi is false'),
+      )
+    })
+
+    it('should fetch PRs when in CI mode', async () => {
+      mockGetCI.mockReturnValue(true)
+      mockGetSocketCliGithubToken.mockReturnValue('ghp_test_token')
+      mockGitUser.SOCKET_CLI_GIT_USER_NAME = 'test-user'
+      mockGitEmail.SOCKET_CLI_GIT_USER_EMAIL = 'test@example.com'
+      mockGithubRepo.GITHUB_REPOSITORY = 'owner/repo'
+      mockGetSocketFixPrs.mockResolvedValue([
+        { number: 1, title: 'Fix PR' },
+      ])
+
+      const result = await getFixEnv()
+
+      expect(mockGetSocketFixPrs).toHaveBeenCalledWith('owner', 'repo', {
+        author: 'test-user',
+        states: 'all',
+      })
+      expect(result.prs).toEqual([{ number: 1, title: 'Fix PR' }])
+    })
+
+    it('should not fetch PRs when not in CI mode', async () => {
+      mockGetCI.mockReturnValue(false)
+
+      await getFixEnv()
+
+      expect(mockGetSocketFixPrs).not.toHaveBeenCalled()
+    })
+
+    it('should return gitEmail and gitUser from env vars', async () => {
+      mockGitUser.SOCKET_CLI_GIT_USER_NAME = 'custom-user'
+      mockGitEmail.SOCKET_CLI_GIT_USER_EMAIL = 'custom@example.com'
+
+      const result = await getFixEnv()
+
+      expect(result.gitUser).toBe('custom-user')
+      expect(result.gitEmail).toBe('custom@example.com')
+    })
+
+    it('should return undefined for gitEmail and gitUser when not set', async () => {
+      mockGitUser.SOCKET_CLI_GIT_USER_NAME = ''
+      mockGitEmail.SOCKET_CLI_GIT_USER_EMAIL = ''
+
+      const result = await getFixEnv()
+
+      expect(result.gitUser).toBe('')
+      expect(result.gitEmail).toBe('')
     })
   })
 })

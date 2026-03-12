@@ -46,6 +46,11 @@ const mockReadJson = vi.hoisted(() => vi.fn())
 const mockSafeMkdir = vi.hoisted(() => vi.fn())
 const mockWriteJson = vi.hoisted(() => vi.fn())
 
+// Mock fs promises.
+const mockFsWriteFile = vi.hoisted(() => vi.fn())
+const mockFsReadFile = vi.hoisted(() => vi.fn())
+const mockFsUnlink = vi.hoisted(() => vi.fn())
+
 vi.mock('node:fs', async () => {
   const actual = await vi.importActual<typeof import('node:fs')>('node:fs')
   return {
@@ -53,8 +58,9 @@ vi.mock('node:fs', async () => {
     promises: {
       ...actual.promises,
       mkdir: vi.fn(),
-      readFile: vi.fn(),
-      writeFile: vi.fn(),
+      readFile: mockFsReadFile,
+      writeFile: mockFsWriteFile,
+      unlink: mockFsUnlink,
     },
   }
 })
@@ -71,6 +77,10 @@ describe('ghsa-tracker', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    // Default: lock file creation succeeds.
+    mockFsWriteFile.mockResolvedValue(undefined)
+    mockFsReadFile.mockResolvedValue('12345')
+    mockFsUnlink.mockResolvedValue(undefined)
   })
 
   describe('loadGhsaTracker', () => {
@@ -363,6 +373,121 @@ describe('ghsa-tracker', () => {
       const record = savedTracker.fixed.find(r => r.ghsaId === 'GHSA-no-pr')
       expect(record).toBeDefined()
       expect(record!.prNumber).toBeUndefined()
+    })
+
+    it('handles lock file already exists (EEXIST)', async () => {
+      const existingTracker: GhsaTracker = {
+        version: 1,
+        fixed: [],
+      }
+
+      // First call to writeFile fails with EEXIST, subsequent succeeds.
+      const eexistError = new Error('Lock exists') as NodeJS.ErrnoException
+      eexistError.code = 'EEXIST'
+      mockFsWriteFile.mockRejectedValueOnce(eexistError)
+      mockFsWriteFile.mockResolvedValueOnce(undefined)
+
+      // Mock reading lock file to show stale lock (dead process).
+      mockFsReadFile.mockResolvedValueOnce('99999999')
+
+      mockReadJson.mockResolvedValue(existingTracker)
+
+      await markGhsaFixed(mockCwd, 'GHSA-lock-test', 123)
+
+      // Should still save the tracker.
+      expect(mockWriteJson).toHaveBeenCalled()
+    })
+
+    it('handles lock file read error', async () => {
+      const existingTracker: GhsaTracker = {
+        version: 1,
+        fixed: [],
+      }
+
+      // First call to writeFile fails with EEXIST.
+      const eexistError = new Error('Lock exists') as NodeJS.ErrnoException
+      eexistError.code = 'EEXIST'
+      mockFsWriteFile.mockRejectedValueOnce(eexistError)
+      mockFsWriteFile.mockResolvedValueOnce(undefined)
+
+      // Mock reading lock file fails.
+      mockFsReadFile.mockRejectedValueOnce(new Error('Read error'))
+
+      mockReadJson.mockResolvedValue(existingTracker)
+
+      await markGhsaFixed(mockCwd, 'GHSA-lock-read-error', 123)
+
+      // Should still save the tracker (proceeds without lock).
+      expect(mockWriteJson).toHaveBeenCalled()
+    })
+
+    it('handles lock file with invalid PID', async () => {
+      const existingTracker: GhsaTracker = {
+        version: 1,
+        fixed: [],
+      }
+
+      // First call to writeFile fails with EEXIST.
+      const eexistError = new Error('Lock exists') as NodeJS.ErrnoException
+      eexistError.code = 'EEXIST'
+      mockFsWriteFile.mockRejectedValueOnce(eexistError)
+      mockFsWriteFile.mockResolvedValueOnce(undefined)
+
+      // Mock reading lock file with invalid PID.
+      mockFsReadFile.mockResolvedValueOnce('not-a-number')
+
+      mockReadJson.mockResolvedValue(existingTracker)
+
+      await markGhsaFixed(mockCwd, 'GHSA-invalid-pid', 123)
+
+      // Should proceed anyway.
+      expect(mockWriteJson).toHaveBeenCalled()
+    })
+
+    it('releases lock after successful operation', async () => {
+      const existingTracker: GhsaTracker = {
+        version: 1,
+        fixed: [],
+      }
+
+      mockReadJson.mockResolvedValue(existingTracker)
+
+      await markGhsaFixed(mockCwd, 'GHSA-release-lock', 123)
+
+      // Should attempt to unlink the lock file.
+      expect(mockFsUnlink).toHaveBeenCalled()
+    })
+
+    it('handles lock cleanup error gracefully', async () => {
+      const existingTracker: GhsaTracker = {
+        version: 1,
+        fixed: [],
+      }
+
+      mockReadJson.mockResolvedValue(existingTracker)
+      mockFsUnlink.mockRejectedValueOnce(new Error('Cleanup error'))
+
+      // Should not throw.
+      await expect(
+        markGhsaFixed(mockCwd, 'GHSA-cleanup-error', 123),
+      ).resolves.toBeUndefined()
+    })
+
+    it('proceeds without lock when all attempts fail', async () => {
+      const existingTracker: GhsaTracker = {
+        version: 1,
+        fixed: [],
+      }
+
+      // All lock attempts fail with non-EEXIST error.
+      mockFsWriteFile.mockRejectedValue(new Error('Permission denied'))
+
+      mockReadJson.mockResolvedValue(existingTracker)
+
+      await markGhsaFixed(mockCwd, 'GHSA-no-lock', 123)
+
+      // Should still save the tracker.
+      expect(mockWriteJson).toHaveBeenCalled()
     })
   })
 })
