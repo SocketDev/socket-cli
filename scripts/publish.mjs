@@ -10,22 +10,16 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 const logger = getDefaultLogger()
+
+// Package filter targets for pnpm publish.
+// Note: socketbin packages are published via publish-socketbin.yml workflow,
+// not through this script (they require SEA builds first).
 const TARGET_PACKAGES = {
   __proto__: null,
   all: './packages/**',
   cli: '@socketsecurity/cli',
   'cli-sentry': '@socketsecurity/cli-with-sentry',
-  'darwin-arm64': '@socketbin/cli-darwin-arm64',
-  'darwin-x64': '@socketbin/cli-darwin-x64',
-  'linux-arm64': '@socketbin/cli-linux-arm64',
-  'linux-arm64-musl': '@socketbin/cli-linux-arm64-musl',
-  'linux-x64': '@socketbin/cli-linux-x64',
-  'linux-x64-musl': '@socketbin/cli-linux-x64-musl',
-  node: '@socketbin/node-smol-builder-builder',
-  sea: '@socketbin/node-sea-builder-builder',
   socket: 'socket',
-  'win32-arm64': '@socketbin/cli-win32-arm64',
-  'win32-x64': '@socketbin/cli-win32-x64',
 }
 
 const args = process.argv.slice(2)
