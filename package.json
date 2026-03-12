@@ -41,8 +41,6 @@
     "clean:cache": "node scripts/clean-cache.mjs",
     "clean:cache:all": "node scripts/clean-cache.mjs --all",
     "update": "node scripts/update.mjs",
-    "// Publishing": "",
-    "publish": "node scripts/publish.mjs",
     "// Setup": "",
     "setup": "node scripts/setup.mjs",
     "postinstall": "node scripts/setup.mjs --install --quiet",

@@ -1,0 +1,252 @@
+name: 📦 Publish
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (semver, auto-generated if omitted)'
+        required: false
+        type: string
+      publish-binaries:
+        description: 'Publish @socketbin/* binary packages'
+        type: boolean
+        default: true
+      publish-socket:
+        description: 'Publish socket package'
+        type: boolean
+        default: true
+      publish-cli:
+        description: 'Publish @socketsecurity/cli package'
+        type: boolean
+        default: true
+      publish-cli-sentry:
+        description: 'Publish @socketsecurity/cli-with-sentry package'
+        type: boolean
+        default: true
+      dry-run:
+        description: 'Dry run (build but do not publish)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  BUILD_MODE: prod
+
+jobs:
+  # Build SEA binaries for all platforms (only if publishing binaries).
+  build-binaries:
+    if: ${{ inputs.publish-binaries }}
+    name: Build ${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.libc && '-musl' || '' }}
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: ubuntu-latest, platform: linux, arch: x64 }
+          - { runner: ubuntu-latest, platform: linux, arch: arm64 }
+          - { runner: ubuntu-latest, platform: linux, arch: x64, libc: musl }
+          - { runner: ubuntu-latest, platform: linux, arch: arm64, libc: musl }
+          - { runner: macos-latest, platform: darwin, arch: x64 }
+          - { runner: macos-latest, platform: darwin, arch: arm64 }
+          - { runner: windows-latest, platform: win32, arch: x64 }
+          - { runner: windows-latest, platform: win32, arch: arm64 }
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          registry-url: 'https://registry.npmjs.org'
+
+      - uses: pnpm/action-setup@v4
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build CLI
+        run: pnpm --filter @socketsecurity/cli run build
+
+      - name: Build SEA binary
+        shell: bash
+        run: |
+          LIBC_FLAG=""
+          if [ "${{ matrix.libc }}" = "musl" ]; then
+            LIBC_FLAG="--libc=musl"
+          fi
+          pnpm --filter @socketsecurity/cli run build:sea -- \
+            --platform=${{ matrix.platform }} \
+            --arch=${{ matrix.arch }} \
+            ${LIBC_FLAG}
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.libc && '-musl' || '' }}
+          path: packages/package-builder/build/prod/out/socketbin-cli-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.libc && '-musl' || '' }}/socket${{ matrix.platform == 'win32' && '.exe' || '' }}
+          retention-days: 1
+
+  # Publish all packages.
+  publish:
+    name: Publish packages
+    needs: [build-binaries]
+    if: ${{ always() && (needs.build-binaries.result == 'success' || needs.build-binaries.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          registry-url: 'https://registry.npmjs.org'
+
+      - uses: pnpm/action-setup@v4
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: npm install -g npm@latest
+
+      # Determine version for all packages.
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+            VERSION="${VERSION#v}"
+          else
+            # Read base version from socket package.
+            BASE=$(node -p "require('./packages/socket/package.json').version.match(/^(\\d+\\.\\d+\\.\\d+)/)[1]")
+            VERSION="${BASE}-$(date -u +'%Y%m%d.%H%M%S')"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Publishing version: $VERSION"
+
+      # Download and publish binary packages.
+      - name: Download binaries
+        if: ${{ inputs.publish-binaries }}
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: binary-*
+
+      - name: Publish binary packages
+        if: ${{ inputs.publish-binaries && !inputs.dry-run }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          PLATFORMS=("linux-x64" "linux-arm64" "linux-x64-musl" "linux-arm64-musl" "darwin-x64" "darwin-arm64" "win32-x64" "win32-arm64")
+
+          for target in "${PLATFORMS[@]}"; do
+            echo "::group::Publishing @socketbin/cli-${target}"
+
+            # Parse platform/arch/libc from target.
+            IFS='-' read -ra PARTS <<< "$target"
+            PLATFORM="${PARTS[0]}"
+            ARCH="${PARTS[1]}"
+            LIBC=""
+            if [ "${PARTS[2]}" = "musl" ]; then
+              LIBC="musl"
+            fi
+
+            # Setup package directory.
+            PKG_DIR="packages/package-builder/build/prod/out/socketbin-cli-${target}"
+            mkdir -p "$PKG_DIR"
+
+            # Copy binary from artifact.
+            if [ "$PLATFORM" = "win32" ]; then
+              cp "artifacts/binary-${target}/socket.exe" "$PKG_DIR/"
+            else
+              cp "artifacts/binary-${target}/socket" "$PKG_DIR/"
+            fi
+
+            # Prepare package.
+            LIBC_FLAG=""
+            if [ -n "$LIBC" ]; then
+              LIBC_FLAG="--libc=$LIBC"
+            fi
+            node scripts/prepublish-socketbin.mjs \
+              --platform="$PLATFORM" --arch="$ARCH" $LIBC_FLAG --prod \
+              --version="$VERSION" --method=sea
+
+            # Publish.
+            cd "$PKG_DIR"
+            npm publish --provenance --access public --tag latest
+            cd -
+
+            echo "::endgroup::"
+          done
+
+      # Build and publish JS packages.
+      - name: Build CLI
+        run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build
+
+      - name: Update socketbin versions
+        if: ${{ inputs.publish-socket }}
+        run: node scripts/update-socketbin-versions.mjs
+
+      - name: Publish socket
+        if: ${{ inputs.publish-socket && !inputs.dry-run }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          node scripts/prepare-package-for-publish.mjs packages/socket
+          cd packages/socket
+          npm publish --provenance --access public --no-git-checks
+
+      - name: Publish @socketsecurity/cli
+        if: ${{ inputs.publish-cli && !inputs.dry-run }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          node scripts/prepare-package-for-publish.mjs packages/cli "$VERSION"
+          cd packages/cli
+          npm publish --provenance --access public --no-git-checks
+
+      - name: Publish @socketsecurity/cli-with-sentry
+        if: ${{ inputs.publish-cli-sentry && !inputs.dry-run }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          node scripts/prepare-package-for-publish.mjs packages/cli-with-sentry "$VERSION"
+          cd packages/cli-with-sentry
+          npm publish --provenance --access public --no-git-checks
+
+      - name: Summary
+        run: |
+          echo "## Publish Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Version: \`${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ inputs.dry-run }}" = "true" ]; then
+            echo "**Dry run - nothing was published**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### Published packages:" >> $GITHUB_STEP_SUMMARY
+            if [ "${{ inputs.publish-binaries }}" = "true" ]; then
+              echo "- @socketbin/cli-* (8 platforms)" >> $GITHUB_STEP_SUMMARY
+            fi
+            if [ "${{ inputs.publish-socket }}" = "true" ]; then
+              echo "- socket" >> $GITHUB_STEP_SUMMARY
+            fi
+            if [ "${{ inputs.publish-cli }}" = "true" ]; then
+              echo "- @socketsecurity/cli" >> $GITHUB_STEP_SUMMARY
+            fi
+            if [ "${{ inputs.publish-cli-sentry }}" = "true" ]; then
+              echo "- @socketsecurity/cli-with-sentry" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
