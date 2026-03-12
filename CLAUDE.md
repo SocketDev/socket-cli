@@ -117,7 +117,7 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 - **Node-smol binaries**: Downloaded from socket-btm releases (not built locally)
 - **Yoga WASM**: Downloaded from socket-btm releases (not built locally)
 - **SEA binaries**: Built by injecting CLI blob into downloaded node-smol binaries
-- **Output location**: `packages/cli/dist/sea/socket-<platform>-<arch>`
+- **Output location**: `packages/package-builder/build/{dev|prod}/out/socketbin-cli-<platform>-<arch>/socket`
 - **Cache location**: Build assets in `packages/build-infra/build/downloaded/`, DLX packages and VFS-extracted tools in `~/.socket/_dlx/`
 
 ### Testing Best Practices - CRITICAL: NO -- FOR FILE PATHS

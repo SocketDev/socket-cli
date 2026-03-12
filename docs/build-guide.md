@@ -6,10 +6,10 @@ This document explains the Socket CLI build system and how to create various bui
 
 The Socket CLI has two main build outputs:
 
-| Build Type       | Description                                  | Output Location          |
-| ---------------- | -------------------------------------------- | ------------------------ |
-| **CLI Bundle**   | JavaScript bundle for npm distribution       | `packages/cli/dist/`     |
-| **SEA Binaries** | Standalone executables (no Node.js required) | `packages/cli/dist/sea/` |
+| Build Type       | Description                                  | Output Location                                               |
+| ---------------- | -------------------------------------------- | ------------------------------------------------------------- |
+| **CLI Bundle**   | JavaScript bundle for npm distribution       | `packages/cli/dist/`                                          |
+| **SEA Binaries** | Standalone executables (no Node.js required) | `packages/package-builder/build/{dev\|prod}/out/socketbin-*` |
 
 ## Prerequisites
 
@@ -56,13 +56,14 @@ socket-cli/
 │   │   └── dist/                 # Distribution files
 │   │       ├── index.js          # Entry point loader
 │   │       ├── cli.js            # CLI bundle (copied from build/)
-│   │       └── sea/              # SEA binaries
-│   │           ├── socket-darwin-arm64
-│   │           ├── socket-darwin-x64
-│   │           ├── socket-linux-arm64
-│   │           ├── socket-linux-x64
-│   │           ├── socket-win32-arm64.exe
-│   │           └── socket-win32-x64.exe
+│   ├── package-builder/          # Package generation and build outputs
+│   │   ├── build/
+│   │   │   └── {dev|prod}/out/   # Build outputs by mode
+│   │   │       ├── socketbin-cli-darwin-arm64/
+│   │   │       │   └── socket    # SEA binary
+│   │   │       ├── socketbin-cli-linux-x64/
+│   │   │       │   └── socket
+│   │   │       └── ...           # Other platform binaries
 │   ├── build-infra/              # Build infrastructure
 │   │   └── build/
 │   │       └── downloaded/       # Cached downloads
@@ -143,7 +144,7 @@ pnpm build --target darwin-arm64
 pnpm build --platform darwin --arch arm64
 ```
 
-**Output**: `packages/cli/dist/sea/socket-<platform>-<arch>`
+**Output**: `packages/package-builder/build/{dev|prod}/out/socketbin-cli-<platform>-<arch>/socket`
 
 #### Supported Platforms
 
