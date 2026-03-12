@@ -308,6 +308,127 @@ describe('update manager', () => {
         expect(mockPerformUpdateCheck).toHaveBeenCalled()
         expect(result).toBe(true)
       })
+
+      it('handles cache update errors gracefully', async () => {
+        mockDlxManifest.get.mockReturnValue(undefined)
+        mockDlxManifest.set.mockRejectedValue(new Error('Cache write error'))
+
+        // Should not throw.
+        const result = await checkForUpdates({
+          name: 'socket',
+          version: '1.0.0',
+        })
+
+        expect(mockLogger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('Failed to update cache'),
+        )
+        expect(result).toBe(true)
+      })
+
+      it('handles notification setup errors gracefully', async () => {
+        mockDlxManifest.get.mockReturnValue(undefined)
+        mockShowUpdateNotification.mockImplementation(() => {
+          throw new Error('Notification error')
+        })
+
+        // Should not throw.
+        const result = await checkForUpdates({
+          name: 'socket',
+          version: '1.0.0',
+          immediate: true,
+        })
+
+        expect(mockLogger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('Failed to set up notification'),
+        )
+        expect(result).toBe(true)
+      })
+    })
+
+    describe('registry URL handling', () => {
+      it('normalizes registry URL in cache key', async () => {
+        mockDlxManifest.get.mockReturnValue(undefined)
+
+        await checkForUpdates({
+          name: 'socket',
+          version: '1.0.0',
+          registryUrl: 'https://registry.npmjs.org',
+        })
+
+        expect(mockDlxManifest.set).toHaveBeenCalledWith(
+          expect.stringContaining(':https://registry.npmjs.org/'),
+          expect.any(Object),
+        )
+      })
+
+      it('handles invalid registry URL gracefully', async () => {
+        mockDlxManifest.get.mockReturnValue(undefined)
+
+        await checkForUpdates({
+          name: 'socket',
+          version: '1.0.0',
+          registryUrl: 'not-a-valid-url',
+        })
+
+        // Should use the raw string when URL parsing fails.
+        expect(mockDlxManifest.set).toHaveBeenCalledWith(
+          'socket@1.0.0:not-a-valid-url',
+          expect.any(Object),
+        )
+      })
+    })
+  })
+
+  describe('invalid system time handling', () => {
+    it('uses cached data when timestamp is invalid and cache is fresh', async () => {
+      // Set up valid cache with a future timestamp for comparison.
+      mockDlxManifest.get.mockReturnValue({
+        timestampFetch: Date.now() + 10_000,
+        version: '2.0.0',
+      })
+
+      // We can't actually mock Date.now() easily, but we can test the
+      // scenario where cache exists but system time is wrong by
+      // verifying the checkForUpdates function behavior.
+      const result = await checkForUpdates({
+        name: 'socket',
+        version: '1.0.0',
+      })
+
+      // Cache is fresh (timestampFetch > current time), so no fetch.
+      expect(mockPerformUpdateCheck).not.toHaveBeenCalled()
+      // Update available because 1.0.0 !== 2.0.0.
+      expect(result).toBe(true)
+    })
+
+    it('handles cache with invalid timestamp data', async () => {
+      // Cache with no timestampFetch.
+      mockDlxManifest.get.mockReturnValue({
+        version: '2.0.0',
+      })
+
+      await checkForUpdates({
+        name: 'socket',
+        version: '1.0.0',
+      })
+
+      // Should fetch because cache has no valid timestampFetch.
+      expect(mockPerformUpdateCheck).toHaveBeenCalled()
+    })
+
+    it('handles cache with zero timestampFetch', async () => {
+      mockDlxManifest.get.mockReturnValue({
+        timestampFetch: 0,
+        version: '2.0.0',
+      })
+
+      await checkForUpdates({
+        name: 'socket',
+        version: '1.0.0',
+      })
+
+      // Should fetch because timestampFetch is 0.
+      expect(mockPerformUpdateCheck).toHaveBeenCalled()
     })
   })
 

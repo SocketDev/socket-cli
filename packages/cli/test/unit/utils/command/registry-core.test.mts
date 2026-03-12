@@ -90,6 +90,52 @@ describe('CommandRegistry', () => {
     })
   })
 
+  describe('unregister()', () => {
+    it('should unregister a command', () => {
+      const command: CommandDefinition = {
+        name: 'test',
+        description: 'Test command',
+        async handler() {
+          return { ok: true, data: undefined }
+        },
+      }
+
+      registry.register(command)
+      expect(registry.has('test')).toBe(true)
+
+      const result = registry.unregister('test')
+
+      expect(result).toBe(true)
+      expect(registry.has('test')).toBe(false)
+    })
+
+    it('should unregister command aliases', () => {
+      const command: CommandDefinition = {
+        name: 'test',
+        description: 'Test command',
+        aliases: ['t', 'tst'],
+        async handler() {
+          return { ok: true, data: undefined }
+        },
+      }
+
+      registry.register(command)
+      expect(registry.has('t')).toBe(true)
+      expect(registry.has('tst')).toBe(true)
+
+      registry.unregister('test')
+
+      expect(registry.has('test')).toBe(false)
+      expect(registry.has('t')).toBe(false)
+      expect(registry.has('tst')).toBe(false)
+    })
+
+    it('should return false when unregistering unknown command', () => {
+      const result = registry.unregister('nonexistent')
+      expect(result).toBe(false)
+    })
+  })
+
   describe('list()', () => {
     it('should list all commands', () => {
       const cmd1: CommandDefinition = {
@@ -336,6 +382,133 @@ describe('CommandRegistry', () => {
 
       expect(result.ok).toBe(false)
       expect(result.cause).toContain('Count must be non-negative')
+    })
+
+    it('should error when string flag is missing value', async () => {
+      const command: CommandDefinition = {
+        name: 'test',
+        description: 'Test command',
+        flags: {
+          name: {
+            type: 'string',
+            description: 'Name',
+          },
+        },
+        async handler() {
+          return { ok: true, data: undefined }
+        },
+      }
+
+      registry.register(command)
+
+      const result = await registry.execute('test', ['--name'])
+
+      expect(result.ok).toBe(false)
+      expect(result.message).toContain('Missing value for flag --name')
+    })
+
+    it('should error when number flag has invalid value', async () => {
+      const command: CommandDefinition = {
+        name: 'test',
+        description: 'Test command',
+        flags: {
+          count: {
+            type: 'number',
+            description: 'Count',
+          },
+        },
+        async handler() {
+          return { ok: true, data: undefined }
+        },
+      }
+
+      registry.register(command)
+
+      const result = await registry.execute('test', ['--count', 'notanumber'])
+
+      expect(result.ok).toBe(false)
+      expect(result.message).toContain('Invalid number value for --count')
+    })
+
+    it('should parse array flags', async () => {
+      const command: CommandDefinition = {
+        name: 'test',
+        description: 'Test command',
+        flags: {
+          tags: {
+            type: 'array',
+            description: 'Tags',
+          },
+        },
+        async handler({ flags }) {
+          expect(flags.tags).toEqual(['tag1', 'tag2', 'tag3'])
+          return { ok: true, data: undefined }
+        },
+      }
+
+      registry.register(command)
+
+      const result = await registry.execute('test', [
+        '--tags',
+        'tag1',
+        '--tags',
+        'tag2',
+        '--tags',
+        'tag3',
+      ])
+
+      expect(result.ok).toBe(true)
+    })
+
+    it('should parse array flags with = syntax', async () => {
+      const command: CommandDefinition = {
+        name: 'test',
+        description: 'Test command',
+        flags: {
+          tags: {
+            type: 'array',
+            description: 'Tags',
+          },
+        },
+        async handler({ flags }) {
+          expect(flags.tags).toEqual(['tag1', 'tag2'])
+          return { ok: true, data: undefined }
+        },
+      }
+
+      registry.register(command)
+
+      const result = await registry.execute('test', [
+        '--tags=tag1',
+        '--tags=tag2',
+      ])
+
+      expect(result.ok).toBe(true)
+    })
+  })
+
+  describe('plugins', () => {
+    it('should install plugin and call its install method', () => {
+      let installed = false
+      const plugin = {
+        name: 'test-plugin',
+        install(reg: CommandRegistry) {
+          installed = true
+          // Plugin can register commands.
+          reg.register({
+            name: 'plugin-cmd',
+            description: 'Plugin command',
+            async handler() {
+              return { ok: true, data: undefined }
+            },
+          })
+        },
+      }
+
+      registry.use(plugin)
+
+      expect(installed).toBe(true)
+      expect(registry.has('plugin-cmd')).toBe(true)
     })
   })
 

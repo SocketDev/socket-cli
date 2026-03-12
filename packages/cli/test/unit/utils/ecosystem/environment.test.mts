@@ -535,5 +535,103 @@ describe('package-environment', () => {
         expect(mockLogger.warn).toHaveBeenCalled()
       }
     })
+
+    it('returns error when node version is not supported', async () => {
+      mockFindUp.mockImplementation(async files => {
+        if (Array.isArray(files) && files.includes('package-lock.json')) {
+          return '/project/package-lock.json'
+        }
+        if (files === 'package.json') {
+          return '/project/package.json'
+        }
+        return undefined
+      })
+      mockExistsSync.mockReturnValue(true)
+      mockWhichBin.mockResolvedValue('/usr/local/bin/npm')
+      mockReadPackageJson.mockResolvedValue({
+        name: 'test-project',
+        version: '1.0.0',
+      })
+      mockReadFileUtf8.mockResolvedValue('lock content')
+      // First return true for agent, then false for node.
+      let callCount = 0
+      mockSatisfies.mockImplementation(() => {
+        callCount++
+        return callCount === 1 // true for agent, false for node.
+      })
+
+      const result = await detectAndValidatePackageEnvironment('/project')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('Version mismatch')
+      }
+    })
+
+    it('returns error when package node engine requirements are not met', async () => {
+      mockFindUp.mockImplementation(async files => {
+        if (Array.isArray(files) && files.includes('package-lock.json')) {
+          return '/project/package-lock.json'
+        }
+        if (files === 'package.json') {
+          return '/project/package.json'
+        }
+        return undefined
+      })
+      mockExistsSync.mockReturnValue(true)
+      mockWhichBin.mockResolvedValue('/usr/local/bin/npm')
+      mockReadPackageJson.mockResolvedValue({
+        name: 'test-project',
+        version: '1.0.0',
+        engines: {
+          node: '>=22.0.0',
+        },
+      })
+      mockReadFileUtf8.mockResolvedValue('lock content')
+      // Return true for agent and node supported, but false for pkgSupports.
+      let callCount = 0
+      mockSatisfies.mockImplementation(() => {
+        callCount++
+        // First two calls return true (agent supported, node supported).
+        // Third call returns false (pkgSupports.agent).
+        // Fourth call returns false (pkgSupports.node).
+        return callCount <= 2
+      })
+
+      const result = await detectAndValidatePackageEnvironment('/project')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('Engine mismatch')
+      }
+    })
+
+    it('returns error when package.json is missing', async () => {
+      mockFindUp.mockImplementation(async files => {
+        if (Array.isArray(files) && files.includes('package-lock.json')) {
+          return '/project/package-lock.json'
+        }
+        if (files === 'package.json') {
+          return '/project/package.json'
+        }
+        return undefined
+      })
+      // Return true for path existence, but make pkgPath undefined by not having editablePkgJson.
+      mockExistsSync.mockReturnValue(true)
+      mockWhichBin.mockResolvedValue('/usr/local/bin/npm')
+      // Return undefined to simulate missing package.json.
+      mockReadPackageJson.mockResolvedValue(undefined)
+      mockToEditablePackageJson.mockResolvedValue(undefined)
+      mockReadFileUtf8.mockResolvedValue('lock content')
+
+      const result = await detectAndValidatePackageEnvironment('/project')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        // The validation checks for lockfile presence first, and
+        // editablePkgJson being undefined makes lockName undefined.
+        expect(result.message).toBe('Missing lockfile')
+      }
+    })
   })
 })

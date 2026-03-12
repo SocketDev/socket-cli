@@ -24,6 +24,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import {
   fileLink,
+  githubRepoLink,
   mailtoLink,
   socketDashboardLink,
   socketDevLink,
@@ -179,6 +180,43 @@ describe('terminal-link utilities', () => {
       const result = socketPackageLink('npm', '@babel/core')
       expect(result).toBe(
         '[https://socket.dev/npm/package/@babel/core](https://socket.dev/npm/package/@babel/core)',
+      )
+    })
+  })
+
+  describe('githubRepoLink', () => {
+    it('creates basic GitHub repo link', () => {
+      const result = githubRepoLink('SocketDev', 'socket-cli')
+      expect(result).toBe(
+        '[SocketDev/socket-cli](https://github.com/SocketDev/socket-cli)',
+      )
+    })
+
+    it('creates GitHub repo link with path', () => {
+      const result = githubRepoLink(
+        'SocketDev',
+        'socket-cli',
+        'blob/main/README.md',
+      )
+      expect(result).toBe(
+        '[SocketDev/socket-cli](https://github.com/SocketDev/socket-cli/blob/main/README.md)',
+      )
+    })
+
+    it('creates GitHub repo link with custom text', () => {
+      const result = githubRepoLink('SocketDev', 'socket-cli', undefined, 'CLI')
+      expect(result).toBe('[CLI](https://github.com/SocketDev/socket-cli)')
+    })
+
+    it('creates GitHub repo link with path and custom text', () => {
+      const result = githubRepoLink(
+        'SocketDev',
+        'socket-cli',
+        'releases',
+        'View Releases',
+      )
+      expect(result).toBe(
+        '[View Releases](https://github.com/SocketDev/socket-cli/releases)',
       )
     })
   })

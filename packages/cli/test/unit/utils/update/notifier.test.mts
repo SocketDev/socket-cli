@@ -195,6 +195,56 @@ describe('update notifier', () => {
       const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
       expect(calls).toContain('CHANGELOG.md')
     })
+
+    it('handles formatting errors gracefully with npm installation', () => {
+      // First call throws, subsequent calls succeed.
+      let callCount = 0
+      mockLogger.log.mockImplementation(() => {
+        callCount++
+        if (callCount === 1) {
+          throw new Error('Formatting error')
+        }
+      })
+
+      // Should not throw.
+      expect(() =>
+        showUpdateNotification({
+          name: 'socket',
+          current: '1.0.0',
+          latest: '2.0.0',
+        }),
+      ).not.toThrow()
+
+      // Fallback message should be shown.
+      const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+      expect(calls).toContain('socket')
+    })
+
+    it('handles formatting errors gracefully with SEA binary', () => {
+      mockGetSeaBinaryPath.mockReturnValue('/usr/local/bin/socket')
+
+      // First call throws, subsequent calls succeed.
+      let callCount = 0
+      mockLogger.log.mockImplementation(() => {
+        callCount++
+        if (callCount === 1) {
+          throw new Error('Formatting error')
+        }
+      })
+
+      // Should not throw.
+      expect(() =>
+        showUpdateNotification({
+          name: 'socket',
+          current: '1.0.0',
+          latest: '2.0.0',
+        }),
+      ).not.toThrow()
+
+      // Fallback message with self-update command should be shown.
+      const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+      expect(calls).toContain('socket')
+    })
   })
 
   describe('scheduleExitNotification', () => {

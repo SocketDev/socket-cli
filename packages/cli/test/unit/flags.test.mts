@@ -126,6 +126,17 @@ describe('flags', () => {
       // Should be 75% of 4GB in MiB = 3072.
       expect(result).toBe(3072)
     })
+
+    it('handles invalid NODE_OPTIONS value gracefully', () => {
+      // Set NODE_OPTIONS with an invalid pattern (non-numeric after equals).
+      // Since the regex only matches digits, this will fall through to default.
+      mockValues.nodeOptions = '--max-old-space-size=abc'
+      resetFlagCache()
+
+      const result = getMaxOldSpaceSizeFlag()
+      // Should fall back to default (75% of 8GB).
+      expect(result).toBe(6144)
+    })
   })
 
   describe('getMaxSemiSpaceSizeFlag', () => {
@@ -176,6 +187,34 @@ describe('flags', () => {
       const result = getMaxSemiSpaceSizeFlag()
       // 2048 MiB heap should use 16 MiB semi-space.
       expect(result).toBe(16)
+    })
+
+    it('scales for 1024 MiB heap', () => {
+      mockValues.maxOldSpaceSize = 1024
+      resetFlagCache()
+
+      const result = getMaxSemiSpaceSizeFlag()
+      // 1024 MiB heap should use 8 MiB semi-space.
+      expect(result).toBe(8)
+    })
+
+    it('scales for 4096 MiB heap', () => {
+      mockValues.maxOldSpaceSize = 4096
+      resetFlagCache()
+
+      const result = getMaxSemiSpaceSizeFlag()
+      // 4096 MiB heap should use 32 MiB semi-space.
+      expect(result).toBe(32)
+    })
+
+    it('handles invalid NODE_OPTIONS for semi-space gracefully', () => {
+      // Set NODE_OPTIONS with a non-matching pattern.
+      mockValues.nodeOptions = '--max-semi-space-size=xyz'
+      resetFlagCache()
+
+      const result = getMaxSemiSpaceSizeFlag()
+      // Should fall back to calculated default based on old space.
+      expect(result).toBe(64) // Default for 6144 MiB old space.
     })
   })
 

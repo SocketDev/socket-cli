@@ -186,6 +186,51 @@ describe('error/display', () => {
       expect(result.body).toBeDefined()
       expect(result.body).toContain('at ')
     })
+
+    it('formats error cause chain when showStack is true', () => {
+      const rootCause = new Error('Root cause')
+      const middleCause = new Error('Middle cause', { cause: rootCause })
+      const error = new Error('Top level error', { cause: middleCause })
+
+      const result = formatErrorForDisplay(error, { showStack: true })
+
+      expect(result.body).toBeDefined()
+      expect(result.body).toContain('Caused by')
+      expect(result.body).toContain('Middle cause')
+    })
+
+    it('handles non-Error cause', () => {
+      const error = new Error('Test error', { cause: 'String cause' })
+
+      const result = formatErrorForDisplay(error, { showStack: true })
+
+      expect(result.body).toBeDefined()
+      expect(result.body).toContain('String cause')
+    })
+
+    it('limits cause chain depth to 5', () => {
+      // Create a chain of 7 causes.
+      let error: Error = new Error('Cause 1')
+      for (let i = 2; i <= 7; i++) {
+        error = new Error(`Cause ${i}`, { cause: error })
+      }
+
+      const result = formatErrorForDisplay(error, { showStack: true })
+
+      // Should show up to 5 causes.
+      expect(result.body).toBeDefined()
+      expect(result.body).toContain('Caused by [1]')
+      expect(result.body).toContain('Caused by [5]')
+      // Cause 6 should not be shown.
+      expect(result.body).not.toContain('Caused by [6]')
+    })
+
+    it('includes verbose body for unknown error types', () => {
+      const result = formatErrorForDisplay(123, { verbose: true })
+
+      expect(result.title).toBe('Unexpected error')
+      expect(result.body).toBe('123')
+    })
   })
 
   describe('formatErrorCompact', () => {
@@ -226,6 +271,29 @@ describe('error/display', () => {
       const result = formatErrorForTerminal(error)
 
       expect(result).toContain('Suggested actions')
+    })
+
+    it('shows stack trace hint when body exists but not verbose', () => {
+      const error = new Error('Test error')
+      error.stack = 'Error: Test error\n    at test.js:1:1'
+
+      const result = formatErrorForTerminal(error, { showStack: true })
+
+      // Should suggest running with verbose flag.
+      expect(result).toContain('DEBUG=1')
+    })
+
+    it('shows full stack trace when verbose is true', () => {
+      const error = new Error('Test error')
+      error.stack = 'Error: Test error\n    at test.js:1:1'
+
+      const result = formatErrorForTerminal(error, {
+        showStack: true,
+        verbose: true,
+      })
+
+      // Should show actual stack trace.
+      expect(result).toContain('Stack trace')
     })
   })
 
