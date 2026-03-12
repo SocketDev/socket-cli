@@ -28,6 +28,7 @@
  * - src/commands/fix/handle-fix.mts - Main fix command orchestrating PR workflow
  */
 
+import { RequestError } from '@octokit/request-error'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -274,6 +275,37 @@ describe('pull-request', () => {
       }
     })
 
+    it('returns network_error when withGitHubRetry fails', async () => {
+      mockGetOctokit.mockReturnValue(mockOctokit)
+      mockCreatePrProvider.mockReturnValue(mockProvider)
+
+      mockProvider.createPr.mockResolvedValue({
+        number: 999,
+        url: 'https://github.com/org/repo/pull/999',
+        state: 'open',
+      })
+
+      // Make withGitHubRetry return failure.
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: false,
+        message: 'Retry failed',
+        cause: 'Network timeout',
+      })
+
+      const result = await openSocketFixPr(
+        'test-org',
+        'test-repo',
+        'socket/fix/GHSA-network',
+        ['GHSA-network'],
+        { baseBranch: 'main' },
+      )
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.reason).toBe('network_error')
+      }
+    })
+
     it('uses exponential backoff for retries', async () => {
       mockGetOctokit.mockReturnValue(mockOctokit)
       mockCreatePrProvider.mockReturnValue(mockProvider)
@@ -302,6 +334,155 @@ describe('pull-request', () => {
       )
 
       expect(result.ok).toBe(true)
+    })
+
+    it('returns already_exists when PR already exists error thrown', async () => {
+      mockCreatePrProvider.mockReturnValue(mockProvider)
+
+      // Create RequestError with "already exists" error message.
+      const requestError = new RequestError('Validation Failed', 422, {
+        request: { method: 'POST', url: '', headers: {} },
+        response: {
+          url: '',
+          status: 422,
+          headers: {},
+          data: {
+            errors: [
+              {
+                message: 'A pull request already exists for this branch',
+              },
+            ],
+          },
+        },
+      })
+
+      mockProvider.createPr.mockRejectedValue(requestError)
+
+      const result = await openSocketFixPr(
+        'test-org',
+        'test-repo',
+        'socket/fix/GHSA-already',
+        ['GHSA-already'],
+        { baseBranch: 'main' },
+      )
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.reason).toBe('already_exists')
+      }
+    })
+
+    it('returns validation_error when validation errors exist', async () => {
+      mockCreatePrProvider.mockReturnValue(mockProvider)
+
+      // Create RequestError with validation errors that are not "already exists".
+      const requestError = new RequestError('Validation Failed', 422, {
+        request: { method: 'POST', url: '', headers: {} },
+        response: {
+          url: '',
+          status: 422,
+          headers: {},
+          data: {
+            errors: [
+              {
+                resource: 'PullRequest',
+                field: 'head',
+                code: 'invalid',
+              },
+            ],
+          },
+        },
+      })
+
+      mockProvider.createPr.mockRejectedValue(requestError)
+
+      const result = await openSocketFixPr(
+        'test-org',
+        'test-repo',
+        'socket/fix/GHSA-validation',
+        ['GHSA-validation'],
+        { baseBranch: 'main' },
+      )
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.reason).toBe('validation_error')
+        if (result.reason === 'validation_error') {
+          expect(result.details).toContain('PullRequest.head')
+        }
+      }
+    })
+
+    it('returns permission_denied for 403 status', async () => {
+      mockCreatePrProvider.mockReturnValue(mockProvider)
+
+      const requestError = new RequestError('Forbidden', 403, {
+        request: { method: 'POST', url: '', headers: {} },
+        response: { url: '', status: 403, headers: {}, data: {} },
+      })
+
+      mockProvider.createPr.mockRejectedValue(requestError)
+
+      const result = await openSocketFixPr(
+        'test-org',
+        'test-repo',
+        'socket/fix/GHSA-forbidden',
+        ['GHSA-forbidden'],
+        { baseBranch: 'main' },
+      )
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.reason).toBe('permission_denied')
+      }
+    })
+
+    it('returns permission_denied for 401 status', async () => {
+      mockCreatePrProvider.mockReturnValue(mockProvider)
+
+      const requestError = new RequestError('Unauthorized', 401, {
+        request: { method: 'POST', url: '', headers: {} },
+        response: { url: '', status: 401, headers: {}, data: {} },
+      })
+
+      mockProvider.createPr.mockRejectedValue(requestError)
+
+      const result = await openSocketFixPr(
+        'test-org',
+        'test-repo',
+        'socket/fix/GHSA-unauth',
+        ['GHSA-unauth'],
+        { baseBranch: 'main' },
+      )
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.reason).toBe('permission_denied')
+      }
+    })
+
+    it('returns network_error for 5xx status', async () => {
+      mockCreatePrProvider.mockReturnValue(mockProvider)
+
+      const requestError = new RequestError('Internal Server Error', 500, {
+        request: { method: 'POST', url: '', headers: {} },
+        response: { url: '', status: 500, headers: {}, data: {} },
+      })
+
+      mockProvider.createPr.mockRejectedValue(requestError)
+
+      const result = await openSocketFixPr(
+        'test-org',
+        'test-repo',
+        'socket/fix/GHSA-server',
+        ['GHSA-server'],
+        { baseBranch: 'main' },
+      )
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.reason).toBe('network_error')
+      }
     })
 
     it('passes GHSA details to PR body generator', async () => {

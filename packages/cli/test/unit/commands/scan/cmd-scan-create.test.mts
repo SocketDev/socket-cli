@@ -782,5 +782,512 @@ describe('cmd-scan-create', () => {
         }),
       )
     })
+
+    describe('numeric flag validation', () => {
+      it('should validate --reach-analysis-memory-limit is a number', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await expect(
+          cmdScanCreate.run(
+            [
+              '--org',
+              'test-org',
+              '--reach',
+              '--reach-analysis-memory-limit',
+              'invalid',
+              '.',
+              '--no-interactive',
+            ],
+            importMeta,
+            context,
+          ),
+        ).rejects.toThrow(/Invalid number value for --reach-analysis-memory-limit/)
+      })
+
+      it('should validate --reach-analysis-timeout is a number', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await expect(
+          cmdScanCreate.run(
+            [
+              '--org',
+              'test-org',
+              '--reach',
+              '--reach-analysis-timeout',
+              'invalid',
+              '.',
+              '--no-interactive',
+            ],
+            importMeta,
+            context,
+          ),
+        ).rejects.toThrow(/Invalid number value for --reach-analysis-timeout/)
+      })
+
+      it('should validate --reach-concurrency is a number', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await expect(
+          cmdScanCreate.run(
+            [
+              '--org',
+              'test-org',
+              '--reach',
+              '--reach-concurrency',
+              'invalid',
+              '.',
+              '--no-interactive',
+            ],
+            importMeta,
+            context,
+          ),
+        ).rejects.toThrow(/Invalid number value for --reach-concurrency/)
+      })
+    })
+
+    describe('interactive mode and suggestions', () => {
+      it('should suggest org when interactive and no org set', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+        mockDetermineOrgSlug.mockResolvedValueOnce(['', ''])
+        mockSuggestOrgSlug.mockResolvedValueOnce('suggested-org')
+
+        await cmdScanCreate.run(['.', '--interactive'], importMeta, context)
+
+        expect(mockSuggestOrgSlug).toHaveBeenCalled()
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            orgSlug: 'suggested-org',
+          }),
+        )
+      })
+
+      it('should output error when org suggestion is canceled', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+        mockDetermineOrgSlug.mockResolvedValueOnce(['', ''])
+        mockSuggestOrgSlug.mockResolvedValueOnce(undefined)
+
+        await cmdScanCreate.run(['.', '--interactive'], importMeta, context)
+
+        expect(mockOutputCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            ok: false,
+            message: 'Canceled by user',
+          }),
+          expect.any(Object),
+        )
+        expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
+      })
+
+      it('should show manifest detection info when count > 0', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+        mockDetectManifestActions.mockResolvedValueOnce({ count: 3 })
+
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '.', '--no-interactive'],
+          importMeta,
+          context,
+        )
+
+        expect(mockLogger.info).toHaveBeenCalledWith(
+          expect.stringContaining('Detected 3 manifest targets'),
+        )
+      })
+
+      it('should suggest targets when interactive with no targets', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(['--org', 'test-org'], importMeta, context)
+
+        // With interactive true and no targets, defaults to cwd.
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            targets: expect.any(Array),
+          }),
+        )
+      })
+    })
+
+    describe('--cwd flag', () => {
+      it('should use custom cwd when provided', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '--cwd', '/tmp/project', '.', '--no-interactive'],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            cwd: expect.stringContaining('/tmp/project'),
+          }),
+        )
+      })
+    })
+
+    describe('--read-only flag', () => {
+      it('should pass readOnly flag to handler', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '--read-only', '.', '--no-interactive'],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            readOnly: true,
+          }),
+        )
+      })
+    })
+
+    describe('--report-level flag', () => {
+      it('should pass reportLevel flag to handler', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '--report-level', 'warn', '.', '--no-interactive'],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            reportLevel: 'warn',
+          }),
+        )
+      })
+    })
+
+    describe('--committers flag', () => {
+      it('should pass committers flag to handler', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--committers',
+            'user@example.com',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            committers: 'user@example.com',
+          }),
+        )
+      })
+    })
+
+    describe('dry-run with details', () => {
+      it('should include repo and branch in dry-run output', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--dry-run',
+            '--org',
+            'test-org',
+            '--repo',
+            'my-repo',
+            '--branch',
+            'develop',
+            '.',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockLogger.log).toHaveBeenCalledWith(
+          expect.stringContaining('DryRun'),
+        )
+      })
+
+      it('should include reach info in dry-run output when --reach enabled', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--dry-run',
+            '--org',
+            'test-org',
+            '--reach',
+            '.',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockLogger.log).toHaveBeenCalledWith(
+          expect.stringContaining('DryRun'),
+        )
+      })
+    })
+
+    describe('reachability options', () => {
+      it('should pass --reach-exclude-paths to handler', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--reach',
+            '--reach-exclude-paths',
+            'node_modules,dist',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            reach: expect.objectContaining({
+              reachExcludePaths: ['node_modules', 'dist'],
+            }),
+          }),
+        )
+      })
+
+      it('should pass --reach-lazy-mode to handler', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--reach',
+            '--reach-lazy-mode',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            reach: expect.objectContaining({
+              reachLazyMode: true,
+            }),
+          }),
+        )
+      })
+
+      it('should pass --reach-skip-cache to handler', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--reach',
+            '--reach-skip-cache',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            reach: expect.objectContaining({
+              reachSkipCache: true,
+            }),
+          }),
+        )
+      })
+
+      it('should pass --reach-disable-analysis-splitting to handler', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--reach',
+            '--reach-disable-analysis-splitting',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            reach: expect.objectContaining({
+              reachDisableAnalysisSplitting: true,
+            }),
+          }),
+        )
+      })
+
+      it('should pass --reach-disable-analytics to handler', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--reach',
+            '--reach-disable-analytics',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            reach: expect.objectContaining({
+              reachDisableAnalytics: true,
+            }),
+          }),
+        )
+      })
+
+      it('should pass --reach-min-severity to handler', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--reach',
+            '--reach-min-severity',
+            'high',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            reach: expect.objectContaining({
+              reachMinSeverity: 'high',
+            }),
+          }),
+        )
+      })
+
+      it('should pass --reach-use-only-pregenerated-sboms to handler', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--reach',
+            '--reach-use-only-pregenerated-sboms',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            reach: expect.objectContaining({
+              reachUseOnlyPregeneratedSboms: true,
+            }),
+          }),
+        )
+      })
+
+      it('should pass --reach-use-unreachable-from-precomputation to handler', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--reach',
+            '--reach-use-unreachable-from-precomputation',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            reach: expect.objectContaining({
+              reachUseUnreachableFromPrecomputation: true,
+            }),
+          }),
+        )
+      })
+    })
+
+    describe('--set-as-alerts-page flag', () => {
+      it('should pass setAsAlertsPage=false with --no-set-as-alerts-page', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '--no-set-as-alerts-page', '.', '--no-interactive'],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            pendingHead: false,
+          }),
+        )
+      })
+    })
+
+    describe('validation edge cases', () => {
+      it('should fail when --pending-head is set without --branch', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+        mockGitBranch.mockResolvedValueOnce('')
+        mockDetectDefaultBranch.mockResolvedValueOnce('')
+
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '--set-as-alerts-page', '.', '--no-interactive'],
+          importMeta,
+          context,
+        )
+
+        // Exit code 2 = invalid usage/validation failure.
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
+      })
+
+      it('should fail when target not valid for reachability', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+        mockValidateReachabilityTarget.mockResolvedValueOnce({
+          isDirectory: true,
+          isInsideCwd: true,
+          isValid: false,
+          targetExists: true,
+        })
+
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '--reach', '.', 'other', '--no-interactive'],
+          importMeta,
+          context,
+        )
+
+        // Exit code 2 = invalid usage/validation failure.
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
+      })
+    })
   })
 })

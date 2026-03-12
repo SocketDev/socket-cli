@@ -24,7 +24,7 @@
  * - src/commands/raw-npx/cmd-raw-npx.mts - Implementation
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -271,6 +271,98 @@ describe('cmd-raw-npx', () => {
           'exit',
           expect.any(Function),
         )
+      })
+    })
+
+    describe('exit handler callback', () => {
+      let exitHandler: (
+        code: number | null,
+        signal: NodeJS.Signals | null,
+      ) => void
+      let mockProcessKill: ReturnType<typeof vi.fn>
+      let mockProcessExit: ReturnType<typeof vi.fn>
+      let mockProcess: {
+        on: ReturnType<typeof vi.fn>
+        kill: ReturnType<typeof vi.fn>
+        pid: number
+        stdin: null
+        stdout: null
+        stderr: null
+      }
+
+      beforeEach(() => {
+        mockProcess = {
+          on: vi.fn(),
+          kill: vi.fn(),
+          pid: 12345,
+          stdin: null,
+          stdout: null,
+          stderr: null,
+        }
+
+        // Capture the exit handler when it's registered.
+        mockProcess.on.mockImplementation(
+          (
+            event: string,
+            handler: (
+              code: number | null,
+              signal: NodeJS.Signals | null,
+            ) => void,
+          ) => {
+            if (event === 'exit') {
+              exitHandler = handler
+            }
+          },
+        )
+
+        mockSpawn.mockReturnValue(
+          Object.assign(Promise.resolve({ exitCode: 0 }), {
+            process: mockProcess,
+          }),
+        )
+
+        // Mock process.kill and process.exit.
+        mockProcessKill = vi.fn()
+        mockProcessExit = vi.fn()
+        vi.stubGlobal('process', {
+          ...process,
+          kill: mockProcessKill,
+          exit: mockProcessExit,
+          pid: process.pid,
+          exitCode: undefined,
+        })
+      })
+
+      afterEach(() => {
+        vi.unstubAllGlobals()
+      })
+
+      it('should call process.exit with numeric exit code', async () => {
+        await cmdRawNpx.run(['cowsay'], importMeta, context)
+
+        // Invoke the exit handler with a numeric code.
+        exitHandler(42, null)
+
+        expect(mockProcessExit).toHaveBeenCalledWith(42)
+      })
+
+      it('should call process.kill with signal', async () => {
+        await cmdRawNpx.run(['cowsay'], importMeta, context)
+
+        // Invoke the exit handler with a signal.
+        exitHandler(null, 'SIGTERM')
+
+        expect(mockProcessKill).toHaveBeenCalledWith(process.pid, 'SIGTERM')
+      })
+
+      it('should not call process.exit when code is null and no signal', async () => {
+        await cmdRawNpx.run(['cowsay'], importMeta, context)
+
+        // Invoke the exit handler with null code and no signal.
+        exitHandler(null, null)
+
+        expect(mockProcessExit).not.toHaveBeenCalled()
+        expect(mockProcessKill).not.toHaveBeenCalled()
       })
     })
 

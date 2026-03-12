@@ -2,7 +2,7 @@
 
 [![Socket Badge](https://socket.dev/api/badge/npm/package/socket)](https://socket.dev/npm/package/socket)
 [![CI](https://github.com/SocketDev/socket-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/SocketDev/socket-cli/actions/workflows/ci.yml)
-![Coverage](https://img.shields.io/badge/coverage-53.35%25-yellow)
+![Coverage](https://img.shields.io/badge/coverage-75.08%25-brightgreen)
 
 [![Follow @SocketSecurity](https://img.shields.io/twitter/follow/SocketSecurity?style=social)](https://twitter.com/SocketSecurity)
 

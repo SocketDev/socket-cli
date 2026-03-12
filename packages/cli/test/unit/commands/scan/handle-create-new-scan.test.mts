@@ -363,4 +363,72 @@ describe('handleCreateNewScan', () => {
       { interactive: false, outputKind: 'json' },
     )
   })
+
+  it('handles reachability analysis failure', async () => {
+    mockFetchSupportedScanFileNames.mockResolvedValue(
+      createSuccessResult(new Set(['package.json'])),
+    )
+    mockGetPackageFilesForScan.mockResolvedValue(['/test/project/package.json'])
+    mockCheckCommandInput.mockReturnValue(true)
+    mockPerformReachabilityAnalysis.mockResolvedValue(
+      createErrorResult('Reachability failed'),
+    )
+
+    await handleCreateNewScan({
+      ...mockConfig,
+      reach: { runReachabilityAnalysis: true },
+    })
+
+    expect(mockOutputCreateNewScan).toHaveBeenCalledWith(
+      expect.objectContaining({ ok: false }),
+      { interactive: false, outputKind: 'json' },
+    )
+  })
+
+  it('handles report mode with missing scan ID', async () => {
+    mockFetchSupportedScanFileNames.mockResolvedValue(
+      createSuccessResult(new Set(['package.json'])),
+    )
+    mockGetPackageFilesForScan.mockResolvedValue(['/test/project/package.json'])
+    mockCheckCommandInput.mockReturnValue(true)
+    // Return success but without id.
+    mockFetchCreateOrgFullScan.mockResolvedValue(
+      createSuccessResult({ name: 'scan' }),
+    )
+
+    await handleCreateNewScan({ ...mockConfig, report: true })
+
+    expect(mockOutputCreateNewScan).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ok: false,
+        message: 'Missing Scan ID',
+      }),
+      { interactive: false, outputKind: 'json' },
+    )
+  })
+
+  it('handles workspace parameter', async () => {
+    mockFetchSupportedScanFileNames.mockResolvedValue(
+      createSuccessResult(new Set(['package.json'])),
+    )
+    mockGetPackageFilesForScan.mockResolvedValue(['/test/project/package.json'])
+    mockCheckCommandInput.mockReturnValue(true)
+    mockFetchCreateOrgFullScan.mockResolvedValue(
+      createSuccessResult({ id: 'scan-123' }),
+    )
+
+    await handleCreateNewScan({
+      ...mockConfig,
+      workspace: 'my-workspace',
+    })
+
+    expect(mockFetchCreateOrgFullScan).toHaveBeenCalledWith(
+      expect.any(Array),
+      'test-org',
+      expect.objectContaining({
+        workspace: 'my-workspace',
+      }),
+      expect.any(Object),
+    )
+  })
 })

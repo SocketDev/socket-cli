@@ -120,5 +120,44 @@ describe('cmd-pycli', () => {
         stdio: 'inherit',
       })
     })
+
+    it('should handle failure without message', async () => {
+      mockSpawnSocketPyCli.mockResolvedValue({ ok: false })
+
+      await cmdPyCli.run(['--enable-sarif'], importMeta, context)
+
+      expect(process.exitCode).toBe(1)
+      // Should not call logger.fail when message is missing.
+      expect(mockLogger.fail).not.toHaveBeenCalled()
+    })
+
+    it('should output dry-run preview when --dry-run is used', async () => {
+      await cmdPyCli.run(
+        ['--dry-run', '--generate-license', '--repo', 'owner/repo'],
+        importMeta,
+        context,
+      )
+
+      expect(mockSpawnSocketPyCli).not.toHaveBeenCalled()
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('DryRun'),
+      )
+    })
+
+    it('should filter help flags from arguments', async () => {
+      mockSpawnSocketPyCli.mockResolvedValue({ ok: true, data: '' })
+
+      await cmdPyCli.run(
+        ['--generate-license', '.'],
+        importMeta,
+        context,
+      )
+
+      // Help flags should not be in arguments passed to Python CLI.
+      expect(mockSpawnSocketPyCli).toHaveBeenCalledWith(
+        ['--generate-license', '.'],
+        expect.any(Object),
+      )
+    })
   })
 })

@@ -395,5 +395,53 @@ describe('cmd-fix', () => {
         expect.stringContaining('compute fixes only'),
       )
     })
+
+    it('should handle org slug error with specific error code', async () => {
+      mockGetDefaultOrgSlug.mockResolvedValueOnce({
+        ok: false,
+        code: 42,
+        error: 'Specific error',
+      })
+
+      await cmdFix.run([], importMeta, context)
+
+      expect(process.exitCode).toBe(42)
+      expect(mockHandleFix).not.toHaveBeenCalled()
+    })
+
+    it('should show ecosystems in dry-run output', async () => {
+      await cmdFix.run(['--dry-run', '--ecosystems', 'npm,pypi'], importMeta, context)
+
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('DryRun'),
+      )
+    })
+
+    it('should show auto-discovered targets in dry-run when no --id or --all', async () => {
+      await cmdFix.run(['--dry-run'], importMeta, context)
+
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('auto-discovered'),
+      )
+    })
+
+
+    it('should show PR info in dry-run when apply fixes enabled', async () => {
+      await cmdFix.run(['--dry-run'], importMeta, context)
+
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('DryRun'),
+      )
+    })
+
+    it('should pass --no-pr-check flag to handleFix', async () => {
+      await cmdFix.run(['--no-pr-check'], importMeta, context)
+
+      expect(mockHandleFix).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prCheck: false,
+        }),
+      )
+    })
   })
 })

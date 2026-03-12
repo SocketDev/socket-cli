@@ -15,7 +15,7 @@
  * - Error handling
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { EventEmitter } from 'node:events'
 
@@ -396,6 +396,119 @@ describe('cmd-npm', () => {
         await cmdNpm.run(['install', 'lodash'], importMeta, context)
 
         expect(mockTrackSubprocessStart).toHaveBeenCalled()
+      })
+    })
+
+    describe('exit handler callback', () => {
+      let exitHandler: (
+        code: number | null,
+        signal: NodeJS.Signals | null,
+      ) => void
+      let mockProcessKill: ReturnType<typeof vi.fn>
+      let mockProcessExit: ReturnType<typeof vi.fn>
+
+      beforeEach(() => {
+        // Capture the exit handler when it's registered.
+        ;(mockChildProcess.on as ReturnType<typeof vi.fn>).mockImplementation(
+          (
+            event: string,
+            handler: (
+              code: number | null,
+              signal: NodeJS.Signals | null,
+            ) => void,
+          ) => {
+            if (event === 'exit') {
+              exitHandler = handler
+            }
+          },
+        )
+        // Mock process.kill and process.exit.
+        mockProcessKill = vi.fn()
+        mockProcessExit = vi.fn()
+        vi.stubGlobal('process', {
+          ...process,
+          kill: mockProcessKill,
+          exit: mockProcessExit,
+          pid: process.pid,
+          exitCode: undefined,
+        })
+      })
+
+      afterEach(() => {
+        vi.unstubAllGlobals()
+      })
+
+      it('should call process.exit with numeric exit code', async () => {
+        mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
+        mockTrackSubprocessExit.mockResolvedValue(undefined)
+
+        await cmdNpm.run(['install', 'lodash'], importMeta, context)
+
+        // Invoke the exit handler with a numeric code.
+        exitHandler(42, null)
+
+        // Wait for telemetry promise to resolve.
+        await new Promise(resolve => setTimeout(resolve, 10))
+
+        expect(mockTrackSubprocessExit).toHaveBeenCalledWith(
+          NPM,
+          expect.any(Number),
+          42,
+        )
+        expect(mockProcessExit).toHaveBeenCalledWith(42)
+      })
+
+      it('should call process.kill with signal', async () => {
+        mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
+        mockTrackSubprocessExit.mockResolvedValue(undefined)
+
+        await cmdNpm.run(['install', 'lodash'], importMeta, context)
+
+        // Invoke the exit handler with a signal.
+        exitHandler(null, 'SIGTERM')
+
+        // Wait for telemetry promise to resolve.
+        await new Promise(resolve => setTimeout(resolve, 10))
+
+        expect(mockTrackSubprocessExit).toHaveBeenCalledWith(
+          NPM,
+          expect.any(Number),
+          null,
+        )
+        expect(mockProcessKill).toHaveBeenCalledWith(process.pid, 'SIGTERM')
+      })
+
+      it('should exit even if telemetry fails', async () => {
+        mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
+        mockTrackSubprocessExit.mockRejectedValue(new Error('Telemetry failed'))
+
+        await cmdNpm.run(['install', 'lodash'], importMeta, context)
+
+        // Invoke the exit handler with a numeric code.
+        exitHandler(1, null)
+
+        // Wait for telemetry promise to reject and catch handler to run.
+        await new Promise(resolve => setTimeout(resolve, 10))
+
+        // Should still exit even though telemetry failed.
+        expect(mockProcessExit).toHaveBeenCalledWith(1)
+      })
+
+      it('should track subprocess exit with code', async () => {
+        mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
+        const startTime = 12345
+        mockTrackSubprocessStart.mockResolvedValue(startTime)
+        mockTrackSubprocessExit.mockResolvedValue(undefined)
+
+        await cmdNpm.run(['install', 'lodash'], importMeta, context)
+
+        // Invoke the exit handler.
+        exitHandler(0, null)
+
+        // Wait for telemetry promise to resolve.
+        await new Promise(resolve => setTimeout(resolve, 10))
+
+        expect(mockTrackSubprocessExit).toHaveBeenCalledWith(NPM, startTime, 0)
       })
     })
 
