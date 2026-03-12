@@ -347,5 +347,59 @@ packages: {}`
       const purls = await extractPurlsFromPnpmLockfile(lockfile)
       expect(purls).toEqual([])
     })
+
+    it('handles dependency pointing to non-existent package', async () => {
+      const lockfile = {
+        lockfileVersion: 5.4,
+        packages: {
+          '/main@1.0.0': {
+            resolution: { integrity: 'sha512-test' },
+            dependencies: {
+              'missing-pkg': '1.0.0',
+            },
+          },
+          // Note: /missing-pkg@1.0.0 is not in packages.
+        },
+      }
+
+      const purls = await extractPurlsFromPnpmLockfile(lockfile)
+      // Should include main and handle the missing package gracefully.
+      // The seen set tracks visited paths but only existing package paths are mapped to purls.
+      expect(purls).toContain('pkg:npm/main@1.0.0')
+      expect(purls).toHaveLength(1)
+    })
+
+    it('handles empty dependency reference', async () => {
+      const lockfile = {
+        lockfileVersion: 5.4,
+        packages: {
+          '/main@1.0.0': {
+            resolution: { integrity: 'sha512-test' },
+            dependencies: {
+              'some-pkg': '',
+            },
+          },
+        },
+      }
+
+      const purls = await extractPurlsFromPnpmLockfile(lockfile)
+      // Should only include main, empty ref should be skipped.
+      expect(purls).toHaveLength(1)
+      expect(purls).toContain('pkg:npm/main@1.0.0')
+    })
+  })
+
+  describe('stripPnpmPeerSuffix edge cases', () => {
+    it('handles empty string input', () => {
+      expect(stripPnpmPeerSuffix('')).toBe('')
+    })
+
+    it('handles null input', () => {
+      expect(stripPnpmPeerSuffix(null as any)).toBe(null)
+    })
+
+    it('handles undefined input', () => {
+      expect(stripPnpmPeerSuffix(undefined as any)).toBe(undefined)
+    })
   })
 })
