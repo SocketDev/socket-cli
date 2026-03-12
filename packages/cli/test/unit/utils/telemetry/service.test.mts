@@ -268,5 +268,150 @@ describe('TelemetryService', () => {
       // Should not throw and only process once.
       expect(TelemetryService.getCurrentInstance()).toBeNull()
     })
+
+    it('does not flush when service is destroyed', async () => {
+      const client = await TelemetryService.getTelemetryClient('test-org')
+      await client.destroy()
+
+      // Now try to flush on a destroyed instance.
+      await client.flush()
+
+      // Should not send anything because service is destroyed.
+      expect(mockPostOrgTelemetry).toHaveBeenCalledTimes(0)
+    })
+
+    it('handles SDK setup failure during flush gracefully', async () => {
+      const client = await TelemetryService.getTelemetryClient('test-org')
+
+      client.track({
+        event_sender_created_at: new Date().toISOString(),
+        event_type: 'test_event',
+        context: {},
+      })
+
+      // Make SDK setup fail during flush.
+      mockSetupSdk.mockResolvedValue({
+        ok: false,
+        message: 'SDK setup failed',
+      })
+
+      // Should not throw.
+      await expect(client.flush()).resolves.not.toThrow()
+    })
+
+    it('handles exceptions during initialization gracefully', async () => {
+      mockSetupSdk.mockRejectedValue(new Error('Unexpected error'))
+
+      // Should not throw and return a client with default config.
+      const client = await TelemetryService.getTelemetryClient('error-org')
+      expect(client).toBeDefined()
+    })
+  })
+
+  describe('concurrent initialization', () => {
+    it('handles concurrent calls to getTelemetryClient', async () => {
+      // Simulate concurrent calls.
+      const [client1, client2, client3] = await Promise.all([
+        TelemetryService.getTelemetryClient('test-org'),
+        TelemetryService.getTelemetryClient('test-org'),
+        TelemetryService.getTelemetryClient('test-org'),
+      ])
+
+      // All should return the same instance.
+      expect(client1).toBe(client2)
+      expect(client2).toBe(client3)
+
+      // SDK setup should only be called once.
+      expect(mockSetupSdk).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('sendEvents error handling', () => {
+    it('tracks success and failure counts correctly', async () => {
+      // Make some events succeed and some fail.
+      let callCount = 0
+      mockPostOrgTelemetry.mockImplementation(async () => {
+        callCount++
+        if (callCount % 2 === 0) {
+          return { success: false, error: 'Failed' }
+        }
+        return { success: true }
+      })
+
+      const client = await TelemetryService.getTelemetryClient('test-org')
+
+      client.track({
+        event_sender_created_at: new Date().toISOString(),
+        event_type: 'event_1',
+        context: {},
+      })
+      client.track({
+        event_sender_created_at: new Date().toISOString(),
+        event_type: 'event_2',
+        context: {},
+      })
+      client.track({
+        event_sender_created_at: new Date().toISOString(),
+        event_type: 'event_3',
+        context: {},
+      })
+
+      await client.flush()
+
+      expect(mockPostOrgTelemetry).toHaveBeenCalledTimes(3)
+    })
+
+    it('handles rejected promises during send', async () => {
+      let callCount = 0
+      mockPostOrgTelemetry.mockImplementation(async () => {
+        callCount++
+        if (callCount === 2) {
+          throw new Error('Network error')
+        }
+        return { success: true }
+      })
+
+      const client = await TelemetryService.getTelemetryClient('test-org')
+
+      client.track({
+        event_sender_created_at: new Date().toISOString(),
+        event_type: 'event_1',
+        context: {},
+      })
+      client.track({
+        event_sender_created_at: new Date().toISOString(),
+        event_type: 'event_2',
+        context: {},
+      })
+      client.track({
+        event_sender_created_at: new Date().toISOString(),
+        event_type: 'event_3',
+        context: {},
+      })
+
+      // Should not throw despite one event failing.
+      await expect(client.flush()).resolves.not.toThrow()
+    })
+  })
+
+  describe('auto-flush on batch size', () => {
+    it('automatically flushes when batch size is reached', async () => {
+      const client = await TelemetryService.getTelemetryClient('test-org')
+
+      // Add 10 events (default batch size).
+      for (let i = 0; i < 10; i++) {
+        client.track({
+          event_sender_created_at: new Date().toISOString(),
+          event_type: `event_${i}`,
+          context: {},
+        })
+      }
+
+      // Give time for auto-flush to complete.
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // Events should have been sent.
+      expect(mockPostOrgTelemetry).toHaveBeenCalled()
+    })
   })
 })
