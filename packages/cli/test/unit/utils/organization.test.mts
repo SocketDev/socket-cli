@@ -2,17 +2,12 @@
  * Unit tests for organization utilities.
  *
  * Purpose:
- * Tests organization-related utilities. Validates org slug handling, validation, and API interactions.
+ * Tests the organization helper functions.
  *
  * Test Coverage:
- * - Org slug validation
- * - Org slug normalization
- * - Org context detection
- * - Org-scoped operations
- * - Default org handling
- *
- * Testing Approach:
- * Tests organization context utilities used throughout CLI.
+ * - getEnterpriseOrgs filtering
+ * - getOrgSlugs extraction
+ * - hasEnterpriseOrgPlan check
  *
  * Related Files:
  * - utils/organization.mts (implementation)
@@ -26,161 +21,99 @@ import {
   hasEnterpriseOrgPlan,
 } from '../../../src/utils/organization.mts'
 
-import type { Organizations } from '../../../src/commands/organization/fetch-organization-list.mts'
-
 describe('organization utilities', () => {
-  const mockOrgs: Organizations = [
-    {
-      id: '1',
-      name: 'Free Org',
-      slug: 'free-org',
-      plan: 'free',
-      createdAt: '2024-01-01',
-      updatedAt: '2024-01-01',
-    },
-    {
-      id: '2',
-      name: 'Enterprise Org 1',
-      slug: 'enterprise-org-1',
-      plan: 'enterprise',
-      createdAt: '2024-01-02',
-      updatedAt: '2024-01-02',
-    },
-    {
-      id: '3',
-      name: 'Pro Org',
-      slug: 'pro-org',
-      plan: 'pro',
-      createdAt: '2024-01-03',
-      updatedAt: '2024-01-03',
-    },
-    {
-      id: '4',
-      name: 'Enterprise Org 2',
-      slug: 'enterprise-org-2',
-      plan: 'enterprise',
-      createdAt: '2024-01-04',
-      updatedAt: '2024-01-04',
-    },
-  ] as Organizations
+  const mockOrgs = [
+    { slug: 'free-org', name: 'Free Org', plan: 'free' },
+    { slug: 'enterprise-org', name: 'Enterprise Org', plan: 'enterprise' },
+    { slug: 'pro-org', name: 'Pro Org', plan: 'pro' },
+    { slug: 'enterprise-plus', name: 'Enterprise Plus', plan: 'enterprise-plus' },
+  ] as any
 
   describe('getEnterpriseOrgs', () => {
-    it('filters out only enterprise organizations', () => {
+    it('returns only enterprise plan organizations', () => {
       const result = getEnterpriseOrgs(mockOrgs)
 
       expect(result).toHaveLength(2)
-      expect(result[0].slug).toBe('enterprise-org-1')
-      expect(result[1].slug).toBe('enterprise-org-2')
-      expect(result.every(org => org.plan === 'enterprise')).toBe(true)
+      expect(result.map(o => o.slug)).toEqual([
+        'enterprise-org',
+        'enterprise-plus',
+      ])
     })
 
     it('returns empty array when no enterprise orgs', () => {
       const nonEnterpriseOrgs = [
-        {
-          id: '1',
-          name: 'Free Org',
-          slug: 'free-org',
-          plan: 'free',
-          createdAt: '2024-01-01',
-          updatedAt: '2024-01-01',
-        },
-        {
-          id: '2',
-          name: 'Pro Org',
-          slug: 'pro-org',
-          plan: 'pro',
-          createdAt: '2024-01-01',
-          updatedAt: '2024-01-01',
-        },
-      ] as Organizations
+        { slug: 'free-org', plan: 'free' },
+        { slug: 'pro-org', plan: 'pro' },
+      ] as any
 
       const result = getEnterpriseOrgs(nonEnterpriseOrgs)
-      expect(result).toEqual([])
+
+      expect(result).toHaveLength(0)
     })
 
-    it('handles empty array', () => {
+    it('returns empty array for empty input', () => {
       const result = getEnterpriseOrgs([])
-      expect(result).toEqual([])
+
+      expect(result).toHaveLength(0)
     })
   })
 
   describe('getOrgSlugs', () => {
-    it('extracts slugs from all organizations', () => {
+    it('extracts slugs from organizations', () => {
       const result = getOrgSlugs(mockOrgs)
 
       expect(result).toEqual([
         'free-org',
-        'enterprise-org-1',
+        'enterprise-org',
         'pro-org',
-        'enterprise-org-2',
+        'enterprise-plus',
       ])
     })
 
-    it('returns empty array for empty organizations', () => {
+    it('returns empty array for empty input', () => {
       const result = getOrgSlugs([])
+
       expect(result).toEqual([])
     })
 
-    it('maintains order of organizations', () => {
-      const orgs = [
-        { slug: 'z-org' },
-        { slug: 'a-org' },
-        { slug: 'm-org' },
-      ] as Organizations
+    it('handles single organization', () => {
+      const result = getOrgSlugs([{ slug: 'single-org', plan: 'pro' }] as any)
 
-      const result = getOrgSlugs(orgs)
-      expect(result).toEqual(['z-org', 'a-org', 'm-org'])
+      expect(result).toEqual(['single-org'])
     })
   })
 
   describe('hasEnterpriseOrgPlan', () => {
     it('returns true when enterprise org exists', () => {
       const result = hasEnterpriseOrgPlan(mockOrgs)
+
       expect(result).toBe(true)
     })
 
     it('returns false when no enterprise org exists', () => {
       const nonEnterpriseOrgs = [
-        {
-          id: '1',
-          name: 'Free Org',
-          slug: 'free-org',
-          plan: 'free',
-          createdAt: '2024-01-01',
-          updatedAt: '2024-01-01',
-        },
-        {
-          id: '2',
-          name: 'Pro Org',
-          slug: 'pro-org',
-          plan: 'pro',
-          createdAt: '2024-01-01',
-          updatedAt: '2024-01-01',
-        },
-      ] as Organizations
+        { slug: 'free-org', plan: 'free' },
+        { slug: 'pro-org', plan: 'pro' },
+      ] as any
 
       const result = hasEnterpriseOrgPlan(nonEnterpriseOrgs)
+
       expect(result).toBe(false)
     })
 
     it('returns false for empty array', () => {
       const result = hasEnterpriseOrgPlan([])
+
       expect(result).toBe(false)
     })
 
-    it('returns true with single enterprise org', () => {
-      const singleEnterprise = [
-        {
-          id: '1',
-          name: 'Enterprise Org',
-          slug: 'enterprise-org',
-          plan: 'enterprise',
-          createdAt: '2024-01-01',
-          updatedAt: '2024-01-01',
-        },
-      ] as Organizations
+    it('matches partial enterprise plan names', () => {
+      const orgsWithEnterprisePlus = [
+        { slug: 'org1', plan: 'enterprise-plus' },
+      ] as any
 
-      const result = hasEnterpriseOrgPlan(singleEnterprise)
+      const result = hasEnterpriseOrgPlan(orgsWithEnterprisePlus)
+
       expect(result).toBe(true)
     })
   })
