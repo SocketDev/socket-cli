@@ -174,7 +174,7 @@ describe('resolve-binary', () => {
         SOCKET_CLI_SFW_LOCAL_PATH: undefined,
       }))
       vi.doMock('../../../../src/env/sfw-version.mts', () => ({
-        getSwfVersion: () => '2.0.0',
+        getSfwNpmVersion: () => '2.0.0',
       }))
 
       const { resolveSfw } =

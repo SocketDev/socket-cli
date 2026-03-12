@@ -80,17 +80,22 @@ export class EnvironmentVariables {
       return value
     }
 
+    // npm packages use 'version' field.
     const cdxgenVersion = getExternalToolVersion('@cyclonedx/cdxgen')
     const coanaVersion = getExternalToolVersion('@coana-tech/cli')
-    const opengrepVersion = getExternalToolVersion('opengrep')
-    const pyCliVersion = getExternalToolVersion('socketsecurity')
-    const pythonBuildTag = getExternalToolVersion('python', 'buildTag')
-    const pythonVersion = getExternalToolVersion('python')
-    const sfwVersion = getExternalToolVersion('sfw')
-    const socketPatchVersion = getExternalToolVersion('socket-patch')
     const synpVersion = getExternalToolVersion('synp')
-    const trivyVersion = getExternalToolVersion('trivy')
-    const trufflehogVersion = getExternalToolVersion('trufflehog')
+    // pypi packages use 'version' field.
+    const pyCliVersion = getExternalToolVersion('socketsecurity')
+    // github-release tools use 'githubRelease' field (release tag, any format).
+    const opengrepVersion = getExternalToolVersion('opengrep', 'githubRelease')
+    const pythonBuildTag = getExternalToolVersion('python', 'buildTag')
+    const pythonVersion = getExternalToolVersion('python', 'githubRelease')
+    const socketPatchVersion = getExternalToolVersion('socket-patch', 'githubRelease')
+    const trivyVersion = getExternalToolVersion('trivy', 'githubRelease')
+    const trufflehogVersion = getExternalToolVersion('trufflehog', 'githubRelease')
+    // sfw uses both: GitHub binary for SEA, npm package for CLI.
+    const sfwVersion = getExternalToolVersion('sfw', 'githubRelease')
+    const sfwNpmVersion = getExternalToolVersion('sfw', 'npmVersion')
 
     // Build-time constants that can be overridden by environment variables.
     const publishedBuild =
@@ -116,6 +121,7 @@ export class EnvironmentVariables {
       INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: pythonBuildTag,
       INLINED_SOCKET_CLI_PYTHON_VERSION: pythonVersion,
       INLINED_SOCKET_CLI_SENTRY_BUILD: sentryBuild ? '1' : '',
+      INLINED_SOCKET_CLI_SFW_NPM_VERSION: sfwNpmVersion,
       INLINED_SOCKET_CLI_SFW_VERSION: sfwVersion,
       INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION: socketPatchVersion,
       INLINED_SOCKET_CLI_SYNP_VERSION: synpVersion,
@@ -142,9 +148,10 @@ export class EnvironmentVariables {
           externalTools['@coana-tech/cli']?.version || '',
         INLINED_SOCKET_CLI_PYCLI_VERSION:
           externalTools.socketsecurity?.version || '',
-        INLINED_SOCKET_CLI_SFW_VERSION: externalTools.sfw?.version || '',
+        INLINED_SOCKET_CLI_SFW_NPM_VERSION: externalTools.sfw?.npmVersion || '',
+        INLINED_SOCKET_CLI_SFW_VERSION: externalTools.sfw?.githubRelease || '',
         INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION:
-          externalTools['socket-patch']?.version || '',
+          externalTools['socket-patch']?.githubRelease || '',
       }
     } catch {
       return {}

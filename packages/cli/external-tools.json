@@ -1,6 +1,6 @@
 {
   "$schema": "External tools configuration for Socket CLI VFS bundling",
-  "$comment": "Build process uses @npmcli/arborist (scripts/sea-build-utils/npm-packages.mjs) to download npm packages with full dependency trees. npm packages are bundled with node_modules/ into VFS alongside security tool binaries.",
+  "$comment": "Build process uses @npmcli/arborist (scripts/sea-build-utils/npm-packages.mjs) to download npm packages with full dependency trees. npm packages are bundled with node_modules/ into VFS alongside security tool binaries. For github-release types, 'githubRelease' is the release tag (any format: v1.6.1, 3.11.14, etc.).",
   "@coana-tech/cli": {
     "description": "Coana CLI for static analysis and reachability detection",
     "type": "npm",
@@ -17,13 +17,13 @@
     "description": "OpenGrep SAST/code analysis engine (fork of Semgrep)",
     "type": "github-release",
     "repository": "opengrep/opengrep",
-    "version": "v1.16.0"
+    "githubRelease": "v1.16.0"
   },
   "python": {
     "description": "Python runtime from python-build-standalone",
     "type": "github-release",
     "repository": "astral-sh/python-build-standalone",
-    "version": "3.11.14",
+    "githubRelease": "3.11.14",
     "buildTag": "20260203"
   },
   "socket-basics": {
@@ -42,13 +42,15 @@
     "description": "Socket Patch CLI for applying security patches (Rust binary)",
     "type": "github-release",
     "repository": "SocketDev/socket-patch",
-    "version": "v2.0.0"
+    "githubRelease": "v2.0.0"
   },
   "sfw": {
-    "description": "Socket Firewall (sfw)",
+    "description": "Socket Firewall (sfw) - GitHub binary for SEA, npm package for CLI",
     "type": "github-release",
     "repository": "SocketDev/sfw-free",
-    "version": "v1.6.0"
+    "githubRelease": "v1.6.1",
+    "npmPackage": "sfw",
+    "npmVersion": "2.0.4"
   },
   "synp": {
     "description": "Tool for converting between yarn.lock and package-lock.json",
@@ -60,12 +62,12 @@
     "description": "Trivy container and filesystem vulnerability scanner",
     "type": "github-release",
     "repository": "aquasecurity/trivy",
-    "version": "v0.69.2"
+    "githubRelease": "v0.69.2"
   },
   "trufflehog": {
     "description": "TruffleHog secret and credential detection",
     "type": "github-release",
     "repository": "trufflesecurity/trufflehog",
-    "version": "v3.93.1"
+    "githubRelease": "v3.93.1"
   }
 }

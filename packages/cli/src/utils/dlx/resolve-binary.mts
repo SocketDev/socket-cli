@@ -12,7 +12,7 @@ import { SOCKET_CLI_COANA_LOCAL_PATH } from '../../env/socket-cli-coana-local-pa
 import { SOCKET_CLI_PYCLI_LOCAL_PATH } from '../../env/socket-cli-pycli-local-path.mts'
 import { SOCKET_CLI_SFW_LOCAL_PATH } from '../../env/socket-cli-sfw-local-path.mts'
 import { SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH } from '../../env/socket-cli-socket-patch-local-path.mts'
-import { getSwfVersion } from '../../env/sfw-version.mts'
+import { getSfwNpmVersion } from '../../env/sfw-version.mts'
 import { getSocketPatchVersion } from '../../env/socket-patch-version.mts'
 import { getSynpVersion } from '../../env/synp-version.mts'
 
@@ -94,6 +94,9 @@ export function resolvePyCli(): BinaryResolution | { type: 'python' } {
 /**
  * Resolve path for Socket Firewall (sfw) binary.
  * Checks SOCKET_CLI_SFW_LOCAL_PATH environment variable first.
+ *
+ * Note: This returns the npm package version for dlx usage.
+ * SEA builds use the GitHub binary directly via VFS extraction.
  */
 export function resolveSfw(): BinaryResolution {
   if (SOCKET_CLI_SFW_LOCAL_PATH) {
@@ -104,7 +107,7 @@ export function resolveSfw(): BinaryResolution {
     type: 'dlx',
     details: {
       name: 'sfw',
-      version: getSwfVersion(),
+      version: getSfwNpmVersion(),
       binaryName: 'sfw',
     },
   }

@@ -271,9 +271,11 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
       TOOL_REPOS[toolName] = {
         owner,
         repo,
-        // Python uses buildTag for version, others use version field.
+        // Python uses buildTag for release tag, others use githubRelease field.
         version:
-          toolName === 'python' ? toolConfig.buildTag : toolConfig.version,
+          toolName === 'python'
+            ? toolConfig.buildTag
+            : toolConfig.githubRelease,
       }
     }
   }
@@ -321,8 +323,8 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
     const archivePath = normalizePath(path.join(toolsDir, assetName))
 
     // Download archive directly from GitHub releases.
-    // Python uses date-based tags without 'v' prefix.
-    const tag = toolName === 'python' ? config.version : config.version
+    // Release tags can be any format (v1.6.1, 3.11.14, 20260203, etc.).
+    const tag = config.version
     const url = `https://github.com/${config.owner}/${config.repo}/releases/download/${tag}/${assetName}`
     await httpDownload(url, archivePath, {
       logger,
@@ -337,11 +339,11 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
     const isStandalone = !isZip && !isTarGz
 
     if (isStandalone) {
-      // Standalone binary (e.g., sfw) - create node_modules structure for VFS compatibility.
+      // Standalone binary - create node_modules structure for VFS compatibility.
       // node-smol VFS requires all files to be under node_modules/ for security.
       logger.log(`  Preparing ${toolName}...`)
 
-      // Create node_modules/@socketsecurity/sfw-bin/ structure.
+      // Create node_modules/@socketsecurity/{toolName}-bin/ structure.
       const packageDir = normalizePath(
         path.join(
           toolsDir,

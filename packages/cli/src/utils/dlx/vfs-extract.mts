@@ -29,7 +29,6 @@
  * ```
  *
  * VFS structure in SEA binaries:
- *   sfw                               # Standalone binary from GitHub release
  *   socket-patch                      # Standalone Rust binary from GitHub release
  *   node_modules/
  *     ├── @cyclonedx/cdxgen/        # Full package with dependencies
@@ -40,6 +39,8 @@
  *     │   ├── bin/coana
  *     │   ├── package.json
  *     │   └── node_modules/
+ *     ├── @socketsecurity/sfw-bin/  # Standalone binary from GitHub release
+ *     │   └── sfw
  *     └── synp/
  *         ├── bin/synp
  *         ├── package.json
@@ -89,7 +90,7 @@ export type ExternalTool = (typeof EXTERNAL_TOOLS)[number]
 
 // Map of npm package tools to their node_modules/ paths.
 // These are full npm packages with dependencies and node_modules/ subdirectories.
-// Standalone binaries (like sfw) are NOT in this map - they use direct file paths.
+// Note: sfw uses GitHub binary for SEA (standalone), npm package for CLI (dlx).
 const TOOL_NPM_PATHS: Partial<
   Record<ExternalTool, { packageName: string; binPath: string }>
 > = {
@@ -109,8 +110,10 @@ const TOOL_NPM_PATHS: Partial<
 
 // Map of standalone binary tools to their VFS paths.
 // These tools are single binaries from GitHub releases without npm dependencies.
-// sfw is stored under node_modules/ for VFS structure, socket-patch is at root level.
+// sfw is stored under node_modules/@socketsecurity/sfw-bin/ for VFS structure.
 const TOOL_STANDALONE_PATHS: Partial<Record<ExternalTool, string>> = {
+  // sfw is a standalone binary from GitHub releases (SocketDev/sfw-free).
+  // Note: npm CLI uses the sfw npm package via dlx instead.
   sfw: 'node_modules/@socketsecurity/sfw-bin/sfw',
   // socket-patch is a Rust binary downloaded from GitHub releases.
   // As of v2.0.0, it's bundled directly (not as an npm package).
@@ -145,7 +148,6 @@ function getToolFilePath(tool: ExternalTool, nodeSmolBase: string): string {
  * Structure:
  * ~/.socket/_dlx/<node-smol-hash>/
  *   ├── node/node                    # Node binary
- *   ├── sfw                          # Standalone binary (GitHub release)
  *   ├── socket-patch                 # Standalone Rust binary (GitHub release)
  *   └── node_modules/                # npm packages with dependencies
  *       ├── @cyclonedx/cdxgen/
@@ -154,6 +156,8 @@ function getToolFilePath(tool: ExternalTool, nodeSmolBase: string): string {
  *       ├── @coana-tech/cli/
  *       │   ├── bin/coana
  *       │   └── node_modules/
+ *       ├── @socketsecurity/sfw-bin/ # Standalone sfw binary (GitHub release)
+ *       │   └── sfw
  *       └── synp/
  *           ├── bin/synp
  *           └── node_modules/
@@ -659,7 +663,7 @@ export async function extractExternalTools(
  *
  * @example
  * const paths = getToolPaths()
- * logger.log('sfw:', paths.sfw)  // ~/.socket/_dlx/<hash>/sfw
+ * logger.log('sfw:', paths.sfw)  // ~/.socket/_dlx/<hash>/node_modules/@socketsecurity/sfw-bin/sfw
  * logger.log('cdxgen:', paths.cdxgen)  // ~/.socket/_dlx/<hash>/node_modules/@cyclonedx/cdxgen/bin/cdxgen
  */
 export function getToolPaths(): Record<ExternalTool, string> {
