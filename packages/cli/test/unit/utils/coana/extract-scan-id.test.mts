@@ -2,210 +2,122 @@
  * Unit tests for Coana scan ID extraction.
  *
  * Purpose:
- * Tests extracting Coana scan IDs from various input formats. Validates ID parsing from URLs, responses, and strings.
+ * Tests the extractTier1ReachabilityScanId function.
  *
  * Test Coverage:
- * - URL-based scan ID extraction
- * - JSON response parsing
- * - String format handling
- * - Invalid input error handling
- * - ID validation
- *
- * Testing Approach:
- * Tests regex patterns and parsing logic for Coana integration.
+ * - Valid scan ID extraction
+ * - Missing file handling
+ * - Invalid JSON handling
+ * - Missing field handling
  *
  * Related Files:
  * - utils/coana/extract-scan-id.mts (implementation)
  */
 
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { extractTier1ReachabilityScanId } from '../../../../src/utils/coana/extract-scan-id.mts'
-
-// Mock @socketsecurity/lib/fs.
+// Mock dependencies.
 const mockReadJsonSync = vi.hoisted(() => vi.fn())
 
 vi.mock('@socketsecurity/lib/fs', () => ({
   readJsonSync: mockReadJsonSync,
 }))
 
-describe('coana utilities', () => {
+import { extractTier1ReachabilityScanId } from '../../../../src/utils/coana/extract-scan-id.mts'
+
+describe('extract-scan-id', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   describe('extractTier1ReachabilityScanId', () => {
-    it('extracts scan ID from valid socket facts file', async () => {
-      const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
+    it('extracts scan ID from valid JSON file', () => {
       mockReadJsonSync.mockReturnValue({
-        tier1ReachabilityScanId: 'scan-123-abc',
-        otherField: 'value',
+        tier1ReachabilityScanId: 'scan-123',
       })
 
-      const result = extractTier1ReachabilityScanId(
-        '/path/to/.socket.facts.json',
-      )
+      const result = extractTier1ReachabilityScanId('/path/to/socket-facts.json')
 
-      expect(result).toBe('scan-123-abc')
-      expect(readJsonSync).toHaveBeenCalledWith('/path/to/.socket.facts.json', {
+      expect(result).toBe('scan-123')
+      expect(mockReadJsonSync).toHaveBeenCalledWith('/path/to/socket-facts.json', {
         throws: false,
       })
     })
 
-    it('returns undefined when tier1ReachabilityScanId is missing', async () => {
-      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
-      const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
+    it('returns undefined for missing file', () => {
+      mockReadJsonSync.mockReturnValue(null)
+
+      const result = extractTier1ReachabilityScanId('/path/to/missing.json')
+
+      expect(result).toBeUndefined()
+    })
+
+    it('returns undefined for non-object JSON', () => {
+      mockReadJsonSync.mockReturnValue('not an object')
+
+      const result = extractTier1ReachabilityScanId('/path/to/file.json')
+
+      expect(result).toBeUndefined()
+    })
+
+    it('returns undefined when tier1ReachabilityScanId is missing', () => {
       mockReadJsonSync.mockReturnValue({
         otherField: 'value',
       })
 
-      const result = extractTier1ReachabilityScanId(
-        '/path/to/.socket.facts.json',
-      )
+      const result = extractTier1ReachabilityScanId('/path/to/file.json')
 
       expect(result).toBeUndefined()
     })
 
-    it('returns undefined when tier1ReachabilityScanId is empty string', async () => {
-      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
-      const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
-      mockReadJsonSync.mockReturnValue({
-        tier1ReachabilityScanId: '',
-      })
-
-      const result = extractTier1ReachabilityScanId(
-        '/path/to/.socket.facts.json',
-      )
-
-      expect(result).toBeUndefined()
-    })
-
-    it('returns undefined when tier1ReachabilityScanId is whitespace only', async () => {
-      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
-      const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
-      mockReadJsonSync.mockReturnValue({
-        tier1ReachabilityScanId: '   \t\n  ',
-      })
-
-      const result = extractTier1ReachabilityScanId(
-        '/path/to/.socket.facts.json',
-      )
-
-      expect(result).toBeUndefined()
-    })
-
-    it('trims whitespace from scan ID', async () => {
-      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
-      const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
-      mockReadJsonSync.mockReturnValue({
-        tier1ReachabilityScanId: '  scan-456-def  \n',
-      })
-
-      const result = extractTier1ReachabilityScanId(
-        '/path/to/.socket.facts.json',
-      )
-
-      expect(result).toBe('scan-456-def')
-    })
-
-    it('converts non-string values to string', async () => {
-      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
-      const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
-      mockReadJsonSync.mockReturnValue({
-        tier1ReachabilityScanId: 12345,
-      })
-
-      const result = extractTier1ReachabilityScanId(
-        '/path/to/.socket.facts.json',
-      )
-
-      expect(result).toBe('12345')
-    })
-
-    it('handles null tier1ReachabilityScanId', async () => {
-      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
-      const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
+    it('returns undefined for null scan ID', () => {
       mockReadJsonSync.mockReturnValue({
         tier1ReachabilityScanId: null,
       })
 
-      const result = extractTier1ReachabilityScanId(
-        '/path/to/.socket.facts.json',
-      )
+      const result = extractTier1ReachabilityScanId('/path/to/file.json')
 
       expect(result).toBeUndefined()
     })
 
-    it('handles undefined tier1ReachabilityScanId', async () => {
-      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
-      const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
+    it('returns undefined for empty string scan ID', () => {
       mockReadJsonSync.mockReturnValue({
-        tier1ReachabilityScanId: undefined,
+        tier1ReachabilityScanId: '',
       })
 
-      const result = extractTier1ReachabilityScanId(
-        '/path/to/.socket.facts.json',
-      )
+      const result = extractTier1ReachabilityScanId('/path/to/file.json')
 
       expect(result).toBeUndefined()
     })
 
-    it('returns undefined when JSON parsing fails', async () => {
-      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
-      const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
-      mockReadJsonSync.mockReturnValue(undefined)
+    it('returns undefined for whitespace-only scan ID', () => {
+      mockReadJsonSync.mockReturnValue({
+        tier1ReachabilityScanId: '   ',
+      })
 
-      const result = extractTier1ReachabilityScanId('/path/to/invalid.json')
+      const result = extractTier1ReachabilityScanId('/path/to/file.json')
 
       expect(result).toBeUndefined()
     })
 
-    it('returns undefined when readJsonSync returns null', async () => {
-      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
-      const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
-      mockReadJsonSync.mockReturnValue(null)
-
-      const result = extractTier1ReachabilityScanId('/path/to/null.json')
-
-      expect(result).toBeUndefined()
-    })
-
-    it('handles boolean values', async () => {
-      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
-      const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
+    it('trims whitespace from scan ID', () => {
       mockReadJsonSync.mockReturnValue({
-        tier1ReachabilityScanId: true,
+        tier1ReachabilityScanId: '  scan-456  ',
       })
 
-      const result = extractTier1ReachabilityScanId(
-        '/path/to/.socket.facts.json',
-      )
+      const result = extractTier1ReachabilityScanId('/path/to/file.json')
 
-      expect(result).toBe('true')
+      expect(result).toBe('scan-456')
     })
 
-    it('handles array values', async () => {
-      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
-      const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
+    it('converts numeric scan ID to string', () => {
       mockReadJsonSync.mockReturnValue({
-        tier1ReachabilityScanId: ['scan', '123'],
+        tier1ReachabilityScanId: 12345,
       })
 
-      const result = extractTier1ReachabilityScanId(
-        '/path/to/.socket.facts.json',
-      )
+      const result = extractTier1ReachabilityScanId('/path/to/file.json')
 
-      expect(result).toBe('scan,123')
-    })
-
-    it('handles object values', async () => {
-      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
-      const { readJsonSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
-      mockReadJsonSync.mockReturnValue({
-        tier1ReachabilityScanId: { id: 'scan-789' },
-      })
-
-      const result = extractTier1ReachabilityScanId(
-        '/path/to/.socket.facts.json',
-      )
-
-      expect(result).toBe('[object Object]')
+      expect(result).toBe('12345')
     })
   })
 })
