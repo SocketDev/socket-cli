@@ -1,3 +1,10 @@
 # Dependabot disabled - we manage dependencies manually
+# Using open-pull-requests-limit: 0 to disable version updates
+# See: https://docs.github.com/en/code-security/supply-chain-security/keeping-your-dependencies-updated-automatically/configuration-options-for-dependency-updates
 version: 2
-updates: []
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: yearly
+    open-pull-requests-limit: 0
