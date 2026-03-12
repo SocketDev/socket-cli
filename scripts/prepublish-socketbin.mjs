@@ -13,11 +13,7 @@ import {
   getSocketbinBinaryPath,
   getSocketbinPackageDir,
 } from 'package-builder/scripts/paths.mjs'
-import {
-  generateDatetimeVersion,
-  preparePackageForPublish,
-  readBaseVersion,
-} from 'package-builder/scripts/utils/prepare-package.mjs'
+import { preparePackageForPublish } from 'package-builder/scripts/utils/prepare-package.mjs'
 
 const logger = getDefaultLogger()
 
@@ -43,8 +39,11 @@ const {
 
 if (!platform || !arch) {
   logger.error(
-    'Usage: prepublish-socketbin.mjs --platform=darwin --arch=arm64 [--version=0.0.0-20250122.143052] [--method=sea]',
+    'Usage: prepublish-socketbin.mjs --platform=darwin --arch=arm64 --version=2.1.0 [--method=sea]',
   )
+  process.exitCode = 1
+} else if (!providedVersion) {
+  logger.error('--version is required')
   process.exitCode = 1
 } else {
   // Get package directory from centralized paths.
@@ -57,10 +56,7 @@ if (!platform || !arch) {
     logger.error('Run SEA build first: pnpm run build:sea')
     process.exitCode = 1
   } else {
-    // Determine version: use provided, or generate datetime-based version.
-    const version = providedVersion
-      ? providedVersion.replace(/^v/, '')
-      : generateDatetimeVersion(readBaseVersion(packageDir))
+    const version = providedVersion.replace(/^v/, '')
 
     // Prepare package for publishing.
     const { name } = preparePackageForPublish(packageDir, {
