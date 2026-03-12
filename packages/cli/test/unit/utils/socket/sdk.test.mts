@@ -296,5 +296,98 @@ describe('SDK Utilities', () => {
         }),
       )
     })
+
+    it('includes hooks in SDK options', async () => {
+      const result = await setupSdk({
+        apiToken: 'mock-sdk-value-12345',
+      })
+
+      expect(result.ok).toBe(true)
+      expect(mockSocketSdkConstructor).toHaveBeenCalledWith(
+        'mock-sdk-value-12345',
+        expect.objectContaining({
+          hooks: expect.objectContaining({
+            onRequest: expect.any(Function),
+            onResponse: expect.any(Function),
+          }),
+        }),
+      )
+    })
+
+    it('includes onFileValidation in SDK options', async () => {
+      const result = await setupSdk({
+        apiToken: 'mock-sdk-value-12345',
+      })
+
+      expect(result.ok).toBe(true)
+      expect(mockSocketSdkConstructor).toHaveBeenCalledWith(
+        'mock-sdk-value-12345',
+        expect.objectContaining({
+          onFileValidation: expect.any(Function),
+        }),
+      )
+    })
+
+    it('includes user agent in SDK options', async () => {
+      const result = await setupSdk({
+        apiToken: 'mock-sdk-value-12345',
+      })
+
+      expect(result.ok).toBe(true)
+      expect(mockSocketSdkConstructor).toHaveBeenCalledWith(
+        'mock-sdk-value-12345',
+        expect.objectContaining({
+          userAgent: 'test-user-agent',
+        }),
+      )
+    })
+
+    it('uses HttpProxyAgent for http base URL', async () => {
+      const result = await setupSdk({
+        apiToken: 'mock-sdk-value-12345',
+        apiBaseUrl: 'http://api.socket.dev',
+        apiProxy: 'http://proxy.example.com:8080',
+      })
+
+      expect(result.ok).toBe(true)
+      // Just verify it includes an agent; the specific class is internal.
+      expect(mockSocketSdkConstructor).toHaveBeenCalledWith(
+        'mock-sdk-value-12345',
+        expect.objectContaining({
+          agent: expect.any(Object),
+          baseUrl: 'http://api.socket.dev',
+        }),
+      )
+    })
+
+    it('falls back to default proxy from environment when invalid proxy provided', async () => {
+      mockGetSocketCliApiProxy.mockReturnValue('http://default-proxy.example.com:8080')
+
+      const result = await setupSdk({
+        apiToken: 'mock-sdk-value-12345',
+        apiProxy: 'invalid-proxy',
+      })
+
+      expect(result.ok).toBe(true)
+      // Should use the default proxy from environment.
+      expect(mockSocketSdkConstructor).toHaveBeenCalledWith(
+        'mock-sdk-value-12345',
+        expect.objectContaining({
+          agent: expect.any(Object),
+        }),
+      )
+    })
+
+    it('returns SDK with default token from config', async () => {
+      mockGetConfigValueOrUndef.mockReturnValue('mock-config-value-12345')
+
+      const result = await setupSdk()
+
+      expect(result.ok).toBe(true)
+      expect(mockSocketSdkConstructor).toHaveBeenCalledWith(
+        'mock-config-value-12345',
+        expect.any(Object),
+      )
+    })
   })
 })

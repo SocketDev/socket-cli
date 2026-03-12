@@ -297,6 +297,337 @@ describe('GitHubProvider', () => {
 
       expect(result).toBe(false)
     })
+
+    it('handles deletion exception gracefully', async () => {
+      mockGitDeleteRemoteBranch.mockRejectedValue(new Error('Branch not found'))
+
+      const provider = new GitHubProvider()
+      const result = await provider.deleteBranch('nonexistent-branch')
+
+      expect(result).toBe(false)
+    })
+  })
+
+  describe('updatePr', () => {
+    it('updates PR by merging base into head', async () => {
+      mockOctokit.repos.merge.mockResolvedValue({})
+      mockOctokit.pulls.get.mockResolvedValue({
+        data: { mergeable_state: 'clean' },
+      })
+
+      const provider = new GitHubProvider()
+      await provider.updatePr({
+        owner: 'owner',
+        repo: 'repo',
+        prNumber: 123,
+        head: 'feature-branch',
+        base: 'main',
+      })
+
+      expect(mockOctokit.repos.merge).toHaveBeenCalledWith({
+        owner: 'owner',
+        repo: 'repo',
+        head: 'main',
+        base: 'feature-branch',
+      })
+    })
+
+    it('adds conflict comment when PR becomes dirty', async () => {
+      mockOctokit.repos.merge.mockResolvedValue({})
+      mockOctokit.pulls.get.mockResolvedValue({
+        data: { mergeable_state: 'dirty' },
+      })
+      mockOctokit.issues.createComment.mockResolvedValue({})
+
+      const provider = new GitHubProvider()
+      await provider.updatePr({
+        owner: 'owner',
+        repo: 'repo',
+        prNumber: 456,
+        head: 'feature-branch',
+        base: 'main',
+      })
+
+      expect(mockOctokit.issues.createComment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          issue_number: 456,
+          body: expect.stringContaining('merge conflicts'),
+        }),
+      )
+    })
+
+    it('throws when merge fails', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: false,
+        message: 'Merge failed',
+        cause: 'Conflict',
+      })
+
+      const provider = new GitHubProvider()
+      await expect(
+        provider.updatePr({
+          owner: 'owner',
+          repo: 'repo',
+          prNumber: 789,
+          head: 'feature',
+          base: 'main',
+        }),
+      ).rejects.toThrow()
+    })
+
+    it('throws when PR details fetch fails', async () => {
+      mockWithGitHubRetry
+        .mockResolvedValueOnce({ ok: true, data: {} })
+        .mockResolvedValueOnce({
+          ok: false,
+          message: 'PR not found',
+        })
+
+      const provider = new GitHubProvider()
+      await expect(
+        provider.updatePr({
+          owner: 'owner',
+          repo: 'repo',
+          prNumber: 999,
+          head: 'feature',
+          base: 'main',
+        }),
+      ).rejects.toThrow()
+    })
+  })
+
+  describe('createPr error handling', () => {
+    it('throws when API call fails', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: false,
+        message: 'Failed to create PR',
+        cause: 'Repository not found',
+      })
+
+      const provider = new GitHubProvider()
+      await expect(
+        provider.createPr({
+          owner: 'owner',
+          repo: 'nonexistent',
+          title: 'Test',
+          head: 'feature',
+          base: 'main',
+          body: 'Body',
+        }),
+      ).rejects.toThrow('Repository not found')
+    })
+
+    it('handles closed PR state', async () => {
+      mockOctokit.pulls.create.mockResolvedValue({
+        data: {
+          number: 789,
+          html_url: 'https://github.com/owner/repo/pull/789',
+          state: 'closed',
+          merged_at: null,
+        },
+      })
+
+      const provider = new GitHubProvider()
+      const result = await provider.createPr({
+        owner: 'owner',
+        repo: 'repo',
+        title: 'Test',
+        head: 'feature',
+        base: 'main',
+        body: 'Body',
+      })
+
+      expect(result.state).toBe('closed')
+    })
+  })
+
+  describe('addComment error handling', () => {
+    it('throws when comment fails', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: false,
+        message: 'Comment failed',
+      })
+
+      const provider = new GitHubProvider()
+      await expect(
+        provider.addComment({
+          owner: 'owner',
+          repo: 'repo',
+          prNumber: 123,
+          body: 'Test',
+        }),
+      ).rejects.toThrow('Comment failed')
+    })
+  })
+
+  describe('listPrs advanced scenarios', () => {
+    it('filters PRs by author', async () => {
+      const mockResponse = {
+        repository: {
+          pullRequests: {
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [
+              {
+                number: 1,
+                title: 'PR by user1',
+                author: { login: 'user1' },
+                headRefName: 'f1',
+                baseRefName: 'main',
+                state: 'OPEN',
+                mergeStateStatus: 'CLEAN',
+              },
+              {
+                number: 2,
+                title: 'PR by user2',
+                author: { login: 'user2' },
+                headRefName: 'f2',
+                baseRefName: 'main',
+                state: 'OPEN',
+                mergeStateStatus: 'CLEAN',
+              },
+            ],
+          },
+        },
+      }
+
+      mockCacheFetch.mockResolvedValue(mockResponse)
+
+      const provider = new GitHubProvider()
+      const results = await provider.listPrs({
+        owner: 'owner',
+        repo: 'repo',
+        author: 'user1',
+      })
+
+      expect(results).toHaveLength(1)
+      expect(results[0]!.author).toBe('user1')
+    })
+
+    it('handles PRs without author', async () => {
+      const mockResponse = {
+        repository: {
+          pullRequests: {
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [
+              {
+                number: 1,
+                title: 'PR without author',
+                // No author field.
+                headRefName: 'f1',
+                baseRefName: 'main',
+                state: 'OPEN',
+                mergeStateStatus: 'CLEAN',
+              },
+            ],
+          },
+        },
+      }
+
+      mockCacheFetch.mockResolvedValue(mockResponse)
+
+      const provider = new GitHubProvider()
+      const results = await provider.listPrs({
+        owner: 'owner',
+        repo: 'repo',
+      })
+
+      expect(results).toHaveLength(1)
+      expect(results[0]!.author).toBe('<unknown>')
+    })
+
+    it('handles specific states filter', async () => {
+      const mockResponse = {
+        repository: {
+          pullRequests: {
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [
+              {
+                number: 1,
+                title: 'Open PR',
+                author: { login: 'user' },
+                headRefName: 'f1',
+                baseRefName: 'main',
+                state: 'OPEN',
+                mergeStateStatus: 'CLEAN',
+              },
+            ],
+          },
+        },
+      }
+
+      mockCacheFetch.mockResolvedValue(mockResponse)
+
+      const provider = new GitHubProvider()
+      const results = await provider.listPrs({
+        owner: 'owner',
+        repo: 'repo',
+        states: 'open',
+      })
+
+      expect(results).toHaveLength(1)
+    })
+
+    it('exits early when ghsaId provided and matches found', async () => {
+      const mockResponse = {
+        repository: {
+          pullRequests: {
+            pageInfo: { hasNextPage: true, endCursor: 'cursor' },
+            nodes: [
+              {
+                number: 1,
+                title: 'Fix GHSA-1234',
+                author: { login: 'user' },
+                headRefName: 'socket/fix/GHSA-1234',
+                baseRefName: 'main',
+                state: 'OPEN',
+                mergeStateStatus: 'CLEAN',
+              },
+            ],
+          },
+        },
+      }
+
+      mockCacheFetch.mockResolvedValue(mockResponse)
+
+      const provider = new GitHubProvider()
+      const results = await provider.listPrs({
+        owner: 'owner',
+        repo: 'repo',
+        ghsaId: 'GHSA-1234',
+      })
+
+      // Should have exited early after first page due to ghsaId optimization.
+      expect(mockCacheFetch).toHaveBeenCalledTimes(1)
+      expect(results).toHaveLength(1)
+    })
+
+    it('handles empty repository response', async () => {
+      mockCacheFetch.mockResolvedValue({
+        repository: {
+          pullRequests: undefined,
+        },
+      })
+
+      const provider = new GitHubProvider()
+      const results = await provider.listPrs({
+        owner: 'owner',
+        repo: 'repo',
+      })
+
+      expect(results).toHaveLength(0)
+    })
+
+    it('handles GraphQL error gracefully', async () => {
+      mockCacheFetch.mockRejectedValue(new Error('GraphQL error'))
+
+      const provider = new GitHubProvider()
+      const results = await provider.listPrs({
+        owner: 'owner',
+        repo: 'repo',
+      })
+
+      expect(results).toHaveLength(0)
+    })
   })
 
   describe('metadata', () => {

@@ -90,12 +90,15 @@ catalogs:
     '@socketsecurity/config':
       specifier: 3.0.1
       version: 3.0.1
+    '@socketsecurity/lib':
+      specifier: 5.8.1
+      version: 5.8.1
     '@socketsecurity/registry':
       specifier: 2.0.2
       version: 2.0.2
     '@socketsecurity/sdk':
-      specifier: 3.4.0
-      version: 3.4.0
+      specifier: 3.4.1
+      version: 3.4.1
     '@types/adm-zip':
       specifier: 0.5.7
       version: 0.5.7
@@ -438,14 +441,14 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 5.8.1
+        specifier: 'catalog:'
         version: 5.8.1(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.2(typescript@5.9.3)
       '@socketsecurity/sdk':
         specifier: 'catalog:'
-        version: 3.4.0(typescript@5.9.3)
+        version: 3.4.1(typescript@5.9.3)
       '@types/cmd-shim':
         specifier: 'catalog:'
         version: 5.0.2
@@ -639,7 +642,7 @@ importers:
         specifier: 'catalog:'
         version: 7.28.4
       '@socketsecurity/lib':
-        specifier: 5.8.1
+        specifier: 'catalog:'
         version: 5.8.1(typescript@5.9.3)
       magic-string:
         specifier: 'catalog:'
@@ -693,14 +696,14 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 5.8.1
+        specifier: 'catalog:'
         version: 5.8.1(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.2(typescript@5.9.3)
       '@socketsecurity/sdk':
         specifier: 'catalog:'
-        version: 3.4.0(typescript@5.9.3)
+        version: 3.4.1(typescript@5.9.3)
       '@types/adm-zip':
         specifier: 'catalog:'
         version: 0.5.7
@@ -834,7 +837,7 @@ importers:
   packages/package-builder:
     dependencies:
       '@socketsecurity/lib':
-        specifier: 5.8.1
+        specifier: 'catalog:'
         version: 5.8.1(typescript@5.9.3)
       build-infra:
         specifier: workspace:*
@@ -2040,8 +2043,8 @@ packages:
       typescript:
         optional: true
 
-  '@socketsecurity/sdk@3.4.0':
-    resolution: {integrity: sha512-D2Ou0nkKtz3LaQthzRyWGTPA+z/CxBvfR/qw0pyy2aAFahPfnTH3zW7ukpggsA48yxY3NJCGagFMsLhoYpLm9Q==}
+  '@socketsecurity/sdk@3.4.1':
+    resolution: {integrity: sha512-Znpqi0GPBNk1j6QzKzcnP069Umpdn4mOuYtalux1qnz8/9X7CEcOFk8z8gUwaeQfsfwSP4NEgRcQvZZDkcg8wQ==}
     engines: {node: '>=18', pnpm: '>=10.25.0'}
 
   '@standard-schema/spec@1.0.0':
@@ -5490,7 +5493,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  '@socketsecurity/sdk@3.4.0(typescript@5.9.3)':
+  '@socketsecurity/sdk@3.4.1(typescript@5.9.3)':
     dependencies:
       '@socketregistry/packageurl-js': 1.3.5
       '@socketsecurity/lib': 5.8.1(typescript@5.9.3)

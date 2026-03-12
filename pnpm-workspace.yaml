@@ -37,7 +37,7 @@ catalog:
   '@socketsecurity/config': 3.0.1
   '@socketsecurity/lib': 5.8.1
   '@socketsecurity/registry': 2.0.2
-  '@socketsecurity/sdk': 3.4.0
+  '@socketsecurity/sdk': 3.4.1
   '@types/adm-zip': 0.5.7
   '@types/cmd-shim': 5.0.2
   '@types/ink': 2.0.3

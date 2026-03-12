@@ -838,5 +838,191 @@ describe('socket-package-alert', () => {
 
       expect(output.join('')).toContain('Critical CVE')
     })
+
+    it('shows packages with hidden alerts not above the fold', () => {
+      const output: string[] = []
+      const mockStream = {
+        write: (str: string) => {
+          output.push(str)
+        },
+      } as NodeJS.WriteStream
+
+      // Create more than MIN_ABOVE_THE_FOLD_COUNT packages so some end up hidden.
+      const alertsMap: AlertsByPurl = new Map()
+      // 4 packages with high severity (above fold).
+      alertsMap.set('pkg:npm/pkg1@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: 'a1', severity: 'high' }),
+        }),
+      ])
+      alertsMap.set('pkg:npm/pkg2@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: 'a2', severity: 'high' }),
+        }),
+      ])
+      alertsMap.set('pkg:npm/pkg3@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: 'a3', severity: 'high' }),
+        }),
+      ])
+      alertsMap.set('pkg:npm/pkg4@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: 'a4', severity: 'high' }),
+        }),
+      ])
+      // Additional packages with low severity alerts that will be hidden.
+      alertsMap.set('pkg:npm/pkg5@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: 'a5', severity: 'low' }),
+        }),
+      ])
+      alertsMap.set('pkg:npm/pkg6@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: 'a6', severity: 'low' }),
+        }),
+      ])
+
+      logAlertsMap(alertsMap, { hideAt: 'middle', output: mockStream })
+
+      const combined = output.join('')
+      // Should show the additional hidden packages count.
+      expect(combined).toContain('Packages with hidden alerts')
+    })
+
+    it('aggregates risk counts for hidden packages', () => {
+      const output: string[] = []
+      const mockStream = {
+        write: (str: string) => {
+          output.push(str)
+        },
+      } as NodeJS.WriteStream
+
+      const alertsMap: AlertsByPurl = new Map()
+      // Above fold packages.
+      for (let i = 1; i <= 4; i++) {
+        alertsMap.set(`pkg:npm/high${i}@1.0.0`, [
+          createMockSocketPackageAlert({
+            raw: createMockAlert({ key: `h${i}`, severity: 'critical' }),
+          }),
+        ])
+      }
+      // Hidden packages with different severities.
+      alertsMap.set('pkg:npm/hidden1@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: 'l1', severity: 'low' }),
+        }),
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: 'l2', severity: 'middle' }),
+        }),
+      ])
+      alertsMap.set('pkg:npm/hidden2@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: 'l3', severity: 'low' }),
+        }),
+      ])
+
+      logAlertsMap(alertsMap, { hideAt: 'middle', output: mockStream })
+
+      const combined = output.join('')
+      // Should aggregate risk counts across multiple hidden packages.
+      expect(combined).toContain('low')
+    })
+
+    it('handles single hidden alert per package', () => {
+      const output: string[] = []
+      const mockStream = {
+        write: (str: string) => {
+          output.push(str)
+        },
+      } as NodeJS.WriteStream
+
+      // Create a package with both viewable and hidden alerts.
+      const alertsMap: AlertsByPurl = new Map()
+      alertsMap.set('pkg:npm/test@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: 'high', severity: 'high' }),
+        }),
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: 'low', severity: 'low' }),
+        }),
+      ])
+
+      logAlertsMap(alertsMap, { hideAt: 'middle', output: mockStream })
+
+      const combined = output.join('')
+      // Single hidden alert should show singular form.
+      expect(combined).toContain('+1 Hidden')
+      expect(combined).toContain('risk alert')
+    })
+
+    it('shows severity label for hidden alerts', () => {
+      const output: string[] = []
+      const mockStream = {
+        write: (str: string) => {
+          output.push(str)
+        },
+      } as NodeJS.WriteStream
+
+      const alertsMap: AlertsByPurl = new Map()
+      alertsMap.set('pkg:npm/test@1.0.0', [
+        createMockSocketPackageAlert({
+          blocked: true,
+          raw: createMockAlert({ key: 'blocked', severity: 'low' }),
+        }),
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: 'hidden-mid', severity: 'middle' }),
+        }),
+      ])
+
+      logAlertsMap(alertsMap, { hideAt: 'middle', output: mockStream })
+
+      const combined = output.join('')
+      // The hidden middle alert should show "moderate" label.
+      expect(combined).toContain('moderate')
+    })
+
+    it('handles empty severity gracefully', () => {
+      const output: string[] = []
+      const mockStream = {
+        write: (str: string) => {
+          output.push(str)
+        },
+      } as NodeJS.WriteStream
+
+      const alertsMap: AlertsByPurl = new Map()
+      alertsMap.set('pkg:npm/test@1.0.0', [
+        createMockSocketPackageAlert({
+          blocked: true,
+          raw: createMockAlert({ key: 'no-sev', severity: undefined as any }),
+        }),
+      ])
+
+      logAlertsMap(alertsMap, { output: mockStream })
+
+      // Should not throw.
+      expect(output.join('')).toContain('test@1.0.0')
+    })
+
+    it('shows alerts without description when translation missing', () => {
+      const output: string[] = []
+      const mockStream = {
+        write: (str: string) => {
+          output.push(str)
+        },
+      } as NodeJS.WriteStream
+
+      const alertsMap: AlertsByPurl = new Map()
+      alertsMap.set('pkg:npm/test@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ severity: 'high', type: 'unknownAlertType' }),
+          type: 'unknownAlertType',
+        }),
+      ])
+
+      logAlertsMap(alertsMap, { output: mockStream })
+
+      // Should show type as title when no translation exists.
+      expect(output.join('')).toContain('unknownAlertType')
+    })
   })
 })
