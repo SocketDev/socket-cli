@@ -187,15 +187,16 @@ jobs:
 
       - name: Update socketbin versions
         if: ${{ inputs.publish-socket }}
-        run: node scripts/update-socketbin-versions.mjs
+        run: node scripts/update-socketbin-versions.mjs --prod
 
       - name: Publish socket
         if: ${{ inputs.publish-socket && !inputs.dry-run }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          node scripts/prepare-package-for-publish.mjs packages/socket "$VERSION"
-          cd packages/socket
+          PKG_DIR="packages/package-builder/build/prod/out/socket"
+          node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
+          cd "$PKG_DIR"
           npm publish --provenance --access public --no-git-checks
 
       - name: Publish @socketsecurity/cli
@@ -203,8 +204,9 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          node scripts/prepare-package-for-publish.mjs packages/cli "$VERSION"
-          cd packages/cli
+          PKG_DIR="packages/package-builder/build/prod/out/cli"
+          node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
+          cd "$PKG_DIR"
           npm publish --provenance --access public --no-git-checks
 
       - name: Publish @socketsecurity/cli-with-sentry
@@ -212,8 +214,9 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          node scripts/prepare-package-for-publish.mjs packages/cli-with-sentry "$VERSION"
-          cd packages/cli-with-sentry
+          PKG_DIR="packages/package-builder/build/prod/out/cli-with-sentry"
+          node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
+          cd "$PKG_DIR"
           npm publish --provenance --access public --no-git-checks
 
       - name: Summary

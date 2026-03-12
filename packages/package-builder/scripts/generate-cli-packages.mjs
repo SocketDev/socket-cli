@@ -11,6 +11,7 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import {
   CLI_SENTRY_TEMPLATE_DIR,
   CLI_TEMPLATE_DIR,
+  SOCKET_TEMPLATE_DIR,
   getPackageOutDir,
 } from './paths.mjs'
 import { copyDirectory } from './utils.mjs'
@@ -30,6 +31,11 @@ const PACKAGES = [
     name: '@socketsecurity/cli-with-sentry',
     outputDir: 'cli-with-sentry',
     templateDir: CLI_SENTRY_TEMPLATE_DIR,
+  },
+  {
+    name: 'socket',
+    outputDir: 'socket',
+    templateDir: SOCKET_TEMPLATE_DIR,
   },
 ]
 
