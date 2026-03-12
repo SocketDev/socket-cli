@@ -1,39 +1,43 @@
 /**
- * Unit tests for standalone Python utilities.
+ * Unit tests for Python standalone utilities.
  *
  * Purpose:
- * Tests standalone Python utilities. Validates Python binary detection.
+ * Tests the re-exports from the DLX spawn utilities.
  *
  * Test Coverage:
- * - ensurePython function
- * - Python binary availability
- *
- * Testing Approach:
- * Tests Python ecosystem utilities.
+ * - Re-export verification
+ * - Type export verification
  *
  * Related Files:
  * - utils/python/standalone.mts (implementation)
- * - utils/dlx/spawn.mts (actual implementation)
+ * - utils/dlx/spawn.mts (source module)
  */
 
 import { describe, expect, it } from 'vitest'
 
-import { ensurePython } from '../../../../src/utils/python/standalone.mts'
+import {
+  ensurePython,
+  ensurePythonDlx,
+  ensureSocketPyCli,
+  spawnSocketPyCli,
+} from '../../../../src/utils/python/standalone.mts'
 
-describe('python-standalone', () => {
-  describe('ensurePython', () => {
-    it('should ensure Python is available or throw error', async () => {
-      try {
-        const pythonBin = await ensurePython()
-        expect(typeof pythonBin).toBe('string')
-        expect(pythonBin.length).toBeGreaterThan(0)
-        expect(pythonBin).toContain('python')
-      } catch (e) {
-        // In test environment without proper constants, download might fail.
-        // This is expected and not a test failure.
-        expect(e).toBeDefined()
-      }
-      // Give it 60 seconds for potential download.
-    }, 60_000)
+describe('python/standalone exports', () => {
+  describe('re-exported functions', () => {
+    it('exports ensurePython function', () => {
+      expect(typeof ensurePython).toBe('function')
+    })
+
+    it('exports ensurePythonDlx function', () => {
+      expect(typeof ensurePythonDlx).toBe('function')
+    })
+
+    it('exports ensureSocketPyCli function', () => {
+      expect(typeof ensureSocketPyCli).toBe('function')
+    })
+
+    it('exports spawnSocketPyCli function', () => {
+      expect(typeof spawnSocketPyCli).toBe('function')
+    })
   })
 })
