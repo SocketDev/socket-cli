@@ -7,10 +7,6 @@ concurrency:
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version (semver, auto-generated if omitted)'
-        required: false
-        type: string
       publish-binaries:
         description: 'Publish @socketbin/* binary packages'
         type: boolean
@@ -122,19 +118,11 @@ jobs:
 
       - run: npm install -g npm@latest
 
-      # Determine version for all packages.
-      # Base version comes from cli-package template (source of truth).
-      - name: Determine version
+      # All packages use the same version from cli-package template.
+      - name: Get version
         id: version
         run: |
-          if [ -n "${{ inputs.version }}" ]; then
-            VERSION="${{ inputs.version }}"
-            VERSION="${VERSION#v}"
-          else
-            # Read base version from CLI template (source of truth).
-            BASE=$(node -p "require('./packages/package-builder/templates/cli-package/package.json').version.match(/^(\\d+\\.\\d+\\.\\d+)/)[1]")
-            VERSION="${BASE}-$(date -u +'%Y%m%d.%H%M%S')"
-          fi
+          VERSION=$(node -p "require('./packages/package-builder/templates/cli-package/package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Publishing version: $VERSION"
 
@@ -206,7 +194,7 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          node scripts/prepare-package-for-publish.mjs packages/socket
+          node scripts/prepare-package-for-publish.mjs packages/socket "$VERSION"
           cd packages/socket
           npm publish --provenance --access public --no-git-checks
 
