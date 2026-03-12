@@ -23,7 +23,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   getAlertsMapFromPnpmLockfile,
   getAlertsMapFromPurls,
-} from '../../../../../src/utils/socket/alerts.mts'
+} from '../../../../src/utils/socket/alerts.mts'
 
 // Mock dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -41,32 +41,32 @@ const mockExtractPurlsFromPnpmLockfile = vi.hoisted(() => vi.fn())
 const mockAddArtifactToAlertsMap = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
 const mockGetPublicApiToken = vi.hoisted(() => vi.fn())
-const mockGetDefaultApiToken = vi.hoisted(() => vi.fn(() => 'test-token'))
+const mockGetDefaultApiToken = vi.hoisted(() => vi.fn(() => 'mock-value'))
 
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock('../../../../../src/utils/socket/sdk.mjs', () => ({
+vi.mock('../../../../src/utils/socket/sdk.mjs', () => ({
   getDefaultApiToken: mockGetDefaultApiToken,
   getPublicApiToken: mockGetPublicApiToken,
   setupSdk: mockSetupSdk,
 }))
 
-vi.mock('../../../../../src/utils/config.mts', () => ({
+vi.mock('../../../../src/utils/config.mts', () => ({
   findSocketYmlSync: mockFindSocketYmlSync,
 }))
 
-vi.mock('../../../../../src/utils/validation/filter-config.mts', () => ({
+vi.mock('../../../../src/utils/validation/filter-config.mts', () => ({
   toFilterConfig: mockToFilterConfig,
 }))
 
-vi.mock('../../../../../src/utils/pnpm/lockfile.mts', () => ({
+vi.mock('../../../../src/utils/pnpm/lockfile.mts', () => ({
   extractPurlsFromPnpmLockfile: mockExtractPurlsFromPnpmLockfile,
 }))
 
-vi.mock('../../../../../src/utils/socket/package-alert.mts', () => ({
+vi.mock('../../../../src/utils/socket/package-alert.mts', () => ({
   addArtifactToAlertsMap: mockAddArtifactToAlertsMap,
 }))
 
@@ -101,7 +101,7 @@ describe('alerts-map utilities', () => {
       }
 
       const result = await getAlertsMapFromPnpmLockfile(lockfile, {
-        apiToken: 'test-token',
+        apiToken: 'mock-value',
         nothrow: true,
       })
 
@@ -131,7 +131,7 @@ describe('alerts-map utilities', () => {
       } as any)
 
       const result = await getAlertsMapFromPurls([], {
-        apiToken: 'test-token',
+        apiToken: 'mock-value',
         nothrow: true,
       })
 
@@ -154,6 +154,245 @@ describe('alerts-map utilities', () => {
       } catch (e) {
         expect(e).toBeDefined()
       }
+    })
+
+    it('deduplicates purls before processing', async () => {
+      mockSetupSdk.mockReturnValue({
+        ok: true,
+        data: {
+          batchPackageStream: async function* () {
+            // Empty generator.
+          },
+        },
+      } as any)
+      mockFindSocketYmlSync.mockReturnValue({
+        ok: false,
+      } as any)
+      mockToFilterConfig.mockReturnValue({})
+
+      const result = await getAlertsMapFromPurls(
+        ['pkg:npm/test@1.0.0', 'pkg:npm/test@1.0.0', 'pkg:npm/test@1.0.0'],
+        {
+          apiToken: 'mock-value',
+        },
+      )
+
+      expect(result).toBeInstanceOf(Map)
+    })
+
+    it('processes batch results with onlyFixable option', async () => {
+      mockSetupSdk.mockReturnValue({
+        ok: true,
+        data: {
+          batchPackageStream: async function* () {
+            // Empty generator.
+          },
+        },
+      } as any)
+      mockFindSocketYmlSync.mockReturnValue({
+        ok: false,
+      } as any)
+      mockToFilterConfig.mockReturnValue({})
+
+      const result = await getAlertsMapFromPurls(['pkg:npm/test@1.0.0'], {
+        apiToken: 'mock-value',
+        onlyFixable: true,
+      })
+
+      expect(result).toBeInstanceOf(Map)
+    })
+
+    it('uses socketYml config when found', async () => {
+      mockSetupSdk.mockReturnValue({
+        ok: true,
+        data: {
+          batchPackageStream: async function* () {
+            // Empty generator.
+          },
+        },
+      } as any)
+      mockFindSocketYmlSync.mockReturnValue({
+        ok: true,
+        data: {
+          parsed: {
+            issueRules: {
+              'known-malware': 'error',
+            },
+          },
+        },
+      } as any)
+      mockToFilterConfig.mockReturnValue({})
+
+      const result = await getAlertsMapFromPurls(['pkg:npm/test@1.0.0'], {
+        apiToken: 'mock-value',
+      })
+
+      expect(result).toBeInstanceOf(Map)
+    })
+
+    it('processes successful batch results', async () => {
+      mockSetupSdk.mockReturnValue({
+        ok: true,
+        data: {
+          batchPackageStream: async function* () {
+            yield {
+              success: true,
+              data: {
+                purl: 'pkg:npm/lodash@4.0.0',
+                alerts: [],
+              },
+            }
+          },
+        },
+      } as any)
+      mockFindSocketYmlSync.mockReturnValue({
+        ok: false,
+      } as any)
+      mockToFilterConfig.mockReturnValue({})
+      mockAddArtifactToAlertsMap.mockResolvedValue(undefined)
+
+      const result = await getAlertsMapFromPurls(['pkg:npm/lodash@4.0.0'], {
+        apiToken: 'mock-value',
+      })
+
+      expect(result).toBeInstanceOf(Map)
+      expect(mockAddArtifactToAlertsMap).toHaveBeenCalled()
+    })
+
+    it('handles failed batch results with nothrow option', async () => {
+      mockSetupSdk.mockReturnValue({
+        ok: true,
+        data: {
+          batchPackageStream: async function* () {
+            yield {
+              success: false,
+              status: 500,
+              error: 'Internal server error',
+            }
+          },
+        },
+      } as any)
+      mockFindSocketYmlSync.mockReturnValue({
+        ok: false,
+      } as any)
+      mockToFilterConfig.mockReturnValue({})
+
+      const result = await getAlertsMapFromPurls(['pkg:npm/test@1.0.0'], {
+        apiToken: 'mock-value',
+        nothrow: true,
+      })
+
+      expect(result).toBeInstanceOf(Map)
+      expect(mockLogger.fail).toHaveBeenCalled()
+    })
+
+    it('throws on failed batch results without nothrow', async () => {
+      mockSetupSdk.mockReturnValue({
+        ok: true,
+        data: {
+          batchPackageStream: async function* () {
+            yield {
+              success: false,
+              status: 500,
+              error: 'Internal server error',
+            }
+          },
+        },
+      } as any)
+      mockFindSocketYmlSync.mockReturnValue({
+        ok: false,
+      } as any)
+      mockToFilterConfig.mockReturnValue({})
+
+      await expect(
+        getAlertsMapFromPurls(['pkg:npm/test@1.0.0'], {
+          apiToken: 'mock-value',
+          nothrow: false,
+        }),
+      ).rejects.toThrow('Internal server error')
+    })
+
+    it('throws generic error when batch result has no error message', async () => {
+      mockSetupSdk.mockReturnValue({
+        ok: true,
+        data: {
+          batchPackageStream: async function* () {
+            yield {
+              success: false,
+              status: 500,
+            }
+          },
+        },
+      } as any)
+      mockFindSocketYmlSync.mockReturnValue({
+        ok: false,
+      } as any)
+      mockToFilterConfig.mockReturnValue({})
+
+      await expect(
+        getAlertsMapFromPurls(['pkg:npm/test@1.0.0'], {
+          apiToken: 'mock-value',
+          nothrow: false,
+        }),
+      ).rejects.toThrow('Socket API server error (500)')
+    })
+
+    it('updates spinner during processing', async () => {
+      const mockSpinner = {
+        start: vi.fn(),
+        stop: vi.fn(),
+      }
+
+      mockSetupSdk.mockReturnValue({
+        ok: true,
+        data: {
+          batchPackageStream: async function* () {
+            yield {
+              success: true,
+              data: {
+                purl: 'pkg:npm/test@1.0.0',
+                alerts: [],
+              },
+            }
+          },
+        },
+      } as any)
+      mockFindSocketYmlSync.mockReturnValue({
+        ok: false,
+      } as any)
+      mockToFilterConfig.mockReturnValue({})
+      mockAddArtifactToAlertsMap.mockResolvedValue(undefined)
+
+      await getAlertsMapFromPurls(['pkg:npm/test@1.0.0'], {
+        apiToken: 'mock-value',
+        spinner: mockSpinner as any,
+      })
+
+      expect(mockSpinner.start).toHaveBeenCalled()
+      expect(mockSpinner.stop).toHaveBeenCalled()
+    })
+
+    it('passes filter actions to query params', async () => {
+      mockSetupSdk.mockReturnValue({
+        ok: true,
+        data: {
+          batchPackageStream: async function* () {
+            // Empty generator.
+          },
+        },
+      } as any)
+      mockFindSocketYmlSync.mockReturnValue({
+        ok: false,
+      } as any)
+      mockToFilterConfig.mockReturnValue({
+        actions: ['error', 'warn'],
+      })
+
+      const result = await getAlertsMapFromPurls(['pkg:npm/test@1.0.0'], {
+        apiToken: 'mock-value',
+      })
+
+      expect(result).toBeInstanceOf(Map)
     })
   })
 })
