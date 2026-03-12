@@ -1,4 +1,21 @@
-/** @fileoverview Tests for SEA (Single Executable Application) detection utilities. */
+/**
+ * Unit tests for SEA detection utilities.
+ *
+ * Purpose:
+ * Tests the SEA (Single Executable Application) detection and related utilities.
+ *
+ * Test Coverage:
+ * - isSeaBinary function
+ * - getSeaBinaryPath function
+ * - canSelfUpdate function
+ *
+ * Note: These tests verify behavior in a non-SEA environment since the tests
+ * run in Node.js where node:sea module is not available. SEA-specific behavior
+ * is tested by verifying the API surface and return types.
+ *
+ * Related Files:
+ * - src/utils/sea/detect.mts (implementation)
+ */
 
 import { describe, expect, it } from 'vitest'
 
@@ -10,52 +27,60 @@ import {
 
 describe('SEA detection utilities', () => {
   describe('isSeaBinary', () => {
-    it('returns false when node:sea module is not available', () => {
-      // In test environment, node:sea is not available so should return false.
-      const result = isSeaBinary()
-
-      expect(result).toBe(false)
-    })
-  })
-
-  describe('getSeaBinaryPath', () => {
-    it('returns undefined when not running via SEA', () => {
-      // In test environment, node:sea is not available so should return undefined.
-      const result = getSeaBinaryPath()
-
-      expect(result).toBeUndefined()
+    it('returns false in non-SEA environment', () => {
+      // In a test environment running via Node.js (not SEA), this should return false.
+      expect(isSeaBinary()).toBe(false)
     })
 
-    it('returns a string from process.argv[0] (the node binary path)', () => {
-      // process.argv[0] is always available and should be a string.
-      expect(typeof process.argv[0]).toBe('string')
-      expect(process.argv[0]).toBeTruthy()
-    })
-  })
-
-  describe('canSelfUpdate', () => {
-    it('returns false when not running as SEA', () => {
-      // In test environment, node:sea is not available so canSelfUpdate should return false.
-      const result = canSelfUpdate()
-
-      expect(result).toBe(false)
-    })
-
-    it('checks process.argv[0] exists', () => {
-      // canSelfUpdate relies on process.argv[0] being available.
-      expect(process.argv[0]).toBeTruthy()
-    })
-  })
-
-  describe('isSeaBinary caching', () => {
     it('returns consistent results on multiple calls', () => {
-      // isSeaBinary should cache its result.
+      // The result should be cached and consistent.
       const result1 = isSeaBinary()
       const result2 = isSeaBinary()
       const result3 = isSeaBinary()
 
       expect(result1).toBe(result2)
       expect(result2).toBe(result3)
+    })
+
+    it('returns a boolean', () => {
+      expect(typeof isSeaBinary()).toBe('boolean')
+    })
+  })
+
+  describe('getSeaBinaryPath', () => {
+    it('returns undefined in non-SEA environment', () => {
+      // Since we're not running as SEA, this should return undefined.
+      expect(getSeaBinaryPath()).toBeUndefined()
+    })
+
+    it('returns undefined or string type', () => {
+      const result = getSeaBinaryPath()
+      expect(result === undefined || typeof result === 'string').toBe(true)
+    })
+  })
+
+  describe('canSelfUpdate', () => {
+    it('returns false in non-SEA environment', () => {
+      // Self-update requires SEA binary, so false in test environment.
+      expect(canSelfUpdate()).toBe(false)
+    })
+
+    it('returns a boolean', () => {
+      expect(typeof canSelfUpdate()).toBe('boolean')
+    })
+  })
+
+  describe('function exports', () => {
+    it('exports isSeaBinary function', () => {
+      expect(typeof isSeaBinary).toBe('function')
+    })
+
+    it('exports getSeaBinaryPath function', () => {
+      expect(typeof getSeaBinaryPath).toBe('function')
+    })
+
+    it('exports canSelfUpdate function', () => {
+      expect(typeof canSelfUpdate).toBe('function')
     })
   })
 })

@@ -1,398 +1,394 @@
 /**
- * Unit tests for dlx binary resolution.
+ * Unit tests for binary path resolution utilities.
  *
  * Purpose:
- * Tests binary resolution for dlx commands. Validates locating and selecting appropriate binaries.
+ * Tests the binary resolution logic for external tools like Coana, cdxgen, sfw, etc.
  *
  * Test Coverage:
- * - Binary path resolution
- * - Local path override detection
- * - DLX package spec generation
- * - Fallback logic
- *
- * Testing Approach:
- * Uses vi.mock() to mock env modules since they export constants at module load time.
+ * - resolveCoana function
+ * - resolveCdxgen function
+ * - resolvePyCli function
+ * - resolveSfw function
+ * - resolveSocketPatch function
+ * - resolveSynp function
  *
  * Related Files:
- * - utils/dlx/resolve-binary.mts (implementation)
+ * - src/utils/dlx/resolve-binary.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { BinaryResolution } from '../../../../src/utils/dlx/resolve-binary.mjs'
+// Mock all environment variable modules.
+const mockCoanaLocalPath = vi.hoisted(() => ({ SOCKET_CLI_COANA_LOCAL_PATH: '' }))
+const mockCdxgenLocalPath = vi.hoisted(() => ({
+  SOCKET_CLI_CDXGEN_LOCAL_PATH: '',
+}))
+const mockPyCliLocalPath = vi.hoisted(() => ({ SOCKET_CLI_PYCLI_LOCAL_PATH: '' }))
+const mockSfwLocalPath = vi.hoisted(() => ({ SOCKET_CLI_SFW_LOCAL_PATH: '' }))
+const mockSocketPatchLocalPath = vi.hoisted(() => ({
+  SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: '',
+}))
 
-describe('resolve-binary', () => {
+vi.mock('../../../../src/env/socket-cli-coana-local-path.mts', () => mockCoanaLocalPath)
+vi.mock(
+  '../../../../src/env/socket-cli-cdxgen-local-path.mts',
+  () => mockCdxgenLocalPath,
+)
+vi.mock(
+  '../../../../src/env/socket-cli-pycli-local-path.mts',
+  () => mockPyCliLocalPath,
+)
+vi.mock('../../../../src/env/socket-cli-sfw-local-path.mts', () => mockSfwLocalPath)
+vi.mock(
+  '../../../../src/env/socket-cli-socket-patch-local-path.mts',
+  () => mockSocketPatchLocalPath,
+)
+
+// Mock version getters.
+vi.mock('../../../../src/env/coana-version.mts', () => ({
+  getCoanaVersion: () => '1.0.0',
+}))
+vi.mock('../../../../src/env/cdxgen-version.mts', () => ({
+  getCdxgenVersion: () => '10.0.0',
+}))
+vi.mock('../../../../src/env/sfw-version.mts', () => ({
+  getSfwNpmVersion: () => '2.0.0',
+}))
+vi.mock('../../../../src/env/socket-patch-version.mts', () => ({
+  getSocketPatchVersion: () => '2.0.0',
+}))
+vi.mock('../../../../src/env/synp-version.mts', () => ({
+  getSynpVersion: () => '3.0.0',
+}))
+
+// Mock os module.
+const mockOs = vi.hoisted(() => ({
+  platform: vi.fn(() => 'darwin'),
+  arch: vi.fn(() => 'arm64'),
+}))
+vi.mock('node:os', () => ({ default: mockOs }))
+
+describe('binary resolution utilities', () => {
   beforeEach(() => {
+    vi.clearAllMocks()
     vi.resetModules()
+    // Reset all local path mocks.
+    mockCoanaLocalPath.SOCKET_CLI_COANA_LOCAL_PATH = ''
+    mockCdxgenLocalPath.SOCKET_CLI_CDXGEN_LOCAL_PATH = ''
+    mockPyCliLocalPath.SOCKET_CLI_PYCLI_LOCAL_PATH = ''
+    mockSfwLocalPath.SOCKET_CLI_SFW_LOCAL_PATH = ''
+    mockSocketPatchLocalPath.SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH = ''
+    mockOs.platform.mockReturnValue('darwin')
+    mockOs.arch.mockReturnValue('arm64')
   })
 
   describe('resolveCoana', () => {
-    it('should return local path when SOCKET_CLI_COANA_LOCAL_PATH is set', async () => {
-      vi.doMock('../../../../src/env/socket-cli-coana-local-path.mts', () => ({
-        SOCKET_CLI_COANA_LOCAL_PATH: '/custom/path/to/coana',
-      }))
-
-      const { resolveCoana } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
+    it('returns dlx spec when no local path is set', async () => {
+      const { resolveCoana } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
 
       const result = resolveCoana()
 
       expect(result).toEqual({
-        type: 'local',
-        path: '/custom/path/to/coana',
+        type: 'dlx',
+        details: {
+          name: '@coana-tech/cli',
+          version: '1.0.0',
+          binaryName: 'coana',
+        },
       })
     })
 
-    it('should return dlx package spec when SOCKET_CLI_COANA_LOCAL_PATH is not set', async () => {
-      vi.doMock('../../../../src/env/socket-cli-coana-local-path.mts', () => ({
-        SOCKET_CLI_COANA_LOCAL_PATH: undefined,
-      }))
-      vi.doMock('../../../../src/env/coana-version.mts', () => ({
-        getCoanaVersion: () => '1.0.0',
-      }))
+    it('returns local path when SOCKET_CLI_COANA_LOCAL_PATH is set', async () => {
+      mockCoanaLocalPath.SOCKET_CLI_COANA_LOCAL_PATH = '/custom/path/coana'
 
-      const { resolveCoana } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
-
-      const result = resolveCoana() as Extract<
-        BinaryResolution,
-        { type: 'dlx' }
-      >
-
-      expect(result.type).toBe('dlx')
-      expect(result.details.name).toBe('@coana-tech/cli')
-      expect(result.details.version).toBe('1.0.0')
-      expect(result.details.binaryName).toBe('coana')
-    })
-
-    it('should prefer local path over dlx when both available', async () => {
-      vi.doMock('../../../../src/env/socket-cli-coana-local-path.mts', () => ({
-        SOCKET_CLI_COANA_LOCAL_PATH: '/local/coana',
-      }))
-
-      const { resolveCoana } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
+      const { resolveCoana } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
 
       const result = resolveCoana()
 
       expect(result).toEqual({
         type: 'local',
-        path: '/local/coana',
+        path: '/custom/path/coana',
       })
     })
   })
 
   describe('resolveCdxgen', () => {
-    it('should return local path when SOCKET_CLI_CDXGEN_LOCAL_PATH is set', async () => {
-      vi.doMock('../../../../src/env/socket-cli-cdxgen-local-path.mts', () => ({
-        SOCKET_CLI_CDXGEN_LOCAL_PATH: '/custom/path/to/cdxgen',
-      }))
+    it('returns dlx spec when no local path is set', async () => {
+      const { resolveCdxgen } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
 
-      const { resolveCdxgen } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
+      const result = resolveCdxgen()
+
+      expect(result).toEqual({
+        type: 'dlx',
+        details: {
+          name: '@cyclonedx/cdxgen',
+          version: '10.0.0',
+          binaryName: 'cdxgen',
+        },
+      })
+    })
+
+    it('returns local path when SOCKET_CLI_CDXGEN_LOCAL_PATH is set', async () => {
+      mockCdxgenLocalPath.SOCKET_CLI_CDXGEN_LOCAL_PATH = '/custom/path/cdxgen'
+
+      const { resolveCdxgen } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
 
       const result = resolveCdxgen()
 
       expect(result).toEqual({
         type: 'local',
-        path: '/custom/path/to/cdxgen',
+        path: '/custom/path/cdxgen',
       })
-    })
-
-    it('should return dlx package spec when SOCKET_CLI_CDXGEN_LOCAL_PATH is not set', async () => {
-      vi.doMock('../../../../src/env/socket-cli-cdxgen-local-path.mts', () => ({
-        SOCKET_CLI_CDXGEN_LOCAL_PATH: undefined,
-      }))
-      vi.doMock('../../../../src/env/cdxgen-version.mts', () => ({
-        getCdxgenVersion: () => '10.0.0',
-      }))
-
-      const { resolveCdxgen } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
-
-      const result = resolveCdxgen() as Extract<
-        BinaryResolution,
-        { type: 'dlx' }
-      >
-
-      expect(result.type).toBe('dlx')
-      expect(result.details.name).toBe('@cyclonedx/cdxgen')
-      expect(result.details.binaryName).toBe('cdxgen')
     })
   })
 
   describe('resolvePyCli', () => {
-    it('should return local path when SOCKET_CLI_PYCLI_LOCAL_PATH is set', async () => {
-      vi.doMock('../../../../src/env/socket-cli-pycli-local-path.mts', () => ({
-        SOCKET_CLI_PYCLI_LOCAL_PATH: '/custom/path/to/pycli',
-      }))
-
-      const { resolvePyCli } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
-
-      const result = resolvePyCli()
-
-      expect(result).toEqual({
-        type: 'local',
-        path: '/custom/path/to/pycli',
-      })
-    })
-
-    it('should return python type when SOCKET_CLI_PYCLI_LOCAL_PATH is not set', async () => {
-      vi.doMock('../../../../src/env/socket-cli-pycli-local-path.mts', () => ({
-        SOCKET_CLI_PYCLI_LOCAL_PATH: undefined,
-      }))
-
-      const { resolvePyCli } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
+    it('returns python type when no local path is set', async () => {
+      const { resolvePyCli } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
 
       const result = resolvePyCli()
 
       expect(result).toEqual({ type: 'python' })
     })
+
+    it('returns local path when SOCKET_CLI_PYCLI_LOCAL_PATH is set', async () => {
+      mockPyCliLocalPath.SOCKET_CLI_PYCLI_LOCAL_PATH = '/custom/path/socket-pycli'
+
+      const { resolvePyCli } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
+
+      const result = resolvePyCli()
+
+      expect(result).toEqual({
+        type: 'local',
+        path: '/custom/path/socket-pycli',
+      })
+    })
   })
 
   describe('resolveSfw', () => {
-    it('should return local path when SOCKET_CLI_SFW_LOCAL_PATH is set', async () => {
-      vi.doMock('../../../../src/env/socket-cli-sfw-local-path.mts', () => ({
-        SOCKET_CLI_SFW_LOCAL_PATH: '/custom/path/to/sfw',
-      }))
+    it('returns dlx spec when no local path is set', async () => {
+      const { resolveSfw } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
 
-      const { resolveSfw } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
+      const result = resolveSfw()
+
+      expect(result).toEqual({
+        type: 'dlx',
+        details: {
+          name: 'sfw',
+          version: '2.0.0',
+          binaryName: 'sfw',
+        },
+      })
+    })
+
+    it('returns local path when SOCKET_CLI_SFW_LOCAL_PATH is set', async () => {
+      mockSfwLocalPath.SOCKET_CLI_SFW_LOCAL_PATH = '/custom/path/sfw'
+
+      const { resolveSfw } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
 
       const result = resolveSfw()
 
       expect(result).toEqual({
         type: 'local',
-        path: '/custom/path/to/sfw',
+        path: '/custom/path/sfw',
       })
-    })
-
-    it('should return dlx type when SOCKET_CLI_SFW_LOCAL_PATH is not set', async () => {
-      vi.doMock('../../../../src/env/socket-cli-sfw-local-path.mts', () => ({
-        SOCKET_CLI_SFW_LOCAL_PATH: undefined,
-      }))
-      vi.doMock('../../../../src/env/sfw-version.mts', () => ({
-        getSfwNpmVersion: () => '2.0.0',
-      }))
-
-      const { resolveSfw } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
-
-      const result = resolveSfw() as Extract<BinaryResolution, { type: 'dlx' }>
-
-      expect(result.type).toBe('dlx')
-      expect(result.details.name).toBe('sfw')
-      expect(result.details.binaryName).toBe('sfw')
-      expect(result.details.version).toBe('2.0.0')
-    })
-  })
-
-  describe('resolveSynp', () => {
-    it('should always return dlx package spec', async () => {
-      vi.doMock('../../../../src/env/synp-version.mts', () => ({
-        getSynpVersion: () => '1.0.0',
-      }))
-
-      const { resolveSynp } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
-
-      const result = resolveSynp() as Extract<BinaryResolution, { type: 'dlx' }>
-
-      expect(result.type).toBe('dlx')
-      expect(result.details.name).toBe('synp')
-      expect(result.details.binaryName).toBe('synp')
     })
   })
 
   describe('resolveSocketPatch', () => {
-    it('should return local path when SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH is set', async () => {
-      vi.doMock(
-        '../../../../src/env/socket-cli-socket-patch-local-path.mts',
-        () => ({
-          SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: '/custom/path/to/socket-patch',
-        }),
-      )
+    it('returns github-release spec for darwin-arm64', async () => {
+      mockOs.platform.mockReturnValue('darwin')
+      mockOs.arch.mockReturnValue('arm64')
 
-      const { resolveSocketPatch } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
+      const { resolveSocketPatch } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
 
       const result = resolveSocketPatch()
 
       expect(result).toEqual({
-        type: 'local',
-        path: '/custom/path/to/socket-patch',
+        type: 'github-release',
+        details: {
+          owner: 'SocketDev',
+          repo: 'socket-patch',
+          version: '2.0.0',
+          assetName: 'socket-patch-aarch64-apple-darwin.tar.gz',
+          binaryName: 'socket-patch',
+        },
       })
     })
 
-    it('should return github-release type for darwin-arm64', async () => {
-      vi.doMock(
-        '../../../../src/env/socket-cli-socket-patch-local-path.mts',
-        () => ({
-          SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: undefined,
-        }),
+    it('returns github-release spec for darwin-x64', async () => {
+      mockOs.platform.mockReturnValue('darwin')
+      mockOs.arch.mockReturnValue('x64')
+
+      const { resolveSocketPatch } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
       )
-      vi.doMock('../../../../src/env/socket-patch-version.mts', () => ({
-        getSocketPatchVersion: () => '2.0.0',
-      }))
-      vi.doMock('node:os', () => ({
-        default: {
-          platform: () => 'darwin',
-          arch: () => 'arm64',
+
+      const result = resolveSocketPatch()
+
+      expect(result).toEqual({
+        type: 'github-release',
+        details: {
+          owner: 'SocketDev',
+          repo: 'socket-patch',
+          version: '2.0.0',
+          assetName: 'socket-patch-x86_64-apple-darwin.tar.gz',
+          binaryName: 'socket-patch',
         },
-      }))
-
-      const { resolveSocketPatch } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
-
-      const result = resolveSocketPatch() as Extract<
-        BinaryResolution,
-        { type: 'github-release' }
-      >
-
-      expect(result.type).toBe('github-release')
-      expect(result.details.owner).toBe('SocketDev')
-      expect(result.details.repo).toBe('socket-patch')
-      expect(result.details.version).toBe('2.0.0')
-      expect(result.details.assetName).toBe(
-        'socket-patch-aarch64-apple-darwin.tar.gz',
-      )
-      expect(result.details.binaryName).toBe('socket-patch')
+      })
     })
 
-    it('should return github-release type for linux-x64', async () => {
-      vi.doMock(
-        '../../../../src/env/socket-cli-socket-patch-local-path.mts',
-        () => ({
-          SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: undefined,
-        }),
+    it('returns github-release spec for linux-arm64', async () => {
+      mockOs.platform.mockReturnValue('linux')
+      mockOs.arch.mockReturnValue('arm64')
+
+      const { resolveSocketPatch } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
       )
-      vi.doMock('../../../../src/env/socket-patch-version.mts', () => ({
-        getSocketPatchVersion: () => '2.0.0',
-      }))
-      vi.doMock('node:os', () => ({
-        default: {
-          platform: () => 'linux',
-          arch: () => 'x64',
+
+      const result = resolveSocketPatch()
+
+      expect(result).toEqual({
+        type: 'github-release',
+        details: {
+          owner: 'SocketDev',
+          repo: 'socket-patch',
+          version: '2.0.0',
+          assetName: 'socket-patch-aarch64-unknown-linux-gnu.tar.gz',
+          binaryName: 'socket-patch',
         },
-      }))
-
-      const { resolveSocketPatch } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
-
-      const result = resolveSocketPatch() as Extract<
-        BinaryResolution,
-        { type: 'github-release' }
-      >
-
-      expect(result.type).toBe('github-release')
-      expect(result.details.assetName).toBe(
-        'socket-patch-x86_64-unknown-linux-musl.tar.gz',
-      )
+      })
     })
 
-    it('should return github-release type for win32-x64', async () => {
-      vi.doMock(
-        '../../../../src/env/socket-cli-socket-patch-local-path.mts',
-        () => ({
-          SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: undefined,
-        }),
+    it('returns github-release spec for linux-x64', async () => {
+      mockOs.platform.mockReturnValue('linux')
+      mockOs.arch.mockReturnValue('x64')
+
+      const { resolveSocketPatch } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
       )
-      vi.doMock('../../../../src/env/socket-patch-version.mts', () => ({
-        getSocketPatchVersion: () => '2.0.0',
-      }))
-      vi.doMock('node:os', () => ({
-        default: {
-          platform: () => 'win32',
-          arch: () => 'x64',
+
+      const result = resolveSocketPatch()
+
+      expect(result).toEqual({
+        type: 'github-release',
+        details: {
+          owner: 'SocketDev',
+          repo: 'socket-patch',
+          version: '2.0.0',
+          assetName: 'socket-patch-x86_64-unknown-linux-musl.tar.gz',
+          binaryName: 'socket-patch',
         },
-      }))
-
-      const { resolveSocketPatch } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
-
-      const result = resolveSocketPatch() as Extract<
-        BinaryResolution,
-        { type: 'github-release' }
-      >
-
-      expect(result.type).toBe('github-release')
-      expect(result.details.assetName).toBe(
-        'socket-patch-x86_64-pc-windows-msvc.zip',
-      )
+      })
     })
 
-    it('should throw error for unsupported platform', async () => {
-      vi.doMock(
-        '../../../../src/env/socket-cli-socket-patch-local-path.mts',
-        () => ({
-          SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: undefined,
-        }),
-      )
-      vi.doMock('node:os', () => ({
-        default: {
-          platform: () => 'freebsd',
-          arch: () => 'x64',
-        },
-      }))
+    it('returns github-release spec for win32-x64', async () => {
+      mockOs.platform.mockReturnValue('win32')
+      mockOs.arch.mockReturnValue('x64')
 
-      const { resolveSocketPatch } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
+      const { resolveSocketPatch } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
+
+      const result = resolveSocketPatch()
+
+      expect(result).toEqual({
+        type: 'github-release',
+        details: {
+          owner: 'SocketDev',
+          repo: 'socket-patch',
+          version: '2.0.0',
+          assetName: 'socket-patch-x86_64-pc-windows-msvc.zip',
+          binaryName: 'socket-patch',
+        },
+      })
+    })
+
+    it('returns github-release spec for win32-arm64', async () => {
+      mockOs.platform.mockReturnValue('win32')
+      mockOs.arch.mockReturnValue('arm64')
+
+      const { resolveSocketPatch } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
+
+      const result = resolveSocketPatch()
+
+      expect(result).toEqual({
+        type: 'github-release',
+        details: {
+          owner: 'SocketDev',
+          repo: 'socket-patch',
+          version: '2.0.0',
+          assetName: 'socket-patch-aarch64-pc-windows-msvc.zip',
+          binaryName: 'socket-patch',
+        },
+      })
+    })
+
+    it('throws error for unsupported platform', async () => {
+      mockOs.platform.mockReturnValue('freebsd')
+      mockOs.arch.mockReturnValue('x64')
+
+      const { resolveSocketPatch } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
 
       expect(() => resolveSocketPatch()).toThrow(
         'socket-patch is not available for platform freebsd-x64',
       )
     })
-  })
 
-  describe('integration scenarios', () => {
-    it('should handle empty string as no local path', async () => {
-      vi.doMock('../../../../src/env/socket-cli-coana-local-path.mts', () => ({
-        SOCKET_CLI_COANA_LOCAL_PATH: '',
-      }))
-      vi.doMock('../../../../src/env/coana-version.mts', () => ({
-        getCoanaVersion: () => '1.0.0',
-      }))
+    it('returns local path when SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH is set', async () => {
+      mockSocketPatchLocalPath.SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH =
+        '/custom/path/socket-patch'
 
-      const { resolveCoana } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
+      const { resolveSocketPatch } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
 
-      const result = resolveCoana()
-
-      // Empty string is falsy, should use dlx.
-      expect(result.type).toBe('dlx')
-    })
-
-    it('should handle relative paths', async () => {
-      vi.doMock('../../../../src/env/socket-cli-cdxgen-local-path.mts', () => ({
-        SOCKET_CLI_CDXGEN_LOCAL_PATH: './local/cdxgen.js',
-      }))
-
-      const { resolveCdxgen } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
-
-      const result = resolveCdxgen()
+      const result = resolveSocketPatch()
 
       expect(result).toEqual({
         type: 'local',
-        path: './local/cdxgen.js',
+        path: '/custom/path/socket-patch',
       })
     })
+  })
 
-    it('should handle absolute paths', async () => {
-      vi.doMock('../../../../src/env/socket-cli-sfw-local-path.mts', () => ({
-        SOCKET_CLI_SFW_LOCAL_PATH: '/usr/local/bin/sfw',
-      }))
+  describe('resolveSynp', () => {
+    it('returns dlx spec', async () => {
+      const { resolveSynp } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
 
-      const { resolveSfw } =
-        await import('../../../../src/utils/dlx/resolve-binary.mjs')
-
-      const result = resolveSfw()
+      const result = resolveSynp()
 
       expect(result).toEqual({
-        type: 'local',
-        path: '/usr/local/bin/sfw',
+        type: 'dlx',
+        details: {
+          name: 'synp',
+          version: '3.0.0',
+          binaryName: 'synp',
+        },
       })
     })
   })
