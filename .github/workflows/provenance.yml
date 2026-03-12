@@ -11,20 +11,20 @@ on:
         description: 'Dry run (build but do not publish)'
         type: boolean
         default: true
-      publish-binaries:
-        description: 'Publish @socketbin/* binary packages'
-        type: boolean
-        default: true
-      publish-socket:
-        description: 'Publish socket package'
-        type: boolean
-        default: true
       publish-cli:
-        description: 'Publish @socketsecurity/cli package'
+        description: '1. Publish @socketsecurity/cli package'
         type: boolean
         default: true
       publish-cli-sentry:
-        description: 'Publish @socketsecurity/cli-with-sentry package'
+        description: '2. Publish @socketsecurity/cli-with-sentry package'
+        type: boolean
+        default: true
+      publish-binaries:
+        description: '3. Publish @socketbin/* binary packages'
+        type: boolean
+        default: true
+      publish-socket:
+        description: '4. Publish socket package (depends on @socketbin/*)'
         type: boolean
         default: true
 
