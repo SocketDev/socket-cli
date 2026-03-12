@@ -465,21 +465,98 @@ describe('cmd-scan-create', () => {
       expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
     })
 
-    it('should pass --tmp flag to handleCreateNewScan', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    describe('--tmp flag', () => {
+      it('should pass --tmp flag to handleCreateNewScan', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdScanCreate.run(
-        ['--org', 'test-org', '--tmp', '.', '--no-interactive'],
-        importMeta,
-        context,
-      )
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '--tmp', '.', '--no-interactive'],
+          importMeta,
+          context,
+        )
 
-      expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
-        expect.objectContaining({
-          tmp: true,
-          pendingHead: false,
-        }),
-      )
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            tmp: true,
+            pendingHead: false,
+          }),
+        )
+      })
+
+      it('should support -t short flag', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '-t', '.', '--no-interactive'],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            tmp: true,
+            pendingHead: false,
+          }),
+        )
+      })
+
+      it('should force pendingHead=false even when --set-as-alerts-page is set', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--tmp',
+            '--set-as-alerts-page',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        // --tmp overrides --set-as-alerts-page.
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            tmp: true,
+            pendingHead: false,
+          }),
+        )
+      })
+
+      it('should support explicit --no-tmp', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '--no-tmp', '.', '--no-interactive'],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            tmp: false,
+            pendingHead: true,
+          }),
+        )
+      })
+
+      it('should default tmp to false when not specified', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '.', '--no-interactive'],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            tmp: false,
+          }),
+        )
+      })
     })
 
     it('should use socket.json defaults for branch', async () => {
