@@ -120,6 +120,12 @@ describe('api utilities', () => {
       expect(result).toContain("doesn't exist")
     })
 
+    it('returns message for 429 Rate Limit', async () => {
+      const result = await getErrorMessageForHttpStatusCode(429)
+      expect(result).toContain('Rate limit exceeded')
+      expect(result).toContain('Too many API requests')
+    })
+
     it('returns message for 500 Internal Server Error', async () => {
       const result = await getErrorMessageForHttpStatusCode(500)
       expect(result).toContain('Server error')

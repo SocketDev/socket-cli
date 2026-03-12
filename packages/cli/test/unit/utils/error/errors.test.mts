@@ -28,6 +28,7 @@ import { UNKNOWN_ERROR } from '@socketsecurity/lib/constants/core'
 
 import {
   AuthError,
+  buildErrorCause,
   ConfigError,
   FileSystemError,
   formatErrorWithDetail,
@@ -512,5 +513,127 @@ describe('Network Error Diagnostics', () => {
       expect(diagnostics).toContain('timeout')
       expect(diagnostics).toContain('35s')
     })
+
+    it('should provide diagnostics for ECONNRESET', () => {
+      const error = Object.assign(new Error('Connection reset'), {
+        code: 'ECONNRESET',
+      })
+      const diagnostics = getNetworkErrorDiagnostics(error)
+      expect(diagnostics).toContain('timeout')
+    })
+
+    it('should provide diagnostics for ESOCKETTIMEDOUT', () => {
+      const error = Object.assign(new Error('Socket timeout'), {
+        code: 'ESOCKETTIMEDOUT',
+      })
+      const diagnostics = getNetworkErrorDiagnostics(error)
+      expect(diagnostics).toContain('timeout')
+    })
+
+    it('should provide diagnostics for EAI_AGAIN', () => {
+      const error = Object.assign(new Error('DNS lookup failed'), {
+        code: 'EAI_AGAIN',
+      })
+      const diagnostics = getNetworkErrorDiagnostics(error)
+      expect(diagnostics).toContain('DNS')
+    })
+
+    it('should provide diagnostics for certificate issues', () => {
+      const error = Object.assign(new Error('Unable to verify'), {
+        code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+      })
+      const diagnostics = getNetworkErrorDiagnostics(error)
+      expect(diagnostics).toContain('certificate')
+    })
+
+    it('should provide diagnostics for self-signed certs', () => {
+      const error = Object.assign(new Error('Self-signed cert'), {
+        code: 'SELF_SIGNED_CERT_IN_CHAIN',
+      })
+      const diagnostics = getNetworkErrorDiagnostics(error)
+      expect(diagnostics).toContain('certificate')
+    })
+
+    it('should provide diagnostics for EHOSTUNREACH', () => {
+      const error = Object.assign(new Error('Host unreachable'), {
+        code: 'EHOSTUNREACH',
+      })
+      const diagnostics = getNetworkErrorDiagnostics(error)
+      expect(diagnostics).toContain('unreachable')
+    })
+
+    it('should detect certificate keyword in message', () => {
+      const error = new Error('certificate validation failed')
+      const diagnostics = getNetworkErrorDiagnostics(error)
+      expect(diagnostics).toContain('certificate')
+    })
+
+    it('should detect getaddrinfo in message', () => {
+      const error = new Error('getaddrinfo failed')
+      const diagnostics = getNetworkErrorDiagnostics(error)
+      expect(diagnostics).toContain('DNS')
+    })
+  })
+})
+
+describe('buildErrorCause', () => {
+  it('should return message with reason appended', async () => {
+    const result = await buildErrorCause(400, 'Bad request', 'Invalid parameter')
+    expect(result).toBe('Bad request (reason: Invalid parameter)')
+  })
+
+  it('should return message only when reason matches message', async () => {
+    const result = await buildErrorCause(400, 'Invalid input', 'Invalid input')
+    expect(result).toBe('Invalid input')
+  })
+
+  it('should return message only when no reason provided', async () => {
+    const result = await buildErrorCause(400, 'Bad request', '')
+    expect(result).toBe('Bad request')
+  })
+
+  it('should skip redundant reasons with high similarity', async () => {
+    const result = await buildErrorCause(
+      400,
+      'Invalid JSON format in request body',
+      'Request body has invalid JSON format',
+    )
+    // Should not add reason because they are too similar.
+    expect(result).not.toContain('reason')
+  })
+
+  it('should include reason when messages are sufficiently different', async () => {
+    const result = await buildErrorCause(
+      400,
+      'Request failed',
+      'Missing required field: name',
+    )
+    expect(result).toContain('reason')
+    expect(result).toContain('Missing required field')
+  })
+
+  it('should handle 429 rate limit errors specially', async () => {
+    const result = await buildErrorCause(429, 'Rate limited', 'Quota exceeded')
+    // Should include quota message.
+    expect(result).toContain('Quota exceeded')
+  })
+
+  it('should handle 429 with message but no reason', async () => {
+    const result = await buildErrorCause(
+      429,
+      'Too many requests',
+      'No error message returned',
+    )
+    expect(result).toContain('Too many requests')
+  })
+
+  it('should handle 429 with no useful error info', async () => {
+    const result = await buildErrorCause(
+      429,
+      'No error message returned',
+      'No error message returned',
+    )
+    // Should return quota message.
+    expect(result.length).toBeGreaterThan(0)
   })
 })
