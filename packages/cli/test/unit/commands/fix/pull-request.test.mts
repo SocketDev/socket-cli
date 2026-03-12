@@ -30,7 +30,11 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { openSocketFixPr } from '../../../../src/commands/fix/pull-request.mts'
+import {
+  cleanupSocketFixPrs,
+  getSocketFixPrs,
+  openSocketFixPr,
+} from '../../../../src/commands/fix/pull-request.mts'
 
 const mockGetOctokit = vi.hoisted(() => vi.fn())
 const mockCreatePrProvider = vi.hoisted(() => vi.fn())
@@ -52,25 +56,47 @@ const mockWithGitHubRetry = vi.hoisted(() =>
   }),
 )
 
+const mockGetSocketFixBranchPattern = vi.hoisted(() =>
+  vi.fn(() => /^socket\/fix\/GHSA-.*/),
+)
+
 // Mock dependencies.
 vi.mock('../../../../src/commands/fix/git.mts', () => ({
+  getSocketFixBranchPattern: mockGetSocketFixBranchPattern,
   getSocketFixPullRequestTitle: mockGetSocketFixPullRequestTitle,
   getSocketFixPullRequestBody: mockGetSocketFixPullRequestBody,
 }))
 
+// Mock debug.
+vi.mock('@socketsecurity/lib/debug', () => ({
+  debug: vi.fn(),
+  debugDir: vi.fn(),
+}))
+
+// Mock pr-lifecycle-logger.
+vi.mock('../../../../src/commands/fix/pr-lifecycle-logger.mts', () => ({
+  logPrEvent: vi.fn(),
+}))
+
+const mockGetOctokitGraphql = vi.hoisted(() => vi.fn())
+const mockCacheFetch = vi.hoisted(() => vi.fn())
+const mockWriteCache = vi.hoisted(() => vi.fn())
+const mockHandleGraphqlError = vi.hoisted(() =>
+  vi.fn(() => ({ ok: false, message: 'GraphQL error' })),
+)
+
 vi.mock('../../../../src/utils/git/github.mts', () => ({
+  cacheFetch: mockCacheFetch,
   getOctokit: mockGetOctokit,
+  getOctokitGraphql: mockGetOctokitGraphql,
   handleGitHubApiError: vi.fn((e: unknown, context: string) => ({
     ok: false,
     message: 'GitHub API error',
     cause: `Error while ${context}: ${e instanceof Error ? e.message : String(e)}`,
   })),
-  handleGraphqlError: vi.fn((_e: unknown, context: string) => ({
-    ok: false,
-    message: 'GitHub GraphQL error',
-    cause: `GraphQL error while ${context}`,
-  })),
+  handleGraphqlError: mockHandleGraphqlError,
   withGitHubRetry: mockWithGitHubRetry,
+  writeCache: mockWriteCache,
 }))
 
 vi.mock('../../../../src/utils/git/provider-factory.mts', () => ({
@@ -319,6 +345,317 @@ describe('pull-request', () => {
         ['GHSA-details-test'],
         mockGhsaDetails,
       )
+    })
+  })
+
+  describe('getSocketFixPrs', () => {
+    beforeEach(() => {
+      mockGetOctokitGraphql.mockReturnValue(vi.fn())
+    })
+
+    it('returns matching PRs', async () => {
+      mockCacheFetch.mockResolvedValueOnce({
+        repository: {
+          pullRequests: {
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [
+              {
+                author: { login: 'testuser' },
+                baseRefName: 'main',
+                headRefName: 'socket/fix/GHSA-xxxx-xxxx-xxxx',
+                mergeStateStatus: 'CLEAN',
+                number: 1,
+                state: 'OPEN',
+                title: 'Fix GHSA-xxxx',
+              },
+              {
+                author: { login: 'otheruser' },
+                baseRefName: 'main',
+                headRefName: 'feature-branch',
+                mergeStateStatus: 'CLEAN',
+                number: 2,
+                state: 'OPEN',
+                title: 'Other PR',
+              },
+            ],
+          },
+        },
+      })
+
+      const result = await getSocketFixPrs('owner', 'repo')
+
+      expect(result).toHaveLength(1)
+      expect(result[0]?.number).toBe(1)
+    })
+
+    it('filters by author', async () => {
+      mockCacheFetch.mockResolvedValueOnce({
+        repository: {
+          pullRequests: {
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [
+              {
+                author: { login: 'testuser' },
+                baseRefName: 'main',
+                headRefName: 'socket/fix/GHSA-xxxx',
+                mergeStateStatus: 'CLEAN',
+                number: 1,
+                state: 'OPEN',
+                title: 'Fix GHSA-xxxx',
+              },
+              {
+                author: { login: 'otheruser' },
+                baseRefName: 'main',
+                headRefName: 'socket/fix/GHSA-yyyy',
+                mergeStateStatus: 'CLEAN',
+                number: 2,
+                state: 'OPEN',
+                title: 'Fix GHSA-yyyy',
+              },
+            ],
+          },
+        },
+      })
+
+      const result = await getSocketFixPrs('owner', 'repo', {
+        author: 'testuser',
+      })
+
+      expect(result).toHaveLength(1)
+      expect(result[0]?.author).toBe('testuser')
+    })
+
+    it('handles GraphQL errors gracefully', async () => {
+      mockCacheFetch.mockRejectedValueOnce(new Error('GraphQL error'))
+
+      const result = await getSocketFixPrs('owner', 'repo')
+
+      expect(result).toEqual([])
+      expect(mockHandleGraphqlError).toHaveBeenCalled()
+    })
+
+    it('handles empty response', async () => {
+      mockCacheFetch.mockResolvedValueOnce({
+        repository: {
+          pullRequests: {
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [],
+          },
+        },
+      })
+
+      const result = await getSocketFixPrs('owner', 'repo')
+
+      expect(result).toEqual([])
+    })
+
+    it('handles missing author in node', async () => {
+      mockCacheFetch.mockResolvedValueOnce({
+        repository: {
+          pullRequests: {
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [
+              {
+                author: null,
+                baseRefName: 'main',
+                headRefName: 'socket/fix/GHSA-xxxx',
+                mergeStateStatus: 'CLEAN',
+                number: 1,
+                state: 'OPEN',
+                title: 'Fix GHSA-xxxx',
+              },
+            ],
+          },
+        },
+      })
+
+      const result = await getSocketFixPrs('owner', 'repo')
+
+      expect(result).toHaveLength(1)
+      // UNKNOWN_VALUE from @socketsecurity/lib/constants/core.
+      expect(result[0]?.author).toBe('<unknown>')
+    })
+
+    it('stops pagination early when ghsaId match found', async () => {
+      mockCacheFetch.mockResolvedValueOnce({
+        repository: {
+          pullRequests: {
+            pageInfo: { hasNextPage: true, endCursor: 'cursor1' },
+            nodes: [
+              {
+                author: { login: 'user1' },
+                baseRefName: 'main',
+                headRefName: 'socket/fix/GHSA-xxxx',
+                mergeStateStatus: 'CLEAN',
+                number: 1,
+                state: 'OPEN',
+                title: 'Fix GHSA-xxxx',
+              },
+            ],
+          },
+        },
+      })
+
+      const result = await getSocketFixPrs('owner', 'repo', {
+        ghsaId: 'GHSA-xxxx',
+      })
+
+      expect(result).toHaveLength(1)
+      // Should have only called cacheFetch once due to early exit.
+      expect(mockCacheFetch).toHaveBeenCalledTimes(1)
+    })
+
+    it('handles null pullRequests response', async () => {
+      mockCacheFetch.mockResolvedValueOnce({
+        repository: {
+          pullRequests: null,
+        },
+      })
+
+      const result = await getSocketFixPrs('owner', 'repo')
+
+      expect(result).toEqual([])
+    })
+  })
+
+  describe('cleanupSocketFixPrs', () => {
+    beforeEach(() => {
+      mockGetOctokitGraphql.mockReturnValue(vi.fn())
+      mockCreatePrProvider.mockReturnValue(mockProvider)
+    })
+
+    it('returns empty array when no matching PRs', async () => {
+      mockCacheFetch.mockResolvedValueOnce({
+        repository: {
+          pullRequests: {
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [],
+          },
+        },
+      })
+
+      const result = await cleanupSocketFixPrs('owner', 'repo', 'GHSA-xxxx')
+
+      expect(result).toEqual([])
+    })
+
+    it('updates stale PRs with BEHIND status', async () => {
+      mockCacheFetch.mockResolvedValueOnce({
+        repository: {
+          pullRequests: {
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [
+              {
+                author: { login: 'testuser' },
+                baseRefName: 'main',
+                headRefName: 'socket/fix/GHSA-xxxx',
+                mergeStateStatus: 'BEHIND',
+                number: 1,
+                state: 'OPEN',
+                title: 'Fix GHSA-xxxx',
+              },
+            ],
+          },
+        },
+      })
+      mockProvider.updatePr.mockResolvedValueOnce({})
+      mockWriteCache.mockResolvedValueOnce(undefined)
+
+      const result = await cleanupSocketFixPrs('owner', 'repo', 'GHSA-xxxx')
+
+      expect(result).toHaveLength(1)
+      expect(mockProvider.updatePr).toHaveBeenCalledWith({
+        owner: 'owner',
+        repo: 'repo',
+        prNumber: 1,
+        head: 'socket/fix/GHSA-xxxx',
+        base: 'main',
+      })
+    })
+
+    it('deletes branches for merged PRs', async () => {
+      mockCacheFetch.mockResolvedValueOnce({
+        repository: {
+          pullRequests: {
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [
+              {
+                author: { login: 'testuser' },
+                baseRefName: 'main',
+                headRefName: 'socket/fix/GHSA-xxxx',
+                mergeStateStatus: 'CLEAN',
+                number: 1,
+                state: 'MERGED',
+                title: 'Fix GHSA-xxxx',
+              },
+            ],
+          },
+        },
+      })
+      mockProvider.deleteBranch.mockResolvedValueOnce(true)
+
+      const result = await cleanupSocketFixPrs('owner', 'repo', 'GHSA-xxxx')
+
+      expect(result).toHaveLength(1)
+      expect(mockProvider.deleteBranch).toHaveBeenCalledWith(
+        'socket/fix/GHSA-xxxx',
+      )
+    })
+
+    it('handles delete branch failure gracefully', async () => {
+      mockCacheFetch.mockResolvedValueOnce({
+        repository: {
+          pullRequests: {
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [
+              {
+                author: { login: 'testuser' },
+                baseRefName: 'main',
+                headRefName: 'socket/fix/GHSA-xxxx',
+                mergeStateStatus: 'CLEAN',
+                number: 1,
+                state: 'MERGED',
+                title: 'Fix GHSA-xxxx',
+              },
+            ],
+          },
+        },
+      })
+      mockProvider.deleteBranch.mockRejectedValueOnce(
+        new Error('Branch not found'),
+      )
+
+      const result = await cleanupSocketFixPrs('owner', 'repo', 'GHSA-xxxx')
+
+      // Should still return the match even if branch deletion fails.
+      expect(result).toHaveLength(1)
+    })
+
+    it('handles update PR failure gracefully', async () => {
+      mockCacheFetch.mockResolvedValueOnce({
+        repository: {
+          pullRequests: {
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [
+              {
+                author: { login: 'testuser' },
+                baseRefName: 'main',
+                headRefName: 'socket/fix/GHSA-xxxx',
+                mergeStateStatus: 'BEHIND',
+                number: 1,
+                state: 'OPEN',
+                title: 'Fix GHSA-xxxx',
+              },
+            ],
+          },
+        },
+      })
+      mockProvider.updatePr.mockRejectedValueOnce(new Error('Update failed'))
+
+      const result = await cleanupSocketFixPrs('owner', 'repo', 'GHSA-xxxx')
+
+      // Should still return the match even if update fails.
+      expect(result).toHaveLength(1)
     })
   })
 })
