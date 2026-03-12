@@ -20,7 +20,7 @@ on:
         type: boolean
         default: true
       socket:
-        description: 'socket (includes @socketbin/* for 8 platforms)'
+        description: 'socket (+ 8 bins)'
         type: boolean
         default: true
 
