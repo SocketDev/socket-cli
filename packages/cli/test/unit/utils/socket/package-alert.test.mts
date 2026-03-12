@@ -18,7 +18,7 @@
  * - utils/socket/package-alert.mts (implementation)
  */
 
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ALERT_SEVERITY } from '../../../../src/utils/alert/severity.mts'
 import {
@@ -30,33 +30,85 @@ import {
   alertsHaveSeverity,
   getAlertSeverityOrder,
   getAlertsSeverityOrder,
+  getCveInfoFromAlertsMap,
   getSeverityLabel,
+  logAlertsMap,
 } from '../../../../src/utils/socket/package-alert.mts'
 
-import type { SocketPackageAlert } from '../../../../src/utils/socket/package-alert.mts'
+import type {
+  AlertsByPurl,
+  SocketPackageAlert,
+} from '../../../../src/utils/socket/package-alert.mts'
+import type { CompactSocketArtifactAlert } from '../../../../src/utils/alert/artifact.mts'
 
-// Mock dependencies.
-vi.mock('../../../../../src/utils/alert/artifact.mts', () => ({
-  isArtifactAlertCve: vi.fn(),
+// Mock getManifestData.
+const mockGetManifestData = vi.hoisted(() => vi.fn())
+vi.mock('@socketsecurity/registry', () => ({
+  getManifestData: mockGetManifestData,
 }))
 
-vi.mock('../../../../../src/utils/alert/fix.mts', () => ({
-  ALERT_FIX_TYPE: {
-    cve: 'cve',
-    upgrade: 'upgrade',
-  },
+// Mock translations.
+const mockGetTranslations = vi.hoisted(() =>
+  vi.fn(() => ({
+    alerts: {
+      criticalCVE: {
+        description: 'Critical vulnerability',
+        title: 'Critical CVE',
+      },
+      missingSemver: {
+        description: 'Package lacks semantic versioning',
+        title: 'Missing Semver',
+      },
+    },
+  })),
+)
+vi.mock('../../../../src/utils/alert/translations.mts', () => ({
+  getTranslations: mockGetTranslations,
 }))
 
-vi.mock('../../../../../src/utils/alert/severity.mts', () => ({
-  ALERT_SEVERITY: {
-    critical: 'critical',
-    high: 'high',
-    middle: 'middle',
-    low: 'low',
-  },
+// Mock debug.
+vi.mock('@socketsecurity/lib/debug', () => ({
+  debugDirNs: vi.fn(),
+  debugNs: vi.fn(),
 }))
+
+// Helper to create mock alerts.
+function createMockAlert(
+  overrides: Partial<CompactSocketArtifactAlert> = {},
+): CompactSocketArtifactAlert {
+  return {
+    key: 'test-key-1',
+    severity: 'high',
+    type: 'criticalCVE',
+    ...overrides,
+  } as CompactSocketArtifactAlert
+}
+
+// Helper to create mock SocketPackageAlert.
+function createMockSocketPackageAlert(
+  overrides: Partial<SocketPackageAlert> = {},
+): SocketPackageAlert {
+  return {
+    blocked: false,
+    critical: false,
+    ecosystem: 'npm',
+    fixable: false,
+    key: 'test-key',
+    name: 'test-package',
+    raw: createMockAlert(),
+    type: 'criticalCVE',
+    upgradable: false,
+    version: '1.0.0',
+    ...overrides,
+  }
+}
 
 describe('socket-package-alert', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetManifestData.mockReturnValue(null)
+  })
+
   describe('alertsHaveBlocked', () => {
     it('returns true when alerts contain blocked alert', () => {
       const alerts: SocketPackageAlert[] = [
@@ -321,6 +373,470 @@ describe('socket-package-alert', () => {
       const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
 
       expect(result.size).toBe(0)
+    })
+
+    it('adds alerts for artifact with blocked action', async () => {
+      const alertsMap: AlertsByPurl = new Map()
+      const artifact = {
+        alerts: [createMockAlert({ action: 'error', key: 'blocked-alert' })],
+        name: 'test-package',
+        type: 'npm',
+        version: '1.0.0',
+      }
+
+      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+
+      expect(result.size).toBe(1)
+      const alerts = result.get('pkg:npm/test-package@1.0.0')
+      expect(alerts).toHaveLength(1)
+      expect(alerts?.[0]?.blocked).toBe(true)
+    })
+
+    it('adds alerts for artifact with critical severity', async () => {
+      const alertsMap: AlertsByPurl = new Map()
+      const artifact = {
+        alerts: [createMockAlert({ severity: 'critical' })],
+        name: 'test-package',
+        type: 'npm',
+        version: '1.0.0',
+      }
+
+      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+
+      expect(result.size).toBe(1)
+      const alerts = result.get('pkg:npm/test-package@1.0.0')
+      expect(alerts?.[0]?.critical).toBe(true)
+    })
+
+    it('skips alerts with ignore action when not explicitly enabled', async () => {
+      const alertsMap: AlertsByPurl = new Map()
+      const artifact = {
+        alerts: [createMockAlert({ action: 'ignore' })],
+        name: 'test-package',
+        type: 'npm',
+        version: '1.0.0',
+      }
+
+      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+
+      expect(result.size).toBe(0)
+    })
+
+    it('includes ignored alerts when explicitly enabled in socketYml', async () => {
+      const alertsMap: AlertsByPurl = new Map()
+      const artifact = {
+        alerts: [createMockAlert({ action: 'ignore', type: 'criticalCVE' })],
+        name: 'test-package',
+        type: 'npm',
+        version: '1.0.0',
+      }
+
+      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+        socketYml: {
+          issueRules: {
+            criticalCVE: true,
+          },
+        } as any,
+      })
+
+      expect(result.size).toBe(1)
+    })
+
+    it('skips alerts when explicitly disabled in socketYml', async () => {
+      const alertsMap: AlertsByPurl = new Map()
+      const artifact = {
+        alerts: [createMockAlert({ type: 'criticalCVE' })],
+        name: 'test-package',
+        type: 'npm',
+        version: '1.0.0',
+      }
+
+      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+        socketYml: {
+          issueRules: {
+            criticalCVE: false,
+          },
+        } as any,
+      })
+
+      expect(result.size).toBe(0)
+    })
+
+    it('handles scoped package names', async () => {
+      const alertsMap: AlertsByPurl = new Map()
+      const artifact = {
+        alerts: [createMockAlert({ action: 'error' })],
+        name: 'package',
+        namespace: '@scope',
+        type: 'npm',
+        version: '1.0.0',
+      }
+
+      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+
+      expect(result.has('pkg:npm/@scope/package@1.0.0')).toBe(true)
+    })
+
+    it('marks alerts as fixable when fix type is cve', async () => {
+      const alertsMap: AlertsByPurl = new Map()
+      const artifact = {
+        alerts: [
+          createMockAlert({
+            fix: { type: 'cve' },
+            props: { firstPatchedVersionIdentifier: '1.0.1' },
+          }),
+        ],
+        name: 'test-package',
+        type: 'npm',
+        version: '1.0.0',
+      }
+
+      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+
+      const alerts = result.get('pkg:npm/test-package@1.0.0')
+      expect(alerts?.[0]?.fixable).toBe(true)
+    })
+
+    it('marks alerts as upgradable when fix type is upgrade', async () => {
+      const alertsMap: AlertsByPurl = new Map()
+      const artifact = {
+        alerts: [createMockAlert({ fix: { type: 'upgrade' } })],
+        name: 'test-package',
+        type: 'npm',
+        version: '1.0.0',
+      }
+
+      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+
+      const alerts = result.get('pkg:npm/test-package@1.0.0')
+      expect(alerts?.[0]?.upgradable).toBe(true)
+    })
+
+    it('does not mark as upgradable when override exists', async () => {
+      const alertsMap: AlertsByPurl = new Map()
+      const artifact = {
+        alerts: [createMockAlert({ fix: { type: 'upgrade' } })],
+        name: 'test-package',
+        type: 'npm',
+        version: '1.0.0',
+      }
+
+      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+        overrides: { 'test-package': '2.0.0' },
+      })
+
+      const alerts = result.get('pkg:npm/test-package@1.0.0')
+      expect(alerts?.[0]?.upgradable).toBe(false)
+    })
+
+    it('consolidates CVE alerts by highest version when consolidate is true', async () => {
+      const alertsMap: AlertsByPurl = new Map()
+      const artifact = {
+        alerts: [
+          createMockAlert({
+            fix: { type: 'cve' },
+            key: 'cve-1',
+            props: {
+              firstPatchedVersionIdentifier: '1.0.1',
+              vulnerableVersionRange: '<1.0.1',
+            },
+          }),
+          createMockAlert({
+            fix: { type: 'cve' },
+            key: 'cve-2',
+            props: {
+              firstPatchedVersionIdentifier: '1.0.2',
+              vulnerableVersionRange: '<1.0.2',
+            },
+          }),
+        ],
+        name: 'test-package',
+        type: 'npm',
+        version: '1.0.0',
+      }
+
+      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+        consolidate: true,
+      })
+
+      const alerts = result.get('pkg:npm/test-package@1.0.0')
+      // Should consolidate to highest version in same major.
+      expect(alerts).toHaveLength(1)
+    })
+
+    it('filters alerts based on custom filter config', async () => {
+      const alertsMap: AlertsByPurl = new Map()
+      const artifact = {
+        alerts: [createMockAlert({ action: 'warn', severity: 'low' })],
+        name: 'test-package',
+        type: 'npm',
+        version: '1.0.0',
+      }
+
+      // Only blocked=true in filter, so low severity warn should not match.
+      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+        filter: { blocked: true, critical: false, cve: false },
+      })
+
+      expect(result.size).toBe(0)
+    })
+  })
+
+  describe('getCveInfoFromAlertsMap', () => {
+    it('returns null when no CVE alerts exist', () => {
+      const alertsMap: AlertsByPurl = new Map()
+      alertsMap.set('pkg:npm/test@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ fix: { type: 'upgrade' } }),
+        }),
+      ])
+
+      const result = getCveInfoFromAlertsMap(alertsMap)
+
+      expect(result).toBeNull()
+    })
+
+    it('extracts CVE info from alerts', () => {
+      const alertsMap: AlertsByPurl = new Map()
+      alertsMap.set('pkg:npm/test@1.0.0', [
+        createMockSocketPackageAlert({
+          ecosystem: 'npm',
+          name: 'test',
+          raw: createMockAlert({
+            fix: { type: 'cve' },
+            key: 'GHSA-xxx',
+            props: {
+              firstPatchedVersionIdentifier: '1.0.1',
+              vulnerableVersionRange: '<1.0.1',
+            },
+          }),
+        }),
+      ])
+
+      const result = getCveInfoFromAlertsMap(alertsMap)
+
+      expect(result).not.toBeNull()
+      expect(result?.has('pkg:npm/test')).toBe(true)
+      const infos = result?.get('pkg:npm/test')
+      expect(infos?.has('GHSA-xxx')).toBe(true)
+    })
+
+    it('handles complex version ranges', () => {
+      const alertsMap: AlertsByPurl = new Map()
+      alertsMap.set('pkg:npm/test@1.0.0', [
+        createMockSocketPackageAlert({
+          ecosystem: 'npm',
+          name: 'test',
+          raw: createMockAlert({
+            fix: { type: 'cve' },
+            key: 'CVE-123',
+            props: {
+              firstPatchedVersionIdentifier: '1.8.2',
+              vulnerableVersionRange: '>= 1.0.0, < 1.8.2',
+            },
+          }),
+        }),
+      ])
+
+      const result = getCveInfoFromAlertsMap(alertsMap)
+
+      expect(result).not.toBeNull()
+      const infos = result?.get('pkg:npm/test')
+      const cveInfo = infos?.get('CVE-123')
+      expect(cveInfo?.vulnerableVersionRange).toBeDefined()
+    })
+
+    it('skips alerts when upgradable filter is false and manifest exists', () => {
+      mockGetManifestData.mockReturnValue({ name: 'test' })
+
+      const alertsMap: AlertsByPurl = new Map()
+      alertsMap.set('pkg:npm/test@1.0.0', [
+        createMockSocketPackageAlert({
+          ecosystem: 'npm',
+          name: 'test',
+          raw: createMockAlert({
+            fix: { type: 'cve' },
+            key: 'CVE-123',
+            props: {
+              firstPatchedVersionIdentifier: '1.0.1',
+              vulnerableVersionRange: '<1.0.1',
+            },
+          }),
+        }),
+      ])
+
+      const result = getCveInfoFromAlertsMap(alertsMap, {
+        filter: { upgradable: false },
+      })
+
+      expect(result).toBeNull()
+    })
+
+    it('handles invalid PURL gracefully', () => {
+      const alertsMap: AlertsByPurl = new Map()
+      alertsMap.set('invalid-purl', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ fix: { type: 'cve' } }),
+        }),
+      ])
+
+      const result = getCveInfoFromAlertsMap(alertsMap)
+
+      expect(result).toBeNull()
+    })
+  })
+
+  describe('logAlertsMap', () => {
+    it('writes alert output to stream', () => {
+      const output: string[] = []
+      const mockStream = {
+        write: (str: string) => {
+          output.push(str)
+        },
+      } as NodeJS.WriteStream
+
+      const alertsMap: AlertsByPurl = new Map()
+      alertsMap.set('pkg:npm/test-package@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ severity: 'high' }),
+        }),
+      ])
+
+      logAlertsMap(alertsMap, { output: mockStream })
+
+      expect(output.join('')).toContain('test-package')
+    })
+
+    it('respects hideAt threshold for severity filtering', () => {
+      const output: string[] = []
+      const mockStream = {
+        write: (str: string) => {
+          output.push(str)
+        },
+      } as NodeJS.WriteStream
+
+      const alertsMap: AlertsByPurl = new Map()
+      alertsMap.set('pkg:npm/test@1.0.0', [
+        createMockSocketPackageAlert({
+          name: 'test',
+          raw: createMockAlert({ severity: 'high' }),
+        }),
+      ])
+
+      // With hideAt: 'none', only blocked alerts would be shown, but high severity will still appear
+      // because of MIN_ABOVE_THE_FOLD_COUNT logic.
+      logAlertsMap(alertsMap, { hideAt: 'none', output: mockStream })
+
+      const combined = output.join('')
+      // The package should still be shown.
+      expect(combined).toContain('test@1.0.0')
+    })
+
+    it('shows blocked alerts regardless of severity', () => {
+      const output: string[] = []
+      const mockStream = {
+        write: (str: string) => {
+          output.push(str)
+        },
+      } as NodeJS.WriteStream
+
+      const alertsMap: AlertsByPurl = new Map()
+      alertsMap.set('pkg:npm/test@1.0.0', [
+        createMockSocketPackageAlert({
+          blocked: true,
+          raw: createMockAlert({ severity: 'low' }),
+        }),
+      ])
+
+      logAlertsMap(alertsMap, { hideAt: 'none', output: mockStream })
+
+      const combined = output.join('')
+      expect(combined).toContain('blocked')
+    })
+
+    it('handles empty alerts map', () => {
+      const output: string[] = []
+      const mockStream = {
+        write: (str: string) => {
+          output.push(str)
+        },
+      } as NodeJS.WriteStream
+
+      const alertsMap: AlertsByPurl = new Map()
+
+      logAlertsMap(alertsMap, { output: mockStream })
+
+      // Should just write newline.
+      expect(output.join('')).toBe('\n')
+    })
+
+    it('shows fixable attribute for fixable alerts', () => {
+      const output: string[] = []
+      const mockStream = {
+        write: (str: string) => {
+          output.push(str)
+        },
+      } as NodeJS.WriteStream
+
+      const alertsMap: AlertsByPurl = new Map()
+      alertsMap.set('pkg:npm/test@1.0.0', [
+        createMockSocketPackageAlert({
+          fixable: true,
+          raw: createMockAlert({ severity: 'high' }),
+        }),
+      ])
+
+      logAlertsMap(alertsMap, { output: mockStream })
+
+      expect(output.join('')).toContain('fixable')
+    })
+
+    it('handles multiple hidden alerts with risk counts', () => {
+      const output: string[] = []
+      const mockStream = {
+        write: (str: string) => {
+          output.push(str)
+        },
+      } as NodeJS.WriteStream
+
+      const alertsMap: AlertsByPurl = new Map()
+      alertsMap.set('pkg:npm/test@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: '1', severity: 'low' }),
+        }),
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: '2', severity: 'low' }),
+        }),
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: '3', severity: 'middle' }),
+        }),
+      ])
+
+      logAlertsMap(alertsMap, { hideAt: 'low', output: mockStream })
+
+      const combined = output.join('')
+      expect(combined).toContain('Hidden')
+    })
+
+    it('uses translations for alert titles', () => {
+      const output: string[] = []
+      const mockStream = {
+        write: (str: string) => {
+          output.push(str)
+        },
+      } as NodeJS.WriteStream
+
+      const alertsMap: AlertsByPurl = new Map()
+      alertsMap.set('pkg:npm/test@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ severity: 'high', type: 'criticalCVE' }),
+          type: 'criticalCVE',
+        }),
+      ])
+
+      logAlertsMap(alertsMap, { output: mockStream })
+
+      expect(output.join('')).toContain('Critical CVE')
     })
   })
 })
