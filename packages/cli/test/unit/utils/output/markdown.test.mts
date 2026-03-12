@@ -22,12 +22,170 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  mdError,
+  mdHeader,
+  mdKeyValue,
+  mdList,
+  mdSection,
   mdTable,
   mdTableOfPairs,
   mdTableStringNumber,
 } from '../../../../src/utils/output/markdown.mts'
 
 describe('markdown utilities', () => {
+  describe('mdHeader', () => {
+    it('creates level 1 header by default', () => {
+      const result = mdHeader('Title')
+      expect(result).toBe('# Title')
+    })
+
+    it('creates header at specified level', () => {
+      expect(mdHeader('Test', 1)).toBe('# Test')
+      expect(mdHeader('Test', 2)).toBe('## Test')
+      expect(mdHeader('Test', 3)).toBe('### Test')
+      expect(mdHeader('Test', 4)).toBe('#### Test')
+      expect(mdHeader('Test', 5)).toBe('##### Test')
+      expect(mdHeader('Test', 6)).toBe('###### Test')
+    })
+
+    it('clamps level to valid range', () => {
+      expect(mdHeader('Test', 0)).toBe('# Test')
+      expect(mdHeader('Test', -1)).toBe('# Test')
+      expect(mdHeader('Test', 7)).toBe('###### Test')
+      expect(mdHeader('Test', 100)).toBe('###### Test')
+    })
+  })
+
+  describe('mdKeyValue', () => {
+    it('formats key-value pair with bold label', () => {
+      const result = mdKeyValue('Status', 'active')
+      expect(result).toBe('**Status**: active')
+    })
+
+    it('handles number values', () => {
+      const result = mdKeyValue('Count', 42)
+      expect(result).toBe('**Count**: 42')
+    })
+
+    it('shows N/A for undefined values', () => {
+      const result = mdKeyValue('Missing', undefined)
+      expect(result).toBe('**Missing**: N/A')
+    })
+
+    it('escapes markdown characters when escaped=true', () => {
+      const result = mdKeyValue('Text', 'some *bold* and _italic_', true)
+      expect(result).toBe('**Text**: some \\*bold\\* and \\_italic\\_')
+    })
+
+    it('does not escape by default', () => {
+      const result = mdKeyValue('Text', 'some *bold* text')
+      expect(result).toBe('**Text**: some *bold* text')
+    })
+  })
+
+  describe('mdList', () => {
+    it('creates bullet list by default', () => {
+      const result = mdList(['item1', 'item2', 'item3'])
+      expect(result).toBe('- item1\n- item2\n- item3')
+    })
+
+    it('creates ordered list when specified', () => {
+      const result = mdList(['first', 'second', 'third'], { ordered: true })
+      expect(result).toBe('1. first\n2. second\n3. third')
+    })
+
+    it('handles empty array', () => {
+      const result = mdList([])
+      expect(result).toBe('')
+    })
+
+    it('handles single item', () => {
+      const result = mdList(['only'])
+      expect(result).toBe('- only')
+    })
+
+    it('applies indentation', () => {
+      const result = mdList(['nested'], { indent: 1 })
+      expect(result).toBe('  - nested')
+    })
+
+    it('applies multiple indentation levels', () => {
+      const result = mdList(['deep'], { indent: 2 })
+      expect(result).toBe('    - deep')
+    })
+
+    it('truncates list when truncateAt is specified', () => {
+      const items = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+      const result = mdList(items, { truncateAt: 3 })
+      expect(result).toContain('- a\n- b\n- c')
+      expect(result).toContain('...and 4 more')
+    })
+
+    it('does not truncate when list is shorter than truncateAt', () => {
+      const items = ['a', 'b']
+      const result = mdList(items, { truncateAt: 5 })
+      expect(result).toBe('- a\n- b')
+      expect(result).not.toContain('more')
+    })
+
+    it('combines ordered and indent options', () => {
+      const result = mdList(['item'], { ordered: true, indent: 1 })
+      expect(result).toBe('  1. item')
+    })
+  })
+
+  describe('mdError', () => {
+    it('formats error message', () => {
+      const result = mdError('Failed to connect')
+      expect(result).toContain('# Error')
+      expect(result).toContain('**Error**: Failed to connect')
+    })
+
+    it('includes cause when provided', () => {
+      const result = mdError('Failed', 'Network timeout')
+      expect(result).toContain('# Error')
+      expect(result).toContain('**Error**: Failed')
+      expect(result).toContain('**Cause**: Network timeout')
+    })
+
+    it('does not include cause section when cause is undefined', () => {
+      const result = mdError('Simple error')
+      expect(result).not.toContain('Cause')
+    })
+  })
+
+  describe('mdSection', () => {
+    it('creates section with header and content', () => {
+      const result = mdSection('Details', 'Some content')
+      expect(result).toBe('## Details\n\nSome content')
+    })
+
+    it('uses level 2 header by default', () => {
+      const result = mdSection('Test', 'Content')
+      expect(result).toContain('## Test')
+    })
+
+    it('uses specified header level', () => {
+      const result = mdSection('Test', 'Content', 3)
+      expect(result).toContain('### Test')
+    })
+
+    it('handles array content', () => {
+      const result = mdSection('Info', ['Line 1', 'Line 2', 'Line 3'])
+      expect(result).toBe('## Info\n\nLine 1\nLine 2\nLine 3')
+    })
+
+    it('handles empty string content', () => {
+      const result = mdSection('Empty', '')
+      expect(result).toBe('## Empty\n\n')
+    })
+
+    it('handles empty array content', () => {
+      const result = mdSection('Empty', [])
+      expect(result).toBe('## Empty\n\n')
+    })
+  })
+
   describe('mdTableStringNumber', () => {
     it('creates markdown table with string keys and number values', () => {
       const data = {
