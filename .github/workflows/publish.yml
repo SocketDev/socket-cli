@@ -182,22 +182,9 @@ jobs:
           done
 
       # Build and publish JS packages.
+      # Order: cli/cli-with-sentry first (independent), then socket (depends on @socketbin/*).
       - name: Build CLI
         run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build
-
-      - name: Update socketbin versions
-        if: ${{ inputs.publish-socket }}
-        run: node scripts/update-socketbin-versions.mjs --prod
-
-      - name: Publish socket
-        if: ${{ inputs.publish-socket && !inputs.dry-run }}
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          PKG_DIR="packages/package-builder/build/prod/out/socket"
-          node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
-          cd "$PKG_DIR"
-          npm publish --provenance --access public --no-git-checks
 
       - name: Publish @socketsecurity/cli
         if: ${{ inputs.publish-cli && !inputs.dry-run }}
@@ -215,6 +202,17 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           PKG_DIR="packages/package-builder/build/prod/out/cli-with-sentry"
+          node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
+          cd "$PKG_DIR"
+          npm publish --provenance --access public --no-git-checks
+
+      # socket published last - depends on @socketbin/* being published first.
+      - name: Publish socket
+        if: ${{ inputs.publish-socket && !inputs.dry-run }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          PKG_DIR="packages/package-builder/build/prod/out/socket"
           node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
           cd "$PKG_DIR"
           npm publish --provenance --access public --no-git-checks

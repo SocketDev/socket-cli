@@ -14,6 +14,7 @@ const logger = getDefaultLogger()
  * - Removes private field
  * - Sets version if provided
  * - Sets buildMethod if provided
+ * - Updates optionalDependencies versions (for lockstep publishing)
  *
  * @param {string} packageDir - Path to the package directory
  * @param {object} [options] - Options
@@ -35,6 +36,13 @@ export function preparePackageForPublish(packageDir, options = {}) {
   // Set version if provided.
   if (version) {
     pkg.version = version
+
+    // Update optionalDependencies to use the same version (lockstep).
+    if (pkg.optionalDependencies) {
+      for (const dep of Object.keys(pkg.optionalDependencies)) {
+        pkg.optionalDependencies[dep] = version
+      }
+    }
   }
 
   // Set buildMethod if provided (for socketbin packages).
