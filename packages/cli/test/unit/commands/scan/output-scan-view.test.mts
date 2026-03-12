@@ -45,7 +45,7 @@ vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
 }))
 
 vi.mock('../../../../src/utils/output/markdown.mts', () => ({
-  mdTable: <T>(data: T[], _columns: string[]) =>
+  mdTable: <T,>(data: T[], _columns: string[]) =>
     `| Table with ${(data as T[]).length} rows |`,
 }))
 
