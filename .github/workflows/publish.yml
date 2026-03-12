@@ -36,25 +36,56 @@ env:
   BUILD_MODE: prod
 
 jobs:
+  # Build CLI bundle once (platform-agnostic JS) and generate platform matrix.
+  build-cli:
+    if: ${{ inputs.publish-binaries }}
+    name: Build CLI bundle
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+
+      - uses: pnpm/action-setup@v4
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build CLI
+        run: pnpm --filter @socketsecurity/cli run build
+
+      - name: Generate platform matrix
+        id: matrix
+        run: |
+          MATRIX=$(node scripts/get-platform-matrix.mjs)
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
+      - name: Upload CLI bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-bundle
+          path: packages/cli/build/cli.js
+          retention-days: 1
+
   # Build SEA binaries for all platforms (only if publishing binaries).
   build-binaries:
     if: ${{ inputs.publish-binaries }}
+    needs: [build-cli]
     name: Build ${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.libc && '-musl' || '' }}
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - { runner: ubuntu-latest, platform: linux, arch: x64 }
-          - { runner: ubuntu-latest, platform: linux, arch: arm64 }
-          - { runner: ubuntu-latest, platform: linux, arch: x64, libc: musl }
-          - { runner: ubuntu-latest, platform: linux, arch: arm64, libc: musl }
-          - { runner: macos-latest, platform: darwin, arch: x64 }
-          - { runner: macos-latest, platform: darwin, arch: arm64 }
-          - { runner: windows-latest, platform: win32, arch: x64 }
-          - { runner: windows-latest, platform: win32, arch: arm64 }
+      matrix: ${{ fromJson(needs.build-cli.outputs.matrix) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -70,8 +101,11 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Build CLI
-        run: pnpm --filter @socketsecurity/cli run build
+      - name: Download CLI bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-bundle
+          path: packages/cli/build
 
       - name: Build SEA binary
         shell: bash
@@ -95,8 +129,8 @@ jobs:
   # Publish all packages.
   publish:
     name: Publish packages
-    needs: [build-binaries]
-    if: ${{ always() && (needs.build-binaries.result == 'success' || needs.build-binaries.result == 'skipped') }}
+    needs: [build-cli, build-binaries]
+    if: ${{ always() && (needs.build-cli.result == 'success' || needs.build-cli.result == 'skipped') && (needs.build-binaries.result == 'success' || needs.build-binaries.result == 'skipped') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -139,7 +173,11 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          PLATFORMS=("linux-x64" "linux-arm64" "linux-x64-musl" "linux-arm64-musl" "darwin-x64" "darwin-arm64" "win32-x64" "win32-arm64")
+          set -euo pipefail
+
+          # Get platform targets from single source of truth.
+          PLATFORMS_STR=$(node scripts/get-platform-targets.mjs)
+          read -ra PLATFORMS <<< "$PLATFORMS_STR"
 
           for target in "${PLATFORMS[@]}"; do
             echo "::group::Publishing @socketbin/cli-${target}"

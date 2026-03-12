@@ -1,22 +1,108 @@
 /**
  * @fileoverview Shared platform target utilities for SEA builds.
  * Provides constants and parsing functions for platform/arch/libc combinations.
+ * This is the single source of truth for all platform definitions.
  */
+
+/**
+ * Complete platform configuration with all metadata.
+ * This is the authoritative source for platform definitions.
+ * @type {ReadonlyArray<{
+ *   platform: string,
+ *   arch: string,
+ *   libc?: string,
+ *   runner: string,
+ *   cpu: string,
+ *   os: string,
+ *   binExt: string,
+ *   description: string
+ * }>}
+ */
+export const PLATFORM_CONFIGS = Object.freeze([
+  {
+    arch: 'arm64',
+    binExt: '',
+    cpu: 'arm64',
+    description: 'macOS ARM64 (Apple Silicon)',
+    os: 'darwin',
+    platform: 'darwin',
+    runner: 'macos-latest',
+  },
+  {
+    arch: 'x64',
+    binExt: '',
+    cpu: 'x64',
+    description: 'macOS x64 (Intel)',
+    os: 'darwin',
+    platform: 'darwin',
+    runner: 'macos-latest',
+  },
+  {
+    arch: 'arm64',
+    binExt: '',
+    cpu: 'arm64',
+    description: 'Linux ARM64 (glibc)',
+    os: 'linux',
+    platform: 'linux',
+    runner: 'ubuntu-latest',
+  },
+  {
+    arch: 'arm64',
+    binExt: '',
+    cpu: 'arm64',
+    description: 'Linux ARM64 (musl/Alpine)',
+    libc: 'musl',
+    os: 'linux',
+    platform: 'linux',
+    runner: 'ubuntu-latest',
+  },
+  {
+    arch: 'x64',
+    binExt: '',
+    cpu: 'x64',
+    description: 'Linux x64 (glibc)',
+    os: 'linux',
+    platform: 'linux',
+    runner: 'ubuntu-latest',
+  },
+  {
+    arch: 'x64',
+    binExt: '',
+    cpu: 'x64',
+    description: 'Linux x64 (musl/Alpine)',
+    libc: 'musl',
+    os: 'linux',
+    platform: 'linux',
+    runner: 'ubuntu-latest',
+  },
+  {
+    arch: 'arm64',
+    binExt: '.exe',
+    cpu: 'arm64',
+    description: 'Windows ARM64',
+    os: 'win32',
+    platform: 'win32',
+    runner: 'windows-latest',
+  },
+  {
+    arch: 'x64',
+    binExt: '.exe',
+    cpu: 'x64',
+    description: 'Windows x64',
+    os: 'win32',
+    platform: 'win32',
+    runner: 'windows-latest',
+  },
+])
 
 /**
  * Valid platform targets for SEA builds.
  * Format: <platform>-<arch>[-musl]
+ * Derived from PLATFORM_CONFIGS.
  */
-export const PLATFORM_TARGETS = [
-  'darwin-arm64',
-  'darwin-x64',
-  'linux-arm64',
-  'linux-arm64-musl',
-  'linux-x64',
-  'linux-x64-musl',
-  'win32-arm64',
-  'win32-x64',
-]
+export const PLATFORM_TARGETS = PLATFORM_CONFIGS.map(
+  c => `${c.platform}-${c.arch}${c.libc ? `-${c.libc}` : ''}`,
+)
 
 /**
  * Valid platforms.
@@ -90,6 +176,18 @@ export function parsePlatformTarget(target) {
  */
 export function isPlatformTarget(target) {
   return PLATFORM_TARGETS.includes(target)
+}
+
+/**
+ * Get the full platform config for a target string.
+ *
+ * @param {string} target - Target string (e.g., "darwin-arm64" or "linux-x64-musl").
+ * @returns {typeof PLATFORM_CONFIGS[number] | undefined} Full platform config or undefined.
+ */
+export function getPlatformConfig(target) {
+  return PLATFORM_CONFIGS.find(
+    c => `${c.platform}-${c.arch}${c.libc ? `-${c.libc}` : ''}` === target,
+  )
 }
 
 /**
