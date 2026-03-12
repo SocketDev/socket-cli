@@ -123,6 +123,7 @@ jobs:
       - run: npm install -g npm@latest
 
       # Determine version for all packages.
+      # Base version comes from cli-package template (source of truth).
       - name: Determine version
         id: version
         run: |
@@ -130,8 +131,8 @@ jobs:
             VERSION="${{ inputs.version }}"
             VERSION="${VERSION#v}"
           else
-            # Read base version from socket package.
-            BASE=$(node -p "require('./packages/socket/package.json').version.match(/^(\\d+\\.\\d+\\.\\d+)/)[1]")
+            # Read base version from CLI template (source of truth).
+            BASE=$(node -p "require('./packages/package-builder/templates/cli-package/package.json').version.match(/^(\\d+\\.\\d+\\.\\d+)/)[1]")
             VERSION="${BASE}-$(date -u +'%Y%m%d.%H%M%S')"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
