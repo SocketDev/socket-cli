@@ -322,4 +322,47 @@ describe('ghsa-tracker', () => {
       expect(result).toEqual([])
     })
   })
+
+  describe('markGhsaFixed with locking', () => {
+    it('uses custom branch name when provided', async () => {
+      const { writeJson } = await import('@socketsecurity/lib/fs')
+      const existingTracker: GhsaTracker = {
+        version: 1,
+        fixed: [],
+      }
+
+      mockReadJson.mockResolvedValue(existingTracker)
+
+      await markGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab', 123, 'custom-branch')
+
+      expect(writeJson).toHaveBeenCalledWith(
+        trackerPath,
+        expect.objectContaining({
+          fixed: expect.arrayContaining([
+            expect.objectContaining({
+              ghsaId: 'GHSA-1234-5678-90ab',
+              branch: 'custom-branch',
+            }),
+          ]),
+        }),
+        { spaces: 2 },
+      )
+    })
+
+    it('omits prNumber when not provided', async () => {
+      const existingTracker: GhsaTracker = {
+        version: 1,
+        fixed: [],
+      }
+
+      mockReadJson.mockResolvedValue(existingTracker)
+
+      await markGhsaFixed(mockCwd, 'GHSA-no-pr', undefined)
+
+      const savedTracker = mockWriteJson.mock.calls[0]![1] as GhsaTracker
+      const record = savedTracker.fixed.find(r => r.ghsaId === 'GHSA-no-pr')
+      expect(record).toBeDefined()
+      expect(record!.prNumber).toBeUndefined()
+    })
+  })
 })

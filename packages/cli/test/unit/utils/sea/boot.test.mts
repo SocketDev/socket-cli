@@ -158,4 +158,17 @@ describe('sea/boot', () => {
       expect(sentMessage[SOCKET_IPC_HANDSHAKE]).toEqual(ipcData)
     })
   })
+
+  describe('waitForBootstrapHandshake', () => {
+    it('resolves with undefined when no IPC channel exists', async () => {
+      // Import fresh module to test default behavior.
+      const { waitForBootstrapHandshake } = await import(
+        '../../../../src/utils/sea/boot.mts'
+      )
+
+      // No IPC channel, should resolve immediately with undefined.
+      const result = await waitForBootstrapHandshake(100)
+      expect(result).toBeUndefined()
+    })
+  })
 })
