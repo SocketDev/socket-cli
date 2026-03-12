@@ -112,6 +112,21 @@ describe('detectMusl', () => {
     expect(detectMusl()).toBe(false)
   })
 
+  it('should detect musl via /proc/version', () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+      // Only /proc/version exists, no /etc/os-release or ld-musl.
+      return path === '/proc/version'
+    })
+    vi.mocked(fs.readFileSync).mockImplementation((path: unknown) => {
+      if (path === '/proc/version') {
+        return 'Linux version 5.15.0 (musl-libc compiler)'
+      }
+      throw new Error('File not found')
+    })
+    expect(detectMusl()).toBe(true)
+  })
+
   it('should cache the result', () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
     let existsSyncCallCount = 0
@@ -474,6 +489,31 @@ describe('clearQuarantine', () => {
 
     expect(spawnMock).not.toHaveBeenCalled()
   })
+
+  it('should call xattr on macOS', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
+    const spawnModule = await import('@socketsecurity/lib/spawn')
+    const spawnMock = vi.mocked(spawnModule.spawn)
+    spawnMock.mockResolvedValue({ exitCode: 0 } as never)
+
+    await clearQuarantine('/path/to/file')
+
+    expect(spawnMock).toHaveBeenCalledWith(
+      'xattr',
+      ['-d', 'com.apple.quarantine', '/path/to/file'],
+      { stdio: 'ignore' },
+    )
+  })
+
+  it('should handle xattr failure gracefully', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
+    const spawnModule = await import('@socketsecurity/lib/spawn')
+    const spawnMock = vi.mocked(spawnModule.spawn)
+    spawnMock.mockRejectedValue(new Error('xattr not found'))
+
+    // Should not throw.
+    await clearQuarantine('/path/to/file')
+  })
 })
 
 describe('ensureExecutable', () => {
@@ -483,6 +523,34 @@ describe('ensureExecutable', () => {
 
   it('should do nothing on Windows', async () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
+
+    // Should not throw.
+    await ensureExecutable('/path/to/file')
+  })
+
+  it('should call chmod on Unix (macOS)', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
+    const chmodMock = vi.spyOn(fs.promises, 'chmod').mockResolvedValue()
+
+    await ensureExecutable('/path/to/file')
+
+    expect(chmodMock).toHaveBeenCalledWith('/path/to/file', 0o755)
+  })
+
+  it('should call chmod on Unix (Linux)', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    const chmodMock = vi.spyOn(fs.promises, 'chmod').mockResolvedValue()
+
+    await ensureExecutable('/path/to/file')
+
+    expect(chmodMock).toHaveBeenCalledWith('/path/to/file', 0o755)
+  })
+
+  it('should handle chmod failure gracefully', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
+    vi.spyOn(fs.promises, 'chmod').mockRejectedValue(
+      new Error('Permission denied'),
+    )
 
     // Should not throw.
     await ensureExecutable('/path/to/file')
