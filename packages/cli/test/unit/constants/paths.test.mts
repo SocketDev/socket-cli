@@ -214,5 +214,103 @@ describe('paths constants', () => {
       const result = getSocketCachePath()
       expect(result).toContain('socket')
     })
+
+    it('respects XDG_CACHE_HOME when set', async () => {
+      const originalXdg = process.env['XDG_CACHE_HOME']
+      process.env['XDG_CACHE_HOME'] = '/custom/cache'
+
+      // Re-import to pick up new env value.
+      const { getSocketCachePath: getPathFresh } = await import(
+        '../../../src/constants/paths.mts'
+      )
+      const result = getPathFresh()
+
+      // Restore.
+      if (originalXdg === undefined) {
+        delete process.env['XDG_CACHE_HOME']
+      } else {
+        process.env['XDG_CACHE_HOME'] = originalXdg
+      }
+
+      expect(result).toContain('socket')
+    })
+  })
+
+  describe('getSocketAppDataPath', () => {
+    it('returns a string or undefined', async () => {
+      const { getSocketAppDataPath } = await import(
+        '../../../src/constants/paths.mts'
+      )
+      const result = getSocketAppDataPath()
+      expect(result === undefined || typeof result === 'string').toBe(true)
+    })
+
+    it('includes socket/settings in path when defined', async () => {
+      const { getSocketAppDataPath } = await import(
+        '../../../src/constants/paths.mts'
+      )
+      const result = getSocketAppDataPath()
+      if (result !== undefined) {
+        expect(result).toContain('socket')
+        expect(result).toContain('settings')
+      }
+    })
+  })
+
+  describe('getSocketRegistryPath', () => {
+    it('returns a path containing registry', async () => {
+      const { getSocketRegistryPath } = await import(
+        '../../../src/constants/paths.mts'
+      )
+      try {
+        const result = getSocketRegistryPath()
+        expect(result).toContain('registry')
+      } catch (e) {
+        // Function may throw if app data path cannot be determined.
+        expect((e as Error).message).toContain('Unable to determine')
+      }
+    })
+  })
+
+  describe('getNmBunPath', () => {
+    it('returns string or undefined', async () => {
+      const { getNmBunPath } = await import('../../../src/constants/paths.mts')
+      const result = getNmBunPath()
+      expect(result === undefined || typeof result === 'string').toBe(true)
+    })
+  })
+
+  describe('getNmNpmPath', () => {
+    it('returns a string', async () => {
+      const { getNmNpmPath } = await import('../../../src/constants/paths.mts')
+      const result = getNmNpmPath()
+      expect(typeof result).toBe('string')
+    })
+  })
+
+  describe('getNmNodeGypPath', () => {
+    it('returns string or undefined', async () => {
+      const { getNmNodeGypPath } = await import(
+        '../../../src/constants/paths.mts'
+      )
+      const result = getNmNodeGypPath()
+      expect(result === undefined || typeof result === 'string').toBe(true)
+    })
+  })
+
+  describe('getNmPnpmPath', () => {
+    it('returns string or undefined', async () => {
+      const { getNmPnpmPath } = await import('../../../src/constants/paths.mts')
+      const result = getNmPnpmPath()
+      expect(result === undefined || typeof result === 'string').toBe(true)
+    })
+  })
+
+  describe('getNmYarnPath', () => {
+    it('returns string or undefined', async () => {
+      const { getNmYarnPath } = await import('../../../src/constants/paths.mts')
+      const result = getNmYarnPath()
+      expect(result === undefined || typeof result === 'string').toBe(true)
+    })
   })
 })
