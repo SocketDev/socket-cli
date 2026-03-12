@@ -8,23 +8,23 @@ on:
   workflow_dispatch:
     inputs:
       dry-run:
-        description: 'Dry run (build but do not publish)'
+        description: 'Dry run (build only)'
         type: boolean
         default: true
-      publish-cli:
-        description: '1. Publish @socketsecurity/cli package'
+      cli:
+        description: '@socketsecurity/cli'
         type: boolean
         default: true
-      publish-cli-sentry:
-        description: '2. Publish @socketsecurity/cli-with-sentry package'
+      cli-sentry:
+        description: '@socketsecurity/cli-with-sentry'
         type: boolean
         default: true
-      publish-binaries:
-        description: '3. Publish @socketbin/* binary packages'
+      binaries:
+        description: '@socketbin/* (8 platforms)'
         type: boolean
         default: true
-      publish-socket:
-        description: '4. Publish socket package (depends on @socketbin/*)'
+      socket:
+        description: 'socket (depends on @socketbin/*)'
         type: boolean
         default: true
 
@@ -38,7 +38,7 @@ env:
 jobs:
   # Build CLI bundle once (platform-agnostic JS) and generate platform matrix.
   build-cli:
-    if: ${{ inputs.publish-binaries }}
+    if: ${{ inputs.binaries }}
     name: Build CLI bundle
     runs-on: ubuntu-latest
     permissions:
@@ -77,7 +77,7 @@ jobs:
 
   # Build SEA binaries for all platforms (only if publishing binaries).
   build-binaries:
-    if: ${{ inputs.publish-binaries }}
+    if: ${{ inputs.binaries }}
     needs: [build-cli]
     name: Build ${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.libc && '-musl' || '' }}
     runs-on: ${{ matrix.runner }}
@@ -162,14 +162,14 @@ jobs:
 
       # Download and publish binary packages.
       - name: Download binaries
-        if: ${{ inputs.publish-binaries }}
+        if: ${{ inputs.binaries }}
         uses: actions/download-artifact@v4
         with:
           path: artifacts
           pattern: binary-*
 
       - name: Publish binary packages
-        if: ${{ inputs.publish-binaries && !inputs.dry-run }}
+        if: ${{ inputs.binaries && !inputs.dry-run }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -225,7 +225,7 @@ jobs:
         run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build
 
       - name: Publish @socketsecurity/cli
-        if: ${{ inputs.publish-cli && !inputs.dry-run }}
+        if: ${{ inputs.cli && !inputs.dry-run }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -235,7 +235,7 @@ jobs:
           npm publish --provenance --access public --no-git-checks
 
       - name: Publish @socketsecurity/cli-with-sentry
-        if: ${{ inputs.publish-cli-sentry && !inputs.dry-run }}
+        if: ${{ inputs.cli-sentry && !inputs.dry-run }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -246,7 +246,7 @@ jobs:
 
       # socket published last - depends on @socketbin/* being published first.
       - name: Publish socket
-        if: ${{ inputs.publish-socket && !inputs.dry-run }}
+        if: ${{ inputs.socket && !inputs.dry-run }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -265,16 +265,16 @@ jobs:
             echo "**Dry run - nothing was published**" >> $GITHUB_STEP_SUMMARY
           else
             echo "### Published packages:" >> $GITHUB_STEP_SUMMARY
-            if [ "${{ inputs.publish-binaries }}" = "true" ]; then
+            if [ "${{ inputs.binaries }}" = "true" ]; then
               echo "- @socketbin/cli-* (8 platforms)" >> $GITHUB_STEP_SUMMARY
             fi
-            if [ "${{ inputs.publish-socket }}" = "true" ]; then
+            if [ "${{ inputs.socket }}" = "true" ]; then
               echo "- socket" >> $GITHUB_STEP_SUMMARY
             fi
-            if [ "${{ inputs.publish-cli }}" = "true" ]; then
+            if [ "${{ inputs.cli }}" = "true" ]; then
               echo "- @socketsecurity/cli" >> $GITHUB_STEP_SUMMARY
             fi
-            if [ "${{ inputs.publish-cli-sentry }}" = "true" ]; then
+            if [ "${{ inputs.cli-sentry }}" = "true" ]; then
               echo "- @socketsecurity/cli-with-sentry" >> $GITHUB_STEP_SUMMARY
             fi
           fi
