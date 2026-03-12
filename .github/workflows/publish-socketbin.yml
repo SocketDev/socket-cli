@@ -52,6 +52,8 @@ env:
   # Opt-in to Node.js 24 for GitHub Actions to avoid deprecation warnings.
   # See: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # Build mode for package output paths (prod in CI).
+  BUILD_MODE: prod
 
 jobs:
   build-sea:
@@ -326,43 +328,31 @@ jobs:
             --arch=${{ matrix.arch }} \
             ${LIBC_FLAG}
 
-      - name: Copy binary to dist/sea for prepublish script
+      - name: Verify binary in socketbin package
         shell: bash
         run: |
-          mkdir -p dist/sea
-
-          # Determine musl suffix
+          # Build outputs directly to socketbin package directory.
           MUSL_SUFFIX=""
           if [ "${{ matrix.libc }}" = "musl" ]; then
             MUSL_SUFFIX="-musl"
           fi
 
-          # Determine source binary name (from build-sea.yml naming).
+          PACKAGE_DIR="packages/package-builder/build/prod/out/socketbin-cli-${{ matrix.platform }}-${{ matrix.arch }}${MUSL_SUFFIX}"
+
           if [ "${{ matrix.platform }}" = "win32" ]; then
-            SOURCE_BINARY="packages/node-sea-builder/dist/sea/socket-win-${{ matrix.arch }}.exe"
-            TARGET_BINARY="dist/sea/socket-${{ matrix.platform }}-${{ matrix.arch }}.exe"
-          elif [ "${{ matrix.platform }}" = "darwin" ]; then
-            SOURCE_BINARY="packages/node-sea-builder/dist/sea/socket-macos-${{ matrix.arch }}"
-            TARGET_BINARY="dist/sea/socket-${{ matrix.platform }}-${{ matrix.arch }}"
+            BINARY_PATH="${PACKAGE_DIR}/socket.exe"
           else
-            SOURCE_BINARY="packages/node-sea-builder/dist/sea/socket-${{ matrix.platform }}-${{ matrix.arch }}${MUSL_SUFFIX}"
-            TARGET_BINARY="dist/sea/socket-${{ matrix.platform }}-${{ matrix.arch }}${MUSL_SUFFIX}"
+            BINARY_PATH="${PACKAGE_DIR}/socket"
           fi
 
-          cp "$SOURCE_BINARY" "$TARGET_BINARY"
-          echo "Copied $SOURCE_BINARY -> $TARGET_BINARY"
-
-      - name: Verify binary
-        shell: bash
-        run: |
-          ls -la dist/sea/socket-*
-          file dist/sea/socket-* || true
+          ls -la "${PACKAGE_DIR}/"
+          file "${BINARY_PATH}" || true
 
       - name: Upload binary artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v5.0.0
         with:
           name: binary-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.libc && format('-{0}', matrix.libc) || '' }}
-          path: dist/sea/socket-*
+          path: packages/package-builder/build/prod/out/socketbin-cli-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.libc == 'musl' && '-musl' || '' }}/socket${{ matrix.platform == 'win32' && '.exe' || '' }}
           retention-days: 1
 
   publish-packages:
@@ -402,7 +392,7 @@ jobs:
           VERSION="${INPUTS_VERSION}"
           if [ -z "$VERSION" ]; then
             # Read base version from socketbin package using Node.js directly (avoids shell injection).
-            BASE_VERSION=$(node -e "const pkg = require('./packages/socketbin-cli-linux-x64/package.json'); const semver = require('semver'); const v = semver.parse(pkg.version); console.log(v ? \`\${v.major}.\${v.minor}.\${v.patch}\` : '0.0.0');")
+            BASE_VERSION=$(node -e "const pkg = require('./packages/package-builder/build/prod/out/socketbin-cli-linux-x64/package.json'); const semver = require('semver'); const v = semver.parse(pkg.version); console.log(v ? \`\${v.major}.\${v.minor}.\${v.patch}\` : '0.0.0');")
             # Auto-generate version in semver format: X.Y.Z-YYYYMMDD.HHmmss.
             VERSION="${BASE_VERSION}-$(date -u +'%Y%m%d.%H%M%S')"
             echo "Generated version: $VERSION"
@@ -431,19 +421,39 @@ jobs:
       - name: Download all binaries
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
-          path: dist/sea
+          path: packages/package-builder/build/prod/out
           pattern: binary-*
-          merge-multiple: true
+          merge-multiple: false
+
+      - name: Move binaries to socketbin packages
+        run: |
+          # Move downloaded binaries to their respective socketbin package directories.
+          for artifact_dir in packages/package-builder/build/prod/out/binary-*; do
+            if [ -d "$artifact_dir" ]; then
+              # Extract platform-arch from directory name (binary-linux-x64 -> linux-x64).
+              target=$(basename "$artifact_dir" | sed 's/binary-//')
+
+              # Find the binary file.
+              binary=$(find "$artifact_dir" -name "socket*" -type f | head -1)
+              if [ -n "$binary" ]; then
+                # Determine destination package directory.
+                dest_dir="packages/package-builder/build/prod/out/socketbin-cli-${target}"
+                mkdir -p "$dest_dir"
+                cp "$binary" "$dest_dir/"
+                echo "Copied $binary -> $dest_dir/"
+              fi
+            fi
+          done
 
       - name: Verify downloaded binaries
         run: |
           echo "Downloaded binaries:"
-          ls -la dist/sea/
+          find packages/package-builder/build/prod/out/socketbin-cli-* -name "socket*" -type f 2>/dev/null || echo "No binaries found"
 
       - name: Prepare and validate Linux x64
         run: |
           node scripts/prepublish-socketbin.mjs \
-            --platform=linux --arch=x64 \
+            --platform=linux --arch=x64 --prod \
             --version="$STEPS_VERSION_OUTPUTS_VERSION" \
             --method="$INPUTS_METHOD"
         env:
@@ -453,18 +463,18 @@ jobs:
       - name: Publish Linux x64
         if: ${{ !inputs.dry-run }}
         run: |
-          cd packages/socketbin-cli-linux-x64
+          cd packages/package-builder/build/prod/out/socketbin-cli-linux-x64
           npm publish --provenance --access public --tag latest
 
       - name: Prepare and publish Linux ARM64
         if: ${{ !inputs.dry-run }}
         run: |
           node scripts/prepublish-socketbin.mjs \
-            --platform=linux --arch=arm64 \
+            --platform=linux --arch=arm64 --prod \
             --version="$STEPS_VERSION_OUTPUTS_VERSION" \
             --method="$INPUTS_METHOD"
 
-          cd packages/socketbin-cli-linux-arm64
+          cd packages/package-builder/build/prod/out/socketbin-cli-linux-arm64
           npm publish --provenance --access public --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
@@ -474,11 +484,11 @@ jobs:
         if: ${{ !inputs.dry-run }}
         run: |
           node scripts/prepublish-socketbin.mjs \
-            --platform=linux --arch=x64 --libc=musl \
+            --platform=linux --arch=x64 --libc=musl --prod \
             --version="$STEPS_VERSION_OUTPUTS_VERSION" \
             --method="$INPUTS_METHOD"
 
-          cd packages/socketbin-cli-linux-x64-musl
+          cd packages/package-builder/build/prod/out/socketbin-cli-linux-x64-musl
           npm publish --provenance --access public --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
@@ -488,11 +498,11 @@ jobs:
         if: ${{ !inputs.dry-run }}
         run: |
           node scripts/prepublish-socketbin.mjs \
-            --platform=linux --arch=arm64 --libc=musl \
+            --platform=linux --arch=arm64 --libc=musl --prod \
             --version="$STEPS_VERSION_OUTPUTS_VERSION" \
             --method="$INPUTS_METHOD"
 
-          cd packages/socketbin-cli-linux-arm64-musl
+          cd packages/package-builder/build/prod/out/socketbin-cli-linux-arm64-musl
           npm publish --provenance --access public --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
@@ -502,11 +512,11 @@ jobs:
         if: ${{ !inputs.dry-run }}
         run: |
           node scripts/prepublish-socketbin.mjs \
-            --platform=darwin --arch=x64 \
+            --platform=darwin --arch=x64 --prod \
             --version="$STEPS_VERSION_OUTPUTS_VERSION" \
             --method="$INPUTS_METHOD"
 
-          cd packages/socketbin-cli-darwin-x64
+          cd packages/package-builder/build/prod/out/socketbin-cli-darwin-x64
           npm publish --provenance --access public --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
@@ -516,11 +526,11 @@ jobs:
         if: ${{ !inputs.dry-run }}
         run: |
           node scripts/prepublish-socketbin.mjs \
-            --platform=darwin --arch=arm64 \
+            --platform=darwin --arch=arm64 --prod \
             --version="$STEPS_VERSION_OUTPUTS_VERSION" \
             --method="$INPUTS_METHOD"
 
-          cd packages/socketbin-cli-darwin-arm64
+          cd packages/package-builder/build/prod/out/socketbin-cli-darwin-arm64
           npm publish --provenance --access public --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
@@ -530,11 +540,11 @@ jobs:
         if: ${{ !inputs.dry-run }}
         run: |
           node scripts/prepublish-socketbin.mjs \
-            --platform=win32 --arch=x64 \
+            --platform=win32 --arch=x64 --prod \
             --version="$STEPS_VERSION_OUTPUTS_VERSION" \
             --method="$INPUTS_METHOD"
 
-          cd packages/socketbin-cli-win32-x64
+          cd packages/package-builder/build/prod/out/socketbin-cli-win32-x64
           npm publish --provenance --access public --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
@@ -544,11 +554,11 @@ jobs:
         if: ${{ !inputs.dry-run }}
         run: |
           node scripts/prepublish-socketbin.mjs \
-            --platform=win32 --arch=arm64 \
+            --platform=win32 --arch=arm64 --prod \
             --version="$STEPS_VERSION_OUTPUTS_VERSION" \
             --method="$INPUTS_METHOD"
 
-          cd packages/socketbin-cli-win32-arm64
+          cd packages/package-builder/build/prod/out/socketbin-cli-win32-arm64
           npm publish --provenance --access public --tag latest
         env:
           STEPS_VERSION_OUTPUTS_VERSION: ${{ steps.version.outputs.version }}
@@ -566,6 +576,6 @@ jobs:
           echo "🚫 Dry run mode - packages were NOT published"
           echo ""
           echo "Generated packages:"
-          find packages/binaries -name package.json -exec echo {} \; -exec jq -r '.name + "@" + .version' {} \;
+          find packages/package-builder/build/prod/out/socketbin-cli-* -name package.json -exec echo {} \; -exec jq -r '.name + "@" + .version' {} \;
           echo ""
           echo "💾 Cache primed for CI e2e tests"

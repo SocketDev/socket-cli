@@ -566,6 +566,9 @@ importers:
       oxlint:
         specifier: 1.52.0
         version: 1.52.0
+      package-builder:
+        specifier: workspace:*
+        version: link:packages/package-builder
       pony-cause:
         specifier: 'catalog:'
         version: 2.1.11

@@ -13,7 +13,7 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import {
   getSocketbinBinaryPath,
   getSocketbinPackageDir,
-} from './packages/package-builder/scripts/paths.mjs'
+} from 'package-builder/scripts/paths.mjs'
 
 const logger = getDefaultLogger()
 
@@ -55,9 +55,11 @@ function generateDatetimeVersion(platform, arch, libc) {
 const { values } = parseArgs({
   options: {
     arch: { type: 'string' },
+    dev: { type: 'boolean' },
     libc: { type: 'string' },
     method: { default: 'smol', type: 'string' },
     platform: { type: 'string' },
+    prod: { type: 'boolean' },
     version: { type: 'string' },
   },
 })
