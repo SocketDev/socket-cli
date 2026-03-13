@@ -5,6 +5,9 @@ export default defineConfig({
     preserveSymlinks: false,
   },
   test: {
+    // Serialize test files to prevent concurrent npx --force invocations
+    // from racing on the npm _npx cache directory.
+    fileParallelism: false,
     include: ['**/*.e2e.test.mts'],
     coverage: {
       exclude: [
