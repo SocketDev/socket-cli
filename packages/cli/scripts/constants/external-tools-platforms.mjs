@@ -29,8 +29,8 @@
  *   - socket-patch-x86_64-apple-darwin.tar.gz       (darwin-x64)
  *   - socket-patch-aarch64-unknown-linux-gnu.tar.gz (linux-arm64 glibc)
  *   - socket-patch-x86_64-unknown-linux-musl.tar.gz (linux-x64 musl)
- *   - socket-patch-aarch64-pc-windows-msvc.zip      (win32-arm64)
- *   - socket-patch-x86_64-pc-windows-msvc.zip       (win32-x64)
+ *   - socket-patch-aarch64-pc-windows-msvc.zip      (win-arm64)
+ *   - socket-patch-x86_64-pc-windows-msvc.zip       (win-x64)
  *
  * MISSING BUILDS (using fallbacks):
  *   - linux-x64 (glibc): Using musl build as fallback. Musl binaries are statically
@@ -130,7 +130,7 @@ export const PLATFORM_MAP_TOOLS = {
 
   // Windows ARM64 - Python, TruffleHog, and socket-patch are native arm64.
   // Trivy, OpenGrep, and sfw use x64 binaries (Windows 11 ARM64 emulates x64).
-  'win32-arm64': {
+  'win-arm64': {
     __proto__: null,
     opengrep: 'opengrep-core_windows_x86.zip', // x64 emulated.
     python:
@@ -142,7 +142,7 @@ export const PLATFORM_MAP_TOOLS = {
   },
 
   // Windows x86_64 - all native x86_64.
-  'win32-x64': {
+  'win-x64': {
     __proto__: null,
     opengrep: 'opengrep-core_windows_x86.zip',
     python:
@@ -152,4 +152,17 @@ export const PLATFORM_MAP_TOOLS = {
     trivy: 'trivy_0.69.2_windows-64bit.zip',
     trufflehog: 'trufflehog_3.93.1_windows_amd64.tar.gz',
   },
+}
+
+/**
+ * Get platform key for EXTERNAL_TOOLS_BY_PLATFORM lookup.
+ * Normalizes process.platform (win32) to release naming (win).
+ *
+ * @param {string} platform - process.platform value (darwin, linux, win32).
+ * @param {string} arch - process.arch value (arm64, x64).
+ * @returns {string} Normalized platform key (e.g., 'win-x64').
+ */
+export function getPlatformKey(platform, arch) {
+  const releasePlatform = platform === 'win32' ? 'win' : platform
+  return `${releasePlatform}-${arch}`
 }

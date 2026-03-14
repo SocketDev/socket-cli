@@ -37,7 +37,7 @@ const PLATFORM_MAP = {
     trufflehog: 'trufflehog_3.93.1_linux_amd64.tar.gz',
     opengrep: 'opengrep-core_linux_x86.tar.gz',
   },
-  'win32-x64': {
+  'win-x64': {
     trivy: 'trivy_0.69.1_windows-64bit.zip',
     trufflehog: 'trufflehog_3.93.1_windows_amd64.tar.gz',
     opengrep: 'opengrep-core_windows_x86.zip',
@@ -56,10 +56,11 @@ const TOOL_REPOS = {
 }
 
 /**
- * Get current platform identifier.
+ * Get current platform identifier (normalized for release naming).
+ * Uses 'win' instead of 'win32' for Windows.
  */
 function getCurrentPlatform() {
-  const platform = process.platform
+  const platform = process.platform === 'win32' ? 'win' : process.platform
   const arch = process.arch
   return `${platform}-${arch}`
 }

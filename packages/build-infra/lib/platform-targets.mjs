@@ -2,6 +2,10 @@
  * @fileoverview Shared platform target utilities for SEA builds.
  * Provides constants and parsing functions for platform/arch/libc combinations.
  * This is the single source of truth for all platform definitions.
+ *
+ * Naming convention:
+ * - `platform`: Node.js process.platform value (darwin, linux, win32)
+ * - `releasePlatform`: Normalized for file/folder/npm names (darwin, linux, win)
  */
 
 /**
@@ -9,6 +13,7 @@
  * This is the authoritative source for platform definitions.
  * @type {ReadonlyArray<{
  *   platform: string,
+ *   releasePlatform: string,
  *   arch: string,
  *   libc?: string,
  *   runner: string,
@@ -26,6 +31,7 @@ export const PLATFORM_CONFIGS = Object.freeze([
     description: 'macOS ARM64 (Apple Silicon)',
     os: 'darwin',
     platform: 'darwin',
+    releasePlatform: 'darwin',
     runner: 'macos-latest',
   },
   {
@@ -35,6 +41,7 @@ export const PLATFORM_CONFIGS = Object.freeze([
     description: 'macOS x64 (Intel)',
     os: 'darwin',
     platform: 'darwin',
+    releasePlatform: 'darwin',
     runner: 'macos-latest',
   },
   {
@@ -44,6 +51,7 @@ export const PLATFORM_CONFIGS = Object.freeze([
     description: 'Linux ARM64 (glibc)',
     os: 'linux',
     platform: 'linux',
+    releasePlatform: 'linux',
     runner: 'ubuntu-latest',
   },
   {
@@ -54,6 +62,7 @@ export const PLATFORM_CONFIGS = Object.freeze([
     libc: 'musl',
     os: 'linux',
     platform: 'linux',
+    releasePlatform: 'linux',
     runner: 'ubuntu-latest',
   },
   {
@@ -63,6 +72,7 @@ export const PLATFORM_CONFIGS = Object.freeze([
     description: 'Linux x64 (glibc)',
     os: 'linux',
     platform: 'linux',
+    releasePlatform: 'linux',
     runner: 'ubuntu-latest',
   },
   {
@@ -73,6 +83,7 @@ export const PLATFORM_CONFIGS = Object.freeze([
     libc: 'musl',
     os: 'linux',
     platform: 'linux',
+    releasePlatform: 'linux',
     runner: 'ubuntu-latest',
   },
   {
@@ -82,6 +93,7 @@ export const PLATFORM_CONFIGS = Object.freeze([
     description: 'Windows ARM64',
     os: 'win32',
     platform: 'win32',
+    releasePlatform: 'win',
     runner: 'windows-latest',
   },
   {
@@ -91,23 +103,40 @@ export const PLATFORM_CONFIGS = Object.freeze([
     description: 'Windows x64',
     os: 'win32',
     platform: 'win32',
+    releasePlatform: 'win',
     runner: 'windows-latest',
   },
 ])
 
 /**
- * Valid platform targets for SEA builds.
- * Format: <platform>-<arch>[-musl]
+ * Valid platform targets for SEA builds (using releasePlatform for naming).
+ * Format: <releasePlatform>-<arch>[-musl]
  * Derived from PLATFORM_CONFIGS.
  */
 export const PLATFORM_TARGETS = PLATFORM_CONFIGS.map(
-  c => `${c.platform}-${c.arch}${c.libc ? `-${c.libc}` : ''}`,
+  c => `${c.releasePlatform}-${c.arch}${c.libc ? `-${c.libc}` : ''}`,
 )
 
 /**
- * Valid platforms.
+ * Get the release platform name for file/folder/npm naming.
+ * Converts win32 → win, leaves others unchanged.
+ *
+ * @param {string} platform - Node.js platform (darwin, linux, win32).
+ * @returns {string} Release platform (darwin, linux, win).
+ */
+export function getReleasePlatform(platform) {
+  return platform === 'win32' ? 'win' : platform
+}
+
+/**
+ * Valid platforms (Node.js process.platform values).
  */
 export const VALID_PLATFORMS = ['darwin', 'linux', 'win32']
+
+/**
+ * Valid release platforms (for file/folder/npm naming).
+ */
+export const VALID_RELEASE_PLATFORMS = ['darwin', 'linux', 'win']
 
 /**
  * Valid architectures.
@@ -124,7 +153,8 @@ export const VALID_ARCHS = ['arm64', 'x64']
 
 /**
  * Parse a platform target string into components.
- * Handles formats: darwin-arm64, linux-x64, linux-arm64-musl, win32-x64
+ * Handles formats: darwin-arm64, linux-x64, linux-arm64-musl, win-x64, win32-x64
+ * Accepts both 'win' (release naming) and 'win32' (Node.js naming) for Windows.
  *
  * @param {string} target - Target string (e.g., "darwin-arm64" or "linux-x64-musl").
  * @returns {PlatformTargetInfo | null} Parsed info or null if invalid.
@@ -136,6 +166,10 @@ export const VALID_ARCHS = ['arm64', 'x64']
  * @example
  * parsePlatformTarget('linux-x64-musl')
  * // { platform: 'linux', arch: 'x64', libc: 'musl' }
+ *
+ * @example
+ * parsePlatformTarget('win-x64')
+ * // { platform: 'win32', arch: 'x64' }
  */
 export function parsePlatformTarget(target) {
   if (!target || typeof target !== 'string') {
@@ -159,7 +193,11 @@ export function parsePlatformTarget(target) {
   // Handle standard platform-arch.
   const parts = target.split('-')
   if (parts.length === 2) {
-    const [platform, arch] = parts
+    let [platform, arch] = parts
+    // Normalize 'win' to 'win32' for internal use.
+    if (platform === 'win') {
+      platform = 'win32'
+    }
     if (VALID_PLATFORMS.includes(platform) && VALID_ARCHS.includes(arch)) {
       return { arch, platform }
     }
@@ -180,13 +218,16 @@ export function isPlatformTarget(target) {
 
 /**
  * Get the full platform config for a target string.
+ * Accepts both release naming (win-x64) and Node.js naming (win32-x64).
  *
- * @param {string} target - Target string (e.g., "darwin-arm64" or "linux-x64-musl").
+ * @param {string} target - Target string (e.g., "darwin-arm64", "win-x64", or "linux-x64-musl").
  * @returns {typeof PLATFORM_CONFIGS[number] | undefined} Full platform config or undefined.
  */
 export function getPlatformConfig(target) {
   return PLATFORM_CONFIGS.find(
-    c => `${c.platform}-${c.arch}${c.libc ? `-${c.libc}` : ''}` === target,
+    c =>
+      `${c.releasePlatform}-${c.arch}${c.libc ? `-${c.libc}` : ''}` === target ||
+      `${c.platform}-${c.arch}${c.libc ? `-${c.libc}` : ''}` === target,
   )
 }
 

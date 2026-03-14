@@ -73,7 +73,7 @@ jobs:
   build-binaries:
     if: ${{ inputs.socket }}
     needs: [build-cli]
-    name: Build ${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.libc && '-musl' || '' }}
+    name: Build ${{ matrix.releasePlatform }}-${{ matrix.arch }}${{ matrix.libc && '-musl' || '' }}
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
@@ -116,8 +116,8 @@ jobs:
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
-          name: binary-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.libc && '-musl' || '' }}
-          path: packages/package-builder/build/prod/out/socketbin-cli-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.libc && '-musl' || '' }}/socket${{ matrix.platform == 'win32' && '.exe' || '' }}
+          name: binary-${{ matrix.releasePlatform }}-${{ matrix.arch }}${{ matrix.libc && '-musl' || '' }}
+          path: packages/package-builder/build/prod/out/socketbin-cli-${{ matrix.releasePlatform }}-${{ matrix.arch }}${{ matrix.libc && '-musl' || '' }}/socket${{ matrix.platform == 'win32' && '.exe' || '' }}
           retention-days: 1
 
   # Publish all packages.
@@ -190,7 +190,8 @@ jobs:
             mkdir -p "$PKG_DIR"
 
             # Copy binary from artifact.
-            if [ "$PLATFORM" = "win32" ]; then
+            # Check for 'win' (release naming, not win32).
+            if [ "$PLATFORM" = "win" ]; then
               cp "artifacts/binary-${target}/socket.exe" "$PKG_DIR/"
             else
               cp "artifacts/binary-${target}/socket" "$PKG_DIR/"

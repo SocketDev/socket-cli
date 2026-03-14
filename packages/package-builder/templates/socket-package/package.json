@@ -21,8 +21,8 @@
     "@socketbin/cli-linux-arm64-musl": "0.0.0-replaced-by-publish",
     "@socketbin/cli-linux-x64": "0.0.0-replaced-by-publish",
     "@socketbin/cli-linux-x64-musl": "0.0.0-replaced-by-publish",
-    "@socketbin/cli-win32-arm64": "0.0.0-replaced-by-publish",
-    "@socketbin/cli-win32-x64": "0.0.0-replaced-by-publish"
+    "@socketbin/cli-win-arm64": "0.0.0-replaced-by-publish",
+    "@socketbin/cli-win-x64": "0.0.0-replaced-by-publish"
   },
   "engines": {
     "node": ">=18"

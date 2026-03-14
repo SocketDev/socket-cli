@@ -14,7 +14,8 @@ const matrix = {
   include: PLATFORM_CONFIGS.map(c => ({
     arch: c.arch,
     libc: c.libc ?? null,
-    platform: c.platform,
+    platform: c.platform, // Node.js platform (win32 for Windows)
+    releasePlatform: c.releasePlatform, // Release naming (win for Windows)
     runner: c.runner,
   })),
 }

@@ -70,29 +70,33 @@ export function getPackageOutDir(packageName, mode = getBuildMode()) {
 
 /**
  * Get the output path for a socketbin package.
+ * Uses release platform naming (win instead of win32).
  *
- * @param {string} platform - Platform identifier (darwin, linux, win32).
+ * @param {string} platform - Platform identifier (darwin, linux, win, or win32).
  * @param {string} arch - Architecture identifier (arm64, x64).
  * @param {string} [libc] - Linux libc variant ('musl' for Alpine).
  * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI detection.
  * @returns {string} Path to socketbin package directory.
  */
 export function getSocketbinPackageDir(platform, arch, libc, mode = getBuildMode()) {
+  // Normalize win32 → win for directory naming.
+  const releasePlatform = platform === 'win32' ? 'win' : platform
   const muslSuffix = libc === 'musl' ? '-musl' : ''
-  const packageName = `socketbin-cli-${platform}-${arch}${muslSuffix}`
+  const packageName = `socketbin-cli-${releasePlatform}-${arch}${muslSuffix}`
   return getPackageOutDir(packageName, mode)
 }
 
 /**
  * Get the binary path within a socketbin package.
  *
- * @param {string} platform - Platform identifier (darwin, linux, win32).
+ * @param {string} platform - Platform identifier (darwin, linux, win, or win32).
  * @param {string} arch - Architecture identifier (arm64, x64).
  * @param {string} [libc] - Linux libc variant ('musl' for Alpine).
  * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI detection.
  * @returns {string} Path to the socket binary.
  */
 export function getSocketbinBinaryPath(platform, arch, libc, mode = getBuildMode()) {
-  const binaryName = platform === 'win32' ? 'socket.exe' : 'socket'
+  // Accept both win and win32 for Windows detection.
+  const binaryName = platform === 'win32' || platform === 'win' ? 'socket.exe' : 'socket'
   return join(getSocketbinPackageDir(platform, arch, libc, mode), binaryName)
 }

@@ -22,13 +22,14 @@ const logger = getDefaultLogger()
  * Generate a single socketbin package.
  */
 async function generatePackage(config) {
-  const { arch, binExt, cpu, description, libc, os, platform } = config
+  const { arch, binExt, cpu, description, libc, os, platform, releasePlatform } = config
   const muslSuffix = libc === 'musl' ? '-musl' : ''
-  const packageName = `socketbin-cli-${platform}-${arch}${muslSuffix}`
-  const packagePath = getSocketbinPackageDir(platform, arch, libc)
+  const packageName = `socketbin-cli-${releasePlatform}-${arch}${muslSuffix}`
+  const packagePath = getSocketbinPackageDir(releasePlatform, arch, libc)
   const templatePath = SOCKETBIN_TEMPLATE_DIR
 
   // Template context for Handlebars.
+  // Use releasePlatform for npm package naming (win, not win32).
   const context = {
     ARCH: arch,
     BIN_EXT: binExt,
@@ -36,7 +37,7 @@ async function generatePackage(config) {
     DESCRIPTION: description,
     LIBC_SUFFIX: muslSuffix,
     OS: os,
-    PLATFORM: platform,
+    PLATFORM: releasePlatform,
   }
 
   // Create package directory.
