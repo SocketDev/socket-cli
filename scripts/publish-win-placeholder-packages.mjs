@@ -33,7 +33,7 @@ const WIN_PACKAGES = [
 ]
 
 // Use a placeholder version that will be replaced by the first real publish.
-const PLACEHOLDER_VERSION = '0.0.0-placeholder.1'
+const PLACEHOLDER_VERSION = '0.0.0'
 
 async function generatePackage(config) {
   const { platform, arch, os, cpu, description } = config
