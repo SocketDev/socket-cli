@@ -119,7 +119,9 @@ async function downloadAsset(config) {
     // Download the asset.
     let assetPath
     try {
-      assetPath = await downloadSocketBtmRelease(download)
+      // Extract tool name from download config.
+      const { tool, ...downloadOptions } = download
+      assetPath = await downloadSocketBtmRelease(tool, downloadOptions)
       logger.info(`Downloaded to ${assetPath}`)
     } catch (e) {
       // Some assets are optional (models).
