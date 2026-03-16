@@ -35,20 +35,15 @@ const output = iocraft.renderToString(element)
 console.log(output)
 ```
 
-## How It Works
+## API Documentation
 
-This package uses npm's `optionalDependencies` to install only the native binary matching your platform:
+This package provides Node.js bindings to the native [iocraft](https://github.com/ccbrown/iocraft) library. The API is similar to the official iocraft API with these differences:
 
-- Main package: `@socketaddon/iocraft` (platform detection and loading)
-- Platform packages: `@socketaddon/iocraft-{platform}-{arch}` (native `.node` binaries)
+- **Import**: Use `import iocraft from '@socketaddon/iocraft'` instead of Rust imports
+- **Function names**: Use camelCase (`printComponent`, `renderToString`) instead of snake_case
+- **Property names**: Node properties use snake_case (e.g., `flex_direction`, `padding_left`) to match the native API
 
-When you `import` the main package, it automatically detects your platform and loads the correct native addon.
-
-## Development
-
-These packages are published from the [socket-cli](https://github.com/SocketDev/socket-cli) repository using template-based generation.
-
-Native binaries are built in the [socket-btm](https://github.com/SocketDev/socket-btm) repository and downloaded during publish.
+For comprehensive API documentation, see the [official iocraft documentation](https://github.com/ccbrown/iocraft#readme).
 
 ## License
 
