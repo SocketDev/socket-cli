@@ -4,6 +4,7 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { debugFileOp } from '../../utils/debug.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { useIocraft } from '../../utils/feature-flags.mts'
 import { mdTableStringNumber } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import { fileLink } from '../../utils/terminal/link.mts'
@@ -117,7 +118,15 @@ export async function outputAnalytics(
       logger.log(serialized)
     }
   } else {
-    await displayAnalyticsWithInk(fdata)
+    // Feature flag: use iocraft or Ink for TUI rendering.
+    if (useIocraft()) {
+      const { displayAnalyticsWithIocraft } = await import(
+        './AnalyticsRenderer.mts'
+      )
+      await displayAnalyticsWithIocraft(fdata)
+    } else {
+      await displayAnalyticsWithInk(fdata)
+    }
   }
 }
 

@@ -11,6 +11,7 @@
     "generate:all": "node scripts/generate-all.mjs",
     "generate:cli": "node scripts/generate-cli-packages.mjs",
     "generate:cli-sentry": "node scripts/generate-cli-sentry-package.mjs",
+    "generate:socketaddon": "node scripts/generate-socketaddon-packages.mjs",
     "generate:socketbin": "node scripts/generate-socketbin-packages.mjs"
   },
   "dependencies": {

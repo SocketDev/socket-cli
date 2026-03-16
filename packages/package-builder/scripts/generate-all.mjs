@@ -51,6 +51,7 @@ async function main() {
 
   // Run all generation scripts in sequence.
   await runScript('generate-cli-packages.mjs', 'CLI packages')
+  await runScript('generate-socketaddon-packages.mjs', 'Socketaddon packages')
   await runScript('generate-socketbin-packages.mjs', 'Socketbin packages')
 
   logger.log('')

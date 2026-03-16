@@ -21,12 +21,18 @@ The package will automatically install the correct native binary for your platfo
 ```javascript
 import iocraft from '@socketaddon/iocraft'
 
-// Use iocraft components and renderers
-const element = iocraft.view({ children: [
-  iocraft.text('Hello from iocraft!')
-]})
+// Create a text element
+const textNode = iocraft.text('Hello from iocraft!')
 
-iocraft.print(element)
+// Create a view with the text element
+const element = iocraft.view([textNode])
+
+// Print the component to stdout
+iocraft.printComponent(element)
+
+// Or render to a string
+const output = iocraft.renderToString(element)
+console.log(output)
 ```
 
 ## How It Works

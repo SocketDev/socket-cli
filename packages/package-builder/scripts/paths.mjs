@@ -19,6 +19,8 @@ export const TEMPLATES_DIR = join(PACKAGE_BUILDER_ROOT, 'templates')
 export const CLI_TEMPLATE_DIR = join(TEMPLATES_DIR, 'cli-package')
 export const CLI_SENTRY_TEMPLATE_DIR = join(TEMPLATES_DIR, 'cli-sentry-package')
 export const SOCKET_TEMPLATE_DIR = join(TEMPLATES_DIR, 'socket-package')
+export const SOCKETADDON_MAIN_TEMPLATE_DIR = join(TEMPLATES_DIR, 'socketaddon-main')
+export const SOCKETADDON_TEMPLATE_DIR = join(TEMPLATES_DIR, 'socketaddon-package')
 export const SOCKETBIN_TEMPLATE_DIR = join(TEMPLATES_DIR, 'socketbin-package')
 
 /**
@@ -99,4 +101,22 @@ export function getSocketbinBinaryPath(platform, arch, libc, mode = getBuildMode
   // Accept both win and win32 for Windows detection.
   const binaryName = platform === 'win32' || platform === 'win' ? 'socket.exe' : 'socket'
   return join(getSocketbinPackageDir(platform, arch, libc, mode), binaryName)
+}
+
+/**
+ * Get the output path for a socketaddon package.
+ * Uses release platform naming (win instead of win32).
+ *
+ * @param {string} platform - Platform identifier (darwin, linux, win, or win32).
+ * @param {string} arch - Architecture identifier (arm64, x64).
+ * @param {string} [libc] - Linux libc variant ('musl' for Alpine).
+ * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI detection.
+ * @returns {string} Path to socketaddon package directory.
+ */
+export function getSocketaddonPackageDir(platform, arch, libc, mode = getBuildMode()) {
+  // Normalize win32 → win for directory naming.
+  const releasePlatform = platform === 'win32' ? 'win' : platform
+  const muslSuffix = libc === 'musl' ? '-musl' : ''
+  const packageName = `socketaddon-iocraft-${releasePlatform}-${arch}${muslSuffix}`
+  return getPackageOutDir(packageName, mode)
 }

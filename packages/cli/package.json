@@ -82,6 +82,7 @@
     "@socketregistry/indent-string": "catalog:",
     "@socketregistry/is-interactive": "catalog:",
     "@socketregistry/packageurl-js": "catalog:",
+    "@socketaddon/iocraft": "file:../package-builder/build/dev/out/socketaddon-iocraft",
     "@socketregistry/yocto-spinner": "catalog:",
     "@socketsecurity/config": "catalog:",
     "@socketsecurity/lib": "catalog:",

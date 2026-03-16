@@ -674,6 +674,9 @@ importers:
       '@octokit/rest':
         specifier: 'catalog:'
         version: 22.0.0
+      '@socketaddon/iocraft':
+        specifier: file:../package-builder/build/dev/out/socketaddon-iocraft
+        version: file:packages/package-builder/build/dev/out/socketaddon-iocraft
       '@socketregistry/hyrious__bun.lockb':
         specifier: 'catalog:'
         version: 1.0.19
@@ -1963,6 +1966,10 @@ packages:
 
   '@sindresorhus/merge-streams@2.3.0':
     resolution: {integrity: sha512-LtoMMhxAlorcGhmFYI+LhPgbPZCkgP6ra1YL604EeF6U98pLlQ3iWIGMdWSC+vWmPBWBNgmDBAhnAobLROJmwg==}
+    engines: {node: '>=18'}
+
+  '@socketaddon/iocraft@file:packages/package-builder/build/dev/out/socketaddon-iocraft':
+    resolution: {directory: packages/package-builder/build/dev/out/socketaddon-iocraft, type: directory}
     engines: {node: '>=18'}
 
   '@socketregistry/es-set-tostringtag@1.0.10':
@@ -5446,6 +5453,8 @@ snapshots:
       execa: 2.1.0(patch_hash=e06dd2da266f9d3e4ac91468988bdc140c6ec1e5722f321960e1f61c83acb9fd)
 
   '@sindresorhus/merge-streams@2.3.0': {}
+
+  '@socketaddon/iocraft@file:packages/package-builder/build/dev/out/socketaddon-iocraft': {}
 
   '@socketregistry/es-set-tostringtag@1.0.10': {}
 
