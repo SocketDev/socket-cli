@@ -4,6 +4,8 @@
   "description": "iocraft native addon ({{DESCRIPTION}})",
   "license": "MIT",
   "files": [
+    "LICENSE",
+    "README.md",
     "iocraft.node"
   ],
   "os": [

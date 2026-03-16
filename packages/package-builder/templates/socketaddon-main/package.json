@@ -13,9 +13,10 @@
     }
   },
   "files": [
+    "LICENSE",
+    "README.md",
     "index.d.ts",
-    "index.mjs",
-    "README.md"
+    "index.mjs"
   ],
   "optionalDependencies": {
     "@socketaddon/iocraft-darwin-arm64": "3.0.0-pre.0",
