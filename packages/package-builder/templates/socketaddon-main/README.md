@@ -44,7 +44,3 @@ This package provides Node.js bindings to the native [iocraft](https://github.co
 - **Property names**: Node properties use snake_case (e.g., `flex_direction`, `padding_left`) to match the native API
 
 For comprehensive API documentation, see the [official iocraft documentation](https://github.com/ccbrown/iocraft#readme).
-
-## License
-
-MIT

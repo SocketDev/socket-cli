@@ -2,16 +2,8 @@
 
 Native [iocraft](https://github.com/ccbrown/iocraft) addon for **{{DESCRIPTION}}**.
 
-This package contains the platform-specific `.node` binary for iocraft. It is automatically installed by the main `@socketaddon/iocraft` package based on your platform.
-
-## Installation
-
-You should not install this package directly. Install the main package instead:
+This package is automatically installed by `@socketaddon/iocraft` based on your platform. Install the main package instead:
 
 ```bash
 npm install @socketaddon/iocraft
 ```
-
-## License
-
-MIT
