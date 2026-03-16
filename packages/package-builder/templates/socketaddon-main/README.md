@@ -27,7 +27,7 @@ const textNode = iocraft.text('Hello from iocraft!')
 // Create a view with the text element
 const element = iocraft.view([textNode])
 
-// Print the component to stdout
+// Print the component to stdout (camelCase or snake_case - both work!)
 iocraft.printComponent(element)
 
 // Or render to a string
@@ -37,10 +37,10 @@ console.log(output)
 
 ## API Documentation
 
-This package provides Node.js bindings to the [iocraft](https://github.com/ccbrown/iocraft) Rust library. The API is similar to the official iocraft API with these differences:
+This package provides Node.js bindings to the [iocraft](https://github.com/ccbrown/iocraft) Rust library. Both camelCase and snake_case naming conventions are supported:
 
 - **Import**: Use `import iocraft from '@socketaddon/iocraft'` instead of Rust imports
-- **Function names**: Use camelCase (`printComponent`, `renderToString`) instead of snake_case
-- **Property names**: Node properties use snake_case (e.g., `flex_direction`, `padding_left`) to match the native API
+- **Functions**: Use either camelCase (`printComponent`, `renderToString`) or snake_case (`print_component`, `render_to_string`)
+- **Properties**: Use either camelCase (`flexDirection`, `paddingLeft`) or snake_case (`flex_direction`, `padding_left`)
 
 For comprehensive API documentation, see the [official iocraft documentation](https://github.com/ccbrown/iocraft#readme).
