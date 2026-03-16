@@ -18,6 +18,11 @@
     "type": "git",
     "url": "git+https://github.com/SocketDev/socket-cli.git"
   },
+  "author": {
+    "name": "Socket Inc",
+    "email": "eng@socket.dev",
+    "url": "https://socket.dev"
+  },
   "publishConfig": {
     "access": "public"
   }
