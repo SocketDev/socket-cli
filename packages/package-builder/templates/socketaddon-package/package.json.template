@@ -1,6 +1,6 @@
 {
   "name": "@socketaddon/iocraft-{{PLATFORM}}-{{ARCH}}{{LIBC_SUFFIX}}",
-  "version": "3.0.0-pre.0",
+  "version": "1.0.0-pre.0",
   "description": "iocraft native addon ({{DESCRIPTION}})",
   "license": "MIT",
   "files": [

@@ -1,6 +1,6 @@
 {
   "name": "@socketaddon/iocraft",
-  "version": "3.0.0-pre.0",
+  "version": "1.0.0-pre.0",
   "description": "Node.js bindings for iocraft - a Rust-based TUI library",
   "license": "MIT",
   "type": "module",
@@ -19,14 +19,14 @@
     "index.mjs"
   ],
   "optionalDependencies": {
-    "@socketaddon/iocraft-darwin-arm64": "3.0.0-pre.0",
-    "@socketaddon/iocraft-darwin-x64": "3.0.0-pre.0",
-    "@socketaddon/iocraft-linux-arm64": "3.0.0-pre.0",
-    "@socketaddon/iocraft-linux-arm64-musl": "3.0.0-pre.0",
-    "@socketaddon/iocraft-linux-x64": "3.0.0-pre.0",
-    "@socketaddon/iocraft-linux-x64-musl": "3.0.0-pre.0",
-    "@socketaddon/iocraft-win-arm64": "3.0.0-pre.0",
-    "@socketaddon/iocraft-win-x64": "3.0.0-pre.0"
+    "@socketaddon/iocraft-darwin-arm64": "1.0.0-pre.0",
+    "@socketaddon/iocraft-darwin-x64": "1.0.0-pre.0",
+    "@socketaddon/iocraft-linux-arm64": "1.0.0-pre.0",
+    "@socketaddon/iocraft-linux-arm64-musl": "1.0.0-pre.0",
+    "@socketaddon/iocraft-linux-x64": "1.0.0-pre.0",
+    "@socketaddon/iocraft-linux-x64-musl": "1.0.0-pre.0",
+    "@socketaddon/iocraft-win-arm64": "1.0.0-pre.0",
+    "@socketaddon/iocraft-win-x64": "1.0.0-pre.0"
   },
   "engines": {
     "node": ">=18"
