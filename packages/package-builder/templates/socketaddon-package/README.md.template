@@ -1,9 +1,3 @@
 # @socketaddon/iocraft-{{PLATFORM}}-{{ARCH}}{{LIBC_SUFFIX}}
 
 Native [iocraft](https://github.com/ccbrown/iocraft) addon for **{{DESCRIPTION}}**.
-
-This package is automatically installed by `@socketaddon/iocraft` based on your platform. Install the main package instead:
-
-```bash
-npm install @socketaddon/iocraft
-```
