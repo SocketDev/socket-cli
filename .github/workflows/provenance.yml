@@ -23,6 +23,10 @@ on:
         description: 'socket (+ 8 bins)'
         type: boolean
         default: true
+      iocraft:
+        description: '@socketaddon/iocraft (+ 8 platforms)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -250,6 +254,44 @@ jobs:
           cd "$PKG_DIR"
           npm publish --provenance --access public --no-git-checks
 
+      # Publish @socketaddon/iocraft packages (main + platform-specific).
+      - name: Publish @socketaddon/iocraft main package
+        if: ${{ inputs.iocraft && !inputs.dry-run }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          PKG_DIR="packages/package-builder/build/prod/out/socketaddon-iocraft"
+          node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
+          cd "$PKG_DIR"
+          npm publish --provenance --access public --no-git-checks
+
+      - name: Publish @socketaddon/iocraft platform packages
+        if: ${{ inputs.iocraft && !inputs.dry-run }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          # Get platform targets from single source of truth.
+          PLATFORMS_STR=$(node scripts/get-platform-targets.mjs)
+          read -ra PLATFORMS <<< "$PLATFORMS_STR"
+
+          for target in "${PLATFORMS[@]}"; do
+            echo "::group::Publishing @socketaddon/iocraft-${target}"
+
+            PKG_DIR="packages/package-builder/build/prod/out/socketaddon-iocraft-${target}"
+
+            # Prepare package.
+            node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
+
+            # Publish.
+            cd "$PKG_DIR"
+            npm publish --provenance --access public --no-git-checks
+            cd -
+
+            echo "::endgroup::"
+          done
+
       - name: Summary
         run: |
           echo "## Publish Summary" >> $GITHUB_STEP_SUMMARY
@@ -271,5 +313,9 @@ jobs:
             fi
             if [ "${{ inputs.cli-sentry }}" = "true" ]; then
               echo "- @socketsecurity/cli-with-sentry" >> $GITHUB_STEP_SUMMARY
+            fi
+            if [ "${{ inputs.iocraft }}" = "true" ]; then
+              echo "- @socketaddon/iocraft (main)" >> $GITHUB_STEP_SUMMARY
+              echo "- @socketaddon/iocraft-* (8 platforms)" >> $GITHUB_STEP_SUMMARY
             fi
           fi

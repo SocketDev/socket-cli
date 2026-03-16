@@ -1,0 +1,22 @@
+{
+  "name": "@socketaddon/iocraft-{{PLATFORM}}-{{ARCH}}{{LIBC_SUFFIX}}",
+  "version": "3.0.0-pre.0",
+  "description": "iocraft native addon ({{DESCRIPTION}})",
+  "license": "MIT",
+  "files": [
+    "iocraft.node"
+  ],
+  "os": [
+    "{{OS}}"
+  ],
+  "cpu": [
+    "{{CPU}}"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -129,5 +129,6 @@ packages/socket/*.png
 !.env.example
 !/.vscode/extensions.json
 !docs/build/
+!packages/package-builder/templates/**/*.d.ts
 !src/types/**/*.d.ts
 .claude/
