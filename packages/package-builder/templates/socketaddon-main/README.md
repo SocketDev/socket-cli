@@ -37,7 +37,7 @@ console.log(output)
 
 ## API Documentation
 
-This package provides Node.js bindings to the native [iocraft](https://github.com/ccbrown/iocraft) library. The API is similar to the official iocraft API with these differences:
+This package provides Node.js bindings to the [iocraft](https://github.com/ccbrown/iocraft) Rust library. The API is similar to the official iocraft API with these differences:
 
 - **Import**: Use `import iocraft from '@socketaddon/iocraft'` instead of Rust imports
 - **Function names**: Use camelCase (`printComponent`, `renderToString`) instead of snake_case
