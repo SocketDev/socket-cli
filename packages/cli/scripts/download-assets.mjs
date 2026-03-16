@@ -9,10 +9,11 @@
  *   node scripts/download-assets.mjs --no-parallel   # Download all assets (sequential)
  *
  * Assets:
- *   yoga      - Yoga layout WASM (yoga-sync.mjs)
- *   models    - AI models tar.gz (MiniLM, CodeT5)
  *   binject   - Binary injection tool
+ *   iocraft   - iocraft native bindings (.node files)
+ *   models    - AI models tar.gz (MiniLM, CodeT5)
  *   node-smol - Minimal Node.js binaries
+ *   yoga      - Yoga layout WASM (yoga-sync.mjs)
  */
 
 import { existsSync, promises as fs } from 'node:fs'
@@ -51,6 +52,18 @@ const ASSETS = {
     },
     name: 'binject',
     type: 'binary',
+  },
+  iocraft: {
+    description: 'iocraft native bindings (.node files)',
+    download: {
+      asset: 'iocraft-*.node',
+      cwd: rootPath,
+      downloadDir: '../../packages/build-infra/build/downloaded/iocraft',
+      quiet: false,
+      tool: 'iocraft',
+    },
+    name: 'iocraft',
+    type: 'multi-platform',
   },
   models: {
     description: 'AI models (MiniLM-L6-v2, CodeT5)',

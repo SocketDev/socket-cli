@@ -281,6 +281,37 @@ jobs:
           cd "$PKG_DIR"
           npm publish --provenance --access public --no-git-checks --tag "$TAG"
 
+      # Download iocraft binaries from socket-btm.
+      - name: Download iocraft binaries
+        if: ${{ inputs.iocraft }}
+        run: |
+          echo "Downloading iocraft .node binaries for all platforms..."
+          node scripts/download-iocraft-binaries.mjs
+
+      # Copy iocraft binaries to package directories.
+      - name: Copy iocraft binaries to packages
+        if: ${{ inputs.iocraft }}
+        run: |
+          set -euo pipefail
+
+          # Get platform targets from single source of truth.
+          PLATFORMS_STR=$(node scripts/get-platform-targets.mjs)
+          read -ra PLATFORMS <<< "$PLATFORMS_STR"
+
+          for target in "${PLATFORMS[@]}"; do
+            echo "Copying iocraft.node for ${target}..."
+
+            # Source path (downloaded binary).
+            SRC_PATH="packages/build-infra/build/downloaded/iocraft/${target}/iocraft.node"
+
+            # Destination path (package directory).
+            PKG_DIR="packages/package-builder/build/prod/out/socketaddon-iocraft-${target}"
+            mkdir -p "$PKG_DIR"
+            cp "$SRC_PATH" "$PKG_DIR/iocraft.node"
+
+            echo "Copied to ${PKG_DIR}/iocraft.node"
+          done
+
       # Publish @socketaddon/iocraft packages (main + platform-specific).
       - name: Publish @socketaddon/iocraft main package
         if: ${{ inputs.iocraft && !inputs.dry-run }}
