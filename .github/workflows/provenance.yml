@@ -158,6 +158,15 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Publishing version: $VERSION"
 
+          # Determine npm dist-tag based on version.
+          if [[ "$VERSION" =~ -pre\. ]]; then
+            TAG="pre"
+          else
+            TAG="latest"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Using dist-tag: $TAG"
+
       # Download and publish binary packages.
       - name: Download binaries
         if: ${{ inputs.socket }}
@@ -170,6 +179,7 @@ jobs:
         if: ${{ inputs.socket && !inputs.dry-run }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
           set -euo pipefail
 
@@ -212,7 +222,7 @@ jobs:
 
             # Publish.
             cd "$PKG_DIR"
-            npm publish --provenance --access public --tag latest
+            npm publish --provenance --access public --tag "$TAG"
             cd -
 
             echo "::endgroup::"
@@ -227,65 +237,55 @@ jobs:
         if: ${{ inputs.cli && !inputs.dry-run }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
           PKG_DIR="packages/package-builder/build/prod/out/cli"
           node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
           cd "$PKG_DIR"
-          npm publish --provenance --access public --no-git-checks
+          npm publish --provenance --access public --no-git-checks --tag "$TAG"
 
       - name: Publish @socketsecurity/cli-with-sentry
         if: ${{ inputs.cli-sentry && !inputs.dry-run }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
           PKG_DIR="packages/package-builder/build/prod/out/cli-with-sentry"
           node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
           cd "$PKG_DIR"
-          npm publish --provenance --access public --no-git-checks
+          npm publish --provenance --access public --no-git-checks --tag "$TAG"
 
       # socket published last - depends on @socketbin/* being published first.
       - name: Publish socket
         if: ${{ inputs.socket && !inputs.dry-run }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
           PKG_DIR="packages/package-builder/build/prod/out/socket"
           node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
           cd "$PKG_DIR"
-          npm publish --provenance --access public --no-git-checks
+          npm publish --provenance --access public --no-git-checks --tag "$TAG"
 
       # Publish @socketaddon/iocraft packages (main + platform-specific).
       - name: Publish @socketaddon/iocraft main package
         if: ${{ inputs.iocraft && !inputs.dry-run }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
           PKG_DIR="packages/package-builder/build/prod/out/socketaddon-iocraft"
           node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
           cd "$PKG_DIR"
-
-          # Determine tag based on version.
-          if [[ "$VERSION" =~ -pre\. ]]; then
-            TAG="pre"
-          else
-            TAG="latest"
-          fi
-
           npm publish --provenance --access public --no-git-checks --tag "$TAG"
 
       - name: Publish @socketaddon/iocraft platform packages
         if: ${{ inputs.iocraft && !inputs.dry-run }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
           set -euo pipefail
-
-          # Determine tag based on version.
-          if [[ "$VERSION" =~ -pre\. ]]; then
-            TAG="pre"
-          else
-            TAG="latest"
-          fi
 
           # Get platform targets from single source of truth.
           PLATFORMS_STR=$(node scripts/get-platform-targets.mjs)
