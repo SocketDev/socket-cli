@@ -150,22 +150,36 @@ jobs:
 
       - run: npm install -g npm@latest
 
-      # All packages use the same version from cli-package template.
-      - name: Get version
+      # Get versions for lock-stepped and independent packages.
+      - name: Get versions
         id: version
         run: |
-          VERSION=$(node -p "require('./packages/package-builder/templates/cli-package/package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Publishing version: $VERSION"
+          # Socket CLI ecosystem version (lock-stepped)
+          CLI_VERSION=$(node -p "require('./packages/package-builder/templates/cli-package/package.json').version")
+          echo "cli_version=$CLI_VERSION" >> $GITHUB_OUTPUT
+          echo "Socket CLI version: $CLI_VERSION"
 
-          # Determine npm dist-tag based on version.
-          if [[ "$VERSION" =~ -pre\. ]]; then
-            TAG="pre"
+          # iocraft ecosystem version (independent)
+          IOCRAFT_VERSION=$(node -p "require('./packages/package-builder/templates/socketaddon-main/package.json').version")
+          echo "iocraft_version=$IOCRAFT_VERSION" >> $GITHUB_OUTPUT
+          echo "iocraft version: $IOCRAFT_VERSION"
+
+          # Determine npm dist-tags based on versions
+          if [[ "$CLI_VERSION" =~ -pre\. ]]; then
+            CLI_TAG="pre"
           else
-            TAG="latest"
+            CLI_TAG="latest"
           fi
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "Using dist-tag: $TAG"
+          echo "cli_tag=$CLI_TAG" >> $GITHUB_OUTPUT
+          echo "Socket CLI dist-tag: $CLI_TAG"
+
+          if [[ "$IOCRAFT_VERSION" =~ -pre\. ]]; then
+            IOCRAFT_TAG="pre"
+          else
+            IOCRAFT_TAG="latest"
+          fi
+          echo "iocraft_tag=$IOCRAFT_TAG" >> $GITHUB_OUTPUT
+          echo "iocraft dist-tag: $IOCRAFT_TAG"
 
       # Download and publish binary packages.
       - name: Download binaries
@@ -178,8 +192,8 @@ jobs:
       - name: Publish binary packages
         if: ${{ inputs.socket && !inputs.dry-run }}
         env:
-          VERSION: ${{ steps.version.outputs.version }}
-          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.cli_version }}
+          TAG: ${{ steps.version.outputs.cli_tag }}
         run: |
           set -euo pipefail
 
@@ -236,8 +250,8 @@ jobs:
       - name: Publish @socketsecurity/cli
         if: ${{ inputs.cli && !inputs.dry-run }}
         env:
-          VERSION: ${{ steps.version.outputs.version }}
-          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.cli_version }}
+          TAG: ${{ steps.version.outputs.cli_tag }}
         run: |
           PKG_DIR="packages/package-builder/build/prod/out/cli"
           node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
@@ -247,8 +261,8 @@ jobs:
       - name: Publish @socketsecurity/cli-with-sentry
         if: ${{ inputs.cli-sentry && !inputs.dry-run }}
         env:
-          VERSION: ${{ steps.version.outputs.version }}
-          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.cli_version }}
+          TAG: ${{ steps.version.outputs.cli_tag }}
         run: |
           PKG_DIR="packages/package-builder/build/prod/out/cli-with-sentry"
           node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
@@ -259,8 +273,8 @@ jobs:
       - name: Publish socket
         if: ${{ inputs.socket && !inputs.dry-run }}
         env:
-          VERSION: ${{ steps.version.outputs.version }}
-          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.cli_version }}
+          TAG: ${{ steps.version.outputs.cli_tag }}
         run: |
           PKG_DIR="packages/package-builder/build/prod/out/socket"
           node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
@@ -271,8 +285,8 @@ jobs:
       - name: Publish @socketaddon/iocraft main package
         if: ${{ inputs.iocraft && !inputs.dry-run }}
         env:
-          VERSION: ${{ steps.version.outputs.version }}
-          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.iocraft_version }}
+          TAG: ${{ steps.version.outputs.iocraft_tag }}
         run: |
           PKG_DIR="packages/package-builder/build/prod/out/socketaddon-iocraft"
           node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
@@ -282,8 +296,8 @@ jobs:
       - name: Publish @socketaddon/iocraft platform packages
         if: ${{ inputs.iocraft && !inputs.dry-run }}
         env:
-          VERSION: ${{ steps.version.outputs.version }}
-          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.iocraft_version }}
+          TAG: ${{ steps.version.outputs.iocraft_tag }}
         run: |
           set -euo pipefail
 
@@ -311,7 +325,12 @@ jobs:
         run: |
           echo "## Publish Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Version: \`${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ inputs.socket }}" = "true" ] || [ "${{ inputs.cli }}" = "true" ] || [ "${{ inputs.cli-sentry }}" = "true" ]; then
+            echo "Socket CLI version: \`${{ steps.version.outputs.cli_version }}\` (tag: \`${{ steps.version.outputs.cli_tag }}\`)" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ inputs.iocraft }}" = "true" ]; then
+            echo "iocraft version: \`${{ steps.version.outputs.iocraft_version }}\` (tag: \`${{ steps.version.outputs.iocraft_tag }}\`)" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ "${{ inputs.dry-run }}" = "true" ]; then
             echo "**Dry run - nothing was published**" >> $GITHUB_STEP_SUMMARY
