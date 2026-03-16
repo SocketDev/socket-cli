@@ -263,7 +263,15 @@ jobs:
           PKG_DIR="packages/package-builder/build/prod/out/socketaddon-iocraft"
           node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
           cd "$PKG_DIR"
-          npm publish --provenance --access public --no-git-checks
+
+          # Determine tag based on version.
+          if [[ "$VERSION" =~ -pre\. ]]; then
+            TAG="pre"
+          else
+            TAG="latest"
+          fi
+
+          npm publish --provenance --access public --no-git-checks --tag "$TAG"
 
       - name: Publish @socketaddon/iocraft platform packages
         if: ${{ inputs.iocraft && !inputs.dry-run }}
@@ -271,6 +279,13 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
+
+          # Determine tag based on version.
+          if [[ "$VERSION" =~ -pre\. ]]; then
+            TAG="pre"
+          else
+            TAG="latest"
+          fi
 
           # Get platform targets from single source of truth.
           PLATFORMS_STR=$(node scripts/get-platform-targets.mjs)
@@ -286,7 +301,7 @@ jobs:
 
             # Publish.
             cd "$PKG_DIR"
-            npm publish --provenance --access public --no-git-checks
+            npm publish --provenance --access public --no-git-checks --tag "$TAG"
             cd -
 
             echo "::endgroup::"
