@@ -37,9 +37,12 @@ describe('branch-cleanup integration tests', () => {
     remoteDir = path.join(tempDir, 'remote.git')
     repoDir = path.join(tempDir, 'repo')
 
-    // Initialize bare remote repository.
+    // Initialize bare remote repository with main as default branch.
     await fs.mkdir(remoteDir, { recursive: true })
-    await spawn('git', ['init', '--bare'], { cwd: remoteDir, stdio: 'ignore' })
+    await spawn('git', ['init', '--bare', '--initial-branch', 'main'], {
+      cwd: remoteDir,
+      stdio: 'ignore',
+    })
 
     // Clone the remote to create local repository.
     await spawn('git', ['clone', remoteDir, repoDir], {
