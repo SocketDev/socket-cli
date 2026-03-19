@@ -19,9 +19,10 @@
  */
 
 import { createEnvProxy } from '@socketsecurity/lib/env'
-import { type SpawnOptions, spawn } from '@socketsecurity/lib/spawn'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 import type { ChildProcess } from 'node:child_process'
+import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 interface PooledProcess {
   process: ChildProcess

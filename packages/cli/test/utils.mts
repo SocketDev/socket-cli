@@ -4,8 +4,10 @@ import { fileURLToPath } from 'node:url'
 import { it } from 'vitest'
 
 import { createEnvProxy } from '@socketsecurity/lib/env'
-import { type SpawnOptions, spawn } from '@socketsecurity/lib/spawn'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { stripAnsi } from '@socketsecurity/lib/strings'
+
+import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 import {
   type ScrubOptions,
