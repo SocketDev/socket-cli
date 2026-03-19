@@ -46,11 +46,11 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version-file: .node-version
 
@@ -68,7 +68,7 @@ jobs:
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
       - name: Upload CLI bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8ff5e4e9264e1c76a100385dcb87c2b141 # v4.4.3
         with:
           name: cli-bundle
           path: packages/cli/build/cli.js
@@ -87,11 +87,11 @@ jobs:
       matrix: ${{ fromJson(needs.build-cli.outputs.matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version-file: .node-version
           registry-url: 'https://registry.npmjs.org'
@@ -101,7 +101,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Download CLI bundle
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           name: cli-bundle
           path: packages/cli/build
@@ -119,7 +119,7 @@ jobs:
             ${LIBC_FLAG}
 
       - name: Upload binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8ff5e4e9264e1c76a100385dcb87c2b141 # v4.4.3
         with:
           name: binary-${{ matrix.releasePlatform }}-${{ matrix.arch }}${{ matrix.libc && '-musl' || '' }}
           path: packages/package-builder/build/prod/out/socketbin-cli-${{ matrix.releasePlatform }}-${{ matrix.arch }}${{ matrix.libc && '-musl' || '' }}/socket${{ matrix.platform == 'win32' && '.exe' || '' }}
@@ -136,11 +136,11 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version-file: .node-version
           registry-url: 'https://registry.npmjs.org'
@@ -185,7 +185,7 @@ jobs:
       # Download and publish binary packages.
       - name: Download binaries
         if: ${{ inputs.socket }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           path: artifacts
           pattern: binary-*

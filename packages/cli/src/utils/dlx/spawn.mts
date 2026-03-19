@@ -260,6 +260,24 @@ async function downloadGitHubReleaseBinary(
       }
 
       zip.extractAllTo(cacheDir, true)
+
+      // Security: validate no symlinks escape the cache directory after extraction.
+      const extractedFiles = await fs.readdir(cacheDir, { recursive: true })
+      for (const file of extractedFiles) {
+        const fullPath = path.join(cacheDir, file)
+        const stats = await fs.lstat(fullPath)
+        if (stats.isSymbolicLink()) {
+          const target = await fs.readlink(fullPath)
+          const resolvedTarget = path.resolve(path.dirname(fullPath), target)
+          if (!resolvedTarget.startsWith(normalizedCacheDir)) {
+            await fs.unlink(fullPath)
+            throw new InputError(
+              `Archive contains unsafe symbolic link: ${file}. ` +
+                `This may indicate a compromised release asset.`,
+            )
+          }
+        }
+      }
     } else if (isTarGz) {
       // Extract tar.gz using system tar.
       // Note: tar has built-in path traversal protection by default.
