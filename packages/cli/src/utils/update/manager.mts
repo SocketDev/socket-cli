@@ -42,6 +42,9 @@ import type { StoreRecord } from '@socketsecurity/lib/dlx/manifest'
 
 const logger = getDefaultLogger()
 
+// Notification TTL: Show notification at most once per 7 days (604800000 ms).
+const NOTIFICATION_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
 export interface UpdateManagerOptions {
   authInfo?: AuthInfo | undefined
   name: string
@@ -228,25 +231,45 @@ export async function checkForUpdates(
     }
   }
 
-  // Show notification if update is available.
+  // Show notification if update is available and not shown recently.
   if (updateResult.updateAvailable && !isFresh) {
-    try {
-      const notificationOptions = {
-        name,
-        current: updateResult.current,
-        latest: updateResult.latest,
-      }
+    const now = Date.now()
+    const lastNotification = record?.timestampNotification ?? 0
+    const timeSinceLastNotification = now - lastNotification
 
-      if (immediate) {
-        showUpdateNotification(notificationOptions)
-      } else {
-        scheduleExitNotification(notificationOptions)
+    // Only show notification if it's been more than NOTIFICATION_TTL_MS since last notification.
+    if (timeSinceLastNotification >= NOTIFICATION_TTL_MS) {
+      try {
+        const notificationOptions = {
+          name,
+          current: updateResult.current,
+          latest: updateResult.latest,
+        }
+
+        if (immediate) {
+          showUpdateNotification(notificationOptions)
+        } else {
+          scheduleExitNotification(notificationOptions)
+        }
+
+        // Update timestampNotification in cache to prevent spam.
+        try {
+          await dlxManifest.set(cacheKey, {
+            timestampFetch: record?.timestampFetch ?? now,
+            timestampNotification: now,
+            version: updateResult.latest,
+          })
+        } catch (e) {
+          loggerLocal.warn(
+            `Failed to update notification timestamp: ${e instanceof Error ? e.message : String(e)}`,
+          )
+        }
+      } catch (e) {
+        loggerLocal.warn(
+          `Failed to set up notification: ${e instanceof Error ? e.message : String(e)}`,
+        )
+        // Notification failure is not critical - update is still available.
       }
-    } catch (e) {
-      loggerLocal.warn(
-        `Failed to set up notification: ${e instanceof Error ? e.message : String(e)}`,
-      )
-      // Notification failure is not critical - update is still available.
     }
   }
 

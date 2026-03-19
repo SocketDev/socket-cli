@@ -381,10 +381,6 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     localConfig[key] = value
   }
 
-  // Invalidate mtime cache to force reload on next read.
-  // This prevents stale reads during concurrent updates.
-  _cachedConfigMtime = undefined
-
   if (_configFromFlag) {
     return {
       ok: true,
@@ -422,7 +418,9 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
           configFilePath,
           Buffer.from(jsonContent).toString('base64'),
         )
-        // Update mtime AFTER write to prevent race condition.
+        // Invalidate mtime cache AFTER write completes to prevent stale reads.
+        _cachedConfigMtime = undefined
+        // Update mtime cache with new value.
         try {
           const stats = statSync(configFilePath)
           _cachedConfigMtime = stats.mtimeMs
