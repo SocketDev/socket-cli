@@ -118,7 +118,10 @@ export async function addOverrides(
     manifestNpmOverrides,
     async ({ 1: data }: { 1: any }) => {
       const { name: sockRegPkgName, package: origPkgName, version } = data
-      const major = getMajor(version)!
+      const major = getMajor(version)
+      if (major === undefined) {
+        return
+      }
       const sockOverridePrefix = `npm:${sockRegPkgName}@`
       const sockOverrideSpec = `${sockOverridePrefix}${pin ? version : `^${major}`}`
       for (const { 1: depObj } of depEntries) {
@@ -232,7 +235,10 @@ export async function addOverrides(
                     const otherVersion = (manifest as { version?: string })
                       ?.version
                     if (otherVersion && otherVersion !== version) {
-                      newSpec = `${sockOverridePrefix}${pin ? otherVersion : `^${getMajor(otherVersion)!}`}`
+                      const otherMajor = getMajor(otherVersion)
+                      if (otherMajor !== undefined) {
+                        newSpec = `${sockOverridePrefix}${pin ? otherVersion : `^${otherMajor}`}`
+                      }
                     }
                   }
                 } else {
