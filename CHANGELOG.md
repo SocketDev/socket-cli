@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.74](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.74) - 2026-03-19
+
+### Fixed
+- Fixed `socket scan create --reach` failing with input validation errors when no explicit target is passed. In non-TTY environments (e.g. Jenkins CI), the interactive prompt to confirm the current directory would silently fail, causing all reach validations to error. Now defaults to `.` (cwd) when `--reach` is used without a target.
+
+### Changed
+- Updated the Coana CLI to v `14.12.200`.
+
 ## [1.1.73](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.73) - 2026-03-13
 
 ### Changed

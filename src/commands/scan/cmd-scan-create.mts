@@ -381,11 +381,20 @@ async function run(
   let updatedInput = false
 
   // Accept zero or more paths. Default to cwd() if none given.
-  let targets = cli.input || [cwd]
+  let targets = cli.input.length ? cli.input : []
 
   if (!targets.length && !dryRun && interactive) {
     targets = await suggestTarget()
     updatedInput = true
+  }
+
+  // Fallback: if targets is still empty after the interactive prompt (e.g. the
+  // select() prompt silently fails in non-TTY environments like Jenkins CI
+  // because wrapPrompt swallows non-TypeError errors and returns undefined),
+  // default to '.' so that downstream validations don't fail with confusing
+  // "At least one TARGET (missing)" errors.
+  if (!targets.length && !dryRun) {
+    targets = ['.']
   }
 
   // We're going to need an api token to suggest data because those suggestions
