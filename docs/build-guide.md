@@ -15,7 +15,7 @@ The Socket CLI has two main build outputs:
 
 | Requirement | Version    | Notes                                    |
 | ----------- | ---------- | ---------------------------------------- |
-| Node.js     | >= 25.5.0  | Monorepo development (building, testing) |
+| Node.js     | >= 25.8.1  | Monorepo development (building, testing) |
 | Node.js     | >= 18.0.0  | Running published CLI package            |
 | pnpm        | >= 10.22.0 | Package manager                          |
 

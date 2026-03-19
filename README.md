@@ -12,7 +12,7 @@ CLI for [Socket.dev](https://socket.dev) security analysis. For user documentati
 
 ### Prerequisites
 
-- **Node.js** 25.5.0+ (see `.node-version`)
+- **Node.js** 25.8.1+ (see `.node-version`)
 - **pnpm** 10.22+ (see `packageManager` in `package.json`)
 
 ### Setup
