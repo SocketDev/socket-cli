@@ -381,9 +381,17 @@ async function run(
   let updatedInput = false
 
   // Accept zero or more paths. Default to cwd() if none given.
-  let targets = cli.input || [cwd]
+  // Note: cli.input is always an array (even if empty), so || [cwd] never
+  // fires because [] is truthy. Use .length check instead.
+  let targets = cli.input.length ? cli.input : []
 
-  if (!targets.length && !dryRun && interactive) {
+  if (!targets.length && reach) {
+    // --reach requires exactly one directory target; default to cwd rather
+    // than relying on an interactive prompt that fails in non-TTY environments
+    // such as Jenkins CI (the select() prompt silently returns undefined when
+    // stdin is not a TTY, causing all downstream validations to fail).
+    targets = ['.']
+  } else if (!targets.length && !dryRun && interactive) {
     targets = await suggestTarget()
     updatedInput = true
   }
