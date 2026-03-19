@@ -183,24 +183,33 @@ async function main() {
       logger.step('Phase 2: Preparing build (parallel)...')
     }
 
-    const parallelPrep = await Promise.all([
+    const parallelPrep = await Promise.allSettled([
       spawn('node', ['scripts/generate-packages.mjs'], {
         shell: WIN32,
         stdio: 'inherit',
-      }),
+      }).then(result => ({ name: 'Generate Packages', result })),
       spawn('node', [...NODE_MEMORY_FLAGS, 'scripts/download-assets.mjs'], {
         shell: WIN32,
         stdio: 'inherit',
-      }),
+      }).then(result => ({ name: 'Download Assets', result })),
     ])
 
-    for (const [index, result] of parallelPrep.entries()) {
-      const stepName = index === 0 ? 'Generate Packages' : 'Download Assets'
+    for (const settled of parallelPrep) {
+      if (settled.status === 'rejected') {
+        if (!quiet) {
+          logger.error(`Parallel preparation failed: ${settled.reason}`)
+          printError('Build failed')
+        }
+        process.exitCode = 1
+        return
+      }
+
+      const { name, result } = settled.value
 
       // Check for null spawn result.
       if (!result) {
         if (!quiet) {
-          logger.error(`${stepName} failed to start`)
+          logger.error(`${name} failed to start`)
           printError('Build failed')
         }
         process.exitCode = 1
@@ -209,7 +218,7 @@ async function main() {
 
       if (result.code !== 0) {
         if (!quiet) {
-          logger.error(`${stepName} failed (exit code: ${result.code})`)
+          logger.error(`${name} failed (exit code: ${result.code})`)
           printError('Build failed')
         }
         process.exitCode = result.code ?? 1
@@ -217,7 +226,7 @@ async function main() {
       }
 
       if (!quiet && verbose) {
-        logger.success(`${stepName} completed`)
+        logger.success(`${name} completed`)
       }
     }
 

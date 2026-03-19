@@ -48,9 +48,9 @@ export default defineConfig({
         // 4. Test state pollution is prevented through proper beforeEach/afterEach
         // 5. Our tests are designed to clean up after themselves
         //
-        // Tests requiring true isolation should use pool: 'forks' or be marked
-        // with { pool: 'forks' } in the test file itself.
-        isolate: false,
+        // Updated: Using isolate: true for consistency with CLI package config
+        // and to ensure reliability in CI environments.
+        isolate: true,
         // Use worker threads for better performance
         useAtomics: true,
       },
