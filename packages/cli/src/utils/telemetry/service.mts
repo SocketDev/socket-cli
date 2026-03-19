@@ -319,7 +319,7 @@ export class TelemetryService {
       return
     }
 
-    if (this.eventQueue.length === 0) {
+    if (!this.eventQueue.length) {
       return
     }
 

@@ -56,7 +56,7 @@ export class PromiseQueue {
   }
 
   private runNext(): void {
-    if (this.running >= this.maxConcurrency || this.queue.length === 0) {
+    if (this.running >= this.maxConcurrency || !this.queue.length) {
       return
     }
 
@@ -85,7 +85,7 @@ export class PromiseQueue {
    */
   async onIdle(): Promise<void> {
     // Already idle - resolve immediately.
-    if (this.running === 0 && this.queue.length === 0) {
+    if (this.running === 0 && !this.queue.length) {
       return
     }
     // Wait for idle state via resolver queue (no polling).
@@ -95,7 +95,7 @@ export class PromiseQueue {
   }
 
   private notifyIdle(): void {
-    if (this.running === 0 && this.queue.length === 0) {
+    if (this.running === 0 && !this.queue.length) {
       for (const resolve of this.idleResolvers) {
         resolve()
       }

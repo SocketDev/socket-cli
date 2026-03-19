@@ -108,7 +108,7 @@ async function run(
     {
       test: purls.length === 1,
       message: 'Expecting at least one package',
-      fail: purls.length === 0 ? 'missing' : 'too many',
+      fail: !purls.length ? 'missing' : 'too many',
     },
     {
       nook: true,

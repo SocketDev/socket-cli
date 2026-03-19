@@ -39,7 +39,7 @@ export function outputDryRunPreview(preview: DryRunPreview): void {
   logger.log(`${DRY_RUN_LABEL}: ${preview.summary}`)
   logger.log('')
 
-  if (preview.actions.length === 0) {
+  if (!preview.actions.length) {
     logger.log('  No actions would be performed.')
   } else {
     logger.log('  Actions that would be performed:')

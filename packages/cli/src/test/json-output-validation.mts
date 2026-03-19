@@ -71,7 +71,7 @@ export function validateSocketJson<T = unknown>(
       )
     }
     // Error response must have message field.
-    if (typeof parsed.message !== 'string' || parsed.message.length === 0) {
+    if (typeof parsed.message !== 'string' || !parsed.message.length) {
       throw new Error(
         `JSON output missing required 'message' field when ok is false: ${jsonString}`,
       )

@@ -31,6 +31,7 @@ import path from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 
 import { PNPM } from '@socketsecurity/lib/constants/agents'
+import { safeDelete } from '@socketsecurity/lib/fs'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import {
@@ -442,7 +443,7 @@ describe('socket pnpm', async () => {
       expect(stdout).toContain('Socket CLI executed successfully')
     } finally {
       // Clean up the temporary directory.
-      await fs.rm(tmpDir, { force: true, recursive: true })
+      await safeDelete(tmpDir)
     }
   })
 })

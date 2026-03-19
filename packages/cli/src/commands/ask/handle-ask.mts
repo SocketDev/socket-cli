@@ -366,7 +366,7 @@ async function onnxSemanticMatch(query: string): Promise<{
   await ensureCommandEmbeddings()
 
   const queryEmbedding = await getEmbedding(query)
-  if (!queryEmbedding || Object.keys(commandEmbeddings).length === 0) {
+  if (!queryEmbedding || !Object.keys(commandEmbeddings).length) {
     return null
   }
 

@@ -80,7 +80,7 @@ export function simpleOutput<T>(
       // Handle table output
       if (table && outputKind !== 'json') {
         const rows = table.rows(data)
-        if (rows.length === 0) {
+        if (!rows.length) {
           logger.log(emptyMessage)
           return
         }
@@ -175,7 +175,7 @@ export function outputPaginatedList<T>(
 
       // Show table
       const rows = tableOptions.getRows(data)
-      if (rows.length === 0) {
+      if (!rows.length) {
         logger.log(tableOptions.emptyMessage || 'No results found')
         return
       }

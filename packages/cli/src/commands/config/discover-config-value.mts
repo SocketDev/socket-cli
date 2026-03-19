@@ -137,7 +137,7 @@ async function getDefaultOrgFromToken(): Promise<
   }
 
   const { organizations } = orgsCResult.data
-  if (organizations.length === 0) {
+  if (!organizations.length) {
     return undefined
   }
   const slugs = getOrgSlugs(organizations)

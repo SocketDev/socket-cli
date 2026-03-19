@@ -25,6 +25,7 @@ import { promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
+import { safeDelete } from '@socketsecurity/lib/fs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { findUp } from '../../../../src/utils/fs/find-up.mts'
@@ -57,7 +58,7 @@ describe('fs utilities', () => {
     afterEach(async () => {
       // Clean up test directory.
       try {
-        await fs.rm(testDir, { recursive: true, force: true })
+        await safeDelete(testDir)
       } catch {
         // Ignore cleanup errors.
       }

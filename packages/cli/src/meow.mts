@@ -188,7 +188,7 @@ export default function meow<
   }
 
   // Auto help/version.
-  if (input.length === 0 && argv.length === 1) {
+  if (!input.length && argv.length === 1) {
     if (flagValues['version' as keyof T] === true && autoVersion) {
       showVersion()
     } else if (flagValues['help' as keyof T] === true && autoHelp) {
