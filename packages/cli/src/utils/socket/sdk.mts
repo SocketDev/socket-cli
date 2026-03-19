@@ -118,6 +118,10 @@ export function getVisibleTokenPrefix(): string {
     : ''
 }
 
+export function invalidateDefaultApiToken(): void {
+  _defaultToken = undefined
+}
+
 export function hasDefaultApiToken(): boolean {
   return !!getDefaultApiToken()
 }

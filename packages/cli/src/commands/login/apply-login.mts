@@ -5,6 +5,7 @@ import {
   CONFIG_KEY_ENFORCED_ORGS,
 } from '../../constants/config.mts'
 import { updateConfigValue } from '../../utils/config.mts'
+import { invalidateDefaultApiToken } from '../../utils/socket/sdk.mts'
 
 export function applyLogin(
   apiToken: string,
@@ -16,4 +17,5 @@ export function applyLogin(
   updateConfigValue(CONFIG_KEY_API_TOKEN, apiToken)
   updateConfigValue(CONFIG_KEY_API_BASE_URL, apiBaseUrl)
   updateConfigValue(CONFIG_KEY_API_PROXY, apiProxy)
+  invalidateDefaultApiToken()
 }

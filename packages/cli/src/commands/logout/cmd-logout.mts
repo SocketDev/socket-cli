@@ -10,6 +10,7 @@ import {
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { isConfigFromFlag, updateConfigValue } from '../../utils/config.mts'
+import { invalidateDefaultApiToken } from '../../utils/socket/sdk.mts'
 
 import type {
   CliCommandConfig,
@@ -31,6 +32,7 @@ function applyLogout(): void {
   updateConfigValue(CONFIG_KEY_API_BASE_URL, null)
   updateConfigValue(CONFIG_KEY_API_PROXY, null)
   updateConfigValue(CONFIG_KEY_ENFORCED_ORGS, null)
+  invalidateDefaultApiToken()
 }
 
 function attemptLogout(): void {
