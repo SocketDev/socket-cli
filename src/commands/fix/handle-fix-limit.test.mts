@@ -217,7 +217,7 @@ describe('socket fix --pr-limit behavior verification', () => {
       })
 
       expect(result.ok).toBe(true)
-      expect(result.data?.fixed).toBe(false)
+      expect(result.data?.fixedAll).toBe(false)
 
       // Only discovery call, no fix call since no GHSAs found.
       expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
@@ -374,7 +374,7 @@ describe('socket fix --pr-limit behavior verification', () => {
       })
 
       expect(result.ok).toBe(true)
-      expect(result.data?.fixed).toBe(false)
+      expect(result.data?.fixedAll).toBe(false)
 
       // With 5 open PRs and prLimit 3, adjusted limit is 0, so no processing.
       expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()

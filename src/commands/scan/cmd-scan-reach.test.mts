@@ -43,6 +43,7 @@ describe('socket scan reach', async () => {
             --reach-debug       Enable debug mode for reachability analysis. Provides verbose logging from the reachability CLI.
             --reach-detailed-analysis-log-file  A log file with detailed analysis logs is written to root of each analyzed workspace.
             --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
+            --reach-disable-external-tool-checks  Disable external tool checks during reachability analysis.
             --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
             --reach-enable-analysis-splitting  Allow the reachability analysis to partition CVEs into buckets that are processed in separate analysis runs. May improve accuracy, but not recommended by default.
             --reach-exclude-paths  List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.

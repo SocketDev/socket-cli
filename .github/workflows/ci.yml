@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main, v1.x]
+  pull_request:
+    branches: [main, v1.x]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@51be85d39d3b4a42dd9d4712948b9d30a2e04794
+        with:
+          node-version: 22
+
+      - name: Lint
+        run: pnpm check:lint
+
+  typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@51be85d39d3b4a42dd9d4712948b9d30a2e04794
+        with:
+          node-version: 22
+
+      - name: Type check
+        run: pnpm check:tsc
+
+  test:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: true
+      matrix:
+        node-version: [20, 22, 24]
+        os: [ubuntu-latest]
+    steps:
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@51be85d39d3b4a42dd9d4712948b9d30a2e04794
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Run unit tests
+        run: pnpm test:unit
