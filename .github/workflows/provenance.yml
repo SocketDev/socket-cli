@@ -31,6 +31,7 @@ on:
 permissions:
   contents: read
 
+env:
   BUILD_MODE: prod
 
 jobs:
@@ -236,7 +237,7 @@ jobs:
 
             # Publish.
             cd "$PKG_DIR"
-            npm publish --provenance --access public --tag "$TAG"
+            NODE_AUTH_TOKEN="${{ secrets.NPM_TOKEN }}" npm publish --provenance --access public --tag "$TAG"
             cd -
 
             echo "::endgroup::"
@@ -256,7 +257,7 @@ jobs:
           PKG_DIR="packages/package-builder/build/prod/out/cli"
           node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
           cd "$PKG_DIR"
-          npm publish --provenance --access public --no-git-checks --tag "$TAG"
+          NODE_AUTH_TOKEN="${{ secrets.NPM_TOKEN }}" npm publish --provenance --access public --no-git-checks --tag "$TAG"
 
       - name: Publish @socketsecurity/cli-with-sentry
         if: ${{ inputs.cli-sentry && !inputs.dry-run }}
@@ -267,7 +268,7 @@ jobs:
           PKG_DIR="packages/package-builder/build/prod/out/cli-with-sentry"
           node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
           cd "$PKG_DIR"
-          npm publish --provenance --access public --no-git-checks --tag "$TAG"
+          NODE_AUTH_TOKEN="${{ secrets.NPM_TOKEN }}" npm publish --provenance --access public --no-git-checks --tag "$TAG"
 
       # socket published last - depends on @socketbin/* being published first.
       - name: Publish socket
@@ -279,7 +280,7 @@ jobs:
           PKG_DIR="packages/package-builder/build/prod/out/socket"
           node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
           cd "$PKG_DIR"
-          npm publish --provenance --access public --no-git-checks --tag "$TAG"
+          NODE_AUTH_TOKEN="${{ secrets.NPM_TOKEN }}" npm publish --provenance --access public --no-git-checks --tag "$TAG"
 
       # Download iocraft binaries from socket-btm.
       - name: Download iocraft binaries
@@ -322,7 +323,7 @@ jobs:
           PKG_DIR="packages/package-builder/build/prod/out/socketaddon-iocraft"
           node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
           cd "$PKG_DIR"
-          npm publish --provenance --access public --no-git-checks --tag "$TAG"
+          NODE_AUTH_TOKEN="${{ secrets.NPM_TOKEN }}" npm publish --provenance --access public --no-git-checks --tag "$TAG"
 
       - name: Publish @socketaddon/iocraft platform packages
         if: ${{ inputs.iocraft && !inputs.dry-run }}
@@ -346,7 +347,7 @@ jobs:
 
             # Publish.
             cd "$PKG_DIR"
-            npm publish --provenance --access public --no-git-checks --tag "$TAG"
+            NODE_AUTH_TOKEN="${{ secrets.NPM_TOKEN }}" npm publish --provenance --access public --no-git-checks --tag "$TAG"
             cd -
 
             echo "::endgroup::"

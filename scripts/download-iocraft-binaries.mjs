@@ -70,7 +70,7 @@ async function downloadIocraftBinary(config) {
     // Download the asset.
     let assetPath
     try {
-      const assetPattern = `iocraft-${target}.node`
+      const assetPattern = `iocraft-*-${target}.node`
       assetPath = await downloadSocketBtmRelease('iocraft', {
         asset: assetPattern,
         cwd: rootPath,
