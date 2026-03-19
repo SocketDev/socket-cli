@@ -150,9 +150,9 @@ async function run(
       fail:
         !id1 && !id2
           ? 'missing both Scan IDs'
-          : !id2
-            ? 'missing second Scan ID'
-            : 'missing first Scan ID', // Not sure how this can happen but ok.
+          : !id1
+            ? 'missing first Scan ID'
+            : 'missing second Scan ID',
     },
     {
       test: !!orgSlug,
