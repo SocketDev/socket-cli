@@ -50,6 +50,7 @@ import type {
   SocketSdkSuccessResult,
 } from '@socketsecurity/sdk'
 
+const MAX_REDIRECTS = 20
 const NO_ERROR_MESSAGE = 'No error message returned'
 
 // Cached HTTPS agent for extra CA certificate support in direct API calls.
@@ -73,27 +74,61 @@ function getHttpsAgent(): HttpsAgent | undefined {
 
 // Wrapper around fetch that supports extra CA certificates via SSL_CERT_FILE.
 // Uses node:https.request with a custom agent when extra CA certs are needed,
-// falling back to regular fetch() otherwise.
-type ApiFetchInit = {
+// falling back to regular fetch() otherwise. Follows redirects like fetch().
+export type ApiFetchInit = {
   body?: string | undefined
   headers?: Record<string, string> | undefined
   method?: string | undefined
 }
 
-async function apiFetch(url: string, init: ApiFetchInit): Promise<Response> {
-  const agent = getHttpsAgent()
-  if (!agent) {
-    return await fetch(url, init as globalThis.RequestInit)
-  }
-  return await new Promise((resolve, reject) => {
+// Internal httpsRequest-based fetch with redirect support.
+function _httpsRequestFetch(
+  url: string,
+  init: ApiFetchInit,
+  agent: HttpsAgent,
+  redirectCount: number,
+): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    const headers: Record<string, string> = { ...init.headers }
+    // Set Content-Length for request bodies to avoid chunked transfer encoding.
+    if (init.body) {
+      headers['content-length'] = String(Buffer.byteLength(init.body))
+    }
     const req = httpsRequest(
       url,
       {
         method: init.method || 'GET',
-        headers: init.headers,
+        headers,
         agent,
       },
       res => {
+        const { statusCode } = res
+        // Follow redirects to match fetch() behavior.
+        if (
+          statusCode &&
+          statusCode >= 300 &&
+          statusCode < 400 &&
+          res.headers['location']
+        ) {
+          // Consume the response body to free up memory.
+          res.resume()
+          if (redirectCount >= MAX_REDIRECTS) {
+            reject(new Error('Maximum redirect limit reached'))
+            return
+          }
+          const redirectUrl = new URL(res.headers['location'], url).href
+          // 307 and 308 preserve the original method and body.
+          const preserveMethod = statusCode === 307 || statusCode === 308
+          resolve(
+            _httpsRequestFetch(
+              redirectUrl,
+              preserveMethod ? init : { headers: init.headers, method: 'GET' },
+              agent,
+              redirectCount + 1,
+            ),
+          )
+          return
+        }
         const chunks: Buffer[] = []
         res.on('data', (chunk: Buffer) => chunks.push(chunk))
         res.on('end', () => {
@@ -110,7 +145,7 @@ async function apiFetch(url: string, init: ApiFetchInit): Promise<Response> {
           }
           resolve(
             new Response(body, {
-              status: res.statusCode ?? 0,
+              status: statusCode ?? 0,
               statusText: res.statusMessage ?? '',
               headers: responseHeaders,
             }),
@@ -125,6 +160,17 @@ async function apiFetch(url: string, init: ApiFetchInit): Promise<Response> {
     req.on('error', reject)
     req.end()
   })
+}
+
+export async function apiFetch(
+  url: string,
+  init: ApiFetchInit = {},
+): Promise<Response> {
+  const agent = getHttpsAgent()
+  if (!agent) {
+    return await fetch(url, init as globalThis.RequestInit)
+  }
+  return await _httpsRequestFetch(url, init, agent, 0)
 }
 
 export type CommandRequirements = {

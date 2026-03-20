@@ -77,6 +77,12 @@ vi.mock('./debug.mts', () => ({
   debugApiResponse: mockDebugApiResponse,
 }))
 
+// Mock registry debug functions used by getExtraCaCerts.
+vi.mock('@socketsecurity/registry/lib/debug', () => ({
+  debugDir: vi.fn(),
+  debugFn: vi.fn(),
+}))
+
 // Mock config.
 const mockGetConfigValueOrUndef = vi.hoisted(() => vi.fn(() => undefined))
 vi.mock('./config.mts', () => ({

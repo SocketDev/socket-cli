@@ -337,4 +337,115 @@ describe('apiFetch with extra CA certificates', () => {
 
     expect(result.ok).toBe(true)
   })
+
+  it('should set Content-Length header for POST requests through https.request', async () => {
+    const caCerts = ['ROOT_CERT', 'EXTRA_CERT']
+    mockGetExtraCaCerts.mockReturnValue(caCerts)
+
+    const mockReq = {
+      end: vi.fn(),
+      on: vi.fn(),
+      write: vi.fn(),
+    }
+
+    mockHttpsRequest.mockImplementation(
+      (_url: string, _opts: unknown, callback: RequestCallback) => {
+        setTimeout(() => {
+          const mockRes = {
+            headers: { 'content-type': 'application/json' },
+            on: vi.fn(),
+            statusCode: 200,
+            statusMessage: 'OK',
+          }
+          const handlers: Record<string, Function> = {}
+          mockRes.on.mockImplementation((event: string, handler: Function) => {
+            handlers[event] = handler
+            return mockRes
+          })
+          callback(mockRes)
+          handlers['data']?.(Buffer.from('{"result":"ok"}'))
+          handlers['end']?.()
+        }, 0)
+        return mockReq
+      },
+    )
+
+    const { sendApiRequest } = await import('./api.mts')
+    await sendApiRequest('test/path', {
+      body: { key: 'value' },
+      method: 'POST',
+    })
+
+    // Verify Content-Length header was set in the request options.
+    const callArgs = mockHttpsRequest.mock.calls[0]
+    const requestHeaders = callArgs[1].headers
+    expect(requestHeaders['content-length']).toBe(
+      String(Buffer.byteLength('{"key":"value"}')),
+    )
+  })
+
+  it('should follow redirects in https.request path', async () => {
+    const caCerts = ['ROOT_CERT', 'EXTRA_CERT']
+    mockGetExtraCaCerts.mockReturnValue(caCerts)
+
+    const mockReq = {
+      end: vi.fn(),
+      on: vi.fn(),
+      write: vi.fn(),
+    }
+
+    // First call: return a 302 redirect.
+    mockHttpsRequest.mockImplementationOnce(
+      (_url: string, _opts: unknown, callback: RequestCallback) => {
+        setTimeout(() => {
+          const mockRes = {
+            headers: { location: 'https://api.socket.dev/v0/redirected' },
+            on: vi.fn(),
+            resume: vi.fn(),
+            statusCode: 302,
+            statusMessage: 'Found',
+          }
+          callback(mockRes as any)
+        }, 0)
+        return mockReq
+      },
+    )
+
+    // Second call: return the actual response.
+    mockHttpsRequest.mockImplementationOnce(
+      (_url: string, _opts: unknown, callback: RequestCallback) => {
+        setTimeout(() => {
+          const mockRes = {
+            headers: { 'content-type': 'text/plain' },
+            on: vi.fn(),
+            statusCode: 200,
+            statusMessage: 'OK',
+          }
+          const handlers: Record<string, Function> = {}
+          mockRes.on.mockImplementation((event: string, handler: Function) => {
+            handlers[event] = handler
+            return mockRes
+          })
+          callback(mockRes)
+          handlers['data']?.(Buffer.from('redirected response'))
+          handlers['end']?.()
+        }, 0)
+        return mockReq
+      },
+    )
+
+    const { queryApiSafeText } = await import('./api.mts')
+    const result = await queryApiSafeText('test/path', 'test request')
+
+    // Should have made two https requests: original and redirect.
+    expect(mockHttpsRequest).toHaveBeenCalledTimes(2)
+    // Second call should be to the redirected URL.
+    expect(mockHttpsRequest.mock.calls[1][0]).toBe(
+      'https://api.socket.dev/v0/redirected',
+    )
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.data).toBe('redirected response')
+    }
+  })
 })

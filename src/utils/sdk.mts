@@ -31,6 +31,7 @@ import { rootCertificates } from 'node:tls'
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { password } from '@socketsecurity/registry/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
@@ -98,7 +99,8 @@ export function getExtraCaCerts(): string[] | undefined {
     // in an agent replaces the default trust store, so both must be included.
     _extraCaCerts = [...rootCertificates, extraCerts]
     return _extraCaCerts
-  } catch {
+  } catch (e) {
+    debugFn('warn', `Failed to read certificate file: ${certPath}`, e)
     return undefined
   }
 }
