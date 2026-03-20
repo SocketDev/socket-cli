@@ -81,6 +81,10 @@ export type SocketPackageAlert = {
 
 export type AlertsByPurl = Map<string, SocketPackageAlert[]>
 
+// RFC 2606 reserved second-level domains — safe for documentation use,
+// never a supply chain risk. Used to suppress false-positive urlStrings alerts.
+const RFC_2606_DOMAINS = new Set(['example.com', 'example.net', 'example.org'])
+
 const MIN_ABOVE_THE_FOLD_COUNT = 3
 
 const MIN_ABOVE_THE_FOLD_ALERT_COUNT = 1
@@ -203,6 +207,19 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
       enabledFlag === false
     ) {
       continue
+    }
+    // Skip urlStrings alerts that only contain RFC 2606 reserved domains.
+    // These domains (example.com, example.net, example.org) are reserved for
+    // documentation use and cannot pose a supply chain risk.
+    if (alert.type === 'urlStrings') {
+      const urls = (alert.props as { urls?: string[] })?.urls
+      if (
+        Array.isArray(urls) &&
+        urls.length > 0 &&
+        urls.every(u => RFC_2606_DOMAINS.has(u.toLowerCase()))
+      ) {
+        continue
+      }
     }
     const blocked = action === 'error'
     const critical = alert.severity === ALERT_SEVERITY.critical
