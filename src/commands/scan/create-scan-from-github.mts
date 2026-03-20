@@ -16,6 +16,7 @@ import { confirm, select } from '@socketsecurity/registry/lib/prompts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import constants from '../../constants.mts'
+import { apiFetch } from '../../utils/api.mts'
 import { debugApiRequest, debugApiResponse } from '../../utils/debug.mts'
 import { formatErrorWithDetail } from '../../utils/errors.mts'
 import { isReportSupportedFile } from '../../utils/glob.mts'
@@ -402,7 +403,7 @@ async function downloadManifestFile({
   debugApiRequest('GET', fileUrl)
   let downloadUrlResponse: Response
   try {
-    downloadUrlResponse = await fetch(fileUrl, {
+    downloadUrlResponse = await apiFetch(fileUrl, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${githubToken}`,
@@ -466,7 +467,7 @@ async function streamDownloadWithFetch(
 
   try {
     debugApiRequest('GET', downloadUrl)
-    response = await fetch(downloadUrl)
+    response = await apiFetch(downloadUrl)
     debugApiResponse('GET', downloadUrl, response.status)
 
     if (!response.ok) {
@@ -567,7 +568,7 @@ async function getLastCommitDetails({
   debugApiRequest('GET', commitApiUrl)
   let commitResponse: Response
   try {
-    commitResponse = await fetch(commitApiUrl, {
+    commitResponse = await apiFetch(commitApiUrl, {
       headers: {
         Authorization: `Bearer ${githubToken}`,
       },
@@ -679,7 +680,7 @@ async function getRepoDetails({
   let repoDetailsResponse: Response
   try {
     debugApiRequest('GET', repoApiUrl)
-    repoDetailsResponse = await fetch(repoApiUrl, {
+    repoDetailsResponse = await apiFetch(repoApiUrl, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${githubToken}`,
@@ -743,7 +744,7 @@ async function getRepoBranchTree({
   let treeResponse: Response
   try {
     debugApiRequest('GET', treeApiUrl)
-    treeResponse = await fetch(treeApiUrl, {
+    treeResponse = await apiFetch(treeApiUrl, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${githubToken}`,
