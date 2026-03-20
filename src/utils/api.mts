@@ -19,6 +19,8 @@
  * - Falls back to configured apiBaseUrl or default API_V0_URL
  */
 
+import { Agent as HttpsAgent, request as httpsRequest } from 'node:https'
+
 import { messageWithCauses } from 'pony-cause'
 
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
@@ -37,7 +39,7 @@ import constants, {
   HTTP_STATUS_UNAUTHORIZED,
 } from '../constants.mts'
 import { getRequirements, getRequirementsKey } from './requirements.mts'
-import { getDefaultApiToken } from './sdk.mts'
+import { getDefaultApiToken, getExtraCaCerts } from './sdk.mts'
 
 import type { CResult } from '../types.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -49,6 +51,81 @@ import type {
 } from '@socketsecurity/sdk'
 
 const NO_ERROR_MESSAGE = 'No error message returned'
+
+// Cached HTTPS agent for extra CA certificate support in direct API calls.
+let _httpsAgent: HttpsAgent | undefined
+let _httpsAgentResolved = false
+
+// Returns an HTTPS agent configured with extra CA certificates when
+// SSL_CERT_FILE is set but NODE_EXTRA_CA_CERTS is not.
+function getHttpsAgent(): HttpsAgent | undefined {
+  if (_httpsAgentResolved) {
+    return _httpsAgent
+  }
+  _httpsAgentResolved = true
+  const ca = getExtraCaCerts()
+  if (!ca) {
+    return undefined
+  }
+  _httpsAgent = new HttpsAgent({ ca })
+  return _httpsAgent
+}
+
+// Wrapper around fetch that supports extra CA certificates via SSL_CERT_FILE.
+// Uses node:https.request with a custom agent when extra CA certs are needed,
+// falling back to regular fetch() otherwise.
+type ApiFetchInit = {
+  body?: string | undefined
+  headers?: Record<string, string> | undefined
+  method?: string | undefined
+}
+
+async function apiFetch(url: string, init: ApiFetchInit): Promise<Response> {
+  const agent = getHttpsAgent()
+  if (!agent) {
+    return await fetch(url, init as globalThis.RequestInit)
+  }
+  return await new Promise((resolve, reject) => {
+    const req = httpsRequest(
+      url,
+      {
+        method: init.method || 'GET',
+        headers: init.headers,
+        agent,
+      },
+      res => {
+        const chunks: Buffer[] = []
+        res.on('data', (chunk: Buffer) => chunks.push(chunk))
+        res.on('end', () => {
+          const body = Buffer.concat(chunks)
+          const responseHeaders = new Headers()
+          for (const [key, value] of Object.entries(res.headers)) {
+            if (typeof value === 'string') {
+              responseHeaders.set(key, value)
+            } else if (Array.isArray(value)) {
+              for (const v of value) {
+                responseHeaders.append(key, v)
+              }
+            }
+          }
+          resolve(
+            new Response(body, {
+              status: res.statusCode ?? 0,
+              statusText: res.statusMessage ?? '',
+              headers: responseHeaders,
+            }),
+          )
+        })
+        res.on('error', reject)
+      },
+    )
+    if (init.body) {
+      req.write(init.body)
+    }
+    req.on('error', reject)
+    req.end()
+  })
+}
 
 export type CommandRequirements = {
   permissions?: string[] | undefined
@@ -287,7 +364,7 @@ async function queryApi(path: string, apiToken: string) {
   }
 
   const url = `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`
-  const result = await fetch(url, {
+  const result = await apiFetch(url, {
     method: 'GET',
     headers: {
       Authorization: `Basic ${btoa(`${apiToken}:`)}`,
@@ -480,7 +557,7 @@ export async function sendApiRequest<T>(
       ...(body ? { body: JSON.stringify(body) } : {}),
     }
 
-    result = await fetch(
+    result = await apiFetch(
       `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`,
       fetchOptions,
     )

@@ -22,12 +22,46 @@
  * - utils/telemetry/integration.mts (telemetry tracking)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import constants from '../constants.mts'
-import { setupSdk } from './sdk.mts'
+import { getExtraCaCerts, setupSdk } from './sdk.mts'
 
 import type { RequestInfo, ResponseInfo } from '@socketsecurity/sdk'
+
+// Mock node:fs for certificate file reading.
+const mockReadFileSync = vi.hoisted(() => vi.fn())
+vi.mock('node:fs', () => ({
+  readFileSync: mockReadFileSync,
+}))
+
+// Mock node:tls for root certificates.
+const MOCK_ROOT_CERTS = vi.hoisted(() => [
+  '-----BEGIN CERTIFICATE-----\nROOT1\n-----END CERTIFICATE-----',
+])
+vi.mock('node:tls', () => ({
+  rootCertificates: MOCK_ROOT_CERTS,
+}))
+
+// Mock node:https for HttpsAgent.
+const MockHttpsAgent = vi.hoisted(() =>
+  vi.fn().mockImplementation(opts => ({ ...opts, _isHttpsAgent: true })),
+)
+vi.mock('node:https', () => ({
+  Agent: MockHttpsAgent,
+}))
+
+// Mock hpagent proxy agents.
+const MockHttpProxyAgent = vi.hoisted(() =>
+  vi.fn().mockImplementation(opts => ({ ...opts, _isHttpProxyAgent: true })),
+)
+const MockHttpsProxyAgent = vi.hoisted(() =>
+  vi.fn().mockImplementation(opts => ({ ...opts, _isHttpsProxyAgent: true })),
+)
+vi.mock('hpagent', () => ({
+  HttpProxyAgent: MockHttpProxyAgent,
+  HttpsProxyAgent: MockHttpsProxyAgent,
+}))
 
 // Mock telemetry integration.
 const mockTrackCliEvent = vi.hoisted(() => vi.fn())
@@ -73,6 +107,7 @@ vi.mock('../constants.mts', () => ({
       INLINED_SOCKET_CLI_HOMEPAGE: 'https://github.com/SocketDev/socket-cli',
       INLINED_SOCKET_CLI_NAME: 'socket-cli',
       INLINED_SOCKET_CLI_VERSION: '1.1.34',
+      NODE_EXTRA_CA_CERTS: '',
       SOCKET_CLI_API_TIMEOUT: 30_000,
       SOCKET_CLI_DEBUG: false,
     },
@@ -513,5 +548,163 @@ describe('SDK setup with telemetry hooks', () => {
         )
       }
     })
+  })
+})
+
+describe('getExtraCaCerts', () => {
+  const savedEnv = { ...process.env }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // Reset the cached state by re-importing. Since vitest caches modules,
+    // we reset the internal state via the resolved flag workaround: calling
+    // the function after resetting module-level state is not possible without
+    // re-import, so we use resetModules.
+    vi.resetModules()
+    // Restore environment variables.
+    process.env = { ...savedEnv }
+    delete process.env['NODE_EXTRA_CA_CERTS']
+    delete process.env['SSL_CERT_FILE']
+    constants.ENV.NODE_EXTRA_CA_CERTS = ''
+  })
+
+  afterEach(() => {
+    process.env = savedEnv
+  })
+
+  it('should return undefined when no cert env vars are set', async () => {
+    const { getExtraCaCerts: fn } = await import('./sdk.mts')
+    const result = fn()
+    expect(result).toBeUndefined()
+  })
+
+  it('should return undefined when NODE_EXTRA_CA_CERTS is set in process.env', async () => {
+    process.env['NODE_EXTRA_CA_CERTS'] = '/some/cert.pem'
+    const { getExtraCaCerts: fn } = await import('./sdk.mts')
+    const result = fn()
+    expect(result).toBeUndefined()
+    // Should not attempt to read the file.
+    expect(mockReadFileSync).not.toHaveBeenCalled()
+  })
+
+  it('should read cert file and combine with root certs when SSL_CERT_FILE is set', async () => {
+    const fakePEM =
+      '-----BEGIN CERTIFICATE-----\nEXTRA\n-----END CERTIFICATE-----'
+    constants.ENV.NODE_EXTRA_CA_CERTS = '/path/to/ssl-cert.pem'
+    mockReadFileSync.mockReturnValue(fakePEM)
+
+    const { getExtraCaCerts: fn } = await import('./sdk.mts')
+    const result = fn()
+
+    expect(mockReadFileSync).toHaveBeenCalledWith(
+      '/path/to/ssl-cert.pem',
+      'utf-8',
+    )
+    expect(result).toEqual([...MOCK_ROOT_CERTS, fakePEM])
+  })
+
+  it('should return undefined when cert file does not exist', async () => {
+    constants.ENV.NODE_EXTRA_CA_CERTS = '/nonexistent/cert.pem'
+    mockReadFileSync.mockImplementation(() => {
+      throw new Error('ENOENT: no such file or directory')
+    })
+
+    const { getExtraCaCerts: fn } = await import('./sdk.mts')
+    const result = fn()
+
+    expect(mockReadFileSync).toHaveBeenCalled()
+    expect(result).toBeUndefined()
+  })
+
+  it('should cache the result after first call', async () => {
+    const fakePEM =
+      '-----BEGIN CERTIFICATE-----\nCACHED\n-----END CERTIFICATE-----'
+    constants.ENV.NODE_EXTRA_CA_CERTS = '/path/to/cert.pem'
+    mockReadFileSync.mockReturnValue(fakePEM)
+
+    const { getExtraCaCerts: fn } = await import('./sdk.mts')
+    const result1 = fn()
+    const result2 = fn()
+
+    // File should only be read once.
+    expect(mockReadFileSync).toHaveBeenCalledTimes(1)
+    expect(result1).toBe(result2)
+  })
+})
+
+describe('setupSdk with extra CA certificates', () => {
+  const savedEnv = { ...process.env }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.resetModules()
+    mockGetConfigValueOrUndef.mockReturnValue(undefined)
+    constants.ENV.SOCKET_CLI_DEBUG = false
+    constants.ENV.NODE_EXTRA_CA_CERTS = ''
+    process.env = { ...savedEnv }
+    delete process.env['NODE_EXTRA_CA_CERTS']
+  })
+
+  afterEach(() => {
+    process.env = savedEnv
+  })
+
+  it('should pass CA certs to HttpsAgent when SSL_CERT_FILE is configured', async () => {
+    const fakePEM =
+      '-----BEGIN CERTIFICATE-----\nAGENT\n-----END CERTIFICATE-----'
+    constants.ENV.NODE_EXTRA_CA_CERTS = '/path/to/cert.pem'
+    mockReadFileSync.mockReturnValue(fakePEM)
+
+    const { setupSdk: fn } = await import('./sdk.mts')
+    const result = await fn({ apiToken: 'test-token' })
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      // Should create an HttpsAgent with combined CA certs.
+      expect(result.data.options.agent).toBeDefined()
+      expect(MockHttpsAgent).toHaveBeenCalledWith({
+        ca: [...MOCK_ROOT_CERTS, fakePEM],
+      })
+    }
+  })
+
+  it('should pass CA certs to proxy agent when proxy and SSL_CERT_FILE are configured', async () => {
+    const fakePEM =
+      '-----BEGIN CERTIFICATE-----\nPROXY\n-----END CERTIFICATE-----'
+    constants.ENV.NODE_EXTRA_CA_CERTS = '/path/to/cert.pem'
+    mockReadFileSync.mockReturnValue(fakePEM)
+
+    const expectedCa = [...MOCK_ROOT_CERTS, fakePEM]
+    const { setupSdk: fn } = await import('./sdk.mts')
+    const result = await fn({
+      apiProxy: 'http://proxy.example.com:8080',
+      apiToken: 'test-token',
+    })
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.data.options.agent).toBeDefined()
+      // Verify the proxy agent was constructed with CA and proxy connect options.
+      expect(MockSocketSdk).toHaveBeenCalledWith(
+        'test-token',
+        expect.objectContaining({
+          agent: expect.objectContaining({
+            ca: expectedCa,
+            proxyConnectOptions: { ca: expectedCa },
+          }),
+        }),
+      )
+    }
+  })
+
+  it('should not create agent when no extra CA certs are needed', async () => {
+    const { setupSdk: fn } = await import('./sdk.mts')
+    const result = await fn({ apiToken: 'test-token' })
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.data.options.agent).toBeUndefined()
+      expect(MockHttpsAgent).not.toHaveBeenCalled()
+    }
   })
 })
