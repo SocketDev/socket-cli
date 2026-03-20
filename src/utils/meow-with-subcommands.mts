@@ -553,7 +553,7 @@ export async function meowWithSubcommands(
       'optimize',
       'organization',
       'package',
-      //'patch',
+      'patch',
       // PNPM,
       'raw-npm',
       'raw-npx',
@@ -612,6 +612,7 @@ export async function meowWithSubcommands(
       `  manifest                    ${description(subcommands['manifest'])}`,
       `  npm                         ${description(subcommands[NPM])}`,
       `  npx                         ${description(subcommands[NPX])}`,
+      `  patch                       ${description(subcommands['patch'])}`,
       `  raw-npm                     ${description(subcommands['raw-npm'])}`,
       `  raw-npx                     ${description(subcommands['raw-npx'])}`,
       '',
@@ -743,9 +744,21 @@ export async function meowWithSubcommands(
     help: lines.map(l => indentString(l, HELP_INDENT)).join('\n'),
   })
 
-  const { dryRun, help: helpFlag } = cli2.flags as {
+  const {
+    dryRun,
+    help: helpFlag,
+    version: versionFlag,
+  } = cli2.flags as {
     dryRun: boolean
     help: boolean
+    version: boolean
+  }
+
+  // Handle --version: print version and exit successfully.
+  if (versionFlag) {
+    logger.log(constants.ENV.INLINED_SOCKET_CLI_VERSION)
+    process.exitCode = 0
+    return
   }
 
   // ...else we provide basic instructions and help.

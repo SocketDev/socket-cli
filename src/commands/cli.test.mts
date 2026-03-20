@@ -6,6 +6,7 @@ import constants, {
   FLAG_CONFIG,
   FLAG_DRY_RUN,
   FLAG_HELP,
+  FLAG_VERSION,
 } from '../constants.mts'
 
 describe('socket root command', async () => {
@@ -48,6 +49,7 @@ describe('socket root command', async () => {
             manifest                    Generate a dependency manifest for certain ecosystems
             npm                         Wraps npm with Socket security scanning
             npx                         Wraps npx with Socket security scanning
+            patch                       Apply, manage, and rollback Socket security patches for vulnerable dependencies
             raw-npm                     Run npm without the Socket wrapper
             raw-npx                     Run npx without the Socket wrapper
 
@@ -84,6 +86,17 @@ describe('socket root command', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain('`socket`')
+    },
+  )
+
+  cmdit(
+    [FLAG_VERSION, FLAG_CONFIG, '{}'],
+    `should support ${FLAG_VERSION}`,
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      // Version output should be a semver string.
+      expect(stdout).toMatch(/^\d+\.\d+\.\d+/)
+      expect(code, 'version should exit with code 0').toBe(0)
     },
   )
 
