@@ -117,12 +117,32 @@ function _httpsRequestFetch(
             return
           }
           const redirectUrl = new URL(res.headers['location'], url).href
+          // Strip sensitive headers on cross-origin redirects to match
+          // fetch() behavior per the Fetch spec.
+          const originalOrigin = new URL(url).origin
+          const redirectOrigin = new URL(redirectUrl).origin
+          let redirectHeaders = init.headers
+          if (originalOrigin !== redirectOrigin && redirectHeaders) {
+            redirectHeaders = { ...redirectHeaders }
+            for (const key of Object.keys(redirectHeaders)) {
+              const lower = key.toLowerCase()
+              if (
+                lower === 'authorization' ||
+                lower === 'cookie' ||
+                lower === 'proxy-authorization'
+              ) {
+                delete redirectHeaders[key]
+              }
+            }
+          }
           // 307 and 308 preserve the original method and body.
           const preserveMethod = statusCode === 307 || statusCode === 308
           resolve(
             _httpsRequestFetch(
               redirectUrl,
-              preserveMethod ? init : { headers: init.headers, method: 'GET' },
+              preserveMethod
+                ? { ...init, headers: redirectHeaders }
+                : { headers: redirectHeaders, method: 'GET' },
               agent,
               redirectCount + 1,
             ),

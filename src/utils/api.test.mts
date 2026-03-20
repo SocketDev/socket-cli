@@ -448,4 +448,138 @@ describe('apiFetch with extra CA certificates', () => {
       expect(result.data).toBe('redirected response')
     }
   })
+
+  it('should strip Authorization header on cross-origin redirects', async () => {
+    const caCerts = ['ROOT_CERT', 'EXTRA_CERT']
+    mockGetExtraCaCerts.mockReturnValue(caCerts)
+
+    const mockReq = {
+      end: vi.fn(),
+      on: vi.fn(),
+      write: vi.fn(),
+    }
+
+    // First call: return a 302 redirect to a different origin.
+    mockHttpsRequest.mockImplementationOnce(
+      (_url: string, _opts: unknown, callback: RequestCallback) => {
+        setTimeout(() => {
+          const mockRes = {
+            headers: { location: 'https://cdn.example.com/file' },
+            on: vi.fn(),
+            resume: vi.fn(),
+            statusCode: 302,
+            statusMessage: 'Found',
+          }
+          callback(mockRes as any)
+        }, 0)
+        return mockReq
+      },
+    )
+
+    // Second call: return the actual response from the CDN.
+    mockHttpsRequest.mockImplementationOnce(
+      (_url: string, _opts: unknown, callback: RequestCallback) => {
+        setTimeout(() => {
+          const mockRes = {
+            headers: { 'content-type': 'text/plain' },
+            on: vi.fn(),
+            statusCode: 200,
+            statusMessage: 'OK',
+          }
+          const handlers: Record<string, Function> = {}
+          mockRes.on.mockImplementation((event: string, handler: Function) => {
+            handlers[event] = handler
+            return mockRes
+          })
+          callback(mockRes)
+          handlers['data']?.(Buffer.from('cdn response'))
+          handlers['end']?.()
+        }, 0)
+        return mockReq
+      },
+    )
+
+    const { apiFetch } = await import('./api.mts')
+    await apiFetch('https://api.github.com/repos/test/contents', {
+      headers: {
+        Authorization: 'Bearer ghp_secret',
+        'Content-Type': 'application/json',
+      },
+    })
+
+    // First request should have Authorization header.
+    const firstCallHeaders = (mockHttpsRequest.mock.calls[0][1] as any).headers
+    expect(firstCallHeaders['Authorization']).toBe('Bearer ghp_secret')
+
+    // Second request (cross-origin redirect) should NOT have Authorization.
+    const secondCallHeaders = (mockHttpsRequest.mock.calls[1][1] as any).headers
+    expect(secondCallHeaders['Authorization']).toBeUndefined()
+    // Non-sensitive headers should still be present.
+    expect(secondCallHeaders['Content-Type']).toBe('application/json')
+  })
+
+  it('should preserve Authorization header on same-origin redirects', async () => {
+    const caCerts = ['ROOT_CERT', 'EXTRA_CERT']
+    mockGetExtraCaCerts.mockReturnValue(caCerts)
+
+    const mockReq = {
+      end: vi.fn(),
+      on: vi.fn(),
+      write: vi.fn(),
+    }
+
+    // First call: return a 302 redirect to the same origin.
+    mockHttpsRequest.mockImplementationOnce(
+      (_url: string, _opts: unknown, callback: RequestCallback) => {
+        setTimeout(() => {
+          const mockRes = {
+            headers: { location: '/v0/other-path' },
+            on: vi.fn(),
+            resume: vi.fn(),
+            statusCode: 302,
+            statusMessage: 'Found',
+          }
+          callback(mockRes as any)
+        }, 0)
+        return mockReq
+      },
+    )
+
+    // Second call: return the actual response.
+    mockHttpsRequest.mockImplementationOnce(
+      (_url: string, _opts: unknown, callback: RequestCallback) => {
+        setTimeout(() => {
+          const mockRes = {
+            headers: { 'content-type': 'text/plain' },
+            on: vi.fn(),
+            statusCode: 200,
+            statusMessage: 'OK',
+          }
+          const handlers: Record<string, Function> = {}
+          mockRes.on.mockImplementation((event: string, handler: Function) => {
+            handlers[event] = handler
+            return mockRes
+          })
+          callback(mockRes)
+          handlers['data']?.(Buffer.from('same-origin response'))
+          handlers['end']?.()
+        }, 0)
+        return mockReq
+      },
+    )
+
+    const { apiFetch } = await import('./api.mts')
+    await apiFetch('https://api.github.com/repos/test/contents', {
+      headers: {
+        Authorization: 'Bearer ghp_secret',
+      },
+    })
+
+    // Both requests should have Authorization since same origin.
+    const firstCallHeaders = (mockHttpsRequest.mock.calls[0][1] as any).headers
+    expect(firstCallHeaders['Authorization']).toBe('Bearer ghp_secret')
+
+    const secondCallHeaders = (mockHttpsRequest.mock.calls[1][1] as any).headers
+    expect(secondCallHeaders['Authorization']).toBe('Bearer ghp_secret')
+  })
 })
