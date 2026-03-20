@@ -743,9 +743,21 @@ export async function meowWithSubcommands(
     help: lines.map(l => indentString(l, HELP_INDENT)).join('\n'),
   })
 
-  const { dryRun, help: helpFlag } = cli2.flags as {
+  const {
+    dryRun,
+    help: helpFlag,
+    version: versionFlag,
+  } = cli2.flags as {
     dryRun: boolean
     help: boolean
+    version: boolean
+  }
+
+  // Handle --version: print version and exit successfully.
+  if (versionFlag) {
+    logger.log(constants.ENV.INLINED_SOCKET_CLI_VERSION)
+    process.exitCode = 0
+    return
   }
 
   // ...else we provide basic instructions and help.
