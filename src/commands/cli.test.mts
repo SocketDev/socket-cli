@@ -49,6 +49,7 @@ describe('socket root command', async () => {
             manifest                    Generate a dependency manifest for certain ecosystems
             npm                         Wraps npm with Socket security scanning
             npx                         Wraps npx with Socket security scanning
+            patch                       Apply, manage, and rollback Socket security patches for vulnerable dependencies
             raw-npm                     Run npm without the Socket wrapper
             raw-npx                     Run npx without the Socket wrapper
 

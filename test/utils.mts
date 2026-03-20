@@ -78,11 +78,6 @@ function normalizeBanner(str: string): string {
       )
       // Replace cwd path with "<redacted>".
       .replace(/cwd: [^\n"]+/g, 'cwd: <redacted>')
-      // Strip "Received an unknown command: patch" error line that appears
-      // when socket-patch binary is not available in the test build.
-      // Also consume any leading whitespace on the next line so indentation
-      // stays consistent when the error line is absent.
-      .replace(/[^\n]*Received an unknown command: patch[^\n]*\n\s*/g, '')
   )
 }
 
