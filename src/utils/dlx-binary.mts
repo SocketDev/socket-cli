@@ -31,6 +31,7 @@ import { readJson } from '@socketsecurity/registry/lib/fs'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../constants.mts'
+import { apiFetch } from './api.mts'
 import { InputError } from './errors.mts'
 
 import type {
@@ -117,7 +118,7 @@ async function downloadBinary(
   destPath: string,
   checksum?: string,
 ): Promise<string> {
-  const response = await fetch(url)
+  const response = await apiFetch(url)
   if (!response.ok) {
     throw new InputError(
       `Failed to download binary: ${response.status} ${response.statusText}`,

@@ -24,9 +24,14 @@
  * - Includes CLI version and platform information
  */
 
+import { readFileSync } from 'node:fs'
+import { Agent as HttpsAgent } from 'node:https'
+import { rootCertificates } from 'node:tls'
+
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { password } from '@socketsecurity/registry/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
@@ -63,6 +68,41 @@ export function getDefaultProxyUrl(): string | undefined {
     constants.ENV.SOCKET_CLI_API_PROXY ||
     getConfigValueOrUndef(CONFIG_KEY_API_PROXY)
   return isUrl(apiProxy) ? apiProxy : undefined
+}
+
+// Cached extra CA certificates for SSL_CERT_FILE support.
+let _extraCaCerts: string[] | undefined
+let _extraCaCertsResolved = false
+
+// Returns combined root and extra CA certificates when SSL_CERT_FILE is set
+// but NODE_EXTRA_CA_CERTS is not. Node.js loads NODE_EXTRA_CA_CERTS at process
+// startup, so setting SSL_CERT_FILE alone does not affect the current process.
+// This function reads the certificate file manually and combines it with the
+// default root certificates for use in HTTPS agents.
+export function getExtraCaCerts(): string[] | undefined {
+  if (_extraCaCertsResolved) {
+    return _extraCaCerts
+  }
+  _extraCaCertsResolved = true
+  // Node.js already loaded extra CA certs at startup.
+  if (process.env['NODE_EXTRA_CA_CERTS']) {
+    return undefined
+  }
+  // Check for SSL_CERT_FILE fallback via constants.
+  const certPath = constants.ENV.NODE_EXTRA_CA_CERTS
+  if (!certPath) {
+    return undefined
+  }
+  try {
+    const extraCerts = readFileSync(certPath, 'utf-8')
+    // Combine default root certificates with extra certificates. Specifying ca
+    // in an agent replaces the default trust store, so both must be included.
+    _extraCaCerts = [...rootCertificates, extraCerts]
+    return _extraCaCerts
+  } catch (e) {
+    debugFn('warn', `Failed to read certificate file: ${certPath}`, e)
+    return undefined
+  }
 }
 
 // This Socket API token should be stored globally for the duration of the CLI execution.
@@ -146,8 +186,21 @@ export async function setupSdk(
     ? HttpProxyAgent
     : HttpsProxyAgent
 
+  // Load extra CA certificates for SSL_CERT_FILE support when
+  // NODE_EXTRA_CA_CERTS was not set at process startup.
+  const ca = getExtraCaCerts()
+
   const sdkOptions = {
-    ...(apiProxy ? { agent: new ProxyAgent({ proxy: apiProxy }) } : {}),
+    ...(apiProxy
+      ? {
+          agent: new ProxyAgent({
+            proxy: apiProxy,
+            ...(ca ? { ca, proxyConnectOptions: { ca } } : {}),
+          }),
+        }
+      : ca
+        ? { agent: new HttpsAgent({ ca }) }
+        : {}),
     ...(apiBaseUrl ? { baseUrl: apiBaseUrl } : {}),
     timeout: constants.ENV.SOCKET_CLI_API_TIMEOUT,
     userAgent: createUserAgentFromPkgJson({

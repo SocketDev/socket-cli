@@ -19,6 +19,8 @@
  * - Falls back to configured apiBaseUrl or default API_V0_URL
  */
 
+import { Agent as HttpsAgent, request as httpsRequest } from 'node:https'
+
 import { messageWithCauses } from 'pony-cause'
 
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
@@ -37,7 +39,7 @@ import constants, {
   HTTP_STATUS_UNAUTHORIZED,
 } from '../constants.mts'
 import { getRequirements, getRequirementsKey } from './requirements.mts'
-import { getDefaultApiToken } from './sdk.mts'
+import { getDefaultApiToken, getExtraCaCerts } from './sdk.mts'
 
 import type { CResult } from '../types.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -48,7 +50,148 @@ import type {
   SocketSdkSuccessResult,
 } from '@socketsecurity/sdk'
 
+const MAX_REDIRECTS = 20
 const NO_ERROR_MESSAGE = 'No error message returned'
+
+// Cached HTTPS agent for extra CA certificate support in direct API calls.
+let _httpsAgent: HttpsAgent | undefined
+let _httpsAgentResolved = false
+
+// Returns an HTTPS agent configured with extra CA certificates when
+// SSL_CERT_FILE is set but NODE_EXTRA_CA_CERTS is not.
+function getHttpsAgent(): HttpsAgent | undefined {
+  if (_httpsAgentResolved) {
+    return _httpsAgent
+  }
+  _httpsAgentResolved = true
+  const ca = getExtraCaCerts()
+  if (!ca) {
+    return undefined
+  }
+  _httpsAgent = new HttpsAgent({ ca })
+  return _httpsAgent
+}
+
+// Wrapper around fetch that supports extra CA certificates via SSL_CERT_FILE.
+// Uses node:https.request with a custom agent when extra CA certs are needed,
+// falling back to regular fetch() otherwise. Follows redirects like fetch().
+export type ApiFetchInit = {
+  body?: string | undefined
+  headers?: Record<string, string> | undefined
+  method?: string | undefined
+}
+
+// Internal httpsRequest-based fetch with redirect support.
+function _httpsRequestFetch(
+  url: string,
+  init: ApiFetchInit,
+  agent: HttpsAgent,
+  redirectCount: number,
+): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    const headers: Record<string, string> = { ...init.headers }
+    // Set Content-Length for request bodies to avoid chunked transfer encoding.
+    if (init.body) {
+      headers['content-length'] = String(Buffer.byteLength(init.body))
+    }
+    const req = httpsRequest(
+      url,
+      {
+        method: init.method || 'GET',
+        headers,
+        agent,
+      },
+      res => {
+        const { statusCode } = res
+        // Follow redirects to match fetch() behavior.
+        if (
+          statusCode &&
+          statusCode >= 300 &&
+          statusCode < 400 &&
+          res.headers['location']
+        ) {
+          // Consume the response body to free up memory.
+          res.resume()
+          if (redirectCount >= MAX_REDIRECTS) {
+            reject(new Error('Maximum redirect limit reached'))
+            return
+          }
+          const redirectUrl = new URL(res.headers['location'], url).href
+          // Strip sensitive headers on cross-origin redirects to match
+          // fetch() behavior per the Fetch spec.
+          const originalOrigin = new URL(url).origin
+          const redirectOrigin = new URL(redirectUrl).origin
+          let redirectHeaders = init.headers
+          if (originalOrigin !== redirectOrigin && redirectHeaders) {
+            redirectHeaders = { ...redirectHeaders }
+            for (const key of Object.keys(redirectHeaders)) {
+              const lower = key.toLowerCase()
+              if (
+                lower === 'authorization' ||
+                lower === 'cookie' ||
+                lower === 'proxy-authorization'
+              ) {
+                delete redirectHeaders[key]
+              }
+            }
+          }
+          // 307 and 308 preserve the original method and body.
+          const preserveMethod = statusCode === 307 || statusCode === 308
+          resolve(
+            _httpsRequestFetch(
+              redirectUrl,
+              preserveMethod
+                ? { ...init, headers: redirectHeaders }
+                : { headers: redirectHeaders, method: 'GET' },
+              agent,
+              redirectCount + 1,
+            ),
+          )
+          return
+        }
+        const chunks: Buffer[] = []
+        res.on('data', (chunk: Buffer) => chunks.push(chunk))
+        res.on('end', () => {
+          const body = Buffer.concat(chunks)
+          const responseHeaders = new Headers()
+          for (const [key, value] of Object.entries(res.headers)) {
+            if (typeof value === 'string') {
+              responseHeaders.set(key, value)
+            } else if (Array.isArray(value)) {
+              for (const v of value) {
+                responseHeaders.append(key, v)
+              }
+            }
+          }
+          resolve(
+            new Response(body, {
+              status: statusCode ?? 0,
+              statusText: res.statusMessage ?? '',
+              headers: responseHeaders,
+            }),
+          )
+        })
+        res.on('error', reject)
+      },
+    )
+    if (init.body) {
+      req.write(init.body)
+    }
+    req.on('error', reject)
+    req.end()
+  })
+}
+
+export async function apiFetch(
+  url: string,
+  init: ApiFetchInit = {},
+): Promise<Response> {
+  const agent = getHttpsAgent()
+  if (!agent) {
+    return await fetch(url, init as globalThis.RequestInit)
+  }
+  return await _httpsRequestFetch(url, init, agent, 0)
+}
 
 export type CommandRequirements = {
   permissions?: string[] | undefined
@@ -287,7 +430,7 @@ async function queryApi(path: string, apiToken: string) {
   }
 
   const url = `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`
-  const result = await fetch(url, {
+  const result = await apiFetch(url, {
     method: 'GET',
     headers: {
       Authorization: `Basic ${btoa(`${apiToken}:`)}`,
@@ -480,7 +623,7 @@ export async function sendApiRequest<T>(
       ...(body ? { body: JSON.stringify(body) } : {}),
     }
 
-    result = await fetch(
+    result = await apiFetch(
       `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`,
       fetchOptions,
     )
