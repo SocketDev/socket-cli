@@ -4,6 +4,7 @@
 import { setTheme } from '@socketsecurity/lib/themes'
 setTheme('socket')
 
+import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -112,7 +113,6 @@ async function writeBootstrapManifestEntry(): Promise<void> {
 
     let installedVersion = '0.0.0'
     try {
-      const fs = await import('node:fs/promises')
       const pkgJson = JSON.parse(await fs.readFile(pkgJsonPath, 'utf8'))
       installedVersion = pkgJson.version || '0.0.0'
     } catch {

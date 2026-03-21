@@ -28,6 +28,7 @@ import { detectExecutableType } from '@socketsecurity/lib/dlx/detect'
 import { dlxPackage } from '@socketsecurity/lib/dlx/package'
 import { safeMkdir } from '@socketsecurity/lib/fs'
 import { spawn } from '@socketsecurity/lib/spawn'
+import { whichReal } from '@socketsecurity/lib/bin'
 
 import {
   resolveCdxgen,
@@ -281,7 +282,6 @@ async function downloadGitHubReleaseBinary(
     } else if (isTarGz) {
       // Extract tar.gz using system tar.
       // Note: tar has built-in path traversal protection by default.
-      const { whichReal } = await import('@socketsecurity/lib/bin')
       const tarPath = await whichReal('tar', { nothrow: true })
       if (!tarPath || Array.isArray(tarPath)) {
         throw new InputError(
@@ -947,7 +947,6 @@ async function downloadPython(pythonDir: string): Promise<void> {
   })
 
   // Extract the tarball to pythonDir.
-  const { whichReal } = await import('@socketsecurity/lib/bin')
   const tarPath = await whichReal('tar', { nothrow: true })
   if (!tarPath || Array.isArray(tarPath)) {
     throw new InputError(
