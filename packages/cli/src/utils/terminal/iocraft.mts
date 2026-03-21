@@ -22,7 +22,9 @@ function getIocraft(): typeof iocraft {
     try {
       // Use createRequire to load native .node module from ESM.
       const require = createRequire(import.meta.url)
-      iocraftInstance = require('@socketaddon/iocraft')
+      const loaded = require('@socketaddon/iocraft')
+      // Handle ESM default export when loaded via require().
+      iocraftInstance = loaded.default || loaded
     } catch (e) {
       throw new Error(
         `Failed to load iocraft native module: ${e}\n` +
