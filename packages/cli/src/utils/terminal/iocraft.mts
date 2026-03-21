@@ -69,6 +69,7 @@ export interface BoxProps {
     | 'center'
     | 'space-between'
     | 'space-around'
+  margin?: number
   marginBottom?: number
   marginLeft?: number
   marginRight?: number
@@ -77,6 +78,7 @@ export interface BoxProps {
   marginY?: number
   overflowX?: 'visible' | 'hidden'
   overflowY?: 'visible' | 'hidden'
+  padding?: number
   paddingBottom?: number
   paddingLeft?: number
   paddingRight?: number
@@ -102,7 +104,6 @@ export type Element = import('@socketaddon/iocraft').ComponentNode
  * Create a text element with styling.
  */
 export function Text(props: TextProps): Element {
-  const io = getIocraft()
   const content =
     typeof props.children === 'string'
       ? props.children
@@ -110,10 +111,13 @@ export function Text(props: TextProps): Element {
         ? props.children.join('')
         : ''
 
-  // Create basic text node.
-  const node = io.text(content)
+  // Create text node as plain object to avoid NAPI deserialization bugs
+  const node: Element = {
+    type: 'Text',
+    content,
+  }
 
-  // Apply styling properties.
+  // Apply styling properties
   if (props.bold) {
     node.bold = true
   }
@@ -134,17 +138,19 @@ export function Text(props: TextProps): Element {
  * Create a box/view element with layout properties.
  */
 export function Box(props: BoxProps): Element {
-  const io = getIocraft()
   const children = Array.isArray(props.children)
     ? props.children
     : props.children
       ? [props.children]
       : []
 
-  // Create basic view node.
-  const node = io.view(children)
+  // Create view node as plain object to avoid NAPI deserialization bugs
+  const node: Element = {
+    type: 'View',
+    children,
+  }
 
-  // Apply layout properties.
+  // Apply layout properties
   if (props.flexDirection) {
     node.flex_direction = props.flexDirection
   }
@@ -164,7 +170,7 @@ export function Box(props: BoxProps): Element {
     node.gap = props.gap
   }
 
-  // Dimensions.
+  // Dimensions
   if (props.width !== undefined) {
     node.width = props.width
   }
@@ -172,14 +178,15 @@ export function Box(props: BoxProps): Element {
     node.height = props.height
   }
 
-  // Padding (handle both individual and shorthand).
+  // Padding (handle both individual and shorthand)
+  if (props.padding !== undefined) {
+    node.padding = props.padding
+  }
   if (props.paddingX !== undefined) {
-    node.padding_left = props.paddingX
-    node.padding_right = props.paddingX
+    node.padding_x = props.paddingX
   }
   if (props.paddingY !== undefined) {
-    node.padding_top = props.paddingY
-    node.padding_bottom = props.paddingY
+    node.padding_y = props.paddingY
   }
   if (props.paddingTop !== undefined) {
     node.padding_top = props.paddingTop
@@ -194,14 +201,15 @@ export function Box(props: BoxProps): Element {
     node.padding_left = props.paddingLeft
   }
 
-  // Margin (handle both individual and shorthand).
+  // Margin (handle both individual and shorthand)
+  if (props.margin !== undefined) {
+    node.margin = props.margin
+  }
   if (props.marginX !== undefined) {
-    node.margin_left = props.marginX
-    node.margin_right = props.marginX
+    node.margin_x = props.marginX
   }
   if (props.marginY !== undefined) {
-    node.margin_top = props.marginY
-    node.margin_bottom = props.marginY
+    node.margin_y = props.marginY
   }
   if (props.marginTop !== undefined) {
     node.margin_top = props.marginTop
@@ -216,7 +224,7 @@ export function Box(props: BoxProps): Element {
     node.margin_left = props.marginLeft
   }
 
-  // Border.
+  // Border
   if (props.borderStyle) {
     node.border_style = props.borderStyle
   }
@@ -224,7 +232,7 @@ export function Box(props: BoxProps): Element {
     node.border_color = props.borderColor
   }
 
-  // Background.
+  // Background
   if (props.backgroundColor) {
     node.background_color = props.backgroundColor
   }
