@@ -79,7 +79,6 @@
     "@socketsecurity/registry": "catalog:",
     "@socketsecurity/sdk": "catalog:",
     "@types/cmd-shim": "catalog:",
-    "@types/ink": "catalog:",
     "@types/js-yaml": "catalog:",
     "@types/micromatch": "catalog:",
     "@types/mock-fs": "catalog:",
@@ -88,7 +87,6 @@
     "@types/npmcli__arborist": "catalog:",
     "@types/npmcli__config": "catalog:",
     "@types/proc-log": "catalog:",
-    "@types/react": "catalog:",
     "@types/semver": "catalog:",
     "@types/which": "catalog:",
     "@types/yargs-parser": "catalog:",
@@ -104,8 +102,6 @@
     "hpagent": "catalog:",
     "husky": "catalog:",
     "ignore": "catalog:",
-    "ink": "catalog:",
-    "ink-table": "catalog:",
     "js-yaml": "catalog:",
     "lint-staged": "catalog:",
     "magic-string": "catalog:",
@@ -121,8 +117,6 @@
     "package-builder": "workspace:*",
     "pony-cause": "catalog:",
     "postject": "catalog:",
-    "react": "catalog:",
-    "react-reconciler": "catalog:",
     "registry-auth-token": "catalog:",
     "registry-url": "catalog:",
     "semver": "catalog:",
@@ -137,7 +131,6 @@
     "yaml": "catalog:",
     "yargs-parser": "catalog:",
     "yoctocolors-cjs": "catalog:",
-    "yoga-layout": "catalog:",
     "zod": "catalog:"
   },
   "pnpm": {
@@ -196,10 +189,8 @@
       "@sigstore/sign@4.1.0": "patches/@sigstore__sign@4.1.0.patch",
       "execa@2.1.0": "patches/execa@2.1.0.patch",
       "execa@5.1.1": "patches/execa@5.1.1.patch",
-      "ink@6.3.1": "patches/ink@6.3.1.patch",
       "node-gyp@11.5.0": "patches/node-gyp@11.5.0.patch",
-      "node-gyp@12.1.0": "patches/node-gyp@12.1.0.patch",
-      "restore-cursor@4.0.0": "patches/restore-cursor@4.0.0.patch"
+      "node-gyp@12.1.0": "patches/node-gyp@12.1.0.patch"
     }
   },
   "lint-staged": {
