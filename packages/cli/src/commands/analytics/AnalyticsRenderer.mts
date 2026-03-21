@@ -24,7 +24,7 @@ export async function displayAnalyticsWithIocraft(
         children: [
           Text({
             bold: true,
-            children: '📊 Socket Analytics (iocraft)',
+            children: '📊 Socket Analytics',
             color: 'cyan',
           }),
         ],
@@ -90,20 +90,6 @@ export async function displayAnalyticsWithIocraft(
         marginBottom: 1,
         paddingX: 1,
         paddingY: 1,
-      }),
-      Box({
-        backgroundColor: 'black',
-        borderColor: 'gray',
-        borderStyle: 'single',
-        children: [
-          Text({
-            children:
-              '💡 TIP: This is rendered with iocraft (SOCKET_CLI_USE_IOCRAFT=1)',
-            color: 'gray',
-          }),
-        ],
-        marginTop: 1,
-        paddingX: 1,
       }),
     ],
     flexDirection: 'column',

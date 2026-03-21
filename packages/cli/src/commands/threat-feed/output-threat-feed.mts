@@ -30,30 +30,28 @@ export async function outputThreatFeed(
     return
   }
 
-  await outputWithInk(result.data)
+  await outputWithIocraft(result.data)
 }
 
 /**
- * Display threat feed using Ink React components.
+ * Display threat feed using iocraft.
  */
-async function outputWithInk(data: ThreadFeedResponse): Promise<void> {
-  const React = await import('react')
-  const { render } = await import('ink')
-  const { ThreatFeedApp } = await import('./ThreatFeedApp.js')
-
-  render(
-    React.createElement(ThreatFeedApp, {
-      results: data.results.map(result => {
-        const purlObj = getPurlObject(result.purl, { throws: false })
-        return {
-          ...result,
-          parsed: {
-            ecosystem: purlObj?.type || '',
-            name: purlObj?.name || '',
-            version: purlObj?.version || '',
-          },
-        }
-      }),
-    }),
+async function outputWithIocraft(data: ThreadFeedResponse): Promise<void> {
+  const { displayThreatFeedWithIocraft } = await import(
+    './ThreatFeedRenderer.mts'
   )
+
+  displayThreatFeedWithIocraft({
+    results: data.results.map(result => {
+      const purlObj = getPurlObject(result.purl, { throws: false })
+      return {
+        ...result,
+        parsed: {
+          ecosystem: purlObj?.type || '',
+          name: purlObj?.name || '',
+          version: purlObj?.version || '',
+        },
+      }
+    }),
+  })
 }

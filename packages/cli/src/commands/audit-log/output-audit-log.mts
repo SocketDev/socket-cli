@@ -67,7 +67,7 @@ export async function outputAuditLog(
     return
   }
 
-  await outputWithInk(result.data, orgSlug)
+  await outputWithIocraft(result.data, orgSlug)
 }
 
 export async function outputAsJson(
@@ -170,29 +170,27 @@ ${table}
 }
 
 /**
- * Display audit log using Ink React components.
+ * Display audit log using iocraft.
  */
-async function outputWithInk(
+async function outputWithIocraft(
   data: SocketSdkSuccessResult<'getAuditLogEvents'>['data'],
   orgSlug: string,
 ): Promise<void> {
-  const React = await import('react')
-  const { render } = await import('ink')
-  const { AuditLogApp } = await import('./AuditLogApp.js')
-
-  render(
-    React.createElement(AuditLogApp, {
-      orgSlug,
-      results: data.results.map((entry: AuditLogEvent) => ({
-        created_at: entry.created_at || '',
-        event_id: entry.event_id || '',
-        formatted_created_at: entry.created_at || '',
-        ip_address: entry.ip_address || '',
-        type: entry.type || '',
-        user_agent: entry.user_agent || '',
-        user_email: entry.user_email || '',
-        payload: entry.payload ?? {},
-      })),
-    }),
+  const { displayAuditLogWithIocraft } = await import(
+    './AuditLogRenderer.mts'
   )
+
+  displayAuditLogWithIocraft({
+    orgSlug,
+    results: data.results.map((entry: AuditLogEvent) => ({
+      created_at: entry.created_at || '',
+      event_id: entry.event_id || '',
+      formatted_created_at: entry.created_at || '',
+      ip_address: entry.ip_address || '',
+      payload: entry.payload ?? {},
+      type: entry.type || '',
+      user_agent: entry.user_agent || '',
+      user_email: entry.user_email || '',
+    })),
+  })
 }

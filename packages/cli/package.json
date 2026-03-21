@@ -89,7 +89,6 @@
     "@socketsecurity/registry": "catalog:",
     "@socketsecurity/sdk": "catalog:",
     "@types/adm-zip": "catalog:",
-    "@types/react": "19.2.14",
     "adm-zip": "catalog:",
     "ajv-dist": "catalog:",
     "ansi-regex": "catalog:",
@@ -108,17 +107,12 @@
     "hpagent": "catalog:",
     "https-proxy-agent": "catalog:",
     "ignore": "catalog:",
-    "ink": "catalog:",
-    "ink-table": "catalog:",
-    "ink-text-input": "catalog:",
     "lru-cache": "11.2.6",
     "micromatch": "catalog:",
     "nanotar": "catalog:",
     "npm-package-arg": "catalog:",
     "open": "catalog:",
     "pony-cause": "catalog:",
-    "react": "catalog:",
-    "react-reconciler": "catalog:",
     "registry-auth-token": "catalog:",
     "registry-url": "catalog:",
     "semver": "catalog:",
@@ -129,7 +123,6 @@
     "yaml": "catalog:",
     "yargs-parser": "catalog:",
     "yoctocolors-cjs": "catalog:",
-    "yoga-layout": "catalog:",
     "zod": "catalog:"
   },
   "engines": {
@@ -195,9 +188,6 @@
       "xml2js": "catalog:",
       "yaml": "catalog:",
       "yargs-parser": "catalog:"
-    },
-    "patchedDependencies": {
-      "ink@6.3.1": "patches/ink@6.3.1.patch"
     }
   }
 }
