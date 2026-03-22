@@ -36,63 +36,280 @@ function getIocraft(): typeof iocraft {
 }
 
 /**
- * Text styling options.
+ * Text weight values for controlling font boldness.
+ *
+ * @example
+ * ```typescript
+ * Text({ children: 'Normal', weight: 'normal' })
+ * Text({ children: 'Bold', weight: 'bold' })
+ * Text({ children: 'Light', weight: 'light' })
+ * ```
+ */
+export type TextWeight = 'normal' | 'bold' | 'light'
+
+/**
+ * Text alignment options for horizontal positioning.
+ *
+ * @example
+ * ```typescript
+ * Text({ children: 'Left aligned', align: 'left' })
+ * Text({ children: 'Centered', align: 'center' })
+ * Text({ children: 'Right aligned', align: 'right' })
+ * ```
+ */
+export type TextAlign = 'left' | 'center' | 'right'
+
+/**
+ * Text wrapping behavior for long text content.
+ *
+ * @example
+ * ```typescript
+ * Text({ children: 'Wraps at width', wrap: 'wrap' })
+ * Text({ children: 'No wrapping', wrap: 'nowrap' })
+ * ```
+ */
+export type TextWrap = 'wrap' | 'nowrap'
+
+/**
+ * Text styling options for visual appearance.
  */
 export interface TextStyle {
+  /** Apply bold styling to text */
   bold?: boolean
+  /** Set text color (named colors or hex values) */
   color?: string
+  /** Apply dim/faded styling to text (maps to light weight) */
   dimColor?: boolean
+  /** Apply italic styling to text */
   italic?: boolean
+  /** Apply strikethrough decoration to text */
   strikethrough?: boolean
+  /** Apply underline decoration to text */
   underline?: boolean
+  /** Set text weight (overrides bold if specified) */
+  weight?: TextWeight
+}
+
+/**
+ * Display type for layout positioning.
+ *
+ * @example
+ * ```typescript
+ * Box({ display: 'flex' }) // Default, enables flexbox layout
+ * Box({ display: 'none' }) // Hides the element
+ * ```
+ */
+export type DisplayType = 'flex' | 'none'
+
+/**
+ * Position type for element positioning in layout.
+ *
+ * @example
+ * ```typescript
+ * Box({ position: 'relative' }) // Normal document flow
+ * Box({ position: 'absolute', top: 0, left: 0 }) // Absolute positioning
+ * ```
+ */
+export type PositionType = 'relative' | 'absolute'
+
+/**
+ * Overflow behavior for content that exceeds container bounds.
+ *
+ * @example
+ * ```typescript
+ * Box({ overflow: 'visible' }) // Content can overflow
+ * Box({ overflow: 'hidden' }) // Clip overflow content
+ * Box({ overflowX: 'hidden', overflowY: 'visible' }) // Per-axis control
+ * ```
+ */
+export type OverflowType = 'visible' | 'hidden'
+
+/**
+ * Border edges configuration for selective border rendering.
+ *
+ * @example
+ * ```typescript
+ * Box({ borderEdges: { top: true, bottom: true } }) // Top and bottom only
+ * Box({ borderEdges: { left: false, right: false } }) // Hide left/right
+ * ```
+ */
+export interface BorderEdges {
+  /** Show border on bottom edge */
+  bottom?: boolean
+  /** Show border on left edge */
+  left?: boolean
+  /** Show border on right edge */
+  right?: boolean
+  /** Show border on top edge */
+  top?: boolean
 }
 
 /**
  * Box/View layout properties (flexbox).
+ *
+ * Supports comprehensive flexbox layout with positioning, dimensions, spacing, and styling.
+ *
+ * @example
+ * ```typescript
+ * // Simple container
+ * Box({ padding: 2, children: [Text({ children: 'Hello' })] })
+ *
+ * // Flex layout
+ * Box({
+ *   flexDirection: 'row',
+ *   gap: 1,
+ *   justifyContent: 'space-between',
+ *   alignItems: 'center',
+ *   children: [...]
+ * })
+ *
+ * // Absolute positioning
+ * Box({
+ *   position: 'absolute',
+ *   top: 0,
+ *   right: 0,
+ *   width: 20,
+ *   height: 10
+ * })
+ * ```
  */
 export interface BoxProps {
+  /** Align flex lines when there's extra space on the cross axis */
+  alignContent?:
+    | 'flex-start'
+    | 'flex-end'
+    | 'center'
+    | 'stretch'
+    | 'space-between'
+    | 'space-around'
+  /** Align items on the cross axis */
   alignItems?: 'flex-start' | 'flex-end' | 'center' | 'stretch'
+  /** Background color (named colors or hex) */
   backgroundColor?: string
+  /** Border color (named colors or hex) */
   borderColor?: string
+  /** Configure which border edges to render */
+  borderEdges?: BorderEdges
+  /** Border style (none, single, double, rounded, bold) */
   borderStyle?: 'single' | 'double' | 'rounded' | 'bold' | 'none'
+  /** Bottom inset for absolute positioning (can be negative) */
+  bottom?: number
+  /** Child elements to render inside this box */
   children?: Element | Element[]
+  /** Gap between columns in flex layout */
+  columnGap?: number
+  /** Display type (flex or none) */
+  display?: DisplayType
+  /** Initial size on the main axis (number, 'auto', or percentage string) */
   flexBasis?: number | string
+  /** Main axis direction (row or column) */
   flexDirection?: 'row' | 'column'
+  /** Flex grow factor (how much to grow relative to siblings) */
   flexGrow?: number
+  /** Flex shrink factor (how much to shrink relative to siblings) */
   flexShrink?: number
+  /** Flex wrap behavior (wrap or nowrap) */
   flexWrap?: 'wrap' | 'nowrap'
+  /** Gap between children (shorthand for rowGap and columnGap) */
   gap?: number
+  /** Height in characters */
   height?: number
+  /** Inset for all sides (shorthand for top/right/bottom/left) */
+  inset?: number
+  /** Align items on the main axis */
   justifyContent?:
     | 'flex-start'
     | 'flex-end'
     | 'center'
     | 'space-between'
     | 'space-around'
+  /** Left inset for absolute positioning (can be negative) */
+  left?: number
+  /** Margin on all sides */
   margin?: number
+  /** Margin on bottom */
   marginBottom?: number
+  /** Margin on left */
   marginLeft?: number
+  /** Margin on right */
   marginRight?: number
+  /** Margin on top */
   marginTop?: number
+  /** Margin on left and right */
   marginX?: number
+  /** Margin on top and bottom */
   marginY?: number
-  overflowX?: 'visible' | 'hidden'
-  overflowY?: 'visible' | 'hidden'
+  /** Maximum height constraint */
+  maxHeight?: number
+  /** Maximum width constraint */
+  maxWidth?: number
+  /** Minimum height constraint */
+  minHeight?: number
+  /** Minimum width constraint */
+  minWidth?: number
+  /** Overflow behavior for both axes (shorthand) */
+  overflow?: OverflowType
+  /** Overflow behavior on horizontal axis */
+  overflowX?: OverflowType
+  /** Overflow behavior on vertical axis */
+  overflowY?: OverflowType
+  /** Padding on all sides */
   padding?: number
+  /** Padding on bottom */
   paddingBottom?: number
+  /** Padding on left */
   paddingLeft?: number
+  /** Padding on right */
   paddingRight?: number
+  /** Padding on top */
   paddingTop?: number
+  /** Padding on left and right */
   paddingX?: number
+  /** Padding on top and bottom */
   paddingY?: number
+  /** Position type (relative or absolute) */
+  position?: PositionType
+  /** Right inset for absolute positioning (can be negative) */
+  right?: number
+  /** Gap between rows in flex layout */
+  rowGap?: number
+  /** Top inset for absolute positioning (can be negative) */
+  top?: number
+  /** Width in characters */
   width?: number
 }
 
 /**
- * Text properties.
+ * Text properties for rendering styled text content.
+ *
+ * @example
+ * ```typescript
+ * // Simple text
+ * Text({ children: 'Hello, world!' })
+ *
+ * // Styled text
+ * Text({
+ *   children: 'Important',
+ *   color: 'red',
+ *   weight: 'bold',
+ *   align: 'center'
+ * })
+ *
+ * // Decorated text
+ * Text({
+ *   children: 'Completed',
+ *   strikethrough: true,
+ *   dimColor: true
+ * })
+ * ```
  */
 export interface TextProps extends TextStyle {
+  /** Horizontal text alignment (left, center, right) */
+  align?: TextAlign
+  /** Text content to display (string or array of strings) */
   children?: string | string[]
+  /** Text wrapping behavior (wrap or nowrap) */
+  wrap?: TextWrap
 }
 
 /**
@@ -118,17 +335,32 @@ export function Text(props: TextProps): Element {
   }
 
   // Apply styling properties
+  if (props.align) {
+    node.align = props.align
+  }
   if (props.bold) {
     node.bold = true
   }
   if (props.color) {
     node.color = props.color
   }
-  if (props.underline) {
-    node.underline = true
+  if (props.dimColor) {
+    node.dim_color = true
   }
   if (props.italic) {
     node.italic = true
+  }
+  if (props.strikethrough) {
+    node.strikethrough = true
+  }
+  if (props.underline) {
+    node.underline = true
+  }
+  if (props.weight) {
+    node.weight = props.weight
+  }
+  if (props.wrap) {
+    node.wrap = props.wrap
   }
 
   return node
@@ -150,7 +382,44 @@ export function Box(props: BoxProps): Element {
     children,
   }
 
-  // Apply layout properties
+  // Display and positioning
+  if (props.display) {
+    node.display = props.display
+  }
+  if (props.position) {
+    node.position = props.position
+  }
+
+  // Inset positioning
+  if (props.bottom !== undefined) {
+    node.bottom = props.bottom
+  }
+  if (props.inset !== undefined) {
+    node.inset = props.inset
+  }
+  if (props.left !== undefined) {
+    node.left = props.left
+  }
+  if (props.right !== undefined) {
+    node.right = props.right
+  }
+  if (props.top !== undefined) {
+    node.top = props.top
+  }
+
+  // Flex layout
+  if (props.alignContent) {
+    node.align_content = props.alignContent
+  }
+  if (props.alignItems) {
+    node.align_items = props.alignItems
+  }
+  if (props.columnGap !== undefined) {
+    node.column_gap = props.columnGap
+  }
+  if (props.flexBasis !== undefined) {
+    node.flex_basis = props.flexBasis
+  }
   if (props.flexDirection) {
     node.flex_direction = props.flexDirection
   }
@@ -160,22 +429,49 @@ export function Box(props: BoxProps): Element {
   if (props.flexShrink !== undefined) {
     node.flex_shrink = props.flexShrink
   }
-  if (props.justifyContent) {
-    node.justify_content = props.justifyContent
-  }
-  if (props.alignItems) {
-    node.align_items = props.alignItems
+  if (props.flexWrap) {
+    node.flex_wrap = props.flexWrap
   }
   if (props.gap !== undefined) {
     node.gap = props.gap
   }
+  if (props.justifyContent) {
+    node.justify_content = props.justifyContent
+  }
+  if (props.rowGap !== undefined) {
+    node.row_gap = props.rowGap
+  }
 
   // Dimensions
+  if (props.height !== undefined) {
+    node.height = props.height
+  }
+  if (props.maxHeight !== undefined) {
+    node.max_height = props.maxHeight
+  }
+  if (props.maxWidth !== undefined) {
+    node.max_width = props.maxWidth
+  }
+  if (props.minHeight !== undefined) {
+    node.min_height = props.minHeight
+  }
+  if (props.minWidth !== undefined) {
+    node.min_width = props.minWidth
+  }
   if (props.width !== undefined) {
     node.width = props.width
   }
-  if (props.height !== undefined) {
-    node.height = props.height
+
+  // Overflow
+  if (props.overflow) {
+    node.overflow_x = props.overflow
+    node.overflow_y = props.overflow
+  }
+  if (props.overflowX) {
+    node.overflow_x = props.overflowX
+  }
+  if (props.overflowY) {
+    node.overflow_y = props.overflowY
   }
 
   // Padding (handle both individual and shorthand)
@@ -225,11 +521,14 @@ export function Box(props: BoxProps): Element {
   }
 
   // Border
-  if (props.borderStyle) {
-    node.border_style = props.borderStyle
-  }
   if (props.borderColor) {
     node.border_color = props.borderColor
+  }
+  if (props.borderEdges) {
+    node.border_edges = props.borderEdges
+  }
+  if (props.borderStyle) {
+    node.border_style = props.borderStyle
   }
 
   // Background

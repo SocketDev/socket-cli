@@ -1,0 +1,16 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AuditLogRenderer > data rendering > should render audit log table with multiple entries 1`] = `
+"Socket Audit Logs for test-org
+
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                              │
+│ Event ID             Created At                Event Type                     User Email                     │
+│                                                                                                              │
+│ evt_12345678901234   Apr 19, 2024 10:30 AM     repository.created             user@example.com               │
+│ evt_23456789012345   Apr 19, 2024 11:00 AM     settings.updated               admin@example.com              │
+│                                                                                                              │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+"
+`;

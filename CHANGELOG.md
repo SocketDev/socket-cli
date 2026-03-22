@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Comprehensive TUI styling and layout properties for terminal interfaces:
+  - Text styling: weight (normal, bold, light), dimColor for faded appearance, strikethrough decoration
+  - Text layout: align (left, center, right), wrap (wrap, nowrap) for content control
+  - Flex layout: flexBasis for initial sizing, flexWrap for multi-line layouts, alignContent for line distribution
+  - Advanced positioning: display (flex, none), position (relative, absolute) with inset controls (top, right, bottom, left)
+  - Dimension constraints: minWidth, maxWidth, minHeight, maxHeight for responsive layouts
+  - Overflow control: overflow, overflowX, overflowY for content that exceeds container bounds
+  - Border customization: borderEdges for selective border rendering (top, right, bottom, left)
+  - Layout spacing: rowGap and columnGap for fine-grained flex item spacing
+
 ### Changed
 
 - Updated to @socketsecurity/socket-patch@1.2.0.

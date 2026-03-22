@@ -7,9 +7,11 @@ import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdTableStringNumber } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import { fileLink } from '../../utils/terminal/link.mts'
+import { displayAnalyticsWithIocraft } from './AnalyticsRenderer.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+
 const logger = getDefaultLogger()
 
 const METRICS = [
@@ -118,10 +120,7 @@ export async function outputAnalytics(
     }
   } else {
     // Use iocraft for TUI rendering.
-    const { displayAnalyticsWithIocraft } = await import(
-      './AnalyticsRenderer.mts'
-    )
-    await displayAnalyticsWithIocraft(fdata)
+    displayAnalyticsWithIocraft(fdata)
   }
 }
 

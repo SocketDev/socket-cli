@@ -3,6 +3,7 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import { getPurlObject } from '../../utils/purl/parse.mts'
+import { displayThreatFeedWithIocraft } from './ThreatFeedRenderer.mts'
 
 import type { ThreadFeedResponse } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
@@ -30,17 +31,13 @@ export async function outputThreatFeed(
     return
   }
 
-  await outputWithIocraft(result.data)
+  outputWithIocraft(result.data)
 }
 
 /**
  * Display threat feed using iocraft.
  */
-async function outputWithIocraft(data: ThreadFeedResponse): Promise<void> {
-  const { displayThreatFeedWithIocraft } = await import(
-    './ThreatFeedRenderer.mts'
-  )
-
+function outputWithIocraft(data: ThreadFeedResponse): void {
   displayThreatFeedWithIocraft({
     results: data.results.map(result => {
       const purlObj = getPurlObject(result.purl, { throws: false })

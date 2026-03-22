@@ -27,6 +27,8 @@ export interface ComponentNode {
   underline?: boolean
   italic?: boolean
   bold?: boolean
+  dim_color?: boolean
+  strikethrough?: boolean
 
   // Layout properties
   flex_direction?: string
@@ -34,6 +36,10 @@ export interface ComponentNode {
   align_items?: string
   flex_grow?: number
   flex_shrink?: number
+  flex_basis?: number | string
+  flex_wrap?: string
+  overflow_x?: string
+  overflow_y?: string
 
   // Dimensions
   width?: number

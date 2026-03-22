@@ -4,7 +4,11 @@
  * Non-interactive renderer for audit log data using iocraft native bindings.
  */
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import { Box, Text, print } from '../../utils/terminal/iocraft.mts'
+
+const logger = getDefaultLogger()
 
 export interface AuditLogEntry {
   created_at: string
@@ -43,20 +47,23 @@ export function displayAuditLogWithIocraft({
   orgSlug,
   results,
 }: AuditLogRendererProps): void {
-  if (!results.length) {
-    const tree = Box({
-      children: [
-        Text({
-          children: 'No audit log entries found.',
-          color: 'yellow',
-        }),
-      ],
-    })
-    print(tree)
-    return
-  }
+  try {
+    if (!results.length) {
+      const tree = Box({
+        children: [
+          Text({
+            children: 'No audit log entries found.',
+            color: 'yellow',
+          }),
+        ],
+      })
+      print(tree)
+      return
+    }
 
-  const tree = Box({
+    const firstEntry = results[0]!
+
+    const tree = Box({
     children: [
       Box({
         children: [
@@ -91,10 +98,10 @@ export function displayAuditLogWithIocraft({
               children: [
                 Text({
                   children: [
-                    entry.event_id.slice(0, 18).padEnd(20),
-                    entry.formatted_created_at.padEnd(25),
-                    entry.type.padEnd(30),
-                    entry.user_email.padEnd(30),
+                    (entry.event_id || '').slice(0, 18).padEnd(20),
+                    (entry.formatted_created_at || '').padEnd(25),
+                    (entry.type || '').padEnd(30),
+                    (entry.user_email || '').padEnd(30),
                   ].join(' '),
                 }),
               ],
@@ -123,7 +130,7 @@ export function displayAuditLogWithIocraft({
           Box({
             children: [
               Text({
-                children: formatEntry(results[0]!),
+                children: formatEntry(firstEntry),
               }),
             ],
           }),
@@ -136,5 +143,18 @@ export function displayAuditLogWithIocraft({
     flexDirection: 'column',
   })
 
-  print(tree)
+    print(tree)
+  } catch (e) {
+    process.exitCode = 1
+    logger.error('Error rendering audit log:', e instanceof Error ? e.message : String(e))
+    logger.warn('Falling back to plain text output')
+    logger.log(`Organization: ${orgSlug}`)
+    logger.log(`Entries: ${results.length}`)
+    results.slice(0, 10).forEach((entry, i) => {
+      logger.log(`[${i + 1}] ${entry.event_id || 'N/A'} - ${entry.type || 'N/A'} - ${entry.formatted_created_at || 'N/A'}`)
+    })
+    if (results.length > 10) {
+      logger.log(`... and ${results.length - 10} more entries`)
+    }
+  }
 }

@@ -11,6 +11,7 @@ import { VITEST } from '../../env/vitest.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdTable } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { displayAuditLogWithIocraft } from './AuditLogRenderer.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -67,7 +68,7 @@ export async function outputAuditLog(
     return
   }
 
-  await outputWithIocraft(result.data, orgSlug)
+  outputWithIocraft(result.data, orgSlug)
 }
 
 export async function outputAsJson(
@@ -172,14 +173,10 @@ ${table}
 /**
  * Display audit log using iocraft.
  */
-async function outputWithIocraft(
+function outputWithIocraft(
   data: SocketSdkSuccessResult<'getAuditLogEvents'>['data'],
   orgSlug: string,
-): Promise<void> {
-  const { displayAuditLogWithIocraft } = await import(
-    './AuditLogRenderer.mts'
-  )
-
+): void {
   displayAuditLogWithIocraft({
     orgSlug,
     results: data.results.map((entry: AuditLogEvent) => ({

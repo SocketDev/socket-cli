@@ -82,7 +82,7 @@ function loadNativeAddon() {
     try {
       const { dirname, join, resolve } = require('node:path')
       const { fileURLToPath } = require('node:url')
-      const { realpathSync } = require('node:fs')
+      const { realpathSync, existsSync } = require('node:fs')
 
       // Get the real path of this module (resolves pnpm symlinks).
       const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -90,10 +90,26 @@ function loadNativeAddon() {
 
       // Check if we're in the build output directory structure.
       // Expected: .../build/dev/out/socketaddon-iocraft
+      // OR pnpm virtual store: .../@socketaddon+iocraft@file+packages+package-builder+build+dev+out+socketaddon-iocraft/...
+      let buildOutDir
+
       if (realDir.includes('/build/') && realDir.includes('/out/socketaddon-iocraft')) {
-        const buildOutDir = realDir.split('/socketaddon-iocraft')[0]
+        // Direct path to build output.
+        buildOutDir = realDir.split('/socketaddon-iocraft')[0]
+      } else if (realDir.includes('@socketaddon+iocraft@file+packages+package-builder+build+dev+out+socketaddon-iocraft')) {
+        // pnpm virtual store - extract project root and reconstruct path.
+        const match = realDir.match(/^(.+?)\/node_modules\/\.pnpm\/@socketaddon/)
+        if (match) {
+          const projectRoot = match[1]
+          buildOutDir = join(projectRoot, 'packages/package-builder/build/dev/out')
+        }
+      }
+
+      if (buildOutDir) {
         const siblingPath = join(buildOutDir, `socketaddon-iocraft-${platformId}`, 'iocraft.node')
-        return require(siblingPath)
+        if (existsSync(siblingPath)) {
+          return require(siblingPath)
+        }
       }
 
       throw new Error('Not in development build structure')
