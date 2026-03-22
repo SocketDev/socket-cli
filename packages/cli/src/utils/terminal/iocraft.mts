@@ -72,11 +72,24 @@ export type TextWrap = 'wrap' | 'nowrap'
 
 /**
  * Text styling options for visual appearance.
+ *
+ * @example
+ * ```typescript
+ * // Named colors
+ * Text({ children: 'Red text', color: 'red' })
+ *
+ * // Hex colors
+ * Text({ children: 'Custom', color: '#FF5733' })
+ *
+ * // ANSI 256 colors
+ * Text({ children: 'Orange', color: 'ansi:208' })
+ * Text({ children: 'Pink', color: '213' }) // Bare number also works
+ * ```
  */
 export interface TextStyle {
   /** Apply bold styling to text */
   bold?: boolean
-  /** Set text color (named colors or hex values) */
+  /** Set text color (named colors like 'red', hex like '#FF0000', or ANSI 256 codes like 'ansi:123' or '196') */
   color?: string
   /** Apply dim/faded styling to text (maps to light weight) */
   dimColor?: boolean
@@ -145,6 +158,95 @@ export interface BorderEdges {
 }
 
 /**
+ * Custom border characters for completely custom border rendering.
+ *
+ * @example
+ * ```typescript
+ * Box({
+ *   customBorderChars: {
+ *     topLeft: '╔',
+ *     topRight: '╗',
+ *     bottomLeft: '╚',
+ *     bottomRight: '╝',
+ *     top: '═',
+ *     bottom: '═',
+ *     left: '║',
+ *     right: '║'
+ *   }
+ * })
+ * ```
+ */
+export interface CustomBorderChars {
+  /** Bottom border character */
+  bottom: string
+  /** Bottom-left corner character */
+  bottomLeft: string
+  /** Bottom-right corner character */
+  bottomRight: string
+  /** Left border character */
+  left: string
+  /** Right border character */
+  right: string
+  /** Top border character */
+  top: string
+  /** Top-left corner character */
+  topLeft: string
+  /** Top-right corner character */
+  topRight: string
+}
+
+/**
+ * Border style for Box/View components.
+ *
+ * @example
+ * ```typescript
+ * Box({ borderStyle: 'single' }) // ┌──┐
+ * Box({ borderStyle: 'double' }) // ╔══╗
+ * Box({ borderStyle: 'rounded' }) // ╭──╮
+ * Box({ borderStyle: 'bold' }) // ┏━━┓
+ * Box({ borderStyle: 'double-left-right' }) // ╓──╖
+ * Box({ borderStyle: 'double-top-bottom' }) // ╒══╕
+ * Box({ borderStyle: 'classic' }) // +--+
+ * ```
+ */
+export type BorderStyle =
+  | 'none'
+  | 'single'
+  | 'double'
+  | 'rounded'
+  | 'bold'
+  | 'double-left-right'
+  | 'double-top-bottom'
+  | 'classic'
+
+/**
+ * Mixed text content with individual styling per section.
+ *
+ * @example
+ * ```typescript
+ * {
+ *   text: 'Error:',
+ *   color: 'red',
+ *   weight: 'bold',
+ *   decoration: 'underline',
+ *   italic: false
+ * }
+ * ```
+ */
+export interface MixedTextContentSection {
+  /** Text color (named colors, hex, or ANSI codes) */
+  color?: string
+  /** Text decoration (underline, strikethrough, or none) */
+  decoration?: 'underline' | 'strikethrough' | 'none'
+  /** Apply italic styling */
+  italic?: boolean
+  /** The text content for this section */
+  text: string
+  /** Text weight (normal, bold, or light) */
+  weight?: TextWeight
+}
+
+/**
  * Box/View layout properties (flexbox).
  *
  * Supports comprehensive flexbox layout with positioning, dimensions, spacing, and styling.
@@ -186,14 +288,16 @@ export interface BoxProps {
   alignItems?: 'flex-start' | 'flex-end' | 'center' | 'stretch'
   /** Background color (named colors or hex) */
   backgroundColor?: string
-  /** Border color (named colors or hex) */
+  /** Border color (named colors, hex, or ANSI codes like 'ansi:123' or '196') */
   borderColor?: string
   /** Configure which border edges to render */
   borderEdges?: BorderEdges
-  /** Border style (none, single, double, rounded, bold) */
-  borderStyle?: 'single' | 'double' | 'rounded' | 'bold' | 'none'
+  /** Border style (supports all variants including double-left-right, double-top-bottom, classic) */
+  borderStyle?: BorderStyle
   /** Bottom inset for absolute positioning (can be negative) */
   bottom?: number
+  /** Custom border characters (when using custom border style) */
+  customBorderChars?: CustomBorderChars
   /** Child elements to render inside this box */
   children?: Element | Element[]
   /** Gap between columns in flex layout */
@@ -310,6 +414,46 @@ export interface TextProps extends TextStyle {
   children?: string | string[]
   /** Text wrapping behavior (wrap or nowrap) */
   wrap?: TextWrap
+}
+
+/**
+ * Mixed text properties for rendering text with multiple styles.
+ *
+ * @example
+ * ```typescript
+ * MixedText({
+ *   contents: [
+ *     { text: 'Error: ', color: 'red', weight: 'bold' },
+ *     { text: 'File not found', color: 'white', italic: true }
+ *   ]
+ * })
+ * ```
+ */
+export interface MixedTextProps {
+  /** Horizontal text alignment */
+  align?: TextAlign
+  /** Array of text sections with individual styling */
+  contents: MixedTextContentSection[]
+  /** Text wrapping behavior */
+  wrap?: TextWrap
+}
+
+/**
+ * Fragment properties for grouping elements without layout impact.
+ *
+ * @example
+ * ```typescript
+ * Fragment({
+ *   children: [
+ *     Text({ children: 'Line 1' }),
+ *     Text({ children: 'Line 2' })
+ *   ]
+ * })
+ * ```
+ */
+export interface FragmentProps {
+  /** Child elements to group */
+  children: Element | Element[]
 }
 
 /**
@@ -530,6 +674,18 @@ export function Box(props: BoxProps): Element {
   if (props.borderStyle) {
     node.border_style = props.borderStyle
   }
+  if (props.customBorderChars) {
+    node.custom_border_chars = {
+      top_left: props.customBorderChars.topLeft,
+      top_right: props.customBorderChars.topRight,
+      bottom_left: props.customBorderChars.bottomLeft,
+      bottom_right: props.customBorderChars.bottomRight,
+      top: props.customBorderChars.top,
+      bottom: props.customBorderChars.bottom,
+      left: props.customBorderChars.left,
+      right: props.customBorderChars.right,
+    }
+  }
 
   // Background
   if (props.backgroundColor) {
@@ -537,6 +693,70 @@ export function Box(props: BoxProps): Element {
   }
 
   return node
+}
+
+/**
+ * Create a mixed text element with multiple styled sections.
+ *
+ * @example
+ * ```typescript
+ * MixedText({
+ *   contents: [
+ *     { text: 'Success: ', color: 'green', weight: 'bold' },
+ *     { text: 'Operation completed', color: 'white' }
+ *   ],
+ *   align: 'center'
+ * })
+ * ```
+ */
+export function MixedText(props: MixedTextProps): Element {
+  const node: Element = {
+    type: 'MixedText',
+    mixed_text_contents: props.contents.map((section) => ({
+      text: section.text,
+      color: section.color,
+      weight: section.weight,
+      decoration: section.decoration,
+      italic: section.italic,
+    })),
+  }
+
+  if (props.align) {
+    node.align = props.align
+  }
+  if (props.wrap) {
+    node.wrap = props.wrap
+  }
+
+  return node
+}
+
+/**
+ * Create a fragment element that groups children without layout impact.
+ *
+ * Fragments are transparent wrappers that allow returning multiple elements
+ * without affecting the layout hierarchy.
+ *
+ * @example
+ * ```typescript
+ * Fragment({
+ *   children: [
+ *     Text({ children: 'Line 1' }),
+ *     Text({ children: 'Line 2' }),
+ *     Text({ children: 'Line 3' })
+ *   ]
+ * })
+ * ```
+ */
+export function Fragment(props: FragmentProps): Element {
+  const children = Array.isArray(props.children)
+    ? props.children
+    : [props.children]
+
+  return {
+    type: 'Fragment',
+    children,
+  }
 }
 
 /**

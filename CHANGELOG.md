@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Advanced TUI components and styling for rich terminal interfaces:
+  - **MixedText component**: Render text with multiple styled sections, perfect for syntax highlighting and rich formatting
+  - **Fragment component**: Group elements without layout impact, enabling cleaner component composition
+  - **Extended border styles**: double-left-right, double-top-bottom, and classic ASCII borders
+  - **Custom border characters**: Full control over border rendering with custom character sets
+  - **ANSI 256-color support**: Use extended color palette with `ansi:123` or bare number notation for vibrant terminal output
 - Comprehensive TUI styling and layout properties for terminal interfaces:
   - Text styling: weight (normal, bold, light), dimColor for faded appearance, strikethrough decoration
   - Text layout: align (left, center, right), wrap (wrap, nowrap) for content control
