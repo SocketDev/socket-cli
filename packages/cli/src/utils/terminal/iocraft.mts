@@ -458,8 +458,109 @@ export interface FragmentProps {
 
 /**
  * Element type (iocraft element).
+ * We define our own interface instead of using ComponentNode directly
+ * because we need to support all properties when building elements.
  */
-export type Element = import('@socketaddon/iocraft').ComponentNode
+export interface Element {
+  type: 'Text' | 'View' | 'MixedText' | 'Fragment'
+  children?: Element[]
+
+  // Text properties
+  content?: string
+  align?: string
+  bold?: boolean
+  color?: string
+  dim_color?: boolean
+  italic?: boolean
+  strikethrough?: boolean
+  underline?: boolean
+  weight?: string
+  wrap?: string
+
+  // View properties
+  display?: string
+  position?: string
+  bottom?: number
+  inset?: number
+  left?: number
+  right?: number
+  top?: number
+
+  // Flex layout
+  align_content?: string
+  align_items?: string
+  column_gap?: number
+  flex_basis?: number | string
+  flex_direction?: string
+  flex_grow?: number
+  flex_shrink?: number
+  flex_wrap?: string
+  gap?: number
+  justify_content?: string
+  row_gap?: number
+
+  // Dimensions
+  height?: number
+  max_height?: number
+  max_width?: number
+  min_height?: number
+  min_width?: number
+  width?: number
+
+  // Overflow
+  overflow_x?: string
+  overflow_y?: string
+
+  // Padding
+  padding?: number
+  padding_x?: number
+  padding_y?: number
+  padding_top?: number
+  padding_right?: number
+  padding_bottom?: number
+  padding_left?: number
+
+  // Margin
+  margin?: number
+  margin_x?: number
+  margin_y?: number
+  margin_top?: number
+  margin_right?: number
+  margin_bottom?: number
+  margin_left?: number
+
+  // Border
+  border_color?: string
+  border_edges?: {
+    top?: boolean
+    right?: boolean
+    bottom?: boolean
+    left?: boolean
+  }
+  border_style?: string
+  custom_border_chars?: {
+    top_left: string
+    top_right: string
+    bottom_left: string
+    bottom_right: string
+    top: string
+    bottom: string
+    left: string
+    right: string
+  }
+
+  // Background
+  background_color?: string
+
+  // MixedText
+  mixed_text_contents?: Array<{
+    text: string
+    color?: string | undefined
+    weight?: string | undefined
+    decoration?: string | undefined
+    italic?: boolean | undefined
+  }>
+}
 
 /**
  * Create a text element with styling.
@@ -764,7 +865,7 @@ export function Fragment(props: FragmentProps): Element {
  */
 export function renderToString(element: Element): string {
   const io = getIocraft()
-  return io.renderToString(element)
+  return io.renderToString(element as import('@socketaddon/iocraft').ComponentNode)
 }
 
 /**
@@ -772,7 +873,7 @@ export function renderToString(element: Element): string {
  */
 export function print(element: Element): void {
   const io = getIocraft()
-  io.printComponent(element)
+  io.printComponent(element as import('@socketaddon/iocraft').ComponentNode)
 }
 
 /**
@@ -780,7 +881,7 @@ export function print(element: Element): void {
  */
 export function eprint(element: Element): void {
   const io = getIocraft()
-  io.eprintComponent(element)
+  io.eprintComponent(element as import('@socketaddon/iocraft').ComponentNode)
 }
 
 /**

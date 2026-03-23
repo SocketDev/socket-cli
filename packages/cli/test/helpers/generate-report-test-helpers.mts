@@ -1,4 +1,4 @@
-import type { SocketArtifact } from '../../utils/alert/artifact.mts'
+import type { SocketArtifact } from '../../src/utils/alert/artifact.mts'
 
 /**
  * Helper function to create a simple clean scan with no security issues.
