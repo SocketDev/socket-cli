@@ -147,6 +147,16 @@ export async function spawnDlx(
     }
     spawnArgs.push(packageString, ...args)
 
+    // Use node-modules linker instead of PnP to avoid issues with packages
+    // that have undeclared dependencies (e.g. @coana-tech/cli -> @babel/types).
+    finalShadowOptions = {
+      ...finalShadowOptions,
+      env: {
+        ...getOwn(finalShadowOptions, 'env'),
+        YARN_NODE_LINKER: 'node-modules',
+      },
+    }
+
     const shadowYarnBin = /*@__PURE__*/ require(constants.shadowYarnBinPath)
     return await shadowYarnBin(spawnArgs, finalShadowOptions, spawnExtra)
   } else {
