@@ -10,7 +10,7 @@
  * - getScanWithMultiplePackages function
  *
  * Related Files:
- * - src/commands/scan/generate-report-test-helpers.mts (implementation)
+ * - test/helpers/generate-report-test-helpers.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'
@@ -19,7 +19,7 @@ import {
   getSimpleCleanScan,
   getScanWithEnvVars,
   getScanWithMultiplePackages,
-} from '../../../../src/commands/scan/generate-report-test-helpers.mts'
+} from '../../../helpers/generate-report-test-helpers.mts'
 
 describe('generate-report-test-helpers', () => {
   describe('getSimpleCleanScan', () => {

@@ -23,7 +23,7 @@ import { describe, expect, it } from 'vitest'
 import {
   getScanWithEnvVars,
   getSimpleCleanScan,
-} from '../../../../src/commands/scan/generate-report-test-helpers.mts'
+} from '../../../helpers/generate-report-test-helpers.mts'
 import { generateReport } from '../../../../src/commands/scan/generate-report.mts'
 
 import type { ScanReport } from '../../../../src/commands/scan/generate-report.mts'
