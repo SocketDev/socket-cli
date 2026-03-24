@@ -81,6 +81,23 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: 'pnpm-lock.yaml'
 
+      - name: Create stub packages
+        run: |
+          mkdir -p packages/package-builder/build/dev/out/socketaddon-iocraft
+          echo '{"name":"@socketaddon/iocraft","version":"0.0.0","types":"./index.d.ts"}' > packages/package-builder/build/dev/out/socketaddon-iocraft/package.json
+          echo 'export interface ComponentNode { type: string; children?: ComponentNode[]; content?: string; [key: string]: any }
+          export function text(content: string): ComponentNode
+          export function view(children: ComponentNode[]): ComponentNode
+          export function renderToString(tree: ComponentNode): string
+          export function renderToStringWithWidth(tree: ComponentNode, maxWidth: number): string
+          export function printComponent(tree: ComponentNode): void
+          export function eprintComponent(tree: ComponentNode): void
+          export function getTerminalSize(): [number, number]
+          export class TuiRenderer { constructor(); setTree(tree: ComponentNode): Promise<void>; isRunning(): boolean; getSize(): [number, number]; renderOnce(): Promise<string>; renderWithWidth(maxWidth: number): Promise<string>; print(): Promise<void>; eprint(): Promise<void> }
+          export function init(): void
+          declare const iocraft: { text: typeof text; view: typeof view; renderToString: typeof renderToString; renderToStringWithWidth: typeof renderToStringWithWidth; printComponent: typeof printComponent; eprintComponent: typeof eprintComponent; getTerminalSize: typeof getTerminalSize; TuiRenderer: typeof TuiRenderer; init: typeof init }
+          export default iocraft' > packages/package-builder/build/dev/out/socketaddon-iocraft/index.d.ts
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -109,6 +126,23 @@ jobs:
           node-version-file: .node-version
           cache: 'pnpm'
           cache-dependency-path: 'pnpm-lock.yaml'
+
+      - name: Create stub packages
+        run: |
+          mkdir -p packages/package-builder/build/dev/out/socketaddon-iocraft
+          echo '{"name":"@socketaddon/iocraft","version":"0.0.0","types":"./index.d.ts"}' > packages/package-builder/build/dev/out/socketaddon-iocraft/package.json
+          echo 'export interface ComponentNode { type: string; children?: ComponentNode[]; content?: string; [key: string]: any }
+          export function text(content: string): ComponentNode
+          export function view(children: ComponentNode[]): ComponentNode
+          export function renderToString(tree: ComponentNode): string
+          export function renderToStringWithWidth(tree: ComponentNode, maxWidth: number): string
+          export function printComponent(tree: ComponentNode): void
+          export function eprintComponent(tree: ComponentNode): void
+          export function getTerminalSize(): [number, number]
+          export class TuiRenderer { constructor(); setTree(tree: ComponentNode): Promise<void>; isRunning(): boolean; getSize(): [number, number]; renderOnce(): Promise<string>; renderWithWidth(maxWidth: number): Promise<string>; print(): Promise<void>; eprint(): Promise<void> }
+          export function init(): void
+          declare const iocraft: { text: typeof text; view: typeof view; renderToString: typeof renderToString; renderToStringWithWidth: typeof renderToStringWithWidth; printComponent: typeof printComponent; eprintComponent: typeof eprintComponent; getTerminalSize: typeof getTerminalSize; TuiRenderer: typeof TuiRenderer; init: typeof init }
+          export default iocraft' > packages/package-builder/build/dev/out/socketaddon-iocraft/index.d.ts
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -145,6 +179,23 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
           cache-dependency-path: 'pnpm-lock.yaml'
+
+      - name: Create stub packages
+        run: |
+          mkdir -p packages/package-builder/build/dev/out/socketaddon-iocraft
+          echo '{"name":"@socketaddon/iocraft","version":"0.0.0","types":"./index.d.ts"}' > packages/package-builder/build/dev/out/socketaddon-iocraft/package.json
+          echo 'export interface ComponentNode { type: string; children?: ComponentNode[]; content?: string; [key: string]: any }
+          export function text(content: string): ComponentNode
+          export function view(children: ComponentNode[]): ComponentNode
+          export function renderToString(tree: ComponentNode): string
+          export function renderToStringWithWidth(tree: ComponentNode, maxWidth: number): string
+          export function printComponent(tree: ComponentNode): void
+          export function eprintComponent(tree: ComponentNode): void
+          export function getTerminalSize(): [number, number]
+          export class TuiRenderer { constructor(); setTree(tree: ComponentNode): Promise<void>; isRunning(): boolean; getSize(): [number, number]; renderOnce(): Promise<string>; renderWithWidth(maxWidth: number): Promise<string>; print(): Promise<void>; eprint(): Promise<void> }
+          export function init(): void
+          declare const iocraft: { text: typeof text; view: typeof view; renderToString: typeof renderToString; renderToStringWithWidth: typeof renderToStringWithWidth; printComponent: typeof printComponent; eprintComponent: typeof eprintComponent; getTerminalSize: typeof getTerminalSize; TuiRenderer: typeof TuiRenderer; init: typeof init }
+          export default iocraft' > packages/package-builder/build/dev/out/socketaddon-iocraft/index.d.ts
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -186,6 +237,23 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
           cache-dependency-path: 'pnpm-lock.yaml'
+
+      - name: Create stub packages
+        run: |
+          mkdir -p packages/package-builder/build/dev/out/socketaddon-iocraft
+          echo '{"name":"@socketaddon/iocraft","version":"0.0.0","types":"./index.d.ts"}' > packages/package-builder/build/dev/out/socketaddon-iocraft/package.json
+          echo 'export interface ComponentNode { type: string; children?: ComponentNode[]; content?: string; [key: string]: any }
+          export function text(content: string): ComponentNode
+          export function view(children: ComponentNode[]): ComponentNode
+          export function renderToString(tree: ComponentNode): string
+          export function renderToStringWithWidth(tree: ComponentNode, maxWidth: number): string
+          export function printComponent(tree: ComponentNode): void
+          export function eprintComponent(tree: ComponentNode): void
+          export function getTerminalSize(): [number, number]
+          export class TuiRenderer { constructor(); setTree(tree: ComponentNode): Promise<void>; isRunning(): boolean; getSize(): [number, number]; renderOnce(): Promise<string>; renderWithWidth(maxWidth: number): Promise<string>; print(): Promise<void>; eprint(): Promise<void> }
+          export function init(): void
+          declare const iocraft: { text: typeof text; view: typeof view; renderToString: typeof renderToString; renderToStringWithWidth: typeof renderToStringWithWidth; printComponent: typeof printComponent; eprintComponent: typeof eprintComponent; getTerminalSize: typeof getTerminalSize; TuiRenderer: typeof TuiRenderer; init: typeof init }
+          export default iocraft' > packages/package-builder/build/dev/out/socketaddon-iocraft/index.d.ts
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
