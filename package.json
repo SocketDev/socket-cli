@@ -184,13 +184,13 @@
       "yargs-parser": "catalog:"
     },
     "patchedDependencies": {
-      "@npmcli/run-script@9.1.0": "patches/@npmcli__run-script@9.1.0.patch",
       "@npmcli/run-script@10.0.3": "patches/@npmcli__run-script@10.0.3.patch",
+      "@npmcli/run-script@10.0.4": "patches/@npmcli__run-script@10.0.4.patch",
       "@sigstore/sign@4.1.0": "patches/@sigstore__sign@4.1.0.patch",
       "execa@2.1.0": "patches/execa@2.1.0.patch",
       "execa@5.1.1": "patches/execa@5.1.1.patch",
-      "node-gyp@11.5.0": "patches/node-gyp@11.5.0.patch",
-      "node-gyp@12.1.0": "patches/node-gyp@12.1.0.patch"
+      "node-gyp@12.1.0": "patches/node-gyp@12.1.0.patch",
+      "node-gyp@12.2.0": "patches/node-gyp@12.2.0.patch"
     }
   },
   "lint-staged": {
