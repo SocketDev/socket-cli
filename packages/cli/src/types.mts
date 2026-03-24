@@ -9,13 +9,9 @@ export type BaseFetchOptions = {
 
 // Checksum types for external tool integrity verification.
 // Maps asset filename to SHA-256 hex checksum.
-export type OpengrepChecksums = Record<string, string>
-export type PythonChecksums = Record<string, string>
 export type PyCliChecksums = Record<string, string>
-export type SfwChecksums = Record<string, string>
+export type PythonChecksums = Record<string, string>
 export type SocketPatchChecksums = Record<string, string>
-export type TrivyChecksums = Record<string, string>
-export type TrufflehogChecksums = Record<string, string>
 
 // CResult is akin to the "Result" or "Outcome" or "Either" pattern.
 // Main difference might be that it's less strict about the error side of

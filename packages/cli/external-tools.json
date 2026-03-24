@@ -46,6 +46,7 @@
     }
   },
   "socket-basics": {
+    "$comment": "socket_basics is distributed via GitHub Actions and Docker, not public PyPI. Checksums handled by container/CI build process.",
     "description": "Socket Basics - integrated SAST, secret scanning, and container analysis",
     "type": "pypi",
     "package": "socket_basics",
