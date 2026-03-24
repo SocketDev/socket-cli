@@ -81,9 +81,13 @@ const logger = getDefaultLogger()
 export const EXTERNAL_TOOLS = [
   'cdxgen',
   'coana',
+  'opengrep',
+  'python',
   'sfw',
   'socket-patch',
   'synp',
+  'trivy',
+  'trufflehog',
 ] as const
 
 export type ExternalTool = (typeof EXTERNAL_TOOLS)[number]
@@ -112,12 +116,21 @@ const TOOL_NPM_PATHS: Partial<
 // These tools are single binaries from GitHub releases without npm dependencies.
 // sfw is stored under node_modules/@socketsecurity/sfw-bin/ for VFS structure.
 const TOOL_STANDALONE_PATHS: Partial<Record<ExternalTool, string>> = {
+  // opengrep is a SAST/code analysis engine from GitHub releases (opengrep/opengrep).
+  opengrep: 'opengrep',
+  // python is a standalone runtime from GitHub releases (astral-sh/python-build-standalone).
+  // Entire python/ directory is extracted, binary is at python/bin/python (Unix) or python/python.exe (Windows).
+  python: 'python',
   // sfw is a standalone binary from GitHub releases (SocketDev/sfw-free).
   // Note: npm CLI uses the sfw npm package via dlx instead.
   sfw: 'node_modules/@socketsecurity/sfw-bin/sfw',
   // socket-patch is a Rust binary downloaded from GitHub releases.
   // As of v2.0.0, it's bundled directly (not as an npm package).
   'socket-patch': 'socket-patch',
+  // trivy is a container/filesystem vulnerability scanner from GitHub releases (aquasecurity/trivy).
+  trivy: 'trivy',
+  // trufflehog is a secret/credential detector from GitHub releases (trufflesecurity/trufflehog).
+  trufflehog: 'trufflehog',
 }
 
 /**
