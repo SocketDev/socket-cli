@@ -326,11 +326,17 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
     // Release tags can be any format (v1.6.1, 3.11.14, 20260203, etc.).
     const tag = config.version
     const url = `https://github.com/${config.owner}/${config.repo}/releases/download/${tag}/${assetName}`
+
+    // Get SHA256 checksum if available in external-tools.json.
+    const toolConfig = externalTools[toolName]
+    const sha256 = toolConfig?.checksums?.[assetName]
+
     await httpDownload(url, archivePath, {
       logger,
       progressInterval: 10,
       retries: 2,
       retryDelay: 5000,
+      ...(sha256 && { sha256 }),
     })
 
     // Extract binary (or handle standalone binaries).

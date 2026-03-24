@@ -17,14 +17,31 @@
     "description": "OpenGrep SAST/code analysis engine (fork of Semgrep)",
     "type": "github-release",
     "repository": "opengrep/opengrep",
-    "githubRelease": "v1.16.0"
+    "githubRelease": "v1.16.0",
+    "checksums": {
+      "opengrep-core_linux_aarch64.tar.gz": "e6a92e2c465b53284ae326d20b315acbd2eb99bc9ea4b3af48db6379306f3a82",
+      "opengrep-core_linux_x86.tar.gz": "4d474141329983c4ddd7a6cd586759deecc7f3fa9aee6e6eeab8c55759dc816b",
+      "opengrep-core_osx_aarch64.tar.gz": "b3d6ff863449014844391ee6b8740683524787da5ab0797f98faa32714e558e9",
+      "opengrep-core_osx_x86.tar.gz": "2b9f380b5840596ec57f6ead508af7be7bfcac4dbcfe5414dfe495d5f7277887",
+      "opengrep-core_windows_x86.zip": "d7cae83d95fea6b945a373b800839505bf27770771388514fe17e0f2437e8f71"
+    }
   },
   "python": {
     "description": "Python runtime from python-build-standalone",
     "type": "github-release",
     "repository": "astral-sh/python-build-standalone",
     "githubRelease": "3.11.14",
-    "buildTag": "20260203"
+    "buildTag": "20260203",
+    "checksums": {
+      "cpython-3.11.14+20260203-aarch64-apple-darwin-install_only.tar.gz": "63e3352fefd3b6494f73f46f51c6581c57a7e0d98775e6e00229d14a67ec3ce9",
+      "cpython-3.11.14+20260203-aarch64-pc-windows-msvc-install_only.tar.gz": "cb7828c131a005da367f7dba3a561bed91619452de870e531ee03344b2ac346f",
+      "cpython-3.11.14+20260203-aarch64-unknown-linux-gnu-install_only.tar.gz": "7341a5a0acd65f2c7c7a228d8bafa6561d220ffed26293d6a02c15ae2ee86af5",
+      "cpython-3.11.14+20260203-aarch64-unknown-linux-musl-install_only.tar.gz": "f0e5988c108187b12eb4d53cbac33a499a8e38e1693104432e1faabbab14c664",
+      "cpython-3.11.14+20260203-x86_64-apple-darwin-install_only.tar.gz": "f3b63051a9b1ffb4f663d928ebaec4311435cb67f3bdfa5634953df93397f25e",
+      "cpython-3.11.14+20260203-x86_64-pc-windows-msvc-install_only.tar.gz": "d220beff465bdc97bf5874be8ffbf07278e5bdf9a064cab932b5d93b542e3e86",
+      "cpython-3.11.14+20260203-x86_64-unknown-linux-gnu-install_only.tar.gz": "67abde21b6e074b58c0f738f0c4802b23827a7d49707dcaf3ed4dadf572f3f37",
+      "cpython-3.11.14+20260203-x86_64-unknown-linux-musl-install_only.tar.gz": "290de5199a9647d4de4adcf13a79a7c59f060357853bf41fd6d1a69b4b5fd00c"
+    }
   },
   "socket-basics": {
     "description": "Socket Basics - integrated SAST, secret scanning, and container analysis",
@@ -42,7 +59,15 @@
     "description": "Socket Patch CLI for applying security patches (Rust binary)",
     "type": "github-release",
     "repository": "SocketDev/socket-patch",
-    "githubRelease": "v2.0.0"
+    "githubRelease": "v2.0.0",
+    "checksums": {
+      "socket-patch-aarch64-apple-darwin.tar.gz": "dd8f778aef4db3f2c5000cd870101a31d1bb03822158d76e5bd2e773098428f0",
+      "socket-patch-aarch64-pc-windows-msvc.zip": "5c0bbfc12d2b6f30a0f79caf4bff85a1eac6baf9541c46d9af4b3f37b05bd574",
+      "socket-patch-aarch64-unknown-linux-gnu.tar.gz": "baf84c0ec84aa5355ae9d0225ae9199f618014a10af7414947132d326c10cdd5",
+      "socket-patch-x86_64-apple-darwin.tar.gz": "73db4c70f1810d98f7f81adf94d0068e2d9378dfd8660811fb541751abe0078d",
+      "socket-patch-x86_64-pc-windows-msvc.zip": "3b980a74621f084ff92126e4e6284f2f742e57e66cf6727e6e010257377017e8",
+      "socket-patch-x86_64-unknown-linux-musl.tar.gz": "00e7b659c82e863857dc6b1d9721a2719a4a77f981488484e35e998359dc91b0"
+    }
   },
   "sfw": {
     "description": "Socket Firewall (sfw) - GitHub binary for SEA, npm package for CLI",
@@ -50,7 +75,16 @@
     "repository": "SocketDev/sfw-free",
     "githubRelease": "v1.6.1",
     "npmPackage": "sfw",
-    "npmVersion": "2.0.4"
+    "npmVersion": "2.0.4",
+    "checksums": {
+      "sfw-free-linux-arm64": "df2eedb2daf2572eee047adb8bfd81c9069edcb200fc7d3710fca98ec3ca81a1",
+      "sfw-free-linux-x86_64": "4a1e8b65e90fce7d5fd066cf0af6c93d512065fa4222a475c8d959a6bc14b9ff",
+      "sfw-free-macos-arm64": "bf1616fc44ac49f1cb2067fedfa127a3ae65d6ec6d634efbb3098cfa355e5555",
+      "sfw-free-macos-x86_64": "724ccea19d847b79db8cc8e38f5f18ce2dd32336007f42b11bed7d2e5f4a2566",
+      "sfw-free-musl-linux-arm64": "41e5ebfe84e33eb7f34846eeb1b0e0c3039b2ba8bcdb87f4a75a5ccb89c64ae1",
+      "sfw-free-musl-linux-x86_64": "19f26c163311d5d0b184d305304972d26c52e445659c9142cefc7d8a11e06c3a",
+      "sfw-free-windows-x86_64.exe": "c953e62ad7928d4d8f2302f5737884ea1a757babc26bed6a42b9b6b68a5d54af"
+    }
   },
   "synp": {
     "description": "Tool for converting between yarn.lock and package-lock.json",
@@ -62,12 +96,27 @@
     "description": "Trivy container and filesystem vulnerability scanner",
     "type": "github-release",
     "repository": "aquasecurity/trivy",
-    "githubRelease": "v0.69.2"
+    "githubRelease": "v0.69.2",
+    "checksums": {
+      "trivy_0.69.2_Linux-64bit.tar.gz": "affa59a1e37d86e4b8ab2cd02f0ab2e63d22f1bf9cf6a7aa326c884e25e26ce3",
+      "trivy_0.69.2_Linux-ARM64.tar.gz": "c73b97699c317b0d25532b3f188564b4e29d13d5472ce6f8eb078082546a6481",
+      "trivy_0.69.2_macOS-64bit.tar.gz": "41f6eac3ebe3a00448a16f08038b55ce769fe2d5128cb0d64bdf282cdad4831a",
+      "trivy_0.69.2_macOS-ARM64.tar.gz": "320c0e6af90b5733b9326da0834240e944c6f44091e50019abdf584237ff4d0c",
+      "trivy_0.69.2_windows-64bit.zip": "d772fa7c3c1bc52d2914ff78107596fbd20010b5f18bec6f39d63ee3bb31ad45"
+    }
   },
   "trufflehog": {
     "description": "TruffleHog secret and credential detection",
     "type": "github-release",
     "repository": "trufflesecurity/trufflehog",
-    "githubRelease": "v3.93.1"
+    "githubRelease": "v3.93.1",
+    "checksums": {
+      "trufflehog_3.93.1_darwin_amd64.tar.gz": "f1f4ecbda3996b88dc70cf6aef2c469c4902efb591aca86128d6305d606d8e07",
+      "trufflehog_3.93.1_darwin_arm64.tar.gz": "d65a2ad0f043a9d48a97176f28533890e558817e2fb7dd1e34132653b61be4a0",
+      "trufflehog_3.93.1_linux_amd64.tar.gz": "2edf991c20fd8e6d2ec5f255b928289156bc1f0640618829c580c6e87e28ff57",
+      "trufflehog_3.93.1_linux_arm64.tar.gz": "6424e63e0397f7e1b63b880bed6657f76025783738b45868210b445aa5a27b5f",
+      "trufflehog_3.93.1_windows_amd64.tar.gz": "2add5bcfd2f9b9fd5db721f7d47921e02b3f093838d24551f7cf8d6d66bc023e",
+      "trufflehog_3.93.1_windows_arm64.tar.gz": "f2d53334a8f6c0c871db1e53defb9ce591a13e1f84d35cb9ca7865255f4fd4ae"
+    }
   }
 }

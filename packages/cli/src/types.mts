@@ -7,6 +7,11 @@ export type BaseFetchOptions = {
   sdkOpts?: import('./utils/socket/sdk.mjs').SetupSdkOptions | undefined
 }
 
+// Checksum types for external tool integrity verification.
+// Maps asset filename to SHA-256 hex checksum.
+export type PythonChecksums = Record<string, string>
+export type SocketPatchChecksums = Record<string, string>
+
 // CResult is akin to the "Result" or "Outcome" or "Either" pattern.
 // Main difference might be that it's less strict about the error side of
 // things, but still assumes a message is returned explaining the error.

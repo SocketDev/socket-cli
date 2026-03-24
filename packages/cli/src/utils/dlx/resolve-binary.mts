@@ -13,6 +13,7 @@ import { SOCKET_CLI_PYCLI_LOCAL_PATH } from '../../env/socket-cli-pycli-local-pa
 import { SOCKET_CLI_SFW_LOCAL_PATH } from '../../env/socket-cli-sfw-local-path.mts'
 import { SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH } from '../../env/socket-cli-socket-patch-local-path.mts'
 import { getSfwNpmVersion } from '../../env/sfw-version.mts'
+import { getSocketPatchChecksums } from '../../env/socket-patch-checksums.mts'
 import { getSocketPatchVersion } from '../../env/socket-patch-version.mts'
 import { getSynpVersion } from '../../env/synp-version.mts'
 
@@ -26,6 +27,11 @@ export type GitHubReleaseSpec = {
   binaryName: string
   owner: string
   repo: string
+  /**
+   * Optional SHA-256 hex checksum for integrity verification.
+   * If provided, downloads will be verified against this checksum.
+   */
+  sha256?: string | undefined
   version: string
 }
 
@@ -160,14 +166,19 @@ export function resolveSocketPatch(): BinaryResolution {
     )
   }
 
+  // Get SHA-256 checksum for integrity verification.
+  const checksums = getSocketPatchChecksums()
+  const sha256 = checksums[assetName]
+
   return {
     type: 'github-release',
     details: {
-      owner: 'SocketDev',
-      repo: 'socket-patch',
-      version: getSocketPatchVersion(),
       assetName,
       binaryName: 'socket-patch',
+      owner: 'SocketDev',
+      repo: 'socket-patch',
+      sha256,
+      version: getSocketPatchVersion(),
     },
   }
 }

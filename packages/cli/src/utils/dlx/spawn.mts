@@ -158,6 +158,7 @@ export async function spawnDlx(
  * Security:
  * - Uses lock files to prevent TOCTOU race conditions during concurrent downloads.
  * - Validates zip entries for path traversal attacks before extraction.
+ * - Verifies SHA-256 checksum if provided in spec.
  *
  * @param spec - GitHub release specification.
  * @returns Path to the downloaded binary.
@@ -165,7 +166,7 @@ export async function spawnDlx(
 async function downloadGitHubReleaseBinary(
   spec: GitHubReleaseSpec,
 ): Promise<string> {
-  const { assetName, binaryName, owner, repo, version } = spec
+  const { assetName, binaryName, owner, repo, sha256, version } = spec
   const isPlatWin = os.platform() === 'win32'
   const binaryFileName = binaryName + (isPlatWin ? '.exe' : '')
 
@@ -237,6 +238,7 @@ async function downloadGitHubReleaseBinary(
 
     const result = await downloadBinary({
       name: `${owner}-${repo}-${version}-${assetName}`,
+      sha256,
       url,
     })
 

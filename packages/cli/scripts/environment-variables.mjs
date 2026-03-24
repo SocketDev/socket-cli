@@ -108,6 +108,10 @@ export class EnvironmentVariables {
       publishedBuild ? '' : ':dev'
     }`
 
+    // Get checksums for tools that have them.
+    const pythonChecksums = externalTools.python?.checksums || {}
+    const socketPatchChecksums = externalTools['socket-patch']?.checksums || {}
+
     // Return all environment variables with raw values.
     return {
       INLINED_SOCKET_CLI_CDXGEN_VERSION: cdxgenVersion,
@@ -119,10 +123,12 @@ export class EnvironmentVariables {
       INLINED_SOCKET_CLI_PUBLISHED_BUILD: publishedBuild ? '1' : '',
       INLINED_SOCKET_CLI_PYCLI_VERSION: pyCliVersion,
       INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: pythonBuildTag,
+      INLINED_SOCKET_CLI_PYTHON_CHECKSUMS: JSON.stringify(pythonChecksums),
       INLINED_SOCKET_CLI_PYTHON_VERSION: pythonVersion,
       INLINED_SOCKET_CLI_SENTRY_BUILD: sentryBuild ? '1' : '',
       INLINED_SOCKET_CLI_SFW_NPM_VERSION: sfwNpmVersion,
       INLINED_SOCKET_CLI_SFW_VERSION: sfwVersion,
+      INLINED_SOCKET_CLI_SOCKET_PATCH_CHECKSUMS: JSON.stringify(socketPatchChecksums),
       INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION: socketPatchVersion,
       INLINED_SOCKET_CLI_SYNP_VERSION: synpVersion,
       INLINED_SOCKET_CLI_TRIVY_VERSION: trivyVersion,
