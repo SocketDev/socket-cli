@@ -50,6 +50,7 @@ import {
 } from '../basics/vfs-extract.mts'
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
 import { getCliVersion } from '../../env/cli-version.mts'
+import { getPyCliChecksums } from '../../env/pycli-checksums.mts'
 import { getPyCliVersion } from '../../env/pycli-version.mts'
 import { getPythonBuildTag } from '../../env/python-build-tag.mts'
 import { requirePythonChecksum } from '../../env/python-checksums.mts'
@@ -1149,6 +1150,80 @@ function convertCaretToPipRange(caretRange: string): string {
 }
 
 /**
+ * Download a PyPI wheel with SHA-256 verification.
+ * Fetches the wheel URL from PyPI JSON API and downloads with integrity check.
+ *
+ * @param packageName - PyPI package name (e.g., 'socketsecurity').
+ * @param version - Exact version to download.
+ * @param sha256 - Expected SHA-256 checksum (hex string).
+ * @returns Path to the downloaded wheel file, or null if download fails.
+ */
+async function downloadPyPiWheel(
+  packageName: string,
+  version: string,
+  sha256: string | undefined,
+): Promise<string | null> {
+  // Cache path: ~/.socket/_dlx/pypi/{package}/{version}/
+  const cacheDir = path.join(getDlxCachePath(), 'pypi', packageName, version)
+  const wheelFilename = `${packageName}-${version}-py3-none-any.whl`
+  const wheelPath = path.join(cacheDir, wheelFilename)
+
+  // Return cached wheel if already downloaded.
+  if (existsSync(wheelPath)) {
+    return wheelPath
+  }
+
+  await safeMkdir(cacheDir)
+
+  // Fetch wheel URL from PyPI JSON API.
+  const pypiUrl = `https://pypi.org/pypi/${packageName}/${version}/json`
+  let wheelUrl: string | null = null
+
+  try {
+    const response = await fetch(pypiUrl)
+    if (!response.ok) {
+      throw new Error(`PyPI API returned ${response.status}`)
+    }
+    const data = (await response.json()) as {
+      urls?: Array<{ filename: string; url: string }>
+    }
+
+    // Find the wheel URL (prefer py3-none-any wheel).
+    const wheelInfo = data.urls?.find(
+      u => u.filename.endsWith('-py3-none-any.whl') || u.filename.endsWith('.whl'),
+    )
+    if (wheelInfo) {
+      wheelUrl = wheelInfo.url
+    }
+  } catch (e) {
+    // If we can't fetch from API, construct URL directly (may not work for all packages).
+    // This is a fallback; the API approach is more reliable.
+    throw new InputError(
+      `Failed to fetch PyPI package info for ${packageName}@${version}: ${getErrorCause(e)}`,
+    )
+  }
+
+  if (!wheelUrl) {
+    throw new InputError(
+      `No wheel found for ${packageName}@${version} on PyPI. ` +
+        'This package may only be available as a source distribution.',
+    )
+  }
+
+  // Download wheel with SHA-256 verification.
+  const result = await downloadBinary({
+    name: wheelFilename,
+    sha256,
+    url: wheelUrl,
+  })
+
+  // Copy to our cache directory (downloadBinary uses its own cache).
+  await fs.copyFile(result.binaryPath, wheelPath)
+
+  return wheelPath
+}
+
+/**
  * Install socketsecurity package into the Python environment.
  * Uses lock file to prevent race conditions when multiple processes
  * try to install simultaneously.
@@ -1257,15 +1332,39 @@ export async function ensureSocketPyCli(
 
   try {
     const pyCliVersion = getPyCliVersion()
-    const versionSpec = convertCaretToPipRange(pyCliVersion)
-    const packageSpec = versionSpec
-      ? `socketsecurity${versionSpec}`
-      : 'socketsecurity'
 
-    await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', packageSpec], {
-      shell: WIN32,
-      stdio: 'inherit',
-    })
+    // Get checksum for integrity verification.
+    // Checksums are keyed by wheel filename in external-tools.json.
+    const wheelFilename = `socketsecurity-${pyCliVersion}-py3-none-any.whl`
+    const checksums = getPyCliChecksums()
+    const sha256 = checksums[wheelFilename]
+
+    // If checksums are available, download verified wheel and install from local file.
+    // Otherwise fall back to pip install (dev mode or missing checksums).
+    if (sha256) {
+      const wheelPath = await downloadPyPiWheel('socketsecurity', pyCliVersion, sha256)
+      if (wheelPath) {
+        await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', wheelPath], {
+          shell: WIN32,
+          stdio: 'inherit',
+        })
+      } else {
+        throw new InputError(
+          `Failed to download verified socketsecurity wheel for version ${pyCliVersion}`,
+        )
+      }
+    } else {
+      // Dev mode: no checksums inlined, install directly from PyPI.
+      const versionSpec = convertCaretToPipRange(pyCliVersion)
+      const packageSpec = versionSpec
+        ? `socketsecurity${versionSpec}`
+        : 'socketsecurity'
+
+      await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', packageSpec], {
+        shell: WIN32,
+        stdio: 'inherit',
+      })
+    }
   } finally {
     // Clean up lock file.
     try {
@@ -1304,13 +1403,32 @@ export async function spawnSocketPyCliVfs(
     const toolPaths = getBasicsToolPaths(toolsDir)
     const pythonBin = toolPaths.python
 
-    // Ensure socketsecurity package is installed.
+    // Ensure socketsecurity package is installed with integrity verification.
     const pyCliVersion = getPyCliVersion()
-    await spawn(
-      pythonBin,
-      ['-m', 'pip', 'install', '--quiet', `socketsecurity==${pyCliVersion}`],
-      { stdio: 'pipe' },
-    )
+    const wheelFilename = `socketsecurity-${pyCliVersion}-py3-none-any.whl`
+    const checksums = getPyCliChecksums()
+    const sha256 = checksums[wheelFilename]
+
+    if (sha256) {
+      // Download verified wheel and install from local file.
+      const wheelPath = await downloadPyPiWheel('socketsecurity', pyCliVersion, sha256)
+      if (wheelPath) {
+        await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', wheelPath], {
+          stdio: 'pipe',
+        })
+      } else {
+        throw new Error(
+          `Failed to download verified socketsecurity wheel for version ${pyCliVersion}`,
+        )
+      }
+    } else {
+      // Dev mode: install directly from PyPI.
+      await spawn(
+        pythonBin,
+        ['-m', 'pip', 'install', '--quiet', `socketsecurity==${pyCliVersion}`],
+        { stdio: 'pipe' },
+      )
+    }
 
     // Run socketcli with isolated PATH.
     const spawnResult = await spawn(
