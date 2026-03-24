@@ -108,9 +108,14 @@ export class EnvironmentVariables {
       publishedBuild ? '' : ':dev'
     }`
 
-    // Get checksums for tools that have them.
+    // Get checksums for all external tools that have them.
+    // All GitHub-released tools have checksums for integrity verification.
+    const opengrepChecksums = externalTools.opengrep?.checksums || {}
     const pythonChecksums = externalTools.python?.checksums || {}
+    const sfwChecksums = externalTools.sfw?.checksums || {}
     const socketPatchChecksums = externalTools['socket-patch']?.checksums || {}
+    const trivyChecksums = externalTools.trivy?.checksums || {}
+    const trufflehogChecksums = externalTools.trufflehog?.checksums || {}
 
     // Return all environment variables with raw values.
     return {
@@ -119,6 +124,7 @@ export class EnvironmentVariables {
       INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: cdxgenVersion,
       INLINED_SOCKET_CLI_HOMEPAGE: packageJson.homepage,
       INLINED_SOCKET_CLI_NAME: packageJson.name,
+      INLINED_SOCKET_CLI_OPENGREP_CHECKSUMS: JSON.stringify(opengrepChecksums),
       INLINED_SOCKET_CLI_OPENGREP_VERSION: opengrepVersion,
       INLINED_SOCKET_CLI_PUBLISHED_BUILD: publishedBuild ? '1' : '',
       INLINED_SOCKET_CLI_PYCLI_VERSION: pyCliVersion,
@@ -126,12 +132,15 @@ export class EnvironmentVariables {
       INLINED_SOCKET_CLI_PYTHON_CHECKSUMS: JSON.stringify(pythonChecksums),
       INLINED_SOCKET_CLI_PYTHON_VERSION: pythonVersion,
       INLINED_SOCKET_CLI_SENTRY_BUILD: sentryBuild ? '1' : '',
+      INLINED_SOCKET_CLI_SFW_CHECKSUMS: JSON.stringify(sfwChecksums),
       INLINED_SOCKET_CLI_SFW_NPM_VERSION: sfwNpmVersion,
       INLINED_SOCKET_CLI_SFW_VERSION: sfwVersion,
       INLINED_SOCKET_CLI_SOCKET_PATCH_CHECKSUMS: JSON.stringify(socketPatchChecksums),
       INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION: socketPatchVersion,
       INLINED_SOCKET_CLI_SYNP_VERSION: synpVersion,
+      INLINED_SOCKET_CLI_TRIVY_CHECKSUMS: JSON.stringify(trivyChecksums),
       INLINED_SOCKET_CLI_TRIVY_VERSION: trivyVersion,
+      INLINED_SOCKET_CLI_TRUFFLEHOG_CHECKSUMS: JSON.stringify(trufflehogChecksums),
       INLINED_SOCKET_CLI_TRUFFLEHOG_VERSION: trufflehogVersion,
       INLINED_SOCKET_CLI_VERSION: socketPackageJson.version,
       INLINED_SOCKET_CLI_VERSION_HASH: versionHash,
