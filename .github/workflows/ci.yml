@@ -84,8 +84,9 @@ jobs:
       - name: Create stub packages
         run: |
           mkdir -p packages/package-builder/build/dev/out/socketaddon-iocraft
-          echo '{"name":"@socketaddon/iocraft","version":"0.0.0","types":"./index.d.ts"}' > packages/package-builder/build/dev/out/socketaddon-iocraft/package.json
-          echo 'export interface ComponentNode { type: string; children?: ComponentNode[]; content?: string; [key: string]: any }
+          echo '{"name":"@socketaddon/iocraft","version":"0.0.0","type":"module","main":"./index.mjs","types":"./index.d.ts"}' > packages/package-builder/build/dev/out/socketaddon-iocraft/package.json
+          cat > packages/package-builder/build/dev/out/socketaddon-iocraft/index.d.ts << 'TYPES'
+          export interface ComponentNode { type: string; children?: ComponentNode[]; content?: string; [key: string]: any }
           export function text(content: string): ComponentNode
           export function view(children: ComponentNode[]): ComponentNode
           export function renderToString(tree: ComponentNode): string
@@ -96,7 +97,26 @@ jobs:
           export class TuiRenderer { constructor(); setTree(tree: ComponentNode): Promise<void>; isRunning(): boolean; getSize(): [number, number]; renderOnce(): Promise<string>; renderWithWidth(maxWidth: number): Promise<string>; print(): Promise<void>; eprint(): Promise<void> }
           export function init(): void
           declare const iocraft: { text: typeof text; view: typeof view; renderToString: typeof renderToString; renderToStringWithWidth: typeof renderToStringWithWidth; printComponent: typeof printComponent; eprintComponent: typeof eprintComponent; getTerminalSize: typeof getTerminalSize; TuiRenderer: typeof TuiRenderer; init: typeof init }
-          export default iocraft' > packages/package-builder/build/dev/out/socketaddon-iocraft/index.d.ts
+          export default iocraft
+          TYPES
+          cat > packages/package-builder/build/dev/out/socketaddon-iocraft/index.mjs << 'CODE'
+          export const text = (content) => ({ type: 'Text', content })
+          export const view = (children) => ({ type: 'View', children })
+          const extractText = (node) => {
+            if (!node) return ''
+            if (node.type === 'Text') return node.content || ''
+            if (node.children) return node.children.map(extractText).join('')
+            return ''
+          }
+          export const renderToString = (tree) => extractText(tree)
+          export const renderToStringWithWidth = (tree, width) => extractText(tree)
+          export const printComponent = (tree) => console.log(renderToString(tree))
+          export const eprintComponent = (tree) => console.error(renderToString(tree))
+          export const getTerminalSize = () => [80, 24]
+          export class TuiRenderer { setTree(t) { return Promise.resolve() } isRunning() { return false } getSize() { return [80, 24] } renderOnce() { return Promise.resolve('') } renderWithWidth(w) { return Promise.resolve('') } print() { return Promise.resolve() } eprint() { return Promise.resolve() } }
+          export const init = () => {}
+          export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
+          CODE
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -130,8 +150,9 @@ jobs:
       - name: Create stub packages
         run: |
           mkdir -p packages/package-builder/build/dev/out/socketaddon-iocraft
-          echo '{"name":"@socketaddon/iocraft","version":"0.0.0","types":"./index.d.ts"}' > packages/package-builder/build/dev/out/socketaddon-iocraft/package.json
-          echo 'export interface ComponentNode { type: string; children?: ComponentNode[]; content?: string; [key: string]: any }
+          echo '{"name":"@socketaddon/iocraft","version":"0.0.0","type":"module","main":"./index.mjs","types":"./index.d.ts"}' > packages/package-builder/build/dev/out/socketaddon-iocraft/package.json
+          cat > packages/package-builder/build/dev/out/socketaddon-iocraft/index.d.ts << 'TYPES'
+          export interface ComponentNode { type: string; children?: ComponentNode[]; content?: string; [key: string]: any }
           export function text(content: string): ComponentNode
           export function view(children: ComponentNode[]): ComponentNode
           export function renderToString(tree: ComponentNode): string
@@ -142,7 +163,26 @@ jobs:
           export class TuiRenderer { constructor(); setTree(tree: ComponentNode): Promise<void>; isRunning(): boolean; getSize(): [number, number]; renderOnce(): Promise<string>; renderWithWidth(maxWidth: number): Promise<string>; print(): Promise<void>; eprint(): Promise<void> }
           export function init(): void
           declare const iocraft: { text: typeof text; view: typeof view; renderToString: typeof renderToString; renderToStringWithWidth: typeof renderToStringWithWidth; printComponent: typeof printComponent; eprintComponent: typeof eprintComponent; getTerminalSize: typeof getTerminalSize; TuiRenderer: typeof TuiRenderer; init: typeof init }
-          export default iocraft' > packages/package-builder/build/dev/out/socketaddon-iocraft/index.d.ts
+          export default iocraft
+          TYPES
+          cat > packages/package-builder/build/dev/out/socketaddon-iocraft/index.mjs << 'CODE'
+          export const text = (content) => ({ type: 'Text', content })
+          export const view = (children) => ({ type: 'View', children })
+          const extractText = (node) => {
+            if (!node) return ''
+            if (node.type === 'Text') return node.content || ''
+            if (node.children) return node.children.map(extractText).join('')
+            return ''
+          }
+          export const renderToString = (tree) => extractText(tree)
+          export const renderToStringWithWidth = (tree, width) => extractText(tree)
+          export const printComponent = (tree) => console.log(renderToString(tree))
+          export const eprintComponent = (tree) => console.error(renderToString(tree))
+          export const getTerminalSize = () => [80, 24]
+          export class TuiRenderer { setTree(t) { return Promise.resolve() } isRunning() { return false } getSize() { return [80, 24] } renderOnce() { return Promise.resolve('') } renderWithWidth(w) { return Promise.resolve('') } print() { return Promise.resolve() } eprint() { return Promise.resolve() } }
+          export const init = () => {}
+          export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
+          CODE
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -183,8 +223,9 @@ jobs:
       - name: Create stub packages
         run: |
           mkdir -p packages/package-builder/build/dev/out/socketaddon-iocraft
-          echo '{"name":"@socketaddon/iocraft","version":"0.0.0","types":"./index.d.ts"}' > packages/package-builder/build/dev/out/socketaddon-iocraft/package.json
-          echo 'export interface ComponentNode { type: string; children?: ComponentNode[]; content?: string; [key: string]: any }
+          echo '{"name":"@socketaddon/iocraft","version":"0.0.0","type":"module","main":"./index.mjs","types":"./index.d.ts"}' > packages/package-builder/build/dev/out/socketaddon-iocraft/package.json
+          cat > packages/package-builder/build/dev/out/socketaddon-iocraft/index.d.ts << 'TYPES'
+          export interface ComponentNode { type: string; children?: ComponentNode[]; content?: string; [key: string]: any }
           export function text(content: string): ComponentNode
           export function view(children: ComponentNode[]): ComponentNode
           export function renderToString(tree: ComponentNode): string
@@ -195,7 +236,26 @@ jobs:
           export class TuiRenderer { constructor(); setTree(tree: ComponentNode): Promise<void>; isRunning(): boolean; getSize(): [number, number]; renderOnce(): Promise<string>; renderWithWidth(maxWidth: number): Promise<string>; print(): Promise<void>; eprint(): Promise<void> }
           export function init(): void
           declare const iocraft: { text: typeof text; view: typeof view; renderToString: typeof renderToString; renderToStringWithWidth: typeof renderToStringWithWidth; printComponent: typeof printComponent; eprintComponent: typeof eprintComponent; getTerminalSize: typeof getTerminalSize; TuiRenderer: typeof TuiRenderer; init: typeof init }
-          export default iocraft' > packages/package-builder/build/dev/out/socketaddon-iocraft/index.d.ts
+          export default iocraft
+          TYPES
+          cat > packages/package-builder/build/dev/out/socketaddon-iocraft/index.mjs << 'CODE'
+          export const text = (content) => ({ type: 'Text', content })
+          export const view = (children) => ({ type: 'View', children })
+          const extractText = (node) => {
+            if (!node) return ''
+            if (node.type === 'Text') return node.content || ''
+            if (node.children) return node.children.map(extractText).join('')
+            return ''
+          }
+          export const renderToString = (tree) => extractText(tree)
+          export const renderToStringWithWidth = (tree, width) => extractText(tree)
+          export const printComponent = (tree) => console.log(renderToString(tree))
+          export const eprintComponent = (tree) => console.error(renderToString(tree))
+          export const getTerminalSize = () => [80, 24]
+          export class TuiRenderer { setTree(t) { return Promise.resolve() } isRunning() { return false } getSize() { return [80, 24] } renderOnce() { return Promise.resolve('') } renderWithWidth(w) { return Promise.resolve('') } print() { return Promise.resolve() } eprint() { return Promise.resolve() } }
+          export const init = () => {}
+          export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
+          CODE
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -241,8 +301,9 @@ jobs:
       - name: Create stub packages
         run: |
           mkdir -p packages/package-builder/build/dev/out/socketaddon-iocraft
-          echo '{"name":"@socketaddon/iocraft","version":"0.0.0","types":"./index.d.ts"}' > packages/package-builder/build/dev/out/socketaddon-iocraft/package.json
-          echo 'export interface ComponentNode { type: string; children?: ComponentNode[]; content?: string; [key: string]: any }
+          echo '{"name":"@socketaddon/iocraft","version":"0.0.0","type":"module","main":"./index.mjs","types":"./index.d.ts"}' > packages/package-builder/build/dev/out/socketaddon-iocraft/package.json
+          cat > packages/package-builder/build/dev/out/socketaddon-iocraft/index.d.ts << 'TYPES'
+          export interface ComponentNode { type: string; children?: ComponentNode[]; content?: string; [key: string]: any }
           export function text(content: string): ComponentNode
           export function view(children: ComponentNode[]): ComponentNode
           export function renderToString(tree: ComponentNode): string
@@ -253,7 +314,26 @@ jobs:
           export class TuiRenderer { constructor(); setTree(tree: ComponentNode): Promise<void>; isRunning(): boolean; getSize(): [number, number]; renderOnce(): Promise<string>; renderWithWidth(maxWidth: number): Promise<string>; print(): Promise<void>; eprint(): Promise<void> }
           export function init(): void
           declare const iocraft: { text: typeof text; view: typeof view; renderToString: typeof renderToString; renderToStringWithWidth: typeof renderToStringWithWidth; printComponent: typeof printComponent; eprintComponent: typeof eprintComponent; getTerminalSize: typeof getTerminalSize; TuiRenderer: typeof TuiRenderer; init: typeof init }
-          export default iocraft' > packages/package-builder/build/dev/out/socketaddon-iocraft/index.d.ts
+          export default iocraft
+          TYPES
+          cat > packages/package-builder/build/dev/out/socketaddon-iocraft/index.mjs << 'CODE'
+          export const text = (content) => ({ type: 'Text', content })
+          export const view = (children) => ({ type: 'View', children })
+          const extractText = (node) => {
+            if (!node) return ''
+            if (node.type === 'Text') return node.content || ''
+            if (node.children) return node.children.map(extractText).join('')
+            return ''
+          }
+          export const renderToString = (tree) => extractText(tree)
+          export const renderToStringWithWidth = (tree, width) => extractText(tree)
+          export const printComponent = (tree) => console.log(renderToString(tree))
+          export const eprintComponent = (tree) => console.error(renderToString(tree))
+          export const getTerminalSize = () => [80, 24]
+          export class TuiRenderer { setTree(t) { return Promise.resolve() } isRunning() { return false } getSize() { return [80, 24] } renderOnce() { return Promise.resolve('') } renderWithWidth(w) { return Promise.resolve('') } print() { return Promise.resolve() } eprint() { return Promise.resolve() } }
+          export const init = () => {}
+          export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
+          CODE
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

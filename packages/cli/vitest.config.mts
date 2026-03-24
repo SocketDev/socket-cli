@@ -6,8 +6,11 @@ const isCoverageEnabled =
   process.env.npm_lifecycle_event === 'cover' ||
   process.argv.includes('--coverage')
 
+// Detect if running in CI.
+const isCI = 'CI' in process.env
+
 // Detect if running in CI on macOS.
-const isMacCI = 'CI' in process.env && process.platform === 'darwin'
+const isMacCI = isCI && process.platform === 'darwin'
 
 // Calculate optimal thread count based on environment.
 // macOS CI runners have limited memory, so use fewer threads to prevent SIGABRT.
@@ -40,6 +43,16 @@ export default defineConfig({
       '**/*.e2e.test.mts',
       // Exclude integration tests (run separately via scripts/integration.mjs).
       'test/integration/**',
+      // Exclude iocraft-dependent tests in CI (requires native module).
+      ...(isCI
+        ? [
+            '**/AnalyticsRenderer.test.mts',
+            '**/AuditLogRenderer.test.mts',
+            '**/ThreatFeedRenderer.test.mts',
+            '**/iocraft-new-features.test.mts',
+            '**/iocraft-properties.test.mts',
+          ]
+        : []),
     ],
     reporters: ['default'],
     setupFiles: ['./test/setup.mts'],
