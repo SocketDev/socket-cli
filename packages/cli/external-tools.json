@@ -5,13 +5,15 @@
     "description": "Coana CLI for static analysis and reachability detection",
     "type": "npm",
     "package": "@coana-tech/cli",
-    "version": "14.12.165"
+    "version": "14.12.165",
+    "integrity": "sha512-Fs/gGzBEFl23x0Xw+eBOnyX2WUaoc82ppgZrrDN9hpB84CN8r0ZEw22IQRpiJTmhmOlbSwiArpRw45VkgJY5sw=="
   },
   "@cyclonedx/cdxgen": {
     "description": "CycloneDX SBOM generator for software bill of materials",
     "type": "npm",
     "package": "@cyclonedx/cdxgen",
-    "version": "12.0.0"
+    "version": "12.0.0",
+    "integrity": "sha512-RRXEZ1eKHcU+Y/2AnfIg30EQRbOmlEpaJddmMVetpXeYpnxDy/yjBM67jXNKkA4iZYjZzfWe7I5GuxckRmuoqg=="
   },
   "opengrep": {
     "description": "OpenGrep SAST/code analysis engine (fork of Semgrep)",
@@ -90,7 +92,8 @@
     "description": "Tool for converting between yarn.lock and package-lock.json",
     "type": "npm",
     "package": "synp",
-    "version": "1.9.14"
+    "version": "1.9.14",
+    "integrity": "sha512-0e4u7KtrCrMqvuXvDN4nnHSEQbPlONtJuoolRWzut0PfuT2mEOvIFnYFHEpn5YPIOv7S5Ubher0b04jmYRQOzQ=="
   },
   "trivy": {
     "description": "Trivy container and filesystem vulnerability scanner",

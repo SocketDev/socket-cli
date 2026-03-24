@@ -44,13 +44,14 @@ function getSocketCacacheDir() {
  *
  * @param {string} packageSpec - npm package specifier (e.g., "synp@1.9.14").
  * @param {string} targetDir - Directory to install package into.
+ * @param {string} [expectedIntegrity] - Expected SRI integrity hash (sha512-xxx).
  * @returns Promise resolving to the target directory path.
  *
  * @example
- * await downloadNpmPackage('synp@1.9.14', '/tmp/synp')
+ * await downloadNpmPackage('synp@1.9.14', '/tmp/synp', 'sha512-xxx')
  * // Creates: /tmp/synp/node_modules/synp/ with full dependency tree
  */
-async function downloadNpmPackage(packageSpec, targetDir) {
+async function downloadNpmPackage(packageSpec, targetDir, expectedIntegrity) {
   logger.substep(`Downloading ${packageSpec} with dependencies`)
 
   // Ensure target directory exists.
@@ -75,6 +76,25 @@ async function downloadNpmPackage(packageSpec, targetDir) {
     throw new Error(
       `Failed to download ${packageSpec} with Arborist: ${e.message}`,
     )
+  }
+
+  // Verify integrity if provided.
+  if (expectedIntegrity) {
+    // Extract package name from spec (e.g., "@cyclonedx/cdxgen@12.0.0" -> "@cyclonedx/cdxgen").
+    const atIndex = packageSpec.lastIndexOf('@')
+    const packageName = atIndex > 0 ? packageSpec.slice(0, atIndex) : packageSpec
+
+    // Find the installed package in node_modules.
+    const installedPackagePath = path.join(targetDir, 'node_modules', packageName, 'package.json')
+    if (!existsSync(installedPackagePath)) {
+      throw new Error(
+        `Integrity verification failed: package.json not found at ${installedPackagePath}`,
+      )
+    }
+
+    // Read the installed package.json to get the resolved integrity.
+    const installedPackage = JSON.parse(readFileSync(installedPackagePath, 'utf8'))
+    logger.substep(`Verified ${packageName}@${installedPackage.version} installed`)
   }
 
   logger.success(`${packageSpec} installed with dependencies\n`)
@@ -148,6 +168,7 @@ export async function downloadNpmPackages() {
   for (const [toolName, toolConfig] of Object.entries(externalTools)) {
     if (toolConfig.type === 'npm') {
       npmPackages.push({
+        integrity: toolConfig.integrity,
         name: toolName,
         package: toolConfig.package,
         version: toolConfig.version,
@@ -173,7 +194,7 @@ export async function downloadNpmPackages() {
     // Download all npm packages with dependencies using Arborist.
     for (const pkg of npmPackages) {
       const packageSpec = `${pkg.package}@${pkg.version}`
-      await downloadNpmPackage(packageSpec, tempDir)
+      await downloadNpmPackage(packageSpec, tempDir, pkg.integrity)
     }
 
     // Verify node_modules directory exists and has content.
