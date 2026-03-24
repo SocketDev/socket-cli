@@ -52,6 +52,7 @@ import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
 import { getCliVersion } from '../../env/cli-version.mts'
 import { getPyCliVersion } from '../../env/pycli-version.mts'
 import { getPythonBuildTag } from '../../env/python-build-tag.mts'
+import { getPythonChecksums } from '../../env/python-checksums.mts'
 import { getPythonVersion } from '../../env/python-version.mts'
 import { SOCKET_CLI_PYTHON_PATH } from '../../env/socket-cli-python-path.mts'
 import { getSynpVersion } from '../../env/synp-version.mts'
@@ -877,9 +878,9 @@ export async function spawnSynp(
  */
 
 /**
- * Get the download URL for python-build-standalone based on platform and architecture.
+ * Get the download URL and asset name for python-build-standalone based on platform and architecture.
  */
-function getPythonStandaloneUrl(): string {
+function getPythonStandaloneInfo(): { assetName: string; url: string } {
   const version = getPythonVersion()
   const tag = getPythonBuildTag()
   const platform = os.platform()
@@ -903,9 +904,13 @@ function getPythonStandaloneUrl(): string {
     throw new InputError(`Unsupported platform: ${platform}`)
   }
 
+  // Asset name format matches checksums in external-tools.json.
+  const assetName = `cpython-${version}+${tag}-${platformTriple}-install_only.tar.gz`
   // URL encoding for the '+' in version string.
   const encodedVersion = `${version}%2B${tag}`
-  return `https://github.com/astral-sh/python-build-standalone/releases/download/${tag}/cpython-${encodedVersion}-${platformTriple}-install_only.tar.gz`
+  const url = `https://github.com/astral-sh/python-build-standalone/releases/download/${tag}/cpython-${encodedVersion}-${platformTriple}-install_only.tar.gz`
+
+  return { assetName, url }
 }
 
 /**
@@ -938,13 +943,18 @@ function getPythonBinPath(pythonDir: string): string {
  * Download and extract Python from python-build-standalone using downloadBinary.
  */
 async function downloadPython(pythonDir: string): Promise<void> {
-  const url = getPythonStandaloneUrl()
+  const { assetName, url } = getPythonStandaloneInfo()
   const tarballName = 'python-standalone.tar.gz'
+
+  // Get SHA-256 checksum for integrity verification.
+  const checksums = getPythonChecksums()
+  const sha256 = checksums[assetName]
 
   await safeMkdir(pythonDir, { recursive: true })
 
   const result = await downloadBinary({
     name: tarballName,
+    sha256,
     url,
   })
 
