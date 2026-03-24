@@ -11,6 +11,7 @@ export type BaseFetchOptions = {
 // Maps asset filename to SHA-256 hex checksum.
 export type OpengrepChecksums = Record<string, string>
 export type PythonChecksums = Record<string, string>
+export type PyCliChecksums = Record<string, string>
 export type SfwChecksums = Record<string, string>
 export type SocketPatchChecksums = Record<string, string>
 export type TrivyChecksums = Record<string, string>

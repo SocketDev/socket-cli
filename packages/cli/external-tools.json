@@ -55,7 +55,11 @@
     "description": "Socket Python CLI (socket-python-cli)",
     "type": "pypi",
     "package": "socketsecurity",
-    "version": "2.2.70"
+    "version": "2.2.70",
+    "checksums": {
+      "socketsecurity-2.2.70-py3-none-any.whl": "8633c2a7f204cc5cec18d8ed04cfd09aa448f7e2257345596435493d2102ba5d",
+      "socketsecurity-2.2.70.tar.gz": "e5212fb9b6b7bee3c5d936efe439508df76a7d0d81b99f84f6eafe760f3d77b7"
+    }
   },
   "socket-patch": {
     "description": "Socket Patch CLI for applying security patches (Rust binary)",
