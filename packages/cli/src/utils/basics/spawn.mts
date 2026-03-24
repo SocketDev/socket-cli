@@ -12,6 +12,8 @@ import { debug } from '@socketsecurity/lib/debug'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+
 import {
   areBasicsToolsAvailable,
   extractBasicsTools,
@@ -19,6 +21,38 @@ import {
 } from './vfs-extract.mts'
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants.mts'
 import { getPyCliVersion } from '../../env/pycli-version.mts'
+
+/**
+ * Check if socketsecurity is installed in the Python environment.
+ */
+async function isSocketPyCliInstalled(pythonBin: string): Promise<boolean> {
+  try {
+    const result = await spawn(
+      pythonBin,
+      ['-c', 'import socketsecurity.socketcli'],
+      { shell: WIN32, stdio: 'pipe' },
+    )
+    return result.code === 0
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Check if socket_basics is installed in the Python environment.
+ */
+async function isSocketBasicsInstalled(pythonBin: string): Promise<boolean> {
+  try {
+    const result = await spawn(
+      pythonBin,
+      ['-c', 'import socket_basics'],
+      { shell: WIN32, stdio: 'pipe' },
+    )
+    return result.code === 0
+  } catch {
+    return false
+  }
+}
 
 import type { CResult } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/lib/spinner'
@@ -137,91 +171,116 @@ export async function runSocketBasics(
   const factsPath =
     outputPath || normalizePath(path.join(cwd, DOT_SOCKET_DOT_FACTS_JSON))
 
-  // Install socketsecurity package via pip if not already installed.
-  spinner?.start('Installing Socket Python CLI...')
+  // Check if socketsecurity is already pre-installed (SEA build-time bundling).
+  const pyCliAlreadyInstalled = await isSocketPyCliInstalled(toolPaths.python)
   const pyCliVersion = getPyCliVersion()
-  const pipInstallResult = await spawn(
-    toolPaths.python,
-    ['-m', 'pip', 'install', '--quiet', `socketsecurity==${pyCliVersion}`],
-    { stdio: 'pipe' },
-  )
 
-  // Check spawn result - it can be null if process failed to start.
-  if (!pipInstallResult) {
+  if (pyCliAlreadyInstalled) {
+    debug('notice', 'Socket Python CLI already installed (pre-bundled)')
+  } else {
+    // Install socketsecurity package via pip.
+    spinner?.start('Installing Socket Python CLI...')
+    const pipInstallResult = await spawn(
+      toolPaths.python,
+      ['-m', 'pip', 'install', '--quiet', `socketsecurity==${pyCliVersion}`],
+      { stdio: 'pipe' },
+    )
+
+    // Check spawn result - it can be null if process failed to start.
+    if (!pipInstallResult) {
+      if (spinner) {
+        spinner.stop()
+        spinner.fail('Failed to start pip install')
+      }
+      return {
+        ok: false,
+        message: 'Failed to start pip install process',
+        cause: 'spawn() returned null',
+      }
+    }
+
+    if (pipInstallResult.code !== 0) {
+      if (spinner) {
+        spinner.stop()
+        spinner.fail('Failed to install Socket Python CLI')
+      }
+      debug('error', 'pip install failed:', pipInstallResult.stderr)
+      return {
+        ok: false,
+        message: 'Failed to install Socket Python CLI',
+        cause: String(
+          pipInstallResult.stderr || 'pip install exited with non-zero code',
+        ),
+      }
+    }
+
     if (spinner) {
       spinner.stop()
-      spinner.fail('Failed to start pip install')
+      spinner.success('Socket Python CLI installed')
     }
+
+    // Verify installed version matches expected version.
+    const verifyResult = await spawn(
+      toolPaths.python,
+      ['-m', 'pip', 'show', 'socketsecurity'],
+      { stdio: 'pipe' },
+    )
+
+    if (!verifyResult || verifyResult.code !== 0) {
+      if (spinner) {
+        spinner.stop()
+        spinner.fail('Failed to verify Socket Python CLI installation')
+      }
+      return {
+        ok: false,
+        message: 'Failed to verify Socket Python CLI installation',
+        cause: String(
+          verifyResult?.stderr || 'pip show exited with non-zero code',
+        ),
+      }
+    }
+
+    const output = String(verifyResult.stdout || '')
+    const versionMatch = output.match(/^Version:\s*(.+)$/m)
+    const installedVersion =
+      versionMatch && versionMatch.length > 1 && versionMatch[1]
+        ? versionMatch[1].trim()
+        : undefined
+
+    if (installedVersion !== pyCliVersion) {
+      if (spinner) {
+        spinner.stop()
+        spinner.fail(
+          `Socket Python CLI version mismatch: expected ${pyCliVersion}, got ${installedVersion}`,
+        )
+      }
+      return {
+        ok: false,
+        message: 'Socket Python CLI version mismatch',
+        cause: `Expected version ${pyCliVersion} but got ${installedVersion}. This may cause compatibility issues.`,
+      }
+    }
+
+    debug('notice', `Socket Python CLI version verified: ${installedVersion}`)
+  }
+
+  // Check if socket_basics is already pre-installed (SEA build-time bundling).
+  const basicsAlreadyInstalled = await isSocketBasicsInstalled(toolPaths.python)
+  if (!basicsAlreadyInstalled) {
+    // socket_basics should be pre-installed in SEA mode.
+    // For dev mode, this would need runtime installation, but socket_basics is not on PyPI.
+    debug(
+      'warn',
+      'socket_basics not found - should be pre-installed in SEA builds',
+    )
     return {
       ok: false,
-      message: 'Failed to start pip install process',
-      cause: 'spawn() returned null',
+      message: 'socket_basics package not installed',
+      cause:
+        'socket_basics must be pre-bundled at SEA build time (not available on PyPI)',
     }
   }
-
-  if (pipInstallResult.code !== 0) {
-    if (spinner) {
-      spinner.stop()
-      spinner.fail('Failed to install Socket Python CLI')
-    }
-    debug('error', 'pip install failed:', pipInstallResult.stderr)
-    return {
-      ok: false,
-      message: 'Failed to install Socket Python CLI',
-      cause: String(
-        pipInstallResult.stderr || 'pip install exited with non-zero code',
-      ),
-    }
-  }
-
-  if (spinner) {
-    spinner.stop()
-    spinner.success('Socket Python CLI installed')
-  }
-
-  // Verify installed version matches expected version.
-  const verifyResult = await spawn(
-    toolPaths.python,
-    ['-m', 'pip', 'show', 'socketsecurity'],
-    { stdio: 'pipe' },
-  )
-
-  if (!verifyResult || verifyResult.code !== 0) {
-    if (spinner) {
-      spinner.stop()
-      spinner.fail('Failed to verify Socket Python CLI installation')
-    }
-    return {
-      ok: false,
-      message: 'Failed to verify Socket Python CLI installation',
-      cause: String(
-        verifyResult?.stderr || 'pip show exited with non-zero code',
-      ),
-    }
-  }
-
-  const output = String(verifyResult.stdout || '')
-  const versionMatch = output.match(/^Version:\s*(.+)$/m)
-  const installedVersion =
-    versionMatch && versionMatch.length > 1 && versionMatch[1]
-      ? versionMatch[1].trim()
-      : undefined
-
-  if (installedVersion !== pyCliVersion) {
-    if (spinner) {
-      spinner.stop()
-      spinner.fail(
-        `Socket Python CLI version mismatch: expected ${pyCliVersion}, got ${installedVersion}`,
-      )
-    }
-    return {
-      ok: false,
-      message: 'Socket Python CLI version mismatch',
-      cause: `Expected version ${pyCliVersion} but got ${installedVersion}. This may cause compatibility issues.`,
-    }
-  }
-
-  debug('notice', `Socket Python CLI version verified: ${installedVersion}`)
+  debug('notice', 'socket_basics already installed (pre-bundled)')
 
   // Construct socket-basics command.
   // socket-basics is a separate PyPI package (socket_basics).

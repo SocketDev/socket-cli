@@ -1,3 +1,5 @@
+import process from 'node:process'
+
 /**
  * @fileoverview Monorepo-aware dependency update script.
  * Uses taze to update dependencies across all packages in the monorepo.

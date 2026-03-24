@@ -1,3 +1,5 @@
+import process from 'node:process'
+
 /**
  * @fileoverview Developer setup script - checks prerequisites and prepares environment.
  *

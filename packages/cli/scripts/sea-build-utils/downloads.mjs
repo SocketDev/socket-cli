@@ -533,6 +533,49 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
         logger.log(`  ✓ socketsecurity ${pyCliVersion} installed`)
       }
 
+      // Install socket_basics from GitHub source (not on PyPI).
+      // socket_basics orchestrates the security tools (trivy, trufflehog, opengrep).
+      const socketBasicsConfig = externalTools['socket-basics']
+      if (socketBasicsConfig && socketBasicsConfig.type === 'github-source') {
+        const { repository, githubRelease } = socketBasicsConfig
+        const version = githubRelease.replace(/^v/, '') // Remove 'v' prefix for version
+
+        logger.log(`  Installing socket_basics ${version} from GitHub...`)
+
+        // Download source tarball from GitHub.
+        const tarballUrl = `https://github.com/${repository}/archive/refs/tags/${githubRelease}.tar.gz`
+        const tarballPath = normalizePath(
+          path.join(toolsDir, `socket-basics-${version}.tar.gz`),
+        )
+
+        await httpDownload(tarballUrl, tarballPath, {
+          logger,
+          progressInterval: 10,
+          retries: 2,
+          retryDelay: 5_000,
+        })
+
+        // Install from tarball using pip (handles building and dependencies).
+        const pipInstallResult = await spawn(pythonBinPath, [
+          '-m',
+          'pip',
+          'install',
+          '--quiet',
+          tarballPath,
+        ])
+
+        if (pipInstallResult && pipInstallResult.code !== 0) {
+          throw new Error(
+            `Failed to install socket_basics from source: exit code ${pipInstallResult.code}`,
+          )
+        }
+
+        // Clean up tarball.
+        await safeDelete(tarballPath)
+
+        logger.log(`  ✓ socket_basics ${version} installed`)
+      }
+
       // Don't clean up - keep the whole python directory.
       // We'll include the entire directory in the tar.gz.
       toolNames.push('python')

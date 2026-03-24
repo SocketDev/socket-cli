@@ -1,3 +1,5 @@
+import process from 'node:process'
+
 /**
  * @fileoverview Monorepo-aware lint runner with smart file detection.
  * Runs linting across affected packages based on changed files.

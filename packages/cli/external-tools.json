@@ -46,11 +46,11 @@
     }
   },
   "socket-basics": {
-    "$comment": "socket_basics is distributed via GitHub Actions and Docker, not public PyPI. Checksums handled by container/CI build process.",
     "description": "Socket Basics - integrated SAST, secret scanning, and container analysis",
-    "type": "pypi",
-    "package": "socket_basics",
-    "version": "1.0.29"
+    "type": "github-source",
+    "repository": "SocketDev/socket-basics",
+    "githubRelease": "v2.0.2",
+    "package": "socket_basics"
   },
   "socketsecurity": {
     "description": "Socket Python CLI (socket-python-cli)",

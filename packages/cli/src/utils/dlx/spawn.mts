@@ -33,9 +33,12 @@ import { whichReal } from '@socketsecurity/lib/bin'
 import {
   resolveCdxgen,
   resolveCoana,
+  resolveOpengrep,
   resolvePyCli,
-  resolveSocketPatch,
   resolveSfw,
+  resolveSocketPatch,
+  resolveTrivy,
+  resolveTrufflehog,
 } from './resolve-binary.mjs'
 
 import type { GitHubReleaseSpec } from './resolve-binary.mjs'
@@ -52,6 +55,7 @@ import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
 import { getCliVersion } from '../../env/cli-version.mts'
 import { getPyCliChecksums } from '../../env/pycli-checksums.mts'
 import { getPyCliVersion } from '../../env/pycli-version.mts'
+import { getSocketBasicsVersion } from '../../env/socket-basics-version.mts'
 import { getPythonBuildTag } from '../../env/python-build-tag.mts'
 import { requirePythonChecksum } from '../../env/python-checksums.mts'
 import { getPythonVersion } from '../../env/python-version.mts'
@@ -1617,4 +1621,196 @@ export async function spawnSocketPyCli(
       ok: false,
     }
   }
+}
+
+/**
+ * Security scanning tool spawn utilities.
+ * These tools are used by socket-basics for comprehensive scanning.
+ * In SEA mode, they're extracted from VFS. In npm CLI mode, they're downloaded from GitHub.
+ */
+
+/**
+ * Spawn Trivy via GitHub download (npm CLI mode).
+ * Downloads from GitHub releases (aquasecurity/trivy).
+ */
+async function spawnTrivyDlx(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<DlxSpawnResult> {
+  const resolution = resolveTrivy()
+
+  if (resolution.type !== 'github-release') {
+    throw new Error('Unexpected resolution type for trivy')
+  }
+
+  const { env: spawnEnv, ...dlxOptions } = {
+    __proto__: null,
+    ...options,
+  } as DlxOptions
+
+  const binaryPath = await downloadGitHubReleaseBinary(resolution.details)
+
+  const spawnPromise = spawn(binaryPath, args, {
+    ...dlxOptions,
+    env: {
+      ...process.env,
+      ...spawnEnv,
+    },
+    stdio: spawnExtra?.['stdio'] || 'inherit',
+  })
+
+  return {
+    spawnPromise,
+  }
+}
+
+/**
+ * Spawn Trivy from VFS (SEA mode).
+ */
+export async function spawnTrivyVfs(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<DlxSpawnResult> {
+  return await spawnToolVfs('trivy', args, options, spawnExtra)
+}
+
+/**
+ * Spawn Trivy.
+ * Auto-detects SEA mode and uses appropriate spawn method.
+ */
+export async function spawnTrivy(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<DlxSpawnResult> {
+  if (isSeaBinary() && areExternalToolsAvailable()) {
+    return await spawnTrivyVfs(args, options, spawnExtra)
+  }
+  return await spawnTrivyDlx(args, options, spawnExtra)
+}
+
+/**
+ * Spawn TruffleHog via GitHub download (npm CLI mode).
+ * Downloads from GitHub releases (trufflesecurity/trufflehog).
+ */
+async function spawnTrufflehogDlx(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<DlxSpawnResult> {
+  const resolution = resolveTrufflehog()
+
+  if (resolution.type !== 'github-release') {
+    throw new Error('Unexpected resolution type for trufflehog')
+  }
+
+  const { env: spawnEnv, ...dlxOptions } = {
+    __proto__: null,
+    ...options,
+  } as DlxOptions
+
+  const binaryPath = await downloadGitHubReleaseBinary(resolution.details)
+
+  const spawnPromise = spawn(binaryPath, args, {
+    ...dlxOptions,
+    env: {
+      ...process.env,
+      ...spawnEnv,
+    },
+    stdio: spawnExtra?.['stdio'] || 'inherit',
+  })
+
+  return {
+    spawnPromise,
+  }
+}
+
+/**
+ * Spawn TruffleHog from VFS (SEA mode).
+ */
+export async function spawnTrufflehogVfs(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<DlxSpawnResult> {
+  return await spawnToolVfs('trufflehog', args, options, spawnExtra)
+}
+
+/**
+ * Spawn TruffleHog.
+ * Auto-detects SEA mode and uses appropriate spawn method.
+ */
+export async function spawnTrufflehog(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<DlxSpawnResult> {
+  if (isSeaBinary() && areExternalToolsAvailable()) {
+    return await spawnTrufflehogVfs(args, options, spawnExtra)
+  }
+  return await spawnTrufflehogDlx(args, options, spawnExtra)
+}
+
+/**
+ * Spawn OpenGrep via GitHub download (npm CLI mode).
+ * Downloads from GitHub releases (opengrep/opengrep).
+ */
+async function spawnOpengrepDlx(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<DlxSpawnResult> {
+  const resolution = resolveOpengrep()
+
+  if (resolution.type !== 'github-release') {
+    throw new Error('Unexpected resolution type for opengrep')
+  }
+
+  const { env: spawnEnv, ...dlxOptions } = {
+    __proto__: null,
+    ...options,
+  } as DlxOptions
+
+  const binaryPath = await downloadGitHubReleaseBinary(resolution.details)
+
+  const spawnPromise = spawn(binaryPath, args, {
+    ...dlxOptions,
+    env: {
+      ...process.env,
+      ...spawnEnv,
+    },
+    stdio: spawnExtra?.['stdio'] || 'inherit',
+  })
+
+  return {
+    spawnPromise,
+  }
+}
+
+/**
+ * Spawn OpenGrep from VFS (SEA mode).
+ */
+export async function spawnOpengrepVfs(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<DlxSpawnResult> {
+  return await spawnToolVfs('opengrep', args, options, spawnExtra)
+}
+
+/**
+ * Spawn OpenGrep.
+ * Auto-detects SEA mode and uses appropriate spawn method.
+ */
+export async function spawnOpengrep(
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<DlxSpawnResult> {
+  if (isSeaBinary() && areExternalToolsAvailable()) {
+    return await spawnOpengrepVfs(args, options, spawnExtra)
+  }
+  return await spawnOpengrepDlx(args, options, spawnExtra)
 }

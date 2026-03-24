@@ -33,6 +33,7 @@
     "lint-ci": "pnpm run lint",
     "type": "tsc --noEmit",
     "type-ci": "pnpm run type",
+    "sync-checksums": "node scripts/sync-checksums.mjs",
     "cover": "node --import=./scripts/load.mjs scripts/cover.mjs",
     "clean": "run-p -c --aggregate-output clean:*",
     "clean:binject": "del-cli 'build/binject'",
