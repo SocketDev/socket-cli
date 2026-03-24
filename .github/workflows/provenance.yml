@@ -198,6 +198,7 @@ jobs:
 
       - name: Publish binary packages
         if: ${{ inputs.socket && !inputs.dry-run }}
+        shell: bash
         env:
           VERSION: ${{ steps.version.outputs.cli_version }}
           TAG: ${{ steps.version.outputs.cli_tag }}
@@ -298,6 +299,7 @@ jobs:
       # Copy iocraft binaries to package directories.
       - name: Copy iocraft binaries to packages
         if: ${{ inputs.iocraft }}
+        shell: bash
         run: |
           set -euo pipefail
 
@@ -333,6 +335,7 @@ jobs:
 
       - name: Publish @socketaddon/iocraft platform packages
         if: ${{ inputs.iocraft && !inputs.dry-run }}
+        shell: bash
         env:
           VERSION: ${{ steps.version.outputs.iocraft_version }}
           TAG: ${{ steps.version.outputs.iocraft_tag }}
