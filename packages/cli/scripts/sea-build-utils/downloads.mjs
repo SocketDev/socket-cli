@@ -466,6 +466,73 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
         }
       }
 
+      // Install socketsecurity (pycli) into the bundled Python environment.
+      // This pre-installs the package so SEA mode doesn't need network access.
+      const pyCliConfig = externalTools['socketsecurity']
+      if (pyCliConfig) {
+        const pyCliVersion = pyCliConfig.version
+        const wheelFilename = `socketsecurity-${pyCliVersion}-py3-none-any.whl`
+        const wheelSha256 = pyCliConfig.checksums?.[wheelFilename]
+
+        if (!wheelSha256) {
+          throw new Error(
+            `Missing SHA-256 checksum for socketsecurity wheel: ${wheelFilename}. ` +
+              'Please update external-tools.json with the correct checksum.',
+          )
+        }
+
+        logger.log(`  Installing socketsecurity ${pyCliVersion} into Python...`)
+
+        // Fetch wheel URL from PyPI JSON API.
+        const pypiResponse = await httpRequest(
+          `https://pypi.org/pypi/socketsecurity/${pyCliVersion}/json`,
+        )
+        if (!pypiResponse.ok) {
+          throw new Error(
+            `Failed to fetch socketsecurity ${pyCliVersion} from PyPI: ${pypiResponse.status}`,
+          )
+        }
+        const pypiData = JSON.parse(pypiResponse.body.toString('utf8'))
+        const wheelInfo = pypiData.urls.find(u => u.filename === wheelFilename)
+        if (!wheelInfo) {
+          throw new Error(
+            `Wheel ${wheelFilename} not found in PyPI release ${pyCliVersion}`,
+          )
+        }
+
+        // Download wheel from PyPI.
+        const wheelPath = normalizePath(path.join(toolsDir, wheelFilename))
+
+        await httpDownload(wheelInfo.url, wheelPath, {
+          logger,
+          progressInterval: 10,
+          retries: 2,
+          retryDelay: 5_000,
+          sha256: wheelSha256,
+        })
+
+        // Install wheel into Python's site-packages using pip.
+        const pipResult = await spawn(pythonBinPath, [
+          '-m',
+          'pip',
+          'install',
+          '--quiet',
+          '--no-deps',
+          wheelPath,
+        ])
+
+        if (pipResult && pipResult.code !== 0) {
+          throw new Error(
+            `Failed to install socketsecurity into bundled Python: exit code ${pipResult.code}`,
+          )
+        }
+
+        // Clean up wheel file.
+        await safeDelete(wheelPath)
+
+        logger.log(`  ✓ socketsecurity ${pyCliVersion} installed`)
+      }
+
       // Don't clean up - keep the whole python directory.
       // We'll include the entire directory in the tar.gz.
       toolNames.push('python')
