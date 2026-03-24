@@ -13,7 +13,7 @@ import { SOCKET_CLI_PYCLI_LOCAL_PATH } from '../../env/socket-cli-pycli-local-pa
 import { SOCKET_CLI_SFW_LOCAL_PATH } from '../../env/socket-cli-sfw-local-path.mts'
 import { SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH } from '../../env/socket-cli-socket-patch-local-path.mts'
 import { getSfwNpmVersion } from '../../env/sfw-version.mts'
-import { getSocketPatchChecksums } from '../../env/socket-patch-checksums.mts'
+import { requireSocketPatchChecksum } from '../../env/socket-patch-checksums.mts'
 import { getSocketPatchVersion } from '../../env/socket-patch-version.mts'
 import { getSynpVersion } from '../../env/synp-version.mts'
 
@@ -167,8 +167,9 @@ export function resolveSocketPatch(): BinaryResolution {
   }
 
   // Get SHA-256 checksum for integrity verification.
-  const checksums = getSocketPatchChecksums()
-  const sha256 = checksums[assetName]
+  // In dev mode (checksums not inlined), returns undefined to allow development.
+  // In production builds, missing checksums throw a HARD ERROR.
+  const sha256 = requireSocketPatchChecksum(assetName)
 
   return {
     type: 'github-release',

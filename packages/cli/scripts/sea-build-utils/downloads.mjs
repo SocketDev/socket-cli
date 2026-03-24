@@ -327,16 +327,25 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
     const tag = config.version
     const url = `https://github.com/${config.owner}/${config.repo}/releases/download/${tag}/${assetName}`
 
-    // Get SHA256 checksum if available in external-tools.json.
+    // Get SHA256 checksum from external-tools.json.
+    // SECURITY: Checksum verification is REQUIRED for all external tool downloads.
+    // If checksum is missing, the build MUST fail.
     const toolConfig = externalTools[toolName]
     const sha256 = toolConfig?.checksums?.[assetName]
+
+    if (!sha256) {
+      throw new Error(
+        `Missing SHA-256 checksum for ${toolName} asset: ${assetName}. ` +
+          'This is a security requirement. Please update external-tools.json with the correct checksum.',
+      )
+    }
 
     await httpDownload(url, archivePath, {
       logger,
       progressInterval: 10,
       retries: 2,
       retryDelay: 5000,
-      ...(sha256 && { sha256 }),
+      sha256,
     })
 
     // Extract binary (or handle standalone binaries).

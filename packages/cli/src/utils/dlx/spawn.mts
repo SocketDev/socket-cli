@@ -52,7 +52,7 @@ import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
 import { getCliVersion } from '../../env/cli-version.mts'
 import { getPyCliVersion } from '../../env/pycli-version.mts'
 import { getPythonBuildTag } from '../../env/python-build-tag.mts'
-import { getPythonChecksums } from '../../env/python-checksums.mts'
+import { requirePythonChecksum } from '../../env/python-checksums.mts'
 import { getPythonVersion } from '../../env/python-version.mts'
 import { SOCKET_CLI_PYTHON_PATH } from '../../env/socket-cli-python-path.mts'
 import { getSynpVersion } from '../../env/synp-version.mts'
@@ -947,8 +947,9 @@ async function downloadPython(pythonDir: string): Promise<void> {
   const tarballName = 'python-standalone.tar.gz'
 
   // Get SHA-256 checksum for integrity verification.
-  const checksums = getPythonChecksums()
-  const sha256 = checksums[assetName]
+  // In dev mode (checksums not inlined), returns undefined to allow development.
+  // In production builds, missing checksums throw a HARD ERROR.
+  const sha256 = requirePythonChecksum(assetName)
 
   await safeMkdir(pythonDir, { recursive: true })
 
