@@ -52,6 +52,7 @@ jobs:
 
       - name: Load Node.js version from .node-version
         id: versions
+        shell: bash
         run: |
           NODE_VERSION=$(cat .node-version)
           echo "node=[\"$NODE_VERSION\"]" >> $GITHUB_OUTPUT

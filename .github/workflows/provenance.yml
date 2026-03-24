@@ -40,6 +40,7 @@ jobs:
     if: ${{ inputs.socket }}
     name: Build CLI bundle
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     outputs:
@@ -82,6 +83,7 @@ jobs:
     needs: [build-cli]
     name: Build ${{ matrix.releasePlatform }}-${{ matrix.arch }}${{ matrix.libc && '-musl' || '' }}
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     permissions:
       contents: read
     strategy:
@@ -135,6 +137,7 @@ jobs:
     needs: [build-cli, build-binaries]
     if: ${{ always() && (needs.build-cli.result == 'success' || needs.build-cli.result == 'skipped') && (needs.build-binaries.result == 'success' || needs.build-binaries.result == 'skipped') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       contents: read
       id-token: write
