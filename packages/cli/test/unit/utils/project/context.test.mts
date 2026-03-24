@@ -15,6 +15,7 @@
  */
 
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -37,8 +38,19 @@ describe('project context utilities', () => {
   const packageManagerField = path.join(testRoot, 'pm-field-project')
   const noLockProject = path.join(testRoot, 'no-lock-project')
   const nestedProject = path.join(testRoot, 'nested', 'deep', 'project')
+  // Use a temp directory outside any project tree to test non-project detection.
+  // This ensures no package.json exists in any parent directory.
+  const emptyDir = path.join(
+    os.tmpdir(),
+    `socket-cli-test-empty-${Date.now()}`,
+    'deeply',
+    'nested',
+    'empty',
+  )
 
   beforeAll(() => {
+    // Create empty directory (no package.json) for testing non-project detection.
+    mkdirSync(emptyDir, { recursive: true })
     // Create npm project.
     mkdirSync(npmProject, { recursive: true })
     writeFileSync(
@@ -114,6 +126,11 @@ describe('project context utilities', () => {
   afterAll(() => {
     if (existsSync(testRoot)) {
       rmSync(testRoot, { recursive: true, force: true })
+    }
+    // Clean up the temp emptyDir base (the unique timestamped directory).
+    const emptyDirBase = path.dirname(path.dirname(path.dirname(emptyDir)))
+    if (existsSync(emptyDirBase)) {
+      rmSync(emptyDirBase, { recursive: true, force: true })
     }
   })
 
@@ -215,7 +232,7 @@ describe('project context utilities', () => {
     })
 
     it('returns null when no package.json found', async () => {
-      const result = await findProjectRoot('/tmp')
+      const result = await findProjectRoot(emptyDir)
 
       expect(result).toBeNull()
     })
@@ -247,7 +264,7 @@ describe('project context utilities', () => {
     })
 
     it('returns null for non-project directory', async () => {
-      const context = await getProjectContext('/tmp')
+      const context = await getProjectContext(emptyDir)
 
       expect(context).toBeNull()
     })
