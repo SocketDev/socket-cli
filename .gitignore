@@ -76,6 +76,7 @@ yarn-error.log*
 **/build/*.log
 **/.claude/*
 !**/.claude/skills/
+!**/.claude/commands/
 
 # ============================================================================
 # Backup and temporary files
@@ -131,4 +132,3 @@ packages/socket/*.png
 !docs/build/
 !packages/package-builder/templates/**/*.d.ts
 !src/types/**/*.d.ts
-.claude/

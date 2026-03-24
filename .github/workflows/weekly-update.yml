@@ -1,0 +1,225 @@
+name: 🔄 Weekly Dependency Update
+
+on:
+  schedule:
+    # Run weekly on Monday at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Check for updates without creating PR'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  check-updates:
+    name: Check for dependency updates
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      has-updates: ${{ steps.check.outputs.has-updates }}
+      update-summary: ${{ steps.check.outputs.update-summary }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version-file: .node-version
+          cache: ''
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b307475762933b98ed359c036b0e51f26b63b74b # v5.0.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check for npm updates
+        id: check
+        run: |
+          echo "Checking for npm package updates..."
+
+          HAS_UPDATES=false
+          SUMMARY=""
+
+          # Check for npm updates
+          NPM_UPDATES=$(pnpm outdated 2>/dev/null || true)
+          if [ -n "$NPM_UPDATES" ] && ! echo "$NPM_UPDATES" | grep -q "No outdated"; then
+            echo "npm packages have updates available"
+            HAS_UPDATES=true
+            SUMMARY="npm packages: updates available"
+          fi
+
+          echo "has-updates=$HAS_UPDATES" >> $GITHUB_OUTPUT
+          if [ -n "$SUMMARY" ]; then
+            SUMMARY_B64=$(echo "$SUMMARY" | base64 | tr -d '\n')
+            echo "update-summary=$SUMMARY_B64" >> $GITHUB_OUTPUT
+          fi
+
+          if [ "$HAS_UPDATES" = "true" ]; then
+            echo ""
+            echo "✓ Updates available!"
+          else
+            echo ""
+            echo "✓ All dependencies are up to date"
+          fi
+
+  apply-updates:
+    name: Apply updates with Claude Code
+    needs: check-updates
+    if: needs.check-updates.outputs.has-updates == 'true' && inputs.dry-run != true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version-file: .node-version
+          cache: ''
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b307475762933b98ed359c036b0e51f26b63b74b # v5.0.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Create update branch
+        id: branch
+        run: |
+          BRANCH_NAME="weekly-update-$(date +%Y%m%d)"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH_NAME"
+          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Run updating skill with Claude Code
+        id: claude
+        timeout-minutes: 30
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CI: 'true'
+          GITHUB_ACTIONS: 'true'
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "⚠️  ANTHROPIC_API_KEY not set - skipping automated update"
+            echo "Please add ANTHROPIC_API_KEY to repository secrets to enable automation"
+            echo "success=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          claude --print --dangerously-skip-permissions \
+            --model sonnet \
+            "/updating - Run the updating skill to update all dependencies. Create atomic commits for each update. You are running in CI mode - skip builds and tests (CI will run them separately). Do not push or create a PR - just make the changes and commits locally." \
+            2>&1 | tee claude-output.log
+
+          if [ $? -eq 0 ]; then
+            echo "success=true" >> $GITHUB_OUTPUT
+            echo "✓ Claude Code successfully applied updates"
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "⚠️  Claude Code encountered errors"
+          fi
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if [ -n "$(git status --porcelain)" ] || [ "$(git rev-list --count HEAD ^origin/main)" -gt 0 ]; then
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+            echo "✓ Changes detected"
+          else
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+            echo "No changes to commit"
+          fi
+
+      - name: Push branch
+        if: steps.claude.outputs.success == 'true' && steps.changes.outputs.has-changes == 'true'
+        env:
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+        run: |
+          git push origin "$BRANCH_NAME"
+
+      - name: Create Pull Request
+        if: steps.claude.outputs.success == 'true' && steps.changes.outputs.has-changes == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+        run: |
+          COMMITS=$(git log --oneline origin/main..HEAD)
+          COMMIT_COUNT=$(git rev-list --count origin/main..HEAD)
+
+          PR_BODY="## Weekly Dependency Update"$'\n\n'
+          PR_BODY+="Automated weekly update of npm packages."$'\n\n'
+          PR_BODY+="---"$'\n\n'
+          PR_BODY+="### Commits (${COMMIT_COUNT})"$'\n\n'
+          PR_BODY+="<details>"$'\n'
+          PR_BODY+="<summary>View commit history</summary>"$'\n\n'
+          PR_BODY+="\`\`\`"$'\n'
+          PR_BODY+="${COMMITS}"$'\n'
+          PR_BODY+="\`\`\`"$'\n\n'
+          PR_BODY+="</details>"$'\n\n'
+          PR_BODY+="---"$'\n\n'
+          PR_BODY+="### Review Checklist"$'\n\n'
+          PR_BODY+="- [ ] All builds pass"$'\n'
+          PR_BODY+="- [ ] Tests pass"$'\n'
+          PR_BODY+="- [ ] No breaking changes"$'\n\n'
+          PR_BODY+="---"$'\n\n'
+          PR_BODY+="<sub>Generated by [weekly-update.yml](.github/workflows/weekly-update.yml)</sub>"
+
+          gh pr create \
+            --title "chore(deps): weekly dependency update ($(date +%Y-%m-%d))" \
+            --body "$PR_BODY" \
+            --draft \
+            --head "$BRANCH_NAME" \
+            --base main
+
+      - name: Upload Claude output
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: claude-output-${{ github.run_id }}
+          path: claude-output.log
+          retention-days: 7
+
+  notify:
+    name: Notify results
+    needs: [check-updates, apply-updates]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Report status
+        env:
+          HAS_UPDATES: ${{ needs.check-updates.outputs.has-updates }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: |
+          if [ "$HAS_UPDATES" = "true" ]; then
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "✓ Updates available (dry-run mode - no PR created)"
+            else
+              echo "✓ Weekly update workflow completed"
+              echo "Check the PRs tab for the automated update PR"
+            fi
+          else
+            echo "✓ All dependencies are up to date - no action needed!"
+          fi
