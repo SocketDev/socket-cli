@@ -12,7 +12,7 @@ import process from 'node:process'
  * Get the full Python version (e.g., "3.11.14").
  */
 export function getPythonVersion(): string {
-  return process.env['INLINED_SOCKET_CLI_PYTHON_VERSION']!
+  return process.env['INLINED_PYTHON_VERSION']!
 }
 
 /**

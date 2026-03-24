@@ -99,8 +99,8 @@ export class EnvironmentVariables {
 
     // Build-time constants that can be overridden by environment variables.
     const publishedBuild =
-      process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'] === '1'
-    const sentryBuild = process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'] === '1'
+      process.env['INLINED_PUBLISHED_BUILD'] === '1'
+    const sentryBuild = process.env['INLINED_SENTRY_BUILD'] === '1'
 
     // Compute version hash (matches Rollup implementation).
     const randUuidSegment = randomUUID().split('-')[0]
@@ -109,41 +109,43 @@ export class EnvironmentVariables {
     }`
 
     // Get checksums for all external tools that have them.
-    // All GitHub-released tools have checksums for integrity verification.
+    // GitHub-released tools and PyPI packages have checksums for integrity verification.
     const opengrepChecksums = externalTools.opengrep?.checksums || {}
     const pythonChecksums = externalTools.python?.checksums || {}
     const sfwChecksums = externalTools.sfw?.checksums || {}
     const socketPatchChecksums = externalTools['socket-patch']?.checksums || {}
+    const pyCliChecksums = externalTools.socketsecurity?.checksums || {}
     const trivyChecksums = externalTools.trivy?.checksums || {}
     const trufflehogChecksums = externalTools.trufflehog?.checksums || {}
 
     // Return all environment variables with raw values.
     return {
-      INLINED_SOCKET_CLI_CDXGEN_VERSION: cdxgenVersion,
-      INLINED_SOCKET_CLI_COANA_VERSION: coanaVersion,
-      INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: cdxgenVersion,
-      INLINED_SOCKET_CLI_HOMEPAGE: packageJson.homepage,
-      INLINED_SOCKET_CLI_NAME: packageJson.name,
-      INLINED_SOCKET_CLI_OPENGREP_CHECKSUMS: JSON.stringify(opengrepChecksums),
-      INLINED_SOCKET_CLI_OPENGREP_VERSION: opengrepVersion,
-      INLINED_SOCKET_CLI_PUBLISHED_BUILD: publishedBuild ? '1' : '',
-      INLINED_SOCKET_CLI_PYCLI_VERSION: pyCliVersion,
-      INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: pythonBuildTag,
-      INLINED_SOCKET_CLI_PYTHON_CHECKSUMS: JSON.stringify(pythonChecksums),
-      INLINED_SOCKET_CLI_PYTHON_VERSION: pythonVersion,
-      INLINED_SOCKET_CLI_SENTRY_BUILD: sentryBuild ? '1' : '',
-      INLINED_SOCKET_CLI_SFW_CHECKSUMS: JSON.stringify(sfwChecksums),
-      INLINED_SOCKET_CLI_SFW_NPM_VERSION: sfwNpmVersion,
-      INLINED_SOCKET_CLI_SFW_VERSION: sfwVersion,
-      INLINED_SOCKET_CLI_SOCKET_PATCH_CHECKSUMS: JSON.stringify(socketPatchChecksums),
-      INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION: socketPatchVersion,
-      INLINED_SOCKET_CLI_SYNP_VERSION: synpVersion,
-      INLINED_SOCKET_CLI_TRIVY_CHECKSUMS: JSON.stringify(trivyChecksums),
-      INLINED_SOCKET_CLI_TRIVY_VERSION: trivyVersion,
-      INLINED_SOCKET_CLI_TRUFFLEHOG_CHECKSUMS: JSON.stringify(trufflehogChecksums),
-      INLINED_SOCKET_CLI_TRUFFLEHOG_VERSION: trufflehogVersion,
-      INLINED_SOCKET_CLI_VERSION: socketPackageJson.version,
-      INLINED_SOCKET_CLI_VERSION_HASH: versionHash,
+      INLINED_CDXGEN_VERSION: cdxgenVersion,
+      INLINED_COANA_VERSION: coanaVersion,
+      INLINED_CYCLONEDX_CDXGEN_VERSION: cdxgenVersion,
+      INLINED_HOMEPAGE: packageJson.homepage,
+      INLINED_NAME: packageJson.name,
+      INLINED_OPENGREP_CHECKSUMS: JSON.stringify(opengrepChecksums),
+      INLINED_OPENGREP_VERSION: opengrepVersion,
+      INLINED_PUBLISHED_BUILD: publishedBuild ? '1' : '',
+      INLINED_PYCLI_VERSION: pyCliVersion,
+      INLINED_PYTHON_BUILD_TAG: pythonBuildTag,
+      INLINED_PYTHON_CHECKSUMS: JSON.stringify(pythonChecksums),
+      INLINED_PYTHON_VERSION: pythonVersion,
+      INLINED_SENTRY_BUILD: sentryBuild ? '1' : '',
+      INLINED_SFW_CHECKSUMS: JSON.stringify(sfwChecksums),
+      INLINED_SFW_NPM_VERSION: sfwNpmVersion,
+      INLINED_SFW_VERSION: sfwVersion,
+      INLINED_SOCKET_PATCH_CHECKSUMS: JSON.stringify(socketPatchChecksums),
+      INLINED_SOCKET_PATCH_VERSION: socketPatchVersion,
+      INLINED_PYCLI_CHECKSUMS: JSON.stringify(pyCliChecksums),
+      INLINED_SYNP_VERSION: synpVersion,
+      INLINED_TRIVY_CHECKSUMS: JSON.stringify(trivyChecksums),
+      INLINED_TRIVY_VERSION: trivyVersion,
+      INLINED_TRUFFLEHOG_CHECKSUMS: JSON.stringify(trufflehogChecksums),
+      INLINED_TRUFFLEHOG_VERSION: trufflehogVersion,
+      INLINED_VERSION: socketPackageJson.version,
+      INLINED_VERSION_HASH: versionHash,
     }
   }
 
@@ -159,13 +161,13 @@ export class EnvironmentVariables {
         readFileSync(path.join(rootPath, 'external-tools.json'), 'utf8'),
       )
       return {
-        INLINED_SOCKET_CLI_COANA_VERSION:
+        INLINED_COANA_VERSION:
           externalTools['@coana-tech/cli']?.version || '',
-        INLINED_SOCKET_CLI_PYCLI_VERSION:
+        INLINED_PYCLI_VERSION:
           externalTools.socketsecurity?.version || '',
-        INLINED_SOCKET_CLI_SFW_NPM_VERSION: externalTools.sfw?.npmVersion || '',
-        INLINED_SOCKET_CLI_SFW_VERSION: externalTools.sfw?.githubRelease || '',
-        INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION:
+        INLINED_SFW_NPM_VERSION: externalTools.sfw?.npmVersion || '',
+        INLINED_SFW_VERSION: externalTools.sfw?.githubRelease || '',
+        INLINED_SOCKET_PATCH_VERSION:
           externalTools['socket-patch']?.githubRelease || '',
       }
     } catch {

@@ -252,7 +252,7 @@ jobs:
       # Build and publish JS packages.
       # Order: cli/cli-with-sentry first (independent), then socket (depends on @socketbin/*).
       - name: Build CLI
-        run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build
+        run: INLINED_PUBLISHED_BUILD=1 pnpm run build
 
       - name: Publish @socketsecurity/cli
         if: ${{ inputs.cli && !inputs.dry-run }}

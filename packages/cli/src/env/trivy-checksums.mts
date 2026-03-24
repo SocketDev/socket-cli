@@ -17,7 +17,7 @@ import type { TrivyChecksums } from '../types.mjs'
  * @throws Error if checksums are missing in production builds.
  */
 export function getTrivyChecksums(): TrivyChecksums {
-  const checksums = process.env['INLINED_SOCKET_CLI_TRIVY_CHECKSUMS']
+  const checksums = process.env['INLINED_TRIVY_CHECKSUMS']
   if (!checksums) {
     // In development mode (not inlined), return empty object.
     // Build validation will catch missing checksums at build time.

@@ -11,5 +11,5 @@ import process from 'node:process'
 import { envAsBoolean } from '@socketsecurity/lib/env'
 
 export function isSentryBuild(): boolean {
-  return envAsBoolean(process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'])
+  return envAsBoolean(process.env['INLINED_SENTRY_BUILD'])
 }

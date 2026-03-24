@@ -9,5 +9,5 @@
 import process from 'node:process'
 
 export function getPythonBuildTag(): string {
-  return process.env['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG']!
+  return process.env['INLINED_PYTHON_BUILD_TAG']!
 }

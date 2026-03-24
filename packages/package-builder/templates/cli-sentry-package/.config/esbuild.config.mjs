@@ -29,7 +29,7 @@ const config = {
   // Override define to enable Sentry build.
   define: {
     ...baseConfig.define,
-    'process.env.INLINED_SOCKET_CLI_SENTRY_BUILD': JSON.stringify('1'),
+    'process.env.INLINED_SENTRY_BUILD': JSON.stringify('1'),
   },
 
   // Make @sentry/node external (not bundled).

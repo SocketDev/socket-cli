@@ -20,33 +20,33 @@ if (existsSync(externalToolsPath)) {
     // Set inlined environment variables if not already set.
     // npm packages use 'version', github-release uses 'githubRelease', pypi uses 'version'.
     const toolVersions: Record<string, string | undefined> = {
-      INLINED_SOCKET_CLI_CDXGEN_VERSION:
+      INLINED_CDXGEN_VERSION:
         externalTools['@cyclonedx/cdxgen']?.version,
-      INLINED_SOCKET_CLI_COANA_VERSION:
+      INLINED_COANA_VERSION:
         externalTools['@coana-tech/cli']?.version,
-      INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION:
+      INLINED_CYCLONEDX_CDXGEN_VERSION:
         externalTools['@cyclonedx/cdxgen']?.version,
-      INLINED_SOCKET_CLI_HOMEPAGE: 'https://github.com/SocketDev/socket-cli',
-      INLINED_SOCKET_CLI_NAME: '@socketsecurity/cli',
-      INLINED_SOCKET_CLI_OPENGREP_VERSION:
+      INLINED_HOMEPAGE: 'https://github.com/SocketDev/socket-cli',
+      INLINED_NAME: '@socketsecurity/cli',
+      INLINED_OPENGREP_VERSION:
         externalTools['opengrep']?.githubRelease,
-      INLINED_SOCKET_CLI_PUBLISHED_BUILD: '',
-      INLINED_SOCKET_CLI_PYCLI_VERSION:
+      INLINED_PUBLISHED_BUILD: '',
+      INLINED_PYCLI_VERSION:
         externalTools['socketsecurity']?.version,
-      INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: externalTools['python']?.buildTag,
-      INLINED_SOCKET_CLI_PYTHON_VERSION:
+      INLINED_PYTHON_BUILD_TAG: externalTools['python']?.buildTag,
+      INLINED_PYTHON_VERSION:
         externalTools['python']?.githubRelease,
-      INLINED_SOCKET_CLI_SENTRY_BUILD: '',
-      INLINED_SOCKET_CLI_SFW_NPM_VERSION: externalTools['sfw']?.npmVersion,
-      INLINED_SOCKET_CLI_SFW_VERSION: externalTools['sfw']?.githubRelease,
-      INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION:
+      INLINED_SENTRY_BUILD: '',
+      INLINED_SFW_NPM_VERSION: externalTools['sfw']?.npmVersion,
+      INLINED_SFW_VERSION: externalTools['sfw']?.githubRelease,
+      INLINED_SOCKET_PATCH_VERSION:
         externalTools['socket-patch']?.githubRelease,
-      INLINED_SOCKET_CLI_SYNP_VERSION: externalTools['synp']?.version,
-      INLINED_SOCKET_CLI_TRIVY_VERSION: externalTools['trivy']?.githubRelease,
-      INLINED_SOCKET_CLI_TRUFFLEHOG_VERSION:
+      INLINED_SYNP_VERSION: externalTools['synp']?.version,
+      INLINED_TRIVY_VERSION: externalTools['trivy']?.githubRelease,
+      INLINED_TRUFFLEHOG_VERSION:
         externalTools['trufflehog']?.githubRelease,
-      INLINED_SOCKET_CLI_VERSION: '0.0.0-test',
-      INLINED_SOCKET_CLI_VERSION_HASH: '0.0.0-test:abc1234:test',
+      INLINED_VERSION: '0.0.0-test',
+      INLINED_VERSION_HASH: '0.0.0-test:abc1234:test',
     }
 
     for (const [key, value] of Object.entries(toolVersions)) {

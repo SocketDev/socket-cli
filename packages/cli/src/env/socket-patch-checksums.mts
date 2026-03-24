@@ -17,7 +17,7 @@ import type { SocketPatchChecksums } from '../types.mjs'
  * @throws Error if checksums are missing in production builds.
  */
 export function getSocketPatchChecksums(): SocketPatchChecksums {
-  const checksums = process.env['INLINED_SOCKET_CLI_SOCKET_PATCH_CHECKSUMS']
+  const checksums = process.env['INLINED_SOCKET_PATCH_CHECKSUMS']
   if (!checksums) {
     // In development mode (not inlined), return empty object.
     // Build validation will catch missing checksums at build time.

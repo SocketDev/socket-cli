@@ -64,7 +64,7 @@ vi.mock('../../../../src/constants.mts', () => ({
   CONFIG_KEY_DEFAULT_ORG: 'defaultOrg',
   default: {
     ENV: {
-      INLINED_SOCKET_CLI_VERSION: '1.0.0-test',
+      INLINED_VERSION: '1.0.0-test',
       VITEST: false,
     },
   },

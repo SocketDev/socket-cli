@@ -17,7 +17,7 @@ import type { SfwChecksums } from '../types.mjs'
  * @throws Error if checksums are missing in production builds.
  */
 export function getSfwChecksums(): SfwChecksums {
-  const checksums = process.env['INLINED_SOCKET_CLI_SFW_CHECKSUMS']
+  const checksums = process.env['INLINED_SFW_CHECKSUMS']
   if (!checksums) {
     // In development mode (not inlined), return empty object.
     // Build validation will catch missing checksums at build time.

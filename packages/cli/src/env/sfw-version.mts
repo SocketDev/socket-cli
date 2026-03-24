@@ -16,10 +16,10 @@ import process from 'node:process'
  * Get the GitHub release version for sfw (used in SEA builds).
  */
 export function getSwfVersion(): string {
-  const version = process.env['INLINED_SOCKET_CLI_SFW_VERSION']
+  const version = process.env['INLINED_SFW_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_SOCKET_CLI_SFW_VERSION not found. Please ensure sfw is properly configured in external-tools.json.',
+      'INLINED_SFW_VERSION not found. Please ensure sfw is properly configured in external-tools.json.',
     )
   }
   return version
@@ -29,10 +29,10 @@ export function getSwfVersion(): string {
  * Get the npm package version for sfw (used in CLI dlx).
  */
 export function getSfwNpmVersion(): string {
-  const version = process.env['INLINED_SOCKET_CLI_SFW_NPM_VERSION']
+  const version = process.env['INLINED_SFW_NPM_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_SOCKET_CLI_SFW_NPM_VERSION not found. Please ensure sfw npmVersion is configured in external-tools.json.',
+      'INLINED_SFW_NPM_VERSION not found. Please ensure sfw npmVersion is configured in external-tools.json.',
     )
   }
   return version

@@ -122,7 +122,7 @@ const generalFlags: MeowFlags = {
   },
   fixVersion: {
     type: 'string',
-    description: `Override the version of @coana-tech/cli used for fix analysis. Default: ${constants.ENV.INLINED_SOCKET_CLI_COANA_VERSION}.`,
+    description: `Override the version of @coana-tech/cli used for fix analysis. Default: ${constants.ENV.INLINED_COANA_VERSION}.`,
   },
   id: {
     type: 'string',

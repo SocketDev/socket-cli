@@ -9,5 +9,5 @@
 import process from 'node:process'
 
 export function getCliVersion(): string {
-  return process.env['INLINED_SOCKET_CLI_VERSION']!
+  return process.env['INLINED_VERSION']!
 }

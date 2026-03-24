@@ -9,5 +9,5 @@
 import process from 'node:process'
 
 export function getSynpVersion(): string {
-  return process.env['INLINED_SOCKET_CLI_SYNP_VERSION']!
+  return process.env['INLINED_SYNP_VERSION']!
 }

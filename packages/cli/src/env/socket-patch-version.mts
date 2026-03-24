@@ -9,10 +9,10 @@
 import process from 'node:process'
 
 export function getSocketPatchVersion(): string {
-  const version = process.env['INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION']
+  const version = process.env['INLINED_SOCKET_PATCH_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION not found. Please ensure socket-patch is properly configured in external-tools.json.',
+      'INLINED_SOCKET_PATCH_VERSION not found. Please ensure socket-patch is properly configured in external-tools.json.',
     )
   }
   return version

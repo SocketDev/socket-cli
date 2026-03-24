@@ -9,5 +9,5 @@
 import process from 'node:process'
 
 export function getCliHomepage(): string {
-  return process.env['INLINED_SOCKET_CLI_HOMEPAGE']!
+  return process.env['INLINED_HOMEPAGE']!
 }

@@ -9,5 +9,5 @@
 import process from 'node:process'
 
 export function getCliName(): string {
-  return process.env['INLINED_SOCKET_CLI_NAME']!
+  return process.env['INLINED_NAME']!
 }

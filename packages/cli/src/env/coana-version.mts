@@ -9,10 +9,10 @@
 import process from 'node:process'
 
 export function getCoanaVersion(): string {
-  const version = process.env['INLINED_SOCKET_CLI_COANA_VERSION']
+  const version = process.env['INLINED_COANA_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_SOCKET_CLI_COANA_VERSION not found. Please ensure @coana-tech/cli is properly configured in external-tools.json.',
+      'INLINED_COANA_VERSION not found. Please ensure @coana-tech/cli is properly configured in external-tools.json.',
     )
   }
   return version

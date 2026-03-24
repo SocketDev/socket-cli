@@ -17,7 +17,7 @@ import type { PythonChecksums } from '../types.mjs'
  * @throws Error if checksums are missing in production builds.
  */
 export function getPythonChecksums(): PythonChecksums {
-  const checksums = process.env['INLINED_SOCKET_CLI_PYTHON_CHECKSUMS']
+  const checksums = process.env['INLINED_PYTHON_CHECKSUMS']
   if (!checksums) {
     // In development mode (not inlined), return empty object.
     // Build validation will catch missing checksums at build time.

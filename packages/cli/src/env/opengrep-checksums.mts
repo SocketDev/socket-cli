@@ -17,7 +17,7 @@ import type { OpengrepChecksums } from '../types.mjs'
  * @throws Error if checksums are missing in production builds.
  */
 export function getOpengrepChecksums(): OpengrepChecksums {
-  const checksums = process.env['INLINED_SOCKET_CLI_OPENGREP_CHECKSUMS']
+  const checksums = process.env['INLINED_OPENGREP_CHECKSUMS']
   if (!checksums) {
     // In development mode (not inlined), return empty object.
     // Build validation will catch missing checksums at build time.

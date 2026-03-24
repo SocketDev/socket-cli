@@ -9,10 +9,10 @@
 import process from 'node:process'
 
 export function getOpengrepVersion(): string {
-  const version = process.env['INLINED_SOCKET_CLI_OPENGREP_VERSION']
+  const version = process.env['INLINED_OPENGREP_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_SOCKET_CLI_OPENGREP_VERSION not found. Please ensure opengrep is properly configured in external-tools.json.',
+      'INLINED_OPENGREP_VERSION not found. Please ensure opengrep is properly configured in external-tools.json.',
     )
   }
   return version

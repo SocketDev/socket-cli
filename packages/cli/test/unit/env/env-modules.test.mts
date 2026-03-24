@@ -25,19 +25,19 @@ describe('env/cli-version', () => {
   let originalValue: string | undefined
 
   beforeEach(() => {
-    originalValue = process.env['INLINED_SOCKET_CLI_VERSION']
+    originalValue = process.env['INLINED_VERSION']
   })
 
   afterEach(() => {
     if (originalValue !== undefined) {
-      process.env['INLINED_SOCKET_CLI_VERSION'] = originalValue
+      process.env['INLINED_VERSION'] = originalValue
     } else {
-      delete process.env['INLINED_SOCKET_CLI_VERSION']
+      delete process.env['INLINED_VERSION']
     }
   })
 
   it('returns version when env var is set', async () => {
-    process.env['INLINED_SOCKET_CLI_VERSION'] = '1.2.3'
+    process.env['INLINED_VERSION'] = '1.2.3'
     const { getCliVersion } = await import('../../../src/env/cli-version.mts')
     expect(getCliVersion()).toBe('1.2.3')
   })
@@ -48,19 +48,19 @@ describe('env/coana-version', () => {
   let originalValue: string | undefined
 
   beforeEach(() => {
-    originalValue = process.env['INLINED_SOCKET_CLI_COANA_VERSION']
+    originalValue = process.env['INLINED_COANA_VERSION']
   })
 
   afterEach(() => {
     if (originalValue !== undefined) {
-      process.env['INLINED_SOCKET_CLI_COANA_VERSION'] = originalValue
+      process.env['INLINED_COANA_VERSION'] = originalValue
     } else {
-      delete process.env['INLINED_SOCKET_CLI_COANA_VERSION']
+      delete process.env['INLINED_COANA_VERSION']
     }
   })
 
   it('returns version when env var is set', async () => {
-    process.env['INLINED_SOCKET_CLI_COANA_VERSION'] = '0.5.0'
+    process.env['INLINED_COANA_VERSION'] = '0.5.0'
     const { getCoanaVersion } = await import(
       '../../../src/env/coana-version.mts'
     )
@@ -68,11 +68,11 @@ describe('env/coana-version', () => {
   })
 
   it('throws error when env var is not set', async () => {
-    delete process.env['INLINED_SOCKET_CLI_COANA_VERSION']
+    delete process.env['INLINED_COANA_VERSION']
     const { getCoanaVersion } = await import(
       '../../../src/env/coana-version.mts'
     )
-    expect(() => getCoanaVersion()).toThrow('INLINED_SOCKET_CLI_COANA_VERSION')
+    expect(() => getCoanaVersion()).toThrow('INLINED_COANA_VERSION')
   })
 })
 
@@ -81,19 +81,19 @@ describe('env/is-published-build', () => {
   let originalValue: string | undefined
 
   beforeEach(() => {
-    originalValue = process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD']
+    originalValue = process.env['INLINED_PUBLISHED_BUILD']
   })
 
   afterEach(() => {
     if (originalValue !== undefined) {
-      process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'] = originalValue
+      process.env['INLINED_PUBLISHED_BUILD'] = originalValue
     } else {
-      delete process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD']
+      delete process.env['INLINED_PUBLISHED_BUILD']
     }
   })
 
   it('returns true when env var is "true"', async () => {
-    process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'] = 'true'
+    process.env['INLINED_PUBLISHED_BUILD'] = 'true'
     const { isPublishedBuild } = await import(
       '../../../src/env/is-published-build.mts'
     )
@@ -101,7 +101,7 @@ describe('env/is-published-build', () => {
   })
 
   it('returns true when env var is "1"', async () => {
-    process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'] = '1'
+    process.env['INLINED_PUBLISHED_BUILD'] = '1'
     const { isPublishedBuild } = await import(
       '../../../src/env/is-published-build.mts'
     )
@@ -109,7 +109,7 @@ describe('env/is-published-build', () => {
   })
 
   it('returns false when env var is "false"', async () => {
-    process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'] = 'false'
+    process.env['INLINED_PUBLISHED_BUILD'] = 'false'
     const { isPublishedBuild } = await import(
       '../../../src/env/is-published-build.mts'
     )
@@ -117,7 +117,7 @@ describe('env/is-published-build', () => {
   })
 
   it('returns false when env var is not set', async () => {
-    delete process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD']
+    delete process.env['INLINED_PUBLISHED_BUILD']
     const { isPublishedBuild } = await import(
       '../../../src/env/is-published-build.mts'
     )

@@ -9,5 +9,5 @@
 import process from 'node:process'
 
 export function getCliVersionHash(): string {
-  return process.env['INLINED_SOCKET_CLI_VERSION_HASH']!
+  return process.env['INLINED_VERSION_HASH']!
 }

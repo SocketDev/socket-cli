@@ -201,14 +201,14 @@ describe('constants/env', () => {
       expect(inlinedKeys.length).toBeGreaterThan(0)
     })
 
-    it('provides access to INLINED_SOCKET_CLI_NAME', () => {
-      const name = ENV.INLINED_SOCKET_CLI_NAME
+    it('provides access to INLINED_NAME', () => {
+      const name = ENV.INLINED_NAME
       expect(typeof name).toBe('string')
       expect(name.length).toBeGreaterThan(0)
     })
 
-    it('provides access to INLINED_SOCKET_CLI_VERSION', () => {
-      const version = ENV.INLINED_SOCKET_CLI_VERSION
+    it('provides access to INLINED_VERSION', () => {
+      const version = ENV.INLINED_VERSION
       expect(typeof version).toBe('string')
     })
   })

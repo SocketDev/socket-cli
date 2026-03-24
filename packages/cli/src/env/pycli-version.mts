@@ -16,10 +16,10 @@ import process from 'node:process'
  * @throws Error if version is not inlined at build time.
  */
 export function getPyCliVersion(): string {
-  const version = process.env['INLINED_SOCKET_CLI_PYCLI_VERSION']
+  const version = process.env['INLINED_PYCLI_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_SOCKET_CLI_PYCLI_VERSION not set - build configuration error. Please rebuild the CLI.',
+      'INLINED_PYCLI_VERSION not set - build configuration error. Please rebuild the CLI.',
     )
   }
   return version

@@ -235,7 +235,7 @@ function buildContext(argv: string[]): TelemetryContext {
     argv: sanitizeArgv(argv),
     node_version: process.version,
     platform: process.platform,
-    version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
+    version: constants.ENV.INLINED_VERSION,
   }
 }
 

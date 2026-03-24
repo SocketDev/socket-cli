@@ -11,5 +11,5 @@ import process from 'node:process'
 import { envAsBoolean } from '@socketsecurity/lib/env'
 
 export function isPublishedBuild(): boolean {
-  return envAsBoolean(process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'])
+  return envAsBoolean(process.env['INLINED_PUBLISHED_BUILD'])
 }

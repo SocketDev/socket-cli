@@ -133,7 +133,7 @@ describe('@socketsecurity/cli-with-sentry package', () => {
       const esbuildPath = path.join(configDir, 'esbuild.cli-sentry.build.mjs')
       const content = await fs.readFile(esbuildPath, 'utf-8')
 
-      expect(content).toContain('INLINED_SOCKET_CLI_SENTRY_BUILD')
+      expect(content).toContain('INLINED_SENTRY_BUILD')
       expect(content).toContain("JSON.stringify('1')")
     })
 
@@ -286,7 +286,7 @@ describe('@socketsecurity/cli-with-sentry package', () => {
       )
       const content = await fs.readFile(sentryInstrumentPath, 'utf-8')
 
-      expect(content).toContain('INLINED_SOCKET_CLI_SENTRY_BUILD')
+      expect(content).toContain('INLINED_SENTRY_BUILD')
       expect(content).toContain('@sentry/node')
       expect(content).toContain('Sentry.init')
     })

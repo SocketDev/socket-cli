@@ -9,5 +9,5 @@
 import process from 'node:process'
 
 export function getCdxgenVersion(): string {
-  return process.env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']!
+  return process.env['INLINED_CYCLONEDX_CDXGEN_VERSION']!
 }
