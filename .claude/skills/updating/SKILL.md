@@ -77,7 +77,7 @@ git status --porcelain
 ### Phase 2: Update npm Packages
 
 <action>
-Run pnpm update to update npm dependencies:
+Run pnpm run update to update npm dependencies:
 </action>
 
 ```bash
@@ -124,7 +124,8 @@ if [ "$CI_MODE" = "true" ]; then
   echo "Commits created - ready for push by CI workflow"
 else
   echo "Interactive mode: Running full validation..."
-  pnpm run build:cli
+  pnpm run fix --all
+  pnpm run check --all
   pnpm test
 fi
 ```
