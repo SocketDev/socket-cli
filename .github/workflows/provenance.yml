@@ -57,7 +57,7 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: 'pnpm-lock.yaml'
 
-      - uses: pnpm/action-setup@58e6119fe4f3092a76a7771efb55e04d25b6b26f # v5
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - run: pnpm install --frozen-lockfile
 
@@ -71,7 +71,7 @@ jobs:
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
       - name: Upload CLI bundle
-        uses: actions/upload-artifact@ea165f8ff5e4e9264e1c76a100385dcb87c2b141 # v4.4.3
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: cli-bundle
           path: packages/cli/build/cli.js
@@ -102,7 +102,7 @@ jobs:
           cache-dependency-path: 'pnpm-lock.yaml'
           registry-url: 'https://registry.npmjs.org'
 
-      - uses: pnpm/action-setup@58e6119fe4f3092a76a7771efb55e04d25b6b26f # v5
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - run: pnpm install --frozen-lockfile
 
@@ -114,18 +114,22 @@ jobs:
 
       - name: Build SEA binary
         shell: bash
+        env:
+          MATRIX_LIBC: ${{ matrix.libc }}
+          MATRIX_PLATFORM: ${{ matrix.platform }}
+          MATRIX_ARCH: ${{ matrix.arch }}
         run: |
           LIBC_FLAG=""
-          if [ "${{ matrix.libc }}" = "musl" ]; then
+          if [ "$MATRIX_LIBC" = "musl" ]; then
             LIBC_FLAG="--libc=musl"
           fi
           pnpm --filter @socketsecurity/cli run build:sea -- \
-            --platform=${{ matrix.platform }} \
-            --arch=${{ matrix.arch }} \
+            --platform="$MATRIX_PLATFORM" \
+            --arch="$MATRIX_ARCH" \
             ${LIBC_FLAG}
 
       - name: Upload binary
-        uses: actions/upload-artifact@ea165f8ff5e4e9264e1c76a100385dcb87c2b141 # v4.4.3
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: binary-${{ matrix.releasePlatform }}-${{ matrix.arch }}${{ matrix.libc && '-musl' || '' }}
           path: packages/package-builder/build/prod/out/socketbin-cli-${{ matrix.releasePlatform }}-${{ matrix.arch }}${{ matrix.libc && '-musl' || '' }}/socket${{ matrix.platform == 'win32' && '.exe' || '' }}
@@ -154,7 +158,7 @@ jobs:
           cache-dependency-path: 'pnpm-lock.yaml'
           registry-url: 'https://registry.npmjs.org'
 
-      - uses: pnpm/action-setup@58e6119fe4f3092a76a7771efb55e04d25b6b26f # v5
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - run: pnpm install --frozen-lockfile
 

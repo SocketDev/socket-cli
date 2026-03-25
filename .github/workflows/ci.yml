@@ -73,10 +73,10 @@ jobs:
           persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@58e6119fe4f3092a76a7771efb55e04d25b6b26f # v5
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # zizmor: ignore[cache-poisoning] # v6.3.0
         with:
           node-version-file: .node-version
           cache: 'pnpm'
@@ -139,10 +139,10 @@ jobs:
           persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@58e6119fe4f3092a76a7771efb55e04d25b6b26f # v5
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # zizmor: ignore[cache-poisoning] # v6.3.0
         with:
           node-version-file: .node-version
           cache: 'pnpm'
@@ -212,10 +212,10 @@ jobs:
           persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@58e6119fe4f3092a76a7771efb55e04d25b6b26f # v5
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # zizmor: ignore[cache-poisoning] # v6.3.0
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
@@ -267,7 +267,9 @@ jobs:
 
       - name: Run unit tests (shard ${{ matrix.shard }})
         working-directory: packages/cli
-        run: pnpm test:unit --shard=${{ matrix.shard }}/3
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: pnpm test:unit --shard="$SHARD"/3
 
   # E2E tests
   e2e:
@@ -290,10 +292,10 @@ jobs:
           persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@58e6119fe4f3092a76a7771efb55e04d25b6b26f # v5
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # zizmor: ignore[cache-poisoning] # v6.3.0
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
@@ -347,4 +349,5 @@ jobs:
         working-directory: packages/cli
         env:
           SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_CLI_API_TOKEN }}
-        run: pnpm run e2e-tests --shard=${{ matrix.shard }}/2
+          SHARD: ${{ matrix.shard }}
+        run: pnpm run e2e-tests --shard="$SHARD"/2
