@@ -18,6 +18,7 @@ export type HandleScanReachConfig = {
   interactive: boolean
   orgSlug: string
   outputKind: OutputKind
+  outputPath: string
   reachabilityOptions: ReachabilityOptions
   targets: string[]
 }
@@ -27,6 +28,7 @@ export async function handleScanReach({
   interactive: _interactive,
   orgSlug,
   outputKind,
+  outputPath,
   reachabilityOptions,
   targets,
 }: HandleScanReachConfig) {
@@ -36,7 +38,6 @@ export async function handleScanReach({
   const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
   if (!supportedFilesCResult.ok) {
     await outputScanReach(supportedFilesCResult, {
-      cwd,
       outputKind,
       outputPath: '',
     })
@@ -76,6 +77,7 @@ export async function handleScanReach({
   const result = await performReachabilityAnalysis({
     cwd,
     orgSlug,
+    outputPath,
     packagePaths,
     reachabilityOptions,
     spinner,
@@ -85,6 +87,9 @@ export async function handleScanReach({
 
   spinner.stop()
 
-  const outputPath = result.ok ? result.data.reachabilityReport : ''
-  await outputScanReach(result, { cwd, outputKind, outputPath })
+  const resolvedOutputPath = result.ok ? result.data.reachabilityReport : ''
+  await outputScanReach(result, {
+    outputKind,
+    outputPath: resolvedOutputPath || outputPath,
+  })
 }

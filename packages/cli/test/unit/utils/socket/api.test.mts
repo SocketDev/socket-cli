@@ -73,6 +73,7 @@ vi.mock('@socketsecurity/lib/spinner', () => ({
 const mockGetDefaultApiToken = vi.hoisted(() => vi.fn())
 vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
   getDefaultApiToken: mockGetDefaultApiToken,
+  getExtraCaCerts: () => undefined,
 }))
 
 // Mock getNetworkErrorDiagnostics.
@@ -81,9 +82,31 @@ vi.mock('../../../../src/utils/error/errors.mts', () => ({
   getNetworkErrorDiagnostics: vi.fn(() => 'Network error diagnostics'),
 }))
 
-// Mock global fetch.
-const mockFetch = vi.hoisted(() => vi.fn())
-vi.stubGlobal('fetch', mockFetch)
+// Mock httpRequest from socket-lib (replaces fetch).
+const mockHttpRequest = vi.hoisted(() => vi.fn())
+vi.mock('@socketsecurity/lib/http-request', () => ({
+  httpRequest: mockHttpRequest,
+}))
+
+// Helper to create httpRequest-style response objects (synchronous .text()/.json()).
+function createHttpResponse(opts: {
+  body?: string
+  ok?: boolean
+  status?: number
+  statusText?: string
+}) {
+  const bodyStr = opts.body ?? ''
+  const bodyBuffer = Buffer.from(bodyStr)
+  return {
+    body: bodyBuffer,
+    headers: {},
+    json: () => JSON.parse(bodyStr),
+    ok: opts.ok ?? true,
+    status: opts.status ?? 200,
+    statusText: opts.statusText ?? 'OK',
+    text: () => bodyStr,
+  }
+}
 
 import { overrideCachedConfig } from '../../../../src/utils/config.mts'
 import {
@@ -109,7 +132,7 @@ describe('api utilities', () => {
   afterEach(() => {
     vi.restoreAllMocks()
     vi.unstubAllEnvs()
-    mockFetch.mockReset()
+    mockHttpRequest.mockReset()
     mockGetDefaultApiToken.mockReset()
   })
 
@@ -348,14 +371,13 @@ describe('api utilities', () => {
 
   describe('queryApi', () => {
     it('makes authenticated GET request to Socket API', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        text: () => Promise.resolve('response text'),
-      })
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({ body: 'response text' }),
+      )
 
       const result = await queryApi('test/path', 'test-token')
 
-      expect(mockFetch).toHaveBeenCalledWith(
+      expect(mockHttpRequest).toHaveBeenCalledWith(
         'https://api.socket.dev/v0/test/path',
         expect.objectContaining({
           method: 'GET',
@@ -375,10 +397,9 @@ describe('api utilities', () => {
       // Since API_V0_URL is always returned as fallback, queryApi won't throw
       // unless we mock getDefaultApiBaseUrl to return undefined.
       // For now, let's test the normal path.
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        text: () => Promise.resolve('response'),
-      })
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({ body: 'response' }),
+      )
 
       const result = await queryApi('path', 'token')
       expect(result.ok).toBe(true)
@@ -403,11 +424,9 @@ describe('api utilities', () => {
     })
 
     it('returns success with text data for successful request', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        text: () => Promise.resolve('response data'),
-      })
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({ body: 'response data' }),
+      )
 
       const result = await queryApiSafeText('test/path', 'test description')
 
@@ -419,11 +438,13 @@ describe('api utilities', () => {
     })
 
     it('returns error for failed HTTP status', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 403,
-        statusText: 'Forbidden',
-      })
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({
+          ok: false,
+          status: 403,
+          statusText: 'Forbidden',
+        }),
+      )
 
       const result = await queryApiSafeText(
         'test/path',
@@ -438,7 +459,7 @@ describe('api utilities', () => {
     })
 
     it('returns error for network failures', async () => {
-      mockFetch.mockRejectedValueOnce(new Error('Network failure'))
+      mockHttpRequest.mockRejectedValueOnce(new Error('Network failure'))
 
       const result = await queryApiSafeText('test/path', 'test description')
 
@@ -450,10 +471,18 @@ describe('api utilities', () => {
     })
 
     it('returns error when response text cannot be read', async () => {
-      mockFetch.mockResolvedValueOnce({
+      // With httpRequest, .text() is synchronous. Simulate a response
+      // where text() throws by providing a malformed mock.
+      mockHttpRequest.mockResolvedValueOnce({
+        body: Buffer.alloc(0),
+        headers: {},
+        json: () => null,
         ok: true,
         status: 200,
-        text: () => Promise.reject(new Error('Read error')),
+        statusText: 'OK',
+        text: () => {
+          throw new Error('Read error')
+        },
       })
 
       const result = await queryApiSafeText('test/path')
@@ -471,11 +500,9 @@ describe('api utilities', () => {
     })
 
     it('parses JSON response successfully', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        text: () => Promise.resolve('{"key": "value"}'),
-      })
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({ body: '{"key": "value"}' }),
+      )
 
       const result = await queryApiSafeJson<{ key: string }>('test/path')
 
@@ -486,11 +513,9 @@ describe('api utilities', () => {
     })
 
     it('returns error for invalid JSON', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        text: () => Promise.resolve('not valid json'),
-      })
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({ body: 'not valid json' }),
+      )
 
       const result = await queryApiSafeJson<any>('test/path')
 
@@ -529,11 +554,9 @@ describe('api utilities', () => {
     })
 
     it('sends POST request with JSON body', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({ result: 'success' }),
-      })
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({ body: '{"result": "success"}' }),
+      )
 
       const result = await sendApiRequest<{ result: string }>('test/path', {
         method: 'POST',
@@ -545,7 +568,7 @@ describe('api utilities', () => {
       if (result.ok) {
         expect(result.data).toEqual({ result: 'success' })
       }
-      expect(mockFetch).toHaveBeenCalledWith(
+      expect(mockHttpRequest).toHaveBeenCalledWith(
         'https://api.socket.dev/v0/test/path',
         expect.objectContaining({
           method: 'POST',
@@ -558,11 +581,9 @@ describe('api utilities', () => {
     })
 
     it('sends PUT request', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({ updated: true }),
-      })
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({ body: '{"updated": true}' }),
+      )
 
       const result = await sendApiRequest<{ updated: boolean }>('test/path', {
         method: 'PUT',
@@ -570,18 +591,20 @@ describe('api utilities', () => {
       })
 
       expect(result.ok).toBe(true)
-      expect(mockFetch).toHaveBeenCalledWith(
+      expect(mockHttpRequest).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ method: 'PUT' }),
       )
     })
 
     it('returns error for failed HTTP status', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-      })
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({
+          ok: false,
+          status: 500,
+          statusText: 'Internal Server Error',
+        }),
+      )
 
       const result = await sendApiRequest<any>('test/path', { method: 'POST' })
 
@@ -592,7 +615,7 @@ describe('api utilities', () => {
     })
 
     it('returns error for network failures', async () => {
-      mockFetch.mockRejectedValueOnce(new Error('Connection refused'))
+      mockHttpRequest.mockRejectedValueOnce(new Error('Connection refused'))
 
       const result = await sendApiRequest<any>('test/path', {
         method: 'POST',
@@ -606,11 +629,10 @@ describe('api utilities', () => {
     })
 
     it('returns error when JSON parsing fails', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.reject(new Error('Invalid JSON')),
-      })
+      // With httpRequest, .json() is synchronous. Provide invalid JSON body.
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({ body: 'not-json' }),
+      )
 
       const result = await sendApiRequest<any>('test/path', { method: 'POST' })
 
@@ -621,11 +643,13 @@ describe('api utilities', () => {
     })
 
     it('logs permissions for 403 errors when commandPath provided', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 403,
-        statusText: 'Forbidden',
-      })
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({
+          ok: false,
+          status: 403,
+          statusText: 'Forbidden',
+        }),
+      )
 
       await sendApiRequest<any>('test/path', {
         method: 'POST',

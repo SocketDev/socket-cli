@@ -1,12 +1,6 @@
-import {
-  createWriteStream,
-  existsSync,
-  promises as fs,
-  mkdtempSync,
-} from 'node:fs'
+import { existsSync, promises as fs, mkdtempSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { pipeline } from 'node:stream/promises'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { safeMkdirSync } from '@socketsecurity/lib/fs'
@@ -17,6 +11,7 @@ import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.m
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mjs'
 import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
+import { socketHttpRequest } from '../../utils/socket/api.mjs'
 import { isReportSupportedFile } from '../../utils/fs/glob.mts'
 import { getOctokit, withGitHubRetry } from '../../utils/git/github.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
@@ -252,8 +247,10 @@ async function scanOneRepo(
       reachAnalysisTimeout: 0,
       reachConcurrency: 1,
       reachDebug: false,
+      reachDetailedAnalysisLogFile: false,
       reachDisableAnalytics: false,
-      reachDisableAnalysisSplitting: false,
+      reachDisableExternalToolChecks: false,
+      reachEnableAnalysisSplitting: false,
       reachEcosystems: [],
       reachExcludePaths: [],
       reachLazyMode: false,
@@ -261,6 +258,7 @@ async function scanOneRepo(
       reachSkipCache: false,
       reachUseOnlyPregeneratedSboms: false,
       reachUseUnreachableFromPrecomputation: false,
+      reachVersion: undefined,
     },
     readOnly: false,
     repoName: repoSlug,
@@ -457,30 +455,16 @@ async function streamDownloadWithFetch(
   localPath: string,
   downloadUrl: string,
 ): Promise<CResult<string>> {
-  // Declare response here to access it in catch if needed.
-  let response: Response | undefined
-
   try {
     // Use longer timeout for file downloads (5 minutes).
-    response = await fetch(downloadUrl, {
-      signal: AbortSignal.timeout(300_000),
+    const response = await socketHttpRequest(downloadUrl, {
+      timeout: 300_000,
     })
 
     if (!response.ok) {
       const errorMsg = `Download failed due to bad server response: ${response.status} ${response.statusText} for ${downloadUrl}`
       logger.fail(errorMsg)
       return { ok: false, message: 'Download Failed', cause: errorMsg }
-    }
-
-    if (!response.body) {
-      logger.fail(
-        `Download failed because the server response was empty, for ${downloadUrl}`,
-      )
-      return {
-        ok: false,
-        message: 'Download Failed',
-        cause: 'Response body is null or undefined.',
-      }
     }
 
     // Make sure the dir exists. It may be nested and we need to construct that
@@ -490,13 +474,7 @@ async function streamDownloadWithFetch(
       safeMkdirSync(dir, { recursive: true })
     }
 
-    const fileStream = createWriteStream(localPath)
-
-    // Using stream.pipeline for better error handling and cleanup
-
-    await pipeline(response.body, fileStream)
-    // 'pipeline' will automatically handle closing streams and propagating errors.
-    // It resolves when the piping is fully complete and fileStream is closed.
+    await fs.writeFile(localPath, response.body)
     return { ok: true, data: localPath }
   } catch (e) {
     logger.fail(
@@ -525,10 +503,6 @@ async function streamDownloadWithFetch(
     if ((e as { cause: string }).cause) {
       // Include cause if available (e.g., from network errors)
       detailedError += `\nCause: ${(e as { cause: string }).cause}`
-    }
-    if (response && !response.ok) {
-      // If error was due to bad HTTP status
-      detailedError += ` (HTTP Status: ${response.status} ${response.statusText})`
     }
     debug(detailedError)
     return { ok: false, message: 'Download Failed', cause: detailedError }

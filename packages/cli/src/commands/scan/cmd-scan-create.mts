@@ -62,13 +62,16 @@ interface ScanCreateFlags {
   reachAnalysisTimeout: number
   reachConcurrency: number
   reachDebug: boolean
-  reachDisableAnalysisSplitting: boolean
+  reachDetailedAnalysisLogFile: boolean
   reachDisableAnalytics: boolean
+  reachDisableExternalToolChecks: boolean
+  reachEnableAnalysisSplitting: boolean
   reachLazyMode: boolean
   reachMinSeverity: string
   reachSkipCache: boolean
   reachUseOnlyPregeneratedSboms: boolean
   reachUseUnreachableFromPrecomputation: boolean
+  reachVersion: string
   readOnly: boolean
   repo: string
   report?: boolean | undefined
@@ -292,13 +295,16 @@ async function run(
     reachAnalysisTimeout,
     reachConcurrency,
     reachDebug,
-    reachDisableAnalysisSplitting,
+    reachDetailedAnalysisLogFile,
     reachDisableAnalytics,
+    reachDisableExternalToolChecks,
+    reachEnableAnalysisSplitting,
     reachLazyMode,
     reachMinSeverity,
     reachSkipCache,
     reachUseOnlyPregeneratedSboms,
     reachUseUnreachableFromPrecomputation,
+    reachVersion,
     readOnly,
     reportLevel,
     setAsAlertsPage: pendingHeadFlag,
@@ -484,9 +490,9 @@ async function run(
     isUsingNonDefaultAnalytics ||
     hasReachEcosystems ||
     hasReachExcludePaths ||
+    reachEnableAnalysisSplitting ||
     reachLazyMode ||
-    reachSkipCache ||
-    reachDisableAnalysisSplitting
+    reachSkipCache
 
   // Validate target constraints when --reach is enabled.
   const reachTargetValidation = reach
@@ -650,8 +656,10 @@ async function run(
       reachAnalysisTimeout: validatedReachAnalysisTimeout,
       reachConcurrency: validatedReachConcurrency,
       reachDebug: Boolean(reachDebug),
+      reachDetailedAnalysisLogFile: Boolean(reachDetailedAnalysisLogFile),
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
-      reachDisableAnalysisSplitting: Boolean(reachDisableAnalysisSplitting),
+      reachDisableExternalToolChecks: Boolean(reachDisableExternalToolChecks),
+      reachEnableAnalysisSplitting: Boolean(reachEnableAnalysisSplitting),
       reachEcosystems,
       reachExcludePaths,
       reachLazyMode: Boolean(reachLazyMode),
@@ -661,6 +669,7 @@ async function run(
       reachUseUnreachableFromPrecomputation: Boolean(
         reachUseUnreachableFromPrecomputation,
       ),
+      reachVersion: reachVersion || undefined,
     },
     readOnly: Boolean(readOnly),
     repoName,

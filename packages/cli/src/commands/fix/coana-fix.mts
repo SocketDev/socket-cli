@@ -4,7 +4,6 @@ import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { readJsonSync } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
@@ -67,9 +66,16 @@ async function cleanupTempFile(filePath: string): Promise<void> {
   }
 }
 
+export type GhsaFixResult = {
+  ghsaId: string
+  fixed: boolean
+  pullRequestLink?: string | undefined
+  pullRequestNumber?: number | undefined
+}
+
 export async function coanaFix(
   fixConfig: FixConfig,
-): Promise<CResult<{ data?: unknown; fixed: boolean }>> {
+): Promise<CResult<{ fixedAll: boolean; ghsaDetails: GhsaFixResult[] }>> {
   const {
     all,
     applyFixes,
@@ -77,6 +83,7 @@ export async function coanaFix(
     coanaVersion,
     cwd,
     debug: debugFlag,
+    disableExternalToolChecks,
     disableMajorUpdates,
     ecosystems,
     exclude,
@@ -188,7 +195,7 @@ export async function coanaFix(
       : ghsas.slice(0, prLimit)
     if (!idsToProcess.length) {
       spinner?.stop()
-      return { ok: true, data: { fixed: false } }
+      return { ok: true, data: { fixedAll: false, ghsaDetails: [] } }
     }
 
     // Create a temporary file for the output.
@@ -217,6 +224,9 @@ export async function coanaFix(
           '--output-file',
           tmpFile,
           ...(debugFlag ? ['--debug'] : []),
+          ...(disableExternalToolChecks
+            ? ['--disable-external-tool-checks']
+            : []),
           ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
           ...(showAffectedDirectDependencies
             ? ['--show-affected-direct-dependencies']
@@ -233,9 +243,6 @@ export async function coanaFix(
         return fixCResult
       }
 
-      // Read the temporary file to get the actual fixes result.
-      const fixesResultJson = readJsonSync(tmpFile, { throws: false })
-
       // Copy to outputFile if provided.
       if (outputFile) {
         logger.info(`Copying fixes result to ${outputFile}`)
@@ -243,7 +250,16 @@ export async function coanaFix(
         await fs.writeFile(outputFile, tmpContent, 'utf8')
       }
 
-      return { ok: true, data: { data: fixesResultJson, fixed: true } }
+      return {
+        ok: true,
+        data: {
+          fixedAll: true,
+          ghsaDetails: idsToProcess.map(id => ({
+            ghsaId: id,
+            fixed: true,
+          })),
+        },
+      }
     } finally {
       // Clean up the temporary file.
       await cleanupTempFile(tmpFile)
@@ -334,7 +350,7 @@ export async function coanaFix(
 
   if (!ids?.length || !fixEnv.repoInfo) {
     spinner?.stop()
-    return { ok: true, data: { fixed: false } }
+    return { ok: true, data: { fixedAll: false, ghsaDetails: [] } }
   }
 
   const displayIds =
@@ -390,6 +406,7 @@ export async function coanaFix(
 
   let count = 0
   let overallFixed = false
+  const ghsaFixResults: GhsaFixResult[] = []
 
   // Process each GHSA ID individually.
   // Use unprocessedIds instead of ids to skip already-fixed GHSAs.
@@ -417,6 +434,9 @@ export async function coanaFix(
         ...(exclude.length ? ['--exclude', ...exclude] : []),
         ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
         ...(debugFlag ? ['--debug'] : []),
+        ...(disableExternalToolChecks
+          ? ['--disable-external-tool-checks']
+          : []),
         ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
         ...(showAffectedDirectDependencies
           ? ['--show-affected-direct-dependencies']
@@ -609,6 +629,13 @@ export async function coanaFix(
         logger.info(`PR URL: ${data.html_url}`)
         logPrEvent('created', data.number, ghsaId, data.html_url)
 
+        ghsaFixResults.push({
+          fixed: true,
+          ghsaId,
+          pullRequestLink: data.html_url,
+          pullRequestNumber: data.number,
+        })
+
         // Mark GHSA as fixed in tracker.
         // eslint-disable-next-line no-await-in-loop
         await markGhsaFixed(cwd, ghsaId, data.number, branch)
@@ -707,6 +734,6 @@ export async function coanaFix(
 
   return {
     ok: true,
-    data: { fixed: overallFixed },
+    data: { fixedAll: overallFixed, ghsaDetails: ghsaFixResults },
   }
 }

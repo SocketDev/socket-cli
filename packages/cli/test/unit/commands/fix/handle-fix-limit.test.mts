@@ -271,7 +271,7 @@ describe('socket fix --limit behavior verification', () => {
       })
 
       expect(result.ok).toBe(true)
-      expect(result.data?.fixed).toBe(false)
+      expect(result.data?.fixedAll).toBe(false)
 
       // spawnCoanaDlx should not be called at all with limit 0.
       expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
@@ -419,7 +419,7 @@ describe('socket fix --limit behavior verification', () => {
       })
 
       expect(result.ok).toBe(true)
-      expect(result.data?.fixed).toBe(false)
+      expect(result.data?.fixedAll).toBe(false)
 
       // With 5 open PRs and limit 3, adjusted limit is 0, so no processing.
       expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()

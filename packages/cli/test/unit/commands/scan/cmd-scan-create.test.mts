@@ -1184,7 +1184,7 @@ describe('cmd-scan-create', () => {
         )
       })
 
-      it('should pass --reach-disable-analysis-splitting to handler', async () => {
+      it('should pass --reach-enable-analysis-splitting to handler', async () => {
         mockHasDefaultApiToken.mockReturnValueOnce(true)
 
         await cmdScanCreate.run(
@@ -1192,7 +1192,7 @@ describe('cmd-scan-create', () => {
             '--org',
             'test-org',
             '--reach',
-            '--reach-disable-analysis-splitting',
+            '--reach-enable-analysis-splitting',
             '.',
             '--no-interactive',
           ],
@@ -1203,7 +1203,7 @@ describe('cmd-scan-create', () => {
         expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
           expect.objectContaining({
             reach: expect.objectContaining({
-              reachDisableAnalysisSplitting: true,
+              reachEnableAnalysisSplitting: true,
             }),
           }),
         )

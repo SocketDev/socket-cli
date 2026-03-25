@@ -23,11 +23,14 @@ import { messageWithCauses } from 'pony-cause'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { getSocketCliApiBaseUrl } from '@socketsecurity/lib/env/socket-cli'
+import { httpRequest } from '@socketsecurity/lib/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
-import { getDefaultApiToken } from './sdk.mts'
+import { getDefaultApiToken, getExtraCaCerts } from './sdk.mts'
+
+import type { HttpRequestOptions as BaseHttpRequestOptions, HttpResponse } from '@socketsecurity/lib/http-request'
 import { CONFIG_KEY_API_BASE_URL } from '../../constants/config.mts'
 import {
   HTTP_STATUS_BAD_REQUEST,
@@ -66,6 +69,28 @@ import type {
 const logger = getDefaultLogger()
 
 const NO_ERROR_MESSAGE = 'No error message returned'
+
+// Extended options that include CA cert support (pending upstream in socket-lib).
+type HttpRequestOptions = BaseHttpRequestOptions & {
+  ca?: string[] | undefined
+}
+
+// Wraps httpRequest with extra CA certificates from SSL_CERT_FILE.
+// Once socket-lib publishes `ca` support in HttpRequestOptions, the
+// cast below can be removed.
+export async function socketHttpRequest(
+  url: string,
+  options?: HttpRequestOptions | undefined,
+): Promise<HttpResponse> {
+  const ca = getExtraCaCerts()
+  if (ca) {
+    return await httpRequest(url, {
+      ...(options ?? {}),
+      ca,
+    } as BaseHttpRequestOptions)
+  }
+  return await httpRequest(url, options)
+}
 
 export type CommandRequirements = {
   permissions?: string[] | undefined
@@ -268,10 +293,14 @@ export async function handleApiCall<T extends SocketSdkOperations>(
       reason,
     )
 
+    const causeWithEndpoint = description
+      ? `${cause} (endpoint: ${description})`
+      : cause
+
     const socketSdkErrorResult: ApiCallResult<T> = {
       ok: false,
       message: 'Socket API error',
-      cause,
+      cause: causeWithEndpoint,
       data: {
         code: sdkResult.status,
       },
@@ -332,10 +361,14 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
       reason,
     )
 
+    const causeWithEndpoint = description
+      ? `${cause} (endpoint: ${description})`
+      : cause
+
     return {
       ok: false,
       message: 'Socket API error',
-      cause,
+      cause: causeWithEndpoint,
       data: {
         code: sdkResult.status,
       },
@@ -354,13 +387,16 @@ export async function queryApi(path: string, apiToken: string) {
     throw new Error('Socket API base URL is not configured.')
   }
 
-  return await fetch(`${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Basic ${btoa(`${apiToken}:`)}`,
+  return await socketHttpRequest(
+    `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Basic ${btoa(`${apiToken}:`)}`,
+      },
+      timeout: 30_000,
     },
-    signal: AbortSignal.timeout(30_000),
-  })
+  )
 }
 
 /**
@@ -451,7 +487,7 @@ export async function queryApiSafeText(
     return {
       ok: false,
       message: 'Socket API error',
-      cause: `${result.statusText} (reason: ${await getErrorMessageForHttpStatusCode(status)})`,
+      cause: `${result.statusText} (reason: ${await getErrorMessageForHttpStatusCode(status)}) (path: ${path})`,
       data: {
         code: status,
       },
@@ -459,7 +495,7 @@ export async function queryApiSafeText(
   }
 
   try {
-    const data = await result.text()
+    const data = result.text()
     return {
       ok: true,
       data,
@@ -552,17 +588,15 @@ export async function sendApiRequest<T>(
 
   let result: any
   try {
-    const fetchOptions = {
-      method,
+    result = await socketHttpRequest(fullUrl, {
+      body: body ? JSON.stringify(body) : undefined,
       headers: {
         Authorization: `Basic ${btoa(`${apiToken}:`)}`,
         'Content-Type': 'application/json',
       },
-      signal: AbortSignal.timeout(60_000),
-      ...(body ? { body: JSON.stringify(body) } : {}),
-    }
-
-    result = await fetch(fullUrl, fetchOptions)
+      method,
+      timeout: 60_000,
+    })
     const durationMs = Date.now() - startTime
     if (description) {
       spinner?.successAndStop(
@@ -634,7 +668,7 @@ export async function sendApiRequest<T>(
     return {
       ok: false,
       message: 'Socket API error',
-      cause: `${result.statusText} (reason: ${await getErrorMessageForHttpStatusCode(status)})`,
+      cause: `${result.statusText} (reason: ${await getErrorMessageForHttpStatusCode(status)}) (path: ${path})`,
       data: {
         code: status,
       },
@@ -642,7 +676,7 @@ export async function sendApiRequest<T>(
   }
 
   try {
-    const data = await result.json()
+    const data = result.json()
     return {
       ok: true,
       data: data as T,

@@ -10,6 +10,7 @@ export type FixConfig = {
   coanaVersion: string | undefined
   cwd: string
   debug: boolean
+  disableExternalToolChecks: boolean
   disableMajorUpdates: boolean
   ecosystems: PURL_Type[]
   exclude: string[]

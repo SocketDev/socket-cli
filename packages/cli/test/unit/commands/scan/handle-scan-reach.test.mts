@@ -127,6 +127,7 @@ describe('handleScanReach', () => {
       interactive: false,
       orgSlug: 'test-org',
       outputKind: 'json',
+      outputPath: '',
       reachabilityOptions: {
         reachAnalysisTimeout: 300,
         reachAnalysisMemoryLimit: 2048,
@@ -143,7 +144,7 @@ describe('handleScanReach', () => {
     expect(mockPerformAnalysis).toHaveBeenCalledWith({
       cwd: '/project',
       orgSlug: 'test-org',
-      outputPath: undefined,
+      outputPath: '',
       packagePaths: ['/project/package.json', '/project/package-lock.json'],
       reachabilityOptions: {
         reachAnalysisTimeout: 300,
@@ -174,12 +175,12 @@ describe('handleScanReach', () => {
       interactive: false,
       orgSlug: 'test-org',
       outputKind: 'text',
+      outputPath: '',
       reachabilityOptions: {},
       targets: [],
     })
 
     expect(mockOutput).toHaveBeenCalledWith(mockError, {
-      cwd: '/project',
       outputKind: 'text',
       outputPath: '',
     })
@@ -199,6 +200,7 @@ describe('handleScanReach', () => {
       interactive: false,
       orgSlug: 'test-org',
       outputKind: 'json',
+      outputPath: '',
       reachabilityOptions: {},
       targets: ['nonexistent'],
     })
@@ -230,12 +232,12 @@ describe('handleScanReach', () => {
       interactive: true,
       orgSlug: 'test-org',
       outputKind: 'markdown',
+      outputPath: '',
       reachabilityOptions: { maxDepth: 10 },
       targets: ['./'],
     })
 
     expect(mockOutput).toHaveBeenCalledWith(analysisError, {
-      cwd: '/project',
       outputKind: 'markdown',
       outputPath: '',
     })

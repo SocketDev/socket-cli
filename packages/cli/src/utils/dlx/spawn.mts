@@ -62,6 +62,7 @@ import { SOCKET_CLI_PYTHON_PATH } from '../../env/socket-cli-python-path.mts'
 import { getSynpVersion } from '../../env/synp-version.mts'
 import { getErrorCause, InputError } from '../error/errors.mts'
 import { isSeaBinary } from '../sea/detect.mts'
+import { socketHttpRequest } from '../socket/api.mjs'
 import { spawnNode } from '../spawn/spawn-node.mjs'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
 
@@ -1183,11 +1184,11 @@ async function downloadPyPiWheel(
   let wheelUrl: string | null = null
 
   try {
-    const response = await fetch(pypiUrl)
+    const response = await socketHttpRequest(pypiUrl)
     if (!response.ok) {
       throw new Error(`PyPI API returned ${response.status}`)
     }
-    const data = (await response.json()) as {
+    const data = response.json() as {
       urls?: Array<{ filename: string; url: string }>
     }
 

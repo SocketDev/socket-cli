@@ -13,7 +13,7 @@ export async function outputScanReach(
   {
     outputKind,
     outputPath,
-  }: { cwd: string; outputKind: OutputKind; outputPath: string },
+  }: { outputKind: OutputKind; outputPath: string },
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1

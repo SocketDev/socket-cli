@@ -34,17 +34,21 @@ interface ScanReachFlags {
   json: boolean
   markdown: boolean
   org: string
+  output: string
   reachAnalysisMemoryLimit: number
   reachAnalysisTimeout: number
   reachConcurrency: number
   reachDebug: boolean
-  reachDisableAnalysisSplitting: boolean
+  reachDetailedAnalysisLogFile: boolean
   reachDisableAnalytics: boolean
+  reachDisableExternalToolChecks: boolean
+  reachEnableAnalysisSplitting: boolean
   reachLazyMode: boolean
   reachMinSeverity: string
   reachSkipCache: boolean
   reachUseOnlyPregeneratedSboms: boolean
   reachUseUnreachableFromPrecomputation: boolean
+  reachVersion: string
 }
 
 export const CMD_NAME = 'reach'
@@ -66,6 +70,13 @@ const generalFlags: MeowFlags = {
     default: '',
     description:
       'Force override the organization slug, overrides the default org from config',
+  },
+  output: {
+    type: 'string',
+    default: '',
+    description:
+      'Path to write the reachability report to (must end with .json). Defaults to .socket.facts.json in the current working directory.',
+    shortFlag: 'o',
   },
 }
 
@@ -103,7 +114,8 @@ async function run(
       ${getFlagListOutput(reachabilityFlags)}
 
     Runs the Socket reachability analysis without creating a scan in Socket.
-    The output is written to .socket.facts.json in the current working directory.
+    The output is written to .socket.facts.json in the current working directory
+    unless the --output flag is specified.
 
     Note: Manifest files are uploaded to Socket's backend services because the
     reachability analysis requires creating a Software Bill of Materials (SBOM)
@@ -113,6 +125,8 @@ async function run(
       $ ${command}
       $ ${command} ./proj
       $ ${command} ./proj --reach-ecosystems npm,pypi
+      $ ${command} --output custom-report.json
+      $ ${command} ./proj --output ./reports/analysis.json
   `,
   }
 
@@ -129,17 +143,21 @@ async function run(
     json,
     markdown,
     org: orgFlag,
+    output: outputPath,
     reachAnalysisMemoryLimit,
     reachAnalysisTimeout,
     reachConcurrency,
     reachDebug,
-    reachDisableAnalysisSplitting,
+    reachDetailedAnalysisLogFile,
     reachDisableAnalytics,
+    reachDisableExternalToolChecks,
+    reachEnableAnalysisSplitting,
     reachLazyMode,
     reachMinSeverity,
     reachSkipCache,
     reachUseOnlyPregeneratedSboms,
     reachUseUnreachableFromPrecomputation,
+    reachVersion,
   } = cli.flags as unknown as ScanReachFlags
 
   const dryRun = !!cli.flags['dryRun']
@@ -202,6 +220,12 @@ async function run(
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       fail: 'omit one',
+    },
+    {
+      nook: true,
+      test: !outputPath || outputPath.endsWith('.json'),
+      message: 'The --output path must end with .json',
+      fail: 'use a path ending with .json',
     },
     {
       nook: true,
@@ -280,17 +304,20 @@ async function run(
 
   await handleScanReach({
     cwd,
+    interactive,
     orgSlug,
     outputKind,
+    outputPath: outputPath || '',
     targets,
-    interactive,
     reachabilityOptions: {
       reachAnalysisMemoryLimit: validatedReachAnalysisMemoryLimit,
       reachAnalysisTimeout: validatedReachAnalysisTimeout,
       reachConcurrency: validatedReachConcurrency,
       reachDebug: Boolean(reachDebug),
+      reachDetailedAnalysisLogFile: Boolean(reachDetailedAnalysisLogFile),
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
-      reachDisableAnalysisSplitting: Boolean(reachDisableAnalysisSplitting),
+      reachDisableExternalToolChecks: Boolean(reachDisableExternalToolChecks),
+      reachEnableAnalysisSplitting: Boolean(reachEnableAnalysisSplitting),
       reachEcosystems,
       reachExcludePaths,
       reachLazyMode: Boolean(reachLazyMode),
@@ -300,6 +327,7 @@ async function run(
       reachUseUnreachableFromPrecomputation: Boolean(
         reachUseUnreachableFromPrecomputation,
       ),
+      reachVersion: reachVersion || undefined,
     },
   })
 }

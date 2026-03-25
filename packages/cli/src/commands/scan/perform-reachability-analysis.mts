@@ -1,5 +1,7 @@
 import path from 'node:path'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
 import {
   SOCKET_DEFAULT_BRANCH,
@@ -22,8 +24,10 @@ export type ReachabilityOptions = {
   reachAnalysisTimeout: number
   reachConcurrency: number
   reachDebug: boolean
+  reachDetailedAnalysisLogFile: boolean
   reachDisableAnalytics: boolean
-  reachDisableAnalysisSplitting: boolean
+  reachDisableExternalToolChecks: boolean
+  reachEnableAnalysisSplitting: boolean
   reachEcosystems: PURL_Type[]
   reachExcludePaths: string[]
   reachLazyMode: boolean
@@ -31,6 +35,7 @@ export type ReachabilityOptions = {
   reachSkipCache: boolean
   reachUseOnlyPregeneratedSboms: boolean
   reachUseUnreachableFromPrecomputation: boolean
+  reachVersion: string | undefined
 }
 
 export type ReachabilityAnalysisOptions = {
@@ -176,12 +181,19 @@ export async function performReachabilityAnalysis(
       ? ['--concurrency', `${reachabilityOptions.reachConcurrency}`]
       : []),
     ...(reachabilityOptions.reachDebug ? ['--debug'] : []),
+    ...(reachabilityOptions.reachDetailedAnalysisLogFile
+      ? ['--detailed-analysis-log-file']
+      : []),
     ...(reachabilityOptions.reachDisableAnalytics
       ? ['--disable-analytics-sharing']
       : []),
-    ...(reachabilityOptions.reachDisableAnalysisSplitting
-      ? ['--disable-analysis-splitting']
+    ...(reachabilityOptions.reachDisableExternalToolChecks
+      ? ['--disable-external-tool-checks']
       : []),
+    // Analysis splitting is disabled by default; only skip the flag when explicitly enabled.
+    ...(reachabilityOptions.reachEnableAnalysisSplitting
+      ? []
+      : ['--disable-analysis-splitting']),
     ...(tarHash
       ? ['--run-without-docker', '--manifests-tar-hash', tarHash]
       : []),
@@ -218,6 +230,7 @@ export async function performReachabilityAnalysis(
 
   // Run Coana with the manifests tar hash.
   const coanaResult = await spawnCoanaDlx(coanaArgs, orgSlug, {
+    coanaVersion: reachabilityOptions.reachVersion || undefined,
     cwd,
     env: coanaEnv,
     spinner,
@@ -226,6 +239,17 @@ export async function performReachabilityAnalysis(
 
   if (wasSpinning) {
     spinner?.start()
+  }
+
+  if (!coanaResult.ok) {
+    const logger = getDefaultLogger()
+    logger.error('Reachability analysis failed')
+    logger.error(
+      `  target: ${analysisTarget}, cwd: ${cwd}`,
+    )
+    if (coanaResult.message) {
+      logger.error(`  ${coanaResult.message}`)
+    }
   }
 
   return coanaResult.ok
