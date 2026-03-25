@@ -8,3 +8,5 @@ updates:
     schedule:
       interval: yearly
     open-pull-requests-limit: 0
+    cooldown:
+      default-days: 7
