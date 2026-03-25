@@ -30,7 +30,7 @@ import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import { getDefaultApiToken, getExtraCaCerts } from './sdk.mts'
 
-import type { HttpRequestOptions as BaseHttpRequestOptions, HttpResponse } from '@socketsecurity/lib/http-request'
+import type { HttpRequestOptions, HttpResponse } from '@socketsecurity/lib/http-request'
 import { CONFIG_KEY_API_BASE_URL } from '../../constants/config.mts'
 import {
   HTTP_STATUS_BAD_REQUEST,
@@ -70,24 +70,14 @@ const logger = getDefaultLogger()
 
 const NO_ERROR_MESSAGE = 'No error message returned'
 
-// Extended options that include CA cert support (pending upstream in socket-lib).
-type HttpRequestOptions = BaseHttpRequestOptions & {
-  ca?: string[] | undefined
-}
-
 // Wraps httpRequest with extra CA certificates from SSL_CERT_FILE.
-// Once socket-lib publishes `ca` support in HttpRequestOptions, the
-// cast below can be removed.
 export async function socketHttpRequest(
   url: string,
   options?: HttpRequestOptions | undefined,
 ): Promise<HttpResponse> {
   const ca = getExtraCaCerts()
   if (ca) {
-    return await httpRequest(url, {
-      ...(options ?? {}),
-      ca,
-    } as BaseHttpRequestOptions)
+    return await httpRequest(url, { ...(options ?? {}), ca })
   }
   return await httpRequest(url, options)
 }
