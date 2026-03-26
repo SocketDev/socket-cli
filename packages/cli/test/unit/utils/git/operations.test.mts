@@ -123,6 +123,7 @@ describe('git utilities', () => {
     })
 
     it('returns GITHUB_REF_NAME when it is a branch', async () => {
+      setEnv('GITHUB_BASE_REF', '')
       setEnv('GITHUB_REF_TYPE', 'branch')
       setEnv('GITHUB_REF_NAME', 'feature-branch')
 
