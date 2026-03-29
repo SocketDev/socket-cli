@@ -17,7 +17,7 @@
   "dependencies": {
     "@socketsecurity/lib": "catalog:",
     "build-infra": "workspace:*",
-    "handlebars": "^4.7.8"
+    "handlebars": "^4.7.9"
   },
   "engines": {
     "node": ">=25.5.0"
