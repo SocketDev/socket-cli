@@ -31,7 +31,13 @@ while read local_ref local_sha remote_ref remote_sha; do
     if [ -z "$default_branch" ]; then
       default_branch="main"
     fi
-    range="${remote}/${default_branch}..$local_sha"
+    # Verify the remote ref exists locally before using it in the range.
+    if git rev-parse --verify "${remote}/${default_branch}" >/dev/null 2>&1; then
+      range="${remote}/${default_branch}..$local_sha"
+    else
+      # Remote ref missing (shallow clone, --single-branch, etc.), check all commits.
+      range="$local_sha"
+    fi
   else
     # Existing branch - check only new commits being pushed.
     range="$remote_sha..$local_sha"
