@@ -26,13 +26,16 @@ TOTAL_ERRORS=0
 while read local_ref local_sha remote_ref remote_sha; do
   # Get the range of commits being pushed.
   if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
-    # New branch - find the latest published release tag to limit scope.
-    latest_release=$(git tag --list 'v*' --sort=-version:refname --merged "$local_sha" | head -1)
-    if [ -n "$latest_release" ]; then
-      # Check commits since the latest published release.
-      range="$latest_release..$local_sha"
+    # New branch: only check commits not already on the remote default branch.
+    default_branch=$(git symbolic-ref "refs/remotes/${remote}/HEAD" 2>/dev/null | sed "s|refs/remotes/${remote}/||")
+    if [ -z "$default_branch" ]; then
+      default_branch="main"
+    fi
+    # Verify the remote ref exists locally before using it in the range.
+    if git rev-parse --verify "${remote}/${default_branch}" >/dev/null 2>&1; then
+      range="${remote}/${default_branch}..$local_sha"
     else
-      # No release tags found - check all commits.
+      # Remote ref missing (shallow clone, --single-branch, etc.), check all commits.
       range="$local_sha"
     fi
   else
