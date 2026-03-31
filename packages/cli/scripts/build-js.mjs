@@ -35,9 +35,14 @@ async function main() {
     logger.step('Building CLI bundle')
     const buildResult = await spawn(
       'node',
-      ['--max-old-space-size=8192', '.config/esbuild.config.mjs', 'cli'],
+      ['--max-old-space-size=8192', '.config/esbuild.build.mjs', 'cli'],
       { stdio: 'inherit' },
     )
+    if (!buildResult) {
+      logger.error('Failed to start CLI build')
+      process.exitCode = 1
+      return
+    }
     if (buildResult.code !== 0) {
       process.exitCode = buildResult.code
       return

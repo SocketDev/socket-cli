@@ -154,15 +154,17 @@ async function downloadBinaries(platformFilter = null) {
     `Downloading iocraft binaries for ${configs.length} platform(s)...`,
   )
 
-  const results = await Promise.all(
+  const settled = await Promise.allSettled(
     configs.map(config => downloadIocraftBinary(config)),
   )
 
-  const failed = results.filter(r => !r.ok)
+  const failed = settled.filter(
+    r => r.status === 'fulfilled' && !r.value.ok,
+  )
   if (failed.length > 0) {
     logger.error(`\n${failed.length} platform(s) failed:`)
-    for (const { target } of failed) {
-      logger.error(`  - ${target}`)
+    for (const r of failed) {
+      logger.error(`  - ${r.value.target}`)
     }
     return false
   }

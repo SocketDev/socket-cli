@@ -65,7 +65,7 @@ async function fixNodeGypStrings(dir, options = {}) {
       await fixNodeGypStrings(filePath, options)
     } else if (file.name.endsWith('.js')) {
       // Read file contents.
-      const contents = await fs.readFile(filePath, 'utf8')
+      const contents = await fs.readFile(filePath, 'utf-8')
 
       // Check if file contains the problematic pattern.
       if (contents.includes('node-gyp/bin/node-gyp.js')) {
@@ -75,7 +75,7 @@ async function fixNodeGypStrings(dir, options = {}) {
           '"node-" + "gyp/bin/node-gyp.js"',
         )
 
-        await fs.writeFile(filePath, fixed, 'utf8')
+        await fs.writeFile(filePath, fixed, 'utf-8')
 
         if (!quiet && verbose) {
           logger.info(
@@ -134,16 +134,16 @@ async function main() {
     // Then start esbuild in watch mode.
     const watchResult = await spawn(
       'node',
-      [...NODE_MEMORY_FLAGS, '.config/esbuild.cli.build.mjs', '--watch'],
+      [...NODE_MEMORY_FLAGS, '.config/esbuild.cli.mjs', '--watch'],
       {
         shell: WIN32,
         stdio: 'inherit',
       },
     )
 
-    if (watchResult.code !== 0) {
-      process.exitCode = watchResult.code
-      throw new Error(`Watch mode failed with exit code ${watchResult.code}`)
+    if (!watchResult || watchResult.code !== 0) {
+      process.exitCode = watchResult?.code ?? 1
+      throw new Error(`Watch mode failed with exit code ${watchResult?.code}`)
     }
     return
   }
@@ -240,7 +240,7 @@ async function main() {
 
     const buildResult = await spawn(
       'node',
-      [...NODE_MEMORY_FLAGS, '.config/esbuild.config.mjs', 'all'],
+      [...NODE_MEMORY_FLAGS, '.config/esbuild.build.mjs', 'all'],
       {
         shell: WIN32,
         stdio: 'inherit',
@@ -265,7 +265,7 @@ async function main() {
       logger.step('Phase 4: Post-processing (parallel)...')
     }
 
-    await Promise.all([
+    const postResults = await Promise.allSettled([
       // Copy CLI bundle to dist (required for dist/index.js to work).
       (async () => {
         copyFileSync('build/cli.js', 'dist/cli.js')
@@ -296,6 +296,14 @@ async function main() {
         }
       })(),
     ])
+
+    const postFailed = postResults.filter(r => r.status === 'rejected')
+    if (postFailed.length > 0) {
+      for (const r of postFailed) {
+        logger.error(`Post-processing failed: ${r.reason?.message ?? r.reason}`)
+      }
+      throw new Error('Post-processing step(s) failed')
+    }
 
     if (!quiet) {
       printSuccess('Build completed')

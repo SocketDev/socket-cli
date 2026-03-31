@@ -23,10 +23,10 @@ const buildPath = path.join(__dirname, '..', 'build', 'cli.js')
 function validateBundle() {
   let content
   try {
-    content = readFileSync(buildPath, 'utf8')
-  } catch (error) {
-    logger.fail(`Failed to read bundle: ${error.message}`)
-    return false
+    content = readFileSync(buildPath, 'utf-8')
+  } catch (e) {
+    logger.fail(`Failed to read bundle: ${e.message}`)
+    return null
   }
 
   const violations = []
@@ -48,6 +48,11 @@ function validateBundle() {
 async function main() {
   try {
     const violations = validateBundle()
+
+    if (!violations) {
+      process.exitCode = 1
+      return
+    }
 
     if (violations.length === 0) {
       logger.success('Bundle validation passed')
@@ -82,7 +87,7 @@ async function main() {
   }
 }
 
-main().catch(error => {
-  console.error(`Validation failed: ${error}`)
+main().catch(e => {
+  logger.error(`Validation failed: ${e}`)
   process.exitCode = 1
 })

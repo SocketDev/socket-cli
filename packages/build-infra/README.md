@@ -14,10 +14,10 @@ Shared build infrastructure utilities for Socket CLI. Provides esbuild plugins, 
 │  │ Unicode       │       │ API Client   │    │ SHA256   │  │
 │  │ Transform     │       │ + Download   │    │ Content  │  │
 │  │               │       │              │    │ Hashing  │  │
-│  ├───────────────┤       ├──────────────┤    └──────────┤  │
-│  │ Dead Code     │       │ Asset Cache  │    │ Skip     │  │
-│  │ Elimination   │       │ (1hr TTL)    │    │ Regen    │  │
-│  └───────────────┘       └──────────────┘    └──────────┘  │
+│  └───────────────┘       ├──────────────┤    └──────────┤  │
+│                          │ Asset Cache  │    │ Skip     │  │
+│                          │ (1hr TTL)    │    │ Regen    │  │
+│                          └──────────────┘    └──────────┘  │
 │                                                              │
 │  Helpers                                                     │
 │  ┌───────────────────────────────────────────────────────┐  │
@@ -71,30 +71,6 @@ export default {
 - Handles both regex literals and `RegExp` constructor calls
 - Replaces unsupported patterns with `/(?:)/` (no-op)
 - Removes `/u` and `/v` flags after transformation
-
-#### `deadCodeEliminationPlugin()`
-
-Removes unreachable code branches based on constant boolean conditions. Simplifies bundled output by eliminating dead paths.
-
-```javascript
-import { deadCodeEliminationPlugin } from 'build-infra/lib/esbuild-plugin-dead-code-elimination'
-
-export default {
-  plugins: [deadCodeEliminationPlugin()],
-}
-```
-
-**Transformations:**
-
-- `if (false) { deadCode() }` → `` (removed)
-- `if (true) { liveCode() } else { deadCode() }` → `liveCode()` (unwrapped)
-- `if (false) { } else { liveCode() }` → `liveCode()` (unwrapped)
-
-**Implementation:**
-
-- Uses Babel parser + MagicString for safe AST transformations
-- Only processes `.js` files in esbuild output
-- Applies transformations in reverse order to maintain positions
 
 ### esbuild Helpers
 
@@ -296,10 +272,9 @@ ensureOutputDir('/path/to/output/file.js')
 ### esbuild Configuration
 
 ```javascript
-// .config/esbuild.config.mjs
+// .config/esbuild.cli.mjs
 import { IMPORT_META_URL_BANNER } from 'build-infra/lib/esbuild-helpers'
 import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
-import { deadCodeEliminationPlugin } from 'build-infra/lib/esbuild-plugin-dead-code-elimination'
 
 export default {
   entryPoints: ['src/cli.mts'],
@@ -317,7 +292,7 @@ export default {
     'import.meta.url': '__importMetaUrl',
   },
 
-  plugins: [unicodeTransformPlugin(), deadCodeEliminationPlugin()],
+  plugins: [unicodeTransformPlugin()],
 }
 ```
 
@@ -438,8 +413,7 @@ Assets are cached per tag to avoid re-downloading across builds.
 
 **Consumers:**
 
-- `packages/cli/.config/esbuild.cli.build.mjs` - Main CLI bundle config
-- `packages/cli/.config/esbuild.inject.config.mjs` - Shadow npm inject config
+- `packages/cli/.config/esbuild.cli.mjs` - Main CLI bundle config
 - `packages/cli/scripts/download-assets.mjs` - Unified asset downloader
 - `packages/cli/scripts/sea-build-utils/builder.mjs` - SEA binary builder
 
