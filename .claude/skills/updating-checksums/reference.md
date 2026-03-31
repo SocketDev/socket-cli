@@ -21,8 +21,8 @@ This document provides detailed information about external tool checksums, the s
 |------|------------|-------------------|-------------------|
 | opengrep | opengrep/opengrep | `v*.*.*` | Yes |
 | python | astral-sh/python-build-standalone | `*.*.*` | No (computed) |
-| socket-patch | nicolo-ribaudo/tc39-proposal-patcher | `v*.*.*` | Varies |
-| sfw | SocketDev/sfw | `v*.*.*` | Varies |
+| socket-patch | SocketDev/socket-patch | `v*.*.*` | Varies |
+| sfw | SocketDev/sfw-free | `v*.*.*` | Varies |
 | trivy | aquasecurity/trivy | `v*.*.*` | Yes |
 | trufflehog | trufflesecurity/trufflehog | `v*.*.*` | Yes |
 
@@ -165,7 +165,7 @@ stream.pipe(hash)
 
 ### Tool with Dual Configuration (sfw)
 
-The `sfw` tool has both a GitHub release binary and an npm package component. The checksums skill only handles the GitHub release checksums. The npm integrity hash is separate.
+The `sfw` tool has both a GitHub release binary (`SocketDev/sfw-free`) and an npm package (`sfw` on npmjs.com). Both are tracked in the same `external-tools.json` entry via `type: "github-release"` for the binary checksums and `npmPackage`/`npmVersion` fields for the npm component. The checksums skill only handles the GitHub release binary checksums; the npm package version is updated separately via `pnpm run update`.
 
 ### python-build-standalone
 
