@@ -99,22 +99,49 @@ Summary: X updated, Y unchanged
 Each tool has specific asset naming conventions:
 
 **opengrep:**
-- `opengrep-{version}-linux-amd64.tar.gz`
-- `opengrep-{version}-darwin-arm64.tar.gz`
-- `opengrep-{version}-darwin-amd64.tar.gz`
+- `opengrep-core_linux_aarch64.tar.gz`
+- `opengrep-core_linux_x86.tar.gz`
+- `opengrep-core_osx_aarch64.tar.gz`
+- `opengrep-core_osx_x86.tar.gz`
+- `opengrep-core_windows_x86.zip`
+- Includes `checksums.txt`
 
 **python (python-build-standalone):**
 - `cpython-{version}+{buildTag}-{target}-{config}.tar.zst`
 - No checksums.txt — hashes computed by downloading each asset
 
+**socket-patch:**
+- `socket-patch-aarch64-apple-darwin.tar.gz`
+- `socket-patch-x86_64-apple-darwin.tar.gz`
+- `socket-patch-aarch64-unknown-linux-gnu.tar.gz`
+- `socket-patch-x86_64-unknown-linux-musl.tar.gz`
+- `socket-patch-aarch64-pc-windows-msvc.zip`
+- `socket-patch-x86_64-pc-windows-msvc.zip`
+
+**sfw (sfw-free):**
+- `sfw-free-linux-arm64`
+- `sfw-free-linux-x86_64`
+- `sfw-free-macos-arm64`
+- `sfw-free-macos-x86_64`
+- `sfw-free-musl-linux-arm64`
+- `sfw-free-musl-linux-x86_64`
+- `sfw-free-windows-x86_64.exe`
+
 **trivy:**
 - `trivy_{version}_Linux-64bit.tar.gz`
+- `trivy_{version}_Linux-ARM64.tar.gz`
+- `trivy_{version}_macOS-64bit.tar.gz`
 - `trivy_{version}_macOS-ARM64.tar.gz`
+- `trivy_{version}_windows-64bit.zip`
 - Includes `trivy_{version}_checksums.txt`
 
 **trufflehog:**
 - `trufflehog_{version}_linux_amd64.tar.gz`
+- `trufflehog_{version}_linux_arm64.tar.gz`
+- `trufflehog_{version}_darwin_amd64.tar.gz`
 - `trufflehog_{version}_darwin_arm64.tar.gz`
+- `trufflehog_{version}_windows_amd64.tar.gz`
+- `trufflehog_{version}_windows_arm64.tar.gz`
 - Includes checksums in release
 
 ### Checksum Storage Format
