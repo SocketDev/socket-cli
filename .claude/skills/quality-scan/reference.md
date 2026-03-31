@@ -959,4 +959,4 @@ All findings follow this structure:
 
 ---
 
-**Version**: 1.1.0 (2026-03-24) | Compatible with socket-cli 3.0.0+ | Includes zizmor integration
+**Version**: 1.1.0 (2026-03-24)

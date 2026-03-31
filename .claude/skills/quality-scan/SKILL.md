@@ -476,4 +476,4 @@ Apply these socket-cli conventions when scanning and fixing:
 
 See `reference.md` @reference for complete agent prompts and pattern definitions.
 
-**Version**: 1.1.0 (2026-03-24) | Compatible with socket-cli 3.0.0+ | Includes zizmor integration
+**Version**: 1.1.0 (2026-03-24)
