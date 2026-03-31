@@ -119,8 +119,9 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - uses: SocketDev/socket-registry/.github/actions/install@715b14fec288ea6abc94a63dd74a2860c0db82f0 # main
+        with:
+          frozen-lockfile: 'true'
 
       - name: Run lint
         run: pnpm --filter @socketsecurity/cli run check
@@ -185,8 +186,9 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - uses: SocketDev/socket-registry/.github/actions/install@715b14fec288ea6abc94a63dd74a2860c0db82f0 # main
+        with:
+          frozen-lockfile: 'true'
 
       - name: Run type check
         run: pnpm --filter @socketsecurity/cli run type
@@ -258,8 +260,9 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - uses: SocketDev/socket-registry/.github/actions/install@715b14fec288ea6abc94a63dd74a2860c0db82f0 # main
+        with:
+          frozen-lockfile: 'true'
 
       - name: Build CLI
         working-directory: packages/cli
@@ -338,8 +341,9 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - uses: SocketDev/socket-registry/.github/actions/install@715b14fec288ea6abc94a63dd74a2860c0db82f0 # main
+        with:
+          frozen-lockfile: 'true'
 
       - name: Build CLI
         working-directory: packages/cli
