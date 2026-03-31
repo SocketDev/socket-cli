@@ -14,6 +14,7 @@ import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
 import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
+import { findSocketYmlSync } from '../../utils/config.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { socketDocsLink } from '../../utils/terminal-link.mts'
@@ -164,7 +165,15 @@ export async function handleCreateNewScan({
   spinner.start('Searching for local files to include in scan...')
 
   const supportedFiles = supportedFilesCResult.data
+
+  // Load socket.yml to respect projectIgnorePaths when collecting files.
+  const socketYmlResult = findSocketYmlSync(cwd)
+  const socketConfig = socketYmlResult.ok
+    ? socketYmlResult.data?.parsed
+    : undefined
+
   const packagePaths = await getPackageFilesForScan(targets, supportedFiles, {
+    config: socketConfig,
     cwd,
   })
 
