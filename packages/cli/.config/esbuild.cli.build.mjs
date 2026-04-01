@@ -145,9 +145,9 @@ const config = {
 
   // Handle special cases with plugins.
   plugins: [
+    unicodeTransformPlugin(),
     // Environment variable replacement must run AFTER unicode transform.
     envVarReplacementPlugin(inlinedEnvVars),
-    unicodeTransformPlugin(),
     {
       name: 'resolve-socket-packages',
       setup(build) {

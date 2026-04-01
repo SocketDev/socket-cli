@@ -141,9 +141,9 @@ async function main() {
       },
     )
 
-    if (watchResult.code !== 0) {
-      process.exitCode = watchResult.code
-      throw new Error(`Watch mode failed with exit code ${watchResult.code}`)
+    if (!watchResult || watchResult.code !== 0) {
+      process.exitCode = watchResult?.code ?? 1
+      throw new Error(`Watch mode failed with exit code ${watchResult?.code ?? 1}`)
     }
     return
   }
@@ -265,7 +265,7 @@ async function main() {
       logger.step('Phase 4: Post-processing (parallel)...')
     }
 
-    await Promise.all([
+    const postResults = await Promise.allSettled([
       // Copy CLI bundle to dist (required for dist/index.js to work).
       (async () => {
         copyFileSync('build/cli.js', 'dist/cli.js')
@@ -296,6 +296,14 @@ async function main() {
         }
       })(),
     ])
+
+    const postFailed = postResults.filter(r => r.status === 'rejected')
+    if (postFailed.length > 0) {
+      for (const r of postFailed) {
+        logger.error(`Post-processing failed: ${r.reason?.message ?? r.reason}`)
+      }
+      throw new Error('Post-processing step(s) failed')
+    }
 
     if (!quiet) {
       printSuccess('Build completed')
