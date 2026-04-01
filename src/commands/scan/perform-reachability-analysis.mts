@@ -75,6 +75,15 @@ export async function performReachabilityAnalysis(
   // Check if user has enterprise plan for reachability analysis.
   const orgsCResult = await fetchOrganization()
   if (!orgsCResult.ok) {
+    const httpCode = (orgsCResult.data as { code?: number } | undefined)?.code
+    if (httpCode === constants.HTTP_STATUS_UNAUTHORIZED) {
+      return {
+        ok: false,
+        message: 'Authentication failed',
+        cause:
+          'Your API token appears to be invalid, expired, or revoked. Please check your token and try again.',
+      }
+    }
     return {
       ok: false,
       message: 'Unable to verify plan permissions',

@@ -1,3 +1,5 @@
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
@@ -54,6 +56,9 @@ export async function fetchOrganization(
     silence,
   })
   if (!orgsCResult.ok) {
+    if (!silence) {
+      logger.fail(orgsCResult.message, orgsCResult.cause)
+    }
     return orgsCResult
   }
 
