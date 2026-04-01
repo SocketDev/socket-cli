@@ -2,10 +2,6 @@
 
 **MANDATORY**: Act as principal-level engineer. Follow these guidelines exactly.
 
-## CANONICAL REFERENCE
-
-This is a reference to shared Socket standards. See `../socket-registry/CLAUDE.md` for canonical source.
-
 ## 👤 USER CONTEXT
 
 - **Identify users by git credentials**: Extract name from git commit author, GitHub account, or context
@@ -19,14 +15,53 @@ This is a reference to shared Socket standards. See `../socket-registry/CLAUDE.m
 
 **MANDATORY**: Review CLAUDE.md before any action. No exceptions.
 
+- Before ANY structural refactor on a file >300 LOC: remove dead code, unused exports, unused imports first — commit that cleanup separately before the real work
+- Multi-file changes: break into phases (≤5 files each), verify each phase before the next
+- When pointed to existing code as a reference: study it before building — working code is a better spec than any description
+- Work from raw error data, not theories — if a bug report has no error output, ask for it
+- On "yes", "do it", or "go": execute immediately, no plan recap
+
 ## VERIFICATION PROTOCOL
 
 **MANDATORY**: Before claiming any task is complete:
 
-1. Test the solution end-to-end
-2. Verify all changes work as expected
-3. Run the actual commands to confirm functionality
-4. Never claim "Done" without verification
+1. Run the actual command — execute the script, run the test, check the output
+2. State what you verified, not just "looks good"
+3. **FORBIDDEN**: Claiming "Done" when any test output shows failures, or characterizing incomplete/broken work as complete
+4. If type-check or lint is configured, run it and fix ALL errors before reporting done
+5. Re-read every file modified; confirm nothing references something that no longer exists
+
+## CONTEXT & EDIT SAFETY
+
+- After 10+ messages: re-read any file before editing it — do not trust remembered contents
+- Read files >500 LOC in chunks using offset/limit; never assume one read captured the whole file
+- Before every edit: re-read the file. After every edit: re-read to confirm the change applied correctly
+- When renaming anything, search separately for: direct calls, type references, string literals, dynamic imports, re-exports, test files — one grep is not enough
+- Never fix a display/rendering problem by duplicating state — one source of truth, everything reads from it
+
+## JUDGMENT PROTOCOL
+
+- If the user's request is based on a misconception, say so before executing
+- If you spot a bug adjacent to what was asked, flag it: "I also noticed X — want me to fix it?"
+- You are a collaborator, not just an executor
+
+## SCOPE PROTOCOL
+
+- Do not add features, refactor, or make improvements beyond what was asked — band-aids when asked for band-aids
+- Try the simplest approach first; if architecture is actually flawed, flag it and wait for approval before restructuring
+- When asked to "make a plan," output only the plan — no code until given the go-ahead
+
+## SELF-EVALUATION
+
+- Before calling anything done: present two views — what a perfectionist would reject vs. what a pragmatist would ship — let the user decide
+- After fixing a bug: explain why it happened and what category of bug it represents
+- If a fix doesn't work after two attempts: stop, re-read the relevant section top-down, state where the mental model was wrong, propose something fundamentally different
+- If asked to "step back" or "we're going in circles": drop everything, rethink from scratch
+
+## HOUSEKEEPING
+
+- Before risky changes: offer to checkpoint — "want me to commit before this?"
+- If a file is getting unwieldy (>400 LOC): flag it — "this is big enough to cause pain — want me to split it?"
 
 ## Critical Rules
 
@@ -378,6 +413,7 @@ Socket CLI integrates with various third-party tools and services:
 - **Array destructuring**: Use object notation `{ 0: key, 1: data }` instead of array destructuring `[key, data]`
 - **Dynamic imports**: 🚨 FORBIDDEN - Never use dynamic imports (`await import()`). Always use static imports at the top of the file
 - **Sorting**: 🚨 MANDATORY - Always sort lists, exports, and items in documentation headers alphabetically/alphanumerically for consistency
+- **Comment policy**: Default to NO comments. Only add one when the WHY is non-obvious to a senior engineer reading the code cold
 - **Comment placement**: Place comments on their own line, not to the right of code
 - **Comment formatting**: Use fewer hyphens/dashes and prefer commas, colons, or semicolons for better readability
 - **Await in loops**: When using `await` inside for-loops, sequential processing is acceptable when iterations depend on each other
