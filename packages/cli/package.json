@@ -50,7 +50,7 @@
     "dev:npx": "cross-env SOCKET_CLI_MODE=npx node --experimental-strip-types src/cli-dispatch.mts",
     "e2e-tests": "dotenvx -q run -f .env.test -- vitest run --config vitest.e2e.config.mts",
     "e2e:js": "node scripts/e2e.mjs --js",
-"e2e:sea": "node scripts/e2e.mjs --sea",
+    "e2e:sea": "node scripts/e2e.mjs --sea",
     "e2e:all": "node scripts/e2e.mjs --all",
     "test": "run-s check test:*",
     "test:prepare": "dotenvx -q run -f .env.test -- pnpm build && del-cli 'test/**/node_modules'",

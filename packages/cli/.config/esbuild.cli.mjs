@@ -82,9 +82,9 @@ const config = {
   },
 
   plugins: [
+    unicodeTransformPlugin(),
     // Environment variable replacement must run AFTER unicode transform.
     envVarReplacementPlugin(inlinedEnvVars),
-    unicodeTransformPlugin(),
     {
       name: 'resolve-socket-lib-internals',
       setup(build) {

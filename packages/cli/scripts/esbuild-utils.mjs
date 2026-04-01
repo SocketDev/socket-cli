@@ -158,5 +158,6 @@ export async function runBuild(config, description = 'Build') {
     logger.error(`Build failed: ${description || 'Unknown'}`)
     logger.error(e)
     process.exitCode = 1
+    throw e
   }
 }
