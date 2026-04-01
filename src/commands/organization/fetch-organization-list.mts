@@ -56,7 +56,9 @@ export async function fetchOrganization(
     silence,
   })
   if (!orgsCResult.ok) {
-    logger.fail(orgsCResult.message, orgsCResult.cause)
+    if (!silence) {
+      logger.fail(orgsCResult.message, orgsCResult.cause)
+    }
     return orgsCResult
   }
 
