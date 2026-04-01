@@ -65,7 +65,7 @@ async function fixNodeGypStrings(dir, options = {}) {
       await fixNodeGypStrings(filePath, options)
     } else if (file.name.endsWith('.js')) {
       // Read file contents.
-      const contents = await fs.readFile(filePath, 'utf8')
+      const contents = await fs.readFile(filePath, 'utf-8')
 
       // Check if file contains the problematic pattern.
       if (contents.includes('node-gyp/bin/node-gyp.js')) {
@@ -75,7 +75,7 @@ async function fixNodeGypStrings(dir, options = {}) {
           '"node-" + "gyp/bin/node-gyp.js"',
         )
 
-        await fs.writeFile(filePath, fixed, 'utf8')
+        await fs.writeFile(filePath, fixed, 'utf-8')
 
         if (!quiet && verbose) {
           logger.info(
@@ -134,7 +134,7 @@ async function main() {
     // Then start esbuild in watch mode.
     const watchResult = await spawn(
       'node',
-      [...NODE_MEMORY_FLAGS, '.config/esbuild.cli.build.mjs', '--watch'],
+      [...NODE_MEMORY_FLAGS, '.config/esbuild.cli.mjs', '--watch'],
       {
         shell: WIN32,
         stdio: 'inherit',
@@ -240,7 +240,7 @@ async function main() {
 
     const buildResult = await spawn(
       'node',
-      [...NODE_MEMORY_FLAGS, '.config/esbuild.config.mjs', 'all'],
+      [...NODE_MEMORY_FLAGS, '.config/esbuild.build.mjs', 'all'],
       {
         shell: WIN32,
         stdio: 'inherit',

@@ -1,33 +1,17 @@
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import colors from 'yoctocolors-cjs'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageRoot = path.resolve(__dirname, '..')
 
-/**
- * Check if a file exists and is readable.
- */
-async function fileExists(filePath) {
-  try {
-    await fs.access(filePath)
-    return true
-  } catch {
-    return false
-  }
-}
+const logger = getDefaultLogger()
 
-/**
- * Main validation function.
- */
 async function validate() {
-  const logger = getDefaultLogger()
   logger.log('')
   logger.log('='.repeat(60))
   logger.log(`${colors.blue('CLI Package Validation')}`)
@@ -39,7 +23,7 @@ async function validate() {
   // Check package.json exists and has correct files array.
   logger.info('Checking package.json...')
   const pkgPath = path.join(packageRoot, 'package.json')
-  if (!(await fileExists(pkgPath))) {
+  if (!(existsSync(pkgPath))) {
     errors.push('package.json does not exist')
   } else {
     logger.success('package.json exists')
@@ -75,7 +59,7 @@ async function validate() {
   for (const file of rootFiles) {
     logger.info(`Checking ${file}...`)
     const filePath = path.join(packageRoot, file)
-    if (!(await fileExists(filePath))) {
+    if (!(existsSync(filePath))) {
       errors.push(`${file} does not exist`)
     } else {
       logger.success(`${file} exists`)
@@ -87,7 +71,7 @@ async function validate() {
   for (const file of distFiles) {
     logger.info(`Checking dist/${file}...`)
     const filePath = path.join(packageRoot, 'dist', file)
-    if (!(await fileExists(filePath))) {
+    if (!(existsSync(filePath))) {
       errors.push(`dist/${file} does not exist`)
     } else {
       logger.success(`dist/${file} exists`)
@@ -97,7 +81,7 @@ async function validate() {
   // Check data directory exists.
   logger.info('Checking data directory...')
   const dataPath = path.join(packageRoot, 'data')
-  if (!(await fileExists(dataPath))) {
+  if (!(existsSync(dataPath))) {
     errors.push('data directory does not exist')
   } else {
     logger.success('data directory exists')
@@ -110,7 +94,7 @@ async function validate() {
     for (const file of dataFiles) {
       logger.info(`Checking data/${file}...`)
       const filePath = path.join(dataPath, file)
-      if (!(await fileExists(filePath))) {
+      if (!(existsSync(filePath))) {
         errors.push(`data/${file} does not exist`)
       } else {
         logger.success(`data/${file} exists`)
@@ -128,7 +112,7 @@ async function validate() {
   if (errors.length > 0) {
     logger.log(`${colors.red('Errors:')}`)
     for (const err of errors) {
-      logger.log(`  ${error(err)}`)
+      logger.log(`  ${err}`)
     }
     logger.log('')
     logger.fail('Package validation FAILED')

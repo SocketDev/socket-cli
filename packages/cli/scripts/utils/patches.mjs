@@ -13,6 +13,8 @@ import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+const logger = getDefaultLogger()
+
 /**
  * Parse JavaScript/TypeScript code into a Babel AST.
  *
@@ -90,7 +92,6 @@ async function promptYesNo(question, defaultAnswer = false) {
  * @returns {Promise<string>} Path to temporary patch directory.
  */
 export async function startPatch(packageSpec) {
-  const logger = getDefaultLogger()
   logger.log(`Starting patch for ${packageSpec}...`)
 
   // First, try to run pnpm patch to see if directory already exists.

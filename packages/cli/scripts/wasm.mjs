@@ -24,6 +24,8 @@ import { fileURLToPath } from 'node:url'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+const logger = getDefaultLogger()
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 const externalDir = path.join(rootPath, 'external')
@@ -40,7 +42,6 @@ function checkNodeVersion() {
   const major = Number.parseInt(nodeVersion.split('.')[0], 10)
 
   if (major < 18) {
-    const logger = getDefaultLogger()
     logger.error(' Node.js version 18 or higher is required')
     logger.error(`Current version: ${nodeVersion}`)
     logger.error('Please upgrade: https://nodejs.org/')

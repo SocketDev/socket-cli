@@ -24,7 +24,7 @@ async function main() {
 
     // Build CLI bundle.
     logger.info('Building CLI bundle...')
-    let result = await spawn('node', ['.config/esbuild.cli.build.mjs'], {
+    let result = await spawn('node', ['.config/esbuild.cli.mjs'], {
       shell: WIN32,
       stdio: 'inherit',
       cwd: rootPath,
@@ -41,7 +41,7 @@ async function main() {
 
     // Build index loader.
     logger.info('Building index loader...')
-    result = await spawn('node', ['.config/esbuild.index.config.mjs'], {
+    result = await spawn('node', ['.config/esbuild.index.mjs'], {
       shell: WIN32,
       stdio: 'inherit',
       cwd: rootPath,

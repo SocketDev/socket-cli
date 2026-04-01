@@ -284,23 +284,25 @@ pnpm clean
 
 Located in `packages/cli/.config/`:
 
-| Config                     | Output          | Description        |
-| -------------------------- | --------------- | ------------------ |
-| `esbuild.cli.build.mjs`    | `build/cli.js`  | Main CLI bundle    |
-| `esbuild.index.config.mjs` | `dist/index.js` | Entry point loader |
+| Config               | Output          | Description                                      |
+| -------------------- | --------------- | ------------------------------------------------ |
+| `esbuild.cli.mjs`    | `build/cli.js`  | Main CLI bundle — bundles all source into one JS |
+| `esbuild.index.mjs`  | `dist/index.js` | Entry point loader — thin shim that loads cli.js |
+| `esbuild.build.mjs`  | (orchestrator)  | Runs both cli and index builds in parallel       |
 
 ### Build Variants
 
-The unified esbuild config (`esbuild.config.mjs`) orchestrates all variants:
+The orchestrator (`esbuild.build.mjs`) accepts an optional variant argument:
 
 ```bash
-# Build all variants
-node .config/esbuild.config.mjs all
+# Build all variants (default)
+node .config/esbuild.build.mjs
 
-# Build specific variant
-node .config/esbuild.config.mjs cli
-node .config/esbuild.config.mjs index
-node .config/esbuild.config.mjs inject
+# Build only the CLI bundle
+node .config/esbuild.build.mjs cli
+
+# Build only the entry point loader
+node .config/esbuild.build.mjs index
 ```
 
 ---

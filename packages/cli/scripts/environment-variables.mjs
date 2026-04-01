@@ -3,7 +3,7 @@
  * Single source of truth for all inlined environment variables.
  *
  * This module consolidates environment variable loading that was previously duplicated between:
- * - esbuild-shared.mjs (full build-time inlining with 18 variables)
+ * - esbuild-utils.mjs (full build-time inlining with 18 variables)
  * - test-wrapper.mjs (partial test environment with 4 variables)
  *
  * Usage:
@@ -158,7 +158,7 @@ export class EnvironmentVariables {
   static loadSafe() {
     try {
       const externalTools = JSON.parse(
-        readFileSync(path.join(rootPath, 'external-tools.json'), 'utf8'),
+        readFileSync(path.join(rootPath, 'external-tools.json'), 'utf-8'),
       )
       return {
         INLINED_COANA_VERSION:
