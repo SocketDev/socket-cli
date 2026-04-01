@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.1.78](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.78) - 2026-04-01
 
 ### Fixed
-- `socket scan create` and `socket scan reach` now respect `projectIgnorePaths` from `socket.yml` when collecting files for a scan
+- `socket scan create`, `socket scan reach`, and `socket fix` now respect `projectIgnorePaths` from `socket.yml` when collecting files
 
 ## [1.1.77](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.77) - 2026-04-01
 
