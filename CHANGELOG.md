@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.77](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.77) - 2026-04-01
+
+### Fixed
+- Improved error message when using `--reach` with an invalid, expired, or revoked API token. Previously showed a misleading "Unable to verify plan permissions" error; now clearly indicates the authentication failure.
+
+### Changed
+- Updated the Coana CLI to v `14.12.201`.
+
 ## [1.1.74](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.74) - 2026-03-19
 
 ### Fixed
