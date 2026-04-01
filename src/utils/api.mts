@@ -248,7 +248,10 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
   if (code === HTTP_STATUS_BAD_REQUEST) {
     return 'One of the options passed might be incorrect'
   }
-  if (code === HTTP_STATUS_FORBIDDEN || code === HTTP_STATUS_UNAUTHORIZED) {
+  if (code === HTTP_STATUS_UNAUTHORIZED) {
+    return 'Your Socket API token appears to be invalid, expired, or revoked. Please verify your token is correct and active'
+  }
+  if (code === HTTP_STATUS_FORBIDDEN) {
     return 'Your Socket API token may not have the required permissions for this command or you might be trying to access (data from) an organization that is not linked to the API token you are logged in with'
   }
   if (code === HTTP_STATUS_NOT_FOUND) {
