@@ -143,7 +143,7 @@ async function main() {
 
     if (!watchResult || watchResult.code !== 0) {
       process.exitCode = watchResult?.code ?? 1
-      throw new Error(`Watch mode failed with exit code ${watchResult?.code}`)
+      throw new Error(`Watch mode failed with exit code ${watchResult?.code ?? 1}`)
     }
     return
   }

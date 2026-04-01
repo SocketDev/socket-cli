@@ -336,12 +336,14 @@ async function downloadAssets(assetNames, parallel = true) {
     )
 
     const failed = settled.filter(
-      r => r.status === 'fulfilled' && !r.value.ok,
+      r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok),
     )
     if (failed.length > 0) {
       logger.error(`\n${failed.length} asset(s) failed:`)
       for (const r of failed) {
-        logger.error(`  - ${r.value.name}`)
+        logger.error(
+          `  - ${r.status === 'rejected' ? r.reason?.message ?? r.reason : r.value.name}`,
+        )
       }
       process.exitCode = 1
     }
