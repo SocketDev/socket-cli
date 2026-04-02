@@ -4,7 +4,7 @@
  * esbuild is much faster than Rollup and doesn't have template literal corruption issues.
  */
 
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -42,50 +42,6 @@ function findSocketLibPath(importerPath) {
   if (existsSync(localPath)) {
     return localPath
   }
-
-  return null
-}
-
-// CLI build must use published packages only - no local sibling directories.
-// This ensures the CLI is properly isolated and doesn't depend on local dev setup.
-const socketPackages = {}
-
-// Resolve subpath from package.json exports.
-function resolvePackageSubpath(packagePath, subpath) {
-  try {
-    const pkgJsonPath = path.join(packagePath, 'package.json')
-    const pkgJson = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'))
-    const exports = pkgJson.exports || {}
-
-    // Try exact export match.
-    const exportKey = subpath === '.' ? '.' : `./${subpath}`
-    if (exports[exportKey]) {
-      const exportValue = exports[exportKey]
-      // Handle conditional exports.
-      if (typeof exportValue === 'object' && exportValue.default) {
-        return path.join(packagePath, exportValue.default)
-      }
-      // Handle simple string exports.
-      if (typeof exportValue === 'string') {
-        return path.join(packagePath, exportValue)
-      }
-    }
-
-    // Fallback: try conventional paths.
-    const distPath = path.join(packagePath, 'dist', subpath)
-    if (existsSync(`${distPath}.js`)) {
-      return `${distPath}.js`
-    }
-    if (existsSync(`${distPath}.mjs`)) {
-      return `${distPath}.mjs`
-    }
-    if (existsSync(path.join(distPath, 'index.js'))) {
-      return path.join(distPath, 'index.js')
-    }
-    if (existsSync(path.join(distPath, 'index.mjs'))) {
-      return path.join(distPath, 'index.mjs')
-    }
-  } catch {}
 
   return null
 }
@@ -148,47 +104,6 @@ const config = {
     // Environment variable replacement must run AFTER unicode transform.
     envVarReplacementPlugin(inlinedEnvVars),
     unicodeTransformPlugin(),
-    {
-      name: 'resolve-socket-packages',
-      setup(build) {
-        // Resolve local Socket packages with subpath exports.
-        for (const [packageName, packagePath] of Object.entries(
-          socketPackages,
-        )) {
-          // Handle package root imports.
-          build.onResolve(
-            { filter: new RegExp(`^${packageName.replace('/', '\\/')}$`) },
-            () => {
-              if (!existsSync(packagePath)) {
-                return null
-              }
-              const resolved = resolvePackageSubpath(packagePath, '.')
-              if (resolved) {
-                return { path: resolved }
-              }
-              return null
-            },
-          )
-
-          // Handle subpath imports.
-          build.onResolve(
-            { filter: new RegExp(`^${packageName.replace('/', '\\/')}\\/`) },
-            args => {
-              if (!existsSync(packagePath)) {
-                return null
-              }
-              const subpath = args.path.slice(packageName.length + 1)
-              const resolved = resolvePackageSubpath(packagePath, subpath)
-              if (resolved) {
-                return { path: resolved }
-              }
-              return null
-            },
-          )
-        }
-      },
-    },
-
     {
       name: 'resolve-socket-lib-internals',
       setup(build) {
