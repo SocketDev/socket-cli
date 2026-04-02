@@ -44,6 +44,7 @@ import {
   fetchGhsaDetails,
   setGitRemoteGithubRepoUrl,
 } from '../../utils/github.mts'
+import { findSocketYmlSync } from '../../utils/config.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
@@ -157,7 +158,15 @@ export async function coanaFix(
   }
 
   const supportedFiles = supportedFilesCResult.data
+
+  // Load socket.yml to respect projectIgnorePaths when collecting files.
+  const socketYmlResult = findSocketYmlSync(cwd)
+  const socketConfig = socketYmlResult.ok
+    ? socketYmlResult.data?.parsed
+    : undefined
+
   const scanFilepaths = await getPackageFilesForScan(['.'], supportedFiles, {
+    config: socketConfig,
     cwd,
   })
   // Exclude any .socket.facts.json files that happen to be in the scan

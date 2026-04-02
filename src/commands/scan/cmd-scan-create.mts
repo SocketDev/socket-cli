@@ -173,7 +173,6 @@ async function run(
       ...generalFlags,
       ...reachabilityFlags,
     },
-    // TODO: Your project's "socket.yml" file's "projectIgnorePaths".
     help: command => `
     Usage
       $ ${command} [options] [TARGET...]
