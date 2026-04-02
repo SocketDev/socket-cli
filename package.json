@@ -48,6 +48,7 @@
     "pretest": "pnpm run build:cli"
   },
   "devDependencies": {
+    "@anthropic-ai/claude-code": "catalog:",
     "@babel/core": "catalog:",
     "@babel/parser": "catalog:",
     "@babel/plugin-proposal-export-default-from": "catalog:",
