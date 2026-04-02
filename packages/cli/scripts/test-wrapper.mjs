@@ -154,17 +154,12 @@ async function main() {
       ...(WIN32 ? { shell: true } : {}),
     }
 
-    const child = spawn(dotenvxPath, dotenvxArgs, spawnOptions)
-
-    child.on('exit', code => {
-      process.exitCode = code || 0
-    })
-
-    child.on('error', e => {
-      logger.error('Failed to spawn test process:', e)
-      process.exitCode = 1
-    })
-  } catch {}
+    const result = await spawn(dotenvxPath, dotenvxArgs, spawnOptions)
+    process.exitCode = result?.code || 0
+  } catch (e) {
+    logger.error('Failed to spawn test process:', e)
+    process.exitCode = 1
+  }
 }
 
 main().catch(e => {

@@ -3,13 +3,17 @@
  * Contains helpers for environment variable inlining and build metadata.
  */
 
-import { execSync } from 'node:child_process'
-import { randomUUID } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { build } from 'esbuild'
+
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import { EnvironmentVariables } from './environment-variables.mjs'
+
+const logger = getDefaultLogger()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -32,12 +36,12 @@ export function createIndexConfig({ entryPoint, minify = false, outfile }) {
     },
     bundle: true,
     entryPoints: [entryPoint],
-    external: [],
     format: 'cjs',
     outfile,
     platform: 'node',
+    // Source maps off for entry point production build.
+    sourcemap: false,
     target: 'node18',
-    treeShaking: true,
     // Define environment variables for inlining.
     define: {
       'process.env.NODE_ENV': '"production"',
@@ -54,7 +58,6 @@ export function createIndexConfig({ entryPoint, minify = false, outfile }) {
   } else {
     config.minifyWhitespace = true
     config.minifyIdentifiers = true
-    config.minifySyntax = false
   }
 
   return config
@@ -127,65 +130,34 @@ export function getInlinedEnvVars() {
 }
 
 /**
- * Create a build runner function that executes esbuild config when run as main module.
- * This eliminates boilerplate code repeated across all esbuild config files.
+ * Run an esbuild config, writing output files if write: false.
  *
  * @param {Object} config - esbuild configuration object
- * @param {string} [description] - Optional description of what this build does
- * @param {ImportMeta} importMeta - The import.meta from the calling config file
- * @returns {Object} The same config object (for chaining)
- *
- * @example
- * ```javascript
- * import { build } from 'esbuild'
- * import { createBuildRunner } from './esbuild-shared.mjs'
- *
- * const config = { ... }
- * export default createBuildRunner(config, 'CLI bundle', import.meta)
- * ```
+ * @param {string} [description] - Description logged before/after build
  */
-export function createBuildRunner(config, description = 'Build', importMeta) {
-  // Only run if the caller's file is the main module (executed directly).
-  // This allows configs to be imported without side effects.
-  if (
-    importMeta &&
-    fileURLToPath(importMeta.url) === process.argv[1]?.replace(/\\/g, '/')
-  ) {
-    ;(async () => {
-      try {
-        // Import esbuild dynamically to avoid loading it during imports.
-        const { build } = await import('esbuild')
+export async function runBuild(config, description = 'Build') {
+  try {
+    if (description) {
+      logger.info(`Building: ${description}`)
+    }
 
-        if (description) {
-          console.log(`Building: ${description}`)
-        }
+    const result = await build(config)
 
-        const result = await build(config)
-
-        // If write: false, manually write outputFiles.
-        if (result.outputFiles && result.outputFiles.length > 0) {
-          const { writeFileSync } = await import('node:fs')
-          const { dirname } = await import('node:path')
-          const { mkdirSync } = await import('node:fs')
-
-          for (const output of result.outputFiles) {
-            // Ensure directory exists.
-            mkdirSync(dirname(output.path), { recursive: true })
-            // Write output file.
-            writeFileSync(output.path, output.contents)
-          }
-
-          if (description) {
-            console.log(`✓ ${description} complete`)
-          }
-        }
-      } catch (error) {
-        console.error(`Build failed: ${description || 'Unknown'}`)
-        console.error(error)
-        process.exitCode = 1
+    // If write: false, manually write outputFiles.
+    if (result.outputFiles && result.outputFiles.length > 0) {
+      for (const output of result.outputFiles) {
+        mkdirSync(path.dirname(output.path), { recursive: true })
+        writeFileSync(output.path, output.contents)
       }
-    })()
-  }
 
-  return config
+      if (description) {
+        logger.success(`${description} complete`)
+      }
+    }
+  } catch (e) {
+    logger.error(`Build failed: ${description || 'Unknown'}`)
+    logger.error(e)
+    process.exitCode = 1
+    throw e
+  }
 }

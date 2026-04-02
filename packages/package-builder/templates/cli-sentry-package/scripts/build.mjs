@@ -29,6 +29,9 @@ async function main() {
       stdio: 'inherit',
       cwd: rootPath,
     })
+    if (!result) {
+      throw new Error('Failed to start CLI bundle build')
+    }
     if (result.code !== 0) {
       throw new Error(`CLI bundle build failed with exit code ${result.code}`)
     }
@@ -36,11 +39,14 @@ async function main() {
 
     // Build index loader.
     logger.info('Building index loader...')
-    result = await spawn('node', ['.config/esbuild.index.config.mjs'], {
+    result = await spawn('node', ['.config/esbuild.index.mjs'], {
       shell: WIN32,
       stdio: 'inherit',
       cwd: rootPath,
     })
+    if (!result) {
+      throw new Error('Failed to start index loader build')
+    }
     if (result.code !== 0) {
       throw new Error(`Index loader build failed with exit code ${result.code}`)
     }

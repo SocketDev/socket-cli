@@ -272,7 +272,7 @@ ensureOutputDir('/path/to/output/file.js')
 ### esbuild Configuration
 
 ```javascript
-// .config/esbuild.cli.build.mjs
+// .config/esbuild.cli.mjs
 import { IMPORT_META_URL_BANNER } from 'build-infra/lib/esbuild-helpers'
 import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
 
@@ -413,7 +413,7 @@ Assets are cached per tag to avoid re-downloading across builds.
 
 **Consumers:**
 
-- `packages/cli/.config/esbuild.cli.build.mjs` - Main CLI bundle config
+- `packages/cli/.config/esbuild.cli.mjs` - Main CLI bundle config
 - `packages/cli/scripts/download-assets.mjs` - Unified asset downloader
 - `packages/cli/scripts/sea-build-utils/builder.mjs` - SEA binary builder
 

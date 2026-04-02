@@ -125,7 +125,7 @@ describe('@socketsecurity/cli-with-sentry package', () => {
       const content = await fs.readFile(esbuildPath, 'utf-8')
 
       expect(content).toContain(
-        "import baseConfig from '../../cli/.config/esbuild.cli.build.mjs'",
+        "import baseConfig from '../../cli/.config/esbuild.cli.mjs'",
       )
     })
 
