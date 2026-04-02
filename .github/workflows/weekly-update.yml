@@ -38,11 +38,13 @@ jobs:
           node-version-file: .node-version
           cache: 'pnpm'
 
-      - uses: SocketDev/socket-registry/.github/actions/install@715b14fec288ea6abc94a63dd74a2860c0db82f0 # main
+      - uses: SocketDev/socket-registry/.github/actions/install@6096b06b1790f411714c89c40f72aade2eeaab7c # main
 
       - name: Check for npm updates
         id: check
+        shell: bash
         run: |
+          alias pnpm="$SFW_BIN pnpm"
           echo "Checking for npm package updates..."
           HAS_UPDATES=false
           NPM_UPDATES=$(pnpm outdated 2>/dev/null || true)
@@ -76,10 +78,7 @@ jobs:
           node-version-file: .node-version
           cache: 'pnpm'
 
-      - uses: SocketDev/socket-registry/.github/actions/install@715b14fec288ea6abc94a63dd74a2860c0db82f0 # main
-
-      - name: Install Claude Code
-        run: npm install -g @anthropic-ai/claude-code
+      - uses: SocketDev/socket-registry/.github/actions/install@6096b06b1790f411714c89c40f72aade2eeaab7c # main
 
       - name: Create update branch
         id: branch
@@ -107,7 +106,7 @@ jobs:
           fi
 
           set +e
-          claude --print --dangerously-skip-permissions \
+          pnpm exec claude --print --dangerously-skip-permissions \
             --model sonnet \
             "/updating - Run the updating skill to update all dependencies. Create atomic commits for each update. You are running in CI mode - skip builds and tests. Do not push or create a PR." \
             2>&1 | tee claude-output.log

@@ -59,10 +59,13 @@ jobs:
 
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
-      - uses: SocketDev/socket-registry/.github/actions/install@715b14fec288ea6abc94a63dd74a2860c0db82f0 # main
+      - uses: SocketDev/socket-registry/.github/actions/install@6096b06b1790f411714c89c40f72aade2eeaab7c # main
 
       - name: Build CLI
-        run: pnpm --filter @socketsecurity/cli run build
+        shell: bash
+        run: |
+          alias pnpm="$SFW_BIN pnpm"
+          pnpm --filter @socketsecurity/cli run build
 
       - name: Generate platform matrix
         id: matrix
@@ -104,7 +107,7 @@ jobs:
 
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
-      - uses: SocketDev/socket-registry/.github/actions/install@715b14fec288ea6abc94a63dd74a2860c0db82f0 # main
+      - uses: SocketDev/socket-registry/.github/actions/install@6096b06b1790f411714c89c40f72aade2eeaab7c # main
 
       - name: Download CLI bundle
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
@@ -119,6 +122,7 @@ jobs:
           MATRIX_PLATFORM: ${{ matrix.platform }}
           MATRIX_ARCH: ${{ matrix.arch }}
         run: |
+          alias pnpm="$SFW_BIN pnpm"
           LIBC_FLAG=""
           if [ "$MATRIX_LIBC" = "musl" ]; then
             LIBC_FLAG="--libc=musl"
@@ -160,9 +164,9 @@ jobs:
 
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
-      - uses: SocketDev/socket-registry/.github/actions/install@715b14fec288ea6abc94a63dd74a2860c0db82f0 # main
+      - uses: SocketDev/socket-registry/.github/actions/install@6096b06b1790f411714c89c40f72aade2eeaab7c # main
 
-      - run: npm install -g npm@latest
+      - run: npm install -g npm@11.12.1
 
       # Get versions for lock-stepped and independent packages.
       - name: Get versions
@@ -260,7 +264,10 @@ jobs:
       # Build and publish JS packages.
       # Order: cli/cli-with-sentry first (independent), then socket (depends on @socketbin/*).
       - name: Build CLI
-        run: INLINED_PUBLISHED_BUILD=1 pnpm run build
+        shell: bash
+        run: |
+          alias pnpm="$SFW_BIN pnpm"
+          INLINED_PUBLISHED_BUILD=1 pnpm run build
 
       - name: Publish @socketsecurity/cli
         if: ${{ inputs.cli && !inputs.dry-run }}
