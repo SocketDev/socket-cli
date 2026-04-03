@@ -485,6 +485,15 @@ The file system is working memory. Use it actively:
 
 ---
 
+## Codex Usage
+
+- **Codex is for advice and critical assessment ONLY — never for making code changes**
+- Ask Codex to: analyze, diagnose, review, estimate, suggest approaches
+- Do NOT ask Codex to: implement, write, modify, add code to files
+- Implement changes yourself after understanding Codex's advice
+- **Proactive consultation**: Before diving deep into a complex optimization (>30min estimated), consult Codex for critical analysis first — this catches fundamental design flaws early
+- **Bounce ideas**: Use Codex as a sounding board when stuck — describe the problem, what you've tried, and ask for honest assessment of whether the approach is worth continuing
+
 ## Quality Standards
 
 - Code MUST pass all existing lints and type checks
