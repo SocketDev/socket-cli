@@ -23,6 +23,8 @@
     "fix:all": "node scripts/fix.mjs --all",
     "lint": "node scripts/lint.mjs",
     "lint:all": "node scripts/lint.mjs --all",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt .",
     "// Claude": "",
     "claude": "pnpm --filter @socketsecurity/cli run claude --",
     "// Type Checking": "",
