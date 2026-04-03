@@ -86,11 +86,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           BRANCH_NAME="weekly-update-$(date +%Y%m%d)"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
           git checkout -b "$BRANCH_NAME"
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - uses: SocketDev/socket-registry/.github/actions/setup-git-signing@6096b06b1790f411714c89c40f72aade2eeaab7c # main
+        with:
+          gpg-private-key: ${{ secrets.BOT_GPG_PRIVATE_KEY }}
 
       - name: Run updating skill with Claude Code
         id: claude
@@ -181,6 +183,9 @@ jobs:
           name: claude-output-${{ github.run_id }}
           path: claude-output.log
           retention-days: 7
+
+      - uses: SocketDev/socket-registry/.github/actions/cleanup-git-signing@6096b06b1790f411714c89c40f72aade2eeaab7c # main
+        if: always()
 
   notify:
     name: Notify results
