@@ -110,7 +110,28 @@ jobs:
           set +e
           pnpm exec claude --print --dangerously-skip-permissions \
             --model sonnet \
-            "/updating - Run the updating skill to update all dependencies. Create atomic commits for each update. You are running in CI mode - skip builds and tests. Do not push or create a PR." \
+            "$(cat <<'PROMPT'
+          /updating
+
+          <context>
+          You are an automated CI agent in a weekly dependency update workflow.
+          Git is configured with GPG signing. A branch has been created for you.
+          </context>
+
+          <instructions>
+          Update all dependencies to their latest versions.
+          Create one atomic commit per dependency update with a conventional commit message.
+          Leave all changes local — the workflow handles pushing and PR creation.
+          Skip running builds, tests, and type checks — CI runs those separately.
+          </instructions>
+
+          <success_criteria>
+          Each updated dependency has its own commit.
+          The lockfile is consistent with package.json changes.
+          No uncommitted changes remain in the working tree.
+          </success_criteria>
+          PROMPT
+          )" \
             2>&1 | tee claude-output.log
           CLAUDE_EXIT=${PIPESTATUS[0]}
           set -e
