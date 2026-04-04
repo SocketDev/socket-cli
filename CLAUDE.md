@@ -100,6 +100,7 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 - Backward Compatibility: 🚨 FORBIDDEN to maintain - actively remove when encountered (see canonical CLAUDE.md)
 - Work Safeguards: MANDATORY commit + backup branch before bulk changes
 - Safe Deletion: Use `safeDelete()` from `@socketsecurity/lib/fs` (NEVER `fs.rm/rmSync` or `rm -rf`)
+- HTTP Requests: Use `httpJson`/`httpText`/`httpRequest` from `@socketsecurity/lib/http-request` (NEVER `fetch()`)
 
 ### Documentation Policy
 
