@@ -118,7 +118,7 @@ jobs:
           set +e
           pnpm exec claude --print \
             --allowedTools "Bash(pnpm:*)" "Bash(git:*)" "Read" "Write" "Edit" "Glob" "Grep" \
-            --model haiku \
+            --model sonnet \
             --max-turns 25 \
             "$(cat <<'PROMPT'
           /updating
