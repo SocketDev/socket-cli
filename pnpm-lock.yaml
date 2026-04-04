@@ -261,6 +261,7 @@ overrides:
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ansi-regex: 6.2.2
   brace-expansion: 5.0.5
+  defu: '>=6.1.5'
   emoji-regex: 10.6.0
   es-define-property: npm:@socketregistry/es-define-property@^1.0.7
   es-set-tostringtag: npm:@socketregistry/es-set-tostringtag@^1.0.10
@@ -2687,8 +2688,8 @@ packages:
     resolution: {integrity: sha512-N+MeXYoqr3pOgn8xfyRPREN7gHakLYjhsHhWGT3fWAiL4IkAt0iDw14QiiEm2bE30c5XX5q0FtAA3CK5f9/BUg==}
     engines: {node: '>=12'}
 
-  defu@6.1.4:
-    resolution: {integrity: sha512-mEQCMmwJu317oSz8CwdIOdwf3xMif1ttiM8LTufzc3g6kR+9Pe236twL8j3IYT1F7GfRgGcW6MWxzZjLIkuHIg==}
+  defu@6.1.6:
+    resolution: {integrity: sha512-f8mefEW4WIVg4LckePx3mALjQSPQgFlg9U8yaPdlsbdYcHQyj9n2zL2LJEA52smeYxOvmd/nB7TpMtHGMTHcug==}
 
   del-cli@6.0.0:
     resolution: {integrity: sha512-9nitGV2W6KLFyya4qYt4+9AKQFL+c0Ehj5K7V7IwlxTc6RMCfQUGY9E9pLG6e8TQjtwXpuiWIGGZb3mfVxyZkw==}
@@ -6340,7 +6341,7 @@ snapshots:
 
   define-lazy-prop@3.0.0: {}
 
-  defu@6.1.4: {}
+  defu@6.1.6: {}
 
   del-cli@6.0.0:
     dependencies:
@@ -8018,7 +8019,7 @@ snapshots:
   unconfig@7.4.1:
     dependencies:
       '@quansync/fs': 0.1.5
-      defu: 6.1.4
+      defu: 6.1.6
       jiti: 2.6.1
       quansync: 0.2.11
       unconfig-core: 7.4.1
@@ -8041,7 +8042,7 @@ snapshots:
 
   unplugin-purge-polyfills@0.1.0:
     dependencies:
-      defu: 6.1.4
+      defu: 6.1.6
       magic-string: 0.30.19
       mlly: 1.8.0
       unplugin: 2.3.10

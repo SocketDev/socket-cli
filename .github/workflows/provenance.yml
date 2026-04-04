@@ -166,7 +166,12 @@ jobs:
 
       - uses: SocketDev/socket-registry/.github/actions/install@6096b06b1790f411714c89c40f72aade2eeaab7c # main
 
-      - run: npm install -g npm@11.12.1
+      - name: Upgrade npm for trusted publishing
+        run: |
+          # Avoid npm self-upgrade (corrupts deps mid-install on Node 22).
+          NPM_DIR="$(npm config get prefix)/lib/node_modules/npm"
+          curl -sL https://registry.npmjs.org/npm/-/npm-11.12.1.tgz | tar xz -C "$NPM_DIR" --strip-components=1
+          echo "npm version: $(npm --version)"
 
       # Get versions for lock-stepped and independent packages.
       - name: Get versions
