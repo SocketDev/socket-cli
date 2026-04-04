@@ -145,7 +145,7 @@
       "aggregate-error": "catalog:",
       "ansi-regex": "catalog:",
       "brace-expansion": "catalog:",
-      "defu": ">=6.1.5",
+      "defu": ">=6.1.6",
       "emoji-regex": "catalog:",
       "es-define-property": "catalog:",
       "es-set-tostringtag": "catalog:",

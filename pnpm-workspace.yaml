@@ -1,5 +1,10 @@
 # Wait 7 days (10080 minutes) before installing newly published packages.
 minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - '@socketaddon/*'
+  - '@socketbin/*'
+  - '@socketregistry/*'
+  - '@socketsecurity/*'
 
 packages:
   - packages/*
