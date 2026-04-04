@@ -119,7 +119,7 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/install@6096b06b1790f411714c89c40f72aade2eeaab7c # main
+      - uses: SocketDev/socket-registry/.github/actions/install@da519693b701861bc0f9690a30f50af1a1dcd49c # main
 
       - name: Run lint
         shell: bash
@@ -187,7 +187,7 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/install@6096b06b1790f411714c89c40f72aade2eeaab7c # main
+      - uses: SocketDev/socket-registry/.github/actions/install@da519693b701861bc0f9690a30f50af1a1dcd49c # main
 
       - name: Run type check
         shell: bash
@@ -262,7 +262,7 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/install@6096b06b1790f411714c89c40f72aade2eeaab7c # main
+      - uses: SocketDev/socket-registry/.github/actions/install@da519693b701861bc0f9690a30f50af1a1dcd49c # main
 
       - name: Build CLI
         working-directory: packages/cli
@@ -347,7 +347,7 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/install@6096b06b1790f411714c89c40f72aade2eeaab7c # main
+      - uses: SocketDev/socket-registry/.github/actions/install@da519693b701861bc0f9690a30f50af1a1dcd49c # main
 
       - name: Build CLI
         working-directory: packages/cli
