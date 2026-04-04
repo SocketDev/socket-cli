@@ -96,11 +96,19 @@ jobs:
 
       - name: Run updating skill with Claude Code
         id: claude
-        timeout-minutes: 30
+        timeout-minutes: 15
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_ACTIONS: 'true'
         run: |
+          # Wrap pnpm through Socket firewall for all subprocesses (not just this shell).
+          if [ -n "$SFW_BIN" ]; then
+            mkdir -p /tmp/sfw-bin
+            printf '#!/bin/bash\nexec "%s" pnpm "$@"\n' "$SFW_BIN" > /tmp/sfw-bin/pnpm
+            chmod +x /tmp/sfw-bin/pnpm
+            export PATH="/tmp/sfw-bin:$PATH"
+          fi
+
           if [ -z "$ANTHROPIC_API_KEY" ]; then
             echo "ANTHROPIC_API_KEY not set - skipping automated update"
             echo "success=false" >> $GITHUB_OUTPUT
@@ -108,8 +116,10 @@ jobs:
           fi
 
           set +e
-          pnpm exec claude --print --dangerously-skip-permissions \
-            --model sonnet \
+          pnpm exec claude --print \
+            --allowedTools "Bash(pnpm:*)" "Bash(git:*)" "Read" "Write" "Edit" "Glob" "Grep" \
+            --model haiku \
+            --max-turns 25 \
             "$(cat <<'PROMPT'
           /updating
 
@@ -142,6 +152,25 @@ jobs:
             echo "success=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Validate changes
+        id: validate
+        if: steps.claude.outputs.success == 'true'
+        run: |
+          # Only allow changes to dependency-related files.
+          UNEXPECTED=""
+          for file in $(git diff --name-only origin/main..HEAD); do
+            case "$file" in
+              package.json|*/package.json|pnpm-lock.yaml|*/pnpm-lock.yaml|.npmrc|pnpm-workspace.yaml) ;;
+              *) UNEXPECTED="$UNEXPECTED $file" ;;
+            esac
+          done
+          if [ -n "$UNEXPECTED" ]; then
+            echo "::error::Unexpected files modified by Claude:$UNEXPECTED"
+            echo "valid=false" >> $GITHUB_OUTPUT
+          else
+            echo "valid=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Check for changes
         id: changes
         run: |
@@ -152,13 +181,13 @@ jobs:
           fi
 
       - name: Push branch
-        if: steps.claude.outputs.success == 'true' && steps.changes.outputs.has-changes == 'true'
+        if: steps.claude.outputs.success == 'true' && steps.validate.outputs.valid == 'true' && steps.changes.outputs.has-changes == 'true'
         env:
           BRANCH_NAME: ${{ steps.branch.outputs.branch }}
         run: git push origin "$BRANCH_NAME"
 
       - name: Create Pull Request
-        if: steps.claude.outputs.success == 'true' && steps.changes.outputs.has-changes == 'true'
+        if: steps.claude.outputs.success == 'true' && steps.validate.outputs.valid == 'true' && steps.changes.outputs.has-changes == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           BRANCH_NAME: ${{ steps.branch.outputs.branch }}
@@ -187,7 +216,7 @@ jobs:
             --base main
 
       - name: Add job summary
-        if: steps.claude.outputs.success == 'true' && steps.changes.outputs.has-changes == 'true'
+        if: steps.claude.outputs.success == 'true' && steps.validate.outputs.valid == 'true' && steps.changes.outputs.has-changes == 'true'
         env:
           BRANCH_NAME: ${{ steps.branch.outputs.branch }}
         run: |
