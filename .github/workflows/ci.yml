@@ -119,12 +119,11 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/install@da519693b701861bc0f9690a30f50af1a1dcd49c # main
+      - uses: SocketDev/socket-registry/.github/actions/install@6147a08ccc20fcb1f690dcc4650ec745776b3345 # main
 
       - name: Run lint
         shell: bash
         run: |
-          alias pnpm="$SFW_BIN pnpm"
           pnpm --filter @socketsecurity/cli run check
 
   type-check:
@@ -187,12 +186,11 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/install@da519693b701861bc0f9690a30f50af1a1dcd49c # main
+      - uses: SocketDev/socket-registry/.github/actions/install@6147a08ccc20fcb1f690dcc4650ec745776b3345 # main
 
       - name: Run type check
         shell: bash
         run: |
-          alias pnpm="$SFW_BIN pnpm"
           pnpm --filter @socketsecurity/cli run type
 
   # Sharded unit tests for faster CI.
@@ -262,13 +260,12 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/install@da519693b701861bc0f9690a30f50af1a1dcd49c # main
+      - uses: SocketDev/socket-registry/.github/actions/install@6147a08ccc20fcb1f690dcc4650ec745776b3345 # main
 
       - name: Build CLI
         working-directory: packages/cli
         shell: bash
         run: |
-          alias pnpm="$SFW_BIN pnpm"
           pnpm run build
 
       - name: Run unit tests (shard ${{ matrix.shard }})
@@ -277,7 +274,6 @@ jobs:
         env:
           SHARD: ${{ matrix.shard }}
         run: |
-          alias pnpm="$SFW_BIN pnpm"
           pnpm test:unit --shard="$SHARD"/3
 
   # E2E tests
@@ -347,13 +343,12 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/install@da519693b701861bc0f9690a30f50af1a1dcd49c # main
+      - uses: SocketDev/socket-registry/.github/actions/install@6147a08ccc20fcb1f690dcc4650ec745776b3345 # main
 
       - name: Build CLI
         working-directory: packages/cli
         shell: bash
         run: |
-          alias pnpm="$SFW_BIN pnpm"
           pnpm run build
 
       - name: Run e2e tests (shard ${{ matrix.shard }})
@@ -363,5 +358,4 @@ jobs:
           SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_CLI_API_TOKEN }}
           SHARD: ${{ matrix.shard }}
         run: |
-          alias pnpm="$SFW_BIN pnpm"
           pnpm run e2e-tests --shard="$SHARD"/2
