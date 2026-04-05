@@ -1,5 +1,10 @@
 # Wait 7 days (10080 minutes) before installing newly published packages.
 minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - '@socketaddon/*'
+  - '@socketbin/*'
+  - '@socketregistry/*'
+  - '@socketsecurity/*'
 
 packages:
   - packages/*
@@ -39,7 +44,7 @@ catalog:
   '@socketregistry/packageurl-js': 1.4.1
   '@socketregistry/yocto-spinner': 1.0.25
   '@socketsecurity/config': 3.0.1
-  '@socketsecurity/lib': 5.11.4
+  '@socketsecurity/lib': 5.12.0
   '@socketsecurity/registry': 2.0.2
   '@socketsecurity/sdk': 3.4.1
   '@types/adm-zip': 0.5.7
