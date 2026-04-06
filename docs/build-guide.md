@@ -51,8 +51,7 @@ socket-cli/
 │   ├── cli/                      # Main CLI package
 │   │   ├── src/                  # TypeScript source
 │   │   ├── build/                # Intermediate build files
-│   │   │   ├── cli.js            # Bundled CLI (esbuild output)
-│   │   │   └── yoga-sync.mjs     # Downloaded WASM module
+│   │   │   └── cli.js            # Bundled CLI (esbuild output)
 │   │   └── dist/                 # Distribution files
 │   │       ├── index.js          # Entry point loader
 │   │       ├── cli.js            # CLI bundle (copied from build/)
@@ -69,7 +68,6 @@ socket-cli/
 │   │       └── downloaded/       # Cached downloads
 │   │           ├── node-smol/    # Node.js binaries
 │   │           ├── binject/      # Binary injection tool
-│   │           ├── yoga-layout/  # Yoga WASM
 │   │           └── models/       # AI models
 │   └── package-builder/          # Package generation templates
 └── scripts/                      # Monorepo build scripts
@@ -86,7 +84,6 @@ Phase 1: Clean (optional, with --force)
 Phase 2: Prepare (parallel)
     ├── Generate CLI packages from templates
     └── Download assets from socket-btm releases
-        ├── yoga-layout (WASM for terminal rendering)
         ├── node-smol (minimal Node.js binaries)
         ├── binject (binary injection tool)
         └── models (AI models for analysis)
@@ -191,9 +188,8 @@ pnpm build:watch
 
 **What it does**:
 
-1. Downloads yoga WASM (first time only)
-2. Starts esbuild in watch mode
-3. Rebuilds `build/cli.js` on changes
+1. Starts esbuild in watch mode
+2. Rebuilds `build/cli.js` on changes
 
 **Note**: Watch mode only rebuilds the CLI bundle, not SEA binaries.
 
@@ -250,7 +246,6 @@ Assets are downloaded from [socket-btm](https://github.com/SocketDev/socket-btm)
 | ------------- | ----------------------- | ------------------------------------ |
 | `node-smol`   | Minimal Node.js for SEA | `node-smol/<platform>-<arch>/node`   |
 | `binject`     | Binary injection tool   | `binject/<platform>-<arch>/binject`  |
-| `yoga-layout` | Terminal layout WASM    | `yoga-layout/assets/yoga-sync-*.mjs` |
 | `models`      | AI models for analysis  | `models/`                            |
 
 ### Cache Management

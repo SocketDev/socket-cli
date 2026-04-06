@@ -146,18 +146,6 @@ const config = {
     },
 
     {
-      name: 'yoga-wasm-alias',
-      setup(build) {
-        // Redirect yoga-layout to our custom synchronous implementation.
-        build.onResolve({ filter: /^yoga-layout$/ }, () => {
-          return {
-            path: path.join(rootPath, 'build/yoga-sync.mjs'),
-          }
-        })
-      },
-    },
-
-    {
       name: 'stub-problematic-packages',
       setup(build) {
         // Stub iconv-lite and encoding to avoid bundling issues.

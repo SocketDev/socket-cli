@@ -344,7 +344,6 @@ Do not read source files and assert on their contents (`.toContain('pattern')`).
 
 ### External Dependencies
 
-- Vendored modules in `src/external/` (e.g., ink-table)
 - Dependencies bundled into `dist/cli.js` via esbuild
 - Uses Socket registry overrides for security
 - Custom patches applied to dependencies in `patches/`

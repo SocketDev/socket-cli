@@ -5,7 +5,7 @@
  * Usage:
  *   node scripts/download-assets.mjs [asset-names...] [options]
  *   node scripts/download-assets.mjs                 # Download all assets (parallel)
- *   node scripts/download-assets.mjs yoga models     # Download specific assets (parallel)
+ *   node scripts/download-assets.mjs models           # Download specific assets (parallel)
  *   node scripts/download-assets.mjs --no-parallel   # Download all assets (sequential)
  *
  * Assets:
@@ -13,7 +13,6 @@
  *   iocraft   - iocraft native bindings (.node files)
  *   models    - AI models tar.gz (MiniLM, CodeT5)
  *   node-smol - Minimal Node.js binaries
- *   yoga      - Yoga layout WASM (yoga-sync.mjs)
  */
 
 import { existsSync, promises as fs } from 'node:fs'
@@ -93,22 +92,6 @@ const ASSETS = {
     },
     name: 'node-smol',
     type: 'binary',
-  },
-  yoga: {
-    description: 'Yoga layout WASM',
-    download: {
-      asset: 'yoga-sync-*.mjs',
-      cwd: rootPath,
-      downloadDir: '../../packages/build-infra/build/downloaded',
-      quiet: false,
-      tool: 'yoga-layout',
-    },
-    name: 'yoga',
-    process: {
-      format: 'javascript',
-      outputPath: path.join(rootPath, 'build/yoga-sync.mjs'),
-    },
-    type: 'processed',
   },
 }
 
@@ -222,29 +205,6 @@ async function extractArchive(tarGzPath, extractConfig, assetName) {
 }
 
 /**
- * Transform yoga-sync.mjs to remove top-level await for CJS compatibility.
- *
- * The newer yoga-sync builds incorrectly use top-level await which isn't
- * compatible with esbuild's CJS output format. Despite the name, yogaPromise
- * is synchronous (-sWASM_ASYNC_COMPILATION=0), so we can call it directly.
- */
-function transformYogaSync(content) {
-  // Pattern: const Yoga = wrapAssembly(await yogaPromise);
-  // Transform to: const Yoga = wrapAssembly(yogaPromise);
-  // (yogaPromise is synchronous despite its name)
-  const hasTopLevelAwait = content.includes('wrapAssembly(await yogaPromise)')
-  if (!hasTopLevelAwait) {
-    return content
-  }
-
-  // Replace the top-level await pattern with synchronous call.
-  return content.replace(
-    /const Yoga = wrapAssembly\(await yogaPromise\);/,
-    'const Yoga = wrapAssembly(yogaPromise);',
-  )
-}
-
-/**
  * Process and transform asset (e.g., add header to JS file).
  */
 async function processAsset(assetPath, processConfig, assetName) {
@@ -275,11 +235,6 @@ async function processAsset(assetPath, processConfig, assetName) {
 
   // Read the downloaded asset.
   let content = await fs.readFile(assetPath, 'utf-8')
-
-  // Transform yoga-sync to remove top-level await for CJS compatibility.
-  if (assetName === 'yoga') {
-    content = transformYogaSync(content)
-  }
 
   // Compute source hash for cache validation.
   const sourceHash = await computeFileHash(assetPath)
