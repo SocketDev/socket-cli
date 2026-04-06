@@ -8161,7 +8161,7 @@ snapshots:
 
   which@5.0.0:
     dependencies:
-      isexe: 3.1.1
+      isexe: 3.1.5
 
   which@6.0.0:
     dependencies:
