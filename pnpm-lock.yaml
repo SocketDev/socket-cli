@@ -257,7 +257,7 @@ overrides:
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
   '@sigstore/sign': 4.1.0
-  '@socketsecurity/lib': 5.13.0
+  '@socketsecurity/lib': 5.15.0
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ansi-regex: 6.2.2
   brace-expansion: 5.0.5
@@ -415,8 +415,8 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 5.13.0
-        version: 5.13.0(typescript@5.9.3)
+        specifier: 5.15.0
+        version: 5.15.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.2(typescript@5.9.3)
@@ -595,8 +595,8 @@ importers:
         specifier: 'catalog:'
         version: 7.28.4
       '@socketsecurity/lib':
-        specifier: 5.13.0
-        version: 5.13.0(typescript@5.9.3)
+        specifier: 5.15.0
+        version: 5.15.0(typescript@5.9.3)
       magic-string:
         specifier: 'catalog:'
         version: 0.30.19
@@ -652,8 +652,8 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 5.13.0
-        version: 5.13.0(typescript@5.9.3)
+        specifier: 5.15.0
+        version: 5.15.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.2(typescript@5.9.3)
@@ -772,8 +772,8 @@ importers:
   packages/package-builder:
     dependencies:
       '@socketsecurity/lib':
-        specifier: 5.13.0
-        version: 5.13.0(typescript@5.9.3)
+        specifier: 5.15.0
+        version: 5.15.0(typescript@5.9.3)
       build-infra:
         specifier: workspace:*
         version: link:../build-infra
@@ -2273,8 +2273,8 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/lib@5.13.0':
-    resolution: {integrity: sha512-BtpsibIaqDEXaXwihTGqQW0uPRixpedyEfmG3i6Vx2h8IpZ4Xw+T1Hc3cNqBND/67XFUuiygpPYJhhjjao0UWA==}
+  '@socketsecurity/lib@5.15.0':
+    resolution: {integrity: sha512-+I7+lR0WBCXWgRxMTQx+N70azONVGr68ndi25pz53D6QLdIQ8gfBgOgC34opECXL9lPUqVCMYNr3XFS/bHABIQ==}
     engines: {node: '>=22', pnpm: '>=10.25.0'}
     peerDependencies:
       typescript: '>=5.0.0'
@@ -5959,7 +5959,7 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/lib@5.13.0(typescript@5.9.3)':
+  '@socketsecurity/lib@5.15.0(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 
@@ -5970,7 +5970,7 @@ snapshots:
   '@socketsecurity/sdk@3.4.1(typescript@5.9.3)':
     dependencies:
       '@socketregistry/packageurl-js': 1.3.5
-      '@socketsecurity/lib': 5.13.0(typescript@5.9.3)
+      '@socketsecurity/lib': 5.15.0(typescript@5.9.3)
       form-data: 4.0.5
     transitivePeerDependencies:
       - typescript
