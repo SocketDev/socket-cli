@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@anthropic-ai/claude-code':
-      specifier: 2.1.89
-      version: 2.1.89
+      specifier: 2.1.92
+      version: 2.1.92
     '@babel/core':
       specifier: 7.28.4
       version: 7.28.4
@@ -332,7 +332,7 @@ importers:
     devDependencies:
       '@anthropic-ai/claude-code':
         specifier: 'catalog:'
-        version: 2.1.89
+        version: 2.1.92
       '@babel/core':
         specifier: 'catalog:'
         version: 7.28.4
@@ -788,8 +788,8 @@ packages:
     engines: {node: '>=20'}
     hasBin: true
 
-  '@anthropic-ai/claude-code@2.1.89':
-    resolution: {integrity: sha512-etjihHqVxj1RjS5Zu/o+rv3ojn1N7AWzfgIOCSSSncfyb4qJn9J677scj0LHIxtwzjgU7j1qAedXlXKxgkFG2w==}
+  '@anthropic-ai/claude-code@2.1.92':
+    resolution: {integrity: sha512-mNGw/IK3+1yHsQBeKaNtdTPCrQDkUEuNTJtm3OBTXs4bBkUVdIgRme/34ZnbZkl2VMMYPoNaTvqX2qJZ9EdSxQ==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -4435,7 +4435,7 @@ snapshots:
       tinyexec: 1.0.2
       tinyglobby: 0.2.15
 
-  '@anthropic-ai/claude-code@2.1.89':
+  '@anthropic-ai/claude-code@2.1.92':
     optionalDependencies:
       '@img/sharp-darwin-arm64': 0.34.5
       '@img/sharp-darwin-x64': 0.34.5
@@ -8161,7 +8161,7 @@ snapshots:
 
   which@5.0.0:
     dependencies:
-      isexe: 3.1.1
+      isexe: 3.1.5
 
   which@6.0.0:
     dependencies:
