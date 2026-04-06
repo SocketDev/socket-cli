@@ -18,14 +18,11 @@
  * - src/postinstallWrapper.mts (implementation)
  */
 
-import fs, { existsSync } from 'node:fs'
+import fs from 'node:fs'
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { postinstallWrapper } from '../../../../src/commands/wrapper/postinstall-wrapper.mts'
-
-// Mock the dependencies.
-vi.mock('node:fs')
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -67,18 +64,24 @@ vi.mock('../../../../src/utils/error/errors.mts', () => ({
 }))
 
 describe('postinstallWrapper', () => {
+  let existsSyncSpy: ReturnType<typeof vi.spyOn>
+
   beforeEach(() => {
     vi.clearAllMocks()
+    existsSyncSpy = vi.spyOn(fs, 'existsSync')
+  })
+
+  afterEach(() => {
+    existsSyncSpy.mockRestore()
   })
 
   it('skips setup when wrapper already enabled in bashrc', async () => {
     const { checkSocketWrapperSetup } =
       await import('../../../../src/commands/wrapper/check-socket-wrapper-setup.mts')
     const { confirm } = await import('@socketsecurity/lib/stdio/prompts')
-    const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
 
-    mockExistsSync.mockImplementation(
+    existsSyncSpy.mockImplementation(
       (path: string) => path === '/home/user/.bashrc',
     )
     mockCheckSetup.mockReturnValue(true)
@@ -93,10 +96,9 @@ describe('postinstallWrapper', () => {
     const { checkSocketWrapperSetup } =
       await import('../../../../src/commands/wrapper/check-socket-wrapper-setup.mts')
     const { confirm } = await import('@socketsecurity/lib/stdio/prompts')
-    const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
 
-    mockExistsSync.mockImplementation(
+    existsSyncSpy.mockImplementation(
       (path: string) => path === '/home/user/.zshrc',
     )
     mockCheckSetup.mockImplementation(
@@ -114,11 +116,10 @@ describe('postinstallWrapper', () => {
       await import('../../../../src/commands/wrapper/check-socket-wrapper-setup.mts')
     const { confirm } = await import('@socketsecurity/lib/stdio/prompts')
     await import('@socketsecurity/lib/logger')
-    const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
     const mockConfirm = vi.mocked(confirm)
 
-    mockExistsSync.mockReturnValue(false)
+    existsSyncSpy.mockReturnValue(false)
     mockCheckSetup.mockReturnValue(false)
     mockConfirm.mockResolvedValue(false)
 
@@ -143,12 +144,11 @@ describe('postinstallWrapper', () => {
     const { checkSocketWrapperSetup } =
       await import('../../../../src/commands/wrapper/check-socket-wrapper-setup.mts')
     const { confirm } = await import('@socketsecurity/lib/stdio/prompts')
-    const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
     const mockConfirm = vi.mocked(confirm)
     const _mockAddWrapper = vi.mocked(addSocketWrapper)
 
-    mockExistsSync.mockImplementation(
+    existsSyncSpy.mockImplementation(
       (path: string) => path === '/home/user/.bashrc',
     )
     mockCheckSetup.mockReturnValue(false)
@@ -165,11 +165,10 @@ describe('postinstallWrapper', () => {
     const { checkSocketWrapperSetup } =
       await import('../../../../src/commands/wrapper/check-socket-wrapper-setup.mts')
     const { confirm } = await import('@socketsecurity/lib/stdio/prompts')
-    const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
     const mockConfirm = vi.mocked(confirm)
 
-    mockExistsSync.mockReturnValue(true)
+    existsSyncSpy.mockReturnValue(true)
     mockCheckSetup.mockReturnValue(false)
     mockConfirm.mockResolvedValue(true)
 
@@ -185,12 +184,11 @@ describe('postinstallWrapper', () => {
     const { checkSocketWrapperSetup } =
       await import('../../../../src/commands/wrapper/check-socket-wrapper-setup.mts')
     const { confirm } = await import('@socketsecurity/lib/stdio/prompts')
-    const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
     const mockConfirm = vi.mocked(confirm)
     const mockAddWrapper = vi.mocked(addSocketWrapper)
 
-    mockExistsSync.mockReturnValue(true)
+    existsSyncSpy.mockReturnValue(true)
     mockCheckSetup.mockReturnValue(false)
     mockConfirm.mockResolvedValue(true)
     mockAddWrapper.mockImplementation(() => {
@@ -208,21 +206,18 @@ describe('postinstallWrapper', () => {
     await import('@socketsecurity/lib/logger')
     const { updateInstalledTabCompletionScript } =
       await import('../../../../src/commands/install/setup-tab-completion.mts')
-    const mockExistsSync = vi.mocked(existsSync) as any
-    const mockFsExistsSync = vi.mocked(fs.existsSync) as any
     const mockGetDetails = vi.mocked(getBashrcDetails)
     const mockUpdateScript = vi.mocked(updateInstalledTabCompletionScript)
     const { checkSocketWrapperSetup } =
       await import('../../../../src/commands/wrapper/check-socket-wrapper-setup.mts')
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
 
-    mockExistsSync.mockReturnValue(true)
+    existsSyncSpy.mockReturnValue(true)
     mockCheckSetup.mockReturnValue(true) // Wrapper already setup.
     mockGetDetails.mockReturnValue({
       ok: true,
       data: { targetPath: '/home/user/.config/socket/tab-completion.bash' },
     } as any)
-    mockFsExistsSync.mockReturnValue(true)
     mockUpdateScript.mockReturnValue({ ok: true } as any)
 
     await postinstallWrapper()
@@ -241,20 +236,20 @@ describe('postinstallWrapper', () => {
     await import('@socketsecurity/lib/logger')
     const { updateInstalledTabCompletionScript } =
       await import('../../../../src/commands/install/setup-tab-completion.mts')
-    const mockExistsSync = vi.mocked(existsSync) as any
-    const mockFsExistsSync = vi.mocked(fs.existsSync) as any
     const mockGetDetails = vi.mocked(getBashrcDetails)
     const { checkSocketWrapperSetup } =
       await import('../../../../src/commands/wrapper/check-socket-wrapper-setup.mts')
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
 
-    mockExistsSync.mockReturnValue(true)
+    existsSyncSpy.mockImplementation(
+      (p: string) =>
+        p !== '/home/user/.config/socket/tab-completion.bash',
+    )
     mockCheckSetup.mockReturnValue(true)
     mockGetDetails.mockReturnValue({
       ok: true,
       data: { targetPath: '/home/user/.config/socket/tab-completion.bash' },
     } as any)
-    mockFsExistsSync.mockReturnValue(false)
 
     await postinstallWrapper()
 
@@ -268,13 +263,12 @@ describe('postinstallWrapper', () => {
     const { getBashrcDetails } =
       await import('../../../../src/utils/cli/completion.mts')
     await import('@socketsecurity/lib/logger')
-    const mockExistsSync = vi.mocked(existsSync) as any
     const mockGetDetails = vi.mocked(getBashrcDetails)
     const { checkSocketWrapperSetup } =
       await import('../../../../src/commands/wrapper/check-socket-wrapper-setup.mts')
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
 
-    mockExistsSync.mockReturnValue(true)
+    existsSyncSpy.mockReturnValue(true)
     mockCheckSetup.mockReturnValue(true)
     mockGetDetails.mockImplementation(() => {
       throw new Error('Tab completion error')
@@ -291,13 +285,12 @@ describe('postinstallWrapper', () => {
     const { getBashrcDetails } =
       await import('../../../../src/utils/cli/completion.mts')
     await import('@socketsecurity/lib/logger')
-    const mockExistsSync = vi.mocked(existsSync) as any
     const mockGetDetails = vi.mocked(getBashrcDetails)
     const { checkSocketWrapperSetup } =
       await import('../../../../src/commands/wrapper/check-socket-wrapper-setup.mts')
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
 
-    mockExistsSync.mockReturnValue(true)
+    existsSyncSpy.mockReturnValue(true)
     mockCheckSetup.mockReturnValue(true)
     mockGetDetails.mockReturnValue({ ok: false, message: 'Not found' } as any)
 

@@ -1,4 +1,4 @@
-import fs, { existsSync } from 'node:fs'
+import fs from 'node:fs'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
@@ -16,8 +16,8 @@ export async function postinstallWrapper() {
   const bashRcPath = getBashRcPath()
   const zshRcPath = getZshRcPath()
   const socketWrapperEnabled =
-    (existsSync(bashRcPath) && checkSocketWrapperSetup(bashRcPath)) ||
-    (existsSync(zshRcPath) && checkSocketWrapperSetup(zshRcPath))
+    (fs.existsSync(bashRcPath) && checkSocketWrapperSetup(bashRcPath)) ||
+    (fs.existsSync(zshRcPath) && checkSocketWrapperSetup(zshRcPath))
 
   if (!socketWrapperEnabled) {
     await setupSocketWrapper(
@@ -78,10 +78,10 @@ async function setupSocketWrapper(query: string): Promise<void> {
     const bashRcPath = getBashRcPath()
     const zshRcPath = getZshRcPath()
     try {
-      if (existsSync(bashRcPath)) {
+      if (fs.existsSync(bashRcPath)) {
         await addSocketWrapper(bashRcPath)
       }
-      if (existsSync(zshRcPath)) {
+      if (fs.existsSync(zshRcPath)) {
         await addSocketWrapper(zshRcPath)
       }
     } catch (e) {
