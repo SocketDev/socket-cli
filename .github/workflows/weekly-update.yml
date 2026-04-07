@@ -293,6 +293,21 @@ jobs:
             --head "$BRANCH_NAME" \
             --base main
 
+      # Pushes made with GITHUB_TOKEN don't trigger other workflows.
+      # Close/reopen the PR to generate a pull_request.reopened event,
+      # which triggers required CI and enterprise audit workflows.
+      - name: Trigger CI checks
+        if: steps.final.outputs.success == 'true' && steps.validate.outputs.valid == 'true' && steps.changes.outputs.has-changes == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+        run: |
+          pr_number=$(gh pr list --head "$BRANCH_NAME" --json number --jq '.[0].number')
+          if [ -n "$pr_number" ]; then
+            gh pr close "$pr_number"
+            gh pr reopen "$pr_number"
+          fi
+
       - name: Add job summary
         if: steps.final.outputs.success == 'true' && steps.validate.outputs.valid == 'true' && steps.changes.outputs.has-changes == 'true'
         env:
