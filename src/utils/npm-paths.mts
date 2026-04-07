@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import Module from 'node:module'
 import path from 'node:path'
 
+import { resolveBinPathSync } from '@socketsecurity/registry/lib/bin'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants, { NODE_MODULES, NPM } from '../constants.mts'
@@ -19,6 +20,23 @@ function exitWithBinPathError(binName: string): never {
   throw new Error('process.exit called')
 }
 
+// Find a binary next to the running node binary (process.execPath).
+// This avoids picking up a project-local binary from node_modules/.bin
+// on PATH, e.g. the standalone "npx" package which bundles npm@5.1.0
+// that is incompatible with Node 22+.
+function findBinNextToNode(binName: string): string | undefined {
+  const nodeDir = path.dirname(process.execPath)
+  const binPath = path.join(nodeDir, binName)
+  if (existsSync(binPath)) {
+    try {
+      return resolveBinPathSync(binPath)
+    } catch {
+      return undefined
+    }
+  }
+  return undefined
+}
+
 let _npmBinPath: string | undefined
 export function getNpmBinPath(): string {
   if (_npmBinPath === undefined) {
@@ -33,7 +51,14 @@ export function getNpmBinPath(): string {
 let _npmBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
 function getNpmBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
   if (_npmBinPathDetails === undefined) {
-    _npmBinPathDetails = findBinPathDetailsSync(NPM)
+    // First try to find npm next to the node binary to avoid picking up
+    // a project-local npm from node_modules/.bin on PATH.
+    const npmNextToNode = findBinNextToNode(NPM)
+    if (npmNextToNode) {
+      _npmBinPathDetails = { name: NPM, path: npmNextToNode, shadowed: false }
+    } else {
+      _npmBinPathDetails = findBinPathDetailsSync(NPM)
+    }
   }
   return _npmBinPathDetails
 }
@@ -95,7 +120,16 @@ export function getNpxBinPath(): string {
 let _npxBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
 function getNpxBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
   if (_npxBinPathDetails === undefined) {
-    _npxBinPathDetails = findBinPathDetailsSync('npx')
+    // First try to find npx next to the node binary to avoid picking up
+    // a project-local npx from node_modules/.bin on PATH (e.g., the
+    // standalone npx package which bundles npm@5.1.0, incompatible
+    // with Node 22+).
+    const npxNextToNode = findBinNextToNode('npx')
+    if (npxNextToNode) {
+      _npxBinPathDetails = { name: 'npx', path: npxNextToNode, shadowed: false }
+    } else {
+      _npxBinPathDetails = findBinPathDetailsSync('npx')
+    }
   }
   return _npxBinPathDetails
 }
