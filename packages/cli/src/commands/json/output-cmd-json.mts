@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import fs from 'node:fs'
 import path from 'node:path'
 
 import { safeReadFileSync, safeStatsSync } from '@socketsecurity/lib/fs'
@@ -16,7 +16,7 @@ export async function outputCmdJson(cwd: string) {
   const sockJsonPath = path.join(cwd, SOCKET_JSON)
   const tildeSockJsonPath = VITEST ? REDACTED : tildify(sockJsonPath)
 
-  if (!existsSync(sockJsonPath)) {
+  if (!fs.existsSync(sockJsonPath)) {
     logger.fail(`Not found: ${tildeSockJsonPath}`)
     process.exitCode = 1
     return
