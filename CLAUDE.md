@@ -77,6 +77,7 @@
 - Always prefer editing existing files
 - Forbidden to create docs unless requested
 - Required to do exactly what was asked
+- NEVER use `npx`, `pnpm dlx`, or `yarn dlx` — use `pnpm exec` or `pnpm run` with pinned devDeps
 
 ## ROLE
 
@@ -493,6 +494,17 @@ The file system is working memory. Use it actively:
 - Implement changes yourself after understanding Codex's advice
 - **Proactive consultation**: Before diving deep into a complex optimization (>30min estimated), consult Codex for critical analysis first — this catches fundamental design flaws early
 - **Bounce ideas**: Use Codex as a sounding board when stuck — describe the problem, what you've tried, and ask for honest assessment of whether the approach is worth continuing
+
+## Agents & Skills
+
+Reusable automation infrastructure lives in `.claude/`:
+
+- **Agents** (`.claude/agents/`): Specialized sub-agent definitions (code-reviewer, security-reviewer, refactor-cleaner)
+- **Skills** (`.claude/skills/`): Multi-phase pipelines with shared components in `_shared/`
+- **Ops** (`.claude/ops/queue.yaml`): Pipeline run tracking and phase ordering
+- **Commands** (`.claude/commands/`): Slash-command entry points that invoke skills
+
+Skills reference shared components (`env-check`, `verify-build`, `security-tools`, `report-format`) and can spawn agents for specialized work. Pipeline state is tracked in `queue.yaml`.
 
 ## Quality Standards
 
