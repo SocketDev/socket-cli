@@ -59,7 +59,7 @@ jobs:
 
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
-      - uses: SocketDev/socket-registry/.github/actions/install@6147a08ccc20fcb1f690dcc4650ec745776b3345 # main
+      - uses: SocketDev/socket-registry/.github/actions/install@8d54162f37b88ef2970a892b6c619b7c064f0c23 # main
 
       - name: Build CLI
         shell: bash
@@ -106,7 +106,7 @@ jobs:
 
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
-      - uses: SocketDev/socket-registry/.github/actions/install@6147a08ccc20fcb1f690dcc4650ec745776b3345 # main
+      - uses: SocketDev/socket-registry/.github/actions/install@8d54162f37b88ef2970a892b6c619b7c064f0c23 # main
 
       - name: Download CLI bundle
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
@@ -162,7 +162,7 @@ jobs:
 
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
-      - uses: SocketDev/socket-registry/.github/actions/install@6147a08ccc20fcb1f690dcc4650ec745776b3345 # main
+      - uses: SocketDev/socket-registry/.github/actions/install@8d54162f37b88ef2970a892b6c619b7c064f0c23 # main
 
       # Get versions for lock-stepped and independent packages.
       - name: Get versions
