@@ -59,6 +59,7 @@ jobs:
     if: needs.check-updates.outputs.has-updates == 'true' && inputs.dry-run != true
     runs-on: ubuntu-latest
     permissions:
+      actions: write
       contents: write
       pull-requests: write
     steps:
@@ -293,20 +294,16 @@ jobs:
             --head "$BRANCH_NAME" \
             --base main
 
-      # Pushes made with GITHUB_TOKEN don't trigger other workflows.
-      # Close/reopen the PR to generate a pull_request.reopened event,
-      # which triggers required CI and enterprise audit workflows.
+      # Events triggered by GITHUB_TOKEN don't create new workflow runs,
+      # with the exception of workflow_dispatch and repository_dispatch.
+      # Use workflow_dispatch to trigger CI on the newly pushed branch.
       - name: Trigger CI checks
         if: steps.final.outputs.success == 'true' && steps.validate.outputs.valid == 'true' && steps.changes.outputs.has-changes == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           BRANCH_NAME: ${{ steps.branch.outputs.branch }}
         run: |
-          pr_number=$(gh pr list --head "$BRANCH_NAME" --json number --jq '.[0].number')
-          if [ -n "$pr_number" ]; then
-            gh pr close "$pr_number"
-            gh pr reopen "$pr_number"
-          fi
+          gh workflow run ci.yml --ref "$BRANCH_NAME"
 
       - name: Add job summary
         if: steps.final.outputs.success == 'true' && steps.validate.outputs.valid == 'true' && steps.changes.outputs.has-changes == 'true'
