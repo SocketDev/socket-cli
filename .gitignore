@@ -74,9 +74,11 @@ yarn-error.log*
 # ============================================================================
 *.log
 **/build/*.log
-**/.claude/*
-!**/.claude/skills/
-!**/.claude/commands/
+/.claude/*
+!/.claude/agents/
+!/.claude/commands/
+!/.claude/ops/
+!/.claude/skills/
 
 # ============================================================================
 # Backup and temporary files

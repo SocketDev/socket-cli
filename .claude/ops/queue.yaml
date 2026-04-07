@@ -1,0 +1,11 @@
+schema_version: 1
+
+phase_order:
+  quality-scan: [env-check, scans, report]
+  security-scan: [env-check, agentshield, zizmor, grade-report]
+  updating: [env-check, npm-update, validate, report]
+  updating-checksums: [env-check, fetch-latest, validate, report]
+
+# Completed runs are appended here by skills. Prune periodically —
+# keep the last 10 entries and delete older ones to avoid unbounded growth.
+runs: []
