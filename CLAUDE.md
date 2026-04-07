@@ -77,7 +77,7 @@
 - Always prefer editing existing files
 - Forbidden to create docs unless requested
 - Required to do exactly what was asked
-- NEVER use `npx`, `pnpm dlx`, or `yarn dlx` — use `pnpm exec` or `pnpm run` with pinned devDeps
+- 🚨 **NEVER use `npx`, `pnpm dlx`, or `yarn dlx`** — use `pnpm exec <package>` for devDep binaries, or `pnpm run <script>` for package.json scripts. If a tool is needed, add it as a pinned devDependency first.
 
 ## ROLE
 
@@ -497,14 +497,12 @@ The file system is working memory. Use it actively:
 
 ## Agents & Skills
 
-Reusable automation infrastructure lives in `.claude/`:
-
-- **Agents** (`.claude/agents/`): Specialized sub-agent definitions (code-reviewer, security-reviewer, refactor-cleaner)
-- **Skills** (`.claude/skills/`): Multi-phase pipelines with shared components in `_shared/`
-- **Ops** (`.claude/ops/queue.yaml`): Pipeline run tracking and phase ordering
-- **Commands** (`.claude/commands/`): Slash-command entry points that invoke skills
-
-Skills reference shared components (`env-check`, `verify-build`, `security-tools`, `report-format`) and can spawn agents for specialized work. Pipeline state is tracked in `queue.yaml`.
+- `/security-scan` — runs AgentShield + zizmor security audit
+- `/quality-scan` — comprehensive code quality analysis
+- `/quality-loop` — scan and fix iteratively
+- Agents: `code-reviewer`, `security-reviewer`, `refactor-cleaner` (in `.claude/agents/`)
+- Shared subskills in `.claude/skills/_shared/`
+- Pipeline state tracked in `.claude/ops/queue.yaml`
 
 ## Quality Standards
 

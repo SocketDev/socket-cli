@@ -1,55 +1,21 @@
-# quality-loop
+Run the `/quality-scan` skill and fix all issues found. Repeat until zero issues remain or 5 iterations complete.
 
-Run comprehensive quality scan and automatic issue fixing loop for socket-cli.
-
-## What it does
-
-Executes an iterative quality improvement cycle:
-
-1. Updates dependencies
-2. Cleans up repository (removes junk files)
-3. Validates code structure
-4. Runs specialized quality scans
-5. Fixes ALL issues found
-6. Commits fixes
-7. Repeats until zero issues or 5 iterations
-
-## Usage
-
-```bash
-/quality-loop
-```
-
-## Scan types
-
-- **critical** - Crashes, security, data corruption, auth handling
-- **logic** - Algorithm errors, edge cases, validation bugs
-- **cache** - Config/token caching correctness
-- **workflow** - Build scripts, CI/CD, cross-platform compatibility
-- **security** - GitHub Actions security, credential handling
-- **documentation** - Command examples, flag accuracy, API docs
+**Interactive only** — this command makes code changes and commits. Do not use as an automated pipeline gate.
 
 ## Process
 
-The skill will:
-- Ask which scans to run (default: all)
-- Run dependency updates
-- Clean junk files with confirmation
-- Execute selected scans sequentially
-- Aggregate and deduplicate findings
-- Fix issues and commit changes
-- Repeat until clean or max iterations
+1. Run `/quality-scan` skill (all scan types)
+2. If issues found: spawn the `refactor-cleaner` agent (see `agents/refactor-cleaner.md`) to fix them, grouped by category
+3. Run verify-build (see `_shared/verify-build.md`) after fixes
+4. Run `/quality-scan` again
+5. Repeat until:
+   - Zero issues found (success), OR
+   - 5 iterations completed (stop)
+6. Commit all fixes: `fix: resolve quality scan issues (iteration N)`
 
-## Exit conditions
+## Rules
 
-- ✅ Success: Zero issues found
-- ⏹️ Stop: After 5 iterations (prevent infinite loops)
-
-## Notes
-
-- Commits fixes with proper git messages
-- Skips no issues (fixes architectural problems too)
-- Runs tests after each iteration
-- Reports progress and statistics
-
-Use this command to maintain high code quality standards across socket-cli.
+- Fix every issue, not just easy ones
+- Spawn refactor-cleaner with CLAUDE.md's pre-action protocol: dead code first, then structural changes, ≤5 files per phase
+- Run tests after fixes to verify nothing broke
+- Track iteration count and report progress

@@ -1,4 +1,4 @@
-You are a refactoring specialist for a Node.js/TypeScript monorepo (socket-registry).
+You are a refactoring specialist for a Node.js/TypeScript monorepo (socket-cli).
 
 Apply these rules from CLAUDE.md exactly:
 

@@ -79,6 +79,7 @@ catalog:
   emoji-regex: 10.6.0
   es-define-property: npm:@socketregistry/es-define-property@^1.0.7
   es-set-tostringtag: npm:@socketregistry/es-set-tostringtag@^1.0.10
+  ecc-agentshield: 1.4.0
   esbuild: 0.25.11
   fast-glob: 3.3.3
   fast-xml-parser: 5.5.1
