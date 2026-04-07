@@ -18,7 +18,7 @@
  * - Supports both read and write operations
  */
 
-import { existsSync, promises as fs, readFileSync } from 'node:fs'
+import fs from 'node:fs'
 import path from 'node:path'
 
 import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
@@ -127,14 +127,14 @@ export async function readSocketJson(
   defaultOnError = false,
 ): Promise<CResult<SocketJson>> {
   const sockJsonPath = path.join(cwd, SOCKET_JSON)
-  if (!existsSync(sockJsonPath)) {
+  if (!fs.existsSync(sockJsonPath)) {
     debugNs('notice', `miss: ${SOCKET_JSON} not found at ${cwd}`)
     return { ok: true, data: getDefaultSocketJson() }
   }
 
   let json = null
   try {
-    json = await fs.readFile(sockJsonPath, 'utf8')
+    json = await fs.promises.readFile(sockJsonPath, 'utf8')
   } catch (e) {
     if (defaultOnError) {
       logger.warn(`Failed to read ${SOCKET_JSON}, using default`)
@@ -188,13 +188,13 @@ export function readSocketJsonSync(
   defaultOnError = false,
 ): CResult<SocketJson> {
   const sockJsonPath = path.join(cwd, SOCKET_JSON)
-  if (!existsSync(sockJsonPath)) {
+  if (!fs.existsSync(sockJsonPath)) {
     debugNs('notice', `miss: ${SOCKET_JSON} not found at ${cwd}`)
     return { ok: true, data: getDefaultSocketJson() }
   }
   let jsonContent = null
   try {
-    jsonContent = readFileSync(sockJsonPath, 'utf8')
+    jsonContent = fs.readFileSync(sockJsonPath, 'utf8')
   } catch (e) {
     if (defaultOnError) {
       logger.warn(`Failed to read ${SOCKET_JSON}, using default`)
@@ -262,7 +262,7 @@ export async function writeSocketJson(
   }
 
   const filepath = path.join(cwd, SOCKET_JSON)
-  await fs.writeFile(filepath, `${jsonContent}\n`, 'utf8')
+  await fs.promises.writeFile(filepath, `${jsonContent}\n`, 'utf8')
 
   return { ok: true, data: undefined }
 }

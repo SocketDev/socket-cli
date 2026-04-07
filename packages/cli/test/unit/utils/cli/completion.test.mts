@@ -13,21 +13,11 @@
  * - utils/cli/completion.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import fs from 'node:fs'
 
-// Mock fs.existsSync.
-const mockExistsSync = vi.hoisted(() => vi.fn())
-vi.mock('node:fs', async importOriginal => {
-  const actual = (await importOriginal()) as typeof import('node:fs')
-  return {
-    ...actual,
-    default: {
-      ...actual,
-      existsSync: mockExistsSync,
-    },
-    existsSync: mockExistsSync,
-  }
-})
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+let mockExistsSync: ReturnType<typeof vi.spyOn>
 
 // Mock getSocketAppDataPath.
 const mockGetSocketAppDataPath = vi.hoisted(() => vi.fn())
@@ -49,6 +39,11 @@ import {
 describe('cli/completion', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockExistsSync = vi.spyOn(fs, 'existsSync')
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   describe('COMPLETION_CMD_PREFIX', () => {

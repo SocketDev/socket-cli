@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import fs from 'node:fs'
 
 import yaml from 'js-yaml'
 import semver from 'semver'
@@ -88,7 +88,9 @@ export function parsePnpmLockfileVersion(version: unknown): SemVer | undefined {
 export async function readPnpmLockfile(
   lockfilePath: string,
 ): Promise<string | undefined> {
-  return existsSync(lockfilePath) ? await readFileUtf8(lockfilePath) : undefined
+  return fs.existsSync(lockfilePath)
+    ? await readFileUtf8(lockfilePath)
+    : undefined
 }
 
 export function stripLeadingPnpmDepPathSlash(depPath: string): string {

@@ -18,7 +18,9 @@
  * - utils/ecosystem/environment.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import fs from 'node:fs'
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   AGENTS,
@@ -27,7 +29,7 @@ import {
 } from '../../../../src/utils/ecosystem/environment.mts'
 
 // Mock the dependencies.
-const mockExistsSync = vi.hoisted(() => vi.fn())
+let mockExistsSync: ReturnType<typeof vi.spyOn>
 const mockDefault = vi.hoisted(() => vi.fn())
 const mockParse = vi.hoisted(() => vi.fn())
 const mockValid = vi.hoisted(() => vi.fn())
@@ -36,14 +38,6 @@ const mockMajor = vi.hoisted(() => vi.fn())
 const mockMinor = vi.hoisted(() => vi.fn())
 const mockPatch = vi.hoisted(() => vi.fn())
 const mockCoerce = vi.hoisted(() => vi.fn())
-
-vi.mock('node:fs', async importOriginal => {
-  const actual = (await importOriginal()) as any
-  return {
-    ...actual,
-    existsSync: mockExistsSync,
-  }
-})
 
 vi.mock('browserslist', () => ({
   default: mockDefault.mockReturnValue([]),
@@ -98,6 +92,7 @@ vi.mock('semver', () => ({
 describe('package-environment', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockExistsSync = vi.spyOn(fs, 'existsSync')
     // Default mock behavior for spawn to get package manager version.
     mockSpawn.mockResolvedValue({ stdout: '10.0.0', stderr: '', code: 0 })
     // Default mock behavior for toEditablePackageJson.
@@ -105,6 +100,10 @@ describe('package-environment', () => {
       content: pkgJson,
       path: '/project/package.json',
     }))
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   describe('AGENTS', () => {

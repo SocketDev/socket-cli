@@ -24,7 +24,7 @@
  * - Configuring concurrent execution limits
  */
 
-import { existsSync, readFileSync } from 'node:fs'
+import fs from 'node:fs'
 import path from 'node:path'
 
 import browserslist from 'browserslist'
@@ -257,13 +257,13 @@ const LOCKS: Record<string, Agent> = {
 function resolveBinPathSync(binPath: string): string {
   // Simple implementation that tries to resolve a bin path to its actual entry point.
   // This is used on Windows to resolve shims like `npm` or `npm.cmd` to their .js entry point.
-  if (!existsSync(binPath)) {
+  if (!fs.existsSync(binPath)) {
     return binPath
   }
 
   try {
     // Try to read the file synchronously
-    const content = readFileSync(binPath, 'utf8')
+    const content = fs.readFileSync(binPath, 'utf8')
     // Look for common patterns in npm/node shims:
     // - node "C:\path\to\npm-cli.js" "$@"
     // - "%_prog%"  "%dp0%\node_modules\npm\bin\npm-cli.js" %*
@@ -309,7 +309,7 @@ function preferWindowsCmdShim(binPath: string, binName: string): string {
   const cmdShim = path.join(path.dirname(binPath), `${binName}.cmd`)
 
   // Ensure shim exists, otherwise fallback to binPath
-  return existsSync(cmdShim) ? cmdShim : binPath
+  return fs.existsSync(cmdShim) ? cmdShim : binPath
 }
 
 async function getAgentExecPath(agent: Agent): Promise<string> {
@@ -317,7 +317,7 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
   if (binName === NPM) {
     // Try to use getNpmExecPath() first, but verify it exists.
     const npmPath = preferWindowsCmdShim(await getNpmExecPath(), NPM)
-    if (existsSync(npmPath)) {
+    if (fs.existsSync(npmPath)) {
       return npmPath
     }
     // If getNpmExecPath() doesn't exist, try common locations.
@@ -325,12 +325,12 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
     const nodeDir = path.dirname(process.execPath)
     if (WIN32) {
       const npmCmdInNodeDir = path.join(nodeDir, `${NPM}.cmd`)
-      if (existsSync(npmCmdInNodeDir)) {
+      if (fs.existsSync(npmCmdInNodeDir)) {
         return npmCmdInNodeDir
       }
     }
     const npmInNodeDir = path.join(nodeDir, NPM)
-    if (existsSync(npmInNodeDir)) {
+    if (fs.existsSync(npmInNodeDir)) {
       return preferWindowsCmdShim(npmInNodeDir, NPM)
     }
     // Fall back to which.
@@ -343,7 +343,7 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
   if (binName === PNPM) {
     // Try to use getPnpmExecPath() first, but verify it exists.
     const pnpmPath = await getPnpmExecPath()
-    if (existsSync(pnpmPath)) {
+    if (fs.existsSync(pnpmPath)) {
       return pnpmPath
     }
     // Fall back to which.
@@ -452,7 +452,7 @@ export async function detectPackageEnvironment({
       )
     : await findUp(PACKAGE_JSON, { cwd })
   const pkgPath =
-    pkgJsonPath && existsSync(pkgJsonPath)
+    pkgJsonPath && fs.existsSync(pkgJsonPath)
       ? path.dirname(pkgJsonPath)
       : undefined
   const pkgJson = pkgPath ? await readPackageJson(pkgPath) : undefined

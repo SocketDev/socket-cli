@@ -104,34 +104,7 @@ async function main() {
       logger.info('Starting watch mode...')
     }
 
-    // First download yoga WASM (only needed asset for CLI bundle).
-    const extractResult = await spawn(
-      'node',
-      [...NODE_MEMORY_FLAGS, 'scripts/download-assets.mjs', 'yoga'],
-      {
-        shell: WIN32,
-        stdio: 'inherit',
-      },
-    )
-
-    if (!extractResult) {
-      const error = new Error('Failed to start asset download process')
-      logger.error(error.message)
-      process.exitCode = 1
-      throw error
-    }
-
-    if (extractResult.code !== 0) {
-      const exitCode = extractResult.code ?? 1
-      const error = new Error(
-        `Asset download failed with exit code ${extractResult.code ?? 'unknown'}`,
-      )
-      logger.error(error.message)
-      process.exitCode = exitCode
-      throw error
-    }
-
-    // Then start esbuild in watch mode.
+    // Start esbuild in watch mode.
     const watchResult = await spawn(
       'node',
       [...NODE_MEMORY_FLAGS, '.config/esbuild.cli.mjs', '--watch'],

@@ -5,7 +5,7 @@
  * Usage:
  *   node scripts/download-assets.mjs [asset-names...] [options]
  *   node scripts/download-assets.mjs                 # Download all assets (parallel)
- *   node scripts/download-assets.mjs yoga models     # Download specific assets (parallel)
+ *   node scripts/download-assets.mjs models           # Download specific assets (parallel)
  *   node scripts/download-assets.mjs --no-parallel   # Download all assets (sequential)
  *
  * Assets:
@@ -13,7 +13,6 @@
  *   iocraft   - iocraft native bindings (.node files)
  *   models    - AI models tar.gz (MiniLM, CodeT5)
  *   node-smol - Minimal Node.js binaries
- *   yoga      - Yoga layout WASM (yoga-sync.mjs)
  */
 
 import { existsSync, promises as fs } from 'node:fs'
@@ -25,11 +24,6 @@ import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { downloadSocketBtmRelease } from '@socketsecurity/lib/releases/socket-btm'
 import { spawn } from '@socketsecurity/lib/spawn'
-
-import {
-  computeFileHash,
-  generateHeader,
-} from './utils/socket-btm-releases.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -94,36 +88,13 @@ const ASSETS = {
     name: 'node-smol',
     type: 'binary',
   },
-  yoga: {
-    description: 'Yoga layout WASM',
-    download: {
-      asset: 'yoga-sync-*.mjs',
-      cwd: rootPath,
-      downloadDir: '../../packages/build-infra/build/downloaded',
-      quiet: false,
-      tool: 'yoga-layout',
-    },
-    name: 'yoga',
-    process: {
-      format: 'javascript',
-      outputPath: path.join(rootPath, 'build/yoga-sync.mjs'),
-    },
-    type: 'processed',
-  },
 }
 
 /**
  * Download a single asset.
  */
 async function downloadAsset(config) {
-  const {
-    description,
-    download,
-    extract,
-    name,
-    process: processConfig,
-    type,
-  } = config
+  const { description, download, extract, name, type } = config
 
   try {
     logger.group(`Extracting ${name} from socket-btm releases...`)
@@ -149,8 +120,6 @@ async function downloadAsset(config) {
     // Process based on asset type.
     if (type === 'archive' && extract) {
       await extractArchive(assetPath, extract, name)
-    } else if (type === 'processed' && processConfig) {
-      await processAsset(assetPath, processConfig, name)
     }
 
     logger.groupEnd()
@@ -219,106 +188,6 @@ async function extractArchive(tarGzPath, extractConfig, assetName) {
 
   // Write version file with release tag.
   await fs.writeFile(versionPath, tag, 'utf-8')
-}
-
-/**
- * Transform yoga-sync.mjs to remove top-level await for CJS compatibility.
- *
- * The newer yoga-sync builds incorrectly use top-level await which isn't
- * compatible with esbuild's CJS output format. Despite the name, yogaPromise
- * is synchronous (-sWASM_ASYNC_COMPILATION=0), so we can call it directly.
- */
-function transformYogaSync(content) {
-  // Pattern: const Yoga = wrapAssembly(await yogaPromise);
-  // Transform to: const Yoga = wrapAssembly(yogaPromise);
-  // (yogaPromise is synchronous despite its name)
-  const hasTopLevelAwait = content.includes('wrapAssembly(await yogaPromise)')
-  if (!hasTopLevelAwait) {
-    return content
-  }
-
-  // Replace the top-level await pattern with synchronous call.
-  return content.replace(
-    /const Yoga = wrapAssembly\(await yogaPromise\);/,
-    'const Yoga = wrapAssembly(yogaPromise);',
-  )
-}
-
-/**
- * Process and transform asset (e.g., add header to JS file).
- */
-async function processAsset(assetPath, processConfig, assetName) {
-  const { outputPath } = processConfig
-
-  // Check if extraction needed by comparing version.
-  const assetDir = path.dirname(assetPath)
-  const sourceVersionPath = path.join(assetDir, '.version')
-  const outputVersionPath = path.join(
-    path.dirname(outputPath),
-    `${path.basename(outputPath, path.extname(outputPath))}.version`,
-  )
-
-  if (
-    existsSync(outputVersionPath) &&
-    existsSync(outputPath) &&
-    existsSync(sourceVersionPath)
-  ) {
-    const cachedVersion = (await fs.readFile(outputVersionPath, 'utf8')).trim()
-    const sourceVersion = (await fs.readFile(sourceVersionPath, 'utf8')).trim()
-    if (cachedVersion === sourceVersion) {
-      logger.info(`${assetName} already up to date`)
-      return
-    }
-
-    logger.info(`${assetName} version changed, re-extracting...`)
-  }
-
-  // Read the downloaded asset.
-  let content = await fs.readFile(assetPath, 'utf-8')
-
-  // Transform yoga-sync to remove top-level await for CJS compatibility.
-  if (assetName === 'yoga') {
-    content = transformYogaSync(content)
-  }
-
-  // Compute source hash for cache validation.
-  const sourceHash = await computeFileHash(assetPath)
-
-  // Get tag from source version file.
-  if (!existsSync(sourceVersionPath)) {
-    throw new Error(
-      `Source version file not found: ${sourceVersionPath}. ` +
-        'Please download assets first using the build system.',
-    )
-  }
-
-  const tag = (await fs.readFile(sourceVersionPath, 'utf8')).trim()
-  if (!tag || tag.length === 0) {
-    throw new Error(
-      `Invalid version file content at ${sourceVersionPath}. ` +
-        'Please re-download assets.',
-    )
-  }
-
-  // Generate output file with header.
-  const header = generateHeader({
-    assetName: path.basename(assetPath),
-    scriptName: 'scripts/download-assets.mjs',
-    sourceHash,
-    tag,
-  })
-
-  const output = `${header}
-
-${content}
-`
-
-  // Ensure build directory exists before writing.
-  await fs.mkdir(path.dirname(outputPath), { recursive: true })
-  await fs.writeFile(outputPath, output, 'utf-8')
-
-  // Write version file.
-  await fs.writeFile(outputVersionPath, tag, 'utf-8')
 }
 
 /**

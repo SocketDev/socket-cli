@@ -13,23 +13,16 @@
  * - constants/agents.mts (implementation)
  */
 
+import fs from 'node:fs'
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies using hoisted mocks.
 const mockWhichReal = vi.hoisted(() => vi.fn())
-const mockExistsSync = vi.hoisted(() => vi.fn())
 
 vi.mock('@socketsecurity/lib/bin', () => ({
   whichReal: mockWhichReal,
 }))
-
-vi.mock('node:fs', async () => {
-  const actual = await vi.importActual('node:fs')
-  return {
-    ...actual,
-    existsSync: mockExistsSync,
-  }
-})
 
 import {
   BUN,
@@ -46,8 +39,11 @@ import {
 } from '../../../src/constants/agents.mts'
 
 describe('agents constants', () => {
+  let mockExistsSync: ReturnType<typeof vi.spyOn>
+
   beforeEach(() => {
     vi.clearAllMocks()
+    mockExistsSync = vi.spyOn(fs, 'existsSync')
   })
 
   afterEach(() => {

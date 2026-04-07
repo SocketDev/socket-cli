@@ -12,26 +12,7 @@ const logger = getDefaultLogger()
 
 async function main() {
   try {
-    // Step 1: Download yoga WASM.
-    logger.step('Downloading yoga WASM')
-    const extractResult = await spawn(
-      'node',
-      ['--max-old-space-size=8192', 'scripts/download-assets.mjs', 'yoga'],
-      { stdio: 'inherit' },
-    )
-
-    if (!extractResult) {
-      logger.error('Failed to start asset download')
-      process.exitCode = 1
-      return
-    }
-
-    if (extractResult.code !== 0) {
-      process.exitCode = extractResult.code
-      return
-    }
-
-    // Step 2: Build with esbuild.
+    // Step 1: Build with esbuild.
     logger.step('Building CLI bundle')
     const buildResult = await spawn(
       'node',

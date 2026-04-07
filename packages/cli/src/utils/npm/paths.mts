@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import fs from 'node:fs'
 import Module from 'node:module'
 import path from 'node:path'
 
@@ -81,7 +81,7 @@ export function getNpmRequire(): NodeJS.Require {
     const npmNmPath = path.join(npmDirPath, `${NODE_MODULES}/npm`)
     _npmRequire = Module.createRequire(
       path.join(
-        existsSync(npmNmPath) ? npmNmPath : npmDirPath,
+        fs.existsSync(npmNmPath) ? npmNmPath : npmDirPath,
         '<dummy-basename>',
       ),
     )

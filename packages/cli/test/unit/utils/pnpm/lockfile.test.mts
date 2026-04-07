@@ -18,7 +18,9 @@
  * - utils/pnpm/lockfile.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import fs from 'node:fs'
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   extractOverridesFromPnpmLockSrc,
@@ -32,12 +34,8 @@ import {
 } from '../../../../src/utils/pnpm/lockfile.mts'
 
 // Mock fs module.
-const mockExistsSync = vi.hoisted(() => vi.fn())
+let mockExistsSync: ReturnType<typeof vi.spyOn>
 const mockReadFileUtf8 = vi.hoisted(() => vi.fn())
-
-vi.mock('node:fs', () => ({
-  existsSync: mockExistsSync,
-}))
 
 // Mock registry modules.
 vi.mock('@socketsecurity/lib/fs', () => ({
@@ -47,6 +45,11 @@ vi.mock('@socketsecurity/lib/fs', () => ({
 describe('pnpm utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockExistsSync = vi.spyOn(fs, 'existsSync')
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   describe('extractOverridesFromPnpmLockSrc', () => {
@@ -169,22 +172,16 @@ packages: {}`
 
   describe('readPnpmLockfile', () => {
     it('reads existing lockfile', async () => {
-      const { existsSync } = await import('node:fs')
-      const { readFileUtf8 } = await import('@socketsecurity/lib/fs')
-
       mockExistsSync.mockReturnValue(true)
       mockReadFileUtf8.mockResolvedValue('lockfile content')
 
       const result = await readPnpmLockfile('/path/to/pnpm-lock.yaml')
       expect(result).toBe('lockfile content')
-      expect(existsSync).toHaveBeenCalledWith('/path/to/pnpm-lock.yaml')
-      expect(readFileUtf8).toHaveBeenCalledWith('/path/to/pnpm-lock.yaml')
+      expect(fs.existsSync).toHaveBeenCalledWith('/path/to/pnpm-lock.yaml')
+      expect(mockReadFileUtf8).toHaveBeenCalledWith('/path/to/pnpm-lock.yaml')
     })
 
     it('returns undefined for non-existent lockfile', async () => {
-      // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
-      const { existsSync } = await import('node:fs')
-
       mockExistsSync.mockReturnValue(false)
 
       const result = await readPnpmLockfile('/path/to/missing.yaml')

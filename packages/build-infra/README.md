@@ -40,7 +40,7 @@ Shared build infrastructure utilities for Socket CLI. Provides esbuild plugins, 
 This package centralizes build-time utilities that are shared across multiple Socket CLI build configurations. It provides:
 
 1. **esbuild plugins** for code transformations required by SEA (Single Executable Application) binaries
-2. **GitHub release utilities** for downloading node-smol, yoga-wasm, and other build dependencies
+2. **GitHub release utilities** for downloading node-smol and other build dependencies
 3. **Extraction caching** to avoid regenerating files when source hasn't changed
 
 ## Modules
@@ -97,7 +97,7 @@ const __importMetaUrl = require('node:url').pathToFileURL(__filename).href
 
 ### GitHub Releases
 
-Downloads assets from SocketDev/socket-btm releases with retry logic and caching. Used for node-smol binaries, yoga-wasm, AI models, and build tools.
+Downloads assets from SocketDev/socket-btm releases with retry logic and caching. Used for node-smol binaries, AI models, and build tools.
 
 #### `getLatestRelease(tool, options)`
 
@@ -112,7 +112,7 @@ const tag = await getLatestRelease('node-smol')
 
 **Parameters:**
 
-- `tool` (string) - Tool name prefix (e.g., 'node-smol', 'yoga-layout', 'binject')
+- `tool` (string) - Tool name prefix (e.g., 'node-smol', 'binject')
 - `options.quiet` (boolean) - Suppress log messages
 
 **Returns:** Latest tag string or `null` if not found
@@ -154,9 +154,9 @@ Downloads a release asset with automatic redirect following.
 import { downloadReleaseAsset } from 'build-infra/lib/github-releases'
 
 await downloadReleaseAsset(
-  'yoga-layout-20250120-def5678',
-  'yoga-sync-20250120.mjs',
-  '/path/to/output.mjs',
+  'node-smol-20250120-abc1234',
+  'node-smol-linux-x64',
+  '/path/to/output',
 )
 ```
 
@@ -403,7 +403,6 @@ The `build/downloaded/` directory stores cached GitHub release assets:
 build/downloaded/
 ├── binject-{tag}-{platform}-{arch}
 ├── node-smol-{tag}-{platform}-{arch}
-├── yoga-layout-{tag}.mjs
 └── models-{tag}.tar.gz
 ```
 
