@@ -3,7 +3,7 @@
  * Functions for package manager version requirements and execution paths.
  */
 
-import { existsSync } from 'node:fs'
+import fs from 'node:fs'
 import path from 'node:path'
 
 import { whichReal } from '@socketsecurity/lib/bin'
@@ -63,7 +63,7 @@ export async function getNpmExecPath(): Promise<string> {
   // Check npm in the same directory as node.
   const nodeDir = path.dirname(process.execPath)
   const npmInNodeDir = path.join(nodeDir, NPM)
-  if (existsSync(npmInNodeDir)) {
+  if (fs.existsSync(npmInNodeDir)) {
     return npmInNodeDir
   }
   // Fall back to whichReal.

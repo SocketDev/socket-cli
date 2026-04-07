@@ -18,12 +18,9 @@
  * - utils/npm/paths.mts (implementation)
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import fs from 'node:fs'
 
-// Mock dependencies.
-vi.mock('node:fs', () => ({
-  existsSync: vi.fn(),
-}))
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('node:module', async importOriginal => {
   const actual = await importOriginal<typeof import('node:module')>()
@@ -79,6 +76,9 @@ describe('npm-paths utilities', () => {
     vi.clearAllMocks()
     vi.resetModules()
 
+    // Spy on fs.existsSync for tests that need it.
+    vi.spyOn(fs, 'existsSync')
+
     // Store original process.exit.
     originalExit = process.exit
     // Mock process.exit to prevent actual exits.
@@ -97,6 +97,7 @@ describe('npm-paths utilities', () => {
   afterEach(() => {
     // Restore original process.exit.
     process.exit = originalExit
+    vi.restoreAllMocks()
     vi.resetModules()
   })
 
@@ -226,8 +227,7 @@ describe('npm-paths utilities', () => {
       })
       findNpmDirPathSync.mockReturnValue('/usr/local/lib/node_modules/npm')
 
-      const { existsSync } = vi.mocked(await import('node:fs'))
-      existsSync.mockReturnValue(true)
+      vi.mocked(fs.existsSync).mockReturnValue(true)
 
       const mockRequire = vi.fn()
       const Module = vi.mocked(await import('node:module')).default
@@ -252,8 +252,7 @@ describe('npm-paths utilities', () => {
       })
       findNpmDirPathSync.mockReturnValue('/usr/local/lib/node_modules/npm')
 
-      const { existsSync } = vi.mocked(await import('node:fs'))
-      existsSync.mockReturnValue(false)
+      vi.mocked(fs.existsSync).mockReturnValue(false)
 
       const mockRequire = vi.fn()
       const Module = vi.mocked(await import('node:module')).default

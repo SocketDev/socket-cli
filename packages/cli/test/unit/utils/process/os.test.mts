@@ -2,7 +2,7 @@
  * Unit tests for platform detection utilities.
  */
 
-import * as fs from 'node:fs'
+import fs from 'node:fs'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -28,20 +28,12 @@ vi.mock('@socketsecurity/lib/spawn', () => ({
   spawn: vi.fn(),
 }))
 
-// Mock the fs module.
-vi.mock('node:fs', async () => {
-  const actual = await vi.importActual('node:fs')
-  return {
-    ...actual,
-    existsSync: vi.fn(),
-    readFileSync: vi.fn(),
-  }
-})
-
 describe('detectMusl', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     resetLibcCache()
+    vi.spyOn(fs, 'existsSync')
+    vi.spyOn(fs, 'readFileSync')
   })
 
   afterEach(() => {
@@ -154,6 +146,8 @@ describe('getLibcSuffix', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     resetLibcCache()
+    vi.spyOn(fs, 'existsSync')
+    vi.spyOn(fs, 'readFileSync')
   })
 
   afterEach(() => {
@@ -228,7 +222,8 @@ describe('getSocketbinPackageName', () => {
     vi.restoreAllMocks()
     resetLibcCache()
     // Default mock for non-musl systems.
-    vi.mocked(fs.existsSync).mockReturnValue(false)
+    vi.spyOn(fs, 'existsSync').mockReturnValue(false)
+    vi.spyOn(fs, 'readFileSync')
   })
 
   afterEach(() => {
