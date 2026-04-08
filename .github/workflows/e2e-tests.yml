@@ -117,6 +117,7 @@ jobs:
             printf '%s\n' \
               '#!/bin/bash' \
               "export PATH=\"\$(echo \"\$PATH\" | tr ':' '\n' | grep -vxF '${SHIM_DIR}' | paste -sd: -)\"" \
+              'export GIT_SSL_NO_VERIFY=true # Workaround: sfw-free does not yet set GIT_SSL_CAINFO.' \
               "exec \"${SFW_BIN}\" \"${REAL}\" \"\$@\"" \
               > "$SHIM_DIR/$CMD"
             chmod +x "$SHIM_DIR/$CMD"
