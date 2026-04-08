@@ -175,10 +175,17 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 - **Update with --update flag**: `pnpm --filter @socketsecurity/cli run test:unit src/commands/specific/cmd-file.test.mts --update`
 - **Timeout for long tests**: Use `timeout` command or specify in test file.
 
-### Git Commit Guidelines
+### Commit Messages
 
-- Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) style
-- **🚨 FORBIDDEN**: NO AI attribution in commits (see SHARED STANDARDS)
+Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
+
+```
+<type>(<scope>): <description>
+
+Types: feat, fix, docs, style, refactor, test, chore, perf
+```
+
+- **NO AI attribution** in commit messages — the commit-msg hook auto-strips it
 
 ### Running the CLI locally
 
