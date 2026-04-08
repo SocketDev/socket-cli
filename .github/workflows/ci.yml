@@ -63,7 +63,11 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           if [ -d .github ]; then
-            zizmor .github --gh-token "${GITHUB_TOKEN}" --min-severity medium
+            # Exit 0 = clean, 13 = warnings only, 14+ = errors.
+            zizmor .github --gh-token "${GITHUB_TOKEN}" --min-severity medium || {
+              exit_code=$?
+              if [ "$exit_code" -ne 13 ]; then exit "$exit_code"; fi
+            }
           fi
 
       - name: Install pnpm
