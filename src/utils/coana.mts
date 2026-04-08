@@ -13,6 +13,59 @@
 
 import { readJsonSync } from '@socketsecurity/registry/lib/fs'
 
+export type ReachabilityError = {
+  componentName: string
+  componentVersion: string
+  ghsaId: string
+  subprojectPath: string
+}
+
+export function extractReachabilityErrors(
+  socketFactsFile: string,
+): ReachabilityError[] {
+  const json = readJsonSync(socketFactsFile, { throws: false }) as
+    | {
+        components?: Array<{
+          name?: string
+          reachability?: Array<{
+            ghsa_id?: string
+            reachability?: Array<{
+              subprojectPath?: string
+              type?: string
+            }>
+          }>
+          version?: string
+        }>
+      }
+    | null
+    | undefined
+  if (!json || !Array.isArray(json.components)) {
+    return []
+  }
+  const errors: ReachabilityError[] = []
+  for (const component of json.components) {
+    if (!Array.isArray(component.reachability)) {
+      continue
+    }
+    for (const ghsaEntry of component.reachability) {
+      if (!Array.isArray(ghsaEntry.reachability)) {
+        continue
+      }
+      for (const entry of ghsaEntry.reachability) {
+        if (entry.type === 'error') {
+          errors.push({
+            componentName: String(component.name ?? ''),
+            componentVersion: String(component.version ?? ''),
+            ghsaId: String(ghsaEntry.ghsa_id ?? ''),
+            subprojectPath: String(entry.subprojectPath ?? ''),
+          })
+        }
+      }
+    }
+  }
+  return errors
+}
+
 export function extractTier1ReachabilityScanId(
   socketFactsFile: string,
 ): string | undefined {
