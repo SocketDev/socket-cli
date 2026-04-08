@@ -196,6 +196,7 @@
     "node": ">=18",
     "pnpm": ">=10.16.0"
   },
+  "packageManager": "pnpm@10.33.0",
   "files": [
     "bin/**",
     "dist/**",
