@@ -226,9 +226,31 @@ function findReachabilityForGhsa(
  * Logs stdout and stderr to help diagnose test failures.
  */
 function logCommandOutput(code: number, stdout: string, stderr: string): void {
-  logger.error(`Command failed with code ${code}`)
+  logger.error(`Command exited with code ${code}`)
   logger.error('stdout:', stdout)
   logger.error('stderr:', stderr)
+}
+
+/**
+ * Log reachability entries that have type "error" for debugging.
+ * Helps diagnose Coana analysis failures in CI.
+ */
+function logReachabilityErrors(facts: SocketFactsJson): void {
+  for (const component of facts.components) {
+    if (!component.reachability) {
+      continue
+    }
+    for (const ghsaEntry of component.reachability) {
+      for (const entry of ghsaEntry.reachability) {
+        if (entry.type === 'error') {
+          logger.error(
+            `Reachability error for ${ghsaEntry.ghsa_id} in ${component.name}@${component.version} ` +
+              `(subproject: ${entry.subprojectPath}): ${JSON.stringify(entry)}`,
+          )
+        }
+      }
+    }
+  }
 }
 
 describe('socket scan reach (E2E tests)', async () => {
@@ -386,8 +408,13 @@ describe('socket scan reach (E2E tests)', async () => {
 
           logger.info('\nReachability analysis completed successfully')
         } catch (e) {
-          if (code !== 0) {
-            logCommandOutput(code, stdout, stderr)
+          logCommandOutput(code, stdout, stderr)
+          // Log reachability errors from the facts file if it was parsed.
+          try {
+            const errorFacts = await readSocketFactsJson(tempFixture.path)
+            logReachabilityErrors(errorFacts)
+          } catch {
+            // Facts file may not exist if the failure was earlier.
           }
           throw e
         } finally {
@@ -483,9 +510,7 @@ describe('socket scan reach (E2E tests)', async () => {
             '\nReachability analysis with excluded paths completed successfully',
           )
         } catch (e) {
-          if (code !== 0) {
-            logCommandOutput(code, stdout, stderr)
-          }
+          logCommandOutput(code, stdout, stderr)
           throw e
         } finally {
           await tempFixture.cleanup()
@@ -595,9 +620,7 @@ describe('socket scan reach (E2E tests)', async () => {
             '\nReachability analysis with target restriction completed successfully',
           )
         } catch (e) {
-          if (code !== 0) {
-            logCommandOutput(code, stdout, stderr)
-          }
+          logCommandOutput(code, stdout, stderr)
           throw e
         } finally {
           await tempFixture.cleanup()
@@ -673,9 +696,7 @@ describe('socket scan reach (E2E tests)', async () => {
             '\nReachability analysis with --cwd flag completed successfully',
           )
         } catch (e) {
-          if (code !== 0) {
-            logCommandOutput(code, stdout, stderr)
-          }
+          logCommandOutput(code, stdout, stderr)
           throw e
         } finally {
           await tempFixture.cleanup()
@@ -771,9 +792,7 @@ describe('socket scan reach (E2E tests)', async () => {
             '\nReachability analysis with --cwd and target completed successfully',
           )
         } catch (e) {
-          if (code !== 0) {
-            logCommandOutput(code, stdout, stderr)
-          }
+          logCommandOutput(code, stdout, stderr)
           throw e
         } finally {
           await tempFixture.cleanup()
@@ -915,9 +934,7 @@ describe('socket scan reach (E2E tests)', async () => {
             '\nReachability analysis output location verified successfully',
           )
         } catch (e) {
-          if (code !== 0) {
-            logCommandOutput(code, stdout, stderr)
-          }
+          logCommandOutput(code, stdout, stderr)
           throw e
         } finally {
           await tempFixture.cleanup()
@@ -1019,9 +1036,7 @@ describe('socket scan reach (E2E tests)', async () => {
             '\nReachability analysis with pypi ecosystem filter completed successfully',
           )
         } catch (e) {
-          if (code !== 0) {
-            logCommandOutput(code, stdout, stderr)
-          }
+          logCommandOutput(code, stdout, stderr)
           throw e
         } finally {
           await tempFixture.cleanup()
@@ -1119,9 +1134,7 @@ describe('socket scan reach (E2E tests)', async () => {
             '\nReachability analysis with npm ecosystem filter completed successfully',
           )
         } catch (e) {
-          if (code !== 0) {
-            logCommandOutput(code, stdout, stderr)
-          }
+          logCommandOutput(code, stdout, stderr)
           throw e
         } finally {
           await tempFixture.cleanup()
