@@ -193,8 +193,8 @@
     "zod": "4.1.8"
   },
   "engines": {
-    "node": ">=18",
-    "pnpm": ">=10.16.0"
+    "node": ">=18.20.8",
+    "pnpm": ">=10.33.0"
   },
   "packageManager": "pnpm@10.33.0",
   "files": [
