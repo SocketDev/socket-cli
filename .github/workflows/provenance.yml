@@ -25,31 +25,112 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - uses: SocketDev/socket-registry/.github/actions/setup@1543e937143cf84e5161ad18c04cbd99c8a4c6d8
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
           scope: '@socketsecurity'
-      - run: npm install -g npm@latest
-      - run: pnpm install
+
+      - name: Download sfw-free
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: | # zizmor: ignore[github-env]
+          SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
+          KERNEL="$(uname -s | cut -d- -f1)"
+          ARCH="$(uname -m)"
+          case "${KERNEL}-${ARCH}" in
+            Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="4a1e8b65e90fce7d5fd066cf0af6c93d512065fa4222a475c8d959a6bc14b9ff" ;;
+            Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="df2eedb2daf2572eee047adb8bfd81c9069edcb200fc7d3710fca98ec3ca81a1" ;;
+            Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="724ccea19d847b79db8cc8e38f5f18ce2dd32336007f42b11bed7d2e5f4a2566" ;;
+            Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="bf1616fc44ac49f1cb2067fedfa127a3ae65d6ec6d634efbb3098cfa355e5555" ;;
+            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="c953e62ad7928d4d8f2302f5737884ea1a757babc26bed6a42b9b6b68a5d54af" ;;
+            *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
+          esac
+          if [ ! -x "$SFW_BIN" ]; then
+            mkdir -p "$SFW_DIR"
+            DOWNLOAD_URL="$(gh api repos/SocketDev/sfw-free/releases/latest \
+              --jq ".assets[] | select(.name == \"$ASSET\") | .browser_download_url")"
+            curl -fsSL -o "$SFW_BIN" "$DOWNLOAD_URL"
+            ACTUAL_SHA256="$(shasum -a 256 "$SFW_BIN" | cut -d' ' -f1)"
+            if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+              echo "Checksum mismatch for ${ASSET}!" >&2
+              echo "  Expected: ${EXPECTED_SHA256}" >&2
+              echo "  Actual:   ${ACTUAL_SHA256}" >&2
+              rm -f "$SFW_BIN"
+              exit 1
+            fi
+            chmod +x "$SFW_BIN"
+          fi
+          echo "SFW_BIN=$SFW_BIN" >> "${GITHUB_ENV:-/dev/null}"
+
+      - name: Create sfw shims
+        shell: bash
+        run: | # zizmor: ignore[github-env]
+          SHIM_DIR="${RUNNER_TEMP:-/tmp}/sfw-shim"
+          rm -rf "$SHIM_DIR"
+          mkdir -p "$SHIM_DIR"
+          IS_WINDOWS=false
+          [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]] && IS_WINDOWS=true
+          msys_to_win_path() {
+            if $IS_WINDOWS && [[ "$1" =~ ^/([a-zA-Z])/(.*) ]]; then
+              echo "${BASH_REMATCH[1]^^}:\\${BASH_REMATCH[2]//\//\\}"
+            else
+              echo "$1"
+            fi
+          }
+          strip_shim_dir() { echo "$PATH" | tr ':' '\n' | grep -vxF "$SHIM_DIR" | paste -sd: -; }
+          CLEAN_PATH="$(strip_shim_dir)"
+          for CMD in npm yarn pnpm pip uv cargo; do
+            REAL="$(PATH="$CLEAN_PATH" command -v "$CMD" 2>/dev/null || true)"
+            [ -z "$REAL" ] && continue
+            REAL="$(msys_to_win_path "$REAL")"
+            printf '%s\n' \
+              '#!/bin/bash' \
+              "export PATH=\"\$(echo \"\$PATH\" | tr ':' '\n' | grep -vxF '${SHIM_DIR}' | paste -sd: -)\"" \
+              "exec \"${SFW_BIN}\" \"${REAL}\" \"\$@\"" \
+              > "$SHIM_DIR/$CMD"
+            chmod +x "$SHIM_DIR/$CMD"
+            if $IS_WINDOWS; then
+              printf '@echo off\r\nset "PATH=;%%PATH%%;"\r\nset "PATH=%%PATH:;%s;=;%%"\r\nset "PATH=%%PATH:~1,-1%%"\r\n"%s" "%s" %%*\r\n' \
+                "$SHIM_DIR" "$SFW_BIN" "$REAL" > "$SHIM_DIR/$CMD.cmd"
+            fi
+          done
+          echo "$SHIM_DIR" >> "${GITHUB_PATH:-/dev/null}"
+          echo "SFW_SHIM_DIR=$SHIM_DIR" >> "${GITHUB_ENV:-/dev/null}"
+
+      - name: Install dependencies
+        run: pnpm install --loglevel error
+
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
-      - run: npm publish --provenance --access public --tag ${{ inputs.dist-tag }}
+      - run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
         continue-on-error: true
         env:
+          NPM_DIST_TAG: ${{ inputs.dist-tag }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: npm publish --provenance --access public --tag ${{ inputs.dist-tag }}
+      - run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
         continue-on-error: true
         env:
+          NPM_DIST_TAG: ${{ inputs.dist-tag }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: npm publish --provenance --access public --tag ${{ inputs.dist-tag }}
+      - run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
         continue-on-error: true
         env:
+          NPM_DIST_TAG: ${{ inputs.dist-tag }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
