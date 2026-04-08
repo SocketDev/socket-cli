@@ -128,8 +128,8 @@ importers:
         specifier: 2.2.4
         version: 2.2.4
       '@coana-tech/cli':
-        specifier: 14.12.201
-        version: 14.12.201
+        specifier: 14.12.203
+        version: 14.12.203
       '@cyclonedx/cdxgen':
         specifier: 12.1.2
         version: 12.1.2
@@ -749,8 +749,8 @@ packages:
     resolution: {integrity: sha512-hAs5PPKPCQ3/Nha+1fo4A4/gL85fIfxZwHPehsjCJ+BhQH2/yw6/xReuaPA/RfNQr6iz1PcD7BZcE3ctyyl3EA==}
     cpu: [x64]
 
-  '@coana-tech/cli@14.12.201':
-    resolution: {integrity: sha512-uX6zaR+mHh6Gkg4ssNEVGq9N8deh/KPLsB1hr5Po9DKnZ+adB5WWYdJuFIOTWK+N0k5fcHSGP9pGje9sIPQ6ow==}
+  '@coana-tech/cli@14.12.203':
+    resolution: {integrity: sha512-N7ZXS8wqIsHg11k5Y0fKIyqABWnc7PKOqZw6YiVZRbbwW+IjSIkbX3t+PAb2f17/U5X1fgRy955N5Niuf4BCAA==}
     hasBin: true
 
   '@colors/colors@1.5.0':
@@ -5385,7 +5385,7 @@ snapshots:
   '@cdxgen/cdxgen-plugins-bin@2.0.2':
     optional: true
 
-  '@coana-tech/cli@14.12.201': {}
+  '@coana-tech/cli@14.12.203': {}
 
   '@colors/colors@1.5.0':
     optional: true
