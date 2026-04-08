@@ -51,15 +51,9 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
         with:
-          node-version-file: .node-version
-          cache: 'pnpm'
-          cache-dependency-path: 'pnpm-lock.yaml'
-
-      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - uses: SocketDev/socket-registry/.github/actions/install@6147a08ccc20fcb1f690dcc4650ec745776b3345 # main
+          checkout: 'false'
 
       - name: Build CLI
         shell: bash
@@ -97,16 +91,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
         with:
-          node-version-file: .node-version
-          cache: 'pnpm'
-          cache-dependency-path: 'pnpm-lock.yaml'
+          checkout: 'false'
           registry-url: 'https://registry.npmjs.org'
-
-      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - uses: SocketDev/socket-registry/.github/actions/install@6147a08ccc20fcb1f690dcc4650ec745776b3345 # main
 
       - name: Download CLI bundle
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
@@ -153,16 +141,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
         with:
-          node-version-file: .node-version
-          cache: 'pnpm'
-          cache-dependency-path: 'pnpm-lock.yaml'
+          checkout: 'false'
           registry-url: 'https://registry.npmjs.org'
-
-      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - uses: SocketDev/socket-registry/.github/actions/install@6147a08ccc20fcb1f690dcc4650ec745776b3345 # main
 
       # Get versions for lock-stepped and independent packages.
       - name: Get versions

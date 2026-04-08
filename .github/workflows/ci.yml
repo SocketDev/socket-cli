@@ -72,16 +72,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # zizmor: ignore[cache-poisoning] # v6.3.0
-        with:
-          node-version-file: .node-version
-          cache: 'pnpm'
-          cache-dependency-path: 'pnpm-lock.yaml'
-
       - name: Create stub packages
         run: |
           mkdir -p packages/package-builder/build/dev/out/socketaddon-iocraft
@@ -119,7 +109,9 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/install@6147a08ccc20fcb1f690dcc4650ec745776b3345 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
+        with:
+          checkout: 'false'
 
       - name: Run lint
         shell: bash
@@ -139,16 +131,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # zizmor: ignore[cache-poisoning] # v6.3.0
-        with:
-          node-version-file: .node-version
-          cache: 'pnpm'
-          cache-dependency-path: 'pnpm-lock.yaml'
-
       - name: Create stub packages
         run: |
           mkdir -p packages/package-builder/build/dev/out/socketaddon-iocraft
@@ -186,7 +168,9 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/install@6147a08ccc20fcb1f690dcc4650ec745776b3345 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
+        with:
+          checkout: 'false'
 
       - name: Run type check
         shell: bash
@@ -213,16 +197,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # zizmor: ignore[cache-poisoning] # v6.3.0
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-          cache-dependency-path: 'pnpm-lock.yaml'
-
       - name: Create stub packages
         run: |
           mkdir -p packages/package-builder/build/dev/out/socketaddon-iocraft
@@ -260,7 +234,10 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/install@6147a08ccc20fcb1f690dcc4650ec745776b3345 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
+        with:
+          checkout: 'false'
+          node-version: ${{ matrix.node-version }}
 
       - name: Build CLI
         working-directory: packages/cli
@@ -296,16 +273,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # zizmor: ignore[cache-poisoning] # v6.3.0
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-          cache-dependency-path: 'pnpm-lock.yaml'
-
       - name: Create stub packages
         run: |
           mkdir -p packages/package-builder/build/dev/out/socketaddon-iocraft
@@ -343,7 +310,10 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/install@6147a08ccc20fcb1f690dcc4650ec745776b3345 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
+        with:
+          checkout: 'false'
+          node-version: ${{ matrix.node-version }}
 
       - name: Build CLI
         working-directory: packages/cli
