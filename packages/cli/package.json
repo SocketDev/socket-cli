@@ -123,10 +123,6 @@
     "yoctocolors-cjs": "catalog:",
     "zod": "catalog:"
   },
-  "engines": {
-    "node": ">=24.14.0",
-    "pnpm": ">=10.22.0"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/SocketDev/socket-cli.git"
