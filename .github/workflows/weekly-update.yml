@@ -29,16 +29,9 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup pnpm and sfw
-        uses: SocketDev/socket-registry/.github/actions/setup@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
-
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
         with:
-          node-version-file: .node-version
-          cache: 'false'
-
-      - uses: SocketDev/socket-registry/.github/actions/install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
+          checkout: 'false'
 
       - name: Check for npm updates
         id: check
@@ -68,16 +61,9 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Setup pnpm and sfw
-        uses: SocketDev/socket-registry/.github/actions/setup@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
-
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
         with:
-          node-version-file: .node-version
-          cache: 'false'
-
-      - uses: SocketDev/socket-registry/.github/actions/install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
+          checkout: 'false'
 
       - name: Create update branch
         id: branch
