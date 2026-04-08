@@ -42,7 +42,7 @@ jobs:
           if [ ! -x "$PNPM_BIN" ]; then
             mkdir -p "$PNPM_DIR"
             curl -fsSL -o "$PNPM_BIN" "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
-            ACTUAL_SHA256="$( (sha256sum "$PNPM_BIN" 2>/dev/null || shasum -a 256 "$PNPM_BIN") | cut -d' ' -f1)"
+            ACTUAL_SHA256="$( (sha256sum "$PNPM_BIN" 2>/dev/null || shasum -a 256 "$PNPM_BIN") | cut -d' ' -f1 | tr -d '\\')"
             if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
               echo "Checksum mismatch for ${ASSET}!" >&2
               echo "  Expected: ${EXPECTED_SHA256}" >&2
@@ -80,7 +80,7 @@ jobs:
             DOWNLOAD_URL="$(gh api repos/SocketDev/sfw-free/releases/latest \
               --jq ".assets[] | select(.name == \"$ASSET\") | .browser_download_url")"
             curl -fsSL -o "$SFW_BIN" "$DOWNLOAD_URL"
-            ACTUAL_SHA256="$( (sha256sum "$SFW_BIN" 2>/dev/null || shasum -a 256 "$SFW_BIN") | cut -d' ' -f1)"
+            ACTUAL_SHA256="$( (sha256sum "$SFW_BIN" 2>/dev/null || shasum -a 256 "$SFW_BIN") | cut -d' ' -f1 | tr -d '\\')"
             if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
               echo "Checksum mismatch for ${ASSET}!" >&2
               echo "  Expected: ${EXPECTED_SHA256}" >&2
