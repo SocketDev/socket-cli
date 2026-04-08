@@ -98,7 +98,12 @@ jobs:
               exit 1
             fi
             chmod +x "$PNPM_BIN"
-            ln -sf "$PNPM_BIN" "$PNPM_DIR/pnpm"
+            # Create pnpm alias. Windows needs a .exe copy; Unix uses a symlink.
+            if [[ "$ASSET" == *.exe ]]; then
+              cp "$PNPM_BIN" "$PNPM_DIR/pnpm.exe"
+            else
+              ln -sf "$PNPM_BIN" "$PNPM_DIR/pnpm"
+            fi
           fi
           echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
 
@@ -219,7 +224,12 @@ jobs:
               exit 1
             fi
             chmod +x "$PNPM_BIN"
-            ln -sf "$PNPM_BIN" "$PNPM_DIR/pnpm"
+            # Create pnpm alias. Windows needs a .exe copy; Unix uses a symlink.
+            if [[ "$ASSET" == *.exe ]]; then
+              cp "$PNPM_BIN" "$PNPM_DIR/pnpm.exe"
+            else
+              ln -sf "$PNPM_BIN" "$PNPM_DIR/pnpm"
+            fi
           fi
           echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
 
@@ -345,7 +355,12 @@ jobs:
               exit 1
             fi
             chmod +x "$PNPM_BIN"
-            ln -sf "$PNPM_BIN" "$PNPM_DIR/pnpm"
+            # Create pnpm alias. Windows needs a .exe copy; Unix uses a symlink.
+            if [[ "$ASSET" == *.exe ]]; then
+              cp "$PNPM_BIN" "$PNPM_DIR/pnpm.exe"
+            else
+              ln -sf "$PNPM_BIN" "$PNPM_DIR/pnpm"
+            fi
           fi
           echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
 
