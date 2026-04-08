@@ -25,31 +25,149 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - uses: SocketDev/socket-registry/.github/actions/setup@1543e937143cf84e5161ad18c04cbd99c8a4c6d8
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        shell: bash
+        run: | # zizmor: ignore[github-env]
+          PNPM_VERSION="10.33.0"
+          PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
+          KERNEL="$(uname -s | cut -d- -f1)"
+          ARCH="$(uname -m)"
+          case "${KERNEL}-${ARCH}" in
+            Linux-x86_64)                      ASSET="pnpm-linux-x64"    ; EXPECTED_SHA256="8d4e8f7d778e8ac482022e2577011706a872542f6f6f233e795a4d9f978ea8b5" ;;
+            Linux-aarch64)                     ASSET="pnpm-linux-arm64"   ; EXPECTED_SHA256="06755ad2817548b84317d857d5c8003dc6e9e28416a3ea7467256c49ab400d48" ;;
+            Darwin-x86_64)                     ASSET="pnpm-macos-x64"    ; EXPECTED_SHA256="c31e29554b0e3f4e03f4617195c949595e4dca36085922003de4896c3ca4057d" ;;
+            Darwin-arm64)                      ASSET="pnpm-macos-arm64"  ; EXPECTED_SHA256="ed8a1f140f4de457b01ebe0be3ae28e9a7e28863315dcd53d22ff1e5a32d63ae" ;;
+            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="pnpm-win-x64.exe" ; EXPECTED_SHA256="afc96009dc39fe23a835d65192049e6a995f342496b175585dc2beda7d42d33f" ;;
+            *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
+          esac
+          PNPM_BIN="$PNPM_DIR/$ASSET"
+          if [ ! -x "$PNPM_BIN" ]; then
+            mkdir -p "$PNPM_DIR"
+            curl -fsSL -o "$PNPM_BIN" "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
+            ACTUAL_SHA256="$( (sha256sum "$PNPM_BIN" 2>/dev/null || shasum -a 256 "$PNPM_BIN") | cut -d' ' -f1 | tr -d '\\')"
+            if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+              echo "Checksum mismatch for ${ASSET}!" >&2
+              echo "  Expected: ${EXPECTED_SHA256}" >&2
+              echo "  Actual:   ${ACTUAL_SHA256}" >&2
+              rm -f "$PNPM_BIN"
+              exit 1
+            fi
+            chmod +x "$PNPM_BIN"
+            # Create pnpm alias. Windows needs a .exe copy; Unix uses a symlink.
+            if [[ "$ASSET" == *.exe ]]; then
+              cp "$PNPM_BIN" "$PNPM_DIR/pnpm.exe"
+            else
+              ln -sf "$PNPM_BIN" "$PNPM_DIR/pnpm"
+            fi
+          fi
+          echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 25.9.0
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
           scope: '@socketsecurity'
-      - run: npm install -g npm@latest
-      - run: pnpm install
+
+      - name: Download sfw-free
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: | # zizmor: ignore[github-env]
+          SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
+          KERNEL="$(uname -s | cut -d- -f1)"
+          ARCH="$(uname -m)"
+          case "${KERNEL}-${ARCH}" in
+            Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="4a1e8b65e90fce7d5fd066cf0af6c93d512065fa4222a475c8d959a6bc14b9ff" ;;
+            Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="df2eedb2daf2572eee047adb8bfd81c9069edcb200fc7d3710fca98ec3ca81a1" ;;
+            Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="724ccea19d847b79db8cc8e38f5f18ce2dd32336007f42b11bed7d2e5f4a2566" ;;
+            Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="bf1616fc44ac49f1cb2067fedfa127a3ae65d6ec6d634efbb3098cfa355e5555" ;;
+            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="c953e62ad7928d4d8f2302f5737884ea1a757babc26bed6a42b9b6b68a5d54af" ;;
+            *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
+          esac
+          if [ ! -x "$SFW_BIN" ]; then
+            mkdir -p "$SFW_DIR"
+            DOWNLOAD_URL="$(gh api repos/SocketDev/sfw-free/releases/latest \
+              --jq ".assets[] | select(.name == \"$ASSET\") | .browser_download_url")"
+            curl -fsSL -o "$SFW_BIN" "$DOWNLOAD_URL"
+            ACTUAL_SHA256="$( (sha256sum "$SFW_BIN" 2>/dev/null || shasum -a 256 "$SFW_BIN") | cut -d' ' -f1 | tr -d '\\')"
+            if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+              echo "Checksum mismatch for ${ASSET}!" >&2
+              echo "  Expected: ${EXPECTED_SHA256}" >&2
+              echo "  Actual:   ${ACTUAL_SHA256}" >&2
+              rm -f "$SFW_BIN"
+              exit 1
+            fi
+            chmod +x "$SFW_BIN"
+          fi
+          echo "SFW_BIN=$SFW_BIN" >> "${GITHUB_ENV:-/dev/null}"
+
+      - name: Create sfw shims
+        shell: bash
+        run: | # zizmor: ignore[github-env]
+          SHIM_DIR="${RUNNER_TEMP:-/tmp}/sfw-shim"
+          rm -rf "$SHIM_DIR"
+          mkdir -p "$SHIM_DIR"
+          IS_WINDOWS=false
+          [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]] && IS_WINDOWS=true
+          msys_to_win_path() {
+            if $IS_WINDOWS && [[ "$1" =~ ^/([a-zA-Z])/(.*) ]]; then
+              echo "${BASH_REMATCH[1]^^}:\\${BASH_REMATCH[2]//\//\\}"
+            else
+              echo "$1"
+            fi
+          }
+          strip_shim_dir() { echo "$PATH" | tr ':' '\n' | grep -vxF "$SHIM_DIR" | paste -sd: -; }
+          CLEAN_PATH="$(strip_shim_dir)"
+          # https://docs.socket.dev/docs/socket-firewall-free#what-ecosystems-and-package-managers-are-supported
+          for CMD in npm yarn pnpm pip uv cargo; do
+            REAL="$(PATH="$CLEAN_PATH" command -v "$CMD" 2>/dev/null || true)"
+            [ -z "$REAL" ] && continue
+            REAL="$(msys_to_win_path "$REAL")"
+            printf '%s\n' \
+              '#!/bin/bash' \
+              "export PATH=\"\$(echo \"\$PATH\" | tr ':' '\n' | grep -vxF '${SHIM_DIR}' | paste -sd: -)\"" \
+              'export GIT_SSL_NO_VERIFY=true # Workaround: sfw-free does not yet set GIT_SSL_CAINFO.' \
+              "exec \"${SFW_BIN}\" \"${REAL}\" \"\$@\"" \
+              > "$SHIM_DIR/$CMD"
+            chmod +x "$SHIM_DIR/$CMD"
+            if $IS_WINDOWS; then
+              printf '@echo off\r\nset "PATH=;%%PATH%%;"\r\nset "PATH=%%PATH:;%s;=;%%"\r\nset "PATH=%%PATH:~1,-1%%"\r\n"%s" "%s" %%*\r\n' \
+                "$SHIM_DIR" "$SFW_BIN" "$REAL" > "$SHIM_DIR/$CMD.cmd"
+            fi
+          done
+          echo "$SHIM_DIR" >> "${GITHUB_PATH:-/dev/null}"
+          echo "SFW_SHIM_DIR=$SHIM_DIR" >> "${GITHUB_ENV:-/dev/null}"
+
+      - name: Install dependencies
+        run: pnpm install --loglevel error
+
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
-      - run: npm publish --provenance --access public --tag ${{ inputs.dist-tag }}
+      - run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
         continue-on-error: true
         env:
+          NPM_DIST_TAG: ${{ inputs.dist-tag }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: npm publish --provenance --access public --tag ${{ inputs.dist-tag }}
+      - run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
         continue-on-error: true
         env:
+          NPM_DIST_TAG: ${{ inputs.dist-tag }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: npm publish --provenance --access public --tag ${{ inputs.dist-tag }}
+      - run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
         continue-on-error: true
         env:
+          NPM_DIST_TAG: ${{ inputs.dist-tag }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}

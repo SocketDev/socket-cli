@@ -14,9 +14,176 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@51be85d39d3b4a42dd9d4712948b9d30a2e04794
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          node-version: 22
+          persist-credentials: false
+
+      - name: Install zizmor
+        shell: bash
+        run: | # zizmor: ignore[github-env]
+          ZIZMOR_VERSION="1.23.1"
+          ZIZMOR_DIR="${RUNNER_TEMP:-/tmp}/zizmor-bin"
+          KERNEL="$(uname -s | cut -d- -f1)"
+          ARCH="$(uname -m)"
+          case "${KERNEL}-${ARCH}" in
+            Linux-x86_64)                      ASSET="zizmor-x86_64-unknown-linux-gnu.tar.gz"  ; EXPECTED_SHA256="67a8df0a14352dd81882e14876653d097b99b0f4f6b6fe798edc0320cff27aff" ;;
+            Linux-aarch64)                     ASSET="zizmor-aarch64-unknown-linux-gnu.tar.gz"  ; EXPECTED_SHA256="3725d7cd7102e4d70827186389f7d5930b6878232930d0a3eb058d7e5b47e658" ;;
+            Darwin-x86_64)                     ASSET="zizmor-x86_64-apple-darwin.tar.gz"        ; EXPECTED_SHA256="89d5ed42081dd9d0433a10b7545fac42b35f1f030885c278b9712b32c66f2597" ;;
+            Darwin-arm64)                      ASSET="zizmor-aarch64-apple-darwin.tar.gz"       ; EXPECTED_SHA256="2632561b974c69f952258c1ab4b7432d5c7f92e555704155c3ac28a2910bd717" ;;
+            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="zizmor-x86_64-pc-windows-msvc.zip"       ; EXPECTED_SHA256="33c2293ff02834720dd7cd8b47348aafb2e95a19bdc993c0ecaca9c804ade92a" ;;
+            *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
+          esac
+          ZIZMOR_BIN="$ZIZMOR_DIR/zizmor"
+          [[ "$ASSET" == *.zip ]] && ZIZMOR_BIN="$ZIZMOR_DIR/zizmor.exe"
+          if [ ! -x "$ZIZMOR_BIN" ]; then
+            mkdir -p "$ZIZMOR_DIR"
+            DOWNLOAD_URL="https://github.com/woodruffw/zizmor/releases/download/v${ZIZMOR_VERSION}/${ASSET}"
+            DOWNLOAD_FILE="${ZIZMOR_DIR}/${ASSET}"
+            curl -fsSL -o "$DOWNLOAD_FILE" "$DOWNLOAD_URL"
+            ACTUAL_SHA256="$( (sha256sum "$DOWNLOAD_FILE" 2>/dev/null || shasum -a 256 "$DOWNLOAD_FILE") | cut -d' ' -f1 | tr -d '\\')"
+            if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+              echo "Checksum mismatch for ${ASSET}!" >&2
+              echo "  Expected: ${EXPECTED_SHA256}" >&2
+              echo "  Actual:   ${ACTUAL_SHA256}" >&2
+              exit 1
+            fi
+            if [[ "$ASSET" == *.zip ]]; then
+              unzip -qo "$DOWNLOAD_FILE" -d "$ZIZMOR_DIR"
+            else
+              tar xzf "$DOWNLOAD_FILE" -C "$ZIZMOR_DIR"
+            fi
+            rm -f "$DOWNLOAD_FILE"
+            chmod +x "$ZIZMOR_BIN"
+          fi
+          echo "$ZIZMOR_DIR" >> "${GITHUB_PATH:-/dev/null}"
+
+      - name: Audit GitHub Actions
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          if [ -d .github ]; then
+            # Exit 0 = clean, 13 = warnings only, 14+ = errors.
+            zizmor .github --gh-token "${GITHUB_TOKEN}" --min-severity medium || {
+              exit_code=$?
+              if [ "$exit_code" -ne 13 ]; then exit "$exit_code"; fi
+            }
+          fi
+
+      - name: Install pnpm
+        shell: bash
+        run: | # zizmor: ignore[github-env]
+          PNPM_VERSION="10.33.0"
+          PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
+          KERNEL="$(uname -s | cut -d- -f1)"
+          ARCH="$(uname -m)"
+          case "${KERNEL}-${ARCH}" in
+            Linux-x86_64)                      ASSET="pnpm-linux-x64"    ; EXPECTED_SHA256="8d4e8f7d778e8ac482022e2577011706a872542f6f6f233e795a4d9f978ea8b5" ;;
+            Linux-aarch64)                     ASSET="pnpm-linux-arm64"   ; EXPECTED_SHA256="06755ad2817548b84317d857d5c8003dc6e9e28416a3ea7467256c49ab400d48" ;;
+            Darwin-x86_64)                     ASSET="pnpm-macos-x64"    ; EXPECTED_SHA256="c31e29554b0e3f4e03f4617195c949595e4dca36085922003de4896c3ca4057d" ;;
+            Darwin-arm64)                      ASSET="pnpm-macos-arm64"  ; EXPECTED_SHA256="ed8a1f140f4de457b01ebe0be3ae28e9a7e28863315dcd53d22ff1e5a32d63ae" ;;
+            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="pnpm-win-x64.exe" ; EXPECTED_SHA256="afc96009dc39fe23a835d65192049e6a995f342496b175585dc2beda7d42d33f" ;;
+            *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
+          esac
+          PNPM_BIN="$PNPM_DIR/$ASSET"
+          if [ ! -x "$PNPM_BIN" ]; then
+            mkdir -p "$PNPM_DIR"
+            curl -fsSL -o "$PNPM_BIN" "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
+            ACTUAL_SHA256="$( (sha256sum "$PNPM_BIN" 2>/dev/null || shasum -a 256 "$PNPM_BIN") | cut -d' ' -f1 | tr -d '\\')"
+            if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+              echo "Checksum mismatch for ${ASSET}!" >&2
+              echo "  Expected: ${EXPECTED_SHA256}" >&2
+              echo "  Actual:   ${ACTUAL_SHA256}" >&2
+              rm -f "$PNPM_BIN"
+              exit 1
+            fi
+            chmod +x "$PNPM_BIN"
+            # Create pnpm alias. Windows needs a .exe copy; Unix uses a symlink.
+            if [[ "$ASSET" == *.exe ]]; then
+              cp "$PNPM_BIN" "$PNPM_DIR/pnpm.exe"
+            else
+              ln -sf "$PNPM_BIN" "$PNPM_DIR/pnpm"
+            fi
+          fi
+          echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 25.9.0
+          cache: pnpm
+
+      - name: Download sfw-free
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: | # zizmor: ignore[github-env]
+          SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
+          KERNEL="$(uname -s | cut -d- -f1)"
+          ARCH="$(uname -m)"
+          case "${KERNEL}-${ARCH}" in
+            Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="4a1e8b65e90fce7d5fd066cf0af6c93d512065fa4222a475c8d959a6bc14b9ff" ;;
+            Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="df2eedb2daf2572eee047adb8bfd81c9069edcb200fc7d3710fca98ec3ca81a1" ;;
+            Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="724ccea19d847b79db8cc8e38f5f18ce2dd32336007f42b11bed7d2e5f4a2566" ;;
+            Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="bf1616fc44ac49f1cb2067fedfa127a3ae65d6ec6d634efbb3098cfa355e5555" ;;
+            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="c953e62ad7928d4d8f2302f5737884ea1a757babc26bed6a42b9b6b68a5d54af" ;;
+            *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
+          esac
+          if [ ! -x "$SFW_BIN" ]; then
+            mkdir -p "$SFW_DIR"
+            DOWNLOAD_URL="$(gh api repos/SocketDev/sfw-free/releases/latest \
+              --jq ".assets[] | select(.name == \"$ASSET\") | .browser_download_url")"
+            curl -fsSL -o "$SFW_BIN" "$DOWNLOAD_URL"
+            ACTUAL_SHA256="$( (sha256sum "$SFW_BIN" 2>/dev/null || shasum -a 256 "$SFW_BIN") | cut -d' ' -f1 | tr -d '\\')"
+            if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+              echo "Checksum mismatch for ${ASSET}!" >&2
+              echo "  Expected: ${EXPECTED_SHA256}" >&2
+              echo "  Actual:   ${ACTUAL_SHA256}" >&2
+              rm -f "$SFW_BIN"
+              exit 1
+            fi
+            chmod +x "$SFW_BIN"
+          fi
+          echo "SFW_BIN=$SFW_BIN" >> "${GITHUB_ENV:-/dev/null}"
+
+      - name: Create sfw shims
+        shell: bash
+        run: | # zizmor: ignore[github-env]
+          SHIM_DIR="${RUNNER_TEMP:-/tmp}/sfw-shim"
+          rm -rf "$SHIM_DIR"
+          mkdir -p "$SHIM_DIR"
+          IS_WINDOWS=false
+          [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]] && IS_WINDOWS=true
+          msys_to_win_path() {
+            if $IS_WINDOWS && [[ "$1" =~ ^/([a-zA-Z])/(.*) ]]; then
+              echo "${BASH_REMATCH[1]^^}:\\${BASH_REMATCH[2]//\//\\}"
+            else
+              echo "$1"
+            fi
+          }
+          strip_shim_dir() { echo "$PATH" | tr ':' '\n' | grep -vxF "$SHIM_DIR" | paste -sd: -; }
+          CLEAN_PATH="$(strip_shim_dir)"
+          # https://docs.socket.dev/docs/socket-firewall-free#what-ecosystems-and-package-managers-are-supported
+          for CMD in npm yarn pnpm pip uv cargo; do
+            REAL="$(PATH="$CLEAN_PATH" command -v "$CMD" 2>/dev/null || true)"
+            [ -z "$REAL" ] && continue
+            REAL="$(msys_to_win_path "$REAL")"
+            printf '%s\n' \
+              '#!/bin/bash' \
+              "export PATH=\"\$(echo \"\$PATH\" | tr ':' '\n' | grep -vxF '${SHIM_DIR}' | paste -sd: -)\"" \
+              'export GIT_SSL_NO_VERIFY=true # Workaround: sfw-free does not yet set GIT_SSL_CAINFO.' \
+              "exec \"${SFW_BIN}\" \"${REAL}\" \"\$@\"" \
+              > "$SHIM_DIR/$CMD"
+            chmod +x "$SHIM_DIR/$CMD"
+            if $IS_WINDOWS; then
+              printf '@echo off\r\nset "PATH=;%%PATH%%;"\r\nset "PATH=%%PATH:;%s;=;%%"\r\nset "PATH=%%PATH:~1,-1%%"\r\n"%s" "%s" %%*\r\n' \
+                "$SHIM_DIR" "$SFW_BIN" "$REAL" > "$SHIM_DIR/$CMD.cmd"
+            fi
+          done
+          echo "$SHIM_DIR" >> "${GITHUB_PATH:-/dev/null}"
+          echo "SFW_SHIM_DIR=$SHIM_DIR" >> "${GITHUB_ENV:-/dev/null}"
+
+      - name: Install dependencies
+        run: pnpm install --loglevel error
 
       - name: Lint
         run: pnpm check:lint
@@ -25,9 +192,124 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@51be85d39d3b4a42dd9d4712948b9d30a2e04794
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          node-version: 22
+          persist-credentials: false
+
+      - name: Install pnpm
+        shell: bash
+        run: | # zizmor: ignore[github-env]
+          PNPM_VERSION="10.33.0"
+          PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
+          KERNEL="$(uname -s | cut -d- -f1)"
+          ARCH="$(uname -m)"
+          case "${KERNEL}-${ARCH}" in
+            Linux-x86_64)                      ASSET="pnpm-linux-x64"    ; EXPECTED_SHA256="8d4e8f7d778e8ac482022e2577011706a872542f6f6f233e795a4d9f978ea8b5" ;;
+            Linux-aarch64)                     ASSET="pnpm-linux-arm64"   ; EXPECTED_SHA256="06755ad2817548b84317d857d5c8003dc6e9e28416a3ea7467256c49ab400d48" ;;
+            Darwin-x86_64)                     ASSET="pnpm-macos-x64"    ; EXPECTED_SHA256="c31e29554b0e3f4e03f4617195c949595e4dca36085922003de4896c3ca4057d" ;;
+            Darwin-arm64)                      ASSET="pnpm-macos-arm64"  ; EXPECTED_SHA256="ed8a1f140f4de457b01ebe0be3ae28e9a7e28863315dcd53d22ff1e5a32d63ae" ;;
+            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="pnpm-win-x64.exe" ; EXPECTED_SHA256="afc96009dc39fe23a835d65192049e6a995f342496b175585dc2beda7d42d33f" ;;
+            *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
+          esac
+          PNPM_BIN="$PNPM_DIR/$ASSET"
+          if [ ! -x "$PNPM_BIN" ]; then
+            mkdir -p "$PNPM_DIR"
+            curl -fsSL -o "$PNPM_BIN" "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
+            ACTUAL_SHA256="$( (sha256sum "$PNPM_BIN" 2>/dev/null || shasum -a 256 "$PNPM_BIN") | cut -d' ' -f1 | tr -d '\\')"
+            if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+              echo "Checksum mismatch for ${ASSET}!" >&2
+              echo "  Expected: ${EXPECTED_SHA256}" >&2
+              echo "  Actual:   ${ACTUAL_SHA256}" >&2
+              rm -f "$PNPM_BIN"
+              exit 1
+            fi
+            chmod +x "$PNPM_BIN"
+            # Create pnpm alias. Windows needs a .exe copy; Unix uses a symlink.
+            if [[ "$ASSET" == *.exe ]]; then
+              cp "$PNPM_BIN" "$PNPM_DIR/pnpm.exe"
+            else
+              ln -sf "$PNPM_BIN" "$PNPM_DIR/pnpm"
+            fi
+          fi
+          echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 25.9.0
+          cache: pnpm
+
+      - name: Download sfw-free
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: | # zizmor: ignore[github-env]
+          SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
+          KERNEL="$(uname -s | cut -d- -f1)"
+          ARCH="$(uname -m)"
+          case "${KERNEL}-${ARCH}" in
+            Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="4a1e8b65e90fce7d5fd066cf0af6c93d512065fa4222a475c8d959a6bc14b9ff" ;;
+            Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="df2eedb2daf2572eee047adb8bfd81c9069edcb200fc7d3710fca98ec3ca81a1" ;;
+            Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="724ccea19d847b79db8cc8e38f5f18ce2dd32336007f42b11bed7d2e5f4a2566" ;;
+            Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="bf1616fc44ac49f1cb2067fedfa127a3ae65d6ec6d634efbb3098cfa355e5555" ;;
+            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="c953e62ad7928d4d8f2302f5737884ea1a757babc26bed6a42b9b6b68a5d54af" ;;
+            *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
+          esac
+          if [ ! -x "$SFW_BIN" ]; then
+            mkdir -p "$SFW_DIR"
+            DOWNLOAD_URL="$(gh api repos/SocketDev/sfw-free/releases/latest \
+              --jq ".assets[] | select(.name == \"$ASSET\") | .browser_download_url")"
+            curl -fsSL -o "$SFW_BIN" "$DOWNLOAD_URL"
+            ACTUAL_SHA256="$( (sha256sum "$SFW_BIN" 2>/dev/null || shasum -a 256 "$SFW_BIN") | cut -d' ' -f1 | tr -d '\\')"
+            if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+              echo "Checksum mismatch for ${ASSET}!" >&2
+              echo "  Expected: ${EXPECTED_SHA256}" >&2
+              echo "  Actual:   ${ACTUAL_SHA256}" >&2
+              rm -f "$SFW_BIN"
+              exit 1
+            fi
+            chmod +x "$SFW_BIN"
+          fi
+          echo "SFW_BIN=$SFW_BIN" >> "${GITHUB_ENV:-/dev/null}"
+
+      - name: Create sfw shims
+        shell: bash
+        run: | # zizmor: ignore[github-env]
+          SHIM_DIR="${RUNNER_TEMP:-/tmp}/sfw-shim"
+          rm -rf "$SHIM_DIR"
+          mkdir -p "$SHIM_DIR"
+          IS_WINDOWS=false
+          [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]] && IS_WINDOWS=true
+          msys_to_win_path() {
+            if $IS_WINDOWS && [[ "$1" =~ ^/([a-zA-Z])/(.*) ]]; then
+              echo "${BASH_REMATCH[1]^^}:\\${BASH_REMATCH[2]//\//\\}"
+            else
+              echo "$1"
+            fi
+          }
+          strip_shim_dir() { echo "$PATH" | tr ':' '\n' | grep -vxF "$SHIM_DIR" | paste -sd: -; }
+          CLEAN_PATH="$(strip_shim_dir)"
+          # https://docs.socket.dev/docs/socket-firewall-free#what-ecosystems-and-package-managers-are-supported
+          for CMD in npm yarn pnpm pip uv cargo; do
+            REAL="$(PATH="$CLEAN_PATH" command -v "$CMD" 2>/dev/null || true)"
+            [ -z "$REAL" ] && continue
+            REAL="$(msys_to_win_path "$REAL")"
+            printf '%s\n' \
+              '#!/bin/bash' \
+              "export PATH=\"\$(echo \"\$PATH\" | tr ':' '\n' | grep -vxF '${SHIM_DIR}' | paste -sd: -)\"" \
+              'export GIT_SSL_NO_VERIFY=true # Workaround: sfw-free does not yet set GIT_SSL_CAINFO.' \
+              "exec \"${SFW_BIN}\" \"${REAL}\" \"\$@\"" \
+              > "$SHIM_DIR/$CMD"
+            chmod +x "$SHIM_DIR/$CMD"
+            if $IS_WINDOWS; then
+              printf '@echo off\r\nset "PATH=;%%PATH%%;"\r\nset "PATH=%%PATH:;%s;=;%%"\r\nset "PATH=%%PATH:~1,-1%%"\r\n"%s" "%s" %%*\r\n' \
+                "$SHIM_DIR" "$SFW_BIN" "$REAL" > "$SHIM_DIR/$CMD.cmd"
+            fi
+          done
+          echo "$SHIM_DIR" >> "${GITHUB_PATH:-/dev/null}"
+          echo "SFW_SHIM_DIR=$SHIM_DIR" >> "${GITHUB_ENV:-/dev/null}"
+
+      - name: Install dependencies
+        run: pnpm install --loglevel error
 
       - name: Type check
         run: pnpm check:tsc
@@ -41,9 +323,124 @@ jobs:
         node-version: [20, 22, 24]
         os: [ubuntu-latest]
     steps:
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@51be85d39d3b4a42dd9d4712948b9d30a2e04794
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        shell: bash
+        run: | # zizmor: ignore[github-env]
+          PNPM_VERSION="10.33.0"
+          PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
+          KERNEL="$(uname -s | cut -d- -f1)"
+          ARCH="$(uname -m)"
+          case "${KERNEL}-${ARCH}" in
+            Linux-x86_64)                      ASSET="pnpm-linux-x64"    ; EXPECTED_SHA256="8d4e8f7d778e8ac482022e2577011706a872542f6f6f233e795a4d9f978ea8b5" ;;
+            Linux-aarch64)                     ASSET="pnpm-linux-arm64"   ; EXPECTED_SHA256="06755ad2817548b84317d857d5c8003dc6e9e28416a3ea7467256c49ab400d48" ;;
+            Darwin-x86_64)                     ASSET="pnpm-macos-x64"    ; EXPECTED_SHA256="c31e29554b0e3f4e03f4617195c949595e4dca36085922003de4896c3ca4057d" ;;
+            Darwin-arm64)                      ASSET="pnpm-macos-arm64"  ; EXPECTED_SHA256="ed8a1f140f4de457b01ebe0be3ae28e9a7e28863315dcd53d22ff1e5a32d63ae" ;;
+            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="pnpm-win-x64.exe" ; EXPECTED_SHA256="afc96009dc39fe23a835d65192049e6a995f342496b175585dc2beda7d42d33f" ;;
+            *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
+          esac
+          PNPM_BIN="$PNPM_DIR/$ASSET"
+          if [ ! -x "$PNPM_BIN" ]; then
+            mkdir -p "$PNPM_DIR"
+            curl -fsSL -o "$PNPM_BIN" "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
+            ACTUAL_SHA256="$( (sha256sum "$PNPM_BIN" 2>/dev/null || shasum -a 256 "$PNPM_BIN") | cut -d' ' -f1 | tr -d '\\')"
+            if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+              echo "Checksum mismatch for ${ASSET}!" >&2
+              echo "  Expected: ${EXPECTED_SHA256}" >&2
+              echo "  Actual:   ${ACTUAL_SHA256}" >&2
+              rm -f "$PNPM_BIN"
+              exit 1
+            fi
+            chmod +x "$PNPM_BIN"
+            # Create pnpm alias. Windows needs a .exe copy; Unix uses a symlink.
+            if [[ "$ASSET" == *.exe ]]; then
+              cp "$PNPM_BIN" "$PNPM_DIR/pnpm.exe"
+            else
+              ln -sf "$PNPM_BIN" "$PNPM_DIR/pnpm"
+            fi
+          fi
+          echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: ${{ matrix.node-version }}
+          cache: pnpm
+
+      - name: Download sfw-free
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: | # zizmor: ignore[github-env]
+          SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
+          KERNEL="$(uname -s | cut -d- -f1)"
+          ARCH="$(uname -m)"
+          case "${KERNEL}-${ARCH}" in
+            Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="4a1e8b65e90fce7d5fd066cf0af6c93d512065fa4222a475c8d959a6bc14b9ff" ;;
+            Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="df2eedb2daf2572eee047adb8bfd81c9069edcb200fc7d3710fca98ec3ca81a1" ;;
+            Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="724ccea19d847b79db8cc8e38f5f18ce2dd32336007f42b11bed7d2e5f4a2566" ;;
+            Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="bf1616fc44ac49f1cb2067fedfa127a3ae65d6ec6d634efbb3098cfa355e5555" ;;
+            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="c953e62ad7928d4d8f2302f5737884ea1a757babc26bed6a42b9b6b68a5d54af" ;;
+            *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
+          esac
+          if [ ! -x "$SFW_BIN" ]; then
+            mkdir -p "$SFW_DIR"
+            DOWNLOAD_URL="$(gh api repos/SocketDev/sfw-free/releases/latest \
+              --jq ".assets[] | select(.name == \"$ASSET\") | .browser_download_url")"
+            curl -fsSL -o "$SFW_BIN" "$DOWNLOAD_URL"
+            ACTUAL_SHA256="$( (sha256sum "$SFW_BIN" 2>/dev/null || shasum -a 256 "$SFW_BIN") | cut -d' ' -f1 | tr -d '\\')"
+            if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+              echo "Checksum mismatch for ${ASSET}!" >&2
+              echo "  Expected: ${EXPECTED_SHA256}" >&2
+              echo "  Actual:   ${ACTUAL_SHA256}" >&2
+              rm -f "$SFW_BIN"
+              exit 1
+            fi
+            chmod +x "$SFW_BIN"
+          fi
+          echo "SFW_BIN=$SFW_BIN" >> "${GITHUB_ENV:-/dev/null}"
+
+      - name: Create sfw shims
+        shell: bash
+        run: | # zizmor: ignore[github-env]
+          SHIM_DIR="${RUNNER_TEMP:-/tmp}/sfw-shim"
+          rm -rf "$SHIM_DIR"
+          mkdir -p "$SHIM_DIR"
+          IS_WINDOWS=false
+          [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]] && IS_WINDOWS=true
+          msys_to_win_path() {
+            if $IS_WINDOWS && [[ "$1" =~ ^/([a-zA-Z])/(.*) ]]; then
+              echo "${BASH_REMATCH[1]^^}:\\${BASH_REMATCH[2]//\//\\}"
+            else
+              echo "$1"
+            fi
+          }
+          strip_shim_dir() { echo "$PATH" | tr ':' '\n' | grep -vxF "$SHIM_DIR" | paste -sd: -; }
+          CLEAN_PATH="$(strip_shim_dir)"
+          # https://docs.socket.dev/docs/socket-firewall-free#what-ecosystems-and-package-managers-are-supported
+          for CMD in npm yarn pnpm pip uv cargo; do
+            REAL="$(PATH="$CLEAN_PATH" command -v "$CMD" 2>/dev/null || true)"
+            [ -z "$REAL" ] && continue
+            REAL="$(msys_to_win_path "$REAL")"
+            printf '%s\n' \
+              '#!/bin/bash' \
+              "export PATH=\"\$(echo \"\$PATH\" | tr ':' '\n' | grep -vxF '${SHIM_DIR}' | paste -sd: -)\"" \
+              'export GIT_SSL_NO_VERIFY=true # Workaround: sfw-free does not yet set GIT_SSL_CAINFO.' \
+              "exec \"${SFW_BIN}\" \"${REAL}\" \"\$@\"" \
+              > "$SHIM_DIR/$CMD"
+            chmod +x "$SHIM_DIR/$CMD"
+            if $IS_WINDOWS; then
+              printf '@echo off\r\nset "PATH=;%%PATH%%;"\r\nset "PATH=%%PATH:;%s;=;%%"\r\nset "PATH=%%PATH:~1,-1%%"\r\n"%s" "%s" %%*\r\n' \
+                "$SHIM_DIR" "$SFW_BIN" "$REAL" > "$SHIM_DIR/$CMD.cmd"
+            fi
+          done
+          echo "$SHIM_DIR" >> "${GITHUB_PATH:-/dev/null}"
+          echo "SFW_SHIM_DIR=$SHIM_DIR" >> "${GITHUB_ENV:-/dev/null}"
+
+      - name: Install dependencies
+        run: pnpm install --loglevel error
 
       - name: Build and run unit tests
         run: pnpm test-ci
