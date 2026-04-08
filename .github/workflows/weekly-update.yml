@@ -29,16 +29,15 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+      - name: Setup pnpm and sfw
+        uses: SocketDev/socket-registry/.github/actions/setup@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
 
       - name: Setup Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version-file: .node-version
-          cache: 'pnpm'
 
-      - uses: SocketDev/socket-registry/.github/actions/install@ec0af5ed4601f2bca8c042b290135c30854648d9 # main
+      - uses: SocketDev/socket-registry/.github/actions/install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
 
       - name: Check for npm updates
         id: check
@@ -68,16 +67,15 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+      - name: Setup pnpm and sfw
+        uses: SocketDev/socket-registry/.github/actions/setup@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
 
       - name: Setup Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version-file: .node-version
-          cache: 'pnpm'
 
-      - uses: SocketDev/socket-registry/.github/actions/install@ec0af5ed4601f2bca8c042b290135c30854648d9 # main
+      - uses: SocketDev/socket-registry/.github/actions/install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
 
       - name: Create update branch
         id: branch
@@ -89,7 +87,7 @@ jobs:
           git checkout -b "$BRANCH_NAME"
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-git-signing@ec0af5ed4601f2bca8c042b290135c30854648d9 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-git-signing@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
         with:
           gpg-private-key: ${{ secrets.BOT_GPG_PRIVATE_KEY }}
 
@@ -316,7 +314,7 @@ jobs:
             test.log
           retention-days: 7
 
-      - uses: SocketDev/socket-registry/.github/actions/cleanup-git-signing@ec0af5ed4601f2bca8c042b290135c30854648d9 # main
+      - uses: SocketDev/socket-registry/.github/actions/cleanup-git-signing@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
         if: always()
 
   notify:
