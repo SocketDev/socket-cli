@@ -157,6 +157,7 @@ jobs:
           }
           strip_shim_dir() { echo "$PATH" | tr ':' '\n' | grep -vxF "$SHIM_DIR" | paste -sd: -; }
           CLEAN_PATH="$(strip_shim_dir)"
+          # https://docs.socket.dev/docs/socket-firewall-free#what-ecosystems-and-package-managers-are-supported
           for CMD in npm yarn pnpm pip uv cargo; do
             REAL="$(PATH="$CLEAN_PATH" command -v "$CMD" 2>/dev/null || true)"
             [ -z "$REAL" ] && continue
@@ -276,6 +277,7 @@ jobs:
           }
           strip_shim_dir() { echo "$PATH" | tr ':' '\n' | grep -vxF "$SHIM_DIR" | paste -sd: -; }
           CLEAN_PATH="$(strip_shim_dir)"
+          # https://docs.socket.dev/docs/socket-firewall-free#what-ecosystems-and-package-managers-are-supported
           for CMD in npm yarn pnpm pip uv cargo; do
             REAL="$(PATH="$CLEAN_PATH" command -v "$CMD" 2>/dev/null || true)"
             [ -z "$REAL" ] && continue
@@ -400,6 +402,7 @@ jobs:
           }
           strip_shim_dir() { echo "$PATH" | tr ':' '\n' | grep -vxF "$SHIM_DIR" | paste -sd: -; }
           CLEAN_PATH="$(strip_shim_dir)"
+          # https://docs.socket.dev/docs/socket-firewall-free#what-ecosystems-and-package-managers-are-supported
           for CMD in npm yarn pnpm pip uv cargo; do
             REAL="$(PATH="$CLEAN_PATH" command -v "$CMD" 2>/dev/null || true)"
             [ -z "$REAL" ] && continue
