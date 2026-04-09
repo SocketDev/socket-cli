@@ -25,11 +25,14 @@ import type { PackageURL } from '@socketregistry/packageurl-js'
 import {
   SOCKET_PUBLIC_API_TOKEN,
 } from '@socketsecurity/lib/constants/socket'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import {
   normalizePath,
 } from '@socketsecurity/lib/paths/normalize'
 import { SocketSdk } from '@socketsecurity/sdk'
 import type { MalwareCheckPackage } from '@socketsecurity/sdk'
+
+const logger = getDefaultLogger()
 
 // Per-request timeout (ms) to avoid blocking the hook on slow responses.
 const API_TIMEOUT = 5_000
@@ -309,21 +312,15 @@ async function check(hook: HookInput): Promise<number> {
   const { blocked, warned } = await checkDepsBatch(deps)
 
   if (warned.length > 0) {
-    console.error(
-      `⚠️ Socket: low-scoring dependencies (not blocked):`
-    )
+    logger.warn('Socket: low-scoring dependencies (not blocked):')
     for (const w of warned) {
-      console.error(
-        `  ${w.purl}: overall score ${w.score}`
-      )
+      logger.warn(`  ${w.purl}: overall score ${w.score}`)
     }
   }
   if (blocked.length > 0) {
-    console.error(
-      `🚫 Socket: blocked ${blocked.length} dep(s):`
-    )
+    logger.error(`Socket: blocked ${blocked.length} dep(s):`)
     for (const b of blocked) {
-      console.error(`  ${b.purl}: ${b.reason}`)
+      logger.error(`  ${b.purl}: ${b.reason}`)
     }
     return 2
   }
@@ -363,8 +360,8 @@ async function checkDepsBatch(
     const result = await sdk.checkMalware(components)
 
     if (!result.success) {
-      console.error(
-        `⚠️ Socket: API returned ${result.status}, allowing all`
+      logger.warn(
+        `Socket: API returned ${result.status}, allowing all`
       )
       return { blocked, warned }
     }
@@ -415,8 +412,8 @@ async function checkDepsBatch(
     }
   } catch (e) {
     // Network failure — log and allow all deps through.
-    console.error(
-      `⚠️ Socket: network error`
+    logger.warn(
+      `Socket: network error`
       + ` (${(e as Error).message}), allowing all`
     )
   }
