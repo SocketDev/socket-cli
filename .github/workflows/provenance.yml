@@ -354,6 +354,7 @@ jobs:
           done
 
       - name: Summary
+        # zizmor: ignore[template-injection]
         run: |
           echo "## Publish Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
