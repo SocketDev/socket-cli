@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   e2e-tests:
-    name: 🔌 E2E Tests
+    name: e2e-tests
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:
