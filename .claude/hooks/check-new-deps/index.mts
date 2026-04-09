@@ -325,7 +325,6 @@ async function check(hook: HookInput): Promise<number> {
     for (const b of blocked) {
       console.error(`  ${b.purl}: ${b.reason}`)
     }
-    console.error(`Use /socket-inspect for details.`)
     return 2
   }
   return 0
