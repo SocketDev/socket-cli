@@ -51,7 +51,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@96c2a403934488b2b1d6127e44f65fd2c36c1150 # main
         with:
           checkout: 'false'
 
@@ -91,7 +91,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@96c2a403934488b2b1d6127e44f65fd2c36c1150 # main
         with:
           checkout: 'false'
           registry-url: 'https://registry.npmjs.org'
@@ -134,14 +134,14 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: read
-      id-token: write
+      id-token: write # NPM trusted publishing via OIDC
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@96c2a403934488b2b1d6127e44f65fd2c36c1150 # main
         with:
           checkout: 'false'
           registry-url: 'https://registry.npmjs.org'
@@ -354,6 +354,7 @@ jobs:
           done
 
       - name: Summary
+        # zizmor: ignore[template-injection]
         run: |
           echo "## Publish Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

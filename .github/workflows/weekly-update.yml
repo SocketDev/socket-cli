@@ -29,7 +29,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@96c2a403934488b2b1d6127e44f65fd2c36c1150 # main
         with:
           checkout: 'false'
 
@@ -52,8 +52,8 @@ jobs:
     if: needs.check-updates.outputs.has-updates == 'true' && inputs.dry-run != true
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: write # Push update branch
+      pull-requests: write # Create PR
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -61,7 +61,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@96c2a403934488b2b1d6127e44f65fd2c36c1150 # main
         with:
           checkout: 'false'
 
@@ -69,13 +69,14 @@ jobs:
         id: branch
         env:
           GH_TOKEN: ${{ github.token }}
+          GITHUB_REPO: ${{ github.repository }}
         run: |
           BRANCH_NAME="weekly-update-$(date +%Y%m%d)"
-          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPO}.git"
           git checkout -b "$BRANCH_NAME"
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-git-signing@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-git-signing@96c2a403934488b2b1d6127e44f65fd2c36c1150 # main
         with:
           gpg-private-key: ${{ secrets.BOT_GPG_PRIVATE_KEY }}
 
@@ -302,7 +303,7 @@ jobs:
             test.log
           retention-days: 7
 
-      - uses: SocketDev/socket-registry/.github/actions/cleanup-git-signing@4edf2e3c3beff7d536e79ce43dfb61abba7cb537 # main
+      - uses: SocketDev/socket-registry/.github/actions/cleanup-git-signing@96c2a403934488b2b1d6127e44f65fd2c36c1150 # main
         if: always()
 
   notify:

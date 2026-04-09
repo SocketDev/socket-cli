@@ -2,132 +2,86 @@
 
 **MANDATORY**: Act as principal-level engineer. Follow these guidelines exactly.
 
-## 👤 USER CONTEXT
+## USER CONTEXT
 
-- **Identify users by git credentials**: Extract name from git commit author, GitHub account, or context
-- 🚨 **When identity is verified**: ALWAYS use their actual name - NEVER use "the user" or "user"
-- **Direct communication**: Use "you/your" when speaking directly to the verified user
-- **Discussing their work**: Use their actual name when referencing their commits/contributions
-- **Example**: If git shows "John-David Dalton <jdalton@example.com>", refer to them as "John-David"
-- **Other contributors**: Use their actual names from commit history/context
+- Identify users by git credentials (commit author, GitHub account). Use their actual name, never "the user".
+- Use "you/your" when speaking directly; use their name when discussing their work.
 
 ## PRE-ACTION PROTOCOL
 
 **MANDATORY**: Review CLAUDE.md before any action. No exceptions.
 
-- Before ANY structural refactor on a file >300 LOC: remove dead code, unused exports, unused imports first — commit that cleanup separately before the real work
-- Multi-file changes: break into phases (≤5 files each), verify each phase before the next
-- When pointed to existing code as a reference: study it before building — working code is a better spec than any description
-- Work from raw error data, not theories — if a bug report has no error output, ask for it
+- Before ANY structural refactor on a file >300 LOC: remove dead code, unused exports, unused imports first -- commit that cleanup separately
+- Multi-file changes: break into phases (<=5 files each), verify each phase before the next
+- When pointed to existing code as a reference: study it before building
+- Work from raw error data, not theories -- if a bug report has no error output, ask for it
 - On "yes", "do it", or "go": execute immediately, no plan recap
 
 ## VERIFICATION PROTOCOL
 
 **MANDATORY**: Before claiming any task is complete:
 
-1. Run the actual command — execute the script, run the test, check the output
+1. Run the actual command -- execute the script, run the test, check the output
 2. State what you verified, not just "looks good"
-3. **FORBIDDEN**: Claiming "Done" when any test output shows failures, or characterizing incomplete/broken work as complete
+3. **FORBIDDEN**: Claiming "Done" when any test output shows failures
 4. If type-check or lint is configured, run it and fix ALL errors before reporting done
 5. Re-read every file modified; confirm nothing references something that no longer exists
 
 ## CONTEXT & EDIT SAFETY
 
-- After 10+ messages: re-read any file before editing it — do not trust remembered contents
-- Read files >500 LOC in chunks using offset/limit; never assume one read captured the whole file
-- Before every edit: re-read the file. After every edit: re-read to confirm the change applied correctly
-- When renaming anything, search separately for: direct calls, type references, string literals, dynamic imports, re-exports, test files — one grep is not enough
-- Never fix a display/rendering problem by duplicating state — one source of truth, everything reads from it
+- After 10+ messages: re-read any file before editing it
+- Read files >500 LOC in chunks using offset/limit
+- Before every edit: re-read the file. After every edit: re-read to confirm
+- When renaming: search for direct calls, type references, string literals, dynamic imports, re-exports, test files -- one grep is not enough
+- Never fix a display/rendering problem by duplicating state
 
-## JUDGMENT PROTOCOL
+## JUDGMENT & SCOPE
 
-- If the user's request is based on a misconception, say so before executing
-- If you spot a bug adjacent to what was asked, flag it: "I also noticed X — want me to fix it?"
-- You are a collaborator, not just an executor
-
-## SCOPE PROTOCOL
-
-- Do not add features, refactor, or make improvements beyond what was asked — band-aids when asked for band-aids
-- Try the simplest approach first; if architecture is actually flawed, flag it and wait for approval before restructuring
-- When asked to "make a plan," output only the plan — no code until given the go-ahead
+- If the request is based on a misconception, say so before executing
+- If you spot a bug adjacent to what was asked, flag it
+- Do not add features, refactor, or make improvements beyond what was asked
+- Try the simplest approach first; flag architecture issues and wait for approval
+- When asked to "make a plan," output only the plan -- no code until given the go-ahead
 
 ## SELF-EVALUATION
 
-- Before calling anything done: present two views — what a perfectionist would reject vs. what a pragmatist would ship — let the user decide
+- Before calling anything done: present what a perfectionist would reject vs. what a pragmatist would ship
 - After fixing a bug: explain why it happened and what category of bug it represents
-- If a fix doesn't work after two attempts: stop, re-read the relevant section top-down, state where the mental model was wrong, propose something fundamentally different
-- If asked to "step back" or "we're going in circles": drop everything, rethink from scratch
+- If a fix doesn't work after two attempts: stop, re-read top-down, state where the mental model was wrong
+- If asked to "step back": drop everything, rethink from scratch
 
 ## HOUSEKEEPING
 
-- Before risky changes: offer to checkpoint — "want me to commit before this?"
-- If a file is getting unwieldy (>400 LOC): flag it — "this is big enough to cause pain — want me to split it?"
+- Before risky changes: offer to checkpoint
+- If a file is getting unwieldy (>400 LOC): flag it
 
 ## Critical Rules
 
-### Fix ALL Issues
-
-- **Fix ALL issues when asked** - Never dismiss issues as "pre-existing" or "not caused by my changes"
-- When asked to fix, lint, or check: fix everything found, regardless of who introduced it
-- Always address all issues found during lint/check operations
-
-## ABSOLUTE RULES
-
-- Never create files unless necessary
-- Always prefer editing existing files
+- **Fix ALL issues when asked** -- never dismiss issues as "pre-existing"
+- Never create files unless necessary; always prefer editing existing files
 - Forbidden to create docs unless requested
-- Required to do exactly what was asked
-- 🚨 **NEVER use `npx`, `pnpm dlx`, or `yarn dlx`** — use `pnpm exec <package>` for devDep binaries, or `pnpm run <script>` for package.json scripts. If a tool is needed, add it as a pinned devDependency first.
-
-## ROLE
-
-Principal Software Engineer: production code, architecture, reliability, ownership.
+- 🚨 **NEVER use `npx`, `pnpm dlx`, or `yarn dlx`** -- use `pnpm exec <package>` for devDep binaries, or `pnpm run <script>` for package.json scripts
 
 ## EVOLUTION
 
 If user repeats instruction 2+ times, ask: "Should I add this to CLAUDE.md?"
 
-## 📚 SHARED STANDARDS
+## SHARED STANDARDS
 
 **Canonical reference**: `../socket-registry/CLAUDE.md`
 
 All shared standards (git, testing, code style, cross-platform, CI) defined in socket-registry/CLAUDE.md.
 
-**Quick references**:
-
-- Commits: [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) `<type>(<scope>): <description>` - NO AI attribution
+- Commits: [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) `<type>(<scope>): <description>` -- NO AI attribution
 - Scripts: Prefer `pnpm run foo --flag` over `foo:bar` scripts
 - Dependencies: After `package.json` edits, run `pnpm install` to update `pnpm-lock.yaml`
-- Backward Compatibility: 🚨 FORBIDDEN to maintain - actively remove when encountered (see canonical CLAUDE.md)
-- Work Safeguards: MANDATORY commit + backup branch before bulk changes
+- Backward Compatibility: 🚨 FORBIDDEN to maintain -- actively remove when encountered
 - Safe Deletion: Use `safeDelete()` from `@socketsecurity/lib/fs` (NEVER `fs.rm/rmSync` or `rm -rf`)
-- HTTP Requests: NEVER use `fetch()` — use `httpJson`/`httpText`/`httpRequest` from `@socketsecurity/lib/http-request`
+- HTTP Requests: NEVER use `fetch()` -- use `httpJson`/`httpText`/`httpRequest` from `@socketsecurity/lib/http-request`
 
 ### Documentation Policy
 
-🚨 **CRITICAL**: Do NOT litter the repository with documentation files.
-
-**Allowed documentation locations:**
-- `docs/` - Primary documentation folder (lowercase-with-hyphens.md filenames, pithy writing with visuals)
-- `README.md` - Root project README only
-- `CHANGELOG.md` - Root changelog only
-- `SECURITY.md` - Root security policy only
-- `CLAUDE.md` - Root project instructions only
-- `packages/*/README.md` - Package-specific READMEs only
-- `test/fixtures/*/README.md` - Test fixture explanations only (when fixtures are complex)
-- `test/*/README.md` - Test suite architecture docs only (e.g., `test/e2e/README.md`, `test/helpers/README.md`)
-
-**Forbidden documentation locations:**
-- ❌ `.claude/*.md` - No temporary analysis docs, architectural notes, coverage reports
-- ❌ Root directory clutter - No ad-hoc markdown files
-- ❌ Scattered docs - No documentation outside approved locations
-
-**When creating documentation:**
-1. Ask: Does this belong in `docs/`? (99% of the time, yes)
-2. Use descriptive lowercase-with-hyphens.md filenames
-3. Keep writing pithy and focused
-4. Include visuals where helpful
-5. Never create temporary/scratch documentation files
+Do NOT litter the repository with documentation files. Allowed locations: `docs/`, root `README.md`/`CHANGELOG.md`/`SECURITY.md`/`CLAUDE.md`, `packages/*/README.md`, `test/fixtures/*/README.md`, `test/*/README.md`. No `.claude/*.md` analysis docs, no ad-hoc markdown files.
 
 ---
 
@@ -135,385 +89,77 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 
 ## Commands
 
-### Development Commands
-
-- **Build**: `pnpm run build` (smart build, skips unchanged)
-- **Build force**: `pnpm run build --force` (force rebuild CLI + SEA for current platform)
-- **Build SEA**: `pnpm run build:sea` (build SEA binaries for all platforms)
-- **Build CLI**: `pnpm run build:cli` (CLI package only)
-- **Test**: `pnpm test` (runs check + all tests from monorepo root)
-- **Test unit only**: `pnpm --filter @socketsecurity/cli run test:unit`
-- **Lint**: `pnpm run lint` (uses oxlint)
-- **Type check**: `pnpm run type` (uses tsc)
-- **Check all**: `pnpm run check` (lint + typecheck)
-- **Fix all issues**: `pnpm run fix` (auto-fix linting and formatting)
-- **Commit without tests**: `git commit --no-verify` (skips pre-commit hooks including tests)
-
-### Binary Build Notes
-
-- **Node-smol binaries**: Downloaded from socket-btm releases (not built locally)
-- **Yoga WASM**: Downloaded from socket-btm releases (not built locally)
-- **SEA binaries**: Built by injecting CLI blob into downloaded node-smol binaries
-- **Output location**: `packages/package-builder/build/{dev|prod}/out/socketbin-cli-<platform>-<arch>/socket`
-- **Cache location**: Build assets in `packages/build-infra/build/downloaded/`, DLX packages and VFS-extracted tools in `~/.socket/_dlx/`
-
-### Testing Best Practices - CRITICAL: NO -- FOR FILE PATHS
-
-- **🚨 NEVER USE `--` BEFORE TEST FILE PATHS** - This runs ALL tests, not just your specified files!
-- **Always build before testing**: Run `pnpm run build:cli` before running tests to ensure dist files are up to date.
-- **Test all**: ✅ CORRECT: `pnpm test` (from monorepo root)
-- **Test single file**: ✅ CORRECT: `pnpm --filter @socketsecurity/cli run test:unit src/commands/specific/cmd-file.test.mts`
-  - ❌ WRONG: `pnpm test:unit src/commands/specific/cmd-file.test.mts` (command not found at root!)
-  - ❌ WRONG: `pnpm --filter @socketsecurity/cli run test:unit -- src/commands/specific/cmd-file.test.mts` (runs ALL tests!)
-- **Test multiple files**: ✅ CORRECT: `pnpm --filter @socketsecurity/cli run test:unit file1.test.mts file2.test.mts`
-- **Test with pattern**: ✅ CORRECT: `pnpm --filter @socketsecurity/cli run test:unit src/commands/specific/cmd-file.test.mts -t "pattern"`
-  - ❌ WRONG: `pnpm --filter @socketsecurity/cli run test:unit -- src/commands/specific/cmd-file.test.mts -t "pattern"`
-- **Update snapshots**:
-  - All tests: `pnpm testu` (builds first, then updates all snapshots)
-  - Single file: ✅ CORRECT: `pnpm testu src/commands/specific/cmd-file.test.mts`
-  - ❌ WRONG: `pnpm testu -- src/commands/specific/cmd-file.test.mts` (updates ALL snapshots!)
-- **Update with --update flag**: `pnpm --filter @socketsecurity/cli run test:unit src/commands/specific/cmd-file.test.mts --update`
-- **Timeout for long tests**: Use `timeout` command or specify in test file.
-
-### Commit Messages
-
-Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
-
-```
-<type>(<scope>): <description>
-
-Types: feat, fix, docs, style, refactor, test, chore, perf
-```
-
-- **NO AI attribution** in commit messages — the commit-msg hook auto-strips it
-
-### Running the CLI locally
-
-- **Watch mode**: `pnpm dev` (auto-rebuilds on file changes)
-- **Build and run**: `pnpm build:cli && node packages/cli/dist/index.js`
-- **Run built version**: `node packages/cli/dist/index.js <args>` (requires prior build)
-
-**Note**: Avoid `pnpm exec socket` if you have a global `socket` installation, as it may conflict with the local package.
-
-### Package Management
-
-- **Package Manager**: This project uses pnpm (v10.22+)
-- **Install dependencies**: `pnpm install`
-- **Add dependency**: `pnpm add <package>`
-- **Add dev dependency**: `pnpm add -D <package>`
-- **Update dependencies**: `pnpm update`
-- **Override behavior**: pnpm.overrides in package.json controls dependency versions across the entire project
-- **Using $ syntax**: `"$package-name"` in overrides means "use the version specified in dependencies"
-
-## Architecture
-
-This is a CLI tool for Socket.dev security analysis, built with TypeScript using .mts extensions.
-
-### Core Structure
-
-- **Entry point**: `src/cli.mts` - Main CLI entry with meow subcommands
-- **Commands**: `src/commands.mts` - Exports all command definitions
-- **Command modules**: `src/commands/*/` - Each feature has its own directory with cmd-_, handle-_, and output-\* files
-- **Utilities**: `src/utils/` - Shared utilities for API, config, formatting, etc.
-- **Constants**: `src/constants.mts` - Application constants
-- **Types**: `src/types.mts` - TypeScript type definitions
-
-### Command Architecture Pattern
-
-**✅ PREFERRED: Consolidated Pattern for Simple Commands**
-
-For commands with straightforward logic (no subcommands, < 200 lines total), consolidate into a single `cmd-*.mts` file:
-
-```typescript
-// Single cmd-*.mts file structure:
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-// ... other imports
-
-const logger = getDefaultLogger()
-
-export const CMD_NAME = 'command-name'
-const description = 'Command description'
-const hidden = false
-
-// Types.
-interface CommandResult {
-  // Type definitions here.
-}
-
-// Helper functions.
-function helperFunction(): void {
-  // Helper logic here.
-}
-
-// Command handler.
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: CliCommandContext,
-): Promise<void> {
-  const config: CliCommandConfig = {
-    /* ... */
-  }
-  const cli = meowOrExit({ argv, config, importMeta, parentName })
-
-  // Command logic here.
-}
-
-// Exported command.
-export const cmdCommandName = {
-  description,
-  hidden,
-  run,
-}
-```
-
-**Benefits**:
-
-- All command logic in one file for easy navigation
-- Clear sections: imports → constants → types → helpers → handler → export
-- Reduced file count (3 files → 1 file)
-- Maintained compatibility with existing meow-based CLI architecture
-
-**Examples**: `whoami`, `logout` (consolidated)
-
-**⚠️ Legacy Pattern for Complex Commands**
-
-Complex commands with subcommands or > 200 lines should keep the modular pattern:
-
-- `cmd-*.mts` - Command definition and CLI interface
-- `handle-*.mts` - Business logic and processing
-- `output-*.mts` - Output formatting (JSON, markdown, etc.)
-- `fetch-*.mts` - API calls (where applicable)
-
-**Examples**: `scan`, `organization`, `repository` (keep modular)
-
-### Key Command Categories
-
-- **npm/npx wrapping**: `socket npm`, `socket npx` - Wraps npm/npx with security scanning
-- **Scanning**: `socket scan` - Create and manage security scans
-- **Organization management**: `socket organization` - Manage org settings and policies
-- **Package analysis**: `socket package` - Analyze package scores
-- **Optimization**: `socket optimize` - Apply Socket registry overrides
-- **Configuration**: `socket config` - Manage CLI configuration
-
-### Update Mechanism
-
-Socket CLI has different update mechanisms depending on installation method:
-
-#### SEA Binaries (Standalone Executables)
-
-- **Update checking**: Handled by node-smol C stub via embedded `--update-config`
-- **Configuration**: Embedded during build in `packages/cli/scripts/sea-build-utils/builder.mjs`
-- **GitHub releases**: Checks `https://api.github.com/repos/SocketDev/socket-cli/releases`
-- **Tag pattern**: Matches `socket-cli-*` (e.g., `socket-cli-20260127-abc1234`)
-- **Notification**: Shown on CLI exit (non-blocking)
-- **Update command**: `socket self-update` (handled by node-smol, not TypeScript CLI)
-- **Environment variable**: `SOCKET_CLI_SKIP_UPDATE_CHECK=1` to disable
-
-#### npm/pnpm/yarn Installations
-
-- **Update checking**: TypeScript-based in `src/utils/update/manager.mts`
-- **Registry**: Checks npm registry for `socket` package
-- **Notification**: Shown on CLI exit (non-blocking)
-- **Update command**: Use package manager (e.g., `npm update -g socket`)
-- **Environment variable**: `SOCKET_CLI_SKIP_UPDATE_CHECK=1` to disable
-
-#### Key Implementation Details
-
-- `scheduleUpdateCheck()` in `manager.mts` skips when `isSeaBinary()` returns true
-- SEA binaries use embedded update-config.json (1112 bytes)
-- node-smol handles HTTP requests via embedded libcurl
-- Update checks respect CI/TTY detection and rate limiting
-
-### Build System
-
-- Uses esbuild for building distribution files
-- TypeScript compilation with tsgo
-- Environment config (.env.test for testing)
-- Linting with Oxlint
-- Formatting with Oxfmt
-
-### Testing
-
-- Vitest for unit testing
-- Test files use `.test.mts` extension
-- Fixtures in `test/fixtures/`
-- Coverage reporting available
-
-### Test Style — Functional Over Source Scanning
-
-**NEVER write source-code-scanning tests**
-
-Do not read source files and assert on their contents (`.toContain('pattern')`). These tests are brittle and break on any refactor.
-
-- Write functional tests that verify **behavior**, not string patterns
-- For modules requiring a built binary: use integration tests
-- For pure logic: use unit tests with real function calls
-
-### External Dependencies
-
-- Dependencies bundled into `dist/cli.js` via esbuild
-- Uses Socket registry overrides for security
-- Custom patches applied to dependencies in `patches/`
-
-## Environment and Configuration
-
-### Environment Files
-
-- **`.env.test`** - Test environment configuration
-
-### Configuration Files
-
-- **`.oxfmtrc.json`** - Oxfmt formatter configuration
-- **`.oxlintrc.json`** - Oxlint linter configuration
-- **`vitest.config.mts`** - Vitest test runner configuration
-- **`tsconfig.json`** - Main TypeScript configuration
-- **`tsconfig.dts.json`** - TypeScript configuration for type definitions
-
-### Package Structure
-
-- **Binary entries**: `socket`, `socket-npm`, `socket-npx` (defined in package.json `bin` field, pointing to `dist/index.js`)
-- **Distribution**: Built files go to `dist/` directory
-- **External dependencies**: Bundled into `dist/cli.js` via esbuild
-- **Test fixtures**: Located in `test/fixtures/`
-
-### Dependency Management
-
-- Uses Socket registry overrides for enhanced alternatives
-- Custom patches applied to dependencies via `custompatch`
-- Overrides specified in package.json for enhanced alternatives
-
-## Changelog Management
-
-Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format. Include user-facing changes only: Added, Changed, Fixed, Removed. Exclude: dependency updates, refactoring, tests, CI/CD, formatting. Marketing voice, stay concise.
-
-### Third-Party Integrations
-
-Socket CLI integrates with various third-party tools and services:
-
-- **@coana-tech/cli**: Static analysis tool for reachability analysis and vulnerability detection
-- **cdxgen**: CycloneDX BOM generator for creating software bill of materials
-- **synp**: Tool for converting between yarn.lock and package-lock.json formats
-
-## 🔧 Code Style (MANDATORY)
-
-### 📁 File Organization
-
-- **File extensions**: Use `.mts` for TypeScript module files
-- **Import order**: Node.js built-ins first, then third-party packages, then local imports
-- **Import grouping**: Group imports by source (Node.js, external packages, local modules)
-- **Type imports**: 🚨 ALWAYS use separate `import type` statements for TypeScript types, NEVER mix runtime imports with type imports in the same statement
-  - ✅ CORRECT: `import { readPackageJson } from '@socketsecurity/registry/lib/packages'` followed by `import type { PackageJson } from '@socketsecurity/registry/lib/packages'`
-  - ❌ FORBIDDEN: `import { readPackageJson, type PackageJson } from '@socketsecurity/registry/lib/packages'`
-
-### Naming Conventions
-
-- **Constants**: Use `UPPER_SNAKE_CASE` for constants (e.g., `CMD_NAME`, `REPORT_LEVEL`)
-- **Files**: Use kebab-case for filenames (e.g., `cmd-scan-create.mts`, `handle-create-new-scan.mts`)
-- **Variables**: Use camelCase for variables and functions
-
-### 🏗️ Code Structure (CRITICAL PATTERNS)
-
-- **Command pattern**: Complex commands use modular pattern (`cmd-*.mts`, `handle-*.mts`, `output-*.mts`); simple commands use consolidated single `cmd-*.mts` file
-- **Type definitions**: 🚨 ALWAYS use `import type` for better tree-shaking
-- **Flags**: 🚨 MUST use `MeowFlags` type with descriptive help text
-- **Error handling**: 🚨 REQUIRED - Use custom error types `AuthError` and `InputError`
-- **Array destructuring**: Use object notation `{ 0: key, 1: data }` instead of array destructuring `[key, data]`
-- **Dynamic imports**: 🚨 FORBIDDEN - Never use dynamic imports (`await import()`). Always use static imports at the top of the file
-- **Sorting**: 🚨 MANDATORY - Always sort lists, exports, and items in documentation headers alphabetically/alphanumerically for consistency
-- **Comment policy**: Default to NO comments. Only add one when the WHY is non-obvious to a senior engineer reading the code cold
-- **Comment placement**: Place comments on their own line, not to the right of code
-- **Comment formatting**: Use fewer hyphens/dashes and prefer commas, colons, or semicolons for better readability
-- **Await in loops**: When using `await` inside for-loops, sequential processing is acceptable when iterations depend on each other
-- **If statement returns**: Never use single-line return if statements; always use proper block syntax with braces
-- **List formatting**: Use `-` for bullet points in text output, not `•` or other Unicode characters, for better terminal compatibility
-- **Existence checks**: Perform simple existence checks first before complex operations
-- **Destructuring order**: Sort destructured properties alphabetically in const declarations
-- **Function ordering**: Place functions in alphabetical order, with private functions first, then exported functions
-- **GitHub API calls**: Use Octokit instances from `src/utils/github.mts` (`getOctokit()`, `getOctokitGraphql()`) instead of raw fetch calls for GitHub API interactions
-- **Object mappings**: Use objects with `__proto__: null` (not `undefined`) for static string-to-string mappings and lookup tables to prevent prototype pollution; use `Map` for dynamic collections that will be mutated
-- **Mapping constants**: Move static mapping objects outside functions as module-level constants with descriptive UPPER_SNAKE_CASE names
-- **Array length checks**: Use `!array.length` instead of `array.length === 0`. For `array.length > 0`, use `!!array.length` when function must return boolean, or `array.length` when used in conditional contexts
-- **Catch parameter naming**: Use `catch (e)` instead of `catch (error)` for consistency across the codebase
-- **Node.js fs imports**: 🚨 MANDATORY pattern - `import { someSyncThing, promises as fs } from 'node:fs'`
-- **Process spawning**: 🚨 FORBIDDEN to use Node.js built-in `child_process.spawn` - MUST use `spawn` from `@socketsecurity/registry/lib/spawn`
-- **Number formatting**: 🚨 REQUIRED - Use underscore separators (e.g., `20_000`) for large numeric literals. 🚨 FORBIDDEN - Do NOT modify number values inside strings
-
-### Error Handling
-
-- **Input validation errors**: Use `InputError` from `src/utils/errors.mts` for user input validation failures (missing files, invalid arguments, etc.)
-- **Authentication errors**: Use `AuthError` from `src/utils/errors.mts` for API authentication issues
-- **CResult pattern**: Use `CResult<T>` type for functions that can fail, following the Result/Either pattern with `ok: true/false`
-- **Process exit**: Avoid `process.exit(1)` unless absolutely necessary; prefer throwing appropriate error types that the CLI framework handles
-- **Error messages**: Write clear, actionable error messages that help users understand what went wrong and how to fix it
-- **Examples**:
-  - ✅ `throw new InputError('No .socket directory found in current directory')`
-  - ✅ `throw new AuthError('Invalid API token')`
-  - ❌ `logger.error('Error occurred'); return` (doesn't set proper exit code)
-  - ❌ `process.exit(1)` (bypasses error handling framework)
-
-### Safe File Operations (SECURITY CRITICAL)
-
-- **File deletion**: See SHARED STANDARDS section
-- 🚨 Use `safeDelete()` from `@socketsecurity/lib/fs` (NEVER `fs.rm/rmSync` or `rm -rf`)
-
-### Debugging and Troubleshooting
-
-- **CI vs Local Differences**: CI uses published npm packages, not local versions. Be defensive when using @socketsecurity/registry features
-- **File Existence Checks**: ALWAYS use `existsSync()` from `node:fs`, NEVER use `fs.access()` or `fs.promises.access()` for file/directory existence checks. `existsSync()` is synchronous, more direct, and the established pattern in this codebase for consistency
-
-### Formatting
-
-- **Linting**: Uses Oxlint with TypeScript and import plugins
-- **Formatting**: Uses Oxfmt for code formatting with 2-space indentation
-- **Line length**: Target 80 character line width where practical
+- **Build**: `pnpm run build` (smart build) | `pnpm run build --force` | `pnpm run build:cli` (CLI only) | `pnpm run build:sea`
+- **Test**: `pnpm test` (all from monorepo root) | `pnpm --filter @socketsecurity/cli run test:unit`
+- **Lint**: `pnpm run lint` | **Type check**: `pnpm run type` | **Check all**: `pnpm run check`
+- **Fix**: `pnpm run fix` (auto-fix linting and formatting)
+- **Dev**: `pnpm dev` (watch mode) | **Run built**: `node packages/cli/dist/index.js <args>`
+
+### Testing -- CRITICAL
+
+- 🚨 **NEVER USE `--` BEFORE TEST FILE PATHS** -- this runs ALL tests, not just specified files
+- Always build before testing: `pnpm run build:cli`
+- Single file: `pnpm --filter @socketsecurity/cli run test:unit src/commands/specific/cmd-file.test.mts`
+- Update snapshots: `pnpm testu src/commands/specific/cmd-file.test.mts`
+- Update with flag: `pnpm --filter @socketsecurity/cli run test:unit src/commands/specific/cmd-file.test.mts --update`
+- NEVER write source-code-scanning tests -- verify behavior, not string patterns
+
+### Changelog
+
+Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). User-facing changes only: Added, Changed, Fixed, Removed. Marketing voice, stay concise.
+
+## Code Style (MANDATORY)
+
+### File Organization
+
+- `.mts` extensions for TypeScript modules
+- 🚨 ALWAYS use separate `import type` statements -- NEVER mix runtime and type imports
+- Node.js fs: `import { someSyncThing, promises as fs } from 'node:fs'`
+- Process spawning: MUST use `spawn` from `@socketsecurity/registry/lib/spawn` (NEVER `child_process`)
+- File existence: ALWAYS use `existsSync()` from `node:fs` (NEVER `fs.access`)
+
+### Code Patterns
+
+- Array destructuring: Use `{ 0: key, 1: data }` instead of `[key, data]`
+- Dynamic imports: 🚨 FORBIDDEN -- always use static imports
+- Sorting: 🚨 MANDATORY -- sort lists, exports, destructured properties, documentation headers alphabetically
+- Comments: Default NO. Only when the WHY is non-obvious. Own line, not inline.
+- Functions: Alphabetical order, private first, exported second
+- Object mappings: Use `__proto__: null` for static lookup tables; `Map` for dynamic collections
+- Array length: `!array.length` not `=== 0`; `array.length` or `!!array.length` for truthy
+- Catch: `catch (e)` not `catch (error)`
+- Numbers: Use underscore separators (`20_000`). Do NOT modify number values inside strings.
+- Flags: MUST use `MeowFlags` type with descriptive help text
+- Error handling: Use `InputError` and `AuthError` from `src/utils/errors.mts`; prefer `CResult<T>` for fallible functions; avoid `process.exit(1)`
+- GitHub API: Use Octokit from `src/utils/github.mts`, not raw fetch
+
+### Command Pattern
+
+- Simple commands (<200 LOC, no subcommands): single `cmd-*.mts` file
+- Complex commands: modular `cmd-*.mts` + `handle-*.mts` + `output-*.mts` + `fetch-*.mts`
 
 ### Completion Protocol
-- **NEVER claim done with something 80% complete** — finish 100% before reporting
-- When a multi-step change doesn't immediately show gains, commit and keep iterating — don't revert
-- If one approach fails, fix forward: analyze why, adjust, rebuild, re-measure — not `git checkout`
-- After EVERY code change: build, test, verify, commit. This is a single atomic unit
-- Reverting is a last resort after exhausting forward fixes — and requires explicit user approval
 
-### File System as State
-The file system is working memory. Use it actively:
-- Write intermediate results and analysis to files in `.claude/`
-- Use `.claude/` for plans, status tracking, and cross-session context
-- When debugging, save logs and outputs to files for reproducible verification
-- Don't hold large analysis in context — write it down, reference it later
-
-### Self-Improvement
-- After ANY correction from the user: log the pattern to memory so the same mistake is never repeated
-- Convert mistakes into strict rules — don't just note them, enforce them
-- After fixing a bug: explain why it happened and whether anything prevents that category of bug in the future
+- NEVER claim done at 80% -- finish 100% before reporting
+- Fix forward: if an approach fails, analyze why, adjust, rebuild -- not `git checkout`
+- After EVERY code change: build, test, verify, commit as a single atomic unit
+- Reverting requires explicit user approval
 
 ### Context Awareness
-- Tool results over 50K characters are silently truncated — if search returns suspiciously few results, narrow scope and re-run
-- For tasks touching >5 files: use sub-agents with worktree isolation to prevent context decay
 
----
+- Tool results over 50K characters are silently truncated -- narrow scope and re-run if results look incomplete
+- For tasks touching >5 files: use sub-agents with worktree isolation
 
 ## Codex Usage
 
-- **Codex is for advice and critical assessment ONLY — never for making code changes**
-- Ask Codex to: analyze, diagnose, review, estimate, suggest approaches
-- Do NOT ask Codex to: implement, write, modify, add code to files
-- Implement changes yourself after understanding Codex's advice
-- **Proactive consultation**: Before diving deep into a complex optimization (>30min estimated), consult Codex for critical analysis first — this catches fundamental design flaws early
-- **Bounce ideas**: Use Codex as a sounding board when stuck — describe the problem, what you've tried, and ask for honest assessment of whether the approach is worth continuing
+- Codex is for advice and critical assessment ONLY -- never for making code changes
+- Before complex optimizations (>30min), consult Codex for critical analysis first
 
 ## Agents & Skills
 
-- `/security-scan` — runs AgentShield + zizmor security audit
-- `/quality-scan` — comprehensive code quality analysis
-- `/quality-loop` — scan and fix iteratively
+- `/security-scan` -- AgentShield + zizmor security audit
+- `/quality-scan` -- comprehensive code quality analysis
+- `/quality-loop` -- scan and fix iteratively
+- `/sync-checksums` -- sync external tool SHA-256 checksums
 - Agents: `code-reviewer`, `security-reviewer`, `refactor-cleaner` (in `.claude/agents/`)
 - Shared subskills in `.claude/skills/_shared/`
-- Pipeline state tracked in `.claude/ops/queue.yaml`
-
-## Quality Standards
-
-- Code MUST pass all existing lints and type checks
-- All patterns MUST follow established codebase conventions
-- Error handling MUST be robust and user-friendly
-- Performance considerations MUST be evaluated for any changes
