@@ -16,13 +16,23 @@ on:
         options:
           - '0'
           - '1'
+      publish-without-sfw:
+        description: 'Publish directly to npm, bypassing Socket firewall shims'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
 jobs:
   build:
+    name: Build and Publish
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
-      id-token: write
+      id-token: write # NPM trusted publishing via OIDC
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -73,25 +83,41 @@ jobs:
           registry-url: https://registry.npmjs.org
           scope: '@socketsecurity'
 
-      - name: Download sfw-free
+      - name: Download sfw
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          SOCKET_API_KEY: ${{ secrets.SOCKET_API_KEY }} # zizmor: ignore[secrets-outside-env]
         run: | # zizmor: ignore[github-env]
           SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
           KERNEL="$(uname -s | cut -d- -f1)"
           ARCH="$(uname -m)"
-          case "${KERNEL}-${ARCH}" in
-            Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="4a1e8b65e90fce7d5fd066cf0af6c93d512065fa4222a475c8d959a6bc14b9ff" ;;
-            Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="df2eedb2daf2572eee047adb8bfd81c9069edcb200fc7d3710fca98ec3ca81a1" ;;
-            Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="724ccea19d847b79db8cc8e38f5f18ce2dd32336007f42b11bed7d2e5f4a2566" ;;
-            Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="bf1616fc44ac49f1cb2067fedfa127a3ae65d6ec6d634efbb3098cfa355e5555" ;;
-            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="c953e62ad7928d4d8f2302f5737884ea1a757babc26bed6a42b9b6b68a5d54af" ;;
-            *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
-          esac
+          USE_ENTERPRISE=false
+          [ -n "$SOCKET_API_KEY" ] && USE_ENTERPRISE=true
+          if [ "$USE_ENTERPRISE" = "true" ]; then
+            REPO="SocketDev/firewall-release"
+            case "${KERNEL}-${ARCH}" in
+              Linux-x86_64)                      ASSET="sfw-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="9115b4ca8021eb173eb9e9c3627deb7f1066f8debd48c5c9d9f3caabb2a26a4b" ;;
+              Linux-aarch64)                     ASSET="sfw-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="671270231617142404a1564e52672f79b806f9df3f232fcc7606329c0246da55" ;;
+              Darwin-x86_64)                     ASSET="sfw-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="01d64d40effda35c31f8d8ee1fed1388aac0a11aba40d47fba8a36024b77500c" ;;
+              Darwin-arm64)                      ASSET="sfw-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="acad0b517601bb7408e2e611c9226f47dcccbd83333d7fc5157f1d32ed2b953d" ;;
+              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="9a50e1ddaf038138c3f85418dc5df0113bbe6fc884f5abe158beaa9aea18d70a" ;;
+              *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
+            esac
+          else
+            REPO="SocketDev/sfw-free"
+            case "${KERNEL}-${ARCH}" in
+              Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="4a1e8b65e90fce7d5fd066cf0af6c93d512065fa4222a475c8d959a6bc14b9ff" ;;
+              Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="df2eedb2daf2572eee047adb8bfd81c9069edcb200fc7d3710fca98ec3ca81a1" ;;
+              Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="724ccea19d847b79db8cc8e38f5f18ce2dd32336007f42b11bed7d2e5f4a2566" ;;
+              Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="bf1616fc44ac49f1cb2067fedfa127a3ae65d6ec6d634efbb3098cfa355e5555" ;;
+              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="c953e62ad7928d4d8f2302f5737884ea1a757babc26bed6a42b9b6b68a5d54af" ;;
+              *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
+            esac
+          fi
           if [ ! -x "$SFW_BIN" ]; then
             mkdir -p "$SFW_DIR"
-            DOWNLOAD_URL="$(gh api repos/SocketDev/sfw-free/releases/latest \
+            DOWNLOAD_URL="$(gh api "repos/${REPO}/releases/latest" \
               --jq ".assets[] | select(.name == \"$ASSET\") | .browser_download_url")"
             curl -fsSL -o "$SFW_BIN" "$DOWNLOAD_URL"
             ACTUAL_SHA256="$( (sha256sum "$SFW_BIN" 2>/dev/null || shasum -a 256 "$SFW_BIN") | cut -d' ' -f1 | tr -d '\\')"
@@ -105,6 +131,10 @@ jobs:
             chmod +x "$SFW_BIN"
           fi
           echo "SFW_BIN=$SFW_BIN" >> "${GITHUB_ENV:-/dev/null}"
+          echo "SFW_IS_ENTERPRISE=$USE_ENTERPRISE" >> "${GITHUB_ENV:-/dev/null}"
+          if [ "$USE_ENTERPRISE" = "true" ]; then
+            echo "SOCKET_API_KEY=$SOCKET_API_KEY" >> "${GITHUB_ENV:-/dev/null}"
+          fi
 
       - name: Create sfw shims
         shell: bash
@@ -123,17 +153,34 @@ jobs:
           }
           strip_shim_dir() { echo "$PATH" | tr ':' '\n' | grep -vxF "$SHIM_DIR" | paste -sd: -; }
           CLEAN_PATH="$(strip_shim_dir)"
-          # https://docs.socket.dev/docs/socket-firewall-free#what-ecosystems-and-package-managers-are-supported
-          for CMD in npm yarn pnpm pip uv cargo; do
+          # Wrapper mode ecosystems (sfw-free):
+          #   JavaScript/TypeScript: npm, yarn, pnpm
+          #   Python: pip, uv
+          #   Rust: cargo
+          # https://github.com/SocketDev/sfw-free?tab=readme-ov-file#supported-package-managers
+          #
+          # Additional wrapper mode ecosystems (sfw-enterprise):
+          #   Ruby: gem, bundler
+          #   .NET: nuget
+          #   Go: go (Linux only)
+          # https://github.com/SocketDev/firewall-release/wiki#support-matrix
+          SSL_WORKAROUND=""
+          SHIM_CMDS="npm yarn pnpm pip uv cargo"
+          if [ "$SFW_IS_ENTERPRISE" = "true" ]; then
+            SHIM_CMDS="npm yarn pnpm pip uv cargo gem bundler nuget"
+            # Go wrapper mode is only supported on Linux.
+            [[ "$OSTYPE" == linux* ]] && SHIM_CMDS="$SHIM_CMDS go"
+          else
+            SSL_WORKAROUND='export GIT_SSL_NO_VERIFY=true # Workaround: sfw-free does not yet set GIT_SSL_CAINFO.'
+          fi
+          for CMD in $SHIM_CMDS; do
             REAL="$(PATH="$CLEAN_PATH" command -v "$CMD" 2>/dev/null || true)"
             [ -z "$REAL" ] && continue
             REAL="$(msys_to_win_path "$REAL")"
-            printf '%s\n' \
-              '#!/bin/bash' \
-              "export PATH=\"\$(echo \"\$PATH\" | tr ':' '\n' | grep -vxF '${SHIM_DIR}' | paste -sd: -)\"" \
-              'export GIT_SSL_NO_VERIFY=true # Workaround: sfw-free does not yet set GIT_SSL_CAINFO.' \
-              "exec \"${SFW_BIN}\" \"${REAL}\" \"\$@\"" \
-              > "$SHIM_DIR/$CMD"
+            SHIM_LINES=('#!/bin/bash' "export PATH=\"\$(echo \"\$PATH\" | tr ':' '\n' | grep -vxF '${SHIM_DIR}' | paste -sd: -)\"")
+            [ -n "$SSL_WORKAROUND" ] && SHIM_LINES+=("$SSL_WORKAROUND")
+            SHIM_LINES+=("exec \"${SFW_BIN}\" \"${REAL}\" \"\$@\"")
+            printf '%s\n' "${SHIM_LINES[@]}" > "$SHIM_DIR/$CMD"
             chmod +x "$SHIM_DIR/$CMD"
             if $IS_WINDOWS; then
               printf '@echo off\r\nset "PATH=;%%PATH%%;"\r\nset "PATH=%%PATH:;%s;=;%%"\r\nset "PATH=%%PATH:~1,-1%%"\r\n"%s" "%s" %%*\r\n' \
@@ -146,12 +193,25 @@ jobs:
       - name: Install dependencies
         run: pnpm install --loglevel error
 
+      - name: Strip sfw shims for publishing
+        if: inputs.publish-without-sfw == true
+        run: |
+          echo "Bypassing Socket firewall shims for publishing"
+          # Rename shim files so real binaries resolve from PATH.
+          # Writing PATH to GITHUB_ENV doesn't work because GITHUB_PATH
+          # entries are prepended by the runner after GITHUB_ENV is applied.
+          if [ -n "$SFW_SHIM_DIR" ] && [ -d "$SFW_SHIM_DIR" ]; then
+            for SHIM in "$SFW_SHIM_DIR"/*; do
+              [ -f "$SHIM" ] && mv "$SHIM" "${SHIM}.disabled"
+            done
+          fi
+
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
       - run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
         continue-on-error: true
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # zizmor: ignore[secrets-outside-env]
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
         env:
@@ -160,7 +220,7 @@ jobs:
         continue-on-error: true
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # zizmor: ignore[secrets-outside-env]
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
         env:
@@ -169,5 +229,13 @@ jobs:
         continue-on-error: true
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # zizmor: ignore[secrets-outside-env]
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+      - name: Restore sfw shims after publishing
+        if: inputs.publish-without-sfw == true && always()
+        run: |
+          if [ -n "$SFW_SHIM_DIR" ] && [ -d "$SFW_SHIM_DIR" ]; then
+            for SHIM in "$SFW_SHIM_DIR"/*.disabled; do
+              [ -f "$SHIM" ] && mv "$SHIM" "${SHIM%.disabled}"
+            done
+          fi
