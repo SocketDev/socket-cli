@@ -77,6 +77,7 @@ yarn-error.log*
 /.claude/*
 !/.claude/agents/
 !/.claude/commands/
+!/.claude/hooks/
 !/.claude/ops/
 !/.claude/skills/
 
