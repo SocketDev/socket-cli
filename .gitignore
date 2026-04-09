@@ -79,6 +79,7 @@ yarn-error.log*
 !/.claude/commands/
 !/.claude/hooks/
 !/.claude/ops/
+!/.claude/settings.json
 !/.claude/skills/
 
 # ============================================================================
