@@ -592,6 +592,22 @@ importers:
         specifier: 'catalog:'
         version: 4.1.8
 
+  .claude/hooks/check-new-deps:
+    dependencies:
+      '@socketregistry/packageurl-js':
+        specifier: 'catalog:'
+        version: 1.4.1
+      '@socketsecurity/lib':
+        specifier: 5.15.0
+        version: 5.15.0(typescript@5.9.3)
+      '@socketsecurity/sdk':
+        specifier: 'catalog:'
+        version: 4.0.0(typescript@5.9.3)
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
   packages/build-infra:
     dependencies:
       '@babel/parser':

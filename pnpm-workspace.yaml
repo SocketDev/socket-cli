@@ -8,6 +8,7 @@ minimumReleaseAgeExclude:
   - '@socketsecurity/*'
 
 packages:
+  - .claude/hooks/*
   - packages/*
   - '!packages/package-builder/build'
 
