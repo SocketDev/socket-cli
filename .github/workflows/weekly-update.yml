@@ -52,8 +52,8 @@ jobs:
     if: needs.check-updates.outputs.has-updates == 'true' && inputs.dry-run != true
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: write # Push update branch
+      pull-requests: write # Create PR
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -69,9 +69,10 @@ jobs:
         id: branch
         env:
           GH_TOKEN: ${{ github.token }}
+          GITHUB_REPO: ${{ github.repository }}
         run: |
           BRANCH_NAME="weekly-update-$(date +%Y%m%d)"
-          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPO}.git"
           git checkout -b "$BRANCH_NAME"
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
