@@ -1,7 +1,7 @@
 ---
 name: quality-scan
 description: >
-  Iteratively scanning socket-cli for code quality issues across critical bugs, logic errors,
+  Iteratively scans socket-cli for code quality issues across critical bugs, logic errors,
   caching problems, workflow issues, security vulnerabilities, and documentation gaps.
   Automatically fixes all discovered issues and commits changes until zero issues remain or
   5 iterations complete. Use when performing comprehensive quality improvement or preparing
