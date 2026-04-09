@@ -4,6 +4,6 @@
   "type": "module",
   "main": "./index.mts",
   "dependencies": {
-    "@socketsecurity/lib": "catalog:"
+    "@socketsecurity/lib": "5.15.0"
   }
 }
