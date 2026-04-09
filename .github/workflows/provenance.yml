@@ -51,7 +51,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@47d61c98b6a4b9db62db149f5f65655474b9901e # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@1dc0e87db45927365e0622ed56a583f97c6cbbab # main
         with:
           checkout: 'false'
 
@@ -91,7 +91,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@47d61c98b6a4b9db62db149f5f65655474b9901e # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@1dc0e87db45927365e0622ed56a583f97c6cbbab # main
         with:
           checkout: 'false'
           registry-url: 'https://registry.npmjs.org'
@@ -141,7 +141,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@47d61c98b6a4b9db62db149f5f65655474b9901e # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@1dc0e87db45927365e0622ed56a583f97c6cbbab # main
         with:
           checkout: 'false'
           registry-url: 'https://registry.npmjs.org'
