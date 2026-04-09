@@ -608,6 +608,12 @@ importers:
         specifier: 'catalog:'
         version: 24.9.2
 
+  .claude/hooks/setup-sfw:
+    dependencies:
+      '@socketsecurity/lib':
+        specifier: 5.15.0
+        version: 5.15.0(typescript@5.9.3)
+
   packages/build-infra:
     dependencies:
       '@babel/parser':
