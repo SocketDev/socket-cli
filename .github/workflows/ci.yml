@@ -109,7 +109,7 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@ed3119078118d558f095e9adf8800263166d65f9 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@079754914791fc84cd6468ba1ea192ec904fe2aa # main
         with:
           checkout: 'false'
 
@@ -168,7 +168,7 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@ed3119078118d558f095e9adf8800263166d65f9 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@079754914791fc84cd6468ba1ea192ec904fe2aa # main
         with:
           checkout: 'false'
 
@@ -234,7 +234,7 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@ed3119078118d558f095e9adf8800263166d65f9 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@079754914791fc84cd6468ba1ea192ec904fe2aa # main
         with:
           checkout: 'false'
           node-version: ${{ matrix.node-version }}
@@ -310,7 +310,7 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@ed3119078118d558f095e9adf8800263166d65f9 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@079754914791fc84cd6468ba1ea192ec904fe2aa # main
         with:
           checkout: 'false'
           node-version: ${{ matrix.node-version }}
