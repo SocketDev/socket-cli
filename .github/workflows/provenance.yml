@@ -21,13 +21,18 @@ on:
         required: false
         default: false
         type: boolean
+
+permissions:
+  contents: read
+
 jobs:
   build:
+    name: Build and Publish
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
-      id-token: write
+      id-token: write # NPM trusted publishing via OIDC
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

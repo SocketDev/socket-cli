@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   lint:
+    name: 🧹 Lint Check
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -226,6 +227,7 @@ jobs:
         run: pnpm check:lint
 
   typecheck:
+    name: 🔍 Type Check
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -389,6 +391,7 @@ jobs:
         run: pnpm check:tsc
 
   test:
+    name: 🧪 Test Matrix
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
