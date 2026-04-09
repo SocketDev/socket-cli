@@ -195,12 +195,15 @@ jobs:
 
       - name: Strip sfw shims for publishing
         if: inputs.publish-without-sfw == true
-        run: | # zizmor: ignore[github-env]
+        run: |
           echo "Bypassing Socket firewall shims for publishing"
-          echo "SFW_ORIGINAL_PATH=$PATH" >> "${GITHUB_ENV:-/dev/null}"
-          if [ -n "$SFW_SHIM_DIR" ]; then
-            CLEAN_PATH="$(echo "$PATH" | tr ':' '\n' | grep -vxF "$SFW_SHIM_DIR" | paste -sd: -)"
-            echo "PATH=$CLEAN_PATH" >> "${GITHUB_ENV:-/dev/null}"
+          # Rename shim files so real binaries resolve from PATH.
+          # Writing PATH to GITHUB_ENV doesn't work because GITHUB_PATH
+          # entries are prepended by the runner after GITHUB_ENV is applied.
+          if [ -n "$SFW_SHIM_DIR" ] && [ -d "$SFW_SHIM_DIR" ]; then
+            for SHIM in "$SFW_SHIM_DIR"/*; do
+              [ -f "$SHIM" ] && mv "$SHIM" "${SHIM}.disabled"
+            done
           fi
 
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
@@ -230,7 +233,9 @@ jobs:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - name: Restore sfw shims after publishing
         if: inputs.publish-without-sfw == true && always()
-        run: | # zizmor: ignore[github-env]
-          if [ -n "$SFW_ORIGINAL_PATH" ]; then
-            echo "PATH=$SFW_ORIGINAL_PATH" >> "${GITHUB_ENV:-/dev/null}"
+        run: |
+          if [ -n "$SFW_SHIM_DIR" ] && [ -d "$SFW_SHIM_DIR" ]; then
+            for SHIM in "$SFW_SHIM_DIR"/*.disabled; do
+              [ -f "$SHIM" ] && mv "$SHIM" "${SHIM%.disabled}"
+            done
           fi
