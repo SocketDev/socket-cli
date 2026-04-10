@@ -8,10 +8,10 @@ import { fileURLToPath } from 'node:url'
 process.env.DEBUG = ''
 delete process.env.NODE_DEBUG
 
-// Load inlined environment variables from external-tools.json.
+// Load inlined environment variables from bundle-tools.json.
 // These are normally inlined at build time by esbuild, but tests run from source.
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const externalToolsPath = path.join(__dirname, '..', 'external-tools.json')
+const externalToolsPath = path.join(__dirname, '..', 'bundle-tools.json')
 
 if (existsSync(externalToolsPath)) {
   try {
@@ -55,6 +55,6 @@ if (existsSync(externalToolsPath)) {
       }
     }
   } catch {
-    // Ignore errors loading external-tools.json.
+    // Ignore errors loading bundle-tools.json.
   }
 }

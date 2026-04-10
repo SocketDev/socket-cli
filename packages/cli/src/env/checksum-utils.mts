@@ -63,7 +63,7 @@ export function requireChecksum(
   if (!sha256) {
     throw new Error(
       `Missing SHA-256 checksum for ${toolName} asset: ${assetName}. ` +
-        'This is a security requirement. Please update external-tools.json with the correct checksum.',
+        'This is a security requirement. Please update bundle-tools.json with the correct checksum.',
     )
   }
   return sha256

@@ -12,7 +12,7 @@ export function getOpengrepVersion(): string {
   const version = process.env['INLINED_OPENGREP_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_OPENGREP_VERSION not found. Please ensure opengrep is properly configured in external-tools.json.',
+      'INLINED_OPENGREP_VERSION not found. Please ensure opengrep is properly configured in bundle-tools.json.',
     )
   }
   return version

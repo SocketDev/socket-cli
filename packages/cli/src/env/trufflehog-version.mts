@@ -12,7 +12,7 @@ export function getTrufflehogVersion(): string {
   const version = process.env['INLINED_TRUFFLEHOG_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_TRUFFLEHOG_VERSION not found. Please ensure trufflehog is properly configured in external-tools.json.',
+      'INLINED_TRUFFLEHOG_VERSION not found. Please ensure trufflehog is properly configured in bundle-tools.json.',
     )
   }
   return version

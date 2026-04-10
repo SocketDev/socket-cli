@@ -56,9 +56,9 @@ export class EnvironmentVariables {
       }).trim()
     } catch {}
 
-    // Get external tool versions from external-tools.json.
+    // Get external tool versions from bundle-tools.json.
     const externalTools = JSON.parse(
-      readFileSync(path.join(rootPath, 'external-tools.json'), 'utf-8'),
+      readFileSync(path.join(rootPath, 'bundle-tools.json'), 'utf-8'),
     )
 
     /**
@@ -68,13 +68,13 @@ export class EnvironmentVariables {
       const tool = externalTools[key]
       if (!tool) {
         throw new Error(
-          `External tool "${key}" not found in external-tools.json. Please add it to the configuration.`,
+          `External tool "${key}" not found in bundle-tools.json. Please add it to the configuration.`,
         )
       }
       const value = tool[field]
       if (!value) {
         throw new Error(
-          `External tool "${key}" is missing required field "${field}" in external-tools.json.`,
+          `External tool "${key}" is missing required field "${field}" in bundle-tools.json.`,
         )
       }
       return value
@@ -158,7 +158,7 @@ export class EnvironmentVariables {
   static loadSafe() {
     try {
       const externalTools = JSON.parse(
-        readFileSync(path.join(rootPath, 'external-tools.json'), 'utf-8'),
+        readFileSync(path.join(rootPath, 'bundle-tools.json'), 'utf-8'),
       )
       return {
         INLINED_COANA_VERSION:

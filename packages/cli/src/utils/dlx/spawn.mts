@@ -909,7 +909,7 @@ function getPythonStandaloneInfo(): { assetName: string; url: string } {
     throw new InputError(`Unsupported platform: ${platform}`)
   }
 
-  // Asset name format matches checksums in external-tools.json.
+  // Asset name format matches checksums in bundle-tools.json.
   const assetName = `cpython-${version}+${tag}-${platformTriple}-install_only.tar.gz`
   // URL encoding for the '+' in version string.
   const encodedVersion = `${version}%2B${tag}`
@@ -1338,7 +1338,7 @@ export async function ensureSocketPyCli(
     const pyCliVersion = getPyCliVersion()
 
     // Get checksum for integrity verification.
-    // Checksums are keyed by wheel filename in external-tools.json.
+    // Checksums are keyed by wheel filename in bundle-tools.json.
     const wheelFilename = `socketsecurity-${pyCliVersion}-py3-none-any.whl`
     const checksums = getPyCliChecksums()
     const sha256 = checksums[wheelFilename]
