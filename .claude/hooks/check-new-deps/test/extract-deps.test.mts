@@ -1,6 +1,8 @@
 import { describe, it } from 'node:test'
-import { strict as assert } from 'node:assert'
-import { execFile } from 'node:child_process'
+import assert from 'node:assert/strict'
+
+import { whichSync } from '@socketsecurity/lib/bin'
+import { spawnSync } from '@socketsecurity/lib/spawn'
 
 import {
   cache,
@@ -15,34 +17,33 @@ import {
 } from '../index.mts'
 
 const hookScript = new URL('../index.mts', import.meta.url).pathname
+const nodeBin = whichSync('node')
+if (!nodeBin) {
+  throw new Error('"node" not found on PATH')
+}
 
-// Helper: run the full hook as a subprocess
+// Helper: run the full hook as a subprocess.
+// Uses spawnSync because we need to pipe stdin content (the hook reads JSON from stdin).
 function runHook(
   toolInput: Record<string, unknown>,
   toolName = 'Edit',
-): Promise<{ code: number | null; stdout: string; stderr: string }> {
-  return new Promise((resolve) => {
-    const child = execFile(
-      'node',
-      [hookScript],
-      { timeout: 15000 },
-      (err, stdout, stderr) => {
-        resolve({
-          code: child.exitCode
-            ?? (err as NodeJS.ErrnoException)?.code as unknown as number
-            ?? 1,
-          stdout,
-          stderr,
-        })
-      },
-    )
-    child.stdin!.write(JSON.stringify({
-      tool_name: toolName,
-      tool_input: toolInput,
-    }))
-    child.stdin!.end()
+): { code: number | null; stdout: string; stderr: string } {
+  const input = JSON.stringify({
+    tool_name: toolName,
+    tool_input: toolInput,
   })
+  const result = spawnSync(nodeBin, [hookScript], {
+    input,
+    timeout: 15_000,
+    stdio: ['pipe', 'pipe', 'pipe'],
+  })
+  return {
+    code: result.status ?? 1,
+    stdout: typeof result.stdout === 'string' ? result.stdout : result.stdout.toString(),
+    stderr: typeof result.stderr === 'string' ? result.stderr : result.stderr.toString(),
+  }
 }
+
 
 // ============================================================================
 // Unit tests: extractNewDeps per ecosystem
