@@ -111,7 +111,7 @@ export type PackageFilesForScanOptions = {
 
 export async function getPackageFilesForScan(
   inputPaths: string[],
-  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
+  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
   options?: PackageFilesForScanOptions | undefined,
 ): Promise<string[]> {
   const { config: socketConfig, cwd = process.cwd() } = {
