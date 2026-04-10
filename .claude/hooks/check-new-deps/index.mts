@@ -231,7 +231,7 @@ const extractors: Record<string, Extractor> = {
       version: m[3],
     })
   ),
-  'Pipfile.lock': extractPypi,
+  'Pipfile.lock': extractPipfileLock,
   'pnpm-lock.yaml': extractNpmLockfile,
   'poetry.lock': extract(
     // Python poetry lockfile: [[package]]\nname = "flask"
@@ -636,7 +636,24 @@ function extractNpm(content: string): Dep[] {
   return deps
 }
 
-// PyPI (requirements.txt, pyproject.toml, setup.py, Pipfile.lock):
+// Pipfile.lock: JSON with "default" and "develop" sections keyed by package name.
+function extractPipfileLock(content: string): Dep[] {
+  const deps: Dep[] = []
+  try {
+    const lock = JSON.parse(content) as Record<string, Record<string, unknown>>
+    for (const section of ['default', 'develop']) {
+      const packages = lock[section]
+      if (packages && typeof packages === 'object') {
+        for (const name of Object.keys(packages)) {
+          deps.push({ type: 'pypi', name })
+        }
+      }
+    }
+  } catch {}
+  return deps
+}
+
+// PyPI (requirements.txt, pyproject.toml, setup.py):
 // requirements.txt: package>=1.0 or package==1.0 at line start
 // pyproject.toml: "package>=1.0" in dependencies arrays
 // setup.py: "package>=1.0" in install_requires lists
