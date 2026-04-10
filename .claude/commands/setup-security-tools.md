@@ -35,3 +35,4 @@ export PATH="$HOME/.socket/sfw/shims:$PATH"
 - SFW binary is cached via dlx at `~/.socket/_dlx/`
 - SFW shims are shared across repos at `~/.socket/sfw/shims/`
 - `.env.local` must NEVER be committed
+- `/update` will check for new versions of these tools via `node .claude/hooks/setup-security-tools/update.mts`
