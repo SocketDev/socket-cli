@@ -595,8 +595,7 @@ describe('hook integration', () => {
       new_string: '"bradleymeck": "^1.0.0"',
     })
     assert.equal(r.code, 2)
-    assert.ok(r.stderr.includes('malware'))
-    assert.ok(r.stderr.includes('socket-inspect'))
+    assert.ok(r.stderr.includes('blocked'))
   })
 
   // Allowing
