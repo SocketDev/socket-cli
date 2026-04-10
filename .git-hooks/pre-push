@@ -2,8 +2,7 @@
 # Socket Security Pre-push Hook
 # Security enforcement layer for all pushes.
 # Validates all commits being pushed for security issues and AI attribution.
-# TODO: The security scanning logic (CHECK 2) is duplicated from .husky/pre-push.
-# Consider extracting shared checks into a common script.
+# NOTE: Security checks parallel .husky/security-checks.sh — keep in sync.
 
 set -e
 
