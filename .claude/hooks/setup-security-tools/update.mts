@@ -130,19 +130,53 @@ function replaceChecksumValue(
   assetName: string,
   oldHash: string,
   newHash: string,
+  objectName?: string,
 ): string {
   // Match the specific asset line in a checksums object.
   const escaped = assetName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const pattern = new RegExp(
+  const multiLine = new RegExp(
     `('${escaped}':\\s*\\n\\s*')${oldHash}'`,
   )
-  if (pattern.test(source)) {
-    return source.replace(pattern, `$1${newHash}'`)
-  }
-  // Single-line format: 'asset-name': 'hash',
   const singleLine = new RegExp(
     `('${escaped}':\\s*')${oldHash}'`,
   )
+  // When objectName is provided, scope the replacement to that object block
+  // to avoid ambiguity when multiple objects share the same platform keys
+  // (e.g. SFW_FREE_CHECKSUMS and SFW_ENTERPRISE_CHECKSUMS both use 'linux-arm64').
+  if (objectName) {
+    const objStart = source.indexOf(`const ${objectName}`)
+    if (objStart !== -1) {
+      const braceStart = source.indexOf('{', objStart)
+      if (braceStart !== -1) {
+        // Find the matching closing brace.
+        let depth = 0
+        let braceEnd = -1
+        for (let i = braceStart; i < source.length; i += 1) {
+          if (source[i] === '{') depth += 1
+          else if (source[i] === '}') {
+            depth -= 1
+            if (!depth) {
+              braceEnd = i + 1
+              break
+            }
+          }
+        }
+        if (braceEnd !== -1) {
+          let block = source.slice(objStart, braceEnd)
+          if (multiLine.test(block)) {
+            block = block.replace(multiLine, `$1${newHash}'`)
+          } else {
+            block = block.replace(singleLine, `$1${newHash}'`)
+          }
+          return source.slice(0, objStart) + block + source.slice(braceEnd)
+        }
+      }
+    }
+  }
+  // Unscoped fallback: replace first match in entire source.
+  if (multiLine.test(source)) {
+    return source.replace(multiLine, `$1${newHash}'`)
+  }
   return source.replace(singleLine, `$1${newHash}'`)
 }
 
@@ -424,7 +458,7 @@ async function updateSfw(source: string): Promise<{
   if (free.changed) {
     for (const { 0: platform, 1: hash } of Object.entries(free.checksums)) {
       if (currentFree[platform] && currentFree[platform] !== hash) {
-        updated = replaceChecksumValue(updated, platform, currentFree[platform]!, hash)
+        updated = replaceChecksumValue(updated, platform, currentFree[platform]!, hash, 'SFW_FREE_CHECKSUMS')
       }
     }
     results.push({ tool: 'sfw-free', skipped: false, updated: true, reason: 'checksums updated' })
@@ -444,7 +478,7 @@ async function updateSfw(source: string): Promise<{
   if (enterprise.changed) {
     for (const { 0: platform, 1: hash } of Object.entries(enterprise.checksums)) {
       if (currentEnterprise[platform] && currentEnterprise[platform] !== hash) {
-        updated = replaceChecksumValue(updated, platform, currentEnterprise[platform]!, hash)
+        updated = replaceChecksumValue(updated, platform, currentEnterprise[platform]!, hash, 'SFW_ENTERPRISE_CHECKSUMS')
       }
     }
     results.push({ tool: 'sfw-enterprise', skipped: false, updated: true, reason: 'checksums updated' })
