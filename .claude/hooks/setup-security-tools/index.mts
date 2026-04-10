@@ -94,8 +94,13 @@ function findApiKey(): string | undefined {
     if (existsSync(filepath)) {
       try {
         const content = readFileSync(filepath, 'utf8')
-        const match = /^SOCKET_API_KEY=(.+)$/m.exec(content)
-        if (match) return match[1]!.trim()
+        const match = /^SOCKET_API_KEY\s*=\s*(.+)$/m.exec(content)
+        if (match) {
+          return match[1]!
+            .replace(/\s*#.*$/, '')   // Strip inline comments.
+            .replace(/^["']|["']$/g, '') // Strip surrounding quotes.
+            .trim()
+        }
       } catch {
         // Ignore read errors.
       }
@@ -234,6 +239,7 @@ async function setupSfw(apiKey: string | undefined): Promise<boolean> {
   logger.log(downloaded ? `Downloaded to ${binaryPath}` : `Cached at ${binaryPath}`)
 
   // Create shims.
+  const isWindows = process.platform === 'win32'
   const shimDir = path.join(getSocketHomePath(), 'sfw', 'shims')
   await fs.mkdir(shimDir, { recursive: true })
   const ecosystems = [...SFW_FREE_ECOSYSTEMS]
@@ -247,14 +253,15 @@ async function setupSfw(apiKey: string | undefined): Promise<boolean> {
   for (const cmd of ecosystems) {
     const realBin = whichSync(cmd, { nothrow: true, path: cleanPath })
     if (!realBin || typeof realBin !== 'string') continue
-    const lines = [
+
+    // Bash shim (macOS/Linux).
+    const bashLines = [
       '#!/bin/bash',
       `export PATH="$(echo "$PATH" | tr ':' '\\n' | grep -vxF '${shimDir}' | paste -sd: -)"`,
     ]
     if (isEnterprise) {
       // Read API key from env at runtime — never embed secrets in scripts.
-      // Strips surrounding quotes, inline comments, and trailing whitespace.
-      lines.push(
+      bashLines.push(
         'if [ -z "$SOCKET_API_KEY" ]; then',
         '  for f in .env.local .env; do',
         '    if [ -f "$f" ]; then',
@@ -268,19 +275,29 @@ async function setupSfw(apiKey: string | undefined): Promise<boolean> {
     }
     if (!isEnterprise) {
       // Workaround: sfw-free does not yet set GIT_SSL_CAINFO (temporary).
-      lines.push('export GIT_SSL_NO_VERIFY=true')
+      bashLines.push('export GIT_SSL_NO_VERIFY=true')
     }
-    lines.push(`exec "${binaryPath}" "${realBin}" "$@"`)
-    const content = lines.join('\n') + '\n'
-    const shimPath = path.join(shimDir, cmd)
-    // Skip if identical.
-    if (existsSync(shimPath)) {
-      try {
-        if (await fs.readFile(shimPath, 'utf8') === content) { created.push(cmd); continue }
-      } catch { /* overwrite */ }
+    bashLines.push(`exec "${binaryPath}" "${realBin}" "$@"`)
+    const bashContent = bashLines.join('\n') + '\n'
+    const bashPath = path.join(shimDir, cmd)
+    if (!existsSync(bashPath) || await fs.readFile(bashPath, 'utf8').catch(() => '') !== bashContent) {
+      await fs.writeFile(bashPath, bashContent, { mode: 0o755 })
     }
-    await fs.writeFile(shimPath, content, { mode: 0o755 })
     created.push(cmd)
+
+    // Windows .cmd shim (strips shim dir from PATH, then execs through sfw).
+    if (isWindows) {
+      const cmdContent =
+        `@echo off\r\n`
+        + `set "PATH=;%PATH%;"\r\n`
+        + `set "PATH=%PATH:;${shimDir};=%"\r\n`
+        + `set "PATH=%PATH:~1,-1%"\r\n`
+        + `"${binaryPath}" "${realBin}" %*\r\n`
+      const cmdPath = path.join(shimDir, `${cmd}.cmd`)
+      if (!existsSync(cmdPath) || await fs.readFile(cmdPath, 'utf8').catch(() => '') !== cmdContent) {
+        await fs.writeFile(cmdPath, cmdContent)
+      }
+    }
   }
 
   if (created.length) {

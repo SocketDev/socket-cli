@@ -609,20 +609,24 @@ function addNpmDep(
 }
 
 // npm (package.json): "name": "version" or "@scope/name": "ver".
-// Delegates to parseNpmSpecifier for proper scoped package parsing.
-// Skips node: builtins, relative paths, and capitalized keys.
+// Only matches entries where the value looks like a version/range/specifier,
+// not arbitrary string values like scripts or config.
 function extractNpm(content: string): Dep[] {
   const deps: Dep[] = []
   for (const m of content.matchAll(
     /"(@?[^"]+)":\s*"([^"]*)"/g
   )) {
     const raw = m[1]
+    const val = m[2]
     // Skip builtins, relative, and absolute paths.
     if (
       raw.startsWith('node:')
       || raw.startsWith('.')
       || raw.startsWith('/')
     ) continue
+    // Value must look like a version specifier: semver, range, workspace:,
+    // catalog:, npm:, *, latest, or starts with ^~><=.
+    if (!/^[\^~><=*]|^\d|^workspace:|^catalog:|^npm:|^latest$/.test(val)) continue
     // Only lowercase or scoped names are real deps.
     if (raw.startsWith('@') || /^[a-z]/.test(raw)) {
       const { namespace, name } = parseNpmSpecifier(raw)
