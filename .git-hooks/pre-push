@@ -1,6 +1,6 @@
 #!/bin/bash
 # Socket Security Pre-push Hook
-# MANDATORY ENFORCEMENT LAYER - Cannot be bypassed with --no-verify.
+# Security enforcement layer for all pushes.
 # Validates all commits being pushed for security issues and AI attribution.
 
 set -e
