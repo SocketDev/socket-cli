@@ -145,7 +145,6 @@ const extractors: Record<string, Extractor> = {
     (m): Dep => ({ type: 'nuget', name: m[1] })
   ),
   '.tf': extractTerraform,
-  'brew': extractBrewfile,
   'Brewfile': extractBrewfile,
   'build.gradle': extractMaven,
   'build.gradle.kts': extractMaven,
@@ -222,12 +221,12 @@ const extractors: Record<string, Extractor> = {
   'package-lock.json': extractNpmLockfile,
   'package.json': extractNpm,
   'Package.swift': extract(
-    // Swift: .package(url: "https://github.com/vapor/vapor", from: "4.0.0")
+    // Swift: .package(url: "https://github.com/vapor/vapor.git", from: "4.0.0")
     /\.package\s*\(\s*url:\s*"https:\/\/github\.com\/([^/]+)\/([^"]+)".*?from:\s*"([^"]+)"/gs,
     (m): Dep => ({
       type: 'swift',
       namespace: `github.com/${m[1]}`,
-      name: m[2],
+      name: m[2].replace(/\.git$/, ''),
       version: m[3],
     })
   ),
