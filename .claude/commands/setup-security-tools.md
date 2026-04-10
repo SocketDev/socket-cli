@@ -1,42 +1,37 @@
-Set up security scanning tools (AgentShield + zizmor) for this project.
+Set up all Socket security tools for local development.
 
-## What this does
+## What this sets up
 
-Installs and configures two security tools used by the pre-push hook and the `/security-scan` command:
-
-1. **AgentShield** (`ecc-agentshield`) - Scans Claude AI configuration files (`.claude/`, `CLAUDE.md`) for prompt injection attacks and security misconfigurations. Already a devDep, so this just verifies it is installed.
-
-2. **zizmor** - Static analysis tool for GitHub Actions workflows. Detects insecure patterns like template injection, unpinned actions, and excessive permissions. Downloaded from GitHub releases and cached at `~/.socket/zizmor/bin/zizmor`.
+1. **AgentShield** — scans Claude config for prompt injection and secrets
+2. **Zizmor** — static analysis for GitHub Actions workflows
+3. **SFW (Socket Firewall)** — intercepts package manager commands to scan for malware
 
 ## Setup
 
-Run the setup script:
+First, ask the user if they have a Socket API key for SFW enterprise features.
 
+If they do:
+1. Ask them to provide it
+2. Write it to `.env.local` as `SOCKET_API_KEY=<their-key>` (create if needed)
+3. Verify `.env.local` is in `.gitignore` — if not, add it and warn
+
+If they don't, proceed with SFW free mode.
+
+Then run:
 ```bash
 node .claude/hooks/setup-security-tools/index.mts
 ```
 
-This will:
-1. Check if `agentshield` is available (installed via `pnpm install`)
-2. Check if `zizmor` is already installed (via brew or cached)
-3. If not cached, download the correct zizmor binary for the current OS/arch
-4. Verify the SHA-256 checksum of the download
-5. Extract and install to `~/.socket/zizmor/bin/zizmor`
-
-## After setup
-
-Both tools are used automatically by the pre-push hook (`.git-hooks/pre-push`):
-- AgentShield failures **block** the push (it scans our own config)
-- zizmor issues are **warnings only** (workflows may have known suppressions)
-
-You can also run them manually:
+After the script completes, add the SFW shim directory to PATH:
 ```bash
-pnpm exec agentshield scan          # Scan Claude config
-~/.socket/zizmor/bin/zizmor .github/ # Scan GitHub Actions workflows
+export PATH="$HOME/.socket/sfw/shims:$PATH"
 ```
 
 ## Notes
 
-- Safe to re-run — skips download if zizmor is already cached at the correct version
-- If zizmor is installed via brew, the download is skipped entirely
-- The pre-push hook checks for both tools and skips gracefully if not available
+- Safe to re-run (idempotent)
+- AgentShield needs `pnpm install` (it's a devDep)
+- Zizmor is cached at `~/.socket/zizmor/bin/`
+- SFW binary is cached via dlx at `~/.socket/_dlx/`
+- SFW shims are shared across repos at `~/.socket/sfw/shims/`
+- `.env.local` must NEVER be committed

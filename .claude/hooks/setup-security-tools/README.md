@@ -1,103 +1,73 @@
 # setup-security-tools Hook
 
-Sets up two security scanning tools for the Socket CLI project: **AgentShield** and **zizmor**. These tools catch security problems before code is pushed.
+Sets up all three Socket security tools for local development in one command.
 
-## What are these tools?
+## Tools
 
-### AgentShield
+### 1. AgentShield
+Scans your Claude Code configuration (`.claude/` directory) for security issues like prompt injection, leaked secrets, and overly permissive tool permissions.
 
-AgentShield scans your Claude AI configuration files (like `CLAUDE.md` and anything in `.claude/`) for prompt injection attacks. Think of it as a linter, but instead of checking code style, it checks for ways an attacker could manipulate an AI assistant through crafted instructions.
+**How it's installed**: Already a devDependency (`ecc-agentshield`). The setup script just verifies it's available — if not, run `pnpm install`.
 
-It is already listed as a dev dependency (`ecc-agentshield`), so `pnpm install` installs it. This setup script just verifies it is accessible.
+### 2. Zizmor
+Static analysis tool for GitHub Actions workflows. Catches unpinned actions, secret exposure, template injection, and permission issues.
 
-### zizmor
+**How it's installed**: Binary downloaded from [GitHub releases](https://github.com/woodruffw/zizmor/releases), SHA-256 verified, cached at `~/.socket/zizmor/bin/zizmor`. If you already have it via `brew install zizmor`, the download is skipped.
 
-zizmor is a security scanner for GitHub Actions workflow files (the YAML files in `.github/workflows/`). It looks for common security mistakes like:
+### 3. SFW (Socket Firewall)
+Intercepts package manager commands (`npm install`, `pnpm add`, etc.) and scans packages against Socket.dev's malware database before installation.
 
-- **Template injection**: Using `${{ github.event.pull_request.title }}` directly in a `run:` step, which lets attackers run arbitrary commands
-- **Unpinned actions**: Using `actions/checkout@main` instead of a pinned SHA
-- **Excessive permissions**: Workflows with `permissions: write-all` when they only need read access
-- **Credential exposure**: Secrets passed to steps that do not need them
+**How it's installed**: Binary downloaded from GitHub, SHA-256 verified, cached via the dlx system at `~/.socket/_dlx/`. Small wrapper scripts ("shims") are created at `~/.socket/sfw/shims/` that transparently route commands through the firewall.
 
-zizmor is not an npm package, so this script downloads the correct binary for your operating system from GitHub releases.
+**Free vs Enterprise**: If you have a `SOCKET_API_KEY` (in env, `.env`, or `.env.local`), enterprise mode is used with additional ecosystem support (gem, bundler, nuget, go). Otherwise, free mode covers npm, yarn, pnpm, pip, uv, and cargo.
 
 ## How to use
-
-Run the Claude Code command:
 
 ```
 /setup-security-tools
 ```
 
-Or run the script directly:
+Claude will ask if you have an API key, then run the setup script.
 
-```bash
-node .claude/hooks/setup-security-tools/index.mts
-```
+## What gets installed where
 
-## What happens when you run it
+| Tool | Location | Persists across repos? |
+|------|----------|----------------------|
+| AgentShield | `node_modules/.bin/agentshield` | No (per-repo devDep) |
+| Zizmor | `~/.socket/zizmor/bin/zizmor` | Yes |
+| SFW binary | `~/.socket/_dlx/<hash>/sfw` | Yes |
+| SFW shims | `~/.socket/sfw/shims/npm`, etc. | Yes |
 
-1. **AgentShield check**: Looks for `agentshield` on your PATH or in node_modules. If found, prints the version. If not, tells you to run `pnpm install`.
+## Pre-push integration
 
-2. **zizmor check**: Checks several locations in order:
-   - Is `zizmor` already on your PATH? (e.g., installed via `brew install zizmor`)
-   - Is there a cached binary at `~/.socket/zizmor/bin/zizmor` with the right version?
-   - If neither, downloads the binary:
-     1. Picks the right file for your OS and CPU (macOS/Linux/Windows, x64/arm64)
-     2. Downloads a `.tar.gz` (or `.zip` on Windows) from GitHub releases
-     3. Verifies the SHA-256 checksum matches the expected value
-     4. Extracts the binary
-     5. Moves it to `~/.socket/zizmor/bin/zizmor`
-     6. Makes it executable
+The `.git-hooks/pre-push` hook automatically runs:
+- **AgentShield scan** (blocks push on failure)
+- **Zizmor scan** (warns but doesn't block)
 
-3. **Summary**: Reports which tools are ready and which need attention.
-
-## Where things are installed
-
-| What | Where | Purpose |
-|------|-------|---------|
-| AgentShield | `node_modules/.bin/agentshield` | Installed by pnpm as a devDep |
-| zizmor binary | `~/.socket/zizmor/bin/zizmor` | Downloaded from GitHub releases |
-
-## How these tools are used in the project
-
-The pre-push hook (`.git-hooks/pre-push`) runs both tools automatically before every `git push`:
-
-- **AgentShield** failures **block the push** because these are our own config files and should always be clean
-- **zizmor** findings are **warnings only** because some workflows intentionally use patterns that zizmor flags (suppressed with `# zizmor: ignore[...]` comments)
-
-You can also run the full security scan with the `/security-scan` Claude Code command.
+This means every push is checked — you don't have to remember to run `/security-scan`.
 
 ## Re-running
 
-Safe to run multiple times. The script:
-- Skips the AgentShield check if it is already installed
-- Skips the zizmor download if the cached binary matches the expected version
-- Does not duplicate anything
-
-## Troubleshooting
-
-**"AgentShield not found"** — Run `pnpm install` from the project root. AgentShield is listed as a devDependency (`ecc-agentshield`).
-
-**"Unsupported platform"** — zizmor supports macOS (Intel + Apple Silicon), Linux (x64 + ARM64), and Windows (x64). Other platforms are not supported.
-
-**"SHA-256 mismatch"** — The downloaded file does not match the expected hash. This could mean a corrupt download or a man-in-the-middle attack. Delete `~/.socket/zizmor/` and try again.
-
-**"Expected binary not found after extraction"** — The tarball structure may have changed in a new zizmor release. Check the release page at https://github.com/woodruffw/zizmor/releases.
-
-## Dependencies
-
-This hook uses `@socketsecurity/lib` for HTTP downloads and logging. Install with:
-
-```bash
-cd .claude/hooks/setup-security-tools
-npm install
-```
+Safe to run multiple times:
+- AgentShield: just re-checks availability
+- Zizmor: skips download if cached binary matches expected version
+- SFW: skips download if cached, only rewrites shims if content changed
 
 ## Copying to another repo
 
-This hook is self-contained. To add it to another Socket repo:
+Self-contained. To add to another Socket repo:
 
 1. Copy `.claude/hooks/setup-security-tools/` and `.claude/commands/setup-security-tools.md`
 2. Run `cd .claude/hooks/setup-security-tools && npm install`
-3. Make sure `ecc-agentshield` is a devDependency in the target repo
+3. Ensure `.claude/hooks/` is not gitignored (add `!/.claude/hooks/` to `.gitignore`)
+4. Ensure `ecc-agentshield` is a devDep in the target repo
+
+## Troubleshooting
+
+**"AgentShield not found"** — Run `pnpm install`. It's the `ecc-agentshield` devDependency.
+
+**"zizmor found but wrong version"** — The script downloads the expected version to `~/.socket/zizmor/bin/`. Your system version (e.g. from brew) will be ignored in favor of the correct version.
+
+**"No supported package managers found"** — SFW only creates shims for package managers found on your PATH. Install npm/pnpm/etc. first.
+
+**SFW shims not intercepting** — Make sure `~/.socket/sfw/shims` is at the *front* of PATH. Run `which npm` — it should point to the shim, not the real binary.

@@ -1,9 +1,0 @@
-{
-  "name": "@socketsecurity/hook-setup-sfw",
-  "private": true,
-  "type": "module",
-  "main": "./index.mts",
-  "dependencies": {
-    "@socketsecurity/lib": "5.15.0"
-  }
-}

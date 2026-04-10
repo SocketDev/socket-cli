@@ -1,27 +1,31 @@
 #!/usr/bin/env node
-// Setup script for security tools (AgentShield + zizmor).
+// Setup script for Socket security tools.
 //
-// AgentShield: Scans Claude AI configuration for prompt injection and
-// security issues. Already a devDep (ecc-agentshield) — this script
-// verifies it is installed and accessible.
-//
-// Zizmor: Static analysis tool for GitHub Actions workflows. Downloads
-// the correct binary for the current platform, verifies its SHA-256
-// checksum, and caches it at ~/.socket/zizmor/bin/zizmor.
+// Configures three tools:
+// 1. AgentShield — scans Claude AI config for prompt injection / secrets.
+//    Already a devDep (ecc-agentshield); this script verifies it's installed.
+// 2. Zizmor — static analysis for GitHub Actions workflows. Downloads the
+//    correct binary, verifies SHA-256, caches at ~/.socket/zizmor/bin/zizmor.
+// 3. SFW (Socket Firewall) — intercepts package manager commands to scan
+//    for malware. Downloads binary, verifies SHA-256, creates PATH shims.
+//    Enterprise vs free determined by SOCKET_API_KEY in env / .env / .env.local.
 
 import { createHash } from 'node:crypto'
-import { existsSync, createReadStream, promises as fs } from 'node:fs'
+import { existsSync, createReadStream, readFileSync, promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
 import { whichSync } from '@socketsecurity/lib/bin'
+import { downloadBinary } from '@socketsecurity/lib/dlx/binary'
 import { httpDownload } from '@socketsecurity/lib/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getSocketHomePath } from '@socketsecurity/lib/paths/socket'
 import { spawn, spawnSync } from '@socketsecurity/lib/spawn'
 
 const logger = getDefaultLogger()
+
+// ── Zizmor constants ──
 
 const ZIZMOR_VERSION = '1.23.1'
 
@@ -39,7 +43,7 @@ const ZIZMOR_CHECKSUMS: Record<string, string> = {
     '67a8df0a14352dd81882e14876653d097b99b0f4f6b6fe798edc0320cff27aff',
 }
 
-const ASSET_MAP: Record<string, string> = {
+const ZIZMOR_ASSET_MAP: Record<string, string> = {
   __proto__: null as unknown as string,
   'darwin-arm64': 'zizmor-aarch64-apple-darwin.tar.gz',
   'darwin-x64': 'zizmor-x86_64-apple-darwin.tar.gz',
@@ -48,26 +52,56 @@ const ASSET_MAP: Record<string, string> = {
   'win32-x64': 'zizmor-x86_64-pc-windows-msvc.zip',
 }
 
-function getZizmorBinDir(): string {
-  return path.join(getSocketHomePath(), 'zizmor', 'bin')
+// ── SFW constants ──
+
+const SFW_ENTERPRISE_CHECKSUMS: Record<string, string> = {
+  __proto__: null as unknown as string,
+  'linux-arm64': '671270231617142404a1564e52672f79b806f9df3f232fcc7606329c0246da55',
+  'linux-x86_64': '9115b4ca8021eb173eb9e9c3627deb7f1066f8debd48c5c9d9f3caabb2a26a4b',
+  'macos-arm64': 'acad0b517601bb7408e2e611c9226f47dcccbd83333d7fc5157f1d32ed2b953d',
+  'macos-x86_64': '01d64d40effda35c31f8d8ee1fed1388aac0a11aba40d47fba8a36024b77500c',
+  'windows-x86_64': '9a50e1ddaf038138c3f85418dc5df0113bbe6fc884f5abe158beaa9aea18d70a',
 }
 
-function getZizmorBinPath(): string {
-  const ext = process.platform === 'win32' ? '.exe' : ''
-  return path.join(getZizmorBinDir(), `zizmor${ext}`)
+const SFW_FREE_CHECKSUMS: Record<string, string> = {
+  __proto__: null as unknown as string,
+  'linux-arm64': 'df2eedb2daf2572eee047adb8bfd81c9069edcb200fc7d3710fca98ec3ca81a1',
+  'linux-x86_64': '4a1e8b65e90fce7d5fd066cf0af6c93d512065fa4222a475c8d959a6bc14b9ff',
+  'macos-arm64': 'bf1616fc44ac49f1cb2067fedfa127a3ae65d6ec6d634efbb3098cfa355e5555',
+  'macos-x86_64': '724ccea19d847b79db8cc8e38f5f18ce2dd32336007f42b11bed7d2e5f4a2566',
+  'windows-x86_64': 'c953e62ad7928d4d8f2302f5737884ea1a757babc26bed6a42b9b6b68a5d54af',
 }
 
-function getAssetName(): string {
-  const key = `${process.platform}-${process.arch}`
-  const asset = ASSET_MAP[key]
-  if (!asset) {
-    throw new Error(`Unsupported platform: ${key}`)
+const SFW_PLATFORM_MAP: Record<string, string> = {
+  __proto__: null as unknown as string,
+  'darwin-arm64': 'macos-arm64',
+  'darwin-x64': 'macos-x86_64',
+  'linux-arm64': 'linux-arm64',
+  'linux-x64': 'linux-x86_64',
+  'win32-x64': 'windows-x86_64',
+}
+
+const SFW_FREE_ECOSYSTEMS = ['npm', 'yarn', 'pnpm', 'pip', 'uv', 'cargo']
+const SFW_ENTERPRISE_EXTRA = ['gem', 'bundler', 'nuget']
+
+// ── Shared helpers ──
+
+function findApiKey(): string | undefined {
+  const envKey = process.env['SOCKET_API_KEY']
+  if (envKey) return envKey
+  for (const filename of ['.env', '.env.local']) {
+    const filepath = path.join(process.cwd(), filename)
+    if (existsSync(filepath)) {
+      try {
+        const content = readFileSync(filepath, 'utf8')
+        const match = /^SOCKET_API_KEY=(.+)$/m.exec(content)
+        if (match) return match[1]!.trim()
+      } catch {
+        // Ignore read errors.
+      }
+    }
   }
-  return asset
-}
-
-function getDownloadUrl(asset: string): string {
-  return `https://github.com/woodruffw/zizmor/releases/download/v${ZIZMOR_VERSION}/${asset}`
+  return undefined
 }
 
 async function sha256File(filePath: string): Promise<string> {
@@ -80,194 +114,191 @@ async function sha256File(filePath: string): Promise<string> {
   })
 }
 
-function checkAgentShield(): boolean {
-  logger.log('Checking AgentShield...')
+// ── AgentShield ──
 
-  // Check if agentshield is available via PATH or pnpm.
-  const agentshieldPath = whichSync('agentshield', { nothrow: true })
-  if (agentshieldPath && typeof agentshieldPath === 'string') {
-    const result = spawnSync(agentshieldPath, ['--version'], {
-      stdio: 'pipe',
-    })
-    const version =
-      typeof result.stdout === 'string'
-        ? result.stdout.trim()
-        : result.stdout.toString().trim()
-    logger.log(`AgentShield found: ${agentshieldPath} (${version})`)
+function setupAgentShield(): boolean {
+  logger.log('=== AgentShield ===')
+  const bin = whichSync('agentshield', { nothrow: true })
+  if (bin && typeof bin === 'string') {
+    const result = spawnSync(bin, ['--version'], { stdio: 'pipe' })
+    const ver = typeof result.stdout === 'string'
+      ? result.stdout.trim()
+      : result.stdout.toString().trim()
+    logger.log(`Found: ${bin} (${ver})`)
     return true
   }
-
-  logger.warn(
-    'AgentShield not found. Run "pnpm install" to install ecc-agentshield.',
-  )
+  logger.warn('Not found. Run "pnpm install" to install ecc-agentshield.')
   return false
 }
+
+// ── Zizmor ──
 
 async function checkZizmorVersion(binPath: string): Promise<boolean> {
   try {
     const result = await spawn(binPath, ['--version'], { stdio: 'pipe' })
-    const output =
-      typeof result.stdout === 'string'
-        ? result.stdout.trim()
-        : result.stdout.toString().trim()
-    // Output format: "zizmor 1.23.1" or just "1.23.1".
+    const output = typeof result.stdout === 'string'
+      ? result.stdout.trim()
+      : result.stdout.toString().trim()
     return output.includes(ZIZMOR_VERSION)
   } catch {
     return false
   }
 }
 
-async function extractTarball(
-  tarballPath: string,
-  destDir: string,
-): Promise<void> {
-  await spawn('tar', ['xzf', tarballPath, '-C', destDir], { stdio: 'pipe' })
-}
-
-async function extractZip(
-  zipPath: string,
-  destDir: string,
-): Promise<void> {
-  // Use PowerShell on Windows for zip extraction.
-  await spawn(
-    'powershell',
-    [
-      '-NoProfile',
-      '-Command',
-      `Expand-Archive -Path '${zipPath}' -DestinationPath '${destDir}' -Force`,
-    ],
-    { stdio: 'pipe' },
-  )
-}
-
 async function setupZizmor(): Promise<boolean> {
-  logger.log('Checking zizmor...')
+  logger.log('=== Zizmor ===')
 
-  // Check if zizmor is already available on PATH (e.g. via brew).
-  const systemZizmor = whichSync('zizmor', { nothrow: true })
-  if (systemZizmor && typeof systemZizmor === 'string') {
-    const versionOk = await checkZizmorVersion(systemZizmor)
-    if (versionOk) {
-      logger.log(`zizmor found on PATH: ${systemZizmor} (v${ZIZMOR_VERSION})`)
+  // Check PATH first (e.g. brew install).
+  const systemBin = whichSync('zizmor', { nothrow: true })
+  if (systemBin && typeof systemBin === 'string') {
+    if (await checkZizmorVersion(systemBin)) {
+      logger.log(`Found on PATH: ${systemBin} (v${ZIZMOR_VERSION})`)
       return true
     }
-    logger.log(
-      `zizmor found on PATH but version mismatch (expected v${ZIZMOR_VERSION})`,
-    )
+    logger.log(`Found on PATH but wrong version (need v${ZIZMOR_VERSION})`)
   }
 
-  // Check if cached binary exists and matches expected version.
-  const binPath = getZizmorBinPath()
-  if (existsSync(binPath)) {
-    const versionOk = await checkZizmorVersion(binPath)
-    if (versionOk) {
-      logger.log(`zizmor already cached at ${binPath} (v${ZIZMOR_VERSION})`)
-      return true
-    }
-    logger.log('Cached zizmor binary has wrong version, re-downloading...')
+  // Check cached binary.
+  const ext = process.platform === 'win32' ? '.exe' : ''
+  const binDir = path.join(getSocketHomePath(), 'zizmor', 'bin')
+  const binPath = path.join(binDir, `zizmor${ext}`)
+  if (existsSync(binPath) && await checkZizmorVersion(binPath)) {
+    logger.log(`Cached: ${binPath} (v${ZIZMOR_VERSION})`)
+    return true
   }
 
-  // Determine asset and checksum.
-  const asset = getAssetName()
-  const expectedSha256 = ZIZMOR_CHECKSUMS[asset]
-  if (!expectedSha256) {
-    throw new Error(`No checksum for asset: ${asset}`)
-  }
-  const url = getDownloadUrl(asset)
+  // Download.
+  const platformKey = `${process.platform}-${process.arch}`
+  const asset = ZIZMOR_ASSET_MAP[platformKey]
+  if (!asset) throw new Error(`Unsupported platform: ${platformKey}`)
+  const expectedSha = ZIZMOR_CHECKSUMS[asset]
+  if (!expectedSha) throw new Error(`No checksum for: ${asset}`)
+  const url = `https://github.com/woodruffw/zizmor/releases/download/v${ZIZMOR_VERSION}/${asset}`
   const isZip = asset.endsWith('.zip')
 
-  logger.log(`Downloading zizmor v${ZIZMOR_VERSION}...`)
-  logger.log(`Asset: ${asset}`)
-
-  // Download tarball to temp location with SHA-256 verification.
-  const tmpDir = tmpdir()
-  const tmpFile = path.join(tmpDir, `zizmor-download-${Date.now()}-${asset}`)
-
+  logger.log(`Downloading zizmor v${ZIZMOR_VERSION} (${asset})...`)
+  const tmpFile = path.join(tmpdir(), `zizmor-${Date.now()}-${asset}`)
   try {
-    await httpDownload(url, tmpFile, {
-      sha256: expectedSha256,
-      retries: 2,
-      retryDelay: 1_000,
-      timeout: 120_000,
-    })
+    await httpDownload(url, tmpFile, { sha256: expectedSha })
     logger.log('Download complete, checksum verified.')
 
-    // Double-check checksum (httpDownload already verifies, but belt-and-suspenders).
-    const actualSha256 = await sha256File(tmpFile)
-    if (actualSha256 !== expectedSha256) {
-      throw new Error(
-        `SHA-256 mismatch: expected ${expectedSha256}, got ${actualSha256}`,
-      )
-    }
-
-    // Extract to temp directory.
-    const extractDir = path.join(tmpDir, `zizmor-extract-${Date.now()}`)
+    // Extract.
+    const extractDir = path.join(tmpdir(), `zizmor-extract-${Date.now()}`)
     await fs.mkdir(extractDir, { recursive: true })
-
     if (isZip) {
-      await extractZip(tmpFile, extractDir)
+      await spawn('powershell', ['-NoProfile', '-Command',
+        `Expand-Archive -Path '${tmpFile}' -DestinationPath '${extractDir}' -Force`], { stdio: 'pipe' })
     } else {
-      await extractTarball(tmpFile, extractDir)
+      await spawn('tar', ['xzf', tmpFile, '-C', extractDir], { stdio: 'pipe' })
     }
 
-    // Find the zizmor binary in the extracted files.
-    const ext = process.platform === 'win32' ? '.exe' : ''
+    // Install.
     const extractedBin = path.join(extractDir, `zizmor${ext}`)
-    if (!existsSync(extractedBin)) {
-      throw new Error(
-        `Expected binary not found at ${extractedBin} after extraction`,
-      )
-    }
-
-    // Move to final destination.
-    const binDir = getZizmorBinDir()
+    if (!existsSync(extractedBin)) throw new Error(`Binary not found after extraction: ${extractedBin}`)
     await fs.mkdir(binDir, { recursive: true })
     await fs.copyFile(extractedBin, binPath)
     await fs.chmod(binPath, 0o755)
-
-    // Clean up temp files.
     await fs.rm(extractDir, { recursive: true, force: true })
 
-    logger.log(`Installed zizmor to ${binPath}`)
-
-    // Verify installation.
-    const versionOk = await checkZizmorVersion(binPath)
-    if (!versionOk) {
-      throw new Error('Installed zizmor binary failed version check')
-    }
-
-    logger.log(`zizmor v${ZIZMOR_VERSION} ready.`)
+    logger.log(`Installed to ${binPath}`)
     return true
   } finally {
-    // Clean up downloaded tarball.
-    if (existsSync(tmpFile)) {
-      await fs.unlink(tmpFile).catch(() => {})
-    }
+    if (existsSync(tmpFile)) await fs.unlink(tmpFile).catch(() => {})
   }
 }
 
+// ── SFW ──
+
+async function setupSfw(apiKey: string | undefined): Promise<boolean> {
+  const isEnterprise = !!apiKey
+  logger.log(`=== Socket Firewall (${isEnterprise ? 'enterprise' : 'free'}) ===`)
+
+  // Platform.
+  const platformKey = `${process.platform}-${process.arch}`
+  const sfwPlatform = SFW_PLATFORM_MAP[platformKey]
+  if (!sfwPlatform) throw new Error(`Unsupported platform: ${platformKey}`)
+
+  // Checksum + asset.
+  const checksums = isEnterprise ? SFW_ENTERPRISE_CHECKSUMS : SFW_FREE_CHECKSUMS
+  const sha256 = checksums[sfwPlatform]
+  if (!sha256) throw new Error(`No checksum for: ${sfwPlatform}`)
+  const prefix = isEnterprise ? 'sfw' : 'sfw-free'
+  const suffix = sfwPlatform.startsWith('windows') ? '.exe' : ''
+  const asset = `${prefix}-${sfwPlatform}${suffix}`
+  const repo = isEnterprise ? 'SocketDev/firewall-release' : 'SocketDev/sfw-free'
+  const url = `https://github.com/${repo}/releases/latest/download/${asset}`
+  const binaryName = isEnterprise ? 'sfw' : 'sfw-free'
+
+  // Download (with cache + checksum).
+  const { binaryPath, downloaded } = await downloadBinary({ url, name: binaryName, sha256 })
+  logger.log(downloaded ? `Downloaded to ${binaryPath}` : `Cached at ${binaryPath}`)
+
+  // Create shims.
+  const shimDir = path.join(getSocketHomePath(), 'sfw', 'shims')
+  await fs.mkdir(shimDir, { recursive: true })
+  const ecosystems = [...SFW_FREE_ECOSYSTEMS]
+  if (isEnterprise) {
+    ecosystems.push(...SFW_ENTERPRISE_EXTRA)
+    if (process.platform === 'linux') ecosystems.push('go')
+  }
+  const cleanPath = (process.env['PATH'] ?? '').split(path.delimiter)
+    .filter(p => p !== shimDir).join(path.delimiter)
+  const created: string[] = []
+  for (const cmd of ecosystems) {
+    const realBin = whichSync(cmd, { nothrow: true, path: cleanPath })
+    if (!realBin || typeof realBin !== 'string') continue
+    const lines = [
+      '#!/bin/bash',
+      `export PATH="$(echo "$PATH" | tr ':' '\\n' | grep -vxF '${shimDir}' | paste -sd: -)"`,
+    ]
+    if (isEnterprise && apiKey) lines.push(`export SOCKET_API_KEY="${apiKey}"`)
+    if (!isEnterprise) lines.push('export GIT_SSL_NO_VERIFY=true')
+    lines.push(`exec "${binaryPath}" "${realBin}" "$@"`)
+    const content = lines.join('\n') + '\n'
+    const shimPath = path.join(shimDir, cmd)
+    // Skip if identical.
+    if (existsSync(shimPath)) {
+      try {
+        if (await fs.readFile(shimPath, 'utf8') === content) { created.push(cmd); continue }
+      } catch { /* overwrite */ }
+    }
+    await fs.writeFile(shimPath, content, { mode: 0o755 })
+    created.push(cmd)
+  }
+
+  if (created.length) {
+    logger.log(`Shims: ${created.join(', ')}`)
+    logger.log(`Shim dir: ${shimDir}`)
+    logger.log(`Activate: export PATH="${shimDir}:$PATH"`)
+  } else {
+    logger.warn('No supported package managers found on PATH.')
+  }
+  return true
+}
+
+// ── Main ──
+
 async function main(): Promise<void> {
-  logger.log('Setting up security tools...')
-  logger.log('')
+  logger.log('Setting up Socket security tools...\n')
 
-  const agentshieldOk = checkAgentShield()
-  logger.log('')
+  const apiKey = findApiKey()
 
+  const agentshieldOk = setupAgentShield()
+  logger.log('')
   const zizmorOk = await setupZizmor()
   logger.log('')
-
-  // Summary.
-  logger.log('=== Setup Summary ===')
-  logger.log(
-    `AgentShield: ${agentshieldOk ? 'ready' : 'NOT AVAILABLE (run pnpm install)'}`,
-  )
-  logger.log(`zizmor:      ${zizmorOk ? 'ready' : 'FAILED'}`)
+  const sfwOk = await setupSfw(apiKey)
   logger.log('')
 
-  if (agentshieldOk && zizmorOk) {
-    logger.log('All security tools are ready.')
+  logger.log('=== Summary ===')
+  logger.log(`AgentShield: ${agentshieldOk ? 'ready' : 'NOT AVAILABLE'}`)
+  logger.log(`Zizmor:      ${zizmorOk ? 'ready' : 'FAILED'}`)
+  logger.log(`SFW:         ${sfwOk ? 'ready' : 'FAILED'}`)
+
+  if (agentshieldOk && zizmorOk && sfwOk) {
+    logger.log('\nAll security tools ready.')
   } else {
-    logger.warn('Some tools are not available. See above for details.')
+    logger.warn('\nSome tools not available. See above.')
   }
 }
 
