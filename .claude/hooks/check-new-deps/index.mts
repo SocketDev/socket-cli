@@ -295,9 +295,9 @@ async function check(hook: HookInput): Promise<number> {
   // Edit provides new_string; Write provides content.
   const newContent =
     hook.tool_input?.new_string
-    || hook.tool_input?.content
-    || ''
-  const oldContent = hook.tool_input?.old_string || ''
+    ?? hook.tool_input?.content
+    ?? ''
+  const oldContent = hook.tool_input?.old_string ?? ''
 
   const newDeps = extractor(newContent)
   if (newDeps.length === 0) return 0
