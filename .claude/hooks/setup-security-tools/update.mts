@@ -25,22 +25,30 @@ const INDEX_FILE = path.join(__dirname, 'index.mts')
 
 // Read minimumReleaseAge from pnpm-workspace.yaml (minutes → ms).
 // Falls back to 10080 minutes (7 days) if not found.
+const DEFAULT_COOLDOWN_MINUTES = 10_080
+
 function readCooldownMs(): number {
   // Walk up from hook dir to find pnpm-workspace.yaml.
   let dir = __dirname
   for (let i = 0; i < 10; i += 1) {
     const candidate = path.join(dir, 'pnpm-workspace.yaml')
     if (existsSync(candidate)) {
-      const content = readFileSync(candidate, 'utf8')
-      const match = /^minimumReleaseAge:\s*(\d+)/m.exec(content)
-      if (match) return Number(match[1]) * 60 * 1_000
-      break
+      try {
+        const content = readFileSync(candidate, 'utf8')
+        const match = /^minimumReleaseAge:\s*(\d+)/m.exec(content)
+        if (match) return Number(match[1]) * 60 * 1_000
+      } catch {
+        // Read error.
+      }
+      logger.warn(`Could not read minimumReleaseAge from ${candidate}, defaulting to ${DEFAULT_COOLDOWN_MINUTES} minutes (7 days)`)
+      return DEFAULT_COOLDOWN_MINUTES * 60 * 1_000
     }
     const parent = path.dirname(dir)
     if (parent === dir) break
     dir = parent
   }
-  return 10_080 * 60 * 1_000
+  logger.warn(`pnpm-workspace.yaml not found, defaulting cooldown to ${DEFAULT_COOLDOWN_MINUTES} minutes (7 days)`)
+  return DEFAULT_COOLDOWN_MINUTES * 60 * 1_000
 }
 
 const COOLDOWN_MS = readCooldownMs()
