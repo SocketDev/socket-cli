@@ -516,6 +516,7 @@ describe('socket fix', async () => {
       )
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
+    { timeout: testTimeout },
   )
 
   cmdit(
