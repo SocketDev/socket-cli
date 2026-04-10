@@ -2,13 +2,13 @@
 // Update script for Socket security tools.
 //
 // Checks for new releases of zizmor and sfw, respecting the pnpm
-// minimumReleaseAge cooldown (7 days = 10080 minutes) for third-party tools.
+// minimumReleaseAge cooldown (read from pnpm-workspace.yaml) for third-party tools.
 // Socket-owned tools (sfw) are excluded from cooldown.
 //
 // Updates embedded checksums in index.mts when new versions are found.
 
 import { createHash } from 'node:crypto'
-import { readFileSync, promises as fs } from 'node:fs'
+import { existsSync, readFileSync, promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -23,8 +23,27 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const INDEX_FILE = path.join(__dirname, 'index.mts')
 
-// Cooldown: 7 days in milliseconds.
-const COOLDOWN_MS = 10_080 * 60 * 1_000
+// Read minimumReleaseAge from pnpm-workspace.yaml (minutes → ms).
+// Falls back to 10080 minutes (7 days) if not found.
+function readCooldownMs(): number {
+  // Walk up from hook dir to find pnpm-workspace.yaml.
+  let dir = __dirname
+  for (let i = 0; i < 10; i += 1) {
+    const candidate = path.join(dir, 'pnpm-workspace.yaml')
+    if (existsSync(candidate)) {
+      const content = readFileSync(candidate, 'utf8')
+      const match = /^minimumReleaseAge:\s*(\d+)/m.exec(content)
+      if (match) return Number(match[1]) * 60 * 1_000
+      break
+    }
+    const parent = path.dirname(dir)
+    if (parent === dir) break
+    dir = parent
+  }
+  return 10_080 * 60 * 1_000
+}
+
+const COOLDOWN_MS = readCooldownMs()
 
 // ── GitHub API helpers ──
 
