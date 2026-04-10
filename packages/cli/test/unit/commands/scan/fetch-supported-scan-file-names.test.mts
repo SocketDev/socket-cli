@@ -26,7 +26,7 @@ vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
   setupSdk: mockSetupSdk,
 }))
 
-vi.mock('../../../../../src/commands/ci/fetch-default-org-slug.mts', () => ({
+vi.mock('../../../../../src/commands/ci/fetch-default-org-slug.mjs', () => ({
   getDefaultOrgSlug: mockGetDefaultOrgSlug,
 }))
 
