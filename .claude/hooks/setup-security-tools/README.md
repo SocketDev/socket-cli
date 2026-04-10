@@ -42,7 +42,7 @@ Claude will ask if you have an API key, then run the setup script.
 
 The `.git-hooks/pre-push` hook automatically runs:
 - **AgentShield scan** (blocks push on failure)
-- **Zizmor scan** (warns but doesn't block)
+- **Zizmor scan** (blocks push on failure)
 
 This means every push is checked — you don't have to remember to run `/security-scan`.
 

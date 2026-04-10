@@ -35,7 +35,7 @@ if command -v agentshield >/dev/null 2>&1 || [ -x "$(pnpm bin 2>/dev/null)/agent
 fi
 
 # ============================================================================
-# PRE-CHECK 2: zizmor scan on GitHub Actions workflows (warning only)
+# PRE-CHECK 2: zizmor scan on GitHub Actions workflows
 # ============================================================================
 ZIZMOR=""
 if command -v zizmor >/dev/null 2>&1; then
@@ -45,9 +45,9 @@ elif [ -x "$HOME/.socket/zizmor/bin/zizmor" ]; then
 fi
 if [ -n "$ZIZMOR" ] && [ -d ".github/" ]; then
   if ! "$ZIZMOR" .github/ 2>/dev/null; then
-    printf "${YELLOW}⚠ Zizmor: workflow security issues found${NC}\n"
+    printf "${RED}✗ Zizmor: workflow security issues found${NC}\n"
     printf "Run 'zizmor .github/' for details\n"
-    # Warning only, don't block push.
+    TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
   fi
 fi
 
