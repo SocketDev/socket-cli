@@ -89,7 +89,7 @@ const SFW_ENTERPRISE_EXTRA = ['gem', 'bundler', 'nuget']
 function findApiKey(): string | undefined {
   const envKey = process.env['SOCKET_API_KEY']
   if (envKey) return envKey
-  for (const filename of ['.env', '.env.local']) {
+  for (const filename of ['.env.local', '.env']) {
     const filepath = path.join(process.cwd(), filename)
     if (existsSync(filepath)) {
       try {
@@ -253,10 +253,14 @@ async function setupSfw(apiKey: string | undefined): Promise<boolean> {
     ]
     if (isEnterprise) {
       // Read API key from env at runtime — never embed secrets in scripts.
+      // Strips surrounding quotes, inline comments, and trailing whitespace.
       lines.push(
         'if [ -z "$SOCKET_API_KEY" ]; then',
         '  for f in .env.local .env; do',
-        '    [ -f "$f" ] && SOCKET_API_KEY="$(grep -m1 "^SOCKET_API_KEY=" "$f" | cut -d= -f2-)" && break',
+        '    if [ -f "$f" ]; then',
+        '      _val="$(grep -m1 "^SOCKET_API_KEY\\s*=" "$f" | sed "s/^[^=]*=\\s*//" | sed "s/\\s*#.*//" | sed "s/^[\"\\x27]\\(.*\\)[\"\\x27]$/\\1/")"',
+        '      if [ -n "$_val" ]; then SOCKET_API_KEY="$_val"; break; fi',
+        '    fi',
         '  done',
         '  export SOCKET_API_KEY',
         'fi',

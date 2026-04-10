@@ -207,9 +207,10 @@ async function updateZizmor(source: string): Promise<{
   // Respect cooldown for third-party tools.
   if (!isOlderThanCooldown(release.published_at)) {
     const daysOld = ((Date.now() - new Date(release.published_at).getTime()) / 86_400_000).toFixed(1)
-    logger.log(`v${latestVersion} is only ${daysOld} days old (need 7). Skipping.`)
+    const cooldownDays = (COOLDOWN_MS / 86_400_000).toFixed(0)
+    logger.log(`v${latestVersion} is only ${daysOld} days old (need ${cooldownDays}). Skipping.`)
     return {
-      result: { tool, skipped: true, updated: false, reason: `too new (${daysOld} days, need 7)` },
+      result: { tool, skipped: true, updated: false, reason: `too new (${daysOld} days, need ${cooldownDays})` },
       source,
     }
   }
