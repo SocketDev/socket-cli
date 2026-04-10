@@ -2,12 +2,13 @@
 # Socket Security Pre-push Hook
 # Security enforcement layer for all pushes.
 # Validates all commits being pushed for security issues and AI attribution.
+# TODO: The security scanning logic (CHECK 2) is duplicated from .husky/pre-push.
+# Consider extracting shared checks into a common script.
 
 set -e
 
 # Colors for output.
 RED='\033[0;31m'
-YELLOW='\033[1;33m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
@@ -67,12 +68,12 @@ while read local_ref local_sha remote_ref remote_sha; do
   # Get the range of commits being pushed.
   if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
     # New branch - only check commits not on the default remote branch.
-    default_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+    default_branch=$(git symbolic-ref "refs/remotes/$remote/HEAD" 2>/dev/null | sed "s@^refs/remotes/$remote/@@")
     if [ -z "$default_branch" ]; then
       default_branch="main"
     fi
-    if git rev-parse "origin/$default_branch" >/dev/null 2>&1; then
-      range="origin/$default_branch..$local_sha"
+    if git rev-parse "$remote/$default_branch" >/dev/null 2>&1; then
+      range="$remote/$default_branch..$local_sha"
     else
       # No remote default branch, fall back to release tag.
       latest_release=$(git tag --list 'v*' --sort=-version:refname --merged "$local_sha" | head -1)

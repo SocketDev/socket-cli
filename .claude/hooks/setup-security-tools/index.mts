@@ -292,7 +292,7 @@ async function setupSfw(apiKey: string | undefined): Promise<boolean> {
   } else {
     logger.warn('No supported package managers found on PATH.')
   }
-  return true
+  return !!created.length
 }
 
 // ── Main ──
