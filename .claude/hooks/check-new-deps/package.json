@@ -1,0 +1,20 @@
+{
+  "name": "@socketsecurity/hook-check-new-deps",
+  "private": true,
+  "type": "module",
+  "main": "./index.mts",
+  "exports": {
+    ".": "./index.mts"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mts"
+  },
+  "dependencies": {
+    "@socketregistry/packageurl-js": "1.4.1",
+    "@socketsecurity/lib": "5.15.0",
+    "@socketsecurity/sdk": "4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.9.2"
+  }
+}
