@@ -383,6 +383,7 @@ async function fetchSfwChecksums(
 
   const newChecksums: Record<string, string> = { __proto__: null } as unknown as Record<string, string>
   let changed = false
+  let allFound = true
 
   for (const { 0: platform, 1: assetName } of Object.entries(assetNames)) {
     const asset = release.assets.find(a => a.name === assetName)
@@ -401,7 +402,13 @@ async function fetchSfwChecksums(
       const msg = e instanceof Error ? e.message : String(e)
       logger.warn(`    Failed to download ${assetName}: ${msg}`)
       newChecksums[platform] = currentChecksums[platform] ?? ''
+      allFound = false
     }
+  }
+
+  if (!allFound) {
+    logger.warn(`  Some ${label} assets could not be downloaded. Skipping update.`)
+    return { checksums: currentChecksums, changed: false }
   }
 
   return { checksums: newChecksums, changed }
