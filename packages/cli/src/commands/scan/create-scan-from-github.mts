@@ -350,7 +350,7 @@ async function testAndDownloadManifestFile({
   orgGithub: string
   repoSlug: string
   supportedFiles:
-    | SocketSdkSuccessResult<'getReportSupportedFiles'>['data']
+    | SocketSdkSuccessResult<'getSupportedFiles'>['data']
     | undefined
   tmpDir: string
 }): Promise<CResult<{ isManifest: boolean }>> {
