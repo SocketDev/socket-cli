@@ -131,7 +131,7 @@ export async function handleCreateNewScan({
 
   const spinner = getDefaultSpinner()
 
-  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
+  const supportedFilesCResult = await fetchSupportedScanFileNames({ orgSlug, spinner })
   if (!supportedFilesCResult.ok) {
     debug('warn', 'Failed to fetch supported scan file names')
     debugDir('inspect', { supportedFilesCResult })

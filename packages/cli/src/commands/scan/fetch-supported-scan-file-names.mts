@@ -8,6 +8,7 @@ import type { Spinner } from '@socketsecurity/lib/spinner'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchSupportedScanFileNamesOptions = {
+  orgSlug?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
   spinner?: Spinner | undefined
 }
@@ -15,7 +16,7 @@ export type FetchSupportedScanFileNamesOptions = {
 export async function fetchSupportedScanFileNames(
   options?: FetchSupportedScanFileNamesOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getSupportedFiles'>['data']>> {
-  const { sdkOpts, spinner } = {
+  const { orgSlug, sdkOpts, spinner } = {
     __proto__: null,
     ...options,
   } as FetchSupportedScanFileNamesOptions
@@ -26,13 +27,18 @@ export async function fetchSupportedScanFileNames(
   }
   const sockSdk = sockSdkCResult.data
 
-  const orgSlugCResult = await getDefaultOrgSlug()
-  if (!orgSlugCResult.ok) {
-    return orgSlugCResult
+  // Use provided orgSlug or discover it.
+  let resolvedOrgSlug = orgSlug
+  if (!resolvedOrgSlug) {
+    const orgSlugCResult = await getDefaultOrgSlug()
+    if (!orgSlugCResult.ok) {
+      return orgSlugCResult
+    }
+    resolvedOrgSlug = orgSlugCResult.data
   }
 
   return await handleApiCall<'getSupportedFiles'>(
-    sockSdk.getSupportedFiles(orgSlugCResult.data),
+    sockSdk.getSupportedFiles(resolvedOrgSlug),
     {
       description: 'supported scan file types',
       spinner,

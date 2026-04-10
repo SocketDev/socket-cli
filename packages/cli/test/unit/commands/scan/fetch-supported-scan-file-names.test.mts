@@ -16,7 +16,6 @@ import {
 // Mock the dependencies.
 const mockHandleApiCall = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
-const mockGetDefaultOrgSlug = vi.hoisted(() => vi.fn())
 
 vi.mock('../../../../../src/utils/socket/api.mts', () => ({
   handleApiCall: mockHandleApiCall,
@@ -24,10 +23,6 @@ vi.mock('../../../../../src/utils/socket/api.mts', () => ({
 
 vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
   setupSdk: mockSetupSdk,
-}))
-
-vi.mock('../../../../../src/commands/ci/fetch-default-org-slug.mjs', () => ({
-  getDefaultOrgSlug: mockGetDefaultOrgSlug,
 }))
 
 describe('fetchSupportedScanFileNames', () => {
@@ -43,9 +38,8 @@ describe('fetchSupportedScanFileNames', () => {
       'getSupportedFiles',
       mockData,
     )
-    mockGetDefaultOrgSlug.mockResolvedValue({ ok: true, data: 'test-org' })
 
-    const result = await fetchSupportedScanFileNames()
+    const result = await fetchSupportedScanFileNames({ orgSlug: 'test-org' })
 
     expect(mockSdk.getSupportedFiles).toHaveBeenCalledWith('test-org')
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
@@ -64,7 +58,7 @@ describe('fetchSupportedScanFileNames', () => {
       cause: 'Invalid configuration',
     })
 
-    const result = await fetchSupportedScanFileNames()
+    const result = await fetchSupportedScanFileNames({ orgSlug: 'test-org' })
 
     expect(result.ok).toBe(false)
     expect(result.message).toBe('Failed to setup SDK')
@@ -76,27 +70,11 @@ describe('fetchSupportedScanFileNames', () => {
       await import('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
 
     await setupSdkMockError('getSupportedFiles', 'API error', 500)
-    mockGetDefaultOrgSlug.mockResolvedValue({ ok: true, data: 'test-org' })
 
-    const result = await fetchSupportedScanFileNames()
+    const result = await fetchSupportedScanFileNames({ orgSlug: 'test-org' })
 
     expect(result.ok).toBe(false)
     expect(result.code).toBe(500)
-  })
-
-  it('handles org slug failure', async () => {
-    const { fetchSupportedScanFileNames } =
-      await import('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
-
-    await setupSdkMockSuccess('getSupportedFiles', {})
-    mockGetDefaultOrgSlug.mockResolvedValue({
-      ok: false,
-      message: 'No org found',
-    })
-
-    const result = await fetchSupportedScanFileNames()
-
-    expect(result.ok).toBe(false)
   })
 
   it('passes custom SDK options', async () => {
@@ -107,18 +85,19 @@ describe('fetchSupportedScanFileNames', () => {
       'getSupportedFiles',
       {},
     )
-    mockGetDefaultOrgSlug.mockResolvedValue({ ok: true, data: 'my-org' })
 
-    const options = {
+    await fetchSupportedScanFileNames({
+      orgSlug: 'my-org',
       sdkOpts: {
         apiToken: 'custom-token',
         baseUrl: 'https://api.example.com',
       },
-    }
+    })
 
-    await fetchSupportedScanFileNames(options)
-
-    expect(mockSetupSdk).toHaveBeenCalledWith(options.sdkOpts)
+    expect(mockSetupSdk).toHaveBeenCalledWith({
+      apiToken: 'custom-token',
+      baseUrl: 'https://api.example.com',
+    })
     expect(mockSdk.getSupportedFiles).toHaveBeenCalledWith('my-org')
   })
 
@@ -130,7 +109,6 @@ describe('fetchSupportedScanFileNames', () => {
       'getSupportedFiles',
       {},
     )
-    mockGetDefaultOrgSlug.mockResolvedValue({ ok: true, data: 'test-org' })
 
     const mockSpinner = {
       start: vi.fn(),
@@ -139,7 +117,7 @@ describe('fetchSupportedScanFileNames', () => {
       fail: vi.fn(),
     }
 
-    await fetchSupportedScanFileNames({ spinner: mockSpinner })
+    await fetchSupportedScanFileNames({ orgSlug: 'test-org', spinner: mockSpinner })
 
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
       description: 'supported scan file types',
@@ -155,16 +133,15 @@ describe('fetchSupportedScanFileNames', () => {
       supportedFiles: [],
       ecosystems: [],
     })
-    mockGetDefaultOrgSlug.mockResolvedValue({ ok: true, data: 'test-org' })
 
-    const result = await fetchSupportedScanFileNames()
+    const result = await fetchSupportedScanFileNames({ orgSlug: 'test-org' })
 
     expect(result.ok).toBe(true)
     expect(result.data?.supportedFiles).toEqual([])
     expect(result.data?.ecosystems).toEqual([])
   })
 
-  it('works without options parameter', async () => {
+  it('works with orgSlug provided', async () => {
     const { fetchSupportedScanFileNames } =
       await import('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
 
@@ -172,9 +149,8 @@ describe('fetchSupportedScanFileNames', () => {
       'getSupportedFiles',
       { supportedFiles: ['package.json'] },
     )
-    mockGetDefaultOrgSlug.mockResolvedValue({ ok: true, data: 'test-org' })
 
-    const result = await fetchSupportedScanFileNames()
+    const result = await fetchSupportedScanFileNames({ orgSlug: 'test-org' })
 
     expect(mockSetupSdk).toHaveBeenCalledWith(undefined)
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
@@ -189,9 +165,8 @@ describe('fetchSupportedScanFileNames', () => {
       await import('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
 
     const { mockSdk } = await setupSdkMockSuccess('getSupportedFiles', {})
-    mockGetDefaultOrgSlug.mockResolvedValue({ ok: true, data: 'test-org' })
 
-    await fetchSupportedScanFileNames()
+    await fetchSupportedScanFileNames({ orgSlug: 'test-org' })
 
     expect(mockSdk.getSupportedFiles).toHaveBeenCalled()
   })
