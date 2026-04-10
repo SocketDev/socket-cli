@@ -283,6 +283,9 @@ async function updateZizmor(source: string): Promise<{
       logger.log(`  ${assetName}: ${oldHash.slice(0, 12)}... -> ${newHash.slice(0, 12)}...`)
     } else if (oldHash === newHash) {
       logger.log(`  ${assetName}: unchanged`)
+    } else {
+      logger.warn(`  ${assetName}: no existing checksum entry found in source`)
+      allFound = false
     }
   }
 
@@ -349,36 +352,21 @@ async function fetchSfwChecksums(
 
   for (const { 0: platform, 1: assetName } of Object.entries(assetNames)) {
     const asset = release.assets.find(a => a.name === assetName)
-    if (!asset) {
-      // Use latest/download URL pattern for sfw (uses /releases/latest/download/).
-      const url = `https://github.com/${repo}/releases/latest/download/${assetName}`
-      logger.log(`    Computing checksum for ${assetName}...`)
-      try {
-        const hash = await downloadAndHash(url)
-        newChecksums[platform] = hash
-        if (currentChecksums[platform] !== hash) {
-          logger.log(`    ${platform}: ${(currentChecksums[platform] ?? '').slice(0, 12)}... -> ${hash.slice(0, 12)}...`)
-          changed = true
-        }
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e)
-        logger.warn(`    Failed to download ${assetName}: ${msg}`)
-        newChecksums[platform] = currentChecksums[platform] ?? ''
+    const url = asset
+      ? asset.browser_download_url
+      : `https://github.com/${repo}/releases/latest/download/${assetName}`
+    logger.log(`    Computing checksum for ${assetName}...`)
+    try {
+      const hash = await downloadAndHash(url)
+      newChecksums[platform] = hash
+      if (currentChecksums[platform] !== hash) {
+        logger.log(`    ${platform}: ${(currentChecksums[platform] ?? '').slice(0, 12)}... -> ${hash.slice(0, 12)}...`)
+        changed = true
       }
-    } else {
-      logger.log(`    Computing checksum for ${assetName}...`)
-      try {
-        const hash = await downloadAndHash(asset.browser_download_url)
-        newChecksums[platform] = hash
-        if (currentChecksums[platform] !== hash) {
-          logger.log(`    ${platform}: ${(currentChecksums[platform] ?? '').slice(0, 12)}... -> ${hash.slice(0, 12)}...`)
-          changed = true
-        }
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e)
-        logger.warn(`    Failed to download ${assetName}: ${msg}`)
-        newChecksums[platform] = currentChecksums[platform] ?? ''
-      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      logger.warn(`    Failed to download ${assetName}: ${msg}`)
+      newChecksums[platform] = currentChecksums[platform] ?? ''
     }
   }
 
