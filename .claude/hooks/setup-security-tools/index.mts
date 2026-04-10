@@ -97,9 +97,9 @@ function findApiKey(): string | undefined {
         const match = /^SOCKET_API_KEY\s*=\s*(.+)$/m.exec(content)
         if (match) {
           return match[1]!
-            .replace(/\s*#.*$/, '')   // Strip inline comments.
+            .replace(/\s*#.*$/, '')      // Strip inline comments.
+            .trim()                      // Strip whitespace before quote removal.
             .replace(/^["']|["']$/g, '') // Strip surrounding quotes.
-            .trim()
         }
       } catch {
         // Ignore read errors.
