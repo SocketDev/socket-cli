@@ -272,11 +272,26 @@ async function setupSfw(apiKey: string | undefined): Promise<boolean> {
 
     // Windows .cmd shim (strips shim dir from PATH, then execs through sfw).
     if (isWindows) {
+      let cmdApiKeyBlock = ''
+      if (isEnterprise) {
+        // Read API key from .env files at runtime — mirrors the bash shim logic.
+        cmdApiKeyBlock =
+          `if not defined SOCKET_API_KEY (\r\n`
+          + `  for %%F in (.env.local .env) do (\r\n`
+          + `    if exist "%%F" (\r\n`
+          + `      for /f "tokens=1,* delims==" %%A in ('findstr /b "SOCKET_API_KEY" "%%F"') do (\r\n`
+          + `        set "SOCKET_API_KEY=%%B"\r\n`
+          + `      )\r\n`
+          + `    )\r\n`
+          + `  )\r\n`
+          + `)\r\n`
+      }
       const cmdContent =
         `@echo off\r\n`
         + `set "PATH=;%PATH%;"\r\n`
         + `set "PATH=%PATH:;${shimDir};=%"\r\n`
         + `set "PATH=%PATH:~1,-1%"\r\n`
+        + cmdApiKeyBlock
         + `"${binaryPath}" "${realBin}" %*\r\n`
       const cmdPath = path.join(shimDir, `${cmd}.cmd`)
       if (!existsSync(cmdPath) || await fs.readFile(cmdPath, 'utf8').catch(() => '') !== cmdContent) {
