@@ -251,8 +251,21 @@ async function setupSfw(apiKey: string | undefined): Promise<boolean> {
       '#!/bin/bash',
       `export PATH="$(echo "$PATH" | tr ':' '\\n' | grep -vxF '${shimDir}' | paste -sd: -)"`,
     ]
-    if (isEnterprise && apiKey) lines.push(`export SOCKET_API_KEY="${apiKey}"`)
-    if (!isEnterprise) lines.push('export GIT_SSL_NO_VERIFY=true')
+    if (isEnterprise) {
+      // Read API key from env at runtime — never embed secrets in scripts.
+      lines.push(
+        'if [ -z "$SOCKET_API_KEY" ]; then',
+        '  for f in .env.local .env; do',
+        '    [ -f "$f" ] && SOCKET_API_KEY="$(grep -m1 "^SOCKET_API_KEY=" "$f" | cut -d= -f2-)" && break',
+        '  done',
+        '  export SOCKET_API_KEY',
+        'fi',
+      )
+    }
+    if (!isEnterprise) {
+      // Workaround: sfw-free does not yet set GIT_SSL_CAINFO (temporary).
+      lines.push('export GIT_SSL_NO_VERIFY=true')
+    }
     lines.push(`exec "${binaryPath}" "${realBin}" "$@"`)
     const content = lines.join('\n') + '\n'
     const shimPath = path.join(shimDir, cmd)

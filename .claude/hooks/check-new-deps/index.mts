@@ -350,65 +350,69 @@ async function checkDepsBatch(
     uncached.push({ dep, purl })
   }
 
-  if (uncached.length === 0) return { blocked, warned }
+  if (!uncached.length) return { blocked, warned }
 
   try {
-    // Respect API batch size limit (1024 PURLs max).
-    const capped = uncached.slice(0, MAX_BATCH_SIZE)
-    const components = capped.map(({ purl }) => ({ purl }))
+    // Process in chunks to respect API batch size limit.
+    for (let i = 0; i < uncached.length; i += MAX_BATCH_SIZE) {
+      const batch = uncached.slice(i, i + MAX_BATCH_SIZE)
+      const components = batch.map(({ purl }) => ({ purl }))
 
-    const result = await sdk.checkMalware(components)
+      const result = await sdk.checkMalware(components)
 
-    if (!result.success) {
-      logger.warn(
-        `Socket: API returned ${result.status}, allowing all`
-      )
-      return { blocked, warned }
-    }
-
-    // Build a lookup from PURL to input entry for matching results.
-    const purlByKey = new Map<string, string>()
-    for (const { dep, purl } of capped) {
-      purlByKey.set(`${dep.type}:${dep.name}`, purl)
-    }
-
-    for (const pkg of result.data as MalwareCheckPackage[]) {
-      const key = `${pkg.type}:${pkg.name}`
-      const purl = purlByKey.get(key)
-      if (!purl) continue
-
-      // Check for malware or critical-severity alerts.
-      const critical = pkg.alerts.find(
-        a => a.severity === 'critical' || a.type === 'malware'
-      )
-      if (critical) {
-        const cr: CheckResult = {
-          purl,
-          blocked: true,
-          reason: `${critical.type} — ${critical.severity ?? 'critical'}`,
-        }
-        cacheSet(purl, cr)
-        blocked.push(cr)
-        continue
+      if (!result.success) {
+        logger.warn(
+          `Socket: API returned ${result.status}, allowing all`
+        )
+        return { blocked, warned }
       }
 
-      // Warn on low quality score.
-      if (
-        pkg.score?.overall !== undefined
-        && pkg.score.overall < LOW_SCORE_THRESHOLD
-      ) {
-        const wr: CheckResult = {
-          purl,
-          warned: true,
-          score: pkg.score.overall,
-        }
-        cacheSet(purl, wr)
-        warned.push(wr)
-        continue
+      // Build lookup keyed by full PURL (includes namespace + version).
+      const purlByKey = new Map<string, string>()
+      for (const { dep, purl } of batch) {
+        const ns = dep.namespace ? `${dep.namespace}/` : ''
+        purlByKey.set(`${dep.type}:${ns}${dep.name}`, purl)
       }
 
-      // No blocking alerts — clean dep.
-      cacheSet(purl, undefined)
+      for (const pkg of result.data as MalwareCheckPackage[]) {
+        const ns = pkg.namespace ? `${pkg.namespace}/` : ''
+        const key = `${pkg.type}:${ns}${pkg.name}`
+        const purl = purlByKey.get(key)
+        if (!purl) continue
+
+        // Check for malware or critical-severity alerts.
+        const critical = pkg.alerts.find(
+          a => a.severity === 'critical' || a.type === 'malware'
+        )
+        if (critical) {
+          const cr: CheckResult = {
+            purl,
+            blocked: true,
+            reason: `${critical.type} — ${critical.severity ?? 'critical'}`,
+          }
+          cacheSet(purl, cr)
+          blocked.push(cr)
+          continue
+        }
+
+        // Warn on low quality score.
+        if (
+          pkg.score?.overall !== undefined
+          && pkg.score.overall < LOW_SCORE_THRESHOLD
+        ) {
+          const wr: CheckResult = {
+            purl,
+            warned: true,
+            score: pkg.score.overall,
+          }
+          cacheSet(purl, wr)
+          warned.push(wr)
+          continue
+        }
+
+        // No blocking alerts — clean dep.
+        cacheSet(purl, undefined)
+      }
     }
   } catch (e) {
     // Network failure — log and allow all deps through.
@@ -628,15 +632,31 @@ function extractNpm(content: string): Dep[] {
   return deps
 }
 
-// PyPI (requirements.txt, pyproject.toml, setup.py):
-// Matches package names followed by version specifiers
-// (>=, ==, ~=, etc.) or bare names in quoted strings.
+// PyPI (requirements.txt, pyproject.toml, setup.py, Pipfile.lock):
+// requirements.txt: package>=1.0 or package==1.0 at line start
+// pyproject.toml: "package>=1.0" in dependencies arrays
+// setup.py: "package>=1.0" in install_requires lists
 function extractPypi(content: string): Dep[] {
   const deps: Dep[] = []
+  const seen = new Set<string>()
+  // requirements.txt style: package name at line start, followed by
+  // version specifier, extras bracket, or end of line.
   for (const m of content.matchAll(
-    /(?:^|["'])([a-zA-Z][\w.-]*)/gm
+    /^([a-zA-Z][\w.-]+)\s*(?:[>=<!~\[;]|$)/gm
   )) {
-    if (m[1].length > 1) {
+    const name = m[1].toLowerCase()
+    if (!seen.has(name)) {
+      seen.add(name)
+      deps.push({ type: 'pypi', name: m[1] })
+    }
+  }
+  // Quoted strings with version specifiers (pyproject.toml, setup.py).
+  for (const m of content.matchAll(
+    /["']([a-zA-Z][\w.-]+)\s*[>=<!~\[]/g
+  )) {
+    const name = m[1].toLowerCase()
+    if (!seen.has(name)) {
+      seen.add(name)
       deps.push({ type: 'pypi', name: m[1] })
     }
   }
