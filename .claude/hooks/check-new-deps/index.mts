@@ -649,7 +649,13 @@ function extractPipfileLock(content: string): Dep[] {
         }
       }
     }
-  } catch {}
+  } catch {
+    // JSON.parse fails on partial content (e.g. Edit new_string fragments).
+    // Fall back to regex matching package name keys in Pipfile.lock JSON.
+    for (const m of content.matchAll(/"([a-zA-Z][\w.-]*)"\s*:\s*\{/g)) {
+      deps.push({ type: 'pypi', name: m[1] })
+    }
+  }
   return deps
 }
 
