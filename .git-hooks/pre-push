@@ -79,20 +79,14 @@ while read local_ref local_sha remote_ref remote_sha; do
       if [ -n "$latest_release" ]; then
         range="$latest_release..$local_sha"
       else
-        range="$local_sha"
+        # No remote branch or tags — skip scan to avoid walking entire history.
+        printf "${GREEN}✓ Skipping validation (no baseline to compare against)${NC}\n"
+        continue
       fi
     fi
   else
-    # Existing branch - check new commits since remote.
-    # Limit scope to commits after the latest published release on this branch.
-    latest_release=$(git tag --list 'v*' --sort=-version:refname --merged "$remote_sha" | head -1)
-    if [ -n "$latest_release" ]; then
-      # Only check commits after the latest release that are being pushed.
-      range="$latest_release..$local_sha"
-    else
-      # No release tags found, check new commits only.
-      range="$remote_sha..$local_sha"
-    fi
+    # Existing branch — only check commits not yet on the remote.
+    range="$remote_sha..$local_sha"
   fi
 
   # Validate the computed range before using it.

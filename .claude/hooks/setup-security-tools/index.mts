@@ -10,8 +10,7 @@
 //    for malware. Downloads binary, verifies SHA-256, creates PATH shims.
 //    Enterprise vs free determined by SOCKET_API_KEY in env / .env / .env.local.
 
-import { createHash } from 'node:crypto'
-import { existsSync, createReadStream, readFileSync, promises as fs } from 'node:fs'
+import { existsSync, readFileSync, promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -107,16 +106,6 @@ function findApiKey(): string | undefined {
     }
   }
   return undefined
-}
-
-async function sha256File(filePath: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const hash = createHash('sha256')
-    const stream = createReadStream(filePath)
-    stream.on('data', (chunk: Buffer) => hash.update(chunk))
-    stream.on('end', () => resolve(hash.digest('hex')))
-    stream.on('error', reject)
-  })
 }
 
 // ── AgentShield ──
@@ -272,10 +261,6 @@ async function setupSfw(apiKey: string | undefined): Promise<boolean> {
         '  export SOCKET_API_KEY',
         'fi',
       )
-    }
-    if (!isEnterprise) {
-      // Workaround: sfw-free does not yet set GIT_SSL_CAINFO (temporary).
-      bashLines.push('export GIT_SSL_NO_VERIFY=true')
     }
     bashLines.push(`exec "${binaryPath}" "${realBin}" "$@"`)
     const bashContent = bashLines.join('\n') + '\n'
