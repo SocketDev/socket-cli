@@ -27,7 +27,7 @@ Socket CLI integrates with external security tools for scanning, analysis, and v
 
 ## Configuration
 
-All tools are defined in `packages/cli/external-tools.json`:
+All tools are defined in `packages/cli/bundle-tools.json`:
 
 ```json
 {
@@ -129,7 +129,7 @@ When installed via npm, tools are downloaded at runtime.
 
 ### Checksum Verification
 
-All downloads are verified with SHA-256 checksums defined in `external-tools.json`:
+All downloads are verified with SHA-256 checksums defined in `bundle-tools.json`:
 
 ```json
 {
@@ -168,7 +168,7 @@ Environment variables for development/testing:
 
 | File | Purpose |
 |------|---------|
-| `external-tools.json` | Tool definitions, versions, checksums |
+| `bundle-tools.json` | Tool definitions, versions, checksums |
 | `src/utils/dlx/resolve-binary.mts` | Binary resolution logic |
 | `src/utils/dlx/spawn.mts` | Tool spawning (VFS + dlx) |
 | `src/utils/dlx/vfs-extract.mts` | VFS extraction utilities |
@@ -181,7 +181,7 @@ Environment variables for development/testing:
 
 ## Adding a New Tool
 
-1. Add entry to `external-tools.json` with version and checksums
+1. Add entry to `bundle-tools.json` with version and checksums
 2. Create `src/env/{tool}-version.mts` version getter
 3. Create `src/env/{tool}-checksums.mts` checksum getter (if applicable)
 4. Add resolve function in `src/utils/dlx/resolve-binary.mts`

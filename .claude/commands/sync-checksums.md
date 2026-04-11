@@ -1,9 +1,9 @@
-Sync SHA-256 checksums from GitHub releases to external-tools.json using the syncing-checksums skill.
+Sync SHA-256 checksums from GitHub releases to bundle-tools.json using the syncing-checksums skill.
 
 ## What it does
 
 1. Fetches checksums.txt from GitHub releases (or computes from assets)
-2. Updates packages/cli/external-tools.json
+2. Updates packages/cli/bundle-tools.json
 3. Validates JSON syntax
 4. Commits changes (if any)
 

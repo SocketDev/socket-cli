@@ -12,7 +12,7 @@ export function getTrivyVersion(): string {
   const version = process.env['INLINED_TRIVY_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_TRIVY_VERSION not found. Please ensure trivy is properly configured in external-tools.json.',
+      'INLINED_TRIVY_VERSION not found. Please ensure trivy is properly configured in bundle-tools.json.',
     )
   }
   return version

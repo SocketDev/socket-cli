@@ -1,25 +1,22 @@
 {
-  "$schema": "External tools configuration for Socket CLI VFS bundling",
-  "$comment": "Build process uses @npmcli/arborist (scripts/sea-build-utils/npm-packages.mjs) to download npm packages with full dependency trees. npm packages are bundled with node_modules/ into VFS alongside security tool binaries. For github-release types, 'githubRelease' is the release tag (any format: v1.6.1, 3.11.14, etc.).",
+  "$schema": "Bundle tools configuration for Socket CLI VFS bundling",
   "@coana-tech/cli": {
     "description": "Coana CLI for static analysis and reachability detection",
-    "type": "npm",
-    "package": "@coana-tech/cli",
     "version": "14.12.165",
+    "packageManager": "npm",
     "integrity": "sha512-Fs/gGzBEFl23x0Xw+eBOnyX2WUaoc82ppgZrrDN9hpB84CN8r0ZEw22IQRpiJTmhmOlbSwiArpRw45VkgJY5sw=="
   },
   "@cyclonedx/cdxgen": {
     "description": "CycloneDX SBOM generator for software bill of materials",
-    "type": "npm",
-    "package": "@cyclonedx/cdxgen",
     "version": "12.0.0",
+    "packageManager": "npm",
     "integrity": "sha512-RRXEZ1eKHcU+Y/2AnfIg30EQRbOmlEpaJddmMVetpXeYpnxDy/yjBM67jXNKkA4iZYjZzfWe7I5GuxckRmuoqg=="
   },
   "opengrep": {
     "description": "OpenGrep SAST/code analysis engine (fork of Semgrep)",
-    "type": "github-release",
-    "repository": "opengrep/opengrep",
-    "githubRelease": "v1.16.0",
+    "repository": "github:opengrep/opengrep",
+    "release": "asset",
+    "version": "v1.16.0",
     "checksums": {
       "opengrep-core_linux_aarch64.tar.gz": "e6a92e2c465b53284ae326d20b315acbd2eb99bc9ea4b3af48db6379306f3a82",
       "opengrep-core_linux_x86.tar.gz": "4d474141329983c4ddd7a6cd586759deecc7f3fa9aee6e6eeab8c55759dc816b",
@@ -30,10 +27,10 @@
   },
   "python": {
     "description": "Python runtime from python-build-standalone",
-    "type": "github-release",
-    "repository": "astral-sh/python-build-standalone",
-    "githubRelease": "3.11.14",
-    "buildTag": "20260203",
+    "repository": "github:astral-sh/python-build-standalone",
+    "release": "asset",
+    "version": "3.11.14",
+    "tag": "20260203",
     "checksums": {
       "cpython-3.11.14+20260203-aarch64-apple-darwin-install_only.tar.gz": "63e3352fefd3b6494f73f46f51c6581c57a7e0d98775e6e00229d14a67ec3ce9",
       "cpython-3.11.14+20260203-aarch64-pc-windows-msvc-install_only.tar.gz": "cb7828c131a005da367f7dba3a561bed91619452de870e531ee03344b2ac346f",
@@ -47,16 +44,15 @@
   },
   "socket-basics": {
     "description": "Socket Basics - integrated SAST, secret scanning, and container analysis",
-    "type": "github-source",
-    "repository": "SocketDev/socket-basics",
-    "githubRelease": "v2.0.2",
-    "package": "socket_basics"
+    "repository": "github:SocketDev/socket-basics",
+    "release": "archive",
+    "version": "v2.0.2",
+    "packageManager": "pip"
   },
   "socketsecurity": {
     "description": "Socket Python CLI (socket-python-cli)",
-    "type": "pypi",
-    "package": "socketsecurity",
     "version": "2.2.70",
+    "packageManager": "pip",
     "checksums": {
       "socketsecurity-2.2.70-py3-none-any.whl": "8633c2a7f204cc5cec18d8ed04cfd09aa448f7e2257345596435493d2102ba5d",
       "socketsecurity-2.2.70.tar.gz": "e5212fb9b6b7bee3c5d936efe439508df76a7d0d81b99f84f6eafe760f3d77b7"
@@ -64,9 +60,9 @@
   },
   "socket-patch": {
     "description": "Socket Patch CLI for applying security patches (Rust binary)",
-    "type": "github-release",
-    "repository": "SocketDev/socket-patch",
-    "githubRelease": "v2.0.0",
+    "repository": "github:SocketDev/socket-patch",
+    "release": "asset",
+    "version": "v2.0.0",
     "checksums": {
       "socket-patch-aarch64-apple-darwin.tar.gz": "dd8f778aef4db3f2c5000cd870101a31d1bb03822158d76e5bd2e773098428f0",
       "socket-patch-aarch64-pc-windows-msvc.zip": "5c0bbfc12d2b6f30a0f79caf4bff85a1eac6baf9541c46d9af4b3f37b05bd574",
@@ -78,11 +74,9 @@
   },
   "sfw": {
     "description": "Socket Firewall (sfw) - GitHub binary for SEA, npm package for CLI",
-    "type": "github-release",
-    "repository": "SocketDev/sfw-free",
-    "githubRelease": "v1.6.1",
-    "npmPackage": "sfw",
-    "npmVersion": "2.0.4",
+    "repository": "github:SocketDev/sfw-free",
+    "release": "asset",
+    "version": "v1.6.1",
     "checksums": {
       "sfw-free-linux-arm64": "df2eedb2daf2572eee047adb8bfd81c9069edcb200fc7d3710fca98ec3ca81a1",
       "sfw-free-linux-x86_64": "4a1e8b65e90fce7d5fd066cf0af6c93d512065fa4222a475c8d959a6bc14b9ff",
@@ -91,20 +85,23 @@
       "sfw-free-musl-linux-arm64": "41e5ebfe84e33eb7f34846eeb1b0e0c3039b2ba8bcdb87f4a75a5ccb89c64ae1",
       "sfw-free-musl-linux-x86_64": "19f26c163311d5d0b184d305304972d26c52e445659c9142cefc7d8a11e06c3a",
       "sfw-free-windows-x86_64.exe": "c953e62ad7928d4d8f2302f5737884ea1a757babc26bed6a42b9b6b68a5d54af"
+    },
+    "npm": {
+      "package": "sfw",
+      "version": "2.0.4"
     }
   },
   "synp": {
     "description": "Tool for converting between yarn.lock and package-lock.json",
-    "type": "npm",
-    "package": "synp",
     "version": "1.9.14",
+    "packageManager": "npm",
     "integrity": "sha512-0e4u7KtrCrMqvuXvDN4nnHSEQbPlONtJuoolRWzut0PfuT2mEOvIFnYFHEpn5YPIOv7S5Ubher0b04jmYRQOzQ=="
   },
   "trivy": {
     "description": "Trivy container and filesystem vulnerability scanner",
-    "type": "github-release",
-    "repository": "aquasecurity/trivy",
-    "githubRelease": "v0.69.2",
+    "repository": "github:aquasecurity/trivy",
+    "release": "asset",
+    "version": "v0.69.2",
     "checksums": {
       "trivy_0.69.2_Linux-64bit.tar.gz": "affa59a1e37d86e4b8ab2cd02f0ab2e63d22f1bf9cf6a7aa326c884e25e26ce3",
       "trivy_0.69.2_Linux-ARM64.tar.gz": "c73b97699c317b0d25532b3f188564b4e29d13d5472ce6f8eb078082546a6481",
@@ -115,9 +112,9 @@
   },
   "trufflehog": {
     "description": "TruffleHog secret and credential detection",
-    "type": "github-release",
-    "repository": "trufflesecurity/trufflehog",
-    "githubRelease": "v3.93.1",
+    "repository": "github:trufflesecurity/trufflehog",
+    "release": "asset",
+    "version": "v3.93.1",
     "checksums": {
       "trufflehog_3.93.1_darwin_amd64.tar.gz": "f1f4ecbda3996b88dc70cf6aef2c469c4902efb591aca86128d6305d606d8e07",
       "trufflehog_3.93.1_darwin_arm64.tar.gz": "d65a2ad0f043a9d48a97176f28533890e558817e2fb7dd1e34132653b61be4a0",

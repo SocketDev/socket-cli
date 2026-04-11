@@ -20,10 +20,10 @@ import { getRootPath } from './downloads.mjs'
 const logger = getDefaultLogger()
 
 /**
- * External tools configuration loaded from external-tools.json.
+ * External tools configuration loaded from bundle-tools.json.
  */
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const externalToolsPath = path.join(__dirname, '../../external-tools.json')
+const externalToolsPath = path.join(__dirname, '../../bundle-tools.json')
 const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
 
 /**
@@ -104,7 +104,7 @@ async function downloadNpmPackage(packageSpec, targetDir, expectedIntegrity) {
 /**
  * Download all npm packages with full dependency trees for VFS bundling.
  *
- * Downloads npm packages specified in external-tools.json that have type='npm',
+ * Downloads npm packages specified in bundle-tools.json that have type='npm',
  * installs them with full production dependency trees using Arborist, and packages
  * them into a compressed tar.gz for VFS embedding.
  *
@@ -163,21 +163,21 @@ export async function downloadNpmPackages() {
     }
   }
 
-  // Collect npm packages from external-tools.json.
+  // Collect npm packages from bundle-tools.json.
   const npmPackages = []
   for (const [toolName, toolConfig] of Object.entries(externalTools)) {
-    if (toolConfig.type === 'npm') {
+    if (toolConfig.packageManager === 'npm') {
       npmPackages.push({
         integrity: toolConfig.integrity,
         name: toolName,
-        package: toolConfig.package,
+        package: toolName,
         version: toolConfig.version,
       })
     }
   }
 
   if (npmPackages.length === 0) {
-    logger.warn('No npm packages defined in external-tools.json')
+    logger.warn('No npm packages defined in bundle-tools.json')
     return null
   }
 

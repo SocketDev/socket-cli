@@ -6,7 +6,7 @@
  * - Cross-platform compatibility (Windows/Unix)
  * - Build validation before running tests
  * - Environment variable loading from .env.test
- * - Inlined variable injection from external-tools.json
+ * - Inlined variable injection from bundle-tools.json
  */
 
 import { existsSync } from 'node:fs'

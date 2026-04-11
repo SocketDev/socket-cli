@@ -3,7 +3,7 @@
 /**
  * @fileoverview Build-time validation for SHA-256 checksums.
  * Ensures all required platform-specific tool assets have checksums defined
- * in external-tools.json before building SEA binaries.
+ * in bundle-tools.json before building SEA binaries.
  *
  * This script is a security requirement - builds MUST NOT proceed if any
  * checksums are missing for downloadable binaries.
@@ -28,7 +28,7 @@ const rootPath = path.join(__dirname, '..')
 // Load external tools configuration.
 const externalToolsPath = path.join(
   rootPath,
-  'packages/cli/external-tools.json',
+  'packages/cli/bundle-tools.json',
 )
 const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
 
@@ -64,7 +64,7 @@ function validateChecksums() {
     const toolConfig = externalTools[toolName]
 
     if (!toolConfig) {
-      errors.push(`Tool "${toolName}" not found in external-tools.json`)
+      errors.push(`Tool "${toolName}" not found in bundle-tools.json`)
       continue
     }
 
@@ -128,7 +128,7 @@ function validateChecksums() {
     }
     console.log('')
     logger.error(
-      'All external tool assets MUST have SHA-256 checksums defined in external-tools.json.',
+      'All external tool assets MUST have SHA-256 checksums defined in bundle-tools.json.',
     )
     logger.error('This is a security requirement to prevent supply chain attacks.')
     return false

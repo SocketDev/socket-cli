@@ -35,11 +35,11 @@ import { PLATFORM_MAP_TOOLS } from '../constants/external-tools-platforms.mjs'
 export const logger = getDefaultLogger()
 
 /**
- * External tools configuration loaded from external-tools.json.
+ * External tools configuration loaded from bundle-tools.json.
  * Contains version info, GitHub repos, and download metadata for security tools.
  */
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const externalToolsPath = path.join(__dirname, '../../external-tools.json')
+const externalToolsPath = path.join(__dirname, '../../bundle-tools.json')
 export const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
 
 /**
@@ -251,31 +251,28 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
   }
 
   // Security tool versions and GitHub release info.
-  // Versions are read from external-tools.json for centralized management.
+  // Versions are read from bundle-tools.json for centralized management.
   // Repository info is derived from the 'repository' field (format: owner/repo).
   const TOOL_REPOS = {
     __proto__: null,
   }
 
-  // Populate TOOL_REPOS from external-tools.json.
-  // Filter by type === 'github-release' to include all GitHub-released tools.
+  // Populate TOOL_REPOS from bundle-tools.json.
+  // Filter by release === 'asset' to include all GitHub-released tools.
   for (const [toolName, toolConfig] of Object.entries(externalTools)) {
-    if (toolConfig.type === 'github-release') {
-      const parts = toolConfig.repository.split('/')
+    if (toolConfig.release === 'asset') {
+      const repoPath = toolConfig.repository.replace(/^github:/, '')
+      const parts = repoPath.split('/')
       if (parts.length !== 2 || !parts[0] || !parts[1]) {
         throw new Error(
-          `Invalid repository format for ${toolName}: expected 'owner/repo', got '${toolConfig.repository}'`,
+          `Invalid repository format for ${toolName}: expected 'github:owner/repo', got '${toolConfig.repository}'`,
         )
       }
       const [owner, repo] = parts
       TOOL_REPOS[toolName] = {
         owner,
         repo,
-        // Python uses buildTag for release tag, others use githubRelease field.
-        version:
-          toolName === 'python'
-            ? toolConfig.buildTag
-            : toolConfig.githubRelease,
+        version: toolConfig.tag ?? toolConfig.version,
       }
     }
   }
@@ -297,11 +294,11 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
   for (const [toolName, assetName] of Object.entries(toolsForPlatform)) {
     const config = TOOL_REPOS[toolName]
 
-    // Validate tool exists in TOOL_REPOS (populated from external-tools.json).
+    // Validate tool exists in TOOL_REPOS (populated from bundle-tools.json).
     if (!config) {
       throw new Error(
         `Tool "${toolName}" is defined in platform mappings but not found in TOOL_REPOS. ` +
-          `Ensure "${toolName}" exists in external-tools.json with type "github-release".`,
+          `Ensure "${toolName}" exists in bundle-tools.json with release "asset".`,
       )
     }
 
@@ -327,7 +324,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
     const tag = config.version
     const url = `https://github.com/${config.owner}/${config.repo}/releases/download/${tag}/${assetName}`
 
-    // Get SHA256 checksum from external-tools.json.
+    // Get SHA256 checksum from bundle-tools.json.
     // SECURITY: Checksum verification is REQUIRED for all external tool downloads.
     // If checksum is missing, the build MUST fail.
     const toolConfig = externalTools[toolName]
@@ -336,7 +333,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
     if (!sha256) {
       throw new Error(
         `Missing SHA-256 checksum for ${toolName} asset: ${assetName}. ` +
-          'This is a security requirement. Please update external-tools.json with the correct checksum.',
+          'This is a security requirement. Please update bundle-tools.json with the correct checksum.',
       )
     }
 
@@ -477,7 +474,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
         if (!wheelSha256) {
           throw new Error(
             `Missing SHA-256 checksum for socketsecurity wheel: ${wheelFilename}. ` +
-              'Please update external-tools.json with the correct checksum.',
+              'Please update bundle-tools.json with the correct checksum.',
           )
         }
 
@@ -536,14 +533,15 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
       // Install socket_basics from GitHub source (not on PyPI).
       // socket_basics orchestrates the security tools (trivy, trufflehog, opengrep).
       const socketBasicsConfig = externalTools['socket-basics']
-      if (socketBasicsConfig && socketBasicsConfig.type === 'github-source') {
-        const { repository, githubRelease } = socketBasicsConfig
-        const version = githubRelease.replace(/^v/, '') // Remove 'v' prefix for version
+      if (socketBasicsConfig && socketBasicsConfig.release === 'archive') {
+        const repoPath = socketBasicsConfig.repository.replace(/^github:/, '')
+        const releaseVersion = socketBasicsConfig.version
+        const version = releaseVersion.replace(/^v/, '') // Remove 'v' prefix for version
 
         logger.log(`  Installing socket_basics ${version} from GitHub...`)
 
         // Download source tarball from GitHub.
-        const tarballUrl = `https://github.com/${repository}/archive/refs/tags/${githubRelease}.tar.gz`
+        const tarballUrl = `https://github.com/${repoPath}/archive/refs/tags/${releaseVersion}.tar.gz`
         const tarballPath = normalizePath(
           path.join(toolsDir, `socket-basics-${version}.tar.gz`),
         )

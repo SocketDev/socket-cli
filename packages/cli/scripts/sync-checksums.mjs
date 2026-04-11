@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * Sync checksums from GitHub releases to external-tools.json.
+ * Sync checksums from GitHub releases to bundle-tools.json.
  *
  * For each GitHub-released tool, this script:
  * 1. Fetches checksums.txt from the release (if available)
  * 2. Or downloads each asset and computes SHA-256 checksums
- * 3. Updates external-tools.json with the new checksums
+ * 3. Updates bundle-tools.json with the new checksums
  *
  * Usage:
  *   node scripts/sync-checksums.mjs [--tool=<tool>] [--force] [--dry-run]
@@ -27,7 +27,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const packageRoot = path.join(__dirname, '..')
 
-const EXTERNAL_TOOLS_FILE = path.join(packageRoot, 'external-tools.json')
+const EXTERNAL_TOOLS_FILE = path.join(packageRoot, 'bundle-tools.json')
 
 /**
  * Compute SHA-256 hash of a file.
@@ -180,7 +180,7 @@ async function main() {
   const toolArg = args.find(arg => arg.startsWith('--tool='))
   const toolFilter = toolArg ? toolArg.split('=')[1] : undefined
 
-  // Load current external-tools.json.
+  // Load current bundle-tools.json.
   if (!existsSync(EXTERNAL_TOOLS_FILE)) {
     console.error(`Error: ${EXTERNAL_TOOLS_FILE} not found`)
     process.exitCode = 1
@@ -193,7 +193,7 @@ async function main() {
   const githubTools = Object.entries(externalTools)
     .filter(([key, value]) => {
       if (key.startsWith('$')) return false // Skip schema keys
-      return value.type === 'github-release'
+      return value.release === 'asset'
     })
     .map(([key, value]) => ({ key, ...value }))
 
@@ -216,12 +216,14 @@ async function main() {
   let failed = 0
 
   for (const tool of githubTools) {
-    console.log(`[${tool.key}] ${tool.repository} @ ${tool.githubRelease}`)
+    const repoPath = tool.repository.replace(/^github:/, '')
+    const releaseTag = tool.tag ?? tool.version
+    console.log(`[${tool.key}] ${repoPath} @ ${releaseTag}`)
 
     try {
       const newChecksums = await fetchGitHubReleaseChecksums(
-        tool.repository,
-        tool.githubRelease,
+        repoPath,
+        releaseTag,
         tool.checksums || {},
       )
 

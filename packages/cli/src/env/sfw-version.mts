@@ -19,7 +19,7 @@ export function getSwfVersion(): string {
   const version = process.env['INLINED_SFW_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_SFW_VERSION not found. Please ensure sfw is properly configured in external-tools.json.',
+      'INLINED_SFW_VERSION not found. Please ensure sfw is properly configured in bundle-tools.json.',
     )
   }
   return version
@@ -32,7 +32,7 @@ export function getSfwNpmVersion(): string {
   const version = process.env['INLINED_SFW_NPM_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_SFW_NPM_VERSION not found. Please ensure sfw npmVersion is configured in external-tools.json.',
+      'INLINED_SFW_NPM_VERSION not found. Please ensure sfw npm.version is configured in bundle-tools.json.',
     )
   }
   return version
