@@ -213,7 +213,7 @@ async function updateZizmor(source: string): Promise<{
 
   let release: GhRelease
   try {
-    release = await ghApiLatestRelease('woodruffw/zizmor')
+    release = await ghApiLatestRelease('zizmorcore/zizmor')
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     logger.warn(`Failed to fetch zizmor releases: ${msg}`)

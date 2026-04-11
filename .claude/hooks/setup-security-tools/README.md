@@ -12,7 +12,7 @@ Scans your Claude Code configuration (`.claude/` directory) for security issues 
 ### 2. Zizmor
 Static analysis tool for GitHub Actions workflows. Catches unpinned actions, secret exposure, template injection, and permission issues.
 
-**How it's installed**: Binary downloaded from [GitHub releases](https://github.com/woodruffw/zizmor/releases), SHA-256 verified, cached at `~/.socket/zizmor/bin/zizmor`. If you already have it via `brew install zizmor`, the download is skipped.
+**How it's installed**: Binary downloaded from [GitHub releases](https://github.com/zizmorcore/zizmor/releases), SHA-256 verified, cached at `~/.socket/zizmor/bin/zizmor`. If you already have it via `brew install zizmor`, the download is skipped.
 
 ### 3. SFW (Socket Firewall)
 Intercepts package manager commands (`npm install`, `pnpm add`, etc.) and scans packages against Socket.dev's malware database before installation.
