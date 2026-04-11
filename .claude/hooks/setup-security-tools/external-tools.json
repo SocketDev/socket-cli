@@ -1,0 +1,64 @@
+{
+  "description": "Security tools for Claude Code hooks (self-contained, no external deps)",
+  "tools": {
+    "zizmor": {
+      "description": "GitHub Actions security scanner",
+      "version": "1.23.1",
+      "repository": "woodruffw/zizmor",
+      "assets": {
+        "darwin-arm64": "zizmor-aarch64-apple-darwin.tar.gz",
+        "darwin-x64": "zizmor-x86_64-apple-darwin.tar.gz",
+        "linux-arm64": "zizmor-aarch64-unknown-linux-gnu.tar.gz",
+        "linux-x64": "zizmor-x86_64-unknown-linux-gnu.tar.gz",
+        "win32-x64": "zizmor-x86_64-pc-windows-msvc.zip"
+      },
+      "checksums": {
+        "zizmor-aarch64-apple-darwin.tar.gz": "2632561b974c69f952258c1ab4b7432d5c7f92e555704155c3ac28a2910bd717",
+        "zizmor-aarch64-unknown-linux-gnu.tar.gz": "3725d7cd7102e4d70827186389f7d5930b6878232930d0a3eb058d7e5b47e658",
+        "zizmor-x86_64-apple-darwin.tar.gz": "89d5ed42081dd9d0433a10b7545fac42b35f1f030885c278b9712b32c66f2597",
+        "zizmor-x86_64-pc-windows-msvc.zip": "33c2293ff02834720dd7cd8b47348aafb2e95a19bdc993c0ecaca9c804ade92a",
+        "zizmor-x86_64-unknown-linux-gnu.tar.gz": "67a8df0a14352dd81882e14876653d097b99b0f4f6b6fe798edc0320cff27aff"
+      }
+    },
+    "sfw-free": {
+      "description": "Socket Firewall (free tier)",
+      "version": "v1.6.1",
+      "repository": "SocketDev/sfw-free",
+      "platforms": {
+        "darwin-arm64": "macos-arm64",
+        "darwin-x64": "macos-x86_64",
+        "linux-arm64": "linux-arm64",
+        "linux-x64": "linux-x86_64",
+        "win32-x64": "windows-x86_64"
+      },
+      "checksums": {
+        "linux-arm64": "df2eedb2daf2572eee047adb8bfd81c9069edcb200fc7d3710fca98ec3ca81a1",
+        "linux-x86_64": "4a1e8b65e90fce7d5fd066cf0af6c93d512065fa4222a475c8d959a6bc14b9ff",
+        "macos-arm64": "bf1616fc44ac49f1cb2067fedfa127a3ae65d6ec6d634efbb3098cfa355e5555",
+        "macos-x86_64": "724ccea19d847b79db8cc8e38f5f18ce2dd32336007f42b11bed7d2e5f4a2566",
+        "windows-x86_64": "c953e62ad7928d4d8f2302f5737884ea1a757babc26bed6a42b9b6b68a5d54af"
+      },
+      "ecosystems": ["npm", "yarn", "pnpm", "pip", "uv", "cargo"]
+    },
+    "sfw-enterprise": {
+      "description": "Socket Firewall (enterprise tier)",
+      "version": "v1.6.1",
+      "repository": "SocketDev/firewall-release",
+      "platforms": {
+        "darwin-arm64": "macos-arm64",
+        "darwin-x64": "macos-x86_64",
+        "linux-arm64": "linux-arm64",
+        "linux-x64": "linux-x86_64",
+        "win32-x64": "windows-x86_64"
+      },
+      "checksums": {
+        "linux-arm64": "671270231617142404a1564e52672f79b806f9df3f232fcc7606329c0246da55",
+        "linux-x86_64": "9115b4ca8021eb173eb9e9c3627deb7f1066f8debd48c5c9d9f3caabb2a26a4b",
+        "macos-arm64": "acad0b517601bb7408e2e611c9226f47dcccbd83333d7fc5157f1d32ed2b953d",
+        "macos-x86_64": "01d64d40effda35c31f8d8ee1fed1388aac0a11aba40d47fba8a36024b77500c",
+        "windows-x86_64": "9a50e1ddaf038138c3f85418dc5df0113bbe6fc884f5abe158beaa9aea18d70a"
+      },
+      "ecosystems": ["npm", "yarn", "pnpm", "pip", "uv", "cargo", "gem", "bundler", "nuget"]
+    }
+  }
+}

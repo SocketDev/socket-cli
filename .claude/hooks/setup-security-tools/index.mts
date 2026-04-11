@@ -14,6 +14,7 @@ import { existsSync, readFileSync, promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 
 import { whichSync } from '@socketsecurity/lib/bin'
 import { downloadBinary } from '@socketsecurity/lib/dlx/binary'
@@ -21,71 +22,35 @@ import { httpDownload } from '@socketsecurity/lib/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getSocketHomePath } from '@socketsecurity/lib/paths/socket'
 import { spawn, spawnSync } from '@socketsecurity/lib/spawn'
+import { z } from 'zod'
 
 const logger = getDefaultLogger()
 
-// ── Zizmor constants ──
+// ── Tool config loaded from external-tools.json (self-contained) ──
 
-const ZIZMOR_VERSION = '1.23.1'
+const toolSchema = z.object({
+  description: z.string().optional(),
+  version: z.string(),
+  repository: z.string().optional(),
+  assets: z.record(z.string(), z.string()).optional(),
+  platforms: z.record(z.string(), z.string()).optional(),
+  checksums: z.record(z.string(), z.string()).optional(),
+  ecosystems: z.array(z.string()).optional(),
+})
 
-const ZIZMOR_CHECKSUMS: Record<string, string> = {
-  __proto__: null as unknown as string,
-  'zizmor-aarch64-apple-darwin.tar.gz':
-    '2632561b974c69f952258c1ab4b7432d5c7f92e555704155c3ac28a2910bd717',
-  'zizmor-aarch64-unknown-linux-gnu.tar.gz':
-    '3725d7cd7102e4d70827186389f7d5930b6878232930d0a3eb058d7e5b47e658',
-  'zizmor-x86_64-apple-darwin.tar.gz':
-    '89d5ed42081dd9d0433a10b7545fac42b35f1f030885c278b9712b32c66f2597',
-  'zizmor-x86_64-pc-windows-msvc.zip':
-    '33c2293ff02834720dd7cd8b47348aafb2e95a19bdc993c0ecaca9c804ade92a',
-  'zizmor-x86_64-unknown-linux-gnu.tar.gz':
-    '67a8df0a14352dd81882e14876653d097b99b0f4f6b6fe798edc0320cff27aff',
-}
+const configSchema = z.object({
+  description: z.string().optional(),
+  tools: z.record(z.string(), toolSchema),
+})
 
-const ZIZMOR_ASSET_MAP: Record<string, string> = {
-  __proto__: null as unknown as string,
-  'darwin-arm64': 'zizmor-aarch64-apple-darwin.tar.gz',
-  'darwin-x64': 'zizmor-x86_64-apple-darwin.tar.gz',
-  'linux-arm64': 'zizmor-aarch64-unknown-linux-gnu.tar.gz',
-  'linux-x64': 'zizmor-x86_64-unknown-linux-gnu.tar.gz',
-  'win32-x64': 'zizmor-x86_64-pc-windows-msvc.zip',
-}
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const configPath = path.join(__dirname, 'external-tools.json')
+const rawConfig = JSON.parse(readFileSync(configPath, 'utf8'))
+const config = configSchema.parse(rawConfig)
 
-// ── SFW constants ──
-
-// Pinned SFW version — checksums below are for this exact version.
-// Using /releases/latest/ would break when a new release ships with different checksums.
-const SFW_VERSION = 'v1.6.1'
-
-const SFW_ENTERPRISE_CHECKSUMS: Record<string, string> = {
-  __proto__: null as unknown as string,
-  'linux-arm64': '671270231617142404a1564e52672f79b806f9df3f232fcc7606329c0246da55',
-  'linux-x86_64': '9115b4ca8021eb173eb9e9c3627deb7f1066f8debd48c5c9d9f3caabb2a26a4b',
-  'macos-arm64': 'acad0b517601bb7408e2e611c9226f47dcccbd83333d7fc5157f1d32ed2b953d',
-  'macos-x86_64': '01d64d40effda35c31f8d8ee1fed1388aac0a11aba40d47fba8a36024b77500c',
-  'windows-x86_64': '9a50e1ddaf038138c3f85418dc5df0113bbe6fc884f5abe158beaa9aea18d70a',
-}
-
-const SFW_FREE_CHECKSUMS: Record<string, string> = {
-  __proto__: null as unknown as string,
-  'linux-arm64': 'df2eedb2daf2572eee047adb8bfd81c9069edcb200fc7d3710fca98ec3ca81a1',
-  'linux-x86_64': '4a1e8b65e90fce7d5fd066cf0af6c93d512065fa4222a475c8d959a6bc14b9ff',
-  'macos-arm64': 'bf1616fc44ac49f1cb2067fedfa127a3ae65d6ec6d634efbb3098cfa355e5555',
-  'macos-x86_64': '724ccea19d847b79db8cc8e38f5f18ce2dd32336007f42b11bed7d2e5f4a2566',
-  'windows-x86_64': 'c953e62ad7928d4d8f2302f5737884ea1a757babc26bed6a42b9b6b68a5d54af',
-}
-
-const SFW_PLATFORM_MAP: Record<string, string> = {
-  __proto__: null as unknown as string,
-  'darwin-arm64': 'macos-arm64',
-  'darwin-x64': 'macos-x86_64',
-  'linux-arm64': 'linux-arm64',
-  'linux-x64': 'linux-x86_64',
-  'win32-x64': 'windows-x86_64',
-}
-
-const SFW_FREE_ECOSYSTEMS = ['npm', 'yarn', 'pnpm', 'pip', 'uv', 'cargo']
-const SFW_ENTERPRISE_EXTRA = ['gem', 'bundler', 'nuget']
+const ZIZMOR = config.tools['zizmor']!
+const SFW_FREE = config.tools['sfw-free']!
+const SFW_ENTERPRISE = config.tools['sfw-enterprise']!
 
 // ── Shared helpers ──
 
@@ -137,7 +102,7 @@ async function checkZizmorVersion(binPath: string): Promise<boolean> {
     const output = typeof result.stdout === 'string'
       ? result.stdout.trim()
       : result.stdout.toString().trim()
-    return output.includes(ZIZMOR_VERSION)
+    return output.includes(ZIZMOR.version)
   } catch {
     return false
   }
@@ -150,10 +115,10 @@ async function setupZizmor(): Promise<boolean> {
   const systemBin = whichSync('zizmor', { nothrow: true })
   if (systemBin && typeof systemBin === 'string') {
     if (await checkZizmorVersion(systemBin)) {
-      logger.log(`Found on PATH: ${systemBin} (v${ZIZMOR_VERSION})`)
+      logger.log(`Found on PATH: ${systemBin} (v${ZIZMOR.version})`)
       return true
     }
-    logger.log(`Found on PATH but wrong version (need v${ZIZMOR_VERSION})`)
+    logger.log(`Found on PATH but wrong version (need v${ZIZMOR.version})`)
   }
 
   // Check cached binary.
@@ -161,20 +126,20 @@ async function setupZizmor(): Promise<boolean> {
   const binDir = path.join(getSocketHomePath(), 'zizmor', 'bin')
   const binPath = path.join(binDir, `zizmor${ext}`)
   if (existsSync(binPath) && await checkZizmorVersion(binPath)) {
-    logger.log(`Cached: ${binPath} (v${ZIZMOR_VERSION})`)
+    logger.log(`Cached: ${binPath} (v${ZIZMOR.version})`)
     return true
   }
 
   // Download.
   const platformKey = `${process.platform}-${process.arch}`
-  const asset = ZIZMOR_ASSET_MAP[platformKey]
+  const asset = ZIZMOR.assets?.[platformKey]
   if (!asset) throw new Error(`Unsupported platform: ${platformKey}`)
-  const expectedSha = ZIZMOR_CHECKSUMS[asset]
+  const expectedSha = ZIZMOR.checksums?.[asset]
   if (!expectedSha) throw new Error(`No checksum for: ${asset}`)
-  const url = `https://github.com/woodruffw/zizmor/releases/download/v${ZIZMOR_VERSION}/${asset}`
+  const url = `https://github.com/${ZIZMOR.repository}/releases/download/v${ZIZMOR.version}/${asset}`
   const isZip = asset.endsWith('.zip')
 
-  logger.log(`Downloading zizmor v${ZIZMOR_VERSION} (${asset})...`)
+  logger.log(`Downloading zizmor v${ZIZMOR.version} (${asset})...`)
   const tmpFile = path.join(tmpdir(), `zizmor-${Date.now()}-${asset}`)
   try {
     await httpDownload(url, tmpFile, { sha256: expectedSha })
@@ -209,22 +174,21 @@ async function setupZizmor(): Promise<boolean> {
 
 async function setupSfw(apiKey: string | undefined): Promise<boolean> {
   const isEnterprise = !!apiKey
+  const sfwConfig = isEnterprise ? SFW_ENTERPRISE : SFW_FREE
   logger.log(`=== Socket Firewall (${isEnterprise ? 'enterprise' : 'free'}) ===`)
 
   // Platform.
   const platformKey = `${process.platform}-${process.arch}`
-  const sfwPlatform = SFW_PLATFORM_MAP[platformKey]
+  const sfwPlatform = sfwConfig.platforms?.[platformKey]
   if (!sfwPlatform) throw new Error(`Unsupported platform: ${platformKey}`)
 
   // Checksum + asset.
-  const checksums = isEnterprise ? SFW_ENTERPRISE_CHECKSUMS : SFW_FREE_CHECKSUMS
-  const sha256 = checksums[sfwPlatform]
+  const sha256 = sfwConfig.checksums?.[sfwPlatform]
   if (!sha256) throw new Error(`No checksum for: ${sfwPlatform}`)
   const prefix = isEnterprise ? 'sfw' : 'sfw-free'
   const suffix = sfwPlatform.startsWith('windows') ? '.exe' : ''
   const asset = `${prefix}-${sfwPlatform}${suffix}`
-  const repo = isEnterprise ? 'SocketDev/firewall-release' : 'SocketDev/sfw-free'
-  const url = `https://github.com/${repo}/releases/download/${SFW_VERSION}/${asset}`
+  const url = `https://github.com/${sfwConfig.repository}/releases/download/${sfwConfig.version}/${asset}`
   const binaryName = isEnterprise ? 'sfw' : 'sfw-free'
 
   // Download (with cache + checksum).
@@ -235,10 +199,9 @@ async function setupSfw(apiKey: string | undefined): Promise<boolean> {
   const isWindows = process.platform === 'win32'
   const shimDir = path.join(getSocketHomePath(), 'sfw', 'shims')
   await fs.mkdir(shimDir, { recursive: true })
-  const ecosystems = [...SFW_FREE_ECOSYSTEMS]
-  if (isEnterprise) {
-    ecosystems.push(...SFW_ENTERPRISE_EXTRA)
-    if (process.platform === 'linux') ecosystems.push('go')
+  const ecosystems = [...(sfwConfig.ecosystems ?? [])]
+  if (isEnterprise && process.platform === 'linux') {
+    ecosystems.push('go')
   }
   const cleanPath = (process.env['PATH'] ?? '').split(path.delimiter)
     .filter(p => p !== shimDir).join(path.delimiter)
