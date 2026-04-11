@@ -1,11 +1,11 @@
 {
   "name": "socket-cli-monorepo",
   "version": "0.0.0",
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@11.0.0-rc.0",
   "private": true,
   "engines": {
     "node": ">=25.9.0",
-    "pnpm": ">=10.33.0"
+    "pnpm": ">=11.0.0-rc.0"
   },
   "scripts": {
     "// Build": "",
@@ -138,67 +138,6 @@
     "yargs-parser": "catalog:",
     "yoctocolors-cjs": "catalog:",
     "zod": "catalog:"
-  },
-  "pnpm": {
-    "overrides": {
-      "@octokit/graphql": "catalog:",
-      "@octokit/request-error": "catalog:",
-      "@sigstore/sign": "4.1.0",
-      "@socketsecurity/lib": "catalog:",
-      "aggregate-error": "catalog:",
-      "ansi-regex": "catalog:",
-      "brace-expansion": "catalog:",
-      "defu": ">=6.1.6",
-      "emoji-regex": "catalog:",
-      "es-define-property": "catalog:",
-      "es-set-tostringtag": "catalog:",
-      "function-bind": "catalog:",
-      "glob": ">=13.0.6",
-      "globalthis": "catalog:",
-      "gopd": "catalog:",
-      "graceful-fs": "catalog:",
-      "has-property-descriptors": "catalog:",
-      "has-proto": "catalog:",
-      "has-symbols": "catalog:",
-      "has-tostringtag": "catalog:",
-      "hasown": "catalog:",
-      "https-proxy-agent": "catalog:",
-      "indent-string": "catalog:",
-      "is-core-module": "catalog:",
-      "isarray": "catalog:",
-      "lodash": "catalog:",
-      "npm-package-arg": "catalog:",
-      "packageurl-js": "catalog:",
-      "path-parse": "catalog:",
-      "qs": ">=6.15.0",
-      "safe-buffer": "catalog:",
-      "safer-buffer": "catalog:",
-      "semver": "catalog:",
-      "set-function-length": "catalog:",
-      "shell-quote": "catalog:",
-      "side-channel": "catalog:",
-      "signal-exit": "4.1.0",
-      "string_decoder": "catalog:",
-      "string-width": "catalog:",
-      "strip-ansi": "catalog:",
-      "tiny-colors": "catalog:",
-      "typedarray": "catalog:",
-      "undici": "catalog:",
-      "vite": "catalog:",
-      "wrap-ansi": "catalog:",
-      "xml2js": "catalog:",
-      "yaml": "catalog:",
-      "yargs-parser": "catalog:"
-    },
-    "patchedDependencies": {
-      "@npmcli/run-script@10.0.3": "patches/@npmcli__run-script@10.0.3.patch",
-      "@npmcli/run-script@10.0.4": "patches/@npmcli__run-script@10.0.4.patch",
-      "@sigstore/sign@4.1.0": "patches/@sigstore__sign@4.1.0.patch",
-      "execa@2.1.0": "patches/execa@2.1.0.patch",
-      "execa@5.1.1": "patches/execa@5.1.1.patch",
-      "node-gyp@12.1.0": "patches/node-gyp@12.1.0.patch",
-      "node-gyp@12.2.0": "patches/node-gyp@12.2.0.patch"
-    }
   },
   "lint-staged": {
     "*.{cjs,cts,js,json,md,mjs,mts,ts}": [

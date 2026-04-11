@@ -1,3 +1,8 @@
+# Migrated from .npmrc (pnpm v11 only reads auth/registry from .npmrc).
+ignoreScripts: true
+linkWorkspacePackages: false
+loglevel: error
+
 # Wait 7 days (10080 minutes) before installing newly published packages.
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
@@ -150,3 +155,67 @@ catalog:
   yargs-parser: 21.1.1
   yoctocolors-cjs: 2.1.3
   zod: 4.1.8
+
+# Packages allowed to run build scripts (pnpm v11 strictDepBuilds default).
+allowBuilds:
+  esbuild: true
+  postject: true
+
+# Dependency overrides (migrated from package.json pnpm.overrides).
+overrides:
+  '@octokit/graphql': 'catalog:'
+  '@octokit/request-error': 'catalog:'
+  '@sigstore/sign': '4.1.0'
+  '@socketsecurity/lib': 'catalog:'
+  aggregate-error: 'catalog:'
+  ansi-regex: 'catalog:'
+  brace-expansion: 'catalog:'
+  defu: '>=6.1.6'
+  emoji-regex: 'catalog:'
+  es-define-property: 'catalog:'
+  es-set-tostringtag: 'catalog:'
+  function-bind: 'catalog:'
+  glob: '>=13.0.6'
+  globalthis: 'catalog:'
+  gopd: 'catalog:'
+  graceful-fs: 'catalog:'
+  has-property-descriptors: 'catalog:'
+  has-proto: 'catalog:'
+  has-symbols: 'catalog:'
+  has-tostringtag: 'catalog:'
+  hasown: 'catalog:'
+  https-proxy-agent: 'catalog:'
+  indent-string: 'catalog:'
+  is-core-module: 'catalog:'
+  isarray: 'catalog:'
+  lodash: 'catalog:'
+  npm-package-arg: 'catalog:'
+  packageurl-js: 'catalog:'
+  path-parse: 'catalog:'
+  qs: '>=6.15.0'
+  safe-buffer: 'catalog:'
+  safer-buffer: 'catalog:'
+  semver: 'catalog:'
+  set-function-length: 'catalog:'
+  shell-quote: 'catalog:'
+  side-channel: 'catalog:'
+  signal-exit: '4.1.0'
+  string_decoder: 'catalog:'
+  string-width: 'catalog:'
+  strip-ansi: 'catalog:'
+  tiny-colors: 'catalog:'
+  typedarray: 'catalog:'
+  undici: 'catalog:'
+  vite: 'catalog:'
+  wrap-ansi: 'catalog:'
+  xml2js: 'catalog:'
+  yaml: 'catalog:'
+  yargs-parser: 'catalog:'
+
+# Patched dependencies (migrated from package.json pnpm.patchedDependencies).
+patchedDependencies:
+  '@npmcli/run-script@10.0.4': patches/@npmcli__run-script@10.0.4.patch
+  '@sigstore/sign@4.1.0': patches/@sigstore__sign@4.1.0.patch
+  execa@2.1.0: patches/execa@2.1.0.patch
+  execa@5.1.1: patches/execa@5.1.1.patch
+  node-gyp@12.2.0: patches/node-gyp@12.2.0.patch
