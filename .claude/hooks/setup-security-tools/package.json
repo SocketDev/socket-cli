@@ -1,0 +1,9 @@
+{
+  "name": "@socketsecurity/hook-setup-security-tools",
+  "private": true,
+  "type": "module",
+  "main": "./index.mts",
+  "dependencies": {
+    "@socketsecurity/lib": "5.15.0"
+  }
+}
