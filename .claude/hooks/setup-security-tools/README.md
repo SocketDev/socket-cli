@@ -66,7 +66,7 @@ Self-contained. To add to another Socket repo:
 
 **"AgentShield not found"** — Run `pnpm install`. It's the `ecc-agentshield` devDependency.
 
-**"zizmor found but wrong version"** — The script downloads the expected version to `~/.socket/zizmor/bin/`. Your system version (e.g. from brew) will be ignored in favor of the correct version.
+**"zizmor found but wrong version"** — The script downloads the expected version via the dlx cache. Your system version (e.g. from brew) will be ignored in favor of the correct version.
 
 **"No supported package managers found"** — SFW only creates shims for package managers found on your PATH. Install npm/pnpm/etc. first.
 
