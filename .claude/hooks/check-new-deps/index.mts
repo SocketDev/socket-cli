@@ -153,11 +153,27 @@ const extractors: Record<string, Extractor> = {
     /name\s*=\s*"([\w][\w-]*)"/gm,
     (m): Dep => ({ type: 'cargo', name: m[1] })
   ),
-  'Cargo.toml': extract(
-    // Rust: serde = "1.0" or serde = { version = "1.0", features = [...] }
-    /^(\w[\w-]*)\s*=\s*(?:\{[^}]*version\s*=\s*"[^"]*"|\s*"[^"]*")/gm,
-    (m): Dep => ({ type: 'cargo', name: m[1] })
-  ),
+  'Cargo.toml': (content: string): Dep[] => {
+    // Rust: only extract from [dependencies], [dev-dependencies], [build-dependencies] sections.
+    // Skip [package], [lib], [bin], [workspace], [profile] metadata sections.
+    const deps: Dep[] = []
+    const depSectionRe = /^\[(?:(?:dev-|build-)?dependencies(?:\.[^\]]+)?)\]\s*$/gm
+    const anySectionRe = /^\[/gm
+    let sectionMatch
+    while ((sectionMatch = depSectionRe.exec(content)) !== null) {
+      const sectionStart = sectionMatch.index + sectionMatch[0].length
+      anySectionRe.lastIndex = sectionStart
+      const nextSection = anySectionRe.exec(content)
+      const sectionEnd = nextSection ? nextSection.index : content.length
+      const sectionText = content.slice(sectionStart, sectionEnd)
+      const lineRe = /^(\w[\w-]*)\s*=\s*(?:\{[^}]*version\s*=\s*"[^"]*"|\s*"[^"]*")/gm
+      let m
+      while ((m = lineRe.exec(sectionText)) !== null) {
+        deps.push({ type: 'cargo', name: m[1] })
+      }
+    }
+    return deps
+  },
   'conanfile.py': extractConan,
   'conanfile.txt': extractConan,
   'composer.lock': extract(
@@ -627,6 +643,8 @@ function extractNpm(content: string): Dep[] {
     // catalog:, npm:, *, latest, or starts with ^~><=.
     if (!/^[\^~><=*]|^\d|^workspace:|^catalog:|^npm:|^latest$/.test(val)) continue
     // Only lowercase or scoped names are real deps.
+    // Exclude known package.json metadata fields that look like deps.
+    if (PACKAGE_JSON_METADATA_KEYS.has(raw)) continue
     if (raw.startsWith('@') || /^[a-z]/.test(raw)) {
       const { namespace, name } = parseNpmSpecifier(raw)
       if (name) deps.push({ type: 'npm', namespace, name })
@@ -634,6 +652,14 @@ function extractNpm(content: string): Dep[] {
   }
   return deps
 }
+
+// package.json metadata fields that match the "key": "value" dep pattern but aren't deps.
+const PACKAGE_JSON_METADATA_KEYS = new Set([
+  'name', 'version', 'description', 'main', 'module', 'browser', 'types',
+  'typings', 'license', 'homepage', 'repository', 'bugs', 'author',
+  'type', 'engines', 'os', 'cpu', 'publishConfig', 'access',
+  'sideEffects', 'unpkg', 'jsdelivr', 'exports',
+])
 
 // Pipfile.lock: JSON with "default" and "develop" sections keyed by package name.
 function extractPipfileLock(content: string): Dep[] {
