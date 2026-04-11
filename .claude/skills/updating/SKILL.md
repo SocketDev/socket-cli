@@ -26,10 +26,13 @@ Your task is to update all dependencies in socket-cli: npm packages via `pnpm ru
 1. **Validate Environment** - Verify clean working directory; detect CI vs interactive mode.
 2. **Update npm Packages** - Run `pnpm run update`; commit if changes detected.
 3. **Update External Tool Checksums** - Invoke the `updating-checksums` skill.
+3b. **Update Security Tools** - Run `node .claude/hooks/setup-security-tools/update.mts` to check for new zizmor/sfw releases. Respects pnpm `minimumReleaseAge` cooldown for third-party tools (zizmor) but updates Socket tools (sfw) immediately. Updates embedded checksums in the setup hook.
+3c. **Sync Claude Code version** - Run `claude --version` to get the installed version. If it's newer than the `@anthropic-ai/claude-code` entry in `pnpm-workspace.yaml` catalog, update both the catalog entry AND the `minimumReleaseAgeExclude` pinned version. This bypasses cooldown since we're the ones running it. Then run `pnpm install` to update the lockfile.
 4. **Final Validation** - In interactive mode: `pnpm run fix --all`, `pnpm run check --all`, `pnpm test`. Skipped in CI.
 5. **Report Summary** - List updates applied, commits created, validation results, and next steps.
 
 ## Coordinates
 
 - `updating-checksums` skill for external tool checksums
+- `node .claude/hooks/setup-security-tools/update.mts` for security tool version updates
 - `pnpm run update` for npm packages
