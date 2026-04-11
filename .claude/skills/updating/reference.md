@@ -28,7 +28,7 @@ Updated via `pnpm run update` which runs `scripts/update.mjs`:
 
 Updated via the `updating-checksums` skill which runs `packages/cli/scripts/sync-checksums.mjs`:
 
-- Syncs SHA-256 checksums from GitHub releases to `packages/cli/external-tools.json`
+- Syncs SHA-256 checksums from GitHub releases to `packages/cli/bundle-tools.json`
 - Only processes tools with `type: "github-release"`
 
 ---
@@ -68,9 +68,9 @@ After update, these files may be modified:
 
 ## External Tool Checksums
 
-### external-tools.json Structure
+### bundle-tools.json Structure
 
-**Location:** `packages/cli/external-tools.json`
+**Location:** `packages/cli/bundle-tools.json`
 
 **Tool types:**
 
@@ -103,10 +103,10 @@ After update, these files may be modified:
 **Location:** `packages/cli/scripts/sync-checksums.mjs`
 
 **Process:**
-1. Reads `external-tools.json` for GitHub release tools
+1. Reads `bundle-tools.json` for GitHub release tools
 2. For each tool, tries to download `checksums.txt` from the release
 3. If no checksums.txt, downloads each asset and computes SHA-256
-4. Updates embedded checksums in `external-tools.json`
+4. Updates embedded checksums in `bundle-tools.json`
 
 **Options:**
 - `--tool=<name>` - Sync specific tool only
@@ -115,7 +115,7 @@ After update, these files may be modified:
 
 ### When to Sync Checksums
 
-- After manually updating tool versions in external-tools.json
+- After manually updating tool versions in bundle-tools.json
 - After new GitHub releases are published for any tool
 - As part of the full update cycle (run after npm updates)
 

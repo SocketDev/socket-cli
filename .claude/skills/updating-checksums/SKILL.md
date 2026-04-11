@@ -1,7 +1,7 @@
 ---
 name: updating-checksums
 description: >
-  Syncs SHA-256 checksums from GitHub releases to external-tools.json.
+  Syncs SHA-256 checksums from GitHub releases to bundle-tools.json.
   Triggers when user mentions "update checksums", "sync checksums", or after
   releasing new tool versions.
 user-invocable: true
@@ -11,7 +11,7 @@ allowed-tools: Bash, Read, Edit
 # updating-checksums
 
 <task>
-Your task is to sync SHA-256 checksums from GitHub releases to the embedded `external-tools.json` file, ensuring SEA builds have up-to-date integrity verification.
+Your task is to sync SHA-256 checksums from GitHub releases to the embedded `bundle-tools.json` file, ensuring SEA builds have up-to-date integrity verification.
 </task>
 
 <constraints>
@@ -24,10 +24,10 @@ Your task is to sync SHA-256 checksums from GitHub releases to the embedded `ext
 
 ## Phases
 
-1. **Check Current State** - Review current checksums and tool versions in `packages/cli/external-tools.json`.
+1. **Check Current State** - Review current checksums and tool versions in `packages/cli/bundle-tools.json`.
 2. **Sync Checksums** - Run `node packages/cli/scripts/sync-checksums.mjs`. Tries `checksums.txt` from the release first; falls back to downloading assets and computing SHA-256.
-3. **Verify Changes** - `git diff packages/cli/external-tools.json`; validate JSON syntax.
-4. **Commit Changes** - If updated, commit `packages/cli/external-tools.json`.
+3. **Verify Changes** - `git diff packages/cli/bundle-tools.json`; validate JSON syntax.
+4. **Commit Changes** - If updated, commit `packages/cli/bundle-tools.json`.
 
 ## Commands
 

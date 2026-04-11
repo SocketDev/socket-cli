@@ -46,7 +46,7 @@ This document provides detailed information about external tool checksums, the s
 
 ### How It Works
 
-1. Reads `packages/cli/external-tools.json`
+1. Reads `packages/cli/bundle-tools.json`
 2. Filters tools with `type: "github-release"`
 3. For each tool:
    a. Fetches the GitHub release by tag
@@ -54,7 +54,7 @@ This document provides detailed information about external tool checksums, the s
    c. If found: parses SHA-256 hashes from checksums.txt
    d. If not found: downloads each release asset and computes SHA-256 via `crypto.createHash('sha256')`
 4. Compares new checksums with existing
-5. Writes updated checksums to external-tools.json
+5. Writes updated checksums to bundle-tools.json
 
 ### Command Reference
 
@@ -146,7 +146,7 @@ Each tool has specific asset naming conventions:
 
 ### Checksum Storage Format
 
-In `external-tools.json`, checksums are stored as:
+In `bundle-tools.json`, checksums are stored as:
 
 ```json
 {
@@ -192,7 +192,7 @@ stream.pipe(hash)
 
 ### Tool with Dual Configuration (sfw)
 
-The `sfw` tool has both a GitHub release binary (`SocketDev/sfw-free`) and an npm package (`sfw` on npmjs.com). Both are tracked in the same `external-tools.json` entry via `type: "github-release"` for the binary checksums and `npmPackage`/`npmVersion` fields for the npm component. The checksums skill only handles the GitHub release binary checksums; the npm package version is updated separately via `pnpm run update`.
+The `sfw` tool has both a GitHub release binary (`SocketDev/sfw-free`) and an npm package (`sfw` on npmjs.com). Both are tracked in the same `bundle-tools.json` entry via `type: "github-release"` for the binary checksums and `npmPackage`/`npmVersion` fields for the npm component. The checksums skill only handles the GitHub release binary checksums; the npm package version is updated separately via `pnpm run update`.
 
 ### python-build-standalone
 
@@ -206,11 +206,11 @@ This tool has no checksums.txt in releases. The sync script must:
 Different tools use different tag formats:
 - Most use `v{version}` (e.g., `v1.16.0`)
 - python-build-standalone uses bare version (e.g., `3.11.14`)
-- The `githubRelease` field in external-tools.json stores the exact tag
+- The `githubRelease` field in bundle-tools.json stores the exact tag
 
 ### Stale Checksums After Version Bump
 
-If someone updates a tool version in external-tools.json but forgets to sync checksums:
+If someone updates a tool version in bundle-tools.json but forgets to sync checksums:
 - SEA builds will fail integrity verification
 - Always run checksum sync after any version change
 
@@ -237,7 +237,7 @@ Authenticated requests get 5,000 requests/hour vs 60 for unauthenticated.
 
 **Symptom:** Script reports release not found for a tool.
 
-**Cause:** The `githubRelease` tag in external-tools.json doesn't match any release.
+**Cause:** The `githubRelease` tag in bundle-tools.json doesn't match any release.
 
 **Solution:**
 ```bash
@@ -258,15 +258,15 @@ gh release list --repo <owner/repo> --limit 5
 
 ### JSON Validation Failure
 
-**Symptom:** Updated external-tools.json is invalid JSON.
+**Symptom:** Updated bundle-tools.json is invalid JSON.
 
 **Solution:**
 ```bash
 # Validate JSON
-node -e "JSON.parse(require('fs').readFileSync('packages/cli/external-tools.json'))"
+node -e "JSON.parse(require('fs').readFileSync('packages/cli/bundle-tools.json'))"
 
 # If corrupted, restore and retry
-git checkout packages/cli/external-tools.json
+git checkout packages/cli/bundle-tools.json
 node packages/cli/scripts/sync-checksums.mjs
 ```
 

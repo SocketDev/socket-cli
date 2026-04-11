@@ -11,7 +11,7 @@ No install step needed — available after `pnpm install`.
 ## Zizmor
 
 Not an npm package. Installed via `pnpm run setup` which downloads the pinned version
-from GitHub releases with SHA256 checksum verification (see `external-tools.json`).
+from GitHub releases with SHA256 checksum verification (see `bundle-tools.json`).
 
 The binary is cached at `.cache/external-tools/zizmor/{version}-{platform}/zizmor`.
 
