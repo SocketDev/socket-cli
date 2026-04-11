@@ -86,16 +86,21 @@ export class EnvironmentVariables {
     const synpVersion = getExternalToolVersion('synp')
     // pypi packages use 'version' field.
     const pyCliVersion = getExternalToolVersion('socketsecurity')
-    // github-release tools use 'githubRelease' field (release tag, any format).
-    const opengrepVersion = getExternalToolVersion('opengrep', 'githubRelease')
-    const pythonBuildTag = getExternalToolVersion('python', 'buildTag')
-    const pythonVersion = getExternalToolVersion('python', 'githubRelease')
-    const socketPatchVersion = getExternalToolVersion('socket-patch', 'githubRelease')
-    const trivyVersion = getExternalToolVersion('trivy', 'githubRelease')
-    const trufflehogVersion = getExternalToolVersion('trufflehog', 'githubRelease')
+    // GitHub-released tools use 'version' field (release tag, any format).
+    const opengrepVersion = getExternalToolVersion('opengrep')
+    const pythonBuildTag = getExternalToolVersion('python', 'tag')
+    const pythonVersion = getExternalToolVersion('python')
+    const socketPatchVersion = getExternalToolVersion('socket-patch')
+    const trivyVersion = getExternalToolVersion('trivy')
+    const trufflehogVersion = getExternalToolVersion('trufflehog')
     // sfw uses both: GitHub binary for SEA, npm package for CLI.
-    const sfwVersion = getExternalToolVersion('sfw', 'githubRelease')
-    const sfwNpmVersion = getExternalToolVersion('sfw', 'npmVersion')
+    const sfwVersion = getExternalToolVersion('sfw')
+    const sfwNpmVersion = externalTools['sfw']?.npm?.version
+    if (!sfwNpmVersion) {
+      throw new Error(
+        'External tool "sfw" is missing required field "npm.version" in bundle-tools.json.',
+      )
+    }
 
     // Build-time constants that can be overridden by environment variables.
     const publishedBuild =
@@ -165,10 +170,10 @@ export class EnvironmentVariables {
           externalTools['@coana-tech/cli']?.version || '',
         INLINED_PYCLI_VERSION:
           externalTools.socketsecurity?.version || '',
-        INLINED_SFW_NPM_VERSION: externalTools.sfw?.npmVersion || '',
-        INLINED_SFW_VERSION: externalTools.sfw?.githubRelease || '',
+        INLINED_SFW_NPM_VERSION: externalTools.sfw?.npm?.version || '',
+        INLINED_SFW_VERSION: externalTools.sfw?.version || '',
         INLINED_SOCKET_PATCH_VERSION:
-          externalTools['socket-patch']?.githubRelease || '',
+          externalTools['socket-patch']?.version || '',
       }
     } catch {
       return {}

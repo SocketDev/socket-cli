@@ -166,11 +166,11 @@ export async function downloadNpmPackages() {
   // Collect npm packages from bundle-tools.json.
   const npmPackages = []
   for (const [toolName, toolConfig] of Object.entries(externalTools)) {
-    if (toolConfig.type === 'npm') {
+    if (toolConfig.packageManager === 'npm') {
       npmPackages.push({
         integrity: toolConfig.integrity,
         name: toolName,
-        package: toolConfig.package,
+        package: toolName,
         version: toolConfig.version,
       })
     }

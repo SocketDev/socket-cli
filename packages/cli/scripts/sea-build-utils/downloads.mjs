@@ -258,24 +258,21 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
   }
 
   // Populate TOOL_REPOS from bundle-tools.json.
-  // Filter by type === 'github-release' to include all GitHub-released tools.
+  // Filter by release === 'asset' to include all GitHub-released tools.
   for (const [toolName, toolConfig] of Object.entries(externalTools)) {
-    if (toolConfig.type === 'github-release') {
-      const parts = toolConfig.repository.split('/')
+    if (toolConfig.release === 'asset') {
+      const repoPath = toolConfig.repository.replace(/^github:/, '')
+      const parts = repoPath.split('/')
       if (parts.length !== 2 || !parts[0] || !parts[1]) {
         throw new Error(
-          `Invalid repository format for ${toolName}: expected 'owner/repo', got '${toolConfig.repository}'`,
+          `Invalid repository format for ${toolName}: expected 'github:owner/repo', got '${toolConfig.repository}'`,
         )
       }
       const [owner, repo] = parts
       TOOL_REPOS[toolName] = {
         owner,
         repo,
-        // Python uses buildTag for release tag, others use githubRelease field.
-        version:
-          toolName === 'python'
-            ? toolConfig.buildTag
-            : toolConfig.githubRelease,
+        version: toolConfig.tag ?? toolConfig.version,
       }
     }
   }
@@ -301,7 +298,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
     if (!config) {
       throw new Error(
         `Tool "${toolName}" is defined in platform mappings but not found in TOOL_REPOS. ` +
-          `Ensure "${toolName}" exists in bundle-tools.json with type "github-release".`,
+          `Ensure "${toolName}" exists in bundle-tools.json with release "asset".`,
       )
     }
 
@@ -536,14 +533,15 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
       // Install socket_basics from GitHub source (not on PyPI).
       // socket_basics orchestrates the security tools (trivy, trufflehog, opengrep).
       const socketBasicsConfig = externalTools['socket-basics']
-      if (socketBasicsConfig && socketBasicsConfig.type === 'github-source') {
-        const { repository, githubRelease } = socketBasicsConfig
-        const version = githubRelease.replace(/^v/, '') // Remove 'v' prefix for version
+      if (socketBasicsConfig && socketBasicsConfig.release === 'archive') {
+        const repoPath = socketBasicsConfig.repository.replace(/^github:/, '')
+        const releaseVersion = socketBasicsConfig.version
+        const version = releaseVersion.replace(/^v/, '') // Remove 'v' prefix for version
 
         logger.log(`  Installing socket_basics ${version} from GitHub...`)
 
         // Download source tarball from GitHub.
-        const tarballUrl = `https://github.com/${repository}/archive/refs/tags/${githubRelease}.tar.gz`
+        const tarballUrl = `https://github.com/${repoPath}/archive/refs/tags/${releaseVersion}.tar.gz`
         const tarballPath = normalizePath(
           path.join(toolsDir, `socket-basics-${version}.tar.gz`),
         )

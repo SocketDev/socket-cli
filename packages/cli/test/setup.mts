@@ -18,7 +18,7 @@ if (existsSync(externalToolsPath)) {
     const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
 
     // Set inlined environment variables if not already set.
-    // npm packages use 'version', github-release uses 'githubRelease', pypi uses 'version'.
+    // All tools now use 'version' field. GitHub-released tools also have optional 'tag'.
     const toolVersions: Record<string, string | undefined> = {
       INLINED_CDXGEN_VERSION:
         externalTools['@cyclonedx/cdxgen']?.version,
@@ -29,22 +29,22 @@ if (existsSync(externalToolsPath)) {
       INLINED_HOMEPAGE: 'https://github.com/SocketDev/socket-cli',
       INLINED_NAME: '@socketsecurity/cli',
       INLINED_OPENGREP_VERSION:
-        externalTools['opengrep']?.githubRelease,
+        externalTools['opengrep']?.version,
       INLINED_PUBLISHED_BUILD: '',
       INLINED_PYCLI_VERSION:
         externalTools['socketsecurity']?.version,
-      INLINED_PYTHON_BUILD_TAG: externalTools['python']?.buildTag,
+      INLINED_PYTHON_BUILD_TAG: externalTools['python']?.tag,
       INLINED_PYTHON_VERSION:
-        externalTools['python']?.githubRelease,
+        externalTools['python']?.version,
       INLINED_SENTRY_BUILD: '',
-      INLINED_SFW_NPM_VERSION: externalTools['sfw']?.npmVersion,
-      INLINED_SFW_VERSION: externalTools['sfw']?.githubRelease,
+      INLINED_SFW_NPM_VERSION: externalTools['sfw']?.npm?.version,
+      INLINED_SFW_VERSION: externalTools['sfw']?.version,
       INLINED_SOCKET_PATCH_VERSION:
-        externalTools['socket-patch']?.githubRelease,
+        externalTools['socket-patch']?.version,
       INLINED_SYNP_VERSION: externalTools['synp']?.version,
-      INLINED_TRIVY_VERSION: externalTools['trivy']?.githubRelease,
+      INLINED_TRIVY_VERSION: externalTools['trivy']?.version,
       INLINED_TRUFFLEHOG_VERSION:
-        externalTools['trufflehog']?.githubRelease,
+        externalTools['trufflehog']?.version,
       INLINED_VERSION: '0.0.0-test',
       INLINED_VERSION_HASH: '0.0.0-test:abc1234:test',
     }

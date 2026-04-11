@@ -193,7 +193,7 @@ async function main() {
   const githubTools = Object.entries(externalTools)
     .filter(([key, value]) => {
       if (key.startsWith('$')) return false // Skip schema keys
-      return value.type === 'github-release'
+      return value.release === 'asset'
     })
     .map(([key, value]) => ({ key, ...value }))
 
@@ -216,12 +216,14 @@ async function main() {
   let failed = 0
 
   for (const tool of githubTools) {
-    console.log(`[${tool.key}] ${tool.repository} @ ${tool.githubRelease}`)
+    const repoPath = tool.repository.replace(/^github:/, '')
+    const releaseTag = tool.tag ?? tool.version
+    console.log(`[${tool.key}] ${repoPath} @ ${releaseTag}`)
 
     try {
       const newChecksums = await fetchGitHubReleaseChecksums(
-        tool.repository,
-        tool.githubRelease,
+        repoPath,
+        releaseTag,
         tool.checksums || {},
       )
 
