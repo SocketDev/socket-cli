@@ -121,7 +121,7 @@ while read local_ref local_sha remote_ref remote_sha; do
     printf "These commits were likely created with --no-verify, bypassing the\n"
     printf "commit-msg hook that strips AI attribution.\n"
     printf "\n"
-    range_base="${range%..*}"
+    range_base="${range%%\.\.*}"
     printf "To fix:\n"
     printf "  git rebase -i %s\n" "$range_base"
     printf "  Mark commits as 'reword', remove AI attribution, save\n"

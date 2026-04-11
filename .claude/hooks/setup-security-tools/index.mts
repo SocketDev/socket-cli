@@ -53,6 +53,10 @@ const ZIZMOR_ASSET_MAP: Record<string, string> = {
 
 // ── SFW constants ──
 
+// Pinned SFW version — checksums below are for this exact version.
+// Using /releases/latest/ would break when a new release ships with different checksums.
+const SFW_VERSION = 'v1.6.1'
+
 const SFW_ENTERPRISE_CHECKSUMS: Record<string, string> = {
   __proto__: null as unknown as string,
   'linux-arm64': '671270231617142404a1564e52672f79b806f9df3f232fcc7606329c0246da55',
@@ -220,7 +224,7 @@ async function setupSfw(apiKey: string | undefined): Promise<boolean> {
   const suffix = sfwPlatform.startsWith('windows') ? '.exe' : ''
   const asset = `${prefix}-${sfwPlatform}${suffix}`
   const repo = isEnterprise ? 'SocketDev/firewall-release' : 'SocketDev/sfw-free'
-  const url = `https://github.com/${repo}/releases/latest/download/${asset}`
+  const url = `https://github.com/${repo}/releases/download/${SFW_VERSION}/${asset}`
   const binaryName = isEnterprise ? 'sfw' : 'sfw-free'
 
   // Download (with cache + checksum).
