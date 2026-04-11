@@ -5,7 +5,7 @@
 // 1. AgentShield — scans Claude AI config for prompt injection / secrets.
 //    Already a devDep (ecc-agentshield); this script verifies it's installed.
 // 2. Zizmor — static analysis for GitHub Actions workflows. Downloads the
-//    correct binary, verifies SHA-256, caches at ~/.socket/zizmor/bin/zizmor.
+//    correct binary, verifies SHA-256, cached via the dlx system.
 // 3. SFW (Socket Firewall) — intercepts package manager commands to scan
 //    for malware. Downloads binary, verifies SHA-256, creates PATH shims.
 //    Enterprise vs free determined by SOCKET_API_KEY in env / .env / .env.local.
@@ -18,7 +18,6 @@ import { fileURLToPath } from 'node:url'
 
 import { whichSync } from '@socketsecurity/lib/bin'
 import { downloadBinary } from '@socketsecurity/lib/dlx/binary'
-import { httpDownload } from '@socketsecurity/lib/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getSocketHomePath } from '@socketsecurity/lib/paths/socket'
 import { spawn, spawnSync } from '@socketsecurity/lib/spawn'
@@ -121,53 +120,50 @@ async function setupZizmor(): Promise<boolean> {
     logger.log(`Found on PATH but wrong version (need v${ZIZMOR.version})`)
   }
 
-  // Check cached binary.
-  const ext = process.platform === 'win32' ? '.exe' : ''
-  const binDir = path.join(getSocketHomePath(), 'zizmor', 'bin')
-  const binPath = path.join(binDir, `zizmor${ext}`)
-  if (existsSync(binPath) && await checkZizmorVersion(binPath)) {
-    logger.log(`Cached: ${binPath} (v${ZIZMOR.version})`)
-    return true
-  }
-
-  // Download.
+  // Download archive via dlx (handles caching + checksum).
   const platformKey = `${process.platform}-${process.arch}`
   const asset = ZIZMOR.assets?.[platformKey]
   if (!asset) throw new Error(`Unsupported platform: ${platformKey}`)
   const expectedSha = ZIZMOR.checksums?.[asset]
   if (!expectedSha) throw new Error(`No checksum for: ${asset}`)
   const url = `https://github.com/${ZIZMOR.repository}/releases/download/v${ZIZMOR.version}/${asset}`
-  const isZip = asset.endsWith('.zip')
 
   logger.log(`Downloading zizmor v${ZIZMOR.version} (${asset})...`)
-  const tmpFile = path.join(tmpdir(), `zizmor-${Date.now()}-${asset}`)
-  try {
-    await httpDownload(url, tmpFile, { sha256: expectedSha })
-    logger.log('Download complete, checksum verified.')
+  const { binaryPath: archivePath, downloaded } = await downloadBinary({
+    url,
+    name: `zizmor-${ZIZMOR.version}-${asset}`,
+    sha256: expectedSha,
+  })
+  logger.log(downloaded ? 'Download complete, checksum verified.' : `Using cached archive: ${archivePath}`)
 
-    // Extract.
-    const extractDir = path.join(tmpdir(), `zizmor-extract-${Date.now()}`)
-    await fs.mkdir(extractDir, { recursive: true })
+  // Extract binary from the cached archive.
+  const ext = process.platform === 'win32' ? '.exe' : ''
+  const binPath = path.join(path.dirname(archivePath), `zizmor${ext}`)
+  if (existsSync(binPath) && await checkZizmorVersion(binPath)) {
+    logger.log(`Cached: ${binPath} (v${ZIZMOR.version})`)
+    return true
+  }
+
+  const isZip = asset.endsWith('.zip')
+  const extractDir = path.join(tmpdir(), `zizmor-extract-${Date.now()}`)
+  await fs.mkdir(extractDir, { recursive: true })
+  try {
     if (isZip) {
       await spawn('powershell', ['-NoProfile', '-Command',
-        `Expand-Archive -Path '${tmpFile}' -DestinationPath '${extractDir}' -Force`], { stdio: 'pipe' })
+        `Expand-Archive -Path '${archivePath}' -DestinationPath '${extractDir}' -Force`], { stdio: 'pipe' })
     } else {
-      await spawn('tar', ['xzf', tmpFile, '-C', extractDir], { stdio: 'pipe' })
+      await spawn('tar', ['xzf', archivePath, '-C', extractDir], { stdio: 'pipe' })
     }
-
-    // Install.
     const extractedBin = path.join(extractDir, `zizmor${ext}`)
     if (!existsSync(extractedBin)) throw new Error(`Binary not found after extraction: ${extractedBin}`)
-    await fs.mkdir(binDir, { recursive: true })
     await fs.copyFile(extractedBin, binPath)
     await fs.chmod(binPath, 0o755)
-    await fs.rm(extractDir, { recursive: true, force: true })
-
-    logger.log(`Installed to ${binPath}`)
-    return true
   } finally {
-    if (existsSync(tmpFile)) await fs.unlink(tmpFile).catch(() => {})
+    await fs.rm(extractDir, { recursive: true, force: true }).catch(() => {})
   }
+
+  logger.log(`Installed to ${binPath}`)
+  return true
 }
 
 // ── SFW ──
