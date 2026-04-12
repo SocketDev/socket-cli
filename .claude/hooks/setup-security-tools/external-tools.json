@@ -4,7 +4,7 @@
     "zizmor": {
       "description": "GitHub Actions security scanner",
       "version": "1.23.1",
-      "repository": "woodruffw/zizmor",
+      "repository": "zizmorcore/zizmor",
       "assets": {
         "darwin-arm64": "zizmor-aarch64-apple-darwin.tar.gz",
         "darwin-x64": "zizmor-x86_64-apple-darwin.tar.gz",
