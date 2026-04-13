@@ -176,9 +176,9 @@ while read local_ref local_sha remote_ref remote_sha; do
         fi
 
         if [ "$is_binary" = true ]; then
-          file_text=$(strings "$file" 2>/dev/null || echo "")
+          file_text=$(strings "$file" 2>/dev/null)
         else
-          file_text=$(cat "$file" 2>/dev/null || echo "")
+          file_text=$(cat "$file" 2>/dev/null)
         fi
 
         # Check for hardcoded user paths.
@@ -210,7 +210,7 @@ while read local_ref local_sha remote_ref remote_sha; do
         fi
 
         # Check for private keys.
-        if echo "$file_text" | grep -qE -- '-----BEGIN (RSA |EC |DSA )?PRIVATE KEY-----'; then
+        if echo "$file_text" | grep -qE '-----BEGIN (RSA |EC |DSA )?PRIVATE KEY-----'; then
           printf "${RED}✗ BLOCKED: Private key found in: %s${NC}\n" "$file"
           ERRORS=$((ERRORS + 1))
         fi
