@@ -216,7 +216,7 @@ async function main() {
   let failed = 0
 
   for (const tool of githubTools) {
-    const repoPath = tool.repository.replace(/^github:/, '')
+    const repoPath = tool.repository.replace(/^[^:]+:/, '')
     const releaseTag = tool.tag ?? tool.version
     console.log(`[${tool.key}] ${repoPath} @ ${releaseTag}`)
 

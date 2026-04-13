@@ -261,11 +261,11 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
   // Filter by release === 'asset' to include all GitHub-released tools.
   for (const [toolName, toolConfig] of Object.entries(externalTools)) {
     if (toolConfig.release === 'asset') {
-      const repoPath = toolConfig.repository.replace(/^github:/, '')
+      const repoPath = toolConfig.repository.replace(/^[^:]+:/, '')
       const parts = repoPath.split('/')
       if (parts.length !== 2 || !parts[0] || !parts[1]) {
         throw new Error(
-          `Invalid repository format for ${toolName}: expected 'github:owner/repo', got '${toolConfig.repository}'`,
+          `Invalid repository format for ${toolName}: expected '<host>:owner/repo', got '${toolConfig.repository}'`,
         )
       }
       const [owner, repo] = parts
@@ -534,7 +534,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
       // socket_basics orchestrates the security tools (trivy, trufflehog, opengrep).
       const socketBasicsConfig = externalTools['socket-basics']
       if (socketBasicsConfig && socketBasicsConfig.release === 'archive') {
-        const repoPath = socketBasicsConfig.repository.replace(/^github:/, '')
+        const repoPath = socketBasicsConfig.repository.replace(/^[^:]+:/, '')
         const releaseVersion = socketBasicsConfig.version
         const version = releaseVersion.replace(/^v/, '') // Remove 'v' prefix for version
 
