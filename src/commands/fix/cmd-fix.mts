@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import terminalLink from 'terminal-link'
@@ -400,6 +401,34 @@ async function run(
     return
   }
 
+  // Check if a positional argument looks like a vulnerability ID (GHSA, CVE,
+  // or PURL) that was likely intended to be passed with --id.
+  const rawInput = cli.input[0]
+  if (
+    rawInput &&
+    (/^GHSA-/i.test(rawInput) ||
+      /^CVE-/i.test(rawInput) ||
+      rawInput.startsWith('pkg:'))
+  ) {
+    logger.fail(
+      `"${rawInput}" looks like a vulnerability identifier, not a directory path.\nDid you mean: socket fix ${FLAG_ID} ${rawInput}`,
+    )
+    process.exitCode = 1
+    return
+  }
+
+  let [cwd = '.'] = cli.input
+  // Note: path.resolve vs .join:
+  // If given path is absolute then cwd should not affect it.
+  cwd = path.resolve(process.cwd(), cwd)
+
+  // Validate the target directory exists.
+  if (!existsSync(cwd)) {
+    logger.fail(`Target directory does not exist: ${cwd}`)
+    process.exitCode = 1
+    return
+  }
+
   if (dryRun) {
     logger.log(constants.DRY_RUN_NOT_SAVING)
     return
@@ -415,11 +444,6 @@ async function run(
   }
 
   const orgSlug = orgSlugCResult.data
-
-  let [cwd = '.'] = cli.input
-  // Note: path.resolve vs .join:
-  // If given path is absolute then cwd should not affect it.
-  cwd = path.resolve(process.cwd(), cwd)
 
   const { spinner } = constants
 
