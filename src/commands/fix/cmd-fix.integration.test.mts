@@ -442,9 +442,7 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toMatch(
-        /Unable to resolve|An error was thrown while requesting/,
-      )
+      expect(output).toMatch(/Target directory does not exist/)
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )
@@ -737,9 +735,7 @@ describe('socket fix', async () => {
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toMatch(
-          /Unable to resolve|An error was thrown while requesting/,
-        )
+        expect(output).toMatch(/Target directory does not exist/)
         expect(code).toBeGreaterThan(0)
       },
     )
