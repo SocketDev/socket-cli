@@ -176,9 +176,9 @@ while read local_ref local_sha remote_ref remote_sha; do
         fi
 
         if [ "$is_binary" = true ]; then
-          file_text=$(strings "$file" 2>/dev/null)
+          file_text=$(strings "$file" 2>/dev/null || echo "")
         else
-          file_text=$(cat "$file" 2>/dev/null)
+          file_text=$(cat "$file" 2>/dev/null || echo "")
         fi
 
         # Check for hardcoded user paths.
