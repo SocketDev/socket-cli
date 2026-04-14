@@ -166,36 +166,51 @@ while read local_ref local_sha remote_ref remote_sha; do
           continue
         fi
 
+        # Use strings for binary files, grep directly for text files.
+        # This correctly extracts printable strings from WASM, .lockb, etc.
+        is_binary=false
+        if grep -qI '' "$file" 2>/dev/null; then
+          is_binary=false
+        else
+          is_binary=true
+        fi
+
+        if [ "$is_binary" = true ]; then
+          file_text=$(strings "$file" 2>/dev/null)
+        else
+          file_text=$(cat "$file" 2>/dev/null)
+        fi
+
         # Check for hardcoded user paths.
-        if grep -E '(/Users/[^/\s]+/|/home/[^/\s]+/|C:\\Users\\[^\\]+\\)' "$file" 2>/dev/null | grep -q .; then
+        if echo "$file_text" | grep -qE '(/Users/[^/\s]+/|/home/[^/\s]+/|C:\\Users\\[^\\]+\\)'; then
           printf "${RED}✗ BLOCKED: Hardcoded personal path found in: %s${NC}\n" "$file"
-          grep -n -E '(/Users/[^/\s]+/|/home/[^/\s]+/|C:\\Users\\[^\\]+\\)' "$file" | head -3
+          echo "$file_text" | grep -nE '(/Users/[^/\s]+/|/home/[^/\s]+/|C:\\Users\\[^\\]+\\)' | head -3
           ERRORS=$((ERRORS + 1))
         fi
 
         # Check for Socket API keys.
-        if grep -E 'sktsec_[a-zA-Z0-9_-]+' "$file" 2>/dev/null | grep -v "$ALLOWED_PUBLIC_KEY" | grep -v 'your_api_key_here' | grep -v 'SOCKET_SECURITY_API_KEY=' | grep -v 'fake-token' | grep -v 'test-token' | grep -q .; then
+        if echo "$file_text" | grep -E 'sktsec_[a-zA-Z0-9_-]+' | grep -v "$ALLOWED_PUBLIC_KEY" | grep -v 'your_api_key_here' | grep -v 'SOCKET_SECURITY_API_KEY=' | grep -v 'fake-token' | grep -v 'test-token' | grep -q .; then
           printf "${RED}✗ BLOCKED: Real API key detected in: %s${NC}\n" "$file"
-          grep -n 'sktsec_' "$file" | grep -v "$ALLOWED_PUBLIC_KEY" | grep -v 'your_api_key_here' | grep -v 'fake-token' | grep -v 'test-token' | head -3
+          echo "$file_text" | grep -n 'sktsec_' | grep -v "$ALLOWED_PUBLIC_KEY" | grep -v 'your_api_key_here' | grep -v 'fake-token' | grep -v 'test-token' | head -3
           ERRORS=$((ERRORS + 1))
         fi
 
         # Check for AWS keys.
-        if grep -iE '(aws_access_key|aws_secret|AKIA[0-9A-Z]{16})' "$file" 2>/dev/null | grep -q .; then
+        if echo "$file_text" | grep -iqE '(aws_access_key|aws_secret|AKIA[0-9A-Z]{16})'; then
           printf "${RED}✗ BLOCKED: Potential AWS credentials found in: %s${NC}\n" "$file"
-          grep -n -iE '(aws_access_key|aws_secret|AKIA[0-9A-Z]{16})' "$file" | head -3
+          echo "$file_text" | grep -niE '(aws_access_key|aws_secret|AKIA[0-9A-Z]{16})' | head -3
           ERRORS=$((ERRORS + 1))
         fi
 
         # Check for GitHub tokens.
-        if grep -E 'gh[ps]_[a-zA-Z0-9]{36}' "$file" 2>/dev/null | grep -q .; then
+        if echo "$file_text" | grep -qE 'gh[ps]_[a-zA-Z0-9]{36}'; then
           printf "${RED}✗ BLOCKED: Potential GitHub token found in: %s${NC}\n" "$file"
-          grep -n -E 'gh[ps]_[a-zA-Z0-9]{36}' "$file" | head -3
+          echo "$file_text" | grep -nE 'gh[ps]_[a-zA-Z0-9]{36}' | head -3
           ERRORS=$((ERRORS + 1))
         fi
 
         # Check for private keys.
-        if grep -E '-----BEGIN (RSA |EC |DSA )?PRIVATE KEY-----' "$file" 2>/dev/null | grep -q .; then
+        if echo "$file_text" | grep -qE -- '-----BEGIN (RSA |EC |DSA )?PRIVATE KEY-----'; then
           printf "${RED}✗ BLOCKED: Private key found in: %s${NC}\n" "$file"
           ERRORS=$((ERRORS + 1))
         fi
