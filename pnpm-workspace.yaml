@@ -1,7 +1,8 @@
 
-ignoreDependencyScripts: true
-linkWorkspacePackages: false
 resolutionMode: highest
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  - undici@6.21.3
 
 packages:
   - packages/*
