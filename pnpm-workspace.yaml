@@ -1,4 +1,8 @@
 
+ignoreDependencyScripts: true
+linkWorkspacePackages: false
+resolutionMode: highest
+
 packages:
   - packages/*
   - '!packages/package-builder/build'
