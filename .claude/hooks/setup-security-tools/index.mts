@@ -121,12 +121,14 @@ async function setupZizmor(): Promise<boolean> {
   }
 
   // Download archive via dlx (handles caching + checksum).
-  const platformKey = `${process.platform}-${process.arch}`
-  const asset = ZIZMOR.assets?.[platformKey]
-  if (!asset) throw new Error(`Unsupported platform: ${platformKey}`)
-  const expectedSha = ZIZMOR.checksums?.[asset]
-  if (!expectedSha) throw new Error(`No checksum for: ${asset}`)
-  const url = `https://github.com/${ZIZMOR.repository}/releases/download/v${ZIZMOR.version}/${asset}`
+  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
+  const platformEntry = ZIZMOR.checksums?.[platformKey]
+  if (!platformEntry) {
+    throw new Error(`Unsupported platform: ${platformKey}`)
+  }
+  const { asset, sha256: expectedSha } = platformEntry
+  const repo = ZIZMOR.repository?.replace(/^[^:]+:/, '') ?? ''
+  const url = `https://github.com/${repo}/releases/download/v${ZIZMOR.version}/${asset}`
 
   logger.log(`Downloading zizmor v${ZIZMOR.version} (${asset})...`)
   const { binaryPath: archivePath, downloaded } = await downloadBinary({
@@ -174,17 +176,16 @@ async function setupSfw(apiKey: string | undefined): Promise<boolean> {
   logger.log(`=== Socket Firewall (${isEnterprise ? 'enterprise' : 'free'}) ===`)
 
   // Platform.
-  const platformKey = `${process.platform}-${process.arch}`
-  const sfwPlatform = sfwConfig.platforms?.[platformKey]
-  if (!sfwPlatform) throw new Error(`Unsupported platform: ${platformKey}`)
+  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
+  const platformEntry = sfwConfig.checksums?.[platformKey]
+  if (!platformEntry) {
+    throw new Error(`Unsupported platform: ${platformKey}`)
+  }
 
   // Checksum + asset.
-  const sha256 = sfwConfig.checksums?.[sfwPlatform]
-  if (!sha256) throw new Error(`No checksum for: ${sfwPlatform}`)
-  const prefix = isEnterprise ? 'sfw' : 'sfw-free'
-  const suffix = sfwPlatform.startsWith('windows') ? '.exe' : ''
-  const asset = `${prefix}-${sfwPlatform}${suffix}`
-  const url = `https://github.com/${sfwConfig.repository}/releases/download/${sfwConfig.version}/${asset}`
+  const { asset, sha256 } = platformEntry
+  const repo = sfwConfig.repository?.replace(/^[^:]+:/, '') ?? ''
+  const url = `https://github.com/${repo}/releases/download/${sfwConfig.version}/${asset}`
   const binaryName = isEnterprise ? 'sfw' : 'sfw-free'
 
   // Download (with cache + checksum).

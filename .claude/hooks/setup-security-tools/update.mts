@@ -146,7 +146,7 @@ async function updateZizmor(config: Config): Promise<UpdateResult> {
     return { tool, skipped: true, updated: false, reason: 'not in config' }
   }
 
-  const repo = toolConfig.repository ?? 'zizmorcore/zizmor'
+  const repo = toolConfig.repository?.replace(/^[^:]+:/, '') ?? 'zizmorcore/zizmor'
 
   let release: GhRelease
   try {
@@ -265,7 +265,7 @@ async function updateSfwTool(
     return { tool: toolName, skipped: true, updated: false, reason: 'not in config' }
   }
 
-  const repo = toolConfig.repository
+  const repo = toolConfig.repository?.replace(/^[^:]+:/, '')
   if (!repo) {
     return { tool: toolName, skipped: true, updated: false, reason: 'no repository' }
   }
