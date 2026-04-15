@@ -154,8 +154,9 @@ while read local_ref local_sha remote_ref remote_sha; do
           file_text=$(cat "$file" 2>/dev/null)
         fi
 
-        # Hardcoded personal paths (/Users/foo/, /home/foo/, C:\Users\foo\).
-        if echo "$file_text" | grep -qE '(/Users/[^/\s]+/|/home/[^/\s]+/|C:\\Users\\[^\\]+\\)'; then
+        # Hardcoded personal paths (/Users/foo/, /home/foo/, C:\\Users\\foo\\).
+        # Skip binary files — compiled binaries contain build-machine paths.
+        if [ "$is_binary" = false ] && echo "$file_text" | grep -qE '(/Users/[^/\s]+/|/home/[^/\s]+/|C:\\Users\\[^\\]+\\)'; then
           printf "${RED}✗ BLOCKED: Hardcoded personal path found in: %s${NC}\n" "$file"
           echo "$file_text" | grep -nE '(/Users/[^/\s]+/|/home/[^/\s]+/|C:\\Users\\[^\\]+\\)' | head -3
           ERRORS=$((ERRORS + 1))
