@@ -22,13 +22,20 @@ function getIocraft(): typeof iocraft {
     try {
       // Use createRequire to load native .node module from ESM.
       const require = createRequire(import.meta.url)
-      const loaded = require('@socketaddon/iocraft')
+      // Try opentui first (yoga-layout + opentui.node renderer),
+      // fall back to iocraft if not available.
+      let loaded
+      try {
+        loaded = require('@socketaddon/opentui')
+      } catch {
+        loaded = require('@socketaddon/iocraft')
+      }
       // Handle ESM default export when loaded via require().
       iocraftInstance = loaded.default || loaded
     } catch (e) {
       throw new Error(
-        `Failed to load iocraft native module: ${e}\n` +
-          `Make sure @socketaddon/iocraft is installed and your platform is supported.`,
+        `Failed to load terminal UI module: ${e}\n` +
+          `Make sure @socketaddon/opentui or @socketaddon/iocraft is installed and your platform is supported.`,
       )
     }
   }

@@ -1,0 +1,50 @@
+{
+  "name": "@socketaddon/opentui",
+  "version": "1.0.0-pre.0",
+  "description": "Node.js bindings for OpenTUI - a Zig-based terminal UI library with flexbox layout",
+  "license": "MIT",
+  "type": "module",
+  "main": "./index.mjs",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.mjs"
+    }
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "index.d.ts",
+    "index.mjs",
+    "render-engine.mjs",
+    "yoga-sync.cjs"
+  ],
+  "optionalDependencies": {
+    "@socketaddon/opentui-darwin-arm64": "1.0.0-pre.0",
+    "@socketaddon/opentui-darwin-x64": "1.0.0-pre.0",
+    "@socketaddon/opentui-linux-arm64": "1.0.0-pre.0",
+    "@socketaddon/opentui-linux-arm64-musl": "1.0.0-pre.0",
+    "@socketaddon/opentui-linux-x64": "1.0.0-pre.0",
+    "@socketaddon/opentui-linux-x64-musl": "1.0.0-pre.0",
+    "@socketaddon/opentui-win-arm64": "1.0.0-pre.0",
+    "@socketaddon/opentui-win-x64": "1.0.0-pre.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git"
+  },
+  "author": {
+    "name": "Socket Inc",
+    "email": "eng@socket.dev",
+    "url": "https://socket.dev"
+  },
+  "homepage": "https://github.com/SocketDev/socket-cli",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

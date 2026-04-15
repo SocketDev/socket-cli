@@ -77,6 +77,7 @@
     "@octokit/request-error": "catalog:",
     "@octokit/rest": "catalog:",
     "@socketaddon/iocraft": "file:../package-builder/build/dev/out/socketaddon-iocraft",
+    "@socketaddon/opentui": "file:../package-builder/build/dev/out/socketaddon-opentui",
     "@socketregistry/hyrious__bun.lockb": "catalog:",
     "@socketregistry/indent-string": "catalog:",
     "@socketregistry/is-interactive": "catalog:",

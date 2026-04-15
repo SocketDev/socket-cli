@@ -804,6 +804,9 @@ importers:
       '@socketaddon/iocraft':
         specifier: file:../package-builder/build/dev/out/socketaddon-iocraft
         version: file:packages/package-builder/build/dev/out/socketaddon-iocraft
+      '@socketaddon/opentui':
+        specifier: file:../package-builder/build/dev/out/socketaddon-opentui
+        version: file:packages/package-builder/build/dev/out/socketaddon-opentui
       '@socketregistry/hyrious__bun.lockb':
         specifier: 'catalog:'
         version: 1.0.19
@@ -2344,6 +2347,10 @@ packages:
 
   '@socketaddon/iocraft@file:packages/package-builder/build/dev/out/socketaddon-iocraft':
     resolution: {directory: packages/package-builder/build/dev/out/socketaddon-iocraft, type: directory}
+    engines: {node: '>=18'}
+
+  '@socketaddon/opentui@file:packages/package-builder/build/dev/out/socketaddon-opentui':
+    resolution: {directory: packages/package-builder/build/dev/out/socketaddon-opentui, type: directory}
     engines: {node: '>=18'}
 
   '@socketregistry/es-set-tostringtag@1.0.10':
@@ -5873,6 +5880,8 @@ snapshots:
   '@sindresorhus/merge-streams@2.3.0': {}
 
   '@socketaddon/iocraft@file:packages/package-builder/build/dev/out/socketaddon-iocraft': {}
+
+  '@socketaddon/opentui@file:packages/package-builder/build/dev/out/socketaddon-opentui': {}
 
   '@socketregistry/es-set-tostringtag@1.0.10': {}
 
