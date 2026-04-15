@@ -15,7 +15,7 @@ import { parseArgs } from 'node:util'
 import { safeDelete } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import { getGlobalCacheDirs } from '../packages/cli/scripts/constants/paths.mjs'
+import { getGlobalCacheDirs } from '../packages/cli/scripts/constants/paths.mts'
 
 const logger = getDefaultLogger()
 
