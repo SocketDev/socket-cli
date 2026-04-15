@@ -10,6 +10,9 @@
     ".": {
       "types": "./index.d.ts",
       "default": "./index.mjs"
+    },
+    "./react": {
+      "default": "./react.mjs"
     }
   },
   "files": [
@@ -17,6 +20,7 @@
     "README.md",
     "index.d.ts",
     "index.mjs",
+    "react.mjs",
     "render-engine.mjs",
     "yoga-sync.cjs"
   ],
