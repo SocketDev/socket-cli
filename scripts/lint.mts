@@ -5,6 +5,8 @@ import process from 'node:process'
  * Runs linting across affected packages based on changed files.
  */
 
+import type { PackageInfo } from './utils/monorepo-helper.mts'
+
 import { isQuiet } from '@socketsecurity/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { getChangedFiles, getStagedFiles } from '@socketsecurity/lib/git'
@@ -15,14 +17,27 @@ import {
   getAffectedPackages,
   getPackagesWithScript,
   runAcrossPackages,
-} from './utils/monorepo-helper.mjs'
+} from './utils/monorepo-helper.mts'
 
 const logger = getDefaultLogger()
+
+interface LintOptions {
+  all?: boolean
+  changed?: boolean
+  fix?: boolean
+  staged?: boolean
+}
+
+interface FilesToLintResult {
+  mode: string
+  packages: PackageInfo[]
+  reason: string | null
+}
 
 /**
  * Get files to lint and determine affected packages.
  */
-async function getFilesToLint(options) {
+async function getFilesToLint(options: LintOptions): Promise<FilesToLintResult> {
   const { all, changed, staged } = options
 
   // If --all, return all packages.
@@ -35,7 +50,7 @@ async function getFilesToLint(options) {
   }
 
   // Get changed files.
-  let changedFiles = []
+  let changedFiles: string[] = []
   let mode = 'changed'
 
   if (staged) {
@@ -69,7 +84,7 @@ async function getFilesToLint(options) {
   return { mode, packages: affectedPackages, reason: null }
 }
 
-async function main() {
+async function main(): Promise<void> {
   try {
     // Parse arguments.
     const { values } = parseArgs({
@@ -151,13 +166,14 @@ async function main() {
         logger.success('All lint checks passed!')
       }
     }
-  } catch (error) {
-    logger.error(`Lint runner failed: ${error.message}`)
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    logger.error(`Lint runner failed: ${message}`)
     process.exitCode = 1
   }
 }
 
-main().catch(e => {
+main().catch((e: unknown) => {
   logger.error(e)
   process.exitCode = 1
 })

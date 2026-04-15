@@ -20,17 +20,34 @@ import {
   getAffectedPackages,
   getPackagesWithScript,
   runAcrossPackages,
-} from './utils/monorepo-helper.mjs'
+} from './utils/monorepo-helper.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const scriptsDir = __dirname
 
 const logger = getDefaultLogger()
 
+import type { PackageInfo } from './utils/monorepo-helper.mts'
+
+interface CheckOptions {
+  all?: boolean
+  changed?: boolean
+  staged?: boolean
+  quiet?: boolean
+}
+
+interface FilesToCheckResult {
+  mode: string
+  packages: PackageInfo[]
+  reason: string | null
+}
+
 /**
  * Get files to check and determine affected packages.
  */
-async function getFilesToCheck(options) {
+async function getFilesToCheck(
+  options: CheckOptions,
+): Promise<FilesToCheckResult> {
   const { all, changed, staged } = options
 
   // If --all, return all packages.
@@ -43,7 +60,7 @@ async function getFilesToCheck(options) {
   }
 
   // Get changed files.
-  let changedFiles = []
+  let changedFiles: string[] = []
   let mode = 'changed'
 
   if (staged) {
@@ -80,7 +97,7 @@ async function getFilesToCheck(options) {
 /**
  * Run Oxlint check via lint script on affected packages.
  */
-async function runOxlintCheck(options = {}) {
+async function runOxlintCheck(options: CheckOptions = {}): Promise<number> {
   const { quiet = false } = options
 
   // Get files to check and affected packages.
@@ -107,7 +124,7 @@ async function runOxlintCheck(options = {}) {
 /**
  * Run TypeScript type check across all packages with type script.
  */
-async function runTypeCheck(options = {}) {
+async function runTypeCheck(options: { quiet?: boolean } = {}): Promise<number> {
   const { quiet = false } = options
 
   const packages = getPackagesWithScript('type')
@@ -130,7 +147,7 @@ async function runTypeCheck(options = {}) {
   )
 }
 
-async function main() {
+async function main(): Promise<void> {
   try {
     // Parse arguments.
     const { values } = parseArgs({
@@ -367,13 +384,14 @@ async function main() {
       logger.success('All checks passed')
       printFooter()
     }
-  } catch (error) {
-    logger.error(`Check runner failed: ${error.message}`)
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    logger.error(`Check runner failed: ${message}`)
     process.exitCode = 1
   }
 }
 
-main().catch(e => {
+main().catch((e: unknown) => {
   logger.error(e)
   process.exitCode = 1
 })

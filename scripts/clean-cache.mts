@@ -15,7 +15,7 @@ import { parseArgs } from 'node:util'
 import { safeDelete } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import { getGlobalCacheDirs } from '../packages/cli/scripts/constants/paths.mjs'
+import { getGlobalCacheDirs } from '../packages/cli/scripts/constants/paths.mts'
 
 const logger = getDefaultLogger()
 
@@ -33,11 +33,24 @@ const { values } = parseArgs({
 const dryRun = values['dry-run']
 const cleanAll = values.all
 
+interface CacheDirInfo {
+  package: string
+  path: string
+}
+
+interface CacheEntry {
+  name: string
+  path: string
+  size: number
+  mtime: Date
+  ageD: number
+}
+
 /**
  * Find all .cache directories in packages.
  */
-function findCacheDirs() {
-  const cacheDirs = []
+function findCacheDirs(): CacheDirInfo[] {
+  const cacheDirs: CacheDirInfo[] = []
   const packagesDir = join(ROOT_DIR, 'packages')
 
   try {
@@ -51,8 +64,9 @@ function findCacheDirs() {
         // No cache dir, skip.
       }
     }
-  } catch (error) {
-    logger.error(`Error scanning packages: ${error.message}`)
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    logger.error(`Error scanning packages: ${message}`)
   }
 
   return cacheDirs
@@ -61,8 +75,8 @@ function findCacheDirs() {
 /**
  * Analyze cache directory and determine what to clean.
  */
-function analyzeCacheDir(cacheDir) {
-  const entries = []
+function analyzeCacheDir(cacheDir: string): CacheEntry[] {
+  const entries: CacheEntry[] = []
 
   try {
     const items = readdirSync(cacheDir)
@@ -82,17 +96,18 @@ function analyzeCacheDir(cacheDir) {
         })
       }
     }
-  } catch (error) {
-    logger.error(`Error analyzing ${cacheDir}: ${error.message}`)
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    logger.error(`Error analyzing ${cacheDir}: ${message}`)
   }
 
-  return entries.sort((a, b) => b.mtime - a.mtime)
+  return entries.sort((a, b) => b.mtime.getTime() - a.mtime.getTime())
 }
 
 /**
  * Get directory size recursively.
  */
-function getDirSize(dir) {
+function getDirSize(dir: string): number {
   let size = 0
   try {
     const items = readdirSync(dir)
@@ -114,7 +129,7 @@ function getDirSize(dir) {
 /**
  * Format bytes to human readable.
  */
-function formatSize(bytes) {
+function formatSize(bytes: number): string {
   if (bytes < 1024) {
     return `${bytes} B`
   }
@@ -127,7 +142,7 @@ function formatSize(bytes) {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
 }
 
-async function main() {
+async function main(): Promise<void> {
   const cacheDirs = findCacheDirs()
 
   if (!cacheDirs.length) {
@@ -226,7 +241,8 @@ async function main() {
   }
 }
 
-main().catch(error => {
-  logger.error(`Error: ${error.message}`)
+main().catch((e: unknown) => {
+  const message = e instanceof Error ? e.message : String(e)
+  logger.error(`Error: ${message}`)
   process.exitCode = 1
 })

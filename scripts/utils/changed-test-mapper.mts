@@ -17,7 +17,7 @@ const rootPath = path.resolve(process.cwd())
 /**
  * Core files that require running all tests when changed.
  */
-const CORE_FILES = [
+const CORE_FILES: string[] = [
   'packages/cli/src/constants/',
   'packages/cli/src/bootstrap/',
   'packages/cli/src/polyfills/',
@@ -27,12 +27,21 @@ const CORE_FILES = [
   '.config/tsconfig',
 ]
 
+interface GetTestsOptions {
+  staged?: boolean
+  all?: boolean
+}
+
+interface GetTestsResult {
+  tests: string[] | 'all' | null
+  reason?: string
+  mode?: string
+}
+
 /**
  * Map source files to their corresponding test files.
- * @param {string} filepath - Path to source file
- * @returns {string[]} Array of test file paths
  */
-function mapSourceToTests(filepath) {
+function mapSourceToTests(filepath: string): string[] {
   const normalized = normalizePath(filepath)
 
   // Skip non-code files
@@ -113,21 +122,17 @@ function mapSourceToTests(filepath) {
 
 /**
  * Get affected test files to run based on changed files.
- * @param {Object} options
- * @param {boolean} options.staged - Use staged files instead of all changes
- * @param {boolean} options.all - Run all tests
- * @returns {{tests: string[] | 'all' | null, reason?: string, mode?: string}} Object with test patterns, reason, and mode
  */
-export function getTestsToRun(options = {}) {
+export function getTestsToRun(options: GetTestsOptions = {}): GetTestsResult {
   const { all = false, staged = false } = options
 
   // All mode runs all tests
-  if (all || process.env.FORCE_TEST === '1') {
+  if (all || process.env['FORCE_TEST'] === '1') {
     return { tests: 'all', reason: 'explicit --all flag', mode: 'all' }
   }
 
   // CI always runs all tests
-  if (process.env.CI === 'true') {
+  if (process.env['CI'] === 'true') {
     return { tests: 'all', reason: 'CI environment', mode: 'all' }
   }
 
@@ -140,7 +145,7 @@ export function getTestsToRun(options = {}) {
     return { tests: null, mode }
   }
 
-  const testFiles = new Set()
+  const testFiles = new Set<string>()
   let runAllTests = false
   let runAllReason = ''
 

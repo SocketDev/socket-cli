@@ -33,7 +33,7 @@ const logger = getDefaultLogger()
  * Resolve the path to a binary, checking global PATH first then node_modules/.bin.
  * Returns undefined if the binary is not found anywhere.
  */
-function resolveBin(name) {
+function resolveBin(name: string): string | undefined {
   // spawn will find it on PATH or in node_modules/.bin via pnpm exec.
   // We just need to know if it exists at all.
   try {
@@ -46,17 +46,23 @@ function resolveBin(name) {
   return undefined
 }
 
+interface SecurityFixOptions {
+  args: string[]
+  bin: string
+  label: string
+  quiet: boolean
+}
+
 /**
  * Run a security tool with --fix. Non-blocking: logs warnings on failure
  * but does not fail the overall fix run.
- *
- * @param {object} opts
- * @param {string[]} opts.args - Arguments to pass to spawn.
- * @param {string} opts.bin - Binary name.
- * @param {string} opts.label - Human-readable label for log output.
- * @param {boolean} opts.quiet - Suppress progress output.
  */
-async function runSecurityFix({ args, bin, label, quiet }) {
+async function runSecurityFix({
+  args,
+  bin,
+  label,
+  quiet,
+}: SecurityFixOptions): Promise<void> {
   if (!quiet) {
     logger.stdout.progress(`Running ${label}...`)
   }
@@ -83,7 +89,7 @@ async function runSecurityFix({ args, bin, label, quiet }) {
   }
 }
 
-async function main() {
+async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
       all: { type: 'boolean', default: false },
@@ -163,18 +169,19 @@ async function main() {
       logger.log('')
       logger.success('Auto-fix completed!')
     }
-  } catch (error) {
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
     if (!quiet) {
-      logger.error(`Fix failed: ${error.message}`)
+      logger.error(`Fix failed: ${message}`)
     }
     if (verbose) {
-      logger.error(error)
+      logger.error(e)
     }
     process.exitCode = 1
   }
 }
 
-main().catch(e => {
+main().catch((e: unknown) => {
   logger.error(e)
   process.exitCode = 1
 })

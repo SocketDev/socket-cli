@@ -19,8 +19,8 @@ import { fileURLToPath } from 'node:url'
 import {
   PLATFORM_CONFIGS,
   parsePlatformArgs,
-} from '../packages/build-infra/lib/platform-targets.mjs'
-import { logTransientErrorHelp } from '../packages/build-infra/lib/github-error-utils.mjs'
+} from '../packages/build-infra/lib/platform-targets.mts'
+import { logTransientErrorHelp } from '../packages/build-infra/lib/github-error-utils.mts'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { downloadSocketBtmRelease } from '@socketsecurity/lib/releases/socket-btm'
@@ -29,10 +29,35 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 const logger = getDefaultLogger()
 
+interface DownloadResult {
+  ok: boolean
+  target: string
+  error?: unknown
+}
+
+interface PlatformConfig {
+  arch: string
+  description: string
+  libc?: string
+  platform: string
+  releasePlatform: string
+  runner: string
+}
+
+interface PlatformFilter {
+  platform: string
+  arch: string
+  libc?: string
+}
+
 /**
  * Get output path for a platform-specific .node binary.
  */
-function getBinaryOutputPath(platform, arch, libc) {
+function getBinaryOutputPath(
+  platform: string,
+  arch: string,
+  libc: string | undefined,
+): string {
   const muslSuffix = libc === 'musl' ? '-musl' : ''
   const releasePlatform = platform === 'win32' ? 'win' : platform
   const target = `${releasePlatform}-${arch}${muslSuffix}`
@@ -47,7 +72,9 @@ function getBinaryOutputPath(platform, arch, libc) {
 /**
  * Download iocraft binary for a specific platform.
  */
-async function downloadIocraftBinary(config) {
+async function downloadIocraftBinary(
+  config: PlatformConfig,
+): Promise<DownloadResult> {
   const { arch, description, libc, platform, releasePlatform } = config
   const target = `${releasePlatform}-${arch}${libc ? `-${libc}` : ''}`
 
@@ -68,7 +95,7 @@ async function downloadIocraftBinary(config) {
     )
 
     // Download the asset.
-    let assetPath
+    let assetPath: string
     try {
       const assetPattern = `iocraft-*-${target}.node`
       assetPath = await downloadSocketBtmRelease('iocraft', {
@@ -79,7 +106,8 @@ async function downloadIocraftBinary(config) {
       })
       logger.info(`Downloaded to ${assetPath}`)
     } catch (e) {
-      logger.error(`Failed to download ${target}: ${e.message}`)
+      const message = e instanceof Error ? e.message : String(e)
+      logger.error(`Failed to download ${target}: ${message}`)
       await logTransientErrorHelp(e)
       throw e
     }
@@ -121,18 +149,21 @@ async function downloadIocraftBinary(config) {
     logger.groupEnd()
     logger.success(`${target} download complete`)
     return { ok: true, target }
-  } catch (error) {
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
     logger.groupEnd()
-    logger.error(`Failed to download ${target}: ${error.message}`)
-    await logTransientErrorHelp(error)
-    return { error, ok: false, target }
+    logger.error(`Failed to download ${target}: ${message}`)
+    await logTransientErrorHelp(e)
+    return { error: e, ok: false, target }
   }
 }
 
 /**
  * Download binaries for all platforms or a specific platform.
  */
-async function downloadBinaries(platformFilter = null) {
+async function downloadBinaries(
+  platformFilter: PlatformFilter | null = null,
+): Promise<boolean> {
   const configs = platformFilter
     ? PLATFORM_CONFIGS.filter(
         c =>
@@ -176,7 +207,7 @@ async function downloadBinaries(platformFilter = null) {
 /**
  * Main entry point.
  */
-async function main() {
+async function main(): Promise<void> {
   const args = process.argv.slice(2)
   const platformArgs = parsePlatformArgs(args)
 
@@ -198,8 +229,8 @@ async function main() {
 
 // Run if invoked directly.
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
-  main().catch(error => {
-    logger.error('Download failed:', error)
+  main().catch((e: unknown) => {
+    logger.error('Download failed:', e)
     process.exitCode = 1
   })
 }

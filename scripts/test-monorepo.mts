@@ -3,6 +3,8 @@
  * Runs tests across affected packages based on changed files.
  */
 
+import type { PackageInfo } from './utils/monorepo-helper.mts'
+
 import colors from 'yoctocolors-cjs'
 
 import { isQuiet } from '@socketsecurity/lib/argv/flags'
@@ -18,13 +20,28 @@ import { ProgressBar } from '@socketsecurity/lib/stdio/progress'
 import {
   getAffectedPackages,
   getPackagesWithScript,
-} from './utils/monorepo-helper.mjs'
+} from './utils/monorepo-helper.mts'
 
 const logger = getDefaultLogger()
+
+interface TestOptions {
+  all?: boolean
+  changed?: boolean
+  staged?: boolean
+}
+
+interface PackagesToTestResult {
+  mode: string
+  packages: PackageInfo[]
+  reason: string | null
+}
+
 /**
  * Get packages to test and determine affected packages.
  */
-async function getPackagesToTest(options) {
+async function getPackagesToTest(
+  options: TestOptions,
+): Promise<PackagesToTestResult> {
   const { all, changed, staged } = options
 
   // If --all, return all packages.
@@ -37,7 +54,7 @@ async function getPackagesToTest(options) {
   }
 
   // Get changed files.
-  let changedFiles = []
+  let changedFiles: string[] = []
   let mode = 'changed'
 
   if (staged) {
@@ -75,18 +92,18 @@ async function getPackagesToTest(options) {
  * Run tests on a specific package with pretty output.
  */
 async function runPackageTest(
-  pkg,
-  testArgs = [],
-  quiet = false,
-  showProgress = true,
-) {
+  pkg: PackageInfo,
+  testArgs: string[] = [],
+  quiet: boolean = false,
+  showProgress: boolean = true,
+): Promise<number> {
   const displayName = pkg.displayName || pkg.name
 
   if (!quiet && showProgress) {
     logger.progress(`${displayName}: running tests`)
   }
 
-  let result
+  let result: Awaited<ReturnType<typeof spawn>>
   try {
     result = await spawn(
       'pnpm',
@@ -112,7 +129,8 @@ async function runPackageTest(
       }
       return e.code
     }
-    logger.error(`Failed to spawn test command: ${e.message}`)
+    const message = e instanceof Error ? e.message : String(e)
+    logger.error(`Failed to spawn test command: ${message}`)
     return 1
   }
 
@@ -138,7 +156,7 @@ async function runPackageTest(
   return 0
 }
 
-async function main() {
+async function main(): Promise<void> {
   try {
     // Parse arguments.
     const { positionals, values } = parseArgs({
@@ -271,13 +289,14 @@ async function main() {
         logger.success('All tests passed!')
       }
     }
-  } catch (error) {
-    logger.error(`Test runner failed: ${error.message}`)
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    logger.error(`Test runner failed: ${message}`)
     process.exitCode = 1
   }
 }
 
-main().catch(e => {
+main().catch((e: unknown) => {
   logger.error(e)
   process.exitCode = 1
 })

@@ -8,14 +8,17 @@ import { join } from 'node:path'
 /**
  * Get build log path.
  */
-export function getBuildLogPath(buildDir) {
+export function getBuildLogPath(buildDir: string): string {
   return join(buildDir, 'build.log')
 }
 
 /**
  * Save build output to log file.
  */
-export async function saveBuildLog(buildDir, content) {
+export async function saveBuildLog(
+  buildDir: string,
+  content: string,
+): Promise<void> {
   const logPath = getBuildLogPath(buildDir)
   try {
     await fs.appendFile(logPath, `${content}\n`)
@@ -27,7 +30,7 @@ export async function saveBuildLog(buildDir, content) {
 /**
  * Format file size in human-readable format.
  */
-export function formatBytes(bytes) {
+export function formatBytes(bytes: number): string {
   if (bytes === 0) {
     return '0 B'
   }

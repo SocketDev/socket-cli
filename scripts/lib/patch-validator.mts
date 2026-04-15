@@ -7,12 +7,55 @@ import { promises as fs } from 'node:fs'
 
 import { spawn } from '@socketsecurity/lib/spawn'
 
+interface PatchMetadata {
+  description: string | null
+  nodeVersions: string[]
+  requires: string[]
+  conflicts: string[]
+}
+
+interface CompatibilityResult {
+  compatible: boolean
+  reason: string | null
+}
+
+interface ValidationResult {
+  valid: boolean
+  reason?: string | null
+  metadata: PatchMetadata | null
+}
+
+interface PatchAnalysis {
+  modifiesV8Includes: boolean
+  modifiesSEA: boolean
+  modifiesFiles: string[]
+}
+
+interface PatchInfo {
+  name: string
+  analysis: PatchAnalysis
+}
+
+interface PatchConflict {
+  type: string
+  file?: string
+  patches: string[]
+  message: string
+  severity?: string
+}
+
+interface PatchApplicationResult {
+  canApply: boolean
+  reason: string | null
+  stderr?: string | Buffer
+}
+
 /**
  * Parse patch metadata from header comments.
  */
-export function parsePatchMetadata(patchContent) {
+export function parsePatchMetadata(patchContent: string): PatchMetadata {
   const lines = patchContent.split('\n')
-  const metadata = {
+  const metadata: PatchMetadata = {
     description: null,
     nodeVersions: [],
     requires: [],
@@ -52,7 +95,10 @@ export function parsePatchMetadata(patchContent) {
 /**
  * Check if patch is compatible with Node version.
  */
-export function isPatchCompatible(metadata, nodeVersion) {
+export function isPatchCompatible(
+  metadata: PatchMetadata,
+  nodeVersion: string,
+): CompatibilityResult {
   if (metadata.nodeVersions.length === 0) {
     // No version restriction = compatible with all.
     return { compatible: true, reason: null }
@@ -92,15 +138,15 @@ export function isPatchCompatible(metadata, nodeVersion) {
 /**
  * Compare Node.js versions.
  */
-function compareVersions(v1, v2) {
+function compareVersions(v1: string, v2: string): number {
   const parts1 = v1.replace('v', '').split('.').map(Number)
   const parts2 = v2.replace('v', '').split('.').map(Number)
 
   for (let i = 0; i < 3; i++) {
-    if (parts1[i] > parts2[i]) {
+    if ((parts1[i] ?? 0) > (parts2[i] ?? 0)) {
       return 1
     }
-    if (parts1[i] < parts2[i]) {
+    if ((parts1[i] ?? 0) < (parts2[i] ?? 0)) {
       return -1
     }
   }
@@ -110,7 +156,10 @@ function compareVersions(v1, v2) {
 /**
  * Validate patch file before applying.
  */
-export async function validatePatch(patchPath, nodeVersion) {
+export async function validatePatch(
+  patchPath: string,
+  nodeVersion: string,
+): Promise<ValidationResult> {
   try {
     const content = await fs.readFile(patchPath, 'utf8')
 
@@ -160,9 +209,10 @@ export async function validatePatch(patchPath, nodeVersion) {
       metadata,
     }
   } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
     return {
       valid: false,
-      reason: `Cannot read patch: ${e.message}`,
+      reason: `Cannot read patch: ${message}`,
       metadata: null,
     }
   }
@@ -171,15 +221,15 @@ export async function validatePatch(patchPath, nodeVersion) {
 /**
  * Analyze what a patch modifies.
  */
-export function analyzePatchContent(patchContent) {
-  const analysis = {
+export function analyzePatchContent(patchContent: string): PatchAnalysis {
+  const analysis: PatchAnalysis = {
     modifiesV8Includes: false,
     modifiesSEA: false,
     modifiesFiles: [],
   }
 
   const lines = patchContent.split('\n')
-  let currentFile
+  let currentFile: string | undefined
 
   for (const line of lines) {
     // Track which files are modified.
@@ -217,18 +267,21 @@ export function analyzePatchContent(patchContent) {
 /**
  * Check for patch conflicts.
  */
-export function checkPatchConflicts(patches, nodeVersion) {
-  const conflicts = []
+export function checkPatchConflicts(
+  patches: PatchInfo[],
+  nodeVersion: string,
+): PatchConflict[] {
+  const conflicts: PatchConflict[] = []
 
   // Check for multiple patches modifying same files.
-  const fileModifications = new Map()
+  const fileModifications = new Map<string, string[]>()
 
   for (const patch of patches) {
     for (const file of patch.analysis.modifiesFiles) {
       if (!fileModifications.has(file)) {
         fileModifications.set(file, [])
       }
-      fileModifications.get(file).push(patch.name)
+      fileModifications.get(file)!.push(patch.name)
     }
   }
 
@@ -263,10 +316,10 @@ export function checkPatchConflicts(patches, nodeVersion) {
  * Test if a patch will apply cleanly (dry-run).
  */
 export async function testPatchApplication(
-  patchPath,
-  targetDir,
-  stripLevel = 1,
-) {
+  patchPath: string,
+  targetDir: string,
+  stripLevel: number = 1,
+): Promise<PatchApplicationResult> {
   try {
     // Use /bin/sh wrapper to ensure patch command is found in PATH.
     // This matches the pattern used in the build script for applying patches.
@@ -289,9 +342,10 @@ export async function testPatchApplication(
       stderr: result.stderr,
     }
   } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
     return {
       canApply: false,
-      reason: `Patch dry-run error: ${e.message}`,
+      reason: `Patch dry-run error: ${message}`,
     }
   }
 }

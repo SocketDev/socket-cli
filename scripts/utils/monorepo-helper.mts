@@ -13,13 +13,18 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 const logger = getDefaultLogger()
+
+export interface PackageInfo {
+  name: string
+  path: string
+  displayName: string
+}
+
 /**
  * Get all packages in the monorepo with specific scripts.
- * @param {string} scriptName - Script name to check for
- * @returns {{name: string, path: string, displayName: string}[]}
  */
-export function getPackagesWithScript(scriptName) {
-  const packages = []
+export function getPackagesWithScript(scriptName: string): PackageInfo[] {
+  const packages: PackageInfo[] = []
   const packagesDir = path.join(process.cwd(), 'packages')
 
   // Main CLI package always has all scripts.
@@ -63,11 +68,9 @@ export function getPackagesWithScript(scriptName) {
 
 /**
  * Determine which packages are affected by changed files.
- * @param {string[]} changedFiles - Array of relative file paths
- * @returns {{name: string, path: string, displayName: string}[]} Affected packages
  */
-export function getAffectedPackages(changedFiles) {
-  const affectedPkgs = new Set()
+export function getAffectedPackages(changedFiles: string[]): PackageInfo[] {
+  const affectedPkgs = new Set<PackageInfo>()
   const packages = getPackagesWithScript('lint')
 
   for (const file of changedFiles) {
@@ -105,20 +108,14 @@ export function getAffectedPackages(changedFiles) {
 
 /**
  * Run a script on a specific package with pretty output.
- * @param {object} pkg - Package info
- * @param {string} scriptName - Script to run
- * @param {string[]} args - Additional arguments
- * @param {boolean} quiet - Suppress output
- * @param {string} [progressMessage] - Optional custom progress message
- * @returns {Promise<number>} Exit code
  */
 export async function runPackageScript(
-  pkg,
-  scriptName,
-  args = [],
-  quiet = false,
-  progressMessage = '',
-) {
+  pkg: PackageInfo,
+  scriptName: string,
+  args: string[] = [],
+  quiet: boolean = false,
+  progressMessage: string = '',
+): Promise<number> {
   const displayName = pkg.displayName || pkg.name
 
   if (!quiet) {
@@ -161,20 +158,14 @@ export async function runPackageScript(
 
 /**
  * Run a script across multiple packages.
- * @param {Array} packages - Packages to run on
- * @param {string} scriptName - Script to run
- * @param {string[]} args - Additional arguments
- * @param {boolean} quiet - Suppress output
- * @param {string} [sectionTitle] - Optional section title to use as progress message
- * @returns {Promise<number>} Exit code (0 if all succeed, first failure code otherwise)
  */
 export async function runAcrossPackages(
-  packages,
-  scriptName,
-  args = [],
-  quiet = false,
-  sectionTitle = '',
-) {
+  packages: PackageInfo[],
+  scriptName: string,
+  args: string[] = [],
+  quiet: boolean = false,
+  sectionTitle: string = '',
+): Promise<number> {
   if (!packages.length) {
     if (!quiet) {
       logger.substep('No packages to process')

@@ -12,8 +12,8 @@ import { preparePackageForPublish } from 'package-builder/scripts/utils/prepare-
 const logger = getDefaultLogger()
 
 const args = process.argv.slice(2)
-const packagePath = args[0]
-const version = args[1]
+const packagePath: string | undefined = args[0]
+const version: string | undefined = args[1]
 
 if (!packagePath) {
   logger.error(
@@ -24,7 +24,8 @@ if (!packagePath) {
   try {
     preparePackageForPublish(resolve(packagePath), { version })
   } catch (e) {
-    logger.error(`Error preparing package: ${e.message}`)
+    const message = e instanceof Error ? e.message : String(e)
+    logger.error(`Error preparing package: ${message}`)
     process.exitCode = 1
   }
 }

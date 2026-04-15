@@ -33,15 +33,15 @@ import {
   PLATFORM_TARGETS,
   formatPlatformTarget,
   parsePlatformTarget,
-} from '../packages/build-infra/lib/platform-targets.mjs'
+} from '../packages/build-infra/lib/platform-targets.mts'
 
 const logger = getDefaultLogger()
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const rootDir = path.resolve(__dirname, '..')
 
-const TARGET_PACKAGES = {
-  __proto__: null,
+const TARGET_PACKAGES: Record<string, string> = {
+  __proto__: null as unknown as string,
   all: './packages/**',
   cli: '@socketsecurity/cli',
   'cli-sentry': '@socketsecurity/cli-with-sentry',
@@ -50,10 +50,39 @@ const TARGET_PACKAGES = {
   socket: 'socket',
 }
 
+interface BuildPackageConfig {
+  name: string
+  filter: string
+  outputCheck: string
+}
+
+interface BuildResult {
+  success: boolean
+  skipped: boolean
+}
+
+interface BuildTargetResult {
+  duration: string
+  success: boolean
+  target: string
+}
+
+interface ParsedArgs {
+  arch: string | undefined
+  buildArgs: string[]
+  force: boolean
+  help: boolean
+  parallel: boolean
+  platform: string | undefined
+  platforms: boolean
+  target: string | undefined
+  targets: string[]
+}
+
 /**
  * Build configuration for each package in the default build order.
  */
-const BUILD_PACKAGES = [
+const BUILD_PACKAGES: BuildPackageConfig[] = [
   {
     name: 'CLI Package',
     filter: '@socketsecurity/cli',
@@ -64,24 +93,24 @@ const BUILD_PACKAGES = [
 /**
  * Parse command line arguments.
  */
-function parseArgs() {
+function parseArgs(): ParsedArgs {
   const args = process.argv.slice(2)
-  let target
-  let targets = []
+  let target: string | undefined
+  let targets: string[] = []
   let platforms = false
   let parallel = false
   let force = false
   let help = false
-  let platform
-  let arch
-  const buildArgs = []
+  let platform: string | undefined
+  let arch: string | undefined
+  const buildArgs: string[] = []
 
   for (let i = 0; i < args.length; i++) {
-    const arg = args[i]
+    const arg = args[i]!
     if (arg === '--target' && i + 1 < args.length) {
       target = args[++i]
     } else if (arg === '--targets' && i + 1 < args.length) {
-      targets = args[++i].split(',').map(t => t.trim())
+      targets = args[++i]!.split(',').map(t => t.trim())
     } else if (arg === '--platform' && i + 1 < args.length) {
       platform = args[++i]
     } else if (arg.startsWith('--platform=')) {
@@ -124,7 +153,7 @@ function parseArgs() {
 /**
  * Display help message.
  */
-function showHelp() {
+function showHelp(): void {
   logger.log('')
   logger.log(`${colors.blue('Socket CLI Build System')}`)
   logger.log('')
@@ -182,7 +211,7 @@ function showHelp() {
  * Check if a package needs to be built.
  * Returns true if build is needed, false if can skip.
  */
-function needsBuild(pkg, force) {
+function needsBuild(pkg: BuildPackageConfig, force: boolean): boolean {
   if (force) {
     return true
   }
@@ -199,7 +228,10 @@ function needsBuild(pkg, force) {
 /**
  * Build a single package.
  */
-async function buildPackage(pkg, force) {
+async function buildPackage(
+  pkg: BuildPackageConfig,
+  force: boolean,
+): Promise<BuildResult> {
   const skip = !needsBuild(pkg, force)
 
   if (skip) {
@@ -237,7 +269,7 @@ async function buildPackage(pkg, force) {
 /**
  * Build SEA binary for current platform.
  */
-async function buildCurrentPlatformSea() {
+async function buildCurrentPlatformSea(): Promise<{ success: boolean }> {
   const { arch, platform } = await import('node:os')
   const currentPlatform = platform()
   const currentArch = arch()
@@ -277,7 +309,7 @@ async function buildCurrentPlatformSea() {
 /**
  * Run the default smart build with caching.
  */
-async function runSmartBuild(force) {
+async function runSmartBuild(force: boolean): Promise<void> {
   logger.log('')
   logger.log('='.repeat(60))
   logger.log(`${colors.blue('Socket CLI Build System')}`)
@@ -362,12 +394,12 @@ async function runSmartBuild(force) {
 
 /**
  * Build SEA binary for a specific platform.
- *
- * @param {string} platform - Platform (darwin, linux, win32).
- * @param {string} arch - Architecture (arm64, x64).
- * @param {string} [libc] - Optional libc (musl).
  */
-async function buildPlatformSea(platform, arch, libc) {
+async function buildPlatformSea(
+  platform: string,
+  arch: string,
+  libc: string | undefined,
+): Promise<{ success: boolean }> {
   const targetName = formatPlatformTarget(platform, arch, libc)
 
   logger.log('')
@@ -409,7 +441,10 @@ async function buildPlatformSea(platform, arch, libc) {
 /**
  * Run a targeted build for a specific package or platform.
  */
-async function runTargetedBuild(target, buildArgs) {
+async function runTargetedBuild(
+  target: string,
+  buildArgs: string[],
+): Promise<void> {
   // Check if this is a platform target (e.g., darwin-arm64).
   const platformInfo = parsePlatformTarget(target)
   if (platformInfo) {
@@ -458,7 +493,10 @@ async function runTargetedBuild(target, buildArgs) {
 /**
  * Build a single target (for parallel/sequential builds).
  */
-async function buildTarget(target, buildArgs) {
+async function buildTarget(
+  target: string,
+  buildArgs: string[],
+): Promise<BuildTargetResult> {
   const startTime = Date.now()
   logger.log(`${colors.cyan('→')} [${target}] Starting build...`)
 
@@ -533,7 +571,10 @@ async function buildTarget(target, buildArgs) {
 /**
  * Run multiple targeted builds in parallel.
  */
-async function runParallelBuilds(targetsToBuild, buildArgs) {
+async function runParallelBuilds(
+  targetsToBuild: string[],
+  buildArgs: string[],
+): Promise<void> {
   logger.log('')
   logger.log('='.repeat(60))
   logger.log(
@@ -601,7 +642,10 @@ async function runParallelBuilds(targetsToBuild, buildArgs) {
 /**
  * Run multiple targeted builds sequentially.
  */
-async function runSequentialBuilds(targetsToBuild, buildArgs) {
+async function runSequentialBuilds(
+  targetsToBuild: string[],
+  buildArgs: string[],
+): Promise<void> {
   logger.log('')
   logger.log('='.repeat(60))
   logger.log(
@@ -673,7 +717,7 @@ async function runSequentialBuilds(targetsToBuild, buildArgs) {
 /**
  * Main build function.
  */
-async function main() {
+async function main(): Promise<void> {
   const opts = parseArgs()
 
   if (opts.help) {
@@ -705,9 +749,10 @@ async function main() {
   await runSmartBuild(opts.force)
 }
 
-main().catch(e => {
+main().catch((e: unknown) => {
+  const message = e instanceof Error ? e.message : String(e)
   logger.error('')
-  logger.error(`${colors.red('✗')} Unexpected error: ${e.message}`)
+  logger.error(`${colors.red('✗')} Unexpected error: ${message}`)
   logger.error('')
   process.exitCode = 1
 })

@@ -3,6 +3,8 @@
  * Runs type checking across packages with pretty UI.
  */
 
+import type { PackageInfo } from './utils/monorepo-helper.mts'
+
 import colors from 'yoctocolors-cjs'
 
 import { isQuiet } from '@socketsecurity/lib/argv/flags'
@@ -12,13 +14,16 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { printFooter, printHeader } from '@socketsecurity/lib/stdio/header'
 
-import { getPackagesWithScript } from './utils/monorepo-helper.mjs'
+import { getPackagesWithScript } from './utils/monorepo-helper.mts'
 
 const logger = getDefaultLogger()
 /**
  * Run type check on a specific package with pretty output.
  */
-async function runPackageTypeCheck(pkg, quiet = false) {
+async function runPackageTypeCheck(
+  pkg: PackageInfo,
+  quiet: boolean = false,
+): Promise<number> {
   const displayName = pkg.displayName || pkg.name
 
   if (!quiet) {
@@ -54,7 +59,7 @@ async function runPackageTypeCheck(pkg, quiet = false) {
   return 0
 }
 
-async function main() {
+async function main(): Promise<void> {
   try {
     // Parse arguments.
     const { values } = parseArgs({
@@ -132,13 +137,14 @@ async function main() {
         printFooter()
       }
     }
-  } catch (error) {
-    logger.error(`Type checker failed: ${error.message}`)
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    logger.error(`Type checker failed: ${message}`)
     process.exitCode = 1
   }
 }
 
-main().catch(e => {
+main().catch((e: unknown) => {
   logger.error(e)
   process.exitCode = 1
 })

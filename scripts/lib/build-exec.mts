@@ -4,16 +4,41 @@
  * Centralized command execution for build script.
  */
 
+import type { SpawnStdioResult } from '@socketsecurity/lib/spawn'
+
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
-import { saveBuildLog } from './build-helpers.mjs'
+import { saveBuildLog } from './build-helpers.mts'
 
 const logger = getDefaultLogger()
+
+interface ExecOptions {
+  buildDir?: string
+  cwd?: string
+  env?: NodeJS.ProcessEnv
+}
+
+interface ExecSilentResult {
+  code: number
+  stdout: string
+  stderr: string
+}
+
+interface DownloadOptions {
+  buildDir?: string
+  maxRetries?: number
+  verifyIntegrity?: boolean
+}
+
 /**
  * Execute a command and stream output.
  */
-export async function exec(command, args = [], options = {}) {
+export async function exec(
+  command: string,
+  args: string[] = [],
+  options: ExecOptions = {},
+): Promise<SpawnStdioResult> {
   const { buildDir, cwd = process.cwd(), env = process.env } = options
 
   const cmdStr = `$ ${command} ${args.join(' ')}`
@@ -42,7 +67,11 @@ export async function exec(command, args = [], options = {}) {
 /**
  * Execute a command silently (no output).
  */
-export async function execSilent(command, args = [], options = {}) {
+export async function execSilent(
+  command: string,
+  args: string[] = [],
+  options: ExecOptions = {},
+): Promise<ExecSilentResult> {
   const { cwd = process.cwd(), env = process.env } = options
 
   const result = await spawn(command, args, {
@@ -54,15 +83,19 @@ export async function execSilent(command, args = [], options = {}) {
 
   return {
     code: result.code,
-    stdout: result.stdout ? result.stdout.trim() : '',
-    stderr: result.stderr ? result.stderr.trim() : '',
+    stdout: result.stdout ? String(result.stdout).trim() : '',
+    stderr: result.stderr ? String(result.stderr).trim() : '',
   }
 }
 
 /**
  * Download file with retry and verification.
  */
-export async function downloadWithRetry(url, outputPath, options = {}) {
+export async function downloadWithRetry(
+  url: string,
+  outputPath: string,
+  options: DownloadOptions = {},
+): Promise<boolean> {
   const { buildDir, maxRetries = 3, verifyIntegrity = true } = options
 
   // Import verifyFileIntegrity dynamically to avoid circular dependency.
@@ -85,13 +118,14 @@ export async function downloadWithRetry(url, outputPath, options = {}) {
 
       return true
     } catch (e) {
+      const message = e instanceof Error ? e.message : String(e)
       if (attempt === maxRetries) {
         throw new Error(
-          `Download failed after ${maxRetries} attempts: ${e.message}`,
+          `Download failed after ${maxRetries} attempts: ${message}`,
         )
       }
 
-      logger.warn(`  ⚠️  Download attempt ${attempt} failed: ${e.message}`)
+      logger.warn(`  ⚠️  Download attempt ${attempt} failed: ${message}`)
 
       // Delete corrupted file if it exists.
       try {
@@ -104,7 +138,7 @@ export async function downloadWithRetry(url, outputPath, options = {}) {
       // Wait before retry (exponential backoff).
       const waitTime = Math.min(1000 * 2 ** (attempt - 1), 5000)
       logger.log(`  ⏱️  Waiting ${waitTime}ms before retry...`)
-      await new Promise(resolve => setTimeout(resolve, waitTime))
+      await new Promise<void>(resolve => setTimeout(resolve, waitTime))
     }
   }
 

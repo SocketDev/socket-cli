@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import { PLATFORM_MAP_TOOLS } from '../packages/cli/scripts/constants/external-tools-platforms.mjs'
+import { PLATFORM_MAP_TOOLS } from '../packages/cli/scripts/constants/external-tools-platforms.mts'
 
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -31,16 +31,15 @@ const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
 
 /**
  * Validate that all required checksums exist for external tools.
- * @returns {boolean} True if all checksums are valid, false otherwise.
  */
-function validateChecksums() {
-  const errors = []
-  const warnings = []
+function validateChecksums(): boolean {
+  const errors: string[] = []
+  const warnings: string[] = []
 
   logger.info('Validating SHA-256 checksums for external tools...\n')
 
   // Track all unique assets that need checksums.
-  const requiredAssets = new Map() // Map<toolName, Set<assetName>>
+  const requiredAssets = new Map<string, Set<string>>()
 
   // Collect all assets needed across all platforms.
   for (const [platform, tools] of Object.entries(PLATFORM_MAP_TOOLS)) {
@@ -75,7 +74,7 @@ function validateChecksums() {
     }
 
     const checksums = toolConfig.checksums || {}
-    const missingAssets = []
+    const missingAssets: string[] = []
 
     for (const assetName of assets) {
       if (!checksums[assetName]) {

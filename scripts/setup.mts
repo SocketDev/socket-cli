@@ -72,10 +72,23 @@ Examples:
   process.exitCode = 0
 }
 
+interface VersionInfo {
+  major: number
+  minor: number
+  patch: number
+}
+
+interface PrerequisiteOptions {
+  command: string
+  minVersion?: VersionInfo
+  name: string
+  required?: boolean
+}
+
 /**
  * Check if a command is available.
  */
-async function hasCommand(command) {
+async function hasCommand(command: string): Promise<boolean> {
   try {
     const result = await spawn(command, ['--version'], {
       stdio: 'pipe',
@@ -89,13 +102,16 @@ async function hasCommand(command) {
 /**
  * Get version of a command.
  */
-async function getVersion(command, args = ['--version']) {
+async function getVersion(
+  command: string,
+  args: string[] = ['--version'],
+): Promise<string | undefined> {
   try {
     const result = await spawn(command, args, {
       stdio: 'pipe',
     })
     if (result.code === 0) {
-      return result.stdout.trim()
+      return String(result.stdout).trim()
     }
   } catch {
     // Ignore.
@@ -106,7 +122,7 @@ async function getVersion(command, args = ['--version']) {
 /**
  * Parse version string to compare.
  */
-function parseVersion(versionString) {
+function parseVersion(versionString: string): VersionInfo | undefined {
   const match = versionString.match(/(\d+)\.(\d+)\.(\d+)/)
   if (!match) {
     return undefined
@@ -122,7 +138,7 @@ function parseVersion(versionString) {
  * Compare two version objects.
  * Returns: -1 if a < b, 0 if a === b, 1 if a > b
  */
-function compareVersions(a, b) {
+function compareVersions(a: VersionInfo, b: VersionInfo): number {
   if (a.major !== b.major) {
     return a.major < b.major ? -1 : 1
   }
@@ -138,7 +154,7 @@ function compareVersions(a, b) {
 /**
  * Install Homebrew (macOS/Linux).
  */
-async function installHomebrew() {
+async function installHomebrew(): Promise<boolean> {
   if (WIN32) {
     logger.warn('Homebrew is not available on Windows')
     return false
@@ -166,7 +182,7 @@ async function installHomebrew() {
 /**
  * Install Chocolatey (Windows).
  */
-async function installChocolatey() {
+async function installChocolatey(): Promise<boolean> {
   if (!WIN32) {
     logger.warn('Chocolatey is only available on Windows')
     return false
@@ -195,7 +211,7 @@ async function installChocolatey() {
 /**
  * Install a package using Homebrew (macOS/Linux).
  */
-async function installWithHomebrew(packageName) {
+async function installWithHomebrew(packageName: string): Promise<boolean> {
   if (!(await hasCommand('brew'))) {
     logger.error('Homebrew not available')
     return false
@@ -219,7 +235,7 @@ async function installWithHomebrew(packageName) {
 /**
  * Install a package using Chocolatey (Windows).
  */
-async function installWithChocolatey(packageName) {
+async function installWithChocolatey(packageName: string): Promise<boolean> {
   if (!(await hasCommand('choco'))) {
     logger.error('Chocolatey not available')
     return false
@@ -244,7 +260,7 @@ async function installWithChocolatey(packageName) {
 /**
  * Check and optionally install gh CLI.
  */
-async function ensureGhCli() {
+async function ensureGhCli(): Promise<boolean> {
   if (await hasCommand('gh')) {
     const version = await getVersion('gh')
     logger.log(`gh CLI ${version} (optional)`)
@@ -335,7 +351,7 @@ async function checkPrerequisite({
   minVersion,
   name,
   required = true,
-}) {
+}: PrerequisiteOptions): Promise<boolean> {
   const version = await getVersion(command)
 
   if (!version) {
@@ -364,7 +380,7 @@ async function checkPrerequisite({
 /**
  * Generate cli-with-sentry package from template.
  */
-async function generateCliSentryPackage() {
+async function generateCliSentryPackage(): Promise<boolean> {
   if (!quiet) {
     logger.log('Generating cli-with-sentry package from template...')
   }
@@ -395,7 +411,7 @@ async function generateCliSentryPackage() {
 /**
  * Generate socketbin packages from template.
  */
-async function generateSocketbinPackages() {
+async function generateSocketbinPackages(): Promise<boolean> {
   if (!quiet) {
     logger.log('Generating socketbin packages from template...')
   }
@@ -422,7 +438,7 @@ async function generateSocketbinPackages() {
 /**
  * Restore build cache if possible.
  */
-async function restoreCache(hasGh) {
+async function restoreCache(hasGh: boolean): Promise<boolean> {
   // Skip entirely if gh CLI not available.
   if (!hasGh) {
     logger.info('Skipping cache restoration (gh CLI not available)')
@@ -462,7 +478,7 @@ async function restoreCache(hasGh) {
 /**
  * Main entry point.
  */
-async function main() {
+async function main(): Promise<number> {
   // Handle --skip-prereqs: skip prerequisite checks, proceed to cache restoration.
   if (skipPrereqs) {
     if (!quiet) {
@@ -592,11 +608,12 @@ async function main() {
 
 if (!showHelp) {
   main()
-    .then(code => {
+    .then((code: number) => {
       process.exitCode = code
     })
-    .catch(error => {
-      logger.error(error.message)
+    .catch((e: unknown) => {
+      const message = e instanceof Error ? e.message : String(e)
+      logger.error(message)
       process.exitCode = 1
     })
 }

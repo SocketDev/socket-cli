@@ -10,7 +10,7 @@ const logger = getDefaultLogger()
 /**
  * Print section header.
  */
-export function printHeader(title) {
+export function printHeader(title: string): void {
   logger.log('')
   logger.log('━'.repeat(60))
   logger.log(`  ${title}`)
@@ -21,7 +21,11 @@ export function printHeader(title) {
 /**
  * Print error with instructions.
  */
-export function printError(title, message, instructions = []) {
+export function printError(
+  title: string,
+  message: string,
+  instructions: string[] = [],
+): void {
   logger.error('')
   logger.error('❌', title)
   logger.error('')
@@ -39,7 +43,11 @@ export function printError(title, message, instructions = []) {
 /**
  * Print warning with suggestions.
  */
-export function printWarning(title, message, suggestions = []) {
+export function printWarning(
+  title: string,
+  message: string,
+  suggestions: string[] = [],
+): void {
   logger.warn('')
   logger.warn('⚠️ ', title)
   logger.warn('')
@@ -57,20 +65,24 @@ export function printWarning(title, message, suggestions = []) {
 /**
  * Print success message.
  */
-export function printSuccess(message) {
+export function printSuccess(message: string): void {
   logger.log(`✅ ${message}`)
 }
 
 /**
  * Print info message.
  */
-export function printInfo(message) {
+export function printInfo(message: string): void {
   logger.log(`ℹ️  ${message}`)
 }
 
 /**
  * Print step with description.
  */
-export function printStep(step, total, description) {
+export function printStep(
+  step: number,
+  total: number,
+  description: string,
+): void {
   logger.log(`[${step}/${total}] ${description}`)
 }

@@ -32,10 +32,22 @@ const BUILTIN_MODULES = new Set([
 // These are packages referenced in bundled code that's never actually called.
 const EXCUSED_EXTERNALS = new Set(['node-gyp'])
 
+interface BundleViolation {
+  type: string
+  package: string
+  message: string
+  fix: string
+}
+
+interface BundleValidationResult {
+  violations: BundleViolation[]
+  warnings: BundleViolation[]
+}
+
 /**
  * Find all JavaScript files in dist directory.
  */
-async function findDistFiles(distPath) {
+async function findDistFiles(distPath: string): Promise<string[]> {
   const files = []
 
   try {
@@ -65,7 +77,7 @@ async function findDistFiles(distPath) {
 /**
  * Extract bundled package names from node_modules paths in comments and code.
  */
-async function extractBundledPackages(filePath) {
+async function extractBundledPackages(filePath: string): Promise<Set<string>> {
   const content = await fs.readFile(filePath, 'utf8')
   const bundled = new Set()
 
@@ -127,7 +139,7 @@ async function extractBundledPackages(filePath) {
 /**
  * Get package name from a module specifier (strip subpaths).
  */
-function getPackageName(specifier) {
+function getPackageName(specifier: string): string | undefined {
   // Relative imports are not packages
   if (specifier.startsWith('.') || specifier.startsWith('/')) {
     return undefined
@@ -180,7 +192,7 @@ function getPackageName(specifier) {
 /**
  * Extract external packages from esbuild config files.
  */
-async function extractExternalsFromConfigs() {
+async function extractExternalsFromConfigs(): Promise<Set<string>> {
   const externals = new Set()
   const configFiles = [
     path.join(cliPackagePath, '.config/esbuild.cli.build.mjs'),
@@ -205,7 +217,7 @@ async function extractExternalsFromConfigs() {
           }
         }
       }
-    } catch (e) {
+    } catch {
       // Config file doesn't exist or can't be read.
       continue
     }
@@ -217,7 +229,10 @@ async function extractExternalsFromConfigs() {
 /**
  * Check if a package is a direct dependency (not transitive).
  */
-async function isDirectDependency(packageName, devDependencies) {
+async function isDirectDependency(
+  packageName: string,
+  devDependencies: Set<string>,
+): Promise<boolean> {
   // If it's in devDependencies, it's direct.
   if (devDependencies.has(packageName)) {
     return true
@@ -251,7 +266,7 @@ async function isDirectDependency(packageName, devDependencies) {
 /**
  * Find all source files in a directory.
  */
-async function findSourceFiles(srcPath) {
+async function findSourceFiles(srcPath: string): Promise<string[]> {
   const files = []
 
   try {
@@ -283,7 +298,7 @@ async function findSourceFiles(srcPath) {
 /**
  * Validate bundle dependencies.
  */
-async function validateBundleDeps() {
+async function validateBundleDeps(): Promise<BundleValidationResult> {
   const distPath = path.join(cliPackagePath, 'build')
   const packageJsonPath = path.join(cliPackagePath, 'package.json')
   const pkg = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'))
@@ -362,7 +377,7 @@ async function validateBundleDeps() {
   return { violations, warnings }
 }
 
-async function main() {
+async function main(): Promise<void> {
   try {
     const { violations, warnings } = await validateBundleDeps()
 
@@ -393,8 +408,9 @@ async function main() {
 
     // Only fail on violations, not warnings
     process.exitCode = violations.length > 0 ? 1 : 0
-  } catch (error) {
-    logger.error('Validation failed:', error.message)
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    logger.error('Validation failed:', message)
     process.exitCode = 1
   }
 }
