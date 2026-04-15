@@ -193,11 +193,9 @@ export function parsePlatformTarget(target) {
   // Handle standard platform-arch.
   const parts = target.split('-')
   if (parts.length === 2) {
-    let [platform, arch] = parts
+    const [rawPlatform, arch] = parts
     // Normalize 'win' to 'win32' for internal use.
-    if (platform === 'win') {
-      platform = 'win32'
-    }
+    const platform = rawPlatform === 'win' ? 'win32' : rawPlatform
     if (VALID_PLATFORMS.includes(platform) && VALID_ARCHS.includes(arch)) {
       return { arch, platform }
     }
