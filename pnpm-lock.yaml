@@ -266,8 +266,8 @@ catalogs:
       specifier: 1.0.6
       version: 1.0.6
     '@socketregistry/packageurl-js':
-      specifier: 1.4.1
-      version: 1.4.1
+      specifier: 1.4.2
+      version: 1.4.2
     '@socketregistry/yocto-spinner':
       specifier: 1.0.25
       version: 1.0.25
@@ -278,8 +278,8 @@ catalogs:
       specifier: 2.0.2
       version: 2.0.2
     '@socketsecurity/sdk':
-      specifier: 4.0.0
-      version: 4.0.0
+      specifier: 4.0.1
+      version: 4.0.1
     '@types/adm-zip':
       specifier: 0.5.7
       version: 0.5.7
@@ -441,11 +441,11 @@ overrides:
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
   '@sigstore/sign': 4.1.0
-  '@socketsecurity/lib': 5.15.0
+  '@socketsecurity/lib': 5.18.2
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ansi-regex: 6.2.2
   brace-expansion: 5.0.5
-  defu: '>=6.1.6'
+  defu: '>=6.1.7'
   emoji-regex: 10.6.0
   es-define-property: npm:@socketregistry/es-define-property@^1.0.7
   es-set-tostringtag: npm:@socketregistry/es-set-tostringtag@^1.0.10
@@ -465,9 +465,9 @@ overrides:
   isarray: npm:@socketregistry/isarray@^1.0.8
   lodash: 4.17.21
   npm-package-arg: 13.0.0
-  packageurl-js: npm:@socketregistry/packageurl-js@^1.4.1
+  packageurl-js: npm:@socketregistry/packageurl-js@^1.4.2
   path-parse: npm:@socketregistry/path-parse@^1.0.8
-  qs: '>=6.15.0'
+  qs: '>=6.15.1'
   safe-buffer: npm:@socketregistry/safe-buffer@^1.0.9
   safer-buffer: npm:@socketregistry/safer-buffer@^1.0.10
   semver: 7.7.2
@@ -475,8 +475,8 @@ overrides:
   shell-quote: 1.8.3
   side-channel: npm:@socketregistry/side-channel@^1.0.10
   signal-exit: 4.1.0
-  string_decoder: 0.10.31
   string-width: 8.1.0
+  string_decoder: 0.10.31
   strip-ansi: 7.1.2
   tiny-colors: 2.1.3
   typedarray: npm:@socketregistry/typedarray@^1.0.8
@@ -575,7 +575,7 @@ importers:
         version: 1.0.6
       '@socketregistry/packageurl-js':
         specifier: 'catalog:'
-        version: 1.4.1
+        version: 1.4.2
       '@socketregistry/yocto-spinner':
         specifier: 'catalog:'
         version: 1.0.25
@@ -583,14 +583,14 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 5.15.0
-        version: 5.15.0(typescript@5.9.3)
+        specifier: 5.18.2
+        version: 5.18.2(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.2(typescript@5.9.3)
       '@socketsecurity/sdk':
         specifier: 'catalog:'
-        version: 4.0.0(typescript@5.9.3)
+        version: 4.0.1
       '@types/cmd-shim':
         specifier: 'catalog:'
         version: 5.0.2
@@ -766,8 +766,8 @@ importers:
         specifier: 'catalog:'
         version: 7.28.4
       '@socketsecurity/lib':
-        specifier: 5.15.0
-        version: 5.15.0(typescript@5.9.3)
+        specifier: 5.18.2
+        version: 5.18.2(typescript@5.9.3)
       magic-string:
         specifier: 'catalog:'
         version: 0.30.19
@@ -815,7 +815,7 @@ importers:
         version: 1.0.6
       '@socketregistry/packageurl-js':
         specifier: 'catalog:'
-        version: 1.4.1
+        version: 1.4.2
       '@socketregistry/yocto-spinner':
         specifier: 'catalog:'
         version: 1.0.25
@@ -823,14 +823,14 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 5.15.0
-        version: 5.15.0(typescript@5.9.3)
+        specifier: 5.18.2
+        version: 5.18.2(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.2(typescript@5.9.3)
       '@socketsecurity/sdk':
         specifier: 'catalog:'
-        version: 4.0.0(typescript@5.9.3)
+        version: 4.0.1
       '@types/adm-zip':
         specifier: 'catalog:'
         version: 0.5.7
@@ -943,8 +943,8 @@ importers:
   packages/package-builder:
     dependencies:
       '@socketsecurity/lib':
-        specifier: 5.15.0
-        version: 5.15.0(typescript@5.9.3)
+        specifier: 5.18.2
+        version: 5.18.2(typescript@5.9.3)
       build-infra:
         specifier: workspace:*
         version: link:../build-infra
@@ -2309,8 +2309,8 @@ packages:
     resolution: {integrity: sha512-kxHrDQ9YgfrWUSXU0cjsQGv8JykOFZQ9ErNKbFPWzk3Hgpwu8x2hHrQ9IdA8yl+j9RTLTC3sAF3Tdq1IQCP4oA==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
-  '@sigstore/protobuf-specs@0.5.0':
-    resolution: {integrity: sha512-MM8XIwUjN2bwvCg1QvrMtbBmpcSHrkhFSCu1D11NyPvDQ25HEc4oG5/OcQfd/Tlf/OxmKWERDj0zGE23jQaMwA==}
+  '@sigstore/protobuf-specs@0.5.1':
+    resolution: {integrity: sha512-/ScWUhhoFasJsSRGTVBwId1loQjjnjAfE4djL6ZhrXRpNCmPTnUKF5Jokd58ILseOMjzET3UrMOtJPS9sYeI0g==}
     engines: {node: ^18.17.0 || >=20.5.0}
 
   '@sigstore/sign@4.1.0':
@@ -2375,9 +2375,9 @@ packages:
     resolution: {integrity: sha512-DM81ydAjO2GJKkNf2Vn17InJ37sEYLK1YyhxpDX16OdbOpYlsDIw8QyeFEUZtc7GqsQXbcPKJmz3j/2qS+BhKQ==}
     engines: {node: '>=18'}
 
-  '@socketregistry/packageurl-js@1.4.1':
-    resolution: {integrity: sha512-t/UrOd1DMYXcGuKo2v07WMbuHCMlKBKOriTHu4cn9OIxfj1qWKoF/kpOswGHOWkG5zwj2Ke/2+qLiDugmx5z+A==}
-    engines: {node: '>=18.20.4', pnpm: '>=10.25.0'}
+  '@socketregistry/packageurl-js@1.4.2':
+    resolution: {integrity: sha512-yt9UfUzD02wZ7kwb67oe4jxG2D9JtgPqjrK/ans2BovFyeie0w8hvRR0MuOWM4mUt2371oFPp7NB6O5ZjYJmlw==}
+    engines: {node: '>=18.20.8', pnpm: '>=11.0.0-rc.0'}
 
   '@socketregistry/path-parse@1.0.8':
     resolution: {integrity: sha512-9dcT4Vj4TY6BsU7hd3sEemoaA8OEGUutK2ufNdP+qKOljcH0xy/5+WnbEZ1RLEJcSKDnpZ3T47mVdq/ZWiGNxw==}
@@ -2403,9 +2403,9 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/lib@5.15.0':
-    resolution: {integrity: sha512-+I7+lR0WBCXWgRxMTQx+N70azONVGr68ndi25pz53D6QLdIQ8gfBgOgC34opECXL9lPUqVCMYNr3XFS/bHABIQ==}
-    engines: {node: '>=22', pnpm: '>=10.25.0'}
+  '@socketsecurity/lib@5.18.2':
+    resolution: {integrity: sha512-h6aGfphQ9jdVjUMGIKJcsIvT6BmzBo0OD20HzeK+6KQJi2HupfCUzIH26vDPxf+aYVmrX0/hKJDYI5sXfTGx9A==}
+    engines: {node: '>=22', pnpm: '>=11.0.0-rc.0'}
     peerDependencies:
       typescript: '>=5.0.0'
     peerDependenciesMeta:
@@ -2421,9 +2421,9 @@ packages:
       typescript:
         optional: true
 
-  '@socketsecurity/sdk@4.0.0':
-    resolution: {integrity: sha512-e7MAVhjkeCMVoqYC8lmFk8GdwlNp8ZYTq9izkOrFf2ZZJMPaREC83lbk0xKTYIJKc09lxVhFLYLtDT/n4LgA4A==}
-    engines: {node: '>=18.20.8', pnpm: '>=10.33.0'}
+  '@socketsecurity/sdk@4.0.1':
+    resolution: {integrity: sha512-fe3DQp2dFwhc0G6Za36GIMSV+QaPAP5L96K3ZOtywt9nhbwxc9IQwqzdOVztdn5Rbez3t9EHU9Esj24/hWdP0g==}
+    engines: {node: '>=18.20.8', pnpm: '>=11.0.0-rc.0'}
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -2739,8 +2739,8 @@ packages:
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
-  baseline-browser-mapping@2.10.14:
-    resolution: {integrity: sha512-fOVLPAsFTsQfuCkvahZkzq6nf8KvGWanlYoTh0SVA0A/PIUxQGU2AOZAoD95n2gFLVDW/jP6sbGLny95nmEuHA==}
+  baseline-browser-mapping@2.10.16:
+    resolution: {integrity: sha512-Lyf3aK28zpsD1yQMiiHD4RvVb6UdMoo8xzG2XzFIfR9luPzOpcBlAsT/qfB1XWS1bxWT+UtE4WmQgsp297FYOA==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -2801,8 +2801,8 @@ packages:
     resolution: {integrity: sha512-Gmy6FhYlCY7uOElZUSbxo2UCDH8owEk996gkbrpsgGtrJLM3J7jGxl9Ic7Qwwj4ivOE5AWZWRMecDdF7hqGjFA==}
     engines: {node: '>=10'}
 
-  caniuse-lite@1.0.30001785:
-    resolution: {integrity: sha512-blhOL/WNR+Km1RI/LCVAvA73xplXA7ZbjzI4YkMK9pa6T/P3F2GxjNpEkyw5repTw9IvkyrjyHpwjnhZ5FOvYQ==}
+  caniuse-lite@1.0.30001786:
+    resolution: {integrity: sha512-4oxTZEvqmLLrERwxO76yfKM7acZo310U+v4kqexI2TL1DkkUEMT8UijrxxcnVdxR3qkVf5awGRX+4Z6aPHVKrA==}
 
   chai@6.2.2:
     resolution: {integrity: sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg==}
@@ -2971,8 +2971,8 @@ packages:
     resolution: {integrity: sha512-N+MeXYoqr3pOgn8xfyRPREN7gHakLYjhsHhWGT3fWAiL4IkAt0iDw14QiiEm2bE30c5XX5q0FtAA3CK5f9/BUg==}
     engines: {node: '>=12'}
 
-  defu@6.1.6:
-    resolution: {integrity: sha512-f8mefEW4WIVg4LckePx3mALjQSPQgFlg9U8yaPdlsbdYcHQyj9n2zL2LJEA52smeYxOvmd/nB7TpMtHGMTHcug==}
+  defu@6.1.7:
+    resolution: {integrity: sha512-7z22QmUWiQ/2d0KkdYmANbRUVABpZ9SNYyH5vx6PZ+nE5bcC0l7uFvEfHlyld/HcGBFTL536ClDt3DEcSlEJAQ==}
 
   del-cli@6.0.0:
     resolution: {integrity: sha512-9nitGV2W6KLFyya4qYt4+9AKQFL+c0Ehj5K7V7IwlxTc6RMCfQUGY9E9pLG6e8TQjtwXpuiWIGGZb3mfVxyZkw==}
@@ -2999,8 +2999,8 @@ packages:
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
     hasBin: true
 
-  dotenv@17.4.0:
-    resolution: {integrity: sha512-kCKF62fwtzwYm0IGBNjRUjtJgMfGapII+FslMHIjMR5KTnwEmBmWLDRSnc3XSNP8bNy34tekgQyDT0hr7pERRQ==}
+  dotenv@17.4.1:
+    resolution: {integrity: sha512-k8DaKGP6r1G30Lx8V4+pCsLzKr8vLmV2paqEj1Y55GdAgJuIqpRp5FfajGF8KtwMxCz9qJc6wUIJnm053d/WCw==}
     engines: {node: '>=12'}
 
   duplexer2@0.1.4:
@@ -3019,8 +3019,8 @@ packages:
     resolution: {integrity: sha512-/RInbCy1d4P6Zdfa+TMVsf/ufZVotat5hCw3QXmWtjU+3pFEOvOQ7ibo3aIxyCJw2leIeAMjmPj+1SLJiCpdrQ==}
     engines: {node: '>=12.0.0'}
 
-  electron-to-chromium@1.5.331:
-    resolution: {integrity: sha512-IbxXrsTlD3hRodkLnbxAPP4OuJYdWCeM3IOdT+CpcMoIwIoDfCmRpEtSPfwBXxVkg9xmBeY7Lz2Eo2TDn/HC3Q==}
+  electron-to-chromium@1.5.332:
+    resolution: {integrity: sha512-7OOtytmh/rINMLwaFTbcMVvYXO3AUm029X0LcyfYk0B557RlPkdpTpnH9+htMlfu5dKwOmT0+Zs2Aw+lnn6TeQ==}
 
   emoji-regex@10.6.0:
     resolution: {integrity: sha512-toUI84YS5YmxW219erniWD0CIVOo46xGKColeNQRgOzDorgBi1v4D71/OFzgD9GO2UGKIv1C3Sp8DAn0+j5w7A==}
@@ -3899,10 +3899,6 @@ packages:
     resolution: {integrity: sha512-V7+vQEJ06Z+c5tSye8S+nHUfI51xoXIXjHQ99cQtKUkQqqO1kO/KCJUfZXuB47h/YBlDhah2H3hdUGXn8ie0oA==}
     engines: {node: '>=8.6'}
 
-  picomatch@4.0.3:
-    resolution: {integrity: sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q==}
-    engines: {node: '>=12'}
-
   picomatch@4.0.4:
     resolution: {integrity: sha512-QP88BAKvMam/3NxH6vj2o21R6MjxZUAd6nlwAS/pnGvN9IVLocLHxGYIzFhg6fUQ+5th6P4dv4eW9jX3DSIj7A==}
     engines: {node: '>=12'}
@@ -3938,8 +3934,8 @@ packages:
     resolution: {integrity: sha512-orRsuYpJVw8LdAwqqLykBj9ecS5/cRHlI5+nvTo8LcCKmzDmqVORXtOIYEEQuL9D4BxtA1lm5isAqzQZCoQ6Eg==}
     engines: {node: '>=4'}
 
-  postcss@8.5.8:
-    resolution: {integrity: sha512-OW/rX8O/jXnm82Ey1k44pObPtdblfiuWnrd8X7GJ7emImCOstunGbXUpp7HdBrFQX6rJzn3sPT397Wp5aCwCHg==}
+  postcss@8.5.9:
+    resolution: {integrity: sha512-7a70Nsot+EMX9fFU3064K/kdHWZqGVY+BADLyXc8Dfv+mTLLVl6JzJpPaCZ2kQL9gIJvKXSLMHhqdRRjwQeFtw==}
     engines: {node: ^10 || ^12 || >=14}
 
   postject@1.0.0-alpha.6:
@@ -3996,8 +3992,8 @@ packages:
   pump@3.0.4:
     resolution: {integrity: sha512-VS7sjc6KR7e1ukRFhQSY5LM2uBWAUPiOPa/A3mkKmiMwSmRFUITt0xuj+/lesgnCv+dPIEYlkzrcyXgquIHMcA==}
 
-  qs@6.15.0:
-    resolution: {integrity: sha512-mAZTtNCeetKMH+pSjrb76NAM8V9a05I9aBZOHztWy/UqcJdQYNsf59vrRKWnojAT9Y+GbIvoTBC++CPHqpDBhQ==}
+  qs@6.15.1:
+    resolution: {integrity: sha512-6YHEFRL9mfgcAvql/XhwTvf5jKcOiiupt2FiJxHkiX1z4j7WL8J/jRHYLluORvc1XxB5rV20KoeK00gVJamspg==}
     engines: {node: '>=0.6'}
 
   quansync@1.0.0:
@@ -4304,12 +4300,12 @@ packages:
   tinyexec@0.3.2:
     resolution: {integrity: sha512-KQQR9yN7R5+OSwaK0XQoj22pwHoTlgYqmUscPYoknOoWCWfj/5/ABTMRi69FrKU5ffPVh5QcFikpWJI/P1ocHA==}
 
-  tinyexec@1.0.4:
-    resolution: {integrity: sha512-u9r3uZC0bdpGOXtlxUIdwf9pkmvhqJdrVCH9fapQtgy/OeTTMZ1nqH7agtvEfmGui6e1XxjcdrlxvxJvc3sMqw==}
+  tinyexec@1.1.1:
+    resolution: {integrity: sha512-VKS/ZaQhhkKFMANmAOhhXVoIfBXblQxGX1myCQ2faQrfmobMftXeJPcZGp0gS07ocvGJWDLZGyOZDadDBqYIJg==}
     engines: {node: '>=18'}
 
-  tinyglobby@0.2.15:
-    resolution: {integrity: sha512-j2Zq4NyQYG5XMST4cbs02Ak8iJUdxRM0XI5QyxXuZOzKOINmWurp3smXu3y5wDcJrptwpSjgXHzIQxR0omXljQ==}
+  tinyglobby@0.2.16:
+    resolution: {integrity: sha512-pn99VhoACYR8nFHhxqix+uvsbXineAasWm5ojXoN8xEwK5Kd3/TrhNn1wByuD52UxWRLy8pu+kRMniEi6Eq9Zg==}
     engines: {node: '>=12.0.0'}
 
   tinypool@2.1.0:
@@ -4641,8 +4637,8 @@ snapshots:
       ansis: 4.2.0
       fzf: 0.5.2
       package-manager-detector: 1.6.0
-      tinyexec: 1.0.4
-      tinyglobby: 0.2.15
+      tinyexec: 1.1.1
+      tinyglobby: 0.2.16
 
   '@anthropic-ai/claude-code@2.1.98':
     optionalDependencies:
@@ -4964,7 +4960,7 @@ snapshots:
   '@dotenvx/dotenvx@1.49.0':
     dependencies:
       commander: 11.1.0
-      dotenv: 17.4.0
+      dotenv: 17.4.1
       eciesjs: 0.4.18
       execa: 5.1.1(patch_hash=ee0e2217eadd7986ec585d2e684030a05ad958593a9b11affa002a14a5d46f77)
       fdir: 6.5.0(picomatch@4.0.4)
@@ -5140,13 +5136,13 @@ snapshots:
   '@gitbeaker/core@43.8.0':
     dependencies:
       '@gitbeaker/requester-utils': 43.8.0
-      qs: 6.15.0
+      qs: 6.15.1
       xcase: 2.0.1
 
   '@gitbeaker/requester-utils@43.8.0':
     dependencies:
       picomatch-browser: 2.2.6
-      qs: 6.15.0
+      qs: 6.15.1
       rate-limiter-flexible: 8.3.0
       xcase: 2.0.1
 
@@ -5832,17 +5828,17 @@ snapshots:
 
   '@sigstore/bundle@4.0.0':
     dependencies:
-      '@sigstore/protobuf-specs': 0.5.0
+      '@sigstore/protobuf-specs': 0.5.1
 
   '@sigstore/core@3.2.0': {}
 
-  '@sigstore/protobuf-specs@0.5.0': {}
+  '@sigstore/protobuf-specs@0.5.1': {}
 
   '@sigstore/sign@4.1.0(patch_hash=cdf99454490d44e78fde33563611c0bf50da7f256a239c94d3eb7af6c7d205fa)':
     dependencies:
       '@sigstore/bundle': 4.0.0
       '@sigstore/core': 3.2.0
-      '@sigstore/protobuf-specs': 0.5.0
+      '@sigstore/protobuf-specs': 0.5.1
       make-fetch-happen: 15.0.5
       proc-log: 6.1.0
       promise-retry: 2.0.1
@@ -5851,7 +5847,7 @@ snapshots:
 
   '@sigstore/tuf@4.0.2':
     dependencies:
-      '@sigstore/protobuf-specs': 0.5.0
+      '@sigstore/protobuf-specs': 0.5.1
       tuf-js: 4.1.0
     transitivePeerDependencies:
       - supports-color
@@ -5860,7 +5856,7 @@ snapshots:
     dependencies:
       '@sigstore/bundle': 4.0.0
       '@sigstore/core': 3.2.0
-      '@sigstore/protobuf-specs': 0.5.0
+      '@sigstore/protobuf-specs': 0.5.1
 
   '@sindresorhus/chunkify@2.0.0': {}
 
@@ -5888,9 +5884,7 @@ snapshots:
 
   '@socketregistry/isarray@1.0.8': {}
 
-  '@socketregistry/packageurl-js@1.4.1':
-    dependencies:
-      picomatch: 4.0.3
+  '@socketregistry/packageurl-js@1.4.2': {}
 
   '@socketregistry/path-parse@1.0.8': {}
 
@@ -5911,7 +5905,7 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/lib@5.15.0(typescript@5.9.3)':
+  '@socketsecurity/lib@5.18.2(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 
@@ -5919,12 +5913,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  '@socketsecurity/sdk@4.0.0(typescript@5.9.3)':
-    dependencies:
-      '@socketsecurity/lib': 5.15.0(typescript@5.9.3)
-      form-data: 4.0.5
-    transitivePeerDependencies:
-      - typescript
+  '@socketsecurity/sdk@4.0.1': {}
 
   '@standard-schema/spec@1.1.0': {}
 
@@ -6125,7 +6114,7 @@ snapshots:
       resolve: 1.22.11
       stream-meter: 1.0.4
       tar: 7.5.13
-      tinyglobby: 0.2.15
+      tinyglobby: 0.2.16
       unzipper: 0.12.3
     transitivePeerDependencies:
       - bare-abort-controller
@@ -6273,7 +6262,7 @@ snapshots:
 
   base64-js@1.5.1: {}
 
-  baseline-browser-mapping@2.10.14: {}
+  baseline-browser-mapping@2.10.16: {}
 
   before-after-hook@4.0.0: {}
 
@@ -6308,16 +6297,16 @@ snapshots:
 
   browserslist@4.25.4:
     dependencies:
-      caniuse-lite: 1.0.30001785
-      electron-to-chromium: 1.5.331
+      caniuse-lite: 1.0.30001786
+      electron-to-chromium: 1.5.332
       node-releases: 2.0.37
       update-browserslist-db: 1.2.3(browserslist@4.25.4)
 
   browserslist@4.28.2:
     dependencies:
-      baseline-browser-mapping: 2.10.14
-      caniuse-lite: 1.0.30001785
-      electron-to-chromium: 1.5.331
+      baseline-browser-mapping: 2.10.16
+      caniuse-lite: 1.0.30001786
+      electron-to-chromium: 1.5.332
       node-releases: 2.0.37
       update-browserslist-db: 1.2.3(browserslist@4.28.2)
 
@@ -6354,7 +6343,7 @@ snapshots:
 
   camelcase@6.3.0: {}
 
-  caniuse-lite@1.0.30001785: {}
+  caniuse-lite@1.0.30001786: {}
 
   chai@6.2.2: {}
 
@@ -6493,7 +6482,7 @@ snapshots:
 
   define-lazy-prop@3.0.0: {}
 
-  defu@6.1.6: {}
+  defu@6.1.7: {}
 
   del-cli@6.0.0:
     dependencies:
@@ -6521,7 +6510,7 @@ snapshots:
       meow: 10.1.5
       noop-stream: 1.0.0
 
-  dotenv@17.4.0: {}
+  dotenv@17.4.1: {}
 
   duplexer2@0.1.4:
     dependencies:
@@ -6547,7 +6536,7 @@ snapshots:
 
   efrt@2.7.0: {}
 
-  electron-to-chromium@1.5.331: {}
+  electron-to-chromium@1.5.332: {}
 
   emoji-regex@10.6.0: {}
 
@@ -7231,7 +7220,7 @@ snapshots:
       proc-log: 6.1.0
       semver: 7.7.2
       tar: 7.5.13
-      tinyglobby: 0.2.15
+      tinyglobby: 0.2.16
       which: 6.0.1
     transitivePeerDependencies:
       - supports-color
@@ -7484,8 +7473,6 @@ snapshots:
 
   picomatch@2.3.2: {}
 
-  picomatch@4.0.3: {}
-
   picomatch@4.0.4: {}
 
   pidtree@0.6.0: {}
@@ -7515,7 +7502,7 @@ snapshots:
       cssesc: 3.0.0
       util-deprecate: 1.0.2
 
-  postcss@8.5.8:
+  postcss@8.5.9:
     dependencies:
       nanoid: 3.3.11
       picocolors: 1.1.1
@@ -7570,7 +7557,7 @@ snapshots:
       end-of-stream: 1.4.5
       once: 1.4.0
 
-  qs@6.15.0:
+  qs@6.15.1:
     dependencies:
       side-channel: '@socketregistry/side-channel@1.0.10'
 
@@ -7721,7 +7708,7 @@ snapshots:
     dependencies:
       '@sigstore/bundle': 4.0.0
       '@sigstore/core': 3.2.0
-      '@sigstore/protobuf-specs': 0.5.0
+      '@sigstore/protobuf-specs': 0.5.1
       '@sigstore/sign': 4.1.0(patch_hash=cdf99454490d44e78fde33563611c0bf50da7f256a239c94d3eb7af6c7d205fa)
       '@sigstore/tuf': 4.0.2
       '@sigstore/verify': 3.1.0
@@ -7928,8 +7915,8 @@ snapshots:
       pathe: 2.0.3
       pnpm-workspace-yaml: 1.6.0
       restore-cursor: 5.1.0
-      tinyexec: 1.0.4
-      tinyglobby: 0.2.15
+      tinyexec: 1.1.1
+      tinyglobby: 0.2.16
       unconfig: 7.5.0
       yaml: 2.8.1
 
@@ -7959,9 +7946,9 @@ snapshots:
 
   tinyexec@0.3.2: {}
 
-  tinyexec@1.0.4: {}
+  tinyexec@1.1.1: {}
 
-  tinyglobby@0.2.15:
+  tinyglobby@0.2.16:
     dependencies:
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
@@ -8047,7 +8034,7 @@ snapshots:
   unconfig@7.5.0:
     dependencies:
       '@quansync/fs': 1.0.0
-      defu: 6.1.6
+      defu: 6.1.7
       jiti: 2.6.1
       quansync: 1.0.0
       unconfig-core: 7.5.0
@@ -8066,7 +8053,7 @@ snapshots:
 
   unplugin-purge-polyfills@0.1.0:
     dependencies:
-      defu: 6.1.6
+      defu: 6.1.7
       magic-string: 0.30.19
       mlly: 1.8.2
       unplugin: 2.3.11
@@ -8116,9 +8103,9 @@ snapshots:
       esbuild: 0.27.7
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
-      postcss: 8.5.8
+      postcss: 8.5.9
       rollup: 4.60.1
-      tinyglobby: 0.2.15
+      tinyglobby: 0.2.16
     optionalDependencies:
       '@types/node': 24.9.2
       fsevents: 2.3.3
@@ -8143,7 +8130,7 @@ snapshots:
       std-env: 3.10.0
       tinybench: 2.9.0
       tinyexec: 0.3.2
-      tinyglobby: 0.2.15
+      tinyglobby: 0.2.16
       tinyrainbow: 3.1.0
       vite: 7.3.2(@types/node@24.9.2)(jiti@2.6.1)(yaml@2.8.1)
       why-is-node-running: 2.3.0
