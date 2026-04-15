@@ -1,18 +1,12 @@
 ---
 name: security-scan
 description: Runs a multi-tool security scan — AgentShield for Claude config, zizmor for GitHub Actions, and optionally Socket CLI for dependency scanning. Produces an A-F graded security report.
+user-invocable: true
 ---
 
 # Security Scan
 
 Multi-tool security scanning pipeline for the repository.
-
-## Related: check-new-deps Hook
-
-This repo includes a pre-tool hook (`.claude/hooks/check-new-deps/`) that automatically
-checks new dependencies against Socket.dev's malware API before Claude adds them.
-The hook runs on every Edit/Write to manifest files — see its README for details.
-This skill covers broader security scanning; the hook provides real-time dependency protection.
 
 ## When to Use
 
