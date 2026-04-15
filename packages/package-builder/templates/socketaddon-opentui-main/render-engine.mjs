@@ -437,19 +437,41 @@ function drawTree(tree, native, bufPtr, offsetX, offsetY, parentFg, parentBg) {
       }
     }
   } else if (element.type === 'MixedText') {
+    // Draw all sections as a single contiguous span by concatenating
+    // text and drawing it as one bufferDrawText call, then overwriting
+    // per-character colors/attributes with bufferSetCell for sections
+    // that differ from the first section's style.
     const contents = element.mixed_text_contents || []
-    let curX = x
+    if (contents.length === 0) return
     const defaultBg = elemBg || TRANSPARENT
 
+    // First pass: draw the full concatenated text with the first section's style.
+    let fullText = ''
     for (let i = 0, len = contents.length; i < len; i += 1) {
+      fullText += contents[i].text || ''
+    }
+    if (fullText.length === 0) return
+
+    const firstFg = parseColor(contents[0].color) || elemFg || WHITE
+    const firstAttrs = buildSectionAttributes(contents[0])
+    native.bufferDrawText(bufPtr, fullText, x, y,
+      firstFg[0], firstFg[1], firstFg[2], firstFg[3],
+      defaultBg[0], defaultBg[1], defaultBg[2], defaultBg[3], firstAttrs)
+
+    // Second pass: overwrite cells for sections with different styles.
+    let curX = x + (contents[0].text || '').length
+    for (let i = 1, len = contents.length; i < len; i += 1) {
       const section = contents[i]
       const text = section.text || ''
       if (text.length === 0) continue
       const fg = parseColor(section.color) || elemFg || WHITE
       const attrs = buildSectionAttributes(section)
-      native.bufferDrawText(bufPtr, text, curX, y,
-        fg[0], fg[1], fg[2], fg[3],
-        defaultBg[0], defaultBg[1], defaultBg[2], defaultBg[3], attrs)
+      // Only overwrite if style differs from first section.
+      for (let j = 0, tlen = text.length; j < tlen; j += 1) {
+        native.bufferSetCell(bufPtr, curX + j, y, text.codePointAt(j),
+          fg[0], fg[1], fg[2], fg[3],
+          defaultBg[0], defaultBg[1], defaultBg[2], defaultBg[3], attrs)
+      }
       curX += text.length
     }
   }
@@ -525,6 +547,122 @@ function drawBorder(native, bufPtr, x, y, w, h, element, bg) {
 }
 
 // ---------------------------------------------------------------------------
+// Buffer-to-ANSI serializer
+// ---------------------------------------------------------------------------
+
+/**
+ * Read the buffer's raw cell data and produce a plain-text string.
+ * This matches iocraft's renderToString behavior which returns
+ * unformatted text without ANSI escape codes.
+ */
+function serializeBufferPlain(native, bufPtr, width, height) {
+  const chars = new Uint32Array(native.bufferGetCharArrayBuffer(bufPtr))
+  const lines = []
+
+  for (let row = 0; row < height; row += 1) {
+    let line = ''
+    // Track last non-space column for trimming trailing spaces.
+    let lastNonSpace = -1
+    for (let col = 0; col < width; col += 1) {
+      const idx = row * width + col
+      if (chars[idx] !== 32) lastNonSpace = col
+    }
+
+    for (let col = 0; col <= lastNonSpace; col += 1) {
+      const idx = row * width + col
+      line += String.fromCodePoint(chars[idx])
+    }
+
+    lines.push(line)
+  }
+
+  // Trim trailing empty lines.
+  while (lines.length > 0 && lines[lines.length - 1] === '') {
+    lines.pop()
+  }
+
+  return lines.join('\n') + '\n'
+}
+
+/**
+ * Read the buffer's raw cell data and produce an ANSI-colored string.
+ * Used by printComponent/eprintComponent for terminal output with colors.
+ */
+function serializeBufferAnsi(native, bufPtr, width, height) {
+  const chars = new Uint32Array(native.bufferGetCharArrayBuffer(bufPtr))
+  const fgData = new Float32Array(native.bufferGetFgArrayBuffer(bufPtr))
+  const bgData = new Float32Array(native.bufferGetBgArrayBuffer(bufPtr))
+  const attrData = new Uint32Array(native.bufferGetAttributesArrayBuffer(bufPtr))
+
+  const lines = []
+  let prevFg = ''
+  let prevBg = ''
+  let prevAttr = 0
+
+  for (let row = 0; row < height; row += 1) {
+    let line = ''
+    let lastNonSpace = -1
+    for (let col = 0; col < width; col += 1) {
+      const idx = row * width + col
+      if (chars[idx] !== 32) lastNonSpace = col
+    }
+
+    for (let col = 0; col <= lastNonSpace; col += 1) {
+      const idx = row * width + col
+      const ch = chars[idx]
+      const fgIdx = idx * 4
+      const fgR = Math.round(fgData[fgIdx] * 255)
+      const fgG = Math.round(fgData[fgIdx + 1] * 255)
+      const fgB = Math.round(fgData[fgIdx + 2] * 255)
+      const bgR = Math.round(bgData[fgIdx] * 255)
+      const bgG = Math.round(bgData[fgIdx + 1] * 255)
+      const bgB = Math.round(bgData[fgIdx + 2] * 255)
+      const attr = attrData[idx] & 0xFF
+
+      const fgKey = `${fgR};${fgG};${fgB}`
+      const bgKey = `${bgR};${bgG};${bgB}`
+
+      const parts = []
+      if (attr !== prevAttr) {
+        const removed = prevAttr & ~attr
+        if (removed) {
+          parts.push('\x1b[0m')
+          prevFg = ''
+          prevBg = ''
+        }
+        if (attr & TEXT_ATTR_BOLD && !(prevAttr & TEXT_ATTR_BOLD)) parts.push('\x1b[1m')
+        if (attr & TEXT_ATTR_DIM && !(prevAttr & TEXT_ATTR_DIM)) parts.push('\x1b[2m')
+        if (attr & TEXT_ATTR_ITALIC && !(prevAttr & TEXT_ATTR_ITALIC)) parts.push('\x1b[3m')
+        if (attr & TEXT_ATTR_UNDERLINE && !(prevAttr & TEXT_ATTR_UNDERLINE)) parts.push('\x1b[4m')
+        if (attr & TEXT_ATTR_STRIKETHROUGH && !(prevAttr & TEXT_ATTR_STRIKETHROUGH)) parts.push('\x1b[9m')
+        prevAttr = attr
+      }
+      if (fgKey !== prevFg) {
+        parts.push(`\x1b[38;2;${fgR};${fgG};${fgB}m`)
+        prevFg = fgKey
+      }
+      if (bgKey !== prevBg && !(bgR === 0 && bgG === 0 && bgB === 0)) {
+        parts.push(`\x1b[48;2;${bgR};${bgG};${bgB}m`)
+        prevBg = bgKey
+      }
+
+      line += parts.join('') + String.fromCodePoint(ch)
+    }
+
+    lines.push(line)
+    prevFg = ''
+    prevBg = ''
+    prevAttr = 0
+  }
+
+  while (lines.length > 0 && lines[lines.length - 1] === '') {
+    lines.pop()
+  }
+
+  return lines.join('\n') + '\x1b[0m\n'
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -558,40 +696,42 @@ export function createRenderEngine(native) {
       return ''
     }
 
-    // Create opentui renderer in testing mode + buffer.
-    const rendererPtr = native.createRenderer(totalWidth, totalHeight, true, false)
-    const bufPtr = native.getNextBuffer(rendererPtr)
+    // Create opentui buffer for drawing.
+    const bufPtr = native.createOptimizedBuffer(totalWidth, totalHeight, false, 0, 'render')
 
-    // Clear buffer (requires background color args).
+    // Clear buffer.
     native.bufferClear(bufPtr, 0, 0, 0, 1)
 
     // Draw the element tree into the buffer.
     drawTree(tree, native, bufPtr, 0, 0, WHITE, TRANSPARENT)
 
-    // Render and extract ANSI string.
-    native.render(rendererPtr, true)
-    const rawOutput = native.getLastOutputForTest(rendererPtr)
+    // Serialize buffer cells.
+    const plainOutput = serializeBufferPlain(native, bufPtr, totalWidth, totalHeight)
+    const ansiOutput = serializeBufferAnsi(native, bufPtr, totalWidth, totalHeight)
 
     // Cleanup.
-    native.destroyRenderer(rendererPtr)
+    native.destroyOptimizedBuffer(bufPtr)
     tree.node.freeRecursive()
 
-    // Strip cursor positioning and terminal mode sequences, keeping
-    // only text content and ANSI SGR (color/style) codes.
-    return stripCursorControls(rawOutput)
+    return { ansi: ansiOutput, plain: plainOutput }
   }
 
   function renderToString(element) {
-    return renderToStringWithWidth(element, undefined)
+    const result = renderToStringWithWidth(element, undefined)
+    return typeof result === 'string' ? result : result.plain
   }
 
   function printComponent(element) {
-    const output = renderToString(element)
+    const result = renderToStringWithWidth(element, undefined)
+    if (!result) return
+    const output = typeof result === 'string' ? result : result.ansi
     if (output) process.stdout.write(output)
   }
 
   function eprintComponent(element) {
-    const output = renderToString(element)
+    const result = renderToStringWithWidth(element, undefined)
+    if (!result) return
+    const output = typeof result === 'string' ? result : result.ansi
     if (output) process.stderr.write(output)
   }
 

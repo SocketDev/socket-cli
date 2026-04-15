@@ -3,14 +3,13 @@
 exports[`ThreatFeedRenderer > data rendering > should render threat feed table with multiple threats 1`] = `
 "Socket Threat Feed
 
-┌─────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                                                                                     │
-│ Ecosystem       Name                           Version         Type                 Detected        │
-│                                                                                                     │
-│ npm             malicious-pkg                  1.0.0           malware              test-date       │
-│ npm             suspicious-lib                 2.1.0           obfuscation          test-date       │
-│                                                                                                     │
-└─────────────────────────────────────────────────────────────────────────────────────────────────────┘
-
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                                                                              │
+│ Ecosystem       Name                           Version         Type          │
+│                                                                              │
+│ npm             malicious-pkg                  1.0.0           malware       │
+│ npm             suspicious-lib                 2.1.0           obfuscation   │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
 "
 `;
