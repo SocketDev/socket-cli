@@ -33,7 +33,6 @@
     "type:all": "node scripts/type.mjs",
     "// Testing": "",
     "test": "node scripts/test-monorepo.mjs",
-    "typecheck": "tsgo --noEmit",
     "test:all": "node scripts/test-monorepo.mjs --all",
     "test:unit": "pnpm --filter @socketsecurity/cli run test:unit",
     "pretest:all": "pnpm run build",
