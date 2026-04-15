@@ -6,7 +6,7 @@
     "suspicious": "error"
   },
   "rules": {
-    "eslint/curly": "off",
+    "eslint/curly": ["error", "all"],
     "eslint/no-await-in-loop": "off",
     "eslint/no-console": "off",
     "eslint/no-control-regex": "off",

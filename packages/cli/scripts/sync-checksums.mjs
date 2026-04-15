@@ -17,7 +17,12 @@
  */
 
 import { createHash } from 'node:crypto'
-import { createReadStream, existsSync, readFileSync, promises as fs } from 'node:fs'
+import {
+  createReadStream,
+  existsSync,
+  readFileSync,
+  promises as fs,
+} from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -48,7 +53,9 @@ function parseChecksums(content) {
   const checksums = {}
   for (const line of content.split('\n')) {
     const trimmed = line.trim()
-    if (!trimmed) continue
+    if (!trimmed) {
+      continue
+    }
     // Format: hash  filename (two spaces or whitespace between)
     const match = trimmed.match(/^([a-f0-9]{64})\s+(.+)$/)
     if (match) {
@@ -64,7 +71,7 @@ function parseChecksums(content) {
 async function downloadFile(url, destPath) {
   const response = await fetch(url, {
     headers: {
-      'Accept': 'application/octet-stream',
+      Accept: 'application/octet-stream',
       'User-Agent': 'socket-cli-sync-checksums',
     },
     redirect: 'follow',
@@ -87,7 +94,11 @@ async function downloadFile(url, destPath) {
  * Fetch checksums for a GitHub release.
  * First tries checksums.txt, then falls back to downloading assets.
  */
-async function fetchGitHubReleaseChecksums(repo, releaseTag, existingChecksums = {}) {
+async function fetchGitHubReleaseChecksums(
+  repo,
+  releaseTag,
+  existingChecksums = {},
+) {
   const [owner, repoName] = repo.split('/')
   const apiUrl = `https://api.github.com/repos/${owner}/${repoName}/releases/tags/${releaseTag}`
 
@@ -95,13 +106,15 @@ async function fetchGitHubReleaseChecksums(repo, releaseTag, existingChecksums =
 
   const response = await fetch(apiUrl, {
     headers: {
-      'Accept': 'application/vnd.github.v3+json',
+      Accept: 'application/vnd.github.v3+json',
       'User-Agent': 'socket-cli-sync-checksums',
     },
   })
 
   if (!response.ok) {
-    throw new Error(`GitHub API error: ${response.status} ${response.statusText}`)
+    throw new Error(
+      `GitHub API error: ${response.status} ${response.statusText}`,
+    )
   }
 
   const release = await response.json()
@@ -111,7 +124,9 @@ async function fetchGitHubReleaseChecksums(repo, releaseTag, existingChecksums =
   const checksumsAsset = assets.find(a => a.name === 'checksums.txt')
   if (checksumsAsset) {
     console.log(`  Found checksums.txt, downloading...`)
-    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'socket-checksums-'))
+    const tempDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'socket-checksums-'),
+    )
     const checksumPath = path.join(tempDir, 'checksums.txt')
 
     try {
@@ -122,7 +137,9 @@ async function fetchGitHubReleaseChecksums(repo, releaseTag, existingChecksums =
       // Clean up.
       await fs.rm(tempDir, { recursive: true })
 
-      console.log(`  Parsed ${Object.keys(checksums).length} checksums from checksums.txt`)
+      console.log(
+        `  Parsed ${Object.keys(checksums).length} checksums from checksums.txt`,
+      )
       return checksums
     } catch (error) {
       console.log(`  Failed to download checksums.txt: ${error.message}`)
@@ -139,7 +156,9 @@ async function fetchGitHubReleaseChecksums(repo, releaseTag, existingChecksums =
     return {}
   }
 
-  console.log(`  No checksums.txt found, downloading ${assetNames.length} assets to compute checksums...`)
+  console.log(
+    `  No checksums.txt found, downloading ${assetNames.length} assets to compute checksums...`,
+  )
 
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'socket-checksums-'))
   const checksums = {}
@@ -192,7 +211,9 @@ async function main() {
   // Find all GitHub-released tools.
   const githubTools = Object.entries(externalTools)
     .filter(([key, value]) => {
-      if (key.startsWith('$')) return false // Skip schema keys
+      if (key.startsWith('$')) {
+        return false
+      } // Skip schema keys
       return value.release === 'asset'
     })
     .map(([key, value]) => ({ key, ...value }))
@@ -200,8 +221,12 @@ async function main() {
   if (toolFilter) {
     const filtered = githubTools.filter(t => t.key === toolFilter)
     if (filtered.length === 0) {
-      console.error(`Error: Tool '${toolFilter}' not found or is not a GitHub release tool`)
-      console.log(`Available GitHub release tools: ${githubTools.map(t => t.key).join(', ')}`)
+      console.error(
+        `Error: Tool '${toolFilter}' not found or is not a GitHub release tool`,
+      )
+      console.log(
+        `Available GitHub release tools: ${githubTools.map(t => t.key).join(', ')}`,
+      )
       process.exitCode = 1
       return
     }
@@ -209,7 +234,9 @@ async function main() {
     githubTools.push(...filtered)
   }
 
-  console.log(`Syncing checksums for ${githubTools.length} GitHub release tool(s)...\n`)
+  console.log(
+    `Syncing checksums for ${githubTools.length} GitHub release tool(s)...\n`,
+  )
 
   let updated = 0
   let unchanged = 0
@@ -235,10 +262,13 @@ async function main() {
 
       // Check if update is needed.
       const oldChecksums = tool.checksums || {}
-      const checksumChanged = JSON.stringify(newChecksums) !== JSON.stringify(oldChecksums)
+      const checksumChanged =
+        JSON.stringify(newChecksums) !== JSON.stringify(oldChecksums)
 
       if (!force && !checksumChanged) {
-        console.log(`  Unchanged: ${Object.keys(newChecksums).length} checksums\n`)
+        console.log(
+          `  Unchanged: ${Object.keys(newChecksums).length} checksums\n`,
+        )
         unchanged++
         continue
       }
@@ -269,7 +299,9 @@ async function main() {
   }
 
   // Summary.
-  console.log(`\nSummary: ${updated} updated, ${unchanged} unchanged, ${failed} failed`)
+  console.log(
+    `\nSummary: ${updated} updated, ${unchanged} unchanged, ${failed} failed`,
+  )
 
   if (failed > 0) {
     process.exitCode = 1

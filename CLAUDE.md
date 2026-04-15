@@ -68,9 +68,7 @@ If user repeats instruction 2+ times, ask: "Should I add this to CLAUDE.md?"
 
 ## SHARED STANDARDS
 
-**Canonical reference**: `../socket-registry/CLAUDE.md`
 
-All shared standards (git, testing, code style, cross-platform, CI) defined in socket-registry/CLAUDE.md.
 
 - Commits: [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) `<type>(<scope>): <description>` -- NO AI attribution
 - Scripts: Prefer `pnpm run foo --flag` over `foo:bar` scripts
