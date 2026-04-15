@@ -136,3 +136,4 @@ packages/socket/*.png
 !docs/build/
 !packages/package-builder/templates/**/*.d.ts
 !src/types/**/*.d.ts
+!packages/*/src/types/**/*.d.ts

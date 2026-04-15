@@ -13,7 +13,7 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
 const traverse =
-  typeof traverseImport === 'function' ? traverseImport : traverseImport.default
+  typeof traverseImport === 'function' ? traverseImport : (traverseImport as any).default
 
 /**
  * Map of Unicode property escapes to explicit character ranges.
@@ -140,7 +140,7 @@ export const unicodePropertyMap = {
 /**
  * Check if a regex pattern has unsupported Unicode features.
  */
-function hasUnsupportedUnicodeFeatures(pattern) {
+function hasUnsupportedUnicodeFeatures(pattern: string) {
   // Check for \u{} escapes (require /u flag).
   if (/\\u\{[0-9a-fA-F]+\}/.test(pattern)) {
     return true
@@ -155,7 +155,7 @@ function hasUnsupportedUnicodeFeatures(pattern) {
 /**
  * Transform a regex pattern by replacing \p{Property} with character classes.
  */
-function transformRegexPattern(pattern) {
+function transformRegexPattern(pattern: string) {
   let transformed = pattern
 
   // Replace \p{Property} with character class equivalents.
@@ -176,7 +176,7 @@ function transformRegexPattern(pattern) {
  * When we get a pattern from Babel's StringLiteral.value, backslashes are interpreted.
  * But when writing back into source code, we need to re-escape them.
  */
-function escapeForStringLiteral(str) {
+function escapeForStringLiteral(str: string) {
   return (
     str
       // Backslash must be doubled.
@@ -196,7 +196,7 @@ function escapeForStringLiteral(str) {
  * @param {string} content - Source code to transform
  * @returns {string} Transformed source code
  */
-export function transformUnicodePropertyEscapes(content) {
+export function transformUnicodePropertyEscapes(content: string) {
   let ast
   try {
     ast = parse(content, {
@@ -205,14 +205,14 @@ export function transformUnicodePropertyEscapes(content) {
     })
   } catch (e) {
     // If parsing fails, return content unchanged.
-    logger.warn('Failed to parse code for Unicode transform:', e.message)
+    logger.warn('Failed to parse code for Unicode transform:', e instanceof Error ? e.message : e)
     return content
   }
 
   const s = new MagicString(content)
 
   traverse(ast, {
-    RegExpLiteral(path) {
+    RegExpLiteral(path: any) {
       const { node } = path
       const { flags, pattern } = node
       const { end, start } = node
@@ -280,7 +280,7 @@ export function transformUnicodePropertyEscapes(content) {
       }
     },
 
-    NewExpression(path) {
+    NewExpression(path: any) {
       const { node } = path
 
       // Check if this is a RegExp constructor.

@@ -5,7 +5,7 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import type { BuildOptions, PluginBuild, BuildResult } from 'esbuild'
 
 import { build } from 'esbuild'
 
@@ -15,9 +15,6 @@ import { EnvironmentVariables } from './environment-variables.mts'
 
 const logger = getDefaultLogger()
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootPath = path.join(__dirname, '..')
-
 /**
  * Create a standard index loader config.
  * @param {Object} options - Configuration options
@@ -26,11 +23,11 @@ const rootPath = path.join(__dirname, '..')
  * @param {boolean} [options.minify=false] - Whether to minify output
  * @returns {Object} esbuild configuration object
  */
-export function createIndexConfig({ entryPoint, minify = false, outfile }) {
+export function createIndexConfig({ entryPoint, minify = false, outfile }: { entryPoint: string; minify?: boolean; outfile: string }) {
   // Get inlined environment variables for build-time constant replacement.
   const inlinedEnvVars = getInlinedEnvVars()
 
-  const config = {
+  const config: BuildOptions = {
     banner: {
       js: '#!/usr/bin/env node',
     },
@@ -67,8 +64,8 @@ export function createIndexConfig({ entryPoint, minify = false, outfile }) {
  * Helper to create both dot and bracket notation define keys.
  * This ensures esbuild can replace both forms of process.env access.
  */
-export function createDefineEntries(envVars) {
-  const entries = {}
+export function createDefineEntries(envVars: Record<string, string>) {
+  const entries: Record<string, string> = {}
   for (const [key, value] of Object.entries(envVars)) {
     // Dot notation: process.env.KEY
     entries[`process.env.${key}`] = value
@@ -82,11 +79,11 @@ export function createDefineEntries(envVars) {
  * esbuild plugin to replace env vars after bundling (handles mangled identifiers).
  * This is necessary because esbuild's define doesn't catch all forms after minification.
  */
-export function envVarReplacementPlugin(envVars) {
+export function envVarReplacementPlugin(envVars: Record<string, string>) {
   return {
     name: 'env-var-replacement',
-    setup(build) {
-      build.onEnd(result => {
+    setup(build: PluginBuild) {
+      build.onEnd((result: BuildResult) => {
         const outputs = result.outputFiles
         if (!outputs || outputs.length === 0) {
           return
@@ -135,7 +132,7 @@ export function getInlinedEnvVars() {
  * @param {Object} config - esbuild configuration object
  * @param {string} [description] - Description logged before/after build
  */
-export async function runBuild(config, description = 'Build') {
+export async function runBuild(config: BuildOptions, description = 'Build') {
   try {
     if (description) {
       logger.info(`Building: ${description}`)

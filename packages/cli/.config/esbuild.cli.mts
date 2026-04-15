@@ -8,6 +8,8 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import type { BuildOptions, PluginBuild, OnResolveArgs } from 'esbuild'
+
 import { IMPORT_META_URL_BANNER } from 'build-infra/lib/esbuild-helpers'
 import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
 
@@ -26,7 +28,7 @@ const inlinedEnvVars = getInlinedEnvVars()
 // Matches ./external/, ../external/, ../../external/, etc. (forward and back slashes).
 const socketLibExternalPathRegExp = /^(?:\.[/\\]|(?:\.\.[/\\])+)external[/\\]/
 
-function findSocketLibPath(importerPath) {
+function findSocketLibPath(importerPath: string) {
   const match = importerPath.match(/^(.*\/@socketsecurity\/lib)\b/)
   if (match) {
     return match[1]
@@ -38,9 +40,11 @@ function findSocketLibPath(importerPath) {
   return null
 }
 
-function resolveSocketLibExternal(socketLibPath, packageName) {
+function resolveSocketLibExternal(socketLibPath: string, packageName: string) {
   if (packageName.startsWith('@')) {
-    const [scope, name] = packageName.split('/')
+    const parts = packageName.split('/')
+    const scope = parts[0]!
+    const name = parts[1]!
     const p = path.join(socketLibPath, 'dist', 'external', scope, `${name}.js`)
     return existsSync(p) ? p : null
   }
@@ -54,7 +58,7 @@ function resolveSocketLibExternal(socketLibPath, packageName) {
 }
 
 
-const config = {
+const config: BuildOptions = {
   entryPoints: [path.join(rootPath, 'src/cli-dispatch.mts')],
   bundle: true,
   outfile: path.join(rootPath, 'build/cli.js'),
@@ -87,8 +91,8 @@ const config = {
     envVarReplacementPlugin(inlinedEnvVars),
     {
       name: 'resolve-socket-lib-internals',
-      setup(build) {
-        function resolveConstant(args, strip) {
+      setup(build: PluginBuild) {
+        function resolveConstant(args: OnResolveArgs, strip: RegExp) {
           if (!args.importer.includes('/socket-lib/dist/')) {
             return null
           }
@@ -105,15 +109,15 @@ const config = {
           return existsSync(p) ? { path: p } : null
         }
 
-        build.onResolve({ filter: /^\.\.\/constants\// }, args =>
+        build.onResolve({ filter: /^\.\.\/constants\// }, (args: OnResolveArgs) =>
           resolveConstant(args, /^\.\.\/constants\//),
         )
 
-        build.onResolve({ filter: /^\.\.\/\.\.\/constants\// }, args =>
+        build.onResolve({ filter: /^\.\.\/\.\.\/constants\// }, (args: OnResolveArgs) =>
           resolveConstant(args, /^\.\.\/\.\.\/constants\//),
         )
 
-        build.onResolve({ filter: socketLibExternalPathRegExp }, args => {
+        build.onResolve({ filter: socketLibExternalPathRegExp }, (args: OnResolveArgs) => {
           if (!args.importer.includes('@socketsecurity/lib/dist/')) {
             return null
           }
@@ -128,7 +132,7 @@ const config = {
           return p ? { path: p } : null
         })
 
-        build.onResolve({ filter: /^(@[^/]+\/[^/]+|[^./][^/]*)/ }, args => {
+        build.onResolve({ filter: /^(@[^/]+\/[^/]+|[^./][^/]*)/ }, (args: OnResolveArgs) => {
           if (!args.importer.includes('/socket-lib/dist/')) {
             return null
           }
@@ -138,7 +142,7 @@ const config = {
           }
           const packageName = args.path.startsWith('@')
             ? args.path.split('/').slice(0, 2).join('/')
-            : args.path.split('/')[0]
+            : args.path.split('/')[0]!
           const p = resolveSocketLibExternal(socketLibPath, packageName)
           return p ? { path: p } : null
         })
@@ -147,9 +151,9 @@ const config = {
 
     {
       name: 'stub-problematic-packages',
-      setup(build) {
+      setup(build: PluginBuild) {
         // Stub iconv-lite and encoding to avoid bundling issues.
-        build.onResolve({ filter: /^(iconv-lite|encoding)(\/|$)/ }, args => {
+        build.onResolve({ filter: /^(iconv-lite|encoding)(\/|$)/ }, (args: OnResolveArgs) => {
           return {
             path: args.path,
             namespace: 'stub',
@@ -167,10 +171,10 @@ const config = {
 
     {
       name: 'ignore-unsupported-files',
-      setup(build) {
+      setup(build: PluginBuild) {
         // Prevent bundling @npmcli/arborist from workspace node_modules.
         // This includes the main package and all subpaths like /lib/edge.js.
-        build.onResolve({ filter: /@npmcli\/arborist/ }, args => {
+        build.onResolve({ filter: /@npmcli\/arborist/ }, (args: OnResolveArgs) => {
           // Only redirect if it's not already coming from socket-lib's external bundle.
           if (args.importer.includes('/socket-lib/dist/')) {
             return null
@@ -179,7 +183,7 @@ const config = {
         })
 
         // Mark node-gyp as external (used by arborist but optionally resolved).
-        build.onResolve({ filter: /node-gyp/ }, args => {
+        build.onResolve({ filter: /node-gyp/ }, (args: OnResolveArgs) => {
           return { path: args.path, external: true }
         })
       },

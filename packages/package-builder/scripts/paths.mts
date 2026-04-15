@@ -41,11 +41,11 @@ export function getBuildMode() {
     return 'prod'
   }
   // Check env var.
-  if (process.env.BUILD_MODE) {
-    return process.env.BUILD_MODE
+  if (process.env['BUILD_MODE']) {
+    return process.env['BUILD_MODE']
   }
   // Default based on CI.
-  const isCI = process.env.CI === 'true' || process.env.CI === '1'
+  const isCI = process.env['CI'] === 'true' || process.env['CI'] === '1'
   return isCI ? 'prod' : 'dev'
 }
 
@@ -66,7 +66,7 @@ export function getBuildOutDir(mode = getBuildMode()) {
  * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI detection.
  * @returns {string} Path to package output directory.
  */
-export function getPackageOutDir(packageName, mode = getBuildMode()) {
+export function getPackageOutDir(packageName: string, mode = getBuildMode()) {
   return join(getBuildOutDir(mode), packageName)
 }
 
@@ -80,7 +80,7 @@ export function getPackageOutDir(packageName, mode = getBuildMode()) {
  * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI detection.
  * @returns {string} Path to socketbin package directory.
  */
-export function getSocketbinPackageDir(platform, arch, libc, mode = getBuildMode()) {
+export function getSocketbinPackageDir(platform: string, arch: string, libc?: string, mode = getBuildMode()) {
   // Normalize win32 → win for directory naming.
   const releasePlatform = platform === 'win32' ? 'win' : platform
   const muslSuffix = libc === 'musl' ? '-musl' : ''
@@ -97,7 +97,7 @@ export function getSocketbinPackageDir(platform, arch, libc, mode = getBuildMode
  * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI detection.
  * @returns {string} Path to the socket binary.
  */
-export function getSocketbinBinaryPath(platform, arch, libc, mode = getBuildMode()) {
+export function getSocketbinBinaryPath(platform: string, arch: string, libc?: string, mode = getBuildMode()) {
   // Accept both win and win32 for Windows detection.
   const binaryName = platform === 'win32' || platform === 'win' ? 'socket.exe' : 'socket'
   return join(getSocketbinPackageDir(platform, arch, libc, mode), binaryName)
@@ -113,7 +113,7 @@ export function getSocketbinBinaryPath(platform, arch, libc, mode = getBuildMode
  * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI detection.
  * @returns {string} Path to socketaddon package directory.
  */
-export function getSocketaddonPackageDir(platform, arch, libc, mode = getBuildMode()) {
+export function getSocketaddonPackageDir(platform: string, arch: string, libc?: string, mode = getBuildMode()) {
   // Normalize win32 → win for directory naming.
   const releasePlatform = platform === 'win32' ? 'win' : platform
   const muslSuffix = libc === 'musl' ? '-musl' : ''

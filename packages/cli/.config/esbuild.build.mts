@@ -12,6 +12,8 @@ import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+import type { BuildOptions } from 'esbuild'
+
 import { runBuild } from '../scripts/esbuild-utils.mts'
 import cliConfig from './esbuild.cli.mts'
 import indexConfig from './esbuild.index.mts'
@@ -34,13 +36,14 @@ async function main() {
     return
   }
 
+  const configRecord = CONFIGS as unknown as Record<string, BuildOptions>
   const targets =
     variant === 'all'
-      ? Object.entries(CONFIGS)
-      : [[variant, CONFIGS[variant]]]
+      ? Object.entries(configRecord)
+      : [[variant, configRecord[variant]]]
 
   const results = await Promise.allSettled(
-    targets.map(({ 0: name, 1: config }) => runBuild(config, name)),
+    targets.map(({ 0: name, 1: config }) => runBuild(config as BuildOptions, name as string)),
   )
   const failed = results.filter(r => r.status === 'rejected')
   if (failed.length > 0) {

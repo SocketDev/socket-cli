@@ -12,6 +12,8 @@
  * }
  */
 
+import type { PluginBuild, BuildResult } from 'esbuild'
+
 import { transformUnicodePropertyEscapes } from './unicode-property-escape-transform.mts'
 
 /**
@@ -22,8 +24,8 @@ import { transformUnicodePropertyEscapes } from './unicode-property-escape-trans
 export function unicodeTransformPlugin() {
   return {
     name: 'unicode-transform',
-    setup(build) {
-      build.onEnd(result => {
+    setup(build: PluginBuild) {
+      build.onEnd((result: BuildResult) => {
         const outputs = result.outputFiles
         if (!outputs || !outputs.length) {
           return

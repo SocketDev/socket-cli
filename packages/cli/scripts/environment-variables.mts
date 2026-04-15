@@ -64,7 +64,7 @@ export class EnvironmentVariables {
     /**
      * Helper to get external tool version with validation.
      */
-    function getExternalToolVersion(key, field = 'version') {
+    function getExternalToolVersion(key: string, field = 'version') {
       const tool = externalTools[key]
       if (!tool) {
         throw new Error(
@@ -187,11 +187,11 @@ export class EnvironmentVariables {
    * @param {Object} [vars] - Pre-loaded variables (optional, will load if not provided)
    * @returns {Record<string, string>} Object with env var names as keys and JSON-stringified values
    */
-  static getDefineEntries(vars) {
+  static getDefineEntries(vars?: Record<string, string>) {
     const envVars = vars || EnvironmentVariables.load()
 
     // Convert all values to JSON-stringified format for esbuild.
-    const defines = {}
+    const defines: Record<string, string> = {}
     for (const [key, value] of Object.entries(envVars)) {
       defines[key] = JSON.stringify(value)
     }
