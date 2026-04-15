@@ -26,10 +26,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 
 // Load external tools configuration.
-const externalToolsPath = path.join(
-  rootPath,
-  'packages/cli/bundle-tools.json',
-)
+const externalToolsPath = path.join(rootPath, 'packages/cli/bundle-tools.json')
 const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
 
 /**
@@ -47,10 +44,14 @@ function validateChecksums() {
 
   // Collect all assets needed across all platforms.
   for (const [platform, tools] of Object.entries(PLATFORM_MAP_TOOLS)) {
-    if (!tools) continue
+    if (!tools) {
+      continue
+    }
 
     for (const [toolName, assetName] of Object.entries(tools)) {
-      if (!assetName) continue
+      if (!assetName) {
+        continue
+      }
 
       if (!requiredAssets.has(toolName)) {
         requiredAssets.set(toolName, new Set())
@@ -130,7 +131,9 @@ function validateChecksums() {
     logger.error(
       'All external tool assets MUST have SHA-256 checksums defined in bundle-tools.json.',
     )
-    logger.error('This is a security requirement to prevent supply chain attacks.')
+    logger.error(
+      'This is a security requirement to prevent supply chain attacks.',
+    )
     return false
   }
 

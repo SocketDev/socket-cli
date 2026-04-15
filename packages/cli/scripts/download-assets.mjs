@@ -231,6 +231,14 @@ async function downloadAssets(assetNames, parallel = true) {
  * Main entry point.
  */
 async function main() {
+  // Skip downloads entirely when SKIP_ASSET_DOWNLOAD is set.
+  // Useful for repeated local builds where assets are already cached,
+  // or when GitHub API rate limits are exhausted.
+  if (process.env.SKIP_ASSET_DOWNLOAD) {
+    logger.info('Skipping asset downloads (SKIP_ASSET_DOWNLOAD is set)')
+    return
+  }
+
   const args = process.argv.slice(2)
   const parallel = !args.includes('--no-parallel')
   const assetArgs = args.filter(arg => !arg.startsWith('--'))

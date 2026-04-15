@@ -168,10 +168,10 @@ while read local_ref local_sha remote_ref remote_sha; do
           ERRORS=$((ERRORS + 1))
         fi
 
-        # AWS keys.
-        if echo "$file_text" | grep -iqE '(aws_access_key|aws_secret|AKIA[0-9A-Z]{16})'; then
+        # AWS keys (word-boundary match to avoid false positives in base64 data).
+        if echo "$file_text" | grep -iqE '(aws_access_key|aws_secret|\bAKIA[0-9A-Z]{16}\b)'; then
           printf "${RED}✗ BLOCKED: Potential AWS credentials found in: %s${NC}\n" "$file"
-          echo "$file_text" | grep -niE '(aws_access_key|aws_secret|AKIA[0-9A-Z]{16})' | head -3
+          echo "$file_text" | grep -niE '(aws_access_key|aws_secret|\bAKIA[0-9A-Z]{16}\b)' | head -3
           ERRORS=$((ERRORS + 1))
         fi
 
