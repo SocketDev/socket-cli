@@ -195,9 +195,9 @@ function getPackageName(specifier: string): string | undefined {
 async function extractExternalsFromConfigs(): Promise<Set<string>> {
   const externals = new Set()
   const configFiles = [
-    path.join(cliPackagePath, '.config/esbuild.cli.build.mjs'),
-    path.join(cliPackagePath, '.config/esbuild.inject.config.mjs'),
-    path.join(cliPackagePath, '.config/esbuild.index.config.mjs'),
+    path.join(cliPackagePath, '.config/esbuild.cli.build.mts'),
+    path.join(cliPackagePath, '.config/esbuild.inject.config.mts'),
+    path.join(cliPackagePath, '.config/esbuild.index.config.mts'),
   ]
 
   for (const configFile of configFiles) {

@@ -8,7 +8,7 @@
  *   3. `agentshield scan --fix` — fix Claude config security findings (if .claude/ exists)
  *
  * Usage:
- *   node scripts/fix.mjs [options]
+ *   node scripts/fix.mts [options]
  *
  * Options:
  *   --all      Fix all packages

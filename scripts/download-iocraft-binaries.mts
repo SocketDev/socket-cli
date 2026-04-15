@@ -6,10 +6,10 @@
  * before publishing @socketaddon/iocraft platform packages.
  *
  * Usage:
- *   node scripts/download-iocraft-binaries.mjs [--platform=<platform>] [--arch=<arch>] [--libc=<libc>]
- *   node scripts/download-iocraft-binaries.mjs                          # Download all platforms
- *   node scripts/download-iocraft-binaries.mjs --platform=darwin --arch=arm64
- *   node scripts/download-iocraft-binaries.mjs --platform=linux --arch=x64 --libc=musl
+ *   node scripts/download-iocraft-binaries.mts [--platform=<platform>] [--arch=<arch>] [--libc=<libc>]
+ *   node scripts/download-iocraft-binaries.mts                          # Download all platforms
+ *   node scripts/download-iocraft-binaries.mts --platform=darwin --arch=arm64
+ *   node scripts/download-iocraft-binaries.mts --platform=linux --arch=x64 --libc=musl
  */
 
 import { existsSync, promises as fs } from 'node:fs'

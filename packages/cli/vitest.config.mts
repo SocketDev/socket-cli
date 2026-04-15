@@ -41,7 +41,7 @@ export default defineConfig({
       '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*',
       // Exclude E2E tests from regular test runs.
       '**/*.e2e.test.mts',
-      // Exclude integration tests (run separately via scripts/integration.mjs).
+      // Exclude integration tests (run separately via scripts/integration.mts).
       'test/integration/**',
       // Exclude iocraft-dependent tests in CI (requires native module).
       ...(isCI

@@ -4,7 +4,7 @@
  * Used by publish workflow to generate dynamic matrix.
  *
  * Usage:
- *   node scripts/get-platform-matrix.mjs
+ *   node scripts/get-platform-matrix.mts
  *   # Outputs: {"include":[...]}
  */
 

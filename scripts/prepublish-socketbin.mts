@@ -12,8 +12,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import {
   getSocketbinBinaryPath,
   getSocketbinPackageDir,
-} from 'package-builder/scripts/paths.mjs'
-import { preparePackageForPublish } from 'package-builder/scripts/utils/prepare-package.mjs'
+} from 'package-builder/scripts/paths.mts'
+import { preparePackageForPublish } from 'package-builder/scripts/utils/prepare-package.mts'
 
 const logger = getDefaultLogger()
 
@@ -39,7 +39,7 @@ const {
 
 if (!platform || !arch) {
   logger.error(
-    'Usage: prepublish-socketbin.mjs --platform=darwin --arch=arm64 --version=2.1.0 [--method=sea]',
+    'Usage: prepublish-socketbin.mts --platform=darwin --arch=arm64 --version=2.1.0 [--method=sea]',
   )
   process.exitCode = 1
 } else if (!providedVersion) {

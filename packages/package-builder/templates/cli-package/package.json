@@ -22,10 +22,10 @@
     "logo-light.png"
   ],
   "scripts": {
-    "build": "node scripts/build.mjs",
+    "build": "node scripts/build.mts",
     "clean:dist": "del-cli 'dist'",
     "test": "vitest run",
-    "verify": "node scripts/verify-package.mjs"
+    "verify": "node scripts/verify-package.mts"
   },
   "devDependencies": {
     "build-infra": "workspace:*",

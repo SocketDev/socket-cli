@@ -5,7 +5,7 @@ import process from 'node:process'
  * Uses taze to update dependencies across all packages in the monorepo.
  *
  * Usage:
- *   node scripts/update.mjs [options]
+ *   node scripts/update.mts [options]
  *
  * Options:
  *   --quiet    Suppress progress output

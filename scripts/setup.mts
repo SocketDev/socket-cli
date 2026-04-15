@@ -386,7 +386,7 @@ async function generateCliSentryPackage(): Promise<boolean> {
   }
 
   const scriptPath = new URL(
-    '../packages/package-builder/scripts/generate-cli-sentry-package.mjs',
+    '../packages/package-builder/scripts/generate-cli-sentry-package.mts',
     import.meta.url,
   )
   const result = await spawn('node', [scriptPath.pathname], {
@@ -417,7 +417,7 @@ async function generateSocketbinPackages(): Promise<boolean> {
   }
 
   const scriptPath = new URL(
-    '../packages/package-builder/scripts/generate-socketbin-packages.mjs',
+    '../packages/package-builder/scripts/generate-socketbin-packages.mts',
     import.meta.url,
   )
   const result = await spawn('node', [scriptPath.pathname], {

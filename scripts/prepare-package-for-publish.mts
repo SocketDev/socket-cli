@@ -7,7 +7,7 @@ import { resolve } from 'node:path'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import { preparePackageForPublish } from 'package-builder/scripts/utils/prepare-package.mjs'
+import { preparePackageForPublish } from 'package-builder/scripts/utils/prepare-package.mts'
 
 const logger = getDefaultLogger()
 
@@ -17,7 +17,7 @@ const version: string | undefined = args[1]
 
 if (!packagePath) {
   logger.error(
-    'Usage: prepare-package-for-publish.mjs <package-path> [version]',
+    'Usage: prepare-package-for-publish.mts <package-path> [version]',
   )
   process.exitCode = 1
 } else {

@@ -1,0 +1,54 @@
+/**
+ * @fileoverview Build script for CLI JavaScript bundle.
+ * Orchestrates extraction, building, and validation.
+ */
+
+import { copyFileSync } from 'node:fs'
+
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
+
+const logger = getDefaultLogger()
+
+async function main() {
+  try {
+    // Step 1: Build with esbuild.
+    logger.step('Building CLI bundle')
+    const buildResult = await spawn(
+      'node',
+      ['--max-old-space-size=8192', '.config/esbuild.build.mts', 'cli'],
+      { stdio: 'inherit' },
+    )
+    if (!buildResult) {
+      logger.error('Failed to start CLI build')
+      process.exitCode = 1
+      return
+    }
+    if (buildResult.code !== 0) {
+      process.exitCode = buildResult.code
+      return
+    }
+
+    // Step 3: Copy bundle to dist/.
+    copyFileSync('build/cli.js', 'dist/cli.js')
+
+    // Step 4: Validate bundle.
+    logger.step('Validating bundle')
+    const validateResult = await spawn(
+      'node',
+      ['scripts/validate-bundle.mts'],
+      { stdio: 'inherit' },
+    )
+    if (validateResult.code !== 0) {
+      process.exitCode = validateResult.code
+      return
+    }
+
+    logger.success('Build completed successfully')
+  } catch (error) {
+    logger.error(`Build failed: ${error.message}`)
+    process.exitCode = 1
+  }
+}
+
+main()
