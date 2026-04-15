@@ -19,14 +19,8 @@ export default defineConfig({
     reporters: ['default'],
     setupFiles: ['./test/setup.mts'],
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        singleThread: false,
-        maxThreads: os.cpus().length,
-        minThreads: Math.min(2, Math.floor(os.cpus().length / 2)),
-        isolate: true,
-      },
-    },
+    maxWorkers: os.cpus().length,
+    isolate: true,
     testTimeout: 60_000, // Integration tests may take longer.
     hookTimeout: 30_000,
     fileParallelism: true,

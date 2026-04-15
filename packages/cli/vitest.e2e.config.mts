@@ -20,15 +20,9 @@ export default defineConfig({
     setupFiles: ['./test/setup.mts'],
     // Use threads for better performance.
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        singleThread: false,
-        maxThreads: os.cpus().length,
-        minThreads: Math.min(4, os.cpus().length),
-        // E2E tests need full isolation for clean execution.
-        isolate: true,
-      },
-    },
+    maxWorkers: os.cpus().length,
+    // E2E tests need full isolation for clean execution.
+    isolate: true,
     // E2E tests need longer timeouts for spawning processes.
     testTimeout: 60_000,
     hookTimeout: 60_000,

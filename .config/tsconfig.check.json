@@ -5,6 +5,7 @@
   },
   "include": [
     "../packages/cli/src/**/*.mts",
+    "../packages/cli/src/**/*.d.ts",
     "../packages/cli/*.config.mts",
     "../packages/cli/.config/*.mts"
   ],
