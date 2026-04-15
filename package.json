@@ -52,6 +52,7 @@
     "pretest": "pnpm run build:cli"
   },
   "devDependencies": {
+    "@typescript/native-preview": "7.0.0-dev.20260415.1",
     "@anthropic-ai/claude-code": "catalog:",
     "@babel/core": "catalog:",
     "@babel/parser": "catalog:",
