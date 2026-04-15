@@ -59,6 +59,18 @@ const ASSETS = {
     name: 'iocraft',
     type: 'multi-platform',
   },
+  opentui: {
+    description: 'opentui native bindings (.node files)',
+    download: {
+      asset: 'opentui-*.node',
+      cwd: rootPath,
+      downloadDir: '../../packages/build-infra/build/downloaded/opentui',
+      quiet: false,
+      tool: 'opentui',
+    },
+    name: 'opentui',
+    type: 'multi-platform',
+  },
   models: {
     description: 'AI models (MiniLM-L6-v2, CodeT5)',
     download: {
