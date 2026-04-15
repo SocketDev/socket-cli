@@ -8,6 +8,6 @@
  *   # Outputs space-separated: linux-x64 linux-arm64 ...
  */
 
-import { PLATFORM_TARGETS } from '../packages/build-infra/lib/platform-targets.mts'
+import { PLATFORM_TARGETS } from '../packages/build-infra/lib/platform-targets.mjs'
 
 console.log(PLATFORM_TARGETS.join(' '))

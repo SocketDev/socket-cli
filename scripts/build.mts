@@ -33,7 +33,7 @@ import {
   PLATFORM_TARGETS,
   formatPlatformTarget,
   parsePlatformTarget,
-} from '../packages/build-infra/lib/platform-targets.mts'
+} from '../packages/build-infra/lib/platform-targets.mjs'
 
 const logger = getDefaultLogger()
 const __filename = fileURLToPath(import.meta.url)

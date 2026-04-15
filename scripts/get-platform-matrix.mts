@@ -8,7 +8,7 @@
  *   # Outputs: {"include":[...]}
  */
 
-import { PLATFORM_CONFIGS } from '../packages/build-infra/lib/platform-targets.mts'
+import { PLATFORM_CONFIGS } from '../packages/build-infra/lib/platform-targets.mjs'
 
 interface MatrixEntry {
   arch: string

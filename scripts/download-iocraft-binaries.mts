@@ -19,8 +19,8 @@ import { fileURLToPath } from 'node:url'
 import {
   PLATFORM_CONFIGS,
   parsePlatformArgs,
-} from '../packages/build-infra/lib/platform-targets.mts'
-import { logTransientErrorHelp } from '../packages/build-infra/lib/github-error-utils.mts'
+} from '../packages/build-infra/lib/platform-targets.mjs'
+import { logTransientErrorHelp } from '../packages/build-infra/lib/github-error-utils.mjs'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { downloadSocketBtmRelease } from '@socketsecurity/lib/releases/socket-btm'
