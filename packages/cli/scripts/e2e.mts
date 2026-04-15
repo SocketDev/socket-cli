@@ -14,6 +14,7 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import { EnvironmentVariables } from './environment-variables.mts'
+import { loadEnvFile } from './utils/load-env.mts'
 
 const logger = getDefaultLogger()
 
@@ -122,30 +123,25 @@ async function runVitest(binaryType) {
   // This is required for tests to load external tool versions (coana, cdxgen, synp, etc).
   const externalToolVersions = EnvironmentVariables.getTestVariables()
 
-  // Use dotenvx to load test environment.
-  const dotenvxCmd = WIN32 ? 'dotenvx.cmd' : 'dotenvx'
-  const dotenvxPath = path.join(NODE_MODULES_BIN_PATH, dotenvxCmd)
+  // Load .env.e2e configuration (falls back gracefully if missing).
+  const e2eEnv = loadEnvFile(path.join(ROOT_DIR, '.env.e2e'))
 
   // Resolve vitest path.
   const vitestCmd = WIN32 ? 'vitest.cmd' : 'vitest'
   const vitestPath = path.join(NODE_MODULES_BIN_PATH, vitestCmd)
 
   const result = await spawn(
-    dotenvxPath,
+    vitestPath,
     [
-      '-q',
-      'run',
-      '-f',
-      '.env.e2e',
-      '--',
-      vitestPath,
       'run',
       'test/e2e/binary-test-suite.e2e.test.mts',
       '--config',
       'vitest.e2e.config.mts',
     ],
     {
+      cwd: ROOT_DIR,
       env: {
+        ...e2eEnv,
         ...process.env,
         // Automatically enable tests when explicitly running e2e.mts.
         RUN_E2E_TESTS: '1',

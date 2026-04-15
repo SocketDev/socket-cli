@@ -14,6 +14,7 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import { EnvironmentVariables } from './environment-variables.mts'
+import { loadEnvFile } from './utils/load-env.mts'
 
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -80,9 +81,8 @@ async function runVitest(binaryType) {
     return
   }
 
-  // Use dotenvx to load test environment.
-  const dotenvxCmd = WIN32 ? 'dotenvx.cmd' : 'dotenvx'
-  const dotenvxPath = path.join(NODE_MODULES_BIN_PATH, dotenvxCmd)
+  // Load .env.test configuration.
+  const testEnv = loadEnvFile(path.join(ROOT_DIR, '.env.test'))
 
   // Resolve vitest path.
   const vitestCmd = WIN32 ? 'vitest.cmd' : 'vitest'
@@ -92,14 +92,8 @@ async function runVitest(binaryType) {
   const externalToolVersions = EnvironmentVariables.getTestVariables()
 
   const result = await spawn(
-    dotenvxPath,
+    vitestPath,
     [
-      '-q',
-      'run',
-      '-f',
-      '.env.test',
-      '--',
-      vitestPath,
       'run',
       'test/integration/binary/',
       '--config',
@@ -108,6 +102,7 @@ async function runVitest(binaryType) {
     {
       cwd: ROOT_DIR,
       env: {
+        ...testEnv,
         ...process.env,
         // Automatically enable tests when explicitly running integration.mts.
         RUN_INTEGRATION_TESTS: '1',

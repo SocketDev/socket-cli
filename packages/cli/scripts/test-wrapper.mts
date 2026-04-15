@@ -5,7 +5,7 @@
  * - Memory optimization for RegExp-heavy tests
  * - Cross-platform compatibility (Windows/Unix)
  * - Build validation before running tests
- * - Environment variable loading from .env.test
+ * - Environment variable loading from .env.test (via loadEnvFile)
  * - Inlined variable injection from bundle-tools.json
  */
 
@@ -20,6 +20,7 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import { EnvironmentVariables } from './environment-variables.mts'
+import { loadEnvFile } from './utils/load-env.mts'
 
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -110,9 +111,8 @@ async function main() {
       ...externalToolVersions,
     }
 
-    // Use dotenvx to load .env.test configuration.
-    const dotenvxCmd = WIN32 ? 'dotenvx.cmd' : 'dotenvx'
-    const dotenvxPath = path.join(rootNodeModulesBinPath, dotenvxCmd)
+    // Load .env.test configuration.
+    const testEnv = loadEnvFile(path.join(rootPath, '.env.test'))
 
     // Handle Windows vs Unix for vitest executable.
     const vitestCmd = WIN32 ? 'vitest.cmd' : 'vitest'
@@ -133,28 +133,22 @@ async function main() {
       }
     }
 
-    // Wrap vitest with dotenvx to load .env.test.
-    // Command: dotenvx -q run -f .env.test -- vitest run [args].
-    const dotenvxArgs = [
-      '-q',
-      'run',
-      '-f',
-      '.env.test',
-      '--',
-      vitestPath,
-      'run',
-      ...expandedArgs,
-    ]
-
     // On Windows, .cmd files need shell: true.
     const spawnOptions = {
       cwd: rootPath,
-      env: spawnEnv,
+      env: {
+        ...testEnv,
+        ...spawnEnv,
+      },
       stdio: 'inherit',
       ...(WIN32 ? { shell: true } : {}),
     }
 
-    const result = await spawn(dotenvxPath, dotenvxArgs, spawnOptions)
+    const result = await spawn(
+      vitestPath,
+      ['run', ...expandedArgs],
+      spawnOptions,
+    )
     process.exitCode = result?.code || 0
   } catch (e) {
     logger.error('Failed to spawn test process:', e)
