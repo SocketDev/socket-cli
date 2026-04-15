@@ -22,4 +22,4 @@ Apply these rules from CLAUDE.md exactly:
 - Unreachable code paths
 - Duplicate logic that should be consolidated
 - Files >400 LOC that should be split (flag to user, don't split without approval)
-- Backward compatibility shims (FORBIDDEN per CLAUDE.md — actively remove)
+- Compat shims (FORBIDDEN per CLAUDE.md — actively remove)

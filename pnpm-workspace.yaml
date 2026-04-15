@@ -1,4 +1,9 @@
 
+resolutionMode: highest
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  - undici@6.21.3
+
 packages:
   - packages/*
   - '!packages/package-builder/build'

@@ -14,7 +14,7 @@ Apply the rules from CLAUDE.md sections listed below. Reference the full section
 
 **Error Handling**: catch (e) not catch (error), double-quoted error messages, { cause: e } chaining.
 
-**Backward Compatibility**: FORBIDDEN — actively remove compat shims, don't maintain them.
+**Compat shims**: FORBIDDEN — actively remove compat shims, don't maintain them.
 
 **Test Style**: Functional tests over source scanning. Never read source files and assert on contents. Verify behavior with real function calls.
 
