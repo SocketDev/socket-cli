@@ -243,7 +243,7 @@ async function main(): Promise<void> {
       }
       const validateResult = await spawn(
         'node',
-        [path.join(scriptsDir, 'validate-no-link-deps.mjs')],
+        [path.join(scriptsDir, 'validate-no-link-deps.mts')],
         {
           shell: WIN32,
           stdio: 'pipe',
@@ -279,7 +279,7 @@ async function main(): Promise<void> {
       }
       const bundleResult = await spawn(
         'node',
-        [path.join(scriptsDir, 'validate-bundle-deps.mjs')],
+        [path.join(scriptsDir, 'validate-bundle-deps.mts')],
         {
           shell: WIN32,
           stdio: 'pipe',
@@ -315,7 +315,7 @@ async function main(): Promise<void> {
       }
       const cdnResult = await spawn(
         'node',
-        [path.join(scriptsDir, 'validate-no-cdn-refs.mjs')],
+        [path.join(scriptsDir, 'validate-no-cdn-refs.mts')],
         {
           shell: WIN32,
           stdio: 'pipe',
@@ -351,7 +351,7 @@ async function main(): Promise<void> {
       }
       const sizeResult = await spawn(
         'node',
-        [path.join(scriptsDir, 'validate-file-size.mjs')],
+        [path.join(scriptsDir, 'validate-file-size.mts')],
         {
           shell: WIN32,
           stdio: 'pipe',

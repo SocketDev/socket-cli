@@ -63,7 +63,7 @@ jobs:
       - name: Generate platform matrix
         id: matrix
         run: |
-          MATRIX=$(node scripts/get-platform-matrix.mjs)
+          MATRIX=$(node scripts/get-platform-matrix.mts)
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
       - name: Upload CLI bundle
@@ -195,7 +195,7 @@ jobs:
           set -euo pipefail
 
           # Get platform targets from single source of truth.
-          PLATFORMS_STR=$(node scripts/get-platform-targets.mjs)
+          PLATFORMS_STR=$(node scripts/get-platform-targets.mts)
           read -ra PLATFORMS <<< "$PLATFORMS_STR"
 
           for target in "${PLATFORMS[@]}"; do
@@ -227,7 +227,7 @@ jobs:
             if [ -n "$LIBC" ]; then
               LIBC_FLAG="--libc=$LIBC"
             fi
-            node scripts/prepublish-socketbin.mjs \
+            node scripts/prepublish-socketbin.mts \
               --platform="$PLATFORM" --arch="$ARCH" $LIBC_FLAG --prod \
               --version="$VERSION" --method=sea
 
@@ -253,7 +253,7 @@ jobs:
           TAG: ${{ steps.version.outputs.cli_tag }}
         run: |
           PKG_DIR="packages/package-builder/build/prod/out/cli"
-          node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
+          node scripts/prepare-package-for-publish.mts "$PKG_DIR" "$VERSION"
           cd "$PKG_DIR"
           npm publish --provenance --access public --no-git-checks --tag "$TAG"
 
@@ -264,7 +264,7 @@ jobs:
           TAG: ${{ steps.version.outputs.cli_tag }}
         run: |
           PKG_DIR="packages/package-builder/build/prod/out/cli-with-sentry"
-          node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
+          node scripts/prepare-package-for-publish.mts "$PKG_DIR" "$VERSION"
           cd "$PKG_DIR"
           npm publish --provenance --access public --no-git-checks --tag "$TAG"
 
@@ -276,7 +276,7 @@ jobs:
           TAG: ${{ steps.version.outputs.cli_tag }}
         run: |
           PKG_DIR="packages/package-builder/build/prod/out/socket"
-          node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
+          node scripts/prepare-package-for-publish.mts "$PKG_DIR" "$VERSION"
           cd "$PKG_DIR"
           npm publish --provenance --access public --no-git-checks --tag "$TAG"
 
@@ -285,7 +285,7 @@ jobs:
         if: ${{ inputs.iocraft }}
         run: |
           echo "Downloading iocraft .node binaries for all platforms..."
-          node scripts/download-iocraft-binaries.mjs
+          node scripts/download-iocraft-binaries.mts
 
       # Copy iocraft binaries to package directories.
       - name: Copy iocraft binaries to packages
@@ -295,7 +295,7 @@ jobs:
           set -euo pipefail
 
           # Get platform targets from single source of truth.
-          PLATFORMS_STR=$(node scripts/get-platform-targets.mjs)
+          PLATFORMS_STR=$(node scripts/get-platform-targets.mts)
           read -ra PLATFORMS <<< "$PLATFORMS_STR"
 
           for target in "${PLATFORMS[@]}"; do
@@ -320,7 +320,7 @@ jobs:
           TAG: ${{ steps.version.outputs.iocraft_tag }}
         run: |
           PKG_DIR="packages/package-builder/build/prod/out/socketaddon-iocraft"
-          node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
+          node scripts/prepare-package-for-publish.mts "$PKG_DIR" "$VERSION"
           cd "$PKG_DIR"
           npm publish --provenance --access public --no-git-checks --tag "$TAG"
 
@@ -334,7 +334,7 @@ jobs:
           set -euo pipefail
 
           # Get platform targets from single source of truth.
-          PLATFORMS_STR=$(node scripts/get-platform-targets.mjs)
+          PLATFORMS_STR=$(node scripts/get-platform-targets.mts)
           read -ra PLATFORMS <<< "$PLATFORMS_STR"
 
           for target in "${PLATFORMS[@]}"; do
@@ -343,7 +343,7 @@ jobs:
             PKG_DIR="packages/package-builder/build/prod/out/socketaddon-iocraft-${target}"
 
             # Prepare package.
-            node scripts/prepare-package-for-publish.mjs "$PKG_DIR" "$VERSION"
+            node scripts/prepare-package-for-publish.mts "$PKG_DIR" "$VERSION"
 
             # Publish.
             cd "$PKG_DIR"

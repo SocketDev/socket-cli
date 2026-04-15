@@ -99,7 +99,7 @@ export async function downloadWithRetry(
   const { buildDir, maxRetries = 3, verifyIntegrity = true } = options
 
   // Import verifyFileIntegrity dynamically to avoid circular dependency.
-  const { verifyFileIntegrity } = await import('./build-helpers.mjs')
+  const { verifyFileIntegrity } = await import('./build-helpers.mts')
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
