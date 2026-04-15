@@ -1,6 +1,6 @@
 {
   "name": "@socketsecurity/cli",
-  "version": "0.0.0-copied-from-packages-socket",
+  "version": "0.0.0",
   "description": "CLI for Socket.dev",
   "private": true,
   "license": "MIT",

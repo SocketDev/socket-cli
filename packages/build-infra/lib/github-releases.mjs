@@ -12,11 +12,11 @@ import { pRetry } from '@socketsecurity/lib/promises'
 
 const logger = getDefaultLogger()
 
-// Cache GitHub API responses for 1 hour to avoid rate limiting.
+// Cache GitHub API responses for 4 hours to reduce API calls and avoid rate limiting.
 const cache = createTtlCache({
   memoize: true,
   prefix: 'github-releases',
-  ttl: 60 * 60 * 1000, // 1 hour.
+  ttl: 4 * 60 * 60 * 1000, // 4 hours.
 })
 
 /**
@@ -155,8 +155,8 @@ export async function getLatestRelease(
         return null
       },
       {
-        backoffFactor: 1,
-        baseDelayMs: 5_000,
+        backoffFactor: 2,
+        baseDelayMs: 3_000,
         onRetry: (attempt, error) => {
           if (!quiet) {
             logger.info(
@@ -231,8 +231,8 @@ export async function getReleaseAssetUrl(
         return asset.browser_download_url
       },
       {
-        backoffFactor: 1,
-        baseDelayMs: 5_000,
+        backoffFactor: 2,
+        baseDelayMs: 3_000,
         onRetry: (attempt, error) => {
           if (!quiet) {
             logger.info(`  Retry attempt ${attempt + 1}/3 for asset URL...`)
