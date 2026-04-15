@@ -55,6 +55,9 @@ export default defineConfig({
         useAtomics: true,
       },
     },
+    deps: {
+      interopDefault: false,
+    },
     testTimeout: 30_000,
     hookTimeout: 30_000,
     bail: process.env.CI ? 1 : 0, // Exit on first failure in CI for faster feedback.

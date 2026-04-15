@@ -79,6 +79,9 @@ export default defineConfig({
     //
     // Performance impact is acceptable for reliability.
     isolate: true,
+    deps: {
+      interopDefault: false,
+    },
     testTimeout: 30_000,
     hookTimeout: 30_000,
     // Enable file-level parallelization for better performance.

@@ -52,7 +52,6 @@
     "pretest": "pnpm run build:cli"
   },
   "devDependencies": {
-    "@typescript/native-preview": "7.0.0-dev.20260415.1",
     "@anthropic-ai/claude-code": "catalog:",
     "@babel/core": "catalog:",
     "@babel/parser": "catalog:",
@@ -63,7 +62,6 @@
     "@babel/preset-typescript": "catalog:",
     "@babel/runtime": "catalog:",
     "@babel/traverse": "catalog:",
-    "@dotenvx/dotenvx": "catalog:",
     "@npmcli/arborist": "catalog:",
     "@npmcli/config": "catalog:",
     "@octokit/graphql": "catalog:",
@@ -96,6 +94,7 @@
     "@types/semver": "catalog:",
     "@types/which": "catalog:",
     "@types/yargs-parser": "catalog:",
+    "@typescript/native-preview": "7.0.0-dev.20260415.1",
     "@vitest/coverage-v8": "catalog:",
     "@yao-pkg/pkg": "catalog:",
     "browserslist": "catalog:",

@@ -15,15 +15,7 @@ else
 fi
 
 if [ -z "${DISABLE_PRECOMMIT_TEST}" ]; then
-  if ! command -v dotenvx >/dev/null 2>&1; then
-    printf "Error: dotenvx not found in PATH\n" >&2
-    printf "Install with: pnpm i\n" >&2
-    exit 1
-  fi
-  # Note: .env.precommit is optional and not tracked in git (contains local test config).
-  # If missing, dotenvx will continue without it. Create .env.precommit with test
-  # environment variables to optimize pre-commit test performance.
-  dotenvx -q run -f .env.precommit -- pnpm test --staged
+  SOCKET_CLI_NO_API_TOKEN=1 pnpm test --staged
 else
   printf "Skipping testing due to DISABLE_PRECOMMIT_TEST env var\n"
 fi

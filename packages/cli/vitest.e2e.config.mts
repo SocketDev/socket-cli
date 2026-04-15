@@ -23,6 +23,9 @@ export default defineConfig({
     maxWorkers: os.cpus().length,
     // E2E tests need full isolation for clean execution.
     isolate: true,
+    deps: {
+      interopDefault: false,
+    },
     // E2E tests need longer timeouts for spawning processes.
     testTimeout: 60_000,
     hookTimeout: 60_000,
