@@ -23,14 +23,14 @@ if [ -n "$COMMITTED_FILES" ]; then
     if [ -f "$file" ]; then
       # Check for Socket API keys (except allowed).
       if grep -E 'sktsec_[a-zA-Z0-9_-]+' "$file" 2>/dev/null | grep -v "$ALLOWED_PUBLIC_KEY" | grep -v 'your_api_key_here' | grep -v 'fake-token' | grep -v 'test-token' | grep -v '\.example' | grep -q .; then
-        echo "${RED}✗ SECURITY: Potential API key detected in commit!${NC}"
+        printf "${RED}✗ SECURITY: Potential API key detected in commit!${NC}\n"
         printf "File: %s\n" "$file"
         ERRORS=$((ERRORS + 1))
       fi
 
       # Check for .env files.
       if echo "$file" | grep -qE '^\.env(\.local)?$'; then
-        echo "${RED}✗ SECURITY: .env file in commit!${NC}"
+        printf "${RED}✗ SECURITY: .env file in commit!${NC}\n"
         ERRORS=$((ERRORS + 1))
       fi
     fi
@@ -41,7 +41,12 @@ fi
 COMMIT_MSG_FILE="$1"
 if [ -f "$COMMIT_MSG_FILE" ]; then
   # Create a temporary file to store the cleaned message.
-  TEMP_FILE=$(mktemp)
+  TEMP_FILE=$(mktemp) || {
+    printf "${RED}✗ Failed to create temporary file${NC}\n" >&2
+    exit 1
+  }
+  # Ensure cleanup on exit
+  trap 'rm -f "$TEMP_FILE"' EXIT
   REMOVED_LINES=0
 
   # Read the commit message line by line and filter out AI attribution.
@@ -58,7 +63,7 @@ if [ -f "$COMMIT_MSG_FILE" ]; then
   # Replace the original commit message with the cleaned version.
   if [ $REMOVED_LINES -gt 0 ]; then
     mv "$TEMP_FILE" "$COMMIT_MSG_FILE"
-    echo "${GREEN}✓ Auto-stripped${NC} $REMOVED_LINES AI attribution line(s) from commit message"
+    printf "${GREEN}✓ Auto-stripped${NC} $REMOVED_LINES AI attribution line(s) from commit message\n"
   else
     # No lines were removed, just clean up the temp file.
     rm -f "$TEMP_FILE"
@@ -66,7 +71,7 @@ if [ -f "$COMMIT_MSG_FILE" ]; then
 fi
 
 if [ $ERRORS -gt 0 ]; then
-  echo "${RED}✗ Commit blocked by security validation${NC}"
+  printf "${RED}✗ Commit blocked by security validation${NC}\n"
   exit 1
 fi
 
