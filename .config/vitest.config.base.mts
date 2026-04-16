@@ -68,6 +68,9 @@ export default defineConfig({
         useAtomics: true,
       },
     },
+    deps: {
+      interopDefault: false,
+    },
     testTimeout: 30_000,
     hookTimeout: 30_000,
     coverage: {

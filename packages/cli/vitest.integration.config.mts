@@ -21,6 +21,9 @@ export default defineConfig({
     pool: 'threads',
     maxWorkers: os.cpus().length,
     isolate: true,
+    deps: {
+      interopDefault: false,
+    },
     testTimeout: 60_000, // Integration tests may take longer.
     hookTimeout: 30_000,
     fileParallelism: true,

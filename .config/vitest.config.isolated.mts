@@ -36,6 +36,9 @@ export default defineConfig({
         minForks: isCoverageEnabled ? 1 : 2,
       },
     },
+    deps: {
+      interopDefault: false,
+    },
     testTimeout: 30_000,
     hookTimeout: 10_000,
     coverage: {
