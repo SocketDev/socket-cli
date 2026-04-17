@@ -173,7 +173,10 @@ describe('api utilities', () => {
 
     it('returns message for 401 Unauthorized', async () => {
       const result = await getErrorMessageForHttpStatusCode(401)
-      expect(result).toContain('permissions')
+      // 401 is now distinct from 403: it's an auth/token problem, not
+      // a permissions problem. Callers get actionable "re-auth" guidance.
+      expect(result).toContain('Authentication failed')
+      expect(result).toContain('token')
     })
 
     it('returns message for 403 Forbidden', async () => {

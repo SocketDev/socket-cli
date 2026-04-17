@@ -163,7 +163,16 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
       '💡 Try: Check your command syntax and parameter values.'
     )
   }
-  if (code === HTTP_STATUS_FORBIDDEN || code === HTTP_STATUS_UNAUTHORIZED) {
+  if (code === HTTP_STATUS_UNAUTHORIZED) {
+    return (
+      '❌ Authentication failed: Your Socket API token appears to be invalid, expired, or revoked.\n' +
+      '💡 Try:\n' +
+      '  • Run `socket whoami` to verify your current token\n' +
+      '  • Run `socket login` to re-authenticate\n' +
+      `  • Manage tokens at ${SOCKET_SETTINGS_API_TOKENS_URL}`
+    )
+  }
+  if (code === HTTP_STATUS_FORBIDDEN) {
     return (
       '❌ Access denied: Your API token lacks required permissions or organization access.\n' +
       '💡 Try:\n' +
