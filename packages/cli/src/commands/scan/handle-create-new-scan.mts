@@ -31,6 +31,7 @@ import { runSocketBasics } from '../../utils/basics/spawn.mts'
 function excludeFactsJson(paths: string[]): string[] {
   return paths.filter(p => path.basename(p) !== DOT_SOCKET_DOT_FACTS_JSON)
 }
+import { findSocketYmlSync } from '../../utils/config.mts'
 import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 import { socketDocsLink } from '../../utils/terminal/link.mts'
@@ -149,7 +150,15 @@ export async function handleCreateNewScan({
   spinner.start('Searching for local files to include in scan...')
 
   const supportedFiles = supportedFilesCResult.data
+
+  // Load socket.yml so projectIgnorePaths is respected when collecting files.
+  const socketYmlResult = findSocketYmlSync(cwd)
+  const socketConfig = socketYmlResult.ok
+    ? socketYmlResult.data?.parsed
+    : undefined
+
   const packagePaths = await getPackageFilesForScan(targets, supportedFiles, {
+    config: socketConfig,
     cwd,
   })
 
