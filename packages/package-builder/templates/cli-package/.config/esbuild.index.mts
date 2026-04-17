@@ -18,7 +18,6 @@ const cliPath = path.resolve(__dirname, '../../cli')
 const config = createIndexConfig({
   entryPoint: path.join(cliPath, 'src', 'index.mts'),
   outfile: path.join(rootPath, 'dist', 'index.js'),
-  minify: false,
 })
 
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
