@@ -149,12 +149,27 @@ fetch_url_to_file() {
   fi
 }
 
+# Parse a JSON string field out of a response body. Tolerates a missing
+# field by returning empty, rather than dying under `pipefail`.
+parse_json_string() {
+  local body="$1"
+  local field="$2"
+  # Pipe through `cat` so a grep non-match (exit 1) doesn't trip pipefail;
+  # the final `echo` replaces an empty match with empty string.
+  printf '%s' "$body" \
+    | grep -o "\"${field}\": *\"[^\"]*\"" \
+    | head -1 \
+    | sed "s/\"${field}\": *\"\\([^\"]*\\)\"/\\1/" \
+    || true
+}
+
 # Get the latest version from npm registry.
 get_latest_version() {
   local package_name="$1"
-  local version
+  local body version
 
-  version=$(fetch_url "https://registry.npmjs.org/${package_name}/latest" | grep -o '"version": *"[^"]*"' | head -1 | sed 's/"version": *"\([^"]*\)"/\1/')
+  body=$(fetch_url "https://registry.npmjs.org/${package_name}/latest")
+  version=$(parse_json_string "$body" "version")
 
   if [ -z "$version" ]; then
     error "Failed to fetch latest version from npm registry"
@@ -172,31 +187,33 @@ get_latest_version() {
 get_published_integrity() {
   local package_name="$1"
   local version="$2"
-  local integrity
+  local body
 
-  integrity=$(fetch_url "https://registry.npmjs.org/${package_name}/${version}" | grep -o '"integrity": *"[^"]*"' | head -1 | sed 's/"integrity": *"\([^"]*\)"/\1/')
-
-  echo "$integrity"
+  body=$(fetch_url "https://registry.npmjs.org/${package_name}/${version}")
+  parse_json_string "$body" "integrity"
 }
 
 # Compute an SSRI-style hash (e.g. "sha512-<base64>") of a file.
+# Requires `openssl` — the tool is ubiquitous (macOS, every mainstream
+# Linux distro, Alpine's default image, WSL, Git Bash) and gives us a
+# one-step hex-less pipeline so we don't depend on `xxd` (not POSIX).
 compute_integrity() {
   local file="$1"
   local algo="$2"
   local digest
 
-  if command -v openssl &> /dev/null; then
-    digest=$(openssl dgst "-${algo}" -binary "$file" | base64 | tr -d '\n')
-  elif [ "$algo" = "sha512" ] && command -v shasum &> /dev/null; then
-    # Fallback: shasum prints hex; convert to base64.
-    digest=$(shasum -a 512 "$file" | awk '{print $1}' | xxd -r -p | base64 | tr -d '\n')
-  elif [ "$algo" = "sha256" ] && command -v shasum &> /dev/null; then
-    digest=$(shasum -a 256 "$file" | awk '{print $1}' | xxd -r -p | base64 | tr -d '\n')
-  else
-    error "No tool available to compute ${algo} (need openssl or shasum)"
+  if ! command -v openssl &> /dev/null; then
+    error "openssl not found — required to verify the download integrity"
+    echo ""
+    info "Install openssl and re-run:"
+    info "  macOS:   already installed (or: brew install openssl)"
+    info "  Alpine:  apk add openssl"
+    info "  Debian:  sudo apt-get install openssl"
+    info "  Fedora:  sudo dnf install openssl"
     exit 1
   fi
 
+  digest=$(openssl dgst "-${algo}" -binary "$file" | openssl base64 -A)
   echo "${algo}-${digest}"
 }
 
