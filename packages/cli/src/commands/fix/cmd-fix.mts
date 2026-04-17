@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import terminalLink from 'terminal-link'
@@ -408,6 +409,54 @@ async function run(
     return
   }
 
+  // Detect the common mistake of passing a vulnerability ID (GHSA / CVE /
+  // PURL) as a positional argument when the user meant to use `--id`.
+  // Without this guard we treat the ID as a directory path, resolve to cwd,
+  // and eventually fail with a confusing upload error. Run this before
+  // `getDefaultOrgSlug()` so users still get the helpful message when no
+  // API token is configured.
+  const rawInput = cli.input[0]
+  if (rawInput) {
+    const upperInput = rawInput.toUpperCase()
+    const isGhsa = upperInput.startsWith('GHSA-')
+    const isCve = upperInput.startsWith('CVE-')
+    const isPurl = rawInput.startsWith('pkg:')
+    if (isGhsa || isCve || isPurl) {
+      // `handle-fix.mts` validates IDs with case-sensitive format regexes:
+      //   * GHSA — prefix must be uppercase, body segments lowercase [a-z0-9]
+      //   * CVE  — prefix must be uppercase, body is all digits (case-free)
+      // PURLs are intentionally lowercase and validated separately.
+      let suggestion: string
+      if (isGhsa) {
+        suggestion = 'GHSA-' + rawInput.slice(5).toLowerCase()
+      } else if (isCve) {
+        suggestion = 'CVE-' + rawInput.slice(4)
+      } else {
+        suggestion = rawInput
+      }
+      logger.fail(
+        `"${rawInput}" looks like a vulnerability identifier, not a directory path.\nDid you mean: socket fix ${FLAG_ID} ${suggestion}`,
+      )
+      process.exitCode = 1
+      return
+    }
+  }
+
+  let [cwd = '.'] = cli.input
+  // Note: path.resolve vs .join:
+  // If given path is absolute then cwd should not affect it.
+  cwd = path.resolve(process.cwd(), cwd)
+
+  // Validate the target directory exists so we fail fast with a clear
+  // message instead of the API's "Need at least one file to be uploaded".
+  // Also runs before the org-slug resolution so the user sees a clearer
+  // error when pointing at a typo'd path without an API token set.
+  if (!existsSync(cwd)) {
+    logger.fail(`Target directory does not exist: ${cwd}`)
+    process.exitCode = 1
+    return
+  }
+
   const orgSlugCResult = await getDefaultOrgSlug()
   if (!orgSlugCResult.ok) {
     process.exitCode = orgSlugCResult.code ?? 1
@@ -418,11 +467,6 @@ async function run(
   }
 
   const orgSlug = orgSlugCResult.data
-
-  let [cwd = '.'] = cli.input
-  // Note: path.resolve vs .join:
-  // If given path is absolute then cwd should not affect it.
-  cwd = path.resolve(process.cwd(), cwd)
 
   const spinner = undefined
 
