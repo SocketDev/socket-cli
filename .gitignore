@@ -33,6 +33,7 @@ yarn-error.log*
 # Build outputs and artifacts
 # ============================================================================
 **/.build-checkpoints
+**/*.build-signature
 **/.cache/
 /.rollup.cache
 **/.type-coverage/
