@@ -103,6 +103,14 @@ Key variables for development:
 | `SOCKET_CLI_API_BASE_URL` | Override API endpoint |
 | `SOCKET_CLI_NO_API_TOKEN` | Disable default API token |
 
+## Further Reading
+
+- [`docs/build-guide.md`](docs/build-guide.md) — build pipeline, SEA binaries, cache management
+- [`docs/bundle-tools.md`](docs/bundle-tools.md) — how bundled tools (opengrep, trivy, etc.) are integrated
+- [`packages/cli/README.md`](packages/cli/README.md) — CLI package architecture
+- [`packages/build-infra/README.md`](packages/build-infra/README.md) — shared build tooling
+- [`packages/package-builder/README.md`](packages/package-builder/README.md) — template-based package generation
+
 ## See Also
 
 - [Socket API Reference](https://docs.socket.dev/reference)
