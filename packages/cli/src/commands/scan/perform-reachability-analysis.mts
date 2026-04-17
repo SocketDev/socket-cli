@@ -2,6 +2,7 @@ import path from 'node:path'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+import { HTTP_STATUS_UNAUTHORIZED } from '../../constants/http.mts'
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
 import {
   SOCKET_DEFAULT_BRANCH,
@@ -81,6 +82,15 @@ export async function performReachabilityAnalysis(
   // Check if user has enterprise plan for reachability analysis.
   const orgsCResult = await fetchOrganization()
   if (!orgsCResult.ok) {
+    const httpCode = (orgsCResult as { data?: { code?: number } }).data?.code
+    if (httpCode === HTTP_STATUS_UNAUTHORIZED) {
+      return {
+        ok: false,
+        message: 'Authentication failed',
+        cause:
+          'Your API token appears to be invalid, expired, or revoked. Please check your token and try again.',
+      }
+    }
     return {
       ok: false,
       message: 'Unable to verify plan permissions',
