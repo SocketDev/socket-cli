@@ -18,10 +18,13 @@
  *   pnpm run build --help                    # Show this help
  */
 
-import { existsSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+
+import fg from 'fast-glob'
 
 import colors from 'yoctocolors-cjs'
 
@@ -54,6 +57,12 @@ interface BuildPackageConfig {
   name: string
   filter: string
   outputCheck: string
+  /**
+   * Glob patterns (repo-relative) whose file contents contribute to the build
+   * signature. A change to any matching file invalidates the cache and forces
+   * a rebuild.
+   */
+  inputs: string[]
 }
 
 interface BuildResult {
@@ -87,8 +96,62 @@ const BUILD_PACKAGES: BuildPackageConfig[] = [
     name: 'CLI Package',
     filter: '@socketsecurity/cli',
     outputCheck: 'packages/cli/dist/index.js',
+    inputs: [
+      'packages/cli/.config/**/*.{mts,ts,json}',
+      'packages/cli/scripts/**/*.{mts,ts}',
+      'packages/cli/src/**/*.{mts,ts,cts,json}',
+      'packages/cli/package.json',
+      'packages/cli/tsconfig.json',
+      'packages/build-infra/lib/**/*.{mts,ts}',
+      'packages/build-infra/package.json',
+      'pnpm-lock.yaml',
+      '.node-version',
+    ],
   },
 ]
+
+/**
+ * Compute a SHA-256 signature over the contents of files matched by the
+ * package's input globs. Files are sorted to keep the hash deterministic.
+ */
+function computeBuildSignature(pkg: BuildPackageConfig): string {
+  const files = fg.sync(pkg.inputs, {
+    cwd: rootDir,
+    onlyFiles: true,
+    dot: true,
+    absolute: true,
+  })
+  files.sort()
+
+  const hash = createHash('sha256')
+  for (const file of files) {
+    const relative = path.relative(rootDir, file)
+    hash.update(relative)
+    hash.update('\0')
+    hash.update(readFileSync(file))
+    hash.update('\0')
+  }
+  return hash.digest('hex')
+}
+
+/**
+ * Path to the sidecar signature file written alongside the build output.
+ */
+function signaturePath(pkg: BuildPackageConfig): string {
+  return path.join(rootDir, `${pkg.outputCheck}.build-signature`)
+}
+
+function readSignature(pkg: BuildPackageConfig): string | null {
+  const file = signaturePath(pkg)
+  if (!existsSync(file)) {
+    return null
+  }
+  return readFileSync(file, 'utf8').trim()
+}
+
+function writeSignature(pkg: BuildPackageConfig, signature: string): void {
+  writeFileSync(signaturePath(pkg), `${signature}\n`, 'utf8')
+}
 
 /**
  * Parse command line arguments.
@@ -210,6 +273,12 @@ function showHelp(): void {
 /**
  * Check if a package needs to be built.
  * Returns true if build is needed, false if can skip.
+ *
+ * Rebuild triggers:
+ *   1. --force
+ *   2. Missing build output
+ *   3. Missing signature sidecar
+ *   4. Current input signature differs from the recorded one
  */
 function needsBuild(pkg: BuildPackageConfig, force: boolean): boolean {
   if (force) {
@@ -221,8 +290,12 @@ function needsBuild(pkg: BuildPackageConfig, force: boolean): boolean {
     return true
   }
 
-  // Output exists, can skip.
-  return false
+  const stored = readSignature(pkg)
+  if (!stored) {
+    return true
+  }
+
+  return computeBuildSignature(pkg) !== stored
 }
 
 /**
@@ -263,6 +336,15 @@ async function buildPackage(
   logger.log(
     `${colors.green('✓')} ${pkg.name}: ${colors.green('built')} (${duration}s)`,
   )
+
+  try {
+    writeSignature(pkg, computeBuildSignature(pkg))
+  } catch (e) {
+    logger.warn(
+      `Could not write build signature for ${pkg.name}: ${e instanceof Error ? e.message : String(e)}`,
+    )
+  }
+
   return { success: true, skipped: false }
 }
 
