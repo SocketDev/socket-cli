@@ -422,10 +422,18 @@ async function run(
     const isCve = upperInput.startsWith('CVE-')
     const isPurl = rawInput.startsWith('pkg:')
     if (isGhsa || isCve || isPurl) {
-      // `handle-fix.mts` matches GHSA/CVE prefixes case-sensitively, so
-      // echo GHSA/CVE in uppercase in the suggestion. PURLs keep their
-      // original case (they're intentionally lowercase).
-      const suggestion = isPurl ? rawInput : upperInput
+      // `handle-fix.mts` validates IDs with case-sensitive format regexes:
+      //   * GHSA — prefix must be uppercase, body segments lowercase [a-z0-9]
+      //   * CVE  — prefix must be uppercase, body is all digits (case-free)
+      // PURLs are intentionally lowercase and validated separately.
+      let suggestion: string
+      if (isGhsa) {
+        suggestion = 'GHSA-' + rawInput.slice(5).toLowerCase()
+      } else if (isCve) {
+        suggestion = 'CVE-' + rawInput.slice(4)
+      } else {
+        suggestion = rawInput
+      }
       logger.fail(
         `"${rawInput}" looks like a vulnerability identifier, not a directory path.\nDid you mean: socket fix ${FLAG_ID} ${suggestion}`,
       )

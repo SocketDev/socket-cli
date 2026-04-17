@@ -366,16 +366,35 @@ describe('cmd-fix', () => {
       )
     })
 
-    it('should uppercase a lowercase GHSA/CVE in the suggestion', async () => {
+    it('should normalize a lowercase GHSA suggestion to prefix-upper / body-lower', async () => {
       await cmdFix.run(['ghsa-abcd-efgh-ijkl'], importMeta, context)
 
       expect(process.exitCode).toBe(1)
       expect(mockHandleFix).not.toHaveBeenCalled()
-      // handle-fix.mts matches GHSA/CVE prefixes case-sensitively, so the
-      // suggested command must use the uppercase form or it will fail
-      // downstream with "Unsupported ID format".
+      // handle-fix.mts validates GHSA format as /^GHSA-[a-z0-9]{4}-...$/:
+      // prefix must be uppercase, body segments must stay lowercase.
       expect(mockLogger.fail).toHaveBeenCalledWith(
-        expect.stringContaining('--id GHSA-ABCD-EFGH-IJKL'),
+        expect.stringContaining('--id GHSA-abcd-efgh-ijkl'),
+      )
+    })
+
+    it('should normalize a lowercase CVE suggestion to uppercase CVE prefix', async () => {
+      await cmdFix.run(['cve-2021-23337'], importMeta, context)
+
+      expect(process.exitCode).toBe(1)
+      expect(mockHandleFix).not.toHaveBeenCalled()
+      expect(mockLogger.fail).toHaveBeenCalledWith(
+        expect.stringContaining('--id CVE-2021-23337'),
+      )
+    })
+
+    it('should leave a PURL suggestion untouched', async () => {
+      await cmdFix.run(['pkg:npm/left-pad@1.3.0'], importMeta, context)
+
+      expect(process.exitCode).toBe(1)
+      expect(mockHandleFix).not.toHaveBeenCalled()
+      expect(mockLogger.fail).toHaveBeenCalledWith(
+        expect.stringContaining('--id pkg:npm/left-pad@1.3.0'),
       )
     })
 
