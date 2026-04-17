@@ -469,6 +469,9 @@ describe('api utilities', () => {
       expect(result.ok).toBe(false)
       if (!result.ok) {
         expect(result.message).toContain('failed')
+        // The cause must include the request path so the user can tell
+        // which endpoint failed when several calls are in flight.
+        expect(result.cause).toContain('(path: test/path)')
       }
       expect(mockFailAndStop).toHaveBeenCalled()
     })
@@ -493,6 +496,7 @@ describe('api utilities', () => {
       expect(result.ok).toBe(false)
       if (!result.ok) {
         expect(result.cause).toContain('response text')
+        expect(result.cause).toContain('(path: test/path)')
       }
     })
   })
@@ -628,6 +632,8 @@ describe('api utilities', () => {
       expect(result.ok).toBe(false)
       if (!result.ok) {
         expect(result.message).toContain('failed')
+        // Request path must be surfaced in error cause for debuggability.
+        expect(result.cause).toContain('(path: test/path)')
       }
     })
 
@@ -642,6 +648,7 @@ describe('api utilities', () => {
       expect(result.ok).toBe(false)
       if (!result.ok) {
         expect(result.cause).toContain('parsing')
+        expect(result.cause).toContain('(path: test/path)')
       }
     })
 

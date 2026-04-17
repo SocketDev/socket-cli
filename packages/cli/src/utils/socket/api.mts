@@ -465,7 +465,7 @@ export async function queryApiSafeText(
     return {
       ok: false,
       message,
-      cause: networkDiagnostics,
+      cause: `${networkDiagnostics} (path: ${path})`,
     }
   }
 
@@ -506,7 +506,7 @@ export async function queryApiSafeText(
     return {
       ok: false,
       message: 'API request failed',
-      cause: 'Unexpected error reading response text',
+      cause: `Unexpected error reading response text (path: ${path})`,
     }
   }
 }
@@ -643,7 +643,7 @@ export async function sendApiRequest<T>(
     return {
       ok: false,
       message,
-      cause: networkDiagnostics,
+      cause: `${networkDiagnostics} (path: ${path})`,
     }
   }
 
@@ -686,7 +686,7 @@ export async function sendApiRequest<T>(
     return {
       ok: false,
       message: 'API request failed',
-      cause: 'Unexpected error parsing response JSON',
+      cause: `Unexpected error parsing response JSON (path: ${path})`,
     }
   }
 }
