@@ -15,7 +15,7 @@
 //
 // Exit codes:
 //   0 = allow (no new deps, all clean, or non-dep file)
-//   2 = block (malware or critical alert from Socket.dev)
+//   2 = block (malware detected by Socket.dev)
 
 import {
   parseNpmSpecifier,
@@ -36,8 +36,6 @@ const logger = getDefaultLogger()
 
 // Per-request timeout (ms) to avoid blocking the hook on slow responses.
 const API_TIMEOUT = 5_000
-// Deps scoring below this threshold trigger a warning (not a block).
-const LOW_SCORE_THRESHOLD = 0.5
 // Max PURLs per batch request (API limit is 1024).
 const MAX_BATCH_SIZE = 1024
 // How long (ms) to cache a successful API response (5 minutes).
@@ -75,9 +73,7 @@ interface HookInput {
 interface CheckResult {
   purl: string
   blocked?: boolean
-  warned?: boolean
   reason?: string
-  score?: number
 }
 
 
@@ -324,14 +320,8 @@ async function check(hook: HookInput): Promise<number> {
   if (deps.length === 0) return 0
 
   // Check all deps via SDK checkMalware().
-  const { blocked, warned } = await checkDepsBatch(deps)
+  const blocked = await checkDepsBatch(deps)
 
-  if (warned.length > 0) {
-    logger.warn('Socket: low-scoring dependencies (not blocked):')
-    for (const w of warned) {
-      logger.warn(`  ${w.purl}: overall score ${w.score}`)
-    }
-  }
   if (blocked.length > 0) {
     logger.error(`Socket: blocked ${blocked.length} dep(s):`)
     for (const b of blocked) {
@@ -343,14 +333,11 @@ async function check(hook: HookInput): Promise<number> {
 }
 
 // Check deps against Socket.dev using SDK v4 checkMalware().
-// The SDK automatically routes small sets (<=5) to parallel firewall
-// requests and larger sets to the batch PURL API.
 // Deps already in cache are skipped; results are cached after lookup.
 async function checkDepsBatch(
   deps: Dep[],
-): Promise<{ blocked: CheckResult[]; warned: CheckResult[] }> {
+): Promise<CheckResult[]> {
   const blocked: CheckResult[] = []
-  const warned: CheckResult[] = []
 
   // Partition deps into cached vs uncached.
   const uncached: Array<{ dep: Dep; purl: string }> = []
@@ -359,13 +346,12 @@ async function checkDepsBatch(
     const cached = cacheGet(purl)
     if (cached) {
       if (cached.result?.blocked) blocked.push(cached.result)
-      else if (cached.result?.warned) warned.push(cached.result)
       continue
     }
     uncached.push({ dep, purl })
   }
 
-  if (!uncached.length) return { blocked, warned }
+  if (!uncached.length) return blocked
 
   try {
     // Process in chunks to respect API batch size limit.
@@ -379,7 +365,7 @@ async function checkDepsBatch(
         logger.warn(
           `Socket: API returned ${result.status}, allowing all`
         )
-        return { blocked, warned }
+        return blocked
       }
 
       // Build lookup keyed by full PURL (includes namespace + version).
@@ -395,37 +381,22 @@ async function checkDepsBatch(
         const purl = purlByKey.get(key)
         if (!purl) continue
 
-        // Check for malware or critical-severity alerts.
-        const critical = pkg.alerts.find(
+        // Check for malware alerts.
+        const malware = pkg.alerts.find(
           a => a.severity === 'critical' || a.type === 'malware'
         )
-        if (critical) {
+        if (malware) {
           const cr: CheckResult = {
             purl,
             blocked: true,
-            reason: `${critical.type} — ${critical.severity ?? 'critical'}`,
+            reason: `${malware.type} — ${malware.severity ?? 'critical'}`,
           }
           cacheSet(purl, cr)
           blocked.push(cr)
           continue
         }
 
-        // Warn on low quality score.
-        if (
-          pkg.score?.overall !== undefined
-          && pkg.score.overall < LOW_SCORE_THRESHOLD
-        ) {
-          const wr: CheckResult = {
-            purl,
-            warned: true,
-            score: pkg.score.overall,
-          }
-          cacheSet(purl, wr)
-          warned.push(wr)
-          continue
-        }
-
-        // No blocking alerts — clean dep.
+        // No malware alerts — clean dep.
         cacheSet(purl, undefined)
       }
     }
@@ -437,7 +408,7 @@ async function checkDepsBatch(
     )
   }
 
-  return { blocked, warned }
+  return blocked
 }
 
 // Return deps in `newDeps` that don't appear in `oldDeps` (by PURL).

@@ -8,10 +8,9 @@ When Claude edits a file like `package.json`, `requirements.txt`, `Cargo.toml`, 
 
 1. **Detects the file type** and extracts dependency names from the content
 2. **Diffs against the old content** (for edits) so only *newly added* deps are checked
-3. **Queries the Socket.dev API** to check for malware and critical security alerts
-4. **Blocks the edit** (exit code 2) if malware or critical alerts are found
-5. **Warns** (but allows) if a package has a low quality score
-6. **Allows** (exit code 0) if everything is clean or the file isn't a manifest
+3. **Queries the Socket.dev API** to check for malware
+4. **Blocks the edit** (exit code 2) if malware is detected
+5. **Allows** (exit code 0) if everything is clean or the file isn't a manifest
 
 ## How it works
 
@@ -30,11 +29,8 @@ Build Package URLs (PURLs) for each dep
         │
         ▼
 Call sdk.checkMalware(components)
-  - ≤5 deps: parallel firewall API (fast, full data)
-  - >5 deps: batch PURL API (efficient)
         │
-        ├── Malware/critical alert → EXIT 2 (blocked)
-        ├── Low score → warn, EXIT 0 (allowed)
+        ├── Malware detected → EXIT 2 (blocked)
         └── Clean → EXIT 0 (allowed)
 ```
 
