@@ -114,9 +114,9 @@ Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). User-facing cha
 
 - `.mts` extensions for TypeScript modules
 - 🚨 ALWAYS use separate `import type` statements -- NEVER mix runtime and type imports
-- Node.js fs: `import { someSyncThing, promises as fs } from 'node:fs'`
+- Node.js fs: `import { existsSync, promises as fs } from 'node:fs'` (cherry-pick `existsSync`, alias promises as `fs`)
 - Process spawning: MUST use `spawn` from `@socketsecurity/registry/lib/spawn` (NEVER `child_process`)
-- File existence: ALWAYS use `existsSync()` from `node:fs` (NEVER `fs.access`)
+- File existence: ALWAYS use `existsSync` from `node:fs`. NEVER `fs.access`, `fs.stat`-for-existence, or an async `fileExists` wrapper.
 
 ### Code Patterns
 
