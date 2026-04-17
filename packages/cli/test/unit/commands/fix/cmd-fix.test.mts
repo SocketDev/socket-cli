@@ -366,6 +366,33 @@ describe('cmd-fix', () => {
       )
     })
 
+    it('should uppercase a lowercase GHSA/CVE in the suggestion', async () => {
+      await cmdFix.run(['ghsa-abcd-efgh-ijkl'], importMeta, context)
+
+      expect(process.exitCode).toBe(1)
+      expect(mockHandleFix).not.toHaveBeenCalled()
+      // handle-fix.mts matches GHSA/CVE prefixes case-sensitively, so the
+      // suggested command must use the uppercase form or it will fail
+      // downstream with "Unsupported ID format".
+      expect(mockLogger.fail).toHaveBeenCalledWith(
+        expect.stringContaining('--id GHSA-ABCD-EFGH-IJKL'),
+      )
+    })
+
+    it('should fail fast without calling getDefaultOrgSlug when input looks like an ID', async () => {
+      await cmdFix.run(['GHSA-xxxx-xxxx-xxxx'], importMeta, context)
+
+      // The validation must run before the network-backed org-slug resolution,
+      // so users without a configured API token still see the helpful message.
+      expect(mockGetDefaultOrgSlug).not.toHaveBeenCalled()
+    })
+
+    it('should fail fast without calling getDefaultOrgSlug when target dir missing', async () => {
+      await cmdFix.run(['./this/path/does/not/exist'], importMeta, context)
+
+      expect(mockGetDefaultOrgSlug).not.toHaveBeenCalled()
+    })
+
     it('should support --json output mode', async () => {
       await cmdFix.run(['--json'], importMeta, context)
 
