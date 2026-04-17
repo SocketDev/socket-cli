@@ -116,13 +116,19 @@ detect_platform() {
 }
 
 # Fetch a URL to stdout, enforcing HTTPS.
+#
+# curl enforces HTTPS via `--proto '=https'`. wget's `--https-only` only
+# applies to recursive downloads, so for the single-file fetches we do
+# here we disable redirect following (`--max-redirect=0`) — npm's
+# registry serves responses directly with no redirect, so this is safe
+# AND blocks any MITM attempt to redirect us to http://.
 fetch_url() {
   local url="$1"
 
   if command -v curl &> /dev/null; then
     curl --proto '=https' --tlsv1.2 -fsSL "$url"
   elif command -v wget &> /dev/null; then
-    wget --https-only -qO- "$url"
+    wget --max-redirect=0 -qO- "$url"
   else
     error "Neither curl nor wget found on your system"
     echo ""
@@ -134,7 +140,7 @@ fetch_url() {
   fi
 }
 
-# Download a URL to a file, enforcing HTTPS.
+# Download a URL to a file, enforcing HTTPS (see `fetch_url` comment).
 fetch_url_to_file() {
   local url="$1"
   local out="$2"
@@ -142,7 +148,7 @@ fetch_url_to_file() {
   if command -v curl &> /dev/null; then
     curl --proto '=https' --tlsv1.2 -fsSL -o "$out" "$url"
   elif command -v wget &> /dev/null; then
-    wget --https-only -qO "$out" "$url"
+    wget --max-redirect=0 -qO "$out" "$url"
   else
     error "Neither curl nor wget found on your system"
     exit 1
