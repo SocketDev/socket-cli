@@ -79,7 +79,9 @@ If user repeats instruction 2+ times, ask: "Should I add this to CLAUDE.md?"
 
 ### Documentation Policy
 
-Do NOT litter the repository with documentation files. Allowed locations: `docs/`, root `README.md`/`CHANGELOG.md`/`SECURITY.md`/`CLAUDE.md`, `packages/*/README.md`, `test/fixtures/*/README.md`, `test/*/README.md`. No `.claude/*.md` analysis docs, no ad-hoc markdown files.
+Do NOT litter the repository with documentation files. Allowed locations: `docs/`, root `README.md`/`CHANGELOG.md`/`SECURITY.md`/`CLAUDE.md`, `packages/*/README.md`, `test/fixtures/*/README.md`, `test/*/README.md`. No ad-hoc markdown files.
+
+**`.claude/` exception**: markdown files under `.claude/agents/`, `.claude/commands/`, `.claude/hooks/`, and `.claude/skills/` are allowed because the Claude harness reads them as configuration (agent definitions, command metadata, `SKILL.md` entrypoints, skill references). These are config, not analysis docs. Ad-hoc analysis/session notes in `.claude/` are still disallowed.
 
 ---
 
