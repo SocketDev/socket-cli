@@ -7,6 +7,7 @@ const logger = getDefaultLogger()
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { outputScanReach } from './output-scan-reach.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
+import { findSocketYmlSync } from '../../utils/config.mts'
 import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
@@ -49,7 +50,15 @@ export async function handleScanReach({
   )
 
   const supportedFiles = supportedFilesCResult.data
+
+  // Load socket.yml so projectIgnorePaths is respected when collecting files.
+  const socketYmlResult = findSocketYmlSync(cwd)
+  const socketConfig = socketYmlResult.ok
+    ? socketYmlResult.data?.parsed
+    : undefined
+
   const packagePaths = await getPackageFilesForScan(targets, supportedFiles, {
+    config: socketConfig,
     cwd,
   })
 

@@ -113,6 +113,8 @@ vi.mock('../../../../src/commands/fix/pr-lifecycle-logger.mts', () => ({
 
 vi.mock('@socketsecurity/lib/fs', () => ({
   readJsonSync: mockReadJsonSync,
+  // Return undefined so findSocketYmlSync treats socket.yml as absent.
+  safeReadFileSync: vi.fn(() => undefined),
 }))
 
 vi.mock('node:fs', () => ({

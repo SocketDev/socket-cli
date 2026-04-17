@@ -29,6 +29,7 @@ import {
 import { FLAG_DRY_RUN } from '../../constants/cli.mts'
 import { GQL_PR_STATE_OPEN } from '../../constants/github.mts'
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
+import { findSocketYmlSync } from '../../utils/config.mts'
 import { spawnCoanaDlx } from '../../utils/dlx/spawn.mjs'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
@@ -121,7 +122,15 @@ export async function coanaFix(
   }
 
   const supportedFiles = supportedFilesCResult.data
+
+  // Load socket.yml so projectIgnorePaths is respected when collecting files.
+  const socketYmlResult = findSocketYmlSync(cwd)
+  const socketConfig = socketYmlResult.ok
+    ? socketYmlResult.data?.parsed
+    : undefined
+
   const scanFilepaths = await getPackageFilesForScan(['.'], supportedFiles, {
+    config: socketConfig,
     cwd,
   })
 
