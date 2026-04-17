@@ -115,17 +115,20 @@ detect_platform() {
   echo "${os}-${arch}${libc_suffix}"
 }
 
-# Get the latest version from npm registry.
-get_latest_version() {
-  local package_name="$1"
-  local version
+# Fetch a URL to stdout, enforcing HTTPS.
+#
+# curl enforces HTTPS via `--proto '=https'`. wget's `--https-only` only
+# applies to recursive downloads, so for the single-file fetches we do
+# here we disable redirect following (`--max-redirect=0`) — npm's
+# registry serves responses directly with no redirect, so this is safe
+# AND blocks any MITM attempt to redirect us to http://.
+fetch_url() {
+  local url="$1"
 
-  # Try using curl with npm registry API.
   if command -v curl &> /dev/null; then
-    version=$(curl -fsSL "https://registry.npmjs.org/${package_name}/latest" | grep -o '"version": *"[^"]*"' | head -1 | sed 's/"version": *"\([^"]*\)"/\1/')
-  # Fallback to wget.
+    curl --proto '=https' --tlsv1.2 -fsSL "$url"
   elif command -v wget &> /dev/null; then
-    version=$(wget -qO- "https://registry.npmjs.org/${package_name}/latest" | grep -o '"version": *"[^"]*"' | head -1 | sed 's/"version": *"\([^"]*\)"/\1/')
+    wget --max-redirect=0 -qO- "$url"
   else
     error "Neither curl nor wget found on your system"
     echo ""
@@ -135,6 +138,44 @@ get_latest_version() {
     info "  Fedora:  sudo dnf install curl"
     exit 1
   fi
+}
+
+# Download a URL to a file, enforcing HTTPS (see `fetch_url` comment).
+fetch_url_to_file() {
+  local url="$1"
+  local out="$2"
+
+  if command -v curl &> /dev/null; then
+    curl --proto '=https' --tlsv1.2 -fsSL -o "$out" "$url"
+  elif command -v wget &> /dev/null; then
+    wget --max-redirect=0 -qO "$out" "$url"
+  else
+    error "Neither curl nor wget found on your system"
+    exit 1
+  fi
+}
+
+# Parse a JSON string field out of a response body. Tolerates a missing
+# field by returning empty, rather than dying under `pipefail`.
+parse_json_string() {
+  local body="$1"
+  local field="$2"
+  # Pipe through `cat` so a grep non-match (exit 1) doesn't trip pipefail;
+  # the final `echo` replaces an empty match with empty string.
+  printf '%s' "$body" \
+    | grep -o "\"${field}\": *\"[^\"]*\"" \
+    | head -1 \
+    | sed "s/\"${field}\": *\"\\([^\"]*\\)\"/\\1/" \
+    || true
+}
+
+# Get the latest version from npm registry.
+get_latest_version() {
+  local package_name="$1"
+  local body version
+
+  body=$(fetch_url "https://registry.npmjs.org/${package_name}/latest")
+  version=$(parse_json_string "$body" "version")
 
   if [ -z "$version" ]; then
     error "Failed to fetch latest version from npm registry"
@@ -145,6 +186,41 @@ get_latest_version() {
   fi
 
   echo "$version"
+}
+
+# Get the npm-published integrity string (SSRI format, e.g. "sha512-...") for
+# a specific version.
+get_published_integrity() {
+  local package_name="$1"
+  local version="$2"
+  local body
+
+  body=$(fetch_url "https://registry.npmjs.org/${package_name}/${version}")
+  parse_json_string "$body" "integrity"
+}
+
+# Compute an SSRI-style hash (e.g. "sha512-<base64>") of a file.
+# Requires `openssl` — the tool is ubiquitous (macOS, every mainstream
+# Linux distro, Alpine's default image, WSL, Git Bash) and gives us a
+# one-step hex-less pipeline so we don't depend on `xxd` (not POSIX).
+compute_integrity() {
+  local file="$1"
+  local algo="$2"
+  local digest
+
+  if ! command -v openssl &> /dev/null; then
+    error "openssl not found — required to verify the download integrity"
+    echo ""
+    info "Install openssl and re-run:"
+    info "  macOS:   already installed (or: brew install openssl)"
+    info "  Alpine:  apk add openssl"
+    info "  Debian:  sudo apt-get install openssl"
+    info "  Fedora:  sudo dnf install openssl"
+    exit 1
+  fi
+
+  digest=$(openssl dgst "-${algo}" -binary "$file" | openssl base64 -A)
+  echo "${algo}-${digest}"
 }
 
 # Calculate SHA256 hash of a string.
@@ -201,16 +277,43 @@ install_socket_cli() {
   # Create installation directory.
   mkdir -p "$install_dir"
 
-  # Download tarball to temporary location.
-  local temp_tarball="${install_dir}/socket.tgz"
-
-  if command -v curl &> /dev/null; then
-    curl -fsSL -o "$temp_tarball" "$download_url"
-  elif command -v wget &> /dev/null; then
-    wget -qO "$temp_tarball" "$download_url"
+  # Look up the integrity string the registry published for this exact version.
+  step "Fetching published integrity..."
+  local expected_integrity
+  expected_integrity=$(get_published_integrity "$package_name" "$version")
+  if [ -z "$expected_integrity" ]; then
+    error "No integrity found in the npm registry metadata for ${package_name}@${version}"
+    info "Refusing to install without a published checksum to verify against."
+    exit 1
   fi
 
-  success "Package downloaded successfully"
+  # Algorithm prefix from the SSRI string (e.g. "sha512-..." -> "sha512").
+  local integrity_algo="${expected_integrity%%-*}"
+
+  # Download tarball to a temporary location outside the install dir so a
+  # failed verify can't leave a partial blob where future runs might trust it.
+  local temp_tarball
+  if command -v mktemp &> /dev/null; then
+    temp_tarball=$(mktemp -t socket-cli.XXXXXX.tgz 2>/dev/null || mktemp "${TMPDIR:-/tmp}/socket-cli.XXXXXX")
+  else
+    temp_tarball="${TMPDIR:-/tmp}/socket-cli.$$.tgz"
+  fi
+  trap 'rm -f "$temp_tarball"' EXIT
+
+  fetch_url_to_file "$download_url" "$temp_tarball"
+
+  # Verify integrity against the value npm published for this version.
+  step "Verifying integrity..."
+  local actual_integrity
+  actual_integrity=$(compute_integrity "$temp_tarball" "$integrity_algo")
+  if [ "$actual_integrity" != "$expected_integrity" ]; then
+    error "Integrity check failed for ${package_name}@${version}"
+    info "  expected: ${expected_integrity}"
+    info "  got:      ${actual_integrity}"
+    info "Not installing. Please retry; if this persists, open an issue."
+    exit 1
+  fi
+  success "Integrity verified (${integrity_algo})"
 
   # Extract tarball.
   step "Capturing lightning in a bottle ⚡"
@@ -250,8 +353,9 @@ install_socket_cli() {
     fi
   fi
 
-  # Clean up tarball.
-  rm "$temp_tarball"
+  # Clean up tarball (EXIT trap also handles this in error paths).
+  rm -f "$temp_tarball"
+  trap - EXIT
 
   success "Binary ready at ${BOLD}$binary_path${NC}"
 
