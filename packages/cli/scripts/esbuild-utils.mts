@@ -16,41 +16,55 @@ import { EnvironmentVariables } from './environment-variables.mts'
 const logger = getDefaultLogger()
 
 /**
- * Create a standard index loader config.
- * @param {Object} options - Configuration options
- * @param {string} options.entryPoint - Path to entry point file
- * @param {string} options.outfile - Path to output file
- * @returns {Object} esbuild configuration object
+ * Settings every Socket CLI esbuild config shares.
+ *
+ * Kept in one place so the target Node version, module format, minify
+ * default, etc. can't drift between the index loader and the main CLI
+ * bundle. Callers spread this and add variant-specific fields
+ * (entry points, output, banner, plugins, extra defines).
  */
-export function createIndexConfig({ entryPoint, outfile }: { entryPoint: string; outfile: string }) {
-  // Get inlined environment variables for build-time constant replacement.
-  const inlinedEnvVars = getInlinedEnvVars()
-
-  const config: BuildOptions = {
-    banner: {
-      js: '#!/usr/bin/env node',
-    },
+export function createBaseConfig(
+  inlinedEnvVars: Record<string, string>,
+): BuildOptions {
+  return {
     bundle: true,
-    entryPoints: [entryPoint],
-    format: 'cjs',
-    minify: false,
-    outfile,
-    platform: 'node',
-    // Source maps off for entry point production build.
-    sourcemap: false,
-    target: 'node18',
-    // Define environment variables for inlining.
     define: {
       'process.env.NODE_ENV': '"production"',
       ...createDefineEntries(inlinedEnvVars),
     },
-    // Add plugin for post-bundle env var replacement.
-    plugins: [envVarReplacementPlugin(inlinedEnvVars)],
-    // Plugin needs to transform output.
+    format: 'cjs',
+    minify: false,
+    platform: 'node',
+    // We don't ship minified bundles and we don't ship sourcemaps for prod.
+    sourcemap: false,
+    target: 'node25',
+    // Plugin writes are handled by `runBuild` so every caller's env-var
+    // replacement can mutate output buffers before they hit disk.
     write: false,
   }
+}
 
-  return config
+/**
+ * Create a standard index loader config.
+ */
+export function createIndexConfig({
+  entryPoint,
+  outfile,
+}: {
+  entryPoint: string
+  outfile: string
+}): BuildOptions {
+  const inlinedEnvVars = getInlinedEnvVars()
+
+  return {
+    ...createBaseConfig(inlinedEnvVars),
+    banner: {
+      js: '#!/usr/bin/env node',
+    },
+    entryPoints: [entryPoint],
+    outfile,
+    plugins: [envVarReplacementPlugin(inlinedEnvVars)],
+  }
 }
 
 /**

@@ -14,7 +14,7 @@ import { IMPORT_META_URL_BANNER } from 'build-infra/lib/esbuild-helpers'
 import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
 
 import {
-  createDefineEntries,
+  createBaseConfig,
   envVarReplacementPlugin,
   getInlinedEnvVars,
   runBuild,
@@ -58,33 +58,27 @@ function resolveSocketLibExternal(socketLibPath: string, packageName: string) {
 }
 
 
+const baseConfig = createBaseConfig(inlinedEnvVars)
+
 const config: BuildOptions = {
+  ...baseConfig,
+  banner: {
+    js: `#!/usr/bin/env node\n"use strict";\n${IMPORT_META_URL_BANNER.js}`,
+  },
+  define: {
+    ...baseConfig.define,
+    'import.meta.url': '__importMetaUrl',
+  },
   entryPoints: [path.join(rootPath, 'src/cli-dispatch.mts')],
-  bundle: true,
-  outfile: path.join(rootPath, 'build/cli.js'),
-  platform: 'node',
-  target: 'node18',
-  format: 'cjs',
+  keepNames: true,
+  // .cs files used by node-gyp on Windows.
+  loader: { '.cs': 'empty' },
   logOverride: {
     'commonjs-variable-in-esm': 'silent',
     'require-resolve-not-external': 'silent',
   },
-  // .cs files used by node-gyp on Windows.
-  loader: { '.cs': 'empty' },
-  sourcemap: false,
-  minify: false,
-  keepNames: true,
-  write: false,
   metafile: true,
-  define: {
-    'process.env.NODE_ENV': '"production"',
-    'import.meta.url': '__importMetaUrl',
-    ...createDefineEntries(inlinedEnvVars),
-  },
-  banner: {
-    js: `#!/usr/bin/env node\n"use strict";\n${IMPORT_META_URL_BANNER.js}`,
-  },
-
+  outfile: path.join(rootPath, 'build/cli.js'),
   plugins: [
     unicodeTransformPlugin(),
     // Environment variable replacement must run AFTER unicode transform.
