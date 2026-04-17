@@ -20,10 +20,9 @@ const logger = getDefaultLogger()
  * @param {Object} options - Configuration options
  * @param {string} options.entryPoint - Path to entry point file
  * @param {string} options.outfile - Path to output file
- * @param {boolean} [options.minify=false] - Whether to minify output
  * @returns {Object} esbuild configuration object
  */
-export function createIndexConfig({ entryPoint, minify = false, outfile }: { entryPoint: string; minify?: boolean; outfile: string }) {
+export function createIndexConfig({ entryPoint, outfile }: { entryPoint: string; outfile: string }) {
   // Get inlined environment variables for build-time constant replacement.
   const inlinedEnvVars = getInlinedEnvVars()
 
@@ -34,6 +33,7 @@ export function createIndexConfig({ entryPoint, minify = false, outfile }: { ent
     bundle: true,
     entryPoints: [entryPoint],
     format: 'cjs',
+    minify: false,
     outfile,
     platform: 'node',
     // Source maps off for entry point production build.
@@ -48,13 +48,6 @@ export function createIndexConfig({ entryPoint, minify = false, outfile }: { ent
     plugins: [envVarReplacementPlugin(inlinedEnvVars)],
     // Plugin needs to transform output.
     write: false,
-  }
-
-  if (minify) {
-    config.minify = true
-  } else {
-    config.minifyWhitespace = true
-    config.minifyIdentifiers = true
   }
 
   return config
