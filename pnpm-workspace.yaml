@@ -153,6 +153,7 @@ catalog:
 # Migrated from .npmrc (pnpm v11 only reads auth/registry from .npmrc).
 ignoreScripts: true
 linkWorkspacePackages: false
+strictPeerDependencies: true
 
 # Wait 7 days (10080 minutes) before installing newly published packages.
 minimumReleaseAge: 10080

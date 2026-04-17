@@ -5,7 +5,7 @@ minimumReleaseAge=10080
 auto-install-peers=true
 
 # Strict peer dependencies.
-strict-peer-dependencies=true
+strict-peer-dependencies=false
 
 # Save exact versions (like npm --save-exact).
 save-exact=true
