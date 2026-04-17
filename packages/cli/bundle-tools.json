@@ -47,7 +47,10 @@
     "repository": "github:SocketDev/socket-basics",
     "release": "archive",
     "version": "v2.0.2",
-    "packageManager": "pip"
+    "packageManager": "pip",
+    "checksums": {
+      "socket-basics-v2.0.2.tar.gz": "ba175171f07ac927eb926387e526283320630e80da42da000ec6894a55adeb13"
+    }
   },
   "socketsecurity": {
     "description": "Socket Python CLI (socket-python-cli)",

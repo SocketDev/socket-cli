@@ -538,6 +538,17 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
         const releaseVersion = socketBasicsConfig.version
         const version = releaseVersion.replace(/^v/, '') // Remove 'v' prefix for version
 
+        // Checksum key matches the local filename convention used for
+        // archive-style releases (`socket-basics-v<ver>.tar.gz`).
+        const archiveKey = `socket-basics-${releaseVersion}.tar.gz`
+        const archiveSha256 = socketBasicsConfig.checksums?.[archiveKey]
+        if (!archiveSha256) {
+          throw new Error(
+            `Missing SHA-256 checksum for socket-basics archive: ${archiveKey}. ` +
+              'Please update bundle-tools.json with the correct checksum.',
+          )
+        }
+
         logger.log(`  Installing socket_basics ${version} from GitHub...`)
 
         // Download source tarball from GitHub.
@@ -551,6 +562,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
           progressInterval: 10,
           retries: 2,
           retryDelay: 5_000,
+          sha256: archiveSha256,
         })
 
         // Install from tarball using pip (handles building and dependencies).
