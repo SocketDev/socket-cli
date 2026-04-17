@@ -150,9 +150,11 @@ catalog:
   yargs-parser: 21.1.1
   yoctocolors-cjs: 2.1.3
   zod: 4.1.8
-# Migrated from .npmrc (pnpm v11 only reads auth/registry from .npmrc).
+# pnpm v11 reads settings from this file; only auth/registry go in .npmrc.
 ignoreScripts: true
 linkWorkspacePackages: false
+saveExact: true
+strictPeerDependencies: true
 
 # Wait 7 days (10080 minutes) before installing newly published packages.
 minimumReleaseAge: 10080
