@@ -38,7 +38,7 @@ export function createIndexConfig({ entryPoint, outfile }: { entryPoint: string;
     platform: 'node',
     // Source maps off for entry point production build.
     sourcemap: false,
-    target: 'node18',
+    target: 'node25',
     // Define environment variables for inlining.
     define: {
       'process.env.NODE_ENV': '"production"',

@@ -63,7 +63,7 @@ const config: BuildOptions = {
   bundle: true,
   outfile: path.join(rootPath, 'build/cli.js'),
   platform: 'node',
-  target: 'node18',
+  target: 'node25',
   format: 'cjs',
   logOverride: {
     'commonjs-variable-in-esm': 'silent',
