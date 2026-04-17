@@ -332,12 +332,37 @@ describe('cmd-fix', () => {
     })
 
     it('should support custom cwd argument', async () => {
-      await cmdFix.run(['./custom/path'], importMeta, context)
+      // Use a path that definitely exists (the test's own cwd) because
+      // cmd-fix now validates the target directory upfront.
+      const realDir = process.cwd()
+      await cmdFix.run([realDir], importMeta, context)
 
       expect(mockHandleFix).toHaveBeenCalledWith(
         expect.objectContaining({
-          cwd: expect.stringContaining('custom/path'),
+          cwd: realDir,
         }),
+      )
+    })
+
+    it('should fail fast when target directory does not exist', async () => {
+      await cmdFix.run(['./this/path/does/not/exist'], importMeta, context)
+
+      expect(process.exitCode).toBe(1)
+      expect(mockHandleFix).not.toHaveBeenCalled()
+      expect(mockLogger.fail).toHaveBeenCalledWith(
+        expect.stringContaining('Target directory does not exist'),
+      )
+    })
+
+    it('should fail fast when a GHSA is passed as a positional arg', async () => {
+      await cmdFix.run(['GHSA-xxxx-xxxx-xxxx'], importMeta, context)
+
+      expect(process.exitCode).toBe(1)
+      expect(mockHandleFix).not.toHaveBeenCalled()
+      expect(mockLogger.fail).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'looks like a vulnerability identifier, not a directory path',
+        ),
       )
     })
 

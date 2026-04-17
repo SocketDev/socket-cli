@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import terminalLink from 'terminal-link'
@@ -419,10 +420,36 @@ async function run(
 
   const orgSlug = orgSlugCResult.data
 
+  // Detect the common mistake of passing a vulnerability ID (GHSA / CVE /
+  // PURL) as a positional argument when the user meant to use `--id`.
+  // Without this guard we treat the ID as a directory path, resolve to cwd,
+  // and eventually fail with a confusing upload error.
+  const rawInput = cli.input[0]
+  if (
+    rawInput &&
+    (/^GHSA-/i.test(rawInput) ||
+      /^CVE-/i.test(rawInput) ||
+      rawInput.startsWith('pkg:'))
+  ) {
+    logger.fail(
+      `"${rawInput}" looks like a vulnerability identifier, not a directory path.\nDid you mean: socket fix ${FLAG_ID} ${rawInput}`,
+    )
+    process.exitCode = 1
+    return
+  }
+
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
+
+  // Validate the target directory exists so we fail fast with a clear
+  // message instead of the API's "Need at least one file to be uploaded".
+  if (!existsSync(cwd)) {
+    logger.fail(`Target directory does not exist: ${cwd}`)
+    process.exitCode = 1
+    return
+  }
 
   const spinner = undefined
 
