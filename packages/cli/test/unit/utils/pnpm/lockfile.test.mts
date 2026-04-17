@@ -226,13 +226,54 @@ packages: {}`
       )
     })
 
-    it('prefers parentheses over underscore', () => {
+    it('prefers the earlier separator when both appear', () => {
+      // pnpm v7's `(peer)` wins because it comes before the legacy `_peer`.
       expect(stripPnpmPeerSuffix('pkg@1.0.0(peer)_other')).toBe('pkg@1.0.0')
     })
 
     it('returns unchanged for paths without suffixes', () => {
       expect(stripPnpmPeerSuffix('lodash@4.17.21')).toBe('lodash@4.17.21')
       expect(stripPnpmPeerSuffix('@babel/core@7.0.0')).toBe('@babel/core@7.0.0')
+    })
+
+    it('preserves underscores inside package names', () => {
+      // `http_ece` is a legitimate package (encryption lib used by
+      // web-push). Stripping at the first `_` would truncate it to
+      // `http`, which resolves to npm's `http@0.0.1-security` malware
+      // placeholder and produces a blocking false-positive alert.
+      expect(stripPnpmPeerSuffix('http_ece@1.0.0')).toBe('http_ece@1.0.0')
+      expect(stripPnpmPeerSuffix('http_ece@1.2.0_web-push@3.6.7')).toBe(
+        'http_ece@1.2.0',
+      )
+      expect(stripPnpmPeerSuffix('http_ece@1.2.0(web-push@3.6.7)')).toBe(
+        'http_ece@1.2.0',
+      )
+    })
+
+    it('handles scoped packages with underscore names', () => {
+      // Scoped variants of a package with an underscore in the name —
+      // the scope leader `@` must not be mistaken for the version-
+      // separating `@`.
+      expect(stripPnpmPeerSuffix('@foo/bar_baz@1.0.0')).toBe(
+        '@foo/bar_baz@1.0.0',
+      )
+      expect(stripPnpmPeerSuffix('@foo/bar_baz@1.0.0_peer@2.0.0')).toBe(
+        '@foo/bar_baz@1.0.0',
+      )
+      expect(stripPnpmPeerSuffix('@foo/bar_baz@1.0.0(peer@2.0.0)')).toBe(
+        '@foo/bar_baz@1.0.0',
+      )
+    })
+
+    it('strips peer suffix from bare version fragments', () => {
+      // `resolvePackageVersion` in spec.mts passes bare versions (no
+      // `name@` prefix) through this function — e.g. the raw
+      // `version` field from a parsed PURL still carries a pnpm peer
+      // suffix. npm package names cannot start with a digit, so a
+      // leading digit disambiguates the bare-version shape.
+      expect(stripPnpmPeerSuffix('4.18.0_peer@1.0.0')).toBe('4.18.0')
+      expect(stripPnpmPeerSuffix('4.18.0(peer@1.0.0)')).toBe('4.18.0')
+      expect(stripPnpmPeerSuffix('4.17.21')).toBe('4.17.21')
     })
   })
 

@@ -98,28 +98,95 @@ export function stripLeadingPnpmDepPathSlash(depPath: string): string {
 }
 
 /**
- * Strip pnpm peer dependency suffix from dep path.
+ * Strip pnpm peer dependency suffix from a dep path or bare version.
  *
- * PNPM appends peer dependency info in format:
- * - `package@1.0.0(peer@2.0.0)` - parentheses for peer deps.
- * - `package@1.0.0_peer@2.0.0` - underscore for peer deps.
+ * pnpm appends peer dependency info in one of two shapes:
+ * - `(peer@2.0.0)` — parentheses (pnpm v7+).
+ * - `_peer@2.0.0`  — underscore (pnpm v6 / older lockfiles).
  *
- * Edge cases to consider:
- * - Package names with `(` or `_` in legitimate names (rare but valid).
- * - Scoped packages: `@scope/package` should work correctly.
- * - Empty or malformed dep paths should return unchanged.
+ * The suffix can appear either attached to a full dep path
+ * (`http_ece@1.2.0_web-push@3.6.7`) or to a bare version fragment
+ * (`4.18.0_peer@1.0.0`, passed from `resolvePackageVersion` in
+ * spec.mts). Either way, the separator always sits *after* the
+ * version.
  *
- * Current implementation: Find first `(` or `_` and strip everything after.
- * Limitation: May incorrectly strip if package name contains these chars.
- * Mitigation: Most package names don't contain `(` or `_`, pnpm format is predictable.
+ * Naive `indexOf('_')` is wrong for dep paths because package names
+ * may legitimately contain `_` (e.g. `http_ece`). Searching strictly
+ * after the first `@` is wrong for bare-version inputs because the
+ * only `@` they carry is the one inside the peer suffix itself
+ * (`peer@1.0.0`), so "after the first `@`" lands past the separator.
+ *
+ * Approach:
+ *   1. Find the earliest `_` / `(` in the whole string.
+ *   2. If the first `@` comes before that separator, we have a
+ *      `name@version...` dep path — the separator is a real peer
+ *      suffix and we cut there. (The `@` came from the version,
+ *      not from a peer suffix embedded earlier.)
+ *   3. If there is no `@` before the separator (bare version), the
+ *      separator itself marks the peer suffix and we cut there too.
+ *   4. If there's no separator at all, return unchanged.
+ *
+ * Semver forbids `(` and `_` in a version / prerelease / build
+ * tag, so any `_` or `(` before an eventual version-`@` must be
+ * inside the package name — never a peer separator. That's the
+ * only case where we have to ignore the earliest separator, and it
+ * only applies when the input starts with a name.
+ *
+ * This previously scanned the whole string for `_` / `(` unguarded,
+ * which truncated `http_ece@1.0.0` to `http` and produced a
+ * blocking false-positive alert against npm's `http@0.0.1-security`
+ * malware placeholder.
  */
 export function stripPnpmPeerSuffix(depPath: string): string {
-  // Defensive: Handle empty or invalid inputs.
+  // Defensive: handle empty or invalid inputs.
   if (!depPath || typeof depPath !== 'string') {
     return depPath
   }
 
-  const parenIndex = depPath.indexOf('(')
-  const index = parenIndex === -1 ? depPath.indexOf('_') : parenIndex
-  return index === -1 ? depPath : depPath.slice(0, index)
+  // Disambiguate `name@version...` dep paths from bare version
+  // fragments (`4.18.0_peer@1.0.0`, passed by resolvePackageVersion)
+  // by looking at the first character. npm package names cannot
+  // start with a digit, and semver versions always do — so a
+  // leading digit means this is a bare version and the earliest
+  // `(` / `_` is the peer-suffix cut.
+  const firstChar = depPath.charCodeAt(0)
+  const startsWithDigit = firstChar >= 48 /*'0'*/ && firstChar <= 57 /*'9'*/
+  if (startsWithDigit) {
+    const parenIdx = depPath.indexOf('(')
+    const underIdx = depPath.indexOf('_')
+    let sepIdx: number
+    if (parenIdx === -1) {
+      sepIdx = underIdx
+    } else if (underIdx === -1) {
+      sepIdx = parenIdx
+    } else {
+      sepIdx = Math.min(parenIdx, underIdx)
+    }
+    return sepIdx === -1 ? depPath : depPath.slice(0, sepIdx)
+  }
+
+  // `name@version...` dep path. The peer-suffix separator is always
+  // *after* the version-separating `@`. Package names may contain
+  // `_` (e.g. `http_ece`) so we must not scan the name region.
+  // A leading `@` is a scope marker, not a version separator.
+  const scopeOffset = depPath.startsWith('@') ? 1 : 0
+  const versionAt = depPath.indexOf('@', scopeOffset)
+  if (versionAt === -1) {
+    return depPath
+  }
+
+  const tail = depPath.slice(versionAt)
+  const parenInTail = tail.indexOf('(')
+  const underInTail = tail.indexOf('_')
+  let cutInTail: number
+  if (parenInTail === -1) {
+    cutInTail = underInTail
+  } else if (underInTail === -1) {
+    cutInTail = parenInTail
+  } else {
+    // Both present — take whichever comes first (handles the
+    // `(peer)_legacyPeer` shape in mixed-format lockfiles).
+    cutInTail = Math.min(parenInTail, underInTail)
+  }
+  return cutInTail === -1 ? depPath : depPath.slice(0, versionAt + cutInTail)
 }
