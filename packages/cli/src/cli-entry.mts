@@ -42,6 +42,7 @@ import {
   getSocketCliBootstrapSpec,
 } from '@socketsecurity/lib/env/socket-cli'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 
 import { rootAliases, rootCommands } from './commands.mts'
 import { SOCKET_CLI_BIN_NAME } from './constants/packages.mts'
@@ -174,6 +175,12 @@ void (async () => {
   } catch (e) {
     process.exitCode = 1
 
+    // Stop any active spinner before emitting error output, otherwise
+    // its animation clashes with the error text on the same line.
+    // Spinner-wrapped command paths stop their own on catch, but any
+    // exception that bypasses those handlers reaches us here.
+    getDefaultSpinner()?.stop()
+
     // Track CLI error for telemetry.
     await trackCliError(process.argv, cliStartTime, e, process.exitCode)
     debug('CLI uncaught error')
@@ -195,8 +202,6 @@ void (async () => {
     if (isJson) {
       logger.log(serializeResultJson(formatErrorForJson(e)))
     } else {
-      // Add 2 newlines in stderr to bump below any spinner.
-      logger.error('\n')
       logger.error(formatErrorForTerminal(e))
       debugDirNs('inspect', { error: e })
     }
