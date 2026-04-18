@@ -74,7 +74,23 @@ export function formatErrorForDisplay(
     body = error.body
   } else if (error instanceof Error) {
     title = opts.title || 'Unexpected error'
+    // Concatenate the cause chain into `message` (what non-debug users see)
+    // so diagnostic context from wrapped errors isn't silently dropped.
+    // `showStack` adds a richer formatted body with stack traces below.
     message = error.message
+    const plainCauses: string[] = []
+    let walk: unknown = error.cause
+    let walkDepth = 1
+    while (walk && walkDepth <= 5) {
+      plainCauses.push(
+        walk instanceof Error ? walk.message : String(walk),
+      )
+      walk = walk instanceof Error ? walk.cause : undefined
+      walkDepth++
+    }
+    if (plainCauses.length) {
+      message = `${message}: ${plainCauses.join(': ')}`
+    }
 
     if (showStack && error.stack) {
       // Format stack trace with proper indentation.

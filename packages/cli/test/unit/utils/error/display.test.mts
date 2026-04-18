@@ -150,6 +150,38 @@ describe('error/display', () => {
       expect(result.message).toBe('Something went wrong')
     })
 
+    it('preserves Error.cause chain in message without debug mode', () => {
+      // Regression: formatErrorForDisplay used to only surface causes
+      // under showStack/verbose, so non-debug users lost the most useful
+      // diagnostic context. See PR #1238.
+      const inner = new Error('root DNS failure')
+      const middle = new Error('network call failed', { cause: inner })
+      const outer = new Error('API request failed', { cause: middle })
+
+      const result = formatErrorForDisplay(outer)
+
+      expect(result.message).toContain('API request failed')
+      expect(result.message).toContain('network call failed')
+      expect(result.message).toContain('root DNS failure')
+    })
+
+    it('stops walking causes at depth 5 to avoid runaway chains', () => {
+      // Build inside-out so the outer Error sits at index 10 and chains
+      // down through level-9, level-8, ..., level-0.
+      let e: Error | undefined
+      for (let i = 0; i <= 10; i++) {
+        e = new Error(`level-${i}`, e ? { cause: e } : undefined)
+      }
+
+      const result = formatErrorForDisplay(e!)
+
+      // Top message + 5 causes should appear.
+      expect(result.message).toContain('level-10')
+      expect(result.message).toContain('level-5')
+      // Anything beyond depth 5 should have been truncated.
+      expect(result.message).not.toContain('level-4')
+    })
+
     it('uses custom title when provided', () => {
       const error = new Error('Something went wrong')
 
