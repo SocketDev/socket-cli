@@ -144,9 +144,13 @@ async function main() {
       ...(WIN32 ? { shell: true } : {}),
     }
 
+    // --passWithNoTests: a scoped run where the expanded args don't
+    // resolve to any test file should succeed rather than error with
+    // "No test files found". Keeps pre-commit hooks passing when an edit
+    // touches only non-testable code.
     const result = await spawn(
       vitestPath,
-      ['run', ...expandedArgs],
+      ['run', '--passWithNoTests', ...expandedArgs],
       spawnOptions,
     )
     process.exitCode = result?.code || 0
