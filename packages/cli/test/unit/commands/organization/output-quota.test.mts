@@ -9,7 +9,9 @@
  * Test Coverage:
  * - JSON format output for successful results
  * - JSON format error output with exit codes
- * - Text format with quota information display
+ * - Text format with remaining/max/refresh display
+ * - Fallback when maxQuota is missing
+ * - Refresh time rendering when nextWindowRefresh is set
  * - Text format error output with badges
  * - Markdown format output
  * - Zero quota handling
@@ -135,16 +137,81 @@ describe('outputQuota', () => {
 
     const result = createSuccessResult({
       quota: 500,
+      maxQuota: 1000,
+      nextWindowRefresh: null,
     })
 
     process.exitCode = undefined
     await outputQuota(result as any, 'text')
 
     expect(mockLogger.log).toHaveBeenCalledWith(
-      'Quota left on the current API token: 500',
+      'Quota remaining: 500 / 1000 (50% used)',
     )
+    expect(mockLogger.log).toHaveBeenCalledWith('Next refresh: unknown')
     expect(mockLogger.log).toHaveBeenCalledWith('')
     expect(process.exitCode).toBeUndefined()
+  })
+
+  it('falls back to remaining-only when maxQuota is missing', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      info: vi.fn(),
+      log: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+      logger: mockLogger,
+    }))
+
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
+
+    const result = createSuccessResult({
+      quota: 250,
+      maxQuota: 0,
+      nextWindowRefresh: null,
+    })
+
+    process.exitCode = undefined
+    await outputQuota(result as any, 'text')
+
+    expect(mockLogger.log).toHaveBeenCalledWith('Quota remaining: 250')
+  })
+
+  it('formats nextWindowRefresh when provided', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      info: vi.fn(),
+      log: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+      logger: mockLogger,
+    }))
+
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
+
+    const result = createSuccessResult({
+      quota: 100,
+      maxQuota: 1000,
+      nextWindowRefresh: '2099-01-01T00:00:00.000Z',
+    })
+
+    process.exitCode = undefined
+    await outputQuota(result as any, 'text')
+
+    // Exact "in X d" count is time-sensitive; just confirm it rendered the ISO date.
+    const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
+    expect(calls.some((c: unknown) => typeof c === 'string' && c.includes('2099-01-01T00:00:00.000Z'))).toBe(true)
   })
 
   it('outputs error in text format', async () => {
@@ -214,6 +281,8 @@ describe('outputQuota', () => {
 
     const result = createSuccessResult({
       quota: 750,
+      maxQuota: 1000,
+      nextWindowRefresh: null,
     })
 
     process.exitCode = undefined
@@ -222,8 +291,9 @@ describe('outputQuota', () => {
     expect(mockLogger.log).toHaveBeenCalledWith('# Quota')
     expect(mockLogger.log).toHaveBeenCalledWith('')
     expect(mockLogger.log).toHaveBeenCalledWith(
-      'Quota left on the current API token: 750',
+      '- Quota remaining: 750 / 1000 (25% used)',
     )
+    expect(mockLogger.log).toHaveBeenCalledWith('- Next refresh: unknown')
   })
 
   it('handles zero quota correctly', async () => {
@@ -249,13 +319,15 @@ describe('outputQuota', () => {
 
     const result = createSuccessResult({
       quota: 0,
+      maxQuota: 1000,
+      nextWindowRefresh: null,
     })
 
     process.exitCode = undefined
     await outputQuota(result as any, 'text')
 
     expect(mockLogger.log).toHaveBeenCalledWith(
-      'Quota left on the current API token: 0',
+      'Quota remaining: 0 / 1000 (100% used)',
     )
   })
 
@@ -282,13 +354,15 @@ describe('outputQuota', () => {
 
     const result = createSuccessResult({
       quota: 100,
+      maxQuota: 1000,
+      nextWindowRefresh: null,
     })
 
     process.exitCode = undefined
     await outputQuota(result as any)
 
     expect(mockLogger.log).toHaveBeenCalledWith(
-      'Quota left on the current API token: 100',
+      'Quota remaining: 100 / 1000 (90% used)',
     )
     expect(mockLogger.log).toHaveBeenCalledWith('')
   })

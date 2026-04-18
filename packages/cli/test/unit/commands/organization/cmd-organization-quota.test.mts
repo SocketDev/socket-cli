@@ -58,12 +58,12 @@ describe('cmd-organization-quota', () => {
   describe('command metadata', () => {
     it('should have correct description', () => {
       expect(cmdOrganizationQuota.description).toBe(
-        'List organizations associated with the Socket API token',
+        'Show remaining Socket API quota for the current token, plus refresh window',
       )
     })
 
-    it('should be hidden', () => {
-      expect(cmdOrganizationQuota.hidden).toBe(true)
+    it('should not be hidden', () => {
+      expect(cmdOrganizationQuota.hidden).toBe(false)
     })
   })
 

@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- `socket organization quota` is no longer hidden and now shows remaining quota, total quota, usage percentage, and the next refresh time in text and markdown output.
+
 ### Added
 
 - Advanced TUI components and styling for rich terminal interfaces:
