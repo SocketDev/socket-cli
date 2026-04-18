@@ -1405,6 +1405,11 @@ describe('cmd-scan-create', () => {
         expect(mockLogger.fail).toHaveBeenCalledWith(
           expect.stringContaining('looks like you meant the branch name "main"'),
         )
+        // Error quotes the exact form the user typed so there's no
+        // confusion about whether the error applies to their input.
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining('"--defaultBranch=main"'),
+        )
       })
 
       it.each([

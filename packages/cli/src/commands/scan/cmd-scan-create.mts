@@ -210,7 +210,7 @@ const DEFAULT_BRANCH_PREFIXES = ['--default-branch=', '--defaultBranch=']
 
 function findDefaultBranchValueMisuse(
   argv: readonly string[],
-): string | undefined {
+): { prefix: string; value: string } | undefined {
   for (const arg of argv) {
     const prefix = DEFAULT_BRANCH_PREFIXES.find(p => arg.startsWith(p))
     if (!prefix) {
@@ -221,7 +221,7 @@ function findDefaultBranchValueMisuse(
     if (normalized === 'true' || normalized === 'false' || value === '') {
       continue
     }
-    return value
+    return { prefix, value }
   }
   return undefined
 }
@@ -298,8 +298,12 @@ async function run(
   // tabs. Fail fast with a suggestion toward the correct form.
   const defaultBranchMisuse = findDefaultBranchValueMisuse(argv)
   if (defaultBranchMisuse) {
+    const { prefix, value } = defaultBranchMisuse
+    // Strip the trailing `=` from the matched prefix when naming the
+    // canonical flag in the suggestion — users should always be told
+    // to use the kebab-case form.
     logger.fail(
-      `"--default-branch=${defaultBranchMisuse}" looks like you meant the branch name "${defaultBranchMisuse}".\n--default-branch is a boolean flag; pass the branch name with --branch instead:\n  socket scan create --branch ${defaultBranchMisuse} --default-branch`,
+      `"${prefix}${value}" looks like you meant the branch name "${value}".\n--default-branch is a boolean flag; pass the branch name with --branch instead:\n  socket scan create --branch ${value} --default-branch`,
     )
     process.exitCode = 2
     return
