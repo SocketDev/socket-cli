@@ -11,56 +11,68 @@
 
 **MANDATORY**: Review CLAUDE.md before any action. No exceptions.
 
-- Before ANY structural refactor on a file >300 LOC: remove dead code, unused exports, unused imports first -- commit that cleanup separately
-- Multi-file changes: break into phases (<=5 files each), verify each phase before the next
-- When pointed to existing code as a reference: study it before building
-- Work from raw error data, not theories -- if a bug report has no error output, ask for it
+- Before ANY structural refactor on a file >300 LOC: remove dead code/unused exports/imports first — commit separately
+- Multi-file changes: break into phases (≤5 files each), verify each phase before the next
+- Study existing code before building
+- Work from raw error data, not theories — if a bug report has no error output, ask for it
 - On "yes", "do it", or "go": execute immediately, no plan recap
 
 ## VERIFICATION PROTOCOL
 
-**MANDATORY**: Before claiming any task is complete:
-
-1. Run the actual command -- execute the script, run the test, check the output
+1. Run the actual command — execute, don't assume
 2. State what you verified, not just "looks good"
 3. **FORBIDDEN**: Claiming "Done" when any test output shows failures
-4. If type-check or lint is configured, run it and fix ALL errors before reporting done
-5. Re-read every file modified; confirm nothing references something that no longer exists
+4. Run type-check/lint if configured; fix ALL errors before reporting done
+5. Re-read every modified file; confirm nothing references removed items
 
 ## CONTEXT & EDIT SAFETY
 
-- After 10+ messages: re-read any file before editing it
-- Read files >500 LOC in chunks using offset/limit
-- Before every edit: re-read the file. After every edit: re-read to confirm
-- When renaming: search for direct calls, type references, string literals, dynamic imports, re-exports, test files -- one grep is not enough
+- After 10+ messages: re-read files before editing
+- Read files >500 LOC in chunks (offset/limit)
+- Before every edit: re-read. After every edit: re-read to confirm
+- When renaming: search direct calls, type refs, string literals, dynamic imports, re-exports, tests
+- Tool results over 50K chars are silently truncated — narrow scope and re-run if incomplete
+- For tasks touching >5 files: use sub-agents with worktree isolation
 - Never fix a display/rendering problem by duplicating state
 
-## JUDGMENT & SCOPE
+## JUDGMENT PROTOCOL
 
-- If the request is based on a misconception, say so before executing
-- If you spot a bug adjacent to what was asked, flag it
+- If the user's request is based on a misconception, say so before executing
+- If you spot a bug adjacent to what was asked, flag it: "I also noticed X — want me to fix it?"
+- You are a collaborator, not just an executor
+- Fix warnings when you find them (lint, type-check, build, runtime) — don't leave them for later
+
+## SCOPE PROTOCOL
+
 - Do not add features, refactor, or make improvements beyond what was asked
-- Try the simplest approach first; flag architecture issues and wait for approval
-- When asked to "make a plan," output only the plan -- no code until given the go-ahead
+- Simplest approach first; flag architectural flaws and wait for approval
+- When asked to "make a plan," output only the plan — no code until given the go-ahead
+
+## COMPLETION PROTOCOL
+
+- NEVER claim done at 80% — finish 100% before reporting
+- Fix forward: if an approach fails, analyze why, adjust, rebuild — not `git checkout`
+- After EVERY code change: build, test, verify, commit as a single atomic unit
+- Reverting requires explicit user approval
 
 ## SELF-EVALUATION
 
-- Before calling anything done: present what a perfectionist would reject vs. what a pragmatist would ship
+- Present two views before calling done: what a perfectionist would reject vs. what a pragmatist would ship
 - After fixing a bug: explain why it happened and what category of bug it represents
-- If a fix doesn't work after two attempts: stop, re-read top-down, state where the mental model was wrong
+- If a fix fails twice: stop, re-read top-down, state where the mental model was wrong
 - If asked to "step back": drop everything, rethink from scratch
 
 ## HOUSEKEEPING
 
-- Before risky changes: offer to checkpoint
-- If a file is getting unwieldy (>400 LOC): flag it
+- Offer to checkpoint before risky changes
+- Flag files >400 LOC for potential splitting
 
-## Critical Rules
+## ABSOLUTE RULES
 
-- **Fix ALL issues when asked** -- never dismiss issues as "pre-existing"
+- **Fix ALL issues when asked** — never dismiss as "pre-existing"
 - Never create files unless necessary; always prefer editing existing files
 - Forbidden to create docs unless requested
-- 🚨 **NEVER use `npx`, `pnpm dlx`, or `yarn dlx`** -- use `pnpm exec <package>` for devDep binaries, or `pnpm run <script>` for package.json scripts
+- 🚨 **NEVER use `npx`, `pnpm dlx`, or `yarn dlx`** — use `pnpm exec <package>` or `pnpm run <script>`
 
 ## EVOLUTION
 
@@ -68,98 +80,74 @@ If user repeats instruction 2+ times, ask: "Should I add this to CLAUDE.md?"
 
 ## SHARED STANDARDS
 
-
-
-- Commits: [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) `<type>(<scope>): <description>` -- NO AI attribution
-- Scripts: Prefer `pnpm run foo --flag` over `foo:bar` scripts
-- Dependencies: After `package.json` edits, run `pnpm install` to update `pnpm-lock.yaml`
-- Backward Compatibility: 🚨 FORBIDDEN to maintain -- actively remove when encountered
+- Commits: [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) `<type>(<scope>): <description>` — NO AI attribution
+- Scripts: Prefer `pnpm run foo --flag` over `foo:bar` variants
+- Dependencies: After `package.json` edits, run `pnpm install`
+- Backward Compatibility: 🚨 FORBIDDEN to maintain — actively remove when encountered
 - Safe Deletion: Use `safeDelete()` from `@socketsecurity/lib/fs` (NEVER `fs.rm/rmSync` or `rm -rf`)
-- HTTP Requests: NEVER use `fetch()` -- use `httpJson`/`httpText`/`httpRequest` from `@socketsecurity/lib/http-request`
+- HTTP Requests: NEVER use `fetch()` — use `httpJson`/`httpText`/`httpRequest` from `@socketsecurity/lib/http-request`
+- File existence: ALWAYS `existsSync` from `node:fs`. NEVER `fs.access`, `fs.stat`-for-existence, or an async `fileExists` wrapper. Import: `import { existsSync, promises as fs } from 'node:fs'`.
 
 ### Documentation Policy
 
-Do NOT litter the repository with documentation files. Allowed locations: `docs/`, root `README.md`/`CHANGELOG.md`/`SECURITY.md`/`CLAUDE.md`, `packages/*/README.md`, `test/fixtures/*/README.md`, `test/*/README.md`. No ad-hoc markdown files.
+Do NOT litter the repo with markdown. Allowed: `docs/`, root `README.md`/`CHANGELOG.md`/`SECURITY.md`/`CLAUDE.md`, `packages/*/README.md`, `test/fixtures/*/README.md`, `test/*/README.md`.
 
-**`.claude/` exception**: markdown files under `.claude/agents/`, `.claude/commands/`, `.claude/hooks/`, and `.claude/skills/` are allowed because the Claude harness reads them as configuration (agent definitions, command metadata, `SKILL.md` entrypoints, skill references). These are config, not analysis docs. Ad-hoc analysis/session notes in `.claude/` are still disallowed.
+**`.claude/` exception**: markdown under `.claude/agents/`, `.claude/commands/`, `.claude/hooks/`, `.claude/skills/` is allowed (harness-loaded config). Ad-hoc analysis/session notes still disallowed.
 
 ---
 
-## CLI-SPECIFIC
+## 🏗️ CLI-SPECIFIC
 
-## Commands
+### Commands
 
-- **Build**: `pnpm run build` (smart build) | `pnpm run build --force` | `pnpm run build:cli` (CLI only) | `pnpm run build:sea`
-- **Test**: `pnpm test` (all from monorepo root) | `pnpm --filter @socketsecurity/cli run test:unit`
+- **Build**: `pnpm run build` (smart) | `--force` | `pnpm run build:cli` | `pnpm run build:sea`
+- **Test**: `pnpm test` (monorepo root) | `pnpm --filter @socketsecurity/cli run test:unit <path>`
 - **Lint**: `pnpm run lint` | **Type check**: `pnpm run type` | **Check all**: `pnpm run check`
-- **Fix**: `pnpm run fix` (auto-fix linting and formatting)
-- **Dev**: `pnpm dev` (watch mode) | **Run built**: `node packages/cli/dist/index.js <args>`
+- **Fix**: `pnpm run fix` | **Dev**: `pnpm dev` (watch) | **Run built**: `node packages/cli/dist/index.js <args>`
 
-### Testing -- CRITICAL
+### Testing
 
-- 🚨 **NEVER USE `--` BEFORE TEST FILE PATHS** -- this runs ALL tests, not just specified files
+- 🚨 **NEVER use `--` before test file paths** — runs ALL tests
 - Always build before testing: `pnpm run build:cli`
-- Single file: `pnpm --filter @socketsecurity/cli run test:unit src/commands/specific/cmd-file.test.mts`
-- Update snapshots: `pnpm testu src/commands/specific/cmd-file.test.mts`
-- Update with flag: `pnpm --filter @socketsecurity/cli run test:unit src/commands/specific/cmd-file.test.mts --update`
-- NEVER write source-code-scanning tests -- verify behavior, not string patterns
+- Update snapshots: `pnpm testu <path>` or `--update` flag
+- NEVER write source-code-scanning tests — verify behavior, not string patterns
 
 ### Changelog
 
-Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). User-facing changes only: Added, Changed, Fixed, Removed. Marketing voice, stay concise.
+Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). User-facing only: Added, Changed, Fixed, Removed. Concise.
 
-## Code Style (MANDATORY)
+### Code Style (MANDATORY)
 
-### File Organization
-
-- `.mts` extensions for TypeScript modules
-- 🚨 ALWAYS use separate `import type` statements -- NEVER mix runtime and type imports
-- Node.js fs: `import { existsSync, promises as fs } from 'node:fs'` (cherry-pick `existsSync`, alias promises as `fs`)
+- `.mts` extensions for TS modules
+- 🚨 Separate `import type` statements — NEVER mix runtime and type imports
 - Process spawning: MUST use `spawn` from `@socketsecurity/registry/lib/spawn` (NEVER `child_process`)
-- File existence: ALWAYS use `existsSync` from `node:fs`. NEVER `fs.access`, `fs.stat`-for-existence, or an async `fileExists` wrapper.
-
-### Code Patterns
-
-- Array destructuring: Use `{ 0: key, 1: data }` instead of `[key, data]`
-- Dynamic imports: 🚨 FORBIDDEN -- always use static imports
-- Sorting: 🚨 MANDATORY -- sort lists, exports, destructured properties, documentation headers alphabetically
-- Comments: Default NO. Only when the WHY is non-obvious. Own line, not inline.
-- Functions: Alphabetical order, private first, exported second
-- Object mappings: Use `__proto__: null` for static lookup tables; `Map` for dynamic collections
-- Array length: `!array.length` not `=== 0`; `array.length` or `!!array.length` for truthy
+- Array destructuring: `{ 0: key, 1: data }` instead of `[key, data]`
+- Dynamic imports: 🚨 FORBIDDEN — always static imports
+- Sorting: 🚨 MANDATORY — lists, exports, destructured properties, doc headers alphabetically
+- Comments: Default NO. Only when WHY is non-obvious. Own line, not inline.
+- Functions: alphabetical; private first, exported second
+- Object mappings: `__proto__: null` for static lookup; `Map` for dynamic
+- Array length: `!array.length` not `=== 0`
 - Catch: `catch (e)` not `catch (error)`
-- Numbers: Use underscore separators (`20_000`). Do NOT modify number values inside strings.
-- Flags: MUST use `MeowFlags` type with descriptive help text
-- Error handling: Use `InputError` and `AuthError` from `src/utils/errors.mts`; prefer `CResult<T>` for fallible functions; avoid `process.exit(1)`
-- GitHub API: Use Octokit from `src/utils/github.mts`, not raw fetch
+- Numbers: underscore separators (`20_000`); don't modify values inside strings
+- Flags: MUST use `MeowFlags` type with descriptive help
+- Error handling: `InputError`/`AuthError` from `src/utils/errors.mts`; prefer `CResult<T>`; avoid `process.exit(1)`
+- GitHub API: Octokit from `src/utils/github.mts`, not raw fetch
 
 ### Command Pattern
 
-- Simple commands (<200 LOC, no subcommands): single `cmd-*.mts` file
-- Complex commands: modular `cmd-*.mts` + `handle-*.mts` + `output-*.mts` + `fetch-*.mts`
-
-### Completion Protocol
-
-- NEVER claim done at 80% -- finish 100% before reporting
-- Fix forward: if an approach fails, analyze why, adjust, rebuild -- not `git checkout`
-- After EVERY code change: build, test, verify, commit as a single atomic unit
-- Reverting requires explicit user approval
-
-### Context Awareness
-
-- Tool results over 50K characters are silently truncated -- narrow scope and re-run if results look incomplete
-- For tasks touching >5 files: use sub-agents with worktree isolation
+- Simple (<200 LOC, no subcommands): single `cmd-*.mts`
+- Complex: `cmd-*.mts` + `handle-*.mts` + `output-*.mts` + `fetch-*.mts`
 
 ## Codex Usage
 
-- Codex is for advice and critical assessment ONLY -- never for making code changes
-- Before complex optimizations (>30min), consult Codex for critical analysis first
+Advice and critical assessment ONLY — never for making code changes. Consult before complex optimizations (>30min).
 
 ## Agents & Skills
 
-- `/security-scan` -- AgentShield + zizmor security audit
-- `/quality-scan` -- comprehensive code quality analysis
-- `/quality-loop` -- scan and fix iteratively
-- `/sync-checksums` -- sync external tool SHA-256 checksums
+- `/security-scan` — AgentShield + zizmor security audit
+- `/quality-scan` — comprehensive code quality analysis
+- `/quality-loop` — scan and fix iteratively
+- `/sync-checksums` — sync external tool SHA-256 checksums
 - Agents: `code-reviewer`, `security-reviewer`, `refactor-cleaner` (in `.claude/agents/`)
 - Shared subskills in `.claude/skills/_shared/`
