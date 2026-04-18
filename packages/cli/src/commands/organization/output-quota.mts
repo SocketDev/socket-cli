@@ -24,13 +24,21 @@ function formatRefresh(nextWindowRefresh: string | null | undefined): string {
   if (diffMs <= 0) {
     return `${date} (due now)`
   }
+  // Under 60 seconds, say "<1 min" so we never show the misleading
+  // "in 0 min".
+  if (diffMs < 60_000) {
+    return `${date} (in <1 min)`
+  }
   // Compute each unit directly from diffMs to avoid cascaded rounding
   // errors — e.g. 89.5 min would round to 90 min, then to 2 h via the
-  // chain, even though 89.5 min is closer to 1 h.
-  if (diffMs < 3_600_000) {
+  // chain, even though 89.5 min is closer to 1 h. The thresholds below
+  // promote to the next unit before rounding would produce a degenerate
+  // display (e.g. 59.5 min → "in 60 min"), so the midpoint value there
+  // is shown as "in 1 h" instead.
+  if (diffMs < 3_570_000) {
     return `${date} (in ${Math.round(diffMs / 60_000)} min)`
   }
-  if (diffMs < 172_800_000) {
+  if (diffMs < 171_000_000) {
     return `${date} (in ${Math.round(diffMs / 3_600_000)} h)`
   }
   return `${date} (in ${Math.round(diffMs / 86_400_000)} d)`

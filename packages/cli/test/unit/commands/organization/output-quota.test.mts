@@ -214,6 +214,77 @@ describe('outputQuota', () => {
     expect(calls.some((c: unknown) => typeof c === 'string' && c.includes('2099-01-01T00:00:00.000Z'))).toBe(true)
   })
 
+  it('shows <1 min when refresh is within 60 seconds', async () => {
+    // Regression: Math.round(diffMs / 60_000) used to produce "in 0 min"
+    // for 1–29,999 ms. See Cursor bugbot feedback on PR #1236.
+    const mockLogger = {
+      fail: vi.fn(),
+      info: vi.fn(),
+      log: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+      logger: mockLogger,
+    }))
+
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
+
+    const soon = new Date(Date.now() + 5_000).toISOString()
+    const result = createSuccessResult({
+      quota: 10,
+      maxQuota: 1000,
+      nextWindowRefresh: soon,
+    })
+
+    process.exitCode = undefined
+    await outputQuota(result as any, 'text')
+
+    const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
+    expect(calls.some((c: unknown) => typeof c === 'string' && c.includes('<1 min'))).toBe(true)
+    expect(calls.some((c: unknown) => typeof c === 'string' && c.includes('0 min'))).toBe(false)
+  })
+
+  it('promotes to hours before producing "in 60 min" at the boundary', async () => {
+    // Regression: at diffMs ~= 59.5 min, Math.round rounded up to 60,
+    // giving "in 60 min" instead of "in 1 h". See Cursor bugbot feedback
+    // on PR #1236.
+    const mockLogger = {
+      fail: vi.fn(),
+      info: vi.fn(),
+      log: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+      logger: mockLogger,
+    }))
+
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
+
+    const near = new Date(Date.now() + 59.8 * 60_000).toISOString()
+    const result = createSuccessResult({
+      quota: 10,
+      maxQuota: 1000,
+      nextWindowRefresh: near,
+    })
+
+    process.exitCode = undefined
+    await outputQuota(result as any, 'text')
+
+    const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
+    expect(calls.some((c: unknown) => typeof c === 'string' && c.includes('60 min'))).toBe(false)
+    expect(calls.some((c: unknown) => typeof c === 'string' && c.includes('1 h'))).toBe(true)
+  })
+
   it('outputs error in text format', async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
