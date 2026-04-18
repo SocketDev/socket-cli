@@ -24,16 +24,16 @@ function formatRefresh(nextWindowRefresh: string | null | undefined): string {
   if (diffMs <= 0) {
     return `${date} (due now)`
   }
-  const mins = Math.round(diffMs / 60_000)
-  if (mins < 60) {
-    return `${date} (in ${mins} min)`
+  // Compute each unit directly from diffMs to avoid cascaded rounding
+  // errors — e.g. 89.5 min would round to 90 min, then to 2 h via the
+  // chain, even though 89.5 min is closer to 1 h.
+  if (diffMs < 3_600_000) {
+    return `${date} (in ${Math.round(diffMs / 60_000)} min)`
   }
-  const hours = Math.round(mins / 60)
-  if (hours < 48) {
-    return `${date} (in ${hours} h)`
+  if (diffMs < 172_800_000) {
+    return `${date} (in ${Math.round(diffMs / 3_600_000)} h)`
   }
-  const days = Math.round(hours / 24)
-  return `${date} (in ${days} d)`
+  return `${date} (in ${Math.round(diffMs / 86_400_000)} d)`
 }
 
 function formatUsageLine(data: QuotaData): string {
