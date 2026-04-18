@@ -202,10 +202,24 @@ const generalFlags: MeowFlags = {
   },
 }
 
-export const cmdScanCreate = {
-  description,
-  hidden,
-  run,
+// Scan argv for `--default-branch=<non-bool-string>`. The flag is declared
+// boolean, so meow coerces `--default-branch=main` to `true` and discards
+// "main" — silently leaving the scan without a branch tag.
+function findDefaultBranchValueMisuse(
+  argv: readonly string[],
+): string | undefined {
+  for (const arg of argv) {
+    if (!arg.startsWith('--default-branch=')) {
+      continue
+    }
+    const value = arg.slice('--default-branch='.length)
+    const normalized = value.toLowerCase()
+    if (normalized === 'true' || normalized === 'false' || value === '') {
+      continue
+    }
+    return value
+  }
+  return undefined
 }
 
 async function run(
@@ -270,6 +284,21 @@ async function run(
       $ ${command} ./proj --json
       $ ${command} --repo=test-repo --branch=main ./package.json
   `,
+  }
+
+  // Detect the common `--default-branch=main` misuse before meow parses.
+  // `--default-branch` is a boolean — meow/yargs-parser treats
+  // `--default-branch=main` as `defaultBranch=true` and silently drops
+  // the "main" portion, so the user's scan gets tagged without the
+  // intended branch name and doesn't appear in the Main/PR dashboard
+  // tabs. Fail fast with a suggestion toward the correct form.
+  const defaultBranchMisuse = findDefaultBranchValueMisuse(argv)
+  if (defaultBranchMisuse) {
+    logger.fail(
+      `"--default-branch=${defaultBranchMisuse}" looks like you meant the branch name "${defaultBranchMisuse}".\n--default-branch is a boolean flag; pass the branch name with --branch instead:\n  socket scan create --branch ${defaultBranchMisuse} --default-branch`,
+    )
+    process.exitCode = 2
+    return
   }
 
   const cli = meowOrExit({
@@ -679,4 +708,10 @@ async function run(
     tmp: Boolean(tmp),
     workspace: (workspace && String(workspace)) || '',
   })
+}
+
+export const cmdScanCreate = {
+  description,
+  hidden,
+  run,
 }

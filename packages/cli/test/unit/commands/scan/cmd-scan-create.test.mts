@@ -1366,5 +1366,79 @@ describe('cmd-scan-create', () => {
         expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
       })
     })
+
+    describe('--default-branch misuse detection', () => {
+      // --default-branch is a boolean flag; meow silently discards the
+      // `=<value>` portion on `--default-branch=<name>`. Catch that
+      // pattern before meow parses so users get a clear error pointing
+      // at the right shape (`--branch <name> --default-branch`).
+      it('fails when --default-branch=<name> is passed with a branch name', async () => {
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '--default-branch=main', '.'],
+          importMeta,
+          context,
+        )
+
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining(
+            '"--default-branch=main" looks like you meant the branch name "main"',
+          ),
+        )
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining('--branch main --default-branch'),
+        )
+      })
+
+      it.each([
+        '--default-branch=true',
+        '--default-branch=false',
+        '--default-branch=TRUE',
+      ])('allows %s (explicit boolean form)', async arg => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--branch',
+            'main',
+            arg,
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        // meow parses the flag normally and flows through to handleCreateNewScan.
+        expect(mockLogger.fail).not.toHaveBeenCalledWith(
+          expect.stringContaining('looks like you meant the branch name'),
+        )
+      })
+
+      it('allows bare --default-branch (default truthy form)', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--branch',
+            'main',
+            '--default-branch',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockLogger.fail).not.toHaveBeenCalledWith(
+          expect.stringContaining('looks like you meant the branch name'),
+        )
+      })
+    })
   })
 })
