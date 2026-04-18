@@ -129,9 +129,12 @@ function buildApiDebugDetails(
   }
   if (requestInfo.responseBody !== undefined) {
     const body = requestInfo.responseBody
+    // `.length` / `.slice` operate on UTF-16 code units, not bytes, so
+    // the counter and truncation are both reported in "chars" to stay
+    // consistent with what we actually measured.
     details['responseBody'] =
       body.length > RESPONSE_BODY_TRUNCATE_LENGTH
-        ? `${body.slice(0, RESPONSE_BODY_TRUNCATE_LENGTH)}… (truncated, ${body.length} bytes)`
+        ? `${body.slice(0, RESPONSE_BODY_TRUNCATE_LENGTH)}… (truncated, ${body.length} chars)`
         : body
   }
   return details

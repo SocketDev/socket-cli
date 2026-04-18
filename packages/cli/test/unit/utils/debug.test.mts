@@ -258,7 +258,7 @@ describe('debug utilities', () => {
       debugApiResponse('/api/big', 500, undefined, requestInfo)
 
       const calledWith = mockDebugDir.mock.calls[0]?.[0]
-      expect(calledWith.responseBody).toMatch(/… \(truncated, 5000 bytes\)$/)
+      expect(calledWith.responseBody).toMatch(/… \(truncated, 5000 chars\)$/)
       expect((calledWith.responseBody as string).length).toBeLessThan(
         bigBody.length,
       )

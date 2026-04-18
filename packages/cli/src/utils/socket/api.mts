@@ -82,6 +82,18 @@ export async function socketHttpRequest(
   return await httpRequest(url, options)
 }
 
+// Safe wrapper for `response.text()` in error-handling code paths.
+// `text()` can throw (e.g. already consumed, malformed body), which
+// would blow past the `ok: false` CResult return and break the
+// error-handling contract of callers like `queryApiSafeText`.
+function tryReadResponseText(result: HttpResponse): string | undefined {
+  try {
+    return result.text?.()
+  } catch {
+    return undefined
+  }
+}
+
 export type CommandRequirements = {
   permissions?: string[] | undefined
   quota?: number | undefined
@@ -488,7 +500,7 @@ export async function queryApiSafeText(
       requestedAt,
       headers: { Authorization: '[REDACTED]' },
       responseHeaders: result.headers,
-      responseBody: result.text?.(),
+      responseBody: tryReadResponseText(result),
     })
     // Log required permissions for 403 errors when in a command context.
     if (commandPath && status === 403) {
@@ -677,7 +689,7 @@ export async function sendApiRequest<T>(
         'Content-Type': 'application/json',
       },
       responseHeaders: result.headers,
-      responseBody: result.text?.(),
+      responseBody: tryReadResponseText(result),
     })
     // Log required permissions for 403 errors when in a command context.
     if (commandPath && status === 403) {
