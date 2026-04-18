@@ -55,6 +55,7 @@ import {
 } from '../ecosystem/requirements.mts'
 import {
   buildErrorCause,
+  ConfigError,
   getNetworkErrorDiagnostics,
 } from '../error/errors.mts'
 
@@ -383,7 +384,10 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
 export async function queryApi(path: string, apiToken: string) {
   const baseUrl = getDefaultApiBaseUrl()
   if (!baseUrl) {
-    throw new Error('Socket API base URL is not configured.')
+    throw new ConfigError(
+      'Socket API base URL is not configured.',
+      CONFIG_KEY_API_BASE_URL,
+    )
   }
 
   return await socketHttpRequest(

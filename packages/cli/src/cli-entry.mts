@@ -28,7 +28,6 @@ process.emitWarning = function (warning, ...args) {
   return Reflect.apply(originalEmitWarning, this, [warning, ...args])
 }
 
-import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import lookupRegistryAuthToken from 'registry-auth-token'
 import lookupRegistryUrl from 'registry-url'
 
@@ -53,11 +52,10 @@ import { VITEST } from './env/vitest.mts'
 import meow from './meow.mts'
 import { meowWithSubcommands } from './utils/cli/with-subcommands.mts'
 import {
-  AuthError,
-  captureException,
-  InputError,
-} from './utils/error/errors.mts'
-import { failMsgWithBadge } from './utils/error/fail-msg-with-badge.mts'
+  formatErrorForJson,
+  formatErrorForTerminal,
+} from './utils/error/display.mts'
+import { captureException } from './utils/error/errors.mts'
 import { serializeResultJson } from './utils/output/result-json.mts'
 import { runPreflightDownloads } from './utils/preflight/downloads.mts'
 import { isSeaBinary } from './utils/sea/detect.mts'
@@ -181,24 +179,6 @@ void (async () => {
     debug('CLI uncaught error')
     debugDir(e)
 
-    let errorBody: string | undefined
-    let errorTitle: string
-    let errorMessage = ''
-    if (e instanceof AuthError) {
-      errorTitle = 'Authentication error'
-      errorMessage = e.message
-    } else if (e instanceof InputError) {
-      errorTitle = 'Invalid input'
-      errorMessage = e.message
-      errorBody = e.body
-    } else if (e instanceof Error) {
-      errorTitle = 'Unexpected error'
-      errorMessage = messageWithCauses(e)
-      errorBody = stackWithCauses(e)
-    } else {
-      errorTitle = 'Unexpected error with no details'
-    }
-
     // Try to parse the flags, find out if --json is set.
     const isJson = (() => {
       const cli = meow({
@@ -213,20 +193,12 @@ void (async () => {
     })()
 
     if (isJson) {
-      logger.log(
-        serializeResultJson({
-          ok: false,
-          message: errorTitle,
-          cause: errorMessage,
-        }),
-      )
+      logger.log(serializeResultJson(formatErrorForJson(e)))
     } else {
       // Add 2 newlines in stderr to bump below any spinner.
       logger.error('\n')
-      logger.fail(failMsgWithBadge(errorTitle, errorMessage))
-      if (errorBody) {
-        debugDirNs('inspect', { errorBody })
-      }
+      logger.error(formatErrorForTerminal(e))
+      debugDirNs('inspect', { error: e })
     }
 
     await captureException(e)
