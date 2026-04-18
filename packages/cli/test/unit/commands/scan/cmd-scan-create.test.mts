@@ -1391,6 +1391,22 @@ describe('cmd-scan-create', () => {
         )
       })
 
+      it('also catches the camelCase --defaultBranch=<name> variant', async () => {
+        // yargs-parser expands camelCase, so users can type either
+        // form from the shell. See Cursor bugbot feedback on PR #1230.
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '--defaultBranch=main', '.'],
+          importMeta,
+          context,
+        )
+
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining('looks like you meant the branch name "main"'),
+        )
+      })
+
       it.each([
         '--default-branch=true',
         '--default-branch=false',

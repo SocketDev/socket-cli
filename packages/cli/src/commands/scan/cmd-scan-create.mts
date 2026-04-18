@@ -202,17 +202,21 @@ const generalFlags: MeowFlags = {
   },
 }
 
-// Scan argv for `--default-branch=<non-bool-string>`. The flag is declared
-// boolean, so meow coerces `--default-branch=main` to `true` and discards
-// "main" — silently leaving the scan without a branch tag.
+// Scan argv for `--default-branch=<non-bool-string>` (both kebab-case
+// and yargs-parser's camelCase expansion). The flag is declared boolean,
+// so meow coerces `--default-branch=main` to `true` and discards "main"
+// — silently leaving the scan without a branch tag.
+const DEFAULT_BRANCH_PREFIXES = ['--default-branch=', '--defaultBranch=']
+
 function findDefaultBranchValueMisuse(
   argv: readonly string[],
 ): string | undefined {
   for (const arg of argv) {
-    if (!arg.startsWith('--default-branch=')) {
+    const prefix = DEFAULT_BRANCH_PREFIXES.find(p => arg.startsWith(p))
+    if (!prefix) {
       continue
     }
-    const value = arg.slice('--default-branch='.length)
+    const value = arg.slice(prefix.length)
     const normalized = value.toLowerCase()
     if (normalized === 'true' || normalized === 'false' || value === '') {
       continue
