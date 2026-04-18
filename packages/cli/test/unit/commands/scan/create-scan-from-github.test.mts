@@ -428,3 +428,106 @@ describe('error message quality', () => {
     }
   })
 })
+
+// Regression tests for ASK-167: the bulk loop in createScanFromGithub
+// used to swallow per-repo failures, so a rate-limited token returned
+// ok:true with "0 manifests". These drive the full function through
+// mocked octokit calls.
+describe('createScanFromGithub rate-limit short-circuit (ASK-167)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns ok:false and stops the loop on GitHub rate limit', async () => {
+    // First call (getRepoDetails for repo-a) fails with rate limit.
+    mockWithGitHubRetry.mockResolvedValueOnce({
+      ok: false,
+      message: 'GitHub rate limit exceeded',
+      cause: 'GitHub API rate limit exceeded.',
+    })
+
+    const { createScanFromGithub } = await import(
+      '../../../../src/commands/scan/create-scan-from-github.mts'
+    )
+
+    const result = await createScanFromGithub({
+      all: false,
+      githubApiUrl: '',
+      githubToken: '',
+      interactive: false,
+      orgGithub: 'org',
+      orgSlug: 'org',
+      outputKind: 'text',
+      repos: 'repo-a,repo-b,repo-c',
+    })
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toBe('GitHub rate limit exceeded')
+    }
+    // Short-circuit: only the first repo's getRepoDetails should have run.
+    expect(mockWithGitHubRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns ok:false and stops on GitHub auth failure', async () => {
+    mockWithGitHubRetry.mockResolvedValueOnce({
+      ok: false,
+      message: 'GitHub authentication failed',
+      cause: 'Bad credentials.',
+    })
+
+    const { createScanFromGithub } = await import(
+      '../../../../src/commands/scan/create-scan-from-github.mts'
+    )
+
+    const result = await createScanFromGithub({
+      all: false,
+      githubApiUrl: '',
+      githubToken: '',
+      interactive: false,
+      orgGithub: 'org',
+      orgSlug: 'org',
+      outputKind: 'text',
+      repos: 'repo-a,repo-b',
+    })
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toBe('GitHub authentication failed')
+    }
+    expect(mockWithGitHubRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns "All repos failed to scan" when every repo errors with a non-blocking reason', async () => {
+    // Each repo's getRepoDetails fails with a non-rate-limit error;
+    // the loop should finish all repos and return the catch-all error.
+    mockWithGitHubRetry.mockResolvedValue({
+      ok: false,
+      message: 'GitHub resource not found',
+      cause: 'Not found.',
+    })
+
+    const { createScanFromGithub } = await import(
+      '../../../../src/commands/scan/create-scan-from-github.mts'
+    )
+
+    const result = await createScanFromGithub({
+      all: false,
+      githubApiUrl: '',
+      githubToken: '',
+      interactive: false,
+      orgGithub: 'org',
+      orgSlug: 'org',
+      outputKind: 'text',
+      repos: 'repo-a,repo-b',
+    })
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toBe('All repos failed to scan')
+      expect(result.cause).toContain('repo-a')
+    }
+    // Both repos should have been attempted (no short-circuit for 404).
+    expect(mockWithGitHubRetry).toHaveBeenCalledTimes(2)
+  })
+})
