@@ -428,6 +428,7 @@ export async function queryApiSafeText(
   const baseUrl = getDefaultApiBaseUrl()
   const fullUrl = `${baseUrl}${baseUrl?.endsWith('/') ? '' : '/'}${path}`
   const startTime = Date.now()
+  const requestedAt = new Date(startTime).toISOString()
 
   let result: any
   try {
@@ -443,6 +444,7 @@ export async function queryApiSafeText(
       method: 'GET',
       url: fullUrl,
       durationMs,
+      requestedAt,
       headers: { Authorization: '[REDACTED]' },
     })
   } catch (e) {
@@ -458,6 +460,7 @@ export async function queryApiSafeText(
       method: 'GET',
       url: fullUrl,
       durationMs,
+      requestedAt,
       headers: { Authorization: '[REDACTED]' },
     })
 
@@ -475,12 +478,17 @@ export async function queryApiSafeText(
   if (!result.ok) {
     const { status } = result
     const durationMs = Date.now() - startTime
-    // Log detailed error information.
+    // Log detailed error information — include response headers (for
+    // cf-ray) and a truncated body so support tickets have everything
+    // needed to file against Cloudflare or backend teams.
     debugApiResponse(description || 'Query API', status, undefined, {
       method: 'GET',
       url: fullUrl,
       durationMs,
+      requestedAt,
       headers: { Authorization: '[REDACTED]' },
+      responseHeaders: result.headers,
+      responseBody: result.text?.(),
     })
     // Log required permissions for 403 errors when in a command context.
     if (commandPath && status === 403) {
@@ -587,6 +595,7 @@ export async function sendApiRequest<T>(
 
   const fullUrl = `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`
   const startTime = Date.now()
+  const requestedAt = new Date(startTime).toISOString()
 
   let result: any
   try {
@@ -614,6 +623,7 @@ export async function sendApiRequest<T>(
         method,
         url: fullUrl,
         durationMs,
+        requestedAt,
         headers: {
           Authorization: '[REDACTED]',
           'Content-Type': 'application/json',
@@ -633,6 +643,7 @@ export async function sendApiRequest<T>(
       method,
       url: fullUrl,
       durationMs,
+      requestedAt,
       headers: {
         Authorization: '[REDACTED]',
         'Content-Type': 'application/json',
@@ -653,15 +664,20 @@ export async function sendApiRequest<T>(
   if (!result.ok) {
     const { status } = result
     const durationMs = Date.now() - startTime
-    // Log detailed error information.
+    // Log detailed error information — include response headers (for
+    // cf-ray) and a truncated body so support tickets have everything
+    // needed to file against Cloudflare or backend teams.
     debugApiResponse(description || 'Send API Request', status, undefined, {
       method,
       url: fullUrl,
       durationMs,
+      requestedAt,
       headers: {
         Authorization: '[REDACTED]',
         'Content-Type': 'application/json',
       },
+      responseHeaders: result.headers,
+      responseBody: result.text?.(),
     })
     // Log required permissions for 403 errors when in a command context.
     if (commandPath && status === 403) {

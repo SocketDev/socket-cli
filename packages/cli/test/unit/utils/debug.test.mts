@@ -188,6 +188,81 @@ describe('debug utilities', () => {
       expect(calledWith.url).toBeUndefined()
       expect(calledWith.headers).toBeUndefined()
     })
+
+    it('includes requestedAt timestamp when provided', () => {
+      const requestInfo = {
+        method: 'POST',
+        url: 'https://api.socket.dev/x',
+        requestedAt: '2026-04-18T00:00:00.000Z',
+      }
+
+      debugApiResponse('/api/x', 500, undefined, requestInfo)
+
+      const calledWith = mockDebugDir.mock.calls[0]?.[0]
+      expect(calledWith.requestedAt).toBe('2026-04-18T00:00:00.000Z')
+    })
+
+    it('extracts cf-ray as a top-level field and keeps responseHeaders', () => {
+      const requestInfo = {
+        method: 'GET',
+        url: 'https://api.socket.dev/y',
+        responseHeaders: {
+          'cf-ray': 'abc123-IAD',
+          'content-type': 'application/json',
+        },
+      }
+
+      debugApiResponse('/api/y', 500, undefined, requestInfo)
+
+      const calledWith = mockDebugDir.mock.calls[0]?.[0]
+      expect(calledWith.cfRay).toBe('abc123-IAD')
+      expect(calledWith.responseHeaders?.['cf-ray']).toBe('abc123-IAD')
+    })
+
+    it('tolerates CF-Ray header casing', () => {
+      const requestInfo = {
+        method: 'GET',
+        url: 'https://api.socket.dev/z',
+        responseHeaders: {
+          'CF-Ray': 'xyz789-SJC',
+        },
+      }
+
+      debugApiResponse('/api/z', 500, undefined, requestInfo)
+
+      const calledWith = mockDebugDir.mock.calls[0]?.[0]
+      expect(calledWith.cfRay).toBe('xyz789-SJC')
+    })
+
+    it('includes response body on error', () => {
+      const requestInfo = {
+        method: 'GET',
+        url: 'https://api.socket.dev/body',
+        responseBody: '{"error":"bad"}',
+      }
+
+      debugApiResponse('/api/body', 400, undefined, requestInfo)
+
+      const calledWith = mockDebugDir.mock.calls[0]?.[0]
+      expect(calledWith.responseBody).toBe('{"error":"bad"}')
+    })
+
+    it('truncates oversized response bodies', () => {
+      const bigBody = 'x'.repeat(5000)
+      const requestInfo = {
+        method: 'GET',
+        url: 'https://api.socket.dev/big',
+        responseBody: bigBody,
+      }
+
+      debugApiResponse('/api/big', 500, undefined, requestInfo)
+
+      const calledWith = mockDebugDir.mock.calls[0]?.[0]
+      expect(calledWith.responseBody).toMatch(/… \(truncated, 5000 bytes\)$/)
+      expect((calledWith.responseBody as string).length).toBeLessThan(
+        bigBody.length,
+      )
+    })
   })
 
   describe('debugFileOp', () => {

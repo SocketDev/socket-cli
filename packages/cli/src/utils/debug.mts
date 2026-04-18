@@ -33,7 +33,19 @@ export type ApiRequestDebugInfo = {
   url?: string | undefined
   headers?: Record<string, string> | undefined
   durationMs?: number | undefined
+  // ISO-8601 timestamp of when the request was initiated. Useful when
+  // correlating failures with server-side logs.
+  requestedAt?: string | undefined
+  // Response headers from the failed request. The helper extracts the
+  // cf-ray trace id as a first-class field so support can look it up in
+  // the Cloudflare dashboard without eyeballing the whole header dump.
+  responseHeaders?: Record<string, string> | undefined
+  // Response body string; truncated by the helper to a safe length so
+  // logs don't balloon on megabyte payloads.
+  responseBody?: string | undefined
 }
+
+const RESPONSE_BODY_TRUNCATE_LENGTH = 2_000
 
 /**
  * Sanitize headers to remove sensitive information.
@@ -77,15 +89,69 @@ export function debugApiRequest(
 }
 
 /**
+ * Build the structured debug payload shared by the error + failure-status
+ * branches of `debugApiResponse`. Extracted so both paths log the same
+ * shape.
+ */
+function buildApiDebugDetails(
+  base: Record<string, unknown>,
+  requestInfo?: ApiRequestDebugInfo | undefined,
+): Record<string, unknown> {
+  if (!requestInfo) {
+    return base
+  }
+  const details: Record<string, unknown> = { ...base }
+  if (requestInfo.requestedAt) {
+    details['requestedAt'] = requestInfo.requestedAt
+  }
+  if (requestInfo.method) {
+    details['method'] = requestInfo.method
+  }
+  if (requestInfo.url) {
+    details['url'] = requestInfo.url
+  }
+  if (requestInfo.durationMs !== undefined) {
+    details['durationMs'] = requestInfo.durationMs
+  }
+  if (requestInfo.headers) {
+    details['headers'] = sanitizeHeaders(requestInfo.headers)
+  }
+  if (requestInfo.responseHeaders) {
+    const cfRay =
+      requestInfo.responseHeaders['cf-ray'] ??
+      requestInfo.responseHeaders['CF-Ray']
+    if (cfRay) {
+      // First-class field so it's obvious when filing a support ticket
+      // that points at a Cloudflare trace.
+      details['cfRay'] = cfRay
+    }
+    details['responseHeaders'] = sanitizeHeaders(requestInfo.responseHeaders)
+  }
+  if (requestInfo.responseBody !== undefined) {
+    const body = requestInfo.responseBody
+    details['responseBody'] =
+      body.length > RESPONSE_BODY_TRUNCATE_LENGTH
+        ? `${body.slice(0, RESPONSE_BODY_TRUNCATE_LENGTH)}… (truncated, ${body.length} bytes)`
+        : body
+  }
+  return details
+}
+
+/**
  * Debug an API response with detailed request information.
- * Logs essential info without exposing sensitive data.
  *
- * For failed requests (status >= 400 or error), logs:
- * - HTTP method (GET, POST, etc.)
- * - Full URL
- * - Response status code
- * - Sanitized headers (Authorization redacted)
- * - Request duration in milliseconds
+ * For failed requests (status >= 400 or error), logs a structured
+ * object with:
+ *   - endpoint (human-readable description)
+ *   - requestedAt (ISO timestamp, if passed)
+ *   - method, url, durationMs
+ *   - sanitized request headers (Authorization redacted)
+ *   - cfRay (extracted from response headers if present)
+ *   - sanitized response headers
+ *   - responseBody (truncated)
+ *
+ * All request-headers are sanitized to redact Authorization and
+ * `*api-key*` values.
  */
 export function debugApiResponse(
   endpoint: string,
@@ -94,37 +160,19 @@ export function debugApiResponse(
   requestInfo?: ApiRequestDebugInfo | undefined,
 ): void {
   if (error) {
-    const errorDetails = {
-      __proto__: null,
-      endpoint,
-      error: error instanceof Error ? error.message : UNKNOWN_ERROR,
-      ...(requestInfo?.method ? { method: requestInfo.method } : {}),
-      ...(requestInfo?.url ? { url: requestInfo.url } : {}),
-      ...(requestInfo?.durationMs !== undefined
-        ? { durationMs: requestInfo.durationMs }
-        : {}),
-      ...(requestInfo?.headers
-        ? { headers: sanitizeHeaders(requestInfo.headers) }
-        : {}),
-    }
-    debugDir(errorDetails)
+    debugDir(
+      buildApiDebugDetails(
+        {
+          endpoint,
+          error: error instanceof Error ? error.message : UNKNOWN_ERROR,
+        },
+        requestInfo,
+      ),
+    )
   } else if (status && status >= 400) {
     // For failed requests, log detailed information.
     if (requestInfo) {
-      const failureDetails = {
-        __proto__: null,
-        endpoint,
-        status,
-        ...(requestInfo.method ? { method: requestInfo.method } : {}),
-        ...(requestInfo.url ? { url: requestInfo.url } : {}),
-        ...(requestInfo.durationMs !== undefined
-          ? { durationMs: requestInfo.durationMs }
-          : {}),
-        ...(requestInfo.headers
-          ? { headers: sanitizeHeaders(requestInfo.headers) }
-          : {}),
-      }
-      debugDir(failureDetails)
+      debugDir(buildApiDebugDetails({ endpoint, status }, requestInfo))
     } else {
       debug(`API ${endpoint}: HTTP ${status}`)
     }
