@@ -45,7 +45,7 @@ catalog:
   '@socketregistry/packageurl-js': 1.4.2
   '@socketregistry/yocto-spinner': 1.0.25
   '@socketsecurity/config': 3.0.1
-  '@socketsecurity/lib': 5.18.2
+  '@socketsecurity/lib': 5.19.1
   '@socketsecurity/registry': 2.0.2
   '@socketsecurity/sdk': 4.0.1
   '@types/adm-zip': 0.5.7
