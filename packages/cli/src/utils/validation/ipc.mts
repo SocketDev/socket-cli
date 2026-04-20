@@ -10,17 +10,17 @@ import { randomBytes } from 'node:crypto'
 import type { IpcStub } from '@socketsecurity/lib/ipc'
 
 export interface IpcMessage<T = unknown> {
+  data: T
   id: string
   timestamp: number
   type: string
-  data: T
 }
 
 export interface IpcHandshake extends IpcMessage<{
-  version: string
-  pid: number
-  appName: string
   apiToken?: string | undefined
+  appName: string
+  pid: number
+  version: string
 }> {
   type: 'handshake'
 }
