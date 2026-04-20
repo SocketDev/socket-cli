@@ -473,6 +473,64 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
     expect(mockWithGitHubRetry).toHaveBeenCalledTimes(1)
   })
 
+  it('returns ok:false and stops on GitHub GraphQL rate limit', async () => {
+    mockWithGitHubRetry.mockResolvedValueOnce({
+      ok: false,
+      message: 'GitHub GraphQL rate limit exceeded',
+      cause: 'GraphQL rate limit hit.',
+    })
+
+    const { createScanFromGithub } = await import(
+      '../../../../src/commands/scan/create-scan-from-github.mts'
+    )
+
+    const result = await createScanFromGithub({
+      all: false,
+      githubApiUrl: '',
+      githubToken: '',
+      interactive: false,
+      orgGithub: 'org',
+      orgSlug: 'org',
+      outputKind: 'text',
+      repos: 'repo-a,repo-b,repo-c',
+    })
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toBe('GitHub GraphQL rate limit exceeded')
+    }
+    expect(mockWithGitHubRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns ok:false and stops on GitHub abuse detection', async () => {
+    mockWithGitHubRetry.mockResolvedValueOnce({
+      ok: false,
+      message: 'GitHub abuse detection triggered',
+      cause: 'Secondary rate limit hit.',
+    })
+
+    const { createScanFromGithub } = await import(
+      '../../../../src/commands/scan/create-scan-from-github.mts'
+    )
+
+    const result = await createScanFromGithub({
+      all: false,
+      githubApiUrl: '',
+      githubToken: '',
+      interactive: false,
+      orgGithub: 'org',
+      orgSlug: 'org',
+      outputKind: 'text',
+      repos: 'repo-a,repo-b,repo-c',
+    })
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toBe('GitHub abuse detection triggered')
+    }
+    expect(mockWithGitHubRetry).toHaveBeenCalledTimes(1)
+  })
+
   it('returns ok:false and stops on GitHub auth failure', async () => {
     mockWithGitHubRetry.mockResolvedValueOnce({
       ok: false,
