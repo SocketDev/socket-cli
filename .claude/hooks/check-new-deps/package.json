@@ -10,9 +10,9 @@
     "test": "node --test test/*.test.mts"
   },
   "dependencies": {
-    "@socketregistry/packageurl-js": "1.4.2",
-    "@socketsecurity/lib": "5.19.1",
-    "@socketsecurity/sdk": "4.0.1"
+    "@socketregistry/packageurl-js": "catalog:",
+    "@socketsecurity/lib": "catalog:",
+    "@socketsecurity/sdk": "catalog:"
   },
   "devDependencies": {
     "@types/node": "24.9.2"
