@@ -98,7 +98,7 @@ function buildApiDebugDetails(
   requestInfo?: ApiRequestDebugInfo | undefined,
 ): Record<string, unknown> {
   // `__proto__: null` keeps the payload free of prototype-chain keys
-  // when callers iterate over `debugDir`'s output.
+  // when callers iterate over the debug output.
   const details: Record<string, unknown> = { __proto__: null, ...base } as Record<string, unknown>
   if (!requestInfo) {
     return details
@@ -143,9 +143,9 @@ function buildApiDebugDetails(
 }
 
 /**
- * Debug an API response. Only failed requests (error or status >= 400)
- * produce structured output; successful responses optionally log a
- * one-liner at the `notice` debug namespace.
+ * Debug an API response. Failed requests (error or status >= 400) log
+ * under the `error` namespace; successful responses optionally log a
+ * one-liner under `notice`.
  *
  * Request and response headers are sanitized via `sanitizeHeaders` so
  * Authorization and `*api-key*` values are redacted.
@@ -157,7 +157,8 @@ export function debugApiResponse(
   requestInfo?: ApiRequestDebugInfo | undefined,
 ): void {
   if (error) {
-    debugDir(
+    debugDirNs(
+      'error',
       buildApiDebugDetails(
         {
           endpoint,
@@ -168,9 +169,9 @@ export function debugApiResponse(
     )
   } else if (status && status >= 400) {
     if (requestInfo) {
-      debugDir(buildApiDebugDetails({ endpoint, status }, requestInfo))
+      debugDirNs('error', buildApiDebugDetails({ endpoint, status }, requestInfo))
     } else {
-      debug(`API ${endpoint}: HTTP ${status}`)
+      debugNs('error', `API ${endpoint}: HTTP ${status}`)
     }
     /* c8 ignore next 3 */
   } else if (isDebugNs('notice')) {
