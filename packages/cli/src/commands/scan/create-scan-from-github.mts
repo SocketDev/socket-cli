@@ -148,13 +148,13 @@ export async function createScanFromGithub({
     }
   }
 
-  logger.success(reposScanned, 'GitHub repos processed')
-  logger.success(scansCreated, 'with supported Manifest files')
-
   if (blockingError) {
     logger.fail(blockingError.message)
     return blockingError
   }
+
+  logger.success(reposScanned, 'GitHub repos processed')
+  logger.success(scansCreated, 'with supported Manifest files')
 
   // If every repo failed but not for a known-blocking reason, treat
   // the run as an error so scripts know something went wrong instead
