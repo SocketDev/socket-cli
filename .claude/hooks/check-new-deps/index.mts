@@ -35,9 +35,8 @@ import {
 import { SocketSdk } from '@socketsecurity/sdk'
 import type { MalwareCheckPackage } from '@socketsecurity/sdk'
 
-// Local mirror of build-infra/lib/error-utils#errorMessage. Hook runs
-// standalone (no workspace deps beyond @socketsecurity/*) so we can't import
-// the shared helper, but the contract is identical.
+// Hook runs standalone with only @socketsecurity/* deps, so this
+// one-liner lives here instead of importing a shared helper.
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
