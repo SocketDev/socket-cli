@@ -1383,7 +1383,7 @@ describe('cmd-scan-create', () => {
           ),
         )
         expect(mockLogger.fail).toHaveBeenCalledWith(
-          expect.stringContaining('--branch main --default-branch'),
+          expect.stringContaining('--branch main --make-default-branch'),
         )
       })
 
@@ -1511,6 +1511,145 @@ describe('cmd-scan-create', () => {
 
         expect(mockLogger.fail).not.toHaveBeenCalledWith(
           expect.stringContaining('looks like you meant the branch name'),
+        )
+      })
+
+      it('catches --make-default-branch=<name> misuse on the primary flag', async () => {
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '--make-default-branch=main', '.'],
+          importMeta,
+          context,
+        )
+
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining(
+            '"--make-default-branch=main" looks like you meant to name the branch "main"',
+          ),
+        )
+      })
+    })
+
+    describe('--make-default-branch primary flag', () => {
+      it('passes --make-default-branch through to handleCreateNewScan', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--branch',
+            'main',
+            '--make-default-branch',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            defaultBranch: true,
+            branchName: 'main',
+          }),
+        )
+      })
+
+      it('does not emit the deprecation warning for the primary name', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--branch',
+            'main',
+            '--make-default-branch',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockLogger.warn).not.toHaveBeenCalledWith(
+          expect.stringContaining('--default-branch is deprecated'),
+        )
+      })
+    })
+
+    describe('--default-branch deprecation warning', () => {
+      it('warns when the legacy --default-branch flag is used', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--branch',
+            'main',
+            '--default-branch',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockLogger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('--default-branch is deprecated'),
+        )
+        expect(mockLogger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('use --make-default-branch'),
+        )
+      })
+
+      it('warns on the legacy camelCase --defaultBranch name', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--branch',
+            'main',
+            '--defaultBranch',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockLogger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('--default-branch is deprecated'),
+        )
+      })
+
+      it('still wires the legacy flag through to handleCreateNewScan (back-compat)', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--branch',
+            'main',
+            '--default-branch',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            defaultBranch: true,
+            branchName: 'main',
+          }),
         )
       })
     })

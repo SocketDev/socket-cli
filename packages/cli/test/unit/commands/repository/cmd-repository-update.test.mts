@@ -539,5 +539,36 @@ describe('cmd-repository-update', () => {
         'text',
       )
     })
+
+    describe('--default-branch empty-value detection', () => {
+      it('fails when --default-branch= is passed with no value', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdRepositoryUpdate.run(
+          ['test-repo', '--default-branch=', '--no-interactive'],
+          importMeta,
+          context,
+        )
+
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleUpdateRepo).not.toHaveBeenCalled()
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining('--default-branch requires a value'),
+        )
+      })
+
+      it('fails on bare --default-branch followed by another flag', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdRepositoryUpdate.run(
+          ['test-repo', '--default-branch', '--no-interactive'],
+          importMeta,
+          context,
+        )
+
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleUpdateRepo).not.toHaveBeenCalled()
+      })
+    })
   })
 })

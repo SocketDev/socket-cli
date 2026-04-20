@@ -28,10 +28,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Updated to @socketsecurity/socket-patch@1.2.0.
 - Updated Coana CLI to v14.12.148.
+- `socket scan create` now accepts `--make-default-branch` (mirrors the `make_default_branch` API field) instead of `--default-branch`. The old name keeps working but emits a deprecation warning.
+
+### Deprecated
+
+- `socket scan create --default-branch` / `--defaultBranch` — use `--make-default-branch` instead. The legacy names still work during the deprecation window but emit a warning.
 
 ### Fixed
 
 - Prevent heap overflow in large monorepo scans by using streaming-based filtering to avoid accumulating all file paths in memory before filtering.
+- `socket scan create` now rejects `--default-branch=<name>` and `--default-branch <name>` (space-separated) with an actionable error instead of silently dropping the branch name. Scans that used the misuse shape were getting recorded without a branch tag and disappearing from the Main/PR dashboard tabs.
+- `socket repository create` / `socket repository update` now reject bare `--default-branch` (no value) and `--default-branch=` (empty value). Previously both persisted a blank default-branch name on the repo record.
 
 ## [2.1.0](https://github.com/SocketDev/socket-cli/releases/tag/v2.1.0) - 2025-11-02
 
