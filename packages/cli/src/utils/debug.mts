@@ -141,20 +141,12 @@ function buildApiDebugDetails(
 }
 
 /**
- * Debug an API response with detailed request information.
+ * Debug an API response. Only failed requests (error or status >= 400)
+ * produce structured output; successful responses optionally log a
+ * one-liner at the `notice` debug namespace.
  *
- * For failed requests (status >= 400 or error), logs a structured
- * object with:
- *   - endpoint (human-readable description)
- *   - requestedAt (ISO timestamp, if passed)
- *   - method, url, durationMs
- *   - sanitized request headers (Authorization redacted)
- *   - cfRay (extracted from response headers if present)
- *   - sanitized response headers
- *   - responseBody (truncated)
- *
- * All request-headers are sanitized to redact Authorization and
- * `*api-key*` values.
+ * Request and response headers are sanitized via `sanitizeHeaders` so
+ * Authorization and `*api-key*` values are redacted.
  */
 export function debugApiResponse(
   endpoint: string,
@@ -173,7 +165,6 @@ export function debugApiResponse(
       ),
     )
   } else if (status && status >= 400) {
-    // For failed requests, log detailed information.
     if (requestInfo) {
       debugDir(buildApiDebugDetails({ endpoint, status }, requestInfo))
     } else {
