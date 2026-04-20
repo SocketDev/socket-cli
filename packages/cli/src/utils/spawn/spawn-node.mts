@@ -34,6 +34,22 @@ import type {
 } from '@socketsecurity/lib/spawn'
 
 /**
+ * Narrows a spawned process to the shape required by
+ * `sendBootstrapHandshake` (i.e. `.send` is a callable, not undefined).
+ * The typeof-on-a-property guard can't flow to the parent object, so
+ * we need an explicit assertion function.
+ */
+function assertHasSend<T extends { send?: unknown }>(
+  proc: T,
+): asserts proc is T & { send: (message: unknown) => void } {
+  if (typeof proc.send !== 'function') {
+    throw new TypeError(
+      'spawn-node: expected IPC channel on child process (send is undefined)',
+    )
+  }
+}
+
+/**
  * Ensures stdio configuration includes IPC channel for process communication.
  * Converts various stdio formats to include 'ipc' as the fourth element.
  */
@@ -117,13 +133,12 @@ export function spawnNode(
     extra,
   )
 
-  if (typeof spawnResult.process.send !== 'function') {
-    throw new TypeError(
-      'spawn-node: expected IPC channel on child process (send is undefined)',
-    )
-  }
+  // `ensureIpcInStdio` above guarantees an IPC channel in stdio, so
+  // `.send` should always be a function here. Narrow explicitly via an
+  // assertion function so the call site doesn't need a structural cast.
+  assertHasSend(spawnResult.process)
   sendBootstrapHandshake(
-    spawnResult.process as { send: (message: unknown) => void },
+    spawnResult.process,
     // Always send IPC handshake with bootstrap indicators + custom data.
     {
       subprocess: true,
