@@ -54,6 +54,15 @@ import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 export type Pr = components['schemas']['pull-request']
 
+// Canonical `message` values returned by `handleGitHubApiError` /
+// `handleGraphqlError`. Exported so callers can short-circuit on
+// blocking conditions without matching free-form strings.
+export const GITHUB_ERR_ABUSE_DETECTION = 'GitHub abuse detection triggered'
+export const GITHUB_ERR_AUTH_FAILED = 'GitHub authentication failed'
+export const GITHUB_ERR_GRAPHQL_RATE_LIMIT =
+  'GitHub GraphQL rate limit exceeded'
+export const GITHUB_ERR_RATE_LIMIT = 'GitHub rate limit exceeded'
+
 interface CacheEntry {
   timestamp: number
   data: JsonContent
@@ -398,7 +407,7 @@ export function handleGraphqlError(
     if (isGraphqlRateLimitError(e)) {
       return {
         ok: false,
-        message: 'GitHub GraphQL rate limit exceeded',
+        message: GITHUB_ERR_GRAPHQL_RATE_LIMIT,
         cause:
           `GitHub GraphQL rate limit exceeded while ${context}. ` +
           'Try again in a few minutes.\n\n' +
@@ -440,7 +449,7 @@ export function handleGitHubApiError(
     if (status === 403 && e.message.includes('secondary rate limit')) {
       return {
         ok: false,
-        message: 'GitHub abuse detection triggered',
+        message: GITHUB_ERR_ABUSE_DETECTION,
         cause:
           `GitHub abuse detection triggered while ${context}. ` +
           'This happens when making too many requests in a short period. ' +
@@ -474,7 +483,7 @@ export function handleGitHubApiError(
 
       return {
         ok: false,
-        message: 'GitHub rate limit exceeded',
+        message: GITHUB_ERR_RATE_LIMIT,
         cause:
           `GitHub API rate limit exceeded while ${context}. ` +
           (waitTime
@@ -492,7 +501,7 @@ export function handleGitHubApiError(
     if (status === 401) {
       return {
         ok: false,
-        message: 'GitHub authentication failed',
+        message: GITHUB_ERR_AUTH_FAILED,
         cause:
           `GitHub authentication failed while ${context}. ` +
           'Your token may be invalid, expired, or missing required permissions.\n\n' +

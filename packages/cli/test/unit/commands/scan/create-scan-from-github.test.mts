@@ -51,6 +51,10 @@ const mockWithGitHubRetry = vi.hoisted(() =>
 
 // Mock dependencies.
 vi.mock('../../../../src/utils/git/github.mts', () => ({
+  GITHUB_ERR_ABUSE_DETECTION: 'GitHub abuse detection triggered',
+  GITHUB_ERR_AUTH_FAILED: 'GitHub authentication failed',
+  GITHUB_ERR_GRAPHQL_RATE_LIMIT: 'GitHub GraphQL rate limit exceeded',
+  GITHUB_ERR_RATE_LIMIT: 'GitHub rate limit exceeded',
   getOctokit: vi.fn(() => mockOctokit),
   withGitHubRetry: mockWithGitHubRetry,
 }))

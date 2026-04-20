@@ -13,7 +13,14 @@ import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mjs'
 import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
 import { socketHttpRequest } from '../../utils/socket/api.mjs'
 import { isReportSupportedFile } from '../../utils/fs/glob.mts'
-import { getOctokit, withGitHubRetry } from '../../utils/git/github.mts'
+import {
+  GITHUB_ERR_ABUSE_DETECTION,
+  GITHUB_ERR_AUTH_FAILED,
+  GITHUB_ERR_GRAPHQL_RATE_LIMIT,
+  GITHUB_ERR_RATE_LIMIT,
+  getOctokit,
+  withGitHubRetry,
+} from '../../utils/git/github.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -123,16 +130,14 @@ export async function createScanFromGithub({
       repo: repoSlug,
       message: scanCResult.message,
     })
-    // Stop the loop if we hit a rate limit or auth failure — every
-    // subsequent repo will fail for the same reason and continuing
-    // only burns more quota while delaying the real error. Strings
-    // here match `handleGitHubApiError` / `handleGraphqlError` in
-    // utils/git/github.mts.
+    // Stop on rate-limit / auth failures: every subsequent repo will
+    // fail for the same reason and continuing only burns more quota
+    // while delaying the real error.
     if (
-      scanCResult.message === 'GitHub rate limit exceeded' ||
-      scanCResult.message === 'GitHub GraphQL rate limit exceeded' ||
-      scanCResult.message === 'GitHub abuse detection triggered' ||
-      scanCResult.message === 'GitHub authentication failed'
+      scanCResult.message === GITHUB_ERR_RATE_LIMIT ||
+      scanCResult.message === GITHUB_ERR_GRAPHQL_RATE_LIMIT ||
+      scanCResult.message === GITHUB_ERR_ABUSE_DETECTION ||
+      scanCResult.message === GITHUB_ERR_AUTH_FAILED
     ) {
       blockingError = {
         ok: false,
