@@ -26,6 +26,25 @@ export type ErrorDisplayOptions = {
 }
 
 /**
+ * Append the `.cause` chain (up to 5 levels) to a base message so
+ * non-debug users see the diagnostic context from wrapped errors.
+ * Typed errors (AuthError, NetworkError, …) can also carry causes.
+ */
+function appendCauseChain(baseMessage: string, cause: unknown): string {
+  const plainCauses: string[] = []
+  let walk: unknown = cause
+  let walkDepth = 1
+  while (walk && walkDepth <= 5) {
+    plainCauses.push(walk instanceof Error ? walk.message : String(walk))
+    walk = walk instanceof Error ? walk.cause : undefined
+    walkDepth++
+  }
+  return plainCauses.length
+    ? `${baseMessage}: ${plainCauses.join(': ')}`
+    : baseMessage
+}
+
+/**
  * Format an error for display with polish and clarity.
  * Uses LOG_SYMBOLS and colors for visual hierarchy.
  */
@@ -47,50 +66,38 @@ export function formatErrorForDisplay(
     if (error.retryAfter) {
       message += ` (retry after ${error.retryAfter}s)`
     }
+    message = appendCauseChain(message, error.cause)
   } else if (error instanceof AuthError) {
     title = 'Authentication error'
-    message = error.message
+    message = appendCauseChain(error.message, error.cause)
   } else if (error instanceof NetworkError) {
     title = 'Network error'
     message = error.message
     if (error.statusCode) {
       message += ` (HTTP ${error.statusCode})`
     }
+    message = appendCauseChain(message, error.cause)
   } else if (error instanceof FileSystemError) {
     title = 'File system error'
     message = error.message
     if (error.path) {
       message += ` (${error.path})`
     }
+    message = appendCauseChain(message, error.cause)
   } else if (error instanceof ConfigError) {
     title = 'Configuration error'
     message = error.message
     if (error.configKey) {
       message += ` (key: ${error.configKey})`
     }
+    message = appendCauseChain(message, error.cause)
   } else if (error instanceof InputError) {
     title = 'Invalid input'
-    message = error.message
+    message = appendCauseChain(error.message, error.cause)
     body = error.body
   } else if (error instanceof Error) {
     title = opts.title || 'Unexpected error'
-    // Concatenate the cause chain into `message` (what non-debug users see)
-    // so diagnostic context from wrapped errors isn't silently dropped.
-    // `showStack` adds a richer formatted body with stack traces below.
-    message = error.message
-    const plainCauses: string[] = []
-    let walk: unknown = error.cause
-    let walkDepth = 1
-    while (walk && walkDepth <= 5) {
-      plainCauses.push(
-        walk instanceof Error ? walk.message : String(walk),
-      )
-      walk = walk instanceof Error ? walk.cause : undefined
-      walkDepth++
-    }
-    if (plainCauses.length) {
-      message = `${message}: ${plainCauses.join(': ')}`
-    }
+    message = appendCauseChain(error.message, error.cause)
 
     if (showStack && error.stack) {
       // Format stack trace with proper indentation.
