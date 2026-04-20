@@ -4,13 +4,8 @@
 
 set -e
 
-# Colors for output.
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-NC='\033[0m'
-
-# Allowed public API key (used in socket-lib).
-ALLOWED_PUBLIC_KEY="sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api"
+# shellcheck source=./_helpers.sh
+. "$(dirname "$0")/_helpers.sh"
 
 ERRORS=0
 
@@ -22,14 +17,14 @@ if [ -n "$COMMITTED_FILES" ]; then
   for file in $COMMITTED_FILES; do
     if [ -f "$file" ]; then
       # Check for Socket API keys (except allowed).
-      if grep -E 'sktsec_[a-zA-Z0-9_-]+' "$file" 2>/dev/null | grep -v "$ALLOWED_PUBLIC_KEY" | grep -v 'your_api_key_here' | grep -v 'fake-token' | grep -v 'test-token' | grep -v '\.example' | grep -q .; then
+      if grep -E 'sktsec_[a-zA-Z0-9_-]+' "$file" 2>/dev/null | filter_allowed_api_keys | grep -q .; then
         printf "${RED}✗ SECURITY: Potential API key detected in commit!${NC}\n"
         printf "File: %s\n" "$file"
         ERRORS=$((ERRORS + 1))
       fi
 
       # Check for .env files.
-      if echo "$file" | grep -qE '^\.env(\.local)?$'; then
+      if echo "$file" | grep -qE '^\.env(\.[^/]+)?$' && ! echo "$file" | grep -qE '^\.env\.(example|test)$'; then
         printf "${RED}✗ SECURITY: .env file in commit!${NC}\n"
         ERRORS=$((ERRORS + 1))
       fi
@@ -37,8 +32,25 @@ if [ -n "$COMMITTED_FILES" ]; then
   done
 fi
 
-# Auto-strip AI attribution from commit message.
+# Block Linear issue references in the commit message.
+# Linear tracking lives in Linear; keep commit history tool-agnostic.
+# Team keys enumerated from the Socket workspace. PATCH listed before PAT so
+# the engine matches the longer prefix first on strings like "PATCH-123".
 COMMIT_MSG_FILE="$1"
+LINEAR_TEAM_KEYS='ASK|AUTO|BOT|CE|CORE|DAT|DES|DEV|ENG|INFRA|LAB|MAR|MET|OPS|PAR|PATCH|PAT|PLAT|REA|SALES|SBOM|SEC|SMO|SUP|TES|TI|WEB'
+if [ -f "$COMMIT_MSG_FILE" ]; then
+  LINEAR_HITS=$(grep -vE '^#' "$COMMIT_MSG_FILE" 2>/dev/null \
+    | grep -oE "(^|[^A-Za-z0-9_])($LINEAR_TEAM_KEYS)-[0-9]+($|[^A-Za-z0-9_])|linear\.app/[A-Za-z0-9/_-]+" \
+    | head -5 || true)
+  if [ -n "$LINEAR_HITS" ]; then
+    printf "${RED}✗ Commit message references Linear issue(s):${NC}\n"
+    printf '%s\n' "$LINEAR_HITS" | sed 's/^/  /'
+    printf "${RED}Linear tracking lives in Linear. Remove the reference from the commit message.${NC}\n"
+    ERRORS=$((ERRORS + 1))
+  fi
+fi
+
+# Auto-strip AI attribution from commit message.
 if [ -f "$COMMIT_MSG_FILE" ]; then
   # Create a temporary file to store the cleaned message.
   TEMP_FILE=$(mktemp) || {
