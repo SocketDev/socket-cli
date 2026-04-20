@@ -7,6 +7,31 @@
 - Identify users by git credentials (commit author, GitHub account). Use their actual name, never "the user".
 - Use "you/your" when speaking directly; use their name when discussing their work.
 
+## PARALLEL CLAUDE SESSIONS - WORKTREE REQUIRED
+
+**This repo may have multiple Claude sessions running concurrently against the same checkout, against parallel git worktrees, or against sibling clones.** Several common git operations are hostile to that and silently destroy or hijack the other session's work.
+
+- **FORBIDDEN in the primary checkout** (the one another Claude may be editing):
+  - `git stash` — shared stash store; another session can `pop` yours.
+  - `git add -A` / `git add .` — sweeps files belonging to other sessions.
+  - `git checkout <branch>` / `git switch <branch>` — yanks the working tree out from under another session.
+  - `git reset --hard` against a non-HEAD ref — discards another session's commits.
+- **REQUIRED for branch work**: spawn a worktree instead of switching branches in place. Each worktree has its own HEAD, so branch operations inside it are safe.
+
+  ```bash
+  # From the primary checkout — does NOT touch the working tree here.
+  git worktree add -b <task-branch> ../<repo>-<task> main
+  cd ../<repo>-<task>
+  # edit, commit, push from here; the primary checkout is untouched.
+  cd -
+  git worktree remove ../<repo>-<task>
+  ```
+
+- **REQUIRED for staging**: surgical `git add <specific-file> [<file>…]` with explicit paths. Never `-A` / `.`.
+- **If you need a quick WIP save**: commit on a new branch from inside a worktree, not a stash.
+
+The umbrella rule: never run a git command that mutates state belonging to a path other than the file you just edited.
+
 ## PRE-ACTION PROTOCOL
 
 **MANDATORY**: Review CLAUDE.md before any action. No exceptions.
