@@ -17,6 +17,9 @@
 //   0 = allow (no new deps, all clean, or non-dep file)
 //   2 = block (malware detected by Socket.dev)
 
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import {
   parseNpmSpecifier,
   stringify,
@@ -31,6 +34,13 @@ import {
 } from '@socketsecurity/lib/paths/normalize'
 import { SocketSdk } from '@socketsecurity/sdk'
 import type { MalwareCheckPackage } from '@socketsecurity/sdk'
+
+// Local mirror of build-infra/lib/error-utils#errorMessage. Hook runs
+// standalone (no workspace deps beyond @socketsecurity/*) so we can't import
+// the shared helper, but the contract is identical.
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
 
 const logger = getDefaultLogger()
 
@@ -273,7 +283,7 @@ const extractors: Record<string, Extractor> = {
 
 // --- main (only when executed directly, not imported) ---
 
-if (import.meta.filename === process.argv[1]) {
+if (fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   // Read the full JSON blob from stdin (piped by Claude Code).
   let input = ''
   for await (const chunk of process.stdin) input += chunk
@@ -402,10 +412,7 @@ async function checkDepsBatch(
     }
   } catch (e) {
     // Network failure — log and allow all deps through.
-    logger.warn(
-      `Socket: network error`
-      + ` (${(e as Error).message}), allowing all`
-    )
+    logger.warn(`Socket: network error (${errorMessage(e)}), allowing all`)
   }
 
   return blocked
