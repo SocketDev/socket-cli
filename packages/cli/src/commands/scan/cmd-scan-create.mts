@@ -202,10 +202,6 @@ const generalFlags: MeowFlags = {
   },
 }
 
-// Scan argv for `--default-branch=<non-bool-string>` (both kebab-case
-// and yargs-parser's camelCase expansion). The flag is declared boolean,
-// so meow coerces `--default-branch=main` to `true` and discards "main"
-// — silently leaving the scan without a branch tag.
 const DEFAULT_BRANCH_PREFIXES = ['--default-branch=', '--defaultBranch=']
 
 function findDefaultBranchValueMisuse(
@@ -224,6 +220,12 @@ function findDefaultBranchValueMisuse(
     return { prefix, value }
   }
   return undefined
+}
+
+export const cmdScanCreate = {
+  description,
+  hidden,
+  run,
 }
 
 async function run(
@@ -290,18 +292,13 @@ async function run(
   `,
   }
 
-  // Detect the common `--default-branch=main` misuse before meow parses.
-  // `--default-branch` is a boolean — meow/yargs-parser treats
-  // `--default-branch=main` as `defaultBranch=true` and silently drops
-  // the "main" portion, so the user's scan gets tagged without the
-  // intended branch name and doesn't appear in the Main/PR dashboard
-  // tabs. Fail fast with a suggestion toward the correct form.
+  // `--default-branch` is declared boolean, so meow/yargs-parser
+  // coerces `--default-branch=main` to `defaultBranch=true` and drops
+  // "main" silently — the resulting scan is untagged and invisible in
+  // the Main/PR dashboard tabs. Catch that shape before meow parses.
   const defaultBranchMisuse = findDefaultBranchValueMisuse(argv)
   if (defaultBranchMisuse) {
     const { prefix, value } = defaultBranchMisuse
-    // Strip the trailing `=` from the matched prefix when naming the
-    // canonical flag in the suggestion — users should always be told
-    // to use the kebab-case form.
     logger.fail(
       `"${prefix}${value}" looks like you meant the branch name "${value}".\n--default-branch is a boolean flag; pass the branch name with --branch instead:\n  socket scan create --branch ${value} --default-branch`,
     )
@@ -716,10 +713,4 @@ async function run(
     tmp: Boolean(tmp),
     workspace: (workspace && String(workspace)) || '',
   })
-}
-
-export const cmdScanCreate = {
-  description,
-  hidden,
-  run,
 }

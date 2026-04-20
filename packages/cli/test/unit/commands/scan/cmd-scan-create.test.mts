@@ -1368,10 +1368,6 @@ describe('cmd-scan-create', () => {
     })
 
     describe('--default-branch misuse detection', () => {
-      // --default-branch is a boolean flag; meow silently discards the
-      // `=<value>` portion on `--default-branch=<name>`. Catch that
-      // pattern before meow parses so users get a clear error pointing
-      // at the right shape (`--branch <name> --default-branch`).
       it('fails when --default-branch=<name> is passed with a branch name', async () => {
         await cmdScanCreate.run(
           ['--org', 'test-org', '--default-branch=main', '.'],
@@ -1392,8 +1388,6 @@ describe('cmd-scan-create', () => {
       })
 
       it('also catches the camelCase --defaultBranch=<name> variant', async () => {
-        // yargs-parser expands camelCase, so users can type either
-        // form from the shell. See Cursor bugbot feedback on PR #1230.
         await cmdScanCreate.run(
           ['--org', 'test-org', '--defaultBranch=main', '.'],
           importMeta,
@@ -1405,8 +1399,6 @@ describe('cmd-scan-create', () => {
         expect(mockLogger.fail).toHaveBeenCalledWith(
           expect.stringContaining('looks like you meant the branch name "main"'),
         )
-        // Error quotes the exact form the user typed so there's no
-        // confusion about whether the error applies to their input.
         expect(mockLogger.fail).toHaveBeenCalledWith(
           expect.stringContaining('"--defaultBranch=main"'),
         )
@@ -1433,7 +1425,6 @@ describe('cmd-scan-create', () => {
           context,
         )
 
-        // meow parses the flag normally and flows through to handleCreateNewScan.
         expect(mockLogger.fail).not.toHaveBeenCalledWith(
           expect.stringContaining('looks like you meant the branch name'),
         )
