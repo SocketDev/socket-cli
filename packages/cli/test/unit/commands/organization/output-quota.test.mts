@@ -216,7 +216,7 @@ describe('outputQuota', () => {
 
   it('shows <1 min when refresh is within 60 seconds', async () => {
     // Regression: Math.round(diffMs / 60_000) used to produce "in 0 min"
-    // for 1–29,999 ms. See Cursor bugbot feedback on PR #1236.
+    // for 1–29,999 ms.
     const mockLogger = {
       fail: vi.fn(),
       info: vi.fn(),
@@ -251,8 +251,7 @@ describe('outputQuota', () => {
 
   it('promotes to hours before producing "in 60 min" at the boundary', async () => {
     // Regression: at diffMs ~= 59.5 min, Math.round rounded up to 60,
-    // giving "in 60 min" instead of "in 1 h". See Cursor bugbot feedback
-    // on PR #1236.
+    // giving "in 60 min" instead of "in 1 h".
     const mockLogger = {
       fail: vi.fn(),
       info: vi.fn(),
