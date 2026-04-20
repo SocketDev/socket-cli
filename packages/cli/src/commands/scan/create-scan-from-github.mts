@@ -105,7 +105,7 @@ export async function createScanFromGithub({
   // this, a rate-limited GitHub token made every repo fail its tree
   // fetch, the outer loop swallowed each error, and the final summary
   // ("N repos / 0 manifests") misled users into thinking the scan
-  // worked. See ASK-167.
+  // worked.
   let blockingError: CResult<undefined> | undefined
   const perRepoFailures: Array<{ repo: string; message: string }> = []
   for (const repoSlug of targetRepos) {

@@ -433,11 +433,11 @@ describe('error message quality', () => {
   })
 })
 
-// Regression tests for ASK-167: the bulk loop in createScanFromGithub
-// used to swallow per-repo failures, so a rate-limited token returned
-// ok:true with "0 manifests". These drive the full function through
-// mocked octokit calls.
-describe('createScanFromGithub rate-limit short-circuit (ASK-167)', () => {
+// Regression tests: the bulk loop in createScanFromGithub used to
+// swallow per-repo failures, so a rate-limited token returned ok:true
+// with "0 manifests". These drive the full function through mocked
+// octokit calls.
+describe('createScanFromGithub rate-limit short-circuit', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
