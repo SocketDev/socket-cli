@@ -2,6 +2,7 @@
 
 import colors from 'yoctocolors-cjs'
 
+import { messageWithCauses } from '@socketsecurity/lib/errors'
 import { LOG_SYMBOLS } from '@socketsecurity/lib/logger'
 import { stripAnsi } from '@socketsecurity/lib/strings'
 
@@ -26,22 +27,18 @@ export type ErrorDisplayOptions = {
 }
 
 /**
- * Append the `.cause` chain (up to 5 levels) to a base message so
- * non-debug users see the diagnostic context from wrapped errors.
- * Typed errors (AuthError, NetworkError, …) can also carry causes.
+ * Append the `.cause` chain to a decorated base message. Typed errors
+ * build their message with suffixes (e.g. ` (HTTP 500)`) before this
+ * is called, so we can't just `messageWithCauses(error)` — we decorate
+ * first, then delegate cause walking to socket-lib.
  */
 function appendCauseChain(baseMessage: string, cause: unknown): string {
-  const plainCauses: string[] = []
-  let walk: unknown = cause
-  let walkDepth = 1
-  while (walk && walkDepth <= 5) {
-    plainCauses.push(walk instanceof Error ? walk.message : String(walk))
-    walk = walk instanceof Error ? walk.cause : undefined
-    walkDepth++
+  if (!cause) {
+    return baseMessage
   }
-  return plainCauses.length
-    ? `${baseMessage}: ${plainCauses.join(': ')}`
-    : baseMessage
+  const causeText =
+    cause instanceof Error ? messageWithCauses(cause) : String(cause)
+  return `${baseMessage}: ${causeText}`
 }
 
 /**

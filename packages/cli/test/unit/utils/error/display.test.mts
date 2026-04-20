@@ -162,17 +162,17 @@ describe('error/display', () => {
       expect(result.message).toContain('root DNS failure')
     })
 
-    it('stops walking causes at depth 5 to avoid runaway chains', () => {
-      let e: Error | undefined
-      for (let i = 0; i <= 10; i++) {
-        e = new Error(`level-${i}`, e ? { cause: e } : undefined)
-      }
+    it('terminates on cyclic cause chains', () => {
+      const a = new Error('a')
+      const b = new Error('b')
+      ;(a as Error & { cause?: unknown }).cause = b
+      ;(b as Error & { cause?: unknown }).cause = a
 
-      const result = formatErrorForDisplay(e!)
+      const result = formatErrorForDisplay(a)
 
-      expect(result.message).toContain('level-10')
-      expect(result.message).toContain('level-5')
-      expect(result.message).not.toContain('level-4')
+      expect(result.message).toContain('a')
+      expect(result.message).toContain('b')
+      expect(result.message).toContain('...')
     })
 
     it('uses custom title when provided', () => {

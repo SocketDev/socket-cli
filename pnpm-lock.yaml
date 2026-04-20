@@ -391,9 +391,6 @@ catalogs:
     open:
       specifier: 10.2.0
       version: 10.2.0
-    pony-cause:
-      specifier: 2.1.11
-      version: 2.1.11
     postject:
       specifier: 1.0.0-alpha.6
       version: 1.0.0-alpha.6
@@ -702,9 +699,6 @@ importers:
       package-builder:
         specifier: workspace:*
         version: link:packages/package-builder
-      pony-cause:
-        specifier: 'catalog:'
-        version: 2.1.11
       postject:
         specifier: 'catalog:'
         version: 1.0.0-alpha.6
@@ -900,9 +894,6 @@ importers:
       package-builder:
         specifier: workspace:*
         version: link:../package-builder
-      pony-cause:
-        specifier: 'catalog:'
-        version: 2.1.11
       registry-auth-token:
         specifier: 'catalog:'
         version: 5.1.0

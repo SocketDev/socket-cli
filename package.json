@@ -121,7 +121,6 @@
     "oxfmt": "0.37.0",
     "oxlint": "1.52.0",
     "package-builder": "workspace:*",
-    "pony-cause": "catalog:",
     "postject": "catalog:",
     "registry-auth-token": "catalog:",
     "registry-url": "catalog:",
