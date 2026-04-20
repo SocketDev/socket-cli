@@ -134,10 +134,10 @@ export async function createScanFromGithub({
     // fail for the same reason and continuing only burns more quota
     // while delaying the real error.
     if (
-      scanCResult.message === GITHUB_ERR_RATE_LIMIT ||
-      scanCResult.message === GITHUB_ERR_GRAPHQL_RATE_LIMIT ||
       scanCResult.message === GITHUB_ERR_ABUSE_DETECTION ||
-      scanCResult.message === GITHUB_ERR_AUTH_FAILED
+      scanCResult.message === GITHUB_ERR_AUTH_FAILED ||
+      scanCResult.message === GITHUB_ERR_GRAPHQL_RATE_LIMIT ||
+      scanCResult.message === GITHUB_ERR_RATE_LIMIT
     ) {
       blockingError = {
         ok: false,
