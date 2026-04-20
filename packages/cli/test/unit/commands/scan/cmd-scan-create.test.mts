@@ -1379,7 +1379,7 @@ describe('cmd-scan-create', () => {
         expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
         expect(mockLogger.fail).toHaveBeenCalledWith(
           expect.stringContaining(
-            '"--default-branch=main" looks like you meant the branch name "main"',
+            '"--default-branch=main" looks like you meant to name the branch "main"',
           ),
         )
         expect(mockLogger.fail).toHaveBeenCalledWith(
@@ -1397,10 +1397,72 @@ describe('cmd-scan-create', () => {
         expect(process.exitCode).toBe(2)
         expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
         expect(mockLogger.fail).toHaveBeenCalledWith(
-          expect.stringContaining('looks like you meant the branch name "main"'),
+          expect.stringContaining(
+            'looks like you meant to name the branch "main"',
+          ),
         )
         expect(mockLogger.fail).toHaveBeenCalledWith(
           expect.stringContaining('"--defaultBranch=main"'),
+        )
+      })
+
+      it('catches the legacy space-separated --default-branch <name> form', async () => {
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '--default-branch', 'main', '.'],
+          importMeta,
+          context,
+        )
+
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining(
+            '"--default-branch main" looks like you meant to name the branch "main"',
+          ),
+        )
+      })
+
+      it('leaves the space-separated form alone when --branch is also passed', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--branch',
+            'main',
+            '--default-branch',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockLogger.fail).not.toHaveBeenCalledWith(
+          expect.stringContaining('looks like you meant'),
+        )
+      })
+
+      it('does not misfire when the next token looks like a target path', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        // `./some/dir` has path separators, so it is a positional target,
+        // not a mistyped branch name.
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--default-branch',
+            './some/dir',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockLogger.fail).not.toHaveBeenCalledWith(
+          expect.stringContaining('looks like you meant'),
         )
       })
 

@@ -202,11 +202,22 @@ const generalFlags: MeowFlags = {
   },
 }
 
-const DEFAULT_BRANCH_PREFIXES = ['--default-branch=', '--defaultBranch=']
+const DEFAULT_BRANCH_FLAGS = ['--default-branch', '--defaultBranch']
+const DEFAULT_BRANCH_PREFIXES = DEFAULT_BRANCH_FLAGS.map(f => `${f}=`)
+
+function isBareIdentifier(token: string): boolean {
+  // Accept only tokens that look like a plain branch name. Anything
+  // with a path separator, dot, or colon is almost certainly a target
+  // path, URL, or something else the user meant as a positional arg.
+  return /^[A-Za-z0-9_-]+$/.test(token)
+}
 
 function findDefaultBranchValueMisuse(
   argv: readonly string[],
-): { prefix: string; value: string } | undefined {
+): { form: string; value: string } | undefined {
+  // `--default-branch=main` — unambiguous: the `=` form attaches a
+  // value to what meow treats as a boolean flag, so the value is
+  // silently dropped.
   for (const arg of argv) {
     const prefix = DEFAULT_BRANCH_PREFIXES.find(p => arg.startsWith(p))
     if (!prefix) {
@@ -217,7 +228,32 @@ function findDefaultBranchValueMisuse(
     if (normalized === 'true' || normalized === 'false' || value === '') {
       continue
     }
-    return { prefix, value }
+    return { form: `${prefix}${value}`, value }
+  }
+  // `--default-branch main` — ambiguous in general (the next token
+  // could be a positional target path), but if the next token is a
+  // bare identifier (no `/`, `.`, `:`) AND the user didn't also pass
+  // `--branch` / `-b`, it's almost certainly a mis-typed branch name.
+  const hasBranchFlag = argv.some(
+    arg =>
+      arg === '--branch' ||
+      arg === '-b' ||
+      arg.startsWith('--branch=') ||
+      arg.startsWith('-b='),
+  )
+  if (hasBranchFlag) {
+    return undefined
+  }
+  for (let i = 0; i < argv.length - 1; i += 1) {
+    const arg = argv[i]!
+    if (!DEFAULT_BRANCH_FLAGS.includes(arg)) {
+      continue
+    }
+    const next = argv[i + 1]!
+    if (next.startsWith('-') || !isBareIdentifier(next)) {
+      continue
+    }
+    return { form: `${arg} ${next}`, value: next }
   }
   return undefined
 }
@@ -293,14 +329,19 @@ async function run(
   }
 
   // `--default-branch` is declared boolean, so meow/yargs-parser
-  // coerces `--default-branch=main` to `defaultBranch=true` and drops
-  // "main" silently — the resulting scan is untagged and invisible in
-  // the Main/PR dashboard tabs. Catch that shape before meow parses.
+  // silently drops any value attached to it — the resulting scan is
+  // untagged and invisible in the Main/PR dashboard tabs. Catch that
+  // shape before meow parses so the user sees an actionable error
+  // instead of a mysteriously-mislabelled scan hours later.
   const defaultBranchMisuse = findDefaultBranchValueMisuse(argv)
   if (defaultBranchMisuse) {
-    const { prefix, value } = defaultBranchMisuse
+    const { form, value } = defaultBranchMisuse
     logger.fail(
-      `"${prefix}${value}" looks like you meant the branch name "${value}".\n--default-branch is a boolean flag; pass the branch name with --branch instead:\n  socket scan create --branch ${value} --default-branch`,
+      `"${form}" looks like you meant to name the branch "${value}", but --default-branch is a boolean flag (no value).\n\n` +
+        `To scan "${value}" as the default branch, use --branch for the name and --default-branch as a flag:\n` +
+        `  socket scan create --branch ${value} --default-branch\n\n` +
+        `To scan a non-default branch, drop --default-branch:\n` +
+        `  socket scan create --branch ${value}`,
     )
     process.exitCode = 2
     return
