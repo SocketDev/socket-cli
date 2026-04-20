@@ -69,6 +69,7 @@ import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
 import type { IpcObject } from '../ipc.mts'
 import type { CResult } from '../../types.mjs'
 import type { ExternalTool } from './vfs-extract.mjs'
+import type { StdioOptions } from 'node:child_process'
 import type {
   SpawnExtra,
   SpawnOptions,
@@ -390,7 +391,7 @@ export async function spawnCoanaDlx(
       const spawnPromise = spawn(spawnCommand, spawnArgs, {
         ...dlxOptions,
         env: finalEnv,
-        stdio: spawnExtra?.['stdio'] || 'inherit',
+        stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
       })
 
       const output = await spawnPromise
@@ -469,7 +470,7 @@ export async function spawnCdxgenDlx(
         ...process.env,
         ...spawnEnv,
       },
-      stdio: spawnExtra?.['stdio'] || 'inherit',
+      stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
     })
 
     return {
@@ -519,7 +520,7 @@ export async function spawnSfwDlx(
         ...process.env,
         ...spawnEnv,
       },
-      stdio: spawnExtra?.['stdio'] || 'inherit',
+      stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
     })
 
     return {
@@ -572,7 +573,7 @@ export async function spawnSocketPatchDlx(
         ...process.env,
         ...spawnEnv,
       },
-      stdio: spawnExtra?.['stdio'] || 'inherit',
+      stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
     })
 
     return {
@@ -590,7 +591,7 @@ export async function spawnSocketPatchDlx(
         ...process.env,
         ...spawnEnv,
       },
-      stdio: spawnExtra?.['stdio'] || 'inherit',
+      stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
     })
 
     return {
@@ -672,7 +673,7 @@ async function spawnToolVfs(
       ...process.env,
       ...spawnEnv,
     },
-    stdio: spawnExtra?.['stdio'] || 'inherit',
+    stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
   })
 
   return {
@@ -1657,7 +1658,7 @@ async function spawnTrivyDlx(
       ...process.env,
       ...spawnEnv,
     },
-    stdio: spawnExtra?.['stdio'] || 'inherit',
+    stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
   })
 
   return {
@@ -1719,7 +1720,7 @@ async function spawnTrufflehogDlx(
       ...process.env,
       ...spawnEnv,
     },
-    stdio: spawnExtra?.['stdio'] || 'inherit',
+    stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
   })
 
   return {
@@ -1781,7 +1782,7 @@ async function spawnOpengrepDlx(
       ...process.env,
       ...spawnEnv,
     },
-    stdio: spawnExtra?.['stdio'] || 'inherit',
+    stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
   })
 
   return {

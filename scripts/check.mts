@@ -14,7 +14,8 @@ import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getChangedFiles, getStagedFiles } from '@socketsecurity/lib/git'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { printFooter, printHeader } from '@socketsecurity/lib/stdio/header'
+import { printFooter } from '@socketsecurity/lib/stdio/footer'
+import { printHeader } from '@socketsecurity/lib/stdio/header'
 
 import {
   getAffectedPackages,

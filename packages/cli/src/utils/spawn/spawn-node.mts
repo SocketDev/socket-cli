@@ -117,8 +117,13 @@ export function spawnNode(
     extra,
   )
 
+  if (typeof spawnResult.process.send !== 'function') {
+    throw new TypeError(
+      'spawn-node: expected IPC channel on child process (send is undefined)',
+    )
+  }
   sendBootstrapHandshake(
-    spawnResult.process,
+    spawnResult.process as { send: (message: unknown) => void },
     // Always send IPC handshake with bootstrap indicators + custom data.
     {
       subprocess: true,
