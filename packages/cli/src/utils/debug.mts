@@ -29,20 +29,20 @@ import {
 } from '@socketsecurity/lib/debug'
 
 export type ApiRequestDebugInfo = {
-  method?: string | undefined
-  url?: string | undefined
-  headers?: Record<string, string> | undefined
   durationMs?: number | undefined
+  headers?: Record<string, string> | undefined
+  method?: string | undefined
   // ISO-8601 timestamp of when the request was initiated. Useful when
   // correlating failures with server-side logs.
   requestedAt?: string | undefined
+  // Response body string; truncated by the helper to a safe length so
+  // logs don't balloon on megabyte payloads.
+  responseBody?: string | undefined
   // Response headers from the failed request. The helper extracts the
   // cf-ray trace id as a first-class field so support can look it up in
   // the Cloudflare dashboard without eyeballing the whole header dump.
   responseHeaders?: Record<string, string> | undefined
-  // Response body string; truncated by the helper to a safe length so
-  // logs don't balloon on megabyte payloads.
-  responseBody?: string | undefined
+  url?: string | undefined
 }
 
 const RESPONSE_BODY_TRUNCATE_LENGTH = 2_000
