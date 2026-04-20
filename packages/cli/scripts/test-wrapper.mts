@@ -153,7 +153,9 @@ async function main() {
       ['run', '--passWithNoTests', ...expandedArgs],
       spawnOptions,
     )
-    process.exitCode = result?.code || 0
+    // `code === null` means the process was killed by a signal — treat
+    // as a failure so SIGKILL / SIGABRT aren't silently reported as 0.
+    process.exitCode = typeof result?.code === 'number' ? result.code : 1
   } catch (e) {
     logger.error('Failed to spawn test process:', e)
     process.exitCode = 1
