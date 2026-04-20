@@ -97,10 +97,12 @@ function buildApiDebugDetails(
   base: Record<string, unknown>,
   requestInfo?: ApiRequestDebugInfo | undefined,
 ): Record<string, unknown> {
+  // `__proto__: null` keeps the payload free of prototype-chain keys
+  // when callers iterate over `debugDir`'s output.
+  const details: Record<string, unknown> = { __proto__: null, ...base } as Record<string, unknown>
   if (!requestInfo) {
-    return base
+    return details
   }
-  const details: Record<string, unknown> = { ...base }
   if (requestInfo.requestedAt) {
     details['requestedAt'] = requestInfo.requestedAt
   }
