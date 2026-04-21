@@ -3,6 +3,8 @@ name: quality-scan
 description: >
   Runs iterative code quality scans on socket-cli, fixing all discovered issues
   and committing changes until zero issues remain or 5 iterations complete.
+  Use when improving code quality, investigating regressions, or before
+  releases.
 ---
 
 # quality-scan
