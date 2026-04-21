@@ -14,8 +14,9 @@ import type {
 
 const config: CliCommandConfig = {
   commandName: 'quota',
-  description: 'List organizations associated with the Socket API token',
-  hidden: true,
+  description:
+    'Show remaining Socket API quota for the current token, plus refresh window',
+  hidden: false,
   flags: {
     ...commonFlags,
     ...outputFlags,
