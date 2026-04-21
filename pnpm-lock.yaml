@@ -199,8 +199,8 @@ catalogs:
       specifier: 5.5.0
       version: 5.5.0
     nanotar:
-      specifier: 0.2.0
-      version: 0.2.0
+      specifier: 0.2.1
+      version: 0.2.1
     nock:
       specifier: 14.0.10
       version: 14.0.10
@@ -496,7 +496,7 @@ importers:
         version: 5.5.0
       nanotar:
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.2.1
       nock:
         specifier: 'catalog:'
         version: 14.0.10
@@ -725,7 +725,7 @@ importers:
         version: 4.0.8
       nanotar:
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.2.1
       npm-package-arg:
         specifier: 13.0.0
         version: 13.0.0
@@ -2151,7 +2151,6 @@ packages:
 
   '@socketaddon/iocraft@file:packages/package-builder/build/dev/out/socketaddon-iocraft':
     resolution: {directory: packages/package-builder/build/dev/out/socketaddon-iocraft, type: directory}
-    engines: {node: '>=18'}
 
   '@socketregistry/es-set-tostringtag@1.0.10':
     resolution: {integrity: sha512-btXmvw1JpA8WtSoXx9mTapo9NAyIDKRRzK84i48d8zc0X09M6ORfobVnHbgwhXf7CFhkRzhYrHG9dqbI9vpELQ==}
@@ -3484,8 +3483,8 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  nanotar@0.2.0:
-    resolution: {integrity: sha512-9ca1h0Xjvo9bEkE4UOxgAzLV0jHKe6LMaxo37ND2DAhhAtd0j8pR1Wxz+/goMrZO8AEZTWCmyaOsFI/W5AdpCQ==}
+  nanotar@0.2.1:
+    resolution: {integrity: sha512-MUrzzDUcIOPbv7ubhDV/L4CIfVTATd9XhDE2ixFeCrM5yp9AlzUpn91JrnN0HD6hksdxvz9IW9aKANz0Bta0GA==}
 
   napi-build-utils@2.0.0:
     resolution: {integrity: sha512-GEbrYkbfF7MoNaoh2iGG84Mnf/WZfB0GdGEsM8wz7Expx/LlWf5U8t9nvJKXSp3qr5IsEbK04cBGhol/KwOsWA==}
@@ -6987,7 +6986,7 @@ snapshots:
 
   nanoid@3.3.11: {}
 
-  nanotar@0.2.0: {}
+  nanotar@0.2.1: {}
 
   napi-build-utils@2.0.0: {}
 
