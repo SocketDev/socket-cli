@@ -1366,5 +1366,292 @@ describe('cmd-scan-create', () => {
         expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
       })
     })
+
+    describe('--default-branch misuse detection', () => {
+      it('fails when --default-branch=<name> is passed with a branch name', async () => {
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '--default-branch=main', '.'],
+          importMeta,
+          context,
+        )
+
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining(
+            '"--default-branch=main" looks like you meant to name the branch "main"',
+          ),
+        )
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining('--branch main --make-default-branch'),
+        )
+      })
+
+      it('also catches the camelCase --defaultBranch=<name> variant', async () => {
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '--defaultBranch=main', '.'],
+          importMeta,
+          context,
+        )
+
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining(
+            'looks like you meant to name the branch "main"',
+          ),
+        )
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining('"--defaultBranch=main"'),
+        )
+      })
+
+      it('catches the legacy space-separated --default-branch <name> form', async () => {
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '--default-branch', 'main', '.'],
+          importMeta,
+          context,
+        )
+
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining(
+            '"--default-branch main" looks like you meant to name the branch "main"',
+          ),
+        )
+      })
+
+      it('leaves the space-separated form alone when --branch is also passed', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--branch',
+            'main',
+            '--default-branch',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockLogger.fail).not.toHaveBeenCalledWith(
+          expect.stringContaining('looks like you meant'),
+        )
+      })
+
+      it('does not misfire when the next token looks like a target path', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        // `./some/dir` has path separators, so it is a positional target,
+        // not a mistyped branch name.
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--default-branch',
+            './some/dir',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockLogger.fail).not.toHaveBeenCalledWith(
+          expect.stringContaining('looks like you meant'),
+        )
+      })
+
+      it.each([
+        '--default-branch=true',
+        '--default-branch=false',
+        '--default-branch=TRUE',
+      ])('allows %s (explicit boolean form)', async arg => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--branch',
+            'main',
+            arg,
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockLogger.fail).not.toHaveBeenCalledWith(
+          expect.stringContaining('looks like you meant the branch name'),
+        )
+      })
+
+      it('allows bare --default-branch (default truthy form)', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--branch',
+            'main',
+            '--default-branch',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockLogger.fail).not.toHaveBeenCalledWith(
+          expect.stringContaining('looks like you meant the branch name'),
+        )
+      })
+
+      it('catches --make-default-branch=<name> misuse on the primary flag', async () => {
+        await cmdScanCreate.run(
+          ['--org', 'test-org', '--make-default-branch=main', '.'],
+          importMeta,
+          context,
+        )
+
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining(
+            '"--make-default-branch=main" looks like you meant to name the branch "main"',
+          ),
+        )
+      })
+    })
+
+    describe('--make-default-branch primary flag', () => {
+      it('passes --make-default-branch through to handleCreateNewScan', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--branch',
+            'main',
+            '--make-default-branch',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            defaultBranch: true,
+            branchName: 'main',
+          }),
+        )
+      })
+
+      it('does not emit the deprecation warning for the primary name', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--branch',
+            'main',
+            '--make-default-branch',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockLogger.warn).not.toHaveBeenCalledWith(
+          expect.stringContaining('--default-branch is deprecated'),
+        )
+      })
+    })
+
+    describe('--default-branch deprecation warning', () => {
+      it('warns when the legacy --default-branch flag is used', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--branch',
+            'main',
+            '--default-branch',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockLogger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('--default-branch is deprecated'),
+        )
+        expect(mockLogger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('use --make-default-branch'),
+        )
+      })
+
+      it('warns on the legacy camelCase --defaultBranch name', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--branch',
+            'main',
+            '--defaultBranch',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockLogger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('--default-branch is deprecated'),
+        )
+      })
+
+      it('still wires the legacy flag through to handleCreateNewScan (back-compat)', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--branch',
+            'main',
+            '--default-branch',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+          expect.objectContaining({
+            defaultBranch: true,
+            branchName: 'main',
+          }),
+        )
+      })
+    })
   })
 })

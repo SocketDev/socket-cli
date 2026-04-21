@@ -391,6 +391,66 @@ describe('cmd-repository-create', () => {
       )
     })
 
+    describe('--default-branch empty-value detection', () => {
+      it('fails when --default-branch= is passed with no value', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdRepositoryCreate.run(
+          ['test-repo', '--default-branch=', '--no-interactive'],
+          importMeta,
+          context,
+        )
+
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateRepo).not.toHaveBeenCalled()
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining('--default-branch requires a value'),
+        )
+      })
+
+      it('fails when --default-branch is followed by another flag (bare form)', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdRepositoryCreate.run(
+          ['test-repo', '--default-branch', '--no-interactive'],
+          importMeta,
+          context,
+        )
+
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateRepo).not.toHaveBeenCalled()
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining('--default-branch requires a value'),
+        )
+      })
+
+      it('fails when --default-branch is the last argv token (bare form)', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdRepositoryCreate.run(
+          ['test-repo', '--default-branch'],
+          importMeta,
+          context,
+        )
+
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateRepo).not.toHaveBeenCalled()
+      })
+
+      it('also catches the camelCase --defaultBranch variant', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdRepositoryCreate.run(
+          ['test-repo', '--defaultBranch=', '--no-interactive'],
+          importMeta,
+          context,
+        )
+
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateRepo).not.toHaveBeenCalled()
+      })
+    })
+
     it('should handle empty string values for optional flags', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 

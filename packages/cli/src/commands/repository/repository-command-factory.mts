@@ -1,3 +1,5 @@
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
 import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
 import {
@@ -40,6 +42,29 @@ type RepositoryCommandSpec = {
   needsRepoName?: boolean
 }
 
+// If the user wrote `--default-branch` (bare, no value) or
+// `--default-branch=`, meow would coerce it to an empty string and
+// silently persist a blank default-branch name on the repo record.
+// Detect that before meow parses so we can stop with an actionable
+// error instead of saving junk data.
+function findEmptyDefaultBranch(
+  argv: readonly string[],
+): 'bare' | 'empty-value' | undefined {
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i]!
+    if (arg === '--default-branch=' || arg === '--defaultBranch=') {
+      return 'empty-value'
+    }
+    if (arg === '--default-branch' || arg === '--defaultBranch') {
+      const next = argv[i + 1]
+      if (next === undefined || next.startsWith('-')) {
+        return 'bare'
+      }
+    }
+  }
+  return undefined
+}
+
 export function createRepositoryCommand(spec: RepositoryCommandSpec) {
   return {
     description: spec.description,
@@ -49,6 +74,24 @@ export function createRepositoryCommand(spec: RepositoryCommandSpec) {
       importMeta: ImportMeta,
       { parentName }: CliCommandContext,
     ): Promise<void> {
+      // Only guard the commands that actually accept `--default-branch`
+      // as a string (create / update). The list/view/delete commands
+      // don't, so the check is a no-op for them.
+      if (
+        (spec.commandName === 'create' || spec.commandName === 'update') &&
+        spec.extraFlags?.['defaultBranch']
+      ) {
+        const emptyShape = findEmptyDefaultBranch(argv)
+        if (emptyShape) {
+          getDefaultLogger().fail(
+            emptyShape === 'empty-value'
+              ? '--default-branch requires a value (e.g. --default-branch=main). Leaving it empty would persist a blank default-branch name on the repo record.'
+              : '--default-branch requires a value (e.g. --default-branch=main). Bare --default-branch with no value would persist a blank default-branch name on the repo record.',
+          )
+          process.exitCode = 2
+          return
+        }
+      }
       const config: CliCommandConfig = {
         commandName: spec.commandName,
         description: spec.description,

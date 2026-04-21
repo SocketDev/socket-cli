@@ -52,6 +52,7 @@ interface ScanCreateFlags {
   committers: string
   cwd: string
   defaultBranch: boolean
+  makeDefaultBranch: boolean
   interactive: boolean
   json: boolean
   markdown: boolean
@@ -130,11 +131,22 @@ const generalFlags: MeowFlags = {
     default: '',
     description: 'working directory, defaults to process.cwd()',
   },
+  makeDefaultBranch: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Reassign the repo\'s default-branch pointer at Socket to the branch of this scan. The previous default-branch designation is replaced. Mirrors the `make_default_branch` API field.',
+  },
+  // Deprecated alias for `--make-default-branch`. Declared as its own
+  // boolean flag (rather than via meow `aliases`) because meow's alias
+  // forwarding doesn't reliably propagate values in this command's
+  // large flag set. We merge it onto `makeDefaultBranch` after parsing.
   defaultBranch: {
     type: 'boolean',
     default: false,
     description:
-      'Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.',
+      'Deprecated alias for --make-default-branch. Kept working for back-compat; emits a deprecation warning on use.',
+    hidden: true,
   },
   interactive: {
     type: 'boolean',
@@ -202,6 +214,81 @@ const generalFlags: MeowFlags = {
   },
 }
 
+// Legacy flag names kept working via meow aliases on `makeDefaultBranch`.
+// Detected here so we can warn on use and keep the misuse heuristic
+// working against both the primary and legacy names.
+const LEGACY_DEFAULT_BRANCH_FLAGS = ['--default-branch', '--defaultBranch']
+const LEGACY_DEFAULT_BRANCH_PREFIXES = LEGACY_DEFAULT_BRANCH_FLAGS.map(
+  f => `${f}=`,
+)
+const DEFAULT_BRANCH_FLAGS = [
+  '--make-default-branch',
+  '--makeDefaultBranch',
+  ...LEGACY_DEFAULT_BRANCH_FLAGS,
+]
+const DEFAULT_BRANCH_PREFIXES = DEFAULT_BRANCH_FLAGS.map(f => `${f}=`)
+
+function hasLegacyDefaultBranchFlag(argv: readonly string[]): boolean {
+  return argv.some(
+    arg =>
+      LEGACY_DEFAULT_BRANCH_FLAGS.includes(arg) ||
+      LEGACY_DEFAULT_BRANCH_PREFIXES.some(p => arg.startsWith(p)),
+  )
+}
+
+function isBareIdentifier(token: string): boolean {
+  // Accept only tokens that look like a plain branch name. Anything
+  // with a path separator, dot, or colon is almost certainly a target
+  // path, URL, or something else the user meant as a positional arg.
+  return /^[A-Za-z0-9_-]+$/.test(token)
+}
+
+function findDefaultBranchValueMisuse(
+  argv: readonly string[],
+): { form: string; value: string } | undefined {
+  // `--default-branch=main` — unambiguous: the `=` form attaches a
+  // value to what meow treats as a boolean flag, so the value is
+  // silently dropped.
+  for (const arg of argv) {
+    const prefix = DEFAULT_BRANCH_PREFIXES.find(p => arg.startsWith(p))
+    if (!prefix) {
+      continue
+    }
+    const value = arg.slice(prefix.length)
+    const normalized = value.toLowerCase()
+    if (normalized === 'true' || normalized === 'false' || value === '') {
+      continue
+    }
+    return { form: `${prefix}${value}`, value }
+  }
+  // `--default-branch main` — ambiguous in general (the next token
+  // could be a positional target path), but if the next token is a
+  // bare identifier (no `/`, `.`, `:`) AND the user didn't also pass
+  // `--branch` / `-b`, it's almost certainly a mis-typed branch name.
+  const hasBranchFlag = argv.some(
+    arg =>
+      arg === '--branch' ||
+      arg === '-b' ||
+      arg.startsWith('--branch=') ||
+      arg.startsWith('-b='),
+  )
+  if (hasBranchFlag) {
+    return undefined
+  }
+  for (let i = 0; i < argv.length - 1; i += 1) {
+    const arg = argv[i]!
+    if (!DEFAULT_BRANCH_FLAGS.includes(arg)) {
+      continue
+    }
+    const next = argv[i + 1]!
+    if (next.startsWith('-') || !isBareIdentifier(next)) {
+      continue
+    }
+    return { form: `${arg} ${next}`, value: next }
+  }
+  return undefined
+}
+
 export const cmdScanCreate = {
   description,
   hidden,
@@ -253,8 +340,10 @@ async function run(
     The --repo and --branch flags tell Socket to associate this Scan with that
     repo/branch. The names will show up on your dashboard on the Socket website.
 
-    Note: for a first run you probably want to set --default-branch to indicate
-          the default branch name, like "main" or "master".
+    Note: on a first scan you probably want to pass --make-default-branch so
+          Socket records this branch ("main", "master", etc.) as your repo's
+          default branch. Subsequent scans don't need the flag unless you're
+          reassigning the default-branch pointer to a different branch.
 
     The ${socketDashboardLink('/org/YOURORG/alerts', '"alerts page"')} will show
     the results from the last scan designated as the "pending head" on the branch
@@ -272,6 +361,35 @@ async function run(
   `,
   }
 
+  // `--make-default-branch` (and its deprecated alias `--default-branch`)
+  // is a boolean flag, so meow/yargs-parser silently drops any value
+  // attached to it — the resulting scan is untagged and invisible in the
+  // Main/PR dashboard tabs. Catch that shape before meow parses so the
+  // user sees an actionable error instead of a mysteriously-mislabelled
+  // scan hours later.
+  const defaultBranchMisuse = findDefaultBranchValueMisuse(argv)
+  if (defaultBranchMisuse) {
+    const { form, value } = defaultBranchMisuse
+    logger.fail(
+      `"${form}" looks like you meant to name the branch "${value}", but --make-default-branch is a boolean flag (no value).\n\n` +
+        `To scan "${value}" as the default branch, use --branch for the name and --make-default-branch as a flag:\n` +
+        `  socket scan create --branch ${value} --make-default-branch\n\n` +
+        `To scan a non-default branch, drop --make-default-branch:\n` +
+        `  socket scan create --branch ${value}`,
+    )
+    process.exitCode = 2
+    return
+  }
+
+  // `--default-branch` / `--defaultBranch` is kept working via meow's
+  // aliases, but nudge callers to migrate so we can eventually retire
+  // the legacy name.
+  if (hasLegacyDefaultBranchFlag(argv)) {
+    logger.warn(
+      '--default-branch is deprecated on `socket scan create`; use --make-default-branch instead. The old flag still works for now.',
+    )
+  }
+
   const cli = meowOrExit({
     argv,
     config,
@@ -284,8 +402,9 @@ async function run(
     commitMessage,
     committers,
     cwd: cwdOverride,
-    defaultBranch,
+    defaultBranch: legacyDefaultBranch,
     interactive = true,
+    makeDefaultBranch: makeDefaultBranchFlag,
     json,
     markdown,
     org: orgFlag,
@@ -310,6 +429,11 @@ async function run(
     setAsAlertsPage: pendingHeadFlag,
     tmp,
   } = cli.flags as unknown as ScanCreateFlags
+
+  // Merge the legacy --default-branch flag into the primary. Both are
+  // declared as separate boolean flags in the config (see the comment
+  // on the `defaultBranch` flag definition above).
+  const makeDefaultBranch = makeDefaultBranchFlag || legacyDefaultBranch
 
   // Validate ecosystem values.
   const reachEcosystems: PURL_Type[] = []
@@ -531,8 +655,8 @@ async function run(
     },
     {
       nook: true,
-      test: !defaultBranch || !!branchName,
-      message: 'When --default-branch is set, --branch is mandatory',
+      test: !makeDefaultBranch || !!branchName,
+      message: 'When --make-default-branch is set, --branch is mandatory',
       fail: 'missing branch name',
     },
     {
@@ -644,7 +768,7 @@ async function run(
     commitMessage: (commitMessage && String(commitMessage)) || '',
     committers: (committers && String(committers)) || '',
     cwd,
-    defaultBranch: Boolean(defaultBranch),
+    defaultBranch: Boolean(makeDefaultBranch),
     interactive: Boolean(interactive),
     orgSlug,
     outputKind,
