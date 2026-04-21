@@ -6,6 +6,7 @@ packages:
 
 # Packages allowed to run build scripts (pnpm v11 strictDepBuilds default).
 allowBuilds:
+  '@pnpm/exe': true
   esbuild: true
   postject: false
 
