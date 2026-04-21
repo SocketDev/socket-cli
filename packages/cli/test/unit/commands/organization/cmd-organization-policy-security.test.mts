@@ -92,7 +92,7 @@ describe('cmd-organization-policy-security', () => {
       )
 
       expect(mockHandleSecurityPolicy).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -194,12 +194,12 @@ describe('cmd-organization-policy-security', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining(
           '[DryRun]: Would fetch organization security policy',
         ),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('organization: test-org'),
       )
     })
@@ -214,7 +214,7 @@ describe('cmd-organization-policy-security', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('organization: (will be determined)'),
       )
     })

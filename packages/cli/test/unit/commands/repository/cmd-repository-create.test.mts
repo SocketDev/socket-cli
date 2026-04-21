@@ -87,10 +87,10 @@ describe('cmd-repository-create', () => {
       )
 
       expect(mockHandleCreateRepo).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('Would upload repository'),
       )
     })
@@ -326,10 +326,10 @@ describe('cmd-repository-create', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('organization: "test-org"'),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('repository: "my-repo"'),
       )
     })

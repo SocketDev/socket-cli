@@ -183,7 +183,7 @@ describe('cmd-scan-setup', () => {
 
       await cmdScanSetup.run(['--dry-run'], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
       expect(mockHandleScanConfig).not.toHaveBeenCalled()

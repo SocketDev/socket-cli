@@ -1,8 +1,12 @@
 /**
  * Dry-run output utilities for Socket CLI commands.
  *
- * Provides standardized output formatting for dry-run mode that shows users
- * what actions WOULD be performed without actually executing them.
+ * Dry-run previews are contextual output — they describe what WOULD
+ * happen, they are not the command's payload. Per the stream discipline
+ * rule (CLAUDE.md: SHARED STANDARDS), context belongs on stderr. This
+ * keeps `command --json --dry-run` pipe-safe and also keeps dry-run
+ * previews visible to humans running `command > file` (where stderr
+ * still goes to the terminal).
  */
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
@@ -10,6 +14,10 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { DRY_RUN_LABEL } from '../../constants/cli.mts'
 
 const logger = getDefaultLogger()
+
+function out(message: string): void {
+  logger.error(message)
+}
 
 export interface DryRunAction {
   type:
@@ -35,36 +43,36 @@ export interface DryRunPreview {
  * Format and output a dry-run preview.
  */
 export function outputDryRunPreview(preview: DryRunPreview): void {
-  logger.log('')
-  logger.log(`${DRY_RUN_LABEL}: ${preview.summary}`)
-  logger.log('')
+  out('')
+  out(`${DRY_RUN_LABEL}: ${preview.summary}`)
+  out('')
 
   if (!preview.actions.length) {
-    logger.log('  No actions would be performed.')
+    out('  No actions would be performed.')
   } else {
-    logger.log('  Actions that would be performed:')
+    out('  Actions that would be performed:')
     for (const action of preview.actions) {
       const targetStr = action.target ? ` → ${action.target}` : ''
-      logger.log(`    - [${action.type}] ${action.description}${targetStr}`)
+      out(`    - [${action.type}] ${action.description}${targetStr}`)
       if (action.details) {
         for (const [key, value] of Object.entries(action.details)) {
-          logger.log(`        ${key}: ${JSON.stringify(value)}`)
+          out(`        ${key}: ${JSON.stringify(value)}`)
         }
       }
     }
   }
 
-  logger.log('')
+  out('')
   if (preview.wouldSucceed !== undefined) {
-    logger.log(
+    out(
       preview.wouldSucceed
         ? '  Would complete successfully.'
         : '  Would fail (see details above).',
     )
   }
-  logger.log('')
-  logger.log('  Run without --dry-run to execute these actions.')
-  logger.log('')
+  out('')
+  out('  Run without --dry-run to execute these actions.')
+  out('')
 }
 
 /**
@@ -76,23 +84,23 @@ export function outputDryRunFetch(
   resourceName: string,
   queryParams?: Record<string, string | number | boolean | undefined>,
 ): void {
-  logger.log('')
-  logger.log(`${DRY_RUN_LABEL}: Would fetch ${resourceName}`)
-  logger.log('')
+  out('')
+  out(`${DRY_RUN_LABEL}: Would fetch ${resourceName}`)
+  out('')
 
   if (queryParams && Object.keys(queryParams).length > 0) {
-    logger.log('  Query parameters:')
+    out('  Query parameters:')
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined && value !== '') {
-        logger.log(`    ${key}: ${value}`)
+        out(`    ${key}: ${value}`)
       }
     }
-    logger.log('')
+    out('')
   }
 
-  logger.log('  This is a read-only operation that does not modify any data.')
-  logger.log('  Run without --dry-run to fetch and display the data.')
-  logger.log('')
+  out('  This is a read-only operation that does not modify any data.')
+  out('  Run without --dry-run to fetch and display the data.')
+  out('')
 }
 
 /**
@@ -103,18 +111,18 @@ export function outputDryRunExecute(
   args: string[],
   description?: string,
 ): void {
-  logger.log('')
-  logger.log(
+  out('')
+  out(
     `${DRY_RUN_LABEL}: Would execute ${description || 'external command'}`,
   )
-  logger.log('')
-  logger.log(`  Command: ${command}`)
+  out('')
+  out(`  Command: ${command}`)
   if (args.length > 0) {
-    logger.log(`  Arguments: ${args.join(' ')}`)
+    out(`  Arguments: ${args.join(' ')}`)
   }
-  logger.log('')
-  logger.log('  Run without --dry-run to execute this command.')
-  logger.log('')
+  out('')
+  out('  Run without --dry-run to execute this command.')
+  out('')
 }
 
 /**
@@ -125,19 +133,19 @@ export function outputDryRunWrite(
   description: string,
   changes?: string[],
 ): void {
-  logger.log('')
-  logger.log(`${DRY_RUN_LABEL}: Would ${description}`)
-  logger.log('')
-  logger.log(`  Target file: ${filePath}`)
+  out('')
+  out(`${DRY_RUN_LABEL}: Would ${description}`)
+  out('')
+  out(`  Target file: ${filePath}`)
   if (changes && changes.length > 0) {
-    logger.log('  Changes:')
+    out('  Changes:')
     for (const change of changes) {
-      logger.log(`    - ${change}`)
+      out(`    - ${change}`)
     }
   }
-  logger.log('')
-  logger.log('  Run without --dry-run to apply these changes.')
-  logger.log('')
+  out('')
+  out('  Run without --dry-run to apply these changes.')
+  out('')
 }
 
 /**
@@ -147,25 +155,25 @@ export function outputDryRunUpload(
   resourceType: string,
   details: Record<string, unknown>,
 ): void {
-  logger.log('')
-  logger.log(`${DRY_RUN_LABEL}: Would upload ${resourceType}`)
-  logger.log('')
-  logger.log('  Details:')
+  out('')
+  out(`${DRY_RUN_LABEL}: Would upload ${resourceType}`)
+  out('')
+  out('  Details:')
   for (const [key, value] of Object.entries(details)) {
     if (typeof value === 'object' && value !== null) {
-      logger.log(`    ${key}:`)
+      out(`    ${key}:`)
       for (const [subKey, subValue] of Object.entries(
         value as Record<string, unknown>,
       )) {
-        logger.log(`      ${subKey}: ${JSON.stringify(subValue)}`)
+        out(`      ${subKey}: ${JSON.stringify(subValue)}`)
       }
     } else {
-      logger.log(`    ${key}: ${JSON.stringify(value)}`)
+      out(`    ${key}: ${JSON.stringify(value)}`)
     }
   }
-  logger.log('')
-  logger.log('  Run without --dry-run to perform this upload.')
-  logger.log('')
+  out('')
+  out('  Run without --dry-run to perform this upload.')
+  out('')
 }
 
 /**
@@ -175,12 +183,12 @@ export function outputDryRunDelete(
   resourceType: string,
   identifier: string,
 ): void {
-  logger.log('')
-  logger.log(`${DRY_RUN_LABEL}: Would delete ${resourceType}`)
-  logger.log('')
-  logger.log(`  Target: ${identifier}`)
-  logger.log('')
-  logger.log('  This action cannot be undone.')
-  logger.log('  Run without --dry-run to perform this deletion.')
-  logger.log('')
+  out('')
+  out(`${DRY_RUN_LABEL}: Would delete ${resourceType}`)
+  out('')
+  out(`  Target: ${identifier}`)
+  out('')
+  out('  This action cannot be undone.')
+  out('  Run without --dry-run to perform this deletion.')
+  out('')
 }

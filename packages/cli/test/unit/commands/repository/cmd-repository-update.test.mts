@@ -87,10 +87,10 @@ describe('cmd-repository-update', () => {
       )
 
       expect(mockHandleUpdateRepo).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('Would upload repository (update)'),
       )
     })
@@ -394,10 +394,10 @@ describe('cmd-repository-update', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('organization: "test-org"'),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('repository: "my-repo"'),
       )
     })

@@ -87,10 +87,10 @@ describe('cmd-repository-del', () => {
       )
 
       expect(mockHandleDeleteRepo).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('Would delete repository'),
       )
     })
@@ -223,7 +223,7 @@ describe('cmd-repository-del', () => {
 
       await cmdRepositoryDel.run(['my-repo', '--dry-run'], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('test-org/my-repo'),
       )
     })

@@ -66,7 +66,7 @@ describe('cmd-fix', () => {
       await cmdFix.run(['--dry-run'], importMeta, context)
 
       expect(mockHandleFix).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -437,7 +437,7 @@ describe('cmd-fix', () => {
     it('should show all vulnerabilities in dry-run with --all', async () => {
       await cmdFix.run(['--dry-run', '--all'], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('all vulnerabilities'),
       )
     })
@@ -449,7 +449,7 @@ describe('cmd-fix', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('2 specified vulnerability'),
       )
     })
@@ -457,7 +457,7 @@ describe('cmd-fix', () => {
     it('should show compute-only mode in dry-run with --no-apply-fixes', async () => {
       await cmdFix.run(['--dry-run', '--no-apply-fixes'], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('compute fixes only'),
       )
     })
@@ -478,7 +478,7 @@ describe('cmd-fix', () => {
     it('should show ecosystems in dry-run output', async () => {
       await cmdFix.run(['--dry-run', '--ecosystems', 'npm,pypi'], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -486,7 +486,7 @@ describe('cmd-fix', () => {
     it('should show auto-discovered targets in dry-run when no --id or --all', async () => {
       await cmdFix.run(['--dry-run'], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('auto-discovered'),
       )
     })
@@ -495,7 +495,7 @@ describe('cmd-fix', () => {
     it('should show PR info in dry-run when apply fixes enabled', async () => {
       await cmdFix.run(['--dry-run'], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })

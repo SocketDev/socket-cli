@@ -116,7 +116,7 @@ describe('cmd-scan-github', () => {
       )
 
       expect(mockHandleCreateGithubScan).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })

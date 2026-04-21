@@ -84,7 +84,7 @@ describe('cmd-manifest-auto', () => {
       // Dry run should still detect but not generate.
       expect(mockDetectManifestActions).toHaveBeenCalled()
       expect(mockGenerateAutoManifest).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })

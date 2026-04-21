@@ -109,7 +109,7 @@ describe('cmd-wrapper', () => {
 
       expect(mockAddSocketWrapper).not.toHaveBeenCalled()
       expect(mockRemoveSocketWrapper).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -119,7 +119,7 @@ describe('cmd-wrapper', () => {
 
       expect(mockAddSocketWrapper).not.toHaveBeenCalled()
       expect(mockRemoveSocketWrapper).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })

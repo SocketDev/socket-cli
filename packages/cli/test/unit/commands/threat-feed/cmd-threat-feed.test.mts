@@ -102,7 +102,7 @@ describe('cmd-threat-feed', () => {
       await cmdThreatFeed.run(['--dry-run'], importMeta, context)
 
       expect(mockHandleThreatFeed).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -392,13 +392,13 @@ describe('cmd-threat-feed', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('threat feed data'),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('npm'),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('test-pkg'),
       )
     })

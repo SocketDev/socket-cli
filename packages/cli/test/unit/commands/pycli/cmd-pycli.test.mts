@@ -139,7 +139,7 @@ describe('cmd-pycli', () => {
       )
 
       expect(mockSpawnSocketPyCli).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })

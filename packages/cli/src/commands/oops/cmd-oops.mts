@@ -60,24 +60,26 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log('')
-    logger.log(`${DRY_RUN_LABEL}: Would trigger an intentional error`)
-    logger.log('')
-    logger.log(
+    // Dry-run previews are contextual output; route to stderr per the
+    // stream discipline rule so stdout stays payload-only.
+    logger.error('')
+    logger.error(`${DRY_RUN_LABEL}: Would trigger an intentional error`)
+    logger.error('')
+    logger.error(
       '  This command throws an error for development/testing purposes.',
     )
-    logger.log(`  Error message: "This error was intentionally left blank."`)
-    logger.log('')
+    logger.error(`  Error message: "This error was intentionally left blank."`)
+    logger.error('')
     if (json && !justThrow) {
-      logger.log('  Output format: JSON error response')
+      logger.error('  Output format: JSON error response')
     } else if (markdown && !justThrow) {
-      logger.log('  Output format: Markdown error message')
+      logger.error('  Output format: Markdown error message')
     } else {
-      logger.log('  Output format: Thrown Error exception')
+      logger.error('  Output format: Thrown Error exception')
     }
-    logger.log('')
-    logger.log('  Run without --dry-run to trigger the error.')
-    logger.log('')
+    logger.error('')
+    logger.error('  Run without --dry-run to trigger the error.')
+    logger.error('')
     return
   }
 

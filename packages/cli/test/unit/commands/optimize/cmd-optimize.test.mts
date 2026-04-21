@@ -76,7 +76,7 @@ describe('cmd-optimize', () => {
       await cmdOptimize.run(['--dry-run'], importMeta, context)
 
       expect(mockHandleOptimize).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -101,7 +101,7 @@ describe('cmd-optimize', () => {
 
       await cmdOptimize.run(['--dry-run'], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('Would fail'),
       )
     })
@@ -176,10 +176,10 @@ describe('cmd-optimize', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('pin to specific versions'),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('production dependencies only'),
       )
     })
@@ -196,7 +196,7 @@ describe('cmd-optimize', () => {
 
       await cmdOptimize.run(['--dry-run'], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('pnpm v9.0.0'),
       )
     })

@@ -105,7 +105,7 @@ describe('cmd-scan-reach', () => {
       )
 
       expect(mockHandleScanReach).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -120,7 +120,7 @@ describe('cmd-scan-reach', () => {
       )
 
       expect(mockHandleScanReach).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('Command: coana'),
       )
     })

@@ -99,10 +99,16 @@ export async function coanaFix(
     spinner,
   } = fixConfig
 
-  // Determine stdio based on output mode:
-  // - 'ignore' when outputKind === 'json': suppress all coana output, return clean JSON response
-  // - 'inherit' otherwise: user sees coana progress in real-time
+  // Under json/markdown mode we route coana's chatter away from our
+  // stdout (its JSON report comes from --output-file, not stdout, so
+  // coana stdout is entirely informational). 'ignore' drops it; that
+  // was the previous behavior and it remains safe. When interactive we
+  // inherit so the user sees coana progress in real-time.
   const coanaStdio = outputKind === 'json' ? 'ignore' : 'inherit'
+  // Ask coana to silence its own Winston logger under json mode. Belt
+  // and braces with stdio:'ignore' and harmless if coana ignores the
+  // flag.
+  const coanaSilenceArgs = outputKind === 'json' ? ['--silent'] : []
 
   const fixEnv = await getFixEnv()
   debugDir({ fixEnv })
@@ -214,6 +220,7 @@ export async function coanaFix(
     try {
       const fixCResult = await spawnCoanaDlx(
         [
+          ...coanaSilenceArgs,
           'compute-fixes-and-upgrade-purls',
           cwd,
           '--manifests-tar-hash',
@@ -254,7 +261,9 @@ export async function coanaFix(
 
       // Copy to outputFile if provided.
       if (outputFile) {
-        logger.info(`Copying fixes result to ${outputFile}`)
+        // Status message — belongs on stderr so stdout stays payload-only
+        // when a consumer is piping `socket fix --json`.
+        logger.error(`Copying fixes result to ${outputFile}`)
         const tmpContent = await fs.readFile(tmpFile, 'utf8')
         await fs.writeFile(outputFile, tmpContent, 'utf8')
       }
@@ -427,6 +436,7 @@ export async function coanaFix(
     // eslint-disable-next-line no-await-in-loop
     const fixCResult = await spawnCoanaDlx(
       [
+        ...coanaSilenceArgs,
         'compute-fixes-and-upgrade-purls',
         cwd,
         '--manifests-tar-hash',

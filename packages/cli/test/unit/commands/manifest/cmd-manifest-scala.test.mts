@@ -77,7 +77,7 @@ describe('cmd-manifest-scala', () => {
       await cmdManifestScala.run(['--dry-run', '.'], importMeta, context)
 
       expect(mockConvertSbtToMaven).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })

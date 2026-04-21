@@ -1,6 +1,7 @@
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { emitPayload } from '../../utils/output/emit-payload.mts'
 import { mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
@@ -59,7 +60,9 @@ export async function outputQuota(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    // Sentinel-wrap the JSON so pipe-safety is preserved even if a
+    // downstream spawn in the same process writes to stdout.
+    emitPayload(serializeResultJson(result), { flags: { json: true } })
     return
   }
   if (!result.ok) {
@@ -71,11 +74,10 @@ export async function outputQuota(
   const refreshLine = `Next refresh: ${formatRefresh(result.data.nextWindowRefresh)}`
 
   if (outputKind === 'markdown') {
-    logger.log(mdHeader('Quota'))
-    logger.log('')
-    logger.log(`- ${usageLine}`)
-    logger.log(`- ${refreshLine}`)
-    logger.log('')
+    const md = [mdHeader('Quota'), '', `- ${usageLine}`, `- ${refreshLine}`].join(
+      '\n',
+    )
+    emitPayload(md, { flags: { markdown: true } })
     return
   }
 

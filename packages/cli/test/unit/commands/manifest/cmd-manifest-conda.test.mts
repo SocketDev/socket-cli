@@ -69,7 +69,7 @@ describe('cmd-manifest-conda', () => {
       await cmdManifestConda.run(['--dry-run'], importMeta, context)
 
       expect(mockHandleManifestConda).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })

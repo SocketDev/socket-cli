@@ -87,7 +87,7 @@ describe('cmd-repository-view', () => {
       )
 
       expect(mockHandleViewRepo).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -220,13 +220,13 @@ describe('cmd-repository-view', () => {
 
       await cmdRepositoryView.run(['my-repo', '--dry-run'], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('test-org/my-repo'),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('organization: test-org'),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('repository: my-repo'),
       )
     })
