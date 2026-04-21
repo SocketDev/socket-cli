@@ -13,19 +13,19 @@ export async function suggestOrgSlug(): Promise<string | undefined> {
     return undefined
   }
 
-  // Ignore a failed request here. It was not the primary goal of
-  // running this command and reporting it only leads to end-user confusion.
   const { organizations } = orgsCResult.data
   const proceed = await select({
     message:
       'Missing org name; do you want to use any of these orgs for this scan?',
     choices: [
       ...organizations.map(o => {
-        const name = o.name ?? o.slug
+        // Display the human-readable name but route with the slug —
+        // display names may contain spaces that break API URLs.
+        const display = o.name ?? o.slug
         return {
-          name: `Yes [${name}]`,
-          value: name,
-          description: `Use "${name}" as the organization`,
+          name: `Yes [${display}]`,
+          value: o.slug,
+          description: `Use "${display}" as the organization`,
         }
       }),
       {
