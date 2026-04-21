@@ -144,12 +144,18 @@ async function main() {
       ...(WIN32 ? { shell: true } : {}),
     }
 
+    // --passWithNoTests: a scoped run where the expanded args don't
+    // resolve to any test file should succeed rather than error with
+    // "No test files found". Keeps pre-commit hooks passing when an edit
+    // touches only non-testable code.
     const result = await spawn(
       vitestPath,
-      ['run', ...expandedArgs],
+      ['run', '--passWithNoTests', ...expandedArgs],
       spawnOptions,
     )
-    process.exitCode = result?.code || 0
+    // `code === null` means the process was killed by a signal — treat
+    // as a failure so SIGKILL / SIGABRT aren't silently reported as 0.
+    process.exitCode = typeof result?.code === 'number' ? result.code : 1
   } catch (e) {
     logger.error('Failed to spawn test process:', e)
     process.exitCode = 1
