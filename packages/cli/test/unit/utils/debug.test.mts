@@ -97,16 +97,16 @@ describe('debug utilities', () => {
 
       debugApiResponse('/api/test', undefined, error)
 
-      expect(debugDir).toHaveBeenCalledWith({
+      expect(mockDebugDirNs).toHaveBeenCalledWith('error', {
         endpoint: '/api/test',
         error: 'API failed',
       })
     })
 
-    it('logs warning for HTTP error status codes', () => {
+    it('logs under error namespace for HTTP error status codes', () => {
       debugApiResponse('/api/test', 404)
 
-      expect(debug).toHaveBeenCalledWith('API /api/test: HTTP 404')
+      expect(debugNs).toHaveBeenCalledWith('error', 'API /api/test: HTTP 404')
     })
 
     it('logs notice for successful responses when debug is enabled', () => {
@@ -128,7 +128,7 @@ describe('debug utilities', () => {
     it('handles non-Error objects in error parameter', () => {
       debugApiResponse('/api/test', undefined, 'String error')
 
-      expect(debugDir).toHaveBeenCalledWith({
+      expect(mockDebugDirNs).toHaveBeenCalledWith('error', {
         endpoint: '/api/test',
         error: 'Unknown error',
       })
@@ -148,7 +148,7 @@ describe('debug utilities', () => {
 
       debugApiResponse('/api/test', undefined, error, requestInfo)
 
-      const calledWith = mockDebugDir.mock.calls[0]?.[0]
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as any
       expect(calledWith.method).toBe('POST')
       expect(calledWith.url).toBe('https://api.socket.dev/test')
       expect(calledWith.durationMs).toBe(1500)
@@ -169,7 +169,7 @@ describe('debug utilities', () => {
 
       debugApiResponse('/api/resource', 500, undefined, requestInfo)
 
-      const calledWith = mockDebugDir.mock.calls[0]?.[0]
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as any
       expect(calledWith.status).toBe(500)
       expect(calledWith.method).toBe('GET')
       // API key should be redacted.
@@ -183,10 +183,85 @@ describe('debug utilities', () => {
 
       debugApiResponse('/api/update', 400, undefined, requestInfo)
 
-      const calledWith = mockDebugDir.mock.calls[0]?.[0]
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as any
       expect(calledWith.method).toBe('PUT')
       expect(calledWith.url).toBeUndefined()
       expect(calledWith.headers).toBeUndefined()
+    })
+
+    it('includes requestedAt timestamp when provided', () => {
+      const requestInfo = {
+        method: 'POST',
+        url: 'https://api.socket.dev/x',
+        requestedAt: '2026-04-18T00:00:00.000Z',
+      }
+
+      debugApiResponse('/api/x', 500, undefined, requestInfo)
+
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as any
+      expect(calledWith.requestedAt).toBe('2026-04-18T00:00:00.000Z')
+    })
+
+    it('extracts cf-ray as a top-level field and keeps responseHeaders', () => {
+      const requestInfo = {
+        method: 'GET',
+        url: 'https://api.socket.dev/y',
+        responseHeaders: {
+          'cf-ray': 'abc123-IAD',
+          'content-type': 'application/json',
+        },
+      }
+
+      debugApiResponse('/api/y', 500, undefined, requestInfo)
+
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as any
+      expect(calledWith.cfRay).toBe('abc123-IAD')
+      expect(calledWith.responseHeaders?.['cf-ray']).toBe('abc123-IAD')
+    })
+
+    it('tolerates CF-Ray header casing', () => {
+      const requestInfo = {
+        method: 'GET',
+        url: 'https://api.socket.dev/z',
+        responseHeaders: {
+          'CF-Ray': 'xyz789-SJC',
+        },
+      }
+
+      debugApiResponse('/api/z', 500, undefined, requestInfo)
+
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as any
+      expect(calledWith.cfRay).toBe('xyz789-SJC')
+    })
+
+    it('includes response body on error', () => {
+      const requestInfo = {
+        method: 'GET',
+        url: 'https://api.socket.dev/body',
+        responseBody: '{"error":"bad"}',
+      }
+
+      debugApiResponse('/api/body', 400, undefined, requestInfo)
+
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as any
+      expect(calledWith.responseBody).toBe('{"error":"bad"}')
+    })
+
+    it('truncates oversized response bodies', () => {
+      const bigBody = 'x'.repeat(5000)
+      const requestInfo = {
+        method: 'GET',
+        url: 'https://api.socket.dev/big',
+        responseBody: bigBody,
+      }
+
+      debugApiResponse('/api/big', 500, undefined, requestInfo)
+
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as any
+      expect(calledWith.responseBody).toMatch(/… \(truncated, 5000 chars\)$/)
+      expect((calledWith.responseBody as string).length).toBeLessThan(
+        bigBody.length,
+      )
     })
   })
 

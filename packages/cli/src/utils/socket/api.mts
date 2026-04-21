@@ -82,6 +82,18 @@ export async function socketHttpRequest(
   return await httpRequest(url, options)
 }
 
+// Safe wrapper for `response.text()` in error-handling code paths.
+// `text()` can throw (e.g. already consumed, malformed body), which
+// would blow past the `ok: false` CResult return and break the
+// error-handling contract of callers like `queryApiSafeText`.
+function tryReadResponseText(result: HttpResponse): string | undefined {
+  try {
+    return result.text?.()
+  } catch {
+    return undefined
+  }
+}
+
 export type CommandRequirements = {
   permissions?: string[] | undefined
   quota?: number | undefined
@@ -428,6 +440,7 @@ export async function queryApiSafeText(
   const baseUrl = getDefaultApiBaseUrl()
   const fullUrl = `${baseUrl}${baseUrl?.endsWith('/') ? '' : '/'}${path}`
   const startTime = Date.now()
+  const requestedAt = new Date(startTime).toISOString()
 
   let result: any
   try {
@@ -443,6 +456,7 @@ export async function queryApiSafeText(
       method: 'GET',
       url: fullUrl,
       durationMs,
+      requestedAt,
       headers: { Authorization: '[REDACTED]' },
     })
   } catch (e) {
@@ -458,6 +472,7 @@ export async function queryApiSafeText(
       method: 'GET',
       url: fullUrl,
       durationMs,
+      requestedAt,
       headers: { Authorization: '[REDACTED]' },
     })
 
@@ -475,12 +490,17 @@ export async function queryApiSafeText(
   if (!result.ok) {
     const { status } = result
     const durationMs = Date.now() - startTime
-    // Log detailed error information.
+    // Include response headers (for cf-ray) and a truncated body so
+    // support tickets have everything needed to file against Cloudflare
+    // or backend teams.
     debugApiResponse(description || 'Query API', status, undefined, {
       method: 'GET',
       url: fullUrl,
       durationMs,
+      requestedAt,
       headers: { Authorization: '[REDACTED]' },
+      responseHeaders: result.headers,
+      responseBody: tryReadResponseText(result),
     })
     // Log required permissions for 403 errors when in a command context.
     if (commandPath && status === 403) {
@@ -587,6 +607,7 @@ export async function sendApiRequest<T>(
 
   const fullUrl = `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`
   const startTime = Date.now()
+  const requestedAt = new Date(startTime).toISOString()
 
   let result: any
   try {
@@ -614,6 +635,7 @@ export async function sendApiRequest<T>(
         method,
         url: fullUrl,
         durationMs,
+        requestedAt,
         headers: {
           Authorization: '[REDACTED]',
           'Content-Type': 'application/json',
@@ -633,6 +655,7 @@ export async function sendApiRequest<T>(
       method,
       url: fullUrl,
       durationMs,
+      requestedAt,
       headers: {
         Authorization: '[REDACTED]',
         'Content-Type': 'application/json',
@@ -653,15 +676,20 @@ export async function sendApiRequest<T>(
   if (!result.ok) {
     const { status } = result
     const durationMs = Date.now() - startTime
-    // Log detailed error information.
+    // Include response headers (for cf-ray) and a truncated body so
+    // support tickets have everything needed to file against Cloudflare
+    // or backend teams.
     debugApiResponse(description || 'Send API Request', status, undefined, {
       method,
       url: fullUrl,
       durationMs,
+      requestedAt,
       headers: {
         Authorization: '[REDACTED]',
         'Content-Type': 'application/json',
       },
+      responseHeaders: result.headers,
+      responseBody: tryReadResponseText(result),
     })
     // Log required permissions for 403 errors when in a command context.
     if (commandPath && status === 403) {
