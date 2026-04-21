@@ -110,7 +110,6 @@
     "npm-package-arg": "catalog:",
     "open": "catalog:",
     "package-builder": "workspace:*",
-    "pony-cause": "catalog:",
     "registry-auth-token": "catalog:",
     "registry-url": "catalog:",
     "semver": "catalog:",

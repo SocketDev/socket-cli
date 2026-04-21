@@ -150,6 +150,31 @@ describe('error/display', () => {
       expect(result.message).toBe('Something went wrong')
     })
 
+    it('preserves Error.cause chain in message without debug mode', () => {
+      const inner = new Error('root DNS failure')
+      const middle = new Error('network call failed', { cause: inner })
+      const outer = new Error('API request failed', { cause: middle })
+
+      const result = formatErrorForDisplay(outer)
+
+      expect(result.message).toContain('API request failed')
+      expect(result.message).toContain('network call failed')
+      expect(result.message).toContain('root DNS failure')
+    })
+
+    it('terminates on cyclic cause chains', () => {
+      const a = new Error('a')
+      const b = new Error('b')
+      ;(a as Error & { cause?: unknown }).cause = b
+      ;(b as Error & { cause?: unknown }).cause = a
+
+      const result = formatErrorForDisplay(a)
+
+      expect(result.message).toContain('a')
+      expect(result.message).toContain('b')
+      expect(result.message).toContain('...')
+    })
+
     it('uses custom title when provided', () => {
       const error = new Error('Something went wrong')
 

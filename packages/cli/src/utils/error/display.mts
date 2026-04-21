@@ -2,6 +2,7 @@
 
 import colors from 'yoctocolors-cjs'
 
+import { messageWithCauses } from '@socketsecurity/lib/errors'
 import { LOG_SYMBOLS } from '@socketsecurity/lib/logger'
 import { stripAnsi } from '@socketsecurity/lib/strings'
 
@@ -26,6 +27,21 @@ export type ErrorDisplayOptions = {
 }
 
 /**
+ * Append the `.cause` chain to a decorated base message. Typed errors
+ * build their message with suffixes (e.g. ` (HTTP 500)`) before this
+ * is called, so we can't just `messageWithCauses(error)` — we decorate
+ * first, then delegate cause walking to socket-lib.
+ */
+function appendCauseChain(baseMessage: string, cause: unknown): string {
+  if (!cause) {
+    return baseMessage
+  }
+  const causeText =
+    cause instanceof Error ? messageWithCauses(cause) : String(cause)
+  return `${baseMessage}: ${causeText}`
+}
+
+/**
  * Format an error for display with polish and clarity.
  * Uses LOG_SYMBOLS and colors for visual hierarchy.
  */
@@ -47,34 +63,38 @@ export function formatErrorForDisplay(
     if (error.retryAfter) {
       message += ` (retry after ${error.retryAfter}s)`
     }
+    message = appendCauseChain(message, error.cause)
   } else if (error instanceof AuthError) {
     title = 'Authentication error'
-    message = error.message
+    message = appendCauseChain(error.message, error.cause)
   } else if (error instanceof NetworkError) {
     title = 'Network error'
     message = error.message
     if (error.statusCode) {
       message += ` (HTTP ${error.statusCode})`
     }
+    message = appendCauseChain(message, error.cause)
   } else if (error instanceof FileSystemError) {
     title = 'File system error'
     message = error.message
     if (error.path) {
       message += ` (${error.path})`
     }
+    message = appendCauseChain(message, error.cause)
   } else if (error instanceof ConfigError) {
     title = 'Configuration error'
     message = error.message
     if (error.configKey) {
       message += ` (key: ${error.configKey})`
     }
+    message = appendCauseChain(message, error.cause)
   } else if (error instanceof InputError) {
     title = 'Invalid input'
-    message = error.message
+    message = appendCauseChain(error.message, error.cause)
     body = error.body
   } else if (error instanceof Error) {
     title = opts.title || 'Unexpected error'
-    message = error.message
+    message = appendCauseChain(error.message, error.cause)
 
     if (showStack && error.stack) {
       // Format stack trace with proper indentation.

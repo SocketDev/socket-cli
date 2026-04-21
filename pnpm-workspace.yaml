@@ -114,7 +114,6 @@ catalog:
   oxlint: 1.52.0
   packageurl-js: npm:@socketregistry/packageurl-js@^1.4.2
   path-parse: npm:@socketregistry/path-parse@^1.0.8
-  pony-cause: 2.1.11
   postject: 1.0.0-alpha.6
   react: 19.2.0
   react-reconciler: 0.33.0

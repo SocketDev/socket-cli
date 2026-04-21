@@ -19,10 +19,9 @@
  * - Falls back to configured apiBaseUrl or default API_V0_URL
  */
 
-import { messageWithCauses } from 'pony-cause'
-
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { getSocketCliApiBaseUrl } from '@socketsecurity/lib/env/socket-cli'
+import { messageWithCauses } from '@socketsecurity/lib/errors'
 import { httpRequest } from '@socketsecurity/lib/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
@@ -55,6 +54,7 @@ import {
 } from '../ecosystem/requirements.mts'
 import {
   buildErrorCause,
+  ConfigError,
   getNetworkErrorDiagnostics,
 } from '../error/errors.mts'
 
@@ -383,7 +383,10 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
 export async function queryApi(path: string, apiToken: string) {
   const baseUrl = getDefaultApiBaseUrl()
   if (!baseUrl) {
-    throw new Error('Socket API base URL is not configured.')
+    throw new ConfigError(
+      'Socket API base URL is not configured.',
+      CONFIG_KEY_API_BASE_URL,
+    )
   }
 
   return await socketHttpRequest(
