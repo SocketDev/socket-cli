@@ -269,6 +269,12 @@ export const commonFlags: MeowFlags = {
     // Only show in root command in debug mode.
     hidden: true,
   },
+  quiet: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.',
+  },
   spinner: {
     type: 'boolean',
     default: true,

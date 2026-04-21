@@ -80,7 +80,7 @@ describe('cmd-scan-metadata', () => {
       await cmdScanMetadata.run(['--dry-run', testScanId], importMeta, context)
 
       expect(mockHandleOrgScanMetadata).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -185,7 +185,7 @@ describe('cmd-scan-metadata', () => {
     it('should show scan ID in dry-run', async () => {
       await cmdScanMetadata.run(['--dry-run', testScanId], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining(testScanId),
       )
     })
@@ -193,7 +193,7 @@ describe('cmd-scan-metadata', () => {
     it('should show organization in dry-run', async () => {
       await cmdScanMetadata.run(['--dry-run', testScanId], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('test-org'),
       )
     })
@@ -201,7 +201,7 @@ describe('cmd-scan-metadata', () => {
     it('should show metadata operation in dry-run', async () => {
       await cmdScanMetadata.run(['--dry-run', testScanId], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringMatching(/metadata/i),
       )
     })
@@ -270,7 +270,7 @@ describe('cmd-scan-metadata', () => {
       await cmdScanMetadata.run(['--dry-run', testScanId], importMeta, context)
 
       expect(mockHandleOrgScanMetadata).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalled()
+      expect(mockLogger.error).toHaveBeenCalled()
     })
   })
 })

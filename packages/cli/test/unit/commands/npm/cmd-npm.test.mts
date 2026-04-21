@@ -112,13 +112,14 @@ describe('cmd-npm', () => {
       it('should show dry-run output without executing', async () => {
         await cmdNpm.run(['--dry-run'], importMeta, context)
 
-        expect(mockLogger.log).toHaveBeenCalled()
+        expect(mockLogger.error).toHaveBeenCalled()
         expect(mockSpawnSfw).not.toHaveBeenCalled()
 
-        // Verify dry-run message.
-        const logCalls = mockLogger.log.mock.calls.flat()
-        const hasDryRunMessage = logCalls.some(
-          call =>
+        // Verify dry-run message. Dry-run routes to stderr per the
+        // stream discipline rule.
+        const errCalls = mockLogger.error.mock.calls.flat()
+        const hasDryRunMessage = errCalls.some(
+          (call: unknown) =>
             typeof call === 'string' &&
             call.includes('Would execute npm with Socket security scanning'),
         )
@@ -132,13 +133,13 @@ describe('cmd-npm', () => {
           context,
         )
 
-        expect(mockLogger.log).toHaveBeenCalled()
+        expect(mockLogger.error).toHaveBeenCalled()
         expect(mockSpawnSfw).not.toHaveBeenCalled()
 
         // Verify dry-run includes arguments.
-        const logCalls = mockLogger.log.mock.calls.flat()
-        const hasArgs = logCalls.some(
-          call =>
+        const errCalls = mockLogger.error.mock.calls.flat()
+        const hasArgs = errCalls.some(
+          (call: unknown) =>
             typeof call === 'string' &&
             (call.includes('install') || call.includes('lodash')),
         )

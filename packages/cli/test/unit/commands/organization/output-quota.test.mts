@@ -358,12 +358,16 @@ describe('outputQuota', () => {
     process.exitCode = undefined
     await outputQuota(result as any, 'markdown')
 
-    expect(mockLogger.log).toHaveBeenCalledWith('# Quota')
-    expect(mockLogger.log).toHaveBeenCalledWith('')
-    expect(mockLogger.log).toHaveBeenCalledWith(
-      '- Quota remaining: 750 / 1000 (25% used)',
-    )
-    expect(mockLogger.log).toHaveBeenCalledWith('- Next refresh: unknown')
+    // Markdown output routes through emitPayload — the whole markdown
+    // body is logged as one string (sentinel-wrapped so downstream
+    // spawns can't contaminate stdout). Match with stringContaining on
+    // the concatenated call args.
+    const loggedPayload = mockLogger.log.mock.calls
+      .map(call => String(call[0]))
+      .join('\n')
+    expect(loggedPayload).toContain('# Quota')
+    expect(loggedPayload).toContain('- Quota remaining: 750 / 1000 (25% used)')
+    expect(loggedPayload).toContain('- Next refresh: unknown')
   })
 
   it('handles zero quota correctly', async () => {

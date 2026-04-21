@@ -86,7 +86,8 @@ describe('cmd-scan-view', () => {
 
       expect(mockHandleScanView).not.toHaveBeenCalled()
       expect(mockStreamScan).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      // Dry-run previews route to stderr per stream discipline.
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -241,7 +242,8 @@ describe('cmd-scan-view', () => {
     it('should show scan ID in dry-run', async () => {
       await cmdScanView.run(['--dry-run', testScanId], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      // Dry-run previews route to stderr.
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining(testScanId),
       )
     })
@@ -249,7 +251,7 @@ describe('cmd-scan-view', () => {
     it('should show organization in dry-run', async () => {
       await cmdScanView.run(['--dry-run', testScanId], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('test-org'),
       )
     })
@@ -261,7 +263,9 @@ describe('cmd-scan-view', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      // Dry-run output routes to stderr when --json is set so the
+      // primary payload stays pipe-safe on stdout.
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('stream'),
       )
     })

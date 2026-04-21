@@ -77,10 +77,12 @@ describe('cmd-organization-quota', () => {
       await cmdOrganizationQuota.run(['--dry-run'], importMeta, context)
 
       expect(mockHandleQuota).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      // Dry-run previews are contextual output; they route to stderr per
+      // the stream discipline rule so stdout stays payload-only.
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('organization quota'),
       )
     })
@@ -157,7 +159,9 @@ describe('cmd-organization-quota', () => {
       )
 
       expect(mockHandleQuota).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      // With --json, dry-run output routes to stderr so stdout stays
+      // pipe-safe for JSON consumers.
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('[DryRun]'),
       )
     })

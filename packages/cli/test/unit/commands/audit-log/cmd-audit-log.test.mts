@@ -104,7 +104,7 @@ describe('cmd-audit-log', () => {
       await cmdAuditLog.run(['--dry-run'], importMeta, context)
 
       expect(mockHandleAuditLog).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -283,10 +283,10 @@ describe('cmd-audit-log', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('audit log entries'),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('deleteReport'),
       )
     })
@@ -358,7 +358,7 @@ describe('cmd-audit-log', () => {
 
       await cmdAuditLog.run(['--dry-run'], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('any'),
       )
     })

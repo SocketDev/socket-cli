@@ -10,6 +10,7 @@ import {
 } from '../../constants/socket.mts'
 import { extractTier1ReachabilityScanId } from '../../utils/coana/extract-scan-id.mjs'
 import { spawnCoanaDlx } from '../../utils/dlx/spawn.mjs'
+import { getMachineOutputMode } from '../../utils/output/ambient-mode.mts'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
 import { handleApiCall } from '../../utils/socket/api.mjs'
 import { setupSdk } from '../../utils/socket/sdk.mjs'
@@ -173,7 +174,11 @@ export async function performReachabilityAnalysis(
     ? outputPath
     : DOT_SOCKET_DOT_FACTS_JSON
   // Build Coana arguments.
+  // Under machine-output mode, --silent suppresses coana's Winston
+  // logger entirely; the report still lands in --socket-mode's file.
+  const machineMode = getMachineOutputMode()
   const coanaArgs = [
+    ...(machineMode ? ['--silent'] : []),
     'run',
     analysisTarget,
     '--output-dir',
@@ -238,13 +243,15 @@ export async function performReachabilityAnalysis(
     coanaEnv['SOCKET_BRANCH_NAME'] = branchName
   }
 
-  // Run Coana with the manifests tar hash.
+  // Run Coana with the manifests tar hash. Under machine mode we drop
+  // coana stdout; --silent plus 'ignore' ensures our own stdout stays
+  // pipe-safe for --json consumers.
   const coanaResult = await spawnCoanaDlx(coanaArgs, orgSlug, {
     coanaVersion: reachabilityOptions.reachVersion || undefined,
     cwd,
     env: coanaEnv,
     spinner,
-    stdio: 'inherit',
+    stdio: machineMode ? 'ignore' : 'inherit',
   })
 
   if (wasSpinning) {

@@ -79,7 +79,7 @@ describe('cmd-organization-dependencies', () => {
       await cmdOrganizationDependencies.run(['--dry-run'], importMeta, context)
 
       expect(mockHandleDependencies).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -249,15 +249,15 @@ describe('cmd-organization-dependencies', () => {
 
       await cmdOrganizationDependencies.run(['--dry-run'], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining(
           '[DryRun]: Would fetch organization dependencies',
         ),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('limit: 50'),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('offset: 0'),
       )
     })
@@ -271,10 +271,10 @@ describe('cmd-organization-dependencies', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('limit: 100'),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('offset: 25'),
       )
     })

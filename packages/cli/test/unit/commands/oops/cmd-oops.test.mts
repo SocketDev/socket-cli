@@ -138,16 +138,16 @@ describe('cmd-oops', () => {
       it('should show preview without throwing error', async () => {
         await cmdOops.run(['--dry-run'], importMeta, context)
 
-        expect(mockLogger.log).toHaveBeenCalledWith('')
-        expect(mockLogger.log).toHaveBeenCalledWith(
+        expect(mockLogger.error).toHaveBeenCalledWith('')
+        expect(mockLogger.error).toHaveBeenCalledWith(
           expect.stringContaining('Would trigger an intentional error'),
         )
-        expect(mockLogger.log).toHaveBeenCalledWith(
+        expect(mockLogger.error).toHaveBeenCalledWith(
           expect.stringContaining(
             'This command throws an error for development/testing purposes.',
           ),
         )
-        expect(mockLogger.log).toHaveBeenCalledWith(
+        expect(mockLogger.error).toHaveBeenCalledWith(
           expect.stringContaining('This error was intentionally left blank'),
         )
       })
@@ -155,7 +155,7 @@ describe('cmd-oops', () => {
       it('should indicate thrown error format in dry-run', async () => {
         await cmdOops.run(['--dry-run'], importMeta, context)
 
-        expect(mockLogger.log).toHaveBeenCalledWith(
+        expect(mockLogger.error).toHaveBeenCalledWith(
           expect.stringContaining('Output format: Thrown Error exception'),
         )
       })
@@ -163,7 +163,7 @@ describe('cmd-oops', () => {
       it('should indicate JSON format in dry-run with --json', async () => {
         await cmdOops.run(['--dry-run', '--json'], importMeta, context)
 
-        expect(mockLogger.log).toHaveBeenCalledWith(
+        expect(mockLogger.error).toHaveBeenCalledWith(
           expect.stringContaining('Output format: JSON error response'),
         )
       })
@@ -171,7 +171,7 @@ describe('cmd-oops', () => {
       it('should indicate markdown format in dry-run with --markdown', async () => {
         await cmdOops.run(['--dry-run', '--markdown'], importMeta, context)
 
-        expect(mockLogger.log).toHaveBeenCalledWith(
+        expect(mockLogger.error).toHaveBeenCalledWith(
           expect.stringContaining('Output format: Markdown error message'),
         )
       })
@@ -183,7 +183,7 @@ describe('cmd-oops', () => {
           context,
         )
 
-        expect(mockLogger.log).toHaveBeenCalledWith(
+        expect(mockLogger.error).toHaveBeenCalledWith(
           expect.stringContaining('Output format: Thrown Error exception'),
         )
       })
@@ -191,7 +191,7 @@ describe('cmd-oops', () => {
       it('should show run instruction in dry-run', async () => {
         await cmdOops.run(['--dry-run'], importMeta, context)
 
-        expect(mockLogger.log).toHaveBeenCalledWith(
+        expect(mockLogger.error).toHaveBeenCalledWith(
           expect.stringContaining('Run without --dry-run to trigger the error'),
         )
       })

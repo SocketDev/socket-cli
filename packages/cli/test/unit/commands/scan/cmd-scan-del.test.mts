@@ -80,7 +80,7 @@ describe('cmd-scan-del', () => {
       await cmdScanDel.run(['--dry-run', testScanId], importMeta, context)
 
       expect(mockHandleDeleteScan).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -174,7 +174,7 @@ describe('cmd-scan-del', () => {
     it('should show scan ID in dry-run', async () => {
       await cmdScanDel.run(['--dry-run', testScanId], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining(testScanId),
       )
     })
@@ -182,7 +182,7 @@ describe('cmd-scan-del', () => {
     it('should show organization in dry-run', async () => {
       await cmdScanDel.run(['--dry-run', testScanId], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('test-org'),
       )
     })
@@ -190,7 +190,7 @@ describe('cmd-scan-del', () => {
     it('should show delete operation in dry-run', async () => {
       await cmdScanDel.run(['--dry-run', testScanId], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringMatching(/delet/i),
       )
     })
@@ -259,7 +259,7 @@ describe('cmd-scan-del', () => {
       await cmdScanDel.run(['--dry-run', testScanId], importMeta, context)
 
       expect(mockHandleDeleteScan).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalled()
+      expect(mockLogger.error).toHaveBeenCalled()
     })
 
     it('should use defaultOrgSlug nook behavior', async () => {
@@ -286,10 +286,10 @@ describe('cmd-scan-del', () => {
     it('should format dry-run output with org/scan path', async () => {
       await cmdScanDel.run(['--dry-run', testScanId], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringMatching(/test-org/),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining(testScanId),
       )
     })

@@ -85,7 +85,7 @@ describe('cmd-scan-diff', () => {
       )
 
       expect(mockHandleDiffScan).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -256,10 +256,10 @@ describe('cmd-scan-diff', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining(testScanId1),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining(testScanId2),
       )
     })
@@ -271,7 +271,7 @@ describe('cmd-scan-diff', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('10'))
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('10'))
     })
 
     it('should show organization in dry-run', async () => {
@@ -281,7 +281,7 @@ describe('cmd-scan-diff', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('test-org'),
       )
     })

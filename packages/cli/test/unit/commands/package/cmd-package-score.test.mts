@@ -80,7 +80,7 @@ describe('cmd-package-score', () => {
       )
 
       expect(mockHandlePurlDeepScore).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -217,10 +217,10 @@ describe('cmd-package-score', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('[DryRun]: Would fetch package score'),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('package: pkg:npm/babel-cli'),
       )
     })

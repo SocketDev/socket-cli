@@ -74,7 +74,7 @@ describe('cmd-manifest-cdxgen', () => {
       // Dry run should not call runCdxgen.
       expect(mockRunCdxgen).not.toHaveBeenCalled()
       // Should log the dry run message.
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -87,7 +87,7 @@ describe('cmd-manifest-cdxgen', () => {
       )
 
       expect(mockRunCdxgen).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('Command: cdxgen'),
       )
     })

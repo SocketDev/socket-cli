@@ -88,7 +88,7 @@ describe('cmd-organization-policy-license', () => {
       await cmdOrganizationPolicyLicense.run(['--dry-run'], importMeta, context)
 
       expect(mockHandleLicensePolicy).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -183,12 +183,12 @@ describe('cmd-organization-policy-license', () => {
 
       await cmdOrganizationPolicyLicense.run(['--dry-run'], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining(
           '[DryRun]: Would fetch organization license policy',
         ),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('organization: test-org'),
       )
     })
@@ -203,7 +203,7 @@ describe('cmd-organization-policy-license', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('organization: (will be determined)'),
       )
     })

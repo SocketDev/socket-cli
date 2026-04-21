@@ -82,7 +82,7 @@ describe('cmd-manifest-gradle', () => {
       await cmdManifestGradle.run(['--dry-run', '.'], importMeta, context)
 
       expect(mockConvertGradleToMaven).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })

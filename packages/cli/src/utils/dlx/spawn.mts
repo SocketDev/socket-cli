@@ -62,6 +62,10 @@ import { SOCKET_CLI_PYTHON_PATH } from '../../env/socket-cli-python-path.mts'
 import { getSynpVersion } from '../../env/synp-version.mts'
 import { getErrorCause, InputError } from '../error/errors.mts'
 import { isSeaBinary } from '../sea/detect.mts'
+import {
+  applyMachineModeIfActive,
+  inferSubcommand,
+} from '../spawn/apply-machine-mode.mts'
 import { socketHttpRequest } from '../socket/api.mjs'
 import { spawnNode } from '../spawn/spawn-node.mjs'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
@@ -500,6 +504,23 @@ export async function spawnSfwDlx(
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<DlxSpawnResult> {
+  // sfw is a transparent proxy: args is [innerTool, innerSubcommand?, ...rest].
+  // Machine-mode flags forward to the inner tool so its stdout stays
+  // pipe-safe under --json.
+  const [innerTool, ...innerArgs] = args
+  const innerSubcommand = inferSubcommand(innerArgs)
+  const innerApplied = innerTool
+    ? applyMachineModeIfActive({
+        args: innerArgs,
+        env: undefined,
+        subcommand: innerSubcommand,
+        tool: innerTool,
+      })
+    : { args: [...innerArgs], env: {} }
+  const effectiveArgs = innerTool
+    ? [innerTool, ...innerApplied.args]
+    : [...args]
+
   const resolution = resolveSfw()
 
   // Use local sfw if available.
@@ -511,13 +532,16 @@ export async function spawnSfwDlx(
     } as DlxOptions
 
     const spawnArgs =
-      detection.type === 'binary' ? args : [resolution.path, ...args]
+      detection.type === 'binary'
+        ? effectiveArgs
+        : [resolution.path, ...effectiveArgs]
     const spawnCommand = detection.type === 'binary' ? resolution.path : 'node'
 
     const spawnPromise = spawn(spawnCommand, spawnArgs, {
       ...dlxOptions,
       env: {
         ...process.env,
+        ...innerApplied.env,
         ...spawnEnv,
       },
       stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
@@ -534,8 +558,15 @@ export async function spawnSfwDlx(
   }
   return await spawnDlx(
     resolution.details,
-    args,
-    { force: false, ...options },
+    effectiveArgs,
+    {
+      force: false,
+      ...options,
+      env: {
+        ...innerApplied.env,
+        ...options?.env,
+      },
+    },
     spawnExtra,
   )
 }

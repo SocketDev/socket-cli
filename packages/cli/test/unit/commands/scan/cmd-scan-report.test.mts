@@ -82,7 +82,7 @@ describe('cmd-scan-report', () => {
       await cmdScanReport.run(['--dry-run', testScanId], importMeta, context)
 
       expect(mockHandleScanReport).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -260,10 +260,10 @@ describe('cmd-scan-report', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('pkg'),
       )
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('monitor'),
       )
     })
@@ -275,7 +275,7 @@ describe('cmd-scan-report', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('includeLicense'),
       )
     })
@@ -287,7 +287,7 @@ describe('cmd-scan-report', () => {
         context,
       )
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('short'),
       )
     })

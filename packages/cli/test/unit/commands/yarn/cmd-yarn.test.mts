@@ -112,11 +112,11 @@ describe('cmd-yarn', () => {
       it('should show dry-run output without executing', async () => {
         await cmdYarn.run(['--dry-run'], importMeta, context)
 
-        expect(mockLogger.log).toHaveBeenCalled()
+        expect(mockLogger.error).toHaveBeenCalled()
         expect(mockSpawnSfwDlx).not.toHaveBeenCalled()
 
         // Verify dry-run message.
-        const logCalls = mockLogger.log.mock.calls.flat()
+        const logCalls = mockLogger.error.mock.calls.flat()
         const hasDryRunMessage = logCalls.some(
           call => typeof call === 'string' && call.includes('Would execute'),
         )
@@ -130,11 +130,11 @@ describe('cmd-yarn', () => {
           context,
         )
 
-        expect(mockLogger.log).toHaveBeenCalled()
+        expect(mockLogger.error).toHaveBeenCalled()
         expect(mockSpawnSfwDlx).not.toHaveBeenCalled()
 
         // Verify dry-run includes arguments.
-        const logCalls = mockLogger.log.mock.calls.flat()
+        const logCalls = mockLogger.error.mock.calls.flat()
         const hasArgs = logCalls.some(
           call =>
             typeof call === 'string' &&

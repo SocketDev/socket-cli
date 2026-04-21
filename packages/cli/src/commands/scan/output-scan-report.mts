@@ -111,7 +111,7 @@ export async function outputScanReport(
       : toJsonReport(scanReport.data as ScanReport, includeLicensePolicy)
 
     if (filepath && filepath !== '-') {
-      logger.log('Writing json report to', filepath)
+      logger.error('Writing json report to', filepath)
       return await fs.writeFile(filepath, json)
     }
 
@@ -129,7 +129,7 @@ export async function outputScanReport(
         )
 
     if (filepath && filepath !== '-') {
-      logger.log('Writing markdown report to', filepath)
+      logger.error('Writing markdown report to', filepath)
       return await fs.writeFile(filepath, md)
     }
 

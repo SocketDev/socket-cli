@@ -147,7 +147,7 @@ describe('cmd-scan-create', () => {
       )
 
       expect(mockHandleCreateNewScan).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -1082,7 +1082,7 @@ describe('cmd-scan-create', () => {
           context,
         )
 
-        expect(mockLogger.log).toHaveBeenCalledWith(
+        expect(mockLogger.error).toHaveBeenCalledWith(
           expect.stringContaining('DryRun'),
         )
       })
@@ -1102,7 +1102,7 @@ describe('cmd-scan-create', () => {
           context,
         )
 
-        expect(mockLogger.log).toHaveBeenCalledWith(
+        expect(mockLogger.error).toHaveBeenCalledWith(
           expect.stringContaining('DryRun'),
         )
       })

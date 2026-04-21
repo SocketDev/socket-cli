@@ -79,7 +79,7 @@ describe('cmd-organization-list', () => {
       await cmdOrganizationList.run(['--dry-run'], importMeta, context)
 
       expect(mockHandleOrganizationList).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
@@ -137,7 +137,7 @@ describe('cmd-organization-list', () => {
 
       await cmdOrganizationList.run(['--dry-run'], importMeta, context)
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('[DryRun]: Would fetch organizations'),
       )
     })

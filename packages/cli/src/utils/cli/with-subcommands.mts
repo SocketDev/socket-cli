@@ -41,6 +41,10 @@ import {
 } from '../config.mts'
 import { isDebug } from '../debug.mts'
 import { tildify } from '../fs/home-path.mts'
+import {
+  resetMachineOutputMode,
+  setMachineOutputMode,
+} from '../output/ambient-mode.mts'
 import { getFlagListOutput, getHelpListOutput } from '../output/formatting.mts'
 import { getVisibleTokenPrefix } from '../socket/sdk.mjs'
 import {
@@ -510,14 +514,29 @@ export async function meowWithSubcommands(
   const {
     compactHeader: compactHeaderFlag,
     config: configFlag,
+    json: jsonFlag,
+    markdown: markdownFlag,
     org: orgFlag,
+    quiet: quietFlag,
     spinner: spinnerFlag,
   } = cli1.flags as {
     compactHeader: boolean
     config: string
+    json: boolean | undefined
+    markdown: boolean | undefined
     org: string
+    quiet: boolean | undefined
     spinner: boolean
   }
+
+  // Re-derive from the current argv so ambient mode doesn't leak across
+  // sequential invocations (e.g. multiple vitest cases in one worker).
+  resetMachineOutputMode()
+  setMachineOutputMode({
+    json: jsonFlag,
+    markdown: markdownFlag,
+    quiet: quietFlag,
+  })
 
   const compactMode = !!compactHeaderFlag || !!(getCI() && !VITEST)
   const noSpinner = spinnerFlag === false || isDebug()
@@ -937,16 +956,31 @@ export function meowOrExit(
   const {
     compactHeader: compactHeaderFlag,
     help: helpFlag,
+    json: jsonFlag,
+    markdown: markdownFlag,
     org: orgFlag,
+    quiet: quietFlag,
     spinner: spinnerFlag,
     version: versionFlag,
   } = cli.flags as {
     compactHeader: boolean
     help: boolean
+    json: boolean | undefined
+    markdown: boolean | undefined
     org: string
+    quiet: boolean | undefined
     spinner: boolean
     version: boolean | undefined
   }
+
+  // Apply machine-output mode from this command's flags. Reset first
+  // so prior in-worker state doesn't leak across sequential invocations.
+  resetMachineOutputMode()
+  setMachineOutputMode({
+    json: jsonFlag,
+    markdown: markdownFlag,
+    quiet: quietFlag,
+  })
 
   const compactMode = !!compactHeaderFlag || !!(getCI() && !VITEST)
   const noSpinner = spinnerFlag === false || isDebug()

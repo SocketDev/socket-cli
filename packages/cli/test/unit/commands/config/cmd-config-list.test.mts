@@ -62,7 +62,7 @@ describe('cmd-config-list', () => {
       await cmdConfigList.run(['--dry-run'], importMeta, context)
 
       expect(mockOutputConfigList).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
