@@ -136,5 +136,32 @@ describe('suggest-org-slug', () => {
       expect(noChoice).toBeDefined()
       expect(noChoice!.value).toBe('')
     })
+
+    it('returns the slug (not display name) for orgs where they differ', async () => {
+      // Regression guard: passing the display name through to the API
+      // produced 404s for orgs with spaces, e.g.
+      // `/v0/orgs/Example%20Org%20Ltd/...` instead of
+      // `/v0/orgs/example-org-ltd/...`.
+      mockFetchOrganization.mockResolvedValue({
+        ok: true,
+        data: {
+          organizations: [
+            { name: 'Example Org Ltd', slug: 'example-org-ltd' },
+          ],
+        },
+      })
+      mockSelect.mockResolvedValue('example-org-ltd')
+
+      await suggestOrgSlug()
+
+      const callArg = mockSelect.mock.calls[0]![0] as {
+        choices: Array<{ name: string; value: string; description: string }>
+      }
+      // The choice value must be the slug. The visible label/description
+      // still use the friendlier display name.
+      expect(callArg.choices[0]!.value).toBe('example-org-ltd')
+      expect(callArg.choices[0]!.name).toContain('Example Org Ltd')
+      expect(callArg.choices[0]!.description).toContain('Example Org Ltd')
+    })
   })
 })
