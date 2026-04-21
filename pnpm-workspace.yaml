@@ -1,4 +1,3 @@
-
 packages:
   - packages/*
   - '!packages/package-builder/build'
@@ -218,7 +217,6 @@ patchedDependencies:
   execa@2.1.0: patches/execa@2.1.0.patch
   execa@5.1.1: patches/execa@5.1.1.patch
   node-gyp@12.2.0: patches/node-gyp@12.2.0.patch
-resolutionMode: highest
 saveExact: true
 strictPeerDependencies: true
 trustPolicy: no-downgrade
