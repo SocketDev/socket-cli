@@ -5,9 +5,14 @@ packages:
 
 # Packages allowed to run build scripts (pnpm v11 strictDepBuilds default).
 allowBuilds:
-  '@pnpm/exe': true
   esbuild: true
   postject: false
+
+# Refuse to run if the pnpm version on PATH differs from the packageManager
+# field in package.json. Our setup action pins pnpm via external-tools.json;
+# any drift should fail fast, not silently auto-download via @pnpm/exe
+# (which in rc.5 leaves a placeholder launcher that errors at runtime).
+pmOnFail: error
 
 catalog:
   '@anthropic-ai/claude-code': 2.1.98
