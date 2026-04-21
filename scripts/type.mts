@@ -12,7 +12,8 @@ import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { printFooter, printHeader } from '@socketsecurity/lib/stdio/header'
+import { printFooter } from '@socketsecurity/lib/stdio/footer'
+import { printHeader } from '@socketsecurity/lib/stdio/header'
 
 import { getPackagesWithScript } from './utils/monorepo-helper.mts'
 

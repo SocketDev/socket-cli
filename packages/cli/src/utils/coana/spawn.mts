@@ -12,6 +12,7 @@ import { spawnNode } from '../spawn/spawn-node.mjs'
 
 import type { IpcObject } from '../ipc.mts'
 import type { CResult } from '../../types.mjs'
+import type { StdioOptions } from 'node:child_process'
 import type { SpawnExtra, SpawnOptions } from '@socketsecurity/lib/spawn'
 
 export type CoanaSpawnOptions = SpawnOptions & {
@@ -70,7 +71,8 @@ export async function spawnCoana(
             ...mixinsEnv,
             ...spawnEnv,
           },
-          stdio: spawnExtra?.['stdio'] || 'inherit',
+          stdio:
+            (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
         },
       )
 

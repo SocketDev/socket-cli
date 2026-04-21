@@ -7,7 +7,23 @@
 
 import { randomBytes } from 'node:crypto'
 
-import type { IpcHandshake, IpcMessage, IpcStub } from '@socketsecurity/lib/ipc'
+import type { IpcStub } from '@socketsecurity/lib/ipc'
+
+export interface IpcMessage<T = unknown> {
+  data: T
+  id: string
+  timestamp: number
+  type: string
+}
+
+export interface IpcHandshake extends IpcMessage<{
+  apiToken?: string | undefined
+  appName: string
+  pid: number
+  version: string
+}> {
+  type: 'handshake'
+}
 
 /**
  * Check if a value is a valid IPC message.

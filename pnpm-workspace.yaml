@@ -1,14 +1,12 @@
-resolutionMode: highest
-trustPolicy: no-downgrade
-trustPolicyExclude:
-  - undici@6.21.3
 
 packages:
   - packages/*
   - '!packages/package-builder/build'
+  - .claude/hooks/*
 
 # Packages allowed to run build scripts (pnpm v11 strictDepBuilds default).
 allowBuilds:
+  '@pnpm/exe': true
   esbuild: true
   postject: false
 
@@ -45,7 +43,7 @@ catalog:
   '@socketregistry/packageurl-js': 1.4.2
   '@socketregistry/yocto-spinner': 1.0.25
   '@socketsecurity/config': 3.0.1
-  '@socketsecurity/lib': 5.18.2
+  '@socketsecurity/lib': 5.21.0
   '@socketsecurity/registry': 2.0.2
   '@socketsecurity/sdk': 4.0.1
   '@types/adm-zip': 0.5.7
@@ -153,8 +151,6 @@ catalog:
 # pnpm v11 reads settings from this file; only auth/registry go in .npmrc.
 ignoreScripts: true
 linkWorkspacePackages: false
-saveExact: true
-strictPeerDependencies: true
 
 # Wait 7 days (10080 minutes) before installing newly published packages.
 minimumReleaseAge: 10080
@@ -223,3 +219,9 @@ patchedDependencies:
   execa@2.1.0: patches/execa@2.1.0.patch
   execa@5.1.1: patches/execa@5.1.1.patch
   node-gyp@12.2.0: patches/node-gyp@12.2.0.patch
+resolutionMode: highest
+saveExact: true
+strictPeerDependencies: true
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  - undici@6.21.3
