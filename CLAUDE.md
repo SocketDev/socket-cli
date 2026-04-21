@@ -72,6 +72,7 @@ The umbrella rule: never run a git command that mutates state belonging to a pat
 - Do not add features, refactor, or make improvements beyond what was asked
 - Simplest approach first; flag architectural flaws and wait for approval
 - When asked to "make a plan," output only the plan — no code until given the go-ahead
+- **Default to perfectionist mindset**: when you have latitude to choose, pick the maximally correct option — no shortcuts, no cosmetic deferrals. Fix state that *looks* stale even if not load-bearing. If pragmatism is the right call, the user will ask for it explicitly. "Works now" ≠ "right."
 
 ## COMPLETION PROTOCOL
 
@@ -82,7 +83,7 @@ The umbrella rule: never run a git command that mutates state belonging to a pat
 
 ## SELF-EVALUATION
 
-- Present two views before calling done: what a perfectionist would reject vs. what a pragmatist would ship
+- Before calling anything done: present both views — what a perfectionist would reject vs. what a pragmatist would ship — and let the user choose. If the user gives no signal, default to perfectionist: do the fuller fix.
 - After fixing a bug: explain why it happened and what category of bug it represents
 - If a fix fails twice: stop, re-read top-down, state where the mental model was wrong
 - If asked to "step back": drop everything, rethink from scratch
