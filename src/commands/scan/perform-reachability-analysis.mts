@@ -19,6 +19,10 @@ export type ReachabilityOptions = {
   reachAnalysisMemoryLimit: number
   reachAnalysisTimeout: number
   reachConcurrency: number
+  reachContinueOnAnalysisErrors: boolean
+  reachContinueOnInstallErrors: boolean
+  reachContinueOnMissingLockFiles: boolean
+  reachContinueOnNoSourceFiles: boolean
   reachDebug: boolean
   reachDetailedAnalysisLogFile: boolean
   reachDisableExternalToolChecks: boolean
@@ -183,6 +187,18 @@ export async function performReachabilityAnalysis(
       : []),
     ...(reachabilityOptions.reachConcurrency
       ? ['--concurrency', `${reachabilityOptions.reachConcurrency}`]
+      : []),
+    ...(reachabilityOptions.reachContinueOnAnalysisErrors
+      ? ['--reach-continue-on-analysis-errors']
+      : []),
+    ...(reachabilityOptions.reachContinueOnInstallErrors
+      ? ['--reach-continue-on-install-errors']
+      : []),
+    ...(reachabilityOptions.reachContinueOnMissingLockFiles
+      ? ['--reach-continue-on-missing-lock-files']
+      : []),
+    ...(reachabilityOptions.reachContinueOnNoSourceFiles
+      ? ['--reach-continue-on-no-source-files']
       : []),
     ...(reachabilityOptions.reachDebug ? ['--debug'] : []),
     ...(reachabilityOptions.reachDetailedAnalysisLogFile

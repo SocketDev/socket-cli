@@ -245,6 +245,10 @@ async function run(
     reachAnalysisMemoryLimit,
     reachAnalysisTimeout,
     reachConcurrency,
+    reachContinueOnAnalysisErrors,
+    reachContinueOnInstallErrors,
+    reachContinueOnMissingLockFiles,
+    reachContinueOnNoSourceFiles,
     reachDebug,
     reachDetailedAnalysisLogFile,
     reachDisableAnalysisSplitting: _reachDisableAnalysisSplitting,
@@ -279,6 +283,10 @@ async function run(
     reachAnalysisMemoryLimit: number
     reachAnalysisTimeout: number
     reachConcurrency: number
+    reachContinueOnAnalysisErrors: boolean
+    reachContinueOnInstallErrors: boolean
+    reachContinueOnMissingLockFiles: boolean
+    reachContinueOnNoSourceFiles: boolean
     reachDebug: boolean
     reachDetailedAnalysisLogFile: boolean
     reachDisableAnalysisSplitting: boolean
@@ -487,6 +495,10 @@ async function run(
     isUsingNonDefaultMemoryLimit ||
     isUsingNonDefaultTimeout ||
     isUsingNonDefaultVersion ||
+    reachContinueOnAnalysisErrors ||
+    reachContinueOnInstallErrors ||
+    reachContinueOnMissingLockFiles ||
+    reachContinueOnNoSourceFiles ||
     reachEnableAnalysisSplitting ||
     reachLazyMode ||
     reachSkipCache ||
@@ -599,6 +611,10 @@ async function run(
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
       reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachConcurrency: Number(reachConcurrency),
+      reachContinueOnAnalysisErrors: Boolean(reachContinueOnAnalysisErrors),
+      reachContinueOnInstallErrors: Boolean(reachContinueOnInstallErrors),
+      reachContinueOnMissingLockFiles: Boolean(reachContinueOnMissingLockFiles),
+      reachContinueOnNoSourceFiles: Boolean(reachContinueOnNoSourceFiles),
       reachDebug: Boolean(reachDebug),
       reachDetailedAnalysisLogFile: Boolean(reachDetailedAnalysisLogFile),
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
