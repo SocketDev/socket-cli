@@ -70,25 +70,34 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: | # zizmor: ignore[github-env]
+          # Pinned version + per-platform checksum pair. Bumping sfw-free
+          # requires updating SFW_FREE_VERSION AND every platform's
+          # SHA256 in the same commit, otherwise the download / verify
+          # steps will diverge.
+          SFW_FREE_VERSION="1.7.2"
           SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
           KERNEL="$(uname -s | cut -d- -f1)"
           ARCH="$(uname -m)"
           case "${KERNEL}-${ARCH}" in
-            Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="4a1e8b65e90fce7d5fd066cf0af6c93d512065fa4222a475c8d959a6bc14b9ff" ;;
-            Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="df2eedb2daf2572eee047adb8bfd81c9069edcb200fc7d3710fca98ec3ca81a1" ;;
-            Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="724ccea19d847b79db8cc8e38f5f18ce2dd32336007f42b11bed7d2e5f4a2566" ;;
-            Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="bf1616fc44ac49f1cb2067fedfa127a3ae65d6ec6d634efbb3098cfa355e5555" ;;
-            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="c953e62ad7928d4d8f2302f5737884ea1a757babc26bed6a42b9b6b68a5d54af" ;;
+            Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="93e2d9dfa244b82a74e014dc26b1c6af18b4adec20f35254378943db5fe91411" ;;
+            Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="84a045e4e1bb320cc5c0d3929f02e53f199398b5be0637e8846d02d9ef0027b1" ;;
+            Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="a5427d479d440f08e3789fa191ba57599be64997196daf42e67d964fec0382b4" ;;
+            Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="248fb588e1e1a27e7192f7b079f739fc29a9de61f0bad7e90928363022dc5643" ;;
+            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="6d333b4cac9d7c5712e2e99677ca634ac8a3020d550c6308312c60bea97f0a28" ;;
             *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
           esac
           if [ ! -x "$SFW_BIN" ]; then
             mkdir -p "$SFW_DIR"
-            DOWNLOAD_URL="$(gh api repos/SocketDev/sfw-free/releases/latest \
+            DOWNLOAD_URL="$(gh api "repos/SocketDev/sfw-free/releases/tags/v${SFW_FREE_VERSION}" \
               --jq ".assets[] | select(.name == \"$ASSET\") | .browser_download_url")"
+            if [ -z "$DOWNLOAD_URL" ]; then
+              echo "Asset ${ASSET} not found in SocketDev/sfw-free@v${SFW_FREE_VERSION}" >&2
+              exit 1
+            fi
             curl -fsSL -o "$SFW_BIN" "$DOWNLOAD_URL"
             ACTUAL_SHA256="$( (sha256sum "$SFW_BIN" 2>/dev/null || shasum -a 256 "$SFW_BIN") | cut -d' ' -f1 | tr -d '\\')"
             if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
-              echo "Checksum mismatch for ${ASSET}!" >&2
+              echo "Checksum mismatch for ${ASSET} (SocketDev/sfw-free@v${SFW_FREE_VERSION})!" >&2
               echo "  Expected: ${EXPECTED_SHA256}" >&2
               echo "  Actual:   ${ACTUAL_SHA256}" >&2
               rm -f "$SFW_BIN"
@@ -146,5 +155,5 @@ jobs:
 
       - name: Run e2e tests
         env:
-          SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_CLI_API_TOKEN }} # zizmor: ignore[secrets-outside-env]
+          SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_API_TOKEN }} # zizmor: ignore[secrets-outside-env]
         run: pnpm run e2e-tests
