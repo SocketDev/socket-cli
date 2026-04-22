@@ -164,26 +164,39 @@ Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). User-facing onl
 
 ### Error Messages
 
-Errors are a UX surface. Every message must let the reader fix the problem without reading the source. Four ingredients, in order:
+An error message is UI. The reader should be able to fix the problem from the message alone, without opening your source.
 
-1. **What**: the rule that was violated (the contract, not the symptom)
-2. **Where**: the exact flag, file, key, line, or record — never "somewhere in config"
-3. **Saw vs. wanted**: the offending value and the allowed shape/set
-4. **Fix**: one concrete action to resolve it
+Every message needs four ingredients, in order:
 
-- Imperative voice (`pass --limit=50`), not passive (`--limit was wrong`)
-- Never say "invalid" without what made it invalid. `Invalid ecosystem: "foo"` is a symptom; `--reach-ecosystems must be one of: npm, pypi, maven (saw: "foo")` is a rule
-- If two records collide, name both — not just the second one found
-- Suggest, don't auto-correct. An error that silently repairs state hides the bug in the next run
+1. **What** — the rule that was broken (e.g. "must be a non-negative integer"), not the fallout ("invalid").
+2. **Where** — the exact flag, file, line, key, or record. Not "somewhere in config".
+3. **Saw vs. wanted** — the bad value and the allowed shape or set.
+4. **Fix** — one concrete action, in imperative voice (`pass --limit=50`, not `--limit was wrong`).
 
-**Examples:**
+Length depends on the audience:
+
+- **Library API errors** (thrown from a published package): terse. Callers may match on the message text, so every word counts. All four ingredients often fit in one sentence.
+- **CLI / validator / config errors** (developer reading a terminal): verbose. Give each ingredient its own words so the reader can fix it without re-running the tool. Most `InputError`/`AuthError` cases land here.
+- **Programmatic errors** (internal assertions, invariant checks): terse, rule only. No end user will see it; short keeps the check readable.
+
+Rules for every message:
+
+- Imperative voice for the fix — `pass --limit=50`, not `--limit was wrong`.
+- Never "invalid" on its own. `Invalid ecosystem: "foo"` is fallout; `--reach-ecosystems must be one of: npm, pypi, maven (saw: "foo")` is a rule.
+- On a collision, name **both** sides, not just the second one found.
+- Suggest, don't auto-correct. Silently fixing state hides the bug next time.
+- Bloat check: if removing a word keeps the information, drop it.
+
+**CLI examples:**
 
 - ✅ `throw new InputError('--pull-request must be a non-negative integer (saw: "abc"); pass a number like --pull-request=42')`
 - ✅ `` throw new InputError(`No .socket directory found in ${cwd}; run \`socket init\` to create one`) ``
 - ✅ `throw new AuthError('Socket API rejected the token (401); run `socket login` or set SOCKET_CLI_API_TOKEN')`
-- ❌ `throw new InputError('Invalid value for --limit: ${limit}')` (symptom, no rule, no fix)
-- ❌ `throw new Error('Authentication failed')` (no where, no fix, wrong error type)
-- ❌ `logger.error('Error occurred'); return` (doesn't set exit code)
+- ❌ `throw new InputError('Invalid value for --limit: ${limit}')` — fallout, no rule, no fix
+- ❌ `throw new Error('Authentication failed')` — no where, no fix, wrong error type
+- ❌ `logger.error('Error occurred'); return` — doesn't set exit code
+
+See `docs/references/error-messages.md` for cross-fleet worked examples and anti-patterns.
 
 ### Command Pattern
 
