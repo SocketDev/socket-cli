@@ -348,7 +348,7 @@ async function extractTool(tool: ExternalTool): Promise<string> {
     return extractedPath
   } catch (e) {
     throw new Error(
-      `failed to extract ${tool} from the SEA VFS (${(e as Error).message}); the embedded tool archive may be corrupt — rebuild the SEA binary`,
+      `failed to extract ${tool} from the SEA VFS (${e instanceof Error ? e.message : String(e)}); the embedded tool archive may be corrupt — rebuild the SEA binary`,
     )
   }
 }
