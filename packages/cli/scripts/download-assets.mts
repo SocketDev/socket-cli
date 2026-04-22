@@ -125,11 +125,11 @@ async function downloadAsset(config) {
     logger.groupEnd()
     logger.success(`${name} extraction complete`)
     return { name, ok: true }
-  } catch (error) {
+  } catch (e) {
     logger.groupEnd()
-    logger.error(`Failed to extract ${name}: ${error.message}`)
-    await logTransientErrorHelp(error)
-    return { error, name, ok: false }
+    logger.error(`Failed to extract ${name}: ${e.message}`)
+    await logTransientErrorHelp(e)
+    return { e, name, ok: false }
   }
 }
 

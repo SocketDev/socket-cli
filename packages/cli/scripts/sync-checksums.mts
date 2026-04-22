@@ -143,8 +143,8 @@ async function fetchGitHubReleaseChecksums(
         `  Parsed ${Object.keys(checksums).length} checksums from checksums.txt`,
       )
       return checksums
-    } catch (error) {
-      console.log(`  Failed to download checksums.txt: ${error.message}`)
+    } catch (e) {
+      console.log(`  Failed to download checksums.txt: ${e.message}`)
       await safeDelete(tempDir).catch(() => {})
       // Fall through to download assets.
     }
@@ -282,8 +282,8 @@ async function main() {
       const newCount = Object.keys(newChecksums).length
       console.log(`  Updated: ${oldCount} -> ${newCount} checksums\n`)
       updated++
-    } catch (error) {
-      console.log(`  Error: ${error.message}\n`)
+    } catch (e) {
+      console.log(`  Error: ${e.message}\n`)
       failed++
     }
   }
