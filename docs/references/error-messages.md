@@ -18,13 +18,13 @@ Every message needs, in order:
 Callers may match on the message text, so stability matters. Aim for one
 sentence.
 
-| ✗ / ✓ | Message | Notes |
-| --- | --- | --- |
-| ✗ | `Error: invalid component` | No rule, no saw, no where. |
-| ✗ | `The "name" component of type "npm" failed validation because the provided value "" is empty, which is not allowed because names are required; please provide a non-empty name.` | Restates the rule three times. |
-| ✓ | `npm "name" component is required` | Rule + where + implied saw (missing). Six words. |
-| ✗ | `Error: bad name` | No rule. |
-| ✓ | `name "__proto__" cannot start with an underscore` | Rule, where (`name`), saw (`__proto__`), fix implied. |
+| ✗ / ✓ | Message                                                                                                                                                                          | Notes                                                 |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| ✗     | `Error: invalid component`                                                                                                                                                       | No rule, no saw, no where.                            |
+| ✗     | `The "name" component of type "npm" failed validation because the provided value "" is empty, which is not allowed because names are required; please provide a non-empty name.` | Restates the rule three times.                        |
+| ✓     | `npm "name" component is required`                                                                                                                                               | Rule + where + implied saw (missing). Six words.      |
+| ✗     | `Error: bad name`                                                                                                                                                                | No rule.                                              |
+| ✓     | `name "__proto__" cannot start with an underscore`                                                                                                                               | Rule, where (`name`), saw (`__proto__`), fix implied. |
 
 ## Validator / config / build-tool errors (verbose)
 
@@ -42,7 +42,7 @@ Breakdown:
 - **Saw vs. wanted**: saw = missing; wanted = a single-word lowercase filename, with `"parsing"` as a concrete model.
 - **Fix**: `Add … to this part` — imperative, specific.
 
-The trailing `to route /<slug>/part/3 at publish time` is optional. Include a *why* clause only when the rule is non-obvious; skip it for rules the reader already knows (e.g. "names can't start with an underscore").
+The trailing `to route /<slug>/part/3 at publish time` is optional. Include a _why_ clause only when the rule is non-obvious; skip it for rules the reader already knows (e.g. "names can't start with an underscore").
 
 ## Programmatic errors (terse, rule only)
 
@@ -97,6 +97,62 @@ Both wrap `Intl.ListFormat`, so the Oxford comma and one-/two-item cases come ou
 - ✓ `` `missing keys: ${joinAnd(missing)}` `` → `"missing keys: filename, slug, and title"`
 
 Use `joinOr` whenever the error is "must be one of X", `joinAnd` whenever it's "all of X are required / missing / in conflict".
+
+## Working with caught values
+
+`catch (e)` binds `unknown`. The helpers in `@socketsecurity/lib/errors` cover the four patterns that recur everywhere:
+
+```ts
+import {
+  errorMessage,
+  errorStack,
+  isError,
+  isErrnoException,
+} from '@socketsecurity/lib/errors'
+```
+
+### `isError(value)` — replaces `value instanceof Error`
+
+Cross-realm-safe. Uses the native ES2025 `Error.isError` when the engine ships it, falls back to a spec-compliant shim otherwise. Catches Errors from worker threads, `vm` contexts, and iframes that same-realm `instanceof Error` silently misses.
+
+- ✗ `if (e instanceof Error) { … }`
+- ✓ `if (isError(e)) { … }`
+
+### `isErrnoException(value)` — replaces `'code' in err` guards
+
+Narrows to `NodeJS.ErrnoException` (an Error with a string `code` set by libuv/syscalls like `ENOENT`, `EACCES`, `EBUSY`, `EPERM`). Builds on `isError`, so it's also cross-realm-safe, and it checks that `code` is a string — a merely branded Error without a real errno code returns `false`.
+
+- ✗ `if (e && typeof e === 'object' && 'code' in e && e.code === 'ENOENT') { … }`
+- ✓ `if (isErrnoException(e) && e.code === 'ENOENT') { … }`
+
+### `errorMessage(value)` — replaces the `instanceof Error ? e.message : String(e)` pattern
+
+Walks the `cause` chain via `messageWithCauses`, coerces primitives and objects to string, and returns the shared `UNKNOWN_ERROR` sentinel (the string `'Unknown error'`) for `null`, `undefined`, empty strings, `[object Object]`, or Errors with no message.
+
+That last bullet is the important one: **every `|| 'Unknown error'` fallback in the fleet should collapse into a single `errorMessage(e)` call.**
+
+- ✗ `` `Failed: ${e instanceof Error ? e.message : String(e)}` ``
+- ✗ `` `Failed: ${(e as Error)?.message ?? 'Unknown error'}` ``
+- ✗ `` `Failed: ${e instanceof Error ? e.message : 'Unknown error'}` ``
+- ✓ `` `Failed: ${errorMessage(e)}` ``
+
+When you want to preserve the cause chain upstream (recommended), pair it with `{ cause }`:
+
+```ts
+try {
+  await readConfig(path)
+} catch (e) {
+  throw new Error(`Failed to read ${path}: ${errorMessage(e)}`, { cause: e })
+}
+```
+
+### `errorStack(value)` — cause-aware stack, or `undefined`
+
+Returns the cause-walking stack for Errors; returns `undefined` for non-Errors so logger calls stay safe:
+
+```ts
+logger.error(`rebuild failed: ${errorMessage(e)}`, { stack: errorStack(e) })
+```
 
 ## Voice & tone
 

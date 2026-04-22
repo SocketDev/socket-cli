@@ -26,6 +26,7 @@ import semver from 'semver'
 
 import { NPM_REGISTRY_URL } from '@socketsecurity/lib/constants/agents'
 import { debug } from '@socketsecurity/lib/debug'
+import { errorMessage } from '@socketsecurity/lib/errors'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { onExit } from '@socketsecurity/lib/signal-exit'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
@@ -174,7 +175,7 @@ const NetworkUtils = {
               }
               reject(
                 new Error(
-                  `Failed to parse JSON response: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+                  `Failed to parse JSON response: ${errorMessage(parseError)}`,
                 ),
               )
             }
@@ -251,7 +252,7 @@ const NetworkUtils = {
 
         if (isLastAttempt) {
           logger.warn(
-            `Failed to fetch version after ${maxAttempts} attempts: ${e instanceof Error ? e.message : String(e)}`,
+            `Failed to fetch version after ${maxAttempts} attempts: ${errorMessage(e)}`,
           )
           throw e
         }
@@ -259,7 +260,7 @@ const NetworkUtils = {
         // Exponential backoff with cap to prevent integer overflow.
         const delay = Math.min(baseDelay * 2 ** (attempts - 1), 60_000)
         logger.log(
-          `Attempt ${attempts} failed, retrying in ${delay}ms: ${e instanceof Error ? e.message : String(e)}`,
+          `Attempt ${attempts} failed, retrying in ${delay}ms: ${errorMessage(e)}`,
         )
 
         // eslint-disable-next-line no-await-in-loop
@@ -310,7 +311,7 @@ async function checkForUpdates(
     }
   } catch (e) {
     logger.log(
-      `Failed to check for updates: ${e instanceof Error ? e.message : String(e)}`,
+      `Failed to check for updates: ${errorMessage(e)}`,
     )
     throw e
   }

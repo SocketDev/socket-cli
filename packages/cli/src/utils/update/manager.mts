@@ -26,6 +26,7 @@
  */
 
 import { dlxManifest } from '@socketsecurity/lib/dlx/manifest'
+import { errorMessage } from '@socketsecurity/lib/errors'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
@@ -167,7 +168,7 @@ export async function checkForUpdates(
     }
   } catch (e) {
     loggerLocal.warn(
-      `Failed to access cache: ${e instanceof Error ? e.message : String(e)}`,
+      `Failed to access cache: ${errorMessage(e)}`,
     )
     record = undefined
   }
@@ -201,13 +202,13 @@ export async function checkForUpdates(
         })
       } catch (e) {
         loggerLocal.warn(
-          `Failed to update cache: ${e instanceof Error ? e.message : String(e)}`,
+          `Failed to update cache: ${errorMessage(e)}`,
         )
         // Continue anyway - cache update failure is not critical.
       }
     } catch (e) {
       loggerLocal.log(
-        `Failed to fetch latest version: ${e instanceof Error ? e.message : String(e)}`,
+        `Failed to fetch latest version: ${errorMessage(e)}`,
       )
 
       // Use cached version if available.
@@ -261,12 +262,12 @@ export async function checkForUpdates(
           })
         } catch (e) {
           loggerLocal.warn(
-            `Failed to update notification timestamp: ${e instanceof Error ? e.message : String(e)}`,
+            `Failed to update notification timestamp: ${errorMessage(e)}`,
           )
         }
       } catch (e) {
         loggerLocal.warn(
-          `Failed to set up notification: ${e instanceof Error ? e.message : String(e)}`,
+          `Failed to set up notification: ${errorMessage(e)}`,
         )
         // Notification failure is not critical - update is still available.
       }
@@ -299,7 +300,7 @@ export async function scheduleUpdateCheck(
   } catch (e) {
     // Silent failure - update checks should never block the main CLI.
     logger.log(
-      `Update check failed: ${e instanceof Error ? e.message : String(e)}`,
+      `Update check failed: ${errorMessage(e)}`,
     )
   }
 }

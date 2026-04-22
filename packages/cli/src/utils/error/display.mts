@@ -2,7 +2,7 @@
 
 import colors from 'yoctocolors-cjs'
 
-import { messageWithCauses } from '@socketsecurity/lib/errors'
+import { errorMessage, isError, messageWithCauses } from '@socketsecurity/lib/errors'
 import { LOG_SYMBOLS } from '@socketsecurity/lib/logger'
 import { stripAnsi } from '@socketsecurity/lib/strings'
 
@@ -37,7 +37,7 @@ function appendCauseChain(baseMessage: string, cause: unknown): string {
     return baseMessage
   }
   const causeText =
-    cause instanceof Error ? messageWithCauses(cause) : String(cause)
+    isError(cause) ? messageWithCauses(cause) : String(cause)
   return `${baseMessage}: ${causeText}`
 }
 
@@ -92,7 +92,7 @@ export function formatErrorForDisplay(
     title = 'Invalid input'
     message = appendCauseChain(error.message, error.cause)
     body = error.body
-  } else if (error instanceof Error) {
+  } else if (isError(error)) {
     title = opts.title || 'Unexpected error'
     message = appendCauseChain(error.message, error.cause)
 
@@ -115,16 +115,14 @@ export function formatErrorForDisplay(
 
       while (currentCause && depth <= 5) {
         const causeMessage =
-          currentCause instanceof Error
-            ? currentCause.message
-            : String(currentCause)
+          errorMessage(currentCause)
 
         causeLines.push(
           `\n${colors.dim(`Caused by [${depth}]:`)} ${colors.yellow(causeMessage)}`,
         )
 
         if (
-          currentCause instanceof Error &&
+          isError(currentCause) &&
           currentCause.stack &&
           depth === 1
         ) {
@@ -137,7 +135,7 @@ export function formatErrorForDisplay(
         }
 
         currentCause =
-          currentCause instanceof Error ? currentCause.cause : undefined
+          isError(currentCause) ? currentCause.cause : undefined
         depth++
       }
 
@@ -166,7 +164,7 @@ export function formatErrorForDisplay(
  * Perfect for inline error display without overwhelming output.
  */
 export function formatErrorCompact(error: unknown): string {
-  if (error instanceof Error) {
+  if (isError(error)) {
     return error.message
   }
   if (typeof error === 'string') {
@@ -276,7 +274,7 @@ export function formatExternalCliError(
       .split('\n')
       .map(line => `  ${line}`)
     lines.push('', colors.dim('Error output:'), ...stderrLines)
-  } else if (error instanceof Error) {
+  } else if (isError(error)) {
     lines.push(`  ${error.message}`)
   }
 

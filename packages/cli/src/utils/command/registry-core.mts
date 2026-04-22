@@ -9,7 +9,7 @@ import type {
   MiddlewareFn,
 } from './registry-types.mjs'
 import type { CResult } from '../../types.mts'
-
+import { errorMessage, errorStack } from '@socketsecurity/lib/errors'
 /**
  * Central registry for CLI commands.
  * Handles registration, discovery, execution, and middleware.
@@ -137,8 +137,8 @@ export class CommandRegistry implements ICommandRegistry {
     } catch (e) {
       return {
         ok: false,
-        message: e instanceof Error ? e.message : String(e),
-        cause: e instanceof Error ? e.stack : undefined,
+        message: errorMessage(e),
+        cause: errorStack(e),
       }
     }
 
@@ -171,8 +171,8 @@ export class CommandRegistry implements ICommandRegistry {
     } catch (e) {
       return {
         ok: false,
-        message: e instanceof Error ? e.message : String(e),
-        cause: e instanceof Error ? e.stack : undefined,
+        message: errorMessage(e),
+        cause: errorStack(e),
       }
     }
   }

@@ -36,6 +36,7 @@ import { Octokit } from '@octokit/rest'
 import { LRUCache } from 'lru-cache'
 
 import { debugDirNs, debugNs, isDebugNs } from '@socketsecurity/lib/debug'
+import { errorMessage, isError } from '@socketsecurity/lib/errors'
 import { readJson, safeMkdir, writeJson } from '@socketsecurity/lib/fs'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { parseUrl } from '@socketsecurity/lib/url'
@@ -564,7 +565,7 @@ export function handleGitHubApiError(
   }
 
   // Network errors (ECONNREFUSED, ETIMEDOUT, etc.).
-  if (e instanceof Error) {
+  if (isError(e)) {
     const code = (e as NodeJS.ErrnoException).code
     if (
       code === 'ECONNREFUSED' ||
@@ -588,7 +589,7 @@ export function handleGitHubApiError(
   return {
     ok: false,
     message: 'GitHub API error',
-    cause: `Unexpected error while ${context}: ${e instanceof Error ? e.message : String(e)}`,
+    cause: `Unexpected error while ${context}: ${errorMessage(e)}`,
   }
 }
 
