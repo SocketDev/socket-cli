@@ -97,7 +97,7 @@ export class GitLabProvider implements PrProvider {
     }
 
     throw new Error(
-      `GitLab API rejected createMergeRequest for ${owner}/${repo} (head="${head}") after ${retries} retries with exponential backoff; check GL_TOKEN permissions (needs api scope), the target branch exists, and GitLab is reachable`,
+      `GitLab API rejected createMergeRequest for ${owner}/${repo} (head="${head}") after ${retries} attempts with exponential backoff; check GITLAB_TOKEN permissions (needs api scope), that the target branch exists, and that GitLab is reachable`,
     )
   }
 

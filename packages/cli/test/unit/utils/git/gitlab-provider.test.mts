@@ -194,7 +194,7 @@ describe('git/gitlab-provider', () => {
           title: 'Test',
         }),
       ).rejects.toThrow(
-        /GitLab API rejected createMergeRequest for owner\/repo .*after 2 retries/,
+        /GitLab API rejected createMergeRequest for owner\/repo .*after 2 attempts/,
       )
     })
 
@@ -215,7 +215,7 @@ describe('git/gitlab-provider', () => {
           title: 'Test',
         }),
       ).rejects.toThrow(
-        /GitLab API rejected createMergeRequest for owner\/repo .*after 3 retries/,
+        /GitLab API rejected createMergeRequest for owner\/repo .*after 3 attempts/,
       )
 
       expect(mockCreate).toHaveBeenCalledTimes(1)
