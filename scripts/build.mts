@@ -32,11 +32,13 @@ import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+import { CHECKPOINTS } from '../packages/build-infra/lib/constants.mts'
 import {
   PLATFORM_TARGETS,
   formatPlatformTarget,
   parsePlatformTarget,
 } from '../packages/build-infra/lib/platform-targets.mts'
+import { runPipelineCli } from '../packages/build-infra/lib/build-pipeline.mts'
 
 const logger = getDefaultLogger()
 const __filename = fileURLToPath(import.meta.url)
@@ -389,89 +391,85 @@ async function buildCurrentPlatformSea(): Promise<{ success: boolean }> {
 }
 
 /**
- * Run the default smart build with caching.
+ * Run the default smart build — now orchestrated via the shared
+ * build-pipeline (same system socket-btm/ultrathink/socket-tui/sdxgen use).
+ *
+ * Stages:
+ *   CLI        build @socketsecurity/cli via pnpm --filter (the existing
+ *              buildPackage helper handles signature check + skip-on-cached
+ *              inside the workspace; the orchestrator's shouldRun layer
+ *              complements with a content-hashed cache key)
+ *   SEA        build SEA binary for current platform (only when --force/--prod)
+ *   FINALIZED  verify expected outputs exist
+ *
+ * Inherits CLI flags from runPipelineCli: --force, --clean, --clean-stage,
+ * --from-stage, --cache-key, --prod, --dev.
  */
 async function runSmartBuild(force: boolean): Promise<void> {
-  logger.log('')
-  logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Socket CLI Build System')}`)
-  logger.log('='.repeat(60))
-  logger.log('')
+  // The orchestrator reads --force/--clean/... off process.argv itself; we
+  // only pass `force` here so the SEA stage knows whether to run.
+  const cliPkg = BUILD_PACKAGES[0]!
+  const cliOutputPath = path.join(rootDir, cliPkg.outputCheck)
 
-  if (force) {
-    logger.log(`${colors.yellow('⚠')} Force rebuild enabled (ignoring cache)`)
-    logger.log('')
-  }
-
-  const results = []
-  let totalTime = 0
-
-  for (const pkg of BUILD_PACKAGES) {
-    const startTime = Date.now()
-    const result = await buildPackage(pkg, force)
-    const duration = Date.now() - startTime
-
-    if (!result.skipped) {
-      totalTime += duration
-    }
-
-    results.push({ ...result, pkg })
-
-    if (!result.success) {
-      break
-    }
-  }
-
-  // If force build and CLI built successfully, also build SEA binary for current platform.
-  if (force && results.every(r => r.success)) {
-    const startTime = Date.now()
-    const seaResult = await buildCurrentPlatformSea()
-    const duration = Date.now() - startTime
-
-    if (!seaResult.success) {
-      results.push({
-        success: false,
-        skipped: false,
-        pkg: { name: 'SEA Binary' },
-      })
-    } else {
-      totalTime += duration
-      results.push({
-        success: true,
-        skipped: false,
-        pkg: { name: 'SEA Binary' },
-      })
-    }
-  }
-
-  // Print summary.
-  logger.log('')
-  logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Build Summary')}`)
-  logger.log('='.repeat(60))
-  logger.log('')
-
-  const built = results.filter(r => r.success && !r.skipped).length
-  const skipped = results.filter(r => r.skipped).length
-  const failed = results.filter(r => !r.success).length
-
-  logger.log(`${colors.green('Built:')}    ${built}`)
-  logger.log(`${colors.gray('Skipped:')}  ${skipped}`)
-  if (failed > 0) {
-    logger.log(`${colors.red('Failed:')}   ${failed}`)
-  }
-  logger.log(`${colors.blue('Total:')}    ${(totalTime / 1000).toFixed(1)}s`)
-  logger.log('')
-
-  if (failed > 0) {
-    logger.log(`${colors.red('✗')} Build FAILED`)
-    logger.log('')
-    process.exitCode = 1
-    return
-  }
-
-  logger.log(`${colors.green('✓')} Build completed successfully`)
-  logger.log('')
+  await runPipelineCli({
+    packageRoot: rootDir,
+    packageName: 'cli',
+    resolvePlatformArch: async () => 'universal',
+    getBuildPaths: (mode: string) => ({
+      buildDir: path.join(rootDir, 'build', mode),
+    }),
+    getOutputFiles: () => [cliOutputPath],
+    stages: [
+      {
+        name: CHECKPOINTS.CLI,
+        sourcePaths: fg.sync(cliPkg.inputs, {
+          cwd: rootDir,
+          onlyFiles: true,
+          dot: true,
+          absolute: true,
+        }),
+        run: async () => {
+          const result = await buildPackage(cliPkg, force)
+          if (!result.success) {
+            throw new Error(`${cliPkg.name} build failed`)
+          }
+          return {
+            smokeTest: async () => {
+              if (!existsSync(cliOutputPath)) {
+                throw new Error(`CLI output missing: ${cliOutputPath}`)
+              }
+            },
+          }
+        },
+      },
+      // SEA stage only runs when --force / --prod is set (matches the
+      // historical behavior of runSmartBuild — plain `pnpm build` stops
+      // after CLI, `pnpm build --force` also builds SEA for the current
+      // platform). The skip predicate runs before shouldRun(), so the
+      // stage is transparently absent on a normal dev build.
+      {
+        name: CHECKPOINTS.SEA,
+        skip: ctx => !force && ctx.buildMode !== 'prod',
+        run: async () => {
+          const seaResult = await buildCurrentPlatformSea()
+          if (!seaResult.success) {
+            throw new Error('SEA binary build failed')
+          }
+          return {}
+        },
+      },
+      {
+        name: CHECKPOINTS.FINALIZED,
+        run: async () => ({
+          smokeTest: async () => {
+            if (!existsSync(cliOutputPath)) {
+              throw new Error(`CLI output missing: ${cliOutputPath}`)
+            }
+          },
+        }),
+      },
+    ],
+  })
 }
 
 /**

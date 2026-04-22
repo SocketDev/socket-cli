@@ -41,13 +41,14 @@ catalog:
   '@pnpm/lockfile.fs': 1001.1.17
   '@pnpm/logger': 1001.0.0
   '@sentry/node': 8.0.0
+  '@sinclair/typebox': 0.34.49
   '@socketregistry/hyrious__bun.lockb': 1.0.19
   '@socketregistry/indent-string': 1.0.14
   '@socketregistry/is-interactive': 1.0.6
   '@socketregistry/packageurl-js': 1.4.2
   '@socketregistry/yocto-spinner': 1.0.25
   '@socketsecurity/config': 3.0.1
-  '@socketsecurity/lib': 5.21.0
+  '@socketsecurity/lib': 5.24.0
   '@socketsecurity/registry': 2.0.2
   '@socketsecurity/sdk': 4.0.1
   '@types/adm-zip': 0.5.7
