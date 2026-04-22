@@ -129,7 +129,7 @@ async function downloadAsset(config) {
     logger.groupEnd()
     logger.error(`Failed to extract ${name}: ${e.message}`)
     await logTransientErrorHelp(e)
-    return { e, name, ok: false }
+    return { error: e, name, ok: false }
   }
 }
 
