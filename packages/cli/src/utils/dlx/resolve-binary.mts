@@ -167,8 +167,7 @@ export function resolveSocketPatch(): BinaryResolution {
 
   if (!assetName) {
     throw new Error(
-      `socket-patch is not available for platform ${platformKey}. ` +
-        `Supported platforms: ${Object.keys(SOCKET_PATCH_ASSETS).join(', ')}`,
+      `socket-patch has no prebuilt binary for "${platformKey}" (supported: ${Object.keys(SOCKET_PATCH_ASSETS).join(', ')}); upgrade socket-cli, build socket-patch from source, or set SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH to point at a local build`,
     )
   }
 
@@ -246,8 +245,7 @@ export function resolveTrivy(): BinaryResolution {
     const platform = os.platform()
     const arch = os.arch()
     throw new Error(
-      `Trivy is not available for platform ${platform}-${arch}. ` +
-        'Supported platforms: darwin-arm64, darwin-x64, linux-arm64, linux-x64, win32-x64',
+      `Trivy has no prebuilt binary for "${platform}-${arch}" (supported: darwin-arm64, darwin-x64, linux-arm64, linux-x64, win32-x64); run socket-cli on a supported platform or install Trivy manually and point \`trivy\` at it on PATH`,
     )
   }
 
@@ -310,8 +308,7 @@ export function resolveTrufflehog(): BinaryResolution {
     const platform = os.platform()
     const arch = os.arch()
     throw new Error(
-      `TruffleHog is not available for platform ${platform}-${arch}. ` +
-        'Supported platforms: darwin-arm64, darwin-x64, linux-arm64, linux-x64, win32-arm64, win32-x64',
+      `TruffleHog has no prebuilt binary for "${platform}-${arch}" (supported: darwin-arm64, darwin-x64, linux-arm64, linux-x64, win32-arm64, win32-x64); run socket-cli on a supported platform or install TruffleHog manually and point \`trufflehog\` at it on PATH`,
     )
   }
 
@@ -363,8 +360,7 @@ export function resolveOpengrep(): BinaryResolution {
 
   if (!assetName) {
     throw new Error(
-      `OpenGrep is not available for platform ${platformKey}. ` +
-        `Supported platforms: ${Object.keys(OPENGREP_ASSETS).join(', ')}`,
+      `OpenGrep has no prebuilt binary for "${platformKey}" (supported: ${Object.keys(OPENGREP_ASSETS).join(', ')}); run socket-cli on a supported platform or install OpenGrep manually and point \`opengrep\` at it on PATH`,
     )
   }
 

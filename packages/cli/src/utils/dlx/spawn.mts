@@ -116,14 +116,14 @@ function validatePackageName(name: string): void {
 
   if (!validNamePattern.test(name)) {
     throw new InputError(
-      `Invalid package name "${name}". Package names must contain only lowercase letters, numbers, hyphens, underscores, dots, and optionally a scope (@org/package).`,
+      `package name "${name}" must match /^(@scope\\/)?[a-z0-9-~][a-z0-9-._~]*$/ (lowercase letters, digits, -, _, ., ~, with optional @scope/); rename the package or check for typos`,
     )
   }
 
   // Check for path traversal attempts.
   if (name.includes('..') || (name.includes('/') && !name.startsWith('@'))) {
     throw new InputError(
-      `Invalid package name "${name}". Package names cannot contain path traversal sequences.`,
+      `package name "${name}" contains path traversal characters (".." or a "/" outside of @scope/); pass a plain name like "lodash" or "@org/pkg"`,
     )
   }
 }
@@ -232,7 +232,7 @@ async function downloadGitHubReleaseBinary(
         }
       }
       throw new InputError(
-        'Timeout waiting for another process to download GitHub release',
+        `timed out waiting for another socket process to finish downloading ${owner}/${repo}@${version} (${assetName}); if no other socket process is running, remove stale lock files under ${path.dirname(binaryPath)} and retry`,
       )
     }
     throw e
@@ -267,8 +267,7 @@ async function downloadGitHubReleaseBinary(
         const entryPath = path.resolve(path.join(cacheDir, entry.entryName))
         if (!entryPath.startsWith(normalizedCacheDir)) {
           throw new InputError(
-            `Archive contains path traversal: ${entry.entryName}. ` +
-              `This may indicate a compromised release asset.`,
+            `archive entry "${entry.entryName}" resolves outside the cache dir (${normalizedCacheDir}) — this looks like a zip-slip attack; do NOT trust this release asset, report it to the upstream project, and delete ${result.binaryPath}`,
           )
         }
       }
@@ -286,8 +285,7 @@ async function downloadGitHubReleaseBinary(
           if (!resolvedTarget.startsWith(normalizedCacheDir)) {
             await fs.unlink(fullPath)
             throw new InputError(
-              `Archive contains unsafe symbolic link: ${file}. ` +
-                `This may indicate a compromised release asset.`,
+              `extracted symlink ${file} targets ${resolvedTarget} which is outside the cache dir (${normalizedCacheDir}); do NOT trust this release asset, report it to the upstream project, and delete ${cacheDir}`,
             )
           }
         }
@@ -298,19 +296,20 @@ async function downloadGitHubReleaseBinary(
       const tarPath = await whichReal('tar', { nothrow: true })
       if (!tarPath || Array.isArray(tarPath)) {
         throw new InputError(
-          'tar is required to extract GitHub release archives. Please install tar for your system.',
+          `tar is required to extract ${assetName} but was not found on PATH; install tar (e.g. \`apt install tar\`, \`brew install gnu-tar\`) and re-run`,
         )
       }
       await spawn(tarPath, ['-xzf', result.binaryPath, '-C', cacheDir], {})
     } else {
-      throw new InputError(`Unsupported archive format: ${assetName}`)
+      throw new InputError(
+        `archive format of ${assetName} is not supported (expected .zip or .tar.gz / .tgz); check the asset name in bundle-tools.json and the release's actual asset list`,
+      )
     }
 
     // Verify binary was extracted.
     if (!existsSync(binaryPath)) {
       throw new InputError(
-        `Binary ${binaryFileName} not found after extracting ${assetName}. ` +
-          `Expected at: ${binaryPath}`,
+        `archive ${assetName} extracted but ${binaryFileName} was not found inside (expected at ${binaryPath}); the release's archive layout may have changed — verify asset contents and update bundle-tools.json`,
       )
     }
 
@@ -408,7 +407,9 @@ export async function spawnCoanaDlx(
 
     // Use dlx version (resolveCoana only returns 'local' or 'dlx' types).
     if (resolution.type !== 'dlx') {
-      throw new Error('Unexpected resolution type for coana')
+      throw new Error(
+        `internal: resolveCoana returned resolution.type="${resolution.type}" (expected "dlx"); this is a resolver contract bug — re-run with --debug and report the output`,
+      )
     }
     const result = await spawnDlx(
       {
@@ -484,7 +485,9 @@ export async function spawnCdxgenDlx(
 
   // Use dlx version (resolveCdxgen only returns 'local' or 'dlx' types).
   if (resolution.type !== 'dlx') {
-    throw new Error('Unexpected resolution type for cdxgen')
+    throw new Error(
+      `internal: resolveCdxgen returned resolution.type="${resolution.type}" (expected "dlx"); this is a resolver contract bug — re-run with --debug and report the output`,
+    )
   }
   return await spawnDlx(
     resolution.details,
@@ -554,7 +557,9 @@ export async function spawnSfwDlx(
 
   // Use dlx version (resolveSfw only returns 'local' or 'dlx' types).
   if (resolution.type !== 'dlx') {
-    throw new Error('Unexpected resolution type for sfw')
+    throw new Error(
+      `internal: resolveSfw returned resolution.type="${resolution.type}" (expected "dlx"); this is a resolver contract bug — re-run with --debug and report the output`,
+    )
   }
   return await spawnDlx(
     resolution.details,
@@ -675,21 +680,25 @@ async function spawnToolVfs(
 ): Promise<DlxSpawnResult> {
   if (!areExternalToolsAvailable()) {
     throw new Error(
-      `Cannot spawn ${tool} from VFS - tools not available in SEA mode`,
+      `cannot spawn ${tool} from VFS: external tools were not bundled into this SEA binary; rebuild the SEA with INLINED_SOCKET_CLI_INCLUDE_EXTERNAL_TOOLS=1 or run the non-SEA CLI`,
     )
   }
 
   // Extract tools from VFS (returns paths directly).
   const toolPaths = await extractExternalTools()
   if (!toolPaths) {
-    throw new Error(`Failed to extract ${tool} from VFS`)
+    throw new Error(
+      `failed to extract ${tool} from VFS (extractExternalTools returned null); the embedded tool archive may be corrupt — rebuild the SEA binary`,
+    )
   }
 
   // Get tool path.
   const toolPath = toolPaths[tool]
 
   if (!toolPath) {
-    throw new Error(`Tool path not found for ${tool}`)
+    throw new Error(
+      `VFS extraction succeeded but ${tool} was not in the output map (got: ${Object.keys(toolPaths).join(', ') || 'empty'}); the SEA bundle is missing ${tool} — rebuild with it included`,
+    )
   }
 
   const { env: spawnEnv, ...dlxOptions } = {
@@ -938,7 +947,9 @@ function getPythonStandaloneInfo(): { assetName: string; url: string } {
     platformTriple =
       arch === 'arm64' ? 'aarch64-pc-windows-msvc' : 'x86_64-pc-windows-msvc'
   } else {
-    throw new InputError(`Unsupported platform: ${platform}`)
+    throw new InputError(
+      `python-build-standalone does not ship a prebuilt for os.platform()="${platform}" (supported: darwin, linux, win32); install Python manually and point socket at it via PATH`,
+    )
   }
 
   // Asset name format matches checksums in bundle-tools.json.
@@ -1000,7 +1011,7 @@ async function downloadPython(pythonDir: string): Promise<void> {
   const tarPath = await whichReal('tar', { nothrow: true })
   if (!tarPath || Array.isArray(tarPath)) {
     throw new InputError(
-      'tar is required to extract Python. Please install tar for your system.',
+      `tar is required to extract the Python standalone archive but was not found on PATH; install tar (e.g. \`apt install tar\`, \`brew install gnu-tar\`) and re-run`,
     )
   }
   await spawn(tarPath, ['-xzf', result.binaryPath, '-C', pythonDir], {})
@@ -1046,8 +1057,7 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
 
   if (retryCount >= MAX_RETRIES) {
     throw new InputError(
-      `Failed to acquire Python installation lock after ${MAX_RETRIES} retries. ` +
-        'Please check for filesystem issues or competing processes.',
+      `could not acquire the Python install lock after ${MAX_RETRIES} retries at ${lockFile}; another socket process may be stuck, or the lock file is stale — remove it manually and retry, or check that ${pythonDir} is writable`,
     )
   }
 
@@ -1107,7 +1117,7 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
           }
         }
         throw new InputError(
-          'Timeout waiting for Python download by another process',
+          `timed out after 60s waiting for another socket process to finish downloading Python to ${pythonDir}; if no other socket process is running, remove ${lockFile} and retry`,
         )
       }
       throw e
@@ -1118,7 +1128,7 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
 
       if (!existsSync(pythonBin)) {
         throw new InputError(
-          `Python binary not found after extraction: ${pythonBin}`,
+          `Python archive extracted but ${pythonBin} does not exist; the standalone archive layout may have changed — check the asset contents under ${pythonDir} and update the bin-path logic in spawn.mts`,
         )
       }
 
@@ -1218,7 +1228,9 @@ async function downloadPyPiWheel(
   try {
     const response = await socketHttpRequest(pypiUrl)
     if (!response.ok) {
-      throw new Error(`PyPI API returned ${response.status}`)
+      throw new Error(
+        `PyPI returned HTTP ${response.status} for ${pypiUrl} (expected 200); check the package name and version, or retry if the registry is rate-limiting`,
+      )
     }
     const data = response.json() as {
       urls?: Array<{ filename: string; url: string }>
@@ -1235,14 +1247,13 @@ async function downloadPyPiWheel(
     // If we can't fetch from API, construct URL directly (may not work for all packages).
     // This is a fallback; the API approach is more reliable.
     throw new InputError(
-      `Failed to fetch PyPI package info for ${packageName}@${version}: ${getErrorCause(e)}`,
+      `could not fetch PyPI metadata for ${packageName}==${version} from ${pypiUrl} (${getErrorCause(e)}); check your network or proxy settings, or try again if PyPI is rate-limiting`,
     )
   }
 
   if (!wheelUrl) {
     throw new InputError(
-      `No wheel found for ${packageName}@${version} on PyPI. ` +
-        'This package may only be available as a source distribution.',
+      `${packageName}==${version} has no py3-none-any wheel on PyPI (only sdist available); pin to a version that ships a wheel or install from source manually`,
     )
   }
 
@@ -1275,8 +1286,7 @@ export async function ensureSocketPyCli(
 
   if (retryCount >= MAX_RETRIES) {
     throw new InputError(
-      `Failed to acquire Socket Python CLI installation lock after ${MAX_RETRIES} retries. ` +
-        'Please check for filesystem issues or competing processes.',
+      `could not acquire the Socket Python CLI install lock after ${MAX_RETRIES} retries; another socket process may be stuck, or the lock file is stale — check for stale lock files under the Python cache dir and retry`,
     )
   }
 
@@ -1386,7 +1396,7 @@ export async function ensureSocketPyCli(
         })
       } else {
         throw new InputError(
-          `Failed to download verified socketsecurity wheel for version ${pyCliVersion}`,
+          `could not download the verified socketsecurity==${pyCliVersion} wheel (downloadPyPiWheel returned null — likely a checksum mismatch or missing wheel asset); re-run with --debug for details, or bump the version in bundle-tools.json if the checksum needs refreshing`,
         )
       }
     } else {
@@ -1454,7 +1464,7 @@ export async function spawnSocketPyCliVfs(
         })
       } else {
         throw new Error(
-          `Failed to download verified socketsecurity wheel for version ${pyCliVersion}`,
+          `failed to download socketsecurity==${pyCliVersion} wheel from PyPI (downloadPyPiWheel returned null — likely a checksum mismatch or missing py3-none-any wheel); re-run with --debug for details`,
         )
       }
     } else {
@@ -1673,7 +1683,9 @@ async function spawnTrivyDlx(
   const resolution = resolveTrivy()
 
   if (resolution.type !== 'github-release') {
-    throw new Error('Unexpected resolution type for trivy')
+    throw new Error(
+      `internal: resolveTrivy returned resolution.type="${resolution.type}" (expected "github-release"); this is a resolver contract bug — re-run with --debug and report the output`,
+    )
   }
 
   const { env: spawnEnv, ...dlxOptions } = {
@@ -1735,7 +1747,9 @@ async function spawnTrufflehogDlx(
   const resolution = resolveTrufflehog()
 
   if (resolution.type !== 'github-release') {
-    throw new Error('Unexpected resolution type for trufflehog')
+    throw new Error(
+      `internal: resolveTrufflehog returned resolution.type="${resolution.type}" (expected "github-release"); this is a resolver contract bug — re-run with --debug and report the output`,
+    )
   }
 
   const { env: spawnEnv, ...dlxOptions } = {
@@ -1797,7 +1811,9 @@ async function spawnOpengrepDlx(
   const resolution = resolveOpengrep()
 
   if (resolution.type !== 'github-release') {
-    throw new Error('Unexpected resolution type for opengrep')
+    throw new Error(
+      `internal: resolveOpengrep returned resolution.type="${resolution.type}" (expected "github-release"); this is a resolver contract bug — re-run with --debug and report the output`,
+    )
   }
 
   const { env: spawnEnv, ...dlxOptions } = {

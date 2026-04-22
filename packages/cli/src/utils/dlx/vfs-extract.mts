@@ -273,7 +273,7 @@ async function extractTool(tool: ExternalTool): Promise<string> {
 
   if (!processWithSmol.smol?.mount) {
     throw new Error(
-      'process.smol.mount not available - not in node-smol SEA mode',
+      `process.smol.mount is undefined — extractTool("${tool}") requires a node-smol SEA build; this code path should only run inside the SEA. Check isSeaBinary() / areExternalToolsAvailable() upstream`,
     )
   }
 
@@ -340,12 +340,16 @@ async function extractTool(tool: ExternalTool): Promise<string> {
     }
 
     if (!existsSync(extractedPath)) {
-      throw new Error(`Extracted tool not found at ${extractedPath}`)
+      throw new Error(
+        `process.smol.mount returned but ${extractedPath} does not exist; the VFS layout for ${tool} may have changed — check the SEA build config and the tool's expected path`,
+      )
     }
 
     return extractedPath
   } catch (e) {
-    throw new Error(`Failed to extract ${tool} from VFS: ${e}`)
+    throw new Error(
+      `failed to extract ${tool} from the SEA VFS (${(e as Error).message}); the embedded tool archive may be corrupt — rebuild the SEA binary`,
+    )
   }
 }
 
@@ -550,7 +554,7 @@ export async function extractExternalTools(
         }
       }
       throw new Error(
-        'Timeout waiting for another process to extract external tools',
+        `timed out waiting for another socket process to finish extracting external tools from the SEA VFS; if no other socket process is running, remove any stale lock files under the node-smol base dir and retry`,
       )
     }
     throw e
@@ -641,7 +645,7 @@ export async function extractExternalTools(
     if (Object.keys(toolPaths).length !== EXTERNAL_TOOLS.length) {
       const missingTools = EXTERNAL_TOOLS.filter(t => !toolPaths[t])
       throw new Error(
-        `Failed to extract all external tools. Missing: ${missingTools.join(', ')}`,
+        `SEA VFS extraction returned ${Object.keys(toolPaths).length}/${EXTERNAL_TOOLS.length} tools (missing: ${missingTools.join(', ')}); the SEA bundle is incomplete — rebuild with all external tools included`,
       )
     }
 
