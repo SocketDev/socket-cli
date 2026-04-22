@@ -28,6 +28,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { pipeline } from 'node:stream/promises'
 
+import { safeDelete } from '@socketsecurity/lib/fs'
+
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const packageRoot = path.join(__dirname, '..')
@@ -135,7 +137,7 @@ async function fetchGitHubReleaseChecksums(
       const checksums = parseChecksums(content)
 
       // Clean up.
-      await fs.rm(tempDir, { recursive: true })
+      await safeDelete(tempDir)
 
       console.log(
         `  Parsed ${Object.keys(checksums).length} checksums from checksums.txt`,
@@ -143,7 +145,7 @@ async function fetchGitHubReleaseChecksums(
       return checksums
     } catch (error) {
       console.log(`  Failed to download checksums.txt: ${error.message}`)
-      await fs.rm(tempDir, { recursive: true }).catch(() => {})
+      await safeDelete(tempDir).catch(() => {})
       // Fall through to download assets.
     }
   }
@@ -183,7 +185,7 @@ async function fetchGitHubReleaseChecksums(
       await fs.unlink(assetPath)
     }
   } finally {
-    await fs.rm(tempDir, { recursive: true }).catch(() => {})
+    await safeDelete(tempDir).catch(() => {})
   }
 
   return checksums
