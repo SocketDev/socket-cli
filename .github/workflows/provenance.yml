@@ -16,11 +16,6 @@ on:
         options:
           - '0'
           - '1'
-      publish-without-sfw:
-        description: 'Publish directly to npm, bypassing Socket firewall shims'
-        required: false
-        default: false
-        type: boolean
 
 permissions:
   contents: read
@@ -205,19 +200,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --loglevel error
 
-      - name: Strip sfw shims for publishing
-        if: inputs.publish-without-sfw == true
-        run: |
-          echo "Bypassing Socket firewall shims for publishing"
-          # Rename shim files so real binaries resolve from PATH.
-          # Writing PATH to GITHUB_ENV doesn't work because GITHUB_PATH
-          # entries are prepended by the runner after GITHUB_ENV is applied.
-          if [ -n "$SFW_SHIM_DIR" ] && [ -d "$SFW_SHIM_DIR" ]; then
-            for SHIM in "$SFW_SHIM_DIR"/*; do
-              [ -f "$SHIM" ] && mv "$SHIM" "${SHIM}.disabled"
-            done
-          fi
-
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
       - run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
         continue-on-error: true
@@ -243,11 +225,3 @@ jobs:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # zizmor: ignore[secrets-outside-env]
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - name: Restore sfw shims after publishing
-        if: inputs.publish-without-sfw == true && always()
-        run: |
-          if [ -n "$SFW_SHIM_DIR" ] && [ -d "$SFW_SHIM_DIR" ]; then
-            for SHIM in "$SFW_SHIM_DIR"/*.disabled; do
-              [ -f "$SHIM" ] && mv "$SHIM" "${SHIM%.disabled}"
-            done
-          fi
