@@ -103,7 +103,9 @@ const NetworkUtils = {
     timeoutMs = UPDATE_NOTIFIER_TIMEOUT,
   ): Promise<{ version?: string }> {
     if (!isNonEmptyString(url)) {
-      throw new Error('Invalid URL provided to fetch')
+      throw new Error(
+        `UpdateChecker.fetch(url) requires a non-empty string (got: ${typeof url === 'string' ? '""' : typeof url}); pass a valid registry URL like https://registry.npmjs.org/<package>`,
+      )
     }
 
     const { authInfo } = { __proto__: null, ...options } as FetchOptions
@@ -205,7 +207,9 @@ const NetworkUtils = {
     options: GetLatestVersionOptions = {},
   ): Promise<string | undefined> {
     if (!isNonEmptyString(name)) {
-      throw new Error('Package name must be a non-empty string')
+      throw new Error(
+        `getLatestVersion(name) requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); pass an npm package name like "socket" or "@socketsecurity/cli"`,
+      )
     }
 
     const { authInfo, registryUrl = NPM_REGISTRY_URL } = {
@@ -214,7 +218,9 @@ const NetworkUtils = {
     } as GetLatestVersionOptions
 
     if (!isNonEmptyString(registryUrl)) {
-      throw new Error('Registry URL must be a non-empty string')
+      throw new Error(
+        `getLatestVersion options.registryUrl must be a non-empty string (got: ${typeof registryUrl === 'string' ? '""' : typeof registryUrl}); omit it to default to ${NPM_REGISTRY_URL}`,
+      )
     }
 
     let normalizedRegistryUrl: string
@@ -222,7 +228,9 @@ const NetworkUtils = {
       const url = new URL(registryUrl)
       normalizedRegistryUrl = url.toString()
     } catch {
-      throw new Error(`Invalid registry URL: ${registryUrl}`)
+      throw new Error(
+        `options.registryUrl "${registryUrl}" is not a valid URL (new URL() threw); pass an absolute http(s) URL like ${NPM_REGISTRY_URL}`,
+      )
     }
 
     const maybeSlash = normalizedRegistryUrl.endsWith('/') ? '' : '/'
@@ -241,7 +249,9 @@ const NetworkUtils = {
         )
 
         if (!json || !isNonEmptyString(json.version)) {
-          throw new Error('Invalid version data in registry response')
+          throw new Error(
+            `${latestUrl} responded without a .version string (got: ${JSON.stringify(json)?.slice(0, 200) ?? 'null'}); the registry may be misconfigured or ${name} may not exist — verify the URL in a browser`,
+          )
         }
 
         return json.version
@@ -284,11 +294,15 @@ async function checkForUpdates(
   } as UpdateCheckOptions
 
   if (!isNonEmptyString(name)) {
-    throw new Error('Package name must be a non-empty string')
+    throw new Error(
+      `checkForUpdates options.name requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); pass an npm package name like "socket" or "@socketsecurity/cli"`,
+    )
   }
 
   if (!isNonEmptyString(version)) {
-    throw new Error('Current version must be a non-empty string')
+    throw new Error(
+      `checkForUpdates options.version requires a non-empty string (got: ${typeof version === 'string' ? '""' : typeof version}); pass the currently-installed semver like "1.2.3"`,
+    )
   }
 
   try {
@@ -298,7 +312,9 @@ async function checkForUpdates(
     })
 
     if (!isNonEmptyString(latest)) {
-      throw new Error('No version information available from registry')
+      throw new Error(
+        `registry returned no latest version for ${name} (getLatestVersion resolved to ${JSON.stringify(latest)}); check that ${name} exists on ${registryUrl || NPM_REGISTRY_URL}`,
+      )
     }
 
     const updateAvailable = isUpdateAvailable(version, latest)

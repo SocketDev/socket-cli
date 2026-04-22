@@ -92,7 +92,9 @@ describe('update manager', () => {
 
         expect(result).toBe(false)
         expect(mockLogger.warn).toHaveBeenCalledWith(
-          'Package name must be a non-empty string',
+          expect.stringContaining(
+            'checkForUpdates options.name requires a non-empty string',
+          ),
         )
       })
 
@@ -104,7 +106,9 @@ describe('update manager', () => {
 
         expect(result).toBe(false)
         expect(mockLogger.warn).toHaveBeenCalledWith(
-          'Current version must be a non-empty string',
+          expect.stringContaining(
+            'checkForUpdates options.version requires a non-empty string',
+          ),
         )
       })
 
@@ -117,7 +121,9 @@ describe('update manager', () => {
 
         expect(result).toBe(false)
         expect(mockLogger.warn).toHaveBeenCalledWith(
-          'TTL must be a non-negative number',
+          expect.stringContaining(
+            'checkForUpdates options.ttl must be >= 0 (saw: -1)',
+          ),
         )
       })
 

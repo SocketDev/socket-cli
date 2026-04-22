@@ -122,7 +122,7 @@ describe('update/checker', () => {
   describe('NetworkUtils.fetch', () => {
     it('throws error for empty URL', async () => {
       await expect(NetworkUtils.fetch('')).rejects.toThrow(
-        'Invalid URL provided to fetch',
+        /UpdateChecker\.fetch\(url\) requires a non-empty string/,
       )
     })
 
@@ -264,14 +264,16 @@ describe('update/checker', () => {
   describe('NetworkUtils.getLatestVersion', () => {
     it('throws error for empty package name', async () => {
       await expect(NetworkUtils.getLatestVersion('')).rejects.toThrow(
-        'Package name must be a non-empty string',
+        /getLatestVersion\(name\) requires a non-empty string/,
       )
     })
 
     it('throws error for invalid registry URL', async () => {
       await expect(
         NetworkUtils.getLatestVersion('test', { registryUrl: 'not-a-url' }),
-      ).rejects.toThrow('Invalid registry URL: not-a-url')
+      ).rejects.toThrow(
+        /options\.registryUrl "not-a-url" is not a valid URL/,
+      )
     })
 
     it('returns latest version on success', async () => {
@@ -334,7 +336,7 @@ describe('update/checker', () => {
 
       await expect(
         NetworkUtils.getLatestVersion('test-package'),
-      ).rejects.toThrow('Invalid version data in registry response')
+      ).rejects.toThrow(/responded without a \.version string/)
     })
   })
 
@@ -342,13 +344,17 @@ describe('update/checker', () => {
     it('throws error for empty package name', async () => {
       await expect(
         checkForUpdates({ name: '', version: '1.0.0' }),
-      ).rejects.toThrow('Package name must be a non-empty string')
+      ).rejects.toThrow(
+        /checkForUpdates options\.name requires a non-empty string/,
+      )
     })
 
     it('throws error for empty version', async () => {
       await expect(
         checkForUpdates({ name: 'test', version: '' }),
-      ).rejects.toThrow('Current version must be a non-empty string')
+      ).rejects.toThrow(
+        /checkForUpdates options\.version requires a non-empty string/,
+      )
     })
 
     it('returns update check result when update is available', async () => {
