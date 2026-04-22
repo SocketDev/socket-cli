@@ -16,6 +16,7 @@ import { createHash } from 'node:crypto'
 import { homedir } from 'node:os'
 import path from 'node:path'
 
+import { joinAnd } from '@socketsecurity/lib/arrays'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 import { spawn } from '@socketsecurity/lib/spawn'
@@ -176,7 +177,7 @@ export async function extractBasicsTools(
     const missingTools = tools.filter(t => !extractedPaths[t])
     if (missingTools.length) {
       throw new Error(
-        `socket-basics VFS extraction returned ${Object.keys(extractedPaths).length}/${tools.length} tools (missing: ${missingTools.join(', ')}); the SEA bundle is incomplete — rebuild with all basics tools included`,
+        `socket-basics VFS extraction returned ${Object.keys(extractedPaths).length}/${tools.length} tools (missing: ${joinAnd(missingTools)}); the SEA bundle is incomplete — rebuild with all basics tools included`,
       )
     }
 
