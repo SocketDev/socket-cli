@@ -222,8 +222,11 @@ export class CommandRegistry implements ICommandRegistry {
 
     const dispatch = async (i: number): Promise<void> => {
       if (i <= index) {
+        // Each middleware[k] receives a next() closure that calls dispatch(k + 1);
+        // if that closure was invoked twice, dispatch(i) is re-entered and the
+        // offender is the middleware that held the closure — position i - 1.
         throw new Error(
-          `middleware at index ${index} called next() more than once (each middleware may invoke next() at most once); remove the extra next() call or split the middleware`,
+          `middleware at index ${i - 1} called next() more than once (each middleware may invoke next() at most once); remove the extra next() call or split the middleware`,
         )
       }
 

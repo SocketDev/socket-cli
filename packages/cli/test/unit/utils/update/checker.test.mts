@@ -122,7 +122,7 @@ describe('update/checker', () => {
   describe('NetworkUtils.fetch', () => {
     it('throws error for empty URL', async () => {
       await expect(NetworkUtils.fetch('')).rejects.toThrow(
-        /UpdateChecker\.fetch\(url\) requires a non-empty string/,
+        /NetworkUtils\.fetch\(url\) requires a non-empty string/,
       )
     })
 

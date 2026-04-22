@@ -104,7 +104,7 @@ const NetworkUtils = {
   ): Promise<{ version?: string }> {
     if (!isNonEmptyString(url)) {
       throw new Error(
-        `UpdateChecker.fetch(url) requires a non-empty string (got: ${typeof url === 'string' ? '""' : typeof url}); pass a valid registry URL like https://registry.npmjs.org/<package>`,
+        `NetworkUtils.fetch(url) requires a non-empty string (got: ${typeof url === 'string' ? '""' : typeof url}); pass a valid registry URL like https://registry.npmjs.org/<package>`,
       )
     }
 
