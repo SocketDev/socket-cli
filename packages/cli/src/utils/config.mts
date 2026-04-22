@@ -140,7 +140,9 @@ function getConfigValues(retryCount = 0): LocalConfig {
             const decoded = Buffer.from(rawString, 'base64').toString('utf8')
             // Check for invalid UTF-8 sequences (replacement character).
             if (decoded.includes('\ufffd')) {
-              throw new Error('Invalid UTF-8 in base64-encoded config')
+              throw new Error(
+                `SOCKET_CLI_CONFIG contains invalid UTF-8 after base64-decode (replacement-character in output); the env var may have been truncated or double-encoded — re-export it with \`echo '{...}' | base64\``,
+              )
             }
             const parsed = JSON.parse(decoded)
             // Only copy supported config keys to prevent prototype pollution.

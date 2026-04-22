@@ -55,7 +55,9 @@ async function getGitPath(): Promise<string> {
   if (!_gitPath) {
     const result = await whichReal('git', { nothrow: true })
     if (!result || Array.isArray(result)) {
-      throw new Error('git not found in PATH')
+      throw new Error(
+        `git executable not found on PATH (whichReal returned ${Array.isArray(result) ? 'multiple matches' : 'null'}); install git and ensure it is on PATH, or set SOCKET_CLI_GIT_PATH to point at a specific binary`,
+      )
     }
     _gitPath = result
   }

@@ -176,7 +176,7 @@ export async function extractBasicsTools(
     const missingTools = tools.filter(t => !extractedPaths[t])
     if (missingTools.length) {
       throw new Error(
-        `Failed to extract all basics tools. Missing: ${missingTools.join(', ')}`,
+        `socket-basics VFS extraction returned ${Object.keys(extractedPaths).length}/${tools.length} tools (missing: ${missingTools.join(', ')}); the SEA bundle is incomplete — rebuild with all basics tools included`,
       )
     }
 
@@ -186,7 +186,9 @@ export async function extractBasicsTools(
     const pythonExe = isPlatWin ? 'python3.exe' : 'python3'
     const pythonDir = extractedPaths['python']
     if (!pythonDir) {
-      throw new Error('Python extraction path not found')
+      throw new Error(
+        `extractedPaths.python is undefined after VFS extraction (expected a directory path); the basics SEA bundle is missing Python — rebuild the SEA binary`,
+      )
     }
     const pythonPath = normalizePath(path.join(pythonDir, 'bin', pythonExe))
 
@@ -197,7 +199,7 @@ export async function extractBasicsTools(
 
     if (!validateResult || validateResult.code !== 0) {
       throw new Error(
-        `Python validation failed: ${validateResult?.stderr || 'Unable to execute Python'}`,
+        `extracted Python at ${pythonPath} failed to run with exit code ${validateResult?.code ?? 'null'} (stderr: ${validateResult?.stderr || '<none>'}); the extracted binary may be corrupt or missing a shared lib — rebuild the SEA binary`,
       )
     }
 
@@ -218,7 +220,7 @@ export async function extractBasicsTools(
 
       if (!toolValidateResult || toolValidateResult.code !== 0) {
         throw new Error(
-          `${tool} validation failed: ${toolValidateResult?.stderr || `Unable to execute ${tool}`}`,
+          `extracted ${tool} at ${toolPath} failed to run with exit code ${toolValidateResult?.code ?? 'null'} (stderr: ${toolValidateResult?.stderr || '<none>'}); the extracted binary may be corrupt or missing a shared lib — rebuild the SEA binary`,
         )
       }
 

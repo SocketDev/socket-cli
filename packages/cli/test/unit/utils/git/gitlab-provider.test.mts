@@ -72,7 +72,7 @@ describe('git/gitlab-provider', () => {
     it('throws error when no token available', () => {
       delete process.env['GITLAB_TOKEN']
       expect(() => new GitLabProvider()).toThrow(
-        'GitLab token not found. Set GITLAB_TOKEN environment variable.',
+        /GitLab access requires a token but process\.env\.GITLAB_TOKEN is not set/,
       )
     })
   })
@@ -193,7 +193,9 @@ describe('git/gitlab-provider', () => {
           retries: 2,
           title: 'Test',
         }),
-      ).rejects.toThrow('Failed to create merge request after 2 attempts')
+      ).rejects.toThrow(
+        /GitLab API rejected createMergeRequest for owner\/repo .*after 2 retries/,
+      )
     })
 
     it('does not retry on 400 errors', async () => {
@@ -212,7 +214,9 @@ describe('git/gitlab-provider', () => {
           retries: 3,
           title: 'Test',
         }),
-      ).rejects.toThrow('Failed to create merge request after 3 attempts')
+      ).rejects.toThrow(
+        /GitLab API rejected createMergeRequest for owner\/repo .*after 3 retries/,
+      )
 
       expect(mockCreate).toHaveBeenCalledTimes(1)
     })

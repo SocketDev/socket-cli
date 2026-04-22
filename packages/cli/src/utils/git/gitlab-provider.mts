@@ -97,7 +97,7 @@ export class GitLabProvider implements PrProvider {
     }
 
     throw new Error(
-      `Failed to create merge request after ${retries} attempts: ${owner}/${repo}#${head}`,
+      `GitLab API rejected createMergeRequest for ${owner}/${repo} (head="${head}") after ${retries} retries with exponential backoff; check GL_TOKEN permissions (needs api scope), the target branch exists, and GitLab is reachable`,
     )
   }
 
@@ -326,6 +326,6 @@ function getGitLabToken(): string {
   }
 
   throw new Error(
-    'GitLab token not found. Set GITLAB_TOKEN environment variable.',
+    `GitLab access requires a token but process.env.GITLAB_TOKEN is not set; create a personal access token with the \`api\` scope at https://gitlab.com/-/user_settings/personal_access_tokens and export GITLAB_TOKEN=<token>`,
   )
 }

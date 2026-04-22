@@ -27,8 +27,7 @@ function getIocraft(): typeof iocraft {
       iocraftInstance = loaded.default || loaded
     } catch (e) {
       throw new Error(
-        `Failed to load iocraft native module: ${e}\n` +
-          `Make sure @socketaddon/iocraft is installed and your platform is supported.`,
+        `could not load @socketaddon/iocraft native module (${(e as Error).message}); reinstall socket-cli to pull the prebuilt for your platform, or check that your platform (${process.platform}-${process.arch}) has a published prebuilt`,
       )
     }
   }

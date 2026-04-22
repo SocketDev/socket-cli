@@ -55,7 +55,7 @@ export function findNpmDirPathSync(npmBinPath: string): string | undefined {
   while (true) {
     if (iterations >= MAX_ITERATIONS) {
       throw new Error(
-        `path traversal exceeded maximum iterations of ${MAX_ITERATIONS}`,
+        `npm path resolution walked ${MAX_ITERATIONS} directories without finding lib/node_modules/npm starting from "${npmBinPath}" (current: "${thePath}"); check for a circular symlink or corrupt node install`,
       )
     }
     iterations += 1

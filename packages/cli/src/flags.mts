@@ -64,12 +64,12 @@ function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
     // Validate numeric flags (should be guaranteed by meow type='number', but defensive).
     if (Number.isNaN(maxOldSpaceSize) || maxOldSpaceSize < 0) {
       throw new Error(
-        `Invalid value for --max-old-space-size: ${cli.flags['maxOldSpaceSize']}`,
+        `--max-old-space-size must be a non-negative integer in megabytes (saw: "${cli.flags['maxOldSpaceSize']}"); pass a whole number like --max-old-space-size=4096 for 4GB`,
       )
     }
     if (Number.isNaN(maxSemiSpaceSize) || maxSemiSpaceSize < 0) {
       throw new Error(
-        `Invalid value for --max-semi-space-size: ${cli.flags['maxSemiSpaceSize']}`,
+        `--max-semi-space-size must be a non-negative integer in megabytes (saw: "${cli.flags['maxSemiSpaceSize']}"); pass a whole number like --max-semi-space-size=128`,
       )
     }
 
