@@ -28,9 +28,9 @@ export function parseChecksums(
   }
   try {
     return JSON.parse(jsonString) as Checksums
-  } catch {
+  } catch (e) {
     throw new Error(
-      `Failed to parse ${toolName} checksums. This indicates a build configuration error.`,
+      `INLINED_${toolName.toUpperCase()}_CHECKSUMS is not valid JSON at runtime (JSON.parse threw: ${(e as Error).message}); the build-time inline step produced corrupt data — rebuild socket-cli (\`pnpm run build:cli\`) and check bundle-tools.json tools.${toolName}.checksums`,
     )
   }
 }
@@ -62,8 +62,7 @@ export function requireChecksum(
   const sha256 = checksums[assetName]
   if (!sha256) {
     throw new Error(
-      `Missing SHA-256 checksum for ${toolName} asset: ${assetName}. ` +
-        'This is a security requirement. Please update bundle-tools.json with the correct checksum.',
+      `bundle-tools.json tools.${toolName}.checksums has no entry for asset "${assetName}" (available: ${Object.keys(checksums).join(', ') || '<empty>'}); add the SHA-256 for this asset via \`pnpm run sync-checksums\` — do NOT ship without verification`,
     )
   }
   return sha256
