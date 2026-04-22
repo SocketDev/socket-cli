@@ -162,6 +162,29 @@ Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). User-facing onl
 - Error handling: `InputError`/`AuthError` from `src/utils/errors.mts`; prefer `CResult<T>`; avoid `process.exit(1)`
 - GitHub API: Octokit from `src/utils/github.mts`, not raw fetch
 
+### Error Messages
+
+Errors are a UX surface. Every message must let the reader fix the problem without reading the source. Four ingredients, in order:
+
+1. **What**: the rule that was violated (the contract, not the symptom)
+2. **Where**: the exact flag, file, key, line, or record — never "somewhere in config"
+3. **Saw vs. wanted**: the offending value and the allowed shape/set
+4. **Fix**: one concrete action to resolve it
+
+- Imperative voice (`pass --limit=50`), not passive (`--limit was wrong`)
+- Never say "invalid" without what made it invalid. `Invalid ecosystem: "foo"` is a symptom; `--reach-ecosystems must be one of: npm, pypi, maven (saw: "foo")` is a rule
+- If two records collide, name both — not just the second one found
+- Suggest, don't auto-correct. An error that silently repairs state hides the bug in the next run
+
+**Examples:**
+
+- ✅ `throw new InputError('--pull-request must be a non-negative integer (saw: "abc"); pass a number like --pull-request=42')`
+- ✅ `` throw new InputError(`No .socket directory found in ${cwd}; run \`socket init\` to create one`) ``
+- ✅ `throw new AuthError('Socket API rejected the token (401); run `socket login` or set SOCKET_CLI_API_TOKEN')`
+- ❌ `throw new InputError('Invalid value for --limit: ${limit}')` (symptom, no rule, no fix)
+- ❌ `throw new Error('Authentication failed')` (no where, no fix, wrong error type)
+- ❌ `logger.error('Error occurred'); return` (doesn't set exit code)
+
 ### Command Pattern
 
 - Simple (<200 LOC, no subcommands): single `cmd-*.mts`
