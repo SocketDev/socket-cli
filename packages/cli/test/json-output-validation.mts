@@ -41,10 +41,18 @@ export function validateSocketJson(output: string, exitCode: number) {
     }
     return {
       ok: false,
-      message: parsed.message || parsed.error || 'Unknown error',
+      message:
+        parsed.message ||
+        parsed.error ||
+        `command exited with code ${exitCode} but returned JSON had no .message or .error field`,
     }
-  } catch (_e) {
+  } catch (e) {
     // If not valid JSON, return error.
-    return { ok: false, message: 'Invalid JSON output' }
+    const preview =
+      output.length > 200 ? `${output.slice(0, 200)}...` : output
+    return {
+      ok: false,
+      message: `command output is not valid JSON (JSON.parse: ${(e as Error).message}); got: ${preview}`,
+    }
   }
 }
