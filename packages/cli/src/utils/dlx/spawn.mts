@@ -1055,15 +1055,15 @@ export async function ensurePython(): Promise<string> {
 export async function ensurePythonDlx(retryCount = 0): Promise<string> {
   const MAX_RETRIES = 3
 
+  const pythonDir = getPythonCachePath()
+  const pythonBin = getPythonBinPath(pythonDir)
+  const lockFile = path.join(pythonDir, '.downloading')
+
   if (retryCount >= MAX_RETRIES) {
     throw new InputError(
       `could not acquire the Python install lock after ${MAX_RETRIES} retries at ${lockFile}; another socket process may be stuck, or the lock file is stale — remove it manually and retry, or check that ${pythonDir} is writable`,
     )
   }
-
-  const pythonDir = getPythonCachePath()
-  const pythonBin = getPythonBinPath(pythonDir)
-  const lockFile = path.join(pythonDir, '.downloading')
 
   if (!existsSync(pythonBin)) {
     await safeMkdir(pythonDir, { recursive: true })
