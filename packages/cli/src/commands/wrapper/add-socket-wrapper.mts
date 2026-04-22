@@ -14,7 +14,7 @@ export async function addSocketWrapper(file: string): Promise<void> {
     )
   } catch (e) {
     throw new InputError(
-      `failed to append socket aliases to ${file} (${(e as Error).message}); check that the file exists and is writable`,
+      `failed to append socket aliases to ${file} (${e instanceof Error ? e.message : String(e)}); check that the file exists and is writable`,
     )
   }
   logger.success(
