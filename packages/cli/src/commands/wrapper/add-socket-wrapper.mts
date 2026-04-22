@@ -2,7 +2,7 @@ import { promises as fs } from 'node:fs'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import { InputError } from '../../utils/error/errors.mts'
+import { getErrorCause, InputError } from '../../utils/error/errors.mts'
 
 const logger = getDefaultLogger()
 
@@ -14,7 +14,7 @@ export async function addSocketWrapper(file: string): Promise<void> {
     )
   } catch (e) {
     throw new InputError(
-      `failed to append socket aliases to ${file} (${e instanceof Error ? e.message : String(e)}); check that the file exists and is writable`,
+      `failed to append socket aliases to ${file} (${getErrorCause(e)}); check that the file exists and is writable`,
     )
   }
   logger.success(
