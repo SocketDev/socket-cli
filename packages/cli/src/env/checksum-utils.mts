@@ -6,6 +6,8 @@
  * This module provides shared parsing and validation logic.
  */
 
+import { joinAnd } from '@socketsecurity/lib/arrays'
+
 export type Checksums = Record<string, string>
 
 /**
@@ -62,7 +64,7 @@ export function requireChecksum(
   const sha256 = checksums[assetName]
   if (!sha256) {
     throw new Error(
-      `${toolName} has no SHA-256 checksum for asset "${assetName}" (known assets: ${Object.keys(checksums).join(', ') || '<empty>'}); add it to the matching entry in bundle-tools.json via \`pnpm run sync-checksums\` — do NOT ship without verification`,
+      `${toolName} has no SHA-256 checksum for asset "${assetName}" (known assets: ${joinAnd(Object.keys(checksums)) || '<empty>'}); add it to the matching entry in bundle-tools.json via \`pnpm run sync-checksums\` — do NOT ship without verification`,
     )
   }
   return sha256

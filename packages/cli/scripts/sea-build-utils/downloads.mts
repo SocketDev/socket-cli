@@ -16,6 +16,7 @@ import AdmZip from 'adm-zip'
 import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
 import { downloadReleaseAsset } from 'build-infra/lib/github-releases'
 
+import { joinAnd } from '@socketsecurity/lib/arrays'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { httpDownload, httpRequest } from '@socketsecurity/lib/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
@@ -332,7 +333,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
 
     if (!sha256) {
       throw new Error(
-        `bundle-tools.json tools.${toolName}.checksums has no entry for "${assetName}" (seen: ${Object.keys(toolConfig?.checksums ?? {}).join(', ') || '<empty>'}); run \`pnpm run sync-checksums\` to populate — builds must verify every external download`,
+        `bundle-tools.json tools.${toolName}.checksums has no entry for "${assetName}" (seen: ${joinAnd(Object.keys(toolConfig?.checksums ?? {})) || '<empty>'}); run \`pnpm run sync-checksums\` to populate — builds must verify every external download`,
       )
     }
 
@@ -472,7 +473,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
 
         if (!wheelSha256) {
           throw new Error(
-            `bundle-tools.json tools.socketsecurity.checksums has no entry for "${wheelFilename}" (seen: ${Object.keys(pyCliConfig.checksums ?? {}).join(', ') || '<empty>'}); run \`pnpm run sync-checksums\` to populate from PyPI — builds must verify the wheel hash`,
+            `bundle-tools.json tools.socketsecurity.checksums has no entry for "${wheelFilename}" (seen: ${joinAnd(Object.keys(pyCliConfig.checksums ?? {})) || '<empty>'}); run \`pnpm run sync-checksums\` to populate from PyPI — builds must verify the wheel hash`,
           )
         }
 
@@ -542,7 +543,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
         const archiveSha256 = socketBasicsConfig.checksums?.[archiveKey]
         if (!archiveSha256) {
           throw new Error(
-            `bundle-tools.json tools["socket-basics"].checksums has no entry for "${archiveKey}" (seen: ${Object.keys(socketBasicsConfig.checksums ?? {}).join(', ') || '<empty>'}); run \`pnpm run sync-checksums\` to populate from the GitHub release — builds must verify the source tarball hash`,
+            `bundle-tools.json tools["socket-basics"].checksums has no entry for "${archiveKey}" (seen: ${joinAnd(Object.keys(socketBasicsConfig.checksums ?? {})) || '<empty>'}); run \`pnpm run sync-checksums\` to populate from the GitHub release — builds must verify the source tarball hash`,
           )
         }
 
