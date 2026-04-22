@@ -78,7 +78,7 @@ describe('addSocketWrapper', () => {
     mockAppendFile.mockRejectedValue(error)
 
     await expect(addSocketWrapper('/etc/protected-file')).rejects.toThrow(
-      'There was an error setting up the alias',
+      /failed to append socket aliases to \/etc\/protected-file/,
     )
 
     expect(fs.promises.appendFile).toHaveBeenCalledWith(

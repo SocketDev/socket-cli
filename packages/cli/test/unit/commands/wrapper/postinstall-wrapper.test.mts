@@ -61,6 +61,12 @@ vi.mock('../../../../src/commands/install/setup-tab-completion.mts', () => ({
 }))
 vi.mock('../../../../src/utils/error/errors.mts', () => ({
   getErrorCause: vi.fn(e => e?.message || String(e)),
+  InputError: class InputError extends Error {
+    constructor(message: string) {
+      super(message)
+      this.name = 'InputError'
+    }
+  },
 }))
 
 describe('postinstallWrapper', () => {
@@ -196,7 +202,7 @@ describe('postinstallWrapper', () => {
     })
 
     await expect(postinstallWrapper()).rejects.toThrow(
-      'There was an issue setting up the alias: Permission denied',
+      /failed to add socket aliases to .* \(Permission denied\)/,
     )
   })
 

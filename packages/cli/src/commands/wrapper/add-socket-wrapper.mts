@@ -1,6 +1,9 @@
 import { promises as fs } from 'node:fs'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
+import { InputError } from '../../utils/error/errors.mts'
+
 const logger = getDefaultLogger()
 
 export async function addSocketWrapper(file: string): Promise<void> {
@@ -10,7 +13,9 @@ export async function addSocketWrapper(file: string): Promise<void> {
       'alias npm="socket npm"\nalias npx="socket npx"\n',
     )
   } catch (e) {
-    throw new Error(`There was an error setting up the alias: ${e}`)
+    throw new InputError(
+      `failed to append socket aliases to ${file} (${(e as Error).message}); check that the file exists and is writable`,
+    )
   }
   logger.success(
     `The alias was added to ${file}. Running 'npm install' will now be wrapped in Socket's "safe npm" 🎉`,

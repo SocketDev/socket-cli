@@ -288,7 +288,7 @@ describe('cmd-scan-reach', () => {
           importMeta,
           context,
         ),
-      ).rejects.toThrow(/Invalid ecosystem/)
+      ).rejects.toThrow(/--reach-ecosystems must be one of/)
     })
 
     it('should support --json output mode', async () => {
@@ -544,7 +544,7 @@ describe('cmd-scan-reach', () => {
           context,
         ),
       ).rejects.toThrow(
-        /Invalid number value for --reach-analysis-memory-limit/,
+        /--reach-analysis-memory-limit must be a number of megabytes/,
       )
     })
 
@@ -557,7 +557,7 @@ describe('cmd-scan-reach', () => {
           importMeta,
           context,
         ),
-      ).rejects.toThrow(/Invalid number value for --reach-analysis-timeout/)
+      ).rejects.toThrow(/--reach-analysis-timeout must be a number of seconds/)
     })
 
     it('should validate invalid numeric values for concurrency', async () => {
@@ -569,7 +569,7 @@ describe('cmd-scan-reach', () => {
           importMeta,
           context,
         ),
-      ).rejects.toThrow(/Invalid number value for --reach-concurrency/)
+      ).rejects.toThrow(/--reach-concurrency must be a positive integer/)
     })
 
     it('should default to current directory if no target specified', async () => {

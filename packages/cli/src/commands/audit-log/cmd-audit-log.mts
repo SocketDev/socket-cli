@@ -1,6 +1,7 @@
 import { handleAuditLog } from './handle-audit-log.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'
+import { InputError } from '../../utils/error/errors.mts'
 import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mjs'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
@@ -191,10 +192,14 @@ async function run(
   }
 
   if (Number.isNaN(validatedPage) || validatedPage < 0) {
-    throw new Error(`Invalid value for --page: ${page}`)
+    throw new InputError(
+      `--page must be a non-negative integer (saw: "${page}"); pass a number like --page=1`,
+    )
   }
   if (Number.isNaN(validatedPerPage) || validatedPerPage < 0) {
-    throw new Error(`Invalid value for --per-page: ${perPage}`)
+    throw new InputError(
+      `--per-page must be a non-negative integer (saw: "${perPage}"); pass a number like --per-page=30`,
+    )
   }
 
   await handleAuditLog({
