@@ -52,7 +52,7 @@ export function validateSocketJson(output: string, exitCode: number) {
       output.length > 200 ? `${output.slice(0, 200)}...` : output
     return {
       ok: false,
-      message: `command output is not valid JSON (JSON.parse: ${(e as Error).message}); got: ${preview}`,
+      message: `command output is not valid JSON (JSON.parse: ${e instanceof Error ? e.message : String(e)}); got: ${preview}`,
     }
   }
 }

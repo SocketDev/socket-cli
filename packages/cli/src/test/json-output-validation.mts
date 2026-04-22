@@ -47,7 +47,7 @@ export function validateSocketJson<T = unknown>(
     parsed = JSON.parse(jsonString)
   } catch (e) {
     throw new Error(
-      `command output is not valid JSON (JSON.parse threw: ${(e as Error).message}); got: ${preview} — check for unclosed braces, trailing commas, or non-JSON text mixed into stdout`,
+      `command output is not valid JSON (JSON.parse threw: ${e instanceof Error ? e.message : String(e)}); got: ${preview} — check for unclosed braces, trailing commas, or non-JSON text mixed into stdout`,
     )
   }
 
