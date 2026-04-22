@@ -186,6 +186,7 @@ Rules for every message:
 - On a collision, name **both** sides, not just the second one found.
 - Suggest, don't auto-correct. Silently fixing state hides the bug next time.
 - Bloat check: if removing a word keeps the information, drop it.
+- For allowed-set / conflict lists, use `joinAnd` / `joinOr` from `@socketsecurity/lib/arrays` — `must be one of: ${joinOr(allowed)}` reads better than a hand-formatted list.
 
 **CLI examples:**
 

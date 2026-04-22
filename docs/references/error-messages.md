@@ -80,6 +80,24 @@ terse keeps the assertion readable when you skim the code.
 - ✗ `The value provided for "timeout" is invalid because timeouts must be positive numbers and the value you provided was not a positive number.`
 - ✓ `timeout must be a positive number (saw: -5)`
 
+## Formatting lists of values
+
+When the error needs to show an allowed set, a list of conflicting
+records, or multiple missing fields, use the list formatters from
+`@socketsecurity/lib/arrays` rather than hand-joining with commas:
+
+- `joinAnd(['a', 'b', 'c'])` → `"a, b, and c"` — for conjunctions ("missing foo, bar, and baz")
+- `joinOr(['npm', 'pypi', 'maven'])` → `"npm, pypi, or maven"` — for disjunctions ("must be one of: …")
+
+Both wrap `Intl.ListFormat`, so the Oxford comma and one-/two-item cases come out right for free (`joinOr(['a'])` → `"a"`; `joinOr(['a', 'b'])` → `"a or b"`).
+
+- ✗ `--reach-ecosystems must be one of: npm, pypi, maven (saw: "foo")` — hand-joined, breaks if the list has one or two entries.
+- ✓ `` `--reach-ecosystems must be one of: ${joinOr(ALLOWED)} (saw: "foo")` ``
+- ✗ `missing keys: filename slug title` — no separators, no grammar.
+- ✓ `` `missing keys: ${joinAnd(missing)}` `` → `"missing keys: filename, slug, and title"`
+
+Use `joinOr` whenever the error is "must be one of X", `joinAnd` whenever it's "all of X are required / missing / in conflict".
+
 ## Voice & tone
 
 - Imperative for the fix: `rename`, `add`, `remove`, `set`.
