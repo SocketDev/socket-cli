@@ -30,7 +30,7 @@ export function parseChecksums(
     return JSON.parse(jsonString) as Checksums
   } catch (e) {
     throw new Error(
-      `INLINED_${toolName.toUpperCase()}_CHECKSUMS is not valid JSON at runtime (JSON.parse threw: ${e instanceof Error ? e.message : String(e)}); the build-time inline step produced corrupt data — rebuild socket-cli (\`pnpm run build:cli\`) and check bundle-tools.json tools.${toolName}.checksums`,
+      `inlined checksums for ${toolName} are not valid JSON at runtime (JSON.parse threw: ${e instanceof Error ? e.message : String(e)}); the build-time inline step produced corrupt data — rebuild socket-cli (\`pnpm run build:cli\`) and verify the matching checksums entry in bundle-tools.json`,
     )
   }
 }
@@ -62,7 +62,7 @@ export function requireChecksum(
   const sha256 = checksums[assetName]
   if (!sha256) {
     throw new Error(
-      `bundle-tools.json tools.${toolName}.checksums has no entry for asset "${assetName}" (available: ${Object.keys(checksums).join(', ') || '<empty>'}); add the SHA-256 for this asset via \`pnpm run sync-checksums\` — do NOT ship without verification`,
+      `${toolName} has no SHA-256 checksum for asset "${assetName}" (known assets: ${Object.keys(checksums).join(', ') || '<empty>'}); add it to the matching entry in bundle-tools.json via \`pnpm run sync-checksums\` — do NOT ship without verification`,
     )
   }
   return sha256
