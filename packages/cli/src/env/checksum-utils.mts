@@ -30,7 +30,7 @@ export function parseChecksums(
     return JSON.parse(jsonString) as Checksums
   } catch (e) {
     throw new Error(
-      `INLINED_${toolName.toUpperCase()}_CHECKSUMS is not valid JSON at runtime (JSON.parse threw: ${(e as Error).message}); the build-time inline step produced corrupt data — rebuild socket-cli (\`pnpm run build:cli\`) and check bundle-tools.json tools.${toolName}.checksums`,
+      `INLINED_${toolName.toUpperCase()}_CHECKSUMS is not valid JSON at runtime (JSON.parse threw: ${e instanceof Error ? e.message : String(e)}); the build-time inline step produced corrupt data — rebuild socket-cli (\`pnpm run build:cli\`) and check bundle-tools.json tools.${toolName}.checksums`,
     )
   }
 }
