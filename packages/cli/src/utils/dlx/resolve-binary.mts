@@ -5,6 +5,8 @@
 
 import os from 'node:os'
 
+import { joinAnd } from '@socketsecurity/lib/arrays'
+
 import { getCdxgenVersion } from '../../env/cdxgen-version.mts'
 import { getCoanaVersion } from '../../env/coana-version.mts'
 import { requireOpengrepChecksum } from '../../env/opengrep-checksums.mts'
@@ -167,7 +169,7 @@ export function resolveSocketPatch(): BinaryResolution {
 
   if (!assetName) {
     throw new Error(
-      `socket-patch has no prebuilt binary for "${platformKey}" (supported: ${Object.keys(SOCKET_PATCH_ASSETS).join(', ')}); upgrade socket-cli, build socket-patch from source, or set SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH to point at a local build`,
+      `socket-patch has no prebuilt binary for "${platformKey}" (supported: ${joinAnd(Object.keys(SOCKET_PATCH_ASSETS))}); upgrade socket-cli, build socket-patch from source, or set SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH to point at a local build`,
     )
   }
 
@@ -360,7 +362,7 @@ export function resolveOpengrep(): BinaryResolution {
 
   if (!assetName) {
     throw new Error(
-      `OpenGrep has no prebuilt binary for "${platformKey}" (supported: ${Object.keys(OPENGREP_ASSETS).join(', ')}); run socket-cli on a supported platform or install OpenGrep manually and point \`opengrep\` at it on PATH`,
+      `OpenGrep has no prebuilt binary for "${platformKey}" (supported: ${joinAnd(Object.keys(OPENGREP_ASSETS))}); run socket-cli on a supported platform or install OpenGrep manually and point \`opengrep\` at it on PATH`,
     )
   }
 

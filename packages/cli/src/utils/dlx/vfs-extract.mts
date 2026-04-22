@@ -66,12 +66,14 @@ import { existsSync, promises as fs } from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
 
+import { joinAnd } from '@socketsecurity/lib/arrays'
 import { debug } from '@socketsecurity/lib/debug'
 import { safeMkdir } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 
 import { UPDATE_STORE_DIR } from '../../constants/paths.mts'
+import { getErrorCause } from '../error/errors.mts'
 import { isSeaBinary } from '../sea/detect.mts'
 
 const logger = getDefaultLogger()
@@ -348,7 +350,7 @@ async function extractTool(tool: ExternalTool): Promise<string> {
     return extractedPath
   } catch (e) {
     throw new Error(
-      `failed to extract ${tool} from the SEA VFS (${e instanceof Error ? e.message : String(e)}); the embedded tool archive may be corrupt — rebuild the SEA binary`,
+      `failed to extract ${tool} from the SEA VFS (${getErrorCause(e)}); the embedded tool archive may be corrupt — rebuild the SEA binary`,
     )
   }
 }
@@ -645,7 +647,7 @@ export async function extractExternalTools(
     if (Object.keys(toolPaths).length !== EXTERNAL_TOOLS.length) {
       const missingTools = EXTERNAL_TOOLS.filter(t => !toolPaths[t])
       throw new Error(
-        `SEA VFS extraction returned ${Object.keys(toolPaths).length}/${EXTERNAL_TOOLS.length} tools (missing: ${missingTools.join(', ')}); the SEA bundle is incomplete — rebuild with all external tools included`,
+        `SEA VFS extraction returned ${Object.keys(toolPaths).length}/${EXTERNAL_TOOLS.length} tools (missing: ${joinAnd(missingTools)}); the SEA bundle is incomplete — rebuild with all external tools included`,
       )
     }
 

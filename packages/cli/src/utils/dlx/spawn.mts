@@ -22,6 +22,7 @@ import os from 'node:os'
 import path from 'node:path'
 
 import AdmZip from 'adm-zip'
+import { joinAnd } from '@socketsecurity/lib/arrays'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib/dlx/binary'
 import { detectExecutableType } from '@socketsecurity/lib/dlx/detect'
@@ -697,7 +698,7 @@ async function spawnToolVfs(
 
   if (!toolPath) {
     throw new Error(
-      `VFS extraction succeeded but ${tool} was not in the output map (got: ${Object.keys(toolPaths).join(', ') || 'empty'}); the SEA bundle is missing ${tool} — rebuild with it included`,
+      `VFS extraction succeeded but ${tool} was not in the output map (got: ${joinAnd(Object.keys(toolPaths)) || 'empty'}); the SEA bundle is missing ${tool} — rebuild with it included`,
     )
   }
 
