@@ -130,7 +130,10 @@ describe('debug utilities', () => {
 
       expect(mockDebugDirNs).toHaveBeenCalledWith('error', {
         endpoint: '/api/test',
-        error: 'Unknown error',
+        // @socketsecurity/lib/errors preserves non-empty primitives as-is;
+        // only empty strings / null / undefined / plain objects coerce to
+        // the Unknown error sentinel. A real string message passes through.
+        error: 'String error',
       })
     })
 
