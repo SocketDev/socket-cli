@@ -333,7 +333,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
 
     if (!sha256) {
       throw new Error(
-        `bundle-tools.json tools.${toolName}.checksums has no entry for "${assetName}" (seen: ${joinAnd(Object.keys(toolConfig?.checksums ?? {})) || '<empty>'}); run \`pnpm run sync-checksums\` to populate — builds must verify every external download`,
+        `bundle-tools.json tools["${toolName}"].checksums has no entry for "${assetName}" (seen: ${joinAnd(Object.keys(toolConfig?.checksums ?? {})) || '<empty>'}); run \`pnpm run sync-checksums\` to populate — builds must verify every external download`,
       )
     }
 
