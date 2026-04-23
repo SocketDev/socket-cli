@@ -727,7 +727,12 @@ async function run(
 
   // Validate numeric flag conversions.
   const validatedPullRequest = Number(pullRequest)
-  if (pullRequest !== undefined && Number.isNaN(validatedPullRequest)) {
+  if (
+    pullRequest !== undefined &&
+    (Number.isNaN(validatedPullRequest) ||
+      !Number.isInteger(validatedPullRequest) ||
+      validatedPullRequest < 0)
+  ) {
     throw new InputError(
       `--pull-request must be a non-negative integer (saw: "${pullRequest}"); pass a number like --pull-request=42`,
     )
@@ -756,7 +761,9 @@ async function run(
   const validatedReachConcurrency = Number(reachConcurrency)
   if (
     reachConcurrency !== undefined &&
-    Number.isNaN(validatedReachConcurrency)
+    (Number.isNaN(validatedReachConcurrency) ||
+      !Number.isInteger(validatedReachConcurrency) ||
+      validatedReachConcurrency <= 0)
   ) {
     throw new InputError(
       `--reach-concurrency must be a positive integer (saw: "${reachConcurrency}"); pass a number like --reach-concurrency=4`,

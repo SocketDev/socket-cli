@@ -296,7 +296,9 @@ async function run(
   const validatedReachConcurrency = Number(reachConcurrency)
   if (
     reachConcurrency !== undefined &&
-    Number.isNaN(validatedReachConcurrency)
+    (Number.isNaN(validatedReachConcurrency) ||
+      !Number.isInteger(validatedReachConcurrency) ||
+      validatedReachConcurrency <= 0)
   ) {
     throw new InputError(
       `--reach-concurrency must be a positive integer (saw: "${reachConcurrency}"); pass a number like --reach-concurrency=4`,

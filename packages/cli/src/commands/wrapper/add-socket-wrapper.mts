@@ -13,8 +13,11 @@ export async function addSocketWrapper(file: string): Promise<void> {
       'alias npm="socket npm"\nalias npx="socket npx"\n',
     )
   } catch (e) {
+    // Don't include `file` in the message: display.formatErrorForDisplay
+    // appends `(${error.path})` automatically when FileSystemError carries
+    // a path, so embedding it here would show the filename twice.
     throw new FileSystemError(
-      `failed to append socket aliases to ${file} (${getErrorCause(e)}); check that the file exists and is writable`,
+      `failed to append socket aliases (${getErrorCause(e)}); check that the file exists and is writable`,
       file,
       (e as NodeJS.ErrnoException)?.code,
     )
