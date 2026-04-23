@@ -2,7 +2,7 @@
 
 import colors from 'yoctocolors-cjs'
 
-import { errorMessage, isError, messageWithCauses } from '@socketsecurity/lib/errors'
+import { isError, messageWithCauses } from '@socketsecurity/lib/errors'
 import { LOG_SYMBOLS } from '@socketsecurity/lib/logger'
 import { stripAnsi } from '@socketsecurity/lib/strings'
 
@@ -114,8 +114,13 @@ export function formatErrorForDisplay(
       let depth = 1
 
       while (currentCause && depth <= 5) {
-        const causeMessage =
-          errorMessage(currentCause)
+        // Use .message (or String coercion) here — errorMessage() walks
+        // the entire remaining cause chain via messageWithCauses, which
+        // would duplicate messages since the outer while loop is already
+        // iterating the chain level-by-level.
+        const causeMessage = isError(currentCause)
+          ? currentCause.message || String(currentCause)
+          : String(currentCause)
 
         causeLines.push(
           `\n${colors.dim(`Caused by [${depth}]:`)} ${colors.yellow(causeMessage)}`,
