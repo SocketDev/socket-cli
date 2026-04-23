@@ -450,6 +450,11 @@ async function runSmartBuild(force: boolean): Promise<void> {
       {
         name: CHECKPOINTS.SEA,
         skip: ctx => !force && ctx.buildMode !== 'prod',
+        // Hash the CLI output into this stage's cache key. Without it,
+        // shouldRun() only sees external-tools.json + package.json, so a
+        // CLI rebuild that leaves those files untouched would skip SEA
+        // and leave a stale binary built against the previous dist/index.js.
+        sourcePaths: [cliOutputPath],
         run: async () => {
           const seaResult = await buildCurrentPlatformSea()
           if (!seaResult.success) {
