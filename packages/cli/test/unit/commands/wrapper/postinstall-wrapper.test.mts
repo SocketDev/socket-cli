@@ -61,10 +61,19 @@ vi.mock('../../../../src/commands/install/setup-tab-completion.mts', () => ({
 }))
 vi.mock('../../../../src/utils/error/errors.mts', () => ({
   getErrorCause: vi.fn(e => e?.message || String(e)),
-  InputError: class InputError extends Error {
-    constructor(message: string) {
+  FileSystemError: class FileSystemError extends Error {
+    public readonly path?: string | undefined
+    public readonly code?: string | undefined
+    public readonly recovery: string[] = []
+    constructor(
+      message: string,
+      path?: string | undefined,
+      code?: string | undefined,
+    ) {
       super(message)
-      this.name = 'InputError'
+      this.name = 'FileSystemError'
+      this.path = path
+      this.code = code
     }
   },
 }))
