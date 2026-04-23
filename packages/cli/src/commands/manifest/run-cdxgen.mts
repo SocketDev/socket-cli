@@ -171,8 +171,11 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<DlxSpawnResult> {
     agent,
   })
 
-  // Use finally handler for cleanup instead of process.on('exit').
-  cdxgenResult.spawnPromise.finally(async () => {
+  // Post-run cleanup + empty-BOM warning. We replace spawnPromise with a
+  // chained promise so the caller's `await spawnPromise` also awaits this
+  // work — otherwise the caller's continuation (e.g. `process.exit`) races
+  // the first `await` inside the finally body and the warning never prints.
+  const chainedSpawnPromise = cdxgenResult.spawnPromise.finally(async () => {
     if (cleanupPackageLock) {
       try {
         // This removes the temporary package-lock.json we created for cdxgen.
@@ -205,7 +208,14 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<DlxSpawnResult> {
     }
   })
 
-  return cdxgenResult
+  // Cast back to SpawnResult: .finally() returns plain Promise<T> which
+  // drops the `process` / `stdin` extras SpawnResult carries. Callers of
+  // runCdxgen only use `await spawnPromise` for the result, not those
+  // extras, so the shape loss is safe.
+  return {
+    ...cdxgenResult,
+    spawnPromise: chainedSpawnPromise as typeof cdxgenResult.spawnPromise,
+  }
 }
 
 /**
