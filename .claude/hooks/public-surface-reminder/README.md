@@ -5,8 +5,7 @@ publish text to a public Git/GitHub surface, writes a short reminder to
 stderr so the model re-reads the command with the two rules freshly in
 mind:
 
-1. **No real customer or company names.** Use `Acme Corporation` (or
-   `Acme Corp` on subsequent references). No exceptions.
+1. **No real customer or company names.** Use `Acme Inc`. No exceptions.
 2. **No internal work-item IDs or tracker URLs.** No `SOC-123` /
    `ENG-456` / `ASK-789` / similar, no `linear.app` / `sentry.io` URLs.
 

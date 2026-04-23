@@ -6,8 +6,7 @@
 // writes a short reminder to stderr so the model re-reads the command with
 // the two rules freshly in mind:
 //
-//   1. No real customer/company names — ever. Use `Acme Corporation`
-//      (or `Acme Corp` shorthand) instead.
+//   1. No real customer/company names — ever. Use `Acme Inc` instead.
 //   2. No internal work-item IDs or tracker URLs — no `SOC-123`, `ENG-456`,
 //      `ASK-789`, `linear.app`, `sentry.io`, etc.
 //
@@ -76,7 +75,7 @@ function main(): void {
   const lines = [
     '[public-surface-reminder] This command writes to a public Git/GitHub surface.',
     '  • Re-read the commit message / PR body / comment BEFORE it sends.',
-    '  • No real customer or company names — use `Acme Corporation` (or `Acme Corp`). No exceptions.',
+    '  • No real customer or company names — use `Acme Inc`. No exceptions.',
     '  • No internal work-item IDs or tracker URLs (linear.app, sentry.io, SOC-/ENG-/ASK-/etc.).',
     '  • If you spot one, cancel and rewrite the text first.',
   ]
