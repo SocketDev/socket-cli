@@ -6,7 +6,11 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { isPath } from '@socketsecurity/lib/paths/normalize'
 import { pluralize } from '@socketsecurity/lib/words'
 
-import { runCdxgen } from './run-cdxgen.mts'
+import {
+  detectNodejsCdxgenSources,
+  isNodejsCdxgenType,
+  runCdxgen,
+} from './run-cdxgen.mts'
 import { FLAG_HELP } from '../../constants/cli.mjs'
 import { outputDryRunExecute } from '../../utils/dry-run/output.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
@@ -285,7 +289,8 @@ async function run(
     // Make 'lifecycle' default to 'pre-build', which also sets 'install-deps' to `false`,
     // to avoid arbitrary code execution on the cdxgen scan.
     // https://github.com/CycloneDX/cdxgen/issues/1328
-    if (yargv.lifecycle === undefined) {
+    const lifecycleWasDefaulted = yargv.lifecycle === undefined
+    if (lifecycleWasDefaulted) {
       yargv.lifecycle = 'pre-build'
       yargv['install-deps'] = false
       logger.info(
@@ -297,6 +302,29 @@ async function run(
     }
     if (yargv.output === undefined) {
       yargv.output = 'socket-cdx.json'
+    }
+
+    // Hard gate: in the default pre-build + install-deps=false path, cdxgen
+    // needs either a lockfile or an installed node_modules/ to produce any
+    // Node.js components. Without both, it emits a valid CycloneDX doc with
+    // "components": []. Refuse with an actionable error instead of shipping
+    // an empty SBOM (SMO-590).
+    if (
+      lifecycleWasDefaulted &&
+      isNodejsCdxgenType(yargv.type) &&
+      !yargv['filter'] &&
+      !yargv['only']
+    ) {
+      const { hasLockfile, hasNodeModules } = await detectNodejsCdxgenSources()
+      if (!hasLockfile && !hasNodeModules) {
+        process.exitCode = 2
+        logger.fail(
+          `socket cdxgen found no lockfile (pnpm-lock.yaml / package-lock.json / yarn.lock) or node_modules/ at or above ${process.cwd()}.\n` +
+            '  The default --lifecycle pre-build with --no-install-deps needs one of them to resolve components; otherwise the SBOM ships with "components": [].\n' +
+            '  Fix: install dependencies first (e.g. `npm install`, `pnpm install`, `yarn install`), or re-run with `--lifecycle build` to let cdxgen resolve during the build.',
+        )
+        return
+      }
     }
   }
 

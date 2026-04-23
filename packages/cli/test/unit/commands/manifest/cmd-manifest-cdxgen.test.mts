@@ -37,8 +37,16 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 
 // Mock runCdxgen to prevent actual cdxgen execution.
 const mockRunCdxgen = vi.hoisted(() => vi.fn())
+const mockDetectNodejsCdxgenSources = vi.hoisted(() =>
+  // Default to "sources available" so pre-existing tests don't trip the
+  // hard gate added in SMO-590.
+  vi.fn().mockResolvedValue({ hasLockfile: true, hasNodeModules: true }),
+)
+const mockIsNodejsCdxgenType = vi.hoisted(() => vi.fn().mockReturnValue(true))
 
 vi.mock('../../../../src/commands/manifest/run-cdxgen.mts', () => ({
+  detectNodejsCdxgenSources: mockDetectNodejsCdxgenSources,
+  isNodejsCdxgenType: mockIsNodejsCdxgenType,
   runCdxgen: mockRunCdxgen,
 }))
 
@@ -49,6 +57,11 @@ const { cmdManifestCdxgen } =
 describe('cmd-manifest-cdxgen', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockDetectNodejsCdxgenSources.mockResolvedValue({
+      hasLockfile: true,
+      hasNodeModules: true,
+    })
+    mockIsNodejsCdxgenType.mockReturnValue(true)
     process.exitCode = undefined
   })
 
@@ -307,6 +320,98 @@ describe('cmd-manifest-cdxgen', () => {
           }),
         )
 
+        mockExit.mockRestore()
+      })
+    })
+
+    describe('empty-components hard gate (SMO-590)', () => {
+      it('fails when default pre-build path has no lockfile and no node_modules', async () => {
+        mockDetectNodejsCdxgenSources.mockResolvedValue({
+          hasLockfile: false,
+          hasNodeModules: false,
+        })
+
+        await cmdManifestCdxgen.run(['.'], importMeta, context)
+
+        expect(process.exitCode).toBe(2)
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining('no lockfile'),
+        )
+        expect(mockRunCdxgen).not.toHaveBeenCalled()
+      })
+
+      it('allows the run when only a lockfile is present', async () => {
+        mockDetectNodejsCdxgenSources.mockResolvedValue({
+          hasLockfile: true,
+          hasNodeModules: false,
+        })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+        const mockExit = vi
+          .spyOn(process, 'exit')
+          .mockImplementation((() => {}) as any)
+
+        await cmdManifestCdxgen.run(['.'], importMeta, context)
+
+        expect(mockRunCdxgen).toHaveBeenCalled()
+        mockExit.mockRestore()
+      })
+
+      it('allows the run when only node_modules/ is present', async () => {
+        mockDetectNodejsCdxgenSources.mockResolvedValue({
+          hasLockfile: false,
+          hasNodeModules: true,
+        })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+        const mockExit = vi
+          .spyOn(process, 'exit')
+          .mockImplementation((() => {}) as any)
+
+        await cmdManifestCdxgen.run(['.'], importMeta, context)
+
+        expect(mockRunCdxgen).toHaveBeenCalled()
+        mockExit.mockRestore()
+      })
+
+      it('skips the gate when user passes --lifecycle explicitly', async () => {
+        mockDetectNodejsCdxgenSources.mockResolvedValue({
+          hasLockfile: false,
+          hasNodeModules: false,
+        })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+        const mockExit = vi
+          .spyOn(process, 'exit')
+          .mockImplementation((() => {}) as any)
+
+        await cmdManifestCdxgen.run(
+          ['--lifecycle', 'build', '.'],
+          importMeta,
+          context,
+        )
+
+        expect(mockDetectNodejsCdxgenSources).not.toHaveBeenCalled()
+        expect(mockRunCdxgen).toHaveBeenCalled()
+        mockExit.mockRestore()
+      })
+
+      it('skips the gate for non-Node.js project types', async () => {
+        mockIsNodejsCdxgenType.mockReturnValue(false)
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+        const mockExit = vi
+          .spyOn(process, 'exit')
+          .mockImplementation((() => {}) as any)
+
+        await cmdManifestCdxgen.run(
+          ['--type', 'python', '.'],
+          importMeta,
+          context,
+        )
+
+        expect(mockDetectNodejsCdxgenSources).not.toHaveBeenCalled()
+        expect(mockRunCdxgen).toHaveBeenCalled()
         mockExit.mockRestore()
       })
     })
