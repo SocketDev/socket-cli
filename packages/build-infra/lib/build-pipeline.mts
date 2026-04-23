@@ -150,7 +150,15 @@ async function loadExternalTools(packageRoot) {
   if (!data) {
     return { versions: {}, rawHash: '' }
   }
-  validateExternalTools(data)
+  const validated = validateExternalTools(data)
+  if (!validated.ok) {
+    const details = validated.errors
+      .map(e => `  ${e.path}: ${e.message}`)
+      .join('\n')
+    throw new Error(
+      `Invalid external-tools.json at ${filePath}:\n${details}`,
+    )
+  }
   const versions = {}
   for (const [tool, meta] of Object.entries(data.tools ?? {})) {
     versions[tool] = meta?.version ?? ''
@@ -475,7 +483,9 @@ export async function runPipelineCli(options) {
   try {
     await runPipeline(options)
   } catch (e) {
-    logger.error(errorMessage(e))
+    // Set exit code and rethrow so the caller's top-level handler is the
+    // single place that formats/logs the failure. Logging here AND in the
+    // caller's catch shows the same error twice.
     process.exitCode = 1
     throw e
   }

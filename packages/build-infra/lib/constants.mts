@@ -65,7 +65,7 @@ export function validateCheckpointChain(
   if (invalid.length) {
     throw new Error(
       `${packageName}: Invalid checkpoint names in chain: ${invalid.join(', ')}. ` +
-        `Valid: ${Object.keys(CHECKPOINTS).join(', ')}`,
+        `Valid: ${Object.values(CHECKPOINTS).join(', ')}`,
     )
   }
   const seen = new Set()
