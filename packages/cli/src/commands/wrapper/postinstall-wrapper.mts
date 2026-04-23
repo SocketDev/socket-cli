@@ -8,7 +8,7 @@ import { addSocketWrapper } from './add-socket-wrapper.mts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
 import { getBashRcPath, getZshRcPath } from '../../constants/paths.mts'
 import { getBashrcDetails } from '../../utils/cli/completion.mts'
-import { getErrorCause, InputError } from '../../utils/error/errors.mjs'
+import { FileSystemError, getErrorCause } from '../../utils/error/errors.mjs'
 import { updateInstalledTabCompletionScript } from '../install/setup-tab-completion.mts'
 const logger = getDefaultLogger()
 
@@ -85,8 +85,10 @@ async function setupSocketWrapper(query: string): Promise<void> {
         await addSocketWrapper(zshRcPath)
       }
     } catch (e) {
-      throw new InputError(
+      throw new FileSystemError(
         `failed to add socket aliases to ${bashRcPath} / ${zshRcPath} (${getErrorCause(e)}); check that your shell rc files exist and are writable`,
+        undefined,
+        (e as NodeJS.ErrnoException)?.code,
       )
     }
   }
