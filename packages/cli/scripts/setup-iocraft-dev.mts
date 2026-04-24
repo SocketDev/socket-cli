@@ -149,5 +149,5 @@ for (const [sourceDir, targetName] of Object.entries(packages)) {
 
 console.log('\n✅ iocraft dev build installed successfully!')
 console.log(
-  '\nYou can now run manual tests:\n  node --experimental-strip-types src/commands/analytics/test-analytics-renderer.mts',
+  '\nYou can now run manual tests:\n  node src/commands/analytics/test-analytics-renderer.mts',
 )
