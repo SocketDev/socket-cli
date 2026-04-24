@@ -169,13 +169,25 @@ export async function coanaFix(
     config: socketConfig,
     cwd,
   })
-  // Exclude any .socket.facts.json files that happen to be in the scan
-  // folder before the analysis was run.
-  const filepathsToUpload = scanFilepaths.filter(
-    p => path.basename(p).toLowerCase() !== DOT_SOCKET_DOT_FACTS_JSON,
+  // Fail if any .socket.facts.json files are present in the scan folder.
+  // These are analysis artifacts and must be removed before re-running fix.
+  const factsFiles = scanFilepaths.filter(
+    p => path.basename(p).toLowerCase() === DOT_SOCKET_DOT_FACTS_JSON,
   )
+  if (factsFiles.length) {
+    if (!silence) {
+      spinner?.stop()
+    }
+    return {
+      ok: false,
+      message: `Found ${DOT_SOCKET_DOT_FACTS_JSON} in manifest files`,
+      cause:
+        `Delete the following ${pluralize('file', factsFiles.length)} before running socket fix again:\n` +
+        factsFiles.map(p => `  - ${p}`).join('\n'),
+    }
+  }
   const uploadCResult = await handleApiCall(
-    sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload, cwd),
+    sockSdk.uploadManifestFiles(orgSlug, scanFilepaths, cwd),
     {
       description: 'upload manifests',
       spinner,

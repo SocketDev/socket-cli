@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.86](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.86) - 2026-04-24
+
+### Changed
+- `socket fix` now fails with a clear error when a `.socket.facts.json` analysis artifact is present alongside manifest files, prompting you to delete it before re-running
+
 ## [1.1.85](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.85) - 2026-04-20
 
 ### Changed
