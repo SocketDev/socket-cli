@@ -24,6 +24,7 @@ import process from 'node:process'
 
 import colors from 'yoctocolors-cjs'
 
+import { errorMessage } from '@socketsecurity/lib/errors'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { onExit } from '@socketsecurity/lib/signal-exit'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
@@ -135,7 +136,7 @@ export function scheduleExitNotification(
     onExit(notificationLogger)
   } catch (e) {
     logger.warn(
-      `Failed to schedule exit notification: ${e instanceof Error ? e.message : String(e)}`,
+      `Failed to schedule exit notification: ${errorMessage(e)}`,
     )
   }
 }

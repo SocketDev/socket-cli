@@ -10,6 +10,7 @@ import path from 'node:path'
 
 import { debug } from '@socketsecurity/lib/debug'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
+import { errorMessage } from '@socketsecurity/lib/errors'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
@@ -433,7 +434,7 @@ async function parseSocketFacts(factsPath: string): Promise<{
     } catch (parseError) {
       debug('error', 'Failed to parse socket facts JSON:', parseError)
       return {
-        error: `Invalid JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+        error: `Invalid JSON: ${errorMessage(parseError)}`,
       }
     }
 
@@ -447,7 +448,7 @@ async function parseSocketFacts(factsPath: string): Promise<{
   } catch (e) {
     debug('error', 'Failed to read socket facts file:', e)
     return {
-      error: `File read error: ${e instanceof Error ? e.message : String(e)}`,
+      error: `File read error: ${errorMessage(e)}`,
     }
   }
 }
