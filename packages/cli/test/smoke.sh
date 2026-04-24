@@ -93,7 +93,7 @@ validate_json() {
 
     # First check if it's valid JSON
     if ! echo "$json_output" | jq . > /dev/null 2>&1; then
-        echo -e "${RED}✗ Invalid JSON output${NC}"
+        echo -e "${RED}✗ command output is not valid JSON (jq rejected it); stdout may contain progress text mixed with the payload${NC}"
         echo -e "Received:"
         echo -e "$json_output"
         return 1
@@ -115,13 +115,13 @@ validate_json() {
 
     # Check if ok field matches expected exit code
     if [ "$expected_exit" -eq 0 ] && [ "$ok_field" != "true" ]; then
-        echo -e "${RED}✗ JSON output 'ok' should be true when exit code is 0${NC}"
+        echo -e "${RED}✗ Socket JSON contract violation: exit code 0 but \"ok\" is \"$ok_field\" (expected true); set ok:true on success${NC}"
         echo -e "Received:"
         echo -e "$json_output"
         return 1
     fi
     if [ "$expected_exit" -ne 0 ] && [ "$ok_field" != "false" ]; then
-        echo -e "${RED}✗ JSON output 'ok' should be false when exit code is non-zero${NC}"
+        echo -e "${RED}✗ Socket JSON contract violation: exit code $expected_exit but \"ok\" is \"$ok_field\" (expected false); set ok:false on failure${NC}"
         echo -e "Received:"
         echo -e "$json_output"
         return 1
@@ -129,7 +129,7 @@ validate_json() {
 
     # Check if data field exists (required when ok is true, optional when false)
     if [ "$ok_field" = "true" ] && [ "$data_field" = "null" ]; then
-        echo -e "${RED}✗ JSON output missing required 'data' field when ok is true${NC}"
+        echo -e "${RED}✗ Socket JSON contract violation: ok:true must include a non-null \"data\" field; return an empty object/array if there's no payload${NC}"
         echo -e "Received:"
         echo -e "$json_output"
         return 1
@@ -137,7 +137,7 @@ validate_json() {
 
     # If ok is false, message is required
     if [ "$ok_field" = "false" ] && [ -z "$message_field" ]; then
-        echo -e "${RED}✗ JSON output missing required 'message' field when ok is false${NC}"
+        echo -e "${RED}✗ Socket JSON contract violation: ok:false must include a non-empty \"message\" string; provide a user-facing error description${NC}"
         echo -e "Received:"
         echo -e "$json_output"
         return 1
@@ -145,7 +145,7 @@ validate_json() {
 
     # If code exists, it must be a number
     if [ -n "$code_field" ] && ! [[ "$code_field" =~ ^[0-9]+$ ]]; then
-        echo -e "${RED}✗ JSON output 'code' field must be a number${NC}"
+        echo -e "${RED}✗ Socket JSON contract violation: \"code\" field must be a number when present (got: \"$code_field\"); drop the field or set it to an integer${NC}"
         echo -e "Received:"
         echo -e "$json_output"
         return 1

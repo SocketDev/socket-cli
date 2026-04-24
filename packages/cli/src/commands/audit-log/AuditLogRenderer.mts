@@ -4,6 +4,7 @@
  * Non-interactive renderer for audit log data using iocraft native bindings.
  */
 
+import { errorMessage } from '@socketsecurity/lib/errors'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { Box, Text, print } from '../../utils/terminal/iocraft.mts'
@@ -146,7 +147,7 @@ export function displayAuditLogWithIocraft({
     print(tree)
   } catch (e) {
     process.exitCode = 1
-    logger.error('Error rendering audit log:', e instanceof Error ? e.message : String(e))
+    logger.error('Error rendering audit log:', errorMessage(e))
     logger.warn('Falling back to plain text output')
     logger.log(`Organization: ${orgSlug}`)
     logger.log(`Entries: ${results.length}`)

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 // Set global Socket theme for consistent CLI branding.
+import { isError } from '@socketsecurity/lib/errors'
 import { setTheme } from '@socketsecurity/lib/themes'
 setTheme('socket')
 
@@ -266,7 +267,7 @@ process.on('unhandledRejection', async (reason, promise) => {
     }
 
     // Track CLI error for unhandled rejection.
-    const error = reason instanceof Error ? reason : new Error(String(reason))
+    const error = isError(reason) ? reason : new Error(String(reason))
     await trackCliError(process.argv, cliStartTime, error, 1)
 
     // Finalize telemetry before exit.

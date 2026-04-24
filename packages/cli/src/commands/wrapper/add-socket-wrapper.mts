@@ -1,6 +1,9 @@
 import { promises as fs } from 'node:fs'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
+import { FileSystemError, getErrorCause } from '../../utils/error/errors.mts'
+
 const logger = getDefaultLogger()
 
 export async function addSocketWrapper(file: string): Promise<void> {
@@ -10,7 +13,14 @@ export async function addSocketWrapper(file: string): Promise<void> {
       'alias npm="socket npm"\nalias npx="socket npx"\n',
     )
   } catch (e) {
-    throw new Error(`There was an error setting up the alias: ${e}`)
+    // Don't include `file` in the message: display.formatErrorForDisplay
+    // appends `(${error.path})` automatically when FileSystemError carries
+    // a path, so embedding it here would show the filename twice.
+    throw new FileSystemError(
+      `failed to append socket aliases (${getErrorCause(e)}); check that the file exists and is writable`,
+      file,
+      (e as NodeJS.ErrnoException)?.code,
+    )
   }
   logger.success(
     `The alias was added to ${file}. Running 'npm install' will now be wrapped in Socket's "safe npm" 🎉`,

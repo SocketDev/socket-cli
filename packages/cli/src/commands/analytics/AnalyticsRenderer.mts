@@ -5,6 +5,7 @@
  * This is a proof-of-concept implementation for the hybrid Ink/iocraft approach.
  */
 
+import { errorMessage } from '@socketsecurity/lib/errors'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { Box, Text, print } from '../../utils/terminal/iocraft.mts'
@@ -118,7 +119,7 @@ export function displayAnalyticsWithIocraft(data: FormattedData): void {
     print(tree)
   } catch (e) {
     process.exitCode = 1
-    logger.error('Error rendering analytics:', e instanceof Error ? e.message : String(e))
+    logger.error('Error rendering analytics:', errorMessage(e))
     logger.warn('Falling back to plain text output')
     logger.log(`Top 5 Alert Types: ${Object.keys(data.top_five_alert_types).length} types`)
     logger.log(`Critical Alerts: ${Object.keys(data.total_critical_alerts).length} dates`)

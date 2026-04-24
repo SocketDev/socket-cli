@@ -296,7 +296,7 @@ describe('cmd-audit-log', () => {
 
       await expect(
         cmdAuditLog.run(['--page', 'invalid'], importMeta, context),
-      ).rejects.toThrow('Invalid value for --page')
+      ).rejects.toThrow(/--page must be a non-negative integer/)
     })
 
     it('should validate per-page is numeric', async () => {
@@ -304,7 +304,7 @@ describe('cmd-audit-log', () => {
 
       await expect(
         cmdAuditLog.run(['--per-page', 'invalid'], importMeta, context),
-      ).rejects.toThrow('Invalid value for --per-page')
+      ).rejects.toThrow(/--per-page must be a non-negative integer/)
     })
 
     it('should reject negative page numbers', async () => {
@@ -312,7 +312,7 @@ describe('cmd-audit-log', () => {
 
       await expect(
         cmdAuditLog.run(['--page', '-1'], importMeta, context),
-      ).rejects.toThrow('Invalid value for --page')
+      ).rejects.toThrow(/--page must be a non-negative integer/)
     })
 
     it('should reject negative per-page numbers', async () => {
@@ -320,7 +320,7 @@ describe('cmd-audit-log', () => {
 
       await expect(
         cmdAuditLog.run(['--per-page', '-1'], importMeta, context),
-      ).rejects.toThrow('Invalid value for --per-page')
+      ).rejects.toThrow(/--per-page must be a non-negative integer/)
     })
 
     it('should accept zero as page number', async () => {

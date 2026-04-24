@@ -62,7 +62,7 @@ describe('socket ask', async () => {
     'should error when no query provided',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toContain('Please provide a question')
+      expect(stdout).toContain('requires a QUERY positional argument')
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )

@@ -91,9 +91,9 @@ async function handleJson(
     try {
       await fs.writeFile(file, json, 'utf8')
       logger.success(`Data successfully written to \`${fileLink(file)}\``)
-    } catch (err) {
+    } catch (e) {
       logger.fail(`Writing to \`${file}\` failed...`)
-      logger.error(err)
+      logger.error(e)
       process.exitCode = 1
     }
     logger.info(dashboardMessage)
