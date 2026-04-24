@@ -115,7 +115,7 @@ describe('cmd-login', () => {
         mockIsInteractive.mockReturnValue(false)
 
         await expect(cmdLogin.run([], importMeta, context)).rejects.toThrow(
-          'Cannot prompt for credentials in a non-interactive shell',
+          /socket login needs an interactive TTY/,
         )
         expect(mockAttemptLogin).not.toHaveBeenCalled()
       })

@@ -304,12 +304,12 @@ async function main() {
         }
       }
     }
-  } catch (error) {
+  } catch (e) {
     if (!quiet) {
-      printError(`Coverage failed: ${error.message}`)
+      printError(`Coverage failed: ${e.message}`)
     }
     if (verbose) {
-      logger.error(error)
+      logger.error(e)
     }
     process.exitCode = 1
   }

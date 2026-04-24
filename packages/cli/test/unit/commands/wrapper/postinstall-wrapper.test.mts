@@ -61,6 +61,21 @@ vi.mock('../../../../src/commands/install/setup-tab-completion.mts', () => ({
 }))
 vi.mock('../../../../src/utils/error/errors.mts', () => ({
   getErrorCause: vi.fn(e => e?.message || String(e)),
+  FileSystemError: class FileSystemError extends Error {
+    public readonly path?: string | undefined
+    public readonly code?: string | undefined
+    public readonly recovery: string[] = []
+    constructor(
+      message: string,
+      path?: string | undefined,
+      code?: string | undefined,
+    ) {
+      super(message)
+      this.name = 'FileSystemError'
+      this.path = path
+      this.code = code
+    }
+  },
 }))
 
 describe('postinstallWrapper', () => {
@@ -196,7 +211,7 @@ describe('postinstallWrapper', () => {
     })
 
     await expect(postinstallWrapper()).rejects.toThrow(
-      'There was an issue setting up the alias: Permission denied',
+      /failed to add socket aliases to .* \(Permission denied\)/,
     )
   })
 

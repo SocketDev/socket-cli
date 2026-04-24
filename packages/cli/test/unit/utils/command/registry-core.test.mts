@@ -60,7 +60,7 @@ describe('CommandRegistry', () => {
       registry.register(command)
 
       expect(() => registry.register(command)).toThrow(
-        'Command "test" is already registered',
+        /cannot register command "test": already registered/,
       )
     })
 
@@ -85,7 +85,7 @@ describe('CommandRegistry', () => {
       registry.register(cmd1)
 
       expect(() => registry.register(cmd2)).toThrow(
-        'Alias "test" conflicts with existing command "test"',
+        /cannot register command "other" alias "test": conflicts with command "test"/,
       )
     })
   })
@@ -349,7 +349,9 @@ describe('CommandRegistry', () => {
       const result = await registry.execute('test', [])
 
       expect(result.ok).toBe(false)
-      expect(result.message).toContain('Required flag --name is missing')
+      expect(result.message).toContain(
+        'command "test" requires --name but it was not provided',
+      )
     })
 
     it('should run validation function', async () => {
@@ -404,7 +406,9 @@ describe('CommandRegistry', () => {
       const result = await registry.execute('test', ['--name'])
 
       expect(result.ok).toBe(false)
-      expect(result.message).toContain('Missing value for flag --name')
+      expect(result.message).toContain(
+        'flag --name requires a string value but none was provided',
+      )
     })
 
     it('should error when number flag has invalid value', async () => {
@@ -427,7 +431,7 @@ describe('CommandRegistry', () => {
       const result = await registry.execute('test', ['--count', 'notanumber'])
 
       expect(result.ok).toBe(false)
-      expect(result.message).toContain('Invalid number value for --count')
+      expect(result.message).toContain('flag --count requires a numeric value')
     })
 
     it('should parse array flags', async () => {

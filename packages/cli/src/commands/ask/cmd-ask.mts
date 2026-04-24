@@ -83,7 +83,7 @@ async function run(
 
   if (!query) {
     throw new InputError(
-      'Please provide a question.\n\nExample: socket ask "scan for vulnerabilities"',
+      'socket ask requires a QUERY positional argument; pass a question like `socket ask "scan for vulnerabilities"`',
     )
   }
 

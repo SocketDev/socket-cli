@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
+import { errorMessage } from '@socketsecurity/lib/errors'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
@@ -128,13 +129,13 @@ export async function convertGradleToMaven({
       },
     }
   } catch (e) {
-    const errorMessage =
+    const summary =
       'There was an unexpected error while generating manifests' +
       (verbose ? '' : '  (use --verbose for details)')
 
     if (isTextMode) {
       process.exitCode = 1
-      logger.fail(errorMessage)
+      logger.fail(summary)
       if (verbose) {
         logger.group('[VERBOSE] error:')
         logger.log(e)
@@ -144,8 +145,8 @@ export async function convertGradleToMaven({
 
     return {
       ok: false,
-      message: errorMessage,
-      cause: e instanceof Error ? e.message : String(e),
+      message: summary,
+      cause: errorMessage(e),
     }
   }
 }
@@ -178,7 +179,9 @@ async function execGradleWithSpinner(
     })
 
     if (!output) {
-      throw new Error(`Failed to execute gradle: ${bin}`)
+      throw new Error(
+        `spawn returned no output for gradle (bin: ${bin}); check that the gradlew wrapper is executable and re-run with --verbose`,
+      )
     }
 
     pass = true

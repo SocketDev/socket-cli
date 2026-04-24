@@ -17,7 +17,6 @@
  * to reduce noise. Enable them explicitly when needed for deep debugging.
  */
 
-import { UNKNOWN_ERROR } from '@socketsecurity/lib/constants/core'
 import {
   debug,
   debugCache,
@@ -27,7 +26,7 @@ import {
   isDebug,
   isDebugNs,
 } from '@socketsecurity/lib/debug'
-
+import { errorMessage } from '@socketsecurity/lib/errors'
 export type ApiRequestDebugInfo = {
   durationMs?: number | undefined
   headers?: Record<string, string> | undefined
@@ -162,7 +161,7 @@ export function debugApiResponse(
       buildApiDebugDetails(
         {
           endpoint,
-          error: error instanceof Error ? error.message : UNKNOWN_ERROR,
+          error: errorMessage(error),
         },
         requestInfo,
       ),
@@ -192,7 +191,7 @@ export function debugFileOp(
     debugDir({
       operation,
       filepath,
-      error: error instanceof Error ? error.message : UNKNOWN_ERROR,
+      error: errorMessage(error),
     })
     /* c8 ignore next 3 */
   } else if (isDebugNs('silly')) {
@@ -246,7 +245,7 @@ export function debugConfig(
   if (error) {
     debugDir({
       source,
-      error: error instanceof Error ? error.message : UNKNOWN_ERROR,
+      error: errorMessage(error),
     })
   } else if (found) {
     debug(`Config loaded: ${source}`)

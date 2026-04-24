@@ -1,5 +1,6 @@
 import { handleListScans } from './handle-list-scans.mts'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'
+import { InputError } from '../../utils/error/errors.mts'
 import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
@@ -201,10 +202,14 @@ async function run(
   }
 
   if (Number.isNaN(validatedPage) || validatedPage < 1) {
-    throw new Error(`Invalid value for --page: ${cli.flags['page']}`)
+    throw new InputError(
+      `--page must be a positive integer (saw: "${cli.flags['page']}"); pass a number like --page=1`,
+    )
   }
   if (Number.isNaN(validatedPerPage) || validatedPerPage < 1) {
-    throw new Error(`Invalid value for --per-page: ${cli.flags['perPage']}`)
+    throw new InputError(
+      `--per-page must be a positive integer (saw: "${cli.flags['perPage']}"); pass a number like --per-page=30`,
+    )
   }
 
   await handleListScans({

@@ -43,6 +43,7 @@ import { homedir } from 'node:os'
 import process from 'node:process'
 
 import { debugNs } from '@socketsecurity/lib/debug'
+import { isError } from '@socketsecurity/lib/errors'
 import { escapeRegExp } from '@socketsecurity/lib/regexps'
 
 import { TelemetryService } from './service.mts'
@@ -218,7 +219,7 @@ function normalizeExitCode(
  * @returns Error object.
  */
 function normalizeError(error: unknown): Error {
-  return error instanceof Error ? error : new Error(String(error))
+  return isError(error) ? error : new Error(String(error))
 }
 
 /**
@@ -368,9 +369,9 @@ export async function trackEvent(
         await telemetry.flush()
       }
     }
-  } catch (err) {
+  } catch (e) {
     // Telemetry errors should never block CLI execution.
-    debug(`Failed to track event ${eventType}: ${err}`)
+    debug(`Failed to track event ${eventType}: ${e}`)
   }
 }
 
