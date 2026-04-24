@@ -28,7 +28,10 @@ const isCoverageEnabled =
 const projectRoot = path.resolve(import.meta.dirname, '..')
 
 export default defineConfig({
-  cacheDir: path.resolve(projectRoot, '.cache/vitest'), // Explicit cache directory for consistent behavior.
+  // `pnpm install` wipes `node_modules/` on every install,
+  // giving us free cache invalidation without a dedicated
+  // clean step.
+  cacheDir: path.resolve(projectRoot, 'node_modules/.cache/vitest'),
   test: {
     globals: false,
     environment: 'node',

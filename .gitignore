@@ -34,7 +34,6 @@ yarn-error.log*
 # ============================================================================
 **/.build-checkpoints
 **/*.build-signature
-**/.cache/
 /.rollup.cache
 **/.type-coverage/
 **/build/
