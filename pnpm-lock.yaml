@@ -72,6 +72,9 @@ catalogs:
     '@pnpm/logger':
       specifier: 1001.0.0
       version: 1001.0.0
+    '@sinclair/typebox':
+      specifier: 0.34.49
+      version: 0.34.49
     '@socketregistry/hyrious__bun.lockb':
       specifier: 1.0.19
       version: 1.0.19
@@ -597,6 +600,9 @@ importers:
       '@babel/traverse':
         specifier: 'catalog:'
         version: 7.28.4
+      '@sinclair/typebox':
+        specifier: 'catalog:'
+        version: 0.34.49
       '@socketsecurity/lib':
         specifier: 5.24.0
         version: 5.24.0(typescript@5.9.3)
@@ -2131,6 +2137,9 @@ packages:
   '@sigstore/verify@3.1.0':
     resolution: {integrity: sha512-mNe0Iigql08YupSOGv197YdHpPPr+EzDZmfCgMc7RPNaZTw5aLN01nBl6CHJOh3BGtnMIj83EeN4butBchc8Ag==}
     engines: {node: ^20.17.0 || >=22.9.0}
+
+  '@sinclair/typebox@0.34.49':
+    resolution: {integrity: sha512-brySQQs7Jtn0joV8Xh9ZV/hZb9Ozb0pmazDIASBkYKCjXrXU3mpcFahmK/z4YDhGkQvP9mWJbVyahdtU5wQA+A==}
 
   '@sindresorhus/chunkify@2.0.0':
     resolution: {integrity: sha512-srajPSoMTC98FETCJIeXJhJqB77IRPJSu8g907jLuuioLORHZJ3YAOY2DsP5ebrZrjOrAwjqf+Cgkg/I8TGPpw==}
@@ -5652,6 +5661,8 @@ snapshots:
       '@sigstore/bundle': 4.0.0
       '@sigstore/core': 3.2.0
       '@sigstore/protobuf-specs': 0.5.1
+
+  '@sinclair/typebox@0.34.49': {}
 
   '@sindresorhus/chunkify@2.0.0': {}
 
