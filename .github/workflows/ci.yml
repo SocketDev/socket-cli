@@ -242,6 +242,13 @@ jobs:
       - name: Build CLI
         working-directory: packages/cli
         shell: bash
+        env:
+          # download-assets.mts hits the GitHub releases API for
+          # binject / node-smol / iocraft. Anonymous calls share the
+          # 60-req/hr public quota and get 403 once exhausted; the
+          # auto-provided GITHUB_TOKEN gives this job its own 1000/hr
+          # bucket.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pnpm run build
 
@@ -318,6 +325,13 @@ jobs:
       - name: Build CLI
         working-directory: packages/cli
         shell: bash
+        env:
+          # download-assets.mts hits the GitHub releases API for
+          # binject / node-smol / iocraft. Anonymous calls share the
+          # 60-req/hr public quota and get 403 once exhausted; the
+          # auto-provided GITHUB_TOKEN gives this job its own 1000/hr
+          # bucket.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pnpm run build
 
