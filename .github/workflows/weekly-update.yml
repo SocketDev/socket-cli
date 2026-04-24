@@ -29,7 +29,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@0371e83fccd7e2e5370b9ee7d0ddc882c9790210 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@f1b40c99a11f8f2f65a44c9e6c66e53470bd0b90 # main
         with:
           checkout: 'false'
 
@@ -62,7 +62,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@0371e83fccd7e2e5370b9ee7d0ddc882c9790210 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@f1b40c99a11f8f2f65a44c9e6c66e53470bd0b90 # main
         with:
           checkout: 'false'
 
@@ -79,7 +79,7 @@ jobs:
           git checkout -b "$BRANCH_NAME" HEAD~1
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-git-signing@0371e83fccd7e2e5370b9ee7d0ddc882c9790210 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-git-signing@f1b40c99a11f8f2f65a44c9e6c66e53470bd0b90 # main
         with:
           gpg-private-key: ${{ secrets.BOT_GPG_PRIVATE_KEY }}
 
@@ -332,7 +332,7 @@ jobs:
             test.log
           retention-days: 7
 
-      - uses: SocketDev/socket-registry/.github/actions/cleanup-git-signing@0371e83fccd7e2e5370b9ee7d0ddc882c9790210 # main
+      - uses: SocketDev/socket-registry/.github/actions/cleanup-git-signing@f1b40c99a11f8f2f65a44c9e6c66e53470bd0b90 # main
         if: always()
 
   notify:
