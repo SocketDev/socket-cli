@@ -15,6 +15,7 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getEcosystemChoicesForMeow } from '../../utils/ecosystem.mts'
+import { InputError } from '../../utils/errors.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import {
   detectDefaultBranch,
@@ -165,6 +166,17 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
+  // The --default-branch flag is a boolean toggle; meow silently discards any
+  // `=value` form (e.g. --default-branch=main) and falls back to the default.
+  // Reject that form with a clear message so scans aren't silently miscategorized.
+  for (const arg of argv) {
+    if (typeof arg === 'string' && /^--default-branch=/.test(arg)) {
+      throw new InputError(
+        '--default-branch is a boolean flag and does not accept a value. Use --default-branch on its own (with --branch=<name> to name the branch), or --no-default-branch to unset it.',
+      )
+    }
+  }
+
   const config: CliCommandConfig = {
     commandName: CMD_NAME,
     description,

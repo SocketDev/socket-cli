@@ -28,7 +28,7 @@ describe('socket repository update', async () => {
             - Permissions: repo:update
 
           Options
-            --default-branch    Repository default branch
+            --default-branch-name  Repository default branch name
             --homepage          Repository url
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json              Output as JSON
@@ -200,6 +200,44 @@ describe('socket repository update', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 on success').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'repository',
+      'update',
+      'fakerepo',
+      '--default-branch=trunk',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
+    ],
+    'should warn when deprecated --default-branch flag is used',
+    async cmd => {
+      const { code, stderr } = await spawnSocketCli(binCliPath, cmd)
+      expect(stderr).toContain(
+        '--default-branch is deprecated; use --default-branch-name instead.',
+      )
+      expect(code, 'dry-run should still exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'repository',
+      'update',
+      'fakerepo',
+      '--default-branch-name=trunk',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
+    ],
+    'should accept --default-branch-name without warning',
+    async cmd => {
+      const { code, stderr } = await spawnSocketCli(binCliPath, cmd)
+      expect(stderr).not.toContain('deprecated')
+      expect(code, 'dry-run should exit with code 0').toBe(0)
     },
   )
 })

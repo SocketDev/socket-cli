@@ -813,4 +813,34 @@ describe('socket scan create', async () => {
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      FLAG_ORG,
+      'fakeOrg',
+      'target',
+      FLAG_DRY_RUN,
+      '--repo',
+      'xyz',
+      '--branch',
+      'main',
+      '--default-branch=main',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should fail when --default-branch is given a value',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        '--default-branch is a boolean flag and does not accept a value',
+      )
+      expect(
+        code,
+        'should exit with non-zero code when --default-branch=value is used',
+      ).not.toBe(0)
+    },
+  )
 })

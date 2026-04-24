@@ -43,11 +43,12 @@ async function run(
     flags: {
       ...commonFlags,
       ...outputFlags,
-      defaultBranch: {
+      defaultBranchName: {
         type: 'string',
         shortFlag: 'b',
         default: 'main',
-        description: 'Repository default branch',
+        description: 'Repository default branch name',
+        aliases: ['defaultBranch'],
       },
       homepage: {
         type: 'string',
@@ -101,6 +102,18 @@ async function run(
     parentName,
     importMeta,
   })
+
+  // Warn when the deprecated --default-branch alias is used. The flag was
+  // renamed to --default-branch-name to disambiguate from the boolean-toggle
+  // flag of the same name in `socket scan create`.
+  for (const arg of argv) {
+    if (typeof arg === 'string' && /^--default-branch(=|$)/.test(arg)) {
+      logger.warn(
+        '--default-branch is deprecated; use --default-branch-name instead.',
+      )
+      break
+    }
+  }
 
   const { json, markdown, org: orgFlag } = cli.flags
 
@@ -163,7 +176,7 @@ async function run(
       repoName: String(repoName),
       description: String(cli.flags['repoDescription'] || ''),
       homepage: String(cli.flags['homepage'] || ''),
-      defaultBranch: String(cli.flags['defaultBranch'] || ''),
+      defaultBranch: String(cli.flags['defaultBranchName'] || ''),
       visibility: String(cli.flags['visibility'] || 'private'),
     },
     outputKind,
