@@ -369,9 +369,9 @@ export async function trackEvent(
         await telemetry.flush()
       }
     }
-  } catch (err) {
+  } catch (e) {
     // Telemetry errors should never block CLI execution.
-    debug(`Failed to track event ${eventType}: ${err}`)
+    debug(`Failed to track event ${eventType}: ${e}`)
   }
 }
 

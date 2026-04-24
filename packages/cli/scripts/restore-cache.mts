@@ -261,9 +261,9 @@ async function restoreCache(repo, cacheKey) {
 
     logger.success('Cache restored successfully!')
     return true
-  } catch (error) {
+  } catch (e) {
     if (isVerbose()) {
-      logger.error(`Cache restoration failed: ${error.message}`)
+      logger.error(`Cache restoration failed: ${e.message}`)
     }
     return false
   } finally {
