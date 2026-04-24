@@ -586,11 +586,26 @@ importers:
         specifier: 24.9.2
         version: 24.9.2
 
+  .claude/hooks/public-surface-reminder:
+    devDependencies:
+      '@types/node':
+        specifier: 24.9.2
+        version: 24.9.2
+
   .claude/hooks/setup-security-tools:
     dependencies:
       '@socketsecurity/lib':
         specifier: 5.24.0
         version: 5.24.0(typescript@5.9.3)
+
+  .claude/hooks/token-hygiene:
+    devDependencies:
+      '@socketsecurity/lib':
+        specifier: 5.24.0
+        version: 5.24.0(typescript@5.9.3)
+      '@types/node':
+        specifier: 24.9.2
+        version: 24.9.2
 
   packages/build-infra:
     dependencies:

@@ -43,6 +43,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Prevent heap overflow in large monorepo scans by using streaming-based filtering to avoid accumulating all file paths in memory before filtering.
 - `socket scan create` now rejects `--default-branch=<name>` and `--default-branch <name>` (space-separated) with an actionable error instead of silently dropping the branch name. Scans that used the misuse shape were getting recorded without a branch tag and disappearing from the Main/PR dashboard tabs.
 - `socket repository create` / `socket repository update` now reject bare `--default-branch` (no value) and `--default-branch=` (empty value). Previously both persisted a blank default-branch name on the repo record.
+- `socket cdxgen` no longer silently produces SBOMs with an empty `components` array when run in the default `--lifecycle pre-build` + `--no-install-deps` mode against a Node.js project that has no lockfile and no `node_modules/`. The command now fails fast with an actionable error (install dependencies or pass `--lifecycle build`), and when the generated BOM still ends up empty for any other reason (e.g. overly narrow `--filter`/`--only`), emits a post-run warning so the condition is surfaced instead of shipping an SBOM that renders as "no alerts" on the Socket dashboard.
 
 ## [2.1.0](https://github.com/SocketDev/socket-cli/releases/tag/v2.1.0) - 2025-11-02
 
