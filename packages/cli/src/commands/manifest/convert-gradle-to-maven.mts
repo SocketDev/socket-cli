@@ -178,7 +178,9 @@ async function execGradleWithSpinner(
     })
 
     if (!output) {
-      throw new Error(`Failed to execute gradle: ${bin}`)
+      throw new Error(
+        `spawn returned no output for gradle (bin: ${bin}); check that the gradlew wrapper is executable and re-run with --verbose`,
+      )
     }
 
     pass = true

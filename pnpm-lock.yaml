@@ -2151,6 +2151,7 @@ packages:
 
   '@socketaddon/iocraft@file:packages/package-builder/build/dev/out/socketaddon-iocraft':
     resolution: {directory: packages/package-builder/build/dev/out/socketaddon-iocraft, type: directory}
+    engines: {node: '>=18'}
 
   '@socketregistry/es-set-tostringtag@1.0.10':
     resolution: {integrity: sha512-btXmvw1JpA8WtSoXx9mTapo9NAyIDKRRzK84i48d8zc0X09M6ORfobVnHbgwhXf7CFhkRzhYrHG9dqbI9vpELQ==}

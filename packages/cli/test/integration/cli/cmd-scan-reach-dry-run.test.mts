@@ -244,7 +244,7 @@ describe('socket scan reach - dry-run tests', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain('Invalid ecosystem: "invalid-ecosystem"')
+      expect(output).toContain('(saw: "invalid-ecosystem")')
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )
@@ -445,7 +445,7 @@ describe('socket scan reach - dry-run tests', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain('Invalid ecosystem: "invalid1"')
+      expect(output).toContain('(saw: "invalid1")')
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )

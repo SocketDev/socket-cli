@@ -340,7 +340,9 @@ export async function coanaFix(
           if (ghsaIdsRaw && ghsaIdsRaw.trim()) {
             const parsed = JSON.parse(ghsaIdsRaw)
             if (!Array.isArray(parsed)) {
-              throw new Error('Expected array of GHSA IDs from coana output')
+              throw new Error(
+                `coana find-vulnerabilities returned non-array JSON on last line (got: ${typeof parsed}); expected an array of GHSA ID strings`,
+              )
             }
             discoveredIds.push(...parsed)
           }
