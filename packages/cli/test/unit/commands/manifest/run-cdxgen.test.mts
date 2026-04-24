@@ -3,7 +3,7 @@
  *
  * Covers the lockfile/node_modules probe and Node.js type detection that
  * gate the default `socket cdxgen` path against shipping empty-components
- * SBOMs (SMO-590).
+ * SBOMs.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

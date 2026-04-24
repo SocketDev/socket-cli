@@ -39,7 +39,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 const mockRunCdxgen = vi.hoisted(() => vi.fn())
 const mockDetectNodejsCdxgenSources = vi.hoisted(() =>
   // Default to "sources available" so pre-existing tests don't trip the
-  // hard gate added in SMO-590.
+  // empty-components hard gate.
   vi.fn().mockResolvedValue({ hasLockfile: true, hasNodeModules: true }),
 )
 const mockIsNodejsCdxgenType = vi.hoisted(() => vi.fn().mockReturnValue(true))
@@ -324,7 +324,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
     })
 
-    describe('empty-components hard gate (SMO-590)', () => {
+    describe('empty-components hard gate', () => {
       it('fails when default pre-build path has no lockfile and no node_modules', async () => {
         mockDetectNodejsCdxgenSources.mockResolvedValue({
           hasLockfile: false,

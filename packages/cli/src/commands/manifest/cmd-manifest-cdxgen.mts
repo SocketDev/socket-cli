@@ -308,7 +308,7 @@ async function run(
     // needs either a lockfile or an installed node_modules/ to produce any
     // Node.js components. Without both, it emits a valid CycloneDX doc with
     // "components": []. Refuse with an actionable error instead of shipping
-    // an empty SBOM (SMO-590).
+    // an empty SBOM.
     if (
       lifecycleWasDefaulted &&
       isNodejsCdxgenType(yargv.type) &&
