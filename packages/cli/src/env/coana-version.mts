@@ -12,7 +12,7 @@ export function getCoanaVersion(): string {
   const version = process.env['INLINED_COANA_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_COANA_VERSION not found. Please ensure @coana-tech/cli is properly configured in bundle-tools.json.',
+      `process.env.INLINED_COANA_VERSION is empty at runtime; this value should be inlined at build time from bundle-tools.json tools["@coana-tech/cli"].version — rebuild socket-cli (\`pnpm run build:cli\`) or check that esbuild's define step ran`,
     )
   }
   return version

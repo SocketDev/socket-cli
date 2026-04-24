@@ -19,7 +19,7 @@ export function getPyCliVersion(): string {
   const version = process.env['INLINED_PYCLI_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_PYCLI_VERSION not set - build configuration error. Please rebuild the CLI.',
+      `process.env.INLINED_PYCLI_VERSION is empty at runtime; this value should be inlined at build time from bundle-tools.json tools.socketsecurity.version (PyPI package) — rebuild socket-cli (\`pnpm run build:cli\`) or check that esbuild's define step ran`,
     )
   }
   return version

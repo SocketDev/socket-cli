@@ -12,7 +12,7 @@ export function getSocketPatchVersion(): string {
   const version = process.env['INLINED_SOCKET_PATCH_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_SOCKET_PATCH_VERSION not found. Please ensure socket-patch is properly configured in bundle-tools.json.',
+      `process.env.INLINED_SOCKET_PATCH_VERSION is empty at runtime; this value should be inlined at build time from bundle-tools.json tools["socket-patch"].version — rebuild socket-cli (\`pnpm run build:cli\`) or check that esbuild's define step ran`,
     )
   }
   return version

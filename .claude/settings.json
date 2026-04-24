@@ -9,6 +9,19 @@
             "command": "node .claude/hooks/check-new-deps/index.mts"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/public-surface-reminder/index.mts"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/token-hygiene/index.mts"
+          }
+        ]
       }
     ]
   }

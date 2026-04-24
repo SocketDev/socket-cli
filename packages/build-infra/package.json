@@ -5,17 +5,24 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./lib/checkpoint-manager": "./lib/checkpoint-manager.mts",
+    "./lib/constants": "./lib/constants.mts",
     "./lib/esbuild-helpers": "./lib/esbuild-helpers.mts",
     "./lib/esbuild-plugin-unicode-transform": "./lib/esbuild-plugin-unicode-transform.mts",
+    "./lib/external-tools-schema": "./lib/external-tools-schema.mts",
     "./lib/extraction-cache": "./lib/extraction-cache.mts",
     "./lib/github-error-utils": "./lib/github-error-utils.mts",
     "./lib/github-releases": "./lib/github-releases.mts",
+    "./lib/platform-mappings": "./lib/platform-mappings.mts",
     "./lib/platform-targets": "./lib/platform-targets.mts",
-    "./lib/unicode-property-escape-transform": "./lib/unicode-property-escape-transform.mts"
+    "./lib/unicode-property-escape-transform": "./lib/unicode-property-escape-transform.mts",
+    "./lib/version-helpers": "./lib/version-helpers.mts",
+    "./lib/build-pipeline": "./lib/build-pipeline.mts"
   },
   "dependencies": {
     "@babel/parser": "catalog:",
     "@babel/traverse": "catalog:",
+    "@sinclair/typebox": "catalog:",
     "@socketsecurity/lib": "catalog:",
     "magic-string": "catalog:"
   },

@@ -12,7 +12,7 @@ export function getOpengrepVersion(): string {
   const version = process.env['INLINED_OPENGREP_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_OPENGREP_VERSION not found. Please ensure opengrep is properly configured in bundle-tools.json.',
+      `process.env.INLINED_OPENGREP_VERSION is empty at runtime; this value should be inlined at build time from bundle-tools.json tools.opengrep.version — rebuild socket-cli (\`pnpm run build:cli\`) or check that esbuild's define step ran`,
     )
   }
   return version

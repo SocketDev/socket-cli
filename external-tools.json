@@ -1,0 +1,167 @@
+{
+  "$schema": "https://raw.githubusercontent.com/SocketDev/socket-btm/main/packages/build-infra/lib/external-tools-schema.json",
+  "description": "External tools required to build + release socket-cli. Wrapped `tools` shape matches the canonical schema every fleet repo now uses. When composite actions or scripts want sha256-verified downloads of pnpm / sfw / zizmor, they read from `config.tools.<name>` in this file.",
+  "tools": {
+    "git": {
+      "description": "Git CLI — checkout, submodule init, tag signing.",
+      "version": "2.30+",
+      "notes": [
+        "Required: yes (all platforms)",
+        "Preinstalled on macOS (Xcode CLT) and most Linux distros",
+        "Windows: https://git-scm.com/download/win or via winget/scoop"
+      ]
+    },
+    "node": {
+      "description": "Node.js — runs the CLI and all build scripts.",
+      "version": "25.9.0",
+      "notes": [
+        "Required: yes",
+        "Node 25+ runs .mts files natively with no flag",
+        "The pinned version lives in .node-version at the repo root"
+      ]
+    },
+    "pnpm": {
+      "description": "pnpm — the fleet's package manager.",
+      "version": "11.0.0-rc.5",
+      "packageManager": "pnpm",
+      "repository": "github:pnpm/pnpm",
+      "release": "asset",
+      "notes": [
+        "Required: yes",
+        "Bootstrap locally via `corepack enable pnpm`",
+        "CI downloads + sha256-verifies the pinned tarball"
+      ],
+      "checksums": {
+        "darwin-arm64": {
+          "asset": "pnpm-darwin-arm64.tar.gz",
+          "sha256": "32a50710ccacfdcf14e6d5995d5368298eec913b0ce3903b9e09b6555f06f4e5"
+        },
+        "darwin-x64": {
+          "asset": "pnpm-darwin-x64.tar.gz",
+          "sha256": "71dca33f4275da6b43bf1eb40bdc4d876f59a116716eacbf01079c3d985ff85d"
+        },
+        "linux-arm64": {
+          "asset": "pnpm-linux-arm64.tar.gz",
+          "sha256": "2dd04127ff10b1f9dd20bae248b779c77a8ec67e3afa35e7256e5f94abddd493"
+        },
+        "linux-x64": {
+          "asset": "pnpm-linux-x64.tar.gz",
+          "sha256": "7ebef4b616ba41fb0d54a207b36508fae3346723283a088b43fc1e038ee6fed0"
+        },
+        "win-arm64": {
+          "asset": "pnpm-win32-arm64.zip",
+          "sha256": "e4a39ad4c251db5e34b18b98561ef25bab5506ad65cad2fa3602af58d1972667"
+        },
+        "win-x64": {
+          "asset": "pnpm-win32-x64.zip",
+          "sha256": "147485ae2f38c3d1ccf2f5db00d0244416bcd22b9114c02388e6a78f41538fc4"
+        }
+      }
+    },
+    "gh": {
+      "description": "GitHub CLI — workflow dispatch, release downloads, PR creation.",
+      "version": "2.63+",
+      "notes": [
+        "Required: only in workflows that call `gh api` / `gh pr create`",
+        "Preinstalled on GitHub-hosted runners",
+        "Local: `brew install gh` / `winget install gh` / `apt install gh`"
+      ]
+    },
+    "zizmor": {
+      "description": "GitHub Actions security linter — audits .github/ for workflow-injection / credential-leak patterns.",
+      "version": "1.23.1",
+      "repository": "github:zizmorcore/zizmor",
+      "release": "asset",
+      "notes": [
+        "Used by the setup-and-install composite action",
+        "Blocks merges on medium+ findings"
+      ],
+      "checksums": {
+        "darwin-arm64": {
+          "asset": "zizmor-aarch64-apple-darwin.tar.gz",
+          "sha256": "2632561b974c69f952258c1ab4b7432d5c7f92e555704155c3ac28a2910bd717"
+        },
+        "darwin-x64": {
+          "asset": "zizmor-x86_64-apple-darwin.tar.gz",
+          "sha256": "89d5ed42081dd9d0433a10b7545fac42b35f1f030885c278b9712b32c66f2597"
+        },
+        "linux-arm64": {
+          "asset": "zizmor-aarch64-unknown-linux-gnu.tar.gz",
+          "sha256": "3725d7cd7102e4d70827186389f7d5930b6878232930d0a3eb058d7e5b47e658"
+        },
+        "linux-x64": {
+          "asset": "zizmor-x86_64-unknown-linux-gnu.tar.gz",
+          "sha256": "67a8df0a14352dd81882e14876653d097b99b0f4f6b6fe798edc0320cff27aff"
+        },
+        "win-x64": {
+          "asset": "zizmor-x86_64-pc-windows-msvc.zip",
+          "sha256": "33c2293ff02834720dd7cd8b47348aafb2e95a19bdc993c0ecaca9c804ade92a"
+        }
+      }
+    },
+    "sfw-free": {
+      "description": "Socket Firewall (free tier) — malware gate on dep installs.",
+      "version": "1.7.2",
+      "repository": "github:SocketDev/sfw-free",
+      "release": "asset",
+      "notes": [
+        "Used when SOCKET_API_KEY is not set",
+        "Shims npm/yarn/pnpm so every install call passes through the firewall"
+      ],
+      "checksums": {
+        "darwin-arm64": {
+          "asset": "sfw-free-macos-arm64",
+          "sha256": "248fb588e1e1a27e7192f7b079f739fc29a9de61f0bad7e90928363022dc5643"
+        },
+        "darwin-x64": {
+          "asset": "sfw-free-macos-x86_64",
+          "sha256": "a5427d479d440f08e3789fa191ba57599be64997196daf42e67d964fec0382b4"
+        },
+        "linux-arm64": {
+          "asset": "sfw-free-linux-arm64",
+          "sha256": "84a045e4e1bb320cc5c0d3929f02e53f199398b5be0637e8846d02d9ef0027b1"
+        },
+        "linux-x64": {
+          "asset": "sfw-free-linux-x86_64",
+          "sha256": "93e2d9dfa244b82a74e014dc26b1c6af18b4adec20f35254378943db5fe91411"
+        },
+        "win-x64": {
+          "asset": "sfw-free-windows-x86_64.exe",
+          "sha256": "6d333b4cac9d7c5712e2e99677ca634ac8a3020d550c6308312c60bea97f0a28"
+        }
+      }
+    },
+    "sfw-enterprise": {
+      "description": "Socket Firewall (enterprise tier) — selected when SOCKET_API_KEY is set.",
+      "version": "1.7.2",
+      "repository": "github:SocketDev/firewall-release",
+      "release": "asset",
+      "notes": [
+        "Used when SOCKET_API_KEY is set (e.g. via repo secrets in CI)",
+        "Same shims as sfw-free, broader ecosystem support"
+      ],
+      "checksums": {
+        "darwin-arm64": {
+          "asset": "sfw-macos-arm64",
+          "sha256": "b1cdc3bdbd2a3161247bd5cc215eb3c44a90b87fe0b800a33889a14f61bb0d6d"
+        },
+        "darwin-x64": {
+          "asset": "sfw-macos-x86_64",
+          "sha256": "da252d2a9a5d0edb271bb771e0d01b9cd6fa1635b6d765f61efd61edb6739f12"
+        },
+        "linux-arm64": {
+          "asset": "sfw-linux-arm64",
+          "sha256": "c24a79c27e1a01a59b7a160c165930ae029816c72b141fcfcdb2f73e0774898a"
+        },
+        "linux-x64": {
+          "asset": "sfw-linux-x86_64",
+          "sha256": "4482b52e6367bd4610519bfd57a104d5907ec87d5399142ed3bb3d222de1f33d"
+        },
+        "win-x64": {
+          "asset": "sfw-windows-x86_64.exe",
+          "sha256": "e52ad806a1c41b440f04098eb1c7e407845f03f5740a6a79006ba6fd172056ec"
+        }
+      }
+    }
+  }
+}

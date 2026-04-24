@@ -190,7 +190,9 @@ export function getSocketCachePath(): string {
 export function getSocketRegistryPath(): string {
   const appDataPath = getSocketAppDataPath()
   if (!appDataPath) {
-    throw new Error('Unable to determine Socket app data path')
+    throw new Error(
+      `could not determine the Socket app-data directory: getSocketAppDataPath() returned undefined because none of HOME, USERPROFILE, LOCALAPPDATA, or XDG_DATA_HOME are set; export one of those env vars (typically HOME on macOS/Linux or LOCALAPPDATA on Windows) and retry`,
+    )
   }
   return path.join(appDataPath, 'registry')
 }

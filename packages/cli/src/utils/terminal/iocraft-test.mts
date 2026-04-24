@@ -1,7 +1,7 @@
 /**
  * @fileoverview Simple test to verify iocraft integration.
  *
- * Run with: node --experimental-strip-types src/utils/terminal/iocraft-test.mts
+ * Run with: node src/utils/terminal/iocraft-test.mts
  */
 
 import { Box, Text, print, renderToString } from './iocraft.mts'
