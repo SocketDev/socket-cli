@@ -282,12 +282,12 @@ async function main() {
       printSuccess('Build completed')
       printFooter()
     }
-  } catch (error) {
+  } catch (e) {
     if (!quiet) {
-      printError(`Build failed: ${error.message}`)
+      printError(`Build failed: ${e.message}`)
     }
     if (verbose) {
-      logger.error(error)
+      logger.error(e)
     }
     process.exitCode = 1
   }

@@ -1,3 +1,4 @@
+import { errorMessage } from '@socketsecurity/lib/errors'
 import { safeReadFile } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
@@ -134,14 +135,14 @@ export async function convertSbtToMaven({
       },
     }
   } catch (e) {
-    const errorMessage =
+    const summary =
       'There was an unexpected error while running this' +
       (verbose ? '' : ' (use --verbose for details)')
 
     if (isTextMode) {
       process.exitCode = 1
       spinner?.stop()
-      logger.fail(errorMessage)
+      logger.fail(summary)
       if (verbose) {
         logger.group('[VERBOSE] error:')
         logger.log(e)
@@ -151,8 +152,8 @@ export async function convertSbtToMaven({
 
     return {
       ok: false,
-      message: errorMessage,
-      cause: e instanceof Error ? e.message : String(e),
+      message: summary,
+      cause: errorMessage(e),
     }
   }
 }

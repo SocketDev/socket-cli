@@ -197,7 +197,9 @@ describe('cmd-organization-dependencies', () => {
 
       await expect(
         cmdOrganizationDependencies.run(['--limit', '-1'], importMeta, context),
-      ).rejects.toThrow('Invalid value for --limit: -1')
+      ).rejects.toThrow(
+        /--limit must be a non-negative integer \(saw: "-1"\)/,
+      )
 
       expect(mockHandleDependencies).not.toHaveBeenCalled()
     })
@@ -211,7 +213,9 @@ describe('cmd-organization-dependencies', () => {
           importMeta,
           context,
         ),
-      ).rejects.toThrow('Invalid value for --offset: -1')
+      ).rejects.toThrow(
+        /--offset must be a non-negative integer \(saw: "-1"\)/,
+      )
 
       expect(mockHandleDependencies).not.toHaveBeenCalled()
     })
@@ -225,7 +229,9 @@ describe('cmd-organization-dependencies', () => {
           importMeta,
           context,
         ),
-      ).rejects.toThrow('Invalid value for --limit: invalid')
+      ).rejects.toThrow(
+        /--limit must be a non-negative integer \(saw: "invalid"\)/,
+      )
 
       expect(mockHandleDependencies).not.toHaveBeenCalled()
     })
@@ -239,7 +245,9 @@ describe('cmd-organization-dependencies', () => {
           importMeta,
           context,
         ),
-      ).rejects.toThrow('Invalid value for --offset: invalid')
+      ).rejects.toThrow(
+        /--offset must be a non-negative integer \(saw: "invalid"\)/,
+      )
 
       expect(mockHandleDependencies).not.toHaveBeenCalled()
     })

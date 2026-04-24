@@ -763,7 +763,7 @@ describe('cmd-scan-create', () => {
           importMeta,
           context,
         ),
-      ).rejects.toThrow(/Invalid ecosystem/)
+      ).rejects.toThrow(/--reach-ecosystems must be one of/)
     })
 
     it('should pass --commit-hash flag to handleCreateNewScan', async () => {
@@ -878,7 +878,7 @@ describe('cmd-scan-create', () => {
             importMeta,
             context,
           ),
-        ).rejects.toThrow(/Invalid number value for --reach-analysis-memory-limit/)
+        ).rejects.toThrow(/--reach-analysis-memory-limit must be a number of megabytes/)
       })
 
       it('should validate --reach-analysis-timeout is a number', async () => {
@@ -898,7 +898,7 @@ describe('cmd-scan-create', () => {
             importMeta,
             context,
           ),
-        ).rejects.toThrow(/Invalid number value for --reach-analysis-timeout/)
+        ).rejects.toThrow(/--reach-analysis-timeout must be a number of seconds/)
       })
 
       it('should validate --reach-concurrency is a number', async () => {
@@ -918,7 +918,7 @@ describe('cmd-scan-create', () => {
             importMeta,
             context,
           ),
-        ).rejects.toThrow(/Invalid number value for --reach-concurrency/)
+        ).rejects.toThrow(/--reach-concurrency must be a positive integer/)
       })
     })
 

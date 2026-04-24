@@ -37,17 +37,24 @@ export function validateSocketJson<T = unknown>(
 ): SocketJsonResponse<T> {
   let parsed: any
 
+  // Truncate to keep error messages readable; full payload goes in the message.
+  const preview = jsonString.length > 200
+    ? `${jsonString.slice(0, 200)}...`
+    : jsonString
+
   // Check if it's valid JSON.
   try {
     parsed = JSON.parse(jsonString)
-  } catch (_e) {
-    throw new Error(`Invalid JSON output: ${jsonString}`)
+  } catch (e) {
+    throw new Error(
+      `command output is not valid JSON (JSON.parse threw: ${e instanceof Error ? e.message : String(e)}); got: ${preview} — check for unclosed braces, trailing commas, or non-JSON text mixed into stdout`,
+    )
   }
 
   // Check for required ok field.
   if (typeof parsed.ok !== 'boolean') {
     throw new Error(
-      `JSON output missing required 'ok' boolean field: ${jsonString}`,
+      `Socket JSON contract violation: missing boolean "ok" field (contract: {ok: boolean, data?: any, message?: string}); got: ${preview} — add ok:true for success, ok:false for failure in the output handler`,
     )
   }
 
@@ -55,31 +62,31 @@ export function validateSocketJson<T = unknown>(
   if (expectedExitCode === 0) {
     if (parsed.ok !== true) {
       throw new Error(
-        `JSON output 'ok' should be true when exit code is 0: ${jsonString}`,
+        `Socket JSON contract violation: exit code is 0 but "ok" is ${JSON.stringify(parsed.ok)} (expected true); got: ${preview} — set ok:true when the command succeeds, or return a non-zero exit code`,
       )
     }
     // Success response must have data field.
     if (parsed.data === undefined || parsed.data === null) {
       throw new Error(
-        `JSON output missing required 'data' field when ok is true: ${jsonString}`,
+        `Socket JSON contract violation: ok:true must include a non-null "data" field (got: ${JSON.stringify(parsed.data)}); full output: ${preview} — return an empty object or array instead of undefined/null`,
       )
     }
   } else {
     if (parsed.ok !== false) {
       throw new Error(
-        `JSON output 'ok' should be false when exit code is non-zero: ${jsonString}`,
+        `Socket JSON contract violation: exit code is ${expectedExitCode} but "ok" is ${JSON.stringify(parsed.ok)} (expected false); got: ${preview} — set ok:false on failure, or exit 0 on success`,
       )
     }
     // Error response must have message field.
     if (typeof parsed.message !== 'string' || !parsed.message.length) {
       throw new Error(
-        `JSON output missing required 'message' field when ok is false: ${jsonString}`,
+        `Socket JSON contract violation: ok:false must include a non-empty "message" string (got: ${JSON.stringify(parsed.message)}); full output: ${preview} — provide a user-facing error description`,
       )
     }
     // If code exists, it must be a number.
     if (parsed.code !== undefined && typeof parsed.code !== 'number') {
       throw new Error(
-        `JSON output 'code' field must be a number: ${jsonString}`,
+        `Socket JSON contract violation: "code" field must be a number when present (got: ${typeof parsed.code} ${JSON.stringify(parsed.code)}); full output: ${preview} — drop the field or set it to an integer`,
       )
     }
   }

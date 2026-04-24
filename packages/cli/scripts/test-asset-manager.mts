@@ -136,16 +136,16 @@ async function main() {
     console.log('')
     console.log('Phase 1 (Foundation) complete. Ready for Phase 2 (Migration).')
     console.log('')
-  } catch (error) {
+  } catch (e) {
     console.error('\n' + '='.repeat(60))
     console.error('❌ TEST FAILED')
     console.error('='.repeat(60))
     console.error('')
-    console.error('Error:', error.message)
+    console.error('Error:', e.message)
     console.error('')
-    if (error.stack) {
+    if (e.stack) {
       console.error('Stack trace:')
-      console.error(error.stack)
+      console.error(e.stack)
     }
     process.exitCode = 1
   }
