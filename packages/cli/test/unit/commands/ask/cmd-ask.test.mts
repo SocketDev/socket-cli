@@ -50,7 +50,7 @@ describe('cmd-ask', () => {
 
     it('should throw InputError when no query provided', async () => {
       await expect(cmdAsk.run([], importMeta, context)).rejects.toThrow(
-        'Please provide a question',
+        /socket ask requires a QUERY positional argument/,
       )
     })
 

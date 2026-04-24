@@ -1,6 +1,7 @@
 import { handleDependencies } from './handle-dependencies.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'
+import { InputError } from '../../utils/error/errors.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -115,10 +116,14 @@ async function run(
   }
 
   if (Number.isNaN(validatedLimit) || validatedLimit < 0) {
-    throw new Error(`Invalid value for --limit: ${limit}`)
+    throw new InputError(
+      `--limit must be a non-negative integer (saw: "${limit}"); pass a number like --limit=50`,
+    )
   }
   if (Number.isNaN(validatedOffset) || validatedOffset < 0) {
-    throw new Error(`Invalid value for --offset: ${offset}`)
+    throw new InputError(
+      `--offset must be a non-negative integer (saw: "${offset}"); pass a number like --offset=0`,
+    )
   }
 
   await handleDependencies({

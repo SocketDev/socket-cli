@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url'
 
 import { whichSync } from '@socketsecurity/lib/bin'
 import { downloadBinary } from '@socketsecurity/lib/dlx/binary'
+import { safeDelete } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getSocketHomePath } from '@socketsecurity/lib/paths/socket'
 import { spawn, spawnSync } from '@socketsecurity/lib/spawn'
@@ -161,7 +162,7 @@ async function setupZizmor(): Promise<boolean> {
     await fs.copyFile(extractedBin, binPath)
     await fs.chmod(binPath, 0o755)
   } finally {
-    await fs.rm(extractDir, { recursive: true, force: true }).catch(() => {})
+    await safeDelete(extractDir).catch(() => {})
   }
 
   logger.log(`Installed to ${binPath}`)

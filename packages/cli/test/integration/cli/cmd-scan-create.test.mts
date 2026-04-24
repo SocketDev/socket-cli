@@ -541,7 +541,7 @@ describe('socket scan create', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain('Invalid ecosystem: "invalid-ecosystem"')
+      expect(output).toContain('(saw: "invalid-ecosystem")')
       expect(
         code,
         'should exit with non-zero code when invalid ecosystem is provided',
@@ -661,7 +661,7 @@ describe('socket scan create', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain('Invalid ecosystem: "invalid"')
+      expect(output).toContain('(saw: "invalid")')
       expect(
         code,
         'should exit with non-zero code when invalid ecosystem provided',

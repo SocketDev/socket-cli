@@ -81,8 +81,8 @@ async function main() {
     logger.log('')
 
     process.exitCode = 1
-  } catch (error) {
-    logger.fail(`Validation failed: ${error.message}`)
+  } catch (e) {
+    logger.fail(`Validation failed: ${e.message}`)
     process.exitCode = 1
   }
 }

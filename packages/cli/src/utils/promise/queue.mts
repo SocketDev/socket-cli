@@ -27,7 +27,9 @@ export class PromiseQueue {
       this.maxQueueLength = maxQueueLength
     }
     if (maxConcurrency < 1) {
-      throw new Error('maxConcurrency must be at least 1')
+      throw new Error(
+        `PromiseQueue maxConcurrency must be >= 1 (saw: ${maxConcurrency}); pass a positive integer like 4 or 8`,
+      )
     }
   }
 

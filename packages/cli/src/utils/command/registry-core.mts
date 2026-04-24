@@ -9,7 +9,7 @@ import type {
   MiddlewareFn,
 } from './registry-types.mjs'
 import type { CResult } from '../../types.mts'
-
+import { errorMessage, errorStack } from '@socketsecurity/lib/errors'
 /**
  * Central registry for CLI commands.
  * Handles registration, discovery, execution, and middleware.
@@ -24,8 +24,9 @@ export class CommandRegistry implements ICommandRegistry {
    */
   register(command: CommandDefinition): void {
     if (this.commands.has(command.name)) {
+      const existing = this.commands.get(command.name)
       throw new Error(
-        `Command "${command.name}" is already registered. Use a unique name or unregister first.`,
+        `cannot register command "${command.name}": already registered (existing definition has name="${existing?.name}"); call registry.unregister("${command.name}") first or pick a different name`,
       )
     }
 
@@ -36,7 +37,7 @@ export class CommandRegistry implements ICommandRegistry {
       for (const alias of command.aliases) {
         if (this.commands.has(alias)) {
           throw new Error(
-            `Alias "${alias}" conflicts with existing command "${this.commands.get(alias)?.name}"`,
+            `cannot register command "${command.name}" alias "${alias}": conflicts with command "${this.commands.get(alias)?.name}"; rename the alias or unregister the conflicting command first`,
           )
         }
         // Store alias pointing to main command.
@@ -137,8 +138,8 @@ export class CommandRegistry implements ICommandRegistry {
     } catch (e) {
       return {
         ok: false,
-        message: e instanceof Error ? e.message : String(e),
-        cause: e instanceof Error ? e.stack : undefined,
+        message: errorMessage(e),
+        cause: errorStack(e),
       }
     }
 
@@ -171,8 +172,8 @@ export class CommandRegistry implements ICommandRegistry {
     } catch (e) {
       return {
         ok: false,
-        message: e instanceof Error ? e.message : String(e),
-        cause: e instanceof Error ? e.stack : undefined,
+        message: errorMessage(e),
+        cause: errorStack(e),
       }
     }
   }
@@ -221,7 +222,12 @@ export class CommandRegistry implements ICommandRegistry {
 
     const dispatch = async (i: number): Promise<void> => {
       if (i <= index) {
-        throw new Error('next() called multiple times')
+        // Each middleware[k] receives a next() closure that calls dispatch(k + 1);
+        // if that closure was invoked twice, dispatch(i) is re-entered and the
+        // offender is the middleware that held the closure — position i - 1.
+        throw new Error(
+          `middleware at index ${i - 1} called next() more than once (each middleware may invoke next() at most once); remove the extra next() call or split the middleware`,
+        )
       }
 
       index = i
@@ -287,7 +293,9 @@ export class CommandRegistry implements ICommandRegistry {
       } else {
         // --flag value format.
         if (i + 1 >= args.length) {
-          throw new Error(`Missing value for flag --${flagName}`)
+          throw new Error(
+            `flag --${flagName} requires a ${flagDef.type} value but none was provided; pass it as --${flagName}=<value> or --${flagName} <value>`,
+          )
         }
         value = args[++i]
       }
@@ -295,9 +303,12 @@ export class CommandRegistry implements ICommandRegistry {
       // Type conversion
       switch (flagDef.type) {
         case 'number': {
+          const raw = value
           value = Number(value)
           if (Number.isNaN(value)) {
-            throw new Error(`Invalid number value for --${flagName}: ${value}`)
+            throw new Error(
+              `flag --${flagName} requires a numeric value (saw: "${String(raw)}"); pass an integer or decimal like --${flagName}=42`,
+            )
           }
           break
         }
@@ -321,7 +332,9 @@ export class CommandRegistry implements ICommandRegistry {
     // Validate required flags
     for (const [name, def] of Object.entries(command.flags)) {
       if (def.isRequired && flags[name] === undefined) {
-        throw new Error(`Required flag --${name} is missing`)
+        throw new Error(
+          `command "${command.name}" requires --${name} but it was not provided; pass --${name}=<${def.type}-value>`,
+        )
       }
     }
 

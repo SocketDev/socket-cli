@@ -28,6 +28,7 @@
 
 import fs from 'node:fs'
 
+import { errorMessage } from '@socketsecurity/lib/errors'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
@@ -235,7 +236,7 @@ async function clearQuarantine(filePath: string): Promise<void> {
     logger.log('Cleared quarantine attribute')
   } catch (e) {
     logger.log(
-      `Failed to clear quarantine: ${e instanceof Error ? e.message : String(e)}`,
+      `Failed to clear quarantine: ${errorMessage(e)}`,
     )
   }
 }
@@ -254,7 +255,7 @@ async function ensureExecutable(filePath: string): Promise<void> {
     logger.log('Set executable permissions')
   } catch (e) {
     logger.warn(
-      `Failed to set executable permissions: ${e instanceof Error ? e.message : String(e)}`,
+      `Failed to set executable permissions: ${errorMessage(e)}`,
     )
   }
 }
