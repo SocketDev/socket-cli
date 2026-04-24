@@ -1,6 +1,7 @@
 import { Gitlab } from '@gitbeaker/rest'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { isError } from '@socketsecurity/lib/errors'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import { formatErrorWithDetail } from '../error/errors.mts'
@@ -62,7 +63,7 @@ export class GitLabProvider implements PrProvider {
         }
       } catch (e) {
         let message = `Failed to create merge request (attempt ${attempt}/${retries})`
-        if (e instanceof Error) {
+        if (isError(e)) {
           message += `: ${e.message}`
         }
 
