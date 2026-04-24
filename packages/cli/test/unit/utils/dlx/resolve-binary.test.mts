@@ -353,7 +353,7 @@ describe('binary resolution utilities', () => {
       )
 
       expect(() => resolveSocketPatch()).toThrow(
-        'socket-patch is not available for platform freebsd-x64',
+        /socket-patch has no prebuilt binary for "freebsd-x64"/,
       )
     })
 
