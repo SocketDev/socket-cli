@@ -184,7 +184,9 @@ export function safeNpmSpecToPurl(pkgSpec: string): string | undefined {
 export function npmSpecToPurl(pkgSpec: string): string {
   const purl = safeNpmSpecToPurl(pkgSpec)
   if (!purl) {
-    throw new Error(`Failed to convert ${NPM} spec to PURL: ${pkgSpec}`)
+    throw new Error(
+      `cannot convert npm spec "${pkgSpec}" to PURL (safeNpmSpecToPurl returned null); valid npm specs look like "lodash@4.17.21" or "@scope/pkg@^1.0.0" — check the spec for typos or unsupported forms`,
+    )
   }
   return purl
 }

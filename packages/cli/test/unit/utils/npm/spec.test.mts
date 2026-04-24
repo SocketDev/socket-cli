@@ -455,7 +455,7 @@ describe('npm-spec utilities', () => {
 
       // Make the fallback parsing fail by providing an empty string that would result in empty name.
       expect(() => npmSpecToPurl('')).toThrow(
-        'Failed to convert npm spec to PURL:',
+        /cannot convert npm spec/,
       )
     })
 
@@ -467,7 +467,7 @@ describe('npm-spec utilities', () => {
 
       // Make fallback parsing fail by providing empty string.
       expect(() => npmSpecToPurl('')).toThrow(
-        'Failed to convert npm spec to PURL: ',
+        /cannot convert npm spec ""/,
       )
     })
 
