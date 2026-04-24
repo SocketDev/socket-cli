@@ -371,7 +371,7 @@ async function run(
   for (const ecosystem of ecosystemsRaw) {
     if (!validEcosystemChoices.includes(ecosystem)) {
       logger.fail(
-        `Invalid ecosystem: "${ecosystem}". Valid values are: ${joinAnd(validEcosystemChoices)}`,
+        `--ecosystems must be one of: ${joinAnd(validEcosystemChoices)} (saw: "${ecosystem}"); pass a supported ecosystem like --ecosystems=${validEcosystemChoices[0]}`,
       )
       process.exitCode = 1
       return

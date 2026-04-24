@@ -45,8 +45,8 @@ async function main() {
     }
 
     logger.success('Build completed successfully')
-  } catch (error) {
-    logger.error(`Build failed: ${error.message}`)
+  } catch (e) {
+    logger.error(`Build failed: ${e.message}`)
     process.exitCode = 1
   }
 }

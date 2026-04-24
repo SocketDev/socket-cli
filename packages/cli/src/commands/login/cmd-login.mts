@@ -97,7 +97,7 @@ async function run(
 
   if (!isInteractive()) {
     throw new InputError(
-      'Cannot prompt for credentials in a non-interactive shell. Use SOCKET_CLI_API_TOKEN environment variable instead',
+      'socket login needs an interactive TTY to prompt for credentials (stdin/stdout is not a TTY); set SOCKET_CLI_API_TOKEN in the environment instead',
     )
   }
 

@@ -1,6 +1,7 @@
 import { Gitlab } from '@gitbeaker/rest'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { isError } from '@socketsecurity/lib/errors'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import { formatErrorWithDetail } from '../error/errors.mts'
@@ -62,7 +63,7 @@ export class GitLabProvider implements PrProvider {
         }
       } catch (e) {
         let message = `Failed to create merge request (attempt ${attempt}/${retries})`
-        if (e instanceof Error) {
+        if (isError(e)) {
           message += `: ${e.message}`
         }
 
@@ -97,7 +98,7 @@ export class GitLabProvider implements PrProvider {
     }
 
     throw new Error(
-      `Failed to create merge request after ${retries} attempts: ${owner}/${repo}#${head}`,
+      `GitLab API rejected createMergeRequest for ${owner}/${repo} (head="${head}") after ${retries} attempts with exponential backoff; check GITLAB_TOKEN permissions (needs api scope), that the target branch exists, and that GitLab is reachable`,
     )
   }
 
@@ -326,6 +327,6 @@ function getGitLabToken(): string {
   }
 
   throw new Error(
-    'GitLab token not found. Set GITLAB_TOKEN environment variable.',
+    `GitLab access requires a token but process.env.GITLAB_TOKEN is not set; create a personal access token with the \`api\` scope at https://gitlab.com/-/user_settings/personal_access_tokens and export GITLAB_TOKEN=<token>`,
   )
 }

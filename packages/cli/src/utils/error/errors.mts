@@ -26,6 +26,8 @@ import {
 } from '@socketsecurity/lib/constants/core'
 import { debugNs } from '@socketsecurity/lib/debug'
 
+import { isError, isErrnoException } from '@socketsecurity/lib/errors'
+export { isErrnoException } from '@socketsecurity/lib/errors'
 import {
   SOCKET_DASHBOARD_URL,
   SOCKET_PRICING_URL,
@@ -241,15 +243,6 @@ export function captureExceptionSync(
   return Sentry.captureException(exception, hint) as string
 }
 
-export function isErrnoException(
-  value: unknown,
-): value is NodeJS.ErrnoException {
-  if (!(value instanceof Error)) {
-    return false
-  }
-  return (value as NodeJS.ErrnoException).code !== undefined
-}
-
 /**
  * Type guard to check if an error has recovery suggestions.
  */
@@ -257,7 +250,7 @@ export function hasRecoverySuggestions(
   error: unknown,
 ): error is Error & { recovery: string[] } {
   return (
-    error instanceof Error &&
+    isError(error) &&
     'recovery' in error &&
     Array.isArray((error as any).recovery)
   )

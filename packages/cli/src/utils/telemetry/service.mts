@@ -51,6 +51,7 @@ import { setupSdk } from '../socket/sdk.mts'
 
 import type { TelemetryEvent } from './types.mts'
 import type { InspectOptions } from '@socketsecurity/lib/debug'
+import { errorMessage } from '@socketsecurity/lib/errors'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 type TelemetryConfig = SocketSdkSuccessResult<'getOrgTelemetryConfig'>['data']
@@ -349,11 +350,11 @@ export class TelemetryService {
       )
     } catch (e) {
       const flushDuration = Date.now() - flushStartTime
-      const errorMessage = e instanceof Error ? e.message : String(e)
+      const errMsg = errorMessage(e)
 
       // Check if this is a timeout error.
       if (
-        errorMessage.includes('timed out') ||
+        errMsg.includes('timed out') ||
         flushDuration >= TELEMETRY_SERVICE_CONFIG.flush_timeout
       ) {
         debug(
@@ -361,7 +362,7 @@ export class TelemetryService {
         )
         debug(`Failed to send ${eventsToSend.length} events due to timeout`)
       } else {
-        debug(`Error flushing telemetry: ${errorMessage}`)
+        debug(`Error flushing telemetry: ${errMsg}`)
         debug(`Failed to send ${eventsToSend.length} events due to error`)
       }
       // Events are discarded on error to prevent infinite growth.
@@ -457,11 +458,11 @@ export class TelemetryService {
         debug(`Events flushed successfully during destroy (${flushDuration}ms)`)
       } catch (e) {
         const flushDuration = Date.now() - flushStartTime
-        const errorMessage = e instanceof Error ? e.message : String(e)
+        const errMsg = errorMessage(e)
 
         // Check if this is a timeout error.
         if (
-          errorMessage.includes('timed out') ||
+          errMsg.includes('timed out') ||
           flushDuration >= TELEMETRY_SERVICE_CONFIG.flush_timeout
         ) {
           debug(
@@ -471,7 +472,7 @@ export class TelemetryService {
             `Failed to send ${eventsToFlush.length} events during destroy due to timeout`,
           )
         } else {
-          debug(`Error flushing telemetry during destroy: ${errorMessage}`)
+          debug(`Error flushing telemetry during destroy: ${errMsg}`)
           debug(
             `Failed to send ${eventsToFlush.length} events during destroy due to error`,
           )

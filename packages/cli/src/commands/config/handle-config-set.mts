@@ -2,6 +2,7 @@ import { debug, debugDir } from '@socketsecurity/lib/debug'
 
 import { outputConfigSet } from './output-config-set.mts'
 import { updateConfigValue } from '../../utils/config.mts'
+import { InputError } from '../../utils/error/errors.mts'
 
 import type { OutputKind } from '../../types.mts'
 import type { LocalConfig } from '../../utils/config.mts'
@@ -16,7 +17,9 @@ export async function handleConfigSet({
   outputKind: OutputKind
 }) {
   if (value === undefined) {
-    throw new Error('Value is required for config set')
+    throw new InputError(
+      `socket config set ${key} requires a VALUE argument; pass the value as the second positional (e.g. \`socket config set ${key} my-value\`)`,
+    )
   }
 
   debug(`Setting config ${key} = ${value}`)

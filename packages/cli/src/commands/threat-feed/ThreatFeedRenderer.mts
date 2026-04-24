@@ -4,6 +4,7 @@
  * Non-interactive renderer for threat feed data using iocraft native bindings.
  */
 
+import { errorMessage } from '@socketsecurity/lib/errors'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { Box, Text, print } from '../../utils/terminal/iocraft.mts'
@@ -225,7 +226,7 @@ export function displayThreatFeedWithIocraft({
     print(tree)
   } catch (e) {
     process.exitCode = 1
-    logger.error('Error rendering threat feed:', e instanceof Error ? e.message : String(e))
+    logger.error('Error rendering threat feed:', errorMessage(e))
     logger.warn('Falling back to plain text output')
     logger.log(`Total threats: ${results.length}`)
     results.slice(0, 10).forEach((threat, i) => {

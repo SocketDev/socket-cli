@@ -229,12 +229,12 @@ export async function createPatch(patchDef) {
 
     // Commit the patch.
     await commitPatch(patchPath, packageName)
-  } catch (error) {
-    logger.error(`Error creating patch for ${packageName}:`, error.message)
+  } catch (e) {
+    logger.error(`Error creating patch for ${packageName}:`, e.message)
     // Cleanup temp directory on error.
     if (patchPath && existsSync(patchPath)) {
       rmSync(patchPath, { force: true, recursive: true })
     }
-    throw error
+    throw e
   }
 }

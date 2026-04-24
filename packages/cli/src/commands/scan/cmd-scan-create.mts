@@ -13,6 +13,7 @@ import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { outputDryRunUpload } from '../../utils/dry-run/output.mts'
+import { InputError } from '../../utils/error/errors.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mts'
 import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mts'
@@ -441,8 +442,8 @@ async function run(
   const validEcosystems = getEcosystemChoicesForMeow()
   for (const ecosystem of reachEcosystemsRaw) {
     if (!validEcosystems.includes(ecosystem)) {
-      throw new Error(
-        `Invalid ecosystem: "${ecosystem}". Valid values are: ${joinAnd(validEcosystems)}`,
+      throw new InputError(
+        `--reach-ecosystems must be one of: ${joinAnd(validEcosystems)} (saw: "${ecosystem}"); pass a supported ecosystem like --reach-ecosystems=${validEcosystems[0]}`,
       )
     }
     reachEcosystems.push(ecosystem as PURL_Type)
@@ -726,8 +727,15 @@ async function run(
 
   // Validate numeric flag conversions.
   const validatedPullRequest = Number(pullRequest)
-  if (pullRequest !== undefined && Number.isNaN(validatedPullRequest)) {
-    throw new Error(`Invalid number value for --pull-request: ${pullRequest}`)
+  if (
+    pullRequest !== undefined &&
+    (Number.isNaN(validatedPullRequest) ||
+      !Number.isInteger(validatedPullRequest) ||
+      validatedPullRequest < 0)
+  ) {
+    throw new InputError(
+      `--pull-request must be a non-negative integer (saw: "${pullRequest}"); pass a number like --pull-request=42`,
+    )
   }
 
   const validatedReachAnalysisMemoryLimit = Number(reachAnalysisMemoryLimit)
@@ -735,8 +743,8 @@ async function run(
     reachAnalysisMemoryLimit !== undefined &&
     Number.isNaN(validatedReachAnalysisMemoryLimit)
   ) {
-    throw new Error(
-      `Invalid number value for --reach-analysis-memory-limit: ${reachAnalysisMemoryLimit}`,
+    throw new InputError(
+      `--reach-analysis-memory-limit must be a number of megabytes (saw: "${reachAnalysisMemoryLimit}"); pass an integer like --reach-analysis-memory-limit=4096`,
     )
   }
 
@@ -745,18 +753,20 @@ async function run(
     reachAnalysisTimeout !== undefined &&
     Number.isNaN(validatedReachAnalysisTimeout)
   ) {
-    throw new Error(
-      `Invalid number value for --reach-analysis-timeout: ${reachAnalysisTimeout}`,
+    throw new InputError(
+      `--reach-analysis-timeout must be a number of seconds (saw: "${reachAnalysisTimeout}"); pass an integer like --reach-analysis-timeout=300`,
     )
   }
 
   const validatedReachConcurrency = Number(reachConcurrency)
   if (
     reachConcurrency !== undefined &&
-    Number.isNaN(validatedReachConcurrency)
+    (Number.isNaN(validatedReachConcurrency) ||
+      !Number.isInteger(validatedReachConcurrency) ||
+      validatedReachConcurrency <= 0)
   ) {
-    throw new Error(
-      `Invalid number value for --reach-concurrency: ${reachConcurrency}`,
+    throw new InputError(
+      `--reach-concurrency must be a positive integer (saw: "${reachConcurrency}"); pass a number like --reach-concurrency=4`,
     )
   }
 

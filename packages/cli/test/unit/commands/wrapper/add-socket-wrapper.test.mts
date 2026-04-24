@@ -77,9 +77,19 @@ describe('addSocketWrapper', () => {
 
     mockAppendFile.mockRejectedValue(error)
 
+    // The FileSystemError wraps the cause in the message; the path is
+    // stored on the `.path` property (not embedded in the message) to
+    // avoid display.formatErrorForDisplay double-printing it. Assert on
+    // the message shape + the path property separately.
     await expect(addSocketWrapper('/etc/protected-file')).rejects.toThrow(
-      'There was an error setting up the alias',
+      /failed to append socket aliases \(Permission denied\)/,
     )
+    await expect(
+      addSocketWrapper('/etc/protected-file'),
+    ).rejects.toMatchObject({
+      name: 'FileSystemError',
+      path: '/etc/protected-file',
+    })
 
     expect(fs.promises.appendFile).toHaveBeenCalledWith(
       '/etc/protected-file',

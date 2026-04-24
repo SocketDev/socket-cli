@@ -196,7 +196,7 @@ describe('cmd-fix', () => {
       expect(process.exitCode).toBe(1)
       expect(mockHandleFix).not.toHaveBeenCalled()
       expect(mockLogger.fail).toHaveBeenCalledWith(
-        expect.stringContaining('Invalid ecosystem'),
+        expect.stringContaining('--ecosystems must be one of'),
       )
     })
 
