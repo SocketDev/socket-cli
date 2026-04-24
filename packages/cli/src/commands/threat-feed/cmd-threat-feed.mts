@@ -4,6 +4,7 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleThreatFeed } from './handle-threat-feed.mts'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'
+import { InputError } from '../../utils/error/errors.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -288,7 +289,9 @@ async function run(
     return
   }
   if (Number.isNaN(validatedPerPage) || validatedPerPage < 1) {
-    throw new Error(`Invalid value for --per-page: ${cli.flags['perPage']}`)
+    throw new InputError(
+      `--per-page must be a positive integer (saw: "${cli.flags['perPage']}"); pass a number like --per-page=30`,
+    )
   }
 
   await handleThreatFeed({

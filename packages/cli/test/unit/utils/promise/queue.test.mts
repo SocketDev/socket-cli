@@ -150,10 +150,10 @@ describe('PromiseQueue', () => {
 
   it('should throw error for invalid concurrency', () => {
     expect(() => new PromiseQueue(0)).toThrow(
-      'maxConcurrency must be at least 1',
+      /PromiseQueue maxConcurrency must be >= 1 \(saw: 0\)/,
     )
     expect(() => new PromiseQueue(-1)).toThrow(
-      'maxConcurrency must be at least 1',
+      /PromiseQueue maxConcurrency must be >= 1 \(saw: -1\)/,
     )
   })
 })

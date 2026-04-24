@@ -40,7 +40,9 @@ export function mockInteractiveLogin(options?: { shouldSucceed?: boolean }) {
         },
       }
     }
-    throw new Error('Authentication failed')
+    throw new Error(
+      `mock interactive-login rejected (configured with shouldSucceed:false); this is a test fixture — flip shouldSucceed to true when testing the happy path`,
+    )
   })
 }
 
@@ -118,7 +120,9 @@ export function mockOAuthPoller(options?: {
         token: MOCK_API_TOKEN,
       }
     }
-    throw new Error('OAuth timeout')
+    throw new Error(
+      `mock OAuth poller rejected after ${pollCount} polls (configured with shouldSucceed:false); this is a test fixture — set shouldSucceed:true or adjust pollCount to test the happy path`,
+    )
   })
 }
 
