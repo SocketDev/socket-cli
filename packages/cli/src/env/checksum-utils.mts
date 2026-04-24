@@ -6,6 +6,8 @@
  * This module provides shared parsing and validation logic.
  */
 
+import { joinAnd } from '@socketsecurity/lib/arrays'
+
 export type Checksums = Record<string, string>
 
 /**
@@ -28,9 +30,9 @@ export function parseChecksums(
   }
   try {
     return JSON.parse(jsonString) as Checksums
-  } catch {
+  } catch (e) {
     throw new Error(
-      `Failed to parse ${toolName} checksums. This indicates a build configuration error.`,
+      `inlined checksums for ${toolName} are not valid JSON at runtime (JSON.parse threw: ${e instanceof Error ? e.message : String(e)}); the build-time inline step produced corrupt data — rebuild socket-cli (\`pnpm run build:cli\`) and verify the matching checksums entry in bundle-tools.json`,
     )
   }
 }
@@ -62,8 +64,7 @@ export function requireChecksum(
   const sha256 = checksums[assetName]
   if (!sha256) {
     throw new Error(
-      `Missing SHA-256 checksum for ${toolName} asset: ${assetName}. ` +
-        'This is a security requirement. Please update bundle-tools.json with the correct checksum.',
+      `${toolName} has no SHA-256 checksum for asset "${assetName}" (known assets: ${joinAnd(Object.keys(checksums)) || '<empty>'}); add it to the matching entry in bundle-tools.json via \`pnpm run sync-checksums\` — do NOT ship without verification`,
     )
   }
   return sha256

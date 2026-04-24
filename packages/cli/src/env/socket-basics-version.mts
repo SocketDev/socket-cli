@@ -12,7 +12,7 @@ export function getSocketBasicsVersion(): string {
   const version = process.env['INLINED_SOCKET_BASICS_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_SOCKET_BASICS_VERSION not found. Please ensure socket-basics is properly configured in bundle-tools.json.',
+      `process.env.INLINED_SOCKET_BASICS_VERSION is empty at runtime; this value should be inlined at build time from bundle-tools.json tools["socket-basics"].version — rebuild socket-cli (\`pnpm run build:cli\`) or check that esbuild's define step ran`,
     )
   }
   return version

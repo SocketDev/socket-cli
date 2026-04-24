@@ -12,7 +12,7 @@ export function getTrivyVersion(): string {
   const version = process.env['INLINED_TRIVY_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_TRIVY_VERSION not found. Please ensure trivy is properly configured in bundle-tools.json.',
+      `process.env.INLINED_TRIVY_VERSION is empty at runtime; this value should be inlined at build time from bundle-tools.json tools.trivy.version — rebuild socket-cli (\`pnpm run build:cli\`) or check that esbuild's define step ran`,
     )
   }
   return version

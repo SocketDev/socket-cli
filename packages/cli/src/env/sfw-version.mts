@@ -19,7 +19,7 @@ export function getSwfVersion(): string {
   const version = process.env['INLINED_SFW_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_SFW_VERSION not found. Please ensure sfw is properly configured in bundle-tools.json.',
+      `process.env.INLINED_SFW_VERSION is empty at runtime; this value should be inlined at build time from bundle-tools.json tools.sfw.version (GitHub release tag) — rebuild socket-cli (\`pnpm run build:cli\`) or check that esbuild's define step ran`,
     )
   }
   return version
@@ -32,7 +32,7 @@ export function getSfwNpmVersion(): string {
   const version = process.env['INLINED_SFW_NPM_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_SFW_NPM_VERSION not found. Please ensure sfw npm.version is configured in bundle-tools.json.',
+      `process.env.INLINED_SFW_NPM_VERSION is empty at runtime; this value should be inlined at build time from bundle-tools.json tools.sfw.npm.version (npm package semver) — rebuild socket-cli (\`pnpm run build:cli\`) or check that esbuild's define step ran`,
     )
   }
   return version
