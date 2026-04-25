@@ -216,6 +216,15 @@ overrides:
   yaml: 'catalog:'
   yargs-parser: 'catalog:'
 
+# Auto-install missing peer deps (pnpm default). Declared explicitly
+# so a future default flip can't silently change install behavior.
+autoInstallPeers: true
+
+# Run pre/post lifecycle scripts on the workspace root (e.g.
+# prepare -> husky). This is the pnpm default; declared explicitly
+# so a future default flip can't silently disable husky setup.
+enablePrePostScripts: true
+
 # Patched dependencies (migrated from package.json pnpm.patchedDependencies).
 patchedDependencies:
   '@npmcli/run-script@10.0.4': patches/@npmcli__run-script@10.0.4.patch
