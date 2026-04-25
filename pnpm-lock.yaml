@@ -283,6 +283,7 @@ overrides:
   npm-package-arg: 13.0.0
   packageurl-js: npm:@socketregistry/packageurl-js@^1.4.2
   path-parse: npm:@socketregistry/path-parse@^1.0.8
+  postcss: '>=8.5.10'
   qs: '>=6.15.1'
   safe-buffer: npm:@socketregistry/safe-buffer@^1.0.9
   safer-buffer: npm:@socketregistry/safer-buffer@^1.0.10
@@ -2175,7 +2176,6 @@ packages:
 
   '@socketaddon/iocraft@file:packages/package-builder/build/dev/out/socketaddon-iocraft':
     resolution: {directory: packages/package-builder/build/dev/out/socketaddon-iocraft, type: directory}
-    engines: {node: '>=18'}
 
   '@socketregistry/es-set-tostringtag@1.0.10':
     resolution: {integrity: sha512-btXmvw1JpA8WtSoXx9mTapo9NAyIDKRRzK84i48d8zc0X09M6ORfobVnHbgwhXf7CFhkRzhYrHG9dqbI9vpELQ==}
@@ -3785,8 +3785,8 @@ packages:
     resolution: {integrity: sha512-orRsuYpJVw8LdAwqqLykBj9ecS5/cRHlI5+nvTo8LcCKmzDmqVORXtOIYEEQuL9D4BxtA1lm5isAqzQZCoQ6Eg==}
     engines: {node: '>=4'}
 
-  postcss@8.5.9:
-    resolution: {integrity: sha512-7a70Nsot+EMX9fFU3064K/kdHWZqGVY+BADLyXc8Dfv+mTLLVl6JzJpPaCZ2kQL9gIJvKXSLMHhqdRRjwQeFtw==}
+  postcss@8.5.10:
+    resolution: {integrity: sha512-pMMHxBOZKFU6HgAZ4eyGnwXF/EvPGGqUr0MnZ5+99485wwW41kW91A4LOGxSHhgugZmSChL5AlElNdwlNgcnLQ==}
     engines: {node: ^10 || ^12 || >=14}
 
   postject@1.0.0-alpha.6:
@@ -7337,7 +7337,7 @@ snapshots:
       cssesc: 3.0.0
       util-deprecate: 1.0.2
 
-  postcss@8.5.9:
+  postcss@8.5.10:
     dependencies:
       nanoid: 3.3.11
       picocolors: 1.1.1
@@ -7937,7 +7937,7 @@ snapshots:
       esbuild: 0.27.7
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
-      postcss: 8.5.9
+      postcss: 8.5.10
       rollup: 4.60.1
       tinyglobby: 0.2.16
     optionalDependencies:

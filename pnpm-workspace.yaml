@@ -196,6 +196,7 @@ overrides:
   npm-package-arg: 'catalog:'
   packageurl-js: 'catalog:'
   path-parse: 'catalog:'
+  postcss: '>=8.5.10'
   qs: '>=6.15.1'
   safe-buffer: 'catalog:'
   safer-buffer: 'catalog:'
