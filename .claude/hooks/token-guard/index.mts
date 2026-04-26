@@ -120,9 +120,19 @@ type ToolInput = {
 const hasRedaction = (command: string): boolean =>
   REDACTION_MARKERS.some(re => re.test(command))
 
+// Word-boundary match so `PASS` doesn't fire on `PATHS-ALLOWLIST` and
+// `AUTH` doesn't fire on `AUTHOR`. Env-var-style boundaries treat `_`
+// as a separator (so `ACCESS_TOKEN` matches `TOKEN`) but require a
+// non-alphanumeric character on each end (so `PATHS` doesn't match
+// `PASS`). The pre-fix substring match created false positives
+// whenever a path name happened to contain a sensitive keyword as a
+// literal substring.
+const sensitiveEnvBoundaryRes = SENSITIVE_ENV_NAMES.map(
+  frag => new RegExp(String.raw`(?:^|[^A-Z0-9])${frag}(?:[^A-Z0-9]|$)`),
+)
 const referencesSensitiveEnv = (command: string): boolean => {
   const upper = command.toUpperCase()
-  return SENSITIVE_ENV_NAMES.some(frag => upper.includes(frag))
+  return sensitiveEnvBoundaryRes.some(re => re.test(upper))
 }
 
 const matchesAlwaysDangerous = (command: string): RegExp | null => {

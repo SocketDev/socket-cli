@@ -182,6 +182,25 @@ describe('token-guard hook', () => {
     })
   })
 
+  describe('does not false-positive on substring of sensitive name', () => {
+    // Regression: `PATHS-ALLOWLIST.YML` toUpperCase()d contains `PASS`
+    // as a substring, which the pre-fix unbounded match treated as
+    // a sensitive env reference. Word-boundary fix means `PASS` must
+    // be a standalone token (or at a `_`/`-`/`.`/`/` boundary).
+    it('paths-allowlist.yml does not trip PASS', () => {
+      assert.equal(runHook('cat .github/paths-allowlist.yml').code, 0)
+    })
+    it('AUTHOR_NAME does not trip AUTH', () => {
+      // AUTHOR ends with R; the boundary-after match correctly skips
+      // it because the next char is `_`, but `AUTH` followed by `O`
+      // (alphanumeric) is not a token boundary.
+      assert.equal(runHook('echo $AUTHOR_NAME').code, 0)
+    })
+    it('PASSAGE_TIME does not trip PASS', () => {
+      assert.equal(runHook('echo $PASSAGE_TIME').code, 0)
+    })
+  })
+
   describe('fails open on malformed input', () => {
     it('empty stdin', () => {
       const r = spawnSync(nodeBin, [hookScript], {
