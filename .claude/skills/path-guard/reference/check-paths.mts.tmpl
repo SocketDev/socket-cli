@@ -231,8 +231,7 @@ const loadAllowlist = (): AllowlistEntry[] => {
       if (m) {
         const key = m[1]!
         const value = unquote(m[2]!)
-        ;(current as any)[key] =
-          key === 'line' ? Number(value) : value
+        ;(current as any)[key] = key === 'line' ? Number(value) : value
       }
     }
   }
@@ -266,10 +265,7 @@ const isAllowlisted = (finding: Finding): boolean =>
     if (entry.pattern && !finding.snippet.includes(entry.pattern)) {
       return false
     }
-    if (
-      entry.line !== undefined &&
-      Math.abs(entry.line - finding.line) > 2
-    ) {
+    if (entry.line !== undefined && Math.abs(entry.line - finding.line) > 2) {
       return false
     }
     return true
@@ -385,8 +381,7 @@ const scanCodeFile = (relPath: string): void => {
         file: relPath,
         line,
         snippet,
-        message:
-          'Multi-stage path constructed inline (outside paths.mts).',
+        message: 'Multi-stage path constructed inline (outside paths.mts).',
         fix: 'Construct in the owning paths.mts (or use getFinalBinaryPath / getDownloadedDir from build-infra/lib/paths). Import the computed value here.',
       })
     }
@@ -732,9 +727,7 @@ const main = (): number => {
     return 0
   }
 
-  logger.error(
-    `Path-hygiene check FAILED — ${blocking.length} finding(s)`,
-  )
+  logger.error(`Path-hygiene check FAILED — ${blocking.length} finding(s)`)
   logger.log('')
   logger.log('Mantra: 1 path, 1 reference')
   logger.log('')
