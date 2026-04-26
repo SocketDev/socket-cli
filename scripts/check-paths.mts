@@ -76,6 +76,13 @@ import { fileURLToPath } from 'node:url'
 
 import { parseArgs } from 'node:util'
 
+import {
+  BUILD_ROOT_SEGMENTS,
+  KNOWN_SIBLING_PACKAGES,
+  MODE_SEGMENTS,
+  STAGE_SEGMENTS,
+} from '../.claude/hooks/path-guard/segments.mts'
+
 // Plain stderr/stdout output — no @socketsecurity/lib dependency so
 // the gate is self-contained and works in socket-lib itself (which
 // would otherwise import itself).
@@ -91,63 +98,10 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const REPO_ROOT = path.resolve(__dirname, '..')
 
-// Stage segments (Rule A core). Spreading any two of these via
-// `path.join` is a finding outside `paths.mts`.
-const STAGE_SEGMENTS = new Set([
-  'Final',
-  'Release',
-  'Stripped',
-  'Compressed',
-  'Optimized',
-  'Synced',
-  'wasm',
-  'downloaded',
-])
-
-const BUILD_ROOT_SEGMENTS = new Set(['build', 'out'])
-const MODE_SEGMENTS = new Set(['dev', 'prod', 'shared'])
-
-// Sibling fleet packages (Rule B). Union of all packages across the
-// Socket fleet — the gate is byte-identical via sync-scaffolding, so
-// listing every fleet package keeps Rule B firing in any repo. When
-// a new package joins the workspace, add it here and propagate via
-// `node scripts/sync-scaffolding.mjs --all --fix` from
-// socket-repo-template.
-const KNOWN_SIBLING_PACKAGES = new Set([
-  // socket-btm
-  'binflate',
-  'binject',
-  'binpress',
-  'bin-infra',
-  'build-infra',
-  'codet5-models-builder',
-  'curl-builder',
-  'iocraft-builder',
-  'ink-builder',
-  'libpq-builder',
-  'lief-builder',
-  'minilm-builder',
-  'models',
-  'napi-go',
-  'node-smol-builder',
-  'onnxruntime-builder',
-  'opentui-builder',
-  'stubs-builder',
-  'ultraviolet-builder',
-  'yoga-layout-builder',
-  // socket-cli
-  'cli',
-  'package-builder',
-  // socket-tui
-  'core',
-  'react',
-  'renderer',
-  'ultraviolet',
-  'yoga',
-  // socket-registry / ultrathink
-  'acorn',
-  'npm',
-])
+// Stage / build-root / mode / sibling-package vocabularies are imported
+// from `.claude/hooks/path-guard/segments.mts` (the canonical source).
+// Both this gate and the path-guard hook share that single definition
+// — Mantra: 1 path, 1 reference.
 
 // File-path patterns that legitimately enumerate path segments.
 const EXEMPT_FILE_PATTERNS: RegExp[] = [

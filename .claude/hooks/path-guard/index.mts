@@ -56,77 +56,12 @@
 
 import process from 'node:process'
 
-// "Stage" segments — appearing two or more in the same path.join /
-// template literal is a Rule A violation. These come from
-// build-infra/lib/constants.mts BUILD_STAGES plus their lowercase
-// directory-name siblings used by some builders (yoga's `wasm/`,
-// build-infra's `downloaded/`).
-const STAGE_SEGMENTS = new Set([
-  'Final',
-  'Release',
-  'Stripped',
-  'Compressed',
-  'Optimized',
-  'Synced',
-  'wasm',
-  'downloaded',
-])
-
-// "Build-root" segments — at least one must be present together with a
-// stage segment to confirm we're constructing a build output path
-// rather than something coincidental. Example: `path.join(SRC,
-// 'wasm', 'lib')` shouldn't fire (no build root); `path.join(PKG,
-// 'build', 'wasm', 'out', 'Final')` should (build root + wasm + out +
-// Final).
-const BUILD_ROOT_SEGMENTS = new Set(['build', 'out'])
-
-// Mode segments — appearing alongside stage + build-root tightens the
-// match further. `'dev'` and `'prod'` alone are too generic; we count
-// them as a confirming signal, not a trigger.
-const MODE_SEGMENTS = new Set(['dev', 'prod', 'shared'])
-
-// Sibling Socket-fleet packages whose build output is reached via
-// `path.join(*, '..', '<name>', 'build', ...)`. Union of all packages
-// across the Socket fleet — the hook is byte-identical via
-// sync-scaffolding, so listing every fleet package keeps Rule B firing
-// in any repo. When a new package joins the workspace, add it here
-// and propagate via `node scripts/sync-scaffolding.mjs --all --fix`
-// from socket-repo-template.
-const KNOWN_SIBLING_PACKAGES = new Set([
-  // socket-btm
-  'binflate',
-  'binject',
-  'binpress',
-  'bin-infra',
-  'build-infra',
-  'codet5-models-builder',
-  'curl-builder',
-  'iocraft-builder',
-  'ink-builder',
-  'libpq-builder',
-  'lief-builder',
-  'minilm-builder',
-  'models',
-  'napi-go',
-  'node-smol-builder',
-  'onnxruntime-builder',
-  'opentui-builder',
-  'stubs-builder',
-  'ultraviolet-builder',
-  'yoga-layout-builder',
-  // socket-cli
-  'cli',
-  'package-builder',
-  // socket-tui
-  'core',
-  'react',
-  'renderer',
-  'ultraviolet',
-  'yoga',
-  // socket-registry / ultrathink
-  'acorn',
-  'npm',
-])
+import {
+  BUILD_ROOT_SEGMENTS,
+  KNOWN_SIBLING_PACKAGES,
+  MODE_SEGMENTS,
+  STAGE_SEGMENTS,
+} from './segments.mts'
 
 // File-path patterns that are exempt from the hook entirely. Edits to
 // these files legitimately need to enumerate path segments.
