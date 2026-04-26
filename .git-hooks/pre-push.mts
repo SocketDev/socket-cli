@@ -102,10 +102,7 @@ const computeRange = (
   }
 
   const defaultBranchOf = (remoteName: string): string => {
-    const sym = git(
-      'symbolic-ref',
-      `refs/remotes/${remoteName}/HEAD`,
-    ).trim()
+    const sym = git('symbolic-ref', `refs/remotes/${remoteName}/HEAD`).trim()
     if (sym) {
       return sym.replace(`refs/remotes/${remoteName}/`, '')
     }
@@ -172,9 +169,7 @@ const scanCommitMessages = (range: string): number => {
   }
   if (errors > 0) {
     out('')
-    out(
-      'These commits were likely created with --no-verify, bypassing the',
-    )
+    out('These commits were likely created with --no-verify, bypassing the')
     out('commit-msg hook that strips AI attribution.')
     out('')
     const rangeBase = range.split('..')[0]
@@ -246,36 +241,28 @@ const scanFilesInRange = (range: string): number => {
     const pathHits = scanPersonalPaths(text)
     if (pathHits.length > 0) {
       out(red(`✗ BLOCKED: Hardcoded personal path found in: ${file}`))
-      pathHits
-        .slice(0, 3)
-        .forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
+      pathHits.slice(0, 3).forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
       errors++
     }
 
     const apiHits = scanSocketApiKeys(text)
     if (apiHits.length > 0) {
       out(red(`✗ BLOCKED: Real API key detected in: ${file}`))
-      apiHits
-        .slice(0, 3)
-        .forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
+      apiHits.slice(0, 3).forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
       errors++
     }
 
     const awsHits = scanAwsKeys(text)
     if (awsHits.length > 0) {
       out(red(`✗ BLOCKED: Potential AWS credentials found in: ${file}`))
-      awsHits
-        .slice(0, 3)
-        .forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
+      awsHits.slice(0, 3).forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
       errors++
     }
 
     const ghHits = scanGitHubTokens(text)
     if (ghHits.length > 0) {
       out(red(`✗ BLOCKED: Potential GitHub token found in: ${file}`))
-      ghHits
-        .slice(0, 3)
-        .forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
+      ghHits.slice(0, 3).forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
       errors++
     }
 

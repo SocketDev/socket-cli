@@ -65,8 +65,7 @@ const main = (): number => {
   // .env files (allowlist .env.example / .env.test).
   out('Checking for .env files...')
   const envFiles = stagedFiles.filter(
-    f =>
-      /^\.env(\.[^/]+)?$/.test(f) && !/^\.env\.(example|test)$/.test(f),
+    f => /^\.env(\.[^/]+)?$/.test(f) && !/^\.env\.(example|test)$/.test(f),
   )
   if (envFiles.length > 0) {
     out(red('✗ ERROR: .env file detected!'))
@@ -90,9 +89,7 @@ const main = (): number => {
     const hits = scanPersonalPaths(text)
     if (hits.length > 0) {
       out(red(`✗ ERROR: Hardcoded personal path found in: ${file}`))
-      hits
-        .slice(0, 3)
-        .forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
+      hits.slice(0, 3).forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
       out('Replace with relative paths or environment variables.')
       errors++
     }
@@ -111,9 +108,7 @@ const main = (): number => {
     const hits = scanSocketApiKeys(text)
     if (hits.length > 0) {
       out(yellow(`⚠ WARNING: Potential API key found in: ${file}`))
-      hits
-        .slice(0, 3)
-        .forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
+      hits.slice(0, 3).forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
       out('If this is a real API key, DO NOT COMMIT IT.')
     }
   }
@@ -167,9 +162,7 @@ const main = (): number => {
     const hits = scanNpxDlx(text)
     if (hits.length > 0) {
       out(red(`✗ ERROR: npx/dlx usage found in: ${file}`))
-      hits
-        .slice(0, 3)
-        .forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
+      hits.slice(0, 3).forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
       out("Use 'pnpm exec <package>' or 'pnpm run <script>' instead.")
       errors++
     }
