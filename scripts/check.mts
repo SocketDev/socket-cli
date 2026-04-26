@@ -380,6 +380,44 @@ async function main(): Promise<void> {
       }
     }
 
+    // Run path-hygiene check (1 path, 1 reference). See
+    // .claude/skills/path-guard/ + .claude/hooks/path-guard/.
+    if (runAll) {
+      if (!quiet) {
+        logger.log('')
+        logger.progress('Running path-hygiene check (1 path, 1 reference)')
+      }
+      const pathHygieneResult = await spawn(
+        'node',
+        ['scripts/check-paths.mts', '--quiet'],
+        {
+          shell: WIN32,
+          stdio: 'pipe',
+          stdioString: true,
+        },
+      )
+      if (pathHygieneResult.code !== 0) {
+        if (!quiet) {
+          logger.clearLine()
+          logger.error(
+            'Path-hygiene check failed — rerun with --explain for details',
+          )
+        }
+        if (pathHygieneResult.stdout) {
+          logger.log(pathHygieneResult.stdout)
+        }
+        if (pathHygieneResult.stderr) {
+          logger.error(pathHygieneResult.stderr)
+        }
+        process.exitCode = pathHygieneResult.code
+        return
+      }
+      if (!quiet) {
+        logger.clearLine()
+        logger.success('Path-hygiene check passed')
+      }
+    }
+
     if (!quiet) {
       logger.log('')
       logger.success('All checks passed')

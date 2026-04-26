@@ -20,6 +20,7 @@
     "// Quality Checks": "",
     "check": "node scripts/check.mts",
     "check:all": "node scripts/check.mts --all",
+    "check:paths": "node scripts/check-paths.mts",
     "fix": "node scripts/fix.mts",
     "fix:all": "node scripts/fix.mts --all",
     "lint": "node scripts/lint.mts",

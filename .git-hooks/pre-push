@@ -15,10 +15,48 @@
 
 set -e
 
-# shellcheck source=./_helpers.sh
-. "$(dirname "$0")/_helpers.sh"
+# shellcheck source=./_api-key-check.sh
+. "$(dirname "$0")/_api-key-check.sh"
 
 printf "${GREEN}Running mandatory pre-push validation...${NC}\n"
+
+# ── CHECK 0: Submodule pristine check ────────────────────────────────
+# Ensures all submodules are at their expected commits with no
+# uncommitted changes. Prevents accidental submodule pointer drift.
+if [ -f .gitmodules ]; then
+  printf "Checking submodules are pristine...\n"
+  SUBMODULE_ERRORS=0
+  while IFS= read -r line; do
+    # git submodule status prefixes: ' ' = clean, '+' = different commit, '-' = not initialized, 'U' = merge conflict
+    prefix="${line:0:1}"
+    rest="${line:1}"
+    sm_path=$(echo "$rest" | awk '{print $2}')
+    case "$prefix" in
+      +)
+        printf "${RED}✗ BLOCKED: Submodule has wrong commit: %s${NC}\n" "$sm_path"
+        printf "  Run: git submodule update --init %s\n" "$sm_path"
+        SUBMODULE_ERRORS=$((SUBMODULE_ERRORS + 1))
+        ;;
+      -)
+        # Uninitialized submodules are OK — CI shallow clones and scheduled
+        # triggers don't init all submodules. Only wrong-commit (+) and
+        # merge-conflict (U) states are errors.
+        ;;
+      U)
+        printf "${RED}✗ BLOCKED: Submodule has merge conflict: %s${NC}\n" "$sm_path"
+        SUBMODULE_ERRORS=$((SUBMODULE_ERRORS + 1))
+        ;;
+    esac
+  done < <(git submodule status)
+
+  if [ $SUBMODULE_ERRORS -gt 0 ]; then
+    printf "\n"
+    printf "${RED}✗ Push blocked: %d submodule(s) not pristine!${NC}\n" "$SUBMODULE_ERRORS"
+    printf "Fix submodules before pushing.\n"
+    exit 1
+  fi
+  printf "${GREEN}✓ All submodules pristine${NC}\n"
+fi
 
 # Get the remote name and URL from git (passed as arguments to pre-push hooks).
 remote="$1"
@@ -60,7 +98,22 @@ while read local_ref local_sha remote_ref remote_sha; do
     fi
   else
     # Existing branch — only check commits not yet on the remote.
-    range="$remote_sha..$local_sha"
+    # Handle force-push / history rewrite: if remote_sha doesn't exist
+    # locally (e.g. after squash), fall back to default branch comparison.
+    if ! git cat-file -e "$remote_sha" 2>/dev/null; then
+      default_branch=$(git symbolic-ref "refs/remotes/$remote/HEAD" 2>/dev/null | sed "s@^refs/remotes/$remote/@@")
+      if [ -z "$default_branch" ]; then
+        default_branch="main"
+      fi
+      if git rev-parse "$remote/$default_branch" >/dev/null 2>&1; then
+        range="$remote/$default_branch..$local_sha"
+      else
+        printf "${GREEN}✓ Skipping validation (no baseline for force-push)${NC}\n"
+        continue
+      fi
+    else
+      range="$remote_sha..$local_sha"
+    fi
   fi
 
   # Validate the computed range before using it.
@@ -129,7 +182,9 @@ while read local_ref local_sha remote_ref remote_sha; do
 
     # Check file contents for secrets and hardcoded paths.
     while IFS= read -r file; do
-      if [ -f "$file" ] && [ ! -d "$file" ]; then
+      # Only scan files that are tracked at HEAD (skip deleted/untracked files
+      # that still exist on disk — e.g. profdata after being removed from git).
+      if [ -f "$file" ] && [ ! -d "$file" ] && git ls-files --error-unmatch "$file" >/dev/null 2>&1; then
         # Skip test files, example files, and hook scripts themselves.
         if echo "$file" | grep -qE '\.(test|spec)\.(m?[jt]s|tsx?)$|\.example$|/test/|/tests/|fixtures/|\.git-hooks/|\.husky/'; then
           continue
