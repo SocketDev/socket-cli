@@ -293,13 +293,58 @@ const checkRuleB = (calls: ReturnType<typeof extractPathCalls>): void => {
   }
 }
 
+// Backtick template-literal detection. Path construction via
+// `${buildDir}/out/Final/${binary}` follows the same shape as
+// path.join() and constitutes the same Rule A violation. Placeholders
+// (${...}) are stripped to a sentinel that won't match any segment
+// set, so segments composed entirely of interpolation contribute
+// nothing to the trigger.
+const TEMPLATE_LITERAL_RE = /`((?:\\.|(?:\$\{(?:[^{}]|\{[^{}]*\})*\})|(?!`)[^\\])*)`/g
+
+const checkRuleATemplate = (source: string): void => {
+  TEMPLATE_LITERAL_RE.lastIndex = 0
+  let m: RegExpExecArray | null
+  while ((m = TEMPLATE_LITERAL_RE.exec(source)) !== null) {
+    const body = m[1] ?? ''
+    if (!body.includes('/')) {
+      continue
+    }
+    const stripped = body.replace(/\$\{(?:[^{}]|\{[^{}]*\})*\}/g, '\x00')
+    const segments = stripped
+      .split('/')
+      .filter(s => s.length > 0 && s !== '\x00')
+    const stages = segments.filter(s => STAGE_SEGMENTS.has(s))
+    const buildRoots = segments.filter(s => BUILD_ROOT_SEGMENTS.has(s))
+    const modes = segments.filter(s => MODE_SEGMENTS.has(s))
+    // Template literal trigger is tighter than path.join() because
+    // backtick strings often appear in patch fixtures, error messages,
+    // and other multi-line content that incidentally contains stage
+    // tokens like `wasm`. Require the canonical build-output shape.
+    const hasBuildAndOut =
+      buildRoots.includes('build') && buildRoots.includes('out')
+    const hasOut = buildRoots.includes('out')
+    const hasBuild = buildRoots.includes('build')
+    const triggers =
+      (hasBuildAndOut && stages.length >= 1) ||
+      (stages.length >= 2 && hasOut) ||
+      (hasBuild && stages.length >= 1 && modes.length >= 1)
+    if (triggers) {
+      throw new BlockError(
+        'A — multi-stage path constructed inline via template literal',
+        'Construct this path in the owning `paths.mts` (or a build-infra helper) and import the computed value here. 1 path, 1 reference.',
+        m[0],
+      )
+    }
+  }
+}
+
 const check = (source: string): void => {
   const calls = extractPathCalls(source)
-  if (calls.length === 0) {
-    return
+  if (calls.length > 0) {
+    checkRuleA(calls)
+    checkRuleB(calls)
   }
-  checkRuleA(calls)
-  checkRuleB(calls)
+  checkRuleATemplate(source)
 }
 
 const emitBlock = (filePath: string, err: BlockError): void => {

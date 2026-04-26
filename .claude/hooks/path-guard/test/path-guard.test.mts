@@ -190,6 +190,60 @@ describe('path-guard — paren-balance correctness', () => {
   })
 })
 
+describe('path-guard — template literals', () => {
+  it('detects A in fully-literal template path', () => {
+    const source = '\n      const p = `build/dev/out/Final/binary`\n    '
+    const { code } = runHook(
+      'Write',
+      'packages/foo/scripts/build.mts',
+      source,
+    )
+    assert.equal(code, 2)
+  })
+
+  it('detects A in template with placeholders', () => {
+    const source =
+      '\n      const p = `${PKG}/build/${mode}/${arch}/out/Final/${name}`\n    '
+    const { code } = runHook(
+      'Write',
+      'packages/foo/scripts/build.mts',
+      source,
+    )
+    assert.equal(code, 2)
+  })
+
+  it('allows template with single non-stage segment', () => {
+    const source = '\n      const url = `https://example.com/path`\n    '
+    const { code } = runHook(
+      'Write',
+      'packages/foo/scripts/build.mts',
+      source,
+    )
+    assert.equal(code, 0)
+  })
+
+  it('allows template with no stage segments', () => {
+    const source = '\n      const tmp = `${packageRoot}/build/temp/cache`\n    '
+    const { code } = runHook(
+      'Write',
+      'packages/foo/scripts/build.mts',
+      source,
+    )
+    assert.equal(code, 0)
+  })
+
+  it('allows template that is purely interpolation', () => {
+    // `${a}/${b}/${c}` has no literal stage segments.
+    const source = '\n      const p = `${a}/${b}/${c}`\n    '
+    const { code } = runHook(
+      'Write',
+      'packages/foo/scripts/build.mts',
+      source,
+    )
+    assert.equal(code, 0)
+  })
+})
+
 describe('path-guard — file-type filter', () => {
   it('skips .ts files', () => {
     const source = `

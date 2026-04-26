@@ -67,6 +67,7 @@
  *   2 — gate itself crashed
  */
 
+import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -179,6 +180,7 @@ const args = parseArgs({
     explain: { type: 'boolean', default: false },
     json: { type: 'boolean', default: false },
     quiet: { type: 'boolean', default: false },
+    'show-hashes': { type: 'boolean', default: false },
   },
   strict: false,
 })
@@ -195,6 +197,7 @@ type AllowlistEntry = {
   pattern?: string
   rule?: string
   line?: number
+  snippet_hash?: string
   reason: string
 }
 
@@ -315,6 +318,36 @@ const unquote = (s: string): string => {
 
 const ALLOWLIST = loadAllowlist()
 
+/**
+ * Stable, normalized snippet hash. Whitespace-insensitive so trivial
+ * reformatting (indent change, trailing comma, line wrap) doesn't
+ * invalidate an allowlist entry, but content-changing edits do. The
+ * hash exposes only the first 12 hex chars (~48 bits) which is plenty
+ * for collision-resistance within a single repo's finding set and
+ * keeps the YAML readable.
+ */
+const snippetHash = (snippet: string): string => {
+  const normalized = snippet.replace(/\s+/g, ' ').trim()
+  return createHash('sha256').update(normalized).digest('hex').slice(0, 12)
+}
+
+/**
+ * Allowlist matching trades off two failure modes:
+ *
+ *   - Drift via reformatting (a line shift breaks an entry, the
+ *     finding re-surfaces, devs paper over with a new entry).
+ *   - Stealth allowlisting (an entry pinned to "anywhere in this file"
+ *     silently exempts unrelated future violations).
+ *
+ * Strategy: exact line match OR `snippet_hash` match (whitespace-
+ * normalized SHA-256, first 12 hex). Either is sufficient. Lines stay
+ * exact (was ±2; the slack let reformatting silently slide), and
+ * `snippet_hash` provides reformatting-tolerant matching that's still
+ * tied to the literal text — paste-and-edit cheating would change the
+ * hash. If neither `line` nor `snippet_hash` is provided, the entry
+ * matches purely by `rule` + `file` + `pattern` (file-level exempt;
+ * use sparingly and always pair with a precise `pattern`).
+ */
 const isAllowlisted = (finding: Finding): boolean =>
   ALLOWLIST.some(entry => {
     if (entry.rule && entry.rule !== finding.rule) {
@@ -326,8 +359,17 @@ const isAllowlisted = (finding: Finding): boolean =>
     if (entry.pattern && !finding.snippet.includes(entry.pattern)) {
       return false
     }
-    if (entry.line !== undefined && Math.abs(entry.line - finding.line) > 2) {
-      return false
+    const lineProvided = entry.line !== undefined
+    const hashProvided =
+      typeof entry.snippet_hash === 'string' && entry.snippet_hash.length > 0
+    if (lineProvided || hashProvided) {
+      const lineMatches =
+        lineProvided && entry.line === finding.line
+      const hashMatches =
+        hashProvided && entry.snippet_hash === snippetHash(finding.snippet)
+      if (!(lineMatches || hashMatches)) {
+        return false
+      }
     }
     return true
   })
@@ -381,6 +423,27 @@ const walk = function* (
 // argument containing 2+ levels of nested function calls).
 const PATH_CALL_RE = /\bpath\.(?:join|resolve)\s*\(/g
 const STRING_LITERAL_RE = /(['"])((?:\\.|(?!\1)[^\\])*)\1/g
+
+// Template literal scanner. Captures backtick-delimited strings
+// (including those with `${...}` placeholders) so Rule A also catches
+// path construction via template literals like
+// `${buildDir}/out/Final/${binary}` or `build/${mode}/out/Final`.
+const TEMPLATE_LITERAL_RE = /`((?:\\.|(?:\$\{(?:[^{}]|\{[^{}]*\})*\})|(?!`)[^\\])*)`/g
+
+/**
+ * Convert a template-literal body into a synthetic forward-slash path
+ * by replacing `${...}` placeholders with a sentinel and normalizing
+ * separators. Returns the sequence of path segments split on `/`. The
+ * sentinel doesn't match any STAGE/BUILD_ROOT/MODE token, so a
+ * placeholder-only segment (`${binaryName}`) won't match those sets.
+ */
+const templateLiteralSegments = (body: string): string[] => {
+  // Strip placeholders so they don't introduce noise in segments.
+  // Empty result for a placeholder is fine; downstream filters by set
+  // membership and skips empties.
+  const stripped = body.replace(/\$\{(?:[^{}]|\{[^{}]*\})*\}/g, '\x00')
+  return stripped.split('/').filter(seg => seg.length > 0 && seg !== '\x00')
+}
 
 /**
  * Extract every `path.join(...)` and `path.resolve(...)` call from the
@@ -528,6 +591,54 @@ const scanCodeFile = (relPath: string): void => {
           break
         }
       }
+    }
+  }
+
+  // Rule A (template literal variant). Backtick strings like
+  // `${buildDir}/out/Final/${binary}` or `build/${mode}/${arch}/out/Final`
+  // construct paths the same way `path.join(...)` does — flag the
+  // same shapes. Skip raw imports / template tag positions by
+  // filtering out leading `import.meta.url`-style / tag positions
+  // implicitly: TEMPLATE_LITERAL_RE matches any backtick string and
+  // we rely on segment composition to decide if it's a path.
+  TEMPLATE_LITERAL_RE.lastIndex = 0
+  let tmpl: RegExpExecArray | null
+  while ((tmpl = TEMPLATE_LITERAL_RE.exec(content)) !== null) {
+    const body = tmpl[1] ?? ''
+    if (!body.includes('/')) {
+      continue
+    }
+    const segments = templateLiteralSegments(body)
+    const stages = segments.filter(s => STAGE_SEGMENTS.has(s))
+    const buildRoots = segments.filter(s => BUILD_ROOT_SEGMENTS.has(s))
+    const modes = segments.filter(s => MODE_SEGMENTS.has(s))
+    // Template literal trigger is tighter than path.join() because
+    // backtick strings often appear in patch fixtures, error messages,
+    // and other multi-line content that incidentally contains stage
+    // tokens like `wasm`. Require the canonical build-output shape:
+    //   - 'build' + 'out' + stage (canonical multi-stage layout), OR
+    //   - 2+ stage segments AND 'out' (e.g. `wasm/out/Final`), OR
+    //   - 'build' + stage + literal mode (back-compat with path.join).
+    const hasBuildAndOut =
+      buildRoots.includes('build') && buildRoots.includes('out')
+    const hasOut = buildRoots.includes('out')
+    const hasBuild = buildRoots.includes('build')
+    const triggersA =
+      (hasBuildAndOut && stages.length >= 1) ||
+      (stages.length >= 2 && hasOut) ||
+      (hasBuild && stages.length >= 1 && modes.length >= 1)
+    if (triggersA) {
+      const line = offsetToLine(tmpl.index)
+      const snippet = (lines[line - 1] ?? '').trim()
+      findings.push({
+        rule: 'A',
+        file: relPath,
+        line,
+        snippet,
+        message:
+          'Multi-stage path constructed inline via template literal (outside paths.mts).',
+        fix: 'Construct in the owning paths.mts (or use getFinalBinaryPath / getDownloadedDir from build-infra/lib/paths). Import the computed value here.',
+      })
     }
   }
 }
@@ -853,6 +964,9 @@ const main = (): number => {
     logger.log(`  [${f.rule}] ${f.file}:${f.line}`)
     logger.log(`      ${f.snippet}`)
     logger.log(`      → ${f.message}`)
+    if (args.values['show-hashes']) {
+      logger.log(`      snippet_hash: ${snippetHash(f.snippet)}`)
+    }
     if (args.values.explain) {
       logger.log(`      Fix: ${f.fix}`)
     }
@@ -862,6 +976,9 @@ const main = (): number => {
     logger.log('Run with --explain to see fix suggestions per finding.')
     logger.log(
       'Add intentional exceptions to .github/paths-allowlist.yml with a `reason` field.',
+    )
+    logger.log(
+      'Run with --show-hashes to print the snippet_hash for each finding (drift-resistant allowlisting).',
     )
   }
   return 1

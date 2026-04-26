@@ -199,6 +199,18 @@ pnpm run check:paths --explain
 
 Print the gate's findings without making any edits. Exit 0 if clean, 1 if findings present. Useful for CI / pre-merge inspection.
 
+## Allowlisting a finding
+
+When a genuine exemption is needed (rare — most "false positives" should be reported as gate bugs), add an entry to `.github/paths-allowlist.yml`. Two ways to pin the entry to a specific site:
+
+- **`line:`** — exact line number. Strict; a single-line edit above shifts the entry off-target and the finding re-surfaces.
+- **`snippet_hash:`** — 12-char SHA-256 prefix of the offending snippet (whitespace-normalized). Drift-resistant: survives reformatting, but any content-changing edit invalidates it. Get the hash:
+  ```bash
+  pnpm run check:paths --show-hashes
+  ```
+
+Both may be set — either matching is sufficient. Prefer `snippet_hash` over raw `line:` when the exemption is expected to outlive routine reformatting; prefer `line:` when you specifically *want* the entry to fall off after any nearby edit.
+
 ## Mode: install (new repo)
 
 When invoked as `/path-guard install` on a Socket repo that doesn't yet have the gate:
