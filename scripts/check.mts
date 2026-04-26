@@ -387,15 +387,16 @@ async function main(): Promise<void> {
         logger.log('')
         logger.progress('Running path-hygiene check (1 path, 1 reference)')
       }
-      const pathHygieneResult = await spawn(
-        'node',
-        ['scripts/check-paths.mts', '--quiet'],
-        {
-          shell: WIN32,
-          stdio: 'pipe',
-          stdioString: true,
-        },
-      )
+      // Resolve the gate path against scripts/ so this runner works
+      // when invoked from any cwd (root or a workspace package dir).
+      const gatePath = path.join(scriptsDir, 'check-paths.mts')
+      const repoRoot = path.dirname(scriptsDir)
+      const pathHygieneResult = await spawn('node', [gatePath, '--quiet'], {
+        cwd: repoRoot,
+        shell: WIN32,
+        stdio: 'pipe',
+        stdioString: true,
+      })
       if (pathHygieneResult.code !== 0) {
         if (!quiet) {
           logger.clearLine()
