@@ -205,14 +205,74 @@ const loadAllowlist = (): AllowlistEntry[] => {
   }
   const text = readFileSync(allowlistPath, 'utf8')
   // Tiny YAML parser — only the shape we need: list of entries with
-  // `file`, `pattern`, `rule`, `line`, `reason` scalar fields.
-  // Avoids a yaml dep for a gate that has to be self-contained.
+  // `file`, `pattern`, `rule`, `line`, `reason` scalar fields, plus
+  // YAML 1.2 block-scalar indicators `|` (literal) and `>` (folded)
+  // for multi-line reasons. Avoids a yaml dep for a gate that has to
+  // be self-contained.
   const entries: AllowlistEntry[] = []
   let current: Partial<AllowlistEntry> | null = null
-  for (const raw of text.split('\n')) {
+  // When set, subsequent more-indented lines fold into this key as a
+  // block scalar (literal '|' keeps newlines, folded '>' joins with
+  // spaces).
+  let blockKey: string | null = null
+  let blockKind: '|' | '>' | null = null
+  let blockIndent = 0
+  let blockLines: string[] = []
+  const flushBlock = () => {
+    if (current && blockKey) {
+      const value =
+        blockKind === '>'
+          ? blockLines.join(' ').replace(/\s+/g, ' ').trim()
+          : blockLines.join('\n').replace(/\n+$/, '')
+      ;(current as any)[blockKey] = value
+    }
+    blockKey = null
+    blockKind = null
+    blockLines = []
+  }
+  const indentOf = (line: string): number => {
+    let i = 0
+    while (i < line.length && line[i] === ' ') {
+      i += 1
+    }
+    return i
+  }
+  const lines = text.split('\n')
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i]!
     const line = raw.replace(/\r$/, '')
+    // Block-scalar accumulation takes precedence over normal parsing.
+    if (blockKey !== null) {
+      if (line.trim() === '') {
+        // Preserve blank lines inside a literal block; folded blocks
+        // turn them into paragraph breaks (kept as separate joins).
+        blockLines.push('')
+        continue
+      }
+      const indent = indentOf(line)
+      if (indent >= blockIndent) {
+        blockLines.push(line.slice(blockIndent))
+        continue
+      }
+      flushBlock()
+      // Fall through and re-process the dedented line as normal.
+    }
     if (!line.trim() || line.trim().startsWith('#')) {
       continue
+    }
+    const tryAssign = (key: string, value: string) => {
+      const trimmed = value.trim()
+      if (current === null) {
+        return
+      }
+      if (trimmed === '|' || trimmed === '>') {
+        blockKey = key
+        blockKind = trimmed as '|' | '>'
+        blockIndent = indentOf(lines[i + 1] ?? '') || indentOf(line) + 2
+        blockLines = []
+        return
+      }
+      ;(current as any)[key] = key === 'line' ? Number(unquote(trimmed)) : unquote(trimmed)
     }
     if (line.startsWith('- ')) {
       if (current && current.reason) {
@@ -221,19 +281,20 @@ const loadAllowlist = (): AllowlistEntry[] => {
       current = {}
       const rest = line.slice(2).trim()
       if (rest) {
-        const m = rest.match(/^(\w+):\s*(.*)$/)
+        const m = rest.match(/^([\w-]+):\s*(.*)$/)
         if (m) {
-          ;(current as any)[m[1]!] = unquote(m[2]!)
+          tryAssign(m[1]!, m[2]!)
         }
       }
     } else if (current) {
-      const m = line.match(/^\s+(\w+):\s*(.*)$/)
+      const m = line.match(/^\s+([\w-]+):\s*(.*)$/)
       if (m) {
-        const key = m[1]!
-        const value = unquote(m[2]!)
-        ;(current as any)[key] = key === 'line' ? Number(value) : value
+        tryAssign(m[1]!, m[2]!)
       }
     }
+  }
+  if (blockKey !== null) {
+    flushBlock()
   }
   if (current && current.reason) {
     entries.push(current as AllowlistEntry)
@@ -314,12 +375,67 @@ const walk = function* (
 // Rule A + B: code scan (.mts / .cts)
 // ──────────────────────────────────────────────────────────────────
 
-const PATH_JOIN_RE = /\bpath\.join\s*\(\s*([^()]*(?:\([^()]*\)[^()]*)*)\)/g
+// Locate `path.join(` or `path.resolve(` call sites; argument-list
+// extraction uses a paren-balancing scanner below to handle arbitrary
+// nesting depth (the previous regex-only approach silently missed any
+// argument containing 2+ levels of nested function calls).
+const PATH_CALL_RE = /\bpath\.(?:join|resolve)\s*\(/g
 const STRING_LITERAL_RE = /(['"])((?:\\.|(?!\1)[^\\])*)\1/g
+
+/**
+ * Extract every `path.join(...)` and `path.resolve(...)` call from the
+ * source text, returning each call's literal start offset and argument
+ * substring. Uses paren-balancing so deeply-nested arguments like
+ * `path.join(getDir(child(x)), 'build', 'Final')` are captured fully.
+ */
+const extractPathCalls = (
+  source: string,
+): Array<{ offset: number; args: string }> => {
+  const calls: Array<{ offset: number; args: string }> = []
+  PATH_CALL_RE.lastIndex = 0
+  let match: RegExpExecArray | null
+  while ((match = PATH_CALL_RE.exec(source)) !== null) {
+    const callStart = match.index
+    const argsStart = PATH_CALL_RE.lastIndex
+    let depth = 1
+    let i = argsStart
+    let inString: '"' | "'" | '`' | null = null
+    while (i < source.length && depth > 0) {
+      const ch = source[i]!
+      if (inString) {
+        if (ch === '\\') {
+          i += 2
+          continue
+        }
+        if (ch === inString) {
+          inString = null
+        }
+      } else {
+        if (ch === '"' || ch === "'" || ch === '`') {
+          inString = ch
+        } else if (ch === '(') {
+          depth += 1
+        } else if (ch === ')') {
+          depth -= 1
+          if (depth === 0) {
+            break
+          }
+        }
+      }
+      i += 1
+    }
+    if (depth === 0) {
+      calls.push({ offset: callStart, args: source.slice(argsStart, i) })
+      PATH_CALL_RE.lastIndex = i + 1
+    }
+  }
+  return calls
+}
 
 const extractStringLiterals = (args: string): string[] => {
   const literals: string[] = []
   let match: RegExpExecArray | null
+  STRING_LITERAL_RE.lastIndex = 0
   while ((match = STRING_LITERAL_RE.exec(args)) !== null) {
     if (match[2] !== undefined) {
       literals.push(match[2])
@@ -359,12 +475,8 @@ const scanCodeFile = (relPath: string): void => {
     return lo + 1
   }
 
-  let match: RegExpExecArray | null
-  PATH_JOIN_RE.lastIndex = 0
-  while ((match = PATH_JOIN_RE.exec(content)) !== null) {
-    const callOffset = match.index
-    const argList = match[1] ?? ''
-    const literals = extractStringLiterals(argList)
+  for (const call of extractPathCalls(content)) {
+    const literals = extractStringLiterals(call.args)
     const stages = literals.filter(l => STAGE_SEGMENTS.has(l))
     const buildRoots = literals.filter(l => BUILD_ROOT_SEGMENTS.has(l))
     const modes = literals.filter(l => MODE_SEGMENTS.has(l))
@@ -374,7 +486,7 @@ const scanCodeFile = (relPath: string): void => {
       stages.length >= 2 ||
       (stages.length >= 1 && buildRoots.length >= 1 && modes.length >= 1)
     if (triggersA) {
-      const line = offsetToLine(callOffset)
+      const line = offsetToLine(call.offset)
       const snippet = (lines[line - 1] ?? '').trim()
       findings.push({
         rule: 'A',
@@ -386,28 +498,34 @@ const scanCodeFile = (relPath: string): void => {
       })
     }
 
-    // Rule B: '..' followed by a known sibling package + build context.
-    let sawDotDot = false
-    for (const lit of literals) {
-      if (lit === '..') {
-        sawDotDot = true
-        continue
-      }
-      if (sawDotDot && KNOWN_SIBLING_PACKAGES.has(lit)) {
-        const hasBuildContext = literals.some(
-          l => BUILD_ROOT_SEGMENTS.has(l) || STAGE_SEGMENTS.has(l),
-        )
-        if (hasBuildContext) {
-          const line = offsetToLine(callOffset)
+    // Rule B: each '..' opens a window; the window stays open only
+    // until the next non-'..' literal. A sibling-package literal
+    // *immediately after* a '..' (no path segment between them)
+    // triggers, AND there must be build context elsewhere in the
+    // call. Resetting per-segment prevents false positives where '..'
+    // appears earlier and sibling-name appears much later in an
+    // unrelated position.
+    const hasBuildContext = literals.some(
+      l => BUILD_ROOT_SEGMENTS.has(l) || STAGE_SEGMENTS.has(l),
+    )
+    if (hasBuildContext) {
+      for (let i = 0; i < literals.length - 1; i++) {
+        if (
+          literals[i] === '..' &&
+          KNOWN_SIBLING_PACKAGES.has(literals[i + 1]!)
+        ) {
+          const sibling = literals[i + 1]!
+          const line = offsetToLine(call.offset)
           const snippet = (lines[line - 1] ?? '').trim()
           findings.push({
             rule: 'B',
             file: relPath,
             line,
             snippet,
-            message: `Cross-package traversal into '${lit}' build output.`,
-            fix: `Add '${lit}: workspace:*' as a dep, declare an exports entry on '${lit}' (e.g. './scripts/paths' → './scripts/paths.mts'), and import the path from there.`,
+            message: `Cross-package traversal into '${sibling}' build output.`,
+            fix: `Add '${sibling}: workspace:*' as a dep, declare an exports entry on '${sibling}' (e.g. './scripts/paths' → './scripts/paths.mts'), and import the path from there.`,
           })
+          break
         }
       }
     }

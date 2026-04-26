@@ -184,23 +184,51 @@ const isInScope = (filePath: string): boolean => {
   return !EXEMPT_FILE_PATTERNS.some(re => re.test(filePath))
 }
 
-const extractPathJoinArgs = (
+// Extract every `path.join(...)` and `path.resolve(...)` call from
+// the diff and return its argument substring. Uses paren-balancing so
+// deeply nested arguments like `path.join(getDir(child(x)), 'Final')`
+// are captured correctly — a regex-only approach silently missed any
+// argument with 2+ levels of nested parentheses.
+const extractPathCalls = (
   source: string,
 ): Array<{ snippet: string; literals: string[] }> => {
-  // Match `path.join(...)` calls and capture the comma-separated
-  // argument list. We're not parsing JS — a regex is brittle, but the
-  // hook is a fast advisory line of defense and the gate runs a more
-  // thorough whole-repo check at commit time.
   const calls: Array<{ snippet: string; literals: string[] }> = []
-  const callRe = /\bpath\.join\s*\(\s*([^()]*(?:\([^()]*\)[^()]*)*)\)/g
-  let match: RegExpExecArray | null
-  while ((match = callRe.exec(source)) !== null) {
-    const args = match[1]
-    if (args === undefined) {
+  const callRe = /\bpath\.(?:join|resolve)\s*\(/g
+  let m: RegExpExecArray | null
+  while ((m = callRe.exec(source)) !== null) {
+    const callStart = m.index
+    const argsStart = callRe.lastIndex
+    let depth = 1
+    let i = argsStart
+    let inString: '"' | "'" | '`' | null = null
+    while (i < source.length && depth > 0) {
+      const ch = source[i]!
+      if (inString) {
+        if (ch === '\\') {
+          i += 2
+          continue
+        }
+        if (ch === inString) {
+          inString = null
+        }
+      } else {
+        if (ch === '"' || ch === "'" || ch === '`') {
+          inString = ch
+        } else if (ch === '(') {
+          depth += 1
+        } else if (ch === ')') {
+          depth -= 1
+          if (depth === 0) {
+            break
+          }
+        }
+      }
+      i += 1
+    }
+    if (depth !== 0) {
       continue
     }
-    // Pull out string literals from the arg list. Both single and
-    // double quotes; ignore template-literal interpolations.
+    const args = source.slice(argsStart, i)
     const litRe = /(['"])((?:\\.|(?!\1)[^\\])*)\1/g
     const literals: string[] = []
     let lit: RegExpExecArray | null
@@ -210,12 +238,13 @@ const extractPathJoinArgs = (
         literals.push(value)
       }
     }
-    calls.push({ snippet: match[0], literals })
+    calls.push({ snippet: source.slice(callStart, i + 1), literals })
+    callRe.lastIndex = i + 1
   }
   return calls
 }
 
-const checkRuleA = (calls: ReturnType<typeof extractPathJoinArgs>): void => {
+const checkRuleA = (calls: ReturnType<typeof extractPathCalls>): void => {
   for (const call of calls) {
     const stages = call.literals.filter(l => STAGE_SEGMENTS.has(l))
     const buildRoots = call.literals.filter(l => BUILD_ROOT_SEGMENTS.has(l))
@@ -235,38 +264,37 @@ const checkRuleA = (calls: ReturnType<typeof extractPathJoinArgs>): void => {
   }
 }
 
-const checkRuleB = (calls: ReturnType<typeof extractPathJoinArgs>): void => {
+const checkRuleB = (calls: ReturnType<typeof extractPathCalls>): void => {
   for (const call of calls) {
-    // Look for the sequence: `..` then a known sibling package name
-    // somewhere in the literal list. The literals come in order from
-    // the regex, so a sibling appearing AFTER a `..` segment indicates
-    // cross-package traversal.
-    let sawDotDot = false
-    for (const lit of call.literals) {
-      if (lit === '..') {
-        sawDotDot = true
-        continue
-      }
-      if (sawDotDot && KNOWN_SIBLING_PACKAGES.has(lit)) {
-        // Only fire when build-output context appears (otherwise this
-        // could be a legitimate test fixture path or shared resource).
-        const hasBuildContext = call.literals.some(
-          l => BUILD_ROOT_SEGMENTS.has(l) || STAGE_SEGMENTS.has(l),
+    // A sibling package name *immediately after* a `..` literal (no
+    // path segment in between) plus build context elsewhere in the
+    // call indicates cross-package traversal. The previous "sticky
+    // sawDotDot" form fired falsely when '..' appeared early and an
+    // unrelated sibling-named segment appeared much later.
+    const hasBuildContext = call.literals.some(
+      l => BUILD_ROOT_SEGMENTS.has(l) || STAGE_SEGMENTS.has(l),
+    )
+    if (!hasBuildContext) {
+      continue
+    }
+    for (let i = 0; i < call.literals.length - 1; i++) {
+      if (
+        call.literals[i] === '..' &&
+        KNOWN_SIBLING_PACKAGES.has(call.literals[i + 1]!)
+      ) {
+        const sibling = call.literals[i + 1]!
+        throw new BlockError(
+          'B — cross-package path traversal',
+          `Don't reach into '${sibling}'s build output via \`..\`. Add \`${sibling}: workspace:*\` as a dep and import its \`paths.mts\` via the \`exports\` field. 1 path, 1 reference.`,
+          call.snippet,
         )
-        if (hasBuildContext) {
-          throw new BlockError(
-            'B — cross-package path traversal',
-            `Don't reach into '${lit}'s build output via \`..\`. Add \`${lit}: workspace:*\` as a dep and import its \`paths.mts\` via the \`exports\` field. 1 path, 1 reference.`,
-            call.snippet,
-          )
-        }
       }
     }
   }
 }
 
 const check = (source: string): void => {
-  const calls = extractPathJoinArgs(source)
+  const calls = extractPathCalls(source)
   if (calls.length === 0) {
     return
   }

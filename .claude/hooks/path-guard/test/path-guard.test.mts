@@ -144,6 +144,50 @@ describe('path-guard — Rule B (cross-package traversal)', () => {
     )
     assert.equal(code, 0)
   })
+
+  it('does not fire when .. and sibling are non-adjacent (regression)', () => {
+    // Earlier regex ran with sticky sawDotDot — once it saw `..` it
+    // would flag any later sibling-named segment. The fix requires
+    // the sibling to appear *immediately* after `..`.
+    const source = `
+      const x = path.join(PKG, '..', 'cache', 'lief-builder', 'config.json')
+    `
+    const { code } = runHook(
+      'Write',
+      'packages/foo/scripts/build.mts',
+      source,
+    )
+    assert.equal(code, 0)
+  })
+})
+
+describe('path-guard — paren-balance correctness', () => {
+  it('detects A through nested function-call args (regression)', () => {
+    // Old regex used \\([^()]*\\) which only handled one nesting
+    // level — `path.join(getDir(child(x)), 'build', 'dev', 'Final')`
+    // silently slipped through. The paren-balancing scanner catches it.
+    const source = `
+      const p = path.join(getDir(child(x)), 'build', 'dev', 'out', 'Final')
+    `
+    const { code } = runHook(
+      'Write',
+      'packages/foo/scripts/build.mts',
+      source,
+    )
+    assert.equal(code, 2)
+  })
+
+  it('detects A in path.resolve() too', () => {
+    const source = `
+      const p = path.resolve(PKG, 'build', 'dev', 'out', 'Final', 'bin')
+    `
+    const { code } = runHook(
+      'Write',
+      'packages/foo/scripts/build.mts',
+      source,
+    )
+    assert.equal(code, 2)
+  })
 })
 
 describe('path-guard — file-type filter', () => {
