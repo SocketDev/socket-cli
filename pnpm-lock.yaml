@@ -257,7 +257,7 @@ overrides:
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
   '@sigstore/sign': 4.1.0
-  '@socketsecurity/lib': 5.26.0
+  '@socketsecurity/lib': 5.25.1
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ansi-regex: 6.2.2
   brace-expansion: 5.0.5
@@ -397,8 +397,8 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 5.26.0
-        version: 5.26.0(typescript@5.9.3)
+        specifier: 5.25.1
+        version: 5.25.1(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.2(typescript@5.9.3)
@@ -577,8 +577,8 @@ importers:
         specifier: 'catalog:'
         version: 1.4.2
       '@socketsecurity/lib':
-        specifier: 5.26.0
-        version: 5.26.0(typescript@5.9.3)
+        specifier: 5.25.1
+        version: 5.25.1(typescript@5.9.3)
       '@socketsecurity/sdk':
         specifier: 'catalog:'
         version: 4.0.1
@@ -598,16 +598,16 @@ importers:
   .claude/hooks/setup-security-tools:
     dependencies:
       '@socketsecurity/lib':
-        specifier: 5.26.0
-        version: 5.26.0(typescript@5.9.3)
+        specifier: 5.25.1
+        version: 5.25.1(typescript@5.9.3)
 
   .claude/hooks/token-guard: {}
 
   .claude/hooks/token-hygiene:
     devDependencies:
       '@socketsecurity/lib':
-        specifier: 5.26.0
-        version: 5.26.0(typescript@5.9.3)
+        specifier: 5.25.1
+        version: 5.25.1(typescript@5.9.3)
       '@types/node':
         specifier: 24.9.2
         version: 24.9.2
@@ -624,8 +624,8 @@ importers:
         specifier: 'catalog:'
         version: 0.34.49
       '@socketsecurity/lib':
-        specifier: 5.26.0
-        version: 5.26.0(typescript@5.9.3)
+        specifier: 5.25.1
+        version: 5.25.1(typescript@5.9.3)
       magic-string:
         specifier: 'catalog:'
         version: 0.30.19
@@ -681,8 +681,8 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 5.26.0
-        version: 5.26.0(typescript@5.9.3)
+        specifier: 5.25.1
+        version: 5.25.1(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.2(typescript@5.9.3)
@@ -798,8 +798,8 @@ importers:
   packages/package-builder:
     dependencies:
       '@socketsecurity/lib':
-        specifier: 5.26.0
-        version: 5.26.0(typescript@5.9.3)
+        specifier: 5.25.1
+        version: 5.25.1(typescript@5.9.3)
       build-infra:
         specifier: workspace:*
         version: link:../build-infra
@@ -2238,8 +2238,8 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/lib@5.26.0':
-    resolution: {integrity: sha512-12diik0y7SQS2EO0IoASxJAd07/QJjLjENadmJi/bRpEOt7+6GuovXq7toPbSE84Q0Hyq3UZz1bqG4aiw9ZG9Q==}
+  '@socketsecurity/lib@5.25.1':
+    resolution: {integrity: sha512-I/sXk5FDOF7FVstzYn8tKtCvRe97KU/hl4p0e3OI1O9gma2uYypDiJT/n3axvtkqOyNFxWICWuXfy8Hnzeaw6Q==}
     engines: {node: '>=22', pnpm: '>=11.0.0-rc.0'}
     peerDependencies:
       typescript: '>=5.0.0'
@@ -5730,7 +5730,7 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/lib@5.26.0(typescript@5.9.3)':
+  '@socketsecurity/lib@5.25.1(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 
