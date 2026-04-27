@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Claude Code PreToolUse hook — token-hygiene firewall.
+// Claude Code PreToolUse hook — token-guard firewall.
 //
 // Blocks Bash commands that would echo token-bearing env vars into
 // tool output. This fires BEFORE the command runs; exit code 2 makes
@@ -41,9 +41,15 @@ const SENSITIVE_ENV_NAMES = [
 ]
 
 // Pipelines that "launder" earlier-stage secrets into safe output.
+// The first two patterns match `sed 's/.../redact.../'` and
+// `sed 's/.../FOO=*****/'` regardless of which delimiter sed uses
+// (`/`, `#`, `|`). `[\s\S]*?` reaches across the delimiter between
+// the search and replacement parts (the previous `[^/|#]*` couldn't
+// cross `/` and so missed the canonical `sed 's/=.*/=<redacted>/'`
+// — the very command the token-guard error message suggests).
 const REDACTION_MARKERS = [
-  /\bsed\b[^|]*s[/|#][^/|#]*=[^/|#]*<?redact/i,
-  /\bsed\b[^|]*s[/|#][^/|#]*[A-Z_]+=[^/|#]*\*+/i,
+  /\bsed\b[^|]*s[/|#][\s\S]*?<?redact/i,
+  /\bsed\b[^|]*s[/|#][\s\S]*?[A-Z_]+=[\s\S]*?\*{3,}/i,
   /\|\s*cut\b[^|]*-d['"]?=['"]?\s*-f\s*1/i,
   /\|\s*awk\b[^|]*-F\s*['"]?=['"]?/i,
   />\s*\/dev\/null/,
@@ -120,9 +126,19 @@ type ToolInput = {
 const hasRedaction = (command: string): boolean =>
   REDACTION_MARKERS.some(re => re.test(command))
 
+// Word-boundary match so `PASS` doesn't fire on `PATHS-ALLOWLIST` and
+// `AUTH` doesn't fire on `AUTHOR`. Env-var-style boundaries treat `_`
+// as a separator (so `ACCESS_TOKEN` matches `TOKEN`) but require a
+// non-alphanumeric character on each end (so `PATHS` doesn't match
+// `PASS`). The pre-fix substring match created false positives
+// whenever a path name happened to contain a sensitive keyword as a
+// literal substring.
+const sensitiveEnvBoundaryRes = SENSITIVE_ENV_NAMES.map(
+  frag => new RegExp(String.raw`(?:^|[^A-Z0-9])${frag}(?:[^A-Z0-9]|$)`),
+)
 const referencesSensitiveEnv = (command: string): boolean => {
   const upper = command.toUpperCase()
-  return SENSITIVE_ENV_NAMES.some(frag => upper.includes(frag))
+  return sensitiveEnvBoundaryRes.some(re => re.test(upper))
 }
 
 const matchesAlwaysDangerous = (command: string): RegExp | null => {
@@ -148,9 +164,11 @@ const check = (command: string): void => {
     }
   }
 
-  // 1. Always-dangerous patterns.
+  // 1. Always-dangerous patterns. Skip when the command already has a
+  // redaction pipeline — the suggested fix here is `env | sed ...`,
+  // which would itself match ALWAYS_DANGEROUS without this guard.
   const dangerous = matchesAlwaysDangerous(command)
-  if (dangerous) {
+  if (dangerous && !hasRedaction(command)) {
     throw new BlockError(
       `\`${dangerous.source}\` dumps env to stdout`,
       'Pipe through redaction, e.g. `env | sed "s/=.*/=<redacted>/"` or filter specific keys.',
@@ -204,7 +222,7 @@ const emitBlock = (command: string, err: BlockError): void => {
     ? command.slice(0, 200) + (command.length > 200 ? '…' : '')
     : '<command suppressed to avoid re-logging the literal token>'
   process.stderr.write(
-    `\n[token-hygiene] Blocked: ${err.rule}\n` +
+    `\n[token-guard] Blocked: ${err.rule}\n` +
       `  Command: ${safeCommand}\n` +
       `  Fix: ${err.suggestion}\n\n`,
   )
@@ -244,6 +262,6 @@ const main = async (): Promise<void> => {
 main().catch(e => {
   // Never block a tool call due to a bug in the hook itself. Log it
   // so we notice, but fail open.
-  process.stderr.write(`[token-hygiene] hook error (allowing): ${e}\n`)
+  process.stderr.write(`[token-guard] hook error (allowing): ${e}\n`)
   process.exitCode = 0
 })

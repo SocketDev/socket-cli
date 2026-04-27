@@ -1,21 +1,41 @@
+#!/bin/sh
 # Optional checks - can be bypassed with --no-verify for fast local commits.
-# Mandatory security checks run in pre-push hook.
+# Mandatory security checks ALSO run in pre-push hook.
+#
+# Architecture (parallels commit-msg and pre-push):
+#   .husky/pre-commit (this file) → .git-hooks/pre-commit.mts (security) + pnpm lint/test
+#
+# Use --no-verify for:
+# - History operations (squash, rebase, amend)
+# - Emergency hotfixes
+# - When tests require binaries that haven't been built yet
+#
+# Use environment variables to selectively disable:
+# - DISABLE_PRECOMMIT_LINT=1 to skip linting
+# - DISABLE_PRECOMMIT_TEST=1 to skip testing
 
-# Check prerequisites.
+# Run Socket security pre-commit checks (API keys, .DS_Store, etc.).
+node .git-hooks/pre-commit.mts
+
+# Check if pnpm is available
 if ! command -v pnpm >/dev/null 2>&1; then
-  printf "Error: pnpm not found in PATH\n" >&2
-  printf "Install from: https://pnpm.io/installation\n" >&2
+  echo "Error: pnpm not found. Install pnpm to run git hooks."
+  echo "Visit: https://pnpm.io/installation"
   exit 1
 fi
 
 if [ -z "${DISABLE_PRECOMMIT_LINT}" ]; then
   pnpm lint --staged
 else
-  printf "Skipping lint due to DISABLE_PRECOMMIT_LINT env var\n"
+  echo "Skipping lint due to DISABLE_PRECOMMIT_LINT env var"
 fi
 
 if [ -z "${DISABLE_PRECOMMIT_TEST}" ]; then
+  # Only run tests if there are staged test files. SOCKET_CLI_NO_API_TOKEN=1
+  # disables the API-token requirement so contributors without a real key
+  # configured don't see test failures during pre-commit (matches the
+  # original .env.precommit behavior).
   SOCKET_CLI_NO_API_TOKEN=1 pnpm test --staged
 else
-  printf "Skipping testing due to DISABLE_PRECOMMIT_TEST env var\n"
+  echo "Skipping testing due to DISABLE_PRECOMMIT_TEST env var"
 fi

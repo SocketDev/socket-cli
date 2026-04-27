@@ -1,0 +1,28 @@
+# Path-hygiene gate allowlist.
+# Mantra: 1 path, 1 reference.
+#
+# Each entry exempts a specific finding from `scripts/check-paths.mts`.
+# Entries MUST carry a `reason` so the list stays audit-able and
+# entries can be removed when the underlying code changes.
+#
+# Schema (all top-level keys optional except `reason`):
+#
+#   - rule:    Rule letter (A, B, C, D, F, G). Omit to match any rule.
+#     file:    Substring match against the relative file path.
+#     pattern: Substring match against the offending snippet.
+#     line:    Line number; matches if within ±2 of the finding.
+#     reason:  Why this site is genuinely exempt. Required.
+#
+# Prefer narrow entries (rule + file + line + pattern) over blanket
+# `file:` entries that exempt the whole file. Genuine exemptions are
+# rare — most "false positives" should be reported as gate bugs.
+#
+# Example:
+#
+#   - rule: A
+#     file: packages/foo/scripts/legacy-build.mts
+#     line: 42
+#     pattern: "path.join(testDir, 'out', 'Final')"
+#     reason: |
+#       legacy-build.mts is scheduled for removal in v2.0; refactoring
+#       its path construction now would conflict with the rewrite.
