@@ -14,6 +14,25 @@
  *
  * Pinned versions come from `pnpm-workspace.yaml`'s `catalog:` —
  * single source of truth.
+ *
+ * --- Repo-convention exceptions ---
+ *
+ * This script intentionally CANNOT depend on `@socketsecurity/lib`
+ * because it is the script that bootstraps that very package. The
+ * usual repo conventions therefore do not apply here:
+ *
+ *   - `fetch()` is used directly instead of `httpJson` from
+ *     `@socketsecurity/lib/http-request`.
+ *   - `rmSync` is used directly instead of `safeDelete` from
+ *     `@socketsecurity/lib/fs`.
+ *   - Caught errors use the inline `e instanceof Error ? e.message
+ *     : String(e)` pattern instead of `errorMessage()` from
+ *     `@socketsecurity/lib/errors`.
+ *
+ * These exceptions are intentional, narrow, and self-contained. Do
+ * not add other repo-convention violations here without documenting
+ * the reason in this header. Once `@socketsecurity/lib` is on disk
+ * (post-bootstrap), other scripts must use the helpers as normal.
  */
 
 import { spawnSync } from 'node:child_process'
