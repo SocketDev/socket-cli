@@ -24,6 +24,8 @@ The strategy lives in three artifacts that ship together:
 2. **Hook** — `.claude/hooks/path-guard/index.mts` runs `PreToolUse` on `Edit`/`Write` of `.mts`/`.cts` files. Blocks new violations at edit time. Mandatory across the fleet.
 3. **Gate** — `scripts/check-paths.mts` runs in `pnpm check` (and CI). Whole-repo scan. Fails the build on any unsanctioned violation.
 
+The hook and gate share their stage / build-root / mode / sibling-package vocabulary via `.claude/hooks/path-guard/segments.mts` — a single canonical source. Adding a new stage segment or fleet package means editing one file; the two consumers can never drift on what counts as a build-output path.
+
 This skill is the *audit-and-fix workflow* that makes a repo conform initially and validates conformance over time.
 
 ## Detection rules
