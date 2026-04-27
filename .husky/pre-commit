@@ -31,8 +31,11 @@ else
 fi
 
 if [ -z "${DISABLE_PRECOMMIT_TEST}" ]; then
-  # Only run tests if there are staged test files
-  pnpm test --staged
+  # Only run tests if there are staged test files. SOCKET_CLI_NO_API_TOKEN=1
+  # disables the API-token requirement so contributors without a real key
+  # configured don't see test failures during pre-commit (matches the
+  # original .env.precommit behavior).
+  SOCKET_CLI_NO_API_TOKEN=1 pnpm test --staged
 else
   echo "Skipping testing due to DISABLE_PRECOMMIT_TEST env var"
 fi

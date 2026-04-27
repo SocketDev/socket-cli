@@ -62,10 +62,14 @@ const main = (): number => {
     errors++
   }
 
-  // .env files (allowlist .env.example / .env.test).
+  // .env files (allowlist .env.example / .env.test / .env.precommit).
+  // Match commit-msg.mts allowlist — .env.precommit is a tracked file
+  // some repos use to disable test API tokens during pre-commit runs.
   out('Checking for .env files...')
   const envFiles = stagedFiles.filter(
-    f => /^\.env(\.[^/]+)?$/.test(f) && !/^\.env\.(example|test)$/.test(f),
+    f =>
+      /^\.env(\.[^/]+)?$/.test(f) &&
+      !/^\.env\.(example|test|precommit)$/.test(f),
   )
   if (envFiles.length > 0) {
     out(red('✗ ERROR: .env file detected!'))

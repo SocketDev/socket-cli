@@ -140,10 +140,10 @@ export const scanSocketApiKeys = (text: string): LineHit[] => {
       hits.push({ lineNumber: i + 1, line })
     }
   }
-  return filterAllowedApiKeys(hits.map(h => h.line)).map(line => ({
-    lineNumber: hits.find(h => h.line === line)!.lineNumber,
-    line,
-  }))
+  // Filter the LineHit objects directly so duplicate-content lines
+  // at different line numbers keep their correct numbers.
+  const allowedSet = new Set(filterAllowedApiKeys(hits.map(h => h.line)))
+  return hits.filter(h => allowedSet.has(h.line))
 }
 
 export const scanAwsKeys = (text: string): LineHit[] => {
@@ -196,6 +196,34 @@ export const scanNpxDlx = (text: string): LineHit[] => {
     }
   }
   return hits
+}
+
+// ── Linear issue reference scanner ─────────────────────────────────
+// CLAUDE.md "ABSOLUTE RULES": NEVER reference Linear issues in commits.
+// Team keys enumerated from the Socket workspace. PATCH listed before
+// PAT so the alternation matches the longer prefix first.
+
+const LINEAR_TEAM_KEYS =
+  'ASK|AUTO|BOT|CE|CORE|DAT|DES|DEV|ENG|INFRA|LAB|MAR|MET|OPS|PAR|PATCH|PAT|PLAT|REA|SALES|SBOM|SEC|SMO|SUP|TES|TI|WEB'
+
+const LINEAR_ISSUE_RE = new RegExp(
+  `(?:^|[^A-Za-z0-9_])((?:${LINEAR_TEAM_KEYS})-[0-9]+)(?:$|[^A-Za-z0-9_])`,
+  'gm',
+)
+
+const LINEAR_URL_RE = /linear\.app\/[A-Za-z0-9/_-]+/g
+
+export const scanLinearReferences = (commitMsg: string): string[] => {
+  const hits: string[] = []
+  const lines = commitMsg.split('\n').filter(l => !l.startsWith('#'))
+  const body = lines.join('\n')
+  for (const m of body.matchAll(LINEAR_ISSUE_RE)) {
+    hits.push(m[1]!)
+  }
+  for (const m of body.matchAll(LINEAR_URL_RE)) {
+    hits.push(m[0]!)
+  }
+  return hits.slice(0, 5)
 }
 
 // ── AI attribution scanner ─────────────────────────────────────────

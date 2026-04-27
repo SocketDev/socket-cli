@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 // Socket Security Commit-msg Hook
 //
-// Two responsibilities:
+// Three responsibilities:
 //   1. Block commits that introduce API keys / .env files (security
 //      layer that runs even when pre-commit is bypassed via
 //      `--no-verify`).
-//   2. Auto-strip AI attribution lines from the commit message before
+//   2. Block commits whose message references Linear issues — Socket
+//      keeps Linear tracking out of git history per CLAUDE.md.
+//   3. Auto-strip AI attribution lines from the commit message before
 //      git records the commit.
 //
 // Wired via .husky/commit-msg, which invokes this with the path to the
@@ -23,6 +25,7 @@ import {
   out,
   red,
   readFileForScan,
+  scanLinearReferences,
   scanSocketApiKeys,
   shouldSkipFile,
   stripAiAttribution,
@@ -67,10 +70,28 @@ const main = (): number => {
     }
   }
 
-  // Auto-strip AI attribution lines from the commit message.
   const commitMsgFile = process.argv[2]
   if (commitMsgFile && existsSync(commitMsgFile)) {
     const original = readFileSync(commitMsgFile, 'utf8')
+
+    // Block Linear issue references in the commit message. Socket
+    // keeps Linear tracking out of git history; commit messages stay
+    // tool-agnostic.
+    const linearHits = scanLinearReferences(original)
+    if (linearHits.length > 0) {
+      out(red('✗ Commit message references Linear issue(s):'))
+      for (const hit of linearHits) {
+        out(`  ${hit}`)
+      }
+      out(
+        red(
+          'Linear tracking lives in Linear. Remove the reference from the commit message.',
+        ),
+      )
+      errors++
+    }
+
+    // Auto-strip AI attribution lines from the commit message.
     const { cleaned, removed } = stripAiAttribution(original)
     if (removed > 0) {
       writeFileSync(commitMsgFile, cleaned)
