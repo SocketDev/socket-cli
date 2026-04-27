@@ -1,5 +1,5 @@
 {
-  "name": "@socketsecurity/hook-public-surface-reminder",
+  "name": "hook-public-surface-reminder",
   "private": true,
   "type": "module",
   "main": "./index.mts",
