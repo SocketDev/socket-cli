@@ -53,10 +53,15 @@ const REDACTION_SEGMENT_MARKERS = [
   /\bcut\b.*-d['"]?=['"]?\s*-f\s*1/i,
   /\bawk\b.*-F\s*['"]?=['"]?/i,
 ]
+// Whole-command redirection markers. Anchored at a pipe-segment
+// boundary (`^`, whitespace, `|`, or `;`) so they fire only on real
+// shell redirection (`env > file`, `env >> file`, `env > /dev/null`)
+// and not on the literal `>` inside regex/HTML-style markers like
+// `<redacted>` or `s/=.*/.../`. The previous /\s*[^|]/ shape would
+// match the `>` in `<redacted>` and bypass the env-dump check.
 const REDACTION_WHOLE_COMMAND_MARKERS = [
-  />\s*\/dev\/null/,
-  />>\s*[^|]/,
-  />\s*[^|]/,
+  /(?:^|[\s|;])>\s*\/dev\/null\b/,
+  /(?:^|[\s|;])>>?\s*[^|<>'"\\$&\s]/,
 ]
 
 // Commands that dump all env vars to stdout with no filter.
@@ -135,8 +140,21 @@ const hasRedaction = (command: string): boolean => {
   if (REDACTION_WHOLE_COMMAND_MARKERS.some(re => re.test(command))) {
     return true
   }
-  // Skip the `||` shell-or operator before splitting on `|`.
-  const segments = command.replace(/\|\|/g, '').split('|')
+  // Drop everything from the first `||` or `&&` onwards. Those branches
+  // don't unconditionally execute, so a redaction marker on their
+  // right side cannot launder an upstream leak. The bypass shape is
+  // `env || sed 's/=.*/=<redacted>/'`: `env` always succeeds so the
+  // `sed` arm never runs at runtime, but the previous logic credited
+  // it as a redaction and let the env dump through. Truncating before
+  // the conditional operator forces the redaction to live in the same
+  // unconditional pipeline as the leaky stage.
+  const idxOr = command.indexOf('||')
+  const idxAnd = command.indexOf('&&')
+  let cut = command.length
+  if (idxOr !== -1) cut = Math.min(cut, idxOr)
+  if (idxAnd !== -1) cut = Math.min(cut, idxAnd)
+  const truncated = command.slice(0, cut)
+  const segments = truncated.split('|')
   return segments.some(seg =>
     REDACTION_SEGMENT_MARKERS.some(re => re.test(seg)),
   )
