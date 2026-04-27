@@ -229,7 +229,8 @@ const loadAllowlist = (): AllowlistEntry[] => {
         blockLines = []
         return
       }
-      ;(current as any)[key] = key === 'line' ? Number(unquote(trimmed)) : unquote(trimmed)
+      ;(current as any)[key] =
+        key === 'line' ? Number(unquote(trimmed)) : unquote(trimmed)
     }
     if (line.startsWith('- ')) {
       if (current && current.reason) {
@@ -317,8 +318,7 @@ const isAllowlisted = (finding: Finding): boolean =>
     const hashProvided =
       typeof entry.snippet_hash === 'string' && entry.snippet_hash.length > 0
     if (lineProvided || hashProvided) {
-      const lineMatches =
-        lineProvided && entry.line === finding.line
+      const lineMatches = lineProvided && entry.line === finding.line
       const hashMatches =
         hashProvided && entry.snippet_hash === snippetHash(finding.snippet)
       if (!(lineMatches || hashMatches)) {
@@ -382,7 +382,8 @@ const STRING_LITERAL_RE = /(['"])((?:\\.|(?!\1)[^\\])*)\1/g
 // (including those with `${...}` placeholders) so Rule A also catches
 // path construction via template literals like
 // `${buildDir}/out/Final/${binary}` or `build/${mode}/out/Final`.
-const TEMPLATE_LITERAL_RE = /`((?:\\.|(?:\$\{(?:[^{}]|\{[^{}]*\})*\})|(?!`)[^\\])*)`/g
+const TEMPLATE_LITERAL_RE =
+  /`((?:\\.|(?:\$\{(?:[^{}]|\{[^{}]*\})*\})|(?!`)[^\\])*)`/g
 
 /**
  * Convert a template-literal body into a synthetic forward-slash path
