@@ -27,10 +27,10 @@ const outPath = path.join(rootDir, 'xport.schema.json')
 // then layering the canonical $schema / $id / title on top gives a clean
 // draft-2020-12 document with the Socket-specific headers.
 const enriched = {
+  ...XportManifestSchema,
   $schema: 'https://json-schema.org/draft/2020-12/schema',
   $id: 'https://github.com/SocketDev/xport.schema.json',
   title: 'xport lock-step manifest',
-  ...XportManifestSchema,
 }
 
 writeFileSync(outPath, JSON.stringify(enriched, null, 2) + '\n', 'utf8')

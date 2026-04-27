@@ -703,7 +703,9 @@ function checkLangParity(
     for (const port of Object.keys(row.ports)) {
       const state = row.ports[port]!
       if (state.status !== 'opt-out') {
-        base.severity = 'drift'
+        if (base.severity !== 'error') {
+          base.severity = 'drift'
+        }
         messages.push(
           `REJECTED anti-pattern reintroduced: port '${port}' is '${state.status}' (must be 'opt-out' for category=rejected)`,
         )
