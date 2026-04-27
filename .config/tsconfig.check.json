@@ -12,6 +12,8 @@
     "../packages/cli/.config/*.mts"
   ],
   "exclude": [
+    "../.cache/**",
+    "../packages/cli/.cache/**",
     "../packages/cli/**/*.tsx",
     "../packages/cli/**/*.d.mts",
     "../packages/cli/src/commands/analytics/output-analytics.mts",
