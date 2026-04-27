@@ -19,11 +19,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/token-guard/index.mts"
+            "command": "node .claude/hooks/private-name-guard/index.mts"
           },
           {
             "type": "command",
             "command": "node .claude/hooks/public-surface-reminder/index.mts"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/release-workflow-guard/index.mts"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/token-guard/index.mts"
           }
         ]
       }
