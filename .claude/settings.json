@@ -24,5 +24,18 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "deny": [
+      "Bash(gh release create:*)",
+      "Bash(gh release delete:*)",
+      "Bash(gh workflow dispatch:*)",
+      "Bash(gh workflow run:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(npm publish:*)",
+      "Bash(pnpm publish:*)",
+      "Bash(yarn publish:*)"
+    ]
   }
 }
