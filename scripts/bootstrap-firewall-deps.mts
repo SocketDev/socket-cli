@@ -1,13 +1,15 @@
 /**
- * @fileoverview Bootstrap zero-dep Socket packages from the npm
- * registry directly into node_modules/ before pnpm install runs.
+ * @fileoverview Bootstrap zero-dep Socket packages into node_modules/
+ * before `pnpm install` runs, with Socket Firewall verification on each
+ * pinned tarball before extraction.
  *
  * Why: setup.mts (and downstream tooling) imports `@socketsecurity/lib`
  * and other zero-dep Socket helpers at module-load time. On a fresh
  * clone, `pnpm install` itself runs scripts that import these — but
  * pnpm install hasn't completed yet, so the imports fail with
  * `ERR_MODULE_NOT_FOUND`. Bootstrap solves this by fetching the
- * pinned tarball directly from the npm registry and extracting it
+ * pinned tarball from the npm registry, running it through Socket
+ * Firewall (refuse-on-alert), and extracting the verified tarball
  * into node_modules/<scope>/<name>/. Subsequent pnpm install will
  * see the directory and either keep it (if version matches) or
  * replace it with the workspace-resolved version.
@@ -86,7 +88,7 @@ const checkFirewall = async (
   try {
     const res = await fetch(url, {
       headers: {
-        'User-Agent': 'socket-bootstrap-from-registry/1.0',
+        'User-Agent': 'socket-bootstrap-firewall-deps/1.0',
         Accept: 'application/json',
       },
       signal: controller.signal,
