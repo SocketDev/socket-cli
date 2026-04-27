@@ -53,12 +53,12 @@ const REDACTION_SEGMENT_MARKERS = [
   /\bcut\b.*-d['"]?=['"]?\s*-f\s*1/i,
   /\bawk\b.*-F\s*['"]?=['"]?/i,
 ]
-// Whole-command redirection markers. Anchored at a pipe-segment
-// boundary (`^`, whitespace, `|`, or `;`) so they fire only on real
-// shell redirection (`env > file`, `env >> file`, `env > /dev/null`)
-// and not on the literal `>` inside regex/HTML-style markers like
-// `<redacted>` or `s/=.*/.../`. The previous /\s*[^|]/ shape would
-// match the `>` in `<redacted>` and bypass the env-dump check.
+// Whole-command redirection markers, checked against the truncated
+// command (after stripping `||`/`&&` suffixes). Anchored at a
+// pipe-segment boundary (`^`, whitespace, `|`, or `;`) so they fire
+// only on real shell redirection (`env > file`, `env >> file`,
+// `env > /dev/null`) and not on the literal `>` inside regex/HTML-
+// style markers like `<redacted>` or `s/=.*/.../`.
 const REDACTION_WHOLE_COMMAND_MARKERS = [
   /(?:^|[\s|;])>\s*\/dev\/null\b/,
   /(?:^|[\s|;])>>?\s*[^|<>'"\\$&\s]/,
@@ -137,9 +137,6 @@ type ToolInput = {
 // where a `redact`-named downstream tool would otherwise launder the
 // upstream `env` dump.
 const hasRedaction = (command: string): boolean => {
-  if (REDACTION_WHOLE_COMMAND_MARKERS.some(re => re.test(command))) {
-    return true
-  }
   // Drop everything from the first `||` or `&&` onwards. Those branches
   // don't unconditionally execute, so a redaction marker on their
   // right side cannot launder an upstream leak. The bypass shape is
@@ -147,13 +144,19 @@ const hasRedaction = (command: string): boolean => {
   // `sed` arm never runs at runtime, but the previous logic credited
   // it as a redaction and let the env dump through. Truncating before
   // the conditional operator forces the redaction to live in the same
-  // unconditional pipeline as the leaky stage.
+  // unconditional pipeline as the leaky stage. Both whole-command and
+  // segment markers must check the truncated string — otherwise
+  // `env || true > /dev/null` would match a whole-command marker and
+  // return true early despite the redirection never executing.
   const idxOr = command.indexOf('||')
   const idxAnd = command.indexOf('&&')
   let cut = command.length
   if (idxOr !== -1) cut = Math.min(cut, idxOr)
   if (idxAnd !== -1) cut = Math.min(cut, idxAnd)
   const truncated = command.slice(0, cut)
+  if (REDACTION_WHOLE_COMMAND_MARKERS.some(re => re.test(truncated))) {
+    return true
+  }
   // Split first on `|` (pipe-stage boundary), then on `;` (statement
   // boundary) within each stage. A redaction marker is only credited
   // when both `sed` and the redaction target live in the same
