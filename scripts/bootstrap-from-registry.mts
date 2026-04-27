@@ -54,6 +54,13 @@ const err = (msg: string): void => {
  * this script must itself be zero-dep so it can run before
  * `pnpm install` brings any tooling in.
  */
+
+// Strip range prefixes (^, ~, >=, <=, etc.) so the registry tarball
+// URL gets an exact semver. Applied to BOTH the catalog and the
+// package.json paths so they can never disagree.
+const stripRange = (v: string): string =>
+  v.replace(/^[\^~>=<]+/, '').trim()
+
 const readPinnedVersion = (pkgName: string): string => {
   // (1) pnpm-workspace.yaml catalog
   const wsPath = path.join(REPO_ROOT, 'pnpm-workspace.yaml')
@@ -78,7 +85,7 @@ const readPinnedVersion = (pkgName: string): string => {
           /^\s+['"]?([@A-Za-z0-9_/-]+)['"]?\s*:\s*['"]?([^'"\s]+)['"]?\s*$/,
         )
         if (m && m[1] === pkgName) {
-          return m[2]!
+          return stripRange(m[2]!)
         }
       }
     }
@@ -98,8 +105,7 @@ const readPinnedVersion = (pkgName: string): string => {
           !v.startsWith('catalog:') &&
           !v.startsWith('workspace:')
         ) {
-          // Strip caret/tilde for tarball URL: registry serves exact versions.
-          return v.replace(/^[\^~>=<]+/, '').trim()
+          return stripRange(v)
         }
       }
     }
