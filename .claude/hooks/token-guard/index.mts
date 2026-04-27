@@ -154,7 +154,13 @@ const hasRedaction = (command: string): boolean => {
   if (idxOr !== -1) cut = Math.min(cut, idxOr)
   if (idxAnd !== -1) cut = Math.min(cut, idxAnd)
   const truncated = command.slice(0, cut)
-  const segments = truncated.split('|')
+  // Split first on `|` (pipe-stage boundary), then on `;` (statement
+  // boundary) within each stage. A redaction marker is only credited
+  // when both `sed` and the redaction target live in the same
+  // statement — otherwise `env | sed 's/a/b/' ; echo redacted_output`
+  // would match the segment regex (which uses `.*` between `sed` and
+  // the marker word) despite the `sed` doing no real redaction.
+  const segments = truncated.split('|').flatMap(s => s.split(';'))
   return segments.some(seg =>
     REDACTION_SEGMENT_MARKERS.some(re => re.test(seg)),
   )
