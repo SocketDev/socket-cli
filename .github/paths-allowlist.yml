@@ -7,21 +7,35 @@
 #
 # Schema (all top-level keys optional except `reason`):
 #
-#   - rule:    Rule letter (A, B, C, D, F, G). Omit to match any rule.
-#     file:    Substring match against the relative file path.
-#     pattern: Substring match against the offending snippet.
-#     line:    Line number; matches if within ±2 of the finding.
-#     reason:  Why this site is genuinely exempt. Required.
+#   - rule:         Rule letter (A, B, C, D, F, G). Omit to match any rule.
+#     file:         Substring match against the relative file path.
+#     pattern:      Substring match against the offending snippet.
+#     line:         Exact line number. Strict — no fuzz tolerance.
+#     snippet_hash: 12-char SHA-256 prefix of the normalized snippet
+#                   (whitespace collapsed). Drift-resistant: the entry
+#                   keeps matching after reformatting that doesn't
+#                   change the offending construction. Get the hash by
+#                   running `node scripts/check-paths.mts --show-hashes`.
+#     reason:       Why this site is genuinely exempt. Required.
 #
-# Prefer narrow entries (rule + file + line + pattern) over blanket
-# `file:` entries that exempt the whole file. Genuine exemptions are
-# rare — most "false positives" should be reported as gate bugs.
+# Match policy: if `line` is provided it must match exactly. If
+# `snippet_hash` is provided it must match exactly. Both may be set —
+# either one matching is sufficient (so a code reformat that keeps
+# the snippet but moves the line still matches via hash, and a
+# reformat that changes the snippet but keeps the line still matches
+# via line). If neither is set, `file` + `pattern` + `rule` matching
+# is used (broader; prefer narrow entries when possible).
+#
+# Prefer narrow entries (rule + file + snippet_hash + pattern) over
+# blanket `file:` entries that exempt the whole file. Genuine
+# exemptions are rare — most "false positives" should be reported
+# as gate bugs.
 #
 # Example:
 #
 #   - rule: A
 #     file: packages/foo/scripts/legacy-build.mts
-#     line: 42
+#     snippet_hash: a1b2c3d4e5f6
 #     pattern: "path.join(testDir, 'out', 'Final')"
 #     reason: |
 #       legacy-build.mts is scheduled for removal in v2.0; refactoring
