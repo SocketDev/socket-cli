@@ -158,9 +158,11 @@ const check = (command: string): void => {
     }
   }
 
-  // 1. Always-dangerous patterns.
+  // 1. Always-dangerous patterns. Skip when the command already has a
+  // redaction pipeline — the suggested fix here is `env | sed ...`,
+  // which would itself match ALWAYS_DANGEROUS without this guard.
   const dangerous = matchesAlwaysDangerous(command)
-  if (dangerous) {
+  if (dangerous && !hasRedaction(command)) {
     throw new BlockError(
       `\`${dangerous.source}\` dumps env to stdout`,
       'Pipe through redaction, e.g. `env | sed "s/=.*/=<redacted>/"` or filter specific keys.',
