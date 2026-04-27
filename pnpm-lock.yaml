@@ -589,7 +589,19 @@ importers:
 
   .claude/hooks/path-guard: {}
 
+  .claude/hooks/private-name-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 24.9.2
+        version: 24.9.2
+
   .claude/hooks/public-surface-reminder:
+    devDependencies:
+      '@types/node':
+        specifier: 24.9.2
+        version: 24.9.2
+
+  .claude/hooks/release-workflow-guard:
     devDependencies:
       '@types/node':
         specifier: 24.9.2
@@ -597,20 +609,17 @@ importers:
 
   .claude/hooks/setup-security-tools:
     dependencies:
+      '@sinclair/typebox':
+        specifier: 'catalog:'
+        version: 0.34.49
+      '@socketregistry/packageurl-js':
+        specifier: 'catalog:'
+        version: 1.4.2
       '@socketsecurity/lib':
         specifier: 5.25.1
         version: 5.25.1(typescript@5.9.3)
 
   .claude/hooks/token-guard: {}
-
-  .claude/hooks/token-hygiene:
-    devDependencies:
-      '@socketsecurity/lib':
-        specifier: 5.25.1
-        version: 5.25.1(typescript@5.9.3)
-      '@types/node':
-        specifier: 24.9.2
-        version: 24.9.2
 
   packages/build-infra:
     dependencies:
