@@ -47,6 +47,7 @@
     "update": "node scripts/update.mts",
     "// Setup": "",
     "setup": "node scripts/setup.mts",
+    "preinstall": "node scripts/bootstrap-from-registry.mts",
     "postinstall": "node scripts/setup.mts --install --quiet",
     "prepare": "husky",
     "pretest": "pnpm run build:cli"
