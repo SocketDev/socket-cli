@@ -18,6 +18,7 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, statSync } from 'node:fs'
 
+import { basename } from 'node:path'
 import process from 'node:process'
 
 import {
@@ -190,8 +191,17 @@ const scanFilesInRange = (range: string): number => {
     return 0
   }
 
-  // Top-level sensitive filenames in the change set.
-  const envHits = changed.filter(f => /^\.env(\.local)?$/.test(f))
+  // .env files at any depth — match commit-msg.mts and pre-commit.mts.
+  // Allow .env.example, .env.test, .env.precommit (templates / tracked
+  // placeholders); block bare .env / .env.local / .env.production /
+  // anything else regardless of directory depth.
+  const envHits = changed.filter(f => {
+    const base = basename(f)
+    return (
+      /^\.env(\.[^/]+)?$/.test(base) &&
+      !/^\.env\.(example|test|precommit)$/.test(base)
+    )
+  })
   if (envHits.length > 0) {
     out(red('✗ BLOCKED: Attempting to push .env file!'))
     out(`Files: ${envHits.join(', ')}`)

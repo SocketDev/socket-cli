@@ -41,9 +41,15 @@ const SENSITIVE_ENV_NAMES = [
 ]
 
 // Pipelines that "launder" earlier-stage secrets into safe output.
+// The first two patterns match `sed 's/.../redact.../'` and
+// `sed 's/.../FOO=*****/'` regardless of which delimiter sed uses
+// (`/`, `#`, `|`). `[\s\S]*?` reaches across the delimiter between
+// the search and replacement parts (the previous `[^/|#]*` couldn't
+// cross `/` and so missed the canonical `sed 's/=.*/=<redacted>/'`
+// — the very command the token-guard error message suggests).
 const REDACTION_MARKERS = [
-  /\bsed\b[^|]*s[/|#][^/|#]*=[^/|#]*<?redact/i,
-  /\bsed\b[^|]*s[/|#][^/|#]*[A-Z_]+=[^/|#]*\*+/i,
+  /\bsed\b[^|]*s[/|#][\s\S]*?<?redact/i,
+  /\bsed\b[^|]*s[/|#][\s\S]*?[A-Z_]+=[\s\S]*?\*{3,}/i,
   /\|\s*cut\b[^|]*-d['"]?=['"]?\s*-f\s*1/i,
   /\|\s*awk\b[^|]*-F\s*['"]?=['"]?/i,
   />\s*\/dev\/null/,
