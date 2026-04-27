@@ -14,6 +14,11 @@
 # - DISABLE_PRECOMMIT_LINT=1 to skip linting
 # - DISABLE_PRECOMMIT_TEST=1 to skip testing
 
+# Exit on the first failing command so a non-zero exit from any check
+# (security, lint, test) blocks the commit instead of being silently
+# overridden by a later passing command.
+set -e
+
 # Run Socket security pre-commit checks (API keys, .DS_Store, etc.).
 node .git-hooks/pre-commit.mts
 

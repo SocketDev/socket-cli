@@ -140,6 +140,16 @@ describe('token-guard hook', () => {
     it('env piped without redactor', () => {
       assert.equal(runHook('env | grep FOO').code, 2)
     })
+    it('env laundered by downstream "redact"-named tool (cross-pipe bypass)', () => {
+      // Regression: a lazy `[\s\S]*?` in the sed-redaction pattern
+      // could cross `|` boundaries, so an unrelated downstream stage
+      // named `tool_redact_output` would match `<?redact` even though
+      // the upstream `env` dump is still leaking.
+      assert.equal(
+        runHook("env | sed 's/foo/bar/' | tool_redact_output").code,
+        2,
+      )
+    })
     it('printenv', () => {
       assert.equal(runHook('printenv').code, 2)
     })

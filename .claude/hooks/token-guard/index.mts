@@ -41,17 +41,19 @@ const SENSITIVE_ENV_NAMES = [
 ]
 
 // Pipelines that "launder" earlier-stage secrets into safe output.
-// The first two patterns match `sed 's/.../redact.../'` and
+// Patterns are applied per-pipe-segment by `hasRedaction()` so a
+// downstream `redact` token cannot launder an unrelated upstream
+// stage. The first two patterns match `sed 's/.../redact.../'` and
 // `sed 's/.../FOO=*****/'` regardless of which delimiter sed uses
-// (`/`, `#`, `|`). `[\s\S]*?` reaches across the delimiter between
-// the search and replacement parts (the previous `[^/|#]*` couldn't
-// cross `/` and so missed the canonical `sed 's/=.*/=<redacted>/'`
-// — the very command the token-guard error message suggests).
-const REDACTION_MARKERS = [
-  /\bsed\b[^|]*s[/|#][\s\S]*?<?redact/i,
-  /\bsed\b[^|]*s[/|#][\s\S]*?[A-Z_]+=[\s\S]*?\*{3,}/i,
-  /\|\s*cut\b[^|]*-d['"]?=['"]?\s*-f\s*1/i,
-  /\|\s*awk\b[^|]*-F\s*['"]?=['"]?/i,
+// (`/`, `#`). Redirections (`>`, `>>`, `>/dev/null`) terminate a
+// pipeline so they're matched against the whole command.
+const REDACTION_SEGMENT_MARKERS = [
+  /\bsed\b.*s[/#].*?<?redact/i,
+  /\bsed\b.*s[/#].*?[A-Z_]+=.*?\*{3,}/i,
+  /\bcut\b.*-d['"]?=['"]?\s*-f\s*1/i,
+  /\bawk\b.*-F\s*['"]?=['"]?/i,
+]
+const REDACTION_WHOLE_COMMAND_MARKERS = [
   />\s*\/dev\/null/,
   />>\s*[^|]/,
   />\s*[^|]/,
@@ -123,8 +125,22 @@ type ToolInput = {
   tool_input?: { command?: string }
 }
 
-const hasRedaction = (command: string): boolean =>
-  REDACTION_MARKERS.some(re => re.test(command))
+// Redaction must occur on the *output* of a leaky stage, which means
+// it has to appear in a downstream pipe segment or as a whole-command
+// redirection. Splitting on `|` and matching each segment prevents the
+// canonical bypass `env | sed 's/foo/bar/' | tool_redact_output`,
+// where a `redact`-named downstream tool would otherwise launder the
+// upstream `env` dump.
+const hasRedaction = (command: string): boolean => {
+  if (REDACTION_WHOLE_COMMAND_MARKERS.some(re => re.test(command))) {
+    return true
+  }
+  // Skip the `||` shell-or operator before splitting on `|`.
+  const segments = command.replace(/\|\|/g, '').split('|')
+  return segments.some(seg =>
+    REDACTION_SEGMENT_MARKERS.some(re => re.test(seg)),
+  )
+}
 
 // Word-boundary match so `PASS` doesn't fire on `PATHS-ALLOWLIST` and
 // `AUTH` doesn't fire on `AUTHOR`. Env-var-style boundaries treat `_`
