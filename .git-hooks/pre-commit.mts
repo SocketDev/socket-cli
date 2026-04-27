@@ -8,6 +8,7 @@
 // Bypassable: --no-verify skips this hook entirely. Use sparingly
 // (hotfixes, history operations, pre-build states).
 
+import { basename } from 'node:path'
 import process from 'node:process'
 
 import {
@@ -62,15 +63,18 @@ const main = (): number => {
     errors++
   }
 
-  // .env files (allowlist .env.example / .env.test / .env.precommit).
-  // Match commit-msg.mts allowlist — .env.precommit is a tracked file
-  // some repos use to disable test API tokens during pre-commit runs.
+  // .env files at any depth — allow only .env.example, .env.test,
+  // .env.precommit (templates / tracked placeholders). Match the
+  // commit-msg.mts behavior: a nested .env.local is just as much a
+  // leak as a root-level one. basename() catches both.
   out('Checking for .env files...')
-  const envFiles = stagedFiles.filter(
-    f =>
-      /^\.env(\.[^/]+)?$/.test(f) &&
-      !/^\.env\.(example|test|precommit)$/.test(f),
-  )
+  const envFiles = stagedFiles.filter(f => {
+    const base = basename(f)
+    return (
+      /^\.env(\.[^/]+)?$/.test(base) &&
+      !/^\.env\.(example|test|precommit)$/.test(base)
+    )
+  })
   if (envFiles.length > 0) {
     out(red('✗ ERROR: .env file detected!'))
     envFiles.forEach(f => out(f))
