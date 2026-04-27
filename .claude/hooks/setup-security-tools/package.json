@@ -4,6 +4,8 @@
   "type": "module",
   "main": "./index.mts",
   "dependencies": {
+    "@sinclair/typebox": "catalog:",
+    "@socketregistry/packageurl-js": "catalog:",
     "@socketsecurity/lib": "catalog:"
   }
 }
