@@ -12,6 +12,8 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+!.env.precommit
+!.env.test
 /.env.local
 
 # ============================================================================
@@ -34,6 +36,7 @@ yarn-error.log*
 # ============================================================================
 **/.build-checkpoints
 **/*.build-signature
+**/.cache/
 /.rollup.cache
 **/.type-coverage/
 **/build/
