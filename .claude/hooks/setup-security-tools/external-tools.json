@@ -1,6 +1,11 @@
 {
   "description": "Security tools for Claude Code hooks (self-contained, no external deps)",
   "tools": {
+    "agentshield": {
+      "description": "Claude AI config security scanner (prompt injection, secrets)",
+      "purl": "pkg:npm/ecc-agentshield@1.4.0",
+      "integrity": "sha512-R98OO1Ujyk2lezDLb+iQmMhF6FwTJCHajy3G4FCB6x7wkSTqR9f8+eAelC5KDzYDsGSbc0sOZvjXOOPRBtMpDg=="
+    },
     "zizmor": {
       "description": "GitHub Actions security scanner",
       "version": "1.23.1",
@@ -56,7 +61,7 @@
           "sha256": "c953e62ad7928d4d8f2302f5737884ea1a757babc26bed6a42b9b6b68a5d54af"
         }
       },
-      "ecosystems": ["npm", "yarn", "pnpm", "pip", "uv", "cargo"]
+      "ecosystems": ["npm", "yarn", "pnpm", "pip", "pip3", "uv", "cargo"]
     },
     "sfw-enterprise": {
       "description": "Socket Firewall (enterprise tier)",
@@ -85,7 +90,7 @@
           "sha256": "9a50e1ddaf038138c3f85418dc5df0113bbe6fc884f5abe158beaa9aea18d70a"
         }
       },
-      "ecosystems": ["npm", "yarn", "pnpm", "pip", "uv", "cargo", "gem", "bundler", "nuget"]
+      "ecosystems": ["npm", "yarn", "pnpm", "pip", "pip3", "uv", "cargo", "gem", "bundler", "nuget"]
     }
   }
 }

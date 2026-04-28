@@ -1,5 +1,5 @@
 /**
- * @fileoverview Tests for the token-hygiene hook.
+ * @fileoverview Tests for the token-guard hook.
  *
  * Runs the hook as a subprocess (node --test), piping a tool-use
  * payload on stdin and asserting on the exit code + stderr. Exit 2
@@ -40,7 +40,7 @@ function runHook(command: string, toolName = 'Bash'): {
   }
 }
 
-describe('token-hygiene hook', () => {
+describe('token-guard hook', () => {
   describe('allows safe commands', () => {
     it('plain echo', () => {
       assert.equal(runHook('echo hello').code, 0)
@@ -140,6 +140,16 @@ describe('token-hygiene hook', () => {
     it('env piped without redactor', () => {
       assert.equal(runHook('env | grep FOO').code, 2)
     })
+    it('env laundered by downstream "redact"-named tool (cross-pipe bypass)', () => {
+      // Regression: a lazy `[\s\S]*?` in the sed-redaction pattern
+      // could cross `|` boundaries, so an unrelated downstream stage
+      // named `tool_redact_output` would match `<?redact` even though
+      // the upstream `env` dump is still leaking.
+      assert.equal(
+        runHook("env | sed 's/foo/bar/' | tool_redact_output").code,
+        2,
+      )
+    })
     it('printenv', () => {
       assert.equal(runHook('printenv').code, 2)
     })
@@ -179,6 +189,25 @@ describe('token-hygiene hook', () => {
         runHook('ruby -e "puts ENV[\'ACCESS_TOKEN\']"').code,
         2,
       )
+    })
+  })
+
+  describe('does not false-positive on substring of sensitive name', () => {
+    // Regression: `PATHS-ALLOWLIST.YML` toUpperCase()d contains `PASS`
+    // as a substring, which the pre-fix unbounded match treated as
+    // a sensitive env reference. Word-boundary fix means `PASS` must
+    // be a standalone token (or at a `_`/`-`/`.`/`/` boundary).
+    it('paths-allowlist.yml does not trip PASS', () => {
+      assert.equal(runHook('cat .github/paths-allowlist.yml').code, 0)
+    })
+    it('AUTHOR_NAME does not trip AUTH', () => {
+      // AUTHOR ends with R; the boundary-after match correctly skips
+      // it because the next char is `_`, but `AUTH` followed by `O`
+      // (alphanumeric) is not a token boundary.
+      assert.equal(runHook('echo $AUTHOR_NAME').code, 0)
+    })
+    it('PASSAGE_TIME does not trip PASS', () => {
+      assert.equal(runHook('echo $PASSAGE_TIME').code, 0)
     })
   })
 

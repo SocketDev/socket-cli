@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Claude Code PreToolUse hook — token-hygiene firewall.
+// Claude Code PreToolUse hook — token-guard firewall.
 //
 // Blocks Bash commands that would echo token-bearing env vars into
 // tool output. This fires BEFORE the command runs; exit code 2 makes
@@ -41,14 +41,27 @@ const SENSITIVE_ENV_NAMES = [
 ]
 
 // Pipelines that "launder" earlier-stage secrets into safe output.
-const REDACTION_MARKERS = [
-  /\bsed\b[^|]*s[/|#][^/|#]*=[^/|#]*<?redact/i,
-  /\bsed\b[^|]*s[/|#][^/|#]*[A-Z_]+=[^/|#]*\*+/i,
-  /\|\s*cut\b[^|]*-d['"]?=['"]?\s*-f\s*1/i,
-  /\|\s*awk\b[^|]*-F\s*['"]?=['"]?/i,
-  />\s*\/dev\/null/,
-  />>\s*[^|]/,
-  />\s*[^|]/,
+// Patterns are applied per-pipe-segment by `hasRedaction()` so a
+// downstream `redact` token cannot launder an unrelated upstream
+// stage. The first two patterns match `sed 's/.../redact.../'` and
+// `sed 's/.../FOO=*****/'` regardless of which delimiter sed uses
+// (`/`, `#`). Redirections (`>`, `>>`, `>/dev/null`) terminate a
+// pipeline so they're matched against the whole command.
+const REDACTION_SEGMENT_MARKERS = [
+  /\bsed\b.*s[/#].*?<?redact/i,
+  /\bsed\b.*s[/#].*?[A-Z_]+=.*?\*{3,}/i,
+  /\bcut\b.*-d['"]?=['"]?\s*-f\s*1/i,
+  /\bawk\b.*-F\s*['"]?=['"]?/i,
+]
+// Whole-command redirection markers. Anchored at a pipe-segment
+// boundary (`^`, whitespace, `|`, or `;`) so they fire only on real
+// shell redirection (`env > file`, `env >> file`, `env > /dev/null`)
+// and not on the literal `>` inside regex/HTML-style markers like
+// `<redacted>` or `s/=.*/.../`. The previous /\s*[^|]/ shape would
+// match the `>` in `<redacted>` and bypass the env-dump check.
+const REDACTION_WHOLE_COMMAND_MARKERS = [
+  /(?:^|[\s|;])>\s*\/dev\/null\b/,
+  /(?:^|[\s|;])>>?\s*[^|<>'"\\$&\s]/,
 ]
 
 // Commands that dump all env vars to stdout with no filter.
@@ -117,12 +130,65 @@ type ToolInput = {
   tool_input?: { command?: string }
 }
 
-const hasRedaction = (command: string): boolean =>
-  REDACTION_MARKERS.some(re => re.test(command))
+// Redaction must occur on the *output* of a leaky stage, which means
+// it has to appear in a downstream pipe segment or as a whole-command
+// redirection. Splitting on `|` and matching each segment prevents the
+// canonical bypass `env | sed 's/foo/bar/' | tool_redact_output`,
+// where a `redact`-named downstream tool would otherwise launder the
+// upstream `env` dump.
+const hasRedaction = (command: string): boolean => {
+  // Drop everything from the first `||` or `&&` onwards before ANY
+  // redaction matching runs. Those branches don't unconditionally
+  // execute, so a redaction marker on their right side cannot
+  // launder an upstream leak. Two known bypass shapes drove this:
+  //
+  //   - `env || sed 's/=.*/=<redacted>/'` — `env` always succeeds
+  //     so the `sed` arm never runs at runtime; previous logic
+  //     credited it as a redaction and let the env dump through.
+  //   - `env || true > /dev/null` — Bugbot finding: the whole-
+  //     command `> /dev/null` marker matched on the FULL string
+  //     before truncation, returning true early even though the
+  //     redirection lives on the unreachable `||` branch. Running
+  //     whole-command markers against the truncated command fixes
+  //     it: after truncation the command is just `env `, which
+  //     doesn't match `> /dev/null`.
+  //
+  // Truncating before any matching forces the redaction to live in
+  // the same unconditional pipeline as the leaky stage.
+  const idxOr = command.indexOf('||')
+  const idxAnd = command.indexOf('&&')
+  let cut = command.length
+  if (idxOr !== -1) cut = Math.min(cut, idxOr)
+  if (idxAnd !== -1) cut = Math.min(cut, idxAnd)
+  const truncated = command.slice(0, cut)
+  if (REDACTION_WHOLE_COMMAND_MARKERS.some(re => re.test(truncated))) {
+    return true
+  }
+  // Split first on `|` (pipe-stage boundary), then on `;` (statement
+  // boundary) within each stage. A redaction marker is only credited
+  // when both `sed` and the redaction target live in the same
+  // statement — otherwise `env | sed 's/a/b/' ; echo redacted_output`
+  // would match the segment regex (which uses `.*` between `sed` and
+  // the marker word) despite the `sed` doing no real redaction.
+  const segments = truncated.split('|').flatMap(s => s.split(';'))
+  return segments.some(seg =>
+    REDACTION_SEGMENT_MARKERS.some(re => re.test(seg)),
+  )
+}
 
+// Word-boundary match so `PASS` doesn't fire on `PATHS-ALLOWLIST` and
+// `AUTH` doesn't fire on `AUTHOR`. Env-var-style boundaries treat `_`
+// as a separator (so `ACCESS_TOKEN` matches `TOKEN`) but require a
+// non-alphanumeric character on each end (so `PATHS` doesn't match
+// `PASS`). The pre-fix substring match created false positives
+// whenever a path name happened to contain a sensitive keyword as a
+// literal substring.
+const sensitiveEnvBoundaryRes = SENSITIVE_ENV_NAMES.map(
+  frag => new RegExp(String.raw`(?:^|[^A-Z0-9])${frag}(?:[^A-Z0-9]|$)`),
+)
 const referencesSensitiveEnv = (command: string): boolean => {
   const upper = command.toUpperCase()
-  return SENSITIVE_ENV_NAMES.some(frag => upper.includes(frag))
+  return sensitiveEnvBoundaryRes.some(re => re.test(upper))
 }
 
 const matchesAlwaysDangerous = (command: string): RegExp | null => {
@@ -148,9 +214,11 @@ const check = (command: string): void => {
     }
   }
 
-  // 1. Always-dangerous patterns.
+  // 1. Always-dangerous patterns. Skip when the command already has a
+  // redaction pipeline — the suggested fix here is `env | sed ...`,
+  // which would itself match ALWAYS_DANGEROUS without this guard.
   const dangerous = matchesAlwaysDangerous(command)
-  if (dangerous) {
+  if (dangerous && !hasRedaction(command)) {
     throw new BlockError(
       `\`${dangerous.source}\` dumps env to stdout`,
       'Pipe through redaction, e.g. `env | sed "s/=.*/=<redacted>/"` or filter specific keys.',
@@ -204,7 +272,7 @@ const emitBlock = (command: string, err: BlockError): void => {
     ? command.slice(0, 200) + (command.length > 200 ? '…' : '')
     : '<command suppressed to avoid re-logging the literal token>'
   process.stderr.write(
-    `\n[token-hygiene] Blocked: ${err.rule}\n` +
+    `\n[token-guard] Blocked: ${err.rule}\n` +
       `  Command: ${safeCommand}\n` +
       `  Fix: ${err.suggestion}\n\n`,
   )
@@ -244,6 +312,6 @@ const main = async (): Promise<void> => {
 main().catch(e => {
   // Never block a tool call due to a bug in the hook itself. Log it
   // so we notice, but fail open.
-  process.stderr.write(`[token-hygiene] hook error (allowing): ${e}\n`)
+  process.stderr.write(`[token-guard] hook error (allowing): ${e}\n`)
   process.exitCode = 0
 })

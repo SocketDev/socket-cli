@@ -1,4 +1,4 @@
-# token-hygiene
+# token-guard
 
 Claude Code `PreToolUse` hook that refuses Bash tool calls that would leak secrets to tool output. Mandatory across the Socket fleet — every repo ships this file byte-for-byte via `scripts/sync-scaffolding.mjs`.
 
@@ -41,10 +41,10 @@ The hook reads the tool-use payload from stdin, type-checks `tool_name === 'Bash
 ## Testing
 
 ```bash
-pnpm --filter @socketsecurity/hook-token-hygiene test
+pnpm --filter hook-token-guard test
 ```
 
-Adding new token-shape detections: update `LITERAL_TOKEN_PATTERNS` in `index.mts`, add a positive and negative test in `test/token-hygiene.test.mts`.
+Adding new token-shape detections: update `LITERAL_TOKEN_PATTERNS` in `index.mts`, add a positive and negative test in `test/token-guard.test.mts`.
 
 ## Updating across the fleet
 
