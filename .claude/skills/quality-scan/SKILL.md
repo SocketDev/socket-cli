@@ -5,6 +5,7 @@ description: >
   and committing changes until zero issues remain or 5 iterations complete.
   Use when improving code quality, investigating regressions, or before
   releases.
+allowed-tools: Task, Skill, Read, Edit, Grep, Glob, AskUserQuestion, Bash(pnpm run check:*), Bash(pnpm run test:*), Bash(pnpm test:*), Bash(pnpm run fix:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git add:*), Bash(git commit:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*)
 ---
 
 # quality-scan

@@ -5,7 +5,7 @@ description: >
   Triggers when user asks to "update everything", "update dependencies", or
   prepare for a release.
 user-invocable: true
-allowed-tools: Task, Skill, Bash, Read, Grep, Glob, Edit
+allowed-tools: Task, Skill, Read, Edit, Bash(pnpm run:*), Bash(pnpm install:*), Bash(pnpm test:*), Bash(claude --version), Bash(node .claude/hooks/setup-security-tools/update.mts:*), Bash(git status:*), Bash(git diff:*), Bash(git add:*), Bash(git commit:*)
 ---
 
 # updating

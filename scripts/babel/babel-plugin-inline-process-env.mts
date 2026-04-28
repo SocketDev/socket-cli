@@ -22,8 +22,8 @@
  * @param {object} babel - Babel API object
  * @param {object} options - Plugin options
  * @param {Record<string, string>} [options.env] - Environment variables to inline
- * @param {string[]} [options.include] - Only inline these env vars (whitelist)
- * @param {string[]} [options.exclude] - Never inline these env vars (blacklist)
+ * @param {string[]} [options.include] - Only inline these env vars (allowlist)
+ * @param {string[]} [options.exclude] - Never inline these env vars (denylist)
  * @returns {object} Babel plugin object
  *
  * @example
@@ -57,7 +57,7 @@ export default function inlineProcessEnv(babel, options = {}) {
 
         const envKey = property.name
 
-        // Check whitelist/blacklist.
+        // Check allowlist/denylist.
         if (includeSet.size > 0 && !includeSet.has(envKey)) {
           return
         }

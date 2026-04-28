@@ -5,7 +5,7 @@ description: >
   Triggers when user mentions "update checksums", "sync checksums", or after
   releasing new tool versions.
 user-invocable: true
-allowed-tools: Bash, Read, Edit
+allowed-tools: Read, Edit, Bash(node packages/cli/scripts/sync-checksums.mjs:*), Bash(git diff:*), Bash(git status:*), Bash(git add:*), Bash(git commit:*)
 ---
 
 # updating-checksums
