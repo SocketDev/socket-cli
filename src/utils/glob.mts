@@ -135,6 +135,22 @@ function ignorePatternToMinimatch(pattern: string): string {
   return `${negatedPrefix}${matchEverywherePrefix}${escapedPatternWithoutLeadingSlash}${matchInsideSuffix}`
 }
 
+// fast-glob silently discards `ignore` entries that end in `/` (it
+// treats them as literal directory paths, not glob patterns). The
+// gitignore convention of writing directory entries as `dist/` lands
+// here as `**/dist/` after `ignorePatternToMinimatch`, which fast-glob
+// then drops — defeating the entire ignore. Strip the trailing slash
+// so fast-glob actually honors the pattern.
+function stripTrailingSlash(pattern: string): string {
+  if (
+    pattern.length > 1 &&
+    pattern.charCodeAt(pattern.length - 1) === 47 /*'/'*/
+  ) {
+    return pattern.slice(0, -1)
+  }
+  return pattern
+}
+
 function workspacePatternToGlobPattern(workspace: string): string {
   const { length } = workspace
   if (!length) {
@@ -252,7 +268,9 @@ export async function globWithGitIgnore(
     absolute: true,
     cwd,
     dot: true,
-    ignore: hasNegatedPattern ? defaultIgnore : [...ignores],
+    ignore: hasNegatedPattern
+      ? defaultIgnore
+      : [...ignores].map(stripTrailingSlash),
     ...additionalOptions,
   } as GlobOptions
 
