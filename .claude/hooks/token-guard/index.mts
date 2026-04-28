@@ -137,23 +137,33 @@ type ToolInput = {
 // where a `redact`-named downstream tool would otherwise launder the
 // upstream `env` dump.
 const hasRedaction = (command: string): boolean => {
-  if (REDACTION_WHOLE_COMMAND_MARKERS.some(re => re.test(command))) {
-    return true
-  }
-  // Drop everything from the first `||` or `&&` onwards. Those branches
-  // don't unconditionally execute, so a redaction marker on their
-  // right side cannot launder an upstream leak. The bypass shape is
-  // `env || sed 's/=.*/=<redacted>/'`: `env` always succeeds so the
-  // `sed` arm never runs at runtime, but the previous logic credited
-  // it as a redaction and let the env dump through. Truncating before
-  // the conditional operator forces the redaction to live in the same
-  // unconditional pipeline as the leaky stage.
+  // Drop everything from the first `||` or `&&` onwards before ANY
+  // redaction matching runs. Those branches don't unconditionally
+  // execute, so a redaction marker on their right side cannot
+  // launder an upstream leak. Two known bypass shapes drove this:
+  //
+  //   - `env || sed 's/=.*/=<redacted>/'` — `env` always succeeds
+  //     so the `sed` arm never runs at runtime; previous logic
+  //     credited it as a redaction and let the env dump through.
+  //   - `env || true > /dev/null` — Bugbot finding: the whole-
+  //     command `> /dev/null` marker matched on the FULL string
+  //     before truncation, returning true early even though the
+  //     redirection lives on the unreachable `||` branch. Running
+  //     whole-command markers against the truncated command fixes
+  //     it: after truncation the command is just `env `, which
+  //     doesn't match `> /dev/null`.
+  //
+  // Truncating before any matching forces the redaction to live in
+  // the same unconditional pipeline as the leaky stage.
   const idxOr = command.indexOf('||')
   const idxAnd = command.indexOf('&&')
   let cut = command.length
   if (idxOr !== -1) cut = Math.min(cut, idxOr)
   if (idxAnd !== -1) cut = Math.min(cut, idxAnd)
   const truncated = command.slice(0, cut)
+  if (REDACTION_WHOLE_COMMAND_MARKERS.some(re => re.test(truncated))) {
+    return true
+  }
   // Split first on `|` (pipe-stage boundary), then on `;` (statement
   // boundary) within each stage. A redaction marker is only credited
   // when both `sed` and the redaction target live in the same

@@ -28,19 +28,13 @@ import type { PackageURL } from '@socketregistry/packageurl-js'
 import {
   SOCKET_PUBLIC_API_TOKEN,
 } from '@socketsecurity/lib/constants/socket'
+import { errorMessage } from '@socketsecurity/lib/errors'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import {
   normalizePath,
 } from '@socketsecurity/lib/paths/normalize'
 import { SocketSdk } from '@socketsecurity/sdk'
 import type { MalwareCheckPackage } from '@socketsecurity/sdk'
-
-// Local mirror of build-infra/lib/error-utils#errorMessage. Hook runs
-// standalone (no workspace deps beyond @socketsecurity/*) so we can't import
-// the shared helper, but the contract is identical.
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
-}
 
 const logger = getDefaultLogger()
 

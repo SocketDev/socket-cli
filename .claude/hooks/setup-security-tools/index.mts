@@ -22,6 +22,7 @@ import { Type } from '@sinclair/typebox'
 import { whichSync } from '@socketsecurity/lib/bin'
 import { downloadBinary } from '@socketsecurity/lib/dlx/binary'
 import { downloadPackage } from '@socketsecurity/lib/dlx/package'
+import { errorMessage } from '@socketsecurity/lib/errors'
 import { safeDelete } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
@@ -335,6 +336,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((e: unknown) => {
-  logger.error(e instanceof Error ? e.message : String(e))
+  logger.error(errorMessage(e))
   process.exitCode = 1
 })
