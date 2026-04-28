@@ -22,7 +22,7 @@
     },
     "pnpm": {
       "description": "pnpm — the fleet's package manager.",
-      "version": "11.0.0-rc.5",
+      "version": "11.0.0",
       "packageManager": "pnpm",
       "repository": "github:pnpm/pnpm",
       "release": "asset",
@@ -34,27 +34,27 @@
       "checksums": {
         "darwin-arm64": {
           "asset": "pnpm-darwin-arm64.tar.gz",
-          "sha256": "32a50710ccacfdcf14e6d5995d5368298eec913b0ce3903b9e09b6555f06f4e5"
+          "sha256": "3620a0fcaf81ecd3aaeccd5965919d90dbc913f4d07a96e11e7cafc2c785054b"
         },
         "darwin-x64": {
           "asset": "pnpm-darwin-x64.tar.gz",
-          "sha256": "71dca33f4275da6b43bf1eb40bdc4d876f59a116716eacbf01079c3d985ff85d"
+          "sha256": "1701748b75187f1333a9c616827943ff84ff46cc42becc156ff6864b9bd0f948"
         },
         "linux-arm64": {
           "asset": "pnpm-linux-arm64.tar.gz",
-          "sha256": "2dd04127ff10b1f9dd20bae248b779c77a8ec67e3afa35e7256e5f94abddd493"
+          "sha256": "1e6d87ebfd7ff169966ff5b3ad71b780b883c68d3e59987df1096dfd8853df75"
         },
         "linux-x64": {
           "asset": "pnpm-linux-x64.tar.gz",
-          "sha256": "7ebef4b616ba41fb0d54a207b36508fae3346723283a088b43fc1e038ee6fed0"
+          "sha256": "9b44acc77ada40fc41b665fde1d57367a5ebec31bd4b1b00598daed195da3e17"
         },
         "win-arm64": {
           "asset": "pnpm-win32-arm64.zip",
-          "sha256": "e4a39ad4c251db5e34b18b98561ef25bab5506ad65cad2fa3602af58d1972667"
+          "sha256": "0746be8e98ca183078d0747559f0cbbd30a13a53eb177f67474eb3c52dc21bc8"
         },
         "win-x64": {
           "asset": "pnpm-win32-x64.zip",
-          "sha256": "147485ae2f38c3d1ccf2f5db00d0244416bcd22b9114c02388e6a78f41538fc4"
+          "sha256": "581e222e622cd0cc4f0ac5f85dd0db76b65117e3b17507979d89e63fdc68edca"
         }
       }
     },
