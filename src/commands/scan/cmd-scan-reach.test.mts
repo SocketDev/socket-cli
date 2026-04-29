@@ -1070,6 +1070,11 @@ describe('socket scan reach', async () => {
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
       },
+      // Non-dry-run invocation actually starts Coana, which under v15
+      // performs more upfront work (tier1 scan registration, legacy-mode
+      // resolution) before failing on the bad memory limit. The default
+      // 30s cmdit timeout is too tight for that path on slower CI runners.
+      { timeout: 60_000 },
     )
 
     cmdit(
