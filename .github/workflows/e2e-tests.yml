@@ -153,6 +153,36 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      # TEMPORARY: probe the tier1-reachability-scan endpoint to capture the
+      # legacy_mode field returned by depscan for the API token's org. Only
+      # purpose is to diagnose why Coana v15 e2e tests halt as if the org were
+      # promoted out of legacy mode. Remove this step once the response has
+      # been captured in CI logs.
+      - name: Probe tier1 legacy_mode (DIAGNOSTIC - REMOVE AFTER USE)
+        if: matrix.node-version == 22
+        env:
+          SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_API_TOKEN }} # zizmor: ignore[secrets-outside-env]
+        run: |
+          set -eu
+          auth=$(printf '%s:' "$SOCKET_CLI_API_TOKEN" | base64 -w0)
+          response=$(curl -sS -X PUT https://api.socket.dev/v0/tier1-reachability-scan \
+            -H "Authorization: Basic $auth" \
+            -H "Content-Type: application/json" \
+            -d '{"cli_options":null,"coana_cli_version":"15.1.0","socket_cli_version":"legacy-mode-probe","system_information":null}')
+          echo "Raw response:"
+          echo "$response"
+          echo "---"
+          echo "$response" | python3 -c "import json,sys
+          try:
+              d = json.load(sys.stdin)
+          except Exception as e:
+              print('response was not valid JSON:', e)
+              sys.exit(0)
+          print('response keys:', sorted(d.keys()))
+          print('legacy_mode present:', 'legacy_mode' in d)
+          print('legacy_mode value:', d.get('legacy_mode', '(absent)'))
+          print('scan_id present:', bool(d.get('tier1_reachability_scan_id')))"
+
       - name: Run e2e tests
         env:
           SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_API_TOKEN }} # zizmor: ignore[secrets-outside-env]
