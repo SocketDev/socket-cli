@@ -275,6 +275,11 @@ describe('socket scan reach (E2E tests)', async () => {
         '--reach-debug',
         '--no-interactive',
         '--reach-disable-analytics',
+        // The fixture has empty subprojects (the workspace root and
+        // packages/package-a contain no source files), which Coana v15 halts
+        // on by default. The test exercises multi-workspace discovery, not
+        // strict source-file presence, so opt out of the halt.
+        '--reach-continue-on-no-source-files',
       ],
       'should run reachability analysis on workspace mono project',
       async cmd => {
@@ -434,6 +439,10 @@ describe('socket scan reach (E2E tests)', async () => {
         '--reach-disable-analytics',
         '--reach-exclude-paths',
         'packages/package-b',
+        // Excluding package-b leaves only empty subprojects, which Coana v15
+        // halts on by default. The test asserts on the exclusion behavior,
+        // not source-file presence.
+        '--reach-continue-on-no-source-files',
       ],
       'should run reachability analysis with excluded paths',
       async cmd => {
@@ -637,6 +646,10 @@ describe('socket scan reach (E2E tests)', async () => {
         '--reach-debug',
         '--no-interactive',
         '--reach-disable-analytics',
+        // Same fixture as the workspace mono tests: root and package-a have
+        // no source files, which Coana v15 halts on by default. The test
+        // exercises --cwd resolution, not source-file presence.
+        '--reach-continue-on-no-source-files',
       ],
       'should use --cwd to set the working directory',
       async cmd => {
@@ -955,6 +968,11 @@ describe('socket scan reach (E2E tests)', async () => {
         '--reach-ecosystems',
         'pypi',
         '--reach-disable-analytics',
+        // Filtering to pypi on this mixed mono project leaves the npm
+        // subproject with no source files for the requested ecosystem, which
+        // Coana v15 halts on by default. The test asserts on the ecosystem
+        // filter, not source-file presence.
+        '--reach-continue-on-no-source-files',
       ],
       'should only analyze pypi ecosystem when --reach-ecosystems pypi is specified',
       async cmd => {
