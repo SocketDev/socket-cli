@@ -973,6 +973,11 @@ describe('socket scan reach (E2E tests)', async () => {
         // Coana v15 halts on by default. The test asserts on the ecosystem
         // filter, not source-file presence.
         '--reach-continue-on-no-source-files',
+        // The CI runner's network firewall blocks pypi.org, so the pypi
+        // pre-install step fails. Coana v15 halts on install errors by
+        // default; this test asserts on ecosystem-filter discovery, not
+        // successful installation.
+        '--reach-continue-on-install-errors',
       ],
       'should only analyze pypi ecosystem when --reach-ecosystems pypi is specified',
       async cmd => {
