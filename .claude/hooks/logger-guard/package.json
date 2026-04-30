@@ -1,0 +1,15 @@
+{
+  "name": "hook-logger-guard",
+  "private": true,
+  "type": "module",
+  "main": "./index.mts",
+  "exports": {
+    ".": "./index.mts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mts"
+  }
+}

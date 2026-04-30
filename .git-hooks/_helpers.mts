@@ -336,6 +336,52 @@ export const scanNpxDlx = (text: string): LineHit[] => {
   return hits
 }
 
+// ── Logger leak scanner ────────────────────────────────────────────
+//
+// The fleet rule: source code uses `getDefaultLogger()` from
+// `@socketsecurity/lib/logger`. Direct calls to `process.stderr.write`,
+// `process.stdout.write`, `console.log`, `console.error`, `console.warn`,
+// `console.info`, `console.debug` are blocked. Doc-context lines are
+// exempt; lines carrying `# socket-hook: allow logger` are exempt too.
+
+const LOGGER_LEAK_RE =
+  /\b(process\.std(?:err|out)\.write|console\.(?:log|error|warn|info|debug))\s*\(/
+
+// Map each direct call to its lib-logger equivalent. process.stdout is
+// closer to logger.info; process.stderr / console.error → logger.error;
+// console.warn → logger.warn; console.info / console.log → logger.info;
+// console.debug → logger.debug.
+function suggestLoggerReplacement(line: string): string {
+  return line
+    .replace(/\bprocess\.stderr\.write\s*\(/g, 'logger.error(')
+    .replace(/\bprocess\.stdout\.write\s*\(/g, 'logger.info(')
+    .replace(/\bconsole\.error\s*\(/g, 'logger.error(')
+    .replace(/\bconsole\.warn\s*\(/g, 'logger.warn(')
+    .replace(/\bconsole\.info\s*\(/g, 'logger.info(')
+    .replace(/\bconsole\.debug\s*\(/g, 'logger.debug(')
+    .replace(/\bconsole\.log\s*\(/g, 'logger.info(')
+}
+
+export const scanLoggerLeaks = (text: string): LineHit[] => {
+  const hits: LineHit[] = []
+  const lines = text.split('\n')
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!
+    if (!LOGGER_LEAK_RE.test(line)) {
+      continue
+    }
+    if (looksLikeDocumentation(line, LOGGER_LEAK_RE, 'logger')) {
+      continue
+    }
+    hits.push({
+      lineNumber: i + 1,
+      line,
+      suggested: suggestLoggerReplacement(line),
+    })
+  }
+  return hits
+}
+
 // ── AI attribution scanner ─────────────────────────────────────────
 
 const AI_ATTRIBUTION_RE =

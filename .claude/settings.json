@@ -10,6 +10,10 @@
           },
           {
             "type": "command",
+            "command": "node .claude/hooks/logger-guard/index.mts"
+          },
+          {
+            "type": "command",
             "command": "node .claude/hooks/path-guard/index.mts"
           }
         ]
@@ -39,6 +43,10 @@
     "Stop": [
       {
         "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/auth-rotation-reminder/index.mts"
+          },
           {
             "type": "command",
             "command": "node .claude/hooks/stale-process-sweeper/index.mts"
