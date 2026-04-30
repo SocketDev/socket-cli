@@ -14,6 +14,7 @@ import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
 import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
+import { compressSocketFactsForUpload } from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
@@ -259,28 +260,40 @@ export async function handleCreateNewScan({
     tier1ReachabilityScanId = reachResult.data?.tier1ReachabilityScanId
   }
 
-  const fullScanCResult = await fetchCreateOrgFullScan(
-    scanPaths,
-    orgSlug,
-    {
-      commitHash,
-      commitMessage,
-      committers,
-      pullRequest,
-      repoName,
-      branchName,
-      scanType: reach.runReachabilityAnalysis
-        ? constants.SCAN_TYPE_SOCKET_TIER1
-        : constants.SCAN_TYPE_SOCKET,
-      workspace,
-    },
-    {
-      cwd,
-      defaultBranch,
-      pendingHead,
-      tmp,
-    },
-  )
+  // Brotli-compress any .socket.facts.json paths in scanPaths just before
+  // upload. depscan's api-v0 multipart boundary streams brotli decode based
+  // on the .br filename suffix. Coana keeps writing plain .socket.facts.json
+  // on disk, so the local read paths (extractTier1ReachabilityScanId,
+  // extractReachabilityErrors) stay correct. The cleanup() in the finally
+  // block removes the temp dirs whether the upload succeeded or threw.
+  const compressed = await compressSocketFactsForUpload(scanPaths)
+  let fullScanCResult: Awaited<ReturnType<typeof fetchCreateOrgFullScan>>
+  try {
+    fullScanCResult = await fetchCreateOrgFullScan(
+      compressed.paths,
+      orgSlug,
+      {
+        commitHash,
+        commitMessage,
+        committers,
+        pullRequest,
+        repoName,
+        branchName,
+        scanType: reach.runReachabilityAnalysis
+          ? constants.SCAN_TYPE_SOCKET_TIER1
+          : constants.SCAN_TYPE_SOCKET,
+        workspace,
+      },
+      {
+        cwd,
+        defaultBranch,
+        pendingHead,
+        tmp,
+      },
+    )
+  } finally {
+    await compressed.cleanup()
+  }
 
   const scanId = fullScanCResult.ok ? fullScanCResult.data?.id : undefined
 
