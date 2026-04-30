@@ -182,6 +182,25 @@ describe('glob utilities', () => {
       ])
     })
 
+    it('should skip directories ignored via trailing-slash patterns', async () => {
+      // fast-glob silently drops `ignore` entries that end in `/`, so
+      // the pattern produced for `dist/` (`**/dist/`) used to do
+      // nothing at the walk level and dist contents leaked through.
+      mockTestFs({
+        [`${mockFixturePath}/.gitignore`]: 'dist/\n',
+        [`${mockFixturePath}/package.json`]: '{}',
+        [`${mockFixturePath}/dist/a.json`]: '{}',
+      })
+
+      const results = await globWithGitIgnore(['**/*.json'], {
+        cwd: mockFixturePath,
+      })
+
+      expect(results.map(normalizePath).sort()).toEqual([
+        `${mockFixturePath}/package.json`,
+      ])
+    })
+
     it('should combine filter with negated gitignore patterns', async () => {
       mockTestFs({
         [`${mockFixturePath}/.gitignore`]: 'build/**\n!build/manifest.json',
