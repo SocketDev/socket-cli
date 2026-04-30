@@ -35,6 +35,16 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/stale-process-sweeper/index.mts"
+          }
+        ]
+      }
     ]
   }
 }

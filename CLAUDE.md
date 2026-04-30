@@ -98,7 +98,7 @@ The umbrella rule: never run a git command that mutates state belonging to a pat
 - **Fix ALL issues when asked** — never dismiss as "pre-existing"
 - Never create files unless necessary; always prefer editing existing files
 - Forbidden to create docs unless requested
-- 🚨 **NEVER use `npx`, `pnpm dlx`, or `yarn dlx`** — use `pnpm exec <package>` or `pnpm run <script>`
+- 🚨 **NEVER use `npx`, `pnpm dlx`, or `yarn dlx`** — use `pnpm exec <package>` or `pnpm run <script>` # zizmor: documentation-prohibition
 - **NEVER reference Linear issues** (e.g. `SOC-123`, `ENG-456`, `ASK-789`, Linear URLs) in code, code comments, or PR titles/descriptions/review comments. Linear tracking lives in Linear; keep the codebase and PR history tool-agnostic.
 - 🚨 **NEVER write a real customer or company name into any commit, PR, issue, GitHub comment, or release note.** When about to write any name, stop and ask: "is this a real company?" If yes, replace it with `Acme Inc` (or drop the reference entirely). No enumerated denylist exists anywhere — a denylist is itself a leak. Recognition is done at write time, every time. The `.claude/hooks/public-surface-reminder` hook re-prints this rule on every public-surface `git`/`gh` command as a priming nudge; the rule still applies when the hook is not installed.
 
@@ -210,6 +210,10 @@ See `docs/references/error-messages.md` for cross-fleet worked examples and anti
 ## Codex Usage
 
 Advice and critical assessment ONLY — never for making code changes. Consult before complex optimizations (>30min).
+
+### Background Bash
+
+Never use `Bash(run_in_background: true)` for test/build commands (`vitest`, `pnpm test`, `pnpm build`, `tsgo`). Backgrounded runs you don't poll get abandoned and leak Node workers. Background mode is for dev servers and long migrations whose results you'll consume. If a run hangs, kill it: `pkill -f "vitest/dist/workers"`.
 
 ## Agents & Skills
 
