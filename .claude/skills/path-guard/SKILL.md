@@ -2,7 +2,7 @@
 name: path-guard
 description: Audit and fix path duplication in this Socket repo. Apply the strict "1 path, 1 reference" rule — every build/test/runtime/config path is constructed exactly once; everywhere else references the constructed value. Default mode finds and fixes; `check` mode reports only; `install` mode drops the gate + hook + rule into a fresh repo.
 user-invocable: true
-allowed-tools: Task, Bash, Read, Edit, Write, Grep, Glob, AskUserQuestion
+allowed-tools: Task, Read, Edit, Write, Grep, Glob, AskUserQuestion, Bash(pnpm run check:*), Bash(node scripts/check-paths:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(git:*)
 ---
 
 # path-guard

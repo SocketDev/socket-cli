@@ -1,18 +1,18 @@
 # Inclusive language reference
 
-The fleet uses precise, neutral terms over historical metaphors that imply hierarchy or exclusion. The substitutes are not euphemisms — they're more *accurate* (a list of allowed values genuinely is an "allowlist"; "whitelist" is a metaphor that hides what the list does).
+The fleet uses precise, neutral terms over historical metaphors that imply hierarchy or exclusion. The substitutes are not euphemisms — they're more _accurate_ (a list of allowed values genuinely is an "allowlist"; "whitelist" is a metaphor that hides what the list does).
 
 ## Substitution table
 
-| Replace                                  | With                                                  |
-| ---------------------------------------- | ----------------------------------------------------- |
-| `whitelist` / `whitelisted`              | `allowlist` / `allowed` / `allowlisted`               |
-| `blacklist` / `blacklisted`              | `denylist` / `denied` / `blocklisted` / `blocked`     |
-| `master` (branch, process, copy)         | `main` (branch); `primary` / `controller` (process)   |
-| `slave`                                  | `replica`, `worker`, `secondary`, `follower`          |
-| `grandfathered`                          | `legacy`, `pre-existing`, `exempted`                  |
-| `sanity check`                           | `quick check`, `confidence check`, `smoke test`       |
-| `dummy` (placeholder)                    | `placeholder`, `stub`                                 |
+| Replace                          | With                                                |
+| -------------------------------- | --------------------------------------------------- |
+| `whitelist` / `whitelisted`      | `allowlist` / `allowed` / `allowlisted`             |
+| `blacklist` / `blacklisted`      | `denylist` / `denied` / `blocklisted` / `blocked`   |
+| `master` (branch, process, copy) | `main` (branch); `primary` / `controller` (process) |
+| `slave`                          | `replica`, `worker`, `secondary`, `follower`        |
+| `grandfathered`                  | `legacy`, `pre-existing`, `exempted`                |
+| `sanity check`                   | `quick check`, `confidence check`, `smoke test`     |
+| `dummy` (placeholder)            | `placeholder`, `stub`                               |
 
 ## Where to apply
 

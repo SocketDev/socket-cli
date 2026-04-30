@@ -58,7 +58,7 @@ The umbrella rule: never run a git command that mutates state belonging to a pat
 ### Tooling
 
 - **Package manager**: `pnpm`. Run scripts via `pnpm run foo --flag`, never `foo:bar`. After `package.json` edits, `pnpm install`.
-- 🚨 NEVER use `npx`, `pnpm dlx`, or `yarn dlx` — use `pnpm exec <package>` or `pnpm run <script>` # zizmor: documentation-prohibition
+- 🚨 NEVER use `npx`, `pnpm dlx`, or `yarn dlx` — use `pnpm exec <package>` or `pnpm run <script>` # socket-hook: allow npx
 - **`minimumReleaseAge`** — never add packages to `minimumReleaseAgeExclude` in CI. Locally, ASK before adding (security control).
 - **Backward compatibility** — FORBIDDEN to maintain. Actively remove when encountered.
 
@@ -115,7 +115,7 @@ Use `isError` / `isErrnoException` / `errorMessage` / `errorStack` from `@socket
 
 🚨 Never emit the raw value of any secret to tool output, commits, comments, or replies. The `.claude/hooks/token-guard/` `PreToolUse` hook blocks the deterministic patterns (literal token shapes, env dumps, `.env*` reads, unfiltered `curl -H "Authorization:"`, sensitive-name commands without redaction). When the hook blocks a command, rewrite — don't bypass.
 
-Behavior the hook can't catch: redact `token` / `jwt` / `access_token` / `refresh_token` / `api_key` / `secret` / `password` / `authorization` fields when citing API responses. Show key *names* only when displaying `.env.local`. If a user pastes a secret, treat it as compromised and ask them to rotate.
+Behavior the hook can't catch: redact `token` / `jwt` / `access_token` / `refresh_token` / `api_key` / `secret` / `password` / `authorization` fields when citing API responses. Show key _names_ only when displaying `.env.local`. If a user pastes a secret, treat it as compromised and ask them to rotate.
 
 Full hook spec in [`.claude/hooks/token-guard/README.md`](.claude/hooks/token-guard/README.md).
 

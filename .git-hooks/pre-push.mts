@@ -251,7 +251,18 @@ const scanFilesInRange = (range: string): number => {
     const pathHits = scanPersonalPaths(text)
     if (pathHits.length > 0) {
       out(red(`✗ BLOCKED: Hardcoded personal path found in: ${file}`))
-      pathHits.slice(0, 3).forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
+      for (const h of pathHits.slice(0, 3)) {
+        out(`${h.lineNumber}: ${h.line.trim()}`)
+        if (h.suggested && h.suggested !== h.line) {
+          out(`     fix: ${h.suggested.trim()}`)
+        }
+      }
+      out(
+        'Replace with `<user>` / `<USERNAME>` placeholders, an env var ' +
+          '(`$HOME`, `${USER}`), or — for documentation lines that need ' +
+          'the literal username form — append the marker ' +
+          '`# zizmor: documentation-placeholder`.',
+      )
       errors++
     }
 

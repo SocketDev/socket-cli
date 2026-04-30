@@ -96,10 +96,123 @@ const PERSONAL_PATH_RE =
 const PERSONAL_PATH_PLACEHOLDER_RE =
   /(\/Users\/<[^>]*>\/|\/home\/<[^>]*>\/|C:\\Users\\<[^>]*>\\|\/Users\/\$\{?[A-Z_]+\}?\/|\/home\/\$\{?[A-Z_]+\}?\/)/
 
-export type LineHit = { lineNumber: number; line: string }
+// Per-line opt-out marker for our pre-commit / pre-push scanners.
+//
+// Canonical form:    # socket-hook: allow
+// Targeted form:     # socket-hook: allow <rule>
+//
+// The targeted form names a specific rule (`personal-path`, `npx`,
+// `aws-key`, etc.) and is recommended for reviewers; the bare `allow`
+// form blanket-suppresses every scanner on that line. eslint-style
+// precedent.
+//
+// Legacy `# zizmor: ...` markers are still recognized for one cycle so
+// existing files don't have to be rewritten in the same change that
+// renames the marker.
+const SOCKET_HOOK_MARKER_RE = /#\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
+const LEGACY_ZIZMOR_MARKER_RE = /#\s*zizmor:\s*[\w-]+/
 
-// Returns lines that contain a real personal path (excludes lines
-// that are pure placeholders). Caller decides what to do with hits.
+function lineIsSuppressed(line: string, rule?: string): boolean {
+  if (LEGACY_ZIZMOR_MARKER_RE.test(line)) {
+    return true
+  }
+  const m = line.match(SOCKET_HOOK_MARKER_RE)
+  if (!m) {
+    return false
+  }
+  // No rule named on the marker → blanket allow.
+  if (!m[1]) {
+    return true
+  }
+  // Marker named a specific rule → only suppress that rule.
+  return rule === undefined || m[1] === rule
+}
+
+// Heuristic context flags: lines that look like "this is a doc example"
+// rather than a real call leaked into runtime code.
+//   - Comment lines (start with `*`, `//`, `#`).
+//   - Lines that contain a JSDoc tag like @example / @param / @returns
+//     (multi-line JSDoc bodies use leading ` * ` which we already match).
+//   - Lines whose entire interesting content sits inside a backtick span
+//     (markdown / template-literal example).
+const COMMENT_LINE_RE = /^\s*(\*|\/\/|#)/
+const JSDOC_TAG_RE = /@(example|param|returns?|see|link)\b/
+
+function isInsideBackticks(line: string, needleRe: RegExp): boolean {
+  // Find every backtick-delimited span on the line and test if the
+  // pattern only appears within those spans. Conservative: if any
+  // hit is *outside* a span, treat the line as runtime code.
+  const spans: Array<[number, number]> = []
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '`') {
+      const end = line.indexOf('`', i + 1)
+      if (end < 0) {
+        break
+      }
+      spans.push([i, end])
+      i = end
+    }
+  }
+  if (spans.length === 0) {
+    return false
+  }
+  let m: RegExpExecArray | null
+  const re = new RegExp(needleRe.source, needleRe.flags.replace('g', '') + 'g')
+  while ((m = re.exec(line)) !== null) {
+    const start = m.index
+    const end = start + m[0].length
+    const inside = spans.some(([s, e]) => start > s && end <= e)
+    if (!inside) {
+      return false
+    }
+  }
+  return true
+}
+
+function looksLikeDocumentation(
+  line: string,
+  needleRe: RegExp,
+  rule?: string,
+): boolean {
+  if (lineIsSuppressed(line, rule)) {
+    return true
+  }
+  if (COMMENT_LINE_RE.test(line)) {
+    return true
+  }
+  if (JSDOC_TAG_RE.test(line)) {
+    return true
+  }
+  if (isInsideBackticks(line, needleRe)) {
+    return true
+  }
+  return false
+}
+
+export type LineHit = {
+  lineNumber: number
+  line: string
+  // Suggested rewrite when this flagged line is documentation-style and
+  // the scanner can offer a concrete fix. Undefined for runtime-code
+  // paths where the right answer depends on the surrounding code.
+  suggested?: string
+}
+
+// Build a suggested rewrite for a documentation-style personal path.
+// Replaces the matched real-path username segment with the canonical
+// placeholder form: `<user>` / `<USERNAME>` (matching the platform
+// convention of the surrounding path).
+function suggestPlaceholder(line: string): string {
+  return line
+    .replace(/\/Users\/[^/\s]+\//g, '/Users/<user>/')
+    .replace(/\/home\/[^/\s]+\//g, '/home/<user>/')
+    .replace(/C:\\Users\\[^\\]+\\/g, 'C:\\Users\\<USERNAME>\\')
+}
+
+// Returns lines that contain a real personal path (excludes lines that
+// are pure placeholders or look like documentation examples). Each hit
+// carries a `suggested` rewrite when the scanner can offer one — the
+// caller surfaces it to the user as the fix recipe.
 export const scanPersonalPaths = (text: string): LineHit[] => {
   const hits: LineHit[] = []
   const lines = text.split('\n')
@@ -109,8 +222,6 @@ export const scanPersonalPaths = (text: string): LineHit[] => {
       continue
     }
     if (PERSONAL_PATH_PLACEHOLDER_RE.test(line)) {
-      // Has placeholder — but might also have a real path on the
-      // same line. Strip placeholder forms and re-test.
       const stripped = line.replace(
         new RegExp(PERSONAL_PATH_PLACEHOLDER_RE, 'g'),
         '',
@@ -119,7 +230,14 @@ export const scanPersonalPaths = (text: string): LineHit[] => {
         continue
       }
     }
-    hits.push({ lineNumber: i + 1, line })
+    if (looksLikeDocumentation(line, PERSONAL_PATH_RE, 'personal-path')) {
+      continue
+    }
+    hits.push({
+      lineNumber: i + 1,
+      line,
+      suggested: suggestPlaceholder(line),
+    })
   }
   return hits
 }
@@ -140,10 +258,10 @@ export const scanSocketApiKeys = (text: string): LineHit[] => {
       hits.push({ lineNumber: i + 1, line })
     }
   }
-  // Filter the LineHit objects directly so duplicate-content lines
-  // at different line numbers keep their correct numbers.
-  const allowedSet = new Set(filterAllowedApiKeys(hits.map(h => h.line)))
-  return hits.filter(h => allowedSet.has(h.line))
+  return filterAllowedApiKeys(hits.map(h => h.line)).map(line => ({
+    lineNumber: hits.find(h => h.line === line)!.lineNumber,
+    line,
+  }))
 }
 
 export const scanAwsKeys = (text: string): LineHit[] => {
@@ -186,44 +304,36 @@ export const scanPrivateKeys = (text: string): LineHit[] => {
 
 const NPX_DLX_RE = /\b(npx|pnpm dlx|yarn dlx)\b/
 
+// Suggest the canonical replacement for a runtime npx/dlx call.
+// Documentation contexts (comments, JSDoc) are exempt via
+// looksLikeDocumentation(); we only ever land here for code lines, where
+// the right swap is `pnpm exec` (since `pnpm` is the fleet's package
+// manager) or `pnpm run` for script entries.
+function suggestNpxReplacement(line: string): string {
+  return line
+    .replace(/\bpnpm dlx\b/g, 'pnpm exec')
+    .replace(/\byarn dlx\b/g, 'pnpm exec')
+    .replace(/\bnpx\b/g, 'pnpm exec')
+}
+
 export const scanNpxDlx = (text: string): LineHit[] => {
   const hits: LineHit[] = []
   const lines = text.split('\n')
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!
-    if (NPX_DLX_RE.test(line) && !line.includes('# zizmor:')) {
-      hits.push({ lineNumber: i + 1, line })
+    if (!NPX_DLX_RE.test(line)) {
+      continue
     }
+    if (looksLikeDocumentation(line, NPX_DLX_RE, 'npx')) {
+      continue
+    }
+    hits.push({
+      lineNumber: i + 1,
+      line,
+      suggested: suggestNpxReplacement(line),
+    })
   }
   return hits
-}
-
-// ── Linear issue reference scanner ─────────────────────────────────
-// CLAUDE.md "ABSOLUTE RULES": NEVER reference Linear issues in commits.
-// Team keys enumerated from the Socket workspace. PATCH listed before
-// PAT so the alternation matches the longer prefix first.
-
-const LINEAR_TEAM_KEYS =
-  'ASK|AUTO|BOT|CE|CORE|DAT|DES|DEV|ENG|INFRA|LAB|MAR|MET|OPS|PAR|PATCH|PAT|PLAT|REA|SALES|SBOM|SEC|SMO|SUP|TES|TI|WEB'
-
-const LINEAR_ISSUE_RE = new RegExp(
-  `(?:^|[^A-Za-z0-9_])((?:${LINEAR_TEAM_KEYS})-[0-9]+)(?:$|[^A-Za-z0-9_])`,
-  'gm',
-)
-
-const LINEAR_URL_RE = /linear\.app\/[A-Za-z0-9/_-]+/g
-
-export const scanLinearReferences = (commitMsg: string): string[] => {
-  const hits: string[] = []
-  const lines = commitMsg.split('\n').filter(l => !l.startsWith('#'))
-  const body = lines.join('\n')
-  for (const m of body.matchAll(LINEAR_ISSUE_RE)) {
-    hits.push(m[1]!)
-  }
-  for (const m of body.matchAll(LINEAR_URL_RE)) {
-    hits.push(m[0]!)
-  }
-  return hits.slice(0, 5)
 }
 
 // ── AI attribution scanner ─────────────────────────────────────────

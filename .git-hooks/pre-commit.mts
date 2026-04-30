@@ -97,8 +97,18 @@ const main = (): number => {
     const hits = scanPersonalPaths(text)
     if (hits.length > 0) {
       out(red(`✗ ERROR: Hardcoded personal path found in: ${file}`))
-      hits.slice(0, 3).forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
-      out('Replace with relative paths or environment variables.')
+      for (const h of hits.slice(0, 3)) {
+        out(`${h.lineNumber}: ${h.line.trim()}`)
+        if (h.suggested && h.suggested !== h.line) {
+          out(`     fix: ${h.suggested.trim()}`)
+        }
+      }
+      out(
+        'Replace with `<user>` / `<USERNAME>` placeholders, an env var ' +
+          '(`$HOME`, `${USER}`), or — for documentation lines that need ' +
+          'the literal username form — append the marker ' +
+          '`# zizmor: documentation-placeholder`.',
+      )
       errors++
     }
   }
@@ -159,7 +169,12 @@ const main = (): number => {
     if (
       file.includes('node_modules/') ||
       file.endsWith('pnpm-lock.yaml') ||
-      file.includes('.git-hooks/')
+      file.includes('.git-hooks/') ||
+      // CHANGELOG entries discuss npx ecosystem *behavior* (cache
+      // semantics, naming conventions) as historical documentation —
+      // they're not commands. Skip the npx/dlx scan for changelogs.
+      file === 'CHANGELOG.md' ||
+      file.endsWith('/CHANGELOG.md')
     ) {
       continue
     }
@@ -170,8 +185,17 @@ const main = (): number => {
     const hits = scanNpxDlx(text)
     if (hits.length > 0) {
       out(red(`✗ ERROR: npx/dlx usage found in: ${file}`))
-      hits.slice(0, 3).forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
-      out("Use 'pnpm exec <package>' or 'pnpm run <script>' instead.")
+      for (const h of hits.slice(0, 3)) {
+        out(`${h.lineNumber}: ${h.line.trim()}`)
+        if (h.suggested && h.suggested !== h.line) {
+          out(`     fix: ${h.suggested.trim()}`)
+        }
+      }
+      out(
+        "Use 'pnpm exec <package>' or 'pnpm run <script>' instead. For " +
+          'documentation lines that need the literal `npx` form, append ' +
+          'the marker `# zizmor: documentation-prohibition`.',
+      )
       errors++
     }
   }
