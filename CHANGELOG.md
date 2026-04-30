@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.90](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.90) - 2026-04-30
+
+### Added
+- `socket fix` now accepts a `--package-managers` flag to narrow fix computation to specific package managers within an ecosystem (e.g. only PNPM in a monorepo that mixes pnpm/yarn/npm). Accepts space- or comma-separated values and is case-insensitive. When combined with `--ecosystems`, both filters must match.
+
+### Changed
+- Updated the Coana CLI to v `15.2.0`.
+
 ## [1.1.89](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.89) - 2026-04-30
 
 ### Fixed

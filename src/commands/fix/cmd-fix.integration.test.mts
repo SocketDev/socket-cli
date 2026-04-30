@@ -183,6 +183,7 @@ describe('socket fix', async () => {
             --no-apply-fixes    Compute fixes only, do not apply them. Logs what upgrades would be applied. If combined with --output-file, the output file will contain the upgrades that would be applied.
             --no-major-updates  Do not suggest or apply fixes that require major version updates of direct or transitive dependencies
             --output-file       Path to store upgrades as a JSON file at this path.
+            --package-managers  Limit fix analysis to specific package managers within an ecosystem (e.g. NPM, PNPM, YARN, MAVEN, POETRY). Accepts space- or comma-separated values and is case-insensitive. When combined with --ecosystems, an artifact must satisfy both filters.
             --pr-limit          Maximum number of pull requests to create in CI mode (default 10). Has no effect in local mode.
             --range-style       Define how dependency version ranges are updated in package.json (default 'preserve').
                                 Available styles:
@@ -1123,6 +1124,98 @@ describe('socket fix', async () => {
         const output = stdout + stderr
         expect(output).toContain('Invalid ecosystem')
         expect(code, 'should exit with non-zero code').not.toBe(0)
+      },
+    )
+  })
+
+  describe('--package-managers flag behavior', () => {
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--package-managers',
+        'NPM',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --package-managers with single value',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--package-managers',
+        'npm,pnpm',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --package-managers comma-separated case-insensitive',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--package-managers',
+        'NPM',
+        '--package-managers',
+        'PNPM',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept multiple --package-managers flags',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--package-managers',
+        'FOO',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should fail with invalid --package-managers value',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain('Invalid package manager')
+        expect(code, 'should exit with non-zero code').not.toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--ecosystems',
+        'npm',
+        '--package-managers',
+        'PNPM',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --ecosystems combined with --package-managers',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
       },
     )
   })

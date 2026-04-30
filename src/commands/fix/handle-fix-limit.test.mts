@@ -86,6 +86,7 @@ describe('socket fix --pr-limit behavior verification', () => {
     minimumReleaseAge: '',
     orgSlug: 'test-org',
     outputFile: '',
+    packageManagers: [],
     prCheck: true,
     prLimit: 10,
     rangeStyle: 'preserve',

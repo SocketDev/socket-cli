@@ -58,6 +58,7 @@ type DiscoverGhsaIdsOptions = {
   coanaVersion?: string | undefined
   cwd?: string | undefined
   ecosystems?: PURL_Type[] | undefined
+  packageManagers?: string[] | undefined
   silence?: boolean | undefined
   spinner?: Spinner | undefined
 }
@@ -74,6 +75,7 @@ async function discoverGhsaIds(
   const {
     cwd = process.cwd(),
     ecosystems,
+    packageManagers,
     silence = false,
     spinner,
   } = {
@@ -88,6 +90,9 @@ async function discoverGhsaIds(
       '--manifests-tar-hash',
       tarHash,
       ...(ecosystems?.length ? ['--purl-types', ...ecosystems] : []),
+      ...(packageManagers?.length
+        ? ['--package-managers', ...packageManagers]
+        : []),
     ],
     orgSlug,
     {
@@ -129,6 +134,7 @@ export async function coanaFix(
     minimumReleaseAge,
     orgSlug,
     outputFile,
+    packageManagers,
     prLimit,
     showAffectedDirectDependencies,
     silence,
@@ -250,6 +256,7 @@ export async function coanaFix(
           coanaVersion,
           cwd,
           ecosystems,
+          packageManagers,
           silence,
           spinner,
         })
@@ -284,6 +291,9 @@ export async function coanaFix(
           ...(include.length ? ['--include', ...include] : []),
           ...(exclude.length ? ['--exclude', ...exclude] : []),
           ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
+          ...(packageManagers.length
+            ? ['--package-managers', ...packageManagers]
+            : []),
           ...(!applyFixes ? [FLAG_DRY_RUN] : []),
           '--output-file',
           tmpFile,
@@ -381,6 +391,7 @@ export async function coanaFix(
             coanaVersion,
             cwd,
             ecosystems,
+            packageManagers,
             silence,
             spinner,
           })
@@ -442,6 +453,9 @@ export async function coanaFix(
         ...(include.length ? ['--include', ...include] : []),
         ...(exclude.length ? ['--exclude', ...exclude] : []),
         ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
+        ...(packageManagers.length
+          ? ['--package-managers', ...packageManagers]
+          : []),
         ...(debug ? ['--debug'] : []),
         ...(disableExternalToolChecks
           ? ['--disable-external-tool-checks']

@@ -19,6 +19,7 @@ export type FixConfig = {
   minSatisfying: boolean
   orgSlug: string
   outputFile: string
+  packageManagers: string[]
   prCheck: boolean
   prLimit: number
   rangeStyle: RangeStyle

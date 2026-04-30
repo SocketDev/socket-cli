@@ -470,6 +470,171 @@ describe('socket fix (E2E tests)', async () => {
     )
   })
 
+  describe('--package-managers filter', () => {
+    cmdit(
+      ['fix', '--package-managers', 'NPM', '.'],
+      'should fix only the npm-managed artifact when --package-managers NPM is set',
+      async cmd => {
+        const tempFixture = await createTempFixtureCopy('e2e-test-multipm')
+        let stdout = ''
+        let stderr = ''
+        let code = -1
+
+        try {
+          const npmAppDir = path.join(tempFixture.path, 'npm-app')
+          const pnpmAppDir = path.join(tempFixture.path, 'pnpm-app')
+
+          const beforeNpmPkg = await readPackageJson(npmAppDir)
+          const beforePnpmPkg = await readPackageJson(pnpmAppDir)
+
+          expect(beforeNpmPkg.dependencies?.['lodash']).toBe('4.17.20')
+          expect(beforePnpmPkg.dependencies?.['axios']).toBe('0.21.0')
+
+          const result = await spawnSocketCli(binCliPath, cmd, {
+            cwd: tempFixture.path,
+            env: getTestEnv(apiToken),
+          })
+          stdout = result.stdout
+          stderr = result.stderr
+          code = result.code
+
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+
+          expect(code, 'should exit with code 0').toBe(0)
+
+          const afterNpmPkg = await readPackageJson(npmAppDir)
+          const afterPnpmPkg = await readPackageJson(pnpmAppDir)
+
+          // npm-app's lodash should be upgraded.
+          const afterLodash = afterNpmPkg.dependencies?.['lodash']
+          expect(afterLodash).toBeDefined()
+          expect(
+            compareVersions(extractVersion(afterLodash!), '4.17.20'),
+            `lodash should be upgraded from 4.17.20 to ${afterLodash}`,
+          ).toBeGreaterThan(0)
+
+          // pnpm-app's axios should remain unchanged (filtered out by --package-managers NPM).
+          expect(
+            afterPnpmPkg.dependencies?.['axios'],
+            'pnpm-app axios should not be touched when --package-managers NPM is set',
+          ).toBe('0.21.0')
+
+          logger.info(
+            `\n--package-managers NPM upgraded npm-app lodash to ${afterLodash} and left pnpm-app axios untouched`,
+          )
+        } catch (e) {
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+          throw e
+        } finally {
+          await tempFixture.cleanup()
+        }
+      },
+      { timeout: testTimeout },
+    )
+
+    cmdit(
+      ['fix', '--package-managers', 'PNPM', '.'],
+      'should fix only the pnpm-managed artifact when --package-managers PNPM is set',
+      async cmd => {
+        const tempFixture = await createTempFixtureCopy('e2e-test-multipm')
+        let stdout = ''
+        let stderr = ''
+        let code = -1
+
+        try {
+          const npmAppDir = path.join(tempFixture.path, 'npm-app')
+          const pnpmAppDir = path.join(tempFixture.path, 'pnpm-app')
+
+          const beforeNpmPkg = await readPackageJson(npmAppDir)
+          const beforePnpmPkg = await readPackageJson(pnpmAppDir)
+
+          expect(beforeNpmPkg.dependencies?.['lodash']).toBe('4.17.20')
+          expect(beforePnpmPkg.dependencies?.['axios']).toBe('0.21.0')
+
+          const result = await spawnSocketCli(binCliPath, cmd, {
+            cwd: tempFixture.path,
+            env: getTestEnv(apiToken),
+          })
+          stdout = result.stdout
+          stderr = result.stderr
+          code = result.code
+
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+
+          expect(code, 'should exit with code 0').toBe(0)
+
+          const afterNpmPkg = await readPackageJson(npmAppDir)
+          const afterPnpmPkg = await readPackageJson(pnpmAppDir)
+
+          // pnpm-app's axios should be upgraded.
+          const afterAxios = afterPnpmPkg.dependencies?.['axios']
+          expect(afterAxios).toBeDefined()
+          expect(
+            compareVersions(extractVersion(afterAxios!), '0.21.0'),
+            `axios should be upgraded from 0.21.0 to ${afterAxios}`,
+          ).toBeGreaterThan(0)
+
+          // npm-app's lodash should remain unchanged (filtered out by --package-managers PNPM).
+          expect(
+            afterNpmPkg.dependencies?.['lodash'],
+            'npm-app lodash should not be touched when --package-managers PNPM is set',
+          ).toBe('4.17.20')
+
+          logger.info(
+            `\n--package-managers PNPM upgraded pnpm-app axios to ${afterAxios} and left npm-app lodash untouched`,
+          )
+        } catch (e) {
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+          throw e
+        } finally {
+          await tempFixture.cleanup()
+        }
+      },
+      { timeout: testTimeout },
+    )
+
+    cmdit(
+      ['fix', '--package-managers', 'NOT_A_REAL_PM', '.'],
+      'should fail fast with a clear error when --package-managers value is invalid',
+      async cmd => {
+        const tempFixture = await createTempFixtureCopy('e2e-test-multipm')
+        let stdout = ''
+        let stderr = ''
+        let code = -1
+
+        try {
+          const result = await spawnSocketCli(binCliPath, cmd, {
+            cwd: tempFixture.path,
+            env: getTestEnv(apiToken),
+          })
+          stdout = result.stdout
+          stderr = result.stderr
+          code = result.code
+
+          const output = stdout + stderr
+          expect(output).toContain('Invalid package manager')
+          expect(code, 'should exit with non-zero code').not.toBe(0)
+        } catch (e) {
+          if (code === 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+          throw e
+        } finally {
+          await tempFixture.cleanup()
+        }
+      },
+      { timeout: testTimeout },
+    )
+  })
+
   describe('Python projects', () => {
     cmdit(
       ['fix', '.'],
