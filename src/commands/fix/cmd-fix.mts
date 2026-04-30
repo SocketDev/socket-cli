@@ -25,6 +25,10 @@ import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
+import {
+  ALL_PACKAGE_MANAGERS,
+  isValidPackageManager,
+} from '../../utils/package-manager.mts'
 import { RangeStyles } from '../../utils/semver.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 
@@ -165,6 +169,13 @@ Available styles:
     default: [],
     description:
       'Limit fix analysis to specific ecosystems. Can be provided as comma separated values or as multiple flags. Defaults to all ecosystems.',
+    isMultiple: true,
+  },
+  packageManagers: {
+    type: 'string',
+    default: [],
+    description:
+      'Limit fix analysis to specific package managers within an ecosystem (e.g. NPM, PNPM, YARN, MAVEN, POETRY). Accepts space- or comma-separated values and is case-insensitive. When combined with --ecosystems, an artifact must satisfy both filters.',
     isMultiple: true,
   },
   showAffectedDirectDependencies: {
@@ -311,6 +322,7 @@ async function run(
     maxSatisfying,
     minimumReleaseAge,
     outputFile,
+    packageManagers,
     prCheck,
     prLimit,
     rangeStyle,
@@ -336,6 +348,7 @@ async function run(
     minSatisfying: boolean
     minimumReleaseAge: string
     outputFile: string
+    packageManagers: string[]
     prCheck: boolean
     prLimit: number
     rangeStyle: RangeStyle
@@ -368,6 +381,24 @@ async function run(
       return
     }
     validatedEcosystems.push(ecosystem as PURL_Type)
+  }
+
+  // Process and validate package manager values early, before dry-run check.
+  // Coana normalizes input to uppercase and rejects unknown values, so do the
+  // same here for a consistent UX and an early failure when invalid.
+  const packageManagersRaw = cmdFlagValueToArray(packageManagers).map(s =>
+    s.toUpperCase(),
+  )
+  const validatedPackageManagers: string[] = []
+  for (const pm of packageManagersRaw) {
+    if (!isValidPackageManager(pm)) {
+      logger.fail(
+        `Invalid package manager: "${pm}". Valid values are: ${joinAnd([...ALL_PACKAGE_MANAGERS])}`,
+      )
+      process.exitCode = 1
+      return
+    }
+    validatedPackageManagers.push(pm)
   }
 
   // Collect ghsas early to validate --all and --id mutual exclusivity.
@@ -468,6 +499,7 @@ async function run(
     orgSlug,
     outputFile,
     outputKind,
+    packageManagers: validatedPackageManagers,
     prCheck,
     prLimit,
     rangeStyle,
