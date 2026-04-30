@@ -2,132 +2,132 @@
 
 **MANDATORY**: Act as principal-level engineer. Follow these guidelines exactly.
 
-## USER CONTEXT
+<!-- BEGIN FLEET-CANONICAL — sync via socket-repo-template/scripts/sync-scaffolding.mjs. Do not edit downstream. -->
 
-- Identify users by git credentials (commit author, GitHub account). Use their actual name, never "the user".
-- Use "you/your" when speaking directly; use their name when discussing their work.
+## 📚 Fleet Standards
 
-## PARALLEL CLAUDE SESSIONS - WORKTREE REQUIRED
+### Identifying users
 
-**This repo may have multiple Claude sessions running concurrently against the same checkout, against parallel git worktrees, or against sibling clones.** Several common git operations are hostile to that and silently destroy or hijack the other session's work.
+Identify users by git credentials and use their actual name. Use "you/your" when speaking directly; use names when referencing contributions.
 
-- **FORBIDDEN in the primary checkout** (the one another Claude may be editing):
-  - `git stash` — shared stash store; another session can `pop` yours.
-  - `git add -A` / `git add .` — sweeps files belonging to other sessions.
-  - `git checkout <branch>` / `git switch <branch>` — yanks the working tree out from under another session.
-  - `git reset --hard` against a non-HEAD ref — discards another session's commits.
-- **REQUIRED for branch work**: spawn a worktree instead of switching branches in place. Each worktree has its own HEAD, so branch operations inside it are safe.
+### Parallel Claude sessions
 
-  ```bash
-  # From the primary checkout — does NOT touch the working tree here.
-  git worktree add -b <task-branch> ../<repo>-<task> main
-  cd ../<repo>-<task>
-  # edit, commit, push from here; the primary checkout is untouched.
-  cd -
-  git worktree remove ../<repo>-<task>
-  ```
+This repo may have multiple Claude sessions running concurrently against the same checkout, against parallel git worktrees, or against sibling clones. Several common git operations are hostile to that.
 
-- **REQUIRED for staging**: surgical `git add <specific-file> [<file>…]` with explicit paths. Never `-A` / `.`.
-- **If you need a quick WIP save**: commit on a new branch from inside a worktree, not a stash.
+**Forbidden in the primary checkout:**
+
+- `git stash` — shared store; another session can `pop` yours
+- `git add -A` / `git add .` — sweeps files from other sessions
+- `git checkout <branch>` / `git switch <branch>` — yanks the working tree out from under another session
+- `git reset --hard` against a non-HEAD ref — discards another session's commits
+
+**Required for branch work:** spawn a worktree.
+
+```bash
+git worktree add -b <task-branch> ../<repo>-<task> main
+cd ../<repo>-<task>
+# edit / commit / push from here; primary checkout is untouched
+git worktree remove ../<repo>-<task>
+```
+
+**Required for staging:** surgical `git add <specific-file>`. Never `-A` / `.`.
+
+**Never revert files you didn't touch.** If `git status` shows unfamiliar changes, leave them — they belong to another session, an upstream pull, or a hook side-effect.
 
 The umbrella rule: never run a git command that mutates state belonging to a path other than the file you just edited.
 
-## PRE-ACTION PROTOCOL
+### Public-surface hygiene
 
-**MANDATORY**: Review CLAUDE.md before any action. No exceptions.
+🚨 The four rules below have hooks that re-print the rule on every public-surface `git` / `gh` command. The rules apply even when the hooks are not installed.
 
-- Before ANY structural refactor on a file >300 LOC: remove dead code/unused exports/imports first — commit separately
-- Multi-file changes: break into phases (≤5 files each), verify each phase before the next
-- Study existing code before building
-- Work from raw error data, not theories — if a bug report has no error output, ask for it
-- On "yes", "do it", or "go": execute immediately, no plan recap
+- **Real customer / company names** — never write one into a commit, PR, issue, comment, or release note. Replace with `Acme Inc` or rewrite the sentence to not need the reference. (No enumerated denylist exists — a denylist is itself a leak.)
+- **Private repos / internal project names** — never mention. Omit the reference entirely; don't substitute "an internal tool" — the placeholder is a tell.
+- **Linear refs** — never put `SOC-123`/`ENG-456`/Linear URLs in code, comments, or PR text. Linear lives in Linear.
+- **Publish / release / build-release workflows** — never `gh workflow run|dispatch` or `gh api …/dispatches`. Dispatches are irrevocable. The user runs them manually.
 
-## VERIFICATION PROTOCOL
+### Commits & PRs
 
-1. Run the actual command — execute, don't assume
-2. State what you verified, not just "looks good"
-3. **FORBIDDEN**: Claiming "Done" when any test output shows failures
-4. Run type-check/lint if configured; fix ALL errors before reporting done
-5. Re-read every modified file; confirm nothing references removed items
+- Conventional Commits `<type>(<scope>): <description>` — NO AI attribution.
+- **When adding commits to an OPEN PR**, update the PR title and description to match the new scope. Use `gh pr edit <num> --title … --body …`. The reviewer should know what's in the PR without scrolling commits.
+- **Replying to Cursor Bugbot** — reply on the inline review-comment thread, not as a detached PR comment: `gh api repos/{owner}/{repo}/pulls/{pr}/comments/{comment_id}/replies -X POST -f body=…`.
 
-## CONTEXT & EDIT SAFETY
+### Programmatic Claude calls
 
-- After 10+ messages: re-read files before editing
-- Read files >500 LOC in chunks (offset/limit)
-- Before every edit: re-read. After every edit: re-read to confirm
-- When renaming: search direct calls, type refs, string literals, dynamic imports, re-exports, tests
-- Tool results over 50K chars are silently truncated — narrow scope and re-run if incomplete
-- For tasks touching >5 files: use sub-agents with worktree isolation
-- Never fix a display/rendering problem by duplicating state
+🚨 Workflows / skills / scripts that invoke `claude` CLI or `@anthropic-ai/claude-agent-sdk` MUST set all four lockdown flags: `tools`, `allowedTools`, `disallowedTools`, `permissionMode: 'dontAsk'`. Never `default` mode in headless contexts. Never `bypassPermissions`. See `.claude/skills/programmatic-claude-lockdown/SKILL.md`.
 
-## JUDGMENT PROTOCOL
+### Tooling
 
-- If the user's request is based on a misconception, say so before executing
-- If you spot a bug adjacent to what was asked, flag it: "I also noticed X — want me to fix it?"
-- You are a collaborator, not just an executor
-- Fix warnings when you find them (lint, type-check, build, runtime) — don't leave them for later
+- **Package manager**: `pnpm`. Run scripts via `pnpm run foo --flag`, never `foo:bar`. After `package.json` edits, `pnpm install`.
+- 🚨 NEVER use `npx`, `pnpm dlx`, or `yarn dlx` — use `pnpm exec <package>` or `pnpm run <script>` # zizmor: documentation-prohibition
+- **`minimumReleaseAge`** — never add packages to `minimumReleaseAgeExclude` in CI. Locally, ASK before adding (security control).
+- **Backward compatibility** — FORBIDDEN to maintain. Actively remove when encountered.
 
-## SCOPE PROTOCOL
+### Code style
 
-- Do not add features, refactor, or make improvements beyond what was asked
-- Simplest approach first; flag architectural flaws and wait for approval
-- When asked to "make a plan," output only the plan — no code until given the go-ahead
-- **Default to perfectionist mindset**: when you have latitude to choose, pick the maximally correct option — no shortcuts, no cosmetic deferrals. Fix state that *looks* stale even if not load-bearing. If pragmatism is the right call, the user will ask for it explicitly. "Works now" ≠ "right."
+- **Comments** — default to none. Write one only when the WHY is non-obvious to a senior engineer.
+- **Completion** — never leave `TODO` / `FIXME` / `XXX` / shims / stubs / placeholders. Finish 100%. If too large for one pass, ask before cutting scope.
+- **`null` vs `undefined`** — use `undefined`. `null` is allowed only for `__proto__: null` or external API requirements.
+- **Object literals** — `{ __proto__: null, ... }` for config / return / internal-state.
+- **Imports** — no dynamic `await import()`. `node:fs` cherry-picks (`existsSync`, `promises as fs`); `path` / `os` / `url` / `crypto` use default imports. Exception: `fileURLToPath` from `node:url`.
+- **HTTP** — never `fetch()`. Use `httpJson` / `httpText` / `httpRequest` from `@socketsecurity/lib/http-request`.
+- **File existence** — `existsSync` from `node:fs`. Never `fs.access` / `fs.stat`-for-existence / async `fileExists` wrapper.
+- **File deletion** — route every delete through `safeDelete()` / `safeDeleteSync()` from `@socketsecurity/lib/fs`. Never `fs.rm` / `fs.unlink` / `fs.rmdir` / `rm -rf` directly — even for one known file.
+- **Edits** — Edit tool, never `sed` / `awk`.
+- **Inclusive language** — see [`docs/references/inclusive-language.md`](docs/references/inclusive-language.md) for the substitution table.
+- **Sorting** — sort lists alphanumerically; details in [`docs/references/sorting.md`](docs/references/sorting.md). When in doubt, sort.
+- **`Promise.race` / `Promise.any` in loops** — never re-race a pool that survives across iterations (the handlers stack). See `.claude/skills/promise-race-pitfall/SKILL.md`.
 
-## COMPLETION PROTOCOL
+### 1 path, 1 reference
 
-- NEVER claim done at 80% — finish 100% before reporting
-- Fix forward: if an approach fails, analyze why, adjust, rebuild — not `git checkout`
-- After EVERY code change: build, test, verify, commit as a single atomic unit
-- Reverting requires explicit user approval
+A path is constructed exactly once. Everywhere else references the constructed value.
 
-## SELF-EVALUATION
+- **Within a package**: every script imports its own `scripts/paths.mts`. No `path.join('build', mode, …)` outside that module.
+- **Across packages**: package B imports package A's `paths.mts` via the workspace `exports` field. Never `path.join(PKG, '..', '<sibling>', 'build', …)`.
+- **Workflows / Dockerfiles / shell** can't `import` TS — construct once, reference by output / `ENV` / variable.
 
-- Before calling anything done: present both views — what a perfectionist would reject vs. what a pragmatist would ship — and let the user choose. If the user gives no signal, default to perfectionist: do the fuller fix.
-- After fixing a bug: explain why it happened and what category of bug it represents
-- If a fix fails twice: stop, re-read top-down, state where the mental model was wrong
-- If asked to "step back": drop everything, rethink from scratch
+Three-level enforcement: `.claude/hooks/path-guard/` blocks at edit time; `scripts/check-paths.mts` is the whole-repo gate run by `pnpm check`; `/path-guard` is the audit-and-fix skill. Find the canonical owner and import from it.
 
-## HOUSEKEEPING
+### Background Bash
 
-- Offer to checkpoint before risky changes
-- Flag files >400 LOC for potential splitting
+Never use `Bash(run_in_background: true)` for test / build commands (`vitest`, `pnpm test`, `pnpm build`, `tsgo`). Backgrounded runs you don't poll get abandoned and leak Node workers. Background mode is for dev servers and long migrations whose results you'll consume. If a run hangs, kill it: `pkill -f "vitest/dist/workers"`. The `.claude/hooks/stale-process-sweeper/` `Stop` hook reaps true orphans as a safety net.
 
-## ABSOLUTE RULES
+### Judgment & self-evaluation
 
-- **Fix ALL issues when asked** — never dismiss as "pre-existing"
-- Never create files unless necessary; always prefer editing existing files
-- Forbidden to create docs unless requested
-- 🚨 **NEVER use `npx`, `pnpm dlx`, or `yarn dlx`** — use `pnpm exec <package>` or `pnpm run <script>` # zizmor: documentation-prohibition
-- **NEVER reference Linear issues** (e.g. `SOC-123`, `ENG-456`, `ASK-789`, Linear URLs) in code, code comments, or PR titles/descriptions/review comments. Linear tracking lives in Linear; keep the codebase and PR history tool-agnostic.
-- 🚨 **NEVER write a real customer or company name into any commit, PR, issue, GitHub comment, or release note.** When about to write any name, stop and ask: "is this a real company?" If yes, replace it with `Acme Inc` (or drop the reference entirely). No enumerated denylist exists anywhere — a denylist is itself a leak. Recognition is done at write time, every time. The `.claude/hooks/public-surface-reminder` hook re-prints this rule on every public-surface `git`/`gh` command as a priming nudge; the rule still applies when the hook is not installed.
+- If the request is based on a misconception, say so before executing.
+- If you spot an adjacent bug, flag it: "I also noticed X — want me to fix it?"
+- Fix warnings (lint / type / build / runtime) when you see them — don't leave them for later.
+- **Default to perfectionist** when you have latitude. "Works now" ≠ "right."
+- Before calling done: perfectionist vs. pragmatist views. Default perfectionist absent a signal.
+- If a fix fails twice: stop, re-read top-down, state where the mental model was wrong, try something fundamentally different.
 
-## EVOLUTION
+### Error messages
 
-If user repeats instruction 2+ times, ask: "Should I add this to CLAUDE.md?"
+An error message is UI. The reader should fix the problem from the message alone. Four ingredients in order:
 
-## SHARED STANDARDS
+1. **What** — the rule, not the fallout (`must be lowercase`, not `invalid`).
+2. **Where** — exact file / line / key / field / flag.
+3. **Saw vs. wanted** — the bad value and the allowed shape or set.
+4. **Fix** — one imperative action (`rename the key to …`).
 
-- Commits: [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) `<type>(<scope>): <description>` — NO AI attribution
-- Scripts: Prefer `pnpm run foo --flag` over `foo:bar` variants
-- Dependencies: After `package.json` edits, run `pnpm install`
-- Backward Compatibility: 🚨 FORBIDDEN to maintain — actively remove when encountered
-- Safe Deletion: Use `safeDelete()` from `@socketsecurity/lib/fs` (NEVER `fs.rm/rmSync` or `rm -rf`)
-- HTTP Requests: NEVER use `fetch()` — use `httpJson`/`httpText`/`httpRequest` from `@socketsecurity/lib/http-request`
-- `Promise.race` / `Promise.any`: NEVER pass a long-lived promise (interrupt signal, pool member) into a race inside a loop. Each call re-attaches `.then` handlers to every arm; handlers accumulate on surviving promises until they settle. For concurrency limiters, use a single-waiter "slot available" signal (resolved by each task's `.then`) instead of re-racing `executing[]`. See nodejs/node#17469 and `@watchable/unpromise`. Race with two fresh arms (e.g. one-shot `withTimeout`) is safe.
-- File existence: ALWAYS `existsSync` from `node:fs`. NEVER `fs.access`, `fs.stat`-for-existence, or an async `fileExists` wrapper. Import: `import { existsSync, promises as fs } from 'node:fs'`.
-- Stream discipline: stdout carries ONLY the data the command was asked to produce (JSON payload, report, fix output — the thing a script pipes into `jq` or redirects to a file). stderr carries everything else: progress, spinners, status, warnings, errors, dry-run previews, context, banners, prompts. Test: would `command | jq` or `command > file` make sense with only the stdout content? If no, it belongs on stderr. Under `--json` / `--markdown`, stdout MUST parse as the declared format with no prefix/suffix text.
-- Replying to Cursor Bugbot: reply on the inline review-comment thread, not as a detached PR comment, so the reply threads under the bot's finding. Use `gh api repos/{owner}/{repo}/pulls/{pr}/comments/{comment_id}/replies -X POST -f body=...`. Find the `{comment_id}` via `gh api repos/{owner}/{repo}/pulls/{pr}/comments -q '.[] | select(.user.login == "cursor[bot]") | {id, path, line, body: (.body|.[0:200])}'`. Detached `gh pr comment` is wrong for bot findings.
+Use `isError` / `isErrnoException` / `errorMessage` / `errorStack` from `@socketsecurity/lib/errors` over hand-rolled checks. Use `joinAnd` / `joinOr` from `@socketsecurity/lib/arrays` for allowed-set lists. Full guidance in [`docs/references/error-messages.md`](docs/references/error-messages.md).
 
-### Documentation Policy
+### Token hygiene
 
-Do NOT litter the repo with markdown. Allowed: `docs/`, root `README.md`/`CHANGELOG.md`/`SECURITY.md`/`CLAUDE.md`, `packages/*/README.md`, `test/fixtures/*/README.md`, `test/*/README.md`.
+🚨 Never emit the raw value of any secret to tool output, commits, comments, or replies. The `.claude/hooks/token-guard/` `PreToolUse` hook blocks the deterministic patterns (literal token shapes, env dumps, `.env*` reads, unfiltered `curl -H "Authorization:"`, sensitive-name commands without redaction). When the hook blocks a command, rewrite — don't bypass.
 
-**`.claude/` exception**: markdown under `.claude/agents/`, `.claude/commands/`, `.claude/hooks/`, `.claude/skills/` is allowed (harness-loaded config). Ad-hoc analysis/session notes still disallowed.
+Behavior the hook can't catch: redact `token` / `jwt` / `access_token` / `refresh_token` / `api_key` / `secret` / `password` / `authorization` fields when citing API responses. Show key *names* only when displaying `.env.local`. If a user pastes a secret, treat it as compromised and ask them to rotate.
 
----
+Full hook spec in [`.claude/hooks/token-guard/README.md`](.claude/hooks/token-guard/README.md).
 
-## 🏗️ CLI-SPECIFIC
+### Agents & skills
+
+- `/security-scan` — AgentShield + zizmor audit
+- `/quality-scan` — quality analysis
+- Shared subskills in `.claude/skills/_shared/`
+
+<!-- END FLEET-CANONICAL -->
+
+## 🏗️ CLI-Specific
 
 ### Commands
 
@@ -143,83 +143,11 @@ Do NOT litter the repo with markdown. Allowed: `docs/`, root `README.md`/`CHANGE
 - Update snapshots: `pnpm testu <path>` or `--update` flag
 - NEVER write source-code-scanning tests — verify behavior, not string patterns
 
-### Changelog
-
-Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). User-facing only: Added, Changed, Fixed, Removed. Concise.
-
-### Code Style (MANDATORY)
-
-- `.mts` extensions for TS modules
-- 🚨 Separate `import type` statements — NEVER mix runtime and type imports
-- Process spawning: MUST use `spawn` from `@socketsecurity/registry/lib/spawn` (NEVER `child_process`)
-- Array destructuring: `{ 0: key, 1: data }` instead of `[key, data]`
-- Dynamic imports: 🚨 FORBIDDEN — always static imports
-- Sorting: 🚨 MANDATORY — lists, exports, destructured properties, doc headers alphabetically
-- Comments: Default NO. Only when WHY is non-obvious. Own line, not inline.
-- Functions: alphabetical; private first, exported second
-- Object mappings: `__proto__: null` for static lookup; `Map` for dynamic
-- Array length: `!array.length` not `=== 0`
-- Catch: `catch (e)` not `catch (error)`
-- Numbers: underscore separators (`20_000`); don't modify values inside strings
-- Flags: MUST use `MeowFlags` type with descriptive help
-- Error handling: `InputError`/`AuthError` from `src/utils/errors.mts`; prefer `CResult<T>`; avoid `process.exit(1)`
-- GitHub API: Octokit from `src/utils/github.mts`, not raw fetch
-
-### Error Messages
-
-An error message is UI. The reader should be able to fix the problem from the message alone, without opening your source.
-
-Every message needs four ingredients, in order:
-
-1. **What** — the rule that was broken (e.g. "must be a non-negative integer"), not the fallout ("invalid").
-2. **Where** — the exact flag, file, line, key, or record. Not "somewhere in config".
-3. **Saw vs. wanted** — the bad value and the allowed shape or set.
-4. **Fix** — one concrete action, in imperative voice (`pass --limit=50`, not `--limit was wrong`).
-
-Length depends on the audience:
-
-- **Library API errors** (thrown from a published package): terse. Callers may match on the message text, so every word counts. All four ingredients often fit in one sentence.
-- **CLI / validator / config errors** (developer reading a terminal): verbose. Give each ingredient its own words so the reader can fix it without re-running the tool. Most `InputError`/`AuthError` cases land here.
-- **Programmatic errors** (internal assertions, invariant checks): terse, rule only. No end user will see it; short keeps the check readable.
-
-Rules for every message:
-
-- Imperative voice for the fix — `pass --limit=50`, not `--limit was wrong`.
-- Never "invalid" on its own. `Invalid ecosystem: "foo"` is fallout; `--reach-ecosystems must be one of: npm, pypi, maven (saw: "foo")` is a rule.
-- On a collision, name **both** sides, not just the second one found.
-- Suggest, don't auto-correct. Silently fixing state hides the bug next time.
-- Bloat check: if removing a word keeps the information, drop it.
-- For allowed-set / conflict lists, use `joinAnd` / `joinOr` from `@socketsecurity/lib/arrays` — `must be one of: ${joinOr(allowed)}` reads better than a hand-formatted list.
-
-**CLI examples:**
-
-- ✅ `throw new InputError('--pull-request must be a non-negative integer (saw: "abc"); pass a number like --pull-request=42')`
-- ✅ `` throw new InputError(`No .socket directory found in ${cwd}; run \`socket init\` to create one`) ``
-- ✅ `throw new AuthError('Socket API rejected the token (401); run `socket login` or set SOCKET_CLI_API_TOKEN')`
-- ❌ `throw new InputError('Invalid value for --limit: ${limit}')` — fallout, no rule, no fix
-- ❌ `throw new Error('Authentication failed')` — no where, no fix, wrong error type
-- ❌ `logger.error('Error occurred'); return` — doesn't set exit code
-
-See `docs/references/error-messages.md` for cross-fleet worked examples and anti-patterns.
-
 ### Command Pattern
 
 - Simple (<200 LOC, no subcommands): single `cmd-*.mts`
 - Complex: `cmd-*.mts` + `handle-*.mts` + `output-*.mts` + `fetch-*.mts`
 
-## Codex Usage
+### Codex Usage
 
 Advice and critical assessment ONLY — never for making code changes. Consult before complex optimizations (>30min).
-
-### Background Bash
-
-Never use `Bash(run_in_background: true)` for test/build commands (`vitest`, `pnpm test`, `pnpm build`, `tsgo`). Backgrounded runs you don't poll get abandoned and leak Node workers. Background mode is for dev servers and long migrations whose results you'll consume. If a run hangs, kill it: `pkill -f "vitest/dist/workers"`.
-
-## Agents & Skills
-
-- `/security-scan` — AgentShield + zizmor security audit
-- `/quality-scan` — comprehensive code quality analysis
-- `/quality-loop` — scan and fix iteratively
-- `/sync-checksums` — sync external tool SHA-256 checksums
-- Agents: `code-reviewer`, `security-reviewer`, `refactor-cleaner` (in `.claude/agents/`)
-- Shared subskills in `.claude/skills/_shared/`
