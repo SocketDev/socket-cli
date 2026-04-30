@@ -1,0 +1,9 @@
+{
+  "name": "e2e-test-multipm-npm",
+  "version": "1.0.0",
+  "description": "E2E test fixture (npm-managed) with vulnerable lodash",
+  "main": "index.js",
+  "dependencies": {
+    "lodash": "4.17.20"
+  }
+}
