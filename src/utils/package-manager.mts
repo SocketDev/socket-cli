@@ -29,10 +29,6 @@ export type PackageManager = (typeof ALL_PACKAGE_MANAGERS)[number]
 
 const ALL_PACKAGE_MANAGERS_SET = new Set<string>(ALL_PACKAGE_MANAGERS)
 
-export function getPackageManagerChoicesForMeow(): string[] {
-  return [...ALL_PACKAGE_MANAGERS]
-}
-
 export function isValidPackageManager(value: string): value is PackageManager {
   return ALL_PACKAGE_MANAGERS_SET.has(value)
 }
