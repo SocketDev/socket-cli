@@ -161,7 +161,9 @@ export function filterBySupportedScanFiles(
   supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
 ): string[] {
   const patterns = getSupportedFilePatterns(supportedFiles)
-  return filepaths.filter(p => micromatch.some(p, patterns, { dot: true }))
+  return filepaths.filter(p =>
+    micromatch.some(p, patterns, { dot: true, nocase: true }),
+  )
 }
 
 export function createSupportedFilesFilter(
@@ -169,7 +171,7 @@ export function createSupportedFilesFilter(
 ): (filepath: string) => boolean {
   const patterns = getSupportedFilePatterns(supportedFiles)
   return (filepath: string) =>
-    micromatch.some(filepath, patterns, { dot: true })
+    micromatch.some(filepath, patterns, { dot: true, nocase: true })
 }
 
 export function getSupportedFilePatterns(
@@ -311,7 +313,7 @@ export function isReportSupportedFile(
   supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
 ) {
   const patterns = getSupportedFilePatterns(supportedFiles)
-  return micromatch.some(filepath, patterns, { dot: true })
+  return micromatch.some(filepath, patterns, { dot: true, nocase: true })
 }
 
 export function pathsToGlobPatterns(

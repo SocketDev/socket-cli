@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.89](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.89) - 2026-04-30
+
+### Fixed
+- `socket scan create` now matches manifest filenames case-insensitively, so capitalized files such as `Pipfile` and `Pipfile.lock` are no longer silently dropped from the scan.
+
 ## [1.1.88](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.88) - 2026-04-29
 
 ### Changed

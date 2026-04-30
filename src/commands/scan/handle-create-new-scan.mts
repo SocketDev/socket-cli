@@ -57,7 +57,7 @@ function filterToCdxSpdxAndFactsFiles(
       return true
     }
     // Include CDX and SPDX files.
-    return micromatch.some(filepath, patterns)
+    return micromatch.some(filepath, patterns, { nocase: true })
   })
 }
 

@@ -358,5 +358,64 @@ describe('Path Resolve', () => {
         `${mockFixturePath}/package.json`,
       ])
     })
+
+    // The supported-file patterns from the SDK are lowercase (e.g. 'pipfile'),
+    // but real Python projects often use capitalized filenames such as
+    // `Pipfile` and `Pipfile.lock`. Pattern matching must be case-insensitive
+    // so those files are not silently dropped from the scan.
+    describe('case-insensitive manifest matching', () => {
+      const pythonPatterns = {
+        npm: {
+          packagejson: { pattern: PACKAGE_JSON },
+        },
+        pypi: {
+          pipfile: { pattern: 'pipfile' },
+          pipfilelock: { pattern: 'pipfile.lock' },
+          pyproject: { pattern: 'pyproject.toml' },
+          requirements: {
+            pattern:
+              '{*requirements.txt,requirements/*.txt,requirements-*.txt,requirements.frozen}',
+          },
+          setuppy: { pattern: 'setup.py' },
+          uvlock: { pattern: 'uv.lock' },
+        },
+      }
+
+      const sortedGetPythonFiles = sortedPromise(getPackageFilesForScan)
+
+      it('picks up canonical Pipfile and Pipfile.lock (uppercase P)', async () => {
+        mockTestFs({
+          [`${mockFixturePath}/project-pipfile/Pipfile`]: '',
+          [`${mockFixturePath}/project-pipfilelock/Pipfile.lock`]: '{}',
+        })
+
+        const actual = await sortedGetPythonFiles(['**/*'], pythonPatterns, {
+          cwd: mockFixturePath,
+        })
+        expect(actual.map(normalizePath)).toEqual([
+          `${mockFixturePath}/project-pipfile/Pipfile`,
+          `${mockFixturePath}/project-pipfilelock/Pipfile.lock`,
+        ])
+      })
+
+      it('picks up every Python sibling project in a mixed-format root', async () => {
+        mockTestFs({
+          [`${mockFixturePath}/project-a/pyproject.toml`]: '',
+          [`${mockFixturePath}/project-a/uv.lock`]: '',
+          [`${mockFixturePath}/project-a/src/main.py`]: '',
+          [`${mockFixturePath}/project-b/requirements.txt`]: '',
+          [`${mockFixturePath}/project-b/src/main.py`]: '',
+        })
+
+        const actual = await sortedGetPythonFiles(['**/*'], pythonPatterns, {
+          cwd: mockFixturePath,
+        })
+        expect(actual.map(normalizePath)).toEqual([
+          `${mockFixturePath}/project-a/pyproject.toml`,
+          `${mockFixturePath}/project-a/uv.lock`,
+          `${mockFixturePath}/project-b/requirements.txt`,
+        ])
+      })
+    })
   })
 })
