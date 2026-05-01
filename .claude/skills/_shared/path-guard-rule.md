@@ -1,7 +1,7 @@
 <!--
 Shared snippet — the canonical "1 path, 1 reference" rule text.
 Synced byte-identical across the Socket fleet via socket-repo-template's
-sync-scaffolding.mjs (SHARED_SKILL_FILES).
+sync-scaffolding.mts (SHARED_SKILL_FILES).
 
 This file is the source of truth for the rule's wording. Three artifacts
 embed (or paraphrase) it:
@@ -10,7 +10,7 @@ embed (or paraphrase) it:
   2. .claude/hooks/path-guard/README.md — what the hook blocks.
   3. .claude/skills/path-guard/SKILL.md — what the skill enforces.
 
-If the wording changes here, re-run `node scripts/sync-scaffolding.mjs
+If the wording changes here, re-run `node scripts/sync-scaffolding.mts
 --all --fix` from socket-repo-template to propagate.
 -->
 

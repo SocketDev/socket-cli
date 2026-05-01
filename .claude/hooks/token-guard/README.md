@@ -1,6 +1,6 @@
 # token-guard
 
-Claude Code `PreToolUse` hook that refuses Bash tool calls that would leak secrets to tool output. Mandatory across the Socket fleet — every repo ships this file byte-for-byte via `scripts/sync-scaffolding.mjs`.
+Claude Code `PreToolUse` hook that refuses Bash tool calls that would leak secrets to tool output. Mandatory across the Socket fleet — every repo ships this file byte-for-byte via `scripts/sync-scaffolding.mts`.
 
 ## What it blocks
 
@@ -48,10 +48,10 @@ Adding new token-shape detections: update `LITERAL_TOKEN_PATTERNS` in `index.mts
 
 ## Updating across the fleet
 
-This file is in `IDENTICAL_FILES` in `scripts/sync-scaffolding.mjs`. After editing, run from `socket-repo-template`:
+This file is in `IDENTICAL_FILES` in `scripts/sync-scaffolding.mts`. After editing, run from `socket-repo-template`:
 
 ```bash
-node scripts/sync-scaffolding.mjs --all --fix
+node scripts/sync-scaffolding.mts --all --fix
 ```
 
 to propagate the change to every fleet repo.

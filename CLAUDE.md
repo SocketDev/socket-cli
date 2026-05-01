@@ -2,7 +2,7 @@
 
 **MANDATORY**: Act as principal-level engineer. Follow these guidelines exactly.
 
-<!-- BEGIN FLEET-CANONICAL — sync via socket-repo-template/scripts/sync-scaffolding.mjs. Do not edit downstream. -->
+<!-- BEGIN FLEET-CANONICAL — sync via socket-repo-template/scripts/sync-scaffolding.mts. Do not edit downstream. -->
 
 ## 📚 Fleet Standards
 
@@ -59,7 +59,7 @@ The umbrella rule: never run a git command that mutates state belonging to a pat
 
 - **Package manager**: `pnpm`. Run scripts via `pnpm run foo --flag`, never `foo:bar`. After `package.json` edits, `pnpm install`.
 - 🚨 NEVER use `npx`, `pnpm dlx`, or `yarn dlx` — use `pnpm exec <package>` or `pnpm run <script>` # socket-hook: allow npx
-- **`minimumReleaseAge`** — never add packages to `minimumReleaseAgeExclude` in CI. Locally, ASK before adding (security control).
+- **Soak window** (pnpm-workspace.yaml `minimumReleaseAge`, default 7 days) — never add packages to `minimumReleaseAgeExclude` in CI. Locally, ASK before adding (security control).
 - **Backward compatibility** — FORBIDDEN to maintain. Actively remove when encountered.
 
 ### Code style

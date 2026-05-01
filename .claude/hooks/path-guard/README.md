@@ -1,6 +1,6 @@
 # path-guard
 
-Claude Code `PreToolUse` hook that refuses `Edit`/`Write` tool calls that would *construct* a multi-segment build/output path inline in a `.mts` or `.cts` file. Mandatory across the Socket fleet — every repo ships this file byte-for-byte via `scripts/sync-scaffolding.mjs`.
+Claude Code `PreToolUse` hook that refuses `Edit`/`Write` tool calls that would *construct* a multi-segment build/output path inline in a `.mts` or `.cts` file. Mandatory across the Socket fleet — every repo ships this file byte-for-byte via `scripts/sync-scaffolding.mts`.
 
 **Mantra: 1 path, 1 reference.**
 
@@ -57,10 +57,10 @@ Adding a new detection pattern: update `STAGE_SEGMENTS` (or `KNOWN_SIBLING_PACKA
 
 ## Updating across the fleet
 
-This file is in `IDENTICAL_FILES` in `scripts/sync-scaffolding.mjs` (in `socket-repo-template`). After editing, run from `socket-repo-template`:
+This file is in `IDENTICAL_FILES` in `scripts/sync-scaffolding.mts` (in `socket-repo-template`). After editing, run from `socket-repo-template`:
 
 ```bash
-node scripts/sync-scaffolding.mjs --all --fix
+node scripts/sync-scaffolding.mts --all --fix
 ```
 
 to propagate the change to every fleet repo.

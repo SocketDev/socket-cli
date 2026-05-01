@@ -6,7 +6,7 @@
 // consumers import from here so they can never drift apart.
 //
 // Synced byte-identically across the Socket fleet via
-// socket-repo-template/scripts/sync-scaffolding.mjs (IDENTICAL_FILES).
+// socket-repo-template/scripts/sync-scaffolding.mts (IDENTICAL_FILES).
 // When adding a new stage/build-root/mode/sibling, edit this file in
 // the template and re-sync.
 
@@ -41,7 +41,7 @@ export const MODE_SEGMENTS = new Set(['dev', 'prod', 'shared'])
 // Socket fleet — the gate is byte-identical via sync-scaffolding, so
 // listing every fleet package keeps Rule B firing in any repo. When a
 // new package joins the workspace, add it here and propagate via
-// `node scripts/sync-scaffolding.mjs --all --fix` from
+// `node scripts/sync-scaffolding.mts --all --fix` from
 // socket-repo-template.
 export const KNOWN_SIBLING_PACKAGES = new Set([
   // socket-btm
