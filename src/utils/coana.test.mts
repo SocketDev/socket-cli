@@ -48,34 +48,33 @@ describe('coana facts-file utils', () => {
   }
 
   describe('compressSocketFactsForUpload', () => {
-    it('swaps a .socket.facts.json path for a brotli .br temp file', async () => {
+    it('writes brotli .br as a sibling of the source file', async () => {
       const wrapDir = mkdtempSync(path.join(tmpdir(), 'socket-coana-wrap-'))
       const inputPath = path.join(wrapDir, '.socket.facts.json')
       const payload = { tier1ReachabilityScanId: 'compress-test', a: 1, b: 2 }
       writeFileSync(inputPath, JSON.stringify(payload))
 
-      const result = await compressSocketFactsForUpload([inputPath])
-      const swappedPath = result.paths[0]!
       try {
+        const result = await compressSocketFactsForUpload([inputPath])
+        const swappedPath = result.paths[0]!
+
         expect(result.paths).toHaveLength(1)
-        expect(swappedPath).not.toBe(inputPath)
-        expect(path.basename(swappedPath)).toBe('.socket.facts.json.br')
+        expect(swappedPath).toBe(`${inputPath}.br`)
         expect(existsSync(swappedPath)).toBe(true)
-        // Temp file lives in a subdir of the source's parent directory, NOT
-        // under tmpdir(). This keeps `path.relative(cwd, swappedPath)`
-        // traversal-free so depscan's multipart ingest accepts the entry.
-        expect(path.dirname(path.dirname(swappedPath))).toBe(wrapDir)
-        // The temp file is real brotli that round-trips to the original JSON.
+        // The sibling file is real brotli that round-trips to the original
+        // JSON.
         const roundTripped = brotliDecompressSync(
           readFileSync(swappedPath),
         ).toString('utf8')
         expect(JSON.parse(roundTripped)).toEqual(payload)
-      } finally {
+
+        // Cleanup removes the sibling .br file but leaves the source intact.
         await result.cleanup()
+        expect(existsSync(swappedPath)).toBe(false)
+        expect(existsSync(inputPath)).toBe(true)
+      } finally {
         rmSync(wrapDir, { recursive: true, force: true })
       }
-      // Cleanup removes the temp .br file.
-      expect(existsSync(swappedPath)).toBe(false)
     })
 
     it('leaves non-facts paths unchanged', async () => {
@@ -118,8 +117,7 @@ describe('coana facts-file utils', () => {
       const result = await compressSocketFactsForUpload([lock, facts])
       try {
         expect(result.paths[0]).toBe(lock)
-        expect(result.paths[1]).not.toBe(facts)
-        expect(path.basename(result.paths[1]!)).toBe('.socket.facts.json.br')
+        expect(result.paths[1]).toBe(`${facts}.br`)
         const roundTripped = JSON.parse(
           brotliDecompressSync(readFileSync(result.paths[1]!)).toString('utf8'),
         )
