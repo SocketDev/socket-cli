@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.91](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.91) - 2026-05-01
+
+### Added
+- New `socket scan create` and `socket scan reach` flags let you keep reachability analysis going when it would otherwise halt: `--reach-continue-on-analysis-errors`, `--reach-continue-on-install-errors`, `--reach-continue-on-missing-lock-files`, and `--reach-continue-on-no-source-files`. Each falls back to precomputed (Tier 2) results so you still get a scan when individual workspaces hit timeouts, install failures, missing lock files, or empty source trees.
+
 ## [1.1.90](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.90) - 2026-04-30
 
 ### Added

@@ -58,6 +58,10 @@ describe('socket scan create', async () => {
             --reach-analysis-memory-limit  The maximum memory in MB to use for the reachability analysis. The default is 8192MB.
             --reach-analysis-timeout  Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.
             --reach-concurrency  Set the maximum number of concurrent reachability analysis runs. It is recommended to choose a concurrency level that ensures each analysis run has at least the --reach-analysis-memory-limit amount of memory available. NPM reachability analysis does not support concurrent execution, so the concurrency level is ignored for NPM.
+            --reach-continue-on-analysis-errors  Continue reachability analysis when errors occur (timeouts, OOM, parse errors, etc.), falling back to precomputed (Tier 2) results. By default, the CLI halts on analysis errors.
+            --reach-continue-on-install-errors  Continue reachability analysis when package installation fails, falling back to precomputed (Tier 2) results. By default, the CLI halts on installation errors.
+            --reach-continue-on-missing-lock-files  Continue reachability analysis when a Gradle or SBT project is missing its lock file (or version catalog / pre-generated SBOM). By default, the CLI halts.
+            --reach-continue-on-no-source-files  Continue reachability analysis when a workspace contains no source files for its ecosystem. By default, the CLI halts.
             --reach-debug       Enable debug mode for reachability analysis. Provides verbose logging from the reachability CLI.
             --reach-detailed-analysis-log-file  A log file with detailed analysis logs is written to root of each analyzed workspace.
             --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.

@@ -28,28 +28,24 @@ export const reachabilityFlags: MeowFlags = {
   reachContinueOnAnalysisErrors: {
     type: 'boolean',
     default: false,
-    hidden: true,
     description:
       'Continue reachability analysis when errors occur (timeouts, OOM, parse errors, etc.), falling back to precomputed (Tier 2) results. By default, the CLI halts on analysis errors.',
   },
   reachContinueOnInstallErrors: {
     type: 'boolean',
     default: false,
-    hidden: true,
     description:
       'Continue reachability analysis when package installation fails, falling back to precomputed (Tier 2) results. By default, the CLI halts on installation errors.',
   },
   reachContinueOnMissingLockFiles: {
     type: 'boolean',
     default: false,
-    hidden: true,
     description:
       'Continue reachability analysis when a Gradle or SBT project is missing its lock file (or version catalog / pre-generated SBOM). By default, the CLI halts.',
   },
   reachContinueOnNoSourceFiles: {
     type: 'boolean',
     default: false,
-    hidden: true,
     description:
       'Continue reachability analysis when a workspace contains no source files for its ecosystem. By default, the CLI halts.',
   },
