@@ -23,10 +23,6 @@ on:
         description: 'socket (+ 8 bins)'
         type: boolean
         default: true
-      iocraft:
-        description: '@socketaddon/iocraft (+ 8 platforms)'
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -155,12 +151,7 @@ jobs:
           echo "cli_version=$CLI_VERSION" >> $GITHUB_OUTPUT
           echo "Socket CLI version: $CLI_VERSION"
 
-          # iocraft ecosystem version (independent)
-          IOCRAFT_VERSION=$(node -p "require('./packages/package-builder/templates/socketaddon-main/package.json').version")
-          echo "iocraft_version=$IOCRAFT_VERSION" >> $GITHUB_OUTPUT
-          echo "iocraft version: $IOCRAFT_VERSION"
-
-          # Determine npm dist-tags based on versions
+          # Determine npm dist-tags based on version
           if [[ "$CLI_VERSION" =~ -pre\. ]]; then
             CLI_TAG="pre"
           else
@@ -168,14 +159,6 @@ jobs:
           fi
           echo "cli_tag=$CLI_TAG" >> $GITHUB_OUTPUT
           echo "Socket CLI dist-tag: $CLI_TAG"
-
-          if [[ "$IOCRAFT_VERSION" =~ -pre\. ]]; then
-            IOCRAFT_TAG="pre"
-          else
-            IOCRAFT_TAG="latest"
-          fi
-          echo "iocraft_tag=$IOCRAFT_TAG" >> $GITHUB_OUTPUT
-          echo "iocraft dist-tag: $IOCRAFT_TAG"
 
       # Download and publish binary packages.
       - name: Download binaries
@@ -280,79 +263,6 @@ jobs:
           cd "$PKG_DIR"
           npm publish --provenance --access public --no-git-checks --tag "$TAG"
 
-      # Download iocraft binaries from socket-btm.
-      - name: Download iocraft binaries
-        if: ${{ inputs.iocraft }}
-        run: |
-          echo "Downloading iocraft .node binaries for all platforms..."
-          node scripts/download-iocraft-binaries.mts
-
-      # Copy iocraft binaries to package directories.
-      - name: Copy iocraft binaries to packages
-        if: ${{ inputs.iocraft }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          # Get platform targets from single source of truth.
-          PLATFORMS_STR=$(node scripts/get-platform-targets.mts)
-          read -ra PLATFORMS <<< "$PLATFORMS_STR"
-
-          for target in "${PLATFORMS[@]}"; do
-            echo "Copying iocraft.node for ${target}..."
-
-            # Source path (downloaded binary).
-            SRC_PATH="packages/build-infra/build/downloaded/iocraft/${target}/iocraft.node"
-
-            # Destination path (package directory).
-            PKG_DIR="packages/package-builder/build/prod/out/socketaddon-iocraft-${target}"
-            mkdir -p "$PKG_DIR"
-            cp "$SRC_PATH" "$PKG_DIR/iocraft.node"
-
-            echo "Copied to ${PKG_DIR}/iocraft.node"
-          done
-
-      # Publish @socketaddon/iocraft packages (main + platform-specific).
-      - name: Publish @socketaddon/iocraft main package
-        if: ${{ inputs.iocraft && !inputs.dry-run }}
-        env:
-          VERSION: ${{ steps.version.outputs.iocraft_version }}
-          TAG: ${{ steps.version.outputs.iocraft_tag }}
-        run: |
-          PKG_DIR="packages/package-builder/build/prod/out/socketaddon-iocraft"
-          node scripts/prepare-package-for-publish.mts "$PKG_DIR" "$VERSION"
-          cd "$PKG_DIR"
-          npm publish --provenance --access public --no-git-checks --tag "$TAG"
-
-      - name: Publish @socketaddon/iocraft platform packages
-        if: ${{ inputs.iocraft && !inputs.dry-run }}
-        shell: bash
-        env:
-          VERSION: ${{ steps.version.outputs.iocraft_version }}
-          TAG: ${{ steps.version.outputs.iocraft_tag }}
-        run: |
-          set -euo pipefail
-
-          # Get platform targets from single source of truth.
-          PLATFORMS_STR=$(node scripts/get-platform-targets.mts)
-          read -ra PLATFORMS <<< "$PLATFORMS_STR"
-
-          for target in "${PLATFORMS[@]}"; do
-            echo "::group::Publishing @socketaddon/iocraft-${target}"
-
-            PKG_DIR="packages/package-builder/build/prod/out/socketaddon-iocraft-${target}"
-
-            # Prepare package.
-            node scripts/prepare-package-for-publish.mts "$PKG_DIR" "$VERSION"
-
-            # Publish.
-            cd "$PKG_DIR"
-            npm publish --provenance --access public --no-git-checks --tag "$TAG"
-            cd -
-
-            echo "::endgroup::"
-          done
-
       - name: Summary
         # zizmor: ignore[template-injection]
         run: |
@@ -360,9 +270,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ "${{ inputs.socket }}" = "true" ] || [ "${{ inputs.cli }}" = "true" ] || [ "${{ inputs.cli-sentry }}" = "true" ]; then
             echo "Socket CLI version: \`${{ steps.version.outputs.cli_version }}\` (tag: \`${{ steps.version.outputs.cli_tag }}\`)" >> $GITHUB_STEP_SUMMARY
-          fi
-          if [ "${{ inputs.iocraft }}" = "true" ]; then
-            echo "iocraft version: \`${{ steps.version.outputs.iocraft_version }}\` (tag: \`${{ steps.version.outputs.iocraft_tag }}\`)" >> $GITHUB_STEP_SUMMARY
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ "${{ inputs.dry-run }}" = "true" ]; then
@@ -380,9 +287,5 @@ jobs:
             fi
             if [ "${{ inputs.cli-sentry }}" = "true" ]; then
               echo "- @socketsecurity/cli-with-sentry" >> $GITHUB_STEP_SUMMARY
-            fi
-            if [ "${{ inputs.iocraft }}" = "true" ]; then
-              echo "- @socketaddon/iocraft (main)" >> $GITHUB_STEP_SUMMARY
-              echo "- @socketaddon/iocraft-* (8 platforms)" >> $GITHUB_STEP_SUMMARY
             fi
           fi
