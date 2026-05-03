@@ -142,7 +142,9 @@ describe('paths constants', () => {
 
     it('getBinCliPath returns path to CLI entry point', () => {
       const result = getBinCliPath()
-      expect(result).toContain('cli.js')
+      // The bundle entry is `dist/index.js` (was `dist/cli.js` before
+      // the unified-build rename in src/constants/paths.mts).
+      expect(result).toContain('dist/index.js')
     })
 
     it('getDistPath returns distPath', () => {
