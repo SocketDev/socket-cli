@@ -4,9 +4,7 @@
   "title": "xport lock-step manifest",
   "description": "Unified lock-step manifest shared across Socket repos. One schema, all cases — `kind` discriminator on each row selects which flavor of lock-step applies.",
   "type": "object",
-  "required": [
-    "rows"
-  ],
+  "required": ["rows"],
   "properties": {
     "$schema": {
       "type": "string"
@@ -32,10 +30,7 @@
         "^(.*)$": {
           "additionalProperties": false,
           "type": "object",
-          "required": [
-            "submodule",
-            "repo"
-          ],
+          "required": ["submodule", "repo"],
           "properties": {
             "submodule": {
               "description": "Submodule path, relative to repo root.",
@@ -57,9 +52,7 @@
         "^(.*)$": {
           "additionalProperties": false,
           "type": "object",
-          "required": [
-            "path"
-          ],
+          "required": ["path"],
           "properties": {
             "path": {
               "description": "Path to the port's root directory, relative to repo root.",
@@ -212,13 +205,7 @@
             "additionalProperties": false,
             "description": "A behavioral feature reimplemented locally to match upstream behavior. Three-pillar validation: code patterns, test patterns, fixture snapshots.",
             "type": "object",
-            "required": [
-              "kind",
-              "id",
-              "upstream",
-              "criticality",
-              "local_area"
-            ],
+            "required": ["kind", "id", "upstream", "criticality", "local_area"],
             "properties": {
               "kind": {
                 "const": "feature-parity",
@@ -273,9 +260,7 @@
                 "additionalProperties": false,
                 "description": "Golden-input verification. Prefer snapshot-based diffs over hardcoded counts (brittleness lesson from sdxgen's lock-step-features).",
                 "type": "object",
-                "required": [
-                  "fixture_path"
-                ],
+                "required": ["fixture_path"],
                 "properties": {
                   "fixture_path": {
                     "type": "string"
@@ -425,9 +410,7 @@
                     "additionalProperties": false,
                     "description": "Per-port status for a lang-parity row. `implemented` = port meets assertions; `opt-out` = port consciously skips, requires non-empty `reason`.",
                     "type": "object",
-                    "required": [
-                      "status"
-                    ],
+                    "required": ["status"],
                     "properties": {
                       "status": {
                         "anyOf": [

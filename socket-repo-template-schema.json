@@ -2,164 +2,226 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/SocketDev/socket-repo-template-schema.json",
   "title": "socket-repo-template per-repo config",
-  "type": "object",
   "description": "Per-repo socket-repo-template config. Lives at the fleet repo root as `.socket-repo-template.json`.",
+  "type": "object",
   "required": ["schemaVersion", "repoName", "kind"],
-  "additionalProperties": false,
   "properties": {
     "$schema": {
-      "type": "string",
-      "description": "JSON Schema reference for editor autocompletion. Conventionally `./socket-repo-template-schema.json`."
+      "description": "JSON Schema reference for editor autocompletion. Conventionally `./socket-repo-template-schema.json`.",
+      "type": "string"
     },
     "schemaVersion": {
+      "description": "Schema version. Bump on breaking changes; readers gate on it.",
       "const": 1,
-      "description": "Schema version. Bump on breaking changes; readers gate on it."
+      "type": "number"
     },
     "repoName": {
-      "type": "string",
       "pattern": "^[a-z0-9][a-z0-9-]*$",
-      "description": "Canonical repo basename (e.g. `socket-lib`, `ultrathink`). Used for kind-independent exemptions like the oxlint `socket-lib` carve-out."
+      "description": "Canonical repo basename (e.g. `socket-lib`, `ultrathink`). Used for kind-independent exemptions like the oxlint `socket-lib` carve-out.",
+      "type": "string"
     },
     "kind": {
       "description": "Fleet repo category. Determines which opt-in files the repo must ship and which it must not. See README.md \"Fleet kinds\" for the table.",
-      "enum": [
-        "single-package",
-        "mono-no-native",
-        "consumer",
-        "producer",
-        "both",
-        "lang-ports"
+      "anyOf": [
+        {
+          "const": "single-package",
+          "type": "string"
+        },
+        {
+          "const": "mono-no-native",
+          "type": "string"
+        },
+        {
+          "const": "consumer",
+          "type": "string"
+        },
+        {
+          "const": "producer",
+          "type": "string"
+        },
+        {
+          "const": "both",
+          "type": "string"
+        },
+        {
+          "const": "lang-ports",
+          "type": "string"
+        }
       ]
     },
     "hooks": {
-      "type": "object",
       "description": "Git-hook opt-ins.",
-      "additionalProperties": false,
+      "type": "object",
       "properties": {
         "enablePrePush": {
-          "type": "boolean",
-          "description": "Wire `.husky/pre-push` → `.git-hooks/pre-push.mts`. Mandatory security gate; default true."
+          "description": "Wire `.husky/pre-push` → `.git-hooks/pre-push.mts`. Mandatory security gate; default true.",
+          "type": "boolean"
         },
         "enableCommitMsg": {
-          "type": "boolean",
-          "description": "Wire `.husky/commit-msg` → `.git-hooks/commit-msg.mts`. Strips AI attribution; default true."
+          "description": "Wire `.husky/commit-msg` → `.git-hooks/commit-msg.mts`. Strips AI attribution; default true.",
+          "type": "boolean"
         },
         "enablePreCommit": {
-          "type": "boolean",
-          "description": "Wire `.husky/pre-commit` → `.git-hooks/pre-commit.mts`. Lint + secret scan on staged files; default true."
+          "description": "Wire `.husky/pre-commit` → `.git-hooks/pre-commit.mts`. Lint + secret scan on staged files; default true.",
+          "type": "boolean"
         },
         "preCommitVariant": {
-          "enum": ["lint-only", "lint-test"],
-          "description": "`lint-only` runs format + secret scan; `lint-test` adds vitest on touched packages. Default `lint-test`."
+          "description": "`lint-only` runs format + secret scan; `lint-test` adds vitest on touched packages. Default `lint-test`.",
+          "anyOf": [
+            {
+              "const": "lint-only",
+              "type": "string"
+            },
+            {
+              "const": "lint-test",
+              "type": "string"
+            }
+          ]
         }
       }
     },
     "scripts": {
-      "type": "object",
       "description": "package.json script tracking overrides.",
-      "additionalProperties": false,
+      "type": "object",
       "properties": {
         "required": {
+          "description": "Override REQUIRED_SCRIPTS from manifest.mts. Usually omitted — the fleet default applies.",
           "type": "array",
-          "items": { "type": "string" },
-          "description": "Override REQUIRED_SCRIPTS from manifest.mts. Usually omitted — the fleet default applies."
+          "items": {
+            "type": "string"
+          }
         },
         "optional": {
+          "description": "Per-script opt-in map keyed by script name. `true` = repo ships this RECOMMENDED script; `false` = explicit opt-out.",
           "type": "object",
-          "additionalProperties": { "type": "boolean" },
-          "description": "Per-script opt-in map keyed by script name. `true` = repo ships this RECOMMENDED script; `false` = explicit opt-out."
+          "patternProperties": {
+            "^(.*)$": {
+              "type": "boolean"
+            }
+          }
         },
         "bodyExempt": {
+          "description": "Script names whose body is allowed to drift from the canonical form (e.g. socket-lib runs a richer test runner than the standard `node scripts/test.mts`). Each entry is the script name only.",
           "type": "array",
-          "items": { "type": "string" },
-          "description": "Script names whose body is allowed to drift from the canonical form (e.g. socket-lib runs a richer test runner than the standard `node scripts/test.mts`). Each entry is the script name only."
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
     "lint": {
-      "type": "object",
       "description": "oxlint profile.",
-      "additionalProperties": false,
+      "type": "object",
       "properties": {
         "profile": {
-          "enum": ["standard", "rich"],
-          "description": "`standard` requires the fleet plugin set (import + typescript + unicorn). `rich` opts into a wider set; check the runner for the exact basenames currently exempted."
+          "description": "`standard` requires the fleet plugin set (import + typescript + unicorn). `rich` opts into a wider set; check the runner for the exact basenames currently exempted.",
+          "anyOf": [
+            {
+              "const": "standard",
+              "type": "string"
+            },
+            {
+              "const": "rich",
+              "type": "string"
+            }
+          ]
         }
       }
     },
     "workflows": {
-      "type": "object",
       "description": "CI workflow opt-ins.",
-      "additionalProperties": false,
+      "type": "object",
       "properties": {
         "ci": {
-          "type": "boolean",
-          "description": "Ship `.github/workflows/ci.yml`."
+          "description": "Ship `.github/workflows/ci.yml`.",
+          "type": "boolean"
         },
         "weeklyUpdate": {
-          "type": "boolean",
-          "description": "Ship `.github/workflows/weekly-update.yml`."
+          "description": "Ship `.github/workflows/weekly-update.yml`.",
+          "type": "boolean"
         },
         "provenance": {
-          "type": "boolean",
-          "description": "Repo publishes with npm provenance (OIDC). Hint for setup helpers; not enforced by the checker today."
+          "description": "Repo publishes with npm provenance (OIDC). Hint for setup helpers; not enforced by the checker today.",
+          "type": "boolean"
         },
         "requirePinnedFullSha": {
-          "type": "boolean",
-          "description": "Enforce 40-char SHA pins on every `uses:` ref. Defaults to true; an opt-out is reserved for special cases (e.g. workflow-dispatch test rigs) and currently has no consumer."
+          "description": "Enforce 40-char SHA pins on every `uses:` ref. Defaults to true; an opt-out is reserved for special cases (e.g. workflow-dispatch test rigs) and currently has no consumer.",
+          "type": "boolean"
         }
       }
     },
     "claude": {
-      "type": "object",
       "description": "Claude Code opt-ins.",
-      "additionalProperties": false,
+      "type": "object",
       "properties": {
         "includeSecurityScanSkill": {
-          "type": "boolean",
-          "description": "Ship `.claude/skills/security-scan/SKILL.md`."
+          "description": "Ship `.claude/skills/security-scan/SKILL.md`.",
+          "type": "boolean"
         },
         "includeSharedSkills": {
-          "type": "boolean",
-          "description": "Ship `.claude/skills/_shared/*` — env-check, path-guard-rule, report-format, security-tools, verify-build."
+          "description": "Ship `.claude/skills/_shared/*` — env-check, path-guard-rule, report-format, security-tools, verify-build.",
+          "type": "boolean"
         },
         "includeUpdatingSkill": {
-          "type": "boolean",
-          "description": "Ship the dependency-update skill. Reserved — no consumer wired today."
+          "description": "Ship the dependency-update skill. Reserved — no consumer wired today.",
+          "type": "boolean"
         }
       }
     },
     "workspace": {
-      "type": "object",
       "description": "pnpm-workspace.yaml setting hints. The runner reads from the YAML; this block exists for repos that prefer to declare intent in JSON.",
-      "additionalProperties": false,
+      "type": "object",
       "properties": {
         "allowBuilds": {
+          "description": "pnpm `onlyBuiltDependencies` allowlist. Map a package name to true/false to grant/deny build scripts.",
           "type": "object",
-          "additionalProperties": { "type": "boolean" },
-          "description": "pnpm `onlyBuiltDependencies` allowlist. Map a package name to true/false to grant/deny build scripts."
+          "patternProperties": {
+            "^(.*)$": {
+              "type": "boolean"
+            }
+          }
         },
         "blockExoticSubdeps": {
-          "type": "boolean",
-          "description": "Refuse transitive git/tarball subdeps (direct git deps still allowed). Required true; the field exists so a repo can document the intent locally."
+          "description": "Refuse transitive git/tarball subdeps (direct git deps still allowed). Required true; the field exists so a repo can document the intent locally.",
+          "type": "boolean"
         },
         "minimumReleaseAge": {
-          "type": "integer",
           "minimum": 0,
-          "description": "Soak window in minutes before installing freshly-published packages. Fleet default 10080 (= 7 days)."
+          "description": "Soak window in minutes before installing freshly-published packages. Fleet default 10080 (= 7 days).",
+          "type": "integer"
         },
         "minimumReleaseAgeExclude": {
+          "description": "Scopes / package patterns exempt from the soak window. Socket-owned scopes typically listed here.",
           "type": "array",
-          "items": { "type": "string" },
-          "description": "Scopes / package patterns exempt from the soak window. Socket-owned scopes typically listed here."
+          "items": {
+            "type": "string"
+          }
         },
         "resolutionMode": {
-          "enum": ["highest", "lowest-direct"],
-          "description": "pnpm `resolutionMode`. Fleet default `highest`."
+          "description": "pnpm `resolutionMode`. Fleet default `highest`.",
+          "anyOf": [
+            {
+              "const": "highest",
+              "type": "string"
+            },
+            {
+              "const": "lowest-direct",
+              "type": "string"
+            }
+          ]
         },
         "trustPolicy": {
-          "enum": ["no-downgrade", "match-spec"],
-          "description": "pnpm `trustPolicy`. Fleet default `no-downgrade`."
+          "description": "pnpm `trustPolicy`. Fleet default `no-downgrade`.",
+          "anyOf": [
+            {
+              "const": "no-downgrade",
+              "type": "string"
+            },
+            {
+              "const": "match-spec",
+              "type": "string"
+            }
+          ]
         }
       }
     }
