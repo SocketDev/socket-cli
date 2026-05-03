@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SocketDev/socket-repo-template-schema.json",
+  "title": "socket-repo-template per-repo config",
+  "type": "object",
+  "description": "Per-repo socket-repo-template config. Lives at the fleet repo root as `.socket-repo-template.json`.",
+  "required": ["schemaVersion", "repoName", "kind"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference for editor autocompletion. Conventionally `./socket-repo-template-schema.json`."
+    },
+    "schemaVersion": {
+      "const": 1,
+      "description": "Schema version. Bump on breaking changes; readers gate on it."
+    },
+    "repoName": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Canonical repo basename (e.g. `socket-lib`, `ultrathink`). Used for kind-independent exemptions like the oxlint `socket-lib` carve-out."
+    },
+    "kind": {
+      "description": "Fleet repo category. Determines which opt-in files the repo must ship and which it must not. See README.md \"Fleet kinds\" for the table.",
+      "enum": [
+        "single-package",
+        "mono-no-native",
+        "consumer",
+        "producer",
+        "both",
+        "lang-ports"
+      ]
+    },
+    "hooks": {
+      "type": "object",
+      "description": "Git-hook opt-ins.",
+      "additionalProperties": false,
+      "properties": {
+        "enablePrePush": {
+          "type": "boolean",
+          "description": "Wire `.husky/pre-push` → `.git-hooks/pre-push.mts`. Mandatory security gate; default true."
+        },
+        "enableCommitMsg": {
+          "type": "boolean",
+          "description": "Wire `.husky/commit-msg` → `.git-hooks/commit-msg.mts`. Strips AI attribution; default true."
+        },
+        "enablePreCommit": {
+          "type": "boolean",
+          "description": "Wire `.husky/pre-commit` → `.git-hooks/pre-commit.mts`. Lint + secret scan on staged files; default true."
+        },
+        "preCommitVariant": {
+          "enum": ["lint-only", "lint-test"],
+          "description": "`lint-only` runs format + secret scan; `lint-test` adds vitest on touched packages. Default `lint-test`."
+        }
+      }
+    },
+    "scripts": {
+      "type": "object",
+      "description": "package.json script tracking overrides.",
+      "additionalProperties": false,
+      "properties": {
+        "required": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Override REQUIRED_SCRIPTS from manifest.mts. Usually omitted — the fleet default applies."
+        },
+        "optional": {
+          "type": "object",
+          "additionalProperties": { "type": "boolean" },
+          "description": "Per-script opt-in map keyed by script name. `true` = repo ships this RECOMMENDED script; `false` = explicit opt-out."
+        },
+        "bodyExempt": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Script names whose body is allowed to drift from the canonical form (e.g. socket-lib runs a richer test runner than the standard `node scripts/test.mts`). Each entry is the script name only."
+        }
+      }
+    },
+    "lint": {
+      "type": "object",
+      "description": "oxlint profile.",
+      "additionalProperties": false,
+      "properties": {
+        "profile": {
+          "enum": ["standard", "rich"],
+          "description": "`standard` requires the fleet plugin set (import + typescript + unicorn). `rich` opts into a wider set; check the runner for the exact basenames currently exempted."
+        }
+      }
+    },
+    "workflows": {
+      "type": "object",
+      "description": "CI workflow opt-ins.",
+      "additionalProperties": false,
+      "properties": {
+        "ci": {
+          "type": "boolean",
+          "description": "Ship `.github/workflows/ci.yml`."
+        },
+        "weeklyUpdate": {
+          "type": "boolean",
+          "description": "Ship `.github/workflows/weekly-update.yml`."
+        },
+        "provenance": {
+          "type": "boolean",
+          "description": "Repo publishes with npm provenance (OIDC). Hint for setup helpers; not enforced by the checker today."
+        },
+        "requirePinnedFullSha": {
+          "type": "boolean",
+          "description": "Enforce 40-char SHA pins on every `uses:` ref. Defaults to true; an opt-out is reserved for special cases (e.g. workflow-dispatch test rigs) and currently has no consumer."
+        }
+      }
+    },
+    "claude": {
+      "type": "object",
+      "description": "Claude Code opt-ins.",
+      "additionalProperties": false,
+      "properties": {
+        "includeSecurityScanSkill": {
+          "type": "boolean",
+          "description": "Ship `.claude/skills/security-scan/SKILL.md`."
+        },
+        "includeSharedSkills": {
+          "type": "boolean",
+          "description": "Ship `.claude/skills/_shared/*` — env-check, path-guard-rule, report-format, security-tools, verify-build."
+        },
+        "includeUpdatingSkill": {
+          "type": "boolean",
+          "description": "Ship the dependency-update skill. Reserved — no consumer wired today."
+        }
+      }
+    },
+    "workspace": {
+      "type": "object",
+      "description": "pnpm-workspace.yaml setting hints. The runner reads from the YAML; this block exists for repos that prefer to declare intent in JSON.",
+      "additionalProperties": false,
+      "properties": {
+        "allowBuilds": {
+          "type": "object",
+          "additionalProperties": { "type": "boolean" },
+          "description": "pnpm `onlyBuiltDependencies` allowlist. Map a package name to true/false to grant/deny build scripts."
+        },
+        "blockExoticSubdeps": {
+          "type": "boolean",
+          "description": "Refuse transitive git/tarball subdeps (direct git deps still allowed). Required true; the field exists so a repo can document the intent locally."
+        },
+        "minimumReleaseAge": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Soak window in minutes before installing freshly-published packages. Fleet default 10080 (= 7 days)."
+        },
+        "minimumReleaseAgeExclude": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Scopes / package patterns exempt from the soak window. Socket-owned scopes typically listed here."
+        },
+        "resolutionMode": {
+          "enum": ["highest", "lowest-direct"],
+          "description": "pnpm `resolutionMode`. Fleet default `highest`."
+        },
+        "trustPolicy": {
+          "enum": ["no-downgrade", "match-spec"],
+          "description": "pnpm `trustPolicy`. Fleet default `no-downgrade`."
+        }
+      }
+    }
+  }
+}
