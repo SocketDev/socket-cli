@@ -1,3 +1,0 @@
-# @socketaddon/iocraft-{{PLATFORM}}-{{ARCH}}{{LIBC_SUFFIX}}
-
-Native [iocraft](https://github.com/ccbrown/iocraft) addon for **{{DESCRIPTION}}**.
