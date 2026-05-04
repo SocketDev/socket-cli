@@ -3,9 +3,11 @@ import constants from '../../constants.mts'
 import type { MeowFlags } from '../../flags.mts'
 
 export const reachabilityFlags: MeowFlags = {
-  reachVersion: {
+  excludePaths: {
     type: 'string',
-    description: `Override the version of @coana-tech/cli used for reachability analysis. Default: ${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}.`,
+    isMultiple: true,
+    description:
+      'List of glob patterns to exclude from the entire Tier 1 scan, including SCA/SBOM manifest discovery. Patterns are matched relative to the project root. Bare directory names are auto-extended to recursive globs (e.g. `tests` becomes `tests/**`). Trailing slashes are stripped. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags.',
   },
   reachAnalysisMemoryLimit: {
     type: 'number',
@@ -49,11 +51,6 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'Continue reachability analysis when a workspace contains no source files for its ecosystem. By default, the CLI halts.',
   },
-  reachDisableExternalToolChecks: {
-    type: 'boolean',
-    default: false,
-    description: 'Disable external tool checks during reachability analysis.',
-  },
   reachDebug: {
     type: 'boolean',
     default: false,
@@ -66,12 +63,6 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'A log file with detailed analysis logs is written to root of each analyzed workspace.',
   },
-  reachDisableAnalytics: {
-    type: 'boolean',
-    default: false,
-    description:
-      'Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.',
-  },
   reachDisableAnalysisSplitting: {
     type: 'boolean',
     default: false,
@@ -79,17 +70,28 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'Deprecated: Analysis splitting is now disabled by default. This flag is a no-op.',
   },
-  reachEnableAnalysisSplitting: {
+  reachDisableAnalytics: {
     type: 'boolean',
     default: false,
     description:
-      'Allow the reachability analysis to partition CVEs into buckets that are processed in separate analysis runs. May improve accuracy, but not recommended by default.',
+      'Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.',
+  },
+  reachDisableExternalToolChecks: {
+    type: 'boolean',
+    default: false,
+    description: 'Disable external tool checks during reachability analysis.',
   },
   reachEcosystems: {
     type: 'string',
     isMultiple: true,
     description:
       'List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.',
+  },
+  reachEnableAnalysisSplitting: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Allow the reachability analysis to partition CVEs into buckets that are processed in separate analysis runs. May improve accuracy, but not recommended by default.',
   },
   reachExcludePaths: {
     type: 'string',
@@ -114,5 +116,9 @@ export const reachabilityFlags: MeowFlags = {
     default: false,
     description:
       'When using this option, the scan is created based only on pre-generated CDX and SPDX files in your project.',
+  },
+  reachVersion: {
+    type: 'string',
+    description: `Override the version of @coana-tech/cli used for reachability analysis. Default: ${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}.`,
   },
 }

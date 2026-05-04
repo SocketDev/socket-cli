@@ -1,0 +1,134 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { handleScanReach } from './handle-scan-reach.mts'
+
+const {
+  mockCheckCommandInput,
+  mockFetchSupportedScanFileNames,
+  mockFindSocketYmlSync,
+  mockGetPackageFilesForScan,
+  mockOutputScanReach,
+  mockPerformReachabilityAnalysis,
+} = vi.hoisted(() => ({
+  mockCheckCommandInput: vi.fn(),
+  mockFetchSupportedScanFileNames: vi.fn(),
+  mockFindSocketYmlSync: vi.fn(),
+  mockGetPackageFilesForScan: vi.fn(),
+  mockOutputScanReach: vi.fn(),
+  mockPerformReachabilityAnalysis: vi.fn(),
+}))
+
+vi.mock('./fetch-supported-scan-file-names.mts', () => ({
+  fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
+}))
+
+vi.mock('./output-scan-reach.mts', () => ({
+  outputScanReach: mockOutputScanReach,
+}))
+
+vi.mock('./perform-reachability-analysis.mts', () => ({
+  performReachabilityAnalysis: mockPerformReachabilityAnalysis,
+}))
+
+vi.mock('../../constants.mts', () => ({
+  default: {
+    spinner: {
+      start: vi.fn(),
+      stop: vi.fn(),
+      successAndStop: vi.fn(),
+    },
+  },
+}))
+
+vi.mock('../../utils/check-input.mts', () => ({
+  checkCommandInput: mockCheckCommandInput,
+}))
+
+vi.mock('../../utils/config.mts', () => ({
+  findSocketYmlSync: mockFindSocketYmlSync,
+}))
+
+vi.mock('../../utils/path-resolve.mts', () => ({
+  getPackageFilesForScan: mockGetPackageFilesForScan,
+}))
+
+vi.mock('@socketsecurity/registry/lib/logger', () => ({
+  logger: {
+    success: vi.fn(),
+  },
+}))
+
+describe('handleScanReach', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockCheckCommandInput.mockReturnValue(true)
+    mockFetchSupportedScanFileNames.mockResolvedValue({
+      ok: true,
+      data: { npm: { packageJson: { pattern: 'package.json' } } },
+    })
+    mockFindSocketYmlSync.mockReturnValue({
+      ok: true,
+      data: { parsed: { projectIgnorePaths: ['vendor/**'] } },
+    })
+    mockGetPackageFilesForScan.mockResolvedValue(['package.json'])
+    mockPerformReachabilityAnalysis.mockResolvedValue({
+      ok: true,
+      data: {
+        reachabilityReport: '.socket.facts.json',
+        tier1ReachabilityScanId: undefined,
+      },
+    })
+  })
+
+  it('applies excludePaths to manifest discovery and reachability analysis', async () => {
+    const reachabilityOptions = {
+      excludePaths: ['tests', 'packages/*'],
+      reachAnalysisMemoryLimit: 8192,
+      reachAnalysisTimeout: 0,
+      reachConcurrency: 1,
+      reachContinueOnAnalysisErrors: false,
+      reachContinueOnInstallErrors: false,
+      reachContinueOnMissingLockFiles: false,
+      reachContinueOnNoSourceFiles: false,
+      reachDebug: false,
+      reachDetailedAnalysisLogFile: false,
+      reachDisableAnalytics: false,
+      reachDisableExternalToolChecks: false,
+      reachEcosystems: [],
+      reachEnableAnalysisSplitting: false,
+      reachExcludePaths: ['node_modules'],
+      reachLazyMode: false,
+      reachSkipCache: false,
+      reachUseOnlyPregeneratedSboms: false,
+      reachVersion: undefined,
+    }
+
+    await handleScanReach({
+      cwd: '/repo',
+      interactive: false,
+      orgSlug: 'fakeOrg',
+      outputKind: 'text',
+      outputPath: '',
+      reachabilityOptions,
+      targets: ['.'],
+    })
+
+    expect(mockGetPackageFilesForScan).toHaveBeenCalledWith(
+      ['.'],
+      { npm: { packageJson: { pattern: 'package.json' } } },
+      {
+        config: {
+          projectIgnorePaths: ['vendor/**', 'tests/**', 'packages/*/**'],
+        },
+        cwd: '/repo',
+      },
+    )
+    expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reachabilityOptions: expect.objectContaining({
+          reachExcludePaths: ['node_modules', 'tests/**', 'packages/*'],
+        }),
+      }),
+    )
+  })
+})
