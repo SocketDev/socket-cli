@@ -2,6 +2,22 @@ import path from 'node:path'
 
 import { InputError } from '../../utils/errors.mts'
 
+import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
+import type { SocketYml } from '@socketsecurity/config'
+
+type ApplyFullExcludePathsOptions = {
+  cwd: string
+  enabled?: boolean | undefined
+  reachabilityOptions: ReachabilityOptions
+  socketConfig: SocketYml | undefined
+  target: string
+}
+
+type ApplyFullExcludePathsResult = {
+  effectiveSocketConfig: SocketYml | undefined
+  mergedReachabilityOptions: ReachabilityOptions
+}
+
 /**
  * Converts a user-facing full-scan exclude path into the socket.yml
  * projectIgnorePaths shape used by SCA manifest discovery.
@@ -34,6 +50,57 @@ export function normalizeExcludePath(path: string): string {
   return stripped.endsWith('/*') || stripped.endsWith('/**')
     ? stripped
     : `${stripped}/**`
+}
+
+/**
+ * Applies --exclude-paths consistently to SCA manifest discovery and Coana.
+ */
+export function applyFullExcludePaths({
+  cwd,
+  enabled = true,
+  reachabilityOptions,
+  socketConfig,
+  target,
+}: ApplyFullExcludePathsOptions): ApplyFullExcludePathsResult {
+  const excludePaths = enabled ? reachabilityOptions.excludePaths : []
+  const scaExcludeGlobs = excludePaths.map(excludePathToProjectIgnorePath)
+  const coanaExcludeGlobs = projectIgnorePathsToReachExcludePaths(
+    scaExcludeGlobs,
+    {
+      cwd,
+      target,
+    },
+  )
+  const socketConfigReachExcludeGlobs = excludePaths.length
+    ? projectIgnorePathsToReachExcludePaths(socketConfig?.projectIgnorePaths, {
+        cwd,
+        target,
+      })
+    : []
+  const effectiveSocketConfig = scaExcludeGlobs.length
+    ? {
+        ...socketConfig,
+        version: socketConfig?.version ?? 2,
+        issueRules: socketConfig?.issueRules ?? {},
+        githubApp: socketConfig?.githubApp ?? {},
+        projectIgnorePaths: [
+          ...(socketConfig?.projectIgnorePaths ?? []),
+          ...scaExcludeGlobs,
+        ],
+      }
+    : socketConfig
+  const mergedReachabilityOptions = excludePaths.length
+    ? {
+        ...reachabilityOptions,
+        reachExcludePaths: [
+          ...socketConfigReachExcludeGlobs,
+          ...reachabilityOptions.reachExcludePaths,
+          ...coanaExcludeGlobs,
+        ],
+      }
+    : reachabilityOptions
+
+  return { effectiveSocketConfig, mergedReachabilityOptions }
 }
 
 /**

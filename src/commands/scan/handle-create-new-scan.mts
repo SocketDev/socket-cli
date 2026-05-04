@@ -6,10 +6,7 @@ import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
-import {
-  excludePathToProjectIgnorePath,
-  projectIgnorePathsToReachExcludePaths,
-} from './exclude-paths.mts'
+import { applyFullExcludePaths } from './exclude-paths.mts'
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
@@ -176,43 +173,14 @@ export async function handleCreateNewScan({
     ? socketYmlResult.data?.parsed
     : undefined
 
-  const excludePaths = reach.runReachabilityAnalysis ? reach.excludePaths : []
-  const scaExcludeGlobs = excludePaths.map(excludePathToProjectIgnorePath)
-  const coanaExcludeGlobs = projectIgnorePathsToReachExcludePaths(
-    scaExcludeGlobs,
-    {
+  const { effectiveSocketConfig, mergedReachabilityOptions } =
+    applyFullExcludePaths({
       cwd,
+      enabled: reach.runReachabilityAnalysis,
+      reachabilityOptions: reach,
+      socketConfig,
       target: targets[0]!,
-    },
-  )
-  const socketConfigReachExcludeGlobs = excludePaths.length
-    ? projectIgnorePathsToReachExcludePaths(socketConfig?.projectIgnorePaths, {
-        cwd,
-        target: targets[0]!,
-      })
-    : []
-  const effectiveSocketConfig = scaExcludeGlobs.length
-    ? {
-        ...socketConfig,
-        version: socketConfig?.version ?? 2,
-        issueRules: socketConfig?.issueRules ?? {},
-        githubApp: socketConfig?.githubApp ?? {},
-        projectIgnorePaths: [
-          ...(socketConfig?.projectIgnorePaths ?? []),
-          ...scaExcludeGlobs,
-        ],
-      }
-    : socketConfig
-  const mergedReachabilityOptions = excludePaths.length
-    ? {
-        ...reach,
-        reachExcludePaths: [
-          ...socketConfigReachExcludeGlobs,
-          ...reach.reachExcludePaths,
-          ...coanaExcludeGlobs,
-        ],
-      }
-    : reach
+    })
 
   const packagePaths = await getPackageFilesForScan(targets, supportedFiles, {
     config: effectiveSocketConfig,

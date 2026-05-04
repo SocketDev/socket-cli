@@ -1,10 +1,7 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
-import {
-  excludePathToProjectIgnorePath,
-  projectIgnorePathsToReachExcludePaths,
-} from './exclude-paths.mts'
+import { applyFullExcludePaths } from './exclude-paths.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { outputScanReach } from './output-scan-reach.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
@@ -59,45 +56,13 @@ export async function handleScanReach({
     ? socketYmlResult.data?.parsed
     : undefined
 
-  const { excludePaths } = reachabilityOptions
-  const scaExcludeGlobs = excludePaths.map(excludePathToProjectIgnorePath)
-  const coanaExcludeGlobs = projectIgnorePathsToReachExcludePaths(
-    scaExcludeGlobs,
-    {
+  const { effectiveSocketConfig, mergedReachabilityOptions } =
+    applyFullExcludePaths({
       cwd,
+      reachabilityOptions,
+      socketConfig,
       target: targets[0]!,
-    },
-  )
-  const socketConfigReachExcludeGlobs = excludePaths.length
-    ? projectIgnorePathsToReachExcludePaths(socketConfig?.projectIgnorePaths, {
-        cwd,
-        target: targets[0]!,
-      })
-    : []
-
-  const effectiveSocketConfig = scaExcludeGlobs.length
-    ? {
-        ...socketConfig,
-        version: socketConfig?.version ?? 2,
-        issueRules: socketConfig?.issueRules ?? {},
-        githubApp: socketConfig?.githubApp ?? {},
-        projectIgnorePaths: [
-          ...(socketConfig?.projectIgnorePaths ?? []),
-          ...scaExcludeGlobs,
-        ],
-      }
-    : socketConfig
-
-  const mergedReachabilityOptions = excludePaths.length
-    ? {
-        ...reachabilityOptions,
-        reachExcludePaths: [
-          ...socketConfigReachExcludeGlobs,
-          ...reachabilityOptions.reachExcludePaths,
-          ...coanaExcludeGlobs,
-        ],
-      }
-    : reachabilityOptions
+    })
 
   const packagePaths = await getPackageFilesForScan(targets, supportedFiles, {
     config: effectiveSocketConfig,
