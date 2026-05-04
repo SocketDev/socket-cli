@@ -9,6 +9,7 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 import {
   excludePathToProjectIgnorePath,
   normalizeExcludePath,
+  projectIgnorePathsToReachExcludePaths,
 } from './exclude-paths.mts'
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
@@ -179,9 +180,15 @@ export async function handleCreateNewScan({
   const excludePaths = reach.runReachabilityAnalysis ? reach.excludePaths : []
   const scaExcludeGlobs = excludePaths.map(excludePathToProjectIgnorePath)
   const coanaExcludeGlobs = excludePaths.map(normalizeExcludePath)
+  const socketConfigReachExcludeGlobs = excludePaths.length
+    ? projectIgnorePathsToReachExcludePaths(socketConfig?.projectIgnorePaths)
+    : []
   const effectiveSocketConfig = scaExcludeGlobs.length
     ? {
         ...socketConfig,
+        version: socketConfig?.version ?? 2,
+        issueRules: socketConfig?.issueRules ?? {},
+        githubApp: socketConfig?.githubApp ?? {},
         projectIgnorePaths: [
           ...(socketConfig?.projectIgnorePaths ?? []),
           ...scaExcludeGlobs,
@@ -191,7 +198,11 @@ export async function handleCreateNewScan({
   const mergedReachabilityOptions = excludePaths.length
     ? {
         ...reach,
-        reachExcludePaths: [...reach.reachExcludePaths, ...coanaExcludeGlobs],
+        reachExcludePaths: [
+          ...socketConfigReachExcludeGlobs,
+          ...reach.reachExcludePaths,
+          ...coanaExcludeGlobs,
+        ],
       }
     : reach
 

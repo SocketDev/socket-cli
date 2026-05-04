@@ -4,6 +4,7 @@ import {
   assertNoNegationPatterns,
   excludePathToProjectIgnorePath,
   normalizeExcludePath,
+  projectIgnorePathsToReachExcludePaths,
 } from './exclude-paths.mts'
 import { InputError } from '../../utils/errors.mts'
 
@@ -41,9 +42,29 @@ describe('exclude-paths', () => {
       ['tests', 'tests/**'],
       ['tests/', 'tests/**'],
       ['tests/*', 'tests/*'],
-      ['tests/**', 'tests/**/**'],
+      ['tests/**', 'tests/**'],
     ])('normalizes %s to %s', (input, expected) => {
       expect(normalizeExcludePath(input)).toBe(expected)
+    })
+  })
+
+  describe('projectIgnorePathsToReachExcludePaths', () => {
+    it('normalizes positive project ignore paths for Coana', () => {
+      expect(
+        projectIgnorePathsToReachExcludePaths(['tests', 'dist/', 'fixtures/**']),
+      ).toEqual([
+        '**/tests',
+        '**/tests/**',
+        '**/dist',
+        '**/dist/**',
+        'fixtures/**',
+      ])
+    })
+
+    it('returns no paths when project ignore paths use negation', () => {
+      expect(
+        projectIgnorePathsToReachExcludePaths(['fixtures/**', '!fixtures/keep']),
+      ).toEqual([])
     })
   })
 })

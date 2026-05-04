@@ -9,6 +9,7 @@ const {
   mockGetPackageFilesForScan,
   mockOutputScanReach,
   mockPerformReachabilityAnalysis,
+  mockSentryInternalsSymbol,
 } = vi.hoisted(() => ({
   mockCheckCommandInput: vi.fn(),
   mockFetchSupportedScanFileNames: vi.fn(),
@@ -16,6 +17,7 @@ const {
   mockGetPackageFilesForScan: vi.fn(),
   mockOutputScanReach: vi.fn(),
   mockPerformReachabilityAnalysis: vi.fn(),
+  mockSentryInternalsSymbol: Symbol('kInternalsSymbol'),
 }))
 
 vi.mock('./fetch-supported-scan-file-names.mts', () => ({
@@ -32,12 +34,17 @@ vi.mock('./perform-reachability-analysis.mts', () => ({
 
 vi.mock('../../constants.mts', () => ({
   default: {
+    kInternalsSymbol: mockSentryInternalsSymbol,
+    [mockSentryInternalsSymbol]: {
+      getSentry: vi.fn(() => undefined),
+    },
     spinner: {
       start: vi.fn(),
       stop: vi.fn(),
       successAndStop: vi.fn(),
     },
   },
+  UNKNOWN_ERROR: 'unknown',
 }))
 
 vi.mock('../../utils/check-input.mts', () => ({
@@ -118,6 +125,9 @@ describe('handleScanReach', () => {
       { npm: { packageJson: { pattern: 'package.json' } } },
       {
         config: {
+          version: 2,
+          issueRules: {},
+          githubApp: {},
           projectIgnorePaths: ['vendor/**', 'tests/**', 'packages/*/**'],
         },
         cwd: '/repo',
@@ -126,7 +136,12 @@ describe('handleScanReach', () => {
     expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
       expect.objectContaining({
         reachabilityOptions: expect.objectContaining({
-          reachExcludePaths: ['node_modules', 'tests/**', 'packages/*'],
+          reachExcludePaths: [
+            'vendor/**',
+            'node_modules',
+            'tests/**',
+            'packages/*',
+          ],
         }),
       }),
     )

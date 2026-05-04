@@ -55,7 +55,7 @@ describe('socket scan create', async () => {
             --workspace         The workspace in the Socket Organization that the repository is in to associate with the full scan.
 
           Reachability Options (when --reach is used)
-            --exclude-paths     List of glob patterns to exclude from the entire Tier 1 scan, including SCA/SBOM manifest discovery. Patterns are matched relative to the project root. Bare directory names are auto-extended to recursive globs (e.g. `tests` becomes `tests/**`). Trailing slashes are stripped. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags.
+            --exclude-paths     List of glob patterns to exclude from the entire Tier 1 scan, including SCA/SBOM manifest discovery. Patterns are matched relative to the project root. Bare directory names are auto-extended to recursive globs (e.g. \`tests\` becomes \`tests/**\`). Trailing slashes are stripped. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
             --reach-analysis-memory-limit  The maximum memory in MB to use for the reachability analysis. The default is 8192MB.
             --reach-analysis-timeout  Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.
             --reach-concurrency  Set the maximum number of concurrent reachability analysis runs. It is recommended to choose a concurrency level that ensures each analysis run has at least the --reach-analysis-memory-limit amount of memory available. NPM reachability analysis does not support concurrent execution, so the concurrency level is ignored for NPM.

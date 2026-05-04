@@ -138,6 +138,9 @@ describe('handleCreateNewScan excludePaths', () => {
       { size: 1 },
       {
         config: {
+          version: 2,
+          issueRules: {},
+          githubApp: {},
           projectIgnorePaths: ['fixtures/**', 'tests/**', 'packages/*/**'],
         },
         cwd: '/repo',
@@ -146,7 +149,12 @@ describe('handleCreateNewScan excludePaths', () => {
     expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
       expect.objectContaining({
         reachabilityOptions: expect.objectContaining({
-          reachExcludePaths: ['dist', 'tests/**', 'packages/*'],
+          reachExcludePaths: [
+            'fixtures/**',
+            'dist',
+            'tests/**',
+            'packages/*',
+          ],
         }),
       }),
     )
