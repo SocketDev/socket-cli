@@ -1,6 +1,10 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
+import {
+  excludePathToProjectIgnorePath,
+  normalizeExcludePath,
+} from './exclude-paths.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { outputScanReach } from './output-scan-reach.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
@@ -33,7 +37,7 @@ export async function handleScanReach({
 }: HandleScanReachConfig) {
   const { spinner } = constants
 
-  // Get supported file names
+  // Get supported file names.
   const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
   if (!supportedFilesCResult.ok) {
     await outputScanReach(supportedFilesCResult, {
@@ -55,8 +59,32 @@ export async function handleScanReach({
     ? socketYmlResult.data?.parsed
     : undefined
 
+  const { excludePaths } = reachabilityOptions
+  const scaExcludeGlobs = excludePaths.map(excludePathToProjectIgnorePath)
+  const coanaExcludeGlobs = excludePaths.map(normalizeExcludePath)
+
+  const effectiveSocketConfig = scaExcludeGlobs.length
+    ? {
+        ...socketConfig,
+        projectIgnorePaths: [
+          ...(socketConfig?.projectIgnorePaths ?? []),
+          ...scaExcludeGlobs,
+        ],
+      }
+    : socketConfig
+
+  const mergedReachabilityOptions = excludePaths.length
+    ? {
+        ...reachabilityOptions,
+        reachExcludePaths: [
+          ...reachabilityOptions.reachExcludePaths,
+          ...coanaExcludeGlobs,
+        ],
+      }
+    : reachabilityOptions
+
   const packagePaths = await getPackageFilesForScan(targets, supportedFiles, {
-    config: socketConfig,
+    config: effectiveSocketConfig,
     cwd,
   })
 
@@ -86,7 +114,7 @@ export async function handleScanReach({
     orgSlug,
     outputPath,
     packagePaths,
-    reachabilityOptions,
+    reachabilityOptions: mergedReachabilityOptions,
     spinner,
     target: targets[0]!,
     uploadManifests: true,

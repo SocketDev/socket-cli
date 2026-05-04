@@ -3,6 +3,7 @@ import path from 'node:path'
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { assertNoNegationPatterns } from './exclude-paths.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { reachabilityFlags } from './reachability-flags.mts'
@@ -279,6 +280,7 @@ async function run(
     setAsAlertsPage: boolean
     tmp: boolean
     // Reachability flags.
+    excludePaths: string[] | undefined
     reach: boolean
     reachAnalysisMemoryLimit: number
     reachAnalysisTimeout: number
@@ -463,9 +465,14 @@ async function run(
     logger.error('')
   }
 
+  const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
+  assertNoNegationPatterns(excludePaths)
+
   const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
 
   // Validation helpers for better readability.
+  const hasExcludePaths = excludePaths.length > 0
+
   const hasReachEcosystems = reachEcosystems.length > 0
 
   const hasReachExcludePaths = reachExcludePaths.length > 0
@@ -488,6 +495,7 @@ async function run(
     reachVersion !== reachabilityFlags['reachVersion']?.default
 
   const isUsingAnyReachabilityFlags =
+    hasExcludePaths ||
     hasReachEcosystems ||
     hasReachExcludePaths ||
     isUsingNonDefaultAnalytics ||
@@ -608,6 +616,7 @@ async function run(
     pendingHead: Boolean(pendingHead),
     pullRequest: Number(pullRequest),
     reach: {
+      excludePaths,
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
       reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachConcurrency: Number(reachConcurrency),
