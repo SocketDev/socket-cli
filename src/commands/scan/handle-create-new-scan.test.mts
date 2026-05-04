@@ -153,7 +153,7 @@ describe('handleCreateNewScan excludePaths', () => {
             'fixtures/**',
             'dist',
             'tests/**',
-            'packages/*',
+            'packages/*/**',
           ],
         }),
       }),

@@ -140,8 +140,67 @@ describe('handleScanReach', () => {
             'vendor/**',
             'node_modules',
             'tests/**',
-            'packages/*',
+            'packages/*/**',
           ],
+        }),
+      }),
+    )
+  })
+
+  it('translates excludePaths from project root for nested targets', async () => {
+    const reachabilityOptions = {
+      excludePaths: ['apps/api/tests', 'dist'],
+      reachAnalysisMemoryLimit: 8192,
+      reachAnalysisTimeout: 0,
+      reachConcurrency: 1,
+      reachContinueOnAnalysisErrors: false,
+      reachContinueOnInstallErrors: false,
+      reachContinueOnMissingLockFiles: false,
+      reachContinueOnNoSourceFiles: false,
+      reachDebug: false,
+      reachDetailedAnalysisLogFile: false,
+      reachDisableAnalytics: false,
+      reachDisableExternalToolChecks: false,
+      reachEcosystems: [],
+      reachEnableAnalysisSplitting: false,
+      reachExcludePaths: ['node_modules'],
+      reachLazyMode: false,
+      reachSkipCache: false,
+      reachUseOnlyPregeneratedSboms: false,
+      reachVersion: undefined,
+    }
+
+    await handleScanReach({
+      cwd: '/repo',
+      interactive: false,
+      orgSlug: 'fakeOrg',
+      outputKind: 'text',
+      outputPath: '',
+      reachabilityOptions,
+      targets: ['/repo/apps/api'],
+    })
+
+    expect(mockGetPackageFilesForScan).toHaveBeenCalledWith(
+      ['/repo/apps/api'],
+      { npm: { packageJson: { pattern: 'package.json' } } },
+      {
+        config: {
+          version: 2,
+          issueRules: {},
+          githubApp: {},
+          projectIgnorePaths: [
+            'vendor/**',
+            'apps/api/tests/**',
+            'dist/**',
+          ],
+        },
+        cwd: '/repo',
+      },
+    )
+    expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reachabilityOptions: expect.objectContaining({
+          reachExcludePaths: ['node_modules', 'tests/**'],
         }),
       }),
     )

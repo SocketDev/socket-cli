@@ -51,7 +51,13 @@ describe('exclude-paths', () => {
   describe('projectIgnorePathsToReachExcludePaths', () => {
     it('normalizes positive project ignore paths for Coana', () => {
       expect(
-        projectIgnorePathsToReachExcludePaths(['tests', 'dist/', 'fixtures/**']),
+        projectIgnorePathsToReachExcludePaths(
+          ['tests', 'dist/', 'fixtures/**'],
+          {
+            cwd: '/repo',
+            target: '/repo',
+          },
+        ),
       ).toEqual([
         '**/tests',
         '**/tests/**',
@@ -61,9 +67,27 @@ describe('exclude-paths', () => {
       ])
     })
 
+    it('keeps project-root paths relative to nested Coana targets', () => {
+      expect(
+        projectIgnorePathsToReachExcludePaths(
+          ['tests/**', 'apps/api/tests/**', 'apps/api/packages/*/**'],
+          {
+            cwd: '/repo',
+            target: '/repo/apps/api',
+          },
+        ),
+      ).toEqual(['tests/**', 'packages/*/**'])
+    })
+
     it('returns no paths when project ignore paths use negation', () => {
       expect(
-        projectIgnorePathsToReachExcludePaths(['fixtures/**', '!fixtures/keep']),
+        projectIgnorePathsToReachExcludePaths(
+          ['fixtures/**', '!fixtures/keep'],
+          {
+            cwd: '/repo',
+            target: '/repo',
+          },
+        ),
       ).toEqual([])
     })
   })

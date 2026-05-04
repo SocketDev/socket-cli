@@ -3,7 +3,6 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import {
   excludePathToProjectIgnorePath,
-  normalizeExcludePath,
   projectIgnorePathsToReachExcludePaths,
 } from './exclude-paths.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
@@ -62,9 +61,18 @@ export async function handleScanReach({
 
   const { excludePaths } = reachabilityOptions
   const scaExcludeGlobs = excludePaths.map(excludePathToProjectIgnorePath)
-  const coanaExcludeGlobs = excludePaths.map(normalizeExcludePath)
+  const coanaExcludeGlobs = projectIgnorePathsToReachExcludePaths(
+    scaExcludeGlobs,
+    {
+      cwd,
+      target: targets[0]!,
+    },
+  )
   const socketConfigReachExcludeGlobs = excludePaths.length
-    ? projectIgnorePathsToReachExcludePaths(socketConfig?.projectIgnorePaths)
+    ? projectIgnorePathsToReachExcludePaths(socketConfig?.projectIgnorePaths, {
+        cwd,
+        target: targets[0]!,
+      })
     : []
 
   const effectiveSocketConfig = scaExcludeGlobs.length
