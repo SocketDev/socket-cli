@@ -2,11 +2,19 @@ import path from 'node:path'
 
 import { InputError } from '../../utils/errors.mts'
 
+/**
+ * Converts a user-facing full-scan exclude path into the socket.yml
+ * projectIgnorePaths shape used by SCA manifest discovery.
+ */
 export function excludePathToProjectIgnorePath(path: string): string {
   const stripped = stripTrailingSlash(path)
   return stripped.endsWith('/**') ? stripped : `${stripped}/**`
 }
 
+/**
+ * Rejects gitignore-style negation patterns for --exclude-paths because the
+ * flag is a positive full-exclusion list, not a complete ignore language.
+ */
 export function assertNoNegationPatterns(paths: readonly string[]): void {
   for (const path of paths) {
     if (path.startsWith('!')) {
@@ -17,6 +25,10 @@ export function assertNoNegationPatterns(paths: readonly string[]): void {
   }
 }
 
+/**
+ * Normalizes a reachability exclude path to a recursive directory glob without
+ * changing explicit one-level or recursive glob suffixes.
+ */
 export function normalizeExcludePath(path: string): string {
   const stripped = stripTrailingSlash(path)
   return stripped.endsWith('/*') || stripped.endsWith('/**')
@@ -24,6 +36,10 @@ export function normalizeExcludePath(path: string): string {
     : `${stripped}/**`
 }
 
+/**
+ * Translates project-root projectIgnorePaths into Coana --exclude-dirs values,
+ * which are interpreted relative to the current reachability analysis target.
+ */
 export function projectIgnorePathsToReachExcludePaths(
   paths: readonly string[] | undefined,
   options: { cwd: string; target: string },
