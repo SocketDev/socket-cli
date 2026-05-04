@@ -28,9 +28,15 @@ export function projectIgnorePathsToReachExcludePaths(
   paths: readonly string[] | undefined,
   options: { cwd: string; target: string },
 ): string[] {
+  // GitHub App-style projectIgnorePaths support negation. Coana's
+  // --exclude-dirs does not, so keep the existing Coana behavior and let it
+  // infer config ignores itself when any negation is present.
   if (!Array.isArray(paths) || paths.some(path => path.includes('!'))) {
     return []
   }
+
+  // projectIgnorePaths are rooted at the project cwd. Coana receives excludes
+  // relative to its analysis target, so nested target scans need translation.
   const targetPath = path.isAbsolute(options.target)
     ? path.relative(options.cwd, options.target)
     : options.target
@@ -71,6 +77,10 @@ function pathRelativeToTarget(path: string, target: string): string | undefined 
   if (target === '.' || target === '') {
     return normalized
   }
+
+  // Ignore paths outside the analysis target. They still affect SCA manifest
+  // discovery through projectIgnorePaths, but Coana cannot exclude directories
+  // outside the target it is analyzing.
   if (normalized === target) {
     return '**'
   }
