@@ -40,6 +40,7 @@ describe('socket scan create', async () => {
             --committers        Committers
             --cwd               working directory, defaults to process.cwd()
             --default-branch    Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.
+            --exclude-paths     List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) Tier 1 reachability analysis. Patterns are matched relative to the project root. Bare directory names are auto-extended to recursive globs (e.g. \`tests\` becomes \`tests/**\`). Trailing slashes are stripped. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json              Output as JSON
             --markdown          Output as Markdown
@@ -55,7 +56,6 @@ describe('socket scan create', async () => {
             --workspace         The workspace in the Socket Organization that the repository is in to associate with the full scan.
 
           Reachability Options (when --reach is used)
-            --exclude-paths     List of glob patterns to exclude from the entire Tier 1 scan, including SCA/SBOM manifest discovery. Patterns are matched relative to the project root. Bare directory names are auto-extended to recursive globs (e.g. \`tests\` becomes \`tests/**\`). Trailing slashes are stripped. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
             --reach-analysis-memory-limit  The maximum memory in MB to use for the reachability analysis. The default is 8192MB.
             --reach-analysis-timeout  Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.
             --reach-concurrency  Set the maximum number of concurrent reachability analysis runs. It is recommended to choose a concurrency level that ensures each analysis run has at least the --reach-analysis-memory-limit amount of memory available. NPM reachability analysis does not support concurrent execution, so the concurrency level is ignored for NPM.
@@ -203,18 +203,14 @@ describe('socket scan create', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should fail when --exclude-paths is used without --reach',
+    'should succeed when --exclude-paths is used without --reach',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      const output = stdout + stderr
-      expect(output).toContain(
-        'Reachability analysis flags require --reach to be enabled',
-      )
-      expect(output).toContain('add --reach flag to use --reach-* options')
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
-        'should exit with non-zero code when validation fails',
-      ).not.toBe(0)
+        'should exit with code 0 when --exclude-paths is used standalone',
+      ).toBe(0)
     },
   )
 

@@ -160,7 +160,7 @@ describe('handleCreateNewScan excludePaths', () => {
     )
   })
 
-  it('does not apply excludePaths when reachability is disabled', async () => {
+  it('applies excludePaths to SCA discovery even when reachability is disabled', async () => {
     await handleCreateNewScan({
       autoManifest: false,
       branchName: 'main',
@@ -208,7 +208,12 @@ describe('handleCreateNewScan excludePaths', () => {
       ['/repo'],
       { size: 1 },
       {
-        config: { projectIgnorePaths: ['fixtures/**'] },
+        config: {
+          version: 2,
+          issueRules: {},
+          githubApp: {},
+          projectIgnorePaths: ['fixtures/**', 'tests/**'],
+        },
         cwd: '/repo',
       },
     )

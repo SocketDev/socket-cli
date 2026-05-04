@@ -6,7 +6,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { assertNoNegationPatterns } from './exclude-paths.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
-import { reachabilityFlags } from './reachability-flags.mts'
+import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
@@ -172,6 +172,7 @@ async function run(
     hidden,
     flags: {
       ...generalFlags,
+      ...excludePathsFlag,
       ...reachabilityFlags,
     },
     help: command => `
@@ -182,7 +183,7 @@ async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
-      ${getFlagListOutput(generalFlags)}
+      ${getFlagListOutput({ ...generalFlags, ...excludePathsFlag })}
 
     Reachability Options (when --reach is used)
       ${getFlagListOutput(reachabilityFlags)}
@@ -471,8 +472,6 @@ async function run(
   const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
 
   // Validation helpers for better readability.
-  const hasExcludePaths = excludePaths.length > 0
-
   const hasReachEcosystems = reachEcosystems.length > 0
 
   const hasReachExcludePaths = reachExcludePaths.length > 0
@@ -495,7 +494,6 @@ async function run(
     reachVersion !== reachabilityFlags['reachVersion']?.default
 
   const isUsingAnyReachabilityFlags =
-    hasExcludePaths ||
     hasReachEcosystems ||
     hasReachExcludePaths ||
     isUsingNonDefaultAnalytics ||

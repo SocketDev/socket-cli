@@ -5,7 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { assertNoNegationPatterns } from './exclude-paths.mts'
 import { handleScanReach } from './handle-scan-reach.mts'
-import { reachabilityFlags } from './reachability-flags.mts'
+import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
 import constants from '../../constants.mts'
@@ -75,6 +75,7 @@ async function run(
     hidden,
     flags: {
       ...generalFlags,
+      ...excludePathsFlag,
       ...reachabilityFlags,
     },
     help: command =>
@@ -89,7 +90,7 @@ async function run(
       ${getFlagListOutput(generalFlags)}
 
     Reachability Options
-      ${getFlagListOutput(reachabilityFlags)}
+      ${getFlagListOutput({ ...excludePathsFlag, ...reachabilityFlags })}
 
     Runs the Socket reachability analysis without creating a scan in Socket.
     The output is written to .socket.facts.json in the current working directory

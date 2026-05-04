@@ -176,7 +176,6 @@ export async function handleCreateNewScan({
   const { effectiveSocketConfig, mergedReachabilityOptions } =
     applyFullExcludePaths({
       cwd,
-      enabled: reach.runReachabilityAnalysis,
       reachabilityOptions: reach,
       socketConfig,
       target: targets[0]!,
