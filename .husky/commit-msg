@@ -1,7 +1,2 @@
 # Run commit message validation and auto-strip AI attribution.
-if [ -x ".git-hooks/commit-msg" ]; then
-  .git-hooks/commit-msg "$1"
-else
-  printf "\033[0;31m✗ Error: .git-hooks/commit-msg not found or not executable\033[0m\n" >&2
-  exit 1
-fi
+node .git-hooks/commit-msg.mts "$1"

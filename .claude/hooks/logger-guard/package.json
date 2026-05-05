@@ -1,5 +1,5 @@
 {
-  "name": "hook-public-surface-reminder",
+  "name": "hook-logger-guard",
   "private": true,
   "type": "module",
   "main": "./index.mts",
@@ -7,6 +7,9 @@
     ".": "./index.mts"
   },
   "devDependencies": {
-    "@types/node": "24.9.2"
+    "@types/node": "catalog:"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mts"
   }
 }

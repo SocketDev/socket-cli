@@ -1,5 +1,5 @@
 {
-  "name": "hook-public-surface-reminder",
+  "name": "hook-release-workflow-guard",
   "private": true,
   "type": "module",
   "main": "./index.mts",
