@@ -1,11 +1,11 @@
 {
   "name": "socket-cli-monorepo",
   "version": "0.0.0",
-  "packageManager": "pnpm@11.0.0-rc.5",
+  "packageManager": "pnpm@11.0.6+sha512.97f906e1da2bedac3df83cadae04b4753a130092dd49d55cd36825ad3e623e9df3f97754f8f259e699172a360fac569acf2f908e7732bdae3eddb2dcf7e121fd",
   "private": true,
   "engines": {
-    "node": ">=25.9.0",
-    "pnpm": ">=11.0.0-rc.3"
+    "node": ">=26.0.0",
+    "pnpm": ">=11.0.6"
   },
   "scripts": {
     "// Build": "",
