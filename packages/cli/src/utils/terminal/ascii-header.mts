@@ -7,12 +7,14 @@
 
 import colors from 'yoctocolors-cjs'
 
-import { applyShimmer } from '@socketsecurity/lib/effects/text-shimmer'
+import { configToSpec, frameColors } from '@socketsecurity/lib/effects/shimmer'
+import { colorsToAnsi } from '@socketsecurity/lib/effects/shimmer-terminal'
 
 import type {
-  ShimmerColorGradient,
-  ShimmerState,
-} from '@socketsecurity/lib/effects/text-shimmer'
+  Palette,
+  RGB,
+  ShimmerSpec,
+} from '@socketsecurity/lib/effects/shimmer'
 
 /**
  * Color themes for header styling.
@@ -94,59 +96,71 @@ function applyHexColor(text: string, hexColor: string): string {
 }
 
 /**
+ * Pick the brighter of two RGB colors. Used to compose two shimmer
+ * waves into one frame: each wave's `frameColors[i]` is computed
+ * independently, then merged so the brighter highlight wins per char.
+ * Treats luminance as the simple sum of channels — fine here because
+ * both waves share base + highlight palettes.
+ */
+function brighterRgb(a: RGB, b: RGB): RGB {
+  return a[0] + a[1] + a[2] >= b[0] + b[1] + b[2] ? a : b
+}
+
+/**
  * Render ASCII logo with shimmer effect for given frame.
- * Uses socket-registry's applyShimmer with theme color gradients.
- * Features dual shimmer waves and slanted diagonal movement.
+ *
+ * Uses socket-lib's @socketsecurity/lib/effects/shimmer engine
+ * (5.26.1+). Builds two ShimmerSpecs per line — primary + secondary
+ * offset by 35 frames — and merges their per-char colors with
+ * `brighterRgb` so the dual-wave look is preserved. Each line gets a
+ * `slantOffset = i * 4` added to the frame counter, producing a
+ * diagonal wave across the logo. Applies bold via ANSI before the
+ * shimmer's truecolor escape so terminals render the highlight bold.
  */
 export function renderShimmerFrame(
   frame: number,
   theme: HeaderTheme = 'default',
 ): string {
-  const themeGradient = THEME_COLORS_RGB[
-    theme
-  ] as unknown as ShimmerColorGradient
+  const themePalette = THEME_COLORS_RGB[theme] as unknown as Palette
 
-  // Apply shimmer to each line of the ASCII logo with slanted offset.
   const lines: string[] = []
   for (let i = 0; i < ASCII_LOGO.length; i++) {
     const line = ASCII_LOGO[i]!
+    const lineLength = line.length
 
-    // Apply bold formatting first so applyShimmer can detect and preserve it.
-    const boldLine = `\x1b[1m${line}\x1b[0m`
-
-    // Create slanted shimmer by offsetting each line's frame position.
-    // This creates a diagonal wave effect across the logo.
+    // Slant the wave by offsetting each line's frame counter — same
+    // 4-frame-per-row delta as the previous implementation.
     const slantOffset = i * 4
+    const speed = 0.25
 
-    // Primary shimmer wave.
-    const shimmerState1: ShimmerState = {
-      currentDir: 'ltr',
-      mode: 'ltr',
-      speed: 0.25,
-      step: frame + slantOffset,
-    }
+    // Build the shimmer spec once and reuse for both waves — the
+    // spec is frame-independent (positionAt is a closure over speed
+    // + textLength + direction). The two waves differ only in the
+    // frame counter passed to `frameColors`.
+    const spec: ShimmerSpec = configToSpec(
+      {
+        color: themePalette,
+        dir: 'ltr',
+        speed,
+      },
+      lineLength,
+    )
 
-    // Secondary shimmer wave (offset to create dual wave effect).
-    const shimmerState2: ShimmerState = {
-      currentDir: 'ltr',
-      mode: 'ltr',
-      speed: 0.25,
-      step: frame + slantOffset + 35,
-    }
+    // Compute per-char colors for both waves and merge.
+    const primaryColors = frameColors(spec, lineLength, frame + slantOffset)
+    const secondaryColors = frameColors(
+      spec,
+      lineLength,
+      frame + slantOffset + 35,
+    )
+    const merged: RGB[] = primaryColors.map((c, idx) =>
+      brighterRgb(c, secondaryColors[idx]!),
+    )
 
-    // Apply first shimmer pass (will detect and preserve bold).
-    const shimmered1 = applyShimmer(boldLine, shimmerState1, {
-      color: themeGradient,
-      direction: 'ltr',
-    })
-
-    // Apply second shimmer pass for dual wave effect.
-    const shimmered2 = applyShimmer(shimmered1, shimmerState2, {
-      color: themeGradient,
-      direction: 'ltr',
-    })
-
-    lines.push(shimmered2)
+    // Render to ANSI truecolor + wrap in bold for the brighter look
+    // the previous implementation produced. \x1b[1m turns bold on,
+    // colorsToAnsi emits per-char truecolor codes, \x1b[0m resets.
+    lines.push(`\x1b[1m${colorsToAnsi(line, merged)}\x1b[0m`)
   }
 
   return lines.join('\n')

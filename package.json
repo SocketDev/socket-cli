@@ -47,7 +47,6 @@
     "update": "node scripts/update.mts",
     "// Setup": "",
     "setup": "node scripts/setup.mts",
-    "preinstall": "node scripts/bootstrap-firewall-deps.mts",
     "postinstall": "node scripts/setup.mts --install --quiet",
     "prepare": "husky",
     "pretest": "pnpm run build:cli"
@@ -74,6 +73,7 @@
     "@pnpm/lockfile.detect-dep-types": "catalog:",
     "@pnpm/lockfile.fs": "catalog:",
     "@pnpm/logger": "catalog:",
+    "@sinclair/typebox": "catalog:",
     "@socketregistry/hyrious__bun.lockb": "catalog:",
     "@socketregistry/indent-string": "catalog:",
     "@socketregistry/is-interactive": "catalog:",
