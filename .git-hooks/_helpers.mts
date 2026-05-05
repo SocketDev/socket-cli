@@ -73,17 +73,21 @@ export const yellow = (msg: string): string => `${YELLOW}${msg}${NC}`
 
 // ── API-key allowlist filter ───────────────────────────────────────
 
-// Drops any line that matches an allowlist entry.
-export const filterAllowedApiKeys = (lines: readonly string[]): string[] => {
-  return lines.filter(
-    line =>
-      !line.includes(ALLOWED_PUBLIC_KEY) &&
-      !line.includes(FAKE_TOKEN_MARKER) &&
-      !line.includes(FAKE_TOKEN_LEGACY) &&
-      !line.includes(SOCKET_SECURITY_ENV) &&
-      !line.includes('.example'),
-  )
-}
+// Returns true if a line is on the allowlist (a public/example/fake
+// token we deliberately ship). Used by scanners to drop allowlisted
+// hits without losing each hit's original lineNumber.
+const isAllowedApiKey = (line: string): boolean =>
+  line.includes(ALLOWED_PUBLIC_KEY) ||
+  line.includes(FAKE_TOKEN_MARKER) ||
+  line.includes(FAKE_TOKEN_LEGACY) ||
+  line.includes(SOCKET_SECURITY_ENV) ||
+  line.includes('.example')
+
+// Drops any line that matches an allowlist entry. Kept for callers
+// that work on bare lines; new code should filter LineHit[] directly
+// via isAllowedApiKey to preserve per-hit lineNumber.
+export const filterAllowedApiKeys = (lines: readonly string[]): string[] =>
+  lines.filter(line => !isAllowedApiKey(line))
 
 // ── Personal-path scanner ──────────────────────────────────────────
 
@@ -254,14 +258,11 @@ export const scanSocketApiKeys = (text: string): LineHit[] => {
   const lines = text.split('\n')
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!
-    if (SOCKET_API_KEY_RE.test(line)) {
+    if (SOCKET_API_KEY_RE.test(line) && !isAllowedApiKey(line)) {
       hits.push({ lineNumber: i + 1, line })
     }
   }
-  return filterAllowedApiKeys(hits.map(h => h.line)).map(line => ({
-    lineNumber: hits.find(h => h.line === line)!.lineNumber,
-    line,
-  }))
+  return hits
 }
 
 export const scanAwsKeys = (text: string): LineHit[] => {
@@ -404,6 +405,102 @@ export const stripAiAttribution = (
     }
   }
   return { cleaned: kept.join('\n'), removed }
+}
+
+// ── Linear reference scanner ──────────────────────────────────────
+//
+// Linear tracking lives in Linear; commit messages stay tool-agnostic
+// (the same rule appears in the canonical CLAUDE.md "public-surface
+// hygiene" block). This scanner enforces it on commit messages and is
+// invoked by .git-hooks/commit-msg.mts.
+//
+// The team-key list is enumerated from the Socket Linear workspace.
+// `PATCH` is listed before `PAT` so the longest-prefix wins on
+// strings like `PATCH-123` — JS regex alternation is leftmost, not
+// longest, so order is load-bearing.
+const LINEAR_TEAM_KEYS = [
+  'ASK',
+  'AUTO',
+  'BOT',
+  'CE',
+  'CORE',
+  'DAT',
+  'DES',
+  'DEV',
+  'ENG',
+  'INFRA',
+  'LAB',
+  'MAR',
+  'MET',
+  'OPS',
+  'PAR',
+  'PATCH',
+  'PAT',
+  'PLAT',
+  'REA',
+  'SALES',
+  'SBOM',
+  'SEC',
+  'SMO',
+  'SUP',
+  'TES',
+  'TI',
+  'WEB',
+] as const
+
+// Match either:
+//   - a team-key + dash + digits, surrounded by non-word chars (or
+//     line start/end) so we don't match inside identifiers like
+//     `someENG-123foo`
+//   - a literal `linear.app/<path>` URL fragment
+//
+// `(^|[^A-Za-z0-9_])` and `($|[^A-Za-z0-9_])` are word-boundary
+// equivalents that also accept end-of-line, since `\b` in JS treats
+// punctuation as a word boundary inconsistently.
+const LINEAR_REF_RE = new RegExp(
+  `(^|[^A-Za-z0-9_])(${LINEAR_TEAM_KEYS.join('|')})-[0-9]+($|[^A-Za-z0-9_])|linear\\.app/[A-Za-z0-9/_-]+`,
+  'g',
+)
+
+// Capture groups for LINEAR_REF_RE:
+//   - match[0]: full match including the leading/trailing word
+//     boundary chars (or the linear.app URL).
+//   - match[1]: leading non-word char (when the team-key branch matched).
+//   - match[2]: team key (when the team-key branch matched).
+// Use the team-key branch's middle chunk by re-extracting `<KEY>-<N>`
+// from match[0]; the URL branch returns match[0] verbatim minus the
+// surrounding word boundaries (which it doesn't have).
+const LINEAR_KEY_DIGITS_RE = new RegExp(
+  `(${LINEAR_TEAM_KEYS.join('|')})-[0-9]+`,
+)
+
+// Returns up to `limit` distinct Linear-style references found in
+// `text`. Comment lines (lines starting with `#`, after the leading
+// whitespace is stripped) are ignored — git uses those for the
+// "Please enter the commit message" hint and we don't want to flag
+// references that appeared in the diff snippet that git inlined.
+export const scanLinearRefs = (text: string, limit = 5): string[] => {
+  const hits: string[] = []
+  for (const rawLine of text.split('\n')) {
+    if (rawLine.trimStart().startsWith('#')) {
+      continue
+    }
+    LINEAR_REF_RE.lastIndex = 0
+    let match: RegExpExecArray | null
+    while ((match = LINEAR_REF_RE.exec(rawLine))) {
+      // Extract the canonical reference: `KEY-NNN` for team-key
+      // matches, or the linear.app/... fragment verbatim.
+      const inner = LINEAR_KEY_DIGITS_RE.exec(match[0])
+      const ref = inner ? inner[0] : match[0]
+      if (!hits.includes(ref)) {
+        hits.push(ref)
+        if (hits.length >= limit) {
+          return hits
+        }
+      }
+    }
+  }
+  return hits
 }
 
 // ── File classification ────────────────────────────────────────────

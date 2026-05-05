@@ -1,10 +1,12 @@
 import { spawn } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+
+import { safeDelete } from '@socketsecurity/lib/fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOOK = path.resolve(__dirname, '..', 'index.mts')
@@ -57,7 +59,7 @@ test('exits 0 silently when CI env var is set', async () => {
     assert.equal(code, 0)
     assert.equal(stderr, '', `expected no output in CI; got: ${stderr}`)
   } finally {
-    rmSync(repo, { recursive: true, force: true })
+    await safeDelete(repo)
   }
 })
 
@@ -74,7 +76,7 @@ test('exits 0 silently when SOCKET_AUTH_ROTATION_DISABLED is set', async () => {
     assert.equal(code, 0)
     assert.equal(stderr, '')
   } finally {
-    rmSync(repo, { recursive: true, force: true })
+    await safeDelete(repo)
   }
 })
 
@@ -94,7 +96,7 @@ test('honors a project-local snooze with future expiry', async () => {
       `hook cleared a fresh snooze: ${stderr}`,
     )
   } finally {
-    rmSync(repo, { recursive: true, force: true })
+    await safeDelete(repo)
   }
 })
 
@@ -119,7 +121,7 @@ test('auto-cleans expired project-local snooze and proceeds', async () => {
       'expired snooze file should have been deleted',
     )
   } finally {
-    rmSync(repo, { recursive: true, force: true })
+    await safeDelete(repo)
   }
 })
 
@@ -138,7 +140,7 @@ test('auto-cleans malformed snooze content', async () => {
       'malformed snooze file should have been deleted',
     )
   } finally {
-    rmSync(repo, { recursive: true, force: true })
+    await safeDelete(repo)
   }
 })
 
@@ -157,6 +159,6 @@ test('auto-cleans empty (legacy) snooze file', async () => {
       'empty (legacy) snooze file should have been deleted',
     )
   } finally {
-    rmSync(repo, { recursive: true, force: true })
+    await safeDelete(repo)
   }
 })

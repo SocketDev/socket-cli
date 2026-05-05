@@ -23,6 +23,7 @@ import {
   out,
   red,
   readFileForScan,
+  scanLinearRefs,
   scanSocketApiKeys,
   shouldSkipFile,
   stripAiAttribution,
@@ -67,10 +68,29 @@ const main = (): number => {
     }
   }
 
-  // Auto-strip AI attribution lines from the commit message.
+  // Block Linear issue references in the commit message. Linear
+  // tracking lives in Linear; commit history stays tool-agnostic. The
+  // canonical CLAUDE.md "public-surface hygiene" block documents the
+  // policy; this hook makes it mechanical so a typo in a hot rebase
+  // can't slip through.
   const commitMsgFile = process.argv[2]
   if (commitMsgFile && existsSync(commitMsgFile)) {
     const original = readFileSync(commitMsgFile, 'utf8')
+    const linearHits = scanLinearRefs(original)
+    if (linearHits.length > 0) {
+      out(red('✗ Commit message references Linear issue(s):'))
+      for (const ref of linearHits) {
+        out(`  ${ref}`)
+      }
+      out(
+        red(
+          'Linear tracking lives in Linear. Remove the reference from the commit message.',
+        ),
+      )
+      errors++
+    }
+
+    // Auto-strip AI attribution lines from the commit message.
     const { cleaned, removed } = stripAiAttribution(original)
     if (removed > 0) {
       writeFileSync(commitMsgFile, cleaned)
