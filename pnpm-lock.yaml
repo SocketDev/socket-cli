@@ -571,6 +571,16 @@ importers:
         specifier: 'catalog:'
         version: 4.1.8
 
+  .claude/hooks/auth-rotation-reminder:
+    dependencies:
+      '@socketsecurity/lib':
+        specifier: 5.24.0
+        version: 5.24.0(typescript@5.9.3)
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
   .claude/hooks/check-new-deps:
     dependencies:
       '@socketregistry/packageurl-js':
@@ -587,6 +597,14 @@ importers:
         specifier: 24.9.2
         version: 24.9.2
 
+  .claude/hooks/logger-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/path-guard: {}
+
   .claude/hooks/public-surface-reminder:
     devDependencies:
       '@types/node':
@@ -598,6 +616,10 @@ importers:
       '@socketsecurity/lib':
         specifier: 5.24.0
         version: 5.24.0(typescript@5.9.3)
+
+  .claude/hooks/stale-process-sweeper: {}
+
+  .claude/hooks/token-guard: {}
 
   .claude/hooks/token-hygiene:
     devDependencies:
@@ -2176,6 +2198,7 @@ packages:
 
   '@socketaddon/iocraft@file:packages/package-builder/build/dev/out/socketaddon-iocraft':
     resolution: {directory: packages/package-builder/build/dev/out/socketaddon-iocraft, type: directory}
+    engines: {node: '>=18'}
 
   '@socketregistry/es-set-tostringtag@1.0.10':
     resolution: {integrity: sha512-btXmvw1JpA8WtSoXx9mTapo9NAyIDKRRzK84i48d8zc0X09M6ORfobVnHbgwhXf7CFhkRzhYrHG9dqbI9vpELQ==}
