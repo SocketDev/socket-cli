@@ -1,2 +1,2 @@
 # Run pre-push security validation.
-.git-hooks/pre-push "$@"
+node .git-hooks/pre-push.mts "$@"

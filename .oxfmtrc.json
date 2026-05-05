@@ -12,6 +12,19 @@
   "bracketSameLine": false,
   "bracketSpacing": true,
   "singleAttributePerLine": false,
+  "jsdoc": {
+    "addDefaultToDescription": false,
+    "bracketSpacing": false,
+    "capitalizeDescriptions": true,
+    "commentLineStrategy": "multiline",
+    "descriptionTag": false,
+    "descriptionWithDot": true,
+    "keepUnparsableExampleIndent": false,
+    "lineWrappingStyle": "greedy",
+    "preferCodeFences": false,
+    "separateReturnsFromParam": false,
+    "separateTagGroups": true
+  },
   "ignorePatterns": [
     "**/.cache",
     "**/.claude",

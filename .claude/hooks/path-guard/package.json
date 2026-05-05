@@ -1,12 +1,12 @@
 {
-  "name": "hook-public-surface-reminder",
+  "name": "hook-path-guard",
   "private": true,
   "type": "module",
   "main": "./index.mts",
   "exports": {
     ".": "./index.mts"
   },
-  "devDependencies": {
-    "@types/node": "24.9.2"
+  "scripts": {
+    "test": "node --test test/*.test.mts"
   }
 }
