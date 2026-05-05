@@ -1,0 +1,466 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SocketDev/xport.schema.json",
+  "title": "xport lock-step manifest",
+  "description": "Unified lock-step manifest shared across Socket repos. One schema, all cases — `kind` discriminator on each row selects which flavor of lock-step applies.",
+  "type": "object",
+  "required": [
+    "rows"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "area": {
+      "description": "Optional label for this manifest file. Used as a grouping key in harness output. Defaults to 'root' for the top-level file and to the filename stem for included files.",
+      "type": "string"
+    },
+    "includes": {
+      "description": "Relative paths to sub-manifests. Top-level `upstreams` and `sites` maps override any same-keyed entries in included manifests.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "upstreams": {
+      "description": "Named upstream submodules. Referenced by rows[].upstream on file-fork, version-pin, feature-parity, spec-conformance rows. Omit when the manifest only has lang-parity rows.",
+      "type": "object",
+      "patternProperties": {
+        "^(.*)$": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "submodule",
+            "repo"
+          ],
+          "properties": {
+            "submodule": {
+              "description": "Submodule path, relative to repo root.",
+              "type": "string"
+            },
+            "repo": {
+              "pattern": "^https?://",
+              "description": "Upstream repository URL (http:// or https://).",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "sites": {
+      "description": "Named sibling ports (typically per-language). Referenced by rows[].ports.<site> on lang-parity rows. Omit when the manifest has no lang-parity rows.",
+      "type": "object",
+      "patternProperties": {
+        "^(.*)$": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "path"
+          ],
+          "properties": {
+            "path": {
+              "description": "Path to the port's root directory, relative to repo root.",
+              "type": "string"
+            },
+            "language": {
+              "description": "Language label, for human reports.",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "rows": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "description": "A local file derived from an upstream file with intentional modifications. Drift = upstream moved forward without us.",
+            "type": "object",
+            "required": [
+              "kind",
+              "id",
+              "upstream",
+              "local",
+              "upstream_path",
+              "forked_at_sha",
+              "deviations"
+            ],
+            "properties": {
+              "kind": {
+                "const": "file-fork",
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^[a-z0-9][A-Za-z0-9-]*$",
+                "description": "Stable identifier, unique within the manifest. Starts with lowercase letter or digit; remaining characters are letters/digits/hyphens. Kebab-case preferred, but camelCase segments are allowed (e.g. `export-findNodeAt` when the id mirrors an API name).",
+                "type": "string"
+              },
+              "upstream": {
+                "description": "Key into the top-level `upstreams` map.",
+                "type": "string"
+              },
+              "criticality": {
+                "minimum": 1,
+                "maximum": 10,
+                "description": "Stay-in-step importance (1 = cosmetic, 10 = security-sensitive). Harness surfaces high-criticality drift louder.",
+                "type": "integer"
+              },
+              "conformance_test": {
+                "description": "Path to a test that enforces behavior parity (modulo documented deviations). Strongly recommended — static checks can't catch silent behavioral drift.",
+                "type": "string"
+              },
+              "notes": {
+                "description": "Free-form context — why this row exists, what gotchas to watch for.",
+                "type": "string"
+              },
+              "local": {
+                "description": "Path to our ported file, relative to repo root.",
+                "type": "string"
+              },
+              "upstream_path": {
+                "description": "Path to the source file within the upstream submodule.",
+                "type": "string"
+              },
+              "forked_at_sha": {
+                "pattern": "^[0-9a-f]{40}$",
+                "description": "Full 40-char SHA of the upstream commit we forked from. Harness runs `git log <sha>..HEAD -- <upstream_path>` to surface drift.",
+                "type": "string"
+              },
+              "deviations": {
+                "minItems": 1,
+                "description": "Human-readable list of intentional differences. Zero deviations = use upstream directly; don't fork.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "additionalProperties": false,
+            "description": "A submodule pinned to an upstream release. Drift = upstream cut a new release we haven't adopted.",
+            "type": "object",
+            "required": [
+              "kind",
+              "id",
+              "upstream",
+              "pinned_sha",
+              "upgrade_policy"
+            ],
+            "properties": {
+              "kind": {
+                "const": "version-pin",
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^[a-z0-9][A-Za-z0-9-]*$",
+                "description": "Stable identifier, unique within the manifest. Starts with lowercase letter or digit; remaining characters are letters/digits/hyphens. Kebab-case preferred, but camelCase segments are allowed (e.g. `export-findNodeAt` when the id mirrors an API name).",
+                "type": "string"
+              },
+              "upstream": {
+                "description": "Key into the top-level `upstreams` map.",
+                "type": "string"
+              },
+              "criticality": {
+                "minimum": 1,
+                "maximum": 10,
+                "description": "Stay-in-step importance (1 = cosmetic, 10 = security-sensitive). Harness surfaces high-criticality drift louder.",
+                "type": "integer"
+              },
+              "conformance_test": {
+                "description": "Path to a test that enforces behavior parity (modulo documented deviations). Strongly recommended — static checks can't catch silent behavioral drift.",
+                "type": "string"
+              },
+              "notes": {
+                "description": "Free-form context — why this row exists, what gotchas to watch for.",
+                "type": "string"
+              },
+              "pinned_sha": {
+                "pattern": "^[0-9a-f]{40}$",
+                "description": "Full 40-char SHA the submodule is pinned to.",
+                "type": "string"
+              },
+              "pinned_tag": {
+                "description": "Human-readable release tag (e.g., `v3.2.1`). Optional — the SHA is authoritative.",
+                "type": "string"
+              },
+              "upgrade_policy": {
+                "description": "track-latest: any new release is actionable; major-gate: only major bumps require review; locked: explicit decision per upgrade.",
+                "anyOf": [
+                  {
+                    "const": "track-latest",
+                    "type": "string"
+                  },
+                  {
+                    "const": "major-gate",
+                    "type": "string"
+                  },
+                  {
+                    "const": "locked",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "additionalProperties": false,
+            "description": "A behavioral feature reimplemented locally to match upstream behavior. Three-pillar validation: code patterns, test patterns, fixture snapshots.",
+            "type": "object",
+            "required": [
+              "kind",
+              "id",
+              "upstream",
+              "criticality",
+              "local_area"
+            ],
+            "properties": {
+              "kind": {
+                "const": "feature-parity",
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^[a-z0-9][A-Za-z0-9-]*$",
+                "description": "Stable identifier, unique within the manifest. Starts with lowercase letter or digit; remaining characters are letters/digits/hyphens. Kebab-case preferred, but camelCase segments are allowed (e.g. `export-findNodeAt` when the id mirrors an API name).",
+                "type": "string"
+              },
+              "upstream": {
+                "description": "Key into the top-level `upstreams` map.",
+                "type": "string"
+              },
+              "criticality": {
+                "minimum": 1,
+                "maximum": 10,
+                "description": "Stay-in-step importance (1 = cosmetic, 10 = security-sensitive). Harness surfaces high-criticality drift louder.",
+                "type": "integer"
+              },
+              "conformance_test": {
+                "description": "Path to a test that enforces behavior parity (modulo documented deviations). Strongly recommended — static checks can't catch silent behavioral drift.",
+                "type": "string"
+              },
+              "notes": {
+                "description": "Free-form context — why this row exists, what gotchas to watch for.",
+                "type": "string"
+              },
+              "local_area": {
+                "description": "Path to the local module/directory implementing the feature. Code pattern scan targets this directory (excluding test files).",
+                "type": "string"
+              },
+              "test_area": {
+                "description": "Optional path to the directory where tests for this feature live. When absent, the harness searches inside `local_area`.",
+                "type": "string"
+              },
+              "code_patterns": {
+                "description": "Regex patterns the local implementation must contain. Prefer anchored patterns (function signatures) over loose keywords to avoid comment false positives.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "test_patterns": {
+                "description": "Regex patterns the test suite must contain.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "fixture_check": {
+                "additionalProperties": false,
+                "description": "Golden-input verification. Prefer snapshot-based diffs over hardcoded counts (brittleness lesson from sdxgen's lock-step-features).",
+                "type": "object",
+                "required": [
+                  "fixture_path"
+                ],
+                "properties": {
+                  "fixture_path": {
+                    "type": "string"
+                  },
+                  "snapshot_path": {
+                    "type": "string"
+                  },
+                  "diff_tolerance": {
+                    "anyOf": [
+                      {
+                        "const": "exact",
+                        "type": "string"
+                      },
+                      {
+                        "const": "line-by-line",
+                        "type": "string"
+                      },
+                      {
+                        "const": "semantic",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "additionalProperties": false,
+            "description": "A local reimplementation of an external specification. Drift = the spec was revised.",
+            "type": "object",
+            "required": [
+              "kind",
+              "id",
+              "upstream",
+              "local_impl",
+              "spec_version"
+            ],
+            "properties": {
+              "kind": {
+                "const": "spec-conformance",
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^[a-z0-9][A-Za-z0-9-]*$",
+                "description": "Stable identifier, unique within the manifest. Starts with lowercase letter or digit; remaining characters are letters/digits/hyphens. Kebab-case preferred, but camelCase segments are allowed (e.g. `export-findNodeAt` when the id mirrors an API name).",
+                "type": "string"
+              },
+              "upstream": {
+                "description": "Key into the top-level `upstreams` map.",
+                "type": "string"
+              },
+              "criticality": {
+                "minimum": 1,
+                "maximum": 10,
+                "description": "Stay-in-step importance (1 = cosmetic, 10 = security-sensitive). Harness surfaces high-criticality drift louder.",
+                "type": "integer"
+              },
+              "conformance_test": {
+                "description": "Path to a test that enforces behavior parity (modulo documented deviations). Strongly recommended — static checks can't catch silent behavioral drift.",
+                "type": "string"
+              },
+              "notes": {
+                "description": "Free-form context — why this row exists, what gotchas to watch for.",
+                "type": "string"
+              },
+              "local_impl": {
+                "type": "string"
+              },
+              "spec_version": {
+                "type": "string"
+              },
+              "spec_path": {
+                "description": "Path within the upstream submodule to the spec document, if applicable.",
+                "type": "string"
+              }
+            }
+          },
+          {
+            "additionalProperties": false,
+            "description": "N sibling language ports of one spec within a single project. Drift = one port diverged from its siblings.",
+            "type": "object",
+            "required": [
+              "kind",
+              "id",
+              "name",
+              "description",
+              "category",
+              "ports"
+            ],
+            "properties": {
+              "kind": {
+                "const": "lang-parity",
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^[a-z0-9][A-Za-z0-9-]*$",
+                "description": "Stable identifier, unique within the manifest. Starts with lowercase letter or digit; remaining characters are letters/digits/hyphens. Kebab-case preferred, but camelCase segments are allowed (e.g. `export-findNodeAt` when the id mirrors an API name).",
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "category": {
+                "description": "Grouping tag. `rejected` is reserved for anti-patterns (every port must be opt-out; reintroduction exits 2).",
+                "type": "string"
+              },
+              "criticality": {
+                "minimum": 1,
+                "maximum": 10,
+                "description": "Stay-in-step importance (1 = cosmetic, 10 = security-sensitive). Harness surfaces high-criticality drift louder.",
+                "type": "integer"
+              },
+              "conformance_test": {
+                "description": "Path to a test that enforces behavior parity (modulo documented deviations). Strongly recommended — static checks can't catch silent behavioral drift.",
+                "type": "string"
+              },
+              "notes": {
+                "description": "Free-form context — why this row exists, what gotchas to watch for.",
+                "type": "string"
+              },
+              "assertions": {
+                "description": "Open-ended assertion list. Each has a `kind` string the harness dispatches on. Unknown kinds are skipped with a log line.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "patternProperties": {
+                    "^(.*)$": {}
+                  }
+                }
+              },
+              "matrix_files": {
+                "description": "For inventory rows that index other xport-lang-*.json files. Paths relative to this manifest.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "ports": {
+                "description": "Per-site status. Keys must match top-level `sites`.",
+                "type": "object",
+                "patternProperties": {
+                  "^(.*)$": {
+                    "additionalProperties": false,
+                    "description": "Per-port status for a lang-parity row. `implemented` = port meets assertions; `opt-out` = port consciously skips, requires non-empty `reason`.",
+                    "type": "object",
+                    "required": [
+                      "status"
+                    ],
+                    "properties": {
+                      "status": {
+                        "anyOf": [
+                          {
+                            "const": "implemented",
+                            "type": "string"
+                          },
+                          {
+                            "const": "opt-out",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "reason": {
+                        "description": "Required when status is `opt-out`. Explain why.",
+                        "type": "string"
+                      },
+                      "path": {
+                        "description": "Optional path to the port's implementation of this row. Useful for module-inventory rows where each language points at a different directory.",
+                        "type": "string"
+                      },
+                      "note": {
+                        "description": "Optional free-form note attached to a specific port's status.",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
