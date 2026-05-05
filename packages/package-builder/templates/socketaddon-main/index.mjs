@@ -106,9 +106,29 @@ function loadNativeAddon() {
       }
 
       if (buildOutDir) {
+        // First: look for a sibling-package-style layout
+        // `socketaddon-iocraft-<platformId>/iocraft.node` next to the
+        // main package.
         const siblingPath = join(buildOutDir, `socketaddon-iocraft-${platformId}`, 'iocraft.node')
         if (existsSync(siblingPath)) {
           return require(siblingPath)
+        }
+        // Second: look inside the main package's bundled
+        // `node_modules/@socketaddon/iocraft-<platformId>/iocraft.node`.
+        // This is where pnpm leaves the optionalDependency when it's
+        // installed into the file: package's local node_modules but
+        // not lifted into the consumer's .pnpm store (which happens
+        // for `file:` deps that declare optionalDependencies).
+        const bundledPath = join(
+          buildOutDir,
+          'socketaddon-iocraft',
+          'node_modules',
+          '@socketaddon',
+          `iocraft-${platformId}`,
+          'iocraft.node',
+        )
+        if (existsSync(bundledPath)) {
+          return require(bundledPath)
         }
       }
 

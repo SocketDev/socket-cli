@@ -2,7 +2,7 @@
 
 // Set global Socket theme for consistent CLI branding.
 import { isError } from '@socketsecurity/lib/errors'
-import { setTheme } from '@socketsecurity/lib/themes'
+import { setTheme } from '@socketsecurity/lib/themes/context'
 setTheme('socket')
 
 import { promises as fs } from 'node:fs'
@@ -214,8 +214,9 @@ void (async () => {
   try {
     logger.error('Fatal error:', err)
   } catch {
-    // Fallback to console if logger fails.
-    console.error('Fatal error:', err)
+    // Last-ditch fallback when logger itself throws — the catch
+    // ensures we still report the original error before exit.
+    console.error('Fatal error:', err) // # socket-hook: allow logger
   }
 
   // Track CLI error for fatal exceptions.
@@ -234,8 +235,8 @@ process.on('uncaughtException', async err => {
     try {
       logger.error('Uncaught exception:', err)
     } catch {
-      // Fallback to console if logger fails.
-      console.error('Uncaught exception:', err)
+      // Last-ditch fallback when logger itself throws.
+      console.error('Uncaught exception:', err) // # socket-hook: allow logger
     }
 
     // Track CLI error for uncaught exception.
@@ -248,7 +249,8 @@ process.on('uncaughtException', async err => {
     try {
       logger.error('Error in uncaughtException handler:', e)
     } catch {
-      console.error('Error in uncaughtException handler:', e)
+      // Last-ditch fallback when logger itself throws.
+      console.error('Error in uncaughtException handler:', e) // # socket-hook: allow logger
     }
   } finally {
     // eslint-disable-next-line n/no-process-exit
@@ -262,8 +264,8 @@ process.on('unhandledRejection', async (reason, promise) => {
     try {
       logger.error('Unhandled rejection at:', promise, 'reason:', reason)
     } catch {
-      // Fallback to console if logger fails.
-      console.error('Unhandled rejection at:', promise, 'reason:', reason)
+      // Last-ditch fallback when logger itself throws.
+      console.error('Unhandled rejection at:', promise, 'reason:', reason) // # socket-hook: allow logger
     }
 
     // Track CLI error for unhandled rejection.
@@ -277,7 +279,8 @@ process.on('unhandledRejection', async (reason, promise) => {
     try {
       logger.error('Error in unhandledRejection handler:', e)
     } catch {
-      console.error('Error in unhandledRejection handler:', e)
+      // Last-ditch fallback when logger itself throws.
+      console.error('Error in unhandledRejection handler:', e) // # socket-hook: allow logger
     }
   } finally {
     // eslint-disable-next-line n/no-process-exit
