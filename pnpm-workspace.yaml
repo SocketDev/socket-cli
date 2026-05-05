@@ -165,6 +165,15 @@ minimumReleaseAgeExclude:
   - '@socketregistry/*'
   - '@socketsecurity/*'
 
+# Refuse transitive dependencies declared via git/tarball/local-tarball
+# specs — an npm package shouldn't be allowed to drag in a git URL we
+# don't control (bypasses npm registry validation, no provenance, no
+# soak window). Direct git deps are still allowed (the test suite at
+# pnpm/pkg-manager/core/test/install/blockExoticSubdeps.ts confirms
+# this). pnpm's current default is `false`; declared explicitly so a
+# future flip can't silently change install behavior.
+blockExoticSubdeps: true
+
 # Dependency overrides (migrated from package.json pnpm.overrides).
 overrides:
   '@octokit/graphql': 'catalog:'
