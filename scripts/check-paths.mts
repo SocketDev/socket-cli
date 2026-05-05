@@ -829,12 +829,17 @@ const checkRuleF = (): void => {
     if (list.length < 2) {
       continue
     }
-    // Promote each Rule-A finding in this group to Rule F so the
-    // message tells the reader the issue is cross-file repetition,
-    // not just a single hand-build.
+    // Rule F is "same path shape appears in two or more *files*" — two
+    // hand-builds in a single file are still a Rule-A pattern, not a
+    // cross-file duplication. Promote only when at least two distinct
+    // files share the shape.
+    const distinctFiles = new Set(list.map(f => f.file))
+    if (distinctFiles.size < 2) {
+      continue
+    }
     for (const f of list) {
       f.rule = 'F'
-      f.message = `Same path shape constructed in ${list.length} places: ${shape.slice(0, 100)}`
+      f.message = `Same path shape constructed in ${distinctFiles.size} files (${list.length} places): ${shape.slice(0, 100)}`
       f.fix =
         'Construct this path ONCE in a paths.mts (or build-infra helper) and import the computed value. References of the computed variable are unlimited; re-constructing the same shape twice is the violation.'
     }
