@@ -41,17 +41,6 @@ export function assertNoNegationPatterns(paths: readonly string[]): void {
 }
 
 /**
- * Normalizes a reachability exclude path to a recursive directory glob without
- * changing explicit one-level or recursive glob suffixes.
- */
-export function normalizeExcludePath(path: string): string {
-  const stripped = stripTrailingSlash(path)
-  return stripped.endsWith('/*') || stripped.endsWith('/**')
-    ? stripped
-    : `${stripped}/**`
-}
-
-/**
  * Applies --exclude-paths consistently to SCA manifest discovery and Coana.
  * SCA exclusion always applies when paths are provided. The reachability
  * options are merged unconditionally; callers decide whether to actually run
@@ -145,6 +134,12 @@ function expandReachExcludePath(path: string): string[] {
   if (path === '**') {
     return ['**']
   }
+  // Coana anchors --exclude-dirs at the project root (matches via
+  // micromatch's isMatch on `relative(projectRoot, file)`), so a bare name
+  // with no slash would not match nested occurrences. socket.yml
+  // projectIgnorePaths use gitignore semantics where a bare name matches at
+  // any depth — bridge the gap by prepending **/ when the input has no path
+  // separator. Inputs that already contain a slash are kept anchored.
   const firstSlash = path.indexOf('/')
   const prefix = firstSlash === -1 || firstSlash === path.length - 1 ? '**/' : ''
   const normalized = stripTrailingSlash(

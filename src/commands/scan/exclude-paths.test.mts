@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import {
   assertNoNegationPatterns,
   excludePathToProjectIgnorePath,
-  normalizeExcludePath,
   projectIgnorePathsToReachExcludePaths,
 } from './exclude-paths.mts'
 import { InputError } from '../../utils/errors.mts'
@@ -34,17 +33,6 @@ describe('exclude-paths', () => {
       ['tests/**', 'tests/**'],
     ])('converts %s to %s', (input, expected) => {
       expect(excludePathToProjectIgnorePath(input)).toBe(expected)
-    })
-  })
-
-  describe('normalizeExcludePath', () => {
-    it.each([
-      ['tests', 'tests/**'],
-      ['tests/', 'tests/**'],
-      ['tests/*', 'tests/*'],
-      ['tests/**', 'tests/**'],
-    ])('normalizes %s to %s', (input, expected) => {
-      expect(normalizeExcludePath(input)).toBe(expected)
     })
   })
 
