@@ -13,7 +13,8 @@ Drive the Cursor Bugbot fix-and-respond loop end-to-end. This is the canonical f
 
 - `/cursor-bugbot <PR#>` — full audit-and-fix on one PR (default).
 - `/cursor-bugbot check <PR#>` — list Bugbot findings, classify them, but don't fix or reply.
-- `/cursor-bugbot reply <comment-id> <state>` — single-comment reply where `<state>` is `fixed`, `false-positive`, or `wont-fix`.
+- `/cursor-bugbot reply <comment-id> <state>` — single-comment reply where `<state>` is `fixed`, `false-positive`, or `wont-fix`. Auto-resolves the thread for `fixed` / `false-positive`; leaves open for `wont-fix`.
+- `/cursor-bugbot resolve <PR#>` — sweep all Bugbot threads on the PR that have author replies but are still open; resolve them. Useful for closing out a PR before merge.
 - `/cursor-bugbot scope <PR#>` — re-evaluate the PR title and body against the actual commits and rewrite them when out of step.
 
 ## Why a skill
@@ -76,7 +77,7 @@ For each `real` finding:
 4. Stage + commit the fix with a message that names the finding (e.g., `fix(hooks): address Cursor Bugbot finding on scanSocketApiKeys lineNumber`).
 5. Note the new commit SHA — the reply needs it.
 
-### Phase 4 — Reply on each thread
+### Phase 4 — Reply + resolve on each thread
 
 **Critical**: replies go on the inline review-comment thread, not as a detached PR comment. The CLI form:
 
@@ -84,6 +85,41 @@ For each `real` finding:
 gh api "repos/{owner}/{repo}/pulls/<PR#>/comments/<comment-id>/replies" \
   -X POST -f body="…"
 ```
+
+After replying, **resolve the thread** so it's marked done in the PR review UI (the reply alone doesn't auto-resolve). Resolution is a GraphQL mutation; first resolve the thread node ID from the comment's databaseId, then resolve:
+
+```bash
+# Step 1: get the thread node ID (PRRT_…) for a given comment databaseId.
+THREAD_ID=$(gh api graphql -f query='
+query($pr: Int!, $owner: String!, $repo: String!) {
+  repository(owner: $owner, name: $repo) {
+    pullRequest(number: $pr) {
+      reviewThreads(first: 50) {
+        nodes {
+          id
+          comments(first: 1) { nodes { databaseId } }
+        }
+      }
+    }
+  }
+}' -f owner=<owner> -f repo=<repo> -F pr=<PR#> \
+  --jq ".data.repository.pullRequest.reviewThreads.nodes[] | select(.comments.nodes[0].databaseId == <comment-id>) | .id")
+
+# Step 2: resolve.
+gh api graphql -f query='
+mutation($threadId: ID!) {
+  resolveReviewThread(input: { threadId: $threadId }) {
+    thread { id, isResolved }
+  }
+}' -f threadId="$THREAD_ID"
+```
+
+When to resolve:
+
+- **`real`, fixed**: resolve after the fix commit lands and the reply is posted.
+- **`already-fixed`**: resolve immediately after the reply (the fix already exists).
+- **`false-positive`**: resolve immediately after the reply *unless* the verdict is contested by the reviewer.
+- **`wont-fix`**: do NOT resolve. The reviewer decides; leave it open as an open question.
 
 Reply templates:
 
@@ -145,6 +181,7 @@ Bugbot will re-review the new HEAD automatically. New findings → loop back to 
 
 - Every Bugbot finding on the PR has a reply on its inline thread.
 - Every `real` finding has a corresponding fix commit on the PR branch.
+- Every reply that closes the matter (fixed / already-fixed / false-positive) is followed by `resolveReviewThread`. `wont-fix` threads stay open for reviewer judgment.
 - The PR title and body match the actual commits.
 - The PR branch is pushed.
 
@@ -152,6 +189,7 @@ Bugbot will re-review the new HEAD automatically. New findings → loop back to 
 
 - ❌ Replying via `gh pr comment` (detached). Doesn't thread, doesn't notify the reviewer.
 - ❌ Force-rewriting a Bugbot's finding by editing the comment via `--method PATCH`. The bot may re-post.
+- ❌ Resolving a thread without a written reply. Future you (or the reviewer) won't know what happened. Reply first, resolve second.
 - ❌ Closing Bugbot threads via the GitHub UI without a written reply. Future you (or the reviewer) won't know what happened.
 - ❌ Fixing a Bugbot finding by deleting the offending code without understanding *why* the code was there. Bugbot doesn't know about your domain; the human reviewer does.
 - ❌ Treating "Bugbot Autofix determined this is a false positive" as a definitive verdict without checking. The autofix bot is right ~95% of the time but verifying takes 10 seconds.
