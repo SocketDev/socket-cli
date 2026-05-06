@@ -52,8 +52,21 @@ export const FAKE_TOKEN_MARKER = 'socket-test-fake-token'
 // lib's rename PR lands.
 export const FAKE_TOKEN_LEGACY = 'socket-lib-test-fake-token'
 
-// Name of the env var used in shell examples; not a token value.
-export const SOCKET_SECURITY_ENV = 'SOCKET_SECURITY_API_KEY='
+// Env-var name prefixes used in shell examples / `.env.example` files.
+// Lines containing `<name>=` are documentation, not real tokens — drop
+// them from secret-scanner hits. SOCKET_API_TOKEN is the canonical
+// fleet name; the rest are legacy variants kept on the allowlist for
+// one cycle so existing `.env.example` files don't trip the gate
+// after the rebrand.
+export const SOCKET_TOKEN_ENV_NAMES: readonly string[] = [
+  'SOCKET_API_TOKEN=',
+  'SOCKET_API_KEY=',
+  'SOCKET_SECURITY_API_TOKEN=',
+  'SOCKET_SECURITY_API_KEY=',
+]
+// Back-compat alias — earlier callers imported this single-string
+// constant. New code should reach for SOCKET_TOKEN_ENV_NAMES.
+export const SOCKET_SECURITY_ENV = SOCKET_TOKEN_ENV_NAMES[0]!
 
 // ── Output ──────────────────────────────────────────────────────────
 //
@@ -79,7 +92,7 @@ const isAllowedApiKey = (line: string): boolean =>
   line.includes(ALLOWED_PUBLIC_KEY) ||
   line.includes(FAKE_TOKEN_MARKER) ||
   line.includes(FAKE_TOKEN_LEGACY) ||
-  line.includes(SOCKET_SECURITY_ENV) ||
+  SOCKET_TOKEN_ENV_NAMES.some(name => line.includes(name)) ||
   line.includes('.example')
 
 // Drops any line that matches an allowlist entry. Kept for callers
@@ -94,8 +107,20 @@ export const filterAllowedApiKeys = (lines: readonly string[]): string[] =>
 const PERSONAL_PATH_RE =
   /(\/Users\/[^/\s]+\/|\/home\/[^/\s]+\/|C:\\Users\\[^\\]+\\)/
 
-// Placeholders we ALLOW (documentation, not real leaks): any path
-// component wrapped in <...> or starting with $VAR / ${VAR}.
+// Placeholders we ALLOW (documentation, not real leaks). The scanner
+// accepts any path component wrapped in <...> or starting with $VAR /
+// ${VAR}, but for **canonical fleet style** use exactly these forms in
+// docs / tests / comments / error messages — pick the one matching the
+// path's platform:
+//
+//   POSIX  →  /Users/<user>/...     (macOS — `<user>` matches $USER)
+//   POSIX  →  /home/<user>/...      (Linux — same convention)
+//   Windows →  C:\Users\<USERNAME>\... (matches %USERNAME%)
+//
+// Don't drift to `<name>` / `<me>` / `<USER>` / `<u>` etc. The
+// `suggestPersonalPathReplacement` helper below auto-rewrites real
+// paths into these canonical shapes; mirror its output everywhere
+// else.
 const PERSONAL_PATH_PLACEHOLDER_RE =
   /(\/Users\/<[^>]*>\/|\/home\/<[^>]*>\/|C:\\Users\\<[^>]*>\\|\/Users\/\$\{?[A-Z_]+\}?\/|\/home\/\$\{?[A-Z_]+\}?\/)/
 

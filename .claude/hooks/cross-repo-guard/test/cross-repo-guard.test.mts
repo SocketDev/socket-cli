@@ -45,7 +45,7 @@ test('blocks ../socket-lib/ relative reference', async () => {
   assert.ok(stderr.includes('cross-repo-guard'))
 })
 
-test('blocks /Users/<name>/projects/<fleet-repo>/ absolute reference', async () => {
+test('blocks /Users/<user>/projects/<fleet-repo>/ absolute reference', async () => {
   const { code, stderr } = await runHook({
     tool_name: 'Write',
     tool_input: {

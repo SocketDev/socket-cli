@@ -8,11 +8,11 @@ Set up all Socket security tools for local development.
 
 ## Setup
 
-First, ask the user if they have a Socket API key for SFW enterprise features.
+First, ask the user if they have a Socket API token for SFW enterprise features.
 
 If they do:
 1. Ask them to provide it
-2. Write it to `.env.local` as `SOCKET_API_KEY=<their-key>` (create if needed)
+2. Write it to `.env.local` as `SOCKET_API_TOKEN=<their-token>` (create if needed). The deprecated `SOCKET_API_KEY` name is also accepted as an alias for one cycle, but new files should use `SOCKET_API_TOKEN`.
 3. Verify `.env.local` is in `.gitignore` — if not, add it and warn
 
 If they don't, proceed with SFW free mode.

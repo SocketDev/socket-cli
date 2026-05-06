@@ -110,10 +110,11 @@ const main = (): number => {
         }
       }
       logger.info(
-        'Replace with `<user>` / `<USERNAME>` placeholders, an env var ' +
-          '(`$HOME`, `${USER}`), or — for documentation lines that need ' +
-          'the literal username form — append the marker ' +
-          '`# zizmor: documentation-placeholder`.',
+        'Replace with the canonical placeholder for the path platform: ' +
+          '`/Users/<user>/...` (macOS), `/home/<user>/...` (Linux), or ' +
+          '`C:\\Users\\<USERNAME>\\...` (Windows). Env vars also work ' +
+          '(`$HOME`, `${USER}`). For documentation lines that need the ' +
+          `literal form, append the marker \`${socketHookMarkerFor(file, 'personal-path')}\`.`,
       )
       errors++
     }
@@ -132,7 +133,9 @@ const main = (): number => {
     const hits = scanSocketApiKeys(text)
     if (hits.length > 0) {
       logger.warn(`Potential API key found in: ${file}`)
-      hits.slice(0, 3).forEach(h => logger.info(`${h.lineNumber}:${h.line.trim()}`))
+      hits
+        .slice(0, 3)
+        .forEach(h => logger.info(`${h.lineNumber}:${h.line.trim()}`))
       logger.info('If this is a real API key, DO NOT COMMIT IT.')
     }
   }
@@ -151,14 +154,18 @@ const main = (): number => {
     const aws = scanAwsKeys(text)
     if (aws.length > 0) {
       logger.fail(`Potential AWS credentials found in: ${file}`)
-      aws.slice(0, 3).forEach(h => logger.info(`${h.lineNumber}:${h.line.trim()}`))
+      aws
+        .slice(0, 3)
+        .forEach(h => logger.info(`${h.lineNumber}:${h.line.trim()}`))
       errors++
     }
 
     const gh = scanGitHubTokens(text)
     if (gh.length > 0) {
       logger.fail(`Potential GitHub token found in: ${file}`)
-      gh.slice(0, 3).forEach(h => logger.info(`${h.lineNumber}:${h.line.trim()}`))
+      gh.slice(0, 3).forEach(h =>
+        logger.info(`${h.lineNumber}:${h.line.trim()}`),
+      )
       errors++
     }
 
