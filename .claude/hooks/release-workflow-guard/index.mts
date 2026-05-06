@@ -29,11 +29,12 @@
 // Bypass — verifiable dry-run only:
 //   - Pass `-f dry-run=true` (or =1/=yes) explicitly.
 //   - The workflow YAML must declare a `dry-run:` input under its
-//     `workflow_dispatch.inputs` block (we read the file from
-//     $CLAUDE_PROJECT_DIR/.github/workflows/<name>.yml). If the
-//     workflow doesn't have the input, the gh CLI silently accepts
-//     the flag but the workflow ignores it — that's the unsafe
-//     case the verification step prevents.
+//     `workflow_dispatch.inputs` block. The hook reads the workflow
+//     file from disk: first $CLAUDE_PROJECT_DIR/.github/workflows/,
+//     then (if `--repo owner/<name>` names a different repo) the
+//     sibling clone at `<parent-of-project-dir>/<name>/.github/...`.
+//     Cross-repo dispatches verify when the sibling clone exists;
+//     otherwise the bypass denies (same posture as a missing file).
 //   - No force-prod overrides may be set: `-f release=true`,
 //     `-f publish=true`, `-f prod=true`, `-f production=true`.
 //   - Bypass applies only to `gh workflow run|dispatch`. The
@@ -171,43 +172,63 @@ type DispatchResult = {
 // when the env var is unset (e.g. the hook invoked outside Claude
 // Code). The check is intentionally permissive: any unparseable
 // workflow file is treated as "no dry-run input" (block-the-default).
-function workflowDeclaresDryRunInput(workflow: string): boolean {
+//
+// `searchRoots` is the list of project directories to probe. The
+// caller picks exactly one based on the dispatch shape:
+//   - same-repo (no --repo, or --repo names the current project):
+//     just the current project dir.
+//   - cross-repo (--repo names a different project): just the
+//     sibling clone at <parent-of-project-dir>/<name>. The current
+//     project is intentionally excluded so a same-named workflow in
+//     the current checkout can't false-positive a cross-repo dispatch.
+function workflowDeclaresDryRunInput(
+  workflow: string,
+  searchRoots: readonly string[],
+): boolean {
   // Workflow arg can be "id.yml", "name.yaml", a numeric ID, or a path.
   // Numeric IDs and paths-without-extension can't be resolved without
   // hitting GitHub's API — for those, conservatively return false.
   if (!/\.(?:yml|yaml)$/i.test(workflow)) {
     return false
   }
-  const projectDir = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
   // Strip any leading directory prefix the user passed (e.g. they
   // typed the path explicitly). The bare filename is what
   // .github/workflows/ holds.
   const filename = path.basename(workflow)
-  const fullPath = path.join(projectDir, '.github', 'workflows', filename)
-  if (!existsSync(fullPath)) {
-    return false
+  for (const root of searchRoots) {
+    const fullPath = path.join(root, '.github', 'workflows', filename)
+    if (!existsSync(fullPath)) {
+      continue
+    }
+    try {
+      const yaml = readFileSync(fullPath, 'utf8')
+      if (WORKFLOW_DRY_RUN_INPUT_RE.test(yaml)) {
+        return true
+      }
+      // File exists but no dry-run input — fall through to next root.
+      // (Same-name workflow may exist in multiple sibling repos with
+      // different shapes; only one needs to satisfy the verification.)
+    } catch {
+      // Read error — try next root.
+    }
   }
-  try {
-    const yaml = readFileSync(fullPath, 'utf8')
-    return WORKFLOW_DRY_RUN_INPUT_RE.test(yaml)
-  } catch {
-    return false
-  }
+  return false
 }
 
 // Decide whether a dispatch on `workflow` should be allowed because
-// it's a verifiable dry-run. All five conditions must hold:
+// it's a verifiable dry-run. All four conditions must hold:
 //   1. `-f dry-run=true|1|yes` is explicitly present in the command
 //   2. `-f dry-run=false|0|no` is NOT present (user didn't override)
 //   3. No force-prod input is present (release/publish/prod=true)
-//   4. If `--repo <owner>/<name>` is present, the repo basename
-//      matches the current $CLAUDE_PROJECT_DIR's basename. Verifying
-//      a workflow file in a different repo would require scanning
-//      sibling clones — too brittle. A cross-repo dispatch goes
-//      through the user.
-//   5. The workflow YAML actually declares a `dry-run:` input under
+//   4. The target workflow YAML declares a `dry-run:` input under
 //      its `workflow_dispatch.inputs` block — without that, the gh
 //      CLI silently accepts the flag but the workflow ignores it.
+//
+// The workflow lookup probes the current project first, then any
+// sibling clone implied by `--repo owner/<name>`. Sibling clones
+// follow the fleet convention: `<projects-dir>/<repo-name>` next to
+// the current project. If the file isn't readable from any local
+// checkout, the bypass denies — same posture as a missing file.
 function isVerifiableDryRun(
   command: string,
   workflow: string | undefined,
@@ -224,15 +245,21 @@ function isVerifiableDryRun(
   if (FORCE_PROD_INPUTS_RE.test(command)) {
     return false
   }
+  const projectDir = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
   const repoMatch = GH_REPO_FLAG_RE.exec(command)
-  if (repoMatch) {
-    const projectDir = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
-    const projectName = path.basename(projectDir)
-    if (repoMatch[1] !== projectName) {
-      return false
-    }
+  // No --repo, or --repo names the current project: search only the
+  // current project. With --repo naming a different project: search
+  // ONLY the sibling clone — falling back to projectDir would falsely
+  // verify a same-named workflow that happens to live in the current
+  // checkout but isn't the dispatch's actual target.
+  let searchRoots: string[]
+  if (!repoMatch || path.basename(projectDir) === repoMatch[1]!) {
+    searchRoots = [projectDir]
+  } else {
+    const sibling = path.join(path.dirname(projectDir), repoMatch[1]!)
+    searchRoots = [sibling]
   }
-  return workflowDeclaresDryRunInput(workflow)
+  return workflowDeclaresDryRunInput(workflow, searchRoots)
 }
 
 function detectDispatch(command: string): DispatchResult {

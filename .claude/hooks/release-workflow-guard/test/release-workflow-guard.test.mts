@@ -334,23 +334,6 @@ describe('release-workflow-guard hook', () => {
       assert.equal(r.code, 2)
     })
 
-    it('blocks --repo pointing at a different project', async () => {
-      // CLAUDE_PROJECT_DIR basename is the tmp-prefix-XXXXX, not "btm".
-      // A `--repo SocketDev/socket-btm` dispatch from a different
-      // project can't be verified (we can't safely read another
-      // repo's workflow files), so the bypass shouldn't apply.
-      ;({ projectDir, cleanup } = await makeWorkflowFixture(
-        'build.yml',
-        WF_WITH_DRY_RUN,
-      ))
-      const r = await runHook(
-        'gh workflow run build.yml --repo SocketDev/socket-btm -f dry-run=true',
-        'Bash',
-        { CLAUDE_PROJECT_DIR: projectDir },
-      )
-      assert.equal(r.code, 2)
-    })
-
     it('allows --repo when its basename matches the project dir', async () => {
       // Make a fixture project whose dirname matches the --repo arg's
       // basename. That's the "user runs the dispatch from inside the
@@ -377,6 +360,52 @@ describe('release-workflow-guard hook', () => {
       } finally {
         await safeDelete(targetProjectDir, { force: true })
       }
+    })
+
+    it('allows --repo when the sibling clone has the workflow', async () => {
+      // Setup: parent dir contains two siblings — the current
+      // project (where the hook is "rooted") and a target repo with
+      // the workflow file. Cross-repo dispatch should resolve via
+      // the sibling-clone fallback.
+      const parentDir = await fs.mkdtemp(path.join(tmpdir(), 'rwg-fleet-'))
+      const currentProject = path.join(parentDir, 'current')
+      const siblingProject = path.join(parentDir, 'sibling-target')
+      await fs.mkdir(currentProject, { recursive: true })
+      await fs.mkdir(path.join(siblingProject, '.github', 'workflows'), {
+        recursive: true,
+      })
+      await fs.writeFile(
+        path.join(siblingProject, '.github', 'workflows', 'build.yml'),
+        WF_WITH_DRY_RUN,
+        'utf8',
+      )
+      try {
+        const r = await runHook(
+          'gh workflow run build.yml --repo SocketDev/sibling-target -f dry-run=true',
+          'Bash',
+          { CLAUDE_PROJECT_DIR: currentProject },
+        )
+        assert.equal(r.code, 0, `Expected 0 but got ${r.code}: ${r.stderr}`)
+        assert.match(r.stderr, /ALLOWED/)
+      } finally {
+        await safeDelete(parentDir, { force: true })
+      }
+    })
+
+    it('blocks --repo when no sibling clone exists', async () => {
+      // The current project has no sibling named after the --repo
+      // target — verification fails (workflow file not readable),
+      // bypass denied.
+      ;({ projectDir, cleanup } = await makeWorkflowFixture(
+        'build.yml',
+        WF_WITH_DRY_RUN,
+      ))
+      const r = await runHook(
+        'gh workflow run build.yml --repo SocketDev/no-such-sibling -f dry-run=true',
+        'Bash',
+        { CLAUDE_PROJECT_DIR: projectDir },
+      )
+      assert.equal(r.code, 2)
     })
 
     it('bypass does not apply to gh api .../dispatches', async () => {
