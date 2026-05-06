@@ -277,6 +277,7 @@ overrides:
   hasown: npm:@socketregistry/hasown@^1.0.7
   https-proxy-agent: 7.0.6
   indent-string: npm:@socketregistry/indent-string@^1.0.14
+  ip-address: '>=10.1.1'
   is-core-module: npm:@socketregistry/is-core-module@^1.0.11
   isarray: npm:@socketregistry/isarray@^1.0.8
   lodash: 4.17.21
@@ -3220,8 +3221,8 @@ packages:
     resolution: {integrity: sha512-XHbaOAvP+uFKUFsOgoNPRjLkwB+I22JFPFe5OjTkQ0nwgj6+pSjb4NmB6VMxaPshLiOf+zcpOCBQuLwC1KHhZA==}
     engines: {node: '>=10'}
 
-  ip-address@10.1.0:
-    resolution: {integrity: sha512-XXADHxXmvT9+CRxhXg56LJovE+bmWnEWB78LB83VZTprKTmaC5QfruXocxzTZ2Kl0DNwKuBdlIhjL8LeY8Sf8Q==}
+  ip-address@10.1.1:
+    resolution: {integrity: sha512-1FMu8/N15Ck1BL551Jf42NYIoin2unWjLQ2Fze/DXryJRl5twqtwNHlO39qERGbIOcKYWHdgRryhOC+NG4eaLw==}
     engines: {node: '>= 12'}
 
   is-arrayish@0.2.1:
@@ -6744,7 +6745,7 @@ snapshots:
       from2: 2.3.0
       p-is-promise: 3.0.0
 
-  ip-address@10.1.0: {}
+  ip-address@10.1.1: {}
 
   is-arrayish@0.2.1: {}
 
@@ -7628,7 +7629,7 @@ snapshots:
 
   socks@2.8.7:
     dependencies:
-      ip-address: 10.1.0
+      ip-address: 10.1.1
       smart-buffer: 4.2.0
 
   sort-keys@4.2.0:

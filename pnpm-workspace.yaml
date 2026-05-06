@@ -199,6 +199,7 @@ overrides:
   hasown: 'catalog:'
   https-proxy-agent: 'catalog:'
   indent-string: 'catalog:'
+  ip-address: '>=10.1.1'
   is-core-module: 'catalog:'
   isarray: 'catalog:'
   lodash: 'catalog:'
