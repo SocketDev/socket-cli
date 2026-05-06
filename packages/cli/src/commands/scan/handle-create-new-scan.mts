@@ -31,6 +31,7 @@ import { runSocketBasics } from '../../utils/basics/spawn.mts'
 function excludeFactsJson(paths: string[]): string[] {
   return paths.filter(p => path.basename(p) !== DOT_SOCKET_DOT_FACTS_JSON)
 }
+import { compressSocketFactsForUpload } from '../../utils/coana/compress-facts.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
 import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
@@ -290,28 +291,40 @@ export async function handleCreateNewScan({
     }
   }
 
-  const fullScanCResult = await fetchCreateOrgFullScan(
-    scanPaths,
-    orgSlug,
-    {
-      commitHash,
-      commitMessage,
-      committers,
-      pullRequest,
-      repoName,
-      branchName,
-      scanType: reach.runReachabilityAnalysis
-        ? SCAN_TYPE_SOCKET_TIER1
-        : SCAN_TYPE_SOCKET,
-      workspace,
-    },
-    {
-      cwd,
-      defaultBranch,
-      pendingHead,
-      tmp,
-    },
-  )
+  // Brotli-compress any .socket.facts.json paths in scanPaths just before
+  // upload. depscan's api-v0 multipart boundary streams brotli decode based
+  // on the .br filename suffix. Coana keeps writing plain .socket.facts.json
+  // on disk, so the local read path (extractTier1ReachabilityScanId) stays
+  // correct. The cleanup() in the finally block removes the sibling .br
+  // files whether the upload succeeded or threw.
+  const compressed = await compressSocketFactsForUpload(scanPaths)
+  let fullScanCResult: Awaited<ReturnType<typeof fetchCreateOrgFullScan>>
+  try {
+    fullScanCResult = await fetchCreateOrgFullScan(
+      compressed.paths,
+      orgSlug,
+      {
+        commitHash,
+        commitMessage,
+        committers,
+        pullRequest,
+        repoName,
+        branchName,
+        scanType: reach.runReachabilityAnalysis
+          ? SCAN_TYPE_SOCKET_TIER1
+          : SCAN_TYPE_SOCKET,
+        workspace,
+      },
+      {
+        cwd,
+        defaultBranch,
+        pendingHead,
+        tmp,
+      },
+    )
+  } finally {
+    await compressed.cleanup()
+  }
 
   const scanId = fullScanCResult.ok ? fullScanCResult.data?.id : undefined
 
