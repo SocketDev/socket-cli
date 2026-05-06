@@ -55,10 +55,10 @@ Find and remove junk files (with user confirmation via AskUserQuestion):
 ### Phase 5: Structural Validation
 
 ```bash
-node scripts/check-consistency.mjs
+node scripts/check-paths.mts
 ```
 
-Report errors as Critical findings. Warnings are Low findings.
+Report errors as Critical findings. Warnings are Low findings. (The fleet's structural validator is `check-paths.mts`, the path-hygiene gate. If a repo has a richer structural validator under a different name, run that instead — but every fleet repo ships `check-paths.mts`.)
 
 ### Phase 6: Determine Scan Scope
 

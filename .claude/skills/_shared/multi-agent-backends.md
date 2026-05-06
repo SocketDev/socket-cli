@@ -2,6 +2,8 @@
 
 Shared policy for skills that delegate work to multiple AI CLIs (codex, claude, opencode, kimi, …). Any skill that calls out to another agent should follow this contract so the user gets a uniform experience across skills.
 
+> Looking for *when* to hand work off to another agent (CLI subprocess vs. mid-conversation `Agent(subagent_type=…)`)? See [`docs/references/agent-delegation.md`](../../../docs/references/agent-delegation.md). This file covers the *how* for the CLI-subprocess path.
+
 ## Goals
 
 - **Graceful detection.** Skills don't hard-fail when a preferred backend isn't installed. They fall back through a documented preference order, then skip the pass with a recorded note if nothing usable is available.
