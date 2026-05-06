@@ -68,7 +68,7 @@ export const KNOWN_SIBLING_PACKAGES = new Set([
   // socket-cli
   'cli',
   'package-builder',
-  // socket-tui
+  // stuie
   'core',
   'react',
   'renderer',

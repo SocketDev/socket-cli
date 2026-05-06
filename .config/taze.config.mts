@@ -1,24 +1,40 @@
 import { defineConfig } from 'taze'
 
+/* Socket-owned scopes bypass the 7-day maturity cooldown.
+ *
+ * The cooldown (maturityPeriod: 7) exists to catch compromised
+ * upstream packages before we adopt them — but Socket-published
+ * packages go through our own provenance + publish pipeline, so
+ * we trust them to ship fresh.
+ *
+ * The scopes listed here are EXCLUDED from pass 1 (the
+ * cooldown-respecting pass) and INCLUDED in pass 2 (the
+ * immediate-bump pass). Keep this list in sync with
+ * scripts/update.mts if the repo ships one, or with whatever
+ * second-pass mechanism the consuming repo's update script
+ * uses.
+ */
+const SOCKET_SCOPES = [
+  '@socketregistry/*',
+  '@socketsecurity/*',
+  '@socketdev/*',
+  'socket-*',
+  'ecc-agentshield',
+  'sfw',
+]
+
 export default defineConfig({
-  // Exclude these packages (migrated from .ncurc.json reject list).
-  exclude: [
-    'eslint-plugin-unicorn',
-    'terminal-link',
-    'yargs-parser',
-    // Vendored npm workspace packages that don't exist on registry.
-    '@npmcli/docs',
-    '@npmcli/mock-globals',
-    '@npmcli/mock-registry',
-  ],
   // Interactive mode disabled for automation.
   interactive: false,
-  // Use minimal logging similar to ncu loglevel.
+  // Minimal logging.
   loglevel: 'warn',
-  // Only update packages that have been stable for 7 days.
+  // Socket scopes handled by a second pass with maturityPeriod 0.
+  exclude: SOCKET_SCOPES,
+  // 7-day cooldown on third-party deps — matches `.npmrc`'s
+  // min-release-age setting for install-time enforcement.
   maturityPeriod: 7,
-  // Update mode: 'latest' is similar to ncu's default behavior.
+  // Bump to latest across major boundaries.
   mode: 'latest',
-  // Write to package.json automatically.
+  // Edit package.json in place.
   write: true,
 })

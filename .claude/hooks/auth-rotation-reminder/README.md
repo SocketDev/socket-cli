@@ -1,17 +1,25 @@
 # auth-rotation-reminder
 
-Claude Code `Stop` hook that periodically logs you out of authenticated
-CLIs (npm, pnpm, gcloud, vault, aws sso, docker, socket, …) so stale
-long-lived tokens don't sit in your dotfiles or keychain for days.
+A **Claude Code hook** that runs at the *end* of every Claude turn,
+notices when you've been logged into a CLI for "too long," and
+automatically logs you out so stale long-lived tokens don't sit in
+your dotfiles or keychain for days.
 
-## Why
+> If you haven't worked with Claude Code hooks before: hooks are tiny
+> scripts that run at specific lifecycle points. A `Stop` hook like
+> this one fires *after* Claude finishes a turn. Stop hooks are a
+> good place for periodic maintenance — they have access to your
+> shell environment but don't gate any tool calls.
 
-Long-lived auth tokens live in well-known locations: `~/.npmrc`,
-`~/.config/gh/hosts.yml`, `~/.config/gcloud/`, `~/.docker/config.json`.
-A compromised dev workstation has a wide blast radius on those files.
-Periodic auto-revocation tightens the window and forces explicit
-re-authentication, which is itself a small phishing-defense moment
-("did I really mean to publish?").
+## Why automatic logout
+
+Long-lived auth tokens live in well-known files: `~/.npmrc`,
+`~/.config/gh/hosts.yml`, `~/.config/gcloud/`, `~/.docker/config.json`,
+your OS keychain. A compromised dev workstation has a wide blast
+radius on those files. Periodic auto-revocation tightens the window
+where a stolen token is useful, and forces explicit re-authentication
+— which is itself a small phishing-defense moment ("did I really
+mean to publish?").
 
 ## Defaults
 
@@ -120,12 +128,20 @@ node --test test/*.test.mts
 
 ## Reusing the snooze convention
 
-Other hooks can adopt the same `.snooze` pattern. The convention is:
+Other hooks can adopt the same `.snooze` pattern. The convention:
 
 - Filename: `.claude/<hook-id>.snooze` (project) or
   `~/.claude/hooks/<hook-id>/snooze` (global).
 - Format: ISO 8601 expiry on line 1. Optional further lines ignored.
 - `.gitignore`: `.claude/*.snooze`.
-- Cleanup: hook auto-deletes expired files via `safeDelete`.
-- The `checkSnoozes` / `tryUnlink` helpers in `index.mts` are easy to
-  copy into a sibling hook.
+- Cleanup: hook auto-deletes expired files via `safeDelete` from
+  `@socketsecurity/lib/fs`.
+- The `checkSnoozes` helper in `index.mts` is easy to copy into a
+  sibling hook.
+
+## Cross-fleet sync
+
+This README and the hook itself live in
+[`socket-repo-template`](https://github.com/SocketDev/socket-repo-template/tree/main/template/.claude/hooks/auth-rotation-reminder)
+and are required to be byte-identical across every fleet repo.
+`scripts/sync-scaffolding.mts` flags drift; `--fix` rewrites it.

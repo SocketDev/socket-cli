@@ -242,7 +242,7 @@ const main = (): number => {
         }
       }
       out(
-        "Use `getDefaultLogger()` from `@socketsecurity/lib/logger`. " +
+        'Use `getDefaultLogger()` from `@socketsecurity/lib/logger`. ' +
           'For documentation lines that need the literal call, append ' +
           'the marker `# socket-hook: allow logger`.',
       )

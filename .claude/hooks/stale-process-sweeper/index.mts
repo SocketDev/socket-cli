@@ -66,19 +66,46 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
 ]
 
 interface ProcRow {
+  command: string
+  // Elapsed seconds since process started.
+  elapsedSec: number
+  pcpu: number
   pid: number
   ppid: number
   rss: number
-  command: string
+}
+
+// Convert ps `etime` field ([dd-]hh:mm:ss or mm:ss) to seconds.
+// Examples: "05:23" → 323, "1:02:30" → 3750, "2-04:00:00" → 187200.
+function parseEtime(etime: string): number {
+  let rest = etime
+  let days = 0
+  const dashIdx = rest.indexOf('-')
+  if (dashIdx !== -1) {
+    days = Number.parseInt(rest.slice(0, dashIdx), 10) || 0
+    rest = rest.slice(dashIdx + 1)
+  }
+  const parts = rest.split(':').map(p => Number.parseInt(p, 10) || 0)
+  let hours = 0
+  let mins = 0
+  let secs = 0
+  if (parts.length === 3) {
+    ;[hours, mins, secs] = parts as [number, number, number]
+  } else if (parts.length === 2) {
+    ;[mins, secs] = parts as [number, number]
+  } else if (parts.length === 1) {
+    secs = parts[0] ?? 0
+  }
+  return days * 86400 + hours * 3600 + mins * 60 + secs
 }
 
 function listProcesses(): ProcRow[] {
   // -A: all processes, -o: custom format, no truncation. macOS + Linux
-  // both support this exact form. Windows isn't supported (Stop hook
-  // is unix-only in practice for socket-* repos).
+  // both support `pcpu` (instantaneous CPU%) and `etime` (elapsed time).
+  // Windows isn't supported (Stop hook is unix-only in practice).
   const result = spawnSync(
     'ps',
-    ['-A', '-o', 'pid=,ppid=,rss=,command='],
+    ['-A', '-o', 'pid=,ppid=,rss=,pcpu=,etime=,command='],
     { encoding: 'utf8' },
   )
   if (result.status !== 0 || !result.stdout) {
@@ -89,20 +116,30 @@ function listProcesses(): ProcRow[] {
     if (!line.trim()) {
       continue
     }
-    // Split into [pid, ppid, rss, ...command]. `command` may contain
-    // arbitrary spaces, so re-join after the first three fields.
+    // Split into [pid, ppid, rss, pcpu, etime, ...command]. `command`
+    // may contain arbitrary spaces, so re-join after the first five
+    // fields. `pcpu` and `etime` are well-formed (no embedded space).
     const parts = line.trim().split(/\s+/)
-    if (parts.length < 4) {
+    if (parts.length < 6) {
       continue
     }
     const pid = Number.parseInt(parts[0]!, 10)
     const ppid = Number.parseInt(parts[1]!, 10)
     const rss = Number.parseInt(parts[2]!, 10)
+    const pcpu = Number.parseFloat(parts[3]!)
+    const elapsedSec = parseEtime(parts[4]!)
     if (!Number.isFinite(pid) || !Number.isFinite(ppid)) {
       continue
     }
-    const command = parts.slice(3).join(' ')
-    rows.push({ pid, ppid, rss, command })
+    const command = parts.slice(5).join(' ')
+    rows.push({
+      pid,
+      ppid,
+      rss,
+      pcpu: Number.isFinite(pcpu) ? pcpu : 0,
+      elapsedSec,
+      command,
+    })
   }
   return rows
 }
@@ -130,11 +167,43 @@ function classify(row: ProcRow): string | undefined {
   return undefined
 }
 
-function sweep(): { killed: Array<{ pid: number; name: string; rssMb: number }>; skipped: number } {
+// Two reasons a matched worker should be reaped:
+//  1. ORPHAN — parent is gone or is init (PID 1). Classic case: vitest
+//     SIGINT'd, parent exited, workers re-parented to init.
+//  2. STUCK — parent is alive but the worker has been running for a
+//     long time, holding lots of memory, and burning CPU. Classic case:
+//     vitest run timed out from inside Claude Code; the parent CLI
+//     process is technically alive but unproductive, and its workers
+//     spin forever consuming gigabytes. We sweep these even though the
+//     parent's still around.
+//
+// Stuck-worker thresholds — conservative on purpose. A real, productive
+// worker doesn't simultaneously hit all three: 5+ minutes of wallclock
+// AND >50% CPU sustained AND >500MB RSS. Healthy parallel test runs
+// finish well under 5 minutes per worker; CI workers that legitimately
+// take longer don't run inside Claude Code's hook environment anyway.
+const STUCK_MIN_ELAPSED_SEC = 300
+const STUCK_MIN_PCPU = 50
+const STUCK_MIN_RSS_KB = 500 * 1024
+
+function sweep(): {
+  killed: Array<{
+    name: string
+    pid: number
+    reason: 'orphan' | 'stuck'
+    rssMb: number
+  }>
+  skipped: number
+} {
   const rows = listProcesses()
   const myPid = process.pid
   const myPpid = process.ppid
-  const killed: Array<{ pid: number; name: string; rssMb: number }> = []
+  const killed: Array<{
+    name: string
+    pid: number
+    reason: 'orphan' | 'stuck'
+    rssMb: number
+  }> = []
   let skipped = 0
 
   for (const row of rows) {
@@ -146,12 +215,21 @@ function sweep(): { killed: Array<{ pid: number; name: string; rssMb: number }>;
     if (!name) {
       continue
     }
-    // Only sweep if the parent is gone (true orphan) or is PID 1
-    // (re-parented to init after the original parent exited). A live
-    // parent means the worker is part of a real, in-progress run we
-    // should not interrupt.
-    const orphan = row.ppid === 1 || !isAlive(row.ppid)
-    if (!orphan) {
+    let reason: 'orphan' | 'stuck' | undefined
+    if (row.ppid === 1 || !isAlive(row.ppid)) {
+      reason = 'orphan'
+    } else if (
+      row.elapsedSec >= STUCK_MIN_ELAPSED_SEC &&
+      row.pcpu >= STUCK_MIN_PCPU &&
+      row.rss >= STUCK_MIN_RSS_KB
+    ) {
+      // Worker is matched, has a live parent, but is wedged: long
+      // elapsed time + spinning CPU + heavy memory. This is the
+      // user-reported case where vitest workers hung at 100% CPU /
+      // 1+GB RSS while their parent CLI was technically alive.
+      reason = 'stuck'
+    }
+    if (reason === undefined) {
       skipped += 1
       continue
     }
@@ -162,8 +240,9 @@ function sweep(): { killed: Array<{ pid: number; name: string; rssMb: number }>;
       // squeezing every last byte.
       process.kill(row.pid, 'SIGTERM')
       killed.push({
-        pid: row.pid,
         name,
+        pid: row.pid,
+        reason,
         rssMb: Math.round(row.rss / 1024),
       })
     } catch {
@@ -188,7 +267,7 @@ function main() {
 }
 
 function runSweep() {
-  let result: { killed: Array<{ pid: number; name: string; rssMb: number }>; skipped: number }
+  let result: ReturnType<typeof sweep>
   try {
     result = sweep()
   } catch (e) {
@@ -201,7 +280,7 @@ function runSweep() {
   if (result.killed.length > 0) {
     const totalMb = result.killed.reduce((sum, k) => sum + k.rssMb, 0)
     const breakdown = result.killed
-      .map(k => `${k.name}=${k.pid}(${k.rssMb}MB)`)
+      .map(k => `${k.name}=${k.pid}(${k.rssMb}MB,${k.reason})`)
       .join(', ')
     process.stderr.write(
       `[stale-process-sweeper] reaped ${result.killed.length} stale ` +

@@ -39,7 +39,7 @@
     "testu": "pnpm --filter @socketsecurity/cli run test:unit:update",
     "cover": "pnpm --filter @socketsecurity/cli run test:unit:coverage",
     "cover:all": "pnpm --filter @socketsecurity/cli run cover",
-    "security": "agentshield scan && { command -v zizmor >/dev/null && zizmor .github/ || echo 'zizmor not installed — run pnpm run setup to install'; }",
+    "security": "node scripts/security.mts",
     "// Maintenance": "",
     "clean": "pnpm --filter \"./packages/**\" run clean",
     "clean:cache": "node scripts/clean-cache.mts",

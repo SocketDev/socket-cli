@@ -30,28 +30,48 @@
  * sync-scaffolding (IDENTICAL_FILES).
  */
 
+import { Buffer } from 'node:buffer'
 import { existsSync, promises as fs } from 'node:fs'
+import { isBuiltin } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
 
 import { spawn } from '@socketsecurity/lib/spawn'
 
-// Probe for node:smol-power. Lives in socket-btm's node-smol binary.
-// Wrapped in try/catch so this file is safe to import on system Node
-// where the module doesn't exist.
-let _smolPower: { isOnAcPower: () => boolean } | undefined
-async function getSmolPower(): Promise<typeof _smolPower> {
-  if (_smolPower !== undefined) {
+// Probe for node:smol-power. Lives in socket-btm's node-smol binary
+// — `isBuiltin()` returns true on those builds and false on system
+// Node, so we only attempt the dynamic import when the module is
+// actually available.
+interface SmolPower {
+  isOnAcPower: () => boolean
+}
+let _smolPower: SmolPower | undefined
+let _smolPowerProbed = false
+async function getSmolPower(): Promise<SmolPower | undefined> {
+  if (_smolPowerProbed) {
     return _smolPower
   }
-  try {
-    const mod = await import('node:smol-power')
-    _smolPower = mod
-    return _smolPower
-  } catch {
-    _smolPower = undefined
+  _smolPowerProbed = true
+  if (!isBuiltin('node:smol-power')) {
     return undefined
   }
+  // Cast through `unknown` because system Node's typings don't
+  // declare the module — only node-smol's lib.d.ts does.
+  _smolPower = (await import(
+    'node:smol-power' as string
+  )) as unknown as SmolPower
+  return _smolPower
+}
+
+// Coerce spawn's stdout (string | Buffer | undefined) to a string.
+function stdoutString(value: unknown): string {
+  if (typeof value === 'string') {
+    return value
+  }
+  if (value instanceof Uint8Array) {
+    return Buffer.from(value).toString('utf8')
+  }
+  return ''
 }
 
 async function detectMacOs(): Promise<boolean> {
@@ -64,7 +84,7 @@ async function detectMacOs(): Promise<boolean> {
     const result = await spawn('pmset', ['-g', 'batt'], {
       stdio: ['ignore', 'pipe', 'ignore'],
     })
-    return /AC Power/.test(result.stdout || '')
+    return /AC Power/.test(stdoutString(result.stdout))
   } catch {
     return true
   }
@@ -122,7 +142,7 @@ async function detectWindows(): Promise<boolean> {
       ],
       { stdio: ['ignore', 'pipe', 'ignore'] },
     )
-    const trimmed = (result.stdout || '').trim()
+    const trimmed = stdoutString(result.stdout).trim()
     if (trimmed === '') {
       return true
     }

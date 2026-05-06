@@ -1,19 +1,41 @@
-# check-new-deps Hook
+# check-new-deps
 
-A Claude Code pre-tool hook that checks new dependencies against [Socket.dev](https://socket.dev) before they're added to the project. It runs automatically every time Claude tries to edit or create a dependency manifest file.
+A **Claude Code hook** that runs whenever Claude tries to edit or
+create a dependency manifest (`package.json`, `requirements.txt`,
+`Cargo.toml`, and 14+ other ecosystems). It extracts the
+*newly added* dependencies, asks [Socket.dev](https://socket.dev) if
+any of them are known malware or have critical security alerts, and
+**blocks** the edit if so.
 
-## What it does
+> If you haven't worked with Claude Code hooks before: hooks are tiny
+> scripts that run at specific lifecycle points. A `PreToolUse` hook
+> like this one fires *before* Claude calls a tool (here, `Edit` or
+> `Write`). It can either **prime** (write to stderr, exit 0, model
+> carries on) or **block** (exit 2, edit never happens). This one
+> blocks for malware/critical findings and primes for low-quality
+> warnings.
 
-When Claude edits a file like `package.json`, `requirements.txt`, `Cargo.toml`, or any of 17+ supported ecosystems, this hook:
+## What it does, step by step
 
-1. **Detects the file type** and extracts dependency names from the content
-2. **Diffs against the old content** (for edits) so only *newly added* deps are checked
-3. **Queries the Socket.dev API** to check for malware and critical security alerts
-4. **Blocks the edit** (exit code 2) if malware or critical alerts are found
-5. **Warns** (but allows) if a package has a low quality score
-6. **Allows** (exit code 0) if everything is clean or the file isn't a manifest
+1. Claude tries to edit `package.json` (or any other supported
+   manifest).
+2. The hook reads the proposed edit from stdin.
+3. It detects the file type and extracts dependency names from the
+   new content.
+4. For an `Edit` (not a `Write`), it diffs new content vs. old, so
+   only *newly added* dependencies get checked — existing deps
+   aren't re-scanned every time you bump an unrelated version.
+5. It builds a [Package URL (PURL)](https://github.com/package-url/purl-spec)
+   for each new dep and calls Socket.dev's `checkMalware` API.
+6. Three outcomes:
+   - **Malware or critical alert** → exit `2`. Edit is blocked,
+     Claude reads the alert reason from stderr and either picks a
+     different package or asks the user.
+   - **Low quality score** → exit `0` with a warning. Edit proceeds.
+   - **Clean (or file isn't a manifest)** → exit `0` silently. Edit
+     proceeds.
 
-## How it works
+## Flow diagram
 
 ```
 Claude wants to edit package.json
@@ -23,7 +45,7 @@ Hook receives the edit via stdin (JSON)
         │
         ▼
 Extract new deps from new_string
-Diff against old_string (if Edit)
+Diff against old_string (if Edit, not Write)
         │
         ▼
 Build Package URLs (PURLs) for each dep
@@ -31,17 +53,17 @@ Build Package URLs (PURLs) for each dep
         ▼
 Call sdk.checkMalware(components)
   - ≤5 deps: parallel firewall API (fast, full data)
-  - >5 deps: batch PURL API (efficient)
+  - >5 deps:  batch PURL API (efficient)
         │
         ├── Malware/critical alert → EXIT 2 (blocked)
-        ├── Low score → warn, EXIT 0 (allowed)
-        └── Clean → EXIT 0 (allowed)
+        ├── Low score              → warn, EXIT 0 (allowed)
+        └── Clean                  → EXIT 0 (allowed)
 ```
 
 ## Supported ecosystems
 
-| File | Ecosystem | Example dep format |
-|------|-----------|-------------------|
+| File pattern | Ecosystem | Example |
+|-------------|-----------|---------|
 | `package.json` | npm | `"express": "^4.19"` |
 | `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock` | npm | lockfile entries |
 | `requirements.txt`, `pyproject.toml`, `setup.py` | PyPI | `flask>=3.0` |
@@ -51,7 +73,7 @@ Call sdk.checkMalware(components)
 | `composer.json`, `composer.lock` | Composer (PHP) | `"vendor/package": "^3.0"` |
 | `pom.xml`, `build.gradle` | Maven (Java) | `<artifactId>commons</artifactId>` |
 | `pubspec.yaml`, `pubspec.lock` | Pub (Dart) | `flutter_bloc: ^8.1` |
-| `.csproj` | NuGet (.NET) | `<PackageReference Include="..."/>` |
+| `.csproj` | NuGet (.NET) | `<PackageReference Include="..." />` |
 | `mix.exs` | Hex (Elixir) | `{:phoenix, "~> 1.7"}` |
 | `Package.swift` | Swift PM | `.package(url: "...", from: "4.0")` |
 | `*.tf` | Terraform | `source = "hashicorp/aws"` |
@@ -60,7 +82,13 @@ Call sdk.checkMalware(components)
 | `flake.nix` | Nix | `github:owner/repo` |
 | `.github/workflows/*.yml` | GitHub Actions | `uses: owner/repo@ref` |
 
-## Configuration
+## Caching
+
+API responses are cached in-memory for 5 minutes (max 500 entries)
+to avoid redundant network calls when Claude touches the same
+manifest a few times in one session.
+
+## Wiring
 
 The hook is registered in `.claude/settings.json`:
 
@@ -84,19 +112,23 @@ The hook is registered in `.claude/settings.json`:
 
 ## Dependencies
 
-All dependencies use `catalog:` references from the workspace root (`pnpm-workspace.yaml`):
+All dependencies use `catalog:` references from the workspace root
+(`pnpm-workspace.yaml`):
 
-- `@socketsecurity/sdk` — Socket.dev SDK v4 with `checkMalware()` API
-- `@socketsecurity/lib` — shared constants and path utilities
-- `@socketregistry/packageurl-js` — Package URL (PURL) parsing and stringification
-
-## Caching
-
-API responses are cached in-memory for 5 minutes (max 500 entries) to avoid redundant network calls when Claude checks the same dependency multiple times in a session.
+- `@socketsecurity/sdk` — Socket.dev SDK v4, exposes `checkMalware()`.
+- `@socketsecurity/lib` — shared constants and path utilities.
+- `@socketregistry/packageurl-js` — Package URL (PURL) parsing.
 
 ## Exit codes
 
-| Code | Meaning | Claude behavior |
-|------|---------|----------------|
-| 0 | Allow | Edit/Write proceeds normally |
-| 2 | Block | Edit/Write is rejected, Claude sees the error message |
+| Code | Meaning | What Claude does next |
+|------|---------|----------------------|
+| `0` | Allow | Edit/Write proceeds normally. |
+| `2` | Block | Edit/Write is rejected; Claude reads the block reason from stderr. |
+
+## Cross-fleet sync
+
+This README and the hook itself live in
+[`socket-repo-template`](https://github.com/SocketDev/socket-repo-template/tree/main/template/.claude/hooks/check-new-deps)
+and are required to be byte-identical across every fleet repo.
+`scripts/sync-scaffolding.mts` flags drift; `--fix` rewrites it.

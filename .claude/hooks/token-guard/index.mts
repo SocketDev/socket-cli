@@ -126,15 +126,34 @@ type ToolInput = {
 const hasRedaction = (command: string): boolean =>
   REDACTION_MARKERS.some(re => re.test(command))
 
-// Word-boundary match so `PASS` doesn't fire on `PATHS-ALLOWLIST` and
-// `AUTH` doesn't fire on `AUTHOR`. Env-var-style boundaries treat `_`
-// as a separator (so `ACCESS_TOKEN` matches `TOKEN`) but require a
-// non-alphanumeric character on each end (so `PATHS` doesn't match
-// `PASS`). The pre-fix substring match created false positives
-// whenever a path name happened to contain a sensitive keyword as a
-// literal substring.
+// Env-var-context match: only fire when a sensitive keyword appears
+// in a position that ACTUALLY references an env var. Possible contexts:
+//   - `$TOKEN` / `${TOKEN}` / `${TOKEN:-default}`
+//   - `TOKEN=value` / `export TOKEN=value`
+//   - `env TOKEN` / `printenv TOKEN` / `unset TOKEN`
+//
+// The previous version did `command.toUpperCase()` then matched on
+// `(?:^|\W)PASS(?:\W|$)` against the entire command string. That
+// produced false positives any time a sensitive keyword appeared as
+// an English word inside a commit message body, comment, or quoted
+// literal — e.g. "tests pass", "test passed", "all checks pass".
+//
+// Now the regex is anchored to the env-var sigils that distinguish
+// env-var references from prose: `$NAME`, `${NAME}`, `NAME=`, `env NAME`,
+// `printenv NAME`, `unset NAME`. Plain-prose occurrences ("tests pass")
+// no longer trigger.
 const sensitiveEnvBoundaryRes = SENSITIVE_ENV_NAMES.map(
-  frag => new RegExp(String.raw`(?:^|[^A-Z0-9])${frag}(?:[^A-Z0-9]|$)`),
+  frag =>
+    new RegExp(
+      String.raw`(?:` +
+        // $NAME  or  ${NAME}  or  ${NAME:-...}  or  ${NAME:=...} etc.
+        String.raw`\$\{?[A-Z0-9_]*${frag}[A-Z0-9_]*\}?` +
+        // NAME=  (assignment; require alphanumeric/underscore name)
+        String.raw`|\b[A-Z0-9_]*${frag}[A-Z0-9_]*\s*=` +
+        // env NAME  /  printenv NAME  /  unset NAME  /  export NAME
+        String.raw`|\b(?:env|printenv|unset|export)\s+[A-Z0-9_]*${frag}[A-Z0-9_]*\b` +
+        String.raw`)`,
+    ),
 )
 const referencesSensitiveEnv = (command: string): boolean => {
   const upper = command.toUpperCase()

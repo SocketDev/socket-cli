@@ -12,6 +12,7 @@ import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { spawn } from '@socketsecurity/lib/spawn'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { XportManifestSchema } from './xport-schema.mts'
@@ -27,11 +28,22 @@ const outPath = path.join(rootDir, 'xport.schema.json')
 // then layering the canonical $schema / $id / title on top gives a clean
 // draft-2020-12 document with the Socket-specific headers.
 const enriched = {
-  ...XportManifestSchema,
   $schema: 'https://json-schema.org/draft/2020-12/schema',
   $id: 'https://github.com/SocketDev/xport.schema.json',
   title: 'xport lock-step manifest',
+  ...XportManifestSchema,
 }
 
 writeFileSync(outPath, JSON.stringify(enriched, null, 2) + '\n', 'utf8')
+
+// Run oxfmt on the output so the file matches what oxfmt would
+// produce. Without this, `pnpm run check --all` (which runs oxfmt
+// over the tree) would flag the emitted schema as drifted on every
+// repo that re-emits it. The schema is in IDENTICAL_FILES, so the
+// formatted form is the byte-canonical form fleet-wide.
+await spawn('pnpm', ['exec', 'oxfmt', outPath], {
+  cwd: rootDir,
+  stdio: 'inherit',
+})
+
 logger.success(`wrote ${path.relative(rootDir, outPath)}`)
