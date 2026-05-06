@@ -152,8 +152,8 @@ describe('handleCreateNewScan excludePaths', () => {
           reachExcludePaths: [
             'fixtures/**',
             'dist',
-            'tests/**',
-            'packages/*/**',
+            'tests',
+            'packages/*',
           ],
         }),
       }),

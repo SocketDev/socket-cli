@@ -17,34 +17,47 @@ type ApplyFullExcludePathsResult = {
   mergedReachabilityOptions: ReachabilityOptions
 }
 
-/**
- * Converts a user-facing full-scan exclude path into the socket.yml
- * projectIgnorePaths shape used by SCA manifest discovery.
- */
-export function excludePathToProjectIgnorePath(path: string): string {
-  const stripped = stripTrailingSlash(path)
-  return stripped.endsWith('/**') ? stripped : `${stripped}/**`
+function normalizeProjectIgnorePath(path: string): string {
+  return stripTrailingSlash(
+    toPosixPath(path.startsWith('/') ? path.slice(1) : path),
+  )
 }
 
-/**
- * Rejects gitignore-style negation patterns for --exclude-paths because the
- * flag is a positive full-exclusion list, not a complete ignore language.
- */
-export function assertNoNegationPatterns(paths: readonly string[]): void {
-  for (const path of paths) {
-    if (path.startsWith('!')) {
-      throw new InputError(
-        `--exclude-paths does not support negation patterns. Got: '${path}'.`,
-      )
-    }
+function pathRelativeToTarget(
+  path: string,
+  target: string,
+): string | undefined {
+  const normalized = normalizeProjectIgnorePath(path)
+  if (target === '.' || target === '') {
+    return normalized
   }
+  if (normalized === target) {
+    return '**'
+  }
+  const targetPrefix = `${target}/`
+  if (normalized.startsWith(targetPrefix)) {
+    return normalized.slice(targetPrefix.length)
+  }
+  return undefined
+}
+
+function stripTrailingSlash(path: string): string {
+  return path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path
+}
+
+function toPosixPath(path: string): string {
+  return path.replaceAll('\\', '/')
 }
 
 /**
- * Applies --exclude-paths consistently to SCA manifest discovery and Coana.
- * SCA exclusion always applies when paths are provided. The reachability
- * options are merged unconditionally; callers decide whether to actually run
- * reachability and consume them.
+ * Fans --exclude-paths out to both exclusion sinks: the SCA manifest-discovery
+ * pipeline (via socket.yml `projectIgnorePaths`) and the reachability analyzer
+ * (via `reachExcludePaths`, ultimately coana's --exclude-dirs). Existing
+ * `projectIgnorePaths` from socket.yml are also forwarded to reachability so
+ * coana sees the same effective set on both sides — coana's own socket.yml
+ * inference fires only when --exclude-dirs isn't passed, so once we forward
+ * the user's patterns we have to also forward the existing ones to keep the
+ * analyzer's view in sync.
  */
 export function applyFullExcludePaths({
   cwd,
@@ -55,11 +68,8 @@ export function applyFullExcludePaths({
   const { excludePaths } = reachabilityOptions
   const scaExcludeGlobs = excludePaths.map(excludePathToProjectIgnorePath)
   const coanaExcludeGlobs = projectIgnorePathsToReachExcludePaths(
-    scaExcludeGlobs,
-    {
-      cwd,
-      target,
-    },
+    excludePaths,
+    { cwd, target },
   )
   const socketConfigReachExcludeGlobs = excludePaths.length
     ? projectIgnorePathsToReachExcludePaths(socketConfig?.projectIgnorePaths, {
@@ -94,96 +104,55 @@ export function applyFullExcludePaths({
 }
 
 /**
- * Translates project-root projectIgnorePaths into Coana --exclude-dirs values,
- * which are interpreted relative to the current reachability analysis target.
+ * Rejects gitignore-style negation patterns for --exclude-paths. The flag is
+ * a positive exclusion list; coana's --exclude-dirs has no negation form, so
+ * accepting `!path` would be a lie on the reachability side.
+ */
+export function assertNoNegationPatterns(paths: readonly string[]): void {
+  for (const path of paths) {
+    if (path.startsWith('!')) {
+      throw new InputError(
+        `--exclude-paths does not support negation patterns. Got: '${path}'.`,
+      )
+    }
+  }
+}
+
+/**
+ * SCA-side adapter. The user-facing contract for --exclude-paths is anchored
+ * micromatch from the project root, but socket.yml `projectIgnorePaths` is
+ * gitignore-style and expands a bare name to a match-anywhere pattern. Append
+ * `/**` so the pattern contains a slash and gets anchored by the gitignore
+ * translator, matching files under the named directory at the user-specified
+ * depth instead of any depth.
+ */
+export function excludePathToProjectIgnorePath(path: string): string {
+  const stripped = stripTrailingSlash(path)
+  return stripped.endsWith('/**') ? stripped : `${stripped}/**`
+}
+
+/**
+ * Re-anchors project-root patterns onto the reachability analysis target.
+ * Coana matches --exclude-dirs relative to whichever directory it was invoked
+ * on, so when the analysis target is a nested subdirectory, project-root
+ * patterns need their target prefix stripped. Patterns that fall outside the
+ * target are dropped — coana cannot exclude what it isn't analyzing. Bails
+ * out entirely when any input contains a negation, since coana's --exclude-dirs
+ * has no negation form.
  */
 export function projectIgnorePathsToReachExcludePaths(
   paths: readonly string[] | undefined,
   options: { cwd: string; target: string },
 ): string[] {
-  // GitHub App-style projectIgnorePaths support negation. Coana's
-  // --exclude-dirs does not, so keep the existing Coana behavior and let it
-  // infer config ignores itself when any negation is present.
-  if (!Array.isArray(paths) || paths.some(path => path.includes('!'))) {
+  if (!Array.isArray(paths) || paths.some(p => p.startsWith('!'))) {
     return []
   }
-
-  // projectIgnorePaths are rooted at the project cwd. Coana receives excludes
-  // relative to its analysis target, so nested target scans need translation.
   const targetPath = path.isAbsolute(options.target)
     ? path.relative(options.cwd, options.target)
     : options.target
   const targetPattern = toPosixPath(stripTrailingSlash(targetPath))
-  return paths.flatMap(path =>
-    projectIgnorePathToReachExcludePaths(path, targetPattern),
-  )
-}
-
-function projectIgnorePathToReachExcludePaths(
-  path: string,
-  targetPattern: string,
-): string[] {
-  const reachPath = pathRelativeToTarget(path, targetPattern)
-  if (!reachPath) {
-    return []
-  }
-  return expandReachExcludePath(reachPath)
-}
-
-function expandReachExcludePath(path: string): string[] {
-  if (path === '**') {
-    return ['**']
-  }
-  // Coana anchors --exclude-dirs at the project root (matches via
-  // micromatch's isMatch on `relative(projectRoot, file)`), so a bare name
-  // with no slash would not match nested occurrences. socket.yml
-  // projectIgnorePaths use gitignore semantics where a bare name matches at
-  // any depth — bridge the gap by prepending **/ when the input has no path
-  // separator. Inputs that already contain a slash are kept anchored.
-  const firstSlash = path.indexOf('/')
-  const prefix = firstSlash === -1 || firstSlash === path.length - 1 ? '**/' : ''
-  const normalized = stripTrailingSlash(
-    path.startsWith('/') ? path.slice(1) : path,
-  )
-  const pattern = `${prefix}${normalized}`
-  return pattern.endsWith('/*') || pattern.endsWith('/**')
-    ? [pattern]
-    : [pattern, `${pattern}/**`]
-}
-
-function pathRelativeToTarget(path: string, target: string): string | undefined {
-  const normalized = normalizeProjectIgnorePath(path)
-  if (target === '.' || target === '') {
-    return normalized
-  }
-
-  // Ignore paths outside the analysis target. They still affect SCA manifest
-  // discovery through projectIgnorePaths, but Coana cannot exclude directories
-  // outside the target it is analyzing.
-  if (normalized === target) {
-    return '**'
-  }
-  const targetPrefix = `${target}/`
-  if (normalized.startsWith(targetPrefix)) {
-    return normalized.slice(targetPrefix.length)
-  }
-  const recursiveTargetPrefix = `${targetPrefix}**/`
-  if (normalized.startsWith(recursiveTargetPrefix)) {
-    return normalized.slice(targetPrefix.length)
-  }
-  return undefined
-}
-
-function normalizeProjectIgnorePath(path: string): string {
-  return stripTrailingSlash(
-    toPosixPath(path.startsWith('/') ? path.slice(1) : path),
-  )
-}
-
-function toPosixPath(path: string): string {
-  return path.replaceAll('\\', '/')
-}
-
-function stripTrailingSlash(path: string): string {
-  return path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path
+  return paths.flatMap(p => {
+    const reachPath = pathRelativeToTarget(p, targetPattern)
+    return reachPath === undefined ? [] : [reachPath]
+  })
 }

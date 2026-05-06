@@ -139,8 +139,8 @@ describe('handleScanReach', () => {
           reachExcludePaths: [
             'vendor/**',
             'node_modules',
-            'tests/**',
-            'packages/*/**',
+            'tests',
+            'packages/*',
           ],
         }),
       }),
@@ -200,7 +200,7 @@ describe('handleScanReach', () => {
     expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
       expect.objectContaining({
         reachabilityOptions: expect.objectContaining({
-          reachExcludePaths: ['node_modules', 'tests/**'],
+          reachExcludePaths: ['node_modules', 'tests'],
         }),
       }),
     )
