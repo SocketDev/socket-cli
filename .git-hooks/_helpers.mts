@@ -102,8 +102,15 @@ const PERSONAL_PATH_PLACEHOLDER_RE =
 
 // Per-line opt-out marker for our pre-commit / pre-push scanners.
 //
-// Canonical form:    # socket-hook: allow
-// Targeted form:     # socket-hook: allow <rule>
+// Canonical form:    <comment-prefix> socket-hook: allow
+// Targeted form:     <comment-prefix> socket-hook: allow <rule>
+//
+// `<comment-prefix>` is whichever comment style the host file uses —
+// `#` for shell / YAML / TOML / Dockerfile, `//` for TS / JS / Rust /
+// Go / C-family, or `/*` for the C-block-comment opener. The hook is
+// invoked from many file types; pinning to `#` made the marker fail
+// silently in `.ts` / `.mts` files (where `// socket-hook: allow` is
+// the only sensible spelling) and confused contributors.
 //
 // The targeted form names a specific rule (`personal-path`, `npx`,
 // `aws-key`, etc.) and is recommended for reviewers; the bare `allow`
@@ -113,8 +120,9 @@ const PERSONAL_PATH_PLACEHOLDER_RE =
 // Legacy `# zizmor: ...` markers are still recognized for one cycle so
 // existing files don't have to be rewritten in the same change that
 // renames the marker.
-const SOCKET_HOOK_MARKER_RE = /#\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
-const LEGACY_ZIZMOR_MARKER_RE = /#\s*zizmor:\s*[\w-]+/
+const SOCKET_HOOK_MARKER_RE =
+  /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
+const LEGACY_ZIZMOR_MARKER_RE = /(?:#|\/\/|\/\*)\s*zizmor:\s*[\w-]+/
 
 function lineIsSuppressed(line: string, rule?: string): boolean {
   if (LEGACY_ZIZMOR_MARKER_RE.test(line)) {

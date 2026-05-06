@@ -115,6 +115,28 @@ test('respects bare # socket-hook: allow marker', async () => {
   assert.equal(code, 0)
 })
 
+test('respects // socket-hook: allow logger marker (slash-slash prefix)', async () => {
+  const { code } = await runHook({
+    tool_name: 'Edit',
+    tool_input: {
+      file_path: 'src/foo.ts',
+      new_string: 'process.stderr.write(buf) // socket-hook: allow logger',
+    },
+  })
+  assert.equal(code, 0)
+})
+
+test('respects /* socket-hook: allow logger */ marker (block-comment prefix)', async () => {
+  const { code } = await runHook({
+    tool_name: 'Edit',
+    tool_input: {
+      file_path: 'src/foo.ts',
+      new_string: 'console.error("a") /* socket-hook: allow logger */',
+    },
+  })
+  assert.equal(code, 0)
+})
+
 test('does not flag JSDoc examples', async () => {
   const { code } = await runHook({
     tool_name: 'Write',

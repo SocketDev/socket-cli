@@ -165,6 +165,7 @@ Full hook spec in [`.claude/hooks/token-guard/README.md`](.claude/hooks/token-gu
 - `/scanning-security` — AgentShield + zizmor audit
 - `/scanning-quality` — quality analysis
 - Shared subskills in `.claude/skills/_shared/`
+- **Handing off to another agent** — see [`docs/references/agent-delegation.md`](docs/references/agent-delegation.md) for when to reach for `codex:codex-rescue`, the `delegate` subagent (OpenCode → Fireworks/Synthetic/Kimi), `Explore`, `Plan`, vs. driving the skill CLIs directly. The CLI-subprocess contract used by skills lives in [`_shared/multi-agent-backends.md`](.claude/skills/_shared/multi-agent-backends.md).
 
 #### Skill scope: fleet vs partial vs unique
 

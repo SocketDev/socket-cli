@@ -1,5 +1,5 @@
 /**
- * @fileoverview Canonical fleet security-scan runner.
+ * @fileoverview Canonical fleet scanning-security runner.
  *
  * Runs the two static-analysis tools the fleet uses for local security
  * checks before push:

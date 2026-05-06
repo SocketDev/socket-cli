@@ -9,6 +9,13 @@ allowed-tools: Task, Read, Grep, Glob, AskUserQuestion, Bash(pnpm run check:*), 
 
 Perform comprehensive quality analysis across the codebase using specialized agents. Clean up junk files first, then scan and generate a prioritized report with actionable fixes.
 
+## Modes
+
+- **Default (interactive)** — `AskUserQuestion` is used to confirm cleanup deletions and to pick scan scope.
+- **Non-interactive** — `/scanning-quality non-interactive` (or any of the aliases below) skips every `AskUserQuestion` and applies safe defaults: scan scope = all types, cleanup = leave junk files in place (don't delete without confirmation), report-save = yes (`reports/scanning-quality-YYYY-MM-DD.md`). Use this when running headlessly (e.g. `pnpm run fleet-skill scanning-quality`, CI cron, programmatic Claude). The four-flag programmatic-Claude lockdown rule already strips `AskUserQuestion`, so headless runs default to non-interactive automatically — but call it out explicitly so future readers understand the contract.
+
+Detect non-interactive mode via any of: `--non-interactive` argument, `non-interactive` argument, `SCANNING_QUALITY_NONINTERACTIVE=1` env var, or absence of `AskUserQuestion` in the available tool surface.
+
 ## Scan Types
 
 1. **critical** - Crashes, security vulnerabilities, resource leaks, data corruption
@@ -46,7 +53,7 @@ Install zizmor for GitHub Actions security scanning, respecting the soak window 
 
 ### Phase 4: Repository Cleanup
 
-Find and remove junk files (with user confirmation via AskUserQuestion):
+Find junk files (interactive mode confirms each batch via `AskUserQuestion`; non-interactive mode lists what was found in the report and leaves them in place — don't delete files without explicit confirmation, even on a clean dirty-tree):
 - SCREAMING_TEXT.md files outside `.claude/` and `docs/`
 - Test files in wrong locations
 - Temp files (`.tmp`, `.DS_Store`, `*~`, `*.swp`, `*.bak`)
@@ -62,7 +69,9 @@ Report errors as Critical findings. Warnings are Low findings. (The fleet's stru
 
 ### Phase 6: Determine Scan Scope
 
-Ask user which scans to run using AskUserQuestion (multiSelect). Default: all scans.
+In **interactive** mode, ask the user which scans to run via `AskUserQuestion` (multiSelect). Default: all scans.
+
+In **non-interactive** mode, run all scan types — no prompt.
 
 ### Phase 7: Execute Scans
 
@@ -77,7 +86,8 @@ Each agent reports findings as:
 - Deduplicate findings across scan types
 - Sort by severity: Critical > High > Medium > Low
 - Generate markdown report with file:line references, suggested fixes, and coverage metrics
-- Offer to save to `reports/scanning-quality-YYYY-MM-DD.md`
+- **Interactive**: offer to save to `reports/scanning-quality-YYYY-MM-DD.md` via `AskUserQuestion`.
+- **Non-interactive**: save the report unconditionally to `reports/scanning-quality-YYYY-MM-DD.md` (create the directory if missing) so the artifact is visible to the orchestrating runner. If the `Write` tool isn't in the allow list, emit the full markdown to stdout with a leading `=== REPORT MARKDOWN ===` marker so the runner can capture and persist it.
 
 ### Phase 9: Summary
 

@@ -155,7 +155,7 @@ const ClaudeSchema = Type.Object(
   {
     includeSecurityScanSkill: Type.Optional(
       Type.Boolean({
-        description: 'Ship `.claude/skills/security-scan/SKILL.md`.',
+        description: 'Ship `.claude/skills/scanning-security/SKILL.md`.',
       }),
     ),
     includeSharedSkills: Type.Optional(

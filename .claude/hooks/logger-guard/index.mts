@@ -68,7 +68,11 @@ const LOGGER_LEAK_RE =
 
 const COMMENT_LINE_RE = /^\s*(\*|\/\/|#)/
 const JSDOC_TAG_RE = /@(example|param|returns?|see|link)\b/
-const SOCKET_HOOK_MARKER_RE = /#\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
+// Accept `#`, `//`, or `/*` comment prefixes — same as the git pre-
+// commit/pre-push scanners. This hook is invoked on TS/JS edits where
+// `// socket-hook: allow logger` is the only natural spelling.
+const SOCKET_HOOK_MARKER_RE =
+  /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
 
 function isMarkerSuppressed(line: string): boolean {
   const m = line.match(SOCKET_HOOK_MARKER_RE)

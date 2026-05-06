@@ -155,7 +155,7 @@
       "type": "object",
       "properties": {
         "includeSecurityScanSkill": {
-          "description": "Ship `.claude/skills/security-scan/SKILL.md`.",
+          "description": "Ship `.claude/skills/scanning-security/SKILL.md`.",
           "type": "boolean"
         },
         "includeSharedSkills": {
