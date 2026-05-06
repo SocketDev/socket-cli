@@ -1,10 +1,15 @@
-// Shared helpers for git hooks — API-key allowlist + ANSI colors +
-// content scanners. Imported by .git-hooks/{commit-msg,pre-commit,
-// pre-push}.mts. No third-party deps; uses only Node built-ins.
+// Shared helpers for git hooks — API-key allowlist + content scanners
+// + tiny string utilities (color wrappers, marker-syntax picker, path
+// normalize). Each hook imports `getDefaultLogger` from
+// `@socketsecurity/lib/logger` directly for output; this module stays
+// import-light so the cost of `import './_helpers.mts'` is bounded.
 //
 // Requires Node 25+ for stable .mts type-stripping (no flag needed).
 // Earlier Node versions either lacked --experimental-strip-types or
 // shipped it under a flag, both unacceptable for hook ergonomics.
+//
+// Hooks run *after* `pnpm install`, so `@socketsecurity/lib` is on the
+// resolution path for any caller that imports it.
 
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, statSync } from 'node:fs'
@@ -50,26 +55,20 @@ export const FAKE_TOKEN_LEGACY = 'socket-lib-test-fake-token'
 // Name of the env var used in shell examples; not a token value.
 export const SOCKET_SECURITY_ENV = 'SOCKET_SECURITY_API_KEY='
 
-// ── ANSI colors ────────────────────────────────────────────────────
+// ── Output ──────────────────────────────────────────────────────────
+//
+// Hooks call `getDefaultLogger()` from `@socketsecurity/lib/logger`
+// directly. Color comes from the logger's semantic methods —
+// `.fail()` is red ✖, `.success()` is green ✔, `.warn()` is yellow ⚠,
+// `.info()` is blue ℹ, `.error()` is plain. ANSI constants and
+// `red()`/`green()`/`yellow()` wrappers are intentionally NOT exported
+// from this module; the logger owns the visual surface.
 
-export const RED = '\x1b[0;31m'
-export const GREEN = '\x1b[0;32m'
-export const YELLOW = '\x1b[1;33m'
-export const NC = '\x1b[0m'
-
-// ── Output helpers ─────────────────────────────────────────────────
-
-export const out = (msg: string): void => {
-  process.stdout.write(msg + '\n')
-}
-
-export const err = (msg: string): void => {
-  process.stderr.write(msg + '\n')
-}
-
-export const red = (msg: string): string => `${RED}${msg}${NC}`
-export const green = (msg: string): string => `${GREEN}${msg}${NC}`
-export const yellow = (msg: string): string => `${YELLOW}${msg}${NC}`
+// Posix-form path normalization for staged file lists. Git on Windows
+// can hand back backslash separators in some surfaces; the downstream
+// `startsWith('.git-hooks/')` / `includes('/external/')` pattern
+// matching assumes forward slashes. Cheap to convert once.
+export const normalizePath = (p: string): string => p.replace(/\\/g, '/')
 
 // ── API-key allowlist filter ───────────────────────────────────────
 
@@ -406,6 +405,85 @@ export const scanLoggerLeaks = (text: string): LineHit[] => {
       lineNumber: i + 1,
       line,
       suggested: suggestLoggerReplacement(line),
+    })
+  }
+  return hits
+}
+
+// ── Cross-repo path scanner ────────────────────────────────────────
+//
+// Two forbidden forms catch the same mistake — referencing another
+// fleet repo by a path that escapes the current repo:
+//
+//   1. `../<fleet-repo>/…` (cross-repo relative). Hardcodes the
+//      assumption that both repos are sibling clones under the same
+//      projects root; breaks in CI sandboxes / fresh clones / non-
+//      standard layouts.
+//   2. `<abs-prefix>/projects/<fleet-repo>/…` (cross-repo absolute,
+//      where <abs-prefix> isn't already caught by scanPersonalPaths
+//      because it uses a placeholder like `${HOME}`).
+//
+// The right way is to import from the published npm package
+// (`@socketsecurity/lib/...`, `@socketsecurity/registry/...`).
+// Scanner detects both shapes; suppress with the canonical marker
+// `<comment-prefix> socket-hook: allow cross-repo`.
+
+const FLEET_REPO_NAMES = [
+  'claude-code',
+  'socket-addon',
+  'socket-btm',
+  'socket-cli',
+  'socket-lib',
+  'socket-packageurl-js',
+  'socket-registry',
+  'socket-repo-template',
+  'socket-sdk-js',
+  'socket-sdxgen',
+  'socket-stuie',
+  'ultrathink',
+] as const
+
+// `../<repo>/…` or `../../<repo>/…` etc. — relative path that walks
+// out of the current repo into a sibling fleet repo.
+const CROSS_REPO_RELATIVE_RE = new RegExp(
+  String.raw`(?:^|[\s'"\`(=,])\.\.(?:/\.\.)*/(?:${FLEET_REPO_NAMES.join('|')})\b`,
+)
+// `…/projects/<repo>/…` — absolute or env-rooted path into a sibling
+// fleet repo. Catches cases where scanPersonalPaths has already been
+// satisfied via `${HOME}` / `<user>` substitution but the path itself
+// still escapes into another repo.
+const CROSS_REPO_ABSOLUTE_RE = new RegExp(
+  String.raw`/projects/(?:${FLEET_REPO_NAMES.join('|')})\b`,
+)
+const CROSS_REPO_ANY_RE = new RegExp(
+  `${CROSS_REPO_RELATIVE_RE.source}|${CROSS_REPO_ABSOLUTE_RE.source}`,
+)
+
+export const scanCrossRepoPaths = (
+  text: string,
+  currentRepoName?: string,
+): LineHit[] => {
+  const hits: LineHit[] = []
+  const lines = text.split('\n')
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!
+    const m = line.match(CROSS_REPO_ANY_RE)
+    if (!m) {
+      continue
+    }
+    // A repo's own paths (`socket-lib/...` referenced from inside
+    // socket-lib) are fine — we only catch cross-repo escapes.
+    const matched = m[0]
+    if (currentRepoName && matched.includes(`/${currentRepoName}`)) {
+      continue
+    }
+    if (looksLikeDocumentation(line, CROSS_REPO_ANY_RE, 'cross-repo')) {
+      continue
+    }
+    hits.push({
+      lineNumber: i + 1,
+      line,
+      suggested: '',
     })
   }
   return hits

@@ -16,18 +16,18 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import process from 'node:process'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import {
-  err,
   gitLines,
-  green,
-  out,
-  red,
   readFileForScan,
   scanLinearRefs,
   scanSocketApiKeys,
   shouldSkipFile,
   stripAiAttribution,
 } from './_helpers.mts'
+
+const logger = getDefaultLogger()
 
 const main = (): number => {
   let errors = 0
@@ -50,8 +50,8 @@ const main = (): number => {
     // Socket API keys (allowlist-aware).
     const apiHits = scanSocketApiKeys(text)
     if (apiHits.length > 0) {
-      out(red('✗ SECURITY: Potential API key detected in commit!'))
-      out(`File: ${file}`)
+      logger.fail('Potential API key detected in commit!')
+      logger.info(`File: ${file}`)
       errors++
     }
 
@@ -62,8 +62,8 @@ const main = (): number => {
       /^\.env(\.[^/]+)?$/.test(base) &&
       !/^\.env\.(example|test|precommit)$/.test(base)
     ) {
-      out(red('✗ SECURITY: .env file in commit!'))
-      out(`File: ${file}`)
+      logger.fail('.env file in commit!')
+      logger.info(`File: ${file}`)
       errors++
     }
   }
@@ -78,14 +78,12 @@ const main = (): number => {
     const original = readFileSync(commitMsgFile, 'utf8')
     const linearHits = scanLinearRefs(original)
     if (linearHits.length > 0) {
-      out(red('✗ Commit message references Linear issue(s):'))
+      logger.fail('Commit message references Linear issue(s):')
       for (const ref of linearHits) {
-        out(`  ${ref}`)
+        logger.info(`  ${ref}`)
       }
-      out(
-        red(
-          'Linear tracking lives in Linear. Remove the reference from the commit message.',
-        ),
+      logger.info(
+        'Linear tracking lives in Linear. Remove the reference from the commit message.',
       )
       errors++
     }
@@ -94,14 +92,14 @@ const main = (): number => {
     const { cleaned, removed } = stripAiAttribution(original)
     if (removed > 0) {
       writeFileSync(commitMsgFile, cleaned)
-      out(
-        `${green('✓ Auto-stripped')} ${removed} AI attribution line(s) from commit message`,
+      logger.success(
+        `Auto-stripped ${removed} AI attribution line(s) from commit message`,
       )
     }
   }
 
   if (errors > 0) {
-    err(red('✗ Commit blocked by security validation'))
+    logger.fail('Commit blocked by security validation')
     return 1
   }
   return 0

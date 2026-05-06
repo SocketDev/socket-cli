@@ -11,14 +11,14 @@
 import { basename } from 'node:path'
 import process from 'node:process'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import {
-  err,
   gitLines,
-  green,
-  out,
-  red,
+  normalizePath,
   readFileForScan,
   scanAwsKeys,
+  scanCrossRepoPaths,
   scanGitHubTokens,
   scanLoggerLeaks,
   scanNpxDlx,
@@ -27,41 +27,45 @@ import {
   scanSocketApiKeys,
   shouldSkipFile,
   socketHookMarkerFor,
-  yellow,
 } from './_helpers.mts'
 
+const logger = getDefaultLogger()
+
 const main = (): number => {
-  out(green('Running Socket Security checks...'))
+  logger.info('Running Socket Security checks...')
+  // Normalize to POSIX forward slashes so downstream
+  // `startsWith('.git-hooks/')` / `includes('/external/')` matchers
+  // work the same on Windows (where git can return `\` separators).
   const stagedFiles = gitLines(
     'diff',
     '--cached',
     '--name-only',
     '--diff-filter=ACM',
-  )
+  ).map(normalizePath)
   if (stagedFiles.length === 0) {
-    out(green('✓ No files to check'))
+    logger.success('No files to check')
     return 0
   }
 
   let errors = 0
 
   // .DS_Store files.
-  out('Checking for .DS_Store files...')
+  logger.info('Checking for .DS_Store files...')
   const dsStores = stagedFiles.filter(f => f.includes('.DS_Store'))
   if (dsStores.length > 0) {
-    out(red('✗ ERROR: .DS_Store file detected!'))
-    dsStores.forEach(f => out(f))
+    logger.fail('.DS_Store file detected!')
+    dsStores.forEach(f => logger.info(f))
     errors++
   }
 
   // Log files (ignore test logs).
-  out('Checking for log files...')
+  logger.info('Checking for log files...')
   const logs = stagedFiles.filter(
     f => f.endsWith('.log') && !/test.*\.log$/.test(f),
   )
   if (logs.length > 0) {
-    out(red('✗ ERROR: Log file detected!'))
-    logs.forEach(f => out(f))
+    logger.fail('Log file detected!')
+    logs.forEach(f => logger.info(f))
     errors++
   }
 
@@ -69,7 +73,7 @@ const main = (): number => {
   // .env.precommit (templates / tracked placeholders). Match the
   // commit-msg.mts behavior: a nested .env.local is just as much a
   // leak as a root-level one. basename() catches both.
-  out('Checking for .env files...')
+  logger.info('Checking for .env files...')
   const envFiles = stagedFiles.filter(f => {
     const base = basename(f)
     return (
@@ -78,16 +82,16 @@ const main = (): number => {
     )
   })
   if (envFiles.length > 0) {
-    out(red('✗ ERROR: .env file detected!'))
-    envFiles.forEach(f => out(f))
-    out(
+    logger.fail('.env file detected!')
+    envFiles.forEach(f => logger.info(f))
+    logger.info(
       'These files should never be committed. Use .env.example for templates.',
     )
     errors++
   }
 
   // Hardcoded personal paths.
-  out('Checking for hardcoded personal paths...')
+  logger.info('Checking for hardcoded personal paths...')
   for (const file of stagedFiles) {
     if (shouldSkipFile(file)) {
       continue
@@ -98,14 +102,14 @@ const main = (): number => {
     }
     const hits = scanPersonalPaths(text)
     if (hits.length > 0) {
-      out(red(`✗ ERROR: Hardcoded personal path found in: ${file}`))
+      logger.fail(`Hardcoded personal path found in: ${file}`)
       for (const h of hits.slice(0, 3)) {
-        out(`${h.lineNumber}: ${h.line.trim()}`)
+        logger.info(`${h.lineNumber}: ${h.line.trim()}`)
         if (h.suggested && h.suggested !== h.line) {
-          out(`     fix: ${h.suggested.trim()}`)
+          logger.info(`     fix: ${h.suggested.trim()}`)
         }
       }
-      out(
+      logger.info(
         'Replace with `<user>` / `<USERNAME>` placeholders, an env var ' +
           '(`$HOME`, `${USER}`), or — for documentation lines that need ' +
           'the literal username form — append the marker ' +
@@ -116,7 +120,7 @@ const main = (): number => {
   }
 
   // Socket API keys (warning, not blocking).
-  out('Checking for API keys...')
+  logger.info('Checking for API keys...')
   for (const file of stagedFiles) {
     if (shouldSkipFile(file)) {
       continue
@@ -127,14 +131,14 @@ const main = (): number => {
     }
     const hits = scanSocketApiKeys(text)
     if (hits.length > 0) {
-      out(yellow(`⚠ WARNING: Potential API key found in: ${file}`))
-      hits.slice(0, 3).forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
-      out('If this is a real API key, DO NOT COMMIT IT.')
+      logger.warn(`Potential API key found in: ${file}`)
+      hits.slice(0, 3).forEach(h => logger.info(`${h.lineNumber}:${h.line.trim()}`))
+      logger.info('If this is a real API key, DO NOT COMMIT IT.')
     }
   }
 
   // Other secret patterns (AWS, GitHub, private keys).
-  out('Checking for potential secrets...')
+  logger.info('Checking for potential secrets...')
   for (const file of stagedFiles) {
     if (shouldSkipFile(file)) {
       continue
@@ -146,27 +150,27 @@ const main = (): number => {
 
     const aws = scanAwsKeys(text)
     if (aws.length > 0) {
-      out(red(`✗ ERROR: Potential AWS credentials found in: ${file}`))
-      aws.slice(0, 3).forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
+      logger.fail(`Potential AWS credentials found in: ${file}`)
+      aws.slice(0, 3).forEach(h => logger.info(`${h.lineNumber}:${h.line.trim()}`))
       errors++
     }
 
     const gh = scanGitHubTokens(text)
     if (gh.length > 0) {
-      out(red(`✗ ERROR: Potential GitHub token found in: ${file}`))
-      gh.slice(0, 3).forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
+      logger.fail(`Potential GitHub token found in: ${file}`)
+      gh.slice(0, 3).forEach(h => logger.info(`${h.lineNumber}:${h.line.trim()}`))
       errors++
     }
 
     const pk = scanPrivateKeys(text)
     if (pk.length > 0) {
-      out(red(`✗ ERROR: Private key found in: ${file}`))
+      logger.fail(`Private key found in: ${file}`)
       errors++
     }
   }
 
   // npx/dlx usage.
-  out('Checking for npx/dlx usage...')
+  logger.info('Checking for npx/dlx usage...')
   for (const file of stagedFiles) {
     if (
       file.includes('node_modules/') ||
@@ -186,14 +190,14 @@ const main = (): number => {
     }
     const hits = scanNpxDlx(text)
     if (hits.length > 0) {
-      out(red(`✗ ERROR: npx/dlx usage found in: ${file}`))
+      logger.fail(`npx/dlx usage found in: ${file}`)
       for (const h of hits.slice(0, 3)) {
-        out(`${h.lineNumber}: ${h.line.trim()}`)
+        logger.info(`${h.lineNumber}: ${h.line.trim()}`)
         if (h.suggested && h.suggested !== h.line) {
-          out(`     fix: ${h.suggested.trim()}`)
+          logger.info(`     fix: ${h.suggested.trim()}`)
         }
       }
-      out(
+      logger.info(
         "Use 'pnpm exec <package>' or 'pnpm run <script>' instead. For " +
           'documentation lines that need the literal `npx` form, append ' +
           `the marker \`${socketHookMarkerFor(file, 'npx')}\`.`,
@@ -207,7 +211,7 @@ const main = (): number => {
   // from @socketsecurity/lib/logger; the logger-guard PreToolUse hook
   // catches these at edit time, this gate catches them at commit time
   // for edits made outside Claude.
-  out('Checking for direct stream writes...')
+  logger.info('Checking for direct stream writes...')
   for (const file of stagedFiles) {
     if (shouldSkipFile(file)) {
       continue
@@ -235,14 +239,14 @@ const main = (): number => {
     }
     const hits = scanLoggerLeaks(text)
     if (hits.length > 0) {
-      out(red(`✗ ERROR: direct stream write found in: ${file}`))
+      logger.fail(`direct stream write found in: ${file}`)
       for (const h of hits.slice(0, 3)) {
-        out(`${h.lineNumber}: ${h.line.trim()}`)
+        logger.info(`${h.lineNumber}: ${h.line.trim()}`)
         if (h.suggested && h.suggested !== h.line) {
-          out(`     fix: ${h.suggested.trim()}`)
+          logger.info(`     fix: ${h.suggested.trim()}`)
         }
       }
-      out(
+      logger.info(
         'Use `getDefaultLogger()` from `@socketsecurity/lib/logger`. ' +
           'For documentation lines that need the literal call, append ' +
           `the marker \`${socketHookMarkerFor(file, 'logger')}\`.`,
@@ -251,14 +255,63 @@ const main = (): number => {
     }
   }
 
+  // Cross-repo path references — `../<fleet-repo>/…` (relative escape
+  // out of the current repo) or `…/projects/<fleet-repo>/…` (absolute
+  // sibling-clone escape). Both forms hardcode someone's local layout
+  // and break in CI / fresh clones / non-standard checkouts.
+  logger.info('Checking for cross-repo path references...')
+  // Best-effort current repo name from the toplevel directory; if git
+  // isn't reachable we simply don't suppress own-repo matches.
+  const repoTopline = gitLines('rev-parse', '--show-toplevel')[0] ?? ''
+  const currentRepoName = repoTopline ? basename(repoTopline) : undefined
+  for (const file of stagedFiles) {
+    if (shouldSkipFile(file)) {
+      continue
+    }
+    // Don't scan the hook source itself (it lists fleet repo names by
+    // necessity), the canonical CLAUDE.md fleet block (which documents
+    // fleet repos), or vendored upstream sources.
+    if (
+      file.startsWith('.git-hooks/') ||
+      file.startsWith('.claude/hooks/') ||
+      file.endsWith('CLAUDE.md') ||
+      file.includes('/external/') ||
+      file.includes('/vendor/') ||
+      file.includes('/upstream/') ||
+      file === 'pnpm-lock.yaml' ||
+      file === 'pnpm-workspace.yaml'
+    ) {
+      continue
+    }
+    const text = readFileForScan(file)
+    if (!text) {
+      continue
+    }
+    const hits = scanCrossRepoPaths(text, currentRepoName)
+    if (hits.length > 0) {
+      logger.fail(`cross-repo path reference found in: ${file}`)
+      for (const h of hits.slice(0, 3)) {
+        logger.info(`${h.lineNumber}: ${h.line.trim()}`)
+      }
+      logger.info(
+        'Cross-repo paths (`../<fleet-repo>/…` or absolute `…/projects/<fleet-repo>/…`) ' +
+          'are forbidden — they assume sibling-clone layout and break in CI / fresh clones. ' +
+          'Import via the published npm package instead (`@socketsecurity/lib/<subpath>`, ' +
+          `\`@socketsecurity/registry/<subpath>\`). For documentation lines that need the ` +
+          `literal path, append the marker \`${socketHookMarkerFor(file, 'cross-repo')}\`.`,
+      )
+      errors++
+    }
+  }
+
   if (errors > 0) {
-    err('')
-    err(red(`✗ Security check failed with ${errors} error(s).`))
-    err('Fix the issues above and try again.')
+    logger.error('')
+    logger.fail(`Security check failed with ${errors} error(s).`)
+    logger.error('Fix the issues above and try again.')
     return 1
   }
 
-  out(green('✓ All security checks passed!'))
+  logger.success('All security checks passed!')
   return 0
 }
 

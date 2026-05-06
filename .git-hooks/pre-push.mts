@@ -21,16 +21,16 @@ import { existsSync, statSync } from 'node:fs'
 import { basename } from 'node:path'
 import process from 'node:process'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import {
   containsAiAttribution,
-  err,
   git,
   gitLines,
-  green,
-  out,
-  red,
   readFileForScan,
+  normalizePath,
   scanAwsKeys,
+  scanCrossRepoPaths,
   scanGitHubTokens,
   scanLoggerLeaks,
   scanPersonalPaths,
@@ -39,6 +39,8 @@ import {
   shouldSkipFile,
   socketHookMarkerFor,
 } from './_helpers.mts'
+
+const logger = getDefaultLogger()
 
 const ZERO_SHA = '0000000000000000000000000000000000000000'
 
@@ -58,7 +60,7 @@ const checkSubmodules = (): number => {
   if (!existsSync('.gitmodules')) {
     return 0
   }
-  out('Checking submodules are pristine...')
+  logger.info('Checking submodules are pristine...')
   let errors = 0
   const status = gitLines('submodule', 'status')
   for (const line of status) {
@@ -69,22 +71,22 @@ const checkSubmodules = (): number => {
     const rest = line.slice(1).trim().split(/\s+/)
     const smPath = rest[1] || '<unknown>'
     if (prefix === '+') {
-      out(red(`✗ BLOCKED: Submodule has wrong commit: ${smPath}`))
-      out(`  Run: git submodule update --init ${smPath}`)
+      logger.fail(`Submodule has wrong commit: ${smPath}`)
+      logger.info(`  Run: git submodule update --init ${smPath}`)
       errors++
     } else if (prefix === 'U') {
-      out(red(`✗ BLOCKED: Submodule has merge conflict: ${smPath}`))
+      logger.fail(`Submodule has merge conflict: ${smPath}`)
       errors++
     }
     // '-' (uninitialized) is OK — CI shallow clones skip submodules.
   }
   if (errors > 0) {
-    err('')
-    err(red(`✗ Push blocked: ${errors} submodule(s) not pristine!`))
-    err('Fix submodules before pushing.')
+    logger.error('')
+    logger.fail(`Push blocked: ${errors} submodule(s) not pristine!`)
+    logger.error('Fix submodules before pushing.')
     return errors
   }
-  out(green('✓ All submodules pristine'))
+  logger.success('All submodules pristine')
   return 0
 }
 
@@ -97,7 +99,7 @@ const computeRange = (
   remoteSha: string,
 ): string | null => {
   if (localRef.startsWith('refs/tags/')) {
-    out(green(`Skipping tag push: ${localRef}`))
+    logger.info(`Skipping tag push: ${localRef}`)
     return null
   }
   if (localSha === ZERO_SHA) {
@@ -129,7 +131,7 @@ const computeRange = (
     const def = defaultBranchOf(remote)
     const baseRef = `${remote}/${def}`
     if (!refExists(baseRef)) {
-      out(green('✓ Skipping validation (no baseline to compare against)'))
+      logger.success('Skipping validation (no baseline to compare against)')
       return null
     }
     return `${baseRef}..${localSha}`
@@ -141,7 +143,7 @@ const computeRange = (
     const def = defaultBranchOf(remote)
     const baseRef = `${remote}/${def}`
     if (!refExists(baseRef)) {
-      out(green('✓ Skipping validation (no baseline for force-push)'))
+      logger.success('Skipping validation (no baseline for force-push)')
       return null
     }
     return `${baseRef}..${localSha}`
@@ -152,7 +154,7 @@ const computeRange = (
 // Scans every commit in the range for AI attribution in commit
 // messages.
 const scanCommitMessages = (range: string): number => {
-  out('Checking commit messages for AI attribution...')
+  logger.info('Checking commit messages for AI attribution...')
   const shas = gitLines('rev-list', range)
   let errors = 0
   for (const sha of shas) {
@@ -162,36 +164,41 @@ const scanCommitMessages = (range: string): number => {
     const msg = git('log', '-1', '--format=%B', sha)
     if (containsAiAttribution(msg)) {
       if (errors === 0) {
-        out(red('✗ BLOCKED: AI attribution found in commit messages!'))
-        out('Commits with AI attribution:')
+        logger.fail('AI attribution found in commit messages!')
+        logger.info('Commits with AI attribution:')
       }
       const oneline = git('log', '-1', '--oneline', sha)
-      out(`  - ${oneline}`)
+      logger.info(`  - ${oneline}`)
       errors++
     }
   }
   if (errors > 0) {
-    out('')
-    out('These commits were likely created with --no-verify, bypassing the')
-    out('commit-msg hook that strips AI attribution.')
-    out('')
+    logger.info('')
+    logger.info('These commits were likely created with --no-verify, bypassing the')
+    logger.info('commit-msg hook that strips AI attribution.')
+    logger.info('')
     const rangeBase = range.split('..')[0]
-    out('To fix:')
-    out(`  git rebase -i ${rangeBase}`)
-    out("  Mark commits as 'reword', remove AI attribution, save")
-    out('  git push')
+    logger.info('To fix:')
+    logger.info(`  git rebase -i ${rangeBase}`)
+    logger.info("  Mark commits as 'reword', remove AI attribution, save")
+    logger.info('  git push')
   }
   return errors
 }
 
 // Scans changed files in the range for secrets, keys, and leaks.
 const scanFilesInRange = (range: string): number => {
-  out('Checking files for security issues...')
-  const changed = gitLines('diff', '--name-only', range)
+  logger.info('Checking files for security issues...')
+  // Normalize to POSIX forward slashes — same reason as pre-commit.mts.
+  const changed = gitLines('diff', '--name-only', range).map(normalizePath)
   let errors = 0
   if (changed.length === 0) {
     return 0
   }
+  // Best-effort current repo name — used by cross-repo scanner to
+  // avoid flagging a repo's own paths.
+  const repoTopline = gitLines('rev-parse', '--show-toplevel')[0] ?? ''
+  const currentRepoName = repoTopline ? basename(repoTopline) : undefined
 
   // .env files at any depth — match commit-msg.mts and pre-commit.mts.
   // Allow .env.example, .env.test, .env.precommit (templates / tracked
@@ -205,22 +212,22 @@ const scanFilesInRange = (range: string): number => {
     )
   })
   if (envHits.length > 0) {
-    out(red('✗ BLOCKED: Attempting to push .env file!'))
-    out(`Files: ${envHits.join(', ')}`)
+    logger.fail('Attempting to push .env file!')
+    logger.info(`Files: ${envHits.join(', ')}`)
     errors += envHits.length
   }
   const dsHits = changed.filter(f => f.includes('.DS_Store'))
   if (dsHits.length > 0) {
-    out(red('✗ BLOCKED: .DS_Store file in push!'))
-    out(`Files: ${dsHits.join(', ')}`)
+    logger.fail('.DS_Store file in push!')
+    logger.info(`Files: ${dsHits.join(', ')}`)
     errors += dsHits.length
   }
   const logHits = changed.filter(
     f => f.endsWith('.log') && !/test.*\.log$/.test(f),
   )
   if (logHits.length > 0) {
-    out(red('✗ BLOCKED: Log file in push!'))
-    out(`Files: ${logHits.join(', ')}`)
+    logger.fail('Log file in push!')
+    logger.info(`Files: ${logHits.join(', ')}`)
     errors += logHits.length
   }
 
@@ -252,14 +259,14 @@ const scanFilesInRange = (range: string): number => {
 
     const pathHits = scanPersonalPaths(text)
     if (pathHits.length > 0) {
-      out(red(`✗ BLOCKED: Hardcoded personal path found in: ${file}`))
+      logger.fail(`Hardcoded personal path found in: ${file}`)
       for (const h of pathHits.slice(0, 3)) {
-        out(`${h.lineNumber}: ${h.line.trim()}`)
+        logger.info(`${h.lineNumber}: ${h.line.trim()}`)
         if (h.suggested && h.suggested !== h.line) {
-          out(`     fix: ${h.suggested.trim()}`)
+          logger.info(`     fix: ${h.suggested.trim()}`)
         }
       }
-      out(
+      logger.info(
         'Replace with `<user>` / `<USERNAME>` placeholders, an env var ' +
           '(`$HOME`, `${USER}`), or — for documentation lines that need ' +
           'the literal username form — append the marker ' +
@@ -270,28 +277,28 @@ const scanFilesInRange = (range: string): number => {
 
     const apiHits = scanSocketApiKeys(text)
     if (apiHits.length > 0) {
-      out(red(`✗ BLOCKED: Real API key detected in: ${file}`))
-      apiHits.slice(0, 3).forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
+      logger.fail(`Real API key detected in: ${file}`)
+      apiHits.slice(0, 3).forEach(h => logger.info(`${h.lineNumber}:${h.line.trim()}`))
       errors++
     }
 
     const awsHits = scanAwsKeys(text)
     if (awsHits.length > 0) {
-      out(red(`✗ BLOCKED: Potential AWS credentials found in: ${file}`))
-      awsHits.slice(0, 3).forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
+      logger.fail(`Potential AWS credentials found in: ${file}`)
+      awsHits.slice(0, 3).forEach(h => logger.info(`${h.lineNumber}:${h.line.trim()}`))
       errors++
     }
 
     const ghHits = scanGitHubTokens(text)
     if (ghHits.length > 0) {
-      out(red(`✗ BLOCKED: Potential GitHub token found in: ${file}`))
-      ghHits.slice(0, 3).forEach(h => out(`${h.lineNumber}:${h.line.trim()}`))
+      logger.fail(`Potential GitHub token found in: ${file}`)
+      ghHits.slice(0, 3).forEach(h => logger.info(`${h.lineNumber}:${h.line.trim()}`))
       errors++
     }
 
     const pkHits = scanPrivateKeys(text)
     if (pkHits.length > 0) {
-      out(red(`✗ BLOCKED: Private key found in: ${file}`))
+      logger.fail(`Private key found in: ${file}`)
       errors++
     }
 
@@ -306,17 +313,44 @@ const scanFilesInRange = (range: string): number => {
     ) {
       const loggerHits = scanLoggerLeaks(text)
       if (loggerHits.length > 0) {
-        out(red(`✗ BLOCKED: direct stream write found in: ${file}`))
+        logger.fail(`direct stream write found in: ${file}`)
         for (const h of loggerHits.slice(0, 3)) {
-          out(`${h.lineNumber}: ${h.line.trim()}`)
+          logger.info(`${h.lineNumber}: ${h.line.trim()}`)
           if (h.suggested && h.suggested !== h.line) {
-            out(`     fix: ${h.suggested.trim()}`)
+            logger.info(`     fix: ${h.suggested.trim()}`)
           }
         }
-        out(
+        logger.info(
           'Use `getDefaultLogger()` from `@socketsecurity/lib/logger`. ' +
             'For documentation lines that need the literal call, append ' +
             `the marker \`${socketHookMarkerFor(file, 'logger')}\`.`,
+        )
+        errors++
+      }
+    }
+
+    // Cross-repo path references — both relative (`../<fleet-repo>/…`)
+    // and absolute (`…/projects/<fleet-repo>/…`) forms.
+    if (
+      !file.startsWith('.git-hooks/') &&
+      !file.startsWith('.claude/hooks/') &&
+      !file.endsWith('CLAUDE.md') &&
+      !file.includes('/external/') &&
+      !file.includes('/vendor/') &&
+      !file.includes('/upstream/') &&
+      file !== 'pnpm-lock.yaml' &&
+      file !== 'pnpm-workspace.yaml'
+    ) {
+      const crossRepoHits = scanCrossRepoPaths(text, currentRepoName)
+      if (crossRepoHits.length > 0) {
+        logger.fail(`cross-repo path reference in: ${file}`)
+        for (const h of crossRepoHits.slice(0, 3)) {
+          logger.info(`${h.lineNumber}: ${h.line.trim()}`)
+        }
+        logger.info(
+          'Cross-repo paths are forbidden — import via the published npm ' +
+            'package (`@socketsecurity/lib/<subpath>`) instead. For doc ' +
+            `lines, append \`${socketHookMarkerFor(file, 'cross-repo')}\`.`,
         )
         errors++
       }
@@ -326,7 +360,7 @@ const scanFilesInRange = (range: string): number => {
 }
 
 const main = async (): Promise<number> => {
-  out(green('Running mandatory pre-push validation...'))
+  logger.info('Running mandatory pre-push validation...')
 
   const submoduleErrors = checkSubmodules()
   if (submoduleErrors > 0) {
@@ -352,7 +386,7 @@ const main = async (): Promise<number> => {
     // Validate range.
     const rl = spawnSync('git', ['rev-list', range], { stdio: 'ignore' })
     if (rl.status !== 0) {
-      err(red(`✗ Invalid commit range: ${range}`))
+      logger.fail(`Invalid commit range: ${range}`)
       return 1
     }
 
@@ -361,13 +395,13 @@ const main = async (): Promise<number> => {
   }
 
   if (totalErrors > 0) {
-    err('')
-    err(red('✗ Push blocked by mandatory validation!'))
-    err('Fix the issues above before pushing.')
+    logger.error('')
+    logger.fail('Push blocked by mandatory validation!')
+    logger.error('Fix the issues above before pushing.')
     return 1
   }
 
-  out(green('✓ All mandatory validation passed!'))
+  logger.success('All mandatory validation passed!')
   return 0
 }
 
