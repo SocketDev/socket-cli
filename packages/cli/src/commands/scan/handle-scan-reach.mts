@@ -4,6 +4,7 @@ import { pluralize } from '@socketsecurity/lib/words'
 
 const logger = getDefaultLogger()
 
+import { applyFullExcludePaths } from './exclude-paths.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { outputScanReach } from './output-scan-reach.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
@@ -57,8 +58,16 @@ export async function handleScanReach({
     ? socketYmlResult.data?.parsed
     : undefined
 
+  const { effectiveSocketConfig, mergedReachabilityOptions } =
+    applyFullExcludePaths({
+      cwd,
+      reachabilityOptions,
+      socketConfig,
+      target: targets[0]!,
+    })
+
   const packagePaths = await getPackageFilesForScan(targets, supportedFiles, {
-    config: socketConfig,
+    config: effectiveSocketConfig,
     cwd,
   })
 
@@ -88,7 +97,7 @@ export async function handleScanReach({
     orgSlug,
     outputPath,
     packagePaths,
-    reachabilityOptions,
+    reachabilityOptions: mergedReachabilityOptions,
     spinner,
     target: targets[0]!,
     uploadManifests: true,

@@ -5,9 +5,10 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
 
+import { assertNoNegationPatterns } from './exclude-paths.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
-import { reachabilityFlags } from './reachability-flags.mts'
+import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
@@ -307,6 +308,7 @@ async function run(
     hidden,
     flags: {
       ...generalFlags,
+      ...excludePathsFlag,
       ...reachabilityFlags,
     },
     help: command => `
@@ -317,7 +319,7 @@ async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
-      ${getFlagListOutput(generalFlags)}
+      ${getFlagListOutput({ ...generalFlags, ...excludePathsFlag })}
 
     Reachability Options (when --reach is used)
       ${getFlagListOutput(reachabilityFlags)}
@@ -587,6 +589,9 @@ async function run(
     logger.error('')
   }
 
+  const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
+  assertNoNegationPatterns(excludePaths)
+
   const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
 
   // Validation helpers for better readability.
@@ -785,6 +790,7 @@ async function run(
     pendingHead: Boolean(pendingHead),
     pullRequest: validatedPullRequest,
     reach: {
+      excludePaths,
       runReachabilityAnalysis: Boolean(reach),
       reachAnalysisMemoryLimit: validatedReachAnalysisMemoryLimit,
       reachAnalysisTimeout: validatedReachAnalysisTimeout,
