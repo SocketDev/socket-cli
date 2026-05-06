@@ -1,5 +1,5 @@
 {
-  "$schema": "./socket-repo-template-schema.json",
+  "$schema": "../socket-repo-template-schema.json",
   "schemaVersion": 1,
   "repoName": "socket-cli",
   "kind": "consumer"
