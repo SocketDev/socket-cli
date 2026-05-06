@@ -257,7 +257,7 @@ overrides:
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
   '@sigstore/sign': 4.1.0
-  '@socketsecurity/lib': 5.26.1
+  '@socketsecurity/lib': 5.28.0
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ansi-regex: 6.2.2
   brace-expansion: 5.0.5
@@ -283,7 +283,7 @@ overrides:
   npm-package-arg: 13.0.0
   packageurl-js: npm:@socketregistry/packageurl-js@^1.4.2
   path-parse: npm:@socketregistry/path-parse@^1.0.8
-  postcss: '>=8.5.10'
+  postcss: '>=8.5.12'
   qs: '>=6.15.1'
   safe-buffer: npm:@socketregistry/safe-buffer@^1.0.9
   safer-buffer: npm:@socketregistry/safer-buffer@^1.0.10
@@ -400,8 +400,8 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 5.26.1
-        version: 5.26.1(typescript@5.9.3)
+        specifier: 5.28.0
+        version: 5.28.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.2(typescript@5.9.3)
@@ -577,8 +577,8 @@ importers:
   .claude/hooks/auth-rotation-reminder:
     dependencies:
       '@socketsecurity/lib':
-        specifier: 5.26.1
-        version: 5.26.1(typescript@5.9.3)
+        specifier: 5.28.0
+        version: 5.28.0(typescript@5.9.3)
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -590,8 +590,8 @@ importers:
         specifier: 'catalog:'
         version: 1.4.2
       '@socketsecurity/lib':
-        specifier: 5.26.1
-        version: 5.26.1(typescript@5.9.3)
+        specifier: 5.28.0
+        version: 5.28.0(typescript@5.9.3)
       '@socketsecurity/sdk':
         specifier: 'catalog:'
         version: 4.0.1
@@ -635,8 +635,8 @@ importers:
         specifier: 'catalog:'
         version: 1.4.2
       '@socketsecurity/lib':
-        specifier: 5.26.1
-        version: 5.26.1(typescript@5.9.3)
+        specifier: 5.28.0
+        version: 5.28.0(typescript@5.9.3)
 
   .claude/hooks/stale-process-sweeper: {}
 
@@ -645,8 +645,8 @@ importers:
   .claude/hooks/token-hygiene:
     devDependencies:
       '@socketsecurity/lib':
-        specifier: 5.26.1
-        version: 5.26.1(typescript@5.9.3)
+        specifier: 5.28.0
+        version: 5.28.0(typescript@5.9.3)
       '@types/node':
         specifier: 24.9.2
         version: 24.9.2
@@ -663,8 +663,8 @@ importers:
         specifier: 'catalog:'
         version: 0.34.49
       '@socketsecurity/lib':
-        specifier: 5.26.1
-        version: 5.26.1(typescript@5.9.3)
+        specifier: 5.28.0
+        version: 5.28.0(typescript@5.9.3)
       magic-string:
         specifier: 'catalog:'
         version: 0.30.19
@@ -720,8 +720,8 @@ importers:
         specifier: 'catalog:'
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 5.26.1
-        version: 5.26.1(typescript@5.9.3)
+        specifier: 5.28.0
+        version: 5.28.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.2(typescript@5.9.3)
@@ -837,8 +837,8 @@ importers:
   packages/package-builder:
     dependencies:
       '@socketsecurity/lib':
-        specifier: 5.26.1
-        version: 5.26.1(typescript@5.9.3)
+        specifier: 5.28.0
+        version: 5.28.0(typescript@5.9.3)
       build-infra:
         specifier: workspace:*
         version: link:../build-infra
@@ -2219,6 +2219,7 @@ packages:
 
   '@socketaddon/iocraft@file:packages/package-builder/build/dev/out/socketaddon-iocraft':
     resolution: {directory: packages/package-builder/build/dev/out/socketaddon-iocraft, type: directory}
+    engines: {node: '>=18'}
 
   '@socketregistry/es-set-tostringtag@1.0.10':
     resolution: {integrity: sha512-btXmvw1JpA8WtSoXx9mTapo9NAyIDKRRzK84i48d8zc0X09M6ORfobVnHbgwhXf7CFhkRzhYrHG9dqbI9vpELQ==}
@@ -2277,9 +2278,10 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/lib@5.26.1':
-    resolution: {integrity: sha512-ppyhOC/vPBY0gZVRtzNpmf/8nodILERmNV8J62pzVo7GvAB9S1q0/k/vSF2tor2NJEDtim+m6N+J5qtQ0mR99A==}
-    engines: {node: '>=22', pnpm: '>=11.0.0-rc.0'}
+  '@socketsecurity/lib@5.28.0':
+    resolution: {integrity: sha512-SVVq+ODU3H6KAQXwaANnnq2sNHj+JgHM67R0ww93V8J38upiSUlUR8Mxx3P5mo922B+gY6WNFU0zSJfEOjbKew==}
+    engines: {node: '>=22', pnpm: '>=11.0.6'}
+    hasBin: true
     peerDependencies:
       typescript: '>=5.0.0'
     peerDependenciesMeta:
@@ -3828,8 +3830,8 @@ packages:
     resolution: {integrity: sha512-orRsuYpJVw8LdAwqqLykBj9ecS5/cRHlI5+nvTo8LcCKmzDmqVORXtOIYEEQuL9D4BxtA1lm5isAqzQZCoQ6Eg==}
     engines: {node: '>=4'}
 
-  postcss@8.5.10:
-    resolution: {integrity: sha512-pMMHxBOZKFU6HgAZ4eyGnwXF/EvPGGqUr0MnZ5+99485wwW41kW91A4LOGxSHhgugZmSChL5AlElNdwlNgcnLQ==}
+  postcss@8.5.12:
+    resolution: {integrity: sha512-W62t/Se6rA0Az3DfCL0AqJwXuKwBeYg6nOaIgzP+xZ7N5BFCI7DYi1qs6ygUYT6rvfi6t9k65UMLJC+PHZpDAA==}
     engines: {node: ^10 || ^12 || >=14}
 
   postject@1.0.0-alpha.6:
@@ -5769,7 +5771,7 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/lib@5.26.1(typescript@5.9.3)':
+  '@socketsecurity/lib@5.28.0(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 
@@ -7380,7 +7382,7 @@ snapshots:
       cssesc: 3.0.0
       util-deprecate: 1.0.2
 
-  postcss@8.5.10:
+  postcss@8.5.12:
     dependencies:
       nanoid: 3.3.11
       picocolors: 1.1.1
@@ -7980,7 +7982,7 @@ snapshots:
       esbuild: 0.27.7
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
-      postcss: 8.5.10
+      postcss: 8.5.12
       rollup: 4.60.1
       tinyglobby: 0.2.16
     optionalDependencies:

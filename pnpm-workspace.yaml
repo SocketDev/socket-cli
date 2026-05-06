@@ -48,7 +48,7 @@ catalog:
   '@socketregistry/packageurl-js': 1.4.2
   '@socketregistry/yocto-spinner': 1.0.25
   '@socketsecurity/config': 3.0.1
-  '@socketsecurity/lib': 5.26.1
+  '@socketsecurity/lib': 5.28.0
   '@socketsecurity/registry': 2.0.2
   '@socketsecurity/sdk': 4.0.1
   '@types/adm-zip': 0.5.7
@@ -205,7 +205,7 @@ overrides:
   npm-package-arg: 'catalog:'
   packageurl-js: 'catalog:'
   path-parse: 'catalog:'
-  postcss: '>=8.5.10'
+  postcss: '>=8.5.12'
   qs: '>=6.15.1'
   safe-buffer: 'catalog:'
   safer-buffer: 'catalog:'
