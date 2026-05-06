@@ -107,6 +107,14 @@ async function main() {
       SOCKET_CLI_API_TOKEN: undefined,
       SOCKET_SECURITY_API_KEY: undefined,
       SOCKET_SECURITY_API_TOKEN: undefined,
+      // Pin timezone for stable date-formatting snapshots. CI runners
+      // are UTC; without this developers on other timezones see
+      // shifted dates (a 2025-04-19T04:50Z fixture renders as Apr 18
+      // in PDT). Forced here — not in `.env.test` — because the host
+      // shell's TZ would otherwise override anything from the env
+      // file. V8 caches TZ after the first Date op per-worker, so
+      // it must enter the worker via spawn env, not setupFiles.
+      TZ: 'UTC',
       // Inject external tool versions (normally inlined at build time).
       ...externalToolVersions,
     }

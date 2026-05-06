@@ -142,9 +142,18 @@ describe('paths constants', () => {
 
     it('getBinCliPath returns path to CLI entry point', () => {
       const result = getBinCliPath()
-      // The bundle entry is `dist/index.js` (was `dist/cli.js` before
-      // the unified-build rename in src/constants/paths.mts).
-      expect(result).toContain('dist/index.js')
+      // Default bundle entry is `dist/index.js` (was `dist/cli.js`
+      // before the unified-build rename in src/constants/paths.mts).
+      // Tests load `.env.test`, which sets `SOCKET_CLI_BIN_PATH` to
+      // `./build/cli.js` so unit tests can exercise locally-built
+      // bundles. The env value is snapshotted at module load by
+      // src/env/socket-cli-bin-path.mts, so we can't unset it here —
+      // accept either the override path or the default.
+      const isOverride =
+        result.endsWith('build/cli.js') || result.endsWith('build\\cli.js')
+      const isDefault =
+        result.endsWith('dist/index.js') || result.endsWith('dist\\index.js')
+      expect(isOverride || isDefault).toBe(true)
     })
 
     it('getDistPath returns distPath', () => {
