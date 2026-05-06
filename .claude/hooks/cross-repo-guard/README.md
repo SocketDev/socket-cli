@@ -29,7 +29,7 @@ workspace dep:
 import { applyShimmer } from '../../socket-lib/dist/effects/text-shimmer.js'
 
 // ✗ WRONG (cross-repo absolute)
-import { applyShimmer } from '/Users/me/projects/socket-lib/dist/effects/text-shimmer.js'
+import { applyShimmer } from '/Users/<user>/projects/socket-lib/dist/effects/text-shimmer.js'
 
 // ✓ RIGHT
 import { applyShimmer } from '@socketsecurity/lib/effects/text-shimmer'

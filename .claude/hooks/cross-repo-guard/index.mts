@@ -116,7 +116,7 @@ function isInScope(filePath: string): boolean {
 }
 
 function repoNameFromPath(filePath: string): string | undefined {
-  // `/Users/jdalton/projects/socket-lib/src/foo.ts` → `socket-lib`.
+  // `/Users/<user>/projects/socket-lib/src/foo.ts` → `socket-lib`.
   // Best-effort: take the segment after `/projects/` if present.
   const m = filePath.match(/\/projects\/([^/]+)/)
   return m?.[1]

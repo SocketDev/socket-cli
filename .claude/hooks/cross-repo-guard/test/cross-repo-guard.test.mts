@@ -37,7 +37,7 @@ test('blocks ../socket-lib/ relative reference', async () => {
   const { code, stderr } = await runHook({
     tool_name: 'Write',
     tool_input: {
-      file_path: '/Users/me/projects/ultrathink/assets/x.mjs',
+      file_path: '/Users/<user>/projects/ultrathink/assets/x.mjs',
       content: `const f = require('../../socket-lib/dist/effects/x.js')`,
     },
   })
@@ -49,8 +49,8 @@ test('blocks /Users/<name>/projects/<fleet-repo>/ absolute reference', async () 
   const { code, stderr } = await runHook({
     tool_name: 'Write',
     tool_input: {
-      file_path: '/Users/me/projects/ultrathink/assets/x.mjs',
-      content: `const f = require('/Users/me/projects/socket-lib/dist/effects/x.js')`,
+      file_path: '/Users/<user>/projects/ultrathink/assets/x.mjs',
+      content: `const f = require('/Users/<user>/projects/socket-lib/dist/effects/x.js')`,
     },
   })
   assert.equal(code, 2, `expected exit 2; got ${code}; stderr=${stderr}`)
@@ -72,8 +72,8 @@ test('does not block own-repo paths (socket-lib editing socket-lib paths)', asyn
   const { code } = await runHook({
     tool_name: 'Write',
     tool_input: {
-      file_path: '/Users/me/projects/socket-lib/scripts/foo.mts',
-      content: `// path: /Users/me/projects/socket-lib/dist/effects/x.js`,
+      file_path: '/Users/<user>/projects/socket-lib/scripts/foo.mts',
+      content: `// path: /Users/<user>/projects/socket-lib/dist/effects/x.js`,
     },
   })
   assert.equal(code, 0)
