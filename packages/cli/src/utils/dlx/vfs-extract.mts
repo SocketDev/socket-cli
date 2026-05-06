@@ -68,7 +68,7 @@ import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { debug } from '@socketsecurity/lib/debug'
-import { safeMkdir } from '@socketsecurity/lib/fs'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 
@@ -441,11 +441,7 @@ export async function extractExternalTools(
       if (isStale) {
         // Clean up stale lock and partial extraction.
         logger.warn('Cleaning up stale extraction lock...')
-        try {
-          await fs.unlink(lockFile)
-        } catch {
-          // Ignore cleanup errors.
-        }
+        await safeDelete(lockFile, { force: true })
         // Retry extraction by calling ourselves recursively.
         return await extractExternalTools(depth + 1)
       }
@@ -490,12 +486,7 @@ export async function extractExternalTools(
           }
           // Extraction incomplete, clean up and retry.
           debug('notice', 'Incomplete extraction detected, cleaning up...')
-          try {
-            await fs.unlink(cacheMarker)
-            await fs.unlink(lockFile)
-          } catch {
-            // Ignore cleanup errors.
-          }
+          await safeDelete([cacheMarker, lockFile], { force: true })
           return await extractExternalTools(depth + 1)
         }
 
@@ -516,11 +507,7 @@ export async function extractExternalTools(
               } catch {
                 // Process died, lock is stale.
                 debug('notice', `Lock holder (PID ${pid}) died during wait`)
-                try {
-                  await fs.unlink(lockFile)
-                } catch {
-                  // Ignore.
-                }
+                await safeDelete(lockFile, { force: true })
                 return await extractExternalTools(depth + 1)
               }
             }
@@ -594,20 +581,12 @@ export async function extractExternalTools(
           'notice',
           'Tool(s) disappeared during validation, re-extracting...',
         )
-        try {
-          await fs.unlink(cacheMarker)
-        } catch {
-          // Ignore cleanup errors.
-        }
+        await safeDelete(cacheMarker, { force: true })
         return await extractExternalTools(depth + 1)
       }
       // Cache marker exists but tools missing, remove marker and re-extract.
       debug('notice', 'Cache validation failed, re-extracting...')
-      try {
-        await fs.unlink(cacheMarker)
-      } catch {
-        // Ignore cleanup errors.
-      }
+      await safeDelete(cacheMarker, { force: true })
     }
 
     const toolPaths: Partial<Record<ExternalTool, string>> = {}
@@ -662,13 +641,10 @@ export async function extractExternalTools(
   } finally {
     // Clean up lock file.
     try {
-      await fs.unlink(lockFile)
+      await safeDelete(lockFile, { force: true })
     } catch (e) {
-      // Only ignore ENOENT (file doesn't exist), log other errors.
       const error = e as NodeJS.ErrnoException
-      if (error.code !== 'ENOENT') {
-        logger.warn(`Failed to cleanup lock file ${lockFile}: ${error.message}`)
-      }
+      logger.warn(`Failed to cleanup lock file ${lockFile}: ${error.message}`)
     }
   }
 }

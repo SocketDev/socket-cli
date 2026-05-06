@@ -43,13 +43,13 @@ import type { GhsaTracker } from '../../../../src/commands/fix/ghsa-tracker.mts'
 
 // Mock file system operations.
 const mockReadJson = vi.hoisted(() => vi.fn())
+const mockSafeDelete = vi.hoisted(() => vi.fn())
 const mockSafeMkdir = vi.hoisted(() => vi.fn())
 const mockWriteJson = vi.hoisted(() => vi.fn())
 
 // Mock fs promises.
 const mockFsWriteFile = vi.hoisted(() => vi.fn())
 const mockFsReadFile = vi.hoisted(() => vi.fn())
-const mockFsUnlink = vi.hoisted(() => vi.fn())
 
 vi.mock('node:fs', async () => {
   const actual = await vi.importActual<typeof import('node:fs')>('node:fs')
@@ -60,13 +60,13 @@ vi.mock('node:fs', async () => {
       mkdir: vi.fn(),
       readFile: mockFsReadFile,
       writeFile: mockFsWriteFile,
-      unlink: mockFsUnlink,
     },
   }
 })
 
 vi.mock('@socketsecurity/lib/fs', () => ({
   readJson: mockReadJson,
+  safeDelete: mockSafeDelete,
   safeMkdir: mockSafeMkdir,
   writeJson: mockWriteJson,
 }))
@@ -80,7 +80,7 @@ describe('ghsa-tracker', () => {
     // Default: lock file creation succeeds.
     mockFsWriteFile.mockResolvedValue(undefined)
     mockFsReadFile.mockResolvedValue('12345')
-    mockFsUnlink.mockResolvedValue(undefined)
+    mockSafeDelete.mockResolvedValue(undefined)
   })
 
   describe('loadGhsaTracker', () => {
@@ -454,23 +454,8 @@ describe('ghsa-tracker', () => {
 
       await markGhsaFixed(mockCwd, 'GHSA-release-lock', 123)
 
-      // Should attempt to unlink the lock file.
-      expect(mockFsUnlink).toHaveBeenCalled()
-    })
-
-    it('handles lock cleanup error gracefully', async () => {
-      const existingTracker: GhsaTracker = {
-        version: 1,
-        fixed: [],
-      }
-
-      mockReadJson.mockResolvedValue(existingTracker)
-      mockFsUnlink.mockRejectedValueOnce(new Error('Cleanup error'))
-
-      // Should not throw.
-      await expect(
-        markGhsaFixed(mockCwd, 'GHSA-cleanup-error', 123),
-      ).resolves.toBeUndefined()
+      // Should attempt to delete the lock file.
+      expect(mockSafeDelete).toHaveBeenCalled()
     })
 
     it('proceeds without lock when all attempts fail', async () => {

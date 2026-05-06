@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { safeMkdirSync } from '@socketsecurity/lib/fs'
+import { safeDelete, safeMkdirSync } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { confirm, select } from '@socketsecurity/lib/stdio/prompts'
 
@@ -543,18 +543,14 @@ async function streamDownloadWithFetch(
 
     // If an error occurs and fileStream was created, attempt to clean up.
     try {
-      await fs.unlink(localPath)
+      await safeDelete(localPath, { force: true })
     } catch (e) {
-      const error = e as NodeJS.ErrnoException
-      // Only log non-ENOENT errors - file not existing is fine.
-      if (error.code !== 'ENOENT') {
-        logger.fail(
-          formatErrorWithDetail(
-            `Error deleting partial file ${localPath}`,
-            error,
-          ),
-        )
-      }
+      logger.fail(
+        formatErrorWithDetail(
+          `Error deleting partial file ${localPath}`,
+          e as NodeJS.ErrnoException,
+        ),
+      )
     }
     // Construct a more informative error message
     let detailedError = `Error during download of ${downloadUrl}: ${(e as { message: string }).message}`

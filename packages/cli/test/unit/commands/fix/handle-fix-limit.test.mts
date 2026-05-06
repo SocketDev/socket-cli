@@ -41,7 +41,7 @@ const mockGetSocketFixPrs = vi.hoisted(() => vi.fn())
 const mockFetchGhsaDetails = vi.hoisted(() => vi.fn())
 const mockGitUnstagedModifiedFiles = vi.hoisted(() => vi.fn())
 const mockReadJsonSync = vi.hoisted(() => vi.fn())
-const mockCleanupTempFile = vi.hoisted(() => vi.fn())
+const mockSafeDelete = vi.hoisted(() => vi.fn())
 
 vi.mock('../../../../src/utils/dlx/spawn.mjs', () => ({
   spawnCoanaDlx: mockSpawnCoanaDlx,
@@ -113,14 +113,9 @@ vi.mock('../../../../src/commands/fix/pr-lifecycle-logger.mts', () => ({
 
 vi.mock('@socketsecurity/lib/fs', () => ({
   readJsonSync: mockReadJsonSync,
+  safeDelete: mockSafeDelete,
   // Return undefined so findSocketYmlSync treats socket.yml as absent.
   safeReadFileSync: vi.fn(() => undefined),
-}))
-
-vi.mock('node:fs', () => ({
-  promises: {
-    unlink: mockCleanupTempFile,
-  },
 }))
 
 describe('socket fix --limit behavior verification', () => {
@@ -188,7 +183,7 @@ describe('socket fix --limit behavior verification', () => {
     })
 
     mockReadJsonSync.mockReturnValue({ fixed: true })
-    mockCleanupTempFile.mockResolvedValue(undefined)
+    mockSafeDelete.mockResolvedValue(undefined)
   })
 
   describe('local mode (no PRs)', () => {

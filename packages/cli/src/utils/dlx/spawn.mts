@@ -27,7 +27,7 @@ import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib/dlx/binary'
 import { detectExecutableType } from '@socketsecurity/lib/dlx/detect'
 import { dlxPackage } from '@socketsecurity/lib/dlx/package'
-import { safeMkdir } from '@socketsecurity/lib/fs'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { whichReal } from '@socketsecurity/lib/bin'
 
@@ -222,7 +222,7 @@ async function downloadGitHubReleaseBinary(
               } catch {
                 // Process died, lock is stale - remove and retry.
                 // eslint-disable-next-line no-await-in-loop
-                await fs.unlink(lockFile).catch(() => {})
+                await safeDelete(lockFile, { force: true })
                 return downloadGitHubReleaseBinary(spec)
               }
             }
@@ -284,7 +284,7 @@ async function downloadGitHubReleaseBinary(
           const target = await fs.readlink(fullPath)
           const resolvedTarget = path.resolve(path.dirname(fullPath), target)
           if (!resolvedTarget.startsWith(normalizedCacheDir)) {
-            await fs.unlink(fullPath)
+            await safeDelete(fullPath, { force: true })
             throw new InputError(
               `extracted symlink ${file} targets ${resolvedTarget} which is outside the cache dir (${normalizedCacheDir}); do NOT trust this release asset, report it to the upstream project, and delete ${cacheDir}`,
             )
@@ -322,11 +322,7 @@ async function downloadGitHubReleaseBinary(
     return binaryPath
   } finally {
     // Clean up lock file.
-    try {
-      await fs.unlink(lockFile)
-    } catch {
-      // Ignore cleanup errors.
-    }
+    await safeDelete(lockFile, { force: true })
   }
 }
 
@@ -1103,7 +1099,7 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
 
         if (isStale) {
           // Stale lock detected, remove and retry.
-          await fs.unlink(lockFile).catch(() => {})
+          await safeDelete(lockFile, { force: true })
           return ensurePythonDlx(retryCount + 1)
         }
 
@@ -1139,11 +1135,7 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
       }
     } finally {
       // Clean up lock file.
-      try {
-        await fs.unlink(lockFile)
-      } catch {
-        // Ignore cleanup errors.
-      }
+      await safeDelete(lockFile, { force: true })
     }
   }
 
@@ -1332,7 +1324,7 @@ export async function ensureSocketPyCli(
 
       if (isStale) {
         // Stale lock detected, remove and retry immediately.
-        await fs.unlink(lockFile).catch(() => {})
+        await safeDelete(lockFile, { force: true })
         return ensureSocketPyCli(pythonBin, retryCount + 1)
       }
 
@@ -1360,7 +1352,7 @@ export async function ensureSocketPyCli(
                 if (pidErr.code !== 'EPERM') {
                   // Lock holder died during wait, retry.
                   // eslint-disable-next-line no-await-in-loop
-                  await fs.unlink(lockFile).catch(() => {})
+                  await safeDelete(lockFile, { force: true })
                   return ensureSocketPyCli(pythonBin, retryCount + 1)
                 }
               }
@@ -1414,11 +1406,7 @@ export async function ensureSocketPyCli(
     }
   } finally {
     // Clean up lock file.
-    try {
-      await fs.unlink(lockFile)
-    } catch {
-      // Ignore cleanup errors.
-    }
+    await safeDelete(lockFile, { force: true })
   }
 }
 

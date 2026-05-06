@@ -2,7 +2,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { readJson, safeMkdir, writeJson } from '@socketsecurity/lib/fs'
+import { readJson, safeDelete, safeMkdir, writeJson } from '@socketsecurity/lib/fs'
 
 import { getSocketFixBranchName } from './git.mts'
 
@@ -103,7 +103,7 @@ export async function markGhsaFixed(
             debug(
               `ghsa-tracker: removing stale lock from dead process ${lockPid}`,
             )
-            await fs.unlink(lockFile).catch(() => {})
+            await safeDelete(lockFile, { force: true })
             continue
           }
         } catch {
@@ -150,11 +150,7 @@ export async function markGhsaFixed(
   } finally {
     // Release lock.
     if (lockAcquired) {
-      try {
-        await fs.unlink(lockFile)
-      } catch {
-        // Ignore cleanup errors.
-      }
+      await safeDelete(lockFile, { force: true })
     }
   }
 }

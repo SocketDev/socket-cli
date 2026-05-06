@@ -14,10 +14,10 @@
  * Build output: dist/bootstrap/node.js (copied to Node.js source)
  */
 
-import { existsSync, promises as fs } from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { safeMkdir } from '@socketsecurity/lib/fs'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
@@ -104,9 +104,7 @@ async function downloadCli(): Promise<void> {
               return
             }
 
-            await fs.unlink(tarballPath).catch(() => {
-              // Ignore cleanup errors.
-            })
+            await safeDelete(tarballPath, { force: true })
 
             logger.error('Socket CLI installed successfully')
             resolve()

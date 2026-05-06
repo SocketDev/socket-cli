@@ -4,6 +4,7 @@ import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { safeDelete } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
@@ -55,17 +56,6 @@ import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-n
 import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()
-
-/**
- * Safely delete a temporary file, ignoring errors.
- */
-async function cleanupTempFile(filePath: string): Promise<void> {
-  try {
-    await fs.unlink(filePath)
-  } catch (_e) {
-    // Ignore cleanup errors.
-  }
-}
 
 export type GhsaFixResult = {
   ghsaId: string
@@ -280,7 +270,7 @@ export async function coanaFix(
       }
     } finally {
       // Clean up the temporary file.
-      await cleanupTempFile(tmpFile)
+      await safeDelete(tmpFile, { force: true })
     }
   }
 
