@@ -69,6 +69,23 @@ When invoked as `/guarding-paths` with no arg:
 
 5. **Commit and push** — group fixes by logical category (workflows, code, Dockerfiles). Push directly to `main` for repos that allow direct push, or open a PR for repos that require it (socket-cli, socket-sdk-js, socket-registry per their CLAUDE.md / memory entries).
 
+6. **Cleanup the worktree** — return to the primary checkout and retire the worktree so it doesn't pile up under `~/projects/`:
+   ```bash
+   cd <primary-checkout-of-this-repo>
+   git worktree remove ../<repo>-paths-audit
+   ```
+   `git worktree list` should show only the primary checkout afterward.
+
+## Commit cadence
+
+Commit incrementally as fixes land, not at the end. The audit-and-fix loop above is multi-phase by design — each fix is its own logical unit. The umbrella rule:
+
+- **Per-rule fix → its own commit.** A Rule A fix in `packages/foo/` and a Rule C workflow fix go in separate commits even when found in the same audit pass. Reviewers diff per concern.
+- **Re-run the gate before each commit.** A green `pnpm run check:paths` is the entry criterion for committing. Don't accumulate fixes that haven't been validated.
+- **Don't leave a partial fix uncommitted across phases.** If you stop the audit mid-flow (interrupted, blocked on a question), commit what you have on a `chore/paths-audit-wip` branch first. CLAUDE.md's "no half-finished implementations" applies here too.
+
+Conventional commit style: `fix(paths): rule A — extract foo build paths into scripts/paths.mts`.
+
 ## Fix patterns
 
 ### Rule A — Multi-stage path constructed inline (in `.mts`/`.cts`)

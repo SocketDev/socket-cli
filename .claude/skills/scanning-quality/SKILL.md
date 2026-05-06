@@ -1,11 +1,11 @@
 ---
-name: quality-scan
+name: scanning-quality
 description: Scans the codebase for bugs, logic errors, caching issues, and workflow problems using specialized agents. Use when preparing for release, investigating quality issues, or running pre-merge checks.
 user-invocable: true
 allowed-tools: Task, Read, Grep, Glob, AskUserQuestion, Bash(pnpm run check:*), Bash(pnpm run test:*), Bash(pnpm test:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*)
 ---
 
-# quality-scan
+# scanning-quality
 
 Perform comprehensive quality analysis across the codebase using specialized agents. Clean up junk files first, then scan and generate a prioritized report with actionable fixes.
 
@@ -77,8 +77,16 @@ Each agent reports findings as:
 - Deduplicate findings across scan types
 - Sort by severity: Critical > High > Medium > Low
 - Generate markdown report with file:line references, suggested fixes, and coverage metrics
-- Offer to save to `reports/quality-scan-YYYY-MM-DD.md`
+- Offer to save to `reports/scanning-quality-YYYY-MM-DD.md`
 
 ### Phase 9: Summary
 
 Report final metrics: dependency updates, structural validation results, cleanup stats, scan counts, and total findings by severity.
+
+## Commit cadence
+
+This skill is read-only — it scans and reports, it doesn't fix. Cadence rules apply to *handing the report off*, not to fixes:
+
+- **Save the report before acting on it.** If the user opts to save (`reports/scanning-quality-YYYY-MM-DD.md`), commit the report file in its own commit (`docs(reports): scanning-quality YYYY-MM-DD`). That snapshot is referenceable later when fixes land.
+- **Don't fix in-skill.** If findings need fixes, hand off to the appropriate skill — `/guarding-paths` for path drift, `refactor-cleaner` agent via `/quality-loop` for code-quality findings — and commit those fixes per that skill's own cadence rules. Don't bundle scan + fixes in one commit.
+- **One report per scan run.** Re-running the skill produces a new report; don't overwrite the previous one's git history. Commit each fresh report so the trend line is visible.

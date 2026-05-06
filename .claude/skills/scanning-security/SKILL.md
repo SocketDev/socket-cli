@@ -82,3 +82,11 @@ The agent:
 Output a HANDOFF block per `_shared/report-format.md` for pipeline chaining.
 
 Update queue: `status: done`, write `findings_count` and final grade.
+
+## Commit cadence
+
+This skill is read-only — scan + grade + report, no fixes. Cadence rules apply to handing the report off:
+
+- **Save the report before acting.** Commit the report file in its own commit (`docs(reports): scanning-security YYYY-MM-DD — grade <A-F>`). The grade in the message makes the trend visible without opening the file.
+- **Don't fix in-skill.** Security findings need careful per-finding triage; they're not safe to batch-fix mechanically. Open per-finding fixes as separate commits driven by the appropriate skill (or hand-edit when the fix is a one-liner like a workflow SHA bump).
+- **One report per scan run.** Re-running produces a new report; commit each so the security trend line is auditable.
