@@ -12,13 +12,14 @@
  * fixture and points the hook at it via CLAUDE_PROJECT_DIR.
  */
 
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process, { execPath } from 'node:process'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
+import { safeDelete } from '@socketsecurity/lib/fs'
 import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
 
 const hookScript = new URL('../index.mts', import.meta.url).pathname
@@ -41,17 +42,19 @@ async function runHook(
  * dir + a cleanup function. Pass the project dir as CLAUDE_PROJECT_DIR
  * to runHook so the dry-run verification reads the fixture.
  */
-function makeWorkflowFixture(
+async function makeWorkflowFixture(
   filename: string,
   body: string,
-): { projectDir: string; cleanup: () => void } {
-  const projectDir = mkdtempSync(path.join(tmpdir(), 'rwg-fixture-'))
+): Promise<{ projectDir: string; cleanup: () => Promise<void> }> {
+  const projectDir = await fs.mkdtemp(path.join(tmpdir(), 'rwg-fixture-'))
   const wfDir = path.join(projectDir, '.github', 'workflows')
-  mkdirSync(wfDir, { recursive: true })
-  writeFileSync(path.join(wfDir, filename), body, 'utf8')
+  await fs.mkdir(wfDir, { recursive: true })
+  await fs.writeFile(path.join(wfDir, filename), body, 'utf8')
   return {
     projectDir,
-    cleanup: () => rmSync(projectDir, { recursive: true, force: true }),
+    cleanup: async () => {
+      await safeDelete(projectDir, { force: true })
+    },
   }
 }
 
@@ -218,16 +221,17 @@ describe('release-workflow-guard hook', () => {
     ].join('\n')
 
     let projectDir: string
-    let cleanup: () => void
+    let cleanup: (() => Promise<void>) | undefined
 
-    afterEach(() => {
+    afterEach(async () => {
       if (cleanup) {
-        cleanup()
+        await cleanup()
+        cleanup = undefined
       }
     })
 
     it('allows -f dry-run=true on a workflow that declares the input', async () => {
-      ;({ projectDir, cleanup } = makeWorkflowFixture(
+      ;({ projectDir, cleanup } = await makeWorkflowFixture(
         'build.yml',
         WF_WITH_DRY_RUN,
       ))
@@ -240,7 +244,7 @@ describe('release-workflow-guard hook', () => {
     })
 
     it('blocks -f dry-run=true when workflow does NOT declare the input', async () => {
-      ;({ projectDir, cleanup } = makeWorkflowFixture(
+      ;({ projectDir, cleanup } = await makeWorkflowFixture(
         'publish.yml',
         WF_WITHOUT_DRY_RUN,
       ))
@@ -254,7 +258,7 @@ describe('release-workflow-guard hook', () => {
     })
 
     it('blocks -f dry-run=true when workflow file does not exist', async () => {
-      ;({ projectDir, cleanup } = makeWorkflowFixture(
+      ;({ projectDir, cleanup } = await makeWorkflowFixture(
         'real.yml',
         WF_WITH_DRY_RUN,
       ))
@@ -267,7 +271,7 @@ describe('release-workflow-guard hook', () => {
     })
 
     it('blocks when -f dry-run=false overrides', async () => {
-      ;({ projectDir, cleanup } = makeWorkflowFixture(
+      ;({ projectDir, cleanup } = await makeWorkflowFixture(
         'build.yml',
         WF_WITH_DRY_RUN,
       ))
@@ -280,7 +284,7 @@ describe('release-workflow-guard hook', () => {
     })
 
     it('blocks when force-prod input is set alongside dry-run=true', async () => {
-      ;({ projectDir, cleanup } = makeWorkflowFixture(
+      ;({ projectDir, cleanup } = await makeWorkflowFixture(
         'build.yml',
         WF_WITH_DRY_RUN,
       ))
@@ -308,7 +312,7 @@ describe('release-workflow-guard hook', () => {
       // The workflow defaults dry-run to true, but the hook requires
       // explicit -f dry-run=true so a future default flip can't
       // silently turn a benign-looking command into a prod dispatch.
-      ;({ projectDir, cleanup } = makeWorkflowFixture(
+      ;({ projectDir, cleanup } = await makeWorkflowFixture(
         'build.yml',
         WF_WITH_DRY_RUN,
       ))
@@ -323,7 +327,7 @@ describe('release-workflow-guard hook', () => {
       // declaring snake_case must be normalized; the hook
       // intentionally fails the verification rather than guessing.
       const wf = WF_WITH_DRY_RUN.replace('dry-run:', 'dry_run:')
-      ;({ projectDir, cleanup } = makeWorkflowFixture('build.yml', wf))
+      ;({ projectDir, cleanup } = await makeWorkflowFixture('build.yml', wf))
       const r = await runHook('gh workflow run build.yml -f dry-run=true', 'Bash', {
         CLAUDE_PROJECT_DIR: projectDir,
       })
@@ -335,7 +339,7 @@ describe('release-workflow-guard hook', () => {
       // A `--repo SocketDev/socket-btm` dispatch from a different
       // project can't be verified (we can't safely read another
       // repo's workflow files), so the bypass shouldn't apply.
-      ;({ projectDir, cleanup } = makeWorkflowFixture(
+      ;({ projectDir, cleanup } = await makeWorkflowFixture(
         'build.yml',
         WF_WITH_DRY_RUN,
       ))
@@ -351,13 +355,17 @@ describe('release-workflow-guard hook', () => {
       // Make a fixture project whose dirname matches the --repo arg's
       // basename. That's the "user runs the dispatch from inside the
       // checkout" common case — the file is locally readable.
-      const targetProjectDir = mkdtempSync(
+      const targetProjectDir = await fs.mkdtemp(
         path.join(tmpdir(), 'rwg-fixture-target-'),
       )
       const matchingName = path.basename(targetProjectDir)
       const wfDir = path.join(targetProjectDir, '.github', 'workflows')
-      mkdirSync(wfDir, { recursive: true })
-      writeFileSync(path.join(wfDir, 'build.yml'), WF_WITH_DRY_RUN, 'utf8')
+      await fs.mkdir(wfDir, { recursive: true })
+      await fs.writeFile(
+        path.join(wfDir, 'build.yml'),
+        WF_WITH_DRY_RUN,
+        'utf8',
+      )
       try {
         const r = await runHook(
           `gh workflow run build.yml --repo SocketDev/${matchingName} -f dry-run=true`,
@@ -367,12 +375,12 @@ describe('release-workflow-guard hook', () => {
         assert.equal(r.code, 0, `Expected 0 but got ${r.code}: ${r.stderr}`)
         assert.match(r.stderr, /ALLOWED/)
       } finally {
-        rmSync(targetProjectDir, { recursive: true, force: true })
+        await safeDelete(targetProjectDir, { force: true })
       }
     })
 
     it('bypass does not apply to gh api .../dispatches', async () => {
-      ;({ projectDir, cleanup } = makeWorkflowFixture(
+      ;({ projectDir, cleanup } = await makeWorkflowFixture(
         'build.yml',
         WF_WITH_DRY_RUN,
       ))
