@@ -1,5 +1,14 @@
 import type { MeowFlags } from '../../flags.mts'
 
+export const excludePathsFlag: MeowFlags = {
+  excludePaths: {
+    type: 'string',
+    isMultiple: true,
+    description:
+      'List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) Tier 1 reachability analysis. Patterns are matched relative to the project root. Bare directory names are auto-extended to recursive globs (e.g. `tests` becomes `tests/**`). Trailing slashes are stripped. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags.',
+  },
+}
+
 export const reachabilityFlags: MeowFlags = {
   reachAnalysisMemoryLimit: {
     type: 'number',

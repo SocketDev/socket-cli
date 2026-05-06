@@ -129,6 +129,8 @@ describe('handleCreateNewScan', () => {
     pullRequest: 0,
     outputKind: 'json' as const,
     reach: {
+      excludePaths: [],
+      reachExcludePaths: [],
       runReachabilityAnalysis: false,
     },
     readOnly: false,
@@ -302,7 +304,11 @@ describe('handleCreateNewScan', () => {
 
     await handleCreateNewScan({
       ...mockConfig,
-      reach: { runReachabilityAnalysis: true },
+      reach: {
+        excludePaths: [],
+        reachExcludePaths: [],
+        runReachabilityAnalysis: true,
+      },
     })
 
     expect(mockPerformReachabilityAnalysis).toHaveBeenCalled()
@@ -376,7 +382,11 @@ describe('handleCreateNewScan', () => {
 
     await handleCreateNewScan({
       ...mockConfig,
-      reach: { runReachabilityAnalysis: true },
+      reach: {
+        excludePaths: [],
+        reachExcludePaths: [],
+        runReachabilityAnalysis: true,
+      },
     })
 
     expect(mockOutputCreateNewScan).toHaveBeenCalledWith(

@@ -129,6 +129,7 @@ describe('handleScanReach', () => {
       outputKind: 'json',
       outputPath: '',
       reachabilityOptions: {
+        excludePaths: [],
         reachAnalysisTimeout: 300,
         reachAnalysisMemoryLimit: 2048,
         reachDisableAnalytics: false,
@@ -147,6 +148,7 @@ describe('handleScanReach', () => {
       outputPath: '',
       packagePaths: ['/project/package.json', '/project/package-lock.json'],
       reachabilityOptions: {
+        excludePaths: [],
         reachAnalysisTimeout: 300,
         reachAnalysisMemoryLimit: 2048,
         reachDisableAnalytics: false,
@@ -201,7 +203,7 @@ describe('handleScanReach', () => {
       orgSlug: 'test-org',
       outputKind: 'json',
       outputPath: '',
-      reachabilityOptions: {},
+      reachabilityOptions: { excludePaths: [], reachExcludePaths: [] },
       targets: ['nonexistent'],
     })
 
@@ -233,7 +235,7 @@ describe('handleScanReach', () => {
       orgSlug: 'test-org',
       outputKind: 'markdown',
       outputPath: '',
-      reachabilityOptions: { maxDepth: 10 },
+      reachabilityOptions: { excludePaths: [], reachExcludePaths: [], maxDepth: 10 },
       targets: ['./'],
     })
 

@@ -22,6 +22,7 @@ import type { PURL_Type } from '../../utils/ecosystem/types.mjs'
 import type { Spinner } from '@socketsecurity/lib/spinner'
 
 export type ReachabilityOptions = {
+  excludePaths: string[]
   reachAnalysisMemoryLimit: number
   reachAnalysisTimeout: number
   reachConcurrency: number

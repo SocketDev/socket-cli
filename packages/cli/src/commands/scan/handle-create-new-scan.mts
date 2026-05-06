@@ -8,6 +8,7 @@ import { pluralize } from '@socketsecurity/lib/words'
 
 const logger = getDefaultLogger()
 
+import { applyFullExcludePaths } from './exclude-paths.mts'
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
@@ -158,8 +159,16 @@ export async function handleCreateNewScan({
     ? socketYmlResult.data?.parsed
     : undefined
 
+  const { effectiveSocketConfig, mergedReachabilityOptions } =
+    applyFullExcludePaths({
+      cwd,
+      reachabilityOptions: reach,
+      socketConfig,
+      target: targets[0]!,
+    })
+
   const packagePaths = await getPackageFilesForScan(targets, supportedFiles, {
-    config: socketConfig,
+    config: effectiveSocketConfig,
     cwd,
   })
 
@@ -210,7 +219,7 @@ export async function handleCreateNewScan({
     logger.error('')
     logger.info('Starting reachability analysis...')
     debug('notice', 'Reachability analysis enabled')
-    debugDir('inspect', { reachabilityOptions: reach })
+    debugDir('inspect', { reachabilityOptions: mergedReachabilityOptions })
 
     spinner.start()
 
@@ -219,7 +228,7 @@ export async function handleCreateNewScan({
       cwd,
       orgSlug,
       packagePaths,
-      reachabilityOptions: reach,
+      reachabilityOptions: mergedReachabilityOptions,
       repoName,
       spinner,
       target: firstTarget,

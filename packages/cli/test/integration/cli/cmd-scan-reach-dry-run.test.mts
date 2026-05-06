@@ -59,6 +59,7 @@ describe('socket scan reach - dry-run tests', async () => {
                 --output            Path to write the reachability report to (must end with .json). Defaults to .socket.facts.json in the current working directory.
           
               Reachability Options
+                --exclude-paths     List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) Tier 1 reachability analysis. Patterns are matched relative to the project root. Bare directory names are auto-extended to recursive globs (e.g. \`tests\` becomes \`tests/**\`). Trailing slashes are stripped. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
                 --reach-analysis-memory-limit  The maximum memory in MB to use for the reachability analysis. The default is 8192MB.
                 --reach-analysis-timeout  Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.
                 --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
@@ -288,6 +289,93 @@ describe('socket scan reach - dry-run tests', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'reach',
+      FLAG_DRY_RUN,
+      '--exclude-paths',
+      'node_modules,dist',
+      '--org',
+      'fakeOrg',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should accept --exclude-paths with comma-separated values',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'reach',
+      FLAG_DRY_RUN,
+      '--exclude-paths',
+      'node_modules',
+      '--exclude-paths',
+      'dist',
+      '--org',
+      'fakeOrg',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should accept multiple --exclude-paths flags',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'reach',
+      FLAG_DRY_RUN,
+      '--exclude-paths',
+      'build',
+      '--reach-exclude-paths',
+      'node_modules,dist',
+      '--org',
+      'fakeOrg',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should accept --exclude-paths together with --reach-exclude-paths',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'reach',
+      FLAG_DRY_RUN,
+      '--exclude-paths',
+      '!tests/keep',
+      '--org',
+      'fakeOrg',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should reject --exclude-paths negation patterns',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        "--exclude-paths does not support negation patterns. Got: '!tests/keep'.",
+      )
+      expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )
 

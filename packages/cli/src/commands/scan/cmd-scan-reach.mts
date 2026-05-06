@@ -2,8 +2,9 @@ import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
 
+import { assertNoNegationPatterns } from './exclude-paths.mts'
 import { handleScanReach } from './handle-scan-reach.mts'
-import { reachabilityFlags } from './reachability-flags.mts'
+import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
 import { outputDryRunExecute } from '../../utils/dry-run/output.mts'
@@ -98,6 +99,7 @@ async function run(
     hidden,
     flags: {
       ...generalFlags,
+      ...excludePathsFlag,
       ...reachabilityFlags,
     },
     help: command =>
@@ -112,7 +114,7 @@ async function run(
       ${getFlagListOutput(generalFlags)}
 
     Reachability Options
-      ${getFlagListOutput(reachabilityFlags)}
+      ${getFlagListOutput({ ...excludePathsFlag, ...reachabilityFlags })}
 
     Runs the Socket reachability analysis without creating a scan in Socket.
     The output is written to .socket.facts.json in the current working directory
@@ -164,8 +166,10 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   // Process comma-separated values for isMultiple flags.
+  const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
   const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
   const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
+  assertNoNegationPatterns(excludePaths)
 
   // Validate ecosystem values.
   const reachEcosystems: PURL_Type[] = []
@@ -313,6 +317,7 @@ async function run(
     outputPath: outputPath || '',
     targets,
     reachabilityOptions: {
+      excludePaths,
       reachAnalysisMemoryLimit: validatedReachAnalysisMemoryLimit,
       reachAnalysisTimeout: validatedReachAnalysisTimeout,
       reachConcurrency: validatedReachConcurrency,
