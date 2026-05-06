@@ -70,8 +70,9 @@ const SFW_ENTERPRISE = config.tools['sfw-enterprise']!
 function findApiKey(): string | undefined {
   const envKey = process.env['SOCKET_API_KEY']
   if (envKey) return envKey
+  const projectDir = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
   for (const filename of ['.env.local', '.env']) {
-    const filepath = path.join(process.cwd(), filename)
+    const filepath = path.join(projectDir, filename)
     if (existsSync(filepath)) {
       try {
         const content = readFileSync(filepath, 'utf8')

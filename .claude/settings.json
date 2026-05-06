@@ -6,15 +6,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/check-new-deps/index.mts"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-new-deps/index.mts"
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/logger-guard/index.mts"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/logger-guard/index.mts"
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/path-guard/index.mts"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/path-guard/index.mts"
           }
         ]
       },
@@ -23,19 +23,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/private-name-guard/index.mts"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/private-name-guard/index.mts"
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/public-surface-reminder/index.mts"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/public-surface-reminder/index.mts"
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/release-workflow-guard/index.mts"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/release-workflow-guard/index.mts"
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/token-guard/index.mts"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/token-guard/index.mts"
           }
         ]
       }
@@ -45,11 +45,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/auth-rotation-reminder/index.mts"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/auth-rotation-reminder/index.mts"
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/stale-process-sweeper/index.mts"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stale-process-sweeper/index.mts"
           }
         ]
       }

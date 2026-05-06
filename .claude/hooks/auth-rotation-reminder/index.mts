@@ -70,16 +70,18 @@ const STATE_FILE = path.join(STATE_DIR, 'last-run')
 const GLOBAL_SNOOZE = path.join(STATE_DIR, 'snooze')
 const GLOBAL_SKIP_LIST = path.join(STATE_DIR, 'services-skip')
 
-// Project-local files live at the repo root next to .claude/. Claude
-// Code spawns Stop hooks with the working directory set to the repo
-// root so process.cwd() is reliable here.
+// Project-local files live at the repo root next to .claude/. Use
+// CLAUDE_PROJECT_DIR (Claude Code injects this on every hook run) so
+// the paths stay correct regardless of session cwd — process.cwd()
+// drifts when the user navigates into a subpackage.
+const PROJECT_DIR = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
 const PROJECT_SNOOZE = path.join(
-  process.cwd(),
+  PROJECT_DIR,
   '.claude',
   'auth-rotation.snooze',
 )
 const PROJECT_SKIP_LIST = path.join(
-  process.cwd(),
+  PROJECT_DIR,
   '.claude',
   'auth-rotation.services-skip',
 )
