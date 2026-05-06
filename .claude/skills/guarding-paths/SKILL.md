@@ -1,20 +1,20 @@
 ---
-name: path-guard
-description: Audit and fix path duplication in this Socket repo. Apply the strict "1 path, 1 reference" rule — every build/test/runtime/config path is constructed exactly once; everywhere else references the constructed value. Default mode finds and fixes; `check` mode reports only; `install` mode drops the gate + hook + rule into a fresh repo.
+name: guarding-paths
+description: Audits and fixes path duplication in a Socket repo. Applies the strict "1 path, 1 reference" rule — every build/test/runtime/config path is constructed exactly once; everywhere else references the constructed value. Default mode finds and fixes; `check` mode reports only; `install` mode drops the gate + hook + rule into a fresh repo. Use when path drift surfaces from `pnpm check`, when a new sibling package needs path conventions, or when bootstrapping a fresh Socket repo.
 user-invocable: true
 allowed-tools: Task, Read, Edit, Write, Grep, Glob, AskUserQuestion, Bash(pnpm run check:*), Bash(node scripts/check-paths:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(git:*)
 ---
 
-# path-guard
+# guarding-paths
 
 **Mantra: 1 path, 1 reference.** A path is constructed exactly once; everywhere else references the constructed value. Re-constructing the same path twice is the violation, not referencing the constructed value many times.
 
 ## Modes
 
-- `/path-guard` — full audit-and-fix conversion of the current repo (default).
-- `/path-guard check` — read-only audit, report violations, no fixes.
-- `/path-guard fix <id>` — fix a single finding from a prior `check` run, by index.
-- `/path-guard install` — drop the gate + hook + rule + allowlist into a fresh repo (for new Socket repos).
+- `/guarding-paths` — full audit-and-fix conversion of the current repo (default).
+- `/guarding-paths check` — read-only audit, report violations, no fixes.
+- `/guarding-paths fix <id>` — fix a single finding from a prior `check` run, by index.
+- `/guarding-paths install` — drop the gate + hook + rule + allowlist into a fresh repo (for new Socket repos).
 
 ## Three-level enforcement
 
@@ -45,7 +45,7 @@ Comments may describe path *structure* with placeholders (`<mode>/<arch>` or `${
 
 ## Mode: audit-and-fix (default)
 
-When invoked as `/path-guard` with no arg:
+When invoked as `/guarding-paths` with no arg:
 
 1. **Setup** — spawn a worktree off `main` per `CLAUDE.md` parallel-sessions rule:
    ```bash
@@ -193,7 +193,7 @@ Each Dockerfile `FROM` stage is its own scope — ENV from the build stage doesn
 
 ## Mode: check (read-only)
 
-When invoked as `/path-guard check`:
+When invoked as `/guarding-paths check`:
 
 ```bash
 pnpm run check:paths --explain
@@ -215,15 +215,15 @@ Both may be set — either matching is sufficient. Prefer `snippet_hash` over ra
 
 ## Mode: install (new repo)
 
-When invoked as `/path-guard install` on a Socket repo that doesn't yet have the gate:
+When invoked as `/guarding-paths install` on a Socket repo that doesn't yet have the gate:
 
 1. Copy the gate file from this skill's reference dir:
    ```bash
-   cp .claude/skills/path-guard/reference/check-paths.mts.tmpl scripts/check-paths.mts
+   cp .claude/skills/guarding-paths/reference/check-paths.mts.tmpl scripts/check-paths.mts
    ```
 2. Copy the empty allowlist:
    ```bash
-   cp .claude/skills/path-guard/reference/paths-allowlist.yml.tmpl .github/paths-allowlist.yml
+   cp .claude/skills/guarding-paths/reference/paths-allowlist.yml.tmpl .github/paths-allowlist.yml
    ```
 3. Add `"check:paths": "node scripts/check-paths.mts"` to `package.json`.
 4. Wire `runPathHygieneCheck()` into `scripts/check.mts` (after the existing checks).
@@ -234,9 +234,9 @@ When invoked as `/path-guard install` on a Socket repo that doesn't yet have the
    ```
 7. Run the gate against the repo. Triage findings as you would in audit-and-fix mode.
 
-## Tie-in with quality-scan
+## Tie-in with scanning-quality
 
-The `/quality-scan` skill should call `pnpm run check:paths --json` as one of its sub-scans and surface findings as part of its A-F graded report. Failures roll into the overall quality grade. The full audit-and-fix workflow lives here; quality-scan just *detects* during periodic scans.
+The `/scanning-quality` skill should call `pnpm run check:paths --json` as one of its sub-scans and surface findings as part of its A-F graded report. Failures roll into the overall quality grade. The full audit-and-fix workflow lives here; scanning-quality just *detects* during periodic scans.
 
 ## Reference patterns
 

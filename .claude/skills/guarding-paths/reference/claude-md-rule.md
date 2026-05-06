@@ -24,6 +24,6 @@ Comments may describe path *structure* with placeholders ("`<mode>/<arch>`" or "
 
 - **Hook** — `.claude/hooks/path-guard/` blocks `Edit`/`Write` calls that would introduce a violation in a `.mts`/`.cts` file. Refusal at edit time stops new duplication from landing.
 - **Gate** — `scripts/check-paths.mts` runs in `pnpm check`. Fails the build on any violation that isn't allowlisted in `.github/paths-allowlist.yml`.
-- **Skill** — `/path-guard` audits the repo and fixes findings; `/path-guard check` reports only; `/path-guard install` drops the gate + hook + rule into a fresh repo.
+- **Skill** — `/guarding-paths` audits the repo and fixes findings; `/guarding-paths check` reports only; `/guarding-paths install` drops the gate + hook + rule into a fresh repo.
 
 The mantra is intentionally short so it sticks: **1 path, 1 reference**. When in doubt, find the canonical owner and import from it.

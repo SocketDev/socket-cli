@@ -23,7 +23,7 @@ Based on finding severity distribution:
 
 ## Pipeline HANDOFF
 
-When a skill completes as part of a larger pipeline (e.g., quality-scan within release),
+When a skill completes as part of a larger pipeline (e.g., scanning-quality within release),
 output a structured handoff block:
 
 ```

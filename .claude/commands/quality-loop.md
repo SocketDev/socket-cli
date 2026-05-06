@@ -1,13 +1,13 @@
-Run the `/quality-scan` skill and fix all issues found. Repeat until zero issues remain or 5 iterations complete.
+Run the `/scanning-quality` skill and fix all issues found. Repeat until zero issues remain or 5 iterations complete.
 
 **Interactive only** — this command makes code changes and commits. Do not use as an automated pipeline gate.
 
 ## Process
 
-1. Run `/quality-scan` skill (all scan types)
+1. Run `/scanning-quality` skill (all scan types)
 2. If issues found: spawn the `refactor-cleaner` agent (see `agents/refactor-cleaner.md`) to fix them, grouped by category
 3. Run verify-build (see `_shared/verify-build.md`) after fixes
-4. Run `/quality-scan` again
+4. Run `/scanning-quality` again
 5. Repeat until:
    - Zero issues found (success), OR
    - 5 iterations completed (stop)

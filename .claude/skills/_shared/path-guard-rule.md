@@ -8,7 +8,7 @@ embed (or paraphrase) it:
 
   1. CLAUDE.md — every Socket repo's instructions to Claude.
   2. .claude/hooks/path-guard/README.md — what the hook blocks.
-  3. .claude/skills/path-guard/SKILL.md — what the skill enforces.
+  3. .claude/skills/guarding-paths/SKILL.md — what the skill enforces.
 
 If the wording changes here, re-run `node scripts/sync-scaffolding.mts
 --all --fix` from socket-repo-template to propagate.
@@ -34,6 +34,6 @@ Code execution takes priority over docs: violations in `.mts`/`.cts`, Makefiles,
 
 - **Hook** — `.claude/hooks/path-guard/` blocks `Edit`/`Write` calls that would introduce a violation in a `.mts`/`.cts` file. Refusal at edit time stops new duplication from landing.
 - **Gate** — `scripts/check-paths.mts` runs in `pnpm check`. Fails the build on any violation that isn't allowlisted.
-- **Skill** — `/path-guard` audits the repo and fixes findings; `/path-guard check` reports only; `/path-guard install` drops the gate + hook + rule into a fresh repo.
+- **Skill** — `/guarding-paths` audits the repo and fixes findings; `/guarding-paths check` reports only; `/guarding-paths install` drops the gate + hook + rule into a fresh repo.
 
 The mantra is intentionally short so it sticks: **1 path, 1 reference**. When in doubt, find the canonical owner and import from it.

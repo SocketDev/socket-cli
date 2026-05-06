@@ -1,11 +1,11 @@
 ---
-name: programmatic-claude-lockdown
+name: locking-down-programmatic-claude
 description: Reference for locking down programmatic Claude invocations (the `claude` CLI in workflows/scripts, the `@anthropic-ai/claude-agent-sdk` `query()` in code). Loads on demand when writing or reviewing any callsite that runs Claude programmatically. Source: https://code.claude.com/docs/en/agent-sdk/permissions.
 user-invocable: false
 allowed-tools: Read, Grep, Glob
 ---
 
-# Programmatic Claude lockdown
+# locking-down-programmatic-claude
 
 **Rule:** every programmatic Claude callsite sets four flags. Skip any one and a future edit silently widens the surface.
 

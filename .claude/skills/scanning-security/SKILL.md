@@ -1,11 +1,11 @@
 ---
-name: security-scan
+name: scanning-security
 description: Runs a multi-tool security scan — AgentShield for Claude config, zizmor for GitHub Actions, and optionally Socket CLI for dependency scanning. Produces an A-F graded security report. Use after modifying `.claude/` config, hooks, agents, or GitHub Actions workflows, and before releases.
 user-invocable: true
 allowed-tools: Task, Read, Bash(pnpm exec agentshield:*), Bash(zizmor:*), Bash(command -v:*), Bash(find .cache/external-tools/zizmor:*)
 ---
 
-# Security Scan
+# scanning-security
 
 Multi-tool security scanning pipeline for the repository.
 
@@ -24,7 +24,7 @@ See `_shared/security-tools.md` for tool detection and installation.
 
 ### Phase 1: Environment Check
 
-Follow `_shared/env-check.md`. Initialize a queue run entry for `security-scan`.
+Follow `_shared/env-check.md`. Initialize a queue run entry for `scanning-security`.
 
 ---
 

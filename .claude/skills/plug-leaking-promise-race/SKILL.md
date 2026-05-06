@@ -1,9 +1,9 @@
 ---
-name: promise-race-pitfall
+name: plug-leaking-promise-race
 description: Reference for the `Promise.race` cross-iteration handler-leak bug. Loads on demand when writing or reviewing concurrency code that uses `Promise.race`, `Promise.any`, or hand-rolled concurrency limiters.
 ---
 
-# Promise.race in loops — the handler-leak pitfall
+# plug-leaking-promise-race
 
 **Never re-race the same pool of promises across loop iterations.** Each call to `Promise.race([A, B, …])` attaches fresh `.then` handlers to every arm. A promise that survives N iterations accumulates N handler sets. See [nodejs/node#17469](https://github.com/nodejs/node/issues/17469) and [`@watchable/unpromise`](https://github.com/watchable/unpromise).
 

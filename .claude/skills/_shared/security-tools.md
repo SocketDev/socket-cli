@@ -32,7 +32,7 @@ If not available:
 
 ## Socket CLI
 
-Optional. Used for dependency scanning in the updating and security-scan pipelines.
+Optional. Used for dependency scanning in the updating and scanning-security pipelines.
 
 Detection: `command -v socket`
 
