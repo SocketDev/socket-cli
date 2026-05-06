@@ -19,4 +19,12 @@ Thumbs.db
 test/fixtures/commands/fix/e2e-test-js-temp-*
 test/fixtures/commands/fix/e2e-test-py-temp-*
 
+/.claude/*
+!/.claude/agents/
+!/.claude/commands/
+!/.claude/hooks/
+!/.claude/ops/
+!/.claude/settings.json
+!/.claude/skills/
+
 !/.vscode/extensions.json
