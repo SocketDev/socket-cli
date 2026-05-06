@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/SocketDev/socket-repo-template/main/template/packages/build-infra/release-assets.schema.json",
+  "title": "Release Assets Manifest",
+  "description": "Embedded SHA-256 manifest for release artifacts. One block per tool: identifies the upstream release tag and the SHA-256 of every asset that release published. Consumers verify downloads against these hashes before installing or republishing. Producers (e.g. socket-btm) update this file when cutting a new release.",
+  "type": "object",
+  "additionalProperties": {
+    "$ref": "#/$defs/toolConfig"
+  },
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Pointer back to this schema for editor hints."
+    },
+    "$comment": {
+      "type": "string",
+      "description": "Free-form note. Conventionally explains how to bump entries."
+    }
+  },
+  "$defs": {
+    "toolConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tag", "checksums"],
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Human-readable label for this tool."
+        },
+        "tag": {
+          "type": "string",
+          "description": "Full release tag, including the tool prefix (e.g. `iocraft-20260424-18f0f46`).",
+          "minLength": 1
+        },
+        "checksums": {
+          "type": "object",
+          "description": "Asset filename → SHA-256 hex digest. Keys are typically flat filenames; some manifests use relative paths (e.g. `./model/model.onnx`) when the producer ships nested artifacts.",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "minProperties": 1
+        }
+      }
+    }
+  }
+}
