@@ -122,6 +122,25 @@ const PERSONAL_PATH_PLACEHOLDER_RE =
 // renames the marker.
 const SOCKET_HOOK_MARKER_RE =
   /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
+
+// File extensions whose natural comment syntax is `//` (C-family + cousins).
+// Anything else falls through to `#` (shell / YAML / TOML / Dockerfile /
+// Makefile / Python / Ruby / etc).
+const SLASH_COMMENT_EXT_RE =
+  /\.(m?ts|tsx|cts|m?js|jsx|cjs|rs|go|c|cc|cpp|cxx|h|hpp|java|swift|kt|scala|dart|php|css|scss|less)$/i
+
+/**
+ * Pick the natural per-line opt-out marker for a host file.
+ *
+ * The marker regex above accepts `#`, `//`, and `/*` prefixes — but error
+ * messages should print the *one* form a contributor would actually paste
+ * into that file. TS edits get `// socket-hook: allow <rule>`; YAML gets
+ * `# socket-hook: allow <rule>`. Same rule, different comment lexer.
+ */
+export const socketHookMarkerFor = (filePath: string, rule: string): string =>
+  SLASH_COMMENT_EXT_RE.test(filePath)
+    ? `// socket-hook: allow ${rule}`
+    : `# socket-hook: allow ${rule}`
 const LEGACY_ZIZMOR_MARKER_RE = /(?:#|\/\/|\/\*)\s*zizmor:\s*[\w-]+/
 
 function lineIsSuppressed(line: string, rule?: string): boolean {
@@ -351,7 +370,8 @@ export const scanNpxDlx = (text: string): LineHit[] => {
 // `@socketsecurity/lib/logger`. Direct calls to `process.stderr.write`,
 // `process.stdout.write`, `console.log`, `console.error`, `console.warn`,
 // `console.info`, `console.debug` are blocked. Doc-context lines are
-// exempt; lines carrying `# socket-hook: allow logger` are exempt too.
+// exempt; lines carrying `// socket-hook: allow logger` (or `#` in
+// non-TS files) are exempt too.
 
 const LOGGER_LEAK_RE =
   /\b(process\.std(?:err|out)\.write|console\.(?:log|error|warn|info|debug))\s*\(/

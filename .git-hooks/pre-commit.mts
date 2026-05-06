@@ -26,6 +26,7 @@ import {
   scanPrivateKeys,
   scanSocketApiKeys,
   shouldSkipFile,
+  socketHookMarkerFor,
   yellow,
 } from './_helpers.mts'
 
@@ -195,7 +196,7 @@ const main = (): number => {
       out(
         "Use 'pnpm exec <package>' or 'pnpm run <script>' instead. For " +
           'documentation lines that need the literal `npx` form, append ' +
-          'the marker `# socket-hook: allow npx`.',
+          `the marker \`${socketHookMarkerFor(file, 'npx')}\`.`,
       )
       errors++
     }
@@ -244,7 +245,7 @@ const main = (): number => {
       out(
         'Use `getDefaultLogger()` from `@socketsecurity/lib/logger`. ' +
           'For documentation lines that need the literal call, append ' +
-          'the marker `# socket-hook: allow logger`.',
+          `the marker \`${socketHookMarkerFor(file, 'logger')}\`.`,
       )
       errors++
     }

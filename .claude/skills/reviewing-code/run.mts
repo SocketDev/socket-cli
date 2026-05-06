@@ -384,8 +384,9 @@ Options:
   -h, --help              Show this help`)
 }
 
-async function git(args: readonly string[]): Promise<string> {
+async function git(args: readonly string[], cwd?: string): Promise<string> {
   const result = await spawn('git', args as string[], {
+    cwd,
     stdio: 'pipe',
     stdioString: true,
   })
@@ -453,6 +454,7 @@ async function runBackend(
   promptText: string,
   tempDir: string,
   passLabel: string,
+  cwd: string,
 ): Promise<{ ok: boolean; output: string; logPath: string }> {
   const desc = BACKENDS[backend]
   const promptFile = path.join(tempDir, `${passLabel}.prompt.txt`)
@@ -464,6 +466,7 @@ async function runBackend(
   let stdout = ''
   try {
     const child = spawn(desc.bin, argv as string[], {
+      cwd,
       stdio: 'pipe',
       stdioString: true,
     })
@@ -573,18 +576,20 @@ async function main(): Promise<void> {
     logger.error('Must be run inside a git repository.')
     process.exit(1)
   }
-  process.chdir(repoRoot)
 
-  const branchRaw = await git(['branch', '--show-current'])
+  const branchRaw = await git(['branch', '--show-current'], repoRoot)
   const branch =
     branchRaw.length > 0
       ? branchRaw
-      : `detached-${(await git(['rev-parse', '--short', 'HEAD']))}`
-  const baseRef = await resolveBaseRef(args.baseRef)
-  const mergeBase = await git(['merge-base', baseRef, 'HEAD'])
+      : `detached-${(await git(['rev-parse', '--short', 'HEAD'], repoRoot))}`
+  const baseRef = await resolveBaseRef(args.baseRef, repoRoot)
+  const mergeBase = await git(['merge-base', baseRef, 'HEAD'], repoRoot)
   const range = `${mergeBase}..HEAD`
-  const commitList = await git(['log', '--oneline', '--no-decorate', range])
-  const diffStat = await git(['diff', '--stat', range])
+  const commitList = await git(
+    ['log', '--oneline', '--no-decorate', range],
+    repoRoot,
+  )
+  const diffStat = await git(['diff', '--stat', range], repoRoot)
 
   const outputPath =
     args.outputPath ??
@@ -631,7 +636,13 @@ async function main(): Promise<void> {
     }
     logger.info(`${passLabel}: running on ${backend}`)
     const promptText = ROLES[role].buildPrompt(ctx)
-    const result = await runBackend(backend, promptText, tempDir, passLabel)
+    const result = await runBackend(
+      backend,
+      promptText,
+      tempDir,
+      passLabel,
+      repoRoot,
+    )
     if (!result.ok) {
       logger.error(`${passLabel}: failed; see ${result.logPath}`)
       await appendSkipNote(
@@ -674,17 +685,23 @@ async function main(): Promise<void> {
   }
 }
 
-async function resolveBaseRef(provided: string | undefined): Promise<string> {
+async function resolveBaseRef(
+  provided: string | undefined,
+  cwd: string,
+): Promise<string> {
   if (provided) {
     return provided
   }
   try {
-    const headRef = await git([
-      'symbolic-ref',
-      '--quiet',
-      '--short',
-      'refs/remotes/origin/HEAD',
-    ])
+    const headRef = await git(
+      [
+        'symbolic-ref',
+        '--quiet',
+        '--short',
+        'refs/remotes/origin/HEAD',
+      ],
+      cwd,
+    )
     if (headRef.length > 0) {
       return headRef
     }

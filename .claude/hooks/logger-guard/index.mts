@@ -220,7 +220,7 @@ function emitBlock(filePath: string, hits: Hit[]): void {
     out.push(`  …and ${hits.length - 3} more.`)
   }
   out.push(
-    '  Opt-out for one line (rare): append `// # socket-hook: allow logger`.',
+    '  Opt-out for one line (rare): append `// socket-hook: allow logger`.',
   )
   out.push('')
   process.stderr.write(out.join('\n'))

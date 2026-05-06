@@ -37,6 +37,7 @@ import {
   scanPrivateKeys,
   scanSocketApiKeys,
   shouldSkipFile,
+  socketHookMarkerFor,
 } from './_helpers.mts'
 
 const ZERO_SHA = '0000000000000000000000000000000000000000'
@@ -315,7 +316,7 @@ const scanFilesInRange = (range: string): number => {
         out(
           'Use `getDefaultLogger()` from `@socketsecurity/lib/logger`. ' +
             'For documentation lines that need the literal call, append ' +
-            'the marker `# socket-hook: allow logger`.',
+            `the marker \`${socketHookMarkerFor(file, 'logger')}\`.`,
         )
         errors++
       }
