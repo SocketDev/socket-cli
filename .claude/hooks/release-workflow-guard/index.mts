@@ -1,21 +1,43 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — release-workflow-guard.
 //
-// BLOCKS every Bash command that would dispatch a GitHub Actions
-// workflow. The user runs workflow_dispatch jobs manually after
-// reviewing the release commit and waiting for CI to pass —
-// auto-triggering is irrevocable in the short term:
+// Risk-tiered policy on Bash commands that would dispatch a GitHub
+// Actions workflow. The risk that matters is reversibility:
 //
-//   - Publish workflows push npm versions (unpublishable after 24h).
-//   - Build/Release workflows publish GitHub releases pinned by SHA.
-//   - Container workflows push immutable image tags.
+//   - npm publish: irreversible after the 24h unpublish window. The
+//     package version is locked forever. Block always.
+//   - GitHub release: reversible via `gh release delete <tag>
+//     --cleanup-tag`. The downstream blast radius is bounded by who
+//     pulled the release before deletion. Allowable.
+//   - Container image push: effectively irreversible (registries
+//     conventionally treat image tags as immutable). Block.
 //
-// Even nominally-CI workflow_dispatches often carry prod side
-// effects — the dispatch itself is the trigger that runs the
-// release pipeline, even when an input gates the destructive step.
-// Default policy: block all dispatches and ask the user to run them
-// themselves. Cost of an extra block: one re-prompt. Cost of a
-// missed prod publish: irreversible.
+// Hook decision tree, in order:
+//
+//   1. Verifiable dry-run? (`-f dry-run=true` + workflow declares
+//      `dry-run:` input + no force-prod override) → ALLOW.
+//   2. GitHub-release-only workflow? (workflow YAML never calls
+//      `npm/pnpm/yarn publish`, does call `gh release create` /
+//      release action, and command has no force-prod override)
+//      → ALLOW.
+//   3. Anything else (npm-publishing workflow, force-prod override,
+//      unclassifiable workflow, `gh api .../dispatches` shape) → BLOCK.
+//
+// The npm-publish detector triggers on `npm publish`, `pnpm publish`,
+// `yarn publish`, and `JS-DevTools/npm-publish` action references in
+// the workflow YAML. The GH-release detector triggers on
+// `gh release create`, `softprops/action-gh-release`, and
+// `ncipollo/release-action`. Both run with whitespace tolerance.
+//
+// Force-prod overrides keep blocking even for GH-only workflows:
+// `-f release=true`, `-f publish=true`, `-f prod=true`,
+// `-f production=true`. These flip a workflow back into "do the prod
+// thing" — a GH-release-only workflow that takes `publish=true` may
+// be wired to also npm-publish in that branch.
+//
+// Recovery (when a wrong release lands):
+//   - `gh release delete <tag> --cleanup-tag --yes`
+//     (drops the GH release and the git tag in one command)
 //
 // Exit code 2 with a clear stderr message stops the tool call. The
 // model never gets to fire the command. The user re-runs it from
@@ -25,21 +47,16 @@
 //   - `gh workflow run <id>`
 //   - `gh workflow dispatch <id>` (alias of `run`)
 //   - `gh api ... actions/workflows/<id>/dispatches` POST/PUT
+//     (the gh-api shape never bypasses; it takes inputs as a JSON
+//      body which is harder to verify safely. Route through user.)
 //
-// Bypass — verifiable dry-run only:
-//   - Pass `-f dry-run=true` (or =1/=yes) explicitly.
-//   - The workflow YAML must declare a `dry-run:` input under its
-//     `workflow_dispatch.inputs` block. The hook reads the workflow
-//     file from disk: first $CLAUDE_PROJECT_DIR/.github/workflows/,
-//     then (if `--repo owner/<name>` names a different repo) the
-//     sibling clone at `<parent-of-project-dir>/<name>/.github/...`.
-//     Cross-repo dispatches verify when the sibling clone exists;
-//     otherwise the bypass denies (same posture as a missing file).
-//   - No force-prod overrides may be set: `-f release=true`,
-//     `-f publish=true`, `-f prod=true`, `-f production=true`.
-//   - Bypass applies only to `gh workflow run|dispatch`. The
-//     `gh api .../dispatches` shape takes inputs as a JSON body,
-//     which is harder to verify safely; route those through the user.
+// Operational rules paired with the SKILL ("updating-node" Phase 5):
+//   - Cap of 2 live releases per artifact in flight. Before
+//     dispatching a 3rd, delete the oldest tag+release. Keeps one
+//     prior release as a validation safety net.
+//   - Before dispatching a release workflow, bump the corresponding
+//     `.github/cache-versions.json` entry. Otherwise the workflow
+//     hits a stale cache and re-publishes a stale binary.
 //
 // The hook recognizes only kebab-case `dry-run` as the input name —
 // see CLAUDE.md "Workflow input naming" for the rule. If a workflow
@@ -59,10 +76,12 @@ import path from 'node:path'
 import process from 'node:process'
 
 type ToolInput = {
-  tool_name?: string
-  tool_input?: {
-    command?: string
-  }
+  tool_input?:
+    | {
+        command?: string | undefined
+      }
+    | undefined
+  tool_name?: string | undefined
 }
 
 // `gh workflow run <id-or-file>` / `gh workflow dispatch <id-or-file>`.
@@ -98,6 +117,23 @@ const FORCE_PROD_INPUTS_RE =
 // that claims to use it. Tolerates leading whitespace (any
 // indentation) since YAML nesting depth varies by file.
 const WORKFLOW_DRY_RUN_INPUT_RE = /^\s+dry-run:\s*$/m
+
+// npm-publish detector. A workflow that contains any of these tokens
+// publishes to npm — irreversible after the 24h unpublish window.
+// Always block these dispatches unless the user runs them themselves.
+//   - `npm publish` / `pnpm publish` / `yarn publish` (CLI)
+//   - `JS-DevTools/npm-publish` (popular publish action)
+// The whitespace tolerance handles `pnpm  publish` and `npm     publish`
+// found in real workflow YAML.
+const WORKFLOW_NPM_PUBLISH_RE =
+  /\b(?:npm|pnpm|yarn)\s+publish\b|JS-DevTools\/npm-publish/i
+
+// GitHub-release detector. A workflow that creates a GH release but
+// never npm-publishes is allowed live (dispatch can be re-run, prior
+// releases can be deleted via `gh release delete`). Recognize both
+// the `gh release create` CLI and the standard release actions.
+const WORKFLOW_GH_RELEASE_RE =
+  /\bgh\s+release\s+create\b|softprops\/action-gh-release|ncipollo\/release-action/i
 
 // `--repo <owner>/<name>` parser. Captures the repo name (after the
 // slash). Used to gate the dry-run bypass: a dispatch targeting a
@@ -156,13 +192,13 @@ function buildQuoteMask(s: string): boolean[] {
 }
 
 type DispatchResult = {
-  blocked: boolean
-  workflow?: string
-  shape?: string
   // When `blocked` is false, populated with the reason the dispatch
   // was allowed through. Surfaced in the hook's "allowed" log line so
   // the user can see exactly why the guard let it pass.
-  allowedReason?: string
+  allowedReason?: string | undefined
+  blocked: boolean
+  shape?: string | undefined
+  workflow?: string | undefined
 }
 
 // Resolve the workflow file path and verify it actually declares a
@@ -181,6 +217,47 @@ type DispatchResult = {
 //     sibling clone at <parent-of-project-dir>/<name>. The current
 //     project is intentionally excluded so a same-named workflow in
 //     the current checkout can't false-positive a cross-repo dispatch.
+// Classify a workflow file by its release shape:
+//   - 'npm'    — runs `npm/pnpm/yarn publish` somewhere; irreversible
+//   - 'gh'     — only creates GitHub releases (reversible via
+//                `gh release delete`)
+//   - 'unknown' — no detected release shape (file unreadable, or
+//                workflow does something the classifier can't see)
+//
+// The hook treats 'gh' as eligible for live dispatch (after other
+// gates pass) and treats 'npm' / 'unknown' as block-the-default.
+function classifyWorkflow(
+  workflow: string,
+  searchRoots: readonly string[],
+): 'npm' | 'gh' | 'unknown' {
+  if (!/\.(?:yml|yaml)$/i.test(workflow)) {
+    return 'unknown'
+  }
+  const filename = path.basename(workflow)
+  for (const root of searchRoots) {
+    const fullPath = path.join(root, '.github', 'workflows', filename)
+    if (!existsSync(fullPath)) {
+      continue
+    }
+    try {
+      const yaml = readFileSync(fullPath, 'utf8')
+      // npm-publish wins if both signals appear — a workflow that
+      // both creates a GH release AND publishes to npm is still
+      // irreversible at the npm step.
+      if (WORKFLOW_NPM_PUBLISH_RE.test(yaml)) {
+        return 'npm'
+      }
+      if (WORKFLOW_GH_RELEASE_RE.test(yaml)) {
+        return 'gh'
+      }
+      // File exists but neither signal — fall through to next root.
+    } catch {
+      // Read error — try next root.
+    }
+  }
+  return 'unknown'
+}
+
 function workflowDeclaresDryRunInput(
   workflow: string,
   searchRoots: readonly string[],
@@ -229,6 +306,23 @@ function workflowDeclaresDryRunInput(
 // follow the fleet convention: `<projects-dir>/<repo-name>` next to
 // the current project. If the file isn't readable from any local
 // checkout, the bypass denies — same posture as a missing file.
+// Resolve the workflow file's search roots based on the command's
+// --repo flag. Used by both bypasses (dry-run + GH-release-only).
+//   - same-repo (no --repo, or --repo names the current project):
+//     just the current project dir.
+//   - cross-repo (--repo names a different project): just the sibling
+//     clone at <parent-of-project-dir>/<name>. The current project is
+//     intentionally excluded so a same-named workflow in the current
+//     checkout can't false-positive a cross-repo dispatch.
+function resolveSearchRoots(command: string): string[] {
+  const projectDir = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
+  const repoMatch = GH_REPO_FLAG_RE.exec(command)
+  if (!repoMatch || path.basename(projectDir) === repoMatch[1]!) {
+    return [projectDir]
+  }
+  return [path.join(path.dirname(projectDir), repoMatch[1]!)]
+}
+
 function isVerifiableDryRun(
   command: string,
   workflow: string | undefined,
@@ -245,21 +339,33 @@ function isVerifiableDryRun(
   if (FORCE_PROD_INPUTS_RE.test(command)) {
     return false
   }
-  const projectDir = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
-  const repoMatch = GH_REPO_FLAG_RE.exec(command)
-  // No --repo, or --repo names the current project: search only the
-  // current project. With --repo naming a different project: search
-  // ONLY the sibling clone — falling back to projectDir would falsely
-  // verify a same-named workflow that happens to live in the current
-  // checkout but isn't the dispatch's actual target.
-  let searchRoots: string[]
-  if (!repoMatch || path.basename(projectDir) === repoMatch[1]!) {
-    searchRoots = [projectDir]
-  } else {
-    const sibling = path.join(path.dirname(projectDir), repoMatch[1]!)
-    searchRoots = [sibling]
+  return workflowDeclaresDryRunInput(workflow, resolveSearchRoots(command))
+}
+
+// Decide whether a live (non-dry-run) dispatch is safe because the
+// target workflow only releases to GitHub — never to npm.
+// Conditions:
+//   1. Workflow YAML contains no `npm/pnpm/yarn publish` reference.
+//   2. Workflow YAML contains a GH-release indicator
+//      (`gh release create`, softprops/action-gh-release, etc.).
+//   3. No force-prod input (`-f publish=true` etc.) is set on the
+//      command — those re-enable destructive steps that even an
+//      otherwise-GH workflow may guard behind a flag.
+//
+// Recovery from a bad GH release is `gh release delete <tag>
+// --cleanup-tag` — single command, undoes both tag and release. That
+// shape is acceptable risk; npm publish is not.
+function isGhReleaseOnly(
+  command: string,
+  workflow: string | undefined,
+): boolean {
+  if (!workflow) {
+    return false
   }
-  return workflowDeclaresDryRunInput(workflow, searchRoots)
+  if (FORCE_PROD_INPUTS_RE.test(command)) {
+    return false
+  }
+  return classifyWorkflow(workflow, resolveSearchRoots(command)) === 'gh'
 }
 
 function detectDispatch(command: string): DispatchResult {
@@ -282,17 +388,26 @@ function detectDispatch(command: string): DispatchResult {
       const workflow = cliMatch[2]
       if (isVerifiableDryRun(command, workflow)) {
         return {
-          blocked: false,
-          workflow,
-          shape: 'gh workflow run/dispatch',
           allowedReason:
             'verifiable dry-run (-f dry-run=true + workflow declares dry-run input)',
+          blocked: false,
+          shape: 'gh workflow run/dispatch',
+          workflow,
+        }
+      }
+      if (isGhReleaseOnly(command, workflow)) {
+        return {
+          allowedReason:
+            'GitHub-release-only workflow (no npm publish; reversible via `gh release delete --cleanup-tag`)',
+          blocked: false,
+          shape: 'gh workflow run/dispatch',
+          workflow,
         }
       }
       return {
         blocked: true,
-        workflow,
         shape: 'gh workflow run/dispatch',
+        workflow,
       }
     }
   }
@@ -307,8 +422,8 @@ function detectDispatch(command: string): DispatchResult {
     if (!mask[apiMatch.index]) {
       return {
         blocked: true,
-        workflow: apiMatch[1],
         shape: 'gh api .../dispatches',
+        workflow: apiMatch[1],
       }
     }
   }
@@ -339,7 +454,7 @@ function main(): void {
     return
   }
 
-  const { blocked, workflow, shape, allowedReason } = detectDispatch(command)
+  const { allowedReason, blocked, shape, workflow } = detectDispatch(command)
   if (!blocked) {
     if (allowedReason) {
       // Transparently log the bypass so the user sees why the guard

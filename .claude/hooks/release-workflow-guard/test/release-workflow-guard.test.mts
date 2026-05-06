@@ -422,6 +422,199 @@ describe('release-workflow-guard hook', () => {
     })
   })
 
+  describe('GH-release-only bypass', () => {
+    let cleanups: Array<() => Promise<void>> = []
+
+    afterEach(async () => {
+      for (const cleanup of cleanups) {
+        await cleanup()
+      }
+      cleanups = []
+    })
+
+    it('allows live dispatch of a workflow that only creates GH releases', async () => {
+      const { projectDir, cleanup } = await makeWorkflowFixture(
+        'stubs.yml',
+        [
+          'name: stubs',
+          'on:',
+          '  workflow_dispatch:',
+          'jobs:',
+          '  release:',
+          '    runs-on: ubuntu-latest',
+          '    steps:',
+          '      - run: gh release create stubs-20260506-abc1234 ./release/*.tar.gz',
+          '',
+        ].join('\n'),
+      )
+      cleanups.push(cleanup)
+      const r = await runHook('gh workflow run stubs.yml', 'Bash', {
+        CLAUDE_PROJECT_DIR: projectDir,
+      })
+      assert.equal(r.code, 0)
+      assert.match(r.stderr, /ALLOWED/)
+      assert.match(r.stderr, /GitHub-release-only/)
+    })
+
+    it('allows live dispatch when softprops/action-gh-release is used', async () => {
+      const { projectDir, cleanup } = await makeWorkflowFixture(
+        'curl.yml',
+        [
+          'name: curl',
+          'on:',
+          '  workflow_dispatch:',
+          'jobs:',
+          '  release:',
+          '    steps:',
+          '      - uses: softprops/action-gh-release@v2',
+          '',
+        ].join('\n'),
+      )
+      cleanups.push(cleanup)
+      const r = await runHook('gh workflow run curl.yml', 'Bash', {
+        CLAUDE_PROJECT_DIR: projectDir,
+      })
+      assert.equal(r.code, 0)
+    })
+
+    it('blocks workflows that npm publish even if they also gh-release', async () => {
+      const { projectDir, cleanup } = await makeWorkflowFixture(
+        'release-and-publish.yml',
+        [
+          'name: release-and-publish',
+          'on:',
+          '  workflow_dispatch:',
+          'jobs:',
+          '  publish:',
+          '    steps:',
+          '      - run: gh release create vX.Y.Z',
+          '      - run: npm publish',
+          '',
+        ].join('\n'),
+      )
+      cleanups.push(cleanup)
+      const r = await runHook(
+        'gh workflow run release-and-publish.yml',
+        'Bash',
+        { CLAUDE_PROJECT_DIR: projectDir },
+      )
+      assert.equal(r.code, 2)
+      assert.match(r.stderr, /BLOCKED/)
+    })
+
+    it('blocks pnpm publish workflows', async () => {
+      const { projectDir, cleanup } = await makeWorkflowFixture(
+        'publish.yml',
+        [
+          'name: publish',
+          'on: { workflow_dispatch: {} }',
+          'jobs:',
+          '  publish:',
+          '    steps:',
+          '      - run: pnpm publish --access public',
+          '',
+        ].join('\n'),
+      )
+      cleanups.push(cleanup)
+      const r = await runHook('gh workflow run publish.yml', 'Bash', {
+        CLAUDE_PROJECT_DIR: projectDir,
+      })
+      assert.equal(r.code, 2)
+    })
+
+    it('blocks JS-DevTools/npm-publish action workflows', async () => {
+      const { projectDir, cleanup } = await makeWorkflowFixture(
+        'auto-publish.yml',
+        [
+          'name: auto-publish',
+          'on: { workflow_dispatch: {} }',
+          'jobs:',
+          '  publish:',
+          '    steps:',
+          '      - uses: JS-DevTools/npm-publish@v3',
+          '',
+        ].join('\n'),
+      )
+      cleanups.push(cleanup)
+      const r = await runHook('gh workflow run auto-publish.yml', 'Bash', {
+        CLAUDE_PROJECT_DIR: projectDir,
+      })
+      assert.equal(r.code, 2)
+    })
+
+    it('blocks workflows with no detectable release shape', async () => {
+      const { projectDir, cleanup } = await makeWorkflowFixture(
+        'mystery.yml',
+        [
+          'name: mystery',
+          'on: { workflow_dispatch: {} }',
+          'jobs:',
+          '  do:',
+          '    steps:',
+          '      - run: ./run-the-thing.sh',
+          '',
+        ].join('\n'),
+      )
+      cleanups.push(cleanup)
+      const r = await runHook('gh workflow run mystery.yml', 'Bash', {
+        CLAUDE_PROJECT_DIR: projectDir,
+      })
+      assert.equal(r.code, 2)
+    })
+
+    it('blocks GH-release-only workflow when force-prod input is set', async () => {
+      const { projectDir, cleanup } = await makeWorkflowFixture(
+        'stubs.yml',
+        [
+          'name: stubs',
+          'on: { workflow_dispatch: {} }',
+          'jobs:',
+          '  release:',
+          '    steps:',
+          '      - run: gh release create x',
+          '',
+        ].join('\n'),
+      )
+      cleanups.push(cleanup)
+      const r = await runHook(
+        'gh workflow run stubs.yml -f publish=true',
+        'Bash',
+        { CLAUDE_PROJECT_DIR: projectDir },
+      )
+      assert.equal(r.code, 2)
+    })
+
+    it('allows --repo when sibling clone has GH-release-only workflow', async () => {
+      // Create a sibling project named "socket-other" alongside the
+      // primary fixture; place a stubs.yml in the sibling. The hook
+      // must read the sibling, not the primary.
+      const projectsRoot = await fs.mkdtemp(path.join(tmpdir(), 'rwg-roots-'))
+      const primaryDir = path.join(projectsRoot, 'socket-btm')
+      const siblingDir = path.join(projectsRoot, 'socket-other')
+      await fs.mkdir(path.join(primaryDir, '.github', 'workflows'), {
+        recursive: true,
+      })
+      await fs.mkdir(path.join(siblingDir, '.github', 'workflows'), {
+        recursive: true,
+      })
+      await fs.writeFile(
+        path.join(siblingDir, '.github', 'workflows', 'stubs.yml'),
+        'jobs:\n  r:\n    steps:\n      - run: gh release create x\n',
+        'utf8',
+      )
+      cleanups.push(async () => {
+        await safeDelete(projectsRoot, { force: true })
+      })
+      const r = await runHook(
+        'gh workflow run stubs.yml --repo SocketDev/socket-other',
+        'Bash',
+        { CLAUDE_PROJECT_DIR: primaryDir },
+      )
+      assert.equal(r.code, 0)
+      assert.match(r.stderr, /GitHub-release-only/)
+    })
+  })
+
   describe('payload edge cases', () => {
     it('non-Bash tool is ignored', async () => {
       assert.equal(
