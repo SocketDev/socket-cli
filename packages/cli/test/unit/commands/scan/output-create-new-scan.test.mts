@@ -292,4 +292,47 @@ describe('outputCreateNewScan', () => {
 
     expect(process.exitCode).toBe(1)
   })
+
+  it('restarts spinner after JSON output if it was spinning', async () => {
+    const spinner = { isSpinning: true, start: vi.fn(), stop: vi.fn() }
+    await outputCreateNewScan(
+      { ok: true, data: { id: 'x', html_report_url: 'http://x' } as any },
+      { outputKind: 'json', spinner: spinner as any },
+    )
+
+    expect(spinner.stop).toHaveBeenCalled()
+    expect(spinner.start).toHaveBeenCalled()
+  })
+
+  it('restarts spinner after text-mode error if it was spinning', async () => {
+    const spinner = { isSpinning: true, start: vi.fn(), stop: vi.fn() }
+    await outputCreateNewScan(
+      { ok: false, message: 'fail' },
+      { outputKind: 'text', spinner: spinner as any },
+    )
+
+    expect(spinner.start).toHaveBeenCalled()
+  })
+
+  it('restarts spinner after markdown output if it was spinning', async () => {
+    const spinner = { isSpinning: true, start: vi.fn(), stop: vi.fn() }
+    await outputCreateNewScan(
+      { ok: true, data: { id: 'x', html_report_url: 'http://x' } as any },
+      { outputKind: 'markdown', spinner: spinner as any },
+    )
+
+    expect(spinner.start).toHaveBeenCalled()
+  })
+
+  it('renders no-id markdown branch', async () => {
+    const spinner = { isSpinning: false, start: vi.fn(), stop: vi.fn() }
+    await outputCreateNewScan(
+      { ok: true, data: { id: '' as any, html_report_url: '' as any } },
+      { outputKind: 'markdown', spinner: spinner as any },
+    )
+
+    const calls = mockLog.mock.calls.map(c => c[0]).join('\n')
+    expect(calls).toContain('did not return a Scan ID')
+    expect(process.exitCode).toBe(1)
+  })
 })
