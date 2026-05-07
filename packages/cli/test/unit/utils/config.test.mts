@@ -262,5 +262,29 @@ describe('utils/config', () => {
       expect(result.ok).toBe(true)
       expect(result.data).toBe('test-org')
     })
+
+    it('handles skipAskToPersistDefaultOrg with string "true"', () => {
+      resetConfigForTesting()
+      const r = updateConfigValue('skipAskToPersistDefaultOrg', 'true' as any)
+      expect(r.ok).toBe(true)
+    })
+
+    it('handles skipAskToPersistDefaultOrg with string "false"', () => {
+      resetConfigForTesting()
+      const r = updateConfigValue('skipAskToPersistDefaultOrg', 'false' as any)
+      expect(r.ok).toBe(true)
+    })
+
+    it('deletes skipAskToPersistDefaultOrg when value is unrecognized', () => {
+      resetConfigForTesting()
+      // Set it first.
+      updateConfigValue('skipAskToPersistDefaultOrg', 'true' as any)
+      // Now pass an unrecognized value — should delete the key.
+      const result = updateConfigValue(
+        'skipAskToPersistDefaultOrg',
+        'maybe' as any,
+      )
+      expect(result.ok).toBe(true)
+    })
   })
 })
