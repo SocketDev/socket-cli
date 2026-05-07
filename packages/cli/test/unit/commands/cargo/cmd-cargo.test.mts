@@ -182,6 +182,56 @@ describe('cmd-cargo', () => {
     })
 
     describe('exit handling', () => {
+      it('skips exit/kill when both code and signal are null', async () => {
+        const mockChildProcess = new EventEmitter()
+        const mockSpawnPromise = Promise.resolve({
+          code: null,
+          signal: null,
+          stderr: Buffer.from(''),
+          stdout: Buffer.from(''),
+        })
+        ;(mockSpawnPromise as any).process = mockChildProcess
+
+        mockSpawnSfwDlx.mockResolvedValue({
+          spawnPromise: mockSpawnPromise,
+        })
+
+        mockFilterFlags.mockReturnValue(['build'])
+
+        const mockExit = vi
+          .spyOn(process, 'exit')
+          .mockImplementation((() => {}) as any)
+        mockExit.mockClear()
+        const mockKill = vi
+          .spyOn(process, 'kill')
+          .mockImplementation((() => {}) as any)
+        mockKill.mockClear()
+
+        cmdCargo.run(['build'], importMeta, context)
+
+        // Wait for handler registration.
+        await new Promise(resolve => {
+          setImmediate(resolve)
+        })
+        const exitCallsBefore = mockExit.mock.calls.length
+        const killCallsBefore = mockKill.mock.calls.length
+
+        // Emit exit with both code and signal as null.
+        mockChildProcess.emit('exit', null, null)
+
+        // Wait for event handler.
+        await new Promise(resolve => {
+          setImmediate(resolve)
+        })
+
+        // Neither exit nor kill call count should increase.
+        expect(mockExit.mock.calls.length).toBe(exitCallsBefore)
+        expect(mockKill.mock.calls.length).toBe(killCallsBefore)
+
+        mockExit.mockRestore()
+        mockKill.mockRestore()
+      })
+
       it('should set default exit code to 1 before child process exits', async () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
