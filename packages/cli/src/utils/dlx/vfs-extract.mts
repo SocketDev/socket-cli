@@ -142,7 +142,7 @@ const TOOL_STANDALONE_PATHS: Partial<Record<ExternalTool, string>> = {
  * @param nodeSmolBase - Base dlx directory path.
  * @returns Path to the tool binary (without .exe extension).
  */
-function getToolFilePath(tool: ExternalTool, nodeSmolBase: string): string {
+export function getToolFilePath(tool: ExternalTool, nodeSmolBase: string): string {
   const npmPath = TOOL_NPM_PATHS[tool]
   const standalonePath = TOOL_STANDALONE_PATHS[tool]
 
@@ -179,7 +179,7 @@ function getToolFilePath(tool: ExternalTool, nodeSmolBase: string): string {
  *
  * @returns Path to node-smol's dlx directory.
  */
-function getNodeSmolBasePath(): string {
+export function getNodeSmolBasePath(): string {
   // Get actual hash from process.smol if available, otherwise use process version.
   let nodeSmolHash = 'node-smol-placeholder'
 
@@ -234,7 +234,7 @@ export function areExternalToolsAvailable(): boolean {
  * @param packagePath - Path to npm package directory.
  * @returns True if package directory exists with node_modules/ and binary.
  */
-async function isNpmPackageExtracted(packagePath: string): Promise<boolean> {
+export async function isNpmPackageExtracted(packagePath: string): Promise<boolean> {
   if (!existsSync(packagePath)) {
     return false
   }
@@ -267,7 +267,7 @@ async function isNpmPackageExtracted(packagePath: string): Promise<boolean> {
  * @param tool - Name of the tool to extract.
  * @returns Path to the extracted tool binary.
  */
-async function extractTool(tool: ExternalTool): Promise<string> {
+export async function extractTool(tool: ExternalTool): Promise<string> {
   // Check if process.smol.mount is available.
   const processWithSmol = process as unknown as {
     smol?: { mount?: (vfsPath: string) => Promise<string> }

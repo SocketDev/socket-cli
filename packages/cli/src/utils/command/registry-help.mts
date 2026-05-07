@@ -62,7 +62,7 @@ export function generateCommandHelp(command: CommandDefinition): string {
  * @param def - Flag definition
  * @returns Formatted flag line
  */
-function formatFlag(name: string, def: FlagDefinition): string {
+export function formatFlag(name: string, def: FlagDefinition): string {
   const parts: string[] = []
 
   // Flag name with alias
@@ -102,7 +102,7 @@ function formatFlag(name: string, def: FlagDefinition): string {
  * @param def - Flag definition
  * @returns Type indicator string or undefined
  */
-function getTypeIndicator(def: FlagDefinition): string | undefined {
+export function getTypeIndicator(def: FlagDefinition): string | undefined {
   switch (def.type) {
     case 'string':
       return '<string>'

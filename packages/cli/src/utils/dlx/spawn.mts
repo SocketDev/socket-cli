@@ -109,7 +109,7 @@ export type DlxPackageSpec = {
  * Validate package name to prevent command injection.
  * Package names must follow npm naming rules.
  */
-function validatePackageName(name: string): void {
+export function validatePackageName(name: string): void {
   // Basic validation: no shell metacharacters, must be valid npm package name.
   // npm package names can contain: lowercase letters, numbers, hyphens, underscores, dots, and @ for scopes.
   const validNamePattern =
@@ -175,7 +175,7 @@ export async function spawnDlx(
  * @param spec - GitHub release specification.
  * @returns Path to the downloaded binary.
  */
-async function downloadGitHubReleaseBinary(
+export async function downloadGitHubReleaseBinary(
   spec: GitHubReleaseSpec,
 ): Promise<string> {
   const { assetName, binaryName, owner, repo, sha256, version } = spec
@@ -669,7 +669,7 @@ export async function spawnSynpDlx(
  * Helper to spawn a tool from VFS extraction.
  * Used when running in SEA mode.
  */
-async function spawnToolVfs(
+export async function spawnToolVfs(
   tool: ExternalTool,
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
@@ -923,7 +923,7 @@ export async function spawnSynp(
 /**
  * Get the download URL and asset name for python-build-standalone based on platform and architecture.
  */
-function getPythonStandaloneInfo(): { assetName: string; url: string } {
+export function getPythonStandaloneInfo(): { assetName: string; url: string } {
   const version = getPythonVersion()
   const tag = getPythonBuildTag()
   const platform = os.platform()
@@ -961,7 +961,7 @@ function getPythonStandaloneInfo(): { assetName: string; url: string } {
 /**
  * Get the path to the cached Python installation directory.
  */
-function getPythonCachePath(): string {
+export function getPythonCachePath(): string {
   const version = getPythonVersion()
   const tag = getPythonBuildTag()
   const platform = os.platform()
@@ -977,7 +977,7 @@ function getPythonCachePath(): string {
 /**
  * Get the path to the Python executable within the installation.
  */
-function getPythonBinPath(pythonDir: string): string {
+export function getPythonBinPath(pythonDir: string): string {
   if (WIN32) {
     return path.join(pythonDir, 'python', 'python.exe')
   }
@@ -987,7 +987,7 @@ function getPythonBinPath(pythonDir: string): string {
 /**
  * Download and extract Python from python-build-standalone using downloadBinary.
  */
-async function downloadPython(pythonDir: string): Promise<void> {
+export async function downloadPython(pythonDir: string): Promise<void> {
   const { assetName, url } = getPythonStandaloneInfo()
   const tarballName = 'python-standalone.tar.gz'
 
@@ -1145,7 +1145,7 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
 /**
  * Check if socketcli is installed in the Python environment.
  */
-async function isSocketPyCliInstalled(pythonBin: string): Promise<boolean> {
+export async function isSocketPyCliInstalled(pythonBin: string): Promise<boolean> {
   try {
     const result = await spawn(
       pythonBin,
@@ -1161,7 +1161,7 @@ async function isSocketPyCliInstalled(pythonBin: string): Promise<boolean> {
 /**
  * Convert npm caret range (^2.2.15) to pip version specifier (>=2.2.15,<3.0.0).
  */
-function convertCaretToPipRange(caretRange: string): string {
+export function convertCaretToPipRange(caretRange: string): string {
   if (!caretRange) {
     return ''
   }
@@ -1197,7 +1197,7 @@ function convertCaretToPipRange(caretRange: string): string {
  * @param sha256 - Expected SHA-256 checksum (hex string).
  * @returns Path to the downloaded wheel file, or null if download fails.
  */
-async function downloadPyPiWheel(
+export async function downloadPyPiWheel(
   packageName: string,
   version: string,
   sha256: string | undefined,
@@ -1664,7 +1664,7 @@ export async function spawnSocketPyCli(
  * Spawn Trivy via GitHub download (npm CLI mode).
  * Downloads from GitHub releases (aquasecurity/trivy).
  */
-async function spawnTrivyDlx(
+export async function spawnTrivyDlx(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
@@ -1728,7 +1728,7 @@ export async function spawnTrivy(
  * Spawn TruffleHog via GitHub download (npm CLI mode).
  * Downloads from GitHub releases (trufflesecurity/trufflehog).
  */
-async function spawnTrufflehogDlx(
+export async function spawnTrufflehogDlx(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
@@ -1792,7 +1792,7 @@ export async function spawnTrufflehog(
  * Spawn OpenGrep via GitHub download (npm CLI mode).
  * Downloads from GitHub releases (opengrep/opengrep).
  */
-async function spawnOpengrepDlx(
+export async function spawnOpengrepDlx(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
