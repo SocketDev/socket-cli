@@ -125,6 +125,26 @@ describe('Error Classes', () => {
       const error = new FileSystemError('Disk full', '/tmp', 'ENOSPC')
       expect(error.recovery[0]).toContain('disk space')
     })
+
+    it('shares EACCES recovery with EPERM code', () => {
+      const error = new FileSystemError('Operation not permitted', '/etc', 'EPERM')
+      expect(error.recovery[0]).toContain('permissions')
+    })
+
+    it('falls back to generic recovery for unknown error codes', () => {
+      const error = new FileSystemError('Unknown error', '/tmp', 'EWHATEVER')
+      expect(error.recovery[0]).toContain('file system permissions')
+    })
+
+    it('falls back to generic recovery when code is undefined', () => {
+      const error = new FileSystemError('Unknown error')
+      expect(error.recovery[0]).toContain('file system permissions')
+    })
+
+    it('uses provided custom recovery instead of defaults', () => {
+      const error = new FileSystemError('x', '/p', 'ENOENT', ['custom rec'])
+      expect(error.recovery).toEqual(['custom rec'])
+    })
   })
 
   describe('ConfigError', () => {
