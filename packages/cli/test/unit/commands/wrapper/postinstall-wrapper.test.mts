@@ -315,4 +315,43 @@ describe('postinstallWrapper', () => {
       'Run `socket install completion` to setup bash tab completion',
     )
   })
+
+  it('handles updateInstalledTabCompletionScript returning ok=false (line 44)', async () => {
+    const { getBashrcDetails } = await import(
+      '../../../../src/utils/cli/completion.mts'
+    )
+    await import('@socketsecurity/lib/logger')
+    const { updateInstalledTabCompletionScript } = await import(
+      '../../../../src/commands/install/setup-tab-completion.mts'
+    )
+    const mockGetDetails = vi.mocked(getBashrcDetails)
+    const mockUpdateScript = vi.mocked(updateInstalledTabCompletionScript)
+    const { checkSocketWrapperSetup } = await import(
+      '../../../../src/commands/wrapper/check-socket-wrapper-setup.mts'
+    )
+    const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
+
+    existsSyncSpy.mockReturnValue(true)
+    mockCheckSetup.mockReturnValue(true)
+    mockGetDetails.mockReturnValue({
+      ok: true,
+      data: { targetPath: '/home/user/.config/socket/tab-completion.bash' },
+    } as any)
+    // Update script returns NOT ok → success log skipped, fallback log runs.
+    mockUpdateScript.mockReturnValue({
+      ok: false,
+      message: 'Update failed',
+    } as any)
+
+    await postinstallWrapper()
+
+    // Should log the fallback message since updatedTabCompletion stays false.
+    expect(mockLogger.log).toHaveBeenCalledWith(
+      'Run `socket install completion` to setup bash tab completion',
+    )
+    // Should NOT log the success message.
+    expect(mockLogger.success).not.toHaveBeenCalledWith(
+      'Updated the installed Socket tab completion script',
+    )
+  })
 })
