@@ -13,7 +13,7 @@ import { getBaseBranch, getRepoInfo } from '../../utils/git/operations.mjs'
 import type { PrMatch } from './pull-request.mts'
 import type { RepoInfo } from '../../utils/git/operations.mjs'
 
-function ciRepoInfo(): RepoInfo | undefined {
+export function ciRepoInfo(): RepoInfo | undefined {
   if (!GITHUB_REPOSITORY) {
     debug('miss: GITHUB_REPOSITORY env var')
     return undefined

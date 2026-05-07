@@ -9,7 +9,7 @@ const GITHUB_ADVISORIES_URL = 'https://github.com/advisories'
 /**
  * Extract unique package names with ecosystems from vulnerability details.
  */
-function getUniquePackages(details: GhsaDetails): string[] {
+export function getUniquePackages(details: GhsaDetails): string[] {
   return [
     ...new Set(
       details.vulnerabilities.nodes.map(

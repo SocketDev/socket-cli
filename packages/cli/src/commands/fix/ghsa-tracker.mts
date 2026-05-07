@@ -9,7 +9,7 @@ import { getSocketFixBranchName } from './git.mts'
 /**
  * Check if a process with the given PID is still running.
  */
-function isPidAlive(pid: number): boolean {
+export function isPidAlive(pid: number): boolean {
   try {
     // Signal 0 checks process existence without sending actual signal.
     process.kill(pid, 0)

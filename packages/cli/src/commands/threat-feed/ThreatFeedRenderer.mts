@@ -28,7 +28,7 @@ export interface ThreatFeedRendererProps {
 /**
  * Format time difference as human-readable string.
  */
-function formatTimeDiff(dateStr: string): string {
+export function formatTimeDiff(dateStr: string): string {
   const now = Date.now()
   const date = new Date(dateStr).getTime()
   const diff = now - date

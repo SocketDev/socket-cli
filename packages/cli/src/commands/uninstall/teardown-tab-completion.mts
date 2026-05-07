@@ -61,7 +61,7 @@ export async function teardownTabCompletion(
   }
 }
 
-function findRemainingCompletionSetups(bashrc: string): string[] {
+export function findRemainingCompletionSetups(bashrc: string): string[] {
   return bashrc
     .split('\n')
     .map(s => s.trim())

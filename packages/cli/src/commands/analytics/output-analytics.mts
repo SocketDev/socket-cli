@@ -289,7 +289,7 @@ export function formatDataOrg(
   }
 }
 
-function formatDate(date: string): string {
+export function formatDate(date: string): string {
   const dateObj = new Date(date)
   const month = dateObj.getMonth()
   const day = dateObj.getDate()

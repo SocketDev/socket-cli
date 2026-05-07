@@ -63,7 +63,7 @@ export function outputPurlsShallowScore(
   logger.log(txt)
 }
 
-function formatReportCard(
+export function formatReportCard(
   artifact: DedupedArtifact,
   colorize: boolean,
 ): string {
@@ -103,7 +103,7 @@ type FormatScoreOptions = {
   padding?: number | undefined
 }
 
-function formatScore(
+export function formatScore(
   score: number,
   options?: FormatScoreOptions | undefined,
 ): string {
@@ -128,7 +128,7 @@ type AlertStringOptions = {
   colorize?: boolean | undefined
 }
 
-function getAlertString(
+export function getAlertString(
   alerts: DedupedArtifact['alerts'],
   options?: AlertStringOptions | undefined,
 ): string {
