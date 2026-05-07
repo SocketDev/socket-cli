@@ -22,9 +22,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import meow from '../../../../src/meow.mts'
 import {
+  description,
   emitBanner,
+  findBestCommandMatch,
+  getHeaderTheme,
   getLastSeenCommand,
+  getTokenOrigin,
+  levenshteinDistance,
   meowOrExit,
+  shouldAnimateHeader,
+  shouldSuppressBanner,
+  stripAnsi,
 } from '../../../../src/utils/cli/with-subcommands.mts'
 
 // Mock meow.
@@ -251,6 +259,142 @@ describe('meow-with-subcommands', () => {
       emitBanner('socket', undefined, false)
 
       expect(mockLogger.error).toHaveBeenCalled()
+    })
+  })
+
+  describe('description', () => {
+    it('returns formatted description for a command', () => {
+      const result = description({
+        description: 'Test command description',
+        run: vi.fn(),
+      } as any)
+      expect(result).toBe('Test command description')
+    })
+
+    it('returns "undefined" when command is undefined', () => {
+      // The implementation returns String(undefined) = "undefined" via fallback.
+      const result = description(undefined)
+      expect(result).toBe('undefined')
+    })
+
+    it('coerces non-string descriptions to string', () => {
+      const result = description({
+        description: 42 as unknown as string,
+        run: vi.fn(),
+      } as any)
+      expect(result).toBe('42')
+    })
+  })
+
+  describe('levenshteinDistance', () => {
+    it('returns 0 for identical strings', () => {
+      expect(levenshteinDistance('socket', 'socket')).toBe(0)
+    })
+
+    it('returns string length when one string is empty', () => {
+      expect(levenshteinDistance('', 'abc')).toBe(3)
+      expect(levenshteinDistance('xyz', '')).toBe(3)
+    })
+
+    it('counts substitutions', () => {
+      expect(levenshteinDistance('cat', 'bat')).toBe(1)
+      expect(levenshteinDistance('cat', 'dog')).toBe(3)
+    })
+
+    it('counts insertions and deletions', () => {
+      expect(levenshteinDistance('hello', 'helloworld')).toBe(5)
+      expect(levenshteinDistance('helloworld', 'hello')).toBe(5)
+    })
+  })
+
+  describe('findBestCommandMatch', () => {
+    const subcommands = { scan: {}, fix: {}, login: {}, logout: {} }
+    const aliases = { ls: {} }
+
+    it('returns close match for typo', () => {
+      const result = findBestCommandMatch('scn', subcommands, aliases)
+      expect(result).toBe('scan')
+    })
+
+    it('returns null when nothing close matches', () => {
+      const result = findBestCommandMatch(
+        'completelyunrelated',
+        subcommands,
+        aliases,
+      )
+      expect(result).toBeNull()
+    })
+
+    it('finds matches in aliases', () => {
+      const result = findBestCommandMatch('lsx', subcommands, aliases)
+      expect(result).toBe('ls')
+    })
+
+    it('matches case-insensitively', () => {
+      const result = findBestCommandMatch('SCAN', subcommands, aliases)
+      expect(result).toBe('scan')
+    })
+  })
+
+  describe('shouldSuppressBanner', () => {
+    it('suppresses for --json', () => {
+      expect(shouldSuppressBanner({ json: true })).toBe(true)
+    })
+
+    it('suppresses for --markdown', () => {
+      expect(shouldSuppressBanner({ markdown: true })).toBe(true)
+    })
+
+    it('suppresses for --no-banner (banner: false)', () => {
+      expect(shouldSuppressBanner({ banner: false })).toBe(true)
+    })
+
+    it('does not suppress with banner: true', () => {
+      expect(shouldSuppressBanner({ banner: true })).toBe(false)
+    })
+
+    it('does not suppress with empty flags', () => {
+      expect(shouldSuppressBanner({})).toBe(false)
+    })
+  })
+
+  describe('stripAnsi', () => {
+    it('strips ANSI color codes', () => {
+      expect(stripAnsi('\x1b[31mred\x1b[0m')).toBe('red')
+    })
+
+    it('returns plain text unchanged', () => {
+      expect(stripAnsi('plain')).toBe('plain')
+    })
+  })
+
+  describe('getHeaderTheme', () => {
+    it('returns valid themes from flags', () => {
+      expect(getHeaderTheme({ headerTheme: 'cyberpunk' })).toBe('cyberpunk')
+      expect(getHeaderTheme({ headerTheme: 'forest' })).toBe('forest')
+      expect(getHeaderTheme({ headerTheme: 'ocean' })).toBe('ocean')
+      expect(getHeaderTheme({ headerTheme: 'sunset' })).toBe('sunset')
+    })
+
+    it('falls back to default for unknown themes', () => {
+      expect(getHeaderTheme({ headerTheme: 'made-up' })).toBe('default')
+      expect(getHeaderTheme({})).toBe('default')
+      expect(getHeaderTheme()).toBe('default')
+    })
+  })
+
+  describe('shouldAnimateHeader', () => {
+    it('returns false in vitest mode', () => {
+      // VITEST is true in this test run.
+      expect(shouldAnimateHeader()).toBe(false)
+      expect(shouldAnimateHeader({ animateHeader: true })).toBe(false)
+    })
+  })
+
+  describe('getTokenOrigin', () => {
+    it('returns a string', () => {
+      const result = getTokenOrigin()
+      expect(typeof result).toBe('string')
     })
   })
 
