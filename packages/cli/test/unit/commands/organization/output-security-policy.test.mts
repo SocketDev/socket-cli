@@ -362,4 +362,78 @@ describe('outputSecurityPolicy', () => {
 
     expect(process.exitCode).toBe(1)
   })
+
+  it('falls back to exitCode 1 when result has no code field', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+      serializeResultJson: mockSerializeResultJson,
+    }))
+
+    const { outputSecurityPolicy } =
+      await import('../../../../src/commands/organization/output-security-policy.mts')
+
+    // Manually construct error without code field.
+    const result = {
+      ok: false as const,
+      message: 'No code',
+      cause: 'no code',
+    }
+
+    process.exitCode = undefined
+    await outputSecurityPolicy(result as any, 'json')
+
+    expect(process.exitCode).toBe(1)
+  })
+
+  it('handles undefined securityPolicyRules in text mode', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockMdHeader = vi.fn(text => `# ${text}`)
+    const mockMdTableOfPairs = vi.fn(
+      (pairs: Array<[string, string]>) => `${pairs.length} entries`,
+    )
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+    vi.doMock('../../../../src/utils/output/markdown.mts', () => ({
+      mdHeader: mockMdHeader,
+      mdTableOfPairs: mockMdTableOfPairs,
+    }))
+
+    const { outputSecurityPolicy } =
+      await import('../../../../src/commands/organization/output-security-policy.mts')
+
+    // securityPolicyRules undefined → entries array is empty (line 41 false branch).
+    const result = {
+      ok: true as const,
+      data: {
+        securityPolicyDefault: 'medium',
+        securityPolicyRules: undefined,
+      },
+    }
+
+    await outputSecurityPolicy(result as any, 'text')
+
+    expect(mockMdTableOfPairs).toHaveBeenCalledWith([], ['name', 'action'])
+  })
 })

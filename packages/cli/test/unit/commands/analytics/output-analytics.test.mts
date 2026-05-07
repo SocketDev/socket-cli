@@ -4,6 +4,7 @@ import FIXTURE from '../../../../src/commands/analytics/analytics-fixture.json' 
 import {
   formatDataOrg,
   formatDataRepo,
+  formatDate,
   renderMarkdown,
 } from '../../../../src/commands/analytics/output-analytics.mts'
 
@@ -294,6 +295,24 @@ describe('output-analytics', () => {
         | ---------------- | ------ |
         "
       `)
+    })
+  })
+
+  describe('formatDate', () => {
+    it('formats valid dates as "MonthName Day"', () => {
+      const result = formatDate('2026-03-15T00:00:00Z')
+      expect(result).toMatch(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d+$/)
+    })
+
+    it('returns first 10 chars for invalid date strings', () => {
+      // Invalid date string → getMonth/getDate return NaN → fallback path.
+      const result = formatDate('not-a-real-date')
+      expect(result).toBe('not-a-real')
+    })
+
+    it('returns truncated input when date does not parse', () => {
+      const result = formatDate('XXXX-YY-ZZ')
+      expect(result).toBe('XXXX-YY-ZZ')
     })
   })
 })
