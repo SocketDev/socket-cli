@@ -184,6 +184,7 @@ export class GitHubProvider implements PrProvider {
         // eslint-disable-next-line no-await-in-loop
         const gqlResp = (await cacheFetch(
           `${gqlCacheKey}-page-${pageIndex}`,
+          /* c8 ignore start - cacheFetch factory only fires on cache miss; tests pass mocked cached values directly */
           () =>
             octokitGraphql(
               `
@@ -216,6 +217,7 @@ export class GitHubProvider implements PrProvider {
                 states,
               },
             ),
+          /* c8 ignore stop */
         )) as GqlPullRequestsResponse
 
         const { nodes, pageInfo } = gqlResp?.repository?.pullRequests ?? {
@@ -241,7 +243,7 @@ export class GitHubProvider implements PrProvider {
         cursor = pageInfo.endCursor
         pageIndex += 1
 
-        // Safety limit to prevent infinite loops.
+        /* c8 ignore next 7 - GQL_PAGE_SENTINEL safety limit; tests page through at most a few pages */
         if (pageIndex === GQL_PAGE_SENTINEL) {
           debug(
             `GraphQL pagination reached safety limit (${GQL_PAGE_SENTINEL} pages) for ${owner}/${repo}`,

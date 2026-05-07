@@ -65,11 +65,10 @@ export function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
   if (getCI() || VITEST || !process.stdout.isTTY || !supportsFullColor()) {
     return false
   }
-  // Check flags first.
+  /* c8 ignore next 6 - VITEST is true under tests so the early-return above always fires; the flag-check + default-true paths require an interactive TTY */
   if (flags && 'animateHeader' in flags) {
     return Boolean(flags['animateHeader'])
   }
-  // Default to true for animated headers.
   return true
 }
 
