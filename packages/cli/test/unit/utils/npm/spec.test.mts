@@ -248,6 +248,17 @@ describe('npm-spec utilities', () => {
       })
     })
 
+    it('returns undefined when fallback parsing sees @ at index 0 without slash', () => {
+      mockNpmPackageArg.mockImplementation(() => {
+        throw new Error('Parse error')
+      })
+
+      // "@no-slash" → starts with @ but scoped regex fails (no /);
+      // atIndex falls back to 0, which is treated as invalid.
+      const result = safeParseNpmSpec('@no-slash')
+      expect(result).toBeUndefined()
+    })
+
     it('falls back handles package without version', () => {
       mockNpmPackageArg.mockImplementation(() => {
         throw new Error('Parse error')
