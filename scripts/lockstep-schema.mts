@@ -1,12 +1,12 @@
 /**
- * @fileoverview TypeBox schema for xport.json — single source of truth.
+ * @fileoverview TypeBox schema for lockstep.json — single source of truth.
  *
  * Everything else is derived:
- *   - TypeScript types in scripts/xport.mts via `Static<typeof ...>`
- *   - xport.schema.json (draft 2020-12) via direct JSON.stringify of the
- *     TypeBox schema, emitted by scripts/xport-emit-schema.mts
+ *   - TypeScript types in scripts/lockstep.mts via `Static<typeof ...>`
+ *   - lockstep.schema.json (draft 2020-12) via direct JSON.stringify of the
+ *     TypeBox schema, emitted by scripts/lockstep-emit-schema.mts
  *   - Runtime validation at harness startup via
- *     `validateSchema(XportManifestSchema, ...)` from
+ *     `validateSchema(LockstepManifestSchema, ...)` from
  *     `@socketsecurity/lib/validation/validate-schema`
  *
  * Byte-identical across sdxgen / socket-btm / socket-registry /
@@ -281,7 +281,7 @@ const LangParityRowSchema = Type.Object(
     matrix_files: Type.Optional(
       Type.Array(Type.String(), {
         description:
-          'For inventory rows that index other xport-lang-*.json files. Paths relative to this manifest.',
+          'For inventory rows that index other lockstep-lang-*.json files. Paths relative to this manifest.',
       }),
     ),
     ports: Type.Record(Type.String(), PortStatusSchema, {
@@ -307,7 +307,7 @@ export const RowSchema = Type.Union([
 // Top-level manifest.
 // ---------------------------------------------------------------------------
 
-export const XportManifestSchema = Type.Object(
+export const LockstepManifestSchema = Type.Object(
   {
     $schema: Type.Optional(Type.String()),
     description: Type.Optional(Type.String()),
@@ -344,7 +344,7 @@ export const XportManifestSchema = Type.Object(
 )
 
 export type Row = Static<typeof RowSchema>
-export type XportManifest = Static<typeof XportManifestSchema>
+export type LockstepManifest = Static<typeof LockstepManifestSchema>
 export type Upstream = Static<typeof UpstreamSchema>
 export type Site = Static<typeof SiteSchema>
 export type PortStatus = Static<typeof PortStatusSchema>

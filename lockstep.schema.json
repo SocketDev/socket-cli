@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/SocketDev/xport.schema.json",
-  "title": "xport lock-step manifest",
+  "$id": "https://github.com/SocketDev/lockstep.schema.json",
+  "title": "lockstep manifest",
   "description": "Unified lock-step manifest shared across Socket repos. One schema, all cases — `kind` discriminator on each row selects which flavor of lock-step applies.",
   "type": "object",
   "required": ["rows"],
@@ -396,7 +396,7 @@
                 }
               },
               "matrix_files": {
-                "description": "For inventory rows that index other xport-lang-*.json files. Paths relative to this manifest.",
+                "description": "For inventory rows that index other lockstep-lang-*.json files. Paths relative to this manifest.",
                 "type": "array",
                 "items": {
                   "type": "string"

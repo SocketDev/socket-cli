@@ -3,7 +3,7 @@
  * TypeBox source.
  *
  * Run via `pnpm run socket-repo-template:emit-schema` from a fleet
- * repo (the worktree where TypeBox is installed). Mirrors the xport
+ * repo (the worktree where TypeBox is installed). Mirrors the lockstep
  * emit pattern.
  */
 

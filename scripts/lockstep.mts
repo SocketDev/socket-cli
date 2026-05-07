@@ -1,8 +1,8 @@
 /**
- * @fileoverview xport lock-step harness (canonical; mirrored in
- * socket-repo-template/template/scripts/xport.mts).
+ * @fileoverview lockstep harness (canonical; mirrored in
+ * socket-repo-template/template/scripts/lockstep.mts).
  *
- * Reads `xport.json` (+ any `includes[]` sub-manifests) and validates each
+ * Reads `lockstep.json` (+ any `includes[]` sub-manifests) and validates each
  * row against its upstream or sibling ports. Every supported `kind` has a
  * checker; a repo populates its manifest only with the kinds it needs.
  *
@@ -46,7 +46,7 @@ import { spawnSync } from '@socketsecurity/lib/spawn'
 import { validateSchema } from '@socketsecurity/lib/schema/validate'
 
 import {
-  XportManifestSchema,
+  LockstepManifestSchema,
   type FeatureParityRow,
   type FileForkRow,
   type LangParityRow,
@@ -56,15 +56,15 @@ import {
   type SpecConformanceRow,
   type Upstream,
   type VersionPinRow,
-  type XportManifest,
-} from './xport-schema.mts'
+  type LockstepManifest,
+} from './lockstep-schema.mts'
 
 const logger = getDefaultLogger()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '..')
 
-type Manifest = XportManifest
+type Manifest = LockstepManifest
 
 // ---------------------------------------------------------------------------
 // Report types — one per kind so dispatcher output is typed precisely.
@@ -141,22 +141,22 @@ type Report =
 
 function readManifest(manifestPath: string): Manifest {
   if (!existsSync(manifestPath)) {
-    logger.error(`xport: manifest not found at ${manifestPath}`)
+    logger.error(`lockstep: manifest not found at ${manifestPath}`)
     process.exit(1)
   }
   let raw: unknown
   try {
     raw = JSON.parse(readFileSync(manifestPath, 'utf8'))
   } catch (e) {
-    logger.error(`xport: could not parse ${manifestPath}`)
+    logger.error(`lockstep: could not parse ${manifestPath}`)
     logger.fail(`  ${errorMessage(e)}`)
     process.exit(1)
   }
-  const result = validateSchema(XportManifestSchema, raw)
+  const result = validateSchema(LockstepManifestSchema, raw)
   if (result.ok) {
     return result.value
   }
-  logger.error(`xport: schema validation failed for ${manifestPath}`)
+  logger.error(`lockstep: schema validation failed for ${manifestPath}`)
   for (const issue of result.errors) {
     const loc = issue.path.length ? issue.path.join('.') : '<root>'
     logger.fail(`  ${loc}: ${issue.message}`)
@@ -184,7 +184,7 @@ function loadManifestTree(rootManifestPath: string): {
   for (const rel of includes) {
     const subPath = path.resolve(baseDir, rel)
     const sub = readManifest(subPath)
-    const area = sub.area ?? path.basename(rel, '.json').replace(/^xport-/, '')
+    const area = sub.area ?? path.basename(rel, '.json').replace(/^lockstep-/, '')
     areas.push({ area, manifest: sub })
   }
 
@@ -341,7 +341,7 @@ function countPatternHits(files: string[], patterns: string[]): number {
       compiled.push(new RegExp(p))
     } catch (e) {
       logger.warn(
-        `xport: skipping invalid regex ${JSON.stringify(p)}: ${errorMessage(e)}`,
+        `lockstep: skipping invalid regex ${JSON.stringify(p)}: ${errorMessage(e)}`,
       )
     }
   }
@@ -721,7 +721,7 @@ function checkLangParity(
 /**
  * Cross-row checks that zod validation can't express: unique ids, upstream
  * refs resolve to the `upstreams` map, port keys resolve to the `sites`
- * map. Zod's `XportManifestSchema.parse()` (called from `loadManifestTree`)
+ * map. Zod's `LockstepManifestSchema.parse()` (called from `loadManifestTree`)
  * already covers per-row shape, enum values, id pattern, and required
  * fields — this is the referential-integrity layer on top.
  */
@@ -856,7 +856,7 @@ function summarize(reports: Report[]): AreaSummary[] {
 
 function emitHuman(reports: Report[], summaries: AreaSummary[]): number {
   logger.info(
-    `xport — ${reports.length} row(s) across ${summaries.length} area(s)`,
+    `lockstep — ${reports.length} row(s) across ${summaries.length} area(s)`,
   )
   logger.info('')
   for (const s of summaries) {
@@ -941,7 +941,7 @@ function emitHuman(reports: Report[], summaries: AreaSummary[]): number {
 }
 
 function main(): void {
-  const rootManifestPath = path.join(rootDir, 'xport.json')
+  const rootManifestPath = path.join(rootDir, 'lockstep.json')
   const { areas, merged } = loadManifestTree(rootManifestPath)
 
   const rowsWithArea: Array<{ row: Row; area: string }> = []
@@ -957,7 +957,7 @@ function main(): void {
       logger.fail(err)
     }
     logger.error(
-      `xport: ${crossRowErrors.length} cross-row error(s) — fix before running drift checks`,
+      `lockstep: ${crossRowErrors.length} cross-row error(s) — fix before running drift checks`,
     )
     process.exit(1)
   }

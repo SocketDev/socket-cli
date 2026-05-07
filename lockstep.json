@@ -1,5 +1,5 @@
 {
-  "$schema": "./xport.schema.json",
+  "$schema": "./lockstep.schema.json",
   "area": "socket-cli",
   "description": "Lock-step manifest. socket-cli is a CLI distribution with no submodule upstreams or sibling language ports — empty rows is the expected state.",
   "upstreams": {},

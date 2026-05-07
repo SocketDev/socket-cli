@@ -1,11 +1,11 @@
 /**
- * @fileoverview Emit `xport.schema.json` from the TypeBox schema.
+ * @fileoverview Emit `lockstep.schema.json` from the TypeBox schema.
  *
- * The TypeBox schema in `scripts/xport-schema.mts` is the source of truth.
+ * The TypeBox schema in `scripts/lockstep-schema.mts` is the source of truth.
  * TypeBox schemas are JSON Schema natively — no conversion library needed,
  * just serialize the schema object and add the draft-2020-12 meta headers.
  *
- * Run via `pnpm run xport:emit-schema` when the schema changes.
+ * Run via `pnpm run lockstep:emit-schema` when the schema changes.
  */
 
 import { writeFileSync } from 'node:fs'
@@ -15,13 +15,13 @@ import { fileURLToPath } from 'node:url'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import { XportManifestSchema } from './xport-schema.mts'
+import { LockstepManifestSchema } from './lockstep-schema.mts'
 
 const logger = getDefaultLogger()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '..')
-const outPath = path.join(rootDir, 'xport.schema.json')
+const outPath = path.join(rootDir, 'lockstep.schema.json')
 
 // TypeBox schemas carry JSON Schema shape directly, plus a Symbol-keyed
 // [Kind] marker that JSON.stringify drops. Spreading the schema first
@@ -29,9 +29,9 @@ const outPath = path.join(rootDir, 'xport.schema.json')
 // draft-2020-12 document with the Socket-specific headers.
 const enriched = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
-  $id: 'https://github.com/SocketDev/xport.schema.json',
-  title: 'xport lock-step manifest',
-  ...XportManifestSchema,
+  $id: 'https://github.com/SocketDev/lockstep.schema.json',
+  title: 'lockstep manifest',
+  ...LockstepManifestSchema,
 }
 
 writeFileSync(outPath, JSON.stringify(enriched, null, 2) + '\n', 'utf8')
