@@ -373,6 +373,32 @@ describe('createScrubber — adapter integration', () => {
     const { stdout } = await pipeThroughAdapter(input, adapter)
     expect(stdout).toBe('this would be dropped by the adapter\n')
   })
+
+  it('writes scrub trace to stderr when SOCKET_SCRUB_TRACE=1', async () => {
+    process.env['SOCKET_SCRUB_TRACE'] = '1'
+    const original = process.stderr.write
+    const written: string[] = []
+    ;(process.stderr as any).write = (chunk: any) => {
+      written.push(String(chunk))
+      return true
+    }
+
+    try {
+      const adapter: ScrubberAdapter = {
+        classify: () => 'noise',
+        name: 'tracer',
+      }
+      await pipeThroughAdapter('hello\n', adapter)
+
+      // Trace lines must include the prefix marker.
+      const joined = written.join('')
+      expect(joined).toContain('[scrub')
+      expect(joined).toContain('tracer')
+    } finally {
+      ;(process.stderr as any).write = original
+      delete process.env['SOCKET_SCRUB_TRACE']
+    }
+  })
 })
 
 async function pipeThroughAdapter(
