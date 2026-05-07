@@ -506,5 +506,43 @@ describe('setup-manifest-config', () => {
       const result = await setupManifestConfig('/cwd')
       expect(result).toEqual({ ok: true, data: { canceled: true } })
     })
+
+    it('appends [detected] to choices when ecosystem is auto-detected (line 87)', async () => {
+      // Make detectManifestActions report all known ecosystems as present;
+      // then the choices.forEach loop appends ' [detected]' to each name
+      // (line 87) and the sort comparator returns -1 / 1 (lines 97 / 103).
+      mockDetectManifestActions.mockResolvedValueOnce({
+        conda: true,
+        gradle: true,
+        sbt: true,
+      })
+      // Cancel immediately after seeing the detected list.
+      mockSelect.mockResolvedValueOnce('')
+      const result = await setupManifestConfig('/cwd')
+      expect(result).toEqual({ ok: true, data: { canceled: true } })
+      // The select prompt was called with choices containing '[detected]'.
+      const calledWith = mockSelect.mock.calls[0]?.[0]
+      expect(JSON.stringify(calledWith)).toContain('[detected]')
+    })
+
+    it('sort comparator orders detected before undetected (lines 97-103)', async () => {
+      // Only conda is detected → conda choices sort before sbt choices.
+      mockDetectManifestActions.mockResolvedValueOnce({
+        conda: true,
+      })
+      mockSelect.mockResolvedValueOnce('')
+      await setupManifestConfig('/cwd')
+      const calledWith: any = mockSelect.mock.calls[0]?.[0]
+      const choices: any[] = calledWith?.choices ?? []
+      const detectedIdx = choices.findIndex((c: any) =>
+        c.name.includes('Conda'),
+      )
+      const undetectedIdx = choices.findIndex((c: any) =>
+        c.name.includes('sbt'),
+      )
+      expect(detectedIdx).toBeGreaterThanOrEqual(0)
+      expect(undetectedIdx).toBeGreaterThanOrEqual(0)
+      expect(detectedIdx).toBeLessThan(undetectedIdx)
+    })
   })
 })
