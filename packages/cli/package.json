@@ -72,6 +72,7 @@
     "@babel/traverse": "catalog:",
     "@babel/types": "catalog:",
     "@gitbeaker/rest": "catalog:",
+    "@modelcontextprotocol/sdk": "catalog:",
     "@npmcli/arborist": "catalog:",
     "@octokit/graphql": "catalog:",
     "@octokit/request-error": "catalog:",
