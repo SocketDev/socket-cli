@@ -578,5 +578,56 @@ describe('CommandRegistry', () => {
 
       expect(order).toEqual(['before', 'handler', 'after'])
     })
+
+    it('throws when middleware calls next() more than once', async () => {
+      // Middleware function form: (ctx, next) => Promise<void>.
+      registry.use(async (_ctx, next) => {
+        await next()
+        // Calling next() again — should trigger the dispatch detection.
+        await next()
+      })
+
+      const command: CommandDefinition = {
+        name: 'test',
+        description: 'Test command',
+        async handler() {
+          return { ok: true, data: undefined }
+        },
+      }
+      registry.register(command)
+
+      // execute() doesn't reject — it catches and returns CResult.
+      const result = await registry.execute('test', [])
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toMatch(/next\(\) more than once/)
+      }
+    })
+
+    it('skips non-flag arguments and unknown flags during parseFlags', async () => {
+      let observedFlags: any
+      const command: CommandDefinition = {
+        name: 'test',
+        description: 'Test command',
+        flags: {
+          known: { type: 'string', default: 'd' },
+        },
+        async handler(ctx) {
+          observedFlags = ctx.flags
+          return { ok: true, data: undefined }
+        },
+      }
+      registry.register(command)
+
+      // Mix of: positional, known flag, unknown flag.
+      await registry.execute('test', [
+        'positional-arg',
+        '--known=v',
+        '--unknown=ignored',
+      ])
+
+      expect(observedFlags.known).toBe('v')
+      expect(observedFlags.unknown).toBeUndefined()
+    })
   })
 })
