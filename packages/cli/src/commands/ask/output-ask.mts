@@ -103,7 +103,7 @@ export function outputAskCommand(options: OutputAskCommandOptions): void {
 /**
  * Explain what the command does.
  */
-function explainCommand(intent: {
+export function explainCommand(intent: {
   action: string
   command: string[]
   severity?: string

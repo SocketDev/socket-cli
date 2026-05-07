@@ -189,7 +189,7 @@ export async function setupManifestConfig(
   return canceledByUser()
 }
 
-async function setupConda(
+export async function setupConda(
   config: NonNullable<
     NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['conda']
   >,
@@ -261,7 +261,7 @@ async function setupConda(
   return notCanceled()
 }
 
-async function setupGradle(
+export async function setupGradle(
   config: NonNullable<
     NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['gradle']
   >,
@@ -304,7 +304,7 @@ async function setupGradle(
   return notCanceled()
 }
 
-async function setupSbt(
+export async function setupSbt(
   config: NonNullable<
     NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['sbt']
   >,
@@ -376,7 +376,7 @@ async function setupSbt(
   return notCanceled()
 }
 
-async function askForStdout(
+export async function askForStdout(
   defaultValue: boolean | undefined,
 ): Promise<string | undefined> {
   return await select({
@@ -402,7 +402,7 @@ async function askForStdout(
   })
 }
 
-async function askForEnabled(
+export async function askForEnabled(
   defaultValue: boolean | undefined,
 ): Promise<boolean | undefined> {
   return await select({
@@ -435,7 +435,7 @@ async function askForEnabled(
   })
 }
 
-async function askForInputFile(defaultName = ''): Promise<string | undefined> {
+export async function askForInputFile(defaultName = ''): Promise<string | undefined> {
   return await input({
     message:
       '(--file) What should be the default file name to read? Should be an absolute path or relative to the cwd. Use `-` to read from stdin instead.' +
@@ -446,7 +446,7 @@ async function askForInputFile(defaultName = ''): Promise<string | undefined> {
   })
 }
 
-async function askForOutputFile(defaultName = ''): Promise<string | undefined> {
+export async function askForOutputFile(defaultName = ''): Promise<string | undefined> {
   return await input({
     message:
       '(--out) What should be the default output file? Should be absolute path or relative to cwd.' +
@@ -457,7 +457,7 @@ async function askForOutputFile(defaultName = ''): Promise<string | undefined> {
   })
 }
 
-async function askForBin(defaultName = ''): Promise<string | undefined> {
+export async function askForBin(defaultName = ''): Promise<string | undefined> {
   return await input({
     message:
       '(--bin) What should be the command to execute? Usually your build binary.' +
@@ -468,7 +468,7 @@ async function askForBin(defaultName = ''): Promise<string | undefined> {
   })
 }
 
-async function askForVerboseFlag(
+export async function askForVerboseFlag(
   current: boolean | undefined,
 ): Promise<string | undefined> {
   return await select({
@@ -494,13 +494,13 @@ async function askForVerboseFlag(
   })
 }
 
-function canceledByUser(): CResult<{ canceled: boolean }> {
+export function canceledByUser(): CResult<{ canceled: boolean }> {
   logger.log('')
   logger.info('User canceled')
   logger.log('')
   return { ok: true, data: { canceled: true } }
 }
 
-function notCanceled(): CResult<{ canceled: boolean }> {
+export function notCanceled(): CResult<{ canceled: boolean }> {
   return { ok: true, data: { canceled: false } }
 }

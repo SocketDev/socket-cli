@@ -137,7 +137,7 @@ const ENVIRONMENT_KEYWORDS = {
  * Normalize query using NLP to handle variations in phrasing.
  * Converts verbs to infinitive and nouns to singular for better matching.
  */
-function normalizeQuery(query: string): string {
+export function normalizeQuery(query: string): string {
   try {
     const doc = nlp(query)
 
@@ -158,7 +158,7 @@ function normalizeQuery(query: string): string {
  * Lazily load the pre-computed semantic index.
  * NO ML models - just word overlap + synonyms (~3KB).
  */
-async function loadSemanticIndex() {
+export async function loadSemanticIndex() {
   if (semanticIndex) {
     return semanticIndex
   }
@@ -186,7 +186,7 @@ async function loadSemanticIndex() {
 /**
  * Extract meaningful words from text (lowercase, >2 chars).
  */
-function extractWords(text: string): string[] {
+export function extractWords(text: string): string[] {
   return text
     .toLowerCase()
     .replace(/[^\w\s-]/g, '')
@@ -198,7 +198,7 @@ function extractWords(text: string): string[] {
  * Compute word overlap score between query and command.
  * Uses Jaccard similarity: |intersection| / |union|.
  */
-function wordOverlap(queryWords: Set<string>, commandWords: string[]): number {
+export function wordOverlap(queryWords: Set<string>, commandWords: string[]): number {
   const commandSet = new Set(commandWords)
   const intersection = new Set([...queryWords].filter(w => commandSet.has(w)))
   const union = new Set([...queryWords, ...commandWords])
@@ -210,7 +210,7 @@ function wordOverlap(queryWords: Set<string>, commandWords: string[]): number {
  * Find best matching command using word overlap + synonym expansion.
  * Fast path - NO ML models, pure JavaScript, ~3KB overhead.
  */
-async function wordOverlapMatch(query: string): Promise<{
+export async function wordOverlapMatch(query: string): Promise<{
   action: string
   confidence: number
 } | null> {
@@ -262,7 +262,7 @@ async function wordOverlapMatch(query: string): Promise<{
  * Lazily load the ONNX embedding pipeline for deep semantic matching.
  * Only loads when word-overlap matching has low confidence.
  */
-async function getEmbeddingPipeline() {
+export async function getEmbeddingPipeline() {
   if (embeddingPipeline) {
     return embeddingPipeline
   }
@@ -295,7 +295,7 @@ async function getEmbeddingPipeline() {
  * Compute cosine similarity between two vectors.
  * Since our embeddings are already normalized, this is just dot product.
  */
-function cosineSimilarity(a: Float32Array, b: Float32Array): number {
+export function cosineSimilarity(a: Float32Array, b: Float32Array): number {
   if (a.length !== b.length) {
     return 0
   }
@@ -311,7 +311,7 @@ function cosineSimilarity(a: Float32Array, b: Float32Array): number {
 /**
  * Get embedding for a text string using ONNX Runtime.
  */
-async function getEmbedding(text: string): Promise<Float32Array | null> {
+export async function getEmbedding(text: string): Promise<Float32Array | null> {
   const model = await getEmbeddingPipeline()
   if (!model) {
     return null
@@ -329,7 +329,7 @@ async function getEmbedding(text: string): Promise<Float32Array | null> {
 /**
  * Pre-compute embeddings for all command patterns.
  */
-async function ensureCommandEmbeddings() {
+export async function ensureCommandEmbeddings() {
   if (Object.keys(commandEmbeddings).length > 0) {
     return
   }
@@ -359,7 +359,7 @@ async function ensureCommandEmbeddings() {
  * Find best matching command using ONNX embeddings.
  * Fallback for when word-overlap has low confidence - slower but more accurate.
  */
-async function onnxSemanticMatch(query: string): Promise<{
+export async function onnxSemanticMatch(query: string): Promise<{
   action: string
   confidence: number
 } | null> {
@@ -603,7 +603,7 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
 /**
  * Read package.json to get context.
  */
-async function getProjectContext(cwd: string): Promise<{
+export async function getProjectContext(cwd: string): Promise<{
   hasPackageJson: boolean
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
