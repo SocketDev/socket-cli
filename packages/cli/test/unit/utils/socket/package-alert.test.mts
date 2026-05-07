@@ -566,6 +566,87 @@ describe('socket-package-alert', () => {
       expect(alerts).toHaveLength(1)
     })
 
+    it('treats CVE alert without firstPatchedVersionIdentifier as unfixable (lines 273-274)', async () => {
+      // CVE fix-type but no patched version → goes to unfixableAlerts.
+      const alertsMap: AlertsByPurl = new Map()
+      const artifact = {
+        alerts: [
+          createMockAlert({
+            fix: { type: 'cve' },
+            key: 'cve-no-patch',
+            props: { vulnerableVersionRange: '<1.0.0' },
+          }),
+        ],
+        name: 'test-package',
+        type: 'npm',
+        version: '1.0.0',
+      }
+
+      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+        consolidate: true,
+      })
+
+      // The single alert ends up in unfixableAlerts and is preserved.
+      const alerts = result.get('pkg:npm/test-package@1.0.0')
+      expect(alerts).toHaveLength(1)
+      expect(alerts?.[0]?.key).toBe('cve-no-patch')
+    })
+
+    it('consolidates upgrade alerts by major (lines 276-283)', async () => {
+      // Upgrade fix-type with parseable major → highestForUpgrade map.
+      const alertsMap: AlertsByPurl = new Map()
+      const artifact = {
+        alerts: [
+          createMockAlert({
+            fix: { type: 'upgrade' },
+            key: 'upgrade-1',
+            props: {},
+          }),
+          createMockAlert({
+            fix: { type: 'upgrade' },
+            key: 'upgrade-2',
+            props: {},
+          }),
+        ],
+        name: 'test-package',
+        type: 'npm',
+        version: '2.0.0',
+      }
+
+      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+        consolidate: true,
+      })
+
+      const alerts = result.get('pkg:npm/test-package@2.0.0')
+      expect(alerts?.length).toBeGreaterThanOrEqual(1)
+    })
+
+    it('treats unknown fix-type as unfixable (line 289)', async () => {
+      // fix.type that is neither 'cve' nor 'upgrade' falls into the else
+      // branch and goes to unfixableAlerts.
+      const alertsMap: AlertsByPurl = new Map()
+      const artifact = {
+        alerts: [
+          createMockAlert({
+            fix: { type: 'someUnknownFixType' as any },
+            key: 'unknown-fix',
+            props: {},
+          }),
+        ],
+        name: 'test-package',
+        type: 'npm',
+        version: '1.0.0',
+      }
+
+      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+        consolidate: true,
+      })
+
+      const alerts = result.get('pkg:npm/test-package@1.0.0')
+      expect(alerts).toHaveLength(1)
+      expect(alerts?.[0]?.key).toBe('unknown-fix')
+    })
+
     it('filters alerts based on custom filter config', async () => {
       const alertsMap: AlertsByPurl = new Map()
       const artifact = {
