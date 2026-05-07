@@ -94,7 +94,9 @@ export type RiskCounts = {
   low: number
 }
 
-function getHiddenRiskCounts(hiddenAlerts: SocketPackageAlert[]): RiskCounts {
+export function getHiddenRiskCounts(
+  hiddenAlerts: SocketPackageAlert[],
+): RiskCounts {
   const riskCounts = {
     critical: 0,
     high: 0,
@@ -120,7 +122,7 @@ function getHiddenRiskCounts(hiddenAlerts: SocketPackageAlert[]): RiskCounts {
   return riskCounts
 }
 
-function getHiddenRisksDescription(riskCounts: RiskCounts): string {
+export function getHiddenRisksDescription(riskCounts: RiskCounts): string {
   const descriptions: string[] = []
   if (riskCounts.critical) {
     descriptions.push(`${riskCounts.critical} ${getSeverityLabel('critical')}`)

@@ -31,6 +31,8 @@ import {
   getAlertSeverityOrder,
   getAlertsSeverityOrder,
   getCveInfoFromAlertsMap,
+  getHiddenRiskCounts,
+  getHiddenRisksDescription,
   getSeverityLabel,
   logAlertsMap,
 } from '../../../../src/utils/socket/package-alert.mts'
@@ -1023,6 +1025,167 @@ describe('socket-package-alert', () => {
 
       // Should show type as title when no translation exists.
       expect(output.join('')).toContain('unknownAlertType')
+    })
+  })
+
+  describe('getHiddenRiskCounts', () => {
+    it('returns zero counts for empty alerts list', () => {
+      const counts = getHiddenRiskCounts([])
+      expect(counts).toStrictEqual({
+        critical: 0,
+        high: 0,
+        middle: 0,
+        low: 0,
+      })
+    })
+
+    it('counts critical-severity alerts (line 107)', () => {
+      const alerts = [
+        createMockSocketPackageAlert({
+          raw: { ...createMockAlert(), severity: 'critical' },
+        }),
+        createMockSocketPackageAlert({
+          raw: { ...createMockAlert(), severity: 'critical' },
+        }),
+      ]
+      const counts = getHiddenRiskCounts(alerts)
+      expect(counts.critical).toBe(2)
+      expect(counts.high).toBe(0)
+      expect(counts.middle).toBe(0)
+      expect(counts.low).toBe(0)
+    })
+
+    it('counts high-severity alerts (line 109-110)', () => {
+      const alerts = [
+        createMockSocketPackageAlert({
+          raw: { ...createMockAlert(), severity: 'high' },
+        }),
+        createMockSocketPackageAlert({
+          raw: { ...createMockAlert(), severity: 'high' },
+        }),
+        createMockSocketPackageAlert({
+          raw: { ...createMockAlert(), severity: 'high' },
+        }),
+      ]
+      const counts = getHiddenRiskCounts(alerts)
+      expect(counts.high).toBe(3)
+    })
+
+    it('counts middle-severity alerts (line 112-113)', () => {
+      const alerts = [
+        createMockSocketPackageAlert({
+          raw: { ...createMockAlert(), severity: 'middle' },
+        }),
+      ]
+      const counts = getHiddenRiskCounts(alerts)
+      expect(counts.middle).toBe(1)
+    })
+
+    it('counts low-severity alerts (line 115-116)', () => {
+      const alerts = [
+        createMockSocketPackageAlert({
+          raw: { ...createMockAlert(), severity: 'low' },
+        }),
+        createMockSocketPackageAlert({
+          raw: { ...createMockAlert(), severity: 'low' },
+        }),
+      ]
+      const counts = getHiddenRiskCounts(alerts)
+      expect(counts.low).toBe(2)
+    })
+
+    it('counts mixed-severity alerts', () => {
+      const alerts = [
+        createMockSocketPackageAlert({
+          raw: { ...createMockAlert(), severity: 'critical' },
+        }),
+        createMockSocketPackageAlert({
+          raw: { ...createMockAlert(), severity: 'high' },
+        }),
+        createMockSocketPackageAlert({
+          raw: { ...createMockAlert(), severity: 'middle' },
+        }),
+        createMockSocketPackageAlert({
+          raw: { ...createMockAlert(), severity: 'low' },
+        }),
+      ]
+      const counts = getHiddenRiskCounts(alerts)
+      expect(counts).toStrictEqual({
+        critical: 1,
+        high: 1,
+        middle: 1,
+        low: 1,
+      })
+    })
+  })
+
+  describe('getHiddenRisksDescription', () => {
+    it('renders critical count (line 126)', () => {
+      const description = getHiddenRisksDescription({
+        critical: 2,
+        high: 0,
+        middle: 0,
+        low: 0,
+      })
+      expect(description).toContain('2')
+      expect(description).toContain('critical')
+    })
+
+    it('renders high count (line 129)', () => {
+      const description = getHiddenRisksDescription({
+        critical: 0,
+        high: 3,
+        middle: 0,
+        low: 0,
+      })
+      expect(description).toContain('3')
+      expect(description).toContain('high')
+    })
+
+    it('renders middle count (label: moderate)', () => {
+      const description = getHiddenRisksDescription({
+        critical: 0,
+        high: 0,
+        middle: 4,
+        low: 0,
+      })
+      expect(description).toContain('4')
+      // getSeverityLabel('middle') returns 'moderate'.
+      expect(description).toContain('moderate')
+    })
+
+    it('renders low count', () => {
+      const description = getHiddenRisksDescription({
+        critical: 0,
+        high: 0,
+        middle: 0,
+        low: 5,
+      })
+      expect(description).toContain('5')
+      expect(description).toContain('low')
+    })
+
+    it('joins multiple severity descriptions with semicolons', () => {
+      const description = getHiddenRisksDescription({
+        critical: 1,
+        high: 2,
+        middle: 3,
+        low: 4,
+      })
+      // Format: "(1 critical; 2 high; 3 middle; 4 low)"
+      expect(description.startsWith('(')).toBe(true)
+      expect(description.endsWith(')')).toBe(true)
+      expect(description.split(';').length).toBe(4)
+    })
+
+    it('returns empty parens for all-zero counts', () => {
+      const description = getHiddenRisksDescription({
+        critical: 0,
+        high: 0,
+        middle: 0,
+        low: 0,
+      })
+      expect(description).toBe('()')
     })
   })
 })
