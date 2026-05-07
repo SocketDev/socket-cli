@@ -296,6 +296,17 @@ describe('meow', () => {
 
       expect(result.pkg).toEqual({})
     })
+
+    it('handles readPackageJsonSync returning null with empty fallback', () => {
+      mockReadPackageJsonSync.mockReturnValueOnce(null)
+
+      const result = meow({
+        argv: [],
+        importMeta: { url: 'file:///path/to/script.js' } as ImportMeta,
+      })
+
+      expect(result.pkg).toEqual({})
+    })
   })
 
   describe('showHelp and showVersion', () => {
