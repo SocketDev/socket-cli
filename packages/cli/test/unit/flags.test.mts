@@ -261,6 +261,17 @@ describe('flags', () => {
       expect(commonFlags.config?.shortFlag).toBe('c')
       expect(commonFlags.help?.shortFlag).toBe('h')
     })
+
+    it('exposes default getters for memory flags', () => {
+      // The max*SpaceSize flags use accessor properties for default.
+      // Reading them invokes the getter body.
+      const oldDefault = (commonFlags.maxOldSpaceSize as any)?.default
+      const semiDefault = (commonFlags.maxSemiSpaceSize as any)?.default
+      expect(typeof oldDefault).toBe('number')
+      expect(typeof semiDefault).toBe('number')
+      expect(oldDefault).toBeGreaterThanOrEqual(0)
+      expect(semiDefault).toBeGreaterThanOrEqual(0)
+    })
   })
 
   describe('outputFlags', () => {
