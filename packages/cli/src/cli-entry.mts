@@ -194,10 +194,13 @@ void (async () => {
         // Prevent meow from potentially exiting early.
         autoHelp: false,
         autoVersion: false,
-        flags: {},
+        allowUnknownFlags: true,
+        flags: {
+          json: { type: 'boolean' },
+        },
         importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
       })
-      return !!cli.flags['json']
+      return !!cli.flags.json
     })()
 
     if (isJson) {

@@ -82,12 +82,12 @@ export interface CliSubcommand {
 // Property names are picked such that the name is at the top when the props
 // get ordered by alphabet while flags is near the bottom and the help text
 // at the bottom, because they tend ot occupy the most lines of code.
-export interface CliCommandConfig {
+export interface CliCommandConfig<F extends MeowFlags = MeowFlags> {
   commandName: string
   description: string
   hidden: boolean
-  flags: MeowFlags
-  help: (command: string, config: CliCommandConfig) => string
+  flags: F
+  help: (command: string, config: CliCommandConfig<F>) => string
 }
 
 export interface CliCommandContext {
@@ -900,9 +900,9 @@ export async function meowWithSubcommands(
   }
 }
 
-export interface MeowOrExitConfig {
+export interface MeowOrExitConfig<F extends MeowFlags = MeowFlags> {
   argv: string[] | readonly string[]
-  config: CliCommandConfig
+  config: CliCommandConfig<F>
   parentName: string
   importMeta: ImportMeta
 }
@@ -922,16 +922,16 @@ export type MeowOrExitOptions = {
  *   { allowUnknownFlags: false }
  * )
  */
-export function meowOrExit(
-  config: MeowOrExitConfig,
+export function meowOrExit<const F extends MeowFlags = MeowFlags>(
+  config: MeowOrExitConfig<F>,
   options?: MeowOrExitOptions | undefined,
-): Result<MeowFlags> {
+): Result<F> {
   const {
     argv,
     config: cliConfig,
     importMeta,
     parentName,
-  } = { __proto__: null, ...config } as MeowOrExitConfig
+  } = { __proto__: null, ...config } as MeowOrExitConfig<F>
   const { allowUnknownFlags = true } = {
     __proto__: null,
     ...options,
@@ -1051,5 +1051,5 @@ export function meowOrExit(
   // Ok, no help, reset to default.
   process.exitCode = 0
 
-  return cli as Result<MeowFlags>
+  return cli as unknown as Result<F>
 }

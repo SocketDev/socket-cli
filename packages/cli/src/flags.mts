@@ -1,7 +1,7 @@
 import os from 'node:os'
 
 import { NODE_OPTIONS } from './env/node-options.mts'
-import meow from './meow.mts'
+import meow, { defineFlags } from './meow.mts'
 
 import type { MeowFlag as Flag } from './meow.mts'
 
@@ -192,7 +192,7 @@ if (typeof exports === 'object' && exports !== null) {
   exports.getMaxSemiSpaceSizeFlag = getMaxSemiSpaceSizeFlag
 }
 
-export const commonFlags: MeowFlags = {
+export const commonFlags = defineFlags({
   animateHeader: {
     type: 'boolean',
     default: true,
@@ -282,9 +282,9 @@ export const commonFlags: MeowFlags = {
     // Hidden to allow custom documenting of the negated `--no-spinner` variant.
     hidden: true,
   },
-}
+})
 
-export const outputFlags: MeowFlags = {
+export const outputFlags = defineFlags({
   json: {
     type: 'boolean',
     default: false,
@@ -297,9 +297,9 @@ export const outputFlags: MeowFlags = {
     description: 'Output as Markdown',
     shortFlag: 'm',
   },
-}
+})
 
-export const validationFlags: MeowFlags = {
+export const validationFlags = defineFlags({
   all: {
     type: 'boolean',
     default: false,
@@ -310,4 +310,4 @@ export const validationFlags: MeowFlags = {
     default: false,
     description: 'Exits with an error code if any matching issues are found',
   },
-}
+})

@@ -1,12 +1,10 @@
 import { handleMcp } from './handle-mcp.mts'
 import { commonFlags } from '../../flags.mts'
+import { defineFlags } from '../../meow.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'mcp'
 
@@ -34,11 +32,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       http: {
         type: 'boolean',
@@ -81,8 +79,8 @@ async function run(
         description:
           'Honor X-Forwarded-Proto / X-Forwarded-Host headers (HTTP mode only; falls back to env TRUST_PROXY=true)',
       },
-    },
-    help: command => `
+    }),
+    help: (command: string) => `
     Usage
       $ ${command} [options]
 
@@ -133,29 +131,29 @@ async function run(
   })
 
   const envHttp = process.env['MCP_HTTP_MODE'] === 'true'
-  const http = !!cli.flags['http'] || envHttp
+  const http = cli.flags.http || envHttp
 
-  const portFlag = cli.flags['port']
+  const portFlag = cli.flags.port
   const portRaw =
-    typeof portFlag === 'number' && portFlag > 0
+    portFlag && portFlag > 0
       ? portFlag
       : Number.parseInt(process.env['MCP_PORT'] || `${DEFAULT_PORT}`, 10)
   const port = Number.isFinite(portRaw) && portRaw > 0 ? portRaw : DEFAULT_PORT
 
   const oauthIssuer =
-    String(cli.flags['oauth-issuer'] || '') ||
+    cli.flags['oauth-issuer'] ||
     process.env['SOCKET_OAUTH_ISSUER'] ||
     ''
   const oauthClientId =
-    String(cli.flags['oauth-client-id'] || '') ||
+    cli.flags['oauth-client-id'] ||
     process.env['SOCKET_OAUTH_INTROSPECTION_CLIENT_ID'] ||
     ''
   const oauthClientSecret =
-    String(cli.flags['oauth-client-secret'] || '') ||
+    cli.flags['oauth-client-secret'] ||
     process.env['SOCKET_OAUTH_INTROSPECTION_CLIENT_SECRET'] ||
     ''
   const oauthRequiredScopesRaw =
-    String(cli.flags['oauth-required-scopes'] || '') ||
+    cli.flags['oauth-required-scopes'] ||
     process.env['SOCKET_OAUTH_REQUIRED_SCOPES'] ||
     ''
   const oauthRequiredScopes = oauthRequiredScopesRaw
@@ -163,7 +161,7 @@ async function run(
     : undefined
 
   const trustProxy =
-    !!cli.flags['trust-proxy'] || process.env['TRUST_PROXY'] === 'true'
+    cli.flags['trust-proxy'] || process.env['TRUST_PROXY'] === 'true'
 
   await handleMcp({
     http,

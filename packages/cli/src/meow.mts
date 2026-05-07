@@ -25,11 +25,68 @@ export interface MeowFlag {
 
 export type MeowFlags = Record<string, MeowFlag>
 
-export interface MeowOptions {
+// Identity helper that preserves the literal flag-schema type so callers
+// can write a plain object literal (no `as const`) and still benefit
+// from the type narrowing in `InferFlagValues`. The constraint also
+// catches typos at the schema definition site.
+//
+// Usage:
+//   const flags = defineFlags({
+//     http: { type: 'boolean', default: false, description: '…' },
+//     port: { type: 'number',  default: 3000,  description: '…' },
+//   })
+//   // …pass `flags` into the command config; cli.flags.http is `boolean`,
+//   // cli.flags.port is `number`, no casts.
+export function defineFlags<const F extends MeowFlags>(flags: F): F {
+  return flags
+}
+
+// Map a flag's schema entry to the runtime value type for that flag.
+// - `type: 'boolean'` → boolean
+// - `type: 'string'`  → string
+// - `type: 'number'`  → number
+// - `isMultiple: true` → array of the above
+// - `default` set     → value is required (no `| undefined`)
+// - otherwise         → value | undefined
+//
+// Using mapped + conditional types lets each callsite write
+// `cli.flags.http` and get back `boolean` (not `MeowFlag | undefined`)
+// without any String() / Boolean() / cast machinery.
+// When `type` is not narrowed (e.g. the wide default `MeowFlag`), fall
+// through to `unknown` rather than `boolean` so callers reading
+// `cli.flags.someFlag` from a wide-typed result don't get the wrong
+// runtime shape narrowed away. Concrete schemas with literal `type`
+// strings still resolve to the precise primitive.
+type ValueOfFlagType<F extends MeowFlag> = F['type'] extends 'string'
+  ? string
+  : F['type'] extends 'number'
+    ? number
+    : F['type'] extends 'boolean'
+      ? boolean
+      : unknown
+type ValueOrArray<F extends MeowFlag, V> = F['isMultiple'] extends true
+  ? V[]
+  : V
+type ValueOrUndefined<F extends MeowFlag, V> = F['default'] extends undefined
+  ? V | undefined
+  : F extends { default: infer D }
+    ? D extends undefined
+      ? V | undefined
+      : V
+    : V | undefined
+export type InferFlagValue<F extends MeowFlag> = ValueOrUndefined<
+  F,
+  ValueOrArray<F, ValueOfFlagType<F>>
+>
+export type InferFlagValues<F extends MeowFlags> = {
+  [K in keyof F]: InferFlagValue<F[K]>
+}
+
+export interface MeowOptions<F extends MeowFlags = MeowFlags> {
   readonly argv?: readonly string[]
   readonly description?: string | false
   readonly help?: string
-  readonly flags?: MeowFlags
+  readonly flags?: F
   readonly importMeta?: ImportMeta
   readonly autoHelp?: boolean
   readonly autoVersion?: boolean
@@ -40,11 +97,11 @@ export interface MeowOptions {
   readonly helpIndent?: number
 }
 
-export interface MeowResult<T = Record<string, unknown>> {
+export interface MeowResult<F extends MeowFlags = MeowFlags> {
   readonly input: readonly string[]
-  readonly flags: T
+  readonly flags: InferFlagValues<F>
   readonly unknownFlags: readonly string[]
-  readonly unnormalizedFlags?: T
+  readonly unnormalizedFlags?: InferFlagValues<F>
   readonly pkg: Record<string, any>
   readonly help: string
   showHelp: (exitCode?: number) => void
@@ -53,15 +110,15 @@ export interface MeowResult<T = Record<string, unknown>> {
 
 // Type aliases for compatibility.
 export type Flag = MeowFlag
-export type Options = MeowOptions
-export type Result<T = Record<string, unknown>> = MeowResult<T>
+export type Options<F extends MeowFlags = MeowFlags> = MeowOptions<F>
+export type Result<F extends MeowFlags = MeowFlags> = MeowResult<F>
 
 /**
  * Parse command-line arguments meow-style.
  */
-export default function meow<
-  T extends Record<string, unknown> = Record<string, unknown>,
->(options: MeowOptions = {}): MeowResult<T> {
+export default function meow<const F extends MeowFlags = MeowFlags>(
+  options: MeowOptions<F> = {},
+): MeowResult<F> {
   const {
     argv = process.argv.slice(2),
     autoHelp = false,
@@ -89,7 +146,8 @@ export default function meow<
 
   // Convert meow flags to parseArgs options.
   const parseArgsOptions: Record<string, any> = {}
-  for (const [name, flag] of Object.entries(flags)) {
+  const flagEntries = Object.entries(flags as MeowFlags)
+  for (const [name, flag] of flagEntries) {
     const type = flag.type === 'number' ? 'string' : flag.type || 'boolean'
     parseArgsOptions[name] = {
       type,
@@ -118,15 +176,15 @@ export default function meow<
 
   const parsed = parseArgs(config)
   const input = parsed.positionals
-  const flagValues = parsed.values as T
+  const flagValues = parsed.values as InferFlagValues<F>
 
   // Convert number flags.
-  for (const [name, flag] of Object.entries(flags)) {
+  for (const [name, flag] of flagEntries) {
     if (
       flag.type === 'number' &&
-      typeof flagValues[name as keyof T] === 'string'
+      typeof flagValues[name as keyof InferFlagValues<F>] === 'string'
     ) {
-      const numValue = Number(flagValues[name as keyof T])
+      const numValue = Number(flagValues[name as keyof InferFlagValues<F>])
       if (!Number.isNaN(numValue)) {
         ;(flagValues as any)[name] = numValue
       }
@@ -135,7 +193,7 @@ export default function meow<
 
   // Handle boolean defaults.
   if (booleanDefault !== undefined) {
-    for (const [name, flag] of Object.entries(flags)) {
+    for (const [name, flag] of flagEntries) {
       if (flag.type === 'boolean' && !(name in flagValues)) {
         ;(flagValues as any)[name] = booleanDefault
       }
@@ -189,9 +247,9 @@ export default function meow<
 
   // Auto help/version.
   if (!input.length && argv.length === 1) {
-    if (flagValues['version' as keyof T] === true && autoVersion) {
+    if (flagValues['version' as keyof InferFlagValues<F>] === true && autoVersion) {
       showVersion()
-    } else if (flagValues['help' as keyof T] === true && autoHelp) {
+    } else if (flagValues['help' as keyof InferFlagValues<F>] === true && autoHelp) {
       showHelp(0)
     }
   }
