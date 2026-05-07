@@ -246,6 +246,23 @@ describe('cmd-repository-create', () => {
       )
     })
 
+    it('should default to private when --visibility is empty string', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+      await cmdRepositoryCreate.run(
+        ['test-repo', '--visibility=', '--no-interactive'],
+        importMeta,
+        context,
+      )
+
+      expect(mockHandleCreateRepo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          visibility: 'private',
+        }),
+        'text',
+      )
+    })
+
     it('should pass --org flag to determineOrgSlug', async () => {
       mockDetermineOrgSlug.mockResolvedValueOnce(['custom-org', 'custom-org'])
       mockHasDefaultApiToken.mockReturnValueOnce(true)
