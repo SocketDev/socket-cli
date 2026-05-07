@@ -19,6 +19,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   updateManifest,
   updateOverridesField,
+  updatePkgJsonField,
   updatePnpmField,
   updateResolutionsField,
 } from '../../../../src/commands/optimize/update-manifest-by-agent.mts'
@@ -280,6 +281,14 @@ describe('update-manifest-by-agent', () => {
         '../../../../src/commands/optimize/update-manifest-by-agent.mts'
       )
       expect(getHighestEntryIndex(entries, ['main', 'scripts'])).toBe(4)
+    })
+  })
+
+  describe('updatePkgJsonField with non-overrides field', () => {
+    it('updates non-OVERRIDES/RESOLUTIONS/PNPM field by simple assignment', () => {
+      const pkgJson = createEditablePkgJson({ name: 'test', custom: 'old' })
+      updatePkgJsonField(pkgJson, 'custom', 'new-value')
+      expect(pkgJson.update).toHaveBeenCalledWith({ custom: 'new-value' })
     })
   })
 })

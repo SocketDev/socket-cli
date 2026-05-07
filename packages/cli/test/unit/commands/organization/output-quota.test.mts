@@ -616,4 +616,37 @@ describe('outputQuota', () => {
 
     expect(process.exitCode).toBe(1)
   })
+
+  it('falls back to exitCode 1 when result has no code field', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      info: vi.fn(),
+      log: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+      logger: mockLogger,
+    }))
+    vi.doMock('../../../../src/utils/output/emit-payload.mts', () => ({
+      emitPayload: vi.fn(),
+    }))
+
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
+
+    const result = {
+      ok: false as const,
+      message: 'No code',
+      cause: 'no code',
+    }
+
+    process.exitCode = undefined
+    await outputQuota(result as any, 'json')
+
+    expect(process.exitCode).toBe(1)
+  })
 })
