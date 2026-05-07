@@ -156,5 +156,38 @@ describe('cmd-sfw', () => {
         })
       }
     })
+
+    it('shows wrapper help when --help is passed and skips spawn', async () => {
+      mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
+
+      const exitSpy = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => {
+          throw new Error('process.exit')
+        }) as never)
+
+      try {
+        await cmdSfw
+          .run(['--help'], importMeta, context)
+          .catch(() => undefined)
+        expect(mockSpawnSfw).not.toHaveBeenCalled()
+      } finally {
+        exitSpy.mockRestore()
+      }
+    })
+
+    it('forwards spawn signal via process.kill when present', async () => {
+      mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0, 'SIGTERM'))
+      const killSpy = vi
+        .spyOn(process, 'kill')
+        .mockImplementation((() => true) as any)
+
+      try {
+        await cmdSfw.run(['npm', 'install'], importMeta, context)
+        expect(killSpy).toHaveBeenCalledWith(process.pid, 'SIGTERM')
+      } finally {
+        killSpy.mockRestore()
+      }
+    })
   })
 })
