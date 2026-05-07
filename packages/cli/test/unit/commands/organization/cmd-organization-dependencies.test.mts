@@ -302,5 +302,21 @@ describe('cmd-organization-dependencies', () => {
         outputKind: 'text',
       })
     })
+
+    it('shows fallback limit=50 in dry-run when --limit=0', async () => {
+      // Exercises the `validatedLimit || 50` fallback at line 111.
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+      await cmdOrganizationDependencies.run(
+        ['--dry-run', '--limit', '0'],
+        importMeta,
+        context,
+      )
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('limit: 50'),
+      )
+      expect(mockHandleDependencies).not.toHaveBeenCalled()
+    })
   })
 })
