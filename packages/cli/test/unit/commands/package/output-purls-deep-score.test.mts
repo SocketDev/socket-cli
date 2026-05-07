@@ -655,4 +655,56 @@ describe('package score output', async () => {
       `)
     })
   })
+
+  describe('no-dependencies edge case', () => {
+    it('renders the dependency-free path when transitively.dependencyCount is 0', () => {
+      const data = {
+        purl: 'pkg:npm/single@1.0.0',
+        self: {
+          purl: 'pkg:npm/single@1.0.0',
+          alerts: [],
+          capabilities: [],
+          score: {
+            overall: 100,
+            maintenance: 100,
+            quality: 100,
+            supplyChain: 100,
+            vulnerability: 100,
+            license: 100,
+          },
+        },
+        transitively: {
+          alerts: [],
+          capabilities: [],
+          dependencyCount: 0,
+          func: 'identity',
+          lowest: {
+            overall: 100,
+            maintenance: 100,
+            quality: 100,
+            supplyChain: 100,
+            vulnerability: 100,
+            license: 100,
+          },
+          score: {
+            overall: 100,
+            maintenance: 100,
+            quality: 100,
+            supplyChain: 100,
+            vulnerability: 100,
+            license: 100,
+          },
+        },
+      } as any
+
+      const txt = createMarkdownReport(data)
+      expect(txt).toContain('It has *no dependencies*')
+      expect(txt).toContain(
+        'Since it has no dependencies, the shallow score is also the deep score',
+      )
+      expect(txt).toContain('## Report')
+      // Transitive section is omitted for the no-deps path.
+      expect(txt).not.toContain('## Transitive Package Results')
+    })
+  })
 })
