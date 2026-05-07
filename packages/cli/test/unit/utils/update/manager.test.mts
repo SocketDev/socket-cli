@@ -436,6 +436,83 @@ describe('update manager', () => {
       // Should fetch because timestampFetch is 0.
       expect(mockPerformUpdateCheck).toHaveBeenCalled()
     })
+
+    it('uses cached data when system time is broken (Date.now <= 0)', async () => {
+      mockDlxManifest.get.mockReturnValueOnce({
+        timestampFetch: 1_000_000,
+        version: '2.0.0',
+      })
+      const realNow = Date.now
+      Date.now = () => 0
+
+      try {
+        const result = await checkForUpdates({
+          name: 'socket',
+          version: '1.0.0',
+          immediate: true,
+        })
+        expect(result).toBe(true)
+        expect(mockShowUpdateNotification).toHaveBeenCalled()
+      } finally {
+        Date.now = realNow
+      }
+    })
+
+    it('schedules exit notification when system time is broken and not immediate', async () => {
+      mockDlxManifest.get.mockReturnValueOnce({
+        timestampFetch: 1_000_000,
+        version: '2.0.0',
+      })
+      const realNow = Date.now
+      Date.now = () => 0
+
+      try {
+        const result = await checkForUpdates({
+          name: 'socket',
+          version: '1.0.0',
+          immediate: false,
+        })
+        expect(result).toBe(true)
+        expect(mockScheduleExitNotification).toHaveBeenCalled()
+      } finally {
+        Date.now = realNow
+      }
+    })
+
+    it('returns false when system time is broken AND cache has no version', async () => {
+      mockDlxManifest.get.mockReturnValueOnce({
+        timestampFetch: 1_000_000,
+        version: '',
+      })
+      const realNow = Date.now
+      Date.now = () => 0
+
+      try {
+        const result = await checkForUpdates({
+          name: 'socket',
+          version: '1.0.0',
+        })
+        expect(result).toBe(false)
+      } finally {
+        Date.now = realNow
+      }
+    })
+
+    it('returns false when system time is broken AND no cache exists', async () => {
+      mockDlxManifest.get.mockReturnValueOnce(undefined)
+      const realNow = Date.now
+      Date.now = () => 0
+
+      try {
+        const result = await checkForUpdates({
+          name: 'socket',
+          version: '1.0.0',
+        })
+        expect(result).toBe(false)
+      } finally {
+        Date.now = realNow
+      }
+    })
   })
 
   describe('scheduleUpdateCheck', () => {
