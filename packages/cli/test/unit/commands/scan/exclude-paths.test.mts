@@ -108,6 +108,18 @@ describe('exclude-paths', () => {
         }),
       ).toEqual(['**'])
     })
+
+    it('strips recursive ${target}/**/ prefix (line 175-178)', () => {
+      // When the path begins with target/**/, only the targetPrefix is
+      // sliced off; the **/ remainder stays. (The wrapping
+      // projectIgnorePaths→reach expansion adds the trailing /** variant.)
+      expect(
+        projectIgnorePathsToReachExcludePaths(['apps/api/**/dist'], {
+          cwd: '/repo',
+          target: 'apps/api',
+        }),
+      ).toEqual(['**/dist', '**/dist/**'])
+    })
   })
 
   describe('applyFullExcludePaths', () => {

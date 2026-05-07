@@ -207,6 +207,7 @@ export async function extractBasicsTools(
     const toolsToValidate = ['trivy', 'trufflehog', 'opengrep'] as const
     for (const tool of toolsToValidate) {
       const toolPath = extractedPaths[tool]
+      /* c8 ignore next - defensive: extraction populates all toolsToValidate keys before this loop */
       if (!toolPath) {continue}
 
       // eslint-disable-next-line no-await-in-loop

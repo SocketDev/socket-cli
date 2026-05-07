@@ -190,7 +190,7 @@ async function run(
   // Accept zero or more paths. Default to cwd() if none given.
   let targets = cli.input.length ? [...cli.input] : [cwd]
 
-  // Use suggestTarget if no targets specified and in interactive mode
+  /* c8 ignore next 3 - defensive: targets always has at least [cwd] from the line above, so this branch never fires in practice */
   if (!targets.length && !dryRun && interactive) {
     targets = await suggestTarget()
   }
