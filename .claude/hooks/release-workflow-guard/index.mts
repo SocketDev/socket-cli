@@ -315,33 +315,56 @@ function workflowDeclaresDryRunInput(
 //     intentionally excluded so a same-named workflow in the current
 //     checkout can't false-positive a cross-repo dispatch.
 function resolveSearchRoots(command: string): string[] {
-  // Resolution order: $CLAUDE_PROJECT_DIR (Claude Code sets this when
-  // it remembers to) → derive from this hook script's path (the hook
-  // lives at <project>/.claude/hooks/release-workflow-guard/index.mts,
-  // so go three levels up from __dirname) → $PWD as last resort.
-  // The script-path derivation is the most robust because it doesn't
-  // depend on the runner exporting env vars correctly.
-  let projectDir = process.env['CLAUDE_PROJECT_DIR']
-  if (!projectDir) {
-    // process.argv[1] is the absolute path of this hook script when
-    // invoked via `node <path>`. Walk up to the repo root.
-    const scriptPath = process.argv[1]
-    if (scriptPath) {
-      // .claude/hooks/release-workflow-guard/index.mts → ../../../ = repo
-      const candidate = path.resolve(scriptPath, '..', '..', '..', '..')
-      if (existsSync(path.join(candidate, '.github', 'workflows'))) {
-        projectDir = candidate
-      }
+  // Resolution: collect every plausible project root (env + script
+  // derivation + cwd), dedupe, and return the list. Downstream
+  // consumers (workflowDeclaresDryRunInput / classifyWorkflow) iterate
+  // and fall through, so multiple candidates is strictly safer than
+  // picking a single one — the env var can point at the *parent* of
+  // the actual checkout when Claude Code resolves a different repo
+  // than the one whose hook is running.
+  const candidates: string[] = []
+  const envDir = process.env['CLAUDE_PROJECT_DIR']
+  if (envDir) {
+    candidates.push(envDir)
+  }
+  // process.argv[1] is the absolute path of this hook script when
+  // invoked via `node <path>`. Walk up to the repo root:
+  // .claude/hooks/release-workflow-guard/index.mts → ../../../ = repo
+  const scriptPath = process.argv[1]
+  if (scriptPath) {
+    const candidate = path.resolve(scriptPath, '..', '..', '..', '..')
+    if (existsSync(path.join(candidate, '.github', 'workflows'))) {
+      candidates.push(candidate)
     }
   }
-  if (!projectDir) {
-    projectDir = process.cwd()
+  candidates.push(process.cwd())
+  // Dedupe while preserving order.
+  const seen = new Set<string>()
+  const unique: string[] = []
+  for (const c of candidates) {
+    if (!seen.has(c)) {
+      seen.add(c)
+      unique.push(c)
+    }
   }
   const repoMatch = GH_REPO_FLAG_RE.exec(command)
-  if (!repoMatch || path.basename(projectDir) === repoMatch[1]!) {
-    return [projectDir]
+  if (!repoMatch) {
+    return unique
   }
-  return [path.join(path.dirname(projectDir), repoMatch[1]!)]
+  // Cross-repo dispatch: redirect every candidate to its sibling clone
+  // of the same name. If none of them have a sibling matching, the
+  // empty list naturally blocks (workflowDeclaresDryRunInput returns
+  // false → bypass denied → block-the-default).
+  const repoName = repoMatch[1]!
+  const redirected: string[] = []
+  for (const c of unique) {
+    if (path.basename(c) === repoName) {
+      redirected.push(c)
+    } else {
+      redirected.push(path.join(path.dirname(c), repoName))
+    }
+  }
+  return redirected
 }
 
 function isVerifiableDryRun(
