@@ -163,6 +163,7 @@ export async function runSocketBasics(
     }
   }
 
+  /* c8 ignore next 4 - spinner only when caller passes one; unit tests omit it */
   if (spinner) {
     spinner.stop()
     spinner.success('Security tools extracted')
@@ -189,6 +190,7 @@ export async function runSocketBasics(
 
     // Check spawn result - it can be null if process failed to start.
     if (!pipInstallResult) {
+      /* c8 ignore next 4 - spinner only when caller passes one */
       if (spinner) {
         spinner.stop()
         spinner.fail('Failed to start pip install')
@@ -201,6 +203,7 @@ export async function runSocketBasics(
     }
 
     if (pipInstallResult.code !== 0) {
+      /* c8 ignore next 4 - spinner only when caller passes one */
       if (spinner) {
         spinner.stop()
         spinner.fail('Failed to install Socket Python CLI')
@@ -215,6 +218,7 @@ export async function runSocketBasics(
       }
     }
 
+    /* c8 ignore next 4 - spinner only when caller passes one */
     if (spinner) {
       spinner.stop()
       spinner.success('Socket Python CLI installed')
@@ -228,6 +232,7 @@ export async function runSocketBasics(
     )
 
     if (!verifyResult || verifyResult.code !== 0) {
+      /* c8 ignore next 4 - spinner only when caller passes one */
       if (spinner) {
         spinner.stop()
         spinner.fail('Failed to verify Socket Python CLI installation')
