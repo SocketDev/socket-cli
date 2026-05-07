@@ -57,7 +57,6 @@ import { getPythonBuildTag } from '../../env/python-build-tag.mts'
 import { requirePythonChecksum } from '../../env/python-checksums.mts'
 import { getPythonVersion } from '../../env/python-version.mts'
 import { SOCKET_CLI_PYTHON_PATH } from '../../env/socket-cli-python-path.mts'
-import { getSynpVersion } from '../../env/synp-version.mts'
 import { getErrorCause, InputError } from '../error/errors.mts'
 import { isSeaBinary } from '../sea/detect.mts'
 import {
@@ -638,24 +637,6 @@ export async function spawnSocketPatchDlx(
   )
 }
 
-/**
- * Helper to spawn synp with dlx.
- */
-export async function spawnSynpDlx(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  return await spawnDlx(
-    {
-      name: 'synp',
-      version: getSynpVersion(),
-    },
-    args,
-    { force: false, ...options },
-    spawnExtra,
-  )
-}
 
 /**
  * VFS-based spawn functions for SEA binaries.
@@ -819,17 +800,6 @@ export async function spawnSocketPatchVfs(
   return await spawnToolVfs('socket-patch', args, options, spawnExtra)
 }
 
-/**
- * Helper to spawn synp from VFS.
- * Used when running in SEA mode.
- */
-export async function spawnSynpVfs(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  return await spawnToolVfs('synp', args, options, spawnExtra)
-}
 
 /**
  * High-level spawn functions that auto-detect SEA vs npm CLI mode.
@@ -897,20 +867,11 @@ export async function spawnSocketPatch(
   return await spawnSocketPatchDlx(args, options, spawnExtra)
 }
 
-/**
- * Spawn synp (package.json converter).
- * Auto-detects SEA mode and uses appropriate spawn method.
- */
-export async function spawnSynp(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  if (isSeaBinary() && areExternalToolsAvailable()) {
-    return await spawnSynpVfs(args, options, spawnExtra)
-  }
-  return await spawnSynpDlx(args, options, spawnExtra)
-}
+export {
+  spawnSynp,
+  spawnSynpDlx,
+  spawnSynpVfs,
+} from './spawn-synp.mts'
 
 /**
  * Python CLI spawn utilities.
