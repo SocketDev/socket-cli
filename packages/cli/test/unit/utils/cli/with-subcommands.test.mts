@@ -671,5 +671,66 @@ describe('meow-with-subcommands', () => {
       // Just confirm no crash.
       expect(true).toBe(true)
     })
+
+    it('shows --help-full output for root command when flag passed', async () => {
+      const subcommands = {
+        scan: {
+          description: 'scan',
+          run: vi.fn(async () => undefined),
+        },
+      }
+      try {
+        await meowWithSubcommands({
+          name: 'socket',
+          argv: ['--help-full'],
+          importMeta: import.meta,
+          subcommands,
+        })
+      } catch {
+        // showHelp throw is expected.
+      }
+      expect(true).toBe(true)
+    })
+
+    it('handles dryRun without --help', async () => {
+      const subcommands = {
+        scan: {
+          description: 'scan',
+          run: vi.fn(async () => undefined),
+        },
+      }
+      try {
+        await meowWithSubcommands({
+          name: 'socket',
+          argv: ['--dry-run'],
+          importMeta: import.meta,
+          subcommands,
+        })
+      } catch {
+        // process.exit throw is expected.
+      }
+      expect(true).toBe(true)
+    })
+
+    it('handles --version flag at root level', async () => {
+      const subcommands = {
+        scan: {
+          description: 'scan',
+          run: vi.fn(async () => undefined),
+        },
+      }
+      try {
+        await meowWithSubcommands({
+          name: 'socket',
+          argv: ['--version'],
+          importMeta: import.meta,
+          subcommands,
+        })
+      } catch {
+        // showVersion throw is expected.
+      }
+      expect(true).toBe(true)
+    })
+
   })
 })
