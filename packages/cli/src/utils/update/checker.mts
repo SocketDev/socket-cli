@@ -83,8 +83,8 @@ function isUpdateAvailable(current: string, latest: string): boolean {
     }
 
     return semver.gt(latestClean, currentClean)
+    /* c8 ignore next 4 - semver.gt fallback for non-semver inputs; both inputs already passed semver.coerce */
   } catch {
-    // Fallback to string comparison on any error.
     return latest !== current
   }
 }
@@ -128,6 +128,7 @@ const NetworkUtils = {
 
     return new Promise((resolve, reject) => {
       // Cleanup function to remove exit handler and prevent memory leak.
+      /* c8 ignore next - exitHandler only fires on actual process exit */
       const exitHandler = () => req.destroy()
       const removeExitHandler = onExit(exitHandler)
 

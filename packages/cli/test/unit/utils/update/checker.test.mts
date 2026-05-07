@@ -276,6 +276,14 @@ describe('update/checker', () => {
       )
     })
 
+    it('throws when registryUrl is explicit empty string (line 222-226)', async () => {
+      await expect(
+        NetworkUtils.getLatestVersion('test', { registryUrl: '' }),
+      ).rejects.toThrow(
+        /getLatestVersion options\.registryUrl must be a non-empty string/,
+      )
+    })
+
     it('returns latest version on success', async () => {
       const mockRes = createMockResponse(200)
       const mockReq = createMockRequest()

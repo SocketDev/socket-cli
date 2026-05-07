@@ -75,6 +75,7 @@ export function formatReportCard(
     License: Math.floor((artifact.score?.license ?? 0) * 100),
   }
   const alertString = getAlertString(artifact.alerts, { colorize })
+  /* c8 ignore next 3 - artifact.ecosystem is required by the SDK contract */
   if (!artifact.ecosystem) {
     debug(`miss: artifact ecosystem ${JSON.stringify(artifact)}`)
   }
@@ -222,8 +223,8 @@ export function preProcess(
     const purl = `pkg:${artifact.type}/${artifact.namespace ? `${artifact.namespace}/` : ''}${artifact.name}${artifact.version ? `@${artifact.version}` : ''}`
     if (rows.has(purl)) {
       const row = rows.get(purl)
+      /* c8 ignore next 3 - rows.has just confirmed; .get cannot return undefined here */
       if (!row) {
-        // Unreachable; Satisfy TS.
         continue
       }
       if ((artifact.score?.supplyChain ?? 100) < row.score.supplyChain) {

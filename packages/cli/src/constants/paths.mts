@@ -92,6 +92,7 @@ export function getBinCliPath(): string {
     // Resolve relative paths against project root to support cwd changes in tests.
     return path.isAbsolute(binPath) ? binPath : path.join(rootPath, binPath)
   }
+  /* c8 ignore next - .env.test always sets SOCKET_CLI_BIN_PATH so the fallback is unreachable in unit tests */
   return path.join(rootPath, 'dist/index.js')
 }
 
@@ -151,8 +152,8 @@ export function getSocketAppDataPath(): string | undefined {
     : ENV.XDG_DATA_HOME
   if (!dataHome) {
     const home = homedir()
+    /* c8 ignore next 5 - WIN32-only fallback when LOCALAPPDATA env var missing; tests run on macOS/Linux */
     if (isWin32) {
-      // Fallback: Use USERPROFILE or HOME when LOCALAPPDATA is missing.
       dataHome = path.join(home, 'AppData', 'Local')
       const logger = getDefaultLogger()
       logger.warn('LOCALAPPDATA not set, using fallback path.')
@@ -189,6 +190,7 @@ export function getSocketCachePath(): string {
 
 export function getSocketRegistryPath(): string {
   const appDataPath = getSocketAppDataPath()
+  /* c8 ignore next 5 - HOME/USERPROFILE/LOCALAPPDATA/XDG_DATA_HOME all unset is essentially impossible in any real environment */
   if (!appDataPath) {
     throw new Error(
       `could not determine the Socket app-data directory: getSocketAppDataPath() returned undefined because none of HOME, USERPROFILE, LOCALAPPDATA, or XDG_DATA_HOME are set; export one of those env vars (typically HOME on macOS/Linux or LOCALAPPDATA on Windows) and retry`,
@@ -223,6 +225,7 @@ export function getNmNpmPath(): string {
 
 export function getNmNodeGypPath(): string | undefined {
   try {
+    /* c8 ignore next - node-gyp is not installed in tests; require.resolve throws before realpathSync runs */
     return realpathSync(require.resolve('node-gyp/package.json'))
   } catch {
     return undefined
