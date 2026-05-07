@@ -147,6 +147,24 @@ describe('Error Classes', () => {
     })
   })
 
+  describe('captureException / captureExceptionSync', () => {
+    it('captureExceptionSync returns "" when Sentry is not configured', async () => {
+      const { captureExceptionSync } = await import(
+        '../../../../src/utils/error/errors.mts'
+      )
+      const result = captureExceptionSync(new Error('boom'))
+      expect(result).toBe('')
+    })
+
+    it('captureException returns "" when Sentry is not configured', async () => {
+      const { captureException } = await import(
+        '../../../../src/utils/error/errors.mts'
+      )
+      const result = await captureException(new Error('boom'))
+      expect(result).toBe('')
+    })
+  })
+
   describe('ConfigError', () => {
     it('should create ConfigError with config key', () => {
       const error = new ConfigError('Invalid value', 'apiToken')
@@ -655,5 +673,12 @@ describe('buildErrorCause', () => {
     )
     // Should return quota message.
     expect(result.length).toBeGreaterThan(0)
+  })
+
+  it('appends reason when both strings have only short words (no overlap signal)', async () => {
+    // Forces calculateStringSimilarity to take the empty word-sets branch
+    // (all tokens <= 2 chars) — similarity returns 0 → reason is appended.
+    const result = await buildErrorCause(400, 'a b c', 'd e f')
+    expect(result).toContain('reason: d e f')
   })
 })
