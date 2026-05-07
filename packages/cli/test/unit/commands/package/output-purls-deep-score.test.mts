@@ -36,7 +36,10 @@ import npmDeep from '../../../../src/commands/package/fixtures/npm_deep.json' wi
 import nugetDeep from '../../../../src/commands/package/fixtures/nuget_deep.json' with { type: 'json' }
 import pythonDeep from '../../../../src/commands/package/fixtures/python_deep.json' with { type: 'json' }
 import rubyDeep from '../../../../src/commands/package/fixtures/ruby_deep.json' with { type: 'json' }
-import { createMarkdownReport } from '../../../../src/commands/package/output-purls-deep-score.mts'
+import {
+  createMarkdownReport,
+  outputPurlsDeepScore,
+} from '../../../../src/commands/package/output-purls-deep-score.mts'
 
 describe('package score output', async () => {
   describe('npm', () => {
@@ -705,6 +708,43 @@ describe('package score output', async () => {
       expect(txt).toContain('## Report')
       // Transitive section is omitted for the no-deps path.
       expect(txt).not.toContain('## Transitive Package Results')
+    })
+  })
+
+  describe('outputPurlsDeepScore', () => {
+    it('sets exit code from error result code', async () => {
+      const result = {
+        ok: false as const,
+        message: 'Failed',
+        code: 7,
+      }
+      process.exitCode = undefined
+      await outputPurlsDeepScore('pkg:npm/test', result as any, 'json')
+      expect(process.exitCode).toBe(7)
+      process.exitCode = undefined
+    })
+
+    it('falls back exit code to 1 when result.code missing', async () => {
+      const result = {
+        ok: false as const,
+        message: 'Failed without code',
+      }
+      process.exitCode = undefined
+      await outputPurlsDeepScore('pkg:npm/test', result as any, 'json')
+      expect(process.exitCode).toBe(1)
+      process.exitCode = undefined
+    })
+
+    it('returns early after fail message in text mode for error result', async () => {
+      const result = {
+        ok: false as const,
+        message: 'fail',
+        cause: 'reason',
+      }
+      // Should not throw / resolve to undefined.
+      await expect(
+        outputPurlsDeepScore('pkg:npm/test', result as any, 'text'),
+      ).resolves.toBeUndefined()
     })
   })
 })
