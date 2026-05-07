@@ -61,7 +61,7 @@ function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
     const maxOldSpaceSize = Number(cli.flags['maxOldSpaceSize'])
     const maxSemiSpaceSize = Number(cli.flags['maxSemiSpaceSize'])
 
-    // Validate numeric flags (should be guaranteed by meow type='number', but defensive).
+    /* c8 ignore next 10 - meow type='number' guarantees numeric values; these guards are belt-and-suspenders */
     if (Number.isNaN(maxOldSpaceSize) || maxOldSpaceSize < 0) {
       throw new Error(
         `--max-old-space-size must be a non-negative integer in megabytes (saw: "${cli.flags['maxOldSpaceSize']}"); pass a whole number like --max-old-space-size=4096 for 4GB`,
@@ -94,7 +94,7 @@ export function getMaxOldSpaceSizeFlag(): number {
       )?.[0]
       if (match) {
         const parsed = Number(match)
-        // Regex guarantees numeric string, but validate defensively.
+        /* c8 ignore next 3 - regex (\d+) guarantees a numeric string; defensive guard */
         if (Number.isNaN(parsed) || parsed < 0) {
           _maxOldSpaceSizeFlag = 0
         } else {
@@ -132,7 +132,7 @@ export function getMaxSemiSpaceSizeFlag(): number {
       )?.[0]
       if (match) {
         const parsed = Number(match)
-        // Regex guarantees numeric string, but validate defensively.
+        /* c8 ignore next 3 - regex (\d+) guarantees a numeric string; defensive guard */
         if (Number.isNaN(parsed) || parsed < 0) {
           _maxSemiSpaceSizeFlag = 0
         } else {

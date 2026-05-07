@@ -169,6 +169,7 @@ async function run(
       all = false
     }
   }
+  /* c8 ignore next 7 - githubApiUrl flag has DEFAULT_GITHUB_URL as its default, so this block only runs when both the flag default AND CLI input are empty */
   if (!githubApiUrl) {
     if (sockJson.defaults?.scan?.github?.githubApiUrl !== undefined) {
       githubApiUrl = sockJson.defaults.scan.github.githubApiUrl

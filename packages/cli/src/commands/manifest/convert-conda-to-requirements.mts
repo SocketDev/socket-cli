@@ -139,8 +139,8 @@ export function convertCondaToRequirementsFromInput(input: string): string {
         // Store the indentation of the block.
         if (trimmed.startsWith('-') && line.includes('-')) {
           const parts = line.split('-')
+          /* c8 ignore next 3 - String.split always returns ≥1 element */
           if (!parts.length) {
-            // Unexpected: split should always return at least one element.
             break
           }
           indent = `${parts[0]}-`
@@ -161,8 +161,8 @@ export function convertCondaToRequirementsFromInput(input: string): string {
     // Note: the line may end with a line comment so don't === it.
     else if (trimmed.startsWith('- pip:') && line.includes('-')) {
       const parts = line.split('-')
+      /* c8 ignore next 3 - String.split always returns ≥1 element */
       if (!parts.length) {
-        // Unexpected: split should always return at least one element.
         continue
       }
       delim = `${parts[0]}-`

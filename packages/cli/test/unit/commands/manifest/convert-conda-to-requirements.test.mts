@@ -114,6 +114,25 @@ dependencies:
     `)
   })
 
+  it('skips # comment lines inside the pip block (line 129-131)', () => {
+    // A flush-left `#` comment line inside the pip block must be ignored
+    // by the `if (line.startsWith('#')) { continue }` branch.
+    const output = convertCondaToRequirementsFromInput(`
+name: myenv
+dependencies:
+  - python=3.8
+  - pip:
+            - pandas
+# flush-left comment
+            - numpy==1.21.0
+`)
+
+    expect(output).toMatchInlineSnapshot(`
+      "pandas
+      numpy==1.21.0"
+    `)
+  })
+
   it('should support block closing on further indent than start', () => {
     const output = convertCondaToRequirementsFromInput(`
 name: myenv
