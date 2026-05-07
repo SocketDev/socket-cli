@@ -35,7 +35,6 @@ import {
   resolveCdxgen,
   resolveCoana,
   resolvePyCli,
-  resolveSfw,
 } from './resolve-binary.mjs'
 
 import type { GitHubReleaseSpec } from './resolve-binary.mjs'
@@ -58,10 +57,6 @@ import { getPythonVersion } from '../../env/python-version.mts'
 import { SOCKET_CLI_PYTHON_PATH } from '../../env/socket-cli-python-path.mts'
 import { getErrorCause, InputError } from '../error/errors.mts'
 import { isSeaBinary } from '../sea/detect.mts'
-import {
-  applyMachineModeIfActive,
-  inferSubcommand,
-} from '../spawn/apply-machine-mode.mts'
 import { socketHttpRequest } from '../socket/api.mjs'
 import { spawnNode } from '../spawn/spawn-node.mjs'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
@@ -489,84 +484,7 @@ export async function spawnCdxgenDlx(
   )
 }
 
-/**
- * Helper to spawn Socket Firewall (sfw) with dlx.
- * If SOCKET_CLI_SFW_LOCAL_PATH environment variable is set, uses the local
- * sfw binary at that path instead of downloading from npm.
- */
-export async function spawnSfwDlx(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  // sfw is a transparent proxy: args is [innerTool, innerSubcommand?, ...rest].
-  // Machine-mode flags forward to the inner tool so its stdout stays
-  // pipe-safe under --json.
-  const [innerTool, ...innerArgs] = args
-  const innerSubcommand = inferSubcommand(innerArgs)
-  const innerApplied = innerTool
-    ? applyMachineModeIfActive({
-        args: innerArgs,
-        env: undefined,
-        subcommand: innerSubcommand,
-        tool: innerTool,
-      })
-    : { args: [...innerArgs], env: {} }
-  const effectiveArgs = innerTool
-    ? [innerTool, ...innerApplied.args]
-    : [...args]
-
-  const resolution = resolveSfw()
-
-  // Use local sfw if available.
-  if (resolution.type === 'local') {
-    const detection = detectExecutableType(resolution.path)
-    const { env: spawnEnv, ...dlxOptions } = {
-      __proto__: null,
-      ...options,
-    } as DlxOptions
-
-    const spawnArgs =
-      detection.type === 'binary'
-        ? effectiveArgs
-        : [resolution.path, ...effectiveArgs]
-    const spawnCommand = detection.type === 'binary' ? resolution.path : 'node'
-
-    const spawnPromise = spawn(spawnCommand, spawnArgs, {
-      ...dlxOptions,
-      env: {
-        ...process.env,
-        ...innerApplied.env,
-        ...spawnEnv,
-      },
-      stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
-    })
-
-    return {
-      spawnPromise,
-    }
-  }
-
-  // Use dlx version (resolveSfw only returns 'local' or 'dlx' types).
-  if (resolution.type !== 'dlx') {
-    throw new Error(
-      `internal: resolveSfw returned resolution.type="${resolution.type}" (expected "dlx"); this is a resolver contract bug — re-run with --debug and report the output`,
-    )
-  }
-  return await spawnDlx(
-    resolution.details,
-    effectiveArgs,
-    {
-      force: false,
-      ...options,
-      env: {
-        ...innerApplied.env,
-        ...options?.env,
-      },
-    },
-    spawnExtra,
-  )
-}
+export { spawnSfwDlx } from './spawn-sfw.mts'
 
 /**
  * Helper to spawn Socket Patch.
@@ -637,17 +555,7 @@ export async function spawnToolVfs(
   }
 }
 
-/**
- * Helper to spawn Socket Firewall (sfw) from VFS.
- * Used when running in SEA mode.
- */
-export async function spawnSfwVfs(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  return await spawnToolVfs('sfw', args, options, spawnExtra)
-}
+export { spawnSfwVfs } from './spawn-sfw.mts'
 
 /**
  * Helper to spawn cdxgen from VFS.
@@ -737,20 +645,7 @@ export { spawnSocketPatchVfs } from './spawn-socket-patch.mts'
  * These choose between VFS extraction (SEA) and dlx download (npm CLI).
  */
 
-/**
- * Spawn Socket Firewall (sfw).
- * Auto-detects SEA mode and uses appropriate spawn method.
- */
-export async function spawnSfw(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  if (isSeaBinary() && areExternalToolsAvailable()) {
-    return await spawnSfwVfs(args, options, spawnExtra)
-  }
-  return await spawnSfwDlx(args, options, spawnExtra)
-}
+export { spawnSfw } from './spawn-sfw.mts'
 
 /**
  * Spawn cdxgen (CycloneDX generator).
