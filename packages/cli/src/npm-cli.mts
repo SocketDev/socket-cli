@@ -27,7 +27,7 @@ export default async function runNpmCli() {
   }
 }
 
-// Run if invoked directly (not as a module).
+/* c8 ignore start - direct CLI invocation only runs when file is the entrypoint */
 if (import.meta.url === `file://${process.argv[1]}`) {
   runNpmCli().catch(error => {
     logger.error('Socket npm wrapper error:', error)
@@ -35,3 +35,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(1)
   })
 }
+/* c8 ignore stop */
