@@ -251,6 +251,55 @@ describe('output-config-auto', () => {
         // Select should be called for enforcedOrgs.
         expect(mockSelect).toHaveBeenCalled()
       })
+
+      it('logs result.message before the discovered value when present', async () => {
+        mockSelect.mockResolvedValue('')
+
+        const result: CResult<string> = {
+          ok: true,
+          data: 'org-a',
+          message: 'note: this is a heuristic guess',
+        }
+
+        await outputConfigAuto('defaultOrg', result, 'text')
+
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+        expect(logs).toContain('heuristic guess')
+        expect(logs).toContain('defaultOrg: org-a')
+      })
+
+      it('handles enforcedOrgs update failure', async () => {
+        mockSelect.mockResolvedValue('enforced-org')
+        mockUpdateConfigValue.mockReturnValue({
+          ok: false,
+          message: 'enforcedOrgs write failed',
+          cause: 'permission',
+        })
+
+        const result: CResult<string> = {
+          ok: true,
+          data: 'enforced-org',
+        }
+
+        await outputConfigAuto('enforcedOrgs', result, 'text')
+
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+        expect(logs).toContain('enforcedOrgs write failed')
+      })
+
+      it('shows no-changes message when user declines enforcedOrgs', async () => {
+        mockSelect.mockResolvedValue('')
+
+        const result: CResult<string> = {
+          ok: true,
+          data: 'enforced-org',
+        }
+
+        await outputConfigAuto('enforcedOrgs', result, 'text')
+
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+        expect(logs).toContain('No changes made')
+      })
     })
   })
 })
