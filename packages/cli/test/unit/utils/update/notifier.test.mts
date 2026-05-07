@@ -276,6 +276,25 @@ describe('update notifier', () => {
       expect(mockOnExit).toHaveBeenCalledWith(expect.any(Function))
     })
 
+    it('invokes the registered notificationLogger callback', () => {
+      // Capture the callback registered with onExit and run it to exercise
+      // the inner arrow function (line 135).
+      let registered: (() => void) | undefined
+      mockOnExit.mockImplementationOnce((cb: () => void) => {
+        registered = cb
+      })
+
+      scheduleExitNotification({
+        name: 'socket',
+        current: '1.0.0',
+        latest: '2.0.0',
+      })
+
+      expect(registered).toBeTypeOf('function')
+      registered!()
+      expect(mockLogger.log).toHaveBeenCalled()
+    })
+
     it('does not schedule when not TTY', () => {
       Object.defineProperty(process.stdout, 'isTTY', {
         value: false,

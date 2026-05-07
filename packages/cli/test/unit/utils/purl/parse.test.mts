@@ -133,6 +133,16 @@ describe('purl utilities', () => {
       expect(purl?.name).toBe('tokio')
       expect(purl?.version).toBe('1.0.0')
     })
+
+    it('falls back to opts.name when name argument is not a string', () => {
+      // Exercises the typeof name !== 'string' branch — opts.name resolves it.
+      const purl = createPurlObject('npm', undefined as any, {
+        name: 'fallback-name',
+        version: '1.0.0',
+      })
+      expect(purl?.name).toBe('fallback-name')
+      expect(purl?.version).toBe('1.0.0')
+    })
   })
 
   describe('getPurlObject', () => {

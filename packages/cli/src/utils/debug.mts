@@ -49,14 +49,12 @@ const RESPONSE_BODY_TRUNCATE_LENGTH = 2_000
 /**
  * Sanitize headers to remove sensitive information.
  * Redacts Authorization and API key headers.
+ *
+ * Callers must gate truthy — passing an empty/undefined map skips the loop.
  */
 function sanitizeHeaders(
-  headers?: Record<string, string> | undefined,
-): Record<string, string> | undefined {
-  if (!headers) {
-    return undefined
-  }
-
+  headers: Record<string, string>,
+): Record<string, string> {
   const sanitized: Record<string, string> = Object.create(null)
   for (const [key, value] of Object.entries(headers)) {
     const lowerKey = key.toLowerCase()

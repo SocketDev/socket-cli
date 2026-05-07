@@ -250,6 +250,12 @@ describe('simple-output', () => {
       expect(result).toBeDefined()
     })
 
+    it('provides updated column with date transform', () => {
+      expect(commonColumns.updated.field).toBe('updated_at')
+      const result = commonColumns.updated.transform?.('2025-02-20T00:00:00Z')
+      expect(result).toBeDefined()
+    })
+
     it('provides boolean column factory', () => {
       const col = commonColumns.boolean('enabled', 'Enabled')
       expect(col.field).toBe('enabled')

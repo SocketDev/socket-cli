@@ -41,7 +41,7 @@ vi.mock('../../src/meow.mts', () => ({
       maxSemiSpaceSize: mockValues.maxSemiSpaceSize,
     },
   })),
-  defineFlags: <T>(flags: T): T => flags,
+  defineFlags: <T,>(flags: T): T => flags,
 }))
 
 // Mock node:os to control total memory.

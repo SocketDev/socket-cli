@@ -264,6 +264,7 @@ export async function runHttpTransport(
               },
               sessionIdGenerator: () => randomUUID(),
             })
+            // eslint-disable-next-line unicorn/prefer-add-event-listener -- MCP SDK exposes onclose as a setter, not an EventTarget.
             newTransport.onclose = makeOnTransportClose(
               () => newTransport.sessionId,
               destroySession,

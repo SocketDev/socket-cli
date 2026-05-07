@@ -35,9 +35,6 @@ export function checkCommandInput(
     }
     const lines = d.message.split('\n')
     const { length: lineCount } = lines
-    if (!lineCount) {
-      continue
-    }
     // If the message has newlines then format the first line with the input
     // expectation and the rest indented below it.
     const logSymbol = d.test ? LOG_SYMBOLS['success'] : LOG_SYMBOLS['fail']

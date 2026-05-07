@@ -165,6 +165,28 @@ describe('registry-help', () => {
       expect(help).toContain('<value...>')
     })
 
+    it('returns no type indicator for unknown flag types', () => {
+      // Exercise the default case in getTypeIndicator's switch.
+      const command: CommandDefinition = {
+        name: 'test-cmd',
+        description: 'A test command',
+        flags: {
+          weird: {
+            // FlagType is constrained but defensive default exists.
+            type: 'unknown' as any,
+            description: 'A flag with an unknown type',
+          },
+        },
+        run: vi.fn(),
+      }
+
+      const help = generateCommandHelp(command)
+
+      expect(help).toContain('--weird')
+      expect(help).not.toContain('<string>')
+      expect(help).not.toContain('<number>')
+    })
+
     it('shows default value for flag', () => {
       const command: CommandDefinition = {
         name: 'test-cmd',

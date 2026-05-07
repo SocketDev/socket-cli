@@ -211,6 +211,12 @@ describe('cmd utilities', () => {
       const result = getConfigFlag(['--other', 'arg'])
       expect(result).toBeUndefined()
     })
+
+    it('skips empty/whitespace-only arguments', () => {
+      // Exercises the `continue` branch for falsy trimmed args.
+      const result = getConfigFlag(['', '   ', '--config', 'value'])
+      expect(result).toBe('value')
+    })
   })
 
   describe('filterFlags', () => {

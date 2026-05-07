@@ -214,6 +214,13 @@ describe('IPC validation', () => {
         }),
       ).toBe(false)
     })
+
+    it('returns false when isValidIpcMessage returns false', () => {
+      // Exercises the early-return branch that delegates to isValidIpcMessage.
+      expect(isValidIpcHandshake(null)).toBe(false)
+      expect(isValidIpcHandshake({})).toBe(false)
+      expect(isValidIpcHandshake('not-an-object')).toBe(false)
+    })
   })
 
   describe('isValidIpcHandle', () => {
