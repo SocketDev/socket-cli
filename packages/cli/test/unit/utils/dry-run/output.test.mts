@@ -20,9 +20,14 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   }),
 }))
 
-const { outputDryRunFetch } = await import(
-  '../../../../src/utils/dry-run/output.mts'
-)
+const {
+  outputDryRunDelete,
+  outputDryRunExecute,
+  outputDryRunFetch,
+  outputDryRunPreview,
+  outputDryRunUpload,
+  outputDryRunWrite,
+} = await import('../../../../src/utils/dry-run/output.mts')
 
 describe('dry-run output utilities', () => {
   beforeEach(() => {
@@ -135,6 +140,131 @@ describe('dry-run output utilities', () => {
       expect(output).toContain('numVal: 42')
       expect(output).toContain('boolTrue: true')
       expect(output).toContain('boolFalse: false')
+    })
+  })
+
+  describe('outputDryRunPreview', () => {
+    it('renders summary + actions + success line', () => {
+      outputDryRunPreview({
+        summary: 'create a thing',
+        actions: [
+          {
+            type: 'create',
+            description: 'add file',
+            target: '/tmp/x',
+            details: { mode: '0644' },
+          },
+        ],
+        wouldSucceed: true,
+      })
+
+      const output = mockStderrLog.mock.calls.map(c => c[0]).join('\n')
+      expect(output).toContain('[DryRun]: create a thing')
+      expect(output).toContain('Actions that would be performed')
+      expect(output).toContain('[create] add file → /tmp/x')
+      expect(output).toContain('mode: "0644"')
+      expect(output).toContain('Would complete successfully')
+    })
+
+    it('renders no-actions and would-fail variants', () => {
+      outputDryRunPreview({
+        summary: 'no-op',
+        actions: [],
+        wouldSucceed: false,
+      })
+
+      const output = mockStderrLog.mock.calls.map(c => c[0]).join('\n')
+      expect(output).toContain('No actions would be performed')
+      expect(output).toContain('Would fail')
+    })
+
+    it('skips success/fail line when wouldSucceed is undefined', () => {
+      outputDryRunPreview({
+        summary: 's',
+        actions: [{ type: 'modify', description: 'd' }],
+      })
+
+      const output = mockStderrLog.mock.calls.map(c => c[0]).join('\n')
+      expect(output).not.toContain('Would complete')
+      expect(output).not.toContain('Would fail')
+    })
+  })
+
+  describe('outputDryRunExecute', () => {
+    it('renders command + arguments', () => {
+      outputDryRunExecute('cmd', ['--flag', 'value'], 'do the thing')
+
+      const output = mockStderrLog.mock.calls.map(c => c[0]).join('\n')
+      expect(output).toContain('Would execute do the thing')
+      expect(output).toContain('Command: cmd')
+      expect(output).toContain('Arguments: --flag value')
+    })
+
+    it('omits arguments line when args is empty + uses default description', () => {
+      outputDryRunExecute('cmd', [])
+
+      const output = mockStderrLog.mock.calls.map(c => c[0]).join('\n')
+      expect(output).toContain('Would execute external command')
+      expect(output).not.toContain('Arguments:')
+    })
+  })
+
+  describe('outputDryRunWrite', () => {
+    it('renders changes list', () => {
+      outputDryRunWrite('/tmp/x.json', 'update config', ['key=value'])
+
+      const output = mockStderrLog.mock.calls.map(c => c[0]).join('\n')
+      expect(output).toContain('Would update config')
+      expect(output).toContain('Target file: /tmp/x.json')
+      expect(output).toContain('- key=value')
+    })
+
+    it('omits changes section when empty', () => {
+      outputDryRunWrite('/tmp/x.json', 'update config')
+
+      const output = mockStderrLog.mock.calls.map(c => c[0]).join('\n')
+      expect(output).not.toContain('Changes:')
+    })
+  })
+
+  describe('outputDryRunUpload', () => {
+    it('renders nested object details', () => {
+      outputDryRunUpload('scan', {
+        orgSlug: 'my-org',
+        meta: { branch: 'main', ref: 'abc' },
+      })
+
+      const output = mockStderrLog.mock.calls.map(c => c[0]).join('\n')
+      expect(output).toContain('Would upload scan')
+      expect(output).toContain('orgSlug: "my-org"')
+      expect(output).toContain('meta:')
+      expect(output).toContain('branch: "main"')
+      expect(output).toContain('ref: "abc"')
+    })
+
+    it('handles primitive values', () => {
+      outputDryRunUpload('config', { count: 5 })
+
+      const output = mockStderrLog.mock.calls.map(c => c[0]).join('\n')
+      expect(output).toContain('count: 5')
+    })
+
+    it('handles null detail values as primitives', () => {
+      outputDryRunUpload('thing', { value: null })
+
+      const output = mockStderrLog.mock.calls.map(c => c[0]).join('\n')
+      expect(output).toContain('value: null')
+    })
+  })
+
+  describe('outputDryRunDelete', () => {
+    it('renders identifier + warning', () => {
+      outputDryRunDelete('repository', 'my-org/my-repo')
+
+      const output = mockStderrLog.mock.calls.map(c => c[0]).join('\n')
+      expect(output).toContain('Would delete repository')
+      expect(output).toContain('Target: my-org/my-repo')
+      expect(output).toContain('cannot be undone')
     })
   })
 
