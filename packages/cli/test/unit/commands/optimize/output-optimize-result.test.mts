@@ -210,5 +210,56 @@ describe('output-optimize-result', () => {
       expect(mockLogger.fail).toHaveBeenCalled()
       expect(process.exitCode).toBe(1)
     })
+
+    it('falls back to exitCode 1 when result.code is undefined', async () => {
+      const result = {
+        ok: false as const,
+        message: 'No code given',
+      }
+
+      await outputOptimizeResult(result, 'text')
+
+      expect(process.exitCode).toBe(1)
+    })
+
+    it('emits both Updated and Added markdown changes when both counts > 0', async () => {
+      const result = {
+        ok: true as const,
+        data: {
+          addedCount: 4,
+          updatedCount: 2,
+          pkgJsonChanged: true,
+          updatedInWorkspaces: 0,
+          addedInWorkspaces: 0,
+        },
+      }
+
+      await outputOptimizeResult(result, 'markdown')
+
+      const logs = mockLogger.log.mock.calls.flat().join('\n')
+      expect(logs).toContain('Updated')
+      expect(logs).toContain('Added')
+    })
+
+    it('text mode appends "." when both updated and added counts > 0', async () => {
+      const result = {
+        ok: true as const,
+        data: {
+          addedCount: 5,
+          updatedCount: 3,
+          pkgJsonChanged: true,
+          updatedInWorkspaces: 0,
+          addedInWorkspaces: 0,
+        },
+      }
+
+      await outputOptimizeResult(result, 'text')
+
+      // When addedCount > 0, the Updated line ends in "." (not 🚀).
+      const logs = mockLogger.log.mock.calls.flat().join('\n')
+      expect(logs).toContain('Updated')
+      // Updated has "." separator before Added when both fire.
+      expect(logs).toMatch(/Updated.*\.\s*$/m)
+    })
   })
 })

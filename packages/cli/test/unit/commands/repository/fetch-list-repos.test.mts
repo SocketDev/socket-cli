@@ -233,4 +233,50 @@ describe('fetchListRepos', () => {
     // The function should work without prototype pollution issues.
     expect(mockSdk.listRepositories).toHaveBeenCalled()
   })
+
+  it('omits sort and direction when both are empty', async () => {
+    const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
+      results: [],
+      nextPage: null,
+    })
+
+    const config = {
+      direction: '',
+      orgSlug: 'no-sort-org',
+      page: 0,
+      perPage: 10,
+      sort: '',
+    }
+
+    await fetchListRepos(config)
+
+    // The call should NOT include sort or direction keys.
+    expect(mockSdk.listRepositories).toHaveBeenCalledWith('no-sort-org', {
+      per_page: 10,
+      page: 0,
+    })
+  })
+
+  it('includes sort but omits direction when only sort is set', async () => {
+    const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
+      results: [],
+      nextPage: null,
+    })
+
+    const config = {
+      direction: '',
+      orgSlug: 'sort-only-org',
+      page: 0,
+      perPage: 10,
+      sort: 'name',
+    }
+
+    await fetchListRepos(config)
+
+    expect(mockSdk.listRepositories).toHaveBeenCalledWith('sort-only-org', {
+      sort: 'name',
+      per_page: 10,
+      page: 0,
+    })
+  })
 })
