@@ -353,8 +353,20 @@ export const scanPrivateKeys = (text: string): LineHit[] => {
 }
 
 // ── npx/dlx scanner ────────────────────────────────────────────────
+//
+// Match `npx` / `pnpm dlx` / `yarn dlx` only when the token sits at a
+// command position — preceded by start-of-line / whitespace / shell
+// separator (`&&`, `||`, `;`, `|`, `(`, backtick), or directly after a
+// PowerShell `& ` invoke. Exclude JSON-key, env-value, and identifier
+// suffix contexts where `npx` shows up as an embedded substring:
+//   - `"socket-npx": …`            (bin-name suffix)
+//   - `"dev:npx": "…SOCKET_CLI_MODE=npx node …"` (script key + env value)
+//   - `cmd-npx-helper`             (identifier interior)
+// The negative lookbehind catches hyphen / colon / equals / underscore /
+// dot prefixes; the negative lookahead catches the same followed forms
+// (`npx-helper`, `npx:foo`).
 
-const NPX_DLX_RE = /\b(npx|pnpm dlx|yarn dlx)\b/
+const NPX_DLX_RE = /(?<![\w\-:=.])\b(npx|pnpm dlx|yarn dlx)\b(?![\w\-:=.])/
 
 // Suggest the canonical replacement for a runtime npx/dlx call.
 // Documentation contexts (comments, JSDoc) are exempt via
