@@ -106,5 +106,36 @@ describe('preflight downloads', () => {
       mockVitest.VITEST = true
     })
 
+    it('runs the full download chain when not in CI/vitest', async () => {
+      // Mock node:timers/promises sleep to resolve immediately so the test
+      // doesn't actually wait 4 seconds for the staggered delays.
+      vi.doMock('node:timers/promises', () => ({
+        setTimeout: () => Promise.resolve(),
+      }))
+      mockVitest.VITEST = false
+      mockGetCI.mockReturnValue(false)
+      mockDownloadPackage.mockResolvedValue(undefined)
+
+      const { runPreflightDownloads } = await import(
+        '../../../../src/utils/preflight/downloads.mts'
+      )
+      runPreflightDownloads()
+      // Allow the background closure to drain.
+      await new Promise(resolve => setImmediate(resolve))
+      await new Promise(resolve => setImmediate(resolve))
+      await new Promise(resolve => setImmediate(resolve))
+
+      // Coana + cdxgen should have been queued.
+      expect(mockDownloadPackage).toHaveBeenCalled()
+      const specs = mockDownloadPackage.mock.calls.map(
+        (c: any) => (c[0] as { package: string }).package,
+      )
+      expect(specs.some((s: string) => s.startsWith('@coana-tech/cli@'))).toBe(
+        true,
+      )
+
+      mockVitest.VITEST = true
+      vi.doUnmock('node:timers/promises')
+    })
   })
 })
