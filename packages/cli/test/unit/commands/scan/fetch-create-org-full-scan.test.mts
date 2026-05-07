@@ -316,4 +316,30 @@ describe('fetchCreateOrgFullScan', () => {
       )
     }
   })
+
+  it('omits repoName, scanType, and workspace when not provided', async () => {
+    const { mockSdk } = await setupSdkMockSuccess('createFullScan', {
+      id: 'scan-no-opts',
+    })
+    const { fetchCreateOrgFullScan } = await import(
+      '../../../../src/commands/scan/fetch-create-org-full-scan.mts'
+    )
+
+    const config = {
+      branchName: '',
+      commitHash: '',
+      commitMessage: '',
+      committers: '',
+      pullRequest: 0,
+      // No repoName, no scanType, no workspace.
+    }
+
+    await fetchCreateOrgFullScan(['/p/package.json'], 'my-org', config as any)
+
+    // Confirm the SDK was called WITHOUT those keys.
+    const callArgs = mockSdk.createFullScan.mock.calls[0]![2]
+    expect(callArgs.repo).toBeUndefined()
+    expect(callArgs.scan_type).toBeUndefined()
+    expect(callArgs.workspace).toBeUndefined()
+  })
 })
