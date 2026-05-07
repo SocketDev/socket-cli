@@ -202,6 +202,26 @@ describe('spawn-node', () => {
       const spawnCall = mockSpawn.mock.calls[0]
       expect(spawnCall[2].stdio).toEqual(['inherit', 'inherit', 'inherit', 'ipc'])
     })
+
+    it('keeps stdio array unchanged when ipc is already present', () => {
+      mockSpawn.mockReturnValue({ process: { send: vi.fn() } })
+
+      spawnNode(['script.js'], {
+        stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+      })
+
+      const spawnCall = mockSpawn.mock.calls[0]
+      expect(spawnCall[2].stdio).toEqual(['pipe', 'pipe', 'pipe', 'ipc'])
+    })
+
+    it('throws when spawned child process is missing the IPC send method', () => {
+      // Simulate a process without a send fn so assertHasSend throws.
+      mockSpawn.mockReturnValue({ process: {} })
+
+      expect(() => spawnNode(['script.js'])).toThrow(
+        /expected IPC channel on child process/,
+      )
+    })
   })
 
   describe('spawnNodeSync', () => {
