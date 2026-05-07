@@ -30,6 +30,7 @@ import {
   getTokenOrigin,
   levenshteinDistance,
   meowOrExit,
+  meowWithSubcommands,
   shouldAnimateHeader,
   shouldSuppressBanner,
   stripAnsi,
@@ -427,6 +428,167 @@ describe('meow-with-subcommands', () => {
       // in this simplified test, but we test the function exists.
       const command = getLastSeenCommand()
       expect(typeof command).toBe('string')
+    })
+  })
+
+  describe('meowWithSubcommands', () => {
+    it('runs the matching subcommand by name', async () => {
+      const runSpy = vi.fn(async () => undefined)
+      const subcommands = {
+        scan: {
+          description: 'scan',
+          run: runSpy,
+        },
+      }
+      await meowWithSubcommands({
+        name: 'app',
+        argv: ['scan', '--foo'],
+        importMeta: import.meta,
+        subcommands,
+      })
+      expect(runSpy).toHaveBeenCalledWith(
+        ['--foo'],
+        import.meta,
+        expect.objectContaining({ parentName: 'app' }),
+      )
+    })
+
+    it('resolves an alias to its target command', async () => {
+      const runSpy = vi.fn(async () => undefined)
+      const subcommands = {
+        scan: {
+          description: 'scan',
+          run: runSpy,
+        },
+      }
+      await meowWithSubcommands(
+        {
+          name: 'app',
+          argv: ['s', 'arg'],
+          importMeta: import.meta,
+          subcommands,
+        },
+        {
+          aliases: {
+            s: { argv: ['scan'], description: 'alias of scan' },
+          },
+        },
+      )
+      expect(runSpy).toHaveBeenCalledWith(
+        ['arg'],
+        import.meta,
+        expect.objectContaining({
+          parentName: 'app',
+          invokedAs: 's',
+        }),
+      )
+    })
+
+    it('uses defaultSub when first arg is unknown but defaultSub is set', async () => {
+      const runSpy = vi.fn(async () => undefined)
+      const subcommands = {
+        scan: {
+          description: 'scan',
+          run: runSpy,
+        },
+      }
+      await meowWithSubcommands(
+        {
+          name: 'app',
+          argv: ['unknown-arg'],
+          importMeta: import.meta,
+          subcommands,
+        },
+        { defaultSub: 'scan' },
+      )
+      expect(runSpy).toHaveBeenCalled()
+    })
+
+    it('reports a typo with a suggestion when command is unknown', async () => {
+      const runSpy = vi.fn(async () => undefined)
+      const subcommands = {
+        scan: {
+          description: 'scan',
+          run: runSpy,
+        },
+        login: {
+          description: 'login',
+          run: vi.fn(),
+        },
+      }
+      process.exitCode = undefined
+      await meowWithSubcommands({
+        name: 'app',
+        argv: ['scna'], // typo for "scan"
+        importMeta: import.meta,
+        subcommands,
+      })
+      expect(process.exitCode).toBe(2)
+      expect(runSpy).not.toHaveBeenCalled()
+      // Should have logged the suggestion.
+      const failCalls = mockLogger.fail.mock.calls.flat().join(' ')
+      expect(failCalls).toMatch(/scna/)
+      process.exitCode = undefined
+    })
+
+    it('reports an unknown command with no suggestion when none is close', async () => {
+      const runSpy = vi.fn(async () => undefined)
+      const subcommands = {
+        scan: {
+          description: 'scan',
+          run: runSpy,
+        },
+      }
+      process.exitCode = undefined
+      await meowWithSubcommands({
+        name: 'app',
+        argv: ['totally-different'],
+        importMeta: import.meta,
+        subcommands,
+      })
+      expect(process.exitCode).toBe(2)
+      expect(runSpy).not.toHaveBeenCalled()
+      process.exitCode = undefined
+    })
+
+    it('forwards purl-like arguments via package score shortcut', async () => {
+      // socket pkg:npm/lodash → calls itself recursively with [package, deep, ...]
+      const packageRun = vi.fn(async () => undefined)
+      const subcommands = {
+        package: {
+          description: 'package commands',
+          run: vi.fn(async (argv: any) => {
+            // Simulate package picking deep subcommand.
+            if (argv[0] === 'deep') {
+              packageRun(argv)
+            }
+          }),
+        },
+      }
+      await meowWithSubcommands({
+        name: 'socket',
+        argv: ['pkg:npm/lodash@4'],
+        importMeta: import.meta,
+        subcommands,
+      })
+      // The run for `package` should have been invoked.
+      expect(subcommands.package.run).toHaveBeenCalled()
+    })
+
+    it('forwards "ecosystem/package" shortcut via package score', async () => {
+      const subcommands = {
+        package: {
+          description: 'package commands',
+          run: vi.fn(async () => undefined),
+        },
+      }
+      await meowWithSubcommands({
+        name: 'socket',
+        argv: ['npm/lodash'],
+        importMeta: import.meta,
+        subcommands,
+      })
+      expect(subcommands.package.run).toHaveBeenCalled()
     })
   })
 })
