@@ -170,5 +170,135 @@ describe('sea/boot', () => {
       const result = await waitForBootstrapHandshake(100)
       expect(result).toBeUndefined()
     })
+
+    it('resolves with handshake data when message arrives', async () => {
+      // Stub process.channel + .on/.off so isSubprocess() reports true.
+      const handlers: Record<string, ((m: unknown) => void)[]> = {}
+      const fakeOn = vi.fn(
+        (event: string, handler: (m: unknown) => void) => {
+          ;(handlers[event] ??= []).push(handler)
+        },
+      )
+      const fakeOff = vi.fn(
+        (event: string, handler: (m: unknown) => void) => {
+          handlers[event] = (handlers[event] ?? []).filter(h => h !== handler)
+        },
+      )
+      const originalChannel = process.channel
+      const originalOn = process.on
+      const originalOff = process.off
+
+      Object.defineProperty(process, 'channel', {
+        value: {} as any,
+        writable: true,
+        configurable: true,
+      })
+      ;(process as any).on = fakeOn
+      ;(process as any).off = fakeOff
+
+      try {
+        const { waitForBootstrapHandshake } = await import(
+          '../../../../src/utils/sea/boot.mts'
+        )
+        const promise = waitForBootstrapHandshake(500)
+        // Schedule the message after the handler is registered.
+        await new Promise(resolve => setImmediate(resolve))
+        const msg = {
+          [SOCKET_IPC_HANDSHAKE]: { subprocess: true, parent_pid: 12345 },
+        }
+        for (const handler of handlers['message'] ?? []) {
+          handler(msg)
+        }
+        const result = await promise
+        expect(result).toEqual({ subprocess: true, parent_pid: 12345 })
+      } finally {
+        Object.defineProperty(process, 'channel', {
+          value: originalChannel,
+          writable: true,
+          configurable: true,
+        })
+        ;(process as any).on = originalOn
+        ;(process as any).off = originalOff
+      }
+    })
+
+    it('rejects on timeout when no message arrives', async () => {
+      const fakeOn = vi.fn()
+      const fakeOff = vi.fn()
+      const originalChannel = process.channel
+      const originalOn = process.on
+      const originalOff = process.off
+
+      Object.defineProperty(process, 'channel', {
+        value: {} as any,
+        writable: true,
+        configurable: true,
+      })
+      ;(process as any).on = fakeOn
+      ;(process as any).off = fakeOff
+
+      try {
+        const { waitForBootstrapHandshake } = await import(
+          '../../../../src/utils/sea/boot.mts'
+        )
+        await expect(waitForBootstrapHandshake(50)).rejects.toThrow(
+          /timeout/,
+        )
+      } finally {
+        Object.defineProperty(process, 'channel', {
+          value: originalChannel,
+          writable: true,
+          configurable: true,
+        })
+        ;(process as any).on = originalOn
+        ;(process as any).off = originalOff
+      }
+    })
+
+    it('ignores non-handshake messages', async () => {
+      const handlers: Record<string, ((m: unknown) => void)[]> = {}
+      const fakeOn = vi.fn(
+        (event: string, handler: (m: unknown) => void) => {
+          ;(handlers[event] ??= []).push(handler)
+        },
+      )
+      const fakeOff = vi.fn()
+      const originalChannel = process.channel
+      const originalOn = process.on
+      const originalOff = process.off
+
+      Object.defineProperty(process, 'channel', {
+        value: {} as any,
+        writable: true,
+        configurable: true,
+      })
+      ;(process as any).on = fakeOn
+      ;(process as any).off = fakeOff
+
+      try {
+        const { waitForBootstrapHandshake } = await import(
+          '../../../../src/utils/sea/boot.mts'
+        )
+        const promise = waitForBootstrapHandshake(50)
+        await new Promise(resolve => setImmediate(resolve))
+        // Send a few non-handshake messages to exercise early-returns.
+        for (const handler of handlers['message'] ?? []) {
+          handler(null)
+          handler('string')
+          handler({ unrelated: true })
+          handler({ [SOCKET_IPC_HANDSHAKE]: 'not-an-object' })
+          handler({ [SOCKET_IPC_HANDSHAKE]: { subprocess: false } })
+        }
+        await expect(promise).rejects.toThrow(/timeout/)
+      } finally {
+        Object.defineProperty(process, 'channel', {
+          value: originalChannel,
+          writable: true,
+          configurable: true,
+        })
+        ;(process as any).on = originalOn
+        ;(process as any).off = originalOff
+      }
+    })
   })
 })
