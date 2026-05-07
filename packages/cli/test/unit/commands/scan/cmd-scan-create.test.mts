@@ -1106,6 +1106,28 @@ describe('cmd-scan-create', () => {
           expect.stringContaining('DryRun'),
         )
       })
+
+      it('should include ecosystems in dry-run output when --reach-ecosystems set', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--reach',
+            '--reach-ecosystems',
+            'npm,pypi',
+            '--dry-run',
+            '.',
+          ],
+          importMeta,
+          context,
+        )
+
+        const errors = mockLogger.error.mock.calls.flat().join(' ')
+        expect(errors).toContain('ecosystems')
+        expect(errors).toContain('npm')
+      })
     })
 
     describe('reachability options', () => {
