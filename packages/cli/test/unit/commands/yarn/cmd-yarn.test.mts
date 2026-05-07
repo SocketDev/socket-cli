@@ -508,6 +508,17 @@ describe('cmd-yarn', () => {
         expect(mockProcessExit).toHaveBeenCalledWith(1)
       })
 
+      it('skips exit/kill when both code and signal are null', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
+        mockTrackSubprocessExit.mockResolvedValue(undefined)
+
+        await cmdYarn.run(['install', 'lodash'], importMeta, context)
+        exitHandler(null, null)
+        await new Promise(resolve => setTimeout(resolve, 10))
+        expect(mockProcessExit).not.toHaveBeenCalled()
+        expect(mockProcessKill).not.toHaveBeenCalled()
+      })
+
       it('should track subprocess exit with code', async () => {
         mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
         const startTime = 12345

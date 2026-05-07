@@ -495,6 +495,22 @@ describe('cmd-npm', () => {
         expect(mockProcessExit).toHaveBeenCalledWith(1)
       })
 
+      it('skips exit/kill when both code and signal are null', async () => {
+        mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
+        mockTrackSubprocessExit.mockResolvedValue(undefined)
+
+        await cmdNpm.run(['install', 'lodash'], importMeta, context)
+
+        // Invoke the exit handler with both null.
+        exitHandler(null, null)
+
+        // Wait for telemetry promise to resolve.
+        await new Promise(resolve => setTimeout(resolve, 10))
+
+        expect(mockProcessExit).not.toHaveBeenCalled()
+        expect(mockProcessKill).not.toHaveBeenCalled()
+      })
+
       it('should track subprocess exit with code', async () => {
         mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
         const startTime = 12345
