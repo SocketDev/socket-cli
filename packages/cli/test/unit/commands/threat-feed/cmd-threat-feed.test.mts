@@ -338,6 +338,28 @@ describe('cmd-threat-feed', () => {
       )
     })
 
+    it('throws InputError on negative --per-page', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+      await expect(
+        cmdThreatFeed.run(['--per-page', '-1'], importMeta, context),
+      ).rejects.toThrow(/--per-page must be a positive integer/)
+    })
+
+    it('warns about extra positional args beyond the recognized slots', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+      await cmdThreatFeed.run(
+        ['npm', 'lodash', 'extra-arg-1', 'extra-arg-2'],
+        importMeta,
+        context,
+      )
+
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        expect.stringContaining('excessive args'),
+      )
+    })
+
     it('should fail if both --json and --markdown are set', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
