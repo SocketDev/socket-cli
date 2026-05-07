@@ -162,7 +162,9 @@ export function trace(
 ): void {
   if (isTraceEnabled()) {
     const prefix = adapterName ? `${adapterName}:${verdict}` : verdict
-    process.stderr.write(`[scrub ${prefix}] ${line}\n`)
+    // Direct stderr write (not via logger) bypasses the routed noise
+    // stream so trace lines don't interleave with buffered scrubber output.
+    process.stderr.write(`[scrub ${prefix}] ${line}\n`) // socket-hook: allow logger
   }
 }
 

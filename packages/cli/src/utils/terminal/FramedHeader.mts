@@ -41,8 +41,8 @@ export async function renderFramedHeader(
 ): Promise<void> {
   const { animate = true, fps = 15, theme = 'default' } = props || {}
 
-  // Hide cursor.
-  process.stdout.write('\x1B[?25l')
+  // Hide cursor — raw ANSI escape, must hit stdout directly.
+  process.stdout.write('\x1B[?25l') // socket-hook: allow logger
 
   let frame = 0
   const frameDelay = 1000 / fps
@@ -52,8 +52,8 @@ export async function renderFramedHeader(
     const width = 40
     const framedLogo = drawBorder(logo, width)
 
-    // Move cursor to home and clear from cursor down.
-    process.stdout.write('\x1B[H\x1B[J')
+    // Move cursor home + clear from cursor down — raw ANSI, direct stdout.
+    process.stdout.write('\x1B[H\x1B[J') // socket-hook: allow logger
     logger.log(`\nTheme: ${theme} | Frame: ${frame}\n`)
     logger.log(framedLogo)
 
@@ -62,7 +62,8 @@ export async function renderFramedHeader(
 
   if (!animate) {
     renderFrame()
-    process.stdout.write('\x1B[?25h')
+    // Restore cursor — raw ANSI, direct stdout.
+    process.stdout.write('\x1B[?25h') // socket-hook: allow logger
     return
   }
 
@@ -71,7 +72,8 @@ export async function renderFramedHeader(
 
   const cleanup = () => {
     clearInterval(interval)
-    process.stdout.write('\x1B[?25h')
+    // Restore cursor — raw ANSI, direct stdout.
+    process.stdout.write('\x1B[?25h') // socket-hook: allow logger
   }
 
   // Handle cleanup on interrupt.

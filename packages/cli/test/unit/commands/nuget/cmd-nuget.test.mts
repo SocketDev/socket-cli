@@ -215,6 +215,47 @@ describe('cmd-nuget', () => {
       })
     })
 
+    it('skips exit/kill when both code and signal are null', async () => {
+      const mockChildProcess = new EventEmitter()
+      const mockSpawnPromise = Promise.resolve({
+        code: null,
+        signal: null,
+        stderr: Buffer.from(''),
+        stdout: Buffer.from(''),
+      })
+      ;(mockSpawnPromise as any).process = mockChildProcess
+
+      mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      mockFilterFlags.mockReturnValue([])
+
+      const mockExit = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => {}) as any)
+      mockExit.mockClear()
+      const mockKill = vi
+        .spyOn(process, 'kill')
+        .mockImplementation((() => {}) as any)
+      mockKill.mockClear()
+
+      cmdNuget.run([], { url: import.meta.url } as any, {
+        parentName: 'socket',
+      } as any)
+
+      await new Promise(resolve => setImmediate(resolve))
+      const exitBefore = mockExit.mock.calls.length
+      const killBefore = mockKill.mock.calls.length
+
+      mockChildProcess.emit('exit', null, null)
+
+      await new Promise(resolve => setImmediate(resolve))
+
+      expect(mockExit.mock.calls.length).toBe(exitBefore)
+      expect(mockKill.mock.calls.length).toBe(killBefore)
+
+      mockExit.mockRestore()
+      mockKill.mockRestore()
+    })
+
     it('should set default exit code to 1', async () => {
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
