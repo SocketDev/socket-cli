@@ -325,4 +325,61 @@ describe('handleOptimize', () => {
     expect(debug).toHaveBeenCalledWith('Applying optimization')
     expect(debug).toHaveBeenCalledWith('Optimization succeeded')
   })
+
+  it('falls back to exitCode 1 when pkgEnv result has no code', async () => {
+    const { detectAndValidatePackageEnvironment } = await import(
+      '../../../../src/utils/ecosystem/environment.mts'
+    )
+    const { applyOptimization } = await import(
+      '../../../../src/commands/optimize/apply-optimization.mts'
+    )
+
+    vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
+      ok: false,
+      // No code field
+      message: 'fail',
+    } as any)
+
+    await handleOptimize({
+      cwd: '/test',
+      outputKind: 'text',
+      pin: false,
+      prod: false,
+    })
+
+    expect(process.exitCode).toBe(1)
+    expect(applyOptimization).not.toHaveBeenCalled()
+  })
+
+  it('falls back to exitCode 1 when applyOptimization result has no code', async () => {
+    const { detectAndValidatePackageEnvironment } = await import(
+      '../../../../src/utils/ecosystem/environment.mts'
+    )
+    const { applyOptimization } = await import(
+      '../../../../src/commands/optimize/apply-optimization.mts'
+    )
+
+    vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
+      ok: true,
+      data: {
+        agent: 'npm',
+        agentVersion: '10.0.0',
+        manifestPath: '/p/package.json',
+        lockfilePath: '/p/package-lock.json',
+      },
+    } as any)
+    vi.mocked(applyOptimization).mockResolvedValue({
+      ok: false,
+      message: 'failed',
+    } as any)
+
+    await handleOptimize({
+      cwd: '/test',
+      outputKind: 'text',
+      pin: false,
+      prod: false,
+    })
+
+    expect(process.exitCode).toBe(1)
+  })
 })
