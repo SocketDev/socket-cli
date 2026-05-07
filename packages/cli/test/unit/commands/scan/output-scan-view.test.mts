@@ -202,6 +202,21 @@ describe('output-scan-view', () => {
         expect(mockWriteFile).toHaveBeenCalled()
       })
 
+      it('handles markdown file write errors', async () => {
+        mockWriteFile.mockRejectedValueOnce(new Error('disk full'))
+        const result: CResult<SocketArtifact[]> = {
+          ok: true,
+          data: mockArtifacts,
+        }
+
+        await outputScanView(result, 'my-org', 'scan-123', '/output.md', 'text')
+
+        expect(process.exitCode).toBe(1)
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining('error trying to write the markdown'),
+        )
+      })
+
       it('outputs error with fail message', async () => {
         const result: CResult<SocketArtifact[]> = {
           ok: false,
