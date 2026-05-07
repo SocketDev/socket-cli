@@ -37,7 +37,6 @@ import {
   resolvePyCli,
   resolveSfw,
   resolveSocketPatch,
-  resolveTrivy,
 } from './resolve-binary.mjs'
 
 import type { GitHubReleaseSpec } from './resolve-binary.mjs'
@@ -1658,69 +1657,11 @@ export async function spawnSocketPyCli(
  * In SEA mode, they're extracted from VFS. In npm CLI mode, they're downloaded from GitHub.
  */
 
-/**
- * Spawn Trivy via GitHub download (npm CLI mode).
- * Downloads from GitHub releases (aquasecurity/trivy).
- */
-export async function spawnTrivyDlx(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  const resolution = resolveTrivy()
-
-  if (resolution.type !== 'github-release') {
-    throw new Error(
-      `internal: resolveTrivy returned resolution.type="${resolution.type}" (expected "github-release"); this is a resolver contract bug — re-run with --debug and report the output`,
-    )
-  }
-
-  const { env: spawnEnv, ...dlxOptions } = {
-    __proto__: null,
-    ...options,
-  } as DlxOptions
-
-  const binaryPath = await downloadGitHubReleaseBinary(resolution.details)
-
-  const spawnPromise = spawn(binaryPath, args, {
-    ...dlxOptions,
-    env: {
-      ...process.env,
-      ...spawnEnv,
-    },
-    stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
-  })
-
-  return {
-    spawnPromise,
-  }
-}
-
-/**
- * Spawn Trivy from VFS (SEA mode).
- */
-export async function spawnTrivyVfs(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  return await spawnToolVfs('trivy', args, options, spawnExtra)
-}
-
-/**
- * Spawn Trivy.
- * Auto-detects SEA mode and uses appropriate spawn method.
- */
-export async function spawnTrivy(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  if (isSeaBinary() && areExternalToolsAvailable()) {
-    return await spawnTrivyVfs(args, options, spawnExtra)
-  }
-  return await spawnTrivyDlx(args, options, spawnExtra)
-}
+export {
+  spawnTrivy,
+  spawnTrivyDlx,
+  spawnTrivyVfs,
+} from './spawn-trivy.mts'
 
 /**
  * Spawn TruffleHog via GitHub download (npm CLI mode).
