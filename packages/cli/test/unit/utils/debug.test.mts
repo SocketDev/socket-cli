@@ -443,4 +443,109 @@ describe('debug utilities', () => {
       expect(debugNs).not.toHaveBeenCalled()
     })
   })
+
+  describe('sanitizeHeaders', () => {
+    it('redacts Authorization header', async () => {
+      const { sanitizeHeaders } = await import(
+        '../../../src/utils/debug.mts'
+      )
+      const result = sanitizeHeaders({
+        Authorization: 'Bearer secret-token',
+        'Content-Type': 'application/json',
+      })
+      expect(result['Authorization']).toBe('[REDACTED]')
+      expect(result['Content-Type']).toBe('application/json')
+    })
+
+    it('redacts api-key headers (case-insensitive)', async () => {
+      const { sanitizeHeaders } = await import(
+        '../../../src/utils/debug.mts'
+      )
+      const result = sanitizeHeaders({
+        'X-Api-Key': 'secret',
+        'x-custom-api-key': 'also-secret',
+        'Content-Length': '100',
+      })
+      expect(result['X-Api-Key']).toBe('[REDACTED]')
+      expect(result['x-custom-api-key']).toBe('[REDACTED]')
+      expect(result['Content-Length']).toBe('100')
+    })
+
+    it('preserves regular headers', async () => {
+      const { sanitizeHeaders } = await import(
+        '../../../src/utils/debug.mts'
+      )
+      const result = sanitizeHeaders({
+        Accept: 'application/json',
+        'User-Agent': 'socket-cli/1.0.0',
+      })
+      expect(result['Accept']).toBe('application/json')
+      expect(result['User-Agent']).toBe('socket-cli/1.0.0')
+    })
+  })
+
+  describe('buildApiDebugDetails', () => {
+    it('returns base details only when requestInfo is missing', async () => {
+      const { buildApiDebugDetails } = await import(
+        '../../../src/utils/debug.mts'
+      )
+      const result = buildApiDebugDetails({ endpoint: '/x', status: 500 })
+      expect(result['endpoint']).toBe('/x')
+      expect(result['status']).toBe(500)
+    })
+
+    it('threads requestInfo fields into details', async () => {
+      const { buildApiDebugDetails } = await import(
+        '../../../src/utils/debug.mts'
+      )
+      const result = buildApiDebugDetails(
+        { endpoint: '/x' },
+        {
+          method: 'GET',
+          url: 'https://api.x.com/x',
+          durationMs: 250,
+          requestedAt: '2026-04-18T00:00:00.000Z',
+          headers: { Authorization: 'Bearer secret' },
+          responseHeaders: { 'cf-ray': 'ray-123' },
+          responseBody: '{"ok":true}',
+        },
+      )
+      expect(result['method']).toBe('GET')
+      expect(result['url']).toBe('https://api.x.com/x')
+      expect(result['durationMs']).toBe(250)
+      expect(result['requestedAt']).toBe('2026-04-18T00:00:00.000Z')
+      expect((result['headers'] as any)?.Authorization).toBe('[REDACTED]')
+      expect(result['cfRay']).toBe('ray-123')
+      expect(result['responseBody']).toBe('{"ok":true}')
+    })
+
+    it('truncates oversize response bodies', async () => {
+      const { buildApiDebugDetails } = await import(
+        '../../../src/utils/debug.mts'
+      )
+      const big = 'x'.repeat(5000)
+      const result = buildApiDebugDetails(
+        { endpoint: '/big' },
+        { method: 'GET', url: '/big', responseBody: big },
+      )
+      expect((result['responseBody'] as string)).toMatch(
+        /…\s\(truncated, 5000 chars\)$/,
+      )
+    })
+
+    it('handles CF-Ray header casing variations', async () => {
+      const { buildApiDebugDetails } = await import(
+        '../../../src/utils/debug.mts'
+      )
+      const result = buildApiDebugDetails(
+        { endpoint: '/x' },
+        {
+          method: 'GET',
+          url: '/x',
+          responseHeaders: { 'CF-Ray': 'upper-case' },
+        },
+      )
+      expect(result['cfRay']).toBe('upper-case')
+    })
+  })
 })
