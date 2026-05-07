@@ -37,6 +37,10 @@ const mockGetVisibleTokenPrefix = vi.hoisted(() => vi.fn(() => 'test'))
 const mockSocketPackageLink = vi.hoisted(() => vi.fn(pkg => pkg))
 
 vi.mock('../../../../src/meow.mts', () => ({
+  // Identity helper used by flags.mts (commonFlags / outputFlags /
+  // validationFlags) and by per-command flag blocks. Test mock just
+  // returns the schema unchanged.
+  defineFlags: <T>(flags: T): T => flags,
   default: vi.fn((helpText, options) => {
     // Simulate meow processing flags with defaults.
     const argv = options?.argv || []

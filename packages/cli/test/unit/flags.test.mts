@@ -31,7 +31,9 @@ const mockValues = vi.hoisted(() => ({
   totalMem: 8 * 1024 * 1024 * 1024, // 8GB default.
 }))
 
-// Mock meow to return controlled flag values.
+// Mock meow to return controlled flag values. defineFlags is re-exported
+// as the identity helper since flags.mts uses it to declare commonFlags
+// / outputFlags / validationFlags.
 vi.mock('../../src/meow.mts', () => ({
   default: vi.fn(() => ({
     flags: {
@@ -39,6 +41,7 @@ vi.mock('../../src/meow.mts', () => ({
       maxSemiSpaceSize: mockValues.maxSemiSpaceSize,
     },
   })),
+  defineFlags: <T>(flags: T): T => flags,
 }))
 
 // Mock node:os to control total memory.
