@@ -351,6 +351,57 @@ describe('meow', () => {
     })
   })
 
+  describe('auto help/version', () => {
+    it('auto-shows version when only --version is in argv and autoVersion is on', () => {
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {
+        throw new Error('exit')
+      }) as never)
+
+      try {
+        expect(() =>
+          meow({
+            argv: ['--version'],
+            flags: { version: { type: 'boolean' } },
+            importMeta: { url: 'file:///x.js' } as ImportMeta,
+            autoVersion: true,
+          }),
+        ).toThrow('exit')
+      } finally {
+        mockExit.mockRestore()
+      }
+    })
+
+    it('auto-shows help when only --help is in argv and autoHelp is on', () => {
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {
+        throw new Error('exit')
+      }) as never)
+
+      try {
+        expect(() =>
+          meow({
+            argv: ['--help'],
+            flags: { help: { type: 'boolean' } },
+            importMeta: { url: 'file:///x.js' } as ImportMeta,
+            autoHelp: true,
+          }),
+        ).toThrow('exit')
+      } finally {
+        mockExit.mockRestore()
+      }
+    })
+
+    it('does not auto-show when autoVersion / autoHelp are off', () => {
+      const result = meow({
+        argv: ['--version'],
+        flags: { version: { type: 'boolean' } },
+        importMeta: { url: 'file:///x.js' } as ImportMeta,
+        autoVersion: false,
+        autoHelp: false,
+      })
+      expect((result.flags as any).version).toBe(true)
+    })
+  })
+
   describe('multiple flags', () => {
     it('handles isMultiple flag option', () => {
       const result = meow({
