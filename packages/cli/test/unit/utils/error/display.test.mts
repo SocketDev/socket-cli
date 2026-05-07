@@ -379,6 +379,14 @@ describe('error/display', () => {
       expect(result).toContain('Error output')
       expect(result).toContain('Package not found')
     })
+
+    it('exercises the verbose debug branch (lines 287-288)', () => {
+      // Pass verbose: true so the debugNs/debugDirNs branch fires.
+      const error = new Error('Verbose error')
+      const result = formatExternalCliError('cmd', error, { verbose: true })
+      expect(result).toContain('cmd')
+      expect(result).toContain('Verbose error')
+    })
   })
 
   describe('formatWarning', () => {
