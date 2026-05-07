@@ -136,8 +136,8 @@ describe('setup-scan-config', () => {
         .mockResolvedValueOnce('') // empty repo => deletes config.repo
         .mockResolvedValueOnce('') // empty workspace
         .mockResolvedValueOnce('') // empty branch
-      // autoManifest select.
-      mockSelect.mockResolvedValueOnce('')
+      // autoManifest + alwaysReport selects.
+      mockSelect.mockResolvedValueOnce('').mockResolvedValueOnce('')
       const config: any = { repo: 'old-repo', workspace: 'old-ws', branch: 'old-br' }
       const result = await configureScan(config, '/cwd')
       expect(result.ok).toBe(true)
@@ -151,7 +151,7 @@ describe('setup-scan-config', () => {
         .mockResolvedValueOnce('new-repo')
         .mockResolvedValueOnce('new-ws')
         .mockResolvedValueOnce('new-branch')
-      mockSelect.mockResolvedValueOnce('yes')
+      mockSelect.mockResolvedValueOnce('yes').mockResolvedValueOnce('yes')
       const config: any = {}
       const result = await configureScan(config, '/cwd')
       expect(result.ok).toBe(true)
@@ -159,6 +159,7 @@ describe('setup-scan-config', () => {
       expect(config.workspace).toBe('new-ws')
       expect(config.branch).toBe('new-branch')
       expect(config.autoManifest).toBe(true)
+      expect(config.report).toBe(true)
     })
 
     it('cancels when autoManifest selector returns undefined', async () => {
@@ -172,12 +173,61 @@ describe('setup-scan-config', () => {
       expect(result).toEqual({ ok: true, data: { canceled: true } })
     })
 
+    it('cancels when alwaysReport selector returns undefined', async () => {
+      mockInput
+        .mockResolvedValueOnce('repo')
+        .mockResolvedValueOnce('ws')
+        .mockResolvedValueOnce('branch')
+      mockSelect
+        .mockResolvedValueOnce('') // autoManifest default
+        .mockResolvedValueOnce(undefined) // alwaysReport canceled
+      const config: any = {}
+      const result = await configureScan(config, '/cwd')
+      expect(result).toEqual({ ok: true, data: { canceled: true } })
+    })
+
+    it('sets report=true when user picks alwaysReport=yes', async () => {
+      mockInput
+        .mockResolvedValueOnce('r')
+        .mockResolvedValueOnce('w')
+        .mockResolvedValueOnce('b')
+      mockSelect.mockResolvedValueOnce('').mockResolvedValueOnce('yes')
+      const config: any = {}
+      const result = await configureScan(config, '/cwd')
+      expect(result.ok).toBe(true)
+      expect(config.report).toBe(true)
+    })
+
+    it('sets report=false when user picks alwaysReport=no', async () => {
+      mockInput
+        .mockResolvedValueOnce('r')
+        .mockResolvedValueOnce('w')
+        .mockResolvedValueOnce('b')
+      mockSelect.mockResolvedValueOnce('').mockResolvedValueOnce('no')
+      const config: any = {}
+      const result = await configureScan(config, '/cwd')
+      expect(result.ok).toBe(true)
+      expect(config.report).toBe(false)
+    })
+
+    it('deletes report when user picks alwaysReport=empty', async () => {
+      mockInput
+        .mockResolvedValueOnce('r')
+        .mockResolvedValueOnce('w')
+        .mockResolvedValueOnce('b')
+      mockSelect.mockResolvedValueOnce('').mockResolvedValueOnce('')
+      const config: any = { report: true }
+      const result = await configureScan(config, '/cwd')
+      expect(result.ok).toBe(true)
+      expect(config.report).toBeUndefined()
+    })
+
     it('sets autoManifest to false when user picks "no"', async () => {
       mockInput
         .mockResolvedValueOnce('r')
         .mockResolvedValueOnce('w')
         .mockResolvedValueOnce('b')
-      mockSelect.mockResolvedValueOnce('no')
+      mockSelect.mockResolvedValueOnce('no').mockResolvedValueOnce('')
       const config: any = {}
       const result = await configureScan(config, '/cwd')
       expect(result.ok).toBe(true)
@@ -189,7 +239,7 @@ describe('setup-scan-config', () => {
         .mockResolvedValueOnce('r')
         .mockResolvedValueOnce('w')
         .mockResolvedValueOnce('b')
-      mockSelect.mockResolvedValueOnce('')
+      mockSelect.mockResolvedValueOnce('').mockResolvedValueOnce('')
       const config: any = { autoManifest: true }
       const result = await configureScan(config, '/cwd')
       expect(result.ok).toBe(true)
@@ -324,6 +374,58 @@ describe('setup-scan-config', () => {
       await setupScanConfig('/cwd')
       const infoMsg = mockLogger.info.mock.calls.flat().join(' ')
       expect(infoMsg).toContain('Found')
+    })
+
+    it('runs configureGithub when user picks "github" target', async () => {
+      mockSelect
+        .mockResolvedValueOnce('github') // target
+        .mockResolvedValueOnce('yes') // --all yes
+        .mockResolvedValueOnce(true) // write yes
+      mockInput
+        .mockResolvedValueOnce('') // githubApiUrl
+        .mockResolvedValueOnce('') // orgGithub
+      const result = await setupScanConfig('/cwd')
+      expect(result.ok).toBe(true)
+      expect(mockWriteSocketJson).toHaveBeenCalled()
+    })
+
+    it('runs configureScan and writes when user picks "create" target + writes yes', async () => {
+      mockSelect
+        .mockResolvedValueOnce('create') // target
+        .mockResolvedValueOnce('') // autoManifest default
+        .mockResolvedValueOnce('') // alwaysReport default
+        .mockResolvedValueOnce(true) // write yes
+      mockInput
+        .mockResolvedValueOnce('repo') // repo
+        .mockResolvedValueOnce('ws') // workspace
+        .mockResolvedValueOnce('br') // branch
+      const result = await setupScanConfig('/cwd')
+      expect(result.ok).toBe(true)
+      expect(mockWriteSocketJson).toHaveBeenCalled()
+    })
+
+    it('cancels at write-config prompt when user picks "no"', async () => {
+      mockSelect
+        .mockResolvedValueOnce('create')
+        .mockResolvedValueOnce('') // autoManifest
+        .mockResolvedValueOnce('') // alwaysReport
+        .mockResolvedValueOnce(false) // do not write
+      mockInput
+        .mockResolvedValueOnce('repo')
+        .mockResolvedValueOnce('ws')
+        .mockResolvedValueOnce('br')
+      const result = await setupScanConfig('/cwd')
+      expect(result).toEqual({ ok: true, data: { canceled: true } })
+    })
+
+    it('returns canceled when configureScan canceled mid-flow', async () => {
+      mockSelect.mockResolvedValueOnce('create')
+      // Cancel inside configureScan at the very first prompt.
+      mockInput.mockResolvedValueOnce(undefined)
+      const result = await setupScanConfig('/cwd')
+      expect(result).toEqual({ ok: true, data: { canceled: true } })
+      // Should NOT have proceeded to write prompt.
+      expect(mockWriteSocketJson).not.toHaveBeenCalled()
     })
   })
 })
