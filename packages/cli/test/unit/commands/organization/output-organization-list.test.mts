@@ -232,6 +232,28 @@ describe('output-organization-list', () => {
         // Should not throw and should include the row.
         expect(logs).toContain('longer-id-string')
       })
+
+      it('falls back for empty id and empty plan in markdown row', async () => {
+        const result: OrganizationsCResult = {
+          ok: true,
+          data: {
+            organizations: [
+              {
+                // All three falsy → exercise all three `|| ''` branches.
+                id: '' as any,
+                name: '' as any,
+                slug: '',
+                plan: '' as any,
+              },
+            ],
+          },
+        }
+
+        await outputOrganizationList(result, 'markdown')
+
+        // Row should still log without throwing.
+        expect(mockLogger.log).toHaveBeenCalled()
+      })
     })
   })
 })
