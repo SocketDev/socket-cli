@@ -32,7 +32,6 @@ import { spawn } from '@socketsecurity/lib/spawn'
 import { whichReal } from '@socketsecurity/lib/bin'
 
 import {
-  resolveCoana,
   resolvePyCli,
 } from './resolve-binary.mjs'
 
@@ -46,8 +45,6 @@ import {
   extractBasicsTools,
   getBasicsToolPaths,
 } from '../basics/vfs-extract.mts'
-import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
-import { getCliVersion } from '../../env/cli-version.mts'
 import { getPyCliChecksums } from '../../env/pycli-checksums.mts'
 import { getPyCliVersion } from '../../env/pycli-version.mts'
 import { getPythonBuildTag } from '../../env/python-build-tag.mts'
@@ -58,7 +55,6 @@ import { getErrorCause, InputError } from '../error/errors.mts'
 import { isSeaBinary } from '../sea/detect.mts'
 import { socketHttpRequest } from '../socket/api.mjs'
 import { spawnNode } from '../spawn/spawn-node.mjs'
-import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
 
 import type { IpcObject } from '../ipc.mts'
 import type { CResult } from '../../types.mjs'
@@ -322,114 +318,7 @@ export async function downloadGitHubReleaseBinary(
  * If SOCKET_CLI_COANA_LOCAL_PATH environment variable is set, uses the local
  * Coana CLI at that path instead of downloading from npm.
  */
-export async function spawnCoanaDlx(
-  args: string[] | readonly string[],
-  orgSlug?: string,
-  options?: CoanaDlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<CResult<string>> {
-  const {
-    coanaVersion,
-    env: spawnEnv,
-    ...dlxOptions
-  } = {
-    __proto__: null,
-    ...options,
-  } as CoanaDlxOptions
-
-  const mixinsEnv: Record<string, string> = {
-    SOCKET_CLI_VERSION: getCliVersion(),
-  }
-  const defaultApiToken = getDefaultApiToken()
-  if (defaultApiToken) {
-    mixinsEnv['SOCKET_CLI_API_TOKEN'] = defaultApiToken
-  }
-
-  if (orgSlug) {
-    mixinsEnv['SOCKET_ORG_SLUG'] = orgSlug
-  } else {
-    const orgSlugCResult = await getDefaultOrgSlug()
-    if (orgSlugCResult.ok) {
-      mixinsEnv['SOCKET_ORG_SLUG'] = orgSlugCResult.data
-    }
-  }
-
-  const proxyUrl = getDefaultProxyUrl()
-  if (proxyUrl) {
-    mixinsEnv['SOCKET_CLI_API_PROXY'] = proxyUrl
-  }
-
-  try {
-    const resolution = resolveCoana()
-
-    // Use local Coana CLI if available.
-    if (resolution.type === 'local') {
-      const detection = detectExecutableType(resolution.path)
-
-      const finalEnv = {
-        ...process.env,
-        ...mixinsEnv,
-        ...spawnEnv,
-      }
-
-      const spawnArgs =
-        detection.type === 'binary' ? args : [resolution.path, ...args]
-      const spawnCommand =
-        detection.type === 'binary' ? resolution.path : 'node'
-
-      const spawnPromise = spawn(spawnCommand, spawnArgs, {
-        ...dlxOptions,
-        env: finalEnv,
-        stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
-      })
-
-      const output = await spawnPromise
-
-      return {
-        ok: true,
-        data: output.stdout?.toString() ?? '',
-      }
-    }
-
-    // Use dlx version (resolveCoana only returns 'local' or 'dlx' types).
-    if (resolution.type !== 'dlx') {
-      throw new Error(
-        `internal: resolveCoana returned resolution.type="${resolution.type}" (expected "dlx"); this is a resolver contract bug — re-run with --debug and report the output`,
-      )
-    }
-    const result = await spawnDlx(
-      {
-        ...resolution.details,
-        version: coanaVersion || resolution.details.version,
-      },
-      args,
-      {
-        force: true,
-        ...dlxOptions,
-        env: {
-          ...process.env,
-          ...mixinsEnv,
-          ...spawnEnv,
-        },
-      },
-      spawnExtra,
-    )
-    const output = await result.spawnPromise
-    return {
-      ok: true,
-      data: output.stdout?.toString() ?? '',
-    }
-  } catch (e) {
-    const stderr = (e as any)?.stderr
-    const cause = getErrorCause(e)
-    const message = stderr || cause
-    return {
-      ok: false,
-      data: e,
-      message,
-    }
-  }
-}
+export { spawnCoanaDlx } from './spawn-coana.mts'
 
 export { spawnCdxgenDlx } from './spawn-cdxgen.mts'
 
@@ -508,73 +397,7 @@ export { spawnSfwVfs } from './spawn-sfw.mts'
 
 export { spawnCdxgenVfs } from './spawn-cdxgen.mts'
 
-/**
- * Helper to spawn Coana from VFS.
- * Used when running in SEA mode.
- */
-export async function spawnCoanaVfs(
-  args: string[] | readonly string[],
-  options?: CoanaDlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<CResult<string>> {
-  const {
-    coanaVersion,
-    env: spawnEnv,
-    ...dlxOptions
-  } = {
-    __proto__: null,
-    ...options,
-  } as CoanaDlxOptions
-
-  const mixinsEnv: Record<string, string> = {
-    SOCKET_CLI_VERSION: getCliVersion(),
-  }
-  const defaultApiToken = getDefaultApiToken()
-  if (defaultApiToken) {
-    mixinsEnv['SOCKET_CLI_API_TOKEN'] = defaultApiToken
-  }
-
-  const orgSlugCResult = await getDefaultOrgSlug()
-  if (orgSlugCResult.ok) {
-    mixinsEnv['SOCKET_ORG_SLUG'] = orgSlugCResult.data
-  }
-
-  const proxyUrl = getDefaultProxyUrl()
-  if (proxyUrl) {
-    mixinsEnv['SOCKET_CLI_API_PROXY'] = proxyUrl
-  }
-
-  try {
-    const result = await spawnToolVfs(
-      'coana',
-      args,
-      {
-        ...dlxOptions,
-        env: {
-          ...process.env,
-          ...mixinsEnv,
-          ...spawnEnv,
-        },
-      },
-      spawnExtra,
-    )
-
-    const output = await result.spawnPromise
-    return {
-      ok: true,
-      data: output.stdout?.toString() ?? '',
-    }
-  } catch (e) {
-    const stderr = (e as any)?.stderr
-    const cause = getErrorCause(e)
-    const message = stderr || cause
-    return {
-      ok: false,
-      data: e,
-      message,
-    }
-  }
-}
+export { spawnCoanaVfs } from './spawn-coana.mts'
 
 export { spawnSocketPatchVfs } from './spawn-socket-patch.mts'
 
@@ -588,21 +411,7 @@ export { spawnSfw } from './spawn-sfw.mts'
 
 export { spawnCdxgen } from './spawn-cdxgen.mts'
 
-/**
- * Spawn Coana CLI.
- * Auto-detects SEA mode and uses appropriate spawn method.
- */
-export async function spawnCoana(
-  args: string[] | readonly string[],
-  orgSlug?: string,
-  options?: CoanaDlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<CResult<string>> {
-  if (isSeaBinary() && areExternalToolsAvailable()) {
-    return await spawnCoanaVfs(args, options, spawnExtra)
-  }
-  return await spawnCoanaDlx(args, orgSlug, options, spawnExtra)
-}
+export { spawnCoana } from './spawn-coana.mts'
 
 export { spawnSocketPatch } from './spawn-socket-patch.mts'
 
