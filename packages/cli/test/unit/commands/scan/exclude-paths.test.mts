@@ -98,6 +98,16 @@ describe('exclude-paths', () => {
         ),
       ).toEqual([])
     })
+
+    it('passes ** through verbatim from expandReachExcludePath', () => {
+      // Path that exactly equals target → translates to '**'.
+      expect(
+        projectIgnorePathsToReachExcludePaths(['apps/api'], {
+          cwd: '/repo',
+          target: 'apps/api',
+        }),
+      ).toEqual(['**'])
+    })
   })
 
   describe('applyFullExcludePaths', () => {
