@@ -87,6 +87,26 @@ describe('cmd-manifest-kotlin', () => {
       )
     })
 
+    it('forwards --bin and --gradle-opts in the dry-run preview args', async () => {
+      await cmdManifestKotlin.run(
+        [
+          '--dry-run',
+          '.',
+          '--bin',
+          '/custom/gradlew',
+          '--gradle-opts',
+          '--info --stacktrace',
+        ],
+        importMeta,
+        context,
+      )
+
+      expect(mockConvertGradleToMaven).not.toHaveBeenCalled()
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('DryRun'),
+      )
+    })
+
     it('should call convertGradleToMaven with correct default parameters', async () => {
       await cmdManifestKotlin.run(['.'], importMeta, context)
 
@@ -257,6 +277,30 @@ describe('cmd-manifest-kotlin', () => {
           bin: '/cli/gradlew',
           verbose: true,
         }),
+      )
+    })
+
+    it('uses socket.json verbose default when --verbose is not passed', async () => {
+      mockReadOrDefaultSocketJson.mockReturnValueOnce({
+        defaults: {
+          manifest: {
+            gradle: {
+              verbose: true,
+            },
+          },
+        },
+      })
+
+      await cmdManifestKotlin.run(['.'], importMeta, context)
+
+      expect(mockConvertGradleToMaven).toHaveBeenCalledWith(
+        expect.objectContaining({
+          verbose: true,
+        }),
+      )
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        expect.stringContaining('Using default --verbose'),
+        true,
       )
     })
   })
