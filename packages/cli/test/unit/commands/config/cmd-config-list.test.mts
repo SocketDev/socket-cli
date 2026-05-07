@@ -67,6 +67,14 @@ describe('cmd-config-list', () => {
       )
     })
 
+    it('shows "yes" for showFullTokens in dry-run when --full is set', async () => {
+      await cmdConfigList.run(['--dry-run', '--full'], importMeta, context)
+
+      expect(mockOutputConfigList).not.toHaveBeenCalled()
+      const errors = mockLogger.error.mock.calls.flat().join(' ')
+      expect(errors).toContain('yes')
+    })
+
     it('should call outputConfigList with default options', async () => {
       await cmdConfigList.run([], importMeta, context)
 
