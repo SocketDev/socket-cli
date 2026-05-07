@@ -51,7 +51,7 @@ import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 // Cache git executable path
 let _gitPath: string | null = null
 
-async function getGitPath(): Promise<string> {
+export async function getGitPath(): Promise<string> {
   if (!_gitPath) {
     const result = await whichReal('git', { nothrow: true })
     if (!result || Array.isArray(result)) {

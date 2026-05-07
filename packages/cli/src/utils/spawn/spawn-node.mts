@@ -39,7 +39,7 @@ import type {
  * The typeof-on-a-property guard can't flow to the parent object, so
  * we need an explicit assertion function.
  */
-function assertHasSend<T extends { send?: unknown }>(
+export function assertHasSend<T extends { send?: unknown }>(
   proc: T,
 ): asserts proc is T & { send: (message: unknown) => void } {
   if (typeof proc.send !== 'function') {
@@ -53,7 +53,7 @@ function assertHasSend<T extends { send?: unknown }>(
  * Ensures stdio configuration includes IPC channel for process communication.
  * Converts various stdio formats to include 'ipc' as the fourth element.
  */
-function ensureIpcInStdio(stdio: StdioOptions | undefined): StdioOptions {
+export function ensureIpcInStdio(stdio: StdioOptions | undefined): StdioOptions {
   if (typeof stdio === 'string') {
     return [stdio, stdio, stdio, 'ipc']
   }

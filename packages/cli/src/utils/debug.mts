@@ -52,7 +52,7 @@ const RESPONSE_BODY_TRUNCATE_LENGTH = 2_000
  *
  * Callers must gate truthy — passing an empty/undefined map skips the loop.
  */
-function sanitizeHeaders(
+export function sanitizeHeaders(
   headers: Record<string, string>,
 ): Record<string, string> {
   const sanitized: Record<string, string> = Object.create(null)
@@ -90,7 +90,7 @@ export function debugApiRequest(
  * branches of `debugApiResponse`. Extracted so both paths log the same
  * shape.
  */
-function buildApiDebugDetails(
+export function buildApiDebugDetails(
   base: Record<string, unknown>,
   requestInfo?: ApiRequestDebugInfo | undefined,
 ): Record<string, unknown> {

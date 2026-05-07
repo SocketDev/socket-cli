@@ -8,7 +8,7 @@ import { SOCKET_DEFAULT_REPOSITORY } from '../constants/socket.mts'
  * @param name - The name to sanitize
  * @returns Sanitized name that complies with repository naming rules, or empty string if no valid characters
  */
-function sanitizeName(name: string): string {
+export function sanitizeName(name: string): string {
   if (!name) {
     return ''
   }

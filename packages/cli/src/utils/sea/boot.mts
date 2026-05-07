@@ -83,7 +83,7 @@ export function getBootstrapExecPath(preferSystemNode = true): string {
  * Find system Node.js binary in PATH (excluding the current SEA binary).
  * Returns undefined if not found or if we are not a SEA binary.
  */
-function findSystemNodejs(): string | undefined {
+export function findSystemNodejs(): string | undefined {
   return undefined
 }
 

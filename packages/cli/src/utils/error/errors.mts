@@ -353,7 +353,7 @@ export function formatErrorWithDetail(
  * Calculate similarity ratio between two strings using word overlap.
  * Returns a value between 0 (no overlap) and 1 (identical).
  */
-function calculateStringSimilarity(str1: string, str2: string): number {
+export function calculateStringSimilarity(str1: string, str2: string): number {
   if (str1 === str2) {
     return 1
   }

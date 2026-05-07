@@ -241,7 +241,7 @@ const TOOLS: Record<string, ToolRules> = {
   },
 }
 
-function mergeEnv(
+export function mergeEnv(
   base: NodeJS.ProcessEnv | undefined,
   overrides: NodeJS.ProcessEnv,
 ): NodeJS.ProcessEnv {

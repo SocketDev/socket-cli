@@ -86,7 +86,7 @@ export async function socketHttpRequest(
 // `text()` can throw (e.g. already consumed, malformed body), which
 // would blow past the `ok: false` CResult return and break the
 // error-handling contract of callers like `queryApiSafeText`.
-function tryReadResponseText(result: HttpResponse): string | undefined {
+export function tryReadResponseText(result: HttpResponse): string | undefined {
   try {
     return result.text?.()
   } catch {
@@ -102,7 +102,7 @@ export type CommandRequirements = {
 /**
  * Get command requirements from requirements.json based on command path.
  */
-function getCommandRequirements(
+export function getCommandRequirements(
   cmdPath?: string | undefined,
 ): CommandRequirements | undefined {
   if (!cmdPath) {
