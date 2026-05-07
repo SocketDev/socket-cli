@@ -358,4 +358,87 @@ describe('outputLicensePolicy', () => {
 
     expect(process.exitCode).toBe(1)
   })
+
+  it('falls back to exitCode 1 when result has no code field', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      info: vi.fn(),
+      log: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+      logger: mockLogger,
+    }))
+    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+      serializeResultJson: mockSerializeResultJson,
+    }))
+
+    const { outputLicensePolicy } =
+      await import('../../../../src/commands/organization/output-license-policy.mts')
+
+    // Manually construct error result without `code` to exercise `?? 1`.
+    const result = {
+      ok: false as const,
+      message: 'No code',
+      cause: 'no code',
+    }
+
+    process.exitCode = undefined
+    await outputLicensePolicy(result as any, 'json')
+
+    expect(process.exitCode).toBe(1)
+  })
+
+  it('handles license policy with non-allowed entries (no for value)', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      info: vi.fn(),
+      log: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockMdHeader = vi.fn(text => `# ${text}`)
+    const mockMdTableOfPairs = vi.fn(
+      (pairs: Array<[string, string]>, header: string[]) =>
+        `${header.join(' | ')}\n${pairs.map(p => p.join(' | ')).join('\n')}`,
+    )
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+      logger: mockLogger,
+    }))
+    vi.doMock('../../../../src/utils/output/markdown.mts', () => ({
+      mdHeader: mockMdHeader,
+      mdTableOfPairs: mockMdTableOfPairs,
+    }))
+
+    const { outputLicensePolicy } =
+      await import('../../../../src/commands/organization/output-license-policy.mts')
+
+    const result = createSuccessResult({
+      license_policy: {
+        MIT: { allowed: true },
+        GPL: { allowed: false },
+        // Entry without an `allowed` field — exercises the falsy branch on line 37.
+        CUSTOM: {},
+      },
+    })
+
+    process.exitCode = undefined
+    await outputLicensePolicy(result as any, 'text')
+
+    expect(mockMdTableOfPairs).toHaveBeenCalled()
+    // mockMdTableOfPairs is called with sorted pairs.
+    const sortedPairs = mockMdTableOfPairs.mock.calls[0]![0] as Array<
+      [string, string]
+    >
+    const customPair = sortedPairs.find(p => p[0] === 'CUSTOM')
+    expect(customPair?.[1]).toBe(' no')
+  })
 })

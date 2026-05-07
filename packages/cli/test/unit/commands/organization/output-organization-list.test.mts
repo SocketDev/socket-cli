@@ -194,6 +194,44 @@ describe('output-organization-list', () => {
         expect(logs).toContain('ID:')
         expect(logs).toContain('Plan:')
       })
+
+      it('renders "undefined" placeholder for missing name in text mode', async () => {
+        const result: OrganizationsCResult = {
+          ok: true,
+          data: {
+            organizations: [
+              { id: 'x', name: undefined as any, slug: 'x', plan: 'free' },
+            ],
+          },
+        }
+
+        await outputOrganizationList(result, 'text')
+
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+        expect(logs).toContain('undefined')
+      })
+
+      it('renders empty padding for missing name in markdown mode', async () => {
+        const result: OrganizationsCResult = {
+          ok: true,
+          data: {
+            organizations: [
+              {
+                id: 'longer-id-string',
+                name: undefined as any,
+                slug: 'x',
+                plan: 'free',
+              },
+            ],
+          },
+        }
+
+        await outputOrganizationList(result, 'markdown')
+
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+        // Should not throw and should include the row.
+        expect(logs).toContain('longer-id-string')
+      })
     })
   })
 })

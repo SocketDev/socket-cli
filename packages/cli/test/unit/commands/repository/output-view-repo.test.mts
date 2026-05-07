@@ -384,4 +384,39 @@ describe('outputViewRepo', () => {
 
     expect(process.exitCode).toBe(1)
   })
+
+  it('falls back to exitCode 1 when result.code is undefined', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('../../../../src/utils/output/result-json.mts', () => ({
+      serializeResultJson: mockSerializeResultJson,
+    }))
+
+    const { outputViewRepo } =
+      await import('../../../../src/commands/repository/output-view-repo.mts')
+
+    // Construct an error result without a code field. The helper always sets
+    // code; manual construction is needed to trigger the `?? 1` fallback.
+    const result = {
+      ok: false as const,
+      message: 'No code',
+      cause: 'no code provided',
+    } satisfies CResult<SocketSdkSuccessResult<'createRepository'>['data']>
+
+    await outputViewRepo(result, 'json')
+
+    expect(process.exitCode).toBe(1)
+  })
 })
