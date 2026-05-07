@@ -19,7 +19,7 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { findBinPathDetailsSync } from '../fs/path-resolve.mjs'
 
-function exitWithBinPathError(binName: string): never {
+export function exitWithBinPathError(binName: string): never {
   const logger = getDefaultLogger()
   logger.fail(
     `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable`,

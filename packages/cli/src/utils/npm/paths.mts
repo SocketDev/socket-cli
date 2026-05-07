@@ -15,7 +15,7 @@ import {
 
 const logger = getDefaultLogger()
 
-function exitWithBinPathError(binName: string): never {
+export function exitWithBinPathError(binName: string): never {
   logger.fail(
     `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable`,
   )
@@ -39,7 +39,7 @@ export function getNpmBinPath(): string {
 }
 
 let _npmBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
-function getNpmBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
+export function getNpmBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
   if (_npmBinPathDetails === undefined) {
     _npmBinPathDetails = findBinPathDetailsSync(NPM)
   }
@@ -101,7 +101,7 @@ export function getNpxBinPath(): string {
 }
 
 let _npxBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
-function getNpxBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
+export function getNpxBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
   if (_npxBinPathDetails === undefined) {
     _npxBinPathDetails = findBinPathDetailsSync('npx')
   }
