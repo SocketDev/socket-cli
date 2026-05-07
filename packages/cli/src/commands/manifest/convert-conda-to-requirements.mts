@@ -7,7 +7,7 @@ import { stripAnsi } from '@socketsecurity/lib/strings'
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()
 
-function prepareContent(content: string): string {
+export function prepareContent(content: string): string {
   return stripAnsi(content.trim())
 }
 

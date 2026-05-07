@@ -37,7 +37,7 @@ export async function outputThreatFeed(
 /**
  * Display threat feed using iocraft.
  */
-function outputWithIocraft(data: ThreadFeedResponse): void {
+export function outputWithIocraft(data: ThreadFeedResponse): void {
   displayThreatFeedWithIocraft({
     results: data.results.map(result => {
       const purlObj = getPurlObject(result.purl, { throws: false })

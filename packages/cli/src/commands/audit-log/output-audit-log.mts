@@ -173,7 +173,7 @@ ${table}
 /**
  * Display audit log using iocraft.
  */
-function outputWithIocraft(
+export function outputWithIocraft(
   data: SocketSdkSuccessResult<'getAuditLogEvents'>['data'],
   orgSlug: string,
 ): void {

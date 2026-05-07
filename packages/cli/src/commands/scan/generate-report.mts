@@ -252,7 +252,7 @@ export function generateReport(
   }
 }
 
-function createLeaf(
+export function createLeaf(
   art: SocketArtifact,
   alert: NonNullable<SocketArtifact['alerts']>[number],
   policyAction: REPORT_LEVEL,
@@ -266,7 +266,7 @@ function createLeaf(
   return leaf
 }
 
-function addAlert(
+export function addAlert(
   art: SocketArtifact,
   violations: ViolationsMap,
   fold: FOLD_SETTING,
@@ -322,7 +322,7 @@ function addAlert(
   }
 }
 
-function isStricterPolicy(was: REPORT_LEVEL, is: REPORT_LEVEL): boolean {
+export function isStricterPolicy(was: REPORT_LEVEL, is: REPORT_LEVEL): boolean {
   // error > warn > monitor > ignore > defer > {unknown}
   if (was === REPORT_LEVEL_ERROR) {
     return false

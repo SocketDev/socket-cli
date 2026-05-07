@@ -130,7 +130,7 @@ export function projectIgnorePathsToReachExcludePaths(
   )
 }
 
-function projectIgnorePathToReachExcludePaths(
+export function projectIgnorePathToReachExcludePaths(
   path: string,
   targetPattern: string,
 ): string[] {
@@ -141,7 +141,7 @@ function projectIgnorePathToReachExcludePaths(
   return expandReachExcludePath(reachPath)
 }
 
-function expandReachExcludePath(path: string): string[] {
+export function expandReachExcludePath(path: string): string[] {
   if (path === '**') {
     return ['**']
   }
@@ -156,7 +156,7 @@ function expandReachExcludePath(path: string): string[] {
     : [pattern, `${pattern}/**`]
 }
 
-function pathRelativeToTarget(path: string, target: string): string | undefined {
+export function pathRelativeToTarget(path: string, target: string): string | undefined {
   const normalized = normalizeProjectIgnorePath(path)
   if (target === '.' || target === '') {
     return normalized
@@ -179,16 +179,16 @@ function pathRelativeToTarget(path: string, target: string): string | undefined 
   return undefined
 }
 
-function normalizeProjectIgnorePath(path: string): string {
+export function normalizeProjectIgnorePath(path: string): string {
   return stripTrailingSlash(
     toPosixPath(path.startsWith('/') ? path.slice(1) : path),
   )
 }
 
-function toPosixPath(path: string): string {
+export function toPosixPath(path: string): string {
   return path.replaceAll('\\', '/')
 }
 
-function stripTrailingSlash(path: string): string {
+export function stripTrailingSlash(path: string): string {
   return path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path
 }
