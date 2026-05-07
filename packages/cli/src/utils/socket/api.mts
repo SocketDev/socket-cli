@@ -76,6 +76,7 @@ export async function socketHttpRequest(
   options?: HttpRequestOptions | undefined,
 ): Promise<HttpResponse> {
   const ca = getExtraCaCerts()
+  /* c8 ignore next 3 - SSL_CERT_FILE not set in tests; getExtraCaCerts returns undefined */
   if (ca) {
     return await httpRequest(url, { ...(options ?? {}), ca })
   }

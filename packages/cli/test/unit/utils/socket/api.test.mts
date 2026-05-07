@@ -263,6 +263,80 @@ describe('api utilities', () => {
       expect(mockSpinner.start).toHaveBeenCalled()
       expect(mockSpinner.stop).toHaveBeenCalled()
     })
+
+    it('starts spinner with description when both provided (line 256)', async () => {
+      // description + spinner → start with prefixed message + log success.
+      const mockApiPromise = Promise.resolve({
+        success: true,
+        data: { x: 1 },
+      } as any)
+      const mockSpinner = {
+        start: mockStart,
+        stop: mockStop,
+        succeed: mockSucceed,
+        fail: mockFail,
+      }
+      await handleApiCall(mockApiPromise, {
+        description: 'test data',
+        spinner: mockSpinner as any,
+      })
+      expect(mockSpinner.start).toHaveBeenCalledWith(
+        expect.stringContaining('Requesting test data from API'),
+      )
+    })
+
+    it('logs success message when description + spinner + success (lines 266-272)', async () => {
+      const mockApiPromise = Promise.resolve({
+        success: true,
+        data: { x: 1 },
+      } as any)
+      const mockSpinner = {
+        start: mockStart,
+        stop: mockStop,
+        succeed: mockSucceed,
+        fail: mockFail,
+      }
+      await handleApiCall(mockApiPromise, {
+        description: 'thing',
+        spinner: mockSpinner as any,
+      })
+      // logger.success was called via the description+spinner branch.
+      expect(mockLogger.success).toHaveBeenCalledWith(
+        expect.stringContaining('thing'),
+      )
+    })
+
+    it('logs info message when description + spinner + non-success result (lines 271)', async () => {
+      // success: false but it's the SDK-level non-success (not a thrown error).
+      const mockApiPromise = Promise.resolve({
+        success: false,
+        error: { message: 'fail', statusCode: 500 },
+      } as any)
+      const mockSpinner = {
+        start: mockStart,
+        stop: mockStop,
+        succeed: mockSucceed,
+        fail: mockFail,
+      }
+      await handleApiCall(mockApiPromise, {
+        description: 'thing',
+        spinner: mockSpinner as any,
+      })
+      // logger.info was called via the description+spinner branch on
+      // non-thrown failure.
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        expect.stringContaining('thing'),
+      )
+    })
+
+    it('logs fail message when description + thrown error (lines 281-282)', async () => {
+      const mockApiPromise = Promise.reject(new Error('boom'))
+      await handleApiCall(mockApiPromise, { description: 'thing' })
+      // logger.fail was called via the description-on-error branch.
+      expect(mockLogger.fail).toHaveBeenCalledWith(
+        expect.stringContaining('thing'),
+      )
+    })
   })
 
   describe('handleApiCallNoSpinner', () => {
