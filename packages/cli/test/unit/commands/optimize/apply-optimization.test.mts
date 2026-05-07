@@ -222,5 +222,6 @@ describe('apply-optimization', () => {
 
       expect(mockUpdateDependencies).not.toHaveBeenCalled()
     })
+
   })
 })
