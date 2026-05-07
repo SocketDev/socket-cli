@@ -449,5 +449,29 @@ describe('cmd-scan-list', () => {
       )
       expect(mockHandleListScans).toHaveBeenCalled()
     })
+
+    it('throws InputError when --page is not a positive integer', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+      await expect(
+        cmdScanList.run(
+          ['--org', 'test-org', '--page', 'not-a-number'],
+          importMeta,
+          context,
+        ),
+      ).rejects.toThrow(/--page must be a positive integer/)
+    })
+
+    it('throws InputError when --per-page is not a positive integer', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+      await expect(
+        cmdScanList.run(
+          ['--org', 'test-org', '--per-page', 'oops'],
+          importMeta,
+          context,
+        ),
+      ).rejects.toThrow(/--per-page must be a positive integer/)
+    })
   })
 })
