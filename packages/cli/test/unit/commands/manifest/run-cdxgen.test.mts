@@ -332,4 +332,44 @@ describe('runCdxgen', () => {
     expect(args).toContain('--')
     expect(args).toContain('extra')
   })
+
+  it('expands Array-valued flags into multiple --key value pairs', async () => {
+    const { argvObjectToArray } = await import(
+      '../../../../src/commands/manifest/run-cdxgen.mts'
+    )
+    // Array value → push --key followed by every entry stringified.
+    const result = argvObjectToArray({
+      filter: ['npm', 'pypi'],
+    } as any)
+    expect(result).toContain('--filter')
+    expect(result).toContain('npm')
+    expect(result).toContain('pypi')
+  })
+
+  it('emits --key when value is exactly true', async () => {
+    const { argvObjectToArray } = await import(
+      '../../../../src/commands/manifest/run-cdxgen.mts'
+    )
+    const result = argvObjectToArray({ recurse: true } as any)
+    expect(result).toEqual(['--recurse'])
+  })
+
+  it('preserves --no-X form for negated lifecycle flags', async () => {
+    const { argvObjectToArray } = await import(
+      '../../../../src/commands/manifest/run-cdxgen.mts'
+    )
+    expect(
+      argvObjectToArray({ babel: false, validate: false } as any),
+    ).toEqual(['--no-babel', '--no-validate'])
+  })
+
+  it('emits --key value for string values', async () => {
+    const { argvObjectToArray } = await import(
+      '../../../../src/commands/manifest/run-cdxgen.mts'
+    )
+    expect(argvObjectToArray({ output: 'out.json' } as any)).toEqual([
+      '--output',
+      'out.json',
+    ])
+  })
 })
