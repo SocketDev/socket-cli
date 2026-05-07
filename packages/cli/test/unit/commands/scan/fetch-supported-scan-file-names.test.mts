@@ -25,6 +25,7 @@ vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
   setupSdk: mockSetupSdk,
 }))
 
+
 describe('fetchSupportedScanFileNames', () => {
   it('fetches supported scan file names successfully', async () => {
     const { fetchSupportedScanFileNames } =

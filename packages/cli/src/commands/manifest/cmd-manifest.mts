@@ -5,15 +5,14 @@ import { cmdManifestGradle } from './cmd-manifest-gradle.mts'
 import { cmdManifestKotlin } from './cmd-manifest-kotlin.mts'
 import { cmdManifestScala } from './cmd-manifest-scala.mts'
 import { cmdManifestSetup } from './cmd-manifest-setup.mts'
-import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
 
 import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
-import type { MeowFlags } from '../../flags.mts'
 
+// meowWithSubcommands renders its own help text from the subcommand list,
+// so this command-level config doesn't need a help builder.
 const config = {
   commandName: 'manifest',
   description: 'Generate a dependency manifest for certain ecosystems',
@@ -21,32 +20,6 @@ const config = {
   flags: defineFlags({
     ...commonFlags,
   }),
-  help: (command: string, config: { flags: MeowFlags }) => `
-    Usage
-      $ ${command} [options] <LANGUAGE> <TARGET>
-
-    Options
-      ${getFlagListOutput(config.flags)}
-
-    Generates a declarative dependency manifest (like a package.json for Node.JS
-    or ${REQUIREMENTS_TXT} for PyPi), but for certain supported ecosystems
-    where it's common to use a dynamic manifest, like Scala's sbt.
-
-    Only certain languages are supported and there may be language specific
-    configurations available. See \`manifest <language> --help\` for usage details
-    per language.
-
-    Currently supported language: scala [beta], gradle [beta], kotlin (through
-    gradle) [beta].
-
-    Examples
-
-      $ ${command} scala .
-
-    To have it auto-detect and attempt to run:
-
-      $ ${command} auto
-  `,
 }
 
 export const cmdManifest = {
