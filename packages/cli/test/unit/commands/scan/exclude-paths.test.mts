@@ -8,6 +8,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  applyFullExcludePaths,
   assertNoNegationPatterns,
   excludePathToProjectIgnorePath,
   normalizeExcludePath,
@@ -96,6 +97,71 @@ describe('exclude-paths', () => {
           },
         ),
       ).toEqual([])
+    })
+  })
+
+  describe('applyFullExcludePaths', () => {
+    it('returns input config unchanged when no exclude paths are provided', () => {
+      const reachabilityOptions = {
+        excludePaths: [],
+        reachExcludePaths: ['existing'],
+      } as any
+      const socketConfig = { foo: 'bar' } as any
+
+      const result = applyFullExcludePaths({
+        cwd: '/repo',
+        reachabilityOptions,
+        socketConfig,
+        target: '.',
+      })
+
+      expect(result.effectiveSocketConfig).toBe(socketConfig)
+      expect(result.mergedReachabilityOptions).toBe(reachabilityOptions)
+    })
+
+    it('merges excludePaths into projectIgnorePaths and reach excludes', () => {
+      const reachabilityOptions = {
+        excludePaths: ['tests', 'fixtures'],
+        reachExcludePaths: ['existing-reach'],
+      } as any
+      const socketConfig = {
+        version: 2,
+        issueRules: { x: true },
+        githubApp: {},
+        projectIgnorePaths: ['cfg-ignore'],
+      } as any
+
+      const result = applyFullExcludePaths({
+        cwd: '/repo',
+        reachabilityOptions,
+        socketConfig,
+        target: '.',
+      })
+
+      expect(result.effectiveSocketConfig.projectIgnorePaths).toEqual(
+        expect.arrayContaining(['cfg-ignore']),
+      )
+      expect(result.mergedReachabilityOptions.reachExcludePaths).toEqual(
+        expect.arrayContaining(['existing-reach']),
+      )
+    })
+
+    it('initializes config defaults when socketConfig is missing fields', () => {
+      const result = applyFullExcludePaths({
+        cwd: '/repo',
+        reachabilityOptions: {
+          excludePaths: ['tests'],
+          reachExcludePaths: [],
+        } as any,
+        socketConfig: undefined,
+        target: '.',
+      })
+
+      expect(result.effectiveSocketConfig).toBeDefined()
+      expect(result.effectiveSocketConfig?.version).toBe(2)
+      expect(result.effectiveSocketConfig?.projectIgnorePaths).toEqual(
+        expect.arrayContaining([expect.any(String)]),
+      )
     })
   })
 })
