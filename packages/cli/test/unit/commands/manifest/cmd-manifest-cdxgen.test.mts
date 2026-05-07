@@ -129,6 +129,27 @@ describe('cmd-manifest-cdxgen', () => {
     })
 
     describe('exit code handling', () => {
+      it('skips exit/kill when both code and signal are null', async () => {
+        const mockSpawnPromise = Promise.resolve({ code: null, signal: null })
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+
+        const mockExit = vi
+          .spyOn(process, 'exit')
+          .mockImplementation((() => {}) as any)
+        const mockKill = vi
+          .spyOn(process, 'kill')
+          .mockImplementation((() => true) as any)
+        mockExit.mockClear()
+        mockKill.mockClear()
+
+        await cmdManifestCdxgen.run(['.'], importMeta, context)
+
+        expect(mockExit).not.toHaveBeenCalled()
+        expect(mockKill).not.toHaveBeenCalled()
+        mockExit.mockRestore()
+        mockKill.mockRestore()
+      })
+
       it('should call process.exit with exit code 0 on success', async () => {
         const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
