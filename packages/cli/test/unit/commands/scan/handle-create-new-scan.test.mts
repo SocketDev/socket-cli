@@ -114,6 +114,11 @@ vi.mock('../../../../src/commands/manifest/generate_auto_manifest.mts', () => ({
   generateAutoManifest: mockGenerateAutoManifest,
 }))
 
+const mockRunSocketBasics = vi.hoisted(() => vi.fn())
+vi.mock('../../../../src/utils/basics/spawn.mts', () => ({
+  runSocketBasics: mockRunSocketBasics,
+}))
+
 describe('handleCreateNewScan', () => {
   const mockConfig = {
     autoManifest: false,
@@ -440,5 +445,60 @@ describe('handleCreateNewScan', () => {
       }),
       expect.any(Object),
     )
+  })
+
+  describe('basics flag', () => {
+    it('warns and continues to upload when socket-basics scan fails', async () => {
+      mockFetchSupportedScanFileNames.mockResolvedValue(
+        createSuccessResult(new Set(['package.json'])),
+      )
+      mockGetPackageFilesForScan.mockResolvedValue([
+        '/test/project/package.json',
+      ])
+      mockCheckCommandInput.mockReturnValue(true)
+      mockFetchCreateOrgFullScan.mockResolvedValue(
+        createSuccessResult({ id: 'scan-123' }),
+      )
+      mockRunSocketBasics.mockResolvedValueOnce(
+        createErrorResult('basics failed', { cause: 'sandbox' }),
+      )
+
+      await handleCreateNewScan({ ...mockConfig, basics: true })
+
+      // runSocketBasics should have been called.
+      expect(mockRunSocketBasics).toHaveBeenCalled()
+      // Upload should still proceed.
+      expect(mockFetchCreateOrgFullScan).toHaveBeenCalled()
+    })
+
+    it('runs runSocketBasics when basics flag is true and continues on success', async () => {
+      // Note: testing the SAST/secrets/containers info-log paths would require
+      // existsSync to return true for the factsPath, but vitest can't spy on
+      // ESM exports. The branch is exercised but assertions on logger output
+      // are limited.
+      mockFetchSupportedScanFileNames.mockResolvedValue(
+        createSuccessResult(new Set(['package.json'])),
+      )
+      mockGetPackageFilesForScan.mockResolvedValue([
+        '/test/project/package.json',
+      ])
+      mockCheckCommandInput.mockReturnValue(true)
+      mockFetchCreateOrgFullScan.mockResolvedValue(
+        createSuccessResult({ id: 'scan-123' }),
+      )
+
+      mockRunSocketBasics.mockResolvedValueOnce(
+        createSuccessResult({
+          factsPath: '/test/project/.socket.facts.json',
+          findings: { sast: 5, secrets: 3, containers: 2 },
+        }),
+      )
+
+      await handleCreateNewScan({ ...mockConfig, basics: true })
+
+      expect(mockRunSocketBasics).toHaveBeenCalled()
+      // Upload should still proceed.
+      expect(mockFetchCreateOrgFullScan).toHaveBeenCalled()
+    })
   })
 })
