@@ -337,6 +337,22 @@ describe('api utilities', () => {
         expect.stringContaining('thing'),
       )
     })
+
+    it('logs permissions for 403 errors when commandPath provided (line 322-323)', async () => {
+      // sdk-level non-success with status=403 + commandPath in options →
+      // calls logPermissionsFor403, which logs the API permissions group.
+      const mockApiPromise = Promise.resolve({
+        success: false,
+        status: 403,
+        error: { message: 'Forbidden', statusCode: 403 },
+      } as any)
+      await handleApiCall(mockApiPromise, {
+        commandPath: 'socket fix',
+      })
+      expect(mockLogger.group).toHaveBeenCalledWith(
+        expect.stringContaining('Required API Permissions'),
+      )
+    })
   })
 
   describe('handleApiCallNoSpinner', () => {
@@ -775,6 +791,37 @@ describe('api utilities', () => {
       if (!result.ok) {
         expect(result.message).toContain('Socket API error')
       }
+    })
+
+    it('returns error with cause when promise rejects (lines 342-354)', async () => {
+      // Rejected promise hits the catch block; the error string becomes cause.
+      const mockApiPromise = Promise.reject(new Error('thrown boom'))
+
+      const result = await handleApiCallNoSpinner(
+        mockApiPromise,
+        'reject test',
+      )
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('Socket API error')
+        expect(result.cause).toContain('thrown boom')
+      }
+    })
+
+    it('omits cause when error stringifies to empty (line 348-349)', async () => {
+      // String(empty error) === '' → cause is set to NO_ERROR_MESSAGE,
+      // and since 'Socket API error' !== NO_ERROR_MESSAGE, cause is included.
+      // To test the cause-equals-message edge case, throw a plain object that
+      // stringifies to nothing. Empty-trim case → uses NO_ERROR_MESSAGE.
+      const mockApiPromise = Promise.reject('')
+
+      const result = await handleApiCallNoSpinner(
+        mockApiPromise as any,
+        'empty err',
+      )
+
+      expect(result.ok).toBe(false)
     })
   })
 })

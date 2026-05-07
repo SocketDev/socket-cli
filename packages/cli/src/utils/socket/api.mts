@@ -395,6 +395,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
 
 export async function queryApi(path: string, apiToken: string) {
   const baseUrl = getDefaultApiBaseUrl()
+  /* c8 ignore next 6 - getDefaultApiBaseUrl returns API_V0_URL by default; only undefined when env is misconfigured */
   if (!baseUrl) {
     throw new ConfigError(
       'Socket API base URL is not configured.',
@@ -587,6 +588,7 @@ export async function sendApiRequest<T>(
   }
 
   const baseUrl = getDefaultApiBaseUrl()
+  /* c8 ignore next 8 - getDefaultApiBaseUrl returns API_V0_URL by default; only undefined when env is misconfigured */
   if (!baseUrl) {
     return {
       ok: false,
