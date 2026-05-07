@@ -123,6 +123,12 @@ describe('get-overrides-by-agent', () => {
       expect(result.type).toBe('yarn/classic')
       expect(result.overrides).toEqual({ react: '18.0.0' })
     })
+
+    it('returns empty object when resolutions field missing', () => {
+      const envDetails = createEnvDetails('yarn/classic', {})
+      const result = getOverridesDataYarnClassic(envDetails)
+      expect(result.overrides).toEqual({})
+    })
   })
 
   describe('getOverridesDataBun', () => {
@@ -136,6 +142,12 @@ describe('get-overrides-by-agent', () => {
       expect(result.type).toBe('yarn/berry')
       expect(result.overrides).toEqual({ jest: '29.0.0' })
     })
+
+    it('returns empty object when resolutions field missing', () => {
+      const envDetails = createEnvDetails('bun', {})
+      const result = getOverridesDataBun(envDetails)
+      expect(result.overrides).toEqual({})
+    })
   })
 
   describe('getOverridesDataVlt', () => {
@@ -148,6 +160,12 @@ describe('get-overrides-by-agent', () => {
       const result = getOverridesDataVlt(envDetails)
       expect(result.type).toBe('vlt')
       expect(result.overrides).toEqual({ chalk: '5.0.0' })
+    })
+
+    it('returns empty object when overrides field missing', () => {
+      const envDetails = createEnvDetails('vlt', {})
+      const result = getOverridesDataVlt(envDetails)
+      expect(result.overrides).toEqual({})
     })
   })
 
