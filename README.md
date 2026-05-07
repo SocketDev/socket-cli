@@ -120,8 +120,8 @@ Key variables for development:
 <br/>
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="logo-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="logo-light.png">
-    <img width="324" height="108" alt="Socket Logo" src="logo-light.png">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/socket-logo-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="assets/socket-logo-light.png">
+    <img width="420" height="120" alt="Socket Logo" src="assets/socket-logo-light.png">
   </picture>
 </div>
