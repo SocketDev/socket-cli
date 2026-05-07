@@ -230,4 +230,56 @@ describe('update-manifest-by-agent', () => {
       expect(parsed.overrides).toEqual({ lodash: '4.17.21' })
     })
   })
+
+  describe('getEntryIndexes / getLowestEntryIndex / getHighestEntryIndex', () => {
+    const entries: Array<[string, any]> = [
+      ['name', 'x'],
+      ['version', '1.0.0'],
+      ['main', 'index.js'],
+      ['exports', {}],
+      ['scripts', {}],
+    ]
+
+    it('getEntryIndexes returns sorted indices for matching keys', async () => {
+      const { getEntryIndexes } = await import(
+        '../../../../src/commands/optimize/update-manifest-by-agent.mts'
+      )
+      expect(getEntryIndexes(entries, ['exports', 'main'])).toEqual([2, 3])
+    })
+
+    it('getEntryIndexes filters out keys not present', async () => {
+      const { getEntryIndexes } = await import(
+        '../../../../src/commands/optimize/update-manifest-by-agent.mts'
+      )
+      expect(getEntryIndexes(entries, ['nope', 'main'])).toEqual([2])
+    })
+
+    it('getLowestEntryIndex returns -1 when no keys match', async () => {
+      const { getLowestEntryIndex } = await import(
+        '../../../../src/commands/optimize/update-manifest-by-agent.mts'
+      )
+      expect(getLowestEntryIndex(entries, ['nope'])).toBe(-1)
+    })
+
+    it('getLowestEntryIndex returns the smallest matching index', async () => {
+      const { getLowestEntryIndex } = await import(
+        '../../../../src/commands/optimize/update-manifest-by-agent.mts'
+      )
+      expect(getLowestEntryIndex(entries, ['scripts', 'main'])).toBe(2)
+    })
+
+    it('getHighestEntryIndex returns -1 when no keys match', async () => {
+      const { getHighestEntryIndex } = await import(
+        '../../../../src/commands/optimize/update-manifest-by-agent.mts'
+      )
+      expect(getHighestEntryIndex(entries, ['nope'])).toBe(-1)
+    })
+
+    it('getHighestEntryIndex returns the largest matching index', async () => {
+      const { getHighestEntryIndex } = await import(
+        '../../../../src/commands/optimize/update-manifest-by-agent.mts'
+      )
+      expect(getHighestEntryIndex(entries, ['main', 'scripts'])).toBe(4)
+    })
+  })
 })
