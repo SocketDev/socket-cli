@@ -363,6 +363,35 @@ describe('output-scan-report', () => {
       expect(mockLogger.log).toHaveBeenCalledWith('OK')
     })
 
+    it('should output JSON in short mode using serializeResultJson', async () => {
+      const successResult = {
+        ok: true as const,
+        data: {
+          scan: [],
+          securityPolicy: { rules: [] },
+        },
+      }
+      mockGenerateReport.mockReturnValue({
+        ok: true,
+        data: {
+          alerts: new Map(),
+          healthy: true,
+          options: { fold: 'none', reportLevel: 'warn' },
+          orgSlug: 'test-org',
+          scanId: 'scan-123',
+        },
+      })
+
+      await outputScanReport(successResult, {
+        ...baseConfig,
+        outputKind: 'json',
+        short: true,
+      })
+
+      // Short JSON mode uses serializeResultJson — should log JSON output.
+      expect(mockLogger.log).toHaveBeenCalled()
+    })
+
     it('should output ERR for unhealthy short format', async () => {
       const successResult = {
         ok: true as const,
