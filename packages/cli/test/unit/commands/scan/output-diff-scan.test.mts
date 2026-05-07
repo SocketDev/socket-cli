@@ -330,6 +330,35 @@ describe('outputDiffScan', () => {
       expect(mockLogger.log).toHaveBeenCalledWith('- Removed packages: 1')
     })
 
+    it('truncates removed package list when over 10', async () => {
+      const removedMany = Array.from({ length: 12 }, (_, i) => ({
+        type: 'npm',
+        name: `removed-${i}`,
+        version: '1.0.0',
+      }))
+      const mockData = createMockDiffData({
+        artifacts: {
+          added: [],
+          removed: removedMany,
+          replaced: [],
+          updated: [],
+          unchanged: [],
+        },
+      })
+      const result = createSuccessResult(mockData)
+
+      await outputDiffScan(result as any, {
+        depth: 5,
+        file: '',
+        outputKind: 'markdown',
+      })
+
+      expect(mockLogger.log).toHaveBeenCalledWith('- Removed packages: 12')
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('and 2 more'),
+      )
+    })
+
     it('truncates package lists longer than 10', async () => {
       const manyPackages = Array.from({ length: 15 }, (_, i) => ({
         type: 'npm',
@@ -377,6 +406,93 @@ describe('outputDiffScan', () => {
       })
 
       expect(mockLogger.log).toHaveBeenCalledWith('- Unchanged packages: 1')
+    })
+
+    it('outputs replaced packages with truncation', async () => {
+      const replacedMany = Array.from({ length: 12 }, (_, i) => ({
+        type: 'npm',
+        name: `pkg-replaced-${i}`,
+        version: '2.0.0',
+      }))
+      const mockData = createMockDiffData({
+        artifacts: {
+          added: [],
+          removed: [],
+          replaced: replacedMany,
+          updated: [],
+          unchanged: [],
+        },
+      })
+      const result = createSuccessResult(mockData)
+
+      await outputDiffScan(result as any, {
+        depth: 5,
+        file: '',
+        outputKind: 'markdown',
+      })
+
+      expect(mockLogger.log).toHaveBeenCalledWith('- Replaced packages: 12')
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('and 2 more'),
+      )
+    })
+
+    it('outputs updated packages with truncation', async () => {
+      const updatedMany = Array.from({ length: 12 }, (_, i) => ({
+        type: 'npm',
+        name: `pkg-updated-${i}`,
+        version: '3.0.0',
+      }))
+      const mockData = createMockDiffData({
+        artifacts: {
+          added: [],
+          removed: [],
+          replaced: [],
+          updated: updatedMany,
+          unchanged: [],
+        },
+      })
+      const result = createSuccessResult(mockData)
+
+      await outputDiffScan(result as any, {
+        depth: 5,
+        file: '',
+        outputKind: 'markdown',
+      })
+
+      expect(mockLogger.log).toHaveBeenCalledWith('- Updated packages: 12')
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('and 2 more'),
+      )
+    })
+
+    it('truncates unchanged packages list when over 10', async () => {
+      const unchangedMany = Array.from({ length: 12 }, (_, i) => ({
+        type: 'npm',
+        name: `unchanged-${i}`,
+        version: '1.0.0',
+      }))
+      const mockData = createMockDiffData({
+        artifacts: {
+          added: [],
+          removed: [],
+          replaced: [],
+          updated: [],
+          unchanged: unchangedMany,
+        },
+      })
+      const result = createSuccessResult(mockData)
+
+      await outputDiffScan(result as any, {
+        depth: 5,
+        file: '',
+        outputKind: 'markdown',
+      })
+
+      expect(mockLogger.log).toHaveBeenCalledWith('- Unchanged packages: 12')
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('and 2 more'),
+      )
     })
 
     it('handles null unchanged array', async () => {
