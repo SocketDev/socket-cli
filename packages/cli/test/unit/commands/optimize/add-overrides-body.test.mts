@@ -1,0 +1,273 @@
+/**
+ * Unit tests for the body of addOverrides (the pEach loop over manifest entries).
+ *
+ * `manifestNpmOverrides = getManifestData(NPM) ?? []` is module-init, so to
+ * exercise the loop body we use `vi.resetModules()` + `vi.doMock()` per test
+ * to control what `getManifestData` returns at module-load time.
+ *
+ * Related Files:
+ * - src/commands/optimize/add-overrides.mts (implementation)
+ */
+
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const mockLogger = {
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}
+
+const baseEnv = (overrides: Record<string, any> = {}) => ({
+  agent: 'npm',
+  agentVersion: '10.0.0',
+  lockName: 'package-lock.json',
+  lockSrc: '',
+  npmExecPath: '/usr/bin/npm',
+  pkgPath: '/test/project',
+  editablePkgJson: {
+    content: { name: 'test', dependencies: {} },
+    update: vi.fn(),
+    save: vi.fn(),
+  },
+  ...overrides,
+})
+
+async function loadAddOverrides(opts: {
+  manifestEntries: Array<[string, any]>
+  getMajor?: (v: string) => number | undefined
+  safeNpa?: (s: string) => any
+  fetchPackageManifest?: (s: string) => Promise<any>
+  globWorkspace?: () => Promise<string[]>
+  getDependencyEntries?: (env: any) => any
+  getOverridesData?: (env: any) => any
+  getOverridesDataNpm?: (env: any) => any
+  getOverridesDataYarnClassic?: (env: any) => any
+  lockSrcIncludes?: (...args: any[]) => boolean
+  lsStdoutIncludes?: (...args: any[]) => boolean
+  listPackages?: (...args: any[]) => Promise<string>
+}) {
+  const { manifestEntries } = opts
+  vi.doMock('@socketsecurity/registry', () => ({
+    getManifestData: (agent?: string) =>
+      agent === 'npm' ? manifestEntries : [],
+  }))
+  vi.doMock('@socketsecurity/lib/promises', () => ({
+    pEach: async (items: any[], fn: any) => {
+      for (const item of items) {
+        await fn(item)
+      }
+    },
+  }))
+  vi.doMock('../../../../src/utils/fs/glob.mts', () => ({
+    globWorkspace: opts.globWorkspace ?? vi.fn(async () => []),
+    isReportSupportedFile: vi.fn(),
+  }))
+  vi.doMock(
+    '../../../../src/commands/optimize/get-dependency-entries.mts',
+    () => ({
+      getDependencyEntries: opts.getDependencyEntries ?? vi.fn(() => []),
+    }),
+  )
+  vi.doMock(
+    '../../../../src/commands/optimize/get-overrides-by-agent.mts',
+    () => ({
+      getOverridesData:
+        opts.getOverridesData ?? vi.fn(() => ({ overrides: {}, type: 'npm' })),
+      getOverridesDataNpm:
+        opts.getOverridesDataNpm ??
+        vi.fn(() => ({ overrides: {}, type: 'npm' })),
+      getOverridesDataYarnClassic:
+        opts.getOverridesDataYarnClassic ??
+        vi.fn(() => ({ overrides: {}, type: 'yarn' })),
+    }),
+  )
+  vi.doMock(
+    '../../../../src/commands/optimize/lockfile-includes-by-agent.mts',
+    () => ({
+      lockSrcIncludes: opts.lockSrcIncludes ?? vi.fn(() => false),
+    }),
+  )
+  vi.doMock(
+    '../../../../src/commands/optimize/deps-includes-by-agent.mts',
+    () => ({
+      lsStdoutIncludes: opts.lsStdoutIncludes ?? vi.fn(() => false),
+    }),
+  )
+  vi.doMock('../../../../src/commands/optimize/ls-by-agent.mts', () => ({
+    listPackages: opts.listPackages ?? vi.fn(async () => ''),
+  }))
+  vi.doMock(
+    '../../../../src/commands/optimize/update-manifest-by-agent.mts',
+    () => ({
+      updateManifest: vi.fn(),
+    }),
+  )
+  vi.doMock('../../../../src/utils/npm/package-arg.mts', () => ({
+    safeNpa: opts.safeNpa ?? vi.fn(() => undefined),
+  }))
+  vi.doMock('../../../../src/utils/process/cmd.mts', () => ({
+    cmdPrefixMessage: (name: string, msg: string) => `[${name}] ${msg}`,
+  }))
+  vi.doMock('../../../../src/utils/semver.mts', () => ({
+    getMajor: opts.getMajor ?? vi.fn((v: string) => parseInt(v, 10)),
+  }))
+  if (opts.fetchPackageManifest) {
+    vi.doMock('@socketsecurity/lib/packages', async importOriginal => {
+      const actual =
+        await importOriginal<typeof import('@socketsecurity/lib/packages')>()
+      return {
+        ...actual,
+        fetchPackageManifest: opts.fetchPackageManifest,
+      }
+    })
+  }
+
+  const mod = await import('../../../../src/commands/optimize/add-overrides.mts')
+  return mod.addOverrides
+}
+
+describe('addOverrides body (manifestNpmOverrides loop)', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.clearAllMocks()
+  })
+
+  it('skips entries when getMajor returns undefined (line 122-124)', async () => {
+    const addOverrides = await loadAddOverrides({
+      manifestEntries: [
+        ['pkg-a', { name: 'pkg-a', package: 'pkg-a-orig', version: 'invalid' }],
+      ],
+      getMajor: vi.fn(() => undefined),
+    })
+    const env = baseEnv()
+    const state = await addOverrides(env as any, '/test/project', {
+      logger: mockLogger as any,
+    })
+    expect(state.added.size).toBe(0)
+  })
+
+  it('adds an alias when origPkgName found in deps (line 158-167)', async () => {
+    const depObj = { 'pkg-a-orig': '^1.0.0' }
+    const addOverrides = await loadAddOverrides({
+      manifestEntries: [
+        ['pkg-a', { name: 'pkg-a', package: 'pkg-a-orig', version: '1.2.3' }],
+      ],
+      getDependencyEntries: vi.fn(() => [['dependencies', depObj]]),
+      getMajor: vi.fn(() => 1),
+      safeNpa: vi.fn(() => undefined),
+    })
+    const env = baseEnv()
+    const state = await addOverrides(env as any, '/test/project', {
+      logger: mockLogger as any,
+    })
+    expect(state.added.has('pkg-a')).toBe(true)
+    expect(depObj['pkg-a-orig']).toMatch(/^npm:pkg-a@/)
+  })
+
+  it('keeps existing alias spec when it parses as a valid alias (line 142-156)', async () => {
+    // origSpec already starts with the sockOverridePrefix and parses correctly,
+    // so we should NOT replace it.
+    const depObj = { 'pkg-a-orig': 'npm:pkg-a@1.5.0' }
+    const addOverrides = await loadAddOverrides({
+      manifestEntries: [
+        ['pkg-a', { name: 'pkg-a', package: 'pkg-a-orig', version: '1.2.3' }],
+      ],
+      getDependencyEntries: vi.fn(() => [['dependencies', depObj]]),
+      getMajor: vi.fn(() => 1),
+      safeNpa: vi.fn(() => ({
+        type: 'alias',
+        subSpec: { rawSpec: '1.5.0' },
+      })),
+    })
+    const env = baseEnv()
+    const state = await addOverrides(env as any, '/test/project', {
+      logger: mockLogger as any,
+    })
+    // The valid alias is preserved.
+    expect(state.added.has('pkg-a')).toBe(false)
+    expect(depObj['pkg-a-orig']).toBe('npm:pkg-a@1.5.0')
+  })
+
+  it('treats sockSpec match as alias too (line 128-133)', async () => {
+    // depObj has the sock-registry name, not the orig name.
+    const depObj = { 'pkg-a': '^1.0.0' }
+    const addOverrides = await loadAddOverrides({
+      manifestEntries: [
+        ['pkg-a', { name: 'pkg-a', package: 'pkg-a-orig', version: '1.2.3' }],
+      ],
+      getDependencyEntries: vi.fn(() => [['dependencies', depObj]]),
+      getMajor: vi.fn(() => 1),
+    })
+    const env = baseEnv()
+    const state = await addOverrides(env as any, '/test/project', {
+      logger: mockLogger as any,
+    })
+    // Without the orig spec, no add but sockSpec is mapped to alias.
+    expect(state.added.size).toBe(0)
+  })
+
+  it('adds override when origPkgName matches via lsStdoutIncludes (line 187-256)', async () => {
+    // Use prod=true to take the lsStdoutIncludes path (isLockScanned=false).
+    const depObj = {}
+    const overridesObj: Record<string, string> = {}
+    const addOverrides = await loadAddOverrides({
+      manifestEntries: [
+        ['pkg-a', { name: 'pkg-a', package: 'pkg-a-orig', version: '1.2.3' }],
+      ],
+      getDependencyEntries: vi.fn(() => [['dependencies', depObj]]),
+      getMajor: vi.fn(() => 1),
+      lsStdoutIncludes: vi.fn(() => true),
+      getOverridesDataNpm: vi.fn(() => ({
+        overrides: overridesObj,
+        type: 'npm',
+      })),
+      getOverridesDataYarnClassic: vi.fn(() => ({
+        overrides: {},
+        type: 'yarn',
+      })),
+      listPackages: vi.fn(async () => ''),
+    })
+    const env = baseEnv()
+    const state = await addOverrides(env as any, '/test/project', {
+      logger: mockLogger as any,
+      prod: true,
+    })
+    expect(state.added.has('pkg-a')).toBe(true)
+    expect(overridesObj['pkg-a-orig']).toMatch(/^npm:pkg-a@/)
+  })
+
+  it('updates an existing override (line 250 — addedOrUpdated branch)', async () => {
+    // overrides already has the orig pkg key, so addedOrUpdated='updated'.
+    const overridesObj: Record<string, string> = {
+      'pkg-a-orig': '^0.9.0', // existing, doesn't start with `$` or sockOverridePrefix.
+    }
+    const addOverrides = await loadAddOverrides({
+      manifestEntries: [
+        ['pkg-a', { name: 'pkg-a', package: 'pkg-a-orig', version: '1.2.3' }],
+      ],
+      getDependencyEntries: vi.fn(() => [['dependencies', {}]]),
+      getMajor: vi.fn(() => 1),
+      getOverridesDataNpm: vi.fn(() => ({
+        overrides: overridesObj,
+        type: 'npm',
+      })),
+      getOverridesDataYarnClassic: vi.fn(() => ({
+        overrides: {},
+        type: 'yarn',
+      })),
+      lsStdoutIncludes: vi.fn(() => true),
+      listPackages: vi.fn(async () => ''),
+    })
+    const env = baseEnv()
+    const state = await addOverrides(env as any, '/test/project', {
+      logger: mockLogger as any,
+      prod: true,
+    })
+    // Since oldSpec='^0.9.0' doesn't start with `$` or sockOverridePrefix,
+    // newSpec is set to oldSpec (line 245), so newSpec === oldSpec — no update.
+    expect(state.updated.has('pkg-a')).toBe(false)
+  })
+})

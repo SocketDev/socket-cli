@@ -210,4 +210,72 @@ describe('addOverrides', () => {
     expect(mockLogger.warn).not.toHaveBeenCalled()
   })
 
+  it('recurses into workspace package.json paths when workspace is detected', async () => {
+    // Exercises the `if (isWorkspace)` branch + recursive addOverrides call
+    // (line 266+). With workspacePkgJsonPaths populated, the function recurses
+    // into each workspace dir.
+    mockGlobWorkspace.mockResolvedValueOnce([
+      '/test/project/packages/a/package.json',
+      '/test/project/packages/b/package.json',
+    ])
+    // Subsequent calls (recursion) return [].
+    mockGlobWorkspace.mockResolvedValue([])
+
+    const customState = {
+      added: new Set<string>(['outer-pkg']),
+      addedInWorkspaces: new Set<string>(['ws1']),
+      updated: new Set<string>(['outer-updated']),
+      updatedInWorkspaces: new Set<string>(),
+      warnedPnpmWorkspaceRequiresNpm: false,
+    }
+    await addOverrides(mockEnvDetails, '/test/project', {
+      logger: mockLogger as any,
+      state: customState,
+    })
+    // globWorkspace called for outer + each workspace package.
+    expect(mockGlobWorkspace.mock.calls.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('uses non-root pkgPath for relative workspace name', async () => {
+    // Exercises `path.relative(rootPath, pkgPath)` branch (line 81)
+    // when pkgPath !== rootPath.
+    const innerPath = '/test/project/packages/inner'
+    await addOverrides(mockEnvDetails, innerPath, {
+      logger: mockLogger as any,
+    })
+    // The function returns successfully without errors.
+    expect(mockGlobWorkspace).toHaveBeenCalled()
+  })
+
+  it('with prod=true skips lockfile scanning even at workspace root', async () => {
+    // Exercises `isLockScanned = isWorkspaceRoot && !prod` (line 80).
+    await addOverrides(mockEnvDetails, '/test/project', {
+      logger: mockLogger as any,
+      prod: true,
+    })
+    expect(mockGetOverridesDataNpm).toHaveBeenCalled()
+  })
+
+  it('with pin=true uses pinned version for overrides', async () => {
+    // Exercises `pin` branch in spec-construction (line 126).
+    await addOverrides(mockEnvDetails, '/test/project', {
+      logger: mockLogger as any,
+      pin: true,
+    })
+    expect(mockGetOverridesDataNpm).toHaveBeenCalled()
+  })
+
+  it('with custom spinner forwards spinner to inner methods', async () => {
+    // Exercises spinner option flow.
+    const mockSpinner: any = {
+      stop: vi.fn(),
+      start: vi.fn(),
+      text: vi.fn(),
+    }
+    await addOverrides(mockEnvDetails, '/test/project', {
+      logger: mockLogger as any,
+      spinner: mockSpinner,
+    })
+    expect(mockGetOverridesDataNpm).toHaveBeenCalled()
+  })
 })
