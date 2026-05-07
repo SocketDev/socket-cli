@@ -97,6 +97,26 @@ describe('cmd-pycli', () => {
       expect(process.exitCode).not.toBe(1)
     })
 
+    it('shows wrapper help when --help is passed and skips spawn', async () => {
+      mockSpawnSocketPyCli.mockResolvedValue({ ok: true, data: '' })
+
+      // meow's showHelp() calls process.exit(0); intercept with throw.
+      const exitSpy = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => {
+          throw new Error('process.exit')
+        }) as never)
+
+      try {
+        await cmdPyCli
+          .run(['--help'], importMeta, context)
+          .catch(() => undefined)
+        expect(mockSpawnSocketPyCli).not.toHaveBeenCalled()
+      } finally {
+        exitSpy.mockRestore()
+      }
+    })
+
     it('should log info message when invoking Python CLI', async () => {
       mockSpawnSocketPyCli.mockResolvedValue({ ok: true, data: '' })
 

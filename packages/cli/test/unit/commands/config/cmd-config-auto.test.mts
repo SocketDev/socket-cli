@@ -94,8 +94,12 @@ vi.mock('../../../../src/utils/validation/check-input.mts', () => ({
 
 // Mock meowOrExit to prevent actual CLI parsing.
 const mockMeowOrExit = vi.hoisted(() =>
-  vi.fn((options: { argv: string[] | readonly string[] }) => {
-    const argv = options.argv
+  vi.fn((options: any) => {
+    // Invoke the help builder so its body is covered.
+    if (typeof options?.config?.help === 'function') {
+      options.config.help('socket config auto', options.config)
+    }
+    const argv = options.argv as string[] | readonly string[]
     const flags: Record<string, unknown> = {
       json: false,
       markdown: false,
