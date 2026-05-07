@@ -251,4 +251,17 @@ dependencies:                   # List of packages to install
       git+https://github.com/user/repo.git    # Install from git"
     `)
   })
+
+  it('bails when an in-block line does not start with the recorded indent', () => {
+    // First "- foo" sets indent to "    -"; the "weird" line has no
+    // leading whitespace, so the indent prefix check at L154 fails and
+    // the function bails. Exercises the "Unexpected input" break.
+    const result = convertCondaToRequirementsFromInput(`
+- pip:
+    - foo
+weird
+    - bar
+`)
+    expect(result).toBe('foo')
+  })
 })
