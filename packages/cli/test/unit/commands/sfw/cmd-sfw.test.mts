@@ -189,5 +189,27 @@ describe('cmd-sfw', () => {
         killSpy.mockRestore()
       }
     })
+
+    it('does nothing when both code and signal are null', async () => {
+      // Construct a result with both code: null and signal: null (rare).
+      mockSpawnSfw.mockResolvedValue({
+        spawnPromise: Promise.resolve({
+          code: null,
+          signal: null,
+          success: false,
+        }),
+      } as any)
+      process.exitCode = undefined
+
+      const killSpy = vi
+        .spyOn(process, 'kill')
+        .mockImplementation((() => true) as any)
+      killSpy.mockClear()
+
+      await cmdSfw.run(['npm', 'install'], importMeta, context)
+
+      expect(killSpy).not.toHaveBeenCalled()
+      killSpy.mockRestore()
+    })
   })
 })

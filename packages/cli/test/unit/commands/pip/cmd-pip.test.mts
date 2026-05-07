@@ -410,6 +410,39 @@ describe('cmd-pip', () => {
   })
 
   describe('process exit handling', () => {
+    it('skips exit/kill when both code and signal are null', async () => {
+      const argv = ['install', 'flask']
+      const importMeta = { url: import.meta.url } as ImportMeta
+      const context: CliCommandContext = {
+        parentName: 'socket',
+      }
+
+      let exitHandler: (
+        code: number | null,
+        signal: NodeJS.Signals | null,
+      ) => void
+      mockChildProcess.on.mockImplementation((event, handler) => {
+        if (event === 'exit') {
+          exitHandler = handler as any
+        }
+        return mockChildProcess
+      })
+
+      mockProcessExit.mockClear()
+      mockProcessKill.mockClear()
+
+      const promise = cmdPip.run(argv, importMeta, context)
+      await new Promise(resolve => process.nextTick(resolve))
+
+      // Trigger exit with both null.
+      exitHandler!(null, null)
+
+      await promise
+
+      expect(mockProcessExit).not.toHaveBeenCalled()
+      expect(mockProcessKill).not.toHaveBeenCalled()
+    })
+
     it('should handle process exit with numeric code 0', async () => {
       const argv = ['install', 'flask']
       const importMeta = { url: import.meta.url } as ImportMeta
