@@ -61,6 +61,40 @@ describe('cmd-cargo', () => {
     it('should have a run function', () => {
       expect(typeof cmdCargo.run).toBe('function')
     })
+
+    it('renders help text via the meow help callback', async () => {
+      mockMeowOrExit.mockImplementation((args: any) => {
+        // Invoke the help callback so coverage records its lines.
+        const helpText = args.config.help('socket cargo')
+        expect(helpText).toContain('socket cargo')
+        return {
+          flags: {},
+          help: helpText,
+          input: [],
+          pkg: {},
+          showHelp: vi.fn(),
+          showVersion: vi.fn(),
+          unknownFlags: [],
+        }
+      })
+      // run() will fall through to spawning sfw; mock that to avoid
+      // touching the real binary.
+      const EventEmitter = (await import('node:events')).default
+      const mockChildProcess = new EventEmitter()
+      const mockSpawnPromise = Promise.resolve({
+        code: 0,
+        signal: null,
+        stderr: Buffer.from(''),
+        stdout: Buffer.from(''),
+      })
+      ;(mockSpawnPromise as any).process = mockChildProcess
+      mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      mockFilterFlags.mockReturnValue([])
+      const runPromise = cmdCargo.run([], { url: import.meta.url } as ImportMeta, { parentName: 'socket' })
+      setImmediate(() => mockChildProcess.emit('exit', 0, null))
+      await runPromise
+      expect(mockMeowOrExit).toHaveBeenCalled()
+    })
   })
 
   describe('run', () => {
