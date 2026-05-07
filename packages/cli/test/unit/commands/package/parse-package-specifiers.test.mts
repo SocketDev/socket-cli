@@ -127,4 +127,28 @@ describe('parse-package-specifiers', async () => {
       }
     `)
   })
+
+  it('flags valid:false when an empty package name appears in the list', () => {
+    // Exercises the inner `if (!pkg) { valid = false; break }` branch.
+    expect(parsePackageSpecifiers('npm', ['babel', '', 'lodash']))
+      .toMatchInlineSnapshot(`
+      {
+        "purls": [
+          "pkg:npm/babel",
+        ],
+        "valid": false,
+      }
+    `)
+  })
+
+  it('returns valid:false when purl-mode has nothing parseable', () => {
+    // Exercise the !purls.length branch in the purl-mode path.
+    expect(parsePackageSpecifiers('not-a-purl', ['also-bad']))
+      .toMatchInlineSnapshot(`
+      {
+        "purls": [],
+        "valid": false,
+      }
+    `)
+  })
 })

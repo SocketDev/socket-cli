@@ -156,4 +156,10 @@ describe('PromiseQueue', () => {
       /PromiseQueue maxConcurrency must be >= 1 \(saw: -1\)/,
     )
   })
+
+  it('onIdle resolves immediately when queue is already idle', async () => {
+    const queue = new PromiseQueue(2)
+    // Never enqueued anything; should resolve same tick.
+    await queue.onIdle()
+  })
 })
