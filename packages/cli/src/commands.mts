@@ -16,6 +16,7 @@ import { cmdLogin } from './commands/login/cmd-login.mts'
 import { cmdLogout } from './commands/logout/cmd-logout.mts'
 import { cmdManifestCdxgen } from './commands/manifest/cmd-manifest-cdxgen.mts'
 import { cmdManifest } from './commands/manifest/cmd-manifest.mts'
+import { cmdMcp } from './commands/mcp/cmd-mcp.mts'
 import { cmdNpm } from './commands/npm/cmd-npm.mts'
 import { cmdNpx } from './commands/npx/cmd-npx.mts'
 import { cmdNuget } from './commands/nuget/cmd-nuget.mts'
@@ -61,6 +62,7 @@ export const rootCommands = {
   login: cmdLogin,
   logout: cmdLogout,
   manifest: cmdManifest,
+  mcp: cmdMcp,
   npm: cmdNpm,
   npx: cmdNpx,
   nuget: cmdNuget,
