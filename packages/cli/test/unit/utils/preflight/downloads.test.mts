@@ -34,10 +34,9 @@ vi.mock('../../../../src/env/cdxgen-version.mts', () => ({
   getCdxgenVersion: () => '10.0.0',
 }))
 
-// Mock VITEST to true to prevent actual downloads in tests.
-vi.mock('../../../../src/env/vitest.mts', () => ({
-  VITEST: true,
-}))
+// Mock VITEST as a getter so it can be flipped per-test.
+const mockVitest = vi.hoisted(() => ({ VITEST: true }))
+vi.mock('../../../../src/env/vitest.mts', () => mockVitest)
 
 vi.mock('../../../../src/utils/python/standalone.mts', () => ({
   ensurePythonDlx: vi.fn().mockResolvedValue('/usr/bin/python3'),
@@ -88,6 +87,23 @@ describe('preflight downloads', () => {
       // Since VITEST is mocked to true, no downloads happen anyway.
       // But the function should track that it's been called.
       expect(true).toBe(true)
+    })
+
+    it('swallows errors thrown inside the background async closure', async () => {
+      mockVitest.VITEST = false
+      mockGetCI.mockReturnValue(false)
+      mockDownloadPackage.mockRejectedValueOnce(new Error('network'))
+
+      const { runPreflightDownloads } = await import(
+        '../../../../src/utils/preflight/downloads.mts'
+      )
+
+      // Should not throw / reject.
+      runPreflightDownloads()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      // No assertion needed — test just verifies no unhandled rejection.
+      expect(true).toBe(true)
+      mockVitest.VITEST = true
     })
   })
 })
