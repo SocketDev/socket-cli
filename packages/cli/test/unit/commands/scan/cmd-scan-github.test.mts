@@ -422,5 +422,42 @@ describe('cmd-scan-github', () => {
         }),
       )
     })
+
+    it('cancels when interactive org selector returns undefined', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+      mockDetermineOrgSlug.mockResolvedValueOnce(['', ''])
+      mockSuggestOrgSlug.mockResolvedValueOnce(undefined)
+
+      await cmdScanGithub.run(
+        ['--github-token', 'gh_xxx'],
+        importMeta,
+        context,
+      )
+
+      expect(mockOutputScanGithub).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ok: false,
+          message: 'Canceled by user',
+        }),
+        expect.any(String),
+      )
+      expect(mockHandleCreateGithubScan).not.toHaveBeenCalled()
+    })
+
+    it('uses suggested orgSlug when interactive selector returns one', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+      mockDetermineOrgSlug.mockResolvedValueOnce(['', ''])
+      mockSuggestOrgSlug.mockResolvedValueOnce('suggested-org')
+
+      await cmdScanGithub.run(
+        ['--github-token', 'gh_xxx'],
+        importMeta,
+        context,
+      )
+
+      expect(mockHandleCreateGithubScan).toHaveBeenCalledWith(
+        expect.objectContaining({ orgSlug: 'suggested-org' }),
+      )
+    })
   })
 })
