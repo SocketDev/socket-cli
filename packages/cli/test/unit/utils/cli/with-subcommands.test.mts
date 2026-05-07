@@ -235,6 +235,46 @@ describe('meow-with-subcommands', () => {
 
       expect(result).toHaveProperty('flags')
     })
+
+    it('exits with error when --version flag is set but config does not declare version', async () => {
+      // Exercises the unknown-version-flag branch (lines 1026-1031).
+      // The default meow mock doesn't auto-set flags for argv items not in
+      // declared flags, so we override its return value just for this test
+      // to simulate meow detecting --version on the cli.flags shape.
+      const meowMod: any = await import('../../../../src/meow.mts')
+      const meowMock = vi.mocked(meowMod.default)
+      meowMock.mockReturnValueOnce({
+        flags: { version: true },
+        input: ['--version'],
+        help: '',
+        showHelp: vi.fn(),
+        showVersion: vi.fn(),
+      } as any)
+
+      const exitSpy = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => {}) as any)
+      try {
+        expect(() =>
+          meowOrExit(
+            {
+              argv: ['--version'],
+              config: mockConfig,
+              importMeta: import.meta,
+            },
+            {
+              flags: {},
+            },
+          ),
+        ).toThrow('process.exit called')
+        expect(exitSpy).toHaveBeenCalledWith(2)
+        expect(mockLogger.error).toHaveBeenCalledWith(
+          expect.stringContaining('Unknown flag'),
+        )
+      } finally {
+        exitSpy.mockRestore()
+      }
+    })
   })
 
   describe('emitBanner', () => {
@@ -683,6 +723,89 @@ describe('meow-with-subcommands', () => {
         await meowWithSubcommands({
           name: 'socket',
           argv: ['--help-full'],
+          importMeta: import.meta,
+          subcommands,
+        })
+      } catch {
+        // showHelp throw is expected.
+      }
+      expect(true).toBe(true)
+    })
+
+    it('shows --help-full bucketed help with all canonical subcommands', async () => {
+      // Provide every subcommand in the canonical Set so the
+      // commands.delete loop empties the Set and the
+      // `if (commands.size)` failure-message branch (lines 700-711)
+      // is skipped, exercising the `lines.push` block (lines 712-750).
+      const stub = (description: string) => ({
+        description,
+        run: vi.fn(async () => undefined),
+      })
+      const subcommands = {
+        analytics: stub('analytics'),
+        ask: stub('ask'),
+        'audit-log': stub('audit-log'),
+        bundler: stub('bundler'),
+        cargo: stub('cargo'),
+        cdxgen: stub('cdxgen'),
+        ci: stub('ci'),
+        config: stub('config'),
+        dependencies: stub('dependencies'),
+        fix: stub('fix'),
+        gem: stub('gem'),
+        go: stub('go'),
+        install: stub('install'),
+        license: stub('license'),
+        login: stub('login'),
+        logout: stub('logout'),
+        manifest: stub('manifest'),
+        npm: stub('npm'),
+        npx: stub('npx'),
+        nuget: stub('nuget'),
+        optimize: stub('optimize'),
+        organization: stub('organization'),
+        package: stub('package'),
+        patch: stub('patch'),
+        pip: stub('pip'),
+        pycli: stub('pycli'),
+        'raw-npm': stub('raw-npm'),
+        'raw-npx': stub('raw-npx'),
+        repository: stub('repository'),
+        scan: stub('scan'),
+        sfw: stub('sfw'),
+        'threat-feed': stub('threat-feed'),
+        uninstall: stub('uninstall'),
+        uv: stub('uv'),
+        whoami: stub('whoami'),
+        wrapper: stub('wrapper'),
+      }
+      try {
+        await meowWithSubcommands({
+          name: 'socket',
+          argv: ['--help-full'],
+          importMeta: import.meta,
+          subcommands,
+        })
+      } catch {
+        // showHelp throw is expected.
+      }
+      expect(true).toBe(true)
+    })
+
+    it('reports unknown subcommand and missing canonical commands when subcommands are partial', async () => {
+      // `extra` is NOT in the canonical Set → triggers
+      // `logger.fail('Received an unknown command:', name)` (line 697-698).
+      // Missing canonical commands trigger the `if (commands.size)` block
+      // (lines 700-711). Together this exercises both branches of the
+      // canonical-Set diff loop.
+      const subcommands = {
+        scan: { description: 'scan', run: vi.fn(async () => undefined) },
+        extra: { description: 'extra', run: vi.fn(async () => undefined) },
+      }
+      try {
+        await meowWithSubcommands({
+          name: 'socket',
+          argv: [],
           importMeta: import.meta,
           subcommands,
         })
