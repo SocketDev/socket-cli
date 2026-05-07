@@ -434,5 +434,47 @@ describe('package score output', async () => {
       const matches = md.match(/Supply Chain Risk:/g) || []
       expect(matches.length).toBeGreaterThanOrEqual(1)
     })
+
+    it('drops duplicate text-report blocks when two purls yield identical cards', () => {
+      // Construct two artifacts with the same shape so formatReportCard
+      // produces an identical string for both, hitting the dupes.has() path.
+      const sharedScore = {
+        supplyChain: 100,
+        maintenance: 100,
+        quality: 100,
+        vulnerability: 100,
+        license: 100,
+      }
+      const rows = new Map<string, any>([
+        [
+          'pkg:npm/dup-pkg@1.0.0',
+          {
+            ecosystem: 'npm',
+            namespace: '',
+            name: 'dup-pkg',
+            version: '1.0.0',
+            score: sharedScore,
+            alerts: new Map(),
+          },
+        ],
+        // Different key but same content → same formatReportCard output.
+        [
+          'pkg:npm/dup-pkg@2.0.0',
+          {
+            ecosystem: 'npm',
+            namespace: '',
+            name: 'dup-pkg',
+            version: '1.0.0',
+            score: sharedScore,
+            alerts: new Map(),
+          },
+        ],
+      ])
+
+      const txt = generateTextReport(rows, [])
+      // The dupe block should be dropped: only one rendering of "dup-pkg" content.
+      const matches = txt.match(/dup-pkg/g) || []
+      expect(matches.length).toBe(1)
+    })
   })
 })
