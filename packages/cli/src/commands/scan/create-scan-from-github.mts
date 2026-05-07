@@ -176,7 +176,7 @@ export async function createScanFromGithub({
   }
 }
 
-async function scanRepo(
+export async function scanRepo(
   repoSlug: string,
   {
     githubApiUrl,
@@ -211,7 +211,7 @@ async function scanRepo(
   return result
 }
 
-async function scanOneRepo(
+export async function scanOneRepo(
   repoSlug: string,
   {
     orgGithub,
@@ -329,7 +329,7 @@ async function scanOneRepo(
   return { ok: true, data: { scanCreated: true } }
 }
 
-async function testAndDownloadManifestFiles({
+export async function testAndDownloadManifestFiles({
   defaultBranch,
   files,
   orgGithub,
@@ -395,7 +395,7 @@ async function testAndDownloadManifestFiles({
   return { ok: true, data: undefined }
 }
 
-async function testAndDownloadManifestFile({
+export async function testAndDownloadManifestFile({
   defaultBranch,
   file,
   orgGithub,
@@ -433,7 +433,7 @@ async function testAndDownloadManifestFile({
   return result.ok ? { ok: true, data: { isManifest: true } } : result
 }
 
-async function downloadManifestFile({
+export async function downloadManifestFile({
   defaultBranch,
   file,
   orgGithub,
@@ -509,7 +509,7 @@ async function downloadManifestFile({
 }
 
 // Courtesy of gemini:
-async function streamDownloadWithFetch(
+export async function streamDownloadWithFetch(
   localPath: string,
   downloadUrl: string,
 ): Promise<CResult<string>> {
@@ -563,7 +563,7 @@ async function streamDownloadWithFetch(
   }
 }
 
-async function getLastCommitDetails({
+export async function getLastCommitDetails({
   defaultBranch,
   orgGithub,
   repoSlug,
@@ -633,7 +633,7 @@ async function getLastCommitDetails({
   return { ok: true, data: { lastCommitMessage, lastCommitSha, lastCommitter } }
 }
 
-async function selectFocus(repos: string[]): Promise<CResult<string[]>> {
+export async function selectFocus(repos: string[]): Promise<CResult<string[]>> {
   const proceed = await select({
     message: 'Please select the repo to process:',
     choices: repos
@@ -658,7 +658,7 @@ async function selectFocus(repos: string[]): Promise<CResult<string[]>> {
   return { ok: true, data: [proceed] }
 }
 
-async function makeSure(count: number): Promise<CResult<undefined>> {
+export async function makeSure(count: number): Promise<CResult<undefined>> {
   if (
     !(await confirm({
       message: `Are you sure you want to run this for ${count} repos?`,
@@ -674,7 +674,7 @@ async function makeSure(count: number): Promise<CResult<undefined>> {
   return { ok: true, data: undefined }
 }
 
-async function getRepoDetails({
+export async function getRepoDetails({
   orgGithub,
   repoSlug,
 }: {
@@ -715,7 +715,7 @@ async function getRepoDetails({
   return { ok: true, data: { defaultBranch, repoDetails } }
 }
 
-async function getRepoBranchTree({
+export async function getRepoBranchTree({
   defaultBranch,
   orgGithub,
   repoSlug,

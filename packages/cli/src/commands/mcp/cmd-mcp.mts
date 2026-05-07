@@ -20,14 +20,14 @@ export const cmdMcp = {
 
 const DEFAULT_PORT = 3000
 
-function parseRequiredScopes(raw: string): string[] {
+export function parseRequiredScopes(raw: string): string[] {
   return raw
     .split(/\s+/u)
     .map(value => value.trim())
     .filter(Boolean)
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,

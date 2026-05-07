@@ -20,20 +20,20 @@ const PLATFORM_PATTERNS = {
   'win32-x64': [/win.*(amd64|x86_64)/i],
 } as unknown as Record<string, RegExp[]>
 
-function artifactGroupKey(artifact: ArtifactData): string {
+export function artifactGroupKey(artifact: ArtifactData): string {
   const ns = artifact.namespace || ''
   return `${artifact.type || ''}/${ns}/${artifact.name || ''}@${artifact.version || ''}`
 }
 
-function isSourceDist(release: string): boolean {
+export function isSourceDist(release: string): boolean {
   return /\.(tar\.gz|tar\.bz2|zip)$/i.test(release) || /sdist/i.test(release)
 }
 
-function isUniversalWheel(release: string): boolean {
+export function isUniversalWheel(release: string): boolean {
   return /[-_]none[-_]any\.whl$/i.test(release) || /py3[-_]none[-_]any/i.test(release)
 }
 
-function matchesPlatform(release: string, platform: string): boolean {
+export function matchesPlatform(release: string, platform: string): boolean {
   const patterns = PLATFORM_PATTERNS[platform]
   if (patterns) {
     return patterns.some(p => p.test(release))
@@ -41,7 +41,7 @@ function matchesPlatform(release: string, platform: string): boolean {
   return release.toLowerCase().includes(platform.toLowerCase())
 }
 
-function selectBestArtifact(
+export function selectBestArtifact(
   artifacts: ArtifactData[],
   platform?: string | undefined,
 ): ArtifactData {

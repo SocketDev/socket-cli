@@ -79,7 +79,7 @@ export async function outputDiffScan(
   logger.info(dashboardMessage)
 }
 
-async function handleJson(
+export async function handleJson(
   data: CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>,
   file: string,
   dashboardMessage: string,
@@ -105,7 +105,7 @@ async function handleJson(
   }
 }
 
-async function handleMarkdown(
+export async function handleMarkdown(
   data: SocketSdkSuccessResult<'GetOrgDiffScan'>['data'],
 ) {
   const SOCKET_SBOM_URL_PREFIX = `${SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`

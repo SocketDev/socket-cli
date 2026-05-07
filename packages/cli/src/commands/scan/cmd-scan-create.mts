@@ -228,7 +228,7 @@ const DEFAULT_BRANCH_FLAGS = [
 ]
 const DEFAULT_BRANCH_PREFIXES = DEFAULT_BRANCH_FLAGS.map(f => `${f}=`)
 
-function hasLegacyDefaultBranchFlag(argv: readonly string[]): boolean {
+export function hasLegacyDefaultBranchFlag(argv: readonly string[]): boolean {
   return argv.some(
     arg =>
       LEGACY_DEFAULT_BRANCH_FLAGS.includes(arg) ||
@@ -236,14 +236,14 @@ function hasLegacyDefaultBranchFlag(argv: readonly string[]): boolean {
   )
 }
 
-function isBareIdentifier(token: string): boolean {
+export function isBareIdentifier(token: string): boolean {
   // Accept only tokens that look like a plain branch name. Anything
   // with a path separator, dot, or colon is almost certainly a target
   // path, URL, or something else the user meant as a positional arg.
   return /^[A-Za-z0-9_-]+$/.test(token)
 }
 
-function findDefaultBranchValueMisuse(
+export function findDefaultBranchValueMisuse(
   argv: readonly string[],
 ): { form: string; value: string } | undefined {
   // `--default-branch=main` — unambiguous: the `=` form attaches a
@@ -295,7 +295,7 @@ export const cmdScanCreate = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,

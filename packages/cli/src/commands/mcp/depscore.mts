@@ -64,7 +64,7 @@ export interface DepscoreOptions {
   apiToken: string
 }
 
-function formatScore(jsonData: ArtifactData): string {
+export function formatScore(jsonData: ArtifactData): string {
   const ns = jsonData.namespace ? `${jsonData.namespace}/` : ''
   const purl = `pkg:${jsonData.type || 'unknown'}/${ns}${jsonData.name || 'unknown'}@${jsonData.version || 'unknown'}`
   if (
@@ -89,7 +89,7 @@ function formatScore(jsonData: ArtifactData): string {
 // tool calls; HTTP+OAuth mode constructs one per distinct token.
 const sdkCache = new Map<string, SocketSdk>()
 
-async function getSdk(apiToken: string): Promise<SocketSdk> {
+export async function getSdk(apiToken: string): Promise<SocketSdk> {
   const cached = sdkCache.get(apiToken)
   if (cached) {
     return cached

@@ -133,7 +133,7 @@ export async function setupScanConfig(
   return canceledByUser()
 }
 
-async function configureScan(
+export async function configureScan(
   config: NonNullable<
     NonNullable<NonNullable<SocketJson['defaults']>['scan']>['create']
   >,
@@ -269,7 +269,7 @@ async function configureScan(
   return notCanceled()
 }
 
-async function configureGithub(
+export async function configureGithub(
   config: NonNullable<
     NonNullable<NonNullable<SocketJson['defaults']>['scan']>['github']
   >,
@@ -363,13 +363,13 @@ async function configureGithub(
   return notCanceled()
 }
 
-function canceledByUser(): CResult<{ canceled: boolean }> {
+export function canceledByUser(): CResult<{ canceled: boolean }> {
   logger.log('')
   logger.info('User canceled')
   logger.log('')
   return { ok: true, data: { canceled: true } }
 }
 
-function notCanceled(): CResult<{ canceled: boolean }> {
+export function notCanceled(): CResult<{ canceled: boolean }> {
   return { ok: true, data: { canceled: false } }
 }

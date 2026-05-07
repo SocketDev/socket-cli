@@ -29,7 +29,7 @@ import { runSocketBasics } from '../../utils/basics/spawn.mts'
  * @param paths - Array of file paths to filter.
  * @returns Filtered paths without .socket.facts.json files.
  */
-function excludeFactsJson(paths: string[]): string[] {
+export function excludeFactsJson(paths: string[]): string[] {
   return paths.filter(p => path.basename(p) !== DOT_SOCKET_DOT_FACTS_JSON)
 }
 import { compressSocketFactsForUpload } from '../../utils/coana/compress-facts.mts'

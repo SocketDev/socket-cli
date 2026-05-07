@@ -26,7 +26,7 @@ const hidden = false
 
 // Helper functions.
 
-function applyLogout(): void {
+export function applyLogout(): void {
   updateConfigValue(CONFIG_KEY_API_TOKEN, null)
   updateConfigValue(CONFIG_KEY_API_BASE_URL, null)
   updateConfigValue(CONFIG_KEY_API_PROXY, null)
@@ -34,7 +34,7 @@ function applyLogout(): void {
   invalidateDefaultApiToken()
 }
 
-function attemptLogout(): void {
+export function attemptLogout(): void {
   try {
     applyLogout()
     logger.success('Successfully logged out')
@@ -51,7 +51,7 @@ function attemptLogout(): void {
 
 // Command handler.
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,

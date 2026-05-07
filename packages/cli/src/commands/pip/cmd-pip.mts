@@ -61,7 +61,7 @@ export const cmdPip = {
  * @param invokedAs - The alias name used to invoke the command (e.g., 'pip3')
  * @returns The pip binary name to use ('pip' or 'pip3')
  */
-async function getPipBinName(invokedAs?: string): Promise<string> {
+export async function getPipBinName(invokedAs?: string): Promise<string> {
   // Determine the requested binary based on how the command was invoked.
   const requested = invokedAs === 'pip3' ? invokedAs : 'pip'
   const fallback = requested === 'pip' ? 'pip3' : 'pip'
@@ -96,7 +96,7 @@ async function getPipBinName(invokedAs?: string): Promise<string> {
  * @param importMeta - Import metadata for meow
  * @param context - CLI command context (parent name, etc.)
  */
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   context: CliCommandContext,
