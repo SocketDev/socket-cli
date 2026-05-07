@@ -151,4 +151,26 @@ describe('parse-package-specifiers', async () => {
       }
     `)
   })
+
+  it('handles undefined slot in pkgs array (sparse) for npm-mode', () => {
+    // pkgs[0] = undefined → `pkgs[i] ?? ''` returns '', then breaks valid.
+    // Use Array.from with explicit undefined.
+    const sparse = [undefined as any]
+    expect(parsePackageSpecifiers('npm', sparse)).toMatchInlineSnapshot(`
+      {
+        "purls": [],
+        "valid": false,
+      }
+    `)
+  })
+
+  it('handles undefined slot in pkgs array (sparse) for purl-mode', () => {
+    const sparse = [undefined as any]
+    expect(parsePackageSpecifiers('not-a-purl', sparse)).toMatchInlineSnapshot(`
+      {
+        "purls": [],
+        "valid": false,
+      }
+    `)
+  })
 })
