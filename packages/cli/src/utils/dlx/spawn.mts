@@ -34,7 +34,6 @@ import { whichReal } from '@socketsecurity/lib/bin'
 import {
   resolveCdxgen,
   resolveCoana,
-  resolveOpengrep,
   resolvePyCli,
   resolveSfw,
   resolveSocketPatch,
@@ -1733,66 +1732,8 @@ export {
   spawnTrufflehogVfs,
 } from './spawn-trufflehog.mts'
 
-/**
- * Spawn OpenGrep via GitHub download (npm CLI mode).
- * Downloads from GitHub releases (opengrep/opengrep).
- */
-export async function spawnOpengrepDlx(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  const resolution = resolveOpengrep()
-
-  if (resolution.type !== 'github-release') {
-    throw new Error(
-      `internal: resolveOpengrep returned resolution.type="${resolution.type}" (expected "github-release"); this is a resolver contract bug — re-run with --debug and report the output`,
-    )
-  }
-
-  const { env: spawnEnv, ...dlxOptions } = {
-    __proto__: null,
-    ...options,
-  } as DlxOptions
-
-  const binaryPath = await downloadGitHubReleaseBinary(resolution.details)
-
-  const spawnPromise = spawn(binaryPath, args, {
-    ...dlxOptions,
-    env: {
-      ...process.env,
-      ...spawnEnv,
-    },
-    stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
-  })
-
-  return {
-    spawnPromise,
-  }
-}
-
-/**
- * Spawn OpenGrep from VFS (SEA mode).
- */
-export async function spawnOpengrepVfs(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  return await spawnToolVfs('opengrep', args, options, spawnExtra)
-}
-
-/**
- * Spawn OpenGrep.
- * Auto-detects SEA mode and uses appropriate spawn method.
- */
-export async function spawnOpengrep(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  if (isSeaBinary() && areExternalToolsAvailable()) {
-    return await spawnOpengrepVfs(args, options, spawnExtra)
-  }
-  return await spawnOpengrepDlx(args, options, spawnExtra)
-}
+export {
+  spawnOpengrep,
+  spawnOpengrepDlx,
+  spawnOpengrepVfs,
+} from './spawn-opengrep.mts'
