@@ -87,6 +87,26 @@ describe('cmd-manifest-gradle', () => {
       )
     })
 
+    it('forwards --gradle-opts and --bin in the dry-run preview args', async () => {
+      // Exercises the args.push branches in the dryRun block.
+      await cmdManifestGradle.run(
+        [
+          '--dry-run',
+          '.',
+          '--bin',
+          '/custom/gradlew',
+          '--gradle-opts',
+          '--stacktrace --info',
+        ],
+        importMeta,
+        context,
+      )
+      expect(mockConvertGradleToMaven).not.toHaveBeenCalled()
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('DryRun'),
+      )
+    })
+
     it('should call convertGradleToMaven with correct default parameters', async () => {
       await cmdManifestGradle.run(['.'], importMeta, context)
 

@@ -89,6 +89,17 @@ describe('cmd-manifest-auto', () => {
       )
     })
 
+    it('logs "no manifest targets" on dry-run when nothing is detected', async () => {
+      mockDetectManifestActions.mockResolvedValueOnce({ count: 0 })
+
+      await cmdManifestAuto.run(['--dry-run'], importMeta, context)
+
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        'No manifest targets detected in the specified directory.',
+      )
+      expect(mockGenerateAutoManifest).not.toHaveBeenCalled()
+    })
+
     it('should detect manifest actions with socket.json config', async () => {
       const mockSocketJson = { defaults: { manifest: { auto: {} } } }
       mockReadOrDefaultSocketJson.mockReturnValueOnce(mockSocketJson)

@@ -82,6 +82,28 @@ describe('agent installer utilities', () => {
     // The mock-based test was removed due to ESM module resolution issues that
     // prevented proper interception. The 6 tests below cover pnpm/yarn/unknown agents.
 
+    it('uses spawn for npm agent with --no-audit --no-fund', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as any)
+
+      const pkgEnvDetails = {
+        agent: 'npm',
+        agentExecPath: '/usr/bin/npm',
+        pkgPath: '/test/project',
+        agentVersion: { major: 10, minor: 0, patch: 0 },
+      } as any
+
+      runAgentInstall(pkgEnvDetails)
+
+      expect(spawn).toHaveBeenCalledWith(
+        '/usr/bin/npm',
+        ['install', '--no-audit', '--no-fund'],
+        expect.objectContaining({
+          cwd: '/test/project',
+        }),
+      )
+    })
+
     it('uses spawn for pnpm agent', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
       spawn.mockReturnValue(Promise.resolve({ status: 0 }) as any)

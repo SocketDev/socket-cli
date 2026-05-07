@@ -82,6 +82,27 @@ describe('cmd-manifest-scala', () => {
       )
     })
 
+    it('forwards --bin, --out, --sbt-opts in the dry-run preview args', async () => {
+      await cmdManifestScala.run(
+        [
+          '--dry-run',
+          '.',
+          '--bin',
+          '/custom/sbt',
+          '--out',
+          '/tmp/out.xml',
+          '--sbt-opts',
+          '--debug --no-colors',
+        ],
+        importMeta,
+        context,
+      )
+      expect(mockConvertSbtToMaven).not.toHaveBeenCalled()
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('DryRun'),
+      )
+    })
+
     it('should call convertSbtToMaven with correct default parameters', async () => {
       await cmdManifestScala.run(['.'], importMeta, context)
 

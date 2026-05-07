@@ -132,4 +132,14 @@ export NODE_ENV=development`,
 
     expect(result).toBe(false)
   })
+
+  it('returns false when readFileSync throws (deleted/unreadable file)', () => {
+    readFileSyncSpy.mockImplementation(() => {
+      const err = new Error('ENOENT') as NodeJS.ErrnoException
+      err.code = 'ENOENT'
+      throw err
+    })
+    const result = checkSocketWrapperSetup('/home/user/.bashrc-missing')
+    expect(result).toBe(false)
+  })
 })
