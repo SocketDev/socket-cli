@@ -9,11 +9,13 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { createConfiguredServer } from './server.mts'
 import {
   buildProtectedResourceMetadata,
+  destroySessionEntry,
   getProtectedResourceMetadataUrl,
   getRequestBaseUrl,
   getRequestHeaderValue,
   handleRequestSafely,
   isLocalhostOrigin,
+  makeOnTransportClose,
   OAuthIntrospector,
   OAUTH_PROTECTED_RESOURCE_METADATA_PATH,
   reapIdleSessions,
@@ -83,18 +85,8 @@ export async function runHttpTransport(
 
   const sessions = new Map<string, Session>()
 
-  const destroySession = (id: string): void => {
-    const s = sessions.get(id)
-    if (!s) {
-      return
-    }
-    sessions.delete(id)
-    try {
-      s.transport.close()
-    } catch {}
-    s.server.close().catch(() => {})
-    logger.info(`Session ${id} destroyed`)
-  }
+  const destroySession = (id: string): void =>
+    destroySessionEntry(id, sessions, logger)
 
   const tickReaper = () =>
     reapIdleSessions(
@@ -272,12 +264,10 @@ export async function runHttpTransport(
               },
               sessionIdGenerator: () => randomUUID(),
             })
-            newTransport.onclose = () => {
-              const id = newTransport.sessionId
-              if (id) {
-                destroySession(id)
-              }
-            }
+            newTransport.onclose = makeOnTransportClose(
+              () => newTransport.sessionId,
+              destroySession,
+            )
             transport = newTransport
             await server.connect(transport as Transport)
           }

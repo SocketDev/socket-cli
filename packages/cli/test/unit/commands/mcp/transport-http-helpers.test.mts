@@ -30,12 +30,14 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import {
   buildProtectedResourceMetadata,
+  destroySessionEntry,
   getForwardedHeaderValue,
   getProtectedResourceMetadataUrl,
   getRequestBaseUrl,
   getRequestHeaderValue,
   handleRequestSafely,
   isLocalhostOrigin,
+  makeOnTransportClose,
   OAUTH_PROTECTED_RESOURCE_METADATA_PATH,
   OAUTH_WELL_KNOWN_PATH,
   parseJsonObject,
@@ -44,6 +46,8 @@ import {
   writeJson,
   writeOAuthError,
 } from '../../../../src/commands/mcp/transport-http-helpers.mts'
+
+import type { SessionLike } from '../../../../src/commands/mcp/transport-http-helpers.mts'
 
 import type { OAuthMetadata } from '../../../../src/commands/mcp/transport-http-helpers.mts'
 
@@ -460,6 +464,98 @@ describe('isLocalhostOrigin', () => {
     // two literal forms are. If we want to extend, that's a deliberate
     // change.
     expect(isLocalhostOrigin('http://[::1]')).toBe(false)
+  })
+})
+
+describe('destroySessionEntry', () => {
+  function fakeSession(opts: {
+    transportClose?: () => void
+    serverClose?: () => Promise<unknown>
+  } = {}): SessionLike {
+    return {
+      lastActivity: 0,
+      server: {
+        close:
+          opts.serverClose ??
+          (() => Promise.resolve()),
+      },
+      transport: {
+        close: opts.transportClose ?? (() => {}),
+      },
+    }
+  }
+
+  it('returns early when the session id is unknown', () => {
+    const sessions = new Map<string, SessionLike>()
+    const log = { info: vi.fn() }
+    destroySessionEntry('does-not-exist', sessions, log)
+    expect(log.info).not.toHaveBeenCalled()
+  })
+
+  it('deletes the session, closes the transport and server, and logs', () => {
+    const transportClose = vi.fn()
+    const serverClose = vi.fn(() => Promise.resolve())
+    const session = fakeSession({ transportClose, serverClose })
+    const sessions = new Map<string, SessionLike>([['s1', session]])
+    const log = { info: vi.fn() }
+    destroySessionEntry('s1', sessions, log)
+    expect(sessions.has('s1')).toBe(false)
+    expect(transportClose).toHaveBeenCalled()
+    expect(serverClose).toHaveBeenCalled()
+    expect(log.info).toHaveBeenCalledWith('Session s1 destroyed')
+  })
+
+  it('swallows synchronous throws from transport.close()', () => {
+    const transportClose = vi.fn(() => {
+      throw new Error('mid-stream close')
+    })
+    const sessions = new Map<string, SessionLike>([
+      ['s1', fakeSession({ transportClose })],
+    ])
+    const log = { info: vi.fn() }
+    expect(() => destroySessionEntry('s1', sessions, log)).not.toThrow()
+    expect(log.info).toHaveBeenCalledWith('Session s1 destroyed')
+  })
+
+  it('swallows async rejections from server.close() (the .catch arm)', async () => {
+    const serverClose = vi.fn(() => Promise.reject(new Error('shutdown race')))
+    const sessions = new Map<string, SessionLike>([
+      ['s1', fakeSession({ serverClose })],
+    ])
+    const log = { info: vi.fn() }
+    destroySessionEntry('s1', sessions, log)
+    // Wait a microtask for the rejection to flush through .catch.
+    await Promise.resolve()
+    await Promise.resolve()
+    // Test passes iff destroySessionEntry didn't propagate the
+    // unhandled rejection to the test runner.
+    expect(serverClose).toHaveBeenCalled()
+  })
+})
+
+describe('makeOnTransportClose', () => {
+  it('calls destroy(id) when the transport reports a sessionId', () => {
+    const destroy = vi.fn()
+    const onclose = makeOnTransportClose(() => 'session-abc', destroy)
+    onclose()
+    expect(destroy).toHaveBeenCalledWith('session-abc')
+  })
+
+  it('is a no-op when the transport has no sessionId yet', () => {
+    // Fires when onclose runs before onsessioninitialized has assigned
+    // a sessionId — the SDK can close a freshly-constructed transport
+    // (e.g. an init failure) before any sessionId exists.
+    const destroy = vi.fn()
+    const onclose = makeOnTransportClose(() => undefined, destroy)
+    onclose()
+    expect(destroy).not.toHaveBeenCalled()
+  })
+
+  it('treats empty-string sessionId as missing', () => {
+    const destroy = vi.fn()
+    const onclose = makeOnTransportClose(() => '', destroy)
+    onclose()
+    expect(destroy).not.toHaveBeenCalled()
   })
 })
 

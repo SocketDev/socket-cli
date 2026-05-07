@@ -327,6 +327,58 @@ export class OAuthIntrospector {
 }
 
 /**
+ * Destroy a session by id. Closes the transport (catching synchronous
+ * throws) and the server (swallowing async rejections), then deletes
+ * the session entry and logs.
+ *
+ * The transport-close try/catch and the server-close `.catch()` are
+ * here because the SDK's close path can fault when called during an
+ * already-closing connection (e.g. client disconnect mid-stream); we
+ * want destroySession to be safe to call repeatedly without
+ * propagating those races.
+ */
+export interface SessionLike {
+  lastActivity: number
+  server: { close(): Promise<unknown> }
+  transport: { close(): void }
+}
+
+export function destroySessionEntry<T extends SessionLike>(
+  id: string,
+  sessions: Map<string, T>,
+  log: { info: (msg: string) => void },
+): void {
+  const s = sessions.get(id)
+  if (!s) {
+    return
+  }
+  sessions.delete(id)
+  try {
+    s.transport.close()
+  } catch {}
+  s.server.close().catch(() => {})
+  log.info(`Session ${id} destroyed`)
+}
+
+/**
+ * Build the `transport.onclose` handler that destroys the session
+ * keyed by the transport's sessionId. The `if (sessionId)` guard
+ * matters because onclose can fire before onsessioninitialized has
+ * assigned a sessionId (e.g. SDK init failure on a brand-new transport).
+ */
+export function makeOnTransportClose(
+  getSessionId: () => string | undefined,
+  destroy: (id: string) => void,
+): () => void {
+  return () => {
+    const id = getSessionId()
+    if (id) {
+      destroy(id)
+    }
+  }
+}
+
+/**
  * Walk a session map and destroy entries whose lastActivity is older
  * than `ttlMs`. Used by the periodic reaper interval.
  */
