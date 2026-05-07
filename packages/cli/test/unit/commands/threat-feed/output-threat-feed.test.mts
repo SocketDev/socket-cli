@@ -260,4 +260,100 @@ describe('outputThreatFeed', () => {
       'Did not receive any data to display.',
     )
   })
+
+  it('renders threat feed with iocraft when results are present', async () => {
+    // Spy on the iocraft display so we don't actually render.
+    const mockDisplay = vi.fn()
+    vi.doMock(
+      '../../../../src/commands/threat-feed/ThreatFeedRenderer.mts',
+      () => ({ displayThreatFeedWithIocraft: mockDisplay }),
+    )
+    vi.resetModules()
+    const { outputThreatFeed: fn } = await import(
+      '../../../../src/commands/threat-feed/output-threat-feed.mts'
+    )
+
+    const threatResults: ThreatResult[] = [
+      {
+        createdAt: '2024-01-01T00:00:00Z',
+        description: 'Test threat',
+        id: 1,
+        locationHtmlUrl: 'https://example.com',
+        packageHtmlUrl: 'https://example.com/package',
+        purl: 'pkg:npm/test@1.0.0',
+        removedAt: null,
+        threatType: 'malware',
+      },
+    ]
+    const result: CResult<ThreadFeedResponse> = {
+      ok: true,
+      data: {
+        nextPage: 'next',
+        results: threatResults,
+      },
+    }
+
+    await fn(result, 'text')
+
+    expect(mockDisplay).toHaveBeenCalledWith(
+      expect.objectContaining({
+        results: expect.arrayContaining([
+          expect.objectContaining({
+            parsed: expect.objectContaining({ ecosystem: 'npm', name: 'test' }),
+          }),
+        ]),
+      }),
+    )
+    vi.doUnmock(
+      '../../../../src/commands/threat-feed/ThreatFeedRenderer.mts',
+    )
+  })
+
+  it('handles unparseable PURLs in iocraft path', async () => {
+    const mockDisplay = vi.fn()
+    vi.doMock(
+      '../../../../src/commands/threat-feed/ThreatFeedRenderer.mts',
+      () => ({ displayThreatFeedWithIocraft: mockDisplay }),
+    )
+    vi.resetModules()
+    const { outputThreatFeed: fn } = await import(
+      '../../../../src/commands/threat-feed/output-threat-feed.mts'
+    )
+
+    const threatResults: ThreatResult[] = [
+      {
+        createdAt: '2024-01-01T00:00:00Z',
+        description: 'Bad PURL',
+        id: 1,
+        locationHtmlUrl: '',
+        packageHtmlUrl: '',
+        purl: 'not-a-real-purl',
+        removedAt: null,
+        threatType: 'malware',
+      },
+    ]
+    const result: CResult<ThreadFeedResponse> = {
+      ok: true,
+      data: {
+        nextPage: 'next',
+        results: threatResults,
+      },
+    }
+
+    await fn(result, 'text')
+
+    // parsed fields should fall back to empty strings.
+    expect(mockDisplay).toHaveBeenCalledWith(
+      expect.objectContaining({
+        results: expect.arrayContaining([
+          expect.objectContaining({
+            parsed: { ecosystem: '', name: '', version: '' },
+          }),
+        ]),
+      }),
+    )
+    vi.doUnmock(
+      '../../../../src/commands/threat-feed/ThreatFeedRenderer.mts',
+    )
+  })
 })
