@@ -23,7 +23,11 @@ vi.mock('../../../../src/constants/paths.mts', () => ({
 import {
   areExternalToolsAvailable,
   EXTERNAL_TOOLS,
+  extractTool,
+  getNodeSmolBasePath,
+  getToolFilePath,
   getToolPaths,
+  isNpmPackageExtracted,
 } from '../../../../src/utils/dlx/vfs-extract.mts'
 
 const realProcessSmol = (process as any).smol
@@ -115,6 +119,101 @@ describe('utils/dlx/vfs-extract', () => {
           value: realPlatform,
           configurable: true,
         })
+      }
+    })
+  })
+
+  describe('getToolFilePath', () => {
+    it('returns npm package binPath for npm tools', () => {
+      const result = getToolFilePath('cdxgen', '/base')
+      expect(result).toContain('node_modules/@cyclonedx/cdxgen/bin/cdxgen')
+    })
+
+    it('returns standalone path for sfw', () => {
+      const result = getToolFilePath('sfw', '/base')
+      expect(result).toContain('node_modules/@socketsecurity/sfw-bin/sfw')
+    })
+
+    it('returns standalone path for socket-patch', () => {
+      const result = getToolFilePath('socket-patch', '/base')
+      expect(result).toContain('socket-patch')
+    })
+
+    it('returns plain tool name fallback when not in either map', () => {
+      const result = getToolFilePath(
+        'definitely-not-a-tool' as never,
+        '/base',
+      )
+      expect(result).toContain('definitely-not-a-tool')
+    })
+  })
+
+  describe('getNodeSmolBasePath', () => {
+    it('returns a path containing the dlx directory', () => {
+      const result = getNodeSmolBasePath()
+      expect(typeof result).toBe('string')
+      expect(result).toContain('_dlx')
+    })
+
+    it('uses process.smol.getHash when available', () => {
+      ;(process as any).smol = { getHash: () => 'mock-hash-12345' }
+      try {
+        const result = getNodeSmolBasePath()
+        expect(result).toContain('mock-hash-12345')
+      } finally {
+        delete (process as any).smol
+      }
+    })
+
+    it('falls back to a derived hash when getHash throws', () => {
+      ;(process as any).smol = {
+        get getHash() {
+          throw new Error('boom')
+        },
+      }
+      try {
+        const result = getNodeSmolBasePath()
+        // Hash falls back to slice(0, 16) of sha256.
+        expect(result).toMatch(/_dlx\/[a-f0-9]{16}$/)
+      } finally {
+        delete (process as any).smol
+      }
+    })
+  })
+
+  describe('isNpmPackageExtracted', () => {
+    it('returns false for missing path', async () => {
+      const result = await isNpmPackageExtracted(
+        '/definitely/not/a/real/path/' + Date.now(),
+      )
+      expect(result).toBe(false)
+    })
+
+    it('returns false when package.json missing', async () => {
+      // The repo's own root has package.json + node_modules; use a sibling
+      // that exists but has no package.json (e.g. /tmp itself).
+      const result = await isNpmPackageExtracted('/tmp')
+      // /tmp exists but has no package.json — should return false.
+      expect(result).toBe(false)
+    })
+  })
+
+  describe('extractTool', () => {
+    it('throws when process.smol.mount is undefined', async () => {
+      // No process.smol set in beforeEach — should throw.
+      await expect(extractTool('cdxgen')).rejects.toThrow(
+        /process\.smol\.mount is undefined/,
+      )
+    })
+
+    it('throws when process.smol exists but mount is missing', async () => {
+      ;(process as any).smol = { otherProp: true }
+      try {
+        await expect(extractTool('cdxgen')).rejects.toThrow(
+          /process\.smol\.mount is undefined/,
+        )
+      } finally {
+        delete (process as any).smol
       }
     })
   })

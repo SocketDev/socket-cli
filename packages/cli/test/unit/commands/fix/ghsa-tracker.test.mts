@@ -34,6 +34,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   getFixedGhsas,
   isGhsaFixed,
+  isPidAlive,
   loadGhsaTracker,
   markGhsaFixed,
   saveGhsaTracker,
@@ -72,6 +73,46 @@ vi.mock('@socketsecurity/lib/fs', () => ({
 }))
 
 describe('ghsa-tracker', () => {
+  describe('isPidAlive', () => {
+    it('returns true for the current process', () => {
+      // process.kill(self, 0) is a no-op that succeeds when the process exists.
+      expect(isPidAlive(process.pid)).toBe(true)
+    })
+
+    it('returns false for a PID that does not exist', () => {
+      // PID 0 / very large PID throws ESRCH (no such process).
+      expect(isPidAlive(2 ** 22)).toBe(false)
+    })
+
+    it('returns true when process.kill throws EPERM (alive but no permission)', () => {
+      const original = process.kill
+      ;(process as any).kill = () => {
+        const e = new Error('Operation not permitted') as NodeJS.ErrnoException
+        e.code = 'EPERM'
+        throw e
+      }
+      try {
+        expect(isPidAlive(1)).toBe(true)
+      } finally {
+        ;(process as any).kill = original
+      }
+    })
+
+    it('returns false when process.kill throws non-EPERM (e.g. EINVAL)', () => {
+      const original = process.kill
+      ;(process as any).kill = () => {
+        const e = new Error('Invalid') as NodeJS.ErrnoException
+        e.code = 'EINVAL'
+        throw e
+      }
+      try {
+        expect(isPidAlive(1)).toBe(false)
+      } finally {
+        ;(process as any).kill = original
+      }
+    })
+  })
+
   const mockCwd = '/test/repo'
   const trackerPath = path.join(mockCwd, '.socket/fixed-ghsas.json')
 

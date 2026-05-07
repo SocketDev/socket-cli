@@ -1,0 +1,370 @@
+/**
+ * Direct unit tests for create-scan-from-github helpers.
+ *
+ * Purpose:
+ * Tests that import + execute the real source functions (not mocks of them).
+ * The companion file `create-scan-from-github.test.mts` only exercises the
+ * Octokit mock surface, which leaves the actual source untouched at runtime.
+ *
+ * Test Coverage:
+ * - getRepoDetails / getRepoBranchTree / getLastCommitDetails
+ * - selectFocus / makeSure (interactive prompt wrappers)
+ * - streamDownloadWithFetch error path
+ *
+ * Related Files:
+ * - src/commands/scan/create-scan-from-github.mts (implementation)
+ */
+
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const mockOctokit = vi.hoisted(() => ({
+  repos: { get: vi.fn(), listCommits: vi.fn() },
+  git: { getTree: vi.fn() },
+}))
+const mockGetOctokit = vi.hoisted(() => vi.fn(() => mockOctokit))
+const mockWithGitHubRetry = vi.hoisted(() => vi.fn())
+
+vi.mock('../../../../src/utils/git/github.mts', () => ({
+  GITHUB_ERR_ABUSE_DETECTION: 'GitHub abuse detection triggered',
+  GITHUB_ERR_AUTH_FAILED: 'GitHub authentication failed',
+  GITHUB_ERR_GRAPHQL_RATE_LIMIT: 'GitHub GraphQL rate limit exceeded',
+  GITHUB_ERR_RATE_LIMIT: 'GitHub rate limit exceeded',
+  getOctokit: mockGetOctokit,
+  withGitHubRetry: mockWithGitHubRetry,
+}))
+
+vi.mock('@socketsecurity/lib/debug', () => ({
+  debug: vi.fn(),
+  debugDir: vi.fn(),
+}))
+
+vi.mock('@socketsecurity/lib/logger', () => ({
+  getDefaultLogger: vi.fn(() => ({
+    fail: vi.fn(),
+    group: vi.fn(),
+    groupEnd: vi.fn(),
+    info: vi.fn(),
+    log: vi.fn(),
+    success: vi.fn(),
+    warn: vi.fn(),
+  })),
+}))
+
+const mockSelect = vi.hoisted(() => vi.fn())
+const mockConfirm = vi.hoisted(() => vi.fn())
+vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
+  select: mockSelect,
+  confirm: mockConfirm,
+}))
+
+const mockSocketHttpRequest = vi.hoisted(() => vi.fn())
+vi.mock('../../../../src/utils/socket/api.mjs', () => ({
+  socketHttpRequest: mockSocketHttpRequest,
+}))
+
+import {
+  getLastCommitDetails,
+  getRepoBranchTree,
+  getRepoDetails,
+  makeSure,
+  selectFocus,
+  streamDownloadWithFetch,
+} from '../../../../src/commands/scan/create-scan-from-github.mts'
+
+describe('create-scan-from-github (direct)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  describe('getRepoDetails', () => {
+    it('returns default branch on success', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: true,
+        data: { default_branch: 'main', name: 'r' },
+      })
+      const result = await getRepoDetails({
+        orgGithub: 'org',
+        repoSlug: 'r',
+        githubApiUrl: 'https://api.github.com',
+        githubToken: 'gh_t',
+      })
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data.defaultBranch).toBe('main')
+      }
+    })
+
+    it('propagates failure from withGitHubRetry', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: false,
+        message: 'GitHub rate limit exceeded',
+        cause: 'fail',
+      })
+      const result = await getRepoDetails({
+        orgGithub: 'org',
+        repoSlug: 'r',
+        githubApiUrl: 'https://api.github.com',
+        githubToken: 'gh_t',
+      })
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('GitHub rate limit exceeded')
+      }
+    })
+
+    it('returns error when default branch is missing', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: true,
+        data: { default_branch: null, name: 'r' },
+      })
+      const result = await getRepoDetails({
+        orgGithub: 'org',
+        repoSlug: 'r',
+        githubApiUrl: 'https://api.github.com',
+        githubToken: 'gh_t',
+      })
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('Default branch not found')
+      }
+    })
+  })
+
+  describe('getRepoBranchTree', () => {
+    it('returns blob paths', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: true,
+        data: {
+          tree: [
+            { type: 'blob', path: 'package.json' },
+            { type: 'tree', path: 'src' },
+            { type: 'blob', path: 'src/index.ts' },
+            { type: 'blob', path: '' },
+          ],
+        },
+      })
+      const result = await getRepoBranchTree({
+        defaultBranch: 'main',
+        orgGithub: 'org',
+        repoSlug: 'r',
+      })
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data).toEqual(['package.json', 'src/index.ts'])
+      }
+    })
+
+    it('returns empty array for "GitHub resource not found" (empty repo)', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: false,
+        message: 'GitHub resource not found',
+        cause: 'empty repo',
+      })
+      const result = await getRepoBranchTree({
+        defaultBranch: 'main',
+        orgGithub: 'org',
+        repoSlug: 'empty',
+      })
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data).toEqual([])
+      }
+    })
+
+    it('propagates other errors', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: false,
+        message: 'GitHub rate limit exceeded',
+        cause: 'rate limited',
+      })
+      const result = await getRepoBranchTree({
+        defaultBranch: 'main',
+        orgGithub: 'org',
+        repoSlug: 'r',
+      })
+      expect(result.ok).toBe(false)
+    })
+
+    it('returns error for invalid tree response', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: true,
+        data: { tree: undefined },
+      })
+      const result = await getRepoBranchTree({
+        defaultBranch: 'main',
+        orgGithub: 'org',
+        repoSlug: 'r',
+      })
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('Invalid tree response')
+      }
+    })
+  })
+
+  describe('getLastCommitDetails', () => {
+    it('returns details for first commit', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: true,
+        data: [
+          {
+            sha: 'abc',
+            commit: {
+              message: 'feat',
+              author: { name: 'Alice' },
+              committer: { name: 'Bob' },
+            },
+          },
+        ],
+      })
+      const result = await getLastCommitDetails({
+        defaultBranch: 'main',
+        orgGithub: 'org',
+        repoSlug: 'r',
+      })
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data.lastCommitSha).toBe('abc')
+        expect(result.data.lastCommitter).toBe('Alice')
+        expect(result.data.lastCommitMessage).toBe('feat')
+      }
+    })
+
+    it('falls back to committer when author missing', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: true,
+        data: [
+          {
+            sha: 'abc',
+            commit: {
+              message: 'msg',
+              committer: { name: 'OnlyCommitter' },
+            },
+          },
+        ],
+      })
+      const result = await getLastCommitDetails({
+        defaultBranch: 'main',
+        orgGithub: 'org',
+        repoSlug: 'r',
+      })
+      if (result.ok) {
+        expect(result.data.lastCommitter).toBe('OnlyCommitter')
+      }
+    })
+
+    it('returns error for empty commits array', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({ ok: true, data: [] })
+      const result = await getLastCommitDetails({
+        defaultBranch: 'main',
+        orgGithub: 'org',
+        repoSlug: 'r',
+      })
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('No commits found')
+      }
+    })
+
+    it('returns error when commit lacks SHA', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: true,
+        data: [{ commit: { message: 'no-sha' } }],
+      })
+      const result = await getLastCommitDetails({
+        defaultBranch: 'main',
+        orgGithub: 'org',
+        repoSlug: 'r',
+      })
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('Missing commit SHA')
+      }
+    })
+
+    it('propagates withGitHubRetry failure', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: false,
+        message: 'GitHub rate limit exceeded',
+        cause: 'rate limited',
+      })
+      const result = await getLastCommitDetails({
+        defaultBranch: 'main',
+        orgGithub: 'org',
+        repoSlug: 'r',
+      })
+      expect(result.ok).toBe(false)
+    })
+  })
+
+  describe('selectFocus', () => {
+    it('returns selected repo', async () => {
+      mockSelect.mockResolvedValueOnce('repo-2')
+      const result = await selectFocus(['repo-1', 'repo-2', 'repo-3'])
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data).toEqual(['repo-2'])
+      }
+    })
+
+    it('returns cancel result when user picks exit', async () => {
+      mockSelect.mockResolvedValueOnce('')
+      const result = await selectFocus(['r1', 'r2'])
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('Canceled by user')
+      }
+    })
+  })
+
+  describe('makeSure', () => {
+    it('returns ok when user confirms', async () => {
+      mockConfirm.mockResolvedValueOnce(true)
+      const result = await makeSure(50)
+      expect(result.ok).toBe(true)
+    })
+
+    it('returns canceled result when user declines', async () => {
+      mockConfirm.mockResolvedValueOnce(false)
+      const result = await makeSure(50)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('User canceled')
+      }
+    })
+  })
+
+  describe('streamDownloadWithFetch', () => {
+    it('returns error on bad response status', async () => {
+      mockSocketHttpRequest.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+      })
+      const result = await streamDownloadWithFetch(
+        '/tmp/download-target',
+        'https://example.com/file',
+      )
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('Download Failed')
+      }
+    })
+
+    it('returns error on thrown exception', async () => {
+      mockSocketHttpRequest.mockRejectedValueOnce(
+        Object.assign(new Error('ECONNREFUSED'), {
+          cause: 'network down',
+        }),
+      )
+      const result = await streamDownloadWithFetch(
+        '/tmp/download-target',
+        'https://example.com/file',
+      )
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('Download Failed')
+      }
+    })
+  })
+})

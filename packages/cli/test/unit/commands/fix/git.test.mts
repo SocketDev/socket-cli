@@ -27,11 +27,94 @@ import {
   getSocketFixCommitMessage,
   getSocketFixPullRequestBody,
   getSocketFixPullRequestTitle,
+  getUniquePackages,
 } from '../../../../src/commands/fix/git.mts'
 
 import type { GhsaDetails } from '../../../../src/utils/git/github.mts'
 
 describe('fix/git utilities', () => {
+  describe('getUniquePackages', () => {
+    it('returns unique package names with ecosystems', () => {
+      const details: GhsaDetails = {
+        id: 'GHSA-test',
+        ghsaId: 'GHSA-test',
+        severity: 'HIGH',
+        summary: 'Test',
+        vulnerabilities: {
+          nodes: [
+            {
+              package: { name: 'a', ecosystem: 'NPM' },
+              vulnerableVersionRange: '<1',
+            },
+            {
+              package: { name: 'b', ecosystem: 'PIP' },
+              vulnerableVersionRange: '<2',
+            },
+          ],
+        },
+      }
+      expect(getUniquePackages(details)).toEqual(['a (NPM)', 'b (PIP)'])
+    })
+
+    it('deduplicates identical package+ecosystem pairs', () => {
+      const details: GhsaDetails = {
+        id: 'GHSA-test',
+        ghsaId: 'GHSA-test',
+        severity: 'HIGH',
+        summary: 'Test',
+        vulnerabilities: {
+          nodes: [
+            {
+              package: { name: 'lodash', ecosystem: 'NPM' },
+              vulnerableVersionRange: '<1',
+            },
+            {
+              package: { name: 'lodash', ecosystem: 'NPM' },
+              vulnerableVersionRange: '<2',
+            },
+          ],
+        },
+      }
+      expect(getUniquePackages(details)).toEqual(['lodash (NPM)'])
+    })
+
+    it('treats same name in different ecosystems as distinct', () => {
+      const details: GhsaDetails = {
+        id: 'GHSA-test',
+        ghsaId: 'GHSA-test',
+        severity: 'LOW',
+        summary: 'Test',
+        vulnerabilities: {
+          nodes: [
+            {
+              package: { name: 'requests', ecosystem: 'PIP' },
+              vulnerableVersionRange: '<1',
+            },
+            {
+              package: { name: 'requests', ecosystem: 'NPM' },
+              vulnerableVersionRange: '<1',
+            },
+          ],
+        },
+      }
+      expect(getUniquePackages(details)).toEqual([
+        'requests (PIP)',
+        'requests (NPM)',
+      ])
+    })
+
+    it('returns empty array when no vulnerabilities', () => {
+      const details: GhsaDetails = {
+        id: 'GHSA-test',
+        ghsaId: 'GHSA-test',
+        severity: 'LOW',
+        summary: 'Test',
+        vulnerabilities: { nodes: [] },
+      }
+      expect(getUniquePackages(details)).toEqual([])
+    })
+  })
+
   describe('getSocketFixBranchName', () => {
     it('returns correct branch name format', () => {
       expect(getSocketFixBranchName('GHSA-1234-5678-9abc')).toBe(
