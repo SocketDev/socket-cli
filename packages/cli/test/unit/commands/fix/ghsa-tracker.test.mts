@@ -499,5 +499,20 @@ describe('ghsa-tracker', () => {
       // Should still save the tracker.
       expect(mockWriteJson).toHaveBeenCalled()
     })
+
+    it('swallows write failure inside the inner catch arm', async () => {
+      const existingTracker: GhsaTracker = {
+        version: 1,
+        fixed: [],
+      }
+
+      mockReadJson.mockResolvedValue(existingTracker)
+      mockWriteJson.mockRejectedValueOnce(new Error('write failed'))
+
+      // Should not throw — the inner catch logs + swallows.
+      await expect(
+        markGhsaFixed(mockCwd, 'GHSA-write-fail', 123),
+      ).resolves.toBeUndefined()
+    })
   })
 })
