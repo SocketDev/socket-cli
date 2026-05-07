@@ -80,6 +80,11 @@ vi.mock('../../../../src/utils/socket/json.mts', () => ({
   readOrDefaultSocketJson: mockReadOrDefaultSocketJson,
 }))
 
+const mockOutputDryRunUpload = vi.hoisted(() => vi.fn())
+vi.mock('../../../../src/utils/dry-run/output.mts', () => ({
+  outputDryRunUpload: mockOutputDryRunUpload,
+}))
+
 // Import after mocks.
 const { cmdScanGithub } =
   await import('../../../../src/commands/scan/cmd-scan-github.mts')
@@ -116,8 +121,10 @@ describe('cmd-scan-github', () => {
       )
 
       expect(mockHandleCreateGithubScan).not.toHaveBeenCalled()
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('DryRun'),
+      // Now that outputDryRunUpload is mocked, assert on it directly.
+      expect(mockOutputDryRunUpload).toHaveBeenCalledWith(
+        'GitHub scan',
+        expect.any(Object),
       )
     })
 
@@ -457,6 +464,81 @@ describe('cmd-scan-github', () => {
 
       expect(mockHandleCreateGithubScan).toHaveBeenCalledWith(
         expect.objectContaining({ orgSlug: 'suggested-org' }),
+      )
+    })
+
+    it('uses sockJson defaults for orgGithub and repos when CLI flags absent', async () => {
+      // Note: githubApiUrl has a flag-level default (DEFAULT_GITHUB_URL),
+      // so the sockJson default branch for it doesn't fire here unless the
+      // flag's default is also empty.
+      mockReadOrDefaultSocketJson.mockReturnValueOnce({
+        defaults: {
+          scan: {
+            github: {
+              orgGithub: 'default-org-github',
+              repos: 'default-repos',
+            },
+          },
+        },
+      })
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+      await cmdScanGithub.run(
+        ['--github-token', 'test-token', '--no-interactive'],
+        importMeta,
+        context,
+      )
+
+      expect(mockHandleCreateGithubScan).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orgGithub: 'default-org-github',
+          repos: 'default-repos',
+        }),
+      )
+    })
+
+    it('outputs dry-run details for --all (scope: all repositories)', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+      await cmdScanGithub.run(
+        [
+          '--github-token',
+          'test-token',
+          '--all',
+          '--dry-run',
+          '--no-interactive',
+        ],
+        importMeta,
+        context,
+      )
+
+      // Dry-run should call outputDryRunUpload with details containing 'scope'.
+      expect(mockOutputDryRunUpload).toHaveBeenCalledWith(
+        'GitHub scan',
+        expect.objectContaining({ scope: 'all repositories' }),
+      )
+      expect(mockHandleCreateGithubScan).not.toHaveBeenCalled()
+    })
+
+    it('outputs dry-run details for --repos (repositories list)', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+      await cmdScanGithub.run(
+        [
+          '--github-token',
+          'test-token',
+          '--repos',
+          'foo,bar',
+          '--dry-run',
+          '--no-interactive',
+        ],
+        importMeta,
+        context,
+      )
+
+      expect(mockOutputDryRunUpload).toHaveBeenCalledWith(
+        'GitHub scan',
+        expect.objectContaining({ repositories: 'foo,bar' }),
       )
     })
   })
