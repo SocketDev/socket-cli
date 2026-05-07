@@ -315,7 +315,28 @@ function workflowDeclaresDryRunInput(
 //     intentionally excluded so a same-named workflow in the current
 //     checkout can't false-positive a cross-repo dispatch.
 function resolveSearchRoots(command: string): string[] {
-  const projectDir = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
+  // Resolution order: $CLAUDE_PROJECT_DIR (Claude Code sets this when
+  // it remembers to) → derive from this hook script's path (the hook
+  // lives at <project>/.claude/hooks/release-workflow-guard/index.mts,
+  // so go three levels up from __dirname) → $PWD as last resort.
+  // The script-path derivation is the most robust because it doesn't
+  // depend on the runner exporting env vars correctly.
+  let projectDir = process.env['CLAUDE_PROJECT_DIR']
+  if (!projectDir) {
+    // process.argv[1] is the absolute path of this hook script when
+    // invoked via `node <path>`. Walk up to the repo root.
+    const scriptPath = process.argv[1]
+    if (scriptPath) {
+      // .claude/hooks/release-workflow-guard/index.mts → ../../../ = repo
+      const candidate = path.resolve(scriptPath, '..', '..', '..', '..')
+      if (existsSync(path.join(candidate, '.github', 'workflows'))) {
+        projectDir = candidate
+      }
+    }
+  }
+  if (!projectDir) {
+    projectDir = process.cwd()
+  }
   const repoMatch = GH_REPO_FLAG_RE.exec(command)
   if (!repoMatch || path.basename(projectDir) === repoMatch[1]!) {
     return [projectDir]
