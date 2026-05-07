@@ -145,24 +145,21 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<DlxSpawnResult> {
     argvMutable['type'] !== YARN &&
     nodejsPlatformTypes.has(argvMutable['type'] as string)
   ) {
-    if (npmLockPath) {
+    // yarnLockPath is only resolved when neither pnpmLockPath nor npmLockPath
+    // are set, so the only branch here is to use synp to create a
+    // package-lock.json from the yarn.lock for a more accurate SBOM.
+    try {
+      const synpResult = await spawnSynpDlx(
+        ['--source-file', `./${YARN_LOCK}`],
+        {
+          ...dlxOpts,
+          agent,
+        },
+      )
+      await synpResult.spawnPromise
       argvMutable['type'] = NPM
-    } else {
-      // Use synp to create a package-lock.json from the yarn.lock,
-      // based on the node_modules folder, for a more accurate SBOM.
-      try {
-        const synpResult = await spawnSynpDlx(
-          ['--source-file', `./${YARN_LOCK}`],
-          {
-            ...dlxOpts,
-            agent,
-          },
-        )
-        await synpResult.spawnPromise
-        argvMutable['type'] = NPM
-        cleanupPackageLock = true
-      } catch {}
-    }
+      cleanupPackageLock = true
+    } catch {}
   }
 
   // Use appropriate package manager for cdxgen.
