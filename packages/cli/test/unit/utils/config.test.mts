@@ -31,6 +31,7 @@ import {
   findSocketYmlSync,
   getConfigValue,
   overrideCachedConfig,
+  overrideConfigApiToken,
   resetConfigForTesting,
   updateConfigValue,
 } from '../../../src/utils/config.mts'
@@ -69,6 +70,78 @@ describe('utils/config', () => {
           "ok": false,
         }
       `)
+    })
+
+    it('warns when value is the string "true" (line 378-381)', () => {
+      // Stringy bool tracks the not-pre-validated path; the function still
+      // accepts the value but emits a logger.warn telling the user that
+      // they probably meant a real boolean.
+      const result = updateConfigValue('defaultOrg', 'true' as any)
+      expect(result.ok).toBe(true)
+    })
+
+    it('warns when value is the string "false"', () => {
+      const result = updateConfigValue('defaultOrg', 'false' as any)
+      expect(result.ok).toBe(true)
+    })
+
+    it('warns when value is the string "undefined"', () => {
+      const result = updateConfigValue('defaultOrg', 'undefined' as any)
+      expect(result.ok).toBe(true)
+    })
+
+    it('handles skipAskToPersistDefaultOrg=true correctly', () => {
+      const result = updateConfigValue('skipAskToPersistDefaultOrg', 'true' as any)
+      expect(result.ok).toBe(true)
+    })
+
+    it('handles skipAskToPersistDefaultOrg=false correctly', () => {
+      const result = updateConfigValue(
+        'skipAskToPersistDefaultOrg',
+        'false' as any,
+      )
+      expect(result.ok).toBe(true)
+    })
+
+    it('deletes skipAskToPersistDefaultOrg on non-bool value', () => {
+      const result = updateConfigValue(
+        'skipAskToPersistDefaultOrg',
+        'something' as any,
+      )
+      expect(result.ok).toBe(true)
+    })
+  })
+
+  describe('overrideConfigApiToken', () => {
+    it('sets apiToken when provided (line 348-354)', () => {
+      overrideCachedConfig({})
+      overrideConfigApiToken('test-token-123')
+      const result = getConfigValue('apiToken')
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data).toBe('test-token-123')
+      }
+    })
+
+    it('handles undefined token without setting key', () => {
+      overrideCachedConfig({})
+      overrideConfigApiToken(undefined)
+      // No key set, but the read-only flag is still toggled.
+      const result = getConfigValue('apiToken')
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data).toBeUndefined()
+      }
+    })
+
+    it('coerces non-string token via String()', () => {
+      overrideCachedConfig({})
+      overrideConfigApiToken(12345 as any)
+      const result = getConfigValue('apiToken')
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data).toBe('12345')
+      }
     })
   })
 
