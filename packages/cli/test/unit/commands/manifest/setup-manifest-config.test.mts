@@ -510,6 +510,61 @@ describe('setup-manifest-config', () => {
       expect(mockWriteSocketJson).toHaveBeenCalled()
     })
 
+    it('sbt: stdout=yes skips outfile prompt (line 341-342)', async () => {
+      mockSelect
+        .mockResolvedValueOnce('sbt') // ecosystem
+        .mockResolvedValueOnce('yes') // stdout = yes
+        .mockResolvedValueOnce('') // verbose default
+        .mockResolvedValueOnce(true) // write yes
+      mockInput
+        .mockResolvedValueOnce('sbt') // bin
+        .mockResolvedValueOnce('') // sbt-opts
+      const result = await setupManifestConfig('/cwd')
+      expect(result.ok).toBe(true)
+    })
+
+    it('sbt: stdout=no leads to outfile prompt (line 343-344)', async () => {
+      mockSelect
+        .mockResolvedValueOnce('sbt') // ecosystem
+        .mockResolvedValueOnce('no') // stdout = no
+        .mockResolvedValueOnce('') // verbose default
+        .mockResolvedValueOnce(true) // write yes
+      mockInput
+        .mockResolvedValueOnce('sbt') // bin
+        .mockResolvedValueOnce('') // sbt-opts
+        .mockResolvedValueOnce('out.xml') // outfile
+      const result = await setupManifestConfig('/cwd')
+      expect(result.ok).toBe(true)
+    })
+
+    it('sbt: outfile="-" promotes stdout to true (line 354-355)', async () => {
+      mockSelect
+        .mockResolvedValueOnce('sbt') // ecosystem
+        .mockResolvedValueOnce('') // stdout default
+        .mockResolvedValueOnce('') // verbose default
+        .mockResolvedValueOnce(true) // write yes
+      mockInput
+        .mockResolvedValueOnce('sbt') // bin
+        .mockResolvedValueOnce('') // sbt-opts
+        .mockResolvedValueOnce('-') // outfile = '-' → stdout=true
+      const result = await setupManifestConfig('/cwd')
+      expect(result.ok).toBe(true)
+    })
+
+    it('sbt: outfile empty deletes outfile config (line 360-361)', async () => {
+      mockSelect
+        .mockResolvedValueOnce('sbt') // ecosystem
+        .mockResolvedValueOnce('') // stdout default
+        .mockResolvedValueOnce('') // verbose default
+        .mockResolvedValueOnce(true) // write yes
+      mockInput
+        .mockResolvedValueOnce('sbt') // bin
+        .mockResolvedValueOnce('') // sbt-opts
+        .mockResolvedValueOnce('') // outfile empty → delete
+      const result = await setupManifestConfig('/cwd')
+      expect(result.ok).toBe(true)
+    })
+
     it('completes flow for sbt + write yes', async () => {
       mockSelect
         .mockResolvedValueOnce('sbt') // target ecosystem
