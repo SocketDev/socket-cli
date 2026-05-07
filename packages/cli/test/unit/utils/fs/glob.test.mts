@@ -222,4 +222,132 @@ describe('utils/fs/glob', () => {
       expect(result).toHaveLength(3)
     })
   })
+
+  describe('ignorePatternToMinimatch', () => {
+    it('returns special-cased patterns verbatim with negation prefix preserved', async () => {
+      const { ignorePatternToMinimatch } = await import(
+        '../../../../src/utils/fs/glob.mts'
+      )
+      expect(ignorePatternToMinimatch('')).toBe('')
+      expect(ignorePatternToMinimatch('**')).toBe('**')
+      expect(ignorePatternToMinimatch('/**')).toBe('/**')
+      expect(ignorePatternToMinimatch('!**')).toBe('!**')
+    })
+
+    it('prepends **/ for patterns without slashes', async () => {
+      const { ignorePatternToMinimatch } = await import(
+        '../../../../src/utils/fs/glob.mts'
+      )
+      expect(ignorePatternToMinimatch('node_modules')).toBe('**/node_modules')
+    })
+
+    it('strips leading slash and treats as project-rooted', async () => {
+      const { ignorePatternToMinimatch } = await import(
+        '../../../../src/utils/fs/glob.mts'
+      )
+      expect(ignorePatternToMinimatch('/dist')).toBe('dist')
+    })
+
+    it('appends /* for patterns ending in /**', async () => {
+      const { ignorePatternToMinimatch } = await import(
+        '../../../../src/utils/fs/glob.mts'
+      )
+      expect(ignorePatternToMinimatch('build/**')).toBe('build/**/*')
+    })
+
+    it('escapes brace + paren characters from gitignore-literal to minimatch-safe', async () => {
+      const { ignorePatternToMinimatch } = await import(
+        '../../../../src/utils/fs/glob.mts'
+      )
+      // gitignore treats `{a,b}` as literal; minimatch treats it as expansion.
+      // Escape so minimatch matches the literal string.
+      expect(ignorePatternToMinimatch('src/{a,b}.js')).toContain('\\{')
+      expect(ignorePatternToMinimatch('src/(group)')).toContain('\\(')
+    })
+
+    it('passes negation prefix through', async () => {
+      const { ignorePatternToMinimatch } = await import(
+        '../../../../src/utils/fs/glob.mts'
+      )
+      expect(ignorePatternToMinimatch('!keep.txt')).toBe('!**/keep.txt')
+    })
+  })
+
+  describe('workspacePatternToGlobPattern', () => {
+    it('returns empty for empty input', async () => {
+      const { workspacePatternToGlobPattern } = await import(
+        '../../../../src/utils/fs/glob.mts'
+      )
+      expect(workspacePatternToGlobPattern('')).toBe('')
+    })
+
+    it('appends /*/package.json for trailing-slash workspaces', async () => {
+      const { workspacePatternToGlobPattern } = await import(
+        '../../../../src/utils/fs/glob.mts'
+      )
+      expect(workspacePatternToGlobPattern('packages/')).toBe(
+        'packages//*/package.json',
+      )
+    })
+
+    it('appends /*/**/package.json for /** workspaces', async () => {
+      const { workspacePatternToGlobPattern } = await import(
+        '../../../../src/utils/fs/glob.mts'
+      )
+      expect(workspacePatternToGlobPattern('packages/**')).toBe(
+        'packages/**/*/**/package.json',
+      )
+    })
+
+    it('appends /package.json for plain workspaces', async () => {
+      const { workspacePatternToGlobPattern } = await import(
+        '../../../../src/utils/fs/glob.mts'
+      )
+      expect(workspacePatternToGlobPattern('packages/cli')).toBe(
+        'packages/cli/package.json',
+      )
+    })
+  })
+
+  describe('ignoreFileLinesToGlobPatterns', () => {
+    it('skips blank and comment lines', async () => {
+      const { ignoreFileLinesToGlobPatterns } = await import(
+        '../../../../src/utils/fs/glob.mts'
+      )
+      const result = ignoreFileLinesToGlobPatterns(
+        ['', '# comment', 'node_modules', ''],
+        '/repo/.gitignore',
+        '/repo',
+      )
+      expect(result).toEqual(['**/node_modules'])
+    })
+
+    it('preserves negation patterns with relative path joined', async () => {
+      const { ignoreFileLinesToGlobPatterns } = await import(
+        '../../../../src/utils/fs/glob.mts'
+      )
+      const result = ignoreFileLinesToGlobPatterns(
+        ['!keep'],
+        '/repo/sub/.gitignore',
+        '/repo',
+      )
+      // Negation prefix preserved + path scoped to the .gitignore's directory.
+      expect(result[0]?.startsWith('!')).toBe(true)
+      expect(result[0]).toContain('keep')
+    })
+  })
+
+  describe('ignoreFileToGlobPatterns', () => {
+    it('splits on \\r?\\n and threads through ignoreFileLinesToGlobPatterns', async () => {
+      const { ignoreFileToGlobPatterns } = await import(
+        '../../../../src/utils/fs/glob.mts'
+      )
+      const result = ignoreFileToGlobPatterns(
+        '# comment\nnode_modules\r\ndist',
+        '/repo/.gitignore',
+        '/repo',
+      )
+      expect(result).toEqual(['**/node_modules', '**/dist'])
+    })
+  })
 })

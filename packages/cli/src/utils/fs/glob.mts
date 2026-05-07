@@ -41,7 +41,7 @@ const IGNORED_DIRS = [
 
 const IGNORED_DIR_PATTERNS = IGNORED_DIRS.map(i => `**/${i}`)
 
-async function getWorkspaceGlobs(
+export async function getWorkspaceGlobs(
   agent: Agent,
   cwd = process.cwd(),
 ): Promise<string[]> {
@@ -66,7 +66,7 @@ async function getWorkspaceGlobs(
     : []
 }
 
-function ignoreFileLinesToGlobPatterns(
+export function ignoreFileLinesToGlobPatterns(
   lines: string[] | readonly string[],
   filepath: string,
   cwd: string,
@@ -88,7 +88,7 @@ function ignoreFileLinesToGlobPatterns(
   return patterns
 }
 
-function ignoreFileToGlobPatterns(
+export function ignoreFileToGlobPatterns(
   content: string,
   filepath: string,
   cwd: string,
@@ -100,7 +100,7 @@ function ignoreFileToGlobPatterns(
 // Apache v2.0 licensed
 // Copyright Nicholas C. Zakas
 // https://github.com/eslint/rewrite/blob/compat-v1.2.1/packages/compat/src/ignore-file.js#L28
-function ignorePatternToMinimatch(pattern: string): string {
+export function ignorePatternToMinimatch(pattern: string): string {
   const isNegated = pattern.startsWith('!')
   const negatedPrefix = isNegated ? '!' : ''
   const patternToTest = (isNegated ? pattern.slice(1) : pattern).trimEnd()
@@ -136,7 +136,7 @@ function ignorePatternToMinimatch(pattern: string): string {
   return `${negatedPrefix}${matchEverywherePrefix}${escapedPatternWithoutLeadingSlash}${matchInsideSuffix}`
 }
 
-function workspacePatternToGlobPattern(workspace: string): string {
+export function workspacePatternToGlobPattern(workspace: string): string {
   const { length } = workspace
   if (!length) {
     return ''
