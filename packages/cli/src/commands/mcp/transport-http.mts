@@ -4,33 +4,32 @@ import { createServer } from 'node:http'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
 
-import { httpRequest } from '@socketsecurity/lib/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import type { HttpResponse } from '@socketsecurity/lib/http-request'
-
 import { createConfiguredServer } from './server.mts'
+import {
+  buildProtectedResourceMetadata,
+  getProtectedResourceMetadataUrl,
+  getRequestBaseUrl,
+  getRequestHeaderValue,
+  handleRequestSafely,
+  isLocalhostOrigin,
+  OAuthIntrospector,
+  OAUTH_PROTECTED_RESOURCE_METADATA_PATH,
+  reapIdleSessions,
+  writeJson,
+} from './transport-http-helpers.mts'
 
 import type { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js'
 import type { ServerConfig } from './server.mts'
-import type { IncomingMessage, ServerResponse } from 'node:http'
+import type { IncomingMessage } from 'node:http'
 
 const logger = getDefaultLogger()
 
-const OAUTH_WELL_KNOWN_PATH = '/.well-known/oauth-authorization-server'
-const OAUTH_PROTECTED_RESOURCE_METADATA_PATH = '/.well-known/oauth-protected-resource'
 const SESSION_TTL_MS = 30 * 60 * 1000
 const SESSION_REAP_INTERVAL_MS = 60_000
-
-interface OAuthMetadata {
-  authorization_endpoint: string
-  introspection_endpoint: string
-  issuer: string
-  token_endpoint: string
-  [key: string]: unknown
-}
 
 type AuthenticatedRequest = IncomingMessage & { auth?: AuthInfo }
 
@@ -49,302 +48,6 @@ export interface HttpTransportConfig extends ServerConfig {
   trustProxy: boolean
 }
 
-function getRequestHeaderValue(
-  header: string | string[] | undefined,
-): string {
-  if (Array.isArray(header)) {
-    return header[0] || ''
-  }
-  return header || ''
-}
-
-function getForwardedHeaderValue(
-  header: string | string[] | undefined,
-): string {
-  return (
-    getRequestHeaderValue(header).split(',', 1)[0]?.trim() || ''
-  )
-}
-
-function getRequestBaseUrl(
-  req: IncomingMessage,
-  fallbackPort: number,
-  trustProxy: boolean,
-): URL {
-  const forwardedProto = trustProxy
-    ? getForwardedHeaderValue(req.headers['x-forwarded-proto']).toLowerCase()
-    : ''
-  const forwardedHost = trustProxy
-    ? getForwardedHeaderValue(req.headers['x-forwarded-host'])
-    : ''
-  const host =
-    forwardedHost ||
-    getRequestHeaderValue(req.headers.host).trim() ||
-    `localhost:${fallbackPort}`
-  const socketWithTls = req.socket as { encrypted?: boolean }
-  const protocol =
-    forwardedProto === 'https' || forwardedProto === 'http'
-      ? forwardedProto
-      : socketWithTls.encrypted
-        ? 'https'
-        : 'http'
-  return new URL(`${protocol}://${host}/`)
-}
-
-function parseJsonObject(
-  responseText: string,
-  context: string,
-): Record<string, unknown> {
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(responseText)
-  } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
-    throw new Error(`${context} returned invalid JSON: ${message}`)
-  }
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error(`${context} returned invalid JSON: expected a JSON object`)
-  }
-  return parsed as Record<string, unknown>
-}
-
-function getProtectedResourceMetadataUrl(baseUrl: URL): string {
-  return new URL(OAUTH_PROTECTED_RESOURCE_METADATA_PATH, baseUrl).href
-}
-
-function buildProtectedResourceMetadata(
-  baseUrl: URL,
-  oauthMetadata: OAuthMetadata,
-  requiredScopes: readonly string[],
-): Record<string, unknown> {
-  return {
-    authorization_servers: [oauthMetadata.issuer],
-    resource: new URL('/', baseUrl).href,
-    resource_name: 'Socket MCP Server',
-    scopes_supported: requiredScopes,
-  }
-}
-
-function writeJson(
-  res: ServerResponse,
-  statusCode: number,
-  body: unknown,
-  headers: Record<string, string> = {},
-): void {
-  res.writeHead(statusCode, {
-    'Content-Type': 'application/json',
-    ...headers,
-  })
-  res.end(JSON.stringify(body))
-}
-
-function writeOAuthError(
-  res: ServerResponse,
-  statusCode: number,
-  errorCode: string,
-  message: string,
-  resourceMetadataUrl?: string | undefined,
-): void {
-  const authenticateValue = resourceMetadataUrl
-    ? `Bearer error="${errorCode}", error_description="${message}", resource_metadata="${resourceMetadataUrl}"`
-    : `Bearer error="${errorCode}", error_description="${message}"`
-  writeJson(
-    res,
-    statusCode,
-    {
-      error: errorCode,
-      error_description: message,
-    },
-    { 'WWW-Authenticate': authenticateValue },
-  )
-}
-
-function splitScopes(scope: unknown): string[] {
-  if (typeof scope !== 'string') {
-    return []
-  }
-  return scope
-    .split(/\s+/u)
-    .map(value => value.trim())
-    .filter(Boolean)
-}
-
-class OAuthIntrospector {
-  private metadataPromise: Promise<OAuthMetadata> | undefined
-  private readonly clientId: string
-  private readonly clientSecret: string
-  private readonly issuer: string
-  private readonly requiredScopes: readonly string[]
-  constructor(
-    issuer: string,
-    clientId: string,
-    clientSecret: string,
-    requiredScopes: readonly string[],
-  ) {
-    this.clientId = clientId
-    this.clientSecret = clientSecret
-    this.issuer = issuer
-    this.requiredScopes = requiredScopes
-  }
-
-  async loadMetadata(): Promise<OAuthMetadata> {
-    if (!this.metadataPromise) {
-      const promise = (async () => {
-        const issuerUrl = new URL(this.issuer)
-        const url = new URL(OAUTH_WELL_KNOWN_PATH, issuerUrl).href
-        const response: HttpResponse = await httpRequest(url, { method: 'GET' })
-        const responseText = response.text()
-        if (response.status < 200 || response.status >= 300) {
-          throw new Error(
-            `OAuth metadata discovery failed with status ${response.status}: ${responseText}`,
-          )
-        }
-        const metadata = parseJsonObject(
-          responseText,
-          'OAuth metadata discovery',
-        )
-        for (const field of [
-          'authorization_endpoint',
-          'introspection_endpoint',
-          'issuer',
-          'token_endpoint',
-        ] as const) {
-          if (typeof metadata[field] !== 'string' || !metadata[field]) {
-            throw new Error(
-              `OAuth metadata missing required field: ${field}`,
-            )
-          }
-        }
-        return metadata as OAuthMetadata
-      })()
-      const retryable = promise.catch(error => {
-        if (this.metadataPromise === retryable) {
-          this.metadataPromise = undefined
-        }
-        throw error
-      })
-      this.metadataPromise = retryable
-    }
-    return await this.metadataPromise
-  }
-
-  async verifyAccessToken(token: string): Promise<AuthInfo | null> {
-    const metadata = await this.loadMetadata()
-    const basicAuth = Buffer.from(
-      `${this.clientId}:${this.clientSecret}`,
-    ).toString('base64')
-    const response: HttpResponse = await httpRequest(metadata.introspection_endpoint, {
-      body: new URLSearchParams({ token }).toString(),
-      headers: {
-        authorization: `Basic ${basicAuth}`,
-        'content-type': 'application/x-www-form-urlencoded',
-      },
-      method: 'POST',
-    })
-    const responseText = response.text()
-    if (response.status < 200 || response.status >= 300) {
-      throw new Error(
-        `Token introspection failed with status ${response.status}: ${responseText}`,
-      )
-    }
-    const introspection = parseJsonObject(responseText, 'Token introspection')
-    if (!introspection['active']) {
-      return null
-    }
-    const expRaw = introspection['exp']
-    const expiresAt =
-      typeof expRaw === 'number' ? expRaw : Number(expRaw)
-    return {
-      clientId:
-        typeof introspection['client_id'] === 'string'
-          ? introspection['client_id']
-          : 'unknown',
-      extra: introspection,
-      scopes: splitScopes(introspection['scope']),
-      token,
-      ...(Number.isFinite(expiresAt) ? { expiresAt } : {}),
-    }
-  }
-
-  async authenticateRequest(
-    req: AuthenticatedRequest,
-    res: ServerResponse,
-    resourceMetadataUrl: string,
-  ): Promise<{ authInfo: AuthInfo; ok: true } | { ok: false }> {
-    const authHeader = getRequestHeaderValue(req.headers.authorization).trim()
-    if (!authHeader) {
-      writeOAuthError(
-        res,
-        401,
-        'invalid_request',
-        'Missing Authorization header',
-        resourceMetadataUrl,
-      )
-      return { ok: false }
-    }
-    const [type, token] = authHeader.split(/\s+/u)
-    if ((type || '').toLowerCase() !== 'bearer' || !token) {
-      writeOAuthError(
-        res,
-        401,
-        'invalid_request',
-        "Invalid Authorization header format, expected 'Bearer TOKEN'",
-        resourceMetadataUrl,
-      )
-      return { ok: false }
-    }
-    let authInfo: AuthInfo | null
-    try {
-      authInfo = await this.verifyAccessToken(token)
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e)
-      logger.error(`Token verification failed: ${message}`)
-      writeJson(res, 500, {
-        error: 'server_error',
-        error_description: 'Token verification failed',
-      })
-      return { ok: false }
-    }
-    if (!authInfo) {
-      writeOAuthError(
-        res,
-        401,
-        'invalid_token',
-        'Invalid or expired token',
-        resourceMetadataUrl,
-      )
-      return { ok: false }
-    }
-    if (
-      typeof authInfo.expiresAt === 'number' &&
-      authInfo.expiresAt < Date.now() / 1000
-    ) {
-      writeOAuthError(
-        res,
-        401,
-        'invalid_token',
-        'Token has expired',
-        resourceMetadataUrl,
-      )
-      return { ok: false }
-    }
-    const missing = this.requiredScopes.filter(
-      s => !authInfo!.scopes.includes(s),
-    )
-    if (missing.length > 0) {
-      writeOAuthError(
-        res,
-        403,
-        'insufficient_scope',
-        `Missing required scopes: ${missing.join(', ')}`,
-        resourceMetadataUrl,
-      )
-      return { ok: false }
-    }
-    req.auth = authInfo
-    return { authInfo, ok: true }
-  }
-}
 
 export async function runHttpTransport(
   config: HttpTransportConfig,
@@ -358,6 +61,7 @@ export async function runHttpTransport(
         config.oauthClientId,
         config.oauthClientSecret,
         config.oauthRequiredScopes,
+        logger,
       )
     : undefined
 
@@ -368,8 +72,11 @@ export async function runHttpTransport(
         `Enabled OAuth-backed MCP auth with issuer ${config.oauthIssuer}`,
       )
     } catch (e) {
-      const message = e instanceof Error ? e.message : String(e)
-      logger.error(`Failed to initialize OAuth metadata: ${message}`)
+      // loadMetadata only throws Error subclasses (httpRequest /
+      // parseJsonObject / explicit throws); read .message directly.
+      logger.error(
+        `Failed to initialize OAuth metadata: ${(e as Error).message}`,
+      )
       throw e
     }
   }
@@ -389,15 +96,20 @@ export async function runHttpTransport(
     logger.info(`Session ${id} destroyed`)
   }
 
-  const reapInterval = setInterval(() => {
-    const now = Date.now()
-    for (const [id, session] of sessions.entries()) {
-      if (now - session.lastActivity > SESSION_TTL_MS) {
-        logger.info(`Reaping idle session ${id}`)
-        destroySession(id)
-      }
-    }
-  }, SESSION_REAP_INTERVAL_MS)
+  const tickReaper = () =>
+    reapIdleSessions(
+      Date.now(),
+      SESSION_TTL_MS,
+      sessions,
+      destroySession,
+      logger,
+    )
+  // First tick runs immediately — the session map is empty so this is
+  // a no-op, but it gives the test surface a deterministic way to
+  // invoke the reaper (and gives coverage tools a one-shot through
+  // the function body).
+  tickReaper()
+  const reapInterval = setInterval(tickReaper, SESSION_REAP_INTERVAL_MS)
   reapInterval.unref()
 
   const allowedOrigins = [
@@ -405,15 +117,6 @@ export async function runHttpTransport(
     'https://mcp.socket-staging.dev',
   ] as const
   const allowedHosts = allowedOrigins.map(o => new URL(o).hostname)
-
-  const isLocalhostOrigin = (originUrl: string): boolean => {
-    try {
-      const u = new URL(originUrl)
-      return u.hostname === 'localhost' || u.hostname === '127.0.0.1'
-    } catch {
-      return false
-    }
-  }
 
   const httpServer = createServer(async (req, res) => {
     const authenticatedReq = req as AuthenticatedRequest
@@ -487,23 +190,18 @@ export async function runHttpTransport(
     const baseUrl = getRequestBaseUrl(req, config.port, config.trustProxy)
 
     if (introspector && url.pathname === OAUTH_PROTECTED_RESOURCE_METADATA_PATH) {
-      try {
-        const metadata = await introspector.loadMetadata()
-        writeJson(
-          res,
-          200,
-          buildProtectedResourceMetadata(
-            baseUrl,
-            metadata,
-            config.oauthRequiredScopes,
-          ),
-        )
-      } catch {
-        writeJson(res, 500, {
-          error: 'server_error',
-          error_description: 'OAuth metadata is unavailable',
-        })
-      }
+      // loadMetadata is memoized after the successful startup probe,
+      // so this resolves synchronously from cache.
+      const metadata = await introspector.loadMetadata()
+      writeJson(
+        res,
+        200,
+        buildProtectedResourceMetadata(
+          baseUrl,
+          metadata,
+          config.oauthRequiredScopes,
+        ),
+      )
       return
     }
 
@@ -546,8 +244,8 @@ export async function runHttpTransport(
       req.on('data', (chunk: string | Buffer) => {
         body += chunk.toString()
       })
-      req.on('end', async () => {
-        try {
+      req.on('end', () =>
+        handleRequestSafely('POST', res, logger, async () => {
           const jsonData = JSON.parse(body)
           const sessionId =
             getRequestHeaderValue(req.headers['mcp-session-id']) || undefined
@@ -604,17 +302,8 @@ export async function runHttpTransport(
           }
 
           await transport.handleRequest(authenticatedReq, res, jsonData)
-        } catch (e) {
-          logger.error(`Error processing POST request: ${e}`)
-          if (!res.headersSent) {
-            writeJson(res, 500, {
-              error: { code: -32603, message: 'Internal server error' },
-              id: null,
-              jsonrpc: '2.0',
-            })
-          }
-        }
-      })
+        }),
+      )
       return
     }
 
@@ -633,19 +322,10 @@ export async function runHttpTransport(
         })
         return
       }
-      try {
+      await handleRequestSafely('GET', res, logger, async () => {
         session.lastActivity = Date.now()
         await session.transport.handleRequest(authenticatedReq, res)
-      } catch (e) {
-        logger.error(`Error processing GET request: ${e}`)
-        if (!res.headersSent) {
-          writeJson(res, 500, {
-            error: { code: -32603, message: 'Internal server error' },
-            id: null,
-            jsonrpc: '2.0',
-          })
-        }
-      }
+      })
       return
     }
 
@@ -661,18 +341,9 @@ export async function runHttpTransport(
         })
         return
       }
-      try {
+      await handleRequestSafely('DELETE', res, logger, async () => {
         await transport.handleRequest(authenticatedReq, res)
-      } catch (e) {
-        logger.error(`Error processing DELETE request: ${e}`)
-        if (!res.headersSent) {
-          writeJson(res, 500, {
-            error: { code: -32603, message: 'Internal server error' },
-            id: null,
-            jsonrpc: '2.0',
-          })
-        }
-      }
+      })
       return
     }
 

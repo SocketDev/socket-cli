@@ -209,10 +209,7 @@ export async function runDepscore(
   return {
     content: [
       {
-        text:
-          results.length > 0
-            ? `Dependency scores:\n${results.join('\n')}`
-            : 'No scores found for the provided packages',
+        text: `Dependency scores:\n${results.join('\n')}`,
         type: 'text',
       },
     ],

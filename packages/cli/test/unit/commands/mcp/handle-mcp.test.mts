@@ -67,10 +67,15 @@ vi.mock('../../../../src/commands/mcp/transport-http.mts', () => ({
   runHttpTransport: mockRunHttpTransport,
 }))
 
+// Use a getter so individual tests can flip the inlined version to
+// undefined and exercise the `|| '0.0.0'` fallback branch.
+const versionRef = { current: '7.7.7' as string | undefined }
 vi.mock('../../../../src/constants.mts', () => ({
   default: {
     ENV: {
-      INLINED_VERSION: '7.7.7',
+      get INLINED_VERSION() {
+        return versionRef.current
+      },
     },
   },
 }))
@@ -87,7 +92,26 @@ const exitSpy = vi
 
 beforeEach(() => {
   vi.clearAllMocks()
+  versionRef.current = '7.7.7'
   mockGetDefaultApiToken.mockReturnValue('test_default_token')
+})
+
+describe('handleMcp — version fallback', () => {
+  it('uses "0.0.0" as version when INLINED_VERSION is undefined', async () => {
+    versionRef.current = undefined
+    await handleMcp({ http: false, port: 3000, trustProxy: false })
+    expect(mockRunStdioTransport).toHaveBeenCalledWith(
+      expect.objectContaining({ version: '0.0.0' }),
+    )
+  })
+
+  it('uses the inlined version when present', async () => {
+    versionRef.current = '12.34.56'
+    await handleMcp({ http: false, port: 3000, trustProxy: false })
+    expect(mockRunStdioTransport).toHaveBeenCalledWith(
+      expect.objectContaining({ version: '12.34.56' }),
+    )
+  })
 })
 
 describe('handleMcp — stdio path', () => {

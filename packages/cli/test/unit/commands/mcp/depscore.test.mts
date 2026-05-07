@@ -413,6 +413,192 @@ describe('runDepscore — error paths', () => {
   })
 })
 
+describe('runDepscore — formatScore fallbacks', () => {
+  it('uses "unknown" placeholder for missing type / name / version', async () => {
+    mockBatchPackageFetch.mockResolvedValue(
+      makeOk([
+        {
+          // No type, no name, no version. score is empty so we land in
+          // the "No score found" branch but still exercise the
+          // type||'unknown', name||'unknown', version||'unknown' arms.
+          score: undefined,
+        },
+      ]),
+    )
+    const result = await runDepscore(
+      { packages: [{ depname: 'whatever' }] },
+      { apiToken: 'test_a' },
+    )
+    expect(result.isError).toBeUndefined()
+    expect(result.content[0]!.text).toContain(
+      'pkg:unknown/unknown@unknown',
+    )
+    expect(result.content[0]!.text).toContain('No score found')
+  })
+})
+
+describe('runDepscore — SDK setup error fallback chain', () => {
+  it('uses result.message when result.cause is empty', async () => {
+    mockSetupSdk.mockResolvedValueOnce({
+      ok: false,
+      cause: '',
+      message: 'Auth Error',
+    })
+    const result = await runDepscore(
+      { packages: [{ depname: 'foo' }] },
+      // Distinct token per test so the module-scoped sdkCache doesn't
+      // hit a previously-set fixture and skip the setup branch.
+      { apiToken: 'test_setup_message_only' },
+    )
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toContain('Auth Error')
+  })
+
+  it('uses the hard-coded fallback string when both cause and message are empty', async () => {
+    mockSetupSdk.mockResolvedValueOnce({
+      ok: false,
+      cause: '',
+      message: '',
+    })
+    const result = await runDepscore(
+      { packages: [{ depname: 'foo' }] },
+      { apiToken: 'test_setup_full_fallback' },
+    )
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toContain('Failed to set up Socket SDK')
+  })
+
+  it('uses String(e) when SDK setup throws a non-Error value', async () => {
+    mockSetupSdk.mockRejectedValueOnce('plain string')
+    const result = await runDepscore(
+      { packages: [{ depname: 'foo' }] },
+      { apiToken: 'test_setup_string_throw' },
+    )
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toContain('SDK setup failed: plain string')
+  })
+})
+
+describe('runDepscore — batchPackageFetch non-Error throw', () => {
+  it('coerces non-Error rejections via String() in the network catch', async () => {
+    mockBatchPackageFetch.mockRejectedValueOnce({ weird: 'object' })
+    const result = await runDepscore(
+      { packages: [{ depname: 'foo' }] },
+      { apiToken: 'test_a' },
+    )
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toBe('Error connecting to Socket API')
+  })
+})
+
+describe('runDepscore — non-success without cause/error fields', () => {
+  it('uses empty string when 401 response has no cause and no error', async () => {
+    mockBatchPackageFetch.mockResolvedValue({
+      success: false,
+      status: 401,
+    })
+    const result = await runDepscore(
+      { packages: [{ depname: 'foo' }] },
+      { apiToken: 'test_a' },
+    )
+    expect(result.isError).toBe(true)
+    // The trailing `${cause ?? ''}` becomes empty; assert the message
+    // shape.
+    expect(result.content[0]!.text).toMatch(
+      /Socket authentication failed \[401\]\. Re-authenticate and retry\.\s*$/,
+    )
+  })
+
+  it('uses empty string when 403 response has no cause and no error', async () => {
+    mockBatchPackageFetch.mockResolvedValue({
+      success: false,
+      status: 403,
+    })
+    const result = await runDepscore(
+      { packages: [{ depname: 'foo' }] },
+      { apiToken: 'test_a' },
+    )
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toMatch(/Re-authenticate.*retry\.\s*$/)
+  })
+
+  it('handles non-2xx response with no cause/error gracefully', async () => {
+    mockBatchPackageFetch.mockResolvedValue({
+      success: false,
+      status: 502,
+    })
+    const result = await runDepscore(
+      { packages: [{ depname: 'foo' }] },
+      { apiToken: 'test_a' },
+    )
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toContain('[502]')
+  })
+})
+
+describe('runDepscore — empty data field on success', () => {
+  it('treats response.data === undefined as no packages', async () => {
+    mockBatchPackageFetch.mockResolvedValue({
+      success: true,
+      status: 200,
+      data: undefined,
+    })
+    const result = await runDepscore(
+      { packages: [{ depname: 'foo' }] },
+      { apiToken: 'test_a' },
+    )
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toBe('No packages were found.')
+  })
+})
+
+describe('runDepscore — error fallbacks (cause vs error field)', () => {
+  it('uses response.error when response.cause is absent on 401', async () => {
+    mockBatchPackageFetch.mockResolvedValue({
+      success: false,
+      status: 401,
+      error: 'Bad token',
+    })
+    const result = await runDepscore(
+      { packages: [{ depname: 'foo' }] },
+      { apiToken: 'test_a' },
+    )
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toContain('Socket authentication failed [401]')
+    expect(result.content[0]!.text).toContain('Bad token')
+  })
+
+  it('uses response.error when response.cause is absent on 403', async () => {
+    mockBatchPackageFetch.mockResolvedValue({
+      success: false,
+      status: 403,
+      error: 'No scope',
+    })
+    const result = await runDepscore(
+      { packages: [{ depname: 'foo' }] },
+      { apiToken: 'test_a' },
+    )
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toContain('Socket denied access [403]')
+    expect(result.content[0]!.text).toContain('No scope')
+  })
+
+  it('uses response.error when response.cause is absent on a generic non-2xx', async () => {
+    mockBatchPackageFetch.mockResolvedValue({
+      success: false,
+      status: 500,
+      error: 'Internal Server Error',
+    })
+    const result = await runDepscore(
+      { packages: [{ depname: 'foo' }] },
+      { apiToken: 'test_a' },
+    )
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toContain('[500]')
+    expect(result.content[0]!.text).toContain('Internal Server Error')
+  })
+})
+
 describe('runDepscore — platform hint forwarding', () => {
   it('forwards the platform hint to artifact dedup', async () => {
     // Two artifacts of the same package with different platforms.

@@ -229,6 +229,33 @@ describe('cmdMcp — port flag', () => {
     )
   })
 
+  it('falls back to default 3000 when MCP_PORT is unset and flag is 0', async () => {
+    // Clear MCP_PORT explicitly so the `process.env['MCP_PORT'] || \`${DEFAULT_PORT}\``
+    // fallback chain hits the right-arm.
+    delete process.env['MCP_PORT']
+    mockMeowOrExit.mockImplementationOnce(() => ({
+      flags: {
+        http: false,
+        'oauth-client-id': '',
+        'oauth-client-secret': '',
+        'oauth-issuer': '',
+        'oauth-required-scopes': '',
+        port: 0,
+        'trust-proxy': false,
+      },
+      help: '',
+      input: [],
+      pkg: {},
+      showHelp: vi.fn(),
+      showVersion: vi.fn(),
+      unknownFlags: [],
+    }))
+    await cmdMcp.run([], importMeta, context)
+    expect(mockHandleMcp).toHaveBeenCalledWith(
+      expect.objectContaining({ port: 3000 }),
+    )
+  })
+
   it('falls back to default 3000 when MCP_PORT is unparseable', async () => {
     process.env['MCP_PORT'] = 'notanumber'
     mockMeowOrExit.mockImplementationOnce(() => ({
@@ -276,6 +303,42 @@ describe('cmdMcp — trust-proxy', () => {
     expect(mockHandleMcp).toHaveBeenCalledWith(
       expect.objectContaining({ trustProxy: false }),
     )
+  })
+})
+
+describe('cmdMcp — help text', () => {
+  it('renders the help text with the command name interpolated', async () => {
+    // The help: (command) => `…` callback is normally invoked by meow
+    // when --help is passed. Capture the config we hand to meowOrExit
+    // and invoke the help fn directly to exercise that branch.
+    let capturedConfig: { help?: (cmd: string) => string } | undefined
+    mockMeowOrExit.mockImplementationOnce(input => {
+      capturedConfig = (input as { config: typeof capturedConfig }).config
+      return {
+        flags: {
+          http: false,
+          'oauth-client-id': '',
+          'oauth-client-secret': '',
+          'oauth-issuer': '',
+          'oauth-required-scopes': '',
+          port: 3000,
+          'trust-proxy': false,
+        },
+        help: '',
+        input: [],
+        pkg: {},
+        showHelp: vi.fn(),
+        showVersion: vi.fn(),
+        unknownFlags: [],
+      }
+    })
+    await cmdMcp.run([], importMeta, context)
+    const helpText = capturedConfig?.help?.('socket mcp') ?? ''
+    expect(helpText).toContain('socket mcp [options]')
+    expect(helpText).toContain('Modes')
+    expect(helpText).toContain('Environment variables')
+    expect(helpText).toContain('Examples')
+    expect(helpText).toContain('SOCKET_API_TOKEN')
   })
 })
 

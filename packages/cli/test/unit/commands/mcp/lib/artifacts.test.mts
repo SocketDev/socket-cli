@@ -86,6 +86,23 @@ describe('deduplicateArtifacts', () => {
       const b = art({ namespace: 'org2' })
       expect(deduplicateArtifacts([a, b])).toHaveLength(2)
     })
+
+    it('uses empty-string fallbacks for missing type/name/version in the group key', () => {
+      // Artifacts missing type/name/version still get grouped: empty
+      // type + empty name + empty version + empty namespace == same key.
+      // Two such artifacts collapse to one.
+      const a = art({
+        name: undefined,
+        type: undefined,
+        version: undefined,
+      })
+      const b = art({
+        name: undefined,
+        type: undefined,
+        version: undefined,
+      })
+      expect(deduplicateArtifacts([a, b])).toHaveLength(1)
+    })
   })
 
   describe('platform hint matching', () => {
