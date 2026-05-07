@@ -47,6 +47,15 @@ describe('sea/boot', () => {
     })
   })
 
+  describe('findSystemNodejs', () => {
+    it('always returns undefined (current stub implementation)', async () => {
+      const { findSystemNodejs } = await import(
+        '../../../../src/utils/sea/boot.mts'
+      )
+      expect(findSystemNodejs()).toBeUndefined()
+    })
+  })
+
   describe('shouldBypassBootstrap', () => {
     it('returns true when not a SEA binary', () => {
       vi.mocked(isSeaBinary).mockReturnValue(false)
