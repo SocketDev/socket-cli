@@ -36,7 +36,7 @@ interface WhoamiStatus {
 
 // Helper functions.
 
-function getTokenLocation(): string {
+export function getTokenLocation(): string {
   // Check environment variable first.
   if (SOCKET_CLI_API_TOKEN) {
     return 'Environment variable (SOCKET_SECURITY_API_KEY)'
@@ -51,7 +51,7 @@ function getTokenLocation(): string {
   return 'Unknown'
 }
 
-function outputWhoami(status: WhoamiStatus): void {
+export function outputWhoami(status: WhoamiStatus): void {
   const result: CResult<WhoamiStatus> = {
     ok: true,
     data: status,

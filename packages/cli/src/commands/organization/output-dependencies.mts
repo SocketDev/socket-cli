@@ -39,7 +39,7 @@ export async function outputDependencies(
   outputMarkdown(result.data, { limit, offset })
 }
 
-function outputMarkdown(
+export function outputMarkdown(
   result: SocketSdkSuccessResult<'searchDependencies'>['data'],
   {
     limit,

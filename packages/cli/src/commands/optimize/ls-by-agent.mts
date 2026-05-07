@@ -13,7 +13,7 @@ import { FLAG_PROD } from '../../constants/cli.mts'
 
 import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 
-function cleanupQueryStdout(stdout: string): string {
+export function cleanupQueryStdout(stdout: string): string {
   if (stdout === '') {
     return ''
   }
@@ -45,7 +45,7 @@ function cleanupQueryStdout(stdout: string): string {
   return JSON.stringify(Array.from(names), null, 2)
 }
 
-function parsableToQueryStdout(stdout: string) {
+export function parsableToQueryStdout(stdout: string) {
   if (stdout === '') {
     return ''
   }
@@ -56,7 +56,7 @@ function parsableToQueryStdout(stdout: string) {
   return JSON.stringify(Array.from(names), null, 2)
 }
 
-async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
+export async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
   let stdout = ''
   try {
     const result = await spawn(npmExecPath, ['query', ':not(.dev)'], {

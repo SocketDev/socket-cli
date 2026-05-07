@@ -88,7 +88,7 @@ export async function setupTabCompletion(targetName: string): Promise<
   }
 }
 
-function getTabCompletionScriptRaw(): CResult<string> {
+export function getTabCompletionScriptRaw(): CResult<string> {
   // Resolve the @socketsecurity/cli package root to find the data directory.
   // This works whether running from source, installed globally, or via npx/dlx.
   let sourcePath: string

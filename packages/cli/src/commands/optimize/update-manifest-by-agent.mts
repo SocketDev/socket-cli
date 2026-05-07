@@ -22,7 +22,7 @@ const depFields = [
   'bundleDependencies',
 ]
 
-function getEntryIndexes(
+export function getEntryIndexes(
   entries: Array<[string | symbol, any]>,
   keys: Array<string | symbol>,
 ): number[] {
@@ -32,21 +32,21 @@ function getEntryIndexes(
     .sort((a, b) => a - b)
 }
 
-function getLowestEntryIndex(
+export function getLowestEntryIndex(
   entries: Array<[string | symbol, any]>,
   keys: Array<string | symbol>,
 ) {
   return getEntryIndexes(entries, keys)?.[0] ?? -1
 }
 
-function getHighestEntryIndex(
+export function getHighestEntryIndex(
   entries: Array<[string | symbol, any]>,
   keys: Array<string | symbol>,
 ) {
   return getEntryIndexes(entries, keys)?.at(-1) ?? -1
 }
 
-function updatePkgJsonField(
+export function updatePkgJsonField(
   editablePkgJson: EditablePackageJson,
   field: string,
   value: any,

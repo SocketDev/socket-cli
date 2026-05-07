@@ -82,7 +82,7 @@ export async function outputOptimizeResult(
   logger.log('')
 }
 
-function createActionMessage(
+export function createActionMessage(
   verb: string,
   overrideCount: number,
   workspaceCount: number,
