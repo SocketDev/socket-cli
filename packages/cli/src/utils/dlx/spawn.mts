@@ -36,7 +36,6 @@ import {
   resolveCoana,
   resolvePyCli,
   resolveSfw,
-  resolveSocketPatch,
 } from './resolve-binary.mjs'
 
 import type { GitHubReleaseSpec } from './resolve-binary.mjs'
@@ -577,65 +576,7 @@ export async function spawnSfwDlx(
  * Note: As of v2.0.0, socket-patch is a Rust binary downloaded from GitHub releases,
  * not an npm package. This function handles both local overrides and GitHub downloads.
  */
-export async function spawnSocketPatchDlx(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  const resolution = resolveSocketPatch()
-  const { env: spawnEnv, ...dlxOptions } = {
-    __proto__: null,
-    ...options,
-  } as DlxOptions
-
-  // Use local socket-patch if available.
-  if (resolution.type === 'local') {
-    const detection = detectExecutableType(resolution.path)
-
-    const spawnArgs =
-      detection.type === 'binary' ? args : [resolution.path, ...args]
-    const spawnCommand = detection.type === 'binary' ? resolution.path : 'node'
-
-    const spawnPromise = spawn(spawnCommand, spawnArgs, {
-      ...dlxOptions,
-      env: {
-        ...process.env,
-        ...spawnEnv,
-      },
-      stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
-    })
-
-    return {
-      spawnPromise,
-    }
-  }
-
-  // Download from GitHub releases (socket-patch v2.0.0+).
-  if (resolution.type === 'github-release') {
-    const binaryPath = await downloadGitHubReleaseBinary(resolution.details)
-
-    const spawnPromise = spawn(binaryPath, args, {
-      ...dlxOptions,
-      env: {
-        ...process.env,
-        ...spawnEnv,
-      },
-      stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
-    })
-
-    return {
-      spawnPromise,
-    }
-  }
-
-  // Fallback to dlx for npm packages (not used for socket-patch v2.0.0+).
-  return await spawnDlx(
-    resolution.details,
-    args,
-    { force: false, ...options },
-    spawnExtra,
-  )
-}
+export { spawnSocketPatchDlx } from './spawn-socket-patch.mts'
 
 
 /**
@@ -788,17 +729,7 @@ export async function spawnCoanaVfs(
   }
 }
 
-/**
- * Helper to spawn Socket Patch from VFS.
- * Used when running in SEA mode.
- */
-export async function spawnSocketPatchVfs(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  return await spawnToolVfs('socket-patch', args, options, spawnExtra)
-}
+export { spawnSocketPatchVfs } from './spawn-socket-patch.mts'
 
 
 /**
@@ -852,20 +783,7 @@ export async function spawnCoana(
   return await spawnCoanaDlx(args, orgSlug, options, spawnExtra)
 }
 
-/**
- * Spawn Socket Patch.
- * Auto-detects SEA mode and uses appropriate spawn method.
- */
-export async function spawnSocketPatch(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  if (isSeaBinary() && areExternalToolsAvailable()) {
-    return await spawnSocketPatchVfs(args, options, spawnExtra)
-  }
-  return await spawnSocketPatchDlx(args, options, spawnExtra)
-}
+export { spawnSocketPatch } from './spawn-socket-patch.mts'
 
 export {
   spawnSynp,
