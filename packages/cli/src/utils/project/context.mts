@@ -78,6 +78,7 @@ export async function findProjectRoot(
  */
 async function isMonorepo(root: string): Promise<boolean> {
   const pkgPath = join(root, 'package.json')
+  /* c8 ignore next 3 - root came from findProjectRoot which already verified package.json exists */
   if (!existsSync(pkgPath)) {
     return false
   }
@@ -120,6 +121,7 @@ async function isMonorepo(root: string): Promise<boolean> {
  */
 async function detectFramework(root: string): Promise<string | undefined> {
   const pkgPath = join(root, 'package.json')
+  /* c8 ignore next 3 - root came from findProjectRoot which already verified package.json exists */
   if (!existsSync(pkgPath)) {
     return undefined
   }

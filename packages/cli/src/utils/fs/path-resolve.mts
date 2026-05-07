@@ -46,6 +46,7 @@ export function findNpmDirPathSync(npmBinPath: string): string | undefined {
   // This allows UNC paths: //server/share, \\server\share.
   // And long paths: \\?\C:\..., //?/C:/...
   // Backslash paths (\\...) don't match startsWith('/') so they pass through.
+  /* c8 ignore next 3 - WIN32-only branch, tests run on macOS/Linux */
   if (WIN32 && npmBinPath.startsWith('/') && !npmBinPath.startsWith('//')) {
     return undefined
   }
@@ -53,6 +54,7 @@ export function findNpmDirPathSync(npmBinPath: string): string | undefined {
   let thePath = npmBinPath
   let iterations = 0
   while (true) {
+    /* c8 ignore next 5 - safety guard against infinite loop on circular symlinks */
     if (iterations >= MAX_ITERATIONS) {
       throw new Error(
         `npm path resolution walked ${MAX_ITERATIONS} directories without finding lib/node_modules/npm starting from "${npmBinPath}" (current: "${thePath}"); check for a circular symlink or corrupt node install`,

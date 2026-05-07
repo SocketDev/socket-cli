@@ -239,6 +239,7 @@ export function captureExceptionSync(
   if (!Sentry) {
     return ''
   }
+  /* c8 ignore next 2 - Sentry is undefined in tests (Sentry build mode is opt-in only) */
   debugNs('notice', 'send: exception to Sentry')
   return Sentry.captureException(exception, hint) as string
 }

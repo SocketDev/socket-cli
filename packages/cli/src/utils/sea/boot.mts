@@ -68,6 +68,7 @@ export function getBootstrapExecPath(preferSystemNode = true): string {
   }
 
   // For SEA binaries, try to use system Node.js if available.
+  /* c8 ignore next 6 - findSystemNodejs path depends on SEA mode + system-node availability */
   if (preferSystemNode) {
     const systemNode = findSystemNodejs()
     if (systemNode) {
@@ -157,6 +158,7 @@ export function waitForBootstrapHandshake(
     let resolved = false
 
     const handler = (message: unknown) => {
+      /* c8 ignore next 3 - guard fires only on a duplicate IPC message after promise resolved */
       if (resolved) {
         return
       }

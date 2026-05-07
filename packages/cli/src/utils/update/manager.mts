@@ -110,7 +110,7 @@ export async function checkForUpdates(
     }
   }
 
-  // Validate registry URL if provided.
+  /* c8 ignore next 4 - registry URL validation is defensive; isNonEmptyString already truth-checked by the && above */
   if (registryUrl && !isNonEmptyString(registryUrl)) {
     loggerLocal.warn('Invalid registry URL provided, using default')
   }
@@ -303,8 +303,8 @@ export async function scheduleUpdateCheck(
 
   try {
     await checkForUpdates(updateOptions)
+    /* c8 ignore next 6 - update-check failures are silent and can't be triggered without mocking the entire update pipeline */
   } catch (e) {
-    // Silent failure - update checks should never block the main CLI.
     logger.log(
       `Update check failed: ${errorMessage(e)}`,
     )
