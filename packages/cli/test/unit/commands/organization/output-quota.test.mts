@@ -284,6 +284,149 @@ describe('outputQuota', () => {
     expect(calls.some((c: unknown) => typeof c === 'string' && c.includes('1 h'))).toBe(true)
   })
 
+  it('returns the raw refresh string when Date.parse yields NaN', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      info: vi.fn(),
+      log: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+      logger: mockLogger,
+    }))
+
+    const { outputQuota } = await import(
+      '../../../../src/commands/organization/output-quota.mts'
+    )
+
+    const result = createSuccessResult({
+      quota: 10,
+      maxQuota: 100,
+      nextWindowRefresh: 'not-a-date',
+    })
+
+    process.exitCode = undefined
+    await outputQuota(result as any, 'text')
+
+    const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
+    expect(
+      calls.some(
+        (c: unknown) => typeof c === 'string' && c.includes('not-a-date'),
+      ),
+    ).toBe(true)
+  })
+
+  it('emits "due now" when refresh timestamp has passed', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      info: vi.fn(),
+      log: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+      logger: mockLogger,
+    }))
+
+    const { outputQuota } = await import(
+      '../../../../src/commands/organization/output-quota.mts'
+    )
+
+    const past = new Date(Date.now() - 60_000).toISOString()
+    const result = createSuccessResult({
+      quota: 10,
+      maxQuota: 100,
+      nextWindowRefresh: past,
+    })
+
+    process.exitCode = undefined
+    await outputQuota(result as any, 'text')
+
+    const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
+    expect(
+      calls.some(
+        (c: unknown) => typeof c === 'string' && c.includes('due now'),
+      ),
+    ).toBe(true)
+  })
+
+  it('emits "in N min" for refresh windows under an hour', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      info: vi.fn(),
+      log: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+      logger: mockLogger,
+    }))
+
+    const { outputQuota } = await import(
+      '../../../../src/commands/organization/output-quota.mts'
+    )
+
+    const tenMin = new Date(Date.now() + 10 * 60_000).toISOString()
+    const result = createSuccessResult({
+      quota: 10,
+      maxQuota: 100,
+      nextWindowRefresh: tenMin,
+    })
+
+    process.exitCode = undefined
+    await outputQuota(result as any, 'text')
+
+    const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
+    expect(
+      calls.some(
+        (c: unknown) => typeof c === 'string' && /in \d+ min/.test(c),
+      ),
+    ).toBe(true)
+  })
+
+  it('emits "in N d" for refresh windows over 1.97 days', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      info: vi.fn(),
+      log: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+      logger: mockLogger,
+    }))
+
+    const { outputQuota } = await import(
+      '../../../../src/commands/organization/output-quota.mts'
+    )
+
+    const days = new Date(Date.now() + 5 * 86_400_000).toISOString()
+    const result = createSuccessResult({
+      quota: 10,
+      maxQuota: 100,
+      nextWindowRefresh: days,
+    })
+
+    process.exitCode = undefined
+    await outputQuota(result as any, 'text')
+
+    const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
+    expect(
+      calls.some(
+        (c: unknown) => typeof c === 'string' && /in \d+ d/.test(c),
+      ),
+    ).toBe(true)
+  })
+
   it('outputs error in text format', async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
