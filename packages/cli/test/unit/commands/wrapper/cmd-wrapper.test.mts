@@ -270,5 +270,15 @@ describe('cmd-wrapper', () => {
         expect.stringContaining('# Socket Wrapper Disabled'),
       )
     })
+
+    it('shows skipped-files section in markdown when files are already configured', async () => {
+      mockCheckSocketWrapperSetup.mockReturnValue(true)
+
+      await cmdWrapper.run(['on', '--markdown'], importMeta, context)
+
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('## Skipped Files'),
+      )
+    })
   })
 })
