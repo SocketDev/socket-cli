@@ -60,6 +60,27 @@ vi.mock('../../../../src/env/socket-patch-version.mts', () => ({
 vi.mock('../../../../src/env/synp-version.mts', () => ({
   getSynpVersion: () => '3.0.0',
 }))
+vi.mock('../../../../src/env/trivy-version.mts', () => ({
+  getTrivyVersion: () => '0.50.0',
+}))
+vi.mock('../../../../src/env/trufflehog-version.mts', () => ({
+  getTrufflehogVersion: () => '3.40.0',
+}))
+vi.mock('../../../../src/env/opengrep-version.mts', () => ({
+  getOpengrepVersion: () => '1.5.0',
+}))
+vi.mock('../../../../src/env/trivy-checksums.mts', () => ({
+  requireTrivyChecksum: vi.fn(() => 'trivy-sha'),
+}))
+vi.mock('../../../../src/env/trufflehog-checksums.mts', () => ({
+  requireTrufflehogChecksum: vi.fn(() => 'trufflehog-sha'),
+}))
+vi.mock('../../../../src/env/opengrep-checksums.mts', () => ({
+  requireOpengrepChecksum: vi.fn(() => 'opengrep-sha'),
+}))
+vi.mock('../../../../src/env/socket-patch-checksums.mts', () => ({
+  requireSocketPatchChecksum: vi.fn(() => 'socket-patch-sha'),
+}))
 
 // Mock os module.
 const mockOs = vi.hoisted(() => ({
@@ -222,7 +243,7 @@ describe('binary resolution utilities', () => {
 
       const result = resolveSocketPatch()
 
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         type: 'github-release',
         details: {
           owner: 'SocketDev',
@@ -244,7 +265,7 @@ describe('binary resolution utilities', () => {
 
       const result = resolveSocketPatch()
 
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         type: 'github-release',
         details: {
           owner: 'SocketDev',
@@ -266,7 +287,7 @@ describe('binary resolution utilities', () => {
 
       const result = resolveSocketPatch()
 
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         type: 'github-release',
         details: {
           owner: 'SocketDev',
@@ -288,7 +309,7 @@ describe('binary resolution utilities', () => {
 
       const result = resolveSocketPatch()
 
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         type: 'github-release',
         details: {
           owner: 'SocketDev',
@@ -310,7 +331,7 @@ describe('binary resolution utilities', () => {
 
       const result = resolveSocketPatch()
 
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         type: 'github-release',
         details: {
           owner: 'SocketDev',
@@ -332,7 +353,7 @@ describe('binary resolution utilities', () => {
 
       const result = resolveSocketPatch()
 
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         type: 'github-release',
         details: {
           owner: 'SocketDev',
@@ -390,6 +411,137 @@ describe('binary resolution utilities', () => {
           binaryName: 'synp',
         },
       })
+    })
+  })
+
+  describe('resolveTrivy', () => {
+    it.each([
+      ['darwin', 'arm64', 'trivy_0.50.0_macOS-ARM64.tar.gz'],
+      ['darwin', 'x64', 'trivy_0.50.0_macOS-64bit.tar.gz'],
+      ['linux', 'arm64', 'trivy_0.50.0_Linux-ARM64.tar.gz'],
+      ['linux', 'x64', 'trivy_0.50.0_Linux-64bit.tar.gz'],
+      ['win32', 'x64', 'trivy_0.50.0_windows-64bit.zip'],
+    ])('returns spec for %s-%s', async (platform, arch, assetName) => {
+      mockOs.platform.mockReturnValue(platform as any)
+      mockOs.arch.mockReturnValue(arch as any)
+
+      const { resolveTrivy } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
+
+      const result = resolveTrivy()
+
+      expect(result).toEqual({
+        type: 'github-release',
+        details: {
+          assetName,
+          binaryName: 'trivy',
+          owner: 'aquasecurity',
+          repo: 'trivy',
+          sha256: 'trivy-sha',
+          version: 'v0.50.0',
+        },
+      })
+    })
+
+    it('throws on unsupported platform', async () => {
+      mockOs.platform.mockReturnValue('win32' as any)
+      mockOs.arch.mockReturnValue('arm64' as any)
+
+      const { resolveTrivy } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
+
+      expect(() => resolveTrivy()).toThrow(
+        /Trivy has no prebuilt binary for "win32-arm64"/,
+      )
+    })
+  })
+
+  describe('resolveTrufflehog', () => {
+    it.each([
+      ['darwin', 'arm64', 'trufflehog_3.40.0_darwin_arm64.tar.gz'],
+      ['darwin', 'x64', 'trufflehog_3.40.0_darwin_amd64.tar.gz'],
+      ['linux', 'arm64', 'trufflehog_3.40.0_linux_arm64.tar.gz'],
+      ['linux', 'x64', 'trufflehog_3.40.0_linux_amd64.tar.gz'],
+      ['win32', 'arm64', 'trufflehog_3.40.0_windows_arm64.tar.gz'],
+      ['win32', 'x64', 'trufflehog_3.40.0_windows_amd64.tar.gz'],
+    ])('returns spec for %s-%s', async (platform, arch, assetName) => {
+      mockOs.platform.mockReturnValue(platform as any)
+      mockOs.arch.mockReturnValue(arch as any)
+
+      const { resolveTrufflehog } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
+
+      const result = resolveTrufflehog()
+
+      expect(result).toMatchObject({
+        type: 'github-release',
+        details: {
+          assetName,
+          binaryName: 'trufflehog',
+          owner: 'trufflesecurity',
+          repo: 'trufflehog',
+          version: 'v3.40.0',
+        },
+      })
+    })
+
+    it('throws on unsupported platform', async () => {
+      mockOs.platform.mockReturnValue('freebsd' as any)
+      mockOs.arch.mockReturnValue('x64' as any)
+
+      const { resolveTrufflehog } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
+
+      expect(() => resolveTrufflehog()).toThrow(
+        /TruffleHog has no prebuilt binary for "freebsd-x64"/,
+      )
+    })
+  })
+
+  describe('resolveOpengrep', () => {
+    it.each([
+      ['darwin', 'arm64', 'opengrep-core_osx_aarch64.tar.gz'],
+      ['darwin', 'x64', 'opengrep-core_osx_x86.tar.gz'],
+      ['linux', 'arm64', 'opengrep-core_linux_aarch64.tar.gz'],
+      ['linux', 'x64', 'opengrep-core_linux_x86.tar.gz'],
+      ['win32', 'x64', 'opengrep-core_windows_x86.zip'],
+    ])('returns spec for %s-%s', async (platform, arch, assetName) => {
+      mockOs.platform.mockReturnValue(platform as any)
+      mockOs.arch.mockReturnValue(arch as any)
+
+      const { resolveOpengrep } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
+
+      const result = resolveOpengrep()
+
+      expect(result).toMatchObject({
+        type: 'github-release',
+        details: {
+          assetName,
+          binaryName: 'osemgrep',
+          owner: 'opengrep',
+          repo: 'opengrep',
+          version: '1.5.0',
+        },
+      })
+    })
+
+    it('throws on unsupported platform', async () => {
+      mockOs.platform.mockReturnValue('win32' as any)
+      mockOs.arch.mockReturnValue('arm64' as any)
+
+      const { resolveOpengrep } = await import(
+        '../../../../src/utils/dlx/resolve-binary.mts'
+      )
+
+      expect(() => resolveOpengrep()).toThrow(
+        /OpenGrep has no prebuilt binary for "win32-arm64"/,
+      )
     })
   })
 })

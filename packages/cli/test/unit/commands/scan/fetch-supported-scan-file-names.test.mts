@@ -170,4 +170,5 @@ describe('fetchSupportedScanFileNames', () => {
 
     expect(mockSdk.getSupportedFiles).toHaveBeenCalled()
   })
+
 })
