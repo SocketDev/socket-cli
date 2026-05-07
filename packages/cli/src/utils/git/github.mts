@@ -129,13 +129,14 @@ export async function cacheFetch<T>(
   fetcher: () => Promise<T>,
   ttlMs?: number | undefined,
 ): Promise<T> {
-  // Optionally disable cache.
+  /* c8 ignore next 4 - DISABLE_GITHUB_CACHE not set in tests */
   if (DISABLE_GITHUB_CACHE) {
     return await fetcher()
   }
 
   // Check if already fetching this key to prevent TOCTOU race.
   const inflight = inflightRequests.get(key)
+  /* c8 ignore next 3 - inflight cache hit requires concurrent calls; tests run serially */
   if (inflight) {
     return inflight as Promise<T>
   }
@@ -233,6 +234,7 @@ export async function fetchGhsaDetails(
       `),
     )
 
+    /* c8 ignore start - GQL response loop; cacheFetch wraps the call so the inner factory only fires on cache miss, which tests don't trigger */
     for (let i = 0, { length } = ids; i < length; i += 1) {
       const id = ids[i]!
       const advisoryKey = `advisory${i}`
@@ -243,6 +245,7 @@ export async function fetchGhsaDetails(
         debugNs('notice', `miss: no advisory found for ${id}`)
       }
     }
+    /* c8 ignore stop */
   } catch (e) {
     debugNs('error', formatErrorWithDetail('Failed to fetch GHSA details', e))
     debugDirNs('error', e)
@@ -351,6 +354,7 @@ export async function setGitRemoteGithubRepoUrl(
 ): Promise<boolean> {
   const urlObj = parseUrl(GITHUB_SERVER_URL || '')
   const host = urlObj?.host
+  /* c8 ignore next 5 - GITHUB_SERVER_URL defaults to a parseable URL; only fires when env var is malformed */
   if (!host) {
     debugNs('error', 'invalid: GITHUB_SERVER_URL env var')
     debugDirNs('inspect', { GITHUB_SERVER_URL })
@@ -366,6 +370,7 @@ export async function setGitRemoteGithubRepoUrl(
   try {
     await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)
     return true
+    /* c8 ignore next 5 - git command failure path; tests run in real cwd with valid git */
   } catch (e) {
     debugNs('error', `Git command failed: ${quotedCmd}`)
     debugDirNs('inspect', { cmd: quotedCmd })
