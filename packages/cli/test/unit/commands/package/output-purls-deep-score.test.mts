@@ -709,6 +709,99 @@ describe('package score output', async () => {
       // Transitive section is omitted for the no-deps path.
       expect(txt).not.toContain('## Transitive Package Results')
     })
+
+    it('renders self-alerts variant when no dependencies exist (line 134)', () => {
+      // dependencyCount=0 + non-empty selfAlerts → exercises line 134
+      // ('These are the alerts found for this package:').
+      const data = {
+        purl: 'pkg:npm/lonely@1.0.0',
+        self: {
+          purl: 'pkg:npm/lonely@1.0.0',
+          alerts: [{ severity: 'high', name: 'cve' }],
+          capabilities: [],
+          score: {
+            overall: 80,
+            maintenance: 80,
+            quality: 80,
+            supplyChain: 80,
+            vulnerability: 80,
+            license: 80,
+          },
+        },
+        transitively: {
+          alerts: [],
+          capabilities: [],
+          dependencyCount: 0,
+          func: 'identity',
+          lowest: {
+            overall: 80,
+            maintenance: 80,
+            quality: 80,
+            supplyChain: 80,
+            vulnerability: 80,
+            license: 80,
+          },
+          score: {
+            overall: 80,
+            maintenance: 80,
+            quality: 80,
+            supplyChain: 80,
+            vulnerability: 80,
+            license: 80,
+          },
+        },
+      } as any
+
+      const txt = createMarkdownReport(data)
+      expect(txt).toContain('These are the alerts found for this package:')
+    })
+
+    it('renders empty-deep-results section (lines 189-210)', () => {
+      // dependencyCount > 0 but transitively.alerts and capabilities empty
+      // → exercises lines 189-191 (no capabilities) and 208-210 (no alerts).
+      const data = {
+        purl: 'pkg:npm/silent@2.0.0',
+        self: {
+          purl: 'pkg:npm/silent@2.0.0',
+          alerts: [],
+          capabilities: [],
+          score: {
+            overall: 100,
+            maintenance: 100,
+            quality: 100,
+            supplyChain: 100,
+            vulnerability: 100,
+            license: 100,
+          },
+        },
+        transitively: {
+          alerts: [],
+          capabilities: [],
+          dependencyCount: 5,
+          func: 'min',
+          lowest: {
+            overall: 'pkg:npm/dep@1.0.0',
+            maintenance: 'pkg:npm/dep@1.0.0',
+            quality: 'pkg:npm/dep@1.0.0',
+            supplyChain: 'pkg:npm/dep@1.0.0',
+            vulnerability: 'pkg:npm/dep@1.0.0',
+            license: 'pkg:npm/dep@1.0.0',
+          },
+          score: {
+            overall: 90,
+            maintenance: 90,
+            quality: 90,
+            supplyChain: 90,
+            vulnerability: 90,
+            license: 90,
+          },
+        },
+      } as any
+
+      const txt = createMarkdownReport(data)
+      expect(txt).toContain('This package had no capabilities')
+      expect(txt).toContain('This package had no alerts')
+    })
   })
 
   describe('outputPurlsDeepScore', () => {
@@ -744,6 +837,30 @@ describe('package score output', async () => {
       // Should not throw / resolve to undefined.
       await expect(
         outputPurlsDeepScore('pkg:npm/test', result as any, 'text'),
+      ).resolves.toBeUndefined()
+    })
+
+    it('renders markdown report on success (lines 29-34)', async () => {
+      // Exercises the `outputKind === 'markdown'` branch that emits
+      // logger.success + logger.log(md) + return.
+      const result = {
+        ok: true as const,
+        data: nugetDeep.data,
+      }
+      await expect(
+        outputPurlsDeepScore('pkg:nuget/test', result as any, 'markdown'),
+      ).resolves.toBeUndefined()
+    })
+
+    it('renders text fallback on success (lines 36-40)', async () => {
+      // Exercises the default text-output branch (logger.log of the data
+      // object after the markdown branch returns).
+      const result = {
+        ok: true as const,
+        data: nugetDeep.data,
+      }
+      await expect(
+        outputPurlsDeepScore('pkg:nuget/test', result as any, 'text'),
       ).resolves.toBeUndefined()
     })
   })
