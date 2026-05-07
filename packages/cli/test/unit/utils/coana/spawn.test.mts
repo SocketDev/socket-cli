@@ -41,9 +41,13 @@ vi.mock('../../../../src/env/coana-version.mts', () => ({
   getCoanaVersion: mockGetCoanaVersion,
 }))
 
-vi.mock('../../../../src/env/socket-cli-coana-local-path.mts', () => ({
-  SOCKET_CLI_COANA_LOCAL_PATH: null,
+const mockCoanaLocalPath = vi.hoisted(() => ({
+  SOCKET_CLI_COANA_LOCAL_PATH: '' as string,
 }))
+vi.mock(
+  '../../../../src/env/socket-cli-coana-local-path.mts',
+  () => mockCoanaLocalPath,
+)
 
 vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
   getDefaultApiToken: mockGetDefaultApiToken,
@@ -147,6 +151,47 @@ describe('coana/spawn', () => {
       const call = mockDlxPackage.mock.calls[0]
       const spawnOptions = call[1].spawnOptions
       expect(spawnOptions.env.SOCKET_CLI_VERSION).toBe('2.0.0')
+    })
+
+    it('uses spawnNode + local path when SOCKET_CLI_COANA_LOCAL_PATH is set', async () => {
+      mockCoanaLocalPath.SOCKET_CLI_COANA_LOCAL_PATH = '/local/coana.js'
+      mockSpawnNode.mockResolvedValueOnce({
+        stdout: 'local-success',
+        code: 0,
+      })
+
+      try {
+        const result = await spawnCoana(['--version'])
+
+        expect(result.ok).toBe(true)
+        if (result.ok) {
+          expect(result.data).toBe('local-success')
+        }
+        expect(mockSpawnNode).toHaveBeenCalledWith(
+          ['/local/coana.js', '--version'],
+          expect.objectContaining({
+            stdio: 'inherit',
+          }),
+        )
+        expect(mockDlxPackage).not.toHaveBeenCalled()
+      } finally {
+        mockCoanaLocalPath.SOCKET_CLI_COANA_LOCAL_PATH = ''
+      }
+    })
+
+    it('handles spawnNode missing stdout in local path branch', async () => {
+      mockCoanaLocalPath.SOCKET_CLI_COANA_LOCAL_PATH = '/local/coana.js'
+      mockSpawnNode.mockResolvedValueOnce({ code: 0 })
+
+      try {
+        const result = await spawnCoana(['--version'])
+        expect(result.ok).toBe(true)
+        if (result.ok) {
+          expect(result.data).toBe('')
+        }
+      } finally {
+        mockCoanaLocalPath.SOCKET_CLI_COANA_LOCAL_PATH = ''
+      }
     })
   })
 })
