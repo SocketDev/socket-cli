@@ -245,6 +245,88 @@ describe('paths constants', () => {
 
       expect(result).toContain('socket')
     })
+
+    it('uses Library/Caches on darwin', async () => {
+      // Stub platform to darwin.
+      const originalPlatform = process.platform
+      Object.defineProperty(process, 'platform', { value: 'darwin' })
+      try {
+        // Reset modules so paths.mts re-evaluates ENV without XDG_CACHE_HOME.
+        const originalXdg = process.env['XDG_CACHE_HOME']
+        delete process.env['XDG_CACHE_HOME']
+        try {
+          vi.resetModules()
+          const { getSocketCachePath: getPathFresh } = await import(
+            '../../../src/constants/paths.mts'
+          )
+          const result = getPathFresh()
+          expect(result).toContain('Library/Caches/socket')
+        } finally {
+          if (originalXdg !== undefined) {
+            process.env['XDG_CACHE_HOME'] = originalXdg
+          }
+        }
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform })
+      }
+    })
+
+    it('uses TEMP-based path on win32 (lines 180-184)', async () => {
+      // The underlying ENV constant is read at module-init from
+      // env/temp.mts, env/tmp.mts. Set them in process.env before
+      // re-importing the module so getSocketCachePath picks them up.
+      const originalPlatform = process.platform
+      const originalXdg = process.env['XDG_CACHE_HOME']
+      const originalTemp = process.env['TEMP']
+      const originalTmp = process.env['TMP']
+
+      Object.defineProperty(process, 'platform', { value: 'win32' })
+      delete process.env['XDG_CACHE_HOME']
+      process.env['TEMP'] = '/winroot/Temp'
+      delete process.env['TMP']
+
+      try {
+        vi.resetModules()
+        const { getSocketCachePath: getPathFresh } = await import(
+          '../../../src/constants/paths.mts'
+        )
+        const result = getPathFresh()
+        expect(result).toContain('socket')
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform })
+        if (originalXdg !== undefined) {
+          process.env['XDG_CACHE_HOME'] = originalXdg
+        }
+        if (originalTemp === undefined) {
+          delete process.env['TEMP']
+        } else {
+          process.env['TEMP'] = originalTemp
+        }
+        if (originalTmp !== undefined) {
+          process.env['TMP'] = originalTmp
+        }
+      }
+    })
+
+    it('uses ~/.cache on linux (default branch line 186)', async () => {
+      const originalPlatform = process.platform
+      const originalXdg = process.env['XDG_CACHE_HOME']
+      Object.defineProperty(process, 'platform', { value: 'linux' })
+      delete process.env['XDG_CACHE_HOME']
+      try {
+        vi.resetModules()
+        const { getSocketCachePath: getPathFresh } = await import(
+          '../../../src/constants/paths.mts'
+        )
+        const result = getPathFresh()
+        expect(result).toContain('.cache/socket')
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform })
+        if (originalXdg !== undefined) {
+          process.env['XDG_CACHE_HOME'] = originalXdg
+        }
+      }
+    })
   })
 
   describe('getSocketAppDataPath', () => {
