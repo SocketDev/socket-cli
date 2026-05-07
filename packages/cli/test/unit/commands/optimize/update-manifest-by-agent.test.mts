@@ -208,5 +208,26 @@ describe('update-manifest-by-agent', () => {
         overrides: { lodash: '4.17.21' },
       })
     })
+
+    it('places new overrides AFTER main when no engines/files anchor exists', () => {
+      // No engines/files -> falls through to getHighestEntryIndex(['exports','imports','main']),
+      // which returns the position of `main`; we then place at that index + 1
+      // because isPlacingHigher = true. Verifies the L130 +1 path.
+      pkgJson = createEditablePkgJson({
+        name: 'test',
+        version: '1.0.0',
+        main: 'index.js',
+        scripts: {},
+      })
+      updateManifest('npm', pkgJson, { lodash: '4.17.21' })
+
+      expect(pkgJson.fromJSON).toHaveBeenCalled()
+      // The new content should include overrides positioned after main.
+      const fromJsonCall = (pkgJson.fromJSON as any).mock.calls[0][0] as string
+      const parsed = JSON.parse(fromJsonCall)
+      const keys = Object.keys(parsed)
+      expect(keys.indexOf('overrides')).toBeGreaterThan(keys.indexOf('main'))
+      expect(parsed.overrides).toEqual({ lodash: '4.17.21' })
+    })
   })
 })
