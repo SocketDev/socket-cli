@@ -264,4 +264,15 @@ weird
 `)
     expect(result).toBe('foo')
   })
+
+  it('bails when first line in pip block does not indent further than the delim', () => {
+    // delim becomes "-" (the "- pip:" line); the next line is "- foo"
+    // with the same single-char prefix, so indent.length (1) <=
+    // delim.length (1) and the function exits with no captured packages.
+    const result = convertCondaToRequirementsFromInput(`
+- pip:
+- foo
+`)
+    expect(result).toBe('')
+  })
 })
