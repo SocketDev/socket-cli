@@ -185,6 +185,16 @@ describe('output-config-list', () => {
         const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
         expect(logs).toContain('org1, org2')
       })
+
+      it('shows <none> for empty array in full mode', async () => {
+        // value.join(', ') === '' → falls back to '<none>'.
+        mockGetConfigValue.mockReturnValue({ ok: true, data: [] })
+
+        await outputConfigList({ full: true, outputKind: 'text' })
+
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+        expect(logs).toContain('<none>')
+      })
     })
   })
 })

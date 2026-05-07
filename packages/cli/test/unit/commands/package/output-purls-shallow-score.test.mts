@@ -435,6 +435,45 @@ describe('package score output', async () => {
       expect(matches.length).toBeGreaterThanOrEqual(1)
     })
 
+    it('takes the lowest of duplicate quality/vulnerability/license scores', () => {
+      // Two artifacts with the same purl but different scores — preProcess
+      // dedupes them by purl and takes the LOWEST score for each metric.
+      const data = [
+        {
+          type: 'npm',
+          name: 'shared-pkg',
+          version: '1.0.0',
+          score: {
+            supplyChain: 100,
+            maintenance: 100,
+            quality: 99,
+            vulnerability: 99,
+            license: 99,
+          },
+          alerts: [],
+        },
+        // Same purl, but lower quality/vulnerability/license.
+        {
+          type: 'npm',
+          name: 'shared-pkg',
+          version: '1.0.0',
+          score: {
+            supplyChain: 100,
+            maintenance: 100,
+            quality: 50,
+            vulnerability: 60,
+            license: 70,
+          },
+          alerts: [],
+        },
+      ]
+      const { rows } = preProcess(data as any, [])
+      const row = rows.get('pkg:npm/shared-pkg@1.0.0')!
+      expect(row.score.quality).toBe(50)
+      expect(row.score.vulnerability).toBe(60)
+      expect(row.score.license).toBe(70)
+    })
+
     it('drops duplicate text-report blocks when two purls yield identical cards', () => {
       // Construct two artifacts with the same shape so formatReportCard
       // produces an identical string for both, hitting the dupes.has() path.
