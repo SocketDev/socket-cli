@@ -2,6 +2,15 @@ import os from 'node:os'
 
 import { defineConfig } from 'vitest/config'
 
+// Pin TZ in the parent process before vitest spawns its workers, so
+// every worker inherits TZ=UTC from spawn env. V8 caches the timezone
+// at the first Date op per-worker, so it must be present before any
+// test code (or vitest worker bootstrap) runs. test.env below sets it
+// on the worker for additional belt-and-suspenders coverage.
+if (!process.env['TZ']) {
+  process.env['TZ'] = 'UTC'
+}
+
 const isCoverageEnabled =
   process.env['npm_lifecycle_event'] === 'cover' ||
   process.argv.includes('--coverage')
@@ -33,6 +42,15 @@ export default defineConfig({
   test: {
     globals: false,
     environment: 'node',
+    // Pin timezone for stable date-formatting snapshots regardless of
+    // how vitest is invoked. CI runners are UTC; without this, devs on
+    // local timezones see shifted dates (a 2025-04-19T04:50Z fixture
+    // renders as Apr 18 in PDT). Vitest applies `test.env` to the
+    // worker process before any module loads, so this is set early
+    // enough that V8's internal timezone cache picks it up.
+    env: {
+      TZ: 'UTC',
+    },
     include: ['test/**/*.test.{mts,ts}'],
     exclude: [
       '**/node_modules/**',
