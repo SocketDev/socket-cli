@@ -185,12 +185,8 @@ export async function extractBasicsTools(
     logger.group('Validating extracted basics tools...')
 
     const pythonExe = isPlatWin ? 'python3.exe' : 'python3'
-    const pythonDir = extractedPaths['python']
-    if (!pythonDir) {
-      throw new Error(
-        `extractedPaths.python is undefined after VFS extraction (expected a directory path); the basics SEA bundle is missing Python — rebuild the SEA binary`,
-      )
-    }
+    // The missing-tools check above already throws when python is absent.
+    const pythonDir = extractedPaths['python']!
     const pythonPath = normalizePath(path.join(pythonDir, 'bin', pythonExe))
 
     const validateResult = await spawn(pythonPath, ['--version'], {

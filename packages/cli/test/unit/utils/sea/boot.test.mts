@@ -60,6 +60,26 @@ describe('sea/boot', () => {
       // No IPC channel, should not bypass.
       expect(shouldBypassBootstrap()).toBe(false)
     })
+
+    it('returns true when SEA binary is also a subprocess (IPC channel set)', () => {
+      vi.mocked(isSeaBinary).mockReturnValue(true)
+      const originalChannel = process.channel
+      Object.defineProperty(process, 'channel', {
+        value: {} as any,
+        writable: true,
+        configurable: true,
+      })
+
+      try {
+        expect(shouldBypassBootstrap()).toBe(true)
+      } finally {
+        Object.defineProperty(process, 'channel', {
+          value: originalChannel,
+          writable: true,
+          configurable: true,
+        })
+      }
+    })
   })
 
   describe('getBootstrapExecPath', () => {
