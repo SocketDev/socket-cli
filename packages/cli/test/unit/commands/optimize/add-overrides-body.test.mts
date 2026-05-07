@@ -336,4 +336,62 @@ describe('addOverrides body (manifestNpmOverrides loop)', () => {
     expect(state.added.has('pkg-a')).toBe(true)
     expect(state.addedInWorkspaces.has('packages/inner')).toBe(true)
   })
+
+  it('with pin=true, fetches manifest when getMajor of existing spec mismatches (lines 213-242)', async () => {
+    // Setup: overrides[orig] = 'npm:pkg-a@1.5.0' (sock-prefix). pin=true forces
+    // re-validation by parsing/coercing — getMajor of 1.5.0 is 1, but we
+    // mock it to return 99 so the inner if (getMajor !== major) fires,
+    // triggering fetchPackageManifest.
+    const overridesObj: Record<string, string> = {
+      'pkg-a-orig': 'npm:pkg-a@1.5.0',
+    }
+    let getMajorCall = 0
+    const fetchPackageManifest = vi.fn(async () => ({ version: '2.0.0' }))
+    const addOverrides = await loadAddOverrides({
+      manifestEntries: [
+        ['pkg-a', { name: 'pkg-a', package: 'pkg-a-orig', version: '1.2.3' }],
+      ],
+      getDependencyEntries: vi.fn(() => [['dependencies', {}]]),
+      // getMajor sequence:
+      //   call 1: outer for the manifest entry version → 1
+      //   call 2: inner IIFE for thisSpec parsed → 99 (mismatch!)
+      //   call 3: outer otherMajor for fetched version → 2
+      getMajor: vi.fn(() => {
+        getMajorCall += 1
+        if (getMajorCall === 1) {
+          return 1
+        }
+        if (getMajorCall === 2) {
+          return 99
+        }
+        return 2
+      }),
+      safeNpa: vi.fn(() => ({
+        type: 'alias',
+        subSpec: { rawSpec: '1.5.0' },
+      })),
+      getOverridesDataNpm: vi.fn(() => ({
+        overrides: overridesObj,
+        type: 'npm',
+      })),
+      getOverridesDataYarnClassic: vi.fn(() => ({
+        overrides: {},
+        type: 'yarn',
+      })),
+      lsStdoutIncludes: vi.fn(() => true),
+      listPackages: vi.fn(async () => ''),
+      fetchPackageManifest,
+    })
+    const env = baseEnv()
+    const state = await addOverrides(env as any, '/test/project', {
+      logger: mockLogger as any,
+      prod: true,
+      pin: true,
+    })
+    // fetchPackageManifest was invoked because the major mismatched.
+    expect(fetchPackageManifest).toHaveBeenCalled()
+    // newSpec was rewritten to use the fetched version.
+    expect(overridesObj['pkg-a-orig']).toContain('npm:pkg-a@2.0.0')
+    expect(state.updated.has('pkg-a')).toBe(true)
+  })
 })
