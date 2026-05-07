@@ -270,4 +270,70 @@ describe('addOverrides body (manifestNpmOverrides loop)', () => {
     // newSpec is set to oldSpec (line 245), so newSpec === oldSpec — no update.
     expect(state.updated.has('pkg-a')).toBe(false)
   })
+
+  it('uses $-reference newSpec when type=NPM and depAlias exists (line 199-207)', async () => {
+    // overrides[orig] exists AND deps include orig — so depAlias is set,
+    // type === NPM triggers the $-reference branch.
+    const overridesObj: Record<string, string> = {
+      'pkg-a-orig': '^0.9.0',
+    }
+    const depObj = { 'pkg-a-orig': '^1.0.0' }
+    const addOverrides = await loadAddOverrides({
+      manifestEntries: [
+        ['pkg-a', { name: 'pkg-a', package: 'pkg-a-orig', version: '1.2.3' }],
+      ],
+      getDependencyEntries: vi.fn(() => [['dependencies', depObj]]),
+      getMajor: vi.fn(() => 1),
+      getOverridesDataNpm: vi.fn(() => ({
+        overrides: overridesObj,
+        type: 'npm',
+      })),
+      getOverridesDataYarnClassic: vi.fn(() => ({
+        overrides: {},
+        type: 'yarn',
+      })),
+      lsStdoutIncludes: vi.fn(() => true),
+      listPackages: vi.fn(async () => ''),
+    })
+    const env = baseEnv()
+    const state = await addOverrides(env as any, '/test/project', {
+      logger: mockLogger as any,
+      prod: true,
+    })
+    // depAlias is present, type=NPM → newSpec set to `$pkg-a-orig`
+    expect(overridesObj['pkg-a-orig']).toMatch(/^\$/)
+    expect(state.updated.has('pkg-a')).toBe(true)
+  })
+
+  it('aggregates state from recursive workspace calls (line 295)', async () => {
+    // Simulates a workspace setup. Both the outer (root) and inner (workspace
+    // pkg) calls iterate the same shared deps object that contains pkg-a-orig,
+    // so both add pkg-a. The inner call returns its state and line 295 merges
+    // it into the outer state.
+    const sharedDep = { 'pkg-a-orig': '^1.0.0' }
+    let callCount = 0
+    const addOverrides = await loadAddOverrides({
+      manifestEntries: [
+        ['pkg-a', { name: 'pkg-a', package: 'pkg-a-orig', version: '1.2.3' }],
+      ],
+      // First call (outer/root): returns workspace pkg path. Second (inner): [].
+      globWorkspace: vi.fn(async () => {
+        callCount += 1
+        if (callCount === 1) {
+          return ['/test/project/packages/inner/package.json']
+        }
+        return []
+      }),
+      getDependencyEntries: vi.fn(() => [['dependencies', sharedDep]]),
+      getMajor: vi.fn(() => 1),
+    })
+    const env = baseEnv()
+    const state = await addOverrides(env as any, '/test/project', {
+      logger: mockLogger as any,
+    })
+    // pkg-a was added by the inner workspace call (isWorkspaceRoot=false), so
+    // it appears in state.addedInWorkspaces — that propagates via line 295.
+    expect(state.added.has('pkg-a')).toBe(true)
+    expect(state.addedInWorkspaces.has('packages/inner')).toBe(true)
+  })
 })
