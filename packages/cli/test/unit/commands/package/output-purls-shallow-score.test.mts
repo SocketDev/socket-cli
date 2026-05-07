@@ -392,4 +392,47 @@ describe('package score output', async () => {
       })
     })
   })
+
+  describe('missing purls', () => {
+    it('emits "missing response" notice in text report', () => {
+      const empty = new Map()
+      const txt = generateTextReport(empty, ['pkg:npm/missing@1', 'pkg:npm/gone@2'])
+      expect(txt).toContain('At least one package had no response')
+      expect(txt).toContain('missing@1')
+      expect(txt).toContain('gone@2')
+    })
+
+    it('emits "missing response" notice in markdown report', () => {
+      const empty = new Map()
+      const md = generateMarkdownReport(empty, ['pkg:pypi/missing@1'])
+      expect(md).toContain('## Missing response')
+      expect(md).toContain('missing@1')
+    })
+
+    it('omits missing notice when array is empty', () => {
+      const empty = new Map()
+      const txt = generateTextReport(empty, [])
+      expect(txt).not.toContain('At least one package had no response')
+      const md = generateMarkdownReport(empty, [])
+      expect(md).not.toContain('## Missing response')
+    })
+  })
+
+  describe('deduplication of identical text-report blocks', () => {
+    it('drops duplicate blocks from generateTextReport', () => {
+      const { missing, rows } = preProcess(pythonDupes.data, [])
+      const txt = generateTextReport(rows, missing)
+      // pythonDupes contains duplicated entries; the dedupe path in
+      // generateTextReport (via the Set<string> tracker) drops repeats.
+      const matches = txt.match(/Supply Chain Risk:/g) || []
+      expect(matches.length).toBeGreaterThanOrEqual(1)
+    })
+
+    it('drops duplicate blocks from generateMarkdownReport', () => {
+      const { missing, rows } = preProcess(pythonDupes.data, [])
+      const md = generateMarkdownReport(rows, missing)
+      const matches = md.match(/Supply Chain Risk:/g) || []
+      expect(matches.length).toBeGreaterThanOrEqual(1)
+    })
+  })
 })

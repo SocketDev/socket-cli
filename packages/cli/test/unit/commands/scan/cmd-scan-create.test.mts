@@ -1653,5 +1653,45 @@ describe('cmd-scan-create', () => {
         )
       })
     })
+
+    describe('input + flag validation edge cases', () => {
+      it('throws InputError for non-numeric --pull-request', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await expect(
+          cmdScanCreate.run(
+            [
+              '--org',
+              'test-org',
+              '--pull-request',
+              'not-a-number',
+              '.',
+              '--no-interactive',
+            ],
+            importMeta,
+            context,
+          ),
+        ).rejects.toThrow(/--pull-request must be a non-negative integer/)
+      })
+
+      it('throws InputError for negative --pull-request', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await expect(
+          cmdScanCreate.run(
+            [
+              '--org',
+              'test-org',
+              '--pull-request',
+              '-5',
+              '.',
+              '--no-interactive',
+            ],
+            importMeta,
+            context,
+          ),
+        ).rejects.toThrow(/--pull-request must be a non-negative integer/)
+      })
+    })
   })
 })

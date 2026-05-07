@@ -656,5 +656,27 @@ describe('cmd-scan-reach', () => {
         }),
       )
     })
+
+    it('emits --ecosystems in dry-run args when reachEcosystems set', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+      await cmdScanReach.run(
+        [
+          '--org',
+          'test-org',
+          '--reach-ecosystems',
+          'npm,pypi',
+          '--dry-run',
+          '.',
+        ],
+        importMeta,
+        context,
+      )
+
+      expect(mockHandleScanReach).not.toHaveBeenCalled()
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('--ecosystems'),
+      )
+    })
   })
 })
