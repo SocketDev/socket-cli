@@ -63,12 +63,14 @@ vi.mock('../../../../src/utils/socket/api.mjs', () => ({
 }))
 
 import {
+  downloadManifestFile,
   getLastCommitDetails,
   getRepoBranchTree,
   getRepoDetails,
   makeSure,
   selectFocus,
   streamDownloadWithFetch,
+  testAndDownloadManifestFile,
 } from '../../../../src/commands/scan/create-scan-from-github.mts'
 
 describe('create-scan-from-github (direct)', () => {
@@ -365,6 +367,120 @@ describe('create-scan-from-github (direct)', () => {
       if (!result.ok) {
         expect(result.message).toBe('Download Failed')
       }
+    })
+  })
+
+  describe('testAndDownloadManifestFile', () => {
+    it('returns isManifest=false when supportedFiles is undefined', async () => {
+      const result = await testAndDownloadManifestFile({
+        defaultBranch: 'main',
+        file: 'package.json',
+        orgGithub: 'org',
+        repoSlug: 'r',
+        supportedFiles: undefined,
+        tmpDir: '/tmp',
+      })
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data.isManifest).toBe(false)
+      }
+    })
+
+    it('returns isManifest=false when file is not a known manifest pattern', async () => {
+      const result = await testAndDownloadManifestFile({
+        defaultBranch: 'main',
+        file: 'random.txt',
+        orgGithub: 'org',
+        repoSlug: 'r',
+        supportedFiles: { npm: { 'package.json': {} } } as any,
+        tmpDir: '/tmp',
+      })
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data.isManifest).toBe(false)
+      }
+    })
+  })
+
+  describe('downloadManifestFile', () => {
+    it('returns error when withGitHubRetry fails', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: false,
+        message: 'GitHub rate limit exceeded',
+        cause: 'rate limited',
+      })
+      const result = await downloadManifestFile({
+        defaultBranch: 'main',
+        file: 'package.json',
+        orgGithub: 'org',
+        repoSlug: 'r',
+        tmpDir: '/tmp',
+      })
+      expect(result.ok).toBe(false)
+    })
+
+    it('returns "Not a file" error when content is a directory', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: true,
+        data: [{ name: 'a.txt' }, { name: 'b.txt' }],
+      })
+      const result = await downloadManifestFile({
+        defaultBranch: 'main',
+        file: 'subdir',
+        orgGithub: 'org',
+        repoSlug: 'r',
+        tmpDir: '/tmp',
+      })
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('Not a file')
+      }
+    })
+
+    it('returns "Missing download URL" when GitHub omits download_url', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: true,
+        data: {
+          type: 'file',
+          size: 100,
+          download_url: null,
+        },
+      })
+      const result = await downloadManifestFile({
+        defaultBranch: 'main',
+        file: 'package.json',
+        orgGithub: 'org',
+        repoSlug: 'r',
+        tmpDir: '/tmp',
+      })
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('Missing download URL')
+      }
+    })
+
+    it('returns the download error when streamDownloadWithFetch fails', async () => {
+      mockWithGitHubRetry.mockResolvedValueOnce({
+        ok: true,
+        data: {
+          type: 'file',
+          size: 100,
+          download_url: 'https://example.com/pkg.json',
+        },
+      })
+      mockSocketHttpRequest.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+      })
+      const result = await downloadManifestFile({
+        defaultBranch: 'main',
+        file: 'package.json',
+        orgGithub: 'org',
+        repoSlug: 'r',
+        tmpDir: '/tmp',
+      })
+      expect(result.ok).toBe(false)
     })
   })
 })
