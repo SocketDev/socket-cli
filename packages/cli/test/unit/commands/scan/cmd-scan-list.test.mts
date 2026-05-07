@@ -473,5 +473,39 @@ describe('cmd-scan-list', () => {
         ),
       ).rejects.toThrow(/--per-page must be a positive integer/)
     })
+
+    it('passes flag-default direction and sort to handleListScans', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+      await cmdScanList.run(
+        ['--org', 'test-org', '--no-interactive'],
+        importMeta,
+        context,
+      )
+
+      // The CLI flag schema sets defaults (direction=desc, sort=created_at).
+      expect(mockHandleListScans).toHaveBeenCalledWith(
+        expect.objectContaining({
+          direction: 'desc',
+          sort: 'created_at',
+        }),
+      )
+    })
+
+    it('uses default sort=created_at and direction=desc in dry-run output', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+      await cmdScanList.run(
+        ['--org', 'test-org', '--dry-run', '--no-interactive'],
+        importMeta,
+        context,
+      )
+
+      expect(mockHandleListScans).not.toHaveBeenCalled()
+      // Defaults should appear in the dry-run output via outputDryRunFetch.
+      const errors = mockLogger.error.mock.calls.flat().join(' ')
+      expect(errors).toContain('created_at')
+      expect(errors).toContain('desc')
+    })
   })
 })
