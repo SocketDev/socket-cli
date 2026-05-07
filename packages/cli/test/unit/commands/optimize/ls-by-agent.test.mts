@@ -492,4 +492,106 @@ describe('commands/optimize/ls-by-agent', () => {
       )
     })
   })
+
+  describe('cleanupQueryStdout', () => {
+    it('returns empty string for empty input', async () => {
+      const { cleanupQueryStdout } = await import(
+        '../../../../src/commands/optimize/ls-by-agent.mts'
+      )
+      expect(cleanupQueryStdout('')).toBe('')
+    })
+
+    it('returns empty string for malformed JSON', async () => {
+      const { cleanupQueryStdout } = await import(
+        '../../../../src/commands/optimize/ls-by-agent.mts'
+      )
+      expect(cleanupQueryStdout('{not json')).toBe('')
+    })
+
+    it('returns empty string for non-array result', async () => {
+      const { cleanupQueryStdout } = await import(
+        '../../../../src/commands/optimize/ls-by-agent.mts'
+      )
+      expect(cleanupQueryStdout('{}')).toBe('')
+    })
+
+    it('returns empty string for empty array', async () => {
+      const { cleanupQueryStdout } = await import(
+        '../../../../src/commands/optimize/ls-by-agent.mts'
+      )
+      expect(cleanupQueryStdout('[]')).toBe('')
+    })
+
+    it('extracts unique names and skips @types/* packages', async () => {
+      const { cleanupQueryStdout } = await import(
+        '../../../../src/commands/optimize/ls-by-agent.mts'
+      )
+      const result = cleanupQueryStdout(
+        JSON.stringify([
+          { name: 'lodash', _id: 'lodash@4.17.21' },
+          { name: 'react', _id: 'react@18.0.0' },
+          { name: 'lodash', _id: 'lodash@4.17.21' },
+          { name: '@types/node', _id: '@types/node@20.0.0' },
+        ]),
+      )
+      expect(JSON.parse(result)).toEqual(['lodash', 'react'])
+    })
+
+    it('falls back to _id when name is missing', async () => {
+      const { cleanupQueryStdout } = await import(
+        '../../../../src/commands/optimize/ls-by-agent.mts'
+      )
+      const result = cleanupQueryStdout(
+        JSON.stringify([{ _id: 'fallback-pkg@1.0.0' }]),
+      )
+      expect(JSON.parse(result)).toEqual(['fallback-pkg'])
+    })
+
+    it('falls back to pkgid when both name + _id are missing', async () => {
+      const { cleanupQueryStdout } = await import(
+        '../../../../src/commands/optimize/ls-by-agent.mts'
+      )
+      const result = cleanupQueryStdout(
+        JSON.stringify([{ pkgid: 'pkgid-pkg@2.0.0' }]),
+      )
+      expect(JSON.parse(result)).toEqual(['pkgid-pkg'])
+    })
+
+    it('skips entries with no resolvable name', async () => {
+      const { cleanupQueryStdout } = await import(
+        '../../../../src/commands/optimize/ls-by-agent.mts'
+      )
+      const result = cleanupQueryStdout(JSON.stringify([{}, {}]))
+      expect(JSON.parse(result)).toEqual([])
+    })
+  })
+
+  describe('parsableToQueryStdout', () => {
+    it('returns empty string for empty input', async () => {
+      const { parsableToQueryStdout } = await import(
+        '../../../../src/commands/optimize/ls-by-agent.mts'
+      )
+      expect(parsableToQueryStdout('')).toBe('')
+    })
+
+    it('extracts trailing path segments before newlines', async () => {
+      const { parsableToQueryStdout } = await import(
+        '../../../../src/commands/optimize/ls-by-agent.mts'
+      )
+      const result = parsableToQueryStdout(
+        '/Users/x/proj/node_modules/lodash\n/Users/x/proj/node_modules/react\n',
+      )
+      expect(typeof result).toBe('string')
+    })
+
+    it('handles backslash paths (Windows-style)', async () => {
+      const { parsableToQueryStdout } = await import(
+        '../../../../src/commands/optimize/ls-by-agent.mts'
+      )
+      const result = parsableToQueryStdout(
+        'C:\\proj\\node_modules\\lodash\nC:\\proj\\node_modules\\react\n',
+      )
+      expect(typeof result).toBe('string')
+    })
+  })
 })
