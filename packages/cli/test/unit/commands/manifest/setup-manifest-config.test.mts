@@ -478,6 +478,38 @@ describe('setup-manifest-config', () => {
       expect(infoMsg).toContain('No')
     })
 
+    it('completes flow for conda + write yes (lines 136-140)', async () => {
+      // setupConda prompts: askForEnabled, askForInputFile, askForStdout,
+      // askForOutputFile (when stdout != yes), askForVerboseFlag.
+      mockSelect
+        .mockResolvedValueOnce('conda') // target ecosystem
+        .mockResolvedValueOnce('') // askForEnabled (default)
+        .mockResolvedValueOnce('') // askForStdout (default)
+        .mockResolvedValueOnce('') // askForVerboseFlag (default)
+        .mockResolvedValueOnce(true) // write yes
+      mockInput
+        .mockResolvedValueOnce('environment.yml') // infile
+        .mockResolvedValueOnce('requirements.txt') // outfile
+      const result = await setupManifestConfig('/cwd')
+      expect(result.ok).toBe(true)
+      expect(mockWriteSocketJson).toHaveBeenCalled()
+    })
+
+    it('completes flow for gradle + write yes (lines 143-147)', async () => {
+      // setupGradle prompts: askForBin (input), gradle-opts (input),
+      // askForVerboseFlag (select). Then outer write-yes prompt.
+      mockSelect
+        .mockResolvedValueOnce('gradle') // target ecosystem
+        .mockResolvedValueOnce('') // askForVerboseFlag (default)
+        .mockResolvedValueOnce(true) // write yes
+      mockInput
+        .mockResolvedValueOnce('./gradlew') // bin
+        .mockResolvedValueOnce('') // gradle-opts
+      const result = await setupManifestConfig('/cwd')
+      expect(result.ok).toBe(true)
+      expect(mockWriteSocketJson).toHaveBeenCalled()
+    })
+
     it('completes flow for sbt + write yes', async () => {
       mockSelect
         .mockResolvedValueOnce('sbt') // target ecosystem
