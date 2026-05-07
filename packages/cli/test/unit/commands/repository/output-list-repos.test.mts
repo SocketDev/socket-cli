@@ -122,6 +122,73 @@ describe('outputListRepos', () => {
     expect(process.exitCode).toBe(2)
   })
 
+  it('falls back to exitCode 1 when error result has no code', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('../../../../src/utils/output/result-json.mts', () => ({
+      serializeResultJson: mockSerializeResultJson,
+    }))
+
+    const { outputListRepos } =
+      await import('../../../../src/commands/repository/output-list-repos.mts')
+
+    // No code passed → process.exitCode falls back to 1.
+    const result = {
+      ok: false as const,
+      message: 'Some failure',
+      cause: 'No code provided',
+    } satisfies CResult<SocketSdkSuccessResult<'listRepositories'>['data']>
+
+    await outputListRepos(result, 'json', 1, null, 'name', 10, 'asc')
+
+    expect(process.exitCode).toBe(1)
+  })
+
+  it('uses 0 in JSON output when nextPage is null', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('../../../../src/utils/output/result-json.mts', () => ({
+      serializeResultJson: mockSerializeResultJson,
+    }))
+
+    const { outputListRepos } =
+      await import('../../../../src/commands/repository/output-list-repos.mts')
+
+    const result = createSuccessResult({ results: [] })
+
+    await outputListRepos(result, 'json', 1, null, 'name', 10, 'asc')
+
+    expect(mockSerializeResultJson).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ nextPage: 0 }),
+      }),
+    )
+  })
+
   it('outputs text format with repository table', async () => {
     const mockLogger = {
       fail: vi.fn(),

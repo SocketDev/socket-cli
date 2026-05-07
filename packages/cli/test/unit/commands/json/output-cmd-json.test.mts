@@ -103,5 +103,24 @@ describe('output-cmd-json', () => {
       expect(mockLogger.fail).toHaveBeenCalled()
       expect(process.exitCode).toBe(1)
     })
+
+    it('uses tildified paths when VITEST is false', async () => {
+      // Re-import with VITEST mocked to false to exercise the tildify branch.
+      vi.resetModules()
+      vi.doMock('../../../../src/env/vitest.mts', () => ({ VITEST: false }))
+
+      const { outputCmdJson: realOutputCmdJson } = await import(
+        '../../../../src/commands/json/output-cmd-json.mts'
+      )
+      existsSyncSpy.mockReturnValue(false)
+      await realOutputCmdJson('/test/path')
+
+      // When VITEST=false, the path is tildified rather than redacted.
+      // The info message should not contain "[REDACTED]".
+      const infoCalls = mockLogger.info.mock.calls.flat().join(' ')
+      expect(infoCalls).not.toContain('[REDACTED]')
+
+      vi.doUnmock('../../../../src/env/vitest.mts')
+    })
   })
 })
