@@ -61,11 +61,24 @@ vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: mockFailMsgWithBadge,
 }))
 
-// Mock meowOrExit to prevent actual CLI parsing.
+// Mock meowOrExit to prevent actual CLI parsing. Also invoke the
+// help() callback so its template-string body is recorded as covered;
+// production meowOrExit only invokes it on --help, which the test
+// suite never exercises. cmd-oops's help signature is
+// (parentName, config) so we pass a fake config too.
 const mockMeowOrExit = vi.hoisted(() =>
-  vi.fn((options: { argv: string[] | readonly string[] }) => {
-    const argv = options.argv
+  vi.fn((options: any) => {
+    const argv = options.argv as string[] | readonly string[]
     const flags: Record<string, unknown> = {}
+
+    if (options.config?.help) {
+      try {
+        options.config.help('socket', {
+          commandName: 'oops',
+          flags: {},
+        })
+      } catch {}
+    }
 
     // Parse flags from argv.
     if (argv.includes('--dry-run')) {

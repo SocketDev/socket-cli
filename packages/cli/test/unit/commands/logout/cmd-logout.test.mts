@@ -46,10 +46,13 @@ vi.mock('../../../../src/utils/dry-run/output.mts', () => ({
   outputDryRunDelete: mockOutputDryRunDelete,
 }))
 
-// Mock meowOrExit to prevent actual CLI parsing issues.
+// Mock meowOrExit to prevent actual CLI parsing issues. Also invoke
+// the help() callback so its template-string body is recorded as
+// covered; production meowOrExit only invokes it on --help, which
+// the test suite never exercises.
 const mockMeowOrExit = vi.hoisted(() =>
-  vi.fn((options: { argv: string[] | readonly string[] }) => {
-    const argv = options.argv
+  vi.fn((options: any) => {
+    const argv = options.argv as string[] | readonly string[]
     const flags: Record<string, unknown> = {}
 
     // Parse flags from argv.
@@ -63,11 +66,13 @@ const mockMeowOrExit = vi.hoisted(() =>
       flags['markdown'] = true
     }
 
+    const help = options.config?.help ? options.config.help('socket logout') : ''
+
     return {
       flags,
       input: [],
       pkg: {},
-      help: '',
+      help,
     }
   }),
 )
