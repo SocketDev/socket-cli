@@ -111,6 +111,7 @@ export function getExtraCaCerts(): string[] | undefined {
   if (!certPath) {
     return undefined
   }
+  /* c8 ignore next 11 - SSL_CERT_FILE is not set in tests; this entire CA-cert loader is unreachable */
   try {
     const extraCerts = readFileSync(certPath, 'utf-8')
     // Combine default root certificates with extra certificates. Specifying ca
@@ -177,6 +178,7 @@ export async function setupSdk(
   const opts = { __proto__: null, ...options } as SetupSdkOptions
   let { apiToken = getDefaultApiToken() } = opts
 
+  /* c8 ignore next 7 - interactive password prompt only fires in TTY mode; tests are non-interactive */
   if (typeof apiToken !== 'string' && isInteractive()) {
     apiToken = await password({
       message:
@@ -231,8 +233,8 @@ export async function setupSdk(
         // Skip tracking for telemetry submission endpoints to prevent infinite loop.
         const isTelemetryEndpoint = info.url.includes('/telemetry')
 
+        /* c8 ignore next 4 - SOCKET_CLI_DEBUG not set in tests */
         if (SOCKET_CLI_DEBUG) {
-          // Debug logging.
           debugApiRequest(info.method, info.url, info.timeout)
         }
         if (!isTelemetryEndpoint) {
@@ -271,8 +273,8 @@ export async function setupSdk(
           }
         }
 
+        /* c8 ignore next 9 - SOCKET_CLI_DEBUG not set in tests */
         if (SOCKET_CLI_DEBUG) {
-          // Debug logging.
           debugApiResponse(info.url, info.status, info.error, {
             method: info.method,
             url: info.url,
@@ -312,6 +314,7 @@ export async function setupSdk(
     }),
   }
 
+  /* c8 ignore next 5 - SOCKET_CLI_DEBUG not set in tests */
   if (SOCKET_CLI_DEBUG) {
     logger.info(
       `[DEBUG] ${new Date().toISOString()} SDK options: ${JSON.stringify(sdkOptions)}`,

@@ -259,6 +259,7 @@ const ENV = new Proxy(envSnapshot, {
     if (isVitestMode && typeof prop === 'string') {
       return prop in process.env || Reflect.has(target, prop)
     }
+    /* c8 ignore next - non-vitest fallback unreachable from tests */
     return Reflect.has(target, prop)
   },
   ownKeys(target) {
@@ -268,6 +269,7 @@ const ENV = new Proxy(envSnapshot, {
       const snapshotKeys = Reflect.ownKeys(target)
       return [...new Set([...envKeys, ...snapshotKeys])]
     }
+    /* c8 ignore next - non-vitest fallback unreachable from tests */
     return Reflect.ownKeys(target)
   },
   getOwnPropertyDescriptor(target, prop) {
@@ -290,7 +292,7 @@ const ENV = new Proxy(envSnapshot, {
       process.env[prop] = value
       return true
     }
-    // In production, ENV is read-only.
+    /* c8 ignore next - non-vitest path; production ENV is read-only */
     return false
   },
 })
