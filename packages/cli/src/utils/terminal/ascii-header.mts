@@ -88,7 +88,7 @@ const ASCII_LOGO = [
 /**
  * Apply hex color to text using ANSI 24-bit color codes.
  */
-function applyHexColor(text: string, hexColor: string): string {
+export function applyHexColor(text: string, hexColor: string): string {
   const r = Number.parseInt(hexColor.slice(1, 3), 16)
   const g = Number.parseInt(hexColor.slice(3, 5), 16)
   const b = Number.parseInt(hexColor.slice(5, 7), 16)
@@ -102,7 +102,7 @@ function applyHexColor(text: string, hexColor: string): string {
  * Treats luminance as the simple sum of channels — fine here because
  * both waves share base + highlight palettes.
  */
-function brighterRgb(a: RGB, b: RGB): RGB {
+export function brighterRgb(a: RGB, b: RGB): RGB {
   return a[0] + a[1] + a[2] >= b[0] + b[1] + b[2] ? a : b
 }
 

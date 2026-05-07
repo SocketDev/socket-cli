@@ -26,7 +26,7 @@ import { getPyCliVersion } from '../../env/pycli-version.mts'
 /**
  * Check if socketsecurity is installed in the Python environment.
  */
-async function isSocketPyCliInstalled(pythonBin: string): Promise<boolean> {
+export async function isSocketPyCliInstalled(pythonBin: string): Promise<boolean> {
   try {
     const result = await spawn(
       pythonBin,
@@ -42,7 +42,7 @@ async function isSocketPyCliInstalled(pythonBin: string): Promise<boolean> {
 /**
  * Check if socket_basics is installed in the Python environment.
  */
-async function isSocketBasicsInstalled(pythonBin: string): Promise<boolean> {
+export async function isSocketBasicsInstalled(pythonBin: string): Promise<boolean> {
   try {
     const result = await spawn(
       pythonBin,
@@ -412,7 +412,7 @@ export async function runSocketBasics(
  * @param factsPath - Path to .socket.facts.json file.
  * @returns Object with finding counts by category, or error if parsing failed.
  */
-async function parseSocketFacts(factsPath: string): Promise<{
+export async function parseSocketFacts(factsPath: string): Promise<{
   containers?: number
   error?: string
   sast?: number

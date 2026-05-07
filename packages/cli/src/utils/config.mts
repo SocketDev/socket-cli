@@ -93,7 +93,7 @@ const supportedConfigKeys = supportedConfigEntries.map(p => p[0])
 
 const MAX_CONFIG_READ_RETRIES = 3
 
-function getConfigValues(retryCount = 0): LocalConfig {
+export function getConfigValues(retryCount = 0): LocalConfig {
   // Order: env var > --config flag > file.
   // If config is from flag/env override, skip file-based caching.
   if (_configFromFlag && _cachedConfig !== undefined) {
@@ -177,7 +177,7 @@ function getConfigValues(retryCount = 0): LocalConfig {
   return _cachedConfig
 }
 
-function normalizeConfigKey(
+export function normalizeConfigKey(
   key: keyof LocalConfig,
 ): CResult<keyof LocalConfig> {
   // Note: `org` is a convenience alias for `defaultOrg`

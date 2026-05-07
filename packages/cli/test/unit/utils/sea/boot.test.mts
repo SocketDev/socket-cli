@@ -202,7 +202,7 @@ describe('sea/boot', () => {
 
     it('resolves with handshake data when message arrives', async () => {
       // Stub process.channel + .on/.off so isSubprocess() reports true.
-      const handlers: Record<string, ((m: unknown) => void)[]> = {}
+      const handlers: Record<string, Array<(m: unknown) => void>> = {}
       const fakeOn = vi.fn(
         (event: string, handler: (m: unknown) => void) => {
           ;(handlers[event] ??= []).push(handler)
@@ -285,7 +285,7 @@ describe('sea/boot', () => {
     })
 
     it('ignores non-handshake messages', async () => {
-      const handlers: Record<string, ((m: unknown) => void)[]> = {}
+      const handlers: Record<string, Array<(m: unknown) => void>> = {}
       const fakeOn = vi.fn(
         (event: string, handler: (m: unknown) => void) => {
           ;(handlers[event] ??= []).push(handler)

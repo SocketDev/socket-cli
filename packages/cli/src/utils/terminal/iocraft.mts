@@ -19,7 +19,7 @@ export type { default as IocraftNative } from '@socketaddon/iocraft'
  */
 let iocraftInstance: typeof iocraft | undefined
 
-function getIocraft(): typeof iocraft {
+export function getIocraft(): typeof iocraft {
   if (!iocraftInstance) {
     try {
       // Use createRequire to load native .node module from ESM.

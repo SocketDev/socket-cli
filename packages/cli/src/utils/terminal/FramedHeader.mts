@@ -21,7 +21,7 @@ export type FramedHeaderProps = {
 /**
  * Draw a border around the ASCII logo using box-drawing characters.
  */
-function drawBorder(content: string, width: number): string {
+export function drawBorder(content: string, width: number): string {
   const lines = content.split('\n')
   const topBorder = `╭${'─'.repeat(width)}╮`
   const bottomBorder = `╰${'─'.repeat(width)}╯`

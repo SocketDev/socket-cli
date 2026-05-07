@@ -11,7 +11,7 @@ import type { CResult, OutputKind } from '../../types.mjs'
 const logger = getDefaultLogger()
 
 // Simple outputResult implementation
-function outputResult<T>(
+export function outputResult<T>(
   result: CResult<T>,
   outputKind: OutputKind,
   handlers: {

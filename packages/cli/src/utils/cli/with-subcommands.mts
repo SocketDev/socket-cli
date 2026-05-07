@@ -116,7 +116,7 @@ const HELP_PAD_NAME = 28
 /**
  * Format a command description for help output.
  */
-function description(command: CliSubcommand | undefined): string {
+export function description(command: CliSubcommand | undefined): string {
   const description = command?.description
   const str =
     typeof description === 'string' ? description : String(description)
@@ -126,7 +126,7 @@ function description(command: CliSubcommand | undefined): string {
 /**
  * Find the best matching command name for a typo.
  */
-function findBestCommandMatch(
+export function findBestCommandMatch(
   input: string,
   subcommands: Record<string, unknown>,
   aliases: Record<string, unknown>,
@@ -152,7 +152,7 @@ function findBestCommandMatch(
 /**
  * Determine the origin of the API token.
  */
-function getTokenOrigin(): string {
+export function getTokenOrigin(): string {
   if (getSocketCliNoApiToken()) {
     return ''
   }
@@ -169,7 +169,7 @@ function getTokenOrigin(): string {
 /**
  * Get header theme from flags or use default.
  */
-function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
+export function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
   const theme = flags?.['headerTheme']
   const validThemes: HeaderTheme[] = [
     'default',
@@ -186,7 +186,7 @@ function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
 /**
  * Determine if header should animate (shimmer effect).
  */
-function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
+export function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
   // Disable animation in CI, tests, or when explicitly disabled.
   if (getCI() || VITEST || !process.stdout.isTTY || !supportsFullColor()) {
     return false
@@ -202,7 +202,7 @@ function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
 /**
  * Generate the ASCII banner header for Socket CLI commands.
  */
-function getAsciiHeader(
+export function getAsciiHeader(
   command: string,
   orgFlag: string | undefined,
   compactMode = false,
@@ -296,14 +296,14 @@ function getAsciiHeader(
 /**
  * Strip ANSI codes for length calculation.
  */
-function stripAnsi(str: string): string {
+export function stripAnsi(str: string): string {
   return str.replace(/\x1b\[[0-9;]*m/g, '')
 }
 
 /**
  * Calculate Levenshtein distance between two strings for fuzzy matching.
  */
-function levenshteinDistance(a: string, b: string): number {
+export function levenshteinDistance(a: string, b: string): number {
   const matrix = Array.from({ length: a.length + 1 }, () =>
     Array(b.length + 1).fill(0),
   )
@@ -332,7 +332,7 @@ function levenshteinDistance(a: string, b: string): number {
 /**
  * Determine if the banner should be suppressed based on output flags.
  */
-function shouldSuppressBanner(flags: Record<string, unknown>): boolean {
+export function shouldSuppressBanner(flags: Record<string, unknown>): boolean {
   return Boolean(
     flags['json'] || flags['markdown'] || flags['banner'] === false,
   )

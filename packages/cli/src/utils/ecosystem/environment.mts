@@ -254,7 +254,7 @@ const LOCKS: Record<string, Agent> = {
   [`${NODE_MODULES}/${DOT_PACKAGE_LOCK_JSON}`]: NPM,
 }
 
-function resolveBinPathSync(binPath: string): string {
+export function resolveBinPathSync(binPath: string): string {
   // Simple implementation that tries to resolve a bin path to its actual entry point.
   // This is used on Windows to resolve shims like `npm` or `npm.cmd` to their .js entry point.
   if (!fs.existsSync(binPath)) {
@@ -283,7 +283,7 @@ function resolveBinPathSync(binPath: string): string {
   return binPath
 }
 
-function preferWindowsCmdShim(binPath: string, binName: string): string {
+export function preferWindowsCmdShim(binPath: string, binName: string): string {
   // Only Windows uses .cmd shims
   if (!WIN32) {
     return binPath
@@ -312,7 +312,7 @@ function preferWindowsCmdShim(binPath: string, binName: string): string {
   return fs.existsSync(cmdShim) ? cmdShim : binPath
 }
 
-async function getAgentExecPath(agent: Agent): Promise<string> {
+export async function getAgentExecPath(agent: Agent): Promise<string> {
   const binName = binByAgent.get(agent)!
   if (binName === NPM) {
     // Try to use getNpmExecPath() first, but verify it exists.
@@ -360,7 +360,7 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
   )
 }
 
-async function getAgentVersion(
+export async function getAgentVersion(
   agent: Agent,
   agentExecPath: string,
   cwd: string,

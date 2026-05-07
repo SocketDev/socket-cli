@@ -45,7 +45,7 @@ const BASICS_TOOL_VFS_PATHS: Record<(typeof BASICS_TOOLS)[number], string> = {
  *
  * @returns Path to node-smol's dlx directory.
  */
-function getNodeSmolBasePath(): string {
+export function getNodeSmolBasePath(): string {
   let nodeSmolHash = 'node-smol-placeholder'
 
   try {

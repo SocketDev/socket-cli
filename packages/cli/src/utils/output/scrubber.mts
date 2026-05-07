@@ -129,7 +129,7 @@ export interface ScrubberOptions {
  *      after the last \r — that's the final rendered state.
  *   4. Strip every ANSI escape (SGR, CSI cursor moves, OSC hyperlinks).
  */
-function cleanLine(line: string): string {
+export function cleanLine(line: string): string {
   let cleaned = line
   if (cleaned.charCodeAt(0) === 0xfeff) {
     cleaned = cleaned.slice(1)
@@ -145,7 +145,7 @@ function cleanLine(line: string): string {
   return cleaned.replace(ANSI_RE, '')
 }
 
-function isTraceEnabled(): boolean {
+export function isTraceEnabled(): boolean {
   return process.env['SOCKET_SCRUB_TRACE'] === '1'
 }
 
@@ -155,7 +155,7 @@ function isTraceEnabled(): boolean {
  * with the routed noise stream. This matters when a caller pipes the
  * scrubber's stderr into a buffer for later inspection.
  */
-function trace(
+export function trace(
   adapterName: string | undefined,
   verdict: string,
   line: string,

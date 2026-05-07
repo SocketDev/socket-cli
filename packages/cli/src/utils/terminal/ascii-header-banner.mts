@@ -26,7 +26,7 @@ import type { HeaderTheme } from './ascii-header.mts'
 /**
  * Determine the origin of the API token.
  */
-function getTokenOrigin(): string {
+export function getTokenOrigin(): string {
   if (getSocketCliNoApiToken()) {
     return ''
   }
@@ -43,7 +43,7 @@ function getTokenOrigin(): string {
 /**
  * Get header theme from flags or use default.
  */
-function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
+export function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
   const theme = flags?.['headerTheme']
   const validThemes: HeaderTheme[] = [
     'default',
@@ -60,7 +60,7 @@ function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
 /**
  * Determine if header should animate (shimmer effect).
  */
-function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
+export function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
   // Disable animation in CI, tests, or when explicitly disabled.
   if (getCI() || VITEST || !process.stdout.isTTY || !supportsFullColor()) {
     return false
@@ -76,7 +76,7 @@ function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
 /**
  * Strip ANSI codes for length calculation.
  */
-function stripAnsi(str: string): string {
+export function stripAnsi(str: string): string {
   return str.replace(/\x1b\[[0-9;]*m/g, '')
 }
 

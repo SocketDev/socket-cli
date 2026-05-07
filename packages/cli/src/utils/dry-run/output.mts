@@ -15,7 +15,7 @@ import { DRY_RUN_LABEL } from '../../constants/cli.mts'
 
 const logger = getDefaultLogger()
 
-function out(message: string): void {
+export function out(message: string): void {
   logger.error(message)
 }
 
