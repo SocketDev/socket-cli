@@ -236,6 +236,7 @@ export async function cleanupSocketFixPrs(
           if (success) {
             debug(`pr: deleted merged branch ${match.headRefName} for ${prRef}`)
             logPrEvent('merged', prNum, ghsaId, 'Branch cleaned up')
+            /* c8 ignore next 5 - branch-delete failure path; depends on remote git state we don't control in tests */
           } else {
             debug(
               `pr: failed to delete branch ${match.headRefName} for ${prRef}`,
@@ -431,7 +432,7 @@ export async function getSocketFixPrsWithContext(
       cursor = pageInfo.endCursor
       pageIndex += 1
 
-      // Safety limit to prevent infinite loops.
+      /* c8 ignore next 7 - GQL_PAGE_SENTINEL safety limit; tests page through at most a few pages */
       if (pageIndex === GQL_PAGE_SENTINEL) {
         debug(
           `GraphQL pagination reached safety limit (${GQL_PAGE_SENTINEL} pages) for ${owner}/${repo}`,

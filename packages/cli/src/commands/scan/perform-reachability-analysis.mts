@@ -146,6 +146,7 @@ export async function performReachabilityAnalysis(
     spinner?.stop()
 
     if (!uploadCResult.ok) {
+      /* c8 ignore next 3 - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
       if (wasSpinning) {
         spinner?.start()
       }
@@ -154,6 +155,7 @@ export async function performReachabilityAnalysis(
 
     tarHash = (uploadCResult.data as { tarHash?: string })?.tarHash
     if (!tarHash) {
+      /* c8 ignore next 3 - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
       if (wasSpinning) {
         spinner?.start()
       }
@@ -255,6 +257,7 @@ export async function performReachabilityAnalysis(
     stdio: machineMode ? 'ignore' : 'inherit',
   })
 
+  /* c8 ignore next 3 - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
   if (wasSpinning) {
     spinner?.start()
   }
