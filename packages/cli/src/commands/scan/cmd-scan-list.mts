@@ -2,6 +2,7 @@ import { handleListScans } from './handle-list-scans.mts'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'
 import { InputError } from '../../utils/error/errors.mts'
 import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -14,11 +15,8 @@ import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { webLink } from '../../utils/terminal/link.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-  CliSubcommand,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext, CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 export const CMD_NAME = 'list'
 
@@ -37,11 +35,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
       branch: {
@@ -96,8 +94,8 @@ async function run(
         default: '',
         description: 'Until time - as a unix timestamp',
       },
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [REPO [BRANCH]]
 

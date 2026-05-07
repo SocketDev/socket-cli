@@ -6,23 +6,22 @@ import { cmdManifestKotlin } from './cmd-manifest-kotlin.mts'
 import { cmdManifestScala } from './cmd-manifest-scala.mts'
 import { cmdManifestSetup } from './cmd-manifest-setup.mts'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'manifest',
   description: 'Generate a dependency manifest for certain ecosystems',
   hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
-  },
-  help: (command, config) => `
+  }),
+  help: (command: string, config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] <LANGUAGE> <TARGET>
 

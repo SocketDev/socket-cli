@@ -2,15 +2,13 @@ import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import { FLAG_DRY_RUN, FLAG_HELP } from '../../constants/cli.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { outputDryRunExecute } from '../../utils/dry-run/output.mts'
 import { getNpxBinPath } from '../../utils/npm/paths.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'raw-npx'
 
@@ -54,14 +52,14 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
-    },
-    help: command => `
+    }),
+    help: (command: string) => `
     Usage
       $ ${command} ...
 

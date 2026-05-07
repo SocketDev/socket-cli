@@ -1,5 +1,6 @@
 import { handleOrgScanMetadata } from './handle-scan-metadata.mts'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -11,11 +12,8 @@ import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-  CliSubcommand,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext, CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 export const CMD_NAME = 'metadata'
 
@@ -34,11 +32,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
       interactive: {
@@ -52,8 +50,8 @@ async function run(
         description:
           'Force override the organization slug, overrides the default org from config',
       },
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] <SCAN_ID>
 

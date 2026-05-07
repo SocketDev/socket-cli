@@ -23,15 +23,13 @@
  *   - Socket Firewall: https://www.npmjs.com/package/sfw
  */
 
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { spawnSfwDlx } from '../../utils/dlx/spawn.mjs'
 import { filterFlags } from '../../utils/process/cmd.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
 
 const CMD_NAME = 'uv'
 const description = 'Run uv with Socket Firewall security'
@@ -66,14 +64,14 @@ async function run(
   context: CliCommandContext,
 ): Promise<void> {
   const { parentName } = { __proto__: null, ...context } as CliCommandContext
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden: false,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
-    },
-    help: command => `
+    }),
+    help: (command: string) => `
     Usage
       $ ${command} ...
 

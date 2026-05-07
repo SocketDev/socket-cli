@@ -2,7 +2,6 @@ import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { spawnSocketPatchDlx } from '../../utils/dlx/spawn.mjs'
 
 import type {
-  CliCommandConfig,
   CliCommandContext,
   CliSubcommand,
 } from '../../utils/cli/with-subcommands.mjs'
@@ -32,12 +31,12 @@ async function run(
   // Only show Socket CLI help if no subcommand is provided.
   // If a subcommand is present (like 'list', 'info'), forward to socket-patch.
   if (!hasSubcommand) {
-    const config: CliCommandConfig = {
+    const config = {
       commandName: CMD_NAME,
       description,
       hidden,
       flags: {},
-      help: command => `
+      help: (command: string) => `
     Usage
       $ ${command} ...
 

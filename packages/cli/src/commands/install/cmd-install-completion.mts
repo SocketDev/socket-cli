@@ -1,22 +1,21 @@
 import { handleInstallCompletion } from './handle-install-completion.mts'
 import { outputDryRunWrite } from '../../utils/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'completion',
   description: 'Install bash completion for Socket CLI',
   hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
-  },
-  help: (command, config) => `
+  }),
+  help: (command: string, config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [NAME=socket]
 

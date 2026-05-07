@@ -2,6 +2,7 @@ import path from 'node:path'
 
 import { handleOptimize } from './handle-optimize.mts'
 import { CMD_NAME as CMD_NAME_FULL } from './shared.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { outputDryRunPreview } from '../../utils/dry-run/output.mts'
@@ -12,11 +13,9 @@ import {
 } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
 import type { DryRunAction } from '../../utils/dry-run/output.mts'
+import type { MeowFlags } from '../../flags.mts'
 
 export const CMD_NAME = 'optimize'
 
@@ -35,11 +34,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       pin: {
         type: 'boolean',
@@ -51,8 +50,8 @@ async function run(
         default: false,
         description: 'Add overrides for production dependencies only',
       },
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [CWD=.]
 

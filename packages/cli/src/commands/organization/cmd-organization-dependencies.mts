@@ -2,6 +2,7 @@ import { handleDependencies } from './handle-dependencies.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'
 import { InputError } from '../../utils/error/errors.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -12,10 +13,8 @@ import { getOutputKind } from '../../utils/output/mode.mjs'
 import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 export const CMD_NAME = 'dependencies'
 
@@ -35,11 +34,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       limit: {
         type: 'number',
@@ -52,8 +51,8 @@ async function run(
         description: 'Page number',
       },
       ...outputFlags,
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, config: { flags: MeowFlags }) => `
     Usage
       ${command} [options]
 

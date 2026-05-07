@@ -2,22 +2,20 @@ import path from 'node:path'
 
 import { handleCmdJson } from './handle-cmd-json.mts'
 import { SOCKET_JSON } from '../../constants/socket.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'json',
   description: `Display the \`${SOCKET_JSON}\` that would be applied for target folder`,
   hidden: true,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
-  },
-  help: command => `
+  }),
+  help: (command: string) => `
     Usage
       $ ${command} [options] [CWD=.]
 

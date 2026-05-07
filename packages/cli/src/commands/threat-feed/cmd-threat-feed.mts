@@ -5,6 +5,7 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { handleThreatFeed } from './handle-threat-feed.mts'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'
 import { InputError } from '../../utils/error/errors.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -17,10 +18,8 @@ import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { mailtoLink } from '../../utils/terminal/link.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 const logger = getDefaultLogger()
 
@@ -57,11 +56,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
       direction: {
@@ -111,8 +110,8 @@ async function run(
         default: '',
         description: 'Filter by this package version',
       },
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [ECOSYSTEM] [TYPE_FILTER]
 

@@ -78,8 +78,15 @@ export type InferFlagValue<F extends MeowFlag> = ValueOrUndefined<
   F,
   ValueOrArray<F, ValueOfFlagType<F>>
 >
+// The known-key map from the schema, plus a `[unknown]: unknown` index
+// signature so callers can still bracket-access flags that aren't in the
+// schema (e.g. `cli.flags['json']` on a command whose schema only spreads
+// `commonFlags`). The index signature returns `unknown`, preserving the
+// old runtime behavior; the known-key entries get the precise primitive.
 export type InferFlagValues<F extends MeowFlags> = {
   [K in keyof F]: InferFlagValue<F[K]>
+} & {
+  [extraKey: string]: unknown
 }
 
 export interface MeowOptions<F extends MeowFlags = MeowFlags> {

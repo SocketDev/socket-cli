@@ -2,7 +2,10 @@ import { handleAnalytics } from './handle-analytics.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'
 import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
+
+import type { MeowFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
@@ -13,10 +16,7 @@ import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { webLink } from '../../utils/terminal/link.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
 
 // Flags interface for type safety.
 interface AnalyticsFlags {
@@ -42,11 +42,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
       file: {
@@ -54,8 +54,8 @@ async function run(
         default: '',
         description: 'Path to store result, only valid with --json/--markdown',
       },
-    },
-    help: (command, { flags }) =>
+    }),
+    help: (command: string, { flags }: { flags: MeowFlags }) =>
       `
     Usage
       $ ${command} [options] [ "org" | "repo" <reponame>] [TIME]

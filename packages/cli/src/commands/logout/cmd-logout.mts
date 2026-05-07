@@ -7,15 +7,14 @@ import {
   CONFIG_KEY_API_TOKEN,
   CONFIG_KEY_ENFORCED_ORGS,
 } from '../../constants/config.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { isConfigFromFlag, updateConfigValue } from '../../utils/config.mts'
 import { invalidateDefaultApiToken } from '../../utils/socket/sdk.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 const logger = getDefaultLogger()
 
@@ -57,14 +56,14 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
-    },
-    help: (command, _config) => `
+    }),
+    help: (command: string, _config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options]
 

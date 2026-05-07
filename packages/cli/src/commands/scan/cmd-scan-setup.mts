@@ -3,28 +3,27 @@ import path from 'node:path'
 import { handleScanConfig } from './handle-scan-config.mts'
 import { SOCKET_JSON } from '../../constants/paths.mts'
 import { outputDryRunWrite } from '../../utils/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'setup',
   description:
     'Start interactive configurator to customize default flag values for `socket scan` in this dir',
   hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
     defaultOnReadError: {
       type: 'boolean',
       description: `If reading the ${SOCKET_JSON} fails, just use a default config? Warning: This might override the existing json file!`,
     },
-  },
-  help: (command, config) => `
+  }),
+  help: (command: string, config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [CWD=.]
 

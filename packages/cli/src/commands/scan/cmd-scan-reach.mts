@@ -9,6 +9,7 @@ import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
 import { outputDryRunExecute } from '../../utils/dry-run/output.mts'
 import { InputError } from '../../utils/error/errors.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mts'
 import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mts'
@@ -23,10 +24,7 @@ import { hasDefaultApiToken } from '../../utils/socket/sdk.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
 import type { MeowFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mts'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mts'
 import type { PURL_Type } from '../../utils/ecosystem/types.mts'
 
 // Flags interface for type safety.
@@ -93,16 +91,16 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...generalFlags,
       ...excludePathsFlag,
       ...reachabilityFlags,
-    },
-    help: command =>
+    }),
+    help: (command: string) =>
       `
     Usage
       $ ${command} [options] [CWD=.]

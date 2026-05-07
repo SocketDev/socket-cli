@@ -29,15 +29,13 @@
 
 import { whichReal } from '@socketsecurity/lib/bin'
 
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { spawnSfwDlx } from '../../utils/dlx/spawn.mjs'
 import { filterFlags } from '../../utils/process/cmd.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mts'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mts'
 
 const CMD_NAME = 'pip'
 const description = 'Run pip with Socket Firewall security'
@@ -107,14 +105,14 @@ async function run(
     __proto__: null,
     ...context,
   } as CliCommandContext
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden: false,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
-    },
-    help: command => `
+    }),
+    help: (command: string) => `
     Usage
       $ ${command} ...
 

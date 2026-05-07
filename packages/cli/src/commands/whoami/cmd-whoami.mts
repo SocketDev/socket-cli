@@ -3,6 +3,7 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { CONFIG_KEY_API_TOKEN } from '../../constants/config.mjs'
 import { SOCKET_CLI_API_TOKEN } from '../../env/socket-cli-api-token.mts'
 import { TOKEN_PREFIX } from '../../constants/socket.mjs'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getConfigValueOrUndef } from '../../utils/config.mts'
@@ -14,10 +15,8 @@ import {
 } from '../../utils/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 const logger = getDefaultLogger()
 
@@ -67,14 +66,14 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, config: { flags: MeowFlags }) => `
     Usage
       $ ${command}
 

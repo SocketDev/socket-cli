@@ -1,5 +1,6 @@
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 import { handleCi } from './handle-ci.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { outputDryRunUpload } from '../../utils/dry-run/output.mts'
@@ -10,17 +11,15 @@ import {
 } from '../../utils/git/operations.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'ci',
   description:
     'Alias for `socket scan create --report` (creates report and exits with error if unhealthy)',
   hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
     autoManifest: {
       type: 'boolean',
@@ -29,8 +28,8 @@ const config: CliCommandConfig = {
       description:
         'Auto generate manifest files where detected? See autoManifest flag in `socket scan create`',
     },
-  },
-  help: (command, _config) => `
+  }),
+  help: (command: string, _config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options]
 

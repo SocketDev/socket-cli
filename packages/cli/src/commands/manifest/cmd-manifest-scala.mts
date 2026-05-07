@@ -8,6 +8,7 @@ import { outputManifest } from './output-manifest.mts'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
 import { outputDryRunExecute } from '../../utils/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
@@ -15,10 +16,8 @@ import { getOutputKind } from '../../utils/output/mode.mjs'
 import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 const logger = getDefaultLogger()
 
@@ -31,12 +30,12 @@ interface ScalaFlags {
   verbose: boolean | undefined
 }
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'scala',
   description:
     "[beta] Generate a manifest file (`pom.xml`) from Scala's `build.sbt` file",
   hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
     bin: {
       type: 'string',
@@ -59,8 +58,8 @@ const config: CliCommandConfig = {
       type: 'boolean',
       description: 'Print debug messages',
     },
-  },
-  help: (command, config) => `
+  }),
+  help: (command: string, config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [CWD=.]
 

@@ -2,6 +2,7 @@ import isInteractive from '@socketregistry/is-interactive/index.cjs'
 
 import { attemptLogin } from './attempt-login.mts'
 import { outputDryRunWrite } from '../../utils/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { InputError } from '../../utils/error/errors.mjs'
@@ -10,10 +11,8 @@ import {
   getFlagListOutput,
 } from '../../utils/output/formatting.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 // Flags interface for type safety.
 interface LoginFlags {
@@ -38,11 +37,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       apiBaseUrl: {
         type: 'string',
@@ -54,8 +53,8 @@ async function run(
         default: '',
         description: 'Proxy to use when making connection to API server',
       },
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options]
 

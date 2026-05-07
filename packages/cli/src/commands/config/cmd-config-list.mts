@@ -1,22 +1,21 @@
 import { outputConfigList } from './output-config-list.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'list',
   description: 'Show all local CLI config items and their values',
   hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
     ...outputFlags,
     full: {
@@ -24,8 +23,8 @@ const config: CliCommandConfig = {
       default: false,
       description: 'Show full tokens in plaintext (unsafe)',
     },
-  },
-  help: (command, config) => `
+  }),
+  help: (command: string, config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options]
 

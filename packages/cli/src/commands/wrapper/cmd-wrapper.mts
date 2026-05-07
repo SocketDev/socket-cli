@@ -8,27 +8,26 @@ import { postinstallWrapper } from './postinstall-wrapper.mts'
 import { removeSocketWrapper } from './remove-socket-wrapper.mts'
 import { outputDryRunWrite } from '../../utils/dry-run/output.mts'
 import { getBashRcPath, getZshRcPath } from '../../constants/paths.mjs'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 const logger = getDefaultLogger()
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'wrapper',
   description: 'Enable or disable the Socket npm/npx wrapper',
   hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
-  },
-  help: (command, config) => `
+  }),
+  help: (command: string, config: { flags: MeowFlags }) => `
     Usage
       $ ${command} <"on" | "off">
 

@@ -1,15 +1,14 @@
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { DRY_RUN_LABEL } from '../../constants/cli.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 const logger = getDefaultLogger()
 
@@ -26,11 +25,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
       throw: {
@@ -39,8 +38,11 @@ async function run(
         description:
           'Throw an explicit error even if --json or --markdown are set',
       },
-    },
-    help: (parentName, config) => `
+    }),
+    help: (
+      parentName: string,
+      config: { commandName: string; flags: MeowFlags },
+    ) => `
     Usage
       $ ${parentName} ${config.commandName}
 

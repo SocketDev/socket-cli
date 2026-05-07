@@ -11,6 +11,7 @@
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mts'
 import { spawnSfw } from '../../utils/dlx/spawn.mts'
@@ -18,10 +19,7 @@ import { outputDryRunExecute } from '../../utils/dry-run/output.mts'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
 import { filterFlags, isHelpFlag } from '../../utils/process/cmd.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mts'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mts'
 
 const logger = getDefaultLogger()
 
@@ -30,14 +28,14 @@ interface SfwFlags {
   dryRun: boolean
 }
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'sfw',
   description: 'Run Socket Firewall directly (alias: firewall)',
   hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
-  },
-  help: command => `
+  }),
+  help: (command: string) => `
     Usage
       $ ${command} <package-manager> [args...]
 

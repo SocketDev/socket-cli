@@ -17,10 +17,7 @@ import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { filterFlags, isHelpFlag } from '../../utils/process/cmd.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
 
 const logger = getDefaultLogger()
 
@@ -207,7 +204,7 @@ const yargsConfig = {
   ],
 }
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'cdxgen',
   description: 'Run cdxgen for SBOM generation',
   hidden: false,

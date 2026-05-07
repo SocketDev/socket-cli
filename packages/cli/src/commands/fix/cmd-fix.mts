@@ -11,6 +11,7 @@ import { handleFix } from './handle-fix.mts'
 import { FLAG_ID } from '../../constants/cli.mts'
 import { ERROR_UNABLE_RESOLVE_ORG } from '../../constants/errors.mts'
 import * as constants from '../../constants.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { outputDryRunPreview } from '../../utils/dry-run/output.mts'
@@ -28,10 +29,7 @@ import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 import type { DryRunAction } from '../../utils/dry-run/output.mts'
 
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
 import type { PURL_Type } from '../../utils/ecosystem/types.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
 const logger = getDefaultLogger()
@@ -270,17 +268,17 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
       ...generalFlags,
       ...hiddenFlags,
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [CWD=.]
 

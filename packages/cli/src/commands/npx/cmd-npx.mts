@@ -1,5 +1,6 @@
 import { NPX } from '@socketsecurity/lib/constants/agents'
 
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { spawnSfw } from '../../utils/dlx/spawn.mjs'
@@ -11,10 +12,7 @@ import {
   trackSubprocessStart,
 } from '../../utils/telemetry/integration.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
 
 const CMD_NAME = NPX
 
@@ -33,14 +31,14 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
-    },
-    help: command => `
+    }),
+    help: (command: string) => `
     Usage
       $ ${command} ...
 
