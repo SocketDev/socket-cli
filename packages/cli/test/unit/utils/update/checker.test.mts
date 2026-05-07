@@ -450,5 +450,26 @@ describe('update/checker', () => {
         checkForUpdates({ name: 'test-package', version: '1.0.0' }),
       ).rejects.toThrow()
     })
+
+    it('throws when registry returns no version field', async () => {
+      // Make getLatestVersion's parse path return JSON with version: ''.
+      // After 3 retry attempts the inner throw escapes.
+      const mockReq = createMockRequest()
+      mockRequest.mockImplementation((_options, callback) => {
+        process.nextTick(() => {
+          const mockRes = createMockResponse(200)
+          callback(mockRes)
+          process.nextTick(() => {
+            mockRes.emit('data', JSON.stringify({}))
+            mockRes.emit('end')
+          })
+        })
+        return mockReq
+      })
+
+      await expect(
+        checkForUpdates({ name: 'test-package', version: '1.0.0' }),
+      ).rejects.toThrow()
+    })
   })
 })
