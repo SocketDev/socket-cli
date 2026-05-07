@@ -228,6 +228,15 @@ describe('convertIdsToGhsas', () => {
     )
   })
 
+  it('warns about IDs that are neither GHSA, CVE, nor PURL', async () => {
+    const result = await convertIdsToGhsas(['some-other-format'])
+
+    expect(result).toEqual([])
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Unsupported ID format'),
+    )
+  })
+
   it('trims whitespace from IDs', async () => {
     const result = await convertIdsToGhsas([
       '  GHSA-1234-5678-9abc  ',
@@ -235,5 +244,112 @@ describe('convertIdsToGhsas', () => {
     ])
 
     expect(result).toEqual(['GHSA-1234-5678-9abc', 'GHSA-abcd-efgh-ijkl'])
+  })
+})
+
+describe('handleFix', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockCoanaFix.mockResolvedValue({ ok: true, data: {} })
+  })
+
+  it('runs coanaFix and pipes the result through outputFixResult', async () => {
+    const { handleFix } = await import(
+      '../../../../src/commands/fix/handle-fix.mts'
+    )
+
+    await handleFix({
+      all: false,
+      applyFixes: false,
+      autopilot: false,
+      coanaVersion: '1.0.0',
+      cwd: '/proj',
+      debug: false,
+      disableExternalToolChecks: false,
+      disableMajorUpdates: false,
+      ecosystems: ['npm'],
+      exclude: [],
+      ghsas: ['GHSA-1234-5678-9abc'],
+      include: [],
+      minSatisfying: false,
+      minimumReleaseAge: '7d',
+      orgSlug: 'my-org',
+      outputFile: '',
+      outputKind: 'json',
+      prCheck: false,
+      prLimit: 5,
+      rangeStyle: 'caret',
+      showAffectedDirectDependencies: false,
+      silence: false,
+      spinner: undefined,
+      unknownFlags: [],
+    })
+
+    expect(mockCoanaFix).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ghsas: ['GHSA-1234-5678-9abc'],
+        orgSlug: 'my-org',
+      }),
+    )
+    expect(mockOutputFixResult).toHaveBeenCalledWith(
+      expect.objectContaining({ ok: true }),
+      'json',
+    )
+  })
+
+  it('converts mixed CVE/PURL/GHSA inputs before calling coanaFix', async () => {
+    mockConvertCveToGhsa.mockResolvedValueOnce({
+      ok: true,
+      data: 'GHSA-from-cve',
+    })
+    mockConvertPurlToGhsas.mockResolvedValueOnce({
+      ok: true,
+      data: ['GHSA-from-purl'],
+    })
+
+    const { handleFix } = await import(
+      '../../../../src/commands/fix/handle-fix.mts'
+    )
+
+    await handleFix({
+      all: false,
+      applyFixes: true,
+      autopilot: false,
+      coanaVersion: '1.0.0',
+      cwd: '/proj',
+      debug: false,
+      disableExternalToolChecks: false,
+      disableMajorUpdates: false,
+      ecosystems: [],
+      exclude: [],
+      ghsas: [
+        'GHSA-1234-5678-9abc',
+        'CVE-2021-44228',
+        'pkg:npm/lodash@4.17.21',
+      ],
+      include: [],
+      minSatisfying: false,
+      minimumReleaseAge: '0',
+      orgSlug: 'my-org',
+      outputFile: '',
+      outputKind: 'text',
+      prCheck: false,
+      prLimit: 5,
+      rangeStyle: 'caret',
+      showAffectedDirectDependencies: false,
+      silence: false,
+      spinner: undefined,
+      unknownFlags: [],
+    })
+
+    expect(mockCoanaFix).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ghsas: expect.arrayContaining([
+          'GHSA-1234-5678-9abc',
+          'GHSA-from-cve',
+          'GHSA-from-purl',
+        ]),
+      }),
+    )
   })
 })
