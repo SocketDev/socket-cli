@@ -1,4 +1,7 @@
+import { existsSync, readFileSync } from 'node:fs'
 import os from 'node:os'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { defineConfig } from 'vitest/config'
 
@@ -9,6 +12,50 @@ import { defineConfig } from 'vitest/config'
 // on the worker for additional belt-and-suspenders coverage.
 if (!process.env['TZ']) {
   process.env['TZ'] = 'UTC'
+}
+
+// Inject INLINED_* env vars from bundle-tools.json before workers
+// spawn. These are normally inlined at build time by esbuild's define
+// step; tests run from source so we feed them in at config-eval time.
+// Doing this here (instead of just in test/setup.mts) means modules
+// that read INLINED_* at the top level (e.g. constants/paths.mts via
+// constants/env.mts → env/coana-version.mts) get the values *before*
+// they evaluate, so single-file vitest runs no longer fail with
+// "process.env.INLINED_COANA_VERSION is empty at runtime".
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const bundleToolsPath = path.join(__dirname, 'bundle-tools.json')
+if (existsSync(bundleToolsPath)) {
+  try {
+    const tools = JSON.parse(readFileSync(bundleToolsPath, 'utf8'))
+    const toolVersions: Record<string, string | undefined> = {
+      INLINED_CDXGEN_VERSION: tools['@cyclonedx/cdxgen']?.version,
+      INLINED_COANA_VERSION: tools['@coana-tech/cli']?.version,
+      INLINED_CYCLONEDX_CDXGEN_VERSION: tools['@cyclonedx/cdxgen']?.version,
+      INLINED_HOMEPAGE: 'https://github.com/SocketDev/socket-cli',
+      INLINED_NAME: '@socketsecurity/cli',
+      INLINED_OPENGREP_VERSION: tools['opengrep']?.version,
+      INLINED_PUBLISHED_BUILD: '',
+      INLINED_PYCLI_VERSION: tools['socketsecurity']?.version,
+      INLINED_PYTHON_BUILD_TAG: tools['python']?.tag,
+      INLINED_PYTHON_VERSION: tools['python']?.version,
+      INLINED_SENTRY_BUILD: '',
+      INLINED_SFW_NPM_VERSION: tools['sfw']?.npm?.version,
+      INLINED_SFW_VERSION: tools['sfw']?.version,
+      INLINED_SOCKET_PATCH_VERSION: tools['socket-patch']?.version,
+      INLINED_SYNP_VERSION: tools['synp']?.version,
+      INLINED_TRIVY_VERSION: tools['trivy']?.version,
+      INLINED_TRUFFLEHOG_VERSION: tools['trufflehog']?.version,
+      INLINED_VERSION: '0.0.0-test',
+      INLINED_VERSION_HASH: '0.0.0-test:abc1234:test',
+    }
+    for (const [key, value] of Object.entries(toolVersions)) {
+      if (!process.env[key] && value) {
+        process.env[key] = value
+      }
+    }
+  } catch {
+    // Ignore — fall back to test/setup.mts injection.
+  }
 }
 
 const isCoverageEnabled =
