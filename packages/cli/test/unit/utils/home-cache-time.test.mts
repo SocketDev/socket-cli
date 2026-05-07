@@ -155,5 +155,13 @@ describe('ms-at-home utilities', () => {
       const result = msAtHome(timestamp)
       expect(result).toBe('2023-12-15')
     })
+
+    it('returns ISO date when timestamp is in the future (negative delta)', () => {
+      // 100 years from now ensures delta < 0.
+      const futureYear = new Date().getUTCFullYear() + 100
+      const timestamp = `${futureYear}-06-15T10:30:00.000Z`
+      const result = msAtHome(timestamp)
+      expect(result).toBe(`${futureYear}-06-15`)
+    })
   })
 })

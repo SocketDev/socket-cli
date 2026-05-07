@@ -83,4 +83,27 @@ describe('SEA detection utilities', () => {
       expect(typeof canSelfUpdate).toBe('function')
     })
   })
+
+  describe('isSeaBinary catch fallback', () => {
+    it('returns false when node:sea cannot be required (older Node)', async () => {
+      // Force require('node:sea') to throw via vi.doMock + a fresh module
+      // import. This exercises the catch arm of isSeaBinary().
+      const { vi } = await import('vitest')
+      vi.resetModules()
+      vi.doMock('node:module', async importOriginal => {
+        const actual = await importOriginal<typeof import('node:module')>()
+        return {
+          ...actual,
+          createRequire: () => () => {
+            throw new Error('Cannot find module node:sea')
+          },
+        }
+      })
+      const fresh = await import(
+        '../../../../src/utils/sea/detect.mts?cache_bust=throw'
+      )
+      expect(fresh.isSeaBinary()).toBe(false)
+      vi.doUnmock('node:module')
+    })
+  })
 })

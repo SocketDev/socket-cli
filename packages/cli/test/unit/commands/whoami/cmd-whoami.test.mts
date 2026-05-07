@@ -61,10 +61,10 @@ const {
     mockGetConfigValueOrUndef: vi.fn(),
     mockGetDefaultApiToken: vi.fn(),
     mockGetVisibleTokenPrefix: vi.fn(),
-    mockMeowOrExit: vi.fn((args: { argv: string[] | readonly string[] }) => {
+    mockMeowOrExit: vi.fn((args: any) => {
       const flags: Record<string, unknown> = {}
       // Parse simple flags from argv.
-      const argv = args.argv
+      const argv = args.argv as string[] | readonly string[]
       if (argv.includes('--json')) {
         flags['json'] = true
       }
@@ -73,6 +73,15 @@ const {
       }
       if (argv.includes('--dry-run')) {
         flags['dryRun'] = true
+      }
+      // Invoke the help() callback so its template-string body is
+      // recorded as covered; production meowOrExit only invokes it on
+      // --help, which the test suite never exercises. cmd-whoami's
+      // help signature is (command, config) so we pass a fake config.
+      if (args.config?.help) {
+        try {
+          args.config.help('socket whoami', { flags: {} })
+        } catch {}
       }
       return {
         flags,

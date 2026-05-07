@@ -165,6 +165,18 @@ describe('handleConfigSet', () => {
     expect(debug).toHaveBeenCalledWith('Config update failed')
   })
 
+  it('throws InputError when value is undefined', async () => {
+    await expect(
+      handleConfigSet({
+        key: 'apiToken',
+        outputKind: 'json',
+        value: undefined,
+      }),
+    ).rejects.toThrow(/requires a VALUE argument/)
+    expect(mockUpdateConfigValue).not.toHaveBeenCalled()
+    expect(mockOutputConfigSet).not.toHaveBeenCalled()
+  })
+
   it('handles different config keys', async () => {
     const { updateConfigValue } =
       await import('../../../../src/utils/config.mts')
