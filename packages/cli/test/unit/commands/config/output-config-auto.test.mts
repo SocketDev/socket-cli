@@ -300,6 +300,39 @@ describe('output-config-auto', () => {
         const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
         expect(logs).toContain('No changes made')
       })
+
+      it('handles array data for defaultOrg by mapping each item to a choice', async () => {
+        mockSelect.mockResolvedValue('org-a')
+        mockUpdateConfigValue.mockReturnValue({ ok: true })
+
+        const result: CResult<string[]> = {
+          ok: true,
+          data: ['org-a', 'org-b', 'org-c'],
+        }
+
+        await outputConfigAuto('defaultOrg', result as any, 'text')
+
+        const selectCallArgs = mockSelect.mock.calls[0]![0] as {
+          choices: Array<{ value: string }>
+        }
+        expect(selectCallArgs.choices.length).toBeGreaterThanOrEqual(3)
+      })
+
+      it('handles array data for enforcedOrgs by mapping each item to a choice', async () => {
+        mockSelect.mockResolvedValue('')
+
+        const result: CResult<string[]> = {
+          ok: true,
+          data: ['org-a', 'org-b'],
+        }
+
+        await outputConfigAuto('enforcedOrgs', result as any, 'text')
+
+        const selectCallArgs = mockSelect.mock.calls[0]![0] as {
+          choices: Array<{ value: string }>
+        }
+        expect(selectCallArgs.choices.length).toBeGreaterThanOrEqual(2)
+      })
     })
   })
 })
