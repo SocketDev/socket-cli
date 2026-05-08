@@ -592,4 +592,90 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
     // Both repos should have been attempted (no short-circuit for 404).
     expect(mockWithGitHubRetry).toHaveBeenCalledTimes(2)
   })
+
+  it('uses fetchListAllRepos when all=true (lines 57-64)', async () => {
+    const { fetchListAllRepos } = await import(
+      '../../../../src/commands/repository/fetch-list-all-repos.mts'
+    )
+    vi.mocked(fetchListAllRepos).mockResolvedValueOnce({
+      ok: true,
+      data: { results: [{ slug: 'a' }, { slug: 'b' }] },
+    } as any)
+    // Make all repos fail with a quick 404 so the test exits cleanly.
+    mockWithGitHubRetry.mockResolvedValue({
+      ok: false,
+      message: 'GitHub resource not found',
+      cause: 'Not found.',
+    })
+    const { createScanFromGithub } = await import(
+      '../../../../src/commands/scan/create-scan-from-github.mts'
+    )
+    const result = await createScanFromGithub({
+      all: true,
+      githubApiUrl: '',
+      githubToken: '',
+      interactive: false,
+      orgGithub: 'org',
+      orgSlug: 'org',
+      outputKind: 'text',
+      repos: '',
+    })
+    expect(fetchListAllRepos).toHaveBeenCalled()
+    expect(result.ok).toBe(false)
+  })
+
+  it('returns ok:false on fetchListAllRepos failure (lines 61-62)', async () => {
+    const { fetchListAllRepos } = await import(
+      '../../../../src/commands/repository/fetch-list-all-repos.mts'
+    )
+    vi.mocked(fetchListAllRepos).mockResolvedValueOnce({
+      ok: false,
+      message: 'API Error',
+      cause: 'Something broke',
+    } as any)
+    const { createScanFromGithub } = await import(
+      '../../../../src/commands/scan/create-scan-from-github.mts'
+    )
+    const result = await createScanFromGithub({
+      all: true,
+      githubApiUrl: '',
+      githubToken: '',
+      interactive: false,
+      orgGithub: 'org',
+      orgSlug: 'org',
+      outputKind: 'text',
+      repos: '',
+    })
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toBe('API Error')
+    }
+  })
+
+  it('returns "No repo found" when targetRepos is empty (lines 73-79)', async () => {
+    const { fetchListAllRepos } = await import(
+      '../../../../src/commands/repository/fetch-list-all-repos.mts'
+    )
+    vi.mocked(fetchListAllRepos).mockResolvedValueOnce({
+      ok: true,
+      data: { results: [] },
+    } as any)
+    const { createScanFromGithub } = await import(
+      '../../../../src/commands/scan/create-scan-from-github.mts'
+    )
+    const result = await createScanFromGithub({
+      all: true,
+      githubApiUrl: '',
+      githubToken: '',
+      interactive: false,
+      orgGithub: 'org',
+      orgSlug: 'org',
+      outputKind: 'text',
+      repos: '',
+    })
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toBe('No repo found')
+    }
+  })
 })
