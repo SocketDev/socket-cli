@@ -1,4 +1,5 @@
 import { handleInstallCompletion } from './handle-install-completion.mts'
+import { HOME } from '../../env/home.mts'
 import { outputDryRunWrite } from '../../utils/dry-run/output.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
@@ -67,7 +68,7 @@ async function run(
   const targetName = cli.input[0] || 'socket'
 
   if (dryRun) {
-    const bashRcPath = `${process.env['HOME']}/.bashrc`
+    const bashRcPath = `${HOME}/.bashrc`
     outputDryRunWrite(
       bashRcPath,
       `install bash completion for "${targetName}"`,

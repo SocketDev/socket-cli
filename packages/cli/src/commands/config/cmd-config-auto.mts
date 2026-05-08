@@ -1,5 +1,6 @@
 import { handleConfigAuto } from './handle-config-auto.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
+import { HOME } from '../../env/home.mts'
 import { outputDryRunWrite } from '../../utils/dry-run/output.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
@@ -101,7 +102,7 @@ ${getSupportedConfigEntries()
   }
 
   if (dryRun) {
-    const configPath = `${process.env['HOME']}/.config/socket/config.json`
+    const configPath = `${HOME}/.config/socket/config.json`
     outputDryRunWrite(
       configPath,
       `auto-discover and set config value for "${key}"`,

@@ -1,5 +1,6 @@
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+import { HOME } from '../../env/home.mts'
 import { outputDryRunDelete } from '../../utils/dry-run/output.mts'
 import {
   CONFIG_KEY_API_BASE_URL,
@@ -84,7 +85,7 @@ export async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    const configPath = `${process.env['HOME']}/.config/socket/config.json`
+    const configPath = `${HOME}/.config/socket/config.json`
     outputDryRunDelete('Socket API credentials', configPath)
     return
   }
