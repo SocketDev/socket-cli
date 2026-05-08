@@ -59,6 +59,7 @@ describe('buildHelpLines', () => {
         'logout',
         'manifest',
         'npm',
+        // socket-hook: allow npx
         'npx',
         'nuget',
         'optimize',
