@@ -472,6 +472,49 @@ describe('meow-with-subcommands', () => {
         }
       }
     })
+
+    it('returns "(--config flag)" when token from config-from-flag (line 56)', () => {
+      const originalNo = process.env['SOCKET_CLI_NO_API_TOKEN']
+      const original = process.env['SOCKET_CLI_API_TOKEN']
+      delete process.env['SOCKET_CLI_NO_API_TOKEN']
+      delete process.env['SOCKET_CLI_API_TOKEN']
+      try {
+        // Mock config returns a token AND isConfigFromFlag returns true.
+        mockGetConfigValueOrUndef.mockReturnValueOnce('sktsec_flag_xxxxxxxxxxxx')
+        mockIsConfigFromFlag.mockReturnValueOnce(true)
+        const result = getTokenOrigin()
+        expect(result).toBe('(--config flag)')
+      } finally {
+        if (originalNo !== undefined) {
+          process.env['SOCKET_CLI_NO_API_TOKEN'] = originalNo
+        }
+        if (original !== undefined) {
+          process.env['SOCKET_CLI_API_TOKEN'] = original
+        }
+      }
+    })
+
+    it('returns "(config)" when token from persisted config (line 56)', () => {
+      const originalNo = process.env['SOCKET_CLI_NO_API_TOKEN']
+      const original = process.env['SOCKET_CLI_API_TOKEN']
+      delete process.env['SOCKET_CLI_NO_API_TOKEN']
+      delete process.env['SOCKET_CLI_API_TOKEN']
+      try {
+        mockGetConfigValueOrUndef.mockReturnValueOnce(
+          'sktsec_persisted_xxxxxxxxxxxx',
+        )
+        mockIsConfigFromFlag.mockReturnValueOnce(false)
+        const result = getTokenOrigin()
+        expect(result).toBe('(config)')
+      } finally {
+        if (originalNo !== undefined) {
+          process.env['SOCKET_CLI_NO_API_TOKEN'] = originalNo
+        }
+        if (original !== undefined) {
+          process.env['SOCKET_CLI_API_TOKEN'] = original
+        }
+      }
+    })
   })
 
   describe('getLastSeenCommand', () => {
