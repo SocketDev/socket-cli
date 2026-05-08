@@ -414,4 +414,62 @@ describe('TelemetryService', () => {
       expect(mockPostOrgTelemetry).toHaveBeenCalled()
     })
   })
+
+  describe('flush error/timeout branches', () => {
+    it('handles errors thrown by setupSdk during flush (lines 351-366)', async () => {
+      const client = await TelemetryService.getTelemetryClient('test-org')
+      client.track({
+        event_sender_created_at: new Date().toISOString(),
+        event_type: 'test_event',
+        context: {},
+      })
+      // Make the second setupSdk call (the one inside sendEvents) throw.
+      mockSetupSdk.mockRejectedValueOnce(new Error('SDK init failed'))
+      // Flush swallows the error and discards events.
+      await expect(client.flush()).resolves.toBeUndefined()
+    })
+
+    it('handles timeout-message errors during flush (lines 356-363)', async () => {
+      const client = await TelemetryService.getTelemetryClient('test-org')
+      client.track({
+        event_sender_created_at: new Date().toISOString(),
+        event_type: 'test_event',
+        context: {},
+      })
+      // Reject with an error whose message contains "timed out" — exercises
+      // the timeout-detection branch in the flush() catch block.
+      mockSetupSdk.mockRejectedValueOnce(
+        new Error('Telemetry flush timed out after 2000ms'),
+      )
+      await expect(client.flush()).resolves.toBeUndefined()
+    })
+  })
+
+  describe('destroy error/timeout branches', () => {
+    it('handles errors thrown during destroy flush (lines 459-478)', async () => {
+      const client = await TelemetryService.getTelemetryClient('test-org')
+      client.track({
+        event_sender_created_at: new Date().toISOString(),
+        event_type: 'test_event',
+        context: {},
+      })
+      // The next setupSdk call (inside destroy → sendEvents) throws.
+      mockSetupSdk.mockRejectedValueOnce(new Error('SDK init failed'))
+      // destroy() should not throw even when its internal flush fails.
+      await expect(client.destroy()).resolves.toBeUndefined()
+    })
+
+    it('handles timeout-message errors during destroy flush (lines 463-473)', async () => {
+      const client = await TelemetryService.getTelemetryClient('test-org')
+      client.track({
+        event_sender_created_at: new Date().toISOString(),
+        event_type: 'test_event',
+        context: {},
+      })
+      mockSetupSdk.mockRejectedValueOnce(
+        new Error('flush during destroy timed out after 2000ms'),
+      )
+      await expect(client.destroy()).resolves.toBeUndefined()
+    })
+  })
 })
