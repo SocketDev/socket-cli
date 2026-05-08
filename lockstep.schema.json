@@ -2,43 +2,46 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/SocketDev/lockstep.schema.json",
   "title": "lockstep manifest",
-  "description": "Unified lock-step manifest shared across Socket repos. One schema, all cases — `kind` discriminator on each row selects which flavor of lock-step applies.",
+  "description": "Unified lock-step manifest shared across Socket repos. One schema, all cases — the `kind` discriminator on each row selects which flavor of lock-step applies. Single-file manifests work for repos with one cohesive concern; the `includes[]` field carves a manifest into per-area files (e.g. lockstep-acorn.json + lockstep-build.json) when one repo tracks multiple independent concerns.",
   "type": "object",
   "required": ["rows"],
   "properties": {
     "$schema": {
+      "description": "JSON Schema reference for editor autocompletion. Conventionally `./lockstep.schema.json` — both the manifest and its schema live side-by-side at repo root.",
       "type": "string"
     },
     "description": {
+      "description": "Human-readable description of what this manifest tracks. Read by humans, not parsed. One short paragraph.",
       "type": "string"
     },
     "area": {
-      "description": "Optional label for this manifest file. Used as a grouping key in harness output. Defaults to 'root' for the top-level file and to the filename stem for included files.",
+      "description": "Optional label for this manifest file. Used as a grouping key in harness output (per-area summaries). Defaults to 'root' for the top-level file and to the filename stem (with the `lockstep-` prefix stripped) for included files.",
       "type": "string"
     },
     "includes": {
-      "description": "Relative paths to sub-manifests. Top-level `upstreams` and `sites` maps override any same-keyed entries in included manifests.",
+      "description": "Relative paths to sub-manifests. The harness loads each and merges its rows into a single flattened view. Top-level `upstreams` and `sites` maps override any same-keyed entries from included manifests (top wins on conflict).",
       "type": "array",
       "items": {
         "type": "string"
       }
     },
     "upstreams": {
-      "description": "Named upstream submodules. Referenced by rows[].upstream on file-fork, version-pin, feature-parity, spec-conformance rows. Omit when the manifest only has lang-parity rows.",
+      "description": "Named upstream submodules. Each entry pairs a submodule path with its repo URL. Referenced by rows[].upstream on file-fork / version-pin / feature-parity / spec-conformance rows. Omit when the manifest only has lang-parity rows.",
       "type": "object",
       "patternProperties": {
         "^(.*)$": {
           "additionalProperties": false,
+          "description": "A submodule + its upstream repo URL. Referenced by file-fork / version-pin / feature-parity / spec-conformance rows via `upstream`.",
           "type": "object",
           "required": ["submodule", "repo"],
           "properties": {
             "submodule": {
-              "description": "Submodule path, relative to repo root.",
+              "description": "Submodule path, relative to repo root. Must match an entry in `.gitmodules`.",
               "type": "string"
             },
             "repo": {
-              "pattern": "^https?://",
-              "description": "Upstream repository URL (http:// or https://).",
+              "pattern": "^https?://[^/\\s]+",
+              "description": "Upstream repository URL (http:// or https:// + host). Anchored at the host so empty URLs fail validation rather than failing at git-fetch time.",
               "type": "string"
             }
           }
@@ -46,20 +49,21 @@
       }
     },
     "sites": {
-      "description": "Named sibling ports (typically per-language). Referenced by rows[].ports.<site> on lang-parity rows. Omit when the manifest has no lang-parity rows.",
+      "description": "Named sibling ports (typically per-language: `cpp`, `go`, `rust`, `typescript`). Referenced by rows[].ports.<site> on lang-parity rows. Omit when the manifest has no lang-parity rows.",
       "type": "object",
       "patternProperties": {
         "^(.*)$": {
           "additionalProperties": false,
+          "description": "A sibling port (typically per-language). Referenced by lang-parity rows via `ports.<site-key>`.",
           "type": "object",
           "required": ["path"],
           "properties": {
             "path": {
-              "description": "Path to the port's root directory, relative to repo root.",
+              "description": "Path to the port's root directory, relative to repo root. The harness reads files under this path when checking the port's assertions.",
               "type": "string"
             },
             "language": {
-              "description": "Language label, for human reports.",
+              "description": "Language label for human reports (e.g. `cpp`, `go`, `rust`, `typescript`). The harness does no language-specific processing — it's purely informational.",
               "type": "string"
             }
           }
@@ -67,12 +71,13 @@
       }
     },
     "rows": {
+      "description": "The actual checks the harness runs. Empty array is valid (and expected for repos that have no upstream relationships — e.g. socket-cli's empty rows).",
       "type": "array",
       "items": {
         "anyOf": [
           {
             "additionalProperties": false,
-            "description": "A local file derived from an upstream file with intentional modifications. Drift = upstream moved forward without us.",
+            "description": "A local file derived from an upstream file with intentional modifications. Drift = upstream moved forward on this path; we may need to cherry-pick or update our deviations.",
             "type": "object",
             "required": [
               "kind",
@@ -89,44 +94,44 @@
                 "type": "string"
               },
               "id": {
-                "pattern": "^[a-z0-9][A-Za-z0-9-]*$",
-                "description": "Stable identifier, unique within the manifest. Starts with lowercase letter or digit; remaining characters are letters/digits/hyphens. Kebab-case preferred, but camelCase segments are allowed (e.g. `export-findNodeAt` when the id mirrors an API name).",
+                "pattern": "^[a-z0-9][a-z0-9-]*(/[A-Za-z0-9_-]+)?$",
+                "description": "Stable identifier, unique within the manifest. Kebab-case (lowercase letters / digits / hyphens). For ids that mirror an external API name, use a namespace prefix: `api/findNodeAt`, `node/parseURL`. The slash separates the kebab namespace from the free-form leaf.",
                 "type": "string"
               },
               "upstream": {
-                "description": "Key into the top-level `upstreams` map.",
+                "description": "Key into the top-level `upstreams` map. The harness errors if no matching upstream entry exists.",
                 "type": "string"
               },
               "criticality": {
                 "minimum": 1,
                 "maximum": 10,
-                "description": "Stay-in-step importance (1 = cosmetic, 10 = security-sensitive). Harness surfaces high-criticality drift louder.",
+                "description": "Stay-in-step importance. Anchors: 1 = cosmetic / nice-to-have; 5 = behavioral parity expected; 10 = security-sensitive. The harness surfaces high-criticality drift louder and gates feature-parity rows on the criticality/10 floor.",
                 "type": "integer"
               },
               "conformance_test": {
-                "description": "Path to a test that enforces behavior parity (modulo documented deviations). Strongly recommended — static checks can't catch silent behavioral drift.",
+                "description": "Path (relative to repo root) of a test that enforces behavior parity (modulo documented deviations). Strongly recommended — static checks catch syntactic drift, not behavioral. A row without a conformance test relies entirely on code-pattern / fixture-snapshot checks.",
                 "type": "string"
               },
               "notes": {
-                "description": "Free-form context — why this row exists, what gotchas to watch for.",
+                "description": "Free-form context: why this row exists, gotchas, links to related issues / PRs / upstream discussions. Read by humans, not by the harness.",
                 "type": "string"
               },
               "local": {
-                "description": "Path to our ported file, relative to repo root.",
+                "description": "Path (relative to repo root) of our ported copy of the upstream file.",
                 "type": "string"
               },
               "upstream_path": {
-                "description": "Path to the source file within the upstream submodule.",
+                "description": "Path within the upstream submodule (relative to the submodule root) of the source file we forked from.",
                 "type": "string"
               },
               "forked_at_sha": {
                 "pattern": "^[0-9a-f]{40}$",
-                "description": "Full 40-char SHA of the upstream commit we forked from. Harness runs `git log <sha>..HEAD -- <upstream_path>` to surface drift.",
+                "description": "Full 40-char SHA of the upstream commit we forked from. The harness runs `git log <sha>..HEAD -- <upstream_path>` inside the submodule to surface drift.",
                 "type": "string"
               },
               "deviations": {
                 "minItems": 1,
-                "description": "Human-readable list of intentional differences. Zero deviations = use upstream directly; don't fork.",
+                "description": "Human-readable list of intentional differences from upstream. Zero deviations = the file should not be forked; consume upstream directly. Each entry is one short sentence (e.g. `swap require() for import` or `remove Node 14 fallback`).",
                 "type": "array",
                 "items": {
                   "type": "string"
@@ -151,39 +156,39 @@
                 "type": "string"
               },
               "id": {
-                "pattern": "^[a-z0-9][A-Za-z0-9-]*$",
-                "description": "Stable identifier, unique within the manifest. Starts with lowercase letter or digit; remaining characters are letters/digits/hyphens. Kebab-case preferred, but camelCase segments are allowed (e.g. `export-findNodeAt` when the id mirrors an API name).",
+                "pattern": "^[a-z0-9][a-z0-9-]*(/[A-Za-z0-9_-]+)?$",
+                "description": "Stable identifier, unique within the manifest. Kebab-case (lowercase letters / digits / hyphens). For ids that mirror an external API name, use a namespace prefix: `api/findNodeAt`, `node/parseURL`. The slash separates the kebab namespace from the free-form leaf.",
                 "type": "string"
               },
               "upstream": {
-                "description": "Key into the top-level `upstreams` map.",
+                "description": "Key into the top-level `upstreams` map. The harness errors if no matching upstream entry exists.",
                 "type": "string"
               },
               "criticality": {
                 "minimum": 1,
                 "maximum": 10,
-                "description": "Stay-in-step importance (1 = cosmetic, 10 = security-sensitive). Harness surfaces high-criticality drift louder.",
+                "description": "Stay-in-step importance. Anchors: 1 = cosmetic / nice-to-have; 5 = behavioral parity expected; 10 = security-sensitive. The harness surfaces high-criticality drift louder and gates feature-parity rows on the criticality/10 floor.",
                 "type": "integer"
               },
               "conformance_test": {
-                "description": "Path to a test that enforces behavior parity (modulo documented deviations). Strongly recommended — static checks can't catch silent behavioral drift.",
+                "description": "Path (relative to repo root) of a test that enforces behavior parity (modulo documented deviations). Strongly recommended — static checks catch syntactic drift, not behavioral. A row without a conformance test relies entirely on code-pattern / fixture-snapshot checks.",
                 "type": "string"
               },
               "notes": {
-                "description": "Free-form context — why this row exists, what gotchas to watch for.",
+                "description": "Free-form context: why this row exists, gotchas, links to related issues / PRs / upstream discussions. Read by humans, not by the harness.",
                 "type": "string"
               },
               "pinned_sha": {
                 "pattern": "^[0-9a-f]{40}$",
-                "description": "Full 40-char SHA the submodule is pinned to.",
+                "description": "Full 40-char SHA the submodule is pinned to. Authoritative — the harness compares this against the submodule HEAD, not against `pinned_tag`.",
                 "type": "string"
               },
               "pinned_tag": {
-                "description": "Human-readable release tag (e.g., `v3.2.1`). Optional — the SHA is authoritative.",
+                "description": "Human-readable release tag for reports / PR titles (e.g. `v3.2.1`). Informational only — `pinned_sha` is the source of truth. Useful when an upstream cuts a release without changing semver but moves the SHA.",
                 "type": "string"
               },
               "upgrade_policy": {
-                "description": "track-latest: any new release is actionable; major-gate: only major bumps require review; locked: explicit decision per upgrade.",
+                "description": "`track-latest` = any new release is actionable; updating-lockstep auto-bumps. `major-gate` = patch / minor auto-bump; major bumps surfaced as advisory. `locked` = explicit decision per upgrade; the harness reports drift but never auto-bumps. Pick `locked` when bumping is gated on a coordinated change in another repo (e.g. Node vendoring temporal-rs).",
                 "anyOf": [
                   {
                     "const": "track-latest",
@@ -203,7 +208,7 @@
           },
           {
             "additionalProperties": false,
-            "description": "A behavioral feature reimplemented locally to match upstream behavior. Three-pillar validation: code patterns, test patterns, fixture snapshots.",
+            "description": "A behavioral feature reimplemented locally to match upstream behavior. Three-pillar validation: code patterns + test patterns + fixture snapshot. The total score is averaged across present pillars; rows below the criticality / 10 floor surface as drift.",
             "type": "object",
             "required": ["kind", "id", "upstream", "criticality", "local_area"],
             "properties": {
@@ -212,45 +217,45 @@
                 "type": "string"
               },
               "id": {
-                "pattern": "^[a-z0-9][A-Za-z0-9-]*$",
-                "description": "Stable identifier, unique within the manifest. Starts with lowercase letter or digit; remaining characters are letters/digits/hyphens. Kebab-case preferred, but camelCase segments are allowed (e.g. `export-findNodeAt` when the id mirrors an API name).",
+                "pattern": "^[a-z0-9][a-z0-9-]*(/[A-Za-z0-9_-]+)?$",
+                "description": "Stable identifier, unique within the manifest. Kebab-case (lowercase letters / digits / hyphens). For ids that mirror an external API name, use a namespace prefix: `api/findNodeAt`, `node/parseURL`. The slash separates the kebab namespace from the free-form leaf.",
                 "type": "string"
               },
               "upstream": {
-                "description": "Key into the top-level `upstreams` map.",
+                "description": "Key into the top-level `upstreams` map. The harness errors if no matching upstream entry exists.",
                 "type": "string"
               },
               "criticality": {
                 "minimum": 1,
                 "maximum": 10,
-                "description": "Stay-in-step importance (1 = cosmetic, 10 = security-sensitive). Harness surfaces high-criticality drift louder.",
+                "description": "Stay-in-step importance. Anchors: 1 = cosmetic / nice-to-have; 5 = behavioral parity expected; 10 = security-sensitive. The harness surfaces high-criticality drift louder and gates feature-parity rows on the criticality/10 floor.",
                 "type": "integer"
               },
               "conformance_test": {
-                "description": "Path to a test that enforces behavior parity (modulo documented deviations). Strongly recommended — static checks can't catch silent behavioral drift.",
+                "description": "Path (relative to repo root) of a test that enforces behavior parity (modulo documented deviations). Strongly recommended — static checks catch syntactic drift, not behavioral. A row without a conformance test relies entirely on code-pattern / fixture-snapshot checks.",
                 "type": "string"
               },
               "notes": {
-                "description": "Free-form context — why this row exists, what gotchas to watch for.",
+                "description": "Free-form context: why this row exists, gotchas, links to related issues / PRs / upstream discussions. Read by humans, not by the harness.",
                 "type": "string"
               },
               "local_area": {
-                "description": "Path to the local module/directory implementing the feature. Code pattern scan targets this directory (excluding test files).",
+                "description": "Path (relative to repo root) of the local module / directory implementing the feature. The code-pattern scan targets this directory recursively, excluding test files (matched by `*.test.{ts,mts,js,mjs}` and `*.spec.*`).",
                 "type": "string"
               },
               "test_area": {
-                "description": "Optional path to the directory where tests for this feature live. When absent, the harness searches inside `local_area`.",
+                "description": "Path (relative to repo root) of the directory where tests for this feature live. When absent, the harness searches for tests inside `local_area`. Useful when tests live in a sibling directory (e.g. `local_area=src/auth`, `test_area=test/auth`).",
                 "type": "string"
               },
               "code_patterns": {
-                "description": "Regex patterns the local implementation must contain. Prefer anchored patterns (function signatures) over loose keywords to avoid comment false positives.",
+                "description": "Regex patterns the local implementation must contain. Prefer anchored patterns (function signatures, exported symbols) over loose keywords to avoid matching comments. Each pattern is searched independently across `local_area`; missing patterns lower the code score.",
                 "type": "array",
                 "items": {
                   "type": "string"
                 }
               },
               "test_patterns": {
-                "description": "Regex patterns the test suite must contain.",
+                "description": "Regex patterns the test suite must contain. Same scoring as `code_patterns` but searched across `test_area` (or `local_area` when `test_area` is absent).",
                 "type": "array",
                 "items": {
                   "type": "string"
@@ -258,17 +263,20 @@
               },
               "fixture_check": {
                 "additionalProperties": false,
-                "description": "Golden-input verification. Prefer snapshot-based diffs over hardcoded counts (brittleness lesson from sdxgen's lock-step-features).",
+                "description": "Golden-input verification. Snapshot-based diffs replace the brittle hardcoded-count checks the harness used historically (sdxgen's lock-step-features lesson).",
                 "type": "object",
                 "required": ["fixture_path"],
                 "properties": {
                   "fixture_path": {
+                    "description": "Path (relative to repo root) of the input fixture the local implementation runs against.",
                     "type": "string"
                   },
                   "snapshot_path": {
+                    "description": "Path (relative to repo root) of the snapshot file the implementation's output is diffed against. When absent, the harness only checks that the fixture is processed without error — no output comparison.",
                     "type": "string"
                   },
                   "diff_tolerance": {
+                    "description": "How the snapshot diff is computed. `exact` = byte-identical; the strictest check. `line-by-line` = per-line diff after normalizing line endings (CRLF / LF); tolerates trailing-newline drift. `semantic` = harness-defined deeper comparison (typically AST or normalized JSON for output that has equivalent representations); each row kind documents what `semantic` means in its context.",
                     "anyOf": [
                       {
                         "const": "exact",
@@ -290,7 +298,7 @@
           },
           {
             "additionalProperties": false,
-            "description": "A local reimplementation of an external specification. Drift = the spec was revised.",
+            "description": "A local reimplementation of an external specification. Drift = the spec was revised; we may need to update our impl, the spec_version, or both.",
             "type": "object",
             "required": [
               "kind",
@@ -305,43 +313,45 @@
                 "type": "string"
               },
               "id": {
-                "pattern": "^[a-z0-9][A-Za-z0-9-]*$",
-                "description": "Stable identifier, unique within the manifest. Starts with lowercase letter or digit; remaining characters are letters/digits/hyphens. Kebab-case preferred, but camelCase segments are allowed (e.g. `export-findNodeAt` when the id mirrors an API name).",
+                "pattern": "^[a-z0-9][a-z0-9-]*(/[A-Za-z0-9_-]+)?$",
+                "description": "Stable identifier, unique within the manifest. Kebab-case (lowercase letters / digits / hyphens). For ids that mirror an external API name, use a namespace prefix: `api/findNodeAt`, `node/parseURL`. The slash separates the kebab namespace from the free-form leaf.",
                 "type": "string"
               },
               "upstream": {
-                "description": "Key into the top-level `upstreams` map.",
+                "description": "Key into the top-level `upstreams` map. The harness errors if no matching upstream entry exists.",
                 "type": "string"
               },
               "criticality": {
                 "minimum": 1,
                 "maximum": 10,
-                "description": "Stay-in-step importance (1 = cosmetic, 10 = security-sensitive). Harness surfaces high-criticality drift louder.",
+                "description": "Stay-in-step importance. Anchors: 1 = cosmetic / nice-to-have; 5 = behavioral parity expected; 10 = security-sensitive. The harness surfaces high-criticality drift louder and gates feature-parity rows on the criticality/10 floor.",
                 "type": "integer"
               },
               "conformance_test": {
-                "description": "Path to a test that enforces behavior parity (modulo documented deviations). Strongly recommended — static checks can't catch silent behavioral drift.",
+                "description": "Path (relative to repo root) of a test that enforces behavior parity (modulo documented deviations). Strongly recommended — static checks catch syntactic drift, not behavioral. A row without a conformance test relies entirely on code-pattern / fixture-snapshot checks.",
                 "type": "string"
               },
               "notes": {
-                "description": "Free-form context — why this row exists, what gotchas to watch for.",
+                "description": "Free-form context: why this row exists, gotchas, links to related issues / PRs / upstream discussions. Read by humans, not by the harness.",
                 "type": "string"
               },
               "local_impl": {
+                "description": "Path (relative to repo root) of our reimplementation of the spec. Either a file or a directory.",
                 "type": "string"
               },
               "spec_version": {
+                "description": "Version label of the spec we conform to (e.g. `ECMAScript-2024`, `RFC-9110`, commit SHA, or upstream tag). Free-form — the harness only checks for drift via the upstream submodule, not the version string itself.",
                 "type": "string"
               },
               "spec_path": {
-                "description": "Path within the upstream submodule to the spec document, if applicable.",
+                "description": "Path within the upstream submodule to the spec document. Used to scope drift detection to the spec file (rather than every change in the upstream repo).",
                 "type": "string"
               }
             }
           },
           {
             "additionalProperties": false,
-            "description": "N sibling language ports of one spec within a single project. Drift = one port diverged from its siblings.",
+            "description": "N sibling language ports of one spec within a single project. Drift = a port diverged from its siblings (one implemented, others opt-out without reason / or vice versa), or a `rejected` anti-pattern was reintroduced.",
             "type": "object",
             "required": [
               "kind",
@@ -357,38 +367,41 @@
                 "type": "string"
               },
               "id": {
-                "pattern": "^[a-z0-9][A-Za-z0-9-]*$",
-                "description": "Stable identifier, unique within the manifest. Starts with lowercase letter or digit; remaining characters are letters/digits/hyphens. Kebab-case preferred, but camelCase segments are allowed (e.g. `export-findNodeAt` when the id mirrors an API name).",
+                "pattern": "^[a-z0-9][a-z0-9-]*(/[A-Za-z0-9_-]+)?$",
+                "description": "Stable identifier, unique within the manifest. Kebab-case (lowercase letters / digits / hyphens). For ids that mirror an external API name, use a namespace prefix: `api/findNodeAt`, `node/parseURL`. The slash separates the kebab namespace from the free-form leaf.",
                 "type": "string"
               },
               "name": {
+                "description": "Short human-readable label for this row (e.g. `Range parsing`, `Async iterators`). Used in report headers; not parsed.",
                 "type": "string"
               },
               "description": {
+                "description": "One-paragraph description of what behavior this row asserts on each port. Read by humans; not parsed.",
                 "type": "string"
               },
               "category": {
-                "description": "Grouping tag. `rejected` is reserved for anti-patterns (every port must be opt-out; reintroduction exits 2).",
+                "description": "Grouping tag for report aggregation (e.g. `parser`, `runtime`, `api`). The single magic value is `rejected` — RESERVED for anti-patterns: every port MUST be `opt-out`, and any port flipping to `implemented` exits 2 ('rejected anti-pattern reintroduced'). Use freely otherwise.",
                 "type": "string"
               },
               "criticality": {
                 "minimum": 1,
                 "maximum": 10,
-                "description": "Stay-in-step importance (1 = cosmetic, 10 = security-sensitive). Harness surfaces high-criticality drift louder.",
+                "description": "Stay-in-step importance. Anchors: 1 = cosmetic / nice-to-have; 5 = behavioral parity expected; 10 = security-sensitive. The harness surfaces high-criticality drift louder and gates feature-parity rows on the criticality/10 floor.",
                 "type": "integer"
               },
               "conformance_test": {
-                "description": "Path to a test that enforces behavior parity (modulo documented deviations). Strongly recommended — static checks can't catch silent behavioral drift.",
+                "description": "Path (relative to repo root) of a test that enforces behavior parity (modulo documented deviations). Strongly recommended — static checks catch syntactic drift, not behavioral. A row without a conformance test relies entirely on code-pattern / fixture-snapshot checks.",
                 "type": "string"
               },
               "notes": {
-                "description": "Free-form context — why this row exists, what gotchas to watch for.",
+                "description": "Free-form context: why this row exists, gotchas, links to related issues / PRs / upstream discussions. Read by humans, not by the harness.",
                 "type": "string"
               },
               "assertions": {
-                "description": "Open-ended assertion list. Each has a `kind` string the harness dispatches on. Unknown kinds are skipped with a log line.",
+                "description": "Assertions checked against each port. Each entry is `{kind: string, ...}`; the harness dispatches on `kind`. See AssertionSchema description for known kinds; unknown kinds skip with a log line. Mutually compatible with `matrix_files` (a row can have both, neither, or one).",
                 "type": "array",
                 "items": {
+                  "description": "A typed assertion the lang-parity row asserts on each port. Shape: `{kind: string, ...kind-specific fields}`. The lockstep harness dispatches on `kind`; per-kind contracts are documented in the harness, not here.",
                   "type": "object",
                   "patternProperties": {
                     "^(.*)$": {}
@@ -396,23 +409,24 @@
                 }
               },
               "matrix_files": {
-                "description": "For inventory rows that index other lockstep-lang-*.json files. Paths relative to this manifest.",
+                "description": "Paths (relative to this manifest) of `lockstep-lang-*.json` sub-manifests this row indexes. For inventory-style rows that group many smaller checks under one parent. The harness loads each and merges its rows.",
                 "type": "array",
                 "items": {
                   "type": "string"
                 }
               },
               "ports": {
-                "description": "Per-site status. Keys must match top-level `sites`.",
+                "description": "Per-port status map. Keys MUST match top-level `sites` keys exactly — the harness errors on stray ports / missing sites. Each value is `{status: 'implemented' | 'opt-out', ...}` per PortStatusSchema.",
                 "type": "object",
                 "patternProperties": {
                   "^(.*)$": {
                     "additionalProperties": false,
-                    "description": "Per-port status for a lang-parity row. `implemented` = port meets assertions; `opt-out` = port consciously skips, requires non-empty `reason`.",
+                    "description": "Per-port status for a lang-parity row. The `ports` map on a row pairs each top-level `sites` key with one of these.",
                     "type": "object",
                     "required": ["status"],
                     "properties": {
                       "status": {
+                        "description": "`implemented` = port meets the row's assertions; `opt-out` = port consciously skips this row (requires `reason`).",
                         "anyOf": [
                           {
                             "const": "implemented",
@@ -425,15 +439,15 @@
                         ]
                       },
                       "reason": {
-                        "description": "Required when status is `opt-out`. Explain why.",
+                        "description": "Why this port opts out. SCHEMA-CONDITIONAL: required when status is `opt-out`. The TypeBox type cannot express the conditional, but the harness rejects opt-out rows with empty / missing reason.",
                         "type": "string"
                       },
                       "path": {
-                        "description": "Optional path to the port's implementation of this row. Useful for module-inventory rows where each language points at a different directory.",
+                        "description": "Optional path to this port's implementation of the row. Useful for module-inventory rows where each language points at a different directory; redundant when the port's overall layout already encodes the path.",
                         "type": "string"
                       },
                       "note": {
-                        "description": "Optional free-form note attached to a specific port's status.",
+                        "description": "Optional free-form note attached to this specific port's status. For multi-port context, prefer the row-level `notes` field.",
                         "type": "string"
                       }
                     }

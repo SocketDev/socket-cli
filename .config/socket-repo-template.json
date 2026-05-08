@@ -2,5 +2,6 @@
   "$schema": "./socket-repo-template-schema.json",
   "schemaVersion": 1,
   "repoName": "socket-cli",
-  "kind": "consumer"
+  "layout": "monorepo",
+  "native": "consumer"
 }

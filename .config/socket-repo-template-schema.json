@@ -2,9 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/SocketDev/socket-repo-template-schema.json",
   "title": "socket-repo-template per-repo config",
-  "description": "Per-repo socket-repo-template config. Canonical path: `.config/socket-repo-template.json` (legacy: `.socket-repo-template.json` at the repo root).",
+  "description": "Per-repo socket-repo-template config. Two valid locations: `.config/socket-repo-template.json` (primary) or `.socket-repo-template.json` at the repo root (alternative). Both are first-class — pick the location that fits your repo's convention.",
   "type": "object",
-  "required": ["schemaVersion", "repoName", "kind"],
+  "required": ["schemaVersion", "repoName", "layout", "native"],
   "properties": {
     "$schema": {
       "description": "JSON Schema reference for editor autocompletion. Conventionally `./socket-repo-template-schema.json` — both the config and its schema live side-by-side in `.config/`.",
@@ -17,18 +17,27 @@
     },
     "repoName": {
       "pattern": "^[a-z0-9][a-z0-9-]*$",
-      "description": "Canonical repo basename (e.g. `socket-lib`, `ultrathink`). Used for kind-independent exemptions like the oxlint `socket-lib` carve-out.",
+      "description": "Canonical repo basename (e.g. `socket-lib`, `ultrathink`). Used for layout / native-independent exemptions like the oxlint `socket-lib` carve-out.",
       "type": "string"
     },
-    "kind": {
-      "description": "Fleet repo category. Determines which opt-in files the repo must ship and which it must not. See README.md \"Fleet kinds\" for the table.",
+    "layout": {
+      "description": "Package layout. `single-package` = one `package.json` at root, no `packages/`. `monorepo` = pnpm workspaces under `packages/`.",
       "anyOf": [
         {
           "const": "single-package",
           "type": "string"
         },
         {
-          "const": "mono-no-native",
+          "const": "monorepo",
+          "type": "string"
+        }
+      ]
+    },
+    "native": {
+      "description": "Native-binary supply-chain role. `none` = pure-npm publish path. `consumer` = pulls prebuilt binaries from a sibling producer. `producer` = ships native artifacts via GH releases. `both` = consumes one set, produces another. (Per-language ports live in `lockstep.json` `lang-parity` rows, not here.)",
+      "anyOf": [
+        {
+          "const": "none",
           "type": "string"
         },
         {
@@ -41,10 +50,6 @@
         },
         {
           "const": "both",
-          "type": "string"
-        },
-        {
-          "const": "lang-ports",
           "type": "string"
         }
       ]

@@ -87,6 +87,22 @@ The Anthropic docs codify several rules; honor them:
 - Prefer **gerund form** for the name (`processing-pdfs`, `scanning-quality`); noun-phrase (`pdf-processing`) and verb-imperative (`process-pdfs`) are acceptable alternatives, but pick one and be consistent across the fleet.
 - Use forward slashes in any path the skill references — never backslashes, even in docs that target Windows users.
 
+## Fleet repo references
+
+When scaffolding a new fleet repo, or when a sync question arises ("how does the fleet do X?"), mimic the reference that matches both axes (`layout` + `native`) in `.config/socket-repo-template.json`:
+
+| layout × native | Best reference | Notes |
+|---|---|---|
+| `single-package` × `none` | **`socket-packageurl-js`** or **`socket-sdk-js`** | Clean `pnpm-workspace.yaml`, canonical `scripts/{check,fix,clean,cover,security,update,lockstep,build}.mts`, simple `lockstep.json` with empty `rows`. |
+| `monorepo` × `producer` | **`socket-btm`** | 10+ packages (`build-infra`, per-tool-builder workspaces), deep `pnpm --filter` patterns, full `packages: [packages/*, .claude/hooks/*]`, richer catalog, lockstep + submodules + native release matrix. The canonical "monorepo done right" reference. |
+| `monorepo` × `consumer` | **`socket-cli`** | 3-package layout (`build-infra`, `cli`, `package-builder`); consumes prebuilts from socket-btm. |
+| `monorepo` × `none` | `socket-registry` | Mono npm publish path, no native artifacts via the fleet's release-checksums infra. |
+| `monorepo` × `none` + lang-parity | `ultrathink` | Per-language ports tracked entirely in `lockstep.json` `lang-parity` rows, not via release-checksums. Each port has its own build matrix. |
+| Library with vendored upstreams | `socket-lib` | Shows `packages: [.claude/hooks/*, tools/*, vendor/*]`, vendored-as-workspace pattern. |
+| Skill marketplace / no real build graph | `skills` | Dep-free shims for `clean.mts` / `cover.mts` are acceptable; document the deviation in the script's header. |
+
+**Don't cross axes when picking a reference.** A `single-package` × `none` repo (`socket-lib`) and a `monorepo` × `consumer` repo (`socket-cli`) ship very different `scripts/*.mts` shapes — `socket-cli`'s scripts assume `packages/` and `pnpm --filter`, which break in a single-package repo. Match both axes.
+
 ## References
 
 Authoritative upstream docs — keep these as the source of truth, mirror their guidance here only when fleet specifics demand it:

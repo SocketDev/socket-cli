@@ -25,21 +25,35 @@
 import { Type, type Static } from '@sinclair/typebox'
 
 // ---------------------------------------------------------------------------
-// Kind enum.
+// Two orthogonal axes describe a fleet repo:
+//
+//   layout  — package shape: single-package vs monorepo.
+//   native  — native-binary supply-chain role: none / consumer /
+//             producer / both.
+//
+// Per-language ports (e.g. ultrathink's cpp/go/rust/typescript ports
+// of one spec) live in `lockstep.json` `lang-parity` rows, not here —
+// the manifest is the source of truth for parity tracking.
 // ---------------------------------------------------------------------------
 
-const KindSchema = Type.Union(
+const LayoutSchema = Type.Union(
+  [Type.Literal('single-package'), Type.Literal('monorepo')],
+  {
+    description:
+      'Package layout. `single-package` = one `package.json` at root, no `packages/`. `monorepo` = pnpm workspaces under `packages/`.',
+  },
+)
+
+const NativeSchema = Type.Union(
   [
-    Type.Literal('single-package'),
-    Type.Literal('mono-no-native'),
+    Type.Literal('none'),
     Type.Literal('consumer'),
     Type.Literal('producer'),
     Type.Literal('both'),
-    Type.Literal('lang-ports'),
   ],
   {
     description:
-      'Fleet repo category. Determines which opt-in files the repo must ship and which it must not. See README.md "Fleet kinds" for the table.',
+      'Native-binary supply-chain role. `none` = pure-npm publish path. `consumer` = pulls prebuilt binaries from a sibling producer. `producer` = ships native artifacts via GH releases. `both` = consumes one set, produces another. (Per-language ports live in `lockstep.json` `lang-parity` rows, not here.)',
   },
 )
 
@@ -245,9 +259,10 @@ export const SocketRepoTemplateConfigSchema = Type.Object(
     repoName: Type.String({
       pattern: '^[a-z0-9][a-z0-9-]*$',
       description:
-        'Canonical repo basename (e.g. `socket-lib`, `ultrathink`). Used for kind-independent exemptions like the oxlint `socket-lib` carve-out.',
+        'Canonical repo basename (e.g. `socket-lib`, `ultrathink`). Used for layout / native-independent exemptions like the oxlint `socket-lib` carve-out.',
     }),
-    kind: KindSchema,
+    layout: LayoutSchema,
+    native: NativeSchema,
     hooks: Type.Optional(HooksSchema),
     scripts: Type.Optional(ScriptsSchema),
     lint: Type.Optional(LintSchema),
@@ -257,11 +272,12 @@ export const SocketRepoTemplateConfigSchema = Type.Object(
   },
   {
     description:
-      'Per-repo socket-repo-template config. Canonical path: `.config/socket-repo-template.json` (legacy: `.socket-repo-template.json` at the repo root).',
+      'Per-repo socket-repo-template config. Two valid locations: `.config/socket-repo-template.json` (primary) or `.socket-repo-template.json` at the repo root (alternative). Both are first-class — pick the location that fits your repo\'s convention.',
   },
 )
 
 export type SocketRepoTemplateConfig = Static<
   typeof SocketRepoTemplateConfigSchema
 >
-export type Kind = Static<typeof KindSchema>
+export type Layout = Static<typeof LayoutSchema>
+export type Native = Static<typeof NativeSchema>
