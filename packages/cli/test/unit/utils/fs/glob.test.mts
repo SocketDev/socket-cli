@@ -350,4 +350,53 @@ describe('utils/fs/glob', () => {
       expect(result).toEqual(['**/node_modules', '**/dist'])
     })
   })
+
+  describe('getWorkspaceGlobs', () => {
+    it('reads pnpm-workspace.yaml packages list for PNPM agent (lines 49-56)', async () => {
+      const { safeReadFile } = vi.mocked(await import('@socketsecurity/lib/fs'))
+      safeReadFile.mockResolvedValueOnce(
+        'packages:\n  - "packages/*"\n  - "apps/*"\n',
+      )
+      const { getWorkspaceGlobs } = await import(
+        '../../../../src/utils/fs/glob.mts'
+      )
+      const result = await getWorkspaceGlobs('pnpm', '/repo')
+      // Workspace patterns are converted to glob form ("packages/*" → "packages/*/").
+      expect(Array.isArray(result)).toBe(true)
+      expect(result.length).toBeGreaterThan(0)
+    })
+
+    it('returns empty array when pnpm-workspace.yaml is missing', async () => {
+      const { safeReadFile } = vi.mocked(await import('@socketsecurity/lib/fs'))
+      safeReadFile.mockResolvedValueOnce(undefined as any)
+      const { getWorkspaceGlobs } = await import(
+        '../../../../src/utils/fs/glob.mts'
+      )
+      const result = await getWorkspaceGlobs('pnpm', '/repo')
+      expect(result).toEqual([])
+    })
+
+    it('returns empty array when pnpm-workspace.yaml is malformed', async () => {
+      const { safeReadFile } = vi.mocked(await import('@socketsecurity/lib/fs'))
+      safeReadFile.mockResolvedValueOnce('this is not :::valid::: yaml{{{')
+      const { getWorkspaceGlobs } = await import(
+        '../../../../src/utils/fs/glob.mts'
+      )
+      const result = await getWorkspaceGlobs('pnpm', '/repo')
+      expect(result).toEqual([])
+    })
+  })
+
+  describe('globWorkspace', () => {
+    it('returns empty array when no workspace globs (line 299-300)', async () => {
+      const { safeReadFile } = vi.mocked(await import('@socketsecurity/lib/fs'))
+      // pnpm-workspace.yaml missing → empty workspaceGlobs → early-return [].
+      safeReadFile.mockResolvedValueOnce(undefined as any)
+      const { globWorkspace } = await import(
+        '../../../../src/utils/fs/glob.mts'
+      )
+      const result = await globWorkspace('pnpm', '/nonexistent/repo')
+      expect(result).toEqual([])
+    })
+  })
 })
