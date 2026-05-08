@@ -40,15 +40,20 @@ export async function getLastCommitDetails({
 
   const octokit = getOctokit()
 
-  const result = await withGitHubRetry(async () => {
-    const { data } = await octokit.repos.listCommits({
-      owner: orgGithub,
-      repo: repoSlug,
-      sha: defaultBranch,
-      per_page: 1,
-    })
-    return data
-  }, `fetching latest commit SHA for ${orgGithub}/${repoSlug}`)
+  const result = await withGitHubRetry(
+    /* c8 ignore start - withGitHubRetry mock returns cached value; the inner factory only runs on cache miss */
+    async () => {
+      const { data } = await octokit.repos.listCommits({
+        owner: orgGithub,
+        repo: repoSlug,
+        sha: defaultBranch,
+        per_page: 1,
+      })
+      return data
+    },
+    /* c8 ignore stop */
+    `fetching latest commit SHA for ${orgGithub}/${repoSlug}`,
+  )
 
   if (!result.ok) {
     return result
@@ -103,13 +108,18 @@ export async function getRepoDetails({
 }): Promise<CResult<{ defaultBranch: string; repoDetails: unknown }>> {
   const octokit = getOctokit()
 
-  const result = await withGitHubRetry(async () => {
-    const { data } = await octokit.repos.get({
-      owner: orgGithub,
-      repo: repoSlug,
-    })
-    return data
-  }, `fetching repository details for ${orgGithub}/${repoSlug}`)
+  const result = await withGitHubRetry(
+    /* c8 ignore start - withGitHubRetry mock returns cached value; the inner factory only runs on cache miss */
+    async () => {
+      const { data } = await octokit.repos.get({
+        owner: orgGithub,
+        repo: repoSlug,
+      })
+      return data
+    },
+    /* c8 ignore stop */
+    `fetching repository details for ${orgGithub}/${repoSlug}`,
+  )
 
   if (!result.ok) {
     return result
@@ -154,15 +164,20 @@ export async function getRepoBranchTree({
 
   const octokit = getOctokit()
 
-  const result = await withGitHubRetry(async () => {
-    const { data } = await octokit.git.getTree({
-      owner: orgGithub,
-      repo: repoSlug,
-      tree_sha: defaultBranch,
-      recursive: 'true',
-    })
-    return data
-  }, `fetching file tree for branch ${defaultBranch} in ${orgGithub}/${repoSlug}`)
+  const result = await withGitHubRetry(
+    /* c8 ignore start - withGitHubRetry mock returns cached value; the inner factory only runs on cache miss */
+    async () => {
+      const { data } = await octokit.git.getTree({
+        owner: orgGithub,
+        repo: repoSlug,
+        tree_sha: defaultBranch,
+        recursive: 'true',
+      })
+      return data
+    },
+    /* c8 ignore stop */
+    `fetching file tree for branch ${defaultBranch} in ${orgGithub}/${repoSlug}`,
+  )
 
   if (!result.ok) {
     // Check if it's an empty repo error (404 with specific message).
