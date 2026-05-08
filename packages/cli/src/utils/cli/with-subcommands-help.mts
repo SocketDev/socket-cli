@@ -95,6 +95,7 @@ export function buildHelpLines(opts: BuildHelpLinesOptions): string[] {
       'login',
       'logout',
       'manifest',
+      'mcp',
       NPM,
       NPX,
       'nuget',
