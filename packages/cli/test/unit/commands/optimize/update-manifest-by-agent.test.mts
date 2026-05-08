@@ -22,6 +22,7 @@ import {
   updatePkgJsonField,
   updatePnpmField,
   updateResolutionsField,
+  usesPnpmWorkspaceOverrides,
 } from '../../../../src/commands/optimize/update-manifest-by-agent.mts'
 
 import type { EditablePackageJson } from '@socketsecurity/lib/packages'
@@ -152,65 +153,97 @@ describe('update-manifest-by-agent', () => {
       })
     })
 
-    it('uses resolutions for bun agent', () => {
-      updateManifest('bun', pkgJson, { lodash: '4.17.21' })
+    // Build a minimal EnvDetails-shaped object. Production code only
+    // touches `editablePkgJson`, `agent`, `agentVersion`, `pkgPath`.
+    const makeEnv = (
+      overrides: Record<string, unknown> = {},
+    ) => ({
+      agent: 'pnpm',
+      agentVersion: { major: 10, minor: 0, patch: 0 },
+      editablePkgJson: pkgJson,
+      pkgPath: '/tmp/test-pkg',
+      ...overrides,
+    }) as any
+
+    it('uses resolutions for bun agent', async () => {
+      await updateManifest('bun', makeEnv({ agent: 'bun' }), { lodash: '4.17.21' })
       // Since field doesn't exist, fromJSON is called.
       expect(pkgJson.fromJSON).toHaveBeenCalled()
     })
 
-    it('uses pnpm field for pnpm agent', () => {
-      updateManifest('pnpm', pkgJson, { lodash: '4.17.21' })
+    it('uses pnpm field for pnpm 10 agent (legacy package.json path)', async () => {
+      await updateManifest(
+        'pnpm',
+        makeEnv({ agent: 'pnpm', agentVersion: { major: 10, minor: 0, patch: 0 } }),
+        { lodash: '4.17.21' },
+      )
       expect(pkgJson.fromJSON).toHaveBeenCalled()
     })
 
-    it('uses overrides for vlt agent', () => {
-      updateManifest('vlt', pkgJson, { lodash: '4.17.21' })
+    it('uses overrides for vlt agent', async () => {
+      await updateManifest('vlt', makeEnv({ agent: 'vlt' }), { lodash: '4.17.21' })
       expect(pkgJson.fromJSON).toHaveBeenCalled()
     })
 
-    it('uses resolutions for yarn/berry agent', () => {
-      updateManifest('yarn/berry', pkgJson, { lodash: '4.17.21' })
+    it('uses resolutions for yarn/berry agent', async () => {
+      await updateManifest('yarn/berry', makeEnv({ agent: 'yarn/berry' }), {
+        lodash: '4.17.21',
+      })
       expect(pkgJson.fromJSON).toHaveBeenCalled()
     })
 
-    it('uses resolutions for yarn/classic agent', () => {
-      updateManifest('yarn/classic', pkgJson, { lodash: '4.17.21' })
+    it('uses resolutions for yarn/classic agent', async () => {
+      await updateManifest('yarn/classic', makeEnv({ agent: 'yarn/classic' }), {
+        lodash: '4.17.21',
+      })
       expect(pkgJson.fromJSON).toHaveBeenCalled()
     })
 
-    it('uses overrides for npm agent (default)', () => {
-      updateManifest('npm', pkgJson, { lodash: '4.17.21' })
+    it('uses overrides for npm agent (default)', async () => {
+      await updateManifest('npm', makeEnv({ agent: 'npm' }), {
+        lodash: '4.17.21',
+      })
       expect(pkgJson.fromJSON).toHaveBeenCalled()
     })
 
-    it('uses overrides for unknown agent', () => {
-      updateManifest('unknown' as any, pkgJson, { lodash: '4.17.21' })
+    it('uses overrides for unknown agent', async () => {
+      await updateManifest('unknown' as any, makeEnv({ agent: 'unknown' }), {
+        lodash: '4.17.21',
+      })
       expect(pkgJson.fromJSON).toHaveBeenCalled()
     })
 
-    it('updates existing resolutions for yarn', () => {
+    it('updates existing resolutions for yarn', async () => {
       pkgJson = createEditablePkgJson({
         name: 'test',
         resolutions: { typescript: '5.0.0' },
       })
-      updateManifest('yarn/berry', pkgJson, { lodash: '4.17.21' })
+      await updateManifest(
+        'yarn/berry',
+        makeEnv({ agent: 'yarn/berry', editablePkgJson: pkgJson }),
+        { lodash: '4.17.21' },
+      )
       expect(pkgJson.update).toHaveBeenCalledWith({
         resolutions: { lodash: '4.17.21' },
       })
     })
 
-    it('updates existing overrides for npm', () => {
+    it('updates existing overrides for npm', async () => {
       pkgJson = createEditablePkgJson({
         name: 'test',
         overrides: { express: '4.17.0' },
       })
-      updateManifest('npm', pkgJson, { lodash: '4.17.21' })
+      await updateManifest(
+        'npm',
+        makeEnv({ agent: 'npm', editablePkgJson: pkgJson }),
+        { lodash: '4.17.21' },
+      )
       expect(pkgJson.update).toHaveBeenCalledWith({
         overrides: { lodash: '4.17.21' },
       })
     })
 
-    it('places new overrides AFTER main when no engines/files anchor exists', () => {
+    it('places new overrides AFTER main when no engines/files anchor exists', async () => {
       // No engines/files -> falls through to getHighestEntryIndex(['exports','imports','main']),
       // which returns the position of `main`; we then place at that index + 1
       // because isPlacingHigher = true. Verifies the L130 +1 path.
@@ -220,7 +253,11 @@ describe('update-manifest-by-agent', () => {
         main: 'index.js',
         scripts: {},
       })
-      updateManifest('npm', pkgJson, { lodash: '4.17.21' })
+      await updateManifest(
+        'npm',
+        makeEnv({ agent: 'npm', editablePkgJson: pkgJson }),
+        { lodash: '4.17.21' },
+      )
 
       expect(pkgJson.fromJSON).toHaveBeenCalled()
       // The new content should include overrides positioned after main.
@@ -229,6 +266,59 @@ describe('update-manifest-by-agent', () => {
       const keys = Object.keys(parsed)
       expect(keys.indexOf('overrides')).toBeGreaterThan(keys.indexOf('main'))
       expect(parsed.overrides).toEqual({ lodash: '4.17.21' })
+    })
+  })
+
+  describe('usesPnpmWorkspaceOverrides', () => {
+    it('returns true for pnpm 11+', () => {
+      expect(
+        usesPnpmWorkspaceOverrides({
+          agent: 'pnpm',
+          agentVersion: { major: 11, minor: 0, patch: 8 } as any,
+        }),
+      ).toBe(true)
+    })
+
+    it('returns true for pnpm 12+', () => {
+      expect(
+        usesPnpmWorkspaceOverrides({
+          agent: 'pnpm',
+          agentVersion: { major: 12, minor: 0, patch: 0 } as any,
+        }),
+      ).toBe(true)
+    })
+
+    it('returns false for pnpm 10', () => {
+      expect(
+        usesPnpmWorkspaceOverrides({
+          agent: 'pnpm',
+          agentVersion: { major: 10, minor: 12, patch: 0 } as any,
+        }),
+      ).toBe(false)
+    })
+
+    it('returns false for pnpm 9', () => {
+      expect(
+        usesPnpmWorkspaceOverrides({
+          agent: 'pnpm',
+          agentVersion: { major: 9, minor: 0, patch: 0 } as any,
+        }),
+      ).toBe(false)
+    })
+
+    it('returns false for non-pnpm agents (regardless of version)', () => {
+      expect(
+        usesPnpmWorkspaceOverrides({
+          agent: 'npm',
+          agentVersion: { major: 11, minor: 0, patch: 0 } as any,
+        }),
+      ).toBe(false)
+      expect(
+        usesPnpmWorkspaceOverrides({
+          agent: 'yarn/berry',
+          agentVersion: { major: 11, minor: 0, patch: 0 } as any,
+        }),
+      ).toBe(false)
     })
   })
 

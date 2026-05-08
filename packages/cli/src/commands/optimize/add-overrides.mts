@@ -306,9 +306,14 @@ export async function addOverrides(
     )
     if (isWorkspaceRoot) {
       for (const { overrides, type } of overridesDataObjects) {
-        updateManifest(
+        // updateManifest is async because the pnpm 11+ path writes to
+        // pnpm-workspace.yaml; older pnpm and other agents resolve
+        // synchronously inside this call.
+        // eslint-disable-next-line no-await-in-loop -- ordering matters:
+        // each agent's overrides write must complete before the next.
+        await updateManifest(
           type,
-          pkgEnvDetails.editablePkgJson,
+          pkgEnvDetails,
           toSortedObject(overrides),
         )
       }

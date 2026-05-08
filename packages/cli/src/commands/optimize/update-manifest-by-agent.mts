@@ -9,7 +9,10 @@ import {
 } from '@socketsecurity/lib/constants/agents'
 import { hasKeys, isObject } from '@socketsecurity/lib/objects'
 
+import { updatePnpmWorkspaceYamlOverrides } from './update-pnpm-workspace-yaml.mts'
+
 import type { Overrides } from './types.mts'
+import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 import type { Agent } from '../../utils/ecosystem/environment.mjs'
 import type { EditablePackageJson } from '@socketsecurity/lib/packages'
 
@@ -60,24 +63,22 @@ export function updatePkgJsonField(
         editablePkgJson.update({
           [field]: {
             ...(isPnpmObj ? oldValue : {}),
-            overrides: {
-              ...(isPnpmObj ? (oldValue as any)[OVERRIDES] : {}),
-              ...value,
-            },
+            [OVERRIDES]: value,
           },
-        })
+        } as typeof editablePkgJson.content)
+      } else if (isPnpmObj) {
+        // Drop the overrides key but keep the rest of the pnpm config.
+        const { overrides: _omitted, ...rest } = oldValue as Record<
+          string,
+          unknown
+        >
+        editablePkgJson.update({
+          [field]: hasKeys(rest) ? rest : undefined,
+        } as typeof editablePkgJson.content)
       } else {
-        // Properties with undefined values are deleted when saved as JSON.
-        editablePkgJson.update(
-          (hasKeys(oldValue)
-            ? {
-                [field]: {
-                  ...(isPnpmObj ? oldValue : {}),
-                  overrides: undefined,
-                },
-              }
-            : { [field]: undefined }) as typeof editablePkgJson.content,
-        )
+        editablePkgJson.update({
+          [field]: undefined,
+        } as typeof editablePkgJson.content)
       }
     } else if (field === OVERRIDES || field === RESOLUTIONS) {
       // Properties with undefined values are deleted when saved as JSON.
@@ -159,17 +160,54 @@ export function updatePnpmField(
   updatePkgJsonField(editablePkgJson, PNPM, overrides)
 }
 
-export function updateManifest(
+/**
+ * pnpm 11+ reads `overrides:` from `pnpm-workspace.yaml`. The
+ * `pnpm.overrides` block in package.json is silently ignored. Returns
+ * true when the host repo's `packageManager` field declares pnpm 11+,
+ * meaning we should write to the YAML file instead of package.json.
+ */
+export function usesPnpmWorkspaceOverrides(
+  pkgEnvDetails: Pick<EnvDetails, 'agent' | 'agentVersion'>,
+): boolean {
+  return pkgEnvDetails.agent === PNPM && pkgEnvDetails.agentVersion.major >= 11
+}
+
+/**
+ * Apply overrides to the host repo's manifest, picking the correct
+ * destination based on agent + version:
+ *   - pnpm 11+ → pnpm-workspace.yaml `overrides:` block (async write,
+ *               preserves comments via the `yaml` package's Document API).
+ *   - pnpm < 11 → package.json `pnpm.overrides`.
+ *   - bun / yarn-classic / yarn-berry → package.json `resolutions`.
+ *   - vlt / npm / fallback → package.json `overrides`.
+ *
+ * The `pkgEnvDetails` parameter carries `agentVersion` (a SemVer
+ * instance) needed to disambiguate pnpm versions. Callers reach this
+ * via `applyOptimization()` which already has the env in scope.
+ */
+export async function updateManifest(
   agent: Agent,
-  editablePkgJson: EditablePackageJson,
+  pkgEnvDetails: EnvDetails,
   overrides: Overrides,
-): void {
+): Promise<void> {
+  const { editablePkgJson } = pkgEnvDetails
   switch (agent) {
     case BUN:
       updateResolutionsField(editablePkgJson, overrides)
       return
     case PNPM:
-      updatePnpmField(editablePkgJson, overrides)
+      if (usesPnpmWorkspaceOverrides(pkgEnvDetails)) {
+        // Route to pnpm-workspace.yaml. Also clear any stale
+        // `pnpm.overrides` in package.json — pnpm 11 ignores it, but
+        // leaving it there is misleading + drift-prone.
+        updatePnpmField(editablePkgJson, {})
+        await updatePnpmWorkspaceYamlOverrides(
+          pkgEnvDetails.pkgPath,
+          overrides,
+        )
+      } else {
+        updatePnpmField(editablePkgJson, overrides)
+      }
       return
     case VLT:
       updateOverridesField(editablePkgJson, overrides)
