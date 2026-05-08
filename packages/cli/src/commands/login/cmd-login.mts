@@ -1,7 +1,6 @@
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 
 import { attemptLogin } from './attempt-login.mts'
-import { HOME } from '../../env/home.mts'
 import { outputDryRunWrite } from '../../utils/dry-run/output.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
@@ -83,7 +82,8 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    const configPath = `${HOME}/.config/socket/config.json`
+    // Runtime read so tests that mutate process.env['HOME'] pick up changes.
+    const configPath = `${process.env['HOME']}/.config/socket/config.json`
     const changes = [
       'Prompt for Socket API token',
       'Verify token with Socket API',

@@ -1,5 +1,4 @@
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
-import { HOME } from '../../env/home.mts'
 import { outputDryRunWrite } from '../../utils/dry-run/output.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
@@ -131,7 +130,8 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
       }
 
       if (dryRun) {
-        const configPath = `${HOME}/.config/socket/config.json`
+        // Runtime read so tests that mutate process.env['HOME'] pick up changes.
+        const configPath = `${process.env['HOME']}/.config/socket/config.json`
         const changes = spec.needsValue
           ? [`Set "${key}" to: ${value}`]
           : [`Remove "${key}" from config`]
