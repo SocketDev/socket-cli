@@ -465,4 +465,27 @@ describe('utils/config', () => {
       expect(getConfigValueOrUndef('defaultOrg')).toBe('my-org')
     })
   })
+
+  describe('getConfigValue', () => {
+    afterEach(() => {
+      resetConfigForTesting()
+    })
+
+    it('returns the !ok keyResult for invalid keys (line 243)', () => {
+      const result = getConfigValue('totally-bogus' as any)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toContain('Invalid config key')
+      }
+    })
+
+    it('returns ok with data for valid keys', () => {
+      overrideCachedConfig(JSON.stringify({ defaultOrg: 'good-org' }))
+      const result = getConfigValue('defaultOrg')
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data).toBe('good-org')
+      }
+    })
+  })
 })
