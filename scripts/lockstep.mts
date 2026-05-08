@@ -184,7 +184,8 @@ function loadManifestTree(rootManifestPath: string): {
   for (const rel of includes) {
     const subPath = path.resolve(baseDir, rel)
     const sub = readManifest(subPath)
-    const area = sub.area ?? path.basename(rel, '.json').replace(/^lockstep-/, '')
+    const area =
+      sub.area ?? path.basename(rel, '.json').replace(/^lockstep-/, '')
     areas.push({ area, manifest: sub })
   }
 

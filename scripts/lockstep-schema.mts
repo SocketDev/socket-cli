@@ -49,7 +49,7 @@ const UpstreamRefSchema = Type.String({
 
 const ConformanceTestSchema = Type.String({
   description:
-    "Path (relative to repo root) of a test that enforces behavior parity (modulo documented deviations). Strongly recommended — static checks catch syntactic drift, not behavioral. A row without a conformance test relies entirely on code-pattern / fixture-snapshot checks.",
+    'Path (relative to repo root) of a test that enforces behavior parity (modulo documented deviations). Strongly recommended — static checks catch syntactic drift, not behavioral. A row without a conformance test relies entirely on code-pattern / fixture-snapshot checks.',
 })
 
 const NotesSchema = Type.String({
@@ -59,13 +59,10 @@ const NotesSchema = Type.String({
 
 const PortStatusSchema = Type.Object(
   {
-    status: Type.Union(
-      [Type.Literal('implemented'), Type.Literal('opt-out')],
-      {
-        description:
-          '`implemented` = port meets the row\'s assertions; `opt-out` = port consciously skips this row (requires `reason`).',
-      },
-    ),
+    status: Type.Union([Type.Literal('implemented'), Type.Literal('opt-out')], {
+      description:
+        "`implemented` = port meets the row's assertions; `opt-out` = port consciously skips this row (requires `reason`).",
+    }),
     reason: Type.Optional(
       Type.String({
         description:
@@ -123,7 +120,7 @@ const SiteSchema = Type.Object(
     language: Type.Optional(
       Type.String({
         description:
-          'Language label for human reports (e.g. `cpp`, `go`, `rust`, `typescript`). The harness does no language-specific processing — it\'s purely informational.',
+          "Language label for human reports (e.g. `cpp`, `go`, `rust`, `typescript`). The harness does no language-specific processing — it's purely informational.",
       }),
     ),
   },
@@ -194,7 +191,8 @@ const FileForkRowSchema = Type.Object(
     conformance_test: Type.Optional(ConformanceTestSchema),
     notes: Type.Optional(NotesSchema),
     local: Type.String({
-      description: 'Path (relative to repo root) of our ported copy of the upstream file.',
+      description:
+        'Path (relative to repo root) of our ported copy of the upstream file.',
     }),
     upstream_path: Type.String({
       description:
@@ -208,7 +206,7 @@ const FileForkRowSchema = Type.Object(
     deviations: Type.Array(Type.String(), {
       minItems: 1,
       description:
-        "Human-readable list of intentional differences from upstream. Zero deviations = the file should not be forked; consume upstream directly. Each entry is one short sentence (e.g. `swap require() for import` or `remove Node 14 fallback`).",
+        'Human-readable list of intentional differences from upstream. Zero deviations = the file should not be forked; consume upstream directly. Each entry is one short sentence (e.g. `swap require() for import` or `remove Node 14 fallback`).',
     }),
   },
   {
@@ -445,7 +443,7 @@ export const LockstepManifestSchema = Type.Object(
   },
   {
     description:
-      "Unified lock-step manifest shared across Socket repos. One schema, all cases — the `kind` discriminator on each row selects which flavor of lock-step applies. Single-file manifests work for repos with one cohesive concern; the `includes[]` field carves a manifest into per-area files (e.g. lockstep-acorn.json + lockstep-build.json) when one repo tracks multiple independent concerns.",
+      'Unified lock-step manifest shared across Socket repos. One schema, all cases — the `kind` discriminator on each row selects which flavor of lock-step applies. Single-file manifests work for repos with one cohesive concern; the `includes[]` field carves a manifest into per-area files (e.g. lockstep-acorn.json + lockstep-build.json) when one repo tracks multiple independent concerns.',
   },
 )
 

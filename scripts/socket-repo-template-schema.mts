@@ -1,14 +1,14 @@
 /**
  * @fileoverview TypeBox schema for the per-fleet-repo socket-repo-template
- * config consumed by `sync-scaffolding`. Canonical filename is
- * `.config/socket-repo-template.json`; the legacy
- * `.socket-repo-template.json` at the repo root is still accepted by
- * the loader for back-compat.
+ * config consumed by `sync-scaffolding`. Two valid locations:
+ * `.config/socket-repo-template.json` (primary) or
+ * `.socket-repo-template.json` at the repo root (alternative). Both are
+ * first-class — pick the location that fits your repo's convention.
  *
  * Each fleet repo (socket-lib, socket-cli, ultrathink, …) ships this
- * config declaring its kind + any per-repo opt-ins. The runner reads
- * it to decide which optional files the repo is expected to ship and
- * which it must not ship.
+ * config declaring its `layout` + `native` axes plus any per-repo
+ * opt-ins. The runner reads it to decide which optional files the
+ * repo is expected to ship and which it must not ship.
  *
  * Source-of-truth flow:
  *   - This TypeBox source → `Static<typeof SocketRepoTemplateConfigSchema>`
@@ -272,7 +272,7 @@ export const SocketRepoTemplateConfigSchema = Type.Object(
   },
   {
     description:
-      'Per-repo socket-repo-template config. Two valid locations: `.config/socket-repo-template.json` (primary) or `.socket-repo-template.json` at the repo root (alternative). Both are first-class — pick the location that fits your repo\'s convention.',
+      "Per-repo socket-repo-template config. Two valid locations: `.config/socket-repo-template.json` (primary) or `.socket-repo-template.json` at the repo root (alternative). Both are first-class — pick the location that fits your repo's convention.",
   },
 )
 

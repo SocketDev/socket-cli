@@ -23,7 +23,11 @@ const rootDir = path.resolve(__dirname, '..')
 // Schema lives in `.config/` next to the per-repo
 // `.config/socket-repo-template.json` it describes — the marker's
 // `$schema` ref is `./socket-repo-template-schema.json`.
-const outPath = path.join(rootDir, '.config', 'socket-repo-template-schema.json')
+const outPath = path.join(
+  rootDir,
+  '.config',
+  'socket-repo-template-schema.json',
+)
 
 const enriched = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
