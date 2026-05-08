@@ -484,4 +484,45 @@ describe('socket fix --limit behavior verification', () => {
       expect(ghsaArgs).toEqual(['GHSA-1111-1111-1111'])
     })
   })
+
+  describe('early-return error paths', () => {
+    it('returns SDK setup error when setupSdk fails (line 110)', async () => {
+      mockSetupSdk.mockResolvedValueOnce({
+        ok: false,
+        message: 'Auth Error',
+        cause: 'Invalid token',
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: ['GHSA-1111-1111-1111'],
+      })
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('Auth Error')
+      }
+      // spawnCoanaDlx should never run when SDK setup fails.
+      expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
+    })
+
+    it('returns supported-files error when fetch fails (line 117)', async () => {
+      mockFetchSupportedScanFileNames.mockResolvedValueOnce({
+        ok: false,
+        message: 'API Error',
+        cause: 'Network timeout',
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: ['GHSA-1111-1111-1111'],
+      })
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('API Error')
+      }
+      expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
+    })
+  })
 })
