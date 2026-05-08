@@ -103,6 +103,55 @@ When scaffolding a new fleet repo, or when a sync question arises ("how does the
 
 **Don't cross axes when picking a reference.** A `single-package` × `none` repo (`socket-lib`) and a `monorepo` × `consumer` repo (`socket-cli`) ship very different `scripts/*.mts` shapes — `socket-cli`'s scripts assume `packages/` and `pnpm --filter`, which break in a single-package repo. Match both axes.
 
+## Build-tool decision
+
+The fleet standardizes on the **VoidZero tool suite** for JavaScript/TypeScript tooling. VoidZero (https://voidzero.dev) maintains the unified upstream stack we adopt component-by-component:
+
+| Layer | Tool | Status in the fleet |
+|---|---|---|
+| Test runner | **Vitest** | ✓ Adopted fleet-wide (catalog-pinned). |
+| Linter | **Oxlint** (Oxc) | ✓ Adopted fleet-wide. |
+| Formatter | **Oxfmt** (Oxc) | ✓ Adopted fleet-wide. |
+| Bundler (libraries) | **esbuild** today; **Rolldown** under evaluation | Migration tracked separately; pilot in socket-packageurl-js. |
+| Dev server / app build | **Vite** | Used implicitly via Vitest; not directly invoked by the fleet's library repos. |
+| Unified CLI / monorepo orchestrator | **Vite+** | **Not adopted.** Alpha-stage; revenue-via-enterprise-support trajectory; no concrete pain point our existing `pnpm run *` orchestration doesn't already solve. Reconsider when (a) Vite+ ships 1.0 stable, AND (b) we have a problem it solves better than current scaffolding. |
+
+**Why component-by-component, not the bundle.** Each VoidZero component matures independently. Adopting individually mature components (Vitest 4.x, Oxlint 1.5x, Oxfmt 0.37+, Rolldown 1.0+) lets the fleet move at the pace of the slowest part — not at the pace of the whole bundle. Adopting Vite+ would couple the fleet to whichever component is least mature at any given time.
+
+**Rolldown vs esbuild.** Rolldown 1.0 (May 2026) ships with Rollup-API compatibility + esbuild-equivalent perf + better chunking control. For library repos that publish CommonJS-and-ESM dual entry (socket-lib, socket-sdk-js, socket-packageurl-js), the chunking-control win matters when output size matters; esbuild's simpler model still wins on tiny single-entry bundles. Pilot in socket-packageurl-js (most complex single-package repo): if rolldown works there, the rest of the fleet follows.
+
+**General rule for fleet-wide tool adoption**, regardless of vendor:
+
+- **Stable** (1.0+, not alpha / beta / RC).
+- **License clarity** with no recent shifts (or, if shifted, settled for ≥6 months).
+- **Concrete pain point** the new tool solves better than the current setup. Hype isn't a pain point. "Same vendor as our current toolchain" isn't a pain point.
+
+### Inspiration to borrow from Vite+
+
+We don't adopt Vite+ as a runtime dependency, but its **resolver pattern** is worth absorbing. Vite+ separates "where does this tool's binary live?" from "how do I dispatch the command?" via small per-tool resolver functions:
+
+```ts
+// vite-plus/packages/cli/src/resolve-test.ts
+export async function test(): Promise<{ binPath: string; envs: Record<string, string> }> {
+  const binPath = join(dirname(resolve('@voidzero-dev/vite-plus-test')), 'dist', 'cli.js')
+  return { binPath, envs: { ...DEFAULT_ENVS } }
+}
+```
+
+The Rust dispatcher then execs `binPath` with the user's args. Swapping the tool = changing one resolver; the dispatcher doesn't care.
+
+**Why the fleet should borrow this:** today every fleet repo carries 200–450-line `scripts/check.mts` / `scripts/fix.mts` / `scripts/test.mts` files that duplicate "find the tool binary, build the right args, exec it." Real drift surface — the same logic written 12 times rarely stays in sync.
+
+**Implemented:** `_shared/scripts/resolve-tools.mts` (fleet-shared, byte-identical) exports `resolveLinter()` / `resolveFormatter()` / `resolveTypeChecker()` / `resolveTestRunner()` / `resolveBundler()` — each returning `{ args, envs }` where `args` is the full `pnpm exec` argv (tool name first) and `envs` is the env-var overrides. A `runResolved()` convenience runs the resolved tool and returns `{ exitCode, stdout, stderr }`.
+
+```ts
+// Caller (per-repo scripts/check.mts):
+import { resolveLinter, runResolved } from '../.claude/skills/_shared/scripts/resolve-tools.mts'
+const result = await runResolved(resolveLinter({ mode: 'check' }), { cwd })
+```
+
+The resolver gives us a clean migration path: when rolldown goes fleet-wide, we change `resolveBundler()` to return `['rolldown']` instead of `['esbuild']` — every per-repo `scripts/build.mts` that consults the resolver picks up the swap. Per-repo migration to consume the resolver lands repo-by-repo so we don't bundle bundler-swap risk into a 12-repo cascade.
+
 ## References
 
 Authoritative upstream docs — keep these as the source of truth, mirror their guidance here only when fleet specifics demand it:
