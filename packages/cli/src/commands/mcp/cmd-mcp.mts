@@ -1,4 +1,11 @@
 import { handleMcp } from './handle-mcp.mts'
+import { getMcpHttpMode } from '../../env/mcp-http-mode.mts'
+import { getMcpPort } from '../../env/mcp-port.mts'
+import { getSocketOauthIntrospectionClientId } from '../../env/socket-oauth-introspection-client-id.mts'
+import { getSocketOauthIntrospectionClientSecret } from '../../env/socket-oauth-introspection-client-secret.mts'
+import { getSocketOauthIssuer } from '../../env/socket-oauth-issuer.mts'
+import { getSocketOauthRequiredScopes } from '../../env/socket-oauth-required-scopes.mts'
+import { getTrustProxy } from '../../env/trust-proxy.mts'
 import { commonFlags } from '../../flags.mts'
 import { defineFlags } from '../../meow.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
@@ -130,38 +137,31 @@ export async function run(
     parentName,
   })
 
-  const envHttp = process.env['MCP_HTTP_MODE'] === 'true'
-  const http = cli.flags.http || envHttp
+  const http = cli.flags.http || getMcpHttpMode()
 
   const portFlag = cli.flags.port
   const portRaw =
     portFlag && portFlag > 0
       ? portFlag
-      : Number.parseInt(process.env['MCP_PORT'] || `${DEFAULT_PORT}`, 10)
+      : Number.parseInt(getMcpPort() || `${DEFAULT_PORT}`, 10)
   const port = Number.isFinite(portRaw) && portRaw > 0 ? portRaw : DEFAULT_PORT
 
-  const oauthIssuer =
-    cli.flags['oauth-issuer'] ||
-    process.env['SOCKET_OAUTH_ISSUER'] ||
-    ''
+  const oauthIssuer = cli.flags['oauth-issuer'] || getSocketOauthIssuer() || ''
   const oauthClientId =
     cli.flags['oauth-client-id'] ||
-    process.env['SOCKET_OAUTH_INTROSPECTION_CLIENT_ID'] ||
+    getSocketOauthIntrospectionClientId() ||
     ''
   const oauthClientSecret =
     cli.flags['oauth-client-secret'] ||
-    process.env['SOCKET_OAUTH_INTROSPECTION_CLIENT_SECRET'] ||
+    getSocketOauthIntrospectionClientSecret() ||
     ''
   const oauthRequiredScopesRaw =
-    cli.flags['oauth-required-scopes'] ||
-    process.env['SOCKET_OAUTH_REQUIRED_SCOPES'] ||
-    ''
+    cli.flags['oauth-required-scopes'] || getSocketOauthRequiredScopes() || ''
   const oauthRequiredScopes = oauthRequiredScopesRaw
     ? parseRequiredScopes(oauthRequiredScopesRaw)
     : undefined
 
-  const trustProxy =
-    cli.flags['trust-proxy'] || process.env['TRUST_PROXY'] === 'true'
+  const trustProxy = cli.flags['trust-proxy'] || getTrustProxy()
 
   await handleMcp({
     http,
