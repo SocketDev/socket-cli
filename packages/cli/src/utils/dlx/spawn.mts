@@ -23,17 +23,11 @@ import path from 'node:path'
 
 import AdmZip from 'adm-zip'
 import { joinAnd } from '@socketsecurity/lib/arrays'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib/dlx/binary'
-import { detectExecutableType } from '@socketsecurity/lib/dlx/detect'
 import { dlxPackage } from '@socketsecurity/lib/dlx/package'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { whichReal } from '@socketsecurity/lib/bin'
-
-import {
-  resolvePyCli,
-} from './resolve-binary.mjs'
 
 import type { GitHubReleaseSpec } from './resolve-binary.mjs'
 import {
