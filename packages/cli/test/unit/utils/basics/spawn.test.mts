@@ -412,6 +412,74 @@ describe('runSocketBasics — basics process result', () => {
     }
   })
 
+  it('uses spinner stop+fail when basics process exits non-zero (lines 362-363)', async () => {
+    const stopSpy = vi.fn()
+    const failSpy = vi.fn()
+    const startSpy = vi.fn()
+    const successSpy = vi.fn()
+    const spinner = {
+      start: startSpy,
+      stop: stopSpy,
+      fail: failSpy,
+      success: successSpy,
+    } as any
+    mockSpawn.mockImplementation(async (_bin, args: string[]) => {
+      if (args.includes('socket_basics') && args.includes('--org')) {
+        return { code: 1, stdout: '', stderr: 'basics boom' }
+      }
+      if (args[0] === '-c') {
+        return { code: 0, stdout: '', stderr: '' }
+      }
+      return { code: 0, stdout: '', stderr: '' }
+    })
+    const result = await runSocketBasics({ ...baseOpts, spinner })
+    expect(result.ok).toBe(false)
+    expect(stopSpy).toHaveBeenCalled()
+    expect(failSpy).toHaveBeenCalled()
+  })
+
+  it('uses spinner stop+success on successful basics scan (lines 376-377)', async () => {
+    const stopSpy = vi.fn()
+    const failSpy = vi.fn()
+    const startSpy = vi.fn()
+    const successSpy = vi.fn()
+    const spinner = {
+      start: startSpy,
+      stop: stopSpy,
+      fail: failSpy,
+      success: successSpy,
+    } as any
+    // Default mock returns code 0 for basics_socket call.
+    const result = await runSocketBasics({ ...baseOpts, spinner })
+    expect(result.ok).toBe(true)
+    expect(successSpy).toHaveBeenCalled()
+  })
+
+  it('uses spinner fail when basicsResult is null (lines 350-351)', async () => {
+    const stopSpy = vi.fn()
+    const failSpy = vi.fn()
+    const successSpy = vi.fn()
+    const spinner = {
+      start: vi.fn(),
+      stop: stopSpy,
+      fail: failSpy,
+      success: successSpy,
+    } as any
+    mockSpawn.mockImplementation(async (_bin, args: string[]) => {
+      if (args.includes('socket_basics') && args.includes('--org')) {
+        // null result simulates spawn failure to start.
+        return null as any
+      }
+      if (args[0] === '-c') {
+        return { code: 0, stdout: '', stderr: '' }
+      }
+      return { code: 0, stdout: '', stderr: '' }
+    })
+    const result = await runSocketBasics({ ...baseOpts, spinner })
+    expect(result.ok).toBe(false)
+    expect(failSpy).toHaveBeenCalled()
+  })
+
   it('errors when facts file is not created', async () => {
     // existsSync(python) returns true, existsSync(factsPath) returns false.
     let callIndex = 0
