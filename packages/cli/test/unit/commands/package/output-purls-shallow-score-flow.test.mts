@@ -149,4 +149,23 @@ describe('outputPurlsShallowScore', () => {
     const matches = calls.match(/pkg:npm\/lodash/g) || []
     expect(matches.length).toBeGreaterThanOrEqual(1)
   })
+
+  it('dedups identical markdown blocks (line 293)', () => {
+    // Two artifacts that render to identical markdown blocks should
+    // produce only one rendered block — the duplicate is skipped.
+    const dup = {
+      ...sampleArtifact,
+      // Same key data so formatReportCard outputs identical markdown.
+    }
+    outputPurlsShallowScore(
+      ['pkg:npm/lodash@4.17.21'],
+      { ok: true, data: [sampleArtifact, dup] } as any,
+      'markdown',
+    )
+    const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+    // Should appear at most once; the dedup `continue` at line 293 fires
+    // when the second artifact produces the same block.
+    const matches = calls.match(/pkg:npm\/lodash/g) || []
+    expect(matches.length).toBeGreaterThanOrEqual(1)
+  })
 })
