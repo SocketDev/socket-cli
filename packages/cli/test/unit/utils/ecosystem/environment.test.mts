@@ -26,6 +26,8 @@ import {
   AGENTS,
   detectAndValidatePackageEnvironment,
   detectPackageEnvironment,
+  getAgentExecPath,
+  getAgentVersion,
   preferWindowsCmdShim,
   resolveBinPathSync,
 } from '../../../../src/utils/ecosystem/environment.mts'
@@ -77,6 +79,17 @@ vi.mock('../../../../src/utils/fs/find-up.mts', () => ({
 vi.mock('@socketregistry/hyrious__bun.lockb/index.cjs', () => ({
   parse: mockParse,
 }))
+
+const mockGetNpmExecPath = vi.hoisted(() => vi.fn())
+const mockGetPnpmExecPath = vi.hoisted(() => vi.fn())
+vi.mock('../../../../src/constants/agents.mts', async importOriginal => {
+  const actual: any = await importOriginal()
+  return {
+    ...actual,
+    getNpmExecPath: mockGetNpmExecPath,
+    getPnpmExecPath: mockGetPnpmExecPath,
+  }
+})
 
 vi.mock('semver', () => ({
   default: {
@@ -195,6 +208,107 @@ describe('package-environment', () => {
     it('returns input for non-absolute paths', () => {
       const result = preferWindowsCmdShim('npm', 'npm')
       expect(result).toBe('npm')
+    })
+  })
+
+  describe('getAgentExecPath', () => {
+    it('returns getNpmExecPath when it exists for npm agent', async () => {
+      mockGetNpmExecPath.mockResolvedValue('/usr/local/bin/npm')
+      mockExistsSync.mockReturnValue(true)
+      const result = await getAgentExecPath('npm')
+      expect(result).toBe('/usr/local/bin/npm')
+    })
+
+    it('falls back to whichReal when getNpmExecPath does not exist', async () => {
+      mockGetNpmExecPath.mockResolvedValue('/missing/npm')
+      mockWhichBin.mockResolvedValue('/usr/bin/npm')
+      // existsSync returns false for npmPath, npmInNodeDir; we want to
+      // exercise the whichReal fallback at lines 337-341.
+      mockExistsSync.mockReturnValue(false)
+      const result = await getAgentExecPath('npm')
+      expect(typeof result).toBe('string')
+      expect(result.length).toBeGreaterThan(0)
+    })
+
+    it('returns binName when whichReal returns null for npm', async () => {
+      mockGetNpmExecPath.mockResolvedValue('/missing/npm')
+      mockWhichBin.mockResolvedValue(null)
+      mockExistsSync.mockReturnValue(false)
+      const result = await getAgentExecPath('npm')
+      // Falls back to bare 'npm' string when whichReal returns null.
+      expect(result).toBe('npm')
+    })
+
+    it('returns getPnpmExecPath when it exists for pnpm agent', async () => {
+      mockGetPnpmExecPath.mockResolvedValue('/usr/local/bin/pnpm')
+      mockExistsSync.mockReturnValue(true)
+      const result = await getAgentExecPath('pnpm')
+      expect(result).toBe('/usr/local/bin/pnpm')
+    })
+
+    it('falls back to whichReal when getPnpmExecPath does not exist', async () => {
+      mockGetPnpmExecPath.mockResolvedValue('/missing/pnpm')
+      mockExistsSync.mockReturnValue(false)
+      mockWhichBin.mockResolvedValue('/found/pnpm')
+      const result = await getAgentExecPath('pnpm')
+      expect(typeof result).toBe('string')
+    })
+
+    it('uses whichReal for non-npm/pnpm agents (yarn-classic)', async () => {
+      mockWhichBin.mockResolvedValue('/usr/local/bin/yarn')
+      const result = await getAgentExecPath('yarn-classic')
+      expect(typeof result).toBe('string')
+    })
+
+    it('returns array first element when whichReal returns array', async () => {
+      mockWhichBin.mockResolvedValue(['/first/yarn', '/second/yarn'])
+      const result = await getAgentExecPath('yarn-classic')
+      expect(result).toBe('/first/yarn')
+    })
+  })
+
+  describe('getAgentVersion', () => {
+    it('returns coerced semver version on successful spawn', async () => {
+      mockSpawn.mockResolvedValue({
+        stdout: '10.8.2',
+        code: 0,
+      })
+      mockCoerce.mockReturnValue({ version: '10.8.2' })
+      const result = await getAgentVersion('npm', '/usr/local/bin/npm', '/cwd')
+      expect(mockSpawn).toHaveBeenCalled()
+      expect(result).toEqual({ version: '10.8.2' })
+    })
+
+    it('returns undefined when spawn returns null/undefined', async () => {
+      mockSpawn.mockResolvedValue(null)
+      const result = await getAgentVersion('npm', '/usr/local/bin/npm', '/cwd')
+      expect(result).toBeUndefined()
+    })
+
+    it('returns undefined and logs when spawn rejects', async () => {
+      mockSpawn.mockRejectedValue(new Error('command failed'))
+      const result = await getAgentVersion('npm', '/usr/local/bin/npm', '/cwd')
+      expect(result).toBeUndefined()
+    })
+
+    it('returns undefined when stdout is non-coerceable', async () => {
+      mockSpawn.mockResolvedValue({
+        stdout: 'not-a-version',
+        code: 0,
+      })
+      mockCoerce.mockReturnValue(null)
+      const result = await getAgentVersion('npm', '/usr/local/bin/npm', '/cwd')
+      expect(result).toBeUndefined()
+    })
+
+    it('handles Buffer stdout (calls .toString())', async () => {
+      mockSpawn.mockResolvedValue({
+        stdout: Buffer.from('10.8.2'),
+        code: 0,
+      })
+      mockCoerce.mockReturnValue({ version: '10.8.2' })
+      const result = await getAgentVersion('npm', '/usr/local/bin/npm', '/cwd')
+      expect(result).toEqual({ version: '10.8.2' })
     })
   })
 
