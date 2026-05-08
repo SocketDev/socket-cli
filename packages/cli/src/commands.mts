@@ -88,6 +88,63 @@ export const rootCommands = {
   yarn: cmdYarn,
 }
 
+/**
+ * Bucket assignments for the `socket --help` layout.
+ *
+ * Each public command can opt into one of four display buckets, or
+ * stay unbucketed (registered + reachable, but not surfaced in the
+ * top-level help text — useful for ecosystem-specific commands that
+ * are documented elsewhere or experimental commands not yet ready
+ * for prominent placement).
+ *
+ * The help builder reads this map to render the bucketed sections.
+ * Adding a new public command = (a) register it in `rootCommands`,
+ * (b) optionally add a bucket here. No parallel hand-maintained list
+ * to drift.
+ *
+ * Drift is impossible-by-construction:
+ *   - A command in this map but not in `rootCommands` would be a
+ *     compile error (TypeScript narrows the keys).
+ *   - A command in `rootCommands` but not here = unbucketed, which
+ *     is a valid state.
+ */
+export type RootCommandBucket = 'main' | 'api' | 'tools' | 'config'
+
+export const rootCommandBuckets: Readonly<
+  Partial<Record<keyof typeof rootCommands, RootCommandBucket>>
+> = {
+  // Main commands — the "hero" actions surfaced first in `socket --help`.
+  fix: 'main',
+  optimize: 'main',
+  cdxgen: 'main',
+  ci: 'main',
+  // Socket API — commands that hit the Socket.dev REST API.
+  analytics: 'api',
+  'audit-log': 'api',
+  organization: 'api',
+  package: 'api',
+  repository: 'api',
+  scan: 'api',
+  'threat-feed': 'api',
+  // Local tools — commands that wrap a local toolchain (npm, pip, …)
+  // or operate on the local filesystem without API calls.
+  manifest: 'tools',
+  npm: 'tools',
+  npx: 'tools',
+  pycli: 'tools',
+  'raw-npm': 'tools',
+  'raw-npx': 'tools',
+  sfw: 'tools',
+  // CLI configuration — login / logout / install / etc.
+  config: 'config',
+  install: 'config',
+  login: 'config',
+  logout: 'config',
+  uninstall: 'config',
+  whoami: 'config',
+  wrapper: 'config',
+}
+
 export const rootAliases = {
   audit: {
     description: `${cmdAuditLog.description} (alias)`,

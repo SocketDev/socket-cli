@@ -180,6 +180,7 @@ export async function meowWithSubcommands(
   } as MeowConfig
   const {
     aliases = {},
+    buckets,
     defaultSub,
     ...additionalOptions
   } = { __proto__: null, ...options } as MeowOptions
@@ -429,6 +430,7 @@ export async function meowWithSubcommands(
   const lines = buildHelpLines({
     aliases,
     argv,
+    buckets,
     flags,
     isRootCommand,
     name,

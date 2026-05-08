@@ -45,7 +45,7 @@ import {
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 
-import { rootAliases, rootCommands } from './commands.mts'
+import { rootAliases, rootCommandBuckets, rootCommands } from './commands.mts'
 import { SOCKET_CLI_BIN_NAME } from './constants/packages.mts'
 import { getCliName } from './env/cli-name.mts'
 import { getCliVersion } from './env/cli-version.mts'
@@ -168,7 +168,7 @@ void (async () => {
         importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
         subcommands: rootCommands,
       },
-      { aliases: rootAliases },
+      { aliases: rootAliases, buckets: rootCommandBuckets },
     )
 
     // Track successful CLI completion.
