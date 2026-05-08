@@ -424,6 +424,78 @@ describe('git/gitlab-provider', () => {
 
       expect(result[0]?.mergeStateStatus).toBe('UNKNOWN')
     })
+
+    it('maps unknown MR state to CLOSED upstream (line 269)', async () => {
+      mockAll.mockResolvedValueOnce([
+        {
+          author: { username: 'user' },
+          iid: 1,
+          merge_status: 'can_be_merged',
+          source_branch: 'feature',
+          // Synthetic state value not in {opened, merged} → falls to default.
+          state: 'locked',
+          target_branch: 'main',
+          title: 'MR 1',
+        },
+      ])
+
+      const result = await provider.listPrs({
+        owner: 'owner',
+        repo: 'repo',
+      })
+
+      expect(result[0]?.state).toBe('CLOSED')
+    })
+
+    it('maps merge_status default → UNKNOWN (line 306)', async () => {
+      mockAll.mockResolvedValueOnce([
+        {
+          author: { username: 'user' },
+          iid: 1,
+          // Synthetic merge_status value not in any known case.
+          merge_status: 'totally-unknown-status',
+          source_branch: 'feature',
+          state: 'opened',
+          target_branch: 'main',
+          title: 'MR 1',
+        },
+      ])
+
+      const result = await provider.listPrs({
+        owner: 'owner',
+        repo: 'repo',
+      })
+
+      expect(result[0]?.mergeStateStatus).toBe('UNKNOWN')
+    })
+
+    it('filters by merged state (lines 280-281 mapStateToGitLab merged path)', async () => {
+      mockAll.mockResolvedValueOnce([])
+
+      await provider.listPrs({
+        owner: 'owner',
+        repo: 'repo',
+        states: 'merged',
+      })
+
+      expect(mockAll).toHaveBeenCalledWith(
+        expect.objectContaining({ state: 'merged' }),
+      )
+    })
+
+    it('filters by closed state (line 283 mapStateToGitLab closed default)', async () => {
+      mockAll.mockResolvedValueOnce([])
+
+      await provider.listPrs({
+        owner: 'owner',
+        repo: 'repo',
+        states: 'closed',
+      })
+
+      expect(mockAll).toHaveBeenCalledWith(
+        expect.objectContaining({ state: 'closed' }),
+      )
+    })
   })
 
   describe('deleteBranch', () => {
