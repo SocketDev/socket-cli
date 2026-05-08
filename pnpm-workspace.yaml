@@ -165,6 +165,9 @@ minimumReleaseAgeExclude:
   - '@socketbin/*'
   - '@socketregistry/*'
   - '@socketsecurity/*'
+  # Network-mocking lib used in fleet test suites. v15 betas pre-date
+  # npm's `time` field for the major; allow pinned beta until v15 GA.
+  - 'nock@15.0.0-beta.11'
 
 # Refuse transitive dependencies declared via git/tarball/local-tarball
 # specs — an npm package shouldn't be allowed to drag in a git URL we
