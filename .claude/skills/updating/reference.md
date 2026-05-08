@@ -1,229 +1,151 @@
-# updating Reference Documentation
+# updating reference
 
-This document provides detailed information about dependency update procedures, external tool checksums, and troubleshooting for the socket-cli updating skill.
+Long-form details for the `updating` umbrella skill — phase scripts, exit-code semantics, and per-mode contracts. The orchestration story lives in [`SKILL.md`](SKILL.md).
 
-## Table of Contents
+## Phase scripts
 
-1. [Update Targets](#update-targets)
-2. [npm Dependency Updates](#npm-dependency-updates)
-3. [External Tool Checksums](#external-tool-checksums)
-4. [Monorepo Structure](#monorepo-structure)
-5. [Weekly Update Workflow](#weekly-update-workflow)
-6. [Validation](#validation)
-7. [Troubleshooting](#troubleshooting)
-
----
-
-## Update Targets
-
-### npm Packages
-
-Updated via `pnpm run update` which runs `scripts/update.mjs`:
-
-1. **taze** pass: `pnpm exec taze -r -w` (recursive, write mode across all packages)
-2. **Socket packages** pass: `pnpm update @socketsecurity/* @socketregistry/* @socketbin/* --latest -r` (bypasses taze maturity period)
-3. **Install**: `pnpm install` to update lock file
-
-### External Tool Checksums
-
-Updated via the `updating-checksums` skill which runs `packages/cli/scripts/sync-checksums.mjs`:
-
-- Syncs SHA-256 checksums from GitHub releases to `packages/cli/bundle-tools.json`
-- Only processes tools with `type: "github-release"`
-
----
-
-## npm Dependency Updates
-
-### How `pnpm run update` Works
+### Phase 2 — npm packages
 
 ```bash
-# Phase 1: Update all dependencies via taze
-pnpm exec taze -r -w
+pnpm run update
 
-# Phase 2: Force-update Socket scoped packages (bypass maturity period)
-pnpm update @socketsecurity/* @socketregistry/* @socketbin/* --latest -r
+if [ -n "$(git status --porcelain)" ]; then
+  git add pnpm-lock.yaml package.json */package.json
+  git commit -m "chore: update npm dependencies
 
-# Phase 3: Install
-pnpm install
+Updated npm packages via pnpm run update."
+  echo "npm packages updated"
+else
+  echo "npm packages already up to date"
+fi
 ```
 
-### Package Scopes
-
-Socket packages are force-updated to latest regardless of taze maturity:
-- `@socketsecurity/*` - Core Socket libraries
-- `@socketregistry/*` - Socket registry packages
-- `@socketbin/*` - Socket binary packages
-
-### Files That Change
-
-After update, these files may be modified:
-- `package.json` (root)
-- `packages/cli/package.json`
-- `packages/build-infra/package.json`
-- `packages/package-builder/package.json`
-- `pnpm-lock.yaml`
-
----
-
-## External Tool Checksums
-
-### bundle-tools.json Structure
-
-**Location:** `packages/cli/bundle-tools.json`
-
-**Tool types:**
-
-| Type | Tools | Checksum Source |
-|------|-------|----------------|
-| `github-release` | opengrep, python, socket-patch, sfw, trivy, trufflehog | SHA-256 from releases |
-| `npm` | @coana-tech/cli, @cyclonedx/cdxgen, synp | SRI integrity hashes |
-| `pypi` | socketsecurity | SRI integrity hashes |
-| `github-source` | socket-basics | No checksums |
-
-**JSON structure per tool:**
-
-```json
-{
-  "description": "Tool description",
-  "type": "github-release",
-  "package": "tool-name",
-  "version": "1.0.0",
-  "repository": "owner/repo",
-  "githubRelease": "v1.0.0",
-  "checksums": {
-    "filename-linux-amd64.tar.gz": "sha256hexstring",
-    "filename-darwin-arm64.tar.gz": "sha256hexstring"
-  }
-}
-```
-
-### Sync Checksums Script
-
-**Location:** `packages/cli/scripts/sync-checksums.mjs`
-
-**Process:**
-1. Reads `bundle-tools.json` for GitHub release tools
-2. For each tool, tries to download `checksums.txt` from the release
-3. If no checksums.txt, downloads each asset and computes SHA-256
-4. Updates embedded checksums in `bundle-tools.json`
-
-**Options:**
-- `--tool=<name>` - Sync specific tool only
-- `--force` - Force update even if unchanged
-- `--dry-run` - Preview changes without writing
-
-### When to Sync Checksums
-
-- After manually updating tool versions in bundle-tools.json
-- After new GitHub releases are published for any tool
-- As part of the full update cycle (run after npm updates)
-
----
-
-## Monorepo Structure
-
-```
-socket-cli/
-├── packages/
-│   ├── cli/              # Main Socket CLI application
-│   ├── build-infra/      # Build infrastructure
-│   └── package-builder/  # Package builder utility
-├── scripts/
-│   └── update.mjs        # Monorepo-aware dependency updater
-└── pnpm-lock.yaml
-```
-
-### Package Dependencies
-
-The monorepo uses pnpm workspaces. Updates are recursive (`-r` flag) to cover all packages.
-
----
-
-## Weekly Update Workflow
-
-**Location:** `.github/workflows/weekly-update.yml`
-**Schedule:** Monday 9 AM UTC
-
-### Pipeline
-
-1. **check-updates** - Runs `pnpm outdated` to detect available updates
-2. **apply-updates** - Creates branch `weekly-update-YYYYMMDD`, runs Claude Code with `/updating` skill, creates draft PR
-3. **notify** - Reports status
-
-### CI Mode Behavior
-
-When `CI=true` or `GITHUB_ACTIONS` is set:
-- Skip build/test validation (CI jobs validate separately)
-- Create atomic commits for each logical update
-- Workflow handles branch creation and PR
-
----
-
-## Validation
-
-### Post-Update Validation (Interactive Mode)
+### Phase 3 — Validate lockstep manifest (if `lockstep.json` exists)
 
 ```bash
-# Fix lint issues across all packages
-pnpm run fix --all
+if [ -f lockstep.json ]; then
+  pnpm run lockstep
+  LOCKSTEP_EXIT=$?
 
-# Run all checks (lint + type check)
-pnpm run check --all
-
-# Run tests
-pnpm test
+  case $LOCKSTEP_EXIT in
+    0) echo "✓ lockstep clean — manifest valid, no drift; skip Phase 4 lockstep step" ;;
+    1) echo "✗ lockstep schema/structural error — stopping"; exit 1 ;;
+    2) echo "⚠ lockstep drift — Phase 4 will invoke updating-lockstep to act" ;;
+  esac
+fi
 ```
 
-### CI Mode
+#### Lockstep exit-code semantics
 
-Validation is skipped - CI pipeline runs builds and tests in separate jobs after the update PR is created.
+| Exit | Meaning | Action |
+|---|---|---|
+| 0 | Manifest valid, no drift | Skip lockstep step in Phase 4 |
+| 1 | Schema violation, missing file, or unreachable baseline | Stop and investigate via `scripts/lockstep-schema.mts` and the failing row's `local_*`/`upstream` fields. Do not auto-retry. |
+| 2 | Drift detected | Phase 4 invokes `updating-lockstep`. Auto-bumps mechanical `version-pin` rows per `upgrade_policy`; everything else (`file-fork` / `feature-parity` / `spec-conformance` / `lang-parity` / `locked` version-pins) becomes advisory in the PR body. |
 
----
+`locked` version-pin rows never auto-bump — they need a coordinated upstream change first (e.g., `temporal-rs` is `locked` because Node vendors it and bumping is gated on a Node bump landing first).
 
-## Troubleshooting
+If `lockstep.json` does NOT exist, skip Phase 3 entirely.
 
-### taze Reports No Updates
+### Phase 4 — Apply drift + non-lockstep submodules
 
-**Symptom:** `pnpm run update` shows no changes when updates exist.
+**4a. lockstep drift** — if Phase 3 reported exit 2:
 
-**Cause:** taze has a maturity period for new releases (typically 3 days).
-
-**Solution:** Socket packages bypass taze maturity via direct `pnpm update --latest`. For other packages, wait for maturity period or manually update `package.json`.
-
-### Checksum Sync Fails
-
-**Symptom:** `sync-checksums.mjs` errors out.
-
-**Possible causes:**
-- GitHub API rate limiting: check with `gh api rate_limit --jq '.rate'`
-- Release doesn't exist: verify with `gh release view <tag> --repo <owner/repo>`
-- Network connectivity issues
-
-### Lock File Conflicts
-
-**Symptom:** `pnpm install` fails after update due to resolution conflicts.
-
-**Solution:**
 ```bash
-rm pnpm-lock.yaml
-pnpm install
+if [ "$LOCKSTEP_EXIT" = "2" ]; then
+  # Invoke via the Skill tool / programmatic-claude flow used by the
+  # weekly-update workflow. Standalone runs can do `/updating-lockstep`.
+  echo "Invoking updating-lockstep for drift handling"
+fi
 ```
 
-### Partial Update Failure
+`updating-lockstep` auto-bumps `version-pin` rows whose `upgrade_policy` is `track-latest` or `major-gate` (patch/minor only — majors → advisory), and emits an advisory block for everything else. Each auto-bumped row becomes its own atomic commit.
 
-**Symptom:** taze phase succeeds but Socket package phase fails (or vice versa).
+**4b. Non-lockstep submodules** — invoke each repo-specific `updating-*` sub-skill (e.g. `updating-node`, `updating-curl`) for submodules NOT claimed by a lockstep `version-pin` row. These sub-skills handle build inputs that aren't tracked in lockstep (cache-versions bumps, patch regeneration, etc.).
 
-**Solution:**
-- Check error messages for specific package failures
-- Socket packages may have unpublished versions - verify with `npm view @socketsecurity/<pkg> versions`
-- Commit successful updates, create separate issue for failures
+If no `.gitmodules` exists, skip 4b.
 
-### Weekly Update PR Has Conflicts
+### Phase 5 — Workflow SHA pins
 
-**Symptom:** Automated PR can't be merged due to conflicts.
+Resolve the default branch (per CLAUDE.md _Default branch fallback_), then compare:
 
-**Solution:**
-1. Check what changed on main since the update branch was created
-2. Rebase the update branch or re-run the workflow
-3. Manual resolution if conflicts are in lock file: regenerate with `pnpm install`
+```bash
+BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+if [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/main;   then BASE=main;   fi
+if [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/master; then BASE=master; fi
+BASE="${BASE:-main}"
+
+PINNED_SHA=$(grep -ohP '(?<=@)[0-9a-f]{40}' .github/workflows/_local-not-for-reuse-ci.yml 2>/dev/null | head -1)
+DEFAULT_SHA=$(git rev-parse "origin/$BASE" 2>/dev/null || echo "")
+
+if [ -n "$PINNED_SHA" ] && [ -n "$DEFAULT_SHA" ] && [ "$PINNED_SHA" != "$DEFAULT_SHA" ]; then
+  echo "Workflow SHA pins are stale: $PINNED_SHA → $DEFAULT_SHA (origin/$BASE)"
+  echo "Run the updating-workflows skill to cascade."
+else
+  echo "Workflow SHA pins are up to date (or no _local-not-for-reuse-*.yml pins in this repo)"
+fi
+```
+
+### Phase 6 — Final validation (skip in CI)
+
+```bash
+if [ "$CI" = "true" ] || [ -n "$GITHUB_ACTIONS" ]; then
+  echo "CI mode: skipping validation"
+else
+  pnpm run check --all
+  pnpm test
+  pnpm run build  # if this repo has a build step
+fi
+```
+
+### Phase 7 — Report
+
+```
+## Update Complete
+
+### Updates Applied:
+
+| Category           | Status                               |
+|--------------------|--------------------------------------|
+| npm packages       | Updated / Up to date                 |
+| lockstep manifest  | <ok>/<total> ok, <drift> drift, <error> error (exit <code>) — or n/a |
+| Other submodules   | K bumped — or n/a                    |
+| Workflow SHA pins  | Up to date / Stale                   |
+
+### Commits Created:
+- [list commits, if any]
+
+### Validation:
+- Build: SUCCESS / SKIPPED (CI mode)
+- Tests: PASS / SKIPPED (CI mode)
+
+### Next Steps:
+**Interactive mode:**
+1. Review changes: `git log --oneline -N`
+2. Push to remote: `git push origin "$BASE"` (where `$BASE` is the default branch resolved in Phase 5 — `main` for most fleet repos, `master` for legacy ones)
+
+**CI mode:**
+1. Workflow will push branch and create PR
+2. CI will run full build/test validation
+3. Review PR when CI passes
+```
+
+## Mode contracts
+
+### CI mode (`CI=true` or `GITHUB_ACTIONS`)
+
+- Create atomic commits per category (npm, lockstep auto-bumps, submodule bumps).
+- Skip Phase 6 build/test validation — CI validates separately.
+- Workflow handles push and PR creation.
+
+### Interactive mode (default)
+
+- Run Phase 6 build + test before reporting "complete."
+- Report validation results to the user.
+- Direct push by the user once they've reviewed.
+
+## Failure recovery
+
+- **Phase 3 exit 1 (schema error):** stop. Read `scripts/lockstep-schema.mts` output and the offending row's `local_*` / `upstream` fields. Fix the manifest, then re-run.
+- **Phase 4a (lockstep drift) commits but Phase 6 tests fail:** the per-row commits are atomic — `git revert <sha>` for the offending row, leave the others, file an advisory.
+- **Phase 5 stale SHA pin:** run `/updating-workflows` to cascade the bump.

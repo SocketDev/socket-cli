@@ -216,5 +216,31 @@ describe('utils/dlx/vfs-extract', () => {
         delete (process as any).smol
       }
     })
+
+    it('wraps mount-failure with a SEA-VFS error message', async () => {
+      ;(process as any).smol = {
+        mount: vi.fn().mockRejectedValue(new Error('vfs corrupt')),
+      }
+      try {
+        await expect(extractTool('cdxgen')).rejects.toThrow(
+          /failed to extract cdxgen from the SEA VFS/,
+        )
+      } finally {
+        delete (process as any).smol
+      }
+    })
+
+    it('wraps mount-failure for standalone tools (sfw)', async () => {
+      ;(process as any).smol = {
+        mount: vi.fn().mockRejectedValue(new Error('vfs not found')),
+      }
+      try {
+        await expect(extractTool('sfw')).rejects.toThrow(
+          /failed to extract sfw from the SEA VFS/,
+        )
+      } finally {
+        delete (process as any).smol
+      }
+    })
   })
 })

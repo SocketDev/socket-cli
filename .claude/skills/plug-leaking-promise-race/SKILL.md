@@ -1,6 +1,8 @@
 ---
 name: plug-leaking-promise-race
 description: Reference for the `Promise.race` cross-iteration handler-leak bug. Loads on demand when writing or reviewing concurrency code that uses `Promise.race`, `Promise.any`, or hand-rolled concurrency limiters.
+user-invocable: false
+allowed-tools: Read, Grep, Glob
 ---
 
 # plug-leaking-promise-race

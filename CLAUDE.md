@@ -24,17 +24,48 @@ This repo may have multiple Claude sessions running concurrently against the sam
 **Required for branch work:** spawn a worktree.
 
 ```bash
-git worktree add -b <task-branch> ../<repo>-<task> main
+BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo main)
+git worktree add -b <task-branch> ../<repo>-<task> "$BASE"
 cd ../<repo>-<task>
 # edit / commit / push from here; primary checkout is untouched
 git worktree remove ../<repo>-<task>
 ```
+
+The `BASE` lookup resolves the remote's default branch — usually `main`, but legacy repos still use `master`. Never hard-code one; use `git symbolic-ref refs/remotes/origin/HEAD` (or fall back to `main` if the remote isn't set). See [Default branch fallback](#default-branch-fallback) below.
 
 **Required for staging:** surgical `git add <specific-file>`. Never `-A` / `.`.
 
 **Never revert files you didn't touch.** If `git status` shows unfamiliar changes, leave them — they belong to another session, an upstream pull, or a hook side-effect.
 
 The umbrella rule: never run a git command that mutates state belonging to a path other than the file you just edited.
+
+### Default branch fallback
+
+Always **favor `main` and fall back to `master`** when scripting git operations that target the default branch. Never hard-code either name — fleet repos are mostly on `main`, but a few legacy / vendored repos still use `master`, and a script that hard-codes `main` silently no-ops on those.
+
+The canonical lookup, in order of preference:
+
+```bash
+# Best: ask the remote what its HEAD points to
+BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+
+# Fallback 1: prefer main if it exists
+if [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/main; then
+  BASE=main
+fi
+
+# Fallback 2: fall back to master if main doesn't exist
+if [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/master; then
+  BASE=master
+fi
+
+# Last resort: assume main and let the next git command fail loudly
+BASE="${BASE:-main}"
+```
+
+Apply this in: worktree creation, base-ref resolution for `git diff` / `git rev-list`, PR base detection in scripts, default-branch comparisons in skills, hook scripts that walk history. Documentation and CLAUDE.md examples can write `main` for clarity, but the underlying scripts must do the lookup.
+
+The order **main → master** matches fleet reality (overwhelming majority on `main`); reversing it would silently pick the wrong branch in repos that have both (e.g., during a rename migration).
 
 ### Public-surface hygiene
 
@@ -63,6 +94,7 @@ The umbrella rule: never run a git command that mutates state belonging to a pat
 - **`packageManager` field** — bare `pnpm@<version>` is correct for pnpm 11+. pnpm 11 stores the integrity hash in `pnpm-lock.yaml` (separate YAML document) instead of inlining it in `packageManager`; on install pnpm rewrites the field to its bare form and migrates legacy inline hashes automatically. Don't fight the strip. Older repos may still ship `pnpm@<version>+sha512.<hex>` — leave it; pnpm migrates on first install. The lockfile is the integrity source of truth.
 - **Monorepo internal `engines.node`** — only the workspace root needs `engines.node`. Private (`"private": true`) sub-packages in `packages/*` don't need their own `engines.node` field; the field is dead, drift-prone, and removing it is the cleaner play. Public-published sub-packages (the npm-published ones with no `"private": true`) keep their `engines.node` because external consumers see it.
 - **Config files in `.config/`** — place tool / test / build configs in `.config/`: `taze.config.mts`, `vitest.config.mts`, `tsconfig.base.json` and other `tsconfig.*.json` variants, `esbuild.config.mts`. New configs go in `.config/` by default. Repo root keeps only what _must_ be there: package manifests + lockfile (`package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`), the linter / formatter dotfiles whose tools require root placement (`.oxlintrc.json`, `.oxfmtrc.json`, `.npmrc`, `.gitignore`, `.node-version`), and `tsconfig.json` itself (TypeScript's project root anchor — the rest of the tsconfig graph extends from `.config/tsconfig.base.json`).
+- **Runners are `.mts`, not `.sh`** — every executable script (skill runner, hook handler, fleet automation) is TypeScript via `node <file>.mts`. Bash works on macOS/Linux but breaks on Windows; `bash` isn't on Windows PATH by default and `if [ ... ]` / `${VAR:-default}` aren't portable. The fleet runs on developer machines (mixed macOS / Linux / Windows / WSL) and CI (Linux), so cross-platform is a hard requirement. Use `@socketsecurity/lib/spawn` (`spawn`, `isSpawnError`) instead of `child_process` — it ships consistent error shapes (`SpawnError`), `stdioString: true` for buffered stdout, and integrates with the rest of the lib. Reach for `_shared/scripts/*.mts` for cross-skill helpers (default-branch resolution, report formatting); reach for `<skill>/run.mts` for skill-specific implementation. Reserve `.sh` for tiny one-shot snippets that genuinely have no Windows audience (e.g., a `bin/` wrapper). The `lib/` vs `scripts/` distinction matches `@socketsecurity/lib` (public, importable surface) vs per-package `scripts/` (private, internal automation) — skill helpers are internal, hence `scripts/`.
 - **Soak window** (pnpm-workspace.yaml `minimumReleaseAge`, default 7 days) — never add packages to `minimumReleaseAgeExclude` in CI. Locally, ASK before adding (security control).
 - **Upstream submodules — always shallow.** Every entry in `.gitmodules` MUST set `shallow = true`. Every `git submodule update --init` call (postinstall.mts, CI, manual) MUST pass `--depth 1 --single-branch`. Upstream repos like yarnpkg/berry, oven-sh/bun, rust-lang/cargo are multi-GB with full history; we only ever need the pinned SHA's tree. A non-shallow init can take 30+ minutes and waste GB of disk on every fresh clone. There is no scenario where the fleet needs upstream submodule history.
 - **Backward compatibility** — FORBIDDEN to maintain. Actively remove when encountered.
@@ -77,6 +109,45 @@ The only exceptions:
 - You don't have permission (the file belongs to another session per the parallel-Claude rule).
 
 In all other cases: fix it in the same commit, or in a sibling commit on the same branch. Never assume someone else will get to it.
+
+### Unrelated issues are critical
+
+🚨 An issue being **unrelated to the task** is not a reason to defer it — it's a reason to treat it as **critical and fix it immediately**. Unrelated bugs are exactly the bugs nobody is currently looking for; if you walk past one, no one else will catch it either. The instinct to "stay focused on the task" is how regressions accumulate.
+
+When you spot an unrelated bug, broken comment, dead branch, type error, failing test, or stale config:
+
+1. Stop the current task.
+2. Fix the unrelated issue first, in its own commit on the same branch (or a sibling commit if scope demands it).
+3. Resume the original task.
+
+If the fix is genuinely too large to bundle (a 2000-line refactor on a one-line bug), state the trade-off explicitly and ask before deferring — same exception as the "no pre-existing excuse" rule. Otherwise: unrelated = critical = fix now.
+
+### Don't leave the worktree dirty
+
+🚨 When you finish a code change, **commit it**. Don't end a turn with uncommitted edits, untracked new files, or staged-but-uncommitted hunks lingering in the working tree. A dirty worktree is a half-finished job: another session, another agent, or a future `git checkout` will trip over it, and the user has to clean up after you.
+
+Rules:
+
+- **After finishing a logical unit of work, commit it.** Use a Conventional Commits message per the _Commits & PRs_ rule. Never leave the working tree dirty between turns.
+- **Surgical staging only** — `git add <specific-file>`, never `-A` / `.` (per the _Parallel Claude sessions_ rule). The dirty-worktree rule is no excuse to sweep in files you didn't touch.
+- **If you genuinely can't commit yet** (the change is mid-refactor, tests are failing, you're waiting on user input), say so explicitly in the turn summary so the user knows the dirty state is intentional. Silent dirty worktrees are the failure mode.
+- **Worktrees from `git worktree add`** — same rule, sharper: a transient task-worktree must be left clean (committed + pushed) before `git worktree remove`, or the removal refuses and you've stranded the work.
+
+The principle: the working tree at end-of-turn should match the user's mental model of where the work is. "Done" means committed; anything else is paused, and pause states need to be announced.
+
+### Variant analysis on every High/Critical finding
+
+🚨 When a finding lands at severity High or Critical, **search the rest of the repo for the same shape** before closing it. Bugs cluster — same mental model, same antipattern. Three searches: same file (read the whole thing, not just the hunk), sibling files (`rg` the shape, not the names), cross-package (parallel implementations love to drift).
+
+Skip for style nits. Full taxonomy in [`.claude/skills/_shared/variant-analysis.md`](.claude/skills/_shared/variant-analysis.md). Cross-fleet variants become a _Drift watch_ task — open `chore(sync): cascade <fix>`.
+
+### Compound lessons into rules
+
+When the same kind of finding fires twice — across two runs, two PRs, or two fleet repos — **promote it to a rule** instead of fixing it again. Land it in CLAUDE.md, a `.claude/hooks/*` block, or a skill prompt — pick the lowest-friction surface. Always cite the original incident in a `**Why:**` line. Skip the retrospective doc; the rule is the artifact. Discipline: [`.claude/skills/_shared/compound-lessons.md`](.claude/skills/_shared/compound-lessons.md).
+
+### Plan review before approval
+
+For non-trivial work (multi-file refactor, new feature, migration), the plan itself is a deliverable. List steps numerically, name files you'll touch, name rules you'll honor — don't bury the plan in prose. If the plan touches fleet-shared resources (this CLAUDE.md fleet block, hooks, `_shared/`), invite a second-opinion pass before writing code. If the plan adds a fleet rule, name the original incident (per _Compound lessons_).
 
 ### Drift watch
 
@@ -120,6 +191,25 @@ Never silently let drift sit. Either reconcile in the same PR or open a follow-u
 - **`Safe` suffix** — non-throwing wrappers end in `Safe` (`safeDelete`, `safeDeleteSync`, `applySafe`, `weakRefSafe`). Read it as "X, but safe from throwing." The wrapper traps the thrown value internally and returns `undefined` (or the documented fallback). Don't invent alternative suffixes (`Try`, `OrUndefined`, `Maybe`) — pick `Safe`.
 - **`node:smol-*` modules** — feature-detect, then require. From outside socket-btm (socket-lib, socket-cli, anywhere else): `import { isBuiltin } from 'node:module'; if (isBuiltin('node:smol-X')) { const mod = require('node:smol-X') }`. The `node:smol-*` namespace is provided by socket-btm's smol Node binary; on stock Node `isBuiltin` returns false and the require would throw. Wrap the loader in a `/*@__NO_SIDE_EFFECTS__*/` lazy-load that caches the result — see `socket-lib/src/smol/util.ts` and `socket-lib/src/smol/primordial.ts` for canonical shape. **Inside** socket-btm's `additions/source-patched/` JS (the smol binary's own bootstrap code), use `internalBinding('smol_X')` directly — that's the C++-binding access path and it's guaranteed available there.
 
+### File size
+
+Source files have a **soft cap of 500 lines** and a **hard cap of 1000 lines**. Past those thresholds, split the file along its natural seams. Long files are not a badge of thoroughness — they are a sign the module is doing too many things.
+
+How to split:
+
+- **Group by domain or concept, not by line count.** Lines 0–500 of a 1500-line file is not a split. Find the natural boundary (one tool per file, one ecosystem per file, one orchestration phase per file) and cut there.
+- **Name the new files for what they are.** `spawn-cdxgen.mts`, `spawn-coana.mts`, `parse-arguments.mts`, `validate-options.mts` — the file name should match what's inside it. Avoid generic suffixes (`-helpers`, `-utils`, `-lib`) that just kick the can down the road.
+- **Co-locate related helpers with their consumer.** A helper used only by one function lives next to that function in the same file (or the same domain split). A helper used across three files lives in a shared module named after the concept (`format-purl.mts`, not `purl-helpers.mts`).
+- **Update the index/barrel only if one already exists.** Don't introduce a barrel just to hide the split — let importers update their paths to the specific file. Barrels are for stable public surfaces.
+- **Run tests after each split, not at the end.** A reviewable commit is one logical extraction. Batching ten splits into one commit makes a regression impossible to bisect.
+
+When NOT to split:
+
+- A single function legitimately needs 500 lines (a parser, a state machine, a configuration table). State this in a one-line comment at the top of the function.
+- The file is a generated artifact (lockfile-style data, schema dump). Generated files don't count toward the cap.
+
+The principle: **a reader should be able to predict what's in a file from its name, and find what they need without scrolling past three other concerns.** If a file's table-of-contents reads like "this and also that and also the other thing," it's overdue for a split.
+
 ### 1 path, 1 reference
 
 A path is constructed exactly once. Everywhere else references the constructed value.
@@ -127,12 +217,15 @@ A path is constructed exactly once. Everywhere else references the constructed v
 - **Within a package**: every script imports its own `scripts/paths.mts`. No `path.join('build', mode, …)` outside that module.
 - **Across packages**: package B imports package A's `paths.mts` via the workspace `exports` field. Never `path.join(PKG, '..', '<sibling>', 'build', …)`.
 - **Workflows / Dockerfiles / shell** can't `import` TS — construct once, reference by output / `ENV` / variable.
+- **Canonical layout**: build outputs live at `<package-root>/build/<mode>/<platform-arch>/out/Final/<artifact>`, where `mode ∈ {dev, prod}` and `platform-arch` is the Node-style `<process.platform>-<process.arch>` (e.g. `darwin-arm64`, `linux-x64`). socket-btm is the worked example; ultrathink follows it; smaller TS-only repos that don't fork by platform may use `'any'` as the platform-arch sentinel but keep the same nesting. Each package's `scripts/paths.mts` exports `PACKAGE_ROOT`, `BUILD_ROOT`, and `getBuildPaths(mode, platformArch)` returning at minimum `outputFinalDir` + `outputFinalFile`/`outputFinalBinary`.
 
 Three-level enforcement: `.claude/hooks/path-guard/` blocks at edit time; `scripts/check-paths.mts` is the whole-repo gate run by `pnpm check`; `/guarding-paths` is the audit-and-fix skill. Find the canonical owner and import from it.
 
 ### Background Bash
 
 Never use `Bash(run_in_background: true)` for test / build commands (`vitest`, `pnpm test`, `pnpm build`, `tsgo`). Backgrounded runs you don't poll get abandoned and leak Node workers. Background mode is for dev servers and long migrations whose results you'll consume. If a run hangs, kill it: `pkill -f "vitest/dist/workers"`. The `.claude/hooks/stale-process-sweeper/` `Stop` hook reaps true orphans as a safety net.
+
+When writing or extending a Bash-allowlist hook, prefer **AST-based parsing** over regex matchers when the rule needs to reason about command structure (chains, subshells, redirects, command substitution). Regex matchers approve `git $(echo rm) foo.txt` because the surface looks like `git`; an AST parser sees the substitution and blocks. Pure-syntactic rules (binary name only) can stay regex; structure-sensitive rules (no writes to `.env*`, no destructive chains, no `$(…)` containing destructive verbs) need a parser. Pattern reference: https://github.com/ldayton/Dippy.
 
 ### Judgment & self-evaluation
 

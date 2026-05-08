@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/SocketDev/socket-repo-template-schema.json",
   "title": "socket-repo-template per-repo config",
-  "description": "Per-repo socket-repo-template config. Lives at the fleet repo root as `.socket-repo-template.json`.",
+  "description": "Per-repo socket-repo-template config. Canonical path: `.config/socket-repo-template.json` (legacy: `.socket-repo-template.json` at the repo root).",
   "type": "object",
   "required": ["schemaVersion", "repoName", "kind"],
   "properties": {
     "$schema": {
-      "description": "JSON Schema reference for editor autocompletion. Conventionally `./socket-repo-template-schema.json`.",
+      "description": "JSON Schema reference for editor autocompletion. Conventionally `./socket-repo-template-schema.json` — both the config and its schema live side-by-side in `.config/`.",
       "type": "string"
     },
     "schemaVersion": {

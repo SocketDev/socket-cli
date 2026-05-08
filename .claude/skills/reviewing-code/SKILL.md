@@ -1,6 +1,8 @@
 ---
 name: reviewing-code
 description: Reviews the current branch against a base ref using multiple AI backends. Routes discovery, discovery-secondary, remediation, and verify passes through the available agents (codex, claude, opencode, kimi, …), gracefully skipping any backend that isn't installed. Writes a markdown findings report under docs/. Use when preparing or updating a PR, before merging a feature branch, or when wanting an independent second opinion from a different agent.
+user-invocable: true
+allowed-tools: Read, Grep, Glob, Bash(node:*), Bash(git:*), Bash(command -v:*)
 ---
 
 # reviewing-code
@@ -10,7 +12,7 @@ Four-pass multi-agent code review of the current branch against a base ref. Each
 ## When to use
 
 - Reviewing a feature branch before opening (or after updating) a PR.
-- Wanting a second-and-third opinion from a different agent than the one currently driving you.
+- Getting a second-and-third opinion from a different agent than the one currently editing.
 - Surfacing real bugs / regressions / data-integrity issues — not style.
 - Establishing a paper trail for a tricky migration or compatibility-path change.
 
@@ -24,6 +26,16 @@ Four-pass multi-agent code review of the current branch against a base ref. Each
 | 4    | verify                | `claude`         | appends `## <Backend> Verification` section |
 
 Per-role fallback order, hybrid-backend handling (`opencode`), and the graceful-detect / skip-with-note policy live in [`_shared/multi-agent-backends.md`](../_shared/multi-agent-backends.md). This skill is the canonical implementation of that contract.
+
+## Variant analysis on confirmed findings
+
+For every High / Critical finding the verify pass marks `CONFIRMED`, run a variant search before closing the report — the same shape often hides elsewhere in the repo. The discipline (what to search for, how to scope, when to skip) lives in [`_shared/variant-analysis.md`](../_shared/variant-analysis.md). Append a `## Variant Analysis` section per finding when variants are found; omit the section when there are none rather than emit an empty header.
+
+For security-class diffs specifically, run [`scanning-quality/scans/differential.md`](../scanning-quality/scans/differential.md) alongside this skill — that scan is the security-regression cousin to this skill's general review.
+
+## Compounding lessons
+
+When the same review finding has fired in two consecutive runs (or across two repos), promote it to a fleet rule per [`_shared/compound-lessons.md`](../_shared/compound-lessons.md). Don't keep catching the same bug; codify it once.
 
 ## Usage
 

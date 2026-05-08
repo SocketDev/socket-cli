@@ -467,6 +467,7 @@ export const scanLoggerLeaks = (text: string): LineHit[] => {
 
 const FLEET_REPO_NAMES = [
   'claude-code',
+  'skills',
   'socket-addon',
   'socket-btm',
   'socket-cli',
@@ -478,6 +479,7 @@ const FLEET_REPO_NAMES = [
   'socket-sdxgen',
   'socket-stuie',
   'ultrathink',
+  'vscode-socket-security',
 ] as const
 
 // `../<repo>/…` or `../../<repo>/…` etc. — relative path that walks

@@ -46,6 +46,7 @@ const logger = getDefaultLogger()
 
 const FLEET_REPO_NAMES = [
   'claude-code',
+  'skills',
   'socket-addon',
   'socket-btm',
   'socket-cli',
@@ -57,6 +58,7 @@ const FLEET_REPO_NAMES = [
   'socket-sdxgen',
   'socket-stuie',
   'ultrathink',
+  'vscode-socket-security',
 ] as const
 
 const FLEET_RE_FRAGMENT = FLEET_REPO_NAMES.join('|')

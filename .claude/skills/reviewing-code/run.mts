@@ -692,6 +692,7 @@ async function resolveBaseRef(
   if (provided) {
     return provided
   }
+  // Default-branch fallback per CLAUDE.md: symbolic-ref → origin/main → origin/master.
   try {
     const headRef = await git(
       [
@@ -707,6 +708,17 @@ async function resolveBaseRef(
     }
   } catch {
     // fall through
+  }
+  for (const branch of ['main', 'master']) {
+    try {
+      await git(
+        ['show-ref', '--verify', '--quiet', `refs/remotes/origin/${branch}`],
+        cwd,
+      )
+      return `origin/${branch}`
+    } catch {
+      // try next
+    }
   }
   return 'origin/main'
 }

@@ -1,19 +1,23 @@
 /**
- * @fileoverview TypeBox schema for `.socket-repo-template.json` — the
- * per-fleet-repo config consumed by `sync-scaffolding`.
+ * @fileoverview TypeBox schema for the per-fleet-repo socket-repo-template
+ * config consumed by `sync-scaffolding`. Canonical filename is
+ * `.config/socket-repo-template.json`; the legacy
+ * `.socket-repo-template.json` at the repo root is still accepted by
+ * the loader for back-compat.
  *
- * Each fleet repo (socket-lib, socket-cli, ultrathink, …) ships a
- * `.socket-repo-template.json` at its root declaring its kind +
- * any per-repo opt-ins. The runner reads it to decide which optional
- * files the repo is expected to ship and which it must not ship.
+ * Each fleet repo (socket-lib, socket-cli, ultrathink, …) ships this
+ * config declaring its kind + any per-repo opt-ins. The runner reads
+ * it to decide which optional files the repo is expected to ship and
+ * which it must not ship.
  *
  * Source-of-truth flow:
  *   - This TypeBox source → `Static<typeof SocketRepoTemplateConfigSchema>`
  *     for typed reads in the runner.
  *   - `socket-repo-template-emit-schema.mts` writes
- *     `socket-repo-template-schema.json` (draft 2020-12) at the repo root.
- *   - `.socket-repo-template.json` references the JSON Schema via its
- *     `$schema` field for IDE autocompletion.
+ *     `.config/socket-repo-template-schema.json` (draft 2020-12) next to
+ *     the per-repo config.
+ *   - The per-repo config references the JSON Schema via its `$schema`
+ *     field for IDE autocompletion.
  *
  * Byte-identical across the fleet via sync-scaffolding's IDENTICAL_FILES.
  */
@@ -231,7 +235,7 @@ export const SocketRepoTemplateConfigSchema = Type.Object(
     $schema: Type.Optional(
       Type.String({
         description:
-          'JSON Schema reference for editor autocompletion. Conventionally `./socket-repo-template-schema.json`.',
+          'JSON Schema reference for editor autocompletion. Conventionally `./socket-repo-template-schema.json` — both the config and its schema live side-by-side in `.config/`.',
       }),
     ),
     schemaVersion: Type.Literal(1, {
@@ -253,7 +257,7 @@ export const SocketRepoTemplateConfigSchema = Type.Object(
   },
   {
     description:
-      'Per-repo socket-repo-template config. Lives at the fleet repo root as `.socket-repo-template.json`.',
+      'Per-repo socket-repo-template config. Canonical path: `.config/socket-repo-template.json` (legacy: `.socket-repo-template.json` at the repo root).',
   },
 )
 
