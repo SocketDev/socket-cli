@@ -14,7 +14,11 @@
  * - commands/optimize/update-manifest-by-agent.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   updateManifest,
@@ -266,6 +270,138 @@ describe('update-manifest-by-agent', () => {
       const keys = Object.keys(parsed)
       expect(keys.indexOf('overrides')).toBeGreaterThan(keys.indexOf('main'))
       expect(parsed.overrides).toEqual({ lodash: '4.17.21' })
+    })
+
+    describe('pnpm 11+ integration (writes to pnpm-workspace.yaml)', () => {
+      let tmpDir: string
+
+      beforeEach(() => {
+        tmpDir = mkdtempSync(
+          path.join(os.tmpdir(), 'socket-cli-update-manifest-test-'),
+        )
+      })
+
+      afterEach(() => {
+        rmSync(tmpDir, { force: true, recursive: true })
+      })
+
+      it('writes overrides to pnpm-workspace.yaml when pnpm@11+', async () => {
+        pkgJson = createEditablePkgJson({ name: 'test' })
+        await updateManifest(
+          'pnpm',
+          makeEnv({
+            agent: 'pnpm',
+            agentVersion: { major: 11, minor: 0, patch: 8 },
+            editablePkgJson: pkgJson,
+            pkgPath: tmpDir,
+          }),
+          { lodash: '4.17.21' },
+        )
+
+        const yamlContent = readFileSync(
+          path.join(tmpDir, 'pnpm-workspace.yaml'),
+          'utf8',
+        )
+        expect(yamlContent).toContain('overrides:')
+        expect(yamlContent).toContain('lodash: 4.17.21')
+      })
+
+      it('clears stale pnpm.overrides from package.json when routing to YAML', async () => {
+        // package.json has a leftover pnpm.overrides block from the
+        // pnpm-10 era. Writing via the YAML path should clear it so
+        // the legacy block doesn't drift silently.
+        pkgJson = createEditablePkgJson({
+          name: 'test',
+          pnpm: { overrides: { 'old-pkg': '1.0.0' } },
+        })
+        await updateManifest(
+          'pnpm',
+          makeEnv({
+            agent: 'pnpm',
+            agentVersion: { major: 11, minor: 0, patch: 8 },
+            editablePkgJson: pkgJson,
+            pkgPath: tmpDir,
+          }),
+          { lodash: '4.17.21' },
+        )
+
+        // package.json's pnpm block should be cleared (update was called
+        // with pnpm: undefined or pnpm: <object without overrides>).
+        const updateCalls = (pkgJson.update as any).mock.calls as Array<
+          [Record<string, unknown>]
+        >
+        const pnpmCalls = updateCalls.filter(([arg]) => 'pnpm' in arg)
+        expect(pnpmCalls.length).toBeGreaterThan(0)
+        // Latest pnpm-related update should not still have an overrides
+        // member (or the whole pnpm field should be undefined).
+        const lastPnpm = pnpmCalls.at(-1)![0].pnpm as
+          | undefined
+          | { overrides?: unknown }
+        expect(
+          lastPnpm === undefined ||
+            lastPnpm === null ||
+            !('overrides' in (lastPnpm ?? {})) ||
+            !(lastPnpm as any).overrides,
+        ).toBe(true)
+      })
+
+      it('preserves a pre-existing pnpm-workspace.yaml when merging', async () => {
+        const fs = await import('node:fs')
+        fs.writeFileSync(
+          path.join(tmpDir, 'pnpm-workspace.yaml'),
+          `# Header
+packages:
+  - .claude/hooks/*
+
+minimumReleaseAge: 10080
+`,
+          'utf8',
+        )
+        pkgJson = createEditablePkgJson({ name: 'test' })
+        await updateManifest(
+          'pnpm',
+          makeEnv({
+            agent: 'pnpm',
+            agentVersion: { major: 11, minor: 0, patch: 8 },
+            editablePkgJson: pkgJson,
+            pkgPath: tmpDir,
+          }),
+          { lodash: '4.17.21' },
+        )
+
+        const yamlContent = readFileSync(
+          path.join(tmpDir, 'pnpm-workspace.yaml'),
+          'utf8',
+        )
+        expect(yamlContent).toContain('# Header')
+        expect(yamlContent).toContain('packages:')
+        expect(yamlContent).toContain('minimumReleaseAge: 10080')
+        expect(yamlContent).toContain('overrides:')
+        expect(yamlContent).toContain('lodash: 4.17.21')
+      })
+
+      it('routes to package.json when pnpm < 11 (legacy path)', async () => {
+        pkgJson = createEditablePkgJson({ name: 'test' })
+        await updateManifest(
+          'pnpm',
+          makeEnv({
+            agent: 'pnpm',
+            agentVersion: { major: 10, minor: 12, patch: 0 },
+            editablePkgJson: pkgJson,
+            pkgPath: tmpDir,
+          }),
+          { lodash: '4.17.21' },
+        )
+
+        // Should NOT have created pnpm-workspace.yaml.
+        const fs = await import('node:fs')
+        expect(fs.existsSync(path.join(tmpDir, 'pnpm-workspace.yaml'))).toBe(
+          false,
+        )
+        // Should have written to package.json (via fromJSON since field
+        // didn't exist).
+        expect(pkgJson.fromJSON).toHaveBeenCalled()
+      })
     })
   })
 

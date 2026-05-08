@@ -5,19 +5,25 @@
  * and the --help-full environment-variable expansion.
  */
 
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { buildHelpLines } from '../../../../src/utils/cli/with-subcommands-help.mts'
 
 import type { CliSubcommand } from '../../../../src/utils/cli/with-subcommands-shared.mts'
 import type { MeowFlags } from '../../../../src/flags.mts'
 
+// Hoist a single shared spy so tests can assert call counts / args.
+const mockFail = vi.hoisted(() => vi.fn())
+const mockInfo = vi.hoisted(() => vi.fn())
+const mockSuccess = vi.hoisted(() => vi.fn())
+const mockWarn = vi.hoisted(() => vi.fn())
+
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => ({
-    fail: vi.fn(),
-    info: vi.fn(),
-    success: vi.fn(),
-    warn: vi.fn(),
+    fail: mockFail,
+    info: mockInfo,
+    success: mockSuccess,
+    warn: mockWarn,
   }),
 }))
 
@@ -37,9 +43,20 @@ const FLAGS: MeowFlags = {
 }
 
 describe('buildHelpLines', () => {
+  beforeEach(() => {
+    mockFail.mockClear()
+    mockInfo.mockClear()
+    mockSuccess.mockClear()
+    mockWarn.mockClear()
+  })
+
   describe('root-command bucketed layout', () => {
     function rootSubcommands(): Record<string, CliSubcommand> {
-      // The exhaustive bucketed set from buildHelpLines.
+      // The exhaustive bucketed set from buildHelpLines. Keep this in
+      // sync with the canonical Set in `with-subcommands-help.mts` —
+      // any addition there should be reflected here so the
+      // "no warnings on the canonical set" regression test stays
+      // meaningful.
       const names = [
         'analytics',
         'ask',
@@ -58,6 +75,7 @@ describe('buildHelpLines', () => {
         'login',
         'logout',
         'manifest',
+        'mcp',
         'npm',
         'npx', // socket-hook: allow npx
         'nuget',
@@ -84,6 +102,22 @@ describe('buildHelpLines', () => {
       }
       return subs
     }
+
+    it('emits no warnings when subcommands match the canonical bucketed set exactly (regression for `socket --version` noise)', () => {
+      buildHelpLines({
+        aliases: {},
+        argv: [],
+        flags: FLAGS,
+        isRootCommand: true,
+        name: 'socket',
+        subcommands: rootSubcommands(),
+      })
+      // The dev-time validation should be silent when the registered
+      // subcommands exactly match the canonical Set. Any logger.fail
+      // call here means a registered command is missing from the Set
+      // (or a Set entry was removed without removing its registration).
+      expect(mockFail).not.toHaveBeenCalled()
+    })
 
     it('emits Usage / Main commands / Socket API / Local tools / CLI configuration buckets', () => {
       const lines = buildHelpLines({
@@ -159,8 +193,11 @@ describe('buildHelpLines', () => {
         name: 'socket',
         subcommands: subs,
       })
-      // The logger.fail is mocked — just verify the function still emits.
       expect(lines.length).toBeGreaterThan(0)
+      expect(mockFail).toHaveBeenCalledWith(
+        'Received an unknown command:',
+        'unknown-cmd',
+      )
     })
 
     it('warns when bucketed commands are missing from subcommands map', () => {
@@ -176,8 +213,20 @@ describe('buildHelpLines', () => {
         name: 'socket',
         subcommands: subs,
       })
-      // logger.fail is mocked. Verify the function still produced lines.
       expect(lines.length).toBeGreaterThan(0)
+      // The "missing from subcommands" warning is the second flavor of
+      // logger.fail emitted by buildHelpLines. Assert it fired with
+      // some payload mentioning the dropped command.
+      const failCalls = mockFail.mock.calls
+      expect(failCalls.length).toBeGreaterThan(0)
+      const calledWithMissing = failCalls.some(
+        args =>
+          typeof args[0] === 'string' &&
+          args[0].includes('not marked as public') &&
+          typeof args[1] === 'string' &&
+          args[1].includes('scan'),
+      )
+      expect(calledWithMissing).toBe(true)
     })
 
     it('skips hidden subcommands during bucket reconciliation', () => {
