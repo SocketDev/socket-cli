@@ -120,6 +120,38 @@ describe('handleGitHubApiError', () => {
       // Should show approximate wait time.
       expect(result.cause).toMatch(/Try again in \d+ seconds/)
     })
+
+    it('falls back to generic message when retry-after is NaN (line 481)', () => {
+      const error = createRequestError(429, 'Rate limit exceeded', {
+        'retry-after': 'not-a-number',
+      })
+      const result = handleGitHubApiError(error, 'fetching data')
+
+      expect(result.ok).toBe(false)
+      // NaN waitTime → falls through to "Try again in a few minutes" message.
+      expect(result.cause).toContain('a few minutes')
+    })
+
+    it('falls back to generic message when retry-after is negative (line 481)', () => {
+      const error = createRequestError(429, 'Rate limit exceeded', {
+        'retry-after': '-30',
+      })
+      const result = handleGitHubApiError(error, 'fetching data')
+
+      expect(result.ok).toBe(false)
+      // Negative waitTime → falls through to "Try again in a few minutes" message.
+      expect(result.cause).toContain('a few minutes')
+    })
+
+    it('falls back to generic message when reset header is non-numeric', () => {
+      const error = createRequestError(429, 'Rate limit exceeded', {
+        'x-ratelimit-reset': 'not-a-timestamp',
+      })
+      const result = handleGitHubApiError(error, 'fetching data')
+
+      expect(result.ok).toBe(false)
+      expect(result.cause).toContain('a few minutes')
+    })
   })
 
   describe('abuse detection', () => {
