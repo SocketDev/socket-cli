@@ -207,6 +207,34 @@ describe('utils/config', () => {
         await safeDelete(tmpDir, { recursive: true })
       }
     })
+
+    it('returns parse error when socket.yml has invalid YAML (lines 222-228)', async () => {
+      // Write a socket.yml with garbage YAML content that fails to parse.
+      const tmpDir = path.resolve(
+        mkdtempSync(path.join(os.tmpdir(), 'socket-test-')),
+      )
+      const socketYmlPath = path.join(tmpDir, 'socket.yml')
+      const nestedDir = path.join(tmpDir, 'deep', 'nested')
+
+      try {
+        safeMkdirSync(nestedDir, { recursive: true })
+        // Garbage with conflicting YAML mapping types — parseSocketConfig
+        // expects an object schema, this will throw.
+        writeFileSync(
+          socketYmlPath,
+          'version: not-a-version\n  invalid: ::: garbage\n!!!:\n  -- bad',
+          'utf8',
+        )
+
+        const result = findSocketYmlSync(nestedDir)
+        expect(result.ok).toBe(false)
+        if (!result.ok) {
+          expect(result.message).toContain('unable to parse')
+        }
+      } finally {
+        await safeDelete(tmpDir, { recursive: true })
+      }
+    })
   })
 
   describe('non-destructive config saving', () => {
