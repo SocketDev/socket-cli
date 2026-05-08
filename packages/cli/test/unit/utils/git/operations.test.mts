@@ -425,6 +425,14 @@ describe('git utilities', () => {
         expect.any(Object),
       )
     })
+
+    it('returns false when reset spawn rejects (lines 525-527)', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockRejectedValue(new Error('reset failed'))
+
+      const result = await gitResetHard('origin/main')
+      expect(result).toBe(false)
+    })
   })
 
   describe('gitEnsureIdentity', () => {
@@ -443,6 +451,47 @@ describe('git utilities', () => {
         ['config', '--get', 'user.name'],
         expect.any(Object),
       )
+    })
+
+    it('handles config set when get fails and value differs (lines 432-450)', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      // Reject `git config --get` so configValue stays undefined != desired value;
+      // then `git config <prop> <value>` resolves successfully.
+      spawn.mockImplementation((_cmd: any, args: any) => {
+        if (args?.[1] === '--get') {
+          return Promise.reject(new Error('not set')) as any
+        }
+        return Promise.resolve({ status: 0, stdout: '', stderr: '' }) as any
+      })
+
+      await gitEnsureIdentity('Test User', 'test@example.com')
+      // Verify the set calls happened.
+      expect(spawn).toHaveBeenCalledWith(
+        'git',
+        ['config', 'user.email', 'test@example.com'],
+        expect.any(Object),
+      )
+      expect(spawn).toHaveBeenCalledWith(
+        'git',
+        ['config', 'user.name', 'Test User'],
+        expect.any(Object),
+      )
+    })
+
+    it('logs failure when config set rejects (lines 447-450)', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      // Reject get; reject set.
+      spawn.mockImplementation((_cmd: any, args: any) => {
+        if (args?.[1] === '--get') {
+          return Promise.reject(new Error('not set')) as any
+        }
+        return Promise.reject(new Error('config set failed')) as any
+      })
+
+      // No throw expected; promises are awaited via Promise.allSettled.
+      await expect(
+        gitEnsureIdentity('Test User', 'test@example.com'),
+      ).resolves.toBeUndefined()
     })
   })
 
@@ -559,6 +608,15 @@ describe('git utilities', () => {
 
       const result = await detectDefaultBranch('/test/dir')
       expect(result).toBe('main')
+    })
+
+    it('falls back to SOCKET_DEFAULT_BRANCH when nothing matches (line 223)', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      // All local AND remote checks reject — exhaust both passes.
+      spawn.mockRejectedValue(new Error('not found'))
+
+      const result = await detectDefaultBranch('/test/dir')
+      expect(result).toBe('socket-default-branch')
     })
   })
 
