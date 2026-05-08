@@ -23,6 +23,7 @@ import { isSeaBinary } from '../sea/detect.mts'
 
 import type { DlxOptions, DlxSpawnResult } from './spawn.mts'
 import type { BinaryResolution } from './resolve-binary.mts'
+import type { ExternalTool } from './vfs-extract.mts'
 import type { StdioOptions } from 'node:child_process'
 import type { SpawnExtra } from '@socketsecurity/lib/spawn'
 
@@ -58,7 +59,7 @@ export function defineAutoDispatch(opts: {
  *
  * The VFS name (e.g. 'trufflehog') is the directory key under the SEA bundle.
  */
-export function defineVfsSpawn(vfsName: string): ToolSpawnFn {
+export function defineVfsSpawn(vfsName: ExternalTool): ToolSpawnFn {
   return async (args, options, spawnExtra) => {
     return await spawnToolVfs(vfsName, args, options, spawnExtra)
   }
@@ -111,7 +112,7 @@ export function defineGitHubReleaseSpawn(opts: {
  */
 export function defineToolSpawn(opts: {
   toolName: string
-  vfsName: string
+  vfsName: ExternalTool
   resolve: () => BinaryResolution
 }): {
   Dlx: ToolSpawnFn

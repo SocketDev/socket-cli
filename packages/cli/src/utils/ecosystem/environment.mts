@@ -30,28 +30,19 @@ import path from 'node:path'
 import browserslist from 'browserslist'
 import semver from 'semver'
 
-import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
 import { whichReal } from '@socketsecurity/lib/bin'
 import {
   BUN,
-  BUN_LOCK,
-  BUN_LOCKB,
   NPM,
-  NPM_SHRINKWRAP_JSON,
-  PACKAGE_LOCK_JSON,
   PNPM,
-  PNPM_LOCK_YAML,
   VLT,
-  VLT_LOCK_JSON,
   YARN,
   YARN_BERRY,
   YARN_CLASSIC,
-  YARN_LOCK,
 } from '@socketsecurity/lib/constants/agents'
 import { getMaintainedNodeVersions } from '@socketsecurity/lib/constants/node'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
-import { readFileBinary, readFileUtf8 } from '@socketsecurity/lib/fs'
 import {
   readPackageJson,
   toEditablePackageJson,
@@ -68,9 +59,6 @@ import {
 import { FLAG_VERSION } from '../../constants/cli.mts'
 import { VITEST } from '../../env/vitest.mts'
 import {
-  EXT_LOCK,
-  EXT_LOCKB,
-  NODE_MODULES,
   NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
   PACKAGE_JSON,
 } from '../../constants/packages.mts'
@@ -158,159 +146,23 @@ export type PartialEnvDetails = Readonly<
   >
 >
 
-export type ReadLockFile =
-  | ((lockPath: string) => Promise<string | Buffer | undefined>)
-  | ((
-      lockPath: string,
-      agentExecPath: string,
-    ) => Promise<string | Buffer | undefined>)
-  | ((
-      lockPath: string,
-      agentExecPath: string,
-      cwd: string,
-    ) => Promise<string | Buffer | undefined>)
+// Lockfile registration + per-agent reader Map extracted to keep this file
+// under the 1000-line cap. Re-export ReadLockFile for back-compat.
+import {
+  LOCKS,
+  readLockFileByAgent,
+} from './lockfile-readers.mts'
 
-const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
-  function wrapReader<T extends (...args: any[]) => Promise<any>>(
-    reader: T,
-  ): (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>> | undefined> {
-    return async (...args: any[]): Promise<any> => {
-      try {
-        return await reader(...args)
-      } catch {}
-      return undefined
-    }
-  }
+export type { ReadLockFile } from './lockfile-readers.mts'
 
-  const binaryReader = wrapReader(readFileBinary)
+// Windows-shim helpers extracted to keep this file under the 1000-line cap.
+// Imported for local use AND re-exported so existing import paths keep working.
+import {
+  preferWindowsCmdShim,
+  resolveBinPathSync,
+} from './windows-shims.mts'
 
-  const defaultReader = wrapReader(
-    async (lockPath: string) => await readFileUtf8(lockPath),
-  )
-
-  return new Map([
-    [
-      BUN,
-      wrapReader(
-        async (
-          lockPath: string,
-          agentExecPath: string,
-          cwd = process.cwd(),
-        ) => {
-          const ext = path.extname(lockPath)
-          if (ext === EXT_LOCK) {
-            return await defaultReader(lockPath)
-          }
-          if (ext === EXT_LOCKB) {
-            const lockBuffer = await binaryReader(lockPath)
-            if (lockBuffer) {
-              try {
-                return parseBunLockb(lockBuffer)
-              } catch {}
-            }
-            // To print a Yarn lockfile to your console without writing it to disk
-            // use `bun bun.lockb`.
-            // https://bun.sh/guides/install/yarnlock
-            return (
-              await spawn(agentExecPath, [lockPath], {
-                cwd,
-                // On Windows, bun is often a .cmd file that requires shell execution.
-                // The spawn function from @socketsecurity/registry will handle this properly
-                // when shell is true.
-                shell: WIN32,
-              })
-            ).stdout
-          }
-          return undefined
-        },
-      ),
-    ],
-    [NPM, defaultReader],
-    [PNPM, defaultReader],
-    [VLT, defaultReader],
-    [YARN_BERRY, defaultReader],
-    [YARN_CLASSIC, defaultReader],
-  ])
-})()
-
-// The order of LOCKS properties IS significant as it affects iteration order.
-const LOCKS: Record<string, Agent> = {
-  [BUN_LOCK]: BUN,
-  [BUN_LOCKB]: BUN,
-  // If both package-lock.json and npm-shrinkwrap.json are present in the root
-  // of a project, npm-shrinkwrap.json will take precedence and package-lock.json
-  // will be ignored.
-  // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#package-lockjson-vs-npm-shrinkwrapjson
-  [NPM_SHRINKWRAP_JSON]: NPM,
-  [PACKAGE_LOCK_JSON]: NPM,
-  [PNPM_LOCK_YAML]: PNPM,
-  [YARN_LOCK]: YARN_CLASSIC,
-  [VLT_LOCK_JSON]: VLT,
-  // Lastly, look for a hidden lockfile which is present if .npmrc has package-lock=false:
-  // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#hidden-lockfiles
-  //
-  // Unlike the other LOCKS keys this key contains a directory AND filename so
-  // it has to be handled differently.
-  [`${NODE_MODULES}/${DOT_PACKAGE_LOCK_JSON}`]: NPM,
-}
-
-export function resolveBinPathSync(binPath: string): string {
-  // Simple implementation that tries to resolve a bin path to its actual entry point.
-  // This is used on Windows to resolve shims like `npm` or `npm.cmd` to their .js entry point.
-  if (!fs.existsSync(binPath)) {
-    return binPath
-  }
-
-  try {
-    // Try to read the file synchronously
-    const content = fs.readFileSync(binPath, 'utf8')
-    // Look for common patterns in npm/node shims:
-    // - node "C:\path\to\npm-cli.js" "$@"
-    // - "%_prog%"  "%dp0%\node_modules\npm\bin\npm-cli.js" %*
-    const nodePathMatch = content.match(
-      /(?:node\s+["']|"%dp0%\\)([^"'\s]+(?:npm-cli|pnpm|yarn)\.(?:c?js|mjs))["'\s]/i,
-    )
-    if (nodePathMatch && nodePathMatch.length > 1 && nodePathMatch[1]) {
-      const matchedPath = nodePathMatch[1]
-      const resolvedPath = path.isAbsolute(matchedPath)
-        ? matchedPath
-        : path.resolve(path.dirname(binPath), matchedPath)
-      return resolvedPath
-    }
-  } catch {
-    // If we can't read/parse the file, just return the original path
-  }
-  return binPath
-}
-
-export function preferWindowsCmdShim(binPath: string, binName: string): string {
-  // Only Windows uses .cmd shims
-  if (!WIN32) {
-    return binPath
-  }
-
-  // Relative paths might be shell commands or aliases, not file paths with potential shims
-  if (!path.isAbsolute(binPath)) {
-    return binPath
-  }
-
-  // If the path already has an extension (.exe, .bat, etc.), it is probably a Windows executable
-  if (path.extname(binPath) !== '') {
-    return binPath
-  }
-
-  // Ensures binPath actually points to the expected binary, not a parent directory that happens to match `binName`
-  // For example, if binPath is C:\foo\npm\something and binName is npm, we shouldn't replace it
-  if (path.basename(binPath).toLowerCase() !== binName.toLowerCase()) {
-    return binPath
-  }
-
-  // Finally attempt to construct a .cmd shim from binPath
-  const cmdShim = path.join(path.dirname(binPath), `${binName}.cmd`)
-
-  // Ensure shim exists, otherwise fallback to binPath
-  return fs.existsSync(cmdShim) ? cmdShim : binPath
-}
+export { preferWindowsCmdShim, resolveBinPathSync }
 
 export async function getAgentExecPath(agent: Agent): Promise<string> {
   const binName = binByAgent.get(agent)!
