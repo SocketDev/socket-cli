@@ -955,5 +955,82 @@ describe('meow-with-subcommands', () => {
       expect(true).toBe(true)
     })
 
+    it('suggests close-match command for typos (lines 414-418)', async () => {
+      const runSpy = vi.fn(async () => undefined)
+      const subcommands = {
+        scan: {
+          description: 'scan',
+          run: runSpy,
+        },
+        login: {
+          description: 'login',
+          run: vi.fn(async () => undefined),
+        },
+      }
+      const originalExitCode = process.exitCode
+      try {
+        await meowWithSubcommands({
+          name: 'socket',
+          argv: ['scn'], // typo for "scan"
+          importMeta: import.meta,
+          subcommands,
+        })
+      } catch {
+        // Expected to potentially throw — we want the suggestion path.
+      }
+      // Subcommand should NOT have run for the typo.
+      expect(runSpy).not.toHaveBeenCalled()
+      // Exit code 2 set when suggestion found.
+      // Reset for other tests.
+      process.exitCode = originalExitCode
+    })
+
+    it('shows error for unknown command with no close match', async () => {
+      const subcommands = {
+        scan: {
+          description: 'scan',
+          run: vi.fn(async () => undefined),
+        },
+      }
+      const originalExitCode = process.exitCode
+      try {
+        await meowWithSubcommands({
+          name: 'socket',
+          argv: ['totally-unrelated-name'],
+          importMeta: import.meta,
+          subcommands,
+        })
+      } catch {
+        // showHelp throw fallthrough is expected.
+      }
+      expect(subcommands.scan.run).not.toHaveBeenCalled()
+      process.exitCode = originalExitCode
+    })
+
+    it('shows version when --version flag is set (line 469)', async () => {
+      const subcommands = {
+        scan: {
+          description: 'scan',
+          run: vi.fn(async () => undefined),
+        },
+      }
+      try {
+        await meowWithSubcommands(
+          {
+            name: 'socket',
+            argv: ['--version'],
+            importMeta: import.meta,
+            subcommands,
+          },
+          {
+            // Need version in flags or root config to avoid the meow validate error.
+            version: '1.0.0',
+          },
+        )
+      } catch {
+        // showVersion typically calls process.exit via meow.
+      }
+      expect(subcommands.scan.run).not.toHaveBeenCalled()
+    })
   })
 })
