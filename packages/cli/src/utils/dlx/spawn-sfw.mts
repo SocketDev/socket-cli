@@ -7,16 +7,19 @@
  *
  * sfw is a transparent proxy: args is [innerTool, innerSubcommand?, ...rest].
  * Machine-mode flags forward to the inner tool so its stdout stays pipe-safe
- * under --json.
+ * under --json. The Dlx flow stays bespoke (machine-mode + local-override
+ * both apply); Vfs + auto-dispatch use the shared helpers.
  */
 
 import { detectExecutableType } from '@socketsecurity/lib/dlx/detect'
 import { spawn } from '@socketsecurity/lib/spawn'
 
-import { spawnDlx, spawnToolVfs } from './spawn.mts'
+import {
+  defineAutoDispatch,
+  defineVfsSpawn,
+} from './define-tool-spawn.mts'
+import { spawnDlx } from './spawn.mts'
 import { resolveSfw } from './resolve-binary.mjs'
-import { areExternalToolsAvailable } from './vfs-extract.mjs'
-import { isSeaBinary } from '../sea/detect.mts'
 import {
   applyMachineModeIfActive,
   inferSubcommand,
@@ -102,29 +105,9 @@ export async function spawnSfwDlx(
   )
 }
 
-/**
- * Helper to spawn Socket Firewall (sfw) from VFS.
- * Used when running in SEA mode.
- */
-export async function spawnSfwVfs(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  return await spawnToolVfs('sfw', args, options, spawnExtra)
-}
+export const spawnSfwVfs = defineVfsSpawn('sfw')
 
-/**
- * Spawn Socket Firewall (sfw).
- * Auto-detects SEA mode and uses appropriate spawn method.
- */
-export async function spawnSfw(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  if (isSeaBinary() && areExternalToolsAvailable()) {
-    return await spawnSfwVfs(args, options, spawnExtra)
-  }
-  return await spawnSfwDlx(args, options, spawnExtra)
-}
+export const spawnSfw = defineAutoDispatch({
+  vfs: spawnSfwVfs,
+  dlx: spawnSfwDlx,
+})

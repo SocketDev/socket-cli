@@ -4,12 +4,18 @@
  * - spawnSynpDlx: install via Socket dlx, then exec.
  * - spawnSynpVfs: extract from SEA bundle, then exec.
  * - spawnSynp: auto-detect SEA vs npm-CLI mode and dispatch.
+ *
+ * synp is a pure-npm package (no GitHub release / no local override), so the
+ * Dlx flow is just `spawnDlx` with the synp version pin. Vfs and auto-dispatch
+ * use the standard helpers from define-tool-spawn.
  */
 
-import { spawnDlx, spawnToolVfs } from './spawn.mts'
-import { areExternalToolsAvailable } from './vfs-extract.mjs'
+import {
+  defineAutoDispatch,
+  defineVfsSpawn,
+} from './define-tool-spawn.mts'
+import { spawnDlx } from './spawn.mts'
 import { getSynpVersion } from '../../env/synp-version.mts'
-import { isSeaBinary } from '../sea/detect.mts'
 
 import type { DlxOptions, DlxSpawnResult } from './spawn.mts'
 import type { SpawnExtra } from '@socketsecurity/lib/spawn'
@@ -33,29 +39,9 @@ export async function spawnSynpDlx(
   )
 }
 
-/**
- * Helper to spawn synp from VFS.
- * Used when running in SEA mode.
- */
-export async function spawnSynpVfs(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  return await spawnToolVfs('synp', args, options, spawnExtra)
-}
+export const spawnSynpVfs = defineVfsSpawn('synp')
 
-/**
- * Spawn synp (package.json converter).
- * Auto-detects SEA mode and uses appropriate spawn method.
- */
-export async function spawnSynp(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  if (isSeaBinary() && areExternalToolsAvailable()) {
-    return await spawnSynpVfs(args, options, spawnExtra)
-  }
-  return await spawnSynpDlx(args, options, spawnExtra)
-}
+export const spawnSynp = defineAutoDispatch({
+  vfs: spawnSynpVfs,
+  dlx: spawnSynpDlx,
+})

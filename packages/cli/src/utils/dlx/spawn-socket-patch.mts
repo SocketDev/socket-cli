@@ -4,19 +4,23 @@
  * - spawnSocketPatchDlx: local override > GitHub release download > legacy npm dlx fallback.
  * - spawnSocketPatchVfs: extract from SEA bundle, then exec.
  * - spawnSocketPatch: auto-detect SEA vs npm-CLI mode and dispatch.
+ *
+ * The Dlx flow is bespoke (three-way dispatch local / GitHub-release / legacy
+ * npm fallback). Vfs + auto-dispatch use the shared helpers.
  */
 
 import { detectExecutableType } from '@socketsecurity/lib/dlx/detect'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import {
+  defineAutoDispatch,
+  defineVfsSpawn,
+} from './define-tool-spawn.mts'
+import {
   downloadGitHubReleaseBinary,
   spawnDlx,
-  spawnToolVfs,
 } from './spawn.mts'
 import { resolveSocketPatch } from './resolve-binary.mjs'
-import { areExternalToolsAvailable } from './vfs-extract.mjs'
-import { isSeaBinary } from '../sea/detect.mts'
 
 import type { DlxOptions, DlxSpawnResult } from './spawn.mts'
 import type { StdioOptions } from 'node:child_process'
@@ -91,29 +95,9 @@ export async function spawnSocketPatchDlx(
   )
 }
 
-/**
- * Helper to spawn Socket Patch from VFS.
- * Used when running in SEA mode.
- */
-export async function spawnSocketPatchVfs(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  return await spawnToolVfs('socket-patch', args, options, spawnExtra)
-}
+export const spawnSocketPatchVfs = defineVfsSpawn('socket-patch')
 
-/**
- * Spawn Socket Patch.
- * Auto-detects SEA mode and uses appropriate spawn method.
- */
-export async function spawnSocketPatch(
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  if (isSeaBinary() && areExternalToolsAvailable()) {
-    return await spawnSocketPatchVfs(args, options, spawnExtra)
-  }
-  return await spawnSocketPatchDlx(args, options, spawnExtra)
-}
+export const spawnSocketPatch = defineAutoDispatch({
+  vfs: spawnSocketPatchVfs,
+  dlx: spawnSocketPatchDlx,
+})
