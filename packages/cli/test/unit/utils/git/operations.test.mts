@@ -224,6 +224,39 @@ describe('git utilities', () => {
         expect.any(Object),
       )
     })
+
+    it('returns false when git add rejects (lines 344-347)', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      // gitEnsureIdentity calls spawn first - allow those to succeed.
+      // Then the git add call should fail.
+      spawn.mockImplementation((_cmd: any, args: any) => {
+        if (args?.includes('add')) {
+          return Promise.reject(new Error('add failed')) as any
+        }
+        return Promise.resolve({ status: 0, stdout: '', stderr: '' }) as any
+      })
+
+      const result = await gitCommit('Test commit', ['file.txt'], {
+        cwd: '/test/dir',
+      })
+      expect(result).toBe(false)
+    })
+
+    it('returns false when git commit rejects (lines 355-358)', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      // Allow add to succeed, fail on commit.
+      spawn.mockImplementation((_cmd: any, args: any) => {
+        if (args?.[0] === 'commit') {
+          return Promise.reject(new Error('commit failed')) as any
+        }
+        return Promise.resolve({ status: 0, stdout: '', stderr: '' }) as any
+      })
+
+      const result = await gitCommit('Test commit', ['file.txt'], {
+        cwd: '/test/dir',
+      })
+      expect(result).toBe(false)
+    })
   })
 
   describe('gitCheckoutBranch', () => {
@@ -269,6 +302,31 @@ describe('git utilities', () => {
         expect.any(Object),
       )
     })
+
+    it('returns true early when branch already exists (line 272)', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      // gitLocalBranchExists resolves successfully (branch exists).
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+
+      const result = await gitCreateBranch('existing-branch')
+      expect(result).toBe(true)
+      // Only the show-ref call should occur — no `git branch` create.
+      expect(spawn).not.toHaveBeenCalledWith(
+        'git',
+        ['branch', 'existing-branch'],
+        expect.any(Object),
+      )
+    })
+
+    it('returns false when branch creation rejects (lines 282-286)', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn
+        .mockRejectedValueOnce(new Error('Branch does not exist')) // gitLocalBranchExists fails.
+        .mockRejectedValueOnce(new Error('branch creation failed')) // git branch fails.
+
+      const result = await gitCreateBranch('bad-branch')
+      expect(result).toBe(false)
+    })
   })
 
   describe('gitDeleteBranch', () => {
@@ -284,6 +342,14 @@ describe('git utilities', () => {
         expect.any(Object),
       )
     })
+
+    it('returns false when delete rejects (lines 377-382)', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockRejectedValue(new Error('branch does not exist'))
+
+      const result = await gitDeleteBranch('nonexistent')
+      expect(result).toBe(false)
+    })
   })
 
   describe('gitPushBranch', () => {
@@ -298,6 +364,28 @@ describe('git utilities', () => {
         ['push', '--force', '--set-upstream', 'origin', 'feature'],
         expect.any(Object),
       )
+    })
+
+    it('returns false on generic spawn rejection (lines 312-313)', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockRejectedValue(new Error('network error'))
+
+      const result = await gitPushBranch('feature')
+      expect(result).toBe(false)
+    })
+
+    it('returns false on 128 spawn-error (token permissions, lines 305-311)', async () => {
+      const { spawn, isSpawnError } = vi.mocked(
+        await import('@socketsecurity/lib/spawn'),
+      )
+      const err: any = new Error('token denied')
+      err.isSpawnError = true
+      err.code = 128
+      isSpawnError.mockReturnValueOnce(true)
+      spawn.mockRejectedValue(err)
+
+      const result = await gitPushBranch('feature')
+      expect(result).toBe(false)
     })
   })
 
