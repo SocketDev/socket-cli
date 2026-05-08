@@ -9,9 +9,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   cosineSimilarity,
+  ensureCommandEmbeddings,
   extractWords,
+  getEmbedding,
+  getEmbeddingPipeline,
   handleAsk,
   normalizeQuery,
+  onnxSemanticMatch,
   parseIntent,
   wordOverlap,
   wordOverlapMatch,
@@ -722,5 +726,36 @@ describe('cosineSimilarity', () => {
     const b = new Float32Array([4, 5, 6])
     // 1*4 + 2*5 + 3*6 = 32.
     expect(cosineSimilarity(a, b)).toBe(32)
+  })
+})
+
+describe('getEmbeddingPipeline', () => {
+  it('returns null when pipeline is temporarily disabled', async () => {
+    // The current implementation always sets embeddingPipelineFailure=true
+    // and returns null. Verify the contract.
+    const result = await getEmbeddingPipeline()
+    expect(result).toBeNull()
+  })
+})
+
+describe('getEmbedding', () => {
+  it('returns null when embedding pipeline is unavailable', async () => {
+    const result = await getEmbedding('any text')
+    expect(result).toBeNull()
+  })
+})
+
+describe('ensureCommandEmbeddings', () => {
+  it('completes without throwing when pipeline is unavailable', async () => {
+    // With the pipeline disabled, getEmbedding returns null for every
+    // command description and no embeddings are stored.
+    await expect(ensureCommandEmbeddings()).resolves.toBeUndefined()
+  })
+})
+
+describe('onnxSemanticMatch', () => {
+  it('returns null when embedding pipeline unavailable', async () => {
+    const result = await onnxSemanticMatch('fix vulnerabilities')
+    expect(result).toBeNull()
   })
 })
