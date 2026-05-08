@@ -544,6 +544,28 @@ describe('meow-with-subcommands', () => {
       expect(runSpy).toHaveBeenCalled()
     })
 
+    it('uses defaultSub when argv is empty (line 199-200)', async () => {
+      // No argv at all → commandOrAliasName_ is undefined → defaultSub kicks
+      // in. This is the line 200 branch.
+      const runSpy = vi.fn(async () => undefined)
+      const subcommands = {
+        scan: {
+          description: 'scan',
+          run: runSpy,
+        },
+      }
+      await meowWithSubcommands(
+        {
+          name: 'app',
+          argv: [],
+          importMeta: import.meta,
+          subcommands,
+        },
+        { defaultSub: 'scan' },
+      )
+      expect(runSpy).toHaveBeenCalled()
+    })
+
     it('reports a typo with a suggestion when command is unknown', async () => {
       const runSpy = vi.fn(async () => undefined)
       const subcommands = {
