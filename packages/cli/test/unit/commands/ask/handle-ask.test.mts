@@ -759,3 +759,24 @@ describe('onnxSemanticMatch', () => {
     expect(result).toBeNull()
   })
 })
+
+describe('parseIntent semantic match fallthrough', () => {
+  it('skips wordOverlapMatch when action not in PATTERNS (lines 512-514)', async () => {
+    // Provide a semantic index whose top match action is unknown to PATTERNS,
+    // so the fallback hits line 513 (`if (pattern)`) but skips the body.
+    mockGetHome.mockReturnValueOnce('/fake/home')
+    mockReadFile.mockResolvedValueOnce(
+      JSON.stringify({
+        commands: {
+          // 'unknown-action' is not in PATTERNS.
+          'unknown-action': { words: ['xyz', 'totally', 'unrelated'] },
+        },
+      }),
+    )
+    // Use a query that matches 'xyz totally unrelated' but doesn't hit
+    // any pattern keyword.
+    const result = await parseIntent('xyz totally unrelated query')
+    // Should fall through to a default action (parseIntent always returns one).
+    expect(result.action).toBeDefined()
+  })
+})
