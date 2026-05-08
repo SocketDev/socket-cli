@@ -23,6 +23,7 @@ vi.mock('../../../../src/constants/paths.mts', () => ({
 import {
   areExternalToolsAvailable,
   EXTERNAL_TOOLS,
+  extractExternalTools,
   extractTool,
   getNodeSmolBasePath,
   getToolFilePath,
@@ -238,6 +239,38 @@ describe('utils/dlx/vfs-extract', () => {
         await expect(extractTool('sfw')).rejects.toThrow(
           /failed to extract sfw from the SEA VFS/,
         )
+      } finally {
+        delete (process as any).smol
+      }
+    })
+  })
+
+  describe('extractExternalTools', () => {
+    it('returns null when not running in SEA mode', async () => {
+      mockIsSeaBinary.mockReturnValue(false)
+      const result = await extractExternalTools()
+      expect(result).toBeNull()
+    })
+
+    it('returns null when smol.mount is missing', async () => {
+      mockIsSeaBinary.mockReturnValue(true)
+      ;(process as any).smol = { otherProp: true }
+      try {
+        const result = await extractExternalTools()
+        expect(result).toBeNull()
+      } finally {
+        delete (process as any).smol
+      }
+    })
+
+    it('returns null when max recursion depth exceeded', async () => {
+      mockIsSeaBinary.mockReturnValue(true)
+      ;(process as any).smol = { mount: vi.fn() }
+      try {
+        // depth=5 hits the MAX_EXTRACTION_DEPTH guard and returns null
+        // before reaching any I/O.
+        const result = await extractExternalTools(5)
+        expect(result).toBeNull()
       } finally {
         delete (process as any).smol
       }
