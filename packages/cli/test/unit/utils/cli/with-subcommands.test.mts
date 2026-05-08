@@ -437,6 +437,41 @@ describe('meow-with-subcommands', () => {
       const result = getTokenOrigin()
       expect(typeof result).toBe('string')
     })
+
+    it('returns empty string when SOCKET_CLI_NO_API_TOKEN is set (line 49)', () => {
+      const original = process.env['SOCKET_CLI_NO_API_TOKEN']
+      process.env['SOCKET_CLI_NO_API_TOKEN'] = '1'
+      try {
+        const result = getTokenOrigin()
+        expect(result).toBe('')
+      } finally {
+        if (original === undefined) {
+          delete process.env['SOCKET_CLI_NO_API_TOKEN']
+        } else {
+          process.env['SOCKET_CLI_NO_API_TOKEN'] = original
+        }
+      }
+    })
+
+    it('returns "(env)" when SOCKET_CLI_API_TOKEN is set (line 52)', () => {
+      const originalNo = process.env['SOCKET_CLI_NO_API_TOKEN']
+      const original = process.env['SOCKET_CLI_API_TOKEN']
+      delete process.env['SOCKET_CLI_NO_API_TOKEN']
+      process.env['SOCKET_CLI_API_TOKEN'] = 'sktsec_test_xxxxxxxxxxxx'
+      try {
+        const result = getTokenOrigin()
+        expect(result).toBe('(env)')
+      } finally {
+        if (originalNo !== undefined) {
+          process.env['SOCKET_CLI_NO_API_TOKEN'] = originalNo
+        }
+        if (original === undefined) {
+          delete process.env['SOCKET_CLI_API_TOKEN']
+        } else {
+          process.env['SOCKET_CLI_API_TOKEN'] = original
+        }
+      }
+    })
   })
 
   describe('getLastSeenCommand', () => {
