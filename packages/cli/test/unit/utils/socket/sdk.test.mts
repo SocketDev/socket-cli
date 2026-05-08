@@ -19,7 +19,7 @@
  * - utils/socket/sdk.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the config utility.
 const mockGetConfigValueOrUndef = vi.hoisted(() => vi.fn())
@@ -87,9 +87,11 @@ import {
   getDefaultApiBaseUrl,
   getDefaultApiToken,
   getDefaultProxyUrl,
+  getExtraCaCerts,
   getPublicApiToken,
   getVisibleTokenPrefix,
   hasDefaultApiToken,
+  invalidateDefaultApiToken,
   setupSdk,
 } from '../../../../src/utils/socket/sdk.mts'
 
@@ -208,6 +210,69 @@ describe('SDK Utilities', () => {
       mockGetSocketCliApiToken.mockReturnValue('mock-value-for-test')
       const hasToken = hasDefaultApiToken()
       expect(hasToken).toBe(true)
+    })
+  })
+
+  describe('invalidateDefaultApiToken', () => {
+    it('clears the cached default token', () => {
+      mockGetSocketCliApiToken.mockReturnValue('cached-token')
+      // Populate the cache.
+      expect(getDefaultApiToken()).toBe('cached-token')
+      // Now invalidate — and have the underlying source return undefined.
+      invalidateDefaultApiToken()
+      mockGetSocketCliApiToken.mockReturnValue(undefined)
+      mockGetConfigValueOrUndef.mockReturnValue(undefined)
+      expect(getDefaultApiToken()).toBeUndefined()
+    })
+  })
+
+  describe('getExtraCaCerts', () => {
+    const realNodeExtraCaCerts = process.env['NODE_EXTRA_CA_CERTS']
+    const realSslCertFile = process.env['SSL_CERT_FILE']
+
+    afterEach(() => {
+      // Restore original env vars after each test.
+      if (realNodeExtraCaCerts === undefined) {
+        delete process.env['NODE_EXTRA_CA_CERTS']
+      } else {
+        process.env['NODE_EXTRA_CA_CERTS'] = realNodeExtraCaCerts
+      }
+      if (realSslCertFile === undefined) {
+        delete process.env['SSL_CERT_FILE']
+      } else {
+        process.env['SSL_CERT_FILE'] = realSslCertFile
+      }
+    })
+
+    it('returns undefined when NODE_EXTRA_CA_CERTS is set (Node already loaded)', async () => {
+      // Use a fresh module import to bypass the module-level cache
+      // (`_extraCaCertsResolved`) that the rest of the test suite has
+      // already populated.
+      vi.resetModules()
+      process.env['NODE_EXTRA_CA_CERTS'] = '/some/path/ca.pem'
+      delete process.env['SSL_CERT_FILE']
+      const fresh = await import('../../../../src/utils/socket/sdk.mts')
+      const result = fresh.getExtraCaCerts()
+      expect(result).toBeUndefined()
+    })
+
+    it('returns undefined when neither env var is set', async () => {
+      vi.resetModules()
+      delete process.env['NODE_EXTRA_CA_CERTS']
+      delete process.env['SSL_CERT_FILE']
+      const fresh = await import('../../../../src/utils/socket/sdk.mts')
+      const result = fresh.getExtraCaCerts()
+      expect(result).toBeUndefined()
+    })
+
+    it('caches the resolved value across calls', async () => {
+      vi.resetModules()
+      delete process.env['NODE_EXTRA_CA_CERTS']
+      delete process.env['SSL_CERT_FILE']
+      const fresh = await import('../../../../src/utils/socket/sdk.mts')
+      // Two calls — second hits the cache early-return.
+      expect(fresh.getExtraCaCerts()).toBeUndefined()
+      expect(fresh.getExtraCaCerts()).toBeUndefined()
     })
   })
 
