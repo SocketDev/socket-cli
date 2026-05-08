@@ -561,75 +561,6 @@ export async function streamDownloadWithFetch(
   }
 }
 
-export async function getLastCommitDetails({
-  defaultBranch,
-  orgGithub,
-  repoSlug,
-}: {
-  defaultBranch: string
-  orgGithub: string
-  repoSlug: string
-}): Promise<
-  CResult<{
-    lastCommitMessage: string
-    lastCommitSha: string
-    lastCommitter: string | undefined
-  }>
-> {
-  logger.info(
-    `Requesting last commit for default branch ${defaultBranch} for ${orgGithub}/${repoSlug}...`,
-  )
-
-  const octokit = getOctokit()
-
-  const result = await withGitHubRetry(async () => {
-    const { data } = await octokit.repos.listCommits({
-      owner: orgGithub,
-      repo: repoSlug,
-      sha: defaultBranch,
-      per_page: 1,
-    })
-    return data
-  }, `fetching latest commit SHA for ${orgGithub}/${repoSlug}`)
-
-  if (!result.ok) {
-    return result
-  }
-
-  const commits = result.data
-  debugDir({ commits })
-
-  if (!commits.length) {
-    return {
-      ok: false,
-      message: 'No commits found',
-      cause:
-        `No commits found on branch ${defaultBranch} for ${orgGithub}/${repoSlug}. ` +
-        'The repository may be empty.',
-    }
-  }
-
-  const [lastCommit] = commits
-  const lastCommitSha = lastCommit?.sha
-
-  if (!lastCommitSha) {
-    return {
-      ok: false,
-      message: 'Missing commit SHA',
-      cause:
-        `Unable to get last commit SHA for ${orgGithub}/${repoSlug}. ` +
-        'The GitHub API response was missing the SHA field.',
-    }
-  }
-
-  // Extract committer information.
-  const authorName = lastCommit?.commit?.author?.name
-  const committerName = lastCommit?.commit?.committer?.name
-  const lastCommitter = authorName || committerName
-  const lastCommitMessage = lastCommit?.commit?.message || ''
-
-  return { ok: true, data: { lastCommitMessage, lastCommitSha, lastCommitter } }
-}
 
 // Interactive prompts extracted to keep this file under the 1000-line File-size cap.
 import {
@@ -639,102 +570,12 @@ import {
 
 export { makeSure, selectFocus }
 
-export async function getRepoDetails({
-  orgGithub,
-  repoSlug,
-}: {
-  orgGithub: string
-  repoSlug: string
-  githubApiUrl: string
-  githubToken: string
-}): Promise<CResult<{ defaultBranch: string; repoDetails: unknown }>> {
-  const octokit = getOctokit()
+// GitHub API helpers extracted to keep this file under the 1000-line File-size cap.
+import {
+  getLastCommitDetails,
+  getRepoBranchTree,
+  getRepoDetails,
+} from './create-scan-from-github-api.mts'
 
-  const result = await withGitHubRetry(async () => {
-    const { data } = await octokit.repos.get({
-      owner: orgGithub,
-      repo: repoSlug,
-    })
-    return data
-  }, `fetching repository details for ${orgGithub}/${repoSlug}`)
+export { getLastCommitDetails, getRepoBranchTree, getRepoDetails }
 
-  if (!result.ok) {
-    return result
-  }
-
-  const repoDetails = result.data
-  logger.success('Request completed.')
-  debugDir({ repoDetails })
-
-  const defaultBranch = repoDetails.default_branch
-  if (!defaultBranch) {
-    return {
-      ok: false,
-      message: 'Default branch not found',
-      cause:
-        `Repository ${orgGithub}/${repoSlug} does not have a default branch set. ` +
-        'This can happen with empty repositories or misconfigured repo settings.',
-    }
-  }
-
-  return { ok: true, data: { defaultBranch, repoDetails } }
-}
-
-export async function getRepoBranchTree({
-  defaultBranch,
-  orgGithub,
-  repoSlug,
-}: {
-  defaultBranch: string
-  orgGithub: string
-  repoSlug: string
-}): Promise<CResult<string[]>> {
-  logger.info(
-    `Requesting default branch file tree; branch \`${defaultBranch}\`, repo \`${orgGithub}/${repoSlug}\`...`,
-  )
-
-  const octokit = getOctokit()
-
-  const result = await withGitHubRetry(async () => {
-    const { data } = await octokit.git.getTree({
-      owner: orgGithub,
-      repo: repoSlug,
-      tree_sha: defaultBranch,
-      recursive: 'true',
-    })
-    return data
-  }, `fetching file tree for branch ${defaultBranch} in ${orgGithub}/${repoSlug}`)
-
-  if (!result.ok) {
-    // Check if it's an empty repo error (404 with specific message).
-    if (result.message === 'GitHub resource not found') {
-      logger.warn(
-        `GitHub reports the default branch of repo ${repoSlug} may be empty or not found. Moving on to next repo.`,
-      )
-      return { ok: true, data: [] }
-    }
-    return result
-  }
-
-  const treeDetails = result.data
-  debugDir({ treeDetails })
-
-  if (!treeDetails.tree || !Array.isArray(treeDetails.tree)) {
-    debugDir({ treeDetails: { tree: treeDetails.tree } })
-
-    return {
-      ok: false,
-      message: 'Invalid tree response',
-      cause:
-        `Tree response for default branch ${defaultBranch} for ${orgGithub}/${repoSlug} was not a list. ` +
-        'The repository may be empty or in an unexpected state.',
-    }
-  }
-
-  const files = treeDetails.tree
-    .filter(obj => obj.type === 'blob')
-    .map(obj => obj.path)
-    .filter((p): p is string => typeof p === 'string' && p.length > 0)
-
-  return { ok: true, data: files }
-}
