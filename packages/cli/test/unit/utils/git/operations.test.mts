@@ -239,6 +239,14 @@ describe('git utilities', () => {
         expect.any(Object),
       )
     })
+
+    it('returns false when checkout spawn rejects (lines 261-264)', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockRejectedValue(new Error('checkout failed'))
+
+      const result = await gitCheckoutBranch('nonexistent')
+      expect(result).toBe(false)
+    })
   })
 
   describe('gitCreateBranch', () => {
@@ -306,6 +314,14 @@ describe('git utilities', () => {
         expect.any(Object),
       )
     })
+
+    it('returns false when clean spawn rejects (lines 242-245)', async () => {
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockRejectedValue(new Error('clean failed'))
+
+      const result = await gitCleanFdx()
+      expect(result).toBe(false)
+    })
   })
 
   describe('gitResetHard', () => {
@@ -366,6 +382,21 @@ describe('git utilities', () => {
     it('returns undefined when spawn returns null', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
       spawn.mockResolvedValue(null as any)
+
+      const result = await getRepoInfo('/test/dir')
+      expect(result).toBeUndefined()
+    })
+
+    it('returns undefined for unmatched git remote URL format (lines 142-145)', async () => {
+      // Some private SSH config (e.g. host alias `myhost:owner/repo`) doesn't
+      // match the parser's regex; the function falls through and the debug
+      // logs fire.
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockResolvedValue({
+        status: 0,
+        stdout: 'some-completely-unrecognised-url-format',
+        stderr: '',
+      } as any)
 
       const result = await getRepoInfo('/test/dir')
       expect(result).toBeUndefined()
