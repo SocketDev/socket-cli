@@ -5,8 +5,6 @@ import path from 'node:path'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { safeDelete, safeMkdirSync } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { confirm, select } from '@socketsecurity/lib/stdio/prompts'
-
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mjs'
@@ -633,46 +631,13 @@ export async function getLastCommitDetails({
   return { ok: true, data: { lastCommitMessage, lastCommitSha, lastCommitter } }
 }
 
-export async function selectFocus(repos: string[]): Promise<CResult<string[]>> {
-  const proceed = await select({
-    message: 'Please select the repo to process:',
-    choices: repos
-      .map(slug => ({
-        name: slug,
-        value: slug,
-        description: `Create scan for the ${slug} repo through GitHub`,
-      }))
-      .concat({
-        name: '(Exit)',
-        value: '',
-        description: 'Cancel this action and exit',
-      }),
-  })
-  if (!proceed) {
-    return {
-      ok: false,
-      message: 'Canceled by user',
-      cause: 'User chose to cancel the action',
-    }
-  }
-  return { ok: true, data: [proceed] }
-}
+// Interactive prompts extracted to keep this file under the 1000-line File-size cap.
+import {
+  makeSure,
+  selectFocus,
+} from './create-scan-from-github-prompts.mts'
 
-export async function makeSure(count: number): Promise<CResult<undefined>> {
-  if (
-    !(await confirm({
-      message: `Are you sure you want to run this for ${count} repos?`,
-      default: false,
-    }))
-  ) {
-    return {
-      ok: false,
-      message: 'User canceled',
-      cause: 'Action canceled by user',
-    }
-  }
-  return { ok: true, data: undefined }
-}
+export { makeSure, selectFocus }
 
 export async function getRepoDetails({
   orgGithub,
