@@ -4,48 +4,33 @@ import { cmdOrganizationPolicyLicense } from './cmd-organization-policy-license.
 import { cmdOrganizationPolicySecurity } from './cmd-organization-policy-security.mts'
 import { cmdOrganizationPolicy } from './cmd-organization-policy.mts'
 import { cmdOrganizationQuota } from './cmd-organization-quota.mts'
-import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
+import { defineSubcommandGroup } from '../../utils/cli/define-subcommand-group.mts'
 
-import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
-
-const description = 'Manage Socket organization account details'
-
-export const cmdOrganization: CliSubcommand = {
-  description,
+export const cmdOrganization = defineSubcommandGroup({
+  name: 'organization',
+  description: 'Manage Socket organization account details',
   hidden: false,
-  async run(argv, importMeta, { parentName }) {
-    await meowWithSubcommands(
-      {
-        argv,
-        name: `${parentName} organization`,
-        importMeta,
-        subcommands: {
-          dependencies: cmdOrganizationDependencies,
-          list: cmdOrganizationList,
-          quota: cmdOrganizationQuota,
-          policy: cmdOrganizationPolicy,
-        },
-      },
-      {
-        aliases: {
-          deps: {
-            description: cmdOrganizationDependencies.description,
-            hidden: true,
-            argv: ['dependencies'],
-          },
-          license: {
-            description: cmdOrganizationPolicyLicense.description,
-            hidden: true,
-            argv: ['policy', 'license'],
-          },
-          security: {
-            description: cmdOrganizationPolicySecurity.description,
-            hidden: true,
-            argv: ['policy', 'security'],
-          },
-        },
-        description,
-      },
-    )
+  subcommands: {
+    dependencies: cmdOrganizationDependencies,
+    list: cmdOrganizationList,
+    quota: cmdOrganizationQuota,
+    policy: cmdOrganizationPolicy,
   },
-}
+  aliases: {
+    deps: {
+      description: cmdOrganizationDependencies.description,
+      hidden: true,
+      argv: ['dependencies'],
+    },
+    license: {
+      description: cmdOrganizationPolicyLicense.description,
+      hidden: true,
+      argv: ['policy', 'license'],
+    },
+    security: {
+      description: cmdOrganizationPolicySecurity.description,
+      hidden: true,
+      argv: ['policy', 'security'],
+    },
+  },
+})

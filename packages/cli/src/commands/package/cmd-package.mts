@@ -1,35 +1,22 @@
 import { cmdPackageScore } from './cmd-package-score.mts'
 import { cmdPackageShallow } from './cmd-package-shallow.mts'
-import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
-
-import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
+import { defineSubcommandGroup } from '../../utils/cli/define-subcommand-group.mts'
 
 const description = 'Look up published package details'
 
-export const cmdPackage: CliSubcommand = {
+export const cmdPackage = defineSubcommandGroup({
+  name: 'package',
   description,
   hidden: false,
-  async run(argv, importMeta, { parentName }) {
-    await meowWithSubcommands(
-      {
-        argv,
-        name: `${parentName} package`,
-        importMeta,
-        subcommands: {
-          score: cmdPackageScore,
-          shallow: cmdPackageShallow,
-        },
-      },
-      {
-        aliases: {
-          deep: {
-            description,
-            hidden: true,
-            argv: ['score'],
-          },
-        },
-        description,
-      },
-    )
+  subcommands: {
+    score: cmdPackageScore,
+    shallow: cmdPackageShallow,
   },
-}
+  aliases: {
+    deep: {
+      description,
+      hidden: true,
+      argv: ['score'],
+    },
+  },
+})
