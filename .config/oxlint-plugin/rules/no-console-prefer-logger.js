@@ -56,7 +56,11 @@ const rule = {
         // Only flag when console.<method> is the callee of a call
         // (skip e.g. `typeof console.log` or destructuring).
         const parent = node.parent
-        if (!parent || parent.type !== 'CallExpression' || parent.callee !== node) {
+        if (
+          !parent ||
+          parent.type !== 'CallExpression' ||
+          parent.callee !== node
+        ) {
           return
         }
 

@@ -31,7 +31,7 @@ const rule = {
     },
     messages: {
       dynamic:
-        "Dynamic import() in {{file}} — favor a static `import` statement at the top of the file. Dynamic import is only valid in bundled code (src/, .config/, packages/). If lazy resolution is required, justify it explicitly.",
+        'Dynamic import() in {{file}} — favor a static `import` statement at the top of the file. Dynamic import is only valid in bundled code (src/, .config/, packages/). If lazy resolution is required, justify it explicitly.',
     },
     schema: [
       {
@@ -54,10 +54,7 @@ const rule = {
     const bundledRoots = options.bundledRoots || DEFAULT_BUNDLED_ROOTS
     const filename = context.physicalFilename || context.filename
     const cwd = context.cwd || process.cwd()
-    const relative = path
-      .relative(cwd, filename)
-      .split(path.sep)
-      .join('/')
+    const relative = path.relative(cwd, filename).split(path.sep).join('/')
 
     const inBundled = bundledRoots.some(root => relative.startsWith(root))
 
