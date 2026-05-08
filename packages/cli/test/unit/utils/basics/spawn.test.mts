@@ -77,9 +77,11 @@ vi.mock('../../../../src/constants.mts', () => ({
   DOT_SOCKET_DOT_FACTS_JSON: '.socket.facts.json',
 }))
 
-const { runSocketBasics } = await import(
-  '../../../../src/utils/basics/spawn.mts'
-)
+const {
+  isSocketBasicsInstalled,
+  isSocketPyCliInstalled,
+  runSocketBasics,
+} = await import('../../../../src/utils/basics/spawn.mts')
 
 const baseOpts = {
   cwd: '/work',
@@ -499,5 +501,39 @@ describe('runSocketBasics — parseSocketFacts', () => {
         containers: 0,
       })
     }
+  })
+})
+
+describe('isSocketPyCliInstalled', () => {
+  it('returns true when spawn exits with code 0', async () => {
+    mockSpawn.mockResolvedValueOnce({ code: 0, stdout: '', stderr: '' })
+    expect(await isSocketPyCliInstalled('/usr/bin/python3')).toBe(true)
+  })
+
+  it('returns false when spawn exits with non-zero code', async () => {
+    mockSpawn.mockResolvedValueOnce({ code: 1, stdout: '', stderr: '' })
+    expect(await isSocketPyCliInstalled('/usr/bin/python3')).toBe(false)
+  })
+
+  it('returns false when spawn rejects (line 38)', async () => {
+    mockSpawn.mockRejectedValueOnce(new Error('python missing'))
+    expect(await isSocketPyCliInstalled('/usr/bin/python3')).toBe(false)
+  })
+})
+
+describe('isSocketBasicsInstalled', () => {
+  it('returns true when spawn exits with code 0', async () => {
+    mockSpawn.mockResolvedValueOnce({ code: 0, stdout: '', stderr: '' })
+    expect(await isSocketBasicsInstalled('/usr/bin/python3')).toBe(true)
+  })
+
+  it('returns false when spawn exits with non-zero code', async () => {
+    mockSpawn.mockResolvedValueOnce({ code: 1, stdout: '', stderr: '' })
+    expect(await isSocketBasicsInstalled('/usr/bin/python3')).toBe(false)
+  })
+
+  it('returns false when spawn rejects (line 54)', async () => {
+    mockSpawn.mockRejectedValueOnce(new Error('python missing'))
+    expect(await isSocketBasicsInstalled('/usr/bin/python3')).toBe(false)
   })
 })
