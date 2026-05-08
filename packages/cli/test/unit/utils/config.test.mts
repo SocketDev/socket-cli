@@ -30,6 +30,12 @@ import { safeDelete, safeMkdirSync } from '@socketsecurity/lib/fs'
 import {
   findSocketYmlSync,
   getConfigValue,
+  getConfigValueOrUndef,
+  getSupportedConfigEntries,
+  getSupportedConfigKeys,
+  isConfigFromFlag,
+  isSensitiveConfigKey,
+  isSupportedConfigKey,
   overrideCachedConfig,
   overrideConfigApiToken,
   resetConfigForTesting,
@@ -358,6 +364,105 @@ describe('utils/config', () => {
         'maybe' as any,
       )
       expect(result.ok).toBe(true)
+    })
+  })
+
+  describe('getSupportedConfigEntries / getSupportedConfigKeys', () => {
+    it('returns a non-empty array of [key, value] entries', () => {
+      const entries = getSupportedConfigEntries()
+      expect(Array.isArray(entries)).toBe(true)
+      expect(entries.length).toBeGreaterThan(0)
+      for (const entry of entries) {
+        expect(Array.isArray(entry)).toBe(true)
+        expect(entry).toHaveLength(2)
+      }
+    })
+
+    it('returns a non-empty array of supported keys', () => {
+      const keys = getSupportedConfigKeys()
+      expect(Array.isArray(keys)).toBe(true)
+      expect(keys.length).toBeGreaterThan(0)
+      expect(keys).toContain('defaultOrg')
+    })
+  })
+
+  describe('isConfigFromFlag', () => {
+    it('returns false initially', () => {
+      resetConfigForTesting()
+      expect(isConfigFromFlag()).toBe(false)
+    })
+
+    it('returns true after invalid override (line 315)', () => {
+      resetConfigForTesting()
+      // overrideCachedConfig with non-object JSON triggers the catch branch
+      // that sets _configFromFlag = true.
+      overrideCachedConfig('not valid json{{{{')
+      expect(isConfigFromFlag()).toBe(true)
+    })
+  })
+
+  describe('isSensitiveConfigKey', () => {
+    it('returns true for apiToken', () => {
+      expect(isSensitiveConfigKey('apiToken')).toBe(true)
+    })
+
+    it('returns false for non-sensitive keys', () => {
+      expect(isSensitiveConfigKey('defaultOrg')).toBe(false)
+    })
+
+    it('returns false for unknown keys', () => {
+      expect(isSensitiveConfigKey('totally-bogus')).toBe(false)
+    })
+  })
+
+  describe('isSupportedConfigKey', () => {
+    it('returns true for known keys', () => {
+      expect(isSupportedConfigKey('defaultOrg')).toBe(true)
+      expect(isSupportedConfigKey('apiToken')).toBe(true)
+    })
+
+    it('returns false for unknown keys', () => {
+      expect(isSupportedConfigKey('totally-bogus')).toBe(false)
+    })
+  })
+
+  describe('overrideCachedConfig', () => {
+    afterEach(() => {
+      resetConfigForTesting()
+    })
+
+    it('returns parse error for non-object JSON (line 315)', () => {
+      // A primitive (number) is valid JSON but not a config object.
+      const result = overrideCachedConfig('42')
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('Could not parse Config as JSON')
+      }
+    })
+
+    it('returns parse error for null JSON (line 315)', () => {
+      const result = overrideCachedConfig('null')
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('Could not parse Config as JSON')
+      }
+    })
+  })
+
+  describe('getConfigValueOrUndef', () => {
+    afterEach(() => {
+      resetConfigForTesting()
+    })
+
+    it('returns undefined for invalid keys', () => {
+      // The internal normalizeConfigKey returns !ok for unsupported keys.
+      // getConfigValueOrUndef squashes that to undefined.
+      expect(getConfigValueOrUndef('totally-bogus' as any)).toBeUndefined()
+    })
+
+    it('returns the config value for valid keys', () => {
+      overrideCachedConfig(JSON.stringify({ defaultOrg: 'my-org' }))
+      expect(getConfigValueOrUndef('defaultOrg')).toBe('my-org')
     })
   })
 })
