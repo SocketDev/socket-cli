@@ -146,6 +146,18 @@ describe('telemetry/integration', () => {
       expect(processOnSpy).toHaveBeenCalled()
       processOnSpy.mockRestore()
     })
+
+    it('skips re-registration on duplicate calls (lines 118-119)', () => {
+      // First call registers (or has already registered from a prior test
+      // in the same module — module-level exitHandlersRegistered persists).
+      setupTelemetryExitHandlers()
+      const processOnSpy = vi.spyOn(process, 'on')
+      // Second call should hit the early-return branch.
+      setupTelemetryExitHandlers()
+      // No new handlers registered on the second call.
+      expect(processOnSpy).not.toHaveBeenCalled()
+      processOnSpy.mockRestore()
+    })
   })
 
   describe('trackSubprocessExit', () => {
