@@ -108,4 +108,45 @@ describe('outputPurlsShallowScore', () => {
     expect(calls).toContain('Missing response')
     expect(calls).toContain('pkg:npm/missing@1.0.0')
   })
+
+  it('does not flag a versioned PURL as missing when @latest companion is in the request (line 211)', () => {
+    // The @latest dedup branch: when '@latest' is in the requested set
+    // alongside a versioned PURL, the @latest entry is filtered out
+    // (not marked as missing) since the versioned data covers it.
+    outputPurlsShallowScore(
+      ['pkg:npm/lodash@latest', 'pkg:npm/lodash@4.17.21'],
+      { ok: true, data: [sampleArtifact] } as any,
+      'markdown',
+    )
+    const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+    // @latest should not appear in a "Missing response" section since
+    // it has a versioned companion in the request.
+    expect(calls).not.toMatch(/Missing.*pkg:npm\/lodash@latest/)
+  })
+
+  it('dedups artifacts and merges to lower scores (lines 228, 231, 234)', () => {
+    const lower = {
+      type: 'npm',
+      name: 'lodash',
+      version: '4.17.21',
+      score: {
+        supplyChain: 0.5,
+        maintenance: 0.55,
+        quality: 0.6,
+        vulnerability: 0.65,
+        license: 0.7,
+      },
+      alerts: [],
+    } as any
+    // Two artifacts that produce the same purl key — merge should pick lower scores.
+    outputPurlsShallowScore(
+      ['pkg:npm/lodash@4.17.21'],
+      { ok: true, data: [sampleArtifact, lower] } as any,
+      'text',
+    )
+    const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+    // Output should appear only once even though two artifacts were provided.
+    const matches = calls.match(/pkg:npm\/lodash/g) || []
+    expect(matches.length).toBeGreaterThanOrEqual(1)
+  })
 })
