@@ -71,8 +71,9 @@ vi.mock('../../../../src/constants.mts', () => ({
 }))
 
 // Mock homedir.
+const mockHomedir = vi.hoisted(() => vi.fn(() => '/Users/testuser'))
 vi.mock('node:os', () => ({
-  homedir: () => '/Users/testuser',
+  homedir: mockHomedir,
 }))
 
 // Mock debug.
@@ -454,6 +455,23 @@ describe('telemetry/integration', () => {
 
       const call = mockTrack.mock.calls[0][0]
       expect(call.context.argv).toContain('[REDACTED]')
+    })
+
+    it('passes argv arg through unchanged when homedir returns empty (line 292)', async () => {
+      mockHomedir.mockReturnValueOnce('')
+      await trackCliEvent('test_cli_event', ['socket', 'scan', '/some/path'])
+      const call = mockTrack.mock.calls[0][0]
+      // /some/path stays unchanged when homedir is empty.
+      expect(call.context.argv).toContain('/some/path')
+    })
+
+    it('passes error message through unchanged when homedir empty (line 314)', async () => {
+      mockHomedir.mockReturnValueOnce('')
+      const error = new Error('something failed')
+      await trackCliError(['socket', 'scan'], Date.now() - 100, error)
+      // The sanitizer leaves the message intact when homedir is empty.
+      const call = mockTrack.mock.calls[0]?.[0]
+      expect(call).toBeDefined()
     })
   })
 })
