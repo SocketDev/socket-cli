@@ -26,6 +26,8 @@ import {
   AGENTS,
   detectAndValidatePackageEnvironment,
   detectPackageEnvironment,
+  preferWindowsCmdShim,
+  resolveBinPathSync,
 } from '../../../../src/utils/ecosystem/environment.mts'
 
 // Mock the dependencies.
@@ -113,6 +115,86 @@ describe('package-environment', () => {
       expect(AGENTS).toContain('bun')
       expect(AGENTS).toContain('vlt')
       expect(AGENTS.length).toBeGreaterThan(0)
+    })
+  })
+
+  describe('resolveBinPathSync', () => {
+    it('returns input path when file does not exist', () => {
+      mockExistsSync.mockReturnValue(false)
+      const result = resolveBinPathSync('/nonexistent/npm')
+      expect(result).toBe('/nonexistent/npm')
+    })
+
+    it('returns input path when shim regex does not match', () => {
+      mockExistsSync.mockReturnValue(true)
+      const readFileSpy = vi
+        .spyOn(fs, 'readFileSync')
+        .mockReturnValue('echo "not a node shim"\n' as any)
+      try {
+        const result = resolveBinPathSync('/usr/local/bin/some-tool')
+        expect(result).toBe('/usr/local/bin/some-tool')
+      } finally {
+        readFileSpy.mockRestore()
+      }
+    })
+
+    it('extracts the underlying npm-cli.js when found', () => {
+      mockExistsSync.mockReturnValue(true)
+      const readFileSpy = vi
+        .spyOn(fs, 'readFileSync')
+        .mockReturnValue(
+          'node "/usr/lib/node_modules/npm/bin/npm-cli.js" "$@"\n' as any,
+        )
+      try {
+        const result = resolveBinPathSync('/usr/local/bin/npm')
+        expect(result).toBe('/usr/lib/node_modules/npm/bin/npm-cli.js')
+      } finally {
+        readFileSpy.mockRestore()
+      }
+    })
+
+    it('resolves relative shim path against bin dir', () => {
+      mockExistsSync.mockReturnValue(true)
+      const readFileSpy = vi
+        .spyOn(fs, 'readFileSync')
+        .mockReturnValue('node "../lib/npm-cli.js" "$@"\n' as any)
+      try {
+        const result = resolveBinPathSync('/usr/local/bin/npm')
+        // Resolves "../lib/npm-cli.js" relative to /usr/local/bin/.
+        expect(result).toContain('npm-cli.js')
+        expect(result.startsWith('/')).toBe(true)
+      } finally {
+        readFileSpy.mockRestore()
+      }
+    })
+
+    it('returns input path when readFileSync throws', () => {
+      mockExistsSync.mockReturnValue(true)
+      const readFileSpy = vi
+        .spyOn(fs, 'readFileSync')
+        .mockImplementation(() => {
+          throw new Error('I/O error')
+        })
+      try {
+        const result = resolveBinPathSync('/usr/local/bin/npm')
+        expect(result).toBe('/usr/local/bin/npm')
+      } finally {
+        readFileSpy.mockRestore()
+      }
+    })
+  })
+
+  describe('preferWindowsCmdShim', () => {
+    it('returns input path on POSIX (no .cmd shim)', () => {
+      // On the test runner platform (POSIX) the function should bail
+      // immediately and return the input.
+      const result = preferWindowsCmdShim('/usr/local/bin/npm', 'npm')
+      expect(result).toBe('/usr/local/bin/npm')
+    })
+
+    it('returns input for non-absolute paths', () => {
+      const result = preferWindowsCmdShim('npm', 'npm')
+      expect(result).toBe('npm')
     })
   })
 
