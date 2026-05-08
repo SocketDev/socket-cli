@@ -12,6 +12,7 @@ import {
   assertNoNegationPatterns,
   excludePathToProjectIgnorePath,
   normalizeExcludePath,
+  pathRelativeToTarget,
   projectIgnorePathsToReachExcludePaths,
 } from '../../../../src/commands/scan/exclude-paths.mts'
 import { InputError } from '../../../../src/utils/error/errors.mts'
@@ -184,6 +185,38 @@ describe('exclude-paths', () => {
       expect(result.effectiveSocketConfig?.projectIgnorePaths).toEqual(
         expect.arrayContaining([expect.any(String)]),
       )
+    })
+  })
+
+  describe('pathRelativeToTarget', () => {
+    it('returns the normalized path when target is "."', () => {
+      expect(pathRelativeToTarget('foo/bar', '.')).toBe('foo/bar')
+    })
+
+    it('returns the normalized path when target is empty string', () => {
+      expect(pathRelativeToTarget('foo/bar', '')).toBe('foo/bar')
+    })
+
+    it('returns "**" when path equals target', () => {
+      expect(pathRelativeToTarget('packages/cli', 'packages/cli')).toBe('**')
+    })
+
+    it('strips the target prefix from a nested path', () => {
+      expect(
+        pathRelativeToTarget('packages/cli/src/foo', 'packages/cli'),
+      ).toBe('src/foo')
+    })
+
+    it('strips the target prefix when path uses recursive **/  prefix (line 177)', () => {
+      // path = "packages/cli/**/dist/foo" with target = "packages/cli"
+      // → matches recursiveTargetPrefix "packages/cli/**/" branch.
+      expect(
+        pathRelativeToTarget('packages/cli/**/dist/foo', 'packages/cli'),
+      ).toBe('**/dist/foo')
+    })
+
+    it('returns undefined when path is outside the target', () => {
+      expect(pathRelativeToTarget('other/dir', 'packages/cli')).toBeUndefined()
     })
   })
 })
