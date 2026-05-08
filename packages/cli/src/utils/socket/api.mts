@@ -31,27 +31,9 @@ import { getDefaultApiToken, getExtraCaCerts } from './sdk.mts'
 
 import type { HttpRequestOptions, HttpResponse } from '@socketsecurity/lib/http-request'
 import { CONFIG_KEY_API_BASE_URL } from '../../constants/config.mts'
-import {
-  HTTP_STATUS_BAD_REQUEST,
-  HTTP_STATUS_FORBIDDEN,
-  HTTP_STATUS_INTERNAL_SERVER_ERROR,
-  HTTP_STATUS_NOT_FOUND,
-  HTTP_STATUS_TOO_MANY_REQUESTS,
-  HTTP_STATUS_UNAUTHORIZED,
-} from '../../constants/http.mts'
-import {
-  API_V0_URL,
-  SOCKET_CLI_ISSUES_URL,
-  SOCKET_PRICING_URL,
-  SOCKET_SETTINGS_API_TOKENS_URL,
-  SOCKET_STATUS_URL,
-} from '../../constants/socket.mts'
+import { API_V0_URL } from '../../constants/socket.mts'
 import { getConfigValueOrUndef } from '../config.mts'
 import { debugApiResponse } from '../debug.mts'
-import {
-  getRequirements,
-  getRequirementsKey,
-} from '../ecosystem/requirements.mts'
 import {
   buildErrorCause,
   ConfigError,
@@ -95,66 +77,21 @@ export function tryReadResponseText(result: HttpResponse): string | undefined {
   }
 }
 
-export type CommandRequirements = {
-  permissions?: string[] | undefined
-  quota?: number | undefined
+// User-facing error messages + permission-requirements logging
+// extracted to keep this file under the 1000-line File-size cap.
+import {
+  getCommandRequirements,
+  getErrorMessageForHttpStatusCode,
+  logPermissionsFor403,
+} from './api-error-messages.mts'
+
+export {
+  getCommandRequirements,
+  getErrorMessageForHttpStatusCode,
+  logPermissionsFor403,
 }
 
-/**
- * Get command requirements from requirements.json based on command path.
- */
-export function getCommandRequirements(
-  cmdPath?: string | undefined,
-): CommandRequirements | undefined {
-  if (!cmdPath) {
-    return undefined
-  }
-
-  const requirements = getRequirements()
-  const key = getRequirementsKey(cmdPath)
-  return (requirements.api as any)[key] || undefined
-}
-
-/**
- * Log required permissions for a command when encountering 403 errors with actionable guidance.
- *
- * @param cmdPath - Command path to look up requirements for (e.g., "socket fix", "socket scan:create")
- */
-export function logPermissionsFor403(cmdPath?: string | undefined): void {
-  const requirements = getCommandRequirements(cmdPath)
-
-  logger.error('')
-  if (requirements?.permissions?.length) {
-    logger.group('🔐 Required API Permissions:')
-    for (const permission of requirements.permissions) {
-      logger.error(permission)
-    }
-    logger.groupEnd()
-    logger.error('')
-    logger.group('💡 To fix this:')
-    logger.error(`Visit ${SOCKET_SETTINGS_API_TOKENS_URL}`)
-    logger.error('Edit your API token to grant the permissions listed above')
-    logger.error('Re-run your command')
-    logger.groupEnd()
-  } else {
-    // No specific permissions found, provide general guidance.
-    logger.group('🔐 Permission Requirements:')
-    logger.error(
-      'Your API token lacks the required permissions for this operation.',
-    )
-    logger.groupEnd()
-    logger.error('')
-    logger.group('💡 To fix this:')
-    logger.error(`Visit ${SOCKET_SETTINGS_API_TOKENS_URL}`)
-    logger.error('Check your API token has the necessary permissions')
-    logger.error(
-      `Run \`socket ${cmdPath?.replace(/^socket[: ]/, '') || 'help'} --help\` to see required permissions`,
-    )
-    logger.error('Re-run your command after updating permissions')
-    logger.groupEnd()
-  }
-  logger.error('')
-}
+export type { CommandRequirements } from './api-error-messages.mts'
 
 // The Socket API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
@@ -164,70 +101,6 @@ export function getDefaultApiBaseUrl(): string | undefined {
     return baseUrl
   }
   return API_V0_URL
-}
-
-/**
- * Get user-friendly error message for HTTP status codes with actionable guidance.
- */
-export async function getErrorMessageForHttpStatusCode(code: number) {
-  if (code === HTTP_STATUS_BAD_REQUEST) {
-    return (
-      '❌ Invalid request: One of the options or parameters may be incorrect.\n' +
-      '💡 Try: Check your command syntax and parameter values.'
-    )
-  }
-  if (code === HTTP_STATUS_UNAUTHORIZED) {
-    return (
-      '❌ Authentication failed: Your Socket API token appears to be invalid, expired, or revoked.\n' +
-      '💡 Try:\n' +
-      '  • Run `socket whoami` to verify your current token\n' +
-      '  • Run `socket login` to re-authenticate\n' +
-      `  • Manage tokens at ${SOCKET_SETTINGS_API_TOKENS_URL}`
-    )
-  }
-  if (code === HTTP_STATUS_FORBIDDEN) {
-    return (
-      '❌ Access denied: Your API token lacks required permissions or organization access.\n' +
-      '💡 Try:\n' +
-      '  • Run `socket whoami` to verify your account and organization\n' +
-      `  • Check your API token permissions at ${SOCKET_SETTINGS_API_TOKENS_URL}\n` +
-      "  • Ensure you're accessing the correct organization with `--org` flag\n" +
-      `  • Verify your plan includes this feature at ${SOCKET_PRICING_URL}`
-    )
-  }
-  if (code === HTTP_STATUS_NOT_FOUND) {
-    return (
-      "❌ Not found: The requested endpoint or resource doesn't exist.\n" +
-      '💡 Try:\n' +
-      '  • Verify resource names (package, repository, organization)\n' +
-      '  • Check if the resource was deleted or moved\n' +
-      '  • Update to the latest CLI version: `socket self-update` (SEA) or `npm update -g socket`\n' +
-      `  • Report persistent issues at ${SOCKET_CLI_ISSUES_URL}`
-    )
-  }
-  if (code === HTTP_STATUS_TOO_MANY_REQUESTS) {
-    return (
-      '❌ Rate limit exceeded: Too many API requests.\n' +
-      '💡 Try:\n' +
-      `  • Free plan: Wait a few minutes for quota reset or upgrade at ${SOCKET_PRICING_URL}\n` +
-      '  • Paid plan: Contact support if rate limits seem incorrect\n' +
-      '  • Check current quota: `socket organization quota`\n' +
-      '  • Reduce request frequency or batch operations'
-    )
-  }
-  if (code === HTTP_STATUS_INTERNAL_SERVER_ERROR) {
-    return (
-      '❌ Server error: Socket API encountered an internal problem (HTTP 500).\n' +
-      '💡 Try:\n' +
-      '  • Wait a few minutes and retry your command\n' +
-      `  • Check Socket status: ${SOCKET_STATUS_URL}\n` +
-      `  • Report persistent issues: ${SOCKET_CLI_ISSUES_URL}`
-    )
-  }
-  return (
-    `❌ HTTP ${code}: Server responded with unexpected status code.\n` +
-    `💡 Try: Check Socket status at ${SOCKET_STATUS_URL} or report the issue.`
-  )
 }
 
 export type HandleApiCallOptions = {
