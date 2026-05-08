@@ -217,76 +217,18 @@ const generalFlags: MeowFlags = {
 // Legacy flag names kept working via meow aliases on `makeDefaultBranch`.
 // Detected here so we can warn on use and keep the misuse heuristic
 // working against both the primary and legacy names.
-const LEGACY_DEFAULT_BRANCH_FLAGS = ['--default-branch', '--defaultBranch']
-const LEGACY_DEFAULT_BRANCH_PREFIXES = LEGACY_DEFAULT_BRANCH_FLAGS.map(
-  f => `${f}=`,
-)
-const DEFAULT_BRANCH_FLAGS = [
-  '--make-default-branch',
-  '--makeDefaultBranch',
-  ...LEGACY_DEFAULT_BRANCH_FLAGS,
-]
-const DEFAULT_BRANCH_PREFIXES = DEFAULT_BRANCH_FLAGS.map(f => `${f}=`)
+// --default-branch / --make-default-branch validation helpers extracted
+// to keep this file under the 1000-line File-size cap.
+import {
+  findDefaultBranchValueMisuse,
+  hasLegacyDefaultBranchFlag,
+  isBareIdentifier,
+} from './cmd-scan-create-validation.mts'
 
-export function hasLegacyDefaultBranchFlag(argv: readonly string[]): boolean {
-  return argv.some(
-    arg =>
-      LEGACY_DEFAULT_BRANCH_FLAGS.includes(arg) ||
-      LEGACY_DEFAULT_BRANCH_PREFIXES.some(p => arg.startsWith(p)),
-  )
-}
-
-export function isBareIdentifier(token: string): boolean {
-  // Accept only tokens that look like a plain branch name. Anything
-  // with a path separator, dot, or colon is almost certainly a target
-  // path, URL, or something else the user meant as a positional arg.
-  return /^[A-Za-z0-9_-]+$/.test(token)
-}
-
-export function findDefaultBranchValueMisuse(
-  argv: readonly string[],
-): { form: string; value: string } | undefined {
-  // `--default-branch=main` — unambiguous: the `=` form attaches a
-  // value to what meow treats as a boolean flag, so the value is
-  // silently dropped.
-  for (const arg of argv) {
-    const prefix = DEFAULT_BRANCH_PREFIXES.find(p => arg.startsWith(p))
-    if (!prefix) {
-      continue
-    }
-    const value = arg.slice(prefix.length)
-    const normalized = value.toLowerCase()
-    if (normalized === 'true' || normalized === 'false' || value === '') {
-      continue
-    }
-    return { form: `${prefix}${value}`, value }
-  }
-  // `--default-branch main` — ambiguous in general (the next token
-  // could be a positional target path), but if the next token is a
-  // bare identifier (no `/`, `.`, `:`) AND the user didn't also pass
-  // `--branch` / `-b`, it's almost certainly a mis-typed branch name.
-  const hasBranchFlag = argv.some(
-    arg =>
-      arg === '--branch' ||
-      arg === '-b' ||
-      arg.startsWith('--branch=') ||
-      arg.startsWith('-b='),
-  )
-  if (hasBranchFlag) {
-    return undefined
-  }
-  for (let i = 0; i < argv.length - 1; i += 1) {
-    const arg = argv[i]!
-    if (!DEFAULT_BRANCH_FLAGS.includes(arg)) {
-      continue
-    }
-    const next = argv[i + 1]!
-    if (next.startsWith('-') || !isBareIdentifier(next)) {
-      continue
-    }
-    return { form: `${arg} ${next}`, value: next }
-  }
-  return undefined
+export {
+  findDefaultBranchValueMisuse,
+  hasLegacyDefaultBranchFlag,
+  isBareIdentifier,
 }
 
 export const cmdScanCreate = {
