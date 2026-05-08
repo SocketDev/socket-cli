@@ -830,6 +830,30 @@ describe('socket-package-alert', () => {
 
       expect(result).toBeNull()
     })
+
+    it('handles unparseable vulnerable version range (lines 437-442)', () => {
+      // Provide a CVE alert with an unparseable version range string —
+      // semver.Range() should throw, hitting the catch + debug logs.
+      const alertsMap: AlertsByPurl = new Map()
+      alertsMap.set('pkg:npm/test-package@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({
+            fix: { type: 'cve' },
+            props: {
+              firstPatchedVersionIdentifier: '1.0.1',
+              // Garbage range that semver.Range cannot parse.
+              vulnerableVersionRange: '!!! totally not a range !!!',
+            },
+          }),
+        }),
+      ])
+
+      const result = getCveInfoFromAlertsMap(alertsMap)
+
+      // The alert is recorded but the parse fails — infoByPartialPurl
+      // ends up with an empty Map for the partial purl.
+      expect(result).not.toBeNull()
+    })
   })
 
   describe('logAlertsMap', () => {
