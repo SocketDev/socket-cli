@@ -151,6 +151,50 @@ describe('TelemetryService', () => {
       await client3.destroy()
     })
 
+    it('clears queue without sending when telemetry disabled mid-queue (lines 328-330)', async () => {
+      // Initially enabled — track an event so it lands in the queue.
+      const client = await TelemetryService.getTelemetryClient('test-org')
+      client.track({
+        event_sender_created_at: new Date().toISOString(),
+        event_type: 'first_event',
+        context: {},
+      })
+      // Mutate the in-memory config to disable telemetry, then flush.
+      ;(client as any).config = { telemetry: { enabled: false } }
+      mockPostOrgTelemetry.mockClear()
+      await client.flush()
+      // Queue should be drained without a network call.
+      expect(mockPostOrgTelemetry).not.toHaveBeenCalled()
+      expect((client as any).eventQueue).toEqual([])
+    })
+
+    it('returns early on track() after destroy on same instance (lines 284-285)', async () => {
+      const client = await TelemetryService.getTelemetryClient('test-org')
+      // Hold the same reference, destroy it, then track on the destroyed
+      // instance directly — exercises the early-return at lines 283-286.
+      await client.destroy()
+      // No throw expected; track returns void synchronously.
+      expect(() =>
+        client.track({
+          event_sender_created_at: new Date().toISOString(),
+          event_type: 'after_destroy',
+          context: {},
+        }),
+      ).not.toThrow()
+      // postOrgTelemetry should NOT be called since the instance is destroyed.
+      // (Counts may be > 0 from earlier tests; reset and verify no NEW call.)
+      mockPostOrgTelemetry.mockClear()
+      // Trigger another track on the destroyed instance.
+      client.track({
+        event_sender_created_at: new Date().toISOString(),
+        event_type: 'still_destroyed',
+        context: {},
+      })
+      // Allow microtasks to settle.
+      await new Promise(resolve => setTimeout(resolve, 10))
+      expect(mockPostOrgTelemetry).not.toHaveBeenCalled()
+    })
+
     it('ignores events when telemetry is disabled', async () => {
       mockGetOrgTelemetryConfig.mockResolvedValue({
         success: true,
