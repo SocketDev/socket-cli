@@ -30,7 +30,7 @@ import {
   FLAG_JSON,
   FLAG_MARKDOWN,
 } from '../../constants/cli.mts'
-import { NPM, NPX } from '../../constants/agents.mts'
+import { NPM } from '../../constants/agents.mts'
 import { API_V0_URL } from '../../constants/socket.mts'
 import { getFlagListOutput, getHelpListOutput } from '../output/formatting.mts'
 import { socketPackageLink } from '../terminal/link.mts'
