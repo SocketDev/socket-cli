@@ -1032,5 +1032,106 @@ describe('meow-with-subcommands', () => {
       }
       expect(subcommands.scan.run).not.toHaveBeenCalled()
     })
+
+    it('applies SOCKET_CLI_CONFIG override when present (line 348)', async () => {
+      const originalConfig = process.env['SOCKET_CLI_CONFIG']
+      process.env['SOCKET_CLI_CONFIG'] = Buffer.from(
+        JSON.stringify({ defaultOrg: 'override-org' }),
+      ).toString('base64')
+      mockOverrideCachedConfig.mockReturnValue({ ok: true })
+      const runSpy = vi.fn(async () => undefined)
+      const subcommands = {
+        scan: {
+          description: 'scan',
+          run: runSpy,
+        },
+      }
+      try {
+        await meowWithSubcommands({
+          name: 'socket',
+          argv: ['scan'],
+          importMeta: import.meta,
+          subcommands,
+        })
+        expect(mockOverrideCachedConfig).toHaveBeenCalled()
+        expect(runSpy).toHaveBeenCalled()
+      } finally {
+        if (originalConfig === undefined) {
+          delete process.env['SOCKET_CLI_CONFIG']
+        } else {
+          process.env['SOCKET_CLI_CONFIG'] = originalConfig
+        }
+      }
+    })
+
+    it('applies SOCKET_CLI_API_TOKEN override (line 362)', async () => {
+      const originalNoToken = process.env['SOCKET_CLI_NO_API_TOKEN']
+      const originalToken = process.env['SOCKET_CLI_API_TOKEN']
+      delete process.env['SOCKET_CLI_NO_API_TOKEN']
+      process.env['SOCKET_CLI_API_TOKEN'] = 'sktsec_test_xxxxxxxxxxxx'
+      const runSpy = vi.fn(async () => undefined)
+      const subcommands = {
+        scan: {
+          description: 'scan',
+          run: runSpy,
+        },
+      }
+      try {
+        await meowWithSubcommands({
+          name: 'socket',
+          argv: ['scan'],
+          importMeta: import.meta,
+          subcommands,
+        })
+        // overrideConfigApiToken should be called with the env token.
+        expect(mockOverrideConfigApiToken).toHaveBeenCalledWith(
+          'sktsec_test_xxxxxxxxxxxx',
+        )
+      } finally {
+        if (originalNoToken !== undefined) {
+          process.env['SOCKET_CLI_NO_API_TOKEN'] = originalNoToken
+        }
+        if (originalToken === undefined) {
+          delete process.env['SOCKET_CLI_API_TOKEN']
+        } else {
+          process.env['SOCKET_CLI_API_TOKEN'] = originalToken
+        }
+      }
+    })
+
+    it('returns early with exit code 2 on bad config override (lines 367-374)', async () => {
+      const originalConfig = process.env['SOCKET_CLI_CONFIG']
+      process.env['SOCKET_CLI_CONFIG'] = 'invalid-base64'
+      mockOverrideCachedConfig.mockReturnValue({
+        ok: false,
+        message: 'Could not parse Config as JSON',
+      })
+      const runSpy = vi.fn(async () => undefined)
+      const subcommands = {
+        scan: {
+          description: 'scan',
+          run: runSpy,
+        },
+      }
+      const originalExitCode = process.exitCode
+      try {
+        await meowWithSubcommands({
+          name: 'socket',
+          argv: ['scan'],
+          importMeta: import.meta,
+          subcommands,
+        })
+        // The bad-config branch returns early, so the subcommand never runs.
+        expect(runSpy).not.toHaveBeenCalled()
+        expect(process.exitCode).toBe(2)
+      } finally {
+        process.exitCode = originalExitCode
+        if (originalConfig === undefined) {
+          delete process.env['SOCKET_CLI_CONFIG']
+        } else {
+          process.env['SOCKET_CLI_CONFIG'] = originalConfig
+        }
+      }
+    })
   })
 })
