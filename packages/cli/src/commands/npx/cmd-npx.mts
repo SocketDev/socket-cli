@@ -1,115 +1,18 @@
+/**
+ * Socket npx command — forwards npx operations to Socket Firewall (sfw).
+ *
+ * Defined via `defineHandoffCommand`. See utils/cli/define-handoff.mts.
+ */
+
 import { NPX } from '@socketsecurity/lib/constants/agents'
 
-import { defineFlags } from '../../meow.mts'
-import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { spawnSfw } from '../../utils/dlx/spawn.mjs'
-import { outputDryRunExecute } from '../../utils/dry-run/output.mts'
-import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
-import { filterFlags } from '../../utils/process/cmd.mts'
-import {
-  trackSubprocessExit,
-  trackSubprocessStart,
-} from '../../utils/telemetry/integration.mts'
+import { defineHandoffCommand } from '../../utils/cli/define-handoff.mts'
 
-import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
-
-const CMD_NAME = NPX
-
-const description = 'Run npx with Socket Firewall security'
-
-const hidden = false
-
-export const cmdNpx = {
-  description,
-  hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: CliCommandContext,
-): Promise<void> {
-  const config = {
-    commandName: CMD_NAME,
-    description,
-    hidden,
-    flags: defineFlags({
-      ...commonFlags,
-    }),
-    help: (command: string) => `
-    Usage
-      $ ${command} ...
-
-    API Token Requirements
-      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
-
-    Note: Everything after "${CMD_NAME}" is forwarded to Socket Firewall (sfw).
-          Socket Firewall provides real-time security scanning for npx packages.
-
-    Use \`socket wrapper on\` to alias this command as \`${NPX}\`.
-
-    Examples
-      $ ${command} cowsay
-      $ ${command} cowsay@1.6.0 hello
-  `,
-  }
-
-  const cli = meowOrExit({
-    argv,
-    config,
-    parentName,
-    importMeta,
-  })
-
-  const dryRun = !!cli.flags['dryRun']
-
-  // Filter Socket flags from argv.
-  const filteredArgv = filterFlags(argv, config.flags)
-
-  if (dryRun) {
-    outputDryRunExecute(
-      'sfw',
-      ['npx', ...filteredArgv],
-      'npx with Socket security scanning',
-    )
-    return
-  }
-
-  // Set default exit code to 1 (failure). Will be overwritten on success.
-  process.exitCode = 1
-
-  // Track subprocess start.
-  const subprocessStartTime = await trackSubprocessStart(NPX)
-
-  // Forward arguments to sfw (Socket Firewall).
-  // Auto-detects SEA vs npm CLI mode (VFS extraction vs dlx download).
-  const { spawnPromise } = await spawnSfw(['npx', ...filteredArgv], {
-    stdio: 'inherit',
-  })
-
-  // Handle exit codes and signals using event-based pattern.
-  // See https://nodejs.org/api/child_process.html#event-exit.
-  const { process: childProcess } = spawnPromise as any
-  childProcess.on(
-    'exit',
-    (code: number | null, signalName: NodeJS.Signals | null) => {
-      const exitProcess = () => {
-        if (signalName) {
-          process.kill(process.pid, signalName)
-        } else if (typeof code === 'number') {
-          // eslint-disable-next-line n/no-process-exit
-          process.exit(code)
-        }
-      }
-      // Track subprocess exit and flush telemetry before exiting.
-      // Use .then()/.catch() to ensure process exits even if telemetry fails.
-      void trackSubprocessExit(NPX, subprocessStartTime, code)
-        .then(exitProcess)
-        .catch(exitProcess)
-    },
-  )
-
-  await spawnPromise
-}
+export const cmdNpx = defineHandoffCommand({
+  name: NPX,
+  description: 'Run npx with Socket Firewall security',
+  spawnMode: 'auto',
+  examples: ['cowsay', 'cowsay@1.6.0 hello'],
+  showApiRequirements: true,
+  wrapperHint: true,
+})
