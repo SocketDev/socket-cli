@@ -27,8 +27,10 @@
 //     extensions. Hooks (.claude/hooks/), git-hooks (.git-hooks/),
 //     scripts (scripts/), tests, fixtures, and external/ vendored code
 //     are exempt — see EXEMPT_PATH_PATTERNS.
-//   - Lines marked `# socket-hook: allow logger` are exempt (canonical
+//   - Lines marked `# socket-hook: allow console` are exempt (canonical
 //     opt-out marker, same as path-guard / token-guard / npx-guard).
+//     The legacy spelling `allow logger` is accepted as an alias for
+//     one cycle (deprecation grace period).
 //   - Lines that look like documentation (comment lines, JSDoc tags,
 //     fully backticked code spans) are exempt — handled by the shared
 //     `looksLikeDocumentation` heuristic in `_helpers.mts`.
@@ -70,7 +72,7 @@ const COMMENT_LINE_RE = /^\s*(\*|\/\/|#)/
 const JSDOC_TAG_RE = /@(example|param|returns?|see|link)\b/
 // Accept `#`, `//`, or `/*` comment prefixes — same as the git pre-
 // commit/pre-push scanners. This hook is invoked on TS/JS edits where
-// `// socket-hook: allow logger` is the only natural spelling.
+// `// socket-hook: allow console` is the natural spelling.
 const SOCKET_HOOK_MARKER_RE =
   /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
 
@@ -79,9 +81,10 @@ function isMarkerSuppressed(line: string): boolean {
   if (!m) {
     return false
   }
-  // No specific rule named → blanket allow. Targeted form must name
-  // 'logger' to suppress this scanner.
-  return !m[1] || m[1] === 'logger'
+  // No specific rule named → blanket allow. Targeted form names what
+  // the line is doing ('console' for direct stream writes); 'logger'
+  // is accepted as a one-cycle alias for the legacy spelling.
+  return !m[1] || m[1] === 'console' || m[1] === 'logger'
 }
 
 function isInsideBackticks(line: string): boolean {
@@ -220,7 +223,7 @@ function emitBlock(filePath: string, hits: Hit[]): void {
     out.push(`  …and ${hits.length - 3} more.`)
   }
   out.push(
-    '  Opt-out for one line (rare): append `// socket-hook: allow logger`.',
+    '  Opt-out for one line (rare): append `// socket-hook: allow console`.',
   )
   out.push('')
   process.stderr.write(out.join('\n'))

@@ -179,10 +179,14 @@ const main = (): number => {
   // npx/dlx usage.
   logger.info('Checking for npx/dlx usage...')
   for (const file of stagedFiles) {
+    // shouldSkipFile covers tests, fixtures, .git-hooks, etc. — test
+    // files frequently mention `npx` as part of fixture paths or
+    // resolution-logic test cases (see socket-lib/test/unit/bin.test.mts).
+    if (shouldSkipFile(file)) {
+      continue
+    }
     if (
-      file.includes('node_modules/') ||
       file.endsWith('pnpm-lock.yaml') ||
-      file.includes('.git-hooks/') ||
       // CHANGELOG entries discuss npx ecosystem *behavior* (cache
       // semantics, naming conventions) as historical documentation —
       // they're not commands. Skip the npx/dlx scan for changelogs.

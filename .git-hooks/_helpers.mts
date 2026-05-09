@@ -167,6 +167,27 @@ export const socketHookMarkerFor = (filePath: string, rule: string): string =>
     : `# socket-hook: allow ${rule}`
 const LEGACY_ZIZMOR_MARKER_RE = /(?:#|\/\/|\/\*)\s*zizmor:\s*[\w-]+/
 
+// Aliases: legacy marker names recognized as equivalent to a current
+// rule for one deprecation cycle, so callers can rename the canonical
+// rule without breaking files that still carry the old marker.
+//
+// Add entries as `<alias>: <canonical>`; both directions match in the
+// comparison below.
+const RULE_ALIASES: { [k: string]: string | undefined } = {
+  __proto__: null,
+  // 'logger' was the original name when the scanner only flagged
+  // process.std{out,err}.write; it now flags console.* too, so the
+  // canonical marker is 'console'. Keep 'logger' for one cycle.
+  logger: 'console',
+}
+
+function aliasMatches(marker: string, rule: string): boolean {
+  if (marker === rule) {
+    return true
+  }
+  return RULE_ALIASES[marker] === rule || RULE_ALIASES[rule] === marker
+}
+
 function lineIsSuppressed(line: string, rule?: string): boolean {
   if (LEGACY_ZIZMOR_MARKER_RE.test(line)) {
     return true
@@ -179,8 +200,9 @@ function lineIsSuppressed(line: string, rule?: string): boolean {
   if (!m[1]) {
     return true
   }
-  // Marker named a specific rule → only suppress that rule.
-  return rule === undefined || m[1] === rule
+  // Marker named a specific rule → suppress when the names match
+  // directly OR through an alias.
+  return rule === undefined || aliasMatches(m[1], rule)
 }
 
 // Heuristic context flags: lines that look like "this is a doc example"
@@ -354,30 +376,39 @@ export const scanPrivateKeys = (text: string): LineHit[] => {
 
 // ── npx/dlx scanner ────────────────────────────────────────────────
 //
-// Match `npx` / `pnpm dlx` / `yarn dlx` only when the token sits at a
-// command position — preceded by start-of-line / whitespace / shell
-// separator (`&&`, `||`, `;`, `|`, `(`, backtick), or directly after a
-// PowerShell `& ` invoke. Exclude JSON-key, env-value, and identifier
-// suffix contexts where `npx` shows up as an embedded substring:
+// Match `npx` / `yarn dlx` only when the token sits at a command
+// position — preceded by start-of-line / whitespace / shell separator
+// (`&&`, `||`, `;`, `|`, `(`, backtick), or directly after a PowerShell
+// `& ` invoke. Exclude JSON-key, env-value, and identifier suffix
+// contexts where `npx` shows up as an embedded substring:
 //   - `"socket-npx": …`            (bin-name suffix)
 //   - `"dev:npx": "…SOCKET_CLI_MODE=npx node …"` (script key + env value)
 //   - `cmd-npx-helper`             (identifier interior)
 // The negative lookbehind catches hyphen / colon / equals / underscore /
 // dot prefixes; the negative lookahead catches the same followed forms
 // (`npx-helper`, `npx:foo`).
+//
+// **Allowed:** `pnpm dlx` / `pnpm exec` / `pn dlx` / `pn exec` / `pnx`
+// (the pnpm v11 shorthands for `pnpm dlx`). `pnpm dlx` is the
+// fleet-canonical fetch-and-run form for documentation lines that
+// describe ad-hoc CLI usage (where the consumer doesn't have the
+// package pinned in their workspace). `pnx` is the v11 shorthand and
+// is equally allowed.
 
-const NPX_DLX_RE = /(?<![\w\-:=.])\b(npx|pnpm dlx|yarn dlx)\b(?![\w\-:=.])/
+const NPX_DLX_RE = /(?<![\w\-:=.])\b(npx|yarn dlx)\b(?![\w\-:=.])/
 
 // Suggest the canonical replacement for a runtime npx/dlx call.
 // Documentation contexts (comments, JSDoc) are exempt via
 // looksLikeDocumentation(); we only ever land here for code lines, where
 // the right swap is `pnpm exec` (since `pnpm` is the fleet's package
-// manager) or `pnpm run` for script entries.
+// manager) or `pnpm run` for script entries. For documentation lines
+// that legitimately need a fetch-and-run command (user-facing
+// instructions where the consumer doesn't have the package pinned),
+// use `pnpm dlx` or its pnpm v11 shorthand `pnx` instead of `npx`.
 function suggestNpxReplacement(line: string): string {
   return line
-    .replace(/\bpnpm dlx\b/g, 'pnpm exec')
     .replace(/\byarn dlx\b/g, 'pnpm exec')
-    .replace(/\bnpx\b/g, 'pnpm exec')
+    .replace(/\bnpx\b/g, 'pnpm dlx')
 }
 
 export const scanNpxDlx = (text: string): LineHit[] => {
@@ -406,8 +437,9 @@ export const scanNpxDlx = (text: string): LineHit[] => {
 // `@socketsecurity/lib/logger`. Direct calls to `process.stderr.write`,
 // `process.stdout.write`, `console.log`, `console.error`, `console.warn`,
 // `console.info`, `console.debug` are blocked. Doc-context lines are
-// exempt; lines carrying `// socket-hook: allow logger` (or `#` in
-// non-TS files) are exempt too.
+// exempt; lines carrying `// socket-hook: allow console` (or `#` in
+// non-TS files) are exempt too. Legacy `allow logger` is accepted as
+// an alias for one deprecation cycle.
 
 const LOGGER_LEAK_RE =
   /\b(process\.std(?:err|out)\.write|console\.(?:log|error|warn|info|debug))\s*\(/
@@ -435,7 +467,7 @@ export const scanLoggerLeaks = (text: string): LineHit[] => {
     if (!LOGGER_LEAK_RE.test(line)) {
       continue
     }
-    if (looksLikeDocumentation(line, LOGGER_LEAK_RE, 'logger')) {
+    if (looksLikeDocumentation(line, LOGGER_LEAK_RE, 'console')) {
       continue
     }
     hits.push({
