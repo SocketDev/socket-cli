@@ -524,5 +524,43 @@ describe('socket fix --limit behavior verification', () => {
       }
       expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
     })
+
+    it('returns upload error when manifest upload fails (line 150)', async () => {
+      mockHandleApiCall.mockResolvedValueOnce({
+        ok: false,
+        message: 'Upload Failed',
+        cause: 'Bad gateway',
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: ['GHSA-1111-1111-1111'],
+      })
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('Upload Failed')
+      }
+      expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
+    })
+
+    it('returns error when upload returns no tar hash (lines 154-160)', async () => {
+      mockHandleApiCall.mockResolvedValueOnce({
+        ok: true,
+        // No tarHash in payload — server contract violation.
+        data: {},
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: ['GHSA-1111-1111-1111'],
+      })
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toContain('tar hash')
+      }
+      expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
+    })
   })
 })
