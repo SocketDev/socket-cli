@@ -100,10 +100,10 @@ const computeRange = (
 ): string | null => {
   if (localRef.startsWith('refs/tags/')) {
     logger.info(`Skipping tag push: ${localRef}`)
-    return undefined
+    return null
   }
   if (localSha === ZERO_SHA) {
-    return undefined
+    return null
   }
 
   const defaultBranchOf = (remoteName: string): string => {
@@ -132,7 +132,7 @@ const computeRange = (
     const baseRef = `${remote}/${def}`
     if (!refExists(baseRef)) {
       logger.success('Skipping validation (no baseline to compare against)')
-      return undefined
+      return null
     }
     return `${baseRef}..${localSha}`
   }
@@ -144,7 +144,7 @@ const computeRange = (
     const baseRef = `${remote}/${def}`
     if (!refExists(baseRef)) {
       logger.success('Skipping validation (no baseline for force-push)')
-      return undefined
+      return null
     }
     return `${baseRef}..${localSha}`
   }
