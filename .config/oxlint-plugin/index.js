@@ -18,7 +18,11 @@ import noConsolePreferLogger from './rules/no-console-prefer-logger.js'
 import noDynamicImportOutsideBundle from './rules/no-dynamic-import-outside-bundle.js'
 import noFetchPreferHttpRequest from './rules/no-fetch-prefer-http-request.js'
 import noInlineLogger from './rules/no-inline-logger.js'
+import noPromiseRaceInLoop from './rules/no-promise-race-in-loop.js'
 import noStatusEmoji from './rules/no-status-emoji.js'
+import noTodoComments from './rules/no-todo-comments.js'
+import preferExistsSync from './rules/prefer-exists-sync.js'
+import preferSafeDelete from './rules/prefer-safe-delete.js'
 import preferUndefinedOverNull from './rules/prefer-undefined-over-null.js'
 import sortSetArgs from './rules/sort-set-args.js'
 import sortSourceMethods from './rules/sort-source-methods.js'
@@ -27,7 +31,7 @@ import sortSourceMethods from './rules/sort-source-methods.js'
 const plugin = {
   meta: {
     name: 'socket',
-    version: '0.2.0',
+    version: '0.3.0',
   },
   rules: {
     'export-top-level-functions': exportTopLevelFunctions,
@@ -35,7 +39,11 @@ const plugin = {
     'no-dynamic-import-outside-bundle': noDynamicImportOutsideBundle,
     'no-fetch-prefer-http-request': noFetchPreferHttpRequest,
     'no-inline-logger': noInlineLogger,
+    'no-promise-race-in-loop': noPromiseRaceInLoop,
     'no-status-emoji': noStatusEmoji,
+    'no-todo-comments': noTodoComments,
+    'prefer-exists-sync': preferExistsSync,
+    'prefer-safe-delete': preferSafeDelete,
     'prefer-undefined-over-null': preferUndefinedOverNull,
     'sort-set-args': sortSetArgs,
     'sort-source-methods': sortSourceMethods,
