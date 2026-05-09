@@ -135,6 +135,10 @@ Rules:
 
 The principle: the working tree at end-of-turn should match the user's mental model of where the work is. "Done" means committed; anything else is paused, and pause states need to be announced.
 
+### Hook bypasses require the canonical phrase
+
+🚨 Reverting tracked changes or bypassing a hook (--no-verify, DISABLE*PRECOMMIT*\*, --no-gpg-sign, force-push) requires the user to type **`Allow <X> bypass`** verbatim in a recent user turn (e.g. `Allow revert bypass`, `Allow no-verify bypass`). Paraphrases don't count. Enforced by `.claude/hooks/no-revert-guard/`. Full phrase table: [`docs/references/bypass-phrases.md`](docs/references/bypass-phrases.md).
+
 ### Variant analysis on every High/Critical finding
 
 🚨 When a finding lands at severity High or Critical, **search the rest of the repo for the same shape** before closing it. Bugs cluster — same mental model, same antipattern. Three searches: same file (read the whole thing, not just the hunk), sibling files (`rg` the shape, not the names), cross-package (parallel implementations love to drift).
