@@ -103,7 +103,11 @@ const rule = {
             context.report({
               node: info.fn.id,
               messageId: 'alphaOutOfOrder',
-              data: { name, visibility: currentVisibility, prev: lastNameInGroup },
+              data: {
+                name,
+                visibility: currentVisibility,
+                prev: lastNameInGroup,
+              },
             })
           } else {
             lastNameInGroup = name

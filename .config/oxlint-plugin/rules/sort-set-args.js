@@ -96,9 +96,7 @@ const rule = {
         const sourceCode = context.getSourceCode
           ? context.getSourceCode()
           : context.sourceCode
-        const expected = sorted
-          .map(e => sourceCode.getText(e))
-          .join(', ')
+        const expected = sorted.map(e => sourceCode.getText(e)).join(', ')
 
         context.report({
           node: arg,
