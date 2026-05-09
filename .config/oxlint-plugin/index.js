@@ -13,26 +13,32 @@
  * `socket/` namespace.
  */
 
-import noStatusEmoji from './rules/no-status-emoji.js'
+import exportTopLevelFunctions from './rules/export-top-level-functions.js'
 import noConsolePreferLogger from './rules/no-console-prefer-logger.js'
-import noInlineLogger from './rules/no-inline-logger.js'
 import noDynamicImportOutsideBundle from './rules/no-dynamic-import-outside-bundle.js'
-import preferUndefinedOverNull from './rules/prefer-undefined-over-null.js'
 import noFetchPreferHttpRequest from './rules/no-fetch-prefer-http-request.js'
+import noInlineLogger from './rules/no-inline-logger.js'
+import noStatusEmoji from './rules/no-status-emoji.js'
+import preferUndefinedOverNull from './rules/prefer-undefined-over-null.js'
+import sortSetArgs from './rules/sort-set-args.js'
+import sortSourceMethods from './rules/sort-source-methods.js'
 
 /** @type {import('eslint').ESLint.Plugin} */
 const plugin = {
   meta: {
     name: 'socket',
-    version: '0.1.0',
+    version: '0.2.0',
   },
   rules: {
-    'no-status-emoji': noStatusEmoji,
+    'export-top-level-functions': exportTopLevelFunctions,
     'no-console-prefer-logger': noConsolePreferLogger,
-    'no-inline-logger': noInlineLogger,
     'no-dynamic-import-outside-bundle': noDynamicImportOutsideBundle,
-    'prefer-undefined-over-null': preferUndefinedOverNull,
     'no-fetch-prefer-http-request': noFetchPreferHttpRequest,
+    'no-inline-logger': noInlineLogger,
+    'no-status-emoji': noStatusEmoji,
+    'prefer-undefined-over-null': preferUndefinedOverNull,
+    'sort-set-args': sortSetArgs,
+    'sort-source-methods': sortSourceMethods,
   },
 }
 
