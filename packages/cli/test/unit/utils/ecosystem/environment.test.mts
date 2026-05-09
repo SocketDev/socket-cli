@@ -828,5 +828,89 @@ describe('package-environment', () => {
         expect(result.message).toBe('Missing lockfile')
       }
     })
+
+    it('detects agent from packageManager field (lines 324-332)', async () => {
+      // packageManager: "pnpm@8.15.7" → agent='pnpm' inferred from the field
+      // before any lockfile lookup.
+      mockFindUp.mockImplementation(async files => {
+        if (Array.isArray(files) && files.includes('pnpm-lock.yaml')) {
+          return '/project/pnpm-lock.yaml'
+        }
+        if (files === 'package.json') {
+          return '/project/package.json'
+        }
+        return undefined
+      })
+      mockExistsSync.mockReturnValue(true)
+      mockWhichBin.mockResolvedValue('/usr/local/bin/pnpm')
+      mockReadPackageJson.mockResolvedValue({
+        name: 'test-project',
+        version: '1.0.0',
+        packageManager: 'pnpm@8.15.7',
+      })
+
+      const result = await detectAndValidatePackageEnvironment('/project')
+
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data.agent).toBe('pnpm')
+      }
+    })
+
+    it('falls back to npm when packageManager has no @ separator', async () => {
+      mockFindUp.mockImplementation(async files => {
+        if (Array.isArray(files) && files.includes('package-lock.json')) {
+          return '/project/package-lock.json'
+        }
+        if (files === 'package.json') {
+          return '/project/package.json'
+        }
+        return undefined
+      })
+      mockExistsSync.mockReturnValue(true)
+      mockWhichBin.mockResolvedValue('/usr/local/bin/npm')
+      mockReadPackageJson.mockResolvedValue({
+        name: 'test-project',
+        version: '1.0.0',
+        // No '@' → atSignIndex < 0 → falls through to lockfile inference.
+        packageManager: 'invalid-format',
+      })
+
+      const result = await detectAndValidatePackageEnvironment('/project')
+
+      // Falls through to LOCKS lookup (package-lock.json → npm).
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data.agent).toBe('npm')
+      }
+    })
+
+    it('detects yarn-berry when yarn-classic agent has major > 1 (lines 348-349)', async () => {
+      mockFindUp.mockImplementation(async files => {
+        if (Array.isArray(files) && files.includes('yarn.lock')) {
+          return '/project/yarn.lock'
+        }
+        if (files === 'package.json') {
+          return '/project/package.json'
+        }
+        return undefined
+      })
+      mockExistsSync.mockReturnValue(true)
+      mockWhichBin.mockResolvedValue('/usr/local/bin/yarn')
+      mockReadPackageJson.mockResolvedValue({
+        name: 'test-project',
+        version: '1.0.0',
+      })
+      // yarn version 4.x → coerced major 4 > 1 → upgrades classic to berry.
+      mockSpawn.mockResolvedValue({ stdout: '4.5.0', stderr: '', code: 0 })
+
+      const result = await detectAndValidatePackageEnvironment('/project')
+
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        // Agent name uses '/' as the separator between flavor variants.
+        expect(result.data.agent).toBe('yarn/berry')
+      }
+    })
   })
 })
