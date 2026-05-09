@@ -1,28 +1,37 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import nlp from 'compromise'
-
-import { getHome } from '@socketsecurity/lib/env/home'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
-// Import compromise for NLP text normalization.
 
+import { onnxSemanticMatch } from './onnx-match.mts'
 import { outputAskCommand } from './output-ask.mts'
+import {
+  normalizeQuery,
+  wordOverlapMatch,
+} from './word-overlap-match.mts'
+
+// Re-export the matchers + helpers so existing import paths keep working.
+export {
+  cosineSimilarity,
+  ensureCommandEmbeddings,
+  getEmbedding,
+  getEmbeddingPipeline,
+  onnxSemanticMatch,
+} from './onnx-match.mts'
+export {
+  extractWords,
+  loadSemanticIndex,
+  normalizeQuery,
+  wordOverlap,
+  wordOverlapMatch,
+} from './word-overlap-match.mts'
 
 const logger = getDefaultLogger()
 
-// Semantic index for fast word-overlap matching (lazy-loaded, ~3KB).
-let semanticIndex: any = null
-
-// ONNX embedding pipeline for deep semantic matching (lazy-loaded, ~17MB model).
-const embeddingPipeline: any = null
-let embeddingPipelineFailure = false
-const commandEmbeddings: Record<string, Float32Array> = {}
-
-// Confidence thresholds.
-const WORD_OVERLAP_THRESHOLD = 0.3 // Minimum for word overlap match.
-const PATTERN_MATCH_THRESHOLD = 0.6 // If below this, try ONNX fallback.
+// Confidence threshold: pattern-match scores below this trigger the ONNX
+// semantic-match fallback (currently a no-op; see onnx-match.mts).
+const PATTERN_MATCH_THRESHOLD = 0.6
 
 export interface HandleAskOptions {
   query: string
@@ -132,265 +141,6 @@ const ENVIRONMENT_KEYWORDS = {
   production: ['production', 'prod'],
   development: ['development', 'dev'],
 } as const
-
-/**
- * Normalize query using NLP to handle variations in phrasing.
- * Converts verbs to infinitive and nouns to singular for better matching.
- */
-export function normalizeQuery(query: string): string {
-  try {
-    const doc = nlp(query)
-
-    // Normalize verbs to infinitive form: "fixing" → "fix", "scanned" → "scan".
-    doc.verbs().toInfinitive()
-
-    // Normalize nouns to singular: "vulnerabilities" → "vulnerability".
-    doc.nouns().toSingular()
-
-    return doc.out('text').toLowerCase()
-  } catch (_e) {
-    // Fallback to original query if NLP fails.
-    return query.toLowerCase()
-  }
-}
-
-/**
- * Lazily load the pre-computed semantic index.
- * NO ML models - just word overlap + synonyms (~3KB).
- */
-export async function loadSemanticIndex() {
-  if (semanticIndex) {
-    return semanticIndex
-  }
-
-  try {
-    const homeDir = getHome()
-    if (!homeDir) {
-      return null
-    }
-    const indexPath = path.join(
-      homeDir,
-      '.claude/skills/socket-cli/semantic-index.json',
-    )
-
-    const content = await fs.readFile(indexPath, 'utf-8')
-    semanticIndex = JSON.parse(content)
-
-    return semanticIndex
-  } catch (_e) {
-    // Semantic index not available - not a critical error.
-    return null
-  }
-}
-
-/**
- * Extract meaningful words from text (lowercase, >2 chars).
- */
-export function extractWords(text: string): string[] {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .split(/\s+/)
-    .filter(w => w.length > 2)
-}
-
-/**
- * Compute word overlap score between query and command.
- * Uses Jaccard similarity: |intersection| / |union|.
- */
-export function wordOverlap(queryWords: Set<string>, commandWords: string[]): number {
-  const commandSet = new Set(commandWords)
-  const intersection = new Set([...queryWords].filter(w => commandSet.has(w)))
-  const union = new Set([...queryWords, ...commandWords])
-
-  return union.size === 0 ? 0 : intersection.size / union.size
-}
-
-/**
- * Find best matching command using word overlap + synonym expansion.
- * Fast path - NO ML models, pure JavaScript, ~3KB overhead.
- */
-export async function wordOverlapMatch(query: string): Promise<{
-  action: string
-  confidence: number
-} | null> {
-  const index = await loadSemanticIndex()
-  if (!index || !index.commands) {
-    return null
-  }
-
-  // Extract query words.
-  const queryWords = new Set(extractWords(query))
-
-  if (queryWords.size === 0) {
-    return null
-  }
-
-  let bestAction = ''
-  let bestScore = 0
-
-  // Match against each command's word index.
-  for (const [commandName, commandData] of Object.entries(index.commands)) {
-    if (
-      !commandData ||
-      typeof commandData !== 'object' ||
-      !('words' in commandData) ||
-      !Array.isArray(commandData.words)
-    ) {
-      continue
-    }
-    const score = wordOverlap(queryWords, commandData.words)
-
-    if (score > bestScore) {
-      bestScore = score
-      bestAction = commandName
-    }
-  }
-
-  // Require minimum overlap threshold.
-  if (bestScore < WORD_OVERLAP_THRESHOLD) {
-    return null
-  }
-
-  return {
-    action: bestAction,
-    confidence: bestScore,
-  }
-}
-
-/**
- * Lazily load the ONNX embedding pipeline for deep semantic matching.
- * Only loads when word-overlap matching has low confidence.
- */
-export async function getEmbeddingPipeline() {
-  if (embeddingPipeline) {
-    return embeddingPipeline
-  }
-
-  // If we already failed to load, don't try again.
-  if (embeddingPipelineFailure) {
-    return null
-  }
-
-  try {
-    // TEMPORARILY DISABLED: ONNX Runtime build issues.
-    // Load our custom MiniLM inference engine.
-    // This uses direct ONNX Runtime + embedded WASM (no transformers.js).
-    // Note: Model is optional - pattern matching works fine without it.
-    // const { MiniLMInference } = await import('../../utils/minilm-inference.mts')
-    // embeddingPipeline = await MiniLMInference.create()
-    // return embeddingPipeline
-
-    // Temporarily fall back to pattern matching only.
-    embeddingPipelineFailure = true
-    return null
-  } catch (_e) {
-    // Model not available - silently fall back to pattern matching.
-    embeddingPipelineFailure = true
-    return null
-  }
-}
-
-/**
- * Compute cosine similarity between two vectors.
- * Since our embeddings are already normalized, this is just dot product.
- */
-export function cosineSimilarity(a: Float32Array, b: Float32Array): number {
-  if (a.length !== b.length) {
-    return 0
-  }
-
-  let dotProduct = 0
-  for (let i = 0; i < a.length; i++) {
-    dotProduct += (a[i] ?? 0) * (b[i] ?? 0)
-  }
-
-  return dotProduct
-}
-
-/**
- * Get embedding for a text string using ONNX Runtime.
- */
-export async function getEmbedding(text: string): Promise<Float32Array | null> {
-  const model = await getEmbeddingPipeline()
-  if (!model) {
-    return null
-  }
-
-  try {
-    const result = await model.embed(text)
-    return result.embedding
-  } catch (_e) {
-    // Silently fail - pattern matching will handle the query.
-    return null
-  }
-}
-
-/**
- * Pre-compute embeddings for all command patterns.
- */
-export async function ensureCommandEmbeddings() {
-  if (Object.keys(commandEmbeddings).length > 0) {
-    return
-  }
-
-  const commandDescriptions = {
-    __proto__: null,
-    fix: 'fix vulnerabilities by updating packages to secure versions',
-    patch: 'apply patches to remove CVEs from code',
-    optimize:
-      'replace dependencies with better alternatives from Socket registry',
-    package: 'check safety score and rating of a package',
-    scan: 'scan project for security vulnerabilities and issues',
-  } as const
-
-  for (const [action, description] of Object.entries(commandDescriptions)) {
-    if (description) {
-      // eslint-disable-next-line no-await-in-loop
-      const embedding = await getEmbedding(description)
-      if (embedding) {
-        commandEmbeddings[action] = embedding
-      }
-    }
-  }
-}
-
-/**
- * Find best matching command using ONNX embeddings.
- * Fallback for when word-overlap has low confidence - slower but more accurate.
- */
-export async function onnxSemanticMatch(query: string): Promise<{
-  action: string
-  confidence: number
-} | null> {
-  await ensureCommandEmbeddings()
-
-  const queryEmbedding = await getEmbedding(query)
-  if (!queryEmbedding || !Object.keys(commandEmbeddings).length) {
-    return null
-  }
-
-  let bestAction = ''
-  let bestScore = 0
-
-  for (const [action, embedding] of Object.entries(commandEmbeddings)) {
-    const similarity = cosineSimilarity(queryEmbedding, embedding)
-    if (similarity > bestScore) {
-      bestScore = similarity
-      bestAction = action
-    }
-  }
-
-  // Require minimum 0.5 similarity to use ONNX match.
-  if (bestScore < 0.5) {
-    return null
-  }
-
-  return {
-    action: bestAction,
-    confidence: bestScore,
-  }
-}
 
 /**
  * Parse natural language query into structured intent.
