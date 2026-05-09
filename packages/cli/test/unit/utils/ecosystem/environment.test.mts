@@ -885,6 +885,67 @@ describe('package-environment', () => {
       }
     })
 
+    it('lowers pkgMinAgentVersion from package engines field (lines 366-373)', async () => {
+      mockFindUp.mockImplementation(async files => {
+        if (Array.isArray(files) && files.includes('package-lock.json')) {
+          return '/project/package-lock.json'
+        }
+        if (files === 'package.json') {
+          return '/project/package.json'
+        }
+        return undefined
+      })
+      mockExistsSync.mockReturnValue(true)
+      mockWhichBin.mockResolvedValue('/usr/local/bin/npm')
+      // Engines pin npm to >=8.0.0 and node to >=16.0.0 — both < the
+      // minimum supported defaults, so they lower pkgMin*Version.
+      mockReadPackageJson.mockResolvedValue({
+        name: 'test-project',
+        version: '1.0.0',
+        engines: {
+          npm: '>=8.0.0',
+          node: '>=16.0.0',
+        },
+      })
+      // Stub semver.lt: any coerced < default is true.
+      mockSatisfies.mockReturnValue(true)
+
+      const result = await detectAndValidatePackageEnvironment('/project')
+
+      expect(result.ok).toBe(true)
+    })
+
+    it('lowers pkgMinNodeVersion from browserslist node targets (lines 387-399)', async () => {
+      mockFindUp.mockImplementation(async files => {
+        if (Array.isArray(files) && files.includes('package-lock.json')) {
+          return '/project/package-lock.json'
+        }
+        if (files === 'package.json') {
+          return '/project/package.json'
+        }
+        return undefined
+      })
+      mockExistsSync.mockReturnValue(true)
+      mockWhichBin.mockResolvedValue('/usr/local/bin/npm')
+      mockReadPackageJson.mockResolvedValue({
+        name: 'test-project',
+        version: '1.0.0',
+        browserslist: ['node 16.0.0', 'node 18.0.0', 'chrome 120'],
+      })
+      // browserslist returns the targets sorted by browserslist itself; we
+      // also want the node-* filter to keep ['node 16.0.0', 'node 18.0.0'].
+      const mockBrowserslist = (await import('browserslist')).default as any
+      mockBrowserslist.mockReturnValue([
+        'node 16.0.0',
+        'node 18.0.0',
+        'chrome 120',
+      ])
+
+      const result = await detectAndValidatePackageEnvironment('/project')
+
+      expect(result.ok).toBe(true)
+    })
+
     it('detects yarn-berry when yarn-classic agent has major > 1 (lines 348-349)', async () => {
       mockFindUp.mockImplementation(async files => {
         if (Array.isArray(files) && files.includes('yarn.lock')) {
