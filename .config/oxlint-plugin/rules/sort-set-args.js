@@ -10,7 +10,7 @@
  * but not auto-fixed (sorting computed values would change behavior).
  */
 
-const SET_NAMES = new Set(['SafeSet', 'Set'])
+const SET_NAMES = new Set(['Set', 'SafeSet'])
 
 function isSortableElement(node) {
   return (

@@ -19,7 +19,7 @@
  */
 
 const ACCESS_METHODS = new Set(['access', 'accessSync'])
-const STAT_METHODS = new Set(['lstat', 'lstatSync', 'stat', 'statSync'])
+const STAT_METHODS = new Set(['stat', 'statSync', 'lstat', 'lstatSync'])
 
 /** @type {import('eslint').Rule.RuleModule} */
 const rule = {

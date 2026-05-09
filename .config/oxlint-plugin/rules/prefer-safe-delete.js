@@ -17,7 +17,14 @@
  * (`.claude/hooks/path-guard/`) — this rule covers the JavaScript side.
  */
 
-const DELETE_METHODS = new Set(['rm', 'rmSync', 'rmdir', 'rmdirSync', 'unlink', 'unlinkSync'])
+const DELETE_METHODS = new Set([
+  'rm',
+  'rmSync',
+  'unlink',
+  'unlinkSync',
+  'rmdir',
+  'rmdirSync',
+])
 
 /** @type {import('eslint').Rule.RuleModule} */
 const rule = {

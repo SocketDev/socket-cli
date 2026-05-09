@@ -20,9 +20,15 @@
  * Reporting only.
  */
 
-const RACE_METHODS = new Set(['any', 'race'])
+const RACE_METHODS = new Set(['race', 'any'])
 
-const LOOP_TYPES = new Set(['DoWhileStatement', 'ForInStatement', 'ForOfStatement', 'ForStatement', 'WhileStatement'])
+const LOOP_TYPES = new Set([
+  'ForStatement',
+  'ForOfStatement',
+  'ForInStatement',
+  'WhileStatement',
+  'DoWhileStatement',
+])
 
 function isInsideLoop(node) {
   let current = node.parent

@@ -67,8 +67,8 @@ const rule = {
     return {
       Program(programNode) {
         let lastVisibilityRank = -1
-        let lastNameInGroup = undefined
-        let currentVisibility = undefined
+        let lastNameInGroup = null
+        let currentVisibility = null
 
         for (const node of programNode.body) {
           const info = declVisibility(node)
