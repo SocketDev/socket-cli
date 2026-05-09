@@ -1,16 +1,44 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "unicorn", "import"],
+  "plugins": [
+    "typescript",
+    "unicorn",
+    "import"
+  ],
+  "jsPlugins": [
+    "./.config/oxlint-plugin/index.js"
+  ],
   "categories": {
     "correctness": "error",
     "suspicious": "error"
   },
   "rules": {
-    "eslint/curly": ["error", "all"],
+    "socket/export-top-level-functions": "error",
+    "socket/no-console-prefer-logger": "error",
+    "socket/no-dynamic-import-outside-bundle": "error",
+    "socket/no-fetch-prefer-http-request": "error",
+    "socket/no-inline-logger": "error",
+    "socket/no-promise-race-in-loop": "error",
+    "socket/no-status-emoji": "error",
+    "socket/no-todo-comments": "error",
+    "socket/prefer-exists-sync": "error",
+    "socket/prefer-safe-delete": "error",
+    "socket/prefer-undefined-over-null": "error",
+    "socket/sort-set-args": "error",
+    "socket/sort-source-methods": "error",
+    "eslint/curly": [
+      "error",
+      "all"
+    ],
     "eslint/no-await-in-loop": "off",
     "eslint/no-console": "off",
     "eslint/no-control-regex": "off",
-    "eslint/no-empty": ["error", { "allowEmptyCatch": true }],
+    "eslint/no-empty": [
+      "error",
+      {
+        "allowEmptyCatch": true
+      }
+    ],
     "eslint/no-new": "error",
     "eslint/no-unmodified-loop-condition": "off",
     "eslint/no-useless-catch": "off",
@@ -26,15 +54,27 @@
     "import/no-named-as-default-member": "off",
     "import/no-self-import": "error",
     "import/no-unassigned-import": "off",
-    "typescript/array-type": ["error", { "default": "array-simple" }],
+    "typescript/array-type": [
+      "error",
+      {
+        "default": "array-simple"
+      }
+    ],
     "typescript/no-extraneous-class": "off",
     "typescript/consistent-type-assertions": [
       "error",
-      { "assertionStyle": "as" }
+      {
+        "assertionStyle": "as"
+      }
     ],
     "typescript/no-misused-new": "error",
     "typescript/no-non-null-asserted-optional-chain": "off",
-    "typescript/no-this-alias": ["error", { "allowDestructuring": true }],
+    "typescript/no-this-alias": [
+      "error",
+      {
+        "allowDestructuring": true
+      }
+    ],
     "unicorn/consistent-function-scoping": "off",
     "unicorn/no-array-for-each": "off",
     "unicorn/no-array-sort": "off",

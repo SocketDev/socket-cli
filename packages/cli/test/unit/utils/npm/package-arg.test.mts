@@ -87,7 +87,7 @@ describe('npm-package-arg utilities', () => {
 
       const mockResult = {
         type: 'file',
-        name: null,
+        name: undefined,
         spec: 'file:../local-package',
       }
       mockNpa.mockReturnValue(mockResult)
@@ -103,7 +103,7 @@ describe('npm-package-arg utilities', () => {
 
       const mockResult = {
         type: 'git',
-        name: null,
+        name: undefined,
         spec: 'git+https://github.com/user/repo.git',
       }
       mockNpa.mockReturnValue(mockResult)
@@ -185,7 +185,7 @@ describe('npm-package-arg utilities', () => {
         throw new TypeError('Cannot read property of null')
       })
 
-      const result = safeNpa(null as any)
+      const result = safeNpa(undefined as any)
 
       expect(result).toBeUndefined()
     })

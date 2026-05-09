@@ -61,7 +61,7 @@ describe('spawn-node', () => {
 
   describe('findSystemNodejsSync', () => {
     it('returns undefined when no node found', () => {
-      mockWhichRealSync.mockReturnValue(null)
+      mockWhichRealSync.mockReturnValue(undefined)
 
       const result = findSystemNodejsSync()
 
@@ -137,7 +137,7 @@ describe('spawn-node', () => {
 
     it('returns process.execPath when SEA and no system node', () => {
       mockIsSeaBinary.mockReturnValue(true)
-      mockWhichRealSync.mockReturnValue(null)
+      mockWhichRealSync.mockReturnValue(undefined)
 
       const result = getNodeExecutablePathSync()
 

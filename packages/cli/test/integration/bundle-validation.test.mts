@@ -111,9 +111,9 @@ describe('Bundle validation', () => {
     const result = hasAbsolutePaths(content)
 
     if (result.hasIssue) {
-      console.error('Found absolute paths in bundle:')
+      logger.fail('Found absolute paths in bundle:')
       for (const match of result.matches) {
-        console.error(`  - ${match}`)
+        logger.fail(`  - ${match}`)
       }
     }
 
@@ -129,9 +129,9 @@ describe('Bundle validation', () => {
     const result = await checkBundledDependencies(content)
 
     if (!result.hasNoBundledDeps) {
-      console.error('Found bundled dependencies (should be external):')
+      logger.fail('Found bundled dependencies (should be external):')
       for (const dep of result.bundledDeps) {
-        console.error(`  - ${dep}`)
+        logger.fail(`  - ${dep}`)
       }
     }
 

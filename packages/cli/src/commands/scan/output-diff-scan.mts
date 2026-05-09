@@ -68,9 +68,9 @@ export async function outputDiffScan(
   logger.log(
     util.inspect(result.data, {
       showHidden: false,
-      depth: depth > 0 ? depth : null,
+      depth: depth > 0 ? depth : undefined,
       colors: true,
-      maxArrayLength: null,
+      maxArrayLength: undefined,
     }),
   )
   logger.info(

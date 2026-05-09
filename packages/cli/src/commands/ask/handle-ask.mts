@@ -225,7 +225,7 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
     explanation: string
     confidence: number
     score: number
-  } | null = null
+  } | null = undefined
 
   for (const [action, pattern] of Object.entries(PATTERNS)) {
     if (!pattern) {

@@ -68,14 +68,14 @@ function main() {
 
   if (!binaryPath) {
     const packageName = getSocketbinPackageName()
-    console.error(`Socket CLI binary not found for your platform.`)
-    console.error(`Expected package: ${packageName}`)
-    console.error(``)
-    console.error(`This may happen if:`)
-    console.error(`  - Your platform is not supported`)
-    console.error(`  - The optional dependency failed to install`)
-    console.error(``)
-    console.error(`Try reinstalling: npm install -g socket`)
+    logger.fail(`Socket CLI binary not found for your platform.`)
+    logger.fail(`Expected package: ${packageName}`)
+    logger.fail(``)
+    logger.fail(`This may happen if:`)
+    logger.fail(`  - Your platform is not supported`)
+    logger.fail(`  - The optional dependency failed to install`)
+    logger.fail(``)
+    logger.fail(`Try reinstalling: npm install -g socket`)
     process.exit(1)
   }
 
@@ -85,7 +85,7 @@ function main() {
   })
 
   child.on('error', err => {
-    console.error(`Failed to start Socket CLI: ${err.message}`)
+    logger.fail(`Failed to start Socket CLI: ${err.message}`)
     process.exit(1)
   })
 

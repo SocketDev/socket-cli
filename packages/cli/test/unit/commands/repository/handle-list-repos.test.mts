@@ -162,7 +162,7 @@ describe('handleListRepos', () => {
       ok: true,
       data: {
         repos: [{ id: '1', name: 'repo1' }],
-        nextPage: null,
+        nextPage: undefined,
       },
     }
     mockFetchListRepos.mockResolvedValue(mockData)
@@ -181,7 +181,7 @@ describe('handleListRepos', () => {
       mockData,
       'json',
       3,
-      null,
+      undefined,
       'name',
       10,
       'asc',
@@ -222,7 +222,7 @@ describe('handleListRepos', () => {
     for (const sort of sortOptions) {
       mockFetchListRepos.mockResolvedValue({
         ok: true,
-        data: { repos: [], nextPage: null },
+        data: { repos: [], nextPage: undefined },
       })
 
       // eslint-disable-next-line no-await-in-loop
@@ -246,7 +246,7 @@ describe('handleListRepos', () => {
   it('handles different page sizes', async () => {
     const mockData = {
       ok: true,
-      data: { repos: [], nextPage: null },
+      data: { repos: [], nextPage: undefined },
     }
     mockFetchListRepos.mockResolvedValue(mockData)
 
@@ -268,7 +268,7 @@ describe('handleListRepos', () => {
       mockData,
       'json',
       1,
-      null,
+      undefined,
       'name',
       100,
       'asc',

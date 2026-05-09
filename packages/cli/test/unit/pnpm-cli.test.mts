@@ -98,7 +98,7 @@ describe('pnpm-cli', () => {
     mockSpawnSfw.mockResolvedValue({
       spawnPromise: Promise.resolve({
         success: false,
-        code: null,
+        code: undefined,
         signal: 'SIGKILL',
       }).then(result => Object.assign(result, { process: mockChildProcess })),
     })

@@ -85,7 +85,7 @@ async function getPackagesToTest(
     return { mode, packages: [], reason: 'no testable packages affected' }
   }
 
-  return { mode, packages: affectedPackages, reason: null }
+  return { mode, packages: affectedPackages, reason: undefined }
 }
 
 /**

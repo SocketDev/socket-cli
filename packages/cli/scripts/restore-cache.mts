@@ -64,11 +64,11 @@ async function getCurrentCommit() {
       stdio: 'pipe',
     })
     if (!result || result.code !== 0) {
-      return null
+      return undefined
     }
     return result.stdout.trim()
   } catch {
-    return null
+    return undefined
   }
 }
 

@@ -41,7 +41,7 @@ function declVisibility(node) {
   if (node.type === 'FunctionDeclaration') {
     return { visibility: 'private', fn: node }
   }
-  return null
+  return undefined
 }
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -67,8 +67,8 @@ const rule = {
     return {
       Program(programNode) {
         let lastVisibilityRank = -1
-        let lastNameInGroup = null
-        let currentVisibility = null
+        let lastNameInGroup = undefined
+        let currentVisibility = undefined
 
         for (const node of programNode.body) {
           const info = declVisibility(node)

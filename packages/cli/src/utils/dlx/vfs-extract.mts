@@ -385,7 +385,7 @@ export async function extractExternalTools(
     logger.error(
       `Max extraction retry limit (${MAX_EXTRACTION_DEPTH}) exceeded`,
     )
-    return null
+    return undefined
   }
 
   const processWithSmol = process as unknown as {
@@ -394,7 +394,7 @@ export async function extractExternalTools(
 
   if (!isSeaBinary() || !processWithSmol.smol?.mount) {
     debug('notice', 'Not running in SEA mode - cannot extract VFS tools')
-    return null
+    return undefined
   }
 
   logger.info('Extracting external tools from VFS...')

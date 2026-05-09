@@ -141,7 +141,7 @@ export async function outputScanReport(
   if (short) {
     logger.log(scanReport.data.healthy ? 'OK' : 'ERR')
   } else {
-    logger.dir(scanReport.data, { depth: null })
+    logger.dir(scanReport.data, { depth: undefined })
   }
 }
 

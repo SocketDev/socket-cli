@@ -57,7 +57,7 @@ describe('objects utilities', () => {
         KEY: 'value',
       })
 
-      expect(Object.getPrototypeOf(myEnum)).toBe(null)
+      expect(Object.getPrototypeOf(myEnum)).toBe(undefined)
       expect('toString' in myEnum).toBe(false)
       expect('valueOf' in myEnum).toBe(false)
     })
@@ -85,14 +85,14 @@ describe('objects utilities', () => {
         STRING: 'text',
         NUMBER: 42,
         BOOLEAN: true,
-        NULL: null,
+        NULL: undefined,
         UNDEFINED: undefined,
       })
 
       expect(mixedEnum.STRING).toBe('text')
       expect(mixedEnum.NUMBER).toBe(42)
       expect(mixedEnum.BOOLEAN).toBe(true)
-      expect(mixedEnum.NULL).toBe(null)
+      expect(mixedEnum.NULL).toBe(undefined)
       expect(mixedEnum.UNDEFINED).toBe(undefined)
     })
   })
@@ -145,13 +145,13 @@ describe('objects utilities', () => {
     it('preserves undefined values', () => {
       const obj = {
         a: undefined,
-        b: null,
+        b: undefined,
         c: 0,
         d: '',
       }
 
       const result = pick(obj, ['a', 'b', 'c'])
-      expect(result).toEqual({ a: undefined, b: null, c: 0 })
+      expect(result).toEqual({ a: undefined, b: undefined, c: 0 })
     })
 
     it('works with complex objects', () => {

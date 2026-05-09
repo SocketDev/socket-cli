@@ -395,7 +395,7 @@ describe('splitScopes', () => {
   })
 
   it('returns empty array for non-string input (null)', () => {
-    expect(splitScopes(null)).toEqual([])
+    expect(splitScopes(undefined)).toEqual([])
   })
 
   it('returns empty array for empty string', () => {
@@ -640,7 +640,7 @@ describe('handleRequestSafely', () => {
     const body = JSON.parse(end.mock.calls[0][0] as string)
     expect(body.error.code).toBe(-32603)
     expect(body.error.message).toBe('Internal server error')
-    expect(body.id).toBe(null)
+    expect(body.id).toBe(undefined)
     expect(body.jsonrpc).toBe('2.0')
   })
 

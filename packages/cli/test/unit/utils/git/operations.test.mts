@@ -518,7 +518,7 @@ describe('git utilities', () => {
 
     it('returns undefined when spawn returns null', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockResolvedValue(null as any)
+      spawn.mockResolvedValue(undefined as any)
 
       const result = await getRepoInfo('/test/dir')
       expect(result).toBeUndefined()

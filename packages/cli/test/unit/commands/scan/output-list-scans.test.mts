@@ -186,7 +186,7 @@ describe('outputListScans', () => {
           {
             id: 'scan-789',
             html_report_url: 'https://socket.dev/scans/789',
-            created_at: null,
+            created_at: undefined,
             repo: 'my-repo',
             branch: 'main',
           },

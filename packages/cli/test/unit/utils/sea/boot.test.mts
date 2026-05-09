@@ -312,7 +312,7 @@ describe('sea/boot', () => {
         await new Promise(resolve => setImmediate(resolve))
         // Send a few non-handshake messages to exercise early-returns.
         for (const handler of handlers['message'] ?? []) {
-          handler(null)
+          handler(undefined)
           handler('string')
           handler({ unrelated: true })
           handler({ [SOCKET_IPC_HANDSHAKE]: 'not-an-object' })

@@ -15,7 +15,7 @@ import { getDefaultApiToken } from '../../../src/utils/socket/sdk.mts'
 import { executeCliCommand } from '../../helpers/cli-execution.mts'
 
 const BINARY: BinaryConfig = {
-  buildCommand: null,
+  buildCommand: undefined,
   // In CI: always enabled. Locally: controlled by env vars (defaults to true).
   enabled: process.env.CI
     ? true

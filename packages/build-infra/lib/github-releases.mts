@@ -128,7 +128,7 @@ export async function getLatestRelease(
             if (!quiet) {
               logger.info(`  No releases found for ${owner}/${repo}`)
             }
-            return null
+            return undefined
           }
           const tag = releases[0].tag_name
           if (!quiet) {
@@ -152,7 +152,7 @@ export async function getLatestRelease(
         if (!quiet) {
           logger.info(`  No ${prefix} release found in latest 100 releases`)
         }
-        return null
+        return undefined
       },
       {
         backoffFactor: 2,

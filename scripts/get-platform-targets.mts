@@ -10,4 +10,4 @@
 
 import { PLATFORM_TARGETS } from '../packages/build-infra/lib/platform-targets.mts'
 
-console.log(PLATFORM_TARGETS.join(' '))
+logger.log(PLATFORM_TARGETS.join(' '))

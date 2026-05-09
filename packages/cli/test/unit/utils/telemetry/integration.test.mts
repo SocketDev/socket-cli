@@ -111,7 +111,7 @@ describe('telemetry/integration', () => {
     })
 
     it('does nothing when no instance exists', async () => {
-      mockGetCurrentInstance.mockReturnValueOnce(null)
+      mockGetCurrentInstance.mockReturnValueOnce(undefined)
 
       await finalizeTelemetry()
 
@@ -129,7 +129,7 @@ describe('telemetry/integration', () => {
     })
 
     it('does nothing when no instance exists', () => {
-      mockGetCurrentInstance.mockReturnValueOnce(null)
+      mockGetCurrentInstance.mockReturnValueOnce(undefined)
 
       finalizeTelemetrySync()
 
@@ -179,7 +179,7 @@ describe('telemetry/integration', () => {
     })
 
     it('does not track when exit code is null', async () => {
-      await trackSubprocessExit('npm', Date.now() - 1000, null)
+      await trackSubprocessExit('npm', Date.now() - 1000, undefined)
 
       // Only finalize is called, no track.
       expect(mockFlush).toHaveBeenCalled()

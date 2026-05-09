@@ -173,7 +173,7 @@ export const VALID_ARCHS = ['arm64', 'x64']
  */
 export function parsePlatformTarget(target) {
   if (!target || typeof target !== 'string') {
-    return null
+    return undefined
   }
 
   // Handle musl suffix (linux-arm64-musl, linux-x64-musl).
@@ -187,7 +187,7 @@ export function parsePlatformTarget(target) {
     ) {
       return { arch: parts[1], libc: 'musl', platform: 'linux' }
     }
-    return null
+    return undefined
   }
 
   // Handle standard platform-arch.
@@ -201,7 +201,7 @@ export function parsePlatformTarget(target) {
     }
   }
 
-  return null
+  return undefined
 }
 
 /**
@@ -265,7 +265,7 @@ export function formatPlatformTarget(platform, arch, libc) {
  * // { platform: 'linux', arch: 'x64', libc: 'musl' }
  */
 export function parsePlatformArgs(args) {
-  const result = { arch: null, libc: null, platform: null }
+  const result = { arch: undefined, libc: undefined, platform: undefined }
 
   for (const arg of args) {
     if (arg.startsWith('--platform=')) {
@@ -290,7 +290,7 @@ export function parsePlatformArgs(args) {
         if (parsed) {
           result.platform = parsed.platform
           result.arch = parsed.arch
-          result.libc = parsed.libc ?? null
+          result.libc = parsed.libc ?? undefined
         }
       }
     }

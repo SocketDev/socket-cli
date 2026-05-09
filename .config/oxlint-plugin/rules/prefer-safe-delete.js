@@ -17,14 +17,7 @@
  * (`.claude/hooks/path-guard/`) — this rule covers the JavaScript side.
  */
 
-const DELETE_METHODS = new Set([
-  'rm',
-  'rmSync',
-  'unlink',
-  'unlinkSync',
-  'rmdir',
-  'rmdirSync',
-])
+const DELETE_METHODS = new Set(['rm', 'rmSync', 'rmdir', 'rmdirSync', 'unlink', 'unlinkSync'])
 
 /** @type {import('eslint').Rule.RuleModule} */
 const rule = {
@@ -69,7 +62,7 @@ const rule = {
             : obj.type === 'MemberExpression' &&
                 obj.property.type === 'Identifier'
               ? obj.property.name
-              : null
+              : undefined
 
         if (!objName) {
           return

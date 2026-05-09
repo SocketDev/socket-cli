@@ -34,7 +34,7 @@ describe('bootstrap/shared/paths', () => {
   let saved: Record<string, string | undefined>
 
   beforeEach(() => {
-    saved = Object.create(null)
+    saved = Object.create(undefined)
     for (const key of SAVED_KEYS) {
       saved[key] = process.env[key]
       delete process.env[key]

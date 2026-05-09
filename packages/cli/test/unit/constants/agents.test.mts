@@ -152,7 +152,7 @@ describe('agents constants', () => {
 
     it('returns "npm" if whichReal returns null', async () => {
       mockExistsSync.mockReturnValue(false)
-      mockWhichReal.mockResolvedValue(null)
+      mockWhichReal.mockResolvedValue(undefined)
 
       const result = await getNpmExecPath()
 
@@ -179,7 +179,7 @@ describe('agents constants', () => {
     })
 
     it('returns "pnpm" if whichReal returns null', async () => {
-      mockWhichReal.mockResolvedValue(null)
+      mockWhichReal.mockResolvedValue(undefined)
 
       const result = await getPnpmExecPath()
 

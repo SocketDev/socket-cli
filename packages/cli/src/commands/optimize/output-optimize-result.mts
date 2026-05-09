@@ -49,7 +49,7 @@ export async function outputOptimizeResult(
         changes.push(addedText)
       }
       logger.log(mdList(changes))
-      logger.log('\n✓ Finished!')
+      logger.success('Finished!')
     } else {
       logger.log('No Socket.dev optimized overrides applied.')
     }

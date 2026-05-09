@@ -13,7 +13,7 @@ const mockMeowOrExit = vi.hoisted(() => vi.fn().mockReturnValue({ flags: {} }))
 // Mock spawnSocketPatchDlx.
 const mockSpawnSocketPatchDlx = vi.hoisted(() =>
   vi.fn().mockResolvedValue({
-    spawnPromise: Promise.resolve({ code: 0, signal: null }),
+    spawnPromise: Promise.resolve({ code: 0, signal: undefined }),
   }),
 )
 
@@ -246,7 +246,7 @@ describe('cmd-patch', () => {
 
     it('should set exit code to 0 on success', async () => {
       mockSpawnSocketPatchDlx.mockResolvedValueOnce({
-        spawnPromise: Promise.resolve({ code: 0, signal: null }),
+        spawnPromise: Promise.resolve({ code: 0, signal: undefined }),
       })
 
       await cmdPatch.run(['list'], importMeta, context)
@@ -256,7 +256,7 @@ describe('cmd-patch', () => {
 
     it('should set exit code to 1 on failure', async () => {
       mockSpawnSocketPatchDlx.mockResolvedValueOnce({
-        spawnPromise: Promise.resolve({ code: 1, signal: null }),
+        spawnPromise: Promise.resolve({ code: 1, signal: undefined }),
       })
 
       await cmdPatch.run(['list'], importMeta, context)
@@ -266,7 +266,7 @@ describe('cmd-patch', () => {
 
     it('should propagate specific exit code from socket-patch', async () => {
       mockSpawnSocketPatchDlx.mockResolvedValueOnce({
-        spawnPromise: Promise.resolve({ code: 42, signal: null }),
+        spawnPromise: Promise.resolve({ code: 42, signal: undefined }),
       })
 
       await cmdPatch.run(['apply'], importMeta, context)
@@ -276,7 +276,7 @@ describe('cmd-patch', () => {
 
     it('should handle null exit code (signal termination)', async () => {
       mockSpawnSocketPatchDlx.mockResolvedValueOnce({
-        spawnPromise: Promise.resolve({ code: null, signal: 'SIGTERM' }),
+        spawnPromise: Promise.resolve({ code: undefined, signal: 'SIGTERM' }),
       })
 
       await cmdPatch.run(['apply'], importMeta, context)
@@ -291,7 +291,7 @@ describe('cmd-patch', () => {
       mockSpawnSocketPatchDlx.mockImplementationOnce(() => {
         exitCodeDuringSpawn = process.exitCode
         return Promise.resolve({
-          spawnPromise: Promise.resolve({ code: 0, signal: null }),
+          spawnPromise: Promise.resolve({ code: 0, signal: undefined }),
         })
       })
 

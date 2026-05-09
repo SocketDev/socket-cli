@@ -78,7 +78,7 @@ export function mockAuthenticatedApiClient(options?: {
 
   return {
     isAuthenticated: vi.fn().mockReturnValue(isAuthenticated),
-    getToken: vi.fn().mockReturnValue(isAuthenticated ? MOCK_API_TOKEN : null),
+    getToken: vi.fn().mockReturnValue(isAuthenticated ? MOCK_API_TOKEN : undefined),
     setToken: vi.fn(),
     clearToken: vi.fn(),
     validateToken: vi.fn().mockResolvedValue(isAuthenticated),

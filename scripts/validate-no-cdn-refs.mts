@@ -33,44 +33,10 @@ const CDN_PATTERNS = [
 ]
 
 // Directories to skip
-const SKIP_DIRS = new Set([
-  'node_modules',
-  '.git',
-  'dist',
-  'build',
-  '.cache',
-  'coverage',
-  '.next',
-  '.nuxt',
-  '.output',
-  '.turbo',
-  '.type-coverage',
-  '.yarn',
-])
+const SKIP_DIRS = new Set(['.cache', '.git', '.next', '.nuxt', '.output', '.turbo', '.type-coverage', '.yarn', 'build', 'coverage', 'dist', 'node_modules'])
 
 // File extensions to check
-const TEXT_EXTENSIONS = new Set([
-  '.js',
-  '.mjs',
-  '.cjs',
-  '.ts',
-  '.mts',
-  '.cts',
-  '.jsx',
-  '.tsx',
-  '.json',
-  '.md',
-  '.html',
-  '.htm',
-  '.css',
-  '.yml',
-  '.yaml',
-  '.xml',
-  '.svg',
-  '.txt',
-  '.sh',
-  '.bash',
-])
+const TEXT_EXTENSIONS = new Set(['.bash', '.cjs', '.css', '.cts', '.htm', '.html', '.js', '.json', '.jsx', '.md', '.mjs', '.mts', '.sh', '.svg', '.ts', '.tsx', '.txt', '.xml', '.yaml', '.yml'])
 
 interface CdnViolation {
   file: string

@@ -37,7 +37,7 @@ describe('PromiseQueue', () => {
     const results = await Promise.allSettled(tasks.map(task => queue.add(task)))
 
     expect(
-      results.map(r => (r.status === 'fulfilled' ? r.value : null)),
+      results.map(r => (r.status === 'fulfilled' ? r.value : undefined)),
     ).toEqual([0, 1, 2, 3, 4])
   })
 

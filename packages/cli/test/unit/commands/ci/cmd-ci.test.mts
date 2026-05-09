@@ -220,7 +220,7 @@ describe('cmd-ci', () => {
       })
 
       it('should use default branch when git branch fails', async () => {
-        mockGitBranch.mockResolvedValue(null)
+        mockGitBranch.mockResolvedValue(undefined)
         mockDetectDefaultBranch.mockResolvedValue('develop')
 
         await cmdCI.run(['--dry-run'], importMeta, context)
@@ -251,7 +251,7 @@ describe('cmd-ci', () => {
       })
 
       it('should show placeholder when repo name is null', async () => {
-        mockGetRepoName.mockResolvedValue(null)
+        mockGetRepoName.mockResolvedValue(undefined)
 
         await cmdCI.run(['--dry-run'], importMeta, context)
 
@@ -264,8 +264,8 @@ describe('cmd-ci', () => {
       })
 
       it('should show placeholder when branch name is null', async () => {
-        mockGitBranch.mockResolvedValue(null)
-        mockDetectDefaultBranch.mockResolvedValue(null)
+        mockGitBranch.mockResolvedValue(undefined)
+        mockDetectDefaultBranch.mockResolvedValue(undefined)
 
         await cmdCI.run(['--dry-run'], importMeta, context)
 
@@ -308,7 +308,7 @@ describe('cmd-ci', () => {
       })
 
       it('should fall back to detectDefaultBranch when gitBranch returns null', async () => {
-        mockGitBranch.mockResolvedValue(null)
+        mockGitBranch.mockResolvedValue(undefined)
 
         await cmdCI.run(['--dry-run'], importMeta, context)
 
@@ -387,9 +387,9 @@ describe('cmd-ci', () => {
       })
 
       it('should handle all git operations returning null', async () => {
-        mockGitBranch.mockResolvedValue(null)
-        mockDetectDefaultBranch.mockResolvedValue(null)
-        mockGetRepoName.mockResolvedValue(null)
+        mockGitBranch.mockResolvedValue(undefined)
+        mockDetectDefaultBranch.mockResolvedValue(undefined)
+        mockGetRepoName.mockResolvedValue(undefined)
 
         await cmdCI.run(['--dry-run'], importMeta, context)
 

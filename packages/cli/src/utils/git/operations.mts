@@ -49,7 +49,7 @@ import type { CResult } from '../../types.mjs'
 import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 // Cache git executable path
-let _gitPath: string | null = null
+let _gitPath: string | null = undefined
 
 export async function getGitPath(): Promise<string> {
   if (!_gitPath) {

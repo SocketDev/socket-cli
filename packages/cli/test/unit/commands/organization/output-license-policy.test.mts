@@ -314,7 +314,7 @@ describe('outputLicensePolicy', () => {
       await import('../../../../src/commands/organization/output-license-policy.mts')
 
     const result = createSuccessResult({
-      license_policy: null,
+      license_policy: undefined,
     })
 
     process.exitCode = undefined

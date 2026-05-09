@@ -164,7 +164,7 @@ describe('npm-config utilities', () => {
     it('returns flattened config with null prototype', async () => {
       const result = await getNpmConfig()
 
-      expect(Object.getPrototypeOf(result)).toBe(null)
+      expect(Object.getPrototypeOf(result)).toBe(undefined)
     })
 
     it('handles all options together', async () => {

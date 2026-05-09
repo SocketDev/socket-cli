@@ -398,7 +398,7 @@ describe('Path Resolve', () => {
     })
 
     it('handles no bin path found', () => {
-      mockWhichRealSync.mockReturnValue(null)
+      mockWhichRealSync.mockReturnValue(undefined)
 
       const result = findBinPathDetailsSync('nonexistent')
 

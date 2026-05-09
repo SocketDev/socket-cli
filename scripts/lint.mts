@@ -81,7 +81,7 @@ async function getFilesToLint(options: LintOptions): Promise<FilesToLintResult> 
     return { mode, packages: [], reason: 'no lintable packages affected' }
   }
 
-  return { mode, packages: affectedPackages, reason: null }
+  return { mode, packages: affectedPackages, reason: undefined }
 }
 
 async function main(): Promise<void> {

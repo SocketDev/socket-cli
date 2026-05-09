@@ -178,10 +178,10 @@ describe('cmd-logout', () => {
         await cmdLogout.run([], importMeta, context)
 
         // Should clear all config keys.
-        expect(mockUpdateConfigValue).toHaveBeenCalledWith('apiToken', null)
-        expect(mockUpdateConfigValue).toHaveBeenCalledWith('apiBaseUrl', null)
-        expect(mockUpdateConfigValue).toHaveBeenCalledWith('apiProxy', null)
-        expect(mockUpdateConfigValue).toHaveBeenCalledWith('enforcedOrgs', null)
+        expect(mockUpdateConfigValue).toHaveBeenCalledWith('apiToken', undefined)
+        expect(mockUpdateConfigValue).toHaveBeenCalledWith('apiBaseUrl', undefined)
+        expect(mockUpdateConfigValue).toHaveBeenCalledWith('apiProxy', undefined)
+        expect(mockUpdateConfigValue).toHaveBeenCalledWith('enforcedOrgs', undefined)
         expect(mockUpdateConfigValue).toHaveBeenCalledTimes(4)
       })
 
@@ -197,10 +197,10 @@ describe('cmd-logout', () => {
         await cmdLogout.run([], importMeta, context)
 
         const calls = mockUpdateConfigValue.mock.calls
-        expect(calls[0]).toEqual(['apiToken', null])
-        expect(calls[1]).toEqual(['apiBaseUrl', null])
-        expect(calls[2]).toEqual(['apiProxy', null])
-        expect(calls[3]).toEqual(['enforcedOrgs', null])
+        expect(calls[0]).toEqual(['apiToken', undefined])
+        expect(calls[1]).toEqual(['apiBaseUrl', undefined])
+        expect(calls[2]).toEqual(['apiProxy', undefined])
+        expect(calls[3]).toEqual(['enforcedOrgs', undefined])
       })
     })
 

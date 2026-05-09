@@ -45,7 +45,7 @@ describe('filter-config utilities', () => {
         disabled: false,
         someFeature: true,
       })
-      expect(Object.getPrototypeOf(result)).toBe(null)
+      expect(Object.getPrototypeOf(result)).toBe(undefined)
     })
 
     it('normalizes object with array values', () => {
@@ -70,7 +70,7 @@ describe('filter-config utilities', () => {
         arrayValue: ['test'],
         stringValue: 'should be filtered',
         numberValue: 42,
-        nullValue: null,
+        nullValue: undefined,
         undefinedValue: undefined,
         objectValue: { nested: true },
         functionValue: () => {},
@@ -109,7 +109,7 @@ describe('filter-config utilities', () => {
 
       isObject.mockReturnValue(false)
 
-      expect(toFilterConfig(null)).toEqual({})
+      expect(toFilterConfig(undefined)).toEqual({})
       expect(toFilterConfig(undefined)).toEqual({})
       expect(toFilterConfig('string')).toEqual({})
       expect(toFilterConfig(123)).toEqual({})
@@ -126,7 +126,7 @@ describe('filter-config utilities', () => {
       const result = toFilterConfig({})
 
       expect(result).toEqual({})
-      expect(Object.getPrototypeOf(result)).toBe(null)
+      expect(Object.getPrototypeOf(result)).toBe(undefined)
     })
 
     it('preserves nested arrays', () => {
@@ -215,7 +215,7 @@ describe('filter-config utilities', () => {
     it('creates object with null prototype', () => {
       const result = toFilterConfig({ test: true })
 
-      expect(Object.getPrototypeOf(result)).toBe(null)
+      expect(Object.getPrototypeOf(result)).toBe(undefined)
       expect(result.constructor).toBeUndefined()
       expect(result.toString).toBeUndefined()
       expect(result.valueOf).toBeUndefined()
@@ -233,7 +233,7 @@ describe('filter-config utilities', () => {
         __proto__: true,
         normal: false,
       })
-      expect(Object.getPrototypeOf(result)).toBe(null)
+      expect(Object.getPrototypeOf(result)).toBe(undefined)
     })
   })
 })

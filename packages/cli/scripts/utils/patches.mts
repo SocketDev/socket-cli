@@ -106,7 +106,7 @@ export async function startPatch(packageSpec) {
   // pnpm outputs errors to stdout, not stderr.
   if (result.code !== 0 && result.stdout.includes('is not empty')) {
     const match = result.stdout.match(/directory (.+?) is not empty/)
-    const existingPatchDir = match ? match[1] : null
+    const existingPatchDir = match ? match[1] : undefined
 
     if (existingPatchDir) {
       logger.log(`\nExisting patch directory found: ${existingPatchDir}`)

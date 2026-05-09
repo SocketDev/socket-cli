@@ -17,9 +17,9 @@ import {
 } from './utils/asset-manager-compat.mts'
 
 const logger = {
-  error: (...args) => console.error('❌', ...args),
-  log: (...args) => console.log('ℹ️', ...args),
-  success: (...args) => console.log('✅', ...args),
+  error: (...args) => logger.fail('❌', ...args),
+  log: (...args) => logger.log('ℹ️', ...args),
+  success: (...args) => logger.log('✅', ...args),
 }
 
 /**
@@ -120,32 +120,32 @@ async function testLocalOverride() {
  * Main test runner.
  */
 async function main() {
-  console.log('='.repeat(60))
-  console.log('AssetManager Isolation Tests')
-  console.log('='.repeat(60))
-  console.log('')
+  logger.log('='.repeat(60))
+  logger.log('AssetManager Isolation Tests')
+  logger.log('='.repeat(60))
+  logger.log('')
 
   try {
     await testAssetManagerCore()
     await testBackwardCompatibility()
     await testLocalOverride()
 
-    console.log('='.repeat(60))
-    console.log('✅ ALL TESTS PASSED!')
-    console.log('='.repeat(60))
-    console.log('')
-    console.log('Phase 1 (Foundation) complete. Ready for Phase 2 (Migration).')
-    console.log('')
+    logger.log('='.repeat(60))
+    logger.log('✅ ALL TESTS PASSED!')
+    logger.log('='.repeat(60))
+    logger.log('')
+    logger.log('Phase 1 (Foundation) complete. Ready for Phase 2 (Migration).')
+    logger.log('')
   } catch (e) {
-    console.error('\n' + '='.repeat(60))
-    console.error('❌ TEST FAILED')
-    console.error('='.repeat(60))
-    console.error('')
-    console.error('Error:', e.message)
-    console.error('')
+    logger.fail('\n' + '='.repeat(60))
+    logger.fail('❌ TEST FAILED')
+    logger.fail('='.repeat(60))
+    logger.fail('')
+    logger.fail('Error:', e.message)
+    logger.fail('')
     if (e.stack) {
-      console.error('Stack trace:')
-      console.error(e.stack)
+      logger.fail('Stack trace:')
+      logger.fail(e.stack)
     }
     process.exitCode = 1
   }

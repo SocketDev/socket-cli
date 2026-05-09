@@ -71,7 +71,7 @@ describe('validateSocketJson', () => {
 
   it('throws when ok:true but data is null', () => {
     expect(() =>
-      validateSocketJson(JSON.stringify({ ok: true, data: null }), 0),
+      validateSocketJson(JSON.stringify({ ok: true, data: undefined }), 0),
     ).toThrow(/must include a non-null "data"/)
   })
 

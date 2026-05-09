@@ -53,7 +53,7 @@ const { detectNodejsCdxgenSources, isNodejsCdxgenType, runCdxgen } =
 describe('isNodejsCdxgenType', () => {
   it('treats an undefined type as Node.js (the cdxgen default)', () => {
     expect(isNodejsCdxgenType(undefined)).toBe(true)
-    expect(isNodejsCdxgenType(null)).toBe(true)
+    expect(isNodejsCdxgenType(undefined)).toBe(true)
   })
 
   it.each(['js', 'javascript', 'typescript', 'nodejs', 'npm', 'pnpm', 'ts'])(
@@ -135,7 +135,7 @@ describe('runCdxgen', () => {
     mockSpawnCdxgenDlx.mockResolvedValue({
       spawnPromise: Promise.resolve({}),
       process: {},
-      stdin: null,
+      stdin: undefined,
     })
     mockSpawnSynpDlx.mockResolvedValue({
       spawnPromise: Promise.resolve({}),

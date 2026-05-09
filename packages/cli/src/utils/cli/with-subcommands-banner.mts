@@ -164,7 +164,7 @@ export function getAsciiHeader(
 
   // Render animated logo if supported, otherwise static.
   // Use frame 0 for static render in non-animated mode.
-  const frame = animate ? Math.floor(Date.now() / 100) % 20 : null
+  const frame = animate ? Math.floor(Date.now() / 100) % 20 : undefined
   const logo = renderLogoWithFallback(frame, theme)
 
   // Build info lines.

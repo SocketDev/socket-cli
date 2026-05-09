@@ -19,7 +19,7 @@
  */
 
 const ACCESS_METHODS = new Set(['access', 'accessSync'])
-const STAT_METHODS = new Set(['stat', 'statSync', 'lstat', 'lstatSync'])
+const STAT_METHODS = new Set(['lstat', 'lstatSync', 'stat', 'statSync'])
 
 /** @type {import('eslint').Rule.RuleModule} */
 const rule = {
@@ -44,10 +44,10 @@ const rule = {
   create(context) {
     function calleeMethodName(callee) {
       if (callee.type !== 'MemberExpression') {
-        return null
+        return undefined
       }
       if (callee.property.type !== 'Identifier') {
-        return null
+        return undefined
       }
       return callee.property.name
     }

@@ -266,7 +266,7 @@ export async function globWithGitIgnore(
   // Use streaming to avoid unbounded memory accumulation.
   // This is critical for large monorepos with 100k+ files.
   const results: string[] = []
-  const ig = hasNegatedPattern ? ignore().add([...ignores]) : null
+  const ig = hasNegatedPattern ? ignore().add([...ignores]) : undefined
   const stream = fastGlob.globStream(
     patterns as string[],
     globOptions,

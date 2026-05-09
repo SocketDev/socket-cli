@@ -22,7 +22,7 @@ const matrix: { include: MatrixEntry[] } = {
   include: PLATFORM_CONFIGS.map(
     (c): MatrixEntry => ({
       arch: c.arch,
-      libc: c.libc ?? null,
+      libc: c.libc ?? undefined,
       platform: c.platform, // Node.js platform (win32 for Windows)
       releasePlatform: c.releasePlatform, // Release naming (win for Windows)
       runner: c.runner,
@@ -30,4 +30,4 @@ const matrix: { include: MatrixEntry[] } = {
   ),
 }
 
-console.log(JSON.stringify(matrix))
+logger.log(JSON.stringify(matrix))

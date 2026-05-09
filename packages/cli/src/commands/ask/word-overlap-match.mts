@@ -22,7 +22,7 @@ import { getHome } from '@socketsecurity/lib/env/home'
 export const WORD_OVERLAP_THRESHOLD = 0.3
 
 // Lazy-loaded ~3KB semantic index. `null` until loadSemanticIndex resolves.
-let semanticIndex: any = null
+let semanticIndex: any = undefined
 
 /**
  * Normalize query using NLP to handle variations in phrasing. Verbs become
@@ -53,7 +53,7 @@ export async function loadSemanticIndex() {
   try {
     const homeDir = getHome()
     if (!homeDir) {
-      return null
+      return undefined
     }
     const indexPath = path.join(
       homeDir,
@@ -65,7 +65,7 @@ export async function loadSemanticIndex() {
     return semanticIndex
   } catch (_e) {
     // Semantic index not available — not a critical error.
-    return null
+    return undefined
   }
 }
 
@@ -110,12 +110,12 @@ export async function wordOverlapMatch(query: string): Promise<{
 } | null> {
   const index = await loadSemanticIndex()
   if (!index || !index.commands) {
-    return null
+    return undefined
   }
 
   const queryWords = new Set(extractWords(query))
   if (queryWords.size === 0) {
-    return null
+    return undefined
   }
 
   let bestAction = ''
@@ -138,7 +138,7 @@ export async function wordOverlapMatch(query: string): Promise<{
   }
 
   if (bestScore < WORD_OVERLAP_THRESHOLD) {
-    return null
+    return undefined
   }
 
   return { action: bestAction, confidence: bestScore }

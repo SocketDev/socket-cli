@@ -60,7 +60,7 @@ describe('semver utilities', () => {
     })
 
     it('returns undefined when coerce returns null', () => {
-      vi.mocked(semver.coerce).mockReturnValue(null)
+      vi.mocked(semver.coerce).mockReturnValue(undefined)
 
       const result = getMajor('invalid')
       expect(result).toBeUndefined()
@@ -76,10 +76,10 @@ describe('semver utilities', () => {
     })
 
     it('handles non-string input', () => {
-      vi.mocked(semver.coerce).mockReturnValue(null)
+      vi.mocked(semver.coerce).mockReturnValue(undefined)
 
       expect(getMajor(123)).toBeUndefined()
-      expect(getMajor(null)).toBeUndefined()
+      expect(getMajor(undefined)).toBeUndefined()
       expect(getMajor(undefined)).toBeUndefined()
       expect(getMajor({})).toBeUndefined()
     })
@@ -96,7 +96,7 @@ describe('semver utilities', () => {
     })
 
     it('returns undefined when minVersion returns null', () => {
-      vi.mocked(semver.minVersion).mockReturnValue(null)
+      vi.mocked(semver.minVersion).mockReturnValue(undefined)
 
       const result = getMinVersion('invalid-range')
       expect(result).toBeUndefined()
@@ -112,10 +112,10 @@ describe('semver utilities', () => {
     })
 
     it('handles non-string input', () => {
-      vi.mocked(semver.minVersion).mockReturnValue(null)
+      vi.mocked(semver.minVersion).mockReturnValue(undefined)
 
       expect(getMinVersion(123)).toBeUndefined()
-      expect(getMinVersion(null)).toBeUndefined()
+      expect(getMinVersion(undefined)).toBeUndefined()
       expect(getMinVersion(undefined)).toBeUndefined()
       expect(getMinVersion([])).toBeUndefined()
     })

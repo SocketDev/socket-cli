@@ -32,7 +32,7 @@ describe('cmd-sfw', () => {
 
   const createMockSpawnResult = (exitCode = 0, signal?: string) => ({
     spawnPromise: Promise.resolve({
-      code: signal ? null : exitCode,
+      code: signal ? undefined : exitCode,
       signal,
       success: exitCode === 0 && !signal,
     }).then(result => Object.assign(result, { process: mockChildProcess })),
@@ -194,8 +194,8 @@ describe('cmd-sfw', () => {
       // Construct a result with both code: null and signal: null (rare).
       mockSpawnSfw.mockResolvedValue({
         spawnPromise: Promise.resolve({
-          code: null,
-          signal: null,
+          code: undefined,
+          signal: undefined,
           success: false,
         }),
       } as any)

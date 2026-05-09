@@ -195,7 +195,7 @@ class CliProcessPool {
 }
 
 // Singleton instance for test sharing.
-let globalPool: CliProcessPool | null = null
+let globalPool: CliProcessPool | null = undefined
 
 /**
  * Get or create the global process pool.
@@ -214,6 +214,6 @@ export function getProcessPool(): CliProcessPool {
 export async function cleanupProcessPool(): Promise<void> {
   if (globalPool) {
     await globalPool.cleanup()
-    globalPool = null
+    globalPool = undefined
   }
 }

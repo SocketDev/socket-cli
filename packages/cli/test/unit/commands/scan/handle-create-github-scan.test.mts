@@ -173,7 +173,7 @@ describe('handleCreateGithubScan', () => {
       all: 0 as any,
       githubApiUrl: 'https://api.github.com',
       githubToken: 'token',
-      interactive: null as any,
+      interactive: undefined as any,
       orgGithub: 'org',
       orgSlug: 'org',
       outputKind: 'json',

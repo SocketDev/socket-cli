@@ -86,7 +86,7 @@ describe('cmd-uv', () => {
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
         code: 0,
-        signal: null,
+        signal: undefined,
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
@@ -94,7 +94,7 @@ describe('cmd-uv', () => {
       mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise })
       mockFilterFlags.mockReturnValue([])
       const runPromise = cmdUv.run([], { url: import.meta.url }, { parentName: 'socket' })
-      setImmediate(() => mockChildProcess.emit('exit', 0, null))
+      setImmediate(() => mockChildProcess.emit('exit', 0, undefined))
       await runPromise
       expect(mockMeowOrExit).toHaveBeenCalled()
     })
@@ -105,7 +105,7 @@ describe('cmd-uv', () => {
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
         code: 0,
-        signal: null,
+        signal: undefined,
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
@@ -125,7 +125,7 @@ describe('cmd-uv', () => {
 
       // Simulate successful exit.
       setImmediate(() => {
-        mockChildProcess.emit('exit', 0, null)
+        mockChildProcess.emit('exit', 0, undefined)
       })
 
       await runPromise
@@ -146,7 +146,7 @@ describe('cmd-uv', () => {
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
         code: 0,
-        signal: null,
+        signal: undefined,
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
@@ -166,7 +166,7 @@ describe('cmd-uv', () => {
 
       // Simulate successful exit.
       setImmediate(() => {
-        mockChildProcess.emit('exit', 0, null)
+        mockChildProcess.emit('exit', 0, undefined)
       })
 
       await runPromise
@@ -180,7 +180,7 @@ describe('cmd-uv', () => {
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
         code: 0,
-        signal: null,
+        signal: undefined,
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
@@ -201,7 +201,7 @@ describe('cmd-uv', () => {
 
       // Simulate successful exit.
       setImmediate(() => {
-        mockChildProcess.emit('exit', 0, null)
+        mockChildProcess.emit('exit', 0, undefined)
       })
 
       await runPromise
@@ -216,7 +216,7 @@ describe('cmd-uv', () => {
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
         code: 0,
-        signal: null,
+        signal: undefined,
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
@@ -246,7 +246,7 @@ describe('cmd-uv', () => {
       })
 
       // Simulate successful exit.
-      mockChildProcess.emit('exit', 0, null)
+      mockChildProcess.emit('exit', 0, undefined)
 
       // Wait for event handler to execute.
       await new Promise(resolve => {
@@ -262,7 +262,7 @@ describe('cmd-uv', () => {
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
         code: 0,
-        signal: null,
+        signal: undefined,
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
@@ -290,7 +290,7 @@ describe('cmd-uv', () => {
       })
 
       // Simulate exit with code 0.
-      mockChildProcess.emit('exit', 0, null)
+      mockChildProcess.emit('exit', 0, undefined)
 
       // Wait for event handler to execute.
       await new Promise(resolve => {
@@ -305,7 +305,7 @@ describe('cmd-uv', () => {
     it('should handle child process exit with signal', async () => {
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
-        code: null,
+        code: undefined,
         signal: 'SIGTERM',
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
@@ -334,7 +334,7 @@ describe('cmd-uv', () => {
       })
 
       // Simulate exit with signal.
-      mockChildProcess.emit('exit', null, 'SIGTERM')
+      mockChildProcess.emit('exit', undefined, 'SIGTERM')
 
       // Wait for event handler to execute.
       await new Promise(resolve => {
@@ -350,7 +350,7 @@ describe('cmd-uv', () => {
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
         code: 0,
-        signal: null,
+        signal: undefined,
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
@@ -371,7 +371,7 @@ describe('cmd-uv', () => {
       })
 
       // Simulate successful exit.
-      mockChildProcess.emit('exit', 0, null)
+      mockChildProcess.emit('exit', 0, undefined)
 
       // Wait for event handler to execute.
       await new Promise(resolve => {
@@ -387,7 +387,7 @@ describe('cmd-uv', () => {
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
         code: 0,
-        signal: null,
+        signal: undefined,
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
@@ -408,7 +408,7 @@ describe('cmd-uv', () => {
       })
 
       // Simulate successful exit.
-      mockChildProcess.emit('exit', 0, null)
+      mockChildProcess.emit('exit', 0, undefined)
 
       // Wait for event handler to execute.
       await new Promise(resolve => {

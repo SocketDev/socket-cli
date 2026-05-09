@@ -119,7 +119,7 @@ describe('get-dependency-entries', () => {
 
       // Check that returned object has null prototype.
       const deps = result[0]![1]
-      expect(Object.getPrototypeOf(deps)).toBe(null)
+      expect(Object.getPrototypeOf(deps)).toBe(undefined)
     })
   })
 })

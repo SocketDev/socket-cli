@@ -45,7 +45,7 @@ describe('extract-scan-id', () => {
     })
 
     it('returns undefined for missing file', () => {
-      mockReadJsonSync.mockReturnValue(null)
+      mockReadJsonSync.mockReturnValue(undefined)
 
       const result = extractTier1ReachabilityScanId('/path/to/missing.json')
 
@@ -72,7 +72,7 @@ describe('extract-scan-id', () => {
 
     it('returns undefined for null scan ID', () => {
       mockReadJsonSync.mockReturnValue({
-        tier1ReachabilityScanId: null,
+        tier1ReachabilityScanId: undefined,
       })
 
       const result = extractTier1ReachabilityScanId('/path/to/file.json')

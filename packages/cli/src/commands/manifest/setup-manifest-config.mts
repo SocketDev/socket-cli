@@ -21,7 +21,7 @@ export async function setupManifestConfig(
   cwd: string,
   defaultOnReadError = false,
 ): Promise<CResult<unknown>> {
-  const detected = await detectManifestActions(null, cwd)
+  const detected = await detectManifestActions(undefined, cwd)
   debugDirNs('inspect', { detected })
 
   // - repeat

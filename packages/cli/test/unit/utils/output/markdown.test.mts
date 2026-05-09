@@ -219,7 +219,7 @@ describe('markdown utilities', () => {
     it('handles null and undefined values', () => {
       const data = {
         Valid: 123,
-        Null: null as any,
+        Null: undefined as any,
         Undefined: undefined as any,
       }
 
@@ -351,7 +351,7 @@ describe('markdown utilities', () => {
 
     it('handles null and undefined values', () => {
       const pairs: Array<[string, any]> = [
-        ['Null', null],
+        ['Null', undefined],
         ['Undefined', undefined],
         ['Empty', ''],
       ]

@@ -54,7 +54,7 @@ function parseArgs() {
       ?.toLowerCase() || 'with-tools'
 
   if (!['standalone', 'vfs', 'with-tools'].includes(mode)) {
-    console.error('Invalid mode. Use: standalone, vfs, or with-tools')
+    logger.fail('Invalid mode. Use: standalone, vfs, or with-tools')
     throw new Error('Invalid mode')
   }
 
@@ -74,8 +74,8 @@ async function loadToolPaths() {
   )
 
   if (!existsSync(toolPathsFile)) {
-    console.error(`Tool paths not found: ${toolPathsFile}`)
-    console.error('Run: node scripts/test-download-external-tools.mts')
+    logger.fail(`Tool paths not found: ${toolPathsFile}`)
+    logger.fail('Run: node scripts/test-download-external-tools.mts')
     throw new Error('Tool paths not found')
   }
 
@@ -83,10 +83,10 @@ async function loadToolPaths() {
   try {
     toolPathsData = JSON.parse(await fs.readFile(toolPathsFile, 'utf8'))
   } catch (e) {
-    console.error(
+    logger.fail(
       `Failed to parse tool paths from ${toolPathsFile}: ${e.message}`,
     )
-    console.error('Run: node scripts/test-download-external-tools.mts')
+    logger.fail('Run: node scripts/test-download-external-tools.mts')
     throw new Error('Invalid tool paths JSON')
   }
   return { platform, toolPaths: toolPathsData.tools }
@@ -96,18 +96,18 @@ async function loadToolPaths() {
  * Display tool information.
  */
 async function displayToolInfo(toolPaths) {
-  console.log('External tools to bundle:')
+  logger.log('External tools to bundle:')
   let totalToolSize = 0
   for (const [toolName, toolPath] of Object.entries(toolPaths)) {
     if (existsSync(toolPath)) {
       const stats = await fs.stat(toolPath)
       const sizeMB = stats.size / 1024 / 1024
       totalToolSize += stats.size
-      console.log(`  ${toolName}: ${sizeMB.toFixed(2)} MB`)
+      logger.log(`  ${toolName}: ${sizeMB.toFixed(2)} MB`)
     }
   }
-  console.log(`  Total: ${(totalToolSize / 1024 / 1024).toFixed(2)} MB`)
-  console.log('')
+  logger.log(`  Total: ${(totalToolSize / 1024 / 1024).toFixed(2)} MB`)
+  logger.log('')
   return totalToolSize
 }
 
@@ -156,7 +156,7 @@ async function generateSeaConfig(entryPoint, outputPath, toolPaths, mode) {
  * Build SEA blob.
  */
 async function buildBlob(configPath) {
-  console.log('Generating SEA blob...')
+  logger.log('Generating SEA blob...')
   const result = await spawn(
     process.execPath,
     ['--experimental-sea-config', configPath],
@@ -174,9 +174,9 @@ async function buildBlob(configPath) {
  * Mode: standalone - Uses standard Node.js + postject.
  */
 async function runStandaloneMode(platform, toolPaths) {
-  console.log('Mode: standalone (Node.js + postject)')
-  console.log('='.repeat(60))
-  console.log('')
+  logger.log('Mode: standalone (Node.js + postject)')
+  logger.log('='.repeat(60))
+  logger.log('')
 
   const totalToolSize = await displayToolInfo(toolPaths)
 
@@ -200,20 +200,20 @@ async function runStandaloneMode(platform, toolPaths) {
   // Check blob size.
   const blobStats = await fs.stat(blobPath)
   const blobSizeMB = blobStats.size / 1024 / 1024
-  console.log(`Blob size: ${blobSizeMB.toFixed(2)} MB`)
-  console.log('')
+  logger.log(`Blob size: ${blobSizeMB.toFixed(2)} MB`)
+  logger.log('')
 
   // Copy current node binary as base.
-  console.log('Copying Node.js binary as base...')
+  logger.log('Copying Node.js binary as base...')
   await fs.copyFile(process.execPath, outputPath)
   await fs.chmod(outputPath, 0o755)
 
   const baseStats = await fs.stat(outputPath)
-  console.log(`Base binary: ${(baseStats.size / 1024 / 1024).toFixed(2)} MB`)
-  console.log('')
+  logger.log(`Base binary: ${(baseStats.size / 1024 / 1024).toFixed(2)} MB`)
+  logger.log('')
 
   // Inject blob using postject.
-  console.log('Injecting blob with postject...')
+  logger.log('Injecting blob with postject...')
   const injectResult = await spawn(
     'npx',
     [
@@ -236,8 +236,8 @@ async function runStandaloneMode(platform, toolPaths) {
 
   // Sign binary (required on macOS).
   if (process.platform === 'darwin') {
-    console.log('')
-    console.log('Signing binary (macOS)...')
+    logger.log('')
+    logger.log('Signing binary (macOS)...')
     const signResult = await spawn('codesign', ['-s', '-', outputPath], {
       stdio: 'inherit',
     })
@@ -252,24 +252,24 @@ async function runStandaloneMode(platform, toolPaths) {
   const uncompressedTotal = (totalToolSize + baseStats.size) / 1024 / 1024
   const compression = ((1 - finalSizeMB / uncompressedTotal) * 100).toFixed(1)
 
-  console.log('')
-  console.log('='.repeat(60))
-  console.log('RESULTS')
-  console.log('='.repeat(60))
-  console.log('')
-  console.log(
+  logger.log('')
+  logger.log('='.repeat(60))
+  logger.log('RESULTS')
+  logger.log('='.repeat(60))
+  logger.log('')
+  logger.log(
     `Tools (uncompressed): ${(totalToolSize / 1024 / 1024).toFixed(2)} MB`,
   )
-  console.log(
+  logger.log(
     `Base Node binary: ${(baseStats.size / 1024 / 1024).toFixed(2)} MB`,
   )
-  console.log(`Blob: ${blobSizeMB.toFixed(2)} MB`)
-  console.log(`Final SEA binary: ${finalSizeMB.toFixed(2)} MB`)
-  console.log(`Compression: ${compression}% reduction`)
-  console.log(`Savings: ${(uncompressedTotal - finalSizeMB).toFixed(2)} MB`)
-  console.log('')
-  console.log(`Output: ${outputPath}`)
-  console.log('')
+  logger.log(`Blob: ${blobSizeMB.toFixed(2)} MB`)
+  logger.log(`Final SEA binary: ${finalSizeMB.toFixed(2)} MB`)
+  logger.log(`Compression: ${compression}% reduction`)
+  logger.log(`Savings: ${(uncompressedTotal - finalSizeMB).toFixed(2)} MB`)
+  logger.log('')
+  logger.log(`Output: ${outputPath}`)
+  logger.log('')
 
   return outputPath
 }
@@ -278,9 +278,9 @@ async function runStandaloneMode(platform, toolPaths) {
  * Mode: vfs - Uses binject with --vfs compression.
  */
 async function runVfsMode(platform) {
-  console.log('Mode: vfs (binject with --vfs compression)')
-  console.log('='.repeat(60))
-  console.log('')
+  logger.log('Mode: vfs (binject with --vfs compression)')
+  logger.log('='.repeat(60))
+  logger.log('')
 
   const outputDir = path.join(__dirname, '../dist/sea-test')
   const vfsTarGz = path.join(outputDir, 'external-tools.tar.gz')
@@ -288,16 +288,16 @@ async function runVfsMode(platform) {
 
   // Check that tar.gz exists.
   if (!existsSync(vfsTarGz)) {
-    console.error(`VFS tar.gz not found: ${vfsTarGz}`)
-    console.error(
+    logger.fail(`VFS tar.gz not found: ${vfsTarGz}`)
+    logger.fail(
       'Create it with: tar -czf packages/cli/dist/sea-test/external-tools.tar.gz -C build-infra/build/external-tools-test/darwin-arm64 trivy trufflehog opengrep',
     )
     throw new Error('VFS tar.gz not found')
   }
 
   const vfsStats = await fs.stat(vfsTarGz)
-  console.log(`VFS tar.gz: ${(vfsStats.size / 1024 / 1024).toFixed(2)} MB`)
-  console.log('')
+  logger.log(`VFS tar.gz: ${(vfsStats.size / 1024 / 1024).toFixed(2)} MB`)
+  logger.log('')
 
   // Create minimal SEA config (no assets).
   const entryPoint = path.join(__dirname, 'test-entry.mts')
@@ -313,35 +313,35 @@ async function runVfsMode(platform) {
   }
 
   await fs.writeFile(configPath, JSON.stringify(config, null, 2))
-  console.log('Generated minimal SEA config (no assets)')
-  console.log('')
+  logger.log('Generated minimal SEA config (no assets)')
+  logger.log('')
 
   // Build SEA blob.
   await buildBlob(configPath)
 
   const blobStats = await fs.stat(blobPath)
-  console.log(`Blob size: ${(blobStats.size / 1024 / 1024).toFixed(2)} MB`)
-  console.log('')
+  logger.log(`Blob size: ${(blobStats.size / 1024 / 1024).toFixed(2)} MB`)
+  logger.log('')
 
   // Copy current node binary as base.
-  console.log('Copying Node.js binary as base...')
+  logger.log('Copying Node.js binary as base...')
   await fs.copyFile(process.execPath, outputPath)
   await fs.chmod(outputPath, 0o755)
 
   const baseStats = await fs.stat(outputPath)
-  console.log(`Base binary: ${(baseStats.size / 1024 / 1024).toFixed(2)} MB`)
-  console.log('')
+  logger.log(`Base binary: ${(baseStats.size / 1024 / 1024).toFixed(2)} MB`)
+  logger.log('')
 
   // Inject blob + VFS using binject.
-  console.log('Injecting blob + VFS with binject...')
+  logger.log('Injecting blob + VFS with binject...')
   const binjectPath = path.join(
     __dirname,
     `../../build-infra/build/downloaded/binject/${platform}/binject`,
   )
 
   if (!existsSync(binjectPath)) {
-    console.error(`binject not found: ${binjectPath}`)
-    console.error('Run build or download binject first')
+    logger.fail(`binject not found: ${binjectPath}`)
+    logger.fail('Run build or download binject first')
     throw new Error('binject not found')
   }
 
@@ -369,8 +369,8 @@ async function runVfsMode(platform) {
   if (process.platform === 'darwin') {
     const checkSign = await spawn('codesign', ['-d', outputPath])
     if (checkSign.code !== 0) {
-      console.log('')
-      console.log('Signing binary (macOS)...')
+      logger.log('')
+      logger.log('Signing binary (macOS)...')
       const signResult = await spawn('codesign', ['-s', '-', outputPath], {
         stdio: 'inherit',
       })
@@ -378,8 +378,8 @@ async function runVfsMode(platform) {
         throw new Error('Codesign failed')
       }
     } else {
-      console.log('')
-      console.log('Binary already signed by binject')
+      logger.log('')
+      logger.log('Binary already signed by binject')
     }
   }
 
@@ -397,26 +397,26 @@ async function runVfsMode(platform) {
     100
   ).toFixed(1)
 
-  console.log('')
-  console.log('='.repeat(60))
-  console.log('RESULTS (binject --vfs compression)')
-  console.log('='.repeat(60))
-  console.log('')
-  console.log(`VFS tar.gz: ${(vfsStats.size / 1024 / 1024).toFixed(2)} MB`)
-  console.log(
+  logger.log('')
+  logger.log('='.repeat(60))
+  logger.log('RESULTS (binject --vfs compression)')
+  logger.log('='.repeat(60))
+  logger.log('')
+  logger.log(`VFS tar.gz: ${(vfsStats.size / 1024 / 1024).toFixed(2)} MB`)
+  logger.log(
     `Base Node binary: ${(baseStats.size / 1024 / 1024).toFixed(2)} MB`,
   )
-  console.log(`Blob: ${(blobStats.size / 1024 / 1024).toFixed(2)} MB`)
-  console.log(`Final SEA binary: ${finalSizeMB.toFixed(2)} MB`)
-  console.log(
+  logger.log(`Blob: ${(blobStats.size / 1024 / 1024).toFixed(2)} MB`)
+  logger.log(`Final SEA binary: ${finalSizeMB.toFixed(2)} MB`)
+  logger.log(
     `Uncompressed size (Node SEA assets): ${uncompressedTotal.toFixed(2)} MB`,
   )
-  console.log(`Compressed size (binject --vfs): ${finalSizeMB.toFixed(2)} MB`)
-  console.log(`Compression: ${compressionRatio}% reduction`)
-  console.log(`Savings: ${savings.toFixed(2)} MB`)
-  console.log('')
-  console.log(`Output: ${outputPath}`)
-  console.log('')
+  logger.log(`Compressed size (binject --vfs): ${finalSizeMB.toFixed(2)} MB`)
+  logger.log(`Compression: ${compressionRatio}% reduction`)
+  logger.log(`Savings: ${savings.toFixed(2)} MB`)
+  logger.log('')
+  logger.log(`Output: ${outputPath}`)
+  logger.log('')
 
   return outputPath
 }
@@ -425,9 +425,9 @@ async function runVfsMode(platform) {
  * Mode: with-tools - Uses Socket infrastructure (downloadNodeBinary + injectSeaBlob).
  */
 async function runWithToolsMode(platform, toolPaths) {
-  console.log('Mode: with-tools (Socket infrastructure)')
-  console.log('='.repeat(60))
-  console.log('')
+  logger.log('Mode: with-tools (Socket infrastructure)')
+  logger.log('='.repeat(60))
+  logger.log('')
 
   // Dynamic import Socket modules.
   const { getDefaultLogger } = await import('@socketsecurity/lib/logger')
@@ -540,15 +540,15 @@ async function runWithToolsMode(platform, toolPaths) {
  * Test the generated binary.
  */
 async function testBinary(outputPath) {
-  console.log('Testing binary...')
-  console.log('-'.repeat(60))
+  logger.log('Testing binary...')
+  logger.log('-'.repeat(60))
   const testResult = await spawn(outputPath, [], { stdio: 'inherit' })
-  console.log('-'.repeat(60))
+  logger.log('-'.repeat(60))
 
   if (testResult.code === 0) {
-    console.log('✅ Binary works!')
+    logger.log('✅ Binary works!')
   } else {
-    console.log('❌ Binary test failed')
+    logger.log('❌ Binary test failed')
     process.exitCode = 1
   }
 }
@@ -580,6 +580,6 @@ async function main() {
 }
 
 main().catch(e => {
-  console.error(e)
+  logger.fail(e)
   process.exitCode = 1
 })

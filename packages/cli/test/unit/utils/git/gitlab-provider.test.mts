@@ -347,7 +347,7 @@ describe('git/gitlab-provider', () => {
     it('paginates through results', async () => {
       // First page full, second page empty.
       const fullPage = Array(100)
-        .fill(null)
+        .fill(undefined)
         .map((_, i) => ({
           author: { username: 'user' },
           iid: i,

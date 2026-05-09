@@ -189,7 +189,7 @@ describe('determineOrgSlug', () => {
 
     it('handles null suggestion from suggestOrgSlug', async () => {
       overrideCachedConfig('{}')
-      mockSuggestOrgSlug.mockResolvedValue(null)
+      mockSuggestOrgSlug.mockResolvedValue(undefined)
 
       const result = await determineOrgSlug('', true, false)
 
@@ -234,7 +234,7 @@ describe('determineOrgSlug', () => {
     it('handles null values for org flag', async () => {
       overrideCachedConfig('{"defaultOrg": "default"}')
 
-      const result = await determineOrgSlug(null as any, false, false)
+      const result = await determineOrgSlug(undefined as any, false, false)
 
       expect(result).toEqual(['default', 'default'])
     })

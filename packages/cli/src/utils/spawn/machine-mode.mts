@@ -35,7 +35,7 @@ export interface MachineModeOutput {
  * mode. Most tools respect at least one of these.
  */
 const UNIVERSAL_ENV: NodeJS.ProcessEnv = {
-  __proto__: null as never,
+  __proto__: undefined as never,
   CLICOLOR_FORCE: '0',
   FORCE_COLOR: '0',
   NO_COLOR: '1',
@@ -143,7 +143,7 @@ const ZPM_JSON_CMDS: readonly string[] = [
 const GO_JSON_CMDS: readonly string[] = ['build', 'list', 'test', 'vet']
 
 const TOOLS: Record<string, ToolRules> = {
-  __proto__: null as never,
+  __proto__: undefined as never,
   cargo: {
     prependArgs: ['-q'],
   },

@@ -26,7 +26,7 @@ function validateBundle() {
     content = readFileSync(buildPath, 'utf-8')
   } catch (e) {
     logger.fail(`Failed to read bundle: ${e.message}`)
-    return null
+    return undefined
   }
 
   const violations = []

@@ -104,7 +104,7 @@ function createMockDiffData(overrides = {}) {
       repository_slug: 'test-repo',
       branch: 'main',
       created_at: '2024-01-01T00:00:00Z',
-      pull_request: null,
+      pull_request: undefined,
     },
     after: {
       id: 'scan-after',
@@ -114,7 +114,7 @@ function createMockDiffData(overrides = {}) {
       repository_slug: 'test-repo',
       branch: 'feature',
       created_at: '2024-01-02T00:00:00Z',
-      pull_request: null,
+      pull_request: undefined,
     },
     artifacts: {
       added: [],
@@ -599,7 +599,7 @@ describe('outputDiffScan', () => {
     })
 
     it('handles missing dashboard URL', async () => {
-      const mockData = createMockDiffData({ diff_report_url: null })
+      const mockData = createMockDiffData({ diff_report_url: undefined })
       const result = createSuccessResult(mockData)
 
       await outputDiffScan(result as any, {

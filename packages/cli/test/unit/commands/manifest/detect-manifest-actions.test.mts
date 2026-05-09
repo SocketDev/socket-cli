@@ -61,7 +61,7 @@ function touch(rel: string) {
 
 describe('detectManifestActions', () => {
   it('returns all-false counts on an empty directory', async () => {
-    const result = await detectManifestActions(null, cwd)
+    const result = await detectManifestActions(undefined, cwd)
     expect(result).toEqual({
       cdxgen: false,
       count: 0,
@@ -73,28 +73,28 @@ describe('detectManifestActions', () => {
 
   it('detects build.sbt as Scala sbt project', async () => {
     touch('build.sbt')
-    const result = await detectManifestActions(null, cwd)
+    const result = await detectManifestActions(undefined, cwd)
     expect(result.sbt).toBe(true)
     expect(result.count).toBe(1)
   })
 
   it('detects gradlew as Gradle project', async () => {
     touch('gradlew')
-    const result = await detectManifestActions(null, cwd)
+    const result = await detectManifestActions(undefined, cwd)
     expect(result.gradle).toBe(true)
     expect(result.count).toBe(1)
   })
 
   it('detects environment.yml as Conda project', async () => {
     touch('environment.yml')
-    const result = await detectManifestActions(null, cwd)
+    const result = await detectManifestActions(undefined, cwd)
     expect(result.conda).toBe(true)
     expect(result.count).toBe(1)
   })
 
   it('detects environment.yaml as Conda project when .yml is absent', async () => {
     touch('environment.yaml')
-    const result = await detectManifestActions(null, cwd)
+    const result = await detectManifestActions(undefined, cwd)
     expect(result.conda).toBe(true)
     expect(result.count).toBe(1)
   })
@@ -102,7 +102,7 @@ describe('detectManifestActions', () => {
   it('counts conda only once when both .yml and .yaml are present', async () => {
     touch('environment.yml')
     touch('environment.yaml')
-    const result = await detectManifestActions(null, cwd)
+    const result = await detectManifestActions(undefined, cwd)
     expect(result.conda).toBe(true)
     expect(result.count).toBe(1)
   })
@@ -111,7 +111,7 @@ describe('detectManifestActions', () => {
     touch('build.sbt')
     touch('gradlew')
     touch('environment.yml')
-    const result = await detectManifestActions(null, cwd)
+    const result = await detectManifestActions(undefined, cwd)
     expect(result.sbt).toBe(true)
     expect(result.gradle).toBe(true)
     expect(result.conda).toBe(true)
@@ -152,7 +152,7 @@ describe('detectManifestActions', () => {
     touch('build.sbt')
     touch('gradlew')
     touch('environment.yml')
-    const result = await detectManifestActions(null, cwd)
+    const result = await detectManifestActions(undefined, cwd)
     expect(result.cdxgen).toBe(false)
   })
 

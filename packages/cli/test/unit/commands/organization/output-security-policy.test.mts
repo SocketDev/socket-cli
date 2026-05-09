@@ -276,7 +276,7 @@ describe('outputSecurityPolicy', () => {
       SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
     > = createSuccessResult({
       securityPolicyDefault: 'defer',
-      securityPolicyRules: null,
+      securityPolicyRules: undefined,
     })
 
     await outputSecurityPolicy(result, 'text')

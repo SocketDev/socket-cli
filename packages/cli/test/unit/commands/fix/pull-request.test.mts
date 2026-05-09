@@ -538,7 +538,7 @@ describe('pull-request', () => {
       mockCacheFetch.mockResolvedValueOnce({
         repository: {
           pullRequests: {
-            pageInfo: { hasNextPage: false, endCursor: null },
+            pageInfo: { hasNextPage: false, endCursor: undefined },
             nodes: [
               {
                 author: { login: 'testuser' },
@@ -573,7 +573,7 @@ describe('pull-request', () => {
       mockCacheFetch.mockResolvedValueOnce({
         repository: {
           pullRequests: {
-            pageInfo: { hasNextPage: false, endCursor: null },
+            pageInfo: { hasNextPage: false, endCursor: undefined },
             nodes: [
               {
                 author: { login: 'testuser' },
@@ -619,7 +619,7 @@ describe('pull-request', () => {
       mockCacheFetch.mockResolvedValueOnce({
         repository: {
           pullRequests: {
-            pageInfo: { hasNextPage: false, endCursor: null },
+            pageInfo: { hasNextPage: false, endCursor: undefined },
             nodes: [],
           },
         },
@@ -634,10 +634,10 @@ describe('pull-request', () => {
       mockCacheFetch.mockResolvedValueOnce({
         repository: {
           pullRequests: {
-            pageInfo: { hasNextPage: false, endCursor: null },
+            pageInfo: { hasNextPage: false, endCursor: undefined },
             nodes: [
               {
-                author: null,
+                author: undefined,
                 baseRefName: 'main',
                 headRefName: 'socket/fix/GHSA-xxxx',
                 mergeStateStatus: 'CLEAN',
@@ -689,7 +689,7 @@ describe('pull-request', () => {
     it('handles null pullRequests response', async () => {
       mockCacheFetch.mockResolvedValueOnce({
         repository: {
-          pullRequests: null,
+          pullRequests: undefined,
         },
       })
 
@@ -709,7 +709,7 @@ describe('pull-request', () => {
       mockCacheFetch.mockResolvedValueOnce({
         repository: {
           pullRequests: {
-            pageInfo: { hasNextPage: false, endCursor: null },
+            pageInfo: { hasNextPage: false, endCursor: undefined },
             nodes: [],
           },
         },
@@ -724,7 +724,7 @@ describe('pull-request', () => {
       mockCacheFetch.mockResolvedValueOnce({
         repository: {
           pullRequests: {
-            pageInfo: { hasNextPage: false, endCursor: null },
+            pageInfo: { hasNextPage: false, endCursor: undefined },
             nodes: [
               {
                 author: { login: 'testuser' },
@@ -758,7 +758,7 @@ describe('pull-request', () => {
       mockCacheFetch.mockResolvedValueOnce({
         repository: {
           pullRequests: {
-            pageInfo: { hasNextPage: false, endCursor: null },
+            pageInfo: { hasNextPage: false, endCursor: undefined },
             nodes: [
               {
                 author: { login: 'testuser' },
@@ -787,7 +787,7 @@ describe('pull-request', () => {
       mockCacheFetch.mockResolvedValueOnce({
         repository: {
           pullRequests: {
-            pageInfo: { hasNextPage: false, endCursor: null },
+            pageInfo: { hasNextPage: false, endCursor: undefined },
             nodes: [
               {
                 author: { login: 'testuser' },
@@ -816,7 +816,7 @@ describe('pull-request', () => {
       mockCacheFetch.mockResolvedValueOnce({
         repository: {
           pullRequests: {
-            pageInfo: { hasNextPage: false, endCursor: null },
+            pageInfo: { hasNextPage: false, endCursor: undefined },
             nodes: [
               {
                 author: { login: 'testuser' },

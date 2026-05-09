@@ -572,7 +572,7 @@ describe('api utilities', () => {
       mockHttpRequest.mockResolvedValueOnce({
         body: Buffer.alloc(0),
         headers: {},
-        json: () => null,
+        json: () => undefined,
         ok: true,
         status: 200,
         statusText: 'OK',

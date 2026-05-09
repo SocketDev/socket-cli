@@ -41,7 +41,7 @@ const rule = {
 
         // Skip if `fetch` is locally shadowed by a parameter / declaration.
         // Best-effort: check the scope chain.
-        const scope = context.getScope ? context.getScope() : null
+        const scope = context.getScope ? context.getScope() : undefined
         if (scope) {
           const variable = scope.references.find(
             ref => ref.identifier === callee,

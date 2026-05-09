@@ -96,7 +96,7 @@ describe('output-cmd-json', () => {
 
     it('handles null safeStatsSync result', async () => {
       existsSyncSpy.mockReturnValue(true)
-      mockSafeStatsSync.mockReturnValue(null)
+      mockSafeStatsSync.mockReturnValue(undefined)
 
       await outputCmdJson('/test/path')
 

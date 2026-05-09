@@ -172,7 +172,7 @@ export function getAsciiHeader(
     inCI || redacting
       ? plainLogo
       : renderLogoWithFallback(
-          animate ? Math.floor(Date.now() / 100) % 20 : null,
+          animate ? Math.floor(Date.now() / 100) % 20 : undefined,
           theme,
         )
 

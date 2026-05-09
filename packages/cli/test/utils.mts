@@ -229,7 +229,7 @@ export function cmdit(
       timeout: 30_000,
       ...options,
     },
-    cb.bind(null, cmd),
+    cb.bind(undefined, cmd),
   )
 }
 

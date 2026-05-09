@@ -65,7 +65,7 @@ describe('cmd-yarn', () => {
 
   const createMockSpawnResult = (exitCode = 0, signal?: string) => {
     const result = {
-      code: signal ? null : exitCode,
+      code: signal ? undefined : exitCode,
       signal,
       success: exitCode === 0 && !signal,
     }
@@ -459,7 +459,7 @@ describe('cmd-yarn', () => {
         await cmdYarn.run(['install', 'lodash'], importMeta, context)
 
         // Invoke the exit handler with a numeric code.
-        exitHandler(42, null)
+        exitHandler(42, undefined)
 
         // Wait for telemetry promise to resolve.
         await new Promise(resolve => setTimeout(resolve, 10))
@@ -479,7 +479,7 @@ describe('cmd-yarn', () => {
         await cmdYarn.run(['install', 'lodash'], importMeta, context)
 
         // Invoke the exit handler with a signal.
-        exitHandler(null, 'SIGTERM')
+        exitHandler(undefined, 'SIGTERM')
 
         // Wait for telemetry promise to resolve.
         await new Promise(resolve => setTimeout(resolve, 10))
@@ -487,7 +487,7 @@ describe('cmd-yarn', () => {
         expect(mockTrackSubprocessExit).toHaveBeenCalledWith(
           YARN,
           expect.any(Number),
-          null,
+          undefined,
         )
         expect(mockProcessKill).toHaveBeenCalledWith(process.pid, 'SIGTERM')
       })
@@ -499,7 +499,7 @@ describe('cmd-yarn', () => {
         await cmdYarn.run(['install', 'lodash'], importMeta, context)
 
         // Invoke the exit handler with a numeric code.
-        exitHandler(1, null)
+        exitHandler(1, undefined)
 
         // Wait for telemetry promise to reject and catch handler to run.
         await new Promise(resolve => setTimeout(resolve, 10))
@@ -513,7 +513,7 @@ describe('cmd-yarn', () => {
         mockTrackSubprocessExit.mockResolvedValue(undefined)
 
         await cmdYarn.run(['install', 'lodash'], importMeta, context)
-        exitHandler(null, null)
+        exitHandler(undefined, undefined)
         await new Promise(resolve => setTimeout(resolve, 10))
         expect(mockProcessExit).not.toHaveBeenCalled()
         expect(mockProcessKill).not.toHaveBeenCalled()
@@ -528,7 +528,7 @@ describe('cmd-yarn', () => {
         await cmdYarn.run(['install', 'lodash'], importMeta, context)
 
         // Invoke the exit handler.
-        exitHandler(0, null)
+        exitHandler(0, undefined)
 
         // Wait for telemetry promise to resolve.
         await new Promise(resolve => setTimeout(resolve, 10))

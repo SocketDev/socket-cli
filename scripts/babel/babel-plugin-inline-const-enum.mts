@@ -125,7 +125,7 @@ function isLiteralValue(t, node) {
  */
 function getLiteralValue(t, node) {
   if (t.isNullLiteral(node)) {
-    return null
+    return undefined
   }
   return node.value
 }

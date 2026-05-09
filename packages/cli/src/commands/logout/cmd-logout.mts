@@ -27,10 +27,10 @@ const hidden = false
 // Helper functions.
 
 export function applyLogout(): void {
-  updateConfigValue(CONFIG_KEY_API_TOKEN, null)
-  updateConfigValue(CONFIG_KEY_API_BASE_URL, null)
-  updateConfigValue(CONFIG_KEY_API_PROXY, null)
-  updateConfigValue(CONFIG_KEY_ENFORCED_ORGS, null)
+  updateConfigValue(CONFIG_KEY_API_TOKEN, undefined)
+  updateConfigValue(CONFIG_KEY_API_BASE_URL, undefined)
+  updateConfigValue(CONFIG_KEY_API_PROXY, undefined)
+  updateConfigValue(CONFIG_KEY_ENFORCED_ORGS, undefined)
   invalidateDefaultApiToken()
 }
 

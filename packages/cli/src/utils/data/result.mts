@@ -46,7 +46,7 @@ export class ResultError extends Error {
  */
 export function requireOk<T>(result: CResult<T>, context: string): T {
   if (!result.ok) {
-    const errorOptions = Object.create(null) as ResultErrorOptions
+    const errorOptions = Object.create(undefined) as ResultErrorOptions
     if (result.code !== undefined) {
       errorOptions.code = result.code
     }
@@ -149,7 +149,7 @@ export function unwrapOr<T>(result: CResult<T>, defaultValue: T): T {
  * @returns The data if ok, null otherwise
  */
 export function unwrapOrNull<T>(result: CResult<T>): T | null {
-  return result.ok ? result.data : null
+  return result.ok ? result.data : undefined
 }
 
 /**

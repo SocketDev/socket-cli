@@ -48,7 +48,7 @@ function makeChildProcess() {
   const child = new EventEmitter()
   const spawnPromise: any = Promise.resolve({
     code: 0,
-    signal: null,
+    signal: undefined,
     stderr: Buffer.from(''),
     stdout: Buffer.from(''),
   })
@@ -115,7 +115,7 @@ describe('defineHandoffCommand', () => {
       const runPromise = cmd.run(['build'], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',
       })
-      setImmediate(() => child.emit('exit', 0, null))
+      setImmediate(() => child.emit('exit', 0, undefined))
       const mockExit = vi
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as any)
@@ -149,7 +149,7 @@ describe('defineHandoffCommand', () => {
         { url: import.meta.url } as ImportMeta,
         { parentName: 'socket' },
       )
-      setImmediate(() => child.emit('exit', 0, null))
+      setImmediate(() => child.emit('exit', 0, undefined))
       const mockExit = vi
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as any)
@@ -188,7 +188,7 @@ describe('defineHandoffCommand', () => {
         { url: import.meta.url } as ImportMeta,
         { parentName: 'socket', invokedAs: 'pip3' },
       )
-      setImmediate(() => child.emit('exit', 0, null))
+      setImmediate(() => child.emit('exit', 0, undefined))
       const mockExit = vi
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as any)
@@ -262,7 +262,7 @@ describe('defineHandoffCommand', () => {
       const runPromise = cmd.run([], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',
       })
-      setImmediate(() => child.emit('exit', 0, null))
+      setImmediate(() => child.emit('exit', 0, undefined))
       const mockExit = vi
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as any)
@@ -292,7 +292,7 @@ describe('defineHandoffCommand', () => {
       const runPromise = cmd.run([], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',
       })
-      setImmediate(() => child.emit('exit', 0, null))
+      setImmediate(() => child.emit('exit', 0, undefined))
       const mockExit = vi
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as any)
@@ -322,7 +322,7 @@ describe('defineHandoffCommand', () => {
       const runPromise = cmd.run([], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',
       })
-      setImmediate(() => child.emit('exit', 0, null))
+      setImmediate(() => child.emit('exit', 0, undefined))
       const mockExit = vi
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as any)
@@ -359,7 +359,7 @@ describe('defineHandoffCommand', () => {
         })
         // Wait for the listener to register (async spawn resolution).
         await new Promise(resolve => setImmediate(resolve))
-        child.emit('exit', 42, null)
+        child.emit('exit', 42, undefined)
         await new Promise(resolve => setImmediate(resolve))
         expect(mockExit).toHaveBeenCalledWith(42)
       } finally {
@@ -388,7 +388,7 @@ describe('defineHandoffCommand', () => {
           parentName: 'socket',
         })
         await new Promise(resolve => setImmediate(resolve))
-        child.emit('exit', null, 'SIGINT')
+        child.emit('exit', undefined, 'SIGINT')
         await new Promise(resolve => setImmediate(resolve))
         expect(mockKill).toHaveBeenCalledWith(process.pid, 'SIGINT')
       } finally {
@@ -433,7 +433,7 @@ describe('defineHandoffCommand', () => {
           { url: import.meta.url } as ImportMeta,
           { parentName: 'socket' },
         )
-        setImmediate(() => child.emit('exit', 0, null))
+        setImmediate(() => child.emit('exit', 0, undefined))
         await runPromise
         await new Promise(resolve => setImmediate(resolve))
       } finally {
@@ -483,7 +483,7 @@ describe('defineHandoffCommand', () => {
           { url: import.meta.url } as ImportMeta,
           { parentName: 'socket' },
         )
-        setImmediate(() => child.emit('exit', 0, null))
+        setImmediate(() => child.emit('exit', 0, undefined))
         await runPromise
         await new Promise(resolve => setImmediate(resolve))
       } finally {

@@ -274,7 +274,7 @@ describe('Error Narrowing', () => {
   })
   it('should return false for non-error values', () => {
     expect(isErrnoException('string')).toBe(false)
-    expect(isErrnoException(null)).toBe(false)
+    expect(isErrnoException(undefined)).toBe(false)
     expect(isErrnoException(undefined)).toBe(false)
     expect(isErrnoException(123)).toBe(false)
     expect(isErrnoException({})).toBe(false)
@@ -295,7 +295,7 @@ describe('getErrorMessage', () => {
   })
 
   it('should return undefined for non-error values', () => {
-    expect(getErrorMessage(null)).toBeUndefined()
+    expect(getErrorMessage(undefined)).toBeUndefined()
     expect(getErrorMessage(undefined)).toBeUndefined()
     expect(getErrorMessage('string')).toBeUndefined()
     expect(getErrorMessage(123)).toBeUndefined()
@@ -315,7 +315,7 @@ describe('getErrorMessageOr', () => {
   })
 
   it('should return fallback for non-error values', () => {
-    expect(getErrorMessageOr(null, 'fallback')).toBe('fallback')
+    expect(getErrorMessageOr(undefined, 'fallback')).toBe('fallback')
     expect(getErrorMessageOr(undefined, 'fallback')).toBe('fallback')
     expect(getErrorMessageOr('string', 'fallback')).toBe('fallback')
     expect(getErrorMessageOr(123, 'fallback')).toBe('fallback')
@@ -327,7 +327,7 @@ describe('getErrorMessageOr', () => {
   })
 
   it('should use different fallback messages', () => {
-    expect(getErrorMessageOr(null, 'Custom fallback 1')).toBe(
+    expect(getErrorMessageOr(undefined, 'Custom fallback 1')).toBe(
       'Custom fallback 1',
     )
     expect(getErrorMessageOr(undefined, 'Custom fallback 2')).toBe(
@@ -343,7 +343,7 @@ describe('getErrorCause', () => {
   })
 
   it('should return UNKNOWN_ERROR for non-error values', () => {
-    expect(getErrorCause(null)).toBe(UNKNOWN_ERROR)
+    expect(getErrorCause(undefined)).toBe(UNKNOWN_ERROR)
     expect(getErrorCause(undefined)).toBe(UNKNOWN_ERROR)
     expect(getErrorCause('string')).toBe(UNKNOWN_ERROR)
     expect(getErrorCause(123)).toBe(UNKNOWN_ERROR)
@@ -371,7 +371,7 @@ describe('formatErrorWithDetail', () => {
   })
 
   it('should return base message for non-error values', () => {
-    expect(formatErrorWithDetail('Task failed', null)).toBe('Task failed')
+    expect(formatErrorWithDetail('Task failed', undefined)).toBe('Task failed')
     expect(formatErrorWithDetail('Task failed', undefined)).toBe('Task failed')
     expect(formatErrorWithDetail('Task failed', 'string')).toBe('Task failed')
   })
@@ -414,7 +414,7 @@ describe('Recovery Utilities', () => {
 
     it('should return false for non-errors', () => {
       expect(hasRecoverySuggestions('string')).toBe(false)
-      expect(hasRecoverySuggestions(null)).toBe(false)
+      expect(hasRecoverySuggestions(undefined)).toBe(false)
       expect(hasRecoverySuggestions(undefined)).toBe(false)
       expect(hasRecoverySuggestions(123)).toBe(false)
     })
@@ -455,7 +455,7 @@ describe('Recovery Utilities', () => {
 
     it('should return empty array for non-errors', () => {
       expect(getRecoverySuggestions('string')).toEqual([])
-      expect(getRecoverySuggestions(null)).toEqual([])
+      expect(getRecoverySuggestions(undefined)).toEqual([])
       expect(getRecoverySuggestions(undefined)).toEqual([])
     })
   })
@@ -476,7 +476,7 @@ describe('Type Guards', () => {
 
     it('should return false for non-errors', () => {
       expect(isNetworkError('string')).toBe(false)
-      expect(isNetworkError(null)).toBe(false)
+      expect(isNetworkError(undefined)).toBe(false)
       expect(isNetworkError(undefined)).toBe(false)
       expect(isNetworkError(123)).toBe(false)
     })
@@ -496,7 +496,7 @@ describe('Type Guards', () => {
 
     it('should return false for non-errors', () => {
       expect(isTimeoutError('string')).toBe(false)
-      expect(isTimeoutError(null)).toBe(false)
+      expect(isTimeoutError(undefined)).toBe(false)
       expect(isTimeoutError(undefined)).toBe(false)
       expect(isTimeoutError({})).toBe(false)
     })
@@ -521,7 +521,7 @@ describe('Network Error Diagnostics', () => {
 
     it('should return undefined for non-errors', () => {
       expect(getNetworkErrorCode('string')).toBeUndefined()
-      expect(getNetworkErrorCode(null)).toBeUndefined()
+      expect(getNetworkErrorCode(undefined)).toBeUndefined()
       expect(getNetworkErrorCode(undefined)).toBeUndefined()
     })
   })

@@ -60,7 +60,7 @@ const rule = {
           return emoji
         }
       }
-      return null
+      return undefined
     }
 
     /**
@@ -71,7 +71,7 @@ const rule = {
     function leadingEmoji(value) {
       const match = EMOJI_LEAD_RE.exec(value)
       if (!match) {
-        return null
+        return undefined
       }
       return {
         emoji: match[1],
@@ -86,30 +86,30 @@ const rule = {
     function tryFix(node, literalNode, leadInfo) {
       const method = EMOJI_TO_METHOD[leadInfo.emoji]
       if (!method) {
-        return null
+        return undefined
       }
 
       // Only fix when the parent is a CallExpression and the literal
       // is the first argument. Otherwise leave to the human.
       const parent = node.parent
       if (!parent || parent.type !== 'CallExpression') {
-        return null
+        return undefined
       }
       if (parent.arguments[0] !== literalNode) {
-        return null
+        return undefined
       }
 
       const callee = parent.callee
       if (callee.type !== 'MemberExpression') {
-        return null
+        return undefined
       }
 
       const objectName =
-        callee.object.type === 'Identifier' ? callee.object.name : null
+        callee.object.type === 'Identifier' ? callee.object.name : undefined
       const propName =
-        callee.property.type === 'Identifier' ? callee.property.name : null
+        callee.property.type === 'Identifier' ? callee.property.name : undefined
       if (!objectName || !propName) {
-        return null
+        return undefined
       }
 
       const isConsole =
@@ -119,7 +119,7 @@ const rule = {
         objectName === 'logger' && (propName === 'log' || propName === 'info')
 
       if (!isConsole && !isLoggerLog) {
-        return null
+        return undefined
       }
 
       // Build the replacement.
@@ -133,7 +133,7 @@ const rule = {
     }
 
     function reportLiteral(node) {
-      const value = typeof node.value === 'string' ? node.value : null
+      const value = typeof node.value === 'string' ? node.value : undefined
       if (!value) {
         return
       }
@@ -144,7 +144,7 @@ const rule = {
       }
 
       const leadInfo = leadingEmoji(value)
-      const method = leadInfo ? EMOJI_TO_METHOD[leadInfo.emoji] : null
+      const method = leadInfo ? EMOJI_TO_METHOD[leadInfo.emoji] : undefined
 
       if (leadInfo && method) {
         const fix = tryFix(node, node, leadInfo)

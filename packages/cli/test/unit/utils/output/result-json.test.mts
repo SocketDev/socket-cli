@@ -72,7 +72,7 @@ describe('serializeResultJson', () => {
     const result = serializeResultJson({
       ok: false,
       message: 'Error',
-      data: null,
+      data: undefined,
     })
     const parsed = JSON.parse(result)
     expect(parsed.data).toBeNull()
@@ -84,7 +84,7 @@ describe('serializeResultJson', () => {
   })
 
   it('returns error JSON for null input', () => {
-    const result = serializeResultJson(null as unknown as { ok: boolean })
+    const result = serializeResultJson(undefined as unknown as { ok: boolean })
     const parsed = JSON.parse(result)
     expect(parsed.ok).toBe(false)
     expect(parsed.message).toBe('Unable to serialize JSON')

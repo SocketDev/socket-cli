@@ -56,7 +56,7 @@ interface PatchApplicationResult {
 export function parsePatchMetadata(patchContent: string): PatchMetadata {
   const lines = patchContent.split('\n')
   const metadata: PatchMetadata = {
-    description: null,
+    description: undefined,
     nodeVersions: [],
     requires: [],
     conflicts: [],
@@ -101,7 +101,7 @@ export function isPatchCompatible(
 ): CompatibilityResult {
   if (metadata.nodeVersions.length === 0) {
     // No version restriction = compatible with all.
-    return { compatible: true, reason: null }
+    return { compatible: true, reason: undefined }
   }
 
   // Check version ranges.
@@ -110,7 +110,7 @@ export function isPatchCompatible(
       // v24.10.0+ means v24.10.0 and later.
       const baseVersion = versionSpec.replace('+', '')
       if (compareVersions(nodeVersion, baseVersion) >= 0) {
-        return { compatible: true, reason: null }
+        return { compatible: true, reason: undefined }
       }
     } else if (versionSpec.includes('-')) {
       // v24.9.0-v24.9.5 means range.
@@ -119,12 +119,12 @@ export function isPatchCompatible(
         compareVersions(nodeVersion, min) >= 0 &&
         compareVersions(nodeVersion, max) <= 0
       ) {
-        return { compatible: true, reason: null }
+        return { compatible: true, reason: undefined }
       }
     } else {
       // Exact version.
       if (nodeVersion === versionSpec) {
-        return { compatible: true, reason: null }
+        return { compatible: true, reason: undefined }
       }
     }
   }
@@ -213,7 +213,7 @@ export async function validatePatch(
     return {
       valid: false,
       reason: `Cannot read patch: ${message}`,
-      metadata: null,
+      metadata: undefined,
     }
   }
 }
@@ -332,7 +332,7 @@ export async function testPatchApplication(
     if (result.code === 0) {
       return {
         canApply: true,
-        reason: null,
+        reason: undefined,
       }
     }
 

@@ -51,7 +51,7 @@ describe('fetchListAllRepos', () => {
         { id: 'repo-1', name: 'first-repo' },
         { id: 'repo-2', name: 'second-repo' },
       ],
-      nextPage: null,
+      nextPage: undefined,
     }
 
     const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
@@ -116,7 +116,7 @@ describe('fetchListAllRepos', () => {
         ok: true,
         data: {
           results: [{ id: 'repo-2', name: 'second-repo' }],
-          nextPage: null,
+          nextPage: undefined,
         },
       })
 
@@ -133,7 +133,7 @@ describe('fetchListAllRepos', () => {
   it('passes sort and direction options', async () => {
     const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     await fetchListAllRepos('sorted-org', {
@@ -177,7 +177,7 @@ describe('fetchListAllRepos', () => {
   it('passes custom SDK options', async () => {
     const { mockSetupSdk } = await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     const sdkOpts = {
@@ -193,7 +193,7 @@ describe('fetchListAllRepos', () => {
   it('uses null prototype for options', async () => {
     const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     // This tests that the function properly uses __proto__: null.

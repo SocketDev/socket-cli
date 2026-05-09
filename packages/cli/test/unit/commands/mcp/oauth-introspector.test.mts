@@ -248,7 +248,7 @@ describe('OAuthIntrospector — verifyAccessToken', () => {
       fakeResponse({ status: 200, body: { active: false } }),
     )
     const intro = newIntrospector()
-    expect(await intro.verifyAccessToken('the-token')).toBe(null)
+    expect(await intro.verifyAccessToken('the-token')).toBe(undefined)
   })
 
   it('throws on non-2xx introspection status', async () => {

@@ -219,7 +219,7 @@ void (async () => {
   } catch {
     // Last-ditch fallback when logger itself throws — the catch
     // ensures we still report the original error before exit.
-    console.error('Fatal error:', err) // # socket-hook: allow logger
+    logger.fail('Fatal error:', err) // # socket-hook: allow logger
   }
 
   // Track CLI error for fatal exceptions.
@@ -239,7 +239,7 @@ process.on('uncaughtException', async err => {
       logger.error('Uncaught exception:', err)
     } catch {
       // Last-ditch fallback when logger itself throws.
-      console.error('Uncaught exception:', err) // # socket-hook: allow logger
+      logger.fail('Uncaught exception:', err) // # socket-hook: allow logger
     }
 
     // Track CLI error for uncaught exception.
@@ -253,7 +253,7 @@ process.on('uncaughtException', async err => {
       logger.error('Error in uncaughtException handler:', e)
     } catch {
       // Last-ditch fallback when logger itself throws.
-      console.error('Error in uncaughtException handler:', e) // # socket-hook: allow logger
+      logger.fail('Error in uncaughtException handler:', e) // # socket-hook: allow logger
     }
   } finally {
     // eslint-disable-next-line n/no-process-exit
@@ -268,7 +268,7 @@ process.on('unhandledRejection', async (reason, promise) => {
       logger.error('Unhandled rejection at:', promise, 'reason:', reason)
     } catch {
       // Last-ditch fallback when logger itself throws.
-      console.error('Unhandled rejection at:', promise, 'reason:', reason) // # socket-hook: allow logger
+      logger.fail('Unhandled rejection at:', promise, 'reason:', reason) // # socket-hook: allow logger
     }
 
     // Track CLI error for unhandled rejection.
@@ -283,7 +283,7 @@ process.on('unhandledRejection', async (reason, promise) => {
       logger.error('Error in unhandledRejection handler:', e)
     } catch {
       // Last-ditch fallback when logger itself throws.
-      console.error('Error in unhandledRejection handler:', e) // # socket-hook: allow logger
+      logger.fail('Error in unhandledRejection handler:', e) // # socket-hook: allow logger
     }
   } finally {
     // eslint-disable-next-line n/no-process-exit

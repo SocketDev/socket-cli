@@ -209,7 +209,7 @@ async function main(): Promise<void> {
       `${dryRun ? 'Would delete' : 'Deleted'} ${totalDeleted} cache entr${totalDeleted === 1 ? 'y' : 'ies'} (${formatSize(totalSize)})`,
     )
   } else {
-    logger.log('✓ All caches are current - nothing to delete')
+    logger.success('All caches are current - nothing to delete')
   }
 
   // Clean global caches if --all flag is used.

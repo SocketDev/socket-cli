@@ -136,7 +136,7 @@ export async function extractBasicsTools(
 ): Promise<string | null> {
   if (!isSeaBinary()) {
     logger.warn('Not running in SEA mode - cannot extract basics tools')
-    return null
+    return undefined
   }
 
   // Check if process.smol.mount is available.
@@ -148,7 +148,7 @@ export async function extractBasicsTools(
     logger.warn(
       'process.smol.mount not available - cannot extract basics tools',
     )
-    return null
+    return undefined
   }
 
   logger.group('Extracting basics tools from VFS...')
@@ -229,7 +229,7 @@ export async function extractBasicsTools(
 
     logger.success('Basics tools extracted and validated')
     // Return the Python directory path for backward compatibility.
-    return extractedPaths['python'] ?? null
+    return extractedPaths['python'] ?? undefined
   } catch (e) {
     logger.error('VFS extraction failed')
     throw e

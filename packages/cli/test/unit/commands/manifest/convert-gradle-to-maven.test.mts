@@ -202,7 +202,7 @@ describe('convertGradleToMaven', () => {
   })
 
   it('errors with helpful message when spawn returns null', async () => {
-    mockSpawn.mockResolvedValueOnce(null)
+    mockSpawn.mockResolvedValueOnce(undefined)
 
     const result = await convertGradleToMaven(baseOpts)
 

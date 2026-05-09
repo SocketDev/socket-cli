@@ -259,7 +259,7 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
           ?.firstPatchedVersionIdentifier
         const patchedMajor = firstPatchedVersionIdentifier
           ? getMajor(firstPatchedVersionIdentifier)
-          : null
+          : undefined
         if (typeof patchedMajor === 'number' && firstPatchedVersionIdentifier) {
           // Consolidate to the highest "first patched version" by each major
           // version number.
@@ -376,7 +376,7 @@ export function getCveInfoFromAlertsMap(
 ): CveInfoByPartialPurl | null {
   const filterConfig = toFilterConfig(getOwn(options, 'filter')) as CveFilter
 
-  let infoByPartialPurl: CveInfoByPartialPurl | null = null
+  let infoByPartialPurl: CveInfoByPartialPurl | null = undefined
   for (const { 0: purl, 1: sockPkgAlerts } of alertsMap) {
     const purlObj = getPurlObject(purl, { throws: false })
     if (!purlObj) {

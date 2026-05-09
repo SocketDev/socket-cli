@@ -140,7 +140,7 @@ export function resolveSfw(): BinaryResolution {
  * - win32-x64: socket-patch-x86_64-pc-windows-msvc.zip
  */
 const SOCKET_PATCH_ASSETS: Record<string, string> = {
-  __proto__: null as unknown as string,
+  __proto__: undefined as unknown as string,
   'darwin-arm64': 'socket-patch-aarch64-apple-darwin.tar.gz',
   'darwin-x64': 'socket-patch-x86_64-apple-darwin.tar.gz',
   'linux-arm64': 'socket-patch-aarch64-unknown-linux-gnu.tar.gz',
@@ -218,7 +218,7 @@ export function resolveSynp(): BinaryResolution {
  * - win32-x64: trivy_{version}_windows-64bit.zip
  */
 const TRIVY_ASSET_PATTERNS: Record<string, (v: string) => string> = {
-  __proto__: null as unknown as (v: string) => string,
+  __proto__: undefined as unknown as (v: string) => string,
   'darwin-arm64': (v: string) => `trivy_${v}_macOS-ARM64.tar.gz`,
   'darwin-x64': (v: string) => `trivy_${v}_macOS-64bit.tar.gz`,
   'linux-arm64': (v: string) => `trivy_${v}_Linux-ARM64.tar.gz`,
@@ -280,7 +280,7 @@ export function resolveTrivy(): BinaryResolution {
  * - win32-x64: trufflehog_{version}_windows_amd64.tar.gz
  */
 const TRUFFLEHOG_ASSET_PATTERNS: Record<string, (v: string) => string> = {
-  __proto__: null as unknown as (v: string) => string,
+  __proto__: undefined as unknown as (v: string) => string,
   'darwin-arm64': (v: string) => `trufflehog_${v}_darwin_arm64.tar.gz`,
   'darwin-x64': (v: string) => `trufflehog_${v}_darwin_amd64.tar.gz`,
   'linux-arm64': (v: string) => `trufflehog_${v}_linux_arm64.tar.gz`,
@@ -342,7 +342,7 @@ export function resolveTrufflehog(): BinaryResolution {
  * - win32-x64: opengrep-core_windows_x86.zip
  */
 const OPENGREP_ASSETS: Record<string, string> = {
-  __proto__: null as unknown as string,
+  __proto__: undefined as unknown as string,
   'darwin-arm64': 'opengrep-core_osx_aarch64.tar.gz',
   'darwin-x64': 'opengrep-core_osx_x86.tar.gz',
   'linux-arm64': 'opengrep-core_linux_aarch64.tar.gz',

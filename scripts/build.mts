@@ -46,7 +46,7 @@ const __dirname = path.dirname(__filename)
 const rootDir = path.resolve(__dirname, '..')
 
 const TARGET_PACKAGES: Record<string, string> = {
-  __proto__: null as unknown as string,
+  __proto__: undefined as unknown as string,
   all: './packages/**',
   cli: '@socketsecurity/cli',
   'cli-sentry': '@socketsecurity/cli-with-sentry',
@@ -146,7 +146,7 @@ function signaturePath(pkg: BuildPackageConfig): string {
 function readSignature(pkg: BuildPackageConfig): string | null {
   const file = signaturePath(pkg)
   if (!existsSync(file)) {
-    return null
+    return undefined
   }
   return readFileSync(file, 'utf8').trim()
 }

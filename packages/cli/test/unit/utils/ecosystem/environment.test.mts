@@ -232,7 +232,7 @@ describe('package-environment', () => {
 
     it('returns binName when whichReal returns null for npm', async () => {
       mockGetNpmExecPath.mockResolvedValue('/missing/npm')
-      mockWhichBin.mockResolvedValue(null)
+      mockWhichBin.mockResolvedValue(undefined)
       mockExistsSync.mockReturnValue(false)
       const result = await getAgentExecPath('npm')
       // Falls back to bare 'npm' string when whichReal returns null.
@@ -280,7 +280,7 @@ describe('package-environment', () => {
     })
 
     it('returns undefined when spawn returns null/undefined', async () => {
-      mockSpawn.mockResolvedValue(null)
+      mockSpawn.mockResolvedValue(undefined)
       const result = await getAgentVersion('npm', '/usr/local/bin/npm', '/cwd')
       expect(result).toBeUndefined()
     })
@@ -296,7 +296,7 @@ describe('package-environment', () => {
         stdout: 'not-a-version',
         code: 0,
       })
-      mockCoerce.mockReturnValue(null)
+      mockCoerce.mockReturnValue(undefined)
       const result = await getAgentVersion('npm', '/usr/local/bin/npm', '/cwd')
       expect(result).toBeUndefined()
     })

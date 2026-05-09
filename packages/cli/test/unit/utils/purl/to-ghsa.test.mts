@@ -43,7 +43,7 @@ vi.mock('../../../../src/utils/error/errors.mts', () => ({
 
 describe('convertPurlToGhsas', () => {
   it('returns error for invalid PURL format', async () => {
-    mockGetPurlObject.mockReturnValue(null)
+    mockGetPurlObject.mockReturnValue(undefined)
 
     const result = await convertPurlToGhsas('invalid-purl')
 

@@ -175,7 +175,7 @@ export class GitHubProvider implements PrProvider {
     ).map(s => s.toUpperCase())
 
     try {
-      let cursor: string | null = null
+      let cursor: string | null = undefined
       let hasNextPage = true
       let pageIndex = 0
       // Include owner in cache key to avoid collisions with same repo name.
@@ -222,7 +222,7 @@ export class GitHubProvider implements PrProvider {
 
         const { nodes, pageInfo } = gqlResp?.repository?.pullRequests ?? {
           nodes: [],
-          pageInfo: { endCursor: null, hasNextPage: false },
+          pageInfo: { endCursor: undefined, hasNextPage: false },
         }
 
         for (let i = 0, { length } = nodes; i < length; i += 1) {

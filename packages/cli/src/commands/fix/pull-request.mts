@@ -357,7 +357,7 @@ export async function getSocketFixPrsWithContext(
 
   try {
     let hasNextPage = true
-    let cursor: string | null = null
+    let cursor: string | null = undefined
     let pageIndex = 0
     // Include owner in cache key to avoid collisions with same repo name.
     const gqlCacheKey = `${owner}::${repo}-pr-graphql-snapshot-${states.join('-').toLowerCase()}`
@@ -401,7 +401,7 @@ export async function getSocketFixPrsWithContext(
 
       const { nodes, pageInfo } = gqlResp?.repository?.pullRequests ?? {
         nodes: [],
-        pageInfo: { hasNextPage: false, endCursor: null },
+        pageInfo: { hasNextPage: false, endCursor: undefined },
       }
 
       for (let i = 0, { length } = nodes; i < length; i += 1) {

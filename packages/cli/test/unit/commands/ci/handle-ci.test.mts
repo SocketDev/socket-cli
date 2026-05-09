@@ -170,7 +170,7 @@ describe('handleCi', () => {
       ok: true,
       data: 'test-org',
     })
-    mockGitBranch.mockResolvedValue(null)
+    mockGitBranch.mockResolvedValue(undefined)
     mockDetectDefaultBranch.mockResolvedValue('main')
     mockGetRepoName.mockResolvedValue('test-repo')
 

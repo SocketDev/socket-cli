@@ -280,8 +280,8 @@ describe('cmd-whoami', () => {
           ok: true,
           data: {
             authenticated: false,
-            location: null,
-            token: null,
+            location: undefined,
+            token: undefined,
           },
         })
       })
@@ -377,8 +377,8 @@ describe('cmd-whoami', () => {
       })
 
       it('should not fail when config returns null', async () => {
-        mockGetDefaultApiToken.mockReturnValue(null)
-        mockGetConfigValueOrUndef.mockReturnValue(null)
+        mockGetDefaultApiToken.mockReturnValue(undefined)
+        mockGetConfigValueOrUndef.mockReturnValue(undefined)
 
         await cmdWhoami.run([], importMeta, context)
 

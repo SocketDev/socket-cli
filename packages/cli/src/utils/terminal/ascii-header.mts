@@ -195,7 +195,7 @@ export function supportsFullColor(): boolean {
  * Render ASCII logo with fallback for terminals without 24-bit color.
  */
 export function renderLogoWithFallback(
-  frame: number | null = null,
+  frame: number | null = undefined,
   theme: HeaderTheme = 'default',
 ): string {
   // If frame is provided and terminal supports full color, use shimmer.

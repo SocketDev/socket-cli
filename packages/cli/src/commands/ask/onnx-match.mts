@@ -10,7 +10,7 @@
  */
 
 // Lazy-loaded ONNX embedding pipeline (~17MB model when enabled).
-const embeddingPipeline: any = null
+const embeddingPipeline: any = undefined
 let embeddingPipelineFailure = false
 const commandEmbeddings: Record<string, Float32Array> = {}
 
@@ -27,7 +27,7 @@ export async function getEmbeddingPipeline() {
     return embeddingPipeline
   }
   if (embeddingPipelineFailure) {
-    return null
+    return undefined
   }
   try {
     // TEMPORARILY DISABLED: ONNX Runtime build issues.
@@ -40,11 +40,11 @@ export async function getEmbeddingPipeline() {
 
     // Temporarily fall back to pattern matching only.
     embeddingPipelineFailure = true
-    return null
+    return undefined
   } catch (_e) {
     // Model not available — silently fall back to pattern matching.
     embeddingPipelineFailure = true
-    return null
+    return undefined
   }
 }
 
@@ -73,14 +73,14 @@ export async function getEmbedding(
 ): Promise<Float32Array | null> {
   const model = await getEmbeddingPipeline()
   if (!model) {
-    return null
+    return undefined
   }
   try {
     const result = await model.embed(text)
     return result.embedding
   } catch (_e) {
     // Silently fail — pattern matching will handle the query.
-    return null
+    return undefined
   }
 }
 
@@ -129,7 +129,7 @@ export async function onnxSemanticMatch(query: string): Promise<{
 
   const queryEmbedding = await getEmbedding(query)
   if (!queryEmbedding || !Object.keys(commandEmbeddings).length) {
-    return null
+    return undefined
   }
 
   let bestAction = ''
@@ -145,7 +145,7 @@ export async function onnxSemanticMatch(query: string): Promise<{
 
   // Require minimum 0.5 similarity to use ONNX match.
   if (bestScore < 0.5) {
-    return null
+    return undefined
   }
 
   return { action: bestAction, confidence: bestScore }

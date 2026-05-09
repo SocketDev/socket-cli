@@ -133,7 +133,7 @@ describe('create-scan-from-github (direct)', () => {
     it('returns error when default branch is missing', async () => {
       mockWithGitHubRetry.mockResolvedValueOnce({
         ok: true,
-        data: { default_branch: null, name: 'r' },
+        data: { default_branch: undefined, name: 'r' },
       })
       const result = await getRepoDetails({
         orgGithub: 'org',
@@ -459,7 +459,7 @@ describe('create-scan-from-github (direct)', () => {
         data: {
           type: 'file',
           size: 100,
-          download_url: null,
+          download_url: undefined,
         },
       })
       const result = await downloadManifestFile({

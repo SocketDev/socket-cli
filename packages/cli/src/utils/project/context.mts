@@ -70,7 +70,7 @@ export async function findProjectRoot(
     currentDir = dirname(currentDir)
   }
 
-  return null
+  return undefined
 }
 
 /**
@@ -189,7 +189,7 @@ export async function getProjectContext(
 ): Promise<ProjectContext | null> {
   const root = await findProjectRoot(cwd)
   if (!root) {
-    return null
+    return undefined
   }
 
   const results = await Promise.allSettled([

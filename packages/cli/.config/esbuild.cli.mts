@@ -37,7 +37,7 @@ function findSocketLibPath(importerPath: string) {
   if (existsSync(localPath)) {
     return localPath
   }
-  return null
+  return undefined
 }
 
 function resolveSocketLibExternal(socketLibPath: string, packageName: string) {
@@ -46,7 +46,7 @@ function resolveSocketLibExternal(socketLibPath: string, packageName: string) {
     const scope = parts[0]!
     const name = parts[1]!
     const p = path.join(socketLibPath, 'dist', 'external', scope, `${name}.js`)
-    return existsSync(p) ? p : null
+    return existsSync(p) ? p : undefined
   }
   const p = path.join(
     socketLibPath,
@@ -54,7 +54,7 @@ function resolveSocketLibExternal(socketLibPath: string, packageName: string) {
     'external',
     `${packageName.split('/')[0]}.js`,
   )
-  return existsSync(p) ? p : null
+  return existsSync(p) ? p : undefined
 }
 
 
@@ -88,11 +88,11 @@ const config: BuildOptions = {
       setup(build: PluginBuild) {
         function resolveConstant(args: OnResolveArgs, strip: RegExp) {
           if (!args.importer.includes('/socket-lib/dist/')) {
-            return null
+            return undefined
           }
           const socketLibPath = findSocketLibPath(args.importer)
           if (!socketLibPath) {
-            return null
+            return undefined
           }
           const p = path.join(
             socketLibPath,
@@ -100,7 +100,7 @@ const config: BuildOptions = {
             'constants',
             `${args.path.replace(strip, '')}.js`,
           )
-          return existsSync(p) ? { path: p } : null
+          return existsSync(p) ? { path: p } : undefined
         }
 
         build.onResolve({ filter: /^\.\.\/constants\// }, (args: OnResolveArgs) =>
@@ -113,32 +113,32 @@ const config: BuildOptions = {
 
         build.onResolve({ filter: socketLibExternalPathRegExp }, (args: OnResolveArgs) => {
           if (!args.importer.includes('@socketsecurity/lib/dist/')) {
-            return null
+            return undefined
           }
           const socketLibPath = findSocketLibPath(args.importer)
           if (!socketLibPath) {
-            return null
+            return undefined
           }
           const externalPath = args.path
             .replace(socketLibExternalPathRegExp, '')
             .replace(/\.js$/, '')
           const p = resolveSocketLibExternal(socketLibPath, externalPath)
-          return p ? { path: p } : null
+          return p ? { path: p } : undefined
         })
 
         build.onResolve({ filter: /^(@[^/]+\/[^/]+|[^./][^/]*)/ }, (args: OnResolveArgs) => {
           if (!args.importer.includes('/socket-lib/dist/')) {
-            return null
+            return undefined
           }
           const socketLibPath = findSocketLibPath(args.importer)
           if (!socketLibPath) {
-            return null
+            return undefined
           }
           const packageName = args.path.startsWith('@')
             ? args.path.split('/').slice(0, 2).join('/')
             : args.path.split('/')[0]!
           const p = resolveSocketLibExternal(socketLibPath, packageName)
-          return p ? { path: p } : null
+          return p ? { path: p } : undefined
         })
       },
     },
@@ -171,7 +171,7 @@ const config: BuildOptions = {
         build.onResolve({ filter: /@npmcli\/arborist/ }, (args: OnResolveArgs) => {
           // Only redirect if it's not already coming from socket-lib's external bundle.
           if (args.importer.includes('/socket-lib/dist/')) {
-            return null
+            return undefined
           }
           return { path: args.path, external: true }
         })

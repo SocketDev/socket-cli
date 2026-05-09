@@ -71,8 +71,8 @@ describe('coana/spawn', () => {
     // Default mock implementations.
     mockGetCliVersion.mockReturnValue('1.0.0')
     mockGetCoanaVersion.mockReturnValue('1.0.0')
-    mockGetDefaultApiToken.mockReturnValue(null)
-    mockGetDefaultProxyUrl.mockReturnValue(null)
+    mockGetDefaultApiToken.mockReturnValue(undefined)
+    mockGetDefaultProxyUrl.mockReturnValue(undefined)
     mockGetDefaultOrgSlug.mockResolvedValue({ ok: false })
     mockGetErrorCause.mockReturnValue('Unknown error')
 

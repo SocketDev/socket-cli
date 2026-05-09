@@ -77,7 +77,7 @@ describe('cmd-gem', () => {
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
         code: 0,
-        signal: null,
+        signal: undefined,
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
@@ -85,7 +85,7 @@ describe('cmd-gem', () => {
       mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise })
       mockFilterFlags.mockReturnValue([])
       const runPromise = cmdGem.run([], { url: import.meta.url }, { parentName: 'socket' })
-      setImmediate(() => mockChildProcess.emit('exit', 0, null))
+      setImmediate(() => mockChildProcess.emit('exit', 0, undefined))
       await runPromise
       expect(mockMeowOrExit).toHaveBeenCalled()
     })
@@ -99,7 +99,7 @@ describe('cmd-gem', () => {
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
         code: 0,
-        signal: null,
+        signal: undefined,
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
@@ -115,7 +115,7 @@ describe('cmd-gem', () => {
 
       // Simulate successful exit.
       setImmediate(() => {
-        mockChildProcess.emit('exit', 0, null)
+        mockChildProcess.emit('exit', 0, undefined)
       })
 
       await runPromise
@@ -137,7 +137,7 @@ describe('cmd-gem', () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
           code: 0,
-          signal: null,
+          signal: undefined,
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
@@ -158,7 +158,7 @@ describe('cmd-gem', () => {
 
         // Simulate successful exit.
         setImmediate(() => {
-          mockChildProcess.emit('exit', 0, null)
+          mockChildProcess.emit('exit', 0, undefined)
         })
 
         await runPromise
@@ -176,7 +176,7 @@ describe('cmd-gem', () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
           code: 0,
-          signal: null,
+          signal: undefined,
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
@@ -202,7 +202,7 @@ describe('cmd-gem', () => {
         })
 
         // Simulate successful exit.
-        mockChildProcess.emit('exit', 0, null)
+        mockChildProcess.emit('exit', 0, undefined)
 
         // Wait for event handler to execute.
         await new Promise(resolve => {
@@ -218,7 +218,7 @@ describe('cmd-gem', () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
           code: 0,
-          signal: null,
+          signal: undefined,
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
@@ -242,7 +242,7 @@ describe('cmd-gem', () => {
         })
 
         // Simulate exit with code 0.
-        mockChildProcess.emit('exit', 0, null)
+        mockChildProcess.emit('exit', 0, undefined)
 
         // Wait for event handler to execute.
         await new Promise(resolve => {
@@ -258,7 +258,7 @@ describe('cmd-gem', () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
           code: 1,
-          signal: null,
+          signal: undefined,
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
@@ -282,7 +282,7 @@ describe('cmd-gem', () => {
         })
 
         // Simulate exit with non-zero code.
-        mockChildProcess.emit('exit', 1, null)
+        mockChildProcess.emit('exit', 1, undefined)
 
         // Wait for event handler to execute.
         await new Promise(resolve => {
@@ -297,7 +297,7 @@ describe('cmd-gem', () => {
       it('should call process.kill with signal when child receives signal', async () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
-          code: null,
+          code: undefined,
           signal: 'SIGTERM',
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
@@ -322,7 +322,7 @@ describe('cmd-gem', () => {
         })
 
         // Simulate exit with signal.
-        mockChildProcess.emit('exit', null, 'SIGTERM')
+        mockChildProcess.emit('exit', undefined, 'SIGTERM')
 
         // Wait for event handler to execute.
         await new Promise(resolve => {
@@ -337,7 +337,7 @@ describe('cmd-gem', () => {
       it('should propagate SIGINT signal from child process', async () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
-          code: null,
+          code: undefined,
           signal: 'SIGINT',
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
@@ -362,7 +362,7 @@ describe('cmd-gem', () => {
         })
 
         // Simulate SIGINT.
-        mockChildProcess.emit('exit', null, 'SIGINT')
+        mockChildProcess.emit('exit', undefined, 'SIGINT')
 
         // Wait for event handler to execute.
         await new Promise(resolve => {
@@ -380,7 +380,7 @@ describe('cmd-gem', () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
           code: 0,
-          signal: null,
+          signal: undefined,
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
@@ -399,7 +399,7 @@ describe('cmd-gem', () => {
         cmdGem.run(['install', 'rails'], importMeta, context)
 
         // Simulate successful exit.
-        mockChildProcess.emit('exit', 0, null)
+        mockChildProcess.emit('exit', 0, undefined)
 
         // Wait for event handler to execute.
         await new Promise(resolve => {
@@ -418,7 +418,7 @@ describe('cmd-gem', () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
           code: 0,
-          signal: null,
+          signal: undefined,
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
@@ -437,7 +437,7 @@ describe('cmd-gem', () => {
         cmdGem.run([], importMeta, context)
 
         // Simulate successful exit.
-        mockChildProcess.emit('exit', 0, null)
+        mockChildProcess.emit('exit', 0, undefined)
 
         // Wait for event handler to execute.
         await new Promise(resolve => {

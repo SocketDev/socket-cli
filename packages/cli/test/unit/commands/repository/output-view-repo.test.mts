@@ -243,7 +243,7 @@ describe('outputViewRepo', () => {
       archived: false,
       created_at: '2024-02-20T14:45:30Z',
       default_branch: 'main',
-      homepage: null,
+      homepage: undefined,
       id: 789,
       name: 'no-homepage-repo',
       visibility: 'public',

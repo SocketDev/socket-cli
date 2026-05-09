@@ -80,7 +80,7 @@ describe('cmd-bundler', () => {
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
         code: 0,
-        signal: null,
+        signal: undefined,
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
@@ -88,7 +88,7 @@ describe('cmd-bundler', () => {
       mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise })
       mockFilterFlags.mockReturnValue([])
       const runPromise = cmdBundler.run([], { url: import.meta.url }, { parentName: 'socket' })
-      setImmediate(() => mockChildProcess.emit('exit', 0, null))
+      setImmediate(() => mockChildProcess.emit('exit', 0, undefined))
       await runPromise
       expect(mockMeowOrExit).toHaveBeenCalled()
     })
@@ -102,7 +102,7 @@ describe('cmd-bundler', () => {
       const mockChildProcess = new EventEmitter()
       const mockSpawnPromise = Promise.resolve({
         code: 0,
-        signal: null,
+        signal: undefined,
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
@@ -118,7 +118,7 @@ describe('cmd-bundler', () => {
 
       // Simulate successful exit.
       setImmediate(() => {
-        mockChildProcess.emit('exit', 0, null)
+        mockChildProcess.emit('exit', 0, undefined)
       })
 
       await runPromise
@@ -140,7 +140,7 @@ describe('cmd-bundler', () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
           code: 0,
-          signal: null,
+          signal: undefined,
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
@@ -161,7 +161,7 @@ describe('cmd-bundler', () => {
 
         // Simulate successful exit.
         setImmediate(() => {
-          mockChildProcess.emit('exit', 0, null)
+          mockChildProcess.emit('exit', 0, undefined)
         })
 
         await runPromise
@@ -178,8 +178,8 @@ describe('cmd-bundler', () => {
       it('skips exit/kill when both code and signal are null', async () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
-          code: null,
-          signal: null,
+          code: undefined,
+          signal: undefined,
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
@@ -203,7 +203,7 @@ describe('cmd-bundler', () => {
         const exitBefore = mockExit.mock.calls.length
         const killBefore = mockKill.mock.calls.length
 
-        mockChildProcess.emit('exit', null, null)
+        mockChildProcess.emit('exit', undefined, undefined)
 
         await new Promise(resolve => setImmediate(resolve))
 
@@ -218,7 +218,7 @@ describe('cmd-bundler', () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
           code: 0,
-          signal: null,
+          signal: undefined,
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
@@ -244,7 +244,7 @@ describe('cmd-bundler', () => {
         })
 
         // Simulate successful exit.
-        mockChildProcess.emit('exit', 0, null)
+        mockChildProcess.emit('exit', 0, undefined)
 
         // Wait for event handler to execute.
         await new Promise(resolve => {
@@ -260,7 +260,7 @@ describe('cmd-bundler', () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
           code: 0,
-          signal: null,
+          signal: undefined,
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
@@ -284,7 +284,7 @@ describe('cmd-bundler', () => {
         })
 
         // Simulate exit with code 0.
-        mockChildProcess.emit('exit', 0, null)
+        mockChildProcess.emit('exit', 0, undefined)
 
         // Wait for event handler to execute.
         await new Promise(resolve => {
@@ -300,7 +300,7 @@ describe('cmd-bundler', () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
           code: 1,
-          signal: null,
+          signal: undefined,
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
@@ -324,7 +324,7 @@ describe('cmd-bundler', () => {
         })
 
         // Simulate exit with non-zero code.
-        mockChildProcess.emit('exit', 1, null)
+        mockChildProcess.emit('exit', 1, undefined)
 
         // Wait for event handler to execute.
         await new Promise(resolve => {
@@ -339,7 +339,7 @@ describe('cmd-bundler', () => {
       it('should call process.kill with signal when child receives signal', async () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
-          code: null,
+          code: undefined,
           signal: 'SIGTERM',
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
@@ -364,7 +364,7 @@ describe('cmd-bundler', () => {
         })
 
         // Simulate exit with signal.
-        mockChildProcess.emit('exit', null, 'SIGTERM')
+        mockChildProcess.emit('exit', undefined, 'SIGTERM')
 
         // Wait for event handler to execute.
         await new Promise(resolve => {
@@ -379,7 +379,7 @@ describe('cmd-bundler', () => {
       it('should propagate SIGINT signal from child process', async () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
-          code: null,
+          code: undefined,
           signal: 'SIGINT',
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
@@ -404,7 +404,7 @@ describe('cmd-bundler', () => {
         })
 
         // Simulate SIGINT.
-        mockChildProcess.emit('exit', null, 'SIGINT')
+        mockChildProcess.emit('exit', undefined, 'SIGINT')
 
         // Wait for event handler to execute.
         await new Promise(resolve => {
@@ -422,7 +422,7 @@ describe('cmd-bundler', () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
           code: 0,
-          signal: null,
+          signal: undefined,
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
@@ -441,7 +441,7 @@ describe('cmd-bundler', () => {
         cmdBundler.run(['install'], importMeta, context)
 
         // Simulate successful exit.
-        mockChildProcess.emit('exit', 0, null)
+        mockChildProcess.emit('exit', 0, undefined)
 
         // Wait for event handler to execute.
         await new Promise(resolve => {
@@ -459,7 +459,7 @@ describe('cmd-bundler', () => {
         const mockChildProcess = new EventEmitter()
         const mockSpawnPromise = Promise.resolve({
           code: 0,
-          signal: null,
+          signal: undefined,
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
@@ -478,7 +478,7 @@ describe('cmd-bundler', () => {
         cmdBundler.run([], importMeta, context)
 
         // Simulate successful exit.
-        mockChildProcess.emit('exit', 0, null)
+        mockChildProcess.emit('exit', 0, undefined)
 
         // Wait for event handler to execute.
         await new Promise(resolve => {

@@ -116,7 +116,7 @@ describe('outputListRepos', () => {
         code: 2,
       })
 
-    await outputListRepos(result, 'json', 1, null, 'created_at', 25, 'desc')
+    await outputListRepos(result, 'json', 1, undefined, 'created_at', 25, 'desc')
 
     expect(mockLogger.log).toHaveBeenCalled()
     expect(process.exitCode).toBe(2)
@@ -151,7 +151,7 @@ describe('outputListRepos', () => {
       cause: 'No code provided',
     } satisfies CResult<SocketSdkSuccessResult<'listRepositories'>['data']>
 
-    await outputListRepos(result, 'json', 1, null, 'name', 10, 'asc')
+    await outputListRepos(result, 'json', 1, undefined, 'name', 10, 'asc')
 
     expect(process.exitCode).toBe(1)
   })
@@ -180,7 +180,7 @@ describe('outputListRepos', () => {
 
     const result = createSuccessResult({ results: [] })
 
-    await outputListRepos(result, 'json', 1, null, 'name', 10, 'asc')
+    await outputListRepos(result, 'json', 1, undefined, 'name', 10, 'asc')
 
     expect(mockSerializeResultJson).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -294,7 +294,7 @@ describe('outputListRepos', () => {
         code: 1,
       })
 
-    await outputListRepos(result, 'text', 1, null, 'name', 10, 'asc')
+    await outputListRepos(result, 'text', 1, undefined, 'name', 10, 'asc')
 
     expect(mockFailMsgWithBadge).toHaveBeenCalledWith(
       'Failed to fetch repositories',
@@ -347,7 +347,7 @@ describe('outputListRepos', () => {
         ],
       })
 
-    await outputListRepos(result, 'text', 5, null, 'name', 20, 'asc')
+    await outputListRepos(result, 'text', 5, undefined, 'name', 20, 'asc')
 
     expect(mockLogger.info).toHaveBeenCalledWith(
       'This is page 5. Server indicated this is the last page with results.',
@@ -393,7 +393,7 @@ describe('outputListRepos', () => {
       result,
       'text',
       1,
-      null,
+      undefined,
       'name',
       Number.POSITIVE_INFINITY,
       'asc',
@@ -439,7 +439,7 @@ describe('outputListRepos', () => {
         results: [],
       })
 
-    await outputListRepos(result, 'text', 1, null, 'name', 10, 'desc')
+    await outputListRepos(result, 'text', 1, undefined, 'name', 10, 'desc')
 
     expect(mockChalkTable).toHaveBeenCalledWith(expect.any(Object), [])
   })
@@ -469,7 +469,7 @@ describe('outputListRepos', () => {
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createErrorResult('Error without code')
 
-    await outputListRepos(result, 'json', 1, null, 'name', 10, 'asc')
+    await outputListRepos(result, 'json', 1, undefined, 'name', 10, 'asc')
 
     expect(process.exitCode).toBe(1)
   })

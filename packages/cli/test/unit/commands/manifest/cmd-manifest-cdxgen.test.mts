@@ -130,7 +130,7 @@ describe('cmd-manifest-cdxgen', () => {
 
     describe('exit code handling', () => {
       it('skips exit/kill when both code and signal are null', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: null, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: undefined, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -151,7 +151,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should call process.exit with exit code 0 on success', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -165,7 +165,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should call process.exit with non-zero exit code on failure', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 1, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 1, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -179,7 +179,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should propagate specific exit code from cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 42, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 42, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -198,7 +198,7 @@ describe('cmd-manifest-cdxgen', () => {
         mockRunCdxgen.mockImplementation(() => {
           exitCodeDuringSpawn = process.exitCode
           return Promise.resolve({
-            spawnPromise: Promise.resolve({ code: 0, signal: null }),
+            spawnPromise: Promise.resolve({ code: 0, signal: undefined }),
           })
         })
 
@@ -216,7 +216,7 @@ describe('cmd-manifest-cdxgen', () => {
     describe('signal handling', () => {
       it('should call process.kill with signal when cdxgen receives SIGTERM', async () => {
         const mockSpawnPromise = Promise.resolve({
-          code: null,
+          code: undefined,
           signal: 'SIGTERM',
         })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
@@ -233,7 +233,7 @@ describe('cmd-manifest-cdxgen', () => {
 
       it('should call process.kill with SIGINT signal', async () => {
         const mockSpawnPromise = Promise.resolve({
-          code: null,
+          code: undefined,
           signal: 'SIGINT',
         })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
@@ -251,7 +251,7 @@ describe('cmd-manifest-cdxgen', () => {
 
     describe('lifecycle defaults', () => {
       it('should set lifecycle to pre-build by default', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -275,7 +275,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should set output to socket-cdx.json by default', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -294,7 +294,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should not override lifecycle when explicitly set', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -322,7 +322,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should not override output when explicitly set', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -366,7 +366,7 @@ describe('cmd-manifest-cdxgen', () => {
           hasLockfile: true,
           hasNodeModules: false,
         })
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
         const mockExit = vi
           .spyOn(process, 'exit')
@@ -383,7 +383,7 @@ describe('cmd-manifest-cdxgen', () => {
           hasLockfile: false,
           hasNodeModules: true,
         })
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
         const mockExit = vi
           .spyOn(process, 'exit')
@@ -400,7 +400,7 @@ describe('cmd-manifest-cdxgen', () => {
           hasLockfile: false,
           hasNodeModules: false,
         })
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
         const mockExit = vi
           .spyOn(process, 'exit')
@@ -419,7 +419,7 @@ describe('cmd-manifest-cdxgen', () => {
 
       it('skips the gate for non-Node.js project types', async () => {
         mockIsNodejsCdxgenType.mockReturnValue(false)
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
         const mockExit = vi
           .spyOn(process, 'exit')
@@ -439,7 +439,7 @@ describe('cmd-manifest-cdxgen', () => {
 
     describe('help flag handling', () => {
       it('should pass --help flag to cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -458,7 +458,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should pass -h flag to cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -477,7 +477,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should not set lifecycle/output defaults when --help is passed', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -500,7 +500,7 @@ describe('cmd-manifest-cdxgen', () => {
 
     describe('cdxgen flag forwarding', () => {
       it('should forward --type flag to cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -519,7 +519,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should forward multiple --type flags to cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -542,7 +542,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should forward --print flag to cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -561,7 +561,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should forward --no-recurse flag to cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -580,7 +580,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should forward --spec-version flag to cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -603,7 +603,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should forward --deep flag to cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -624,7 +624,7 @@ describe('cmd-manifest-cdxgen', () => {
 
     describe('path argument handling', () => {
       it('should accept path as positional argument', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -643,7 +643,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should accept multiple paths', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -666,7 +666,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should accept absolute paths', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -691,7 +691,7 @@ describe('cmd-manifest-cdxgen', () => {
 
     describe('Socket flag filtering', () => {
       it('should filter out --config flag from cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -711,7 +711,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should keep --no-banner flag for cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -732,7 +732,7 @@ describe('cmd-manifest-cdxgen', () => {
 
     describe('edge cases', () => {
       it('should handle readonly argv array', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -749,7 +749,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should handle empty context object', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -764,7 +764,7 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should handle context with additional properties', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: null })
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi

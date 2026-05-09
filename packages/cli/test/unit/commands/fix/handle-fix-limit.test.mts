@@ -174,7 +174,7 @@ describe('socket fix --limit behavior verification', () => {
       gitUserEmail: '',
       gitUserName: '',
       isCi: false,
-      repoInfo: null,
+      repoInfo: undefined,
     })
 
     mockGitUnstagedModifiedFiles.mockResolvedValue({

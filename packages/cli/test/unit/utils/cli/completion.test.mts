@@ -103,7 +103,7 @@ describe('cli/completion', () => {
 
     it('returns error when config directory cannot be determined', () => {
       mockExistsSync.mockReturnValue(true)
-      mockGetSocketAppDataPath.mockReturnValue(null)
+      mockGetSocketAppDataPath.mockReturnValue(undefined)
 
       const result = getBashrcDetails('socket')
 

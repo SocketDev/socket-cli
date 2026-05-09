@@ -55,7 +55,7 @@ const RESPONSE_BODY_TRUNCATE_LENGTH = 2_000
 export function sanitizeHeaders(
   headers: Record<string, string>,
 ): Record<string, string> {
-  const sanitized: Record<string, string> = Object.create(null)
+  const sanitized: Record<string, string> = Object.create(undefined)
   for (const [key, value] of Object.entries(headers)) {
     const lowerKey = key.toLowerCase()
     if (lowerKey === 'authorization' || lowerKey.includes('api-key')) {

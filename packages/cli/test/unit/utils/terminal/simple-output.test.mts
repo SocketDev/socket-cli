@@ -298,7 +298,7 @@ describe('simple-output', () => {
       outputPaginatedList(result, 'text', {
         page: 1,
         perPage: 10,
-        nextPage: null,
+        nextPage: undefined,
         sort: 'name',
         direction: 'asc',
       }, {
@@ -320,7 +320,7 @@ describe('simple-output', () => {
       outputPaginatedList(result, 'text', {
         page: 1,
         perPage: Number.POSITIVE_INFINITY,
-        nextPage: null,
+        nextPage: undefined,
       }, {
         columns: [{ field: 'name', name: 'Name' }],
         getRows: data => data.map(name => ({ name })),
@@ -340,7 +340,7 @@ describe('simple-output', () => {
       outputPaginatedList(result, 'text', {
         page: 1,
         perPage: 10,
-        nextPage: null,
+        nextPage: undefined,
       }, {
         columns: [{ field: 'name', name: 'Name' }],
         getRows: () => [],

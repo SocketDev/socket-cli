@@ -139,7 +139,7 @@ describe('runSocketBasics — preflight failures', () => {
   })
 
   it('returns "Failed to extract basics tools" when extraction returns null', async () => {
-    mockExtractBasicsTools.mockResolvedValueOnce(null)
+    mockExtractBasicsTools.mockResolvedValueOnce(undefined)
     const result = await runSocketBasics(baseOpts)
     expect(result.ok).toBe(false)
     if (!result.ok) {
@@ -199,7 +199,7 @@ describe('runSocketBasics — pyCli installation', () => {
         return { code: 1, stdout: '', stderr: '' }
       }
       if (args.includes('install')) {
-        return null as any
+        return undefined as any
       }
       return { code: 0, stdout: '', stderr: '' }
     })
@@ -381,7 +381,7 @@ describe('runSocketBasics — basics process result', () => {
   it('errors when basics spawn returns null', async () => {
     mockSpawn.mockImplementation(async (_bin, args: string[]) => {
       if (args.includes('socket_basics') && args.includes('--org')) {
-        return null as any
+        return undefined as any
       }
       if (args[0] === '-c') {
         return { code: 0, stdout: '', stderr: '' }
@@ -468,7 +468,7 @@ describe('runSocketBasics — basics process result', () => {
     mockSpawn.mockImplementation(async (_bin, args: string[]) => {
       if (args.includes('socket_basics') && args.includes('--org')) {
         // null result simulates spawn failure to start.
-        return null as any
+        return undefined as any
       }
       if (args[0] === '-c') {
         return { code: 0, stdout: '', stderr: '' }

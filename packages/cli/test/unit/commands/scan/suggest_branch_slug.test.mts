@@ -42,7 +42,7 @@ describe('suggest_branch_slug', () => {
 
   describe('suggestBranchSlug', () => {
     it('returns undefined when spawn returns null', async () => {
-      mockSpawn.mockResolvedValue(null)
+      mockSpawn.mockResolvedValue(undefined)
 
       const result = await suggestBranchSlug('main')
 

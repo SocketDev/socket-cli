@@ -111,22 +111,22 @@ function validateChecksums(): boolean {
   }
 
   // Print summary.
-  console.log('')
+  logger.log('')
   if (warnings.length > 0) {
     logger.warn('Warnings:')
     for (const warning of warnings) {
       logger.warn(`  ${warning}`)
     }
-    console.log('')
+    logger.log('')
   }
 
   if (errors.length > 0) {
     logger.error('CHECKSUM VALIDATION FAILED')
-    console.log('')
+    logger.log('')
     for (const error of errors) {
       logger.error(error)
     }
-    console.log('')
+    logger.log('')
     logger.error(
       'All external tool assets MUST have SHA-256 checksums defined in bundle-tools.json.',
     )

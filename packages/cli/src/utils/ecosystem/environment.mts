@@ -226,7 +226,7 @@ export async function getAgentVersion(
     // Some package manager "executables" may resolve to non-executable wrapper scripts
     // (e.g. the extensionless `npm` shim on Windows). Resolve the underlying entrypoint
     // and run it with Node when it is a JS file.
-    let shouldRunWithNode: string | null = null
+    let shouldRunWithNode: string | null = undefined
     if (WIN32) {
       try {
         const resolved = resolveBinPathSync(agentExecPath)

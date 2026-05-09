@@ -192,7 +192,7 @@ describe('ascii-header', () => {
 
   describe('renderLogoWithFallback', () => {
     it('should render static logo when frame is null', () => {
-      const logo = renderLogoWithFallback(null)
+      const logo = renderLogoWithFallback(undefined)
       expect(logo).toContain('|   __|___') // ASCII art content
       expect(logo).toContain('.dev')
     })
@@ -254,7 +254,7 @@ describe('ascii-header', () => {
         'sunset',
       ]
       for (const theme of themes) {
-        const logo = renderLogoWithFallback(null, theme)
+        const logo = renderLogoWithFallback(undefined, theme)
         expect(logo).toContain('|   __|___') // ASCII art content
       }
     })
@@ -297,7 +297,7 @@ describe('ascii-header', () => {
       const isVitest = process.env['VITEST'] === 'true'
       if (isVitest) {
         // When running under vitest, prefer static logo
-        const logo = renderLogoWithFallback(null)
+        const logo = renderLogoWithFallback(undefined)
         expect(logo).toContain('|   __|___') // ASCII art content
       }
     })
@@ -311,7 +311,7 @@ describe('ascii-header', () => {
         delete process.env['TERM']
         delete process.env['TERM_PROGRAM']
         expect(() => supportsFullColor()).not.toThrow()
-        expect(() => renderLogoWithFallback(null)).not.toThrow()
+        expect(() => renderLogoWithFallback(undefined)).not.toThrow()
       } finally {
         if (originalColorterm !== undefined) {
           process.env['COLORTERM'] = originalColorterm

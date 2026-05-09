@@ -136,7 +136,7 @@ describe('outputThreatFeed', () => {
         locationHtmlUrl: 'https://example.com',
         packageHtmlUrl: 'https://example.com/package',
         purl: 'pkg:npm/test@1.0.0',
-        removedAt: null,
+        removedAt: undefined,
         threatType: 'malware',
       },
     ]
@@ -218,7 +218,7 @@ describe('outputThreatFeed', () => {
         locationHtmlUrl: 'https://example.com/location',
         packageHtmlUrl: 'https://example.com/package',
         purl: 'pkg:npm/test-package@1.0.0',
-        removedAt: null,
+        removedAt: undefined,
         threatType: 'malware',
       },
     ]
@@ -251,7 +251,7 @@ describe('outputThreatFeed', () => {
   it('handles null data properly', async () => {
     const result: CResult<ThreadFeedResponse> = {
       ok: true,
-      data: null as any,
+      data: undefined as any,
     }
 
     await outputThreatFeed(result, 'text')
@@ -281,7 +281,7 @@ describe('outputThreatFeed', () => {
         locationHtmlUrl: 'https://example.com',
         packageHtmlUrl: 'https://example.com/package',
         purl: 'pkg:npm/test@1.0.0',
-        removedAt: null,
+        removedAt: undefined,
         threatType: 'malware',
       },
     ]
@@ -328,7 +328,7 @@ describe('outputThreatFeed', () => {
         locationHtmlUrl: '',
         packageHtmlUrl: '',
         purl: 'not-a-real-purl',
-        removedAt: null,
+        removedAt: undefined,
         threatType: 'malware',
       },
     ]

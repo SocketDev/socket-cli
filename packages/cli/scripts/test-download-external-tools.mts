@@ -147,7 +147,7 @@ async function downloadTool(toolName, platform) {
 
   if (!assetName) {
     logger.warn(`${toolName} not available for platform: ${platform}`)
-    return null
+    return undefined
   }
 
   const outputDir = path.join(
@@ -239,6 +239,6 @@ async function main() {
 }
 
 main().catch(e => {
-  console.error(e)
+  logger.fail(e)
   process.exitCode = 1
 })

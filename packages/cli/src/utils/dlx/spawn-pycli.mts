@@ -328,7 +328,7 @@ export async function downloadPyPiWheel(
 
   // Fetch wheel URL from PyPI JSON API.
   const pypiUrl = `https://pypi.org/pypi/${packageName}/${version}/json`
-  let wheelUrl: string | null = null
+  let wheelUrl: string | null = undefined
 
   try {
     const response = await socketHttpRequest(pypiUrl)

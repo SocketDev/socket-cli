@@ -107,7 +107,7 @@ interface TelemetryServiceInstance {
  * Only one instance exists per process.
  */
 const telemetryServiceInstance: TelemetryServiceInstance = {
-  current: null,
+  current: undefined,
 }
 
 /**
@@ -170,7 +170,7 @@ function withTimeout<T>(
  */
 export class TelemetryService {
   private readonly orgSlug: string
-  private config: TelemetryConfig | null = null
+  private config: TelemetryConfig | null = undefined
   private eventQueue: TelemetryEvent[] = []
   private isDestroyed = false
 
@@ -480,10 +480,10 @@ export class TelemetryService {
       }
     }
 
-    this.config = null
+    this.config = undefined
 
     // Clear singleton instance.
-    telemetryServiceInstance.current = null
+    telemetryServiceInstance.current = undefined
 
     debug(`Telemetry service destroyed for org: ${this.orgSlug}`)
   }

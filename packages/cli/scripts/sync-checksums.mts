@@ -104,7 +104,7 @@ async function fetchGitHubReleaseChecksums(
   const [owner, repoName] = repo.split('/')
   const apiUrl = `https://api.github.com/repos/${owner}/${repoName}/releases/tags/${releaseTag}`
 
-  console.log(`  Fetching release info from ${apiUrl}...`)
+  logger.log(`  Fetching release info from ${apiUrl}...`)
 
   const response = await fetch(apiUrl, {
     headers: {
@@ -125,7 +125,7 @@ async function fetchGitHubReleaseChecksums(
   // Try to find checksums.txt in assets.
   const checksumsAsset = assets.find(a => a.name === 'checksums.txt')
   if (checksumsAsset) {
-    console.log(`  Found checksums.txt, downloading...`)
+    logger.log(`  Found checksums.txt, downloading...`)
     const tempDir = await fs.mkdtemp(
       path.join(os.tmpdir(), 'socket-checksums-'),
     )
@@ -139,12 +139,12 @@ async function fetchGitHubReleaseChecksums(
       // Clean up.
       await safeDelete(tempDir)
 
-      console.log(
+      logger.log(
         `  Parsed ${Object.keys(checksums).length} checksums from checksums.txt`,
       )
       return checksums
     } catch (e) {
-      console.log(`  Failed to download checksums.txt: ${e.message}`)
+      logger.log(`  Failed to download checksums.txt: ${e.message}`)
       await safeDelete(tempDir).catch(() => {})
       // Fall through to download assets.
     }
@@ -154,11 +154,11 @@ async function fetchGitHubReleaseChecksums(
   // Only download assets that are in existingChecksums (to avoid downloading unnecessary files).
   const assetNames = Object.keys(existingChecksums)
   if (assetNames.length === 0) {
-    console.log(`  No existing checksums to update and no checksums.txt found`)
+    logger.log(`  No existing checksums to update and no checksums.txt found`)
     return {}
   }
 
-  console.log(
+  logger.log(
     `  No checksums.txt found, downloading ${assetNames.length} assets to compute checksums...`,
   )
 
@@ -169,17 +169,17 @@ async function fetchGitHubReleaseChecksums(
     for (const assetName of assetNames) {
       const asset = assets.find(a => a.name === assetName)
       if (!asset) {
-        console.log(`    Warning: Asset ${assetName} not found in release`)
+        logger.log(`    Warning: Asset ${assetName} not found in release`)
         continue
       }
 
       const assetPath = path.join(tempDir, assetName)
-      console.log(`    Downloading ${assetName}...`)
+      logger.log(`    Downloading ${assetName}...`)
       await downloadFile(asset.browser_download_url, assetPath)
 
       const hash = await computeFileHash(assetPath)
       checksums[assetName] = hash
-      console.log(`    ${assetName}: ${hash.slice(0, 16)}...`)
+      logger.log(`    ${assetName}: ${hash.slice(0, 16)}...`)
 
       // Clean up as we go to save disk space.
       await fs.unlink(assetPath)
@@ -203,7 +203,7 @@ async function main() {
 
   // Load current bundle-tools.json.
   if (!existsSync(EXTERNAL_TOOLS_FILE)) {
-    console.error(`Error: ${EXTERNAL_TOOLS_FILE} not found`)
+    logger.fail(`Error: ${EXTERNAL_TOOLS_FILE} not found`)
     process.exitCode = 1
     return
   }
@@ -223,10 +223,10 @@ async function main() {
   if (toolFilter) {
     const filtered = githubTools.filter(t => t.key === toolFilter)
     if (filtered.length === 0) {
-      console.error(
+      logger.fail(
         `Error: Tool '${toolFilter}' not found or is not a GitHub release tool`,
       )
-      console.log(
+      logger.log(
         `Available GitHub release tools: ${githubTools.map(t => t.key).join(', ')}`,
       )
       process.exitCode = 1
@@ -236,7 +236,7 @@ async function main() {
     githubTools.push(...filtered)
   }
 
-  console.log(
+  logger.log(
     `Syncing checksums for ${githubTools.length} GitHub release tool(s)...\n`,
   )
 
@@ -247,7 +247,7 @@ async function main() {
   for (const tool of githubTools) {
     const repoPath = tool.repository.replace(/^[^:]+:/, '')
     const releaseTag = tool.tag ?? tool.version
-    console.log(`[${tool.key}] ${repoPath} @ ${releaseTag}`)
+    logger.log(`[${tool.key}] ${repoPath} @ ${releaseTag}`)
 
     try {
       const newChecksums = await fetchGitHubReleaseChecksums(
@@ -257,7 +257,7 @@ async function main() {
       )
 
       if (Object.keys(newChecksums).length === 0) {
-        console.log(`  Skipped: No checksums found\n`)
+        logger.log(`  Skipped: No checksums found\n`)
         unchanged++
         continue
       }
@@ -268,7 +268,7 @@ async function main() {
         JSON.stringify(newChecksums) !== JSON.stringify(oldChecksums)
 
       if (!force && !checksumChanged) {
-        console.log(
+        logger.log(
           `  Unchanged: ${Object.keys(newChecksums).length} checksums\n`,
         )
         unchanged++
@@ -280,10 +280,10 @@ async function main() {
 
       const oldCount = Object.keys(oldChecksums).length
       const newCount = Object.keys(newChecksums).length
-      console.log(`  Updated: ${oldCount} -> ${newCount} checksums\n`)
+      logger.log(`  Updated: ${oldCount} -> ${newCount} checksums\n`)
       updated++
     } catch (e) {
-      console.log(`  Error: ${e.message}\n`)
+      logger.log(`  Error: ${e.message}\n`)
       failed++
     }
   }
@@ -295,13 +295,13 @@ async function main() {
       JSON.stringify(externalTools, null, 2) + '\n',
       'utf8',
     )
-    console.log(`Updated ${EXTERNAL_TOOLS_FILE}`)
+    logger.log(`Updated ${EXTERNAL_TOOLS_FILE}`)
   } else if (dryRun && updated > 0) {
-    console.log('Dry run - no changes written')
+    logger.log('Dry run - no changes written')
   }
 
   // Summary.
-  console.log(
+  logger.log(
     `\nSummary: ${updated} updated, ${unchanged} unchanged, ${failed} failed`,
   )
 
@@ -311,6 +311,6 @@ async function main() {
 }
 
 main().catch(error => {
-  console.error(`Sync failed: ${error.message}`)
+  logger.fail(`Sync failed: ${error.message}`)
   process.exitCode = 1
 })

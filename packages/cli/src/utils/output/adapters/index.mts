@@ -14,7 +14,7 @@ import type { ScrubberAdapter } from '../scrubber.mts'
 // us to express "keys are arbitrary strings, no prototype chain"
 // directly, so we construct via Object.create and freeze.
 const ADAPTERS: Readonly<Record<string, ScrubberAdapter>> = Object.freeze(
-  Object.assign(Object.create(null) as Record<string, ScrubberAdapter>, {
+  Object.assign(Object.create(undefined) as Record<string, ScrubberAdapter>, {
     gem: gemAdapter,
     synp: synpAdapter,
     zpm: zpmAdapter,

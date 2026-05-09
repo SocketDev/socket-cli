@@ -200,7 +200,7 @@ export type FoundSocketYml = {
 export function findSocketYmlSync(
   dir = process.cwd(),
 ): CResult<FoundSocketYml | undefined> {
-  let prevDir = null
+  let prevDir = undefined
   while (dir !== prevDir) {
     let ymlPath = path.join(dir, SOCKET_YML)
     let yml = safeReadFileSync(ymlPath)

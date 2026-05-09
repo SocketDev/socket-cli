@@ -51,9 +51,9 @@ const mockSpawn = vi.hoisted(() => {
     on: vi.fn(),
     kill: vi.fn(),
     pid: 12345,
-    stdin: null,
-    stdout: null,
-    stderr: null,
+    stdin: undefined,
+    stdout: undefined,
+    stderr: undefined,
   }
   return vi.fn(() => {
     return Object.assign(Promise.resolve({ exitCode: 0 }), {
@@ -265,9 +265,9 @@ describe('cmd-raw-npm', () => {
           on: vi.fn(),
           kill: vi.fn(),
           pid: 12345,
-          stdin: null,
-          stdout: null,
-          stderr: null,
+          stdin: undefined,
+          stdout: undefined,
+          stderr: undefined,
         }
 
         mockSpawn.mockReturnValue(
@@ -306,9 +306,9 @@ describe('cmd-raw-npm', () => {
           on: vi.fn(),
           kill: vi.fn(),
           pid: 12345,
-          stdin: null,
-          stdout: null,
-          stderr: null,
+          stdin: undefined,
+          stdout: undefined,
+          stderr: undefined,
         }
 
         // Capture the exit handler when it's registered.
@@ -352,7 +352,7 @@ describe('cmd-raw-npm', () => {
         await cmdRawNpm.run(['install'], importMeta, context)
 
         // Invoke the exit handler with a numeric code.
-        exitHandler(42, null)
+        exitHandler(42, undefined)
 
         expect(mockProcessExit).toHaveBeenCalledWith(42)
       })
@@ -361,7 +361,7 @@ describe('cmd-raw-npm', () => {
         await cmdRawNpm.run(['install'], importMeta, context)
 
         // Invoke the exit handler with a signal.
-        exitHandler(null, 'SIGTERM')
+        exitHandler(undefined, 'SIGTERM')
 
         expect(mockProcessKill).toHaveBeenCalledWith(process.pid, 'SIGTERM')
       })
@@ -370,7 +370,7 @@ describe('cmd-raw-npm', () => {
         await cmdRawNpm.run(['install'], importMeta, context)
 
         // Invoke the exit handler with null code and no signal.
-        exitHandler(null, null)
+        exitHandler(undefined, undefined)
 
         expect(mockProcessExit).not.toHaveBeenCalled()
         expect(mockProcessKill).not.toHaveBeenCalled()

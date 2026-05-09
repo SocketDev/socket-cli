@@ -138,7 +138,7 @@ describe('outputQuota', () => {
     const result = createSuccessResult({
       quota: 500,
       maxQuota: 1000,
-      nextWindowRefresh: null,
+      nextWindowRefresh: undefined,
     })
 
     process.exitCode = undefined
@@ -173,7 +173,7 @@ describe('outputQuota', () => {
     const result = createSuccessResult({
       quota: 250,
       maxQuota: 0,
-      nextWindowRefresh: null,
+      nextWindowRefresh: undefined,
     })
 
     process.exitCode = undefined
@@ -495,7 +495,7 @@ describe('outputQuota', () => {
     const result = createSuccessResult({
       quota: 750,
       maxQuota: 1000,
-      nextWindowRefresh: null,
+      nextWindowRefresh: undefined,
     })
 
     process.exitCode = undefined
@@ -537,7 +537,7 @@ describe('outputQuota', () => {
     const result = createSuccessResult({
       quota: 0,
       maxQuota: 1000,
-      nextWindowRefresh: null,
+      nextWindowRefresh: undefined,
     })
 
     process.exitCode = undefined
@@ -572,7 +572,7 @@ describe('outputQuota', () => {
     const result = createSuccessResult({
       quota: 100,
       maxQuota: 1000,
-      nextWindowRefresh: null,
+      nextWindowRefresh: undefined,
     })
 
     process.exitCode = undefined

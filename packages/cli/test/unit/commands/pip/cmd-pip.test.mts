@@ -48,7 +48,7 @@ describe('cmd-pip', () => {
   const createMockSpawnResult = (exitCode = 0, signal?: NodeJS.Signals) => {
     const promise: any = Promise.resolve({
       success: exitCode === 0 && !signal,
-      code: signal ? null : exitCode,
+      code: signal ? undefined : exitCode,
       signal: signal || undefined,
     })
     promise.process = mockChildProcess
@@ -435,7 +435,7 @@ describe('cmd-pip', () => {
       await new Promise(resolve => process.nextTick(resolve))
 
       // Trigger exit with both null.
-      exitHandler!(null, null)
+      exitHandler!(undefined, undefined)
 
       await promise
 
@@ -467,7 +467,7 @@ describe('cmd-pip', () => {
       await new Promise(resolve => process.nextTick(resolve))
 
       // Trigger exit event.
-      exitHandler!(0, null)
+      exitHandler!(0, undefined)
 
       await promise
 
@@ -500,7 +500,7 @@ describe('cmd-pip', () => {
       await new Promise(resolve => process.nextTick(resolve))
 
       // Trigger exit event.
-      exitHandler!(1, null)
+      exitHandler!(1, undefined)
 
       await promise
 
@@ -533,7 +533,7 @@ describe('cmd-pip', () => {
       await new Promise(resolve => process.nextTick(resolve))
 
       // Trigger exit event with signal.
-      exitHandler!(null, 'SIGTERM')
+      exitHandler!(undefined, 'SIGTERM')
 
       await promise
 
@@ -566,7 +566,7 @@ describe('cmd-pip', () => {
       await new Promise(resolve => process.nextTick(resolve))
 
       // Trigger exit event with signal.
-      exitHandler!(null, 'SIGINT')
+      exitHandler!(undefined, 'SIGINT')
 
       await promise
 

@@ -26,7 +26,7 @@ export async function outputFixResult(
     } else {
       logger.log(mdHeader('Fix Completed'))
       logger.log('')
-      logger.log('✓ Finished!')
+      logger.success('Finished!')
     }
     return
   }

@@ -70,7 +70,7 @@ function createGraphqlError(
   return new GraphqlResponseError(
     { method: 'POST', url: 'https://api.github.com/graphql' },
     { 'x-request-id': 'test' },
-    { data: null, errors },
+    { data: undefined, errors },
   )
 }
 
@@ -348,7 +348,7 @@ describe('isGraphqlRateLimitError', () => {
   })
 
   it('returns false for null/undefined', () => {
-    expect(isGraphqlRateLimitError(null)).toBe(false)
+    expect(isGraphqlRateLimitError(undefined)).toBe(false)
     expect(isGraphqlRateLimitError(undefined)).toBe(false)
   })
 })

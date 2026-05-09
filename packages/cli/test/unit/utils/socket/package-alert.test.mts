@@ -108,7 +108,7 @@ function createMockSocketPackageAlert(
 describe('socket-package-alert', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockGetManifestData.mockReturnValue(null)
+    mockGetManifestData.mockReturnValue(undefined)
   })
 
   describe('alertsHaveBlocked', () => {

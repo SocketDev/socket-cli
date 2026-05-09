@@ -63,7 +63,7 @@ export async function fetchListAllRepos(
     ok: true,
     data: {
       results: rows,
-      nextPage: null,
+      nextPage: undefined,
     },
   }
 }

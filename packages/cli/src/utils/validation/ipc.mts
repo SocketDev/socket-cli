@@ -138,5 +138,5 @@ export function parseIpcMessage(value: unknown): IpcMessage | null {
     }
   }
 
-  return null
+  return undefined
 }

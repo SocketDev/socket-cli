@@ -228,7 +228,7 @@ export class OAuthIntrospector {
     }
     const introspection = parseJsonObject(responseText, 'Token introspection')
     if (!introspection['active']) {
-      return null
+      return undefined
     }
     const expRaw = introspection['exp']
     const expiresAt = typeof expRaw === 'number' ? expRaw : Number(expRaw)
@@ -419,7 +419,7 @@ export async function handleRequestSafely(
     if (!res.headersSent) {
       writeJson(res, 500, {
         error: { code: -32603, message: 'Internal server error' },
-        id: null,
+        id: undefined,
         jsonrpc: '2.0',
       })
     }

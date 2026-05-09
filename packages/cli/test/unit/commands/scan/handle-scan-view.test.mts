@@ -106,7 +106,7 @@ describe('handleScanView', () => {
       data: {
         id: 'scan-456',
         status: 'in_progress',
-        results: null,
+        results: undefined,
       },
     }
     mockFetchScan.mockResolvedValue(mockData)

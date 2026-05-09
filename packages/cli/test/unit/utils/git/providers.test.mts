@@ -238,7 +238,7 @@ describe('GitHubProvider', () => {
           pullRequests: {
             pageInfo: {
               hasNextPage: false,
-              endCursor: null,
+              endCursor: undefined,
             },
             nodes: [
               {
@@ -423,7 +423,7 @@ describe('GitHubProvider', () => {
           number: 789,
           html_url: 'https://github.com/owner/repo/pull/789',
           state: 'closed',
-          merged_at: null,
+          merged_at: undefined,
         },
       })
 
@@ -465,7 +465,7 @@ describe('GitHubProvider', () => {
       const mockResponse = {
         repository: {
           pullRequests: {
-            pageInfo: { hasNextPage: false, endCursor: null },
+            pageInfo: { hasNextPage: false, endCursor: undefined },
             nodes: [
               {
                 number: 1,
@@ -507,7 +507,7 @@ describe('GitHubProvider', () => {
       const mockResponse = {
         repository: {
           pullRequests: {
-            pageInfo: { hasNextPage: false, endCursor: null },
+            pageInfo: { hasNextPage: false, endCursor: undefined },
             nodes: [
               {
                 number: 1,
@@ -539,7 +539,7 @@ describe('GitHubProvider', () => {
       const mockResponse = {
         repository: {
           pullRequests: {
-            pageInfo: { hasNextPage: false, endCursor: null },
+            pageInfo: { hasNextPage: false, endCursor: undefined },
             nodes: [
               {
                 number: 1,

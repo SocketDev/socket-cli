@@ -25,22 +25,7 @@ const rootPath = path.join(__dirname, '..')
 const MAX_FILE_SIZE = 2 * 1024 * 1024
 
 // Directories to skip
-const SKIP_DIRS = new Set([
-  'node_modules',
-  '.git',
-  'dist',
-  'build',
-  '.cache',
-  'coverage',
-  '.next',
-  '.nuxt',
-  '.output',
-  '.turbo',
-  '.vercel',
-  '.vscode',
-  'tmp',
-  'external',
-])
+const SKIP_DIRS = new Set(['.cache', '.git', '.next', '.nuxt', '.output', '.turbo', '.vercel', '.vscode', 'build', 'coverage', 'dist', 'external', 'node_modules', 'tmp'])
 
 interface FileSizeViolation {
   file: string

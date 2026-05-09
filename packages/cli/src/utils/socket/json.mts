@@ -132,7 +132,7 @@ export async function readSocketJson(
     return { ok: true, data: getDefaultSocketJson() }
   }
 
-  let json = null
+  let json = undefined
   try {
     json = await fs.promises.readFile(sockJsonPath, 'utf8')
   } catch (e) {
@@ -192,7 +192,7 @@ export function readSocketJsonSync(
     debugNs('notice', `miss: ${SOCKET_JSON} not found at ${cwd}`)
     return { ok: true, data: getDefaultSocketJson() }
   }
-  let jsonContent = null
+  let jsonContent = undefined
   try {
     jsonContent = fs.readFileSync(sockJsonPath, 'utf8')
   } catch (e) {

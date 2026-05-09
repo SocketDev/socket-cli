@@ -178,7 +178,7 @@ export async function downloadNpmPackages() {
 
   if (npmPackages.length === 0) {
     logger.warn('No npm packages defined in bundle-tools.json')
-    return null
+    return undefined
   }
 
   logger.step('Downloading npm packages with full dependency trees')

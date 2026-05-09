@@ -79,7 +79,7 @@ export function findBestCommandMatch(
   subcommands: Record<string, unknown>,
   aliases: Record<string, unknown>,
 ): string | null {
-  let bestMatch = null
+  let bestMatch = undefined
   let bestScore = Number.POSITIVE_INFINITY
   const allCommands = [...Object.keys(subcommands), ...Object.keys(aliases)]
   for (const command of allCommands) {

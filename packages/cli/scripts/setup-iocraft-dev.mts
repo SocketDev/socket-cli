@@ -25,13 +25,13 @@ const packages = {
   'socketaddon-iocraft-win-x64': '@socketaddon/iocraft-win-x64',
 }
 
-console.log('Setting up iocraft dev build in node_modules...\n')
+logger.log('Setting up iocraft dev build in node_modules...\n')
 
 for (const [sourceDir, targetName] of Object.entries(packages)) {
   const sourcePath = join(packagesDir, sourceDir)
 
   if (!existsSync(sourcePath)) {
-    console.log(`⊘ Skipping ${sourceDir} (not found)`)
+    logger.log(`⊘ Skipping ${sourceDir} (not found)`)
     continue
   }
 
@@ -75,7 +75,7 @@ for (const [sourceDir, targetName] of Object.entries(packages)) {
     }
   }
 
-  console.log(`✓ Installed ${targetName}`)
+  logger.log(`✓ Installed ${targetName}`)
 }
 
 // Patch the iocraft index.mjs to handle node_modules installation.
@@ -109,7 +109,7 @@ if (existsSync(iocraftIndexPath)) {
         `$1$2`,
     )
     writeFileSync(iocraftIndexPath, indexContent, 'utf8')
-    console.log('\n✓ Patched iocraft index.mjs for node_modules loading')
+    logger.log('\n✓ Patched iocraft index.mjs for node_modules loading')
   }
 }
 
@@ -140,14 +140,14 @@ for (const [sourceDir, targetName] of Object.entries(packages)) {
       }
       const { symlinkSync } = await import('node:fs')
       symlinkSync(targetPath, symlinkPath, 'dir')
-      console.log(`  → Linked ${targetName} into iocraft/node_modules`)
+      logger.log(`  → Linked ${targetName} into iocraft/node_modules`)
     } catch (e) {
-      console.log(`  ⚠ Failed to link ${targetName}:`, e.message)
+      logger.log(`  ⚠ Failed to link ${targetName}:`, e.message)
     }
   }
 }
 
-console.log('\n✅ iocraft dev build installed successfully!')
-console.log(
+logger.log('\n✅ iocraft dev build installed successfully!')
+logger.log(
   '\nYou can now run manual tests:\n  node src/commands/analytics/test-analytics-renderer.mts',
 )

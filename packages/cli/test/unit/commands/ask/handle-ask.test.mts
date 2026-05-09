@@ -105,7 +105,7 @@ describe('handleAsk', () => {
   })
 
   it('should handle spawn returning null', async () => {
-    mockSpawn.mockResolvedValue(null)
+    mockSpawn.mockResolvedValue(undefined)
 
     const mockExit = vi
       .spyOn(process, 'exit')
@@ -654,7 +654,7 @@ describe('wordOverlapMatch', () => {
   })
 
   it('returns null when getHome returns falsy (line 169)', async () => {
-    mockGetHome.mockReturnValueOnce(null)
+    mockGetHome.mockReturnValueOnce(undefined)
     mockReadFile.mockClear()
     const result = await wordOverlapMatch('fix something')
     // Index load returns null when no homeDir → no readFile, returns null.

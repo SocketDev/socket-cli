@@ -142,12 +142,12 @@ describe('fetchScanMetadata', () => {
     const { fetchScanMetadata } =
       await import('../../../../../src/commands/scan/fetch-scan-metadata.mts')
 
-    await setupSdkMockSuccess('getFullScanMetadata', null)
+    await setupSdkMockSuccess('getFullScanMetadata', undefined)
 
     const result = await fetchScanMetadata('test-org', 'empty-scan')
 
     expect(result.ok).toBe(true)
-    expect(result.data).toBe(null)
+    expect(result.data).toBe(undefined)
   })
 
   it('handles pending scan metadata', async () => {

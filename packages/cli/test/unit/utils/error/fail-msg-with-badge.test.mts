@@ -142,7 +142,7 @@ describe('failMsgWithBadge', () => {
   describe('null and type coercion', () => {
     it('handles null as message', () => {
       // @ts-expect-error Testing runtime behavior with null.
-      const result = failMsgWithBadge('ERROR', null)
+      const result = failMsgWithBadge('ERROR', undefined)
       expect(result).toBe(
         '[BG_RED_BRIGHT][BOLD][WHITE] ERROR[/WHITE][/BOLD][/BG_RED_BRIGHT]',
       )

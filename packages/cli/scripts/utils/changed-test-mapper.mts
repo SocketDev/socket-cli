@@ -387,7 +387,7 @@ export function getTestsToRun(options = {}) {
 
   if (changedFiles.length === 0) {
     // No changes, skip tests
-    return { tests: null, mode }
+    return { tests: undefined, mode }
   }
 
   const testFiles = new Set()
@@ -458,7 +458,7 @@ export function getTestsToRun(options = {}) {
   }
 
   if (testFiles.size === 0) {
-    return { tests: null, mode }
+    return { tests: undefined, mode }
   }
 
   return { tests: Array.from(testFiles), mode }

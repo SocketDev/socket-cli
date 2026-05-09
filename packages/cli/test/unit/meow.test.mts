@@ -298,7 +298,7 @@ describe('meow', () => {
     })
 
     it('handles readPackageJsonSync returning null with empty fallback', () => {
-      mockReadPackageJsonSync.mockReturnValueOnce(null)
+      mockReadPackageJsonSync.mockReturnValueOnce(undefined)
 
       const result = meow({
         argv: [],

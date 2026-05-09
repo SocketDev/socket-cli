@@ -122,7 +122,7 @@ describe('fetchListRepos', () => {
   it('passes custom SDK options', async () => {
     const { mockSetupSdk } = await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     const config = {
@@ -146,7 +146,7 @@ describe('fetchListRepos', () => {
   it('handles large page size configuration', async () => {
     const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     const config = {
@@ -170,7 +170,7 @@ describe('fetchListRepos', () => {
   it('handles different sort criteria', async () => {
     const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     const config = {
@@ -194,7 +194,7 @@ describe('fetchListRepos', () => {
   it('handles empty results on specific page', async () => {
     await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     const config = {
@@ -216,7 +216,7 @@ describe('fetchListRepos', () => {
   it('uses null prototype for options', async () => {
     const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     const config = {
@@ -237,7 +237,7 @@ describe('fetchListRepos', () => {
   it('omits sort and direction when both are empty', async () => {
     const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     const config = {
@@ -260,7 +260,7 @@ describe('fetchListRepos', () => {
   it('includes sort but omits direction when only sort is set', async () => {
     const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     const config = {

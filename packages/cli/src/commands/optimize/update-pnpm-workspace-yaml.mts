@@ -39,7 +39,7 @@ export async function updatePnpmWorkspaceYamlOverrides(
   const yamlPath = path.join(repoRoot, 'pnpm-workspace.yaml')
   const existing = existsSync(yamlPath)
     ? await safeReadFile(yamlPath, { encoding: 'utf8' })
-    : null
+    : undefined
 
   let doc: Document
   if (existing) {

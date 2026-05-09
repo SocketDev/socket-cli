@@ -119,7 +119,7 @@ export async function runHttpTransport(
       logger.warn(`Invalid URL in request: ${req.url} - ${e}`)
       writeJson(res, 400, {
         error: { code: -32000, message: 'Bad Request: Invalid URL' },
-        id: null,
+        id: undefined,
         jsonrpc: '2.0',
       })
       return
@@ -154,7 +154,7 @@ export async function runHttpTransport(
       )
       writeJson(res, 403, {
         error: { code: -32000, message: 'Forbidden: Invalid origin' },
-        id: null,
+        id: undefined,
         jsonrpc: '2.0',
       })
       return
@@ -279,7 +279,7 @@ export async function runHttpTransport(
                 code: -32000,
                 message: 'Bad Request: No valid session. Send initialize first.',
               },
-              id: null,
+              id: undefined,
               jsonrpc: '2.0',
             })
             return
@@ -308,7 +308,7 @@ export async function runHttpTransport(
             code: -32000,
             message: 'Not Found: Invalid or expired session. Re-initialize.',
           },
-          id: null,
+          id: undefined,
           jsonrpc: '2.0',
         })
         return
@@ -327,7 +327,7 @@ export async function runHttpTransport(
       if (!transport) {
         writeJson(res, 404, {
           error: { code: -32000, message: 'Not Found: Invalid or expired session.' },
-          id: null,
+          id: undefined,
           jsonrpc: '2.0',
         })
         return

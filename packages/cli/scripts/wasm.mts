@@ -319,7 +319,8 @@ async function downloadWasm() {
     })
 
     if (answer !== 'y' && answer !== 'yes') {
-      logger.info('\n✓ Keeping existing file\n')
+      logger.success('Keeping existing file
+')
       return
     }
 

@@ -16,15 +16,15 @@ describe('dlx e2e tests', () => {
       const apiToken = await getDefaultApiToken()
       hasAuth = !!apiToken
       if (!apiToken) {
-        console.log()
-        console.warn('E2E tests require Socket authentication.')
-        console.log('Please run one of the following:')
-        console.log('  1. socket login (to authenticate with Socket)')
-        console.log('  2. Set SOCKET_SECURITY_API_KEY environment variable')
-        console.log(
+        logger.log()
+        logger.warn('E2E tests require Socket authentication.')
+        logger.log('Please run one of the following:')
+        logger.log('  1. socket login (to authenticate with Socket)')
+        logger.log('  2. Set SOCKET_SECURITY_API_KEY environment variable')
+        logger.log(
           '  3. Skip e2e tests by not setting RUN_INTEGRATION_TESTS\n',
         )
-        console.log(
+        logger.log(
           'E2E tests will be skipped due to missing authentication.\n',
         )
       }
@@ -37,7 +37,7 @@ describe('dlx e2e tests', () => {
         // Check if we're in a pnpm project.
         const pnpmLock = await findUp('pnpm-lock.yaml')
         if (!pnpmLock) {
-          console.log('Skipping test - not in a pnpm project')
+          logger.log('Skipping test - not in a pnpm project')
           return
         }
 
@@ -73,7 +73,7 @@ describe('dlx e2e tests', () => {
         // This test verifies by checking what command would be run.
         const pnpmLock = await findUp('pnpm-lock.yaml')
         if (!pnpmLock) {
-          console.log('Skipping test - not in a pnpm project')
+          logger.log('Skipping test - not in a pnpm project')
           return
         }
 
@@ -99,7 +99,7 @@ describe('dlx e2e tests', () => {
           }).toThrow()
         } catch (e) {
           // If pnpm is not available globally, skip this part.
-          console.log('Could not run direct pnpm test:', e.message)
+          logger.log('Could not run direct pnpm test:', e.message)
         }
       },
       15000,
@@ -117,7 +117,7 @@ describe('dlx e2e tests', () => {
 
         // Skip if we're in a pnpm/yarn project to ensure npm is used.
         if (pnpmLock || yarnLock) {
-          console.log('Skipping npm test - in pnpm/yarn project')
+          logger.log('Skipping npm test - in pnpm/yarn project')
           return
         }
 

@@ -58,7 +58,7 @@ vi.mock('../../../../src/meow.mts', () => ({
       for (const [key, flag] of Object.entries(options.flags)) {
         // Check if flag is present in argv.
         const flagName = `--${key}`
-        const shortFlag = flag.shortFlag ? `-${flag.shortFlag}` : null
+        const shortFlag = flag.shortFlag ? `-${flag.shortFlag}` : undefined
         const isPresent =
           argv.includes(flagName) || (shortFlag && argv.includes(shortFlag))
 

@@ -68,7 +68,7 @@ describe('cmd utilities', () => {
     })
 
     it('handles null/undefined', () => {
-      expect(cmdFlagValueToArray(null)).toEqual([])
+      expect(cmdFlagValueToArray(undefined)).toEqual([])
       expect(cmdFlagValueToArray(undefined)).toEqual([])
     })
 

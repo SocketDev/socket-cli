@@ -41,7 +41,7 @@ describe('IPC validation', () => {
     })
 
     it('returns false for null', () => {
-      expect(isValidIpcMessage(null)).toBe(false)
+      expect(isValidIpcMessage(undefined)).toBe(false)
     })
 
     it('returns false for non-object', () => {
@@ -118,7 +118,7 @@ describe('IPC validation', () => {
           id: 'test',
           timestamp: Date.now(),
           type: 'test',
-          data: null,
+          data: undefined,
         }),
       ).toBe(true)
     })
@@ -210,14 +210,14 @@ describe('IPC validation', () => {
           id: 'test',
           timestamp: Date.now(),
           type: 'handshake',
-          data: null,
+          data: undefined,
         }),
       ).toBe(false)
     })
 
     it('returns false when isValidIpcMessage returns false', () => {
       // Exercises the early-return branch that delegates to isValidIpcMessage.
-      expect(isValidIpcHandshake(null)).toBe(false)
+      expect(isValidIpcHandshake(undefined)).toBe(false)
       expect(isValidIpcHandshake({})).toBe(false)
       expect(isValidIpcHandshake('not-an-object')).toBe(false)
     })
@@ -235,7 +235,7 @@ describe('IPC validation', () => {
     })
 
     it('returns false for null', () => {
-      expect(isValidIpcHandle(null)).toBe(false)
+      expect(isValidIpcHandle(undefined)).toBe(false)
     })
 
     it('returns false for non-object', () => {
@@ -361,7 +361,7 @@ describe('IPC validation', () => {
     })
 
     it('returns null for null input', () => {
-      expect(parseIpcMessage(null)).toBeNull()
+      expect(parseIpcMessage(undefined)).toBeNull()
     })
 
     it('returns null for undefined', () => {

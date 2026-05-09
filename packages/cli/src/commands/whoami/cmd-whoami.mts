@@ -119,8 +119,8 @@ async function run(
     if (flags['json']) {
       outputWhoami({
         authenticated: false,
-        location: null,
-        token: null,
+        location: undefined,
+        token: undefined,
       })
     } else {
       logger.fail('Not authenticated with Socket')

@@ -159,7 +159,7 @@ describe('ghsa-tracker', () => {
     })
 
     it('handles null tracker data', async () => {
-      mockReadJson.mockResolvedValue(null)
+      mockReadJson.mockResolvedValue(undefined)
 
       const result = await loadGhsaTracker(mockCwd)
 
