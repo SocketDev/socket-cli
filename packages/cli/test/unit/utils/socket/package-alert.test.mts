@@ -1173,6 +1173,127 @@ describe('socket-package-alert', () => {
       expect(output.join('')).toContain('test@1.0.0')
     })
 
+    it('borrows from hidden alerts when above-the-fold count is short (lines 515-538)', () => {
+      const output: string[] = []
+      const mockStream = {
+        write: (str: string) => {
+          output.push(str)
+        },
+      } as NodeJS.WriteStream
+
+      // Construct: 1 above-fold (blocked low) + 2 hidden-only (unblocked low)
+      // with hideAt='high' so low-severity unblocked alerts are hidden.
+      // aboveTheFoldPurls=1 < MIN_ABOVE_THE_FOLD_COUNT(3) forces the loop
+      // over hiddenAlertsByPurl (lines 515-538) to borrow hidden alerts
+      // into the viewable set so they get rendered.
+      const alertsMap: AlertsByPurl = new Map()
+      alertsMap.set('pkg:npm/blocked@1.0.0', [
+        createMockSocketPackageAlert({
+          blocked: true,
+          raw: createMockAlert({ key: 'b1', severity: 'low' }),
+        }),
+      ])
+      alertsMap.set('pkg:npm/hidden1@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: 'h1', severity: 'low' }),
+        }),
+      ])
+      alertsMap.set('pkg:npm/hidden2@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: 'h2', severity: 'low' }),
+        }),
+      ])
+
+      logAlertsMap(alertsMap, { hideAt: 'high', output: mockStream })
+
+      const combined = output.join('')
+      // Borrowed-from-hidden purls should be promoted to viewable.
+      expect(combined).toContain('hidden1@1.0.0')
+      expect(combined).toContain('hidden2@1.0.0')
+    })
+
+    it('aggregates risk counts for remaining hidden purls not surfaced inline (line 626)', () => {
+      const output: string[] = []
+      const mockStream = {
+        write: (str: string) => {
+          output.push(str)
+        },
+      } as NodeJS.WriteStream
+
+      // Build a map with enough above-fold purls (>= 3) so the borrow loop
+      // does not consume any hidden purls, leaving them for the trailing
+      // aggregate-counts pass. The trailing pass at line 624 iterates
+      // hiddenAlertsByPurl and skips any purl already mentioned inline
+      // (line 626) — this triggers when a purl had both viewable and
+      // hidden alerts (so it was mentioned inline AND remained in the
+      // hiddenAlertsByPurl map after the borrow loop didn't consume it).
+      const alertsMap: AlertsByPurl = new Map()
+      // 3 above-fold purls with mixed viewable + hidden alerts.
+      for (let i = 1; i <= 3; i++) {
+        alertsMap.set(`pkg:npm/mixed${i}@1.0.0`, [
+          createMockSocketPackageAlert({
+            raw: createMockAlert({ key: `hi${i}`, severity: 'critical' }),
+          }),
+          createMockSocketPackageAlert({
+            raw: createMockAlert({ key: `lo${i}`, severity: 'low' }),
+          }),
+        ])
+      }
+      // An extra hidden-only purl that won't be borrowed (size already >= 3).
+      alertsMap.set('pkg:npm/extra-hidden@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: 'eh', severity: 'low' }),
+        }),
+      ])
+
+      logAlertsMap(alertsMap, { hideAt: 'middle', output: mockStream })
+
+      const combined = output.join('')
+      // The 3 mixed purls should render inline with their hidden-alert hint.
+      expect(combined).toContain('mixed1@1.0.0')
+      // The trailing aggregate-counts line should cover the extra purl.
+      expect(combined).toContain('Packages with hidden alerts')
+    })
+
+    it('renders consecutive below-the-fold purls with leading separator only after above-fold (line 593)', () => {
+      const output: string[] = []
+      const mockStream = {
+        write: (str: string) => {
+          output.push(str)
+        },
+      } as NodeJS.WriteStream
+
+      // Need 3+ above-fold viewable (severity < middle) plus 2+ below-fold
+      // viewable (severity >= middle, not blocked) so the size-cap on the
+      // second loop keeps the latter below-fold. With two consecutive
+      // below-fold purls in the render loop, the second one hits the
+      // `prevAboveTheFold === false` branch on line 593.
+      const alertsMap: AlertsByPurl = new Map()
+      for (let i = 1; i <= 3; i++) {
+        alertsMap.set(`pkg:npm/above${i}@1.0.0`, [
+          createMockSocketPackageAlert({
+            raw: createMockAlert({ key: `a${i}`, severity: 'high' }),
+          }),
+        ])
+      }
+      alertsMap.set('pkg:npm/below1@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: 'b1', severity: 'middle' }),
+        }),
+      ])
+      alertsMap.set('pkg:npm/below2@1.0.0', [
+        createMockSocketPackageAlert({
+          raw: createMockAlert({ key: 'b2', severity: 'middle' }),
+        }),
+      ])
+
+      logAlertsMap(alertsMap, { hideAt: 'none', output: mockStream })
+
+      const combined = output.join('')
+      expect(combined).toContain('below1@1.0.0')
+      expect(combined).toContain('below2@1.0.0')
+    })
+
     it('shows alerts without description when translation missing', () => {
       const output: string[] = []
       const mockStream = {
