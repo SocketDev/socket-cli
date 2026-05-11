@@ -125,7 +125,7 @@ describe('preflight downloads', () => {
       // Coana + cdxgen should have been queued.
       expect(mockDownloadPackage).toHaveBeenCalled()
       const specs = mockDownloadPackage.mock.calls.map(
-        (c: any) => (c[0] as { package: string }).package,
+        (c: unknown) => (c[0] as { package: string }).package,
       )
       expect(specs.some((s: string) => s.startsWith('@coana-tech/cli@'))).toBe(
         true,

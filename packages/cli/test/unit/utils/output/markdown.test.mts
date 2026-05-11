@@ -219,8 +219,8 @@ describe('markdown utilities', () => {
     it('handles null and undefined values', () => {
       const data = {
         Valid: 123,
-        Null: undefined as any,
-        Undefined: undefined as any,
+        Null: undefined as unknown,
+        Undefined: undefined as unknown,
       }
 
       const result = mdTableStringNumber('Key', 'Value', data)
@@ -279,7 +279,7 @@ describe('markdown utilities', () => {
     })
 
     it('handles missing properties', () => {
-      const logs = [{ a: 'value1' }, { b: 'value2' }] as any[]
+      const logs = [{ a: 'value1' }, { b: 'value2' }] as unknown[]
 
       const result = mdTable(logs, ['a', 'b'])
 
@@ -302,7 +302,7 @@ describe('markdown utilities', () => {
     })
 
     it('handles empty array', () => {
-      const logs: any[] = []
+      const logs: unknown[] = []
 
       const result = mdTable(logs, ['col1', 'col2'])
 

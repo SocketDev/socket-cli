@@ -36,6 +36,9 @@ import {
 } from '../../../../src/utils/fs/path-resolve.mts'
 import { createTestWorkspace } from '../../../helpers/workspace-helper.mts'
 
+import type * as BinModule from '@socketsecurity/lib/bin'
+import type * as FsModule from '@socketsecurity/lib/fs'
+
 const PACKAGE_JSON = 'package.json'
 
 // Hoisted mocks for better CI reliability.
@@ -45,7 +48,7 @@ const mockResolveRealBinSync = vi.hoisted(() => vi.fn((p: string) => p))
 // Mock dependencies for new tests.
 vi.mock('@socketsecurity/lib/bin', async () => {
   const actual = await vi.importActual<
-    typeof import('@socketsecurity/lib/bin')
+    typeof BinModule
   >('@socketsecurity/lib/bin')
   return {
     ...actual,
@@ -55,7 +58,7 @@ vi.mock('@socketsecurity/lib/bin', async () => {
 })
 
 vi.mock('@socketsecurity/lib/fs', async () => {
-  const actual = await vi.importActual<typeof import('@socketsecurity/lib/fs')>(
+  const actual = await vi.importActual<typeof FsModule>(
     '@socketsecurity/lib/fs',
   )
   return {
@@ -113,11 +116,11 @@ const globPatterns = {
   },
 }
 
-type Fn = (...args: any[]) => Promise<any[]>
+type Fn = (...args: unknown[]) => Promise<any[]>
 
 const sortedPromise =
   (fn: Fn) =>
-  async (...args: any[]) => {
+  async (...args: unknown[]) => {
     const result = await fn(...args)
     return result.sort()
   }
@@ -421,7 +424,7 @@ describe('Path Resolve', () => {
     })
 
     it('handles single string result', () => {
-      mockWhichRealSync.mockReturnValue('/usr/local/bin/npm' as any)
+      mockWhichRealSync.mockReturnValue('/usr/local/bin/npm' as unknown)
 
       const result = findBinPathDetailsSync('npm')
 

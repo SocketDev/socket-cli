@@ -187,7 +187,7 @@ describe('socket-package-alert', () => {
 
     it('returns 4 for unknown severity', () => {
       const alert = {
-        raw: { severity: 'unknown' as any },
+        raw: { severity: 'unknown' as unknown },
       } as SocketPackageAlert
       expect(getAlertSeverityOrder(alert)).toBe(4)
     })
@@ -347,7 +347,7 @@ describe('socket-package-alert', () => {
         alerts: [],
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap)
 
       expect(result.size).toBe(0)
     })
@@ -360,7 +360,7 @@ describe('socket-package-alert', () => {
         alerts: [{ type: 'cve', severity: 'high' }],
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap)
 
       expect(result.size).toBe(0)
     })
@@ -373,7 +373,7 @@ describe('socket-package-alert', () => {
         alerts: [{ type: 'cve', severity: 'high' }],
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap)
 
       expect(result.size).toBe(0)
     })
@@ -387,7 +387,7 @@ describe('socket-package-alert', () => {
         version: '1.0.0',
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap)
 
       expect(result.size).toBe(1)
       const alerts = result.get('pkg:npm/test-package@1.0.0')
@@ -404,7 +404,7 @@ describe('socket-package-alert', () => {
         version: '1.0.0',
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap)
 
       expect(result.size).toBe(1)
       const alerts = result.get('pkg:npm/test-package@1.0.0')
@@ -420,7 +420,7 @@ describe('socket-package-alert', () => {
         version: '1.0.0',
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap)
 
       expect(result.size).toBe(0)
     })
@@ -434,12 +434,12 @@ describe('socket-package-alert', () => {
         version: '1.0.0',
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap, {
         socketYml: {
           issueRules: {
             criticalCVE: true,
           },
-        } as any,
+        } as unknown,
       })
 
       expect(result.size).toBe(1)
@@ -454,12 +454,12 @@ describe('socket-package-alert', () => {
         version: '1.0.0',
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap, {
         socketYml: {
           issueRules: {
             criticalCVE: false,
           },
-        } as any,
+        } as unknown,
       })
 
       expect(result.size).toBe(0)
@@ -475,7 +475,7 @@ describe('socket-package-alert', () => {
         version: '1.0.0',
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap)
 
       expect(result.has('pkg:npm/@scope/package@1.0.0')).toBe(true)
     })
@@ -494,7 +494,7 @@ describe('socket-package-alert', () => {
         version: '1.0.0',
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap)
 
       const alerts = result.get('pkg:npm/test-package@1.0.0')
       expect(alerts?.[0]?.fixable).toBe(true)
@@ -509,7 +509,7 @@ describe('socket-package-alert', () => {
         version: '1.0.0',
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap)
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap)
 
       const alerts = result.get('pkg:npm/test-package@1.0.0')
       expect(alerts?.[0]?.upgradable).toBe(true)
@@ -524,7 +524,7 @@ describe('socket-package-alert', () => {
         version: '1.0.0',
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap, {
         overrides: { 'test-package': '2.0.0' },
       })
 
@@ -558,7 +558,7 @@ describe('socket-package-alert', () => {
         version: '1.0.0',
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap, {
         consolidate: true,
       })
 
@@ -583,7 +583,7 @@ describe('socket-package-alert', () => {
         version: '1.0.0',
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap, {
         consolidate: true,
       })
 
@@ -614,7 +614,7 @@ describe('socket-package-alert', () => {
         version: '2.0.0',
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap, {
         consolidate: true,
       })
 
@@ -639,7 +639,7 @@ describe('socket-package-alert', () => {
         version: 'not-a-semver',
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap, {
         consolidate: true,
       })
 
@@ -668,7 +668,7 @@ describe('socket-package-alert', () => {
         version: '1.0.0',
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap, {
         consolidate: false,
       })
 
@@ -692,7 +692,7 @@ describe('socket-package-alert', () => {
       const artifact = {
         alerts: [
           createMockAlert({
-            fix: { type: 'someUnknownFixType' as any },
+            fix: { type: 'someUnknownFixType' as unknown },
             key: 'unknown-fix',
             props: {},
           }),
@@ -702,7 +702,7 @@ describe('socket-package-alert', () => {
         version: '1.0.0',
       }
 
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap, {
         consolidate: true,
       })
 
@@ -721,7 +721,7 @@ describe('socket-package-alert', () => {
       }
 
       // Only blocked=true in filter, so low severity warn should not match.
-      const result = await addArtifactToAlertsMap(artifact as any, alertsMap, {
+      const result = await addArtifactToAlertsMap(artifact as unknown, alertsMap, {
         filter: { blocked: true, critical: false, cve: false },
       })
 
@@ -1164,7 +1164,7 @@ describe('socket-package-alert', () => {
       alertsMap.set('pkg:npm/test@1.0.0', [
         createMockSocketPackageAlert({
           blocked: true,
-          raw: createMockAlert({ key: 'no-sev', severity: undefined as any }),
+          raw: createMockAlert({ key: 'no-sev', severity: undefined as unknown }),
         }),
       ])
 

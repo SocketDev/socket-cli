@@ -161,12 +161,12 @@ describe('TelemetryService', () => {
         context: {},
       })
       // Mutate the in-memory config to disable telemetry, then flush.
-      ;(client as any).config = { telemetry: { enabled: false } }
+      ;(client as unknown).config = { telemetry: { enabled: false } }
       mockPostOrgTelemetry.mockClear()
       await client.flush()
       // Queue should be drained without a network call.
       expect(mockPostOrgTelemetry).not.toHaveBeenCalled()
-      expect((client as any).eventQueue).toEqual([])
+      expect((client as unknown).eventQueue).toEqual([])
     })
 
     it('returns early on track() after destroy on same instance (lines 284-285)', async () => {

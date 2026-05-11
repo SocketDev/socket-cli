@@ -242,7 +242,7 @@ describe('telemetry/integration', () => {
       // Error with no stack property — sanitizeErrorAttribute hits the
       // falsy-input early return on line 304-305.
       const error = new Error('Test error')
-      delete (error as any).stack
+      delete (error as unknown).stack
       await trackEvent(
         'test_event',
         {

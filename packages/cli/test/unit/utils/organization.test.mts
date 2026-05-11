@@ -31,7 +31,7 @@ describe('organization utilities', () => {
       name: 'Enterprise Plus',
       plan: 'enterprise-plus',
     },
-  ] as any
+  ] as unknown
 
   describe('getEnterpriseOrgs', () => {
     it('returns only enterprise plan organizations', () => {
@@ -48,7 +48,7 @@ describe('organization utilities', () => {
       const nonEnterpriseOrgs = [
         { slug: 'free-org', plan: 'free' },
         { slug: 'pro-org', plan: 'pro' },
-      ] as any
+      ] as unknown
 
       const result = getEnterpriseOrgs(nonEnterpriseOrgs)
 
@@ -81,7 +81,7 @@ describe('organization utilities', () => {
     })
 
     it('handles single organization', () => {
-      const result = getOrgSlugs([{ slug: 'single-org', plan: 'pro' }] as any)
+      const result = getOrgSlugs([{ slug: 'single-org', plan: 'pro' }] as unknown)
 
       expect(result).toEqual(['single-org'])
     })
@@ -98,7 +98,7 @@ describe('organization utilities', () => {
       const nonEnterpriseOrgs = [
         { slug: 'free-org', plan: 'free' },
         { slug: 'pro-org', plan: 'pro' },
-      ] as any
+      ] as unknown
 
       const result = hasEnterpriseOrgPlan(nonEnterpriseOrgs)
 
@@ -114,7 +114,7 @@ describe('organization utilities', () => {
     it('matches partial enterprise plan names', () => {
       const orgsWithEnterprisePlus = [
         { slug: 'org1', plan: 'enterprise-plus' },
-      ] as any
+      ] as unknown
 
       const result = hasEnterpriseOrgPlan(orgsWithEnterprisePlus)
 

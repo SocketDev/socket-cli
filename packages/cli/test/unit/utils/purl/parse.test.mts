@@ -136,7 +136,7 @@ describe('purl utilities', () => {
 
     it('falls back to opts.name when name argument is not a string', () => {
       // Exercises the typeof name !== 'string' branch — opts.name resolves it.
-      const purl = createPurlObject('npm', undefined as any, {
+      const purl = createPurlObject('npm', undefined as unknown, {
         name: 'fallback-name',
         version: '1.0.0',
       })
@@ -168,7 +168,7 @@ describe('purl utilities', () => {
     })
 
     it('handles SocketArtifact object', () => {
-      const artifact = { type: 'npm', name: 'package' } as any
+      const artifact = { type: 'npm', name: 'package' } as unknown
       const purl = getPurlObject(artifact)
       expect(purl).toBe(artifact)
     })

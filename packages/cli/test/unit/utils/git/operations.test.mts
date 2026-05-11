@@ -138,7 +138,7 @@ describe('git utilities', () => {
         status: 0,
         stdout: 'main\n',
         stderr: '',
-      } as any)
+      } as unknown)
 
       const result = await getBaseBranch('/test/dir')
       expect(result).toBe('main')
@@ -149,7 +149,7 @@ describe('git utilities', () => {
       setEnv('GITHUB_REF_TYPE', '')
       setEnv('GITHUB_REF_NAME', '')
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockResolvedValueOnce(undefined as any)
+      spawn.mockResolvedValueOnce(undefined as unknown)
 
       const result = await getBaseBranch('/test/dir')
       expect(result).toBe('main')
@@ -165,7 +165,7 @@ describe('git utilities', () => {
         stdout:
           '* remote origin\n  Fetch URL: git@github.com:o/r.git\n  HEAD branch: develop\n  Remote branches:\n',
         stderr: '',
-      } as any)
+      } as unknown)
 
       const result = await getBaseBranch('/test/dir')
       expect(result).toBe('develop')
@@ -179,7 +179,7 @@ describe('git utilities', () => {
         status: 0,
         stdout: 'feature-branch\n',
         stderr: '',
-      } as any)
+      } as unknown)
 
       const result = await gitBranch()
       expect(result).toBe('feature-branch\n')
@@ -198,7 +198,7 @@ describe('git utilities', () => {
           status: 0,
           stdout: 'abc1234\n',
           stderr: '',
-        } as any)
+        } as unknown)
 
       const result = await gitBranch()
       expect(result).toBe('abc1234\n')
@@ -220,7 +220,7 @@ describe('git utilities', () => {
   describe('gitCommit', () => {
     it('creates a commit with message and files', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
 
       const result = await gitCommit(
         'Test commit',
@@ -242,7 +242,7 @@ describe('git utilities', () => {
 
     it('handles commit without files', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
 
       const result = await gitCommit('Test commit', [], { cwd: '/test/dir' })
       expect(result).toBe(false)
@@ -257,11 +257,11 @@ describe('git utilities', () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
       // gitEnsureIdentity calls spawn first - allow those to succeed.
       // Then the git add call should fail.
-      spawn.mockImplementation((_cmd: any, args: any) => {
+      spawn.mockImplementation((_cmd: unknown, args: unknown) => {
         if (args?.includes('add')) {
-          return Promise.reject(new Error('add failed')) as any
+          return Promise.reject(new Error('add failed')) as unknown
         }
-        return Promise.resolve({ status: 0, stdout: '', stderr: '' }) as any
+        return Promise.resolve({ status: 0, stdout: '', stderr: '' }) as unknown
       })
 
       const result = await gitCommit('Test commit', ['file.txt'], {
@@ -273,11 +273,11 @@ describe('git utilities', () => {
     it('returns false when git commit rejects (lines 355-358)', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
       // Allow add to succeed, fail on commit.
-      spawn.mockImplementation((_cmd: any, args: any) => {
+      spawn.mockImplementation((_cmd: unknown, args: unknown) => {
         if (args?.[0] === 'commit') {
-          return Promise.reject(new Error('commit failed')) as any
+          return Promise.reject(new Error('commit failed')) as unknown
         }
-        return Promise.resolve({ status: 0, stdout: '', stderr: '' }) as any
+        return Promise.resolve({ status: 0, stdout: '', stderr: '' }) as unknown
       })
 
       const result = await gitCommit('Test commit', ['file.txt'], {
@@ -290,7 +290,7 @@ describe('git utilities', () => {
   describe('gitCheckoutBranch', () => {
     it('checks out a branch', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
 
       const result = await gitCheckoutBranch('main')
       expect(result).toBe(true)
@@ -315,7 +315,7 @@ describe('git utilities', () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
       spawn
         .mockRejectedValueOnce(new Error('Branch does not exist')) // gitLocalBranchExists fails.
-        .mockResolvedValueOnce({ status: 0, stdout: '', stderr: '' } as any) // git branch succeeds.
+        .mockResolvedValueOnce({ status: 0, stdout: '', stderr: '' } as unknown) // git branch succeeds.
 
       const result = await gitCreateBranch('new-feature')
       expect(result).toBe(true)
@@ -334,7 +334,7 @@ describe('git utilities', () => {
     it('returns true early when branch already exists (line 272)', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
       // gitLocalBranchExists resolves successfully (branch exists).
-      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
 
       const result = await gitCreateBranch('existing-branch')
       expect(result).toBe(true)
@@ -360,7 +360,7 @@ describe('git utilities', () => {
   describe('gitDeleteBranch', () => {
     it('deletes a local branch', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
 
       const result = await gitDeleteBranch('old-feature')
       expect(result).toBe(true)
@@ -383,7 +383,7 @@ describe('git utilities', () => {
   describe('gitPushBranch', () => {
     it('pushes a branch to remote', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
 
       const result = await gitPushBranch('feature')
       expect(result).toBe(true)
@@ -406,7 +406,7 @@ describe('git utilities', () => {
       const { spawn, isSpawnError } = vi.mocked(
         await import('@socketsecurity/lib/spawn'),
       )
-      const err: any = new Error('token denied')
+      const err: unknown = new Error('token denied')
       err.isSpawnError = true
       err.code = 128
       isSpawnError.mockReturnValueOnce(true)
@@ -420,7 +420,7 @@ describe('git utilities', () => {
   describe('gitCleanFdx', () => {
     it('cleans untracked files', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
 
       const result = await gitCleanFdx()
       expect(result).toBe(true)
@@ -443,7 +443,7 @@ describe('git utilities', () => {
   describe('gitResetHard', () => {
     it('resets to a specific ref', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
 
       const result = await gitResetHard('origin/main')
       expect(result).toBe(true)
@@ -466,7 +466,7 @@ describe('git utilities', () => {
   describe('gitEnsureIdentity', () => {
     it('sets git user name and email', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
 
       await gitEnsureIdentity('Test User', 'test@example.com')
       expect(spawn).toHaveBeenCalledWith(
@@ -485,11 +485,11 @@ describe('git utilities', () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
       // Reject `git config --get` so configValue stays undefined != desired value;
       // then `git config <prop> <value>` resolves successfully.
-      spawn.mockImplementation((_cmd: any, args: any) => {
+      spawn.mockImplementation((_cmd: unknown, args: unknown) => {
         if (args?.[1] === '--get') {
-          return Promise.reject(new Error('not set')) as any
+          return Promise.reject(new Error('not set')) as unknown
         }
-        return Promise.resolve({ status: 0, stdout: '', stderr: '' }) as any
+        return Promise.resolve({ status: 0, stdout: '', stderr: '' }) as unknown
       })
 
       await gitEnsureIdentity('Test User', 'test@example.com')
@@ -509,11 +509,11 @@ describe('git utilities', () => {
     it('logs failure when config set rejects (lines 447-450)', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
       // Reject get; reject set.
-      spawn.mockImplementation((_cmd: any, args: any) => {
+      spawn.mockImplementation((_cmd: unknown, args: unknown) => {
         if (args?.[1] === '--get') {
-          return Promise.reject(new Error('not set')) as any
+          return Promise.reject(new Error('not set')) as unknown
         }
-        return Promise.reject(new Error('config set failed')) as any
+        return Promise.reject(new Error('config set failed')) as unknown
       })
 
       // No throw expected; promises are awaited via Promise.allSettled.
@@ -530,7 +530,7 @@ describe('git utilities', () => {
         status: 0,
         stdout: 'git@github.com:socketdev/socket-cli.git',
         stderr: '',
-      } as any)
+      } as unknown)
 
       const result = await getRepoInfo('/test/dir')
       expect(result).toEqual({ owner: 'socketdev', repo: 'socket-cli' })
@@ -546,7 +546,7 @@ describe('git utilities', () => {
 
     it('returns undefined when spawn returns null', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockResolvedValue(undefined as any)
+      spawn.mockResolvedValue(undefined as unknown)
 
       const result = await getRepoInfo('/test/dir')
       expect(result).toBeUndefined()
@@ -561,7 +561,7 @@ describe('git utilities', () => {
         status: 0,
         stdout: 'some-completely-unrecognised-url-format',
         stderr: '',
-      } as any)
+      } as unknown)
 
       const result = await getRepoInfo('/test/dir')
       expect(result).toBeUndefined()
@@ -575,7 +575,7 @@ describe('git utilities', () => {
         status: 0,
         stdout: 'git@github.com:socketdev/socket-cli.git',
         stderr: '',
-      } as any)
+      } as unknown)
 
       const result = await getRepoName('/test/dir')
       expect(result).toBe('socket-cli')
@@ -598,7 +598,7 @@ describe('git utilities', () => {
         status: 0,
         stdout: 'git@github.com:socketdev/socket-cli.git',
         stderr: '',
-      } as any)
+      } as unknown)
 
       const result = await getRepoOwner('/test/dir')
       expect(result).toBe('socketdev')
@@ -616,7 +616,7 @@ describe('git utilities', () => {
   describe('detectDefaultBranch', () => {
     it('returns main when it exists locally', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
 
       const result = await detectDefaultBranch('/test/dir')
       expect(result).toBe('main')
@@ -636,7 +636,7 @@ describe('git utilities', () => {
           status: 0,
           stdout: 'refs/heads/main',
           stderr: '',
-        } as any)
+        } as unknown)
 
       const result = await detectDefaultBranch('/test/dir')
       expect(result).toBe('main')
@@ -655,7 +655,7 @@ describe('git utilities', () => {
   describe('gitDeleteRemoteBranch', () => {
     it('deletes a remote branch', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
 
       const result = await gitDeleteRemoteBranch('old-feature')
       expect(result).toBe(true)
@@ -678,7 +678,7 @@ describe('git utilities', () => {
   describe('gitLocalBranchExists', () => {
     it('returns true when branch exists', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
 
       const result = await gitLocalBranchExists('main')
       expect(result).toBe(true)
@@ -705,7 +705,7 @@ describe('git utilities', () => {
         status: 0,
         stdout: 'abc123\trefs/heads/main',
         stderr: '',
-      } as any)
+      } as unknown)
 
       const result = await gitRemoteBranchExists('main')
       expect(result).toBe(true)
@@ -722,7 +722,7 @@ describe('git utilities', () => {
         status: 0,
         stdout: '',
         stderr: '',
-      } as any)
+      } as unknown)
 
       const result = await gitRemoteBranchExists('nonexistent')
       expect(result).toBe(false)
@@ -740,7 +740,7 @@ describe('git utilities', () => {
   describe('gitResetAndClean', () => {
     it('calls gitResetHard and gitCleanFdx', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
 
       await gitResetAndClean('main', '/test/dir')
       expect(spawn).toHaveBeenCalledWith(
@@ -763,7 +763,7 @@ describe('git utilities', () => {
         status: 0,
         stdout: 'file1.txt\nfile2.txt\n',
         stderr: '',
-      } as any)
+      } as unknown)
 
       const result = await gitUnstagedModifiedFiles('/test/dir')
       expect(result.ok).toBe(true)

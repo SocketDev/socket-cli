@@ -53,7 +53,7 @@ describe('output-formatting utilities', () => {
             permissions: ['read', 'write', 'admin'],
           },
         },
-      } as any)
+      } as unknown)
 
       const result = getFlagApiRequirementsOutput('socket scan create')
       expect(result).toContain('- Quota: 10 units')
@@ -72,7 +72,7 @@ describe('output-formatting utilities', () => {
             quota: 1,
           },
         },
-      } as any)
+      } as unknown)
 
       const result = getFlagApiRequirementsOutput('test')
       expect(result).toBe('- Quota: 1 unit')
@@ -90,7 +90,7 @@ describe('output-formatting utilities', () => {
             permissions: ['execute'],
           },
         },
-      } as any)
+      } as unknown)
 
       const result = getFlagApiRequirementsOutput('test')
       expect(result).toBe('- Permissions: execute')
@@ -104,7 +104,7 @@ describe('output-formatting utilities', () => {
       getRequirementsKey.mockReturnValue('missing')
       getRequirements.mockReturnValue({
         api: {},
-      } as any)
+      } as unknown)
 
       const result = getFlagApiRequirementsOutput('missing')
       expect(result).toBe('(none)')
@@ -122,7 +122,7 @@ describe('output-formatting utilities', () => {
             quota: 5,
           },
         },
-      } as any)
+      } as unknown)
 
       const result = getFlagApiRequirementsOutput('test', { indent: 2 })
       expect(result).toBe('- Quota: 5 units')
@@ -229,7 +229,7 @@ describe('output-formatting utilities', () => {
 
     it('handles string descriptions', () => {
       const list = {
-        simple: 'Simple description' as any,
+        simple: 'Simple description' as unknown,
         object: { description: 'Object description' },
       }
 
@@ -258,7 +258,7 @@ describe('output-formatting utilities', () => {
     it('handles empty descriptions', () => {
       const list = {
         empty: { description: '' },
-        noDesc: {} as any,
+        noDesc: {} as unknown,
       }
 
       const result = getHelpListOutput(list)

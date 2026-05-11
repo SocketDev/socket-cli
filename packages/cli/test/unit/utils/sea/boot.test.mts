@@ -73,7 +73,7 @@ describe('sea/boot', () => {
       vi.mocked(isSeaBinary).mockReturnValue(true)
       const originalChannel = process.channel
       Object.defineProperty(process, 'channel', {
-        value: {} as any,
+        value: {} as unknown,
         writable: true,
         configurable: true,
       })
@@ -212,12 +212,12 @@ describe('sea/boot', () => {
       const originalOff = process.off
 
       Object.defineProperty(process, 'channel', {
-        value: {} as any,
+        value: {} as unknown,
         writable: true,
         configurable: true,
       })
-      ;(process as any).on = fakeOn
-      ;(process as any).off = fakeOff
+      ;(process as unknown).on = fakeOn
+      ;(process as unknown).off = fakeOff
 
       try {
         const { waitForBootstrapHandshake } =
@@ -239,8 +239,8 @@ describe('sea/boot', () => {
           writable: true,
           configurable: true,
         })
-        ;(process as any).on = originalOn
-        ;(process as any).off = originalOff
+        ;(process as unknown).on = originalOn
+        ;(process as unknown).off = originalOff
       }
     })
 
@@ -252,12 +252,12 @@ describe('sea/boot', () => {
       const originalOff = process.off
 
       Object.defineProperty(process, 'channel', {
-        value: {} as any,
+        value: {} as unknown,
         writable: true,
         configurable: true,
       })
-      ;(process as any).on = fakeOn
-      ;(process as any).off = fakeOff
+      ;(process as unknown).on = fakeOn
+      ;(process as unknown).off = fakeOff
 
       try {
         const { waitForBootstrapHandshake } =
@@ -269,8 +269,8 @@ describe('sea/boot', () => {
           writable: true,
           configurable: true,
         })
-        ;(process as any).on = originalOn
-        ;(process as any).off = originalOff
+        ;(process as unknown).on = originalOn
+        ;(process as unknown).off = originalOff
       }
     })
 
@@ -285,12 +285,12 @@ describe('sea/boot', () => {
       const originalOff = process.off
 
       Object.defineProperty(process, 'channel', {
-        value: {} as any,
+        value: {} as unknown,
         writable: true,
         configurable: true,
       })
-      ;(process as any).on = fakeOn
-      ;(process as any).off = fakeOff
+      ;(process as unknown).on = fakeOn
+      ;(process as unknown).off = fakeOff
 
       try {
         const { waitForBootstrapHandshake } =
@@ -312,8 +312,8 @@ describe('sea/boot', () => {
           writable: true,
           configurable: true,
         })
-        ;(process as any).on = originalOn
-        ;(process as any).off = originalOff
+        ;(process as unknown).on = originalOn
+        ;(process as unknown).off = originalOff
       }
     })
   })

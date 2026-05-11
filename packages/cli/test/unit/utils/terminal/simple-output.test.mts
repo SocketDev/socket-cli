@@ -207,7 +207,7 @@ describe('simple-output', () => {
       it('logs default error message when no message provided', () => {
         const result: CResult<unknown> = {
           ok: false,
-        } as any
+        } as unknown
 
         simpleOutput(result, 'text', {})
 

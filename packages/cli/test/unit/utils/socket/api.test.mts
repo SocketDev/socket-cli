@@ -215,7 +215,7 @@ describe('api utilities', () => {
       const mockApiPromise = Promise.resolve({
         success: true,
         data: { result: 'test' },
-      } as any)
+      } as unknown)
 
       const result = await handleApiCall(mockApiPromise)
       expect(result.ok).toBe(true)
@@ -228,7 +228,7 @@ describe('api utilities', () => {
       const mockApiPromise = Promise.resolve({
         success: false,
         error: { message: 'API error', statusCode: 400 },
-      } as any)
+      } as unknown)
 
       const result = await handleApiCall(mockApiPromise)
       expect(result.ok).toBe(false)
@@ -251,7 +251,7 @@ describe('api utilities', () => {
       const mockApiPromise = Promise.resolve({
         success: true,
         data: { result: 'test' },
-      } as any)
+      } as unknown)
 
       const mockSpinner = {
         start: mockStart,
@@ -260,7 +260,7 @@ describe('api utilities', () => {
         fail: mockFail,
       }
 
-      await handleApiCall(mockApiPromise, { spinner: mockSpinner as any })
+      await handleApiCall(mockApiPromise, { spinner: mockSpinner as unknown })
       expect(mockSpinner.start).toHaveBeenCalled()
       expect(mockSpinner.stop).toHaveBeenCalled()
     })
@@ -270,7 +270,7 @@ describe('api utilities', () => {
       const mockApiPromise = Promise.resolve({
         success: true,
         data: { x: 1 },
-      } as any)
+      } as unknown)
       const mockSpinner = {
         start: mockStart,
         stop: mockStop,
@@ -279,7 +279,7 @@ describe('api utilities', () => {
       }
       await handleApiCall(mockApiPromise, {
         description: 'test data',
-        spinner: mockSpinner as any,
+        spinner: mockSpinner as unknown,
       })
       expect(mockSpinner.start).toHaveBeenCalledWith(
         expect.stringContaining('Requesting test data from API'),
@@ -290,7 +290,7 @@ describe('api utilities', () => {
       const mockApiPromise = Promise.resolve({
         success: true,
         data: { x: 1 },
-      } as any)
+      } as unknown)
       const mockSpinner = {
         start: mockStart,
         stop: mockStop,
@@ -299,7 +299,7 @@ describe('api utilities', () => {
       }
       await handleApiCall(mockApiPromise, {
         description: 'thing',
-        spinner: mockSpinner as any,
+        spinner: mockSpinner as unknown,
       })
       // logger.success was called via the description+spinner branch.
       expect(mockLogger.success).toHaveBeenCalledWith(
@@ -312,7 +312,7 @@ describe('api utilities', () => {
       const mockApiPromise = Promise.resolve({
         success: false,
         error: { message: 'fail', statusCode: 500 },
-      } as any)
+      } as unknown)
       const mockSpinner = {
         start: mockStart,
         stop: mockStop,
@@ -321,7 +321,7 @@ describe('api utilities', () => {
       }
       await handleApiCall(mockApiPromise, {
         description: 'thing',
-        spinner: mockSpinner as any,
+        spinner: mockSpinner as unknown,
       })
       // logger.info was called via the description+spinner branch on
       // non-thrown failure.
@@ -346,7 +346,7 @@ describe('api utilities', () => {
         success: false,
         status: 403,
         error: { message: 'Forbidden', statusCode: 403 },
-      } as any)
+      } as unknown)
       await handleApiCall(mockApiPromise, {
         commandPath: 'socket fix',
       })
@@ -361,7 +361,7 @@ describe('api utilities', () => {
       const mockApiPromise = Promise.resolve({
         success: true,
         data: { result: 'test' },
-      } as any)
+      } as unknown)
 
       const mockSpinner = {
         start: mockStart,
@@ -371,7 +371,7 @@ describe('api utilities', () => {
       }
 
       await handleApiCallNoSpinner(mockApiPromise, {
-        spinner: mockSpinner as any,
+        spinner: mockSpinner as unknown,
       })
       expect(mockSpinner.start).not.toHaveBeenCalled()
     })
@@ -380,7 +380,7 @@ describe('api utilities', () => {
       const mockApiPromise = Promise.resolve({
         success: true,
         data: { result: 'test' },
-      } as any)
+      } as unknown)
 
       const result = await handleApiCallNoSpinner(mockApiPromise)
       expect(result.ok).toBe(true)
@@ -615,7 +615,7 @@ describe('api utilities', () => {
         createHttpResponse({ body: 'not valid json' }),
       )
 
-      const result = await queryApiSafeJson<any>('test/path')
+      const result = await queryApiSafeJson<unknown>('test/path')
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
@@ -626,7 +626,7 @@ describe('api utilities', () => {
     it('propagates authentication errors', async () => {
       mockGetDefaultApiToken.mockReturnValue(undefined)
 
-      const result = await queryApiSafeJson<any>('test/path')
+      const result = await queryApiSafeJson<unknown>('test/path')
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
@@ -643,7 +643,7 @@ describe('api utilities', () => {
     it('returns error when not authenticated', async () => {
       mockGetDefaultApiToken.mockReturnValue(undefined)
 
-      const result = await sendApiRequest<any>('test/path', { method: 'POST' })
+      const result = await sendApiRequest<unknown>('test/path', { method: 'POST' })
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
@@ -704,7 +704,7 @@ describe('api utilities', () => {
         }),
       )
 
-      const result = await sendApiRequest<any>('test/path', { method: 'POST' })
+      const result = await sendApiRequest<unknown>('test/path', { method: 'POST' })
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
@@ -715,7 +715,7 @@ describe('api utilities', () => {
     it('returns error for network failures', async () => {
       mockHttpRequest.mockRejectedValueOnce(new Error('Connection refused'))
 
-      const result = await sendApiRequest<any>('test/path', {
+      const result = await sendApiRequest<unknown>('test/path', {
         method: 'POST',
         description: 'test operation',
       })
@@ -734,7 +734,7 @@ describe('api utilities', () => {
         createHttpResponse({ body: 'not-json' }),
       )
 
-      const result = await sendApiRequest<any>('test/path', { method: 'POST' })
+      const result = await sendApiRequest<unknown>('test/path', { method: 'POST' })
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
@@ -752,7 +752,7 @@ describe('api utilities', () => {
         }),
       )
 
-      await sendApiRequest<any>('test/path', {
+      await sendApiRequest<unknown>('test/path', {
         method: 'POST',
         commandPath: 'socket fix',
       })
@@ -817,7 +817,7 @@ describe('api utilities', () => {
       const mockApiPromise = Promise.reject('')
 
       const result = await handleApiCallNoSpinner(
-        mockApiPromise as any,
+        mockApiPromise as unknown,
         'empty err',
       )
 

@@ -120,7 +120,7 @@ describe('determineOrgSlug', () => {
 
       const result = await determineOrgSlug('', false, false)
 
-      expect(result).toEqual(['12345', 12345 as any])
+      expect(result).toEqual(['12345', 12345 as unknown])
     })
   })
 
@@ -200,7 +200,7 @@ describe('determineOrgSlug', () => {
 
     it('handles undefined suggestion from suggestOrgSlug', async () => {
       overrideCachedConfig('{}')
-      mockSuggestOrgSlug.mockResolvedValue(undefined as any)
+      mockSuggestOrgSlug.mockResolvedValue(undefined as unknown)
 
       const result = await determineOrgSlug('', true, false)
 
@@ -226,7 +226,7 @@ describe('determineOrgSlug', () => {
     it('handles boolean values for org flag', async () => {
       overrideCachedConfig('{"defaultOrg": "default"}')
 
-      const result = await determineOrgSlug(true as any, false, false)
+      const result = await determineOrgSlug(true as unknown, false, false)
 
       expect(result).toEqual(['true', 'default'])
     })
@@ -234,7 +234,7 @@ describe('determineOrgSlug', () => {
     it('handles null values for org flag', async () => {
       overrideCachedConfig('{"defaultOrg": "default"}')
 
-      const result = await determineOrgSlug(undefined as any, false, false)
+      const result = await determineOrgSlug(undefined as unknown, false, false)
 
       expect(result).toEqual(['default', 'default'])
     })
@@ -242,7 +242,7 @@ describe('determineOrgSlug', () => {
     it('handles undefined values for org flag', async () => {
       overrideCachedConfig('{"defaultOrg": "default"}')
 
-      const result = await determineOrgSlug(undefined as any, false, false)
+      const result = await determineOrgSlug(undefined as unknown, false, false)
 
       expect(result).toEqual(['default', 'default'])
     })
@@ -250,7 +250,7 @@ describe('determineOrgSlug', () => {
     it('handles numeric values for org flag', async () => {
       overrideCachedConfig('{}')
 
-      const result = await determineOrgSlug(42 as any, false, false)
+      const result = await determineOrgSlug(42 as unknown, false, false)
 
       expect(result).toEqual(['42', undefined])
     })

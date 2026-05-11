@@ -56,7 +56,7 @@ describe('npm-spec utilities', () => {
   describe('safeNpa', () => {
     it('returns parsed result when npm-package-arg succeeds', () => {
       const mockResult = { name: 'lodash', type: 'tag', fetchSpec: '4.17.21' }
-      mockNpmPackageArg.mockReturnValue(mockResult as any)
+      mockNpmPackageArg.mockReturnValue(mockResult as unknown)
 
       const result = safeNpa('lodash@4.17.21')
 
@@ -76,7 +76,7 @@ describe('npm-spec utilities', () => {
 
     it('passes all arguments to npm-package-arg', () => {
       const mockResult = { name: 'lodash' }
-      mockNpmPackageArg.mockReturnValue(mockResult as any)
+      mockNpmPackageArg.mockReturnValue(mockResult as unknown)
 
       safeNpa('lodash', '/some/dir')
 
@@ -85,7 +85,7 @@ describe('npm-spec utilities', () => {
 
     it('handles empty arguments', () => {
       const mockResult = { name: '' }
-      mockNpmPackageArg.mockReturnValue(mockResult as any)
+      mockNpmPackageArg.mockReturnValue(mockResult as unknown)
 
       const result = safeNpa('')
 
@@ -100,7 +100,7 @@ describe('npm-spec utilities', () => {
         type: 'tag',
         fetchSpec: '*',
         rawSpec: '',
-      } as any)
+      } as unknown)
 
       const result = safeParseNpmSpec('lodash')
 
@@ -116,7 +116,7 @@ describe('npm-spec utilities', () => {
         type: 'version',
         fetchSpec: '4.17.21',
         rawSpec: '4.17.21',
-      } as any)
+      } as unknown)
 
       const result = safeParseNpmSpec('lodash@4.17.21')
 
@@ -132,7 +132,7 @@ describe('npm-spec utilities', () => {
         type: 'range',
         fetchSpec: '^4.0.0',
         rawSpec: '^4.0.0',
-      } as any)
+      } as unknown)
 
       const result = safeParseNpmSpec('lodash@^4.0.0')
 
@@ -148,7 +148,7 @@ describe('npm-spec utilities', () => {
         type: 'version',
         fetchSpec: '20.0.0',
         rawSpec: '20.0.0',
-      } as any)
+      } as unknown)
 
       const result = safeParseNpmSpec('@types/node@20.0.0')
 
@@ -164,7 +164,7 @@ describe('npm-spec utilities', () => {
         type: 'tag',
         fetchSpec: 'latest',
         rawSpec: 'latest',
-      } as any)
+      } as unknown)
 
       const result = safeParseNpmSpec('lodash@latest')
 
@@ -180,7 +180,7 @@ describe('npm-spec utilities', () => {
         type: 'git',
         fetchSpec: 'git+https://github.com/user/repo.git',
         rawSpec: 'git+https://github.com/user/repo.git',
-      } as any)
+      } as unknown)
 
       const result = safeParseNpmSpec('git+https://github.com/user/repo.git')
 
@@ -196,7 +196,7 @@ describe('npm-spec utilities', () => {
         type: 'file',
         fetchSpec: '../local-package',
         rawSpec: '../local-package',
-      } as any)
+      } as unknown)
 
       const result = safeParseNpmSpec('file:../local-package')
 
@@ -212,7 +212,7 @@ describe('npm-spec utilities', () => {
         type: 'remote',
         fetchSpec: 'https://example.com/package.tgz',
         rawSpec: 'https://example.com/package.tgz',
-      } as any)
+      } as unknown)
 
       const result = safeParseNpmSpec('https://example.com/package.tgz')
 
@@ -278,7 +278,7 @@ describe('npm-spec utilities', () => {
         type: 'range',
         fetchSpec: '*',
         rawSpec: '',
-      } as any)
+      } as unknown)
 
       const result = safeParseNpmSpec('lodash')
 
@@ -294,7 +294,7 @@ describe('npm-spec utilities', () => {
         type: 'range',
         fetchSpec: '*',
         rawSpec: '^4.0.0',
-      } as any)
+      } as unknown)
 
       const result = safeParseNpmSpec('lodash@^4.0.0')
 
@@ -310,7 +310,7 @@ describe('npm-spec utilities', () => {
         type: 'tag',
         fetchSpec: 'latest',
         rawSpec: 'lodash',
-      } as any)
+      } as unknown)
 
       const result = safeParseNpmSpec('lodash@latest')
 
@@ -328,12 +328,12 @@ describe('npm-spec utilities', () => {
         type: 'version',
         fetchSpec: '4.17.21',
         rawSpec: '4.17.21',
-      } as any)
+      } as unknown)
     })
 
     it('converts package spec to PURL', () => {
       const mockPurl = { toString: () => 'pkg:npm/lodash@4.17.21' }
-      mockCreatePurlObject.mockReturnValue(mockPurl as any)
+      mockCreatePurlObject.mockReturnValue(mockPurl as unknown)
 
       const result = safeNpmSpecToPurl('lodash@4.17.21')
 
@@ -352,10 +352,10 @@ describe('npm-spec utilities', () => {
         type: 'tag',
         fetchSpec: '*',
         rawSpec: '',
-      } as any)
+      } as unknown)
 
       const mockPurl = { toString: () => 'pkg:npm/lodash' }
-      mockCreatePurlObject.mockReturnValue(mockPurl as any)
+      mockCreatePurlObject.mockReturnValue(mockPurl as unknown)
 
       const result = safeNpmSpecToPurl('lodash')
 
@@ -374,10 +374,10 @@ describe('npm-spec utilities', () => {
         type: 'version',
         fetchSpec: '20.0.0',
         rawSpec: '20.0.0',
-      } as any)
+      } as unknown)
 
       const mockPurl = { toString: () => 'pkg:npm/@types/node@20.0.0' }
-      mockCreatePurlObject.mockReturnValue(mockPurl as any)
+      mockCreatePurlObject.mockReturnValue(mockPurl as unknown)
 
       const result = safeNpmSpecToPurl('@types/node@20.0.0')
 
@@ -398,7 +398,7 @@ describe('npm-spec utilities', () => {
         type: 'tag',
         fetchSpec: '*',
         rawSpec: '',
-      } as any)
+      } as unknown)
       mockCreatePurlObject.mockReturnValue(undefined)
 
       const result = safeNpmSpecToPurl('lodash')
@@ -427,10 +427,10 @@ describe('npm-spec utilities', () => {
         type: 'range',
         fetchSpec: '>=4.0.0 <5.0.0',
         rawSpec: '>=4.0.0 <5.0.0',
-      } as any)
+      } as unknown)
 
       const mockPurl = { toString: () => 'pkg:npm/lodash@>=4.0.0 <5.0.0' }
-      mockCreatePurlObject.mockReturnValue(mockPurl as any)
+      mockCreatePurlObject.mockReturnValue(mockPurl as unknown)
 
       const result = safeNpmSpecToPurl('lodash@>=4.0.0 <5.0.0')
 
@@ -445,12 +445,12 @@ describe('npm-spec utilities', () => {
         type: 'version',
         fetchSpec: '4.17.21',
         rawSpec: '4.17.21',
-      } as any)
+      } as unknown)
     })
 
     it('returns PURL when conversion succeeds', () => {
       const mockPurl = { toString: () => 'pkg:npm/lodash@4.17.21' }
-      mockCreatePurlObject.mockReturnValue(mockPurl as any)
+      mockCreatePurlObject.mockReturnValue(mockPurl as unknown)
 
       const result = npmSpecToPurl('lodash@4.17.21')
 
@@ -480,7 +480,7 @@ describe('npm-spec utilities', () => {
 
     it('delegates to safeNpmSpecToPurl', () => {
       const mockPurl = { toString: () => 'pkg:npm/test@1.0.0' }
-      mockCreatePurlObject.mockReturnValue(mockPurl as any)
+      mockCreatePurlObject.mockReturnValue(mockPurl as unknown)
 
       const result = npmSpecToPurl('test@1.0.0')
 

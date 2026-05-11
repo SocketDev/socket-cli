@@ -172,7 +172,7 @@ describe('npm-package-arg utilities', () => {
         throw new TypeError('Cannot read property of undefined')
       })
 
-      const result = safeNpa(undefined as any)
+      const result = safeNpa(undefined as unknown)
 
       expect(result).toBeUndefined()
     })
@@ -185,7 +185,7 @@ describe('npm-package-arg utilities', () => {
         throw new TypeError('Cannot read property of null')
       })
 
-      const result = safeNpa(undefined as any)
+      const result = safeNpa(undefined as unknown)
 
       expect(result).toBeUndefined()
     })

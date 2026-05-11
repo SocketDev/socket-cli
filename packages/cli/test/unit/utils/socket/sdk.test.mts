@@ -51,9 +51,9 @@ vi.mock('@socketregistry/is-interactive/index.cjs', () => ({
 // Mock the SocketSdk class.
 class MockSocketSdk {
   apiToken: string
-  options: any
+  options: unknown
 
-  constructor(apiToken: string, options: any) {
+  constructor(apiToken: string, options: unknown) {
     this.apiToken = apiToken
     this.options = options
   }
@@ -65,7 +65,7 @@ class MockSocketSdk {
 const mockSocketSdkConstructor = vi.hoisted(() => vi.fn())
 vi.mock('@socketsecurity/sdk', () => ({
   SocketSdk: class {
-    constructor(apiToken: string, options: any) {
+    constructor(apiToken: string, options: unknown) {
       mockSocketSdkConstructor(apiToken, options)
       return new MockSocketSdk(apiToken, options)
     }

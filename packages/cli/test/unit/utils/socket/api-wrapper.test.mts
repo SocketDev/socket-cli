@@ -63,8 +63,8 @@ describe('apiCall', () => {
     mockSetupSdk.mockResolvedValueOnce({ ok: false, message: 'no token' })
 
     const result = await apiCall(
-      'listRepositories' as any,
-      ['org', {}] as any,
+      'listRepositories' as unknown,
+      ['org', {}] as unknown,
       'list of repositories',
     )
 
@@ -74,8 +74,8 @@ describe('apiCall', () => {
 
   it('forwards the SDK call through handleApiCall', async () => {
     await apiCall(
-      'listRepositories' as any,
-      ['org-slug', { page: 1 }] as any,
+      'listRepositories' as unknown,
+      ['org-slug', { page: 1 }] as unknown,
       'list of repositories',
     )
 
@@ -86,9 +86,9 @@ describe('apiCall', () => {
   })
 
   it('threads sdkOpts through to setupSdk', async () => {
-    await apiCall('listRepositories' as any, ['org', {}] as any, 'desc', {
+    await apiCall('listRepositories' as unknown, ['org', {}] as unknown, 'desc', {
       sdkOpts: { apiBaseUrl: 'https://api.example.com' },
-    } as any)
+    } as unknown)
 
     expect(mockSetupSdk).toHaveBeenCalledWith({
       apiBaseUrl: 'https://api.example.com',
@@ -148,7 +148,7 @@ describe('orgApi', () => {
     if (op === 'list') {
       await orgApi[op]()
     } else {
-      await (orgApi as any)[op]('org')
+      await (orgApi as unknown)[op]('org')
     }
     expect(mockHandleApiCall).toHaveBeenCalledWith(
       expect.anything(),

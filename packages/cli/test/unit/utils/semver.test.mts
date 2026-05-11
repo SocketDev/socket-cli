@@ -50,7 +50,7 @@ describe('semver utilities', () => {
 
   describe('getMajor', () => {
     it('returns major version for valid semver', () => {
-      vi.mocked(semver.coerce).mockReturnValue({ version: '1.2.3' } as any)
+      vi.mocked(semver.coerce).mockReturnValue({ version: '1.2.3' } as unknown)
       vi.mocked(semver.major).mockReturnValue(1)
 
       const result = getMajor('1.2.3')
@@ -87,7 +87,7 @@ describe('semver utilities', () => {
 
   describe('getMinVersion', () => {
     it('returns min version for valid range', () => {
-      const mockSemVer = { version: '1.0.0' } as any
+      const mockSemVer = { version: '1.0.0' } as unknown
       vi.mocked(semver.minVersion).mockReturnValue(mockSemVer)
 
       const result = getMinVersion('^1.0.0')

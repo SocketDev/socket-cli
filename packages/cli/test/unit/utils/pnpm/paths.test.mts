@@ -18,6 +18,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type * as PathsModule from '../../../../../src/utils/pnpm/paths.mts'
+
 // Mock dependencies.
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -41,8 +43,8 @@ vi.mock('../../../../src/utils/fs/path-resolve.mts', () => ({
 
 describe('pnpm-paths utilities', () => {
   let originalExit: typeof process.exit
-  let getPnpmBinPath: (typeof import('../../../../../src/utils/pnpm/paths.mts'))['getPnpmBinPath']
-  let getPnpmBinPathDetails: (typeof import('../../../../../src/utils/pnpm/paths.mts'))['getPnpmBinPathDetails']
+  let getPnpmBinPath: (typeof PathsModule)['getPnpmBinPath']
+  let getPnpmBinPathDetails: (typeof PathsModule)['getPnpmBinPathDetails']
 
   beforeEach(async () => {
     vi.clearAllMocks()
@@ -53,7 +55,7 @@ describe('pnpm-paths utilities', () => {
     // Mock process.exit to prevent actual exits.
     process.exit = vi.fn((code?: number) => {
       throw new Error(`process.exit(${code})`)
-    }) as any
+    }) as unknown
 
     // Re-import functions after module reset to clear caches.
     const pnpmPaths = await import('../../../../../src/utils/pnpm/paths.mts')

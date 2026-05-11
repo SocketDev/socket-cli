@@ -16,7 +16,7 @@ describe('tryReadResponseText', () => {
   it('returns the text when response.text() succeeds', () => {
     const result = tryReadResponseText({
       text: () => 'response body',
-    } as any)
+    } as unknown)
     expect(result).toBe('response body')
   })
 
@@ -25,12 +25,12 @@ describe('tryReadResponseText', () => {
       text: () => {
         throw new Error('already consumed')
       },
-    } as any)
+    } as unknown)
     expect(result).toBeUndefined()
   })
 
   it('returns undefined when response has no text method', () => {
-    const result = tryReadResponseText({} as any)
+    const result = tryReadResponseText({} as unknown)
     expect(result).toBeUndefined()
   })
 })

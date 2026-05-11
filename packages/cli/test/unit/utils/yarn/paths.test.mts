@@ -18,6 +18,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type * as PathsModule from '../../../../../src/utils/yarn/paths.mts'
+
 // Mock dependencies.
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -41,8 +43,8 @@ vi.mock('../../../../src/utils/fs/path-resolve.mts', () => ({
 
 describe('yarn-paths utilities', () => {
   let originalExit: typeof process.exit
-  let getYarnBinPath: (typeof import('../../../../../src/utils/yarn/paths.mts'))['getYarnBinPath']
-  let getYarnBinPathDetails: (typeof import('../../../../../src/utils/yarn/paths.mts'))['getYarnBinPathDetails']
+  let getYarnBinPath: (typeof PathsModule)['getYarnBinPath']
+  let getYarnBinPathDetails: (typeof PathsModule)['getYarnBinPathDetails']
 
   beforeEach(async () => {
     vi.clearAllMocks()
@@ -53,7 +55,7 @@ describe('yarn-paths utilities', () => {
     // Mock process.exit to prevent actual exits.
     process.exit = vi.fn((code?: number) => {
       throw new Error(`process.exit(${code})`)
-    }) as any
+    }) as unknown
 
     // Re-import functions after module reset to clear caches.
     const yarnPaths = await import('../../../../../src/utils/yarn/paths.mts')

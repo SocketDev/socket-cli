@@ -44,7 +44,7 @@ vi.mock('../../../../../src/utils/purl/parse.mts', () => ({
 describe('socket-url utilities', () => {
   describe('getPkgFullNameFromPurl', () => {
     it('returns name for packages without namespace', () => {
-      mockGetPurlObject.mockImplementation((purl: any) => {
+      mockGetPurlObject.mockImplementation((purl: unknown) => {
         if (typeof purl === 'string') {
           return {
             type: 'npm',
@@ -66,7 +66,7 @@ describe('socket-url utilities', () => {
         name: 'core',
         version: '7.0.0',
       }
-      mockGetPurlObject.mockReturnValue(purlObj as any)
+      mockGetPurlObject.mockReturnValue(purlObj as unknown)
 
       const result = getPkgFullNameFromPurl('pkg:npm/@babel/core@7.0.0')
       expect(result).toBe('@babel/core')
@@ -79,9 +79,9 @@ describe('socket-url utilities', () => {
         name: 'commons',
         version: '3.0',
       }
-      mockGetPurlObject.mockReturnValue(purlObj as any)
+      mockGetPurlObject.mockReturnValue(purlObj as unknown)
 
-      const result = getPkgFullNameFromPurl(purlObj as any)
+      const result = getPkgFullNameFromPurl(purlObj as unknown)
       expect(result).toBe('org.apache:commons')
     })
 
@@ -92,9 +92,9 @@ describe('socket-url utilities', () => {
         name: 'rest-framework',
         version: '3.0',
       }
-      mockGetPurlObject.mockReturnValue(purlObj as any)
+      mockGetPurlObject.mockReturnValue(purlObj as unknown)
 
-      const result = getPkgFullNameFromPurl(purlObj as any)
+      const result = getPkgFullNameFromPurl(purlObj as unknown)
       expect(result).toBe('django/rest-framework')
     })
   })
@@ -169,7 +169,7 @@ describe('socket-url utilities', () => {
         namespace: undefined,
         name: 'express',
         version: '4.18.0',
-      } as any)
+      } as unknown)
 
       const result = getSocketDevPackageOverviewUrlFromPurl(
         'pkg:npm/express@4.18.0',

@@ -67,7 +67,7 @@ describe('classifyLine', () => {
   })
 
   it('classifies standalone JSON primitives as payload', () => {
-    // Widened detection: any JSON.parse-valid line is payload.
+    // Widened detection: unknown JSON.parse-valid line is payload.
     expect(classifyLine('42', undefined)).toBe('payload')
     expect(classifyLine('-3.14', undefined)).toBe('payload')
     expect(classifyLine('"hello"', undefined)).toBe('payload')
@@ -369,7 +369,7 @@ describe('createScrubber — adapter integration', () => {
     process.env['SOCKET_SCRUB_TRACE'] = '1'
     const original = process.stderr.write
     const written: string[] = []
-    ;(process.stderr as any).write = (chunk: any) => {
+    ;(process.stderr as unknown).write = (chunk: unknown) => {
       written.push(String(chunk))
       return true
     }
@@ -386,7 +386,7 @@ describe('createScrubber — adapter integration', () => {
       expect(joined).toContain('[scrub')
       expect(joined).toContain('tracer')
     } finally {
-      ;(process.stderr as any).write = original
+      ;(process.stderr as unknown).write = original
       delete process.env['SOCKET_SCRUB_TRACE']
     }
   })

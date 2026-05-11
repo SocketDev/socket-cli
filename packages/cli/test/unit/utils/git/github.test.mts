@@ -652,7 +652,7 @@ describe('enablePrAutoMerge', () => {
     const mockPr = {
       node_id: 'test-node-id',
       number: 123,
-    } as any
+    } as unknown
 
     // Without proper mocking, this will attempt a real API call and fail.
     // The function should handle errors gracefully.

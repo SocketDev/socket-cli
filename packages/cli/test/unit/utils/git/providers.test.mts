@@ -129,8 +129,8 @@ describe('provider-factory', () => {
 })
 
 describe('GitHubProvider', () => {
-  let mockOctokit: any
-  let mockOctokitGraphql: any
+  let mockOctokit: unknown
+  let mockOctokitGraphql: unknown
 
   beforeEach(() => {
     mockOctokit = {
