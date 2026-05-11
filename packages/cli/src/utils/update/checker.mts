@@ -68,27 +68,6 @@ interface GetLatestVersionOptions {
 }
 
 /**
- * Version comparison using semver library.
- */
-export function isUpdateAvailable(current: string, latest: string): boolean {
-  try {
-    // Use semver for robust version comparison.
-    const currentClean = semver.clean(current)
-    const latestClean = semver.clean(latest)
-
-    if (!currentClean || !latestClean) {
-      // Fallback to string comparison if semver parsing fails.
-      return latest !== current
-    }
-
-    return semver.gt(latestClean, currentClean)
-    /* c8 ignore next 4 - semver.gt fallback for non-semver inputs; both inputs already passed semver.coerce */
-  } catch {
-    return latest !== current
-  }
-}
-
-/**
  * Network utilities with robust error handling and timeouts.
  */
 const NetworkUtils = {
@@ -328,6 +307,27 @@ export async function checkForUpdates(
   } catch (e) {
     logger.log(`Failed to check for updates: ${errorMessage(e)}`)
     throw e
+  }
+}
+
+/**
+ * Version comparison using semver library.
+ */
+export function isUpdateAvailable(current: string, latest: string): boolean {
+  try {
+    // Use semver for robust version comparison.
+    const currentClean = semver.clean(current)
+    const latestClean = semver.clean(latest)
+
+    if (!currentClean || !latestClean) {
+      // Fallback to string comparison if semver parsing fails.
+      return latest !== current
+    }
+
+    return semver.gt(latestClean, currentClean)
+    /* c8 ignore next 4 - semver.gt fallback for non-semver inputs; both inputs already passed semver.coerce */
+  } catch {
+    return latest !== current
   }
 }
 

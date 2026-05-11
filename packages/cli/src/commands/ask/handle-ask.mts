@@ -288,13 +288,15 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
   }
 
   // Match against patterns.
-  let bestMatch: {
-    action: string
-    command: string[]
-    explanation: string
-    confidence: number
-    score: number
-  } | undefined = undefined
+  let bestMatch:
+    | {
+        action: string
+        command: string[]
+        explanation: string
+        confidence: number
+        score: number
+      }
+    | undefined = undefined
 
   for (const [action, pattern] of Object.entries(PATTERNS)) {
     if (!pattern) {

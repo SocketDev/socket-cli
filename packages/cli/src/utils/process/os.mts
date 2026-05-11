@@ -39,14 +39,6 @@ const logger = getDefaultLogger()
 let cachedLibc: string | undefined
 
 /**
- * Reset the libc detection cache.
- * This is primarily for testing purposes to allow re-detection.
- */
-export function resetLibcCache(): void {
-  cachedLibc = undefined
-}
-
-/**
  * Platform name mappings for GitHub releases.
  */
 const platformNameByOs = new Map([
@@ -83,48 +75,22 @@ const npmArchByArch = new Map([
 ])
 
 /**
- * Map Node.js platform names to GitHub release names.
+ * Clear macOS quarantine attribute from a file.
+ * This prevents macOS from blocking execution of downloaded binaries.
  */
-export function getPlatformName(): string {
-  const platform = process.platform
-  return platformNameByOs.get(platform) ?? platform
-}
+export async function clearQuarantine(filePath: string): Promise<void> {
+  if (process.platform !== 'darwin') {
+    return
+  }
 
-/**
- * Map Node.js arch names to GitHub release names.
- */
-export function getArchName(): string {
-  const arch = process.arch
-  return archNameByArch.get(arch) ?? arch
-}
-
-/**
- * Generate the expected asset name for the current platform.
- * Used for downloading platform-specific binaries from GitHub releases.
- */
-export function getExpectedAssetName(): string {
-  const platformName = getPlatformName()
-  const archName = getArchName()
-  const extension = process.platform === 'win32' ? '.exe' : ''
-  return `socket-${platformName}-${archName}${extension}`
-}
-
-/**
- * Get npm platform name for @socketbin packages.
- * Uses Node.js platform names (darwin, linux, win32).
- */
-export function getNpmPlatform(): string {
-  const platform = process.platform
-  return npmPlatformByOs.get(platform) ?? platform
-}
-
-/**
- * Get npm arch name for @socketbin packages.
- * Uses Node.js arch names (arm64, x64).
- */
-export function getNpmArch(): string {
-  const arch = process.arch
-  return npmArchByArch.get(arch) ?? arch
+  try {
+    await spawn('xattr', ['-d', 'com.apple.quarantine', filePath], {
+      stdio: 'ignore',
+    })
+    logger.log('Cleared quarantine attribute')
+  } catch (e) {
+    logger.log(`Failed to clear quarantine: ${errorMessage(e)}`)
+  }
 }
 
 /**
@@ -186,23 +152,28 @@ export function detectMusl(): boolean {
 }
 
 /**
- * Get the libc suffix for package names.
- * Returns "-musl" on musl systems, empty string otherwise.
+ * Ensure file is executable on Unix systems.
+ * Sets 0o755 permissions (rwxr-xr-x) for proper binary execution.
  */
-export function getLibcSuffix(): string {
-  return detectMusl() ? '-musl' : ''
+export async function ensureExecutable(filePath: string): Promise<void> {
+  if (process.platform === 'win32') {
+    return
+  }
+
+  try {
+    await chmod(filePath, 0o755)
+    logger.log('Set executable permissions')
+  } catch (e) {
+    logger.warn(`Failed to set executable permissions: ${errorMessage(e)}`)
+  }
 }
 
 /**
- * Get the @socketbin package name for the current platform.
- * Returns package name like "@socketbin/cli-darwin-arm64" or
- * "@socketbin/cli-linux-x64-musl" on Alpine.
+ * Map Node.js arch names to GitHub release names.
  */
-export function getSocketbinPackageName(): string {
-  const platform = getNpmPlatform()
-  const arch = getNpmArch()
-  const libcSuffix = getLibcSuffix()
-  return `@socketbin/cli-${platform}-${arch}${libcSuffix}`
+export function getArchName(): string {
+  const arch = process.arch
+  return archNameByArch.get(arch) ?? arch
 }
 
 /**
@@ -222,39 +193,60 @@ export function getBinaryRelativePath(): string {
 }
 
 /**
- * Clear macOS quarantine attribute from a file.
- * This prevents macOS from blocking execution of downloaded binaries.
+ * Generate the expected asset name for the current platform.
+ * Used for downloading platform-specific binaries from GitHub releases.
  */
-export async function clearQuarantine(filePath: string): Promise<void> {
-  if (process.platform !== 'darwin') {
-    return
-  }
-
-  try {
-    await spawn('xattr', ['-d', 'com.apple.quarantine', filePath], {
-      stdio: 'ignore',
-    })
-    logger.log('Cleared quarantine attribute')
-  } catch (e) {
-    logger.log(`Failed to clear quarantine: ${errorMessage(e)}`)
-  }
+export function getExpectedAssetName(): string {
+  const platformName = getPlatformName()
+  const archName = getArchName()
+  const extension = process.platform === 'win32' ? '.exe' : ''
+  return `socket-${platformName}-${archName}${extension}`
 }
 
 /**
- * Ensure file is executable on Unix systems.
- * Sets 0o755 permissions (rwxr-xr-x) for proper binary execution.
+ * Get the libc suffix for package names.
+ * Returns "-musl" on musl systems, empty string otherwise.
  */
-export async function ensureExecutable(filePath: string): Promise<void> {
-  if (process.platform === 'win32') {
-    return
-  }
+export function getLibcSuffix(): string {
+  return detectMusl() ? '-musl' : ''
+}
 
-  try {
-    await chmod(filePath, 0o755)
-    logger.log('Set executable permissions')
-  } catch (e) {
-    logger.warn(`Failed to set executable permissions: ${errorMessage(e)}`)
-  }
+/**
+ * Get npm arch name for @socketbin packages.
+ * Uses Node.js arch names (arm64, x64).
+ */
+export function getNpmArch(): string {
+  const arch = process.arch
+  return npmArchByArch.get(arch) ?? arch
+}
+
+/**
+ * Get npm platform name for @socketbin packages.
+ * Uses Node.js platform names (darwin, linux, win32).
+ */
+export function getNpmPlatform(): string {
+  const platform = process.platform
+  return npmPlatformByOs.get(platform) ?? platform
+}
+
+/**
+ * Map Node.js platform names to GitHub release names.
+ */
+export function getPlatformName(): string {
+  const platform = process.platform
+  return platformNameByOs.get(platform) ?? platform
+}
+
+/**
+ * Get the @socketbin package name for the current platform.
+ * Returns package name like "@socketbin/cli-darwin-arm64" or
+ * "@socketbin/cli-linux-x64-musl" on Alpine.
+ */
+export function getSocketbinPackageName(): string {
+  const platform = getNpmPlatform()
+  const arch = getNpmArch()
+  const libcSuffix = getLibcSuffix()
+  return `@socketbin/cli-${platform}-${arch}${libcSuffix}`
 }
 
 /**
@@ -285,3 +277,10 @@ export function isPlatformSupported(): boolean {
   return false
 }
 
+/**
+ * Reset the libc detection cache.
+ * This is primarily for testing purposes to allow re-detection.
+ */
+export function resetLibcCache(): void {
+  cachedLibc = undefined
+}

@@ -93,6 +93,90 @@ const supportedConfigKeys = supportedConfigEntries.map(p => p[0])
 
 const MAX_CONFIG_READ_RETRIES = 3
 
+// Ensure export because dist/utils.js is required in src/constants.mts.
+// eslint-disable-next-line n/exports-style
+if (typeof exports === 'object' && exports !== null) {
+  // eslint-disable-next-line n/exports-style
+  exports.getConfigValueOrUndef = getConfigValueOrUndef
+}
+
+let _cachedConfig: LocalConfig | undefined
+
+let _cachedConfigMtime: number | undefined
+
+let _cachedConfigPath: string | undefined
+
+// When using --config or SOCKET_CLI_CONFIG, do not persist the config.
+let _configFromFlag = false
+
+let _pendingSave = false
+
+export type FoundSocketYml = {
+  path: string
+  parsed: SocketYml
+}
+
+export function findSocketYmlSync(
+  dir = process.cwd(),
+): CResult<FoundSocketYml | undefined> {
+  let prevDir = undefined
+  while (dir !== prevDir) {
+    let ymlPath = path.join(dir, SOCKET_YML)
+    let yml = safeReadFileSync(ymlPath)
+    if (yml === undefined) {
+      ymlPath = path.join(dir, SOCKET_YAML)
+      yml = safeReadFileSync(ymlPath)
+    }
+    if (yml !== undefined) {
+      try {
+        const ymlString = Buffer.isBuffer(yml) ? yml.toString('utf8') : yml
+        return {
+          ok: true,
+          data: {
+            path: ymlPath,
+            parsed: config.parseSocketConfig(ymlString),
+          },
+        }
+      } catch (e) {
+        debugNs('error', `Failed to parse config file: ${ymlPath}`)
+        debugDirNs('error', e)
+        return {
+          ok: false,
+          message: `Found file but was unable to parse ${ymlPath}`,
+          cause: getErrorCause(e),
+        }
+      }
+    }
+    prevDir = dir
+    dir = path.join(dir, '..')
+  }
+  return { ok: true, data: undefined }
+}
+
+export function getConfigValue<Key extends keyof LocalConfig>(
+  key: Key,
+): CResult<LocalConfig[Key]> {
+  const localConfig = getConfigValues()
+  const keyResult = normalizeConfigKey(key)
+  if (!keyResult.ok) {
+    return keyResult
+  }
+  return { ok: true, data: localConfig[keyResult.data as Key] }
+}
+
+// This version squashes errors, returning undefined instead.
+// Should be used when we can reasonably predict the call can't fail.
+export function getConfigValueOrUndef<Key extends keyof LocalConfig>(
+  key: Key,
+): LocalConfig[Key] | undefined {
+  const localConfig = getConfigValues()
+  const keyResult = normalizeConfigKey(key)
+  if (!keyResult.ok) {
+    return undefined
+  }
+  return localConfig[keyResult.data as Key]
+}
+
 export function getConfigValues(retryCount = 0): LocalConfig {
   // Order: env var > --config flag > file.
   // If config is from flag/env override, skip file-based caching.
@@ -177,94 +261,6 @@ export function getConfigValues(retryCount = 0): LocalConfig {
   return _cachedConfig
 }
 
-export function normalizeConfigKey(
-  key: keyof LocalConfig,
-): CResult<keyof LocalConfig> {
-  // Note: `org` is a convenience alias for `defaultOrg`
-  const normalizedKey = key === CONFIG_KEY_ORG ? CONFIG_KEY_DEFAULT_ORG : key
-  if (!isSupportedConfigKey(normalizedKey)) {
-    return {
-      ok: false,
-      message: `Invalid config key: ${normalizedKey}`,
-      data: undefined,
-    }
-  }
-  return { ok: true, data: normalizedKey }
-}
-
-export type FoundSocketYml = {
-  path: string
-  parsed: SocketYml
-}
-
-export function findSocketYmlSync(
-  dir = process.cwd(),
-): CResult<FoundSocketYml | undefined> {
-  let prevDir = undefined
-  while (dir !== prevDir) {
-    let ymlPath = path.join(dir, SOCKET_YML)
-    let yml = safeReadFileSync(ymlPath)
-    if (yml === undefined) {
-      ymlPath = path.join(dir, SOCKET_YAML)
-      yml = safeReadFileSync(ymlPath)
-    }
-    if (yml !== undefined) {
-      try {
-        const ymlString = Buffer.isBuffer(yml) ? yml.toString('utf8') : yml
-        return {
-          ok: true,
-          data: {
-            path: ymlPath,
-            parsed: config.parseSocketConfig(ymlString),
-          },
-        }
-      } catch (e) {
-        debugNs('error', `Failed to parse config file: ${ymlPath}`)
-        debugDirNs('error', e)
-        return {
-          ok: false,
-          message: `Found file but was unable to parse ${ymlPath}`,
-          cause: getErrorCause(e),
-        }
-      }
-    }
-    prevDir = dir
-    dir = path.join(dir, '..')
-  }
-  return { ok: true, data: undefined }
-}
-
-export function getConfigValue<Key extends keyof LocalConfig>(
-  key: Key,
-): CResult<LocalConfig[Key]> {
-  const localConfig = getConfigValues()
-  const keyResult = normalizeConfigKey(key)
-  if (!keyResult.ok) {
-    return keyResult
-  }
-  return { ok: true, data: localConfig[keyResult.data as Key] }
-}
-
-// This version squashes errors, returning undefined instead.
-// Should be used when we can reasonably predict the call can't fail.
-export function getConfigValueOrUndef<Key extends keyof LocalConfig>(
-  key: Key,
-): LocalConfig[Key] | undefined {
-  const localConfig = getConfigValues()
-  const keyResult = normalizeConfigKey(key)
-  if (!keyResult.ok) {
-    return undefined
-  }
-  return localConfig[keyResult.data as Key]
-}
-
-// Ensure export because dist/utils.js is required in src/constants.mts.
-// eslint-disable-next-line n/exports-style
-if (typeof exports === 'object' && exports !== null) {
-  // eslint-disable-next-line n/exports-style
-  exports.getConfigValueOrUndef = getConfigValueOrUndef
-}
-
 export function getSupportedConfigEntries() {
   return [...supportedConfigEntries]
 }
@@ -285,22 +281,19 @@ export function isSupportedConfigKey(key: string): key is keyof LocalConfig {
   return supportedConfig.has(key as keyof LocalConfig)
 }
 
-let _cachedConfig: LocalConfig | undefined
-let _cachedConfigMtime: number | undefined
-let _cachedConfigPath: string | undefined
-// When using --config or SOCKET_CLI_CONFIG, do not persist the config.
-let _configFromFlag = false
-
-/**
- * Reset config cache for testing purposes.
- * This allows tests to start with a fresh config state.
- * @internal
- */
-export function resetConfigForTesting(): void {
-  _cachedConfig = undefined
-  _cachedConfigMtime = undefined
-  _cachedConfigPath = undefined
-  _configFromFlag = false
+export function normalizeConfigKey(
+  key: keyof LocalConfig,
+): CResult<keyof LocalConfig> {
+  // Note: `org` is a convenience alias for `defaultOrg`
+  const normalizedKey = key === CONFIG_KEY_ORG ? CONFIG_KEY_DEFAULT_ORG : key
+  if (!isSupportedConfigKey(normalizedKey)) {
+    return {
+      ok: false,
+      message: `Invalid config key: ${normalizedKey}`,
+      data: undefined,
+    }
+  }
+  return { ok: true, data: normalizedKey }
 }
 
 export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
@@ -355,7 +348,18 @@ export function overrideConfigApiToken(apiToken: unknown) {
   _configFromFlag = true
 }
 
-let _pendingSave = false
+/**
+ * Reset config cache for testing purposes.
+ * This allows tests to start with a fresh config state.
+ * @internal
+ */
+export function resetConfigForTesting(): void {
+  _cachedConfig = undefined
+  _cachedConfigMtime = undefined
+  _cachedConfigPath = undefined
+  _configFromFlag = false
+}
+
 export function updateConfigValue<Key extends keyof LocalConfig>(
   configKey: keyof LocalConfig,
   value: LocalConfig[Key],

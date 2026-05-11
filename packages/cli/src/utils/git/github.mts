@@ -70,60 +70,13 @@ interface CacheEntry {
   data: JsonContent
 }
 
-export async function readCache(
-  key: string,
-  // 5 minute in milliseconds time to live (TTL).
-  ttlMs = 5 * 60 * 1000,
-): Promise<JsonContent | undefined> {
-  const githubCachePath = getGithubCachePath()
-  const cacheJsonPath = path.join(githubCachePath, `${key}.json`)
-
-  try {
-    const entry = (await readJson(cacheJsonPath)) as CacheEntry | JsonContent
-    // Handle both new format (with timestamp) and legacy format (without).
-    if (
-      entry &&
-      typeof entry === 'object' &&
-      'timestamp' in entry &&
-      'data' in entry
-    ) {
-      const isExpired = Date.now() - (entry.timestamp as number) > ttlMs
-      if (!isExpired) {
-        return entry.data
-      }
-    } else {
-      // Legacy format without timestamp - treat as expired.
-      return undefined
-    }
-  } catch {
-    return undefined
-  }
-  return undefined
-}
-
-export async function writeCache(
-  key: string,
-  data: JsonContent,
-): Promise<void> {
-  const githubCachePath = getGithubCachePath()
-  const cacheJsonPath = path.join(githubCachePath, `${key}.json`)
-  // Create directory with recursive flag that doesn't fail if exists.
-  await safeMkdir(githubCachePath, { recursive: true })
-
-  const entry: CacheEntry = {
-    timestamp: Date.now(),
-    data,
-  }
-
-  // Use atomic write pattern to prevent multi-process race conditions.
-  const tmpPath = `${cacheJsonPath}.tmp.${process.pid}`
-  await writeJson(tmpPath, entry)
-  await fs.rename(tmpPath, cacheJsonPath)
-}
-
 // In-memory promise cache to prevent concurrent fetches for the same key.
 // LRU cache with max size to prevent unbounded memory growth.
 const inflightRequests = new LRUCache<string, Promise<unknown>>({ max: 100 })
+
+let _octokit: Octokit | undefined
+
+let _octokitGraphql: typeof OctokitGraphql | undefined
 
 export async function cacheFetch<T>(
   key: string,
@@ -169,6 +122,55 @@ export async function cacheFetch<T>(
     // Fetch promise's finally block handles cleanup - no action needed here.
     throw e
   }
+}
+
+export type PrAutoMergeState = {
+  enabled: boolean
+  details?: string[] | undefined
+}
+
+export async function enablePrAutoMerge({
+  node_id: prId,
+}: Pr): Promise<PrAutoMergeState> {
+  const octokitGraphql = getOctokitGraphql()
+  try {
+    const gqlResp = await octokitGraphql(
+      `
+      mutation EnableAutoMerge($pullRequestId: ID!) {
+        enablePullRequestAutoMerge(input: {
+          pullRequestId: $pullRequestId,
+          mergeMethod: SQUASH
+        }) {
+          pullRequest {
+            number
+          }
+        }
+      }`,
+      { pullRequestId: prId },
+    )
+    const respPrNumber = (
+      gqlResp as
+        | {
+            enablePullRequestAutoMerge?: {
+              pullRequest?: { number?: number }
+            }
+          }
+        | undefined
+    )?.enablePullRequestAutoMerge?.pullRequest?.number
+    if (respPrNumber) {
+      return { enabled: true }
+    }
+  } catch (e) {
+    if (
+      e instanceof GraphqlResponseError &&
+      Array.isArray(e.errors) &&
+      e.errors.length
+    ) {
+      const details = e.errors.map(({ message: m }) => m.trim())
+      return { enabled: false, details }
+    }
+  }
+  return { enabled: false }
 }
 
 export type GhsaDetails = {
@@ -257,7 +259,6 @@ export async function fetchGhsaDetails(
   return results
 }
 
-let _octokit: Octokit | undefined
 export function getOctokit(): Octokit {
   if (_octokit === undefined) {
     if (!SOCKET_CLI_GITHUB_TOKEN) {
@@ -273,7 +274,6 @@ export function getOctokit(): Octokit {
   return _octokit
 }
 
-let _octokitGraphql: typeof OctokitGraphql | undefined
 export function getOctokitGraphql(): typeof OctokitGraphql {
   if (!_octokitGraphql) {
     if (!SOCKET_CLI_GITHUB_TOKEN) {
@@ -286,165 +286,6 @@ export function getOctokitGraphql(): typeof OctokitGraphql {
     })
   }
   return _octokitGraphql
-}
-
-export type PrAutoMergeState = {
-  enabled: boolean
-  details?: string[] | undefined
-}
-
-export async function enablePrAutoMerge({
-  node_id: prId,
-}: Pr): Promise<PrAutoMergeState> {
-  const octokitGraphql = getOctokitGraphql()
-  try {
-    const gqlResp = await octokitGraphql(
-      `
-      mutation EnableAutoMerge($pullRequestId: ID!) {
-        enablePullRequestAutoMerge(input: {
-          pullRequestId: $pullRequestId,
-          mergeMethod: SQUASH
-        }) {
-          pullRequest {
-            number
-          }
-        }
-      }`,
-      { pullRequestId: prId },
-    )
-    const respPrNumber = (
-      gqlResp as
-        | {
-            enablePullRequestAutoMerge?: {
-              pullRequest?: { number?: number }
-            }
-          }
-        | undefined
-    )?.enablePullRequestAutoMerge?.pullRequest?.number
-    if (respPrNumber) {
-      return { enabled: true }
-    }
-  } catch (e) {
-    if (
-      e instanceof GraphqlResponseError &&
-      Array.isArray(e.errors) &&
-      e.errors.length
-    ) {
-      const details = e.errors.map(({ message: m }) => m.trim())
-      return { enabled: false, details }
-    }
-  }
-  return { enabled: false }
-}
-
-export async function prExistForBranch(
-  owner: string,
-  repo: string,
-  branch: string,
-): Promise<boolean> {
-  const octokit = getOctokit()
-  try {
-    const { data: prs } = await octokit.pulls.list({
-      owner,
-      repo,
-      head: `${owner}:${branch}`,
-      state: 'all',
-      per_page: 1,
-    })
-    return prs.length > 0
-  } catch {}
-  return false
-}
-
-export async function setGitRemoteGithubRepoUrl(
-  owner: string,
-  repo: string,
-  token: string,
-  cwd = process.cwd(),
-): Promise<boolean> {
-  const urlObj = parseUrl(GITHUB_SERVER_URL || '')
-  const host = urlObj?.host
-  /* c8 ignore next 5 - GITHUB_SERVER_URL defaults to a parseable URL; only fires when env var is malformed */
-  if (!host) {
-    debugNs('error', 'invalid: GITHUB_SERVER_URL env var')
-    debugDirNs('inspect', { GITHUB_SERVER_URL })
-    return false
-  }
-  const url = `https://x-access-token:${token}@${host}/${owner}/${repo}`
-  const stdioIgnoreOptions: SpawnOptions = {
-    cwd,
-    stdio: isDebugNs('stdio') ? 'inherit' : 'ignore',
-  }
-  const quotedCmd = `\`git remote set-url origin ${url}\``
-  debugNs('stdio', `spawn: ${quotedCmd}`)
-  try {
-    await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)
-    return true
-    /* c8 ignore next 5 - git command failure path; tests run in real cwd with valid git */
-  } catch (e) {
-    debugNs('error', `Git command failed: ${quotedCmd}`)
-    debugDirNs('inspect', { cmd: quotedCmd })
-    debugDirNs('error', e)
-  }
-  return false
-}
-
-/**
- * Check if a GraphQL error is a rate limit error.
- */
-export function isGraphqlRateLimitError(e: unknown): boolean {
-  if (e instanceof GraphqlResponseError && Array.isArray(e.errors)) {
-    return e.errors.some(
-      err =>
-        err.type === 'RATE_LIMITED' ||
-        err.message?.toLowerCase().includes('rate limit'),
-    )
-  }
-  return false
-}
-
-/**
- * Convert GraphQL errors to user-friendly CResult failures.
- * Handles rate limits and authentication errors with actionable messages.
- */
-export function handleGraphqlError(
-  e: unknown,
-  context: string,
-): CResult<never> {
-  debugNs('error', formatErrorWithDetail(`GraphQL error: ${context}`, e))
-  debugDirNs('error', e)
-
-  if (e instanceof GraphqlResponseError) {
-    const errorMessages = Array.isArray(e.errors)
-      ? e.errors.map(err => err.message).filter(Boolean)
-      : []
-
-    // Check for rate limit errors.
-    if (isGraphqlRateLimitError(e)) {
-      return {
-        ok: false,
-        message: GITHUB_ERR_GRAPHQL_RATE_LIMIT,
-        cause:
-          `GitHub GraphQL rate limit exceeded while ${context}. ` +
-          'Try again in a few minutes.\n\n' +
-          'To increase your rate limit:\n' +
-          '- Set GITHUB_TOKEN environment variable with a valid token\n' +
-          '- In GitHub Actions, GITHUB_TOKEN is automatically available',
-      }
-    }
-
-    // Return the GraphQL error details.
-    return {
-      ok: false,
-      message: 'GitHub GraphQL error',
-      cause:
-        `GitHub GraphQL error while ${context}` +
-        (errorMessages.length ? `:\n- ${errorMessages.join('\n- ')}` : ''),
-    }
-  }
-
-  // Fall back to REST error handler for non-GraphQL errors.
-  return handleGitHubApiError(e, context)
 }
 
 /**
@@ -609,6 +450,147 @@ export function handleGitHubApiError(
 }
 
 /**
+ * Convert GraphQL errors to user-friendly CResult failures.
+ * Handles rate limits and authentication errors with actionable messages.
+ */
+export function handleGraphqlError(
+  e: unknown,
+  context: string,
+): CResult<never> {
+  debugNs('error', formatErrorWithDetail(`GraphQL error: ${context}`, e))
+  debugDirNs('error', e)
+
+  if (e instanceof GraphqlResponseError) {
+    const errorMessages = Array.isArray(e.errors)
+      ? e.errors.map(err => err.message).filter(Boolean)
+      : []
+
+    // Check for rate limit errors.
+    if (isGraphqlRateLimitError(e)) {
+      return {
+        ok: false,
+        message: GITHUB_ERR_GRAPHQL_RATE_LIMIT,
+        cause:
+          `GitHub GraphQL rate limit exceeded while ${context}. ` +
+          'Try again in a few minutes.\n\n' +
+          'To increase your rate limit:\n' +
+          '- Set GITHUB_TOKEN environment variable with a valid token\n' +
+          '- In GitHub Actions, GITHUB_TOKEN is automatically available',
+      }
+    }
+
+    // Return the GraphQL error details.
+    return {
+      ok: false,
+      message: 'GitHub GraphQL error',
+      cause:
+        `GitHub GraphQL error while ${context}` +
+        (errorMessages.length ? `:\n- ${errorMessages.join('\n- ')}` : ''),
+    }
+  }
+
+  // Fall back to REST error handler for non-GraphQL errors.
+  return handleGitHubApiError(e, context)
+}
+
+/**
+ * Check if a GraphQL error is a rate limit error.
+ */
+export function isGraphqlRateLimitError(e: unknown): boolean {
+  if (e instanceof GraphqlResponseError && Array.isArray(e.errors)) {
+    return e.errors.some(
+      err =>
+        err.type === 'RATE_LIMITED' ||
+        err.message?.toLowerCase().includes('rate limit'),
+    )
+  }
+  return false
+}
+
+export async function prExistForBranch(
+  owner: string,
+  repo: string,
+  branch: string,
+): Promise<boolean> {
+  const octokit = getOctokit()
+  try {
+    const { data: prs } = await octokit.pulls.list({
+      owner,
+      repo,
+      head: `${owner}:${branch}`,
+      state: 'all',
+      per_page: 1,
+    })
+    return prs.length > 0
+  } catch {}
+  return false
+}
+
+export async function readCache(
+  key: string,
+  // 5 minute in milliseconds time to live (TTL).
+  ttlMs = 5 * 60 * 1000,
+): Promise<JsonContent | undefined> {
+  const githubCachePath = getGithubCachePath()
+  const cacheJsonPath = path.join(githubCachePath, `${key}.json`)
+
+  try {
+    const entry = (await readJson(cacheJsonPath)) as CacheEntry | JsonContent
+    // Handle both new format (with timestamp) and legacy format (without).
+    if (
+      entry &&
+      typeof entry === 'object' &&
+      'timestamp' in entry &&
+      'data' in entry
+    ) {
+      const isExpired = Date.now() - (entry.timestamp as number) > ttlMs
+      if (!isExpired) {
+        return entry.data
+      }
+    } else {
+      // Legacy format without timestamp - treat as expired.
+      return undefined
+    }
+  } catch {
+    return undefined
+  }
+  return undefined
+}
+
+export async function setGitRemoteGithubRepoUrl(
+  owner: string,
+  repo: string,
+  token: string,
+  cwd = process.cwd(),
+): Promise<boolean> {
+  const urlObj = parseUrl(GITHUB_SERVER_URL || '')
+  const host = urlObj?.host
+  /* c8 ignore next 5 - GITHUB_SERVER_URL defaults to a parseable URL; only fires when env var is malformed */
+  if (!host) {
+    debugNs('error', 'invalid: GITHUB_SERVER_URL env var')
+    debugDirNs('inspect', { GITHUB_SERVER_URL })
+    return false
+  }
+  const url = `https://x-access-token:${token}@${host}/${owner}/${repo}`
+  const stdioIgnoreOptions: SpawnOptions = {
+    cwd,
+    stdio: isDebugNs('stdio') ? 'inherit' : 'ignore',
+  }
+  const quotedCmd = `\`git remote set-url origin ${url}\``
+  debugNs('stdio', `spawn: ${quotedCmd}`)
+  try {
+    await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)
+    return true
+    /* c8 ignore next 5 - git command failure path; tests run in real cwd with valid git */
+  } catch (e) {
+    debugNs('error', `Git command failed: ${quotedCmd}`)
+    debugDirNs('inspect', { cmd: quotedCmd })
+    debugDirNs('error', e)
+  }
+  return false
+}
+
+/**
  * Execute a GitHub API call with retry logic for transient failures.
  * Retries on 5xx errors and network failures with exponential backoff.
  */
@@ -659,4 +641,24 @@ export async function withGitHubRetry<T>(
   }
 
   return handleGitHubApiError(lastError, context)
+}
+
+export async function writeCache(
+  key: string,
+  data: JsonContent,
+): Promise<void> {
+  const githubCachePath = getGithubCachePath()
+  const cacheJsonPath = path.join(githubCachePath, `${key}.json`)
+  // Create directory with recursive flag that doesn't fail if exists.
+  await safeMkdir(githubCachePath, { recursive: true })
+
+  const entry: CacheEntry = {
+    timestamp: Date.now(),
+    data,
+  }
+
+  // Use atomic write pattern to prevent multi-process race conditions.
+  const tmpPath = `${cacheJsonPath}.tmp.${process.pid}`
+  await writeJson(tmpPath, entry)
+  await fs.rename(tmpPath, cacheJsonPath)
 }

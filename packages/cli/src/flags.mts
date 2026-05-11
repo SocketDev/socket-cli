@@ -29,59 +29,17 @@ type RawSpaceSizeFlags = {
 
 let _rawSpaceSizeFlags: RawSpaceSizeFlags | undefined
 
-/**
- * Reset cached flag values for testing purposes.
- * @internal
- */
-export function resetFlagCache(): void {
-  _rawSpaceSizeFlags = undefined
-  _maxOldSpaceSizeFlag = undefined
-  _maxSemiSpaceSizeFlag = undefined
-}
-
-export function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
-  if (_rawSpaceSizeFlags === undefined) {
-    const cli = meow({
-      argv: process.argv.slice(2),
-      // Prevent meow from potentially exiting early.
-      autoHelp: false,
-      autoVersion: false,
-      flags: {
-        maxOldSpaceSize: {
-          type: 'number',
-          default: 0,
-        },
-        maxSemiSpaceSize: {
-          type: 'number',
-          default: 0,
-        },
-      },
-      importMeta: { url: import.meta.url } as ImportMeta,
-    })
-    const maxOldSpaceSize = Number(cli.flags['maxOldSpaceSize'])
-    const maxSemiSpaceSize = Number(cli.flags['maxSemiSpaceSize'])
-
-    /* c8 ignore next 10 - meow type='number' guarantees numeric values; these guards are belt-and-suspenders */
-    if (Number.isNaN(maxOldSpaceSize) || maxOldSpaceSize < 0) {
-      throw new Error(
-        `--max-old-space-size must be a non-negative integer in megabytes (saw: "${cli.flags['maxOldSpaceSize']}"); pass a whole number like --max-old-space-size=4096 for 4GB`,
-      )
-    }
-    if (Number.isNaN(maxSemiSpaceSize) || maxSemiSpaceSize < 0) {
-      throw new Error(
-        `--max-semi-space-size must be a non-negative integer in megabytes (saw: "${cli.flags['maxSemiSpaceSize']}"); pass a whole number like --max-semi-space-size=128`,
-      )
-    }
-
-    _rawSpaceSizeFlags = {
-      maxOldSpaceSize,
-      maxSemiSpaceSize,
-    }
-  }
-  return _rawSpaceSizeFlags!
-}
-
 let _maxOldSpaceSizeFlag: number | undefined
+
+// Ensure export because dist/flags.js is required in src/constants.mts.
+// eslint-disable-next-line n/exports-style
+if (typeof exports === 'object' && exports !== null) {
+  // eslint-disable-next-line n/exports-style
+  exports.getMaxOldSpaceSizeFlag = getMaxOldSpaceSizeFlag
+}
+
+let _maxSemiSpaceSizeFlag: number | undefined
+
 export function getMaxOldSpaceSizeFlag(): number {
   if (_maxOldSpaceSizeFlag === undefined) {
     const rawFlag = getRawSpaceSizeFlags().maxOldSpaceSize
@@ -115,14 +73,7 @@ export function getMaxOldSpaceSizeFlag(): number {
   }
   return _maxOldSpaceSizeFlag
 }
-// Ensure export because dist/flags.js is required in src/constants.mts.
-// eslint-disable-next-line n/exports-style
-if (typeof exports === 'object' && exports !== null) {
-  // eslint-disable-next-line n/exports-style
-  exports.getMaxOldSpaceSizeFlag = getMaxOldSpaceSizeFlag
-}
 
-let _maxSemiSpaceSizeFlag: number | undefined
 export function getMaxSemiSpaceSizeFlag(): number {
   if (_maxSemiSpaceSizeFlag === undefined) {
     _maxSemiSpaceSizeFlag = getRawSpaceSizeFlags().maxSemiSpaceSize
@@ -184,6 +135,58 @@ export function getMaxSemiSpaceSizeFlag(): number {
     }
   }
   return _maxSemiSpaceSizeFlag
+}
+
+export function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
+  if (_rawSpaceSizeFlags === undefined) {
+    const cli = meow({
+      argv: process.argv.slice(2),
+      // Prevent meow from potentially exiting early.
+      autoHelp: false,
+      autoVersion: false,
+      flags: {
+        maxOldSpaceSize: {
+          type: 'number',
+          default: 0,
+        },
+        maxSemiSpaceSize: {
+          type: 'number',
+          default: 0,
+        },
+      },
+      importMeta: { url: import.meta.url } as ImportMeta,
+    })
+    const maxOldSpaceSize = Number(cli.flags['maxOldSpaceSize'])
+    const maxSemiSpaceSize = Number(cli.flags['maxSemiSpaceSize'])
+
+    /* c8 ignore next 10 - meow type='number' guarantees numeric values; these guards are belt-and-suspenders */
+    if (Number.isNaN(maxOldSpaceSize) || maxOldSpaceSize < 0) {
+      throw new Error(
+        `--max-old-space-size must be a non-negative integer in megabytes (saw: "${cli.flags['maxOldSpaceSize']}"); pass a whole number like --max-old-space-size=4096 for 4GB`,
+      )
+    }
+    if (Number.isNaN(maxSemiSpaceSize) || maxSemiSpaceSize < 0) {
+      throw new Error(
+        `--max-semi-space-size must be a non-negative integer in megabytes (saw: "${cli.flags['maxSemiSpaceSize']}"); pass a whole number like --max-semi-space-size=128`,
+      )
+    }
+
+    _rawSpaceSizeFlags = {
+      maxOldSpaceSize,
+      maxSemiSpaceSize,
+    }
+  }
+  return _rawSpaceSizeFlags!
+}
+
+/**
+ * Reset cached flag values for testing purposes.
+ * @internal
+ */
+export function resetFlagCache(): void {
+  _rawSpaceSizeFlags = undefined
+  _maxOldSpaceSizeFlag = undefined
+  _maxSemiSpaceSizeFlag = undefined
 }
 // Ensure export because dist/flags.js is required in src/constants.mts.
 // eslint-disable-next-line n/exports-style

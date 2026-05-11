@@ -9,7 +9,7 @@
  * when one exists (so child_process can spawn it without `shell: true`).
  */
 
-import { existsSync,  readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'

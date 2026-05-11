@@ -27,10 +27,9 @@ export async function apiCall<T extends keyof SocketSdk>(
 }
 
 // Helper: derive a method's positional parameter type at a given index.
-type SdkArg<
-  T extends keyof SocketSdk,
-  I extends number,
-> = Parameters<SocketSdk[T]>[I]
+type SdkArg<T extends keyof SocketSdk, I extends number> = Parameters<
+  SocketSdk[T]
+>[I]
 
 /**
  * Simplified repository API calls

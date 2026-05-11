@@ -6,18 +6,10 @@ import type { GhsaDetails } from '../../utils/git/github.mts'
 
 const GITHUB_ADVISORIES_URL = 'https://github.com/advisories'
 
-/**
- * Extract unique package names with ecosystems from vulnerability details.
- */
-export function getUniquePackages(details: GhsaDetails): string[] {
-  return [
-    ...new Set(
-      details.vulnerabilities.nodes.map(
-        v => `${v.package.name} (${v.package.ecosystem})`,
-      ),
-    ),
-  ]
-}
+export const genericSocketFixBranchParser = createSocketFixBranchParser()
+
+// GHSA ID pattern: GHSA-xxxx-xxxx-xxxx (4 alphanumeric segments).
+const GHSA_ID_PATTERN = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/i
 
 export type SocketFixBranchParser = (
   branch: string,
@@ -43,14 +35,9 @@ export function createSocketFixBranchParser(
   }
 }
 
-export const genericSocketFixBranchParser = createSocketFixBranchParser()
-
 export function getSocketFixBranchName(ghsaId: string): string {
   return `socket/fix/${ghsaId}`
 }
-
-// GHSA ID pattern: GHSA-xxxx-xxxx-xxxx (4 alphanumeric segments).
-const GHSA_ID_PATTERN = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/i
 
 export function getSocketFixBranchPattern(ghsaId?: string | undefined): RegExp {
   // Escape special regex characters to prevent ReDoS attacks.
@@ -117,4 +104,17 @@ export function getSocketFixPullRequestTitle(ghsaIds: string[]): string {
   return vulnCount === 1 && firstGhsa
     ? `Fix for ${firstGhsa}`
     : `Fixes for ${vulnCount} GHSAs`
+}
+
+/**
+ * Extract unique package names with ecosystems from vulnerability details.
+ */
+export function getUniquePackages(details: GhsaDetails): string[] {
+  return [
+    ...new Set(
+      details.vulnerabilities.nodes.map(
+        v => `${v.package.name} (${v.package.ecosystem})`,
+      ),
+    ),
+  ]
 }

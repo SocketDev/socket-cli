@@ -55,6 +55,128 @@ export type BinaryResolution =
   | { type: 'github-release'; details: GitHubReleaseSpec }
 
 /**
+ * Platform-specific asset names for socket-patch GitHub releases.
+ * Maps Node.js platform/arch to GitHub release asset names.
+ *
+ * Socket-Patch v2.0.0+ Platform Coverage:
+ * - darwin-arm64: socket-patch-aarch64-apple-darwin.tar.gz
+ * - darwin-x64: socket-patch-x86_64-apple-darwin.tar.gz
+ * - linux-arm64: socket-patch-aarch64-unknown-linux-gnu.tar.gz
+ * - linux-x64: socket-patch-x86_64-unknown-linux-musl.tar.gz (musl works on glibc)
+ * - win32-arm64: socket-patch-aarch64-pc-windows-msvc.zip
+ * - win32-x64: socket-patch-x86_64-pc-windows-msvc.zip
+ */
+const SOCKET_PATCH_ASSETS: Record<string, string> = {
+  __proto__: undefined as unknown as string,
+  'darwin-arm64': 'socket-patch-aarch64-apple-darwin.tar.gz',
+  'darwin-x64': 'socket-patch-x86_64-apple-darwin.tar.gz',
+  'linux-arm64': 'socket-patch-aarch64-unknown-linux-gnu.tar.gz',
+  // FALLBACK: musl build works on glibc systems (statically linked).
+  'linux-x64': 'socket-patch-x86_64-unknown-linux-musl.tar.gz',
+  'win32-arm64': 'socket-patch-aarch64-pc-windows-msvc.zip',
+  'win32-x64': 'socket-patch-x86_64-pc-windows-msvc.zip',
+}
+
+/**
+ * Platform-specific asset name patterns for Trivy GitHub releases.
+ * Maps Node.js platform/arch to GitHub release asset name generator functions.
+ *
+ * Trivy Platform Coverage:
+ * - darwin-arm64: trivy_{version}_macOS-ARM64.tar.gz
+ * - darwin-x64: trivy_{version}_macOS-64bit.tar.gz
+ * - linux-arm64: trivy_{version}_Linux-ARM64.tar.gz
+ * - linux-x64: trivy_{version}_Linux-64bit.tar.gz
+ * - win32-x64: trivy_{version}_windows-64bit.zip
+ */
+const TRIVY_ASSET_PATTERNS: Record<string, (v: string) => string> = {
+  __proto__: undefined as unknown as (v: string) => string,
+  'darwin-arm64': (v: string) => `trivy_${v}_macOS-ARM64.tar.gz`,
+  'darwin-x64': (v: string) => `trivy_${v}_macOS-64bit.tar.gz`,
+  'linux-arm64': (v: string) => `trivy_${v}_Linux-ARM64.tar.gz`,
+  'linux-x64': (v: string) => `trivy_${v}_Linux-64bit.tar.gz`,
+  'win32-x64': (v: string) => `trivy_${v}_windows-64bit.zip`,
+}
+
+/**
+ * Platform-specific asset name patterns for TruffleHog GitHub releases.
+ * Maps Node.js platform/arch to GitHub release asset name generator functions.
+ *
+ * TruffleHog Platform Coverage:
+ * - darwin-arm64: trufflehog_{version}_darwin_arm64.tar.gz
+ * - darwin-x64: trufflehog_{version}_darwin_amd64.tar.gz
+ * - linux-arm64: trufflehog_{version}_linux_arm64.tar.gz
+ * - linux-x64: trufflehog_{version}_linux_amd64.tar.gz
+ * - win32-arm64: trufflehog_{version}_windows_arm64.tar.gz
+ * - win32-x64: trufflehog_{version}_windows_amd64.tar.gz
+ */
+const TRUFFLEHOG_ASSET_PATTERNS: Record<string, (v: string) => string> = {
+  __proto__: undefined as unknown as (v: string) => string,
+  'darwin-arm64': (v: string) => `trufflehog_${v}_darwin_arm64.tar.gz`,
+  'darwin-x64': (v: string) => `trufflehog_${v}_darwin_amd64.tar.gz`,
+  'linux-arm64': (v: string) => `trufflehog_${v}_linux_arm64.tar.gz`,
+  'linux-x64': (v: string) => `trufflehog_${v}_linux_amd64.tar.gz`,
+  'win32-arm64': (v: string) => `trufflehog_${v}_windows_arm64.tar.gz`,
+  'win32-x64': (v: string) => `trufflehog_${v}_windows_amd64.tar.gz`,
+}
+
+/**
+ * Platform-specific asset names for OpenGrep GitHub releases.
+ * Maps Node.js platform/arch to GitHub release asset names.
+ *
+ * OpenGrep Platform Coverage:
+ * - darwin-arm64: opengrep-core_osx_aarch64.tar.gz
+ * - darwin-x64: opengrep-core_osx_x86.tar.gz
+ * - linux-arm64: opengrep-core_linux_aarch64.tar.gz
+ * - linux-x64: opengrep-core_linux_x86.tar.gz
+ * - win32-x64: opengrep-core_windows_x86.zip
+ */
+const OPENGREP_ASSETS: Record<string, string> = {
+  __proto__: undefined as unknown as string,
+  'darwin-arm64': 'opengrep-core_osx_aarch64.tar.gz',
+  'darwin-x64': 'opengrep-core_osx_x86.tar.gz',
+  'linux-arm64': 'opengrep-core_linux_aarch64.tar.gz',
+  'linux-x64': 'opengrep-core_linux_x86.tar.gz',
+  'win32-x64': 'opengrep-core_windows_x86.zip',
+}
+
+export function getTrivyAssetName(version: string): string | undefined {
+  const platform = os.platform()
+  const arch = os.arch()
+  const platformKey = `${platform}-${arch}`
+
+  const pattern = TRIVY_ASSET_PATTERNS[platformKey]
+  return pattern ? pattern(version) : undefined
+}
+
+export function getTrufflehogAssetName(version: string): string | undefined {
+  const platform = os.platform()
+  const arch = os.arch()
+  const platformKey = `${platform}-${arch}`
+
+  const pattern = TRUFFLEHOG_ASSET_PATTERNS[platformKey]
+  return pattern ? pattern(version) : undefined
+}
+
+/**
+ * Resolve path for cdxgen binary.
+ * Checks SOCKET_CLI_CDXGEN_LOCAL_PATH environment variable first.
+ */
+export function resolveCdxgen(): BinaryResolution {
+  if (SOCKET_CLI_CDXGEN_LOCAL_PATH) {
+    return { type: 'local', path: SOCKET_CLI_CDXGEN_LOCAL_PATH }
+  }
+
+  return {
+    type: 'dlx',
+    details: {
+      name: '@cyclonedx/cdxgen',
+      version: getCdxgenVersion(),
+      binaryName: 'cdxgen',
+    },
+  }
+}
+
+/**
  * Resolve path for Coana CLI binary.
  * Checks SOCKET_CLI_COANA_LOCAL_PATH environment variable first.
  */
@@ -74,20 +196,33 @@ export function resolveCoana(): BinaryResolution {
 }
 
 /**
- * Resolve path for cdxgen binary.
- * Checks SOCKET_CLI_CDXGEN_LOCAL_PATH environment variable first.
+ * Resolve path for OpenGrep binary.
+ * Downloads from GitHub releases (opengrep/opengrep).
  */
-export function resolveCdxgen(): BinaryResolution {
-  if (SOCKET_CLI_CDXGEN_LOCAL_PATH) {
-    return { type: 'local', path: SOCKET_CLI_CDXGEN_LOCAL_PATH }
+export function resolveOpengrep(): BinaryResolution {
+  const platform = os.platform()
+  const arch = os.arch()
+  const platformKey = `${platform}-${arch}`
+  const assetName = OPENGREP_ASSETS[platformKey]
+
+  if (!assetName) {
+    throw new Error(
+      `OpenGrep has no prebuilt binary for "${platformKey}" (supported: ${joinAnd(Object.keys(OPENGREP_ASSETS))}); run socket-cli on a supported platform or install OpenGrep manually and point \`opengrep\` at it on PATH`,
+    )
   }
 
+  const sha256 = requireOpengrepChecksum(assetName)
+
   return {
-    type: 'dlx',
+    type: 'github-release',
     details: {
-      name: '@cyclonedx/cdxgen',
-      version: getCdxgenVersion(),
-      binaryName: 'cdxgen',
+      assetName,
+      // OpenGrep extracts to 'osemgrep' binary.
+      binaryName: 'osemgrep',
+      owner: 'opengrep',
+      repo: 'opengrep',
+      sha256,
+      version: getOpengrepVersion(),
     },
   }
 }
@@ -125,29 +260,6 @@ export function resolveSfw(): BinaryResolution {
       binaryName: 'sfw',
     },
   }
-}
-
-/**
- * Platform-specific asset names for socket-patch GitHub releases.
- * Maps Node.js platform/arch to GitHub release asset names.
- *
- * Socket-Patch v2.0.0+ Platform Coverage:
- * - darwin-arm64: socket-patch-aarch64-apple-darwin.tar.gz
- * - darwin-x64: socket-patch-x86_64-apple-darwin.tar.gz
- * - linux-arm64: socket-patch-aarch64-unknown-linux-gnu.tar.gz
- * - linux-x64: socket-patch-x86_64-unknown-linux-musl.tar.gz (musl works on glibc)
- * - win32-arm64: socket-patch-aarch64-pc-windows-msvc.zip
- * - win32-x64: socket-patch-x86_64-pc-windows-msvc.zip
- */
-const SOCKET_PATCH_ASSETS: Record<string, string> = {
-  __proto__: undefined as unknown as string,
-  'darwin-arm64': 'socket-patch-aarch64-apple-darwin.tar.gz',
-  'darwin-x64': 'socket-patch-x86_64-apple-darwin.tar.gz',
-  'linux-arm64': 'socket-patch-aarch64-unknown-linux-gnu.tar.gz',
-  // FALLBACK: musl build works on glibc systems (statically linked).
-  'linux-x64': 'socket-patch-x86_64-unknown-linux-musl.tar.gz',
-  'win32-arm64': 'socket-patch-aarch64-pc-windows-msvc.zip',
-  'win32-x64': 'socket-patch-x86_64-pc-windows-msvc.zip',
 }
 
 /**
@@ -207,35 +319,6 @@ export function resolveSynp(): BinaryResolution {
 }
 
 /**
- * Platform-specific asset name patterns for Trivy GitHub releases.
- * Maps Node.js platform/arch to GitHub release asset name generator functions.
- *
- * Trivy Platform Coverage:
- * - darwin-arm64: trivy_{version}_macOS-ARM64.tar.gz
- * - darwin-x64: trivy_{version}_macOS-64bit.tar.gz
- * - linux-arm64: trivy_{version}_Linux-ARM64.tar.gz
- * - linux-x64: trivy_{version}_Linux-64bit.tar.gz
- * - win32-x64: trivy_{version}_windows-64bit.zip
- */
-const TRIVY_ASSET_PATTERNS: Record<string, (v: string) => string> = {
-  __proto__: undefined as unknown as (v: string) => string,
-  'darwin-arm64': (v: string) => `trivy_${v}_macOS-ARM64.tar.gz`,
-  'darwin-x64': (v: string) => `trivy_${v}_macOS-64bit.tar.gz`,
-  'linux-arm64': (v: string) => `trivy_${v}_Linux-ARM64.tar.gz`,
-  'linux-x64': (v: string) => `trivy_${v}_Linux-64bit.tar.gz`,
-  'win32-x64': (v: string) => `trivy_${v}_windows-64bit.zip`,
-}
-
-export function getTrivyAssetName(version: string): string | undefined {
-  const platform = os.platform()
-  const arch = os.arch()
-  const platformKey = `${platform}-${arch}`
-
-  const pattern = TRIVY_ASSET_PATTERNS[platformKey]
-  return pattern ? pattern(version) : undefined
-}
-
-/**
  * Resolve path for Trivy binary.
  * Downloads from GitHub releases (aquasecurity/trivy).
  */
@@ -268,37 +351,6 @@ export function resolveTrivy(): BinaryResolution {
 }
 
 /**
- * Platform-specific asset name patterns for TruffleHog GitHub releases.
- * Maps Node.js platform/arch to GitHub release asset name generator functions.
- *
- * TruffleHog Platform Coverage:
- * - darwin-arm64: trufflehog_{version}_darwin_arm64.tar.gz
- * - darwin-x64: trufflehog_{version}_darwin_amd64.tar.gz
- * - linux-arm64: trufflehog_{version}_linux_arm64.tar.gz
- * - linux-x64: trufflehog_{version}_linux_amd64.tar.gz
- * - win32-arm64: trufflehog_{version}_windows_arm64.tar.gz
- * - win32-x64: trufflehog_{version}_windows_amd64.tar.gz
- */
-const TRUFFLEHOG_ASSET_PATTERNS: Record<string, (v: string) => string> = {
-  __proto__: undefined as unknown as (v: string) => string,
-  'darwin-arm64': (v: string) => `trufflehog_${v}_darwin_arm64.tar.gz`,
-  'darwin-x64': (v: string) => `trufflehog_${v}_darwin_amd64.tar.gz`,
-  'linux-arm64': (v: string) => `trufflehog_${v}_linux_arm64.tar.gz`,
-  'linux-x64': (v: string) => `trufflehog_${v}_linux_amd64.tar.gz`,
-  'win32-arm64': (v: string) => `trufflehog_${v}_windows_arm64.tar.gz`,
-  'win32-x64': (v: string) => `trufflehog_${v}_windows_amd64.tar.gz`,
-}
-
-export function getTrufflehogAssetName(version: string): string | undefined {
-  const platform = os.platform()
-  const arch = os.arch()
-  const platformKey = `${platform}-${arch}`
-
-  const pattern = TRUFFLEHOG_ASSET_PATTERNS[platformKey]
-  return pattern ? pattern(version) : undefined
-}
-
-/**
  * Resolve path for TruffleHog binary.
  * Downloads from GitHub releases (trufflesecurity/trufflehog).
  */
@@ -326,58 +378,6 @@ export function resolveTrufflehog(): BinaryResolution {
       sha256,
       // TruffleHog uses 'v' prefix for release tags.
       version: `v${version}`,
-    },
-  }
-}
-
-/**
- * Platform-specific asset names for OpenGrep GitHub releases.
- * Maps Node.js platform/arch to GitHub release asset names.
- *
- * OpenGrep Platform Coverage:
- * - darwin-arm64: opengrep-core_osx_aarch64.tar.gz
- * - darwin-x64: opengrep-core_osx_x86.tar.gz
- * - linux-arm64: opengrep-core_linux_aarch64.tar.gz
- * - linux-x64: opengrep-core_linux_x86.tar.gz
- * - win32-x64: opengrep-core_windows_x86.zip
- */
-const OPENGREP_ASSETS: Record<string, string> = {
-  __proto__: undefined as unknown as string,
-  'darwin-arm64': 'opengrep-core_osx_aarch64.tar.gz',
-  'darwin-x64': 'opengrep-core_osx_x86.tar.gz',
-  'linux-arm64': 'opengrep-core_linux_aarch64.tar.gz',
-  'linux-x64': 'opengrep-core_linux_x86.tar.gz',
-  'win32-x64': 'opengrep-core_windows_x86.zip',
-}
-
-/**
- * Resolve path for OpenGrep binary.
- * Downloads from GitHub releases (opengrep/opengrep).
- */
-export function resolveOpengrep(): BinaryResolution {
-  const platform = os.platform()
-  const arch = os.arch()
-  const platformKey = `${platform}-${arch}`
-  const assetName = OPENGREP_ASSETS[platformKey]
-
-  if (!assetName) {
-    throw new Error(
-      `OpenGrep has no prebuilt binary for "${platformKey}" (supported: ${joinAnd(Object.keys(OPENGREP_ASSETS))}); run socket-cli on a supported platform or install OpenGrep manually and point \`opengrep\` at it on PATH`,
-    )
-  }
-
-  const sha256 = requireOpengrepChecksum(assetName)
-
-  return {
-    type: 'github-release',
-    details: {
-      assetName,
-      // OpenGrep extracts to 'osemgrep' binary.
-      binaryName: 'osemgrep',
-      owner: 'opengrep',
-      repo: 'opengrep',
-      sha256,
-      version: getOpengrepVersion(),
     },
   }
 }

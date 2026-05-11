@@ -556,12 +556,7 @@ export function logAlertsMap(
       const attributes = [
         ...(severity
           ? [
-              (
-                colors as unknown as Record<
-                  string,
-                  (s: string) => string
-                >
-              )[
+              (colors as unknown as Record<string, (s: string) => string>)[
                 ALERT_SEVERITY_COLOR[
                   severity as keyof typeof ALERT_SEVERITY_COLOR
                 ]

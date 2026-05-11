@@ -12,6 +12,95 @@ import { serializeResultJson } from '../output/result-json.mjs'
 import type { CResult, OutputKind } from '../../types.mjs'
 const logger = getDefaultLogger()
 
+/**
+ * Common table column definitions
+ */
+export const commonColumns = {
+  id: { field: 'id', name: colors.magenta('ID') },
+  name: { field: 'name', name: colors.magenta('Name') },
+  description: { field: 'description', name: colors.magenta('Description') },
+  status: {
+    field: 'status',
+    name: colors.magenta('Status'),
+    transform: (v: string) =>
+      v === 'active' ? colors.green(v) : colors.yellow(v),
+  },
+  created: {
+    field: 'created_at',
+    name: colors.magenta('Created'),
+    transform: (v: string) => new Date(v).toLocaleDateString(),
+  },
+  updated: {
+    field: 'updated_at',
+    name: colors.magenta('Updated'),
+    transform: (v: string) => new Date(v).toLocaleDateString(),
+  },
+  boolean: (field: string, label: string) => ({
+    field,
+    name: colors.magenta(label),
+    transform: (v: boolean) => (v ? colors.green('✓') : colors.red('✗')),
+  }),
+}
+
+/**
+ * Pagination helper for list outputs
+ */
+export function outputPaginatedList<T>(
+  result: CResult<T>,
+  outputKind: OutputKind,
+  pagination: {
+    page: number
+    perPage: number
+    nextPage: number | null
+    sort?: string
+    direction?: string
+  },
+  tableOptions: {
+    columns: TableColumn[]
+    getRows: (data: T) => Array<Record<string, unknown>>
+    emptyMessage?: string
+  },
+): void {
+  simpleOutput(result, outputKind, {
+    json: data => ({
+      data,
+      ...pagination,
+    }),
+    text: data => {
+      // Show pagination info
+      const { direction, nextPage, page, perPage, sort } = pagination
+      logger.log(
+        `Page: ${page}, Per page: ${perPage === Number.POSITIVE_INFINITY ? 'all' : perPage}` +
+          (sort ? `, Sort: ${sort}` : '') +
+          (direction ? `, Direction: ${direction}` : ''),
+      )
+
+      // Show table
+      const rows = tableOptions.getRows(data)
+      if (!rows.length) {
+        logger.log(tableOptions.emptyMessage || 'No results found')
+        return
+      }
+
+      const formattedRows = rows.map(row => {
+        const formatted: Record<string, unknown> = {}
+        for (const col of tableOptions.columns) {
+          const value = row[col.field]
+          formatted[col.field] = col.transform ? col.transform(value) : value
+        }
+        return formatted
+      })
+
+      logger.log(chalkTable({ columns: tableOptions.columns }, formattedRows))
+
+      // Show next page hint
+      if (nextPage !== null) {
+        logger.log(`\nNext page: ${nextPage}`)
+      }
+    },
+  })
+}
+
 // Simple outputResult implementation
 export function outputResult<T>(
   result: CResult<T>,
@@ -108,95 +197,6 @@ export function simpleOutput<T>(
 
       // Default: log the data
       logger.log(data)
-    },
-  })
-}
-
-/**
- * Common table column definitions
- */
-export const commonColumns = {
-  id: { field: 'id', name: colors.magenta('ID') },
-  name: { field: 'name', name: colors.magenta('Name') },
-  description: { field: 'description', name: colors.magenta('Description') },
-  status: {
-    field: 'status',
-    name: colors.magenta('Status'),
-    transform: (v: string) =>
-      v === 'active' ? colors.green(v) : colors.yellow(v),
-  },
-  created: {
-    field: 'created_at',
-    name: colors.magenta('Created'),
-    transform: (v: string) => new Date(v).toLocaleDateString(),
-  },
-  updated: {
-    field: 'updated_at',
-    name: colors.magenta('Updated'),
-    transform: (v: string) => new Date(v).toLocaleDateString(),
-  },
-  boolean: (field: string, label: string) => ({
-    field,
-    name: colors.magenta(label),
-    transform: (v: boolean) => (v ? colors.green('✓') : colors.red('✗')),
-  }),
-}
-
-/**
- * Pagination helper for list outputs
- */
-export function outputPaginatedList<T>(
-  result: CResult<T>,
-  outputKind: OutputKind,
-  pagination: {
-    page: number
-    perPage: number
-    nextPage: number | null
-    sort?: string
-    direction?: string
-  },
-  tableOptions: {
-    columns: TableColumn[]
-    getRows: (data: T) => Array<Record<string, unknown>>
-    emptyMessage?: string
-  },
-): void {
-  simpleOutput(result, outputKind, {
-    json: data => ({
-      data,
-      ...pagination,
-    }),
-    text: data => {
-      // Show pagination info
-      const { direction, nextPage, page, perPage, sort } = pagination
-      logger.log(
-        `Page: ${page}, Per page: ${perPage === Number.POSITIVE_INFINITY ? 'all' : perPage}` +
-          (sort ? `, Sort: ${sort}` : '') +
-          (direction ? `, Direction: ${direction}` : ''),
-      )
-
-      // Show table
-      const rows = tableOptions.getRows(data)
-      if (!rows.length) {
-        logger.log(tableOptions.emptyMessage || 'No results found')
-        return
-      }
-
-      const formattedRows = rows.map(row => {
-        const formatted: Record<string, unknown> = {}
-        for (const col of tableOptions.columns) {
-          const value = row[col.field]
-          formatted[col.field] = col.transform ? col.transform(value) : value
-        }
-        return formatted
-      })
-
-      logger.log(chalkTable({ columns: tableOptions.columns }, formattedRows))
-
-      // Show next page hint
-      if (nextPage !== null) {
-        logger.log(`\nNext page: ${nextPage}`)
-      }
     },
   })
 }

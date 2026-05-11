@@ -58,14 +58,20 @@ export async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    outputDryRunExecute(getNpxBinPath(), argv as string[], 'raw pnpm exec command')
+    outputDryRunExecute(
+      getNpxBinPath(),
+      argv as string[],
+      'raw pnpm exec command',
+    )
     return
   }
 
   await runRawNpx(argv)
 }
 
-export async function runRawNpx(argv: string[] | readonly string[]): Promise<void> {
+export async function runRawNpx(
+  argv: string[] | readonly string[],
+): Promise<void> {
   process.exitCode = 1
 
   const spawnPromise = spawn(getNpxBinPath(), argv as string[], {

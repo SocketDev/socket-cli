@@ -198,7 +198,11 @@ export const commandPatterns = {
   /**
    * Build a standard create command
    */
-  create: (entity: string, args: string, handler: CommandBuilderOptions['handler']) =>
+  create: (
+    entity: string,
+    args: string,
+    handler: CommandBuilderOptions['handler'],
+  ) =>
     buildCommand({
       name: `create-${entity}`,
       description: `Create a new ${entity}`,
@@ -211,7 +215,11 @@ export const commandPatterns = {
   /**
    * Build a standard delete command
    */
-  delete: (entity: string, args: string, handler: CommandBuilderOptions['handler']) =>
+  delete: (
+    entity: string,
+    args: string,
+    handler: CommandBuilderOptions['handler'],
+  ) =>
     buildCommand({
       name: `delete-${entity}`,
       description: `Delete a ${entity}`,
@@ -223,7 +231,11 @@ export const commandPatterns = {
   /**
    * Build a standard view command
    */
-  view: (entity: string, args: string, handler: CommandBuilderOptions['handler']) =>
+  view: (
+    entity: string,
+    args: string,
+    handler: CommandBuilderOptions['handler'],
+  ) =>
     buildCommand({
       name: `view-${entity}`,
       description: `View details of a ${entity}`,

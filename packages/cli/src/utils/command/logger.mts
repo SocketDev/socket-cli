@@ -47,6 +47,34 @@ export interface CommandLogger {
 }
 
 /**
+ * Global logger instance (re-exported for convenience)
+ */
+export { getDefaultLogger }
+
+/**
+ * Logger factory with LRU cache to prevent unbounded growth.
+ * Limits to 100 command loggers in memory.
+ */
+const instances = new LRUCache<string, CommandLogger>({ max: 100 })
+
+/**
+ * Clear all loggers from the cache.
+ * Useful for cleanup in long-running processes.
+ */
+export function clearAllLoggers(): void {
+  instances.clear()
+}
+
+/**
+ * Clear a specific logger from the cache.
+ *
+ * @param commandName - The command name to clear
+ */
+export function clearLogger(commandName: string): void {
+  instances.delete(commandName)
+}
+
+/**
  * Creates a command-scoped logger that prefixes all messages with the command name
  *
  * @param commandName - The name of the command (e.g., 'scan:create', 'repository:delete')
@@ -95,6 +123,37 @@ export function createCommandLogger(
 }
 
 /**
+ * Create a logger for debugging purposes
+ * Only logs when DEBUG environment variable matches the namespace
+ *
+ * @param namespace - Debug namespace (e.g., 'socket:cli:scan')
+ * @returns A debug logger function
+ *
+ * @example
+ * const debug = createDebugLogger('socket:cli:scan')
+ * debug('Scanning directory...') // Only logs if DEBUG=socket:cli:scan
+ */
+export function createDebugLogger(
+  namespace: string,
+): (...args: unknown[]) => void {
+  const debugEnv = process.env['DEBUG']
+  const enabled =
+    debugEnv === '*' ||
+    debugEnv?.split(',').some(ns => {
+      const pattern = ns.trim().replace(/\*/g, '.*')
+      return new RegExp(`^${pattern}$`).test(namespace)
+    })
+
+  if (!enabled) {
+    return () => {}
+  }
+
+  return (...args: unknown[]) => {
+    logger.log(`[${namespace}]`, ...args)
+  }
+}
+
+/**
  * Creates a scoped logger for a specific operation within a command
  *
  * @param commandLogger - The command logger to scope
@@ -116,46 +175,6 @@ export function createOperationLogger(
 }
 
 /**
- * Global logger instance (re-exported for convenience)
- */
-export { getDefaultLogger }
-
-/**
- * Create a logger for debugging purposes
- * Only logs when DEBUG environment variable matches the namespace
- *
- * @param namespace - Debug namespace (e.g., 'socket:cli:scan')
- * @returns A debug logger function
- *
- * @example
- * const debug = createDebugLogger('socket:cli:scan')
- * debug('Scanning directory...') // Only logs if DEBUG=socket:cli:scan
- */
-export function createDebugLogger(namespace: string): (...args: unknown[]) => void {
-  const debugEnv = process.env['DEBUG']
-  const enabled =
-    debugEnv === '*' ||
-    debugEnv?.split(',').some(ns => {
-      const pattern = ns.trim().replace(/\*/g, '.*')
-      return new RegExp(`^${pattern}$`).test(namespace)
-    })
-
-  if (!enabled) {
-    return () => {}
-  }
-
-  return (...args: unknown[]) => {
-    logger.log(`[${namespace}]`, ...args)
-  }
-}
-
-/**
- * Logger factory with LRU cache to prevent unbounded growth.
- * Limits to 100 command loggers in memory.
- */
-const instances = new LRUCache<string, CommandLogger>({ max: 100 })
-
-/**
  * Get or create a command logger.
  *
  * @param commandName - The command name
@@ -168,21 +187,4 @@ export function getLogger(commandName: string): CommandLogger {
     instances.set(commandName, logger)
   }
   return logger
-}
-
-/**
- * Clear a specific logger from the cache.
- *
- * @param commandName - The command name to clear
- */
-export function clearLogger(commandName: string): void {
-  instances.delete(commandName)
-}
-
-/**
- * Clear all loggers from the cache.
- * Useful for cleanup in long-running processes.
- */
-export function clearAllLoggers(): void {
-  instances.clear()
 }

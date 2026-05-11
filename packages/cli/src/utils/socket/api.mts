@@ -56,31 +56,6 @@ const logger = getDefaultLogger()
 
 const NO_ERROR_MESSAGE = 'No error message returned'
 
-// Wraps httpRequest with extra CA certificates from SSL_CERT_FILE.
-export async function socketHttpRequest(
-  url: string,
-  options?: HttpRequestOptions | undefined,
-): Promise<HttpResponse> {
-  const ca = getExtraCaCerts()
-  /* c8 ignore next 3 - SSL_CERT_FILE not set in tests; getExtraCaCerts returns undefined */
-  if (ca) {
-    return await httpRequest(url, { ...(options ?? {}), ca })
-  }
-  return await httpRequest(url, options)
-}
-
-// Safe wrapper for `response.text()` in error-handling code paths.
-// `text()` can throw (e.g. already consumed, malformed body), which
-// would blow past the `ok: false` CResult return and break the
-// error-handling contract of callers like `queryApiSafeText`.
-export function tryReadResponseText(result: HttpResponse): string | undefined {
-  try {
-    return result.text?.()
-  } catch {
-    return undefined
-  }
-}
-
 // User-facing error messages + permission-requirements logging
 // extracted to keep this file under the 1000-line File-size cap.
 import {
@@ -295,6 +270,33 @@ export async function queryApi(path: string, apiToken: string) {
 }
 
 /**
+ * Query Socket API endpoint and return parsed JSON response.
+ */
+export async function queryApiSafeJson<T>(
+  path: string,
+  description = '',
+): Promise<CResult<T>> {
+  const result = await queryApiSafeText(path, description)
+
+  if (!result.ok) {
+    return result
+  }
+
+  try {
+    return {
+      ok: true,
+      data: JSON.parse(result.data) as T,
+    }
+  } catch (_e) {
+    return {
+      ok: false,
+      message: 'Server returned invalid JSON',
+      cause: `Please report this. JSON.parse threw an error over the following response: \`${(result.data?.slice?.(0, 100) || '').trim() + (result.data?.length > 100 ? '…' : '')}\``,
+    }
+  }
+}
+
+/**
  * Query Socket API endpoint and return text response with error handling.
  */
 export async function queryApiSafeText(
@@ -412,33 +414,6 @@ export async function queryApiSafeText(
       ok: false,
       message: 'API request failed',
       cause: `Unexpected error reading response text (path: ${path})`,
-    }
-  }
-}
-
-/**
- * Query Socket API endpoint and return parsed JSON response.
- */
-export async function queryApiSafeJson<T>(
-  path: string,
-  description = '',
-): Promise<CResult<T>> {
-  const result = await queryApiSafeText(path, description)
-
-  if (!result.ok) {
-    return result
-  }
-
-  try {
-    return {
-      ok: true,
-      data: JSON.parse(result.data) as T,
-    }
-  } catch (_e) {
-    return {
-      ok: false,
-      message: 'Server returned invalid JSON',
-      cause: `Please report this. JSON.parse threw an error over the following response: \`${(result.data?.slice?.(0, 100) || '').trim() + (result.data?.length > 100 ? '…' : '')}\``,
     }
   }
 }
@@ -603,5 +578,30 @@ export async function sendApiRequest<T>(
       message: 'API request failed',
       cause: `Unexpected error parsing response JSON (path: ${path})`,
     }
+  }
+}
+
+// Wraps httpRequest with extra CA certificates from SSL_CERT_FILE.
+export async function socketHttpRequest(
+  url: string,
+  options?: HttpRequestOptions | undefined,
+): Promise<HttpResponse> {
+  const ca = getExtraCaCerts()
+  /* c8 ignore next 3 - SSL_CERT_FILE not set in tests; getExtraCaCerts returns undefined */
+  if (ca) {
+    return await httpRequest(url, { ...(options ?? {}), ca })
+  }
+  return await httpRequest(url, options)
+}
+
+// Safe wrapper for `response.text()` in error-handling code paths.
+// `text()` can throw (e.g. already consumed, malformed body), which
+// would blow past the `ok: false` CResult return and break the
+// error-handling contract of callers like `queryApiSafeText`.
+export function tryReadResponseText(result: HttpResponse): string | undefined {
+  try {
+    return result.text?.()
+  } catch {
+    return undefined
   }
 }

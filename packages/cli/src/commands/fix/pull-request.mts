@@ -412,9 +412,8 @@ export async function openSocketFixPr(
 
     // Handle RequestError from Octokit/provider.
     if (e instanceof RequestError) {
-      const errors = (
-        e.response?.data as { errors?: unknown } | undefined
-      )?.errors
+      const errors = (e.response?.data as { errors?: unknown } | undefined)
+        ?.errors
       const errorMessages = Array.isArray(errors)
         ? errors.map(
             (d: {
@@ -422,8 +421,7 @@ export async function openSocketFixPr(
               resource?: string
               field?: string
               code?: string
-            }) =>
-              d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`,
+            }) => d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`,
           )
         : []
 

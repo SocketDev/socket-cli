@@ -60,6 +60,43 @@ const debug = (message: string): void => {
   debugNs('socket:telemetry:integration', message)
 }
 
+// Track whether exit handlers have been set up to prevent duplicate registration.
+let exitHandlersRegistered = false
+
+// Add other subcommands
+const WRAPPER_CLI = new Set(['bun', 'npm', 'npx', 'pip', 'pnpm', 'vlt', 'yarn'])
+
+// Add other sensitive flags
+const API_TOKEN_FLAGS = new Set(['--api-token', '--token', '-t'])
+
+/**
+ * Build context for the current telemetry entry.
+ *
+ * The context contains the current execution context, in which all CLI invocation should have access to.
+ *
+ * @param argv Command line arguments.
+ * @returns Telemetry context object.
+ */
+export function buildContext(argv: string[]): TelemetryContext {
+  return {
+    arch: process.arch,
+    argv: sanitizeArgv(argv),
+    node_version: process.version,
+    platform: process.platform,
+    version: constants.ENV.INLINED_VERSION,
+  }
+}
+
+/**
+ * Calculate duration from start timestamp.
+ *
+ * @param startTime - Start timestamp from Date.now().
+ * @returns Duration in milliseconds.
+ */
+export function calculateDuration(startTime: number): number {
+  return Date.now() - startTime
+}
+
 /**
  * Finalize telemetry and clean up resources (async version).
  * This should be called before process.exit to ensure telemetry is sent and resources are cleaned up.
@@ -91,112 +128,14 @@ export function finalizeTelemetrySync(): void {
   }
 }
 
-// Track whether exit handlers have been set up to prevent duplicate registration.
-let exitHandlersRegistered = false
-
 /**
- * Set up exit handlers for telemetry finalization.
- * This registers handlers for both normal exits (beforeExit) and common fatal signals.
+ * Normalize error to Error object.
  *
- * Flushing strategy:
- * - Batch-based: Auto-flush when queue reaches 10 events.
- * - beforeExit: Async handler for clean shutdowns (when event loop empties).
- * - Fatal signals (SIGINT, SIGTERM, SIGHUP): Best-effort sync flush.
- * - Accepts that forced exits (SIGKILL, process.exit()) may lose final events.
- *
- * Call this once during CLI initialization to ensure telemetry is flushed on exit.
- * Safe to call multiple times - only registers handlers once.
- *
- * @example
- * ```typescript
- * // In src/cli.mts
- * setupTelemetryExitHandlers()
- * ```
+ * @param error - Unknown error value.
+ * @returns Error object.
  */
-export function setupTelemetryExitHandlers(): void {
-  // Prevent duplicate handler registration.
-  if (exitHandlersRegistered) {
-    debug('Telemetry exit handlers already registered, skipping')
-    return
-  }
-
-  exitHandlersRegistered = true
-
-  // Use beforeExit for async finalization during clean shutdowns.
-  // This fires when the event loop empties but before process actually exits.
-  process.on('beforeExit', () => {
-    debug('beforeExit handler triggered')
-    void finalizeTelemetry()
-  })
-
-  // Register handlers for common fatal signals as best-effort fallback.
-  // These are synchronous contexts, so we can only trigger flush without awaiting.
-  const fatalSignals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP']
-
-  for (const signal of fatalSignals) {
-    try {
-      process.on(signal, () => {
-        debug(`Signal ${signal} received, attempting sync flush`)
-        finalizeTelemetrySync()
-      })
-    } catch (e) {
-      // Some signals may not be available on all platforms.
-      debug(`Failed to register handler for signal ${signal}: ${e}`)
-    }
-  }
-
-  debug('Telemetry exit handlers registered (beforeExit + common signals)')
-}
-
-/**
- * Track subprocess exit and finalize telemetry.
- * This is a convenience function that tracks completion/error based on exit code
- * and ensures telemetry is flushed before returning.
- *
- * Note: Only tracks subprocess-level events. CLI-level events (cli_complete, cli_error)
- * are tracked by the main CLI entry point in src/cli.mts.
- *
- * @param command - Command name (e.g., 'npm', 'pip').
- * @param startTime - Start timestamp from trackSubprocessStart.
- * @param exitCode - Process exit code (null treated as error).
- * @returns Promise that resolves when tracking and flush complete.
- *
- * @example
- * ```typescript
- * await trackSubprocessExit(NPM, subprocessStartTime, code)
- * ```
- */
-export async function trackSubprocessExit(
-  command: string,
-  startTime: number,
-  exitCode: number | null,
-): Promise<void> {
-  // Track subprocess completion or error based on exit code.
-  if (exitCode !== null && exitCode !== 0) {
-    const error = new Error(`${command} exited with code ${exitCode}`)
-    await trackSubprocessError(command, startTime, error, exitCode)
-  } else if (exitCode === 0) {
-    await trackSubprocessComplete(command, startTime, exitCode)
-  }
-
-  // Flush telemetry to ensure events are sent before exit.
-  await finalizeTelemetry()
-}
-
-// Add other subcommands
-const WRAPPER_CLI = new Set(['bun', 'npm', 'npx', 'pip', 'pnpm', 'vlt', 'yarn'])
-
-// Add other sensitive flags
-const API_TOKEN_FLAGS = new Set(['--api-token', '--token', '-t'])
-
-/**
- * Calculate duration from start timestamp.
- *
- * @param startTime - Start timestamp from Date.now().
- * @returns Duration in milliseconds.
- */
-export function calculateDuration(startTime: number): number {
-  return Date.now() - startTime
+export function normalizeError(error: unknown): Error {
+  return isError(error) ? error : new Error(String(error))
 }
 
 /**
@@ -211,34 +150,6 @@ export function normalizeExitCode(
   defaultValue: number,
 ): number {
   return typeof exitCode === 'number' ? exitCode : defaultValue
-}
-
-/**
- * Normalize error to Error object.
- *
- * @param error - Unknown error value.
- * @returns Error object.
- */
-export function normalizeError(error: unknown): Error {
-  return isError(error) ? error : new Error(String(error))
-}
-
-/**
- * Build context for the current telemetry entry.
- *
- * The context contains the current execution context, in which all CLI invocation should have access to.
- *
- * @param argv Command line arguments.
- * @returns Telemetry context object.
- */
-export function buildContext(argv: string[]): TelemetryContext {
-  return {
-    arch: process.arch,
-    argv: sanitizeArgv(argv),
-    node_version: process.version,
-    platform: process.platform,
-    version: constants.ENV.INLINED_VERSION,
-  }
 }
 
 /**
@@ -301,7 +212,9 @@ export function sanitizeArgv(argv: string[]): string[] {
  * @param input Raw input.
  * @returns Sanitized input.
  */
-export function sanitizeErrorAttribute(input: string | undefined): string | undefined {
+export function sanitizeErrorAttribute(
+  input: string | undefined,
+): string | undefined {
   if (!input) {
     return undefined
   }
@@ -316,99 +229,57 @@ export function sanitizeErrorAttribute(input: string | undefined): string | unde
 }
 
 /**
- * Generic event tracking function.
- * Tracks any telemetry event with optional error details and explicit flush.
+ * Set up exit handlers for telemetry finalization.
+ * This registers handlers for both normal exits (beforeExit) and common fatal signals.
  *
- * Events are automatically flushed via batch size or exit handlers.
- * Use the flush option only when immediate submission is required.
+ * Flushing strategy:
+ * - Batch-based: Auto-flush when queue reaches 10 events.
+ * - beforeExit: Async handler for clean shutdowns (when event loop empties).
+ * - Fatal signals (SIGINT, SIGTERM, SIGHUP): Best-effort sync flush.
+ * - Accepts that forced exits (SIGKILL, process.exit()) may lose final events.
  *
- * @param eventType Type of event to track.
- * @param context Event context.
- * @param metadata Event metadata.
- * @param options Optional configuration.
- * @returns Promise that resolves when tracking completes.
+ * Call this once during CLI initialization to ensure telemetry is flushed on exit.
+ * Safe to call multiple times - only registers handlers once.
+ *
+ * @example
+ * ```typescript
+ * // In src/cli.mts
+ * setupTelemetryExitHandlers()
+ * ```
  */
-export async function trackEvent(
-  eventType: string,
-  context: TelemetryContext,
-  metadata: Record<string, unknown> = {},
-  options: {
-    error?: Error | undefined
-    flush?: boolean | undefined
-  } = {},
-): Promise<void> {
-  // Skip telemetry in test environments.
-  if (constants.ENV.VITEST) {
+export function setupTelemetryExitHandlers(): void {
+  // Prevent duplicate handler registration.
+  if (exitHandlersRegistered) {
+    debug('Telemetry exit handlers already registered, skipping')
     return
   }
 
-  try {
-    const orgSlug = getConfigValueOrUndef(CONFIG_KEY_DEFAULT_ORG)
+  exitHandlersRegistered = true
 
-    if (orgSlug) {
-      const telemetry = await TelemetryService.getTelemetryClient(orgSlug)
-      debug(`Got telemetry service for org: ${orgSlug}`)
+  // Use beforeExit for async finalization during clean shutdowns.
+  // This fires when the event loop empties but before process actually exits.
+  process.on('beforeExit', () => {
+    debug('beforeExit handler triggered')
+    void finalizeTelemetry()
+  })
 
-      const event = {
-        context,
-        event_sender_created_at: new Date().toISOString(),
-        event_type: eventType,
-        ...(Object.keys(metadata).length > 0 && { metadata }),
-        ...(options.error && {
-          error: {
-            message: sanitizeErrorAttribute(options.error.message),
-            stack: sanitizeErrorAttribute(options.error.stack),
-            type: options.error.constructor.name,
-          },
-        }),
-      }
+  // Register handlers for common fatal signals as best-effort fallback.
+  // These are synchronous contexts, so we can only trigger flush without awaiting.
+  const fatalSignals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP']
 
-      telemetry.track(event)
-
-      // Flush events if requested.
-      if (options.flush) {
-        await telemetry.flush()
-      }
+  for (const signal of fatalSignals) {
+    try {
+      process.on(signal, () => {
+        debug(`Signal ${signal} received, attempting sync flush`)
+        finalizeTelemetrySync()
+      })
+    } catch (e) {
+      // Some signals may not be available on all platforms.
+      debug(`Failed to register handler for signal ${signal}: ${e}`)
     }
-  } catch (e) {
-    // Telemetry errors should never block CLI execution.
-    debug(`Failed to track event ${eventType}: ${e}`)
   }
-}
 
-/**
- * Track CLI initialization event.
- * Should be called at the start of CLI execution.
- *
- * @param argv Command line arguments (process.argv).
- * @returns Start timestamp for duration calculation.
- */
-export async function trackCliStart(argv: string[]): Promise<number> {
-  debug('Capture start of command')
-
-  const startTime = Date.now()
-
-  await trackEvent('cli_start', buildContext(argv))
-
-  return startTime
-}
-
-/**
- * Track a generic CLI event with optional metadata.
- * Use this for tracking custom events during CLI execution.
- *
- * @param eventType Type of event to track.
- * @param argv Command line arguments (process.argv).
- * @param metadata Optional additional metadata to include with the event.
- */
-export async function trackCliEvent(
-  eventType: string,
-  argv: string[],
-  metadata?: Record<string, unknown> | undefined,
-): Promise<void> {
-  debug(`Tracking CLI event: ${eventType}`)
-
-  await trackEvent(eventType, buildContext(argv), metadata)
+  debug('Telemetry exit handlers registered (beforeExit + common signals)')
 }
 
 /**
@@ -473,28 +344,99 @@ export async function trackCliError(
 }
 
 /**
- * Track subprocess/command start event.
+ * Track a generic CLI event with optional metadata.
+ * Use this for tracking custom events during CLI execution.
  *
- * Use this when spawning external commands like npm, npx, coana, cdxgen, etc.
+ * @param eventType Type of event to track.
+ * @param argv Command line arguments (process.argv).
+ * @param metadata Optional additional metadata to include with the event.
+ */
+export async function trackCliEvent(
+  eventType: string,
+  argv: string[],
+  metadata?: Record<string, unknown> | undefined,
+): Promise<void> {
+  debug(`Tracking CLI event: ${eventType}`)
+
+  await trackEvent(eventType, buildContext(argv), metadata)
+}
+
+/**
+ * Track CLI initialization event.
+ * Should be called at the start of CLI execution.
  *
- * @param command Command being executed (e.g., 'npm', 'npx', 'coana').
- * @param metadata Optional additional metadata (e.g., cwd, purpose).
+ * @param argv Command line arguments (process.argv).
  * @returns Start timestamp for duration calculation.
  */
-export async function trackSubprocessStart(
-  command: string,
-  metadata?: Record<string, unknown> | undefined,
-): Promise<number> {
-  debug(`Tracking subprocess start: ${command}`)
+export async function trackCliStart(argv: string[]): Promise<number> {
+  debug('Capture start of command')
 
   const startTime = Date.now()
 
-  await trackEvent('subprocess_start', buildContext(process.argv), {
-    command,
-    ...metadata,
-  })
+  await trackEvent('cli_start', buildContext(argv))
 
   return startTime
+}
+
+/**
+ * Generic event tracking function.
+ * Tracks any telemetry event with optional error details and explicit flush.
+ *
+ * Events are automatically flushed via batch size or exit handlers.
+ * Use the flush option only when immediate submission is required.
+ *
+ * @param eventType Type of event to track.
+ * @param context Event context.
+ * @param metadata Event metadata.
+ * @param options Optional configuration.
+ * @returns Promise that resolves when tracking completes.
+ */
+export async function trackEvent(
+  eventType: string,
+  context: TelemetryContext,
+  metadata: Record<string, unknown> = {},
+  options: {
+    error?: Error | undefined
+    flush?: boolean | undefined
+  } = {},
+): Promise<void> {
+  // Skip telemetry in test environments.
+  if (constants.ENV.VITEST) {
+    return
+  }
+
+  try {
+    const orgSlug = getConfigValueOrUndef(CONFIG_KEY_DEFAULT_ORG)
+
+    if (orgSlug) {
+      const telemetry = await TelemetryService.getTelemetryClient(orgSlug)
+      debug(`Got telemetry service for org: ${orgSlug}`)
+
+      const event = {
+        context,
+        event_sender_created_at: new Date().toISOString(),
+        event_type: eventType,
+        ...(Object.keys(metadata).length > 0 && { metadata }),
+        ...(options.error && {
+          error: {
+            message: sanitizeErrorAttribute(options.error.message),
+            stack: sanitizeErrorAttribute(options.error.stack),
+            type: options.error.constructor.name,
+          },
+        }),
+      }
+
+      telemetry.track(event)
+
+      // Flush events if requested.
+      if (options.flush) {
+        await telemetry.flush()
+      }
+    }
+  } catch (e) {
+    // Telemetry errors should never block CLI execution.
+    debug(`Failed to track event ${eventType}: ${e}`)
+  }
 }
 
 /**
@@ -556,4 +498,64 @@ export async function trackSubprocessError(
       error: normalizeError(error),
     },
   )
+}
+
+/**
+ * Track subprocess exit and finalize telemetry.
+ * This is a convenience function that tracks completion/error based on exit code
+ * and ensures telemetry is flushed before returning.
+ *
+ * Note: Only tracks subprocess-level events. CLI-level events (cli_complete, cli_error)
+ * are tracked by the main CLI entry point in src/cli.mts.
+ *
+ * @param command - Command name (e.g., 'npm', 'pip').
+ * @param startTime - Start timestamp from trackSubprocessStart.
+ * @param exitCode - Process exit code (null treated as error).
+ * @returns Promise that resolves when tracking and flush complete.
+ *
+ * @example
+ * ```typescript
+ * await trackSubprocessExit(NPM, subprocessStartTime, code)
+ * ```
+ */
+export async function trackSubprocessExit(
+  command: string,
+  startTime: number,
+  exitCode: number | null,
+): Promise<void> {
+  // Track subprocess completion or error based on exit code.
+  if (exitCode !== null && exitCode !== 0) {
+    const error = new Error(`${command} exited with code ${exitCode}`)
+    await trackSubprocessError(command, startTime, error, exitCode)
+  } else if (exitCode === 0) {
+    await trackSubprocessComplete(command, startTime, exitCode)
+  }
+
+  // Flush telemetry to ensure events are sent before exit.
+  await finalizeTelemetry()
+}
+
+/**
+ * Track subprocess/command start event.
+ *
+ * Use this when spawning external commands like npm, npx, coana, cdxgen, etc.
+ *
+ * @param command Command being executed (e.g., 'npm', 'npx', 'coana').
+ * @param metadata Optional additional metadata (e.g., cwd, purpose).
+ * @returns Start timestamp for duration calculation.
+ */
+export async function trackSubprocessStart(
+  command: string,
+  metadata?: Record<string, unknown> | undefined,
+): Promise<number> {
+  debug(`Tracking subprocess start: ${command}`)
+
+  const startTime = Date.now()
+
+  await trackEvent('subprocess_start', buildContext(process.argv), {
+    command,
+    ...metadata,
+  })
+
+  return startTime
 }

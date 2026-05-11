@@ -23,6 +23,27 @@ import {
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants.mts'
 import { getPyCliVersion } from '../../env/pycli-version.mts'
 
+import type { CResult } from '../../types.mts'
+
+import type { Spinner } from '@socketsecurity/lib/spinner'
+
+/**
+ * Check if socket_basics is installed in the Python environment.
+ */
+export async function isSocketBasicsInstalled(
+  pythonBin: string,
+): Promise<boolean> {
+  try {
+    const result = await spawn(pythonBin, ['-c', 'import socket_basics'], {
+      shell: WIN32,
+      stdio: 'pipe',
+    })
+    return result.code === 0
+  } catch {
+    return false
+  }
+}
+
 /**
  * Check if socketsecurity is installed in the Python environment.
  */
@@ -42,24 +63,57 @@ export async function isSocketPyCliInstalled(
 }
 
 /**
- * Check if socket_basics is installed in the Python environment.
+ * Parse .socket.facts.json to extract finding counts.
+ *
+ * @param factsPath - Path to .socket.facts.json file.
+ * @returns Object with finding counts by category, or error if parsing failed.
  */
-export async function isSocketBasicsInstalled(
-  pythonBin: string,
-): Promise<boolean> {
+export async function parseSocketFacts(factsPath: string): Promise<{
+  containers?: number
+  error?: string
+  sast?: number
+  secrets?: number
+}> {
   try {
-    const result = await spawn(pythonBin, ['-c', 'import socket_basics'], {
-      shell: WIN32,
-      stdio: 'pipe',
-    })
-    return result.code === 0
-  } catch {
-    return false
+    const factsContent = await fs.readFile(factsPath, 'utf8')
+
+    if (!factsContent || factsContent.trim() === '') {
+      debug('error', 'Socket facts file is empty')
+      return {
+        error: 'Facts file is empty',
+      }
+    }
+
+    let facts: {
+      findings?: {
+        containers?: unknown[]
+        sast?: unknown[]
+        secrets?: unknown[]
+      }
+    }
+    try {
+      facts = JSON.parse(factsContent)
+    } catch (parseError) {
+      debug('error', 'Failed to parse socket facts JSON:', parseError)
+      return {
+        error: `Invalid JSON: ${errorMessage(parseError)}`,
+      }
+    }
+
+    // Extract finding counts from socket-basics output format.
+    // The exact structure depends on socket-basics implementation.
+    return {
+      containers: facts.findings?.containers?.length || 0,
+      sast: facts.findings?.sast?.length || 0,
+      secrets: facts.findings?.secrets?.length || 0,
+    }
+  } catch (e) {
+    debug('error', 'Failed to read socket facts file:', e)
+    return {
+      error: `File read error: ${errorMessage(e)}`,
+    }
   }
 }
-
-import type { CResult } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
 
 export type SocketBasicsOptions = {
   cacheDir?: string
@@ -411,58 +465,5 @@ export async function runSocketBasics(
       factsPath,
       findings,
     },
-  }
-}
-
-/**
- * Parse .socket.facts.json to extract finding counts.
- *
- * @param factsPath - Path to .socket.facts.json file.
- * @returns Object with finding counts by category, or error if parsing failed.
- */
-export async function parseSocketFacts(factsPath: string): Promise<{
-  containers?: number
-  error?: string
-  sast?: number
-  secrets?: number
-}> {
-  try {
-    const factsContent = await fs.readFile(factsPath, 'utf8')
-
-    if (!factsContent || factsContent.trim() === '') {
-      debug('error', 'Socket facts file is empty')
-      return {
-        error: 'Facts file is empty',
-      }
-    }
-
-    let facts: {
-      findings?: {
-        containers?: unknown[]
-        sast?: unknown[]
-        secrets?: unknown[]
-      }
-    }
-    try {
-      facts = JSON.parse(factsContent)
-    } catch (parseError) {
-      debug('error', 'Failed to parse socket facts JSON:', parseError)
-      return {
-        error: `Invalid JSON: ${errorMessage(parseError)}`,
-      }
-    }
-
-    // Extract finding counts from socket-basics output format.
-    // The exact structure depends on socket-basics implementation.
-    return {
-      containers: facts.findings?.containers?.length || 0,
-      sast: facts.findings?.sast?.length || 0,
-      secrets: facts.findings?.secrets?.length || 0,
-    }
-  } catch (e) {
-    debug('error', 'Failed to read socket facts file:', e)
-    return {
-      error: `File read error: ${errorMessage(e)}`,
-    }
   }
 }

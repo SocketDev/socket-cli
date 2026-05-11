@@ -63,7 +63,9 @@ export async function run(
   await runRawNpm(argv)
 }
 
-export async function runRawNpm(argv: string[] | readonly string[]): Promise<void> {
+export async function runRawNpm(
+  argv: string[] | readonly string[],
+): Promise<void> {
   process.exitCode = 1
 
   const spawnPromise = spawn(getNpmBinPath(), argv as string[], {

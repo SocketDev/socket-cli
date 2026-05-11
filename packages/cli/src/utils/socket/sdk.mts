@@ -71,6 +71,14 @@ const logger = getDefaultLogger()
 
 const TOKEN_VISIBLE_LENGTH = 5
 
+// Cached extra CA certificates for SSL_CERT_FILE support.
+let _extraCaCerts: string[] | undefined
+
+let _extraCaCertsResolved = false
+
+// This Socket API token should be stored globally for the duration of the CLI execution.
+let _defaultToken: string | undefined
+
 // The Socket API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
@@ -78,6 +86,21 @@ export function getDefaultApiBaseUrl(): string | undefined {
     getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL) ||
     undefined
   return isUrl(baseUrl) ? baseUrl : undefined
+}
+
+export function getDefaultApiToken(): string | undefined {
+  if (getSocketCliNoApiToken()) {
+    _defaultToken = undefined
+    return _defaultToken
+  }
+
+  const key =
+    getSocketCliApiToken() ||
+    getConfigValueOrUndef(CONFIG_KEY_API_TOKEN) ||
+    _defaultToken
+
+  _defaultToken = isNonEmptyString(key) ? key : undefined
+  return _defaultToken
 }
 
 // The Socket API server that should be used for operations.
@@ -88,10 +111,6 @@ export function getDefaultProxyUrl(): string | undefined {
     undefined
   return isUrl(apiProxy) ? apiProxy : undefined
 }
-
-// Cached extra CA certificates for SSL_CERT_FILE support.
-let _extraCaCerts: string[] | undefined
-let _extraCaCertsResolved = false
 
 // Returns combined root and extra CA certificates when SSL_CERT_FILE is set
 // but NODE_EXTRA_CA_CERTS is not. Node.js loads NODE_EXTRA_CA_CERTS at process
@@ -124,24 +143,6 @@ export function getExtraCaCerts(): string[] | undefined {
   }
 }
 
-// This Socket API token should be stored globally for the duration of the CLI execution.
-let _defaultToken: string | undefined
-
-export function getDefaultApiToken(): string | undefined {
-  if (getSocketCliNoApiToken()) {
-    _defaultToken = undefined
-    return _defaultToken
-  }
-
-  const key =
-    getSocketCliApiToken() ||
-    getConfigValueOrUndef(CONFIG_KEY_API_TOKEN) ||
-    _defaultToken
-
-  _defaultToken = isNonEmptyString(key) ? key : undefined
-  return _defaultToken
-}
-
 export function getPublicApiToken(): string {
   return (
     getDefaultApiToken() || getSocketCliApiToken() || SOCKET_PUBLIC_API_TOKEN
@@ -158,12 +159,12 @@ export function getVisibleTokenPrefix(): string {
     : ''
 }
 
-export function invalidateDefaultApiToken(): void {
-  _defaultToken = undefined
-}
-
 export function hasDefaultApiToken(): boolean {
   return !!getDefaultApiToken()
+}
+
+export function invalidateDefaultApiToken(): void {
+  _defaultToken = undefined
 }
 
 export type SetupSdkOptions = {

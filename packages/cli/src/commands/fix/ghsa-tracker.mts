@@ -11,6 +11,52 @@ import {
 
 import { getSocketFixBranchName } from './git.mts'
 
+export type GhsaFixRecord = {
+  branch: string
+  fixedAt: string // ISO 8601
+  ghsaId: string
+  prNumber?: number
+}
+
+export type GhsaTracker = {
+  fixed: GhsaFixRecord[]
+  version: 1
+}
+
+const TRACKER_FILE = '.socket/fixed-ghsas.json'
+
+/**
+ * Get all fixed GHSA records from the tracker.
+ */
+export async function getFixedGhsas(cwd: string): Promise<GhsaFixRecord[]> {
+  try {
+    const tracker = await loadGhsaTracker(cwd)
+    return tracker.fixed
+    /* c8 ignore next 5 - loadGhsaTracker already returns a safe fallback on read failure */
+  } catch (e) {
+    debug('ghsa-tracker: failed to get fixed GHSAs')
+    debugDir(e)
+    return []
+  }
+}
+
+/**
+ * Check if a GHSA has been fixed according to the tracker.
+ */
+export async function isGhsaFixed(
+  cwd: string,
+  ghsaId: string,
+): Promise<boolean> {
+  try {
+    const tracker = await loadGhsaTracker(cwd)
+    return tracker.fixed.some(r => r.ghsaId === ghsaId)
+  } catch (e) {
+    debug(`ghsa-tracker: failed to check if ${ghsaId} is fixed`)
+    debugDir(e)
+    return false
+  }
+}
+
 /**
  * Check if a process with the given PID is still running.
  */
@@ -28,20 +74,6 @@ export function isPidAlive(pid: number): boolean {
   }
 }
 
-export type GhsaFixRecord = {
-  branch: string
-  fixedAt: string // ISO 8601
-  ghsaId: string
-  prNumber?: number
-}
-
-export type GhsaTracker = {
-  fixed: GhsaFixRecord[]
-  version: 1
-}
-
-const TRACKER_FILE = '.socket/fixed-ghsas.json'
-
 /**
  * Load the GHSA tracker from the repository.
  * Creates a new tracker if the file doesn't exist.
@@ -56,23 +88,6 @@ export async function loadGhsaTracker(cwd: string): Promise<GhsaTracker> {
     debug(`ghsa-tracker: creating new tracker at ${trackerPath}`)
     return { version: 1, fixed: [] }
   }
-}
-
-/**
- * Save the GHSA tracker to the repository.
- * Creates the .socket directory if it doesn't exist.
- */
-export async function saveGhsaTracker(
-  cwd: string,
-  tracker: GhsaTracker,
-): Promise<void> {
-  const trackerPath = path.join(cwd, TRACKER_FILE)
-
-  // Ensure .socket directory exists.
-  await safeMkdir(path.dirname(trackerPath), { recursive: true })
-
-  await writeJson(trackerPath, tracker, { spaces: 2 })
-  debug(`ghsa-tracker: saved ${tracker.fixed.length} records to ${trackerPath}`)
 }
 
 /**
@@ -161,33 +176,18 @@ export async function markGhsaFixed(
 }
 
 /**
- * Check if a GHSA has been fixed according to the tracker.
+ * Save the GHSA tracker to the repository.
+ * Creates the .socket directory if it doesn't exist.
  */
-export async function isGhsaFixed(
+export async function saveGhsaTracker(
   cwd: string,
-  ghsaId: string,
-): Promise<boolean> {
-  try {
-    const tracker = await loadGhsaTracker(cwd)
-    return tracker.fixed.some(r => r.ghsaId === ghsaId)
-  } catch (e) {
-    debug(`ghsa-tracker: failed to check if ${ghsaId} is fixed`)
-    debugDir(e)
-    return false
-  }
-}
+  tracker: GhsaTracker,
+): Promise<void> {
+  const trackerPath = path.join(cwd, TRACKER_FILE)
 
-/**
- * Get all fixed GHSA records from the tracker.
- */
-export async function getFixedGhsas(cwd: string): Promise<GhsaFixRecord[]> {
-  try {
-    const tracker = await loadGhsaTracker(cwd)
-    return tracker.fixed
-    /* c8 ignore next 5 - loadGhsaTracker already returns a safe fallback on read failure */
-  } catch (e) {
-    debug('ghsa-tracker: failed to get fixed GHSAs')
-    debugDir(e)
-    return []
-  }
+  // Ensure .socket directory exists.
+  await safeMkdir(path.dirname(trackerPath), { recursive: true })
+
+  await writeJson(trackerPath, tracker, { spaces: 2 })
+  debug(`ghsa-tracker: saved ${tracker.fixed.length} records to ${trackerPath}`)
 }

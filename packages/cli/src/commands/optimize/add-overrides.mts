@@ -287,8 +287,8 @@ export async function addOverrides(
           'addedInWorkspaces',
           'updated',
           'updatedInWorkspaces',
-        ] satisfies // of the type and that they're all Set<string> props. // Here we're just telling TS that we're looping over key names
-        Array<
+        ] satisfies Array<
+          // of the type and that they're all Set<string> props. // Here we're just telling TS that we're looping over key names
           keyof Pick<
             AddOverridesState,
             'added' | 'addedInWorkspaces' | 'updated' | 'updatedInWorkspaces'

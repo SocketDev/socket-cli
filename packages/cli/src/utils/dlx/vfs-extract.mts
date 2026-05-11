@@ -139,78 +139,26 @@ const TOOL_STANDALONE_PATHS: Partial<Record<ExternalTool, string>> = {
 }
 
 /**
- * Get the file system path for a tool based on its type (npm package or standalone binary).
+ * Extract external tools from VFS to node-smol's dlx directory.
  *
- * @param tool - Tool name.
- * @param nodeSmolBase - Base dlx directory path.
- * @returns Path to the tool binary (without .exe extension).
+ * Extracts external tools from the SEA's VFS and writes them to node-smol's shared
+ * dlx directory (~/.socket/_dlx/<node-smol-hash>/).
+ *
+ * Tool extraction paths:
+ * - Standalone binaries: ~/.socket/_dlx/<hash>/{tool}
+ * - npm packages: ~/.socket/_dlx/<hash>/node_modules/{packageName}/bin/{binaryName}
+ *
+ * @returns Record of tool names to their extracted paths, or null if extraction failed.
+ *
+ * @example
+ * const toolPaths = await extractExternalTools()
+ * if (toolPaths) {
+ *   const sfwPath = toolPaths.sfw  // ~/.socket/_dlx/<hash>/sfw
+ *   const cdxgenPath = toolPaths.cdxgen  // ~/.socket/_dlx/<hash>/node_modules/@cyclonedx/cdxgen/bin/cdxgen
+ * }
  */
-export function getToolFilePath(
-  tool: ExternalTool,
-  nodeSmolBase: string,
-): string {
-  const npmPath = TOOL_NPM_PATHS[tool]
-  const standalonePath = TOOL_STANDALONE_PATHS[tool]
-
-  // For npm packages, use node_modules/ path with binPath.
-  // For standalone binaries under node_modules/, use standalonePath.
-  // For other standalone binaries, use direct tool name.
-  return npmPath
-    ? normalizePath(path.join(nodeSmolBase, npmPath.binPath))
-    : standalonePath
-      ? normalizePath(path.join(nodeSmolBase, standalonePath))
-      : normalizePath(path.join(nodeSmolBase, tool))
-}
-
-/**
- * Get the base dlx directory path for node-smol.
- * This is where both VFS-extracted tools and npm-installed packages live.
- *
- * Structure:
- * ~/.socket/_dlx/<node-smol-hash>/
- *   ├── node/node                    # Node binary
- *   ├── socket-patch                 # Standalone Rust binary (GitHub release)
- *   └── node_modules/                # npm packages with dependencies
- *       ├── @cyclonedx/cdxgen/
- *       │   ├── bin/cdxgen
- *       │   └── node_modules/
- *       ├── @coana-tech/cli/
- *       │   ├── bin/coana
- *       │   └── node_modules/
- *       ├── @socketsecurity/sfw-bin/ # Standalone sfw binary (GitHub release)
- *       │   └── sfw
- *       └── synp/
- *           ├── bin/synp
- *           └── node_modules/
- *
- * @returns Path to node-smol's dlx directory.
- */
-export function getNodeSmolBasePath(): string {
-  // Get actual hash from process.smol if available, otherwise use process version.
-  let nodeSmolHash = 'node-smol-placeholder'
-
-  try {
-    // Try to get hash from process.smol API (if available in future node-smol).
-    const processWithSmol = process as unknown as {
-      smol?: { getHash?: () => string }
-    }
-    if (typeof processWithSmol.smol?.getHash === 'function') {
-      nodeSmolHash = processWithSmol.smol.getHash()
-    } else {
-      // Fallback: hash based on Node.js version and platform.
-      const hashInput = `${process.version}-${process.platform}-${process.arch}`
-      const hash = crypto.createHash('sha256').update(hashInput).digest('hex')
-      nodeSmolHash = hash.slice(0, 16)
-    }
-  } catch {
-    // Fallback to versioned hash.
-    const hashInput = `${process.version}-${process.platform}-${process.arch}`
-    const hash = crypto.createHash('sha256').update(hashInput).digest('hex')
-    nodeSmolHash = hash.slice(0, 16)
-  }
-
-  return normalizePath(path.join(os.homedir(), UPDATE_STORE_DIR, nodeSmolHash))
-}
+// Maximum recursion depth for extraction retries.
+const MAX_EXTRACTION_DEPTH = 5
 
 /**
  * Check if external tools are available in VFS.
@@ -233,157 +181,6 @@ export function areExternalToolsAvailable(): boolean {
   // Not in SEA mode - tools will be downloaded via dlx.
   return false
 }
-
-/**
- * Check if npm package directory with dependencies exists and is valid.
- *
- * @param packagePath - Path to npm package directory.
- * @returns True if package directory exists with node_modules/ and binary.
- */
-export async function isNpmPackageExtracted(
-  packagePath: string,
-): Promise<boolean> {
-  if (!existsSync(packagePath)) {
-    return false
-  }
-
-  const packageJsonPath = path.join(packagePath, 'package.json')
-  if (!existsSync(packageJsonPath)) {
-    return false
-  }
-
-  // node_modules/ directory should exist for packages with dependencies.
-  const nodeModulesPath = path.join(packagePath, 'node_modules')
-  if (!existsSync(nodeModulesPath)) {
-    debug('notice', `Package ${packagePath} exists but missing node_modules/`)
-    return false
-  }
-
-  return true
-}
-
-/**
- * Extract a single external tool from VFS to node-smol's dlx directory using process.smol.mount().
- * Extracts to ~/.socket/_dlx/<node-smol-hash>/node_modules/{packageName}/bin/{binaryName}
- *
- * Implementation:
- * - npm packages: Uses process.smol.mount() to extract entire directory with dependencies
- * - Standalone binaries: Uses process.smol.mount() to extract single file
- * - Automatically handles file permissions and directory structure
- * - Supports caching to avoid re-extraction
- *
- * @param tool - Name of the tool to extract.
- * @returns Path to the extracted tool binary.
- */
-export async function extractTool(tool: ExternalTool): Promise<string> {
-  // Check if process.smol.mount is available.
-  const processWithSmol = process as unknown as {
-    smol?: { mount?: (vfsPath: string) => Promise<string> }
-  }
-
-  if (!processWithSmol.smol?.mount) {
-    throw new Error(
-      `process.smol.mount is undefined — extractTool("${tool}") requires a node-smol SEA build; this code path should only run inside the SEA. Check isSeaBinary() / areExternalToolsAvailable() upstream`,
-    )
-  }
-
-  const isPlatWin = process.platform === 'win32'
-  const nodeSmolBase = getNodeSmolBasePath()
-  const npmPath = TOOL_NPM_PATHS[tool]
-
-  // For npm packages, check if already extracted with dependencies.
-  if (npmPath) {
-    const packageDir = normalizePath(
-      path.join(nodeSmolBase, 'node_modules', npmPath.packageName),
-    )
-
-    if (await isNpmPackageExtracted(packageDir)) {
-      const toolPath = normalizePath(path.join(nodeSmolBase, npmPath.binPath))
-      const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
-
-      if (existsSync(toolPathWithExt)) {
-        debug(
-          'notice',
-          `Tool ${tool} already extracted with dependencies at ${packageDir}`,
-        )
-        return toolPathWithExt
-      }
-    }
-  }
-
-  // Extract from VFS using process.smol.mount().
-  try {
-    let extractedPath: string
-
-    if (npmPath) {
-      // Extract entire npm package directory with dependencies.
-      const vfsPackagePath = `/snapshot/node_modules/${npmPath.packageName}`
-      const packageDir = await processWithSmol.smol.mount(vfsPackagePath)
-
-      logger.info(
-        `  ✓ Extracted ${tool} package with dependencies to ${packageDir}`,
-      )
-
-      // Return path to binary within extracted package.
-      const toolPath = normalizePath(path.join(nodeSmolBase, npmPath.binPath))
-      extractedPath = isPlatWin ? `${toolPath}.exe` : toolPath
-    } else {
-      // Extract standalone binary - check if it's under node_modules/ or VFS root.
-      const standalonePath = TOOL_STANDALONE_PATHS[tool]
-      const vfsBinaryPath = standalonePath
-        ? `/snapshot/${standalonePath}`
-        : `/snapshot/${tool}`
-      const binaryPath = await processWithSmol.smol.mount(vfsBinaryPath)
-
-      logger.info(`  ✓ Extracted ${tool} binary to ${binaryPath}`)
-
-      extractedPath = isPlatWin ? `${binaryPath}.exe` : binaryPath
-
-      // Make executable on Unix.
-      if (!isPlatWin && existsSync(extractedPath)) {
-        try {
-          await fs.chmod(extractedPath, 0o755)
-        } catch {
-          // Ignore chmod errors - file might already be executable.
-        }
-      }
-    }
-
-    if (!existsSync(extractedPath)) {
-      throw new Error(
-        `process.smol.mount returned but ${extractedPath} does not exist; the VFS layout for ${tool} may have changed — check the SEA build config and the tool's expected path`,
-      )
-    }
-
-    return extractedPath
-  } catch (e) {
-    throw new Error(
-      `failed to extract ${tool} from the SEA VFS (${getErrorCause(e)}); the embedded tool archive may be corrupt — rebuild the SEA binary`,
-    )
-  }
-}
-
-/**
- * Extract external tools from VFS to node-smol's dlx directory.
- *
- * Extracts external tools from the SEA's VFS and writes them to node-smol's shared
- * dlx directory (~/.socket/_dlx/<node-smol-hash>/).
- *
- * Tool extraction paths:
- * - Standalone binaries: ~/.socket/_dlx/<hash>/{tool}
- * - npm packages: ~/.socket/_dlx/<hash>/node_modules/{packageName}/bin/{binaryName}
- *
- * @returns Record of tool names to their extracted paths, or null if extraction failed.
- *
- * @example
- * const toolPaths = await extractExternalTools()
- * if (toolPaths) {
- *   const sfwPath = toolPaths.sfw  // ~/.socket/_dlx/<hash>/sfw
- *   const cdxgenPath = toolPaths.cdxgen  // ~/.socket/_dlx/<hash>/node_modules/@cyclonedx/cdxgen/bin/cdxgen
- * }
- */
-// Maximum recursion depth for extraction retries.
-const MAX_EXTRACTION_DEPTH = 5
 
 export async function extractExternalTools(
   depth = 0,
@@ -659,6 +456,181 @@ export async function extractExternalTools(
 }
 
 /**
+ * Extract a single external tool from VFS to node-smol's dlx directory using process.smol.mount().
+ * Extracts to ~/.socket/_dlx/<node-smol-hash>/node_modules/{packageName}/bin/{binaryName}
+ *
+ * Implementation:
+ * - npm packages: Uses process.smol.mount() to extract entire directory with dependencies
+ * - Standalone binaries: Uses process.smol.mount() to extract single file
+ * - Automatically handles file permissions and directory structure
+ * - Supports caching to avoid re-extraction
+ *
+ * @param tool - Name of the tool to extract.
+ * @returns Path to the extracted tool binary.
+ */
+export async function extractTool(tool: ExternalTool): Promise<string> {
+  // Check if process.smol.mount is available.
+  const processWithSmol = process as unknown as {
+    smol?: { mount?: (vfsPath: string) => Promise<string> }
+  }
+
+  if (!processWithSmol.smol?.mount) {
+    throw new Error(
+      `process.smol.mount is undefined — extractTool("${tool}") requires a node-smol SEA build; this code path should only run inside the SEA. Check isSeaBinary() / areExternalToolsAvailable() upstream`,
+    )
+  }
+
+  const isPlatWin = process.platform === 'win32'
+  const nodeSmolBase = getNodeSmolBasePath()
+  const npmPath = TOOL_NPM_PATHS[tool]
+
+  // For npm packages, check if already extracted with dependencies.
+  if (npmPath) {
+    const packageDir = normalizePath(
+      path.join(nodeSmolBase, 'node_modules', npmPath.packageName),
+    )
+
+    if (await isNpmPackageExtracted(packageDir)) {
+      const toolPath = normalizePath(path.join(nodeSmolBase, npmPath.binPath))
+      const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
+
+      if (existsSync(toolPathWithExt)) {
+        debug(
+          'notice',
+          `Tool ${tool} already extracted with dependencies at ${packageDir}`,
+        )
+        return toolPathWithExt
+      }
+    }
+  }
+
+  // Extract from VFS using process.smol.mount().
+  try {
+    let extractedPath: string
+
+    if (npmPath) {
+      // Extract entire npm package directory with dependencies.
+      const vfsPackagePath = `/snapshot/node_modules/${npmPath.packageName}`
+      const packageDir = await processWithSmol.smol.mount(vfsPackagePath)
+
+      logger.info(
+        `  ✓ Extracted ${tool} package with dependencies to ${packageDir}`,
+      )
+
+      // Return path to binary within extracted package.
+      const toolPath = normalizePath(path.join(nodeSmolBase, npmPath.binPath))
+      extractedPath = isPlatWin ? `${toolPath}.exe` : toolPath
+    } else {
+      // Extract standalone binary - check if it's under node_modules/ or VFS root.
+      const standalonePath = TOOL_STANDALONE_PATHS[tool]
+      const vfsBinaryPath = standalonePath
+        ? `/snapshot/${standalonePath}`
+        : `/snapshot/${tool}`
+      const binaryPath = await processWithSmol.smol.mount(vfsBinaryPath)
+
+      logger.info(`  ✓ Extracted ${tool} binary to ${binaryPath}`)
+
+      extractedPath = isPlatWin ? `${binaryPath}.exe` : binaryPath
+
+      // Make executable on Unix.
+      if (!isPlatWin && existsSync(extractedPath)) {
+        try {
+          await fs.chmod(extractedPath, 0o755)
+        } catch {
+          // Ignore chmod errors - file might already be executable.
+        }
+      }
+    }
+
+    if (!existsSync(extractedPath)) {
+      throw new Error(
+        `process.smol.mount returned but ${extractedPath} does not exist; the VFS layout for ${tool} may have changed — check the SEA build config and the tool's expected path`,
+      )
+    }
+
+    return extractedPath
+  } catch (e) {
+    throw new Error(
+      `failed to extract ${tool} from the SEA VFS (${getErrorCause(e)}); the embedded tool archive may be corrupt — rebuild the SEA binary`,
+    )
+  }
+}
+
+/**
+ * Get the base dlx directory path for node-smol.
+ * This is where both VFS-extracted tools and npm-installed packages live.
+ *
+ * Structure:
+ * ~/.socket/_dlx/<node-smol-hash>/
+ *   ├── node/node                    # Node binary
+ *   ├── socket-patch                 # Standalone Rust binary (GitHub release)
+ *   └── node_modules/                # npm packages with dependencies
+ *       ├── @cyclonedx/cdxgen/
+ *       │   ├── bin/cdxgen
+ *       │   └── node_modules/
+ *       ├── @coana-tech/cli/
+ *       │   ├── bin/coana
+ *       │   └── node_modules/
+ *       ├── @socketsecurity/sfw-bin/ # Standalone sfw binary (GitHub release)
+ *       │   └── sfw
+ *       └── synp/
+ *           ├── bin/synp
+ *           └── node_modules/
+ *
+ * @returns Path to node-smol's dlx directory.
+ */
+export function getNodeSmolBasePath(): string {
+  // Get actual hash from process.smol if available, otherwise use process version.
+  let nodeSmolHash = 'node-smol-placeholder'
+
+  try {
+    // Try to get hash from process.smol API (if available in future node-smol).
+    const processWithSmol = process as unknown as {
+      smol?: { getHash?: () => string }
+    }
+    if (typeof processWithSmol.smol?.getHash === 'function') {
+      nodeSmolHash = processWithSmol.smol.getHash()
+    } else {
+      // Fallback: hash based on Node.js version and platform.
+      const hashInput = `${process.version}-${process.platform}-${process.arch}`
+      const hash = crypto.createHash('sha256').update(hashInput).digest('hex')
+      nodeSmolHash = hash.slice(0, 16)
+    }
+  } catch {
+    // Fallback to versioned hash.
+    const hashInput = `${process.version}-${process.platform}-${process.arch}`
+    const hash = crypto.createHash('sha256').update(hashInput).digest('hex')
+    nodeSmolHash = hash.slice(0, 16)
+  }
+
+  return normalizePath(path.join(os.homedir(), UPDATE_STORE_DIR, nodeSmolHash))
+}
+
+/**
+ * Get the file system path for a tool based on its type (npm package or standalone binary).
+ *
+ * @param tool - Tool name.
+ * @param nodeSmolBase - Base dlx directory path.
+ * @returns Path to the tool binary (without .exe extension).
+ */
+export function getToolFilePath(
+  tool: ExternalTool,
+  nodeSmolBase: string,
+): string {
+  const npmPath = TOOL_NPM_PATHS[tool]
+  const standalonePath = TOOL_STANDALONE_PATHS[tool]
+
+  // For npm packages, use node_modules/ path with binPath.
+  // For standalone binaries under node_modules/, use standalonePath.
+  // For other standalone binaries, use direct tool name.
+  return npmPath
+    ? normalizePath(path.join(nodeSmolBase, npmPath.binPath))
+    : standalonePath
+      ? normalizePath(path.join(nodeSmolBase, standalonePath))
+      : normalizePath(path.join(nodeSmolBase, tool))
+}
+
+/**
  * Get paths to extracted external tools in node-smol's dlx directory.
  * npm packages are in node_modules/{packageName}/bin/{binaryName}.
  * Standalone binaries are in the base directory.
@@ -682,4 +654,32 @@ export function getToolPaths(): Record<ExternalTool, string> {
   }
 
   return paths as Record<ExternalTool, string>
+}
+
+/**
+ * Check if npm package directory with dependencies exists and is valid.
+ *
+ * @param packagePath - Path to npm package directory.
+ * @returns True if package directory exists with node_modules/ and binary.
+ */
+export async function isNpmPackageExtracted(
+  packagePath: string,
+): Promise<boolean> {
+  if (!existsSync(packagePath)) {
+    return false
+  }
+
+  const packageJsonPath = path.join(packagePath, 'package.json')
+  if (!existsSync(packageJsonPath)) {
+    return false
+  }
+
+  // node_modules/ directory should exist for packages with dependencies.
+  const nodeModulesPath = path.join(packagePath, 'node_modules')
+  if (!existsSync(nodeModulesPath)) {
+    debug('notice', `Package ${packagePath} exists but missing node_modules/`)
+    return false
+  }
+
+  return true
 }

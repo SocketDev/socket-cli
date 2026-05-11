@@ -70,62 +70,27 @@ export type DlxPackageSpec = {
 }
 
 /**
- * Validate package name to prevent command injection.
- * Package names must follow npm naming rules.
+ * Helper to spawn Coana with dlx.
+ * Returns a CResult with stdout extraction for backward compatibility.
+ *
+ * If SOCKET_CLI_COANA_LOCAL_PATH environment variable is set, uses the local
+ * Coana CLI at that path instead of downloading from npm.
  */
-export function validatePackageName(name: string): void {
-  // Basic validation: no shell metacharacters, must be valid npm package name.
-  // npm package names can contain: lowercase letters, numbers, hyphens, underscores, dots, and @ for scopes.
-  const validNamePattern =
-    /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
+export { spawnCoanaDlx } from './spawn-coana.mts'
 
-  if (!validNamePattern.test(name)) {
-    throw new InputError(
-      `package name "${name}" must match /^(@scope\\/)?[a-z0-9-~][a-z0-9-._~]*$/ (lowercase letters, digits, -, _, ., ~, with optional @scope/); rename the package or check for typos`,
-    )
-  }
+export { spawnCdxgenDlx } from './spawn-cdxgen.mts'
 
-  // Check for path traversal attempts.
-  if (name.includes('..') || (name.includes('/') && !name.startsWith('@'))) {
-    throw new InputError(
-      `package name "${name}" contains path traversal characters (".." or a "/" outside of @scope/); pass a plain name like "lodash" or "@org/pkg"`,
-    )
-  }
-}
+export { spawnSfwDlx } from './spawn-sfw.mts'
 
 /**
- * Spawns a package using Socket's dlx implementation.
- * Installs packages to ~/.socket/_dlx and executes them directly.
+ * Helper to spawn Socket Patch.
+ * If SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH environment variable is set, uses the local
+ * socket-patch binary at that path instead of downloading.
+ *
+ * Note: As of v2.0.0, socket-patch is a Rust binary downloaded from GitHub releases,
+ * not an npm package. This function handles both local overrides and GitHub downloads.
  */
-export async function spawnDlx(
-  packageSpec: DlxPackageSpec,
-  args: string[] | readonly string[],
-  options?: DlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<DlxSpawnResult> {
-  const { force = false, ...spawnOpts } = options ?? {}
-
-  // Validate package name for security.
-  validatePackageName(packageSpec.name)
-
-  const packageString = `${packageSpec.name}@${packageSpec.version}`
-
-  // Use Socket's dlxPackage to install and execute.
-  const result = await dlxPackage(
-    args,
-    {
-      package: packageString,
-      binaryName: packageSpec.binaryName,
-      force,
-      spawnOptions: spawnOpts,
-    },
-    spawnExtra,
-  )
-
-  return {
-    spawnPromise: result.spawnPromise as unknown as SpawnResult,
-  }
-}
+export { spawnSocketPatchDlx } from './spawn-socket-patch.mts'
 
 /**
  * Download and cache a binary from GitHub releases.
@@ -292,32 +257,38 @@ export async function downloadGitHubReleaseBinary(
 }
 
 /**
- * Helper to spawn Coana with dlx.
- * Returns a CResult with stdout extraction for backward compatibility.
- *
- * If SOCKET_CLI_COANA_LOCAL_PATH environment variable is set, uses the local
- * Coana CLI at that path instead of downloading from npm.
+ * Spawns a package using Socket's dlx implementation.
+ * Installs packages to ~/.socket/_dlx and executes them directly.
  */
-export { spawnCoanaDlx } from './spawn-coana.mts'
+export async function spawnDlx(
+  packageSpec: DlxPackageSpec,
+  args: string[] | readonly string[],
+  options?: DlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<DlxSpawnResult> {
+  const { force = false, ...spawnOpts } = options ?? {}
 
-export { spawnCdxgenDlx } from './spawn-cdxgen.mts'
+  // Validate package name for security.
+  validatePackageName(packageSpec.name)
 
-export { spawnSfwDlx } from './spawn-sfw.mts'
+  const packageString = `${packageSpec.name}@${packageSpec.version}`
 
-/**
- * Helper to spawn Socket Patch.
- * If SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH environment variable is set, uses the local
- * socket-patch binary at that path instead of downloading.
- *
- * Note: As of v2.0.0, socket-patch is a Rust binary downloaded from GitHub releases,
- * not an npm package. This function handles both local overrides and GitHub downloads.
- */
-export { spawnSocketPatchDlx } from './spawn-socket-patch.mts'
+  // Use Socket's dlxPackage to install and execute.
+  const result = await dlxPackage(
+    args,
+    {
+      package: packageString,
+      binaryName: packageSpec.binaryName,
+      force,
+      spawnOptions: spawnOpts,
+    },
+    spawnExtra,
+  )
 
-/**
- * VFS-based spawn functions for SEA binaries.
- * These extract tools from VFS and execute them directly.
- */
+  return {
+    spawnPromise: result.spawnPromise as unknown as SpawnResult,
+  }
+}
 
 /**
  * Helper to spawn a tool from VFS extraction.
@@ -369,6 +340,30 @@ export async function spawnToolVfs(
 
   return {
     spawnPromise,
+  }
+}
+
+/**
+ * Validate package name to prevent command injection.
+ * Package names must follow npm naming rules.
+ */
+export function validatePackageName(name: string): void {
+  // Basic validation: no shell metacharacters, must be valid npm package name.
+  // npm package names can contain: lowercase letters, numbers, hyphens, underscores, dots, and @ for scopes.
+  const validNamePattern =
+    /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
+
+  if (!validNamePattern.test(name)) {
+    throw new InputError(
+      `package name "${name}" must match /^(@scope\\/)?[a-z0-9-~][a-z0-9-._~]*$/ (lowercase letters, digits, -, _, ., ~, with optional @scope/); rename the package or check for typos`,
+    )
+  }
+
+  // Check for path traversal attempts.
+  if (name.includes('..') || (name.includes('/') && !name.startsWith('@'))) {
+    throw new InputError(
+      `package name "${name}" contains path traversal characters (".." or a "/" outside of @scope/); pass a plain name like "lodash" or "@org/pkg"`,
+    )
   }
 }
 

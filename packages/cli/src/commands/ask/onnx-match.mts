@@ -68,7 +68,9 @@ export async function ensureCommandEmbeddings(): Promise<void> {
  * Get the embedding for a text string. Returns null when the pipeline is
  * unavailable or the underlying call throws.
  */
-export async function getEmbedding(text: string): Promise<Float32Array | undefined> {
+export async function getEmbedding(
+  text: string,
+): Promise<Float32Array | undefined> {
   const model = await getEmbeddingPipeline()
   if (!model) {
     return undefined
@@ -122,10 +124,13 @@ export async function getEmbeddingPipeline() {
  * embedding pipeline is unavailable, the query embeds to null, or no
  * command meets the threshold.
  */
-export async function onnxSemanticMatch(query: string): Promise<{
-  action: string
-  confidence: number
-} | undefined> {
+export async function onnxSemanticMatch(query: string): Promise<
+  | {
+      action: string
+      confidence: number
+    }
+  | undefined
+> {
   await ensureCommandEmbeddings()
 
   const queryEmbedding = await getEmbedding(query)

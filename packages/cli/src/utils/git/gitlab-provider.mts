@@ -304,7 +304,9 @@ export function mapGitLabState(state: string): 'open' | 'closed' | 'merged' {
 /**
  * Maps GitLab merge request state to uppercase common state.
  */
-export function mapGitLabStateToUpper(state: string): 'OPEN' | 'CLOSED' | 'MERGED' {
+export function mapGitLabStateToUpper(
+  state: string,
+): 'OPEN' | 'CLOSED' | 'MERGED' {
   if (state === 'opened') {
     return 'OPEN'
   }
@@ -317,7 +319,9 @@ export function mapGitLabStateToUpper(state: string): 'OPEN' | 'CLOSED' | 'MERGE
 /**
  * Maps common state to GitLab state.
  */
-export function mapStateToGitLab(state: string): 'opened' | 'closed' | 'merged' {
+export function mapStateToGitLab(
+  state: string,
+): 'opened' | 'closed' | 'merged' {
   const lower = state.toLowerCase()
   if (lower === 'open') {
     return 'opened'

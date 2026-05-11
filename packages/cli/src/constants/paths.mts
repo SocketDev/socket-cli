@@ -73,16 +73,12 @@ export const UPDATE_STORE_FILE_NAME = '.dlx-manifest.json'
 
 // Lazy Path Getters (computed on first access)
 
+// Package Manager Resolution Paths
+// Helper for creating require.
+const require = createRequire(import.meta.url)
+
 export function getBashRcPath(): string {
   return path.join(os.homedir(), '.bashrc')
-}
-
-export function getZshRcPath(): string {
-  return path.join(os.homedir(), '.zshrc')
-}
-
-export function getBinPath(): string {
-  return path.join(rootPath, 'bin')
 }
 
 export function getBinCliPath(): string {
@@ -96,24 +92,8 @@ export function getBinCliPath(): string {
   return path.join(rootPath, 'dist/index.js')
 }
 
-export function getDistPath(): string {
-  return distPath
-}
-
-export function getDistBinPath(): string {
-  return path.join(distPath, 'bin')
-}
-
-export function getDistPackageJsonPath(): string {
-  return path.join(distPath, 'package.json')
-}
-
-export function getPackageJsonPath(): string {
-  return path.join(rootPath, 'package.json')
-}
-
-export function getBlessedPath(): string {
-  return path.join(externalPath, 'blessed')
+export function getBinPath(): string {
+  return path.join(rootPath, 'bin')
 }
 
 export function getBlessedContribPath(): string {
@@ -132,6 +112,71 @@ export function getBlessedOptions() {
     output: process.stdout,
     terminal: blessedColorDepth === 256 ? 'xterm-256color' : 'xterm',
   }
+}
+
+export function getBlessedPath(): string {
+  return path.join(externalPath, 'blessed')
+}
+
+export function getDistBinPath(): string {
+  return path.join(distPath, 'bin')
+}
+
+export function getDistPackageJsonPath(): string {
+  return path.join(distPath, 'package.json')
+}
+
+export function getDistPath(): string {
+  return distPath
+}
+
+export function getGithubCachePath(): string {
+  return path.join(getSocketCachePath(), 'github')
+}
+
+export function getNmBunPath(): string | undefined {
+  try {
+    return realpathSync(require.resolve('bun/package.json'))
+  } catch {
+    return undefined
+  }
+}
+
+export function getNmNodeGypPath(): string | undefined {
+  try {
+    /* c8 ignore next - node-gyp is not installed in tests; require.resolve throws before realpathSync runs */
+    return realpathSync(require.resolve('node-gyp/package.json'))
+  } catch {
+    return undefined
+  }
+}
+
+export function getNmNpmPath(): string {
+  try {
+    return realpathSync(require.resolve('npm/package.json'))
+  } catch {
+    return 'npm'
+  }
+}
+
+export function getNmPnpmPath(): string | undefined {
+  try {
+    return realpathSync(require.resolve('pnpm/package.json'))
+  } catch {
+    return undefined
+  }
+}
+
+export function getNmYarnPath(): string | undefined {
+  try {
+    return realpathSync(require.resolve('yarn/package.json'))
+  } catch {
+    return undefined
+  }
+}
+
+export function getPackageJsonPath(): string {
+  return path.join(rootPath, 'package.json')
 }
 
 export function getSocketAppDataPath(): string | undefined {
@@ -199,51 +244,6 @@ export function getSocketRegistryPath(): string {
   return path.join(appDataPath, 'registry')
 }
 
-export function getGithubCachePath(): string {
-  return path.join(getSocketCachePath(), 'github')
-}
-
-// Package Manager Resolution Paths
-// Helper for creating require.
-const require = createRequire(import.meta.url)
-
-export function getNmBunPath(): string | undefined {
-  try {
-    return realpathSync(require.resolve('bun/package.json'))
-  } catch {
-    return undefined
-  }
-}
-
-export function getNmNpmPath(): string {
-  try {
-    return realpathSync(require.resolve('npm/package.json'))
-  } catch {
-    return 'npm'
-  }
-}
-
-export function getNmNodeGypPath(): string | undefined {
-  try {
-    /* c8 ignore next - node-gyp is not installed in tests; require.resolve throws before realpathSync runs */
-    return realpathSync(require.resolve('node-gyp/package.json'))
-  } catch {
-    return undefined
-  }
-}
-
-export function getNmPnpmPath(): string | undefined {
-  try {
-    return realpathSync(require.resolve('pnpm/package.json'))
-  } catch {
-    return undefined
-  }
-}
-
-export function getNmYarnPath(): string | undefined {
-  try {
-    return realpathSync(require.resolve('yarn/package.json'))
-  } catch {
-    return undefined
-  }
+export function getZshRcPath(): string {
+  return path.join(os.homedir(), '.zshrc')
 }

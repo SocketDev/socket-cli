@@ -893,7 +893,5 @@ export function print(element: Element): void {
  */
 export function renderToString(element: Element): string {
   const io = getIocraft()
-  return io.renderToString(
-    element as IocraftNs.ComponentNode,
-  )
+  return io.renderToString(element as IocraftNs.ComponentNode)
 }

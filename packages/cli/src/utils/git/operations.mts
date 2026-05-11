@@ -52,19 +52,6 @@ import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 // Cache git executable path
 let _gitPath: string | undefined = undefined
 
-export async function getGitPath(): Promise<string> {
-  if (!_gitPath) {
-    const result = await whichReal('git', { nothrow: true })
-    if (!result || Array.isArray(result)) {
-      throw new Error(
-        `git executable not found on PATH (whichReal returned ${Array.isArray(result) ? 'multiple matches' : 'null'}); install git (e.g. \`brew install git\`, \`apt install git\`) and make sure it is reachable on PATH`,
-      )
-    }
-    _gitPath = result
-  }
-  return _gitPath
-}
-
 // Listed in order of check preference.
 const COMMON_DEFAULT_BRANCH_NAMES = [
   // Modern default (GitHub, GitLab, Bitbucket have switched to this).
@@ -78,6 +65,32 @@ const COMMON_DEFAULT_BRANCH_NAMES = [
   // Used in some older enterprise setups and tools.
   'default',
 ]
+
+const parsedGitRemoteUrlCache = new Map<string, RepoInfo | undefined>()
+
+/**
+ * Try to detect the default branch name by checking common patterns.
+ * Returns the first branch that exists in the repository.
+ */
+export async function detectDefaultBranch(
+  cwd = process.cwd(),
+): Promise<string> {
+  // First pass: check all local branches
+  for (const branch of COMMON_DEFAULT_BRANCH_NAMES) {
+    // eslint-disable-next-line no-await-in-loop
+    if (await gitLocalBranchExists(branch, cwd)) {
+      return branch
+    }
+  }
+  // Second pass: check remote branches only if no local branch found
+  for (const branch of COMMON_DEFAULT_BRANCH_NAMES) {
+    // eslint-disable-next-line no-await-in-loop
+    if (await gitRemoteBranchExists(branch, cwd)) {
+      return branch
+    }
+  }
+  return SOCKET_DEFAULT_BRANCH
+}
 
 export async function getBaseBranch(cwd = process.cwd()): Promise<string> {
   // 1. In a pull request, this is always the base branch.
@@ -114,6 +127,19 @@ export async function getBaseBranch(cwd = process.cwd()): Promise<string> {
   // GitHub and GitLab default to branch name "main"
   // https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-branches#about-the-default-branch
   return 'main'
+}
+
+export async function getGitPath(): Promise<string> {
+  if (!_gitPath) {
+    const result = await whichReal('git', { nothrow: true })
+    if (!result || Array.isArray(result)) {
+      throw new Error(
+        `git executable not found on PATH (whichReal returned ${Array.isArray(result) ? 'multiple matches' : 'null'}); install git (e.g. \`brew install git\`, \`apt install git\`) and make sure it is reachable on PATH`,
+      )
+    }
+    _gitPath = result
+  }
+  return _gitPath
 }
 
 export type RepoInfo = {
@@ -200,28 +226,23 @@ export async function gitBranch(
   return undefined
 }
 
-/**
- * Try to detect the default branch name by checking common patterns.
- * Returns the first branch that exists in the repository.
- */
-export async function detectDefaultBranch(
+export async function gitCheckoutBranch(
+  branch: string,
   cwd = process.cwd(),
-): Promise<string> {
-  // First pass: check all local branches
-  for (const branch of COMMON_DEFAULT_BRANCH_NAMES) {
-    // eslint-disable-next-line no-await-in-loop
-    if (await gitLocalBranchExists(branch, cwd)) {
-      return branch
-    }
+): Promise<boolean> {
+  const stdioIgnoreOptions: SpawnOptions = {
+    cwd,
+    stdio: isDebug() ? 'inherit' : 'ignore',
   }
-  // Second pass: check remote branches only if no local branch found
-  for (const branch of COMMON_DEFAULT_BRANCH_NAMES) {
-    // eslint-disable-next-line no-await-in-loop
-    if (await gitRemoteBranchExists(branch, cwd)) {
-      return branch
-    }
+  try {
+    const gitPath = await getGitPath()
+    await spawn(gitPath, ['checkout', branch], stdioIgnoreOptions)
+    debugGit(`checkout ${branch}`, true)
+    return true
+  } catch (e) {
+    debugGit(`checkout ${branch}`, false, { error: e })
   }
-  return SOCKET_DEFAULT_BRANCH
+  return false
 }
 
 export type GitCreateAndPushBranchOptions = {
@@ -242,77 +263,6 @@ export async function gitCleanFdx(cwd = process.cwd()): Promise<boolean> {
     return true
   } catch (e) {
     debugGit('clean -fdx', false, { error: e })
-  }
-  return false
-}
-
-export async function gitCheckoutBranch(
-  branch: string,
-  cwd = process.cwd(),
-): Promise<boolean> {
-  const stdioIgnoreOptions: SpawnOptions = {
-    cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
-  try {
-    const gitPath = await getGitPath()
-    await spawn(gitPath, ['checkout', branch], stdioIgnoreOptions)
-    debugGit(`checkout ${branch}`, true)
-    return true
-  } catch (e) {
-    debugGit(`checkout ${branch}`, false, { error: e })
-  }
-  return false
-}
-
-export async function gitCreateBranch(
-  branch: string,
-  cwd = process.cwd(),
-): Promise<boolean> {
-  if (await gitLocalBranchExists(branch)) {
-    return true
-  }
-  const stdioIgnoreOptions: SpawnOptions = {
-    cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
-  try {
-    const gitPath = await getGitPath()
-    await spawn(gitPath, ['branch', branch], stdioIgnoreOptions)
-    debugGit(`branch ${branch}`, true)
-    return true
-  } catch (e) {
-    debugGit(`branch ${branch}`, false, { error: e })
-  }
-  return false
-}
-
-export async function gitPushBranch(
-  branch: string,
-  cwd = process.cwd(),
-): Promise<boolean> {
-  const stdioIgnoreOptions: SpawnOptions = {
-    cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
-  try {
-    await spawn(
-      'git',
-      ['push', '--force', '--set-upstream', 'origin', branch],
-      stdioIgnoreOptions,
-    )
-    debugGit(`push ${branch}`, true)
-    return true
-  } catch (e) {
-    if (isSpawnError(e) && e.code === 128) {
-      debug(
-        "Push denied: token requires write permissions for 'contents' and 'pull-requests'",
-      )
-      debugDir(e)
-      debugDir({ branch })
-    } else {
-      debugGit(`push ${branch}`, false, { error: e })
-    }
   }
   return false
 }
@@ -356,6 +306,28 @@ export async function gitCommit(
   } catch (e) {
     debugGit('commit', false, { error: e })
     debugDir({ commitMsg })
+  }
+  return false
+}
+
+export async function gitCreateBranch(
+  branch: string,
+  cwd = process.cwd(),
+): Promise<boolean> {
+  if (await gitLocalBranchExists(branch)) {
+    return true
+  }
+  const stdioIgnoreOptions: SpawnOptions = {
+    cwd,
+    stdio: isDebug() ? 'inherit' : 'ignore',
+  }
+  try {
+    const gitPath = await getGitPath()
+    await spawn(gitPath, ['branch', branch], stdioIgnoreOptions)
+    debugGit(`branch ${branch}`, true)
+    return true
+  } catch (e) {
+    debugGit(`branch ${branch}`, false, { error: e })
   }
   return false
 }
@@ -477,6 +449,36 @@ export async function gitLocalBranchExists(
   return false
 }
 
+export async function gitPushBranch(
+  branch: string,
+  cwd = process.cwd(),
+): Promise<boolean> {
+  const stdioIgnoreOptions: SpawnOptions = {
+    cwd,
+    stdio: isDebug() ? 'inherit' : 'ignore',
+  }
+  try {
+    await spawn(
+      'git',
+      ['push', '--force', '--set-upstream', 'origin', branch],
+      stdioIgnoreOptions,
+    )
+    debugGit(`push ${branch}`, true)
+    return true
+  } catch (e) {
+    if (isSpawnError(e) && e.code === 128) {
+      debug(
+        "Push denied: token requires write permissions for 'contents' and 'pull-requests'",
+      )
+      debugDir(e)
+      debugDir({ branch })
+    } else {
+      debugGit(`push ${branch}`, false, { error: e })
+    }
+  }
+  return false
+}
+
 export async function gitRemoteBranchExists(
   branch: string,
   cwd = process.cwd(),
@@ -557,8 +559,6 @@ export async function gitUnstagedModifiedFiles(
     }
   }
 }
-
-const parsedGitRemoteUrlCache = new Map<string, RepoInfo | undefined>()
 
 export function parseGitRemoteUrl(remoteUrl: string): RepoInfo | undefined {
   let result = parsedGitRemoteUrlCache.get(remoteUrl)

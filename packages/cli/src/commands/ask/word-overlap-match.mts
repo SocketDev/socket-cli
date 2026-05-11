@@ -105,10 +105,13 @@ export function wordOverlap(
  * when the index isn't loaded, the query has no scoring tokens, or no
  * command meets the threshold.
  */
-export async function wordOverlapMatch(query: string): Promise<{
-  action: string
-  confidence: number
-} | undefined> {
+export async function wordOverlapMatch(query: string): Promise<
+  | {
+      action: string
+      confidence: number
+    }
+  | undefined
+> {
   const index = await loadSemanticIndex()
   if (!index || !index.commands) {
     return undefined

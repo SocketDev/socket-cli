@@ -44,134 +44,6 @@ export const borderStyles = {
 }
 
 /**
- * Create a bordered box around text
- */
-export function createBox(
-  content: string,
-  width = 40,
-  style: keyof typeof borderStyles = 'single',
-  color: (text: string) => string = colors.blue,
-): string {
-  const border = borderStyles[style]
-  const lines = content.split('\n')
-  const paddedWidth = width - 2 // Account for borders
-
-  const result: string[] = []
-
-  // Top border
-  result.push(
-    color(
-      border.topLeft + border.horizontal.repeat(paddedWidth) + border.topRight,
-    ),
-  )
-
-  // Content lines with side borders
-  for (const line of lines) {
-    const paddedLine = line.padEnd(paddedWidth, ' ')
-    result.push(color(border.vertical) + paddedLine + color(border.vertical))
-  }
-
-  // Bottom border
-  result.push(
-    color(
-      border.bottomLeft +
-        border.horizontal.repeat(paddedWidth) +
-        border.bottomRight,
-    ),
-  )
-
-  return result.join('\n')
-}
-
-/**
- * Create a bordered input prompt
- */
-export async function borderedInput(
-  prompt: string,
-  options: {
-    width?: number
-    style?: keyof typeof borderStyles
-    color?: (text: string) => string
-    placeholder?: string
-  } = {},
-): Promise<string> {
-  const {
-    color = colors.blue,
-    placeholder = '',
-    style = 'single',
-    width = 50,
-  } = options
-
-  const border = borderStyles[style]
-  const innerWidth = width - 2
-
-  // Clear line and draw top border
-  stdout.write('\r\x1b[K')
-  stdout.write(
-    `${color(
-      border.topLeft + border.horizontal.repeat(innerWidth) + border.topRight,
-    )}\n`,
-  )
-
-  // Draw prompt line
-  if (prompt) {
-    const paddedPrompt = ` ${prompt} `.padEnd(innerWidth, ' ')
-    stdout.write(
-      color(border.vertical) +
-        colors.cyan(paddedPrompt) +
-        color(border.vertical) +
-        '\n',
-    )
-
-    // Draw separator
-    stdout.write(
-      color(border.vertical) +
-        color(border.horizontal.repeat(innerWidth)) +
-        color(border.vertical) +
-        '\n',
-    )
-  }
-
-  // Draw input line with placeholder
-  stdout.write(`${color(border.vertical)} `)
-
-  // Save cursor position for input
-  const cursorX = 3 // After border and space
-
-  // Create readline interface
-  const rl = readline.createInterface({
-    input: stdin,
-    output: stdout,
-    prompt: placeholder ? colors.dim(placeholder) : '',
-  })
-
-  // Draw right border after input area
-  stdout.write(' '.repeat(innerWidth - 1))
-  stdout.write(`${color(border.vertical)}\n`)
-
-  // Draw bottom border
-  stdout.write(
-    `${color(
-      border.bottomLeft +
-        border.horizontal.repeat(innerWidth) +
-        border.bottomRight,
-    )}\n`,
-  )
-
-  // Move cursor back up to input line
-  stdout.write(`\x1b[3A\x1b[${cursorX}C`)
-
-  // Get input
-  const answer = await rl.question('')
-
-  // Move cursor to after the box
-  stdout.write('\x1b[3B\n')
-
-  rl.close()
-  return answer
-}
-
-/**
  * Create a live updating bordered box (like a terminal window)
  */
 export class BorderedOutput {
@@ -286,6 +158,94 @@ export class BorderedOutput {
 }
 
 /**
+ * Create a bordered input prompt
+ */
+export async function borderedInput(
+  prompt: string,
+  options: {
+    width?: number
+    style?: keyof typeof borderStyles
+    color?: (text: string) => string
+    placeholder?: string
+  } = {},
+): Promise<string> {
+  const {
+    color = colors.blue,
+    placeholder = '',
+    style = 'single',
+    width = 50,
+  } = options
+
+  const border = borderStyles[style]
+  const innerWidth = width - 2
+
+  // Clear line and draw top border
+  stdout.write('\r\x1b[K')
+  stdout.write(
+    `${color(
+      border.topLeft + border.horizontal.repeat(innerWidth) + border.topRight,
+    )}\n`,
+  )
+
+  // Draw prompt line
+  if (prompt) {
+    const paddedPrompt = ` ${prompt} `.padEnd(innerWidth, ' ')
+    stdout.write(
+      color(border.vertical) +
+        colors.cyan(paddedPrompt) +
+        color(border.vertical) +
+        '\n',
+    )
+
+    // Draw separator
+    stdout.write(
+      color(border.vertical) +
+        color(border.horizontal.repeat(innerWidth)) +
+        color(border.vertical) +
+        '\n',
+    )
+  }
+
+  // Draw input line with placeholder
+  stdout.write(`${color(border.vertical)} `)
+
+  // Save cursor position for input
+  const cursorX = 3 // After border and space
+
+  // Create readline interface
+  const rl = readline.createInterface({
+    input: stdin,
+    output: stdout,
+    prompt: placeholder ? colors.dim(placeholder) : '',
+  })
+
+  // Draw right border after input area
+  stdout.write(' '.repeat(innerWidth - 1))
+  stdout.write(`${color(border.vertical)}\n`)
+
+  // Draw bottom border
+  stdout.write(
+    `${color(
+      border.bottomLeft +
+        border.horizontal.repeat(innerWidth) +
+        border.bottomRight,
+    )}\n`,
+  )
+
+  // Move cursor back up to input line
+  stdout.write(`\x1b[3A\x1b[${cursorX}C`)
+
+  // Get input
+  const answer = await rl.question('')
+
+  // Move cursor to after the box
+  stdout.write('\x1b[3B\n')
+
+  rl.close()
+  return answer
+}
+
+/**
  * Create a menu with bordered options
  */
 export async function borderedMenu(
@@ -349,4 +309,44 @@ export async function borderedMenu(
   return Number.isNaN(parsed) || parsed < 1 || parsed > options.length
     ? 0
     : parsed
+}
+
+/**
+ * Create a bordered box around text
+ */
+export function createBox(
+  content: string,
+  width = 40,
+  style: keyof typeof borderStyles = 'single',
+  color: (text: string) => string = colors.blue,
+): string {
+  const border = borderStyles[style]
+  const lines = content.split('\n')
+  const paddedWidth = width - 2 // Account for borders
+
+  const result: string[] = []
+
+  // Top border
+  result.push(
+    color(
+      border.topLeft + border.horizontal.repeat(paddedWidth) + border.topRight,
+    ),
+  )
+
+  // Content lines with side borders
+  for (const line of lines) {
+    const paddedLine = line.padEnd(paddedWidth, ' ')
+    result.push(color(border.vertical) + paddedLine + color(border.vertical))
+  }
+
+  // Bottom border
+  result.push(
+    color(
+      border.bottomLeft +
+        border.horizontal.repeat(paddedWidth) +
+        border.bottomRight,
+    ),
+  )
+
+  return result.join('\n')
 }

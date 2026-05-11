@@ -22,10 +22,7 @@ export interface MeowFlag {
   readonly default?: unknown
   readonly isRequired?:
     | boolean
-    | ((
-        flags: Record<string, unknown>,
-        input: readonly string[],
-      ) => boolean)
+    | ((flags: Record<string, unknown>, input: readonly string[]) => boolean)
   readonly isMultiple?: boolean
 }
 

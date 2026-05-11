@@ -66,6 +66,32 @@ export interface MeowConfig {
   subcommands: Record<string, CliSubcommand>
 }
 
+// Banner / ASCII-header rendering helpers extracted to keep this file
+// under the 1000-line File size cap. See with-subcommands-banner.mts.
+import {
+  emitBanner,
+  getAsciiHeader,
+  getHeaderTheme,
+  getTokenOrigin,
+  shouldAnimateHeader,
+  shouldSuppressBanner,
+  stripAnsi,
+} from './with-subcommands-banner.mts'
+
+export {
+  emitBanner,
+  getAsciiHeader,
+  getHeaderTheme,
+  getTokenOrigin,
+  shouldAnimateHeader,
+  shouldSuppressBanner,
+  stripAnsi,
+}
+
+// For debugging. Whenever you call meowOrExit it will store the command here
+// This module exports a getter that returns the current value.
+let lastSeenCommand = ''
+
 /**
  * Find the best matching command name for a typo.
  */
@@ -92,26 +118,11 @@ export function findBestCommandMatch(
   return bestMatch
 }
 
-// Banner / ASCII-header rendering helpers extracted to keep this file
-// under the 1000-line File size cap. See with-subcommands-banner.mts.
-import {
-  emitBanner,
-  getAsciiHeader,
-  getHeaderTheme,
-  getTokenOrigin,
-  shouldAnimateHeader,
-  shouldSuppressBanner,
-  stripAnsi,
-} from './with-subcommands-banner.mts'
-
-export {
-  emitBanner,
-  getAsciiHeader,
-  getHeaderTheme,
-  getTokenOrigin,
-  shouldAnimateHeader,
-  shouldSuppressBanner,
-  stripAnsi,
+/**
+ * Get the last command that was processed by meowOrExit (for debugging).
+ */
+export function getLastSeenCommand(): string {
+  return lastSeenCommand
 }
 
 /**
@@ -143,15 +154,158 @@ export function levenshteinDistance(a: string, b: string): number {
   return matrix[a.length]?.[b.length]!
 }
 
-// For debugging. Whenever you call meowOrExit it will store the command here
-// This module exports a getter that returns the current value.
-let lastSeenCommand = ''
+export interface MeowOrExitConfig<F extends MeowFlags = MeowFlags> {
+  argv: string[] | readonly string[]
+  config: CliCommandConfig<F>
+  parentName: string
+  importMeta: ImportMeta
+}
+
+export type MeowOrExitOptions = {
+  allowUnknownFlags?: boolean | undefined
+}
 
 /**
- * Get the last command that was processed by meowOrExit (for debugging).
+ * Create meow CLI instance or exit with help/error (meow will exit immediately
+ * if it calls .showHelp()).
+ * @param config Configuration object with argv, config, parentName, and importMeta.
+ * @param options Optional settings like allowUnknownFlags.
+ * @example
+ * meowOrExit(
+ *   { argv, config, parentName, importMeta },
+ *   { allowUnknownFlags: false }
+ * )
  */
-export function getLastSeenCommand(): string {
-  return lastSeenCommand
+export function meowOrExit<const F extends MeowFlags = MeowFlags>(
+  config: MeowOrExitConfig<F>,
+  options?: MeowOrExitOptions | undefined,
+): Result<F> {
+  const {
+    argv,
+    config: cliConfig,
+    importMeta,
+    parentName,
+  } = { __proto__: null, ...config } as MeowOrExitConfig<F>
+  const { allowUnknownFlags = true } = {
+    __proto__: null,
+    ...options,
+  } as MeowOrExitOptions
+  const command = `${parentName} ${cliConfig.commandName}`
+  lastSeenCommand = command
+
+  // This exits if .printHelp() is called either by meow itself or by us.
+  const cli = meow({
+    argv,
+    // Prevent meow from potentially exiting early.
+    autoHelp: false,
+    autoVersion: false,
+    // We want to detect whether a bool flag is given at all.
+    booleanDefault: undefined,
+    description: cliConfig.description,
+    flags: cliConfig.flags,
+    help: trimNewlines(cliConfig.help(command, cliConfig)),
+    importMeta,
+  })
+
+  const {
+    compactHeader: compactHeaderFlag,
+    help: helpFlag,
+    json: jsonFlag,
+    markdown: markdownFlag,
+    org: orgFlag,
+    quiet: quietFlag,
+    spinner: spinnerFlag,
+    version: versionFlag,
+  } = cli.flags as {
+    compactHeader: boolean
+    help: boolean
+    json: boolean | undefined
+    markdown: boolean | undefined
+    org: string
+    quiet: boolean | undefined
+    spinner: boolean
+    version: boolean | undefined
+  }
+
+  // Apply machine-output mode from this command's flags. Reset first
+  // so prior in-worker state doesn't leak across sequential invocations.
+  resetMachineOutputMode()
+  setMachineOutputMode({
+    json: jsonFlag,
+    markdown: markdownFlag,
+    quiet: quietFlag,
+  })
+
+  const compactMode = !!compactHeaderFlag || !!(getCI() && !VITEST)
+  const noSpinner = spinnerFlag === false || isDebug()
+
+  // Use CI spinner style when --no-spinner is passed.
+  // This prevents the spinner from interfering with debug output.
+  if (noSpinner) {
+    // Note: Spinner configuration skipped here to avoid circular dependency with
+    // constants barrel. Spinner is managed via terminal/spinner state.
+    // Refactoring opportunity: Extract spinner to standalone module.
+  }
+
+  if (!shouldSuppressBanner(cli.flags)) {
+    emitBanner(command, orgFlag, compactMode, cli.flags)
+    // Add newline in stderr.
+    // Meow help adds a newline too so we do it here.
+    logger.error('')
+  }
+
+  // As per https://github.com/sindresorhus/meow/issues/178
+  // Setting `allowUnknownFlags: false` makes it reject camel cased flags.
+  // if (!allowUnknownFlags) {
+  //   // Run meow specifically with the flag setting. It will exit(2) if an
+  //   // invalid flag is set and print a message.
+  //   meow({
+  //     argv,
+  //     allowUnknownFlags: false,
+  //     // Prevent meow from potentially exiting early.
+  //     autoHelp: false,
+  //     autoVersion: false,
+  //     description: config.description,
+  //     flags: config.flags,
+  //     help: trimNewlines(config.help(command, config)),
+  //     importMeta,
+  //   })
+  // }
+
+  if (helpFlag) {
+    cli.showHelp(0)
+  }
+
+  // Meow doesn't detect 'version' as an unknown flag, so we do the leg work here.
+  if (versionFlag && !hasOwn(cliConfig.flags, 'version')) {
+    logger.error('Unknown flag\n--version')
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(2)
+    // This line is never reached in production, but helps tests.
+    throw new Error('process.exit called')
+  }
+
+  // Now test for help state. Run Meow again. If it exits now, it must be due
+  // to wanting to print the help screen. But it would exit(0) and we want a
+  // consistent exit(2) for that case (missing input).
+  process.exitCode = 2
+  meow({
+    argv,
+    // As per https://github.com/sindresorhus/meow/issues/178
+    // Setting `allowUnknownFlags: false` makes it reject camel cased flags.
+    allowUnknownFlags: Boolean(allowUnknownFlags),
+    // Prevent meow from potentially exiting early.
+    autoHelp: false,
+    autoVersion: false,
+    description: cliConfig.description,
+    help: trimNewlines(cliConfig.help(command, cliConfig)),
+    importMeta,
+    flags: cliConfig.flags,
+  })
+  // Ok, no help, reset to default.
+  process.exitCode = 0
+
+  return cli as unknown as Result<F>
 }
 
 /**
@@ -480,158 +634,4 @@ export async function meowWithSubcommands(
     // so we exit(0). If we do it because we need more input, we exit(2).
     cli2.showHelp(helpFlag ? 0 : 2)
   }
-}
-
-export interface MeowOrExitConfig<F extends MeowFlags = MeowFlags> {
-  argv: string[] | readonly string[]
-  config: CliCommandConfig<F>
-  parentName: string
-  importMeta: ImportMeta
-}
-
-export type MeowOrExitOptions = {
-  allowUnknownFlags?: boolean | undefined
-}
-
-/**
- * Create meow CLI instance or exit with help/error (meow will exit immediately
- * if it calls .showHelp()).
- * @param config Configuration object with argv, config, parentName, and importMeta.
- * @param options Optional settings like allowUnknownFlags.
- * @example
- * meowOrExit(
- *   { argv, config, parentName, importMeta },
- *   { allowUnknownFlags: false }
- * )
- */
-export function meowOrExit<const F extends MeowFlags = MeowFlags>(
-  config: MeowOrExitConfig<F>,
-  options?: MeowOrExitOptions | undefined,
-): Result<F> {
-  const {
-    argv,
-    config: cliConfig,
-    importMeta,
-    parentName,
-  } = { __proto__: null, ...config } as MeowOrExitConfig<F>
-  const { allowUnknownFlags = true } = {
-    __proto__: null,
-    ...options,
-  } as MeowOrExitOptions
-  const command = `${parentName} ${cliConfig.commandName}`
-  lastSeenCommand = command
-
-  // This exits if .printHelp() is called either by meow itself or by us.
-  const cli = meow({
-    argv,
-    // Prevent meow from potentially exiting early.
-    autoHelp: false,
-    autoVersion: false,
-    // We want to detect whether a bool flag is given at all.
-    booleanDefault: undefined,
-    description: cliConfig.description,
-    flags: cliConfig.flags,
-    help: trimNewlines(cliConfig.help(command, cliConfig)),
-    importMeta,
-  })
-
-  const {
-    compactHeader: compactHeaderFlag,
-    help: helpFlag,
-    json: jsonFlag,
-    markdown: markdownFlag,
-    org: orgFlag,
-    quiet: quietFlag,
-    spinner: spinnerFlag,
-    version: versionFlag,
-  } = cli.flags as {
-    compactHeader: boolean
-    help: boolean
-    json: boolean | undefined
-    markdown: boolean | undefined
-    org: string
-    quiet: boolean | undefined
-    spinner: boolean
-    version: boolean | undefined
-  }
-
-  // Apply machine-output mode from this command's flags. Reset first
-  // so prior in-worker state doesn't leak across sequential invocations.
-  resetMachineOutputMode()
-  setMachineOutputMode({
-    json: jsonFlag,
-    markdown: markdownFlag,
-    quiet: quietFlag,
-  })
-
-  const compactMode = !!compactHeaderFlag || !!(getCI() && !VITEST)
-  const noSpinner = spinnerFlag === false || isDebug()
-
-  // Use CI spinner style when --no-spinner is passed.
-  // This prevents the spinner from interfering with debug output.
-  if (noSpinner) {
-    // Note: Spinner configuration skipped here to avoid circular dependency with
-    // constants barrel. Spinner is managed via terminal/spinner state.
-    // Refactoring opportunity: Extract spinner to standalone module.
-  }
-
-  if (!shouldSuppressBanner(cli.flags)) {
-    emitBanner(command, orgFlag, compactMode, cli.flags)
-    // Add newline in stderr.
-    // Meow help adds a newline too so we do it here.
-    logger.error('')
-  }
-
-  // As per https://github.com/sindresorhus/meow/issues/178
-  // Setting `allowUnknownFlags: false` makes it reject camel cased flags.
-  // if (!allowUnknownFlags) {
-  //   // Run meow specifically with the flag setting. It will exit(2) if an
-  //   // invalid flag is set and print a message.
-  //   meow({
-  //     argv,
-  //     allowUnknownFlags: false,
-  //     // Prevent meow from potentially exiting early.
-  //     autoHelp: false,
-  //     autoVersion: false,
-  //     description: config.description,
-  //     flags: config.flags,
-  //     help: trimNewlines(config.help(command, config)),
-  //     importMeta,
-  //   })
-  // }
-
-  if (helpFlag) {
-    cli.showHelp(0)
-  }
-
-  // Meow doesn't detect 'version' as an unknown flag, so we do the leg work here.
-  if (versionFlag && !hasOwn(cliConfig.flags, 'version')) {
-    logger.error('Unknown flag\n--version')
-    // eslint-disable-next-line n/no-process-exit
-    process.exit(2)
-    // This line is never reached in production, but helps tests.
-    throw new Error('process.exit called')
-  }
-
-  // Now test for help state. Run Meow again. If it exits now, it must be due
-  // to wanting to print the help screen. But it would exit(0) and we want a
-  // consistent exit(2) for that case (missing input).
-  process.exitCode = 2
-  meow({
-    argv,
-    // As per https://github.com/sindresorhus/meow/issues/178
-    // Setting `allowUnknownFlags: false` makes it reject camel cased flags.
-    allowUnknownFlags: Boolean(allowUnknownFlags),
-    // Prevent meow from potentially exiting early.
-    autoHelp: false,
-    autoVersion: false,
-    description: cliConfig.description,
-    help: trimNewlines(cliConfig.help(command, cliConfig)),
-    importMeta,
-    flags: cliConfig.flags,
-  })
-  // Ok, no help, reset to default.
-  process.exitCode = 0
-
-  return cli as unknown as Result<F>
 }

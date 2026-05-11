@@ -16,133 +16,6 @@ export const OAUTH_WELL_KNOWN_PATH = '/.well-known/oauth-authorization-server'
 export const OAUTH_PROTECTED_RESOURCE_METADATA_PATH =
   '/.well-known/oauth-protected-resource'
 
-export function getRequestHeaderValue(
-  header: string | string[] | undefined,
-): string {
-  if (Array.isArray(header)) {
-    return header[0] || ''
-  }
-  return header || ''
-}
-
-export function getForwardedHeaderValue(
-  header: string | string[] | undefined,
-): string {
-  return getRequestHeaderValue(header).split(',', 1)[0]?.trim() || ''
-}
-
-export function getRequestBaseUrl(
-  req: IncomingMessage,
-  fallbackPort: number,
-  trustProxy: boolean,
-): URL {
-  const forwardedProto = trustProxy
-    ? getForwardedHeaderValue(req.headers['x-forwarded-proto']).toLowerCase()
-    : ''
-  const forwardedHost = trustProxy
-    ? getForwardedHeaderValue(req.headers['x-forwarded-host'])
-    : ''
-  const host =
-    forwardedHost ||
-    getRequestHeaderValue(req.headers.host).trim() ||
-    `localhost:${fallbackPort}`
-  const socketWithTls = req.socket as { encrypted?: boolean }
-  const protocol =
-    forwardedProto === 'http' || forwardedProto === 'https'
-      ? forwardedProto
-      : socketWithTls.encrypted
-        ? 'https'
-        : 'http'
-  return new URL(`${protocol}://${host}/`)
-}
-
-export function parseJsonObject(
-  responseText: string,
-  context: string,
-): Record<string, unknown> {
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(responseText)
-  } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
-    throw new Error(`${context} returned invalid JSON: ${message}`)
-  }
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error(`${context} returned invalid JSON: expected a JSON object`)
-  }
-  return parsed as Record<string, unknown>
-}
-
-export function getProtectedResourceMetadataUrl(baseUrl: URL): string {
-  return new URL(OAUTH_PROTECTED_RESOURCE_METADATA_PATH, baseUrl).href
-}
-
-export function buildProtectedResourceMetadata(
-  baseUrl: URL,
-  oauthMetadata: OAuthMetadata,
-  requiredScopes: readonly string[],
-): Record<string, unknown> {
-  return {
-    authorization_servers: [oauthMetadata.issuer],
-    resource: new URL('/', baseUrl).href,
-    resource_name: 'Socket MCP Server',
-    scopes_supported: requiredScopes,
-  }
-}
-
-export function writeJson(
-  res: ServerResponse,
-  statusCode: number,
-  body: unknown,
-  headers: Record<string, string> = {},
-): void {
-  res.writeHead(statusCode, {
-    'Content-Type': 'application/json',
-    ...headers,
-  })
-  res.end(JSON.stringify(body))
-}
-
-export function writeOAuthError(
-  res: ServerResponse,
-  statusCode: number,
-  errorCode: string,
-  message: string,
-  resourceMetadataUrl?: string | undefined,
-): void {
-  const authenticateValue = resourceMetadataUrl
-    ? `Bearer error="${errorCode}", error_description="${message}", resource_metadata="${resourceMetadataUrl}"`
-    : `Bearer error="${errorCode}", error_description="${message}"`
-  writeJson(
-    res,
-    statusCode,
-    {
-      error: errorCode,
-      error_description: message,
-    },
-    { 'WWW-Authenticate': authenticateValue },
-  )
-}
-
-export function splitScopes(scope: unknown): string[] {
-  if (typeof scope !== 'string') {
-    return []
-  }
-  return scope
-    .split(/\s+/u)
-    .map(value => value.trim())
-    .filter(Boolean)
-}
-
-export function isLocalhostOrigin(originUrl: string): boolean {
-  try {
-    const u = new URL(originUrl)
-    return u.hostname === '127.0.0.1' || u.hostname === 'localhost'
-  } catch {
-    return false
-  }
-}
-
 type AuthenticatedRequest = IncomingMessage & { auth?: AuthInfo }
 
 export class OAuthIntrospector {
@@ -329,6 +202,19 @@ export class OAuthIntrospector {
   }
 }
 
+export function buildProtectedResourceMetadata(
+  baseUrl: URL,
+  oauthMetadata: OAuthMetadata,
+  requiredScopes: readonly string[],
+): Record<string, unknown> {
+  return {
+    authorization_servers: [oauthMetadata.issuer],
+    resource: new URL('/', baseUrl).href,
+    resource_name: 'Socket MCP Server',
+    scopes_supported: requiredScopes,
+  }
+}
+
 /**
  * Destroy a session by id. Closes the transport (catching synchronous
  * throws) and the server (swallowing async rejections), then deletes
@@ -363,41 +249,48 @@ export function destroySessionEntry<T extends SessionLike>(
   log.info(`Session ${id} destroyed`)
 }
 
-/**
- * Build the `transport.onclose` handler that destroys the session
- * keyed by the transport's sessionId. The `if (sessionId)` guard
- * matters because onclose can fire before onsessioninitialized has
- * assigned a sessionId (e.g. SDK init failure on a brand-new transport).
- */
-export function makeOnTransportClose(
-  getSessionId: () => string | undefined,
-  destroy: (id: string) => void,
-): () => void {
-  return () => {
-    const id = getSessionId()
-    if (id) {
-      destroy(id)
-    }
-  }
+export function getForwardedHeaderValue(
+  header: string | string[] | undefined,
+): string {
+  return getRequestHeaderValue(header).split(',', 1)[0]?.trim() || ''
 }
 
-/**
- * Walk a session map and destroy entries whose lastActivity is older
- * than `ttlMs`. Used by the periodic reaper interval.
- */
-export function reapIdleSessions<T extends { lastActivity: number }>(
-  now: number,
-  ttlMs: number,
-  sessions: Map<string, T>,
-  destroy: (id: string) => void,
-  log: { info: (msg: string) => void },
-): void {
-  for (const [id, session] of sessions.entries()) {
-    if (now - session.lastActivity > ttlMs) {
-      log.info(`Reaping idle session ${id}`)
-      destroy(id)
-    }
+export function getProtectedResourceMetadataUrl(baseUrl: URL): string {
+  return new URL(OAUTH_PROTECTED_RESOURCE_METADATA_PATH, baseUrl).href
+}
+
+export function getRequestBaseUrl(
+  req: IncomingMessage,
+  fallbackPort: number,
+  trustProxy: boolean,
+): URL {
+  const forwardedProto = trustProxy
+    ? getForwardedHeaderValue(req.headers['x-forwarded-proto']).toLowerCase()
+    : ''
+  const forwardedHost = trustProxy
+    ? getForwardedHeaderValue(req.headers['x-forwarded-host'])
+    : ''
+  const host =
+    forwardedHost ||
+    getRequestHeaderValue(req.headers.host).trim() ||
+    `localhost:${fallbackPort}`
+  const socketWithTls = req.socket as { encrypted?: boolean }
+  const protocol =
+    forwardedProto === 'http' || forwardedProto === 'https'
+      ? forwardedProto
+      : socketWithTls.encrypted
+        ? 'https'
+        : 'http'
+  return new URL(`${protocol}://${host}/`)
+}
+
+export function getRequestHeaderValue(
+  header: string | string[] | undefined,
+): string {
+  if (Array.isArray(header)) {
+    return header[0] || ''
   }
+  return header || ''
 }
 
 /**
@@ -427,4 +320,111 @@ export async function handleRequestSafely(
       })
     }
   }
+}
+
+export function isLocalhostOrigin(originUrl: string): boolean {
+  try {
+    const u = new URL(originUrl)
+    return u.hostname === '127.0.0.1' || u.hostname === 'localhost'
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Build the `transport.onclose` handler that destroys the session
+ * keyed by the transport's sessionId. The `if (sessionId)` guard
+ * matters because onclose can fire before onsessioninitialized has
+ * assigned a sessionId (e.g. SDK init failure on a brand-new transport).
+ */
+export function makeOnTransportClose(
+  getSessionId: () => string | undefined,
+  destroy: (id: string) => void,
+): () => void {
+  return () => {
+    const id = getSessionId()
+    if (id) {
+      destroy(id)
+    }
+  }
+}
+
+export function parseJsonObject(
+  responseText: string,
+  context: string,
+): Record<string, unknown> {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(responseText)
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    throw new Error(`${context} returned invalid JSON: ${message}`)
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error(`${context} returned invalid JSON: expected a JSON object`)
+  }
+  return parsed as Record<string, unknown>
+}
+
+/**
+ * Walk a session map and destroy entries whose lastActivity is older
+ * than `ttlMs`. Used by the periodic reaper interval.
+ */
+export function reapIdleSessions<T extends { lastActivity: number }>(
+  now: number,
+  ttlMs: number,
+  sessions: Map<string, T>,
+  destroy: (id: string) => void,
+  log: { info: (msg: string) => void },
+): void {
+  for (const [id, session] of sessions.entries()) {
+    if (now - session.lastActivity > ttlMs) {
+      log.info(`Reaping idle session ${id}`)
+      destroy(id)
+    }
+  }
+}
+
+export function splitScopes(scope: unknown): string[] {
+  if (typeof scope !== 'string') {
+    return []
+  }
+  return scope
+    .split(/\s+/u)
+    .map(value => value.trim())
+    .filter(Boolean)
+}
+
+export function writeJson(
+  res: ServerResponse,
+  statusCode: number,
+  body: unknown,
+  headers: Record<string, string> = {},
+): void {
+  res.writeHead(statusCode, {
+    'Content-Type': 'application/json',
+    ...headers,
+  })
+  res.end(JSON.stringify(body))
+}
+
+export function writeOAuthError(
+  res: ServerResponse,
+  statusCode: number,
+  errorCode: string,
+  message: string,
+  resourceMetadataUrl?: string | undefined,
+): void {
+  const authenticateValue = resourceMetadataUrl
+    ? `Bearer error="${errorCode}", error_description="${message}", resource_metadata="${resourceMetadataUrl}"`
+    : `Bearer error="${errorCode}", error_description="${message}"`
+  writeJson(
+    res,
+    statusCode,
+    {
+      error: errorCode,
+      error_description: message,
+    },
+    { 'WWW-Authenticate': authenticateValue },
+  )
 }
