@@ -145,6 +145,15 @@ describe('exclude-paths', () => {
       ).toEqual(['tests/**', 'packages/*/**'])
     })
 
+    it('preserves match-anywhere globs for nested targets', () => {
+      expect(
+        projectIgnorePathsToReachExcludePaths(['**/dist'], {
+          cwd: '/repo',
+          target: '/repo/apps/api',
+        }),
+      ).toEqual(['**/dist'])
+    })
+
     it('strips trailing slashes when re-anchoring under a nested target', () => {
       expect(
         projectIgnorePathsToReachExcludePaths(

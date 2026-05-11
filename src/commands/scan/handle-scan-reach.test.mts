@@ -143,7 +143,7 @@ describe('handleScanReach', () => {
 
   it('translates excludePaths from the scan root for nested targets', async () => {
     const reachabilityOptions = {
-      excludePaths: ['apps/api/tests', 'dist'],
+      excludePaths: ['apps/api/tests', '**/dist'],
       reachAnalysisMemoryLimit: 8192,
       reachAnalysisTimeout: 0,
       reachConcurrency: 1,
@@ -181,8 +181,8 @@ describe('handleScanReach', () => {
         additionalIgnores: [
           'apps/api/tests',
           'apps/api/tests/**',
-          'dist',
-          'dist/**',
+          '**/dist',
+          '**/dist/**',
         ],
         config: { projectIgnorePaths: ['vendor/**'] },
         cwd: '/repo',
@@ -191,7 +191,7 @@ describe('handleScanReach', () => {
     expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
       expect.objectContaining({
         reachabilityOptions: expect.objectContaining({
-          reachExcludePaths: ['node_modules', 'tests'],
+          reachExcludePaths: ['node_modules', 'tests', '**/dist'],
         }),
       }),
     )

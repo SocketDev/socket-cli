@@ -166,7 +166,7 @@ describe('handleCreateNewScan excludePaths', () => {
       pendingHead: false,
       pullRequest: 0,
       reach: {
-        excludePaths: ['apps/api/tests', 'dist'],
+        excludePaths: ['apps/api/tests', '**/dist'],
         reachAnalysisMemoryLimit: 8192,
         reachAnalysisTimeout: 0,
         reachConcurrency: 1,
@@ -202,8 +202,8 @@ describe('handleCreateNewScan excludePaths', () => {
         additionalIgnores: [
           'apps/api/tests',
           'apps/api/tests/**',
-          'dist',
-          'dist/**',
+          '**/dist',
+          '**/dist/**',
         ],
         config: { projectIgnorePaths: ['fixtures/**'] },
         cwd: '/repo',
@@ -213,7 +213,7 @@ describe('handleCreateNewScan excludePaths', () => {
       expect.objectContaining({
         target: '/repo/apps/api',
         reachabilityOptions: expect.objectContaining({
-          reachExcludePaths: ['node_modules', 'tests'],
+          reachExcludePaths: ['node_modules', 'tests', '**/dist'],
         }),
       }),
     )

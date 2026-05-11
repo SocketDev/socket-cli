@@ -27,8 +27,10 @@ function normalizeProjectIgnorePath(path: string): string {
  * Coana expects for the current analysis target. Coana resolves --exclude-dirs
  * relative to the path passed to `coana run`, not relative to this command's
  * cwd. For a root target the pattern can pass through unchanged; for a nested
- * target we strip the target prefix; and for paths outside the target we return
- * undefined because Coana cannot exclude directories it is not analyzing.
+ * target we strip the target prefix; documented match-anywhere globstar
+ * patterns remain meaningful relative to the nested target; and paths outside
+ * the target return undefined because Coana cannot exclude directories it is
+ * not analyzing.
  */
 function pathRelativeToTarget(
   path: string,
@@ -42,6 +44,10 @@ function pathRelativeToTarget(
   if (normalized === target) {
     // Whole target excluded: manifest discovery should stop before Coana runs.
     return undefined
+  }
+  if (normalized.startsWith('**/')) {
+    // Match-anywhere glob: keep matching at any depth under the Coana target.
+    return normalized
   }
   const targetPrefix = `${target}/`
   if (normalized.startsWith(targetPrefix)) {
