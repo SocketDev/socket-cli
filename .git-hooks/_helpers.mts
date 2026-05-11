@@ -23,8 +23,13 @@ const nodeMajor = Number.parseInt(
   10,
 )
 if (nodeMajor < NODE_MIN_MAJOR) {
+  // @socketsecurity/lib requires Node >= 25; the canonical logger
+  // isn't importable here. Use raw process.stderr with ASCII (no
+  // status-emoji glyph) so the no-status-emoji lint rule stays clean
+  // — the lint rule's recommendation (use logger.fail()) doesn't
+  // apply when the entire branch is the logger-unavailable bail.
   process.stderr.write(
-    `\x1b[0;31m✗ Hook requires Node >= ${NODE_MIN_MAJOR}.0.0 (have v${process.versions.node})\x1b[0m\n`,
+    `\x1b[0;31mHook requires Node >= ${NODE_MIN_MAJOR}.0.0 (have v${process.versions.node})\x1b[0m\n`,
   )
   process.stderr.write(
     'Install Node 25+ — these hooks rely on stable .mts type stripping.\n',
@@ -181,14 +186,14 @@ const RULE_ALIASES: { [k: string]: string | undefined } = {
   logger: 'console',
 }
 
-function aliasMatches(marker: string, rule: string): boolean {
+export function aliasMatches(marker: string, rule: string): boolean {
   if (marker === rule) {
     return true
   }
   return RULE_ALIASES[marker] === rule || RULE_ALIASES[rule] === marker
 }
 
-function lineIsSuppressed(line: string, rule?: string): boolean {
+export function lineIsSuppressed(line: string, rule?: string): boolean {
   if (LEGACY_ZIZMOR_MARKER_RE.test(line)) {
     return true
   }
@@ -215,7 +220,7 @@ function lineIsSuppressed(line: string, rule?: string): boolean {
 const COMMENT_LINE_RE = /^\s*(\*|\/\/|#)/
 const JSDOC_TAG_RE = /@(example|param|returns?|see|link)\b/
 
-function isInsideBackticks(line: string, needleRe: RegExp): boolean {
+export function isInsideBackticks(line: string, needleRe: RegExp): boolean {
   // Find every backtick-delimited span on the line and test if the
   // pattern only appears within those spans. Conservative: if any
   // hit is *outside* a span, treat the line as runtime code.
@@ -246,7 +251,7 @@ function isInsideBackticks(line: string, needleRe: RegExp): boolean {
   return true
 }
 
-function looksLikeDocumentation(
+export function looksLikeDocumentation(
   line: string,
   needleRe: RegExp,
   rule?: string,
@@ -275,11 +280,56 @@ export type LineHit = {
   suggested?: string
 }
 
+// Generic line-walk scanner factory. Splits text into lines once,
+// applies the regex per line, optionally skips lines via `filter` (for
+// allowlists) and/or via `skipDocs` (for documentation-style
+// detection), and optionally attaches a suggested rewrite. Centralizes
+// the loop shape that every concrete scanner used to inline.
+//
+// Options:
+//   filter — return true to drop a line (e.g. allowlist match).
+//   skipDocs.rule — when set, calls looksLikeDocumentation() with the
+//     same regex + this rule name and skips lines that match.
+//   suggest — produces the per-line `suggested` rewrite shown to users.
+function scanLines(
+  text: string,
+  pattern: RegExp,
+  options: {
+    filter?: (line: string) => boolean
+    skipDocs?: { rule: string }
+    suggest?: (line: string) => string
+  } = {},
+): LineHit[] {
+  const hits: LineHit[] = []
+  const lines = text.split('\n')
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!
+    if (!pattern.test(line)) {
+      continue
+    }
+    if (options.filter && options.filter(line)) {
+      continue
+    }
+    if (
+      options.skipDocs &&
+      looksLikeDocumentation(line, pattern, options.skipDocs.rule)
+    ) {
+      continue
+    }
+    const hit: LineHit = { lineNumber: i + 1, line }
+    if (options.suggest) {
+      hit.suggested = options.suggest(line)
+    }
+    hits.push(hit)
+  }
+  return hits
+}
+
 // Build a suggested rewrite for a documentation-style personal path.
 // Replaces the matched real-path username segment with the canonical
 // placeholder form: `<user>` / `<USERNAME>` (matching the platform
 // convention of the surrounding path).
-function suggestPlaceholder(line: string): string {
+export function suggestPlaceholder(line: string): string {
   return line
     .replace(/\/Users\/[^/\s]+\//g, '/Users/<user>/')
     .replace(/\/home\/[^/\s]+\//g, '/home/<user>/')
@@ -290,34 +340,23 @@ function suggestPlaceholder(line: string): string {
 // are pure placeholders or look like documentation examples). Each hit
 // carries a `suggested` rewrite when the scanner can offer one — the
 // caller surfaces it to the user as the fix recipe.
-export const scanPersonalPaths = (text: string): LineHit[] => {
-  const hits: LineHit[] = []
-  const lines = text.split('\n')
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!
-    if (!PERSONAL_PATH_RE.test(line)) {
-      continue
-    }
-    if (PERSONAL_PATH_PLACEHOLDER_RE.test(line)) {
+export const scanPersonalPaths = (text: string): LineHit[] =>
+  scanLines(text, PERSONAL_PATH_RE, {
+    filter: line => {
+      // Pure-placeholder lines (no real path remains after stripping
+      // every `<...>` placeholder) are documentation, not leaks.
+      if (!PERSONAL_PATH_PLACEHOLDER_RE.test(line)) {
+        return false
+      }
       const stripped = line.replace(
         new RegExp(PERSONAL_PATH_PLACEHOLDER_RE, 'g'),
         '',
       )
-      if (!PERSONAL_PATH_RE.test(stripped)) {
-        continue
-      }
-    }
-    if (looksLikeDocumentation(line, PERSONAL_PATH_RE, 'personal-path')) {
-      continue
-    }
-    hits.push({
-      lineNumber: i + 1,
-      line,
-      suggested: suggestPlaceholder(line),
-    })
-  }
-  return hits
-}
+      return !PERSONAL_PATH_RE.test(stripped)
+    },
+    skipDocs: { rule: 'personal-path' },
+    suggest: suggestPlaceholder,
+  })
 
 // ── Secret scanners ────────────────────────────────────────────────
 
@@ -326,53 +365,17 @@ const AWS_KEY_RE = /(aws_access_key|aws_secret|\bAKIA[0-9A-Z]{16}\b)/i
 const GITHUB_TOKEN_RE = /gh[ps]_[a-zA-Z0-9]{36}/
 const PRIVATE_KEY_RE = /-----BEGIN (RSA |EC |DSA )?PRIVATE KEY-----/
 
-export const scanSocketApiKeys = (text: string): LineHit[] => {
-  const hits: LineHit[] = []
-  const lines = text.split('\n')
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!
-    if (SOCKET_API_KEY_RE.test(line) && !isAllowedApiKey(line)) {
-      hits.push({ lineNumber: i + 1, line })
-    }
-  }
-  return hits
-}
+export const scanSocketApiKeys = (text: string): LineHit[] =>
+  scanLines(text, SOCKET_API_KEY_RE, { filter: isAllowedApiKey })
 
-export const scanAwsKeys = (text: string): LineHit[] => {
-  const hits: LineHit[] = []
-  const lines = text.split('\n')
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!
-    if (AWS_KEY_RE.test(line)) {
-      hits.push({ lineNumber: i + 1, line })
-    }
-  }
-  return hits
-}
+export const scanAwsKeys = (text: string): LineHit[] =>
+  scanLines(text, AWS_KEY_RE)
 
-export const scanGitHubTokens = (text: string): LineHit[] => {
-  const hits: LineHit[] = []
-  const lines = text.split('\n')
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!
-    if (GITHUB_TOKEN_RE.test(line)) {
-      hits.push({ lineNumber: i + 1, line })
-    }
-  }
-  return hits
-}
+export const scanGitHubTokens = (text: string): LineHit[] =>
+  scanLines(text, GITHUB_TOKEN_RE)
 
-export const scanPrivateKeys = (text: string): LineHit[] => {
-  const hits: LineHit[] = []
-  const lines = text.split('\n')
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!
-    if (PRIVATE_KEY_RE.test(line)) {
-      hits.push({ lineNumber: i + 1, line })
-    }
-  }
-  return hits
-}
+export const scanPrivateKeys = (text: string): LineHit[] =>
+  scanLines(text, PRIVATE_KEY_RE)
 
 // ── npx/dlx scanner ────────────────────────────────────────────────
 //
@@ -402,34 +405,24 @@ const NPX_DLX_RE = /(?<![\w\-:=.])\b(npx|yarn dlx)\b(?![\w\-:=.])/
 // looksLikeDocumentation(); we only ever land here for code lines, where
 // the right swap is `pnpm exec` (since `pnpm` is the fleet's package
 // manager) or `pnpm run` for script entries. For documentation lines
-// that legitimately need a fetch-and-run command (user-facing
-// instructions where the consumer doesn't have the package pinned),
-// use `pnpm dlx` or its pnpm v11 shorthand `pnx` instead of `npx`.
-function suggestNpxReplacement(line: string): string {
+// All dlx-style invocations rewrite to `pnpm exec`. This matches the
+// `socket/no-npx-dlx` oxlint rule's autofix and the CLAUDE.md tooling
+// rule (NEVER use npx / pnpm dlx / yarn dlx — use pnpm exec). Keep
+// the alternation ordered longest-prefix-first so `pnpm dlx` matches
+// before any future `pnpm`-anchored rule could shadow it.
+export function suggestNpxReplacement(line: string): string {
   return line
+    .replace(/\bpnpm dlx\b/g, 'pnpm exec')
     .replace(/\byarn dlx\b/g, 'pnpm exec')
-    .replace(/\bnpx\b/g, 'pnpm dlx')
+    .replace(/\bpnx\b/g, 'pnpm exec')
+    .replace(/\bnpx\b/g, 'pnpm exec')
 }
 
-export const scanNpxDlx = (text: string): LineHit[] => {
-  const hits: LineHit[] = []
-  const lines = text.split('\n')
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!
-    if (!NPX_DLX_RE.test(line)) {
-      continue
-    }
-    if (looksLikeDocumentation(line, NPX_DLX_RE, 'npx')) {
-      continue
-    }
-    hits.push({
-      lineNumber: i + 1,
-      line,
-      suggested: suggestNpxReplacement(line),
-    })
-  }
-  return hits
-}
+export const scanNpxDlx = (text: string): LineHit[] =>
+  scanLines(text, NPX_DLX_RE, {
+    skipDocs: { rule: 'npx' },
+    suggest: suggestNpxReplacement,
+  })
 
 // ── Logger leak scanner ────────────────────────────────────────────
 //
@@ -448,7 +441,7 @@ const LOGGER_LEAK_RE =
 // closer to logger.info; process.stderr / console.error → logger.error;
 // console.warn → logger.warn; console.info / console.log → logger.info;
 // console.debug → logger.debug.
-function suggestLoggerReplacement(line: string): string {
+export function suggestLoggerReplacement(line: string): string {
   return line
     .replace(/\bprocess\.stderr\.write\s*\(/g, 'logger.error(')
     .replace(/\bprocess\.stdout\.write\s*\(/g, 'logger.info(')
@@ -459,25 +452,11 @@ function suggestLoggerReplacement(line: string): string {
     .replace(/\bconsole\.log\s*\(/g, 'logger.info(')
 }
 
-export const scanLoggerLeaks = (text: string): LineHit[] => {
-  const hits: LineHit[] = []
-  const lines = text.split('\n')
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!
-    if (!LOGGER_LEAK_RE.test(line)) {
-      continue
-    }
-    if (looksLikeDocumentation(line, LOGGER_LEAK_RE, 'console')) {
-      continue
-    }
-    hits.push({
-      lineNumber: i + 1,
-      line,
-      suggested: suggestLoggerReplacement(line),
-    })
-  }
-  return hits
-}
+export const scanLoggerLeaks = (text: string): LineHit[] =>
+  scanLines(text, LOGGER_LEAK_RE, {
+    skipDocs: { rule: 'console' },
+    suggest: suggestLoggerReplacement,
+  })
 
 // ── Cross-repo path scanner ────────────────────────────────────────
 //
@@ -561,9 +540,15 @@ export const scanCrossRepoPaths = (
 }
 
 // ── AI attribution scanner ─────────────────────────────────────────
+//
+// Matches BOILERPLATE attribution patterns ("Generated with Claude",
+// "Co-Authored-By: Claude", emoji prefixes, vendor email addresses) —
+// not legitimate product / directory references. Bare "Claude" /
+// "Claude Code" / ".claude/" are valid prose; only the
+// attribution-verb-anchored forms trigger the hook.
 
 const AI_ATTRIBUTION_RE =
-  /(Generated with.*(Claude|AI)|Co-Authored-By: Claude|Co-Authored-By: AI|🤖 Generated|AI generated|@anthropic\.com|Assistant:|Generated by Claude|Machine generated|Claude Code)/i
+  /(?:(?:Generated|Built|Created|Made|Written|Authored|Powered|Crafted)\s+(?:with|by)\s+(?:Claude|AI|GPT|ChatGPT|Copilot|Cursor|Bard|Gemini)|Co-Authored-By:\s+(?:Claude|AI|GPT|ChatGPT|Copilot|Cursor|Bard|Gemini)|🤖\s+Generated|AI[\s-]generated|Machine[\s-]generated|@(?:anthropic|openai)\.com|^Assistant:)/im
 
 export const containsAiAttribution = (text: string): boolean =>
   AI_ATTRIBUTION_RE.test(text)

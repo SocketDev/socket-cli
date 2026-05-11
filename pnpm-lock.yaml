@@ -592,17 +592,17 @@ importers:
   .claude/hooks/check-new-deps:
     dependencies:
       '@socketregistry/packageurl-js':
-        specifier: 'catalog:'
+        specifier: 1.4.2
         version: 1.4.2
       '@socketsecurity/lib':
         specifier: 5.28.0
         version: 5.28.0(typescript@5.9.3)
       '@socketsecurity/sdk':
-        specifier: 'catalog:'
+        specifier: 4.0.1
         version: 4.0.1
     devDependencies:
       '@types/node':
-        specifier: 24.9.2
+        specifier: 'catalog:'
         version: 24.9.2
 
   .claude/hooks/claude-md-size-guard:
@@ -617,9 +617,37 @@ importers:
         specifier: 'catalog:'
         version: 24.9.2
 
+  .claude/hooks/excuse-detector:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
   .claude/hooks/gitmodules-comment-guard: {}
 
   .claude/hooks/logger-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/markdown-filename-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/no-experimental-strip-types-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/no-fleet-fork-guard:
+    dependencies:
+      '@socketsecurity/lib':
+        specifier: 5.28.0
+        version: 5.28.0(typescript@5.9.3)
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

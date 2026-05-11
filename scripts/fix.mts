@@ -1,6 +1,7 @@
 /**
  * @fileoverview Auto-fix script — runs linters with --fix, then security
- * tools (zizmor, agentshield) if available.
+ * tools (zizmor, agentshield) if available, then an AI-assisted pass
+ * for the lint findings the deterministic fixer can't safely handle.
  *
  * Steps:
  *   1. pnpm run lint --fix — oxlint + oxfmt (forwards extra argv like --all)
@@ -8,6 +9,10 @@
  *      (skipped if .github/ doesn't exist)
  *   3. agentshield scan --fix — Claude config fixes
  *      (skipped if .claude/ or agentshield isn't installed)
+ *   4. AI-assisted lint fix — headless claude (Sonnet) with a
+ *      restricted toolset for judgment-call rules. Skipped silently
+ *      when the claude CLI isn't installed, when SKIP_AI_FIX=1, or
+ *      when --no-ai is passed. See scripts/ai-lint-fix.mts.
  *
  * Forwards `process.argv.slice(2)` to the lint step, so
  * `pnpm run fix --all` runs `pnpm run lint --fix --all` (full-tree
@@ -82,6 +87,22 @@ async function main(): Promise<void> {
       required: false,
     })
   }
+
+  // Step 4: AI-assisted lint fix. Most lint rules ship a
+  // deterministic autofix and Step 1 handled them. What remains is
+  // the judgment-call set — rule violations whose right rewrite
+  // depends on surrounding context that a regex / AST rewrite can't
+  // safely infer. This step shells out to a headless Claude (Sonnet,
+  // four-flag lockdown per CLAUDE.md "Programmatic Claude calls",
+  // restricted toolset) to handle just those rules.
+  //
+  // Skipped silently when the claude CLI isn't on PATH, when
+  // SKIP_AI_FIX=1, or when --no-ai is passed. CI sets SKIP_AI_FIX=1
+  // because the fleet rule is "no AI in CI for code changes."
+  await run('node', ['scripts/ai-lint-fix.mts', ...process.argv.slice(2)], {
+    label: 'ai-lint-fix',
+    required: false,
+  })
 }
 
 main().catch((e: unknown) => {

@@ -21,7 +21,7 @@ const logger = getDefaultLogger()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '..')
-const outPath = path.join(rootDir, '.config', 'lockstep.schema.json')
+const outPath = path.join(rootDir, 'lockstep.schema.json')
 
 // TypeBox schemas carry JSON Schema shape directly, plus a Symbol-keyed
 // [Kind] marker that JSON.stringify drops. Spreading the schema first
@@ -41,9 +41,13 @@ writeFileSync(outPath, JSON.stringify(enriched, null, 2) + '\n', 'utf8')
 // over the tree) would flag the emitted schema as drifted on every
 // repo that re-emits it. The schema is in IDENTICAL_FILES, so the
 // formatted form is the byte-canonical form fleet-wide.
-await spawn('pnpm', ['exec', 'oxfmt', outPath], {
-  cwd: rootDir,
-  stdio: 'inherit',
-})
+await spawn(
+  'pnpm',
+  ['exec', 'oxfmt', '-c', '.config/oxfmtrc.json', outPath],
+  {
+    cwd: rootDir,
+    stdio: 'inherit',
+  },
+)
 
 logger.success(`wrote ${path.relative(rootDir, outPath)}`)

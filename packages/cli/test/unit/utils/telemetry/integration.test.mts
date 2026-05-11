@@ -237,6 +237,28 @@ describe('telemetry/integration', () => {
       expect(call.error.message).toBe('Test error')
     })
 
+    it('sanitizes error with undefined stack (line 304-305)', async () => {
+      // Error with no stack property — sanitizeErrorAttribute hits the
+      // falsy-input early return on line 304-305.
+      const error = new Error('Test error')
+      delete (error as any).stack
+      await trackEvent(
+        'test_event',
+        {
+          arch: 'x64',
+          argv: [],
+          node_version: 'v20.0.0',
+          platform: 'darwin',
+          version: '1.0.0',
+        },
+        {},
+        { error },
+      )
+
+      const call = mockTrack.mock.calls[0][0]
+      expect(call.error.stack).toBeUndefined()
+    })
+
     it('flushes when flush option is true', async () => {
       await trackEvent(
         'test_event',

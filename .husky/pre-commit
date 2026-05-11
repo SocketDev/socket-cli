@@ -31,8 +31,21 @@ else
 fi
 
 if [ -z "${DISABLE_PRECOMMIT_TEST}" ]; then
-  # Only run tests if there are staged test files
-  pnpm test --staged
+  # Each repo's `pnpm test` script wraps a runner that understands
+  # `--staged` (e.g. scripts/test.mts forwards staged-filtering to
+  # vitest, or filters the staged set in a pre-pass). When
+  # DISABLE_PRECOMMIT_LINT is set, also pass --fast so the test
+  # runner skips its embedded format/lint check (otherwise lint
+  # bypass leaks through this path and re-blocks the commit).
+  #
+  # Repos whose `pnpm test` is bare vitest without a wrapper need a
+  # local override (skills/.husky/pre-commit pre-filters with
+  # `git diff --cached --name-only` then runs `pnpm test`).
+  if [ -n "${DISABLE_PRECOMMIT_LINT}" ]; then
+    pnpm test --staged --fast
+  else
+    pnpm test --staged
+  fi
 else
   echo "Skipping testing due to DISABLE_PRECOMMIT_TEST env var"
 fi

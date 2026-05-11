@@ -4,20 +4,34 @@
  * `getDefaultLogger()` from `@socketsecurity/lib/logger` — those
  * methods emit theme-aware coloring + canonical symbols.
  *
- * Autofix: rewrites `console.log(...)` → `logger.log(...)` and
- * similar. Assumes a hoisted `logger` const at the top of the file
- * (the no-inline-logger rule enforces that). If no `logger` import
- * exists, the human can run `pnpm fix` then add the import.
+ * Autofix: rewrites `console.<method>(...)` → `logger.<loggerMethod>(...)`
+ * AND inserts the missing pieces in one go:
+ *
+ *   1. `import { getDefaultLogger } from '@socketsecurity/lib/logger'`
+ *      — appended after the last existing top-level import (or at the
+ *      top of the file if there are none).
+ *   2. `const logger = getDefaultLogger()` — appended after the import
+ *      block (so `logger` is hoisted at module scope).
+ *
+ * Each `console.<method>(...)` call site emits its own fix
+ * independently. ESLint's autofixer dedupes overlapping inserts (the
+ * import line + hoist), so the visit order is irrelevant.
  */
 
+import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'
+
 const CONSOLE_TO_LOGGER = {
-  log: 'log',
-  error: 'fail',
-  warn: 'warn',
-  info: 'info',
   debug: 'log',
+  error: 'fail',
+  info: 'info',
+  log: 'log',
   trace: 'log',
+  warn: 'warn',
 }
+
+const LOGGER_IMPORT_LINE =
+  "import { getDefaultLogger } from '@socketsecurity/lib/logger'"
+const LOGGER_HOIST_LINE = 'const logger = getDefaultLogger()'
 
 /** @type {import('eslint').Rule.RuleModule} */
 const rule = {
@@ -38,6 +52,25 @@ const rule = {
   },
 
   create(context) {
+    const sourceCode = context.getSourceCode
+      ? context.getSourceCode()
+      : context.sourceCode
+
+    let summary
+
+    function ensureSummary() {
+      if (summary) {
+        return summary
+      }
+      summary = summarizeImportTarget(
+        sourceCode.ast,
+        '@socketsecurity/lib/logger',
+        'getDefaultLogger',
+        'logger',
+      )
+      return summary
+    }
+
     return {
       MemberExpression(node) {
         if (
@@ -64,12 +97,22 @@ const rule = {
           return
         }
 
+        const s = ensureSummary()
+
         context.report({
           node,
           messageId: 'banned',
           data: { method, loggerMethod },
           fix(fixer) {
-            return fixer.replaceText(node, `logger.${loggerMethod}`)
+            return [
+              fixer.replaceText(node, `logger.${loggerMethod}`),
+              ...appendImportFixes(
+                s,
+                fixer,
+                LOGGER_IMPORT_LINE,
+                LOGGER_HOIST_LINE,
+              ),
+            ]
           },
         })
       },

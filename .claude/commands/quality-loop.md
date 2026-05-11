@@ -1,3 +1,7 @@
+---
+description: Run /scanning-quality and fix all issues found, repeating until clean or 5 iterations complete
+---
+
 Run the `/scanning-quality` skill and fix all issues found. Repeat until zero issues remain or 5 iterations complete.
 
 **Interactive only** — this command makes code changes and commits. Do not use as an automated pipeline gate.

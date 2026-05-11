@@ -9,13 +9,29 @@
  *   - `fs.unlink(...)` / `fs.unlinkSync(...)`
  *   - `fs.rmdir(...)` / `fs.rmdirSync(...)`
  *
- * No autofix: `safeDelete()` swallows ENOENT (the whole point), but
- * call sites may rely on fs.rm's throw-on-missing behavior. Forcing
- * a rewrite without inspection could change error semantics.
+ * Autofix: rewrites the call to `safeDelete(path)` / `safeDeleteSync(path)`
+ * AND injects `import { safeDelete } from '@socketsecurity/lib/fs'`
+ * (or `safeDeleteSync`) when missing.
+ *
+ * The autofix is conservative — it only fires when the call shape is
+ * "obviously equivalent" to safeDelete:
+ *
+ *   - The first argument is a single expression (the path).
+ *   - Any second argument is an options object literal (we drop it;
+ *     safeDelete handles recursive/force internally).
+ *   - No third argument (rules out fs.rm with an explicit callback).
+ *   - Not a node-callback-style usage (no trailing function expression).
+ *
+ * Skipped (reported without fix):
+ *   - `fs.rm(p, opts, cb)` — node-callback style; semantics differ.
+ *   - Calls whose result is checked/assigned in a way that depends on
+ *     fs.rm's specific throw-on-missing or callback contract.
  *
  * Spawn-based bans (`rm -rf`, `Remove-Item`) live in a separate hook
  * (`.claude/hooks/path-guard/`) — this rule covers the JavaScript side.
  */
+
+import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'
 
 const DELETE_METHODS = new Set([
   'rm',
@@ -25,6 +41,8 @@ const DELETE_METHODS = new Set([
   'rmdir',
   'rmdirSync',
 ])
+
+const SYNC_METHODS = new Set(['rmSync', 'unlinkSync', 'rmdirSync'])
 
 /** @type {import('eslint').Rule.RuleModule} */
 const rule = {
@@ -36,6 +54,7 @@ const rule = {
       category: 'Best Practices',
       recommended: true,
     },
+    fixable: 'code',
     messages: {
       banned:
         'fs.{{method}}() — use safeDelete / safeDeleteSync from @socketsecurity/lib/fs. The lib wrapper handles ENOENT, retries on EBUSY, and integrates with the rest of the fleet.',
@@ -44,6 +63,64 @@ const rule = {
   },
 
   create(context) {
+    const sourceCode = context.getSourceCode
+      ? context.getSourceCode()
+      : context.sourceCode
+
+    // One summary per replacement target — async (safeDelete) and
+    // sync (safeDeleteSync) are separate import names from the same
+    // specifier, so each gets its own summary cache.
+    const summaryCache = new Map()
+
+    function ensureSummary(importName) {
+      let s = summaryCache.get(importName)
+      if (s) {
+        return s
+      }
+      s = summarizeImportTarget(
+        sourceCode.ast,
+        '@socketsecurity/lib/fs',
+        importName,
+      )
+      summaryCache.set(importName, s)
+      return s
+    }
+
+    /**
+     * The autofix only fires when the call shape is unambiguous:
+     *   fs.rm(path)
+     *   fs.rm(path, { ...opts })
+     *   fs.rmSync(path)
+     *   fs.rmSync(path, { ...opts })
+     *
+     * Bail on:
+     *   - 0 args (malformed; skip)
+     *   - 3+ args (callback-style fs.rm — semantics differ)
+     *   - 2nd arg is a function expression (callback-style)
+     *   - any spread argument (...args; can't reason about arity)
+     */
+    function isFixable(node) {
+      const args = node.arguments
+      if (args.length === 0 || args.length > 2) {
+        return false
+      }
+      for (const a of args) {
+        if (a.type === 'SpreadElement') {
+          return false
+        }
+      }
+      if (args.length === 2) {
+        const second = args[1]
+        if (
+          second.type === 'FunctionExpression' ||
+          second.type === 'ArrowFunctionExpression'
+        ) {
+          return false
+        }
+      }
+      return true
+    }
+
     return {
       CallExpression(node) {
         const callee = node.callee
@@ -81,10 +158,38 @@ const rule = {
           return
         }
 
+        const method = callee.property.name
+        const isSync = SYNC_METHODS.has(method)
+        const replacement = isSync ? 'safeDeleteSync' : 'safeDelete'
+
+        if (!isFixable(node)) {
+          context.report({
+            node,
+            messageId: 'banned',
+            data: { method },
+          })
+          return
+        }
+
+        const s = ensureSummary(replacement)
+        const pathArg = node.arguments[0]
+        const pathText = sourceCode.getText(pathArg)
+
         context.report({
           node,
           messageId: 'banned',
-          data: { method: callee.property.name },
+          data: { method },
+          fix(fixer) {
+            return [
+              fixer.replaceText(node, `${replacement}(${pathText})`),
+              ...appendImportFixes(
+                s,
+                fixer,
+                `import { ${replacement} } from '@socketsecurity/lib/fs'`,
+                undefined,
+              ),
+            ]
+          },
         })
       },
     }

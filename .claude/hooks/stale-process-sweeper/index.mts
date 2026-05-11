@@ -12,6 +12,12 @@
 //   - tsgo / tsc type-check daemons
 //   - type-coverage workers
 //   - esbuild service processes
+//   - Socket Firewall wrappers (`~/.socket/sfw/bin/sfw`) — each pnpm /
+//     yarn invocation goes through one, and the wrapper sometimes
+//     outlives its pnpm child. On a busy day this can pile up to
+//     hundreds of orphans holding ~200MB RSS each (20+GB total).
+//     Only orphans are reaped (parent dead or init) — live-parent
+//     wrappers might be tied to an in-progress install.
 //
 // What's NOT swept:
 //   - Anything spawned by a still-living shell (PPID alive)
@@ -41,10 +47,14 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
     rx: /vitest\/dist\/workers\/(forks|threads)/,
   },
   // Vitest parent runner that survived its own children's exit.
-  // Matches `node ... vitest/dist/cli ... run` etc.
+  // Matches both shapes:
+  //   - `node ... vitest/dist/cli ... run`         (older entry point)
+  //   - `node ... vitest/dist/node.mjs ... run`    (alternate entry point)
+  //   - `node node_modules/.bin/../vitest/vitest.mjs run` (current shape
+  //     spawned by `pnpm test` / `vitest run`)
   {
     name: 'vitest-runner',
-    rx: /vitest\/dist\/(cli|node)\.[mc]?js/,
+    rx: /vitest\/(dist\/(cli|node)\.[mc]?js|vitest\.[mc]?js)\b/,
   },
   // tsgo / tsc daemons. `tsgo` is the new Go-based type checker;
   // `tsc --watch` daemons can also linger.
@@ -62,6 +72,20 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
   {
     name: 'esbuild-service',
     rx: /esbuild\/(bin|lib)\/.*\bservice\b/,
+  },
+  // Socket Firewall command wrappers. Three deployment layouts:
+  //   - ~/.socket/sfw/bin/sfw[-<version>]            (current dev install)
+  //   - ~/.socket/_dlx/<hash>/sfw                    (planned: dlxBinary cache)
+  //   - ${RUNNER_TEMP}/sfw-bin/sfw[.exe]             (CI runner install)
+  // Path component is invariant across home prefixes (/Users/<u>/ vs
+  // /home/<u>/). The CI path uses RUNNER_TEMP which varies per OS but
+  // the trailing `/sfw-bin/sfw` is stable.
+  //
+  // Orphan-only (the parent-alive branch in sweep()) — a live-parent
+  // sfw is likely a mid-flight pnpm/yarn install.
+  {
+    name: 'sfw-wrapper',
+    rx: /(?:\.socket\/(?:_dlx\/[0-9a-f]+|sfw\/bin)|sfw-bin)\/sfw(?:-[\w.]+)?(?:\.exe)?\b/,
   },
 ]
 

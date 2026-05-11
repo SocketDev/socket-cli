@@ -9,10 +9,25 @@
  * every call and reads inconsistently. The hoisted form is the
  * fleet-canonical pattern.
  *
- * No autofix: the right hoist position depends on the file's import
- * block layout, which can't be safely inferred at the call site.
- * Reporting only.
+ * Autofix: rewrites `getDefaultLogger().<method>` → `logger.<method>`
+ * AND inserts the missing pieces in one go:
+ *
+ *   1. `import { getDefaultLogger } from '@socketsecurity/lib/logger'`
+ *      — appended after the last existing top-level import (or at the
+ *      top of the file if there are none).
+ *   2. `const logger = getDefaultLogger()` — appended after the import
+ *      block (so `logger` is hoisted at module scope).
+ *
+ * Each inline call site emits its own fix independently. ESLint's
+ * autofixer dedupes overlapping inserts, so multiple violations in the
+ * same file collapse the import + hoist into a single insertion.
  */
+
+import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'
+
+const LOGGER_IMPORT_LINE =
+  "import { getDefaultLogger } from '@socketsecurity/lib/logger'"
+const LOGGER_HOIST_LINE = 'const logger = getDefaultLogger()'
 
 /** @type {import('eslint').Rule.RuleModule} */
 const rule = {
@@ -24,6 +39,7 @@ const rule = {
       category: 'Best Practices',
       recommended: true,
     },
+    fixable: 'code',
     messages: {
       inline:
         'getDefaultLogger() must be hoisted: add `const logger = getDefaultLogger()` near the top of the file and use `logger.{{method}}(...)`.',
@@ -32,6 +48,25 @@ const rule = {
   },
 
   create(context) {
+    const sourceCode = context.getSourceCode
+      ? context.getSourceCode()
+      : context.sourceCode
+
+    let summary
+
+    function ensureSummary() {
+      if (summary) {
+        return summary
+      }
+      summary = summarizeImportTarget(
+        sourceCode.ast,
+        '@socketsecurity/lib/logger',
+        'getDefaultLogger',
+        'logger',
+      )
+      return summary
+    }
+
     return {
       MemberExpression(node) {
         // Match: getDefaultLogger().<method>
@@ -48,10 +83,26 @@ const rule = {
           return
         }
 
+        const s = ensureSummary()
+
         context.report({
           node,
           messageId: 'inline',
           data: { method: node.property.name },
+          fix(fixer) {
+            // Replace `getDefaultLogger()` (the CallExpression) with
+            // `logger`. Leaves `.method(...)` intact, so the result is
+            // `logger.method(...)`.
+            return [
+              fixer.replaceText(obj, 'logger'),
+              ...appendImportFixes(
+                s,
+                fixer,
+                LOGGER_IMPORT_LINE,
+                LOGGER_HOIST_LINE,
+              ),
+            ]
+          },
         })
       },
     }

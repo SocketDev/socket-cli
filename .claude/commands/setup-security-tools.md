@@ -1,3 +1,7 @@
+---
+description: Install Socket Firewall (SFW) + AgentShield (AI scanner) + Zizmor (GH Actions scanner) for local security scanning
+---
+
 Set up all Socket security tools for local development.
 
 ## What this sets up

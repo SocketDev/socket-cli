@@ -11,7 +11,7 @@
  * repo is expected to ship and which it must not ship.
  *
  * Source-of-truth flow:
- *   - This TypeBox source → `Static<typeof SocketRepoTemplateConfigSchema>`
+ *   - This TypeBox source → `Static<typeof SocketWheelhouseConfigSchema>`
  *     for typed reads in the runner.
  *   - `socket-wheelhouse-emit-schema.mts` writes
  *     `.config/socket-wheelhouse-schema.json` (draft 2020-12) next to
@@ -244,7 +244,7 @@ const WorkspaceSchema = Type.Object(
 // Top-level config.
 // ---------------------------------------------------------------------------
 
-export const SocketRepoTemplateConfigSchema = Type.Object(
+export const SocketWheelhouseConfigSchema = Type.Object(
   {
     $schema: Type.Optional(
       Type.String({
@@ -276,8 +276,6 @@ export const SocketRepoTemplateConfigSchema = Type.Object(
   },
 )
 
-export type SocketRepoTemplateConfig = Static<
-  typeof SocketRepoTemplateConfigSchema
->
+export type SocketWheelhouseConfig = Static<typeof SocketWheelhouseConfigSchema>
 export type Layout = Static<typeof LayoutSchema>
 export type Native = Static<typeof NativeSchema>
