@@ -11,6 +11,7 @@ import { createRequire } from 'node:module'
 import { getErrorCause } from '../error/errors.mts'
 
 import type iocraft from '@socketaddon/iocraft'
+import type * as IocraftNs from '@socketaddon/iocraft'
 
 // Re-export iocraft types for direct access when needed.
 export type { default as IocraftNative } from '@socketaddon/iocraft'
@@ -868,7 +869,7 @@ export function Fragment(props: FragmentProps): Element {
 export function renderToString(element: Element): string {
   const io = getIocraft()
   return io.renderToString(
-    element as iocraft.ComponentNode,
+    element as IocraftNs.ComponentNode,
   )
 }
 
@@ -877,7 +878,7 @@ export function renderToString(element: Element): string {
  */
 export function print(element: Element): void {
   const io = getIocraft()
-  io.printComponent(element as iocraft.ComponentNode)
+  io.printComponent(element as IocraftNs.ComponentNode)
 }
 
 /**
@@ -885,7 +886,7 @@ export function print(element: Element): void {
  */
 export function eprint(element: Element): void {
   const io = getIocraft()
-  io.eprintComponent(element as iocraft.ComponentNode)
+  io.eprintComponent(element as IocraftNs.ComponentNode)
 }
 
 /**
