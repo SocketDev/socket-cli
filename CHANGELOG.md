@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - `socket fix --ecosystems` now accepts values case-insensitively (e.g. `NPM`, `npm`, and `Npm` are all valid), matching the existing behavior of `--package-managers`.
+- Updated the Coana CLI to v `15.2.4`.
 
 ## [1.1.92](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.92) - 2026-05-05
 
