@@ -18,7 +18,6 @@
  * - src/postinstallWrapper.mts (implementation)
  */
 
-import fs from 'node:fs'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

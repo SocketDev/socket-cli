@@ -19,7 +19,6 @@
  * - utils/ecosystem/environment.mts (implementation)
  */
 
-import fs from 'node:fs'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
