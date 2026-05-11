@@ -57,9 +57,9 @@ describe('socket npx', async () => {
                 - Permissions: packages:list
           
               Note: Everything after "npx" is passed to the pnpm exec command.
-                    Only the `--dry-run` and `--help` flags are caught here.
+                    Only the \`--dry-run\` and \`--help\` flags are caught here.
           
-              Use `socket wrapper on` to alias this command as `npx`.
+              Use \`socket wrapper on\` to alias this command as \`npx\`.
           
               Examples
                 $ socket pnpm exec cowsay

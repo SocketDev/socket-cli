@@ -22,6 +22,7 @@ import type { DlxOptions, DlxSpawnResult } from '../../utils/dlx/spawn.mjs'
 
 const logger = getDefaultLogger()
 
+// oxlint-disable-next-line socket/sort-set-args -- alphabetical; NPM and PNPM constants sit at their alphabetical positions.
 const nodejsPlatformTypes = new Set([
   'javascript',
   'js',

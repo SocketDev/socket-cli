@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * @fileoverview Validates that no individual files exceed size threshold.
  *
@@ -9,19 +10,17 @@
 
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
-import { formatBytes } from './lib/build-helpers.mts'
 
 const logger = getDefaultLogger()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 
-// Maximum file size: 2MB
-// 2,097,152 bytes
+// Maximum file size: 2MB (2,097,152 bytes)
 const MAX_FILE_SIZE = 2 * 1024 * 1024
 
 // Directories to skip
@@ -37,10 +36,25 @@ const SKIP_DIRS = new Set([
   'build',
   'coverage',
   'dist',
-  'external',
   'node_modules',
   'tmp',
 ])
+
+/**
+ * Format bytes to human-readable size.
+ */
+function formatBytes(bytes: number): string {
+  if (bytes === 0) {
+    return '0 B'
+  }
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(k)),
+    sizes.length - 1,
+  )
+  return `${(bytes / k ** i).toFixed(2)} ${sizes[i]}`
+}
 
 interface FileSizeViolation {
   file: string
@@ -52,7 +66,7 @@ interface FileSizeViolation {
 /**
  * Recursively scan directory for files exceeding size limit.
  */
-export async function scanDirectory(
+async function scanDirectory(
   dir: string,
   violations: FileSizeViolation[] = [],
 ): Promise<FileSizeViolation[]> {
@@ -75,6 +89,7 @@ export async function scanDirectory(
         }
       } else if (entry.isFile()) {
         try {
+          // oxlint-disable-next-line socket/prefer-exists-sync -- need stats.size for the size threshold check; this IS the file-size validator.
           const stats = await fs.stat(fullPath)
           if (stats.size > MAX_FILE_SIZE) {
             const relativePath = path.relative(rootPath, fullPath)
@@ -100,7 +115,7 @@ export async function scanDirectory(
 /**
  * Validate file sizes in repository.
  */
-export async function validateFileSizes(): Promise<FileSizeViolation[]> {
+async function validateFileSizes(): Promise<FileSizeViolation[]> {
   const violations = await scanDirectory(rootPath)
 
   // Sort by size descending (largest first)
@@ -142,8 +157,9 @@ async function main(): Promise<void> {
 
     process.exitCode = 1
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
-    logger.fail(`Validation failed: ${message}`)
+    logger.fail(
+      `Validation failed: ${e instanceof Error ? e.message : String(e)}`,
+    )
     process.exitCode = 1
   }
 }

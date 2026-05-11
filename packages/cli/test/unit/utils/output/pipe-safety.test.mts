@@ -120,7 +120,7 @@ describe('pipe safety', () => {
     // Simulating a child process that emits raw JSON mixed with
     // chatter — no sentinels involved. The classifier handles it.
     const mixed =
-      'npm notice pre-install\n' + '{"clean":true}\n' + '[INFO] post-install\n'
+      'npm notice pre-install\n{"clean":true}\n[INFO] post-install\n'
     const stdout = new Sink()
     const stderr = new Sink()
     const scrubber = createScrubber({ stderr, stdout })

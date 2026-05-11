@@ -25,6 +25,7 @@ const logger = getDefaultLogger()
 
 export const CMD_NAME = 'threat-feed'
 
+// oxlint-disable-next-line socket/sort-set-args -- alphabetical by ecosystem name; NPM constant sits between 'maven' and 'nuget' which would be its sort position if inlined.
 const ECOSYSTEMS = new Set(['gem', 'golang', 'maven', NPM, 'nuget', 'pypi'])
 
 const TYPE_FILTERS = new Set([

@@ -48,7 +48,7 @@ describe('socket wrapper', async () => {
                 (none)
           
               While enabled, the wrapper makes it so that when you call npm/pnpm exec on your
-              machine, it will automatically actually run `socket npm` / `socket npx`
+              machine, it will automatically actually run \`socket npm\` / \`socket npx\`
               instead.
           
               Examples

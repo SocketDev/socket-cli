@@ -70,16 +70,16 @@ describe('socket pnpm', async () => {
               Note: Everything after "pnpm" is forwarded to Socket Firewall (sfw).
                     Socket Firewall provides real-time security scanning for pnpm packages.
           
-              Use `socket wrapper on` to alias this command as `pnpm`.
+              Use \`socket wrapper on\` to alias this command as \`pnpm\`.
           
               Examples
                 $ socket pnpm
                 $ socket pnpm install
                 $ socket pnpm add package-name
                 $ socket pnpm exec package-name"
-      `,
+      \`,
       )
-      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+      expect(\`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>

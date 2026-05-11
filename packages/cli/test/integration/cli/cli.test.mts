@@ -57,7 +57,7 @@ describe('socket root command', async () => {
               socket fix                  Fix CVEs in dependencies
               socket optimize             Optimize dependencies with @socketregistry overrides
               socket cdxgen               Run cdxgen for SBOM generation
-              socket ci                   Alias for `socket scan create --report` (creates report and exits with error if unhealthy)
+              socket ci                   Alias for \`socket scan create --report\` (creates report and exits with error if unhealthy)
           
             Socket API
               analytics                   Look up analytics data

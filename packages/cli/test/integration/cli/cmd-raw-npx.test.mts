@@ -45,12 +45,12 @@ describe('socket raw-npx', async () => {
           Usage
                 $ socket raw-npx ...
           
-              Execute `npx` without gating installs through the Socket API.
-              Useful when  `socket wrapper on` is enabled and you want to bypass
+              Execute \`npx\` without gating installs through the Socket API.
+              Useful when  \`socket wrapper on\` is enabled and you want to bypass
               the Socket wrapper. Use at your own risk.
           
               Note: Everything after "raw-npx" is passed to the pnpm exec command.
-                    Only the `--dry-run` and `--help` flags are caught here.
+                    Only the \`--dry-run\` and \`--help\` flags are caught here.
           
               Examples
                 $ socket raw-npx cowsay"

@@ -58,7 +58,7 @@ describe('socket yarn', async () => {
               Note: Everything after "yarn" is forwarded to Socket Firewall (sfw).
                     Socket Firewall provides real-time security scanning for yarn packages.
           
-              Use `socket wrapper on` to alias this command as `yarn`.
+              Use \`socket wrapper on\` to alias this command as \`yarn\`.
           
               Examples
                 $ socket yarn
