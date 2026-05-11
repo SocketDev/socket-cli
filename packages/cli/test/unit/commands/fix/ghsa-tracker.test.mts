@@ -43,6 +43,7 @@ import {
 
 import type { GhsaTracker } from '../../../../src/commands/fix/ghsa-tracker.mts'
 
+// oxlint-disable-next-line socket/prefer-node-builtin-imports -- type namespace needed for vi.importActual<typeof FsModule>
 import type * as FsModule from 'node:fs'
 
 // Mock file system operations.

@@ -18,6 +18,7 @@
  * - utils/npm/paths.mts (implementation)
  */
 
+// oxlint-disable-next-line socket/prefer-node-builtin-imports -- module passed as value to vi.spyOn / vi.mocked, can't named-import
 import fs from 'node:fs'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
