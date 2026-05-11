@@ -110,6 +110,12 @@ export type PackageFilesForScanOptions = {
   config?: SocketYml | undefined
 }
 
+/**
+ * Converts absolute scan targets inside cwd back to cwd-relative paths before
+ * glob expansion. SCA excludes passed through `additionalIgnores` are anchored
+ * to cwd, so package discovery needs target globs in the same coordinate
+ * system for fast-glob to apply those ignores consistently.
+ */
 function normalizeScanInputPath(pathToNormalize: string, cwd: string): string {
   if (!path.isAbsolute(pathToNormalize)) {
     return pathToNormalize

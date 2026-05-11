@@ -57,10 +57,9 @@ function toPosixPath(path: string): string {
 }
 
 /**
- * Fans --exclude-paths out to both exclusion sinks: the SCA manifest-discovery
- * pipeline (via fast-glob's `ignore` option, as already-anchored minimatch
- * patterns) and the reachability analyzer (via `reachExcludePaths`, ultimately
- * coana's --exclude-dirs).
+ * Derives the two scan-time forms of --exclude-paths: anchored minimatch
+ * patterns for SCA manifest discovery, and target-relative paths for Coana's
+ * reachability analysis.
  */
 export function applyFullExcludePaths({
   cwd,
@@ -105,9 +104,9 @@ const DEGENERATE_EXCLUDE_PATHS = new Set<string>([
 /**
  * Validates --exclude-paths entries before they reach either exclusion sink.
  * Rejects gitignore-style negations (coana's --exclude-dirs has no negation
- * form), absolute paths (`/repo/tests` silently no-ops on both sinks today),
- * patterns escaping the scan root via `..`, and degenerate match-everything
- * sentinels like `.`, `**`, `/`.
+ * form), absolute paths (the flag is scan-root relative), patterns escaping
+ * the scan root via `..`, and degenerate match-everything sentinels like `.`,
+ * `**`, `/`.
  */
 export function assertValidExcludePaths(paths: readonly string[]): void {
   for (const p of paths) {
@@ -156,7 +155,7 @@ export function excludePathToScanIgnores(input: string): string[] {
 }
 
 /**
- * Re-anchors Socket-scan-root patterns onto the reachability analysis target.
+ * Re-anchors --exclude-paths patterns onto the reachability analysis target.
  * Coana matches --exclude-dirs relative to whichever directory it was invoked
  * on, so when the analysis target is a nested subdirectory, scan-root
  * patterns need their target prefix stripped. Patterns that fall outside the
