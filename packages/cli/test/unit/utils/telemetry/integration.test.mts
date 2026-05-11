@@ -75,6 +75,9 @@ vi.mock('../../../../src/constants.mts', () => ({
 const mockHomedir = vi.hoisted(() => vi.fn(() => '/Users/testuser'))
 vi.mock('node:os', () => ({
   homedir: mockHomedir,
+  default: {
+    homedir: mockHomedir,
+  },
 }))
 
 // Mock debug.

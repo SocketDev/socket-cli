@@ -18,13 +18,19 @@
  * - utils/npm/paths.mts (implementation)
  */
 
-// oxlint-disable-next-line socket/prefer-node-builtin-imports -- module passed as value to vi.spyOn / vi.mocked, can't named-import
-import fs from 'node:fs'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type * as ModuleModule from 'node:module'
 import type * as PathsModule from '../../../../src/utils/npm/paths.mts'
+
+const mockExistsSync = vi.hoisted(() => vi.fn())
+
+vi.mock('node:fs', () => ({
+  existsSync: mockExistsSync,
+  default: {
+    existsSync: mockExistsSync,
+  },
+}))
 
 vi.mock('node:module', async importOriginal => {
   const actual = await importOriginal<typeof ModuleModule>()
@@ -79,9 +85,6 @@ describe('npm-paths utilities', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
     vi.resetModules()
-
-    // Spy on fs.existsSync for tests that need it.
-    vi.spyOn(fs, 'existsSync')
 
     // Store original process.exit.
     originalExit = process.exit
@@ -231,7 +234,7 @@ describe('npm-paths utilities', () => {
       })
       findNpmDirPathSync.mockReturnValue('/usr/local/lib/node_modules/npm')
 
-      vi.mocked(fs.existsSync).mockReturnValue(true)
+      mockExistsSync.mockReturnValue(true)
 
       const mockRequire = vi.fn()
       const Module = vi.mocked(await import('node:module')).default
@@ -256,7 +259,7 @@ describe('npm-paths utilities', () => {
       })
       findNpmDirPathSync.mockReturnValue('/usr/local/lib/node_modules/npm')
 
-      vi.mocked(fs.existsSync).mockReturnValue(false)
+      mockExistsSync.mockReturnValue(false)
 
       const mockRequire = vi.fn()
       const Module = vi.mocked(await import('node:module')).default

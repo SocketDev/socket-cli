@@ -17,6 +17,10 @@ const mockAppendFileSync = vi.hoisted(() => vi.fn())
 const mockWriteFileSync = vi.hoisted(() => vi.fn())
 
 vi.mock('node:fs', () => ({
+  existsSync: mockExistsSync,
+  readFileSync: mockReadFileSync,
+  appendFileSync: mockAppendFileSync,
+  writeFileSync: mockWriteFileSync,
   default: {
     existsSync: mockExistsSync,
     readFileSync: mockReadFileSync,

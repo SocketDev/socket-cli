@@ -3,10 +3,33 @@
  * Unit tests for platform detection utilities.
  */
 
-// oxlint-disable-next-line socket/prefer-node-builtin-imports -- module passed as value to vi.spyOn / vi.mocked, can't named-import
-import fs from 'node:fs'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+const mockExistsSync = vi.hoisted(() => vi.fn())
+const mockReadFileSync = vi.hoisted(() => vi.fn())
+const mockChmod = vi.hoisted(() => vi.fn())
+
+vi.mock('node:fs', () => ({
+  existsSync: mockExistsSync,
+  readFileSync: mockReadFileSync,
+  promises: {
+    chmod: mockChmod,
+  },
+  default: {
+    existsSync: mockExistsSync,
+    readFileSync: mockReadFileSync,
+    promises: {
+      chmod: mockChmod,
+    },
+  },
+}))
+
+vi.mock('node:fs/promises', () => ({
+  chmod: mockChmod,
+  default: {
+    chmod: mockChmod,
+  },
+}))
 
 import {
   clearQuarantine,
@@ -32,10 +55,8 @@ vi.mock('@socketsecurity/lib/spawn', () => ({
 
 describe('detectMusl', () => {
   beforeEach(() => {
-    vi.restoreAllMocks()
+    vi.clearAllMocks()
     resetLibcCache()
-    vi.spyOn(fs, 'existsSync')
-    vi.spyOn(fs, 'readFileSync')
   })
 
   afterEach(() => {
@@ -54,10 +75,10 @@ describe('detectMusl', () => {
 
   it('should detect Alpine Linux via /etc/os-release', () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
-    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+    mockExistsSync.mockImplementation((path: unknown) => {
       return path === '/etc/os-release'
     })
-    vi.mocked(fs.readFileSync).mockImplementation((path: unknown) => {
+    mockReadFileSync.mockImplementation((path: unknown) => {
       if (path === '/etc/os-release') {
         return 'NAME="Alpine Linux"\nID=alpine\nVERSION_ID=3.18.0'
       }
@@ -68,10 +89,10 @@ describe('detectMusl', () => {
 
   it('should detect musl via ld-musl dynamic linker (x86_64)', () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
-    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+    mockExistsSync.mockImplementation((path: unknown) => {
       return path === '/lib/ld-musl-x86_64.so.1'
     })
-    vi.mocked(fs.readFileSync).mockImplementation(() => {
+    mockReadFileSync.mockImplementation(() => {
       throw new Error('File not found')
     })
     expect(detectMusl()).toBe(true)
@@ -79,10 +100,10 @@ describe('detectMusl', () => {
 
   it('should detect musl via ld-musl dynamic linker (aarch64)', () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
-    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+    mockExistsSync.mockImplementation((path: unknown) => {
       return path === '/lib/ld-musl-aarch64.so.1'
     })
-    vi.mocked(fs.readFileSync).mockImplementation(() => {
+    mockReadFileSync.mockImplementation(() => {
       throw new Error('File not found')
     })
     expect(detectMusl()).toBe(true)
@@ -90,11 +111,11 @@ describe('detectMusl', () => {
 
   it('should return false for glibc-based Linux', () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
-    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+    mockExistsSync.mockImplementation((path: unknown) => {
       // Only /etc/os-release and /proc/version exist.
       return path === '/etc/os-release' || path === '/proc/version'
     })
-    vi.mocked(fs.readFileSync).mockImplementation((path: unknown) => {
+    mockReadFileSync.mockImplementation((path: unknown) => {
       if (path === '/etc/os-release') {
         return 'NAME="Ubuntu"\nID=ubuntu\nVERSION_ID="22.04"'
       }
@@ -108,11 +129,11 @@ describe('detectMusl', () => {
 
   it('should detect musl via /proc/version', () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
-    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+    mockExistsSync.mockImplementation((path: unknown) => {
       // Only /proc/version exists, no /etc/os-release or ld-musl.
       return path === '/proc/version'
     })
-    vi.mocked(fs.readFileSync).mockImplementation((path: unknown) => {
+    mockReadFileSync.mockImplementation((path: unknown) => {
       if (path === '/proc/version') {
         return 'Linux version 5.15.0 (musl-libc compiler)'
       }
@@ -124,11 +145,11 @@ describe('detectMusl', () => {
   it('should cache the result', () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
     let existsSyncCallCount = 0
-    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+    mockExistsSync.mockImplementation((path: unknown) => {
       existsSyncCallCount++
       return path === '/etc/os-release'
     })
-    vi.mocked(fs.readFileSync).mockImplementation((path: unknown) => {
+    mockReadFileSync.mockImplementation((path: unknown) => {
       if (path === '/etc/os-release') {
         return 'NAME="Alpine Linux"'
       }
@@ -146,10 +167,8 @@ describe('detectMusl', () => {
 
 describe('getLibcSuffix', () => {
   beforeEach(() => {
-    vi.restoreAllMocks()
+    vi.clearAllMocks()
     resetLibcCache()
-    vi.spyOn(fs, 'existsSync')
-    vi.spyOn(fs, 'readFileSync')
   })
 
   afterEach(() => {
@@ -163,10 +182,10 @@ describe('getLibcSuffix', () => {
 
   it('should return -musl on Alpine', () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
-    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+    mockExistsSync.mockImplementation((path: unknown) => {
       return path === '/etc/os-release'
     })
-    vi.mocked(fs.readFileSync).mockImplementation((path: unknown) => {
+    mockReadFileSync.mockImplementation((path: unknown) => {
       if (path === '/etc/os-release') {
         return 'ID=alpine'
       }
@@ -177,7 +196,7 @@ describe('getLibcSuffix', () => {
 
   it('should return empty string on glibc Linux', () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
-    vi.mocked(fs.existsSync).mockReturnValue(false)
+    mockExistsSync.mockReturnValue(false)
     expect(getLibcSuffix()).toBe('')
   })
 })
@@ -221,11 +240,10 @@ describe('getNpmArch', () => {
 
 describe('getSocketbinPackageName', () => {
   beforeEach(() => {
-    vi.restoreAllMocks()
+    vi.clearAllMocks()
     resetLibcCache()
     // Default mock for non-musl systems.
-    vi.spyOn(fs, 'existsSync').mockReturnValue(false)
-    vi.spyOn(fs, 'readFileSync')
+    mockExistsSync.mockReturnValue(false)
   })
 
   afterEach(() => {
@@ -259,7 +277,7 @@ describe('getSocketbinPackageName', () => {
   it('should return correct package name for Linux ARM64 (musl/Alpine)', () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
     vi.spyOn(process, 'arch', 'get').mockReturnValue('arm64')
-    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+    mockExistsSync.mockImplementation((path: unknown) => {
       return path === '/lib/ld-musl-aarch64.so.1'
     })
     expect(getSocketbinPackageName()).toBe('@socketbin/cli-linux-arm64-musl')
@@ -268,7 +286,7 @@ describe('getSocketbinPackageName', () => {
   it('should return correct package name for Linux x64 (musl/Alpine)', () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
     vi.spyOn(process, 'arch', 'get').mockReturnValue('x64')
-    vi.mocked(fs.existsSync).mockImplementation((path: unknown) => {
+    mockExistsSync.mockImplementation((path: unknown) => {
       return path === '/lib/ld-musl-x86_64.so.1'
     })
     expect(getSocketbinPackageName()).toBe('@socketbin/cli-linux-x64-musl')
@@ -531,27 +549,25 @@ describe('ensureExecutable', () => {
 
   it('should call chmod on Unix (macOS)', async () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
-    const chmodMock = vi.spyOn(fs.promises, 'chmod').mockResolvedValue()
+    mockChmod.mockResolvedValue(undefined)
 
     await ensureExecutable('/path/to/file')
 
-    expect(chmodMock).toHaveBeenCalledWith('/path/to/file', 0o755)
+    expect(mockChmod).toHaveBeenCalledWith('/path/to/file', 0o755)
   })
 
   it('should call chmod on Unix (Linux)', async () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
-    const chmodMock = vi.spyOn(fs.promises, 'chmod').mockResolvedValue()
+    mockChmod.mockResolvedValue(undefined)
 
     await ensureExecutable('/path/to/file')
 
-    expect(chmodMock).toHaveBeenCalledWith('/path/to/file', 0o755)
+    expect(mockChmod).toHaveBeenCalledWith('/path/to/file', 0o755)
   })
 
   it('should handle chmod failure gracefully', async () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
-    vi.spyOn(fs.promises, 'chmod').mockRejectedValue(
-      new Error('Permission denied'),
-    )
+    mockChmod.mockRejectedValue(new Error('Permission denied'))
 
     // Should not throw.
     await ensureExecutable('/path/to/file')

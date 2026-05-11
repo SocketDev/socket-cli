@@ -18,12 +18,21 @@
  * - src/removeSocketWrapper.mts (implementation)
  */
 
-// oxlint-disable-next-line socket/prefer-node-builtin-imports -- module passed as value to vi.spyOn, can't named-import
-import fs from 'node:fs'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { removeSocketWrapper } from '../../../../src/commands/../../../../src/commands/wrapper/remove-socket-wrapper.mts'
+const mockReadFileSync = vi.hoisted(() => vi.fn())
+const mockWriteFileSync = vi.hoisted(() => vi.fn())
+
+vi.mock('node:fs', () => ({
+  readFileSync: mockReadFileSync,
+  writeFileSync: mockWriteFileSync,
+  default: {
+    readFileSync: mockReadFileSync,
+    writeFileSync: mockWriteFileSync,
+  },
+}))
+
+import { removeSocketWrapper } from '../../../../src/commands/wrapper/remove-socket-wrapper.mts'
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -40,32 +49,26 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 }))
 
 describe('removeSocketWrapper', () => {
-  let readFileSyncSpy: ReturnType<typeof vi.spyOn>
-  let writeFileSyncSpy: ReturnType<typeof vi.spyOn>
-
   beforeEach(() => {
     vi.clearAllMocks()
-    readFileSyncSpy = vi.spyOn(fs, 'readFileSync')
-    writeFileSyncSpy = vi.spyOn(fs, 'writeFileSync')
-    writeFileSyncSpy.mockImplementation(() => undefined)
+    mockWriteFileSync.mockImplementation(() => undefined)
   })
 
   afterEach(() => {
-    readFileSyncSpy.mockRestore()
-    writeFileSyncSpy.mockRestore()
+    vi.clearAllMocks()
   })
 
   it('successfully removes both aliases from file', async () => {
     await import('@socketsecurity/lib/logger')
 
-    readFileSyncSpy.mockReturnValue(
+    mockReadFileSync.mockReturnValue(
       'alias npm="socket npm"\nalias npx="socket npx"\nother content',
     )
 
     removeSocketWrapper('/home/user/.bashrc')
 
-    expect(fs.readFileSync).toHaveBeenCalledWith('/home/user/.bashrc', 'utf8')
-    expect(fs.writeFileSync).toHaveBeenCalledWith(
+    expect(mockReadFileSync).toHaveBeenCalledWith('/home/user/.bashrc', 'utf8')
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
       '/home/user/.bashrc',
       'other content',
       'utf8',
@@ -79,13 +82,13 @@ describe('removeSocketWrapper', () => {
   })
 
   it('removes only socket aliases, leaving others intact', () => {
-    readFileSyncSpy.mockReturnValue(
+    mockReadFileSync.mockReturnValue(
       'alias ll="ls -la"\nalias npm="socket npm"\nalias gs="git status"\nalias npx="socket npx"',
     )
 
     removeSocketWrapper('/home/user/.zshrc')
 
-    expect(fs.writeFileSync).toHaveBeenCalledWith(
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
       '/home/user/.zshrc',
       'alias ll="ls -la"\nalias gs="git status"',
       'utf8',
@@ -96,7 +99,7 @@ describe('removeSocketWrapper', () => {
     await import('@socketsecurity/lib/logger')
     const readError = new Error('Permission denied')
 
-    readFileSyncSpy.mockImplementation(() => {
+    mockReadFileSync.mockImplementation(() => {
       throw readError
     })
 
@@ -106,15 +109,15 @@ describe('removeSocketWrapper', () => {
       expect.stringContaining('There was an error removing the alias'),
     )
     expect(mockLogger.error).toHaveBeenCalledWith(readError)
-    expect(fs.writeFileSync).not.toHaveBeenCalled()
+    expect(mockWriteFileSync).not.toHaveBeenCalled()
   })
 
   it('handles write error gracefully', async () => {
     await import('@socketsecurity/lib/logger')
     const writeError = new Error('Disk full')
 
-    readFileSyncSpy.mockReturnValue('alias npm="socket npm"')
-    writeFileSyncSpy.mockImplementation(() => {
+    mockReadFileSync.mockReturnValue('alias npm="socket npm"')
+    mockWriteFileSync.mockImplementation(() => {
       throw writeError
     })
 
@@ -127,14 +130,14 @@ describe('removeSocketWrapper', () => {
   it('handles file with no socket aliases', async () => {
     await import('@socketsecurity/lib/logger')
 
-    readFileSyncSpy.mockReturnValue(
+    mockReadFileSync.mockReturnValue(
       'alias ll="ls -la"\nexport PATH=$PATH:/usr/local/bin',
     )
 
     removeSocketWrapper('/home/user/.bashrc')
 
     // When no socket aliases are removed, success message is still shown.
-    expect(fs.writeFileSync).toHaveBeenCalledWith(
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
       '/home/user/.bashrc',
       'alias ll="ls -la"\nexport PATH=$PATH:/usr/local/bin',
       'utf8',
@@ -146,13 +149,13 @@ describe('removeSocketWrapper', () => {
   })
 
   it('preserves empty lines when removing aliases', () => {
-    readFileSyncSpy.mockReturnValue(
+    mockReadFileSync.mockReturnValue(
       '\nalias npm="socket npm"\n\nalias npx="socket npx"\n\nother content\n',
     )
 
     removeSocketWrapper('/home/user/.bashrc')
 
-    expect(fs.writeFileSync).toHaveBeenCalledWith(
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
       '/home/user/.bashrc',
       '\n\n\nother content\n',
       'utf8',
@@ -162,11 +165,11 @@ describe('removeSocketWrapper', () => {
   it('handles empty file', async () => {
     await import('@socketsecurity/lib/logger')
 
-    readFileSyncSpy.mockReturnValue('')
+    mockReadFileSync.mockReturnValue('')
 
     removeSocketWrapper('/home/user/.bashrc')
 
-    expect(fs.writeFileSync).toHaveBeenCalledWith(
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
       '/home/user/.bashrc',
       '',
       'utf8',
@@ -178,7 +181,7 @@ describe('removeSocketWrapper', () => {
   })
 
   it('removes only exact matches', () => {
-    readFileSyncSpy.mockReturnValue(
+    mockReadFileSync.mockReturnValue(
       [
         'alias npm="socket npm"',
         'alias npm2="socket npm"',
@@ -189,7 +192,7 @@ describe('removeSocketWrapper', () => {
 
     removeSocketWrapper('/home/user/.bashrc')
 
-    expect(fs.writeFileSync).toHaveBeenCalledWith(
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
       '/home/user/.bashrc',
       ['alias npm2="socket npm"', 'alias npx-extra="socket pnpm exec --extra"'].join(
         '\n',
@@ -201,7 +204,7 @@ describe('removeSocketWrapper', () => {
   it('handles undefined error in read catch', async () => {
     await import('@socketsecurity/lib/logger')
 
-    readFileSyncSpy.mockImplementation(() => {
+    mockReadFileSync.mockImplementation(() => {
       throw undefined
     })
 
@@ -216,8 +219,8 @@ describe('removeSocketWrapper', () => {
   it('handles undefined error in write catch', async () => {
     await import('@socketsecurity/lib/logger')
 
-    readFileSyncSpy.mockReturnValue('alias npm="socket npm"')
-    writeFileSyncSpy.mockImplementation(() => {
+    mockReadFileSync.mockReturnValue('alias npm="socket npm"')
+    mockWriteFileSync.mockImplementation(() => {
       throw undefined
     })
 

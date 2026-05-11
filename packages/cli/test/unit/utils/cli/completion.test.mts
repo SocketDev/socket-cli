@@ -15,7 +15,14 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-let mockExistsSync: ReturnType<typeof vi.spyOn>
+const mockExistsSync = vi.hoisted(() => vi.fn())
+
+vi.mock('node:fs', () => ({
+  existsSync: mockExistsSync,
+  default: {
+    existsSync: mockExistsSync,
+  },
+}))
 
 // Mock getSocketAppDataPath.
 const mockGetSocketAppDataPath = vi.hoisted(() => vi.fn())
@@ -39,11 +46,10 @@ import type * as PathsModule from '../../../../src/constants/paths.mts'
 describe('cli/completion', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockExistsSync = vi.spyOn(fs, 'existsSync')
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('COMPLETION_CMD_PREFIX', () => {

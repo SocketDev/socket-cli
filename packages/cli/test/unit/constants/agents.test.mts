@@ -18,6 +18,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies using hoisted mocks.
 const mockWhichReal = vi.hoisted(() => vi.fn())
+const mockExistsSync = vi.hoisted(() => vi.fn())
+
+vi.mock('node:fs', () => ({
+  existsSync: mockExistsSync,
+  default: {
+    existsSync: mockExistsSync,
+  },
+}))
 
 vi.mock('@socketsecurity/lib/bin', () => ({
   whichReal: mockWhichReal,
@@ -38,15 +46,12 @@ import {
 } from '../../../src/constants/agents.mts'
 
 describe('agents constants', () => {
-  let mockExistsSync: ReturnType<typeof vi.spyOn>
-
   beforeEach(() => {
     vi.clearAllMocks()
-    mockExistsSync = vi.spyOn(fs, 'existsSync')
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('agent name constants', () => {

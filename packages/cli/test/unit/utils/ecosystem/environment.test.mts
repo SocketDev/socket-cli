@@ -33,7 +33,18 @@ import {
 } from '../../../../src/utils/ecosystem/environment.mts'
 
 // Mock the dependencies.
-let mockExistsSync: ReturnType<typeof vi.spyOn>
+const mockExistsSync = vi.hoisted(() => vi.fn())
+const mockReadFileSync = vi.hoisted(() => vi.fn())
+
+vi.mock('node:fs', () => ({
+  existsSync: mockExistsSync,
+  readFileSync: mockReadFileSync,
+  default: {
+    existsSync: mockExistsSync,
+    readFileSync: mockReadFileSync,
+  },
+}))
+
 const mockDefault = vi.hoisted(() => vi.fn())
 const mockParse = vi.hoisted(() => vi.fn())
 const mockValid = vi.hoisted(() => vi.fn())
@@ -107,7 +118,6 @@ vi.mock('semver', () => ({
 describe('package-environment', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockExistsSync = vi.spyOn(fs, 'existsSync')
     // Default mock behavior for spawn to get package manager version.
     mockSpawn.mockResolvedValue({ stdout: '10.0.0', stderr: '', code: 0 })
     // Default mock behavior for toEditablePackageJson.
@@ -140,60 +150,38 @@ describe('package-environment', () => {
 
     it('returns input path when shim regex does not match', () => {
       mockExistsSync.mockReturnValue(true)
-      const readFileSpy = vi
-        .spyOn(fs, 'readFileSync')
-        .mockReturnValue('echo "not a node shim"\n' as unknown)
-      try {
-        const result = resolveBinPathSync('/usr/local/bin/some-tool')
-        expect(result).toBe('/usr/local/bin/some-tool')
-      } finally {
-        readFileSpy.mockRestore()
-      }
+      mockReadFileSync.mockReturnValue('echo "not a node shim"\n' as unknown)
+      const result = resolveBinPathSync('/usr/local/bin/some-tool')
+      expect(result).toBe('/usr/local/bin/some-tool')
     })
 
     it('extracts the underlying npm-cli.js when found', () => {
       mockExistsSync.mockReturnValue(true)
-      const readFileSpy = vi
-        .spyOn(fs, 'readFileSync')
-        .mockReturnValue(
-          'node "/usr/lib/node_modules/npm/bin/npm-cli.js" "$@"\n' as unknown,
-        )
-      try {
-        const result = resolveBinPathSync('/usr/local/bin/npm')
-        expect(result).toBe('/usr/lib/node_modules/npm/bin/npm-cli.js')
-      } finally {
-        readFileSpy.mockRestore()
-      }
+      mockReadFileSync.mockReturnValue(
+        'node "/usr/lib/node_modules/npm/bin/npm-cli.js" "$@"\n' as unknown,
+      )
+      const result = resolveBinPathSync('/usr/local/bin/npm')
+      expect(result).toBe('/usr/lib/node_modules/npm/bin/npm-cli.js')
     })
 
     it('resolves relative shim path against bin dir', () => {
       mockExistsSync.mockReturnValue(true)
-      const readFileSpy = vi
-        .spyOn(fs, 'readFileSync')
-        .mockReturnValue('node "../lib/npm-cli.js" "$@"\n' as unknown)
-      try {
-        const result = resolveBinPathSync('/usr/local/bin/npm')
-        // Resolves "../lib/npm-cli.js" relative to /usr/local/bin/.
-        expect(result).toContain('npm-cli.js')
-        expect(result.startsWith('/')).toBe(true)
-      } finally {
-        readFileSpy.mockRestore()
-      }
+      mockReadFileSync.mockReturnValue(
+        'node "../lib/npm-cli.js" "$@"\n' as unknown,
+      )
+      const result = resolveBinPathSync('/usr/local/bin/npm')
+      // Resolves "../lib/npm-cli.js" relative to /usr/local/bin/.
+      expect(result).toContain('npm-cli.js')
+      expect(result.startsWith('/')).toBe(true)
     })
 
     it('returns input path when readFileSync throws', () => {
       mockExistsSync.mockReturnValue(true)
-      const readFileSpy = vi
-        .spyOn(fs, 'readFileSync')
-        .mockImplementation(() => {
-          throw new Error('I/O error')
-        })
-      try {
-        const result = resolveBinPathSync('/usr/local/bin/npm')
-        expect(result).toBe('/usr/local/bin/npm')
-      } finally {
-        readFileSpy.mockRestore()
-      }
+      mockReadFileSync.mockImplementation(() => {
+        throw new Error('I/O error')
+      })
+      const result = resolveBinPathSync('/usr/local/bin/npm')
+      expect(result).toBe('/usr/local/bin/npm')
     })
   })
 

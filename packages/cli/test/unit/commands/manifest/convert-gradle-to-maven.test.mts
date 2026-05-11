@@ -14,6 +14,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mockExistsSync = vi.hoisted(() => vi.fn(() => true))
 
 vi.mock('node:fs', () => ({
+  existsSync: mockExistsSync,
   default: {
     existsSync: mockExistsSync,
   },

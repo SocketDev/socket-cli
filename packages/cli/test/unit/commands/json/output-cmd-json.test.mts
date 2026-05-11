@@ -2,8 +2,16 @@
  * @fileoverview Unit tests for json command output.
  */
 
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+const mockExistsSync = vi.hoisted(() => vi.fn())
+
+vi.mock('node:fs', () => ({
+  existsSync: mockExistsSync,
+  default: {
+    existsSync: mockExistsSync,
+  },
+}))
 
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -29,22 +37,19 @@ import { outputCmdJson } from '../../../../src/commands/json/output-cmd-json.mts
 
 describe('output-cmd-json', () => {
   const originalExitCode = process.exitCode
-  let existsSyncSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     vi.clearAllMocks()
     process.exitCode = undefined
-    existsSyncSpy = vi.spyOn(fs, 'existsSync')
   })
 
   afterEach(() => {
-    existsSyncSpy.mockRestore()
     process.exitCode = originalExitCode
   })
 
   describe('outputCmdJson', () => {
     it('logs info about target cwd', async () => {
-      existsSyncSpy.mockReturnValue(false)
+      mockExistsSync.mockReturnValue(false)
 
       await outputCmdJson('/test/path')
 
@@ -55,7 +60,7 @@ describe('output-cmd-json', () => {
     })
 
     it('handles socket.json not found', async () => {
-      existsSyncSpy.mockReturnValue(false)
+      mockExistsSync.mockReturnValue(false)
 
       await outputCmdJson('/test/path')
 
@@ -66,7 +71,7 @@ describe('output-cmd-json', () => {
     })
 
     it('handles non-file (directory) path', async () => {
-      existsSyncSpy.mockReturnValue(true)
+      mockExistsSync.mockReturnValue(true)
       mockSafeStatsSync.mockReturnValue({
         isFile: () => false,
       })
@@ -81,7 +86,7 @@ describe('output-cmd-json', () => {
 
     it('successfully reads and outputs socket.json contents', async () => {
       const mockContent = JSON.stringify({ version: '1.0.0' }, null, 2)
-      existsSyncSpy.mockReturnValue(true)
+      mockExistsSync.mockReturnValue(true)
       mockSafeStatsSync.mockReturnValue({
         isFile: () => true,
       })
@@ -97,7 +102,7 @@ describe('output-cmd-json', () => {
     })
 
     it('handles null safeStatsSync result', async () => {
-      existsSyncSpy.mockReturnValue(true)
+      mockExistsSync.mockReturnValue(true)
       mockSafeStatsSync.mockReturnValue(undefined)
 
       await outputCmdJson('/test/path')
@@ -113,7 +118,7 @@ describe('output-cmd-json', () => {
 
       const { outputCmdJson: realOutputCmdJson } =
         await import('../../../../src/commands/json/output-cmd-json.mts')
-      existsSyncSpy.mockReturnValue(false)
+      mockExistsSync.mockReturnValue(false)
       await realOutputCmdJson('/test/path')
 
       // When VITEST=false, the path is tildified rather than redacted.

@@ -63,6 +63,7 @@ vi.mock('../../../../src/utils/git/operations.mjs', () => ({
 
 const mockExistsSync = vi.hoisted(() => vi.fn(() => false))
 vi.mock('node:fs', () => ({
+  existsSync: mockExistsSync,
   default: {
     existsSync: mockExistsSync,
   },

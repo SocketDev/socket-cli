@@ -20,6 +20,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // Mock fs.
 const mockWriteFileSync = vi.hoisted(() => vi.fn())
 vi.mock('node:fs', () => ({
+  writeFileSync: mockWriteFileSync,
   default: {
     writeFileSync: mockWriteFileSync,
   },

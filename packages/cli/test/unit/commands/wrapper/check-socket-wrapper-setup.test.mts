@@ -4,10 +4,16 @@
  * @fileoverview Unit tests for checkSocketWrapperSetup.
  */
 
-// oxlint-disable-next-line socket/prefer-node-builtin-imports -- module passed as value to vi.spyOn, can't named-import
-import fs from 'node:fs'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+const mockReadFileSync = vi.hoisted(() => vi.fn())
+
+vi.mock('node:fs', () => ({
+  readFileSync: mockReadFileSync,
+  default: {
+    readFileSync: mockReadFileSync,
+  },
+}))
 
 import { checkSocketWrapperSetup } from '../../../../src/commands/wrapper/check-socket-wrapper-setup.mts'
 
@@ -26,28 +32,25 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 }))
 
 describe('checkSocketWrapperSetup', () => {
-  let readFileSyncSpy: ReturnType<typeof vi.spyOn>
-
   beforeEach(() => {
     vi.clearAllMocks()
-    readFileSyncSpy = vi.spyOn(fs, 'readFileSync')
   })
 
   afterEach(() => {
-    readFileSyncSpy.mockRestore()
+    vi.clearAllMocks()
   })
 
   it('detects npm alias in file', () => {
-    readFileSyncSpy.mockReturnValue('alias npm="socket npm"\nother content')
+    mockReadFileSync.mockReturnValue('alias npm="socket npm"\nother content')
 
     const result = checkSocketWrapperSetup('/home/user/.bashrc')
 
     expect(result).toBe(true)
-    expect(fs.readFileSync).toHaveBeenCalledWith('/home/user/.bashrc', 'utf8')
+    expect(mockReadFileSync).toHaveBeenCalledWith('/home/user/.bashrc', 'utf8')
   })
 
   it('detects pnpm exec alias in file', () => {
-    readFileSyncSpy.mockReturnValue('alias npx="socket npx"\nother content')
+    mockReadFileSync.mockReturnValue('alias npx="socket npx"\nother content')
 
     const result = checkSocketWrapperSetup('/home/user/.bashrc')
 
@@ -55,7 +58,7 @@ describe('checkSocketWrapperSetup', () => {
   })
 
   it('detects both aliases in file', () => {
-    readFileSyncSpy.mockReturnValue(
+    mockReadFileSync.mockReturnValue(
       'alias npm="socket npm"\nalias npx="socket npx"\nother content',
     )
 
@@ -65,7 +68,7 @@ describe('checkSocketWrapperSetup', () => {
   })
 
   it('returns false when no aliases found', () => {
-    readFileSyncSpy.mockReturnValue('some other content\nno aliases here')
+    mockReadFileSync.mockReturnValue('some other content\nno aliases here')
 
     const result = checkSocketWrapperSetup('/home/user/.bashrc')
 
@@ -73,7 +76,7 @@ describe('checkSocketWrapperSetup', () => {
   })
 
   it('returns false for empty file', () => {
-    readFileSyncSpy.mockReturnValue('')
+    mockReadFileSync.mockReturnValue('')
 
     const result = checkSocketWrapperSetup('/home/user/.bashrc')
 
@@ -81,7 +84,7 @@ describe('checkSocketWrapperSetup', () => {
   })
 
   it('logs instructions when wrapper is set up', () => {
-    readFileSyncSpy.mockReturnValue('alias npm="socket npm"')
+    mockReadFileSync.mockReturnValue('alias npm="socket npm"')
 
     checkSocketWrapperSetup('/home/user/.bashrc')
 
@@ -92,7 +95,7 @@ describe('checkSocketWrapperSetup', () => {
   })
 
   it('ignores partial alias matches', () => {
-    readFileSyncSpy.mockReturnValue(
+    mockReadFileSync.mockReturnValue(
       'alias npm="other-tool npm"\nalias npx="other-tool npx"',
     )
 
@@ -102,7 +105,7 @@ describe('checkSocketWrapperSetup', () => {
   })
 
   it('handles multiline file with aliases mixed in', () => {
-    readFileSyncSpy.mockReturnValue(
+    mockReadFileSync.mockReturnValue(
       `#!/bin/bash
 # User bashrc
 export PATH=$PATH:/usr/local/bin
@@ -117,7 +120,7 @@ export NODE_ENV=development`,
   })
 
   it('is case-sensitive for alias detection', () => {
-    readFileSyncSpy.mockReturnValue('ALIAS NPM="SOCKET NPM"')
+    mockReadFileSync.mockReturnValue('ALIAS NPM="SOCKET NPM"')
 
     const result = checkSocketWrapperSetup('/home/user/.bashrc')
 
@@ -125,7 +128,7 @@ export NODE_ENV=development`,
   })
 
   it('handles files with Windows line endings', () => {
-    readFileSyncSpy.mockReturnValue(
+    mockReadFileSync.mockReturnValue(
       'line1\r\nalias npm="socket npm"\r\nalias npx="socket npx"\r\n',
     )
 
@@ -135,7 +138,7 @@ export NODE_ENV=development`,
   })
 
   it('returns false when readFileSync throws (deleted/unreadable file)', () => {
-    readFileSyncSpy.mockImplementation(() => {
+    mockReadFileSync.mockImplementation(() => {
       const err = new Error('ENOENT') as NodeJS.ErrnoException
       err.code = 'ENOENT'
       throw err

@@ -18,17 +18,45 @@
  * - utils/socket/json.mts (implementation)
  */
 
-// oxlint-disable-next-line socket/prefer-node-builtin-imports -- module passed as value to vi.spyOn / vi.mocked, can't named-import
-import fs from 'node:fs'
 import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-let mockExistsSync: ReturnType<typeof vi.spyOn<typeof fs, 'existsSync'>>
-let mockReadFileSync: ReturnType<typeof vi.spyOn<typeof fs, 'readFileSync'>>
-let mockReadFile: ReturnType<typeof vi.spyOn<typeof fs.promises, 'readFile'>>
-let mockWriteFile: ReturnType<typeof vi.spyOn<typeof fs.promises, 'writeFile'>>
-let mockStat: ReturnType<typeof vi.spyOn<typeof fs.promises, 'stat'>>
+const mockExistsSync = vi.hoisted(() => vi.fn())
+const mockReadFileSync = vi.hoisted(() => vi.fn())
+const mockReadFile = vi.hoisted(() => vi.fn())
+const mockWriteFile = vi.hoisted(() => vi.fn())
+const mockStat = vi.hoisted(() => vi.fn())
+
+vi.mock('node:fs', () => ({
+  existsSync: mockExistsSync,
+  readFileSync: mockReadFileSync,
+  promises: {
+    readFile: mockReadFile,
+    writeFile: mockWriteFile,
+    stat: mockStat,
+  },
+  default: {
+    existsSync: mockExistsSync,
+    readFileSync: mockReadFileSync,
+    promises: {
+      readFile: mockReadFile,
+      writeFile: mockWriteFile,
+      stat: mockStat,
+    },
+  },
+}))
+
+vi.mock('node:fs/promises', () => ({
+  readFile: mockReadFile,
+  writeFile: mockWriteFile,
+  stat: mockStat,
+  default: {
+    readFile: mockReadFile,
+    writeFile: mockWriteFile,
+    stat: mockStat,
+  },
+}))
 
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -61,15 +89,10 @@ import {
 describe('socket-json utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockExistsSync = vi.spyOn(fs, 'existsSync')
-    mockReadFileSync = vi.spyOn(fs, 'readFileSync')
-    mockReadFile = vi.spyOn(fs.promises, 'readFile')
-    mockWriteFile = vi.spyOn(fs.promises, 'writeFile')
-    mockStat = vi.spyOn(fs.promises, 'stat')
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('getDefaultSocketJson', () => {
@@ -337,7 +360,7 @@ describe('socket-json utilities', () => {
 
       const result = await writeSocketJson('/test/dir', mockJson as unknown)
       expect(result.ok).toBe(true)
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
+      expect(mockWriteFile).toHaveBeenCalledWith(
         path.join('/test/dir', SOCKET_JSON),
         expect.stringContaining('"version": 1'),
         'utf8',
@@ -360,7 +383,7 @@ describe('socket-json utilities', () => {
       mockWriteFile.mockResolvedValue(undefined)
 
       await writeSocketJson('/test/dir', mockJson)
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
+      expect(mockWriteFile).toHaveBeenCalledWith(
         expect.any(String),
         expect.stringMatching(/\n$/),
         'utf8',
