@@ -53,7 +53,7 @@ const FLEET_REPO_NAMES = [
   'socket-lib',
   'socket-packageurl-js',
   'socket-registry',
-  'socket-repo-template',
+  'socket-wheelhouse',
   'socket-sdk-js',
   'socket-sdxgen',
   'socket-stuie',

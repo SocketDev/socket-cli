@@ -1,8 +1,8 @@
 /**
- * @fileoverview TypeBox schema for the per-fleet-repo socket-repo-template
+ * @fileoverview TypeBox schema for the per-fleet-repo socket-wheelhouse
  * config consumed by `sync-scaffolding`. Two valid locations:
- * `.config/socket-repo-template.json` (primary) or
- * `.socket-repo-template.json` at the repo root (alternative). Both are
+ * `.config/socket-wheelhouse.json` (primary) or
+ * `.socket-wheelhouse.json` at the repo root (alternative). Both are
  * first-class — pick the location that fits your repo's convention.
  *
  * Each fleet repo (socket-lib, socket-cli, ultrathink, …) ships this
@@ -13,8 +13,8 @@
  * Source-of-truth flow:
  *   - This TypeBox source → `Static<typeof SocketRepoTemplateConfigSchema>`
  *     for typed reads in the runner.
- *   - `socket-repo-template-emit-schema.mts` writes
- *     `.config/socket-repo-template-schema.json` (draft 2020-12) next to
+ *   - `socket-wheelhouse-emit-schema.mts` writes
+ *     `.config/socket-wheelhouse-schema.json` (draft 2020-12) next to
  *     the per-repo config.
  *   - The per-repo config references the JSON Schema via its `$schema`
  *     field for IDE autocompletion.
@@ -249,7 +249,7 @@ export const SocketRepoTemplateConfigSchema = Type.Object(
     $schema: Type.Optional(
       Type.String({
         description:
-          'JSON Schema reference for editor autocompletion. Conventionally `./socket-repo-template-schema.json` — both the config and its schema live side-by-side in `.config/`.',
+          'JSON Schema reference for editor autocompletion. Conventionally `./socket-wheelhouse-schema.json` — both the config and its schema live side-by-side in `.config/`.',
       }),
     ),
     schemaVersion: Type.Literal(1, {
@@ -272,7 +272,7 @@ export const SocketRepoTemplateConfigSchema = Type.Object(
   },
   {
     description:
-      "Per-repo socket-repo-template config. Two valid locations: `.config/socket-repo-template.json` (primary) or `.socket-repo-template.json` at the repo root (alternative). Both are first-class — pick the location that fits your repo's convention.",
+      "Per-repo socket-wheelhouse config. Two valid locations: `.config/socket-wheelhouse.json` (primary) or `.socket-wheelhouse.json` at the repo root (alternative). Both are first-class — pick the location that fits your repo's convention.",
   },
 )
 

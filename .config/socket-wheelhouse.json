@@ -1,5 +1,5 @@
 {
-  "$schema": "./socket-repo-template-schema.json",
+  "$schema": "./socket-wheelhouse-schema.json",
   "schemaVersion": 1,
   "repoName": "socket-cli",
   "layout": "monorepo",

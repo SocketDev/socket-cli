@@ -1,6 +1,6 @@
 <!--
 Shared snippet — the canonical "1 path, 1 reference" rule text.
-Synced byte-identical across the Socket fleet via socket-repo-template's
+Synced byte-identical across the Socket fleet via socket-wheelhouse's
 sync-scaffolding.mts (SHARED_SKILL_FILES).
 
 This file is the source of truth for the rule's wording. Three artifacts
@@ -11,7 +11,7 @@ embed (or paraphrase) it:
   3. .claude/skills/guarding-paths/SKILL.md — what the skill enforces.
 
 If the wording changes here, re-run `node scripts/sync-scaffolding.mts
---all --fix` from socket-repo-template to propagate.
+--all --fix` from socket-wheelhouse to propagate.
 -->
 
 ## 1 path, 1 reference

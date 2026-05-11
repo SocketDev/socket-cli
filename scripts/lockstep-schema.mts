@@ -10,7 +10,7 @@
  *     `@socketsecurity/lib/validation/validate-schema`
  *
  * Byte-identical across sdxgen / socket-btm / socket-registry /
- * socket-repo-template / stuie / ultrathink via sync-scaffolding.mts.
+ * socket-wheelhouse / stuie / ultrathink via sync-scaffolding.mts.
  */
 
 import { Type, type Static } from '@sinclair/typebox'

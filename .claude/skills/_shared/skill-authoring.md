@@ -89,7 +89,7 @@ The Anthropic docs codify several rules; honor them:
 
 ## Fleet repo references
 
-When scaffolding a new fleet repo, or when a sync question arises ("how does the fleet do X?"), mimic the reference that matches both axes (`layout` + `native`) in `.config/socket-repo-template.json`:
+When scaffolding a new fleet repo, or when a sync question arises ("how does the fleet do X?"), mimic the reference that matches both axes (`layout` + `native`) in `.config/socket-wheelhouse.json`:
 
 | layout × native | Best reference | Notes |
 |---|---|---|

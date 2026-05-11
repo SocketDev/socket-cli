@@ -1,6 +1,6 @@
 /**
  * @fileoverview lockstep harness (canonical; mirrored in
- * socket-repo-template/template/scripts/lockstep.mts).
+ * socket-wheelhouse/template/scripts/lockstep.mts).
  *
  * Reads `lockstep.json` (+ any `includes[]` sub-manifests) and validates each
  * row against its upstream or sibling ports. Every supported `kind` has a

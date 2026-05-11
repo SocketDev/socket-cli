@@ -76,7 +76,7 @@ mutation($threadId: ID!) {
 Keep replies short. Bugbot doesn't read them, but the human reviewer does.
 
 - **Real, fixed**: `Fixed in <commit-sha>. <one-sentence what changed>. <propagation note if any>.`
-  - Example: `Fixed in a63d29105. Restored the Linear team-key + linear.app URL blocking from the deleted .sh hook as scanLinearRefs() in _helpers.mts. Synced from canonical socket-repo-template.`
+  - Example: `Fixed in a63d29105. Restored the Linear team-key + linear.app URL blocking from the deleted .sh hook as scanLinearRefs() in _helpers.mts. Synced from canonical socket-wheelhouse.`
 
 - **Already fixed**: `Already fixed in <commit-sha> (current PR HEAD). <one-sentence what changed>.`
 

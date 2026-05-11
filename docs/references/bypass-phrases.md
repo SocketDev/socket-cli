@@ -46,4 +46,4 @@ When introducing a new destructive flag or hook bypass:
 1. Add a new entry to the `CHECKS` array in `.claude/hooks/no-revert-guard/index.mts`. Each check is `{ pattern: RegExp, bypassPhrase: string, label: string }`.
 2. Add a row to this reference's table.
 3. Add a test case to `.claude/hooks/no-revert-guard/test/index.test.mts` covering both the blocked-without-phrase and allowed-with-phrase paths.
-4. Cascade via `node socket-repo-template/scripts/sync-scaffolding.mts --all --fix` so every fleet repo picks up the change.
+4. Cascade via `node socket-wheelhouse/scripts/sync-scaffolding.mts --all --fix` so every fleet repo picks up the change.

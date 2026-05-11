@@ -81,6 +81,6 @@ Always `0`. The hook prints a reminder and steps aside.
 ## Cross-fleet sync
 
 This README and the hook itself live in
-[`socket-repo-template`](https://github.com/SocketDev/socket-repo-template/tree/main/template/.claude/hooks/public-surface-reminder)
+[`socket-wheelhouse`](https://github.com/SocketDev/socket-wheelhouse/tree/main/template/.claude/hooks/public-surface-reminder)
 and are required to be byte-identical across every fleet repo.
 `scripts/sync-scaffolding.mts` flags drift; `--fix` rewrites it.

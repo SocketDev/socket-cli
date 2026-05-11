@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/SocketDev/socket-repo-template/main/template/packages/build-infra/release-assets.schema.json",
+  "$id": "https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/template/packages/build-infra/release-assets.schema.json",
   "title": "Release Assets Manifest",
   "description": "Embedded SHA-256 manifest for release artifacts. One block per tool: identifies the upstream release tag and the SHA-256 of every asset that release published. Consumers verify downloads against these hashes before installing or republishing. Producers (e.g. socket-btm) update this file when cutting a new release.",
   "type": "object",

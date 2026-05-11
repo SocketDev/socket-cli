@@ -102,6 +102,6 @@ a wrong fire is irreversible; prime when it's recoverable.
 ## Cross-fleet sync
 
 This README and the hook itself live in
-[`socket-repo-template`](https://github.com/SocketDev/socket-repo-template/tree/main/template/.claude/hooks/release-workflow-guard)
+[`socket-wheelhouse`](https://github.com/SocketDev/socket-wheelhouse/tree/main/template/.claude/hooks/release-workflow-guard)
 and are required to be byte-identical across every fleet repo.
 `scripts/sync-scaffolding.mts` flags drift; `--fix` rewrites it.

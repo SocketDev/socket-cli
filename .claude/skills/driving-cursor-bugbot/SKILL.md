@@ -36,7 +36,7 @@ This skill makes all of the above mechanical.
 |---|---|---|
 | 1 | Inventory | List Bugbot findings via `gh api .../pulls/<PR#>/comments`. Capture `id`, `path`, `line`, body. |
 | 2 | Classify | Sort each finding into `real` / `already-fixed` / `false-positive` / `wont-fix`. |
-| 3 | Fix | Implement fixes for `real` findings. Propagate to canonical (`socket-repo-template/template/`) when the file is fleet-shared. One commit per finding. |
+| 3 | Fix | Implement fixes for `real` findings. Propagate to canonical (`socket-wheelhouse/template/`) when the file is fleet-shared. One commit per finding. |
 | 4 | Reply + resolve | Reply on each inline thread (NOT detached); resolve on `fixed` / `already-fixed` / `false-positive`; leave `wont-fix` open. |
 | 5 | Title + body realignment | Per CLAUDE.md, update PR title / body when scope shifted. Use `gh pr edit`. |
 | 6 | Push | `git push`. Bugbot re-reviews; loop back to phase 1 if new findings. |
@@ -60,7 +60,7 @@ To check `already-fixed`: read `git log` on the PR branch since the comment's `c
 - **Reply first, resolve second.** Resolving without a written reply leaves future readers blind.
 - **One commit per `real` finding.** Don't bundle. Conventional Commits: `fix(<scope>): address Bugbot finding on <file>:<line>`.
 - **Push after each fix; reply with the new commit SHA.** The reply cites the SHA, so the SHA must already be pushed.
-- **Propagate canonical fixes.** When the file lives under `.claude/hooks/`, `.claude/skills/`, or `.git-hooks/`, fix at `socket-repo-template/template/` first, then sync to consumers — drifting fleet copies is the larger bug.
+- **Propagate canonical fixes.** When the file lives under `.claude/hooks/`, `.claude/skills/`, or `.git-hooks/`, fix at `socket-wheelhouse/template/` first, then sync to consumers — drifting fleet copies is the larger bug.
 
 ## When to use
 

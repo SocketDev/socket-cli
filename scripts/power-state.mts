@@ -26,7 +26,7 @@
  * Returns a Promise so callers don't block the event loop on shellout
  * paths.
  *
- * Byte-identical across the fleet via socket-repo-template's
+ * Byte-identical across the fleet via socket-wheelhouse's
  * sync-scaffolding (IDENTICAL_FILES).
  */
 

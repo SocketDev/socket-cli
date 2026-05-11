@@ -1,8 +1,8 @@
 /**
- * @fileoverview Emit `socket-repo-template-schema.json` from the
+ * @fileoverview Emit `socket-wheelhouse-schema.json` from the
  * TypeBox source.
  *
- * Run via `pnpm run socket-repo-template:emit-schema` from a fleet
+ * Run via `pnpm run socket-wheelhouse:emit-schema` from a fleet
  * repo (the worktree where TypeBox is installed). Mirrors the lockstep
  * emit pattern.
  */
@@ -14,25 +14,25 @@ import { fileURLToPath } from 'node:url'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import { SocketRepoTemplateConfigSchema } from './socket-repo-template-schema.mts'
+import { SocketRepoTemplateConfigSchema } from './socket-wheelhouse-schema.mts'
 
 const logger = getDefaultLogger()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '..')
 // Schema lives in `.config/` next to the per-repo
-// `.config/socket-repo-template.json` it describes — the marker's
-// `$schema` ref is `./socket-repo-template-schema.json`.
+// `.config/socket-wheelhouse.json` it describes — the marker's
+// `$schema` ref is `./socket-wheelhouse-schema.json`.
 const outPath = path.join(
   rootDir,
   '.config',
-  'socket-repo-template-schema.json',
+  'socket-wheelhouse-schema.json',
 )
 
 const enriched = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
-  $id: 'https://github.com/SocketDev/socket-repo-template-schema.json',
-  title: 'socket-repo-template per-repo config',
+  $id: 'https://github.com/SocketDev/socket-wheelhouse-schema.json',
+  title: 'socket-wheelhouse per-repo config',
   ...SocketRepoTemplateConfigSchema,
 }
 

@@ -62,7 +62,7 @@ socket-cli
 socket-lib
 socket-packageurl-js
 socket-registry
-socket-repo-template
+socket-wheelhouse
 socket-sdk-js
 socket-sdxgen
 socket-stuie
@@ -98,6 +98,6 @@ companion git-side scanner in `.git-hooks/_helpers.mts` (`FLEET_REPO_NAMES`)
 ## Cross-fleet sync
 
 This README and the hook itself live in
-[`socket-repo-template`](https://github.com/SocketDev/socket-repo-template/tree/main/template/.claude/hooks/cross-repo-guard)
+[`socket-wheelhouse`](https://github.com/SocketDev/socket-wheelhouse/tree/main/template/.claude/hooks/cross-repo-guard)
 and are required to be byte-identical across every fleet repo.
 `scripts/sync-scaffolding.mts` flags drift; `--fix` rewrites it.

@@ -48,7 +48,7 @@ Adding new token-shape detections: update `LITERAL_TOKEN_PATTERNS` in `index.mts
 
 ## Updating across the fleet
 
-This file is in `IDENTICAL_FILES` in `scripts/sync-scaffolding.mjs`. After editing, run from `socket-repo-template`:
+This file is in `IDENTICAL_FILES` in `scripts/sync-scaffolding.mjs`. After editing, run from `socket-wheelhouse`:
 
 ```bash
 node scripts/sync-scaffolding.mjs --all --fix

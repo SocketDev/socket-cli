@@ -16,7 +16,7 @@
  *
  * Source: lifted from socket-packageurl-js's inline plugin
  * (.config/rolldown.config.mts), generalized so the stub-pattern is
- * caller-provided. Fleet-canonical via socket-repo-template.
+ * caller-provided. Fleet-canonical via socket-wheelhouse.
  */
 
 import type { Plugin } from 'rolldown'

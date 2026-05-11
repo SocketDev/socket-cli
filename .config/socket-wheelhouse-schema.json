@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/SocketDev/socket-repo-template-schema.json",
-  "title": "socket-repo-template per-repo config",
-  "description": "Per-repo socket-repo-template config. Two valid locations: `.config/socket-repo-template.json` (primary) or `.socket-repo-template.json` at the repo root (alternative). Both are first-class — pick the location that fits your repo's convention.",
+  "$id": "https://github.com/SocketDev/socket-wheelhouse-schema.json",
+  "title": "socket-wheelhouse per-repo config",
+  "description": "Per-repo socket-wheelhouse config. Two valid locations: `.config/socket-wheelhouse.json` (primary) or `.socket-wheelhouse.json` at the repo root (alternative). Both are first-class — pick the location that fits your repo's convention.",
   "type": "object",
   "required": ["schemaVersion", "repoName", "layout", "native"],
   "properties": {
     "$schema": {
-      "description": "JSON Schema reference for editor autocompletion. Conventionally `./socket-repo-template-schema.json` — both the config and its schema live side-by-side in `.config/`.",
+      "description": "JSON Schema reference for editor autocompletion. Conventionally `./socket-wheelhouse-schema.json` — both the config and its schema live side-by-side in `.config/`.",
       "type": "string"
     },
     "schemaVersion": {
