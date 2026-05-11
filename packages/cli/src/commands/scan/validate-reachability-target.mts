@@ -45,6 +45,7 @@ export async function validateReachabilityTarget(
 
   result.targetExists = existsSync(targetPath)
   if (result.targetExists) {
+    // oxlint-disable-next-line socket/prefer-exists-sync -- reads .isDirectory() metadata, not just existence.
     const targetStat = await fs.stat(targetPath)
     result.isDirectory = targetStat.isDirectory()
   }

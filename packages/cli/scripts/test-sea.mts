@@ -8,6 +8,8 @@
  *   node scripts/test-sea.mts --mode=with-tools
  */
 
+// oxlint-disable socket/prefer-exists-sync -- all fs.stat() calls here read .size for size reporting; not existence checks.
+
 import { spawn } from '@socketsecurity/lib/spawn'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'

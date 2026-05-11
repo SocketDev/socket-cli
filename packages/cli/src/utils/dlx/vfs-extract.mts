@@ -607,6 +607,7 @@ export async function extractExternalTools(
         try {
           // Quick validation - check if executable.
           // eslint-disable-next-line no-await-in-loop
+          // oxlint-disable-next-line socket/prefer-exists-sync -- fs.access(X_OK) checks executable permission, not existence.
           await fs.access(toolPathWithExt, fs.constants.X_OK)
           debug(
             'notice',

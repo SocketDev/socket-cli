@@ -1,4 +1,5 @@
 /* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
+/* oxlint-disable socket/prefer-exists-sync -- fs.stat() calls read .size for WASM bundle size reporting; not existence checks. */
 
 /**
  * Socket CLI WASM Bundle Manager

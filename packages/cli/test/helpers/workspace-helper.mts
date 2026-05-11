@@ -1,6 +1,6 @@
 /** @fileoverview Workspace test helpers for Socket CLI. Provides utilities for creating and managing temporary test workspaces with package manifests, lockfiles, and source files. */
 
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -210,13 +210,8 @@ export async function createTestWorkspace(
       }
     },
 
-    fileExists: async (relativePath: string) => {
-      try {
-        await fs.access(path.join(workspacePath, relativePath))
-        return true
-      } catch {
-        return false
-      }
+    fileExists: (relativePath: string) => {
+      return existsSync(path.join(workspacePath, relativePath))
     },
 
     readFile: async (relativePath: string) => {

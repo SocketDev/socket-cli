@@ -3,6 +3,8 @@
  * Downloads npm packages with full dependency trees using Arborist for SEA VFS embedding.
  */
 
+// oxlint-disable socket/prefer-exists-sync -- fs.stat() calls read .size for cache validation and reporting; not existence checks.
+
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'

@@ -243,6 +243,7 @@ export async function downloadGitHubReleaseBinary(
       const extractedFiles = await fs.readdir(cacheDir, { recursive: true })
       for (const file of extractedFiles) {
         const fullPath = path.join(cacheDir, file)
+        // oxlint-disable-next-line socket/prefer-exists-sync -- reads .isSymbolicLink() metadata for symlink escape validation.
         const stats = await fs.lstat(fullPath)
         if (stats.isSymbolicLink()) {
           const target = await fs.readlink(fullPath)

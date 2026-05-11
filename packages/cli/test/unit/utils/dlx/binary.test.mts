@@ -104,6 +104,7 @@ describe('binary', () => {
 
       // If cache exists, verify it's a directory
       if (existsSync(cachePath)) {
+        // oxlint-disable-next-line socket/prefer-exists-sync -- reads .isDirectory() metadata for the assertion.
         const stats = await fs.stat(cachePath)
         expect(stats.isDirectory()).toBe(true)
       }

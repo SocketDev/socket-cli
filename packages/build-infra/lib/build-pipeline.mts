@@ -365,7 +365,7 @@ export async function runPipeline(options, cliOverrides) {
   })
 
   if (flags.printCacheKey) {
-    process.stdout.write(`${cacheKey}\n`)
+    process.stdout.write(`${cacheKey}\n`) // socket-hook: allow console
     return /** @type {any} */ (undefined)
   }
 

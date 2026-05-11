@@ -14,15 +14,10 @@ const packageRoot = path.resolve(__dirname, '..')
 const logger = getDefaultLogger()
 
 /**
- * Check if a file exists and is readable.
+ * Check if a file exists.
  */
-export async function fileExists(filePath) {
-  try {
-    await fs.access(filePath)
-    return true
-  } catch {
-    return false
-  }
+export function fileExists(filePath) {
+  return existsSync(filePath)
 }
 
 /**
