@@ -24,7 +24,7 @@ import type { ScrubberAdapter } from '../scrubber.mts'
 // Matches lines like "➤ YN0000: ..." or "➤ Done in ..." regardless of
 // leading whitespace. Zpm uses U+27A4 BLACK RIGHTWARDS ARROWHEAD as
 // the bullet. The YN\d{4} code pattern is structured and distinctive.
-const ZPM_LOG_RE = /^\s*(?:➤|YN\d{4}:|Done in\s)/
+const ZPM_LOG_RE = /^\s*(?:Done in\s|YN\d{4}:|➤)/
 
 export const zpmAdapter: ScrubberAdapter = {
   name: 'zpm',

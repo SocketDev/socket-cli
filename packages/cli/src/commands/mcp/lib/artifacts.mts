@@ -47,7 +47,7 @@ export function deduplicateArtifacts(
 }
 
 export function isSourceDist(release: string): boolean {
-  return /\.(tar\.gz|tar\.bz2|zip)$/i.test(release) || /sdist/i.test(release)
+  return /\.(tar\.bz2|tar\.gz|zip)$/i.test(release) || /sdist/i.test(release)
 }
 
 export function isUniversalWheel(release: string): boolean {

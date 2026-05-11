@@ -136,7 +136,7 @@ async function main() {
         )
         const output = (codeCoverageResult.stdout + codeCoverageResult.stderr)
           .replace(ansiRegex, '')
-          .replace(/(?:✧|︎|⚡)\s*/g, '')
+          .replace(/(?:⚡|✧|︎)\s*/g, '')
           .trim()
 
         // Extract and display test summary
@@ -215,7 +215,7 @@ async function main() {
       // Remove ANSI color codes
       .replace(ansiRegex, '')
       // Remove spinner artifacts
-      .replace(/(?:✧|︎|⚡)\s*/g, '')
+      .replace(/(?:⚡|✧|︎)\s*/g, '')
       .trim()
 
     // Extract test summary (Test Files ... Duration)

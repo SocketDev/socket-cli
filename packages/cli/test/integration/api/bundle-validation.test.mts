@@ -84,9 +84,9 @@ export function hasAbsolutePaths(content: string): {
   // Match absolute paths but exclude URLs and node: protocol.
   const patterns = [
     // Match require('/abs/path') or require('C:\\path').
-    /require\(["'](?:\/[^"'\n]+|[A-Z]:\\[^"'\n]+)["']\)/g,
+    /require\(["'](?:[A-Z]:\\[^"'\n]+|\/[^"'\n]+)["']\)/g,
     // Match import from '/abs/path'.
-    /import\s+.*?from\s+["'](?:\/[^"'\n]+|[A-Z]:\\[^"'\n]+)["']/g,
+    /import\s+.*?from\s+["'](?:[A-Z]:\\[^"'\n]+|\/[^"'\n]+)["']/g,
   ]
 
   const matches: string[] = []

@@ -70,7 +70,7 @@ export function resolveBinPathSync(binPath: string): string {
     //   node "C:\path\to\npm-cli.js" "$@"
     //   "%_prog%"  "%dp0%\node_modules\npm\bin\npm-cli.js" %*
     const nodePathMatch = content.match(
-      /(?:node\s+["']|"%dp0%\\)([^"'\s]+(?:npm-cli|pnpm|yarn)\.(?:c?js|mjs))["'\s]/i,
+      /(?:"%dp0%\\|node\s+["'])([^"'\s]+(?:npm-cli|pnpm|yarn)\.(?:c?js|mjs))["'\s]/i,
     )
     if (nodePathMatch && nodePathMatch.length > 1 && nodePathMatch[1]) {
       const matchedPath = nodePathMatch[1]

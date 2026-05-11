@@ -26,7 +26,7 @@ const rootPath = path.join(__dirname, '..')
 const inlinedEnvVars = getInlinedEnvVars()
 
 // Matches ./external/, ../external/, ../../external/, etc. (forward and back slashes).
-const socketLibExternalPathRegExp = /^(?:\.[/\\]|(?:\.\.[/\\])+)external[/\\]/
+const socketLibExternalPathRegExp = /^(?:(?:\.\.[/\\])+|\.[/\\])external[/\\]/
 
 export function findSocketLibPath(importerPath: string) {
   const match = importerPath.match(/^(.*\/@socketsecurity\/lib)\b/)
@@ -156,7 +156,7 @@ const config: BuildOptions = {
       setup(build: PluginBuild) {
         // Stub iconv-lite and encoding to avoid bundling issues.
         build.onResolve(
-          { filter: /^(encoding|iconv-lite)(\/|$)/ },
+          { filter: /^(encoding|iconv-lite)(?:$|\/)/ },
           (args: OnResolveArgs) => {
             return {
               path: args.path,
