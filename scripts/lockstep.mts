@@ -41,8 +41,8 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import { errorMessage } from '@socketsecurity/lib/errors'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawnSync } from '@socketsecurity/lib/spawn'
+import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
+import { spawnSync } from '@socketsecurity/lib/spawn/core'
 import { validateSchema } from '@socketsecurity/lib/schema/validate'
 
 import {

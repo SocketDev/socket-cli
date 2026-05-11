@@ -31,7 +31,7 @@ import { WIN32, getArch } from '@socketsecurity/lib/constants/platform'
 import { downloadBinary } from '@socketsecurity/lib/dlx/binary'
 import { errorMessage } from '@socketsecurity/lib/errors'
 import { safeDelete } from '@socketsecurity/lib/fs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 
 const logger = getDefaultLogger()
 

@@ -22,7 +22,7 @@ import { basename } from 'node:path'
 import process from 'node:process'
 
 import { errorMessage } from '@socketsecurity/lib/errors'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 
 import {
   containsAiAttribution,

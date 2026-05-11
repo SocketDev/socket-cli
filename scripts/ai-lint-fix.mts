@@ -43,8 +43,9 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn, isSpawnError } from '@socketsecurity/lib/spawn'
+import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
+import { isSpawnError } from '@socketsecurity/lib/spawn/errors'
+import { spawn } from '@socketsecurity/lib/spawn/core'
 
 const logger = getDefaultLogger()
 
