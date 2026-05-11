@@ -868,7 +868,7 @@ export function Fragment(props: FragmentProps): Element {
 export function renderToString(element: Element): string {
   const io = getIocraft()
   return io.renderToString(
-    element as import('@socketaddon/iocraft').ComponentNode,
+    element as iocraft.ComponentNode,
   )
 }
 
@@ -877,7 +877,7 @@ export function renderToString(element: Element): string {
  */
 export function print(element: Element): void {
   const io = getIocraft()
-  io.printComponent(element as import('@socketaddon/iocraft').ComponentNode)
+  io.printComponent(element as iocraft.ComponentNode)
 }
 
 /**
@@ -885,7 +885,7 @@ export function print(element: Element): void {
  */
 export function eprint(element: Element): void {
   const io = getIocraft()
-  io.eprintComponent(element as import('@socketaddon/iocraft').ComponentNode)
+  io.eprintComponent(element as iocraft.ComponentNode)
 }
 
 /**
