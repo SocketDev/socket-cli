@@ -34,7 +34,7 @@ const sampleArtifact = {
     license: 0.99,
   },
   alerts: [],
-} as any
+} as unknown
 
 describe('outputPurlsShallowScore', () => {
   beforeEach(() => {
@@ -45,7 +45,7 @@ describe('outputPurlsShallowScore', () => {
   it('sets exit code from result.code on failure', async () => {
     outputPurlsShallowScore(
       ['pkg:npm/x'],
-      { ok: false, message: 'fail', code: 5 } as any,
+      { ok: false, message: 'fail', code: 5 } as unknown,
       'text',
     )
     expect(process.exitCode).toBe(5)
@@ -54,7 +54,7 @@ describe('outputPurlsShallowScore', () => {
   it('defaults exit code to 1 when result.code is missing', async () => {
     outputPurlsShallowScore(
       ['pkg:npm/x'],
-      { ok: false, message: 'fail' } as any,
+      { ok: false, message: 'fail' } as unknown,
       'text',
     )
     expect(process.exitCode).toBe(1)
@@ -63,7 +63,7 @@ describe('outputPurlsShallowScore', () => {
   it('logs JSON for failed result in JSON mode', async () => {
     outputPurlsShallowScore(
       ['pkg:npm/x'],
-      { ok: false, message: 'fail' } as any,
+      { ok: false, message: 'fail' } as unknown,
       'json',
     )
     expect(mockLogger.log).toHaveBeenCalled()
@@ -73,7 +73,7 @@ describe('outputPurlsShallowScore', () => {
   it('logs JSON for successful result in JSON mode', async () => {
     outputPurlsShallowScore(
       ['pkg:npm/lodash@4.17.21'],
-      { ok: true, data: [sampleArtifact] } as any,
+      { ok: true, data: [sampleArtifact] } as unknown,
       'json',
     )
     expect(mockLogger.log).toHaveBeenCalled()
@@ -82,7 +82,7 @@ describe('outputPurlsShallowScore', () => {
   it('logs failure with badge in non-JSON mode', async () => {
     outputPurlsShallowScore(
       ['pkg:npm/x'],
-      { ok: false, message: 'fail', cause: 'detail' } as any,
+      { ok: false, message: 'fail', cause: 'detail' } as unknown,
       'text',
     )
     expect(mockLogger.fail).toHaveBeenCalled()
@@ -91,7 +91,7 @@ describe('outputPurlsShallowScore', () => {
   it('logs markdown report for successful result in markdown mode', async () => {
     outputPurlsShallowScore(
       ['pkg:npm/lodash@4.17.21'],
-      { ok: true, data: [sampleArtifact] } as any,
+      { ok: true, data: [sampleArtifact] } as unknown,
       'markdown',
     )
     expect(mockLogger.log).toHaveBeenCalledWith(
@@ -102,7 +102,7 @@ describe('outputPurlsShallowScore', () => {
   it('logs text report for successful result in text mode', async () => {
     outputPurlsShallowScore(
       ['pkg:npm/lodash@4.17.21'],
-      { ok: true, data: [sampleArtifact] } as any,
+      { ok: true, data: [sampleArtifact] } as unknown,
       'text',
     )
     expect(mockLogger.log).toHaveBeenCalledWith(
@@ -113,7 +113,7 @@ describe('outputPurlsShallowScore', () => {
   it('flags missing PURLs in the report', async () => {
     outputPurlsShallowScore(
       ['pkg:npm/lodash@4.17.21', 'pkg:npm/missing@1.0.0'],
-      { ok: true, data: [sampleArtifact] } as any,
+      { ok: true, data: [sampleArtifact] } as unknown,
       'markdown',
     )
     const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
@@ -127,7 +127,7 @@ describe('outputPurlsShallowScore', () => {
     // (not marked as missing) since the versioned data covers it.
     outputPurlsShallowScore(
       ['pkg:npm/lodash@latest', 'pkg:npm/lodash@4.17.21'],
-      { ok: true, data: [sampleArtifact] } as any,
+      { ok: true, data: [sampleArtifact] } as unknown,
       'markdown',
     )
     const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
@@ -149,11 +149,11 @@ describe('outputPurlsShallowScore', () => {
         license: 0.7,
       },
       alerts: [],
-    } as any
+    } as unknown
     // Two artifacts that produce the same purl key — merge should pick lower scores.
     outputPurlsShallowScore(
       ['pkg:npm/lodash@4.17.21'],
-      { ok: true, data: [sampleArtifact, lower] } as any,
+      { ok: true, data: [sampleArtifact, lower] } as unknown,
       'text',
     )
     const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
@@ -171,7 +171,7 @@ describe('outputPurlsShallowScore', () => {
     }
     outputPurlsShallowScore(
       ['pkg:npm/lodash@4.17.21'],
-      { ok: true, data: [sampleArtifact, dup] } as any,
+      { ok: true, data: [sampleArtifact, dup] } as unknown,
       'markdown',
     )
     const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')

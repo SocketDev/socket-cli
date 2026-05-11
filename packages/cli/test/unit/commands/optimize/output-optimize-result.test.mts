@@ -45,7 +45,7 @@ vi.mock('../../../../src/utils/output/markdown.mts', () => ({
 }))
 
 vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
-  serializeResultJson: (result: any) => JSON.stringify(result),
+  serializeResultJson: (result: unknown) => JSON.stringify(result),
 }))
 
 import { outputOptimizeResult } from '../../../../src/commands/optimize/output-optimize-result.mts'

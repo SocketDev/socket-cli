@@ -38,7 +38,7 @@ const sampleData = {
     },
   ],
   nextPage: '2',
-} as any
+} as unknown
 
 const baseOpts = {
   logType: '',

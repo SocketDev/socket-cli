@@ -53,7 +53,7 @@ export function validateSocketJson<T = unknown>(
   jsonString: string,
   expectedExitCode: number,
 ): SocketJsonResponse<T> {
-  let parsed: any
+  let parsed: unknown
 
   // Truncate to keep error messages readable; full payload goes in the message.
   const preview =
@@ -71,7 +71,7 @@ export function validateSocketJson<T = unknown>(
   // Check for required ok field.
   if (typeof parsed.ok !== 'boolean') {
     throw new Error(
-      `Socket JSON contract violation: missing boolean "ok" field (contract: {ok: boolean, data?: any, message?: string}); got: ${preview} — add ok:true for success, ok:false for failure in the output handler`,
+      `Socket JSON contract violation: missing boolean "ok" field (contract: {ok: boolean, data?: unknown, message?: string}); got: ${preview} — add ok:true for success, ok:false for failure in the output handler`,
     )
   }
 

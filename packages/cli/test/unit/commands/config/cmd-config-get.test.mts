@@ -340,7 +340,7 @@ describe('cmd-config-get', () => {
         // Check that validation includes the conflicting flags check.
         const validations = call.slice(1)
         const conflictCheck = validations.find(
-          (v: any) =>
+          (v: unknown) =>
             v.message &&
             v.message.includes('--json') &&
             v.message.includes('--markdown'),

@@ -33,7 +33,7 @@ import type { EnvDetails } from '../../../../src/utils/ecosystem/environment.mjs
 describe('get-overrides-by-agent', () => {
   const createEnvDetails = (
     agent: string,
-    pkgJsonContent: any = {},
+    pkgJsonContent: unknown = {},
   ): EnvDetails =>
     ({
       agent,

@@ -47,7 +47,7 @@ describe('cmd-pip', () => {
 
   // Create a proper promise-like object for spawnPromise.
   const createMockSpawnResult = (exitCode = 0, signal?: NodeJS.Signals) => {
-    const promise: any = Promise.resolve({
+    const promise: unknown = Promise.resolve({
       success: exitCode === 0 && !signal,
       code: signal ? undefined : exitCode,
       signal: signal || undefined,
@@ -424,7 +424,7 @@ describe('cmd-pip', () => {
       ) => void
       mockChildProcess.on.mockImplementation((event, handler) => {
         if (event === 'exit') {
-          exitHandler = handler as any
+          exitHandler = handler as unknown
         }
         return mockChildProcess
       })
@@ -457,7 +457,7 @@ describe('cmd-pip', () => {
       ) => void
       mockChildProcess.on.mockImplementation((event, handler) => {
         if (event === 'exit') {
-          exitHandler = handler as any
+          exitHandler = handler as unknown
         }
         return mockChildProcess
       })
@@ -490,7 +490,7 @@ describe('cmd-pip', () => {
       ) => void
       mockChildProcess.on.mockImplementation((event, handler) => {
         if (event === 'exit') {
-          exitHandler = handler as any
+          exitHandler = handler as unknown
         }
         return mockChildProcess
       })
@@ -523,7 +523,7 @@ describe('cmd-pip', () => {
       ) => void
       mockChildProcess.on.mockImplementation((event, handler) => {
         if (event === 'exit') {
-          exitHandler = handler as any
+          exitHandler = handler as unknown
         }
         return mockChildProcess
       })
@@ -556,7 +556,7 @@ describe('cmd-pip', () => {
       ) => void
       mockChildProcess.on.mockImplementation((event, handler) => {
         if (event === 'exit') {
-          exitHandler = handler as any
+          exitHandler = handler as unknown
         }
         return mockChildProcess
       })

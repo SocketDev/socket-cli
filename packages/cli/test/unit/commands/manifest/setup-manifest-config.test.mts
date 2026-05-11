@@ -231,7 +231,7 @@ describe('setup-manifest-config', () => {
       mockSelect.mockResolvedValueOnce('')
       mockInput.mockResolvedValueOnce('requirements.txt')
       mockSelect.mockResolvedValueOnce('')
-      const config: any = {}
+      const config: unknown = {}
       const result = await setupConda(config)
       expect(result.ok).toBe(true)
       expect(config.disabled).toBe(true)
@@ -244,7 +244,7 @@ describe('setup-manifest-config', () => {
       mockSelect.mockResolvedValueOnce('')
       mockInput.mockResolvedValueOnce('out.txt')
       mockSelect.mockResolvedValueOnce('yes')
-      const config: any = { disabled: true }
+      const config: unknown = { disabled: true }
       const result = await setupConda(config)
       expect(result.ok).toBe(true)
       expect(config.disabled).toBeUndefined()
@@ -272,7 +272,7 @@ describe('setup-manifest-config', () => {
       mockInput.mockResolvedValueOnce('env.yml')
       mockSelect.mockResolvedValueOnce('yes')
       mockSelect.mockResolvedValueOnce('')
-      const config: any = {}
+      const config: unknown = {}
       const result = await setupConda(config)
       expect(result.ok).toBe(true)
       expect(config.stdout).toBe(true)
@@ -284,7 +284,7 @@ describe('setup-manifest-config', () => {
       mockSelect.mockResolvedValueOnce('no')
       mockInput.mockResolvedValueOnce('out.txt')
       mockSelect.mockResolvedValueOnce('')
-      const config: any = {}
+      const config: unknown = {}
       const result = await setupConda(config)
       expect(result.ok).toBe(true)
       // Note: after the output-file prompt fires, stdout is deleted (line 242)
@@ -308,7 +308,7 @@ describe('setup-manifest-config', () => {
       mockSelect.mockResolvedValueOnce('')
       mockInput.mockResolvedValueOnce('-')
       mockSelect.mockResolvedValueOnce('')
-      const config: any = {}
+      const config: unknown = {}
       await setupConda(config)
       expect(config.stdout).toBe(true)
       expect(config.outfile).toBeUndefined()
@@ -353,7 +353,7 @@ describe('setup-manifest-config', () => {
         .mockResolvedValueOnce('/usr/bin/gradle')
         .mockResolvedValueOnce('--debug --info')
       mockSelect.mockResolvedValueOnce('yes')
-      const config: any = {}
+      const config: unknown = {}
       const result = await setupGradle(config)
       expect(result.ok).toBe(true)
       expect(config.bin).toBe('/usr/bin/gradle')
@@ -364,7 +364,7 @@ describe('setup-manifest-config', () => {
     it('clears bin/gradleOpts when user empties them', async () => {
       mockInput.mockResolvedValueOnce('').mockResolvedValueOnce('')
       mockSelect.mockResolvedValueOnce('')
-      const config: any = { bin: 'old', gradleOpts: 'old', verbose: true }
+      const config: unknown = { bin: 'old', gradleOpts: 'old', verbose: true }
       const result = await setupGradle(config)
       expect(result.ok).toBe(true)
       expect(config.bin).toBeUndefined()
@@ -375,7 +375,7 @@ describe('setup-manifest-config', () => {
     it('sets verbose=false when user picks "no"', async () => {
       mockInput.mockResolvedValueOnce('./gradlew').mockResolvedValueOnce('')
       mockSelect.mockResolvedValueOnce('no')
-      const config: any = {}
+      const config: unknown = {}
       const result = await setupGradle(config)
       expect(result.ok).toBe(true)
       expect(config.verbose).toBe(false)
@@ -417,7 +417,7 @@ describe('setup-manifest-config', () => {
       mockSelect
         .mockResolvedValueOnce('yes') // stdout
         .mockResolvedValueOnce('yes') // verbose
-      const config: any = {}
+      const config: unknown = {}
       const result = await setupSbt(config)
       expect(result.ok).toBe(true)
       expect(config.bin).toBe('/usr/bin/sbt')
@@ -431,7 +431,7 @@ describe('setup-manifest-config', () => {
       mockSelect
         .mockResolvedValueOnce('yes') // stdout
         .mockResolvedValueOnce('') // verbose default
-      const config: any = { bin: 'old', sbtOpts: 'old', verbose: true }
+      const config: unknown = { bin: 'old', sbtOpts: 'old', verbose: true }
       const result = await setupSbt(config)
       expect(result.ok).toBe(true)
       expect(config.bin).toBeUndefined()
@@ -614,12 +614,12 @@ describe('setup-manifest-config', () => {
       })
       mockSelect.mockResolvedValueOnce('')
       await setupManifestConfig('/cwd')
-      const calledWith: any = mockSelect.mock.calls[0]?.[0]
-      const choices: any[] = calledWith?.choices ?? []
-      const detectedIdx = choices.findIndex((c: any) =>
+      const calledWith: unknown = mockSelect.mock.calls[0]?.[0]
+      const choices: unknown[] = calledWith?.choices ?? []
+      const detectedIdx = choices.findIndex((c: unknown) =>
         c.name.includes('Conda'),
       )
-      const undetectedIdx = choices.findIndex((c: any) =>
+      const undetectedIdx = choices.findIndex((c: unknown) =>
         c.name.includes('sbt'),
       )
       expect(detectedIdx).toBeGreaterThanOrEqual(0)

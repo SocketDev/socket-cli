@@ -57,11 +57,11 @@ export function mockBrowserOpener() {
  * Mock configuration storage for auth tokens.
  */
 export function mockConfigStorage() {
-  const storage = new Map<string, any>()
+  const storage = new Map<string, unknown>()
 
   return {
     get: vi.fn((key: string) => storage.get(key)),
-    set: vi.fn((key: string, value: any) => {
+    set: vi.fn((key: string, value: unknown) => {
       storage.set(key, value)
       return true
     }),

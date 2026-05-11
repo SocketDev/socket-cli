@@ -699,7 +699,7 @@ describe('package score output', async () => {
             license: 100,
           },
         },
-      } as any
+      } as unknown
 
       const txt = createMarkdownReport(data)
       expect(txt).toContain('It has *no dependencies*')
@@ -751,7 +751,7 @@ describe('package score output', async () => {
             license: 80,
           },
         },
-      } as any
+      } as unknown
 
       const txt = createMarkdownReport(data)
       expect(txt).toContain('These are the alerts found for this package:')
@@ -797,7 +797,7 @@ describe('package score output', async () => {
             license: 90,
           },
         },
-      } as any
+      } as unknown
 
       const txt = createMarkdownReport(data)
       expect(txt).toContain('This package had no capabilities')
@@ -813,7 +813,7 @@ describe('package score output', async () => {
         code: 7,
       }
       process.exitCode = undefined
-      await outputPurlsDeepScore('pkg:npm/test', result as any, 'json')
+      await outputPurlsDeepScore('pkg:npm/test', result as unknown, 'json')
       expect(process.exitCode).toBe(7)
       process.exitCode = undefined
     })
@@ -824,7 +824,7 @@ describe('package score output', async () => {
         message: 'Failed without code',
       }
       process.exitCode = undefined
-      await outputPurlsDeepScore('pkg:npm/test', result as any, 'json')
+      await outputPurlsDeepScore('pkg:npm/test', result as unknown, 'json')
       expect(process.exitCode).toBe(1)
       process.exitCode = undefined
     })
@@ -837,7 +837,7 @@ describe('package score output', async () => {
       }
       // Should not throw / resolve to undefined.
       await expect(
-        outputPurlsDeepScore('pkg:npm/test', result as any, 'text'),
+        outputPurlsDeepScore('pkg:npm/test', result as unknown, 'text'),
       ).resolves.toBeUndefined()
     })
 
@@ -849,7 +849,7 @@ describe('package score output', async () => {
         data: nugetDeep.data,
       }
       await expect(
-        outputPurlsDeepScore('pkg:nuget/test', result as any, 'markdown'),
+        outputPurlsDeepScore('pkg:nuget/test', result as unknown, 'markdown'),
       ).resolves.toBeUndefined()
     })
 
@@ -861,7 +861,7 @@ describe('package score output', async () => {
         data: nugetDeep.data,
       }
       await expect(
-        outputPurlsDeepScore('pkg:nuget/test', result as any, 'text'),
+        outputPurlsDeepScore('pkg:nuget/test', result as unknown, 'text'),
       ).resolves.toBeUndefined()
     })
   })

@@ -111,7 +111,7 @@ describe('cmd-bundler', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -149,7 +149,7 @@ describe('cmd-bundler', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -188,18 +188,18 @@ describe('cmd-bundler', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise })
         mockFilterFlags.mockReturnValue([])
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
         mockExit.mockClear()
         const mockKill = vi
           .spyOn(process, 'kill')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
         mockKill.mockClear()
 
         cmdBundler.run([], importMeta, context)
@@ -227,7 +227,7 @@ describe('cmd-bundler', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -237,7 +237,7 @@ describe('cmd-bundler', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         process.exitCode = undefined
 
@@ -269,7 +269,7 @@ describe('cmd-bundler', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -279,7 +279,7 @@ describe('cmd-bundler', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdBundler.run(['install'], importMeta, context)
 
@@ -309,7 +309,7 @@ describe('cmd-bundler', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -319,7 +319,7 @@ describe('cmd-bundler', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdBundler.run(['install'], importMeta, context)
 
@@ -349,7 +349,7 @@ describe('cmd-bundler', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -359,7 +359,7 @@ describe('cmd-bundler', () => {
 
         const mockKill = vi
           .spyOn(process, 'kill')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdBundler.run(['install'], importMeta, context)
 
@@ -389,7 +389,7 @@ describe('cmd-bundler', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -399,7 +399,7 @@ describe('cmd-bundler', () => {
 
         const mockKill = vi
           .spyOn(process, 'kill')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdBundler.run(['check'], importMeta, context)
 
@@ -431,7 +431,7 @@ describe('cmd-bundler', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -441,7 +441,7 @@ describe('cmd-bundler', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdBundler.run(['install'], importMeta, context)
 
@@ -468,7 +468,7 @@ describe('cmd-bundler', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -478,7 +478,7 @@ describe('cmd-bundler', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdBundler.run([], importMeta, context)
 

@@ -46,7 +46,7 @@ export function createLoggerMocks() {
 /**
  * Creates a mock Socket SDK with common methods
  */
-export function createMockSdk(overrides: Partial<SocketSdk> = {}): any {
+export function createMockSdk(overrides: Partial<SocketSdk> = {}): unknown {
   return {
     deleteOrgRepo: vi.fn(),
     createOrgRepo: vi.fn(),
@@ -182,7 +182,7 @@ export async function setupSdkSetupFailure(
  */
 export async function setupSuccessfulSdkChain(
   sdkMethod: string,
-  mockData: any,
+  mockData: unknown,
 ): Promise<void> {
   const { handleApiCall } = await import('../../src/utils/socket/api.mts')
   const { setupSdk } = await import('../../src/utils/socket/sdk.mts')

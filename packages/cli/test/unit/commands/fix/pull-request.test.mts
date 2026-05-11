@@ -106,8 +106,8 @@ vi.mock('../../../../src/utils/git/provider-factory.mts', () => ({
 }))
 
 describe('pull-request', () => {
-  let mockOctokit: any
-  let mockProvider: any
+  let mockOctokit: unknown
+  let mockProvider: unknown
 
   beforeEach(() => {
     vi.clearAllMocks()

@@ -74,8 +74,8 @@ describe('isNodejsCdxgenType', () => {
 
   it('returns false for non-string non-array types', () => {
     expect(isNodejsCdxgenType(42)).toBe(false)
-    expect(isNodejsCdxgenType({} as any)).toBe(false)
-    expect(isNodejsCdxgenType(true as any)).toBe(false)
+    expect(isNodejsCdxgenType({} as unknown)).toBe(false)
+    expect(isNodejsCdxgenType(true as unknown)).toBe(false)
   })
 })
 
@@ -328,7 +328,7 @@ describe('runCdxgen', () => {
     const result = await runCdxgen({
       _: ['./project'],
       '--': ['extra', 'args'],
-    } as any)
+    } as unknown)
     await result.spawnPromise
 
     const args = mockSpawnCdxgenDlx.mock.calls[0]?.[0] as string[]
@@ -343,7 +343,7 @@ describe('runCdxgen', () => {
     // Array value → push --key followed by every entry stringified.
     const result = argvObjectToArray({
       filter: ['npm', 'pypi'],
-    } as any)
+    } as unknown)
     expect(result).toContain('--filter')
     expect(result).toContain('npm')
     expect(result).toContain('pypi')
@@ -352,14 +352,14 @@ describe('runCdxgen', () => {
   it('emits --key when value is exactly true', async () => {
     const { argvObjectToArray } =
       await import('../../../../src/commands/manifest/run-cdxgen.mts')
-    const result = argvObjectToArray({ recurse: true } as any)
+    const result = argvObjectToArray({ recurse: true } as unknown)
     expect(result).toEqual(['--recurse'])
   })
 
   it('preserves --no-X form for negated lifecycle flags', async () => {
     const { argvObjectToArray } =
       await import('../../../../src/commands/manifest/run-cdxgen.mts')
-    expect(argvObjectToArray({ babel: false, validate: false } as any)).toEqual(
+    expect(argvObjectToArray({ babel: false, validate: false } as unknown)).toEqual(
       ['--no-babel', '--no-validate'],
     )
   })
@@ -367,7 +367,7 @@ describe('runCdxgen', () => {
   it('emits --key value for string values', async () => {
     const { argvObjectToArray } =
       await import('../../../../src/commands/manifest/run-cdxgen.mts')
-    expect(argvObjectToArray({ output: 'out.json' } as any)).toEqual([
+    expect(argvObjectToArray({ output: 'out.json' } as unknown)).toEqual([
       '--output',
       'out.json',
     ])

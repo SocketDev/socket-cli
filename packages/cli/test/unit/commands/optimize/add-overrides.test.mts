@@ -88,7 +88,7 @@ vi.mock('@socketsecurity/registry', () => ({
 }))
 
 vi.mock('@socketsecurity/lib/promises', () => ({
-  pEach: async (items: any[], fn: any, opts?: any) => {
+  pEach: async (items: unknown[], fn: unknown, opts?: unknown) => {
     for (const item of items) {
       await fn(item)
     }
@@ -98,7 +98,7 @@ vi.mock('@socketsecurity/lib/promises', () => ({
 import { addOverrides } from '../../../../src/commands/optimize/add-overrides.mts'
 
 describe('addOverrides', () => {
-  const mockEnvDetails: any = {
+  const mockEnvDetails: unknown = {
     agent: 'npm',
     agentVersion: '10.0.0',
     lockName: 'package-lock.json',
@@ -129,7 +129,7 @@ describe('addOverrides', () => {
 
   it('returns initial state when no manifest overrides exist', async () => {
     const state = await addOverrides(mockEnvDetails, '/test/project', {
-      logger: mockLogger as any,
+      logger: mockLogger as unknown,
     })
     expect(state.added.size).toBe(0)
     expect(state.updated.size).toBe(0)
@@ -144,7 +144,7 @@ describe('addOverrides', () => {
       warnedPnpmWorkspaceRequiresNpm: false,
     }
     const state = await addOverrides(mockEnvDetails, '/test/project', {
-      logger: mockLogger as any,
+      logger: mockLogger as unknown,
       state: customState,
     })
     expect(state).toBe(customState)
@@ -163,7 +163,7 @@ describe('addOverrides', () => {
       },
     }
     await addOverrides(privateEnv, '/test/project', {
-      logger: mockLogger as any,
+      logger: mockLogger as unknown,
     })
     expect(mockGetOverridesData).toHaveBeenCalledWith(privateEnv)
     expect(mockGetOverridesDataNpm).not.toHaveBeenCalled()
@@ -171,7 +171,7 @@ describe('addOverrides', () => {
 
   it('uses both getOverridesDataNpm and YarnClassic for non-private non-workspace', async () => {
     await addOverrides(mockEnvDetails, '/test/project', {
-      logger: mockLogger as any,
+      logger: mockLogger as unknown,
     })
     expect(mockGetOverridesDataNpm).toHaveBeenCalled()
     expect(mockGetOverridesDataYarnClassic).toHaveBeenCalled()
@@ -192,7 +192,7 @@ describe('addOverrides', () => {
       warnedPnpmWorkspaceRequiresNpm: false,
     }
     await addOverrides(pnpmEnv, '/test/project', {
-      logger: mockLogger as any,
+      logger: mockLogger as unknown,
       state: customState,
     })
     expect(customState.warnedPnpmWorkspaceRequiresNpm).toBe(true)
@@ -212,7 +212,7 @@ describe('addOverrides', () => {
       warnedPnpmWorkspaceRequiresNpm: true, // Already warned.
     }
     await addOverrides(pnpmEnv, '/test/project', {
-      logger: mockLogger as any,
+      logger: mockLogger as unknown,
       state: customState,
     })
     expect(mockLogger.warn).not.toHaveBeenCalled()
@@ -237,7 +237,7 @@ describe('addOverrides', () => {
       warnedPnpmWorkspaceRequiresNpm: false,
     }
     await addOverrides(mockEnvDetails, '/test/project', {
-      logger: mockLogger as any,
+      logger: mockLogger as unknown,
       state: customState,
     })
     // globWorkspace called for outer + each workspace package.
@@ -249,7 +249,7 @@ describe('addOverrides', () => {
     // when pkgPath !== rootPath.
     const innerPath = '/test/project/packages/inner'
     await addOverrides(mockEnvDetails, innerPath, {
-      logger: mockLogger as any,
+      logger: mockLogger as unknown,
     })
     // The function returns successfully without errors.
     expect(mockGlobWorkspace).toHaveBeenCalled()
@@ -258,7 +258,7 @@ describe('addOverrides', () => {
   it('with prod=true skips lockfile scanning even at workspace root', async () => {
     // Exercises `isLockScanned = isWorkspaceRoot && !prod` (line 80).
     await addOverrides(mockEnvDetails, '/test/project', {
-      logger: mockLogger as any,
+      logger: mockLogger as unknown,
       prod: true,
     })
     expect(mockGetOverridesDataNpm).toHaveBeenCalled()
@@ -267,7 +267,7 @@ describe('addOverrides', () => {
   it('with pin=true uses pinned version for overrides', async () => {
     // Exercises `pin` branch in spec-construction (line 126).
     await addOverrides(mockEnvDetails, '/test/project', {
-      logger: mockLogger as any,
+      logger: mockLogger as unknown,
       pin: true,
     })
     expect(mockGetOverridesDataNpm).toHaveBeenCalled()
@@ -275,13 +275,13 @@ describe('addOverrides', () => {
 
   it('with custom spinner forwards spinner to inner methods', async () => {
     // Exercises spinner option flow.
-    const mockSpinner: any = {
+    const mockSpinner: unknown = {
       stop: vi.fn(),
       start: vi.fn(),
       text: vi.fn(),
     }
     await addOverrides(mockEnvDetails, '/test/project', {
-      logger: mockLogger as any,
+      logger: mockLogger as unknown,
       spinner: mockSpinner,
     })
     expect(mockGetOverridesDataNpm).toHaveBeenCalled()

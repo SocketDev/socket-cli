@@ -71,7 +71,7 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'json')
+    await outputQuota(result as unknown, 'json')
 
     expect(mockSerializeResultJson).toHaveBeenCalledWith(result)
     expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
@@ -143,7 +143,7 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'text')
+    await outputQuota(result as unknown, 'text')
 
     expect(mockLogger.log).toHaveBeenCalledWith(
       'Quota remaining: 500 / 1000 (50% used)',
@@ -178,7 +178,7 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'text')
+    await outputQuota(result as unknown, 'text')
 
     expect(mockLogger.log).toHaveBeenCalledWith('Quota remaining: 250')
   })
@@ -208,10 +208,10 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'text')
+    await outputQuota(result as unknown, 'text')
 
     // Exact "in X d" count is time-sensitive; just confirm it rendered the ISO date.
-    const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
+    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
     expect(
       calls.some(
         (c: unknown) =>
@@ -248,9 +248,9 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'text')
+    await outputQuota(result as unknown, 'text')
 
-    const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
+    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
     expect(
       calls.some((c: unknown) => typeof c === 'string' && c.includes('<1 min')),
     ).toBe(true)
@@ -287,9 +287,9 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'text')
+    await outputQuota(result as unknown, 'text')
 
-    const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
+    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
     expect(
       calls.some((c: unknown) => typeof c === 'string' && c.includes('60 min')),
     ).toBe(false)
@@ -322,9 +322,9 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'text')
+    await outputQuota(result as unknown, 'text')
 
-    const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
+    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
     expect(
       calls.some(
         (c: unknown) => typeof c === 'string' && c.includes('not-a-date'),
@@ -357,9 +357,9 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'text')
+    await outputQuota(result as unknown, 'text')
 
-    const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
+    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
     expect(
       calls.some(
         (c: unknown) => typeof c === 'string' && c.includes('due now'),
@@ -392,9 +392,9 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'text')
+    await outputQuota(result as unknown, 'text')
 
-    const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
+    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
     expect(
       calls.some((c: unknown) => typeof c === 'string' && /in \d+ min/.test(c)),
     ).toBe(true)
@@ -425,9 +425,9 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'text')
+    await outputQuota(result as unknown, 'text')
 
-    const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
+    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
     expect(
       calls.some((c: unknown) => typeof c === 'string' && /in \d+ d/.test(c)),
     ).toBe(true)
@@ -505,7 +505,7 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'markdown')
+    await outputQuota(result as unknown, 'markdown')
 
     // Markdown output routes through emitPayload — the whole markdown
     // body is logged as one string (sentinel-wrapped so downstream
@@ -547,7 +547,7 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'text')
+    await outputQuota(result as unknown, 'text')
 
     expect(mockLogger.log).toHaveBeenCalledWith(
       'Quota remaining: 0 / 1000 (100% used)',
@@ -582,7 +582,7 @@ describe('outputQuota', () => {
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any)
+    await outputQuota(result as unknown)
 
     expect(mockLogger.log).toHaveBeenCalledWith(
       'Quota remaining: 100 / 1000 (90% used)',
@@ -618,7 +618,7 @@ describe('outputQuota', () => {
     const result = createErrorResult('Error')
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'json')
+    await outputQuota(result as unknown, 'json')
 
     expect(process.exitCode).toBe(1)
   })
@@ -651,7 +651,7 @@ describe('outputQuota', () => {
     }
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'json')
+    await outputQuota(result as unknown, 'json')
 
     expect(process.exitCode).toBe(1)
   })

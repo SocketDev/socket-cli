@@ -336,7 +336,7 @@ describe('handleOptimize', () => {
       ok: false,
       // No code field
       message: 'fail',
-    } as any)
+    } as unknown)
 
     await handleOptimize({
       cwd: '/test',
@@ -363,11 +363,11 @@ describe('handleOptimize', () => {
         manifestPath: '/p/package.json',
         lockfilePath: '/p/package-lock.json',
       },
-    } as any)
+    } as unknown)
     vi.mocked(applyOptimization).mockResolvedValue({
       ok: false,
       message: 'failed',
-    } as any)
+    } as unknown)
 
     await handleOptimize({
       cwd: '/test',

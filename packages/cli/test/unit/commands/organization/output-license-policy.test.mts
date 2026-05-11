@@ -71,7 +71,7 @@ describe('outputLicensePolicy', () => {
     })
 
     process.exitCode = undefined
-    await outputLicensePolicy(result as any, 'json')
+    await outputLicensePolicy(result as unknown, 'json')
 
     expect(mockSerializeResultJson).toHaveBeenCalledWith(result)
     expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
@@ -150,7 +150,7 @@ describe('outputLicensePolicy', () => {
     })
 
     process.exitCode = undefined
-    await outputLicensePolicy(result as any, 'text')
+    await outputLicensePolicy(result as unknown, 'text')
 
     expect(mockLogger.info).toHaveBeenCalledWith(
       'Use --json to get the full result',
@@ -240,7 +240,7 @@ describe('outputLicensePolicy', () => {
     })
 
     process.exitCode = undefined
-    await outputLicensePolicy(result as any, 'markdown')
+    await outputLicensePolicy(result as unknown, 'markdown')
 
     expect(mockLogger.log).toHaveBeenCalledWith('# License policy')
     expect(mockLogger.log).toHaveBeenCalledWith(
@@ -279,7 +279,7 @@ describe('outputLicensePolicy', () => {
     })
 
     process.exitCode = undefined
-    await outputLicensePolicy(result as any, 'text')
+    await outputLicensePolicy(result as unknown, 'text')
 
     expect(mockMdTableOfPairs).toHaveBeenCalledWith(
       [],
@@ -318,7 +318,7 @@ describe('outputLicensePolicy', () => {
     })
 
     process.exitCode = undefined
-    await outputLicensePolicy(result as any, 'text')
+    await outputLicensePolicy(result as unknown, 'text')
 
     expect(mockMdTableOfPairs).toHaveBeenCalledWith(
       [],
@@ -354,7 +354,7 @@ describe('outputLicensePolicy', () => {
     const result = createErrorResult('Error')
 
     process.exitCode = undefined
-    await outputLicensePolicy(result as any, 'json')
+    await outputLicensePolicy(result as unknown, 'json')
 
     expect(process.exitCode).toBe(1)
   })
@@ -389,7 +389,7 @@ describe('outputLicensePolicy', () => {
     }
 
     process.exitCode = undefined
-    await outputLicensePolicy(result as any, 'json')
+    await outputLicensePolicy(result as unknown, 'json')
 
     expect(process.exitCode).toBe(1)
   })
@@ -431,7 +431,7 @@ describe('outputLicensePolicy', () => {
     })
 
     process.exitCode = undefined
-    await outputLicensePolicy(result as any, 'text')
+    await outputLicensePolicy(result as unknown, 'text')
 
     expect(mockMdTableOfPairs).toHaveBeenCalled()
     // mockMdTableOfPairs is called with sorted pairs.

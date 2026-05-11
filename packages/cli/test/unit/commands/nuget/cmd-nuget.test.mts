@@ -116,7 +116,7 @@ describe('cmd-nuget', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -157,7 +157,7 @@ describe('cmd-nuget', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -191,7 +191,7 @@ describe('cmd-nuget', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -227,26 +227,26 @@ describe('cmd-nuget', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise })
       mockFilterFlags.mockReturnValue([])
 
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
       mockExit.mockClear()
       const mockKill = vi
         .spyOn(process, 'kill')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
       mockKill.mockClear()
 
       cmdNuget.run(
         [],
-        { url: import.meta.url } as any,
+        { url: import.meta.url } as unknown,
         {
           parentName: 'socket',
-        } as any,
+        } as unknown,
       )
 
       await new Promise(resolve => setImmediate(resolve))
@@ -272,7 +272,7 @@ describe('cmd-nuget', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -282,7 +282,7 @@ describe('cmd-nuget', () => {
 
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
 
       process.exitCode = undefined
 
@@ -318,7 +318,7 @@ describe('cmd-nuget', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -328,7 +328,7 @@ describe('cmd-nuget', () => {
 
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
 
       cmdNuget.run(
         ['install', 'Newtonsoft.Json'],
@@ -362,7 +362,7 @@ describe('cmd-nuget', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -372,7 +372,7 @@ describe('cmd-nuget', () => {
 
       const mockKill = vi
         .spyOn(process, 'kill')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
 
       cmdNuget.run(
         ['install', 'Newtonsoft.Json'],
@@ -406,7 +406,7 @@ describe('cmd-nuget', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -416,7 +416,7 @@ describe('cmd-nuget', () => {
 
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
 
       cmdNuget.run([], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',
@@ -445,7 +445,7 @@ describe('cmd-nuget', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -455,7 +455,7 @@ describe('cmd-nuget', () => {
 
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
 
       cmdNuget.run(['help'], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',

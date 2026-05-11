@@ -393,7 +393,7 @@ describe('outputSecurityPolicy', () => {
     }
 
     process.exitCode = undefined
-    await outputSecurityPolicy(result as any, 'json')
+    await outputSecurityPolicy(result as unknown, 'json')
 
     expect(process.exitCode).toBe(1)
   })
@@ -432,7 +432,7 @@ describe('outputSecurityPolicy', () => {
       },
     }
 
-    await outputSecurityPolicy(result as any, 'text')
+    await outputSecurityPolicy(result as unknown, 'text')
 
     expect(mockMdTableOfPairs).toHaveBeenCalledWith([], ['name', 'action'])
   })

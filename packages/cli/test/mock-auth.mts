@@ -31,7 +31,7 @@ export interface MockAuthOptions {
   /** Custom error message for failure scenarios. */
   errorMessage?: string | undefined
   /** Custom response data for success scenarios. */
-  responseData?: any | undefined
+  responseData?: unknown | undefined
 }
 
 export interface MockLoginOptions extends MockAuthOptions {
@@ -77,7 +77,7 @@ const MILLISECONDS_30_DAYS = Date.now() + 30 * 24 * 60 * 60 * 1000
  */
 export async function mockApiTokenAuth(
   options?: MockTokenOptions,
-): Promise<CResult<{ valid: boolean; user?: any }>> {
+): Promise<CResult<{ valid: boolean; user?: unknown }>> {
   const {
     delay = 50,
     errorMessage = 'Invalid token',
@@ -155,7 +155,7 @@ export async function mockGenerateApiKey(
  */
 export async function mockGitHubAuth(
   options?: MockAuthOptions & { code?: string },
-): Promise<CResult<{ accessToken: string; user: any }>> {
+): Promise<CResult<{ accessToken: string; user: unknown }>> {
   const {
     code = 'github-auth-code-123',
     delay = 200,
@@ -359,7 +359,7 @@ export async function mockRefreshToken(
  */
 export async function mockSsoAuth(
   options?: MockAuthOptions & { ssoProvider?: string; ssoOrgSlug?: string },
-): Promise<CResult<{ apiToken: string; user: any }>> {
+): Promise<CResult<{ apiToken: string; user: unknown }>> {
   const {
     delay = 300,
     errorMessage = 'SSO authentication failed',

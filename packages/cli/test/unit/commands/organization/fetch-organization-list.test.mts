@@ -121,7 +121,7 @@ describe('fetchOrganizationList', () => {
 
     const mockSdk = {
       listOrganizations: vi.fn().mockResolvedValue({}),
-    } as any
+    } as unknown
 
     vi.mocked(handleApiCall).mockResolvedValue(
       createSuccessResult({ organizations: {} }),

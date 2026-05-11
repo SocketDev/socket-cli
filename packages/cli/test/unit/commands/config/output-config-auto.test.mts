@@ -310,7 +310,7 @@ describe('output-config-auto', () => {
           data: ['org-a', 'org-b', 'org-c'],
         }
 
-        await outputConfigAuto('defaultOrg', result as any, 'text')
+        await outputConfigAuto('defaultOrg', result as unknown, 'text')
 
         const selectCallArgs = mockSelect.mock.calls[0]![0] as {
           choices: Array<{ value: string }>
@@ -326,7 +326,7 @@ describe('output-config-auto', () => {
           data: ['org-a', 'org-b'],
         }
 
-        await outputConfigAuto('enforcedOrgs', result as any, 'text')
+        await outputConfigAuto('enforcedOrgs', result as unknown, 'text')
 
         const selectCallArgs = mockSelect.mock.calls[0]![0] as {
           choices: Array<{ value: string }>

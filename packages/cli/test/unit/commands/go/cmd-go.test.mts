@@ -113,7 +113,7 @@ describe('cmd-go', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -154,7 +154,7 @@ describe('cmd-go', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -197,7 +197,7 @@ describe('cmd-go', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -233,7 +233,7 @@ describe('cmd-go', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -243,7 +243,7 @@ describe('cmd-go', () => {
 
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
 
       process.exitCode = undefined
 
@@ -277,7 +277,7 @@ describe('cmd-go', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -287,7 +287,7 @@ describe('cmd-go', () => {
 
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
 
       cmdGo.run(['get', 'package'], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',
@@ -319,7 +319,7 @@ describe('cmd-go', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -329,7 +329,7 @@ describe('cmd-go', () => {
 
       const mockKill = vi
         .spyOn(process, 'kill')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
 
       cmdGo.run(['get', 'package'], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',
@@ -361,7 +361,7 @@ describe('cmd-go', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -371,7 +371,7 @@ describe('cmd-go', () => {
 
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
 
       cmdGo.run([], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',
@@ -398,7 +398,7 @@ describe('cmd-go', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -408,7 +408,7 @@ describe('cmd-go', () => {
 
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
 
       cmdGo.run(['version'], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',

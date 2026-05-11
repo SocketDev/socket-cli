@@ -231,7 +231,7 @@ describe('output-analytics', () => {
           total_medium_prevented: 0,
           total_low_prevented: 0,
         },
-      ] as any
+      ] as unknown
 
       const result = formatDataOrg(data)
       // Both entries on the same day get the same date key after formatDate;

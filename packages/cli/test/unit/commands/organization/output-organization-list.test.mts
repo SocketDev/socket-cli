@@ -170,7 +170,7 @@ describe('output-organization-list', () => {
             organizations: [
               {
                 id: 'org-1',
-                name: undefined as any,
+                name: undefined as unknown,
                 slug: 'my-org',
                 plan: 'pro',
               },
@@ -205,7 +205,7 @@ describe('output-organization-list', () => {
           ok: true,
           data: {
             organizations: [
-              { id: 'x', name: undefined as any, slug: 'x', plan: 'free' },
+              { id: 'x', name: undefined as unknown, slug: 'x', plan: 'free' },
             ],
           },
         }
@@ -223,7 +223,7 @@ describe('output-organization-list', () => {
             organizations: [
               {
                 id: 'longer-id-string',
-                name: undefined as any,
+                name: undefined as unknown,
                 slug: 'x',
                 plan: 'free',
               },
@@ -245,10 +245,10 @@ describe('output-organization-list', () => {
             organizations: [
               {
                 // All three falsy → exercise all three `|| ''` branches.
-                id: '' as any,
-                name: '' as any,
+                id: '' as unknown,
+                name: '' as unknown,
                 slug: '',
-                plan: '' as any,
+                plan: '' as unknown,
               },
             ],
           },

@@ -33,7 +33,7 @@ import {
 import type { EditablePackageJson } from '@socketsecurity/lib/packages'
 
 describe('update-manifest-by-agent', () => {
-  const createEditablePkgJson = (content: Record<string, any> = {}) => {
+  const createEditablePkgJson = (content: Record<string, unknown> = {}) => {
     const pkgJson: EditablePackageJson = {
       content,
       fromJSON: vi.fn((json: string) => {
@@ -43,7 +43,7 @@ describe('update-manifest-by-agent', () => {
       indent: '  ',
       newline: '\n',
       save: vi.fn(),
-      update: vi.fn((updates: Record<string, any>) => {
+      update: vi.fn((updates: Record<string, unknown>) => {
         Object.assign(pkgJson.content, updates)
       }),
     } as unknown as EditablePackageJson
@@ -115,7 +115,7 @@ describe('update-manifest-by-agent', () => {
       })
       updatePnpmField(pkgJson, { express: '4.18.0' })
       expect(pkgJson.update).toHaveBeenCalled()
-      const updateArg = (pkgJson.update as any).mock.calls[0][0]
+      const updateArg = (pkgJson.update as unknown).mock.calls[0][0]
       expect(updateArg.pnpm.overrides).toEqual({ express: '4.18.0' })
     })
 
@@ -169,7 +169,7 @@ describe('update-manifest-by-agent', () => {
         editablePkgJson: pkgJson,
         pkgPath: '/tmp/test-pkg',
         ...overrides,
-      }) as any
+      }) as unknown
 
     it('uses resolutions for bun agent', async () => {
       await updateManifest('bun', makeEnv({ agent: 'bun' }), {
@@ -220,7 +220,7 @@ describe('update-manifest-by-agent', () => {
     })
 
     it('uses overrides for unknown agent', async () => {
-      await updateManifest('unknown' as any, makeEnv({ agent: 'unknown' }), {
+      await updateManifest('unknown' as unknown, makeEnv({ agent: 'unknown' }), {
         lodash: '4.17.21',
       })
       expect(pkgJson.fromJSON).toHaveBeenCalled()
@@ -274,7 +274,7 @@ describe('update-manifest-by-agent', () => {
 
       expect(pkgJson.fromJSON).toHaveBeenCalled()
       // The new content should include overrides positioned after main.
-      const fromJsonCall = (pkgJson.fromJSON as any).mock.calls[0][0] as string
+      const fromJsonCall = (pkgJson.fromJSON as unknown).mock.calls[0][0] as string
       const parsed = JSON.parse(fromJsonCall)
       const keys = Object.keys(parsed)
       expect(keys.indexOf('overrides')).toBeGreaterThan(keys.indexOf('main'))
@@ -336,7 +336,7 @@ describe('update-manifest-by-agent', () => {
 
         // package.json's pnpm block should be cleared (update was called
         // with pnpm: undefined or pnpm: <object without overrides>).
-        const updateCalls = (pkgJson.update as any).mock.calls as Array<
+        const updateCalls = (pkgJson.update as unknown).mock.calls as Array<
           [Record<string, unknown>]
         >
         const pnpmCalls = updateCalls.filter(([arg]) => 'pnpm' in arg)
@@ -350,7 +350,7 @@ describe('update-manifest-by-agent', () => {
           lastPnpm === undefined ||
             lastPnpm === null ||
             !('overrides' in (lastPnpm ?? {})) ||
-            !(lastPnpm as any).overrides,
+            !(lastPnpm as unknown).overrides,
         ).toBe(true)
       })
 
@@ -419,7 +419,7 @@ minimumReleaseAge: 10080
       expect(
         usesPnpmWorkspaceOverrides({
           agent: 'pnpm',
-          agentVersion: { major: 11, minor: 0, patch: 8 } as any,
+          agentVersion: { major: 11, minor: 0, patch: 8 } as unknown,
         }),
       ).toBe(true)
     })
@@ -428,7 +428,7 @@ minimumReleaseAge: 10080
       expect(
         usesPnpmWorkspaceOverrides({
           agent: 'pnpm',
-          agentVersion: { major: 12, minor: 0, patch: 0 } as any,
+          agentVersion: { major: 12, minor: 0, patch: 0 } as unknown,
         }),
       ).toBe(true)
     })
@@ -437,7 +437,7 @@ minimumReleaseAge: 10080
       expect(
         usesPnpmWorkspaceOverrides({
           agent: 'pnpm',
-          agentVersion: { major: 10, minor: 12, patch: 0 } as any,
+          agentVersion: { major: 10, minor: 12, patch: 0 } as unknown,
         }),
       ).toBe(false)
     })
@@ -446,7 +446,7 @@ minimumReleaseAge: 10080
       expect(
         usesPnpmWorkspaceOverrides({
           agent: 'pnpm',
-          agentVersion: { major: 9, minor: 0, patch: 0 } as any,
+          agentVersion: { major: 9, minor: 0, patch: 0 } as unknown,
         }),
       ).toBe(false)
     })
@@ -455,13 +455,13 @@ minimumReleaseAge: 10080
       expect(
         usesPnpmWorkspaceOverrides({
           agent: 'npm',
-          agentVersion: { major: 11, minor: 0, patch: 0 } as any,
+          agentVersion: { major: 11, minor: 0, patch: 0 } as unknown,
         }),
       ).toBe(false)
       expect(
         usesPnpmWorkspaceOverrides({
           agent: 'yarn/berry',
-          agentVersion: { major: 11, minor: 0, patch: 0 } as any,
+          agentVersion: { major: 11, minor: 0, patch: 0 } as unknown,
         }),
       ).toBe(false)
     })

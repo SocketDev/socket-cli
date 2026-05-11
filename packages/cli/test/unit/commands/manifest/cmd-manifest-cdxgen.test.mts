@@ -139,10 +139,10 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
         const mockKill = vi
           .spyOn(process, 'kill')
-          .mockImplementation((() => true) as any)
+          .mockImplementation((() => true) as unknown)
         mockExit.mockClear()
         mockKill.mockClear()
 
@@ -160,7 +160,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['.'], importMeta, context)
 
@@ -174,7 +174,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['.'], importMeta, context)
 
@@ -191,7 +191,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['.'], importMeta, context)
 
@@ -211,7 +211,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['.'], importMeta, context)
 
@@ -230,7 +230,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockKill = vi
           .spyOn(process, 'kill')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['.'], importMeta, context)
 
@@ -247,7 +247,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockKill = vi
           .spyOn(process, 'kill')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['.'], importMeta, context)
 
@@ -263,7 +263,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['.'], importMeta, context)
 
@@ -287,7 +287,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['.'], importMeta, context)
 
@@ -306,7 +306,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(
           ['--lifecycle', 'build', '.'],
@@ -334,7 +334,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(
           ['--output', 'custom.json', '.'],
@@ -377,7 +377,7 @@ describe('cmd-manifest-cdxgen', () => {
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['.'], importMeta, context)
 
@@ -394,7 +394,7 @@ describe('cmd-manifest-cdxgen', () => {
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['.'], importMeta, context)
 
@@ -411,7 +411,7 @@ describe('cmd-manifest-cdxgen', () => {
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(
           ['--lifecycle', 'build', '.'],
@@ -430,7 +430,7 @@ describe('cmd-manifest-cdxgen', () => {
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(
           ['--type', 'python', '.'],
@@ -451,7 +451,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['--help'], importMeta, context)
 
@@ -470,7 +470,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['-h'], importMeta, context)
 
@@ -489,7 +489,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['--help'], importMeta, context)
 
@@ -512,7 +512,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['--type', 'npm', '.'], importMeta, context)
 
@@ -531,7 +531,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(
           ['--type', 'npm', '--type', 'pypi', '.'],
@@ -554,7 +554,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['--print', '.'], importMeta, context)
 
@@ -573,7 +573,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['--no-recurse', '.'], importMeta, context)
 
@@ -592,7 +592,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(
           ['--spec-version', '1.5', '.'],
@@ -615,7 +615,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['--deep', '.'], importMeta, context)
 
@@ -636,7 +636,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['./my-project'], importMeta, context)
 
@@ -655,7 +655,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(
           ['./project1', './project2'],
@@ -678,7 +678,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(
           ['/absolute/path/to/project'],
@@ -703,7 +703,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(
           ['--config', '{}', '.'],
@@ -723,7 +723,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['--no-banner', '.'], importMeta, context)
 
@@ -744,7 +744,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         const readonlyArgv = Object.freeze(['.']) as readonly string[]
 
@@ -761,7 +761,7 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['.'], importMeta, {})
 
@@ -776,12 +776,12 @@ describe('cmd-manifest-cdxgen', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         await cmdManifestCdxgen.run(['.'], importMeta, {
           parentName: 'socket manifest',
           extraProp: 'ignored',
-        } as any)
+        } as unknown)
 
         expect(mockRunCdxgen).toHaveBeenCalled()
 

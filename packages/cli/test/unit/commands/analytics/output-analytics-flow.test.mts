@@ -54,7 +54,7 @@ const sampleData = [
     total_medium_prevented: 1,
     total_low_prevented: 1,
   },
-] as any
+] as unknown
 
 describe('outputAnalytics', () => {
   beforeEach(() => {

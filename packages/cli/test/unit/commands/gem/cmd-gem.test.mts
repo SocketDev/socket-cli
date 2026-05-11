@@ -107,7 +107,7 @@ describe('cmd-gem', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -145,7 +145,7 @@ describe('cmd-gem', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -184,7 +184,7 @@ describe('cmd-gem', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -194,7 +194,7 @@ describe('cmd-gem', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         process.exitCode = undefined
 
@@ -226,7 +226,7 @@ describe('cmd-gem', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -236,7 +236,7 @@ describe('cmd-gem', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdGem.run(['install', 'rails'], importMeta, context)
 
@@ -266,7 +266,7 @@ describe('cmd-gem', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -276,7 +276,7 @@ describe('cmd-gem', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdGem.run(['install', 'rails'], importMeta, context)
 
@@ -306,7 +306,7 @@ describe('cmd-gem', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -316,7 +316,7 @@ describe('cmd-gem', () => {
 
         const mockKill = vi
           .spyOn(process, 'kill')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdGem.run(['install', 'rails'], importMeta, context)
 
@@ -346,7 +346,7 @@ describe('cmd-gem', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -356,7 +356,7 @@ describe('cmd-gem', () => {
 
         const mockKill = vi
           .spyOn(process, 'kill')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdGem.run(['list'], importMeta, context)
 
@@ -388,7 +388,7 @@ describe('cmd-gem', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -398,7 +398,7 @@ describe('cmd-gem', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdGem.run(['install', 'rails'], importMeta, context)
 
@@ -426,7 +426,7 @@ describe('cmd-gem', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -436,7 +436,7 @@ describe('cmd-gem', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdGem.run([], importMeta, context)
 

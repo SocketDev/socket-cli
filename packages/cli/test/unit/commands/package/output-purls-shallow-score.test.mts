@@ -471,7 +471,7 @@ describe('package score output', async () => {
           alerts: [],
         },
       ]
-      const { rows } = preProcess(data as any, [])
+      const { rows } = preProcess(data as unknown, [])
       const row = rows.get('pkg:npm/shared-pkg@1.0.0')!
       expect(row.score.quality).toBe(50)
       expect(row.score.vulnerability).toBe(60)
@@ -488,7 +488,7 @@ describe('package score output', async () => {
         vulnerability: 100,
         license: 100,
       }
-      const rows = new Map<string, any>([
+      const rows = new Map<string, unknown>([
         [
           'pkg:npm/dup-pkg@1.0.0',
           {

@@ -49,7 +49,7 @@ vi.mock('../../../../src/commands/ask/output-ask.mts', () => ({
 
 const mockReadFile = vi.hoisted(() => vi.fn())
 vi.mock('node:fs', async importOriginal => {
-  const actual: any = await importOriginal()
+  const actual: unknown = await importOriginal()
   return {
     ...actual,
     promises: {

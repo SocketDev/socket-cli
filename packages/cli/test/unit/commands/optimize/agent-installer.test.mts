@@ -84,14 +84,14 @@ describe('agent installer utilities', () => {
 
     it('uses spawn for npm agent with --no-audit --no-fund', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as any)
+      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
 
       const pkgEnvDetails = {
         agent: 'npm',
         agentExecPath: '/usr/bin/npm',
         pkgPath: '/test/project',
         agentVersion: { major: 10, minor: 0, patch: 0 },
-      } as any
+      } as unknown
 
       runAgentInstall(pkgEnvDetails)
 
@@ -106,14 +106,14 @@ describe('agent installer utilities', () => {
 
     it('uses spawn for pnpm agent', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as any)
+      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
 
       const pkgEnvDetails = {
         agent: 'pnpm',
         agentExecPath: '/usr/bin/pnpm',
         pkgPath: '/test/project',
         agentVersion: { major: 8, minor: 0, patch: 0 },
-      } as any
+      } as unknown
 
       runAgentInstall(pkgEnvDetails)
 
@@ -135,13 +135,13 @@ describe('agent installer utilities', () => {
 
     it('uses spawn for yarn agent', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as any)
+      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
 
       const pkgEnvDetails = {
         agent: 'yarn',
         agentExecPath: '/usr/bin/yarn',
         pkgPath: '/test/project',
-      } as any
+      } as unknown
 
       runAgentInstall(pkgEnvDetails)
 
@@ -156,13 +156,13 @@ describe('agent installer utilities', () => {
 
     it('passes args to the agent command', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as any)
+      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
 
       const pkgEnvDetails = {
         agent: 'yarn',
         agentExecPath: '/usr/bin/yarn',
         pkgPath: '/test/project',
-      } as any
+      } as unknown
 
       runAgentInstall(pkgEnvDetails, {
         args: ['--frozen-lockfile', '--production'],
@@ -181,17 +181,17 @@ describe('agent installer utilities', () => {
         start: vi.fn(),
         stop: vi.fn(),
       }
-      Spinner.mockReturnValue(mockSpinner as any)
+      Spinner.mockReturnValue(mockSpinner as unknown)
 
       const pkgEnvDetails = {
         agent: 'pnpm',
         agentExecPath: '/usr/bin/pnpm',
         pkgPath: '/test/project',
         agentVersion: { major: 8, minor: 0, patch: 0 },
-      } as any
+      } as unknown
 
       runAgentInstall(pkgEnvDetails, {
-        spinner: mockSpinner as any,
+        spinner: mockSpinner as unknown,
       })
 
       // Spinner would be passed through to spawn.
@@ -211,13 +211,13 @@ describe('agent installer utilities', () => {
 
     it('handles unknown agent', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as any)
+      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
 
       const pkgEnvDetails = {
         agent: 'unknown-agent',
         agentExecPath: '/usr/bin/unknown-agent',
         pkgPath: '/test/project',
-      } as any
+      } as unknown
 
       runAgentInstall(pkgEnvDetails)
 
@@ -230,13 +230,13 @@ describe('agent installer utilities', () => {
 
     it('merges options correctly', async () => {
       const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
-      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as any)
+      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
 
       const pkgEnvDetails = {
         agent: 'yarn',
         agentExecPath: '/usr/bin/yarn',
         pkgPath: '/test/project',
-      } as any
+      } as unknown
 
       const options = {
         args: ['--prod'],

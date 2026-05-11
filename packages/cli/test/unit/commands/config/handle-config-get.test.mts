@@ -129,7 +129,7 @@ describe('handleConfigGet', () => {
 
       // eslint-disable-next-line no-await-in-loop
       await handleConfigGet({
-        key: key as any,
+        key: key as unknown,
         outputKind: 'json',
       })
 

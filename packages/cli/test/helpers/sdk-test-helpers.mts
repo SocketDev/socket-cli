@@ -77,7 +77,7 @@ export async function setupSdkMockError(
  * @param mockData - The data to return in the success response
  * @returns Object with mockSdk, mockHandleApi, and mockSetupSdk references
  */
-export async function setupSdkMockSuccess(sdkMethod: string, mockData: any) {
+export async function setupSdkMockSuccess(sdkMethod: string, mockData: unknown) {
   const mockSdk = createMockSdk({
     [sdkMethod]: vi.fn().mockResolvedValue({ success: true, data: mockData }),
   })
@@ -105,8 +105,8 @@ export async function setupSdkMockSuccess(sdkMethod: string, mockData: any) {
  * @returns Object with mockSdk, mockHandleApi, and mockSetupSdk
  */
 export async function setupSdkMockWithCustomSdk(
-  mockSdkMethods: Record<string, any>,
-  mockApiData: any,
+  mockSdkMethods: Record<string, unknown>,
+  mockApiData: unknown,
 ) {
   const mockSdk = createMockSdk(mockSdkMethods)
 
@@ -149,8 +149,8 @@ export async function setupSdkSetupFailure(
  */
 // c8 ignore start - Dead code: withSdk not yet implemented in sdk.mts.
 // export async function setupWithSdkMock(
-//   _callback: (sdk: any) => any,
-//   mockSdkMethods: Record<string, any> = {},
+//   _callback: (sdk: unknown) => any,
+//   mockSdkMethods: Record<string, unknown> = {},
 // ) {
 //   const mockSdk = createMockSdk(mockSdkMethods)
 //   const withSdk = await getMockWithSdk()

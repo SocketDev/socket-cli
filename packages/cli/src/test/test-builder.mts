@@ -12,7 +12,7 @@ export interface TestSetupOptions {
   commandName: string
   parentCommand?: string
   mockSdk?: boolean
-  mockConfig?: Record<string, any>
+  mockConfig?: Record<string, unknown>
   env?: Record<string, string>
 }
 
@@ -29,12 +29,12 @@ export function setupCommandTest(options: TestSetupOptions) {
 
   const stubs = {
     loggerLog: undefined as Mock | undefined,
-    sdk: {} as any,
+    sdk: {} as unknown,
     config: mockConfig,
   }
 
   // Expose mock SDK globally for tests to access
-  ;(global as any).mockSdk = stubs.sdk
+  ;(global as unknown).mockSdk = stubs.sdk
 
   beforeEach(() => {
     // Reset environment
@@ -43,8 +43,8 @@ export function setupCommandTest(options: TestSetupOptions) {
     }
 
     // Reset mock SDK for each test
-    stubs.sdk = {} as any
-    ;(global as any).mockSdk = stubs.sdk
+    stubs.sdk = {} as unknown
+    ;(global as unknown).mockSdk = stubs.sdk
 
     // Mock SDK if needed
     if (mockSdk) {
@@ -79,12 +79,12 @@ export function setupCommandTest(options: TestSetupOptions) {
 export interface CommandTestCase {
   name: string
   args: string[]
-  flags?: Record<string, any>
+  flags?: Record<string, unknown>
   expectedExitCode?: number
   expectedOutput?: string | RegExp | string[]
   expectedError?: string | RegExp
   setup?: () => void | Promise<void>
-  validate?: (stubs: any) => void | Promise<void>
+  validate?: (stubs: unknown) => void | Promise<void>
 }
 
 export function buildCommandTests(
@@ -193,7 +193,7 @@ export const commonTests = {
     flags: { json: true },
     validate: stubs => {
       const output = stubs.loggerLog?.mock.calls
-        .map((call: any[]) => call[0])
+        .map((call: unknown[]) => call[0])
         .join('')
       expect(() => JSON.parse(output)).not.toThrow()
     },
@@ -239,14 +239,14 @@ export const commonTests = {
 /**
  * Mock API responses
  */
-export function mockApiResponse<T>(sdk: any, method: string, response: T) {
+export function mockApiResponse<T>(sdk: unknown, method: string, response: T) {
   sdk[method] = vi.fn().mockResolvedValue({
     ok: true,
     data: response,
   })
 }
 
-export function mockApiError(sdk: any, method: string, error: string) {
+export function mockApiError(sdk: unknown, method: string, error: string) {
   sdk[method] = vi.fn().mockResolvedValue({
     ok: false,
     message: error,

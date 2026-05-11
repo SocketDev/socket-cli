@@ -64,7 +64,7 @@ describe('cmd-cargo', () => {
     })
 
     it('renders help text via the meow help callback', async () => {
-      mockMeowOrExit.mockImplementation((args: any) => {
+      mockMeowOrExit.mockImplementation((args: unknown) => {
         // Invoke the help callback so coverage records its lines.
         const helpText = args.config.help('socket cargo')
         expect(helpText).toContain('socket cargo')
@@ -88,7 +88,7 @@ describe('cmd-cargo', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
       mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise })
       mockFilterFlags.mockReturnValue([])
       const runPromise = cmdCargo.run(
@@ -114,7 +114,7 @@ describe('cmd-cargo', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -156,7 +156,7 @@ describe('cmd-cargo', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -195,7 +195,7 @@ describe('cmd-cargo', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -205,11 +205,11 @@ describe('cmd-cargo', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
         mockExit.mockClear()
         const mockKill = vi
           .spyOn(process, 'kill')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
         mockKill.mockClear()
 
         cmdCargo.run(['build'], importMeta, context)
@@ -245,7 +245,7 @@ describe('cmd-cargo', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -255,7 +255,7 @@ describe('cmd-cargo', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         process.exitCode = undefined
 
@@ -287,7 +287,7 @@ describe('cmd-cargo', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -297,7 +297,7 @@ describe('cmd-cargo', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdCargo.run(['build'], importMeta, context)
 
@@ -327,7 +327,7 @@ describe('cmd-cargo', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -337,7 +337,7 @@ describe('cmd-cargo', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdCargo.run(['build'], importMeta, context)
 
@@ -367,7 +367,7 @@ describe('cmd-cargo', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -377,7 +377,7 @@ describe('cmd-cargo', () => {
 
         const mockKill = vi
           .spyOn(process, 'kill')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdCargo.run(['build'], importMeta, context)
 
@@ -407,7 +407,7 @@ describe('cmd-cargo', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -417,7 +417,7 @@ describe('cmd-cargo', () => {
 
         const mockKill = vi
           .spyOn(process, 'kill')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdCargo.run(['test'], importMeta, context)
 
@@ -449,7 +449,7 @@ describe('cmd-cargo', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -459,7 +459,7 @@ describe('cmd-cargo', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdCargo.run(['install', 'ripgrep'], importMeta, context)
 
@@ -487,7 +487,7 @@ describe('cmd-cargo', () => {
           stderr: Buffer.from(''),
           stdout: Buffer.from(''),
         })
-        ;(mockSpawnPromise as any).process = mockChildProcess
+        ;(mockSpawnPromise as unknown).process = mockChildProcess
 
         mockSpawnSfwDlx.mockResolvedValue({
           spawnPromise: mockSpawnPromise,
@@ -497,7 +497,7 @@ describe('cmd-cargo', () => {
 
         const mockExit = vi
           .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as any)
+          .mockImplementation((() => {}) as unknown)
 
         cmdCargo.run([], importMeta, context)
 

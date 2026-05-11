@@ -102,12 +102,12 @@ describe('convertCondaToRequirements (file)', () => {
 
 describe('convertCondaToRequirements (stdin)', () => {
   let originalStdin: NodeJS.ReadStream
-  let stdinFake: EventEmitter & { off?: (...args: any[]) => void }
+  let stdinFake: EventEmitter & { off?: (...args: unknown[]) => void }
 
   beforeEach(() => {
     vi.clearAllMocks()
     originalStdin = process.stdin
-    stdinFake = new EventEmitter() as any
+    stdinFake = new EventEmitter() as unknown
     Object.defineProperty(process, 'stdin', {
       value: stdinFake,
       writable: true,

@@ -91,7 +91,7 @@ vi.mock('../../../../src/utils/dry-run/output.mts', () => ({
 // production meowOrExit only invokes it on --help, which the test
 // suite never exercises.
 const mockMeowOrExit = vi.hoisted(() =>
-  vi.fn((options: any) => {
+  vi.fn((options: unknown) => {
     const argv = options.argv as string[] | readonly string[]
     const flags: Record<string, unknown> = {}
 
