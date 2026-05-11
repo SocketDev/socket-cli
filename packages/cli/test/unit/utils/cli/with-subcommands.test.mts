@@ -357,13 +357,13 @@ describe('meow-with-subcommands', () => {
       expect(result).toBe('scan')
     })
 
-    it('returns null when nothing close matches', () => {
+    it('returns undefined when nothing close matches', () => {
       const result = findBestCommandMatch(
         'completelyunrelated',
         subcommands,
         aliases,
       )
-      expect(result).toBeNull()
+      expect(result).toBeUndefined()
     })
 
     it('finds matches in aliases', () => {

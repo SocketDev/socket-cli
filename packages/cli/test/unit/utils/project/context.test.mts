@@ -231,10 +231,10 @@ describe('project context utilities', () => {
       expect(result).toBe(path.join(testRoot, 'nested'))
     })
 
-    it('returns null when no package.json found', async () => {
+    it('returns undefined when no package.json found', async () => {
       const result = await findProjectRoot(emptyDir)
 
-      expect(result).toBeNull()
+      expect(result).toBeUndefined()
     })
   })
 
@@ -263,10 +263,10 @@ describe('project context utilities', () => {
       expect(context?.framework).toBe('next')
     })
 
-    it('returns null for non-project directory', async () => {
+    it('returns undefined for non-project directory', async () => {
       const context = await getProjectContext(emptyDir)
 
-      expect(context).toBeNull()
+      expect(context).toBeUndefined()
     })
 
     it('marks hasLockFile false for unknown package manager', async () => {

@@ -10,7 +10,7 @@
  * - isOk and isError functions
  * - mapResult function
  * - chainResult function
- * - unwrapOr, unwrapOrNull, unwrapOrUndefined functions
+ * - unwrapOr, unwrapOrUndefined functions
  * - toResultPattern function
  *
  * Related Files:
@@ -28,7 +28,6 @@ import {
   requireOk,
   toResultPattern,
   unwrapOr,
-  unwrapOrNull,
   unwrapOrUndefined,
 } from '../../../../src/utils/data/result.mts'
 
@@ -243,20 +242,6 @@ describe('result utilities', () => {
       const result: CResult<string> = { ok: false, message: 'failed' }
 
       expect(unwrapOr(result, 'default')).toBe('default')
-    })
-  })
-
-  describe('unwrapOrNull', () => {
-    it('returns data for ok result', () => {
-      const result: CResult<string> = { ok: true, data: 'success' }
-
-      expect(unwrapOrNull(result)).toBe('success')
-    })
-
-    it('returns null for error result', () => {
-      const result: CResult<string> = { ok: false, message: 'failed' }
-
-      expect(unwrapOrNull(result)).toBeNull()
     })
   })
 

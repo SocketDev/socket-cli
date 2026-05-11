@@ -641,24 +641,21 @@ describe('wordOverlap', () => {
 })
 
 describe('wordOverlapMatch', () => {
-  it('returns null when semantic index is unavailable', async () => {
-    // The semantic index is loaded from disk lazily and is normally
-    // not present in the test environment — the function should return null.
+  it('returns undefined when semantic index is unavailable', async () => {
     const result = await wordOverlapMatch('fix vulnerabilities')
-    expect(result === null || typeof result === 'object').toBe(true)
+    expect(result === undefined || typeof result === 'object').toBe(true)
   })
 
-  it('returns null for empty/whitespace query', async () => {
+  it('returns undefined for empty/whitespace query', async () => {
     const result = await wordOverlapMatch('   ')
-    expect(result).toBeNull()
+    expect(result).toBeUndefined()
   })
 
-  it('returns null when getHome returns falsy (line 169)', async () => {
+  it('returns undefined when getHome returns falsy (line 169)', async () => {
     mockGetHome.mockReturnValueOnce(undefined)
     mockReadFile.mockClear()
     const result = await wordOverlapMatch('fix something')
-    // Index load returns null when no homeDir → no readFile, returns null.
-    expect(result).toBeNull()
+    expect(result).toBeUndefined()
   })
 
   it('skips invalid command entries during scoring (lines 233-241)', async () => {
@@ -685,7 +682,7 @@ describe('wordOverlapMatch', () => {
     }
   })
 
-  it('returns null when no command meets minimum overlap threshold (line 252)', async () => {
+  it('returns undefined when no command meets minimum overlap threshold (line 252)', async () => {
     mockGetHome.mockReturnValueOnce('/fake/home')
     mockReadFile.mockResolvedValueOnce(
       JSON.stringify({
@@ -695,9 +692,8 @@ describe('wordOverlapMatch', () => {
         },
       }),
     )
-    // Query has zero overlap with any command.
     const result = await wordOverlapMatch('completely unrelated query')
-    expect(result).toBeNull()
+    expect(result).toBeUndefined()
   })
 })
 
@@ -730,18 +726,16 @@ describe('cosineSimilarity', () => {
 })
 
 describe('getEmbeddingPipeline', () => {
-  it('returns null when pipeline is temporarily disabled', async () => {
-    // The current implementation always sets embeddingPipelineFailure=true
-    // and returns null. Verify the contract.
+  it('returns undefined when pipeline is temporarily disabled', async () => {
     const result = await getEmbeddingPipeline()
-    expect(result).toBeNull()
+    expect(result).toBeUndefined()
   })
 })
 
 describe('getEmbedding', () => {
-  it('returns null when embedding pipeline is unavailable', async () => {
+  it('returns undefined when embedding pipeline is unavailable', async () => {
     const result = await getEmbedding('any text')
-    expect(result).toBeNull()
+    expect(result).toBeUndefined()
   })
 })
 
@@ -754,9 +748,9 @@ describe('ensureCommandEmbeddings', () => {
 })
 
 describe('onnxSemanticMatch', () => {
-  it('returns null when embedding pipeline unavailable', async () => {
+  it('returns undefined when embedding pipeline unavailable', async () => {
     const result = await onnxSemanticMatch('fix vulnerabilities')
-    expect(result).toBeNull()
+    expect(result).toBeUndefined()
   })
 })
 

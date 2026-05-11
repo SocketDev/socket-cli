@@ -57,7 +57,7 @@ describe('objects utilities', () => {
         KEY: 'value',
       })
 
-      expect(Object.getPrototypeOf(myEnum)).toBe(undefined)
+      expect(Object.getPrototypeOf(myEnum)).toBeNull()
       expect('toString' in myEnum).toBe(false)
       expect('valueOf' in myEnum).toBe(false)
     })

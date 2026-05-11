@@ -243,31 +243,29 @@ describe('utils/dlx/vfs-extract', () => {
   })
 
   describe('extractExternalTools', () => {
-    it('returns null when not running in SEA mode', async () => {
+    it('returns undefined when not running in SEA mode', async () => {
       mockIsSeaBinary.mockReturnValue(false)
       const result = await extractExternalTools()
-      expect(result).toBeNull()
+      expect(result).toBeUndefined()
     })
 
-    it('returns null when smol.mount is missing', async () => {
+    it('returns undefined when smol.mount is missing', async () => {
       mockIsSeaBinary.mockReturnValue(true)
       ;(process as any).smol = { otherProp: true }
       try {
         const result = await extractExternalTools()
-        expect(result).toBeNull()
+        expect(result).toBeUndefined()
       } finally {
         delete (process as any).smol
       }
     })
 
-    it('returns null when max recursion depth exceeded', async () => {
+    it('returns undefined when max recursion depth exceeded', async () => {
       mockIsSeaBinary.mockReturnValue(true)
       ;(process as any).smol = { mount: vi.fn() }
       try {
-        // depth=5 hits the MAX_EXTRACTION_DEPTH guard and returns null
-        // before reaching any I/O.
         const result = await extractExternalTools(5)
-        expect(result).toBeNull()
+        expect(result).toBeUndefined()
       } finally {
         delete (process as any).smol
       }

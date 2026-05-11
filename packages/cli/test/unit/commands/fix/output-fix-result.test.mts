@@ -109,7 +109,7 @@ describe('output-fix-result', () => {
         await outputFixResult(result, 'markdown')
 
         expect(mockLogger.log).toHaveBeenCalledWith('# Fix Completed')
-        expect(mockLogger.log).toHaveBeenCalledWith('✓ Finished!')
+        expect(mockLogger.success).toHaveBeenCalledWith('Finished!')
         expect(process.exitCode).toBeUndefined()
       })
 

@@ -274,14 +274,13 @@ describe('cmd-patch', () => {
       expect(process.exitCode).toBe(42)
     })
 
-    it('should handle null exit code (signal termination)', async () => {
+    it('should handle nullish exit code (signal termination)', async () => {
       mockSpawnSocketPatchDlx.mockResolvedValueOnce({
         spawnPromise: Promise.resolve({ code: undefined, signal: 'SIGTERM' }),
       })
 
       await cmdPatch.run(['apply'], importMeta, context)
 
-      // When code is null and not 0, exitCode remains the default (1 from start).
       expect(process.exitCode).toBe(1)
     })
 

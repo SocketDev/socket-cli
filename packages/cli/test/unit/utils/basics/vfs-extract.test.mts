@@ -113,20 +113,20 @@ describe('basics/vfs-extract', () => {
   })
 
   describe('extractBasicsTools', () => {
-    it('returns null when not in SEA mode', async () => {
+    it('returns undefined when not in SEA mode', async () => {
       mockIsSeaBinary.mockReturnValue(false)
       const result = await extractBasicsTools()
-      expect(result).toBeNull()
+      expect(result).toBeUndefined()
       expect(mockLogger.warn).toHaveBeenCalledWith(
         expect.stringContaining('Not running in SEA mode'),
       )
     })
 
-    it('returns null when smol.mount is missing', async () => {
+    it('returns undefined when smol.mount is missing', async () => {
       mockIsSeaBinary.mockReturnValue(true)
       ;(process as any).smol = {}
       const result = await extractBasicsTools()
-      expect(result).toBeNull()
+      expect(result).toBeUndefined()
       expect(mockLogger.warn).toHaveBeenCalledWith(
         expect.stringContaining('process.smol.mount'),
       )

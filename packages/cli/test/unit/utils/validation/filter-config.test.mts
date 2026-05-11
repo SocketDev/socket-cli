@@ -45,7 +45,7 @@ describe('filter-config utilities', () => {
         disabled: false,
         someFeature: true,
       })
-      expect(Object.getPrototypeOf(result)).toBe(undefined)
+      expect(Object.getPrototypeOf(result)).toBeNull()
     })
 
     it('normalizes object with array values', () => {
@@ -126,7 +126,7 @@ describe('filter-config utilities', () => {
       const result = toFilterConfig({})
 
       expect(result).toEqual({})
-      expect(Object.getPrototypeOf(result)).toBe(undefined)
+      expect(Object.getPrototypeOf(result)).toBeNull()
     })
 
     it('preserves nested arrays', () => {
@@ -215,7 +215,7 @@ describe('filter-config utilities', () => {
     it('creates object with null prototype', () => {
       const result = toFilterConfig({ test: true })
 
-      expect(Object.getPrototypeOf(result)).toBe(undefined)
+      expect(Object.getPrototypeOf(result)).toBeNull()
       expect(result.constructor).toBeUndefined()
       expect(result.toString).toBeUndefined()
       expect(result.valueOf).toBeUndefined()
@@ -233,7 +233,7 @@ describe('filter-config utilities', () => {
         __proto__: true,
         normal: false,
       })
-      expect(Object.getPrototypeOf(result)).toBe(undefined)
+      expect(Object.getPrototypeOf(result)).toBeNull()
     })
   })
 })

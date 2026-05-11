@@ -69,7 +69,7 @@ describe('word-overlap-match edge cases', () => {
   })
 
   describe('wordOverlapMatch — empty-query early return (line 118)', () => {
-    it('returns null when extractWords yields no tokens', async () => {
+    it('returns undefined when extractWords yields no tokens', async () => {
       // Provide an index so loadSemanticIndex succeeds, then pass a query
       // whose tokens are all <= 2 chars (filtered by extractWords).
       mockGetHome.mockReturnValue('/fake/home')
@@ -81,7 +81,7 @@ describe('word-overlap-match edge cases', () => {
         }),
       )
       const result = await wordOverlapMatch('a b c')
-      expect(result).toBeNull()
+      expect(result).toBeUndefined()
     })
   })
 })

@@ -235,11 +235,11 @@ describe('dry-run output utilities', () => {
       expect(output).toContain('count: 5')
     })
 
-    it('handles null detail values as primitives', () => {
+    it('handles undefined detail values as primitives', () => {
       outputDryRunUpload('thing', { value: undefined })
 
       const output = mockStderrLog.mock.calls.map(c => c[0]).join('\n')
-      expect(output).toContain('value: null')
+      expect(output).toContain('value: undefined')
     })
   })
 

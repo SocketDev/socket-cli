@@ -68,7 +68,7 @@ async function run(
   // Wait for the spawn to complete and set exit code.
   const result = await spawnPromise
 
-  if (result.code !== null && result.code !== 0) {
+  if (result.code != null && result.code !== 0) {
     process.exitCode = result.code
   } else if (result.code === 0) {
     process.exitCode = 0

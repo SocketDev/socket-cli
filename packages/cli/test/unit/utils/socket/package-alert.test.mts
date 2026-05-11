@@ -729,7 +729,7 @@ describe('socket-package-alert', () => {
   })
 
   describe('getCveInfoFromAlertsMap', () => {
-    it('returns null when no CVE alerts exist', () => {
+    it('returns undefined when no CVE alerts exist', () => {
       const alertsMap: AlertsByPurl = new Map()
       alertsMap.set('pkg:npm/test@1.0.0', [
         createMockSocketPackageAlert({
@@ -739,7 +739,7 @@ describe('socket-package-alert', () => {
 
       const result = getCveInfoFromAlertsMap(alertsMap)
 
-      expect(result).toBeNull()
+      expect(result).toBeUndefined()
     })
 
     it('extracts CVE info from alerts', () => {
@@ -815,7 +815,7 @@ describe('socket-package-alert', () => {
         filter: { upgradable: false },
       })
 
-      expect(result).toBeNull()
+      expect(result).toBeUndefined()
     })
 
     it('handles invalid PURL gracefully', () => {
@@ -828,7 +828,7 @@ describe('socket-package-alert', () => {
 
       const result = getCveInfoFromAlertsMap(alertsMap)
 
-      expect(result).toBeNull()
+      expect(result).toBeUndefined()
     })
 
     it('handles unparseable vulnerable version range (lines 437-442)', () => {

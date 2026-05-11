@@ -162,16 +162,6 @@ export function unwrapOr<T>(result: CResult<T>, defaultValue: T): T {
 }
 
 /**
- * Unwraps a CResult, returning the data or null if error
- *
- * @param result - The CResult to unwrap
- * @returns The data if ok, null otherwise
- */
-export function unwrapOrNull<T>(result: CResult<T>): T | undefined {
-  return result.ok ? result.data : undefined
-}
-
-/**
  * Unwraps a CResult, returning the data or undefined if error
  *
  * @param result - The CResult to unwrap

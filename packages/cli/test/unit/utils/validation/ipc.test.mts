@@ -348,24 +348,24 @@ describe('IPC validation', () => {
       expect(result).toEqual(message)
     })
 
-    it('returns null for invalid object', () => {
-      expect(parseIpcMessage({ invalid: true })).toBeNull()
+    it('returns undefined for invalid object', () => {
+      expect(parseIpcMessage({ invalid: true })).toBeUndefined()
     })
 
-    it('returns null for invalid JSON string', () => {
-      expect(parseIpcMessage('not-json')).toBeNull()
+    it('returns undefined for invalid JSON string', () => {
+      expect(parseIpcMessage('not-json')).toBeUndefined()
     })
 
-    it('returns null for JSON with invalid message', () => {
-      expect(parseIpcMessage(JSON.stringify({ invalid: true }))).toBeNull()
+    it('returns undefined for JSON with invalid message', () => {
+      expect(parseIpcMessage(JSON.stringify({ invalid: true }))).toBeUndefined()
     })
 
-    it('returns null for null input', () => {
-      expect(parseIpcMessage(undefined)).toBeNull()
+    it('returns undefined for null input', () => {
+      expect(parseIpcMessage(undefined)).toBeUndefined()
     })
 
-    it('returns null for undefined', () => {
-      expect(parseIpcMessage(undefined)).toBeNull()
+    it('returns undefined for undefined', () => {
+      expect(parseIpcMessage(undefined)).toBeUndefined()
     })
   })
 })

@@ -68,14 +68,14 @@ describe('serializeResultJson', () => {
     expect(result).toContain('    "value": 42')
   })
 
-  it('handles objects with null values', () => {
+  it('handles objects with undefined values', () => {
     const result = serializeResultJson({
       ok: false,
       message: 'Error',
       data: undefined,
     })
     const parsed = JSON.parse(result)
-    expect(parsed.data).toBeNull()
+    expect(parsed.data).toBeUndefined()
   })
 
   it('handles empty object', () => {

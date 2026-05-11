@@ -63,16 +63,16 @@ describe('TelemetryService', () => {
   })
 
   describe('getCurrentInstance', () => {
-    it('returns null when no instance exists', () => {
+    it('returns undefined when no instance exists', () => {
       const instance = TelemetryService.getCurrentInstance()
-      expect(instance).toBeNull()
+      expect(instance).toBeUndefined()
     })
 
     it('returns instance after initialization', async () => {
       await TelemetryService.getTelemetryClient('test-org')
 
       const instance = TelemetryService.getCurrentInstance()
-      expect(instance).not.toBeNull()
+      expect(instance).not.toBeUndefined()
     })
   })
 
@@ -300,7 +300,7 @@ describe('TelemetryService', () => {
 
       await client.destroy()
 
-      expect(TelemetryService.getCurrentInstance()).toBeNull()
+      expect(TelemetryService.getCurrentInstance()).toBeUndefined()
     })
 
     it('is idempotent', async () => {
@@ -309,8 +309,7 @@ describe('TelemetryService', () => {
       await client.destroy()
       await client.destroy()
 
-      // Should not throw and only process once.
-      expect(TelemetryService.getCurrentInstance()).toBeNull()
+      expect(TelemetryService.getCurrentInstance()).toBeUndefined()
     })
 
     it('does not flush when service is destroyed', async () => {
