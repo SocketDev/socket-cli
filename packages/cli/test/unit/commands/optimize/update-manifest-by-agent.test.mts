@@ -149,6 +149,18 @@ describe('update-manifest-by-agent', () => {
       updatePnpmField(pkgJson, { express: '4.18.0' })
       expect(pkgJson.update).toHaveBeenCalled()
     })
+
+    it('clears non-object pnpm value when overrides empty (line 135-138)', () => {
+      // pnpm exists but isn't an object (e.g. a string value) AND the
+      // incoming overrides are empty — the only safe move is to drop
+      // the whole `pnpm` field by setting it to undefined.
+      const pkgJson = createEditablePkgJson({
+        name: 'test',
+        pnpm: 'invalid',
+      })
+      updatePnpmField(pkgJson, {})
+      expect(pkgJson.update).toHaveBeenCalledWith({ pnpm: undefined })
+    })
   })
 
   describe('updateManifest', () => {

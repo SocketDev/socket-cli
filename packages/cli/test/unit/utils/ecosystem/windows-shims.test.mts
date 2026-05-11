@@ -118,8 +118,10 @@ describe('windows-shims', () => {
     it('returns the input when path already has an extension (line 73-74)', () => {
       mockWin32.WIN32 = true
       try {
-        expect(preferWindowsCmdShim('C:\\nodejs\\npm.exe', 'npm')).toBe(
-          'C:\\nodejs\\npm.exe',
+        // Absolute POSIX path with an extension — exercises the
+        // extname-not-empty branch on non-Windows test environments.
+        expect(preferWindowsCmdShim('/usr/local/bin/npm.exe', 'npm')).toBe(
+          '/usr/local/bin/npm.exe',
         )
       } finally {
         mockWin32.WIN32 = false

@@ -528,6 +528,7 @@ export function logAlertsMap(
         if (!hiddenAlerts.length) {
           hiddenAlertsByPurl.delete(purl)
         }
+        /* c8 ignore next 4 - defensive: hiddenAlertsByPurl entries always have length >= 1 (set by the filter loop above), and neededCount = MIN_ABOVE_THE_FOLD_ALERT_COUNT (1), so this branch is unreachable while the constant stays at 1. */
       } else {
         removedHiddenAlerts = [...hiddenAlerts]
         hiddenAlertsByPurl.delete(purl)

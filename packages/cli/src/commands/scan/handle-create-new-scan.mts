@@ -208,6 +208,7 @@ export async function handleCreateNewScan({
 
   // If reachability is enabled, perform reachability analysis.
   if (reach.runReachabilityAnalysis) {
+    /* c8 ignore next 4 - defensive: empty targets crashes earlier at applyFullExcludePaths({ target: targets[0]! }) — this guard is unreachable in practice. */
     if (!targets.length) {
       logger.fail('Reachability analysis requires at least one target')
       return
