@@ -41,67 +41,109 @@ import type { SpawnNodeOptions } from '../spawn/spawn-node.mts'
 import type { CResult } from '../../types.mjs'
 
 /**
- * Get the download URL and asset name for python-build-standalone based on platform and architecture.
+ * Convert npm caret range (^2.2.15) to pip version specifier (>=2.2.15,<3.0.0).
  */
-export function getPythonStandaloneInfo(): { assetName: string; url: string } {
-  const version = getPythonVersion()
-  const tag = getPythonBuildTag()
-  const platform = os.platform()
-  const arch = os.arch()
+export function convertCaretToPipRange(caretRange: string): string {
+  if (!caretRange) {
+    return ''
+  }
 
-  let platformTriple: string
+  if (!caretRange.startsWith('^')) {
+    return `==${caretRange}`
+  }
 
-  if (platform === 'darwin') {
-    platformTriple =
-      arch === 'arm64' ? 'aarch64-apple-darwin' : 'x86_64-apple-darwin'
-  } else if (platform === 'linux') {
-    platformTriple =
-      arch === 'arm64'
-        ? 'aarch64-unknown-linux-gnu'
-        : 'x86_64-unknown-linux-gnu'
-  } else if (platform === 'win32') {
-    // Windows ARM64 can use native ARM64 Python for better performance.
-    platformTriple =
-      arch === 'arm64' ? 'aarch64-pc-windows-msvc' : 'x86_64-pc-windows-msvc'
-  } else {
+  const version = caretRange.slice(1) // Remove '^'.
+
+  // Handle malformed caret range (just "^" with no version).
+  if (!version) {
+    return ''
+  }
+
+  const parts = version.split('.')
+  const major = Number.parseInt(parts[0] || '0', 10)
+  // Handle non-numeric major version (e.g., "^x.2.3").
+  if (Number.isNaN(major)) {
+    return `==${version}`
+  }
+  const nextMajor = major + 1
+
+  return `>=${version},<${nextMajor}.0.0`
+}
+
+/**
+ * Download a PyPI wheel with SHA-256 verification.
+ * Fetches the wheel URL from PyPI JSON API and downloads with integrity check.
+ *
+ * @param packageName - PyPI package name (e.g., 'socketsecurity').
+ * @param version - Exact version to download.
+ * @param sha256 - Expected SHA-256 checksum (hex string).
+ * @returns Path to the downloaded wheel file, or null if download fails.
+ */
+export async function downloadPyPiWheel(
+  packageName: string,
+  version: string,
+  sha256: string | undefined,
+): Promise<string | undefined> {
+  // Cache path: ~/.socket/_dlx/pypi/{package}/{version}/
+  const cacheDir = path.join(getDlxCachePath(), 'pypi', packageName, version)
+  const wheelFilename = `${packageName}-${version}-py3-none-any.whl`
+  const wheelPath = path.join(cacheDir, wheelFilename)
+
+  // Return cached wheel if already downloaded.
+  if (existsSync(wheelPath)) {
+    return wheelPath
+  }
+
+  await safeMkdir(cacheDir)
+
+  // Fetch wheel URL from PyPI JSON API.
+  const pypiUrl = `https://pypi.org/pypi/${packageName}/${version}/json`
+  let wheelUrl: string | undefined = undefined
+
+  try {
+    const response = await socketHttpRequest(pypiUrl)
+    if (!response.ok) {
+      throw new Error(
+        `PyPI returned HTTP ${response.status} for ${pypiUrl} (expected 200); check the package name and version, or retry if the registry is rate-limiting`,
+      )
+    }
+    const data = response.json() as {
+      urls?: Array<{ filename: string; url: string }>
+    }
+
+    // Find the wheel URL (prefer py3-none-any wheel).
+    const wheelInfo = data.urls?.find(
+      u =>
+        u.filename.endsWith('-py3-none-any.whl') || u.filename.endsWith('.whl'),
+    )
+    if (wheelInfo) {
+      wheelUrl = wheelInfo.url
+    }
+  } catch (e) {
+    // If we can't fetch from API, construct URL directly (may not work for all packages).
+    // This is a fallback; the API approach is more reliable.
     throw new InputError(
-      `python-build-standalone does not ship a prebuilt for os.platform()="${platform}" (supported: darwin, linux, win32); install Python manually and point socket at it via PATH`,
+      `could not fetch PyPI metadata for ${packageName}==${version} from ${pypiUrl} (${getErrorCause(e)}); check your network or proxy settings, or try again if PyPI is rate-limiting`,
     )
   }
 
-  // Asset name format matches checksums in bundle-tools.json.
-  const assetName = `cpython-${version}+${tag}-${platformTriple}-install_only.tar.gz`
-  // URL encoding for the '+' in version string.
-  const encodedVersion = `${version}%2B${tag}`
-  const url = `https://github.com/astral-sh/python-build-standalone/releases/download/${tag}/cpython-${encodedVersion}-${platformTriple}-install_only.tar.gz`
-
-  return { assetName, url }
-}
-
-/**
- * Get the path to the cached Python installation directory.
- */
-export function getPythonCachePath(): string {
-  const version = getPythonVersion()
-  const tag = getPythonBuildTag()
-  const platform = os.platform()
-  const arch = os.arch()
-
-  return path.join(
-    getDlxCachePath(),
-    'python',
-    `${version}-${tag}-${platform}-${arch}`,
-  )
-}
-
-/**
- * Get the path to the Python executable within the installation.
- */
-export function getPythonBinPath(pythonDir: string): string {
-  if (WIN32) {
-    return path.join(pythonDir, 'python', 'python.exe')
+  if (!wheelUrl) {
+    throw new InputError(
+      `${packageName}==${version} has no py3-none-any wheel on PyPI (only sdist available); pin to a version that ships a wheel or install from source manually`,
+    )
   }
-  return path.join(pythonDir, 'python', 'bin', 'python3')
+
+  // Download wheel with SHA-256 verification.
+  const result = await downloadBinary({
+    name: wheelFilename,
+    sha256,
+    url: wheelUrl,
+  })
+
+  // Copy to our cache directory (downloadBinary uses its own cache).
+  await fs.copyFile(result.binaryPath, wheelPath)
+
+  return wheelPath
 }
 
 /**
@@ -257,130 +299,6 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
 }
 
 /**
- * Check if socketcli is installed in the Python environment.
- */
-export async function isSocketPyCliInstalled(
-  pythonBin: string,
-): Promise<boolean> {
-  try {
-    const result = await spawn(
-      pythonBin,
-      ['-c', 'import socketsecurity.socketcli'],
-      { shell: WIN32 },
-    )
-    return result.code === 0
-  } catch {
-    return false
-  }
-}
-
-/**
- * Convert npm caret range (^2.2.15) to pip version specifier (>=2.2.15,<3.0.0).
- */
-export function convertCaretToPipRange(caretRange: string): string {
-  if (!caretRange) {
-    return ''
-  }
-
-  if (!caretRange.startsWith('^')) {
-    return `==${caretRange}`
-  }
-
-  const version = caretRange.slice(1) // Remove '^'.
-
-  // Handle malformed caret range (just "^" with no version).
-  if (!version) {
-    return ''
-  }
-
-  const parts = version.split('.')
-  const major = Number.parseInt(parts[0] || '0', 10)
-  // Handle non-numeric major version (e.g., "^x.2.3").
-  if (Number.isNaN(major)) {
-    return `==${version}`
-  }
-  const nextMajor = major + 1
-
-  return `>=${version},<${nextMajor}.0.0`
-}
-
-/**
- * Download a PyPI wheel with SHA-256 verification.
- * Fetches the wheel URL from PyPI JSON API and downloads with integrity check.
- *
- * @param packageName - PyPI package name (e.g., 'socketsecurity').
- * @param version - Exact version to download.
- * @param sha256 - Expected SHA-256 checksum (hex string).
- * @returns Path to the downloaded wheel file, or null if download fails.
- */
-export async function downloadPyPiWheel(
-  packageName: string,
-  version: string,
-  sha256: string | undefined,
-): Promise<string | undefined> {
-  // Cache path: ~/.socket/_dlx/pypi/{package}/{version}/
-  const cacheDir = path.join(getDlxCachePath(), 'pypi', packageName, version)
-  const wheelFilename = `${packageName}-${version}-py3-none-any.whl`
-  const wheelPath = path.join(cacheDir, wheelFilename)
-
-  // Return cached wheel if already downloaded.
-  if (existsSync(wheelPath)) {
-    return wheelPath
-  }
-
-  await safeMkdir(cacheDir)
-
-  // Fetch wheel URL from PyPI JSON API.
-  const pypiUrl = `https://pypi.org/pypi/${packageName}/${version}/json`
-  let wheelUrl: string | undefined = undefined
-
-  try {
-    const response = await socketHttpRequest(pypiUrl)
-    if (!response.ok) {
-      throw new Error(
-        `PyPI returned HTTP ${response.status} for ${pypiUrl} (expected 200); check the package name and version, or retry if the registry is rate-limiting`,
-      )
-    }
-    const data = response.json() as {
-      urls?: Array<{ filename: string; url: string }>
-    }
-
-    // Find the wheel URL (prefer py3-none-any wheel).
-    const wheelInfo = data.urls?.find(
-      u =>
-        u.filename.endsWith('-py3-none-any.whl') || u.filename.endsWith('.whl'),
-    )
-    if (wheelInfo) {
-      wheelUrl = wheelInfo.url
-    }
-  } catch (e) {
-    // If we can't fetch from API, construct URL directly (may not work for all packages).
-    // This is a fallback; the API approach is more reliable.
-    throw new InputError(
-      `could not fetch PyPI metadata for ${packageName}==${version} from ${pypiUrl} (${getErrorCause(e)}); check your network or proxy settings, or try again if PyPI is rate-limiting`,
-    )
-  }
-
-  if (!wheelUrl) {
-    throw new InputError(
-      `${packageName}==${version} has no py3-none-any wheel on PyPI (only sdist available); pin to a version that ships a wheel or install from source manually`,
-    )
-  }
-
-  // Download wheel with SHA-256 verification.
-  const result = await downloadBinary({
-    name: wheelFilename,
-    sha256,
-    url: wheelUrl,
-  })
-
-  // Copy to our cache directory (downloadBinary uses its own cache).
-  await fs.copyFile(result.binaryPath, wheelPath)
-
-  return wheelPath
-}
-
-/**
  * Install socketsecurity package into the Python environment.
  * Uses a lock file to prevent races when multiple processes install concurrently.
  *
@@ -530,13 +448,93 @@ export async function ensureSocketPyCli(
   }
 }
 
-export type SocketPyCliDlxOptions = DlxOptions
+/**
+ * Get the path to the Python executable within the installation.
+ */
+export function getPythonBinPath(pythonDir: string): string {
+  if (WIN32) {
+    return path.join(pythonDir, 'python', 'python.exe')
+  }
+  return path.join(pythonDir, 'python', 'bin', 'python3')
+}
 
 /**
- * Spawn socketcli via bundled Python from SEA VFS.
- * Uses the same Python as socket-basics for consistency.
+ * Get the path to the cached Python installation directory.
  */
-export async function spawnSocketPyCliVfs(
+export function getPythonCachePath(): string {
+  const version = getPythonVersion()
+  const tag = getPythonBuildTag()
+  const platform = os.platform()
+  const arch = os.arch()
+
+  return path.join(
+    getDlxCachePath(),
+    'python',
+    `${version}-${tag}-${platform}-${arch}`,
+  )
+}
+
+/**
+ * Get the download URL and asset name for python-build-standalone based on platform and architecture.
+ */
+export function getPythonStandaloneInfo(): { assetName: string; url: string } {
+  const version = getPythonVersion()
+  const tag = getPythonBuildTag()
+  const platform = os.platform()
+  const arch = os.arch()
+
+  let platformTriple: string
+
+  if (platform === 'darwin') {
+    platformTriple =
+      arch === 'arm64' ? 'aarch64-apple-darwin' : 'x86_64-apple-darwin'
+  } else if (platform === 'linux') {
+    platformTriple =
+      arch === 'arm64'
+        ? 'aarch64-unknown-linux-gnu'
+        : 'x86_64-unknown-linux-gnu'
+  } else if (platform === 'win32') {
+    // Windows ARM64 can use native ARM64 Python for better performance.
+    platformTriple =
+      arch === 'arm64' ? 'aarch64-pc-windows-msvc' : 'x86_64-pc-windows-msvc'
+  } else {
+    throw new InputError(
+      `python-build-standalone does not ship a prebuilt for os.platform()="${platform}" (supported: darwin, linux, win32); install Python manually and point socket at it via PATH`,
+    )
+  }
+
+  // Asset name format matches checksums in bundle-tools.json.
+  const assetName = `cpython-${version}+${tag}-${platformTriple}-install_only.tar.gz`
+  // URL encoding for the '+' in version string.
+  const encodedVersion = `${version}%2B${tag}`
+  const url = `https://github.com/astral-sh/python-build-standalone/releases/download/${tag}/cpython-${encodedVersion}-${platformTriple}-install_only.tar.gz`
+
+  return { assetName, url }
+}
+
+/**
+ * Check if socketcli is installed in the Python environment.
+ */
+export async function isSocketPyCliInstalled(
+  pythonBin: string,
+): Promise<boolean> {
+  try {
+    const result = await spawn(
+      pythonBin,
+      ['-c', 'import socketsecurity.socketcli'],
+      { shell: WIN32 },
+    )
+    return result.code === 0
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Spawn socketcli (Socket Python CLI).
+ * Ensures Python is available (SEA bundled or DLX downloaded) before spawning.
+ */
+export async function spawnSocketPyCli(
   args: string[] | readonly string[],
   options?: SocketPyCliDlxOptions | undefined,
 ): Promise<CResult<string>> {
@@ -545,62 +543,55 @@ export async function spawnSocketPyCliVfs(
     ...options,
   } as SocketPyCliDlxOptions
 
+  const finalEnv: Record<string, string | undefined> = {
+    ...process.env,
+    ...spawnEnv,
+  }
+
   try {
-    const toolsDir = await extractBasicsTools()
-    if (!toolsDir) {
+    // Check for local path override first.
+    const resolution = resolvePyCli()
+    if (resolution.type === 'local') {
+      const spawnNodeOpts: SpawnNodeOptions = {
+        ...(dlxOptions.cwd ? { cwd: dlxOptions.cwd } : {}),
+        env: finalEnv,
+        shell: WIN32,
+        stdio: 'inherit',
+      }
+      const spawnResult = await spawnNode(
+        [resolution.path, ...args],
+        spawnNodeOpts,
+      )
+
       return {
-        data: new Error('Failed to extract basics tools from VFS'),
-        message: 'Failed to extract basics tools from VFS',
-        ok: false,
+        data: spawnResult.stdout?.toString() ?? '',
+        ok: true,
       }
     }
 
-    const toolPaths = getBasicsToolPaths(toolsDir)
-    const pythonBin = toolPaths.python
+    // Ensure Python is available (SEA bundled or DLX downloaded).
+    const pythonBin = await ensurePython()
 
-    // Ensure socketsecurity package is installed with integrity verification.
-    const pyCliVersion = getPyCliVersion()
-    const wheelFilename = `socketsecurity-${pyCliVersion}-py3-none-any.whl`
-    const checksums = getPyCliChecksums()
-    const sha256 = checksums[wheelFilename]
+    // Ensure socketsecurity package is installed.
+    await ensureSocketPyCli(pythonBin)
 
-    if (sha256) {
-      // Download verified wheel and install from local file.
-      const wheelPath = await downloadPyPiWheel(
-        'socketsecurity',
-        pyCliVersion,
-        sha256,
-      )
-      if (wheelPath) {
-        await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', wheelPath], {
-          stdio: 'pipe',
-        })
-      } else {
-        throw new Error(
-          `failed to download socketsecurity==${pyCliVersion} wheel from PyPI (downloadPyPiWheel returned null — likely a checksum mismatch or missing py3-none-any wheel); re-run with --debug for details`,
-        )
-      }
-    } else {
-      // Dev mode: install directly from PyPI.
-      await spawn(
-        pythonBin,
-        ['-m', 'pip', 'install', '--quiet', `socketsecurity==${pyCliVersion}`],
-        { stdio: 'pipe' },
-      )
-    }
+    // Build environment - isolate PATH for SEA mode.
+    const spawnEnvFinal =
+      isSeaBinary() && areBasicsToolsAvailable()
+        ? {
+            ...finalEnv,
+            // Isolate PATH to bundled tools directory for SEA.
+            PATH: `${path.dirname(pythonBin)}:${path.dirname(path.dirname(pythonBin))}`,
+          }
+        : finalEnv
 
-    // Run socketcli with isolated PATH.
+    // Run socketcli via python -m.
     const spawnResult = await spawn(
       pythonBin,
       ['-m', 'socketsecurity.socketcli', ...args],
       {
         ...dlxOptions,
-        env: {
-          ...process.env,
-          ...spawnEnv,
-          // Isolate PATH to bundled tools only.
-          PATH: `${path.dirname(pythonBin)}:${toolsDir}`,
-        },
+        env: spawnEnvFinal,
         shell: WIN32,
         stdio: 'inherit',
       },
@@ -692,11 +683,13 @@ export async function spawnSocketPyCliDlx(
   }
 }
 
+export type SocketPyCliDlxOptions = DlxOptions
+
 /**
- * Spawn socketcli (Socket Python CLI).
- * Ensures Python is available (SEA bundled or DLX downloaded) before spawning.
+ * Spawn socketcli via bundled Python from SEA VFS.
+ * Uses the same Python as socket-basics for consistency.
  */
-export async function spawnSocketPyCli(
+export async function spawnSocketPyCliVfs(
   args: string[] | readonly string[],
   options?: SocketPyCliDlxOptions | undefined,
 ): Promise<CResult<string>> {
@@ -705,55 +698,62 @@ export async function spawnSocketPyCli(
     ...options,
   } as SocketPyCliDlxOptions
 
-  const finalEnv: Record<string, string | undefined> = {
-    ...process.env,
-    ...spawnEnv,
-  }
-
   try {
-    // Check for local path override first.
-    const resolution = resolvePyCli()
-    if (resolution.type === 'local') {
-      const spawnNodeOpts: SpawnNodeOptions = {
-        ...(dlxOptions.cwd ? { cwd: dlxOptions.cwd } : {}),
-        env: finalEnv,
-        shell: WIN32,
-        stdio: 'inherit',
-      }
-      const spawnResult = await spawnNode(
-        [resolution.path, ...args],
-        spawnNodeOpts,
-      )
-
+    const toolsDir = await extractBasicsTools()
+    if (!toolsDir) {
       return {
-        data: spawnResult.stdout?.toString() ?? '',
-        ok: true,
+        data: new Error('Failed to extract basics tools from VFS'),
+        message: 'Failed to extract basics tools from VFS',
+        ok: false,
       }
     }
 
-    // Ensure Python is available (SEA bundled or DLX downloaded).
-    const pythonBin = await ensurePython()
+    const toolPaths = getBasicsToolPaths(toolsDir)
+    const pythonBin = toolPaths.python
 
-    // Ensure socketsecurity package is installed.
-    await ensureSocketPyCli(pythonBin)
+    // Ensure socketsecurity package is installed with integrity verification.
+    const pyCliVersion = getPyCliVersion()
+    const wheelFilename = `socketsecurity-${pyCliVersion}-py3-none-any.whl`
+    const checksums = getPyCliChecksums()
+    const sha256 = checksums[wheelFilename]
 
-    // Build environment - isolate PATH for SEA mode.
-    const spawnEnvFinal =
-      isSeaBinary() && areBasicsToolsAvailable()
-        ? {
-            ...finalEnv,
-            // Isolate PATH to bundled tools directory for SEA.
-            PATH: `${path.dirname(pythonBin)}:${path.dirname(path.dirname(pythonBin))}`,
-          }
-        : finalEnv
+    if (sha256) {
+      // Download verified wheel and install from local file.
+      const wheelPath = await downloadPyPiWheel(
+        'socketsecurity',
+        pyCliVersion,
+        sha256,
+      )
+      if (wheelPath) {
+        await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', wheelPath], {
+          stdio: 'pipe',
+        })
+      } else {
+        throw new Error(
+          `failed to download socketsecurity==${pyCliVersion} wheel from PyPI (downloadPyPiWheel returned null — likely a checksum mismatch or missing py3-none-any wheel); re-run with --debug for details`,
+        )
+      }
+    } else {
+      // Dev mode: install directly from PyPI.
+      await spawn(
+        pythonBin,
+        ['-m', 'pip', 'install', '--quiet', `socketsecurity==${pyCliVersion}`],
+        { stdio: 'pipe' },
+      )
+    }
 
-    // Run socketcli via python -m.
+    // Run socketcli with isolated PATH.
     const spawnResult = await spawn(
       pythonBin,
       ['-m', 'socketsecurity.socketcli', ...args],
       {
         ...dlxOptions,
-        env: spawnEnvFinal,
+        env: {
+          ...process.env,
+          ...spawnEnv,
+          // Isolate PATH to bundled tools only.
+          PATH: `${path.dirname(pythonBin)}:${toolsDir}`,
+        },
         shell: WIN32,
         stdio: 'inherit',
       },

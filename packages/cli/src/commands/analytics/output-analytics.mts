@@ -45,6 +45,106 @@ const Months = [
   'Dec',
 ] as const
 
+export function formatDataOrg(
+  data: SocketSdkSuccessResult<'getOrgAnalytics'>['data'],
+): FormattedData {
+  const sortedTopFiveAlerts: Record<string, number> = {}
+  const totalTopAlerts: Record<string, number> = {}
+
+  const formattedData = {} as Omit<FormattedData, 'top_five_alert_types'>
+  for (const metric of METRICS) {
+    formattedData[metric] = {}
+  }
+
+  for (const entry of data) {
+    const topFiveAlertTypes = entry.top_five_alert_types
+    for (const type of Object.keys(topFiveAlertTypes)) {
+      const count = topFiveAlertTypes[type] ?? 0
+      if (totalTopAlerts[type]) {
+        totalTopAlerts[type] += count
+      } else {
+        totalTopAlerts[type] = count
+      }
+    }
+  }
+
+  for (const metric of METRICS) {
+    const formatted = formattedData[metric]
+    for (const entry of data) {
+      const date = formatDate(entry.created_at)
+      if (formatted[date]) {
+        formatted[date] += entry[metric]!
+      } else {
+        formatted[date] = entry[metric]!
+      }
+    }
+  }
+
+  const topFiveAlertEntries = Object.entries(totalTopAlerts)
+    .sort(([_keya, a], [_keyb, b]) => b - a)
+    .slice(0, 5)
+  for (const { 0: key, 1: value } of topFiveAlertEntries) {
+    sortedTopFiveAlerts[key] = value
+  }
+
+  return {
+    ...formattedData,
+    top_five_alert_types: sortedTopFiveAlerts,
+  }
+}
+
+export function formatDataRepo(
+  data: SocketSdkSuccessResult<'getRepoAnalytics'>['data'],
+): FormattedData {
+  const sortedTopFiveAlerts: Record<string, number> = {}
+  const totalTopAlerts: Record<string, number> = {}
+
+  const formattedData = {} as Omit<FormattedData, 'top_five_alert_types'>
+  for (const metric of METRICS) {
+    formattedData[metric] = {}
+  }
+
+  // Aggregate alert counts: sum across time entries (consistent with formatDataOrg).
+  for (const entry of data) {
+    const topFiveAlertTypes = entry.top_five_alert_types
+    for (const type of Object.keys(topFiveAlertTypes)) {
+      const count = topFiveAlertTypes[type] ?? 0
+      if (totalTopAlerts[type]) {
+        totalTopAlerts[type] += count
+      } else {
+        totalTopAlerts[type] = count
+      }
+    }
+  }
+  for (const entry of data) {
+    for (const metric of METRICS) {
+      formattedData[metric]![formatDate(entry.created_at)] = entry[metric]
+    }
+  }
+
+  const topFiveAlertEntries = Object.entries(totalTopAlerts)
+    .sort(([_keya, a], [_keyb, b]) => b - a)
+    .slice(0, 5)
+  for (const { 0: key, 1: value } of topFiveAlertEntries) {
+    sortedTopFiveAlerts[key] = value
+  }
+
+  return {
+    ...formattedData,
+    top_five_alert_types: sortedTopFiveAlerts,
+  }
+}
+
+export function formatDate(date: string): string {
+  const dateObj = new Date(date)
+  const month = dateObj.getMonth()
+  const day = dateObj.getDate()
+  if (Number.isNaN(month) || month < 0 || month > 11 || Number.isNaN(day)) {
+    return date.slice(0, 10)
+  }
+  return `${Months[month]} ${day}`
+}
+
 export type OutputAnalyticsConfig = {
   filepath: string
   outputKind: OutputKind
@@ -197,104 +297,4 @@ ${table}
 
 ${mdTableStringNumber('Name', 'Counts', data.top_five_alert_types)}
 `.trim()}\n`
-}
-
-export function formatDataRepo(
-  data: SocketSdkSuccessResult<'getRepoAnalytics'>['data'],
-): FormattedData {
-  const sortedTopFiveAlerts: Record<string, number> = {}
-  const totalTopAlerts: Record<string, number> = {}
-
-  const formattedData = {} as Omit<FormattedData, 'top_five_alert_types'>
-  for (const metric of METRICS) {
-    formattedData[metric] = {}
-  }
-
-  // Aggregate alert counts: sum across time entries (consistent with formatDataOrg).
-  for (const entry of data) {
-    const topFiveAlertTypes = entry.top_five_alert_types
-    for (const type of Object.keys(topFiveAlertTypes)) {
-      const count = topFiveAlertTypes[type] ?? 0
-      if (totalTopAlerts[type]) {
-        totalTopAlerts[type] += count
-      } else {
-        totalTopAlerts[type] = count
-      }
-    }
-  }
-  for (const entry of data) {
-    for (const metric of METRICS) {
-      formattedData[metric]![formatDate(entry.created_at)] = entry[metric]
-    }
-  }
-
-  const topFiveAlertEntries = Object.entries(totalTopAlerts)
-    .sort(([_keya, a], [_keyb, b]) => b - a)
-    .slice(0, 5)
-  for (const { 0: key, 1: value } of topFiveAlertEntries) {
-    sortedTopFiveAlerts[key] = value
-  }
-
-  return {
-    ...formattedData,
-    top_five_alert_types: sortedTopFiveAlerts,
-  }
-}
-
-export function formatDataOrg(
-  data: SocketSdkSuccessResult<'getOrgAnalytics'>['data'],
-): FormattedData {
-  const sortedTopFiveAlerts: Record<string, number> = {}
-  const totalTopAlerts: Record<string, number> = {}
-
-  const formattedData = {} as Omit<FormattedData, 'top_five_alert_types'>
-  for (const metric of METRICS) {
-    formattedData[metric] = {}
-  }
-
-  for (const entry of data) {
-    const topFiveAlertTypes = entry.top_five_alert_types
-    for (const type of Object.keys(topFiveAlertTypes)) {
-      const count = topFiveAlertTypes[type] ?? 0
-      if (totalTopAlerts[type]) {
-        totalTopAlerts[type] += count
-      } else {
-        totalTopAlerts[type] = count
-      }
-    }
-  }
-
-  for (const metric of METRICS) {
-    const formatted = formattedData[metric]
-    for (const entry of data) {
-      const date = formatDate(entry.created_at)
-      if (formatted[date]) {
-        formatted[date] += entry[metric]!
-      } else {
-        formatted[date] = entry[metric]!
-      }
-    }
-  }
-
-  const topFiveAlertEntries = Object.entries(totalTopAlerts)
-    .sort(([_keya, a], [_keyb, b]) => b - a)
-    .slice(0, 5)
-  for (const { 0: key, 1: value } of topFiveAlertEntries) {
-    sortedTopFiveAlerts[key] = value
-  }
-
-  return {
-    ...formattedData,
-    top_five_alert_types: sortedTopFiveAlerts,
-  }
-}
-
-export function formatDate(date: string): string {
-  const dateObj = new Date(date)
-  const month = dateObj.getMonth()
-  const day = dateObj.getDate()
-  if (Number.isNaN(month) || month < 0 || month > 11 || Number.isNaN(day)) {
-    return date.slice(0, 10)
-  }
-  return `${Months[month]} ${day}`
 }

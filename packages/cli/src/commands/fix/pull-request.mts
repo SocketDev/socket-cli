@@ -32,140 +32,6 @@ import { createPrProvider } from '../../utils/git/provider-factory.mts'
 import type { OctokitResponse } from '@octokit/types'
 import type { JsonContent } from '@socketsecurity/lib/fs'
 
-export type OpenSocketFixPrOptions = {
-  baseBranch?: string | undefined
-  cwd?: string | undefined
-  ghsaDetails?: Map<string, GhsaDetails> | undefined
-  retries?: number | undefined
-}
-
-export type OpenPrResult =
-  | { ok: true; pr: OctokitResponse<Pr> }
-  | { ok: false; reason: 'already_exists'; error: RequestError }
-  | {
-      ok: false
-      reason: 'validation_error'
-      error: RequestError
-      details: string
-    }
-  | { ok: false; reason: 'permission_denied'; error: RequestError }
-  | { ok: false; reason: 'network_error'; error: RequestError }
-  | { ok: false; reason: 'unknown'; error: Error }
-
-export async function openSocketFixPr(
-  owner: string,
-  repo: string,
-  branch: string,
-  ghsaIds: string[],
-  options?: OpenSocketFixPrOptions | undefined,
-): Promise<OpenPrResult> {
-  const {
-    baseBranch = 'main',
-    ghsaDetails,
-    retries = 3,
-  } = {
-    __proto__: null,
-    ...options,
-  } as OpenSocketFixPrOptions
-
-  const provider = createPrProvider()
-
-  try {
-    const result = await provider.createPr({
-      owner,
-      repo,
-      title: getSocketFixPullRequestTitle(ghsaIds),
-      head: branch,
-      base: baseBranch,
-      body: getSocketFixPullRequestBody(ghsaIds, ghsaDetails),
-      retries,
-    })
-
-    // Convert provider response to Octokit format for backward compatibility.
-    const octokit = getOctokit()
-    const prDetailsResult = await withGitHubRetry(
-      () =>
-        octokit.pulls.get({
-          owner,
-          repo,
-          pull_number: result.number,
-        }),
-      `fetching PR #${result.number} details`,
-    )
-
-    if (!prDetailsResult.ok) {
-      return {
-        ok: false,
-        reason: 'network_error',
-        error: new Error(
-          prDetailsResult.cause || prDetailsResult.message,
-        ) as RequestError,
-      }
-    }
-
-    return { ok: true, pr: prDetailsResult.data }
-  } catch (e) {
-    debug(formatErrorWithDetail('Failed to create pull request', e))
-    debugDir(e)
-
-    // Handle RequestError from Octokit/provider.
-    if (e instanceof RequestError) {
-      const errors = (
-        e.response?.data as { errors?: unknown } | undefined
-      )?.errors
-      const errorMessages = Array.isArray(errors)
-        ? errors.map(
-            (d: {
-              message?: string
-              resource?: string
-              field?: string
-              code?: string
-            }) =>
-              d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`,
-          )
-        : []
-
-      // Check for "PR already exists" error.
-      if (
-        errorMessages.some((msg: string) =>
-          msg.toLowerCase().includes('pull request already exists'),
-        )
-      ) {
-        debug('Failed to create pull request: already exists')
-        return { ok: false, reason: 'already_exists', error: e }
-      }
-
-      // Check for validation errors (e.g., no commits between branches).
-      if (Array.isArray(errors) && errors.length > 0) {
-        const details = errorMessages.map((d: string) => `- ${d}`).join('\n')
-        debug(`Failed to create pull request:\n${details}`)
-        return {
-          ok: false,
-          reason: 'validation_error',
-          error: e,
-          details,
-        }
-      }
-
-      // Check HTTP status codes for permission errors.
-      if (e.status === 403 || e.status === 401) {
-        debug('Failed to create pull request: permission denied')
-        return { ok: false, reason: 'permission_denied', error: e }
-      }
-
-      // Check for server errors.
-      if (e.status && e.status >= 500) {
-        debug('Failed to create pull request: network error')
-        return { ok: false, reason: 'network_error', error: e }
-      }
-    }
-
-    // Unknown error.
-    debug(`Failed to create pull request: ${e}`)
-    return { ok: false, reason: 'unknown', error: e as Error }
-  }
-}
-
 export type GQL_MERGE_STATE_STATUS =
   | 'BEHIND'
   | 'BLOCKED'
@@ -466,4 +332,138 @@ export async function getSocketFixPrsWithContext(
   }
 
   return contextualMatches
+}
+
+export type OpenSocketFixPrOptions = {
+  baseBranch?: string | undefined
+  cwd?: string | undefined
+  ghsaDetails?: Map<string, GhsaDetails> | undefined
+  retries?: number | undefined
+}
+
+export type OpenPrResult =
+  | { ok: true; pr: OctokitResponse<Pr> }
+  | { ok: false; reason: 'already_exists'; error: RequestError }
+  | {
+      ok: false
+      reason: 'validation_error'
+      error: RequestError
+      details: string
+    }
+  | { ok: false; reason: 'permission_denied'; error: RequestError }
+  | { ok: false; reason: 'network_error'; error: RequestError }
+  | { ok: false; reason: 'unknown'; error: Error }
+
+export async function openSocketFixPr(
+  owner: string,
+  repo: string,
+  branch: string,
+  ghsaIds: string[],
+  options?: OpenSocketFixPrOptions | undefined,
+): Promise<OpenPrResult> {
+  const {
+    baseBranch = 'main',
+    ghsaDetails,
+    retries = 3,
+  } = {
+    __proto__: null,
+    ...options,
+  } as OpenSocketFixPrOptions
+
+  const provider = createPrProvider()
+
+  try {
+    const result = await provider.createPr({
+      owner,
+      repo,
+      title: getSocketFixPullRequestTitle(ghsaIds),
+      head: branch,
+      base: baseBranch,
+      body: getSocketFixPullRequestBody(ghsaIds, ghsaDetails),
+      retries,
+    })
+
+    // Convert provider response to Octokit format for backward compatibility.
+    const octokit = getOctokit()
+    const prDetailsResult = await withGitHubRetry(
+      () =>
+        octokit.pulls.get({
+          owner,
+          repo,
+          pull_number: result.number,
+        }),
+      `fetching PR #${result.number} details`,
+    )
+
+    if (!prDetailsResult.ok) {
+      return {
+        ok: false,
+        reason: 'network_error',
+        error: new Error(
+          prDetailsResult.cause || prDetailsResult.message,
+        ) as RequestError,
+      }
+    }
+
+    return { ok: true, pr: prDetailsResult.data }
+  } catch (e) {
+    debug(formatErrorWithDetail('Failed to create pull request', e))
+    debugDir(e)
+
+    // Handle RequestError from Octokit/provider.
+    if (e instanceof RequestError) {
+      const errors = (
+        e.response?.data as { errors?: unknown } | undefined
+      )?.errors
+      const errorMessages = Array.isArray(errors)
+        ? errors.map(
+            (d: {
+              message?: string
+              resource?: string
+              field?: string
+              code?: string
+            }) =>
+              d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`,
+          )
+        : []
+
+      // Check for "PR already exists" error.
+      if (
+        errorMessages.some((msg: string) =>
+          msg.toLowerCase().includes('pull request already exists'),
+        )
+      ) {
+        debug('Failed to create pull request: already exists')
+        return { ok: false, reason: 'already_exists', error: e }
+      }
+
+      // Check for validation errors (e.g., no commits between branches).
+      if (Array.isArray(errors) && errors.length > 0) {
+        const details = errorMessages.map((d: string) => `- ${d}`).join('\n')
+        debug(`Failed to create pull request:\n${details}`)
+        return {
+          ok: false,
+          reason: 'validation_error',
+          error: e,
+          details,
+        }
+      }
+
+      // Check HTTP status codes for permission errors.
+      if (e.status === 403 || e.status === 401) {
+        debug('Failed to create pull request: permission denied')
+        return { ok: false, reason: 'permission_denied', error: e }
+      }
+
+      // Check for server errors.
+      if (e.status && e.status >= 500) {
+        debug('Failed to create pull request: network error')
+        return { ok: false, reason: 'network_error', error: e }
+      }
+    }
+
+    // Unknown error.
+    debug(`Failed to create pull request: ${e}`)
+    return { ok: false, reason: 'unknown', error: e as Error }
+  }
 }

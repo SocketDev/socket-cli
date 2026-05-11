@@ -72,6 +72,8 @@
     "**/scripts/socket-wheelhouse-schema.mts",
     "**/scripts/update.mts",
     "**/scripts/validate-config-paths.mts",
+    "**/scripts/validate-esbuild-minify.mts",
+    "**/scripts/validate-file-size.mts",
     "#fleet-canonical-end"
   ]
 }

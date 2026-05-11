@@ -214,4 +214,6 @@ scripts/socket-wheelhouse-emit-schema.mts linguist-generated=true
 scripts/socket-wheelhouse-schema.mts linguist-generated=true
 scripts/update.mts linguist-generated=true
 scripts/validate-config-paths.mts linguist-generated=true
+scripts/validate-esbuild-minify.mts linguist-generated=true
+scripts/validate-file-size.mts linguist-generated=true
 # ─── END fleet-canonical ────────────────────────────────────────

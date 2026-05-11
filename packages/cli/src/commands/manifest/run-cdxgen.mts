@@ -34,6 +34,42 @@ const nodejsPlatformTypes = new Set([
   'typescript',
 ])
 
+export type ArgvObject = {
+  [key: string]: boolean | null | number | string | Array<string | number>
+}
+
+export function argvObjectToArray(argvObj: ArgvObject): string[] {
+  if (argvObj['help']) {
+    return [FLAG_HELP]
+  }
+  const result = []
+  for (const { 0: key, 1: value } of Object.entries(argvObj)) {
+    if (key === '--' || key === '_') {
+      continue
+    }
+    if (key === 'babel' || key === 'install-deps' || key === 'validate') {
+      // cdxgen documents no-babel, no-install-deps, and no-validate flags so
+      // use them when relevant.
+      result.push(`--${value ? key : `no-${key}`}`)
+    } else if (value === true) {
+      result.push(`--${key}`)
+    } else if (typeof value === 'string') {
+      result.push(`--${key}`, String(value))
+    } else if (Array.isArray(value)) {
+      result.push(`--${key}`, ...value.map(String))
+    }
+  }
+  const pathArgs = argvObj['_'] as string[]
+  if (Array.isArray(pathArgs)) {
+    result.push(...pathArgs)
+  }
+  const argsAfterDoubleHyphen = argvObj['--'] as string[]
+  if (Array.isArray(argsAfterDoubleHyphen)) {
+    result.push('--', ...argsAfterDoubleHyphen)
+  }
+  return result
+}
+
 /**
  * Result of probing a cwd for Node.js SBOM inputs that cdxgen needs in the
  * default `pre-build` + `install-deps: false` mode.
@@ -81,42 +117,6 @@ export function isNodejsCdxgenType(argvType: unknown): boolean {
     )
   }
   return false
-}
-
-export type ArgvObject = {
-  [key: string]: boolean | null | number | string | Array<string | number>
-}
-
-export function argvObjectToArray(argvObj: ArgvObject): string[] {
-  if (argvObj['help']) {
-    return [FLAG_HELP]
-  }
-  const result = []
-  for (const { 0: key, 1: value } of Object.entries(argvObj)) {
-    if (key === '--' || key === '_') {
-      continue
-    }
-    if (key === 'babel' || key === 'install-deps' || key === 'validate') {
-      // cdxgen documents no-babel, no-install-deps, and no-validate flags so
-      // use them when relevant.
-      result.push(`--${value ? key : `no-${key}`}`)
-    } else if (value === true) {
-      result.push(`--${key}`)
-    } else if (typeof value === 'string') {
-      result.push(`--${key}`, String(value))
-    } else if (Array.isArray(value)) {
-      result.push(`--${key}`, ...value.map(String))
-    }
-  }
-  const pathArgs = argvObj['_'] as string[]
-  if (Array.isArray(pathArgs)) {
-    result.push(...pathArgs)
-  }
-  const argsAfterDoubleHyphen = argvObj['--'] as string[]
-  if (Array.isArray(argsAfterDoubleHyphen)) {
-    result.push('--', ...argsAfterDoubleHyphen)
-  }
-  return result
 }
 
 export async function runCdxgen(argvObj: ArgvObject): Promise<DlxSpawnResult> {

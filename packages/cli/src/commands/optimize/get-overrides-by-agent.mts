@@ -13,6 +13,33 @@ import type { NpmOverrides, Overrides, PnpmOrYarnOverrides } from './types.mts'
 import type { Agent, EnvDetails } from '../../utils/ecosystem/environment.mjs'
 import type { PackageJson } from '@socketsecurity/lib/packages'
 
+export type GetOverrides = (
+  pkgEnvDetails: EnvDetails,
+  pkgJson?: PackageJson | undefined,
+) => GetOverridesResult
+
+export type GetOverridesResult = { type: Agent; overrides: Overrides }
+
+export function getOverridesData(
+  pkgEnvDetails: EnvDetails,
+  pkgJson?: PackageJson | undefined,
+): GetOverridesResult {
+  switch (pkgEnvDetails.agent) {
+    case BUN:
+      return getOverridesDataBun(pkgEnvDetails, pkgJson)
+    case PNPM:
+      return getOverridesDataPnpm(pkgEnvDetails, pkgJson)
+    case VLT:
+      return getOverridesDataVlt(pkgEnvDetails, pkgJson)
+    case YARN_BERRY:
+      return getOverridesDataYarn(pkgEnvDetails, pkgJson)
+    case YARN_CLASSIC:
+      return getOverridesDataYarnClassic(pkgEnvDetails, pkgJson)
+    default:
+      return getOverridesDataNpm(pkgEnvDetails, pkgJson)
+  }
+}
+
 export function getOverridesDataBun(
   pkgEnvDetails: EnvDetails,
   pkgJson = pkgEnvDetails.editablePkgJson.content,
@@ -69,31 +96,4 @@ export function getOverridesDataYarnClassic(
 ): { type: Agent; overrides: PnpmOrYarnOverrides } {
   const overrides = (pkgJson?.[RESOLUTIONS] ?? {}) as PnpmOrYarnOverrides
   return { type: YARN_CLASSIC, overrides }
-}
-
-export type GetOverrides = (
-  pkgEnvDetails: EnvDetails,
-  pkgJson?: PackageJson | undefined,
-) => GetOverridesResult
-
-export type GetOverridesResult = { type: Agent; overrides: Overrides }
-
-export function getOverridesData(
-  pkgEnvDetails: EnvDetails,
-  pkgJson?: PackageJson | undefined,
-): GetOverridesResult {
-  switch (pkgEnvDetails.agent) {
-    case BUN:
-      return getOverridesDataBun(pkgEnvDetails, pkgJson)
-    case PNPM:
-      return getOverridesDataPnpm(pkgEnvDetails, pkgJson)
-    case VLT:
-      return getOverridesDataVlt(pkgEnvDetails, pkgJson)
-    case YARN_BERRY:
-      return getOverridesDataYarn(pkgEnvDetails, pkgJson)
-    case YARN_CLASSIC:
-      return getOverridesDataYarnClassic(pkgEnvDetails, pkgJson)
-    default:
-      return getOverridesDataNpm(pkgEnvDetails, pkgJson)
-  }
 }

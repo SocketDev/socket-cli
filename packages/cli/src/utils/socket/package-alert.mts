@@ -88,58 +88,6 @@ const MIN_ABOVE_THE_FOLD_ALERT_COUNT = 1
 
 const format = new ColorOrMarkdown(false)
 
-export type RiskCounts = {
-  critical: number
-  high: number
-  middle: number
-  low: number
-}
-
-export function getHiddenRiskCounts(
-  hiddenAlerts: SocketPackageAlert[],
-): RiskCounts {
-  const riskCounts = {
-    critical: 0,
-    high: 0,
-    middle: 0,
-    low: 0,
-  }
-  for (const alert of hiddenAlerts) {
-    switch (getAlertSeverityOrder(alert)) {
-      case ALERT_SEVERITY_ORDER.critical:
-        riskCounts.critical += 1
-        break
-      case ALERT_SEVERITY_ORDER.high:
-        riskCounts.high += 1
-        break
-      case ALERT_SEVERITY_ORDER.middle:
-        riskCounts.middle += 1
-        break
-      case ALERT_SEVERITY_ORDER.low:
-        riskCounts.low += 1
-        break
-    }
-  }
-  return riskCounts
-}
-
-export function getHiddenRisksDescription(riskCounts: RiskCounts): string {
-  const descriptions: string[] = []
-  if (riskCounts.critical) {
-    descriptions.push(`${riskCounts.critical} ${getSeverityLabel('critical')}`)
-  }
-  if (riskCounts.high) {
-    descriptions.push(`${riskCounts.high} ${getSeverityLabel('high')}`)
-  }
-  if (riskCounts.middle) {
-    descriptions.push(`${riskCounts.middle} ${getSeverityLabel('middle')}`)
-  }
-  if (riskCounts.low) {
-    descriptions.push(`${riskCounts.low} ${getSeverityLabel('low')}`)
-  }
-  return `(${descriptions.join('; ')})`
-}
-
 export type AlertFilter = {
   actions?: ALERT_ACTION[] | undefined
   blocked?: boolean | undefined
@@ -307,6 +255,14 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
   return alertsByPurl
 }
 
+export function alertSeverityComparator(
+  a: SocketPackageAlert,
+  b: SocketPackageAlert,
+): number {
+  // Put the most severe first.
+  return getAlertSeverityOrder(a) - getAlertSeverityOrder(b)
+}
+
 export function alertsHaveBlocked(alerts: SocketPackageAlert[]): boolean {
   return alerts.find(a => a.blocked) !== undefined
 }
@@ -316,14 +272,6 @@ export function alertsHaveSeverity(
   severity: `${keyof typeof ALERT_SEVERITY}`,
 ): boolean {
   return alerts.find(a => a.raw.severity === severity) !== undefined
-}
-
-export function alertSeverityComparator(
-  a: SocketPackageAlert,
-  b: SocketPackageAlert,
-): number {
-  // Put the most severe first.
-  return getAlertSeverityOrder(a) - getAlertSeverityOrder(b)
 }
 
 export function getAlertSeverityOrder(alert: SocketPackageAlert): number {
@@ -445,6 +393,58 @@ export function getCveInfoFromAlertsMap(
     }
   }
   return infoByPartialPurl
+}
+
+export type RiskCounts = {
+  critical: number
+  high: number
+  middle: number
+  low: number
+}
+
+export function getHiddenRiskCounts(
+  hiddenAlerts: SocketPackageAlert[],
+): RiskCounts {
+  const riskCounts = {
+    critical: 0,
+    high: 0,
+    middle: 0,
+    low: 0,
+  }
+  for (const alert of hiddenAlerts) {
+    switch (getAlertSeverityOrder(alert)) {
+      case ALERT_SEVERITY_ORDER.critical:
+        riskCounts.critical += 1
+        break
+      case ALERT_SEVERITY_ORDER.high:
+        riskCounts.high += 1
+        break
+      case ALERT_SEVERITY_ORDER.middle:
+        riskCounts.middle += 1
+        break
+      case ALERT_SEVERITY_ORDER.low:
+        riskCounts.low += 1
+        break
+    }
+  }
+  return riskCounts
+}
+
+export function getHiddenRisksDescription(riskCounts: RiskCounts): string {
+  const descriptions: string[] = []
+  if (riskCounts.critical) {
+    descriptions.push(`${riskCounts.critical} ${getSeverityLabel('critical')}`)
+  }
+  if (riskCounts.high) {
+    descriptions.push(`${riskCounts.high} ${getSeverityLabel('high')}`)
+  }
+  if (riskCounts.middle) {
+    descriptions.push(`${riskCounts.middle} ${getSeverityLabel('middle')}`)
+  }
+  if (riskCounts.low) {
+    descriptions.push(`${riskCounts.low} ${getSeverityLabel('low')}`)
+  }
+  return `(${descriptions.join('; ')})`
 }
 
 export function getSeverityLabel(

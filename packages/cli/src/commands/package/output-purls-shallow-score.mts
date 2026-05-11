@@ -11,58 +11,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 const logger = getDefaultLogger()
 
-// This is a simplified view of an artifact. Potentially merged with other artifacts.
-interface DedupedArtifact {
-  ecosystem: string // artifact.type
-  namespace: string
-  name: string
-  version: string
-  score: {
-    supplyChain: number
-    maintenance: number
-    quality: number
-    vulnerability: number
-    license: number
-  }
-  alerts: Map<
-    string,
-    {
-      type: string
-      severity: string
-    }
-  >
-}
-
-export function outputPurlsShallowScore(
-  purls: string[],
-  result: CResult<SocketArtifact[]>,
-  outputKind: OutputKind,
-): void {
-  if (!result.ok) {
-    process.exitCode = result.code ?? 1
-  }
-
-  if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
-    return
-  }
-  if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
-    return
-  }
-
-  const { missing, rows } = preProcess(result.data, purls)
-
-  if (outputKind === 'markdown') {
-    const md = generateMarkdownReport(rows, missing)
-    logger.log(md)
-    return
-  }
-
-  const txt = generateTextReport(rows, missing)
-  logger.log(txt)
-}
-
 export function formatReportCard(
   artifact: DedupedArtifact,
   colorize: boolean,
@@ -125,6 +73,66 @@ export function formatScore(
   return colors.red(padded)
 }
 
+export function generateMarkdownReport(
+  artifacts: Map<string, DedupedArtifact>,
+  missing: string[],
+): string {
+  const blocks: string[] = []
+  const dupes: Set<string> = new Set()
+  for (const artifact of artifacts.values()) {
+    const block = `## ${formatReportCard(artifact, false)}`
+    if (dupes.has(block)) {
+      // Omit duplicate blocks.
+      continue
+    }
+    dupes.add(block)
+    blocks.push(block)
+  }
+  return `
+# Shallow Package Report
+
+This report contains the response for requesting data on some package url(s).
+
+Please note: The listed scores are ONLY for the package itself. It does NOT
+             reflect the scores of any dependencies, transitive or otherwise.
+
+${missing.length ? `\n## Missing response\n\nAt least one package had no response or the purl was not canonical:\n\n${missing.map(purl => `- ${purl}\n`).join('')}` : ''}
+
+${blocks.join('\n\n\n')}
+    `.trim()
+}
+
+export function generateTextReport(
+  artifacts: Map<string, DedupedArtifact>,
+  missing: string[],
+): string {
+  const o: string[] = []
+  o.push(`\n${colors.bold('Shallow Package Score')}\n`)
+  o.push(
+    'Please note: The listed scores are ONLY for the package itself. It does NOT\n' +
+      '             reflect the scores of any dependencies, transitive or otherwise.',
+  )
+  if (missing.length) {
+    o.push(
+      `\nAt least one package had no response or the purl was not canonical:\n${missing.map(purl => `\n- ${colors.bold(purl)}`).join('')}`,
+    )
+  }
+  const dupes: Set<string> = new Set()
+  for (const artifact of artifacts.values()) {
+    const block = formatReportCard(artifact, true)
+    if (dupes.has(block)) {
+      // Omit duplicate blocks.
+      continue
+    }
+    dupes.add(block)
+    o.push('\n')
+    o.push(block)
+  }
+  o.push('')
+
+  return o.join('\n')
+}
+
 type AlertStringOptions = {
   colorize?: boolean | undefined
 }
@@ -174,6 +182,58 @@ export function getAlertString(
     ...mid.map(a => `[${a.severity}] ${a.type}`),
     ...low.map(a => `[${a.severity}] ${a.type}`),
   ])}`
+}
+
+// This is a simplified view of an artifact. Potentially merged with other artifacts.
+interface DedupedArtifact {
+  ecosystem: string // artifact.type
+  namespace: string
+  name: string
+  version: string
+  score: {
+    supplyChain: number
+    maintenance: number
+    quality: number
+    vulnerability: number
+    license: number
+  }
+  alerts: Map<
+    string,
+    {
+      type: string
+      severity: string
+    }
+  >
+}
+
+export function outputPurlsShallowScore(
+  purls: string[],
+  result: CResult<SocketArtifact[]>,
+  outputKind: OutputKind,
+): void {
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
+  if (outputKind === 'json') {
+    logger.log(serializeResultJson(result))
+    return
+  }
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
+  const { missing, rows } = preProcess(result.data, purls)
+
+  if (outputKind === 'markdown') {
+    const md = generateMarkdownReport(rows, missing)
+    logger.log(md)
+    return
+  }
+
+  const txt = generateTextReport(rows, missing)
+  logger.log(txt)
 }
 
 export function preProcess(
@@ -280,64 +340,4 @@ export function preProcess(
   }
 
   return { rows, missing }
-}
-
-export function generateMarkdownReport(
-  artifacts: Map<string, DedupedArtifact>,
-  missing: string[],
-): string {
-  const blocks: string[] = []
-  const dupes: Set<string> = new Set()
-  for (const artifact of artifacts.values()) {
-    const block = `## ${formatReportCard(artifact, false)}`
-    if (dupes.has(block)) {
-      // Omit duplicate blocks.
-      continue
-    }
-    dupes.add(block)
-    blocks.push(block)
-  }
-  return `
-# Shallow Package Report
-
-This report contains the response for requesting data on some package url(s).
-
-Please note: The listed scores are ONLY for the package itself. It does NOT
-             reflect the scores of any dependencies, transitive or otherwise.
-
-${missing.length ? `\n## Missing response\n\nAt least one package had no response or the purl was not canonical:\n\n${missing.map(purl => `- ${purl}\n`).join('')}` : ''}
-
-${blocks.join('\n\n\n')}
-    `.trim()
-}
-
-export function generateTextReport(
-  artifacts: Map<string, DedupedArtifact>,
-  missing: string[],
-): string {
-  const o: string[] = []
-  o.push(`\n${colors.bold('Shallow Package Score')}\n`)
-  o.push(
-    'Please note: The listed scores are ONLY for the package itself. It does NOT\n' +
-      '             reflect the scores of any dependencies, transitive or otherwise.',
-  )
-  if (missing.length) {
-    o.push(
-      `\nAt least one package had no response or the purl was not canonical:\n${missing.map(purl => `\n- ${colors.bold(purl)}`).join('')}`,
-    )
-  }
-  const dupes: Set<string> = new Set()
-  for (const artifact of artifacts.values()) {
-    const block = formatReportCard(artifact, true)
-    if (dupes.has(block)) {
-      // Omit duplicate blocks.
-      continue
-    }
-    dupes.add(block)
-    o.push('\n')
-    o.push(block)
-  }
-  o.push('')
-
-  return o.join('\n')
 }

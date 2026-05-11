@@ -19,6 +19,71 @@ export function out(message: string): void {
   logger.error(message)
 }
 
+/**
+ * Output dry-run for delete operations.
+ */
+export function outputDryRunDelete(
+  resourceType: string,
+  identifier: string,
+): void {
+  out('')
+  out(`${DRY_RUN_LABEL}: Would delete ${resourceType}`)
+  out('')
+  out(`  Target: ${identifier}`)
+  out('')
+  out('  This action cannot be undone.')
+  out('  Run without --dry-run to perform this deletion.')
+  out('')
+}
+
+/**
+ * Output dry-run for commands that execute external tools.
+ */
+export function outputDryRunExecute(
+  command: string,
+  args: string[],
+  description?: string,
+): void {
+  out('')
+  out(`${DRY_RUN_LABEL}: Would execute ${description || 'external command'}`)
+  out('')
+  out(`  Command: ${command}`)
+  if (args.length > 0) {
+    out(`  Arguments: ${args.join(' ')}`)
+  }
+  out('')
+  out('  Run without --dry-run to execute this command.')
+  out('')
+}
+
+/**
+ * Output a simple dry-run message for commands that just fetch/display data.
+ * These commands don't really need dry-run since they're read-only,
+ * but showing computed query parameters helps users verify their input.
+ */
+export function outputDryRunFetch(
+  resourceName: string,
+  queryParams?: Record<string, string | number | boolean | undefined>,
+): void {
+  out('')
+  out(`${DRY_RUN_LABEL}: Would fetch ${resourceName}`)
+  out('')
+
+  if (queryParams && Object.keys(queryParams).length > 0) {
+    out('  Query parameters:')
+    for (const [key, value] of Object.entries(queryParams)) {
+      if (value !== undefined && value !== '') {
+        out(`    ${key}: ${value}`)
+      }
+    }
+    out('')
+  }
+
+  out('  This is a read-only operation that does not modify any data.')
+  out('  Run without --dry-run to fetch and display the data.')
+  out('')
+}
+
 export interface DryRunAction {
   type:
     | 'create'
@@ -76,77 +141,6 @@ export function outputDryRunPreview(preview: DryRunPreview): void {
 }
 
 /**
- * Output a simple dry-run message for commands that just fetch/display data.
- * These commands don't really need dry-run since they're read-only,
- * but showing computed query parameters helps users verify their input.
- */
-export function outputDryRunFetch(
-  resourceName: string,
-  queryParams?: Record<string, string | number | boolean | undefined>,
-): void {
-  out('')
-  out(`${DRY_RUN_LABEL}: Would fetch ${resourceName}`)
-  out('')
-
-  if (queryParams && Object.keys(queryParams).length > 0) {
-    out('  Query parameters:')
-    for (const [key, value] of Object.entries(queryParams)) {
-      if (value !== undefined && value !== '') {
-        out(`    ${key}: ${value}`)
-      }
-    }
-    out('')
-  }
-
-  out('  This is a read-only operation that does not modify any data.')
-  out('  Run without --dry-run to fetch and display the data.')
-  out('')
-}
-
-/**
- * Output dry-run for commands that execute external tools.
- */
-export function outputDryRunExecute(
-  command: string,
-  args: string[],
-  description?: string,
-): void {
-  out('')
-  out(`${DRY_RUN_LABEL}: Would execute ${description || 'external command'}`)
-  out('')
-  out(`  Command: ${command}`)
-  if (args.length > 0) {
-    out(`  Arguments: ${args.join(' ')}`)
-  }
-  out('')
-  out('  Run without --dry-run to execute this command.')
-  out('')
-}
-
-/**
- * Output dry-run for file write operations.
- */
-export function outputDryRunWrite(
-  filePath: string,
-  description: string,
-  changes?: string[],
-): void {
-  out('')
-  out(`${DRY_RUN_LABEL}: Would ${description}`)
-  out('')
-  out(`  Target file: ${filePath}`)
-  if (changes && changes.length > 0) {
-    out('  Changes:')
-    for (const change of changes) {
-      out(`    - ${change}`)
-    }
-  }
-  out('')
-  out('  Run without --dry-run to apply these changes.')
-  out('')
-}
-
-/**
  * Output dry-run for API upload operations.
  */
 export function outputDryRunUpload(
@@ -175,18 +169,24 @@ export function outputDryRunUpload(
 }
 
 /**
- * Output dry-run for delete operations.
+ * Output dry-run for file write operations.
  */
-export function outputDryRunDelete(
-  resourceType: string,
-  identifier: string,
+export function outputDryRunWrite(
+  filePath: string,
+  description: string,
+  changes?: string[],
 ): void {
   out('')
-  out(`${DRY_RUN_LABEL}: Would delete ${resourceType}`)
+  out(`${DRY_RUN_LABEL}: Would ${description}`)
   out('')
-  out(`  Target: ${identifier}`)
+  out(`  Target file: ${filePath}`)
+  if (changes && changes.length > 0) {
+    out('  Changes:')
+    for (const change of changes) {
+      out(`    - ${change}`)
+    }
+  }
   out('')
-  out('  This action cannot be undone.')
-  out('  Run without --dry-run to perform this deletion.')
+  out('  Run without --dry-run to apply these changes.')
   out('')
 }

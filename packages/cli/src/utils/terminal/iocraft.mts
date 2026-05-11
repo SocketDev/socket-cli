@@ -21,21 +21,253 @@ export type { default as IocraftNative } from '@socketaddon/iocraft'
  */
 let iocraftInstance: typeof iocraft | undefined
 
-export function getIocraft(): typeof iocraft {
-  if (!iocraftInstance) {
-    try {
-      // Use createRequire to load native .node module from ESM.
-      const require = createRequire(import.meta.url)
-      const loaded = require('@socketaddon/iocraft')
-      // Handle ESM default export when loaded via require().
-      iocraftInstance = loaded.default || loaded
-    } catch (e) {
-      throw new Error(
-        `could not load @socketaddon/iocraft native module (${getErrorCause(e)}); reinstall socket-cli to pull the prebuilt for your platform, or check that your platform (${process.platform}-${process.arch}) has a published prebuilt`,
-      )
+/**
+ * Create a box/view element with layout properties.
+ */
+export function Box(props: BoxProps): Element {
+  const children = Array.isArray(props.children)
+    ? props.children
+    : props.children
+      ? [props.children]
+      : []
+
+  // Create view node as plain object to avoid NAPI deserialization bugs
+  const node: Element = {
+    type: 'View',
+    children,
+  }
+
+  // Display and positioning
+  if (props.display) {
+    node.display = props.display
+  }
+  if (props.position) {
+    node.position = props.position
+  }
+
+  // Inset positioning
+  if (props.bottom !== undefined) {
+    node.bottom = props.bottom
+  }
+  if (props.inset !== undefined) {
+    node.inset = props.inset
+  }
+  if (props.left !== undefined) {
+    node.left = props.left
+  }
+  if (props.right !== undefined) {
+    node.right = props.right
+  }
+  if (props.top !== undefined) {
+    node.top = props.top
+  }
+
+  // Flex layout
+  if (props.alignContent) {
+    node.align_content = props.alignContent
+  }
+  if (props.alignItems) {
+    node.align_items = props.alignItems
+  }
+  if (props.columnGap !== undefined) {
+    node.column_gap = props.columnGap
+  }
+  if (props.flexBasis !== undefined) {
+    node.flex_basis = props.flexBasis
+  }
+  if (props.flexDirection) {
+    node.flex_direction = props.flexDirection
+  }
+  if (props.flexGrow !== undefined) {
+    node.flex_grow = props.flexGrow
+  }
+  if (props.flexShrink !== undefined) {
+    node.flex_shrink = props.flexShrink
+  }
+  if (props.flexWrap) {
+    node.flex_wrap = props.flexWrap
+  }
+  if (props.gap !== undefined) {
+    node.gap = props.gap
+  }
+  if (props.justifyContent) {
+    node.justify_content = props.justifyContent
+  }
+  if (props.rowGap !== undefined) {
+    node.row_gap = props.rowGap
+  }
+
+  // Dimensions
+  if (props.height !== undefined) {
+    node.height = props.height
+  }
+  if (props.maxHeight !== undefined) {
+    node.max_height = props.maxHeight
+  }
+  if (props.maxWidth !== undefined) {
+    node.max_width = props.maxWidth
+  }
+  if (props.minHeight !== undefined) {
+    node.min_height = props.minHeight
+  }
+  if (props.minWidth !== undefined) {
+    node.min_width = props.minWidth
+  }
+  if (props.width !== undefined) {
+    node.width = props.width
+  }
+
+  // Overflow
+  if (props.overflow) {
+    node.overflow_x = props.overflow
+    node.overflow_y = props.overflow
+  }
+  if (props.overflowX) {
+    node.overflow_x = props.overflowX
+  }
+  if (props.overflowY) {
+    node.overflow_y = props.overflowY
+  }
+
+  // Padding (handle both individual and shorthand)
+  if (props.padding !== undefined) {
+    node.padding = props.padding
+  }
+  if (props.paddingX !== undefined) {
+    node.padding_x = props.paddingX
+  }
+  if (props.paddingY !== undefined) {
+    node.padding_y = props.paddingY
+  }
+  if (props.paddingTop !== undefined) {
+    node.padding_top = props.paddingTop
+  }
+  if (props.paddingRight !== undefined) {
+    node.padding_right = props.paddingRight
+  }
+  if (props.paddingBottom !== undefined) {
+    node.padding_bottom = props.paddingBottom
+  }
+  if (props.paddingLeft !== undefined) {
+    node.padding_left = props.paddingLeft
+  }
+
+  // Margin (handle both individual and shorthand)
+  if (props.margin !== undefined) {
+    node.margin = props.margin
+  }
+  if (props.marginX !== undefined) {
+    node.margin_x = props.marginX
+  }
+  if (props.marginY !== undefined) {
+    node.margin_y = props.marginY
+  }
+  if (props.marginTop !== undefined) {
+    node.margin_top = props.marginTop
+  }
+  if (props.marginRight !== undefined) {
+    node.margin_right = props.marginRight
+  }
+  if (props.marginBottom !== undefined) {
+    node.margin_bottom = props.marginBottom
+  }
+  if (props.marginLeft !== undefined) {
+    node.margin_left = props.marginLeft
+  }
+
+  // Border
+  if (props.borderColor) {
+    node.border_color = props.borderColor
+  }
+  if (props.borderEdges) {
+    node.border_edges = props.borderEdges
+  }
+  if (props.borderStyle) {
+    node.border_style = props.borderStyle
+  }
+  if (props.customBorderChars) {
+    node.custom_border_chars = {
+      top_left: props.customBorderChars.topLeft,
+      top_right: props.customBorderChars.topRight,
+      bottom_left: props.customBorderChars.bottomLeft,
+      bottom_right: props.customBorderChars.bottomRight,
+      top: props.customBorderChars.top,
+      bottom: props.customBorderChars.bottom,
+      left: props.customBorderChars.left,
+      right: props.customBorderChars.right,
     }
   }
-  return iocraftInstance!
+
+  // Background
+  if (props.backgroundColor) {
+    node.background_color = props.backgroundColor
+  }
+
+  return node
+}
+
+/**
+ * Create a fragment element that groups children without layout impact.
+ *
+ * Fragments are transparent wrappers that allow returning multiple elements
+ * without affecting the layout hierarchy.
+ *
+ * @example
+ * ```typescript
+ * Fragment({
+ *   children: [
+ *     Text({ children: 'Line 1' }),
+ *     Text({ children: 'Line 2' }),
+ *     Text({ children: 'Line 3' })
+ *   ]
+ * })
+ * ```
+ */
+export function Fragment(props: FragmentProps): Element {
+  const children = Array.isArray(props.children)
+    ? props.children
+    : [props.children]
+
+  return {
+    type: 'Fragment',
+    children,
+  }
+}
+
+/**
+ * Create a mixed text element with multiple styled sections.
+ *
+ * @example
+ * ```typescript
+ * MixedText({
+ *   contents: [
+ *     { text: 'Success: ', color: 'green', weight: 'bold' },
+ *     { text: 'Operation completed', color: 'white' }
+ *   ],
+ *   align: 'center'
+ * })
+ * ```
+ */
+export function MixedText(props: MixedTextProps): Element {
+  const node: Element = {
+    type: 'MixedText',
+    mixed_text_contents: props.contents.map(section => ({
+      text: section.text,
+      color: section.color,
+      weight: section.weight,
+      decoration: section.decoration,
+      italic: section.italic,
+    })),
+  }
+
+  if (props.align) {
+    node.align = props.align
+  }
+  if (props.wrap) {
+    node.wrap = props.wrap
+  }
+
+  return node
 }
 
 /**
@@ -615,262 +847,37 @@ export function Text(props: TextProps): Element {
 }
 
 /**
- * Create a box/view element with layout properties.
+ * Print an element to stderr.
  */
-export function Box(props: BoxProps): Element {
-  const children = Array.isArray(props.children)
-    ? props.children
-    : props.children
-      ? [props.children]
-      : []
+export function eprint(element: Element): void {
+  const io = getIocraft()
+  io.eprintComponent(element as IocraftNs.ComponentNode)
+}
 
-  // Create view node as plain object to avoid NAPI deserialization bugs
-  const node: Element = {
-    type: 'View',
-    children,
-  }
-
-  // Display and positioning
-  if (props.display) {
-    node.display = props.display
-  }
-  if (props.position) {
-    node.position = props.position
-  }
-
-  // Inset positioning
-  if (props.bottom !== undefined) {
-    node.bottom = props.bottom
-  }
-  if (props.inset !== undefined) {
-    node.inset = props.inset
-  }
-  if (props.left !== undefined) {
-    node.left = props.left
-  }
-  if (props.right !== undefined) {
-    node.right = props.right
-  }
-  if (props.top !== undefined) {
-    node.top = props.top
-  }
-
-  // Flex layout
-  if (props.alignContent) {
-    node.align_content = props.alignContent
-  }
-  if (props.alignItems) {
-    node.align_items = props.alignItems
-  }
-  if (props.columnGap !== undefined) {
-    node.column_gap = props.columnGap
-  }
-  if (props.flexBasis !== undefined) {
-    node.flex_basis = props.flexBasis
-  }
-  if (props.flexDirection) {
-    node.flex_direction = props.flexDirection
-  }
-  if (props.flexGrow !== undefined) {
-    node.flex_grow = props.flexGrow
-  }
-  if (props.flexShrink !== undefined) {
-    node.flex_shrink = props.flexShrink
-  }
-  if (props.flexWrap) {
-    node.flex_wrap = props.flexWrap
-  }
-  if (props.gap !== undefined) {
-    node.gap = props.gap
-  }
-  if (props.justifyContent) {
-    node.justify_content = props.justifyContent
-  }
-  if (props.rowGap !== undefined) {
-    node.row_gap = props.rowGap
-  }
-
-  // Dimensions
-  if (props.height !== undefined) {
-    node.height = props.height
-  }
-  if (props.maxHeight !== undefined) {
-    node.max_height = props.maxHeight
-  }
-  if (props.maxWidth !== undefined) {
-    node.max_width = props.maxWidth
-  }
-  if (props.minHeight !== undefined) {
-    node.min_height = props.minHeight
-  }
-  if (props.minWidth !== undefined) {
-    node.min_width = props.minWidth
-  }
-  if (props.width !== undefined) {
-    node.width = props.width
-  }
-
-  // Overflow
-  if (props.overflow) {
-    node.overflow_x = props.overflow
-    node.overflow_y = props.overflow
-  }
-  if (props.overflowX) {
-    node.overflow_x = props.overflowX
-  }
-  if (props.overflowY) {
-    node.overflow_y = props.overflowY
-  }
-
-  // Padding (handle both individual and shorthand)
-  if (props.padding !== undefined) {
-    node.padding = props.padding
-  }
-  if (props.paddingX !== undefined) {
-    node.padding_x = props.paddingX
-  }
-  if (props.paddingY !== undefined) {
-    node.padding_y = props.paddingY
-  }
-  if (props.paddingTop !== undefined) {
-    node.padding_top = props.paddingTop
-  }
-  if (props.paddingRight !== undefined) {
-    node.padding_right = props.paddingRight
-  }
-  if (props.paddingBottom !== undefined) {
-    node.padding_bottom = props.paddingBottom
-  }
-  if (props.paddingLeft !== undefined) {
-    node.padding_left = props.paddingLeft
-  }
-
-  // Margin (handle both individual and shorthand)
-  if (props.margin !== undefined) {
-    node.margin = props.margin
-  }
-  if (props.marginX !== undefined) {
-    node.margin_x = props.marginX
-  }
-  if (props.marginY !== undefined) {
-    node.margin_y = props.marginY
-  }
-  if (props.marginTop !== undefined) {
-    node.margin_top = props.marginTop
-  }
-  if (props.marginRight !== undefined) {
-    node.margin_right = props.marginRight
-  }
-  if (props.marginBottom !== undefined) {
-    node.margin_bottom = props.marginBottom
-  }
-  if (props.marginLeft !== undefined) {
-    node.margin_left = props.marginLeft
-  }
-
-  // Border
-  if (props.borderColor) {
-    node.border_color = props.borderColor
-  }
-  if (props.borderEdges) {
-    node.border_edges = props.borderEdges
-  }
-  if (props.borderStyle) {
-    node.border_style = props.borderStyle
-  }
-  if (props.customBorderChars) {
-    node.custom_border_chars = {
-      top_left: props.customBorderChars.topLeft,
-      top_right: props.customBorderChars.topRight,
-      bottom_left: props.customBorderChars.bottomLeft,
-      bottom_right: props.customBorderChars.bottomRight,
-      top: props.customBorderChars.top,
-      bottom: props.customBorderChars.bottom,
-      left: props.customBorderChars.left,
-      right: props.customBorderChars.right,
+export function getIocraft(): typeof iocraft {
+  if (!iocraftInstance) {
+    try {
+      // Use createRequire to load native .node module from ESM.
+      const require = createRequire(import.meta.url)
+      const loaded = require('@socketaddon/iocraft')
+      // Handle ESM default export when loaded via require().
+      iocraftInstance = loaded.default || loaded
+    } catch (e) {
+      throw new Error(
+        `could not load @socketaddon/iocraft native module (${getErrorCause(e)}); reinstall socket-cli to pull the prebuilt for your platform, or check that your platform (${process.platform}-${process.arch}) has a published prebuilt`,
+      )
     }
   }
-
-  // Background
-  if (props.backgroundColor) {
-    node.background_color = props.backgroundColor
-  }
-
-  return node
+  return iocraftInstance!
 }
 
 /**
- * Create a mixed text element with multiple styled sections.
- *
- * @example
- * ```typescript
- * MixedText({
- *   contents: [
- *     { text: 'Success: ', color: 'green', weight: 'bold' },
- *     { text: 'Operation completed', color: 'white' }
- *   ],
- *   align: 'center'
- * })
- * ```
+ * Get terminal size.
  */
-export function MixedText(props: MixedTextProps): Element {
-  const node: Element = {
-    type: 'MixedText',
-    mixed_text_contents: props.contents.map(section => ({
-      text: section.text,
-      color: section.color,
-      weight: section.weight,
-      decoration: section.decoration,
-      italic: section.italic,
-    })),
-  }
-
-  if (props.align) {
-    node.align = props.align
-  }
-  if (props.wrap) {
-    node.wrap = props.wrap
-  }
-
-  return node
-}
-
-/**
- * Create a fragment element that groups children without layout impact.
- *
- * Fragments are transparent wrappers that allow returning multiple elements
- * without affecting the layout hierarchy.
- *
- * @example
- * ```typescript
- * Fragment({
- *   children: [
- *     Text({ children: 'Line 1' }),
- *     Text({ children: 'Line 2' }),
- *     Text({ children: 'Line 3' })
- *   ]
- * })
- * ```
- */
-export function Fragment(props: FragmentProps): Element {
-  const children = Array.isArray(props.children)
-    ? props.children
-    : [props.children]
-
-  return {
-    type: 'Fragment',
-    children,
-  }
-}
-
-/**
- * Render an element to a string.
- */
-export function renderToString(element: Element): string {
+export function getTerminalSize(): { columns: number; rows: number } {
   const io = getIocraft()
-  return io.renderToString(
-    element as IocraftNs.ComponentNode,
-  )
+  const size = io.getTerminalSize()
+  return { columns: size[0], rows: size[1] }
 }
 
 /**
@@ -882,18 +889,11 @@ export function print(element: Element): void {
 }
 
 /**
- * Print an element to stderr.
+ * Render an element to a string.
  */
-export function eprint(element: Element): void {
+export function renderToString(element: Element): string {
   const io = getIocraft()
-  io.eprintComponent(element as IocraftNs.ComponentNode)
-}
-
-/**
- * Get terminal size.
- */
-export function getTerminalSize(): { columns: number; rows: number } {
-  const io = getIocraft()
-  const size = io.getTerminalSize()
-  return { columns: size[0], rows: size[1] }
+  return io.renderToString(
+    element as IocraftNs.ComponentNode,
+  )
 }

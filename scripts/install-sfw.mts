@@ -165,11 +165,7 @@ async function main(): Promise<void> {
   // install so a version bump updates the link target.
   await fsPromises.mkdir(SFW_BIN_DIR, { recursive: true })
   const linkPath = path.join(SFW_BIN_DIR, binaryName)
-  // Use lstat (not existsSync) so we detect even broken symlinks —
-  // existsSync follows the link and returns false if the target is
-  // gone, leaving the stale link in place. We need to delete it
-  // before the new symlink call.
-  // oxlint-disable-next-line socket/prefer-exists-sync
+  // oxlint-disable-next-line socket/prefer-exists-sync -- need lstat (not existsSync) to detect broken symlinks; existsSync follows the link and returns false if the target is gone, leaving the stale link in place.
   const linkExists = await fsPromises
     .lstat(linkPath)
     .then(() => true)

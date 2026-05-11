@@ -36,6 +36,7 @@ const SKIP_DIRS = new Set([
   'build',
   'coverage',
   'dist',
+  'external',
   'node_modules',
   'tmp',
 ])

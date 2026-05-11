@@ -69,6 +69,56 @@ export function ensureIpcInStdio(
 }
 
 /**
+ * Find system Node.js binary in PATH (excluding the current SEA binary).
+ *
+ * Returns the path to system Node.js if found, undefined otherwise.
+ *
+ * @returns Path to system Node.js, or undefined
+ */
+export function findSystemNodejsSync(): string | undefined {
+  // Use which to find 'node' in PATH (returns all matches).
+  const nodePath = whichRealSync('node', { all: true, nothrow: true })
+
+  if (!nodePath) {
+    return undefined
+  }
+
+  // which with all:true returns string[] if multiple matches, string if single match.
+  const nodePaths = Array.isArray(nodePath) ? nodePath : [nodePath]
+
+  // Find first Node.js that isn't our SEA binary.
+  const currentExecPath = process.execPath
+  const systemNode = nodePaths.find(p => p !== currentExecPath)
+
+  return systemNode
+}
+
+/**
+ * Get the Node.js executable path to use for spawning.
+ *
+ * Priority:
+ * 1. System Node.js (if we're a SEA and system Node.js exists)
+ * 2. Current execPath (process.execPath)
+ *
+ * @returns Path to Node.js executable
+ */
+export function getNodeExecutablePathSync(): string {
+  // If not a SEA, use standard getExecPath().
+  if (!isSeaBinary()) {
+    return getExecPath()
+  }
+
+  // For SEA binaries, try to find system Node.js.
+  const systemNode = findSystemNodejsSync()
+  if (systemNode) {
+    return systemNode
+  }
+
+  // Fall back to SEA binary itself (will use IPC handshake).
+  return process.execPath
+}
+
+/**
  * Options for spawnNode, extending SpawnOptions with IPC handshake data.
  */
 export interface SpawnNodeOptions extends SpawnOptions {
@@ -151,56 +201,6 @@ export function spawnNode(
   )
 
   return spawnResult
-}
-
-/**
- * Find system Node.js binary in PATH (excluding the current SEA binary).
- *
- * Returns the path to system Node.js if found, undefined otherwise.
- *
- * @returns Path to system Node.js, or undefined
- */
-export function findSystemNodejsSync(): string | undefined {
-  // Use which to find 'node' in PATH (returns all matches).
-  const nodePath = whichRealSync('node', { all: true, nothrow: true })
-
-  if (!nodePath) {
-    return undefined
-  }
-
-  // which with all:true returns string[] if multiple matches, string if single match.
-  const nodePaths = Array.isArray(nodePath) ? nodePath : [nodePath]
-
-  // Find first Node.js that isn't our SEA binary.
-  const currentExecPath = process.execPath
-  const systemNode = nodePaths.find(p => p !== currentExecPath)
-
-  return systemNode
-}
-
-/**
- * Get the Node.js executable path to use for spawning.
- *
- * Priority:
- * 1. System Node.js (if we're a SEA and system Node.js exists)
- * 2. Current execPath (process.execPath)
- *
- * @returns Path to Node.js executable
- */
-export function getNodeExecutablePathSync(): string {
-  // If not a SEA, use standard getExecPath().
-  if (!isSeaBinary()) {
-    return getExecPath()
-  }
-
-  // For SEA binaries, try to find system Node.js.
-  const systemNode = findSystemNodejsSync()
-  if (systemNode) {
-    return systemNode
-  }
-
-  // Fall back to SEA binary itself (will use IPC handshake).
-  return process.execPath
 }
 
 /**

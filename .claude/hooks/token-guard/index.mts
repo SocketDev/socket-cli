@@ -131,30 +131,42 @@ const hasRedaction = (command: string): boolean =>
 //   - `$TOKEN` / `${TOKEN}` / `${TOKEN:-default}`
 //   - `TOKEN=value` / `export TOKEN=value`
 //   - `env TOKEN` / `printenv TOKEN` / `unset TOKEN`
+//   - `ENV['TOKEN']` / `ENV["TOKEN"]` / `ENV.fetch('TOKEN')` (Ruby)
 //
-// The previous version did `command.toUpperCase()` then matched on
-// `(?:^|\W)PASS(?:\W|$)` against the entire command string. That
-// produced false positives any time a sensitive keyword appeared as
-// an English word inside a commit message body, comment, or quoted
-// literal — e.g. "tests pass", "test passed", "all checks pass".
+// The previous version matched the fragment as a SUBSTRING of the
+// env-var name (`[A-Z0-9_]*FRAG[A-Z0-9_]*`). That tripped `$AUTHOR_NAME`
+// on `AUTH` (because AUTH is a prefix of AUTHOR) and `$PASSAGE_TIME`
+// on `PASS`.
 //
-// Now the regex is anchored to the env-var sigils that distinguish
-// env-var references from prose: `$NAME`, `${NAME}`, `NAME=`, `env NAME`,
-// `printenv NAME`, `unset NAME`. Plain-prose occurrences ("tests pass")
-// no longer trigger.
-const sensitiveEnvBoundaryRes = SENSITIVE_ENV_NAMES.map(
-  frag =>
-    new RegExp(
-      String.raw`(?:` +
-        // $NAME  or  ${NAME}  or  ${NAME:-...}  or  ${NAME:=...} etc.
-        String.raw`\$\{?[A-Z0-9_]*${frag}[A-Z0-9_]*\}?` +
-        // NAME=  (assignment; require alphanumeric/underscore name)
-        String.raw`|\b[A-Z0-9_]*${frag}[A-Z0-9_]*\s*=` +
-        // env NAME  /  printenv NAME  /  unset NAME  /  export NAME
-        String.raw`|\b(?:env|printenv|unset|export)\s+[A-Z0-9_]*${frag}[A-Z0-9_]*\b` +
-        String.raw`)`,
-    ),
-)
+// Env-var names are conventionally underscore-segmented tokens
+// (`ACCESS_TOKEN`, `API_KEY`). For a fragment to be sensitive it
+// must occupy one or more WHOLE underscore-delimited tokens — not a
+// substring of a single token. Boundary chars inside the name are
+// therefore `^`, `$`, or `_`; letters/digits adjacent to the fragment
+// mean it's part of a larger word (`AUTH` inside `AUTHOR`) so it
+// doesn't count.
+//
+// Plain-prose occurrences ("tests pass") still don't trigger because
+// the env-var sigils (`$`, `${`, `=`, `env`/`printenv`/etc., `ENV[`)
+// gate every match.
+const NAME_BODY = String.raw`(?:[A-Z0-9_]*_)?` // optional leading tokens
+const NAME_TAIL = String.raw`(?:_[A-Z0-9_]*)?` // optional trailing tokens
+const sensitiveEnvBoundaryRes = SENSITIVE_ENV_NAMES.map(frag => {
+  const NAME = `${NAME_BODY}${frag}${NAME_TAIL}`
+  return new RegExp(
+    String.raw`(?:` +
+      // $NAME  or  ${NAME}  or  ${NAME:-...}  or  ${NAME:=...} etc.
+      String.raw`\$\{?${NAME}(?:[:}\W]|$)` +
+      // NAME=  (assignment; whitespace allowed before =).
+      String.raw`|(?:^|\s|;|&|\|)${NAME}\s*=` +
+      // env NAME  /  printenv NAME  /  unset NAME  /  export NAME
+      String.raw`|\b(?:env|printenv|unset|export)\s+${NAME}\b` +
+      // Ruby ENV[...]  /  ENV.fetch(...)  with the name in single or
+      // double quotes: ENV['ACCESS_TOKEN'], ENV["TOKEN"], etc.
+      String.raw`|\bENV(?:\.FETCH)?\s*[\[(]\s*['"]${NAME}['"]` +
+      String.raw`)`,
+  )
+})
 const referencesSensitiveEnv = (command: string): boolean => {
   const upper = command.toUpperCase()
   return sensitiveEnvBoundaryRes.some(re => re.test(upper))

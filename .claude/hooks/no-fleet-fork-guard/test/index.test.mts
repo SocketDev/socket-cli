@@ -129,7 +129,7 @@ test('Edit on .config/oxlint-plugin/rules/* in a fleet repo is BLOCKED', async (
     })
     assert.strictEqual(result.code, 2)
     assert.match(result.stderr, /no-fleet-fork-guard/)
-    assert.match(result.stderr, /\.config\/oxlint-plugin\/rules\/example\.js/)
+    assert.match(result.stderr, /\.config\/oxlint-plugin\/rules\/example\.mts/)
     assert.match(result.stderr, /Allow fleet-fork bypass/)
   } finally {
     rmSync(repo, { force: true, recursive: true })

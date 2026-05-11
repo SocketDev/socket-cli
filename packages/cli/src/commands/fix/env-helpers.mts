@@ -13,6 +13,34 @@ import { getBaseBranch, getRepoInfo } from '../../utils/git/operations.mjs'
 import type { PrMatch } from './pull-request.mts'
 import type { RepoInfo } from '../../utils/git/operations.mjs'
 
+/**
+ * Check which required CI environment variables are missing.
+ * Returns lists of missing and present variables.
+ */
+export function checkCiEnvVars(): MissingEnvVars {
+  const missing: string[] = []
+  const present: string[] = []
+
+  // Helper to categorize env var as present or missing.
+  const checkVar = (value: unknown, name: string) => {
+    if (value) {
+      present.push(name)
+    } else {
+      missing.push(name)
+    }
+  }
+
+  checkVar(getCI(), 'CI')
+  checkVar(SOCKET_CLI_GIT_USER_EMAIL, 'SOCKET_CLI_GIT_USER_EMAIL')
+  checkVar(SOCKET_CLI_GIT_USER_NAME, 'SOCKET_CLI_GIT_USER_NAME')
+  checkVar(
+    getSocketCliGithubToken(),
+    'SOCKET_CLI_GITHUB_TOKEN (or GITHUB_TOKEN)',
+  )
+
+  return { missing, present }
+}
+
 export function ciRepoInfo(): RepoInfo | undefined {
   if (!GITHUB_REPOSITORY) {
     debug('miss: GITHUB_REPOSITORY env var')
@@ -55,34 +83,6 @@ export function getCiEnvInstructions(): string {
     '  - SOCKET_CLI_GIT_USER_NAME=<git-username>\n' +
     '  - SOCKET_CLI_GIT_USER_EMAIL=<git-email>'
   )
-}
-
-/**
- * Check which required CI environment variables are missing.
- * Returns lists of missing and present variables.
- */
-export function checkCiEnvVars(): MissingEnvVars {
-  const missing: string[] = []
-  const present: string[] = []
-
-  // Helper to categorize env var as present or missing.
-  const checkVar = (value: unknown, name: string) => {
-    if (value) {
-      present.push(name)
-    } else {
-      missing.push(name)
-    }
-  }
-
-  checkVar(getCI(), 'CI')
-  checkVar(SOCKET_CLI_GIT_USER_EMAIL, 'SOCKET_CLI_GIT_USER_EMAIL')
-  checkVar(SOCKET_CLI_GIT_USER_NAME, 'SOCKET_CLI_GIT_USER_NAME')
-  checkVar(
-    getSocketCliGithubToken(),
-    'SOCKET_CLI_GITHUB_TOKEN (or GITHUB_TOKEN)',
-  )
-
-  return { missing, present }
 }
 
 export async function getFixEnv(): Promise<FixEnv> {

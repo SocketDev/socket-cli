@@ -41,6 +41,35 @@ const IGNORED_DIRS = [
 
 const IGNORED_DIR_PATTERNS = IGNORED_DIRS.map(i => `**/${i}`)
 
+export function createSupportedFilesFilter(
+  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
+): (filepath: string) => boolean {
+  const patterns = getSupportedFilePatterns(supportedFiles)
+  return (filepath: string) =>
+    micromatch.some(filepath, patterns, { dot: true })
+}
+
+export function filterBySupportedScanFiles(
+  filepaths: string[] | readonly string[],
+  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
+): string[] {
+  const patterns = getSupportedFilePatterns(supportedFiles)
+  return filepaths.filter(p => micromatch.some(p, patterns, { dot: true }))
+}
+
+export function getSupportedFilePatterns(
+  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
+): string[] {
+  const patterns: string[] = []
+  for (const key of Object.keys(supportedFiles)) {
+    const supported = supportedFiles[key]
+    if (supported) {
+      patterns.push(...Object.values(supported).map(p => `**/${p.pattern}`))
+    }
+  }
+  return patterns
+}
+
 export async function getWorkspaceGlobs(
   agent: Agent,
   cwd = process.cwd(),
@@ -64,126 +93,6 @@ export async function getWorkspaceGlobs(
         .filter(isNonEmptyString)
         .map(workspacePatternToGlobPattern)
     : []
-}
-
-export function ignoreFileLinesToGlobPatterns(
-  lines: string[] | readonly string[],
-  filepath: string,
-  cwd: string,
-): string[] {
-  const base = path.relative(cwd, path.dirname(filepath)).replace(/\\/g, '/')
-  const patterns = []
-  for (let i = 0, { length } = lines; i < length; i += 1) {
-    const pattern = lines[i]!.trim()
-    if (pattern.length > 0 && pattern.charCodeAt(0) !== 35 /*'#'*/) {
-      patterns.push(
-        ignorePatternToMinimatch(
-          pattern.length && pattern.charCodeAt(0) === 33 /*'!'*/
-            ? `!${path.posix.join(base, pattern.slice(1))}`
-            : path.posix.join(base, pattern),
-        ),
-      )
-    }
-  }
-  return patterns
-}
-
-export function ignoreFileToGlobPatterns(
-  content: string,
-  filepath: string,
-  cwd: string,
-): string[] {
-  return ignoreFileLinesToGlobPatterns(content.split(/\r?\n/), filepath, cwd)
-}
-
-// Based on `@eslint/compat` convertIgnorePatternToMinimatch.
-// Apache v2.0 licensed
-// Copyright Nicholas C. Zakas
-// https://github.com/eslint/rewrite/blob/compat-v1.2.1/packages/compat/src/ignore-file.js#L28
-export function ignorePatternToMinimatch(pattern: string): string {
-  const isNegated = pattern.startsWith('!')
-  const negatedPrefix = isNegated ? '!' : ''
-  const patternToTest = (isNegated ? pattern.slice(1) : pattern).trimEnd()
-  // Special cases.
-  if (
-    patternToTest === '' ||
-    patternToTest === '**' ||
-    patternToTest === '**' ||
-    patternToTest === '/**'
-  ) {
-    return `${negatedPrefix}${patternToTest}`
-  }
-  const firstIndexOfSlash = patternToTest.indexOf('/')
-  const matchEverywherePrefix =
-    firstIndexOfSlash === -1 || firstIndexOfSlash === patternToTest.length - 1
-      ? '**/'
-      : ''
-  const patternWithoutLeadingSlash =
-    firstIndexOfSlash === 0 ? patternToTest.slice(1) : patternToTest
-  // Escape `{` and `(` because in gitignore patterns they are just
-  // literal characters without any specific syntactic meaning,
-  // while in minimatch patterns they can form brace expansion or extglob syntax.
-  //
-  // For example, gitignore pattern `src/{a,b}.js` ignores file `src/{a,b}.js`.
-  // But, the same minimatch pattern `src/{a,b}.js` ignores files `src/a.js` and `src/b.js`.
-  // Minimatch pattern `src/\{a,b}.js` is equivalent to gitignore pattern `src/{a,b}.js`.
-  const escapedPatternWithoutLeadingSlash =
-    patternWithoutLeadingSlash.replaceAll(
-      /(?=((?:\\.|[^{(])*))\1([{(])/guy, // socket-hook: allow regex-alternation-order -- `\\.` must come first so escape pairs are consumed atomically.
-      '$1\\$2',
-    )
-  const matchInsideSuffix = patternToTest.endsWith('/**') ? '/*' : ''
-  return `${negatedPrefix}${matchEverywherePrefix}${escapedPatternWithoutLeadingSlash}${matchInsideSuffix}`
-}
-
-export function workspacePatternToGlobPattern(workspace: string): string {
-  const { length } = workspace
-  if (!length) {
-    return ''
-  }
-  // If the workspace ends with "/"
-  if (workspace.charCodeAt(length - 1) === 47 /*'/'*/) {
-    return `${workspace}/*/package.json`
-  }
-  // If the workspace ends with "/**"
-  if (
-    workspace.charCodeAt(length - 1) === 42 /*'*'*/ &&
-    workspace.charCodeAt(length - 2) === 42 /*'*'*/ &&
-    workspace.charCodeAt(length - 3) === 47 /*'/'*/
-  ) {
-    return `${workspace}/*/**/package.json`
-  }
-  // Things like "packages/a" or "packages/*"
-  return `${workspace}/package.json`
-}
-
-export function filterBySupportedScanFiles(
-  filepaths: string[] | readonly string[],
-  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
-): string[] {
-  const patterns = getSupportedFilePatterns(supportedFiles)
-  return filepaths.filter(p => micromatch.some(p, patterns, { dot: true }))
-}
-
-export function createSupportedFilesFilter(
-  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
-): (filepath: string) => boolean {
-  const patterns = getSupportedFilePatterns(supportedFiles)
-  return (filepath: string) =>
-    micromatch.some(filepath, patterns, { dot: true })
-}
-
-export function getSupportedFilePatterns(
-  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
-): string[] {
-  const patterns: string[] = []
-  for (const key of Object.keys(supportedFiles)) {
-    const supported = supportedFiles[key]
-    if (supported) {
-      patterns.push(...Object.values(supported).map(p => `**/${p.pattern}`))
-    }
-  }
-  return patterns
 }
 
 type GlobWithGitIgnoreOptions = GlobOptions & {
@@ -307,6 +216,76 @@ export async function globWorkspace(
     : []
 }
 
+export function ignoreFileLinesToGlobPatterns(
+  lines: string[] | readonly string[],
+  filepath: string,
+  cwd: string,
+): string[] {
+  const base = path.relative(cwd, path.dirname(filepath)).replace(/\\/g, '/')
+  const patterns = []
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const pattern = lines[i]!.trim()
+    if (pattern.length > 0 && pattern.charCodeAt(0) !== 35 /*'#'*/) {
+      patterns.push(
+        ignorePatternToMinimatch(
+          pattern.length && pattern.charCodeAt(0) === 33 /*'!'*/
+            ? `!${path.posix.join(base, pattern.slice(1))}`
+            : path.posix.join(base, pattern),
+        ),
+      )
+    }
+  }
+  return patterns
+}
+
+export function ignoreFileToGlobPatterns(
+  content: string,
+  filepath: string,
+  cwd: string,
+): string[] {
+  return ignoreFileLinesToGlobPatterns(content.split(/\r?\n/), filepath, cwd)
+}
+
+// Based on `@eslint/compat` convertIgnorePatternToMinimatch.
+// Apache v2.0 licensed
+// Copyright Nicholas C. Zakas
+// https://github.com/eslint/rewrite/blob/compat-v1.2.1/packages/compat/src/ignore-file.js#L28
+export function ignorePatternToMinimatch(pattern: string): string {
+  const isNegated = pattern.startsWith('!')
+  const negatedPrefix = isNegated ? '!' : ''
+  const patternToTest = (isNegated ? pattern.slice(1) : pattern).trimEnd()
+  // Special cases.
+  if (
+    patternToTest === '' ||
+    patternToTest === '**' ||
+    patternToTest === '**' ||
+    patternToTest === '/**'
+  ) {
+    return `${negatedPrefix}${patternToTest}`
+  }
+  const firstIndexOfSlash = patternToTest.indexOf('/')
+  const matchEverywherePrefix =
+    firstIndexOfSlash === -1 || firstIndexOfSlash === patternToTest.length - 1
+      ? '**/'
+      : ''
+  const patternWithoutLeadingSlash =
+    firstIndexOfSlash === 0 ? patternToTest.slice(1) : patternToTest
+  // Escape `{` and `(` because in gitignore patterns they are just
+  // literal characters without any specific syntactic meaning,
+  // while in minimatch patterns they can form brace expansion or extglob syntax.
+  //
+  // For example, gitignore pattern `src/{a,b}.js` ignores file `src/{a,b}.js`.
+  // But, the same minimatch pattern `src/{a,b}.js` ignores files `src/a.js` and `src/b.js`.
+  // Minimatch pattern `src/\{a,b}.js` is equivalent to gitignore pattern `src/{a,b}.js`.
+  const escapedPatternWithoutLeadingSlash =
+    patternWithoutLeadingSlash.replaceAll(
+      /(?=((?:\\.|[^{(])*))\1([{(])/guy, // socket-hook: allow regex-alternation-order -- `\\.` must come first so escape pairs are consumed atomically.
+      '$1\\$2',
+    )
+  const matchInsideSuffix = patternToTest.endsWith('/**') ? '/*' : ''
+  return `${negatedPrefix}${matchEverywherePrefix}${escapedPatternWithoutLeadingSlash}${matchInsideSuffix}`
+}
+
 export function isReportSupportedFile(
   filepath: string,
   supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
@@ -340,4 +319,25 @@ export function pathsToGlobPatterns(
     }
     return resolvedPath
   })
+}
+
+export function workspacePatternToGlobPattern(workspace: string): string {
+  const { length } = workspace
+  if (!length) {
+    return ''
+  }
+  // If the workspace ends with "/"
+  if (workspace.charCodeAt(length - 1) === 47 /*'/'*/) {
+    return `${workspace}/*/package.json`
+  }
+  // If the workspace ends with "/**"
+  if (
+    workspace.charCodeAt(length - 1) === 42 /*'*'*/ &&
+    workspace.charCodeAt(length - 2) === 42 /*'*'*/ &&
+    workspace.charCodeAt(length - 3) === 47 /*'/'*/
+  ) {
+    return `${workspace}/*/**/package.json`
+  }
+  // Things like "packages/a" or "packages/*"
+  return `${workspace}/package.json`
 }

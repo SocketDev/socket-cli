@@ -26,6 +26,41 @@
 
 const SCRIPT_ENTRY_NAMES = new Set(['main'])
 
+/**
+ * Type-only top-level statements that can travel with the function they
+ * sit above. Reordering them is safe because they're erased at compile
+ * time (no runtime side effects, no declaration-order semantics).
+ */
+function isTypeOnlyStatement(node) {
+  if (!node) {
+    return false
+  }
+  if (
+    node.type === 'TSTypeAliasDeclaration' ||
+    node.type === 'TSInterfaceDeclaration'
+  ) {
+    return true
+  }
+  if (
+    node.type === 'ExportNamedDeclaration' &&
+    node.declaration &&
+    (node.declaration.type === 'TSTypeAliasDeclaration' ||
+      node.declaration.type === 'TSInterfaceDeclaration')
+  ) {
+    return true
+  }
+  // `export type { ... }` re-exports — typically grouped at top with
+  // imports, but if one slipped between functions it's safe to move.
+  if (
+    node.type === 'ExportNamedDeclaration' &&
+    node.exportKind === 'type' &&
+    !node.declaration
+  ) {
+    return true
+  }
+  return false
+}
+
 function declVisibility(node) {
   // ExportNamedDeclaration wrapping a FunctionDeclaration.
   if (
@@ -171,7 +206,25 @@ const rule = {
           }
           const name = info.fn.id.name
           const isEntrypoint = SCRIPT_ENTRY_NAMES.has(name)
-          const start = leadingCommentStart(sourceCode, node)
+          let start = leadingCommentStart(sourceCode, node)
+          // Pull in any contiguous type-only statements (TS type aliases
+          // / interfaces) that sit immediately above this function —
+          // they're erased at compile time, have no runtime side
+          // effects, and are conventionally placed next to the function
+          // that consumes them. They travel with the function on sort.
+          let j = i - 1
+          while (j >= 0 && isTypeOnlyStatement(bodyByIndex[j])) {
+            // Only absorb the type when there's no other function entry
+            // between it and the current node (entries are pushed in
+            // order, so the previous entry's `end` marks where the
+            // previous function's range ended).
+            const prevEntry = entries[entries.length - 1]
+            if (prevEntry && prevEntry.end > bodyByIndex[j].range[0]) {
+              break
+            }
+            start = leadingCommentStart(sourceCode, bodyByIndex[j])
+            j -= 1
+          }
           const nextStart =
             i + 1 < bodyByIndex.length ? bodyByIndex[i + 1].range[0] : undefined
           const end = trailingCommentEnd(sourceCode, node, nextStart)
@@ -244,12 +297,16 @@ const rule = {
         const rangeStart = orderedByPosition[0].start
         const rangeEnd = orderedByPosition[orderedByPosition.length - 1].end
 
-        // Bail if any non-function, non-comment statements live between
-        // the first and last function — re-ordering would skip over
-        // them and lose their side-effects / declaration-order semantics.
+        // Bail if any runtime statement lives between the first and
+        // last function — re-ordering would skip over them and lose
+        // their side-effects / declaration-order semantics. Type-only
+        // statements (TSTypeAliasDeclaration / TSInterfaceDeclaration
+        // and their exported forms) are erased at compile time and are
+        // already absorbed into the preceding function's range above,
+        // so they don't trigger the bail.
         for (const stmt of programNode.body) {
           const isFn = entries.some(e => e.node === stmt)
-          if (isFn) {
+          if (isFn || isTypeOnlyStatement(stmt)) {
             continue
           }
           if (stmt.range[0] >= rangeStart && stmt.range[1] <= rangeEnd) {
