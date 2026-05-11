@@ -97,9 +97,9 @@ interface VersionPinReport extends ReportBase {
   kind: 'version-pin'
   upstream: string
   pinned_sha: string
-  pinned_tag: string | null
+  pinned_tag: string | undefined
   upgrade_policy: string
-  head_sha: string | null
+  head_sha: string | undefined
   drift_count: number
 }
 
@@ -119,7 +119,7 @@ interface SpecConformanceReport extends ReportBase {
   upstream: string
   local_impl: string
   spec_version: string
-  spec_path: string | null
+  spec_path: string | undefined
 }
 
 interface LangParityReport extends ReportBase {
@@ -284,12 +284,12 @@ function resolveUpstream(
   manifest: Manifest,
   alias: string,
   messages: string[],
-): Upstream | null {
+): Upstream | undefined {
   const upstream = manifest.upstreams?.[alias]
   if (!upstream) {
     const known = Object.keys(manifest.upstreams ?? {}).join(', ') || '(none)'
     messages.push(`unknown upstream alias '${alias}' (known: ${known})`)
-    return null
+    return undefined
   }
   return upstream
 }
@@ -444,9 +444,9 @@ function checkVersionPin(
     messages,
     upstream: row.upstream,
     pinned_sha: row.pinned_sha,
-    pinned_tag: row.pinned_tag ?? null,
+    pinned_tag: row.pinned_tag ?? undefined,
     upgrade_policy: row.upgrade_policy,
-    head_sha: null,
+    head_sha: undefined,
     drift_count: 0,
   }
   if (!upstream) {
@@ -636,7 +636,7 @@ function checkSpecConformance(
     upstream: row.upstream,
     local_impl: row.local_impl,
     spec_version: row.spec_version,
-    spec_path: row.spec_path ?? null,
+    spec_path: row.spec_path ?? undefined,
   }
   if (!upstream) {
     base.severity = 'error'
@@ -942,7 +942,7 @@ function emitHuman(reports: Report[], summaries: AreaSummary[]): number {
 }
 
 function main(): void {
-  const rootManifestPath = path.join(rootDir, '.config', 'lockstep.json')
+  const rootManifestPath = path.join(rootDir, 'lockstep.json')
   const { areas, merged } = loadManifestTree(rootManifestPath)
 
   const rowsWithArea: Array<{ row: Row; area: string }> = []
