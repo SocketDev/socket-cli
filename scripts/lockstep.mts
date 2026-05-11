@@ -942,7 +942,7 @@ function emitHuman(reports: Report[], summaries: AreaSummary[]): number {
 }
 
 function main(): void {
-  const rootManifestPath = path.join(rootDir, 'lockstep.json')
+  const rootManifestPath = path.join(rootDir, '.config', 'lockstep.json')
   const { areas, merged } = loadManifestTree(rootManifestPath)
 
   const rowsWithArea: Array<{ row: Row; area: string }> = []

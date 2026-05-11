@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
   "plugins": ["typescript", "unicorn", "import"],
-  "jsPlugins": ["./.config/oxlint-plugin/index.js"],
+  "jsPlugins": ["./oxlint-plugin/index.js"],
   "categories": {
     "correctness": "error",
     "suspicious": "error"

@@ -21,7 +21,7 @@ const logger = getDefaultLogger()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '..')
-const outPath = path.join(rootDir, 'lockstep.schema.json')
+const outPath = path.join(rootDir, '.config', 'lockstep.schema.json')
 
 // TypeBox schemas carry JSON Schema shape directly, plus a Symbol-keyed
 // [Kind] marker that JSON.stringify drops. Spreading the schema first
