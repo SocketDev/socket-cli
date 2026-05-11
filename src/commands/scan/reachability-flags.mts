@@ -2,16 +2,11 @@ import constants from '../../constants.mts'
 
 import type { MeowFlags } from '../../flags.mts'
 
-export const excludePathsFlag: MeowFlags = {
-  excludePaths: {
-    type: 'string',
-    isMultiple: true,
-    description:
-      'List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) Tier 1 reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (`--cwd` if set), not the reachability target: `tests` matches only `<cwd>/tests`; use `**/tests` to match at any depth. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags.',
-  },
-}
-
 export const reachabilityFlags: MeowFlags = {
+  reachVersion: {
+    type: 'string',
+    description: `Override the version of @coana-tech/cli used for reachability analysis. Default: ${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}.`,
+  },
   reachAnalysisMemoryLimit: {
     type: 'number',
     default: 8192,
@@ -54,6 +49,11 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'Continue reachability analysis when a workspace contains no source files for its ecosystem. By default, the CLI halts.',
   },
+  reachDisableExternalToolChecks: {
+    type: 'boolean',
+    default: false,
+    description: 'Disable external tool checks during reachability analysis.',
+  },
   reachDebug: {
     type: 'boolean',
     default: false,
@@ -66,6 +66,12 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'A log file with detailed analysis logs is written to root of each analyzed workspace.',
   },
+  reachDisableAnalytics: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.',
+  },
   reachDisableAnalysisSplitting: {
     type: 'boolean',
     default: false,
@@ -73,28 +79,17 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'Deprecated: Analysis splitting is now disabled by default. This flag is a no-op.',
   },
-  reachDisableAnalytics: {
+  reachEnableAnalysisSplitting: {
     type: 'boolean',
     default: false,
     description:
-      'Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.',
-  },
-  reachDisableExternalToolChecks: {
-    type: 'boolean',
-    default: false,
-    description: 'Disable external tool checks during reachability analysis.',
+      'Allow the reachability analysis to partition CVEs into buckets that are processed in separate analysis runs. May improve accuracy, but not recommended by default.',
   },
   reachEcosystems: {
     type: 'string',
     isMultiple: true,
     description:
       'List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.',
-  },
-  reachEnableAnalysisSplitting: {
-    type: 'boolean',
-    default: false,
-    description:
-      'Allow the reachability analysis to partition CVEs into buckets that are processed in separate analysis runs. May improve accuracy, but not recommended by default.',
   },
   reachExcludePaths: {
     type: 'string',
@@ -120,8 +115,13 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'When using this option, the scan is created based only on pre-generated CDX and SPDX files in your project.',
   },
-  reachVersion: {
+}
+
+export const excludePathsFlag: MeowFlags = {
+  excludePaths: {
     type: 'string',
-    description: `Override the version of @coana-tech/cli used for reachability analysis. Default: ${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}.`,
+    isMultiple: true,
+    description:
+      'List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) Tier 1 reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (`--cwd` if set), not the reachability target: `tests` matches only `<cwd>/tests`; use `**/tests` to match at any depth. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags.',
   },
 }
