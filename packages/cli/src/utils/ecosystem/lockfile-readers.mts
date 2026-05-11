@@ -58,12 +58,12 @@ export type ReadLockFile =
  * fall through" rather than aborting detection.
  */
 export const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
-  function wrapReader<T extends (...args: any[]) => Promise<any>>(
+  function wrapReader<T extends (...args: never[]) => Promise<unknown>>(
     reader: T,
   ): (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>> | undefined> {
-    return async (...args: any[]): Promise<any> => {
+    return async (...args: Parameters<T>) => {
       try {
-        return await reader(...args)
+        return (await reader(...args)) as Awaited<ReturnType<T>>
       } catch {}
       return undefined
     }

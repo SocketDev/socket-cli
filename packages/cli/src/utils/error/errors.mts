@@ -36,11 +36,19 @@ import {
 } from '../../constants/socket.mts'
 
 // Access internals via kInternalsSymbol.
-const constants = { [kInternalsSymbol]: {} as { getSentry?: () => any } }
+type SentryClient = {
+  captureException(exception: unknown, hint?: unknown): string
+}
+const constants = {
+  [kInternalsSymbol]: {} as { getSentry?: () => SentryClient | undefined },
+}
 const internals = constants[kInternalsSymbol]
 const getSentry = internals.getSentry
 
-type EventHintOrCaptureContext = { [key: string]: any } | Function
+type EventHintOrCaptureContext =
+  | { [key: string]: unknown }
+  // eslint-disable-next-line typescript-eslint/no-unsafe-function-type -- Sentry public API accepts a Function for captureContext.
+  | Function
 
 /**
  * Authentication error with recovery suggestions.
@@ -534,7 +542,7 @@ export function hasRecoverySuggestions(
   return (
     isError(error) &&
     'recovery' in error &&
-    Array.isArray((error as any).recovery)
+    Array.isArray((error as { recovery?: unknown }).recovery)
   )
 }
 

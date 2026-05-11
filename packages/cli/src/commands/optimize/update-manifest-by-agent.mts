@@ -26,7 +26,7 @@ const depFields = [
 ]
 
 export function getEntryIndexes(
-  entries: Array<[string | symbol, any]>,
+  entries: Array<[string | symbol, unknown]>,
   keys: Array<string | symbol>,
 ): number[] {
   return keys
@@ -36,14 +36,14 @@ export function getEntryIndexes(
 }
 
 export function getHighestEntryIndex(
-  entries: Array<[string | symbol, any]>,
+  entries: Array<[string | symbol, unknown]>,
   keys: Array<string | symbol>,
 ) {
   return getEntryIndexes(entries, keys)?.at(-1) ?? -1
 }
 
 export function getLowestEntryIndex(
-  entries: Array<[string | symbol, any]>,
+  entries: Array<[string | symbol, unknown]>,
   keys: Array<string | symbol>,
 ) {
   return getEntryIndexes(entries, keys)?.[0] ?? -1
@@ -108,7 +108,7 @@ export function updateOverridesField(
 export function updatePkgJsonField(
   editablePkgJson: EditablePackageJson,
   field: string,
-  value: any,
+  value: unknown,
 ) {
   const oldValue = editablePkgJson.content[field]
   if (oldValue) {

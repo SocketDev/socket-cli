@@ -110,10 +110,17 @@ export async function openSocketFixPr(
 
     // Handle RequestError from Octokit/provider.
     if (e instanceof RequestError) {
-      const errors = (e.response?.data as any)?.['errors']
+      const errors = (
+        e.response?.data as { errors?: unknown } | undefined
+      )?.errors
       const errorMessages = Array.isArray(errors)
         ? errors.map(
-            (d: any) =>
+            (d: {
+              message?: string
+              resource?: string
+              field?: string
+              code?: string
+            }) =>
               d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`,
           )
         : []
@@ -129,7 +136,7 @@ export async function openSocketFixPr(
       }
 
       // Check for validation errors (e.g., no commits between branches).
-      if (errors && errors.length > 0) {
+      if (Array.isArray(errors) && errors.length > 0) {
         const details = errorMessages.map((d: string) => `- ${d}`).join('\n')
         debug(`Failed to create pull request:\n${details}`)
         return {
@@ -322,10 +329,10 @@ type ContextualPrMatch = {
   context: {
     apiType: 'graphql' | 'rest'
     cacheKey: string
-    data: any
-    entry: any
+    data: JsonContent
+    entry: GqlPrNode
     index: number
-    parent: any[]
+    parent: GqlPrNode[]
   }
   match: PrMatch
 }

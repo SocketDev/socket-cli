@@ -399,7 +399,7 @@ export function getCveInfoFromAlertsMap(
       if (
         alert.fix?.type !== ALERT_FIX_TYPE.cve ||
         (filterConfig.upgradable === false &&
-          getManifestData(sockPkgAlert.ecosystem as any, name))
+          getManifestData(sockPkgAlert.ecosystem, name))
       ) {
         continue
       }
@@ -556,11 +556,16 @@ export function logAlertsMap(
       const attributes = [
         ...(severity
           ? [
-              (colors as any)[
+              (
+                colors as unknown as Record<
+                  string,
+                  (s: string) => string
+                >
+              )[
                 ALERT_SEVERITY_COLOR[
                   severity as keyof typeof ALERT_SEVERITY_COLOR
                 ]
-              ](getSeverityLabel(severity)),
+              ]!(getSeverityLabel(severity)),
             ]
           : []),
         ...(alert.blocked ? [colors.bold(colors.red('blocked'))] : []),
@@ -571,7 +576,12 @@ export function logAlertsMap(
         : ''
       // Based data from { pageProps: { alertTypes } } of:
       // https://socket.dev/_next/data/9a6db8224b68b6da0eb9f7dbb17aff7e51568ac2/en-US.json
-      const info = (translations.alerts as any)[type]
+      const info = (
+        translations.alerts as Record<
+          string,
+          { title?: string; description?: string } | undefined
+        >
+      )[type]
       const title = info?.title ?? type
       const maybeDesc = info?.description ? ` - ${info.description}` : ''
       const content = `${title}${maybeAttributes}${maybeDesc}`

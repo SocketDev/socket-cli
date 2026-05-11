@@ -211,14 +211,18 @@ export async function downloadManifestFile({
     return result
   }
 
-  const fileData = result.data
+  const fileData = result.data as {
+    type?: string
+    size?: number
+    download_url?: string | null
+  }
   debug('complete: request')
   debugDir({
-    fileData: { type: (fileData as any).type, size: (fileData as any).size },
+    fileData: { type: fileData.type, size: fileData.size },
   })
 
   // Check if it's a file (not a directory).
-  if (Array.isArray(fileData) || (fileData as any).type !== 'file') {
+  if (Array.isArray(fileData) || fileData.type !== 'file') {
     return {
       ok: false,
       message: 'Not a file',
@@ -226,7 +230,7 @@ export async function downloadManifestFile({
     }
   }
 
-  const downloadUrl = (fileData as any).download_url
+  const downloadUrl = fileData.download_url
   if (!downloadUrl) {
     return {
       ok: false,

@@ -159,7 +159,7 @@ export function getAlertString(
   const padding = `  ${' '.repeat(Math.max(0, 20 - colorless.length))}`
 
   if (colorize) {
-    return `- Alerts (${colors.red(bad.length as any)}/${colors.yellow(mid.length as any)}/${low.length}):${
+    return `- Alerts (${colors.red(String(bad.length))}/${colors.yellow(String(mid.length))}/${low.length}):${
       padding
     }${joinAnd([
       ...bad.map(a => colors.red(`${colors.dim(`[${a.severity}] `)}${a.type}`)),
@@ -243,8 +243,9 @@ export function preProcess(
         row.score.license = artifact.score?.license ?? 100
       }
 
-      artifact.alerts?.forEach((alert: any) => {
-        const { severity, type } = alert
+      artifact.alerts?.forEach(alert => {
+        const severity = alert.severity ?? ''
+        const { type } = alert
         row.alerts.set(`${type}:${severity}`, {
           type,
           severity,
@@ -252,8 +253,9 @@ export function preProcess(
       })
     } else {
       const alerts = new Map<string, { type: string; severity: string }>()
-      artifact.alerts?.forEach((alert: any) => {
-        const { severity, type } = alert
+      artifact.alerts?.forEach(alert => {
+        const severity = alert.severity ?? ''
+        const { type } = alert
         alerts.set(`${type}:${severity}`, {
           type,
           severity,
