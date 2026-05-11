@@ -8,7 +8,7 @@ setTheme('socket')
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import url, { fileURLToPath } from 'node:url'
 
 // Suppress MaxListenersExceeded warning for AbortSignal.
 // The Socket SDK properly manages listeners but may exceed the default limit of 30
@@ -165,7 +165,7 @@ void (async () => {
       {
         name: SOCKET_CLI_BIN_NAME,
         argv: process.argv.slice(2),
-        importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
+        importMeta: { url: `${url.pathToFileURL(__filename)}` } as ImportMeta,
         subcommands: rootCommands,
       },
       { aliases: rootAliases, buckets: rootCommandBuckets },
@@ -198,7 +198,7 @@ void (async () => {
         flags: {
           json: { type: 'boolean' },
         },
-        importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
+        importMeta: { url: `${url.pathToFileURL(__filename)}` } as ImportMeta,
       })
       return !!cli.flags.json
     })()

@@ -5,7 +5,7 @@
  * Ensures type safety for inter-process communication.
  */
 
-import { randomBytes } from 'node:crypto'
+import crypto from 'node:crypto'
 import type { IpcStub } from '@socketsecurity/lib/ipc'
 
 export interface IpcMessage<T = unknown> {
@@ -49,7 +49,7 @@ export function createIpcMessage<T = unknown>(
   data: T,
 ): IpcMessage<T> {
   return {
-    id: `${process.pid}-${Date.now()}-${randomBytes(4).toString('hex')}`,
+    id: `${process.pid}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
     timestamp: Date.now(),
     type,
     data,

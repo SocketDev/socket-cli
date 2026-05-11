@@ -36,6 +36,29 @@ interface WhoamiStatus {
 
 // Helper functions.
 
+export function getTokenLocation(): string {
+  // Check environment variable first.
+  if (SOCKET_CLI_API_TOKEN) {
+    return 'Environment variable (SOCKET_SECURITY_API_KEY)'
+  }
+
+  // Check config file.
+  const configToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
+  if (configToken) {
+    return 'Config file (~/.config/socket/config.toml)'
+  }
+
+  return 'Unknown'
+}
+
+export function outputWhoami(status: WhoamiStatus): void {
+  const result: CResult<WhoamiStatus> = {
+    ok: true,
+    data: status,
+  }
+  logger.log(serializeResultJson(result))
+}
+
 export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
@@ -105,29 +128,6 @@ export async function run(
       logger.log('  export SOCKET_SECURITY_API_KEY=<your-token>')
     }
   }
-}
-
-export function getTokenLocation(): string {
-  // Check environment variable first.
-  if (SOCKET_CLI_API_TOKEN) {
-    return 'Environment variable (SOCKET_SECURITY_API_KEY)'
-  }
-
-  // Check config file.
-  const configToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
-  if (configToken) {
-    return 'Config file (~/.config/socket/config.toml)'
-  }
-
-  return 'Unknown'
-}
-
-export function outputWhoami(status: WhoamiStatus): void {
-  const result: CResult<WhoamiStatus> = {
-    ok: true,
-    data: status,
-  }
-  logger.log(serializeResultJson(result))
 }
 
 // Exported command.

@@ -39,6 +39,85 @@ interface GetTestsResult {
 }
 
 /**
+ * Get affected test files to run based on changed files.
+ */
+export function getTestsToRun(options: GetTestsOptions = {}): GetTestsResult {
+  const { all = false, staged = false } = options
+
+  // All mode runs all tests
+  if (all || process.env['FORCE_TEST'] === '1') {
+    return { tests: 'all', reason: 'explicit --all flag', mode: 'all' }
+  }
+
+  // CI always runs all tests
+  if (process.env['CI'] === 'true') {
+    return { tests: 'all', reason: 'CI environment', mode: 'all' }
+  }
+
+  // Get changed files
+  const changedFiles = staged ? getStagedFilesSync() : getChangedFilesSync()
+  const mode = staged ? 'staged' : 'changed'
+
+  if (changedFiles.length === 0) {
+    // No changes, skip tests
+    return { tests: undefined, mode }
+  }
+
+  const testFiles = new Set<string>()
+  let runAllTests = false
+  let runAllReason = ''
+
+  for (const file of changedFiles) {
+    const normalized = normalizePath(file)
+
+    // Test files always run themselves
+    if (normalized.includes('.test.')) {
+      // Skip deleted files.
+      if (existsSync(path.join(rootPath, file))) {
+        testFiles.add(file)
+      }
+      continue
+    }
+
+    // Source files map to test files
+    const tests = mapSourceToTests(normalized)
+    if (tests.includes('all')) {
+      runAllTests = true
+      runAllReason = 'core file changes'
+      break
+    }
+
+    for (const test of tests) {
+      // Handle directory patterns
+      if (test.endsWith('/')) {
+        runAllTests = true
+        runAllReason = 'integration test directory'
+        break
+      }
+
+      // Skip deleted files.
+      if (existsSync(path.join(rootPath, test))) {
+        testFiles.add(test)
+      }
+    }
+
+    if (runAllTests) {
+      break
+    }
+  }
+
+  if (runAllTests) {
+    return { tests: 'all', reason: runAllReason, mode: 'all' }
+  }
+
+  if (testFiles.size === 0) {
+    return { tests: undefined, mode }
+  }
+
+  return { tests: Array.from(testFiles), mode }
+}
+
+/**
  * Map source files to their corresponding test files.
  */
 export function mapSourceToTests(filepath: string): string[] {
@@ -118,83 +197,4 @@ export function mapSourceToTests(filepath: string): string[] {
 
   // If no specific mapping, run all tests to be safe
   return ['all']
-}
-
-/**
- * Get affected test files to run based on changed files.
- */
-export function getTestsToRun(options: GetTestsOptions = {}): GetTestsResult {
-  const { all = false, staged = false } = options
-
-  // All mode runs all tests
-  if (all || process.env['FORCE_TEST'] === '1') {
-    return { tests: 'all', reason: 'explicit --all flag', mode: 'all' }
-  }
-
-  // CI always runs all tests
-  if (process.env['CI'] === 'true') {
-    return { tests: 'all', reason: 'CI environment', mode: 'all' }
-  }
-
-  // Get changed files
-  const changedFiles = staged ? getStagedFilesSync() : getChangedFilesSync()
-  const mode = staged ? 'staged' : 'changed'
-
-  if (changedFiles.length === 0) {
-    // No changes, skip tests
-    return { tests: undefined, mode }
-  }
-
-  const testFiles = new Set<string>()
-  let runAllTests = false
-  let runAllReason = ''
-
-  for (const file of changedFiles) {
-    const normalized = normalizePath(file)
-
-    // Test files always run themselves
-    if (normalized.includes('.test.')) {
-      // Skip deleted files.
-      if (existsSync(path.join(rootPath, file))) {
-        testFiles.add(file)
-      }
-      continue
-    }
-
-    // Source files map to test files
-    const tests = mapSourceToTests(normalized)
-    if (tests.includes('all')) {
-      runAllTests = true
-      runAllReason = 'core file changes'
-      break
-    }
-
-    for (const test of tests) {
-      // Handle directory patterns
-      if (test.endsWith('/')) {
-        runAllTests = true
-        runAllReason = 'integration test directory'
-        break
-      }
-
-      // Skip deleted files.
-      if (existsSync(path.join(rootPath, test))) {
-        testFiles.add(test)
-      }
-    }
-
-    if (runAllTests) {
-      break
-    }
-  }
-
-  if (runAllTests) {
-    return { tests: 'all', reason: runAllReason, mode: 'all' }
-  }
-
-  if (testFiles.size === 0) {
-    return { tests: undefined, mode }
-  }
-
-  return { tests: Array.from(testFiles), mode }
 }

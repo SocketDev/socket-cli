@@ -9,7 +9,7 @@
 /**
  * Get the value from a literal node.
  */
-function getLiteralValue(t, node) {
+export function getLiteralValue(t, node) {
   if (t.isNullLiteral(node)) {
     return undefined
   }
@@ -19,7 +19,7 @@ function getLiteralValue(t, node) {
 /**
  * Check if a node is a literal value.
  */
-function isLiteralValue(t, node) {
+export function isLiteralValue(t, node) {
   return (
     t.isNumericLiteral(node) ||
     t.isStringLiteral(node) ||
@@ -31,7 +31,7 @@ function isLiteralValue(t, node) {
 /**
  * Convert a value to a Babel AST literal node.
  */
-function valueToLiteral(t, value) {
+export function valueToLiteral(t, value) {
   if (value === null) {
     return t.nullLiteral()
   }

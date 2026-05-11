@@ -16,7 +16,7 @@ const logger = getDefaultLogger()
 /**
  * Check if a file exists and is readable.
  */
-async function fileExists(filePath) {
+export async function fileExists(filePath) {
   try {
     await fs.access(filePath)
     return true
@@ -28,7 +28,7 @@ async function fileExists(filePath) {
 /**
  * Main validation function.
  */
-async function validate() {
+export async function validate() {
   logger.log('')
   logger.log('='.repeat(60))
   logger.log(`${colors.blue('CLI Package Validation')}`)
@@ -72,7 +72,7 @@ async function validate() {
   for (const file of rootFiles) {
     logger.info(`Checking ${file}...`)
     const filePath = path.join(packageRoot, file)
-    if (!(await fileExists(filePath))) {
+    if (!(await existsSync(filePath))) {
       errors.push(`${file} does not exist`)
     } else {
       logger.success(`${file} exists`)
@@ -84,7 +84,7 @@ async function validate() {
   for (const file of distFiles) {
     logger.info(`Checking dist/${file}...`)
     const filePath = path.join(packageRoot, 'dist', file)
-    if (!(await fileExists(filePath))) {
+    if (!(await existsSync(filePath))) {
       errors.push(`dist/${file} does not exist`)
     } else {
       logger.success(`dist/${file} exists`)
@@ -94,7 +94,7 @@ async function validate() {
   // Check build/cli.js exists.
   logger.info('Checking build/cli.js...')
   const buildPath = path.join(packageRoot, 'build', 'cli.js')
-  if (!(await fileExists(buildPath))) {
+  if (!(await existsSync(buildPath))) {
     errors.push('build/cli.js does not exist')
   } else {
     logger.success('build/cli.js exists')
@@ -103,7 +103,7 @@ async function validate() {
   // Check data directory exists.
   logger.info('Checking data directory...')
   const dataPath = path.join(packageRoot, 'data')
-  if (!(await fileExists(dataPath))) {
+  if (!(await existsSync(dataPath))) {
     errors.push('data directory does not exist')
   } else {
     logger.success('data directory exists')
@@ -116,7 +116,7 @@ async function validate() {
     for (const file of dataFiles) {
       logger.info(`Checking data/${file}...`)
       const filePath = path.join(dataPath, file)
-      if (!(await fileExists(filePath))) {
+      if (!(await existsSync(filePath))) {
         errors.push(`data/${file} does not exist`)
       } else {
         logger.success(`data/${file} exists`)

@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto'
+import crypto from 'node:crypto'
 import { createServer } from 'node:http'
 
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
@@ -267,7 +267,7 @@ export async function runHttpTransport(
                   transport: newTransport,
                 })
               },
-              sessionIdGenerator: () => randomUUID(),
+              sessionIdGenerator: () => crypto.randomUUID(),
             })
             // eslint-disable-next-line unicorn/prefer-add-event-listener -- MCP SDK exposes onclose as a setter, not an EventTarget.
             newTransport.onclose = makeOnTransportClose(

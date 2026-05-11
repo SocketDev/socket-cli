@@ -5,29 +5,29 @@
  * Follows ultrathink pattern: build/{mode}/out/{package}
  */
 
-import { dirname, join } from 'node:path'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+const __dirname = path.dirname(__filename)
 
 // Package-builder root directory.
-export const PACKAGE_BUILDER_ROOT = join(__dirname, '..')
+export const PACKAGE_BUILDER_ROOT = path.join(__dirname, '..')
 
 // Template directories.
-export const TEMPLATES_DIR = join(PACKAGE_BUILDER_ROOT, 'templates')
-export const CLI_TEMPLATE_DIR = join(TEMPLATES_DIR, 'cli-package')
-export const CLI_SENTRY_TEMPLATE_DIR = join(TEMPLATES_DIR, 'cli-sentry-package')
-export const SOCKET_TEMPLATE_DIR = join(TEMPLATES_DIR, 'socket-package')
-export const SOCKETADDON_MAIN_TEMPLATE_DIR = join(
+export const TEMPLATES_DIR = path.join(PACKAGE_BUILDER_ROOT, 'templates')
+export const CLI_TEMPLATE_DIR = path.join(TEMPLATES_DIR, 'cli-package')
+export const CLI_SENTRY_TEMPLATE_DIR = path.join(TEMPLATES_DIR, 'cli-sentry-package')
+export const SOCKET_TEMPLATE_DIR = path.join(TEMPLATES_DIR, 'socket-package')
+export const SOCKETADDON_MAIN_TEMPLATE_DIR = path.join(
   TEMPLATES_DIR,
   'socketaddon-main',
 )
-export const SOCKETADDON_TEMPLATE_DIR = join(
+export const SOCKETADDON_TEMPLATE_DIR = path.join(
   TEMPLATES_DIR,
   'socketaddon-package',
 )
-export const SOCKETBIN_TEMPLATE_DIR = join(TEMPLATES_DIR, 'socketbin-package')
+export const SOCKETBIN_TEMPLATE_DIR = path.join(TEMPLATES_DIR, 'socketbin-package')
 
 /**
  * Get build mode (dev/prod).
@@ -51,7 +51,7 @@ export function getBuildMode() {
     return process.env['BUILD_MODE']
   }
   // Default based on CI.
-  const isCI = process.env['CI'] === 'true' || process.env['CI'] === '1'
+  const isCI = process.env['CI'] === '1' || process.env['CI'] === 'true'
   return isCI ? 'prod' : 'dev'
 }
 
@@ -62,7 +62,7 @@ export function getBuildMode() {
  * @returns {string} Path to build output root.
  */
 export function getBuildOutDir(mode = getBuildMode()) {
-  return join(PACKAGE_BUILDER_ROOT, 'build', mode, 'out')
+  return path.join(PACKAGE_BUILDER_ROOT, 'build', mode, 'out')
 }
 
 /**
@@ -73,7 +73,7 @@ export function getBuildOutDir(mode = getBuildMode()) {
  * @returns {string} Path to package output directory.
  */
 export function getPackageOutDir(packageName: string, mode = getBuildMode()) {
-  return join(getBuildOutDir(mode), packageName)
+  return path.join(getBuildOutDir(mode), packageName)
 }
 
 /**
@@ -116,8 +116,8 @@ export function getSocketbinBinaryPath(
 ) {
   // Accept both win and win32 for Windows detection.
   const binaryName =
-    platform === 'win32' || platform === 'win' ? 'socket.exe' : 'socket'
-  return join(getSocketbinPackageDir(platform, arch, libc, mode), binaryName)
+    platform === 'win' || platform === 'win32' ? 'socket.exe' : 'socket'
+  return path.join(getSocketbinPackageDir(platform, arch, libc, mode), binaryName)
 }
 
 /**

@@ -79,6 +79,69 @@ const BUCKET_SECTIONS: readonly BucketSection[] = [
   { heading: 'CLI configuration', bucket: 'config' },
 ]
 
+/**
+ * Build the help-text lines passed to meow as the `help` option.
+ *
+ * For root `socket`: a bucketed layout (Main commands, Socket API,
+ * Local tools, CLI configuration) plus optional environment-variable
+ * docs gated on --help-full.
+ *
+ * For sub-commands (`socket scan`, `socket package`, …): a flat
+ * alphabetised list of the subcommand's own children + aliases.
+ */
+export function buildHelpLines(opts: BuildHelpLinesOptions): string[] {
+  const { aliases, argv, buckets, flags, isRootCommand, name, subcommands } =
+    opts
+
+  const lines = ['', 'Usage', `  $ ${name} <command>`]
+  if (isRootCommand) {
+    lines.push(
+      `  $ ${name} scan create ${FLAG_JSON}`,
+      `  $ ${name} package score ${NPM} lodash ${FLAG_MARKDOWN}`,
+    )
+  }
+  lines.push('')
+
+  if (isRootCommand) {
+    pushRootBucketedLayout(lines, subcommands, buckets ?? {})
+  } else {
+    pushSubcommandFlatList(lines, subcommands, aliases)
+  }
+
+  lines.push('', 'Options')
+  if (isRootCommand) {
+    lines.push(
+      '  Note: All commands have these flags even when not displayed in their help',
+      '',
+    )
+  } else {
+    lines.push('')
+  }
+  lines.push(
+    `  ${getFlagListOutput(
+      {
+        ...flags,
+        // Explicitly document the negated --no-banner variant.
+        noBanner: {
+          ...flags['banner'],
+          hidden: false,
+        } as MeowFlag,
+        // Explicitly document the negated --no-spinner variant.
+        noSpinner: {
+          ...flags['spinner'],
+          hidden: false,
+        } as MeowFlag,
+      },
+      { indent: HELP_INDENT, padName: HELP_PAD_NAME },
+    )}`,
+  )
+  if (isRootCommand) {
+    pushEnvironmentVariables(lines, argv)
+  }
+
+  return lines
+}
+
 export function describeOrFallback(
   cmd: CliSubcommand | undefined,
   fallback: string,
@@ -247,67 +310,4 @@ export function pushSubcommandFlatList(
       { indent: HELP_INDENT, padName: HELP_PAD_NAME },
     )}`,
   )
-}
-
-/**
- * Build the help-text lines passed to meow as the `help` option.
- *
- * For root `socket`: a bucketed layout (Main commands, Socket API,
- * Local tools, CLI configuration) plus optional environment-variable
- * docs gated on --help-full.
- *
- * For sub-commands (`socket scan`, `socket package`, …): a flat
- * alphabetised list of the subcommand's own children + aliases.
- */
-export function buildHelpLines(opts: BuildHelpLinesOptions): string[] {
-  const { aliases, argv, buckets, flags, isRootCommand, name, subcommands } =
-    opts
-
-  const lines = ['', 'Usage', `  $ ${name} <command>`]
-  if (isRootCommand) {
-    lines.push(
-      `  $ ${name} scan create ${FLAG_JSON}`,
-      `  $ ${name} package score ${NPM} lodash ${FLAG_MARKDOWN}`,
-    )
-  }
-  lines.push('')
-
-  if (isRootCommand) {
-    pushRootBucketedLayout(lines, subcommands, buckets ?? {})
-  } else {
-    pushSubcommandFlatList(lines, subcommands, aliases)
-  }
-
-  lines.push('', 'Options')
-  if (isRootCommand) {
-    lines.push(
-      '  Note: All commands have these flags even when not displayed in their help',
-      '',
-    )
-  } else {
-    lines.push('')
-  }
-  lines.push(
-    `  ${getFlagListOutput(
-      {
-        ...flags,
-        // Explicitly document the negated --no-banner variant.
-        noBanner: {
-          ...flags['banner'],
-          hidden: false,
-        } as MeowFlag,
-        // Explicitly document the negated --no-spinner variant.
-        noSpinner: {
-          ...flags['spinner'],
-          hidden: false,
-        } as MeowFlag,
-      },
-      { indent: HELP_INDENT, padName: HELP_PAD_NAME },
-    )}`,
-  )
-  if (isRootCommand) {
-    pushEnvironmentVariables(lines, argv)
-  }
-
-  return lines
 }

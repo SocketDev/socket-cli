@@ -30,12 +30,6 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
 
-export function checkpointDir(buildDir, packageName) {
-  return packageName
-    ? path.join(buildDir, 'checkpoints', packageName)
-    : path.join(buildDir, 'checkpoints')
-}
-
 function checkpointFile(buildDir, packageName, name) {
   return path.join(checkpointDir(buildDir, packageName), `${name}.json`)
 }
@@ -82,6 +76,12 @@ function platformCacheKey({ buildMode, nodeVersion, platform, arch, libc }) {
     return ''
   }
   return createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 16)
+}
+
+export function checkpointDir(buildDir, packageName) {
+  return packageName
+    ? path.join(buildDir, 'checkpoints', packageName)
+    : path.join(buildDir, 'checkpoints')
 }
 
 /**

@@ -39,7 +39,7 @@
  * finalizeTelemetrySync()    // Sync version (best-effort).
  * ```
  */
-import { homedir } from 'node:os'
+import os from 'node:os'
 import process from 'node:process'
 
 import { debugNs } from '@socketsecurity/lib/debug'
@@ -284,7 +284,7 @@ export function sanitizeArgv(argv: string[]): string[] {
     }
 
     // Remove user home directory from file paths.
-    const homeDir = homedir()
+    const homeDir = os.homedir()
     if (homeDir) {
       return arg.replace(new RegExp(escapeRegExp(homeDir), 'g'), '~')
     }
@@ -306,7 +306,7 @@ export function sanitizeErrorAttribute(input: string | undefined): string | unde
   }
 
   // Remove user home directory.
-  const homeDir = homedir()
+  const homeDir = os.homedir()
   if (homeDir) {
     return input.replace(new RegExp(escapeRegExp(homeDir), 'g'), '~')
   }

@@ -20,23 +20,6 @@ const cache = createTtlCache({
 })
 
 /**
- * Get GitHub authentication headers if token is available.
- *
- * @returns {object} - Headers object with Authorization if token exists.
- */
-export function getAuthHeaders() {
-  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
-  const headers = {
-    Accept: 'application/vnd.github+json',
-    'X-GitHub-Api-Version': '2022-11-28',
-  }
-  if (token) {
-    headers.Authorization = `Bearer ${token}`
-  }
-  return headers
-}
-
-/**
  * Download a specific release asset.
  *
  * Uses browser_download_url to avoid consuming GitHub API quota.
@@ -80,6 +63,23 @@ export async function downloadReleaseAsset(
     retries: 2,
     retryDelay: 5_000,
   })
+}
+
+/**
+ * Get GitHub authentication headers if token is available.
+ *
+ * @returns {object} - Headers object with Authorization if token exists.
+ */
+export function getAuthHeaders() {
+  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+  return headers
 }
 
 /**

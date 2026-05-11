@@ -10,7 +10,7 @@
  * Therefore, we use direct process.env access for bootstrap-specific env vars.
  */
 
-import { homedir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 
 /**
@@ -69,5 +69,5 @@ export function getRegistryUrl(): string {
  * Direct process.env access required - bootstrap runs before ENV module loads.
  */
 export function getSocketHome(): string {
-  return process.env['SOCKET_HOME'] || path.join(homedir(), '.socket')
+  return process.env['SOCKET_HOME'] || path.join(os.homedir(), '.socket')
 }

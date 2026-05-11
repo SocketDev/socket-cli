@@ -19,83 +19,6 @@
  * var str = '\n'  // Proper escape
  */
 
-/**
- * Convert legacy octal literal (0123) to decimal number
- * @param {string} value - The numeric literal string
- * @returns {number|undefined} Decimal value or undefined if not octal
- */
-export function convertOctalLiteral(value) {
-  // Match legacy octal: starts with 0, followed by octal digits (0-7)
-  const octalMatch = /^0([0-7]+)$/.exec(value)
-  if (!octalMatch) {
-    return undefined
-  }
-
-  const octalDigits = octalMatch[1]
-  return Number.parseInt(octalDigits, 8)
-}
-
-/**
- * Transform octal escape sequences in strings to proper escapes
- * @param {string} str - String literal value
- * @returns {string} Transformed string
- */
-export function transformOctalEscapes(str) {
-  // Common octal escapes and their replacements
-  const commonOctals = {
-    // Null (allowed in strict mode if not followed by digit)
-    '\\0': '\\0',
-    // Start of Heading
-    '\\1': '\\x01',
-    // Start of Text
-    '\\2': '\\x02',
-    // End of Text
-    '\\3': '\\x03',
-    // End of Transmission
-    '\\4': '\\x04',
-    // Enquiry
-    '\\5': '\\x05',
-    // Acknowledge
-    '\\6': '\\x06',
-    // Bell
-    '\\7': '\\x07',
-    // Backspace
-    '\\10': '\\b',
-    // Tab
-    '\\11': '\\t',
-    // Line Feed
-    '\\12': '\\n',
-    // Vertical Tab
-    '\\13': '\\v',
-    // Form Feed
-    '\\14': '\\f',
-    // Carriage Return
-    '\\15': '\\r',
-  }
-
-  let result = str
-
-  // Replace common named escapes first
-  for (const [octal, replacement] of Object.entries(commonOctals)) {
-    // Use word boundary to avoid matching longer sequences
-    result = result.replace(
-      new RegExp(`${octal.replace(/\\/g, '\\\\')}(?![0-7])`, 'g'),
-      replacement,
-    )
-  }
-
-  // Replace any remaining octal escapes (\16-\377) with hex escapes
-  result = result.replace(/\\([0-7]{1,3})/g, (_match, octalDigits) => {
-    const codePoint = Number.parseInt(octalDigits, 8)
-    if (codePoint <= 0xff) {
-      return `\\x${codePoint.toString(16).padStart(2, '0')}`
-    }
-    return `\\u${codePoint.toString(16).padStart(4, '0')}`
-  })
-
-  return result
-}
-
 export default function babelPluginStrictMode({ types: t }) {
   const stats = {
     octalLiterals: 0,
@@ -270,4 +193,81 @@ Strict Mode Transformation Stats:
       },
     },
   }
+}
+
+/**
+ * Convert legacy octal literal (0123) to decimal number
+ * @param {string} value - The numeric literal string
+ * @returns {number|undefined} Decimal value or undefined if not octal
+ */
+export function convertOctalLiteral(value) {
+  // Match legacy octal: starts with 0, followed by octal digits (0-7)
+  const octalMatch = /^0([0-7]+)$/.exec(value)
+  if (!octalMatch) {
+    return undefined
+  }
+
+  const octalDigits = octalMatch[1]
+  return Number.parseInt(octalDigits, 8)
+}
+
+/**
+ * Transform octal escape sequences in strings to proper escapes
+ * @param {string} str - String literal value
+ * @returns {string} Transformed string
+ */
+export function transformOctalEscapes(str) {
+  // Common octal escapes and their replacements
+  const commonOctals = {
+    // Null (allowed in strict mode if not followed by digit)
+    '\\0': '\\0',
+    // Start of Heading
+    '\\1': '\\x01',
+    // Start of Text
+    '\\2': '\\x02',
+    // End of Text
+    '\\3': '\\x03',
+    // End of Transmission
+    '\\4': '\\x04',
+    // Enquiry
+    '\\5': '\\x05',
+    // Acknowledge
+    '\\6': '\\x06',
+    // Bell
+    '\\7': '\\x07',
+    // Backspace
+    '\\10': '\\b',
+    // Tab
+    '\\11': '\\t',
+    // Line Feed
+    '\\12': '\\n',
+    // Vertical Tab
+    '\\13': '\\v',
+    // Form Feed
+    '\\14': '\\f',
+    // Carriage Return
+    '\\15': '\\r',
+  }
+
+  let result = str
+
+  // Replace common named escapes first
+  for (const [octal, replacement] of Object.entries(commonOctals)) {
+    // Use word boundary to avoid matching longer sequences
+    result = result.replace(
+      new RegExp(`${octal.replace(/\\/g, '\\\\')}(?![0-7])`, 'g'),
+      replacement,
+    )
+  }
+
+  // Replace any remaining octal escapes (\16-\377) with hex escapes
+  result = result.replace(/\\([0-7]{1,3})/g, (_match, octalDigits) => {
+    const codePoint = Number.parseInt(octalDigits, 8)
+    if (codePoint <= 0xff) {
+      return `\\x${codePoint.toString(16).padStart(2, '0')}`
+    }
+    return `\\u${codePoint.toString(16).padStart(4, '0')}`
+  })
+
+  return result
 }

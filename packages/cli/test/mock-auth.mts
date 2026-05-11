@@ -73,13 +73,6 @@ const MILLISECONDS_1_DAY = Date.now() + 24 * 60 * 60 * 1000
 const MILLISECONDS_30_DAYS = Date.now() + 30 * 24 * 60 * 60 * 1000
 
 /**
- * Simulate a delay for realistic async behavior.
- */
-export function simulateDelay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
-
-/**
  * Mock API token authentication.
  */
 export async function mockApiTokenAuth(
@@ -473,4 +466,11 @@ export async function mockValidateSession(
       expiresAt: isValid ? new Date(MILLISECONDS_1_DAY) : undefined,
     },
   }
+}
+
+/**
+ * Simulate a delay for realistic async behavior.
+ */
+export function simulateDelay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }

@@ -18,34 +18,6 @@ import { spawn } from '@socketsecurity/lib/spawn'
 const logger = getDefaultLogger()
 
 /**
- * Prompt user for yes/no confirmation.
- *
- * @param {string} question - Question to ask the user.
- * @param {boolean} [defaultAnswer=false] - Default answer if user just presses enter.
- * @returns {Promise<boolean>} True if user answered yes, false otherwise.
- */
-export async function promptYesNo(question, defaultAnswer = false) {
-  const readline = await import('node:readline')
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  })
-
-  return new Promise(resolve => {
-    const defaultHint = defaultAnswer ? 'Y/n' : 'y/N'
-    rl.question(`${question} (${defaultHint}): `, answer => {
-      rl.close()
-      const normalized = answer.trim().toLowerCase()
-      if (normalized === '') {
-        resolve(defaultAnswer)
-      } else {
-        resolve(normalized === 'y' || normalized === 'yes')
-      }
-    })
-  })
-}
-
-/**
  * Run pnpm patch-commit command to finalize patch.
  *
  * @param {string} patchPath - Path to temporary patch directory.
@@ -142,6 +114,34 @@ export function parseCode(code, options = {}) {
     sourceType: 'module',
     plugins: [],
     ...options,
+  })
+}
+
+/**
+ * Prompt user for yes/no confirmation.
+ *
+ * @param {string} question - Question to ask the user.
+ * @param {boolean} [defaultAnswer=false] - Default answer if user just presses enter.
+ * @returns {Promise<boolean>} True if user answered yes, false otherwise.
+ */
+export async function promptYesNo(question, defaultAnswer = false) {
+  const readline = await import('node:readline')
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  })
+
+  return new Promise(resolve => {
+    const defaultHint = defaultAnswer ? 'Y/n' : 'y/N'
+    rl.question(`${question} (${defaultHint}): `, answer => {
+      rl.close()
+      const normalized = answer.trim().toLowerCase()
+      if (normalized === '') {
+        resolve(defaultAnswer)
+      } else {
+        resolve(normalized === 'y' || normalized === 'yes')
+      }
+    })
   })
 }
 

@@ -16,7 +16,7 @@ const logger = getDefaultLogger()
 /**
  * Check if a file exists and is readable.
  */
-async function fileExists(filePath) {
+export async function fileExists(filePath) {
   try {
     await fs.access(filePath)
     return true
@@ -28,7 +28,7 @@ async function fileExists(filePath) {
 /**
  * Main validation function.
  */
-async function validate() {
+export async function validate() {
   logger.log('')
   logger.log('='.repeat(60))
   logger.log(`${colors.blue('CLI with Sentry Package Validation')}`)
@@ -79,7 +79,7 @@ async function validate() {
   for (const file of rootFiles) {
     logger.info(`Checking ${file}...`)
     const filePath = path.join(packageRoot, file)
-    if (!(await fileExists(filePath))) {
+    if (!(await existsSync(filePath))) {
       errors.push(`${file} does not exist`)
     } else {
       logger.success(`${file} exists`)
@@ -91,7 +91,7 @@ async function validate() {
   for (const file of distFiles) {
     logger.info(`Checking dist/${file}...`)
     const filePath = path.join(packageRoot, 'dist', file)
-    if (!(await fileExists(filePath))) {
+    if (!(await existsSync(filePath))) {
       errors.push(`dist/${file} does not exist`)
     } else {
       logger.success(`dist/${file} exists`)
@@ -101,7 +101,7 @@ async function validate() {
   // Verify Sentry is referenced in the build (check for @sentry/node require).
   logger.info('Checking for Sentry integration in build...')
   const buildPath = path.join(packageRoot, 'build', 'cli.js')
-  if (await fileExists(buildPath)) {
+  if (await existsSync(buildPath)) {
     const buildContent = await fs.readFile(buildPath, 'utf-8')
     if (!buildContent.includes('@sentry/node')) {
       errors.push('Sentry integration not found in build/cli.js')
@@ -115,7 +115,7 @@ async function validate() {
   // Check data directory exists.
   logger.info('Checking data directory...')
   const dataPath = path.join(packageRoot, 'data')
-  if (!(await fileExists(dataPath))) {
+  if (!(await existsSync(dataPath))) {
     errors.push('data directory does not exist')
   } else {
     logger.success('data directory exists')
@@ -128,7 +128,7 @@ async function validate() {
     for (const file of dataFiles) {
       logger.info(`Checking data/${file}...`)
       const filePath = path.join(dataPath, file)
-      if (!(await fileExists(filePath))) {
+      if (!(await existsSync(filePath))) {
         errors.push(`data/${file} does not exist`)
       } else {
         logger.success(`data/${file} exists`)

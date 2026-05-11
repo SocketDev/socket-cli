@@ -41,7 +41,7 @@
  * ```
  */
 
-import { randomUUID } from 'node:crypto'
+import crypto from 'node:crypto'
 
 import { LRUCache } from 'lru-cache'
 
@@ -75,7 +75,7 @@ const debugDirWrapper = (obj: unknown, inspectOpts?: InspectOptions): void => {
  * Process-wide session ID.
  * Generated once per CLI invocation and shared across all telemetry instances.
  */
-const SESSION_ID = randomUUID()
+const SESSION_ID = crypto.randomUUID()
 
 /**
  * Default telemetry configuration.

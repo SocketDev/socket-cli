@@ -88,7 +88,7 @@ interface PrerequisiteOptions {
 /**
  * Check prerequisite.
  */
-async function checkPrerequisite({
+export async function checkPrerequisite({
   command,
   minVersion,
   name,
@@ -123,7 +123,7 @@ async function checkPrerequisite({
  * Compare two version objects.
  * Returns: -1 if a < b, 0 if a === b, 1 if a > b
  */
-function compareVersions(a: VersionInfo, b: VersionInfo): number {
+export function compareVersions(a: VersionInfo, b: VersionInfo): number {
   if (a.major !== b.major) {
     return a.major < b.major ? -1 : 1
   }
@@ -139,7 +139,7 @@ function compareVersions(a: VersionInfo, b: VersionInfo): number {
 /**
  * Check and optionally install gh CLI.
  */
-async function ensureGhCli(): Promise<boolean> {
+export async function ensureGhCli(): Promise<boolean> {
   if (await hasCommand('gh')) {
     const version = await getVersion('gh')
     logger.log(`gh CLI ${version} (optional)`)
@@ -225,7 +225,7 @@ async function ensureGhCli(): Promise<boolean> {
 /**
  * Generate cli-with-sentry package from template.
  */
-async function generateCliSentryPackage(): Promise<boolean> {
+export async function generateCliSentryPackage(): Promise<boolean> {
   if (!quiet) {
     logger.log('Generating cli-with-sentry package from template...')
   }
@@ -252,7 +252,7 @@ async function generateCliSentryPackage(): Promise<boolean> {
 /**
  * Generate socketbin packages from template.
  */
-async function generateSocketbinPackages(): Promise<boolean> {
+export async function generateSocketbinPackages(): Promise<boolean> {
   if (!quiet) {
     logger.log('Generating socketbin packages from template...')
   }
@@ -279,7 +279,7 @@ async function generateSocketbinPackages(): Promise<boolean> {
 /**
  * Get version of a command.
  */
-async function getVersion(
+export async function getVersion(
   command: string,
   args: string[] = ['--version'],
 ): Promise<string | undefined> {
@@ -299,7 +299,7 @@ async function getVersion(
 /**
  * Check if a command is available.
  */
-async function hasCommand(command: string): Promise<boolean> {
+export async function hasCommand(command: string): Promise<boolean> {
   try {
     const result = await spawn(command, ['--version'], {
       stdio: 'pipe',
@@ -313,7 +313,7 @@ async function hasCommand(command: string): Promise<boolean> {
 /**
  * Install Chocolatey (Windows).
  */
-async function installChocolatey(): Promise<boolean> {
+export async function installChocolatey(): Promise<boolean> {
   if (!WIN32) {
     logger.warn('Chocolatey is only available on Windows')
     return false
@@ -342,7 +342,7 @@ async function installChocolatey(): Promise<boolean> {
 /**
  * Install Homebrew (macOS/Linux).
  */
-async function installHomebrew(): Promise<boolean> {
+export async function installHomebrew(): Promise<boolean> {
   if (WIN32) {
     logger.warn('Homebrew is not available on Windows')
     return false
@@ -370,7 +370,7 @@ async function installHomebrew(): Promise<boolean> {
 /**
  * Install a package using Chocolatey (Windows).
  */
-async function installWithChocolatey(packageName: string): Promise<boolean> {
+export async function installWithChocolatey(packageName: string): Promise<boolean> {
   if (!(await hasCommand('choco'))) {
     logger.error('Chocolatey not available')
     return false
@@ -395,7 +395,7 @@ async function installWithChocolatey(packageName: string): Promise<boolean> {
 /**
  * Install a package using Homebrew (macOS/Linux).
  */
-async function installWithHomebrew(packageName: string): Promise<boolean> {
+export async function installWithHomebrew(packageName: string): Promise<boolean> {
   if (!(await hasCommand('brew'))) {
     logger.error('Homebrew not available')
     return false
@@ -419,7 +419,7 @@ async function installWithHomebrew(packageName: string): Promise<boolean> {
 /**
  * Parse version string to compare.
  */
-function parseVersion(versionString: string): VersionInfo | undefined {
+export function parseVersion(versionString: string): VersionInfo | undefined {
   const match = versionString.match(/(\d+)\.(\d+)\.(\d+)/)
   if (!match) {
     return undefined
@@ -434,7 +434,7 @@ function parseVersion(versionString: string): VersionInfo | undefined {
 /**
  * Restore build cache if possible.
  */
-async function restoreCache(hasGh: boolean): Promise<boolean> {
+export async function restoreCache(hasGh: boolean): Promise<boolean> {
   // Skip entirely if gh CLI not available.
   if (!hasGh) {
     logger.info('Skipping cache restoration (gh CLI not available)')

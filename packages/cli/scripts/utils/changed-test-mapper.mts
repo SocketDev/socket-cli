@@ -25,6 +25,109 @@ const CORE_FILES = [
 ]
 
 /**
+ * Get affected test files to run based on changed files.
+ * @param {Object} options
+ * @param {boolean} options.staged - Use staged files instead of all changes
+ * @param {boolean} options.all - Run all tests
+ * @returns {{tests: string[] | 'all' | null, reason?: string, mode?: string}} Object with test patterns, reason, and mode
+ */
+export function getTestsToRun(options = {}) {
+  const { all = false, staged = false } = options
+
+  // All mode runs all tests
+  if (all || process.env.FORCE_TEST === '1') {
+    return { tests: 'all', reason: 'explicit --all flag', mode: 'all' }
+  }
+
+  // CI always runs all tests
+  if (process.env.CI === 'true') {
+    return { tests: 'all', reason: 'CI environment', mode: 'all' }
+  }
+
+  // Get changed files
+  const changedFiles = staged ? getStagedFilesSync() : getChangedFilesSync()
+  const mode = staged ? 'staged' : 'changed'
+
+  if (changedFiles.length === 0) {
+    // No changes, skip tests
+    return { tests: undefined, mode }
+  }
+
+  const testFiles = new Set()
+  let runAllTests = false
+  let runAllReason = ''
+
+  for (const file of changedFiles) {
+    const normalized = normalizePath(file)
+
+    // Test files always run themselves (both in test/ and co-located in src/)
+    if (normalized.includes('.test.')) {
+      // Skip deleted files.
+      if (existsSync(path.join(rootPath, file))) {
+        testFiles.add(file)
+      }
+      continue
+    }
+
+    // Source files map to test files
+    if (normalized.startsWith('src/')) {
+      const tests = mapSourceToTests(normalized)
+      if (tests.includes('all')) {
+        runAllTests = true
+        runAllReason = 'core file changes'
+        break
+      }
+      for (const test of tests) {
+        // Skip deleted files.
+        if (existsSync(path.join(rootPath, test))) {
+          testFiles.add(test)
+        }
+      }
+      continue
+    }
+
+    // Config changes run all tests
+    if (normalized.includes('vitest.config')) {
+      runAllTests = true
+      runAllReason = 'vitest config changed'
+      break
+    }
+
+    if (normalized.includes('tsconfig')) {
+      runAllTests = true
+      runAllReason = 'TypeScript config changed'
+      break
+    }
+
+    // Data changes may affect integration tests
+    if (normalized.startsWith('data/')) {
+      // Check if integration tests exist in test directory
+      const integrationDir = path.join(rootPath, 'test/integration')
+      if (existsSync(integrationDir)) {
+        testFiles.add('test/integration/**/*.test.mts')
+      }
+    }
+
+    // Config file changes
+    if (normalized.includes('package.json')) {
+      runAllTests = true
+      runAllReason = 'package.json changed'
+      break
+    }
+  }
+
+  if (runAllTests) {
+    return { tests: 'all', reason: runAllReason, mode: 'all' }
+  }
+
+  if (testFiles.size === 0) {
+    return { tests: undefined, mode }
+  }
+
+  return { tests: Array.from(testFiles), mode }
+}
+
+/**
  * Map source files to their corresponding test files.
  * @param {string} filepath - Path to source file
  * @returns {string[]} Array of test file paths
@@ -359,107 +462,4 @@ export function mapSourceToTests(filepath) {
 
   // If no specific mapping, run all tests to be safe
   return ['all']
-}
-
-/**
- * Get affected test files to run based on changed files.
- * @param {Object} options
- * @param {boolean} options.staged - Use staged files instead of all changes
- * @param {boolean} options.all - Run all tests
- * @returns {{tests: string[] | 'all' | null, reason?: string, mode?: string}} Object with test patterns, reason, and mode
- */
-export function getTestsToRun(options = {}) {
-  const { all = false, staged = false } = options
-
-  // All mode runs all tests
-  if (all || process.env.FORCE_TEST === '1') {
-    return { tests: 'all', reason: 'explicit --all flag', mode: 'all' }
-  }
-
-  // CI always runs all tests
-  if (process.env.CI === 'true') {
-    return { tests: 'all', reason: 'CI environment', mode: 'all' }
-  }
-
-  // Get changed files
-  const changedFiles = staged ? getStagedFilesSync() : getChangedFilesSync()
-  const mode = staged ? 'staged' : 'changed'
-
-  if (changedFiles.length === 0) {
-    // No changes, skip tests
-    return { tests: undefined, mode }
-  }
-
-  const testFiles = new Set()
-  let runAllTests = false
-  let runAllReason = ''
-
-  for (const file of changedFiles) {
-    const normalized = normalizePath(file)
-
-    // Test files always run themselves (both in test/ and co-located in src/)
-    if (normalized.includes('.test.')) {
-      // Skip deleted files.
-      if (existsSync(path.join(rootPath, file))) {
-        testFiles.add(file)
-      }
-      continue
-    }
-
-    // Source files map to test files
-    if (normalized.startsWith('src/')) {
-      const tests = mapSourceToTests(normalized)
-      if (tests.includes('all')) {
-        runAllTests = true
-        runAllReason = 'core file changes'
-        break
-      }
-      for (const test of tests) {
-        // Skip deleted files.
-        if (existsSync(path.join(rootPath, test))) {
-          testFiles.add(test)
-        }
-      }
-      continue
-    }
-
-    // Config changes run all tests
-    if (normalized.includes('vitest.config')) {
-      runAllTests = true
-      runAllReason = 'vitest config changed'
-      break
-    }
-
-    if (normalized.includes('tsconfig')) {
-      runAllTests = true
-      runAllReason = 'TypeScript config changed'
-      break
-    }
-
-    // Data changes may affect integration tests
-    if (normalized.startsWith('data/')) {
-      // Check if integration tests exist in test directory
-      const integrationDir = path.join(rootPath, 'test/integration')
-      if (existsSync(integrationDir)) {
-        testFiles.add('test/integration/**/*.test.mts')
-      }
-    }
-
-    // Config file changes
-    if (normalized.includes('package.json')) {
-      runAllTests = true
-      runAllReason = 'package.json changed'
-      break
-    }
-  }
-
-  if (runAllTests) {
-    return { tests: 'all', reason: runAllReason, mode: 'all' }
-  }
-
-  if (testFiles.size === 0) {
-    return { tests: undefined, mode }
-  }
-
-  return { tests: Array.from(testFiles), mode }
 }

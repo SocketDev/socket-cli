@@ -791,7 +791,7 @@ describe('git utilities', () => {
       // having already filled the cache.
       vi.resetModules()
       vi.doMock('@socketsecurity/lib/bin', () => ({
-        whichReal: vi.fn().mockResolvedValue(null),
+        whichReal: vi.fn().mockResolvedValue(undefined),
       }))
       const { getGitPath: freshGetGitPath } = await import(
         '../../../../src/utils/git/operations.mts'

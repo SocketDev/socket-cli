@@ -5,7 +5,7 @@
 
 import { realpathSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { homedir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -50,7 +50,7 @@ export const rootPath =
 export const distPath = path.join(rootPath, 'dist')
 export const configPath = path.join(rootPath, '.config')
 export const externalPath = path.join(rootPath, 'external')
-export const homePath = homedir()
+export const homePath = os.homedir()
 
 // Configuration File Names (CLI-specific)
 export const ENVIRONMENT_YAML = 'environment.yaml'
@@ -74,11 +74,11 @@ export const UPDATE_STORE_FILE_NAME = '.dlx-manifest.json'
 // Lazy Path Getters (computed on first access)
 
 export function getBashRcPath(): string {
-  return path.join(homedir(), '.bashrc')
+  return path.join(os.homedir(), '.bashrc')
 }
 
 export function getZshRcPath(): string {
-  return path.join(homedir(), '.zshrc')
+  return path.join(os.homedir(), '.zshrc')
 }
 
 export function getBinPath(): string {
@@ -151,7 +151,7 @@ export function getSocketAppDataPath(): string | undefined {
     ? ENV.LOCALAPPDATA
     : ENV.XDG_DATA_HOME
   if (!dataHome) {
-    const home = homedir()
+    const home = os.homedir()
     /* c8 ignore next 5 - WIN32-only fallback when LOCALAPPDATA env var missing; tests run on macOS/Linux */
     if (isWin32) {
       dataHome = path.join(home, 'AppData', 'Local')
@@ -174,7 +174,7 @@ export function getSocketCachePath(): string {
     return path.join(xdgCacheHome, 'socket')
   }
   const platform = process.platform
-  const home = homedir()
+  const home = os.homedir()
   switch (platform) {
     case 'darwin':
       return path.join(home, 'Library', 'Caches', 'socket')

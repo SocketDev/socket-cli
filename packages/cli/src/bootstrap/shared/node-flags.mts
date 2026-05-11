@@ -4,6 +4,14 @@
  */
 
 /**
+ * Get flags to disable SIGUSR1 debugger signal handling.
+ * Returns --disable-sigusr1 for newer Node, --no-inspect for older versions.
+ */
+export function getNodeDisableSigusr1Flags(): string[] {
+  return supportsDisableSigusr1() ? ['--disable-sigusr1'] : ['--no-inspect']
+}
+
+/**
  * Get Node major version number.
  */
 export function getNodeMajorVersion(): number {
@@ -35,12 +43,4 @@ export function supportsDisableSigusr1(): boolean {
     return minor >= 14
   }
   return false
-}
-
-/**
- * Get flags to disable SIGUSR1 debugger signal handling.
- * Returns --disable-sigusr1 for newer Node, --no-inspect for older versions.
- */
-export function getNodeDisableSigusr1Flags(): string[] {
-  return supportsDisableSigusr1() ? ['--disable-sigusr1'] : ['--no-inspect']
 }

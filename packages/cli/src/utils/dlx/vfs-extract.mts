@@ -63,9 +63,9 @@
  * See socket-btm/docs/vfs-runtime-api.md for full documentation.
  */
 
-import { createHash } from 'node:crypto'
+import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
-import { homedir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
@@ -198,17 +198,17 @@ export function getNodeSmolBasePath(): string {
     } else {
       // Fallback: hash based on Node.js version and platform.
       const hashInput = `${process.version}-${process.platform}-${process.arch}`
-      const hash = createHash('sha256').update(hashInput).digest('hex')
+      const hash = crypto.createHash('sha256').update(hashInput).digest('hex')
       nodeSmolHash = hash.slice(0, 16)
     }
   } catch {
     // Fallback to versioned hash.
     const hashInput = `${process.version}-${process.platform}-${process.arch}`
-    const hash = createHash('sha256').update(hashInput).digest('hex')
+    const hash = crypto.createHash('sha256').update(hashInput).digest('hex')
     nodeSmolHash = hash.slice(0, 16)
   }
 
-  return normalizePath(path.join(homedir(), UPDATE_STORE_DIR, nodeSmolHash))
+  return normalizePath(path.join(os.homedir(), UPDATE_STORE_DIR, nodeSmolHash))
 }
 
 /**

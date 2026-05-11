@@ -16,7 +16,7 @@
 import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import { randomUUID } from 'node:crypto'
+import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 
 import { getPackageOutDir } from 'package-builder/scripts/paths.mts'
@@ -107,7 +107,7 @@ export class EnvironmentVariables {
     const sentryBuild = process.env['INLINED_SENTRY_BUILD'] === '1'
 
     // Compute version hash (matches Rollup implementation).
-    const randUuidSegment = randomUUID().split('-')[0]
+    const randUuidSegment = crypto.randomUUID().split('-')[0]
     const versionHash = `${packageJson.version}:${gitHash}:${randUuidSegment}${
       publishedBuild ? '' : ':dev'
     }`

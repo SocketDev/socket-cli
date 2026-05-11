@@ -14,7 +14,7 @@ const { join } = require('node:path')
 const { spawn } = require('node:child_process')
 
 // Get the socketbin package name for current platform.
-function getSocketbinPackageName() {
+export function getSocketbinPackageName() {
   const p = platform()
   const a = arch()
   const musl = isMusl() ? '-musl' : ''
@@ -22,7 +22,7 @@ function getSocketbinPackageName() {
 }
 
 // Get path to the socket binary.
-function getSocketbinPath() {
+export function getSocketbinPath() {
   const packageName = getSocketbinPackageName()
   const binaryName = platform() === 'win32' ? 'socket.exe' : 'socket'
 
@@ -46,7 +46,7 @@ function getSocketbinPath() {
 }
 
 // Detect musl libc on Linux.
-function isMusl() {
+export function isMusl() {
   if (platform() !== 'linux') {
     return false
   }

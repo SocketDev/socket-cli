@@ -27,6 +27,18 @@ export const ALERT_SEVERITIES_SORTED: ReadonlyArray<
   SocketSdkAlert['severity']
 > = Object.freeze(['critical', 'high', 'middle', 'low'])
 
+export function formatSeverityCount(
+  severityCount: Record<SocketSdkAlert['severity'], number>,
+): string {
+  const summary: string[] = []
+  for (const severity of ALERT_SEVERITIES_SORTED) {
+    if (severityCount[severity]) {
+      summary.push(`${severityCount[severity]} ${severity}`)
+    }
+  }
+  return joinAnd(summary)
+}
+
 export function getDesiredSeverities(
   lowestToInclude: SocketSdkAlert['severity'] | undefined,
 ): Array<SocketSdkAlert['severity']> {
@@ -38,18 +50,6 @@ export function getDesiredSeverities(
     }
   }
   return result
-}
-
-export function formatSeverityCount(
-  severityCount: Record<SocketSdkAlert['severity'], number>,
-): string {
-  const summary: string[] = []
-  for (const severity of ALERT_SEVERITIES_SORTED) {
-    if (severityCount[severity]) {
-      summary.push(`${severityCount[severity]} ${severity}`)
-    }
-  }
-  return joinAnd(summary)
 }
 
 export function getSeverityCount(

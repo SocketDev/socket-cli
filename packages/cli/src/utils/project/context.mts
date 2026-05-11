@@ -2,7 +2,7 @@
 
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import path from 'node:path'
 interface ProjectContext {
   type: 'npm' | 'yarn' | 'pnpm' | 'unknown'
   root: string
@@ -17,7 +17,7 @@ interface ProjectContext {
  * Detect the framework being used
  */
 export async function detectFramework(root: string): Promise<string | undefined> {
-  const pkgPath = join(root, 'package.json')
+  const pkgPath = path.join(root, 'package.json')
   /* c8 ignore next 3 - root came from findProjectRoot which already verified package.json exists */
   if (!existsSync(pkgPath)) {
     return undefined
@@ -79,67 +79,24 @@ export async function detectFramework(root: string): Promise<string | undefined>
 }
 
 /**
- * Detect if this is a monorepo
- */
-export async function isMonorepo(root: string): Promise<boolean> {
-  const pkgPath = join(root, 'package.json')
-  /* c8 ignore next 3 - root came from findProjectRoot which already verified package.json exists */
-  if (!existsSync(pkgPath)) {
-    return false
-  }
-
-  try {
-    const pkg = JSON.parse(await readFile(pkgPath, 'utf8'))
-    // Check for workspaces (npm/yarn/pnpm)
-    if (pkg.workspaces) {
-      return true
-    }
-
-    // Check for lerna
-    if (existsSync(join(root, 'lerna.json'))) {
-      return true
-    }
-
-    // Check for rush
-    if (existsSync(join(root, 'rush.json'))) {
-      return true
-    }
-
-    // Check for nx
-    if (existsSync(join(root, 'nx.json'))) {
-      return true
-    }
-
-    // Check for pnpm workspaces
-    if (existsSync(join(root, 'pnpm-workspace.yaml'))) {
-      return true
-    }
-  } catch {
-    // Ignore errors
-  }
-
-  return false
-}
-
-/**
  * Detect the package manager being used in the project
  */
 export async function detectPackageManager(
   cwd: string,
 ): Promise<ProjectContext['type']> {
   // Check for lock files
-  if (existsSync(join(cwd, 'pnpm-lock.yaml'))) {
+  if (existsSync(path.join(cwd, 'pnpm-lock.yaml'))) {
     return 'pnpm'
   }
-  if (existsSync(join(cwd, 'yarn.lock'))) {
+  if (existsSync(path.join(cwd, 'yarn.lock'))) {
     return 'yarn'
   }
-  if (existsSync(join(cwd, 'package-lock.json'))) {
+  if (existsSync(path.join(cwd, 'package-lock.json'))) {
     return 'npm'
   }
 
   // Check packageManager field in package.json
-  const pkgPath = join(cwd, 'package.json')
+  const pkgPath = path.join(cwd, 'package.json')
   if (existsSync(pkgPath)) {
     try {
       const pkg = JSON.parse(await readFile(pkgPath, 'utf8'))
@@ -170,11 +127,11 @@ export async function findProjectRoot(
 ): Promise<string | undefined> {
   let currentDir = startDir
 
-  while (currentDir !== dirname(currentDir)) {
-    if (existsSync(join(currentDir, 'package.json'))) {
+  while (currentDir !== path.dirname(currentDir)) {
+    if (existsSync(path.join(currentDir, 'package.json'))) {
       return currentDir
     }
-    currentDir = dirname(currentDir)
+    currentDir = path.dirname(currentDir)
   }
 
   return undefined
@@ -245,4 +202,47 @@ export async function getProjectContext(
   }
 
   return context
+}
+
+/**
+ * Detect if this is a monorepo
+ */
+export async function isMonorepo(root: string): Promise<boolean> {
+  const pkgPath = path.join(root, 'package.json')
+  /* c8 ignore next 3 - root came from findProjectRoot which already verified package.json exists */
+  if (!existsSync(pkgPath)) {
+    return false
+  }
+
+  try {
+    const pkg = JSON.parse(await readFile(pkgPath, 'utf8'))
+    // Check for workspaces (npm/yarn/pnpm)
+    if (pkg.workspaces) {
+      return true
+    }
+
+    // Check for lerna
+    if (existsSync(path.join(root, 'lerna.json'))) {
+      return true
+    }
+
+    // Check for rush
+    if (existsSync(path.join(root, 'rush.json'))) {
+      return true
+    }
+
+    // Check for nx
+    if (existsSync(path.join(root, 'nx.json'))) {
+      return true
+    }
+
+    // Check for pnpm workspaces
+    if (existsSync(path.join(root, 'pnpm-workspace.yaml'))) {
+      return true
+    }
+  } catch {
+    // Ignore errors
+  }
+
+  return false
 }

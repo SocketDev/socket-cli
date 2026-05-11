@@ -124,25 +124,50 @@ const logger = getDefaultLogger()
  *   like 'universal' so the cache key stays stable across host OSes.
  */
 
-async function readJson(filePath) {
-  let raw
-  try {
-    raw = await fs.readFile(filePath, 'utf8')
-  } catch (e) {
-    if (e.code === 'ENOENT') {
-      return undefined
+export function buildCacheKey({
+  buildMode,
+  nodeVersion,
+  platformArch,
+  sources,
+  toolVersions,
+  toolsHash,
+  packageVersion,
+  extraHash,
+}) {
+  const hash = createHash('sha256')
+  hash.update(`node=${nodeVersion}`)
+  hash.update(`platformArch=${platformArch}`)
+  hash.update(`mode=${buildMode}`)
+  hash.update(`tools=${toolsHash}`)
+  for (const tool of Object.keys(toolVersions).toSorted()) {
+    hash.update(`${tool}@${toolVersions[tool]}`)
+  }
+  for (const key of Object.keys(sources).toSorted()) {
+    const src = sources[key] ?? {}
+    hash.update(
+      `src:${key}=${src.version ?? ''}:${src.ref ?? ''}:${src.url ?? ''}`,
+    )
+  }
+  if (extraHash) {
+    hash.update(`extra=${extraHash}`)
+  }
+  const digest = hash.digest('hex').slice(0, 12)
+  return `v${nodeVersion}-${platformArch}-${buildMode}-${digest}-${packageVersion}`
+}
+
+function hashFileContents(files) {
+  const hash = createHash('sha256')
+  for (const file of files.toSorted()) {
+    let content = Buffer.alloc(0)
+    if (existsSync(file)) {
+      try {
+        content = readFileSync(file)
+      } catch {}
     }
-    throw new Error(`Failed to read ${filePath}: ${errorMessage(e)}`, {
-      cause: e,
-    })
+    hash.update(`${file}:`)
+    hash.update(content)
   }
-  try {
-    return JSON.parse(raw)
-  } catch (e) {
-    throw new Error(`Failed to parse ${filePath}: ${errorMessage(e)}`, {
-      cause: e,
-    })
-  }
+  return hash.digest('hex').slice(0, 16)
 }
 
 async function loadExternalTools(packageRoot) {
@@ -177,52 +202,6 @@ async function loadPackageJson(packageRoot) {
   return pkg
 }
 
-function hashFileContents(files) {
-  const hash = createHash('sha256')
-  for (const file of files.toSorted()) {
-    let content = Buffer.alloc(0)
-    if (existsSync(file)) {
-      try {
-        content = readFileSync(file)
-      } catch {}
-    }
-    hash.update(`${file}:`)
-    hash.update(content)
-  }
-  return hash.digest('hex').slice(0, 16)
-}
-
-function buildCacheKey({
-  buildMode,
-  nodeVersion,
-  platformArch,
-  sources,
-  toolVersions,
-  toolsHash,
-  packageVersion,
-  extraHash,
-}) {
-  const hash = createHash('sha256')
-  hash.update(`node=${nodeVersion}`)
-  hash.update(`platformArch=${platformArch}`)
-  hash.update(`mode=${buildMode}`)
-  hash.update(`tools=${toolsHash}`)
-  for (const tool of Object.keys(toolVersions).toSorted()) {
-    hash.update(`${tool}@${toolVersions[tool]}`)
-  }
-  for (const key of Object.keys(sources).toSorted()) {
-    const src = sources[key] ?? {}
-    hash.update(
-      `src:${key}=${src.version ?? ''}:${src.ref ?? ''}:${src.url ?? ''}`,
-    )
-  }
-  if (extraHash) {
-    hash.update(`extra=${extraHash}`)
-  }
-  const digest = hash.digest('hex').slice(0, 12)
-  return `v${nodeVersion}-${platformArch}-${buildMode}-${digest}-${packageVersion}`
-}
-
 function parseFlags(argv) {
   const args = new Set(argv)
   const getValue = flag => {
@@ -241,6 +220,27 @@ function parseFlags(argv) {
     cleanStage: getValue('--clean-stage'),
     fromStage: getValue('--from-stage'),
     raw: args,
+  }
+}
+
+async function readJson(filePath) {
+  let raw
+  try {
+    raw = await fs.readFile(filePath, 'utf8')
+  } catch (e) {
+    if (e.code === 'ENOENT') {
+      return undefined
+    }
+    throw new Error(`Failed to read ${filePath}: ${errorMessage(e)}`, {
+      cause: e,
+    })
+  }
+  try {
+    return JSON.parse(raw)
+  } catch (e) {
+    throw new Error(`Failed to parse ${filePath}: ${errorMessage(e)}`, {
+      cause: e,
+    })
   }
 }
 

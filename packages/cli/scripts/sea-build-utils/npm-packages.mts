@@ -27,91 +27,6 @@ const externalToolsPath = path.join(__dirname, '../../bundle-tools.json')
 const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
 
 /**
- * Download a single npm package with full dependency tree using Arborist.
- *
- * Downloads the complete package structure including node_modules/ with all
- * production dependencies, ready for VFS bundling.
- *
- * @param {string} packageSpec - npm package specifier (e.g., "synp@1.9.14").
- * @param {string} targetDir - Directory to install package into.
- * @param {string} [expectedIntegrity] - Expected SRI integrity hash (sha512-xxx).
- * @returns Promise resolving to the target directory path.
- *
- * @example
- * await downloadNpmPackage('synp@1.9.14', '/tmp/synp', 'sha512-xxx')
- * // Creates: /tmp/synp/node_modules/synp/ with full dependency tree
- */
-export async function downloadNpmPackage(packageSpec, targetDir, expectedIntegrity) {
-  logger.substep(`Downloading ${packageSpec} with dependencies`)
-
-  // Ensure target directory exists.
-  await safeMkdir(targetDir)
-
-  // Configure Arborist with Socket cacache and security settings.
-  const arb = new Arborist({
-    audit: false,
-    binLinks: true,
-    cache: getSocketCacacheDir(),
-    fund: false,
-    ignoreScripts: true,
-    omit: ['dev'],
-    path: targetDir,
-    silent: true,
-  })
-
-  // Download and install package with dependencies.
-  try {
-    await arb.reify({ add: [packageSpec], save: false })
-  } catch (e) {
-    throw new Error(
-      `Failed to download ${packageSpec} with Arborist: ${e.message}`,
-    )
-  }
-
-  // Verify integrity if provided.
-  if (expectedIntegrity) {
-    // Extract package name from spec (e.g., "@cyclonedx/cdxgen@12.0.0" -> "@cyclonedx/cdxgen").
-    const atIndex = packageSpec.lastIndexOf('@')
-    const packageName =
-      atIndex > 0 ? packageSpec.slice(0, atIndex) : packageSpec
-
-    // Find the installed package in node_modules.
-    const installedPackagePath = path.join(
-      targetDir,
-      'node_modules',
-      packageName,
-      'package.json',
-    )
-    if (!existsSync(installedPackagePath)) {
-      throw new Error(
-        `Integrity verification failed: package.json not found at ${installedPackagePath}`,
-      )
-    }
-
-    // Read the installed package.json to get the resolved integrity.
-    const installedPackage = JSON.parse(
-      readFileSync(installedPackagePath, 'utf8'),
-    )
-    logger.substep(
-      `Verified ${packageName}@${installedPackage.version} installed`,
-    )
-  }
-
-  logger.success(`${packageSpec} installed with dependencies\n`)
-  return targetDir
-}
-
-/**
- * Get Socket cacache directory for Arborist npm package caching.
- *
- * @returns Path to Socket's cacache directory.
- */
-export function getSocketCacacheDir() {
-  const homeDir = process.env['HOME'] || process.env['USERPROFILE'] || tmpdir()
-  return normalizePath(path.join(homeDir, '.socket', '_cacache'))
-}
-
-/**
  * Combine npm packages and external tools into a single VFS archive.
  *
  * Creates a unified tar.gz containing both:
@@ -251,6 +166,81 @@ export async function combineVfsArchives(
 }
 
 /**
+ * Download a single npm package with full dependency tree using Arborist.
+ *
+ * Downloads the complete package structure including node_modules/ with all
+ * production dependencies, ready for VFS bundling.
+ *
+ * @param {string} packageSpec - npm package specifier (e.g., "synp@1.9.14").
+ * @param {string} targetDir - Directory to install package into.
+ * @param {string} [expectedIntegrity] - Expected SRI integrity hash (sha512-xxx).
+ * @returns Promise resolving to the target directory path.
+ *
+ * @example
+ * await downloadNpmPackage('synp@1.9.14', '/tmp/synp', 'sha512-xxx')
+ * // Creates: /tmp/synp/node_modules/synp/ with full dependency tree
+ */
+export async function downloadNpmPackage(packageSpec, targetDir, expectedIntegrity) {
+  logger.substep(`Downloading ${packageSpec} with dependencies`)
+
+  // Ensure target directory exists.
+  await safeMkdir(targetDir)
+
+  // Configure Arborist with Socket cacache and security settings.
+  const arb = new Arborist({
+    audit: false,
+    binLinks: true,
+    cache: getSocketCacacheDir(),
+    fund: false,
+    ignoreScripts: true,
+    omit: ['dev'],
+    path: targetDir,
+    silent: true,
+  })
+
+  // Download and install package with dependencies.
+  try {
+    await arb.reify({ add: [packageSpec], save: false })
+  } catch (e) {
+    throw new Error(
+      `Failed to download ${packageSpec} with Arborist: ${e.message}`,
+    )
+  }
+
+  // Verify integrity if provided.
+  if (expectedIntegrity) {
+    // Extract package name from spec (e.g., "@cyclonedx/cdxgen@12.0.0" -> "@cyclonedx/cdxgen").
+    const atIndex = packageSpec.lastIndexOf('@')
+    const packageName =
+      atIndex > 0 ? packageSpec.slice(0, atIndex) : packageSpec
+
+    // Find the installed package in node_modules.
+    const installedPackagePath = path.join(
+      targetDir,
+      'node_modules',
+      packageName,
+      'package.json',
+    )
+    if (!existsSync(installedPackagePath)) {
+      throw new Error(
+        `Integrity verification failed: package.json not found at ${installedPackagePath}`,
+      )
+    }
+
+    // Read the installed package.json to get the resolved integrity.
+    const installedPackage = JSON.parse(
+      readFileSync(installedPackagePath, 'utf8'),
+    )
+    logger.substep(
+      `Verified ${packageName}@${installedPackage.version} installed`,
+    )
+  }
+
+  logger.success(`${packageSpec} installed with dependencies\n`)
+  return targetDir
+}
+
+/**
  * Download all npm packages with full dependency trees for VFS bundling.
  *
  * Downloads npm packages specified in bundle-tools.json that have type='npm',
@@ -376,4 +366,14 @@ export async function downloadNpmPackages() {
     // Clean up temporary directory.
     await safeDelete(tempDir)
   }
+}
+
+/**
+ * Get Socket cacache directory for Arborist npm package caching.
+ *
+ * @returns Path to Socket's cacache directory.
+ */
+export function getSocketCacacheDir() {
+  const homeDir = process.env['HOME'] || process.env['USERPROFILE'] || tmpdir()
+  return normalizePath(path.join(homeDir, '.socket', '_cacache'))
 }

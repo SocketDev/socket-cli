@@ -158,42 +158,6 @@ export function buildHelp(
 }
 
 /**
- * Wire the child process's exit/signal back to the parent. Optionally flushes
- * telemetry first. Centralized so all wrappers share the same lifecycle.
- */
-export function wireChildExit(
-  childProcess: NodeJS.Process & { on: any },
-  options: {
-    name: string
-    trackTelemetry: boolean
-    subprocessStartTime: number | undefined
-  },
-): void {
-  const { name, subprocessStartTime, trackTelemetry } = options
-  childProcess.on(
-    'exit',
-    (code: number | null, signalName: NodeJS.Signals | null) => {
-      const exitProcess = () => {
-        if (signalName) {
-          process.kill(process.pid, signalName)
-        } else if (typeof code === 'number') {
-          // eslint-disable-next-line n/no-process-exit
-          process.exit(code)
-        }
-      }
-      if (trackTelemetry && subprocessStartTime !== undefined) {
-        // .then/.catch so the exit happens even when telemetry flush fails.
-        void trackSubprocessExit(name, subprocessStartTime, code)
-          .then(exitProcess)
-          .catch(exitProcess)
-      } else {
-        exitProcess()
-      }
-    },
-  )
-}
-
-/**
  * Define a "hand-off" subcommand that proxies to Socket Firewall.
  *
  * Returns a CliSubcommand-shaped object ready to plug into the meow router.
@@ -271,4 +235,40 @@ export function defineHandoffCommand(
   }
 
   return { description, hidden, run }
+}
+
+/**
+ * Wire the child process's exit/signal back to the parent. Optionally flushes
+ * telemetry first. Centralized so all wrappers share the same lifecycle.
+ */
+export function wireChildExit(
+  childProcess: NodeJS.Process & { on: any },
+  options: {
+    name: string
+    trackTelemetry: boolean
+    subprocessStartTime: number | undefined
+  },
+): void {
+  const { name, subprocessStartTime, trackTelemetry } = options
+  childProcess.on(
+    'exit',
+    (code: number | null, signalName: NodeJS.Signals | null) => {
+      const exitProcess = () => {
+        if (signalName) {
+          process.kill(process.pid, signalName)
+        } else if (typeof code === 'number') {
+          // eslint-disable-next-line n/no-process-exit
+          process.exit(code)
+        }
+      }
+      if (trackTelemetry && subprocessStartTime !== undefined) {
+        // .then/.catch so the exit happens even when telemetry flush fails.
+        void trackSubprocessExit(name, subprocessStartTime, code)
+          .then(exitProcess)
+          .catch(exitProcess)
+      } else {
+        exitProcess()
+      }
+    },
+  )
 }

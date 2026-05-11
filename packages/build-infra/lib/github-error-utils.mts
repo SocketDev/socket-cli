@@ -30,7 +30,7 @@ const TRANSIENT_ERROR_PATTERNS = [
  * @param {Error|string|unknown} error - The error to extract message from.
  * @returns {string} The error message.
  */
-function getErrorMessage(error) {
+export function getErrorMessage(error) {
   if (typeof error === 'string') {
     return error
   }

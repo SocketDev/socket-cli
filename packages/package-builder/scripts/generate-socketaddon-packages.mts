@@ -26,7 +26,7 @@ const logger = getDefaultLogger()
 /**
  * Generate the main wrapper package.
  */
-async function generateMainPackage() {
+export async function generateMainPackage() {
   const packagePath = path.join(getBuildOutDir(), 'socketaddon-iocraft')
   const templatePath = SOCKETADDON_MAIN_TEMPLATE_DIR
 
@@ -86,7 +86,7 @@ async function generateMainPackage() {
 /**
  * Generate a single socketaddon package.
  */
-async function generatePackage(config) {
+export async function generatePackage(config) {
   const { arch, cpu, description, libc, os, releasePlatform } = config
   const muslSuffix = libc === 'musl' ? '-musl' : ''
   const packageName = `socketaddon-iocraft-${releasePlatform}-${arch}${muslSuffix}`
