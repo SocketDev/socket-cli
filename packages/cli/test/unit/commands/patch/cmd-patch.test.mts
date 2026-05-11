@@ -7,6 +7,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type * as WithSubcommandsModule from '../../../../src/utils/cli/with-subcommands.mts'
+
 // Mock meowOrExit.
 const mockMeowOrExit = vi.hoisted(() => vi.fn().mockReturnValue({ flags: {} }))
 
@@ -22,7 +24,7 @@ vi.mock(
   async importOriginal => {
     const actual =
       await importOriginal<
-        typeof import('../../../../src/utils/cli/with-subcommands.mts')
+        typeof WithSubcommandsModule
       >()
     return {
       ...actual,
@@ -327,7 +329,7 @@ describe('cmd-patch', () => {
       await cmdPatch.run([], importMeta, {
         parentName: 'socket',
         extraProp: 'ignored',
-      } as any)
+      } as unknown)
 
       expect(mockMeowOrExit).toHaveBeenCalledWith(
         expect.objectContaining({

@@ -7,6 +7,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type * as LoggerModule from '@socketsecurity/lib/logger'
+import type * as SdkModule from '../../../../src/utils/socket/sdk.mjs'
+import type * as SocketCliModule from '@socketsecurity/lib/env/socket-cli'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -19,7 +23,7 @@ const mockLogger = vi.hoisted(() => ({
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
   const actual =
-    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+    await importOriginal<typeof LoggerModule>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -29,7 +33,7 @@ vi.mock('@socketsecurity/lib/logger', async importOriginal => {
 // Mock environment functions.
 vi.mock('@socketsecurity/lib/env/socket-cli', async importOriginal => {
   const actual =
-    await importOriginal<typeof import('@socketsecurity/lib/env/socket-cli')>()
+    await importOriginal<typeof SocketCliModule>()
   return {
     ...actual,
     getSocketCliGithubToken: vi.fn().mockReturnValue(''),
@@ -69,7 +73,7 @@ vi.mock('../../../../src/utils/socket/org-slug.mjs', () => ({
 vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
   const actual =
     await importOriginal<
-      typeof import('../../../../src/utils/socket/sdk.mjs')
+      typeof SdkModule
     >()
   return {
     ...actual,
