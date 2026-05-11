@@ -23,8 +23,11 @@ import fs from 'node:fs'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type * as ModuleModule from 'node:module'
+import type * as PathsModule from '../../../../src/utils/npm/paths.mts'
+
 vi.mock('node:module', async importOriginal => {
-  const actual = await importOriginal<typeof import('node:module')>()
+  const actual = await importOriginal<typeof ModuleModule>()
   return {
     ...actual,
     createRequire: vi.fn(),
@@ -68,10 +71,10 @@ vi.mock('../../../../src/constants/packages.mts', () => ({
 
 describe('npm-paths utilities', () => {
   let originalExit: typeof process.exit
-  let getNpmBinPath: (typeof import('../../../../src/utils/npm/paths.mts'))['getNpmBinPath']
-  let getNpmDirPath: (typeof import('../../../../src/utils/npm/paths.mts'))['getNpmDirPath']
-  let getNpmRequire: (typeof import('../../../../src/utils/npm/paths.mts'))['getNpmRequire']
-  let getNpxBinPath: (typeof import('../../../../src/utils/npm/paths.mts'))['getNpxBinPath']
+  let getNpmBinPath: (typeof PathsModule)['getNpmBinPath']
+  let getNpmDirPath: (typeof PathsModule)['getNpmDirPath']
+  let getNpmRequire: (typeof PathsModule)['getNpmRequire']
+  let getNpxBinPath: (typeof PathsModule)['getNpxBinPath']
 
   beforeEach(async () => {
     vi.clearAllMocks()

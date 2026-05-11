@@ -31,6 +31,8 @@ import { SOCKET_WEBSITE_URL } from '../../../../src/constants/socket.mts'
 
 import type { ScanReport } from '../../../../src/commands/scan/generate-report.mts'
 
+import type * as GenerateReportModule from '../../../../src/commands/scan/generate-report.mts'
+
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
   dir: vi.fn(),
@@ -71,7 +73,7 @@ const mockGenerateReport = vi.hoisted(() => vi.fn())
 vi.mock('../../../../src/commands/scan/generate-report.mts', async orig => {
   const actual =
     await orig<
-      typeof import('../../../../src/commands/scan/generate-report.mts')
+      typeof GenerateReportModule
     >()
   return {
     ...actual,

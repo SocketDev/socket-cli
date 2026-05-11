@@ -13,7 +13,6 @@
  * - utils/cli/completion.mts (implementation)
  */
 
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 let mockExistsSync: ReturnType<typeof vi.spyOn>
@@ -22,7 +21,7 @@ let mockExistsSync: ReturnType<typeof vi.spyOn>
 const mockGetSocketAppDataPath = vi.hoisted(() => vi.fn())
 vi.mock('../../../../src/constants/paths.mts', async importOriginal => {
   const actual =
-    (await importOriginal()) as typeof import('../../../../src/constants/paths.mts')
+    (await importOriginal()) as typeof PathsModule
   return {
     ...actual,
     getSocketAppDataPath: mockGetSocketAppDataPath,
@@ -34,6 +33,8 @@ import {
   getBashrcDetails,
   getCompletionSourcingCommand,
 } from '../../../../src/utils/cli/completion.mts'
+
+import type * as PathsModule from '../../../../src/constants/paths.mts'
 
 describe('cli/completion', () => {
   beforeEach(() => {

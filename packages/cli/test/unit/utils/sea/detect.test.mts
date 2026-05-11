@@ -25,6 +25,8 @@ import {
   isSeaBinary,
 } from '../../../../src/utils/sea/detect.mts'
 
+import type * as ModuleModule from 'node:module'
+
 describe('SEA detection utilities', () => {
   describe('isSeaBinary', () => {
     it('returns false in non-SEA environment', () => {
@@ -91,7 +93,7 @@ describe('SEA detection utilities', () => {
       const { vi } = await import('vitest')
       vi.resetModules()
       vi.doMock('node:module', async importOriginal => {
-        const actual = await importOriginal<typeof import('node:module')>()
+        const actual = await importOriginal<typeof ModuleModule>()
         return {
           ...actual,
           createRequire: () => () => {

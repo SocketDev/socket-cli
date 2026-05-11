@@ -8,6 +8,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+// oxlint-disable-next-line socket/prefer-node-builtin-imports -- type namespace needed for vi.importActual<typeof FsModule>
+import type * as FsModule from 'node:fs'
+import type * as PathsModule from '../../../../src/constants/paths.mts'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -42,7 +46,7 @@ const mockGetZshRcPath = vi.hoisted(() =>
 )
 
 vi.mock('node:fs', async importOriginal => {
-  const actual = await importOriginal<typeof import('node:fs')>()
+  const actual = await importOriginal<typeof FsModule>()
   return {
     ...actual,
     existsSync: mockExistsSync,
@@ -70,7 +74,7 @@ vi.mock('../../../../src/commands/wrapper/postinstall-wrapper.mts', () => ({
 
 vi.mock('../../../../src/constants/paths.mts', async importOriginal => {
   const actual =
-    await importOriginal<typeof import('../../../../src/constants/paths.mts')>()
+    await importOriginal<typeof PathsModule>()
   return {
     ...actual,
     getBashRcPath: mockGetBashRcPath,
