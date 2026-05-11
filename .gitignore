@@ -1,5 +1,6 @@
 .DS_Store
 ._.DS_Store
+.Trash/
 Thumbs.db
 /.env
 /.env.local
