@@ -13,7 +13,6 @@ import {
   globWithGitIgnore,
   pathsToGlobPatterns,
 } from './glob.mts'
-import { excludePathToScanIgnores } from '../commands/scan/exclude-paths.mts'
 
 import type FileSystem from 'mock-fs/lib/filesystem'
 
@@ -216,7 +215,7 @@ describe('glob utilities', () => {
       })
 
       const results = await globWithGitIgnore(['**/*.json'], {
-        additionalIgnores: excludePathToScanIgnores('tests'),
+        additionalIgnores: ['tests', 'tests/**'],
         cwd: mockFixturePath,
       })
 
@@ -241,7 +240,7 @@ describe('glob utilities', () => {
       })
 
       const results = await globWithGitIgnore(['**/*.json'], {
-        additionalIgnores: excludePathToScanIgnores('packages/*'),
+        additionalIgnores: ['packages/*', 'packages/*/**'],
         cwd: mockFixturePath,
       })
 

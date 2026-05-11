@@ -12,6 +12,7 @@ import {
   createSupportedFilesFilter,
   globWithGitIgnore,
   pathsToGlobPatterns,
+  stripTrailingSlash,
 } from './glob.mts'
 
 import type { SocketYml } from '@socketsecurity/config'
@@ -109,6 +110,20 @@ export type PackageFilesForScanOptions = {
   config?: SocketYml | undefined
 }
 
+function normalizeScanInputPath(pathToNormalize: string, cwd: string): string {
+  if (!path.isAbsolute(pathToNormalize)) {
+    return pathToNormalize
+  }
+  const relativePath = path.relative(cwd, pathToNormalize)
+  const isInsideCwd =
+    relativePath === '' ||
+    (!relativePath.startsWith('..') && !path.isAbsolute(relativePath))
+  if (!isInsideCwd) {
+    return pathToNormalize
+  }
+  return stripTrailingSlash(relativePath.replaceAll('\\', '/')) || '.'
+}
+
 export async function getPackageFilesForScan(
   inputPaths: string[],
   supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
@@ -128,8 +143,12 @@ export async function getPackageFilesForScan(
   // where accumulating all paths before filtering causes OOM errors.
   const filter = createSupportedFilesFilter(supportedFiles)
 
+  const normalizedInputPaths = inputPaths.map(p =>
+    normalizeScanInputPath(p, cwd),
+  )
+
   return await globWithGitIgnore(
-    pathsToGlobPatterns(inputPaths, options?.cwd),
+    pathsToGlobPatterns(normalizedInputPaths, cwd),
     {
       additionalIgnores,
       cwd,

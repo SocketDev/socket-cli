@@ -173,6 +173,29 @@ describe('Path Resolve', () => {
       ])
     })
 
+    it('should keep scan-root ignores effective when the input path is absolute', async () => {
+      const appDirPath = normalizePath(path.join(mockFixturePath, 'apps/api'))
+      mockTestFs({
+        [`${appDirPath}/package.json`]: '{}',
+        [`${appDirPath}/src/package.json`]: '{}',
+        [`${appDirPath}/tests/package.json`]: '{}',
+      })
+
+      const actual = await sortedGetPackageFilesFullScans(
+        [appDirPath],
+        globPatterns,
+        {
+          additionalIgnores: ['apps/api/tests', 'apps/api/tests/**'],
+          cwd: mockFixturePath,
+        },
+      )
+
+      expect(actual.map(normalizePath)).toEqual([
+        `${appDirPath}/package.json`,
+        `${appDirPath}/src/package.json`,
+      ])
+    })
+
     it('should respect ignores from socket config', async () => {
       mockTestFs({
         [`${mockFixturePath}/bar/package-lock.json`]: '{}',
