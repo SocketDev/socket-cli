@@ -1,5 +1,5 @@
 /* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
-import fs from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import { debugDirNs } from '@socketsecurity/lib/debug'
@@ -280,7 +280,7 @@ export async function setupManifestConfig(
   //   - record them to the socket.yml (or socket-cli.yml ? or just socket.json ?)
 
   const jsonPath = path.join(cwd, SOCKET_JSON)
-  if (fs.existsSync(jsonPath)) {
+  if (existsSync(jsonPath)) {
     logger.info(`Found ${SOCKET_JSON} at ${jsonPath}`)
   } else {
     logger.info(`No ${SOCKET_JSON} found at ${cwd}, will generate a new one`)

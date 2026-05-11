@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import { writeFileSync } from 'node:fs'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
@@ -34,7 +34,7 @@ export async function outputRequirements(
     if (out === '-') {
       logger.log(json)
     } else {
-      fs.writeFileSync(out, json, 'utf8')
+      writeFileSync(out, json, 'utf8')
     }
 
     return
@@ -57,7 +57,7 @@ export async function outputRequirements(
     if (out === '-') {
       logger.log(md)
     } else {
-      fs.writeFileSync(out, md, 'utf8')
+      writeFileSync(out, md, 'utf8')
     }
     return
   }
@@ -66,6 +66,6 @@ export async function outputRequirements(
     logger.log(result.data.pip)
     logger.log('')
   } else {
-    fs.writeFileSync(out, result.data.pip, 'utf8')
+    writeFileSync(out, result.data.pip, 'utf8')
   }
 }

@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import { errorMessage } from '@socketsecurity/lib/errors'
@@ -29,8 +29,8 @@ export async function convertGradleToMaven({
   // We don't resolve against $PATH since gradlew is typically a local wrapper script.
   // Users can provide absolute paths if they need to reference system-wide installations.
   const rBin = path.resolve(cwd, bin)
-  const binExists = fs.existsSync(rBin)
-  const cwdExists = fs.existsSync(cwd)
+  const binExists = existsSync(rBin)
+  const cwdExists = existsSync(cwd)
 
   // Only show logging in text mode.
   const isTextMode = outputKind === 'text'

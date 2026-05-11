@@ -1,4 +1,9 @@
-import fs from 'node:fs'
+import {
+  appendFileSync,
+  existsSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -29,7 +34,7 @@ export function getTabCompletionScriptRaw(): CResult<string> {
     sourcePath = path.resolve(__dirname, '../../../data/socket-completion.bash')
   }
 
-  if (!fs.existsSync(sourcePath)) {
+  if (!existsSync(sourcePath)) {
     return {
       ok: false,
       message: 'Source not found.',
@@ -37,7 +42,7 @@ export function getTabCompletionScriptRaw(): CResult<string> {
     }
   }
 
-  return { ok: true, data: fs.readFileSync(sourcePath, 'utf8') }
+  return { ok: true, data: readFileSync(sourcePath, 'utf8') }
 }
 
 export async function setupTabCompletion(targetName: string): Promise<
@@ -64,7 +69,7 @@ export async function setupTabCompletion(targetName: string): Promise<
   const targetDir = path.dirname(targetPath)
   debug(`target: path + dir ${targetPath} ${targetDir}`)
 
-  if (!fs.existsSync(targetDir)) {
+  if (!existsSync(targetDir)) {
     debug('create: target dir')
     safeMkdirSync(targetDir, { recursive: true })
   }
@@ -76,13 +81,13 @@ export async function setupTabCompletion(targetName: string): Promise<
   // Add to ~/.bashrc if not already there
   const bashrcPath = homePath ? path.join(homePath, '.bashrc') : ''
 
-  const foundBashrc = Boolean(bashrcPath && fs.existsSync(bashrcPath))
+  const foundBashrc = Boolean(bashrcPath && existsSync(bashrcPath))
 
   if (foundBashrc) {
     try {
-      const content = fs.readFileSync(bashrcPath, 'utf8')
+      const content = readFileSync(bashrcPath, 'utf8')
       if (!content.includes(sourcingCommand)) {
-        fs.appendFileSync(bashrcPath, toAddToBashrc)
+        appendFileSync(bashrcPath, toAddToBashrc)
         bashrcUpdated = true
       }
     } catch {
@@ -122,7 +127,7 @@ export function updateInstalledTabCompletionScript(
 
   // When installing set the current package.json version.
   // Later, we can call _socket_completion_version to get the installed version.
-  fs.writeFileSync(
+  writeFileSync(
     targetPath,
     content.data.replaceAll('%SOCKET_VERSION_TOKEN%', getCliVersionHash()),
     'utf8',
