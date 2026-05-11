@@ -468,7 +468,7 @@ minimumReleaseAge: 10080
   })
 
   describe('getEntryIndexes / getLowestEntryIndex / getHighestEntryIndex', () => {
-    const entries: Array<[string, any]> = [
+    const entries: Array<[string, unknown]> = [
       ['name', 'x'],
       ['version', '1.0.0'],
       ['main', 'index.js'],

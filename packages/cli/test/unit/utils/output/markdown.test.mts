@@ -350,7 +350,7 @@ describe('markdown utilities', () => {
     })
 
     it('handles null and undefined values', () => {
-      const pairs: Array<[string, any]> = [
+      const pairs: Array<[string, unknown]> = [
         ['Null', undefined],
         ['Undefined', undefined],
         ['Empty', ''],
@@ -380,7 +380,7 @@ describe('markdown utilities', () => {
     })
 
     it('handles non-string values', () => {
-      const pairs: Array<[any, any]> = [
+      const pairs: Array<[unknown, unknown]> = [
         [123, true],
         [false, { key: 'value' }],
       ]

@@ -38,15 +38,15 @@ const baseEnv = (overrides: Record<string, unknown> = {}) => ({
 })
 
 export async function loadAddOverrides(opts: {
-  manifestEntries: Array<[string, any]>
+  manifestEntries: Array<[string, unknown]>
   getMajor?: (v: string) => number | undefined
-  safeNpa?: (s: string) => any
+  safeNpa?: (s: string) => unknown
   fetchPackageManifest?: (s: string) => Promise<unknown>
   globWorkspace?: () => Promise<string[]>
-  getDependencyEntries?: (env: unknown) => any
-  getOverridesData?: (env: unknown) => any
-  getOverridesDataNpm?: (env: unknown) => any
-  getOverridesDataYarnClassic?: (env: unknown) => any
+  getDependencyEntries?: (env: unknown) => unknown
+  getOverridesData?: (env: unknown) => unknown
+  getOverridesDataNpm?: (env: unknown) => unknown
+  getOverridesDataYarnClassic?: (env: unknown) => unknown
   lockSrcIncludes?: (...args: unknown[]) => boolean
   lsStdoutIncludes?: (...args: unknown[]) => boolean
   listPackages?: (...args: unknown[]) => Promise<string>

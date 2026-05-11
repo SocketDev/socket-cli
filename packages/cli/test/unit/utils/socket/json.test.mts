@@ -335,7 +335,7 @@ describe('socket-json utilities', () => {
       const mockJson = { version: 1, custom: 'data' }
       mockWriteFile.mockResolvedValue(undefined)
 
-      const result = await writeSocketJson('/test/dir', mockJson as any)
+      const result = await writeSocketJson('/test/dir', mockJson as unknown)
       expect(result.ok).toBe(true)
       expect(fs.promises.writeFile).toHaveBeenCalledWith(
         path.join('/test/dir', SOCKET_JSON),
@@ -345,7 +345,7 @@ describe('socket-json utilities', () => {
     })
 
     it('returns error when JSON serialization fails', async () => {
-      const circularRef: any = {}
+      const circularRef: unknown = {}
       circularRef.self = circularRef
 
       const result = await writeSocketJson('/test/dir', circularRef)

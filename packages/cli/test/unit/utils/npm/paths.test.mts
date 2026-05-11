@@ -88,7 +88,7 @@ describe('npm-paths utilities', () => {
     // Mock process.exit to prevent actual exits.
     process.exit = vi.fn((code?: number) => {
       throw new Error(`process.exit(${code})`)
-    }) as any
+    }) as unknown
 
     // Re-import functions after module reset to clear caches.
     const npmPaths = await import('../../../../src/utils/npm/paths.mts')
@@ -235,7 +235,7 @@ describe('npm-paths utilities', () => {
 
       const mockRequire = vi.fn()
       const Module = vi.mocked(await import('node:module')).default
-      Module.createRequire.mockReturnValue(mockRequire as any)
+      Module.createRequire.mockReturnValue(mockRequire as unknown)
 
       const result = getNpmRequire()
 
@@ -260,7 +260,7 @@ describe('npm-paths utilities', () => {
 
       const mockRequire = vi.fn()
       const Module = vi.mocked(await import('node:module')).default
-      Module.createRequire.mockReturnValue(mockRequire as any)
+      Module.createRequire.mockReturnValue(mockRequire as unknown)
 
       const result = getNpmRequire()
 

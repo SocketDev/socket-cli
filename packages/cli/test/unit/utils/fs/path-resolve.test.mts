@@ -116,7 +116,7 @@ const globPatterns = {
   },
 }
 
-type Fn = (...args: unknown[]) => Promise<any[]>
+type Fn = (...args: unknown[]) => Promise<unknown[]>
 
 const sortedPromise =
   (fn: Fn) =>
