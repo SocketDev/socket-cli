@@ -104,15 +104,12 @@
   "overrides": [
     {
       "files": [
-        "scripts/**",
-        "test/**",
-        "tests/**",
-        ".config/**",
-        ".git-hooks/**",
-        ".github/**",
-        "packages/*/scripts/**",
-        "packages/*/test/**",
-        "packages/*/tests/**"
+        "**/scripts/**",
+        "**/test/**",
+        "**/tests/**",
+        "**/.config/**",
+        "**/.git-hooks/**",
+        "**/.github/**"
       ],
       "rules": {
         "socket/export-top-level-functions": "off",
