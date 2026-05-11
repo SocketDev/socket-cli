@@ -1,10 +1,12 @@
+import type { SetupSdkOptions } from './utils/socket/sdk.mjs'
+
 export type StringKeyValueObject = { [key: string]: string }
 
 export type OutputKind = 'json' | 'markdown' | 'text'
 
 // Base options type for fetch functions that use SDK.
 export type BaseFetchOptions = {
-  sdkOpts?: import('./utils/socket/sdk.mjs').SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
 }
 
 // Checksum types for external tool integrity verification.
