@@ -20,7 +20,7 @@
  *     `eslint-disable socket/max-file-lines`. Per CLAUDE.md the rare
  *     legitimate cases are parsers, state machines, and config tables;
  *     they should self-document with a one-line comment.
- *   - Generated artifacts — the rule trusts .oxlintrc.json's
+ *   - Generated artifacts — the rule trusts .config/oxlintrc.json's
  *     ignorePatterns to keep generated files out of scope.
  */
 

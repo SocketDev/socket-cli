@@ -205,7 +205,7 @@ test('lineIsSuppressed: rule-named marker matches the named rule', () => {
   assert.strictEqual(
     lineIsSuppressed('console.log("x") // socket-hook: allow npx', 'console'),
     false,
-    'pnpm exec marker does NOT suppress console rule',
+    'npx marker does NOT suppress console rule',
   )
 })
 
@@ -235,7 +235,7 @@ test('isInsideBackticks: pattern entirely within span', () => {
 
 test('isInsideBackticks: pattern only outside span', () => {
   assert.strictEqual(
-    isInsideBackticks('pnpm exec is `something else`', /\bnpx\b/),
+    isInsideBackticks('npx is `something else`', /\bnpx\b/),
     false,
   )
 })
@@ -248,22 +248,22 @@ test('isInsideBackticks: no spans → false', () => {
 
 test('looksLikeDocumentation: comment lines pass as docs', () => {
   assert.strictEqual(
-    looksLikeDocumentation('// uses pnpm exec for the build', /\bnpx\b/),
+    looksLikeDocumentation('// uses npx for the build', /\bnpx\b/),
     true,
   )
   assert.strictEqual(
-    looksLikeDocumentation(' * runs pnpm exec in CI', /\bnpx\b/),
+    looksLikeDocumentation(' * runs npx in CI', /\bnpx\b/),
     true,
   )
   assert.strictEqual(
-    looksLikeDocumentation('# pnpm exec documentation', /\bnpx\b/),
+    looksLikeDocumentation('# npx documentation', /\bnpx\b/),
     true,
   )
 })
 
 test('looksLikeDocumentation: JSDoc tag lines pass as docs', () => {
   assert.strictEqual(
-    looksLikeDocumentation('@example pnpm exec prettier', /\bnpx\b/),
+    looksLikeDocumentation('@example npx prettier', /\bnpx\b/),
     true,
   )
 })
@@ -277,7 +277,7 @@ test('looksLikeDocumentation: backtick-only mentions pass', () => {
 
 test('looksLikeDocumentation: bare runtime call does not pass', () => {
   assert.strictEqual(
-    looksLikeDocumentation('pnpm exec prettier --write', /\bnpx\b/),
+    looksLikeDocumentation('npx prettier --write', /\bnpx\b/),
     false,
   )
 })
@@ -336,12 +336,12 @@ test('socketHookMarkerFor: chooses comment style by file extension', () => {
 
 // ── suggestPlaceholder ────────────────────────────────────────────
 
-test('suggestPlaceholder: rewrites /Users/<user>/ → /Users/<user>/', () => {
+test('suggestPlaceholder: rewrites /Users/<name>/ → /Users/<user>/', () => {
   const out = suggestPlaceholder('const p = "/Users/jdalton/foo.txt"')
   assert.match(out, /\/Users\/<user>\//)
 })
 
-test('suggestPlaceholder: rewrites C:\\Users\\<USERNAME>\\ → C:\\Users\\<USERNAME>\\', () => {
+test('suggestPlaceholder: rewrites C:\\Users\\<name>\\ → C:\\Users\\<USERNAME>\\', () => {
   // String contains 1 literal backslash per separator: C:\Users\jdalton\Documents
   const out = suggestPlaceholder('const p = "C:\\Users\\jdalton\\Documents"')
   assert.match(out, /C:\\Users\\<USERNAME>\\/)
@@ -349,30 +349,30 @@ test('suggestPlaceholder: rewrites C:\\Users\\<USERNAME>\\ → C:\\Users\\<USERN
 
 // ── suggestNpxReplacement ─────────────────────────────────────────
 
-test('suggestNpxReplacement: pnpm exec → pnpm exec', () => {
+test('suggestNpxReplacement: npx → pnpm exec', () => {
   assert.strictEqual(
-    suggestNpxReplacement('pnpm exec prettier --check'),
+    suggestNpxReplacement('npx prettier --check'),
     'pnpm exec prettier --check',
   )
 })
 
-test('suggestNpxReplacement: pnpm exec → pnpm exec', () => {
+test('suggestNpxReplacement: pnpm dlx → pnpm exec', () => {
   assert.strictEqual(
-    suggestNpxReplacement('pnpm exec tsx foo.ts'),
+    suggestNpxReplacement('pnpm dlx tsx foo.ts'),
     'pnpm exec tsx foo.ts',
   )
 })
 
-test('suggestNpxReplacement: pnpm exec → pnpm exec', () => {
+test('suggestNpxReplacement: yarn dlx → pnpm exec', () => {
   assert.strictEqual(
-    suggestNpxReplacement('pnpm exec tsx foo.ts'),
+    suggestNpxReplacement('yarn dlx tsx foo.ts'),
     'pnpm exec tsx foo.ts',
   )
 })
 
-test('suggestNpxReplacement: pnpm exec → pnpm exec', () => {
+test('suggestNpxReplacement: pnx → pnpm exec', () => {
   assert.strictEqual(
-    suggestNpxReplacement('pnpm exec tsx foo.ts'),
+    suggestNpxReplacement('pnx tsx foo.ts'),
     'pnpm exec tsx foo.ts',
   )
 })
@@ -388,17 +388,17 @@ test('suggestNpxReplacement: leaves non-dlx commands alone', () => {
 
 test('suggestLoggerReplacement: console.log → logger.log', () => {
   const out = suggestLoggerReplacement("console.log('hi')")
-  assert.match(out, /logger\.(info|log)/)
+  assert.match(out, /logger\.(log|info)/)
 })
 
 test('suggestLoggerReplacement: console.error → logger.fail', () => {
   const out = suggestLoggerReplacement("console.error('x')")
-  assert.match(out, /logger\.(error|fail)/)
+  assert.match(out, /logger\.(fail|error)/)
 })
 
 // ── scanPersonalPaths ─────────────────────────────────────────────
 
-test('scanPersonalPaths: flags real /Users/<user>/ paths', () => {
+test('scanPersonalPaths: flags real /Users/<name>/ paths', () => {
   const hits = scanPersonalPaths('const p = "/Users/jdalton/secret.txt"')
   assert.ok(hits.length > 0)
   assert.match(hits[0]!.line, /jdalton/)

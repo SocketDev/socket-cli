@@ -8,7 +8,7 @@
 // Bypassable: --no-verify skips this hook entirely. Use sparingly
 // (hotfixes, history operations, pre-build states).
 
-import path from 'node:path'
+import { basename } from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
@@ -78,7 +78,7 @@ const main = (): number => {
     const base = basename(f)
     return (
       /^\.env(\.[^/]+)?$/.test(base) &&
-      !/^\.env\.(example|precommit|test)$/.test(base)
+      !/^\.env\.(example|test|precommit)$/.test(base)
     )
   })
   if (envFiles.length > 0) {

@@ -20,6 +20,7 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
+import { which } from '@socketsecurity/lib/bin'
 import { safeDelete } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
@@ -401,26 +402,25 @@ function slugify(s: string): string {
 }
 
 async function isCommandAvailable(bin: string): Promise<boolean> {
-  try {
-    await spawn('command', ['-v', bin], {
-      stdio: 'pipe',
-      stdioString: true,
-      shell: true,
-    })
-    return true
-  } catch {
-    return false
-  }
+  // Use `which` from @socketsecurity/lib/bin instead of spawning
+  // `command -v` with shell: true. The shell:true variant invokes
+  // cmd.exe on Windows and mangles `command -v`; `which` is
+  // cross-platform and avoids the shell entirely.
+  return (await which(bin)) !== null
 }
 
 async function detectAvailableBackends(): Promise<ReadonlySet<BackendName>> {
-  const set = new Set<BackendName>()
-  for (const name of Object.keys(BACKENDS) as BackendName[]) {
-    if (await isCommandAvailable(BACKENDS[name].bin)) {
-      set.add(name)
-    }
-  }
-  return set
+  // Fan out the `which` lookups instead of awaiting one at a time.
+  // Cheap parallelism — N filesystem stats run concurrently rather
+  // than serially.
+  const names = Object.keys(BACKENDS) as BackendName[]
+  const results = await Promise.all(
+    names.map(async name => ({
+      name,
+      available: await isCommandAvailable(BACKENDS[name].bin),
+    })),
+  )
+  return new Set(results.filter(r => r.available).map(r => r.name))
 }
 
 function pickBackend(

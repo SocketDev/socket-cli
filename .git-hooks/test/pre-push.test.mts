@@ -6,47 +6,16 @@
 
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { spawn, spawnSync } from 'node:child_process'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import os from 'node:os'
+import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const HOOK = path.join(here, '..', 'pre-push.mts')
 
 const ZERO_SHA = '0000000000000000000000000000000000000000'
-
-export function commit(
-  dir: string,
-  file: string,
-  content: string,
-  msg: string,
-): string {
-  writeFileSync(path.join(dir, file), content)
-  spawnSync('git', ['add', file], { cwd: dir })
-  spawnSync('git', ['commit', '-q', '-m', msg, '--no-verify'], { cwd: dir })
-  const r = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: dir })
-  return r.stdout.toString().trim()
-}
-
-async function runHook(
-  cwd: string,
-  pushLine: string,
-): Promise<{ code: number; stderr: string }> {
-  const child = spawn(process.execPath, [HOOK, 'origin', cwd], {
-    cwd,
-    stdio: 'pipe',
-  })
-  let stderr = ''
-  child.stderr.on('data', chunk => {
-    stderr += chunk.toString('utf8')
-  })
-  child.stdin.end(pushLine)
-  return new Promise(resolve => {
-    child.on('exit', code => resolve({ code: code ?? 0, stderr }))
-  })
-}
 
 function setupRepo(): string {
   const dir = mkdtempSync(path.join(tmpdir(), 'pre-push-test-'))
@@ -78,6 +47,37 @@ function setupRepo(): string {
     { cwd: dir },
   )
   return dir
+}
+
+function commit(
+  dir: string,
+  file: string,
+  content: string,
+  msg: string,
+): string {
+  writeFileSync(path.join(dir, file), content)
+  spawnSync('git', ['add', file], { cwd: dir })
+  spawnSync('git', ['commit', '-q', '-m', msg, '--no-verify'], { cwd: dir })
+  const r = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: dir })
+  return r.stdout.toString().trim()
+}
+
+async function runHook(
+  cwd: string,
+  pushLine: string,
+): Promise<{ code: number; stderr: string }> {
+  const child = spawn(process.execPath, [HOOK, 'origin', cwd], {
+    cwd,
+    stdio: 'pipe',
+  })
+  let stderr = ''
+  child.stderr.on('data', chunk => {
+    stderr += chunk.toString('utf8')
+  })
+  child.stdin.end(pushLine)
+  return new Promise(resolve => {
+    child.on('exit', code => resolve({ code: code ?? 0, stderr }))
+  })
 }
 
 test('pre-push: empty stdin exits 0 (nothing to push)', async () => {

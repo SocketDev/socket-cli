@@ -81,48 +81,60 @@ function main() {
     stdin += chunk
   })
   process.stdin.on('end', () => {
-    let payload: Hook
+    // Fail OPEN on any internal bug. The JSON.parse below already has
+    // its own try/catch (bad payloads exit 0), but unexpected throws
+    // in the regex/stderr path would otherwise become unhandled
+    // rejections → exit 1 → block. Per CLAUDE.md, hooks must not
+    // brick the session on their own crash.
     try {
-      payload = JSON.parse(stdin) as Hook
-    } catch {
-      // Bad payload — fail open.
+      let payload: Hook
+      try {
+        payload = JSON.parse(stdin) as Hook
+      } catch {
+        // Bad payload — fail open.
+        process.exit(0)
+      }
+      const tool = payload.tool_name
+      if (tool !== 'Edit' && tool !== 'Write') {
+        process.exit(0)
+      }
+      const filePath = payload.tool_input?.file_path
+      if (!filePath || !filePath.endsWith('/.gitmodules')) {
+        process.exit(0)
+      }
+      // Edit gives us new_string (the replacement); Write gives us
+      // content (the full new file). Either way, we scan the proposed
+      // text for the orphan condition. For Edit calls the new_string
+      // may be a fragment that doesn't contain a [submodule] header —
+      // that's fine, the check passes.
+      const proposed =
+        payload.tool_input?.content ?? payload.tool_input?.new_string ?? ''
+      const orphans = findOrphanSubmoduleSections(proposed)
+      if (orphans.length === 0) {
+        process.exit(0)
+      }
+      // Block the tool call. Exit code 2 makes Claude Code refuse and
+      // surface the stderr to the model so it can retry.
+      process.stderr.write(
+        `[gitmodules-comment-guard] refusing edit: ${orphans.length} ` +
+          `submodule section(s) lack the canonical ` +
+          `# <slug>-<version> comment immediately above:\n` +
+          orphans.map(o => `    [submodule "${o}"]`).join('\n') +
+          '\n\nFix: prepend a comment line on the line BEFORE each\n' +
+          '[submodule "..."] section. Example:\n' +
+          '\n  # semver-7.7.4\n  [submodule "packages/.../upstream/semver"]\n' +
+          '\nThe slug should be a short name (no path); the version is\n' +
+          'whatever the upstream tags (v25.9.0, 1.7.19, liburing-2.14, etc.).\n' +
+          '\nOne-off override: append `# socket-hook: allow gitmodules-no-comment`\n' +
+          'to the [submodule] line.\n',
+      )
+      process.exit(2)
+    } catch (e) {
+      process.stderr.write(
+        `[gitmodules-comment-guard] hook error (allowing): ${e}\n`,
+      )
       process.exit(0)
     }
-    const tool = payload.tool_name
-    if (tool !== 'Edit' && tool !== 'Write') {
-      process.exit(0)
-    }
-    const filePath = payload.tool_input?.file_path
-    if (!filePath || !filePath.endsWith('/.gitmodules')) {
-      process.exit(0)
-    }
-    // Edit gives us new_string (the replacement); Write gives us
-    // content (the full new file). Either way, we scan the proposed
-    // text for the orphan condition. For Edit calls the new_string
-    // may be a fragment that doesn't contain a [submodule] header —
-    // that's fine, the check passes.
-    const proposed =
-      payload.tool_input?.content ?? payload.tool_input?.new_string ?? ''
-    const orphans = findOrphanSubmoduleSections(proposed)
-    if (orphans.length === 0) {
-      process.exit(0)
-    }
-    // Block the tool call. Exit code 2 makes Claude Code refuse and
-    // surface the stderr to the model so it can retry.
-    process.stderr.write(
-      `[gitmodules-comment-guard] refusing edit: ${orphans.length} ` +
-        `submodule section(s) lack the canonical ` +
-        `# <slug>-<version> comment immediately above:\n` +
-        orphans.map(o => `    [submodule "${o}"]`).join('\n') +
-        '\n\nFix: prepend a comment line on the line BEFORE each\n' +
-        '[submodule "..."] section. Example:\n' +
-        '\n  # semver-7.7.4\n  [submodule "packages/.../upstream/semver"]\n' +
-        '\nThe slug should be a short name (no path); the version is\n' +
-        'whatever the upstream tags (v25.9.0, 1.7.19, liburing-2.14, etc.).\n' +
-        '\nOne-off override: append `# socket-hook: allow gitmodules-no-comment`\n' +
-        'to the [submodule] line.\n',
-    )
-    process.exit(2)
   })
   // If stdin is closed before any data, treat as empty payload.
   if (process.stdin.readable === false) {

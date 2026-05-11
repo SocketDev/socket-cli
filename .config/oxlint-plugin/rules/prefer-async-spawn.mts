@@ -39,7 +39,7 @@
  *     "Reserve `spawnSync` for top-level scripts whose entire flow is
  *     sync").
  *   - Files inside `@socketsecurity/lib/spawn` itself — they wrap the
- *     core APIs. Handled at the .oxlintrc.json ignorePatterns level.
+ *     core APIs. Handled at the .config/oxlintrc.json ignorePatterns level.
  */
 
 const CHILD_PROCESS_SPECIFIERS = new Set([

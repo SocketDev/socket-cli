@@ -743,14 +743,25 @@ export {
 // module-level declaration is initialized before main runs.
 
 if (fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
-  // Read the full JSON blob from stdin (piped by Claude Code).
-  let input = ''
-  for await (const chunk of process.stdin) input += chunk
-  const hook: HookInput = JSON.parse(input)
+  // Fail OPEN on any internal bug — per CLAUDE.md, hooks must not
+  // brick the session if they hit their own crash. Malformed stdin,
+  // unexpected SDK throws, or any other error here exits 0 with a
+  // stderr breadcrumb so the user can still see what went wrong.
+  try {
+    // Read the full JSON blob from stdin (piped by Claude Code).
+    let input = ''
+    for await (const chunk of process.stdin) input += chunk
+    const hook: HookInput = JSON.parse(input)
 
-  if (hook.tool_name !== 'Edit' && hook.tool_name !== 'Write') {
+    if (hook.tool_name !== 'Edit' && hook.tool_name !== 'Write') {
+      process.exitCode = 0
+    } else {
+      process.exitCode = await check(hook)
+    }
+  } catch (e) {
+    process.stderr.write(
+      `[check-new-deps] hook error (allowing): ${errorMessage(e)}\n`,
+    )
     process.exitCode = 0
-  } else {
-    process.exitCode = await check(hook)
   }
 }

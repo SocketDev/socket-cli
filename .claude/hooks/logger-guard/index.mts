@@ -40,6 +40,8 @@
 
 import process from 'node:process'
 
+import { lineIsSuppressed } from '../_shared/markers.mts'
+
 // Files exempt from the rule. Comments explain why each is excluded.
 const EXEMPT_PATH_PATTERNS: RegExp[] = [
   // Hook code itself runs early in the lifecycle and may need to log
@@ -72,19 +74,12 @@ const COMMENT_LINE_RE = /^\s*(\*|\/\/|#)/
 const JSDOC_TAG_RE = /@(example|param|returns?|see|link)\b/
 // Accept `#`, `//`, or `/*` comment prefixes — same as the git pre-
 // commit/pre-push scanners. This hook is invoked on TS/JS edits where
-// `// socket-hook: allow console` is the natural spelling.
-const SOCKET_HOOK_MARKER_RE =
-  /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
-
+// Marker regex + suppression logic live in `_shared/markers.mts` so
+// this hook and the parallel scanner in `.git-hooks/_helpers.mts`
+// never drift on the alias map. See that module for the canonical
+// `RULE_ALIASES` definition.
 function isMarkerSuppressed(line: string): boolean {
-  const m = line.match(SOCKET_HOOK_MARKER_RE)
-  if (!m) {
-    return false
-  }
-  // No specific rule named → blanket allow. Targeted form names what
-  // the line is doing ('console' for direct stream writes); 'logger'
-  // is accepted as a one-cycle alias for the legacy spelling.
-  return !m[1] || m[1] === 'console' || m[1] === 'logger'
+  return lineIsSuppressed(line, 'console')
 }
 
 function isInsideBackticks(line: string): boolean {

@@ -71,7 +71,7 @@ export function getEmbeddedChecksums(): EmbeddedChecksums | undefined {
         readFileSync(checksumPath, 'utf8'),
       ) as EmbeddedChecksums
     } catch {
-      embeddedChecksums = undefined
+      embeddedChecksums = null
       return undefined
     }
   }

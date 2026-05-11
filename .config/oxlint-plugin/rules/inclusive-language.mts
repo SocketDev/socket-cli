@@ -30,12 +30,12 @@
  * Allowed exceptions (skipped — no report, no fix):
  *   - Third-party API field references: comment with
  *     `inclusive-language: external-api` adjacent to the line.
- *   - Vendored / fixture paths: handled at the .oxlintrc.json
+ *   - Vendored / fixture paths: handled at the .config/oxlintrc.json
  *     ignorePatterns level; this rule trusts the include set.
  *   - The literal phrase "main / primary" / etc. inside a doc that
  *     spells out the substitution table — handled by the
  *     `docs/references/inclusive-language.md` ignore pattern in
- *     .oxlintrc.json (caller adds the override).
+ *     .config/oxlintrc.json (caller adds the override).
  */
 
 // [legacyStem, replacementStem]. The detector matches the stem

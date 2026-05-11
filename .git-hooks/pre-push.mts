@@ -15,20 +15,21 @@
 // Stdin format (provided by git): one push line per ref, each line:
 //   <local_ref> <local_sha> <remote_ref> <remote_sha>
 
-import { spawn } from '@socketsecurity/lib/spawn'
+import { spawnSync } from 'node:child_process'
 import { existsSync, statSync } from 'node:fs'
 
-import path from 'node:path'
+import { basename } from 'node:path'
 import process from 'node:process'
 
+import { errorMessage } from '@socketsecurity/lib/errors'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import {
   containsAiAttribution,
   git,
   gitLines,
-  normalizePath,
   readFileForScan,
+  normalizePath,
   scanAwsKeys,
   scanCrossRepoPaths,
   scanGitHubTokens,
@@ -100,10 +101,10 @@ const computeRange = (
 ): string | null => {
   if (localRef.startsWith('refs/tags/')) {
     logger.info(`Skipping tag push: ${localRef}`)
-    return undefined
+    return null
   }
   if (localSha === ZERO_SHA) {
-    return undefined
+    return null
   }
 
   const defaultBranchOf = (remoteName: string): string => {
@@ -132,7 +133,7 @@ const computeRange = (
     const baseRef = `${remote}/${def}`
     if (!refExists(baseRef)) {
       logger.success('Skipping validation (no baseline to compare against)')
-      return undefined
+      return null
     }
     return `${baseRef}..${localSha}`
   }
@@ -144,7 +145,7 @@ const computeRange = (
     const baseRef = `${remote}/${def}`
     if (!refExists(baseRef)) {
       logger.success('Skipping validation (no baseline for force-push)')
-      return undefined
+      return null
     }
     return `${baseRef}..${localSha}`
   }
@@ -210,7 +211,7 @@ const scanFilesInRange = (range: string): number => {
     const base = basename(f)
     return (
       /^\.env(\.[^/]+)?$/.test(base) &&
-      !/^\.env\.(example|precommit|test)$/.test(base)
+      !/^\.env\.(example|test|precommit)$/.test(base)
     )
   })
   if (envHits.length > 0) {
@@ -414,4 +415,13 @@ const main = async (): Promise<number> => {
   return 0
 }
 
-main().then(code => process.exit(code))
+// Explicit .catch so a thrown error in main() doesn't become an
+// unhandled rejection — surface the error through the logger so the
+// user sees what blocked the push, then exit 1 intentionally.
+main().then(
+  code => process.exit(code),
+  e => {
+    logger.error(`pre-push: ${errorMessage(e)}`)
+    process.exit(1)
+  },
+)

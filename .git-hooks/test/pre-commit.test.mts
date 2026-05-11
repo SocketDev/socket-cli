@@ -6,16 +6,25 @@
 
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { spawn } from '@socketsecurity/lib/spawn'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { spawn, spawnSync } from 'node:child_process'
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
-import os from 'node:os'
+import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const HOOK = path.join(here, '..', 'pre-commit.mts')
 
-export async function runHook(cwd: string): Promise<{ code: number; stderr: string }> {
+function setupRepo(): string {
+  const dir = mkdtempSync(path.join(tmpdir(), 'pre-commit-test-'))
+  spawnSync('git', ['init', '-q'], { cwd: dir })
+  spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd: dir })
+  spawnSync('git', ['config', 'user.name', 'Test'], { cwd: dir })
+  spawnSync('git', ['config', 'commit.gpgsign', 'false'], { cwd: dir })
+  return dir
+}
+
+async function runHook(cwd: string): Promise<{ code: number; stderr: string }> {
   const child = spawn(process.execPath, [HOOK], {
     cwd,
     stdio: 'pipe',
@@ -27,15 +36,6 @@ export async function runHook(cwd: string): Promise<{ code: number; stderr: stri
   return new Promise(resolve => {
     child.on('exit', code => resolve({ code: code ?? 0, stderr }))
   })
-}
-
-function setupRepo(): string {
-  const dir = mkdtempSync(path.join(tmpdir(), 'pre-commit-test-'))
-  spawnSync('git', ['init', '-q'], { cwd: dir })
-  spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd: dir })
-  spawnSync('git', ['config', 'user.name', 'Test'], { cwd: dir })
-  spawnSync('git', ['config', 'commit.gpgsign', 'false'], { cwd: dir })
-  return dir
 }
 
 test('pre-commit: passes a clean staged file', async () => {
