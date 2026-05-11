@@ -168,7 +168,7 @@ describe('socket fix', async () => {
                                 See GitHub documentation (https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository) for managing auto-merge for pull requests in your repository.
             --debug             Enable debug logging in the Coana-based Socket Fix CLI invocation.
             --disable-external-tool-checks  Disable external tool checks during fix analysis.
-            --ecosystems        Limit fix analysis to specific ecosystems. Can be provided as comma separated values or as multiple flags. Defaults to all ecosystems.
+            --ecosystems        Limit fix analysis to specific ecosystems. Accepts space- or comma-separated values and is case-insensitive. Defaults to all ecosystems.
             --exclude           Exclude workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags
             --fix-version       Override the version of @coana-tech/cli used for fix analysis. Default: <coana-version>.
             --id                Provide a list of vulnerability identifiers to compute fixes for:
@@ -1102,6 +1102,23 @@ describe('socket fix', async () => {
         '{"apiToken":"fakeToken"}',
       ],
       'should accept multiple --ecosystems flags',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        '--ecosystems',
+        'NPM,PyPI',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --ecosystems case-insensitively',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
         expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
