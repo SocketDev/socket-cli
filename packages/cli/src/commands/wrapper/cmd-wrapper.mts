@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-npx-dlx -- product feature name / command wrapping npx; the literal is intentional. */
+
 import { existsSync } from 'node:fs'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'

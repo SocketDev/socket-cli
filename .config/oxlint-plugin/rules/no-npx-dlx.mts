@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-npx-dlx -- this file IS the rule definition; the banned commands are lookup-table data, not real usage. */
+
 /**
  * @fileoverview Per CLAUDE.md "Tooling" rule:
  *

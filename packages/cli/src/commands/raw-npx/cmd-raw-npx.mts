@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-npx-dlx -- product feature name / command wrapping npx; the literal is intentional. */
+
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { spawn } from '@socketsecurity/lib/spawn'
 
