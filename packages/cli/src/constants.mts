@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
  * Barrel file that re-exports all constants from the /src/constants/ directory.
  * This provides a single entry point for accessing all Socket CLI constants.

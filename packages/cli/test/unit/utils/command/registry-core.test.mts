@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /** @fileoverview Tests for command registry system. */
 
 import { beforeEach, describe, expect, it } from 'vitest'

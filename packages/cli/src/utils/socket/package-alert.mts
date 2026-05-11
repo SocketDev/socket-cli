@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
  * Socket package alert utilities for Socket CLI.
  * Handles security alerts, vulnerabilities, and package risk assessment.

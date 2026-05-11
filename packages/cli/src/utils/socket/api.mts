@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
  * API utilities for Socket CLI.
  * Provides consistent API communication with error handling and permissions management.

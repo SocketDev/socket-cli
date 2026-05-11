@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
  * Direct unit tests for create-scan-from-github helpers.
  *

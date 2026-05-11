@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
  * Telemetry integration helpers for Socket CLI.
  * Provides utilities for tracking common CLI events and subprocess executions.

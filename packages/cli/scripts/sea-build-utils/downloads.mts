@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
 /* oxlint-disable socket/prefer-exists-sync -- fs.stat()/lstat() calls read .size / .isFile() for cache validation, size reporting, and chmod checks; not existence checks. */
 

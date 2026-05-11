@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'

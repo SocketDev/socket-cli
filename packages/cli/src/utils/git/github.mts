@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
  * GitHub utilities for Socket CLI.
  * Provides GitHub API integration for repository operations and GHSA vulnerability data.

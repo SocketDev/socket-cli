@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CliCommandContext } from '../../../../src/utils/cli/with-subcommands.mts'

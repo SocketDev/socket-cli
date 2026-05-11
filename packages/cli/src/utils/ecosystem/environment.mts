@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
  * Package environment detection utilities for Socket CLI.
  * Analyzes project environment and package manager configuration.

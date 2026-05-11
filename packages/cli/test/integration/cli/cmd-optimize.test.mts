@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
  * Integration tests for `socket optimize` command.
  *

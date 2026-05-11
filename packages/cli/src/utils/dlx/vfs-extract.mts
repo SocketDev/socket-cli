@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /* oxlint-disable socket/no-status-emoji -- TUI / custom output formatter; emojis are part of the visual contract. */
 
 /**

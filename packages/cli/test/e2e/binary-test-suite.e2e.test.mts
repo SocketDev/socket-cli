@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
  * @fileoverview Comprehensive E2E test suite for all Socket CLI binary types.
  *

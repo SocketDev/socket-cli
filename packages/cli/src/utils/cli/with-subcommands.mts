@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 import { getCI } from '@socketsecurity/lib/env/ci'
 import {
   getSocketCliApiToken,

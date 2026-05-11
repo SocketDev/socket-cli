@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
  * Unit tests for setup-manifest-config helpers and interactive flow.
  *
