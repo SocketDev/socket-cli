@@ -33,7 +33,7 @@ vi.mock('@socketsecurity/lib/env/ci', () => ({
 const mockGetSocketCliGithubToken = vi.hoisted(() => vi.fn())
 vi.mock('@socketsecurity/lib/env/socket-cli', async importOriginal => {
   const actual =
-    (await importOriginal()) as typeof import('@socketsecurity/lib/env/socket-cli')
+    (await importOriginal()) as typeof SocketCliModule
   return {
     ...actual,
     getSocketCliGithubToken: mockGetSocketCliGithubToken,
@@ -94,6 +94,8 @@ import {
   getCiEnvInstructions,
   getFixEnv,
 } from '../../../../src/commands/fix/env-helpers.mts'
+
+import type * as SocketCliModule from '@socketsecurity/lib/env/socket-cli'
 
 describe('env-helpers', () => {
   beforeEach(() => {

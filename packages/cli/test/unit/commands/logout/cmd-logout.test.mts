@@ -6,6 +6,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type * as ConfigModule from '../../../../src/utils/config.mts'
+import type * as LoggerModule from '@socketsecurity/lib/logger'
+import type * as WithSubcommandsModule from '../../../../src/utils/cli/with-subcommands.mjs'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -18,7 +22,7 @@ const mockLogger = vi.hoisted(() => ({
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
   const actual =
-    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+    await importOriginal<typeof LoggerModule>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -31,7 +35,7 @@ const mockIsConfigFromFlag = vi.hoisted(() => vi.fn(() => false))
 
 vi.mock('../../../../src/utils/config.mts', async importOriginal => {
   const actual =
-    await importOriginal<typeof import('../../../../src/utils/config.mts')>()
+    await importOriginal<typeof ConfigModule>()
   return {
     ...actual,
     isConfigFromFlag: mockIsConfigFromFlag,
@@ -51,7 +55,7 @@ vi.mock('../../../../src/utils/dry-run/output.mts', () => ({
 // covered; production meowOrExit only invokes it on --help, which
 // the test suite never exercises.
 const mockMeowOrExit = vi.hoisted(() =>
-  vi.fn((options: any) => {
+  vi.fn((options: unknown) => {
     const argv = options.argv as string[] | readonly string[]
     const flags: Record<string, unknown> = {}
 
@@ -84,7 +88,7 @@ vi.mock(
   async importOriginal => {
     const actual =
       await importOriginal<
-        typeof import('../../../../src/utils/cli/with-subcommands.mjs')
+        typeof WithSubcommandsModule
       >()
     return {
       ...actual,

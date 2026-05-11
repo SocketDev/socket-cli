@@ -43,6 +43,8 @@ import {
 
 import type { GhsaTracker } from '../../../../src/commands/fix/ghsa-tracker.mts'
 
+import type * as FsModule from 'node:fs'
+
 // Mock file system operations.
 const mockReadJson = vi.hoisted(() => vi.fn())
 const mockSafeDelete = vi.hoisted(() => vi.fn())
@@ -54,7 +56,7 @@ const mockFsWriteFile = vi.hoisted(() => vi.fn())
 const mockFsReadFile = vi.hoisted(() => vi.fn())
 
 vi.mock('node:fs', async () => {
-  const actual = await vi.importActual<typeof import('node:fs')>('node:fs')
+  const actual = await vi.importActual<typeof FsModule>('node:fs')
   return {
     ...actual,
     promises: {
@@ -87,7 +89,7 @@ describe('ghsa-tracker', () => {
 
     it('returns true when process.kill throws EPERM (alive but no permission)', () => {
       const original = process.kill
-      ;(process as any).kill = () => {
+      ;(process as unknown).kill = () => {
         const e = new Error('Operation not permitted') as NodeJS.ErrnoException
         e.code = 'EPERM'
         throw e
@@ -95,13 +97,13 @@ describe('ghsa-tracker', () => {
       try {
         expect(isPidAlive(1)).toBe(true)
       } finally {
-        ;(process as any).kill = original
+        ;(process as unknown).kill = original
       }
     })
 
     it('returns false when process.kill throws non-EPERM (e.g. EINVAL)', () => {
       const original = process.kill
-      ;(process as any).kill = () => {
+      ;(process as unknown).kill = () => {
         const e = new Error('Invalid') as NodeJS.ErrnoException
         e.code = 'EINVAL'
         throw e
@@ -109,7 +111,7 @@ describe('ghsa-tracker', () => {
       try {
         expect(isPidAlive(1)).toBe(false)
       } finally {
-        ;(process as any).kill = original
+        ;(process as unknown).kill = original
       }
     })
   })
@@ -339,7 +341,7 @@ describe('ghsa-tracker', () => {
 
     it('returns false when tracker shape is invalid (fixed.some throws)', async () => {
       // Resolve to a malformed tracker so .fixed.some() throws.
-      mockReadJson.mockResolvedValue({ version: 1 } as any)
+      mockReadJson.mockResolvedValue({ version: 1 } as unknown)
 
       const result = await isGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab')
 

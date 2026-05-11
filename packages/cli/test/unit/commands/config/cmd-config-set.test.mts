@@ -31,6 +31,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type * as ConfigModule from '../../../../src/utils/config.mts'
+import type * as LoggerModule from '@socketsecurity/lib/logger'
+import type * as WithSubcommandsModule from '../../../../src/utils/cli/with-subcommands.mjs'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -43,7 +47,7 @@ const mockLogger = vi.hoisted(() => ({
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
   const actual =
-    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+    await importOriginal<typeof LoggerModule>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -70,7 +74,7 @@ const mockGetSupportedConfigEntries = vi.hoisted(() =>
 
 vi.mock('../../../../src/utils/config.mts', async importOriginal => {
   const actual =
-    await importOriginal<typeof import('../../../../src/utils/config.mts')>()
+    await importOriginal<typeof ConfigModule>()
   return {
     ...actual,
     getSupportedConfigEntries: mockGetSupportedConfigEntries,
@@ -138,7 +142,7 @@ vi.mock(
   async importOriginal => {
     const actual =
       await importOriginal<
-        typeof import('../../../../src/utils/cli/with-subcommands.mjs')
+        typeof WithSubcommandsModule
       >()
     return {
       ...actual,
@@ -297,7 +301,7 @@ describe('cmd-config-set', () => {
 
         // Should have value validation that checks for presence.
         const valueValidation = validations.find(
-          (v: any) =>
+          (v: unknown) =>
             v.message &&
             (v.message.includes('value') || v.message.includes('unset')),
         )
@@ -313,7 +317,7 @@ describe('cmd-config-set', () => {
         const validations = call.slice(1)
 
         const valueValidation = validations.find(
-          (v: any) =>
+          (v: unknown) =>
             v.message &&
             (v.message.includes('value') || v.message.includes('unset')),
         )
@@ -486,7 +490,7 @@ describe('cmd-config-set', () => {
         // Check that validation includes the conflicting flags check.
         const validations = call.slice(1)
         const conflictCheck = validations.find(
-          (v: any) =>
+          (v: unknown) =>
             v.message &&
             v.message.includes('--json') &&
             v.message.includes('--markdown'),
