@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import { getGithubApiUrl } from '@socketsecurity/lib/env/github'
@@ -267,7 +267,7 @@ export async function setupScanConfig(
   defaultOnReadError = false,
 ): Promise<CResult<unknown>> {
   const jsonPath = path.join(cwd, SOCKET_JSON)
-  if (fs.existsSync(jsonPath)) {
+  if (existsSync(jsonPath)) {
     logger.info(`Found ${SOCKET_JSON} at ${jsonPath}`)
   } else {
     logger.info(`No ${SOCKET_JSON} found at ${cwd}, will generate a new one`)

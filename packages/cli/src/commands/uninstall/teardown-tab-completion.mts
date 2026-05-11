@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { homePath } from '../../constants/paths.mts'
@@ -30,8 +30,8 @@ export async function teardownTabCompletion(
   // Remove from ~/.bashrc if found
   const bashrc = homePath ? path.join(homePath, '.bashrc') : ''
 
-  if (bashrc && fs.existsSync(bashrc)) {
-    const content = fs.readFileSync(bashrc, 'utf8')
+  if (bashrc && existsSync(bashrc)) {
+    const content = readFileSync(bashrc, 'utf8')
 
     if (content.includes(toAddToBashrc)) {
       const newContent = content
@@ -41,7 +41,7 @@ export async function teardownTabCompletion(
         .replaceAll(sourcingCommand, '')
         .replaceAll(completionCommand, '')
 
-      fs.writeFileSync(bashrc, newContent, 'utf8')
+      writeFileSync(bashrc, newContent, 'utf8')
 
       return {
         ok: true,

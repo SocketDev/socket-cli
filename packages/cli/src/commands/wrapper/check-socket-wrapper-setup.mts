@@ -1,6 +1,6 @@
 /* oxlint-disable socket/no-npx-dlx -- product feature name / command wrapping npx; the literal is intentional. */
 
-import fs from 'node:fs'
+import { readFileSync } from 'node:fs'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 const logger = getDefaultLogger()
@@ -8,7 +8,7 @@ const logger = getDefaultLogger()
 export function checkSocketWrapperSetup(file: string): boolean {
   let fileContent: string
   try {
-    fileContent = fs.readFileSync(file, 'utf8')
+    fileContent = readFileSync(file, 'utf8')
   } catch {
     // File may have been deleted or become unreadable.
     return false

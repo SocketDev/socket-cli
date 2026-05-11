@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import { existsSync } from 'node:fs'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
@@ -16,8 +16,8 @@ export async function postinstallWrapper() {
   const bashRcPath = getBashRcPath()
   const zshRcPath = getZshRcPath()
   const socketWrapperEnabled =
-    (fs.existsSync(bashRcPath) && checkSocketWrapperSetup(bashRcPath)) ||
-    (fs.existsSync(zshRcPath) && checkSocketWrapperSetup(zshRcPath))
+    (existsSync(bashRcPath) && checkSocketWrapperSetup(bashRcPath)) ||
+    (existsSync(zshRcPath) && checkSocketWrapperSetup(zshRcPath))
 
   if (!socketWrapperEnabled) {
     await setupSocketWrapper(
@@ -36,7 +36,7 @@ Do you want to install the Socket npm wrapper (this will create an alias to the 
   try {
     const details = getBashrcDetails('') // Note: command is not relevant, we just want the config path
     if (details.ok) {
-      if (fs.existsSync(details.data.targetPath)) {
+      if (existsSync(details.data.targetPath)) {
         // Replace the file with the one from this installation
         const result = updateInstalledTabCompletionScript(
           details.data.targetPath,
@@ -78,10 +78,10 @@ export async function setupSocketWrapper(query: string): Promise<void> {
     const bashRcPath = getBashRcPath()
     const zshRcPath = getZshRcPath()
     try {
-      if (fs.existsSync(bashRcPath)) {
+      if (existsSync(bashRcPath)) {
         await addSocketWrapper(bashRcPath)
       }
-      if (fs.existsSync(zshRcPath)) {
+      if (existsSync(zshRcPath)) {
         await addSocketWrapper(zshRcPath)
       }
     } catch (e) {
