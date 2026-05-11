@@ -106,7 +106,9 @@ const rule = {
         let fixerAttached = false
         for (const spec of typeSpecifiers) {
           const name =
-            spec.imported && spec.imported.name ? spec.imported.name : '<unknown>'
+            spec.imported && spec.imported.name
+              ? spec.imported.name
+              : '<unknown>'
           const report = {
             node: spec,
             messageId: 'preferSeparateTypeImport',

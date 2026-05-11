@@ -211,7 +211,8 @@ const rule = {
             messageId: 'preferCachedForNoFix',
             data: {
               shape: '.forEach',
-              reason: 'callback is async (changes parallel-vs-sequential semantics)',
+              reason:
+                'callback is async (changes parallel-vs-sequential semantics)',
             },
           })
           return
