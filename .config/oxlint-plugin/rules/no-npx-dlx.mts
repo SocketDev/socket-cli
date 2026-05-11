@@ -33,12 +33,12 @@ const PATTERNS = [
   // before `pnpm` and `pnx ` is matched before `pnpm`. Each entry
   // is [match-prefix, replacement-prefix, label].
   ['pnpm dlx ', 'pnpm exec ', 'pnpm dlx'],
-  ['yarn dlx ', 'pnpm exec ', 'yarn dlx'],
-  ['npx ', 'pnpm exec ', 'npx'],
+  ['yarn dlx ', 'pnpm exec ', 'yarn dlx'], // socket-hook: allow npx
+  ['npx ', 'pnpm exec ', 'npx'], // socket-hook: allow npx
   ['pnx ', 'pnpm exec ', 'pnx'],
 ]
 
-const COMMENT_BYPASS_RE = /socket-hook:\s*allow\s+npx/
+const COMMENT_BYPASS_RE = /socket-hook:\s*allow\s+npx/ // socket-hook: allow npx
 
 /** @type {import('eslint').Rule.RuleModule} */
 const rule = {

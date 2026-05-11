@@ -117,10 +117,10 @@ async function findPackageJsonFiles(dir: string): Promise<string[]> {
 
     // Skip node_modules, .git, and build directories.
     if (
-      entry.name === 'node_modules' ||
       entry.name === '.git' ||
       entry.name === 'build' ||
-      entry.name === 'dist'
+      entry.name === 'dist' ||
+      entry.name === 'node_modules'
     ) {
       continue
     }

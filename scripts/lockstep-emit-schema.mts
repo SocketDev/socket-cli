@@ -12,8 +12,8 @@ import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { spawn } from '@socketsecurity/lib/spawn/core'
-import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
+import { spawn } from '@socketsecurity/lib/spawn'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { LockstepManifestSchema } from './lockstep-schema.mts'
 
