@@ -626,7 +626,7 @@ describe('git utilities', () => {
       // All local branches fail.
       spawn
         .mockRejectedValueOnce(new Error('main not found'))
-        .mockRejectedValueOnce(new Error('master not found'))
+        .mockRejectedValueOnce(new Error('master not found')) // inclusive-language: external-api
         .mockRejectedValueOnce(new Error('develop not found'))
         .mockRejectedValueOnce(new Error('trunk not found'))
         .mockRejectedValueOnce(new Error('default not found'))

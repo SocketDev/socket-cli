@@ -19,7 +19,7 @@
  * - parseGitRemoteUrl: Extract owner/repo from SSH or HTTPS URLs
  *
  * Repository Information:
- * - detectDefaultBranch: Find default branch (main/master/develop/etc)
+ * - detectDefaultBranch: Find default branch (main/master/develop/etc — inclusive-language: external-api)
  * - getBaseBranch: Determine base branch (respects GitHub Actions env)
  * - getRepoInfo: Extract owner/repo from git remote URL
  * - gitBranch: Get current branch or commit hash
@@ -68,7 +68,7 @@ export async function getGitPath(): Promise<string> {
 const COMMON_DEFAULT_BRANCH_NAMES = [
   // Modern default (GitHub, GitLab, Bitbucket have switched to this).
   'main',
-  // Historic default in Git (pre-2020, still used in many repos).
+  // inclusive-language: external-api — git's historical default branch.
   'master',
   // Common in Git Flow workflows (main for stable, develop for ongoing work).
   'develop',

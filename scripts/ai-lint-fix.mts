@@ -1,3 +1,5 @@
+/* oxlint-disable socket/inclusive-language -- AI-fix orchestrator documents the rules it handles, including the legacy terms each rule scans for. */
+
 /**
  * @fileoverview AI-assisted lint fix step.
  *
@@ -42,7 +44,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
+import { spawn, isSpawnError } from '@socketsecurity/lib/spawn'
 
 const logger = getDefaultLogger()
 
@@ -51,7 +53,40 @@ const logger = getDefaultLogger()
 // safely infer. Each one IS fixable — the AI step does the work.
 // The deterministic linter already handled the unambiguous shapes;
 // what remains is the structural-rewrite set.
-const AI_HANDLED_RULES = new Set(['socket/inclusive-language', 'socket/max-file-lines', 'socket/no-fetch-prefer-http-request', 'socket/no-placeholders', 'socket/personal-path-placeholders', 'socket/prefer-async-spawn', 'socket/prefer-exists-sync', 'socket/prefer-node-builtin-imports', 'socket/prefer-undefined-over-null'])
+const AI_HANDLED_RULES = new Set([
+  // master/slave — context decides main/primary/controller vs
+  // replica/worker. Other forms (whitelist/blacklist/etc.) auto-fix.
+  'socket/inclusive-language',
+  // Literal username in a user-home path. In source: substitute a
+  // placeholder / env-var / delete. In WASM or generated bundles:
+  // the bundler is leaking the path — fix the build config.
+  'socket/personal-path-placeholders',
+  // fs.access / fs.stat existence checks. AI rewrites the try/catch
+  // → if/else and preserves metadata calls when the result is
+  // destructured. Wrapper-name shapes (fileExists / pathExists /
+  // isFile / isDir) auto-fix deterministically.
+  'socket/prefer-exists-sync',
+  // node:fs default/namespace where references are "weird" (computed
+  // access, passed as a value, reassigned). Plain `fs.X` shapes
+  // auto-fix via scope rename.
+  'socket/prefer-node-builtin-imports',
+  // spawnSync where the call site isn't already in async context or
+  // its return value is consumed (assignment, property access).
+  // await/expression-statement shapes auto-fix.
+  'socket/prefer-async-spawn',
+  // null whose surrounding type annotation also mentions null. AI
+  // flips BOTH the annotation and the value in lockstep through the
+  // function signatures / interfaces / return types involved.
+  // Cross-file ripple is handled by per-file passes on the next run.
+  'socket/prefer-undefined-over-null',
+  // File splitting needs to choose natural seams.
+  'socket/max-file-lines',
+  // Placeholder finishes need actual implementation.
+  'socket/no-placeholders',
+  // No-fetch needs httpJson/httpText/httpRequest decision based on
+  // how the response is consumed.
+  'socket/no-fetch-prefer-http-request',
+])
 
 interface OxlintMessage {
   ruleId?: string
@@ -75,7 +110,7 @@ interface CliArgs {
   passthrough: string[]
 }
 
-export function parseArgs(argv: readonly string[]): CliArgs {
+function parseArgs(argv: readonly string[]): CliArgs {
   const passthrough: string[] = []
   let noAi = false
   let staged = false
@@ -100,7 +135,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   return { all, noAi, passthrough, staged }
 }
 
-export async function runLintJson(
+async function runLintJson(
   passthrough: readonly string[],
 ): Promise<OxlintFile[]> {
   // Run oxlint directly with --format=json. Bypass `pnpm run lint`
@@ -147,7 +182,7 @@ export async function runLintJson(
   }
 }
 
-export function bucketFindings(files: OxlintFile[]): Map<string, OxlintMessage[]> {
+function bucketFindings(files: OxlintFile[]): Map<string, OxlintMessage[]> {
   const byFile = new Map<string, OxlintMessage[]>()
   for (const f of files) {
     const handled = f.messages.filter(
@@ -173,6 +208,7 @@ export function bucketFindings(files: OxlintFile[]): Map<string, OxlintMessage[]
 const RULE_GUIDANCE = {
   // oxlint-disable-next-line socket/prefer-undefined-over-null -- null-prototype object literal.
   __proto__: null,
+  // oxlint-disable-next-line socket/inclusive-language -- rule guidance string documents the legacy terms it scans for.
   'socket/inclusive-language':
     'Replace `master`/`slave` with the contextually correct term: `main` (branch), `primary`/`controller` (process), `replica`/`worker`/`secondary`/`follower` (subordinate). Read the surrounding code to pick the right one. Do not autofix when an external API field name forces the legacy term — leave a `// inclusive-language: external-api` comment instead.',
   'socket/personal-path-placeholders':
@@ -193,7 +229,7 @@ const RULE_GUIDANCE = {
     'Replace `fetch(url, opts)` with the right helper from `@socketsecurity/lib/http-request`: `httpJson` when the caller calls `.json()` on the response, `httpText` when it calls `.text()`, `httpRequest` for raw access. Add the named import.',
 } as unknown as Readonly<Record<string, string>>
 
-export function renderFindings(findings: OxlintMessage[], _rel: string): string {
+function renderFindings(findings: OxlintMessage[], _rel: string): string {
   return findings
     .map(
       f =>
@@ -207,7 +243,7 @@ export function renderFindings(findings: OxlintMessage[], _rel: string): string 
     .join('\n')
 }
 
-export function renderRuleGuidance(findings: OxlintMessage[]): string {
+function renderRuleGuidance(findings: OxlintMessage[]): string {
   const seen = new Set<string>()
   for (const f of findings) {
     if (f.ruleId) {
@@ -245,7 +281,7 @@ export function renderRuleGuidance(findings: OxlintMessage[]): string {
  * the guidance block carries enough context), and how to use Edit /
  * Read. Adding boilerplate dilutes the instructions.
  */
-export function buildPrompt(filePath: string, findings: OxlintMessage[]): string {
+function buildPrompt(filePath: string, findings: OxlintMessage[]): string {
   const rel = path.relative(process.cwd(), filePath)
   const findingsBlock = renderFindings(findings, rel)
   const rulesBlock = renderRuleGuidance(findings)
@@ -270,7 +306,7 @@ ${rulesBlock}
 <output>One short sentence summarizing what you changed. No markdown, no code blocks, no preamble.</output>`
 }
 
-export async function runClaudeFix(
+async function runClaudeFix(
   _filePath: string,
   prompt: string,
   cwd: string,
@@ -324,7 +360,7 @@ export async function runClaudeFix(
   return { exitCode, stderr, stdout }
 }
 
-export async function hasClaudeCli(): Promise<boolean> {
+async function hasClaudeCli(): Promise<boolean> {
   try {
     const result = await spawn('claude', ['--version'], {
       shell: process.platform === 'win32',

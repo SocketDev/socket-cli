@@ -1,3 +1,5 @@
+/* oxlint-disable socket/inclusive-language -- this file IS the rule definition; the legacy terms are lookup-table data, not real usage. */
+
 /**
  * @fileoverview Per CLAUDE.md "Inclusive language" rule (full table
  * in docs/references/inclusive-language.md).
@@ -141,6 +143,17 @@ const rule = {
       const after = sourceCode.getCommentsAfter(node)
       for (const c of [...before, ...after]) {
         if (BYPASS_RE.test(c.value)) {
+          return true
+        }
+      }
+      // Fall-back: scan the entire source line containing the node for
+      // a trailing bypass comment. AST-level "after" comments stop at
+      // the statement boundary, but a chained method call's string
+      // literal won't see a trailing comment on the same physical line.
+      const loc = node.loc
+      if (loc && loc.start.line === loc.end.line) {
+        const lineText = sourceCode.lines?.[loc.start.line - 1]
+        if (lineText && BYPASS_RE.test(lineText)) {
           return true
         }
       }
