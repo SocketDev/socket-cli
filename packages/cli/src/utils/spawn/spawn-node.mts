@@ -216,7 +216,7 @@ export function getNodeExecutablePathSync(): string {
 export function spawnNodeSync(
   args: string[] | readonly string[],
   options?: Omit<SpawnNodeOptions, 'ipc'>,
-): ReturnType<typeof import('@socketsecurity/lib/spawn').spawnSync> {
+): ReturnType<typeof spawnSync> {
   const nodePath = getNodeExecutablePathSync()
   return spawnSync(nodePath, args, options)
 }
