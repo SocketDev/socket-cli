@@ -15,21 +15,32 @@ export async function apiCall<T extends keyof SocketSdk>(
   args: Parameters<SocketSdk[T]>,
   description: string,
   options?: BaseFetchOptions,
-): Promise<CResult<any>> {
+): Promise<CResult<unknown>> {
   const sdkResult = await setupSdk(options?.sdkOpts)
   if (!sdkResult.ok) {
     return sdkResult
   }
   const sdk = sdkResult.data
 
+  // eslint-disable-next-line typescript-eslint/no-explicit-any -- dynamic SDK method dispatch; method/args linkage requires bypassing structural check.
   return await handleApiCall((sdk[method] as any)(...args), { description })
 }
+
+// Helper: derive a method's positional parameter type at a given index.
+type SdkArg<
+  T extends keyof SocketSdk,
+  I extends number,
+> = Parameters<SocketSdk[T]>[I]
 
 /**
  * Simplified repository API calls
  */
 export const repoApi = {
-  list: (orgSlug: string, params: any, options?: BaseFetchOptions) =>
+  list: (
+    orgSlug: string,
+    params: SdkArg<'listRepositories', 1>,
+    options?: BaseFetchOptions,
+  ) =>
     apiCall(
       'listRepositories',
       [orgSlug, params],
@@ -37,7 +48,11 @@ export const repoApi = {
       options,
     ),
 
-  create: (orgSlug: string, params: any, options?: BaseFetchOptions) =>
+  create: (
+    orgSlug: string,
+    params: SdkArg<'createRepository', 1>,
+    options?: BaseFetchOptions,
+  ) =>
     apiCall(
       'createRepository',
       [orgSlug, params],
@@ -56,7 +71,7 @@ export const repoApi = {
   update: (
     orgSlug: string,
     repoName: string,
-    params: any,
+    params: SdkArg<'updateRepository', 2>,
     options?: BaseFetchOptions,
   ) =>
     apiCall(
@@ -77,8 +92,11 @@ export const orgApi = {
   list: (options?: BaseFetchOptions) =>
     apiCall('listOrganizations', [], 'list of organizations', options),
 
-  dependencies: (_orgSlug: string, params: any, options?: BaseFetchOptions) =>
-    apiCall('searchDependencies', [params], 'dependencies', options),
+  dependencies: (
+    _orgSlug: string,
+    params: SdkArg<'searchDependencies', 0>,
+    options?: BaseFetchOptions,
+  ) => apiCall('searchDependencies', [params], 'dependencies', options),
 
   quota: (_orgSlug: string, options?: BaseFetchOptions) =>
     apiCall('getQuota' as keyof SocketSdk, [], 'organization quota', options),
@@ -125,18 +143,18 @@ export const packageApi = {
  * Simplified scan API calls
  */
 export const scanApi = {
-  create: (orgSlug: string, params: any, options?: BaseFetchOptions) =>
+  create: (orgSlug: string, params: unknown, options?: BaseFetchOptions) =>
     apiCall(
       'createFullScan' as keyof SocketSdk,
-      [orgSlug, params],
+      [orgSlug, params] as Parameters<SocketSdk[keyof SocketSdk]>,
       'to create a scan',
       options,
     ),
 
-  list: (orgSlug: string, params: any, options?: BaseFetchOptions) =>
+  list: (orgSlug: string, params: unknown, options?: BaseFetchOptions) =>
     apiCall(
       'listFullScans' as keyof SocketSdk,
-      [orgSlug, params],
+      [orgSlug, params] as Parameters<SocketSdk[keyof SocketSdk]>,
       'list of scans',
       options,
     ),

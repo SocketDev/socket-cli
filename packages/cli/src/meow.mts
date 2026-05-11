@@ -7,7 +7,10 @@ import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { readPackageJsonSync } from '@socketsecurity/lib/packages'
 
-import type { ParseArgsConfig } from '@socketsecurity/lib/argv/parse'
+import type {
+  ParseArgsConfig,
+  ParseArgsOptionsConfig,
+} from '@socketsecurity/lib/argv/parse'
 
 const logger = getDefaultLogger()
 
@@ -19,7 +22,10 @@ export interface MeowFlag {
   readonly default?: unknown
   readonly isRequired?:
     | boolean
-    | ((flags: any, input: readonly string[]) => boolean)
+    | ((
+        flags: Record<string, unknown>,
+        input: readonly string[],
+      ) => boolean)
   readonly isMultiple?: boolean
 }
 
@@ -109,7 +115,7 @@ export interface MeowResult<F extends MeowFlags = MeowFlags> {
   readonly flags: InferFlagValues<F>
   readonly unknownFlags: readonly string[]
   readonly unnormalizedFlags?: InferFlagValues<F>
-  readonly pkg: Record<string, any>
+  readonly pkg: Record<string, unknown>
   readonly help: string
   showHelp: (exitCode?: number) => void
   showVersion: () => void
@@ -140,7 +146,7 @@ export default function meow<const F extends MeowFlags = MeowFlags>(
   } = options
 
   // Read package.json.
-  let pkg: Record<string, any> = {}
+  let pkg: Record<string, unknown> = {}
   if (importMeta?.url) {
     try {
       const url = new URL(importMeta.url)
@@ -152,7 +158,7 @@ export default function meow<const F extends MeowFlags = MeowFlags>(
   }
 
   // Convert meow flags to parseArgs options.
-  const parseArgsOptions: Record<string, any> = {}
+  const parseArgsOptions: Record<string, ParseArgsOptionsConfig> = {}
   const flagEntries = Object.entries(flags as MeowFlags)
   for (const [name, flag] of flagEntries) {
     const type = flag.type === 'number' ? 'string' : flag.type || 'boolean'
@@ -193,7 +199,7 @@ export default function meow<const F extends MeowFlags = MeowFlags>(
     ) {
       const numValue = Number(flagValues[name as keyof InferFlagValues<F>])
       if (!Number.isNaN(numValue)) {
-        ;(flagValues as any)[name] = numValue
+        ;(flagValues as Record<string, unknown>)[name] = numValue
       }
     }
   }
@@ -202,7 +208,7 @@ export default function meow<const F extends MeowFlags = MeowFlags>(
   if (booleanDefault !== undefined) {
     for (const [name, flag] of flagEntries) {
       if (flag.type === 'boolean' && !(name in flagValues)) {
-        ;(flagValues as any)[name] = booleanDefault
+        ;(flagValues as Record<string, unknown>)[name] = booleanDefault
       }
     }
   }

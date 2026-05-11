@@ -24,7 +24,11 @@ export interface CommandBuilderOptions {
   flags?: MeowFlags
   includeCommonFlags?: boolean
   includeOutputFlags?: boolean
-  handler: (args: { input: string[]; flags: any; cli: any }) => Promise<void>
+  handler: (args: {
+    input: string[]
+    flags: Record<string, unknown>
+    cli: unknown
+  }) => Promise<void>
   examples?: Array<{ command: string; description?: string }>
   usage?: string
   helpText?: string
@@ -179,7 +183,7 @@ export const commandPatterns = {
   /**
    * Build a standard list command
    */
-  list: (entity: string, handler: any) =>
+  list: (entity: string, handler: CommandBuilderOptions['handler']) =>
     buildCommand({
       name: `list-${entity}`,
       description: `List all ${entity}`,
@@ -194,7 +198,7 @@ export const commandPatterns = {
   /**
    * Build a standard create command
    */
-  create: (entity: string, args: string, handler: any) =>
+  create: (entity: string, args: string, handler: CommandBuilderOptions['handler']) =>
     buildCommand({
       name: `create-${entity}`,
       description: `Create a new ${entity}`,
@@ -207,7 +211,7 @@ export const commandPatterns = {
   /**
    * Build a standard delete command
    */
-  delete: (entity: string, args: string, handler: any) =>
+  delete: (entity: string, args: string, handler: CommandBuilderOptions['handler']) =>
     buildCommand({
       name: `delete-${entity}`,
       description: `Delete a ${entity}`,
@@ -219,7 +223,7 @@ export const commandPatterns = {
   /**
    * Build a standard view command
    */
-  view: (entity: string, args: string, handler: any) =>
+  view: (entity: string, args: string, handler: CommandBuilderOptions['handler']) =>
     buildCommand({
       name: `view-${entity}`,
       description: `View details of a ${entity}`,
@@ -248,10 +252,14 @@ export const errorHandlers = {
   /**
    * Handle API error
    */
-  apiError: (error: any, operation: string) => {
+  apiError: (error: unknown, operation: string) => {
     logger.error(`Failed to ${operation}`)
-    if (error.message) {
-      logger.error(error.message)
+    const message =
+      error && typeof error === 'object' && 'message' in error
+        ? (error as { message?: unknown }).message
+        : undefined
+    if (message) {
+      logger.error(String(message))
     }
     process.exitCode = 1
   },

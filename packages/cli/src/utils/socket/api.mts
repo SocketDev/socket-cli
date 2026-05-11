@@ -121,7 +121,7 @@ export type ApiCallResult<T extends SocketSdkOperations> = CResult<
  * Handle Socket SDK API calls with error handling and permission logging.
  */
 export async function handleApiCall<T extends SocketSdkOperations>(
-  value: Promise<any>,
+  value: Promise<unknown>,
   options?: HandleApiCallOptions | undefined,
 ): Promise<ApiCallResult<T>> {
   const { commandPath, description, spinner } = {
@@ -135,6 +135,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     spinner?.start()
   }
 
+  // eslint-disable-next-line typescript-eslint/no-explicit-any -- value is `Promise<unknown>`; sdkResult shape is narrowed inline via `success`/`status`/`error`/`cause` discriminants below.
   let sdkResult: any
   try {
     sdkResult = await value
@@ -210,9 +211,10 @@ export async function handleApiCall<T extends SocketSdkOperations>(
 }
 
 export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
-  value: Promise<any>,
+  value: Promise<unknown>,
   description: string,
 ): Promise<CResult<SocketSdkSuccessResult<T>['data']>> {
+  // eslint-disable-next-line typescript-eslint/no-explicit-any -- value is `Promise<unknown>`; sdkResult shape is narrowed inline via `success`/`status`/`error`/`cause` discriminants below.
   let sdkResult: any
   try {
     sdkResult = await value
@@ -321,6 +323,7 @@ export async function queryApiSafeText(
   const startTime = Date.now()
   const requestedAt = new Date(startTime).toISOString()
 
+  // eslint-disable-next-line typescript-eslint/no-explicit-any -- HTTP response shape (status/ok/headers/text/json/data) is dynamically narrowed below; typing here would require a discriminated union for every status code.
   let result: any
   try {
     result = await queryApi(path, apiToken)
@@ -489,6 +492,7 @@ export async function sendApiRequest<T>(
   const startTime = Date.now()
   const requestedAt = new Date(startTime).toISOString()
 
+  // eslint-disable-next-line typescript-eslint/no-explicit-any -- HTTP response shape (status/ok/headers/text/json/data) is dynamically narrowed below; typing here would require a discriminated union for every status code.
   let result: any
   try {
     result = await socketHttpRequest(fullUrl, {

@@ -36,17 +36,17 @@ export function outputResult<T>(
 export interface TableColumn {
   field: string
   name: string
-  transform?: (value: any) => string
+  transform?: (value: unknown) => string
 }
 
 /**
  * Options for simple output formatting
  */
 export interface SimpleOutputOptions<T> {
-  json?: (data: T) => any
+  json?: (data: T) => unknown
   table?: {
     columns: TableColumn[]
-    rows: (data: T) => any[]
+    rows: (data: T) => Array<Record<string, unknown>>
   }
   text?: (data: T) => void
   title?: string
@@ -88,7 +88,7 @@ export function simpleOutput<T>(
         }
 
         const formattedRows = rows.map(row => {
-          const formatted: any = {}
+          const formatted: Record<string, unknown> = {}
           for (const col of table.columns) {
             const value = row[col.field]
             formatted[col.field] = col.transform ? col.transform(value) : value
@@ -157,7 +157,7 @@ export function outputPaginatedList<T>(
   },
   tableOptions: {
     columns: TableColumn[]
-    getRows: (data: T) => any[]
+    getRows: (data: T) => Array<Record<string, unknown>>
     emptyMessage?: string
   },
 ): void {
@@ -183,7 +183,7 @@ export function outputPaginatedList<T>(
       }
 
       const formattedRows = rows.map(row => {
-        const formatted: any = {}
+        const formatted: Record<string, unknown> = {}
         for (const col of tableOptions.columns) {
           const value = row[col.field]
           formatted[col.field] = col.transform ? col.transform(value) : value
