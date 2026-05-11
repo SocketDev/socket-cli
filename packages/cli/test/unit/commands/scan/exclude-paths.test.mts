@@ -128,8 +128,8 @@ describe('exclude-paths', () => {
       const reachabilityOptions = {
         excludePaths: [],
         reachExcludePaths: ['existing'],
-      } as any
-      const socketConfig = { foo: 'bar' } as any
+      } as unknown
+      const socketConfig = { foo: 'bar' } as unknown
 
       const result = applyFullExcludePaths({
         cwd: '/repo',
@@ -146,13 +146,13 @@ describe('exclude-paths', () => {
       const reachabilityOptions = {
         excludePaths: ['tests', 'fixtures'],
         reachExcludePaths: ['existing-reach'],
-      } as any
+      } as unknown
       const socketConfig = {
         version: 2,
         issueRules: { x: true },
         githubApp: {},
         projectIgnorePaths: ['cfg-ignore'],
-      } as any
+      } as unknown
 
       const result = applyFullExcludePaths({
         cwd: '/repo',
@@ -175,7 +175,7 @@ describe('exclude-paths', () => {
         reachabilityOptions: {
           excludePaths: ['tests'],
           reachExcludePaths: [],
-        } as any,
+        } as unknown,
         socketConfig: undefined,
         target: '.',
       })

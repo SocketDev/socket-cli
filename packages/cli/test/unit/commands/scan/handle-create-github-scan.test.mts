@@ -170,14 +170,14 @@ describe('handleCreateGithubScan', () => {
 
     // Test with various falsy values.
     await handleCreateGithubScan({
-      all: 0 as any,
+      all: 0 as unknown,
       githubApiUrl: 'https://api.github.com',
       githubToken: 'token',
-      interactive: undefined as any,
+      interactive: undefined as unknown,
       orgGithub: 'org',
       orgSlug: 'org',
       outputKind: 'json',
-      repos: undefined as any,
+      repos: undefined as unknown,
     })
 
     expect(mockCreate).toHaveBeenCalledWith({

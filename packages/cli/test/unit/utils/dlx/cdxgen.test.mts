@@ -28,7 +28,7 @@ vi.mock('../../../../src/utils/dlx/spawn.mts', () => {
   // Return the actual implementation for spawnCdxgenDlx.
   return {
     spawnDlx: mockSpawnDlx,
-    spawnCdxgenDlx: async (args: any, options: any, spawnExtra: any) => {
+    spawnCdxgenDlx: async (args: unknown, options: unknown, spawnExtra: unknown) => {
       // Replicate the actual implementation.
       return mockSpawnDlx(
         { name: '@cyclonedx/cdxgen', version: 'undefined' },
@@ -62,7 +62,7 @@ describe('spawnCdxgenDlx', () => {
         stdout: 'cdxgen output',
         stderr: '',
       }),
-    } as any)
+    } as unknown)
 
     await spawnCdxgenDlx(['--help'])
 
@@ -80,7 +80,7 @@ describe('spawnCdxgenDlx', () => {
         stdout: 'cdxgen output',
         stderr: '',
       }),
-    } as any)
+    } as unknown)
 
     const options = {
       env: { CDXGEN_OUTPUT: 'sbom.json' },
@@ -113,7 +113,7 @@ describe('spawnCdxgenDlx', () => {
         stderr: '',
       }),
     }
-    mockFn.mockResolvedValueOnce(expectedResult as any)
+    mockFn.mockResolvedValueOnce(expectedResult as unknown)
 
     const result = await spawnCdxgenDlx(['--type', 'npm'])
 
@@ -126,7 +126,7 @@ describe('spawnCdxgenDlx', () => {
         stdout: 'cdxgen output',
         stderr: '',
       }),
-    } as any)
+    } as unknown)
 
     const sbomArgs = [
       '--type',
@@ -155,7 +155,7 @@ describe('spawnCdxgenDlx', () => {
         stdout: 'cdxgen output',
         stderr: '',
       }),
-    } as any)
+    } as unknown)
 
     await spawnCdxgenDlx(['-r', '/path/to/scan'])
 

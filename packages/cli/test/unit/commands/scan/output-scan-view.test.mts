@@ -75,7 +75,7 @@ describe('output-scan-view', () => {
         name: 'lodash',
         version: '4.17.21',
         author: ['John Dalton'],
-        score: { overall: 0.8 } as any,
+        score: { overall: 0.8 } as unknown,
       } as SocketArtifact,
     ]
 
@@ -172,7 +172,7 @@ describe('output-scan-view', () => {
               name: 'test-pkg',
               version: '1.0.0',
               author: ['Author 1', 'Author 2'],
-              score: { overall: 0.9 } as any,
+              score: { overall: 0.9 } as unknown,
             } as SocketArtifact,
           ],
         }
@@ -192,7 +192,7 @@ describe('output-scan-view', () => {
               name: 'test-pkg',
               version: '1.0.0',
               author: [],
-              score: { overall: 0.9 } as any,
+              score: { overall: 0.9 } as unknown,
             } as SocketArtifact,
           ],
         }

@@ -44,11 +44,11 @@ describe('objects utilities', () => {
       })
 
       expect(() => {
-        ;(myEnum as any).VALUE3 = 3
+        ;(myEnum as unknown).VALUE3 = 3
       }).toThrow()
 
       expect(() => {
-        ;(myEnum as any).VALUE1 = 10
+        ;(myEnum as unknown).VALUE1 = 10
       }).toThrow()
     })
 

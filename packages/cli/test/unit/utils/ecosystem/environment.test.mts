@@ -83,7 +83,7 @@ vi.mock('@socketregistry/hyrious__bun.lockb/index.cjs', () => ({
 const mockGetNpmExecPath = vi.hoisted(() => vi.fn())
 const mockGetPnpmExecPath = vi.hoisted(() => vi.fn())
 vi.mock('../../../../src/constants/agents.mts', async importOriginal => {
-  const actual: any = await importOriginal()
+  const actual: unknown = await importOriginal()
   return {
     ...actual,
     getNpmExecPath: mockGetNpmExecPath,
@@ -142,7 +142,7 @@ describe('package-environment', () => {
       mockExistsSync.mockReturnValue(true)
       const readFileSpy = vi
         .spyOn(fs, 'readFileSync')
-        .mockReturnValue('echo "not a node shim"\n' as any)
+        .mockReturnValue('echo "not a node shim"\n' as unknown)
       try {
         const result = resolveBinPathSync('/usr/local/bin/some-tool')
         expect(result).toBe('/usr/local/bin/some-tool')
@@ -156,7 +156,7 @@ describe('package-environment', () => {
       const readFileSpy = vi
         .spyOn(fs, 'readFileSync')
         .mockReturnValue(
-          'node "/usr/lib/node_modules/npm/bin/npm-cli.js" "$@"\n' as any,
+          'node "/usr/lib/node_modules/npm/bin/npm-cli.js" "$@"\n' as unknown,
         )
       try {
         const result = resolveBinPathSync('/usr/local/bin/npm')
@@ -170,7 +170,7 @@ describe('package-environment', () => {
       mockExistsSync.mockReturnValue(true)
       const readFileSpy = vi
         .spyOn(fs, 'readFileSync')
-        .mockReturnValue('node "../lib/npm-cli.js" "$@"\n' as any)
+        .mockReturnValue('node "../lib/npm-cli.js" "$@"\n' as unknown)
       try {
         const result = resolveBinPathSync('/usr/local/bin/npm')
         // Resolves "../lib/npm-cli.js" relative to /usr/local/bin/.
@@ -510,7 +510,7 @@ describe('package-environment', () => {
     })
 
     it('detects browser targets from browserslist', async () => {
-      const mockBrowserslist = (await import('browserslist')).default as any
+      const mockBrowserslist = (await import('browserslist')).default as unknown
 
       mockFindUp.mockImplementation(async files => {
         if (
@@ -549,7 +549,7 @@ describe('package-environment', () => {
         patch: parseInt(v.replace(/^v/, '').split('.')[2] || '0', 10),
       }))
       mockSatisfies.mockReturnValue(true)
-      mockMajor.mockImplementation((v: any) => v?.major ?? 18)
+      mockMajor.mockImplementation((v: unknown) => v?.major ?? 18)
     })
 
     it('returns success when all validations pass', async () => {
@@ -688,7 +688,7 @@ describe('package-environment', () => {
 
       await detectAndValidatePackageEnvironment('/project', {
         cmdName: 'test-cmd',
-        logger: mockLogger as any,
+        logger: mockLogger as unknown,
       })
 
       // The onUnknown callback should have been called.
@@ -722,7 +722,7 @@ describe('package-environment', () => {
 
       const result = await detectAndValidatePackageEnvironment('/project', {
         cmdName: 'test-cmd',
-        logger: mockLogger as any,
+        logger: mockLogger as unknown,
       })
 
       // In VITEST mode, the lockPath is redacted in the warning.
@@ -907,7 +907,7 @@ describe('package-environment', () => {
           node: '>=16.0.0',
         },
       })
-      // Stub semver.lt: any coerced < default is true.
+      // Stub semver.lt: unknown coerced < default is true.
       mockSatisfies.mockReturnValue(true)
 
       const result = await detectAndValidatePackageEnvironment('/project')
@@ -934,7 +934,7 @@ describe('package-environment', () => {
       })
       // browserslist returns the targets sorted by browserslist itself; we
       // also want the node-* filter to keep ['node 16.0.0', 'node 18.0.0'].
-      const mockBrowserslist = (await import('browserslist')).default as any
+      const mockBrowserslist = (await import('browserslist')).default as unknown
       mockBrowserslist.mockReturnValue([
         'node 16.0.0',
         'node 18.0.0',

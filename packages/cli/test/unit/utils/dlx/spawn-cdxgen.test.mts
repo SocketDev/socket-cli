@@ -87,7 +87,7 @@ describe('spawnCdxgenDlx', () => {
   it('throws when resolveCdxgen returns an unexpected type', async () => {
     mockResolveCdxgen.mockReturnValue({
       type: 'github-release',
-      details: {} as any,
+      details: {} as unknown,
     })
 
     await expect(spawnCdxgenDlx([], undefined, undefined)).rejects.toThrow(
@@ -103,7 +103,7 @@ describe('spawnCdxgenDlx', () => {
     mockDetectExecutableType.mockReturnValue({ type: 'binary' })
     mockSpawn.mockReturnValue('p')
 
-    await spawnCdxgenDlx([], undefined, { stdio: 'pipe' } as any)
+    await spawnCdxgenDlx([], undefined, { stdio: 'pipe' } as unknown)
 
     expect(mockSpawn).toHaveBeenCalledWith(
       '/local/cdxgen',

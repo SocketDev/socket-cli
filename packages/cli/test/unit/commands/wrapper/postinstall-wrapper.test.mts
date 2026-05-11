@@ -231,8 +231,8 @@ describe('postinstallWrapper', () => {
     mockGetDetails.mockReturnValue({
       ok: true,
       data: { targetPath: '/home/user/.config/socket/tab-completion.bash' },
-    } as any)
-    mockUpdateScript.mockReturnValue({ ok: true } as any)
+    } as unknown)
+    mockUpdateScript.mockReturnValue({ ok: true } as unknown)
 
     await postinstallWrapper()
 
@@ -262,7 +262,7 @@ describe('postinstallWrapper', () => {
     mockGetDetails.mockReturnValue({
       ok: true,
       data: { targetPath: '/home/user/.config/socket/tab-completion.bash' },
-    } as any)
+    } as unknown)
 
     await postinstallWrapper()
 
@@ -305,7 +305,7 @@ describe('postinstallWrapper', () => {
 
     existsSyncSpy.mockReturnValue(true)
     mockCheckSetup.mockReturnValue(true)
-    mockGetDetails.mockReturnValue({ ok: false, message: 'Not found' } as any)
+    mockGetDetails.mockReturnValue({ ok: false, message: 'Not found' } as unknown)
 
     await postinstallWrapper()
 
@@ -331,12 +331,12 @@ describe('postinstallWrapper', () => {
     mockGetDetails.mockReturnValue({
       ok: true,
       data: { targetPath: '/home/user/.config/socket/tab-completion.bash' },
-    } as any)
+    } as unknown)
     // Update script returns NOT ok → success log skipped, fallback log runs.
     mockUpdateScript.mockReturnValue({
       ok: false,
       message: 'Update failed',
-    } as any)
+    } as unknown)
 
     await postinstallWrapper()
 

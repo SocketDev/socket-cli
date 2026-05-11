@@ -73,7 +73,7 @@ describe('generate-report', () => {
       const scan = [createArtifact()]
       const policy = createSecurityPolicy()
 
-      const result = generateReport(scan, policy as any, defaultOptions)
+      const result = generateReport(scan, policy as unknown, defaultOptions)
 
       expect(result.ok).toBe(true)
       expect(result.data).toEqual(
@@ -89,7 +89,7 @@ describe('generate-report', () => {
       const scan = [createArtifact()]
       const policy = createSecurityPolicy()
 
-      const result = generateReport(scan, policy as any, {
+      const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         short: true,
       })
@@ -108,7 +108,7 @@ describe('generate-report', () => {
         badAlert: { action: 'error' },
       })
 
-      const result = generateReport(scan, policy as any, defaultOptions)
+      const result = generateReport(scan, policy as unknown, defaultOptions)
 
       expect(result.ok).toBe(true)
       expect(result.data).toEqual(
@@ -129,7 +129,7 @@ describe('generate-report', () => {
         warnAlert: { action: 'warn' },
       })
 
-      const result = generateReport(scan, policy as any, {
+      const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_WARN,
       })
@@ -152,13 +152,13 @@ describe('generate-report', () => {
         warnAlert: { action: 'warn' },
       })
 
-      const result = generateReport(scan, policy as any, {
+      const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_WARN,
       })
 
       expect(result.ok).toBe(true)
-      const data = result.data as { alerts: Map<string, any> }
+      const data = result.data as { alerts: Map<string, unknown> }
       expect(data.alerts.size).toBeGreaterThan(0)
     })
 
@@ -172,13 +172,13 @@ describe('generate-report', () => {
         warnAlert: { action: 'warn' },
       })
 
-      const result = generateReport(scan, policy as any, {
+      const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_ERROR,
       })
 
       expect(result.ok).toBe(true)
-      const data = result.data as { alerts: Map<string, any> }
+      const data = result.data as { alerts: Map<string, unknown> }
       expect(data.alerts.size).toBe(0)
     })
 
@@ -194,13 +194,13 @@ describe('generate-report', () => {
         monitorAlert: { action: 'monitor' },
       })
 
-      const result = generateReport(scan, policy as any, {
+      const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_MONITOR,
       })
 
       expect(result.ok).toBe(true)
-      const data = result.data as { alerts: Map<string, any> }
+      const data = result.data as { alerts: Map<string, unknown> }
       expect(data.alerts.size).toBeGreaterThan(0)
     })
 
@@ -216,13 +216,13 @@ describe('generate-report', () => {
         ignoreAlert: { action: 'ignore' },
       })
 
-      const result = generateReport(scan, policy as any, {
+      const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_IGNORE,
       })
 
       expect(result.ok).toBe(true)
-      const data = result.data as { alerts: Map<string, any> }
+      const data = result.data as { alerts: Map<string, unknown> }
       expect(data.alerts.size).toBeGreaterThan(0)
     })
 
@@ -236,13 +236,13 @@ describe('generate-report', () => {
         deferAlert: { action: 'defer' },
       })
 
-      const result = generateReport(scan, policy as any, {
+      const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_DEFER,
       })
 
       expect(result.ok).toBe(true)
-      const data = result.data as { alerts: Map<string, any> }
+      const data = result.data as { alerts: Map<string, unknown> }
       expect(data.alerts.size).toBeGreaterThan(0)
     })
 
@@ -255,13 +255,13 @@ describe('generate-report', () => {
       })
 
       it('folds by package when fold is pkg', () => {
-        const result = generateReport([alertedArtifact], errorPolicy as any, {
+        const result = generateReport([alertedArtifact], errorPolicy as unknown, {
           ...defaultOptions,
           fold: FOLD_SETTING_PKG,
         })
 
         expect(result.ok).toBe(true)
-        const data = result.data as { alerts: Map<string, any> }
+        const data = result.data as { alerts: Map<string, unknown> }
         const npmMap = data.alerts.get('npm')
         expect(npmMap).toBeDefined()
         // Should have leaf node directly under package name.
@@ -270,13 +270,13 @@ describe('generate-report', () => {
       })
 
       it('folds by version when fold is version', () => {
-        const result = generateReport([alertedArtifact], errorPolicy as any, {
+        const result = generateReport([alertedArtifact], errorPolicy as unknown, {
           ...defaultOptions,
           fold: FOLD_SETTING_VERSION,
         })
 
         expect(result.ok).toBe(true)
-        const data = result.data as { alerts: Map<string, any> }
+        const data = result.data as { alerts: Map<string, unknown> }
         const npmMap = data.alerts.get('npm')
         const pkgMap = npmMap.get('test-pkg')
         expect(pkgMap).toBeDefined()
@@ -286,13 +286,13 @@ describe('generate-report', () => {
       })
 
       it('folds by file when fold is file', () => {
-        const result = generateReport([alertedArtifact], errorPolicy as any, {
+        const result = generateReport([alertedArtifact], errorPolicy as unknown, {
           ...defaultOptions,
           fold: FOLD_SETTING_FILE,
         })
 
         expect(result.ok).toBe(true)
-        const data = result.data as { alerts: Map<string, any> }
+        const data = result.data as { alerts: Map<string, unknown> }
         const npmMap = data.alerts.get('npm')
         const pkgMap = npmMap.get('test-pkg')
         const verMap = pkgMap.get('1.0.0')
@@ -303,13 +303,13 @@ describe('generate-report', () => {
       })
 
       it('does not fold when fold is none', () => {
-        const result = generateReport([alertedArtifact], errorPolicy as any, {
+        const result = generateReport([alertedArtifact], errorPolicy as unknown, {
           ...defaultOptions,
           fold: FOLD_SETTING_NONE,
         })
 
         expect(result.ok).toBe(true)
-        const data = result.data as { alerts: Map<string, any> }
+        const data = result.data as { alerts: Map<string, unknown> }
         const npmMap = data.alerts.get('npm')
         const pkgMap = npmMap.get('test-pkg')
         const verMap = pkgMap.get('1.0.0')
@@ -325,8 +325,8 @@ describe('generate-report', () => {
     it('handles artifacts with missing name/version', () => {
       const scan = [
         createArtifact({
-          name: undefined as any,
-          version: undefined as any,
+          name: undefined as unknown,
+          version: undefined as unknown,
           alerts: [{ type: 'badAlert', file: 'index.js', start: 0, end: 10 }],
         }),
       ]
@@ -334,7 +334,7 @@ describe('generate-report', () => {
         badAlert: { action: 'error' },
       })
 
-      const result = generateReport(scan, policy as any, defaultOptions)
+      const result = generateReport(scan, policy as unknown, defaultOptions)
 
       expect(result.ok).toBe(true)
       expect(result.data).toEqual(
@@ -347,7 +347,7 @@ describe('generate-report', () => {
     it('handles artifacts with no manifestFiles', () => {
       const scan = [
         createArtifact({
-          manifestFiles: undefined as any,
+          manifestFiles: undefined as unknown,
           alerts: [{ type: 'badAlert', file: 'index.js', start: 0, end: 10 }],
         }),
       ]
@@ -355,7 +355,7 @@ describe('generate-report', () => {
         badAlert: { action: 'error' },
       })
 
-      const result = generateReport(scan, policy as any, defaultOptions)
+      const result = generateReport(scan, policy as unknown, defaultOptions)
 
       expect(result.ok).toBe(true)
     })
@@ -370,7 +370,7 @@ describe('generate-report', () => {
         badAlert: { action: 'error' },
       })
 
-      const result = generateReport(scan, policy as any, {
+      const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         fold: FOLD_SETTING_NONE,
       })
@@ -390,7 +390,7 @@ describe('generate-report', () => {
         unknownAlert: { action: 'unknown-action' },
       })
 
-      const result = generateReport(scan, policy as any, defaultOptions)
+      const result = generateReport(scan, policy as unknown, defaultOptions)
 
       expect(result.ok).toBe(true)
       expect(result.data).toEqual(
@@ -408,7 +408,7 @@ describe('generate-report', () => {
       ]
       const policy = {} // No securityPolicyRules.
 
-      const result = generateReport(scan, policy as any, defaultOptions)
+      const result = generateReport(scan, policy as unknown, defaultOptions)
 
       expect(result.ok).toBe(true)
       expect(result.data).toEqual(
@@ -432,14 +432,14 @@ describe('generate-report', () => {
         errorAlert: { action: 'error' },
       })
 
-      const result = generateReport(scan, policy as any, {
+      const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         fold: FOLD_SETTING_PKG,
         reportLevel: REPORT_LEVEL_WARN,
       })
 
       expect(result.ok).toBe(true)
-      const data = result.data as { alerts: Map<string, any> }
+      const data = result.data as { alerts: Map<string, unknown> }
       const npmMap = data.alerts.get('npm')
       const leaf = npmMap.get('test-pkg')
       expect(leaf.policy).toBe('error')
@@ -453,9 +453,9 @@ describe('generate-report', () => {
       const scan = [createArtifact()]
       const policy = createSecurityPolicy()
 
-      generateReport(scan, policy as any, {
+      generateReport(scan, policy as unknown, {
         ...defaultOptions,
-        spinner: mockSpinner as any,
+        spinner: mockSpinner as unknown,
       })
 
       expect(mockSpinner.start).toHaveBeenCalledWith('Generating report...')
@@ -474,7 +474,7 @@ describe('generate-report', () => {
         badAlert: { action: 'error' },
       })
 
-      const result = generateReport(scan, policy as any, {
+      const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         short: true,
       })

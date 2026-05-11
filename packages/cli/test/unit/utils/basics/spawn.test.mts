@@ -197,7 +197,7 @@ describe('runSocketBasics — pyCli installation', () => {
         return { code: 1, stdout: '', stderr: '' }
       }
       if (args.includes('install')) {
-        return undefined as any
+        return undefined as unknown
       }
       return { code: 0, stdout: '', stderr: '' }
     })
@@ -381,7 +381,7 @@ describe('runSocketBasics — basics process result', () => {
   it('errors when basics spawn returns null', async () => {
     mockSpawn.mockImplementation(async (_bin, args: string[]) => {
       if (args.includes('socket_basics') && args.includes('--org')) {
-        return undefined as any
+        return undefined as unknown
       }
       if (args[0] === '-c') {
         return { code: 0, stdout: '', stderr: '' }
@@ -422,7 +422,7 @@ describe('runSocketBasics — basics process result', () => {
       stop: stopSpy,
       fail: failSpy,
       success: successSpy,
-    } as any
+    } as unknown
     mockSpawn.mockImplementation(async (_bin, args: string[]) => {
       if (args.includes('socket_basics') && args.includes('--org')) {
         return { code: 1, stdout: '', stderr: 'basics boom' }
@@ -448,7 +448,7 @@ describe('runSocketBasics — basics process result', () => {
       stop: stopSpy,
       fail: failSpy,
       success: successSpy,
-    } as any
+    } as unknown
     // Default mock returns code 0 for basics_socket call.
     const result = await runSocketBasics({ ...baseOpts, spinner })
     expect(result.ok).toBe(true)
@@ -464,11 +464,11 @@ describe('runSocketBasics — basics process result', () => {
       stop: stopSpy,
       fail: failSpy,
       success: successSpy,
-    } as any
+    } as unknown
     mockSpawn.mockImplementation(async (_bin, args: string[]) => {
       if (args.includes('socket_basics') && args.includes('--org')) {
         // null result simulates spawn failure to start.
-        return undefined as any
+        return undefined as unknown
       }
       if (args[0] === '-c') {
         return { code: 0, stdout: '', stderr: '' }

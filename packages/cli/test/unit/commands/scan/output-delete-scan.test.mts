@@ -32,7 +32,7 @@ vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
 }))
 
 vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
-  serializeResultJson: (result: any) => JSON.stringify(result),
+  serializeResultJson: (result: unknown) => JSON.stringify(result),
 }))
 
 import { outputDeleteScan } from '../../../../src/commands/scan/output-delete-scan.mts'

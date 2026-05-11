@@ -100,7 +100,7 @@ describe('outputListScans', () => {
 
       const result = createSuccessResult(mockData)
 
-      await outputListScans(result as any, 'json')
+      await outputListScans(result as unknown, 'json')
 
       expect(mockSerializeResultJson).toHaveBeenCalledWith(result)
       expect(mockLogger.log).toHaveBeenCalled()
@@ -113,7 +113,7 @@ describe('outputListScans', () => {
         cause: 'Server error',
       })
 
-      await outputListScans(result as any, 'json')
+      await outputListScans(result as unknown, 'json')
 
       expect(mockSerializeResultJson).toHaveBeenCalledWith(result)
       expect(mockLogger.log).toHaveBeenCalled()
@@ -144,7 +144,7 @@ describe('outputListScans', () => {
 
       const result = createSuccessResult(mockData)
 
-      await outputListScans(result as any, 'text')
+      await outputListScans(result as unknown, 'text')
 
       expect(mockChalkTable).toHaveBeenCalled()
       expect(mockLogger.log).toHaveBeenCalledWith('mocked-table-output')
@@ -157,7 +157,7 @@ describe('outputListScans', () => {
         cause: 'Network error',
       })
 
-      await outputListScans(result as any, 'text')
+      await outputListScans(result as unknown, 'text')
 
       expect(mockFailMsgWithBadge).toHaveBeenCalledWith(
         'Failed to list scans',
@@ -174,7 +174,7 @@ describe('outputListScans', () => {
 
       const result = createSuccessResult(mockData)
 
-      await outputListScans(result as any, 'text')
+      await outputListScans(result as unknown, 'text')
 
       expect(mockChalkTable).toHaveBeenCalled()
       expect(process.exitCode).toBeUndefined()
@@ -195,7 +195,7 @@ describe('outputListScans', () => {
 
       const result = createSuccessResult(mockData)
 
-      await outputListScans(result as any, 'text')
+      await outputListScans(result as unknown, 'text')
 
       expect(mockChalkTable).toHaveBeenCalledWith(
         expect.any(Object),
@@ -213,7 +213,7 @@ describe('outputListScans', () => {
     it('sets exit code from error result', async () => {
       const result = createErrorResult('Error', { code: 42 })
 
-      await outputListScans(result as any, 'text')
+      await outputListScans(result as unknown, 'text')
 
       expect(process.exitCode).toBe(42)
     })
@@ -224,7 +224,7 @@ describe('outputListScans', () => {
         message: 'Error without code',
       }
 
-      await outputListScans(result as any, 'text')
+      await outputListScans(result as unknown, 'text')
 
       expect(process.exitCode).toBe(1)
     })
@@ -232,7 +232,7 @@ describe('outputListScans', () => {
     it('does not set exit code for successful result', async () => {
       const result = createSuccessResult({ results: [] })
 
-      await outputListScans(result as any, 'text')
+      await outputListScans(result as unknown, 'text')
 
       expect(process.exitCode).toBeUndefined()
     })

@@ -46,7 +46,7 @@ vi.mock('../../src/meow.mts', () => ({
 
 // Mock node:os to control total memory.
 vi.mock('node:os', async importOriginal => {
-  const original = await importOriginal<typeof import('node:os')>()
+  const original = await importOriginal<typeof OsModule>()
   return {
     ...original,
     default: {
@@ -71,6 +71,8 @@ import {
   resetFlagCache,
   validationFlags,
 } from '../../src/flags.mts'
+
+import type * as OsModule from 'node:os'
 
 describe('flags', () => {
   beforeEach(() => {
@@ -265,8 +267,8 @@ describe('flags', () => {
     it('exposes default getters for memory flags', () => {
       // The max*SpaceSize flags use accessor properties for default.
       // Reading them invokes the getter body.
-      const oldDefault = (commonFlags.maxOldSpaceSize as any)?.default
-      const semiDefault = (commonFlags.maxSemiSpaceSize as any)?.default
+      const oldDefault = (commonFlags.maxOldSpaceSize as unknown)?.default
+      const semiDefault = (commonFlags.maxSemiSpaceSize as unknown)?.default
       expect(typeof oldDefault).toBe('number')
       expect(typeof semiDefault).toBe('number')
       expect(oldDefault).toBeGreaterThanOrEqual(0)

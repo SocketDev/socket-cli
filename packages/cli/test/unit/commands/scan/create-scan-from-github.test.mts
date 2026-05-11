@@ -214,8 +214,8 @@ describe('GitHub scan API interactions', () => {
         expect(result.data.tree).toHaveLength(3)
         // Should filter to only blobs.
         const files = result.data.tree
-          .filter((obj: any) => obj.type === 'blob')
-          .map((obj: any) => obj.path)
+          .filter((obj: unknown) => obj.type === 'blob')
+          .map((obj: unknown) => obj.path)
         expect(files).toEqual(['package.json', 'src/index.ts'])
       }
     })
@@ -595,7 +595,7 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
     vi.mocked(fetchListAllRepos).mockResolvedValueOnce({
       ok: true,
       data: { results: [{ slug: 'a' }, { slug: 'b' }] },
-    } as any)
+    } as unknown)
     // Make all repos fail with a quick 404 so the test exits cleanly.
     mockWithGitHubRetry.mockResolvedValue({
       ok: false,
@@ -625,7 +625,7 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
       ok: false,
       message: 'API Error',
       cause: 'Something broke',
-    } as any)
+    } as unknown)
     const { createScanFromGithub } =
       await import('../../../../src/commands/scan/create-scan-from-github.mts')
     const result = await createScanFromGithub({
@@ -650,7 +650,7 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
     vi.mocked(fetchListAllRepos).mockResolvedValueOnce({
       ok: true,
       data: { results: [] },
-    } as any)
+    } as unknown)
     const { createScanFromGithub } =
       await import('../../../../src/commands/scan/create-scan-from-github.mts')
     const result = await createScanFromGithub({

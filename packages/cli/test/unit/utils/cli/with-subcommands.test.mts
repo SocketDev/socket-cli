@@ -242,7 +242,7 @@ describe('meow-with-subcommands', () => {
       // The default meow mock doesn't auto-set flags for argv items not in
       // declared flags, so we override its return value just for this test
       // to simulate meow detecting --version on the cli.flags shape.
-      const meowMod: any = await import('../../../../src/meow.mts')
+      const meowMod: unknown = await import('../../../../src/meow.mts')
       const meowMock = vi.mocked(meowMod.default)
       meowMock.mockReturnValueOnce({
         flags: { version: true },
@@ -250,11 +250,11 @@ describe('meow-with-subcommands', () => {
         help: '',
         showHelp: vi.fn(),
         showVersion: vi.fn(),
-      } as any)
+      } as unknown)
 
       const exitSpy = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
       try {
         expect(() =>
           meowOrExit(
@@ -309,7 +309,7 @@ describe('meow-with-subcommands', () => {
       const result = description({
         description: 'Test command description',
         run: vi.fn(),
-      } as any)
+      } as unknown)
       expect(result).toBe('Test command description')
     })
 
@@ -323,7 +323,7 @@ describe('meow-with-subcommands', () => {
       const result = description({
         description: 42 as unknown as string,
         run: vi.fn(),
-      } as any)
+      } as unknown)
       expect(result).toBe('42')
     })
   })
@@ -700,7 +700,7 @@ describe('meow-with-subcommands', () => {
       const subcommands = {
         package: {
           description: 'package commands',
-          run: vi.fn(async (argv: any) => {
+          run: vi.fn(async (argv: unknown) => {
             // Simulate package picking deep subcommand.
             if (argv[0] === 'deep') {
               packageRun(argv)

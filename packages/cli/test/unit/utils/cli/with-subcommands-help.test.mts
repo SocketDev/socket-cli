@@ -37,10 +37,10 @@ export function makeSubcommand(description: string, hidden = false): CliSubcomma
 }
 
 const FLAGS: MeowFlags = {
-  banner: { type: 'boolean', default: true, description: 'Banner' } as any,
-  spinner: { type: 'boolean', default: true, description: 'Spinner' } as any,
-  json: { type: 'boolean', description: 'JSON output' } as any,
-  markdown: { type: 'boolean', description: 'Markdown output' } as any,
+  banner: { type: 'boolean', default: true, description: 'Banner' } as unknown,
+  spinner: { type: 'boolean', default: true, description: 'Spinner' } as unknown,
+  json: { type: 'boolean', description: 'JSON output' } as unknown,
+  markdown: { type: 'boolean', description: 'Markdown output' } as unknown,
 }
 
 /**
@@ -199,11 +199,11 @@ describe('buildHelpLines', () => {
       const lines = buildHelpLines({
         aliases: {},
         argv: [],
-        buckets: { fix: 'main', 'ghost-command': 'main' } as any,
+        buckets: { fix: 'main', 'ghost-command': 'main' } as unknown,
         flags: FLAGS,
         isRootCommand: true,
         name: 'socket',
-        subcommands: { fix: makeSubcommand('fix description') } as any,
+        subcommands: { fix: makeSubcommand('fix description') } as unknown,
       })
       const blob = lines.join('\n')
       expect(blob).toContain('fix')

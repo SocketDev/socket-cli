@@ -173,7 +173,7 @@ describe('registry-help', () => {
         flags: {
           weird: {
             // FlagType is constrained but defensive default exists.
-            type: 'unknown' as any,
+            type: 'unknown' as unknown,
             description: 'A flag with an unknown type',
           },
         },

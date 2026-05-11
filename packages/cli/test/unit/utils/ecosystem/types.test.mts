@@ -155,7 +155,7 @@ describe('ecosystem utilities', () => {
     })
 
     it('coerces non-string array elements', () => {
-      const result = parseEcosystems([123, 'npm', true] as any)
+      const result = parseEcosystems([123, 'npm', true] as unknown)
       expect(result).toEqual(['npm'])
     })
   })

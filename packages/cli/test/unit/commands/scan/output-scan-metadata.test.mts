@@ -87,7 +87,7 @@ describe('output-scan-metadata', () => {
           message: 'Scan not found',
         }
 
-        await outputScanMetadata(result as any, 'scan-123', 'json')
+        await outputScanMetadata(result as unknown, 'scan-123', 'json')
 
         expect(mockLogger.log).toHaveBeenCalledWith(
           expect.stringContaining('"ok": false'),
@@ -160,7 +160,7 @@ describe('output-scan-metadata', () => {
           cause: 'Invalid ID',
         }
 
-        await outputScanMetadata(result as any, 'scan-123', 'text')
+        await outputScanMetadata(result as unknown, 'scan-123', 'text')
 
         expect(mockLogger.fail).toHaveBeenCalledWith(
           expect.stringContaining('Scan not found'),
@@ -175,7 +175,7 @@ describe('output-scan-metadata', () => {
           message: 'Failed',
         }
 
-        await outputScanMetadata(result as any, 'scan-123', 'text')
+        await outputScanMetadata(result as unknown, 'scan-123', 'text')
 
         expect(process.exitCode).toBe(1)
       })
@@ -187,7 +187,7 @@ describe('output-scan-metadata', () => {
           code: 2,
         }
 
-        await outputScanMetadata(result as any, 'scan-123', 'text')
+        await outputScanMetadata(result as unknown, 'scan-123', 'text')
 
         expect(process.exitCode).toBe(2)
       })

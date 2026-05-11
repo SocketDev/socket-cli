@@ -44,7 +44,7 @@ vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
 }))
 
 describe('handleScanReport', () => {
-  let handleScanReport: any
+  let handleScanReport: unknown
 
   beforeEach(async () => {
     vi.clearAllMocks()

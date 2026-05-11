@@ -113,7 +113,7 @@ describe('cmd-uv', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -154,7 +154,7 @@ describe('cmd-uv', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -188,7 +188,7 @@ describe('cmd-uv', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -224,7 +224,7 @@ describe('cmd-uv', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -234,7 +234,7 @@ describe('cmd-uv', () => {
 
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
 
       process.exitCode = undefined
 
@@ -270,7 +270,7 @@ describe('cmd-uv', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -280,7 +280,7 @@ describe('cmd-uv', () => {
 
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
 
       cmdUv.run(
         ['pip', 'install', 'flask'],
@@ -314,7 +314,7 @@ describe('cmd-uv', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -324,7 +324,7 @@ describe('cmd-uv', () => {
 
       const mockKill = vi
         .spyOn(process, 'kill')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
 
       cmdUv.run(
         ['pip', 'install', 'flask'],
@@ -358,7 +358,7 @@ describe('cmd-uv', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -368,7 +368,7 @@ describe('cmd-uv', () => {
 
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
 
       cmdUv.run([], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',
@@ -395,7 +395,7 @@ describe('cmd-uv', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise as any).process = mockChildProcess
+      ;(mockSpawnPromise as unknown).process = mockChildProcess
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
@@ -405,7 +405,7 @@ describe('cmd-uv', () => {
 
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
 
       cmdUv.run(['--version'], { url: import.meta.url } as ImportMeta, {
         parentName: 'socket',

@@ -251,7 +251,7 @@ describe('outputThreatFeed', () => {
   it('handles null data properly', async () => {
     const result: CResult<ThreadFeedResponse> = {
       ok: true,
-      data: undefined as any,
+      data: undefined as unknown,
     }
 
     await outputThreatFeed(result, 'text')

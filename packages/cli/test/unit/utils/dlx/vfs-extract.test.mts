@@ -31,20 +31,20 @@ import {
   isNpmPackageExtracted,
 } from '../../../../src/utils/dlx/vfs-extract.mts'
 
-const realProcessSmol = (process as any).smol
+const realProcessSmol = (process as unknown).smol
 
 describe('utils/dlx/vfs-extract', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockIsSeaBinary.mockReturnValue(false)
-    delete (process as any).smol
+    delete (process as unknown).smol
   })
 
   afterEach(() => {
     if (realProcessSmol === undefined) {
-      delete (process as any).smol
+      delete (process as unknown).smol
     } else {
-      ;(process as any).smol = realProcessSmol
+      ;(process as unknown).smol = realProcessSmol
     }
   })
 
@@ -65,13 +65,13 @@ describe('utils/dlx/vfs-extract', () => {
 
     it('returns false when in SEA mode but smol.mount is missing', () => {
       mockIsSeaBinary.mockReturnValue(true)
-      ;(process as any).smol = {}
+      ;(process as unknown).smol = {}
       expect(areExternalToolsAvailable()).toBe(false)
     })
 
     it('returns true when in SEA mode with smol.mount', () => {
       mockIsSeaBinary.mockReturnValue(true)
-      ;(process as any).smol = { mount: vi.fn() }
+      ;(process as unknown).smol = { mount: vi.fn() }
       expect(areExternalToolsAvailable()).toBe(true)
     })
   })
@@ -154,17 +154,17 @@ describe('utils/dlx/vfs-extract', () => {
     })
 
     it('uses process.smol.getHash when available', () => {
-      ;(process as any).smol = { getHash: () => 'mock-hash-12345' }
+      ;(process as unknown).smol = { getHash: () => 'mock-hash-12345' }
       try {
         const result = getNodeSmolBasePath()
         expect(result).toContain('mock-hash-12345')
       } finally {
-        delete (process as any).smol
+        delete (process as unknown).smol
       }
     })
 
     it('falls back to a derived hash when getHash throws', () => {
-      ;(process as any).smol = {
+      ;(process as unknown).smol = {
         get getHash() {
           throw new Error('boom')
         },
@@ -174,7 +174,7 @@ describe('utils/dlx/vfs-extract', () => {
         // Hash falls back to slice(0, 16) of sha256.
         expect(result).toMatch(/_dlx\/[a-f0-9]{16}$/)
       } finally {
-        delete (process as any).smol
+        delete (process as unknown).smol
       }
     })
   })
@@ -205,18 +205,18 @@ describe('utils/dlx/vfs-extract', () => {
     })
 
     it('throws when process.smol exists but mount is missing', async () => {
-      ;(process as any).smol = { otherProp: true }
+      ;(process as unknown).smol = { otherProp: true }
       try {
         await expect(extractTool('cdxgen')).rejects.toThrow(
           /process\.smol\.mount is undefined/,
         )
       } finally {
-        delete (process as any).smol
+        delete (process as unknown).smol
       }
     })
 
     it('wraps mount-failure with a SEA-VFS error message', async () => {
-      ;(process as any).smol = {
+      ;(process as unknown).smol = {
         mount: vi.fn().mockRejectedValue(new Error('vfs corrupt')),
       }
       try {
@@ -224,12 +224,12 @@ describe('utils/dlx/vfs-extract', () => {
           /failed to extract cdxgen from the SEA VFS/,
         )
       } finally {
-        delete (process as any).smol
+        delete (process as unknown).smol
       }
     })
 
     it('wraps mount-failure for standalone tools (sfw)', async () => {
-      ;(process as any).smol = {
+      ;(process as unknown).smol = {
         mount: vi.fn().mockRejectedValue(new Error('vfs not found')),
       }
       try {
@@ -237,7 +237,7 @@ describe('utils/dlx/vfs-extract', () => {
           /failed to extract sfw from the SEA VFS/,
         )
       } finally {
-        delete (process as any).smol
+        delete (process as unknown).smol
       }
     })
   })
@@ -251,23 +251,23 @@ describe('utils/dlx/vfs-extract', () => {
 
     it('returns undefined when smol.mount is missing', async () => {
       mockIsSeaBinary.mockReturnValue(true)
-      ;(process as any).smol = { otherProp: true }
+      ;(process as unknown).smol = { otherProp: true }
       try {
         const result = await extractExternalTools()
         expect(result).toBeUndefined()
       } finally {
-        delete (process as any).smol
+        delete (process as unknown).smol
       }
     })
 
     it('returns undefined when max recursion depth exceeded', async () => {
       mockIsSeaBinary.mockReturnValue(true)
-      ;(process as any).smol = { mount: vi.fn() }
+      ;(process as unknown).smol = { mount: vi.fn() }
       try {
         const result = await extractExternalTools(5)
         expect(result).toBeUndefined()
       } finally {
-        delete (process as any).smol
+        delete (process as unknown).smol
       }
     })
   })

@@ -58,7 +58,7 @@ describe('spawnSynpDlx', () => {
     mockSpawnDlx.mockResolvedValue({ spawnPromise: 'p' })
     const spawnExtra = { stdioString: true }
 
-    await spawnSynpDlx(['arg'], undefined, spawnExtra as any)
+    await spawnSynpDlx(['arg'], undefined, spawnExtra as unknown)
 
     expect(mockSpawnDlx).toHaveBeenCalledWith(
       { name: 'synp', version: '1.9.0' },

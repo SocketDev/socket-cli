@@ -78,11 +78,11 @@ describe('isStricterPolicy', () => {
   })
 
   it('returns false for entirely unknown levels (final fallthrough)', () => {
-    expect(isStricterPolicy('???' as any, '???' as any)).toBe(false)
+    expect(isStricterPolicy('???' as unknown, '???' as unknown)).toBe(false)
   })
 
   it('returns false when is is defer and was is unknown (line 354-355)', () => {
     // is = DEFER but was = unknown level → exits via the L354 if-block.
-    expect(isStricterPolicy('???' as any, REPORT_LEVEL_DEFER)).toBe(false)
+    expect(isStricterPolicy('???' as unknown, REPORT_LEVEL_DEFER)).toBe(false)
   })
 })

@@ -103,7 +103,7 @@ describe('spawnSfwDlx', () => {
   it('throws when resolveSfw returns an unexpected type', async () => {
     mockResolveSfw.mockReturnValue({
       type: 'github-release',
-      details: {} as any,
+      details: {} as unknown,
     })
 
     await expect(spawnSfwDlx([], undefined, undefined)).rejects.toThrow(
@@ -119,7 +119,7 @@ describe('spawnSfwDlx', () => {
     mockDetectExecutableType.mockReturnValue({ type: 'binary' })
     mockSpawn.mockReturnValue('p')
 
-    await spawnSfwDlx(['npm'], undefined, { stdio: 'pipe' } as any)
+    await spawnSfwDlx(['npm'], undefined, { stdio: 'pipe' } as unknown)
 
     expect(mockSpawn).toHaveBeenCalledWith(
       '/local/sfw',

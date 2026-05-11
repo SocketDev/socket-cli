@@ -83,24 +83,24 @@ describe('utils/config', () => {
       // Stringy bool tracks the not-pre-validated path; the function still
       // accepts the value but emits a logger.warn telling the user that
       // they probably meant a real boolean.
-      const result = updateConfigValue('defaultOrg', 'true' as any)
+      const result = updateConfigValue('defaultOrg', 'true' as unknown)
       expect(result.ok).toBe(true)
     })
 
     it('warns when value is the string "false"', () => {
-      const result = updateConfigValue('defaultOrg', 'false' as any)
+      const result = updateConfigValue('defaultOrg', 'false' as unknown)
       expect(result.ok).toBe(true)
     })
 
     it('warns when value is the string "undefined"', () => {
-      const result = updateConfigValue('defaultOrg', 'undefined' as any)
+      const result = updateConfigValue('defaultOrg', 'undefined' as unknown)
       expect(result.ok).toBe(true)
     })
 
     it('handles skipAskToPersistDefaultOrg=true correctly', () => {
       const result = updateConfigValue(
         'skipAskToPersistDefaultOrg',
-        'true' as any,
+        'true' as unknown,
       )
       expect(result.ok).toBe(true)
     })
@@ -108,7 +108,7 @@ describe('utils/config', () => {
     it('handles skipAskToPersistDefaultOrg=false correctly', () => {
       const result = updateConfigValue(
         'skipAskToPersistDefaultOrg',
-        'false' as any,
+        'false' as unknown,
       )
       expect(result.ok).toBe(true)
     })
@@ -116,7 +116,7 @@ describe('utils/config', () => {
     it('deletes skipAskToPersistDefaultOrg on non-bool value', () => {
       const result = updateConfigValue(
         'skipAskToPersistDefaultOrg',
-        'something' as any,
+        'something' as unknown,
       )
       expect(result.ok).toBe(true)
     })
@@ -146,7 +146,7 @@ describe('utils/config', () => {
 
     it('coerces non-string token via String()', () => {
       overrideCachedConfig({})
-      overrideConfigApiToken(12345 as any)
+      overrideConfigApiToken(12345 as unknown)
       const result = getConfigValue('apiToken')
       expect(result.ok).toBe(true)
       if (result.ok) {
@@ -376,24 +376,24 @@ describe('utils/config', () => {
 
     it('handles skipAskToPersistDefaultOrg with string "true"', () => {
       resetConfigForTesting()
-      const r = updateConfigValue('skipAskToPersistDefaultOrg', 'true' as any)
+      const r = updateConfigValue('skipAskToPersistDefaultOrg', 'true' as unknown)
       expect(r.ok).toBe(true)
     })
 
     it('handles skipAskToPersistDefaultOrg with string "false"', () => {
       resetConfigForTesting()
-      const r = updateConfigValue('skipAskToPersistDefaultOrg', 'false' as any)
+      const r = updateConfigValue('skipAskToPersistDefaultOrg', 'false' as unknown)
       expect(r.ok).toBe(true)
     })
 
     it('deletes skipAskToPersistDefaultOrg when value is unrecognized', () => {
       resetConfigForTesting()
       // Set it first.
-      updateConfigValue('skipAskToPersistDefaultOrg', 'true' as any)
+      updateConfigValue('skipAskToPersistDefaultOrg', 'true' as unknown)
       // Now pass an unrecognized value — should delete the key.
       const result = updateConfigValue(
         'skipAskToPersistDefaultOrg',
-        'maybe' as any,
+        'maybe' as unknown,
       )
       expect(result.ok).toBe(true)
     })
@@ -489,7 +489,7 @@ describe('utils/config', () => {
     it('returns undefined for invalid keys', () => {
       // The internal normalizeConfigKey returns !ok for unsupported keys.
       // getConfigValueOrUndef squashes that to undefined.
-      expect(getConfigValueOrUndef('totally-bogus' as any)).toBeUndefined()
+      expect(getConfigValueOrUndef('totally-bogus' as unknown)).toBeUndefined()
     })
 
     it('returns the config value for valid keys', () => {
@@ -504,7 +504,7 @@ describe('utils/config', () => {
     })
 
     it('returns the !ok keyResult for invalid keys (line 243)', () => {
-      const result = getConfigValue('totally-bogus' as any)
+      const result = getConfigValue('totally-bogus' as unknown)
       expect(result.ok).toBe(false)
       if (!result.ok) {
         expect(result.message).toContain('Invalid config key')

@@ -409,7 +409,7 @@ describe('create-scan-from-github (direct)', () => {
         file: 'random.txt',
         orgGithub: 'org',
         repoSlug: 'r',
-        supportedFiles: { npm: { 'package.json': {} } } as any,
+        supportedFiles: { npm: { 'package.json': {} } } as unknown,
         tmpDir: '/tmp',
       })
       expect(result.ok).toBe(true)

@@ -46,7 +46,7 @@ import { defineHandoffCommand } from '../../../../src/utils/cli/define-handoff.m
 
 export function makeChildProcess() {
   const child = new EventEmitter()
-  const spawnPromise: any = Promise.resolve({
+  const spawnPromise: unknown = Promise.resolve({
     code: 0,
     signal: undefined,
     stderr: Buffer.from(''),
@@ -122,7 +122,7 @@ describe('defineHandoffCommand', () => {
       setImmediate(() => child.emit('exit', 0, undefined))
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
       try {
         await runPromise
         expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['cargo', 'build'], {
@@ -156,7 +156,7 @@ describe('defineHandoffCommand', () => {
       setImmediate(() => child.emit('exit', 0, undefined))
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
       try {
         await runPromise
         expect(mockSpawnSfw).toHaveBeenCalledWith(
@@ -194,7 +194,7 @@ describe('defineHandoffCommand', () => {
       setImmediate(() => child.emit('exit', 0, undefined))
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
       try {
         await runPromise
         expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
@@ -268,7 +268,7 @@ describe('defineHandoffCommand', () => {
       setImmediate(() => child.emit('exit', 0, undefined))
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
       try {
         await runPromise
         expect(mockOutputDryRunExecute).not.toHaveBeenCalled()
@@ -298,7 +298,7 @@ describe('defineHandoffCommand', () => {
       setImmediate(() => child.emit('exit', 0, undefined))
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
       try {
         await runPromise
         await new Promise(resolve => setImmediate(resolve))
@@ -328,7 +328,7 @@ describe('defineHandoffCommand', () => {
       setImmediate(() => child.emit('exit', 0, undefined))
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
       try {
         await runPromise
         expect(mockTrackSubprocessStart).not.toHaveBeenCalled()
@@ -355,7 +355,7 @@ describe('defineHandoffCommand', () => {
 
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
       try {
         cmd.run([], { url: import.meta.url } as ImportMeta, {
           parentName: 'socket',
@@ -385,7 +385,7 @@ describe('defineHandoffCommand', () => {
 
       const mockKill = vi
         .spyOn(process, 'kill')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
       try {
         cmd.run([], { url: import.meta.url } as ImportMeta, {
           parentName: 'socket',
@@ -406,7 +406,7 @@ describe('defineHandoffCommand', () => {
       mockSpawnSfwDlx.mockResolvedValue({ spawnPromise })
       mockFilterFlags.mockReturnValue([])
       let capturedHelp = ''
-      mockMeowOrExit.mockImplementation((args: any) => {
+      mockMeowOrExit.mockImplementation((args: unknown) => {
         capturedHelp = args.config.help('socket cargo')
         return {
           flags: {},
@@ -429,7 +429,7 @@ describe('defineHandoffCommand', () => {
 
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
       try {
         const runPromise = cmd.run([], { url: import.meta.url } as ImportMeta, {
           parentName: 'socket',
@@ -454,7 +454,7 @@ describe('defineHandoffCommand', () => {
       mockSpawnSfwDlx.mockResolvedValue({ spawnPromise })
       mockFilterFlags.mockReturnValue([])
       let capturedHelp = ''
-      mockMeowOrExit.mockImplementation((args: any) => {
+      mockMeowOrExit.mockImplementation((args: unknown) => {
         capturedHelp = args.config.help('socket yarn')
         return {
           flags: {},
@@ -477,7 +477,7 @@ describe('defineHandoffCommand', () => {
 
       const mockExit = vi
         .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as any)
+        .mockImplementation((() => {}) as unknown)
       try {
         const runPromise = cmd.run([], { url: import.meta.url } as ImportMeta, {
           parentName: 'socket',

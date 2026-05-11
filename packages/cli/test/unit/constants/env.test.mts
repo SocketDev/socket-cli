@@ -181,7 +181,7 @@ describe('constants/env', () => {
       const originalValue = process.env[testKey]
 
       // Set value via ENV proxy.
-      ;(ENV as any)[testKey] = 'test-value'
+      ;(ENV as unknown)[testKey] = 'test-value'
 
       // Verify it was set in process.env.
       expect(process.env[testKey]).toBe('test-value')

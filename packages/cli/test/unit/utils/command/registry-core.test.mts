@@ -606,7 +606,7 @@ describe('CommandRegistry', () => {
     })
 
     it('skips non-flag arguments and unknown flags during parseFlags', async () => {
-      let observedFlags: any
+      let observedFlags: unknown
       const command: CommandDefinition = {
         name: 'test',
         description: 'Test command',

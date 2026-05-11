@@ -49,20 +49,20 @@ import {
   getPythonSitePackagesPath,
 } from '../../../../src/utils/basics/vfs-extract.mts'
 
-const realProcessSmol = (process as any).smol
+const realProcessSmol = (process as unknown).smol
 
 describe('basics/vfs-extract', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockIsSeaBinary.mockReturnValue(false)
-    delete (process as any).smol
+    delete (process as unknown).smol
   })
 
   afterEach(() => {
     if (realProcessSmol === undefined) {
-      delete (process as any).smol
+      delete (process as unknown).smol
     } else {
-      ;(process as any).smol = realProcessSmol
+      ;(process as unknown).smol = realProcessSmol
     }
   })
 
@@ -75,13 +75,13 @@ describe('basics/vfs-extract', () => {
     })
 
     it('uses process.smol.getHash() when available', () => {
-      ;(process as any).smol = { getHash: () => 'smol-hash-aaaa' }
+      ;(process as unknown).smol = { getHash: () => 'smol-hash-aaaa' }
       const result = getPythonSitePackagesPath()
       expect(result).toContain('smol-hash-aaaa')
     })
 
     it('falls back to versioned hash when smol.getHash throws', () => {
-      ;(process as any).smol = {
+      ;(process as unknown).smol = {
         getHash: () => {
           throw new Error('boom')
         },
@@ -95,19 +95,19 @@ describe('basics/vfs-extract', () => {
   describe('areBasicsToolsAvailable', () => {
     it('returns false when not in SEA mode', () => {
       mockIsSeaBinary.mockReturnValue(false)
-      ;(process as any).smol = { mount: vi.fn() }
+      ;(process as unknown).smol = { mount: vi.fn() }
       expect(areBasicsToolsAvailable()).toBe(false)
     })
 
     it('returns false when in SEA mode but smol.mount missing', () => {
       mockIsSeaBinary.mockReturnValue(true)
-      delete (process as any).smol
+      delete (process as unknown).smol
       expect(areBasicsToolsAvailable()).toBe(false)
     })
 
     it('returns true when in SEA mode and smol.mount is available', () => {
       mockIsSeaBinary.mockReturnValue(true)
-      ;(process as any).smol = { mount: vi.fn() }
+      ;(process as unknown).smol = { mount: vi.fn() }
       expect(areBasicsToolsAvailable()).toBe(true)
     })
   })
@@ -124,7 +124,7 @@ describe('basics/vfs-extract', () => {
 
     it('returns undefined when smol.mount is missing', async () => {
       mockIsSeaBinary.mockReturnValue(true)
-      ;(process as any).smol = {}
+      ;(process as unknown).smol = {}
       const result = await extractBasicsTools()
       expect(result).toBeUndefined()
       expect(mockLogger.warn).toHaveBeenCalledWith(
@@ -141,7 +141,7 @@ describe('basics/vfs-extract', () => {
         '/snapshot/trufflehog': '/cache/trufflehog',
       }
       const mount = vi.fn(async (vfsPath: string) => mountedPaths[vfsPath]!)
-      ;(process as any).smol = { mount }
+      ;(process as unknown).smol = { mount }
 
       mockSpawn.mockResolvedValue({ code: 0, stdout: '1.0.0', stderr: '' })
 
@@ -154,7 +154,7 @@ describe('basics/vfs-extract', () => {
 
     it('throws when Python validation fails', async () => {
       mockIsSeaBinary.mockReturnValue(true)
-      ;(process as any).smol = {
+      ;(process as unknown).smol = {
         mount: vi.fn(async (p: string) => `/cache/${p.split('/').pop()}`),
       }
       mockSpawn.mockResolvedValueOnce({ code: 1, stdout: '', stderr: 'oops' })
@@ -165,7 +165,7 @@ describe('basics/vfs-extract', () => {
 
     it('throws when a security tool validation fails', async () => {
       mockIsSeaBinary.mockReturnValue(true)
-      ;(process as any).smol = {
+      ;(process as unknown).smol = {
         mount: vi.fn(async (p: string) => `/cache/${p.split('/').pop()}`),
       }
       // Python validates OK, then trivy fails.
@@ -178,7 +178,7 @@ describe('basics/vfs-extract', () => {
 
     it('throws when mount returns falsy for a tool', async () => {
       mockIsSeaBinary.mockReturnValue(true)
-      ;(process as any).smol = {
+      ;(process as unknown).smol = {
         mount: vi.fn(async (p: string) =>
           // python returns empty so the missing-tools check fires.
           p === '/snapshot/python' ? '' : `/cache/${p.split('/').pop()}`,

@@ -176,7 +176,7 @@ describe('cmd-sfw', () => {
       mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0, 'SIGTERM'))
       const killSpy = vi
         .spyOn(process, 'kill')
-        .mockImplementation((() => true) as any)
+        .mockImplementation((() => true) as unknown)
 
       try {
         await cmdSfw.run(['npm', 'install'], importMeta, context)
@@ -194,12 +194,12 @@ describe('cmd-sfw', () => {
           signal: undefined,
           success: false,
         }),
-      } as any)
+      } as unknown)
       process.exitCode = undefined
 
       const killSpy = vi
         .spyOn(process, 'kill')
-        .mockImplementation((() => true) as any)
+        .mockImplementation((() => true) as unknown)
       killSpy.mockClear()
 
       await cmdSfw.run(['npm', 'install'], importMeta, context)

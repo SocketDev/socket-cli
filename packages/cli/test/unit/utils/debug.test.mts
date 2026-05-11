@@ -152,7 +152,7 @@ describe('debug utilities', () => {
 
       debugApiResponse('/api/test', undefined, error, requestInfo)
 
-      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as any
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.method).toBe('POST')
       expect(calledWith.url).toBe('https://api.socket.dev/test')
       expect(calledWith.durationMs).toBe(1500)
@@ -173,7 +173,7 @@ describe('debug utilities', () => {
 
       debugApiResponse('/api/resource', 500, undefined, requestInfo)
 
-      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as any
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.status).toBe(500)
       expect(calledWith.method).toBe('GET')
       // API key should be redacted.
@@ -187,7 +187,7 @@ describe('debug utilities', () => {
 
       debugApiResponse('/api/update', 400, undefined, requestInfo)
 
-      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as any
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.method).toBe('PUT')
       expect(calledWith.url).toBeUndefined()
       expect(calledWith.headers).toBeUndefined()
@@ -202,7 +202,7 @@ describe('debug utilities', () => {
 
       debugApiResponse('/api/x', 500, undefined, requestInfo)
 
-      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as any
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.requestedAt).toBe('2026-04-18T00:00:00.000Z')
     })
 
@@ -218,7 +218,7 @@ describe('debug utilities', () => {
 
       debugApiResponse('/api/y', 500, undefined, requestInfo)
 
-      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as any
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.cfRay).toBe('abc123-IAD')
       expect(calledWith.responseHeaders?.['cf-ray']).toBe('abc123-IAD')
     })
@@ -234,7 +234,7 @@ describe('debug utilities', () => {
 
       debugApiResponse('/api/z', 500, undefined, requestInfo)
 
-      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as any
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.cfRay).toBe('xyz789-SJC')
     })
 
@@ -247,7 +247,7 @@ describe('debug utilities', () => {
 
       debugApiResponse('/api/body', 400, undefined, requestInfo)
 
-      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as any
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.responseBody).toBe('{"error":"bad"}')
     })
 
@@ -261,7 +261,7 @@ describe('debug utilities', () => {
 
       debugApiResponse('/api/big', 500, undefined, requestInfo)
 
-      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as any
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.responseBody).toMatch(/… \(truncated, 5000 chars\)$/)
       expect((calledWith.responseBody as string).length).toBeLessThan(
         bigBody.length,
@@ -507,7 +507,7 @@ describe('debug utilities', () => {
       expect(result['url']).toBe('https://api.x.com/x')
       expect(result['durationMs']).toBe(250)
       expect(result['requestedAt']).toBe('2026-04-18T00:00:00.000Z')
-      expect((result['headers'] as any)?.Authorization).toBe('[REDACTED]')
+      expect((result['headers'] as unknown)?.Authorization).toBe('[REDACTED]')
       expect(result['cfRay']).toBe('ray-123')
       expect(result['responseBody']).toBe('{"ok":true}')
     })

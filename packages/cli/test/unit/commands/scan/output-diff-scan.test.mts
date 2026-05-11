@@ -142,7 +142,7 @@ describe('outputDiffScan', () => {
         cause: 'Server error',
       })
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'text',
@@ -157,7 +157,7 @@ describe('outputDiffScan', () => {
         cause: 'Not found',
       })
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'json',
@@ -173,7 +173,7 @@ describe('outputDiffScan', () => {
         cause: 'Network error',
       })
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'text',
@@ -189,7 +189,7 @@ describe('outputDiffScan', () => {
         message: 'Error without code',
       }
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'text',
@@ -204,7 +204,7 @@ describe('outputDiffScan', () => {
       const mockData = createMockDiffData()
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'json',
@@ -220,7 +220,7 @@ describe('outputDiffScan', () => {
       const mockData = createMockDiffData()
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '-',
         outputKind: 'json',
@@ -234,7 +234,7 @@ describe('outputDiffScan', () => {
       const mockData = createMockDiffData()
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: 'output.json',
         outputKind: 'text',
@@ -253,7 +253,7 @@ describe('outputDiffScan', () => {
       const mockData = createMockDiffData()
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '/invalid/path.json',
         outputKind: 'text',
@@ -272,7 +272,7 @@ describe('outputDiffScan', () => {
       const mockData = createMockDiffData()
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'markdown',
@@ -298,7 +298,7 @@ describe('outputDiffScan', () => {
       })
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'markdown',
@@ -322,7 +322,7 @@ describe('outputDiffScan', () => {
       })
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'markdown',
@@ -348,7 +348,7 @@ describe('outputDiffScan', () => {
       })
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'markdown',
@@ -377,7 +377,7 @@ describe('outputDiffScan', () => {
       })
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'markdown',
@@ -400,7 +400,7 @@ describe('outputDiffScan', () => {
       })
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'markdown',
@@ -426,7 +426,7 @@ describe('outputDiffScan', () => {
       })
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'markdown',
@@ -455,7 +455,7 @@ describe('outputDiffScan', () => {
       })
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'markdown',
@@ -484,7 +484,7 @@ describe('outputDiffScan', () => {
       })
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'markdown',
@@ -508,7 +508,7 @@ describe('outputDiffScan', () => {
       })
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'markdown',
@@ -521,7 +521,7 @@ describe('outputDiffScan', () => {
       const mockData = createMockDiffData()
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'markdown',
@@ -539,7 +539,7 @@ describe('outputDiffScan', () => {
       const mockData = createMockDiffData()
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'markdown',
@@ -559,7 +559,7 @@ describe('outputDiffScan', () => {
       const mockData = createMockDiffData()
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'text',
@@ -575,7 +575,7 @@ describe('outputDiffScan', () => {
       const mockData = createMockDiffData()
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 0,
         file: '',
         outputKind: 'text',
@@ -588,7 +588,7 @@ describe('outputDiffScan', () => {
       const mockData = createMockDiffData()
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'text',
@@ -603,7 +603,7 @@ describe('outputDiffScan', () => {
       const mockData = createMockDiffData({ diff_report_url: undefined })
       const result = createSuccessResult(mockData)
 
-      await outputDiffScan(result as any, {
+      await outputDiffScan(result as unknown, {
         depth: 5,
         file: '',
         outputKind: 'text',

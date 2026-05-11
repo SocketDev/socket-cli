@@ -106,14 +106,14 @@ describe('setup-scan-config', () => {
   describe('configureScan', () => {
     it('cancels when user aborts the repo prompt', async () => {
       mockInput.mockResolvedValueOnce(undefined)
-      const config: any = {}
+      const config: unknown = {}
       const result = await configureScan(config, '/cwd')
       expect(result).toEqual({ ok: true, data: { canceled: true } })
     })
 
     it('cancels when user aborts the workspace prompt', async () => {
       mockInput.mockResolvedValueOnce('repo').mockResolvedValueOnce(undefined)
-      const config: any = {}
+      const config: unknown = {}
       const result = await configureScan(config, '/cwd')
       expect(result).toEqual({ ok: true, data: { canceled: true } })
     })
@@ -123,7 +123,7 @@ describe('setup-scan-config', () => {
         .mockResolvedValueOnce('repo')
         .mockResolvedValueOnce('workspace')
         .mockResolvedValueOnce(undefined)
-      const config: any = {}
+      const config: unknown = {}
       const result = await configureScan(config, '/cwd')
       expect(result).toEqual({ ok: true, data: { canceled: true } })
     })
@@ -136,7 +136,7 @@ describe('setup-scan-config', () => {
         .mockResolvedValueOnce('') // empty branch
       // autoManifest + alwaysReport selects.
       mockSelect.mockResolvedValueOnce('').mockResolvedValueOnce('')
-      const config: any = {
+      const config: unknown = {
         repo: 'old-repo',
         workspace: 'old-ws',
         branch: 'old-br',
@@ -154,7 +154,7 @@ describe('setup-scan-config', () => {
         .mockResolvedValueOnce('new-ws')
         .mockResolvedValueOnce('new-branch')
       mockSelect.mockResolvedValueOnce('yes').mockResolvedValueOnce('yes')
-      const config: any = {}
+      const config: unknown = {}
       const result = await configureScan(config, '/cwd')
       expect(result.ok).toBe(true)
       expect(config.repo).toBe('new-repo')
@@ -170,7 +170,7 @@ describe('setup-scan-config', () => {
         .mockResolvedValueOnce('ws')
         .mockResolvedValueOnce('branch')
       mockSelect.mockResolvedValueOnce(undefined)
-      const config: any = {}
+      const config: unknown = {}
       const result = await configureScan(config, '/cwd')
       expect(result).toEqual({ ok: true, data: { canceled: true } })
     })
@@ -183,7 +183,7 @@ describe('setup-scan-config', () => {
       mockSelect
         .mockResolvedValueOnce('') // autoManifest default
         .mockResolvedValueOnce(undefined) // alwaysReport canceled
-      const config: any = {}
+      const config: unknown = {}
       const result = await configureScan(config, '/cwd')
       expect(result).toEqual({ ok: true, data: { canceled: true } })
     })
@@ -194,7 +194,7 @@ describe('setup-scan-config', () => {
         .mockResolvedValueOnce('w')
         .mockResolvedValueOnce('b')
       mockSelect.mockResolvedValueOnce('').mockResolvedValueOnce('yes')
-      const config: any = {}
+      const config: unknown = {}
       const result = await configureScan(config, '/cwd')
       expect(result.ok).toBe(true)
       expect(config.report).toBe(true)
@@ -206,7 +206,7 @@ describe('setup-scan-config', () => {
         .mockResolvedValueOnce('w')
         .mockResolvedValueOnce('b')
       mockSelect.mockResolvedValueOnce('').mockResolvedValueOnce('no')
-      const config: any = {}
+      const config: unknown = {}
       const result = await configureScan(config, '/cwd')
       expect(result.ok).toBe(true)
       expect(config.report).toBe(false)
@@ -218,7 +218,7 @@ describe('setup-scan-config', () => {
         .mockResolvedValueOnce('w')
         .mockResolvedValueOnce('b')
       mockSelect.mockResolvedValueOnce('').mockResolvedValueOnce('')
-      const config: any = { report: true }
+      const config: unknown = { report: true }
       const result = await configureScan(config, '/cwd')
       expect(result.ok).toBe(true)
       expect(config.report).toBeUndefined()
@@ -230,7 +230,7 @@ describe('setup-scan-config', () => {
         .mockResolvedValueOnce('w')
         .mockResolvedValueOnce('b')
       mockSelect.mockResolvedValueOnce('no').mockResolvedValueOnce('')
-      const config: any = {}
+      const config: unknown = {}
       const result = await configureScan(config, '/cwd')
       expect(result.ok).toBe(true)
       expect(config.autoManifest).toBe(false)
@@ -242,7 +242,7 @@ describe('setup-scan-config', () => {
         .mockResolvedValueOnce('w')
         .mockResolvedValueOnce('b')
       mockSelect.mockResolvedValueOnce('').mockResolvedValueOnce('')
-      const config: any = { autoManifest: true }
+      const config: unknown = { autoManifest: true }
       const result = await configureScan(config, '/cwd')
       expect(result.ok).toBe(true)
       expect(config.autoManifest).toBeUndefined()
@@ -252,7 +252,7 @@ describe('setup-scan-config', () => {
   describe('configureGithub', () => {
     it('cancels when --all selector returns undefined', async () => {
       mockSelect.mockResolvedValueOnce(undefined)
-      const config: any = {}
+      const config: unknown = {}
       const result = await configureGithub(config, '/cwd')
       expect(result).toEqual({ ok: true, data: { canceled: true } })
     })
@@ -263,7 +263,7 @@ describe('setup-scan-config', () => {
       mockInput
         .mockResolvedValueOnce('') // githubApiUrl empty => deletes
         .mockResolvedValueOnce('') // orgGithub empty => deletes
-      const config: any = {}
+      const config: unknown = {}
       const result = await configureGithub(config, '/cwd')
       expect(result.ok).toBe(true)
       expect(config.all).toBe(true)
@@ -277,7 +277,7 @@ describe('setup-scan-config', () => {
       mockInput
         .mockResolvedValueOnce('') // githubApiUrl empty
         .mockResolvedValueOnce('') // orgGithub empty
-      const config: any = {}
+      const config: unknown = {}
       const result = await configureGithub(config, '/cwd')
       expect(result.ok).toBe(true)
       expect(config.all).toBe(false)
@@ -289,7 +289,7 @@ describe('setup-scan-config', () => {
         .mockResolvedValueOnce('r1,r2') // repos
         .mockResolvedValueOnce('') // githubApiUrl
         .mockResolvedValueOnce('') // orgGithub
-      const config: any = {}
+      const config: unknown = {}
       const result = await configureGithub(config, '/cwd')
       expect(result.ok).toBe(true)
       expect(config.repos).toBe('r1,r2')
@@ -298,7 +298,7 @@ describe('setup-scan-config', () => {
     it('cancels when repos prompt is aborted', async () => {
       mockSelect.mockResolvedValueOnce('') // empty -> deletes config.all -> shows repos prompt.
       mockInput.mockResolvedValueOnce(undefined) // repos canceled
-      const config: any = {}
+      const config: unknown = {}
       const result = await configureGithub(config, '/cwd')
       expect(result).toEqual({ ok: true, data: { canceled: true } })
     })
@@ -306,7 +306,7 @@ describe('setup-scan-config', () => {
     it('cancels when githubApiUrl prompt is aborted', async () => {
       mockSelect.mockResolvedValueOnce('no')
       mockInput.mockResolvedValueOnce('repos').mockResolvedValueOnce(undefined) // githubApiUrl canceled
-      const config: any = {}
+      const config: unknown = {}
       const result = await configureGithub(config, '/cwd')
       expect(result).toEqual({ ok: true, data: { canceled: true } })
     })
@@ -316,7 +316,7 @@ describe('setup-scan-config', () => {
       mockInput
         .mockResolvedValueOnce('') // githubApiUrl
         .mockResolvedValueOnce(undefined) // orgGithub canceled
-      const config: any = {}
+      const config: unknown = {}
       const result = await configureGithub(config, '/cwd')
       expect(result).toEqual({ ok: true, data: { canceled: true } })
     })
@@ -326,7 +326,7 @@ describe('setup-scan-config', () => {
       mockInput
         .mockResolvedValueOnce('https://custom.api')
         .mockResolvedValueOnce('my-gh-org')
-      const config: any = {}
+      const config: unknown = {}
       const result = await configureGithub(config, '/cwd')
       expect(result.ok).toBe(true)
       expect(config.githubApiUrl).toBe('https://custom.api')
@@ -339,7 +339,7 @@ describe('setup-scan-config', () => {
         .mockResolvedValueOnce('repos')
         .mockResolvedValueOnce('')
         .mockResolvedValueOnce('')
-      const config: any = { all: true }
+      const config: unknown = { all: true }
       const result = await configureGithub(config, '/cwd')
       expect(result.ok).toBe(true)
       expect(config.all).toBeUndefined()

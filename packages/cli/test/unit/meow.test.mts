@@ -411,7 +411,7 @@ describe('meow', () => {
         autoVersion: false,
         autoHelp: false,
       })
-      expect((result.flags as any).version).toBe(true)
+      expect((result.flags as unknown).version).toBe(true)
     })
   })
 

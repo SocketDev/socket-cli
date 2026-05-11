@@ -115,7 +115,7 @@ describe('agents constants', () => {
     })
 
     it('returns * for unknown agent', () => {
-      const result = getMinimumVersionByAgent('unknown' as any)
+      const result = getMinimumVersionByAgent('unknown' as unknown)
       expect(result).toBe('*')
     })
   })

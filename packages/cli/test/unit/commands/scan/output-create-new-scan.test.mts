@@ -165,7 +165,7 @@ describe('outputCreateNewScan', () => {
         ok: true,
         data: {
           html_report_url: 'https://socket.dev/report/no-id',
-          id: undefined as any,
+          id: undefined as unknown,
         },
       }
 
@@ -271,7 +271,7 @@ describe('outputCreateNewScan', () => {
       {
         ok: true,
         data: {
-          html_report_url: undefined as any,
+          html_report_url: undefined as unknown,
           id: 'scan-no-url',
         },
       }
@@ -296,8 +296,8 @@ describe('outputCreateNewScan', () => {
   it('restarts spinner after JSON output if it was spinning', async () => {
     const spinner = { isSpinning: true, start: vi.fn(), stop: vi.fn() }
     await outputCreateNewScan(
-      { ok: true, data: { id: 'x', html_report_url: 'http://x' } as any },
-      { outputKind: 'json', spinner: spinner as any },
+      { ok: true, data: { id: 'x', html_report_url: 'http://x' } as unknown },
+      { outputKind: 'json', spinner: spinner as unknown },
     )
 
     expect(spinner.stop).toHaveBeenCalled()
@@ -308,7 +308,7 @@ describe('outputCreateNewScan', () => {
     const spinner = { isSpinning: true, start: vi.fn(), stop: vi.fn() }
     await outputCreateNewScan(
       { ok: false, message: 'fail' },
-      { outputKind: 'text', spinner: spinner as any },
+      { outputKind: 'text', spinner: spinner as unknown },
     )
 
     expect(spinner.start).toHaveBeenCalled()
@@ -317,8 +317,8 @@ describe('outputCreateNewScan', () => {
   it('restarts spinner after markdown output if it was spinning', async () => {
     const spinner = { isSpinning: true, start: vi.fn(), stop: vi.fn() }
     await outputCreateNewScan(
-      { ok: true, data: { id: 'x', html_report_url: 'http://x' } as any },
-      { outputKind: 'markdown', spinner: spinner as any },
+      { ok: true, data: { id: 'x', html_report_url: 'http://x' } as unknown },
+      { outputKind: 'markdown', spinner: spinner as unknown },
     )
 
     expect(spinner.start).toHaveBeenCalled()
@@ -327,8 +327,8 @@ describe('outputCreateNewScan', () => {
   it('renders no-id markdown branch', async () => {
     const spinner = { isSpinning: false, start: vi.fn(), stop: vi.fn() }
     await outputCreateNewScan(
-      { ok: true, data: { id: '' as any, html_report_url: '' as any } },
-      { outputKind: 'markdown', spinner: spinner as any },
+      { ok: true, data: { id: '' as unknown, html_report_url: '' as unknown } },
+      { outputKind: 'markdown', spinner: spinner as unknown },
     )
 
     const calls = mockLog.mock.calls.map(c => c[0]).join('\n')

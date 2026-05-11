@@ -12,7 +12,7 @@ const mockReadFileSync = vi.hoisted(() => vi.fn())
 
 // Mock fs so each test can dictate file existence and shim contents.
 vi.mock('node:fs', async importOriginal => {
-  const actual: any = await importOriginal()
+  const actual: unknown = await importOriginal()
   return {
     ...actual,
     default: {
