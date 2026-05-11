@@ -155,7 +155,7 @@ export function buildCacheKey({
   return `v${nodeVersion}-${platformArch}-${buildMode}-${digest}-${packageVersion}`
 }
 
-function hashFileContents(files) {
+export function hashFileContents(files) {
   const hash = createHash('sha256')
   for (const file of files.toSorted()) {
     let content = Buffer.alloc(0)
@@ -170,7 +170,7 @@ function hashFileContents(files) {
   return hash.digest('hex').slice(0, 16)
 }
 
-async function loadExternalTools(packageRoot) {
+export async function loadExternalTools(packageRoot) {
   const filePath = path.join(packageRoot, 'external-tools.json')
   const data = await readJson(filePath)
   if (!data) {
@@ -194,7 +194,7 @@ async function loadExternalTools(packageRoot) {
   return { versions, rawHash }
 }
 
-async function loadPackageJson(packageRoot) {
+export async function loadPackageJson(packageRoot) {
   const pkg = await readJson(path.join(packageRoot, 'package.json'))
   if (!pkg) {
     throw new Error(`Missing package.json in ${packageRoot}`)
@@ -202,7 +202,7 @@ async function loadPackageJson(packageRoot) {
   return pkg
 }
 
-function parseFlags(argv) {
+export function parseFlags(argv) {
   const args = new Set(argv)
   const getValue = flag => {
     const prefix = `${flag}=`
@@ -223,7 +223,7 @@ function parseFlags(argv) {
   }
 }
 
-async function readJson(filePath) {
+export async function readJson(filePath) {
   let raw
   try {
     raw = await fs.readFile(filePath, 'utf8')
@@ -244,14 +244,14 @@ async function readJson(filePath) {
   }
 }
 
-function resolveCheckpointBuildDir(stage, ctx) {
+export function resolveCheckpointBuildDir(stage, ctx) {
   if (stage.shared && ctx.sharedPaths?.buildDir) {
     return ctx.sharedPaths.buildDir
   }
   return ctx.paths.buildDir
 }
 
-async function runStage(stage, ctx, stageParams) {
+export async function runStage(stage, ctx, stageParams) {
   const { buildMode, forceRebuild, logger } = ctx
 
   if (stage.skipInDev && buildMode === 'dev') {

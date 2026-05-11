@@ -70,7 +70,7 @@ interface GetLatestVersionOptions {
 /**
  * Version comparison using semver library.
  */
-function isUpdateAvailable(current: string, latest: string): boolean {
+export function isUpdateAvailable(current: string, latest: string): boolean {
   try {
     // Use semver for robust version comparison.
     const currentClean = semver.clean(current)
@@ -286,7 +286,7 @@ const NetworkUtils = {
  * Check for available updates for a package.
  * Fetches latest version from registry and compares with current.
  */
-async function checkForUpdates(
+export async function checkForUpdates(
   options: UpdateCheckOptions,
 ): Promise<UpdateCheckResult> {
   const { authInfo, name, registryUrl, version } = {
@@ -331,4 +331,4 @@ async function checkForUpdates(
   }
 }
 
-export { checkForUpdates, isUpdateAvailable, NetworkUtils }
+export { NetworkUtils }

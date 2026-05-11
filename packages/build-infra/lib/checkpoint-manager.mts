@@ -30,11 +30,11 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
 
-function checkpointFile(buildDir, packageName, name) {
+export function checkpointFile(buildDir, packageName, name) {
   return path.join(checkpointDir(buildDir, packageName), `${name}.json`)
 }
 
-function computeCacheHash(sourcePaths, options) {
+export function computeCacheHash(sourcePaths, options) {
   const sourcesHash = sourcePaths?.length ? hashSourcePaths(sourcePaths) : ''
   const platformHash = platformCacheKey(options || {})
   if (!sourcesHash && !platformHash) {
@@ -47,7 +47,7 @@ function computeCacheHash(sourcePaths, options) {
     .digest('hex')
 }
 
-function hashSourcePaths(sourcePaths) {
+export function hashSourcePaths(sourcePaths) {
   const hash = createHash('sha256')
   for (const file of [...sourcePaths].sort()) {
     hash.update(`${file}:`)
@@ -64,7 +64,7 @@ function hashSourcePaths(sourcePaths) {
   return hash.digest('hex')
 }
 
-function platformCacheKey({ buildMode, nodeVersion, platform, arch, libc }) {
+export function platformCacheKey({ buildMode, nodeVersion, platform, arch, libc }) {
   const parts = [
     buildMode && `mode=${buildMode}`,
     nodeVersion && `node=${nodeVersion}`,

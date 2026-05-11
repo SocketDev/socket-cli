@@ -46,7 +46,7 @@ let _isSea: boolean | undefined
  * - Standalone binaries in system paths like /usr/local/bin (not in DLX directory)
  * - Bootstrap wrappers (not SEA binaries)
  */
-function canSelfUpdate(): boolean {
+export function canSelfUpdate(): boolean {
   const binaryPath = process.argv[0]
   return isSeaBinary() && !!binaryPath && isInSocketDlx(binaryPath)
 }
@@ -55,7 +55,7 @@ function canSelfUpdate(): boolean {
  * Get the current SEA binary path.
  * Only valid when running as a SEA binary.
  */
-function getSeaBinaryPath(): string | undefined {
+export function getSeaBinaryPath(): string | undefined {
   return isSeaBinary() ? process.argv[0] : undefined
 }
 
@@ -63,7 +63,7 @@ function getSeaBinaryPath(): string | undefined {
  * Detect if the current process is running as a SEA binary.
  * Uses Node.js 24+ native API with caching for performance.
  */
-function isSeaBinary(): boolean {
+export function isSeaBinary(): boolean {
   if (_isSea === undefined) {
     try {
       // Use Node.js 24+ native SEA detection API.
@@ -75,5 +75,3 @@ function isSeaBinary(): boolean {
   }
   return _isSea ?? false
 }
-
-export { canSelfUpdate, getSeaBinaryPath, isSeaBinary }

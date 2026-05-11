@@ -41,7 +41,7 @@ let cachedLibc: string | undefined
  * Reset the libc detection cache.
  * This is primarily for testing purposes to allow re-detection.
  */
-function resetLibcCache(): void {
+export function resetLibcCache(): void {
   cachedLibc = undefined
 }
 
@@ -84,7 +84,7 @@ const npmArchByArch = new Map([
 /**
  * Map Node.js platform names to GitHub release names.
  */
-function getPlatformName(): string {
+export function getPlatformName(): string {
   const platform = process.platform
   return platformNameByOs.get(platform) ?? platform
 }
@@ -92,7 +92,7 @@ function getPlatformName(): string {
 /**
  * Map Node.js arch names to GitHub release names.
  */
-function getArchName(): string {
+export function getArchName(): string {
   const arch = process.arch
   return archNameByArch.get(arch) ?? arch
 }
@@ -101,7 +101,7 @@ function getArchName(): string {
  * Generate the expected asset name for the current platform.
  * Used for downloading platform-specific binaries from GitHub releases.
  */
-function getExpectedAssetName(): string {
+export function getExpectedAssetName(): string {
   const platformName = getPlatformName()
   const archName = getArchName()
   const extension = process.platform === 'win32' ? '.exe' : ''
@@ -112,7 +112,7 @@ function getExpectedAssetName(): string {
  * Get npm platform name for @socketbin packages.
  * Uses Node.js platform names (darwin, linux, win32).
  */
-function getNpmPlatform(): string {
+export function getNpmPlatform(): string {
   const platform = process.platform
   return npmPlatformByOs.get(platform) ?? platform
 }
@@ -121,7 +121,7 @@ function getNpmPlatform(): string {
  * Get npm arch name for @socketbin packages.
  * Uses Node.js arch names (arm64, x64).
  */
-function getNpmArch(): string {
+export function getNpmArch(): string {
   const arch = process.arch
   return npmArchByArch.get(arch) ?? arch
 }
@@ -130,7 +130,7 @@ function getNpmArch(): string {
  * Detect if running on musl libc (Alpine Linux, etc.).
  * Uses multiple detection methods for reliability.
  */
-function detectMusl(): boolean {
+export function detectMusl(): boolean {
   // Only check on Linux.
   if (process.platform !== 'linux') {
     return false
@@ -188,7 +188,7 @@ function detectMusl(): boolean {
  * Get the libc suffix for package names.
  * Returns "-musl" on musl systems, empty string otherwise.
  */
-function getLibcSuffix(): string {
+export function getLibcSuffix(): string {
   return detectMusl() ? '-musl' : ''
 }
 
@@ -197,7 +197,7 @@ function getLibcSuffix(): string {
  * Returns package name like "@socketbin/cli-darwin-arm64" or
  * "@socketbin/cli-linux-x64-musl" on Alpine.
  */
-function getSocketbinPackageName(): string {
+export function getSocketbinPackageName(): string {
   const platform = getNpmPlatform()
   const arch = getNpmArch()
   const libcSuffix = getLibcSuffix()
@@ -208,7 +208,7 @@ function getSocketbinPackageName(): string {
  * Get the binary name for the current platform.
  * Returns "socket" on Unix, "socket.exe" on Windows.
  */
-function getBinaryName(): string {
+export function getBinaryName(): string {
   return process.platform === 'win32' ? 'socket.exe' : 'socket'
 }
 
@@ -216,7 +216,7 @@ function getBinaryName(): string {
  * Get the relative path to the binary within @socketbin package.
  * Returns "bin/socket" or "bin/socket.exe".
  */
-function getBinaryRelativePath(): string {
+export function getBinaryRelativePath(): string {
   return `bin/${getBinaryName()}`
 }
 
@@ -224,7 +224,7 @@ function getBinaryRelativePath(): string {
  * Clear macOS quarantine attribute from a file.
  * This prevents macOS from blocking execution of downloaded binaries.
  */
-async function clearQuarantine(filePath: string): Promise<void> {
+export async function clearQuarantine(filePath: string): Promise<void> {
   if (process.platform !== 'darwin') {
     return
   }
@@ -243,7 +243,7 @@ async function clearQuarantine(filePath: string): Promise<void> {
  * Ensure file is executable on Unix systems.
  * Sets 0o755 permissions (rwxr-xr-x) for proper binary execution.
  */
-async function ensureExecutable(filePath: string): Promise<void> {
+export async function ensureExecutable(filePath: string): Promise<void> {
   if (process.platform === 'win32') {
     return
   }
@@ -260,7 +260,7 @@ async function ensureExecutable(filePath: string): Promise<void> {
  * Check if the current platform/architecture combination is supported.
  * Based on available GitHub release assets.
  */
-function isPlatformSupported(): boolean {
+export function isPlatformSupported(): boolean {
   const platformName = getPlatformName()
   const archName = getArchName()
 
@@ -284,19 +284,3 @@ function isPlatformSupported(): boolean {
   return false
 }
 
-export {
-  clearQuarantine,
-  detectMusl,
-  ensureExecutable,
-  getArchName,
-  getBinaryName,
-  getBinaryRelativePath,
-  getExpectedAssetName,
-  getLibcSuffix,
-  getNpmArch,
-  getNpmPlatform,
-  getPlatformName,
-  getSocketbinPackageName,
-  isPlatformSupported,
-  resetLibcCache,
-}
