@@ -36,6 +36,10 @@ export type ToolSpawnFn = (
   spawnExtra?: SpawnExtra | undefined,
 ) => Promise<DlxSpawnResult>
 
+function capitalize(s: string): string {
+  return s.length ? s[0]!.toUpperCase() + s.slice(1) : s
+}
+
 /**
  * Build the standard auto-dispatcher: in SEA mode use VFS, otherwise use Dlx.
  *
@@ -51,17 +55,6 @@ export function defineAutoDispatch(opts: {
       return await vfs(args, options, spawnExtra)
     }
     return await dlx(args, options, spawnExtra)
-  }
-}
-
-/**
- * Build the standard SEA-mode VFS spawner for a tool.
- *
- * The VFS name (e.g. 'trufflehog') is the directory key under the SEA bundle.
- */
-export function defineVfsSpawn(vfsName: ExternalTool): ToolSpawnFn {
-  return async (args, options, spawnExtra) => {
-    return await spawnToolVfs(vfsName, args, options, spawnExtra)
   }
 }
 
@@ -128,6 +121,13 @@ export function defineToolSpawn(opts: {
   return { Dlx, Vfs, auto }
 }
 
-function capitalize(s: string): string {
-  return s.length ? s[0]!.toUpperCase() + s.slice(1) : s
+/**
+ * Build the standard SEA-mode VFS spawner for a tool.
+ *
+ * The VFS name (e.g. 'trufflehog') is the directory key under the SEA bundle.
+ */
+export function defineVfsSpawn(vfsName: ExternalTool): ToolSpawnFn {
+  return async (args, options, spawnExtra) => {
+    return await spawnToolVfs(vfsName, args, options, spawnExtra)
+  }
 }

@@ -814,7 +814,7 @@ export function Box(props: BoxProps): Element {
 export function MixedText(props: MixedTextProps): Element {
   const node: Element = {
     type: 'MixedText',
-    mixed_text_contents: props.contents.map((section) => ({
+    mixed_text_contents: props.contents.map(section => ({
       text: section.text,
       color: section.color,
       weight: section.weight,
@@ -866,7 +866,9 @@ export function Fragment(props: FragmentProps): Element {
  */
 export function renderToString(element: Element): string {
   const io = getIocraft()
-  return io.renderToString(element as import('@socketaddon/iocraft').ComponentNode)
+  return io.renderToString(
+    element as import('@socketaddon/iocraft').ComponentNode,
+  )
 }
 
 /**

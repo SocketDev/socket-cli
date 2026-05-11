@@ -95,55 +95,6 @@ export async function getLastCommitDetails({
 }
 
 /**
- * Fetch repo metadata (default branch, plus the raw repo details payload).
- */
-export async function getRepoDetails({
-  orgGithub,
-  repoSlug,
-}: {
-  orgGithub: string
-  repoSlug: string
-  githubApiUrl: string
-  githubToken: string
-}): Promise<CResult<{ defaultBranch: string; repoDetails: unknown }>> {
-  const octokit = getOctokit()
-
-  const result = await withGitHubRetry(
-    /* c8 ignore start - withGitHubRetry mock returns cached value; the inner factory only runs on cache miss */
-    async () => {
-      const { data } = await octokit.repos.get({
-        owner: orgGithub,
-        repo: repoSlug,
-      })
-      return data
-    },
-    /* c8 ignore stop */
-    `fetching repository details for ${orgGithub}/${repoSlug}`,
-  )
-
-  if (!result.ok) {
-    return result
-  }
-
-  const repoDetails = result.data
-  logger.success('Request completed.')
-  debugDir({ repoDetails })
-
-  const defaultBranch = repoDetails.default_branch
-  if (!defaultBranch) {
-    return {
-      ok: false,
-      message: 'Default branch not found',
-      cause:
-        `Repository ${orgGithub}/${repoSlug} does not have a default branch set. ` +
-        'This can happen with empty repositories or misconfigured repo settings.',
-    }
-  }
-
-  return { ok: true, data: { defaultBranch, repoDetails } }
-}
-
-/**
  * Fetch the recursive file tree of a branch — returns a flat list of blob paths.
  *
  * Treats a `GitHub resource not found` error as an empty repo (returns []),
@@ -211,4 +162,53 @@ export async function getRepoBranchTree({
     .filter((p): p is string => typeof p === 'string' && p.length > 0)
 
   return { ok: true, data: files }
+}
+
+/**
+ * Fetch repo metadata (default branch, plus the raw repo details payload).
+ */
+export async function getRepoDetails({
+  orgGithub,
+  repoSlug,
+}: {
+  orgGithub: string
+  repoSlug: string
+  githubApiUrl: string
+  githubToken: string
+}): Promise<CResult<{ defaultBranch: string; repoDetails: unknown }>> {
+  const octokit = getOctokit()
+
+  const result = await withGitHubRetry(
+    /* c8 ignore start - withGitHubRetry mock returns cached value; the inner factory only runs on cache miss */
+    async () => {
+      const { data } = await octokit.repos.get({
+        owner: orgGithub,
+        repo: repoSlug,
+      })
+      return data
+    },
+    /* c8 ignore stop */
+    `fetching repository details for ${orgGithub}/${repoSlug}`,
+  )
+
+  if (!result.ok) {
+    return result
+  }
+
+  const repoDetails = result.data
+  logger.success('Request completed.')
+  debugDir({ repoDetails })
+
+  const defaultBranch = repoDetails.default_branch
+  if (!defaultBranch) {
+    return {
+      ok: false,
+      message: 'Default branch not found',
+      cause:
+        `Repository ${orgGithub}/${repoSlug} does not have a default branch set. ` +
+        'This can happen with empty repositories or misconfigured repo settings.',
+    }
+  }
+
+  return { ok: true, data: { defaultBranch, repoDetails } }
 }

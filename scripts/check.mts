@@ -125,7 +125,9 @@ async function runOxlintCheck(options: CheckOptions = {}): Promise<number> {
 /**
  * Run TypeScript type check across all packages with type script.
  */
-async function runTypeCheck(options: { quiet?: boolean } = {}): Promise<number> {
+async function runTypeCheck(
+  options: { quiet?: boolean } = {},
+): Promise<number> {
   const { quiet = false } = options
 
   const packages = getPackagesWithScript('type')

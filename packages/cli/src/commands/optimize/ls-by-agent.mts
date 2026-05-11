@@ -56,7 +56,10 @@ export function parsableToQueryStdout(stdout: string) {
   return JSON.stringify(Array.from(names), null, 2)
 }
 
-export async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
+export async function npmQuery(
+  npmExecPath: string,
+  cwd: string,
+): Promise<string> {
   let stdout = ''
   try {
     const result = await spawn(npmExecPath, ['query', ':not(.dev)'], {

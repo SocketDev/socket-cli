@@ -57,9 +57,8 @@ vi.mock('../../../../src/commands/mcp/depscore.mts', async importOriginal => {
   }
 })
 
-const { createConfiguredServer } = await import(
-  '../../../../src/commands/mcp/server.mts'
-)
+const { createConfiguredServer } =
+  await import('../../../../src/commands/mcp/server.mts')
 
 // Helper: invoke a handler from the underlying SDK Server. The SDK
 // exposes `.setRequestHandler` but not a public `.handle(...)`, so we
@@ -103,16 +102,18 @@ describe('createConfiguredServer — construction', () => {
     const server = createConfiguredServer(baseConfig)
     // The SDK Server stores serverInfo internally; round-trip via the
     // protocol's getter for the server's implementation info.
-    const info = (server as unknown as { _serverInfo: { name: string; version: string } })
-      ._serverInfo
+    const info = (
+      server as unknown as { _serverInfo: { name: string; version: string } }
+    )._serverInfo
     expect(info.name).toBe('socket')
     expect(info.version).toBe('9.9.9')
   })
 
   it('declares the tools capability', () => {
     const server = createConfiguredServer(baseConfig)
-    const caps = (server as unknown as { _capabilities: Record<string, unknown> })
-      ._capabilities
+    const caps = (
+      server as unknown as { _capabilities: Record<string, unknown> }
+    )._capabilities
     expect(caps['tools']).toBeDefined()
   })
 })

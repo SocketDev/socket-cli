@@ -45,9 +45,8 @@ describe('IPC utilities', () => {
         },
       })
 
-      const { getIpcExtra, initializeIpc } = await import(
-        '../../../src/utils/ipc.mts'
-      )
+      const { getIpcExtra, initializeIpc } =
+        await import('../../../src/utils/ipc.mts')
 
       await initializeIpc()
 
@@ -60,9 +59,8 @@ describe('IPC utilities', () => {
 
   describe('getBootstrapBinaryPath', () => {
     it('returns undefined before initialization', async () => {
-      const { getBootstrapBinaryPath } = await import(
-        '../../../src/utils/ipc.mts'
-      )
+      const { getBootstrapBinaryPath } =
+        await import('../../../src/utils/ipc.mts')
 
       expect(getBootstrapBinaryPath()).toBeUndefined()
     })
@@ -74,9 +72,8 @@ describe('IPC utilities', () => {
         },
       })
 
-      const { getBootstrapBinaryPath, initializeIpc } = await import(
-        '../../../src/utils/ipc.mts'
-      )
+      const { getBootstrapBinaryPath, initializeIpc } =
+        await import('../../../src/utils/ipc.mts')
 
       await initializeIpc()
 
@@ -88,9 +85,8 @@ describe('IPC utilities', () => {
     it('handles missing handshake gracefully', async () => {
       mockWaitForBootstrapHandshake.mockResolvedValue(undefined)
 
-      const { getIpcExtra, initializeIpc } = await import(
-        '../../../src/utils/ipc.mts'
-      )
+      const { getIpcExtra, initializeIpc } =
+        await import('../../../src/utils/ipc.mts')
 
       // Should not throw.
       await expect(initializeIpc()).resolves.not.toThrow()
@@ -101,9 +97,8 @@ describe('IPC utilities', () => {
     it('handles handshake timeout gracefully', async () => {
       mockWaitForBootstrapHandshake.mockRejectedValue(new Error('Timeout'))
 
-      const { getIpcExtra, initializeIpc } = await import(
-        '../../../src/utils/ipc.mts'
-      )
+      const { getIpcExtra, initializeIpc } =
+        await import('../../../src/utils/ipc.mts')
 
       // Should not throw.
       await expect(initializeIpc()).resolves.not.toThrow()
@@ -117,9 +112,8 @@ describe('IPC utilities', () => {
         data: {},
       })
 
-      const { getIpcExtra, initializeIpc } = await import(
-        '../../../src/utils/ipc.mts'
-      )
+      const { getIpcExtra, initializeIpc } =
+        await import('../../../src/utils/ipc.mts')
 
       await initializeIpc()
 
@@ -155,9 +149,8 @@ describe('IPC utilities', () => {
         },
       })
 
-      const { getBootstrapBinaryPath, initializeIpc } = await import(
-        '../../../src/utils/ipc.mts'
-      )
+      const { getBootstrapBinaryPath, initializeIpc } =
+        await import('../../../src/utils/ipc.mts')
 
       await initializeIpc()
 

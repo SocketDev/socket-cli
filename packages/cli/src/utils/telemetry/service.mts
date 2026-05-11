@@ -99,7 +99,7 @@ const TELEMETRY_SERVICE_CONFIG = {
  * Singleton instance holder.
  */
 interface TelemetryServiceInstance {
-  current: TelemetryService | null
+  current: TelemetryService | undefined
 }
 
 /**
@@ -170,7 +170,7 @@ function withTimeout<T>(
  */
 export class TelemetryService {
   private readonly orgSlug: string
-  private config: TelemetryConfig | null = undefined
+  private config: TelemetryConfig | undefined = undefined
   private eventQueue: TelemetryEvent[] = []
   private isDestroyed = false
 
@@ -193,7 +193,7 @@ export class TelemetryService {
    *
    * @returns Current telemetry instance or null if none exists.
    */
-  static getCurrentInstance(): TelemetryService | null {
+  static getCurrentInstance(): TelemetryService | undefined {
     return telemetryServiceInstance.current
   }
 

@@ -67,6 +67,51 @@ export interface Workspace {
 }
 
 /**
+ * Create workspace configured for monorepo structure.
+ *
+ * @param packages - Package configurations keyed by package name
+ * @returns Workspace instance
+ *
+ * @example
+ * ```typescript
+ * const workspace = await createMonorepoWorkspace({
+ *   'packages/app': {
+ *     name: '@myorg/app',
+ *     dependencies: { express: '^4.18.0' }
+ *   },
+ *   'packages/utils': {
+ *     name: '@myorg/utils',
+ *     version: '1.0.0'
+ *   }
+ * })
+ * ```
+ */
+export async function createMonorepoWorkspace(
+  packages: Record<string, PackageJsonConfig>,
+): Promise<Workspace> {
+  const files: WorkspaceFile[] = []
+
+  // Create package.json for each package
+  for (const [pkgPath, pkgConfig] of Object.entries(packages)) {
+    files.push({
+      content: pkgConfig,
+      path: path.join(pkgPath, 'package.json'),
+    })
+  }
+
+  const workspace = await createTestWorkspace({
+    files,
+    packageJson: {
+      name: 'monorepo-root',
+      private: true,
+      workspaces: Object.keys(packages),
+    },
+  })
+
+  return workspace
+}
+
+/**
  * Create a temporary test workspace with specified files and configuration.
  *
  * @param config - Workspace configuration
@@ -194,39 +239,6 @@ export async function createTestWorkspace(
 }
 
 /**
- * Execute a test function with a temporary workspace, automatically cleaning up.
- *
- * @param config - Workspace configuration
- * @param testFn - Test function to execute with workspace
- * @returns Result of test function
- *
- * @example
- * ```typescript
- * await withTestWorkspace(
- *   {
- *     packageJson: { name: 'test-app' },
- *     files: [{ path: 'index.js', content: 'module.exports = {}' }]
- *   },
- *   async (workspace) => {
- *     const result = await executeCliCommand(['scan'], { cwd: workspace.path })
- *     expect(result.status).toBe(true)
- *   }
- * )
- * ```
- */
-export async function withTestWorkspace<T>(
-  config: WorkspaceConfig | undefined,
-  testFn: (workspace: Workspace) => Promise<T>,
-): Promise<T> {
-  const workspace = await createTestWorkspace(config)
-  try {
-    return await testFn(workspace)
-  } finally {
-    await workspace.cleanup()
-  }
-}
-
-/**
  * Create workspace with common package manager lockfiles.
  *
  * @param packageManager - Package manager type
@@ -298,47 +310,29 @@ ${Object.entries(dependencies)
 }
 
 /**
- * Create workspace configured for monorepo structure.
+ * Create workspace with Socket.dev configuration file.
  *
- * @param packages - Package configurations keyed by package name
+ * @param socketConfig - Socket configuration object
  * @returns Workspace instance
  *
  * @example
  * ```typescript
- * const workspace = await createMonorepoWorkspace({
- *   'packages/app': {
- *     name: '@myorg/app',
- *     dependencies: { express: '^4.18.0' }
- *   },
- *   'packages/utils': {
- *     name: '@myorg/utils',
- *     version: '1.0.0'
+ * const workspace = await createWorkspaceWithSocketConfig({
+ *   version: 2,
+ *   issueRules: {
+ *     '*': { 'npm/install-scripts': 'error' }
  *   }
  * })
  * ```
  */
-export async function createMonorepoWorkspace(
-  packages: Record<string, PackageJsonConfig>,
+export async function createWorkspaceWithSocketConfig(
+  socketConfig: Record<string, unknown>,
 ): Promise<Workspace> {
-  const files: WorkspaceFile[] = []
-
-  // Create package.json for each package
-  for (const [pkgPath, pkgConfig] of Object.entries(packages)) {
-    files.push({
-      content: pkgConfig,
-      path: path.join(pkgPath, 'package.json'),
-    })
-  }
-
-  const workspace = await createTestWorkspace({
-    files,
-    packageJson: {
-      name: 'monorepo-root',
-      private: true,
-      workspaces: Object.keys(packages),
-    },
-  })
-
+  const workspace = await createTestWorkspace()
+  await workspace.writeFile(
+    '.socketrc.json',
+    JSON.stringify(socketConfig, null, 2),
+  )
   return workspace
 }
 
@@ -389,28 +383,34 @@ export async function setupPackageJson(
 }
 
 /**
- * Create workspace with Socket.dev configuration file.
+ * Execute a test function with a temporary workspace, automatically cleaning up.
  *
- * @param socketConfig - Socket configuration object
- * @returns Workspace instance
+ * @param config - Workspace configuration
+ * @param testFn - Test function to execute with workspace
+ * @returns Result of test function
  *
  * @example
  * ```typescript
- * const workspace = await createWorkspaceWithSocketConfig({
- *   version: 2,
- *   issueRules: {
- *     '*': { 'npm/install-scripts': 'error' }
+ * await withTestWorkspace(
+ *   {
+ *     packageJson: { name: 'test-app' },
+ *     files: [{ path: 'index.js', content: 'module.exports = {}' }]
+ *   },
+ *   async (workspace) => {
+ *     const result = await executeCliCommand(['scan'], { cwd: workspace.path })
+ *     expect(result.status).toBe(true)
  *   }
- * })
+ * )
  * ```
  */
-export async function createWorkspaceWithSocketConfig(
-  socketConfig: Record<string, unknown>,
-): Promise<Workspace> {
-  const workspace = await createTestWorkspace()
-  await workspace.writeFile(
-    '.socketrc.json',
-    JSON.stringify(socketConfig, null, 2),
-  )
-  return workspace
+export async function withTestWorkspace<T>(
+  config: WorkspaceConfig | undefined,
+  testFn: (workspace: Workspace) => Promise<T>,
+): Promise<T> {
+  const workspace = await createTestWorkspace(config)
+  try {
+    return await testFn(workspace)
+  } finally {
+    await workspace.cleanup()
+  }
 }

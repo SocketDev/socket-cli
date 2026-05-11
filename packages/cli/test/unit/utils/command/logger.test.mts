@@ -98,9 +98,14 @@ describe('command logger utilities', () => {
 
       logger.log('arg1', 'arg2', { key: 'value' })
 
-      expect(mockLogger.log).toHaveBeenCalledWith('[test-cmd]', 'arg1', 'arg2', {
-        key: 'value',
-      })
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        '[test-cmd]',
+        'arg1',
+        'arg2',
+        {
+          key: 'value',
+        },
+      )
     })
   })
 

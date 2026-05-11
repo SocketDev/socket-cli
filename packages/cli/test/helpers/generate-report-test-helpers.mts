@@ -1,41 +1,6 @@
 import type { SocketArtifact } from '../../src/utils/alert/artifact.mts'
 
 /**
- * Helper function to create a simple clean scan with no security issues.
- */
-export function getSimpleCleanScan(): SocketArtifact[] {
-  return [
-    {
-      id: '12521',
-      author: ['typescript-bot'],
-      size: 33965,
-      type: 'npm',
-      name: 'tslib',
-      version: '1.14.1',
-      license: '0BSD',
-      licenseDetails: [],
-      score: {
-        license: 1,
-        maintenance: 0.86,
-        overall: 0.86,
-        quality: 1,
-        supplyChain: 1,
-        vulnerability: 1,
-      },
-      alerts: [],
-      manifestFiles: [
-        {
-          file: 'package-lock.json',
-          start: 600172,
-          end: 600440,
-        },
-      ],
-      topLevelAncestors: ['15903631404'],
-    },
-  ]
-}
-
-/**
  * Helper function to create a scan with environment variable alerts.
  */
 export function getScanWithEnvVars(): SocketArtifact[] {
@@ -181,6 +146,41 @@ export function getScanWithMultiplePackages(): SocketArtifact[] {
         },
       ],
       topLevelAncestors: ['15903631405'],
+    },
+  ]
+}
+
+/**
+ * Helper function to create a simple clean scan with no security issues.
+ */
+export function getSimpleCleanScan(): SocketArtifact[] {
+  return [
+    {
+      id: '12521',
+      author: ['typescript-bot'],
+      size: 33965,
+      type: 'npm',
+      name: 'tslib',
+      version: '1.14.1',
+      license: '0BSD',
+      licenseDetails: [],
+      score: {
+        license: 1,
+        maintenance: 0.86,
+        overall: 0.86,
+        quality: 1,
+        supplyChain: 1,
+        vulnerability: 1,
+      },
+      alerts: [],
+      manifestFiles: [
+        {
+          file: 'package-lock.json',
+          start: 600172,
+          end: 600440,
+        },
+      ],
+      topLevelAncestors: ['15903631404'],
     },
   ]
 }

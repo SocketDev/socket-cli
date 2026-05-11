@@ -46,9 +46,12 @@ vi.mock('../../../../src/commands/optimize/get-overrides-by-agent.mts', () => ({
   getOverridesDataYarnClassic: mockGetOverridesDataYarnClassic,
 }))
 
-vi.mock('../../../../src/commands/optimize/lockfile-includes-by-agent.mts', () => ({
-  lockSrcIncludes: vi.fn(() => false),
-}))
+vi.mock(
+  '../../../../src/commands/optimize/lockfile-includes-by-agent.mts',
+  () => ({
+    lockSrcIncludes: vi.fn(() => false),
+  }),
+)
 
 vi.mock('../../../../src/commands/optimize/deps-includes-by-agent.mts', () => ({
   lsStdoutIncludes: vi.fn(() => false),
@@ -58,9 +61,12 @@ vi.mock('../../../../src/commands/optimize/ls-by-agent.mts', () => ({
   listPackages: vi.fn(async () => ''),
 }))
 
-vi.mock('../../../../src/commands/optimize/update-manifest-by-agent.mts', () => ({
-  updateManifest: vi.fn(),
-}))
+vi.mock(
+  '../../../../src/commands/optimize/update-manifest-by-agent.mts',
+  () => ({
+    updateManifest: vi.fn(),
+  }),
+)
 
 const mockSafeNpa = vi.hoisted(() => vi.fn())
 vi.mock('../../../../src/utils/npm/package-arg.mts', () => ({
@@ -156,7 +162,9 @@ describe('addOverrides', () => {
         },
       },
     }
-    await addOverrides(privateEnv, '/test/project', { logger: mockLogger as any })
+    await addOverrides(privateEnv, '/test/project', {
+      logger: mockLogger as any,
+    })
     expect(mockGetOverridesData).toHaveBeenCalledWith(privateEnv)
     expect(mockGetOverridesDataNpm).not.toHaveBeenCalled()
   })

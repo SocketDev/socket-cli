@@ -321,9 +321,8 @@ describe('fetchCreateOrgFullScan', () => {
     const { mockSdk } = await setupSdkMockSuccess('createFullScan', {
       id: 'scan-no-opts',
     })
-    const { fetchCreateOrgFullScan } = await import(
-      '../../../../src/commands/scan/fetch-create-org-full-scan.mts'
-    )
+    const { fetchCreateOrgFullScan } =
+      await import('../../../../src/commands/scan/fetch-create-org-full-scan.mts')
 
     const config = {
       branchName: '',
@@ -347,9 +346,8 @@ describe('fetchCreateOrgFullScan', () => {
     const { mockSdk } = await setupSdkMockSuccess('createFullScan', {
       id: 'scan-with-opts',
     })
-    const { fetchCreateOrgFullScan } = await import(
-      '../../../../src/commands/scan/fetch-create-org-full-scan.mts'
-    )
+    const { fetchCreateOrgFullScan } =
+      await import('../../../../src/commands/scan/fetch-create-org-full-scan.mts')
 
     const config = {
       branchName: 'main',

@@ -72,7 +72,7 @@ describe('cmd-nuget', () => {
     })
 
     it('renders help text via the meow help callback', async () => {
-      mockMeowOrExit.mockImplementation((args) => {
+      mockMeowOrExit.mockImplementation(args => {
         const helpText = args.config.help('socket nuget')
         expect(helpText).toContain('socket nuget')
         return {
@@ -93,10 +93,14 @@ describe('cmd-nuget', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise).process = mockChildProcess
+      mockSpawnPromise.process = mockChildProcess
       mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise })
       mockFilterFlags.mockReturnValue([])
-      const runPromise = cmdNuget.run([], { url: import.meta.url }, { parentName: 'socket' })
+      const runPromise = cmdNuget.run(
+        [],
+        { url: import.meta.url },
+        { parentName: 'socket' },
+      )
       setImmediate(() => mockChildProcess.emit('exit', 0, undefined))
       await runPromise
       expect(mockMeowOrExit).toHaveBeenCalled()
@@ -237,9 +241,13 @@ describe('cmd-nuget', () => {
         .mockImplementation((() => {}) as any)
       mockKill.mockClear()
 
-      cmdNuget.run([], { url: import.meta.url } as any, {
-        parentName: 'socket',
-      } as any)
+      cmdNuget.run(
+        [],
+        { url: import.meta.url } as any,
+        {
+          parentName: 'socket',
+        } as any,
+      )
 
       await new Promise(resolve => setImmediate(resolve))
       const exitBefore = mockExit.mock.calls.length

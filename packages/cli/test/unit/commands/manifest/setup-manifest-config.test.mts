@@ -389,26 +389,20 @@ describe('setup-manifest-config', () => {
     })
 
     it('cancels when sbt-opts prompt is aborted', async () => {
-      mockInput
-        .mockResolvedValueOnce('sbt')
-        .mockResolvedValueOnce(undefined)
+      mockInput.mockResolvedValueOnce('sbt').mockResolvedValueOnce(undefined)
       const result = await setupSbt({})
       expect(result).toEqual({ ok: true, data: { canceled: true } })
     })
 
     it('cancels when stdout prompt is aborted', async () => {
-      mockInput
-        .mockResolvedValueOnce('sbt')
-        .mockResolvedValueOnce('')
+      mockInput.mockResolvedValueOnce('sbt').mockResolvedValueOnce('')
       mockSelect.mockResolvedValueOnce(undefined)
       const result = await setupSbt({})
       expect(result).toEqual({ ok: true, data: { canceled: true } })
     })
 
     it('cancels when output prompt is aborted', async () => {
-      mockInput
-        .mockResolvedValueOnce('sbt')
-        .mockResolvedValueOnce('')
+      mockInput.mockResolvedValueOnce('sbt').mockResolvedValueOnce('')
       mockSelect.mockResolvedValueOnce('') // stdout default
       mockInput.mockResolvedValueOnce(undefined) // outfile
       const result = await setupSbt({})

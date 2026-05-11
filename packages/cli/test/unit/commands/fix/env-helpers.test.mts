@@ -53,9 +53,7 @@ const mockGithubRepo = vi.hoisted(() => ({ GITHUB_REPOSITORY: '' }))
 vi.mock('../../../../src/env/github-repository.mts', () => mockGithubRepo)
 
 // Mock git operations.
-const mockGetBaseBranch = vi.hoisted(() =>
-  vi.fn().mockResolvedValue('main'),
-)
+const mockGetBaseBranch = vi.hoisted(() => vi.fn().mockResolvedValue('main'))
 const mockGetRepoInfo = vi.hoisted(() =>
   vi.fn().mockResolvedValue({ owner: 'test-owner', repo: 'test-repo' }),
 )
@@ -106,7 +104,10 @@ describe('env-helpers', () => {
     mockGitUser.SOCKET_CLI_GIT_USER_NAME = ''
     mockGithubRepo.GITHUB_REPOSITORY = ''
     mockGetBaseBranch.mockResolvedValue('main')
-    mockGetRepoInfo.mockResolvedValue({ owner: 'test-owner', repo: 'test-repo' })
+    mockGetRepoInfo.mockResolvedValue({
+      owner: 'test-owner',
+      repo: 'test-repo',
+    })
     mockGetSocketFixPrs.mockResolvedValue([])
     mockIsDebug.mockReturnValue(false)
   })
@@ -218,7 +219,10 @@ describe('env-helpers', () => {
       expect(result.isCi).toBe(false)
       expect(result.baseBranch).toBe('main')
       expect(result.prs).toEqual([])
-      expect(result.repoInfo).toEqual({ owner: 'test-owner', repo: 'test-repo' })
+      expect(result.repoInfo).toEqual({
+        owner: 'test-owner',
+        repo: 'test-repo',
+      })
     })
 
     it('should return isCi true when all CI vars are set', async () => {
@@ -260,7 +264,10 @@ describe('env-helpers', () => {
 
       const result = await getFixEnv()
 
-      expect(result.repoInfo).toEqual({ owner: 'test-owner', repo: 'test-repo' })
+      expect(result.repoInfo).toEqual({
+        owner: 'test-owner',
+        repo: 'test-repo',
+      })
       expect(mockGetRepoInfo).toHaveBeenCalled()
     })
 
@@ -319,9 +326,7 @@ describe('env-helpers', () => {
       mockGitUser.SOCKET_CLI_GIT_USER_NAME = 'test-user'
       mockGitEmail.SOCKET_CLI_GIT_USER_EMAIL = 'test@example.com'
       mockGithubRepo.GITHUB_REPOSITORY = 'owner/repo'
-      mockGetSocketFixPrs.mockResolvedValue([
-        { number: 1, title: 'Fix PR' },
-      ])
+      mockGetSocketFixPrs.mockResolvedValue([{ number: 1, title: 'Fix PR' }])
 
       const result = await getFixEnv()
 

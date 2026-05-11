@@ -106,7 +106,9 @@ describe('cli-messages', () => {
     })
 
     it('ALREADY_EXISTS formats resource name', () => {
-      expect(RESOURCE_MESSAGES.ALREADY_EXISTS('Scan')).toBe('Scan already exists')
+      expect(RESOURCE_MESSAGES.ALREADY_EXISTS('Scan')).toBe(
+        'Scan already exists',
+      )
     })
 
     it('CREATED formats resource name', () => {

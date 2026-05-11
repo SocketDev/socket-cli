@@ -225,9 +225,8 @@ describe('utils/fs/glob', () => {
 
   describe('ignorePatternToMinimatch', () => {
     it('returns special-cased patterns verbatim with negation prefix preserved', async () => {
-      const { ignorePatternToMinimatch } = await import(
-        '../../../../src/utils/fs/glob.mts'
-      )
+      const { ignorePatternToMinimatch } =
+        await import('../../../../src/utils/fs/glob.mts')
       expect(ignorePatternToMinimatch('')).toBe('')
       expect(ignorePatternToMinimatch('**')).toBe('**')
       expect(ignorePatternToMinimatch('/**')).toBe('/**')
@@ -235,30 +234,26 @@ describe('utils/fs/glob', () => {
     })
 
     it('prepends **/ for patterns without slashes', async () => {
-      const { ignorePatternToMinimatch } = await import(
-        '../../../../src/utils/fs/glob.mts'
-      )
+      const { ignorePatternToMinimatch } =
+        await import('../../../../src/utils/fs/glob.mts')
       expect(ignorePatternToMinimatch('node_modules')).toBe('**/node_modules')
     })
 
     it('strips leading slash and treats as project-rooted', async () => {
-      const { ignorePatternToMinimatch } = await import(
-        '../../../../src/utils/fs/glob.mts'
-      )
+      const { ignorePatternToMinimatch } =
+        await import('../../../../src/utils/fs/glob.mts')
       expect(ignorePatternToMinimatch('/dist')).toBe('dist')
     })
 
     it('appends /* for patterns ending in /**', async () => {
-      const { ignorePatternToMinimatch } = await import(
-        '../../../../src/utils/fs/glob.mts'
-      )
+      const { ignorePatternToMinimatch } =
+        await import('../../../../src/utils/fs/glob.mts')
       expect(ignorePatternToMinimatch('build/**')).toBe('build/**/*')
     })
 
     it('escapes brace + paren characters from gitignore-literal to minimatch-safe', async () => {
-      const { ignorePatternToMinimatch } = await import(
-        '../../../../src/utils/fs/glob.mts'
-      )
+      const { ignorePatternToMinimatch } =
+        await import('../../../../src/utils/fs/glob.mts')
       // gitignore treats `{a,b}` as literal; minimatch treats it as expansion.
       // Escape so minimatch matches the literal string.
       expect(ignorePatternToMinimatch('src/{a,b}.js')).toContain('\\{')
@@ -266,43 +261,38 @@ describe('utils/fs/glob', () => {
     })
 
     it('passes negation prefix through', async () => {
-      const { ignorePatternToMinimatch } = await import(
-        '../../../../src/utils/fs/glob.mts'
-      )
+      const { ignorePatternToMinimatch } =
+        await import('../../../../src/utils/fs/glob.mts')
       expect(ignorePatternToMinimatch('!keep.txt')).toBe('!**/keep.txt')
     })
   })
 
   describe('workspacePatternToGlobPattern', () => {
     it('returns empty for empty input', async () => {
-      const { workspacePatternToGlobPattern } = await import(
-        '../../../../src/utils/fs/glob.mts'
-      )
+      const { workspacePatternToGlobPattern } =
+        await import('../../../../src/utils/fs/glob.mts')
       expect(workspacePatternToGlobPattern('')).toBe('')
     })
 
     it('appends /*/package.json for trailing-slash workspaces', async () => {
-      const { workspacePatternToGlobPattern } = await import(
-        '../../../../src/utils/fs/glob.mts'
-      )
+      const { workspacePatternToGlobPattern } =
+        await import('../../../../src/utils/fs/glob.mts')
       expect(workspacePatternToGlobPattern('packages/')).toBe(
         'packages//*/package.json',
       )
     })
 
     it('appends /*/**/package.json for /** workspaces', async () => {
-      const { workspacePatternToGlobPattern } = await import(
-        '../../../../src/utils/fs/glob.mts'
-      )
+      const { workspacePatternToGlobPattern } =
+        await import('../../../../src/utils/fs/glob.mts')
       expect(workspacePatternToGlobPattern('packages/**')).toBe(
         'packages/**/*/**/package.json',
       )
     })
 
     it('appends /package.json for plain workspaces', async () => {
-      const { workspacePatternToGlobPattern } = await import(
-        '../../../../src/utils/fs/glob.mts'
-      )
+      const { workspacePatternToGlobPattern } =
+        await import('../../../../src/utils/fs/glob.mts')
       expect(workspacePatternToGlobPattern('packages/cli')).toBe(
         'packages/cli/package.json',
       )
@@ -311,9 +301,8 @@ describe('utils/fs/glob', () => {
 
   describe('ignoreFileLinesToGlobPatterns', () => {
     it('skips blank and comment lines', async () => {
-      const { ignoreFileLinesToGlobPatterns } = await import(
-        '../../../../src/utils/fs/glob.mts'
-      )
+      const { ignoreFileLinesToGlobPatterns } =
+        await import('../../../../src/utils/fs/glob.mts')
       const result = ignoreFileLinesToGlobPatterns(
         ['', '# comment', 'node_modules', ''],
         '/repo/.gitignore',
@@ -323,9 +312,8 @@ describe('utils/fs/glob', () => {
     })
 
     it('preserves negation patterns with relative path joined', async () => {
-      const { ignoreFileLinesToGlobPatterns } = await import(
-        '../../../../src/utils/fs/glob.mts'
-      )
+      const { ignoreFileLinesToGlobPatterns } =
+        await import('../../../../src/utils/fs/glob.mts')
       const result = ignoreFileLinesToGlobPatterns(
         ['!keep'],
         '/repo/sub/.gitignore',
@@ -339,9 +327,8 @@ describe('utils/fs/glob', () => {
 
   describe('ignoreFileToGlobPatterns', () => {
     it('splits on \\r?\\n and threads through ignoreFileLinesToGlobPatterns', async () => {
-      const { ignoreFileToGlobPatterns } = await import(
-        '../../../../src/utils/fs/glob.mts'
-      )
+      const { ignoreFileToGlobPatterns } =
+        await import('../../../../src/utils/fs/glob.mts')
       const result = ignoreFileToGlobPatterns(
         '# comment\nnode_modules\r\ndist',
         '/repo/.gitignore',
@@ -357,9 +344,8 @@ describe('utils/fs/glob', () => {
       safeReadFile.mockResolvedValueOnce(
         'packages:\n  - "packages/*"\n  - "apps/*"\n',
       )
-      const { getWorkspaceGlobs } = await import(
-        '../../../../src/utils/fs/glob.mts'
-      )
+      const { getWorkspaceGlobs } =
+        await import('../../../../src/utils/fs/glob.mts')
       const result = await getWorkspaceGlobs('pnpm', '/repo')
       // Workspace patterns are converted to glob form ("packages/*" → "packages/*/").
       expect(Array.isArray(result)).toBe(true)
@@ -369,9 +355,8 @@ describe('utils/fs/glob', () => {
     it('returns empty array when pnpm-workspace.yaml is missing', async () => {
       const { safeReadFile } = vi.mocked(await import('@socketsecurity/lib/fs'))
       safeReadFile.mockResolvedValueOnce(undefined as any)
-      const { getWorkspaceGlobs } = await import(
-        '../../../../src/utils/fs/glob.mts'
-      )
+      const { getWorkspaceGlobs } =
+        await import('../../../../src/utils/fs/glob.mts')
       const result = await getWorkspaceGlobs('pnpm', '/repo')
       expect(result).toEqual([])
     })
@@ -379,9 +364,8 @@ describe('utils/fs/glob', () => {
     it('returns empty array when pnpm-workspace.yaml is malformed', async () => {
       const { safeReadFile } = vi.mocked(await import('@socketsecurity/lib/fs'))
       safeReadFile.mockResolvedValueOnce('this is not :::valid::: yaml{{{')
-      const { getWorkspaceGlobs } = await import(
-        '../../../../src/utils/fs/glob.mts'
-      )
+      const { getWorkspaceGlobs } =
+        await import('../../../../src/utils/fs/glob.mts')
       const result = await getWorkspaceGlobs('pnpm', '/repo')
       expect(result).toEqual([])
     })
@@ -392,9 +376,8 @@ describe('utils/fs/glob', () => {
       const { safeReadFile } = vi.mocked(await import('@socketsecurity/lib/fs'))
       // pnpm-workspace.yaml missing → empty workspaceGlobs → early-return [].
       safeReadFile.mockResolvedValueOnce(undefined as any)
-      const { globWorkspace } = await import(
-        '../../../../src/utils/fs/glob.mts'
-      )
+      const { globWorkspace } =
+        await import('../../../../src/utils/fs/glob.mts')
       const result = await globWorkspace('pnpm', '/nonexistent/repo')
       expect(result).toEqual([])
     })

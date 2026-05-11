@@ -31,11 +31,15 @@ describe('env/socket-patch-version', () => {
 
   it('throws when the env var is missing', () => {
     delete process.env['INLINED_SOCKET_PATCH_VERSION']
-    expect(() => getSocketPatchVersion()).toThrow(/INLINED_SOCKET_PATCH_VERSION/)
+    expect(() => getSocketPatchVersion()).toThrow(
+      /INLINED_SOCKET_PATCH_VERSION/,
+    )
   })
 
   it('throws when the env var is the empty string', () => {
     process.env['INLINED_SOCKET_PATCH_VERSION'] = ''
-    expect(() => getSocketPatchVersion()).toThrow(/INLINED_SOCKET_PATCH_VERSION/)
+    expect(() => getSocketPatchVersion()).toThrow(
+      /INLINED_SOCKET_PATCH_VERSION/,
+    )
   })
 })

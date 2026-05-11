@@ -173,9 +173,7 @@ export async function checkForUpdates(
       return false
     }
   } catch (e) {
-    loggerLocal.warn(
-      `Failed to access cache: ${errorMessage(e)}`,
-    )
+    loggerLocal.warn(`Failed to access cache: ${errorMessage(e)}`)
     record = undefined
   }
 
@@ -207,15 +205,11 @@ export async function checkForUpdates(
           version: updateResult.latest,
         })
       } catch (e) {
-        loggerLocal.warn(
-          `Failed to update cache: ${errorMessage(e)}`,
-        )
+        loggerLocal.warn(`Failed to update cache: ${errorMessage(e)}`)
         // Continue anyway - cache update failure is not critical.
       }
     } catch (e) {
-      loggerLocal.log(
-        `Failed to fetch latest version: ${errorMessage(e)}`,
-      )
+      loggerLocal.log(`Failed to fetch latest version: ${errorMessage(e)}`)
 
       // Use cached version if available.
       if (record) {
@@ -272,9 +266,7 @@ export async function checkForUpdates(
           )
         }
       } catch (e) {
-        loggerLocal.warn(
-          `Failed to set up notification: ${errorMessage(e)}`,
-        )
+        loggerLocal.warn(`Failed to set up notification: ${errorMessage(e)}`)
         // Notification failure is not critical - update is still available.
       }
     }
@@ -305,8 +297,6 @@ export async function scheduleUpdateCheck(
     await checkForUpdates(updateOptions)
     /* c8 ignore next 6 - update-check failures are silent and can't be triggered without mocking the entire update pipeline */
   } catch (e) {
-    logger.log(
-      `Update check failed: ${errorMessage(e)}`,
-    )
+    logger.log(`Update check failed: ${errorMessage(e)}`)
   }
 }

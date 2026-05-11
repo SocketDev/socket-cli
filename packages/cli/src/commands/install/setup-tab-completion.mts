@@ -16,6 +16,30 @@ const require = createRequire(import.meta.url)
 
 import type { CResult } from '../../types.mts'
 
+export function getTabCompletionScriptRaw(): CResult<string> {
+  // Resolve the @socketsecurity/cli package root to find the data directory.
+  // This works whether running from source, installed globally, or via npx/dlx.
+  let sourcePath: string
+  try {
+    const cliPackageJson = require.resolve('@socketsecurity/cli/package.json')
+    const cliPackageRoot = path.dirname(cliPackageJson)
+    sourcePath = path.join(cliPackageRoot, 'data', 'socket-completion.bash')
+    /* c8 ignore next 4 - fallback for source-tree development; require.resolve always succeeds in tests because the workspace package is installed */
+  } catch {
+    sourcePath = path.resolve(__dirname, '../../../data/socket-completion.bash')
+  }
+
+  if (!fs.existsSync(sourcePath)) {
+    return {
+      ok: false,
+      message: 'Source not found.',
+      cause: `Unable to find the source tab completion bash script that Socket should ship. Expected to find it in \`${sourcePath}\` but it was not there.`,
+    }
+  }
+
+  return { ok: true, data: fs.readFileSync(sourcePath, 'utf8') }
+}
+
 export async function setupTabCompletion(targetName: string): Promise<
   CResult<{
     actions: string[]
@@ -86,30 +110,6 @@ export async function setupTabCompletion(targetName: string): Promise<
       targetPath,
     },
   }
-}
-
-export function getTabCompletionScriptRaw(): CResult<string> {
-  // Resolve the @socketsecurity/cli package root to find the data directory.
-  // This works whether running from source, installed globally, or via npx/dlx.
-  let sourcePath: string
-  try {
-    const cliPackageJson = require.resolve('@socketsecurity/cli/package.json')
-    const cliPackageRoot = path.dirname(cliPackageJson)
-    sourcePath = path.join(cliPackageRoot, 'data', 'socket-completion.bash')
-    /* c8 ignore next 4 - fallback for source-tree development; require.resolve always succeeds in tests because the workspace package is installed */
-  } catch {
-    sourcePath = path.resolve(__dirname, '../../../data/socket-completion.bash')
-  }
-
-  if (!fs.existsSync(sourcePath)) {
-    return {
-      ok: false,
-      message: 'Source not found.',
-      cause: `Unable to find the source tab completion bash script that Socket should ship. Expected to find it in \`${sourcePath}\` but it was not there.`,
-    }
-  }
-
-  return { ok: true, data: fs.readFileSync(sourcePath, 'utf8') }
 }
 
 export function updateInstalledTabCompletionScript(

@@ -4,6 +4,47 @@ import type { CommandDefinition, FlagDefinition } from './registry-types.mjs'
 import type { CommandRegistry } from './registry.mts'
 
 /**
+ * Format a flag definition for help output.
+ *
+ * @param name - Flag name
+ * @param def - Flag definition
+ * @returns Formatted flag line
+ */
+export function formatFlag(name: string, def: FlagDefinition): string {
+  const parts: string[] = []
+
+  // Flag name with alias
+  const flagName = def.alias ? `--${name}, -${def.alias}` : `--${name}`
+  parts.push(flagName.padEnd(20))
+
+  // Type indicator
+  const typeIndicator = getTypeIndicator(def)
+  if (typeIndicator) {
+    parts.push(typeIndicator)
+  }
+
+  // Description
+  parts.push(def.description)
+
+  // Default value
+  if (def.default !== undefined) {
+    parts.push(`(default: ${JSON.stringify(def.default)})`)
+  }
+
+  // Required indicator
+  if (def.isRequired) {
+    parts.push('[required]')
+  }
+
+  // Choices
+  if (def.choices && def.choices.length > 0) {
+    parts.push(`[choices: ${def.choices.join(', ')}]`)
+  }
+
+  return parts.join(' ')
+}
+
+/**
  * Generate help text for a command.
  *
  * @param command - Command definition to generate help for
@@ -56,69 +97,6 @@ export function generateCommandHelp(command: CommandDefinition): string {
 }
 
 /**
- * Format a flag definition for help output.
- *
- * @param name - Flag name
- * @param def - Flag definition
- * @returns Formatted flag line
- */
-export function formatFlag(name: string, def: FlagDefinition): string {
-  const parts: string[] = []
-
-  // Flag name with alias
-  const flagName = def.alias ? `--${name}, -${def.alias}` : `--${name}`
-  parts.push(flagName.padEnd(20))
-
-  // Type indicator
-  const typeIndicator = getTypeIndicator(def)
-  if (typeIndicator) {
-    parts.push(typeIndicator)
-  }
-
-  // Description
-  parts.push(def.description)
-
-  // Default value
-  if (def.default !== undefined) {
-    parts.push(`(default: ${JSON.stringify(def.default)})`)
-  }
-
-  // Required indicator
-  if (def.isRequired) {
-    parts.push('[required]')
-  }
-
-  // Choices
-  if (def.choices && def.choices.length > 0) {
-    parts.push(`[choices: ${def.choices.join(', ')}]`)
-  }
-
-  return parts.join(' ')
-}
-
-/**
- * Get type indicator for flag definition.
- *
- * @param def - Flag definition
- * @returns Type indicator string or undefined
- */
-export function getTypeIndicator(def: FlagDefinition): string | undefined {
-  switch (def.type) {
-    case 'string':
-      return '<string>'
-    case 'number':
-      return '<number>'
-    case 'array':
-      return '<value...>'
-    case 'boolean':
-      // Boolean flags don't need type indicator
-      return undefined
-    default:
-      return undefined
-  }
-}
-
-/**
  * Generate help text listing all available commands.
  *
  * @param registry - Command registry instance
@@ -161,6 +139,28 @@ export function generateGlobalHelp(registry: CommandRegistry): string {
   lines.push('')
 
   return lines.join('\n')
+}
+
+/**
+ * Get type indicator for flag definition.
+ *
+ * @param def - Flag definition
+ * @returns Type indicator string or undefined
+ */
+export function getTypeIndicator(def: FlagDefinition): string | undefined {
+  switch (def.type) {
+    case 'string':
+      return '<string>'
+    case 'number':
+      return '<number>'
+    case 'array':
+      return '<value...>'
+    case 'boolean':
+      // Boolean flags don't need type indicator
+      return undefined
+    default:
+      return undefined
+  }
 }
 
 /**

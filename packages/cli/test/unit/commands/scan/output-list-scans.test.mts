@@ -65,17 +65,17 @@ import { outputListScans } from '../../../../src/commands/scan/output-list-scans
 import type { CResult } from '../../../../src/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-// Helper to create success result.
-function createSuccessResult<T>(data: T): CResult<T> {
-  return { ok: true, data }
-}
-
 // Helper to create error result.
 function createErrorResult(
   message: string,
   options: { code?: number; cause?: string } = {},
 ): CResult<never> {
   return { ok: false, message, ...options }
+}
+
+// Helper to create success result.
+function createSuccessResult<T>(data: T): CResult<T> {
+  return { ok: true, data }
 }
 
 describe('outputListScans', () => {

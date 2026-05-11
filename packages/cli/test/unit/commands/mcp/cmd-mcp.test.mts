@@ -48,49 +48,47 @@ const { mockHandleMcp, mockMeowOrExit } = vi.hoisted(() => ({
   // from the argv each test passes in, mimicking what meowOrExit
   // would produce. We parse a tiny subset of argv to keep the test
   // realistic (the real parsing is exercised in meow.test.mts).
-  mockMeowOrExit: vi.fn(
-    (input: { argv: string[] | readonly string[] }) => {
-      const argv = [...input.argv]
-      const flags: Record<string, unknown> = {
-        http: false,
-        'oauth-client-id': '',
-        'oauth-client-secret': '',
-        'oauth-issuer': '',
-        'oauth-required-scopes': '',
-        port: 3000,
-        'trust-proxy': false,
+  mockMeowOrExit: vi.fn((input: { argv: string[] | readonly string[] }) => {
+    const argv = [...input.argv]
+    const flags: Record<string, unknown> = {
+      http: false,
+      'oauth-client-id': '',
+      'oauth-client-secret': '',
+      'oauth-issuer': '',
+      'oauth-required-scopes': '',
+      port: 3000,
+      'trust-proxy': false,
+    }
+    for (let i = 0; i < argv.length; i++) {
+      const a = argv[i]!
+      if (a === '--http') {
+        flags['http'] = true
+      } else if (a === '--trust-proxy') {
+        flags['trust-proxy'] = true
+      } else if (a === '--port') {
+        flags['port'] = Number(argv[++i])
+      } else if (a.startsWith('--port=')) {
+        flags['port'] = Number(a.slice('--port='.length))
+      } else if (a === '--oauth-issuer') {
+        flags['oauth-issuer'] = argv[++i]
+      } else if (a === '--oauth-client-id') {
+        flags['oauth-client-id'] = argv[++i]
+      } else if (a === '--oauth-client-secret') {
+        flags['oauth-client-secret'] = argv[++i]
+      } else if (a === '--oauth-required-scopes') {
+        flags['oauth-required-scopes'] = argv[++i]
       }
-      for (let i = 0; i < argv.length; i++) {
-        const a = argv[i]!
-        if (a === '--http') {
-          flags['http'] = true
-        } else if (a === '--trust-proxy') {
-          flags['trust-proxy'] = true
-        } else if (a === '--port') {
-          flags['port'] = Number(argv[++i])
-        } else if (a.startsWith('--port=')) {
-          flags['port'] = Number(a.slice('--port='.length))
-        } else if (a === '--oauth-issuer') {
-          flags['oauth-issuer'] = argv[++i]
-        } else if (a === '--oauth-client-id') {
-          flags['oauth-client-id'] = argv[++i]
-        } else if (a === '--oauth-client-secret') {
-          flags['oauth-client-secret'] = argv[++i]
-        } else if (a === '--oauth-required-scopes') {
-          flags['oauth-required-scopes'] = argv[++i]
-        }
-      }
-      return {
-        flags,
-        help: '',
-        input: [],
-        pkg: {},
-        showHelp: vi.fn(),
-        showVersion: vi.fn(),
-        unknownFlags: [],
-      }
-    },
-  ),
+    }
+    return {
+      flags,
+      help: '',
+      input: [],
+      pkg: {},
+      showHelp: vi.fn(),
+      showVersion: vi.fn(),
+      unknownFlags: [],
+    }
+  }),
 }))
 
 vi.mock('../../../../src/commands/mcp/handle-mcp.mts', () => ({

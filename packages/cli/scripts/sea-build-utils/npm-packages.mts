@@ -27,16 +27,6 @@ const externalToolsPath = path.join(__dirname, '../../bundle-tools.json')
 const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
 
 /**
- * Get Socket cacache directory for Arborist npm package caching.
- *
- * @returns Path to Socket's cacache directory.
- */
-function getSocketCacacheDir() {
-  const homeDir = process.env['HOME'] || process.env['USERPROFILE'] || tmpdir()
-  return normalizePath(path.join(homeDir, '.socket', '_cacache'))
-}
-
-/**
  * Download a single npm package with full dependency tree using Arborist.
  *
  * Downloads the complete package structure including node_modules/ with all
@@ -82,10 +72,16 @@ async function downloadNpmPackage(packageSpec, targetDir, expectedIntegrity) {
   if (expectedIntegrity) {
     // Extract package name from spec (e.g., "@cyclonedx/cdxgen@12.0.0" -> "@cyclonedx/cdxgen").
     const atIndex = packageSpec.lastIndexOf('@')
-    const packageName = atIndex > 0 ? packageSpec.slice(0, atIndex) : packageSpec
+    const packageName =
+      atIndex > 0 ? packageSpec.slice(0, atIndex) : packageSpec
 
     // Find the installed package in node_modules.
-    const installedPackagePath = path.join(targetDir, 'node_modules', packageName, 'package.json')
+    const installedPackagePath = path.join(
+      targetDir,
+      'node_modules',
+      packageName,
+      'package.json',
+    )
     if (!existsSync(installedPackagePath)) {
       throw new Error(
         `Integrity verification failed: package.json not found at ${installedPackagePath}`,
@@ -93,8 +89,12 @@ async function downloadNpmPackage(packageSpec, targetDir, expectedIntegrity) {
     }
 
     // Read the installed package.json to get the resolved integrity.
-    const installedPackage = JSON.parse(readFileSync(installedPackagePath, 'utf8'))
-    logger.substep(`Verified ${packageName}@${installedPackage.version} installed`)
+    const installedPackage = JSON.parse(
+      readFileSync(installedPackagePath, 'utf8'),
+    )
+    logger.substep(
+      `Verified ${packageName}@${installedPackage.version} installed`,
+    )
   }
 
   logger.success(`${packageSpec} installed with dependencies\n`)
@@ -102,131 +102,13 @@ async function downloadNpmPackage(packageSpec, targetDir, expectedIntegrity) {
 }
 
 /**
- * Download all npm packages with full dependency trees for VFS bundling.
+ * Get Socket cacache directory for Arborist npm package caching.
  *
- * Downloads npm packages specified in bundle-tools.json that have type='npm',
- * installs them with full production dependency trees using Arborist, and packages
- * them into a compressed tar.gz for VFS embedding.
- *
- * npm Packages:
- * - @coana-tech/cli: Static analysis and reachability detection.
- * - @cyclonedx/cdxgen: CycloneDX SBOM generator.
- * - synp: yarn.lock to package-lock.json converter.
- *
- * Note: socket-patch was migrated from npm to GitHub releases in v2.0.0.
- * It's now bundled as a standalone Rust binary via downloads.mts.
- *
- * Directory Structure:
- * <targetDir>/
- *   └── node_modules/
- *       ├── @coana-tech/cli/
- *       │   ├── bin/coana
- *       │   ├── package.json
- *       │   └── node_modules/  # Dependencies
- *       ├── @cyclonedx/cdxgen/
- *       │   ├── bin/cdxgen
- *       │   ├── package.json
- *       │   └── node_modules/  # Dependencies
- *       └── synp/
- *           ├── bin/synp
- *           ├── package.json
- *           └── node_modules/  # Dependencies
- *
- * @returns Promise resolving to path of tar.gz archive, or null if no npm packages defined.
- *
- * @example
- * const tarGzPath = await downloadNpmPackages()
- * // Returns: '../build-infra/build/npm-packages/npm-packages.tar.gz'
+ * @returns Path to Socket's cacache directory.
  */
-export async function downloadNpmPackages() {
-  const rootPath = getRootPath()
-  const npmPackagesDir = normalizePath(
-    path.join(rootPath, 'packages/build-infra/build/npm-packages'),
-  )
-  const tarGzPath = normalizePath(
-    path.join(npmPackagesDir, 'npm-packages.tar.gz'),
-  )
-
-  // Check if tar.gz already exists and is valid.
-  if (existsSync(tarGzPath)) {
-    const stats = await fs.stat(tarGzPath)
-
-    // Validate cached file is not empty or suspiciously small (> 1KB).
-    if (stats.size < 1024) {
-      logger.warn(
-        `Cached npm packages tar.gz is too small (${stats.size} bytes), rebuilding...`,
-      )
-      await safeDelete(tarGzPath)
-    } else {
-      logger.log(`npm packages tar.gz already exists: ${tarGzPath}`)
-      return tarGzPath
-    }
-  }
-
-  // Collect npm packages from bundle-tools.json.
-  const npmPackages = []
-  for (const [toolName, toolConfig] of Object.entries(externalTools)) {
-    if (toolConfig.packageManager === 'npm') {
-      npmPackages.push({
-        integrity: toolConfig.integrity,
-        name: toolName,
-        package: toolName,
-        version: toolConfig.version,
-      })
-    }
-  }
-
-  if (npmPackages.length === 0) {
-    logger.warn('No npm packages defined in bundle-tools.json')
-    return undefined
-  }
-
-  logger.step('Downloading npm packages with full dependency trees')
-  await safeMkdir(npmPackagesDir)
-
-  // Create unique temporary directory for package installation (prevents parallel build conflicts).
-  const tempDir = normalizePath(
-    path.join(npmPackagesDir, `temp-${process.pid}-${Date.now()}`),
-  )
-  await safeMkdir(tempDir)
-
-  try {
-    // Download all npm packages with dependencies using Arborist.
-    for (const pkg of npmPackages) {
-      const packageSpec = `${pkg.package}@${pkg.version}`
-      await downloadNpmPackage(packageSpec, tempDir, pkg.integrity)
-    }
-
-    // Verify node_modules directory exists and has content.
-    const nodeModulesDir = path.join(tempDir, 'node_modules')
-    if (!existsSync(nodeModulesDir)) {
-      throw new Error('node_modules directory not created by Arborist')
-    }
-
-    // Package node_modules into compressed tar.gz.
-    logger.substep(`Creating compressed tar.gz: ${path.basename(tarGzPath)}`)
-    const tarResult = await spawn('tar', [
-      '-czf',
-      tarGzPath,
-      '-C',
-      tempDir,
-      'node_modules',
-    ])
-
-    if (tarResult && tarResult.code !== 0) {
-      throw new Error('Failed to create npm packages tar.gz')
-    }
-
-    const tarStats = await fs.stat(tarGzPath)
-    logger.success(
-      `npm packages packaged: ${(tarStats.size / 1_024 / 1_024).toFixed(2)} MB\n`,
-    )
-
-    return tarGzPath
-  } finally {
-    // Clean up temporary directory.
-    await safeDelete(tempDir)
-  }
+function getSocketCacacheDir() {
+  const homeDir = process.env['HOME'] || process.env['USERPROFILE'] || tmpdir()
+  return normalizePath(path.join(homeDir, '.socket', '_cacache'))
 }
 
 /**
@@ -365,5 +247,133 @@ export async function combineVfsArchives(
   } finally {
     // Clean up extracted files.
     await safeDelete(vfsDir)
+  }
+}
+
+/**
+ * Download all npm packages with full dependency trees for VFS bundling.
+ *
+ * Downloads npm packages specified in bundle-tools.json that have type='npm',
+ * installs them with full production dependency trees using Arborist, and packages
+ * them into a compressed tar.gz for VFS embedding.
+ *
+ * npm Packages:
+ * - @coana-tech/cli: Static analysis and reachability detection.
+ * - @cyclonedx/cdxgen: CycloneDX SBOM generator.
+ * - synp: yarn.lock to package-lock.json converter.
+ *
+ * Note: socket-patch was migrated from npm to GitHub releases in v2.0.0.
+ * It's now bundled as a standalone Rust binary via downloads.mts.
+ *
+ * Directory Structure:
+ * <targetDir>/
+ *   └── node_modules/
+ *       ├── @coana-tech/cli/
+ *       │   ├── bin/coana
+ *       │   ├── package.json
+ *       │   └── node_modules/  # Dependencies
+ *       ├── @cyclonedx/cdxgen/
+ *       │   ├── bin/cdxgen
+ *       │   ├── package.json
+ *       │   └── node_modules/  # Dependencies
+ *       └── synp/
+ *           ├── bin/synp
+ *           ├── package.json
+ *           └── node_modules/  # Dependencies
+ *
+ * @returns Promise resolving to path of tar.gz archive, or null if no npm packages defined.
+ *
+ * @example
+ * const tarGzPath = await downloadNpmPackages()
+ * // Returns: '../build-infra/build/npm-packages/npm-packages.tar.gz'
+ */
+export async function downloadNpmPackages() {
+  const rootPath = getRootPath()
+  const npmPackagesDir = normalizePath(
+    path.join(rootPath, 'packages/build-infra/build/npm-packages'),
+  )
+  const tarGzPath = normalizePath(
+    path.join(npmPackagesDir, 'npm-packages.tar.gz'),
+  )
+
+  // Check if tar.gz already exists and is valid.
+  if (existsSync(tarGzPath)) {
+    const stats = await fs.stat(tarGzPath)
+
+    // Validate cached file is not empty or suspiciously small (> 1KB).
+    if (stats.size < 1024) {
+      logger.warn(
+        `Cached npm packages tar.gz is too small (${stats.size} bytes), rebuilding...`,
+      )
+      await safeDelete(tarGzPath)
+    } else {
+      logger.log(`npm packages tar.gz already exists: ${tarGzPath}`)
+      return tarGzPath
+    }
+  }
+
+  // Collect npm packages from bundle-tools.json.
+  const npmPackages = []
+  for (const [toolName, toolConfig] of Object.entries(externalTools)) {
+    if (toolConfig.packageManager === 'npm') {
+      npmPackages.push({
+        integrity: toolConfig.integrity,
+        name: toolName,
+        package: toolName,
+        version: toolConfig.version,
+      })
+    }
+  }
+
+  if (npmPackages.length === 0) {
+    logger.warn('No npm packages defined in bundle-tools.json')
+    return undefined
+  }
+
+  logger.step('Downloading npm packages with full dependency trees')
+  await safeMkdir(npmPackagesDir)
+
+  // Create unique temporary directory for package installation (prevents parallel build conflicts).
+  const tempDir = normalizePath(
+    path.join(npmPackagesDir, `temp-${process.pid}-${Date.now()}`),
+  )
+  await safeMkdir(tempDir)
+
+  try {
+    // Download all npm packages with dependencies using Arborist.
+    for (const pkg of npmPackages) {
+      const packageSpec = `${pkg.package}@${pkg.version}`
+      await downloadNpmPackage(packageSpec, tempDir, pkg.integrity)
+    }
+
+    // Verify node_modules directory exists and has content.
+    const nodeModulesDir = path.join(tempDir, 'node_modules')
+    if (!existsSync(nodeModulesDir)) {
+      throw new Error('node_modules directory not created by Arborist')
+    }
+
+    // Package node_modules into compressed tar.gz.
+    logger.substep(`Creating compressed tar.gz: ${path.basename(tarGzPath)}`)
+    const tarResult = await spawn('tar', [
+      '-czf',
+      tarGzPath,
+      '-C',
+      tempDir,
+      'node_modules',
+    ])
+
+    if (tarResult && tarResult.code !== 0) {
+      throw new Error('Failed to create npm packages tar.gz')
+    }
+
+    const tarStats = await fs.stat(tarGzPath)
+    logger.success(
+      `npm packages packaged: ${(tarStats.size / 1_024 / 1_024).toFixed(2)} MB\n`,
+    )
+
+    return tarGzPath
+  } finally {
+    // Clean up temporary directory.
+    await safeDelete(tempDir)
   }
 }

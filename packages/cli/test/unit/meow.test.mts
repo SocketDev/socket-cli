@@ -321,7 +321,9 @@ describe('meow', () => {
       })
 
       expect(() => result.showHelp()).toThrow('exit')
-      expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('Test help'))
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('Test help'),
+      )
       expect(mockExit).toHaveBeenCalledWith(2)
 
       mockExit.mockRestore()

@@ -29,7 +29,10 @@ import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import { getDefaultApiToken, getExtraCaCerts } from './sdk.mts'
 
-import type { HttpRequestOptions, HttpResponse } from '@socketsecurity/lib/http-request'
+import type {
+  HttpRequestOptions,
+  HttpResponse,
+} from '@socketsecurity/lib/http-request'
 import { CONFIG_KEY_API_BASE_URL } from '../../constants/config.mts'
 import { API_V0_URL } from '../../constants/socket.mts'
 import { getConfigValueOrUndef } from '../config.mts'

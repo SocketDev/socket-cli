@@ -19,7 +19,7 @@ import {
 const logger = {
   error: (...args) => logger.fail('❌', ...args),
   log: (...args) => logger.log('ℹ️', ...args),
-  success: (...args) => logger.log('✅', ...args),
+  success: (...args) => logger.success('', ...args),
 }
 
 /**
@@ -131,7 +131,7 @@ async function main() {
     await testLocalOverride()
 
     logger.log('='.repeat(60))
-    logger.log('✅ ALL TESTS PASSED!')
+    logger.success('ALL TESTS PASSED!')
     logger.log('='.repeat(60))
     logger.log('')
     logger.log('Phase 1 (Foundation) complete. Ready for Phase 2 (Migration).')

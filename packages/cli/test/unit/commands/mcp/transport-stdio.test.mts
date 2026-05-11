@@ -74,9 +74,8 @@ vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
   StdioServerTransport: MockStdioServerTransport,
 }))
 
-const { runStdioTransport } = await import(
-  '../../../../src/commands/mcp/transport-stdio.mts'
-)
+const { runStdioTransport } =
+  await import('../../../../src/commands/mcp/transport-stdio.mts')
 
 const baseConfig = {
   getApiToken: () => 'test_a',
@@ -140,7 +139,9 @@ describe('runStdioTransport', () => {
 
   it('propagates errors from server.connect to the caller', async () => {
     mockConnect.mockRejectedValueOnce(new Error('transport boom'))
-    await expect(runStdioTransport(baseConfig)).rejects.toThrow('transport boom')
+    await expect(runStdioTransport(baseConfig)).rejects.toThrow(
+      'transport boom',
+    )
   })
 
   it('uses the version from config in the success message', async () => {

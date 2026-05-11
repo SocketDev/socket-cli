@@ -42,29 +42,6 @@ type RepositoryCommandSpec = {
   needsRepoName?: boolean
 }
 
-// If the user wrote `--default-branch` (bare, no value) or
-// `--default-branch=`, meow would coerce it to an empty string and
-// silently persist a blank default-branch name on the repo record.
-// Detect that before meow parses so we can stop with an actionable
-// error instead of saving junk data.
-export function findEmptyDefaultBranch(
-  argv: readonly string[],
-): 'bare' | 'empty-value' | undefined {
-  for (let i = 0; i < argv.length; i += 1) {
-    const arg = argv[i]!
-    if (arg === '--default-branch=' || arg === '--defaultBranch=') {
-      return 'empty-value'
-    }
-    if (arg === '--default-branch' || arg === '--defaultBranch') {
-      const next = argv[i + 1]
-      if (next === undefined || next.startsWith('-')) {
-        return 'bare'
-      }
-    }
-  }
-  return undefined
-}
-
 export function createRepositoryCommand(spec: RepositoryCommandSpec) {
   return {
     description: spec.description,
@@ -229,4 +206,27 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
       })
     },
   }
+}
+
+// If the user wrote `--default-branch` (bare, no value) or
+// `--default-branch=`, meow would coerce it to an empty string and
+// silently persist a blank default-branch name on the repo record.
+// Detect that before meow parses so we can stop with an actionable
+// error instead of saving junk data.
+export function findEmptyDefaultBranch(
+  argv: readonly string[],
+): 'bare' | 'empty-value' | undefined {
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i]!
+    if (arg === '--default-branch=' || arg === '--defaultBranch=') {
+      return 'empty-value'
+    }
+    if (arg === '--default-branch' || arg === '--defaultBranch') {
+      const next = argv[i + 1]
+      if (next === undefined || next.startsWith('-')) {
+        return 'bare'
+      }
+    }
+  }
+  return undefined
 }

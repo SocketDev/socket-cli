@@ -14,50 +14,6 @@ export type ErrorOptions = {
 }
 
 /**
- * Creates mock functions for SDK and API utilities
- */
-export function createSdkMocks() {
-  return {
-    handleApiCall: vi.fn(),
-    setupSdk: vi.fn(),
-    withSdk: vi.fn(),
-  }
-}
-
-/**
- * Creates a mock Socket SDK with common methods
- */
-export function createMockSdk(overrides: Partial<SocketSdk> = {}): any {
-  return {
-    deleteOrgRepo: vi.fn(),
-    createOrgRepo: vi.fn(),
-    getOrgRepo: vi.fn(),
-    getOrgRepoList: vi.fn(),
-    updateOrgRepo: vi.fn(),
-    getQuota: vi.fn(),
-    getOrganizations: vi.fn(),
-    deleteOrgFullScan: vi.fn(),
-    getOrgFullScanList: vi.fn(),
-    getOrgFullScanMetadata: vi.fn(),
-    getSupportedScanFiles: vi.fn(),
-    getOrgAnalytics: vi.fn(),
-    getRepoAnalytics: vi.fn(),
-    batchPackageFetch: vi.fn(),
-    ...overrides,
-  }
-}
-
-/**
- * Creates a successful CResult
- */
-export function createSuccessResult<T>(data: T): CResult<T> {
-  return {
-    ok: true,
-    data,
-  }
-}
-
-/**
  * Creates a failed CResult
  */
 export function createErrorResult(
@@ -88,6 +44,29 @@ export function createLoggerMocks() {
 }
 
 /**
+ * Creates a mock Socket SDK with common methods
+ */
+export function createMockSdk(overrides: Partial<SocketSdk> = {}): any {
+  return {
+    deleteOrgRepo: vi.fn(),
+    createOrgRepo: vi.fn(),
+    getOrgRepo: vi.fn(),
+    getOrgRepoList: vi.fn(),
+    updateOrgRepo: vi.fn(),
+    getQuota: vi.fn(),
+    getOrganizations: vi.fn(),
+    deleteOrgFullScan: vi.fn(),
+    getOrgFullScanList: vi.fn(),
+    getOrgFullScanMetadata: vi.fn(),
+    getSupportedScanFiles: vi.fn(),
+    getOrgAnalytics: vi.fn(),
+    getRepoAnalytics: vi.fn(),
+    batchPackageFetch: vi.fn(),
+    ...overrides,
+  }
+}
+
+/**
  * Creates mock output utility functions
  */
 export function createOutputMocks() {
@@ -98,17 +77,46 @@ export function createOutputMocks() {
 }
 
 /**
- * Setup common module mocks for SDK operations
+ * Creates mock functions for SDK and API utilities
  */
-export function setupSdkModuleMocks() {
-  vi.mock('../../src/utils/socket/api.mts', () => ({
+export function createSdkMocks() {
+  return {
     handleApiCall: vi.fn(),
-  }))
-
-  vi.mock('../../src/utils/socket/sdk.mts', () => ({
     setupSdk: vi.fn(),
     withSdk: vi.fn(),
-  }))
+  }
+}
+
+/**
+ * Creates a successful CResult
+ */
+export function createSuccessResult<T>(data: T): CResult<T> {
+  return {
+    ok: true,
+    data,
+  }
+}
+
+/**
+ * Setup API call failure mock
+ */
+export async function setupApiCallFailure(
+  sdkMethod: string,
+  error: Error | string,
+  code = 404,
+): Promise<void> {
+  const { handleApiCall } = await import('../../src/utils/socket/api.mts')
+  const { setupSdk } = await import('../../src/utils/socket/sdk.mts')
+
+  const errorObj = typeof error === 'string' ? new Error(error) : error
+  const mockSdk = createMockSdk({
+    [sdkMethod]: vi.fn().mockRejectedValue(errorObj),
+  })
+
+  vi.mocked(setupSdk).mockResolvedValue(createSuccessResult(mockSdk))
+  vi.mocked(handleApiCall).mockResolvedValue(
+    createErrorResult(errorObj.message, { code }),
+  )
 }
 
 /**
@@ -144,6 +152,32 @@ export function setupOutputModuleMocks() {
 }
 
 /**
+ * Setup common module mocks for SDK operations
+ */
+export function setupSdkModuleMocks() {
+  vi.mock('../../src/utils/socket/api.mts', () => ({
+    handleApiCall: vi.fn(),
+  }))
+
+  vi.mock('../../src/utils/socket/sdk.mts', () => ({
+    setupSdk: vi.fn(),
+    withSdk: vi.fn(),
+  }))
+}
+
+/**
+ * Setup SDK setup failure mock
+ */
+export async function setupSdkSetupFailure(
+  message: string,
+  cause?: string | undefined,
+): Promise<void> {
+  const { setupSdk } = await import('../../src/utils/socket/sdk.mts')
+  const options: ErrorOptions = cause !== undefined ? { cause } : {}
+  vi.mocked(setupSdk).mockResolvedValue(createErrorResult(message, options))
+}
+
+/**
  * Setup successful SDK mock chain
  */
 export async function setupSuccessfulSdkChain(
@@ -162,38 +196,4 @@ export async function setupSuccessfulSdkChain(
 
   vi.mocked(setupSdk).mockResolvedValue(createSuccessResult(mockSdk))
   vi.mocked(handleApiCall).mockResolvedValue(createSuccessResult(mockData))
-}
-
-/**
- * Setup SDK setup failure mock
- */
-export async function setupSdkSetupFailure(
-  message: string,
-  cause?: string | undefined,
-): Promise<void> {
-  const { setupSdk } = await import('../../src/utils/socket/sdk.mts')
-  const options: ErrorOptions = cause !== undefined ? { cause } : {}
-  vi.mocked(setupSdk).mockResolvedValue(createErrorResult(message, options))
-}
-
-/**
- * Setup API call failure mock
- */
-export async function setupApiCallFailure(
-  sdkMethod: string,
-  error: Error | string,
-  code = 404,
-): Promise<void> {
-  const { handleApiCall } = await import('../../src/utils/socket/api.mts')
-  const { setupSdk } = await import('../../src/utils/socket/sdk.mts')
-
-  const errorObj = typeof error === 'string' ? new Error(error) : error
-  const mockSdk = createMockSdk({
-    [sdkMethod]: vi.fn().mockRejectedValue(errorObj),
-  })
-
-  vi.mocked(setupSdk).mockResolvedValue(createSuccessResult(mockSdk))
-  vi.mocked(handleApiCall).mockResolvedValue(
-    createErrorResult(errorObj.message, { code }),
-  )
 }

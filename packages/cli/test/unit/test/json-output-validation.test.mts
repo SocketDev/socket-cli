@@ -35,9 +35,7 @@ describe('validateSocketJson', () => {
   })
 
   it('throws on malformed JSON', () => {
-    expect(() => validateSocketJson('{not json', 0)).toThrow(
-      /not valid JSON/,
-    )
+    expect(() => validateSocketJson('{not json', 0)).toThrow(/not valid JSON/)
   })
 
   it('truncates long payloads in malformed-JSON errors', () => {
@@ -46,9 +44,9 @@ describe('validateSocketJson', () => {
   })
 
   it('throws when ok field is missing', () => {
-    expect(() =>
-      validateSocketJson(JSON.stringify({ data: 'x' }), 0),
-    ).toThrow(/missing boolean "ok"/)
+    expect(() => validateSocketJson(JSON.stringify({ data: 'x' }), 0)).toThrow(
+      /missing boolean "ok"/,
+    )
   })
 
   it('throws when ok field is not boolean', () => {
@@ -64,9 +62,9 @@ describe('validateSocketJson', () => {
   })
 
   it('throws when ok:true but data is missing', () => {
-    expect(() =>
-      validateSocketJson(JSON.stringify({ ok: true }), 0),
-    ).toThrow(/must include a non-null "data"/)
+    expect(() => validateSocketJson(JSON.stringify({ ok: true }), 0)).toThrow(
+      /must include a non-null "data"/,
+    )
   })
 
   it('throws when ok:true but data is null', () => {
@@ -82,9 +80,9 @@ describe('validateSocketJson', () => {
   })
 
   it('throws when ok:false but message is missing', () => {
-    expect(() =>
-      validateSocketJson(JSON.stringify({ ok: false }), 1),
-    ).toThrow(/must include a non-empty "message"/)
+    expect(() => validateSocketJson(JSON.stringify({ ok: false }), 1)).toThrow(
+      /must include a non-empty "message"/,
+    )
   })
 
   it('throws when ok:false but message is empty', () => {

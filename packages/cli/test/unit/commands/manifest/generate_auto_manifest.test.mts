@@ -15,7 +15,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mockConvertSbtToMaven = vi.hoisted(() => vi.fn().mockResolvedValue({}))
 const mockConvertGradleToMaven = vi.hoisted(() => vi.fn().mockResolvedValue({}))
 const mockHandleManifestConda = vi.hoisted(() => vi.fn().mockResolvedValue({}))
-const mockReadOrDefaultSocketJson = vi.hoisted(() => vi.fn().mockReturnValue({}))
+const mockReadOrDefaultSocketJson = vi.hoisted(() =>
+  vi.fn().mockReturnValue({}),
+)
 const mockLogger = vi.hoisted(() => ({
   info: vi.fn(),
   log: vi.fn(),
@@ -25,24 +27,18 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
-vi.mock(
-  '../../../../src/commands/manifest/convert-sbt-to-maven.mts',
-  () => ({
-    convertSbtToMaven: mockConvertSbtToMaven,
-  }),
-)
+vi.mock('../../../../src/commands/manifest/convert-sbt-to-maven.mts', () => ({
+  convertSbtToMaven: mockConvertSbtToMaven,
+}))
 vi.mock(
   '../../../../src/commands/manifest/convert-gradle-to-maven.mts',
   () => ({
     convertGradleToMaven: mockConvertGradleToMaven,
   }),
 )
-vi.mock(
-  '../../../../src/commands/manifest/handle-manifest-conda.mts',
-  () => ({
-    handleManifestConda: mockHandleManifestConda,
-  }),
-)
+vi.mock('../../../../src/commands/manifest/handle-manifest-conda.mts', () => ({
+  handleManifestConda: mockHandleManifestConda,
+}))
 vi.mock('../../../../src/utils/socket/json.mts', () => ({
   readOrDefaultSocketJson: mockReadOrDefaultSocketJson,
 }))

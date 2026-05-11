@@ -84,30 +84,10 @@ export interface SocketJson {
   }
 }
 
-export function readOrDefaultSocketJson(cwd: string): SocketJson {
-  const jsonCResult = readSocketJsonSync(cwd, true)
-  return jsonCResult.ok
-    ? jsonCResult.data
-    : // This should be unreachable but it makes TS happy.
-      getDefaultSocketJson()
-}
-
 export async function findSocketJsonUp(
   cwd: string,
 ): Promise<string | undefined> {
   return await findUp(SOCKET_JSON, { onlyFiles: true, cwd })
-}
-
-export async function readOrDefaultSocketJsonUp(
-  cwd: string,
-): Promise<SocketJson> {
-  const socketJsonPath = await findSocketJsonUp(cwd)
-  if (socketJsonPath) {
-    const socketJsonDir = path.dirname(socketJsonPath)
-    const jsonCResult = readSocketJsonSync(socketJsonDir, true)
-    return jsonCResult.ok ? jsonCResult.data : getDefaultSocketJson()
-  }
-  return getDefaultSocketJson()
 }
 
 export function getDefaultSocketJson(): SocketJson {
@@ -120,6 +100,26 @@ export function getDefaultSocketJson(): SocketJson {
     '|_____|___|___|_,_|___|_|.dev': `Warning: This file may be overwritten without warning by \`${SOCKET_JSON.replace('.json', '')} manifest setup\` or other commands`,
     version: 1,
   }
+}
+
+export function readOrDefaultSocketJson(cwd: string): SocketJson {
+  const jsonCResult = readSocketJsonSync(cwd, true)
+  return jsonCResult.ok
+    ? jsonCResult.data
+    : // This should be unreachable but it makes TS happy.
+      getDefaultSocketJson()
+}
+
+export async function readOrDefaultSocketJsonUp(
+  cwd: string,
+): Promise<SocketJson> {
+  const socketJsonPath = await findSocketJsonUp(cwd)
+  if (socketJsonPath) {
+    const socketJsonDir = path.dirname(socketJsonPath)
+    const jsonCResult = readSocketJsonSync(socketJsonDir, true)
+    return jsonCResult.ok ? jsonCResult.data : getDefaultSocketJson()
+  }
+  return getDefaultSocketJson()
 }
 
 export async function readSocketJson(

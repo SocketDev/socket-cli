@@ -67,9 +67,8 @@ vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
   getDefaultApiToken: vi.fn(() => 'test_default'),
 }))
 
-const { runHttpTransport } = await import(
-  '../../../../src/commands/mcp/transport-http.mts'
-)
+const { runHttpTransport } =
+  await import('../../../../src/commands/mcp/transport-http.mts')
 
 // We boot a real http.Server and need to tear it down between tests.
 // runHttpTransport doesn't return a stop handle, so we discover the
@@ -830,7 +829,9 @@ describe('runHttpTransport — OAuth enabled', () => {
   }
 
   async function mockIssuerServer(opts: {
-    introspectionResponse: Record<string, unknown> | (() => Record<string, unknown>)
+    introspectionResponse:
+      | Record<string, unknown>
+      | (() => Record<string, unknown>)
     introspectionStatus?: number
   }): Promise<{ url: string; close: () => Promise<void> }> {
     const { createServer } = require('node:http') as typeof import('node:http')

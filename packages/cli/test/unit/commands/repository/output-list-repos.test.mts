@@ -116,7 +116,15 @@ describe('outputListRepos', () => {
         code: 2,
       })
 
-    await outputListRepos(result, 'json', 1, undefined, 'created_at', 25, 'desc')
+    await outputListRepos(
+      result,
+      'json',
+      1,
+      undefined,
+      'created_at',
+      25,
+      'desc',
+    )
 
     expect(mockLogger.log).toHaveBeenCalled()
     expect(process.exitCode).toBe(2)

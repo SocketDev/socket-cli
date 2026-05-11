@@ -13,7 +13,9 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
 const traverse =
-  typeof traverseImport === 'function' ? traverseImport : (traverseImport as any).default
+  typeof traverseImport === 'function'
+    ? traverseImport
+    : (traverseImport as any).default
 
 /**
  * Map of Unicode property escapes to explicit character ranges.
@@ -205,7 +207,10 @@ export function transformUnicodePropertyEscapes(content: string) {
     })
   } catch (e) {
     // If parsing fails, return content unchanged.
-    logger.warn('Failed to parse code for Unicode transform:', e instanceof Error ? e.message : e)
+    logger.warn(
+      'Failed to parse code for Unicode transform:',
+      e instanceof Error ? e.message : e,
+    )
     return content
   }
 

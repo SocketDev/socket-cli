@@ -7,10 +7,6 @@ import { stripAnsi } from '@socketsecurity/lib/strings'
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()
 
-export function prepareContent(content: string): string {
-  return stripAnsi(content.trim())
-}
-
 export async function convertCondaToRequirements(
   filename: string,
   cwd: string,
@@ -171,4 +167,8 @@ export function convertCondaToRequirementsFromInput(input: string): string {
   }
 
   return prepareContent(keeping.join('\n'))
+}
+
+export function prepareContent(content: string): string {
+  return stripAnsi(content.trim())
 }

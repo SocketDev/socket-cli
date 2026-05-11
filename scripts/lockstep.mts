@@ -289,7 +289,7 @@ function resolveUpstream(
   if (!upstream) {
     const known = Object.keys(manifest.upstreams ?? {}).join(', ') || '(none)'
     messages.push(`unknown upstream alias '${alias}' (known: ${known})`)
-    return undefined
+    return null
   }
   return upstream
 }
@@ -444,9 +444,9 @@ function checkVersionPin(
     messages,
     upstream: row.upstream,
     pinned_sha: row.pinned_sha,
-    pinned_tag: row.pinned_tag ?? undefined,
+    pinned_tag: row.pinned_tag ?? null,
     upgrade_policy: row.upgrade_policy,
-    head_sha: undefined,
+    head_sha: null,
     drift_count: 0,
   }
   if (!upstream) {
@@ -636,7 +636,7 @@ function checkSpecConformance(
     upstream: row.upstream,
     local_impl: row.local_impl,
     spec_version: row.spec_version,
-    spec_path: row.spec_path ?? undefined,
+    spec_path: row.spec_path ?? null,
   }
   if (!upstream) {
     base.severity = 'error'

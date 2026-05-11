@@ -202,7 +202,13 @@ describe('outputAnalytics', () => {
     // The renderer receives the formatted data; just verify it's called.
     await outputAnalytics(
       { ok: true, data: sampleData },
-      { filepath: '', outputKind: 'text', repo: 'my-repo', scope: 'repo', time: 7 },
+      {
+        filepath: '',
+        outputKind: 'text',
+        repo: 'my-repo',
+        scope: 'repo',
+        time: 7,
+      },
     )
 
     expect(mockDisplayAnalyticsWithIocraft).toHaveBeenCalled()

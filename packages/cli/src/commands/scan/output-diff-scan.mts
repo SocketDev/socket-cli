@@ -18,67 +18,6 @@ const logger = getDefaultLogger()
 type DiffScanArtifact =
   SocketSdkSuccessResult<'GetOrgDiffScan'>['data']['artifacts']['added'][number]
 
-export async function outputDiffScan(
-  result: CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>,
-  {
-    depth,
-    file,
-    outputKind,
-  }: {
-    depth: number
-    file: string
-    outputKind: OutputKind
-  },
-): Promise<void> {
-  if (!result.ok) {
-    process.exitCode = result.code ?? 1
-  }
-
-  if (!result.ok) {
-    if (outputKind === 'json') {
-      logger.log(serializeResultJson(result))
-      return
-    }
-    logger.fail(failMsgWithBadge(result.message, result.cause))
-    return
-  }
-
-  const dashboardUrl = result.data.diff_report_url
-  const dashboardMessage = dashboardUrl
-    ? `\n View this diff scan in the Socket dashboard: ${colors.cyan(dashboardUrl)}`
-    : ''
-
-  // When forcing json, or dumping to file, serialize to string such that it
-  // won't get truncated. The only way to dump the full raw JSON to stdout is
-  // to use `--json --file -` (the dash is a standard notation for stdout)
-  if (outputKind === 'json' || file) {
-    await handleJson(result, file, dashboardMessage)
-    return
-  }
-
-  if (outputKind === 'markdown') {
-    await handleMarkdown(result.data)
-    return
-  }
-
-  // In this case neither the --json nor the --file flag was passed
-  // Dump the JSON to CLI and let NodeJS deal with truncation
-
-  logger.log('Diff scan result:')
-  logger.log(
-    util.inspect(result.data, {
-      showHidden: false,
-      depth: depth > 0 ? depth : undefined,
-      colors: true,
-      maxArrayLength: undefined,
-    }),
-  )
-  logger.info(
-    '\n 📝 To display the detailed report in the terminal, use the --json flag. For a friendlier report, use the --markdown flag.\n',
-  )
-  logger.info(dashboardMessage)
-}
-
 export async function handleJson(
   data: CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>,
   file: string,
@@ -221,4 +160,65 @@ export async function handleMarkdown(
   }
 
   logger.log('')
+}
+
+export async function outputDiffScan(
+  result: CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>,
+  {
+    depth,
+    file,
+    outputKind,
+  }: {
+    depth: number
+    file: string
+    outputKind: OutputKind
+  },
+): Promise<void> {
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
+  if (!result.ok) {
+    if (outputKind === 'json') {
+      logger.log(serializeResultJson(result))
+      return
+    }
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
+  const dashboardUrl = result.data.diff_report_url
+  const dashboardMessage = dashboardUrl
+    ? `\n View this diff scan in the Socket dashboard: ${colors.cyan(dashboardUrl)}`
+    : ''
+
+  // When forcing json, or dumping to file, serialize to string such that it
+  // won't get truncated. The only way to dump the full raw JSON to stdout is
+  // to use `--json --file -` (the dash is a standard notation for stdout)
+  if (outputKind === 'json' || file) {
+    await handleJson(result, file, dashboardMessage)
+    return
+  }
+
+  if (outputKind === 'markdown') {
+    await handleMarkdown(result.data)
+    return
+  }
+
+  // In this case neither the --json nor the --file flag was passed
+  // Dump the JSON to CLI and let NodeJS deal with truncation
+
+  logger.log('Diff scan result:')
+  logger.log(
+    util.inspect(result.data, {
+      showHidden: false,
+      depth: depth > 0 ? depth : undefined,
+      colors: true,
+      maxArrayLength: undefined,
+    }),
+  )
+  logger.info(
+    '\n 📝 To display the detailed report in the terminal, use the --json flag. For a friendlier report, use the --markdown flag.\n',
+  )
+  logger.info(dashboardMessage)
 }

@@ -69,7 +69,7 @@ describe('cmd-uv', () => {
     })
 
     it('renders help text via the meow help callback', async () => {
-      mockMeowOrExit.mockImplementation((args) => {
+      mockMeowOrExit.mockImplementation(args => {
         const helpText = args.config.help('socket uv')
         expect(helpText).toContain('socket uv')
         return {
@@ -90,10 +90,14 @@ describe('cmd-uv', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise).process = mockChildProcess
+      mockSpawnPromise.process = mockChildProcess
       mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise })
       mockFilterFlags.mockReturnValue([])
-      const runPromise = cmdUv.run([], { url: import.meta.url }, { parentName: 'socket' })
+      const runPromise = cmdUv.run(
+        [],
+        { url: import.meta.url },
+        { parentName: 'socket' },
+      )
       setImmediate(() => mockChildProcess.emit('exit', 0, undefined))
       await runPromise
       expect(mockMeowOrExit).toHaveBeenCalled()

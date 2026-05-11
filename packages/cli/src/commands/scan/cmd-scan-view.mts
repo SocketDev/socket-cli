@@ -14,7 +14,10 @@ import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
-import type { CliCommandContext, CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
+import type {
+  CliCommandContext,
+  CliSubcommand,
+} from '../../utils/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'
 
 export const CMD_NAME = 'view'

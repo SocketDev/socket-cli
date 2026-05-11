@@ -71,7 +71,9 @@ describe('output-optimize-result', () => {
 
       await outputOptimizeResult(result, 'json')
 
-      expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('"ok":true'))
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('"ok":true'),
+      )
     })
 
     it('outputs JSON for error result', async () => {

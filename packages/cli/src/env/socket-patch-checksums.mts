@@ -18,7 +18,10 @@ const TOOL_NAME = 'Socket Patch'
  */
 export function getSocketPatchChecksums(): SocketPatchChecksums {
   // MUST use direct process.env access for esbuild inlining.
-  return parseChecksums(process.env['INLINED_SOCKET_PATCH_CHECKSUMS'], TOOL_NAME)
+  return parseChecksums(
+    process.env['INLINED_SOCKET_PATCH_CHECKSUMS'],
+    TOOL_NAME,
+  )
 }
 
 /**
@@ -26,6 +29,8 @@ export function getSocketPatchChecksums(): SocketPatchChecksums {
  * In production builds, throws if asset is missing.
  * In dev mode, returns undefined to allow development.
  */
-export function requireSocketPatchChecksum(assetName: string): string | undefined {
+export function requireSocketPatchChecksum(
+  assetName: string,
+): string | undefined {
   return requireChecksum(getSocketPatchChecksums(), assetName, TOOL_NAME)
 }

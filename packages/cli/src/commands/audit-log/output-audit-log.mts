@@ -20,57 +20,6 @@ const logger = getDefaultLogger()
 type AuditLogEvent =
   SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results'][number]
 
-export async function outputAuditLog(
-  result: CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>,
-  {
-    logType,
-    orgSlug,
-    outputKind,
-    page,
-    perPage,
-  }: {
-    logType: string
-    outputKind: OutputKind
-    orgSlug: string
-    page: number
-    perPage: number
-  },
-): Promise<void> {
-  if (!result.ok) {
-    process.exitCode = result.code ?? 1
-  }
-
-  if (outputKind === OUTPUT_JSON) {
-    logger.log(
-      await outputAsJson(result, {
-        logType,
-        orgSlug,
-        page,
-        perPage,
-      }),
-    )
-  }
-
-  if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
-    return
-  }
-
-  if (outputKind === OUTPUT_MARKDOWN) {
-    logger.log(
-      await outputAsMarkdown(result.data, {
-        logType,
-        orgSlug,
-        page,
-        perPage,
-      }),
-    )
-    return
-  }
-
-  outputWithIocraft(result.data, orgSlug)
-}
-
 export async function outputAsJson(
   auditLogs: CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>,
   {
@@ -168,6 +117,57 @@ ${table}
     debugDir(e)
     return 'Failed to generate the markdown report'
   }
+}
+
+export async function outputAuditLog(
+  result: CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>,
+  {
+    logType,
+    orgSlug,
+    outputKind,
+    page,
+    perPage,
+  }: {
+    logType: string
+    outputKind: OutputKind
+    orgSlug: string
+    page: number
+    perPage: number
+  },
+): Promise<void> {
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
+  if (outputKind === OUTPUT_JSON) {
+    logger.log(
+      await outputAsJson(result, {
+        logType,
+        orgSlug,
+        page,
+        perPage,
+      }),
+    )
+  }
+
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
+  if (outputKind === OUTPUT_MARKDOWN) {
+    logger.log(
+      await outputAsMarkdown(result.data, {
+        logType,
+        orgSlug,
+        page,
+        perPage,
+      }),
+    )
+    return
+  }
+
+  outputWithIocraft(result.data, orgSlug)
 }
 
 /**

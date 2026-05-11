@@ -465,9 +465,7 @@ describe('npm-spec utilities', () => {
       mockCreatePurlObject.mockReturnValue(undefined)
 
       // Make the fallback parsing fail by providing an empty string that would result in empty name.
-      expect(() => npmSpecToPurl('')).toThrow(
-        /cannot convert npm spec/,
-      )
+      expect(() => npmSpecToPurl('')).toThrow(/cannot convert npm spec/)
     })
 
     it('includes spec in error message when conversion fails', () => {
@@ -477,9 +475,7 @@ describe('npm-spec utilities', () => {
       mockCreatePurlObject.mockReturnValue(undefined)
 
       // Make fallback parsing fail by providing empty string.
-      expect(() => npmSpecToPurl('')).toThrow(
-        /cannot convert npm spec ""/,
-      )
+      expect(() => npmSpecToPurl('')).toThrow(/cannot convert npm spec ""/)
     })
 
     it('delegates to safeNpmSpecToPurl', () => {

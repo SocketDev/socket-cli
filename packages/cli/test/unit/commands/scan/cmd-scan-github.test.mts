@@ -435,11 +435,7 @@ describe('cmd-scan-github', () => {
       mockDetermineOrgSlug.mockResolvedValueOnce(['', ''])
       mockSuggestOrgSlug.mockResolvedValueOnce(undefined)
 
-      await cmdScanGithub.run(
-        ['--github-token', 'gh_xxx'],
-        importMeta,
-        context,
-      )
+      await cmdScanGithub.run(['--github-token', 'gh_xxx'], importMeta, context)
 
       expect(mockOutputScanGithub).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -456,11 +452,7 @@ describe('cmd-scan-github', () => {
       mockDetermineOrgSlug.mockResolvedValueOnce(['', ''])
       mockSuggestOrgSlug.mockResolvedValueOnce('suggested-org')
 
-      await cmdScanGithub.run(
-        ['--github-token', 'gh_xxx'],
-        importMeta,
-        context,
-      )
+      await cmdScanGithub.run(['--github-token', 'gh_xxx'], importMeta, context)
 
       expect(mockHandleCreateGithubScan).toHaveBeenCalledWith(
         expect.objectContaining({ orgSlug: 'suggested-org' }),

@@ -6,10 +6,7 @@ import { spawn } from '@socketsecurity/lib/spawn'
 
 import { onnxSemanticMatch } from './onnx-match.mts'
 import { outputAskCommand } from './output-ask.mts'
-import {
-  normalizeQuery,
-  wordOverlapMatch,
-} from './word-overlap-match.mts'
+import { normalizeQuery, wordOverlapMatch } from './word-overlap-match.mts'
 
 // Re-export the matchers + helpers so existing import paths keep working.
 export {
@@ -143,6 +140,78 @@ const ENVIRONMENT_KEYWORDS = {
 } as const
 
 /**
+ * Read package.json to get context.
+ */
+export async function getProjectContext(cwd: string): Promise<{
+  hasPackageJson: boolean
+  dependencies?: Record<string, string>
+  devDependencies?: Record<string, string>
+}> {
+  try {
+    const pkgPath = path.join(cwd, 'package.json')
+    const content = await fs.readFile(pkgPath, 'utf8')
+    const pkg = JSON.parse(content)
+    return {
+      hasPackageJson: true,
+      dependencies: pkg.dependencies || {},
+      devDependencies: pkg.devDependencies || {},
+    }
+  } catch (_e) {
+    return { hasPackageJson: false }
+  }
+}
+
+/**
+ * Main handler for ask command.
+ */
+export async function handleAsk(options: HandleAskOptions): Promise<void> {
+  const { execute, explain, query } = options
+
+  // Parse the intent.
+  const intent = await parseIntent(query)
+
+  // Get project context.
+  const context = await getProjectContext(process.cwd())
+
+  // Show what we understood.
+  outputAskCommand({
+    query,
+    intent,
+    context,
+    explain,
+  })
+
+  // If not executing, just show the command.
+  if (!execute) {
+    logger.log('')
+    logger.log('💡 Tip: Add --execute or -e to run this command directly')
+    return
+  }
+
+  // Execute the command.
+  logger.log('')
+  logger.log('🚀 Executing...')
+  logger.log('')
+
+  const result = await spawn('socket', intent.command, {
+    stdio: 'inherit',
+    cwd: process.cwd(),
+  })
+
+  if (!result) {
+    logger.error('Failed to execute command')
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(1)
+  }
+
+  if (result.code !== 0) {
+    logger.error(`Command failed with exit code ${result.code}`)
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(result.code)
+  }
+}
+
+/**
  * Parse natural language query into structured intent.
  */
 export async function parseIntent(query: string): Promise<ParsedIntent> {
@@ -225,7 +294,7 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
     explanation: string
     confidence: number
     score: number
-  } | null = undefined
+  } | undefined = undefined
 
   for (const [action, pattern] of Object.entries(PATTERNS)) {
     if (!pattern) {
@@ -348,76 +417,4 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
   }
 
   return result
-}
-
-/**
- * Read package.json to get context.
- */
-export async function getProjectContext(cwd: string): Promise<{
-  hasPackageJson: boolean
-  dependencies?: Record<string, string>
-  devDependencies?: Record<string, string>
-}> {
-  try {
-    const pkgPath = path.join(cwd, 'package.json')
-    const content = await fs.readFile(pkgPath, 'utf8')
-    const pkg = JSON.parse(content)
-    return {
-      hasPackageJson: true,
-      dependencies: pkg.dependencies || {},
-      devDependencies: pkg.devDependencies || {},
-    }
-  } catch (_e) {
-    return { hasPackageJson: false }
-  }
-}
-
-/**
- * Main handler for ask command.
- */
-export async function handleAsk(options: HandleAskOptions): Promise<void> {
-  const { execute, explain, query } = options
-
-  // Parse the intent.
-  const intent = await parseIntent(query)
-
-  // Get project context.
-  const context = await getProjectContext(process.cwd())
-
-  // Show what we understood.
-  outputAskCommand({
-    query,
-    intent,
-    context,
-    explain,
-  })
-
-  // If not executing, just show the command.
-  if (!execute) {
-    logger.log('')
-    logger.log('💡 Tip: Add --execute or -e to run this command directly')
-    return
-  }
-
-  // Execute the command.
-  logger.log('')
-  logger.log('🚀 Executing...')
-  logger.log('')
-
-  const result = await spawn('socket', intent.command, {
-    stdio: 'inherit',
-    cwd: process.cwd(),
-  })
-
-  if (!result) {
-    logger.error('Failed to execute command')
-    // eslint-disable-next-line n/no-process-exit
-    process.exit(1)
-  }
-
-  if (result.code !== 0) {
-    logger.error(`Command failed with exit code ${result.code}`)
-    // eslint-disable-next-line n/no-process-exit
-    process.exit(result.code)
-  }
 }

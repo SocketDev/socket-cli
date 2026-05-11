@@ -373,10 +373,10 @@ export type GetCveInfoByPackageOptions = {
 export function getCveInfoFromAlertsMap(
   alertsMap: AlertsByPurl,
   options?: GetCveInfoByPackageOptions | undefined,
-): CveInfoByPartialPurl | null {
+): CveInfoByPartialPurl | undefined {
   const filterConfig = toFilterConfig(getOwn(options, 'filter')) as CveFilter
 
-  let infoByPartialPurl: CveInfoByPartialPurl | null = undefined
+  let infoByPartialPurl: CveInfoByPartialPurl | undefined = undefined
   for (const { 0: purl, 1: sockPkgAlerts } of alertsMap) {
     const purlObj = getPurlObject(purl, { throws: false })
     if (!purlObj) {

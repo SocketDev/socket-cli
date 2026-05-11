@@ -86,8 +86,8 @@ describe('setupTabCompletion', () => {
   })
 
   it('creates target dir when it does not exist', async () => {
-    mockExistsSync.mockImplementation((p: string) =>
-      p !== '/home/user/.local/share/socket',
+    mockExistsSync.mockImplementation(
+      (p: string) => p !== '/home/user/.local/share/socket',
     )
 
     await setupTabCompletion('socket')
@@ -129,9 +129,10 @@ describe('setupTabCompletion', () => {
   })
 
   it('handles missing .bashrc gracefully', async () => {
-    mockExistsSync.mockImplementation((p: string) =>
-      // Source script + target dir exist, .bashrc does not.
-      !p.endsWith('.bashrc'),
+    mockExistsSync.mockImplementation(
+      (p: string) =>
+        // Source script + target dir exist, .bashrc does not.
+        !p.endsWith('.bashrc'),
     )
 
     const result = await setupTabCompletion('socket')

@@ -110,13 +110,7 @@ function buildHelp(
   opts: DefineHandoffCommandOptions,
   parentName: string,
 ): (command: string) => string {
-  const {
-    examples,
-    helpNotes,
-    name,
-    showApiRequirements,
-    wrapperHint,
-  } = opts
+  const { examples, helpNotes, name, showApiRequirements, wrapperHint } = opts
 
   return (command: string) => {
     const lines: string[] = []
@@ -143,7 +137,10 @@ function buildHelp(
     }
 
     if (wrapperHint) {
-      lines.push('', `    Use \`socket wrapper on\` to alias this command as \`${name}\`.`)
+      lines.push(
+        '',
+        `    Use \`socket wrapper on\` to alias this command as \`${name}\`.`,
+      )
     }
 
     if (examples.length) {

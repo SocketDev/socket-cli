@@ -45,6 +45,17 @@ vi.mock('@socketsecurity/lib/debug', () => ({
   isDebugNs: vi.fn(() => false),
 }))
 
+// Helper to create a GraphqlResponseError.
+function createGraphqlError(
+  errors: Array<{ type?: string; message: string }>,
+): GraphqlResponseError<unknown> {
+  return new GraphqlResponseError(
+    { method: 'POST', url: 'https://api.github.com/graphql' },
+    { 'x-request-id': 'test' },
+    { data: undefined, errors },
+  )
+}
+
 // Helper to create a RequestError with specific status.
 function createRequestError(
   status: number,
@@ -61,17 +72,6 @@ function createRequestError(
     },
   })
   return error
-}
-
-// Helper to create a GraphqlResponseError.
-function createGraphqlError(
-  errors: Array<{ type?: string; message: string }>,
-): GraphqlResponseError<unknown> {
-  return new GraphqlResponseError(
-    { method: 'POST', url: 'https://api.github.com/graphql' },
-    { 'x-request-id': 'test' },
-    { data: undefined, errors },
-  )
 }
 
 describe('handleGitHubApiError', () => {
@@ -644,9 +644,8 @@ describe('writeCache', () => {
 
 describe('enablePrAutoMerge', () => {
   it('returns enabled true when GraphQL mutation succeeds', async () => {
-    const { enablePrAutoMerge } = await import(
-      '../../../../src/utils/git/github.mts'
-    )
+    const { enablePrAutoMerge } =
+      await import('../../../../src/utils/git/github.mts')
     // This test verifies the function exists and handles the PR object.
     // Full testing would require mocking getOctokitGraphql.
     const mockPr = {
@@ -666,9 +665,8 @@ describe('enablePrAutoMerge', () => {
 
 describe('prExistForBranch', () => {
   it('returns a boolean result', async () => {
-    const { prExistForBranch } = await import(
-      '../../../../src/utils/git/github.mts'
-    )
+    const { prExistForBranch } =
+      await import('../../../../src/utils/git/github.mts')
 
     // Without proper mocking, this will attempt a real API call.
     // The function should handle errors gracefully and return false.
@@ -684,9 +682,8 @@ describe('prExistForBranch', () => {
 
 describe('fetchGhsaDetails', () => {
   it('returns empty map for empty input array', async () => {
-    const { fetchGhsaDetails } = await import(
-      '../../../../src/utils/git/github.mts'
-    )
+    const { fetchGhsaDetails } =
+      await import('../../../../src/utils/git/github.mts')
 
     const result = await fetchGhsaDetails([])
 
@@ -695,9 +692,8 @@ describe('fetchGhsaDetails', () => {
   })
 
   it('returns a Map for valid GHSA IDs', async () => {
-    const { fetchGhsaDetails } = await import(
-      '../../../../src/utils/git/github.mts'
-    )
+    const { fetchGhsaDetails } =
+      await import('../../../../src/utils/git/github.mts')
 
     // Without proper mocking, this will attempt a real API call.
     // The function should handle errors gracefully.
@@ -711,9 +707,8 @@ describe('setGitRemoteGithubRepoUrl', () => {
   it('returns false when GITHUB_SERVER_URL is invalid', async () => {
     // Without proper mocking of GITHUB_SERVER_URL environment variable,
     // this test verifies the function handles the edge case.
-    const { setGitRemoteGithubRepoUrl } = await import(
-      '../../../../src/utils/git/github.mts'
-    )
+    const { setGitRemoteGithubRepoUrl } =
+      await import('../../../../src/utils/git/github.mts')
 
     // The function should return false when it cannot parse the server URL.
     const result = await setGitRemoteGithubRepoUrl(

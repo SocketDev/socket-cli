@@ -43,7 +43,9 @@ async function main() {
       : [[variant, configRecord[variant]]]
 
   const results = await Promise.allSettled(
-    targets.map(({ 0: name, 1: config }) => runBuild(config as BuildOptions, name as string)),
+    targets.map(({ 0: name, 1: config }) =>
+      runBuild(config as BuildOptions, name as string),
+    ),
   )
   const failed = results.filter(r => r.status === 'rejected')
   if (failed.length > 0) {

@@ -18,14 +18,14 @@ import type { MachineModeFlags } from './mode.mts'
 
 let ambientMode = false
 
-export function setMachineOutputMode(flags: MachineModeFlags): void {
-  ambientMode = isMachineOutputMode(flags)
+export function getMachineOutputMode(): boolean {
+  return ambientMode
 }
 
 export function resetMachineOutputMode(): void {
   ambientMode = false
 }
 
-export function getMachineOutputMode(): boolean {
-  return ambientMode
+export function setMachineOutputMode(flags: MachineModeFlags): void {
+  ambientMode = isMachineOutputMode(flags)
 }

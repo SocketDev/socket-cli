@@ -10,10 +10,7 @@
  * use the standard helpers from define-tool-spawn.
  */
 
-import {
-  defineAutoDispatch,
-  defineVfsSpawn,
-} from './define-tool-spawn.mts'
+import { defineAutoDispatch, defineVfsSpawn } from './define-tool-spawn.mts'
 import { spawnDlx } from './spawn.mts'
 import { getSynpVersion } from '../../env/synp-version.mts'
 

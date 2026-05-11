@@ -84,12 +84,12 @@ describe('addSocketWrapper', () => {
     await expect(addSocketWrapper('/etc/protected-file')).rejects.toThrow(
       /failed to append socket aliases \(Permission denied\)/,
     )
-    await expect(
-      addSocketWrapper('/etc/protected-file'),
-    ).rejects.toMatchObject({
-      name: 'FileSystemError',
-      path: '/etc/protected-file',
-    })
+    await expect(addSocketWrapper('/etc/protected-file')).rejects.toMatchObject(
+      {
+        name: 'FileSystemError',
+        path: '/etc/protected-file',
+      },
+    )
 
     expect(fs.promises.appendFile).toHaveBeenCalledWith(
       '/etc/protected-file',

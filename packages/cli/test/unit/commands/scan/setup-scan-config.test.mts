@@ -112,9 +112,7 @@ describe('setup-scan-config', () => {
     })
 
     it('cancels when user aborts the workspace prompt', async () => {
-      mockInput
-        .mockResolvedValueOnce('repo')
-        .mockResolvedValueOnce(undefined)
+      mockInput.mockResolvedValueOnce('repo').mockResolvedValueOnce(undefined)
       const config: any = {}
       const result = await configureScan(config, '/cwd')
       expect(result).toEqual({ ok: true, data: { canceled: true } })
@@ -138,7 +136,11 @@ describe('setup-scan-config', () => {
         .mockResolvedValueOnce('') // empty branch
       // autoManifest + alwaysReport selects.
       mockSelect.mockResolvedValueOnce('').mockResolvedValueOnce('')
-      const config: any = { repo: 'old-repo', workspace: 'old-ws', branch: 'old-br' }
+      const config: any = {
+        repo: 'old-repo',
+        workspace: 'old-ws',
+        branch: 'old-br',
+      }
       const result = await configureScan(config, '/cwd')
       expect(result.ok).toBe(true)
       expect(config.repo).toBeUndefined()
@@ -303,9 +305,7 @@ describe('setup-scan-config', () => {
 
     it('cancels when githubApiUrl prompt is aborted', async () => {
       mockSelect.mockResolvedValueOnce('no')
-      mockInput
-        .mockResolvedValueOnce('repos')
-        .mockResolvedValueOnce(undefined) // githubApiUrl canceled
+      mockInput.mockResolvedValueOnce('repos').mockResolvedValueOnce(undefined) // githubApiUrl canceled
       const config: any = {}
       const result = await configureGithub(config, '/cwd')
       expect(result).toEqual({ ok: true, data: { canceled: true } })

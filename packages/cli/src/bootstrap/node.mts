@@ -32,15 +32,6 @@ import {
 const logger = getDefaultLogger()
 
 /**
- * Check if CLI is installed.
- */
-function isCliInstalled(): boolean {
-  const entryPoint = getCliEntryPoint()
-  const packageJson = `${getCliPackageDir()}/package.json`
-  return existsSync(entryPoint) && existsSync(packageJson)
-}
-
-/**
  * Download CLI using npm pack command.
  * This delegates to npm which handles downloading and extracting the latest version.
  */
@@ -115,6 +106,15 @@ async function downloadCli(): Promise<void> {
       }
     })
   })
+}
+
+/**
+ * Check if CLI is installed.
+ */
+function isCliInstalled(): boolean {
+  const entryPoint = getCliEntryPoint()
+  const packageJson = `${getCliPackageDir()}/package.json`
+  return existsSync(entryPoint) && existsSync(packageJson)
 }
 
 /**

@@ -130,7 +130,10 @@ describe('cmd-manifest-cdxgen', () => {
 
     describe('exit code handling', () => {
       it('skips exit/kill when both code and signal are null', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: undefined, signal: undefined })
+        const mockSpawnPromise = Promise.resolve({
+          code: undefined,
+          signal: undefined,
+        })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi
@@ -179,7 +182,10 @@ describe('cmd-manifest-cdxgen', () => {
       })
 
       it('should propagate specific exit code from cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 42, signal: undefined })
+        const mockSpawnPromise = Promise.resolve({
+          code: 42,
+          signal: undefined,
+        })
         mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
 
         const mockExit = vi

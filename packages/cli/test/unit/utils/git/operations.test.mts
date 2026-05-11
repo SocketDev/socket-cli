@@ -604,7 +604,11 @@ describe('git utilities', () => {
         .mockRejectedValueOnce(new Error('trunk not found'))
         .mockRejectedValueOnce(new Error('default not found'))
         // First remote succeeds.
-        .mockResolvedValueOnce({ status: 0, stdout: 'refs/heads/main', stderr: '' } as any)
+        .mockResolvedValueOnce({
+          status: 0,
+          stdout: 'refs/heads/main',
+          stderr: '',
+        } as any)
 
       const result = await detectDefaultBranch('/test/dir')
       expect(result).toBe('main')

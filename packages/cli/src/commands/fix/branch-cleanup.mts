@@ -16,6 +16,37 @@ import {
 const logger = getDefaultLogger()
 
 /**
+ * Clean up branches in catch block after unexpected error.
+ * Safe to delete both remote and local since no PR was created.
+ */
+export async function cleanupErrorBranches(
+  branch: string,
+  cwd: string,
+  remoteBranchExists: boolean,
+): Promise<void> {
+  // Clean up remote branch if it exists (push may have succeeded before error).
+  // Safe to delete both remote and local since no PR was created.
+  if (remoteBranchExists) {
+    await gitDeleteRemoteBranch(branch, cwd)
+  }
+  await gitDeleteBranch(branch, cwd)
+}
+
+/**
+ * Clean up branches after PR creation failure.
+ * Safe to delete both remote and local since no PR was created.
+ */
+export async function cleanupFailedPrBranches(
+  branch: string,
+  cwd: string,
+): Promise<void> {
+  // Clean up pushed branch since PR creation failed.
+  // Safe to delete both remote and local since no PR exists.
+  await gitDeleteRemoteBranch(branch, cwd)
+  await gitDeleteBranch(branch, cwd)
+}
+
+/**
  * Clean up a stale branch (both remote and local).
  * Safe to delete both since no PR exists for this branch.
  *
@@ -44,20 +75,6 @@ export async function cleanupStaleBranch(
 }
 
 /**
- * Clean up branches after PR creation failure.
- * Safe to delete both remote and local since no PR was created.
- */
-export async function cleanupFailedPrBranches(
-  branch: string,
-  cwd: string,
-): Promise<void> {
-  // Clean up pushed branch since PR creation failed.
-  // Safe to delete both remote and local since no PR exists.
-  await gitDeleteRemoteBranch(branch, cwd)
-  await gitDeleteBranch(branch, cwd)
-}
-
-/**
  * Clean up local branch after successful PR creation.
  * Keeps remote branch - PR needs it to be mergeable.
  */
@@ -66,22 +83,5 @@ export async function cleanupSuccessfulPrLocalBranch(
   cwd: string,
 ): Promise<void> {
   // Clean up local branch only - keep remote branch for PR merge.
-  await gitDeleteBranch(branch, cwd)
-}
-
-/**
- * Clean up branches in catch block after unexpected error.
- * Safe to delete both remote and local since no PR was created.
- */
-export async function cleanupErrorBranches(
-  branch: string,
-  cwd: string,
-  remoteBranchExists: boolean,
-): Promise<void> {
-  // Clean up remote branch if it exists (push may have succeeded before error).
-  // Safe to delete both remote and local since no PR was created.
-  if (remoteBranchExists) {
-    await gitDeleteRemoteBranch(branch, cwd)
-  }
   await gitDeleteBranch(branch, cwd)
 }

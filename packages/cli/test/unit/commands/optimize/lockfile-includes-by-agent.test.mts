@@ -262,7 +262,9 @@ lodash@^4.17.0:
 
     it('uses npm format for npm agent', () => {
       const lockSrc = `{ "lodash": { "version": "4.17.21" } }`
-      expect(lockSrcIncludes(createEnvDetails('npm'), lockSrc, 'lodash')).toBe(true)
+      expect(lockSrcIncludes(createEnvDetails('npm'), lockSrc, 'lodash')).toBe(
+        true,
+      )
     })
 
     it('uses pnpm format for pnpm agent', () => {
@@ -271,7 +273,9 @@ packages:
   lodash@4.17.21:
     resolution: {integrity: sha512-...}
       `
-      expect(lockSrcIncludes(createEnvDetails('pnpm'), lockSrc, 'lodash')).toBe(true)
+      expect(lockSrcIncludes(createEnvDetails('pnpm'), lockSrc, 'lodash')).toBe(
+        true,
+      )
     })
 
     it('uses yarn format for yarn/berry agent', () => {
@@ -279,7 +283,9 @@ packages:
 lodash@^4.17.0:
   version "4.17.21"
       `
-      expect(lockSrcIncludes(createEnvDetails('yarn/berry'), lockSrc, 'lodash')).toBe(true)
+      expect(
+        lockSrcIncludes(createEnvDetails('yarn/berry'), lockSrc, 'lodash'),
+      ).toBe(true)
     })
 
     it('uses yarn format for yarn/classic agent', () => {
@@ -287,7 +293,9 @@ lodash@^4.17.0:
 lodash@^4.17.0:
   version "4.17.21"
       `
-      expect(lockSrcIncludes(createEnvDetails('yarn/classic'), lockSrc, 'lodash')).toBe(true)
+      expect(
+        lockSrcIncludes(createEnvDetails('yarn/classic'), lockSrc, 'lodash'),
+      ).toBe(true)
     })
 
     it('uses bun format for bun agent', () => {
@@ -295,17 +303,28 @@ lodash@^4.17.0:
 lodash@^4.17.0:
   version "4.17.21"
       `
-      expect(lockSrcIncludes(createEnvDetails('bun'), lockSrc, 'lodash', 'bun.lockb')).toBe(true)
+      expect(
+        lockSrcIncludes(
+          createEnvDetails('bun'),
+          lockSrc,
+          'lodash',
+          'bun.lockb',
+        ),
+      ).toBe(true)
     })
 
     it('uses vlt format for vlt agent', () => {
       const lockSrc = `{ "lodash": "4.17.21" }`
-      expect(lockSrcIncludes(createEnvDetails('vlt'), lockSrc, 'lodash')).toBe(true)
+      expect(lockSrcIncludes(createEnvDetails('vlt'), lockSrc, 'lodash')).toBe(
+        true,
+      )
     })
 
     it('defaults to npm format for unknown agent', () => {
       const lockSrc = `{ "lodash": { "version": "4.17.21" } }`
-      expect(lockSrcIncludes(createEnvDetails('unknown'), lockSrc, 'lodash')).toBe(true)
+      expect(
+        lockSrcIncludes(createEnvDetails('unknown'), lockSrc, 'lodash'),
+      ).toBe(true)
     })
   })
 })

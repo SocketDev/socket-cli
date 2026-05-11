@@ -41,60 +41,23 @@ import type { HeaderTheme } from '../terminal/ascii-header.mts'
 const logger = getDefaultLogger()
 
 /**
- * Determine the origin of the API token (env var, config, --config flag, or none).
- * Used in the banner to show the user where the active token is coming from.
+ * Emit the Socket CLI banner to stderr for branding and debugging.
  */
-export function getTokenOrigin(): string {
-  if (getSocketCliNoApiToken()) {
-    return ''
-  }
-  if (getSocketCliApiToken()) {
-    return '(env)'
-  }
-  const configToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
-  if (configToken) {
-    return isConfigFromFlag() ? '(--config flag)' : '(config)'
-  }
-  return ''
-}
-
-/**
- * Get header theme from flags or use default.
- */
-export function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
-  const theme = flags?.['headerTheme']
-  const validThemes: HeaderTheme[] = [
-    'default',
-    'cyberpunk',
-    'forest',
-    'ocean',
-    'sunset',
-  ]
-  return validThemes.includes(theme as HeaderTheme)
-    ? (theme as HeaderTheme)
-    : 'default'
-}
-
-/**
- * Determine if header should animate (shimmer effect).
- */
-export function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
-  // Disable animation in CI, tests, or when explicitly disabled.
-  if (getCI() || VITEST || !process.stdout.isTTY || !supportsFullColor()) {
-    return false
-  }
-  /* c8 ignore next 6 - VITEST is true under tests so the early-return above always fires; the flag-check + default-true paths require an interactive TTY */
-  if (flags && 'animateHeader' in flags) {
-    return Boolean(flags['animateHeader'])
-  }
-  return true
-}
-
-/**
- * Strip ANSI codes for length calculation.
- */
-export function stripAnsi(str: string): string {
-  return str.replace(/\x1b\[[0-9;]*m/g, '')
+export function emitBanner(
+  name: string,
+  orgFlag: string | undefined,
+  compactMode = false,
+  flags?: Record<string, unknown>,
+) {
+  // Print a banner at the top of each command.
+  // This helps with brand recognition and marketing.
+  // It also helps with debugging since it contains version and command details.
+  // Note: print over stderr to preserve stdout for flags like --json and
+  //       --markdown. If we don't do this, you can't use --json in particular
+  //       and pipe the result to other tools. By emitting the banner over stderr
+  //       you can do something like `socket scan view xyz | jq | process`.
+  //       The spinner also emits over stderr for example.
+  logger.error(getAsciiHeader(name, orgFlag, compactMode, flags))
 }
 
 /**
@@ -192,6 +155,56 @@ export function getAsciiHeader(
 }
 
 /**
+ * Get header theme from flags or use default.
+ */
+export function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
+  const theme = flags?.['headerTheme']
+  const validThemes: HeaderTheme[] = [
+    'default',
+    'cyberpunk',
+    'forest',
+    'ocean',
+    'sunset',
+  ]
+  return validThemes.includes(theme as HeaderTheme)
+    ? (theme as HeaderTheme)
+    : 'default'
+}
+
+/**
+ * Determine the origin of the API token (env var, config, --config flag, or none).
+ * Used in the banner to show the user where the active token is coming from.
+ */
+export function getTokenOrigin(): string {
+  if (getSocketCliNoApiToken()) {
+    return ''
+  }
+  if (getSocketCliApiToken()) {
+    return '(env)'
+  }
+  const configToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
+  if (configToken) {
+    return isConfigFromFlag() ? '(--config flag)' : '(config)'
+  }
+  return ''
+}
+
+/**
+ * Determine if header should animate (shimmer effect).
+ */
+export function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
+  // Disable animation in CI, tests, or when explicitly disabled.
+  if (getCI() || VITEST || !process.stdout.isTTY || !supportsFullColor()) {
+    return false
+  }
+  /* c8 ignore next 6 - VITEST is true under tests so the early-return above always fires; the flag-check + default-true paths require an interactive TTY */
+  if (flags && 'animateHeader' in flags) {
+    return Boolean(flags['animateHeader'])
+  }
+  return true
+}
+
+/**
  * Determine if the banner should be suppressed based on output flags.
  */
 export function shouldSuppressBanner(flags: Record<string, unknown>): boolean {
@@ -201,21 +214,8 @@ export function shouldSuppressBanner(flags: Record<string, unknown>): boolean {
 }
 
 /**
- * Emit the Socket CLI banner to stderr for branding and debugging.
+ * Strip ANSI codes for length calculation.
  */
-export function emitBanner(
-  name: string,
-  orgFlag: string | undefined,
-  compactMode = false,
-  flags?: Record<string, unknown>,
-) {
-  // Print a banner at the top of each command.
-  // This helps with brand recognition and marketing.
-  // It also helps with debugging since it contains version and command details.
-  // Note: print over stderr to preserve stdout for flags like --json and
-  //       --markdown. If we don't do this, you can't use --json in particular
-  //       and pipe the result to other tools. By emitting the banner over stderr
-  //       you can do something like `socket scan view xyz | jq | process`.
-  //       The spinner also emits over stderr for example.
-  logger.error(getAsciiHeader(name, orgFlag, compactMode, flags))
+export function stripAnsi(str: string): string {
+  return str.replace(/\x1b\[[0-9;]*m/g, '')
 }

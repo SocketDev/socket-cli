@@ -92,9 +92,11 @@ describe('serializeResultJson', () => {
   })
 
   it('returns error JSON for string input', () => {
-    const result = serializeResultJson('not an object' as unknown as {
-      ok: boolean
-    })
+    const result = serializeResultJson(
+      'not an object' as unknown as {
+        ok: boolean
+      },
+    )
     const parsed = JSON.parse(result)
     expect(parsed.ok).toBe(false)
     expect(parsed.cause).toContain('JSON was not an object')

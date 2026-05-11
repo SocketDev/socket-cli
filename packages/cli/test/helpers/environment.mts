@@ -3,14 +3,10 @@
 import { afterEach, beforeEach, vi } from 'vitest'
 
 /**
- * Setup standard test environment with beforeEach hook
- * Clears all mocks and resets process.exitCode
+ * Clear all mocks manually
  */
-export function setupTestEnvironment(): void {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-  })
+export function clearAllMocks(): void {
+  vi.clearAllMocks()
 }
 
 /**
@@ -21,10 +17,14 @@ export function resetExitCode(): void {
 }
 
 /**
- * Clear all mocks manually
+ * Setup standard test environment with beforeEach hook
+ * Clears all mocks and resets process.exitCode
  */
-export function clearAllMocks(): void {
-  vi.clearAllMocks()
+export function setupTestEnvironment(): void {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    process.exitCode = undefined
+  })
 }
 
 /**

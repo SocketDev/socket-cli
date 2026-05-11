@@ -231,9 +231,8 @@ describe('paths constants', () => {
       process.env['XDG_CACHE_HOME'] = '/custom/cache'
 
       // Re-import to pick up new env value.
-      const { getSocketCachePath: getPathFresh } = await import(
-        '../../../src/constants/paths.mts'
-      )
+      const { getSocketCachePath: getPathFresh } =
+        await import('../../../src/constants/paths.mts')
       const result = getPathFresh()
 
       // Restore.
@@ -256,9 +255,8 @@ describe('paths constants', () => {
         delete process.env['XDG_CACHE_HOME']
         try {
           vi.resetModules()
-          const { getSocketCachePath: getPathFresh } = await import(
-            '../../../src/constants/paths.mts'
-          )
+          const { getSocketCachePath: getPathFresh } =
+            await import('../../../src/constants/paths.mts')
           const result = getPathFresh()
           expect(result).toContain('Library/Caches/socket')
         } finally {
@@ -287,9 +285,8 @@ describe('paths constants', () => {
 
       try {
         vi.resetModules()
-        const { getSocketCachePath: getPathFresh } = await import(
-          '../../../src/constants/paths.mts'
-        )
+        const { getSocketCachePath: getPathFresh } =
+          await import('../../../src/constants/paths.mts')
         const result = getPathFresh()
         expect(result).toContain('socket')
       } finally {
@@ -315,9 +312,8 @@ describe('paths constants', () => {
       delete process.env['XDG_CACHE_HOME']
       try {
         vi.resetModules()
-        const { getSocketCachePath: getPathFresh } = await import(
-          '../../../src/constants/paths.mts'
-        )
+        const { getSocketCachePath: getPathFresh } =
+          await import('../../../src/constants/paths.mts')
         const result = getPathFresh()
         expect(result).toContain('.cache/socket')
       } finally {
@@ -331,17 +327,15 @@ describe('paths constants', () => {
 
   describe('getSocketAppDataPath', () => {
     it('returns a string or undefined', async () => {
-      const { getSocketAppDataPath } = await import(
-        '../../../src/constants/paths.mts'
-      )
+      const { getSocketAppDataPath } =
+        await import('../../../src/constants/paths.mts')
       const result = getSocketAppDataPath()
       expect(result === undefined || typeof result === 'string').toBe(true)
     })
 
     it('includes socket/settings in path when defined', async () => {
-      const { getSocketAppDataPath } = await import(
-        '../../../src/constants/paths.mts'
-      )
+      const { getSocketAppDataPath } =
+        await import('../../../src/constants/paths.mts')
       const result = getSocketAppDataPath()
       if (result !== undefined) {
         expect(result).toContain('socket')
@@ -352,9 +346,8 @@ describe('paths constants', () => {
 
   describe('getSocketRegistryPath', () => {
     it('returns a path containing registry', async () => {
-      const { getSocketRegistryPath } = await import(
-        '../../../src/constants/paths.mts'
-      )
+      const { getSocketRegistryPath } =
+        await import('../../../src/constants/paths.mts')
       try {
         const result = getSocketRegistryPath()
         expect(result).toContain('registry')
@@ -383,9 +376,8 @@ describe('paths constants', () => {
 
   describe('getNmNodeGypPath', () => {
     it('returns string or undefined', async () => {
-      const { getNmNodeGypPath } = await import(
-        '../../../src/constants/paths.mts'
-      )
+      const { getNmNodeGypPath } =
+        await import('../../../src/constants/paths.mts')
       const result = getNmNodeGypPath()
       expect(result === undefined || typeof result === 'string').toBe(true)
     })

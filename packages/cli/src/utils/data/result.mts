@@ -31,43 +31,26 @@ export class ResultError extends Error {
 }
 
 /**
- * Requires a CResult to be ok, otherwise throws a ResultError
+ * Chains CResult operations, passing through errors
  *
- * @param result - The CResult to validate
- * @param context - Context string describing the operation
- * @returns The unwrapped data if result is ok
- * @throws {ResultError} If result is not ok
+ * @param result - The CResult to chain from
+ * @param fn - Function that returns a new CResult
+ * @returns The result of fn if input is ok, otherwise the error
  *
  * @example
- * const repos = requireOk(
- *   await fetchListRepos(orgSlug),
- *   'fetch repositories'
+ * const result = await chainResult(
+ *   await fetchRepo(orgSlug, repoName),
+ *   async (repo) => await updateRepo(repo.id, updates)
  * )
  */
-export function requireOk<T>(result: CResult<T>, context: string): T {
-  if (!result.ok) {
-    const errorOptions = Object.create(undefined) as ResultErrorOptions
-    if (result.code !== undefined) {
-      errorOptions.code = result.code
-    }
-    if (result.cause !== undefined) {
-      errorOptions.cause = result.cause
-    }
-    throw new ResultError(`${context}: ${result.message}`, errorOptions)
-  }
-  return result.data
-}
-
-/**
- * Checks if a CResult is ok
- *
- * @param result - The CResult to check
- * @returns true if result is ok, false otherwise
- */
-export function isOk<T>(
+export async function chainResult<T, U>(
   result: CResult<T>,
-): result is Extract<CResult<T>, { ok: true }> {
-  return result.ok
+  fn: (data: T) => Promise<CResult<U>>,
+): Promise<CResult<U>> {
+  if (!result.ok) {
+    return result
+  }
+  return await fn(result.data)
 }
 
 /**
@@ -80,6 +63,18 @@ export function isError<T>(
   result: CResult<T>,
 ): result is Extract<CResult<T>, { ok: false }> {
   return !result.ok
+}
+
+/**
+ * Checks if a CResult is ok
+ *
+ * @param result - The CResult to check
+ * @returns true if result is ok, false otherwise
+ */
+export function isOk<T>(
+  result: CResult<T>,
+): result is Extract<CResult<T>, { ok: true }> {
+  return result.ok
 }
 
 /**
@@ -110,56 +105,31 @@ export function mapResult<T, U>(
 }
 
 /**
- * Chains CResult operations, passing through errors
+ * Requires a CResult to be ok, otherwise throws a ResultError
  *
- * @param result - The CResult to chain from
- * @param fn - Function that returns a new CResult
- * @returns The result of fn if input is ok, otherwise the error
+ * @param result - The CResult to validate
+ * @param context - Context string describing the operation
+ * @returns The unwrapped data if result is ok
+ * @throws {ResultError} If result is not ok
  *
  * @example
- * const result = await chainResult(
- *   await fetchRepo(orgSlug, repoName),
- *   async (repo) => await updateRepo(repo.id, updates)
+ * const repos = requireOk(
+ *   await fetchListRepos(orgSlug),
+ *   'fetch repositories'
  * )
  */
-export async function chainResult<T, U>(
-  result: CResult<T>,
-  fn: (data: T) => Promise<CResult<U>>,
-): Promise<CResult<U>> {
+export function requireOk<T>(result: CResult<T>, context: string): T {
   if (!result.ok) {
-    return result
+    const errorOptions = Object.create(null) as ResultErrorOptions
+    if (result.code !== undefined) {
+      errorOptions.code = result.code
+    }
+    if (result.cause !== undefined) {
+      errorOptions.cause = result.cause
+    }
+    throw new ResultError(`${context}: ${result.message}`, errorOptions)
   }
-  return await fn(result.data)
-}
-
-/**
- * Unwraps a CResult, returning the data or undefined if error
- *
- * @param result - The CResult to unwrap
- * @returns The data if ok, undefined otherwise
- */
-export function unwrapOr<T>(result: CResult<T>, defaultValue: T): T {
-  return result.ok ? result.data : defaultValue
-}
-
-/**
- * Unwraps a CResult, returning the data or null if error
- *
- * @param result - The CResult to unwrap
- * @returns The data if ok, null otherwise
- */
-export function unwrapOrNull<T>(result: CResult<T>): T | null {
-  return result.ok ? result.data : undefined
-}
-
-/**
- * Unwraps a CResult, returning the data or undefined if error
- *
- * @param result - The CResult to unwrap
- * @returns The data if ok, undefined otherwise
- */
-export function unwrapOrUndefined<T>(result: CResult<T>): T | undefined {
-  return result.ok ? result.data : undefined
+  return result.data
 }
 
 /**
@@ -179,4 +149,34 @@ export function toResultPattern<T>(
     error.cause = result.cause
   }
   return { ok: false, error }
+}
+
+/**
+ * Unwraps a CResult, returning the data or undefined if error
+ *
+ * @param result - The CResult to unwrap
+ * @returns The data if ok, undefined otherwise
+ */
+export function unwrapOr<T>(result: CResult<T>, defaultValue: T): T {
+  return result.ok ? result.data : defaultValue
+}
+
+/**
+ * Unwraps a CResult, returning the data or null if error
+ *
+ * @param result - The CResult to unwrap
+ * @returns The data if ok, null otherwise
+ */
+export function unwrapOrNull<T>(result: CResult<T>): T | undefined {
+  return result.ok ? result.data : undefined
+}
+
+/**
+ * Unwraps a CResult, returning the data or undefined if error
+ *
+ * @param result - The CResult to unwrap
+ * @returns The data if ok, undefined otherwise
+ */
+export function unwrapOrUndefined<T>(result: CResult<T>): T | undefined {
+  return result.ok ? result.data : undefined
 }

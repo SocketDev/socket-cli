@@ -49,6 +49,76 @@ export type ReportLeafNode = {
   manifest: string[]
 }
 
+export function addAlert(
+  art: SocketArtifact,
+  violations: ViolationsMap,
+  fold: FOLD_SETTING,
+  ecosystem: string,
+  pkgName: string,
+  version: string,
+  alert: NonNullable<SocketArtifact['alerts']>[number],
+  policyAction: REPORT_LEVEL,
+): void {
+  if (!violations.has(ecosystem)) {
+    violations.set(ecosystem, new Map())
+  }
+  const ecoMap: EcoMap = violations.get(ecosystem)!
+  if (fold === FOLD_SETTING_PKG) {
+    const existing = ecoMap.get(pkgName) as ReportLeafNode | undefined
+    if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+      ecoMap.set(pkgName, createLeaf(art, alert, policyAction))
+    }
+  } else {
+    if (!ecoMap.has(pkgName)) {
+      ecoMap.set(pkgName, new Map())
+    }
+    const pkgMap = ecoMap.get(pkgName) as PackageMap
+    if (fold === FOLD_SETTING_VERSION) {
+      const existing = pkgMap.get(version) as ReportLeafNode | undefined
+      if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+        pkgMap.set(version, createLeaf(art, alert, policyAction))
+      }
+    } else {
+      if (!pkgMap.has(version)) {
+        pkgMap.set(version, new Map())
+      }
+      const file = alert.file || UNKNOWN_VALUE
+      const verMap = pkgMap.get(version) as VersionMap
+
+      if (fold === FOLD_SETTING_FILE) {
+        const existing = verMap.get(file) as ReportLeafNode | undefined
+        if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+          verMap.set(file, createLeaf(art, alert, policyAction))
+        }
+      } else {
+        if (!verMap.has(file)) {
+          verMap.set(file, new Map())
+        }
+        const key = `${alert.type} at ${alert.start}:${alert.end}`
+        const fileMap: FileMap = verMap.get(file) as FileMap
+        const existing = fileMap.get(key) as ReportLeafNode | undefined
+        if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+          fileMap.set(key, createLeaf(art, alert, policyAction))
+        }
+      }
+    }
+  }
+}
+
+export function createLeaf(
+  art: SocketArtifact,
+  alert: NonNullable<SocketArtifact['alerts']>[number],
+  policyAction: REPORT_LEVEL,
+): ReportLeafNode {
+  const leaf: ReportLeafNode = {
+    type: alert.type,
+    policy: policyAction,
+    url: getSocketDevPackageOverviewUrlFromPurl(art),
+    manifest: art.manifestFiles?.map((o: { file: string }) => o.file) ?? [],
+  }
+  return leaf
+}
+
 // Note: The returned cResult will only be ok:false when the generation
 //       failed. It won't reflect the healthy state.
 export function generateReport(
@@ -249,76 +319,6 @@ export function generateReport(
   return {
     ok: true,
     data: report,
-  }
-}
-
-export function createLeaf(
-  art: SocketArtifact,
-  alert: NonNullable<SocketArtifact['alerts']>[number],
-  policyAction: REPORT_LEVEL,
-): ReportLeafNode {
-  const leaf: ReportLeafNode = {
-    type: alert.type,
-    policy: policyAction,
-    url: getSocketDevPackageOverviewUrlFromPurl(art),
-    manifest: art.manifestFiles?.map((o: { file: string }) => o.file) ?? [],
-  }
-  return leaf
-}
-
-export function addAlert(
-  art: SocketArtifact,
-  violations: ViolationsMap,
-  fold: FOLD_SETTING,
-  ecosystem: string,
-  pkgName: string,
-  version: string,
-  alert: NonNullable<SocketArtifact['alerts']>[number],
-  policyAction: REPORT_LEVEL,
-): void {
-  if (!violations.has(ecosystem)) {
-    violations.set(ecosystem, new Map())
-  }
-  const ecoMap: EcoMap = violations.get(ecosystem)!
-  if (fold === FOLD_SETTING_PKG) {
-    const existing = ecoMap.get(pkgName) as ReportLeafNode | undefined
-    if (!existing || isStricterPolicy(existing.policy, policyAction)) {
-      ecoMap.set(pkgName, createLeaf(art, alert, policyAction))
-    }
-  } else {
-    if (!ecoMap.has(pkgName)) {
-      ecoMap.set(pkgName, new Map())
-    }
-    const pkgMap = ecoMap.get(pkgName) as PackageMap
-    if (fold === FOLD_SETTING_VERSION) {
-      const existing = pkgMap.get(version) as ReportLeafNode | undefined
-      if (!existing || isStricterPolicy(existing.policy, policyAction)) {
-        pkgMap.set(version, createLeaf(art, alert, policyAction))
-      }
-    } else {
-      if (!pkgMap.has(version)) {
-        pkgMap.set(version, new Map())
-      }
-      const file = alert.file || UNKNOWN_VALUE
-      const verMap = pkgMap.get(version) as VersionMap
-
-      if (fold === FOLD_SETTING_FILE) {
-        const existing = verMap.get(file) as ReportLeafNode | undefined
-        if (!existing || isStricterPolicy(existing.policy, policyAction)) {
-          verMap.set(file, createLeaf(art, alert, policyAction))
-        }
-      } else {
-        if (!verMap.has(file)) {
-          verMap.set(file, new Map())
-        }
-        const key = `${alert.type} at ${alert.start}:${alert.end}`
-        const fileMap: FileMap = verMap.get(file) as FileMap
-        const existing = fileMap.get(key) as ReportLeafNode | undefined
-        if (!existing || isStricterPolicy(existing.policy, policyAction)) {
-          fileMap.set(key, createLeaf(art, alert, policyAction))
-        }
-      }
-    }
   }
 }
 

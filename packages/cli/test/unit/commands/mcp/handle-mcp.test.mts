@@ -80,7 +80,8 @@ vi.mock('../../../../src/constants.mts', () => ({
   },
 }))
 
-const { handleMcp } = await import('../../../../src/commands/mcp/handle-mcp.mts')
+const { handleMcp } =
+  await import('../../../../src/commands/mcp/handle-mcp.mts')
 
 const exitSpy = vi
   .spyOn(process, 'exit')
@@ -248,7 +249,9 @@ describe('handleMcp — HTTP path', () => {
       handleMcp({ http: true, port: 3000, trustProxy: false }),
     ).rejects.toThrow('process.exit called')
     expect(mockLogger.error).toHaveBeenCalledWith(
-      expect.stringContaining('No SOCKET_API_TOKEN configured and OAuth is not enabled'),
+      expect.stringContaining(
+        'No SOCKET_API_TOKEN configured and OAuth is not enabled',
+      ),
     )
     expect(mockRunHttpTransport).not.toHaveBeenCalled()
   })

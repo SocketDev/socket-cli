@@ -51,9 +51,7 @@ const {
   mockHandleApiCall: vi.fn(),
   mockHasEnterpriseOrgPlan: vi.fn(),
   mockSetupSdk: vi.fn(),
-  mockSocketDevLink: vi.fn(
-    (label: string, _path: string) => `[link:${label}]`,
-  ),
+  mockSocketDevLink: vi.fn((label: string, _path: string) => `[link:${label}]`),
   mockSpawnCoanaDlx: vi.fn(),
   mockUploadManifestFiles: vi.fn(),
 }))
@@ -111,13 +109,16 @@ vi.mock('@socketsecurity/lib/logger', async importOriginal => {
   }
 })
 
-const { performReachabilityAnalysis } = await import(
-  '../../../../src/commands/scan/perform-reachability-analysis.mts'
-)
+const { performReachabilityAnalysis } =
+  await import('../../../../src/commands/scan/perform-reachability-analysis.mts')
 
 const enterpriseOrgs = {
   ok: true as const,
-  data: { organizations: [{ id: 'a', slug: 'ent', name: 'Ent', image: '', plan: 'enterprise' }] },
+  data: {
+    organizations: [
+      { id: 'a', slug: 'ent', name: 'Ent', image: '', plan: 'enterprise' },
+    ],
+  },
 }
 
 const baseReachOpts = {

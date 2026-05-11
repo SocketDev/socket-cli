@@ -20,9 +20,9 @@ export interface GeneratableManifests {
 }
 
 export async function detectManifestActions(
-  // Passing in null means we attempt detection for every supported language
-  // regardless of local socket.json status. Sometimes we want that.
-  sockJson: SocketJson | null,
+  // Passing in undefined means we attempt detection for every supported
+  // language regardless of local socket.json status. Sometimes we want that.
+  sockJson: SocketJson | undefined,
   cwd = process.cwd(),
 ): Promise<GeneratableManifests> {
   const output = {

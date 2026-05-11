@@ -22,6 +22,37 @@ const VALIDATION_CHECKS = {
 }
 
 /**
+ * Format validation results for display.
+ */
+function formatResults(results) {
+  const errors = []
+  const warnings = []
+  const infos = []
+
+  for (const result of results) {
+    if (result.issues.length === 0) {
+      continue
+    }
+
+    for (const issue of result.issues) {
+      const message = `${result.file}: ${issue.message}`
+      if (issue.severity === 'error') {
+        errors.push(message)
+        const logger = getDefaultLogger()
+        logger.fail(message)
+      } else if (issue.severity === 'warning') {
+        warnings.push(message)
+        logger.warn(message)
+      } else {
+        infos.push(message)
+      }
+    }
+  }
+
+  return { errors, infos, warnings }
+}
+
+/**
  * Get list of test files to validate.
  */
 async function getTestFiles() {
@@ -50,32 +81,31 @@ async function getTestFiles() {
 }
 
 /**
- * Validate test file structure and naming.
+ * Validate that required build artifacts exist.
  */
-async function validateTestStructure(testFile) {
+async function validateBuildArtifacts() {
   const issues = []
-  const relativePath = path.relative(rootPath, testFile)
+  const distPath = path.join(rootPath, 'dist')
 
-  // Check naming convention.
-  if (!testFile.endsWith('.test.mts')) {
+  if (!existsSync(distPath)) {
     issues.push({
-      type: VALIDATION_CHECKS.TEST_STRUCTURE,
-      severity: 'warning',
-      message: `Test file should use .test.mts extension: ${relativePath}`,
+      type: VALIDATION_CHECKS.BUILD_ARTIFACTS,
+      severity: 'error',
+      message: 'dist/ directory not found. Run pnpm run build:cli first',
     })
+    return issues
   }
 
-  // Check if corresponding source file exists for unit tests.
-  if (relativePath.includes('test/unit')) {
-    const sourceFile = testFile
-      .replace('/test/unit/', '/src/')
-      .replace('.test.mts', '.mts')
+  // Check for key entry points.
+  const requiredArtifacts = ['build/cli.js', 'dist/index.js']
 
-    if (!existsSync(sourceFile)) {
+  for (const artifact of requiredArtifacts) {
+    const fullPath = path.join(rootPath, artifact)
+    if (!existsSync(fullPath)) {
       issues.push({
-        type: VALIDATION_CHECKS.TEST_STRUCTURE,
-        severity: 'info',
-        message: `No corresponding source file found for ${relativePath}`,
+        type: VALIDATION_CHECKS.BUILD_ARTIFACTS,
+        severity: 'error',
+        message: `Required build artifact missing: ${artifact}`,
       })
     }
   }
@@ -175,39 +205,6 @@ async function validateSnapshotFiles(testFile) {
 }
 
 /**
- * Validate that required build artifacts exist.
- */
-async function validateBuildArtifacts() {
-  const issues = []
-  const distPath = path.join(rootPath, 'dist')
-
-  if (!existsSync(distPath)) {
-    issues.push({
-      type: VALIDATION_CHECKS.BUILD_ARTIFACTS,
-      severity: 'error',
-      message: 'dist/ directory not found. Run pnpm run build:cli first',
-    })
-    return issues
-  }
-
-  // Check for key entry points.
-  const requiredArtifacts = ['build/cli.js', 'dist/index.js']
-
-  for (const artifact of requiredArtifacts) {
-    const fullPath = path.join(rootPath, artifact)
-    if (!existsSync(fullPath)) {
-      issues.push({
-        type: VALIDATION_CHECKS.BUILD_ARTIFACTS,
-        severity: 'error',
-        message: `Required build artifact missing: ${artifact}`,
-      })
-    }
-  }
-
-  return issues
-}
-
-/**
  * Run all validations for a test file.
  */
 async function validateTestFile(testFile) {
@@ -235,34 +232,37 @@ async function validateTestFile(testFile) {
 }
 
 /**
- * Format validation results for display.
+ * Validate test file structure and naming.
  */
-function formatResults(results) {
-  const errors = []
-  const warnings = []
-  const infos = []
+async function validateTestStructure(testFile) {
+  const issues = []
+  const relativePath = path.relative(rootPath, testFile)
 
-  for (const result of results) {
-    if (result.issues.length === 0) {
-      continue
-    }
+  // Check naming convention.
+  if (!testFile.endsWith('.test.mts')) {
+    issues.push({
+      type: VALIDATION_CHECKS.TEST_STRUCTURE,
+      severity: 'warning',
+      message: `Test file should use .test.mts extension: ${relativePath}`,
+    })
+  }
 
-    for (const issue of result.issues) {
-      const message = `${result.file}: ${issue.message}`
-      if (issue.severity === 'error') {
-        errors.push(message)
-        const logger = getDefaultLogger()
-        logger.fail(message)
-      } else if (issue.severity === 'warning') {
-        warnings.push(message)
-        logger.warn(message)
-      } else {
-        infos.push(message)
-      }
+  // Check if corresponding source file exists for unit tests.
+  if (relativePath.includes('test/unit')) {
+    const sourceFile = testFile
+      .replace('/test/unit/', '/src/')
+      .replace('.test.mts', '.mts')
+
+    if (!existsSync(sourceFile)) {
+      issues.push({
+        type: VALIDATION_CHECKS.TEST_STRUCTURE,
+        severity: 'info',
+        message: `No corresponding source file found for ${relativePath}`,
+      })
     }
   }
 
-  return { errors, infos, warnings }
+  return issues
 }
 
 /**

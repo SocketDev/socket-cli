@@ -73,17 +73,17 @@ socket-cli/
 
 ## Development Commands
 
-| Command | Description |
-|---------|-------------|
-| `pnpm run build` | Smart build (skips unchanged) |
-| `pnpm run build --force` | Force rebuild everything |
-| `pnpm run build:cli` | Build CLI package only |
-| `pnpm run build:sea` | Build SEA binaries |
-| `pnpm dev` | Watch mode (auto-rebuild) |
-| `pnpm test` | Run all tests |
-| `pnpm testu` | Update test snapshots |
-| `pnpm run check` | Lint + typecheck |
-| `pnpm run fix` | Auto-fix issues |
+| Command                  | Description                   |
+| ------------------------ | ----------------------------- |
+| `pnpm run build`         | Smart build (skips unchanged) |
+| `pnpm run build --force` | Force rebuild everything      |
+| `pnpm run build:cli`     | Build CLI package only        |
+| `pnpm run build:sea`     | Build SEA binaries            |
+| `pnpm dev`               | Watch mode (auto-rebuild)     |
+| `pnpm test`              | Run all tests                 |
+| `pnpm testu`             | Update test snapshots         |
+| `pnpm run check`         | Lint + typecheck              |
+| `pnpm run fix`           | Auto-fix issues               |
 
 ## Debug Logging
 
@@ -95,13 +95,13 @@ SOCKET_CLI_DEBUG=1 node packages/cli/dist/index.js <command>
 
 Key variables for development:
 
-| Variable | Description |
-|----------|-------------|
-| `SOCKET_CLI_DEBUG` | Enable debug logging (`1`) |
-| `SOCKET_CLI_API_TOKEN` | Socket API token |
-| `SOCKET_CLI_ORG_SLUG` | Socket organization slug |
-| `SOCKET_CLI_API_BASE_URL` | Override API endpoint |
-| `SOCKET_CLI_NO_API_TOKEN` | Disable default API token |
+| Variable                  | Description                |
+| ------------------------- | -------------------------- |
+| `SOCKET_CLI_DEBUG`        | Enable debug logging (`1`) |
+| `SOCKET_CLI_API_TOKEN`    | Socket API token           |
+| `SOCKET_CLI_ORG_SLUG`     | Socket organization slug   |
+| `SOCKET_CLI_API_BASE_URL` | Override API endpoint      |
+| `SOCKET_CLI_NO_API_TOKEN` | Disable default API token  |
 
 ## Further Reading
 

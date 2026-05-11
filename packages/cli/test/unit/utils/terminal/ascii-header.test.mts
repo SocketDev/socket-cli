@@ -350,17 +350,15 @@ describe('ascii-header', () => {
 
   describe('applyHexColor', () => {
     it('wraps text with 24-bit ANSI escape codes derived from hex', async () => {
-      const { applyHexColor } = await import(
-        '../../../../src/utils/terminal/ascii-header.mts'
-      )
+      const { applyHexColor } =
+        await import('../../../../src/utils/terminal/ascii-header.mts')
       const result = applyHexColor('hello', '#ff8000')
       expect(result).toBe('\x1b[38;2;255;128;0mhello\x1b[0m')
     })
 
     it('handles black + white extremes', async () => {
-      const { applyHexColor } = await import(
-        '../../../../src/utils/terminal/ascii-header.mts'
-      )
+      const { applyHexColor } =
+        await import('../../../../src/utils/terminal/ascii-header.mts')
       expect(applyHexColor('x', '#000000')).toBe('\x1b[38;2;0;0;0mx\x1b[0m')
       expect(applyHexColor('x', '#ffffff')).toBe(
         '\x1b[38;2;255;255;255mx\x1b[0m',
@@ -370,9 +368,8 @@ describe('ascii-header', () => {
 
   describe('brighterRgb', () => {
     it('returns the brighter of two RGB tuples by channel sum', async () => {
-      const { brighterRgb } = await import(
-        '../../../../src/utils/terminal/ascii-header.mts'
-      )
+      const { brighterRgb } =
+        await import('../../../../src/utils/terminal/ascii-header.mts')
       const dark: [number, number, number] = [10, 10, 10]
       const bright: [number, number, number] = [200, 200, 200]
       expect(brighterRgb(dark, bright)).toBe(bright)
@@ -380,9 +377,8 @@ describe('ascii-header', () => {
     })
 
     it('returns the first arg on ties (a >= b)', async () => {
-      const { brighterRgb } = await import(
-        '../../../../src/utils/terminal/ascii-header.mts'
-      )
+      const { brighterRgb } =
+        await import('../../../../src/utils/terminal/ascii-header.mts')
       const a: [number, number, number] = [50, 50, 50]
       const b: [number, number, number] = [50, 50, 50]
       expect(brighterRgb(a, b)).toBe(a)

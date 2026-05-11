@@ -48,7 +48,8 @@ export async function run(
       http: {
         type: 'boolean',
         default: false,
-        description: 'Start the MCP server in Streamable HTTP mode (default: stdio)',
+        description:
+          'Start the MCP server in Streamable HTTP mode (default: stdio)',
       },
       'oauth-client-id': {
         type: 'string',
@@ -148,9 +149,7 @@ export async function run(
 
   const oauthIssuer = cli.flags['oauth-issuer'] || getSocketOauthIssuer() || ''
   const oauthClientId =
-    cli.flags['oauth-client-id'] ||
-    getSocketOauthIntrospectionClientId() ||
-    ''
+    cli.flags['oauth-client-id'] || getSocketOauthIntrospectionClientId() || ''
   const oauthClientSecret =
     cli.flags['oauth-client-secret'] ||
     getSocketOauthIntrospectionClientSecret() ||

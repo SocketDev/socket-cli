@@ -49,25 +49,6 @@ async function computeFileHash(filePath) {
 }
 
 /**
- * Parse checksums.txt content into a map.
- */
-function parseChecksums(content) {
-  const checksums = {}
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim()
-    if (!trimmed) {
-      continue
-    }
-    // Format: hash  filename (two spaces or whitespace between)
-    const match = trimmed.match(/^([a-f0-9]{64})\s+(.+)$/)
-    if (match) {
-      checksums[match[2]] = match[1]
-    }
-  }
-  return checksums
-}
-
-/**
  * Download a file from a URL.
  */
 async function downloadFile(url, destPath) {
@@ -188,6 +169,25 @@ async function fetchGitHubReleaseChecksums(
     await safeDelete(tempDir).catch(() => {})
   }
 
+  return checksums
+}
+
+/**
+ * Parse checksums.txt content into a map.
+ */
+function parseChecksums(content) {
+  const checksums = {}
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed) {
+      continue
+    }
+    // Format: hash  filename (two spaces or whitespace between)
+    const match = trimmed.match(/^([a-f0-9]{64})\s+(.+)$/)
+    if (match) {
+      checksums[match[2]] = match[1]
+    }
+  }
   return checksums
 }
 

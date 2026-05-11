@@ -271,7 +271,9 @@ describe('cmd-scan-diff', () => {
         context,
       )
 
-      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('10'))
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('10'),
+      )
     })
 
     it('should show organization in dry-run', async () => {

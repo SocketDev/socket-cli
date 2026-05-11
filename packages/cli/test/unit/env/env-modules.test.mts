@@ -61,17 +61,15 @@ describe('env/coana-version', () => {
 
   it('returns version when env var is set', async () => {
     process.env['INLINED_COANA_VERSION'] = '0.5.0'
-    const { getCoanaVersion } = await import(
-      '../../../src/env/coana-version.mts'
-    )
+    const { getCoanaVersion } =
+      await import('../../../src/env/coana-version.mts')
     expect(getCoanaVersion()).toBe('0.5.0')
   })
 
   it('throws error when env var is not set', async () => {
     delete process.env['INLINED_COANA_VERSION']
-    const { getCoanaVersion } = await import(
-      '../../../src/env/coana-version.mts'
-    )
+    const { getCoanaVersion } =
+      await import('../../../src/env/coana-version.mts')
     expect(() => getCoanaVersion()).toThrow('INLINED_COANA_VERSION')
   })
 })
@@ -94,33 +92,29 @@ describe('env/is-published-build', () => {
 
   it('returns true when env var is "true"', async () => {
     process.env['INLINED_PUBLISHED_BUILD'] = 'true'
-    const { isPublishedBuild } = await import(
-      '../../../src/env/is-published-build.mts'
-    )
+    const { isPublishedBuild } =
+      await import('../../../src/env/is-published-build.mts')
     expect(isPublishedBuild()).toBe(true)
   })
 
   it('returns true when env var is "1"', async () => {
     process.env['INLINED_PUBLISHED_BUILD'] = '1'
-    const { isPublishedBuild } = await import(
-      '../../../src/env/is-published-build.mts'
-    )
+    const { isPublishedBuild } =
+      await import('../../../src/env/is-published-build.mts')
     expect(isPublishedBuild()).toBe(true)
   })
 
   it('returns false when env var is "false"', async () => {
     process.env['INLINED_PUBLISHED_BUILD'] = 'false'
-    const { isPublishedBuild } = await import(
-      '../../../src/env/is-published-build.mts'
-    )
+    const { isPublishedBuild } =
+      await import('../../../src/env/is-published-build.mts')
     expect(isPublishedBuild()).toBe(false)
   })
 
   it('returns false when env var is not set', async () => {
     delete process.env['INLINED_PUBLISHED_BUILD']
-    const { isPublishedBuild } = await import(
-      '../../../src/env/is-published-build.mts'
-    )
+    const { isPublishedBuild } =
+      await import('../../../src/env/is-published-build.mts')
     expect(isPublishedBuild()).toBe(false)
   })
 })

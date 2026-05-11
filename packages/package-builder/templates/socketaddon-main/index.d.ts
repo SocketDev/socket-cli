@@ -89,7 +89,10 @@ export function renderToString(tree: ComponentNode): string
 /**
  * Render a component tree to a string with a maximum width.
  */
-export function renderToStringWithWidth(tree: ComponentNode, maxWidth: number): string
+export function renderToStringWithWidth(
+  tree: ComponentNode,
+  maxWidth: number,
+): string
 
 /**
  * Render a component tree and print to stdout.

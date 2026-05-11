@@ -49,7 +49,10 @@ describe('output-cmd-json', () => {
 
       await outputCmdJson('/test/path')
 
-      expect(mockLogger.info).toHaveBeenCalledWith('Target cwd:', expect.any(String))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Target cwd:',
+        expect.any(String),
+      )
     })
 
     it('handles socket.json not found', async () => {
@@ -109,9 +112,8 @@ describe('output-cmd-json', () => {
       vi.resetModules()
       vi.doMock('../../../../src/env/vitest.mts', () => ({ VITEST: false }))
 
-      const { outputCmdJson: realOutputCmdJson } = await import(
-        '../../../../src/commands/json/output-cmd-json.mts'
-      )
+      const { outputCmdJson: realOutputCmdJson } =
+        await import('../../../../src/commands/json/output-cmd-json.mts')
       existsSyncSpy.mockReturnValue(false)
       await realOutputCmdJson('/test/path')
 

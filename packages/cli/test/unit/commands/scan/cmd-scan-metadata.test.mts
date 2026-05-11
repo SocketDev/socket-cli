@@ -231,11 +231,7 @@ describe('cmd-scan-metadata', () => {
       // We just confirm the function runs without error.
       mockDetermineOrgSlug.mockResolvedValueOnce(['.', '.'])
 
-      await cmdScanMetadata.run(
-        [testScanId, '--org', '.'],
-        importMeta,
-        context,
-      )
+      await cmdScanMetadata.run([testScanId, '--org', '.'], importMeta, context)
 
       // No throw; covers the orgSlug === '.' ternary at line 102.
       expect(true).toBe(true)

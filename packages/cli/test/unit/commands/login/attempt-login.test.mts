@@ -77,10 +77,9 @@ vi.mock('../../../../src/utils/terminal/link.mts', () => ({
 const mockFailMsgWithBadge = vi.hoisted(() =>
   vi.fn((msg, cause) => `[fail] ${msg}: ${cause}`),
 )
-vi.mock(
-  '../../../../src/utils/error/fail-msg-with-badge.mts',
-  () => ({ failMsgWithBadge: mockFailMsgWithBadge }),
-)
+vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+  failMsgWithBadge: mockFailMsgWithBadge,
+}))
 
 import { attemptLogin } from '../../../../src/commands/login/attempt-login.mts'
 

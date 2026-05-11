@@ -22,6 +22,10 @@ import { spawn } from '@socketsecurity/lib/spawn'
 
 const logger = getDefaultLogger()
 
+function printError(message) {
+  logger.error(`✖ ${message}`)
+}
+
 function printHeader(message) {
   logger.error('\n═══════════════════════════════════════════════════════')
   logger.error(`  ${message}`)
@@ -30,10 +34,6 @@ function printHeader(message) {
 
 function printSuccess(message) {
   logger.log(`✔ ${message}`)
-}
-
-function printError(message) {
-  logger.error(`✖ ${message}`)
 }
 
 async function main() {

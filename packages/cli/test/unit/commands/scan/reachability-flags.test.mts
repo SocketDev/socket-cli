@@ -117,9 +117,9 @@ describe('reachability-flags', () => {
       >
       for (const flagName of flagNames) {
         expect(reachabilityFlags[flagName]!.description).toBeDefined()
-        expect(reachabilityFlags[flagName]!.description!.length).toBeGreaterThan(
-          0,
-        )
+        expect(
+          reachabilityFlags[flagName]!.description!.length,
+        ).toBeGreaterThan(0)
       }
     })
   })

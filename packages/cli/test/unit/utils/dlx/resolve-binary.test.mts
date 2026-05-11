@@ -19,17 +19,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock all environment variable modules.
-const mockCoanaLocalPath = vi.hoisted(() => ({ SOCKET_CLI_COANA_LOCAL_PATH: '' }))
+const mockCoanaLocalPath = vi.hoisted(() => ({
+  SOCKET_CLI_COANA_LOCAL_PATH: '',
+}))
 const mockCdxgenLocalPath = vi.hoisted(() => ({
   SOCKET_CLI_CDXGEN_LOCAL_PATH: '',
 }))
-const mockPyCliLocalPath = vi.hoisted(() => ({ SOCKET_CLI_PYCLI_LOCAL_PATH: '' }))
+const mockPyCliLocalPath = vi.hoisted(() => ({
+  SOCKET_CLI_PYCLI_LOCAL_PATH: '',
+}))
 const mockSfwLocalPath = vi.hoisted(() => ({ SOCKET_CLI_SFW_LOCAL_PATH: '' }))
 const mockSocketPatchLocalPath = vi.hoisted(() => ({
   SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: '',
 }))
 
-vi.mock('../../../../src/env/socket-cli-coana-local-path.mts', () => mockCoanaLocalPath)
+vi.mock(
+  '../../../../src/env/socket-cli-coana-local-path.mts',
+  () => mockCoanaLocalPath,
+)
 vi.mock(
   '../../../../src/env/socket-cli-cdxgen-local-path.mts',
   () => mockCdxgenLocalPath,
@@ -38,7 +45,10 @@ vi.mock(
   '../../../../src/env/socket-cli-pycli-local-path.mts',
   () => mockPyCliLocalPath,
 )
-vi.mock('../../../../src/env/socket-cli-sfw-local-path.mts', () => mockSfwLocalPath)
+vi.mock(
+  '../../../../src/env/socket-cli-sfw-local-path.mts',
+  () => mockSfwLocalPath,
+)
 vi.mock(
   '../../../../src/env/socket-cli-socket-patch-local-path.mts',
   () => mockSocketPatchLocalPath,
@@ -105,9 +115,8 @@ describe('binary resolution utilities', () => {
 
   describe('resolveCoana', () => {
     it('returns dlx spec when no local path is set', async () => {
-      const { resolveCoana } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveCoana } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolveCoana()
 
@@ -124,9 +133,8 @@ describe('binary resolution utilities', () => {
     it('returns local path when SOCKET_CLI_COANA_LOCAL_PATH is set', async () => {
       mockCoanaLocalPath.SOCKET_CLI_COANA_LOCAL_PATH = '/custom/path/coana'
 
-      const { resolveCoana } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveCoana } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolveCoana()
 
@@ -139,9 +147,8 @@ describe('binary resolution utilities', () => {
 
   describe('resolveCdxgen', () => {
     it('returns dlx spec when no local path is set', async () => {
-      const { resolveCdxgen } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveCdxgen } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolveCdxgen()
 
@@ -158,9 +165,8 @@ describe('binary resolution utilities', () => {
     it('returns local path when SOCKET_CLI_CDXGEN_LOCAL_PATH is set', async () => {
       mockCdxgenLocalPath.SOCKET_CLI_CDXGEN_LOCAL_PATH = '/custom/path/cdxgen'
 
-      const { resolveCdxgen } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveCdxgen } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolveCdxgen()
 
@@ -173,9 +179,8 @@ describe('binary resolution utilities', () => {
 
   describe('resolvePyCli', () => {
     it('returns python type when no local path is set', async () => {
-      const { resolvePyCli } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolvePyCli } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolvePyCli()
 
@@ -183,11 +188,11 @@ describe('binary resolution utilities', () => {
     })
 
     it('returns local path when SOCKET_CLI_PYCLI_LOCAL_PATH is set', async () => {
-      mockPyCliLocalPath.SOCKET_CLI_PYCLI_LOCAL_PATH = '/custom/path/socket-pycli'
+      mockPyCliLocalPath.SOCKET_CLI_PYCLI_LOCAL_PATH =
+        '/custom/path/socket-pycli'
 
-      const { resolvePyCli } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolvePyCli } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolvePyCli()
 
@@ -200,9 +205,8 @@ describe('binary resolution utilities', () => {
 
   describe('resolveSfw', () => {
     it('returns dlx spec when no local path is set', async () => {
-      const { resolveSfw } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveSfw } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolveSfw()
 
@@ -219,9 +223,8 @@ describe('binary resolution utilities', () => {
     it('returns local path when SOCKET_CLI_SFW_LOCAL_PATH is set', async () => {
       mockSfwLocalPath.SOCKET_CLI_SFW_LOCAL_PATH = '/custom/path/sfw'
 
-      const { resolveSfw } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveSfw } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolveSfw()
 
@@ -237,9 +240,8 @@ describe('binary resolution utilities', () => {
       mockOs.platform.mockReturnValue('darwin')
       mockOs.arch.mockReturnValue('arm64')
 
-      const { resolveSocketPatch } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveSocketPatch } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolveSocketPatch()
 
@@ -259,9 +261,8 @@ describe('binary resolution utilities', () => {
       mockOs.platform.mockReturnValue('darwin')
       mockOs.arch.mockReturnValue('x64')
 
-      const { resolveSocketPatch } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveSocketPatch } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolveSocketPatch()
 
@@ -281,9 +282,8 @@ describe('binary resolution utilities', () => {
       mockOs.platform.mockReturnValue('linux')
       mockOs.arch.mockReturnValue('arm64')
 
-      const { resolveSocketPatch } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveSocketPatch } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolveSocketPatch()
 
@@ -303,9 +303,8 @@ describe('binary resolution utilities', () => {
       mockOs.platform.mockReturnValue('linux')
       mockOs.arch.mockReturnValue('x64')
 
-      const { resolveSocketPatch } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveSocketPatch } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolveSocketPatch()
 
@@ -325,9 +324,8 @@ describe('binary resolution utilities', () => {
       mockOs.platform.mockReturnValue('win32')
       mockOs.arch.mockReturnValue('x64')
 
-      const { resolveSocketPatch } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveSocketPatch } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolveSocketPatch()
 
@@ -347,9 +345,8 @@ describe('binary resolution utilities', () => {
       mockOs.platform.mockReturnValue('win32')
       mockOs.arch.mockReturnValue('arm64')
 
-      const { resolveSocketPatch } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveSocketPatch } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolveSocketPatch()
 
@@ -369,9 +366,8 @@ describe('binary resolution utilities', () => {
       mockOs.platform.mockReturnValue('freebsd')
       mockOs.arch.mockReturnValue('x64')
 
-      const { resolveSocketPatch } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveSocketPatch } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       expect(() => resolveSocketPatch()).toThrow(
         /socket-patch has no prebuilt binary for "freebsd-x64"/,
@@ -382,9 +378,8 @@ describe('binary resolution utilities', () => {
       mockSocketPatchLocalPath.SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH =
         '/custom/path/socket-patch'
 
-      const { resolveSocketPatch } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveSocketPatch } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolveSocketPatch()
 
@@ -397,9 +392,8 @@ describe('binary resolution utilities', () => {
 
   describe('resolveSynp', () => {
     it('returns dlx spec', async () => {
-      const { resolveSynp } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveSynp } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolveSynp()
 
@@ -425,9 +419,8 @@ describe('binary resolution utilities', () => {
       mockOs.platform.mockReturnValue(platform as any)
       mockOs.arch.mockReturnValue(arch as any)
 
-      const { resolveTrivy } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveTrivy } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolveTrivy()
 
@@ -448,9 +441,8 @@ describe('binary resolution utilities', () => {
       mockOs.platform.mockReturnValue('win32' as any)
       mockOs.arch.mockReturnValue('arm64' as any)
 
-      const { resolveTrivy } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveTrivy } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       expect(() => resolveTrivy()).toThrow(
         /Trivy has no prebuilt binary for "win32-arm64"/,
@@ -470,9 +462,8 @@ describe('binary resolution utilities', () => {
       mockOs.platform.mockReturnValue(platform as any)
       mockOs.arch.mockReturnValue(arch as any)
 
-      const { resolveTrufflehog } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveTrufflehog } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolveTrufflehog()
 
@@ -492,9 +483,8 @@ describe('binary resolution utilities', () => {
       mockOs.platform.mockReturnValue('freebsd' as any)
       mockOs.arch.mockReturnValue('x64' as any)
 
-      const { resolveTrufflehog } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveTrufflehog } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       expect(() => resolveTrufflehog()).toThrow(
         /TruffleHog has no prebuilt binary for "freebsd-x64"/,
@@ -513,9 +503,8 @@ describe('binary resolution utilities', () => {
       mockOs.platform.mockReturnValue(platform as any)
       mockOs.arch.mockReturnValue(arch as any)
 
-      const { resolveOpengrep } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveOpengrep } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       const result = resolveOpengrep()
 
@@ -535,9 +524,8 @@ describe('binary resolution utilities', () => {
       mockOs.platform.mockReturnValue('win32' as any)
       mockOs.arch.mockReturnValue('arm64' as any)
 
-      const { resolveOpengrep } = await import(
-        '../../../../src/utils/dlx/resolve-binary.mts'
-      )
+      const { resolveOpengrep } =
+        await import('../../../../src/utils/dlx/resolve-binary.mts')
 
       expect(() => resolveOpengrep()).toThrow(
         /OpenGrep has no prebuilt binary for "win32-arm64"/,

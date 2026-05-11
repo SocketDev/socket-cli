@@ -36,9 +36,8 @@ vi.mock('../../../../src/utils/git/gitlab-provider.mts', () => ({
   },
 }))
 
-const { createPrProvider, getGitRemoteUrlSync } = await import(
-  '../../../../src/utils/git/provider-factory.mts'
-)
+const { createPrProvider, getGitRemoteUrlSync } =
+  await import('../../../../src/utils/git/provider-factory.mts')
 
 const savedGitlabHost = process.env['GITLAB_HOST']
 

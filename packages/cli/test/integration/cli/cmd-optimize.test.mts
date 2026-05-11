@@ -63,33 +63,6 @@ const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
 const _npmFixtureDir = path.join(fixtureBaseDir, NPM)
 const pnpmFixtureDir = path.join(fixtureBaseDir, PNPM)
 
-async function revertFixtureChanges() {
-  // Reset only the package.json and pnpm-lock.yaml files that tests modify.
-  const cwd = process.cwd()
-  // Git needs the paths relative to the repository root.
-  const relativePackageJson = path.relative(
-    cwd,
-    path.join(pnpmFixtureDir, PACKAGE_JSON),
-  )
-  const relativePnpmLock = path.relative(
-    cwd,
-    path.join(pnpmFixtureDir, PNPM_LOCK_YAML),
-  )
-  // Silently ignore errors. Files may not be tracked by git, may already be
-  // reverted, or may not have been modified yet. This is expected behavior
-  // in CI environments and during initial test runs.
-  try {
-    await spawn(
-      'git',
-      ['checkout', 'HEAD', '--', relativePackageJson, relativePnpmLock],
-      {
-        cwd,
-        stdio: 'ignore',
-      },
-    )
-  } catch {}
-}
-
 async function _createTempFixture(sourceDir: string): Promise<string> {
   // Create a temporary directory with a unique name.
   const tempDir = path.join(
@@ -120,6 +93,33 @@ async function _createTempFixture(sourceDir: string): Promise<string> {
   }
 
   return tempDir
+}
+
+async function revertFixtureChanges() {
+  // Reset only the package.json and pnpm-lock.yaml files that tests modify.
+  const cwd = process.cwd()
+  // Git needs the paths relative to the repository root.
+  const relativePackageJson = path.relative(
+    cwd,
+    path.join(pnpmFixtureDir, PACKAGE_JSON),
+  )
+  const relativePnpmLock = path.relative(
+    cwd,
+    path.join(pnpmFixtureDir, PNPM_LOCK_YAML),
+  )
+  // Silently ignore errors. Files may not be tracked by git, may already be
+  // reverted, or may not have been modified yet. This is expected behavior
+  // in CI environments and during initial test runs.
+  try {
+    await spawn(
+      'git',
+      ['checkout', 'HEAD', '--', relativePackageJson, relativePnpmLock],
+      {
+        cwd,
+        stdio: 'ignore',
+      },
+    )
+  } catch {}
 }
 
 describe('socket optimize', async () => {

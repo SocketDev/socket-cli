@@ -85,6 +85,25 @@ export function formatUpdateMessage(options: UpdateNotificationOptions): {
 }
 
 /**
+ * Schedule update notification to show on process exit.
+ * This ensures the notification doesn't interfere with command output.
+ */
+export function scheduleExitNotification(
+  options: UpdateNotificationOptions,
+): void {
+  if (!process.stdout?.isTTY) {
+    return // Probably piping stdout.
+  }
+
+  try {
+    const notificationLogger = () => showUpdateNotification(options)
+    onExit(notificationLogger)
+  } catch (e) {
+    logger.warn(`Failed to schedule exit notification: ${errorMessage(e)}`)
+  }
+}
+
+/**
  * Show update notification immediately.
  */
 export function showUpdateNotification(
@@ -117,26 +136,5 @@ export function showUpdateNotification(
         `Run '${seaBinPath} ${SEA_UPDATE_COMMAND}' to update automatically`,
       )
     }
-  }
-}
-
-/**
- * Schedule update notification to show on process exit.
- * This ensures the notification doesn't interfere with command output.
- */
-export function scheduleExitNotification(
-  options: UpdateNotificationOptions,
-): void {
-  if (!process.stdout?.isTTY) {
-    return // Probably piping stdout.
-  }
-
-  try {
-    const notificationLogger = () => showUpdateNotification(options)
-    onExit(notificationLogger)
-  } catch (e) {
-    logger.warn(
-      `Failed to schedule exit notification: ${errorMessage(e)}`,
-    )
   }
 }

@@ -97,7 +97,10 @@ describe('utils/config', () => {
     })
 
     it('handles skipAskToPersistDefaultOrg=true correctly', () => {
-      const result = updateConfigValue('skipAskToPersistDefaultOrg', 'true' as any)
+      const result = updateConfigValue(
+        'skipAskToPersistDefaultOrg',
+        'true' as any,
+      )
       expect(result.ok).toBe(true)
     })
 

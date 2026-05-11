@@ -163,168 +163,6 @@ export class ResultAssertion<T> {
 }
 
 /**
- * Create fluent assertion builder for CResult validation.
- *
- * @param result - CResult to validate
- * @returns Fluent assertion builder
- *
- * @example
- * ```typescript
- * const result = await mockApiCall()
- * expectResult(result)
- *   .isSuccess()
- *   .hasData()
- *   .dataContains({ id: 'scan-123' })
- * ```
- */
-export function expectResult<T>(result: CResult<T>): ResultAssertion<T> {
-  return new ResultAssertion(result)
-}
-
-/**
- * Assert CResult is successful and return data with type narrowing.
- *
- * @param result - CResult to validate
- * @returns Data from successful result
- * @throws Error if result is not successful
- *
- * @example
- * ```typescript
- * const data = expectSuccess(result)
- * expect(data.id).toBeDefined()
- * ```
- */
-export function expectSuccess<T>(result: CResult<T>): T {
-  if (!result.ok) {
-    throw new Error(
-      `Expected successful result but got error: ${(result as { message: string }).message}`,
-    )
-  }
-  return (result as { data: T }).data
-}
-
-/**
- * Assert CResult is failure and return error info with type narrowing.
- *
- * @param result - CResult to validate
- * @returns Error information from failed result
- * @throws Error if result is successful
- *
- * @example
- * ```typescript
- * const error = expectFailure(result)
- * expect(error.message).toContain('not found')
- * expect(error.code).toBe(404)
- * ```
- */
-export function expectFailure<T>(result: CResult<T>): {
-  code?: number
-  cause?: string
-  message: string
-} {
-  if (result.ok) {
-    throw new Error('Expected failed result but got success')
-  }
-  return result as { code?: number; cause?: string; message: string }
-}
-
-/**
- * Assert CResult is successful and data matches expected value.
- *
- * @param result - CResult to validate
- * @param expected - Expected data value
- *
- * @example
- * ```typescript
- * expectSuccessWithData(result, { id: 'scan-123', status: 'completed' })
- * ```
- */
-export function expectSuccessWithData<T>(
-  result: CResult<T>,
-  expected: T,
-): void {
-  expect(result.ok).toBe(true)
-  expect((result as { data: T }).data).toEqual(expected)
-}
-
-/**
- * Assert CResult is failure with expected error message.
- *
- * @param result - CResult to validate
- * @param expectedMessage - Expected error message
- * @param expectedCode - Optional expected error code
- *
- * @example
- * ```typescript
- * expectFailureWithMessage(result, 'Repository not found', 404)
- * ```
- */
-export function expectFailureWithMessage<T>(
-  result: CResult<T>,
-  expectedMessage: string | RegExp,
-  expectedCode?: number | undefined,
-): void {
-  expect(result.ok).toBe(false)
-  const error = result as { code?: number; message: string }
-
-  if (typeof expectedMessage === 'string') {
-    expect(error.message).toContain(expectedMessage)
-  } else {
-    expect(error.message).toMatch(expectedMessage)
-  }
-
-  if (expectedCode !== undefined) {
-    expect(error.code).toBe(expectedCode)
-  }
-}
-
-/**
- * Assert CResult data has expected properties.
- *
- * @param result - CResult to validate
- * @param expectedProps - Expected property names
- *
- * @example
- * ```typescript
- * expectResultHasProperties(result, ['id', 'name', 'status'])
- * ```
- */
-export function expectResultHasProperties<T>(
-  result: CResult<T>,
-  expectedProps: Array<keyof T>,
-): void {
-  expect(result.ok).toBe(true)
-  const data = (result as { data: T }).data
-
-  for (const prop of expectedProps) {
-    expect(data).toHaveProperty(prop as string)
-  }
-}
-
-/**
- * Assert CResult matches expected type structure.
- * Useful for validating complex nested types.
- *
- * @param result - CResult to validate
- * @param validator - Validation function that returns true if valid
- *
- * @example
- * ```typescript
- * expectResultMatchesType(result, (data): data is ScanResult => {
- *   return typeof data.id === 'string' && Array.isArray(data.issues)
- * })
- * ```
- */
-export function expectResultMatchesType<T, U extends T>(
-  result: CResult<T>,
-  validator: (data: T) => data is U,
-): asserts result is CResult<U> {
-  expect(result.ok).toBe(true)
-  const data = (result as { data: T }).data
-  expect(validator(data)).toBe(true)
-}
-
-/**
  * Assert array of CResults all succeeded.
  *
  * @param results - Array of CResults to validate
@@ -381,21 +219,165 @@ export function expectErrorCodeOneOf<T>(
 }
 
 /**
- * Extract data from array of successful CResults.
+ * Assert CResult is failure and return error info with type narrowing.
  *
- * @param results - Array of CResults
- * @returns Array of data from successful results
+ * @param result - CResult to validate
+ * @returns Error information from failed result
+ * @throws Error if result is successful
  *
  * @example
  * ```typescript
- * const data = extractSuccessData([result1, result2, result3])
- * expect(data).toHaveLength(2)
+ * const error = expectFailure(result)
+ * expect(error.message).toContain('not found')
+ * expect(error.code).toBe(404)
  * ```
  */
-export function extractSuccessData<T>(results: Array<CResult<T>>): T[] {
-  return results
-    .filter((r): r is { ok: true; data: T } => r.ok)
-    .map(r => r.data)
+export function expectFailure<T>(result: CResult<T>): {
+  code?: number
+  cause?: string
+  message: string
+} {
+  if (result.ok) {
+    throw new Error('Expected failed result but got success')
+  }
+  return result as { code?: number; cause?: string; message: string }
+}
+
+/**
+ * Assert CResult is failure with expected error message.
+ *
+ * @param result - CResult to validate
+ * @param expectedMessage - Expected error message
+ * @param expectedCode - Optional expected error code
+ *
+ * @example
+ * ```typescript
+ * expectFailureWithMessage(result, 'Repository not found', 404)
+ * ```
+ */
+export function expectFailureWithMessage<T>(
+  result: CResult<T>,
+  expectedMessage: string | RegExp,
+  expectedCode?: number | undefined,
+): void {
+  expect(result.ok).toBe(false)
+  const error = result as { code?: number; message: string }
+
+  if (typeof expectedMessage === 'string') {
+    expect(error.message).toContain(expectedMessage)
+  } else {
+    expect(error.message).toMatch(expectedMessage)
+  }
+
+  if (expectedCode !== undefined) {
+    expect(error.code).toBe(expectedCode)
+  }
+}
+
+/**
+ * Create fluent assertion builder for CResult validation.
+ *
+ * @param result - CResult to validate
+ * @returns Fluent assertion builder
+ *
+ * @example
+ * ```typescript
+ * const result = await mockApiCall()
+ * expectResult(result)
+ *   .isSuccess()
+ *   .hasData()
+ *   .dataContains({ id: 'scan-123' })
+ * ```
+ */
+export function expectResult<T>(result: CResult<T>): ResultAssertion<T> {
+  return new ResultAssertion(result)
+}
+
+/**
+ * Assert CResult data has expected properties.
+ *
+ * @param result - CResult to validate
+ * @param expectedProps - Expected property names
+ *
+ * @example
+ * ```typescript
+ * expectResultHasProperties(result, ['id', 'name', 'status'])
+ * ```
+ */
+export function expectResultHasProperties<T>(
+  result: CResult<T>,
+  expectedProps: Array<keyof T>,
+): void {
+  expect(result.ok).toBe(true)
+  const data = (result as { data: T }).data
+
+  for (const prop of expectedProps) {
+    expect(data).toHaveProperty(prop as string)
+  }
+}
+
+/**
+ * Assert CResult matches expected type structure.
+ * Useful for validating complex nested types.
+ *
+ * @param result - CResult to validate
+ * @param validator - Validation function that returns true if valid
+ *
+ * @example
+ * ```typescript
+ * expectResultMatchesType(result, (data): data is ScanResult => {
+ *   return typeof data.id === 'string' && Array.isArray(data.issues)
+ * })
+ * ```
+ */
+export function expectResultMatchesType<T, U extends T>(
+  result: CResult<T>,
+  validator: (data: T) => data is U,
+): asserts result is CResult<U> {
+  expect(result.ok).toBe(true)
+  const data = (result as { data: T }).data
+  expect(validator(data)).toBe(true)
+}
+
+/**
+ * Assert CResult is successful and return data with type narrowing.
+ *
+ * @param result - CResult to validate
+ * @returns Data from successful result
+ * @throws Error if result is not successful
+ *
+ * @example
+ * ```typescript
+ * const data = expectSuccess(result)
+ * expect(data.id).toBeDefined()
+ * ```
+ */
+export function expectSuccess<T>(result: CResult<T>): T {
+  if (!result.ok) {
+    throw new Error(
+      `Expected successful result but got error: ${(result as { message: string }).message}`,
+    )
+  }
+  return (result as { data: T }).data
+}
+
+/**
+ * Assert CResult is successful and data matches expected value.
+ *
+ * @param result - CResult to validate
+ * @param expected - Expected data value
+ *
+ * @example
+ * ```typescript
+ * expectSuccessWithData(result, { id: 'scan-123', status: 'completed' })
+ * ```
+ */
+export function expectSuccessWithData<T>(
+  result: CResult<T>,
+  expected: T,
+): void {
+  expect(result.ok).toBe(true)
+  expect((result as { data: T }).data).toEqual(expected)
 }
 
 /**
@@ -414,4 +396,22 @@ export function extractErrorMessages<T>(results: Array<CResult<T>>): string[] {
   return results
     .filter((r): r is { ok: false; message: string } => !r.ok)
     .map(r => r.message)
+}
+
+/**
+ * Extract data from array of successful CResults.
+ *
+ * @param results - Array of CResults
+ * @returns Array of data from successful results
+ *
+ * @example
+ * ```typescript
+ * const data = extractSuccessData([result1, result2, result3])
+ * expect(data).toHaveLength(2)
+ * ```
+ */
+export function extractSuccessData<T>(results: Array<CResult<T>>): T[] {
+  return results
+    .filter((r): r is { ok: true; data: T } => r.ok)
+    .map(r => r.data)
 }

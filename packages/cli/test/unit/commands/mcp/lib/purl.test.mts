@@ -150,9 +150,7 @@ describe('buildPurl', () => {
     it('lowercases mixed-case PyPI ecosystem (and lowercases the package name per PURL spec)', () => {
       // Per the packageurl spec, pypi names are case-insensitive and are
       // canonicalized to lowercase by packageurl-js.
-      expect(buildPurl('PyPI', 'Django', '5.0.0')).toBe(
-        'pkg:pypi/django@5.0.0',
-      )
+      expect(buildPurl('PyPI', 'Django', '5.0.0')).toBe('pkg:pypi/django@5.0.0')
     })
   })
 

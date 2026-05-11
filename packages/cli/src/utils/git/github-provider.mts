@@ -51,7 +51,7 @@ type GqlPullRequestsResponse = {
   repository: {
     pullRequests: {
       pageInfo: {
-        endCursor: string | null
+        endCursor: string | undefined
         hasNextPage: boolean
       }
       nodes: GqlPrNode[]
@@ -175,7 +175,7 @@ export class GitHubProvider implements PrProvider {
     ).map(s => s.toUpperCase())
 
     try {
-      let cursor: string | null = undefined
+      let cursor: string | undefined = undefined
       let hasNextPage = true
       let pageIndex = 0
       // Include owner in cache key to avoid collisions with same repo name.

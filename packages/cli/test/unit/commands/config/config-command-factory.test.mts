@@ -123,9 +123,9 @@ describe('createConfigCommand', () => {
   })
 
   it('runs spec.validate when provided and threads its checks', async () => {
-    const validate = vi.fn().mockReturnValue([
-      { test: false, message: 'custom check', fail: 'bad' },
-    ])
+    const validate = vi
+      .fn()
+      .mockReturnValue([{ test: false, message: 'custom check', fail: 'bad' }])
     const cmd = createConfigCommand({ ...baseSpec, validate })
     setMeow()
 

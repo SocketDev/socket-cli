@@ -62,7 +62,8 @@ vi.mock('../../../../src/constants/packages.mts', () => ({
 }))
 
 vi.mock('../../../../src/utils/process/cmd.mts', () => ({
-  cmdPrefixMessage: (cmd: string, msg: string) => (cmd ? `${cmd}: ${msg}` : msg),
+  cmdPrefixMessage: (cmd: string, msg: string) =>
+    cmd ? `${cmd}: ${msg}` : msg,
 }))
 
 import { updateDependencies } from '../../../../src/commands/optimize/update-dependencies.mts'
@@ -95,10 +96,9 @@ describe('update-dependencies', () => {
       })
 
       expect(result.ok).toBe(true)
-      expect(mockRunAgentInstall).toHaveBeenCalledWith(
-        mockEnvDetails,
-        { spinner: mockSpinner },
-      )
+      expect(mockRunAgentInstall).toHaveBeenCalledWith(mockEnvDetails, {
+        spinner: mockSpinner,
+      })
       expect(mockSpinner.start).toHaveBeenCalledWith(
         'Updating package-lock.json...',
       )

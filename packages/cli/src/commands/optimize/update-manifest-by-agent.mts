@@ -35,6 +35,13 @@ export function getEntryIndexes(
     .sort((a, b) => a - b)
 }
 
+export function getHighestEntryIndex(
+  entries: Array<[string | symbol, any]>,
+  keys: Array<string | symbol>,
+) {
+  return getEntryIndexes(entries, keys)?.at(-1) ?? -1
+}
+
 export function getLowestEntryIndex(
   entries: Array<[string | symbol, any]>,
   keys: Array<string | symbol>,
@@ -42,11 +49,60 @@ export function getLowestEntryIndex(
   return getEntryIndexes(entries, keys)?.[0] ?? -1
 }
 
-export function getHighestEntryIndex(
-  entries: Array<[string | symbol, any]>,
-  keys: Array<string | symbol>,
+/**
+ * Apply overrides to the host repo's manifest, picking the correct
+ * destination based on agent + version:
+ *   - pnpm 11+ → pnpm-workspace.yaml `overrides:` block (async write,
+ *               preserves comments via the `yaml` package's Document API).
+ *   - pnpm < 11 → package.json `pnpm.overrides`.
+ *   - bun / yarn-classic / yarn-berry → package.json `resolutions`.
+ *   - vlt / npm / fallback → package.json `overrides`.
+ *
+ * The `pkgEnvDetails` parameter carries `agentVersion` (a SemVer
+ * instance) needed to disambiguate pnpm versions. Callers reach this
+ * via `applyOptimization()` which already has the env in scope.
+ */
+export async function updateManifest(
+  agent: Agent,
+  pkgEnvDetails: EnvDetails,
+  overrides: Overrides,
+): Promise<void> {
+  const { editablePkgJson } = pkgEnvDetails
+  switch (agent) {
+    case BUN:
+      updateResolutionsField(editablePkgJson, overrides)
+      return
+    case PNPM:
+      if (usesPnpmWorkspaceOverrides(pkgEnvDetails)) {
+        // Route to pnpm-workspace.yaml. Also clear any stale
+        // `pnpm.overrides` in package.json — pnpm 11 ignores it, but
+        // leaving it there is misleading + drift-prone.
+        updatePnpmField(editablePkgJson, {})
+        await updatePnpmWorkspaceYamlOverrides(pkgEnvDetails.pkgPath, overrides)
+      } else {
+        updatePnpmField(editablePkgJson, overrides)
+      }
+      return
+    case VLT:
+      updateOverridesField(editablePkgJson, overrides)
+      return
+    case YARN_BERRY:
+      updateResolutionsField(editablePkgJson, overrides)
+      return
+    case YARN_CLASSIC:
+      updateResolutionsField(editablePkgJson, overrides)
+      return
+    default:
+      updateOverridesField(editablePkgJson, overrides)
+      return
+  }
+}
+
+export function updateOverridesField(
+  editablePkgJson: EditablePackageJson,
+  overrides: Overrides,
 ) {
-  return getEntryIndexes(entries, keys)?.at(-1) ?? -1
+  updatePkgJsonField(editablePkgJson, OVERRIDES, overrides)
 }
 
 export function updatePkgJsonField(
@@ -139,11 +195,11 @@ export function updatePkgJsonField(
   )
 }
 
-export function updateOverridesField(
+export function updatePnpmField(
   editablePkgJson: EditablePackageJson,
   overrides: Overrides,
 ) {
-  updatePkgJsonField(editablePkgJson, OVERRIDES, overrides)
+  updatePkgJsonField(editablePkgJson, PNPM, overrides)
 }
 
 export function updateResolutionsField(
@@ -151,13 +207,6 @@ export function updateResolutionsField(
   overrides: Overrides,
 ) {
   updatePkgJsonField(editablePkgJson, RESOLUTIONS, overrides)
-}
-
-export function updatePnpmField(
-  editablePkgJson: EditablePackageJson,
-  overrides: Overrides,
-) {
-  updatePkgJsonField(editablePkgJson, PNPM, overrides)
 }
 
 /**
@@ -170,56 +219,4 @@ export function usesPnpmWorkspaceOverrides(
   pkgEnvDetails: Pick<EnvDetails, 'agent' | 'agentVersion'>,
 ): boolean {
   return pkgEnvDetails.agent === PNPM && pkgEnvDetails.agentVersion.major >= 11
-}
-
-/**
- * Apply overrides to the host repo's manifest, picking the correct
- * destination based on agent + version:
- *   - pnpm 11+ → pnpm-workspace.yaml `overrides:` block (async write,
- *               preserves comments via the `yaml` package's Document API).
- *   - pnpm < 11 → package.json `pnpm.overrides`.
- *   - bun / yarn-classic / yarn-berry → package.json `resolutions`.
- *   - vlt / npm / fallback → package.json `overrides`.
- *
- * The `pkgEnvDetails` parameter carries `agentVersion` (a SemVer
- * instance) needed to disambiguate pnpm versions. Callers reach this
- * via `applyOptimization()` which already has the env in scope.
- */
-export async function updateManifest(
-  agent: Agent,
-  pkgEnvDetails: EnvDetails,
-  overrides: Overrides,
-): Promise<void> {
-  const { editablePkgJson } = pkgEnvDetails
-  switch (agent) {
-    case BUN:
-      updateResolutionsField(editablePkgJson, overrides)
-      return
-    case PNPM:
-      if (usesPnpmWorkspaceOverrides(pkgEnvDetails)) {
-        // Route to pnpm-workspace.yaml. Also clear any stale
-        // `pnpm.overrides` in package.json — pnpm 11 ignores it, but
-        // leaving it there is misleading + drift-prone.
-        updatePnpmField(editablePkgJson, {})
-        await updatePnpmWorkspaceYamlOverrides(
-          pkgEnvDetails.pkgPath,
-          overrides,
-        )
-      } else {
-        updatePnpmField(editablePkgJson, overrides)
-      }
-      return
-    case VLT:
-      updateOverridesField(editablePkgJson, overrides)
-      return
-    case YARN_BERRY:
-      updateResolutionsField(editablePkgJson, overrides)
-      return
-    case YARN_CLASSIC:
-      updateResolutionsField(editablePkgJson, overrides)
-      return
-    default:
-      updateOverridesField(editablePkgJson, overrides)
-      return
-  }
 }

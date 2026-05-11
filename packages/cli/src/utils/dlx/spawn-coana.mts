@@ -26,6 +26,22 @@ import type { StdioOptions } from 'node:child_process'
 import type { SpawnExtra } from '@socketsecurity/lib/spawn'
 
 /**
+ * Spawn Coana CLI.
+ * Auto-detects SEA mode and uses appropriate spawn method.
+ */
+export async function spawnCoana(
+  args: string[] | readonly string[],
+  orgSlug?: string,
+  options?: CoanaDlxOptions | undefined,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<CResult<string>> {
+  if (isSeaBinary() && areExternalToolsAvailable()) {
+    return await spawnCoanaVfs(args, options, spawnExtra)
+  }
+  return await spawnCoanaDlx(args, orgSlug, options, spawnExtra)
+}
+
+/**
  * Helper to spawn Coana with dlx.
  *
  * Returns a CResult with stdout extraction for backward compatibility.
@@ -151,10 +167,7 @@ export async function spawnCoanaVfs(
   options?: CoanaDlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
-  const {
-    env: spawnEnv,
-    ...dlxOptions
-  } = {
+  const { env: spawnEnv, ...dlxOptions } = {
     __proto__: null,
     ...options,
   } as CoanaDlxOptions
@@ -207,20 +220,4 @@ export async function spawnCoanaVfs(
       message,
     }
   }
-}
-
-/**
- * Spawn Coana CLI.
- * Auto-detects SEA mode and uses appropriate spawn method.
- */
-export async function spawnCoana(
-  args: string[] | readonly string[],
-  orgSlug?: string,
-  options?: CoanaDlxOptions | undefined,
-  spawnExtra?: SpawnExtra | undefined,
-): Promise<CResult<string>> {
-  if (isSeaBinary() && areExternalToolsAvailable()) {
-    return await spawnCoanaVfs(args, options, spawnExtra)
-  }
-  return await spawnCoanaDlx(args, orgSlug, options, spawnExtra)
 }

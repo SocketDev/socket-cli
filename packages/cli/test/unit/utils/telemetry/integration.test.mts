@@ -420,12 +420,7 @@ describe('telemetry/integration', () => {
     })
 
     it('replaces home directory with tilde', async () => {
-      await trackCliStart([
-        'node',
-        'socket',
-        'scan',
-        '/Users/testuser/project',
-      ])
+      await trackCliStart(['node', 'socket', 'scan', '/Users/testuser/project'])
 
       const call = mockTrack.mock.calls[0][0]
       expect(call.context.argv).toContain('~/project')

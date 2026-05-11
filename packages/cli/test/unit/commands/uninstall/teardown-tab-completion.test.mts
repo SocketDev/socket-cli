@@ -60,9 +60,8 @@ vi.mock('../../../../src/constants/paths.mts', () => ({
   },
 }))
 
-const { teardownTabCompletion } = await import(
-  '../../../../src/commands/uninstall/teardown-tab-completion.mts'
-)
+const { teardownTabCompletion } =
+  await import('../../../../src/commands/uninstall/teardown-tab-completion.mts')
 
 const validDetails = {
   ok: true as const,

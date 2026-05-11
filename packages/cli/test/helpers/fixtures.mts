@@ -147,16 +147,6 @@ export const TEST_ERRORS = {
 }
 
 /**
- * Create a test CResult with success data
- */
-export function createTestSuccessResult<T>(data: T): CResult<T> {
-  return {
-    ok: true,
-    data,
-  }
-}
-
-/**
  * Create a test CResult with error
  */
 export function createTestErrorResult(
@@ -168,5 +158,15 @@ export function createTestErrorResult(
     code: error.code,
     message: error.message,
     cause: error.cause,
+  }
+}
+
+/**
+ * Create a test CResult with success data
+ */
+export function createTestSuccessResult<T>(data: T): CResult<T> {
+  return {
+    ok: true,
+    data,
   }
 }

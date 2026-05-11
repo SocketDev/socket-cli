@@ -107,6 +107,45 @@ export function brighterRgb(a: RGB, b: RGB): RGB {
 }
 
 /**
+ * Format header info line with theme colors.
+ */
+export function formatInfoLine(
+  text: string,
+  theme: HeaderTheme = 'default',
+): string {
+  const themeColors = THEME_COLORS_HEX[theme]
+  const accentColor = themeColors[1]!
+  return applyHexColor(text, accentColor)
+}
+
+/**
+ * Render ASCII logo with fallback for terminals without 24-bit color.
+ */
+export function renderLogoWithFallback(
+  frame: number | undefined = undefined,
+  theme: HeaderTheme = 'default',
+): string {
+  // If frame is provided and terminal supports full color, use shimmer.
+  if (frame !== undefined && supportsFullColor()) {
+    return renderShimmerFrame(frame, theme)
+  }
+
+  // Static rendering for terminals without full color support.
+  // Use simple yoctocolors for compatibility.
+  const themeToColor = {
+    __proto__: null,
+    default: colors.magenta,
+    cyberpunk: colors.cyan,
+    forest: colors.green,
+    ocean: colors.blue,
+    sunset: colors.yellow,
+  } as const
+
+  const colorFn = themeToColor[theme]
+  return ASCII_LOGO.map(line => colorFn(line)).join('\n')
+}
+
+/**
  * Render ASCII logo with shimmer effect for given frame.
  *
  * Uses socket-lib's @socketsecurity/lib/effects/shimmer engine
@@ -189,43 +228,4 @@ export function supportsFullColor(): boolean {
     TERM_PROGRAM === 'Hyper' ||
     TERM_PROGRAM === 'vscode'
   )
-}
-
-/**
- * Render ASCII logo with fallback for terminals without 24-bit color.
- */
-export function renderLogoWithFallback(
-  frame: number | null = undefined,
-  theme: HeaderTheme = 'default',
-): string {
-  // If frame is provided and terminal supports full color, use shimmer.
-  if (frame !== null && supportsFullColor()) {
-    return renderShimmerFrame(frame, theme)
-  }
-
-  // Static rendering for terminals without full color support.
-  // Use simple yoctocolors for compatibility.
-  const themeToColor = {
-    __proto__: null,
-    default: colors.magenta,
-    cyberpunk: colors.cyan,
-    forest: colors.green,
-    ocean: colors.blue,
-    sunset: colors.yellow,
-  } as const
-
-  const colorFn = themeToColor[theme]
-  return ASCII_LOGO.map(line => colorFn(line)).join('\n')
-}
-
-/**
- * Format header info line with theme colors.
- */
-export function formatInfoLine(
-  text: string,
-  theme: HeaderTheme = 'default',
-): string {
-  const themeColors = THEME_COLORS_HEX[theme]
-  const accentColor = themeColors[1]!
-  return applyHexColor(text, accentColor)
 }

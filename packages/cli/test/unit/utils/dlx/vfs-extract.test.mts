@@ -44,7 +44,7 @@ describe('utils/dlx/vfs-extract', () => {
     if (realProcessSmol === undefined) {
       delete (process as any).smol
     } else {
-      (process as any).smol = realProcessSmol
+      ;(process as any).smol = realProcessSmol
     }
   })
 
@@ -141,10 +141,7 @@ describe('utils/dlx/vfs-extract', () => {
     })
 
     it('returns plain tool name fallback when not in either map', () => {
-      const result = getToolFilePath(
-        'definitely-not-a-tool' as never,
-        '/base',
-      )
+      const result = getToolFilePath('definitely-not-a-tool' as never, '/base')
       expect(result).toContain('definitely-not-a-tool')
     })
   })

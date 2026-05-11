@@ -58,6 +58,14 @@ interface MockRequest extends EventEmitter {
   end: () => void
 }
 
+// Helper to create mock request.
+function createMockRequest(): MockRequest {
+  const req = new EventEmitter() as MockRequest
+  req.destroy = vi.fn()
+  req.end = vi.fn()
+  return req
+}
+
 // Helper to create mock response.
 function createMockResponse(
   statusCode: number,
@@ -68,14 +76,6 @@ function createMockResponse(
   res.statusMessage = statusCode === 200 ? 'OK' : 'Error'
   res.headers = headers
   return res
-}
-
-// Helper to create mock request.
-function createMockRequest(): MockRequest {
-  const req = new EventEmitter() as MockRequest
-  req.destroy = vi.fn()
-  req.end = vi.fn()
-  return req
 }
 
 describe('update/checker', () => {
@@ -271,9 +271,7 @@ describe('update/checker', () => {
     it('throws error for invalid registry URL', async () => {
       await expect(
         NetworkUtils.getLatestVersion('test', { registryUrl: 'not-a-url' }),
-      ).rejects.toThrow(
-        /options\.registryUrl "not-a-url" is not a valid URL/,
-      )
+      ).rejects.toThrow(/options\.registryUrl "not-a-url" is not a valid URL/)
     })
 
     it('throws when registryUrl is explicit empty string (line 222-226)', async () => {

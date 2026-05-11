@@ -599,9 +599,7 @@ describe('project context utilities', () => {
         isMonorepo: true,
       })
 
-      expect(suggestions).toContainEqual(
-        expect.stringContaining('--recursive'),
-      )
+      expect(suggestions).toContainEqual(expect.stringContaining('--recursive'))
     })
 
     it('suggests --prod for Next.js projects', () => {

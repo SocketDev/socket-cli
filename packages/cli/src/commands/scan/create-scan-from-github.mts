@@ -157,7 +157,11 @@ export async function createScanFromGithub({
   // If every repo failed but not for a known-blocking reason, treat
   // the run as an error so scripts know something went wrong instead
   // of inferring success from an ok: true with 0 scans.
-  if (reposScanned > 0 && scansCreated === 0 && perRepoFailures.length === reposScanned) {
+  if (
+    reposScanned > 0 &&
+    scansCreated === 0 &&
+    perRepoFailures.length === reposScanned
+  ) {
     const firstFailure = perRepoFailures[0]!
     return {
       ok: false,
@@ -174,39 +178,79 @@ export async function createScanFromGithub({
   }
 }
 
-export async function scanRepo(
-  repoSlug: string,
-  {
-    githubApiUrl,
-    githubToken,
-    orgGithub,
-    orgSlug,
-    outputKind,
-    repos,
-  }: {
-    githubApiUrl: string
-    githubToken: string
-    orgSlug: string
-    orgGithub: string
-    outputKind: OutputKind
-    repos: string
-  },
-): Promise<CResult<{ scanCreated: boolean }>> {
-  logger.info(
-    `Requesting repo details from GitHub API for: \`${orgGithub}/${repoSlug}\`...`,
-  )
-  logger.group()
-  const result = await scanOneRepo(repoSlug, {
-    githubApiUrl,
-    githubToken,
-    orgSlug,
-    orgGithub,
-    outputKind,
-    repos,
+export async function downloadManifestFile({
+  defaultBranch,
+  file,
+  orgGithub,
+  repoSlug,
+  tmpDir,
+}: {
+  defaultBranch: string
+  file: string
+  orgGithub: string
+  repoSlug: string
+  tmpDir: string
+}): Promise<CResult<undefined>> {
+  debug('request: file content from GitHub')
+
+  const octokit = getOctokit()
+
+  const result = await withGitHubRetry(async () => {
+    const { data } = await octokit.repos.getContent({
+      owner: orgGithub,
+      repo: repoSlug,
+      path: file,
+      ref: defaultBranch,
+    })
+    return data
+  }, `fetching file content for ${file} in ${orgGithub}/${repoSlug}`)
+
+  if (!result.ok) {
+    logger.fail(`Failed to get file content for: ${file}`)
+    return result
+  }
+
+  const fileData = result.data
+  debug('complete: request')
+  debugDir({
+    fileData: { type: (fileData as any).type, size: (fileData as any).size },
   })
-  logger.groupEnd()
-  logger.log('')
-  return result
+
+  // Check if it's a file (not a directory).
+  if (Array.isArray(fileData) || (fileData as any).type !== 'file') {
+    return {
+      ok: false,
+      message: 'Not a file',
+      cause: `Path ${file} is not a file in ${orgGithub}/${repoSlug}.`,
+    }
+  }
+
+  const downloadUrl = (fileData as any).download_url
+  if (!downloadUrl) {
+    return {
+      ok: false,
+      message: 'Missing download URL',
+      cause:
+        `GitHub did not provide a download URL for ${file} in ${orgGithub}/${repoSlug}. ` +
+        'The file may be too large or in an unsupported format.',
+    }
+  }
+
+  const localPath = path.join(tmpDir, file)
+  debug(`download: manifest file started ${downloadUrl} -> ${localPath}`)
+
+  // Now stream the file to that file.
+  const downloadResult = await streamDownloadWithFetch(localPath, downloadUrl)
+  if (!downloadResult.ok) {
+    logger.fail(
+      `Failed to download manifest file, skipping to next file. File: ${file}`,
+    )
+    return downloadResult
+  }
+
+  debug('download: manifest file completed')
+
+  return { ok: true, data: undefined }
 }
 
 export async function scanOneRepo(
@@ -327,6 +371,134 @@ export async function scanOneRepo(
   return { ok: true, data: { scanCreated: true } }
 }
 
+export async function scanRepo(
+  repoSlug: string,
+  {
+    githubApiUrl,
+    githubToken,
+    orgGithub,
+    orgSlug,
+    outputKind,
+    repos,
+  }: {
+    githubApiUrl: string
+    githubToken: string
+    orgSlug: string
+    orgGithub: string
+    outputKind: OutputKind
+    repos: string
+  },
+): Promise<CResult<{ scanCreated: boolean }>> {
+  logger.info(
+    `Requesting repo details from GitHub API for: \`${orgGithub}/${repoSlug}\`...`,
+  )
+  logger.group()
+  const result = await scanOneRepo(repoSlug, {
+    githubApiUrl,
+    githubToken,
+    orgSlug,
+    orgGithub,
+    outputKind,
+    repos,
+  })
+  logger.groupEnd()
+  logger.log('')
+  return result
+}
+
+// Courtesy of gemini:
+export async function streamDownloadWithFetch(
+  localPath: string,
+  downloadUrl: string,
+): Promise<CResult<string>> {
+  try {
+    // Use longer timeout for file downloads (5 minutes).
+    const response = await socketHttpRequest(downloadUrl, {
+      timeout: 300_000,
+    })
+
+    if (!response.ok) {
+      const errorMsg = `Download failed due to bad server response: ${response.status} ${response.statusText} for ${downloadUrl}`
+      logger.fail(errorMsg)
+      return { ok: false, message: 'Download Failed', cause: errorMsg }
+    }
+
+    // Make sure the dir exists. It may be nested and we need to construct that
+    // before starting the download.
+    const dir = path.dirname(localPath)
+    if (!existsSync(dir)) {
+      safeMkdirSync(dir, { recursive: true })
+    }
+
+    await fs.writeFile(localPath, response.body)
+    return { ok: true, data: localPath }
+  } catch (e) {
+    logger.fail(
+      'An error was thrown while trying to download a manifest file... url:',
+      downloadUrl,
+    )
+    debugDir(e)
+
+    // If an error occurs and fileStream was created, attempt to clean up.
+    try {
+      await safeDelete(localPath, { force: true })
+    } catch (e) {
+      logger.fail(
+        formatErrorWithDetail(
+          `Error deleting partial file ${localPath}`,
+          e as NodeJS.ErrnoException,
+        ),
+      )
+    }
+    // Construct a more informative error message
+    let detailedError = `Error during download of ${downloadUrl}: ${(e as { message: string }).message}`
+    if ((e as { cause: string }).cause) {
+      // Include cause if available (e.g., from network errors)
+      detailedError += `\nCause: ${(e as { cause: string }).cause}`
+    }
+    debug(detailedError)
+    return { ok: false, message: 'Download Failed', cause: detailedError }
+  }
+}
+
+export async function testAndDownloadManifestFile({
+  defaultBranch,
+  file,
+  orgGithub,
+  repoSlug,
+  supportedFiles,
+  tmpDir,
+}: {
+  defaultBranch: string
+  file: string
+  orgGithub: string
+  repoSlug: string
+  supportedFiles:
+    | SocketSdkSuccessResult<'getSupportedFiles'>['data']
+    | undefined
+  tmpDir: string
+}): Promise<CResult<{ isManifest: boolean }>> {
+  debug(`testing: file ${file}`)
+
+  if (!supportedFiles || !isReportSupportedFile(file, supportedFiles)) {
+    debug('skip: not a known pattern')
+    // Not an error.
+    return { ok: true, data: { isManifest: false } }
+  }
+
+  debug(`found: manifest file, going to attempt to download it; ${file}`)
+
+  const result = await downloadManifestFile({
+    defaultBranch,
+    file,
+    orgGithub,
+    repoSlug,
+    tmpDir,
+  })
+
+  return result.ok ? { ok: true, data: { isManifest: true } } : result
+}
+
 export async function testAndDownloadManifestFiles({
   defaultBranch,
   files,
@@ -393,180 +565,8 @@ export async function testAndDownloadManifestFiles({
   return { ok: true, data: undefined }
 }
 
-export async function testAndDownloadManifestFile({
-  defaultBranch,
-  file,
-  orgGithub,
-  repoSlug,
-  supportedFiles,
-  tmpDir,
-}: {
-  defaultBranch: string
-  file: string
-  orgGithub: string
-  repoSlug: string
-  supportedFiles:
-    | SocketSdkSuccessResult<'getSupportedFiles'>['data']
-    | undefined
-  tmpDir: string
-}): Promise<CResult<{ isManifest: boolean }>> {
-  debug(`testing: file ${file}`)
-
-  if (!supportedFiles || !isReportSupportedFile(file, supportedFiles)) {
-    debug('skip: not a known pattern')
-    // Not an error.
-    return { ok: true, data: { isManifest: false } }
-  }
-
-  debug(`found: manifest file, going to attempt to download it; ${file}`)
-
-  const result = await downloadManifestFile({
-    defaultBranch,
-    file,
-    orgGithub,
-    repoSlug,
-    tmpDir,
-  })
-
-  return result.ok ? { ok: true, data: { isManifest: true } } : result
-}
-
-export async function downloadManifestFile({
-  defaultBranch,
-  file,
-  orgGithub,
-  repoSlug,
-  tmpDir,
-}: {
-  defaultBranch: string
-  file: string
-  orgGithub: string
-  repoSlug: string
-  tmpDir: string
-}): Promise<CResult<undefined>> {
-  debug('request: file content from GitHub')
-
-  const octokit = getOctokit()
-
-  const result = await withGitHubRetry(async () => {
-    const { data } = await octokit.repos.getContent({
-      owner: orgGithub,
-      repo: repoSlug,
-      path: file,
-      ref: defaultBranch,
-    })
-    return data
-  }, `fetching file content for ${file} in ${orgGithub}/${repoSlug}`)
-
-  if (!result.ok) {
-    logger.fail(`Failed to get file content for: ${file}`)
-    return result
-  }
-
-  const fileData = result.data
-  debug('complete: request')
-  debugDir({
-    fileData: { type: (fileData as any).type, size: (fileData as any).size },
-  })
-
-  // Check if it's a file (not a directory).
-  if (Array.isArray(fileData) || (fileData as any).type !== 'file') {
-    return {
-      ok: false,
-      message: 'Not a file',
-      cause: `Path ${file} is not a file in ${orgGithub}/${repoSlug}.`,
-    }
-  }
-
-  const downloadUrl = (fileData as any).download_url
-  if (!downloadUrl) {
-    return {
-      ok: false,
-      message: 'Missing download URL',
-      cause:
-        `GitHub did not provide a download URL for ${file} in ${orgGithub}/${repoSlug}. ` +
-        'The file may be too large or in an unsupported format.',
-    }
-  }
-
-  const localPath = path.join(tmpDir, file)
-  debug(`download: manifest file started ${downloadUrl} -> ${localPath}`)
-
-  // Now stream the file to that file.
-  const downloadResult = await streamDownloadWithFetch(localPath, downloadUrl)
-  if (!downloadResult.ok) {
-    logger.fail(
-      `Failed to download manifest file, skipping to next file. File: ${file}`,
-    )
-    return downloadResult
-  }
-
-  debug('download: manifest file completed')
-
-  return { ok: true, data: undefined }
-}
-
-// Courtesy of gemini:
-export async function streamDownloadWithFetch(
-  localPath: string,
-  downloadUrl: string,
-): Promise<CResult<string>> {
-  try {
-    // Use longer timeout for file downloads (5 minutes).
-    const response = await socketHttpRequest(downloadUrl, {
-      timeout: 300_000,
-    })
-
-    if (!response.ok) {
-      const errorMsg = `Download failed due to bad server response: ${response.status} ${response.statusText} for ${downloadUrl}`
-      logger.fail(errorMsg)
-      return { ok: false, message: 'Download Failed', cause: errorMsg }
-    }
-
-    // Make sure the dir exists. It may be nested and we need to construct that
-    // before starting the download.
-    const dir = path.dirname(localPath)
-    if (!existsSync(dir)) {
-      safeMkdirSync(dir, { recursive: true })
-    }
-
-    await fs.writeFile(localPath, response.body)
-    return { ok: true, data: localPath }
-  } catch (e) {
-    logger.fail(
-      'An error was thrown while trying to download a manifest file... url:',
-      downloadUrl,
-    )
-    debugDir(e)
-
-    // If an error occurs and fileStream was created, attempt to clean up.
-    try {
-      await safeDelete(localPath, { force: true })
-    } catch (e) {
-      logger.fail(
-        formatErrorWithDetail(
-          `Error deleting partial file ${localPath}`,
-          e as NodeJS.ErrnoException,
-        ),
-      )
-    }
-    // Construct a more informative error message
-    let detailedError = `Error during download of ${downloadUrl}: ${(e as { message: string }).message}`
-    if ((e as { cause: string }).cause) {
-      // Include cause if available (e.g., from network errors)
-      detailedError += `\nCause: ${(e as { cause: string }).cause}`
-    }
-    debug(detailedError)
-    return { ok: false, message: 'Download Failed', cause: detailedError }
-  }
-}
-
-
 // Interactive prompts extracted to keep this file under the 1000-line File-size cap.
-import {
-  makeSure,
-  selectFocus,
-} from './create-scan-from-github-prompts.mts'
+import { makeSure, selectFocus } from './create-scan-from-github-prompts.mts'
 
 export { makeSure, selectFocus }
 
@@ -578,4 +578,3 @@ import {
 } from './create-scan-from-github-api.mts'
 
 export { getLastCommitDetails, getRepoBranchTree, getRepoDetails }
-

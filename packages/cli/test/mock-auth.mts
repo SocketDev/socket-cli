@@ -80,48 +80,6 @@ function simulateDelay(ms: number): Promise<void> {
 }
 
 /**
- * Mock interactive login flow.
- */
-export async function mockInteractiveLogin(
-  options?: MockLoginOptions | undefined,
-): Promise<CResult<{ apiToken: string; orgSlug: string }>> {
-  const {
-    apiToken = 'test-token-123',
-    delay = 100,
-    errorMessage = 'Login failed',
-    orgSlug = 'test-org',
-    requireMfa = false,
-    shouldSucceed = true,
-  } = {
-    __proto__: null,
-    ...options,
-  } as MockLoginOptions
-
-  await simulateDelay(delay)
-
-  if (!shouldSucceed) {
-    return {
-      ok: false,
-      code: 401,
-      message: errorMessage,
-    }
-  }
-
-  if (requireMfa) {
-    // Simulate MFA flow.
-    await simulateDelay(delay)
-  }
-
-  return {
-    ok: true,
-    data: {
-      apiToken,
-      orgSlug,
-    },
-  }
-}
-
-/**
  * Mock API token authentication.
  */
 export async function mockApiTokenAuth(
@@ -165,6 +123,41 @@ export async function mockApiTokenAuth(
 }
 
 /**
+ * Mock API key generation.
+ */
+export async function mockGenerateApiKey(
+  options?: MockAuthOptions & { keyName?: string; scopes?: string[] },
+): Promise<CResult<{ apiKey: string; keyId: string }>> {
+  const {
+    delay = 150,
+    errorMessage = 'API key generation failed',
+    keyName = 'test-key',
+    shouldSucceed = true,
+  } = {
+    __proto__: null,
+    ...options,
+  } as MockAuthOptions & { keyName?: string; scopes?: string[] }
+
+  await simulateDelay(delay)
+
+  if (!shouldSucceed) {
+    return {
+      ok: false,
+      code: 500,
+      message: errorMessage,
+    }
+  }
+
+  return {
+    ok: true,
+    data: {
+      apiKey: `sk_test_${Buffer.from(keyName).toString('base64').substring(0, 16)}`,
+      keyId: `key_${Date.now()}`,
+    },
+  }
+}
+
+/**
  * Mock GitHub OAuth authentication flow.
  */
 export async function mockGitHubAuth(
@@ -201,6 +194,79 @@ export async function mockGitHubAuth(
         name: 'Test User',
       },
     },
+  }
+}
+
+/**
+ * Mock interactive login flow.
+ */
+export async function mockInteractiveLogin(
+  options?: MockLoginOptions | undefined,
+): Promise<CResult<{ apiToken: string; orgSlug: string }>> {
+  const {
+    apiToken = 'test-token-123',
+    delay = 100,
+    errorMessage = 'Login failed',
+    orgSlug = 'test-org',
+    requireMfa = false,
+    shouldSucceed = true,
+  } = {
+    __proto__: null,
+    ...options,
+  } as MockLoginOptions
+
+  await simulateDelay(delay)
+
+  if (!shouldSucceed) {
+    return {
+      ok: false,
+      code: 401,
+      message: errorMessage,
+    }
+  }
+
+  if (requireMfa) {
+    // Simulate MFA flow.
+    await simulateDelay(delay)
+  }
+
+  return {
+    ok: true,
+    data: {
+      apiToken,
+      orgSlug,
+    },
+  }
+}
+
+/**
+ * Mock logout flow.
+ */
+export async function mockLogout(
+  options?: MockAuthOptions,
+): Promise<CResult<void>> {
+  const {
+    delay = 50,
+    errorMessage = 'Logout failed',
+    shouldSucceed = true,
+  } = {
+    __proto__: null,
+    ...options,
+  } as MockAuthOptions
+
+  await simulateDelay(delay)
+
+  if (!shouldSucceed) {
+    return {
+      ok: false,
+      code: 500,
+      message: errorMessage,
+    }
+  }
+
+  return {
+    ok: true,
+    data: undefined,
   }
 }
 
@@ -261,15 +327,15 @@ export async function mockOrgSelection(
 }
 
 /**
- * Mock token validation.
+ * Mock refresh token flow.
  */
-export async function mockTokenValidation(
-  token: string,
+export async function mockRefreshToken(
+  _refreshToken: string,
   options?: MockAuthOptions,
-): Promise<CResult<boolean>> {
+): Promise<CResult<{ accessToken: string; expiresIn: number }>> {
   const {
-    delay = 30,
-    errorMessage = 'Token validation failed',
+    delay = 100,
+    errorMessage = 'Token refresh failed',
     shouldSucceed = true,
   } = {
     __proto__: null,
@@ -286,12 +352,12 @@ export async function mockTokenValidation(
     }
   }
 
-  // Simulate basic token validation.
-  const isValid = token.length > 10 && token.startsWith('test-')
-
   return {
     ok: true,
-    data: isValid,
+    data: {
+      accessToken: `refreshed-token-${Date.now()}`,
+      expiresIn: 3600, // 1 hour.
+    },
   }
 }
 
@@ -338,15 +404,15 @@ export async function mockSsoAuth(
 }
 
 /**
- * Mock refresh token flow.
+ * Mock token validation.
  */
-export async function mockRefreshToken(
-  _refreshToken: string,
+export async function mockTokenValidation(
+  token: string,
   options?: MockAuthOptions,
-): Promise<CResult<{ accessToken: string; expiresIn: number }>> {
+): Promise<CResult<boolean>> {
   const {
-    delay = 100,
-    errorMessage = 'Token refresh failed',
+    delay = 30,
+    errorMessage = 'Token validation failed',
     shouldSucceed = true,
   } = {
     __proto__: null,
@@ -363,78 +429,12 @@ export async function mockRefreshToken(
     }
   }
 
-  return {
-    ok: true,
-    data: {
-      accessToken: `refreshed-token-${Date.now()}`,
-      expiresIn: 3600, // 1 hour.
-    },
-  }
-}
-
-/**
- * Mock logout flow.
- */
-export async function mockLogout(
-  options?: MockAuthOptions,
-): Promise<CResult<void>> {
-  const {
-    delay = 50,
-    errorMessage = 'Logout failed',
-    shouldSucceed = true,
-  } = {
-    __proto__: null,
-    ...options,
-  } as MockAuthOptions
-
-  await simulateDelay(delay)
-
-  if (!shouldSucceed) {
-    return {
-      ok: false,
-      code: 500,
-      message: errorMessage,
-    }
-  }
+  // Simulate basic token validation.
+  const isValid = token.length > 10 && token.startsWith('test-')
 
   return {
     ok: true,
-    data: undefined,
-  }
-}
-
-/**
- * Mock API key generation.
- */
-export async function mockGenerateApiKey(
-  options?: MockAuthOptions & { keyName?: string; scopes?: string[] },
-): Promise<CResult<{ apiKey: string; keyId: string }>> {
-  const {
-    delay = 150,
-    errorMessage = 'API key generation failed',
-    keyName = 'test-key',
-    shouldSucceed = true,
-  } = {
-    __proto__: null,
-    ...options,
-  } as MockAuthOptions & { keyName?: string; scopes?: string[] }
-
-  await simulateDelay(delay)
-
-  if (!shouldSucceed) {
-    return {
-      ok: false,
-      code: 500,
-      message: errorMessage,
-    }
-  }
-
-  return {
-    ok: true,
-    data: {
-      apiKey: `sk_test_${Buffer.from(keyName).toString('base64').substring(0, 16)}`,
-      keyId: `key_${Date.now()}`,
-    },
+    data: isValid,
   }
 }
 

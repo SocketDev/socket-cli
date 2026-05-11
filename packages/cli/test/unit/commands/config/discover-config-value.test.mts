@@ -25,12 +25,15 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockFetchOrganization, mockHasDefaultApiToken, mockIsSupportedConfigKey } =
-  vi.hoisted(() => ({
-    mockFetchOrganization: vi.fn(),
-    mockHasDefaultApiToken: vi.fn(),
-    mockIsSupportedConfigKey: vi.fn(),
-  }))
+const {
+  mockFetchOrganization,
+  mockHasDefaultApiToken,
+  mockIsSupportedConfigKey,
+} = vi.hoisted(() => ({
+  mockFetchOrganization: vi.fn(),
+  mockHasDefaultApiToken: vi.fn(),
+  mockIsSupportedConfigKey: vi.fn(),
+}))
 
 vi.mock('../../../../src/utils/config.mts', () => ({
   isSupportedConfigKey: mockIsSupportedConfigKey,
@@ -47,9 +50,8 @@ vi.mock(
   }),
 )
 
-const { discoverConfigValue } = await import(
-  '../../../../src/commands/config/discover-config-value.mts'
-)
+const { discoverConfigValue } =
+  await import('../../../../src/commands/config/discover-config-value.mts')
 
 const orgFixture = (slugs: string[]) => ({
   ok: true as const,

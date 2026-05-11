@@ -34,28 +34,6 @@ const rootPath = path.join(__dirname, '..')
 const logger = getDefaultLogger()
 
 /**
- * Parse CLI arguments.
- */
-function parseArgs() {
-  const args = process.argv.slice(2)
-  const platformArgs = parsePlatformArgs(args)
-
-  const options = {
-    all: args.includes('--all'),
-    arch: platformArgs.arch,
-    libc: platformArgs.libc,
-    platform: platformArgs.platform,
-  }
-
-  // Default to --all if no specific platform/arch/libc specified.
-  if (!options.platform && !options.arch && !options.libc) {
-    options.all = true
-  }
-
-  return options
-}
-
-/**
  * Filter targets based on CLI arguments.
  */
 function filterTargets(targets, options) {
@@ -80,6 +58,28 @@ function filterTargets(targets, options) {
     }
     return true
   })
+}
+
+/**
+ * Parse CLI arguments.
+ */
+function parseArgs() {
+  const args = process.argv.slice(2)
+  const platformArgs = parsePlatformArgs(args)
+
+  const options = {
+    all: args.includes('--all'),
+    arch: platformArgs.arch,
+    libc: platformArgs.libc,
+    platform: platformArgs.platform,
+  }
+
+  // Default to --all if no specific platform/arch/libc specified.
+  if (!options.platform && !options.arch && !options.libc) {
+    options.all = true
+  }
+
+  return options
 }
 
 /**

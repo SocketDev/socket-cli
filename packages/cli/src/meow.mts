@@ -254,9 +254,15 @@ export default function meow<const F extends MeowFlags = MeowFlags>(
 
   // Auto help/version.
   if (!input.length && argv.length === 1) {
-    if (flagValues['version' as keyof InferFlagValues<F>] === true && autoVersion) {
+    if (
+      flagValues['version' as keyof InferFlagValues<F>] === true &&
+      autoVersion
+    ) {
       showVersion()
-    } else if (flagValues['help' as keyof InferFlagValues<F>] === true && autoHelp) {
+    } else if (
+      flagValues['help' as keyof InferFlagValues<F>] === true &&
+      autoHelp
+    ) {
       showHelp(0)
     }
   }

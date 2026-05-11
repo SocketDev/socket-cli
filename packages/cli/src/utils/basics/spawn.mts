@@ -26,7 +26,9 @@ import { getPyCliVersion } from '../../env/pycli-version.mts'
 /**
  * Check if socketsecurity is installed in the Python environment.
  */
-export async function isSocketPyCliInstalled(pythonBin: string): Promise<boolean> {
+export async function isSocketPyCliInstalled(
+  pythonBin: string,
+): Promise<boolean> {
   try {
     const result = await spawn(
       pythonBin,
@@ -42,13 +44,14 @@ export async function isSocketPyCliInstalled(pythonBin: string): Promise<boolean
 /**
  * Check if socket_basics is installed in the Python environment.
  */
-export async function isSocketBasicsInstalled(pythonBin: string): Promise<boolean> {
+export async function isSocketBasicsInstalled(
+  pythonBin: string,
+): Promise<boolean> {
   try {
-    const result = await spawn(
-      pythonBin,
-      ['-c', 'import socket_basics'],
-      { shell: WIN32, stdio: 'pipe' },
-    )
+    const result = await spawn(pythonBin, ['-c', 'import socket_basics'], {
+      shell: WIN32,
+      stdio: 'pipe',
+    })
     return result.code === 0
   } catch {
     return false

@@ -165,7 +165,11 @@ describe('removeSocketWrapper', () => {
 
     removeSocketWrapper('/home/user/.bashrc')
 
-    expect(fs.writeFileSync).toHaveBeenCalledWith('/home/user/.bashrc', '', 'utf8')
+    expect(fs.writeFileSync).toHaveBeenCalledWith(
+      '/home/user/.bashrc',
+      '',
+      'utf8',
+    )
     // File is written successfully, so success is logged.
     expect(mockLogger.success).toHaveBeenCalledWith(
       expect.stringContaining('The alias was removed from /home/user/.bashrc'),

@@ -43,11 +43,7 @@ export const cmdPip = defineHandoffCommand({
   name: 'pip',
   description: 'Run pip with Socket Firewall security',
   spawnMode: 'dlx',
-  examples: [
-    'install flask',
-    'install -r requirements.txt',
-    'list',
-  ],
+  examples: ['install flask', 'install -r requirements.txt', 'list'],
   binaryPicker: ctx => getPipBinName(ctx.invokedAs),
   trackTelemetry: false,
   supportDryRun: false,

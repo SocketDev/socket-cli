@@ -37,20 +37,15 @@ vi.mock('@socketsecurity/lib/http-request', async importOriginal => {
   }
 })
 
-const { OAuthIntrospector } = await import(
-  '../../../../src/commands/mcp/transport-http-helpers.mts'
-)
+const { OAuthIntrospector } =
+  await import('../../../../src/commands/mcp/transport-http-helpers.mts')
 
 const ISSUER = 'https://auth.example.com'
 const CLIENT_ID = 'client-id'
 const CLIENT_SECRET = 'client-secret'
 const SCOPES = ['packages:list'] as const
 
-function fakeResponse(opts: {
-  status: number
-  body?: unknown
-  text?: string
-}) {
+function fakeResponse(opts: { status: number; body?: unknown; text?: string }) {
   const text =
     opts.text ?? (opts.body !== undefined ? JSON.stringify(opts.body) : '')
   return {
@@ -327,8 +322,7 @@ describe('OAuthIntrospector — verifyAccessToken', () => {
     const introCall = mockHttpRequest.mock.calls[1]
     expect(introCall![0]).toBe('https://auth.example.com/introspect')
     const expectedAuth =
-      'Basic ' +
-      Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64')
+      'Basic ' + Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64')
     expect(introCall![1].headers.authorization).toBe(expectedAuth)
     expect(introCall![1].headers['content-type']).toBe(
       'application/x-www-form-urlencoded',
@@ -585,8 +579,8 @@ describe('OAuthIntrospector — authenticateRequest', () => {
       expect(result.authInfo.token).toBe('some-token')
       expect(result.authInfo.scopes).toContain('packages:list')
     }
-    expect(
-      (req as unknown as { auth?: { token: string } }).auth?.token,
-    ).toBe('some-token')
+    expect((req as unknown as { auth?: { token: string } }).auth?.token).toBe(
+      'some-token',
+    )
   })
 })

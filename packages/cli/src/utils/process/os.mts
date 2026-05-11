@@ -235,9 +235,7 @@ async function clearQuarantine(filePath: string): Promise<void> {
     })
     logger.log('Cleared quarantine attribute')
   } catch (e) {
-    logger.log(
-      `Failed to clear quarantine: ${errorMessage(e)}`,
-    )
+    logger.log(`Failed to clear quarantine: ${errorMessage(e)}`)
   }
 }
 
@@ -254,9 +252,7 @@ async function ensureExecutable(filePath: string): Promise<void> {
     await fs.promises.chmod(filePath, 0o755)
     logger.log('Set executable permissions')
   } catch (e) {
-    logger.warn(
-      `Failed to set executable permissions: ${errorMessage(e)}`,
-    )
+    logger.warn(`Failed to set executable permissions: ${errorMessage(e)}`)
   }
 }
 

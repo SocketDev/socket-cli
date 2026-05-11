@@ -63,11 +63,7 @@ async function generatePackage(config) {
     path.join(templatePath, 'LICENSE'),
     'utf-8',
   )
-  await fs.writeFile(
-    path.join(packagePath, 'LICENSE'),
-    licenseContent,
-    'utf-8',
-  )
+  await fs.writeFile(path.join(packagePath, 'LICENSE'), licenseContent, 'utf-8')
 
   // Generate README.md.
   const readmeContent = await processTemplate(
@@ -138,11 +134,7 @@ async function generateMainPackage() {
     path.join(templatePath, 'LICENSE'),
     'utf-8',
   )
-  await fs.writeFile(
-    path.join(packagePath, 'LICENSE'),
-    licenseContent,
-    'utf-8',
-  )
+  await fs.writeFile(path.join(packagePath, 'LICENSE'), licenseContent, 'utf-8')
 
   // Copy README.md.
   const readmeContent = await fs.readFile(

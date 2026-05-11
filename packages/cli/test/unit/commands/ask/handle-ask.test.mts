@@ -624,9 +624,9 @@ describe('wordOverlap', () => {
   })
 
   it('returns 1 when query and command identical', () => {
-    expect(
-      wordOverlap(new Set(['fix', 'security']), ['fix', 'security']),
-    ).toBe(1)
+    expect(wordOverlap(new Set(['fix', 'security']), ['fix', 'security'])).toBe(
+      1,
+    )
   })
 
   it('returns Jaccard ratio for partial overlap', () => {

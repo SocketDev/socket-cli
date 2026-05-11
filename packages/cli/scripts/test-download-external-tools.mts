@@ -56,16 +56,6 @@ const TOOL_REPOS = {
 }
 
 /**
- * Get current platform identifier (normalized for release naming).
- * Uses 'win' instead of 'win32' for Windows.
- */
-function getCurrentPlatform() {
-  const platform = process.platform === 'win32' ? 'win' : process.platform
-  const arch = process.arch
-  return `${platform}-${arch}`
-}
-
-/**
  * Download a file from GitHub releases using curl (simpler than handling streams).
  */
 async function downloadFile(url, destPath) {
@@ -84,6 +74,53 @@ async function downloadFile(url, destPath) {
 
   const stats = await fs.stat(destPath)
   logger.log(`Downloaded: ${(stats.size / 1024 / 1024).toFixed(2)} MB`)
+}
+
+/**
+ * Download and extract an external tool.
+ */
+async function downloadTool(toolName, platform) {
+  const config = TOOL_REPOS[toolName]
+  const assetName = PLATFORM_MAP[platform]?.[toolName]
+
+  if (!assetName) {
+    logger.warn(`${toolName} not available for platform: ${platform}`)
+    return undefined
+  }
+
+  const outputDir = path.join(
+    __dirname,
+    '../../build-infra/build/external-tools-test',
+    platform,
+  )
+  await safeMkdir(outputDir)
+
+  const archivePath = path.join(outputDir, assetName)
+  // OpenGrep binary is named "opengrep-core" in the archive.
+  const archiveBinaryName = toolName === 'opengrep' ? 'opengrep-core' : toolName
+  const binaryName = toolName + (process.platform === 'win32' ? '.exe' : '')
+  const binaryPath = path.join(outputDir, binaryName)
+
+  // Skip if already downloaded.
+  if (existsSync(binaryPath)) {
+    const stats = await fs.stat(binaryPath)
+    logger.log(
+      `Already exists: ${binaryName} (${(stats.size / 1024 / 1024).toFixed(2)} MB)`,
+    )
+    return binaryPath
+  }
+
+  // Download archive.
+  const url = `https://github.com/${config.owner}/${config.repo}/releases/download/${config.version}/${assetName}`
+  await downloadFile(url, archivePath)
+
+  // Extract binary.
+  await extractFromTarGz(archivePath, binaryPath, archiveBinaryName)
+
+  // Cleanup archive.
+  await fs.unlink(archivePath)
+
+  return binaryPath
 }
 
 /**
@@ -139,50 +176,13 @@ async function extractFromTarGz(archivePath, outputPath, binaryName) {
 }
 
 /**
- * Download and extract an external tool.
+ * Get current platform identifier (normalized for release naming).
+ * Uses 'win' instead of 'win32' for Windows.
  */
-async function downloadTool(toolName, platform) {
-  const config = TOOL_REPOS[toolName]
-  const assetName = PLATFORM_MAP[platform]?.[toolName]
-
-  if (!assetName) {
-    logger.warn(`${toolName} not available for platform: ${platform}`)
-    return undefined
-  }
-
-  const outputDir = path.join(
-    __dirname,
-    '../../build-infra/build/external-tools-test',
-    platform,
-  )
-  await safeMkdir(outputDir)
-
-  const archivePath = path.join(outputDir, assetName)
-  // OpenGrep binary is named "opengrep-core" in the archive.
-  const archiveBinaryName = toolName === 'opengrep' ? 'opengrep-core' : toolName
-  const binaryName = toolName + (process.platform === 'win32' ? '.exe' : '')
-  const binaryPath = path.join(outputDir, binaryName)
-
-  // Skip if already downloaded.
-  if (existsSync(binaryPath)) {
-    const stats = await fs.stat(binaryPath)
-    logger.log(
-      `Already exists: ${binaryName} (${(stats.size / 1024 / 1024).toFixed(2)} MB)`,
-    )
-    return binaryPath
-  }
-
-  // Download archive.
-  const url = `https://github.com/${config.owner}/${config.repo}/releases/download/${config.version}/${assetName}`
-  await downloadFile(url, archivePath)
-
-  // Extract binary.
-  await extractFromTarGz(archivePath, binaryPath, archiveBinaryName)
-
-  // Cleanup archive.
-  await fs.unlink(archivePath)
-
-  return binaryPath
+function getCurrentPlatform() {
+  const platform = process.platform === 'win32' ? 'win' : process.platform
+  const arch = process.arch
+  return `${platform}-${arch}`
 }
 
 /**

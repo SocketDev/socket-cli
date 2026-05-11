@@ -7,10 +7,7 @@
 import { getMachineOutputMode } from '../output/ambient-mode.mts'
 import { applyMachineMode as rawApply } from './machine-mode.mts'
 
-import type {
-  MachineModeInput,
-  MachineModeOutput,
-} from './machine-mode.mts'
+import type { MachineModeInput, MachineModeOutput } from './machine-mode.mts'
 
 /**
  * Apply machine-mode flag forwarding + env injection when ambient
@@ -33,9 +30,7 @@ export function applyMachineModeIfActive(
  * non-flag token is the subcommand (npm install, pnpm ls, yarn add,
  * etc.). Returns undefined if args starts with a flag or is empty.
  */
-export function inferSubcommand(
-  args: readonly string[],
-): string | undefined {
+export function inferSubcommand(args: readonly string[]): string | undefined {
   for (const arg of args) {
     if (!arg.startsWith('-')) {
       return arg

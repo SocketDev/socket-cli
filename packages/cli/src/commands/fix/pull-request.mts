@@ -311,7 +311,7 @@ type GqlPullRequestsResponse = {
     pullRequests: {
       pageInfo: {
         hasNextPage: boolean
-        endCursor: string | null
+        endCursor: string | undefined
       }
       nodes: GqlPrNode[]
     }
@@ -357,7 +357,7 @@ export async function getSocketFixPrsWithContext(
 
   try {
     let hasNextPage = true
-    let cursor: string | null = undefined
+    let cursor: string | undefined = undefined
     let pageIndex = 0
     // Include owner in cache key to avoid collisions with same repo name.
     const gqlCacheKey = `${owner}::${repo}-pr-graphql-snapshot-${states.join('-').toLowerCase()}`

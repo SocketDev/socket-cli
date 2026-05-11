@@ -44,11 +44,7 @@ describe('spawnCdxgenDlx', () => {
     mockDetectExecutableType.mockReturnValue({ type: 'binary' })
     mockSpawn.mockReturnValue('p')
 
-    const result = await spawnCdxgenDlx(
-      ['-r', '.'],
-      undefined,
-      undefined,
-    )
+    const result = await spawnCdxgenDlx(['-r', '.'], undefined, undefined)
 
     expect(mockSpawn).toHaveBeenCalledWith(
       '/local/cdxgen',

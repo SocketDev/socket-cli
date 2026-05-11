@@ -327,12 +327,10 @@ describe('handleOptimize', () => {
   })
 
   it('falls back to exitCode 1 when pkgEnv result has no code', async () => {
-    const { detectAndValidatePackageEnvironment } = await import(
-      '../../../../src/utils/ecosystem/environment.mts'
-    )
-    const { applyOptimization } = await import(
-      '../../../../src/commands/optimize/apply-optimization.mts'
-    )
+    const { detectAndValidatePackageEnvironment } =
+      await import('../../../../src/utils/ecosystem/environment.mts')
+    const { applyOptimization } =
+      await import('../../../../src/commands/optimize/apply-optimization.mts')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: false,
@@ -352,12 +350,10 @@ describe('handleOptimize', () => {
   })
 
   it('falls back to exitCode 1 when applyOptimization result has no code', async () => {
-    const { detectAndValidatePackageEnvironment } = await import(
-      '../../../../src/utils/ecosystem/environment.mts'
-    )
-    const { applyOptimization } = await import(
-      '../../../../src/commands/optimize/apply-optimization.mts'
-    )
+    const { detectAndValidatePackageEnvironment } =
+      await import('../../../../src/utils/ecosystem/environment.mts')
+    const { applyOptimization } =
+      await import('../../../../src/commands/optimize/apply-optimization.mts')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,

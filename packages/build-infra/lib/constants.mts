@@ -51,10 +51,7 @@ export const CHECKPOINT_CHAINS = {
 /**
  * Validate a checkpoint chain at runtime.
  */
-export function validateCheckpointChain(
-  chain: string[],
-  packageName: string,
-) {
+export function validateCheckpointChain(chain: string[], packageName: string) {
   if (!Array.isArray(chain)) {
     throw new Error(`${packageName}: Checkpoint chain must be an array`)
   }

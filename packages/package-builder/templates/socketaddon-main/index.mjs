@@ -93,15 +93,27 @@ function loadNativeAddon() {
       // OR pnpm virtual store: .../@socketaddon+iocraft@file+packages+package-builder+build+dev+out+socketaddon-iocraft/...
       let buildOutDir
 
-      if (realDir.includes('/build/') && realDir.includes('/out/socketaddon-iocraft')) {
+      if (
+        realDir.includes('/build/') &&
+        realDir.includes('/out/socketaddon-iocraft')
+      ) {
         // Direct path to build output.
         buildOutDir = realDir.split('/socketaddon-iocraft')[0]
-      } else if (realDir.includes('@socketaddon+iocraft@file+packages+package-builder+build+dev+out+socketaddon-iocraft')) {
+      } else if (
+        realDir.includes(
+          '@socketaddon+iocraft@file+packages+package-builder+build+dev+out+socketaddon-iocraft',
+        )
+      ) {
         // pnpm virtual store - extract project root and reconstruct path.
-        const match = realDir.match(/^(.+?)\/node_modules\/\.pnpm\/@socketaddon/)
+        const match = realDir.match(
+          /^(.+?)\/node_modules\/\.pnpm\/@socketaddon/,
+        )
         if (match) {
           const projectRoot = match[1]
-          buildOutDir = join(projectRoot, 'packages/package-builder/build/dev/out')
+          buildOutDir = join(
+            projectRoot,
+            'packages/package-builder/build/dev/out',
+          )
         }
       }
 
@@ -109,7 +121,11 @@ function loadNativeAddon() {
         // First: look for a sibling-package-style layout
         // `socketaddon-iocraft-<platformId>/iocraft.node` next to the
         // main package.
-        const siblingPath = join(buildOutDir, `socketaddon-iocraft-${platformId}`, 'iocraft.node')
+        const siblingPath = join(
+          buildOutDir,
+          `socketaddon-iocraft-${platformId}`,
+          'iocraft.node',
+        )
         if (existsSync(siblingPath)) {
           return require(siblingPath)
         }

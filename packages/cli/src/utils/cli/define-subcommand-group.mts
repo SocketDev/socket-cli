@@ -22,10 +22,7 @@ import { defineFlags } from '../../meow.mts'
 import { meowWithSubcommands } from './with-subcommands.mts'
 
 import type { MeowFlags } from '../../flags.mts'
-import type {
-  CliAliases,
-  CliSubcommand,
-} from './with-subcommands-shared.mts'
+import type { CliAliases, CliSubcommand } from './with-subcommands-shared.mts'
 
 export interface DefineSubcommandGroupOptions {
   /**

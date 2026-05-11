@@ -99,9 +99,8 @@ describe('SEA detection utilities', () => {
           },
         }
       })
-      const fresh = await import(
-        '../../../../src/utils/sea/detect.mts?cache_bust=throw'
-      )
+      const fresh =
+        await import('../../../../src/utils/sea/detect.mts?cache_bust=throw')
       expect(fresh.isSeaBinary()).toBe(false)
       vi.doUnmock('node:module')
     })

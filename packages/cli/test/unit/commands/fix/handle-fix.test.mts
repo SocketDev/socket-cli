@@ -254,9 +254,8 @@ describe('handleFix', () => {
   })
 
   it('runs coanaFix and pipes the result through outputFixResult', async () => {
-    const { handleFix } = await import(
-      '../../../../src/commands/fix/handle-fix.mts'
-    )
+    const { handleFix } =
+      await import('../../../../src/commands/fix/handle-fix.mts')
 
     await handleFix({
       all: false,
@@ -307,9 +306,8 @@ describe('handleFix', () => {
       data: ['GHSA-from-purl'],
     })
 
-    const { handleFix } = await import(
-      '../../../../src/commands/fix/handle-fix.mts'
-    )
+    const { handleFix } =
+      await import('../../../../src/commands/fix/handle-fix.mts')
 
     await handleFix({
       all: false,

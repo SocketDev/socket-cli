@@ -32,11 +32,7 @@ import {
   YARN_CLASSIC,
   YARN_LOCK,
 } from '@socketsecurity/lib/constants/agents'
-import {
-  EXT_LOCK,
-  EXT_LOCKB,
-  NODE_MODULES,
-} from '../../constants/packages.mts'
+import { EXT_LOCK, EXT_LOCKB, NODE_MODULES } from '../../constants/packages.mts'
 
 // `.package-lock.json` is the npm "hidden lockfile" name. Defined locally
 // because @socketsecurity/lib doesn't export this constant.

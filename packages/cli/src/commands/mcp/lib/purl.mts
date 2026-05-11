@@ -38,6 +38,13 @@ export function buildPurl(
     version === 'unknown' || version === '1.0.0' || !version
       ? undefined
       : version
-  const purl = new PackageURL(type, namespace, name, purlVersion, undefined, undefined)
+  const purl = new PackageURL(
+    type,
+    namespace,
+    name,
+    purlVersion,
+    undefined,
+    undefined,
+  )
   return purl.toString()
 }

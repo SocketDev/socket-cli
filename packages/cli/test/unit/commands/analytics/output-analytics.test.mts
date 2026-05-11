@@ -355,7 +355,9 @@ describe('output-analytics', () => {
   describe('formatDate', () => {
     it('formats valid dates as "MonthName Day"', () => {
       const result = formatDate('2026-03-15T00:00:00Z')
-      expect(result).toMatch(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d+$/)
+      expect(result).toMatch(
+        /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d+$/,
+      )
     })
 
     it('returns first 10 chars for invalid date strings', () => {

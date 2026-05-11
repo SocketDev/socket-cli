@@ -186,10 +186,14 @@ describe('fix/git utilities', () => {
 
   describe('genericSocketFixBranchParser', () => {
     it('parses any socket fix branch', () => {
-      expect(genericSocketFixBranchParser('socket/fix/GHSA-1234-5678-9abc')).toEqual({
+      expect(
+        genericSocketFixBranchParser('socket/fix/GHSA-1234-5678-9abc'),
+      ).toEqual({
         ghsaId: 'GHSA-1234-5678-9abc',
       })
-      expect(genericSocketFixBranchParser('socket/fix/GHSA-aaaa-bbbb-cccc')).toEqual({
+      expect(
+        genericSocketFixBranchParser('socket/fix/GHSA-aaaa-bbbb-cccc'),
+      ).toEqual({
         ghsaId: 'GHSA-aaaa-bbbb-cccc',
       })
     })
@@ -269,7 +273,9 @@ describe('fix/git utilities', () => {
       const body = getSocketFixPullRequestBody(['GHSA-1234-5678-9abc'])
       expect(body).toContain('Socket')
       expect(body).toContain('GHSA-1234-5678-9abc')
-      expect(body).toContain('https://github.com/advisories/GHSA-1234-5678-9abc')
+      expect(body).toContain(
+        'https://github.com/advisories/GHSA-1234-5678-9abc',
+      )
     })
 
     it('includes vulnerability details for single GHSA', () => {

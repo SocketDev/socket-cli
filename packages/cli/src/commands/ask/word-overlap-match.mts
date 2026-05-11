@@ -25,19 +25,16 @@ export const WORD_OVERLAP_THRESHOLD = 0.3
 let semanticIndex: any = undefined
 
 /**
- * Normalize query using NLP to handle variations in phrasing. Verbs become
- * infinitive ("fixing" → "fix"), nouns become singular ("vulnerabilities" →
- * "vulnerability"). Falls back to plain lowercase if compromise throws.
+ * Extract meaningful words from text: lowercase, stripped of punctuation,
+ * filtered to length > 2. Used both as the matcher's tokenizer and exposed
+ * as a utility for tests.
  */
-export function normalizeQuery(query: string): string {
-  try {
-    const doc = nlp(query)
-    doc.verbs().toInfinitive()
-    doc.nouns().toSingular()
-    return doc.out('text').toLowerCase()
-  } catch (_e) {
-    return query.toLowerCase()
-  }
+export function extractWords(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .split(/\s+/)
+    .filter(w => w.length > 2)
 }
 
 /**
@@ -70,16 +67,19 @@ export async function loadSemanticIndex() {
 }
 
 /**
- * Extract meaningful words from text: lowercase, stripped of punctuation,
- * filtered to length > 2. Used both as the matcher's tokenizer and exposed
- * as a utility for tests.
+ * Normalize query using NLP to handle variations in phrasing. Verbs become
+ * infinitive ("fixing" → "fix"), nouns become singular ("vulnerabilities" →
+ * "vulnerability"). Falls back to plain lowercase if compromise throws.
  */
-export function extractWords(text: string): string[] {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .split(/\s+/)
-    .filter(w => w.length > 2)
+export function normalizeQuery(query: string): string {
+  try {
+    const doc = nlp(query)
+    doc.verbs().toInfinitive()
+    doc.nouns().toSingular()
+    return doc.out('text').toLowerCase()
+  } catch (_e) {
+    return query.toLowerCase()
+  }
 }
 
 /**
@@ -91,9 +91,7 @@ export function wordOverlap(
   commandWords: string[],
 ): number {
   const commandSet = new Set(commandWords)
-  const intersection = new Set(
-    [...queryWords].filter(w => commandSet.has(w)),
-  )
+  const intersection = new Set([...queryWords].filter(w => commandSet.has(w)))
   const union = new Set([...queryWords, ...commandWords])
   return union.size === 0 ? 0 : intersection.size / union.size
 }
@@ -107,7 +105,7 @@ export function wordOverlap(
 export async function wordOverlapMatch(query: string): Promise<{
   action: string
   confidence: number
-} | null> {
+} | undefined> {
   const index = await loadSemanticIndex()
   if (!index || !index.commands) {
     return undefined

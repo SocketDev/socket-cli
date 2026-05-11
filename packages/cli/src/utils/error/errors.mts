@@ -221,117 +221,37 @@ export class TimeoutError extends Error {
   }
 }
 
-export async function captureException(
-  exception: unknown,
-  hint?: EventHintOrCaptureContext | undefined,
+export async function buildErrorCause(
+  status: number,
+  message: string,
+  reason: string,
 ): Promise<string> {
-  const result = captureExceptionSync(exception, hint)
-  // "Sleep" for a second, just in case, hopefully enough time to initiate fetch.
-  await sleep(1000)
-  return result
-}
+  const NO_ERROR_MESSAGE = 'No error message returned'
 
-export function captureExceptionSync(
-  exception: unknown,
-  hint?: EventHintOrCaptureContext | undefined,
-): string {
-  const Sentry = getSentry?.()
-  if (!Sentry) {
-    return ''
+  // For 429 errors, preserve the detailed quota information.
+  if (status === 429) {
+    const { getErrorMessageForHttpStatusCode } =
+      await import('../socket/api.mjs')
+    const quotaMessage = await getErrorMessageForHttpStatusCode(429)
+    if (reason && reason !== NO_ERROR_MESSAGE) {
+      return `${reason}. ${quotaMessage}`
+    }
+    if (message && message !== NO_ERROR_MESSAGE) {
+      return `${message}. ${quotaMessage}`
+    }
+    return quotaMessage
   }
-  /* c8 ignore next 2 - Sentry is undefined in tests (Sentry build mode is opt-in only) */
-  debugNs('notice', 'send: exception to Sentry')
-  return Sentry.captureException(exception, hint) as string
-}
 
-/**
- * Type guard to check if an error has recovery suggestions.
- */
-export function hasRecoverySuggestions(
-  error: unknown,
-): error is Error & { recovery: string[] } {
-  return (
-    isError(error) &&
-    'recovery' in error &&
-    Array.isArray((error as any).recovery)
-  )
-}
-
-/**
- * Extract recovery suggestions from an error.
- *
- * @param error - The error object to extract recovery suggestions from
- * @returns Array of recovery suggestion strings, or empty array if none
- */
-export function getRecoverySuggestions(error: unknown): string[] {
-  if (hasRecoverySuggestions(error)) {
-    return error.recovery
+  // Skip adding reason if it's too similar to message (avoid redundancy).
+  // Threshold of 0.7 means >70% word overlap indicates redundancy.
+  if (reason && message !== reason) {
+    const similarity = calculateStringSimilarity(message, reason)
+    if (similarity < 0.7) {
+      return `${message} (reason: ${reason})`
+    }
   }
-  return []
-}
 
-/**
- * Extracts an error message from an unknown value.
- * Returns the message if it's an Error object, otherwise returns undefined.
- *
- * @param error - The error object to extract message from
- * @returns The error message or undefined
- */
-export function getErrorMessage(error: unknown): string | undefined {
-  return (error as Error)?.message
-}
-
-/**
- * Extracts an error message from an unknown value with a fallback.
- * Returns the message if it's an Error object, otherwise returns the fallback.
- *
- * @param error - The error object to extract message from
- * @param fallback - The fallback message if no error message is found
- * @returns The error message or fallback
- *
- * @example
- * getErrorMessageOr(error, 'Unknown error occurred')
- * // Returns: "ENOENT: no such file or directory" or "Unknown error occurred"
- */
-export function getErrorMessageOr(error: unknown, fallback: string): string {
-  return getErrorMessage(error) || fallback
-}
-
-/**
- * Extracts an error cause from an unknown value.
- * Returns the error message if available, otherwise UNKNOWN_ERROR.
- * Commonly used for creating CResult error causes.
- *
- * @param error - The error object to extract message from
- * @returns The error message or UNKNOWN_ERROR constant
- *
- * @example
- * return { ok: false, message: 'Operation failed', cause: getErrorCause(e) }
- */
-export function getErrorCause(error: unknown): string {
-  return getErrorMessageOr(error, UNKNOWN_ERROR)
-}
-
-/**
- * Formats an error message with an optional error detail appended.
- * Extracts the message from an unknown error value and appends it
- * to the base message if available.
- *
- * @param baseMessage - The base message to display
- * @param error - The error object to extract message from
- * @returns Formatted message with error detail if available
- *
- * @example
- * formatErrorWithDetail('Failed to delete file', error)
- * // Returns: "Failed to delete file: ENOENT: no such file or directory"
- * // Or just: "Failed to delete file" if no error message
- */
-export function formatErrorWithDetail(
-  baseMessage: string,
-  error: unknown,
-): string {
-  const errorMessage = getErrorMessage(error)
-  return `${baseMessage}${errorMessage ? `: ${errorMessage}` : ''}`
+  return message
 }
 
 /**
@@ -386,51 +306,91 @@ export function calculateStringSimilarity(str1: string, str2: string): number {
   return (2 * overlap) / (words1.size + words2.size)
 }
 
-export async function buildErrorCause(
-  status: number,
-  message: string,
-  reason: string,
+export async function captureException(
+  exception: unknown,
+  hint?: EventHintOrCaptureContext | undefined,
 ): Promise<string> {
-  const NO_ERROR_MESSAGE = 'No error message returned'
+  const result = captureExceptionSync(exception, hint)
+  // "Sleep" for a second, just in case, hopefully enough time to initiate fetch.
+  await sleep(1000)
+  return result
+}
 
-  // For 429 errors, preserve the detailed quota information.
-  if (status === 429) {
-    const { getErrorMessageForHttpStatusCode } =
-      await import('../socket/api.mjs')
-    const quotaMessage = await getErrorMessageForHttpStatusCode(429)
-    if (reason && reason !== NO_ERROR_MESSAGE) {
-      return `${reason}. ${quotaMessage}`
-    }
-    if (message && message !== NO_ERROR_MESSAGE) {
-      return `${message}. ${quotaMessage}`
-    }
-    return quotaMessage
+export function captureExceptionSync(
+  exception: unknown,
+  hint?: EventHintOrCaptureContext | undefined,
+): string {
+  const Sentry = getSentry?.()
+  if (!Sentry) {
+    return ''
   }
-
-  // Skip adding reason if it's too similar to message (avoid redundancy).
-  // Threshold of 0.7 means >70% word overlap indicates redundancy.
-  if (reason && message !== reason) {
-    const similarity = calculateStringSimilarity(message, reason)
-    if (similarity < 0.7) {
-      return `${message} (reason: ${reason})`
-    }
-  }
-
-  return message
+  /* c8 ignore next 2 - Sentry is undefined in tests (Sentry build mode is opt-in only) */
+  debugNs('notice', 'send: exception to Sentry')
+  return Sentry.captureException(exception, hint) as string
 }
 
 /**
- * Type guard to check if an error is a network error.
+ * Formats an error message with an optional error detail appended.
+ * Extracts the message from an unknown error value and appends it
+ * to the base message if available.
+ *
+ * @param baseMessage - The base message to display
+ * @param error - The error object to extract message from
+ * @returns Formatted message with error detail if available
+ *
+ * @example
+ * formatErrorWithDetail('Failed to delete file', error)
+ * // Returns: "Failed to delete file: ENOENT: no such file or directory"
+ * // Or just: "Failed to delete file" if no error message
  */
-export function isNetworkError(error: unknown): error is NetworkError {
-  return error instanceof NetworkError
+export function formatErrorWithDetail(
+  baseMessage: string,
+  error: unknown,
+): string {
+  const errorMessage = getErrorMessage(error)
+  return `${baseMessage}${errorMessage ? `: ${errorMessage}` : ''}`
 }
 
 /**
- * Type guard to check if an error is a timeout error.
+ * Extracts an error cause from an unknown value.
+ * Returns the error message if available, otherwise UNKNOWN_ERROR.
+ * Commonly used for creating CResult error causes.
+ *
+ * @param error - The error object to extract message from
+ * @returns The error message or UNKNOWN_ERROR constant
+ *
+ * @example
+ * return { ok: false, message: 'Operation failed', cause: getErrorCause(e) }
  */
-export function isTimeoutError(error: unknown): error is TimeoutError {
-  return error instanceof TimeoutError
+export function getErrorCause(error: unknown): string {
+  return getErrorMessageOr(error, UNKNOWN_ERROR)
+}
+
+/**
+ * Extracts an error message from an unknown value.
+ * Returns the message if it's an Error object, otherwise returns undefined.
+ *
+ * @param error - The error object to extract message from
+ * @returns The error message or undefined
+ */
+export function getErrorMessage(error: unknown): string | undefined {
+  return (error as Error)?.message
+}
+
+/**
+ * Extracts an error message from an unknown value with a fallback.
+ * Returns the message if it's an Error object, otherwise returns the fallback.
+ *
+ * @param error - The error object to extract message from
+ * @param fallback - The fallback message if no error message is found
+ * @returns The error message or fallback
+ *
+ * @example
+ * getErrorMessageOr(error, 'Unknown error occurred')
+ * // Returns: "ENOENT: no such file or directory" or "Unknown error occurred"
+ */
+export function getErrorMessageOr(error: unknown, fallback: string): string {
+  return getErrorMessage(error) || fallback
 }
 
 /**
@@ -549,4 +509,44 @@ export function getNetworkErrorDiagnostics(
     `  • Check Socket status: ${SOCKET_STATUS_URL}\n` +
     '  • Try again in a few moments'
   )
+}
+
+/**
+ * Extract recovery suggestions from an error.
+ *
+ * @param error - The error object to extract recovery suggestions from
+ * @returns Array of recovery suggestion strings, or empty array if none
+ */
+export function getRecoverySuggestions(error: unknown): string[] {
+  if (hasRecoverySuggestions(error)) {
+    return error.recovery
+  }
+  return []
+}
+
+/**
+ * Type guard to check if an error has recovery suggestions.
+ */
+export function hasRecoverySuggestions(
+  error: unknown,
+): error is Error & { recovery: string[] } {
+  return (
+    isError(error) &&
+    'recovery' in error &&
+    Array.isArray((error as any).recovery)
+  )
+}
+
+/**
+ * Type guard to check if an error is a network error.
+ */
+export function isNetworkError(error: unknown): error is NetworkError {
+  return error instanceof NetworkError
+}
+
+/**
+ * Type guard to check if an error is a timeout error.
+ */
+export function isTimeoutError(error: unknown): error is TimeoutError {
+  return error instanceof TimeoutError
 }

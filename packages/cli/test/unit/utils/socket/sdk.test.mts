@@ -426,7 +426,9 @@ describe('SDK Utilities', () => {
     })
 
     it('falls back to default proxy from environment when invalid proxy provided', async () => {
-      mockGetSocketCliApiProxy.mockReturnValue('http://default-proxy.example.com:8080')
+      mockGetSocketCliApiProxy.mockReturnValue(
+        'http://default-proxy.example.com:8080',
+      )
 
       const result = await setupSdk({
         apiToken: 'mock-sdk-value-12345',
@@ -574,11 +576,9 @@ describe('SDK Utilities', () => {
       const sdkOptions = mockSocketSdkConstructor.mock.calls[0]![1]
       const { onFileValidation } = sdkOptions
 
-      const validationResult = onFileValidation(
-        ['/path/to/valid.json'],
-        [],
-        { operation: 'createFullScan' },
-      )
+      const validationResult = onFileValidation(['/path/to/valid.json'], [], {
+        operation: 'createFullScan',
+      })
 
       expect(validationResult).toEqual({ shouldContinue: true })
     })
@@ -610,11 +610,9 @@ describe('SDK Utilities', () => {
       const sdkOptions = mockSocketSdkConstructor.mock.calls[0]![1]
       const { onFileValidation } = sdkOptions
 
-      const validationResult = onFileValidation(
-        [],
-        ['/path/to/symlink.json'],
-        { operation: 'createDependenciesSnapshot' },
-      )
+      const validationResult = onFileValidation([], ['/path/to/symlink.json'], {
+        operation: 'createDependenciesSnapshot',
+      })
 
       expect(validationResult).toEqual({ shouldContinue: true })
     })

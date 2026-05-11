@@ -72,10 +72,6 @@ const {
   runDepscore,
 } = await import('../../../../src/commands/mcp/depscore.mts')
 
-function makeOk<T>(data: T) {
-  return { success: true as const, status: 200, data }
-}
-
 function makeErr(status: number, message: string, cause?: string) {
   return {
     success: false as const,
@@ -83,6 +79,10 @@ function makeErr(status: number, message: string, cause?: string) {
     error: message,
     ...(cause ? { cause } : {}),
   }
+}
+
+function makeOk<T>(data: T) {
+  return { success: true as const, status: 200, data }
 }
 
 beforeEach(() => {
@@ -375,7 +375,9 @@ describe('runDepscore — error paths', () => {
       { apiToken: 'test_bad' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain('Socket authentication failed [401]')
+    expect(result.content[0]!.text).toContain(
+      'Socket authentication failed [401]',
+    )
   })
 
   it('surfaces a 403 with a permissions message', async () => {
@@ -391,9 +393,7 @@ describe('runDepscore — error paths', () => {
   })
 
   it('surfaces a generic non-2xx with the status code', async () => {
-    mockBatchPackageFetch.mockResolvedValue(
-      makeErr(503, 'Service Unavailable'),
-    )
+    mockBatchPackageFetch.mockResolvedValue(makeErr(503, 'Service Unavailable'))
     const result = await runDepscore(
       { packages: [{ depname: 'foo' }] },
       { apiToken: 'test_a' },
@@ -430,9 +430,7 @@ describe('runDepscore — formatScore fallbacks', () => {
       { apiToken: 'test_a' },
     )
     expect(result.isError).toBeUndefined()
-    expect(result.content[0]!.text).toContain(
-      'pkg:unknown/unknown@unknown',
-    )
+    expect(result.content[0]!.text).toContain('pkg:unknown/unknown@unknown')
     expect(result.content[0]!.text).toContain('No score found')
   })
 })
@@ -564,7 +562,9 @@ describe('runDepscore — error fallbacks (cause vs error field)', () => {
       { apiToken: 'test_a' },
     )
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toContain('Socket authentication failed [401]')
+    expect(result.content[0]!.text).toContain(
+      'Socket authentication failed [401]',
+    )
     expect(result.content[0]!.text).toContain('Bad token')
   })
 

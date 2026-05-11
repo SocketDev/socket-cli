@@ -25,12 +25,36 @@ export function artifactGroupKey(artifact: ArtifactData): string {
   return `${artifact.type || ''}/${ns}/${artifact.name || ''}@${artifact.version || ''}`
 }
 
+export function deduplicateArtifacts(
+  artifacts: ArtifactData[],
+  platform?: string | undefined,
+): ArtifactData[] {
+  const groups = new Map<string, ArtifactData[]>()
+  for (const artifact of artifacts) {
+    const key = artifactGroupKey(artifact)
+    let group = groups.get(key)
+    if (!group) {
+      group = []
+      groups.set(key, group)
+    }
+    group.push(artifact)
+  }
+  const results: ArtifactData[] = []
+  for (const group of groups.values()) {
+    results.push(selectBestArtifact(group, platform))
+  }
+  return results
+}
+
 export function isSourceDist(release: string): boolean {
   return /\.(tar\.gz|tar\.bz2|zip)$/i.test(release) || /sdist/i.test(release)
 }
 
 export function isUniversalWheel(release: string): boolean {
-  return /[-_]none[-_]any\.whl$/i.test(release) || /py3[-_]none[-_]any/i.test(release)
+  return (
+    /[-_]none[-_]any\.whl$/i.test(release) ||
+    /py3[-_]none[-_]any/i.test(release)
+  )
 }
 
 export function matchesPlatform(release: string, platform: string): boolean {
@@ -67,25 +91,4 @@ export function selectBestArtifact(
     return universal
   }
   return artifacts[0]!
-}
-
-export function deduplicateArtifacts(
-  artifacts: ArtifactData[],
-  platform?: string | undefined,
-): ArtifactData[] {
-  const groups = new Map<string, ArtifactData[]>()
-  for (const artifact of artifacts) {
-    const key = artifactGroupKey(artifact)
-    let group = groups.get(key)
-    if (!group) {
-      group = []
-      groups.set(key, group)
-    }
-    group.push(artifact)
-  }
-  const results: ArtifactData[] = []
-  for (const group of groups.values()) {
-    results.push(selectBestArtifact(group, platform))
-  }
-  return results
 }

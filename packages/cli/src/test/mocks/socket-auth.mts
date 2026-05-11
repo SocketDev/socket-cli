@@ -23,27 +23,34 @@ export interface MockAuthResponse {
 }
 
 /**
- * Mock the interactive login flow.
- * Simulates opening browser, polling for auth completion.
+ * Mock API client with authentication.
  */
-export function mockInteractiveLogin(options?: { shouldSucceed?: boolean }) {
-  const { shouldSucceed = true } = options || {}
+export function mockAuthenticatedApiClient(options?: {
+  isAuthenticated?: boolean
+}) {
+  const { isAuthenticated = true } = options || {}
 
-  return vi.fn().mockImplementation(async () => {
-    if (shouldSucceed) {
-      return {
-        success: true,
-        token: MOCK_API_TOKEN,
-        org: {
-          id: MOCK_ORG_ID,
-          name: MOCK_ORG_NAME,
-        },
-      }
-    }
-    throw new Error(
-      `mock interactive-login rejected (configured with shouldSucceed:false); this is a test fixture — flip shouldSucceed to true when testing the happy path`,
-    )
-  })
+  return {
+    isAuthenticated: vi.fn().mockReturnValue(isAuthenticated),
+    getToken: vi
+      .fn()
+      .mockReturnValue(isAuthenticated ? MOCK_API_TOKEN : undefined),
+    setToken: vi.fn(),
+    clearToken: vi.fn(),
+    validateToken: vi.fn().mockResolvedValue(isAuthenticated),
+    listOrganizations: vi
+      .fn()
+      .mockResolvedValue(
+        isAuthenticated ? [{ id: MOCK_ORG_ID, name: MOCK_ORG_NAME }] : [],
+      ),
+  }
+}
+
+/**
+ * Mock browser opener for OAuth flow.
+ */
+export function mockBrowserOpener() {
+  return vi.fn().mockResolvedValue(undefined)
 }
 
 /**
@@ -69,32 +76,27 @@ export function mockConfigStorage() {
 }
 
 /**
- * Mock API client with authentication.
+ * Mock the interactive login flow.
+ * Simulates opening browser, polling for auth completion.
  */
-export function mockAuthenticatedApiClient(options?: {
-  isAuthenticated?: boolean
-}) {
-  const { isAuthenticated = true } = options || {}
+export function mockInteractiveLogin(options?: { shouldSucceed?: boolean }) {
+  const { shouldSucceed = true } = options || {}
 
-  return {
-    isAuthenticated: vi.fn().mockReturnValue(isAuthenticated),
-    getToken: vi.fn().mockReturnValue(isAuthenticated ? MOCK_API_TOKEN : undefined),
-    setToken: vi.fn(),
-    clearToken: vi.fn(),
-    validateToken: vi.fn().mockResolvedValue(isAuthenticated),
-    listOrganizations: vi
-      .fn()
-      .mockResolvedValue(
-        isAuthenticated ? [{ id: MOCK_ORG_ID, name: MOCK_ORG_NAME }] : [],
-      ),
-  }
-}
-
-/**
- * Mock browser opener for OAuth flow.
- */
-export function mockBrowserOpener() {
-  return vi.fn().mockResolvedValue(undefined)
+  return vi.fn().mockImplementation(async () => {
+    if (shouldSucceed) {
+      return {
+        success: true,
+        token: MOCK_API_TOKEN,
+        org: {
+          id: MOCK_ORG_ID,
+          name: MOCK_ORG_NAME,
+        },
+      }
+    }
+    throw new Error(
+      `mock interactive-login rejected (configured with shouldSucceed:false); this is a test fixture — flip shouldSucceed to true when testing the happy path`,
+    )
+  })
 }
 
 /**

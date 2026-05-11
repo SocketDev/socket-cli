@@ -71,7 +71,7 @@ export function getEmbeddedChecksums(): EmbeddedChecksums | undefined {
         readFileSync(checksumPath, 'utf8'),
       ) as EmbeddedChecksums
     } catch {
-      embeddedChecksums = undefined
+      embeddedChecksums = null
       return undefined
     }
   }
@@ -122,7 +122,7 @@ export async function computeFileHash(filePath: string): Promise<string> {
  * tools that prepend a header or comments.
  */
 export function parseChecksums(content: string): Record<string, string> {
-  const checksums: Record<string, string> = { __proto__: undefined as never }
+  const checksums: Record<string, string> = { __proto__: null as never }
   for (const line of content.split('\n')) {
     const trimmed = line.trim()
     if (!trimmed) {

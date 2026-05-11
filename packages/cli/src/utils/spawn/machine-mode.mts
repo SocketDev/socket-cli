@@ -160,15 +160,11 @@ const TOOLS: Record<string, ToolRules> = {
     prependArgs: ['--quiet', '--no-color'],
   },
   go: {
-    subcommands: Object.fromEntries(
-      GO_JSON_CMDS.map((c) => [c, ['-json']]),
-    ),
+    subcommands: Object.fromEntries(GO_JSON_CMDS.map(c => [c, ['-json']])),
   },
   npm: {
     prependArgs: ['--loglevel=error'],
-    subcommands: Object.fromEntries(
-      NPM_JSON_CMDS.map((c) => [c, ['--json']]),
-    ),
+    subcommands: Object.fromEntries(NPM_JSON_CMDS.map(c => [c, ['--json']])),
   },
   nuget: {
     // Only pack/push accept --json. Scrubber handles the rest.
@@ -190,7 +186,7 @@ const TOOLS: Record<string, ToolRules> = {
     // Non-JSON subcommands inherit `--reporter=silent` via the
     // fallback path in applyMachineMode.
     subcommands: Object.fromEntries(
-      PNPM_JSON_CMDS.map((c) => [c, ['--reporter=json']]),
+      PNPM_JSON_CMDS.map(c => [c, ['--reporter=json']]),
     ),
     fallbackArgs: ['--reporter=silent'],
   },
@@ -217,7 +213,7 @@ const TOOLS: Record<string, ToolRules> = {
     // Classic v1. For Berry/v4 and zpm/v6 callers should use keys
     // 'yarn-berry' or 'zpm' instead.
     subcommands: Object.fromEntries(
-      YARN_CLASSIC_JSON_CMDS.map((c) => [c, ['--json', '--silent']]),
+      YARN_CLASSIC_JSON_CMDS.map(c => [c, ['--json', '--silent']]),
     ),
   },
   'yarn-berry': {
@@ -229,23 +225,16 @@ const TOOLS: Record<string, ToolRules> = {
       YARN_ENABLE_PROGRESS_BARS: '0',
     },
     subcommands: Object.fromEntries(
-      YARN_BERRY_JSON_CMDS.map((c) => [c, ['--json']]),
+      YARN_BERRY_JSON_CMDS.map(c => [c, ['--json']]),
     ),
   },
   zpm: {
     subcommands: {
-      ...Object.fromEntries(ZPM_JSON_CMDS.map((c) => [c, ['--json']])),
+      ...Object.fromEntries(ZPM_JSON_CMDS.map(c => [c, ['--json']])),
       add: ['--silent'],
       install: ['--silent'],
     },
   },
-}
-
-export function mergeEnv(
-  base: NodeJS.ProcessEnv | undefined,
-  overrides: NodeJS.ProcessEnv,
-): NodeJS.ProcessEnv {
-  return { ...base, ...UNIVERSAL_ENV, ...overrides }
 }
 
 /**
@@ -259,9 +248,7 @@ export function mergeEnv(
  * flags are injected, preventing "unknown option" errors on
  * unrecognized subcommands).
  */
-export function applyMachineMode(
-  input: MachineModeInput,
-): MachineModeOutput {
+export function applyMachineMode(input: MachineModeInput): MachineModeOutput {
   const rules = TOOLS[input.tool]
   if (!rules) {
     return {
@@ -287,4 +274,11 @@ export function applyMachineMode(
     args,
     env: mergeEnv(input.env, extraEnv),
   }
+}
+
+export function mergeEnv(
+  base: NodeJS.ProcessEnv | undefined,
+  overrides: NodeJS.ProcessEnv,
+): NodeJS.ProcessEnv {
+  return { ...base, ...UNIVERSAL_ENV, ...overrides }
 }

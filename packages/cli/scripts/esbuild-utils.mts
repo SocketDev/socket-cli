@@ -45,6 +45,21 @@ export function createBaseConfig(
 }
 
 /**
+ * Helper to create both dot and bracket notation define keys.
+ * This ensures esbuild can replace both forms of process.env access.
+ */
+export function createDefineEntries(envVars: Record<string, string>) {
+  const entries: Record<string, string> = {}
+  for (const [key, value] of Object.entries(envVars)) {
+    // Dot notation: process.env.KEY
+    entries[`process.env.${key}`] = value
+    // Bracket notation: process.env["KEY"]
+    entries[`process.env["${key}"]`] = value
+  }
+  return entries
+}
+
+/**
  * Create a standard index loader config.
  */
 export function createIndexConfig({
@@ -65,21 +80,6 @@ export function createIndexConfig({
     outfile,
     plugins: [envVarReplacementPlugin(inlinedEnvVars)],
   }
-}
-
-/**
- * Helper to create both dot and bracket notation define keys.
- * This ensures esbuild can replace both forms of process.env access.
- */
-export function createDefineEntries(envVars: Record<string, string>) {
-  const entries: Record<string, string> = {}
-  for (const [key, value] of Object.entries(envVars)) {
-    // Dot notation: process.env.KEY
-    entries[`process.env.${key}`] = value
-    // Bracket notation: process.env["KEY"]
-    entries[`process.env["${key}"]`] = value
-  }
-  return entries
 }
 
 /**

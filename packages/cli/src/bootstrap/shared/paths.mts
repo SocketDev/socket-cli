@@ -14,15 +14,6 @@ import { homedir } from 'node:os'
 import path from 'node:path'
 
 /**
- * Get the Socket home directory path.
- * Supports SOCKET_HOME environment variable override.
- * Direct process.env access required - bootstrap runs before ENV module loads.
- */
-export function getSocketHome(): string {
-  return process.env['SOCKET_HOME'] || path.join(homedir(), '.socket')
-}
-
-/**
  * Get the bootstrap binary installation directory.
  * This is where SEA/yao-pkg executables are cached.
  */
@@ -31,11 +22,10 @@ export function getBootstrapBinaryDir(): string {
 }
 
 /**
- * Get the DLX cache directory for downloaded packages.
- * This is where @socketsecurity/cli and other packages are installed.
+ * Get the CLI entry point path.
  */
-export function getDlxDir(): string {
-  return path.join(getSocketHome(), '_dlx')
+export function getCliEntryPoint(): string {
+  return path.join(getCliPackageDir(), 'dist', 'cli.js')
 }
 
 /**
@@ -46,10 +36,19 @@ export function getCliPackageDir(): string {
 }
 
 /**
- * Get the CLI entry point path.
+ * Get package name to download.
+ * Direct process.env access required - bootstrap runs before ENV module loads.
  */
-export function getCliEntryPoint(): string {
-  return path.join(getCliPackageDir(), 'dist', 'cli.js')
+export function getCliPackageName(): string {
+  return process.env['SOCKET_CLI_PACKAGE'] || '@socketsecurity/cli'
+}
+
+/**
+ * Get the DLX cache directory for downloaded packages.
+ * This is where @socketsecurity/cli and other packages are installed.
+ */
+export function getDlxDir(): string {
+  return path.join(getSocketHome(), '_dlx')
 }
 
 /**
@@ -65,9 +64,10 @@ export function getRegistryUrl(): string {
 }
 
 /**
- * Get package name to download.
+ * Get the Socket home directory path.
+ * Supports SOCKET_HOME environment variable override.
  * Direct process.env access required - bootstrap runs before ENV module loads.
  */
-export function getCliPackageName(): string {
-  return process.env['SOCKET_CLI_PACKAGE'] || '@socketsecurity/cli'
+export function getSocketHome(): string {
+  return process.env['SOCKET_HOME'] || path.join(homedir(), '.socket')
 }

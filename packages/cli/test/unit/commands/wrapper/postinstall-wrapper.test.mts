@@ -257,8 +257,7 @@ describe('postinstallWrapper', () => {
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
 
     existsSyncSpy.mockImplementation(
-      (p: string) =>
-        p !== '/home/user/.config/socket/tab-completion.bash',
+      (p: string) => p !== '/home/user/.config/socket/tab-completion.bash',
     )
     mockCheckSetup.mockReturnValue(true)
     mockGetDetails.mockReturnValue({
@@ -317,18 +316,15 @@ describe('postinstallWrapper', () => {
   })
 
   it('handles updateInstalledTabCompletionScript returning ok=false (line 44)', async () => {
-    const { getBashrcDetails } = await import(
-      '../../../../src/utils/cli/completion.mts'
-    )
+    const { getBashrcDetails } =
+      await import('../../../../src/utils/cli/completion.mts')
     await import('@socketsecurity/lib/logger')
-    const { updateInstalledTabCompletionScript } = await import(
-      '../../../../src/commands/install/setup-tab-completion.mts'
-    )
+    const { updateInstalledTabCompletionScript } =
+      await import('../../../../src/commands/install/setup-tab-completion.mts')
     const mockGetDetails = vi.mocked(getBashrcDetails)
     const mockUpdateScript = vi.mocked(updateInstalledTabCompletionScript)
-    const { checkSocketWrapperSetup } = await import(
-      '../../../../src/commands/wrapper/check-socket-wrapper-setup.mts'
-    )
+    const { checkSocketWrapperSetup } =
+      await import('../../../../src/commands/wrapper/check-socket-wrapper-setup.mts')
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
 
     existsSyncSpy.mockReturnValue(true)

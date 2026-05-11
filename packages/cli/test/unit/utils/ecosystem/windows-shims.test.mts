@@ -62,9 +62,7 @@ describe('windows-shims', () => {
 
     it('extracts the pnpm shim path', () => {
       mockExistsSync.mockReturnValue(true)
-      mockReadFileSync.mockReturnValue(
-        'node "/opt/pnpm/dist/pnpm.cjs" "$@"\n',
-      )
+      mockReadFileSync.mockReturnValue('node "/opt/pnpm/dist/pnpm.cjs" "$@"\n')
       expect(resolveBinPathSync('/usr/local/bin/pnpm')).toBe(
         '/opt/pnpm/dist/pnpm.cjs',
       )
@@ -72,9 +70,7 @@ describe('windows-shims', () => {
 
     it('extracts the yarn shim path (.mjs extension)', () => {
       mockExistsSync.mockReturnValue(true)
-      mockReadFileSync.mockReturnValue(
-        'node "/opt/yarn/lib/yarn.mjs" "$@"\n',
-      )
+      mockReadFileSync.mockReturnValue('node "/opt/yarn/lib/yarn.mjs" "$@"\n')
       expect(resolveBinPathSync('/usr/local/bin/yarn')).toBe(
         '/opt/yarn/lib/yarn.mjs',
       )
@@ -122,9 +118,9 @@ describe('windows-shims', () => {
     it('returns the input when path already has an extension (line 73-74)', () => {
       mockWin32.WIN32 = true
       try {
-        expect(
-          preferWindowsCmdShim('C:\\nodejs\\npm.exe', 'npm'),
-        ).toBe('C:\\nodejs\\npm.exe')
+        expect(preferWindowsCmdShim('C:\\nodejs\\npm.exe', 'npm')).toBe(
+          'C:\\nodejs\\npm.exe',
+        )
       } finally {
         mockWin32.WIN32 = false
       }
@@ -133,9 +129,9 @@ describe('windows-shims', () => {
     it('returns the input when basename does not match binName (line 79-80)', () => {
       mockWin32.WIN32 = true
       try {
-        expect(
-          preferWindowsCmdShim('/usr/local/bin/wrong', 'npm'),
-        ).toBe('/usr/local/bin/wrong')
+        expect(preferWindowsCmdShim('/usr/local/bin/wrong', 'npm')).toBe(
+          '/usr/local/bin/wrong',
+        )
       } finally {
         mockWin32.WIN32 = false
       }

@@ -244,6 +244,50 @@ export class GitLabProvider implements PrProvider {
 }
 
 /**
+ * Gets the GitLab API token from environment or git config.
+ *
+ * Priority:
+ * 1. GITLAB_TOKEN environment variable
+ * 2. git config gitlab.token
+ * 3. Error if not found
+ */
+function getGitLabToken(): string {
+  // Check environment variable.
+  const envToken = process.env['GITLAB_TOKEN']
+  if (envToken) {
+    return envToken
+  }
+
+  throw new Error(
+    `GitLab access requires a token but process.env.GITLAB_TOKEN is not set; create a personal access token with the \`api\` scope at https://gitlab.com/-/user_settings/personal_access_tokens and export GITLAB_TOKEN=<token>`,
+  )
+}
+
+/**
+ * Maps GitLab merge_status to common merge state status.
+ */
+function mapGitLabMergeStatus(status: string): MergeStateStatus {
+  // GitLab merge_status values:
+  // - can_be_merged: clean, no conflicts
+  // - cannot_be_merged: has conflicts
+  // - unchecked: not yet checked
+  // - checking: currently checking
+  // - cannot_be_merged_recheck: needs recheck
+  switch (status) {
+    case 'can_be_merged':
+      return 'CLEAN'
+    case 'cannot_be_merged':
+    case 'cannot_be_merged_recheck':
+      return 'DIRTY'
+    case 'checking':
+    case 'unchecked':
+      return 'UNKNOWN'
+    default:
+      return 'UNKNOWN'
+  }
+}
+
+/**
  * Maps GitLab merge request state to common state.
  */
 function mapGitLabState(state: string): 'open' | 'closed' | 'merged' {
@@ -283,50 +327,6 @@ function mapStateToGitLab(state: string): 'opened' | 'closed' | 'merged' {
   return 'closed'
 }
 
-/**
- * Maps GitLab merge_status to common merge state status.
- */
-function mapGitLabMergeStatus(status: string): MergeStateStatus {
-  // GitLab merge_status values:
-  // - can_be_merged: clean, no conflicts
-  // - cannot_be_merged: has conflicts
-  // - unchecked: not yet checked
-  // - checking: currently checking
-  // - cannot_be_merged_recheck: needs recheck
-  switch (status) {
-    case 'can_be_merged':
-      return 'CLEAN'
-    case 'cannot_be_merged':
-    case 'cannot_be_merged_recheck':
-      return 'DIRTY'
-    case 'checking':
-    case 'unchecked':
-      return 'UNKNOWN'
-    default:
-      return 'UNKNOWN'
-  }
-}
-
 async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
-}
-
-/**
- * Gets the GitLab API token from environment or git config.
- *
- * Priority:
- * 1. GITLAB_TOKEN environment variable
- * 2. git config gitlab.token
- * 3. Error if not found
- */
-function getGitLabToken(): string {
-  // Check environment variable.
-  const envToken = process.env['GITLAB_TOKEN']
-  if (envToken) {
-    return envToken
-  }
-
-  throw new Error(
-    `GitLab access requires a token but process.env.GITLAB_TOKEN is not set; create a personal access token with the \`api\` scope at https://gitlab.com/-/user_settings/personal_access_tokens and export GITLAB_TOKEN=<token>`,
-  )
 }

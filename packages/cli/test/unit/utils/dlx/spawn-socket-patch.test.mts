@@ -46,11 +46,7 @@ describe('spawnSocketPatchDlx', () => {
     mockDetectExecutableType.mockReturnValue({ type: 'binary' })
     mockSpawn.mockReturnValue('p')
 
-    const result = await spawnSocketPatchDlx(
-      ['apply'],
-      undefined,
-      undefined,
-    )
+    const result = await spawnSocketPatchDlx(['apply'], undefined, undefined)
 
     expect(mockSpawn).toHaveBeenCalledWith(
       '/local/socket-patch',

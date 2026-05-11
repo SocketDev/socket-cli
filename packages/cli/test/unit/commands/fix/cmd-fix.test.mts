@@ -476,7 +476,11 @@ describe('cmd-fix', () => {
     })
 
     it('should show ecosystems in dry-run output', async () => {
-      await cmdFix.run(['--dry-run', '--ecosystems', 'npm,pypi'], importMeta, context)
+      await cmdFix.run(
+        ['--dry-run', '--ecosystems', 'npm,pypi'],
+        importMeta,
+        context,
+      )
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
@@ -490,7 +494,6 @@ describe('cmd-fix', () => {
         expect.stringContaining('auto-discovered'),
       )
     })
-
 
     it('should show PR info in dry-run when apply fixes enabled', async () => {
       await cmdFix.run(['--dry-run'], importMeta, context)

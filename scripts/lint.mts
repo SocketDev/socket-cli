@@ -37,7 +37,9 @@ interface FilesToLintResult {
 /**
  * Get files to lint and determine affected packages.
  */
-async function getFilesToLint(options: LintOptions): Promise<FilesToLintResult> {
+async function getFilesToLint(
+  options: LintOptions,
+): Promise<FilesToLintResult> {
   const { all, changed, staged } = options
 
   // If --all, return all packages.

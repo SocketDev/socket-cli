@@ -62,7 +62,7 @@ describe('basics/vfs-extract', () => {
     if (realProcessSmol === undefined) {
       delete (process as any).smol
     } else {
-      (process as any).smol = realProcessSmol
+      ;(process as any).smol = realProcessSmol
     }
   })
 

@@ -16,7 +16,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock all external dependencies.
-const mockDownloadPackage = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
+const mockDownloadPackage = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(undefined),
+)
 vi.mock('@socketsecurity/lib/dlx/package', () => ({
   downloadPackage: mockDownloadPackage,
 }))
@@ -52,9 +54,8 @@ describe('preflight downloads', () => {
 
   describe('runPreflightDownloads', () => {
     it('does not run downloads in test environment', async () => {
-      const { runPreflightDownloads } = await import(
-        '../../../../src/utils/preflight/downloads.mts'
-      )
+      const { runPreflightDownloads } =
+        await import('../../../../src/utils/preflight/downloads.mts')
 
       runPreflightDownloads()
 
@@ -65,9 +66,8 @@ describe('preflight downloads', () => {
     it('does not run downloads in CI environment', async () => {
       mockGetCI.mockReturnValue(true)
 
-      const { runPreflightDownloads } = await import(
-        '../../../../src/utils/preflight/downloads.mts'
-      )
+      const { runPreflightDownloads } =
+        await import('../../../../src/utils/preflight/downloads.mts')
 
       runPreflightDownloads()
 
@@ -75,9 +75,8 @@ describe('preflight downloads', () => {
     })
 
     it('only runs once per module load', async () => {
-      const { runPreflightDownloads } = await import(
-        '../../../../src/utils/preflight/downloads.mts'
-      )
+      const { runPreflightDownloads } =
+        await import('../../../../src/utils/preflight/downloads.mts')
 
       runPreflightDownloads()
       runPreflightDownloads()
@@ -94,9 +93,8 @@ describe('preflight downloads', () => {
       mockGetCI.mockReturnValue(false)
       mockDownloadPackage.mockRejectedValueOnce(new Error('network'))
 
-      const { runPreflightDownloads } = await import(
-        '../../../../src/utils/preflight/downloads.mts'
-      )
+      const { runPreflightDownloads } =
+        await import('../../../../src/utils/preflight/downloads.mts')
 
       // Should not throw / reject.
       runPreflightDownloads()
@@ -116,9 +114,8 @@ describe('preflight downloads', () => {
       mockGetCI.mockReturnValue(false)
       mockDownloadPackage.mockResolvedValue(undefined)
 
-      const { runPreflightDownloads } = await import(
-        '../../../../src/utils/preflight/downloads.mts'
-      )
+      const { runPreflightDownloads } =
+        await import('../../../../src/utils/preflight/downloads.mts')
       runPreflightDownloads()
       // Allow the background closure to drain.
       await new Promise(resolve => setImmediate(resolve))

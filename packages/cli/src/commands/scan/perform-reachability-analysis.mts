@@ -265,9 +265,7 @@ export async function performReachabilityAnalysis(
   if (!coanaResult.ok) {
     const logger = getDefaultLogger()
     logger.error('Reachability analysis failed')
-    logger.error(
-      `  target: ${analysisTarget}, cwd: ${cwd}`,
-    )
+    logger.error(`  target: ${analysisTarget}, cwd: ${cwd}`)
     if (coanaResult.message) {
       logger.error(`  ${coanaResult.message}`)
     }

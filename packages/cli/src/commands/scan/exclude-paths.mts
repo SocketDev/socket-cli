@@ -18,40 +18,6 @@ type ApplyFullExcludePathsResult = {
 }
 
 /**
- * Converts a user-facing full-scan exclude path into the socket.yml
- * projectIgnorePaths shape used by SCA manifest discovery.
- */
-export function excludePathToProjectIgnorePath(path: string): string {
-  const stripped = stripTrailingSlash(path)
-  return stripped.endsWith('/**') ? stripped : `${stripped}/**`
-}
-
-/**
- * Rejects gitignore-style negation patterns for --exclude-paths because the
- * flag is a positive full-exclusion list, not a complete ignore language.
- */
-export function assertNoNegationPatterns(paths: readonly string[]): void {
-  for (const path of paths) {
-    if (path.startsWith('!')) {
-      throw new InputError(
-        `--exclude-paths does not support negation patterns. Got: '${path}'.`,
-      )
-    }
-  }
-}
-
-/**
- * Normalizes a reachability exclude path to a recursive directory glob without
- * changing explicit one-level or recursive glob suffixes.
- */
-export function normalizeExcludePath(path: string): string {
-  const stripped = stripTrailingSlash(path)
-  return stripped.endsWith('/*') || stripped.endsWith('/**')
-    ? stripped
-    : `${stripped}/**`
-}
-
-/**
  * Applies --exclude-paths consistently to SCA manifest discovery and Coana.
  * SCA exclusion always applies when paths are provided. The reachability
  * options are merged unconditionally; callers decide whether to actually run
@@ -105,6 +71,99 @@ export function applyFullExcludePaths({
 }
 
 /**
+ * Rejects gitignore-style negation patterns for --exclude-paths because the
+ * flag is a positive full-exclusion list, not a complete ignore language.
+ */
+export function assertNoNegationPatterns(paths: readonly string[]): void {
+  for (const path of paths) {
+    if (path.startsWith('!')) {
+      throw new InputError(
+        `--exclude-paths does not support negation patterns. Got: '${path}'.`,
+      )
+    }
+  }
+}
+
+/**
+ * Converts a user-facing full-scan exclude path into the socket.yml
+ * projectIgnorePaths shape used by SCA manifest discovery.
+ */
+export function excludePathToProjectIgnorePath(path: string): string {
+  const stripped = stripTrailingSlash(path)
+  return stripped.endsWith('/**') ? stripped : `${stripped}/**`
+}
+
+export function expandReachExcludePath(path: string): string[] {
+  if (path === '**') {
+    return ['**']
+  }
+  const firstSlash = path.indexOf('/')
+  const prefix =
+    firstSlash === -1 || firstSlash === path.length - 1 ? '**/' : ''
+  const normalized = stripTrailingSlash(
+    path.startsWith('/') ? path.slice(1) : path,
+  )
+  const pattern = `${prefix}${normalized}`
+  return pattern.endsWith('/*') || pattern.endsWith('/**')
+    ? [pattern]
+    : [pattern, `${pattern}/**`]
+}
+
+/**
+ * Normalizes a reachability exclude path to a recursive directory glob without
+ * changing explicit one-level or recursive glob suffixes.
+ */
+export function normalizeExcludePath(path: string): string {
+  const stripped = stripTrailingSlash(path)
+  return stripped.endsWith('/*') || stripped.endsWith('/**')
+    ? stripped
+    : `${stripped}/**`
+}
+
+export function normalizeProjectIgnorePath(path: string): string {
+  return stripTrailingSlash(
+    toPosixPath(path.startsWith('/') ? path.slice(1) : path),
+  )
+}
+
+export function pathRelativeToTarget(
+  path: string,
+  target: string,
+): string | undefined {
+  const normalized = normalizeProjectIgnorePath(path)
+  if (target === '.' || target === '') {
+    return normalized
+  }
+
+  // Ignore paths outside the analysis target. They still affect SCA manifest
+  // discovery through projectIgnorePaths, but Coana cannot exclude directories
+  // outside the target it is analyzing.
+  if (normalized === target) {
+    return '**'
+  }
+  const targetPrefix = `${target}/`
+  if (normalized.startsWith(targetPrefix)) {
+    return normalized.slice(targetPrefix.length)
+  }
+  const recursiveTargetPrefix = `${targetPrefix}**/`
+  if (normalized.startsWith(recursiveTargetPrefix)) {
+    return normalized.slice(targetPrefix.length)
+  }
+  return undefined
+}
+
+export function projectIgnorePathToReachExcludePaths(
+  path: string,
+  targetPattern: string,
+): string[] {
+  const reachPath = pathRelativeToTarget(path, targetPattern)
+  if (!reachPath) {
+    return []
+  }
+  return expandReachExcludePath(reachPath)
+}
+
+/**
  * Translates project-root projectIgnorePaths into Coana --exclude-dirs values,
  * which are interpreted relative to the current reachability analysis target.
  */
@@ -130,65 +189,10 @@ export function projectIgnorePathsToReachExcludePaths(
   )
 }
 
-export function projectIgnorePathToReachExcludePaths(
-  path: string,
-  targetPattern: string,
-): string[] {
-  const reachPath = pathRelativeToTarget(path, targetPattern)
-  if (!reachPath) {
-    return []
-  }
-  return expandReachExcludePath(reachPath)
-}
-
-export function expandReachExcludePath(path: string): string[] {
-  if (path === '**') {
-    return ['**']
-  }
-  const firstSlash = path.indexOf('/')
-  const prefix = firstSlash === -1 || firstSlash === path.length - 1 ? '**/' : ''
-  const normalized = stripTrailingSlash(
-    path.startsWith('/') ? path.slice(1) : path,
-  )
-  const pattern = `${prefix}${normalized}`
-  return pattern.endsWith('/*') || pattern.endsWith('/**')
-    ? [pattern]
-    : [pattern, `${pattern}/**`]
-}
-
-export function pathRelativeToTarget(path: string, target: string): string | undefined {
-  const normalized = normalizeProjectIgnorePath(path)
-  if (target === '.' || target === '') {
-    return normalized
-  }
-
-  // Ignore paths outside the analysis target. They still affect SCA manifest
-  // discovery through projectIgnorePaths, but Coana cannot exclude directories
-  // outside the target it is analyzing.
-  if (normalized === target) {
-    return '**'
-  }
-  const targetPrefix = `${target}/`
-  if (normalized.startsWith(targetPrefix)) {
-    return normalized.slice(targetPrefix.length)
-  }
-  const recursiveTargetPrefix = `${targetPrefix}**/`
-  if (normalized.startsWith(recursiveTargetPrefix)) {
-    return normalized.slice(targetPrefix.length)
-  }
-  return undefined
-}
-
-export function normalizeProjectIgnorePath(path: string): string {
-  return stripTrailingSlash(
-    toPosixPath(path.startsWith('/') ? path.slice(1) : path),
-  )
+export function stripTrailingSlash(path: string): string {
+  return path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path
 }
 
 export function toPosixPath(path: string): string {
   return path.replaceAll('\\', '/')
-}
-
-export function stripTrailingSlash(path: string): string {
-  return path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path
 }

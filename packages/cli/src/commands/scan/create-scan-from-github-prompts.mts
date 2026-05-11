@@ -12,6 +12,25 @@ import { confirm, select } from '@socketsecurity/lib/stdio/prompts'
 import type { CResult } from '../../types.mts'
 
 /**
+ * Confirm a bulk action ("are you sure you want to run this for N repos?").
+ */
+export async function makeSure(count: number): Promise<CResult<undefined>> {
+  if (
+    !(await confirm({
+      message: `Are you sure you want to run this for ${count} repos?`,
+      default: false,
+    }))
+  ) {
+    return {
+      ok: false,
+      message: 'User canceled',
+      cause: 'Action canceled by user',
+    }
+  }
+  return { ok: true, data: undefined }
+}
+
+/**
  * Ask the user to pick a single repo from a list. Returns ok:false
  * with cause='User chose to cancel the action' when the user picks
  * the synthetic '(Exit)' choice.
@@ -39,23 +58,4 @@ export async function selectFocus(repos: string[]): Promise<CResult<string[]>> {
     }
   }
   return { ok: true, data: [proceed] }
-}
-
-/**
- * Confirm a bulk action ("are you sure you want to run this for N repos?").
- */
-export async function makeSure(count: number): Promise<CResult<undefined>> {
-  if (
-    !(await confirm({
-      message: `Are you sure you want to run this for ${count} repos?`,
-      default: false,
-    }))
-  ) {
-    return {
-      ok: false,
-      message: 'User canceled',
-      cause: 'Action canceled by user',
-    }
-  }
-  return { ok: true, data: undefined }
 }

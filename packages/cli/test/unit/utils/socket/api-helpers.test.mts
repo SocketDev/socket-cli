@@ -43,9 +43,7 @@ describe('getCommandRequirements', () => {
   })
 
   it('returns undefined for unknown command paths', () => {
-    expect(
-      getCommandRequirements('socket:nonexistent:path'),
-    ).toBeUndefined()
+    expect(getCommandRequirements('socket:nonexistent:path')).toBeUndefined()
   })
 
   it('returns requirements for a known command path', () => {

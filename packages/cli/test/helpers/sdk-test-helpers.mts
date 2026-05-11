@@ -37,47 +37,6 @@ async function getMockSetupSdk(): Promise<Mock> {
 }
 
 /**
- * Get the mocked withSdk function.
- * This must be called after vi.mock() has been executed in the test file.
- *
- * @returns The mocked withSdk function
- */
-// c8 ignore start - Dead code: withSdk not yet implemented in sdk.mts.
-// async function getMockWithSdk(): Promise<Mock> {
-//   const module = await vi.importMock<
-//     typeof import('../../src/utils/socket/sdk.mts')
-//   >('../../src/utils/socket/sdk.mts')
-//   return vi.mocked(module.withSdk)
-// }
-// c8 ignore stop
-
-/**
- * Setup SDK mock for successful API call.
- * Note: Test files must call vi.mock() for the SDK modules before using this helper.
- *
- * @param sdkMethod - The SDK method to mock (e.g., 'getOrgQuotaOverview')
- * @param mockData - The data to return in the success response
- * @returns Object with mockSdk, mockHandleApi, and mockSetupSdk references
- */
-export async function setupSdkMockSuccess(sdkMethod: string, mockData: any) {
-  const mockSdk = createMockSdk({
-    [sdkMethod]: vi.fn().mockResolvedValue({ success: true, data: mockData }),
-  })
-
-  const setupSdk = await getMockSetupSdk()
-  const handleApiCall = await getMockHandleApiCall()
-
-  setupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-  handleApiCall.mockResolvedValue(createSuccessResult(mockData))
-
-  return {
-    mockHandleApi: handleApiCall,
-    mockSdk,
-    mockSetupSdk: setupSdk,
-  }
-}
-
-/**
  * Setup SDK mock for API call error.
  * Note: Test files must call vi.mock() for the SDK modules before using this helper.
  *
@@ -109,18 +68,29 @@ export async function setupSdkMockError(
 }
 
 /**
- * Setup SDK setup failure (before API call).
+ * Setup SDK mock for successful API call.
  * Note: Test files must call vi.mock() for the SDK modules before using this helper.
  *
- * @param message - Error message
- * @param options - Error options (code, cause)
+ * @param sdkMethod - The SDK method to mock (e.g., 'getOrgQuotaOverview')
+ * @param mockData - The data to return in the success response
+ * @returns Object with mockSdk, mockHandleApi, and mockSetupSdk references
  */
-export async function setupSdkSetupFailure(
-  message: string,
-  options?: { code?: number; cause?: string },
-) {
+export async function setupSdkMockSuccess(sdkMethod: string, mockData: any) {
+  const mockSdk = createMockSdk({
+    [sdkMethod]: vi.fn().mockResolvedValue({ success: true, data: mockData }),
+  })
+
   const setupSdk = await getMockSetupSdk()
-  setupSdk.mockResolvedValue(createErrorResult(message, options))
+  const handleApiCall = await getMockHandleApiCall()
+
+  setupSdk.mockResolvedValue(createSuccessResult(mockSdk))
+  handleApiCall.mockResolvedValue(createSuccessResult(mockData))
+
+  return {
+    mockHandleApi: handleApiCall,
+    mockSdk,
+    mockSetupSdk: setupSdk,
+  }
 }
 
 /**
@@ -149,6 +119,21 @@ export async function setupSdkMockWithCustomSdk(
     mockSdk,
     mockSetupSdk: setupSdk,
   }
+}
+
+/**
+ * Setup SDK setup failure (before API call).
+ * Note: Test files must call vi.mock() for the SDK modules before using this helper.
+ *
+ * @param message - Error message
+ * @param options - Error options (code, cause)
+ */
+export async function setupSdkSetupFailure(
+  message: string,
+  options?: { code?: number; cause?: string },
+) {
+  const setupSdk = await getMockSetupSdk()
+  setupSdk.mockResolvedValue(createErrorResult(message, options))
 }
 
 /**

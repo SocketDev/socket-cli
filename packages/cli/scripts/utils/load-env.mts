@@ -7,9 +7,7 @@ import { readFileSync } from 'node:fs'
  * Supports comments (#), blank lines, KEY=value, KEY="value", KEY='value'.
  * Returns an empty object if the file does not exist.
  */
-export function loadEnvFile(
-  filePath: string,
-): Record<string, string> {
+export function loadEnvFile(filePath: string): Record<string, string> {
   const env: Record<string, string> = { __proto__: null } as Record<
     string,
     string

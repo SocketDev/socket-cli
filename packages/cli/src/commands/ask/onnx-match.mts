@@ -15,40 +15,6 @@ let embeddingPipelineFailure = false
 const commandEmbeddings: Record<string, Float32Array> = {}
 
 /**
- * Lazily load the ONNX embedding pipeline. Currently disabled due to ONNX
- * Runtime build issues — always returns null and marks the pipeline as
- * permanently failed so subsequent calls short-circuit.
- *
- * Re-enabling requires uncommenting the MiniLMInference import below and
- * verifying the WASM bundle ships with the SEA build.
- */
-export async function getEmbeddingPipeline() {
-  if (embeddingPipeline) {
-    return embeddingPipeline
-  }
-  if (embeddingPipelineFailure) {
-    return undefined
-  }
-  try {
-    // TEMPORARILY DISABLED: ONNX Runtime build issues.
-    // Load our custom MiniLM inference engine.
-    // This uses direct ONNX Runtime + embedded WASM (no transformers.js).
-    // Note: model is optional — pattern matching works fine without it.
-    // const { MiniLMInference } = await import('../../utils/minilm-inference.mts')
-    // embeddingPipeline = await MiniLMInference.create()
-    // return embeddingPipeline
-
-    // Temporarily fall back to pattern matching only.
-    embeddingPipelineFailure = true
-    return undefined
-  } catch (_e) {
-    // Model not available — silently fall back to pattern matching.
-    embeddingPipelineFailure = true
-    return undefined
-  }
-}
-
-/**
  * Compute cosine similarity between two vectors. Since our embeddings are
  * normalized, cosine similarity reduces to a dot product. Returns 0 when
  * the vectors have different lengths.
@@ -62,26 +28,6 @@ export function cosineSimilarity(a: Float32Array, b: Float32Array): number {
     dotProduct += (a[i] ?? 0) * (b[i] ?? 0)
   }
   return dotProduct
-}
-
-/**
- * Get the embedding for a text string. Returns null when the pipeline is
- * unavailable or the underlying call throws.
- */
-export async function getEmbedding(
-  text: string,
-): Promise<Float32Array | null> {
-  const model = await getEmbeddingPipeline()
-  if (!model) {
-    return undefined
-  }
-  try {
-    const result = await model.embed(text)
-    return result.embedding
-  } catch (_e) {
-    // Silently fail — pattern matching will handle the query.
-    return undefined
-  }
 }
 
 /**
@@ -116,6 +62,58 @@ export async function ensureCommandEmbeddings(): Promise<void> {
 }
 
 /**
+ * Get the embedding for a text string. Returns null when the pipeline is
+ * unavailable or the underlying call throws.
+ */
+export async function getEmbedding(text: string): Promise<Float32Array | undefined> {
+  const model = await getEmbeddingPipeline()
+  if (!model) {
+    return undefined
+  }
+  try {
+    const result = await model.embed(text)
+    return result.embedding
+  } catch (_e) {
+    // Silently fail — pattern matching will handle the query.
+    return undefined
+  }
+}
+
+/**
+ * Lazily load the ONNX embedding pipeline. Currently disabled due to ONNX
+ * Runtime build issues — always returns null and marks the pipeline as
+ * permanently failed so subsequent calls short-circuit.
+ *
+ * Re-enabling requires uncommenting the MiniLMInference import below and
+ * verifying the WASM bundle ships with the SEA build.
+ */
+export async function getEmbeddingPipeline() {
+  if (embeddingPipeline) {
+    return embeddingPipeline
+  }
+  if (embeddingPipelineFailure) {
+    return undefined
+  }
+  try {
+    // TEMPORARILY DISABLED: ONNX Runtime build issues.
+    // Load our custom MiniLM inference engine.
+    // This uses direct ONNX Runtime + embedded WASM (no transformers.js).
+    // Note: model is optional — pattern matching works fine without it.
+    // const { MiniLMInference } = await import('../../utils/minilm-inference.mts')
+    // embeddingPipeline = await MiniLMInference.create()
+    // return embeddingPipeline
+
+    // Temporarily fall back to pattern matching only.
+    embeddingPipelineFailure = true
+    return undefined
+  } catch (_e) {
+    // Model not available — silently fall back to pattern matching.
+    embeddingPipelineFailure = true
+    return undefined
+  }
+}
+
+/**
  * Score the query against pre-computed command embeddings and return the
  * best match if it clears 0.5 cosine similarity. Returns null when the
  * embedding pipeline is unavailable, the query embeds to null, or no
@@ -124,7 +122,7 @@ export async function ensureCommandEmbeddings(): Promise<void> {
 export async function onnxSemanticMatch(query: string): Promise<{
   action: string
   confidence: number
-} | null> {
+} | undefined> {
   await ensureCommandEmbeddings()
 
   const queryEmbedding = await getEmbedding(query)

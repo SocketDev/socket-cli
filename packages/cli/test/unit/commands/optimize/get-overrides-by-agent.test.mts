@@ -31,7 +31,10 @@ import {
 import type { EnvDetails } from '../../../../src/utils/ecosystem/environment.mjs'
 
 describe('get-overrides-by-agent', () => {
-  const createEnvDetails = (agent: string, pkgJsonContent: any = {}): EnvDetails =>
+  const createEnvDetails = (
+    agent: string,
+    pkgJsonContent: any = {},
+  ): EnvDetails =>
     ({
       agent,
       editablePkgJson: {
@@ -135,7 +138,7 @@ describe('get-overrides-by-agent', () => {
     it('returns bun resolutions from package.json', () => {
       const envDetails = createEnvDetails('bun', {
         resolutions: {
-          'jest': '29.0.0',
+          jest: '29.0.0',
         },
       })
       const result = getOverridesDataBun(envDetails)
@@ -178,21 +181,27 @@ describe('get-overrides-by-agent', () => {
     })
 
     it('returns pnpm overrides for pnpm agent', () => {
-      const envDetails = createEnvDetails('pnpm', { pnpm: { overrides: { b: '2' } } })
+      const envDetails = createEnvDetails('pnpm', {
+        pnpm: { overrides: { b: '2' } },
+      })
       const result = getOverridesData(envDetails)
       expect(result.type).toBe('pnpm')
       expect(result.overrides).toEqual({ b: '2' })
     })
 
     it('returns yarn overrides for yarn-berry agent', () => {
-      const envDetails = createEnvDetails('yarn/berry', { resolutions: { c: '3' } })
+      const envDetails = createEnvDetails('yarn/berry', {
+        resolutions: { c: '3' },
+      })
       const result = getOverridesData(envDetails)
       expect(result.type).toBe('yarn/berry')
       expect(result.overrides).toEqual({ c: '3' })
     })
 
     it('returns yarn classic overrides for yarn-classic agent', () => {
-      const envDetails = createEnvDetails('yarn/classic', { resolutions: { d: '4' } })
+      const envDetails = createEnvDetails('yarn/classic', {
+        resolutions: { d: '4' },
+      })
       const result = getOverridesData(envDetails)
       expect(result.type).toBe('yarn/classic')
       expect(result.overrides).toEqual({ d: '4' })

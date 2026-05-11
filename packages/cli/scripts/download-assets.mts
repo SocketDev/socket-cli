@@ -134,6 +134,43 @@ async function downloadAsset(config) {
 }
 
 /**
+ * Download multiple assets (parallel by default, sequential opt-in).
+ *
+ * Parallel mode is optimized for fast builds. Assets are downloaded concurrently
+ * and have isolated subdirectories to minimize race conditions.
+ *
+ * Use --no-parallel flag for sequential mode if filesystem issues occur.
+ */
+async function downloadAssets(assetNames, parallel = true) {
+  if (parallel) {
+    const settled = await Promise.allSettled(
+      assetNames.map(name => downloadAsset(ASSETS[name])),
+    )
+
+    const failed = settled.filter(
+      r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok),
+    )
+    if (failed.length > 0) {
+      logger.error(`\n${failed.length} asset(s) failed:`)
+      for (const r of failed) {
+        logger.error(
+          `  - ${r.status === 'rejected' ? (r.reason?.message ?? r.reason) : r.value.name}`,
+        )
+      }
+      process.exitCode = 1
+    }
+  } else {
+    for (const name of assetNames) {
+      const result = await downloadAsset(ASSETS[name])
+      if (!result.ok && !result.skipped) {
+        process.exitCode = 1
+        return
+      }
+    }
+  }
+}
+
+/**
  * Extract tar.gz archive.
  */
 async function extractArchive(tarGzPath, extractConfig, assetName) {
@@ -188,43 +225,6 @@ async function extractArchive(tarGzPath, extractConfig, assetName) {
 
   // Write version file with release tag.
   await fs.writeFile(versionPath, tag, 'utf-8')
-}
-
-/**
- * Download multiple assets (parallel by default, sequential opt-in).
- *
- * Parallel mode is optimized for fast builds. Assets are downloaded concurrently
- * and have isolated subdirectories to minimize race conditions.
- *
- * Use --no-parallel flag for sequential mode if filesystem issues occur.
- */
-async function downloadAssets(assetNames, parallel = true) {
-  if (parallel) {
-    const settled = await Promise.allSettled(
-      assetNames.map(name => downloadAsset(ASSETS[name])),
-    )
-
-    const failed = settled.filter(
-      r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok),
-    )
-    if (failed.length > 0) {
-      logger.error(`\n${failed.length} asset(s) failed:`)
-      for (const r of failed) {
-        logger.error(
-          `  - ${r.status === 'rejected' ? r.reason?.message ?? r.reason : r.value.name}`,
-        )
-      }
-      process.exitCode = 1
-    }
-  } else {
-    for (const name of assetNames) {
-      const result = await downloadAsset(ASSETS[name])
-      if (!result.ok && !result.skipped) {
-        process.exitCode = 1
-        return
-      }
-    }
-  }
 }
 
 /**

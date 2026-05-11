@@ -39,14 +39,6 @@ export function getSocketDevAlertUrl(alertType: string): string {
   return `${SOCKET_WEBSITE_URL}/alerts/${alertType}`
 }
 
-export function getSocketDevPackageOverviewUrlFromPurl(
-  purl: string | PackageURL | SocketArtifact,
-): string {
-  const purlObj = getPurlObject(purl)
-  const fullName = getPkgFullNameFromPurl(purlObj)
-  return getSocketDevPackageOverviewUrl(purlObj.type, fullName, purlObj.version)
-}
-
 export function getSocketDevPackageOverviewUrl(
   ecosystem: PURL_Type,
   fullName: string,
@@ -56,4 +48,12 @@ export function getSocketDevPackageOverviewUrl(
   return ecosystem === 'golang'
     ? `${url}${version ? `?section=overview&version=${version}` : ''}`
     : `${url}${version ? `/overview/${version}` : ''}`
+}
+
+export function getSocketDevPackageOverviewUrlFromPurl(
+  purl: string | PackageURL | SocketArtifact,
+): string {
+  const purlObj = getPurlObject(purl)
+  const fullName = getPkgFullNameFromPurl(purlObj)
+  return getSocketDevPackageOverviewUrl(purlObj.type, fullName, purlObj.version)
 }

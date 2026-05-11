@@ -24,62 +24,6 @@ import { getVisibleTokenPrefix } from '../socket/sdk.mjs'
 import type { HeaderTheme } from './ascii-header.mts'
 
 /**
- * Determine the origin of the API token.
- */
-export function getTokenOrigin(): string {
-  if (getSocketCliNoApiToken()) {
-    return ''
-  }
-  if (getSocketCliApiToken()) {
-    return '(env)'
-  }
-  const configToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
-  if (configToken) {
-    return isConfigFromFlag() ? '(--config flag)' : '(config)'
-  }
-  return ''
-}
-
-/**
- * Get header theme from flags or use default.
- */
-export function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
-  const theme = flags?.['headerTheme']
-  const validThemes: HeaderTheme[] = [
-    'default',
-    'cyberpunk',
-    'forest',
-    'ocean',
-    'sunset',
-  ]
-  return validThemes.includes(theme as HeaderTheme)
-    ? (theme as HeaderTheme)
-    : 'default'
-}
-
-/**
- * Determine if header should animate (shimmer effect).
- */
-export function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
-  // Disable animation in CI, tests, or when explicitly disabled.
-  if (getCI() || VITEST || !process.stdout.isTTY || !supportsFullColor()) {
-    return false
-  }
-  /* c8 ignore next 6 - VITEST is true under tests so the early-return above always fires; the flag-check + default-true paths require an interactive TTY */
-  if (flags && 'animateHeader' in flags) {
-    return Boolean(flags['animateHeader'])
-  }
-  return true
-}
-
-/**
- * Strip ANSI codes for length calculation.
- */
-export function stripAnsi(str: string): string {
-  return str.replace(/\x1b\[[0-9;]*m/g, '')
-}
-
-/**
  * Generate the ASCII banner header for Socket CLI commands.
  */
 export function getAsciiHeader(
@@ -198,4 +142,60 @@ export function getAsciiHeader(
   }
 
   return combinedLines.join('\n')
+}
+
+/**
+ * Get header theme from flags or use default.
+ */
+export function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
+  const theme = flags?.['headerTheme']
+  const validThemes: HeaderTheme[] = [
+    'default',
+    'cyberpunk',
+    'forest',
+    'ocean',
+    'sunset',
+  ]
+  return validThemes.includes(theme as HeaderTheme)
+    ? (theme as HeaderTheme)
+    : 'default'
+}
+
+/**
+ * Determine the origin of the API token.
+ */
+export function getTokenOrigin(): string {
+  if (getSocketCliNoApiToken()) {
+    return ''
+  }
+  if (getSocketCliApiToken()) {
+    return '(env)'
+  }
+  const configToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
+  if (configToken) {
+    return isConfigFromFlag() ? '(--config flag)' : '(config)'
+  }
+  return ''
+}
+
+/**
+ * Determine if header should animate (shimmer effect).
+ */
+export function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
+  // Disable animation in CI, tests, or when explicitly disabled.
+  if (getCI() || VITEST || !process.stdout.isTTY || !supportsFullColor()) {
+    return false
+  }
+  /* c8 ignore next 6 - VITEST is true under tests so the early-return above always fires; the flag-check + default-true paths require an interactive TTY */
+  if (flags && 'animateHeader' in flags) {
+    return Boolean(flags['animateHeader'])
+  }
+  return true
+}
+
+/**
+ * Strip ANSI codes for length calculation.
+ */
+export function stripAnsi(str: string): string {
+  return str.replace(/\x1b\[[0-9;]*m/g, '')
 }

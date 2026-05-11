@@ -44,9 +44,7 @@ describe('dry-run output utilities', () => {
     it('should output basic message without query params', () => {
       outputDryRunFetch('test data')
 
-      const output = mockStderrLog.mock.calls
-        .map(call => call[0])
-        .join('\n')
+      const output = mockStderrLog.mock.calls.map(call => call[0]).join('\n')
       expect(output).toContain('[DryRun]: Would fetch test data')
       expect(output).toContain('This is a read-only operation')
       expect(output).toContain('Run without --dry-run')
@@ -60,9 +58,7 @@ describe('dry-run output utilities', () => {
         page: 1,
       })
 
-      const output = mockStderrLog.mock.calls
-        .map(call => call[0])
-        .join('\n')
+      const output = mockStderrLog.mock.calls.map(call => call[0]).join('\n')
       expect(output).toContain('[DryRun]: Would fetch threat feed data')
       expect(output).toContain('Query parameters:')
       expect(output).toContain('organization: my-org')
@@ -78,9 +74,7 @@ describe('dry-run output utilities', () => {
         time: '30 days',
       })
 
-      const output = mockStderrLog.mock.calls
-        .map(call => call[0])
-        .join('\n')
+      const output = mockStderrLog.mock.calls.map(call => call[0]).join('\n')
       expect(output).toContain('scope: org')
       expect(output).toContain('time: 30 days')
       expect(output).not.toContain('repo:')
@@ -93,9 +87,7 @@ describe('dry-run output utilities', () => {
         enabled: true,
       })
 
-      const output = mockStderrLog.mock.calls
-        .map(call => call[0])
-        .join('\n')
+      const output = mockStderrLog.mock.calls.map(call => call[0]).join('\n')
       expect(output).toContain('showFullTokens: false')
       expect(output).toContain('enabled: true')
     })
@@ -107,9 +99,7 @@ describe('dry-run output utilities', () => {
         offset: 0,
       })
 
-      const output = mockStderrLog.mock.calls
-        .map(call => call[0])
-        .join('\n')
+      const output = mockStderrLog.mock.calls.map(call => call[0]).join('\n')
       expect(output).toContain('page: 5')
       expect(output).toContain('perPage: 30')
       expect(output).toContain('offset: 0')
@@ -118,9 +108,7 @@ describe('dry-run output utilities', () => {
     it('should not show query parameters section for empty params object', () => {
       outputDryRunFetch('empty params', {})
 
-      const output = mockStderrLog.mock.calls
-        .map(call => call[0])
-        .join('\n')
+      const output = mockStderrLog.mock.calls.map(call => call[0]).join('\n')
       expect(output).toContain('[DryRun]: Would fetch empty params')
       expect(output).not.toContain('Query parameters')
     })
@@ -133,9 +121,7 @@ describe('dry-run output utilities', () => {
         boolFalse: false,
       })
 
-      const output = mockStderrLog.mock.calls
-        .map(call => call[0])
-        .join('\n')
+      const output = mockStderrLog.mock.calls.map(call => call[0]).join('\n')
       expect(output).toContain('stringVal: hello')
       expect(output).toContain('numVal: 42')
       expect(output).toContain('boolTrue: true')

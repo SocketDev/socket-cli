@@ -31,19 +31,39 @@ describe('apply-login', () => {
 
   describe('applyLogin', () => {
     it('updates all config values', () => {
-      applyLogin('test-token', ['org1', 'org2'], 'https://api.example.com', 'http://proxy')
+      applyLogin(
+        'test-token',
+        ['org1', 'org2'],
+        'https://api.example.com',
+        'http://proxy',
+      )
 
       expect(mockUpdateConfigValue).toHaveBeenCalledTimes(4)
-      expect(mockUpdateConfigValue).toHaveBeenCalledWith('enforcedOrgs', ['org1', 'org2'])
-      expect(mockUpdateConfigValue).toHaveBeenCalledWith('apiToken', 'test-token')
-      expect(mockUpdateConfigValue).toHaveBeenCalledWith('apiBaseUrl', 'https://api.example.com')
-      expect(mockUpdateConfigValue).toHaveBeenCalledWith('apiProxy', 'http://proxy')
+      expect(mockUpdateConfigValue).toHaveBeenCalledWith('enforcedOrgs', [
+        'org1',
+        'org2',
+      ])
+      expect(mockUpdateConfigValue).toHaveBeenCalledWith(
+        'apiToken',
+        'test-token',
+      )
+      expect(mockUpdateConfigValue).toHaveBeenCalledWith(
+        'apiBaseUrl',
+        'https://api.example.com',
+      )
+      expect(mockUpdateConfigValue).toHaveBeenCalledWith(
+        'apiProxy',
+        'http://proxy',
+      )
     })
 
     it('handles undefined apiBaseUrl', () => {
       applyLogin('test-token', ['org1'], undefined, undefined)
 
-      expect(mockUpdateConfigValue).toHaveBeenCalledWith('apiBaseUrl', undefined)
+      expect(mockUpdateConfigValue).toHaveBeenCalledWith(
+        'apiBaseUrl',
+        undefined,
+      )
       expect(mockUpdateConfigValue).toHaveBeenCalledWith('apiProxy', undefined)
     })
 

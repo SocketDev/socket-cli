@@ -57,7 +57,6 @@ function resolveSocketLibExternal(socketLibPath: string, packageName: string) {
   return existsSync(p) ? p : undefined
 }
 
-
 const baseConfig = createBaseConfig(inlinedEnvVars)
 
 const config: BuildOptions = {
@@ -103,43 +102,52 @@ const config: BuildOptions = {
           return existsSync(p) ? { path: p } : undefined
         }
 
-        build.onResolve({ filter: /^\.\.\/constants\// }, (args: OnResolveArgs) =>
-          resolveConstant(args, /^\.\.\/constants\//),
+        build.onResolve(
+          { filter: /^\.\.\/constants\// },
+          (args: OnResolveArgs) => resolveConstant(args, /^\.\.\/constants\//),
         )
 
-        build.onResolve({ filter: /^\.\.\/\.\.\/constants\// }, (args: OnResolveArgs) =>
-          resolveConstant(args, /^\.\.\/\.\.\/constants\//),
+        build.onResolve(
+          { filter: /^\.\.\/\.\.\/constants\// },
+          (args: OnResolveArgs) =>
+            resolveConstant(args, /^\.\.\/\.\.\/constants\//),
         )
 
-        build.onResolve({ filter: socketLibExternalPathRegExp }, (args: OnResolveArgs) => {
-          if (!args.importer.includes('@socketsecurity/lib/dist/')) {
-            return undefined
-          }
-          const socketLibPath = findSocketLibPath(args.importer)
-          if (!socketLibPath) {
-            return undefined
-          }
-          const externalPath = args.path
-            .replace(socketLibExternalPathRegExp, '')
-            .replace(/\.js$/, '')
-          const p = resolveSocketLibExternal(socketLibPath, externalPath)
-          return p ? { path: p } : undefined
-        })
+        build.onResolve(
+          { filter: socketLibExternalPathRegExp },
+          (args: OnResolveArgs) => {
+            if (!args.importer.includes('@socketsecurity/lib/dist/')) {
+              return undefined
+            }
+            const socketLibPath = findSocketLibPath(args.importer)
+            if (!socketLibPath) {
+              return undefined
+            }
+            const externalPath = args.path
+              .replace(socketLibExternalPathRegExp, '')
+              .replace(/\.js$/, '')
+            const p = resolveSocketLibExternal(socketLibPath, externalPath)
+            return p ? { path: p } : undefined
+          },
+        )
 
-        build.onResolve({ filter: /^(@[^/]+\/[^/]+|[^./][^/]*)/ }, (args: OnResolveArgs) => {
-          if (!args.importer.includes('/socket-lib/dist/')) {
-            return undefined
-          }
-          const socketLibPath = findSocketLibPath(args.importer)
-          if (!socketLibPath) {
-            return undefined
-          }
-          const packageName = args.path.startsWith('@')
-            ? args.path.split('/').slice(0, 2).join('/')
-            : args.path.split('/')[0]!
-          const p = resolveSocketLibExternal(socketLibPath, packageName)
-          return p ? { path: p } : undefined
-        })
+        build.onResolve(
+          { filter: /^(@[^/]+\/[^/]+|[^./][^/]*)/ },
+          (args: OnResolveArgs) => {
+            if (!args.importer.includes('/socket-lib/dist/')) {
+              return undefined
+            }
+            const socketLibPath = findSocketLibPath(args.importer)
+            if (!socketLibPath) {
+              return undefined
+            }
+            const packageName = args.path.startsWith('@')
+              ? args.path.split('/').slice(0, 2).join('/')
+              : args.path.split('/')[0]!
+            const p = resolveSocketLibExternal(socketLibPath, packageName)
+            return p ? { path: p } : undefined
+          },
+        )
       },
     },
 
@@ -147,12 +155,15 @@ const config: BuildOptions = {
       name: 'stub-problematic-packages',
       setup(build: PluginBuild) {
         // Stub iconv-lite and encoding to avoid bundling issues.
-        build.onResolve({ filter: /^(iconv-lite|encoding)(\/|$)/ }, (args: OnResolveArgs) => {
-          return {
-            path: args.path,
-            namespace: 'stub',
-          }
-        })
+        build.onResolve(
+          { filter: /^(iconv-lite|encoding)(\/|$)/ },
+          (args: OnResolveArgs) => {
+            return {
+              path: args.path,
+              namespace: 'stub',
+            }
+          },
+        )
 
         build.onLoad({ filter: /.*/, namespace: 'stub' }, () => {
           return {
@@ -168,13 +179,16 @@ const config: BuildOptions = {
       setup(build: PluginBuild) {
         // Prevent bundling @npmcli/arborist from workspace node_modules.
         // This includes the main package and all subpaths like /lib/edge.js.
-        build.onResolve({ filter: /@npmcli\/arborist/ }, (args: OnResolveArgs) => {
-          // Only redirect if it's not already coming from socket-lib's external bundle.
-          if (args.importer.includes('/socket-lib/dist/')) {
-            return undefined
-          }
-          return { path: args.path, external: true }
-        })
+        build.onResolve(
+          { filter: /@npmcli\/arborist/ },
+          (args: OnResolveArgs) => {
+            // Only redirect if it's not already coming from socket-lib's external bundle.
+            if (args.importer.includes('/socket-lib/dist/')) {
+              return undefined
+            }
+            return { path: args.path, external: true }
+          },
+        )
 
         // Mark node-gyp as external (used by arborist but optionally resolved).
         build.onResolve({ filter: /node-gyp/ }, (args: OnResolveArgs) => {
@@ -186,7 +200,9 @@ const config: BuildOptions = {
 }
 
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
-  runBuild(config, 'CLI bundle').catch(() => { process.exitCode = 1 })
+  runBuild(config, 'CLI bundle').catch(() => {
+    process.exitCode = 1
+  })
 }
 
 export default config

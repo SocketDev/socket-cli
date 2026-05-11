@@ -15,6 +15,19 @@ export function fileLink(filePath: string, text?: string | undefined): string {
 }
 
 /**
+ * Creates a terminal link to a GitHub repository.
+ */
+export function githubRepoLink(
+  owner: string,
+  repo: string,
+  path?: string | undefined,
+  text?: string | undefined,
+): string {
+  const url = `https://github.com/${owner}/${repo}${path ? `/${path}` : ''}`
+  return terminalLink(text ?? `${owner}/${repo}`, url)
+}
+
+/**
  * Creates a terminal link to an email address.
  */
 export function mailtoLink(email: string, text?: string | undefined): string {
@@ -77,19 +90,6 @@ export function socketPackageLink(
     url = `https://socket.dev/${ecosystem}/package/${packageName}`
   }
   return terminalLink(text ?? url, url)
-}
-
-/**
- * Creates a terminal link to a GitHub repository.
- */
-export function githubRepoLink(
-  owner: string,
-  repo: string,
-  path?: string | undefined,
-  text?: string | undefined,
-): string {
-  const url = `https://github.com/${owner}/${repo}${path ? `/${path}` : ''}`
-  return terminalLink(text ?? `${owner}/${repo}`, url)
 }
 
 /**

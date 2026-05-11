@@ -480,7 +480,9 @@ describe('meow-with-subcommands', () => {
       delete process.env['SOCKET_CLI_API_TOKEN']
       try {
         // Mock config returns a token AND isConfigFromFlag returns true.
-        mockGetConfigValueOrUndef.mockReturnValueOnce('sktsec_flag_xxxxxxxxxxxx')
+        mockGetConfigValueOrUndef.mockReturnValueOnce(
+          'sktsec_flag_xxxxxxxxxxxx',
+        )
         mockIsConfigFromFlag.mockReturnValueOnce(true)
         const result = getTokenOrigin()
         expect(result).toBe('(--config flag)')

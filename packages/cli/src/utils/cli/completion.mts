@@ -7,29 +7,6 @@ import type { CResult } from '../../types.mjs'
 
 export const COMPLETION_CMD_PREFIX = 'complete -F _socket_completion'
 
-export function getCompletionSourcingCommand(): CResult<string> {
-  // Bash completion script lives in data directory.
-  const completionScriptPath = path.join(
-    rootPath,
-    'data',
-    'socket-completion.bash',
-  )
-
-  if (!fs.existsSync(completionScriptPath)) {
-    return {
-      ok: false,
-      message: 'Tab Completion script not found',
-      cause: `Expected to find completion script at \`${completionScriptPath.replace(/\\/g, '/')}\` but it was not there`,
-    }
-  }
-
-  // Bash scripts always use forward slashes, even on Windows.
-  return {
-    ok: true,
-    data: `source ${completionScriptPath.replace(/\\/g, '/')}`,
-  }
-}
-
 export function getBashrcDetails(targetCommandName: string): CResult<{
   completionCommand: string
   sourcingCommand: string
@@ -82,5 +59,28 @@ fi
       targetName: targetCommandName,
       targetPath: bashCompletionPath,
     },
+  }
+}
+
+export function getCompletionSourcingCommand(): CResult<string> {
+  // Bash completion script lives in data directory.
+  const completionScriptPath = path.join(
+    rootPath,
+    'data',
+    'socket-completion.bash',
+  )
+
+  if (!fs.existsSync(completionScriptPath)) {
+    return {
+      ok: false,
+      message: 'Tab Completion script not found',
+      cause: `Expected to find completion script at \`${completionScriptPath.replace(/\\/g, '/')}\` but it was not there`,
+    }
+  }
+
+  // Bash scripts always use forward slashes, even on Windows.
+  return {
+    ok: true,
+    data: `source ${completionScriptPath.replace(/\\/g, '/')}`,
   }
 }

@@ -14,10 +14,7 @@
 import { detectExecutableType } from '@socketsecurity/lib/dlx/detect'
 import { spawn } from '@socketsecurity/lib/spawn'
 
-import {
-  defineAutoDispatch,
-  defineVfsSpawn,
-} from './define-tool-spawn.mts'
+import { defineAutoDispatch, defineVfsSpawn } from './define-tool-spawn.mts'
 import { spawnDlx } from './spawn.mts'
 import { resolveSfw } from './resolve-binary.mjs'
 import {

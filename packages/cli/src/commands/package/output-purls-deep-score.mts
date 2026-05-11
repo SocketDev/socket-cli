@@ -8,38 +8,6 @@ import type { PurlDataResponse } from './fetch-purl-deep-score.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-export async function outputPurlsDeepScore(
-  purl: string,
-  result: CResult<PurlDataResponse>,
-  outputKind: OutputKind,
-): Promise<void> {
-  if (!result.ok) {
-    process.exitCode = result.code ?? 1
-  }
-
-  if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
-    return
-  }
-  if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
-    return
-  }
-
-  if (outputKind === 'markdown') {
-    const md = createMarkdownReport(result.data)
-    logger.success(`Score report for "${result.data.purl}" ("${purl}"):\n`)
-    logger.log(md)
-    return
-  }
-
-  logger.log(
-    `Score report for "${purl}" (use --json for raw and --markdown for formatted reports):`,
-  )
-  logger.log(result.data)
-  logger.log('')
-}
-
 export function createMarkdownReport(data: PurlDataResponse): string {
   const {
     self: {
@@ -212,4 +180,36 @@ export function createMarkdownReport(data: PurlDataResponse): string {
     o.push('')
   }
   return o.join('\n')
+}
+
+export async function outputPurlsDeepScore(
+  purl: string,
+  result: CResult<PurlDataResponse>,
+  outputKind: OutputKind,
+): Promise<void> {
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
+  if (outputKind === 'json') {
+    logger.log(serializeResultJson(result))
+    return
+  }
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
+  if (outputKind === 'markdown') {
+    const md = createMarkdownReport(result.data)
+    logger.success(`Score report for "${result.data.purl}" ("${purl}"):\n`)
+    logger.log(md)
+    return
+  }
+
+  logger.log(
+    `Score report for "${purl}" (use --json for raw and --markdown for formatted reports):`,
+  )
+  logger.log(result.data)
+  logger.log('')
 }

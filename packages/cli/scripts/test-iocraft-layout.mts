@@ -17,7 +17,7 @@ const io = iocraft.default || iocraft
 io.init()
 
 logger.log('Testing iocraft layout engine\n')
-logger.log('=' .repeat(60))
+logger.log('='.repeat(60))
 
 // Test 1: Column layout.
 logger.log('\n1. Column Layout Test')
@@ -62,4 +62,6 @@ logger.log('\nSUMMARY:')
 logger.log('- flex_direction: "column" → NOT WORKING (items render in row)')
 logger.log('- border_style: "single" → NOT WORKING (no border drawn)')
 logger.log('- gap → PARTIALLY WORKING (adds space in row layout)')
-logger.log('\nThe layout engine does not appear to be processing flexbox properties.')
+logger.log(
+  '\nThe layout engine does not appear to be processing flexbox properties.',
+)

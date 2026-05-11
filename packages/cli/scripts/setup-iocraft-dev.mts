@@ -85,7 +85,7 @@ if (existsSync(iocraftIndexPath)) {
   let indexContent = readFileSync(iocraftIndexPath, 'utf8')
 
   // Add fallback for node_modules installation if not already present.
-  if (!indexContent.includes('Check if we\'re in node_modules')) {
+  if (!indexContent.includes("Check if we're in node_modules")) {
     // First, add existsSync to the imports.
     indexContent = indexContent.replace(
       /const { realpathSync } = require\('node:fs'\)/,
@@ -109,13 +109,16 @@ if (existsSync(iocraftIndexPath)) {
         `$1$2`,
     )
     writeFileSync(iocraftIndexPath, indexContent, 'utf8')
-    logger.log('\n✓ Patched iocraft index.mjs for node_modules loading')
+    logger.success('Patched iocraft index.mjs for node_modules loading')
   }
 }
 
 // Create node_modules inside iocraft package and symlink platform packages.
 // This allows iocraft's require() to find the platform-specific packages.
-const iocraftNodeModules = join(nodeModulesDir, '@socketaddon/iocraft/node_modules')
+const iocraftNodeModules = join(
+  nodeModulesDir,
+  '@socketaddon/iocraft/node_modules',
+)
 const iocraftScope = join(iocraftNodeModules, '@socketaddon')
 
 if (!existsSync(iocraftScope)) {
@@ -129,7 +132,10 @@ for (const [sourceDir, targetName] of Object.entries(packages)) {
   }
 
   const targetPath = join(nodeModulesDir, targetName)
-  const symlinkPath = join(iocraftScope, targetName.replace('@socketaddon/', ''))
+  const symlinkPath = join(
+    iocraftScope,
+    targetName.replace('@socketaddon/', ''),
+  )
 
   if (existsSync(targetPath)) {
     try {
@@ -147,7 +153,7 @@ for (const [sourceDir, targetName] of Object.entries(packages)) {
   }
 }
 
-logger.log('\n✅ iocraft dev build installed successfully!')
+logger.success('iocraft dev build installed successfully!')
 logger.log(
   '\nYou can now run manual tests:\n  node src/commands/analytics/test-analytics-renderer.mts',
 )

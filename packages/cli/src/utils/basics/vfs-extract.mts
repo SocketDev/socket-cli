@@ -40,58 +40,6 @@ const BASICS_TOOL_VFS_PATHS: Record<(typeof BASICS_TOOLS)[number], string> = {
 }
 
 /**
- * Get the base dlx directory path for node-smol.
- * This is the shared extraction directory: ~/.socket/_dlx/<node-smol-hash>/
- *
- * @returns Path to node-smol's dlx directory.
- */
-export function getNodeSmolBasePath(): string {
-  let nodeSmolHash = 'node-smol-placeholder'
-
-  try {
-    // Try to get hash from process.smol API (if available in future node-smol).
-    const processWithSmol = process as unknown as {
-      smol?: { getHash?: () => string }
-    }
-    if (typeof processWithSmol.smol?.getHash === 'function') {
-      nodeSmolHash = processWithSmol.smol.getHash()
-    } else {
-      // Fallback: hash based on Node.js version and platform.
-      const hashInput = `${process.version}-${process.platform}-${process.arch}`
-      const hash = createHash('sha256').update(hashInput).digest('hex')
-      nodeSmolHash = hash.slice(0, 16)
-    }
-  } catch {
-    // Fallback to versioned hash.
-    const hashInput = `${process.version}-${process.platform}-${process.arch}`
-    const hash = createHash('sha256').update(hashInput).digest('hex')
-    nodeSmolHash = hash.slice(0, 16)
-  }
-
-  return normalizePath(path.join(homedir(), UPDATE_STORE_DIR, nodeSmolHash))
-}
-
-/**
- * Get the Python site-packages path for extracting Python packages.
- * Path: ~/.socket/_dlx/<hash>/python/lib/python{major.minor}/site-packages/
- *
- * @returns Path to site-packages directory.
- */
-export function getPythonSitePackagesPath(): string {
-  const basePath = getNodeSmolBasePath()
-  const pythonMajorMinor = getPythonMajorMinor()
-  return normalizePath(
-    path.join(
-      basePath,
-      'python',
-      'lib',
-      `python${pythonMajorMinor}`,
-      'site-packages',
-    ),
-  )
-}
-
-/**
  * Check if basics tools are available for socket-basics.
  *
  * Returns true if:
@@ -133,7 +81,7 @@ export function areBasicsToolsAvailable(): boolean {
  */
 export async function extractBasicsTools(
   _cacheDir?: string,
-): Promise<string | null> {
+): Promise<string | undefined> {
   if (!isSeaBinary()) {
     logger.warn('Not running in SEA mode - cannot extract basics tools')
     return undefined
@@ -208,7 +156,9 @@ export async function extractBasicsTools(
     for (const tool of toolsToValidate) {
       const toolPath = extractedPaths[tool]
       /* c8 ignore next - defensive: extraction populates all toolsToValidate keys before this loop */
-      if (!toolPath) {continue}
+      if (!toolPath) {
+        continue
+      }
 
       // eslint-disable-next-line no-await-in-loop
       const toolValidateResult = await spawn(toolPath, ['--version'], {
@@ -287,4 +237,56 @@ export function getBasicsToolPaths(toolsDir: string): {
       ),
     ),
   }
+}
+
+/**
+ * Get the base dlx directory path for node-smol.
+ * This is the shared extraction directory: ~/.socket/_dlx/<node-smol-hash>/
+ *
+ * @returns Path to node-smol's dlx directory.
+ */
+export function getNodeSmolBasePath(): string {
+  let nodeSmolHash = 'node-smol-placeholder'
+
+  try {
+    // Try to get hash from process.smol API (if available in future node-smol).
+    const processWithSmol = process as unknown as {
+      smol?: { getHash?: () => string }
+    }
+    if (typeof processWithSmol.smol?.getHash === 'function') {
+      nodeSmolHash = processWithSmol.smol.getHash()
+    } else {
+      // Fallback: hash based on Node.js version and platform.
+      const hashInput = `${process.version}-${process.platform}-${process.arch}`
+      const hash = createHash('sha256').update(hashInput).digest('hex')
+      nodeSmolHash = hash.slice(0, 16)
+    }
+  } catch {
+    // Fallback to versioned hash.
+    const hashInput = `${process.version}-${process.platform}-${process.arch}`
+    const hash = createHash('sha256').update(hashInput).digest('hex')
+    nodeSmolHash = hash.slice(0, 16)
+  }
+
+  return normalizePath(path.join(homedir(), UPDATE_STORE_DIR, nodeSmolHash))
+}
+
+/**
+ * Get the Python site-packages path for extracting Python packages.
+ * Path: ~/.socket/_dlx/<hash>/python/lib/python{major.minor}/site-packages/
+ *
+ * @returns Path to site-packages directory.
+ */
+export function getPythonSitePackagesPath(): string {
+  const basePath = getNodeSmolBasePath()
+  const pythonMajorMinor = getPythonMajorMinor()
+  return normalizePath(
+    path.join(
+      basePath,
+      'python',
+      'lib',
+      `python${pythonMajorMinor}`,
+      'site-packages',
+    ),
+  )
 }

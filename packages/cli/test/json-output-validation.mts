@@ -48,8 +48,7 @@ export function validateSocketJson(output: string, exitCode: number) {
     }
   } catch (e) {
     // If not valid JSON, return error.
-    const preview =
-      output.length > 200 ? `${output.slice(0, 200)}...` : output
+    const preview = output.length > 200 ? `${output.slice(0, 200)}...` : output
     return {
       ok: false,
       message: `command output is not valid JSON (JSON.parse: ${e instanceof Error ? e.message : String(e)}); got: ${preview}`,

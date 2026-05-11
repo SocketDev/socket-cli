@@ -112,9 +112,7 @@ export function outputDryRunExecute(
   description?: string,
 ): void {
   out('')
-  out(
-    `${DRY_RUN_LABEL}: Would execute ${description || 'external command'}`,
-  )
+  out(`${DRY_RUN_LABEL}: Would execute ${description || 'external command'}`)
   out('')
   out(`  Command: ${command}`)
   if (args.length > 0) {

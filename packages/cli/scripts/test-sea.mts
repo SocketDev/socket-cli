@@ -16,80 +16,21 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /**
- * Spawn a process and return result.
+ * Build SEA blob.
  */
-function spawn(command, args, options = {}) {
-  return new Promise(resolve => {
-    const child = nodeSpawn(command, args, options)
-
-    let stdout = ''
-    let stderr = ''
-
-    if (child.stdout) {
-      child.stdout.on('data', data => {
-        stdout += data
-      })
-    }
-    if (child.stderr) {
-      child.stderr.on('data', data => {
-        stderr += data
-      })
-    }
-
-    child.on('close', exitCode => {
-      resolve({ exitCode, stderr, stdout })
-    })
-  })
-}
-
-/**
- * Parse command line arguments.
- */
-function parseArgs() {
-  const args = process.argv.slice(2)
-  const mode =
-    args
-      .find(a => a.startsWith('--mode='))
-      ?.split('=')[1]
-      ?.toLowerCase() || 'with-tools'
-
-  if (!['standalone', 'vfs', 'with-tools'].includes(mode)) {
-    logger.fail('Invalid mode. Use: standalone, vfs, or with-tools')
-    throw new Error('Invalid mode')
-  }
-
-  return { mode }
-}
-
-/**
- * Load tool paths from previous download.
- */
-async function loadToolPaths() {
-  const platform = `${process.platform}-${process.arch}`
-  const toolPathsFile = path.join(
-    __dirname,
-    '../../build-infra/build/external-tools-test',
-    platform,
-    'tool-paths.json',
+async function buildBlob(configPath) {
+  logger.log('Generating SEA blob...')
+  const result = await spawn(
+    process.execPath,
+    ['--experimental-sea-config', configPath],
+    {
+      stdio: 'inherit',
+    },
   )
 
-  if (!existsSync(toolPathsFile)) {
-    logger.fail(`Tool paths not found: ${toolPathsFile}`)
-    logger.fail('Run: node scripts/test-download-external-tools.mts')
-    throw new Error('Tool paths not found')
+  if (result.code !== 0) {
+    throw new Error(`Failed to generate SEA blob: exit code ${result.code}`)
   }
-
-  let toolPathsData
-  try {
-    toolPathsData = JSON.parse(await fs.readFile(toolPathsFile, 'utf8'))
-  } catch (e) {
-    logger.fail(
-      `Failed to parse tool paths from ${toolPathsFile}: ${e.message}`,
-    )
-    logger.fail('Run: node scripts/test-download-external-tools.mts')
-    throw new Error('Invalid tool paths JSON')
-  }
-  return { platform, toolPaths: toolPathsData.tools }
 }
 
 /**
@@ -153,21 +94,53 @@ async function generateSeaConfig(entryPoint, outputPath, toolPaths, mode) {
 }
 
 /**
- * Build SEA blob.
+ * Load tool paths from previous download.
  */
-async function buildBlob(configPath) {
-  logger.log('Generating SEA blob...')
-  const result = await spawn(
-    process.execPath,
-    ['--experimental-sea-config', configPath],
-    {
-      stdio: 'inherit',
-    },
+async function loadToolPaths() {
+  const platform = `${process.platform}-${process.arch}`
+  const toolPathsFile = path.join(
+    __dirname,
+    '../../build-infra/build/external-tools-test',
+    platform,
+    'tool-paths.json',
   )
 
-  if (result.code !== 0) {
-    throw new Error(`Failed to generate SEA blob: exit code ${result.code}`)
+  if (!existsSync(toolPathsFile)) {
+    logger.fail(`Tool paths not found: ${toolPathsFile}`)
+    logger.fail('Run: node scripts/test-download-external-tools.mts')
+    throw new Error('Tool paths not found')
   }
+
+  let toolPathsData
+  try {
+    toolPathsData = JSON.parse(await fs.readFile(toolPathsFile, 'utf8'))
+  } catch (e) {
+    logger.fail(
+      `Failed to parse tool paths from ${toolPathsFile}: ${e.message}`,
+    )
+    logger.fail('Run: node scripts/test-download-external-tools.mts')
+    throw new Error('Invalid tool paths JSON')
+  }
+  return { platform, toolPaths: toolPathsData.tools }
+}
+
+/**
+ * Parse command line arguments.
+ */
+function parseArgs() {
+  const args = process.argv.slice(2)
+  const mode =
+    args
+      .find(a => a.startsWith('--mode='))
+      ?.split('=')[1]
+      ?.toLowerCase() || 'with-tools'
+
+  if (!['standalone', 'vfs', 'with-tools'].includes(mode)) {
+    logger.fail('Invalid mode. Use: standalone, vfs, or with-tools')
+    throw new Error('Invalid mode')
+  }
+
+  return { mode }
 }
 
 /**
@@ -537,6 +510,33 @@ async function runWithToolsMode(platform, toolPaths) {
 }
 
 /**
+ * Spawn a process and return result.
+ */
+function spawn(command, args, options = {}) {
+  return new Promise(resolve => {
+    const child = nodeSpawn(command, args, options)
+
+    let stdout = ''
+    let stderr = ''
+
+    if (child.stdout) {
+      child.stdout.on('data', data => {
+        stdout += data
+      })
+    }
+    if (child.stderr) {
+      child.stderr.on('data', data => {
+        stderr += data
+      })
+    }
+
+    child.on('close', exitCode => {
+      resolve({ exitCode, stderr, stdout })
+    })
+  })
+}
+
+/**
  * Test the generated binary.
  */
 async function testBinary(outputPath) {
@@ -546,9 +546,9 @@ async function testBinary(outputPath) {
   logger.log('-'.repeat(60))
 
   if (testResult.code === 0) {
-    logger.log('✅ Binary works!')
+    logger.success('Binary works!')
   } else {
-    logger.log('❌ Binary test failed')
+    logger.fail('Binary test failed')
     process.exitCode = 1
   }
 }

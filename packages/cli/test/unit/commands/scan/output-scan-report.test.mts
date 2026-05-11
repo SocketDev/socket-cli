@@ -69,7 +69,9 @@ const mockGenerateReport = vi.hoisted(() => vi.fn())
 
 vi.mock('../../../../src/commands/scan/generate-report.mts', async orig => {
   const actual =
-    await orig<typeof import('../../../../src/commands/scan/generate-report.mts')>()
+    await orig<
+      typeof import('../../../../src/commands/scan/generate-report.mts')
+    >()
   return {
     ...actual,
     generateReport: mockGenerateReport,
@@ -211,7 +213,10 @@ describe('output-scan-report', () => {
         cause: 'Invalid data',
       })
 
-      await outputScanReport(successResult, { ...baseConfig, outputKind: 'json' })
+      await outputScanReport(successResult, {
+        ...baseConfig,
+        outputKind: 'json',
+      })
 
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('"ok": false'),
@@ -238,7 +243,10 @@ describe('output-scan-report', () => {
         },
       })
 
-      await outputScanReport(successResult, { ...baseConfig, outputKind: 'json' })
+      await outputScanReport(successResult, {
+        ...baseConfig,
+        outputKind: 'json',
+      })
 
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('"ok": true'),
@@ -510,7 +518,6 @@ describe('output-scan-report', () => {
       )
     })
   })
-
 
   describe('toJsonReport', () => {
     it('should be able to generate a healthy json report', () => {

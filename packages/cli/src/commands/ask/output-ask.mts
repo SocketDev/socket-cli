@@ -24,83 +24,6 @@ interface OutputAskCommandOptions {
 }
 
 /**
- * Format the ask command output.
- */
-export function outputAskCommand(options: OutputAskCommandOptions): void {
-  const { context, explain, intent, query } = options
-
-  // Show the query.
-  logger.log('')
-  logger.log(colors.bold(colors.magenta('❯ You asked:')))
-  logger.log(`  "${colors.cyan(query)}"`)
-  logger.log('')
-
-  // Show interpretation.
-  logger.log(colors.bold(colors.magenta('🤖 I understood:')))
-  logger.log(`  ${intent.explanation}`)
-
-  // Show extracted details if present.
-  const details = []
-  if (intent.packageName) {
-    details.push(`Package: ${colors.cyan(intent.packageName)}`)
-  }
-  if (intent.severity) {
-    const severityColor =
-      intent.severity === 'critical' || intent.severity === 'high'
-        ? colors.red
-        : intent.severity === 'medium'
-          ? colors.yellow
-          : colors.blue
-    details.push(`Severity: ${severityColor(intent.severity)}`)
-  }
-  if (intent.environment) {
-    details.push(`Environment: ${colors.green(intent.environment)}`)
-  }
-  if (intent.isDryRun) {
-    details.push(`Mode: ${colors.yellow('dry-run (preview only)')}`)
-  }
-
-  if (details.length > 0) {
-    logger.log(`  ${details.join(', ')}`)
-  }
-
-  // Show confidence if low.
-  if (intent.confidence < 0.6) {
-    logger.log('')
-    logger.log(
-      colors.yellow(
-        '⚠️  Low confidence - the command might not match your intent exactly',
-      ),
-    )
-  }
-
-  logger.log('')
-
-  // Show the command.
-  logger.log(colors.bold(colors.magenta('📝 Command:')))
-  logger.log(
-    `  ${colors.green('$')} socket ${colors.cyan(intent.command.join(' '))}`,
-  )
-
-  // Show explanation if requested.
-  if (explain) {
-    logger.log('')
-    logger.log(colors.bold(colors.magenta('💡 Explanation:')))
-    logger.log(explainCommand(intent))
-  }
-
-  // Show context.
-  if (context.hasPackageJson && explain) {
-    logger.log('')
-    logger.log(colors.bold(colors.magenta('📦 Project Context:')))
-    const depCount = Object.keys(context.dependencies || {}).length
-    const devDepCount = Object.keys(context.devDependencies || {}).length
-    logger.log(`  Dependencies: ${depCount} packages`)
-    logger.log(`  Dev Dependencies: ${devDepCount} packages`)
-  }
-}
-
-/**
  * Explain what the command does.
  */
 export function explainCommand(intent: {
@@ -189,4 +112,81 @@ export function explainCommand(intent: {
   }
 
   return parts.join('\n')
+}
+
+/**
+ * Format the ask command output.
+ */
+export function outputAskCommand(options: OutputAskCommandOptions): void {
+  const { context, explain, intent, query } = options
+
+  // Show the query.
+  logger.log('')
+  logger.log(colors.bold(colors.magenta('❯ You asked:')))
+  logger.log(`  "${colors.cyan(query)}"`)
+  logger.log('')
+
+  // Show interpretation.
+  logger.log(colors.bold(colors.magenta('🤖 I understood:')))
+  logger.log(`  ${intent.explanation}`)
+
+  // Show extracted details if present.
+  const details = []
+  if (intent.packageName) {
+    details.push(`Package: ${colors.cyan(intent.packageName)}`)
+  }
+  if (intent.severity) {
+    const severityColor =
+      intent.severity === 'critical' || intent.severity === 'high'
+        ? colors.red
+        : intent.severity === 'medium'
+          ? colors.yellow
+          : colors.blue
+    details.push(`Severity: ${severityColor(intent.severity)}`)
+  }
+  if (intent.environment) {
+    details.push(`Environment: ${colors.green(intent.environment)}`)
+  }
+  if (intent.isDryRun) {
+    details.push(`Mode: ${colors.yellow('dry-run (preview only)')}`)
+  }
+
+  if (details.length > 0) {
+    logger.log(`  ${details.join(', ')}`)
+  }
+
+  // Show confidence if low.
+  if (intent.confidence < 0.6) {
+    logger.log('')
+    logger.log(
+      colors.yellow(
+        '⚠️  Low confidence - the command might not match your intent exactly',
+      ),
+    )
+  }
+
+  logger.log('')
+
+  // Show the command.
+  logger.log(colors.bold(colors.magenta('📝 Command:')))
+  logger.log(
+    `  ${colors.green('$')} socket ${colors.cyan(intent.command.join(' '))}`,
+  )
+
+  // Show explanation if requested.
+  if (explain) {
+    logger.log('')
+    logger.log(colors.bold(colors.magenta('💡 Explanation:')))
+    logger.log(explainCommand(intent))
+  }
+
+  // Show context.
+  if (context.hasPackageJson && explain) {
+    logger.log('')
+    logger.log(colors.bold(colors.magenta('📦 Project Context:')))
+    const depCount = Object.keys(context.dependencies || {}).length
+    const devDepCount = Object.keys(context.devDependencies || {}).length
+    logger.log(`  Dependencies: ${depCount} packages`)
+    logger.log(`  Dev Dependencies: ${devDepCount} packages`)
+  }
 }

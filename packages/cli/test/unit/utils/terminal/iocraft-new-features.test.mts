@@ -124,10 +124,7 @@ describe('iocraft new features', () => {
 
     it('should render fragment to string', () => {
       const element = Fragment({
-        children: [
-          Text({ children: 'Line 1' }),
-          Text({ children: 'Line 2' }),
-        ],
+        children: [Text({ children: 'Line 1' }), Text({ children: 'Line 2' })],
       })
 
       const output = renderToString(element)

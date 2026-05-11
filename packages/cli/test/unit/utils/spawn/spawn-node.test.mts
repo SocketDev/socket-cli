@@ -77,7 +77,10 @@ describe('spawn-node', () => {
     })
 
     it('returns first non-current-exec path when multiple found', () => {
-      mockWhichRealSync.mockReturnValue(['/usr/bin/node', '/usr/local/bin/node'])
+      mockWhichRealSync.mockReturnValue([
+        '/usr/bin/node',
+        '/usr/local/bin/node',
+      ])
       // Mock process.execPath.
       const originalExecPath = process.execPath
       Object.defineProperty(process, 'execPath', {
@@ -200,7 +203,12 @@ describe('spawn-node', () => {
       spawnNode(['script.js'], { stdio: 'inherit' })
 
       const spawnCall = mockSpawn.mock.calls[0]
-      expect(spawnCall[2].stdio).toEqual(['inherit', 'inherit', 'inherit', 'ipc'])
+      expect(spawnCall[2].stdio).toEqual([
+        'inherit',
+        'inherit',
+        'inherit',
+        'ipc',
+      ])
     })
 
     it('keeps stdio array unchanged when ipc is already present', () => {

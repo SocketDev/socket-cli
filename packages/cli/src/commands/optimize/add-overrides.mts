@@ -283,8 +283,7 @@ export async function addOverrides(
           'addedInWorkspaces',
           'updated',
           'updatedInWorkspaces',
-        ] satisfies // Here we're just telling TS that we're looping over key names
-        // of the type and that they're all Set<string> props.
+        ] satisfies // of the type and that they're all Set<string> props. // Here we're just telling TS that we're looping over key names
         Array<
           keyof Pick<
             AddOverridesState,
@@ -311,11 +310,7 @@ export async function addOverrides(
         // synchronously inside this call.
         // eslint-disable-next-line no-await-in-loop -- ordering matters:
         // each agent's overrides write must complete before the next.
-        await updateManifest(
-          type,
-          pkgEnvDetails,
-          toSortedObject(overrides),
-        )
+        await updateManifest(type, pkgEnvDetails, toSortedObject(overrides))
       }
     }
     await pkgEnvDetails.editablePkgJson.save()

@@ -52,9 +52,8 @@ describe('yarn version utilities', () => {
         stdout: '2.4.3\n',
       })
 
-      const { isYarnBerry } = await import(
-        '../../../../src/utils/yarn/version.mts'
-      )
+      const { isYarnBerry } =
+        await import('../../../../src/utils/yarn/version.mts')
       const result = isYarnBerry()
 
       expect(result).toBe(true)
@@ -67,9 +66,8 @@ describe('yarn version utilities', () => {
         stdout: '3.6.1\n',
       })
 
-      const { isYarnBerry } = await import(
-        '../../../../src/utils/yarn/version.mts'
-      )
+      const { isYarnBerry } =
+        await import('../../../../src/utils/yarn/version.mts')
       const result = isYarnBerry()
 
       expect(result).toBe(true)
@@ -81,9 +79,8 @@ describe('yarn version utilities', () => {
         stdout: '4.0.0',
       })
 
-      const { isYarnBerry } = await import(
-        '../../../../src/utils/yarn/version.mts'
-      )
+      const { isYarnBerry } =
+        await import('../../../../src/utils/yarn/version.mts')
       const result = isYarnBerry()
 
       expect(result).toBe(true)
@@ -95,9 +92,8 @@ describe('yarn version utilities', () => {
         stdout: '1.22.19\n',
       })
 
-      const { isYarnBerry } = await import(
-        '../../../../src/utils/yarn/version.mts'
-      )
+      const { isYarnBerry } =
+        await import('../../../../src/utils/yarn/version.mts')
       const result = isYarnBerry()
 
       expect(result).toBe(false)
@@ -109,9 +105,8 @@ describe('yarn version utilities', () => {
         stdout: '',
       })
 
-      const { isYarnBerry } = await import(
-        '../../../../src/utils/yarn/version.mts'
-      )
+      const { isYarnBerry } =
+        await import('../../../../src/utils/yarn/version.mts')
       const result = isYarnBerry()
 
       expect(result).toBe(false)
@@ -123,9 +118,8 @@ describe('yarn version utilities', () => {
         stdout: Buffer.from(''),
       })
 
-      const { isYarnBerry } = await import(
-        '../../../../src/utils/yarn/version.mts'
-      )
+      const { isYarnBerry } =
+        await import('../../../../src/utils/yarn/version.mts')
       const result = isYarnBerry()
 
       expect(result).toBe(false)
@@ -137,9 +131,8 @@ describe('yarn version utilities', () => {
         stdout: Buffer.from('3.0.0\n'),
       })
 
-      const { isYarnBerry } = await import(
-        '../../../../src/utils/yarn/version.mts'
-      )
+      const { isYarnBerry } =
+        await import('../../../../src/utils/yarn/version.mts')
       const result = isYarnBerry()
 
       expect(result).toBe(true)
@@ -151,9 +144,8 @@ describe('yarn version utilities', () => {
         stdout: 'invalid-version\n',
       })
 
-      const { isYarnBerry } = await import(
-        '../../../../src/utils/yarn/version.mts'
-      )
+      const { isYarnBerry } =
+        await import('../../../../src/utils/yarn/version.mts')
       const result = isYarnBerry()
 
       expect(result).toBe(false)
@@ -165,9 +157,8 @@ describe('yarn version utilities', () => {
         stdout: '',
       })
 
-      const { isYarnBerry } = await import(
-        '../../../../src/utils/yarn/version.mts'
-      )
+      const { isYarnBerry } =
+        await import('../../../../src/utils/yarn/version.mts')
       const result = isYarnBerry()
 
       expect(result).toBe(false)
@@ -178,9 +169,8 @@ describe('yarn version utilities', () => {
         throw new Error('spawn failed')
       })
 
-      const { isYarnBerry } = await import(
-        '../../../../src/utils/yarn/version.mts'
-      )
+      const { isYarnBerry } =
+        await import('../../../../src/utils/yarn/version.mts')
       const result = isYarnBerry()
 
       expect(result).toBe(false)
@@ -192,9 +182,8 @@ describe('yarn version utilities', () => {
         stdout: '3.0.0\n',
       })
 
-      const { isYarnBerry } = await import(
-        '../../../../src/utils/yarn/version.mts'
-      )
+      const { isYarnBerry } =
+        await import('../../../../src/utils/yarn/version.mts')
 
       // Call multiple times.
       const result1 = isYarnBerry()

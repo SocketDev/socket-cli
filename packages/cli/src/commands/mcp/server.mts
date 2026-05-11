@@ -23,13 +23,6 @@ export interface ServerConfig {
 
 const depscoreInputCheck = TypeCompiler.Compile(DepscoreInputSchema)
 
-// Convert TypeBox schema to a JSON Schema literal for MCP wire output.
-// TypeBox values are JSON Schema natively; cloning produces a plain
-// object the SDK serializes without zod-specific machinery.
-export function schemaToJsonSchema(schema: object): Record<string, unknown> {
-  return JSON.parse(JSON.stringify(schema))
-}
-
 export function createConfiguredServer(config: ServerConfig): Server {
   const server = new Server(
     {
@@ -97,12 +90,24 @@ export function createConfiguredServer(config: ServerConfig): Server {
       }
     }
 
-    const result = await runDepscore(args as DepscoreInput, { apiToken: authToken })
+    const result = await runDepscore(args as DepscoreInput, {
+      apiToken: authToken,
+    })
     return {
-      content: result.content.map(c => ({ text: c.text, type: 'text' as const })),
+      content: result.content.map(c => ({
+        text: c.text,
+        type: 'text' as const,
+      })),
       isError: result.isError,
     }
   })
 
   return server
+}
+
+// Convert TypeBox schema to a JSON Schema literal for MCP wire output.
+// TypeBox values are JSON Schema natively; cloning produces a plain
+// object the SDK serializes without zod-specific machinery.
+export function schemaToJsonSchema(schema: object): Record<string, unknown> {
+  return JSON.parse(JSON.stringify(schema))
 }

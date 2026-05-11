@@ -878,7 +878,9 @@ describe('cmd-scan-create', () => {
             importMeta,
             context,
           ),
-        ).rejects.toThrow(/--reach-analysis-memory-limit must be a number of megabytes/)
+        ).rejects.toThrow(
+          /--reach-analysis-memory-limit must be a number of megabytes/,
+        )
       })
 
       it('should validate --reach-analysis-timeout is a number', async () => {
@@ -898,7 +900,9 @@ describe('cmd-scan-create', () => {
             importMeta,
             context,
           ),
-        ).rejects.toThrow(/--reach-analysis-timeout must be a number of seconds/)
+        ).rejects.toThrow(
+          /--reach-analysis-timeout must be a number of seconds/,
+        )
       })
 
       it('should validate --reach-concurrency is a number', async () => {
@@ -989,7 +993,14 @@ describe('cmd-scan-create', () => {
         mockHasDefaultApiToken.mockReturnValueOnce(true)
 
         await cmdScanCreate.run(
-          ['--org', 'test-org', '--cwd', '/tmp/project', '.', '--no-interactive'],
+          [
+            '--org',
+            'test-org',
+            '--cwd',
+            '/tmp/project',
+            '.',
+            '--no-interactive',
+          ],
           importMeta,
           context,
         )
@@ -1025,7 +1036,14 @@ describe('cmd-scan-create', () => {
         mockHasDefaultApiToken.mockReturnValueOnce(true)
 
         await cmdScanCreate.run(
-          ['--org', 'test-org', '--report-level', 'warn', '.', '--no-interactive'],
+          [
+            '--org',
+            'test-org',
+            '--report-level',
+            'warn',
+            '.',
+            '--no-interactive',
+          ],
           importMeta,
           context,
         )
@@ -1091,13 +1109,7 @@ describe('cmd-scan-create', () => {
         mockHasDefaultApiToken.mockReturnValueOnce(true)
 
         await cmdScanCreate.run(
-          [
-            '--dry-run',
-            '--org',
-            'test-org',
-            '--reach',
-            '.',
-          ],
+          ['--dry-run', '--org', 'test-org', '--reach', '.'],
           importMeta,
           context,
         )
@@ -1338,7 +1350,13 @@ describe('cmd-scan-create', () => {
         mockHasDefaultApiToken.mockReturnValueOnce(true)
 
         await cmdScanCreate.run(
-          ['--org', 'test-org', '--no-set-as-alerts-page', '.', '--no-interactive'],
+          [
+            '--org',
+            'test-org',
+            '--no-set-as-alerts-page',
+            '.',
+            '--no-interactive',
+          ],
           importMeta,
           context,
         )
@@ -1358,7 +1376,13 @@ describe('cmd-scan-create', () => {
         mockDetectDefaultBranch.mockResolvedValueOnce('')
 
         await cmdScanCreate.run(
-          ['--org', 'test-org', '--set-as-alerts-page', '.', '--no-interactive'],
+          [
+            '--org',
+            'test-org',
+            '--set-as-alerts-page',
+            '.',
+            '--no-interactive',
+          ],
           importMeta,
           context,
         )

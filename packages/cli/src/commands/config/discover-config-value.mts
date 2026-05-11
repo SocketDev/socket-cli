@@ -147,7 +147,9 @@ export async function getDefaultOrgFromToken(): Promise<
   return slugs
 }
 
-export async function getEnforceableOrgsFromToken(): Promise<string[] | undefined> {
+export async function getEnforceableOrgsFromToken(): Promise<
+  string[] | undefined
+> {
   const orgsCResult = await fetchOrganization()
   if (!orgsCResult.ok) {
     return undefined

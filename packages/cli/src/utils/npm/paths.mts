@@ -39,7 +39,9 @@ export function getNpmBinPath(): string {
 }
 
 let _npmBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
-export function getNpmBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
+export function getNpmBinPathDetails(): ReturnType<
+  typeof findBinPathDetailsSync
+> {
   if (_npmBinPathDetails === undefined) {
     _npmBinPathDetails = findBinPathDetailsSync(NPM)
   }
@@ -101,7 +103,9 @@ export function getNpxBinPath(): string {
 }
 
 let _npxBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
-export function getNpxBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
+export function getNpxBinPathDetails(): ReturnType<
+  typeof findBinPathDetailsSync
+> {
   if (_npxBinPathDetails === undefined) {
     _npxBinPathDetails = findBinPathDetailsSync('npx')
   }

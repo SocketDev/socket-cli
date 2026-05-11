@@ -43,17 +43,29 @@ describe('outputPurlsShallowScore', () => {
   })
 
   it('sets exit code from result.code on failure', async () => {
-    outputPurlsShallowScore(['pkg:npm/x'], { ok: false, message: 'fail', code: 5 } as any, 'text')
+    outputPurlsShallowScore(
+      ['pkg:npm/x'],
+      { ok: false, message: 'fail', code: 5 } as any,
+      'text',
+    )
     expect(process.exitCode).toBe(5)
   })
 
   it('defaults exit code to 1 when result.code is missing', async () => {
-    outputPurlsShallowScore(['pkg:npm/x'], { ok: false, message: 'fail' } as any, 'text')
+    outputPurlsShallowScore(
+      ['pkg:npm/x'],
+      { ok: false, message: 'fail' } as any,
+      'text',
+    )
     expect(process.exitCode).toBe(1)
   })
 
   it('logs JSON for failed result in JSON mode', async () => {
-    outputPurlsShallowScore(['pkg:npm/x'], { ok: false, message: 'fail' } as any, 'json')
+    outputPurlsShallowScore(
+      ['pkg:npm/x'],
+      { ok: false, message: 'fail' } as any,
+      'json',
+    )
     expect(mockLogger.log).toHaveBeenCalled()
     expect(mockLogger.fail).not.toHaveBeenCalled()
   })

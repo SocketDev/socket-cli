@@ -271,25 +271,22 @@ describe('ascii-header-banner', () => {
   describe('exposed helpers', () => {
     describe('stripAnsi', () => {
       it('strips ANSI escape sequences', async () => {
-        const { stripAnsi } = await import(
-          '../../../../src/utils/terminal/ascii-header-banner.mts'
-        )
+        const { stripAnsi } =
+          await import('../../../../src/utils/terminal/ascii-header-banner.mts')
         expect(stripAnsi('\x1b[31mred\x1b[0m text')).toBe('red text')
       })
 
       it('returns plain strings unchanged', async () => {
-        const { stripAnsi } = await import(
-          '../../../../src/utils/terminal/ascii-header-banner.mts'
-        )
+        const { stripAnsi } =
+          await import('../../../../src/utils/terminal/ascii-header-banner.mts')
         expect(stripAnsi('plain text')).toBe('plain text')
       })
     })
 
     describe('getHeaderTheme', () => {
       it('returns theme from flags when valid', async () => {
-        const { getHeaderTheme } = await import(
-          '../../../../src/utils/terminal/ascii-header-banner.mts'
-        )
+        const { getHeaderTheme } =
+          await import('../../../../src/utils/terminal/ascii-header-banner.mts')
         expect(getHeaderTheme({ headerTheme: 'cyberpunk' })).toBe('cyberpunk')
         expect(getHeaderTheme({ headerTheme: 'forest' })).toBe('forest')
         expect(getHeaderTheme({ headerTheme: 'ocean' })).toBe('ocean')
@@ -297,9 +294,8 @@ describe('ascii-header-banner', () => {
       })
 
       it('falls back to default for unknown themes', async () => {
-        const { getHeaderTheme } = await import(
-          '../../../../src/utils/terminal/ascii-header-banner.mts'
-        )
+        const { getHeaderTheme } =
+          await import('../../../../src/utils/terminal/ascii-header-banner.mts')
         expect(getHeaderTheme({ headerTheme: 'unknown' })).toBe('default')
         expect(getHeaderTheme({})).toBe('default')
         expect(getHeaderTheme()).toBe('default')
@@ -308,9 +304,8 @@ describe('ascii-header-banner', () => {
 
     describe('shouldAnimateHeader', () => {
       it('returns false in vitest mode', async () => {
-        const { shouldAnimateHeader } = await import(
-          '../../../../src/utils/terminal/ascii-header-banner.mts'
-        )
+        const { shouldAnimateHeader } =
+          await import('../../../../src/utils/terminal/ascii-header-banner.mts')
         // VITEST is true in this run.
         expect(shouldAnimateHeader()).toBe(false)
         expect(shouldAnimateHeader({ animateHeader: true })).toBe(false)
@@ -319,9 +314,8 @@ describe('ascii-header-banner', () => {
 
     describe('getTokenOrigin', () => {
       it('returns a string indicating origin (or empty)', async () => {
-        const { getTokenOrigin } = await import(
-          '../../../../src/utils/terminal/ascii-header-banner.mts'
-        )
+        const { getTokenOrigin } =
+          await import('../../../../src/utils/terminal/ascii-header-banner.mts')
         const result = getTokenOrigin()
         expect(typeof result).toBe('string')
       })

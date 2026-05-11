@@ -25,7 +25,6 @@ vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
   setupSdk: mockSetupSdk,
 }))
 
-
 describe('fetchSupportedScanFileNames', () => {
   it('fetches supported scan file names successfully', async () => {
     const { fetchSupportedScanFileNames } =
@@ -106,10 +105,7 @@ describe('fetchSupportedScanFileNames', () => {
     const { fetchSupportedScanFileNames } =
       await import('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
 
-    const { mockHandleApi } = await setupSdkMockSuccess(
-      'getSupportedFiles',
-      {},
-    )
+    const { mockHandleApi } = await setupSdkMockSuccess('getSupportedFiles', {})
 
     const mockSpinner = {
       start: vi.fn(),
@@ -118,7 +114,10 @@ describe('fetchSupportedScanFileNames', () => {
       fail: vi.fn(),
     }
 
-    await fetchSupportedScanFileNames({ orgSlug: 'test-org', spinner: mockSpinner })
+    await fetchSupportedScanFileNames({
+      orgSlug: 'test-org',
+      spinner: mockSpinner,
+    })
 
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
       description: 'supported scan file types',

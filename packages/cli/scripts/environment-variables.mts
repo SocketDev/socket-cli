@@ -103,8 +103,7 @@ export class EnvironmentVariables {
     }
 
     // Build-time constants that can be overridden by environment variables.
-    const publishedBuild =
-      process.env['INLINED_PUBLISHED_BUILD'] === '1'
+    const publishedBuild = process.env['INLINED_PUBLISHED_BUILD'] === '1'
     const sentryBuild = process.env['INLINED_SENTRY_BUILD'] === '1'
 
     // Compute version hash (matches Rollup implementation).
@@ -166,10 +165,8 @@ export class EnvironmentVariables {
         readFileSync(path.join(rootPath, 'bundle-tools.json'), 'utf-8'),
       )
       return {
-        INLINED_COANA_VERSION:
-          externalTools['@coana-tech/cli']?.version || '',
-        INLINED_PYCLI_VERSION:
-          externalTools.socketsecurity?.version || '',
+        INLINED_COANA_VERSION: externalTools['@coana-tech/cli']?.version || '',
+        INLINED_PYCLI_VERSION: externalTools.socketsecurity?.version || '',
         INLINED_SFW_NPM_VERSION: externalTools.sfw?.npm?.version || '',
         INLINED_SFW_VERSION: externalTools.sfw?.version || '',
         INLINED_SOCKET_PATCH_VERSION:

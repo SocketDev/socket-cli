@@ -86,12 +86,9 @@ describe('apiCall', () => {
   })
 
   it('threads sdkOpts through to setupSdk', async () => {
-    await apiCall(
-      'listRepositories' as any,
-      ['org', {}] as any,
-      'desc',
-      { sdkOpts: { apiBaseUrl: 'https://api.example.com' } } as any,
-    )
+    await apiCall('listRepositories' as any, ['org', {}] as any, 'desc', {
+      sdkOpts: { apiBaseUrl: 'https://api.example.com' },
+    } as any)
 
     expect(mockSetupSdk).toHaveBeenCalledWith({
       apiBaseUrl: 'https://api.example.com',

@@ -60,11 +60,7 @@ describe('spawnSfwDlx', () => {
     })
     mockSpawn.mockReturnValue('spawn-promise')
 
-    const result = await spawnSfwDlx(
-      ['npm', 'install'],
-      undefined,
-      undefined,
-    )
+    const result = await spawnSfwDlx(['npm', 'install'], undefined, undefined)
 
     expect(mockSpawn).toHaveBeenCalledWith(
       '/local/sfw',

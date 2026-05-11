@@ -269,9 +269,8 @@ describe('outputThreatFeed', () => {
       () => ({ displayThreatFeedWithIocraft: mockDisplay }),
     )
     vi.resetModules()
-    const { outputThreatFeed: fn } = await import(
-      '../../../../src/commands/threat-feed/output-threat-feed.mts'
-    )
+    const { outputThreatFeed: fn } =
+      await import('../../../../src/commands/threat-feed/output-threat-feed.mts')
 
     const threatResults: ThreatResult[] = [
       {
@@ -304,9 +303,7 @@ describe('outputThreatFeed', () => {
         ]),
       }),
     )
-    vi.doUnmock(
-      '../../../../src/commands/threat-feed/ThreatFeedRenderer.mts',
-    )
+    vi.doUnmock('../../../../src/commands/threat-feed/ThreatFeedRenderer.mts')
   })
 
   it('handles unparseable PURLs in iocraft path', async () => {
@@ -316,9 +313,8 @@ describe('outputThreatFeed', () => {
       () => ({ displayThreatFeedWithIocraft: mockDisplay }),
     )
     vi.resetModules()
-    const { outputThreatFeed: fn } = await import(
-      '../../../../src/commands/threat-feed/output-threat-feed.mts'
-    )
+    const { outputThreatFeed: fn } =
+      await import('../../../../src/commands/threat-feed/output-threat-feed.mts')
 
     const threatResults: ThreatResult[] = [
       {
@@ -352,8 +348,6 @@ describe('outputThreatFeed', () => {
         ]),
       }),
     )
-    vi.doUnmock(
-      '../../../../src/commands/threat-feed/ThreatFeedRenderer.mts',
-    )
+    vi.doUnmock('../../../../src/commands/threat-feed/ThreatFeedRenderer.mts')
   })
 })

@@ -396,7 +396,10 @@ describe('package score output', async () => {
   describe('missing purls', () => {
     it('emits "missing response" notice in text report', () => {
       const empty = new Map()
-      const txt = generateTextReport(empty, ['pkg:npm/missing@1', 'pkg:npm/gone@2'])
+      const txt = generateTextReport(empty, [
+        'pkg:npm/missing@1',
+        'pkg:npm/gone@2',
+      ])
       expect(txt).toContain('At least one package had no response')
       expect(txt).toContain('missing@1')
       expect(txt).toContain('gone@2')

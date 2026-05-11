@@ -148,146 +148,128 @@ export type PartialEnvDetails = Readonly<
 
 // Lockfile registration + per-agent reader Map extracted to keep this file
 // under the 1000-line cap. Re-export ReadLockFile for back-compat.
-import {
-  LOCKS,
-  readLockFileByAgent,
-} from './lockfile-readers.mts'
+import { LOCKS, readLockFileByAgent } from './lockfile-readers.mts'
 
 export type { ReadLockFile } from './lockfile-readers.mts'
 
 // Windows-shim helpers extracted to keep this file under the 1000-line cap.
 // Imported for local use AND re-exported so existing import paths keep working.
-import {
-  preferWindowsCmdShim,
-  resolveBinPathSync,
-} from './windows-shims.mts'
+import { preferWindowsCmdShim, resolveBinPathSync } from './windows-shims.mts'
 
 export { preferWindowsCmdShim, resolveBinPathSync }
 
-export async function getAgentExecPath(agent: Agent): Promise<string> {
-  const binName = binByAgent.get(agent)!
-  if (binName === NPM) {
-    // Try to use getNpmExecPath() first, but verify it exists.
-    const npmPath = preferWindowsCmdShim(await getNpmExecPath(), NPM)
-    if (fs.existsSync(npmPath)) {
-      return npmPath
-    }
-    // If getNpmExecPath() doesn't exist, try common locations.
-    // Check npm in the same directory as node.
-    const nodeDir = path.dirname(process.execPath)
-    if (WIN32) {
-      const npmCmdInNodeDir = path.join(nodeDir, `${NPM}.cmd`)
-      if (fs.existsSync(npmCmdInNodeDir)) {
-        return npmCmdInNodeDir
-      }
-    }
-    const npmInNodeDir = path.join(nodeDir, NPM)
-    if (fs.existsSync(npmInNodeDir)) {
-      return preferWindowsCmdShim(npmInNodeDir, NPM)
-    }
-    // Fall back to which.
-    const whichRealResult = await whichReal(binName, { nothrow: true })
-    return (
-      (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ??
-      binName
-    )
-  }
-  if (binName === PNPM) {
-    // Try to use getPnpmExecPath() first, but verify it exists.
-    const pnpmPath = await getPnpmExecPath()
-    if (fs.existsSync(pnpmPath)) {
-      return pnpmPath
-    }
-    // Fall back to which.
-    const whichRealResult = await whichReal(binName, { nothrow: true })
-    return (
-      (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ??
-      binName
-    )
-  }
-  const whichRealResult = await whichReal(binName, { nothrow: true })
-  return (
-    (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ??
-    binName
-  )
-}
-
-export async function getAgentVersion(
-  agent: Agent,
-  agentExecPath: string,
+export async function detectAndValidatePackageEnvironment(
   cwd: string,
-): Promise<SemVer | undefined> {
-  let result: any
-  const quotedCmd = `\`${agent} ${FLAG_VERSION}\``
-  debugNs('stdio', `spawn: ${quotedCmd}`)
-  try {
-    let stdout: string
-
-    // Some package manager "executables" may resolve to non-executable wrapper scripts
-    // (e.g. the extensionless `npm` shim on Windows). Resolve the underlying entrypoint
-    // and run it with Node when it is a JS file.
-    let shouldRunWithNode: string | null = undefined
-    if (WIN32) {
-      try {
-        const resolved = resolveBinPathSync(agentExecPath)
-        const ext = path.extname(resolved).toLowerCase()
-        if (ext === '.js' || ext === '.cjs' || ext === '.mjs') {
-          shouldRunWithNode = resolved
-        }
-      } catch (e) {
-        debugNs(
-          'warn',
-          `Failed to resolve bin path for ${agentExecPath}, falling back to direct spawn.`,
-        )
-        debugDirNs('error', e)
-      }
-    }
-
-    if (shouldRunWithNode) {
-      const result = await spawn(
-        execPath,
-        [...nodeNoWarningsFlags, shouldRunWithNode, FLAG_VERSION],
-        { cwd },
+  options?: DetectAndValidateOptions | undefined,
+): Promise<CResult<EnvDetails>> {
+  const {
+    cmdName = '',
+    logger,
+    prod,
+  } = {
+    __proto__: null,
+    ...options,
+  } as DetectAndValidateOptions
+  const details = await detectPackageEnvironment({
+    cwd,
+    onUnknown(pkgManager: string | undefined) {
+      logger?.warn(
+        cmdPrefixMessage(
+          cmdName,
+          `Unknown package manager${pkgManager ? ` ${pkgManager}` : ''}, defaulting to ${NPM}`,
+        ),
       )
-
-      if (!result) {
-        return undefined
-      }
-
-      stdout =
-        typeof result.stdout === 'string'
-          ? result.stdout
-          : result.stdout.toString()
-    } else {
-      const result = await spawn(agentExecPath, [FLAG_VERSION], {
-        cwd,
-        // On Windows, package managers are often .cmd files that require shell execution.
-        // The spawn function from @socketsecurity/registry will handle this properly
-        // when shell is true.
-        shell: WIN32,
-      })
-
-      if (!result) {
-        return undefined
-      }
-
-      stdout =
-        typeof result.stdout === 'string'
-          ? result.stdout
-          : result.stdout.toString()
+    },
+  })
+  const { agent, nodeVersion, pkgRequirements } = details
+  const agentVersion = details.agentVersion ?? 'unknown'
+  if (!details.agentSupported) {
+    const minVersion = getMinimumVersionByAgent(agent)
+    return {
+      ok: false,
+      message: 'Version mismatch',
+      cause: cmdPrefixMessage(
+        cmdName,
+        `Requires ${agent} >=${minVersion}. Current version: ${agentVersion}.`,
+      ),
     }
-
-    result =
-      // Coerce version output into a valid semver version by passing it through
-      // semver.coerce which strips leading v's, carets (^), comparators (<,<=,>,>=,=),
-      // and tildes (~).
-      semver.coerce(stdout) ?? undefined
-  } catch (e) {
-    debugNs('error', `Package manager command failed: ${quotedCmd}`)
-    debugDirNs('inspect', { cmd: quotedCmd })
-    debugDirNs('error', e)
   }
-  return result
+  if (!details.nodeSupported) {
+    const minVersion = getMaintainedNodeVersions().last
+    return {
+      ok: false,
+      message: 'Version mismatch',
+      cause: cmdPrefixMessage(
+        cmdName,
+        `Requires Node >=${minVersion}. Current version: ${nodeVersion}.`,
+      ),
+    }
+  }
+  if (!details.pkgSupports.agent) {
+    return {
+      ok: false,
+      message: 'Engine mismatch',
+      cause: cmdPrefixMessage(
+        cmdName,
+        `Package engine "${agent}" requires ${pkgRequirements.agent}. Current version: ${agentVersion}`,
+      ),
+    }
+  }
+  if (!details.pkgSupports.node) {
+    return {
+      ok: false,
+      message: 'Version mismatch',
+      cause: cmdPrefixMessage(
+        cmdName,
+        `Package engine "node" requires ${pkgRequirements.node}. Current version: ${nodeVersion}`,
+      ),
+    }
+  }
+  const lockName = details.lockName ?? 'lockfile'
+  if (details.lockName === undefined || details.lockSrc === undefined) {
+    return {
+      ok: false,
+      message: 'Missing lockfile',
+      cause: cmdPrefixMessage(cmdName, `No ${lockName} found`),
+    }
+  }
+  if (details.lockSrc.trim() === '') {
+    return {
+      ok: false,
+      message: 'Empty lockfile',
+      cause: cmdPrefixMessage(cmdName, `${lockName} is empty`),
+    }
+  }
+  if (details.pkgPath === undefined) {
+    return {
+      ok: false,
+      message: 'Missing package.json',
+      cause: cmdPrefixMessage(cmdName, `No ${PACKAGE_JSON} found`),
+    }
+  }
+  if (prod && (agent === BUN || agent === YARN_BERRY)) {
+    return {
+      ok: false,
+      message: 'Bad input',
+      cause: cmdPrefixMessage(
+        cmdName,
+        `--prod not supported for ${agent}${agentVersion ? `@${agentVersion}` : ''}`,
+      ),
+    }
+  }
+  if (
+    details.lockPath &&
+    path.relative(cwd, details.lockPath).startsWith('.')
+  ) {
+    // Note: In tests we return <redacted> because otherwise snapshots will fail.
+    logger?.warn(
+      cmdPrefixMessage(
+        cmdName,
+        `Package ${lockName} found at ${VITEST ? '[REDACTED]' : details.lockPath}`,
+      ),
+    )
+  }
+  return { ok: true, data: details as EnvDetails }
 }
 
 export async function detectPackageEnvironment({
@@ -459,116 +441,128 @@ export async function detectPackageEnvironment({
   }
 }
 
-export async function detectAndValidatePackageEnvironment(
-  cwd: string,
-  options?: DetectAndValidateOptions | undefined,
-): Promise<CResult<EnvDetails>> {
-  const {
-    cmdName = '',
-    logger,
-    prod,
-  } = {
-    __proto__: null,
-    ...options,
-  } as DetectAndValidateOptions
-  const details = await detectPackageEnvironment({
-    cwd,
-    onUnknown(pkgManager: string | undefined) {
-      logger?.warn(
-        cmdPrefixMessage(
-          cmdName,
-          `Unknown package manager${pkgManager ? ` ${pkgManager}` : ''}, defaulting to ${NPM}`,
-        ),
-      )
-    },
-  })
-  const { agent, nodeVersion, pkgRequirements } = details
-  const agentVersion = details.agentVersion ?? 'unknown'
-  if (!details.agentSupported) {
-    const minVersion = getMinimumVersionByAgent(agent)
-    return {
-      ok: false,
-      message: 'Version mismatch',
-      cause: cmdPrefixMessage(
-        cmdName,
-        `Requires ${agent} >=${minVersion}. Current version: ${agentVersion}.`,
-      ),
+export async function getAgentExecPath(agent: Agent): Promise<string> {
+  const binName = binByAgent.get(agent)!
+  if (binName === NPM) {
+    // Try to use getNpmExecPath() first, but verify it exists.
+    const npmPath = preferWindowsCmdShim(await getNpmExecPath(), NPM)
+    if (fs.existsSync(npmPath)) {
+      return npmPath
     }
-  }
-  if (!details.nodeSupported) {
-    const minVersion = getMaintainedNodeVersions().last
-    return {
-      ok: false,
-      message: 'Version mismatch',
-      cause: cmdPrefixMessage(
-        cmdName,
-        `Requires Node >=${minVersion}. Current version: ${nodeVersion}.`,
-      ),
+    // If getNpmExecPath() doesn't exist, try common locations.
+    // Check npm in the same directory as node.
+    const nodeDir = path.dirname(process.execPath)
+    if (WIN32) {
+      const npmCmdInNodeDir = path.join(nodeDir, `${NPM}.cmd`)
+      if (fs.existsSync(npmCmdInNodeDir)) {
+        return npmCmdInNodeDir
+      }
     }
-  }
-  if (!details.pkgSupports.agent) {
-    return {
-      ok: false,
-      message: 'Engine mismatch',
-      cause: cmdPrefixMessage(
-        cmdName,
-        `Package engine "${agent}" requires ${pkgRequirements.agent}. Current version: ${agentVersion}`,
-      ),
+    const npmInNodeDir = path.join(nodeDir, NPM)
+    if (fs.existsSync(npmInNodeDir)) {
+      return preferWindowsCmdShim(npmInNodeDir, NPM)
     }
-  }
-  if (!details.pkgSupports.node) {
-    return {
-      ok: false,
-      message: 'Version mismatch',
-      cause: cmdPrefixMessage(
-        cmdName,
-        `Package engine "node" requires ${pkgRequirements.node}. Current version: ${nodeVersion}`,
-      ),
-    }
-  }
-  const lockName = details.lockName ?? 'lockfile'
-  if (details.lockName === undefined || details.lockSrc === undefined) {
-    return {
-      ok: false,
-      message: 'Missing lockfile',
-      cause: cmdPrefixMessage(cmdName, `No ${lockName} found`),
-    }
-  }
-  if (details.lockSrc.trim() === '') {
-    return {
-      ok: false,
-      message: 'Empty lockfile',
-      cause: cmdPrefixMessage(cmdName, `${lockName} is empty`),
-    }
-  }
-  if (details.pkgPath === undefined) {
-    return {
-      ok: false,
-      message: 'Missing package.json',
-      cause: cmdPrefixMessage(cmdName, `No ${PACKAGE_JSON} found`),
-    }
-  }
-  if (prod && (agent === BUN || agent === YARN_BERRY)) {
-    return {
-      ok: false,
-      message: 'Bad input',
-      cause: cmdPrefixMessage(
-        cmdName,
-        `--prod not supported for ${agent}${agentVersion ? `@${agentVersion}` : ''}`,
-      ),
-    }
-  }
-  if (
-    details.lockPath &&
-    path.relative(cwd, details.lockPath).startsWith('.')
-  ) {
-    // Note: In tests we return <redacted> because otherwise snapshots will fail.
-    logger?.warn(
-      cmdPrefixMessage(
-        cmdName,
-        `Package ${lockName} found at ${VITEST ? '[REDACTED]' : details.lockPath}`,
-      ),
+    // Fall back to which.
+    const whichRealResult = await whichReal(binName, { nothrow: true })
+    return (
+      (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ??
+      binName
     )
   }
-  return { ok: true, data: details as EnvDetails }
+  if (binName === PNPM) {
+    // Try to use getPnpmExecPath() first, but verify it exists.
+    const pnpmPath = await getPnpmExecPath()
+    if (fs.existsSync(pnpmPath)) {
+      return pnpmPath
+    }
+    // Fall back to which.
+    const whichRealResult = await whichReal(binName, { nothrow: true })
+    return (
+      (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ??
+      binName
+    )
+  }
+  const whichRealResult = await whichReal(binName, { nothrow: true })
+  return (
+    (Array.isArray(whichRealResult) ? whichRealResult[0] : whichRealResult) ??
+    binName
+  )
+}
+
+export async function getAgentVersion(
+  agent: Agent,
+  agentExecPath: string,
+  cwd: string,
+): Promise<SemVer | undefined> {
+  let result: any
+  const quotedCmd = `\`${agent} ${FLAG_VERSION}\``
+  debugNs('stdio', `spawn: ${quotedCmd}`)
+  try {
+    let stdout: string
+
+    // Some package manager "executables" may resolve to non-executable wrapper scripts
+    // (e.g. the extensionless `npm` shim on Windows). Resolve the underlying entrypoint
+    // and run it with Node when it is a JS file.
+    let shouldRunWithNode: string | undefined = undefined
+    if (WIN32) {
+      try {
+        const resolved = resolveBinPathSync(agentExecPath)
+        const ext = path.extname(resolved).toLowerCase()
+        if (ext === '.js' || ext === '.cjs' || ext === '.mjs') {
+          shouldRunWithNode = resolved
+        }
+      } catch (e) {
+        debugNs(
+          'warn',
+          `Failed to resolve bin path for ${agentExecPath}, falling back to direct spawn.`,
+        )
+        debugDirNs('error', e)
+      }
+    }
+
+    if (shouldRunWithNode) {
+      const result = await spawn(
+        execPath,
+        [...nodeNoWarningsFlags, shouldRunWithNode, FLAG_VERSION],
+        { cwd },
+      )
+
+      if (!result) {
+        return undefined
+      }
+
+      stdout =
+        typeof result.stdout === 'string'
+          ? result.stdout
+          : result.stdout.toString()
+    } else {
+      const result = await spawn(agentExecPath, [FLAG_VERSION], {
+        cwd,
+        // On Windows, package managers are often .cmd files that require shell execution.
+        // The spawn function from @socketsecurity/registry will handle this properly
+        // when shell is true.
+        shell: WIN32,
+      })
+
+      if (!result) {
+        return undefined
+      }
+
+      stdout =
+        typeof result.stdout === 'string'
+          ? result.stdout
+          : result.stdout.toString()
+    }
+
+    result =
+      // Coerce version output into a valid semver version by passing it through
+      // semver.coerce which strips leading v's, carets (^), comparators (<,<=,>,>=,=),
+      // and tildes (~).
+      semver.coerce(stdout) ?? undefined
+  } catch (e) {
+    debugNs('error', `Package manager command failed: ${quotedCmd}`)
+    debugDirNs('inspect', { cmd: quotedCmd })
+    debugDirNs('error', e)
+  }
+  return result
 }

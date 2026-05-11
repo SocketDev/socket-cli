@@ -112,9 +112,13 @@ describe('defineHandoffCommand', () => {
         supportDryRun: false,
       })
 
-      const runPromise = cmd.run(['build'], { url: import.meta.url } as ImportMeta, {
-        parentName: 'socket',
-      })
+      const runPromise = cmd.run(
+        ['build'],
+        { url: import.meta.url } as ImportMeta,
+        {
+          parentName: 'socket',
+        },
+      )
       setImmediate(() => child.emit('exit', 0, undefined))
       const mockExit = vi
         .spyOn(process, 'exit')
@@ -177,8 +181,7 @@ describe('defineHandoffCommand', () => {
         description: 'Run pip',
         spawnMode: 'dlx',
         examples: [],
-        binaryPicker: ctx =>
-          ctx.invokedAs === 'pip3' ? 'pip3' : 'pip',
+        binaryPicker: ctx => (ctx.invokedAs === 'pip3' ? 'pip3' : 'pip'),
         trackTelemetry: false,
         supportDryRun: false,
       })
@@ -428,11 +431,9 @@ describe('defineHandoffCommand', () => {
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as any)
       try {
-        const runPromise = cmd.run(
-          [],
-          { url: import.meta.url } as ImportMeta,
-          { parentName: 'socket' },
-        )
+        const runPromise = cmd.run([], { url: import.meta.url } as ImportMeta, {
+          parentName: 'socket',
+        })
         setImmediate(() => child.emit('exit', 0, undefined))
         await runPromise
         await new Promise(resolve => setImmediate(resolve))
@@ -478,11 +479,9 @@ describe('defineHandoffCommand', () => {
         .spyOn(process, 'exit')
         .mockImplementation((() => {}) as any)
       try {
-        const runPromise = cmd.run(
-          [],
-          { url: import.meta.url } as ImportMeta,
-          { parentName: 'socket' },
-        )
+        const runPromise = cmd.run([], { url: import.meta.url } as ImportMeta, {
+          parentName: 'socket',
+        })
         setImmediate(() => child.emit('exit', 0, undefined))
         await runPromise
         await new Promise(resolve => setImmediate(resolve))

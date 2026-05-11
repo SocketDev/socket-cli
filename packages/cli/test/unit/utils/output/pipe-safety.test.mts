@@ -28,12 +28,10 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   }),
 }))
 
-const { emitJsonPayload, emitPayload } = await import(
-  '../../../../src/utils/output/emit-payload.mts'
-)
-const { createScrubber } = await import(
-  '../../../../src/utils/output/scrubber.mts'
-)
+const { emitJsonPayload, emitPayload } =
+  await import('../../../../src/utils/output/emit-payload.mts')
+const { createScrubber } =
+  await import('../../../../src/utils/output/scrubber.mts')
 
 class Sink extends Writable {
   buffer = ''
@@ -56,11 +54,7 @@ async function scrubCapturedOutput(
   childChatterBefore: string[] = [],
   childChatterAfter: string[] = [],
 ): Promise<{ stdout: string; stderr: string }> {
-  const allLines = [
-    ...childChatterBefore,
-    ...stdoutLines,
-    ...childChatterAfter,
-  ]
+  const allLines = [...childChatterBefore, ...stdoutLines, ...childChatterAfter]
   const combined = allLines.length ? allLines.join('\n') + '\n' : ''
   const stdout = new Sink()
   const stderr = new Sink()
@@ -80,10 +74,7 @@ describe('pipe safety', () => {
   })
 
   it('--json single-line payload round-trips cleanly', async () => {
-    emitJsonPayload(
-      { status: 'ok', count: 42 },
-      { flags: { json: true } },
-    )
+    emitJsonPayload({ status: 'ok', count: 42 }, { flags: { json: true } })
 
     const { stdout } = await scrubCapturedOutput()
     const parsed = JSON.parse(stdout.trim())
@@ -93,11 +84,7 @@ describe('pipe safety', () => {
   it('--json multi-line (pretty-printed) payload round-trips', async () => {
     // emitPayload accepts a pre-formatted multi-line string; the
     // sentinel block protects it from re-classification.
-    const pretty = JSON.stringify(
-      { a: 1, b: [1, 2, 3] },
-      null,
-      2,
-    )
+    const pretty = JSON.stringify({ a: 1, b: [1, 2, 3] }, null, 2)
     emitPayload(pretty, { flags: { json: true } })
 
     const { stdout } = await scrubCapturedOutput()
@@ -133,9 +120,7 @@ describe('pipe safety', () => {
     // Simulating a child process that emits raw JSON mixed with
     // chatter — no sentinels involved. The classifier handles it.
     const mixed =
-      'npm notice pre-install\n' +
-      '{"clean":true}\n' +
-      '[INFO] post-install\n'
+      'npm notice pre-install\n' + '{"clean":true}\n' + '[INFO] post-install\n'
     const stdout = new Sink()
     const stderr = new Sink()
     const scrubber = createScrubber({ stderr, stdout })

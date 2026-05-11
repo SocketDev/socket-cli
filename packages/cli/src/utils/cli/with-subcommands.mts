@@ -12,10 +12,7 @@ import { DRY_RUN_LABEL } from '../../constants/cli.mts'
 import { VITEST } from '../../env/vitest.mts'
 import { commonFlags } from '../../flags.mts'
 import meow from '../../meow.mts'
-import {
-  overrideCachedConfig,
-  overrideConfigApiToken,
-} from '../config.mts'
+import { overrideCachedConfig, overrideConfigApiToken } from '../config.mts'
 import { isDebug } from '../debug.mts'
 import {
   resetMachineOutputMode,
@@ -42,10 +39,7 @@ export {
   type MeowOptions,
 } from './with-subcommands-shared.mts'
 
-import type {
-  CliSubcommand,
-  MeowOptions,
-} from './with-subcommands-shared.mts'
+import type { CliSubcommand, MeowOptions } from './with-subcommands-shared.mts'
 
 // Property names are picked such that the name is at the top when the props
 // get ordered by alphabet while flags is near the bottom and the help text
@@ -78,7 +72,7 @@ export function findBestCommandMatch(
   input: string,
   subcommands: Record<string, unknown>,
   aliases: Record<string, unknown>,
-): string | null {
+): string | undefined {
   let bestMatch = undefined
   let bestScore = Number.POSITIVE_INFINITY
   const allCommands = [...Object.keys(subcommands), ...Object.keys(aliases)]
@@ -118,7 +112,6 @@ export {
   shouldSuppressBanner,
   stripAnsi,
 }
-
 
 /**
  * Calculate Levenshtein distance between two strings for fuzzy matching.

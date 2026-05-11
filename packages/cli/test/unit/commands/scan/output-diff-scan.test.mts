@@ -78,11 +78,6 @@ vi.mock('node:fs', () => ({
 
 import { outputDiffScan } from '../../../../src/commands/scan/output-diff-scan.mts'
 
-// Helper to create success result.
-function createSuccessResult<T>(data: T): CResult<T> {
-  return { ok: true, data }
-}
-
 // Helper to create error result.
 function createErrorResult(
   message: string,
@@ -125,6 +120,11 @@ function createMockDiffData(overrides = {}) {
     },
     ...overrides,
   }
+}
+
+// Helper to create success result.
+function createSuccessResult<T>(data: T): CResult<T> {
+  return { ok: true, data }
 }
 
 describe('outputDiffScan', () => {

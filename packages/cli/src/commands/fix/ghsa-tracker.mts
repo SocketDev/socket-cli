@@ -2,7 +2,12 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { readJson, safeDelete, safeMkdir, writeJson } from '@socketsecurity/lib/fs'
+import {
+  readJson,
+  safeDelete,
+  safeMkdir,
+  writeJson,
+} from '@socketsecurity/lib/fs'
 
 import { getSocketFixBranchName } from './git.mts'
 

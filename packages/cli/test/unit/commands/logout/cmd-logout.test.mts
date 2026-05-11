@@ -66,7 +66,9 @@ const mockMeowOrExit = vi.hoisted(() =>
       flags['markdown'] = true
     }
 
-    const help = options.config?.help ? options.config.help('socket logout') : ''
+    const help = options.config?.help
+      ? options.config.help('socket logout')
+      : ''
 
     return {
       flags,
@@ -178,10 +180,22 @@ describe('cmd-logout', () => {
         await cmdLogout.run([], importMeta, context)
 
         // Should clear all config keys.
-        expect(mockUpdateConfigValue).toHaveBeenCalledWith('apiToken', undefined)
-        expect(mockUpdateConfigValue).toHaveBeenCalledWith('apiBaseUrl', undefined)
-        expect(mockUpdateConfigValue).toHaveBeenCalledWith('apiProxy', undefined)
-        expect(mockUpdateConfigValue).toHaveBeenCalledWith('enforcedOrgs', undefined)
+        expect(mockUpdateConfigValue).toHaveBeenCalledWith(
+          'apiToken',
+          undefined,
+        )
+        expect(mockUpdateConfigValue).toHaveBeenCalledWith(
+          'apiBaseUrl',
+          undefined,
+        )
+        expect(mockUpdateConfigValue).toHaveBeenCalledWith(
+          'apiProxy',
+          undefined,
+        )
+        expect(mockUpdateConfigValue).toHaveBeenCalledWith(
+          'enforcedOrgs',
+          undefined,
+        )
         expect(mockUpdateConfigValue).toHaveBeenCalledTimes(4)
       })
 

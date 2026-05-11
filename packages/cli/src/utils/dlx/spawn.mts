@@ -313,7 +313,6 @@ export { spawnSfwDlx } from './spawn-sfw.mts'
  */
 export { spawnSocketPatchDlx } from './spawn-socket-patch.mts'
 
-
 /**
  * VFS-based spawn functions for SEA binaries.
  * These extract tools from VFS and execute them directly.
@@ -380,7 +379,6 @@ export { spawnCoanaVfs } from './spawn-coana.mts'
 
 export { spawnSocketPatchVfs } from './spawn-socket-patch.mts'
 
-
 /**
  * High-level spawn functions that auto-detect SEA vs npm CLI mode.
  * These choose between VFS extraction (SEA) and dlx download (npm CLI).
@@ -394,11 +392,7 @@ export { spawnCoana } from './spawn-coana.mts'
 
 export { spawnSocketPatch } from './spawn-socket-patch.mts'
 
-export {
-  spawnSynp,
-  spawnSynpDlx,
-  spawnSynpVfs,
-} from './spawn-synp.mts'
+export { spawnSynp, spawnSynpDlx, spawnSynpVfs } from './spawn-synp.mts'
 
 /**
  * Python CLI spawn utilities.
@@ -429,11 +423,7 @@ export type { SocketPyCliDlxOptions } from './spawn-pycli.mts'
  * In SEA mode, they're extracted from VFS. In npm CLI mode, they're downloaded from GitHub.
  */
 
-export {
-  spawnTrivy,
-  spawnTrivyDlx,
-  spawnTrivyVfs,
-} from './spawn-trivy.mts'
+export { spawnTrivy, spawnTrivyDlx, spawnTrivyVfs } from './spawn-trivy.mts'
 
 /**
  * Spawn TruffleHog via GitHub download (npm CLI mode).

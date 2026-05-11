@@ -70,7 +70,9 @@ describe('commands/optimize/ls-by-agent', () => {
         stdout: 'package1@1.0.0\npackage2@2.0.0',
       })
 
-      const result = await lsBun(createMockEnvDetails(BUN, '/usr/local/bin/bun'))
+      const result = await lsBun(
+        createMockEnvDetails(BUN, '/usr/local/bin/bun'),
+      )
 
       expect(result).toBe('package1@1.0.0\npackage2@2.0.0')
       expect(mockSpawn).toHaveBeenCalledWith(
@@ -83,7 +85,9 @@ describe('commands/optimize/ls-by-agent', () => {
     it('returns empty string when spawn throws', async () => {
       mockSpawn.mockRejectedValueOnce(new Error('spawn failed'))
 
-      const result = await lsBun(createMockEnvDetails(BUN, '/usr/local/bin/bun'))
+      const result = await lsBun(
+        createMockEnvDetails(BUN, '/usr/local/bin/bun'),
+      )
 
       expect(result).toBe('')
     })
@@ -93,7 +97,9 @@ describe('commands/optimize/ls-by-agent', () => {
         stdout: Buffer.from('package1@1.0.0'),
       })
 
-      const result = await lsBun(createMockEnvDetails(BUN, '/usr/local/bin/bun'))
+      const result = await lsBun(
+        createMockEnvDetails(BUN, '/usr/local/bin/bun'),
+      )
 
       expect(result).toBe('package1@1.0.0')
     })
@@ -102,10 +108,7 @@ describe('commands/optimize/ls-by-agent', () => {
   describe('lsNpm', () => {
     it('returns cleaned up query output', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: JSON.stringify([
-          { name: 'lodash' },
-          { name: 'express' },
-        ]),
+        stdout: JSON.stringify([{ name: 'lodash' }, { name: 'express' }]),
       })
 
       const result = await lsNpm(createMockEnvDetails(NPM))
@@ -142,9 +145,7 @@ describe('commands/optimize/ls-by-agent', () => {
 
     it('falls back to pkgid when name and _id are not present', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: JSON.stringify([
-          { pkgid: 'lodash@4.0.0' },
-        ]),
+        stdout: JSON.stringify([{ pkgid: 'lodash@4.0.0' }]),
       })
 
       const result = await lsNpm(createMockEnvDetails(NPM))
@@ -191,7 +192,9 @@ describe('commands/optimize/ls-by-agent', () => {
         stdout: '/path/to/lodash\n/path/to/express\n',
       })
 
-      const result = await lsPnpm(createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'))
+      const result = await lsPnpm(
+        createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'),
+      )
 
       expect(mockSpawn).toHaveBeenCalledWith(
         '/usr/local/bin/pnpm',
@@ -208,9 +211,12 @@ describe('commands/optimize/ls-by-agent', () => {
         stdout: JSON.stringify([{ name: 'lodash' }]),
       })
 
-      const result = await lsPnpm(createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'), {
-        npmExecPath: '/usr/local/bin/npm',
-      })
+      const result = await lsPnpm(
+        createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'),
+        {
+          npmExecPath: '/usr/local/bin/npm',
+        },
+      )
 
       expect(JSON.parse(result)).toEqual(['lodash'])
     })
@@ -223,9 +229,12 @@ describe('commands/optimize/ls-by-agent', () => {
         stdout: '/node_modules/lodash\n',
       })
 
-      const result = await lsPnpm(createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'), {
-        npmExecPath: '/usr/local/bin/npm',
-      })
+      const result = await lsPnpm(
+        createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'),
+        {
+          npmExecPath: '/usr/local/bin/npm',
+        },
+      )
 
       expect(mockSpawn).toHaveBeenCalledTimes(2)
     })
@@ -233,7 +242,9 @@ describe('commands/optimize/ls-by-agent', () => {
     it('returns empty string when spawn throws', async () => {
       mockSpawn.mockRejectedValueOnce(new Error('pnpm ls failed'))
 
-      const result = await lsPnpm(createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'))
+      const result = await lsPnpm(
+        createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'),
+      )
 
       expect(result).toBe('')
     })
@@ -242,13 +253,12 @@ describe('commands/optimize/ls-by-agent', () => {
   describe('lsVlt', () => {
     it('returns cleaned up vlt ls output', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: JSON.stringify([
-          { name: 'lodash' },
-          { name: 'express' },
-        ]),
+        stdout: JSON.stringify([{ name: 'lodash' }, { name: 'express' }]),
       })
 
-      const result = await lsVlt(createMockEnvDetails(VLT, '/usr/local/bin/vlt'))
+      const result = await lsVlt(
+        createMockEnvDetails(VLT, '/usr/local/bin/vlt'),
+      )
 
       expect(JSON.parse(result)).toEqual(['lodash', 'express'])
       expect(mockSpawn).toHaveBeenCalledWith(
@@ -261,7 +271,9 @@ describe('commands/optimize/ls-by-agent', () => {
     it('returns empty string when spawn throws', async () => {
       mockSpawn.mockRejectedValueOnce(new Error('vlt ls failed'))
 
-      const result = await lsVlt(createMockEnvDetails(VLT, '/usr/local/bin/vlt'))
+      const result = await lsVlt(
+        createMockEnvDetails(VLT, '/usr/local/bin/vlt'),
+      )
 
       expect(result).toBe('')
     })
@@ -273,7 +285,9 @@ describe('commands/optimize/ls-by-agent', () => {
         stdout: 'lodash@4.0.0\nexpress@5.0.0',
       })
 
-      const result = await lsYarnBerry(createMockEnvDetails(YARN_BERRY, '/usr/local/bin/yarn'))
+      const result = await lsYarnBerry(
+        createMockEnvDetails(YARN_BERRY, '/usr/local/bin/yarn'),
+      )
 
       expect(result).toBe('lodash@4.0.0\nexpress@5.0.0')
       expect(mockSpawn).toHaveBeenCalledWith(
@@ -286,7 +300,9 @@ describe('commands/optimize/ls-by-agent', () => {
     it('returns empty string when spawn throws', async () => {
       mockSpawn.mockRejectedValueOnce(new Error('yarn info failed'))
 
-      const result = await lsYarnBerry(createMockEnvDetails(YARN_BERRY, '/usr/local/bin/yarn'))
+      const result = await lsYarnBerry(
+        createMockEnvDetails(YARN_BERRY, '/usr/local/bin/yarn'),
+      )
 
       expect(result).toBe('')
     })
@@ -298,7 +314,9 @@ describe('commands/optimize/ls-by-agent', () => {
         stdout: 'lodash@4.0.0\nexpress@5.0.0',
       })
 
-      const result = await lsYarnClassic(createMockEnvDetails(YARN_CLASSIC, '/usr/local/bin/yarn'))
+      const result = await lsYarnClassic(
+        createMockEnvDetails(YARN_CLASSIC, '/usr/local/bin/yarn'),
+      )
 
       expect(result).toBe('lodash@4.0.0\nexpress@5.0.0')
       expect(mockSpawn).toHaveBeenCalledWith(
@@ -311,7 +329,9 @@ describe('commands/optimize/ls-by-agent', () => {
     it('returns empty string when spawn throws', async () => {
       mockSpawn.mockRejectedValueOnce(new Error('yarn list failed'))
 
-      const result = await lsYarnClassic(createMockEnvDetails(YARN_CLASSIC, '/usr/local/bin/yarn'))
+      const result = await lsYarnClassic(
+        createMockEnvDetails(YARN_CLASSIC, '/usr/local/bin/yarn'),
+      )
 
       expect(result).toBe('')
     })
@@ -321,7 +341,9 @@ describe('commands/optimize/ls-by-agent', () => {
     it('delegates to lsBun for bun agent', async () => {
       mockSpawn.mockResolvedValueOnce({ stdout: 'bun-output' })
 
-      const result = await listPackages(createMockEnvDetails(BUN, '/usr/local/bin/bun'))
+      const result = await listPackages(
+        createMockEnvDetails(BUN, '/usr/local/bin/bun'),
+      )
 
       expect(result).toBe('bun-output')
     })
@@ -329,7 +351,9 @@ describe('commands/optimize/ls-by-agent', () => {
     it('delegates to lsPnpm for pnpm agent', async () => {
       mockSpawn.mockResolvedValueOnce({ stdout: '/path/to/pkg\n' })
 
-      const result = await listPackages(createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'))
+      const result = await listPackages(
+        createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'),
+      )
 
       expect(mockSpawn).toHaveBeenCalledWith(
         '/usr/local/bin/pnpm',
@@ -341,7 +365,9 @@ describe('commands/optimize/ls-by-agent', () => {
     it('delegates to lsVlt for vlt agent', async () => {
       mockSpawn.mockResolvedValueOnce({ stdout: '[]' })
 
-      const result = await listPackages(createMockEnvDetails(VLT, '/usr/local/bin/vlt'))
+      const result = await listPackages(
+        createMockEnvDetails(VLT, '/usr/local/bin/vlt'),
+      )
 
       expect(mockSpawn).toHaveBeenCalledWith(
         '/usr/local/bin/vlt',
@@ -353,7 +379,9 @@ describe('commands/optimize/ls-by-agent', () => {
     it('delegates to lsYarnBerry for yarn berry agent', async () => {
       mockSpawn.mockResolvedValueOnce({ stdout: 'berry-output' })
 
-      const result = await listPackages(createMockEnvDetails(YARN_BERRY, '/usr/local/bin/yarn'))
+      const result = await listPackages(
+        createMockEnvDetails(YARN_BERRY, '/usr/local/bin/yarn'),
+      )
 
       expect(result).toBe('berry-output')
     })
@@ -361,7 +389,9 @@ describe('commands/optimize/ls-by-agent', () => {
     it('delegates to lsYarnClassic for yarn classic agent', async () => {
       mockSpawn.mockResolvedValueOnce({ stdout: 'classic-output' })
 
-      const result = await listPackages(createMockEnvDetails(YARN_CLASSIC, '/usr/local/bin/yarn'))
+      const result = await listPackages(
+        createMockEnvDetails(YARN_CLASSIC, '/usr/local/bin/yarn'),
+      )
 
       expect(result).toBe('classic-output')
     })
@@ -371,7 +401,9 @@ describe('commands/optimize/ls-by-agent', () => {
         stdout: JSON.stringify([{ name: 'lodash' }]),
       })
 
-      const result = await listPackages(createMockEnvDetails(NPM, '/usr/local/bin/npm'))
+      const result = await listPackages(
+        createMockEnvDetails(NPM, '/usr/local/bin/npm'),
+      )
 
       expect(mockSpawn).toHaveBeenCalledWith(
         '/usr/local/bin/npm',
@@ -385,7 +417,9 @@ describe('commands/optimize/ls-by-agent', () => {
         stdout: JSON.stringify([{ name: 'lodash' }]),
       })
 
-      const result = await listPackages(createMockEnvDetails('unknown', '/usr/local/bin/npm'))
+      const result = await listPackages(
+        createMockEnvDetails('unknown', '/usr/local/bin/npm'),
+      )
 
       expect(mockSpawn).toHaveBeenCalledWith(
         '/usr/local/bin/npm',
@@ -411,9 +445,7 @@ describe('commands/optimize/ls-by-agent', () => {
 
     it('handles packages without @ in _id', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: JSON.stringify([
-          { _id: 'simple-package' },
-        ]),
+        stdout: JSON.stringify([{ _id: 'simple-package' }]),
       })
 
       const result = await lsNpm(createMockEnvDetails(NPM))
@@ -450,7 +482,9 @@ describe('commands/optimize/ls-by-agent', () => {
     it('handles empty parsable output', async () => {
       mockSpawn.mockResolvedValueOnce({ stdout: '' })
 
-      const result = await lsPnpm(createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'))
+      const result = await lsPnpm(
+        createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'),
+      )
 
       expect(result).toBe('')
     })
@@ -460,7 +494,9 @@ describe('commands/optimize/ls-by-agent', () => {
         stdout: 'C:\\Users\\test\\node_modules\\lodash\n',
       })
 
-      const result = await lsPnpm(createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'))
+      const result = await lsPnpm(
+        createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'),
+      )
 
       // Should extract 'lodash' from the path.
       expect(result).toBeTruthy()
@@ -495,37 +531,32 @@ describe('commands/optimize/ls-by-agent', () => {
 
   describe('cleanupQueryStdout', () => {
     it('returns empty string for empty input', async () => {
-      const { cleanupQueryStdout } = await import(
-        '../../../../src/commands/optimize/ls-by-agent.mts'
-      )
+      const { cleanupQueryStdout } =
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
       expect(cleanupQueryStdout('')).toBe('')
     })
 
     it('returns empty string for malformed JSON', async () => {
-      const { cleanupQueryStdout } = await import(
-        '../../../../src/commands/optimize/ls-by-agent.mts'
-      )
+      const { cleanupQueryStdout } =
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
       expect(cleanupQueryStdout('{not json')).toBe('')
     })
 
     it('returns empty string for non-array result', async () => {
-      const { cleanupQueryStdout } = await import(
-        '../../../../src/commands/optimize/ls-by-agent.mts'
-      )
+      const { cleanupQueryStdout } =
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
       expect(cleanupQueryStdout('{}')).toBe('')
     })
 
     it('returns empty string for empty array', async () => {
-      const { cleanupQueryStdout } = await import(
-        '../../../../src/commands/optimize/ls-by-agent.mts'
-      )
+      const { cleanupQueryStdout } =
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
       expect(cleanupQueryStdout('[]')).toBe('')
     })
 
     it('extracts unique names and skips @types/* packages', async () => {
-      const { cleanupQueryStdout } = await import(
-        '../../../../src/commands/optimize/ls-by-agent.mts'
-      )
+      const { cleanupQueryStdout } =
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
       const result = cleanupQueryStdout(
         JSON.stringify([
           { name: 'lodash', _id: 'lodash@4.17.21' },
@@ -538,9 +569,8 @@ describe('commands/optimize/ls-by-agent', () => {
     })
 
     it('falls back to _id when name is missing', async () => {
-      const { cleanupQueryStdout } = await import(
-        '../../../../src/commands/optimize/ls-by-agent.mts'
-      )
+      const { cleanupQueryStdout } =
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
       const result = cleanupQueryStdout(
         JSON.stringify([{ _id: 'fallback-pkg@1.0.0' }]),
       )
@@ -548,9 +578,8 @@ describe('commands/optimize/ls-by-agent', () => {
     })
 
     it('falls back to pkgid when both name + _id are missing', async () => {
-      const { cleanupQueryStdout } = await import(
-        '../../../../src/commands/optimize/ls-by-agent.mts'
-      )
+      const { cleanupQueryStdout } =
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
       const result = cleanupQueryStdout(
         JSON.stringify([{ pkgid: 'pkgid-pkg@2.0.0' }]),
       )
@@ -558,9 +587,8 @@ describe('commands/optimize/ls-by-agent', () => {
     })
 
     it('skips entries with no resolvable name', async () => {
-      const { cleanupQueryStdout } = await import(
-        '../../../../src/commands/optimize/ls-by-agent.mts'
-      )
+      const { cleanupQueryStdout } =
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
       const result = cleanupQueryStdout(JSON.stringify([{}, {}]))
       expect(JSON.parse(result)).toEqual([])
     })
@@ -568,16 +596,14 @@ describe('commands/optimize/ls-by-agent', () => {
 
   describe('parsableToQueryStdout', () => {
     it('returns empty string for empty input', async () => {
-      const { parsableToQueryStdout } = await import(
-        '../../../../src/commands/optimize/ls-by-agent.mts'
-      )
+      const { parsableToQueryStdout } =
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
       expect(parsableToQueryStdout('')).toBe('')
     })
 
     it('extracts trailing path segments before newlines', async () => {
-      const { parsableToQueryStdout } = await import(
-        '../../../../src/commands/optimize/ls-by-agent.mts'
-      )
+      const { parsableToQueryStdout } =
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
       const result = parsableToQueryStdout(
         '/Users/x/proj/node_modules/lodash\n/Users/x/proj/node_modules/react\n',
       )
@@ -585,9 +611,8 @@ describe('commands/optimize/ls-by-agent', () => {
     })
 
     it('handles backslash paths (Windows-style)', async () => {
-      const { parsableToQueryStdout } = await import(
-        '../../../../src/commands/optimize/ls-by-agent.mts'
-      )
+      const { parsableToQueryStdout } =
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
       const result = parsableToQueryStdout(
         'C:\\proj\\node_modules\\lodash\nC:\\proj\\node_modules\\react\n',
       )

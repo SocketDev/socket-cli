@@ -28,7 +28,7 @@ export function setupCommandTest(options: TestSetupOptions) {
   } = options
 
   const stubs = {
-    loggerLog: undefined as Mock | null,
+    loggerLog: undefined as Mock | undefined,
     sdk: {} as any,
     config: mockConfig,
   }

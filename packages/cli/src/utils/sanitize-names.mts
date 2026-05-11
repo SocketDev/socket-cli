@@ -1,6 +1,31 @@
 import { SOCKET_DEFAULT_REPOSITORY } from '../constants/socket.mts'
 
 /**
+ * Extracts and sanitizes a repository name.
+ *
+ * @param name - The repository name to extract and sanitize
+ * @returns Sanitized repository name, or default repository name if empty
+ */
+export function extractName(name: string): string {
+  const sanitized = sanitizeName(name)
+  return sanitized || SOCKET_DEFAULT_REPOSITORY
+}
+
+/**
+ * Extracts and sanitizes a repository owner name.
+ *
+ * @param owner - The repository owner name to extract and sanitize
+ * @returns Sanitized repository owner name, or undefined if input is empty
+ */
+export function extractOwner(owner: string): string | undefined {
+  if (!owner) {
+    return undefined
+  }
+  const sanitized = sanitizeName(owner)
+  return sanitized || undefined
+}
+
+/**
  * Sanitizes a name to comply with repository naming constraints.
  * Constraints: 100 or less A-Za-z0-9 characters only with non-repeating,
  * non-leading or trailing ., _ or - only.
@@ -27,29 +52,4 @@ export function sanitizeName(name: string): string {
     .slice(0, 100)
 
   return sanitized
-}
-
-/**
- * Extracts and sanitizes a repository name.
- *
- * @param name - The repository name to extract and sanitize
- * @returns Sanitized repository name, or default repository name if empty
- */
-export function extractName(name: string): string {
-  const sanitized = sanitizeName(name)
-  return sanitized || SOCKET_DEFAULT_REPOSITORY
-}
-
-/**
- * Extracts and sanitizes a repository owner name.
- *
- * @param owner - The repository owner name to extract and sanitize
- * @returns Sanitized repository owner name, or undefined if input is empty
- */
-export function extractOwner(owner: string): string | undefined {
-  if (!owner) {
-    return undefined
-  }
-  const sanitized = sanitizeName(owner)
-  return sanitized || undefined
 }

@@ -780,7 +780,9 @@ describe('api utilities', () => {
     })
 
     it('returns error result for failed SDK response', async () => {
-      const mockApiPromise = Promise.resolve(mockErrorResponse('API error', 400))
+      const mockApiPromise = Promise.resolve(
+        mockErrorResponse('API error', 400),
+      )
 
       const result = await handleApiCallNoSpinner(
         mockApiPromise,
@@ -797,10 +799,7 @@ describe('api utilities', () => {
       // Rejected promise hits the catch block; the error string becomes cause.
       const mockApiPromise = Promise.reject(new Error('thrown boom'))
 
-      const result = await handleApiCallNoSpinner(
-        mockApiPromise,
-        'reject test',
-      )
+      const result = await handleApiCallNoSpinner(mockApiPromise, 'reject test')
 
       expect(result.ok).toBe(false)
       if (!result.ok) {

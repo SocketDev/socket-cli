@@ -39,9 +39,8 @@ vi.mock('../../../../src/constants/paths.mjs', () => ({
   ENVIRONMENT_YML: 'environment.yml',
 }))
 
-const { detectManifestActions } = await import(
-  '../../../../src/commands/manifest/detect-manifest-actions.mts'
-)
+const { detectManifestActions } =
+  await import('../../../../src/commands/manifest/detect-manifest-actions.mts')
 
 let cwd = ''
 

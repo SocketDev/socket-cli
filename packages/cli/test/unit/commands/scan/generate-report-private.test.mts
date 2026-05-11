@@ -22,20 +22,28 @@ import { isStricterPolicy } from '../../../../src/commands/scan/generate-report.
 describe('isStricterPolicy', () => {
   it('error is the most strict — never overridden', () => {
     expect(isStricterPolicy(REPORT_LEVEL_ERROR, REPORT_LEVEL_WARN)).toBe(false)
-    expect(isStricterPolicy(REPORT_LEVEL_ERROR, REPORT_LEVEL_MONITOR)).toBe(false)
-    expect(isStricterPolicy(REPORT_LEVEL_ERROR, REPORT_LEVEL_IGNORE)).toBe(false)
+    expect(isStricterPolicy(REPORT_LEVEL_ERROR, REPORT_LEVEL_MONITOR)).toBe(
+      false,
+    )
+    expect(isStricterPolicy(REPORT_LEVEL_ERROR, REPORT_LEVEL_IGNORE)).toBe(
+      false,
+    )
     expect(isStricterPolicy(REPORT_LEVEL_ERROR, REPORT_LEVEL_DEFER)).toBe(false)
   })
 
   it('error overrides anything below it', () => {
     expect(isStricterPolicy(REPORT_LEVEL_WARN, REPORT_LEVEL_ERROR)).toBe(true)
-    expect(isStricterPolicy(REPORT_LEVEL_MONITOR, REPORT_LEVEL_ERROR)).toBe(true)
+    expect(isStricterPolicy(REPORT_LEVEL_MONITOR, REPORT_LEVEL_ERROR)).toBe(
+      true,
+    )
     expect(isStricterPolicy(REPORT_LEVEL_IGNORE, REPORT_LEVEL_ERROR)).toBe(true)
     expect(isStricterPolicy(REPORT_LEVEL_DEFER, REPORT_LEVEL_ERROR)).toBe(true)
   })
 
   it('warn is second strictest — overridden only by error', () => {
-    expect(isStricterPolicy(REPORT_LEVEL_WARN, REPORT_LEVEL_MONITOR)).toBe(false)
+    expect(isStricterPolicy(REPORT_LEVEL_WARN, REPORT_LEVEL_MONITOR)).toBe(
+      false,
+    )
     expect(isStricterPolicy(REPORT_LEVEL_WARN, REPORT_LEVEL_IGNORE)).toBe(false)
     expect(isStricterPolicy(REPORT_LEVEL_WARN, REPORT_LEVEL_DEFER)).toBe(false)
     expect(isStricterPolicy(REPORT_LEVEL_MONITOR, REPORT_LEVEL_WARN)).toBe(true)
@@ -44,14 +52,24 @@ describe('isStricterPolicy', () => {
   })
 
   it('monitor is third — overridden by error/warn', () => {
-    expect(isStricterPolicy(REPORT_LEVEL_MONITOR, REPORT_LEVEL_IGNORE)).toBe(false)
-    expect(isStricterPolicy(REPORT_LEVEL_MONITOR, REPORT_LEVEL_DEFER)).toBe(false)
-    expect(isStricterPolicy(REPORT_LEVEL_IGNORE, REPORT_LEVEL_MONITOR)).toBe(true)
-    expect(isStricterPolicy(REPORT_LEVEL_DEFER, REPORT_LEVEL_MONITOR)).toBe(true)
+    expect(isStricterPolicy(REPORT_LEVEL_MONITOR, REPORT_LEVEL_IGNORE)).toBe(
+      false,
+    )
+    expect(isStricterPolicy(REPORT_LEVEL_MONITOR, REPORT_LEVEL_DEFER)).toBe(
+      false,
+    )
+    expect(isStricterPolicy(REPORT_LEVEL_IGNORE, REPORT_LEVEL_MONITOR)).toBe(
+      true,
+    )
+    expect(isStricterPolicy(REPORT_LEVEL_DEFER, REPORT_LEVEL_MONITOR)).toBe(
+      true,
+    )
   })
 
   it('ignore overrides only defer', () => {
-    expect(isStricterPolicy(REPORT_LEVEL_IGNORE, REPORT_LEVEL_DEFER)).toBe(false)
+    expect(isStricterPolicy(REPORT_LEVEL_IGNORE, REPORT_LEVEL_DEFER)).toBe(
+      false,
+    )
     expect(isStricterPolicy(REPORT_LEVEL_DEFER, REPORT_LEVEL_IGNORE)).toBe(true)
   })
 

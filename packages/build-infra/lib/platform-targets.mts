@@ -224,7 +224,8 @@ export function isPlatformTarget(target) {
 export function getPlatformConfig(target) {
   return PLATFORM_CONFIGS.find(
     c =>
-      `${c.releasePlatform}-${c.arch}${c.libc ? `-${c.libc}` : ''}` === target ||
+      `${c.releasePlatform}-${c.arch}${c.libc ? `-${c.libc}` : ''}` ===
+        target ||
       `${c.platform}-${c.arch}${c.libc ? `-${c.libc}` : ''}` === target,
   )
 }

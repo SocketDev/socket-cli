@@ -6,9 +6,9 @@ This document explains the Socket CLI build system and how to create various bui
 
 The Socket CLI has two main build outputs:
 
-| Build Type       | Description                                  | Output Location                                               |
-| ---------------- | -------------------------------------------- | ------------------------------------------------------------- |
-| **CLI Bundle**   | JavaScript bundle for npm distribution       | `packages/cli/dist/`                                          |
+| Build Type       | Description                                  | Output Location                                              |
+| ---------------- | -------------------------------------------- | ------------------------------------------------------------ |
+| **CLI Bundle**   | JavaScript bundle for npm distribution       | `packages/cli/dist/`                                         |
 | **SEA Binaries** | Standalone executables (no Node.js required) | `packages/package-builder/build/{dev\|prod}/out/socketbin-*` |
 
 ## Prerequisites
@@ -242,11 +242,11 @@ Run from `packages/cli/`:
 
 Assets are downloaded from [socket-btm](https://github.com/SocketDev/socket-btm) releases and cached in `packages/build-infra/build/downloaded/`.
 
-| Asset         | Purpose                 | Cache Location                       |
-| ------------- | ----------------------- | ------------------------------------ |
-| `node-smol`   | Minimal Node.js for SEA | `node-smol/<platform>-<arch>/node`   |
-| `binject`     | Binary injection tool   | `binject/<platform>-<arch>/binject`  |
-| `models`      | AI models for analysis  | `models/`                            |
+| Asset       | Purpose                 | Cache Location                      |
+| ----------- | ----------------------- | ----------------------------------- |
+| `node-smol` | Minimal Node.js for SEA | `node-smol/<platform>-<arch>/node`  |
+| `binject`   | Binary injection tool   | `binject/<platform>-<arch>/binject` |
+| `models`    | AI models for analysis  | `models/`                           |
 
 ### Cache Management
 
@@ -279,11 +279,11 @@ pnpm run clean
 
 Located in `packages/cli/.config/`:
 
-| Config               | Output          | Description                                      |
-| -------------------- | --------------- | ------------------------------------------------ |
-| `esbuild.cli.mjs`    | `build/cli.js`  | Main CLI bundle — bundles all source into one JS |
-| `esbuild.index.mjs`  | `dist/index.js` | Entry point loader — thin shim that loads cli.js |
-| `esbuild.build.mjs`  | (orchestrator)  | Runs both cli and index builds in parallel       |
+| Config              | Output          | Description                                      |
+| ------------------- | --------------- | ------------------------------------------------ |
+| `esbuild.cli.mjs`   | `build/cli.js`  | Main CLI bundle — bundles all source into one JS |
+| `esbuild.index.mjs` | `dist/index.js` | Entry point loader — thin shim that loads cli.js |
+| `esbuild.build.mjs` | (orchestrator)  | Runs both cli and index builds in parallel       |
 
 ### Build Variants
 

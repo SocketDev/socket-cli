@@ -71,7 +71,9 @@ export function formatScore(jsonData: ArtifactData): string {
     jsonData.score &&
     (jsonData.score as Record<string, unknown>)['overall'] !== undefined
   ) {
-    const scoreEntries = Object.entries(jsonData.score as Record<string, unknown>)
+    const scoreEntries = Object.entries(
+      jsonData.score as Record<string, unknown>,
+    )
       .filter(([key]) => key !== 'overall' && key !== 'uuid')
       .map(([key, value]) => {
         const numValue = Number(value)
@@ -96,7 +98,9 @@ export async function getSdk(apiToken: string): Promise<SocketSdk> {
   }
   const result = await setupSdk({ apiToken })
   if (!result.ok) {
-    throw new Error(result.cause || result.message || 'Failed to set up Socket SDK')
+    throw new Error(
+      result.cause || result.message || 'Failed to set up Socket SDK',
+    )
   }
   sdkCache.set(apiToken, result.data)
   return result.data
@@ -197,7 +201,10 @@ export async function runDepscore(
   if (!filtered.length) {
     return {
       content: [
-        { text: 'No valid artifact records returned by Socket API', type: 'text' },
+        {
+          text: 'No valid artifact records returned by Socket API',
+          type: 'text',
+        },
       ],
       isError: true,
     }

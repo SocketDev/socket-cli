@@ -178,7 +178,10 @@ describe('apply-optimization', () => {
         },
       } as unknown as EnvDetails
 
-      await applyOptimization(envWithBuggyOverrides, { pin: false, prod: false })
+      await applyOptimization(envWithBuggyOverrides, {
+        pin: false,
+        prod: false,
+      })
 
       expect(mockUpdateDependencies).toHaveBeenCalled()
     })
@@ -222,6 +225,5 @@ describe('apply-optimization', () => {
 
       expect(mockUpdateDependencies).not.toHaveBeenCalled()
     })
-
   })
 })

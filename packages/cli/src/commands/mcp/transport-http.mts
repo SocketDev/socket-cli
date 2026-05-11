@@ -50,7 +50,6 @@ export interface HttpTransportConfig extends ServerConfig {
   trustProxy: boolean
 }
 
-
 export async function runHttpTransport(
   config: HttpTransportConfig,
 ): Promise<void> {
@@ -162,7 +161,10 @@ export async function runHttpTransport(
 
     if (origin) {
       res.setHeader('Access-Control-Allow-Origin', origin)
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
+      res.setHeader(
+        'Access-Control-Allow-Methods',
+        'GET, POST, DELETE, OPTIONS',
+      )
       res.setHeader(
         'Access-Control-Allow-Headers',
         'Authorization, Content-Type, Accept, Mcp-Session-Id',
@@ -181,7 +183,10 @@ export async function runHttpTransport(
 
     const baseUrl = getRequestBaseUrl(req, config.port, config.trustProxy)
 
-    if (introspector && url.pathname === OAUTH_PROTECTED_RESOURCE_METADATA_PATH) {
+    if (
+      introspector &&
+      url.pathname === OAUTH_PROTECTED_RESOURCE_METADATA_PATH
+    ) {
       // loadMetadata is memoized after the successful startup probe,
       // so this resolves synchronously from cache.
       const metadata = await introspector.loadMetadata()
@@ -277,7 +282,8 @@ export async function runHttpTransport(
             writeJson(res, 400, {
               error: {
                 code: -32000,
-                message: 'Bad Request: No valid session. Send initialize first.',
+                message:
+                  'Bad Request: No valid session. Send initialize first.',
               },
               id: undefined,
               jsonrpc: '2.0',
@@ -323,10 +329,15 @@ export async function runHttpTransport(
     if (req.method === 'DELETE') {
       const sessionId =
         getRequestHeaderValue(req.headers['mcp-session-id']) || undefined
-      const transport = sessionId ? sessions.get(sessionId)?.transport : undefined
+      const transport = sessionId
+        ? sessions.get(sessionId)?.transport
+        : undefined
       if (!transport) {
         writeJson(res, 404, {
-          error: { code: -32000, message: 'Not Found: Invalid or expired session.' },
+          error: {
+            code: -32000,
+            message: 'Not Found: Invalid or expired session.',
+          },
           id: undefined,
           jsonrpc: '2.0',
         })

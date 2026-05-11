@@ -63,7 +63,7 @@ describe('cmd-bundler', () => {
     })
 
     it('renders help text via the meow help callback', async () => {
-      mockMeowOrExit.mockImplementation((args) => {
+      mockMeowOrExit.mockImplementation(args => {
         const helpText = args.config.help('socket bundler')
         expect(helpText).toContain('socket bundler')
         return {
@@ -84,10 +84,14 @@ describe('cmd-bundler', () => {
         stderr: Buffer.from(''),
         stdout: Buffer.from(''),
       })
-      ;(mockSpawnPromise).process = mockChildProcess
+      mockSpawnPromise.process = mockChildProcess
       mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise })
       mockFilterFlags.mockReturnValue([])
-      const runPromise = cmdBundler.run([], { url: import.meta.url }, { parentName: 'socket' })
+      const runPromise = cmdBundler.run(
+        [],
+        { url: import.meta.url },
+        { parentName: 'socket' },
+      )
       setImmediate(() => mockChildProcess.emit('exit', 0, undefined))
       await runPromise
       expect(mockMeowOrExit).toHaveBeenCalled()

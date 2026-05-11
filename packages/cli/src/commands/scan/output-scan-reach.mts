@@ -10,10 +10,7 @@ const logger = getDefaultLogger()
 
 export async function outputScanReach(
   result: CResult<ReachabilityAnalysisResult>,
-  {
-    outputKind,
-    outputPath,
-  }: { outputKind: OutputKind; outputPath: string },
+  { outputKind, outputPath }: { outputKind: OutputKind; outputPath: string },
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1

@@ -127,7 +127,11 @@ describe('Error Classes', () => {
     })
 
     it('shares EACCES recovery with EPERM code', () => {
-      const error = new FileSystemError('Operation not permitted', '/etc', 'EPERM')
+      const error = new FileSystemError(
+        'Operation not permitted',
+        '/etc',
+        'EPERM',
+      )
       expect(error.recovery[0]).toContain('permissions')
     })
 
@@ -149,23 +153,20 @@ describe('Error Classes', () => {
 
   describe('calculateStringSimilarity', () => {
     it('returns 1 for identical strings (early-return)', async () => {
-      const { calculateStringSimilarity } = await import(
-        '../../../../src/utils/error/errors.mts'
-      )
+      const { calculateStringSimilarity } =
+        await import('../../../../src/utils/error/errors.mts')
       expect(calculateStringSimilarity('exact', 'exact')).toBe(1)
     })
 
     it('returns 0 when both strings have only short words (no overlap signal)', async () => {
-      const { calculateStringSimilarity } = await import(
-        '../../../../src/utils/error/errors.mts'
-      )
+      const { calculateStringSimilarity } =
+        await import('../../../../src/utils/error/errors.mts')
       expect(calculateStringSimilarity('a b c', 'd e f')).toBe(0)
     })
 
     it('returns a fractional value for partial overlap', async () => {
-      const { calculateStringSimilarity } = await import(
-        '../../../../src/utils/error/errors.mts'
-      )
+      const { calculateStringSimilarity } =
+        await import('../../../../src/utils/error/errors.mts')
       const score = calculateStringSimilarity(
         'fetch request failed',
         'fetch request succeeded',
@@ -175,9 +176,8 @@ describe('Error Classes', () => {
     })
 
     it('returns close to 1 for nearly-identical phrasing', async () => {
-      const { calculateStringSimilarity } = await import(
-        '../../../../src/utils/error/errors.mts'
-      )
+      const { calculateStringSimilarity } =
+        await import('../../../../src/utils/error/errors.mts')
       const score = calculateStringSimilarity(
         'invalid json format in request body',
         'request body has invalid json format',
@@ -188,17 +188,15 @@ describe('Error Classes', () => {
 
   describe('captureException / captureExceptionSync', () => {
     it('captureExceptionSync returns "" when Sentry is not configured', async () => {
-      const { captureExceptionSync } = await import(
-        '../../../../src/utils/error/errors.mts'
-      )
+      const { captureExceptionSync } =
+        await import('../../../../src/utils/error/errors.mts')
       const result = captureExceptionSync(new Error('boom'))
       expect(result).toBe('')
     })
 
     it('captureException returns "" when Sentry is not configured', async () => {
-      const { captureException } = await import(
-        '../../../../src/utils/error/errors.mts'
-      )
+      const { captureException } =
+        await import('../../../../src/utils/error/errors.mts')
       const result = await captureException(new Error('boom'))
       expect(result).toBe('')
     })
@@ -655,7 +653,11 @@ describe('Network Error Diagnostics', () => {
 
 describe('buildErrorCause', () => {
   it('should return message with reason appended', async () => {
-    const result = await buildErrorCause(400, 'Bad request', 'Invalid parameter')
+    const result = await buildErrorCause(
+      400,
+      'Bad request',
+      'Invalid parameter',
+    )
     expect(result).toBe('Bad request (reason: Invalid parameter)')
   })
 

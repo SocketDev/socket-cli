@@ -178,7 +178,10 @@ export class OAuthIntrospector {
             `OAuth metadata discovery failed with status ${response.status}: ${responseText}`,
           )
         }
-        const metadata = parseJsonObject(responseText, 'OAuth metadata discovery')
+        const metadata = parseJsonObject(
+          responseText,
+          'OAuth metadata discovery',
+        )
         for (const field of [
           'authorization_endpoint',
           'introspection_endpoint',
@@ -186,9 +189,7 @@ export class OAuthIntrospector {
           'token_endpoint',
         ] as const) {
           if (typeof metadata[field] !== 'string' || !metadata[field]) {
-            throw new Error(
-              `OAuth metadata missing required field: ${field}`,
-            )
+            throw new Error(`OAuth metadata missing required field: ${field}`)
           }
         }
         return metadata as OAuthMetadata
@@ -204,7 +205,7 @@ export class OAuthIntrospector {
     return await this.metadataPromise
   }
 
-  async verifyAccessToken(token: string): Promise<AuthInfo | null> {
+  async verifyAccessToken(token: string): Promise<AuthInfo | undefined> {
     const metadata = await this.loadMetadata()
     const basicAuth = Buffer.from(
       `${this.clientId}:${this.clientSecret}`,
@@ -275,7 +276,7 @@ export class OAuthIntrospector {
       )
       return { ok: false }
     }
-    let authInfo: AuthInfo | null
+    let authInfo: AuthInfo | undefined
     try {
       authInfo = await this.verifyAccessToken(token)
     } catch (e) {
@@ -310,7 +311,9 @@ export class OAuthIntrospector {
       )
       return { ok: false }
     }
-    const missing = this.requiredScopes.filter(s => !authInfo!.scopes.includes(s))
+    const missing = this.requiredScopes.filter(
+      s => !authInfo!.scopes.includes(s),
+    )
     if (missing.length > 0) {
       writeOAuthError(
         res,

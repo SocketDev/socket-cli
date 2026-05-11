@@ -63,7 +63,8 @@ export async function fetchListAllRepos(
     ok: true,
     data: {
       results: rows,
-      nextPage: undefined,
+      // oxlint-disable-next-line socket/prefer-undefined-over-null -- SDK schema uses `nextPage: string | null` for the GitHub-style pagination sentinel.
+      nextPage: null,
     },
   }
 }

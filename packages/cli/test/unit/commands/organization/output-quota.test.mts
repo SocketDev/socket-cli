@@ -211,7 +211,12 @@ describe('outputQuota', () => {
 
     // Exact "in X d" count is time-sensitive; just confirm it rendered the ISO date.
     const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
-    expect(calls.some((c: unknown) => typeof c === 'string' && c.includes('2099-01-01T00:00:00.000Z'))).toBe(true)
+    expect(
+      calls.some(
+        (c: unknown) =>
+          typeof c === 'string' && c.includes('2099-01-01T00:00:00.000Z'),
+      ),
+    ).toBe(true)
   })
 
   it('shows <1 min when refresh is within 60 seconds', async () => {
@@ -245,8 +250,12 @@ describe('outputQuota', () => {
     await outputQuota(result as any, 'text')
 
     const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
-    expect(calls.some((c: unknown) => typeof c === 'string' && c.includes('<1 min'))).toBe(true)
-    expect(calls.some((c: unknown) => typeof c === 'string' && c.includes('0 min'))).toBe(false)
+    expect(
+      calls.some((c: unknown) => typeof c === 'string' && c.includes('<1 min')),
+    ).toBe(true)
+    expect(
+      calls.some((c: unknown) => typeof c === 'string' && c.includes('0 min')),
+    ).toBe(false)
   })
 
   it('promotes to hours before producing "in 60 min" at the boundary', async () => {
@@ -280,8 +289,12 @@ describe('outputQuota', () => {
     await outputQuota(result as any, 'text')
 
     const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
-    expect(calls.some((c: unknown) => typeof c === 'string' && c.includes('60 min'))).toBe(false)
-    expect(calls.some((c: unknown) => typeof c === 'string' && c.includes('1 h'))).toBe(true)
+    expect(
+      calls.some((c: unknown) => typeof c === 'string' && c.includes('60 min')),
+    ).toBe(false)
+    expect(
+      calls.some((c: unknown) => typeof c === 'string' && c.includes('1 h')),
+    ).toBe(true)
   })
 
   it('returns the raw refresh string when Date.parse yields NaN', async () => {
@@ -298,9 +311,8 @@ describe('outputQuota', () => {
       logger: mockLogger,
     }))
 
-    const { outputQuota } = await import(
-      '../../../../src/commands/organization/output-quota.mts'
-    )
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 10,
@@ -333,9 +345,8 @@ describe('outputQuota', () => {
       logger: mockLogger,
     }))
 
-    const { outputQuota } = await import(
-      '../../../../src/commands/organization/output-quota.mts'
-    )
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const past = new Date(Date.now() - 60_000).toISOString()
     const result = createSuccessResult({
@@ -369,9 +380,8 @@ describe('outputQuota', () => {
       logger: mockLogger,
     }))
 
-    const { outputQuota } = await import(
-      '../../../../src/commands/organization/output-quota.mts'
-    )
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const tenMin = new Date(Date.now() + 10 * 60_000).toISOString()
     const result = createSuccessResult({
@@ -385,9 +395,7 @@ describe('outputQuota', () => {
 
     const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
     expect(
-      calls.some(
-        (c: unknown) => typeof c === 'string' && /in \d+ min/.test(c),
-      ),
+      calls.some((c: unknown) => typeof c === 'string' && /in \d+ min/.test(c)),
     ).toBe(true)
   })
 
@@ -405,9 +413,8 @@ describe('outputQuota', () => {
       logger: mockLogger,
     }))
 
-    const { outputQuota } = await import(
-      '../../../../src/commands/organization/output-quota.mts'
-    )
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const days = new Date(Date.now() + 5 * 86_400_000).toISOString()
     const result = createSuccessResult({
@@ -421,9 +428,7 @@ describe('outputQuota', () => {
 
     const calls = mockLogger.log.mock.calls.map((c: any[]) => c[0])
     expect(
-      calls.some(
-        (c: unknown) => typeof c === 'string' && /in \d+ d/.test(c),
-      ),
+      calls.some((c: unknown) => typeof c === 'string' && /in \d+ d/.test(c)),
     ).toBe(true)
   })
 

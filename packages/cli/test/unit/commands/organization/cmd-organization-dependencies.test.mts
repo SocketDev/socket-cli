@@ -197,9 +197,7 @@ describe('cmd-organization-dependencies', () => {
 
       await expect(
         cmdOrganizationDependencies.run(['--limit', '-1'], importMeta, context),
-      ).rejects.toThrow(
-        /--limit must be a non-negative integer \(saw: "-1"\)/,
-      )
+      ).rejects.toThrow(/--limit must be a non-negative integer \(saw: "-1"\)/)
 
       expect(mockHandleDependencies).not.toHaveBeenCalled()
     })
@@ -213,9 +211,7 @@ describe('cmd-organization-dependencies', () => {
           importMeta,
           context,
         ),
-      ).rejects.toThrow(
-        /--offset must be a non-negative integer \(saw: "-1"\)/,
-      )
+      ).rejects.toThrow(/--offset must be a non-negative integer \(saw: "-1"\)/)
 
       expect(mockHandleDependencies).not.toHaveBeenCalled()
     })

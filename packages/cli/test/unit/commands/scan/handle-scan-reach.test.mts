@@ -235,7 +235,11 @@ describe('handleScanReach', () => {
       orgSlug: 'test-org',
       outputKind: 'markdown',
       outputPath: '',
-      reachabilityOptions: { excludePaths: [], reachExcludePaths: [], maxDepth: 10 },
+      reachabilityOptions: {
+        excludePaths: [],
+        reachExcludePaths: [],
+        maxDepth: 10,
+      },
       targets: ['./'],
     })
 

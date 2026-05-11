@@ -24,12 +24,8 @@ describe('Critical CLI Commands E2E', () => {
         logger.log('Please run one of the following:')
         logger.log('  1. socket login (to authenticate with Socket)')
         logger.log('  2. Set SOCKET_SECURITY_API_KEY environment variable')
-        logger.log(
-          '  3. Skip E2E tests by not setting RUN_INTEGRATION_TESTS\n',
-        )
-        logger.log(
-          'E2E tests will be skipped due to missing authentication.\n',
-        )
+        logger.log('  3. Skip E2E tests by not setting RUN_INTEGRATION_TESTS\n')
+        logger.log('E2E tests will be skipped due to missing authentication.\n')
       }
     }
   })

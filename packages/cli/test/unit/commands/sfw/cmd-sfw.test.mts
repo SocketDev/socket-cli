@@ -160,16 +160,12 @@ describe('cmd-sfw', () => {
     it('shows wrapper help when --help is passed and skips spawn', async () => {
       mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
 
-      const exitSpy = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {
-          throw new Error('process.exit')
-        }) as never)
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
+        throw new Error('process.exit')
+      }) as never)
 
       try {
-        await cmdSfw
-          .run(['--help'], importMeta, context)
-          .catch(() => undefined)
+        await cmdSfw.run(['--help'], importMeta, context).catch(() => undefined)
         expect(mockSpawnSfw).not.toHaveBeenCalled()
       } finally {
         exitSpy.mockRestore()

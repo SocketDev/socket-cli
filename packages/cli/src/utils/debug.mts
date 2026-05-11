@@ -47,45 +47,6 @@ export type ApiRequestDebugInfo = {
 const RESPONSE_BODY_TRUNCATE_LENGTH = 2_000
 
 /**
- * Sanitize headers to remove sensitive information.
- * Redacts Authorization and API key headers.
- *
- * Callers must gate truthy — passing an empty/undefined map skips the loop.
- */
-export function sanitizeHeaders(
-  headers: Record<string, string>,
-): Record<string, string> {
-  const sanitized: Record<string, string> = Object.create(undefined)
-  for (const [key, value] of Object.entries(headers)) {
-    const lowerKey = key.toLowerCase()
-    if (lowerKey === 'authorization' || lowerKey.includes('api-key')) {
-      sanitized[key] = '[REDACTED]'
-    } else {
-      sanitized[key] = value
-    }
-  }
-  return sanitized
-}
-
-/**
- * Debug an API request start.
- * Logs essential info without exposing sensitive data.
- */
-export function debugApiRequest(
-  method: string,
-  endpoint: string,
-  timeout?: number | undefined,
-): void {
-  if (isDebugNs('silly')) {
-    const timeoutStr = timeout !== undefined ? ` (timeout: ${timeout}ms)` : ''
-    debugNs(
-      'silly',
-      `[${new Date().toISOString()}] request started: ${method} ${endpoint}${timeoutStr}`,
-    )
-  }
-}
-
-/**
  * Build the structured debug payload shared by the error + failure-status
  * branches of `debugApiResponse`. Extracted so both paths log the same
  * shape.
@@ -96,7 +57,10 @@ export function buildApiDebugDetails(
 ): Record<string, unknown> {
   // `__proto__: null` keeps the payload free of prototype-chain keys
   // when callers iterate over the debug output.
-  const details: Record<string, unknown> = { __proto__: null, ...base } as Record<string, unknown>
+  const details: Record<string, unknown> = {
+    __proto__: null,
+    ...base,
+  } as Record<string, unknown>
   if (!requestInfo) {
     return details
   }
@@ -140,6 +104,24 @@ export function buildApiDebugDetails(
 }
 
 /**
+ * Debug an API request start.
+ * Logs essential info without exposing sensitive data.
+ */
+export function debugApiRequest(
+  method: string,
+  endpoint: string,
+  timeout?: number | undefined,
+): void {
+  if (isDebugNs('silly')) {
+    const timeoutStr = timeout !== undefined ? ` (timeout: ${timeout}ms)` : ''
+    debugNs(
+      'silly',
+      `[${new Date().toISOString()}] request started: ${method} ${endpoint}${timeoutStr}`,
+    )
+  }
+}
+
+/**
  * Debug an API response. Failed requests (error or status >= 400) log
  * under the `error` namespace; successful responses optionally log a
  * one-liner under `notice`.
@@ -166,13 +148,37 @@ export function debugApiResponse(
     )
   } else if (status && status >= 400) {
     if (requestInfo) {
-      debugDirNs('error', buildApiDebugDetails({ endpoint, status }, requestInfo))
+      debugDirNs(
+        'error',
+        buildApiDebugDetails({ endpoint, status }, requestInfo),
+      )
     } else {
       debugNs('error', `API ${endpoint}: HTTP ${status}`)
     }
     /* c8 ignore next 3 */
   } else if (isDebugNs('notice')) {
     debugNs('notice', `API ${endpoint}: ${status || 'pending'}`)
+  }
+}
+
+/**
+ * Debug configuration loading.
+ */
+export function debugConfig(
+  source: string,
+  found: boolean,
+  error?: unknown | undefined,
+): void {
+  if (error) {
+    debugDir({
+      source,
+      error: errorMessage(error),
+    })
+  } else if (found) {
+    debug(`Config loaded: ${source}`)
+    /* c8 ignore next 3 */
+  } else if (isDebugNs('silly')) {
+    debugNs('silly', `Config not found: ${source}`)
   }
 }
 
@@ -194,6 +200,31 @@ export function debugFileOp(
     /* c8 ignore next 3 */
   } else if (isDebugNs('silly')) {
     debugNs('silly', `File ${operation}: ${filepath}`)
+  }
+}
+
+/**
+ * Debug git operations.
+ * Only logs important git operations, not every command.
+ */
+export function debugGit(
+  operation: string,
+  success: boolean,
+  details?: Record<string, unknown> | undefined,
+): void {
+  if (!success) {
+    debugDir({
+      git_op: operation,
+      ...details,
+    })
+  } else if (
+    (isDebugNs('notice') && operation.includes('push')) ||
+    operation.includes('commit')
+  ) {
+    // Only log important operations like push and commit.
+    debugNs('notice', `Git ${operation} succeeded`)
+  } else if (isDebugNs('silly')) {
+    debugNs('silly', `Git ${operation}`)
   }
 }
 
@@ -233,49 +264,24 @@ export function debugScan(
 }
 
 /**
- * Debug configuration loading.
+ * Sanitize headers to remove sensitive information.
+ * Redacts Authorization and API key headers.
+ *
+ * Callers must gate truthy — passing an empty/undefined map skips the loop.
  */
-export function debugConfig(
-  source: string,
-  found: boolean,
-  error?: unknown | undefined,
-): void {
-  if (error) {
-    debugDir({
-      source,
-      error: errorMessage(error),
-    })
-  } else if (found) {
-    debug(`Config loaded: ${source}`)
-    /* c8 ignore next 3 */
-  } else if (isDebugNs('silly')) {
-    debugNs('silly', `Config not found: ${source}`)
+export function sanitizeHeaders(
+  headers: Record<string, string>,
+): Record<string, string> {
+  const sanitized: Record<string, string> = Object.create(null)
+  for (const [key, value] of Object.entries(headers)) {
+    const lowerKey = key.toLowerCase()
+    if (lowerKey === 'authorization' || lowerKey.includes('api-key')) {
+      sanitized[key] = '[REDACTED]'
+    } else {
+      sanitized[key] = value
+    }
   }
-}
-
-/**
- * Debug git operations.
- * Only logs important git operations, not every command.
- */
-export function debugGit(
-  operation: string,
-  success: boolean,
-  details?: Record<string, unknown> | undefined,
-): void {
-  if (!success) {
-    debugDir({
-      git_op: operation,
-      ...details,
-    })
-  } else if (
-    (isDebugNs('notice') && operation.includes('push')) ||
-    operation.includes('commit')
-  ) {
-    // Only log important operations like push and commit.
-    debugNs('notice', `Git ${operation} succeeded`)
-  } else if (isDebugNs('silly')) {
-    debugNs('silly', `Git ${operation}`)
-  }
+  return sanitized
 }
 
 export { debug, debugCache, debugDir, debugDirNs, debugNs, isDebug, isDebugNs }

@@ -327,9 +327,7 @@ async function checkForUpdates(
       updateAvailable,
     }
   } catch (e) {
-    logger.log(
-      `Failed to check for updates: ${errorMessage(e)}`,
-    )
+    logger.log(`Failed to check for updates: ${errorMessage(e)}`)
     throw e
   }
 }

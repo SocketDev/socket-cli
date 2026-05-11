@@ -257,7 +257,9 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
 /**
  * Check if socketcli is installed in the Python environment.
  */
-export async function isSocketPyCliInstalled(pythonBin: string): Promise<boolean> {
+export async function isSocketPyCliInstalled(
+  pythonBin: string,
+): Promise<boolean> {
   try {
     const result = await spawn(
       pythonBin,
@@ -313,7 +315,7 @@ export async function downloadPyPiWheel(
   packageName: string,
   version: string,
   sha256: string | undefined,
-): Promise<string | null> {
+): Promise<string | undefined> {
   // Cache path: ~/.socket/_dlx/pypi/{package}/{version}/
   const cacheDir = path.join(getDlxCachePath(), 'pypi', packageName, version)
   const wheelFilename = `${packageName}-${version}-py3-none-any.whl`
@@ -328,7 +330,7 @@ export async function downloadPyPiWheel(
 
   // Fetch wheel URL from PyPI JSON API.
   const pypiUrl = `https://pypi.org/pypi/${packageName}/${version}/json`
-  let wheelUrl: string | null = undefined
+  let wheelUrl: string | undefined = undefined
 
   try {
     const response = await socketHttpRequest(pypiUrl)
@@ -343,7 +345,8 @@ export async function downloadPyPiWheel(
 
     // Find the wheel URL (prefer py3-none-any wheel).
     const wheelInfo = data.urls?.find(
-      u => u.filename.endsWith('-py3-none-any.whl') || u.filename.endsWith('.whl'),
+      u =>
+        u.filename.endsWith('-py3-none-any.whl') || u.filename.endsWith('.whl'),
     )
     if (wheelInfo) {
       wheelUrl = wheelInfo.url
@@ -492,7 +495,11 @@ export async function ensureSocketPyCli(
     // If checksums are available, download verified wheel and install from local file.
     // Otherwise fall back to pip install (dev mode or missing checksums).
     if (sha256) {
-      const wheelPath = await downloadPyPiWheel('socketsecurity', pyCliVersion, sha256)
+      const wheelPath = await downloadPyPiWheel(
+        'socketsecurity',
+        pyCliVersion,
+        sha256,
+      )
       if (wheelPath) {
         await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', wheelPath], {
           shell: WIN32,
@@ -557,7 +564,11 @@ export async function spawnSocketPyCliVfs(
 
     if (sha256) {
       // Download verified wheel and install from local file.
-      const wheelPath = await downloadPyPiWheel('socketsecurity', pyCliVersion, sha256)
+      const wheelPath = await downloadPyPiWheel(
+        'socketsecurity',
+        pyCliVersion,
+        sha256,
+      )
       if (wheelPath) {
         await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', wheelPath], {
           stdio: 'pipe',

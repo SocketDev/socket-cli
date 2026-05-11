@@ -41,17 +41,55 @@ const isQuiet = () => process.argv.includes('--quiet')
 const isVerbose = () => process.argv.includes('--verbose')
 
 /**
- * Check if gh CLI is available.
+ * Check if cache exists in GitHub Actions.
  */
-async function hasGhCli() {
+async function cacheExists(repo, cacheKey) {
   try {
-    const result = await spawn('gh', ['--version'], {
-      stdio: 'pipe',
-    })
-    return result !== null && result.code === 0
+    const result = await spawn(
+      'gh',
+      [
+        'cache',
+        'list',
+        '--repo',
+        repo,
+        '--key',
+        `cli-build-Linux-${cacheKey}`,
+        '--json',
+        'key',
+      ],
+      {
+        cwd: repoRoot,
+        stdio: 'pipe',
+      },
+    )
+    if (result.code !== 0) {
+      return false
+    }
+
+    // Validate stdout before parsing.
+    if (!result.stdout || result.stdout.trim().length === 0) {
+      return false
+    }
+
+    const caches = JSON.parse(result.stdout)
+    return Array.isArray(caches) && caches.length > 0
   } catch {
     return false
   }
+}
+
+/**
+ * Generate CLI build cache key (matches CI workflow).
+ */
+async function generateCacheKey() {
+  const pnpmLockHash = await hashFile(path.join(repoRoot, 'pnpm-lock.yaml'))
+  const srcHash = await hashFiles('packages/cli/src', repoRoot)
+  const configHash = await hashFiles(
+    'packages/cli/.config packages/cli/scripts',
+    repoRoot,
+  )
+  const combined = `${pnpmLockHash}-${srcHash}-${configHash}`
+  return createHash('sha256').update(combined).digest('hex')
 }
 
 /**
@@ -69,6 +107,20 @@ async function getCurrentCommit() {
     return result.stdout.trim()
   } catch {
     return undefined
+  }
+}
+
+/**
+ * Check if gh CLI is available.
+ */
+async function hasGhCli() {
+  try {
+    const result = await spawn('gh', ['--version'], {
+      stdio: 'pipe',
+    })
+    return result !== null && result.code === 0
+  } catch {
+    return false
   }
 }
 
@@ -126,58 +178,6 @@ async function hashFiles(globPattern, cwd) {
     return hash.digest('hex')
   } catch {
     return 'none'
-  }
-}
-
-/**
- * Generate CLI build cache key (matches CI workflow).
- */
-async function generateCacheKey() {
-  const pnpmLockHash = await hashFile(path.join(repoRoot, 'pnpm-lock.yaml'))
-  const srcHash = await hashFiles('packages/cli/src', repoRoot)
-  const configHash = await hashFiles(
-    'packages/cli/.config packages/cli/scripts',
-    repoRoot,
-  )
-  const combined = `${pnpmLockHash}-${srcHash}-${configHash}`
-  return createHash('sha256').update(combined).digest('hex')
-}
-
-/**
- * Check if cache exists in GitHub Actions.
- */
-async function cacheExists(repo, cacheKey) {
-  try {
-    const result = await spawn(
-      'gh',
-      [
-        'cache',
-        'list',
-        '--repo',
-        repo,
-        '--key',
-        `cli-build-Linux-${cacheKey}`,
-        '--json',
-        'key',
-      ],
-      {
-        cwd: repoRoot,
-        stdio: 'pipe',
-      },
-    )
-    if (result.code !== 0) {
-      return false
-    }
-
-    // Validate stdout before parsing.
-    if (!result.stdout || result.stdout.trim().length === 0) {
-      return false
-    }
-
-    const caches = JSON.parse(result.stdout)
-    return Array.isArray(caches) && caches.length > 0
-  } catch {
-    return false
   }
 }
 

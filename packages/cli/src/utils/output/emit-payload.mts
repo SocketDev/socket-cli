@@ -17,11 +17,7 @@
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import {
-  isMachineOutputMode,
-  SENTINEL_BEGIN,
-  SENTINEL_END,
-} from './mode.mts'
+import { isMachineOutputMode, SENTINEL_BEGIN, SENTINEL_END } from './mode.mts'
 
 import type { MachineModeFlags } from './mode.mts'
 
@@ -29,6 +25,17 @@ const logger = getDefaultLogger()
 
 export interface EmitPayloadOptions {
   flags: MachineModeFlags
+}
+
+export function emitJsonPayload(
+  value: unknown,
+  options: EmitPayloadOptions,
+): void {
+  // JSON.stringify(undefined) returns undefined, which logs as the
+  // literal string "undefined" — serialize as null instead so we
+  // always emit syntactically valid JSON.
+  const serialized = JSON.stringify(value) ?? 'null'
+  emitPayload(serialized, options)
 }
 
 export function emitPayload(
@@ -46,15 +53,4 @@ export function emitPayload(
   } else {
     logger.log(normalized)
   }
-}
-
-export function emitJsonPayload(
-  value: unknown,
-  options: EmitPayloadOptions,
-): void {
-  // JSON.stringify(undefined) returns undefined, which logs as the
-  // literal string "undefined" — serialize as null instead so we
-  // always emit syntactically valid JSON.
-  const serialized = JSON.stringify(value) ?? 'null'
-  emitPayload(serialized, options)
 }

@@ -26,6 +26,24 @@ export type SocketJsonResponse<T = unknown> =
   | SocketJsonError
 
 /**
+ * Helper to check if response is an error response.
+ */
+export function isSocketJsonError<T = unknown>(
+  response: SocketJsonResponse<T>,
+): response is SocketJsonError {
+  return response.ok === false
+}
+
+/**
+ * Helper to check if response is a success response.
+ */
+export function isSocketJsonSuccess<T = unknown>(
+  response: SocketJsonResponse<T>,
+): response is SocketJsonSuccess<T> {
+  return response.ok === true
+}
+
+/**
  * Validates that a string contains valid JSON matching Socket CLI response format.
  * @param jsonString - The JSON string to validate
  * @param expectedExitCode - Expected exit code (0 for success, non-zero for failure)
@@ -38,9 +56,8 @@ export function validateSocketJson<T = unknown>(
   let parsed: any
 
   // Truncate to keep error messages readable; full payload goes in the message.
-  const preview = jsonString.length > 200
-    ? `${jsonString.slice(0, 200)}...`
-    : jsonString
+  const preview =
+    jsonString.length > 200 ? `${jsonString.slice(0, 200)}...` : jsonString
 
   // Check if it's valid JSON.
   try {
@@ -92,22 +109,4 @@ export function validateSocketJson<T = unknown>(
   }
 
   return parsed as SocketJsonResponse<T>
-}
-
-/**
- * Helper to check if response is a success response.
- */
-export function isSocketJsonSuccess<T = unknown>(
-  response: SocketJsonResponse<T>,
-): response is SocketJsonSuccess<T> {
-  return response.ok === true
-}
-
-/**
- * Helper to check if response is an error response.
- */
-export function isSocketJsonError<T = unknown>(
-  response: SocketJsonResponse<T>,
-): response is SocketJsonError {
-  return response.ok === false
 }

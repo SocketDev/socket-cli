@@ -20,33 +20,11 @@ import { isSeaBinary } from './detect.mts'
 import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 /**
- * Check if the current process is running as a subprocess with IPC.
- * Returns true if we have an IPC channel (process.channel exists).
+ * Find system Node.js binary in PATH (excluding the current SEA binary).
+ * Returns undefined if not found or if we are not a SEA binary.
  */
-export function isSubprocess(): boolean {
-  return !!process.channel
-}
-
-/**
- * Check if we should bypass bootstrap logic.
- * Returns true if:
- * - Not a SEA binary (regular Node.js doesn't need bootstrap)
- * - Running as a subprocess with IPC channel (already bootstrapped)
- */
-export function shouldBypassBootstrap(): boolean {
-  // If not a SEA binary, no bootstrap needed.
-  if (!isSeaBinary()) {
-    return true
-  }
-
-  // If we're a subprocess (have IPC channel), bypass bootstrap.
-  // The parent already handled delegation.
-  if (isSubprocess()) {
-    return true
-  }
-
-  // We're a SEA binary in initial entry mode - need bootstrap.
-  return false
+export function findSystemNodejs(): string | undefined {
+  return undefined
 }
 
 /**
@@ -81,11 +59,11 @@ export function getBootstrapExecPath(preferSystemNode = true): string {
 }
 
 /**
- * Find system Node.js binary in PATH (excluding the current SEA binary).
- * Returns undefined if not found or if we are not a SEA binary.
+ * Check if the current process is running as a subprocess with IPC.
+ * Returns true if we have an IPC channel (process.channel exists).
  */
-export function findSystemNodejs(): string | undefined {
-  return undefined
+export function isSubprocess(): boolean {
+  return !!process.channel
 }
 
 /**
@@ -129,6 +107,28 @@ export function sendBootstrapHandshake(
   childProcess.send({
     [SOCKET_IPC_HANDSHAKE]: ipcData,
   })
+}
+
+/**
+ * Check if we should bypass bootstrap logic.
+ * Returns true if:
+ * - Not a SEA binary (regular Node.js doesn't need bootstrap)
+ * - Running as a subprocess with IPC channel (already bootstrapped)
+ */
+export function shouldBypassBootstrap(): boolean {
+  // If not a SEA binary, no bootstrap needed.
+  if (!isSeaBinary()) {
+    return true
+  }
+
+  // If we're a subprocess (have IPC channel), bypass bootstrap.
+  // The parent already handled delegation.
+  if (isSubprocess()) {
+    return true
+  }
+
+  // We're a SEA binary in initial entry mode - need bootstrap.
+  return false
 }
 
 /**

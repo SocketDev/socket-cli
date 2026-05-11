@@ -22,21 +22,6 @@ const DEFAULT_BRANCH_FLAGS = [
 ]
 const DEFAULT_BRANCH_PREFIXES = DEFAULT_BRANCH_FLAGS.map(f => `${f}=`)
 
-export function hasLegacyDefaultBranchFlag(argv: readonly string[]): boolean {
-  return argv.some(
-    arg =>
-      LEGACY_DEFAULT_BRANCH_FLAGS.includes(arg) ||
-      LEGACY_DEFAULT_BRANCH_PREFIXES.some(p => arg.startsWith(p)),
-  )
-}
-
-export function isBareIdentifier(token: string): boolean {
-  // Accept only tokens that look like a plain branch name. Anything
-  // with a path separator, dot, or colon is almost certainly a target
-  // path, URL, or something else the user meant as a positional arg.
-  return /^[A-Za-z0-9_-]+$/.test(token)
-}
-
 export function findDefaultBranchValueMisuse(
   argv: readonly string[],
 ): { form: string; value: string } | undefined {
@@ -81,4 +66,19 @@ export function findDefaultBranchValueMisuse(
     return { form: `${arg} ${next}`, value: next }
   }
   return undefined
+}
+
+export function hasLegacyDefaultBranchFlag(argv: readonly string[]): boolean {
+  return argv.some(
+    arg =>
+      LEGACY_DEFAULT_BRANCH_FLAGS.includes(arg) ||
+      LEGACY_DEFAULT_BRANCH_PREFIXES.some(p => arg.startsWith(p)),
+  )
+}
+
+export function isBareIdentifier(token: string): boolean {
+  // Accept only tokens that look like a plain branch name. Anything
+  // with a path separator, dot, or colon is almost certainly a target
+  // path, URL, or something else the user meant as a positional arg.
+  return /^[A-Za-z0-9_-]+$/.test(token)
 }

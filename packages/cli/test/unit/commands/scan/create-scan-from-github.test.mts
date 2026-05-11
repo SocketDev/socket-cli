@@ -450,9 +450,8 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
       cause: 'GitHub API rate limit exceeded.',
     })
 
-    const { createScanFromGithub } = await import(
-      '../../../../src/commands/scan/create-scan-from-github.mts'
-    )
+    const { createScanFromGithub } =
+      await import('../../../../src/commands/scan/create-scan-from-github.mts')
 
     const result = await createScanFromGithub({
       all: false,
@@ -480,9 +479,8 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
       cause: 'GraphQL rate limit hit.',
     })
 
-    const { createScanFromGithub } = await import(
-      '../../../../src/commands/scan/create-scan-from-github.mts'
-    )
+    const { createScanFromGithub } =
+      await import('../../../../src/commands/scan/create-scan-from-github.mts')
 
     const result = await createScanFromGithub({
       all: false,
@@ -509,9 +507,8 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
       cause: 'Secondary rate limit hit.',
     })
 
-    const { createScanFromGithub } = await import(
-      '../../../../src/commands/scan/create-scan-from-github.mts'
-    )
+    const { createScanFromGithub } =
+      await import('../../../../src/commands/scan/create-scan-from-github.mts')
 
     const result = await createScanFromGithub({
       all: false,
@@ -538,9 +535,8 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
       cause: 'Bad credentials.',
     })
 
-    const { createScanFromGithub } = await import(
-      '../../../../src/commands/scan/create-scan-from-github.mts'
-    )
+    const { createScanFromGithub } =
+      await import('../../../../src/commands/scan/create-scan-from-github.mts')
 
     const result = await createScanFromGithub({
       all: false,
@@ -569,9 +565,8 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
       cause: 'Not found.',
     })
 
-    const { createScanFromGithub } = await import(
-      '../../../../src/commands/scan/create-scan-from-github.mts'
-    )
+    const { createScanFromGithub } =
+      await import('../../../../src/commands/scan/create-scan-from-github.mts')
 
     const result = await createScanFromGithub({
       all: false,
@@ -594,9 +589,8 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
   })
 
   it('uses fetchListAllRepos when all=true (lines 57-64)', async () => {
-    const { fetchListAllRepos } = await import(
-      '../../../../src/commands/repository/fetch-list-all-repos.mts'
-    )
+    const { fetchListAllRepos } =
+      await import('../../../../src/commands/repository/fetch-list-all-repos.mts')
     vi.mocked(fetchListAllRepos).mockResolvedValueOnce({
       ok: true,
       data: { results: [{ slug: 'a' }, { slug: 'b' }] },
@@ -607,9 +601,8 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
       message: 'GitHub resource not found',
       cause: 'Not found.',
     })
-    const { createScanFromGithub } = await import(
-      '../../../../src/commands/scan/create-scan-from-github.mts'
-    )
+    const { createScanFromGithub } =
+      await import('../../../../src/commands/scan/create-scan-from-github.mts')
     const result = await createScanFromGithub({
       all: true,
       githubApiUrl: '',
@@ -625,17 +618,15 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
   })
 
   it('returns ok:false on fetchListAllRepos failure (lines 61-62)', async () => {
-    const { fetchListAllRepos } = await import(
-      '../../../../src/commands/repository/fetch-list-all-repos.mts'
-    )
+    const { fetchListAllRepos } =
+      await import('../../../../src/commands/repository/fetch-list-all-repos.mts')
     vi.mocked(fetchListAllRepos).mockResolvedValueOnce({
       ok: false,
       message: 'API Error',
       cause: 'Something broke',
     } as any)
-    const { createScanFromGithub } = await import(
-      '../../../../src/commands/scan/create-scan-from-github.mts'
-    )
+    const { createScanFromGithub } =
+      await import('../../../../src/commands/scan/create-scan-from-github.mts')
     const result = await createScanFromGithub({
       all: true,
       githubApiUrl: '',
@@ -653,16 +644,14 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
   })
 
   it('returns "No repo found" when targetRepos is empty (lines 73-79)', async () => {
-    const { fetchListAllRepos } = await import(
-      '../../../../src/commands/repository/fetch-list-all-repos.mts'
-    )
+    const { fetchListAllRepos } =
+      await import('../../../../src/commands/repository/fetch-list-all-repos.mts')
     vi.mocked(fetchListAllRepos).mockResolvedValueOnce({
       ok: true,
       data: { results: [] },
     } as any)
-    const { createScanFromGithub } = await import(
-      '../../../../src/commands/scan/create-scan-from-github.mts'
-    )
+    const { createScanFromGithub } =
+      await import('../../../../src/commands/scan/create-scan-from-github.mts')
     const result = await createScanFromGithub({
       all: true,
       githubApiUrl: '',

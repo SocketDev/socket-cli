@@ -22,7 +22,16 @@ const logger = getDefaultLogger()
  * Generate a single socketbin package.
  */
 async function generatePackage(config) {
-  const { arch, binExt, cpu, description, libc, os, platform, releasePlatform } = config
+  const {
+    arch,
+    binExt,
+    cpu,
+    description,
+    libc,
+    os,
+    platform,
+    releasePlatform,
+  } = config
   const muslSuffix = libc === 'musl' ? '-musl' : ''
   const packageName = `socketbin-cli-${releasePlatform}-${arch}${muslSuffix}`
   const packagePath = getSocketbinPackageDir(releasePlatform, arch, libc)

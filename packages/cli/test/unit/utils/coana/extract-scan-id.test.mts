@@ -36,12 +36,17 @@ describe('extract-scan-id', () => {
         tier1ReachabilityScanId: 'scan-123',
       })
 
-      const result = extractTier1ReachabilityScanId('/path/to/socket-facts.json')
+      const result = extractTier1ReachabilityScanId(
+        '/path/to/socket-facts.json',
+      )
 
       expect(result).toBe('scan-123')
-      expect(mockReadJsonSync).toHaveBeenCalledWith('/path/to/socket-facts.json', {
-        throws: false,
-      })
+      expect(mockReadJsonSync).toHaveBeenCalledWith(
+        '/path/to/socket-facts.json',
+        {
+          throws: false,
+        },
+      )
     })
 
     it('returns undefined for missing file', () => {

@@ -37,6 +37,29 @@ const require = createRequire(import.meta.url)
 let _isSea: boolean | undefined
 
 /**
+ * Detect if self-update is allowed for the current binary.
+ * Self-update is ONLY allowed for SEA binaries running from Socket's
+ * managed DLX directory (~/.socket/_dlx/).
+ *
+ * Not allowed for:
+ * - npm/pnpm/yarn-installed packages (not in DLX directory)
+ * - Standalone binaries in system paths like /usr/local/bin (not in DLX directory)
+ * - Bootstrap wrappers (not SEA binaries)
+ */
+function canSelfUpdate(): boolean {
+  const binaryPath = process.argv[0]
+  return isSeaBinary() && !!binaryPath && isInSocketDlx(binaryPath)
+}
+
+/**
+ * Get the current SEA binary path.
+ * Only valid when running as a SEA binary.
+ */
+function getSeaBinaryPath(): string | undefined {
+  return isSeaBinary() ? process.argv[0] : undefined
+}
+
+/**
  * Detect if the current process is running as a SEA binary.
  * Uses Node.js 24+ native API with caching for performance.
  */
@@ -51,29 +74,6 @@ function isSeaBinary(): boolean {
     }
   }
   return _isSea ?? false
-}
-
-/**
- * Get the current SEA binary path.
- * Only valid when running as a SEA binary.
- */
-function getSeaBinaryPath(): string | undefined {
-  return isSeaBinary() ? process.argv[0] : undefined
-}
-
-/**
- * Detect if self-update is allowed for the current binary.
- * Self-update is ONLY allowed for SEA binaries running from Socket's
- * managed DLX directory (~/.socket/_dlx/).
- *
- * Not allowed for:
- * - npm/pnpm/yarn-installed packages (not in DLX directory)
- * - Standalone binaries in system paths like /usr/local/bin (not in DLX directory)
- * - Bootstrap wrappers (not SEA binaries)
- */
-function canSelfUpdate(): boolean {
-  const binaryPath = process.argv[0]
-  return isSeaBinary() && !!binaryPath && isInSocketDlx(binaryPath)
 }
 
 export { canSelfUpdate, getSeaBinaryPath, isSeaBinary }

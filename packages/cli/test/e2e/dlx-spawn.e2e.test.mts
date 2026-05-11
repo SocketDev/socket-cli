@@ -22,9 +22,7 @@ describe('dlx e2e tests', () => {
         logger.log('  1. socket login (to authenticate with Socket)')
         logger.log('  2. Set SOCKET_SECURITY_API_KEY environment variable')
         logger.log('  3. Skip e2e tests by not setting RUN_E2E_TESTS\n')
-        logger.log(
-          'E2E tests will be skipped due to missing authentication.\n',
-        )
+        logger.log('E2E tests will be skipped due to missing authentication.\n')
       }
     }
   })

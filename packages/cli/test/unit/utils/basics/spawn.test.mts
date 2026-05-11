@@ -77,11 +77,8 @@ vi.mock('../../../../src/constants.mts', () => ({
   DOT_SOCKET_DOT_FACTS_JSON: '.socket.facts.json',
 }))
 
-const {
-  isSocketBasicsInstalled,
-  isSocketPyCliInstalled,
-  runSocketBasics,
-} = await import('../../../../src/utils/basics/spawn.mts')
+const { isSocketBasicsInstalled, isSocketPyCliInstalled, runSocketBasics } =
+  await import('../../../../src/utils/basics/spawn.mts')
 
 const baseOpts = {
   cwd: '/work',
@@ -370,7 +367,9 @@ describe('runSocketBasics — argument construction', () => {
 
   it('sets PATH and SKIP_* env vars on the basics process', async () => {
     await runSocketBasics(baseOpts)
-    const spawnOpts = mockSpawn.mock.calls.at(-1)?.[2] as { env: Record<string, string> }
+    const spawnOpts = mockSpawn.mock.calls.at(-1)?.[2] as {
+      env: Record<string, string>
+    }
     expect(spawnOpts.env['SKIP_SOCKET_REACH']).toBe('1')
     expect(spawnOpts.env['SKIP_SOCKET_SUBMISSION']).toBe('1')
     expect(spawnOpts.env['PATH']).toContain('/tools')

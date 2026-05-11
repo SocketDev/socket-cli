@@ -7,6 +7,14 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 
+export function createActionMessage(
+  verb: string,
+  overrideCount: number,
+  workspaceCount: number,
+): string {
+  return `${verb} ${overrideCount} Socket.dev optimized ${pluralize('override', { count: overrideCount })}${workspaceCount ? ` in ${workspaceCount} ${pluralize('workspace', { count: workspaceCount })}` : ''}`
+}
+
 export async function outputOptimizeResult(
   result: CResult<{
     addedCount: number
@@ -80,12 +88,4 @@ export async function outputOptimizeResult(
   logger.log('')
   logger.success('Finished!')
   logger.log('')
-}
-
-export function createActionMessage(
-  verb: string,
-  overrideCount: number,
-  workspaceCount: number,
-): string {
-  return `${verb} ${overrideCount} Socket.dev optimized ${pluralize('override', { count: overrideCount })}${workspaceCount ? ` in ${workspaceCount} ${pluralize('workspace', { count: workspaceCount })}` : ''}`
 }

@@ -343,7 +343,9 @@ describe('getPlatformName', () => {
   })
 
   it('should return unknown platform as-is', () => {
-    vi.spyOn(process, 'platform', 'get').mockReturnValue('freebsd' as NodeJS.Platform)
+    vi.spyOn(process, 'platform', 'get').mockReturnValue(
+      'freebsd' as NodeJS.Platform,
+    )
     expect(getPlatformName()).toBe('freebsd')
   })
 })
@@ -447,7 +449,9 @@ describe('isPlatformSupported', () => {
   })
 
   it('should return false for unsupported platforms', () => {
-    vi.spyOn(process, 'platform', 'get').mockReturnValue('freebsd' as NodeJS.Platform)
+    vi.spyOn(process, 'platform', 'get').mockReturnValue(
+      'freebsd' as NodeJS.Platform,
+    )
     vi.spyOn(process, 'arch', 'get').mockReturnValue('x64')
     expect(isPlatformSupported()).toBe(false)
   })

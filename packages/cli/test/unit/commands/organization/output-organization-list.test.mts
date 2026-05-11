@@ -168,7 +168,12 @@ describe('output-organization-list', () => {
           ok: true,
           data: {
             organizations: [
-              { id: 'org-1', name: undefined as any, slug: 'my-org', plan: 'pro' },
+              {
+                id: 'org-1',
+                name: undefined as any,
+                slug: 'my-org',
+                plan: 'pro',
+              },
             ],
           },
         }

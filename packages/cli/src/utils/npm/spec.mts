@@ -42,6 +42,21 @@ export type ParsedPackageSpec = {
 }
 
 /**
+ * Convert npm package spec to PURL string.
+ * Handles various npm spec formats and converts them to standardized PURLs.
+ * Throws if conversion fails.
+ */
+export function npmSpecToPurl(pkgSpec: string): string {
+  const purl = safeNpmSpecToPurl(pkgSpec)
+  if (!purl) {
+    throw new Error(
+      `cannot convert npm spec "${pkgSpec}" to PURL (safeNpmSpecToPurl returned null); valid npm specs look like "lodash@4.17.21" or "@scope/pkg@^1.0.0" — check the spec for typos or unsupported forms`,
+    )
+  }
+  return purl
+}
+
+/**
  * Safe wrapper for npm-package-arg that doesn't throw.
  * Returns undefined if parsing fails.
  */
@@ -52,6 +67,32 @@ export function safeNpa(
     return Reflect.apply(npmPackageArg, undefined, args)
   } catch {}
   return undefined
+}
+
+/**
+ * Convert npm package spec to PURL string.
+ * Handles various npm spec formats and converts them to standardized PURLs.
+ * Returns undefined if conversion fails.
+ */
+export function safeNpmSpecToPurl(pkgSpec: string): string | undefined {
+  const parsed = safeParseNpmSpec(pkgSpec)
+  if (!parsed) {
+    return undefined
+  }
+
+  const { name, version } = parsed
+
+  // Create PURL object to ensure proper formatting.
+  const purlObj = createPurlObject({
+    type: NPM,
+    name,
+    version,
+    throws: false,
+  })
+
+  return (
+    purlObj?.toString() ?? `pkg:${NPM}/${name}${version ? `@${version}` : ''}`
+  )
 }
 
 /**
@@ -148,45 +189,4 @@ export function safeParseNpmSpec(
   }
 
   return { name, version }
-}
-
-/**
- * Convert npm package spec to PURL string.
- * Handles various npm spec formats and converts them to standardized PURLs.
- * Returns undefined if conversion fails.
- */
-export function safeNpmSpecToPurl(pkgSpec: string): string | undefined {
-  const parsed = safeParseNpmSpec(pkgSpec)
-  if (!parsed) {
-    return undefined
-  }
-
-  const { name, version } = parsed
-
-  // Create PURL object to ensure proper formatting.
-  const purlObj = createPurlObject({
-    type: NPM,
-    name,
-    version,
-    throws: false,
-  })
-
-  return (
-    purlObj?.toString() ?? `pkg:${NPM}/${name}${version ? `@${version}` : ''}`
-  )
-}
-
-/**
- * Convert npm package spec to PURL string.
- * Handles various npm spec formats and converts them to standardized PURLs.
- * Throws if conversion fails.
- */
-export function npmSpecToPurl(pkgSpec: string): string {
-  const purl = safeNpmSpecToPurl(pkgSpec)
-  if (!purl) {
-    throw new Error(
-      `cannot convert npm spec "${pkgSpec}" to PURL (safeNpmSpecToPurl returned null); valid npm specs look like "lodash@4.17.21" or "@scope/pkg@^1.0.0" — check the spec for typos or unsupported forms`,
-    )
-  }
-  return purl
 }

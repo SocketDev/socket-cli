@@ -23,7 +23,7 @@ async function validate() {
   // Check package.json exists and has correct files array.
   logger.info('Checking package.json...')
   const pkgPath = path.join(packageRoot, 'package.json')
-  if (!(existsSync(pkgPath))) {
+  if (!existsSync(pkgPath)) {
     errors.push('package.json does not exist')
   } else {
     logger.success('package.json exists')
@@ -59,7 +59,7 @@ async function validate() {
   for (const file of rootFiles) {
     logger.info(`Checking ${file}...`)
     const filePath = path.join(packageRoot, file)
-    if (!(existsSync(filePath))) {
+    if (!existsSync(filePath)) {
       errors.push(`${file} does not exist`)
     } else {
       logger.success(`${file} exists`)
@@ -71,7 +71,7 @@ async function validate() {
   for (const file of distFiles) {
     logger.info(`Checking dist/${file}...`)
     const filePath = path.join(packageRoot, 'dist', file)
-    if (!(existsSync(filePath))) {
+    if (!existsSync(filePath)) {
       errors.push(`dist/${file} does not exist`)
     } else {
       logger.success(`dist/${file} exists`)
@@ -81,7 +81,7 @@ async function validate() {
   // Check data directory exists.
   logger.info('Checking data directory...')
   const dataPath = path.join(packageRoot, 'data')
-  if (!(existsSync(dataPath))) {
+  if (!existsSync(dataPath)) {
     errors.push('data directory does not exist')
   } else {
     logger.success('data directory exists')
@@ -94,7 +94,7 @@ async function validate() {
     for (const file of dataFiles) {
       logger.info(`Checking data/${file}...`)
       const filePath = path.join(dataPath, file)
-      if (!(existsSync(filePath))) {
+      if (!existsSync(filePath)) {
         errors.push(`data/${file} does not exist`)
       } else {
         logger.success(`data/${file} exists`)

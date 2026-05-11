@@ -53,7 +53,8 @@ vi.mock('../../../../src/utils/terminal/link.mts', () => ({
     name: string,
     path: string,
     text: string,
-  ): string => `https://socket.dev/${ecosystem}/package/${name}/${path} (${text})`,
+  ): string =>
+    `https://socket.dev/${ecosystem}/package/${name}/${path} (${text})`,
 }))
 
 import {

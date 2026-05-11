@@ -26,7 +26,11 @@ describe('organization utilities', () => {
     { slug: 'free-org', name: 'Free Org', plan: 'free' },
     { slug: 'enterprise-org', name: 'Enterprise Org', plan: 'enterprise' },
     { slug: 'pro-org', name: 'Pro Org', plan: 'pro' },
-    { slug: 'enterprise-plus', name: 'Enterprise Plus', plan: 'enterprise-plus' },
+    {
+      slug: 'enterprise-plus',
+      name: 'Enterprise Plus',
+      plan: 'enterprise-plus',
+    },
   ] as any
 
   describe('getEnterpriseOrgs', () => {

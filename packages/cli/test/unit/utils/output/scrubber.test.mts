@@ -19,9 +19,7 @@ class BufferedSink extends Writable {
     _encoding: BufferEncoding,
     cb: (err?: Error | null) => void,
   ): void {
-    this.chunks.push(
-      typeof chunk === 'string' ? chunk : chunk.toString('utf8'),
-    )
+    this.chunks.push(typeof chunk === 'string' ? chunk : chunk.toString('utf8'))
     cb()
   }
   get contents(): string {
@@ -88,26 +86,20 @@ describe('classifyLine', () => {
   })
 
   it('classifies npm chatter as noise', () => {
-    expect(classifyLine('npm notice package tarball', undefined)).toBe(
-      'noise',
-    )
+    expect(classifyLine('npm notice package tarball', undefined)).toBe('noise')
     expect(classifyLine('npm warn deprecated', undefined)).toBe('noise')
     expect(classifyLine('npm err! missing script', undefined)).toBe('noise')
   })
 
   it('classifies lowercase log prefixes as noise (rust/cargo style)', () => {
-    expect(classifyLine('warning: unused variable', undefined)).toBe(
-      'noise',
-    )
+    expect(classifyLine('warning: unused variable', undefined)).toBe('noise')
     expect(classifyLine('error: expected ;', undefined)).toBe('noise')
     expect(classifyLine('note: defined here', undefined)).toBe('noise')
     expect(classifyLine('help: try adding a type', undefined)).toBe('noise')
   })
 
   it('classifies cargo status verbs as noise', () => {
-    expect(classifyLine('    Compiling serde v1.0.0', undefined)).toBe(
-      'noise',
-    )
+    expect(classifyLine('    Compiling serde v1.0.0', undefined)).toBe('noise')
     expect(classifyLine('    Finished dev [unoptimized]', undefined)).toBe(
       'noise',
     )
@@ -159,9 +151,7 @@ describe('classifyLine', () => {
 
 describe('createScrubber — outside block', () => {
   it('routes NDJSON lines to stdout', async () => {
-    const { stderr, stdout } = await pipeThroughScrubber(
-      '{"a":1}\n{"b":2}\n',
-    )
+    const { stderr, stdout } = await pipeThroughScrubber('{"a":1}\n{"b":2}\n')
     expect(stdout).toBe('{"a":1}\n{"b":2}\n')
     expect(stderr).toBe('')
   })
@@ -347,8 +337,7 @@ describe('createScrubber — sentinel block state machine', () => {
 describe('createScrubber — adapter integration', () => {
   it('applies adapter verdict outside blocks', async () => {
     const adapter: ScrubberAdapter = {
-      classify: line =>
-        line.startsWith('Created ') ? 'drop' : undefined,
+      classify: line => (line.startsWith('Created ') ? 'drop' : undefined),
       name: 'synp',
     }
     const { stderr, stdout } = await pipeThroughScrubber(

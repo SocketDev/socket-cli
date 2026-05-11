@@ -28,13 +28,10 @@ describe('socket-cli env bindings', () => {
 })
 
 describe('process env bindings', () => {
-  it.each(['node-env', 'npm-config-user-agent'])(
-    'exports %s',
-    async name => {
-      const mod = await import(`../../../src/env/${name}.mts`)
-      expect(Object.keys(mod).length).toBeGreaterThan(0)
-    },
-  )
+  it.each(['node-env', 'npm-config-user-agent'])('exports %s', async name => {
+    const mod = await import(`../../../src/env/${name}.mts`)
+    expect(Object.keys(mod).length).toBeGreaterThan(0)
+  })
 })
 
 describe('socket-cli-* env bindings (additional)', () => {
@@ -97,11 +94,8 @@ describe('process / system env bindings', () => {
 })
 
 describe('python build env bindings', () => {
-  it.each(['python-build-tag', 'cdxgen-version'])(
-    'exports %s',
-    async name => {
-      const mod = await import(`../../../src/env/${name}.mts`)
-      expect(Object.keys(mod).length).toBeGreaterThan(0)
-    },
-  )
+  it.each(['python-build-tag', 'cdxgen-version'])('exports %s', async name => {
+    const mod = await import(`../../../src/env/${name}.mts`)
+    expect(Object.keys(mod).length).toBeGreaterThan(0)
+  })
 })

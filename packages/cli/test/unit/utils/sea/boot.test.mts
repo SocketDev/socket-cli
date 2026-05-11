@@ -49,9 +49,8 @@ describe('sea/boot', () => {
 
   describe('findSystemNodejs', () => {
     it('always returns undefined (current stub implementation)', async () => {
-      const { findSystemNodejs } = await import(
-        '../../../../src/utils/sea/boot.mts'
-      )
+      const { findSystemNodejs } =
+        await import('../../../../src/utils/sea/boot.mts')
       expect(findSystemNodejs()).toBeUndefined()
     })
   })
@@ -191,9 +190,8 @@ describe('sea/boot', () => {
   describe('waitForBootstrapHandshake', () => {
     it('resolves with undefined when no IPC channel exists', async () => {
       // Import fresh module to test default behavior.
-      const { waitForBootstrapHandshake } = await import(
-        '../../../../src/utils/sea/boot.mts'
-      )
+      const { waitForBootstrapHandshake } =
+        await import('../../../../src/utils/sea/boot.mts')
 
       // No IPC channel, should resolve immediately with undefined.
       const result = await waitForBootstrapHandshake(100)
@@ -203,16 +201,12 @@ describe('sea/boot', () => {
     it('resolves with handshake data when message arrives', async () => {
       // Stub process.channel + .on/.off so isSubprocess() reports true.
       const handlers: Record<string, Array<(m: unknown) => void>> = {}
-      const fakeOn = vi.fn(
-        (event: string, handler: (m: unknown) => void) => {
-          ;(handlers[event] ??= []).push(handler)
-        },
-      )
-      const fakeOff = vi.fn(
-        (event: string, handler: (m: unknown) => void) => {
-          handlers[event] = (handlers[event] ?? []).filter(h => h !== handler)
-        },
-      )
+      const fakeOn = vi.fn((event: string, handler: (m: unknown) => void) => {
+        ;(handlers[event] ??= []).push(handler)
+      })
+      const fakeOff = vi.fn((event: string, handler: (m: unknown) => void) => {
+        handlers[event] = (handlers[event] ?? []).filter(h => h !== handler)
+      })
       const originalChannel = process.channel
       const originalOn = process.on
       const originalOff = process.off
@@ -226,9 +220,8 @@ describe('sea/boot', () => {
       ;(process as any).off = fakeOff
 
       try {
-        const { waitForBootstrapHandshake } = await import(
-          '../../../../src/utils/sea/boot.mts'
-        )
+        const { waitForBootstrapHandshake } =
+          await import('../../../../src/utils/sea/boot.mts')
         const promise = waitForBootstrapHandshake(500)
         // Schedule the message after the handler is registered.
         await new Promise(resolve => setImmediate(resolve))
@@ -267,12 +260,9 @@ describe('sea/boot', () => {
       ;(process as any).off = fakeOff
 
       try {
-        const { waitForBootstrapHandshake } = await import(
-          '../../../../src/utils/sea/boot.mts'
-        )
-        await expect(waitForBootstrapHandshake(50)).rejects.toThrow(
-          /timeout/,
-        )
+        const { waitForBootstrapHandshake } =
+          await import('../../../../src/utils/sea/boot.mts')
+        await expect(waitForBootstrapHandshake(50)).rejects.toThrow(/timeout/)
       } finally {
         Object.defineProperty(process, 'channel', {
           value: originalChannel,
@@ -286,11 +276,9 @@ describe('sea/boot', () => {
 
     it('ignores non-handshake messages', async () => {
       const handlers: Record<string, Array<(m: unknown) => void>> = {}
-      const fakeOn = vi.fn(
-        (event: string, handler: (m: unknown) => void) => {
-          ;(handlers[event] ??= []).push(handler)
-        },
-      )
+      const fakeOn = vi.fn((event: string, handler: (m: unknown) => void) => {
+        ;(handlers[event] ??= []).push(handler)
+      })
       const fakeOff = vi.fn()
       const originalChannel = process.channel
       const originalOn = process.on
@@ -305,9 +293,8 @@ describe('sea/boot', () => {
       ;(process as any).off = fakeOff
 
       try {
-        const { waitForBootstrapHandshake } = await import(
-          '../../../../src/utils/sea/boot.mts'
-        )
+        const { waitForBootstrapHandshake } =
+          await import('../../../../src/utils/sea/boot.mts')
         const promise = waitForBootstrapHandshake(50)
         await new Promise(resolve => setImmediate(resolve))
         // Send a few non-handshake messages to exercise early-returns.

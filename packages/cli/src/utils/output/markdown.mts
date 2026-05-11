@@ -27,6 +27,30 @@
  */
 
 /**
+ * Format an error message in markdown.
+ *
+ * @param message - The error message
+ * @param cause - Optional error cause/details
+ * @returns Markdown formatted error string
+ *
+ * @example
+ * mdError('Failed to connect')
+ * // '# Error\n\n**Error**: Failed to connect'
+ *
+ * mdError('Failed', 'Network timeout')
+ * // '# Error\n\n**Error**: Failed\n\n**Cause**: Network timeout'
+ */
+export function mdError(message: string, cause?: string): string {
+  const parts = [mdHeader('Error'), '', mdKeyValue('Error', message)]
+
+  if (cause) {
+    parts.push('', mdKeyValue('Cause', cause))
+  }
+
+  return parts.join('\n')
+}
+
+/**
  * Create a markdown header.
  *
  * @param title - The header text
@@ -115,30 +139,6 @@ export function mdList(
 }
 
 /**
- * Format an error message in markdown.
- *
- * @param message - The error message
- * @param cause - Optional error cause/details
- * @returns Markdown formatted error string
- *
- * @example
- * mdError('Failed to connect')
- * // '# Error\n\n**Error**: Failed to connect'
- *
- * mdError('Failed', 'Network timeout')
- * // '# Error\n\n**Error**: Failed\n\n**Cause**: Network timeout'
- */
-export function mdError(message: string, cause?: string): string {
-  const parts = [mdHeader('Error'), '', mdKeyValue('Error', message)]
-
-  if (cause) {
-    parts.push('', mdKeyValue('Cause', cause))
-  }
-
-  return parts.join('\n')
-}
-
-/**
  * Create a markdown section with optional header.
  *
  * @param title - Section title
@@ -161,35 +161,6 @@ export function mdSection(
   const header = mdHeader(title, level)
   const body = Array.isArray(content) ? content.join('\n') : content
   return `${header}\n\n${body}`
-}
-
-export function mdTableStringNumber(
-  title1: string,
-  title2: string,
-  obj: Record<string, number | string>,
-): string {
-  // | Date        | Counts |
-  // | ----------- | ------ |
-  // | Header      | 201464 |
-  // | Paragraph   |     18 |
-  let mw1 = title1.length
-  let mw2 = title2.length
-  for (const { 0: key, 1: value } of Object.entries(obj)) {
-    mw1 = Math.max(mw1, key.length)
-    mw2 = Math.max(mw2, String(value ?? '').length)
-  }
-
-  const lines = []
-  lines.push(`| ${title1.padEnd(mw1, ' ')} | ${title2.padEnd(mw2)} |`)
-  lines.push(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} |`)
-  for (const { 0: key, 1: value } of Object.entries(obj)) {
-    lines.push(
-      `| ${key.padEnd(mw1, ' ')} | ${String(value ?? '').padStart(mw2, ' ')} |`,
-    )
-  }
-  lines.push(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} |`)
-
-  return lines.join('\n')
 }
 
 export function mdTable<T extends Array<Record<string, string>>>(
@@ -269,4 +240,33 @@ export function mdTableOfPairs(
   }
 
   return [div, header, div, body.trim(), div].filter(s => s.trim()).join('\n')
+}
+
+export function mdTableStringNumber(
+  title1: string,
+  title2: string,
+  obj: Record<string, number | string>,
+): string {
+  // | Date        | Counts |
+  // | ----------- | ------ |
+  // | Header      | 201464 |
+  // | Paragraph   |     18 |
+  let mw1 = title1.length
+  let mw2 = title2.length
+  for (const { 0: key, 1: value } of Object.entries(obj)) {
+    mw1 = Math.max(mw1, key.length)
+    mw2 = Math.max(mw2, String(value ?? '').length)
+  }
+
+  const lines = []
+  lines.push(`| ${title1.padEnd(mw1, ' ')} | ${title2.padEnd(mw2)} |`)
+  lines.push(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} |`)
+  for (const { 0: key, 1: value } of Object.entries(obj)) {
+    lines.push(
+      `| ${key.padEnd(mw1, ' ')} | ${String(value ?? '').padStart(mw2, ' ')} |`,
+    )
+  }
+  lines.push(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} |`)
+
+  return lines.join('\n')
 }

@@ -27,7 +27,9 @@ const config = {
 }
 
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
-  runBuild(config, 'CLI bundle (Sentry)').catch(() => { process.exitCode = 1 })
+  runBuild(config, 'CLI bundle (Sentry)').catch(() => {
+    process.exitCode = 1
+  })
 }
 
 export default config

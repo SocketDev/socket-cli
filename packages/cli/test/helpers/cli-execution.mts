@@ -41,6 +41,36 @@ export interface CliExecutionOptions extends SpawnOptions {
 }
 
 /**
+ * Batch execute multiple CLI commands in sequence.
+ *
+ * @param commands - Array of command argument arrays
+ * @param options - Execution options applied to all commands
+ * @returns Array of CLI execution results
+ *
+ * @example
+ * ```typescript
+ * const results = await executeBatchCliCommands([
+ *   ['config', 'get', 'apiToken'],
+ *   ['config', 'get', 'defaultOrg'],
+ * ])
+ * ```
+ */
+export async function executeBatchCliCommands(
+  commands: string[][],
+  options?: CliExecutionOptions | undefined,
+): Promise<CliExecutionResult[]> {
+  const results: CliExecutionResult[] = []
+
+  for (const args of commands) {
+    // eslint-disable-next-line no-await-in-loop
+    const result = await executeCliCommand(args, options)
+    results.push(result)
+  }
+
+  return results
+}
+
+/**
  * Execute Socket CLI command with enhanced result handling.
  *
  * @param args - Command arguments to pass to Socket CLI
@@ -101,75 +131,6 @@ export async function executeCliCommand(
     stderr: result.stderr,
     stdout: result.stdout,
   }
-}
-
-/**
- * Execute Socket CLI command expecting success (exit code 0).
- *
- * @param args - Command arguments
- * @param options - Execution options
- * @returns CLI execution result
- * @throws Error if command fails
- *
- * @example
- * ```typescript
- * const result = await expectCliSuccess(['wrapper', '--help'])
- * expect(result.stdout).toContain('Usage')
- * ```
- */
-export async function expectCliSuccess(
-  args: string[],
-  options?: CliExecutionOptions | undefined,
-): Promise<CliExecutionResult> {
-  const result = await executeCliCommand(args, {
-    expectedExitCode: 0,
-    ...options,
-  })
-
-  if (!result.status) {
-    throw new Error(
-      `Expected CLI command to succeed but got exit code ${result.code}\nCommand: ${args.join(' ')}\nstdout: ${result.stdout}\nstderr: ${result.stderr}`,
-    )
-  }
-
-  return result
-}
-
-/**
- * Execute Socket CLI command expecting failure (non-zero exit code).
- *
- * @param args - Command arguments
- * @param expectedCode - Expected exit code (default: any non-zero)
- * @param options - Execution options
- * @returns CLI execution result
- * @throws Error if command succeeds
- *
- * @example
- * ```typescript
- * const result = await expectCliError(['scan'], 1)
- * expect(result.stderr).toContain('error')
- * ```
- */
-export async function expectCliError(
-  args: string[],
-  expectedCode?: number | undefined,
-  options?: CliExecutionOptions | undefined,
-): Promise<CliExecutionResult> {
-  const result = await executeCliCommand(args, options)
-
-  if (result.status) {
-    throw new Error(
-      `Expected CLI command to fail but it succeeded\nCommand: ${args.join(' ')}\nstdout: ${result.stdout}`,
-    )
-  }
-
-  if (expectedCode !== undefined && result.code !== expectedCode) {
-    throw new Error(
-      `Expected exit code ${expectedCode} but got ${result.code}\nCommand: ${args.join(' ')}\nstderr: ${result.stderr}`,
-    )
-  }
-
-  return result
 }
 
 /**
@@ -249,36 +210,6 @@ export async function executeCliWithRetry(
 }
 
 /**
- * Batch execute multiple CLI commands in sequence.
- *
- * @param commands - Array of command argument arrays
- * @param options - Execution options applied to all commands
- * @returns Array of CLI execution results
- *
- * @example
- * ```typescript
- * const results = await executeBatchCliCommands([
- *   ['config', 'get', 'apiToken'],
- *   ['config', 'get', 'defaultOrg'],
- * ])
- * ```
- */
-export async function executeBatchCliCommands(
-  commands: string[][],
-  options?: CliExecutionOptions | undefined,
-): Promise<CliExecutionResult[]> {
-  const results: CliExecutionResult[] = []
-
-  for (const args of commands) {
-    // eslint-disable-next-line no-await-in-loop
-    const result = await executeCliCommand(args, options)
-    results.push(result)
-  }
-
-  return results
-}
-
-/**
  * Execute CLI command and capture timing information.
  *
  * @param args - Command arguments
@@ -311,4 +242,73 @@ export async function executeCliWithTiming(
     result,
     startTime,
   }
+}
+
+/**
+ * Execute Socket CLI command expecting failure (non-zero exit code).
+ *
+ * @param args - Command arguments
+ * @param expectedCode - Expected exit code (default: any non-zero)
+ * @param options - Execution options
+ * @returns CLI execution result
+ * @throws Error if command succeeds
+ *
+ * @example
+ * ```typescript
+ * const result = await expectCliError(['scan'], 1)
+ * expect(result.stderr).toContain('error')
+ * ```
+ */
+export async function expectCliError(
+  args: string[],
+  expectedCode?: number | undefined,
+  options?: CliExecutionOptions | undefined,
+): Promise<CliExecutionResult> {
+  const result = await executeCliCommand(args, options)
+
+  if (result.status) {
+    throw new Error(
+      `Expected CLI command to fail but it succeeded\nCommand: ${args.join(' ')}\nstdout: ${result.stdout}`,
+    )
+  }
+
+  if (expectedCode !== undefined && result.code !== expectedCode) {
+    throw new Error(
+      `Expected exit code ${expectedCode} but got ${result.code}\nCommand: ${args.join(' ')}\nstderr: ${result.stderr}`,
+    )
+  }
+
+  return result
+}
+
+/**
+ * Execute Socket CLI command expecting success (exit code 0).
+ *
+ * @param args - Command arguments
+ * @param options - Execution options
+ * @returns CLI execution result
+ * @throws Error if command fails
+ *
+ * @example
+ * ```typescript
+ * const result = await expectCliSuccess(['wrapper', '--help'])
+ * expect(result.stdout).toContain('Usage')
+ * ```
+ */
+export async function expectCliSuccess(
+  args: string[],
+  options?: CliExecutionOptions | undefined,
+): Promise<CliExecutionResult> {
+  const result = await executeCliCommand(args, {
+    expectedExitCode: 0,
+    ...options,
+  })
+
+  if (!result.status) {
+    throw new Error(
+      `Expected CLI command to succeed but got exit code ${result.code}\nCommand: ${args.join(' ')}\nstdout: ${result.stdout}\nstderr: ${result.stderr}`,
+    )
+  }
+
+  return result
 }

@@ -272,16 +272,21 @@ describe('simple-output', () => {
         data: ['item1', 'item2'],
       }
 
-      outputPaginatedList(result, 'json', {
-        page: 1,
-        perPage: 10,
-        nextPage: 2,
-        sort: 'name',
-        direction: 'asc',
-      }, {
-        columns: [{ field: 'name', name: 'Name' }],
-        getRows: data => data.map(name => ({ name })),
-      })
+      outputPaginatedList(
+        result,
+        'json',
+        {
+          page: 1,
+          perPage: 10,
+          nextPage: 2,
+          sort: 'name',
+          direction: 'asc',
+        },
+        {
+          columns: [{ field: 'name', name: 'Name' }],
+          getRows: data => data.map(name => ({ name })),
+        },
+      )
 
       const loggedJson = mockLogger.log.mock.calls[0]![0]
       expect(loggedJson).toContain('"page": 1')
@@ -295,16 +300,21 @@ describe('simple-output', () => {
         data: ['item1'],
       }
 
-      outputPaginatedList(result, 'text', {
-        page: 1,
-        perPage: 10,
-        nextPage: undefined,
-        sort: 'name',
-        direction: 'asc',
-      }, {
-        columns: [{ field: 'name', name: 'Name' }],
-        getRows: data => data.map(name => ({ name })),
-      })
+      outputPaginatedList(
+        result,
+        'text',
+        {
+          page: 1,
+          perPage: 10,
+          nextPage: undefined,
+          sort: 'name',
+          direction: 'asc',
+        },
+        {
+          columns: [{ field: 'name', name: 'Name' }],
+          getRows: data => data.map(name => ({ name })),
+        },
+      )
 
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('Page: 1'),
@@ -317,14 +327,19 @@ describe('simple-output', () => {
         data: ['item1'],
       }
 
-      outputPaginatedList(result, 'text', {
-        page: 1,
-        perPage: Number.POSITIVE_INFINITY,
-        nextPage: undefined,
-      }, {
-        columns: [{ field: 'name', name: 'Name' }],
-        getRows: data => data.map(name => ({ name })),
-      })
+      outputPaginatedList(
+        result,
+        'text',
+        {
+          page: 1,
+          perPage: Number.POSITIVE_INFINITY,
+          nextPage: undefined,
+        },
+        {
+          columns: [{ field: 'name', name: 'Name' }],
+          getRows: data => data.map(name => ({ name })),
+        },
+      )
 
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('Per page: all'),
@@ -337,15 +352,20 @@ describe('simple-output', () => {
         data: [],
       }
 
-      outputPaginatedList(result, 'text', {
-        page: 1,
-        perPage: 10,
-        nextPage: undefined,
-      }, {
-        columns: [{ field: 'name', name: 'Name' }],
-        getRows: () => [],
-        emptyMessage: 'Nothing here',
-      })
+      outputPaginatedList(
+        result,
+        'text',
+        {
+          page: 1,
+          perPage: 10,
+          nextPage: undefined,
+        },
+        {
+          columns: [{ field: 'name', name: 'Name' }],
+          getRows: () => [],
+          emptyMessage: 'Nothing here',
+        },
+      )
 
       expect(mockLogger.log).toHaveBeenCalledWith('Nothing here')
     })
@@ -356,14 +376,19 @@ describe('simple-output', () => {
         data: ['item1'],
       }
 
-      outputPaginatedList(result, 'text', {
-        page: 1,
-        perPage: 10,
-        nextPage: 2,
-      }, {
-        columns: [{ field: 'name', name: 'Name' }],
-        getRows: data => data.map(name => ({ name })),
-      })
+      outputPaginatedList(
+        result,
+        'text',
+        {
+          page: 1,
+          perPage: 10,
+          nextPage: 2,
+        },
+        {
+          columns: [{ field: 'name', name: 'Name' }],
+          getRows: data => data.map(name => ({ name })),
+        },
+      )
 
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('Next page: 2'),

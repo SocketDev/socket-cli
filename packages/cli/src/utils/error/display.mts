@@ -36,9 +36,22 @@ function appendCauseChain(baseMessage: string, cause: unknown): string {
   if (!cause) {
     return baseMessage
   }
-  const causeText =
-    isError(cause) ? messageWithCauses(cause) : String(cause)
+  const causeText = isError(cause) ? messageWithCauses(cause) : String(cause)
   return `${baseMessage}: ${causeText}`
+}
+
+/**
+ * Format error as compact single-line summary.
+ * Perfect for inline error display without overwhelming output.
+ */
+export function formatErrorCompact(error: unknown): string {
+  if (isError(error)) {
+    return error.message
+  }
+  if (typeof error === 'string') {
+    return error
+  }
+  return 'An unknown error occurred'
 }
 
 /**
@@ -126,11 +139,7 @@ export function formatErrorForDisplay(
           `\n${colors.dim(`Caused by [${depth}]:`)} ${colors.yellow(causeMessage)}`,
         )
 
-        if (
-          isError(currentCause) &&
-          currentCause.stack &&
-          depth === 1
-        ) {
+        if (isError(currentCause) && currentCause.stack && depth === 1) {
           const causeStack = currentCause.stack
             .split('\n')
             .slice(1)
@@ -139,8 +148,7 @@ export function formatErrorForDisplay(
           causeLines.push(causeStack)
         }
 
-        currentCause =
-          isError(currentCause) ? currentCause.cause : undefined
+        currentCause = isError(currentCause) ? currentCause.cause : undefined
         depth++
       }
 
@@ -165,17 +173,26 @@ export function formatErrorForDisplay(
 }
 
 /**
- * Format error as compact single-line summary.
- * Perfect for inline error display without overwhelming output.
+ * Format error for JSON output.
+ * Provides structured error data for machine consumption.
  */
-export function formatErrorCompact(error: unknown): string {
-  if (isError(error)) {
-    return error.message
+export function formatErrorForJson(
+  error: unknown,
+  options?: ErrorDisplayOptions | undefined,
+): CResult<never> & { recovery?: string[] } {
+  const { body, message, title } = formatErrorForDisplay(error, {
+    ...options,
+    showStack: false,
+  })
+
+  const recovery = getRecoverySuggestions(error)
+
+  return {
+    ok: false,
+    cause: stripAnsi(body || message),
+    message: stripAnsi(title),
+    ...(recovery.length > 0 ? { recovery } : {}),
   }
-  if (typeof error === 'string') {
-    return error
-  }
-  return 'An unknown error occurred'
 }
 
 /**
@@ -215,29 +232,6 @@ export function formatErrorForTerminal(
   }
 
   return lines.filter(Boolean).join('\n')
-}
-
-/**
- * Format error for JSON output.
- * Provides structured error data for machine consumption.
- */
-export function formatErrorForJson(
-  error: unknown,
-  options?: ErrorDisplayOptions | undefined,
-): CResult<never> & { recovery?: string[] } {
-  const { body, message, title } = formatErrorForDisplay(error, {
-    ...options,
-    showStack: false,
-  })
-
-  const recovery = getRecoverySuggestions(error)
-
-  return {
-    ok: false,
-    cause: stripAnsi(body || message),
-    message: stripAnsi(title),
-    ...(recovery.length > 0 ? { recovery } : {}),
-  }
 }
 
 /**
@@ -292,13 +286,13 @@ export function formatExternalCliError(
 }
 
 /**
- * Format warning message with visual hierarchy.
+ * Format info message with visual hierarchy.
  */
-export function formatWarning(
+export function formatInfo(
   message: string,
   details?: string | undefined,
 ): string {
-  const lines = [`${LOG_SYMBOLS['warning']} ${colors.yellow(message)}`]
+  const lines = [`${LOG_SYMBOLS['info']} ${colors.blue(message)}`]
 
   if (details) {
     lines.push(`  ${colors.dim(details)}`)
@@ -324,13 +318,13 @@ export function formatSuccess(
 }
 
 /**
- * Format info message with visual hierarchy.
+ * Format warning message with visual hierarchy.
  */
-export function formatInfo(
+export function formatWarning(
   message: string,
   details?: string | undefined,
 ): string {
-  const lines = [`${LOG_SYMBOLS['info']} ${colors.blue(message)}`]
+  const lines = [`${LOG_SYMBOLS['warning']} ${colors.yellow(message)}`]
 
   if (details) {
     lines.push(`  ${colors.dim(details)}`)

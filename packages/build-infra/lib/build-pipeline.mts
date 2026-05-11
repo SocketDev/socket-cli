@@ -155,9 +155,7 @@ async function loadExternalTools(packageRoot) {
     const details = validated.errors
       .map(e => `  ${e.path}: ${e.message}`)
       .join('\n')
-    throw new Error(
-      `Invalid external-tools.json at ${filePath}:\n${details}`,
-    )
+    throw new Error(`Invalid external-tools.json at ${filePath}:\n${details}`)
   }
   const versions = {}
   for (const [tool, meta] of Object.entries(data.tools ?? {})) {

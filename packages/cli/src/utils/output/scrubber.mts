@@ -121,54 +121,6 @@ export interface ScrubberOptions {
 }
 
 /**
- * Clean a single line:
- *   1. Strip leading BOM.
- *   2. Strip a single trailing \r (CRLF line terminator artifact).
- *   3. If the remaining line still contains \r bytes (progress-bar
- *      same-line overwrite: "\rline1\rline2"), keep only the segment
- *      after the last \r — that's the final rendered state.
- *   4. Strip every ANSI escape (SGR, CSI cursor moves, OSC hyperlinks).
- */
-export function cleanLine(line: string): string {
-  let cleaned = line
-  if (cleaned.charCodeAt(0) === 0xfeff) {
-    cleaned = cleaned.slice(1)
-  }
-  if (cleaned.endsWith('\r')) {
-    cleaned = cleaned.slice(0, -1)
-  }
-  if (cleaned.includes('\r')) {
-    // Overwrite semantics: render only the last segment.
-    const lastCr = cleaned.lastIndexOf('\r')
-    cleaned = cleaned.slice(lastCr + 1)
-  }
-  return cleaned.replace(ANSI_RE, '')
-}
-
-export function isTraceEnabled(): boolean {
-  return process.env['SOCKET_SCRUB_TRACE'] === '1'
-}
-
-/**
- * Trace writes go to process.stderr directly (not through the
- * scrubber's configured stderr sink) so trace lines don't interleave
- * with the routed noise stream. This matters when a caller pipes the
- * scrubber's stderr into a buffer for later inspection.
- */
-export function trace(
-  adapterName: string | undefined,
-  verdict: string,
-  line: string,
-): void {
-  if (isTraceEnabled()) {
-    const prefix = adapterName ? `${adapterName}:${verdict}` : verdict
-    // Direct stderr write (not via logger) bypasses the routed noise
-    // stream so trace lines don't interleave with buffered scrubber output.
-    process.stderr.write(`[scrub ${prefix}] ${line}\n`) // socket-hook: allow logger
-  }
-}
-
-/**
  * Classify a cleaned line under the outside-block state.
  */
 export function classifyLine(
@@ -196,6 +148,31 @@ export function classifyLine(
   } catch {
     return 'noise'
   }
+}
+
+/**
+ * Clean a single line:
+ *   1. Strip leading BOM.
+ *   2. Strip a single trailing \r (CRLF line terminator artifact).
+ *   3. If the remaining line still contains \r bytes (progress-bar
+ *      same-line overwrite: "\rline1\rline2"), keep only the segment
+ *      after the last \r — that's the final rendered state.
+ *   4. Strip every ANSI escape (SGR, CSI cursor moves, OSC hyperlinks).
+ */
+export function cleanLine(line: string): string {
+  let cleaned = line
+  if (cleaned.charCodeAt(0) === 0xfeff) {
+    cleaned = cleaned.slice(1)
+  }
+  if (cleaned.endsWith('\r')) {
+    cleaned = cleaned.slice(0, -1)
+  }
+  if (cleaned.includes('\r')) {
+    // Overwrite semantics: render only the last segment.
+    const lastCr = cleaned.lastIndexOf('\r')
+    cleaned = cleaned.slice(lastCr + 1)
+  }
+  return cleaned.replace(ANSI_RE, '')
 }
 
 /**
@@ -297,4 +274,27 @@ export function createScrubber(options: ScrubberOptions = {}): Transform {
       done()
     },
   })
+}
+
+export function isTraceEnabled(): boolean {
+  return process.env['SOCKET_SCRUB_TRACE'] === '1'
+}
+
+/**
+ * Trace writes go to process.stderr directly (not through the
+ * scrubber's configured stderr sink) so trace lines don't interleave
+ * with the routed noise stream. This matters when a caller pipes the
+ * scrubber's stderr into a buffer for later inspection.
+ */
+export function trace(
+  adapterName: string | undefined,
+  verdict: string,
+  line: string,
+): void {
+  if (isTraceEnabled()) {
+    const prefix = adapterName ? `${adapterName}:${verdict}` : verdict
+    // Direct stderr write (not via logger) bypasses the routed noise
+    // stream so trace lines don't interleave with buffered scrubber output.
+    process.stderr.write(`[scrub ${prefix}] ${line}\n`) // socket-hook: allow logger
+  }
 }

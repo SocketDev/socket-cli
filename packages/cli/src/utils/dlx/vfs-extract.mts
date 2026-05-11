@@ -142,7 +142,10 @@ const TOOL_STANDALONE_PATHS: Partial<Record<ExternalTool, string>> = {
  * @param nodeSmolBase - Base dlx directory path.
  * @returns Path to the tool binary (without .exe extension).
  */
-export function getToolFilePath(tool: ExternalTool, nodeSmolBase: string): string {
+export function getToolFilePath(
+  tool: ExternalTool,
+  nodeSmolBase: string,
+): string {
   const npmPath = TOOL_NPM_PATHS[tool]
   const standalonePath = TOOL_STANDALONE_PATHS[tool]
 
@@ -234,7 +237,9 @@ export function areExternalToolsAvailable(): boolean {
  * @param packagePath - Path to npm package directory.
  * @returns True if package directory exists with node_modules/ and binary.
  */
-export async function isNpmPackageExtracted(packagePath: string): Promise<boolean> {
+export async function isNpmPackageExtracted(
+  packagePath: string,
+): Promise<boolean> {
   if (!existsSync(packagePath)) {
     return false
   }
@@ -379,7 +384,7 @@ const MAX_EXTRACTION_DEPTH = 5
 
 export async function extractExternalTools(
   depth = 0,
-): Promise<Record<ExternalTool, string> | null> {
+): Promise<Record<ExternalTool, string> | undefined> {
   // Prevent unbounded recursion from pathological scenarios.
   if (depth >= MAX_EXTRACTION_DEPTH) {
     logger.error(

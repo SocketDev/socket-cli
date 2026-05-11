@@ -14,12 +14,10 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   }),
 }))
 
-const { emitJsonPayload, emitPayload } = await import(
-  '../../../../src/utils/output/emit-payload.mts'
-)
-const { SENTINEL_BEGIN, SENTINEL_END } = await import(
-  '../../../../src/utils/output/mode.mts'
-)
+const { emitJsonPayload, emitPayload } =
+  await import('../../../../src/utils/output/emit-payload.mts')
+const { SENTINEL_BEGIN, SENTINEL_END } =
+  await import('../../../../src/utils/output/mode.mts')
 
 describe('emitPayload', () => {
   beforeEach(() => {
@@ -74,7 +72,10 @@ describe('emitPayload', () => {
   it('emitJsonPayload stringifies and wraps', () => {
     emitJsonPayload({ status: 'ok', count: 3 }, { flags: { json: true } })
     expect(mockStdoutLog).toHaveBeenCalledTimes(3)
-    expect(mockStdoutLog).toHaveBeenNthCalledWith(2, '{"status":"ok","count":3}')
+    expect(mockStdoutLog).toHaveBeenNthCalledWith(
+      2,
+      '{"status":"ok","count":3}',
+    )
   })
 
   it('never writes to stderr', () => {

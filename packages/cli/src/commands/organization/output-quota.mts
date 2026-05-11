@@ -11,7 +11,9 @@ const logger = getDefaultLogger()
 
 type QuotaData = SocketSdkSuccessResult<'getQuota'>['data']
 
-export function formatRefresh(nextWindowRefresh: string | null | undefined): string {
+export function formatRefresh(
+  nextWindowRefresh: string | null | undefined,
+): string {
   if (!nextWindowRefresh) {
     return 'unknown'
   }
@@ -74,9 +76,12 @@ export async function outputQuota(
   const refreshLine = `Next refresh: ${formatRefresh(result.data.nextWindowRefresh)}`
 
   if (outputKind === 'markdown') {
-    const md = [mdHeader('Quota'), '', `- ${usageLine}`, `- ${refreshLine}`].join(
-      '\n',
-    )
+    const md = [
+      mdHeader('Quota'),
+      '',
+      `- ${usageLine}`,
+      `- ${refreshLine}`,
+    ].join('\n')
     emitPayload(md, { flags: { markdown: true } })
     return
   }

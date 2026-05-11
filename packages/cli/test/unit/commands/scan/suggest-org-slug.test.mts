@@ -145,9 +145,7 @@ describe('suggest-org-slug', () => {
       mockFetchOrganization.mockResolvedValue({
         ok: true,
         data: {
-          organizations: [
-            { name: 'Example Org Ltd', slug: 'example-org-ltd' },
-          ],
+          organizations: [{ name: 'Example Org Ltd', slug: 'example-org-ltd' }],
         },
       })
       mockSelect.mockResolvedValue('example-org-ltd')

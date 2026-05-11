@@ -101,11 +101,9 @@ describe('cmd-pycli', () => {
       mockSpawnSocketPyCli.mockResolvedValue({ ok: true, data: '' })
 
       // meow's showHelp() calls process.exit(0); intercept with throw.
-      const exitSpy = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {
-          throw new Error('process.exit')
-        }) as never)
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
+        throw new Error('process.exit')
+      }) as never)
 
       try {
         await cmdPyCli
@@ -167,11 +165,7 @@ describe('cmd-pycli', () => {
     it('should filter help flags from arguments', async () => {
       mockSpawnSocketPyCli.mockResolvedValue({ ok: true, data: '' })
 
-      await cmdPyCli.run(
-        ['--generate-license', '.'],
-        importMeta,
-        context,
-      )
+      await cmdPyCli.run(['--generate-license', '.'], importMeta, context)
 
       // Help flags should not be in arguments passed to Python CLI.
       expect(mockSpawnSocketPyCli).toHaveBeenCalledWith(

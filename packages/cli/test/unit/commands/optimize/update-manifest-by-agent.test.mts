@@ -56,7 +56,9 @@ describe('update-manifest-by-agent', () => {
         overrides: { lodash: '4.17.20' },
       })
       updateOverridesField(pkgJson, { lodash: '4.17.21' })
-      expect(pkgJson.update).toHaveBeenCalledWith({ overrides: { lodash: '4.17.21' } })
+      expect(pkgJson.update).toHaveBeenCalledWith({
+        overrides: { lodash: '4.17.21' },
+      })
     })
 
     it('removes overrides field when empty', () => {
@@ -159,18 +161,19 @@ describe('update-manifest-by-agent', () => {
 
     // Build a minimal EnvDetails-shaped object. Production code only
     // touches `editablePkgJson`, `agent`, `agentVersion`, `pkgPath`.
-    const makeEnv = (
-      overrides: Record<string, unknown> = {},
-    ) => ({
-      agent: 'pnpm',
-      agentVersion: { major: 10, minor: 0, patch: 0 },
-      editablePkgJson: pkgJson,
-      pkgPath: '/tmp/test-pkg',
-      ...overrides,
-    }) as any
+    const makeEnv = (overrides: Record<string, unknown> = {}) =>
+      ({
+        agent: 'pnpm',
+        agentVersion: { major: 10, minor: 0, patch: 0 },
+        editablePkgJson: pkgJson,
+        pkgPath: '/tmp/test-pkg',
+        ...overrides,
+      }) as any
 
     it('uses resolutions for bun agent', async () => {
-      await updateManifest('bun', makeEnv({ agent: 'bun' }), { lodash: '4.17.21' })
+      await updateManifest('bun', makeEnv({ agent: 'bun' }), {
+        lodash: '4.17.21',
+      })
       // Since field doesn't exist, fromJSON is called.
       expect(pkgJson.fromJSON).toHaveBeenCalled()
     })
@@ -178,14 +181,19 @@ describe('update-manifest-by-agent', () => {
     it('uses pnpm field for pnpm 10 agent (legacy package.json path)', async () => {
       await updateManifest(
         'pnpm',
-        makeEnv({ agent: 'pnpm', agentVersion: { major: 10, minor: 0, patch: 0 } }),
+        makeEnv({
+          agent: 'pnpm',
+          agentVersion: { major: 10, minor: 0, patch: 0 },
+        }),
         { lodash: '4.17.21' },
       )
       expect(pkgJson.fromJSON).toHaveBeenCalled()
     })
 
     it('uses overrides for vlt agent', async () => {
-      await updateManifest('vlt', makeEnv({ agent: 'vlt' }), { lodash: '4.17.21' })
+      await updateManifest('vlt', makeEnv({ agent: 'vlt' }), {
+        lodash: '4.17.21',
+      })
       expect(pkgJson.fromJSON).toHaveBeenCalled()
     })
 
@@ -468,44 +476,38 @@ minimumReleaseAge: 10080
     ]
 
     it('getEntryIndexes returns sorted indices for matching keys', async () => {
-      const { getEntryIndexes } = await import(
-        '../../../../src/commands/optimize/update-manifest-by-agent.mts'
-      )
+      const { getEntryIndexes } =
+        await import('../../../../src/commands/optimize/update-manifest-by-agent.mts')
       expect(getEntryIndexes(entries, ['exports', 'main'])).toEqual([2, 3])
     })
 
     it('getEntryIndexes filters out keys not present', async () => {
-      const { getEntryIndexes } = await import(
-        '../../../../src/commands/optimize/update-manifest-by-agent.mts'
-      )
+      const { getEntryIndexes } =
+        await import('../../../../src/commands/optimize/update-manifest-by-agent.mts')
       expect(getEntryIndexes(entries, ['nope', 'main'])).toEqual([2])
     })
 
     it('getLowestEntryIndex returns -1 when no keys match', async () => {
-      const { getLowestEntryIndex } = await import(
-        '../../../../src/commands/optimize/update-manifest-by-agent.mts'
-      )
+      const { getLowestEntryIndex } =
+        await import('../../../../src/commands/optimize/update-manifest-by-agent.mts')
       expect(getLowestEntryIndex(entries, ['nope'])).toBe(-1)
     })
 
     it('getLowestEntryIndex returns the smallest matching index', async () => {
-      const { getLowestEntryIndex } = await import(
-        '../../../../src/commands/optimize/update-manifest-by-agent.mts'
-      )
+      const { getLowestEntryIndex } =
+        await import('../../../../src/commands/optimize/update-manifest-by-agent.mts')
       expect(getLowestEntryIndex(entries, ['scripts', 'main'])).toBe(2)
     })
 
     it('getHighestEntryIndex returns -1 when no keys match', async () => {
-      const { getHighestEntryIndex } = await import(
-        '../../../../src/commands/optimize/update-manifest-by-agent.mts'
-      )
+      const { getHighestEntryIndex } =
+        await import('../../../../src/commands/optimize/update-manifest-by-agent.mts')
       expect(getHighestEntryIndex(entries, ['nope'])).toBe(-1)
     })
 
     it('getHighestEntryIndex returns the largest matching index', async () => {
-      const { getHighestEntryIndex } = await import(
-        '../../../../src/commands/optimize/update-manifest-by-agent.mts'
-      )
+      const { getHighestEntryIndex } =
+        await import('../../../../src/commands/optimize/update-manifest-by-agent.mts')
       expect(getHighestEntryIndex(entries, ['main', 'scripts'])).toBe(4)
     })
   })

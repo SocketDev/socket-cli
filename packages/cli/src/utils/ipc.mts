@@ -21,20 +21,20 @@ let ipcExtra: IpcObject | undefined
 let bootstrapBinaryPath: string | undefined
 
 /**
- * Get IPC extra data from handshake.
- * Returns the extra field from the bootstrap handshake.
- */
-export function getIpcExtra(): IpcObject | undefined {
-  return ipcExtra
-}
-
-/**
  * Get bootstrap binary path from handshake.
  * Returns the path to the bootstrap wrapper that launched this CLI instance.
  * Only available when CLI was launched via a bootstrap wrapper (e.g., npx socket).
  */
 export function getBootstrapBinaryPath(): string | undefined {
   return bootstrapBinaryPath
+}
+
+/**
+ * Get IPC extra data from handshake.
+ * Returns the extra field from the bootstrap handshake.
+ */
+export function getIpcExtra(): IpcObject | undefined {
+  return ipcExtra
 }
 
 /**

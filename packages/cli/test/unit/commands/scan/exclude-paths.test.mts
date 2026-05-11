@@ -202,9 +202,9 @@ describe('exclude-paths', () => {
     })
 
     it('strips the target prefix from a nested path', () => {
-      expect(
-        pathRelativeToTarget('packages/cli/src/foo', 'packages/cli'),
-      ).toBe('src/foo')
+      expect(pathRelativeToTarget('packages/cli/src/foo', 'packages/cli')).toBe(
+        'src/foo',
+      )
     })
 
     it('strips the target prefix when path uses recursive **/  prefix (line 177)', () => {

@@ -7,7 +7,11 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { Box, Text, renderToString } from '../../../../src/utils/terminal/iocraft.mjs'
+import {
+  Box,
+  Text,
+  renderToString,
+} from '../../../../src/utils/terminal/iocraft.mjs'
 
 describe('iocraft properties', () => {
   describe('Text properties', () => {

@@ -15,41 +15,6 @@ import path from 'node:path'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
 /**
- * Resolve a bin path to its underlying JavaScript entry point if the file
- * is an npm/pnpm/yarn shim. Returns the input path unchanged when:
- *   - the file does not exist
- *   - reading or parsing it throws
- *   - no shim pattern is recognized in the file content
- *
- * Used on Windows to resolve shims like `npm` or `npm.cmd` to their
- * `npm-cli.js` entry point so we can spawn them via Node directly.
- */
-export function resolveBinPathSync(binPath: string): string {
-  if (!fs.existsSync(binPath)) {
-    return binPath
-  }
-
-  try {
-    const content = fs.readFileSync(binPath, 'utf8')
-    // Look for common shim patterns:
-    //   node "C:\path\to\npm-cli.js" "$@"
-    //   "%_prog%"  "%dp0%\node_modules\npm\bin\npm-cli.js" %*
-    const nodePathMatch = content.match(
-      /(?:node\s+["']|"%dp0%\\)([^"'\s]+(?:npm-cli|pnpm|yarn)\.(?:c?js|mjs))["'\s]/i,
-    )
-    if (nodePathMatch && nodePathMatch.length > 1 && nodePathMatch[1]) {
-      const matchedPath = nodePathMatch[1]
-      return path.isAbsolute(matchedPath)
-        ? matchedPath
-        : path.resolve(path.dirname(binPath), matchedPath)
-    }
-  } catch {
-    // Unreadable/unparseable shim — fall through to the input path.
-  }
-  return binPath
-}
-
-/**
  * Given a bin path that might be an extensionless shim, return the matching
  * `.cmd` file when one exists in the same directory. Otherwise return the
  * input unchanged.
@@ -82,4 +47,39 @@ export function preferWindowsCmdShim(binPath: string, binName: string): string {
 
   const cmdShim = path.join(path.dirname(binPath), `${binName}.cmd`)
   return fs.existsSync(cmdShim) ? cmdShim : binPath
+}
+
+/**
+ * Resolve a bin path to its underlying JavaScript entry point if the file
+ * is an npm/pnpm/yarn shim. Returns the input path unchanged when:
+ *   - the file does not exist
+ *   - reading or parsing it throws
+ *   - no shim pattern is recognized in the file content
+ *
+ * Used on Windows to resolve shims like `npm` or `npm.cmd` to their
+ * `npm-cli.js` entry point so we can spawn them via Node directly.
+ */
+export function resolveBinPathSync(binPath: string): string {
+  if (!fs.existsSync(binPath)) {
+    return binPath
+  }
+
+  try {
+    const content = fs.readFileSync(binPath, 'utf8')
+    // Look for common shim patterns:
+    //   node "C:\path\to\npm-cli.js" "$@"
+    //   "%_prog%"  "%dp0%\node_modules\npm\bin\npm-cli.js" %*
+    const nodePathMatch = content.match(
+      /(?:node\s+["']|"%dp0%\\)([^"'\s]+(?:npm-cli|pnpm|yarn)\.(?:c?js|mjs))["'\s]/i,
+    )
+    if (nodePathMatch && nodePathMatch.length > 1 && nodePathMatch[1]) {
+      const matchedPath = nodePathMatch[1]
+      return path.isAbsolute(matchedPath)
+        ? matchedPath
+        : path.resolve(path.dirname(binPath), matchedPath)
+    }
+  } catch {
+    // Unreadable/unparseable shim — fall through to the input path.
+  }
+  return binPath
 }

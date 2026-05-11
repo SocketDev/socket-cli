@@ -4,26 +4,26 @@ Socket CLI integrates with external security tools for scanning, analysis, and v
 
 ## Deployment Modes
 
-| Mode | Description | Tool Source |
-|------|-------------|-------------|
-| **SEA** | Standalone executable with bundled VFS | Tools pre-bundled at build time |
-| **npm CLI** | Installed via npm/pnpm/yarn | Tools downloaded at runtime |
+| Mode        | Description                            | Tool Source                     |
+| ----------- | -------------------------------------- | ------------------------------- |
+| **SEA**     | Standalone executable with bundled VFS | Tools pre-bundled at build time |
+| **npm CLI** | Installed via npm/pnpm/yarn            | Tools downloaded at runtime     |
 
 ## Tool Matrix
 
-| Tool | Type | SEA Mode | npm CLI Mode |
-|------|------|----------|--------------|
-| @coana-tech/cli | npm | VFS (node_modules) | dlx download |
-| @cyclonedx/cdxgen | npm | VFS (node_modules) | dlx download |
-| opengrep | github-release | VFS (/snapshot/) | GitHub download |
-| python | github-release | VFS (/snapshot/) | GitHub download |
-| socket-basics | github-source | VFS (pre-installed) | N/A (SEA only) |
-| socket-patch | github-release | VFS (/snapshot/) | GitHub download |
-| socketsecurity | pypi | VFS (pre-installed via pip) | pip install |
-| sfw | hybrid | VFS (GitHub binary) | dlx (npm package) |
-| synp | npm | VFS (node_modules) | dlx download |
-| trivy | github-release | VFS (/snapshot/) | GitHub download |
-| trufflehog | github-release | VFS (/snapshot/) | GitHub download |
+| Tool              | Type           | SEA Mode                    | npm CLI Mode      |
+| ----------------- | -------------- | --------------------------- | ----------------- |
+| @coana-tech/cli   | npm            | VFS (node_modules)          | dlx download      |
+| @cyclonedx/cdxgen | npm            | VFS (node_modules)          | dlx download      |
+| opengrep          | github-release | VFS (/snapshot/)            | GitHub download   |
+| python            | github-release | VFS (/snapshot/)            | GitHub download   |
+| socket-basics     | github-source  | VFS (pre-installed)         | N/A (SEA only)    |
+| socket-patch      | github-release | VFS (/snapshot/)            | GitHub download   |
+| socketsecurity    | pypi           | VFS (pre-installed via pip) | pip install       |
+| sfw               | hybrid         | VFS (GitHub binary)         | dlx (npm package) |
+| synp              | npm            | VFS (node_modules)          | dlx download      |
+| trivy             | github-release | VFS (/snapshot/)            | GitHub download   |
+| trufflehog        | github-release | VFS (/snapshot/)            | GitHub download   |
 
 ## Configuration
 
@@ -95,12 +95,12 @@ When installed via npm, tools are downloaded at runtime.
 
 ### Download Locations
 
-| Source | Cache Location |
-|--------|----------------|
-| npm dlx | `~/.socket/_dlx/{package}@{version}/` |
-| GitHub releases | `~/.socket/_dlx/github/{owner}/{repo}/{version}/` |
-| PyPI | `~/.socket/_dlx/pypi/{package}/{version}/` |
-| Python runtime | `~/.socket/_dlx/python/{version}-{tag}-{platform}-{arch}/` |
+| Source          | Cache Location                                             |
+| --------------- | ---------------------------------------------------------- |
+| npm dlx         | `~/.socket/_dlx/{package}@{version}/`                      |
+| GitHub releases | `~/.socket/_dlx/github/{owner}/{repo}/{version}/`          |
+| PyPI            | `~/.socket/_dlx/pypi/{package}/{version}/`                 |
+| Python runtime  | `~/.socket/_dlx/python/{version}-{tag}-{platform}-{arch}/` |
 
 ### Download Flow
 
@@ -154,28 +154,28 @@ Checksums are **required** in production builds. Dev mode allows downloads witho
 
 Environment variables for development/testing:
 
-| Variable | Tool |
-|----------|------|
-| `SOCKET_CLI_CDXGEN_LOCAL_PATH` | cdxgen |
-| `SOCKET_CLI_COANA_LOCAL_PATH` | coana |
-| `SOCKET_CLI_PYCLI_LOCAL_PATH` | socketsecurity |
-| `SOCKET_CLI_SFW_LOCAL_PATH` | sfw |
-| `SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH` | socket-patch |
+| Variable                             | Tool           |
+| ------------------------------------ | -------------- |
+| `SOCKET_CLI_CDXGEN_LOCAL_PATH`       | cdxgen         |
+| `SOCKET_CLI_COANA_LOCAL_PATH`        | coana          |
+| `SOCKET_CLI_PYCLI_LOCAL_PATH`        | socketsecurity |
+| `SOCKET_CLI_SFW_LOCAL_PATH`          | sfw            |
+| `SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH` | socket-patch   |
 
 ---
 
 ## Implementation Files
 
-| File | Purpose |
-|------|---------|
-| `bundle-tools.json` | Tool definitions, versions, checksums |
-| `src/utils/dlx/resolve-binary.mts` | Binary resolution logic |
-| `src/utils/dlx/spawn.mts` | Tool spawning (VFS + dlx) |
-| `src/utils/dlx/vfs-extract.mts` | VFS extraction utilities |
-| `src/utils/basics/spawn.mts` | Python-based tools (basics) |
-| `src/utils/basics/vfs-extract.mts` | Basics tools VFS extraction |
-| `src/env/*-version.mts` | Version getters (esbuild inlined) |
-| `src/env/*-checksums.mts` | Checksum getters (esbuild inlined) |
+| File                               | Purpose                               |
+| ---------------------------------- | ------------------------------------- |
+| `bundle-tools.json`                | Tool definitions, versions, checksums |
+| `src/utils/dlx/resolve-binary.mts` | Binary resolution logic               |
+| `src/utils/dlx/spawn.mts`          | Tool spawning (VFS + dlx)             |
+| `src/utils/dlx/vfs-extract.mts`    | VFS extraction utilities              |
+| `src/utils/basics/spawn.mts`       | Python-based tools (basics)           |
+| `src/utils/basics/vfs-extract.mts` | Basics tools VFS extraction           |
+| `src/env/*-version.mts`            | Version getters (esbuild inlined)     |
+| `src/env/*-checksums.mts`          | Checksum getters (esbuild inlined)    |
 
 ---
 

@@ -168,6 +168,5 @@ describe('cmd-manifest', () => {
         expect.any(Object),
       )
     })
-
   })
 })

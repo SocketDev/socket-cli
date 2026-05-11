@@ -10,12 +10,6 @@ import { escapeRegExp } from '@socketsecurity/lib/regexps'
 
 import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 
-export function npmLockSrcIncludes(lockSrc: string, name: string) {
-  // Detects the package name in the following cases:
-  //   "name":
-  return lockSrc.includes(`"${name}":`)
-}
-
 export function bunLockSrcIncludes(
   lockSrc: string,
   name: string,
@@ -29,6 +23,34 @@ export function bunLockSrcIncludes(
     ? npmLockSrcIncludes
     : yarnLockSrcIncludes
   return lockfileScanner(lockSrc, name)
+}
+
+export function lockSrcIncludes(
+  pkgEnvDetails: EnvDetails,
+  lockSrc: string,
+  name: string,
+  lockName?: string | undefined,
+): boolean {
+  switch (pkgEnvDetails.agent) {
+    case BUN:
+      return bunLockSrcIncludes(lockSrc, name, lockName)
+    case PNPM:
+      return pnpmLockSrcIncludes(lockSrc, name)
+    case VLT:
+      return vltLockSrcIncludes(lockSrc, name)
+    case YARN_BERRY:
+      return yarnLockSrcIncludes(lockSrc, name)
+    case YARN_CLASSIC:
+      return yarnLockSrcIncludes(lockSrc, name)
+    default:
+      return npmLockSrcIncludes(lockSrc, name)
+  }
+}
+
+export function npmLockSrcIncludes(lockSrc: string, name: string) {
+  // Detects the package name in the following cases:
+  //   "name":
+  return lockSrc.includes(`"${name}":`)
 }
 
 export function pnpmLockSrcIncludes(lockSrc: string, name: string) {
@@ -63,26 +85,4 @@ export function yarnLockSrcIncludes(lockSrc: string, name: string) {
     `(?<=(?:^\\s*|,\\s*)"?)${escapedName}(?=@)`,
     'm',
   ).test(lockSrc)
-}
-
-export function lockSrcIncludes(
-  pkgEnvDetails: EnvDetails,
-  lockSrc: string,
-  name: string,
-  lockName?: string | undefined,
-): boolean {
-  switch (pkgEnvDetails.agent) {
-    case BUN:
-      return bunLockSrcIncludes(lockSrc, name, lockName)
-    case PNPM:
-      return pnpmLockSrcIncludes(lockSrc, name)
-    case VLT:
-      return vltLockSrcIncludes(lockSrc, name)
-    case YARN_BERRY:
-      return yarnLockSrcIncludes(lockSrc, name)
-    case YARN_CLASSIC:
-      return yarnLockSrcIncludes(lockSrc, name)
-    default:
-      return npmLockSrcIncludes(lockSrc, name)
-  }
 }

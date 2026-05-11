@@ -240,9 +240,7 @@ describe('parseJsonObject', () => {
   })
 
   it('throws when payload is a primitive number', () => {
-    expect(() => parseJsonObject('42', 'ctx')).toThrow(
-      /expected a JSON object/,
-    )
+    expect(() => parseJsonObject('42', 'ctx')).toThrow(/expected a JSON object/)
   })
 
   it('throws when payload is a primitive string', () => {
@@ -448,7 +446,9 @@ describe('isLocalhostOrigin', () => {
   })
 
   it('returns false for malicious-localhost.evil.com', () => {
-    expect(isLocalhostOrigin('https://malicious-localhost.evil.com')).toBe(false)
+    expect(isLocalhostOrigin('https://malicious-localhost.evil.com')).toBe(
+      false,
+    )
   })
 
   it('returns false for a malformed URL', () => {
@@ -468,16 +468,16 @@ describe('isLocalhostOrigin', () => {
 })
 
 describe('destroySessionEntry', () => {
-  function fakeSession(opts: {
-    transportClose?: () => void
-    serverClose?: () => Promise<unknown>
-  } = {}): SessionLike {
+  function fakeSession(
+    opts: {
+      transportClose?: () => void
+      serverClose?: () => Promise<unknown>
+    } = {},
+  ): SessionLike {
     return {
       lastActivity: 0,
       server: {
-        close:
-          opts.serverClose ??
-          (() => Promise.resolve()),
+        close: opts.serverClose ?? (() => Promise.resolve()),
       },
       transport: {
         close: opts.transportClose ?? (() => {}),

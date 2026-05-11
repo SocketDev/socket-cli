@@ -9,6 +9,14 @@ import {
 
 import type { CResult } from '../../types.mts'
 
+export function findRemainingCompletionSetups(bashrc: string): string[] {
+  return bashrc
+    .split('\n')
+    .map(s => s.trim())
+    .filter(s => s.startsWith(COMPLETION_CMD_PREFIX))
+    .map(s => s.slice(COMPLETION_CMD_PREFIX.length).trim())
+}
+
 export async function teardownTabCompletion(
   targetName: string,
 ): Promise<CResult<{ action: string; left: string[] }>> {
@@ -59,12 +67,4 @@ export async function teardownTabCompletion(
     data: { action: 'not found', left: [] },
     message: '~/.bashrc not found, skipping',
   }
-}
-
-export function findRemainingCompletionSetups(bashrc: string): string[] {
-  return bashrc
-    .split('\n')
-    .map(s => s.trim())
-    .filter(s => s.startsWith(COMPLETION_CMD_PREFIX))
-    .map(s => s.slice(COMPLETION_CMD_PREFIX.length).trim())
 }

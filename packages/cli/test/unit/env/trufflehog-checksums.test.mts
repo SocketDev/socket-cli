@@ -71,9 +71,9 @@ describe('env/trufflehog-checksums', () => {
       process.env['INLINED_TRUFFLEHOG_CHECKSUMS'] = JSON.stringify({
         'trufflehog-darwin-arm64': 'sha-th',
       })
-      expect(() =>
-        requireTrufflehogChecksum('trufflehog-windows-x64'),
-      ).toThrow(/TruffleHog has no SHA-256 checksum/)
+      expect(() => requireTrufflehogChecksum('trufflehog-windows-x64')).toThrow(
+        /TruffleHog has no SHA-256 checksum/,
+      )
     })
   })
 })

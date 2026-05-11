@@ -113,7 +113,13 @@ describe('output-scan-view', () => {
           data: mockArtifacts,
         }
 
-        await outputScanView(result, 'my-org', 'scan-123', '/output.json', 'json')
+        await outputScanView(
+          result,
+          'my-org',
+          'scan-123',
+          '/output.json',
+          'json',
+        )
 
         expect(mockWriteFile).toHaveBeenCalled()
         expect(mockLogger.info).toHaveBeenCalledWith(
@@ -128,7 +134,13 @@ describe('output-scan-view', () => {
           data: mockArtifacts,
         }
 
-        await outputScanView(result, 'my-org', 'scan-123', '/output.json', 'json')
+        await outputScanView(
+          result,
+          'my-org',
+          'scan-123',
+          '/output.json',
+          'json',
+        )
 
         expect(mockLogger.fail).toHaveBeenCalledWith(
           expect.stringContaining('error'),

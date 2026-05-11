@@ -90,7 +90,11 @@ describe('cmd-cargo', () => {
       ;(mockSpawnPromise as any).process = mockChildProcess
       mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise })
       mockFilterFlags.mockReturnValue([])
-      const runPromise = cmdCargo.run([], { url: import.meta.url } as ImportMeta, { parentName: 'socket' })
+      const runPromise = cmdCargo.run(
+        [],
+        { url: import.meta.url } as ImportMeta,
+        { parentName: 'socket' },
+      )
       setImmediate(() => mockChildProcess.emit('exit', 0, undefined))
       await runPromise
       expect(mockMeowOrExit).toHaveBeenCalled()

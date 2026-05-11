@@ -64,13 +64,16 @@ describe('AnalyticsRenderer', () => {
             borderStyle: 'single',
             children: [
               Box({
-                children: [Text({ bold: true, children: 'Top 5 Alert Types:' })],
+                children: [
+                  Text({ bold: true, children: 'Top 5 Alert Types:' }),
+                ],
                 marginBottom: 1,
               }),
-              ...Object.entries(fdata.top_five_alert_types).map(({ 0: type, 1: count }) =>
-                Box({
-                  children: [Text({ children: `  ${type}: ${count}` })],
-                }),
+              ...Object.entries(fdata.top_five_alert_types).map(
+                ({ 0: type, 1: count }) =>
+                  Box({
+                    children: [Text({ children: `  ${type}: ${count}` })],
+                  }),
               ),
             ],
             flexDirection: 'column',
@@ -84,14 +87,19 @@ describe('AnalyticsRenderer', () => {
             children: [
               Box({
                 children: [
-                  Text({ bold: true, children: 'Critical Alerts', color: 'red' }),
+                  Text({
+                    bold: true,
+                    children: 'Critical Alerts',
+                    color: 'red',
+                  }),
                 ],
                 marginBottom: 1,
               }),
-              ...Object.entries(fdata.total_critical_alerts).map(({ 0: date, 1: count }) =>
-                Box({
-                  children: [Text({ children: `  ${date}: ${count}` })],
-                }),
+              ...Object.entries(fdata.total_critical_alerts).map(
+                ({ 0: date, 1: count }) =>
+                  Box({
+                    children: [Text({ children: `  ${date}: ${count}` })],
+                  }),
               ),
             ],
             flexDirection: 'column',
@@ -105,14 +113,19 @@ describe('AnalyticsRenderer', () => {
             children: [
               Box({
                 children: [
-                  Text({ bold: true, children: 'High Alerts', color: 'yellow' }),
+                  Text({
+                    bold: true,
+                    children: 'High Alerts',
+                    color: 'yellow',
+                  }),
                 ],
                 marginBottom: 1,
               }),
-              ...Object.entries(fdata.total_high_alerts).map(({ 0: date, 1: count }) =>
-                Box({
-                  children: [Text({ children: `  ${date}: ${count}` })],
-                }),
+              ...Object.entries(fdata.total_high_alerts).map(
+                ({ 0: date, 1: count }) =>
+                  Box({
+                    children: [Text({ children: `  ${date}: ${count}` })],
+                  }),
               ),
             ],
             flexDirection: 'column',
