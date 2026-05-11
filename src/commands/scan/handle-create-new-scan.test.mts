@@ -285,4 +285,66 @@ describe('handleCreateNewScan excludePaths', () => {
     )
     expect(mockPerformReachabilityAnalysis).not.toHaveBeenCalled()
   })
+
+  it('does not invoke Coana when excludePaths remove the whole target from manifest discovery', async () => {
+    mockGetPackageFilesForScan.mockResolvedValueOnce([])
+
+    await handleCreateNewScan({
+      autoManifest: false,
+      branchName: 'main',
+      commitHash: '',
+      commitMessage: '',
+      committers: '',
+      cwd: '/repo',
+      defaultBranch: false,
+      interactive: false,
+      orgSlug: 'fakeOrg',
+      outputKind: 'text',
+      pendingHead: false,
+      pullRequest: 0,
+      reach: {
+        excludePaths: ['apps/api'],
+        reachAnalysisMemoryLimit: 8192,
+        reachAnalysisTimeout: 0,
+        reachConcurrency: 1,
+        reachContinueOnAnalysisErrors: false,
+        reachContinueOnInstallErrors: false,
+        reachContinueOnMissingLockFiles: false,
+        reachContinueOnNoSourceFiles: false,
+        reachDebug: false,
+        reachDetailedAnalysisLogFile: false,
+        reachDisableAnalytics: false,
+        reachDisableExternalToolChecks: false,
+        reachEcosystems: [],
+        reachEnableAnalysisSplitting: false,
+        reachExcludePaths: ['node_modules'],
+        reachLazyMode: false,
+        reachSkipCache: false,
+        reachUseOnlyPregeneratedSboms: false,
+        reachVersion: undefined,
+        runReachabilityAnalysis: true,
+      },
+      readOnly: false,
+      repoName: 'repo',
+      report: false,
+      reportLevel: 'error',
+      targets: ['/repo/apps/api'],
+      tmp: false,
+    })
+
+    expect(mockGetPackageFilesForScan).toHaveBeenCalledWith(
+      ['/repo/apps/api'],
+      { size: 1 },
+      {
+        config: {
+          version: 2,
+          issueRules: {},
+          githubApp: {},
+          projectIgnorePaths: ['fixtures/**', 'apps/api/**'],
+        },
+        cwd: '/repo',
+      },
+    )
+    expect(mockPerformReachabilityAnalysis).not.toHaveBeenCalled()
+  })
 })
