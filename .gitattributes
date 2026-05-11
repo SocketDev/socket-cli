@@ -9,7 +9,9 @@
 .claude/commands/security-scan.md linguist-generated=true
 .claude/commands/setup-security-tools.md linguist-generated=true
 .claude/commands/squash-history.md linguist-generated=true
+.claude/hooks/_shared/README.md linguist-generated=true
 .claude/hooks/_shared/bash-quote-mask.mts linguist-generated=true
+.claude/hooks/_shared/markers.mts linguist-generated=true
 .claude/hooks/_shared/test/bash-quote-mask.test.mts linguist-generated=true
 .claude/hooks/auth-rotation-reminder/README.md linguist-generated=true
 .claude/hooks/auth-rotation-reminder/index.mts linguist-generated=true
@@ -73,6 +75,10 @@
 .claude/hooks/private-name-guard/README.md linguist-generated=true
 .claude/hooks/public-surface-reminder/README.md linguist-generated=true
 .claude/hooks/release-workflow-guard/README.md linguist-generated=true
+.claude/hooks/release-workflow-guard/index.mts linguist-generated=true
+.claude/hooks/release-workflow-guard/package.json linguist-generated=true
+.claude/hooks/release-workflow-guard/test/release-workflow-guard.test.mts linguist-generated=true
+.claude/hooks/release-workflow-guard/tsconfig.json linguist-generated=true
 .claude/hooks/setup-security-tools/README.md linguist-generated=true
 .claude/hooks/stale-process-sweeper/README.md linguist-generated=true
 .claude/hooks/stale-process-sweeper/index.mts linguist-generated=true

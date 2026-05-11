@@ -6,7 +6,11 @@
   "exports": {
     ".": "./index.mts"
   },
+  "scripts": {
+    "test": "node --test test/*.test.mts"
+  },
   "devDependencies": {
-    "@types/node": "24.9.2"
+    "@socketsecurity/lib": "catalog:",
+    "@types/node": "catalog:"
   }
 }

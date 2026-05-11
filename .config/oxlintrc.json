@@ -1,7 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "unicorn", "import"],
-  "jsPlugins": ["./oxlint-plugin/index.mts"],
+  "plugins": [
+    "typescript",
+    "unicorn",
+    "import"
+  ],
+  "jsPlugins": [
+    "./oxlint-plugin/index.mts"
+  ],
   "categories": {
     "correctness": "error",
     "suspicious": "error"
@@ -34,7 +40,12 @@
     "eslint/no-await-in-loop": "off",
     "eslint/no-console": "off",
     "eslint/no-control-regex": "off",
-    "eslint/no-empty": ["error", { "allowEmptyCatch": true }],
+    "eslint/no-empty": [
+      "error",
+      {
+        "allowEmptyCatch": true
+      }
+    ],
     "eslint/no-new": "error",
     "eslint/no-unmodified-loop-condition": "off",
     "eslint/no-useless-catch": "off",
@@ -50,11 +61,18 @@
     "import/no-named-as-default-member": "off",
     "import/no-self-import": "error",
     "import/no-unassigned-import": "off",
-    "typescript/array-type": ["error", { "default": "array-simple" }],
+    "typescript/array-type": [
+      "error",
+      {
+        "default": "array-simple"
+      }
+    ],
     "typescript/no-extraneous-class": "off",
     "typescript/consistent-type-assertions": [
       "error",
-      { "assertionStyle": "as" }
+      {
+        "assertionStyle": "as"
+      }
     ],
     "typescript/consistent-type-imports": "error",
     "typescript/no-duplicate-enum-values": "error",
@@ -63,7 +81,12 @@
     "typescript/no-extra-non-null-assertion": "error",
     "typescript/no-misused-new": "error",
     "typescript/no-non-null-asserted-optional-chain": "off",
-    "typescript/no-this-alias": ["error", { "allowDestructuring": true }],
+    "typescript/no-this-alias": [
+      "error",
+      {
+        "allowDestructuring": true
+      }
+    ],
     "typescript/no-useless-empty-export": "error",
     "typescript/no-wrapper-object-types": "error",
     "typescript/prefer-as-const": "error",
@@ -113,6 +136,32 @@
     "**/test/packages",
     "**/*.d.ts",
     "**/*.d.ts.map",
-    "**/*.tsbuildinfo"
+    "**/*.tsbuildinfo",
+    "#fleet-canonical-begin (managed by socket-wheelhouse sync)",
+    "**/.config/oxlint-plugin/**",
+    "**/.config/rolldown/**",
+    "**/.git-hooks/**",
+    "**/.husky/**",
+    "**/.config/lockstep.schema.json",
+    "**/.config/socket-wheelhouse-schema.json",
+    "**/.config/taze.config.mts",
+    "**/packages/build-infra/lib/release-checksums/consumer.mts",
+    "**/packages/build-infra/lib/release-checksums/core.mts",
+    "**/packages/build-infra/lib/release-checksums/producer.mts",
+    "**/packages/build-infra/release-assets.schema.json",
+    "**/scripts/ai-lint-fix.mts",
+    "**/scripts/check-paths.mts",
+    "**/scripts/fix.mts",
+    "**/scripts/install-sfw.mts",
+    "**/scripts/lockstep-emit-schema.mts",
+    "**/scripts/lockstep-schema.mts",
+    "**/scripts/lockstep.mts",
+    "**/scripts/power-state.mts",
+    "**/scripts/security.mts",
+    "**/scripts/socket-wheelhouse-emit-schema.mts",
+    "**/scripts/socket-wheelhouse-schema.mts",
+    "**/scripts/update.mts",
+    "**/scripts/validate-config-paths.mts",
+    "#fleet-canonical-end"
   ]
 }

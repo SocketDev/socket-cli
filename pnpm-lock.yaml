@@ -675,8 +675,11 @@ importers:
 
   .claude/hooks/release-workflow-guard:
     devDependencies:
+      '@socketsecurity/lib':
+        specifier: 5.28.0
+        version: 5.28.0(typescript@5.9.3)
       '@types/node':
-        specifier: 24.9.2
+        specifier: 'catalog:'
         version: 24.9.2
 
   .claude/hooks/setup-security-tools:
