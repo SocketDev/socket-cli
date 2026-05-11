@@ -18,7 +18,7 @@
  *     scoping the rule to comment AST nodes only.
  */
 
-const MARKER_RE = /\b(TODO|FIXME|XXX|HACK)\b/
+const MARKER_RE = /\b(FIXME|HACK|TODO|XXX)\b/
 
 /** @type {import('eslint').Rule.RuleModule} */
 const rule = {

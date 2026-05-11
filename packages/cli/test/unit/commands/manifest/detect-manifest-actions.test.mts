@@ -23,7 +23,7 @@
  */
 
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -52,7 +52,7 @@ afterEach(() => {
   rmSync(cwd, { force: true, recursive: true })
 })
 
-function touch(rel: string) {
+export function touch(rel: string) {
   const full = path.join(cwd, rel)
   mkdirSync(path.dirname(full), { recursive: true })
   writeFileSync(full, '')

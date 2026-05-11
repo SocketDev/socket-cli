@@ -34,7 +34,7 @@ import { deduplicateArtifacts } from '../../../../../src/commands/mcp/lib/artifa
 
 import type { ArtifactData } from '../../../../../src/commands/mcp/lib/artifacts.mts'
 
-function art(overrides: Partial<ArtifactData>): ArtifactData {
+export function art(overrides: Partial<ArtifactData>): ArtifactData {
   return {
     name: 'foo',
     type: 'pypi',

@@ -41,16 +41,6 @@ function getErrorMessage(error) {
 }
 
 /**
- * Check if an error indicates a transient GitHub/network issue.
- * @param {Error|string|unknown} error - The error to check.
- * @returns {boolean} True if the error appears to be transient.
- */
-export function isTransientError(error) {
-  const message = getErrorMessage(error)
-  return TRANSIENT_ERROR_PATTERNS.some(pattern => pattern.test(message))
-}
-
-/**
  * Fetch GitHub status and return a human-readable summary.
  * @returns {Promise<{status: string, description: string, url: string}|undefined>}
  */
@@ -72,6 +62,16 @@ export async function checkGitHubStatus() {
     // GitHub status check failed - don't let this block error reporting.
   }
   return undefined
+}
+
+/**
+ * Check if an error indicates a transient GitHub/network issue.
+ * @param {Error|string|unknown} error - The error to check.
+ * @returns {boolean} True if the error appears to be transient.
+ */
+export function isTransientError(error) {
+  const message = getErrorMessage(error)
+  return TRANSIENT_ERROR_PATTERNS.some(pattern => pattern.test(message))
 }
 
 /**

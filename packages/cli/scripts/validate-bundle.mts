@@ -20,7 +20,7 @@ const buildPath = path.join(__dirname, '..', 'build', 'cli.js')
 /**
  * Validate that the bundle doesn't contain unresolved external requires.
  */
-function validateBundle() {
+export function validateBundle() {
   let content
   try {
     content = readFileSync(buildPath, 'utf-8')

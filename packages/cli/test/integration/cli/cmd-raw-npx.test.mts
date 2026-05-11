@@ -40,17 +40,17 @@ describe('socket raw-npx', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "Run npx without the Socket wrapper
+        "Run pnpm exec without the Socket wrapper
 
           Usage
                 $ socket raw-npx ...
           
-              Execute \`npx\` without gating installs through the Socket API.
-              Useful when  \`socket wrapper on\` is enabled and you want to bypass
+              Execute `npx` without gating installs through the Socket API.
+              Useful when  `socket wrapper on` is enabled and you want to bypass
               the Socket wrapper. Use at your own risk.
           
-              Note: Everything after "raw-npx" is passed to the npx command.
-                    Only the \`--dry-run\` and \`--help\` flags are caught here.
+              Note: Everything after "raw-npx" is passed to the pnpm exec command.
+                    Only the `--dry-run` and `--help` flags are caught here.
           
               Examples
                 $ socket raw-npx cowsay"

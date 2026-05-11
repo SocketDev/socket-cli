@@ -16,12 +16,12 @@
  *   --dry-run      Show what would be updated without writing
  */
 
-import { createHash } from 'node:crypto'
+import crypto from 'node:crypto'
 import {
   createReadStream,
   existsSync,
-  readFileSync,
   promises as fs,
+  readFileSync,
 } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -39,7 +39,7 @@ const EXTERNAL_TOOLS_FILE = path.join(packageRoot, 'bundle-tools.json')
 /**
  * Compute SHA-256 hash of a file.
  */
-async function computeFileHash(filePath) {
+export async function computeFileHash(filePath) {
   const hash = createHash('sha256')
   const stream = createReadStream(filePath)
   for await (const chunk of stream) {
@@ -51,7 +51,7 @@ async function computeFileHash(filePath) {
 /**
  * Download a file from a URL.
  */
-async function downloadFile(url, destPath) {
+export async function downloadFile(url, destPath) {
   const response = await fetch(url, {
     headers: {
       Accept: 'application/octet-stream',
@@ -77,7 +77,7 @@ async function downloadFile(url, destPath) {
  * Fetch checksums for a GitHub release.
  * First tries checksums.txt, then falls back to downloading assets.
  */
-async function fetchGitHubReleaseChecksums(
+export async function fetchGitHubReleaseChecksums(
   repo,
   releaseTag,
   existingChecksums = {},
@@ -163,7 +163,7 @@ async function fetchGitHubReleaseChecksums(
       logger.log(`    ${assetName}: ${hash.slice(0, 16)}...`)
 
       // Clean up as we go to save disk space.
-      await fs.unlink(assetPath)
+      await safeDelete(assetPath)
     }
   } finally {
     await safeDelete(tempDir).catch(() => {})
@@ -175,7 +175,7 @@ async function fetchGitHubReleaseChecksums(
 /**
  * Parse checksums.txt content into a map.
  */
-function parseChecksums(content) {
+export function parseChecksums(content) {
   const checksums = {}
   for (const line of content.split('\n')) {
     const trimmed = line.trim()

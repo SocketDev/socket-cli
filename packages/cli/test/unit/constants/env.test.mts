@@ -21,6 +21,9 @@ import { describe, expect, it } from 'vitest'
 import {
   CI,
   ENV,
+  HOME,
+  SOCKET_CLI_DEBUG,
+  VITEST,
   getCdxgenVersion,
   getCliHomepage,
   getCliName,
@@ -32,12 +35,9 @@ import {
   getPythonVersion,
   getSocketPatchVersion,
   getSynpVersion,
-  HOME,
   isPublishedBuild,
   isSentryBuild,
   processEnv,
-  SOCKET_CLI_DEBUG,
-  VITEST,
 } from '../../../src/constants/env.mts'
 
 describe('constants/env', () => {

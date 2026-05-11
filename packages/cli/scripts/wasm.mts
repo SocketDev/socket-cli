@@ -37,7 +37,7 @@ const WASM_ASSET_NAME = 'socket-ai-sync.mjs'
 /**
  * Build WASM bundle from source.
  */
-async function buildWasm() {
+export async function buildWasm() {
   const isDev = process.argv.includes('--dev')
 
   logger.info('╔═══════════════════════════════════════════════════╗')
@@ -94,7 +94,7 @@ async function buildWasm() {
 /**
  * Check Node.js version requirement.
  */
-function checkNodeVersion() {
+export function checkNodeVersion() {
   const nodeVersion = process.versions.node
   const major = Number.parseInt(nodeVersion.split('.')[0], 10)
 
@@ -109,7 +109,7 @@ function checkNodeVersion() {
 /**
  * Download file with progress.
  */
-async function downloadFile(url, outputPath, expectedSize) {
+export async function downloadFile(url, outputPath, expectedSize) {
   logger.progress(' Downloading from GitHub...')
   logger.substep(`URL: ${url}`)
   logger.substep(`Size: ${(expectedSize / 1024 / 1024).toFixed(2)} MB\n`)
@@ -144,7 +144,7 @@ async function downloadFile(url, outputPath, expectedSize) {
 /**
  * Download pre-built WASM bundle from GitHub releases.
  */
-async function downloadWasm() {
+export async function downloadWasm() {
   logger.info('╔═══════════════════════════════════════════════════╗')
   logger.info('║   Downloading Pre-built WASM Bundle               ║')
   logger.info('╚═══════════════════════════════════════════════════╝\n')
@@ -193,7 +193,7 @@ async function downloadWasm() {
 /**
  * Execute command and wait for completion.
  */
-async function exec(command, args, options = {}) {
+export async function exec(command, args, options = {}) {
   const result = await spawn(command, args, {
     stdio: options.stdio || 'pipe',
     stdioString: true,
@@ -215,7 +215,7 @@ async function exec(command, args, options = {}) {
 /**
  * Get latest WASM build release from GitHub.
  */
-async function getLatestWasmRelease() {
+export async function getLatestWasmRelease() {
   logger.info('📡 Fetching latest WASM build from GitHub...\n')
 
   try {
@@ -290,7 +290,7 @@ async function getLatestWasmRelease() {
 /**
  * Show help message.
  */
-function showHelp() {
+export function showHelp() {
   logger.info(`
 ╔═══════════════════════════════════════════════════╗
 ║   Socket CLI WASM Bundle Manager                  ║

@@ -17,7 +17,7 @@ const buildPath = path.join(packagePath, 'build')
  * Check if bundle contains inlined dependencies.
  * Reads package.json dependencies and ensures they are NOT bundled inline.
  */
-async function checkBundledDependencies(content: string): Promise<{
+export async function checkBundledDependencies(content: string): Promise<{
   bundledDeps: string[]
   hasNoBundledDeps: boolean
 }> {
@@ -77,7 +77,7 @@ async function checkBundledDependencies(content: string): Promise<{
  * Check if content contains absolute paths.
  * Detects paths like /Users/, C:\, /home/, etc.
  */
-function hasAbsolutePaths(content: string): {
+export function hasAbsolutePaths(content: string): {
   hasIssue: boolean
   matches: string[]
 } {

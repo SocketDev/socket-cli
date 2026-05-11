@@ -3,8 +3,8 @@
  * Downloads npm packages with full dependency trees using Arborist for SEA VFS embedding.
  */
 
-import { existsSync, readFileSync, promises as fs } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { existsSync, promises as fs, readFileSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -41,7 +41,7 @@ const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
  * await downloadNpmPackage('synp@1.9.14', '/tmp/synp', 'sha512-xxx')
  * // Creates: /tmp/synp/node_modules/synp/ with full dependency tree
  */
-async function downloadNpmPackage(packageSpec, targetDir, expectedIntegrity) {
+export async function downloadNpmPackage(packageSpec, targetDir, expectedIntegrity) {
   logger.substep(`Downloading ${packageSpec} with dependencies`)
 
   // Ensure target directory exists.
@@ -106,7 +106,7 @@ async function downloadNpmPackage(packageSpec, targetDir, expectedIntegrity) {
  *
  * @returns Path to Socket's cacache directory.
  */
-function getSocketCacacheDir() {
+export function getSocketCacacheDir() {
   const homeDir = process.env['HOME'] || process.env['USERPROFILE'] || tmpdir()
   return normalizePath(path.join(homeDir, '.socket', '_cacache'))
 }

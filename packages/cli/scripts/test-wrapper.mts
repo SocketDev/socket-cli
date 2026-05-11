@@ -36,7 +36,7 @@ const rootNodeModulesBinPath = path.join(
 /**
  * Check if required build artifacts exist.
  */
-function checkBuildArtifacts() {
+export function checkBuildArtifacts() {
   const requiredArtifacts = ['build/cli.js', 'dist/index.js']
   for (const artifact of requiredArtifacts) {
     const fullPath = path.join(rootPath, artifact)
@@ -74,8 +74,8 @@ async function main() {
     const problematicEnvVars = [
       'SOCKET_CLI_API_KEY',
       'SOCKET_CLI_API_TOKEN',
-      'SOCKET_SECURITY_API_KEY',
-      'SOCKET_SECURITY_API_TOKEN',
+      'SOCKET_API_TOKEN',
+      'SOCKET_API_TOKEN',
     ]
     const foundEnvVars = problematicEnvVars.filter(v => process.env[v])
     if (foundEnvVars.length > 0) {

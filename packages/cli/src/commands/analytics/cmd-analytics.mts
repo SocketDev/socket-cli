@@ -37,7 +37,7 @@ export const cmdAnalytics = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
@@ -147,12 +147,12 @@ async function run(
       nook: true,
       test:
         scope === 'org' ||
-        (repoName !== '7' && repoName !== '30' && repoName !== '90'),
+        (repoName !== '30' && repoName !== '7' && repoName !== '90'),
       message: 'When scope is repo, the second arg should be repo, not time',
       fail: 'missing',
     },
     {
-      test: time === '7' || time === '30' || time === '90',
+      test: time === '30' || time === '7' || time === '90',
       message: 'The time filter must either be 7, 30 or 90',
       fail: 'invalid range set, see --help for command arg details.',
     },

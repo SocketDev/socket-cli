@@ -31,15 +31,7 @@ const SOCKET_HOOK_MARKER_RE =
 
 const SIMPLE_ALT_ELEMENT_RE = /^[\w\-:./]+$/
 
-function isLineMarkered(line) {
-  const m = line.match(SOCKET_HOOK_MARKER_RE)
-  if (!m) {
-    return false
-  }
-  return !m[1] || m[1] === 'regex-alternation-order'
-}
-
-/**
+export /**
  * Find every alternation group in a regex pattern. Returns
  * `{ start, end, prefix, alternatives, suffix }` for each group.
  * Walks the pattern character by character to handle nested groups +
@@ -131,6 +123,14 @@ function findAlternationGroups(pattern) {
     i++
   }
   return groups
+}
+
+function isLineMarkered(line) {
+  const m = line.match(SOCKET_HOOK_MARKER_RE)
+  if (!m) {
+    return false
+  }
+  return !m[1] || m[1] === 'regex-alternation-order'
 }
 
 /**

@@ -13,7 +13,7 @@
  * socket-wheelhouse / stuie / ultrathink via sync-scaffolding.mts.
  */
 
-import { Type, type Static } from '@sinclair/typebox'
+import { type Static, Type } from '@sinclair/typebox'
 
 // ---------------------------------------------------------------------------
 // Shared primitives.

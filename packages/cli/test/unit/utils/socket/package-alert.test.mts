@@ -22,9 +22,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ALERT_SEVERITY } from '../../../../src/utils/alert/severity.mts'
 import {
-  addArtifactToAlertsMap,
   ALERT_SEVERITY_COLOR,
   ALERT_SEVERITY_ORDER,
+  addArtifactToAlertsMap,
   alertSeverityComparator,
   alertsHaveBlocked,
   alertsHaveSeverity,
@@ -75,7 +75,7 @@ vi.mock('@socketsecurity/lib/debug', () => ({
 }))
 
 // Helper to create mock alerts.
-function createMockAlert(
+export function createMockAlert(
   overrides: Partial<CompactSocketArtifactAlert> = {},
 ): CompactSocketArtifactAlert {
   return {
@@ -87,7 +87,7 @@ function createMockAlert(
 }
 
 // Helper to create mock SocketPackageAlert.
-function createMockSocketPackageAlert(
+export function createMockSocketPackageAlert(
   overrides: Partial<SocketPackageAlert> = {},
 ): SocketPackageAlert {
   return {

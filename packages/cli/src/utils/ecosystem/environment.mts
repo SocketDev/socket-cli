@@ -508,7 +508,7 @@ export async function getAgentVersion(
       try {
         const resolved = resolveBinPathSync(agentExecPath)
         const ext = path.extname(resolved).toLowerCase()
-        if (ext === '.js' || ext === '.cjs' || ext === '.mjs') {
+        if (ext === '.cjs' || ext === '.js' || ext === '.mjs') {
           shouldRunWithNode = resolved
         }
       } catch (e) {

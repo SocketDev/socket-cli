@@ -13,7 +13,7 @@ import path from 'node:path'
 import { PLATFORM_CONFIGS } from 'build-infra/lib/platform-targets'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import { getSocketbinPackageDir, SOCKETBIN_TEMPLATE_DIR } from './paths.mts'
+import { SOCKETBIN_TEMPLATE_DIR, getSocketbinPackageDir } from './paths.mts'
 import { processTemplate } from './utils.mts'
 
 const logger = getDefaultLogger()
@@ -21,7 +21,7 @@ const logger = getDefaultLogger()
 /**
  * Generate a single socketbin package.
  */
-async function generatePackage(config) {
+export async function generatePackage(config) {
   const {
     arch,
     binExt,

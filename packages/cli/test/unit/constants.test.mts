@@ -31,7 +31,7 @@ import ENV from '../../src/constants/env.mts'
 
 // Mock environment variables before importing constants.
 vi.stubEnv('SOCKET_API_BASE_URL', '')
-vi.stubEnv('SOCKET_API_KEY', '')
+vi.stubEnv('SOCKET_API_TOKEN', '')
 vi.stubEnv('SOCKET_API_PROXY', '')
 vi.stubEnv('SOCKET_CDN_BASE_URL', '')
 vi.stubEnv('SOCKET_ISSUES_BASE_URL', '')

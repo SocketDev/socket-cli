@@ -276,7 +276,7 @@ function isPlatformSupported(): boolean {
   }
   if (
     platformName === 'linux' &&
-    (archName === 'x64' || archName === 'arm64')
+    (archName === 'arm64' || archName === 'x64')
   ) {
     return true
   }

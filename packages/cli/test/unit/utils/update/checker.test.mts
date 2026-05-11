@@ -41,9 +41,9 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 }))
 
 import {
+  NetworkUtils,
   checkForUpdates,
   isUpdateAvailable,
-  NetworkUtils,
 } from '../../../../src/utils/update/checker.mts'
 
 // Helper types.
@@ -59,7 +59,7 @@ interface MockRequest extends EventEmitter {
 }
 
 // Helper to create mock request.
-function createMockRequest(): MockRequest {
+export function createMockRequest(): MockRequest {
   const req = new EventEmitter() as MockRequest
   req.destroy = vi.fn()
   req.end = vi.fn()
@@ -67,7 +67,7 @@ function createMockRequest(): MockRequest {
 }
 
 // Helper to create mock response.
-function createMockResponse(
+export function createMockResponse(
   statusCode: number,
   headers: Record<string, string> = { 'content-type': 'application/json' },
 ): MockResponse {

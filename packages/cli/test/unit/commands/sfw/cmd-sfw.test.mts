@@ -80,7 +80,7 @@ describe('cmd-sfw', () => {
       )
     })
 
-    it('should handle npx command', async () => {
+    it('should handle pnpm exec command', async () => {
       mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
 
       await cmdSfw.run(['npx', 'cowsay', 'hello'], importMeta, context)

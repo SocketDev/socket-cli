@@ -13,6 +13,35 @@
  */
 
 /**
+ * Build the fixer-side inserts for missing import + optional hoist.
+ * Returns an array of fixer operations the caller appends to its own
+ * fix() return value.
+ *
+ *   summary       — output of summarizeImportTarget()
+ *   fixer         — the fixer passed to context.report({ fix })
+ *   importLine    — the literal `import { ... } from '...'` text
+ *   hoistLine     — optional; the literal `const x = ...()` text
+ */
+export function appendImportFixes(summary, fixer, importLine, hoistLine) {
+  const ops = []
+  if (!summary.hasImport) {
+    if (summary.lastImport) {
+      ops.push(fixer.insertTextAfter(summary.lastImport, `\n${importLine}`))
+    } else {
+      ops.push(fixer.insertTextBeforeRange([0, 0], `${importLine}\n`))
+    }
+  }
+  if (hoistLine && !summary.hasLocal) {
+    if (summary.lastImport) {
+      ops.push(fixer.insertTextAfter(summary.lastImport, `\n\n${hoistLine}`))
+    } else {
+      ops.push(fixer.insertTextBeforeRange([0, 0], `${hoistLine}\n\n`))
+    }
+  }
+  return ops
+}
+
+/**
  * Walk a Program node body once and figure out:
  *   - the last top-level ImportDeclaration node (or undefined)
  *   - whether `importName` is already imported (from ANY source)
@@ -78,33 +107,4 @@ export function summarizeImportTarget(
     }
   }
   return { hasImport, hasLocal, lastImport }
-}
-
-/**
- * Build the fixer-side inserts for missing import + optional hoist.
- * Returns an array of fixer operations the caller appends to its own
- * fix() return value.
- *
- *   summary       — output of summarizeImportTarget()
- *   fixer         — the fixer passed to context.report({ fix })
- *   importLine    — the literal `import { ... } from '...'` text
- *   hoistLine     — optional; the literal `const x = ...()` text
- */
-export function appendImportFixes(summary, fixer, importLine, hoistLine) {
-  const ops = []
-  if (!summary.hasImport) {
-    if (summary.lastImport) {
-      ops.push(fixer.insertTextAfter(summary.lastImport, `\n${importLine}`))
-    } else {
-      ops.push(fixer.insertTextBeforeRange([0, 0], `${importLine}\n`))
-    }
-  }
-  if (hoistLine && !summary.hasLocal) {
-    if (summary.lastImport) {
-      ops.push(fixer.insertTextAfter(summary.lastImport, `\n\n${hoistLine}`))
-    } else {
-      ops.push(fixer.insertTextBeforeRange([0, 0], `${hoistLine}\n\n`))
-    }
-  }
-  return ops
 }

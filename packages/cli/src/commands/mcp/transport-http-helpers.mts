@@ -48,7 +48,7 @@ export function getRequestBaseUrl(
     `localhost:${fallbackPort}`
   const socketWithTls = req.socket as { encrypted?: boolean }
   const protocol =
-    forwardedProto === 'https' || forwardedProto === 'http'
+    forwardedProto === 'http' || forwardedProto === 'https'
       ? forwardedProto
       : socketWithTls.encrypted
         ? 'https'
@@ -137,7 +137,7 @@ export function splitScopes(scope: unknown): string[] {
 export function isLocalhostOrigin(originUrl: string): boolean {
   try {
     const u = new URL(originUrl)
-    return u.hostname === 'localhost' || u.hostname === '127.0.0.1'
+    return u.hostname === '127.0.0.1' || u.hostname === 'localhost'
   } catch {
     return false
   }

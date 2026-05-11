@@ -25,7 +25,7 @@ const logger = {
 /**
  * Test AssetManager core functionality.
  */
-async function testAssetManagerCore() {
+export async function testAssetManagerCore() {
   logger.log('Testing AssetManager core functionality...')
 
   // Test instantiation.
@@ -75,7 +75,7 @@ async function testAssetManagerCore() {
 /**
  * Test backward-compatible wrappers.
  */
-async function testBackwardCompatibility() {
+export async function testBackwardCompatibility() {
   logger.log('Testing backward-compatible wrappers...')
 
   // Test that functions exist and have correct signatures.
@@ -98,7 +98,7 @@ async function testBackwardCompatibility() {
 /**
  * Test local override environment variable handling.
  */
-async function testLocalOverride() {
+export async function testLocalOverride() {
   logger.log('Testing local override handling...')
 
   const manager = new AssetManager({ quiet: true })

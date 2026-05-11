@@ -151,7 +151,7 @@ describe('commands', () => {
       expect(rootCommands).toHaveProperty('wrapper')
     })
 
-    it('has raw npm/npx commands', () => {
+    it('has raw npm/pnpm exec commands', () => {
       expect(rootCommands).toHaveProperty('raw-npm')
       expect(rootCommands).toHaveProperty('raw-npx')
     })

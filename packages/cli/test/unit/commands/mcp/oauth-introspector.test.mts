@@ -45,7 +45,7 @@ const CLIENT_ID = 'client-id'
 const CLIENT_SECRET = 'client-secret'
 const SCOPES = ['packages:list'] as const
 
-function fakeResponse(opts: { status: number; body?: unknown; text?: string }) {
+export function fakeResponse(opts: { status: number; body?: unknown; text?: string }) {
   const text =
     opts.text ?? (opts.body !== undefined ? JSON.stringify(opts.body) : '')
   return {
@@ -67,7 +67,7 @@ const validMetadata = {
   token_endpoint: 'https://auth.example.com/token',
 }
 
-function makeRes(): {
+export function makeRes(): {
   res: ServerResponse
   writeHead: ReturnType<typeof vi.fn>
   end: ReturnType<typeof vi.fn>
@@ -81,7 +81,7 @@ function makeRes(): {
   }
 }
 
-function makeReq(authHeader?: string | undefined) {
+export function makeReq(authHeader?: string | undefined) {
   return {
     headers: authHeader ? { authorization: authHeader } : {},
   } as unknown as IncomingMessage
@@ -93,7 +93,7 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-function newIntrospector(scopes: readonly string[] = SCOPES) {
+export function newIntrospector(scopes: readonly string[] = SCOPES) {
   return new OAuthIntrospector(ISSUER, CLIENT_ID, CLIENT_SECRET, scopes, log)
 }
 

@@ -3,7 +3,7 @@
  * Contains socket-cli-specific utilities for header generation and file hashing.
  */
 
-import { createHash } from 'node:crypto'
+import crypto from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 
 /**

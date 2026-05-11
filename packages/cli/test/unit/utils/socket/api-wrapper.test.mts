@@ -107,7 +107,7 @@ describe('repoApi', () => {
     ['create', 'to create a repository'],
     ['view', 'repository'],
   ] as const)('%s sets the description correctly', async (op, desc) => {
-    if (op === 'list' || op === 'create') {
+    if (op === 'create' || op === 'list') {
       await repoApi[op]('org', {})
     } else {
       await repoApi[op]('org', 'repo')

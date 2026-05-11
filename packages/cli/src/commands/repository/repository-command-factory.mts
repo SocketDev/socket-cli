@@ -26,6 +26,8 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 
+const logger = getDefaultLogger()
+
 type RepositoryCommandSpec = {
   commandName: string
   description: string
@@ -60,7 +62,7 @@ export function createRepositoryCommand(spec: RepositoryCommandSpec) {
       ) {
         const emptyShape = findEmptyDefaultBranch(argv)
         if (emptyShape) {
-          getDefaultLogger().fail(
+          logger.fail(
             emptyShape === 'empty-value'
               ? '--default-branch requires a value (e.g. --default-branch=main). Leaving it empty would persist a blank default-branch name on the repo record.'
               : '--default-branch requires a value (e.g. --default-branch=main). Bare --default-branch with no value would persist a blank default-branch name on the repo record.',

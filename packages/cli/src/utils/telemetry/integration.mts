@@ -194,7 +194,7 @@ const API_TOKEN_FLAGS = new Set(['--api-token', '--token', '-t'])
  * @param startTime - Start timestamp from Date.now().
  * @returns Duration in milliseconds.
  */
-function calculateDuration(startTime: number): number {
+export function calculateDuration(startTime: number): number {
   return Date.now() - startTime
 }
 
@@ -205,7 +205,7 @@ function calculateDuration(startTime: number): number {
  * @param defaultValue - Default value if exitCode is not a number.
  * @returns Normalized exit code.
  */
-function normalizeExitCode(
+export function normalizeExitCode(
   exitCode: string | number | null | undefined,
   defaultValue: number,
 ): number {
@@ -218,7 +218,7 @@ function normalizeExitCode(
  * @param error - Unknown error value.
  * @returns Error object.
  */
-function normalizeError(error: unknown): Error {
+export function normalizeError(error: unknown): Error {
   return isError(error) ? error : new Error(String(error))
 }
 
@@ -230,7 +230,7 @@ function normalizeError(error: unknown): Error {
  * @param argv Command line arguments.
  * @returns Telemetry context object.
  */
-function buildContext(argv: string[]): TelemetryContext {
+export function buildContext(argv: string[]): TelemetryContext {
   return {
     arch: process.arch,
     argv: sanitizeArgv(argv),
@@ -252,7 +252,7 @@ function buildContext(argv: string[]): TelemetryContext {
  * // Input: ['node', 'socket', 'npm', 'install', '@my/private-package', '--token', 'fake-token']
  * // Output: ['npm', 'install']
  */
-function sanitizeArgv(argv: string[]): string[] {
+export function sanitizeArgv(argv: string[]): string[] {
   // Strip the first two values to drop the execPath and script.
   const withoutPathAndScript = argv.slice(2)
 
@@ -300,7 +300,7 @@ function sanitizeArgv(argv: string[]): string[] {
  * @param input Raw input.
  * @returns Sanitized input.
  */
-function sanitizeErrorAttribute(input: string | undefined): string | undefined {
+export function sanitizeErrorAttribute(input: string | undefined): string | undefined {
   if (!input) {
     return undefined
   }

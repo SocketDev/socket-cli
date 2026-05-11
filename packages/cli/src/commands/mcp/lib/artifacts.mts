@@ -14,8 +14,8 @@ const PLATFORM_PATTERNS = {
   __proto__: null,
   'darwin-arm64': [/macosx.*arm64/i],
   'darwin-x64': [/macosx.*x86_64/i],
-  'linux-arm64': [/(manylinux|linux).*(aarch64|arm64)/i],
-  'linux-x64': [/(manylinux|linux).*x86_64/i],
+  'linux-arm64': [/(linux|manylinux).*(aarch64|arm64)/i],
+  'linux-x64': [/(linux|manylinux).*x86_64/i],
   'win32-ia32': [/win.*win32/i],
   'win32-x64': [/win.*(amd64|x86_64)/i],
 } as unknown as Record<string, RegExp[]>

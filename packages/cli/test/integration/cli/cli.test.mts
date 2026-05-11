@@ -57,7 +57,7 @@ describe('socket root command', async () => {
               socket fix                  Fix CVEs in dependencies
               socket optimize             Optimize dependencies with @socketregistry overrides
               socket cdxgen               Run cdxgen for SBOM generation
-              socket ci                   Alias for \`socket scan create --report\` (creates report and exits with error if unhealthy)
+              socket ci                   Alias for `socket scan create --report` (creates report and exits with error if unhealthy)
           
             Socket API
               analytics                   Look up analytics data
@@ -71,9 +71,9 @@ describe('socket root command', async () => {
             Local tools
               manifest                    Generate a dependency manifest for certain ecosystems
               npm                         Wraps npm with Socket security scanning
-              npx                         Wraps npx with Socket security scanning
+              pnpm exec                         Wraps pnpm exec with Socket security scanning
               raw-npm                     Run npm without the Socket wrapper
-              raw-npx                     Run npx without the Socket wrapper
+              raw-npx                     Run pnpm exec without the Socket wrapper
           
             CLI configuration
               config                      Manage Socket CLI configuration
@@ -82,7 +82,7 @@ describe('socket root command', async () => {
               logout                      Socket API logout
               uninstall                   Uninstall Socket CLI tab completion
               whoami                      Check Socket CLI authentication status
-              wrapper                     Enable or disable the Socket npm/npx wrapper
+              wrapper                     Enable or disable the Socket npm/pnpm exec wrapper
           
             Options
               Note: All commands have these flags even when not displayed in their help
@@ -96,7 +96,7 @@ describe('socket root command', async () => {
               --no-spinner                Hide the console spinner
               --version                   Print the app version
           
-            Environment variables [more\\u2026]
+            Environment variables [more\u2026]
               Use --help-full to view all environment variables"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

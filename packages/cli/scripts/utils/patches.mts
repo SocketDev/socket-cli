@@ -22,7 +22,7 @@ const logger = getDefaultLogger()
  * @param {boolean} [defaultAnswer=false] - Default answer if user just presses enter.
  * @returns {Promise<boolean>} True if user answered yes, false otherwise.
  */
-async function promptYesNo(question, defaultAnswer = false) {
+export async function promptYesNo(question, defaultAnswer = false) {
   const readline = await import('node:readline')
   const rl = readline.createInterface({
     input: process.stdin,

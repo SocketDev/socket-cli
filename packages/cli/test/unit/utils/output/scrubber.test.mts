@@ -27,7 +27,7 @@ class BufferedSink extends Writable {
   }
 }
 
-function pipeThroughScrubber(
+export function pipeThroughScrubber(
   input: string,
   opts?: { adapter?: ScrubberAdapter },
 ): Promise<{ stdout: string; stderr: string }> {
@@ -390,7 +390,7 @@ describe('createScrubber — adapter integration', () => {
   })
 })
 
-async function pipeThroughAdapter(
+export async function pipeThroughAdapter(
   input: string,
   adapter: ScrubberAdapter,
 ): Promise<{ stdout: string; stderr: string }> {

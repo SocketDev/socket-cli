@@ -32,63 +32,6 @@ interface DownloadOptions {
 }
 
 /**
- * Execute a command and stream output.
- */
-export async function exec(
-  command: string,
-  args: string[] = [],
-  options: ExecOptions = {},
-): Promise<SpawnStdioResult> {
-  const { buildDir, cwd = process.cwd(), env = process.env } = options
-
-  const cmdStr = `$ ${command} ${args.join(' ')}`
-  logger.log(cmdStr)
-
-  if (buildDir) {
-    await saveBuildLog(buildDir, cmdStr)
-  }
-
-  const result = await spawn(command, args, {
-    cwd,
-    env,
-    stdio: 'inherit',
-    shell: false,
-  })
-
-  if (result.code !== 0) {
-    throw new Error(
-      `Command failed with exit code ${result.code}: ${command} ${args.join(' ')}`,
-    )
-  }
-
-  return result
-}
-
-/**
- * Execute a command silently (no output).
- */
-export async function execSilent(
-  command: string,
-  args: string[] = [],
-  options: ExecOptions = {},
-): Promise<ExecSilentResult> {
-  const { cwd = process.cwd(), env = process.env } = options
-
-  const result = await spawn(command, args, {
-    cwd,
-    env,
-    stdio: 'pipe',
-    shell: false,
-  })
-
-  return {
-    code: result.code,
-    stdout: result.stdout ? String(result.stdout).trim() : '',
-    stderr: result.stderr ? String(result.stderr).trim() : '',
-  }
-}
-
-/**
  * Download file with retry and verification.
  */
 export async function downloadWithRetry(
@@ -143,4 +86,61 @@ export async function downloadWithRetry(
   }
 
   return false
+}
+
+/**
+ * Execute a command and stream output.
+ */
+export async function exec(
+  command: string,
+  args: string[] = [],
+  options: ExecOptions = {},
+): Promise<SpawnStdioResult> {
+  const { buildDir, cwd = process.cwd(), env = process.env } = options
+
+  const cmdStr = `$ ${command} ${args.join(' ')}`
+  logger.log(cmdStr)
+
+  if (buildDir) {
+    await saveBuildLog(buildDir, cmdStr)
+  }
+
+  const result = await spawn(command, args, {
+    cwd,
+    env,
+    stdio: 'inherit',
+    shell: false,
+  })
+
+  if (result.code !== 0) {
+    throw new Error(
+      `Command failed with exit code ${result.code}: ${command} ${args.join(' ')}`,
+    )
+  }
+
+  return result
+}
+
+/**
+ * Execute a command silently (no output).
+ */
+export async function execSilent(
+  command: string,
+  args: string[] = [],
+  options: ExecOptions = {},
+): Promise<ExecSilentResult> {
+  const { cwd = process.cwd(), env = process.env } = options
+
+  const result = await spawn(command, args, {
+    cwd,
+    env,
+    stdio: 'pipe',
+    shell: false,
+  })
+
+  return {
+    code: result.code,
+    stdout: result.stdout ? String(result.stdout).trim() : '',
+    stderr: result.stderr ? String(result.stderr).trim() : '',
+  }
 }

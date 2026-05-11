@@ -5,7 +5,7 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import type { BuildOptions, PluginBuild, BuildResult } from 'esbuild'
+import type { BuildOptions, BuildResult, PluginBuild } from 'esbuild'
 
 import { build } from 'esbuild'
 

@@ -28,7 +28,7 @@ export default async function runNpxCli() {
 /* c8 ignore start - direct CLI invocation only runs when file is the entrypoint */
 if (import.meta.url === `file://${process.argv[1]}`) {
   runNpxCli().catch(error => {
-    logger.error('Socket npx wrapper error:', error)
+    logger.error('Socket pnpm exec wrapper error:', error)
     // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   })

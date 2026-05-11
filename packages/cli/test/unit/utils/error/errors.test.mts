@@ -28,9 +28,13 @@ import { UNKNOWN_ERROR } from '@socketsecurity/lib/constants/core'
 
 import {
   AuthError,
-  buildErrorCause,
   ConfigError,
   FileSystemError,
+  InputError,
+  NetworkError,
+  RateLimitError,
+  TimeoutError,
+  buildErrorCause,
   formatErrorWithDetail,
   getErrorCause,
   getErrorMessage,
@@ -39,13 +43,9 @@ import {
   getNetworkErrorDiagnostics,
   getRecoverySuggestions,
   hasRecoverySuggestions,
-  InputError,
   isErrnoException,
   isNetworkError,
   isTimeoutError,
-  NetworkError,
-  RateLimitError,
-  TimeoutError,
 } from '../../../../src/utils/error/errors.mts'
 
 const __filename = fileURLToPath(import.meta.url)

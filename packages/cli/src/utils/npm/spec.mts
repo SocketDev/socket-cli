@@ -159,9 +159,9 @@ export function safeParseNpmSpec(
 
   // Handle different spec types from npm-package-arg.
   if (
+    parsed.type === 'range' ||
     parsed.type === 'tag' ||
-    parsed.type === 'version' ||
-    parsed.type === 'range'
+    parsed.type === 'version'
   ) {
     // For npm registry packages:
     // - type 'tag': latest, beta, etc.
@@ -178,9 +178,9 @@ export function safeParseNpmSpec(
       version = parsed.rawSpec
     }
   } else if (
+    parsed.type === 'file' ||
     parsed.type === 'git' ||
-    parsed.type === 'remote' ||
-    parsed.type === 'file'
+    parsed.type === 'remote'
   ) {
     // For non-registry specs, use rawSpec if different from name.
     if (parsed.rawSpec && parsed.rawSpec !== parsed.name) {

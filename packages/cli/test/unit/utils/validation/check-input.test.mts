@@ -9,7 +9,7 @@
  * - Type validation
  * - Format checking
  * - Length limits
- * - Whitelist/blacklist
+ * - Allowlist/denylist
  * - Error messages
  *
  * Testing Approach:

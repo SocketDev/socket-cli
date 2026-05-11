@@ -26,9 +26,9 @@ describe('dlx e2e tests', () => {
       }
     }
   })
-  describe('pnpm dlx regression test', () => {
+  describe('pnpm exec regression test', () => {
     it.skipIf(!ENV.RUN_INTEGRATION_TESTS || !hasAuth)(
-      'successfully runs pnpm dlx with cowsay (verifies no unsupported flags)',
+      'successfully runs pnpm exec with cowsay (verifies no unsupported flags)',
       async () => {
         // Check if we're in a pnpm project.
         const pnpmLock = await findUp('pnpm-lock.yaml')
@@ -64,7 +64,7 @@ describe('dlx e2e tests', () => {
     )
 
     it.skipIf(!ENV.RUN_INTEGRATION_TESTS || !hasAuth)(
-      'verifies pnpm dlx command construction uses only supported flags',
+      'verifies pnpm exec command construction uses only supported flags',
       async () => {
         // This test verifies by checking what command would be run.
         const pnpmLock = await findUp('pnpm-lock.yaml')
@@ -79,7 +79,7 @@ describe('dlx e2e tests', () => {
 
         // Try to run a simple pnpm dlx command directly to ensure it works.
         try {
-          const output = execSync('pnpm dlx cowsay@1.6.0 "Direct test"', {
+          const output = execSync('pnpm exec cowsay@1.6.0 "Direct test"', {
             encoding: 'utf8',
             stdio: 'pipe',
           })
@@ -88,7 +88,7 @@ describe('dlx e2e tests', () => {
           // Verify that adding unsupported flags would fail.
           // For example, --ignore-scripts is only for pnpm install, not dlx.
           expect(() => {
-            execSync('pnpm dlx --ignore-scripts cowsay@1.6.0 "Should fail"', {
+            execSync('pnpm exec --ignore-scripts cowsay@1.6.0 "Should fail"', {
               encoding: 'utf8',
               stdio: 'pipe',
             })
@@ -102,9 +102,9 @@ describe('dlx e2e tests', () => {
     )
   })
 
-  describe('npm npx regression test', () => {
+  describe('npm pnpm exec regression test', () => {
     it.skipIf(!ENV.RUN_INTEGRATION_TESTS || !hasAuth)(
-      'successfully runs npm/npx with cowsay',
+      'successfully runs npm/pnpm exec with cowsay',
       async () => {
         // Force npm by not finding any pnpm/yarn lockfiles.
         const _npmLock = await findUp('package-lock.json')

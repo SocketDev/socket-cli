@@ -10,17 +10,9 @@
  * but not auto-fixed (sorting computed values would change behavior).
  */
 
-const SET_NAMES = new Set(['Set', 'SafeSet'])
+const SET_NAMES = new Set(['SafeSet', 'Set'])
 
-function isSortableElement(node) {
-  return (
-    node !== null &&
-    node.type === 'Literal' &&
-    (typeof node.value === 'string' || typeof node.value === 'number')
-  )
-}
-
-function compareSortable(a, b) {
+export function compareSortable(a, b) {
   const aVal = String(a.value)
   const bVal = String(b.value)
   if (aVal < bVal) {
@@ -30,6 +22,14 @@ function compareSortable(a, b) {
     return 1
   }
   return 0
+}
+
+function isSortableElement(node) {
+  return (
+    node !== null &&
+    node.type === 'Literal' &&
+    (typeof node.value === 'string' || typeof node.value === 'number')
+  )
 }
 
 /** @type {import('eslint').Rule.RuleModule} */

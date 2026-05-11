@@ -131,7 +131,7 @@ export function pathRelativeToTarget(
   target: string,
 ): string | undefined {
   const normalized = normalizeProjectIgnorePath(path)
-  if (target === '.' || target === '') {
+  if (target === '' || target === '.') {
     return normalized
   }
 

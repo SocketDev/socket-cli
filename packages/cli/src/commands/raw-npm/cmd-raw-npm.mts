@@ -18,7 +18,7 @@ const hidden = false
 
 // Helper functions.
 
-async function run(
+export async function run(
   argv: readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
@@ -63,7 +63,7 @@ async function run(
   await runRawNpm(argv)
 }
 
-async function runRawNpm(argv: string[] | readonly string[]): Promise<void> {
+export async function runRawNpm(argv: string[] | readonly string[]): Promise<void> {
   process.exitCode = 1
 
   const spawnPromise = spawn(getNpmBinPath(), argv as string[], {

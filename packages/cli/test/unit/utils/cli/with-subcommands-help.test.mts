@@ -28,7 +28,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   }),
 }))
 
-function makeSubcommand(description: string, hidden = false): CliSubcommand {
+export function makeSubcommand(description: string, hidden = false): CliSubcommand {
   return {
     description,
     hidden,
@@ -47,7 +47,7 @@ const FLAGS: MeowFlags = {
  * A representative subcommand registry covering all bucket
  * categories, used by most root-help tests.
  */
-function rootSubcommands(): Record<string, CliSubcommand> {
+export function rootSubcommands(): Record<string, CliSubcommand> {
   const names = [
     // main bucket.
     'fix',

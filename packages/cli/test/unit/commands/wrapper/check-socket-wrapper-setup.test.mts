@@ -43,7 +43,7 @@ describe('checkSocketWrapperSetup', () => {
     expect(fs.readFileSync).toHaveBeenCalledWith('/home/user/.bashrc', 'utf8')
   })
 
-  it('detects npx alias in file', () => {
+  it('detects pnpm exec alias in file', () => {
     readFileSyncSpy.mockReturnValue('alias npx="socket npx"\nother content')
 
     const result = checkSocketWrapperSetup('/home/user/.bashrc')
@@ -83,7 +83,7 @@ describe('checkSocketWrapperSetup', () => {
     checkSocketWrapperSetup('/home/user/.bashrc')
 
     expect(mockLogger.log).toHaveBeenCalledWith(
-      'The Socket npm/npx wrapper is set up in your bash profile (/home/user/.bashrc).',
+      'The Socket npm/pnpm exec wrapper is set up in your bash profile (/home/user/.bashrc).',
     )
     expect(mockLogger.log).toHaveBeenCalledWith('    source /home/user/.bashrc')
   })

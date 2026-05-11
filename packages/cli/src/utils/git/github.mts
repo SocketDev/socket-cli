@@ -69,7 +69,7 @@ interface CacheEntry {
   data: JsonContent
 }
 
-async function readCache(
+export async function readCache(
   key: string,
   // 5 minute in milliseconds time to live (TTL).
   ttlMs = 5 * 60 * 1000,
@@ -574,8 +574,8 @@ export function handleGitHubApiError(
     const code = (e as NodeJS.ErrnoException).code
     if (
       code === 'ECONNREFUSED' ||
-      code === 'ETIMEDOUT' ||
-      code === 'ENOTFOUND'
+      code === 'ENOTFOUND' ||
+      code === 'ETIMEDOUT'
     ) {
       return {
         ok: false,

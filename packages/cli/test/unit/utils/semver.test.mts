@@ -23,9 +23,9 @@ import semver from 'semver'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  RangeStyles,
   getMajor,
   getMinVersion,
-  RangeStyles,
 } from '../../../src/utils/semver.mts'
 
 // Mock semver.

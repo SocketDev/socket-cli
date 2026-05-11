@@ -42,7 +42,7 @@ const BINARY_FLAGS = {
   },
 }
 
-async function checkBinaryExists(binaryType) {
+export async function checkBinaryExists(binaryType) {
   // For explicit binary requests (js, sea), require binary to exist.
   if (binaryType === 'js' || binaryType === 'sea') {
     const binaryPath = BINARY_PATHS[binaryType]
@@ -67,7 +67,7 @@ async function checkBinaryExists(binaryType) {
   return true
 }
 
-async function runVitest(binaryType) {
+export async function runVitest(binaryType) {
   const envVars = BINARY_FLAGS[binaryType]
   logger.log(
     `${colors.blue('ℹ')} Running distribution integration tests for ${binaryType}...`,

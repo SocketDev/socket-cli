@@ -56,6 +56,13 @@ interface GetChecksumsOptions {
 }
 
 /**
+ * Clear the checksum cache. Useful for testing or forcing re-download.
+ */
+export function clearChecksumCache(): void {
+  checksumCache.clear()
+}
+
+/**
  * Get checksums for a producing repo's release.
  *
  * Lookup priority:
@@ -198,11 +205,4 @@ export async function getReleaseChecksums(
     }
     return { checksums: {}, source: 'network', tag }
   }
-}
-
-/**
- * Clear the checksum cache. Useful for testing or forcing re-download.
- */
-export function clearChecksumCache(): void {
-  checksumCache.clear()
 }

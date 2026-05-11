@@ -89,7 +89,7 @@ vi.mock('@socketsecurity/lib/http-request', () => ({
 }))
 
 // Helper to create httpRequest-style response objects (synchronous .text()/.json()).
-function createHttpResponse(opts: {
+export function createHttpResponse(opts: {
   body?: string
   ok?: boolean
   status?: number

@@ -8,7 +8,7 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import type { BuildOptions, PluginBuild, OnResolveArgs } from 'esbuild'
+import type { BuildOptions, OnResolveArgs, PluginBuild } from 'esbuild'
 
 import { IMPORT_META_URL_BANNER } from 'build-infra/lib/esbuild-helpers'
 import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
@@ -28,7 +28,7 @@ const inlinedEnvVars = getInlinedEnvVars()
 // Matches ./external/, ../external/, ../../external/, etc. (forward and back slashes).
 const socketLibExternalPathRegExp = /^(?:\.[/\\]|(?:\.\.[/\\])+)external[/\\]/
 
-function findSocketLibPath(importerPath: string) {
+export function findSocketLibPath(importerPath: string) {
   const match = importerPath.match(/^(.*\/@socketsecurity\/lib)\b/)
   if (match) {
     return match[1]
@@ -40,7 +40,7 @@ function findSocketLibPath(importerPath: string) {
   return undefined
 }
 
-function resolveSocketLibExternal(socketLibPath: string, packageName: string) {
+export function resolveSocketLibExternal(socketLibPath: string, packageName: string) {
   if (packageName.startsWith('@')) {
     const parts = packageName.split('/')
     const scope = parts[0]!
@@ -156,7 +156,7 @@ const config: BuildOptions = {
       setup(build: PluginBuild) {
         // Stub iconv-lite and encoding to avoid bundling issues.
         build.onResolve(
-          { filter: /^(iconv-lite|encoding)(\/|$)/ },
+          { filter: /^(encoding|iconv-lite)(\/|$)/ },
           (args: OnResolveArgs) => {
             return {
               path: args.path,

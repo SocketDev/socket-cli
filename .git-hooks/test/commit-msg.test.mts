@@ -7,10 +7,10 @@
 
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import { fileURLToPath } from 'node:url'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
@@ -18,7 +18,7 @@ const HOOK = path.join(here, '..', 'commit-msg.mts')
 
 type Result = { code: number; stderr: string }
 
-async function runHook(commitMsg: string): Promise<{
+export async function runHook(commitMsg: string): Promise<{
   result: Result
   rewrittenMessage: string
 }> {

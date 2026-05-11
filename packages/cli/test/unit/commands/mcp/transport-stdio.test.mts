@@ -151,7 +151,7 @@ describe('runStdioTransport', () => {
     )
   })
 
-  // Sanity: the mocked server is unused except as a connect target.
+  // Quick: the mocked server is unused except as a connect target.
   // Ensure we didn't accidentally also call .close() in the happy path.
   it('does not close the server during normal startup', async () => {
     await runStdioTransport(baseConfig)

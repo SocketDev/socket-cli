@@ -20,8 +20,8 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  ALERT_SEVERITY,
   ALERT_SEVERITIES_SORTED,
+  ALERT_SEVERITY,
   formatSeverityCount,
   getSeverityCount,
 } from '../../../../src/utils/alert/severity.mts'

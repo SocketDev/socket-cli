@@ -39,7 +39,7 @@ describe('socket wrapper', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "Enable or disable the Socket npm/npx wrapper
+        "Enable or disable the Socket npm/pnpm exec wrapper
 
           Usage
                 $ socket wrapper <"on" | "off">
@@ -47,8 +47,8 @@ describe('socket wrapper', async () => {
               Options
                 (none)
           
-              While enabled, the wrapper makes it so that when you call npm/npx on your
-              machine, it will automatically actually run \`socket npm\` / \`socket npx\`
+              While enabled, the wrapper makes it so that when you call npm/pnpm exec on your
+              machine, it will automatically actually run `socket npm` / `socket npx`
               instead.
           
               Examples

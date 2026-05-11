@@ -46,7 +46,7 @@ interface FilesToCheckResult {
 /**
  * Get files to check and determine affected packages.
  */
-async function getFilesToCheck(
+export async function getFilesToCheck(
   options: CheckOptions,
 ): Promise<FilesToCheckResult> {
   const { all, changed, staged } = options
@@ -98,7 +98,7 @@ async function getFilesToCheck(
 /**
  * Run Oxlint check via lint script on affected packages.
  */
-async function runOxlintCheck(options: CheckOptions = {}): Promise<number> {
+export async function runOxlintCheck(options: CheckOptions = {}): Promise<number> {
   const { quiet = false } = options
 
   // Get files to check and affected packages.
@@ -125,7 +125,7 @@ async function runOxlintCheck(options: CheckOptions = {}): Promise<number> {
 /**
  * Run TypeScript type check across all packages with type script.
  */
-async function runTypeCheck(
+export async function runTypeCheck(
   options: { quiet?: boolean } = {},
 ): Promise<number> {
   const { quiet = false } = options

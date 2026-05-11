@@ -29,6 +29,8 @@ import { describe, expect, it, vi } from 'vitest'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import {
+  OAUTH_PROTECTED_RESOURCE_METADATA_PATH,
+  OAUTH_WELL_KNOWN_PATH,
   buildProtectedResourceMetadata,
   destroySessionEntry,
   getForwardedHeaderValue,
@@ -38,8 +40,6 @@ import {
   handleRequestSafely,
   isLocalhostOrigin,
   makeOnTransportClose,
-  OAUTH_PROTECTED_RESOURCE_METADATA_PATH,
-  OAUTH_WELL_KNOWN_PATH,
   parseJsonObject,
   reapIdleSessions,
   splitScopes,
@@ -107,7 +107,7 @@ describe('getForwardedHeaderValue', () => {
   })
 })
 
-function makeReq(opts: {
+export function makeReq(opts: {
   headers?: Record<string, string | string[] | undefined>
   encrypted?: boolean
 }): IncomingMessage {
@@ -311,7 +311,7 @@ describe('buildProtectedResourceMetadata', () => {
   })
 })
 
-function makeRes(): {
+export function makeRes(): {
   res: ServerResponse
   writeHead: ReturnType<typeof vi.fn>
   end: ReturnType<typeof vi.fn>

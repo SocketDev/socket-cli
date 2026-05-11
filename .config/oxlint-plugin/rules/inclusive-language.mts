@@ -40,11 +40,11 @@
 // case-insensitively and word-boundary anchored. Replacement preserves
 // case shape.
 const SUBSTITUTIONS = [
-  ['whitelist', 'allowlist'],
-  ['blacklist', 'denylist'],
-  ['grandfathered', 'legacy'],
-  ['sanity', 'quick'],
-  ['dummy', 'placeholder'],
+  ['allowlist', 'allowlist'],
+  ['denylist', 'denylist'],
+  ['legacy', 'legacy'],
+  ['quick', 'quick'],
+  ['placeholder', 'placeholder'],
   // master/slave are loaded but rewriting requires more nuance — only
   // flag, never autofix (could mean main/primary/controller; depends
   // on the surrounding domain).
@@ -56,7 +56,7 @@ const REPORT_ONLY_TERMS = ['master', 'slave']
 const BYPASS_RE = /inclusive-language:\s*external-api/
 
 /** Build a regex matching any legacy stem with word boundaries. */
-function buildDetectorRegex() {
+export function buildDetectorRegex() {
   const stems = [
     ...SUBSTITUTIONS.map(([legacy]) => legacy),
     ...REPORT_ONLY_TERMS,
@@ -67,12 +67,12 @@ function buildDetectorRegex() {
 const DETECTOR_RE = buildDetectorRegex()
 
 /**
- * Replace a single hit `match` (e.g. `Whitelist`, `WHITELIST`,
- * `whitelisted`, `whitelistEntry`) with the case-preserving form of
+ * Replace a single hit `match` (e.g. `Allowlist`, `ALLOWLIST`,
+ * `allowlisted`, `allowlistEntry`) with the case-preserving form of
  * the new stem. Returns undefined when there's no autofix-able
  * substitution (master/slave).
  */
-function rewriteHit(match) {
+export function rewriteHit(match) {
   const lower = match.toLowerCase()
   for (const [legacy, replacement] of SUBSTITUTIONS) {
     if (!lower.startsWith(legacy)) {
@@ -93,7 +93,7 @@ function rewriteHit(match) {
   return undefined
 }
 
-function findHits(text) {
+export function findHits(text) {
   const hits = []
   DETECTOR_RE.lastIndex = 0
   let m
@@ -115,7 +115,7 @@ const rule = {
     type: 'suggestion',
     docs: {
       description:
-        'Use inclusive language. Replace whitelist/blacklist/master/slave/grandfathered/sanity/dummy per the fleet substitution table.',
+        'Use inclusive language. Replace allowlist/denylist/master/slave/legacy/quick/placeholder per the fleet substitution table.',
       category: 'Stylistic Issues',
       recommended: true,
     },

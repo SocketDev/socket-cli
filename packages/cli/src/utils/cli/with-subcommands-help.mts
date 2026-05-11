@@ -79,7 +79,7 @@ const BUCKET_SECTIONS: readonly BucketSection[] = [
   { heading: 'CLI configuration', bucket: 'config' },
 ]
 
-function describeOrFallback(
+export function describeOrFallback(
   cmd: CliSubcommand | undefined,
   fallback: string,
 ): string {
@@ -93,7 +93,7 @@ function describeOrFallback(
  * Hidden commands and commands without a bucket assignment are
  * excluded.
  */
-function groupCommandsByBucket(
+export function groupCommandsByBucket(
   subcommands: Record<string, CliSubcommand>,
   buckets: CliBuckets,
 ): Map<CliBucket, string[]> {
@@ -119,11 +119,11 @@ function groupCommandsByBucket(
   return grouped
 }
 
-function hasHeroRows(bucket: CliBucket): boolean {
+export function hasHeroRows(bucket: CliBucket): boolean {
   return bucket === 'main'
 }
 
-function pushEnvironmentVariables(
+export function pushEnvironmentVariables(
   lines: string[],
   argv: readonly string[],
 ): void {
@@ -148,8 +148,8 @@ function pushEnvironmentVariables(
       '  SOCKET_CLI_NPM_PATH         The absolute location of the npm directory',
       '  SOCKET_CLI_ORG_SLUG         Specify the Socket organization slug',
       '',
-      '  SOCKET_CLI_ACCEPT_RISKS     Accept risks of a Socket wrapped npm/npx run',
-      '  SOCKET_CLI_VIEW_ALL_RISKS   View all risks of a Socket wrapped npm/npx run',
+      '  SOCKET_CLI_ACCEPT_RISKS     Accept risks of a Socket wrapped npm/pnpm exec run',
+      '  SOCKET_CLI_VIEW_ALL_RISKS   View all risks of a Socket wrapped npm/pnpm exec run',
       '',
       'Environment variables for development',
       '  SOCKET_CLI_API_BASE_URL     Change the base URL for Socket API calls',
@@ -177,7 +177,7 @@ function pushEnvironmentVariables(
  * static "hero" rows in the Main bucket that aren't standalone commands
  * (e.g. `socket scan create`, `socket npm/<purl>`).
  */
-function pushRootBucketedLayout(
+export function pushRootBucketedLayout(
   lines: string[],
   subcommands: Record<string, CliSubcommand>,
   buckets: CliBuckets,
@@ -217,7 +217,7 @@ function pushRootBucketedLayout(
   }
 }
 
-function pushSubcommandFlatList(
+export function pushSubcommandFlatList(
   lines: string[],
   subcommands: Record<string, CliSubcommand>,
   aliases: Record<string, CliAliases[string]>,

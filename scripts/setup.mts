@@ -86,52 +86,37 @@ interface PrerequisiteOptions {
 }
 
 /**
- * Check if a command is available.
+ * Check prerequisite.
  */
-async function hasCommand(command: string): Promise<boolean> {
-  try {
-    const result = await spawn(command, ['--version'], {
-      stdio: 'pipe',
-    })
-    return result.code === 0
-  } catch {
+async function checkPrerequisite({
+  command,
+  minVersion,
+  name,
+  required = true,
+}: PrerequisiteOptions): Promise<boolean> {
+  const version = await getVersion(command)
+
+  if (!version) {
+    logger.error(`${name} not found`)
     return false
   }
-}
 
-/**
- * Get version of a command.
- */
-async function getVersion(
-  command: string,
-  args: string[] = ['--version'],
-): Promise<string | undefined> {
-  try {
-    const result = await spawn(command, args, {
-      stdio: 'pipe',
-    })
-    if (result.code === 0) {
-      return String(result.stdout).trim()
+  if (minVersion) {
+    const current = parseVersion(version)
+    if (!current) {
+      logger.warn(`Could not parse ${name} version: ${version}`)
+      return !required
     }
-  } catch {
-    // Ignore.
-  }
-  return undefined
-}
 
-/**
- * Parse version string to compare.
- */
-function parseVersion(versionString: string): VersionInfo | undefined {
-  const match = versionString.match(/(\d+)\.(\d+)\.(\d+)/)
-  if (!match) {
-    return undefined
+    if (compareVersions(current, minVersion) < 0) {
+      const minVersionStr = `${minVersion.major}.${minVersion.minor}.${minVersion.patch}`
+      logger.error(`${name} ${version} found, but >=${minVersionStr} required`)
+      return false
+    }
   }
-  return {
-    major: Number.parseInt(match[1], 10),
-    minor: Number.parseInt(match[2], 10),
-    patch: Number.parseInt(match[3], 10),
-  }
+
+  logger.log(`${name} ${version}`)
+  return true
 }
 
 /**
@@ -149,112 +134,6 @@ function compareVersions(a: VersionInfo, b: VersionInfo): number {
     return a.patch < b.patch ? -1 : 1
   }
   return 0
-}
-
-/**
- * Install Homebrew (macOS/Linux).
- */
-async function installHomebrew(): Promise<boolean> {
-  if (WIN32) {
-    logger.warn('Homebrew is not available on Windows')
-    return false
-  }
-
-  logger.step('Installing Homebrew...')
-  logger.info('This requires sudo access and may take a few minutes')
-
-  const installScript =
-    '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
-
-  const result = await spawn('bash', ['-c', installScript], {
-    stdio: 'inherit',
-  })
-
-  if (result.code === 0) {
-    logger.success('Homebrew installed successfully!')
-    return true
-  }
-
-  logger.error('Failed to install Homebrew')
-  return false
-}
-
-/**
- * Install Chocolatey (Windows).
- */
-async function installChocolatey(): Promise<boolean> {
-  if (!WIN32) {
-    logger.warn('Chocolatey is only available on Windows')
-    return false
-  }
-
-  logger.step('Installing Chocolatey...')
-  logger.info('This requires admin access and may take a few minutes')
-
-  const installScript =
-    "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
-
-  const result = await spawn('powershell', ['-Command', installScript], {
-    stdio: 'inherit',
-  })
-
-  if (result.code === 0) {
-    logger.success('Chocolatey installed successfully!')
-    return true
-  }
-
-  logger.error('Failed to install Chocolatey')
-  logger.info('You may need to run as Administrator')
-  return false
-}
-
-/**
- * Install a package using Homebrew (macOS/Linux).
- */
-async function installWithHomebrew(packageName: string): Promise<boolean> {
-  if (!(await hasCommand('brew'))) {
-    logger.error('Homebrew not available')
-    return false
-  }
-
-  logger.step(`Installing ${packageName} with Homebrew...`)
-
-  const result = await spawn('brew', ['install', packageName], {
-    stdio: 'inherit',
-  })
-
-  if (result.code === 0) {
-    logger.success(`${packageName} installed successfully!`)
-    return true
-  }
-
-  logger.error(`Failed to install ${packageName}`)
-  return false
-}
-
-/**
- * Install a package using Chocolatey (Windows).
- */
-async function installWithChocolatey(packageName: string): Promise<boolean> {
-  if (!(await hasCommand('choco'))) {
-    logger.error('Chocolatey not available')
-    return false
-  }
-
-  logger.step(`Installing ${packageName} with Chocolatey...`)
-
-  const result = await spawn('choco', ['install', packageName, '-y'], {
-    stdio: 'inherit',
-  })
-
-  if (result.code === 0) {
-    logger.success(`${packageName} installed successfully!`)
-    return true
-  }
-
-  logger.error(`Failed to install ${packageName}`)
-  logger.info('You may need to run as Administrator')
-  return false
 }
 
 /**
@@ -344,40 +223,6 @@ async function ensureGhCli(): Promise<boolean> {
 }
 
 /**
- * Check prerequisite.
- */
-async function checkPrerequisite({
-  command,
-  minVersion,
-  name,
-  required = true,
-}: PrerequisiteOptions): Promise<boolean> {
-  const version = await getVersion(command)
-
-  if (!version) {
-    logger.error(`${name} not found`)
-    return false
-  }
-
-  if (minVersion) {
-    const current = parseVersion(version)
-    if (!current) {
-      logger.warn(`Could not parse ${name} version: ${version}`)
-      return !required
-    }
-
-    if (compareVersions(current, minVersion) < 0) {
-      const minVersionStr = `${minVersion.major}.${minVersion.minor}.${minVersion.patch}`
-      logger.error(`${name} ${version} found, but >=${minVersionStr} required`)
-      return false
-    }
-  }
-
-  logger.log(`${name} ${version}`)
-  return true
-}
-
-/**
  * Generate cli-with-sentry package from template.
  */
 async function generateCliSentryPackage(): Promise<boolean> {
@@ -405,10 +250,6 @@ async function generateCliSentryPackage(): Promise<boolean> {
 }
 
 /**
- * Generate socket package from template.
- */
-
-/**
  * Generate socketbin packages from template.
  */
 async function generateSocketbinPackages(): Promise<boolean> {
@@ -433,6 +274,161 @@ async function generateSocketbinPackages(): Promise<boolean> {
 
   logger.warn('Failed to generate socketbin packages')
   return false
+}
+
+/**
+ * Get version of a command.
+ */
+async function getVersion(
+  command: string,
+  args: string[] = ['--version'],
+): Promise<string | undefined> {
+  try {
+    const result = await spawn(command, args, {
+      stdio: 'pipe',
+    })
+    if (result.code === 0) {
+      return String(result.stdout).trim()
+    }
+  } catch {
+    // Ignore.
+  }
+  return undefined
+}
+
+/**
+ * Check if a command is available.
+ */
+async function hasCommand(command: string): Promise<boolean> {
+  try {
+    const result = await spawn(command, ['--version'], {
+      stdio: 'pipe',
+    })
+    return result.code === 0
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Install Chocolatey (Windows).
+ */
+async function installChocolatey(): Promise<boolean> {
+  if (!WIN32) {
+    logger.warn('Chocolatey is only available on Windows')
+    return false
+  }
+
+  logger.step('Installing Chocolatey...')
+  logger.info('This requires admin access and may take a few minutes')
+
+  const installScript =
+    "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
+
+  const result = await spawn('powershell', ['-Command', installScript], {
+    stdio: 'inherit',
+  })
+
+  if (result.code === 0) {
+    logger.success('Chocolatey installed successfully!')
+    return true
+  }
+
+  logger.error('Failed to install Chocolatey')
+  logger.info('You may need to run as Administrator')
+  return false
+}
+
+/**
+ * Install Homebrew (macOS/Linux).
+ */
+async function installHomebrew(): Promise<boolean> {
+  if (WIN32) {
+    logger.warn('Homebrew is not available on Windows')
+    return false
+  }
+
+  logger.step('Installing Homebrew...')
+  logger.info('This requires sudo access and may take a few minutes')
+
+  const installScript =
+    '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+
+  const result = await spawn('bash', ['-c', installScript], {
+    stdio: 'inherit',
+  })
+
+  if (result.code === 0) {
+    logger.success('Homebrew installed successfully!')
+    return true
+  }
+
+  logger.error('Failed to install Homebrew')
+  return false
+}
+
+/**
+ * Install a package using Chocolatey (Windows).
+ */
+async function installWithChocolatey(packageName: string): Promise<boolean> {
+  if (!(await hasCommand('choco'))) {
+    logger.error('Chocolatey not available')
+    return false
+  }
+
+  logger.step(`Installing ${packageName} with Chocolatey...`)
+
+  const result = await spawn('choco', ['install', packageName, '-y'], {
+    stdio: 'inherit',
+  })
+
+  if (result.code === 0) {
+    logger.success(`${packageName} installed successfully!`)
+    return true
+  }
+
+  logger.error(`Failed to install ${packageName}`)
+  logger.info('You may need to run as Administrator')
+  return false
+}
+
+/**
+ * Install a package using Homebrew (macOS/Linux).
+ */
+async function installWithHomebrew(packageName: string): Promise<boolean> {
+  if (!(await hasCommand('brew'))) {
+    logger.error('Homebrew not available')
+    return false
+  }
+
+  logger.step(`Installing ${packageName} with Homebrew...`)
+
+  const result = await spawn('brew', ['install', packageName], {
+    stdio: 'inherit',
+  })
+
+  if (result.code === 0) {
+    logger.success(`${packageName} installed successfully!`)
+    return true
+  }
+
+  logger.error(`Failed to install ${packageName}`)
+  return false
+}
+
+/**
+ * Parse version string to compare.
+ */
+function parseVersion(versionString: string): VersionInfo | undefined {
+  const match = versionString.match(/(\d+)\.(\d+)\.(\d+)/)
+  if (!match) {
+    return undefined
+  }
+  return {
+    major: Number.parseInt(match[1], 10),
+    minor: Number.parseInt(match[2], 10),
+    patch: Number.parseInt(match[3], 10),
+  }
 }
 
 /**

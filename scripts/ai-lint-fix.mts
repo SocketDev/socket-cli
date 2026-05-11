@@ -42,7 +42,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn, isSpawnError } from '@socketsecurity/lib/spawn'
+import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
 
 const logger = getDefaultLogger()
 
@@ -51,40 +51,7 @@ const logger = getDefaultLogger()
 // safely infer. Each one IS fixable — the AI step does the work.
 // The deterministic linter already handled the unambiguous shapes;
 // what remains is the structural-rewrite set.
-const AI_HANDLED_RULES = new Set([
-  // master/slave — context decides main/primary/controller vs
-  // replica/worker. Other forms (whitelist/blacklist/etc.) auto-fix.
-  'socket/inclusive-language',
-  // Literal username in a user-home path. In source: substitute a
-  // placeholder / env-var / delete. In WASM or generated bundles:
-  // the bundler is leaking the path — fix the build config.
-  'socket/personal-path-placeholders',
-  // fs.access / fs.stat existence checks. AI rewrites the try/catch
-  // → if/else and preserves metadata calls when the result is
-  // destructured. Wrapper-name shapes (fileExists / pathExists /
-  // isFile / isDir) auto-fix deterministically.
-  'socket/prefer-exists-sync',
-  // node:fs default/namespace where references are "weird" (computed
-  // access, passed as a value, reassigned). Plain `fs.X` shapes
-  // auto-fix via scope rename.
-  'socket/prefer-node-builtin-imports',
-  // spawnSync where the call site isn't already in async context or
-  // its return value is consumed (assignment, property access).
-  // await/expression-statement shapes auto-fix.
-  'socket/prefer-async-spawn',
-  // null whose surrounding type annotation also mentions null. AI
-  // flips BOTH the annotation and the value in lockstep through the
-  // function signatures / interfaces / return types involved.
-  // Cross-file ripple is handled by per-file passes on the next run.
-  'socket/prefer-undefined-over-null',
-  // File splitting needs to choose natural seams.
-  'socket/max-file-lines',
-  // Placeholder finishes need actual implementation.
-  'socket/no-placeholders',
-  // No-fetch needs httpJson/httpText/httpRequest decision based on
-  // how the response is consumed.
-  'socket/no-fetch-prefer-http-request',
-])
+const AI_HANDLED_RULES = new Set(['socket/inclusive-language', 'socket/max-file-lines', 'socket/no-fetch-prefer-http-request', 'socket/no-placeholders', 'socket/personal-path-placeholders', 'socket/prefer-async-spawn', 'socket/prefer-exists-sync', 'socket/prefer-node-builtin-imports', 'socket/prefer-undefined-over-null'])
 
 interface OxlintMessage {
   ruleId?: string
@@ -108,7 +75,7 @@ interface CliArgs {
   passthrough: string[]
 }
 
-function parseArgs(argv: readonly string[]): CliArgs {
+export function parseArgs(argv: readonly string[]): CliArgs {
   const passthrough: string[] = []
   let noAi = false
   let staged = false
@@ -133,7 +100,7 @@ function parseArgs(argv: readonly string[]): CliArgs {
   return { all, noAi, passthrough, staged }
 }
 
-async function runLintJson(
+export async function runLintJson(
   passthrough: readonly string[],
 ): Promise<OxlintFile[]> {
   // Run oxlint directly with --format=json. Bypass `pnpm run lint`
@@ -180,7 +147,7 @@ async function runLintJson(
   }
 }
 
-function bucketFindings(files: OxlintFile[]): Map<string, OxlintMessage[]> {
+export function bucketFindings(files: OxlintFile[]): Map<string, OxlintMessage[]> {
   const byFile = new Map<string, OxlintMessage[]>()
   for (const f of files) {
     const handled = f.messages.filter(
@@ -226,7 +193,7 @@ const RULE_GUIDANCE = {
     'Replace `fetch(url, opts)` with the right helper from `@socketsecurity/lib/http-request`: `httpJson` when the caller calls `.json()` on the response, `httpText` when it calls `.text()`, `httpRequest` for raw access. Add the named import.',
 } as unknown as Readonly<Record<string, string>>
 
-function renderFindings(findings: OxlintMessage[], _rel: string): string {
+export function renderFindings(findings: OxlintMessage[], _rel: string): string {
   return findings
     .map(
       f =>
@@ -240,7 +207,7 @@ function renderFindings(findings: OxlintMessage[], _rel: string): string {
     .join('\n')
 }
 
-function renderRuleGuidance(findings: OxlintMessage[]): string {
+export function renderRuleGuidance(findings: OxlintMessage[]): string {
   const seen = new Set<string>()
   for (const f of findings) {
     if (f.ruleId) {
@@ -278,7 +245,7 @@ function renderRuleGuidance(findings: OxlintMessage[]): string {
  * the guidance block carries enough context), and how to use Edit /
  * Read. Adding boilerplate dilutes the instructions.
  */
-function buildPrompt(filePath: string, findings: OxlintMessage[]): string {
+export function buildPrompt(filePath: string, findings: OxlintMessage[]): string {
   const rel = path.relative(process.cwd(), filePath)
   const findingsBlock = renderFindings(findings, rel)
   const rulesBlock = renderRuleGuidance(findings)
@@ -303,7 +270,7 @@ ${rulesBlock}
 <output>One short sentence summarizing what you changed. No markdown, no code blocks, no preamble.</output>`
 }
 
-async function runClaudeFix(
+export async function runClaudeFix(
   _filePath: string,
   prompt: string,
   cwd: string,
@@ -357,7 +324,7 @@ async function runClaudeFix(
   return { exitCode, stderr, stdout }
 }
 
-async function hasClaudeCli(): Promise<boolean> {
+export async function hasClaudeCli(): Promise<boolean> {
   try {
     const result = await spawn('claude', ['--version'], {
       shell: process.platform === 'win32',

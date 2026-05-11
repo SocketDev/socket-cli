@@ -13,23 +13,6 @@ const { arch, platform } = require('node:os')
 const { join } = require('node:path')
 const { spawn } = require('node:child_process')
 
-// Detect musl libc on Linux.
-function isMusl() {
-  if (platform() !== 'linux') {
-    return false
-  }
-  try {
-    // Check if we're running on Alpine/musl by looking at the libc.
-    const { execSync } = require('node:child_process')
-    const lddOutput = execSync('ldd --version 2>&1 || true', {
-      encoding: 'utf8',
-    })
-    return lddOutput.includes('musl')
-  } catch {
-    return false
-  }
-}
-
 // Get the socketbin package name for current platform.
 function getSocketbinPackageName() {
   const p = platform()
@@ -60,6 +43,23 @@ function getSocketbinPath() {
   }
 
   return undefined
+}
+
+// Detect musl libc on Linux.
+function isMusl() {
+  if (platform() !== 'linux') {
+    return false
+  }
+  try {
+    // Check if we're running on Alpine/musl by looking at the libc.
+    const { execSync } = require('node:child_process')
+    const lddOutput = execSync('ldd --version 2>&1 || true', {
+      encoding: 'utf8',
+    })
+    return lddOutput.includes('musl')
+  } catch {
+    return false
+  }
 }
 
 // Main entry point.

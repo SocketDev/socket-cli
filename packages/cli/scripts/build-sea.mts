@@ -36,7 +36,7 @@ const logger = getDefaultLogger()
 /**
  * Filter targets based on CLI arguments.
  */
-function filterTargets(targets, options) {
+export function filterTargets(targets, options) {
   if (options.all) {
     return targets
   }
@@ -63,7 +63,7 @@ function filterTargets(targets, options) {
 /**
  * Parse CLI arguments.
  */
-function parseArgs() {
+export function parseArgs() {
   const args = process.argv.slice(2)
   const platformArgs = parsePlatformArgs(args)
 

@@ -270,7 +270,7 @@ describe('npm-paths utilities', () => {
   })
 
   describe('getNpxBinPath', () => {
-    it('returns npx bin path when found', async () => {
+    it('returns pnpm exec bin path when found', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
         await import('../../../../src/utils/fs/path-resolve.mts'),
       )
@@ -285,7 +285,7 @@ describe('npm-paths utilities', () => {
       expect(findBinPathDetailsSync).toHaveBeenCalledWith('npx')
     })
 
-    it('exits with error when npx not found', async () => {
+    it('exits with error when pnpm exec not found', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
         await import('../../../../src/utils/fs/path-resolve.mts'),
       )

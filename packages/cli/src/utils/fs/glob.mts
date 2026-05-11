@@ -108,8 +108,8 @@ export function ignorePatternToMinimatch(pattern: string): string {
   if (
     patternToTest === '' ||
     patternToTest === '**' ||
-    patternToTest === '/**' ||
-    patternToTest === '**'
+    patternToTest === '**' ||
+    patternToTest === '/**'
   ) {
     return `${negatedPrefix}${patternToTest}`
   }

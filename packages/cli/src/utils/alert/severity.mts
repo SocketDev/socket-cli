@@ -27,7 +27,7 @@ export const ALERT_SEVERITIES_SORTED: ReadonlyArray<
   SocketSdkAlert['severity']
 > = Object.freeze(['critical', 'high', 'middle', 'low'])
 
-function getDesiredSeverities(
+export function getDesiredSeverities(
   lowestToInclude: SocketSdkAlert['severity'] | undefined,
 ): Array<SocketSdkAlert['severity']> {
   const result: Array<SocketSdkAlert['severity']> = []

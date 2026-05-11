@@ -24,7 +24,7 @@
  */
 import { spawn } from '@socketsecurity/lib/spawn'
 
-async function run(cmd: string, args: string[]): Promise<boolean> {
+export async function run(cmd: string, args: string[]): Promise<boolean> {
   try {
     await spawn(cmd, args, { stdio: 'inherit' })
     return true

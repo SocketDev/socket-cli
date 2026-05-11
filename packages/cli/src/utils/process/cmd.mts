@@ -91,7 +91,7 @@ export function filterFlags(
   for (const [flagName, flag] of Object.entries(flagsToFilter)) {
     const longFlag = `--${camelToKebab(flagName)}`
     // Special case for negated booleans.
-    if (flagName === 'spinner' || flagName === 'banner') {
+    if (flagName === 'banner' || flagName === 'spinner') {
       flagsToFilterSet.add(`--no-${flagName}`)
     } else {
       flagsToFilterSet.add(longFlag)
@@ -195,7 +195,7 @@ export function isHelpFlag(cmdArg: string): boolean {
  * npm uses: install, i, update
  */
 export function isNpmLockfileScanCommand(command: string): boolean {
-  return command === 'install' || command === 'i' || command === 'update'
+  return command === 'i' || command === 'install' || command === 'update'
 }
 
 /**
@@ -204,10 +204,10 @@ export function isNpmLockfileScanCommand(command: string): boolean {
  */
 export function isPnpmLockfileScanCommand(command: string): boolean {
   return (
-    command === 'install' ||
     command === 'i' ||
-    command === 'update' ||
-    command === 'up'
+    command === 'install' ||
+    command === 'up' ||
+    command === 'update'
   )
 }
 

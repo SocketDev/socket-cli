@@ -32,7 +32,7 @@ const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
 /**
  * Validate that all required checksums exist for external tools.
  */
-function validateChecksums(): boolean {
+export function validateChecksums(): boolean {
   const errors: string[] = []
   const warnings: string[] = []
 

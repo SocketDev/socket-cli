@@ -48,7 +48,7 @@ import {
 
 import type { EnvDetails } from '../../../../src/utils/ecosystem/environment.mjs'
 
-function createMockEnvDetails(
+export function createMockEnvDetails(
   agent: string,
   agentExecPath = '/usr/local/bin/npm',
 ): EnvDetails {

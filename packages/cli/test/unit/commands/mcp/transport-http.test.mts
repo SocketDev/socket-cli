@@ -80,7 +80,7 @@ const { runHttpTransport } =
 
 let nextPort = 23900
 
-function freshPort(): number {
+export function freshPort(): number {
   return nextPort++
 }
 
@@ -90,7 +90,7 @@ const baseConfig = {
   version: '0.0.1',
 }
 
-async function startServer(
+export async function startServer(
   overrides: Partial<{
     oauthClientId: string
     oauthClientSecret: string

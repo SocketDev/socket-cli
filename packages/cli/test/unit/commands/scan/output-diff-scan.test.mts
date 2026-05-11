@@ -79,7 +79,7 @@ vi.mock('node:fs', () => ({
 import { outputDiffScan } from '../../../../src/commands/scan/output-diff-scan.mts'
 
 // Helper to create error result.
-function createErrorResult(
+export function createErrorResult(
   message: string,
   options: { code?: number; cause?: string } = {},
 ): CResult<never> {
@@ -87,7 +87,7 @@ function createErrorResult(
 }
 
 // Helper to create mock diff scan data.
-function createMockDiffData(overrides = {}) {
+export function createMockDiffData(overrides = {}) {
   return {
     diff_report_url: 'https://socket.dev/diff/123',
     directDependenciesChanged: true,
@@ -123,7 +123,7 @@ function createMockDiffData(overrides = {}) {
 }
 
 // Helper to create success result.
-function createSuccessResult<T>(data: T): CResult<T> {
+export function createSuccessResult<T>(data: T): CResult<T> {
   return { ok: true, data }
 }
 

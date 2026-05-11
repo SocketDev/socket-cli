@@ -27,9 +27,9 @@ import { msAtHome } from '../../../../src/utils/home-cache-time.mts'
 import { serializeResultJson } from '../../../../src/utils/output/result-json.mts'
 
 import type {
+  CResult,
   ThreadFeedResponse,
   ThreatResult,
-  CResult,
 } from '../../../../src/commands/threat-feed/types.mts'
 
 // Mock the dependencies.

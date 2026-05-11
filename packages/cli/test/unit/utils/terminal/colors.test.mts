@@ -24,8 +24,8 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  colorOrMarkdown,
   ColorOrMarkdown,
+  colorOrMarkdown,
 } from '../../../../src/utils/terminal/colors.mts'
 
 describe('colorOrMarkdown', () => {

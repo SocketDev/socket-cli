@@ -232,7 +232,7 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
     // Must look like a real package (has @, /, or contains common package patterns).
     const pkgMatch = query
       .toLowerCase()
-      .match(/(?:is|check|about|with)\s+([a-z0-9-@/]+)/i)
+      .match(/(?:about|check|is|with)\s+([a-z0-9-@/]+)/i)
     if (pkgMatch) {
       const candidate = pkgMatch[1]
       // Only accept if it looks like a real package name (not common words).

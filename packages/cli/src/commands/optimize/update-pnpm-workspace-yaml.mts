@@ -17,7 +17,7 @@ import { existsSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { safeReadFile } from '@socketsecurity/lib/fs'
-import { parseDocument, isMap, type Document, type YAMLMap } from 'yaml'
+import { type Document, type YAMLMap, isMap, parseDocument } from 'yaml'
 
 import type { Overrides } from './types.mts'
 

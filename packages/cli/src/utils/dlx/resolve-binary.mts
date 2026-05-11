@@ -226,7 +226,7 @@ const TRIVY_ASSET_PATTERNS: Record<string, (v: string) => string> = {
   'win32-x64': (v: string) => `trivy_${v}_windows-64bit.zip`,
 }
 
-function getTrivyAssetName(version: string): string | undefined {
+export function getTrivyAssetName(version: string): string | undefined {
   const platform = os.platform()
   const arch = os.arch()
   const platformKey = `${platform}-${arch}`
@@ -289,7 +289,7 @@ const TRUFFLEHOG_ASSET_PATTERNS: Record<string, (v: string) => string> = {
   'win32-x64': (v: string) => `trufflehog_${v}_windows_amd64.tar.gz`,
 }
 
-function getTrufflehogAssetName(version: string): string | undefined {
+export function getTrufflehogAssetName(version: string): string | undefined {
   const platform = os.platform()
   const arch = os.arch()
   const platformKey = `${platform}-${arch}`

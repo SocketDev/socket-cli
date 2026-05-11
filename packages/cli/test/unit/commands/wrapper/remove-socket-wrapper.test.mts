@@ -178,14 +178,18 @@ describe('removeSocketWrapper', () => {
 
   it('removes only exact matches', () => {
     readFileSyncSpy.mockReturnValue(
-      'alias npm="socket npm"\nalias npm2="socket npm"\nalias npx="socket npx"\nalias npx-extra="socket npx --extra"',
+      'alias npm="socket npm"
+alias npm2="socket npm"
+alias npx="socket npx"
+alias npx-extra="socket pnpm exec --extra"',
     )
 
     removeSocketWrapper('/home/user/.bashrc')
 
     expect(fs.writeFileSync).toHaveBeenCalledWith(
       '/home/user/.bashrc',
-      'alias npm2="socket npm"\nalias npx-extra="socket npx --extra"',
+      'alias npm2="socket npm"
+alias npx-extra="socket pnpm exec --extra"',
       'utf8',
     )
   })

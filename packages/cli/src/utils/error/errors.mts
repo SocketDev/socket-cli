@@ -21,12 +21,12 @@
 import { setTimeout as sleep } from 'node:timers/promises'
 
 import {
-  kInternalsSymbol,
   UNKNOWN_ERROR,
+  kInternalsSymbol,
 } from '@socketsecurity/lib/constants/core'
 import { debugNs } from '@socketsecurity/lib/debug'
 
-import { isError, isErrnoException } from '@socketsecurity/lib/errors'
+import { isErrnoException, isError } from '@socketsecurity/lib/errors'
 export { isErrnoException } from '@socketsecurity/lib/errors'
 import {
   SOCKET_DASHBOARD_URL,
@@ -489,7 +489,7 @@ export function getNetworkErrorDiagnostics(
   }
 
   // Network unreachable.
-  if (errorCode === 'ENETUNREACH' || errorCode === 'EHOSTUNREACH') {
+  if (errorCode === 'EHOSTUNREACH' || errorCode === 'ENETUNREACH') {
     return (
       'Network unreachable. Cannot reach the destination network.\n' +
       '💡 Try:\n' +

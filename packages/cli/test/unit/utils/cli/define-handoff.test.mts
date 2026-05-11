@@ -44,7 +44,7 @@ vi.mock('../../../../src/utils/telemetry/integration.mts', () => ({
 
 import { defineHandoffCommand } from '../../../../src/utils/cli/define-handoff.mts'
 
-function makeChildProcess() {
+export function makeChildProcess() {
   const child = new EventEmitter()
   const spawnPromise: any = Promise.resolve({
     code: 0,

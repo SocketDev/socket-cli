@@ -251,7 +251,7 @@ export class GitLabProvider implements PrProvider {
  * 2. git config gitlab.token
  * 3. Error if not found
  */
-function getGitLabToken(): string {
+export function getGitLabToken(): string {
   // Check environment variable.
   const envToken = process.env['GITLAB_TOKEN']
   if (envToken) {
@@ -266,7 +266,7 @@ function getGitLabToken(): string {
 /**
  * Maps GitLab merge_status to common merge state status.
  */
-function mapGitLabMergeStatus(status: string): MergeStateStatus {
+export function mapGitLabMergeStatus(status: string): MergeStateStatus {
   // GitLab merge_status values:
   // - can_be_merged: clean, no conflicts
   // - cannot_be_merged: has conflicts
@@ -290,7 +290,7 @@ function mapGitLabMergeStatus(status: string): MergeStateStatus {
 /**
  * Maps GitLab merge request state to common state.
  */
-function mapGitLabState(state: string): 'open' | 'closed' | 'merged' {
+export function mapGitLabState(state: string): 'open' | 'closed' | 'merged' {
   if (state === 'opened') {
     return 'open'
   }
@@ -303,7 +303,7 @@ function mapGitLabState(state: string): 'open' | 'closed' | 'merged' {
 /**
  * Maps GitLab merge request state to uppercase common state.
  */
-function mapGitLabStateToUpper(state: string): 'OPEN' | 'CLOSED' | 'MERGED' {
+export function mapGitLabStateToUpper(state: string): 'OPEN' | 'CLOSED' | 'MERGED' {
   if (state === 'opened') {
     return 'OPEN'
   }
@@ -316,7 +316,7 @@ function mapGitLabStateToUpper(state: string): 'OPEN' | 'CLOSED' | 'MERGED' {
 /**
  * Maps common state to GitLab state.
  */
-function mapStateToGitLab(state: string): 'opened' | 'closed' | 'merged' {
+export function mapStateToGitLab(state: string): 'opened' | 'closed' | 'merged' {
   const lower = state.toLowerCase()
   if (lower === 'open') {
     return 'opened'
@@ -327,6 +327,6 @@ function mapStateToGitLab(state: string): 'opened' | 'closed' | 'merged' {
   return 'closed'
 }
 
-async function sleep(ms: number): Promise<void> {
+export async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }

@@ -18,7 +18,6 @@ import constants, {
   FLAG_DRY_RUN,
   FLAG_JSON,
   FLAG_ORG,
-  getCliVersion,
   LOOP_SENTINEL,
   NPM,
   OUTPUT_JSON,
@@ -29,6 +28,7 @@ import constants, {
   SOCKET_CLI_PACKAGE_NAME,
   VITEST,
   YARN,
+  getCliVersion,
 } from '../../src/constants.mts'
 
 describe('constants barrel exports', () => {

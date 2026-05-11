@@ -6,7 +6,7 @@
 
 import { getSocketCliGithubToken } from '@socketsecurity/lib/env/socket-cli'
 
-function getGithubToken(): string {
+export function getGithubToken(): string {
   // Try Socket-specific env var first.
   const socketCliToken = getSocketCliGithubToken()
   if (socketCliToken) {

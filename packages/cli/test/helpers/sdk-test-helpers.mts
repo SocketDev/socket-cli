@@ -16,7 +16,7 @@ import type { Mock } from 'vitest'
  *
  * @returns The mocked handleApiCall function
  */
-async function getMockHandleApiCall(): Promise<Mock> {
+export async function getMockHandleApiCall(): Promise<Mock> {
   const module = await vi.importMock<
     typeof import('../../src/utils/socket/api.mts')
   >('../../src/utils/socket/api.mts')
@@ -29,7 +29,7 @@ async function getMockHandleApiCall(): Promise<Mock> {
  *
  * @returns The mocked setupSdk function
  */
-async function getMockSetupSdk(): Promise<Mock> {
+export async function getMockSetupSdk(): Promise<Mock> {
   const module = await vi.importMock<
     typeof import('../../src/utils/socket/sdk.mts')
   >('../../src/utils/socket/sdk.mts')

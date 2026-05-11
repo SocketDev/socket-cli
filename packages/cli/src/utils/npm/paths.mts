@@ -84,7 +84,7 @@ export function getNpmRequire(): NodeJS.Require {
     _npmRequire = Module.createRequire(
       path.join(
         fs.existsSync(npmNmPath) ? npmNmPath : npmDirPath,
-        '<dummy-basename>',
+        '<placeholder-basename>',
       ),
     )
   }

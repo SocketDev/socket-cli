@@ -400,7 +400,7 @@ describe('cmd-fix', () => {
         expect(mockHandleFix).toHaveBeenCalledWith(
           expect.objectContaining({ cwd: realDir }),
         )
-        // Sanity: no bail on the happy path.
+        // Quick: no bail on the happy path.
         expect(mockLogger.fail).not.toHaveBeenCalledWith(
           expect.stringContaining('Target directory does not exist'),
         )

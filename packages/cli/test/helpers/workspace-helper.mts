@@ -1,7 +1,7 @@
 /** @fileoverview Workspace test helpers for Socket CLI. Provides utilities for creating and managing temporary test workspaces with package manifests, lockfiles, and source files. */
 
 import { promises as fs } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 
 import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'

@@ -35,7 +35,7 @@ const logger = getDefaultLogger()
  * Download CLI using npm pack command.
  * This delegates to npm which handles downloading and extracting the latest version.
  */
-async function downloadCli(): Promise<void> {
+export async function downloadCli(): Promise<void> {
   const packageName = getCliPackageName()
   const dlxDir = getDlxDir()
   const cliDir = getCliPackageDir()
@@ -111,7 +111,7 @@ async function downloadCli(): Promise<void> {
 /**
  * Check if CLI is installed.
  */
-function isCliInstalled(): boolean {
+export function isCliInstalled(): boolean {
   const entryPoint = getCliEntryPoint()
   const packageJson = `${getCliPackageDir()}/package.json`
   return existsSync(entryPoint) && existsSync(packageJson)

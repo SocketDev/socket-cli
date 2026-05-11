@@ -24,7 +24,7 @@
  * @param {string} value - The numeric literal string
  * @returns {number|undefined} Decimal value or undefined if not octal
  */
-function convertOctalLiteral(value) {
+export function convertOctalLiteral(value) {
   // Match legacy octal: starts with 0, followed by octal digits (0-7)
   const octalMatch = /^0([0-7]+)$/.exec(value)
   if (!octalMatch) {
@@ -40,7 +40,7 @@ function convertOctalLiteral(value) {
  * @param {string} str - String literal value
  * @returns {string} Transformed string
  */
-function transformOctalEscapes(str) {
+export function transformOctalEscapes(str) {
   // Common octal escapes and their replacements
   const commonOctals = {
     // Null (allowed in strict mode if not followed by digit)

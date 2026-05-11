@@ -21,7 +21,7 @@ const logger = getDefaultLogger()
 /**
  * Run type check on a specific package with pretty output.
  */
-async function runPackageTypeCheck(
+export async function runPackageTypeCheck(
   pkg: PackageInfo,
   quiet: boolean = false,
 ): Promise<number> {

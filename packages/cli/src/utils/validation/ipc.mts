@@ -6,7 +6,6 @@
  */
 
 import { randomBytes } from 'node:crypto'
-
 import type { IpcStub } from '@socketsecurity/lib/ipc'
 
 export interface IpcMessage<T = unknown> {

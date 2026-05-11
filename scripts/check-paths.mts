@@ -167,12 +167,12 @@ const loadAllowlist = (): AllowlistEntry[] => {
   // for multi-line reasons. Avoids a yaml dep for a gate that has to
   // be self-contained.
   const entries: AllowlistEntry[] = []
-  let current: Partial<AllowlistEntry> | null = null
+  let current: Partial<AllowlistEntry> | undefined = undefined
   // When set, subsequent more-indented lines fold into this key as a
   // block scalar (literal '|' keeps newlines, folded '>' joins with
   // spaces).
-  let blockKey: string | null = null
-  let blockKind: '|' | '>' | null = null
+  let blockKey: string | undefined = undefined
+  let blockKind: '|' | '>' | undefined = undefined
   let blockIndent = 0
   let blockLines: string[] = []
   const flushBlock = () => {
@@ -183,8 +183,8 @@ const loadAllowlist = (): AllowlistEntry[] => {
           : blockLines.join('\n').replace(/\n+$/, '')
       ;(current as any)[blockKey] = value
     }
-    blockKey = null
-    blockKind = null
+    blockKey = undefined
+    blockKind = undefined
     blockLines = []
   }
   const indentOf = (line: string): number => {
@@ -417,7 +417,7 @@ const extractPathCalls = (
     const argsStart = PATH_CALL_RE.lastIndex
     let depth = 1
     let i = argsStart
-    let inString: '"' | "'" | '`' | null = null
+    let inString: '"' | "'" | '`' | undefined = undefined
     while (i < source.length && depth > 0) {
       const ch = source[i]!
       if (inString) {
@@ -426,7 +426,7 @@ const extractPathCalls = (
           continue
         }
         if (ch === inString) {
-          inString = null
+          inString = undefined
         }
       } else {
         if (ch === '"' || ch === "'" || ch === '`') {

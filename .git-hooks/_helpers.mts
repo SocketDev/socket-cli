@@ -11,7 +11,7 @@
 // Hooks run *after* `pnpm install`, so `@socketsecurity/lib` is on the
 // resolution path for any caller that imports it.
 
-import { spawnSync } from 'node:child_process'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 
 // Hard-fail if Node is below 25. This runs at module load — every
@@ -291,7 +291,7 @@ export type LineHit = {
 //   skipDocs.rule — when set, calls looksLikeDocumentation() with the
 //     same regex + this rule name and skips lines that match.
 //   suggest — produces the per-line `suggested` rewrite shown to users.
-function scanLines(
+export function scanLines(
   text: string,
   pattern: RegExp,
   options: {
@@ -435,7 +435,7 @@ export const scanNpxDlx = (text: string): LineHit[] =>
 // an alias for one deprecation cycle.
 
 const LOGGER_LEAK_RE =
-  /\b(process\.std(?:err|out)\.write|console\.(?:log|error|warn|info|debug))\s*\(/
+  /\b(process\.std(?:err|out)\.write|console\.(?:debug|error|info|log|warn))\s*\(/
 
 // Map each direct call to its lib-logger equivalent. process.stdout is
 // closer to logger.info; process.stderr / console.error → logger.error;
@@ -548,7 +548,7 @@ export const scanCrossRepoPaths = (
 // attribution-verb-anchored forms trigger the hook.
 
 const AI_ATTRIBUTION_RE =
-  /(?:(?:Generated|Built|Created|Made|Written|Authored|Powered|Crafted)\s+(?:with|by)\s+(?:Claude|AI|GPT|ChatGPT|Copilot|Cursor|Bard|Gemini)|Co-Authored-By:\s+(?:Claude|AI|GPT|ChatGPT|Copilot|Cursor|Bard|Gemini)|🤖\s+Generated|AI[\s-]generated|Machine[\s-]generated|@(?:anthropic|openai)\.com|^Assistant:)/im
+  /(?:(?:Authored|Built|Crafted|Created|Generated|Made|Powered|Written)\s+(?:with|by)\s+(?:Claude|AI|GPT|ChatGPT|Copilot|Cursor|Bard|Gemini)|Co-Authored-By:\s+(?:Claude|AI|GPT|ChatGPT|Copilot|Cursor|Bard|Gemini)|🤖\s+Generated|AI[\s-]generated|Machine[\s-]generated|@(?:anthropic|openai)\.com|^Assistant:)/im
 
 export const containsAiAttribution = (text: string): boolean =>
   AI_ATTRIBUTION_RE.test(text)
@@ -669,7 +669,7 @@ export const scanLinearRefs = (text: string, limit = 5): string[] => {
 
 // Files we never scan: hooks themselves, husky shims, test fixtures.
 const SKIP_FILE_RE =
-  /\.(test|spec)\.(m?[jt]s|tsx?|cts|mts)$|\.example$|\/test\/|\/tests\/|fixtures\/|\.git-hooks\/|\.husky\/|node_modules\/|pnpm-lock\.yaml/
+  /\.(spec|test)\.(m?[jt]s|tsx?|cts|mts)$|\.example$|\/test\/|\/tests\/|fixtures\/|\.git-hooks\/|\.husky\/|node_modules\/|pnpm-lock\.yaml/
 
 export const shouldSkipFile = (filePath: string): boolean =>
   SKIP_FILE_RE.test(filePath)

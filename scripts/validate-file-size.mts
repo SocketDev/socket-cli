@@ -52,7 +52,7 @@ interface FileSizeViolation {
 /**
  * Recursively scan directory for files exceeding size limit.
  */
-async function scanDirectory(
+export async function scanDirectory(
   dir: string,
   violations: FileSizeViolation[] = [],
 ): Promise<FileSizeViolation[]> {
@@ -100,7 +100,7 @@ async function scanDirectory(
 /**
  * Validate file sizes in repository.
  */
-async function validateFileSizes(): Promise<FileSizeViolation[]> {
+export async function validateFileSizes(): Promise<FileSizeViolation[]> {
   const violations = await scanDirectory(rootPath)
 
   // Sort by size descending (largest first)

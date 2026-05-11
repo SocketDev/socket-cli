@@ -11,7 +11,7 @@ const packageRoot = path.resolve(__dirname, '..')
 
 const logger = getDefaultLogger()
 
-async function validate() {
+export async function validate() {
   logger.log('')
   logger.log('='.repeat(60))
   logger.log(`${colors.blue('CLI Package Validation')}`)

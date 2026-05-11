@@ -34,7 +34,7 @@ import { ARCH_MAP, PLATFORM_MAP } from '../constants/platform-mappings.mts'
  *
  * @returns Absolute path to monorepo root.
  */
-function getRootPath() {
+export function getRootPath() {
   const __dirname = path.dirname(fileURLToPath(import.meta.url))
   return path.join(__dirname, '../../../..')
 }
@@ -332,7 +332,7 @@ export class AssetManager {
       // Clean up lock file.
       try {
         if (existsSync(lockFile)) {
-          await fs.unlink(lockFile)
+          await safeDelete(lockFile)
         }
       } catch {
         // Ignore cleanup errors.

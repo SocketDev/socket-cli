@@ -368,14 +368,14 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
   // Implicitly deleting when serializing.
   let wasDeleted = value === undefined
   if (key === 'skipAskToPersistDefaultOrg') {
-    if (value === 'true' || value === 'false') {
+    if (value === 'false' || value === 'true') {
       localConfig.skipAskToPersistDefaultOrg = value === 'true'
     } else {
       delete localConfig.skipAskToPersistDefaultOrg
       wasDeleted = true
     }
   } else {
-    if (value === 'undefined' || value === 'true' || value === 'false') {
+    if (value === 'false' || value === 'true' || value === 'undefined') {
       logger.warn(
         `Note: The value is set to "${value}", as a string (!). Use \`socket config unset\` to reset a key.`,
       )

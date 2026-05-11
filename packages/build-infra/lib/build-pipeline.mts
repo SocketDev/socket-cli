@@ -25,7 +25,7 @@
  * @module build-infra/lib/build-pipeline
  */
 
-import { createHash } from 'node:crypto'
+import crypto from 'node:crypto'
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -43,6 +43,7 @@ import { getBuildMode, validateCheckpointChain } from './constants.mts'
 import { validateExternalTools } from './external-tools-schema.mts'
 import { getCurrentPlatformArch } from './platform-mappings.mts'
 import { getNodeVersion } from './version-helpers.mts'
+import { safeDelete } from '@socketsecurity/lib/fs'
 
 const logger = getDefaultLogger()
 
@@ -421,7 +422,7 @@ export async function runPipeline(options, cliOverrides) {
       for (const ext of ['.json', '.tar.gz', '.tar.gz.lock']) {
         const file = path.join(markerDir, `${stage.name}${ext}`)
         if (existsSync(file)) {
-          await fs.rm(file, { force: true })
+          await safeDelete(file)
         }
       }
     }

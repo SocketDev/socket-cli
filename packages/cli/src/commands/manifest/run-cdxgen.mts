@@ -92,7 +92,7 @@ export function argvObjectToArray(argvObj: ArgvObject): string[] {
   }
   const result = []
   for (const { 0: key, 1: value } of Object.entries(argvObj)) {
-    if (key === '_' || key === '--') {
+    if (key === '--' || key === '_') {
       continue
     }
     if (key === 'babel' || key === 'install-deps' || key === 'validate') {

@@ -15,10 +15,10 @@
 // Stdin format (provided by git): one push line per ref, each line:
 //   <local_ref> <local_sha> <remote_ref> <remote_sha>
 
-import { spawnSync } from 'node:child_process'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { existsSync, statSync } from 'node:fs'
 
-import { basename } from 'node:path'
+import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
@@ -27,8 +27,8 @@ import {
   containsAiAttribution,
   git,
   gitLines,
-  readFileForScan,
   normalizePath,
+  readFileForScan,
   scanAwsKeys,
   scanCrossRepoPaths,
   scanGitHubTokens,
@@ -100,10 +100,10 @@ const computeRange = (
 ): string | null => {
   if (localRef.startsWith('refs/tags/')) {
     logger.info(`Skipping tag push: ${localRef}`)
-    return null
+    return undefined
   }
   if (localSha === ZERO_SHA) {
-    return null
+    return undefined
   }
 
   const defaultBranchOf = (remoteName: string): string => {
@@ -132,7 +132,7 @@ const computeRange = (
     const baseRef = `${remote}/${def}`
     if (!refExists(baseRef)) {
       logger.success('Skipping validation (no baseline to compare against)')
-      return null
+      return undefined
     }
     return `${baseRef}..${localSha}`
   }
@@ -144,7 +144,7 @@ const computeRange = (
     const baseRef = `${remote}/${def}`
     if (!refExists(baseRef)) {
       logger.success('Skipping validation (no baseline for force-push)')
-      return null
+      return undefined
     }
     return `${baseRef}..${localSha}`
   }
@@ -210,7 +210,7 @@ const scanFilesInRange = (range: string): number => {
     const base = basename(f)
     return (
       /^\.env(\.[^/]+)?$/.test(base) &&
-      !/^\.env\.(example|test|precommit)$/.test(base)
+      !/^\.env\.(example|precommit|test)$/.test(base)
     )
   })
   if (envHits.length > 0) {

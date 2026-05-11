@@ -46,7 +46,7 @@ const BINARY_FLAGS = {
   },
 }
 
-async function buildBinary(binaryType) {
+export async function buildBinary(binaryType) {
   const buildCommand = BINARY_BUILD_COMMANDS[binaryType]
   if (!buildCommand) {
     logger.error('No build command defined for binary type:', binaryType)
@@ -77,7 +77,7 @@ async function buildBinary(binaryType) {
   }
 }
 
-async function checkBinaryExists(binaryType) {
+export async function checkBinaryExists(binaryType) {
   // For explicit binary requests (js, sea), check and auto-build if needed.
   if (binaryType === 'js' || binaryType === 'sea') {
     const binaryPath = BINARY_PATHS[binaryType]
@@ -106,7 +106,7 @@ async function checkBinaryExists(binaryType) {
   return true
 }
 
-async function runVitest(binaryType) {
+export async function runVitest(binaryType) {
   const envVars = BINARY_FLAGS[binaryType]
   logger.log(
     `${colors.blue('ℹ')} Running e2e tests for ${binaryType} binary...`,

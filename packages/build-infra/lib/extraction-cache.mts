@@ -7,7 +7,7 @@
  * @module extraction-cache
  */
 
-import { createHash } from 'node:crypto'
+import crypto from 'node:crypto'
 import { existsSync, mkdirSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 

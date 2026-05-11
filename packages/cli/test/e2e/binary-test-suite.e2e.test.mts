@@ -95,7 +95,7 @@ const BINARIES = {
 /**
  * Build a binary if needed.
  */
-async function buildBinary(
+export async function buildBinary(
   binaryType: keyof typeof BINARIES,
 ): Promise<boolean> {
   const binary = BINARIES[binaryType]
@@ -139,7 +139,7 @@ async function buildBinary(
 /**
  * Run the test suite for a specific binary type.
  */
-function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
+export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
   const binary = BINARIES[binaryType]
 
   if (!binary.enabled) {

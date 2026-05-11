@@ -128,7 +128,7 @@ const inflightInit = new LRUCache<string, Promise<TelemetryService>>({
  * @param errorMessage Error message if timeout occurs.
  * @returns Promise that resolves or times out.
  */
-function withTimeout<T>(
+export function withTimeout<T>(
   promise: Promise<T>,
   timeoutMs: number,
   errorMessage: string,

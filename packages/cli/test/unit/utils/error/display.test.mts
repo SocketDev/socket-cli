@@ -356,9 +356,9 @@ describe('error/display', () => {
     it('formats command name in error', () => {
       const error = new Error('Command failed')
 
-      const result = formatExternalCliError('npx cdxgen', error)
+      const result = formatExternalCliError('pnpm exec cdxgen', error)
 
-      expect(result).toContain('npx cdxgen')
+      expect(result).toContain('pnpm exec cdxgen')
       expect(result).toContain('Command failed')
     })
 

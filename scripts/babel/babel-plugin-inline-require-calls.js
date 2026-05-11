@@ -125,7 +125,7 @@ module.exports = function inlineRequireCalls(babel) {
 /**
  * Check if a value can be serialized to an AST node.
  */
-function isSerializable(value) {
+export function isSerializable(value) {
   const type = typeof value
   return (
     value === null ||
@@ -139,7 +139,7 @@ function isSerializable(value) {
 /**
  * Convert a JavaScript value to a Babel AST node.
  */
-function valueToASTNode(t, value) {
+export function valueToASTNode(t, value) {
   if (value === null) {
     return t.nullLiteral()
   }

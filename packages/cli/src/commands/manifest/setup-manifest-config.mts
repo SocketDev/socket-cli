@@ -213,7 +213,7 @@ export async function setupConda(
   if (verbose === undefined) {
     return canceledByUser()
   }
-  if (verbose === 'yes' || verbose === 'no') {
+  if (verbose === 'no' || verbose === 'yes') {
     config.verbose = verbose === 'yes'
   } else {
     delete config.verbose
@@ -256,7 +256,7 @@ export async function setupGradle(
   if (verbose === undefined) {
     return canceledByUser()
   }
-  if (verbose === 'yes' || verbose === 'no') {
+  if (verbose === 'no' || verbose === 'yes') {
     config.verbose = verbose === 'yes'
   } else {
     delete config.verbose
@@ -500,7 +500,7 @@ export async function setupSbt(
   if (verbose === undefined) {
     return canceledByUser()
   }
-  if (verbose === 'yes' || verbose === 'no') {
+  if (verbose === 'no' || verbose === 'yes') {
     config.verbose = verbose === 'yes'
   } else {
     delete config.verbose

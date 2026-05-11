@@ -66,7 +66,7 @@ import type { CResult } from '../../../../src/types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Helper to create error result.
-function createErrorResult(
+export function createErrorResult(
   message: string,
   options: { code?: number; cause?: string } = {},
 ): CResult<never> {
@@ -74,7 +74,7 @@ function createErrorResult(
 }
 
 // Helper to create success result.
-function createSuccessResult<T>(data: T): CResult<T> {
+export function createSuccessResult<T>(data: T): CResult<T> {
   return { ok: true, data }
 }
 

@@ -19,7 +19,7 @@
  * identical across repos.
  */
 
-import { createHash } from 'node:crypto'
+import crypto from 'node:crypto'
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -30,7 +30,7 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
 
-function checkpointDir(buildDir, packageName) {
+export function checkpointDir(buildDir, packageName) {
   return packageName
     ? path.join(buildDir, 'checkpoints', packageName)
     : path.join(buildDir, 'checkpoints')
@@ -38,6 +38,19 @@ function checkpointDir(buildDir, packageName) {
 
 function checkpointFile(buildDir, packageName, name) {
   return path.join(checkpointDir(buildDir, packageName), `${name}.json`)
+}
+
+function computeCacheHash(sourcePaths, options) {
+  const sourcesHash = sourcePaths?.length ? hashSourcePaths(sourcePaths) : ''
+  const platformHash = platformCacheKey(options || {})
+  if (!sourcesHash && !platformHash) {
+    return ''
+  }
+  return createHash('sha256')
+    .update(sourcesHash)
+    .update('|')
+    .update(platformHash)
+    .digest('hex')
 }
 
 function hashSourcePaths(sourcePaths) {
@@ -71,42 +84,16 @@ function platformCacheKey({ buildMode, nodeVersion, platform, arch, libc }) {
   return createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 16)
 }
 
-function computeCacheHash(sourcePaths, options) {
-  const sourcesHash = sourcePaths?.length ? hashSourcePaths(sourcePaths) : ''
-  const platformHash = platformCacheKey(options || {})
-  if (!sourcesHash && !platformHash) {
-    return ''
-  }
-  return createHash('sha256')
-    .update(sourcesHash)
-    .update('|')
-    .update(platformHash)
-    .digest('hex')
-}
-
 /**
- * Does a checkpoint JSON marker exist?
+ * Delete all checkpoints under a build dir (or a single package's scope).
  */
-export function hasCheckpoint(buildDir, packageName, name) {
-  return existsSync(checkpointFile(buildDir, packageName, name))
-}
-
-/**
- * Read a checkpoint's JSON data, or undefined if it does not exist.
- */
-export async function getCheckpointData(buildDir, packageName, name) {
-  const file = checkpointFile(buildDir, packageName, name)
-  if (!existsSync(file)) {
-    return undefined
+export async function cleanCheckpoint(buildDir, packageName) {
+  const dir = checkpointDir(buildDir, packageName)
+  if (!existsSync(dir)) {
+    return
   }
-  try {
-    return JSON.parse(await fs.readFile(file, 'utf8'))
-  } catch (e) {
-    logger.warn(
-      `Checkpoint ${name} JSON unreadable (${errorMessage(e)}) — ignoring`,
-    )
-    return undefined
-  }
+  await safeDelete(dir)
+  logger.substep('Checkpoints cleaned')
 }
 
 /**
@@ -196,6 +183,31 @@ export async function createCheckpoint(
 }
 
 /**
+ * Read a checkpoint's JSON data, or undefined if it does not exist.
+ */
+export async function getCheckpointData(buildDir, packageName, name) {
+  const file = checkpointFile(buildDir, packageName, name)
+  if (!existsSync(file)) {
+    return undefined
+  }
+  try {
+    return JSON.parse(await fs.readFile(file, 'utf8'))
+  } catch (e) {
+    logger.warn(
+      `Checkpoint ${name} JSON unreadable (${errorMessage(e)}) — ignoring`,
+    )
+    return undefined
+  }
+}
+
+/**
+ * Does a checkpoint JSON marker exist?
+ */
+export function hasCheckpoint(buildDir, packageName, name) {
+  return existsSync(checkpointFile(buildDir, packageName, name))
+}
+
+/**
  * Should the stage run? True if force, no checkpoint, missing cache hash,
  * or the hash no longer matches current inputs.
  */
@@ -237,16 +249,4 @@ export async function shouldRun(
   }
 
   return false
-}
-
-/**
- * Delete all checkpoints under a build dir (or a single package's scope).
- */
-export async function cleanCheckpoint(buildDir, packageName) {
-  const dir = checkpointDir(buildDir, packageName)
-  if (!existsSync(dir)) {
-    return
-  }
-  await safeDelete(dir)
-  logger.substep('Checkpoints cleaned')
 }

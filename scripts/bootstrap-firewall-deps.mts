@@ -37,10 +37,10 @@
  * (post-bootstrap), other scripts must use the helpers as normal.
  */
 
-import { spawnSync } from 'node:child_process'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 
 import path from 'node:path'
 import process from 'node:process'

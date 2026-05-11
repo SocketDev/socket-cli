@@ -38,8 +38,8 @@ import { API_V0_URL } from '../../constants/socket.mts'
 import { getConfigValueOrUndef } from '../config.mts'
 import { debugApiResponse } from '../debug.mts'
 import {
-  buildErrorCause,
   ConfigError,
+  buildErrorCause,
   getNetworkErrorDiagnostics,
 } from '../error/errors.mts'
 

@@ -7,6 +7,50 @@
  */
 
 /**
+ * Get the value from a literal node.
+ */
+function getLiteralValue(t, node) {
+  if (t.isNullLiteral(node)) {
+    return undefined
+  }
+  return node.value
+}
+
+/**
+ * Check if a node is a literal value.
+ */
+function isLiteralValue(t, node) {
+  return (
+    t.isNumericLiteral(node) ||
+    t.isStringLiteral(node) ||
+    t.isBooleanLiteral(node) ||
+    t.isNullLiteral(node)
+  )
+}
+
+/**
+ * Convert a value to a Babel AST literal node.
+ */
+function valueToLiteral(t, value) {
+  if (value === null) {
+    return t.nullLiteral()
+  }
+  if (value === undefined) {
+    return t.identifier('undefined')
+  }
+  if (typeof value === 'string') {
+    return t.stringLiteral(value)
+  }
+  if (typeof value === 'number') {
+    return t.numericLiteral(value)
+  }
+  if (typeof value === 'boolean') {
+    return t.booleanLiteral(value)
+  }
+  throw new Error(`Unsupported enum value type: ${typeof value}`)
+}
+
+/**
  * Babel plugin to inline const enum values.
  *
  * Transforms:
@@ -106,48 +150,4 @@ export default function inlineConstEnum(babel, options = {}) {
       },
     },
   }
-}
-
-/**
- * Check if a node is a literal value.
- */
-function isLiteralValue(t, node) {
-  return (
-    t.isNumericLiteral(node) ||
-    t.isStringLiteral(node) ||
-    t.isBooleanLiteral(node) ||
-    t.isNullLiteral(node)
-  )
-}
-
-/**
- * Get the value from a literal node.
- */
-function getLiteralValue(t, node) {
-  if (t.isNullLiteral(node)) {
-    return undefined
-  }
-  return node.value
-}
-
-/**
- * Convert a value to a Babel AST literal node.
- */
-function valueToLiteral(t, value) {
-  if (value === null) {
-    return t.nullLiteral()
-  }
-  if (value === undefined) {
-    return t.identifier('undefined')
-  }
-  if (typeof value === 'string') {
-    return t.stringLiteral(value)
-  }
-  if (typeof value === 'number') {
-    return t.numericLiteral(value)
-  }
-  if (typeof value === 'boolean') {
-    return t.booleanLiteral(value)
-  }
-  throw new Error(`Unsupported enum value type: ${typeof value}`)
 }

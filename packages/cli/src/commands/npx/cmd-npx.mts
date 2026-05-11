@@ -10,7 +10,7 @@ import { defineHandoffCommand } from '../../utils/cli/define-handoff.mts'
 
 export const cmdNpx = defineHandoffCommand({
   name: NPX,
-  description: 'Run npx with Socket Firewall security', // socket-hook: allow npx
+  description: 'Run pnpm exec with Socket Firewall security', // socket-hook: allow npx
   spawnMode: 'auto',
   examples: ['cowsay', 'cowsay@1.6.0 hello'],
   showApiRequirements: true,

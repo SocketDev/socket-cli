@@ -8,7 +8,7 @@
  *   node scripts/test-sea.mts --mode=with-tools
  */
 
-import { spawn as nodeSpawn } from 'node:child_process'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -18,7 +18,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 /**
  * Build SEA blob.
  */
-async function buildBlob(configPath) {
+export async function buildBlob(configPath) {
   logger.log('Generating SEA blob...')
   const result = await spawn(
     process.execPath,
@@ -36,7 +36,7 @@ async function buildBlob(configPath) {
 /**
  * Display tool information.
  */
-async function displayToolInfo(toolPaths) {
+export async function displayToolInfo(toolPaths) {
   logger.log('External tools to bundle:')
   let totalToolSize = 0
   for (const [toolName, toolPath] of Object.entries(toolPaths)) {
@@ -55,7 +55,7 @@ async function displayToolInfo(toolPaths) {
 /**
  * Generate SEA configuration.
  */
-async function generateSeaConfig(entryPoint, outputPath, toolPaths, mode) {
+export async function generateSeaConfig(entryPoint, outputPath, toolPaths, mode) {
   const outputName = path.basename(outputPath, path.extname(outputPath))
   const configPath = path.join(
     path.dirname(outputPath),
@@ -96,7 +96,7 @@ async function generateSeaConfig(entryPoint, outputPath, toolPaths, mode) {
 /**
  * Load tool paths from previous download.
  */
-async function loadToolPaths() {
+export async function loadToolPaths() {
   const platform = `${process.platform}-${process.arch}`
   const toolPathsFile = path.join(
     __dirname,
@@ -127,7 +127,7 @@ async function loadToolPaths() {
 /**
  * Parse command line arguments.
  */
-function parseArgs() {
+export function parseArgs() {
   const args = process.argv.slice(2)
   const mode =
     args
@@ -146,7 +146,7 @@ function parseArgs() {
 /**
  * Mode: standalone - Uses standard Node.js + postject.
  */
-async function runStandaloneMode(platform, toolPaths) {
+export async function runStandaloneMode(platform, toolPaths) {
   logger.log('Mode: standalone (Node.js + postject)')
   logger.log('='.repeat(60))
   logger.log('')
@@ -250,7 +250,7 @@ async function runStandaloneMode(platform, toolPaths) {
 /**
  * Mode: vfs - Uses binject with --vfs compression.
  */
-async function runVfsMode(platform) {
+export async function runVfsMode(platform) {
   logger.log('Mode: vfs (binject with --vfs compression)')
   logger.log('='.repeat(60))
   logger.log('')
@@ -397,7 +397,7 @@ async function runVfsMode(platform) {
 /**
  * Mode: with-tools - Uses Socket infrastructure (downloadNodeBinary + injectSeaBlob).
  */
-async function runWithToolsMode(platform, toolPaths) {
+export async function runWithToolsMode(platform, toolPaths) {
   logger.log('Mode: with-tools (Socket infrastructure)')
   logger.log('='.repeat(60))
   logger.log('')
@@ -512,7 +512,7 @@ async function runWithToolsMode(platform, toolPaths) {
 /**
  * Spawn a process and return result.
  */
-function spawn(command, args, options = {}) {
+export function spawn(command, args, options = {}) {
   return new Promise(resolve => {
     const child = nodeSpawn(command, args, options)
 
@@ -539,7 +539,7 @@ function spawn(command, args, options = {}) {
 /**
  * Test the generated binary.
  */
-async function testBinary(outputPath) {
+export async function testBinary(outputPath) {
   logger.log('Testing binary...')
   logger.log('-'.repeat(60))
   const testResult = await spawn(outputPath, [], { stdio: 'inherit' })

@@ -3,7 +3,7 @@
  * Handles removing private field and optionally setting version.
  */
 
-import { resolve } from 'node:path'
+import path from 'node:path'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 

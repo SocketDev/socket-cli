@@ -46,7 +46,7 @@ vi.mock('@socketsecurity/lib/debug', () => ({
 }))
 
 // Helper to create a GraphqlResponseError.
-function createGraphqlError(
+export function createGraphqlError(
   errors: Array<{ type?: string; message: string }>,
 ): GraphqlResponseError<unknown> {
   return new GraphqlResponseError(
@@ -57,7 +57,7 @@ function createGraphqlError(
 }
 
 // Helper to create a RequestError with specific status.
-function createRequestError(
+export function createRequestError(
   status: number,
   message: string,
   headers: Record<string, string> = {},
@@ -678,6 +678,7 @@ describe('prExistForBranch', () => {
 
     expect(typeof result).toBe('boolean')
   })
+
 })
 
 describe('fetchGhsaDetails', () => {

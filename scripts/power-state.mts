@@ -47,50 +47,7 @@ interface SmolPower {
 }
 let _smolPower: SmolPower | undefined
 let _smolPowerProbed = false
-async function getSmolPower(): Promise<SmolPower | undefined> {
-  if (_smolPowerProbed) {
-    return _smolPower
-  }
-  _smolPowerProbed = true
-  if (!isBuiltin('node:smol-power')) {
-    return undefined
-  }
-  // Cast through `unknown` because system Node's typings don't
-  // declare the module — only node-smol's lib.d.ts does.
-  _smolPower = (await import(
-    'node:smol-power' as string
-  )) as unknown as SmolPower
-  return _smolPower
-}
-
-// Coerce spawn's stdout (string | Buffer | undefined) to a string.
-function stdoutString(value: unknown): string {
-  if (typeof value === 'string') {
-    return value
-  }
-  if (value instanceof Uint8Array) {
-    return Buffer.from(value).toString('utf8')
-  }
-  return ''
-}
-
-async function detectMacOs(): Promise<boolean> {
-  try {
-    // `pmset -g batt` on macOS prints lines like
-    //   Now drawing from 'AC Power'
-    //   Now drawing from 'Battery Power'
-    // Match the AC variant; everything else (battery, unknown) is
-    // treated as not-AC.
-    const result = await spawn('pmset', ['-g', 'batt'], {
-      stdio: ['ignore', 'pipe', 'ignore'],
-    })
-    return /AC Power/.test(stdoutString(result.stdout))
-  } catch {
-    return true
-  }
-}
-
-async function detectLinux(): Promise<boolean> {
+export async function detectLinux(): Promise<boolean> {
   // Linux exposes power state under /sys/class/power_supply. Each
   // AC adapter is its own dir (`AC`, `ADP1`, `AC0`, `ACAD`, …)
   // with an `online` file holding "1" when power is connected.
@@ -124,6 +81,22 @@ async function detectLinux(): Promise<boolean> {
   return false
 }
 
+async function detectMacOs(): Promise<boolean> {
+  try {
+    // `pmset -g batt` on macOS prints lines like
+    //   Now drawing from 'AC Power'
+    //   Now drawing from 'Battery Power'
+    // Match the AC variant; everything else (battery, unknown) is
+    // treated as not-AC.
+    const result = await spawn('pmset', ['-g', 'batt'], {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+    return /AC Power/.test(stdoutString(result.stdout))
+  } catch {
+    return true
+  }
+}
+
 async function detectWindows(): Promise<boolean> {
   try {
     // Windows: query the battery status via PowerShell + CIM.
@@ -154,6 +127,33 @@ async function detectWindows(): Promise<boolean> {
   } catch {
     return true
   }
+}
+
+async function getSmolPower(): Promise<SmolPower | undefined> {
+  if (_smolPowerProbed) {
+    return _smolPower
+  }
+  _smolPowerProbed = true
+  if (!isBuiltin('node:smol-power')) {
+    return undefined
+  }
+  // Cast through `unknown` because system Node's typings don't
+  // declare the module — only node-smol's lib.d.ts does.
+  _smolPower = (await import(
+    'node:smol-power' as string
+  )) as unknown as SmolPower
+  return _smolPower
+}
+
+// Coerce spawn's stdout (string | Buffer | undefined) to a string.
+function stdoutString(value: unknown): string {
+  if (typeof value === 'string') {
+    return value
+  }
+  if (value instanceof Uint8Array) {
+    return Buffer.from(value).toString('utf8')
+  }
+  return ''
 }
 
 /**

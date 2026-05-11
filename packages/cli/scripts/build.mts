@@ -51,7 +51,7 @@ const printError = msg => {
  * @param {boolean} options.quiet - Suppress output
  * @param {boolean} options.verbose - Show detailed output
  */
-async function fixNodeGypStrings(dir, options = {}) {
+export async function fixNodeGypStrings(dir, options = {}) {
   const { quiet = false, verbose = false } = options
 
   // Find all .js files in build directory.

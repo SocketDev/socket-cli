@@ -147,7 +147,7 @@ describe('cmd-raw-npx', () => {
     })
 
     it('should have correct description', () => {
-      expect(cmdRawNpx.description).toBe('Run npx without the Socket wrapper')
+      expect(cmdRawNpx.description).toBe('Run pnpm exec without the Socket wrapper')
     })
 
     it('should not be hidden', () => {
@@ -166,12 +166,12 @@ describe('cmd-raw-npx', () => {
         expect(mockOutputDryRunExecute).toHaveBeenCalledWith(
           '/usr/bin/npx',
           ['cowsay', '--dry-run'],
-          'raw npx command',
+          'raw pnpm exec command',
         )
         expect(mockSpawn).not.toHaveBeenCalled()
       })
 
-      it('should use npx path from getNpxBinPath in dry-run', async () => {
+      it('should use pnpm exec path from getNpxBinPath in dry-run', async () => {
         mockGetNpxBinPath.mockReturnValue('/custom/path/to/npx')
 
         await cmdRawNpx.run(['cowsay', '--dry-run'], importMeta, context)
@@ -179,7 +179,7 @@ describe('cmd-raw-npx', () => {
         expect(mockOutputDryRunExecute).toHaveBeenCalledWith(
           '/custom/path/to/npx',
           expect.any(Array),
-          'raw npx command',
+          'raw pnpm exec command',
         )
       })
 
@@ -193,13 +193,13 @@ describe('cmd-raw-npx', () => {
         expect(mockOutputDryRunExecute).toHaveBeenCalledWith(
           expect.any(String),
           ['prettier', '--check', '.', '--dry-run'],
-          'raw npx command',
+          'raw pnpm exec command',
         )
       })
     })
 
-    describe('npx execution', () => {
-      it('should spawn npx with correct path', async () => {
+    describe('pnpm exec execution', () => {
+      it('should spawn pnpm exec with correct path', async () => {
         mockGetNpxBinPath.mockReturnValue('/usr/local/bin/npx')
 
         await cmdRawNpx.run(['cowsay'], importMeta, context)
@@ -455,7 +455,7 @@ describe('cmd-raw-npx', () => {
     })
 
     describe('edge cases', () => {
-      it('should handle npx path with spaces', async () => {
+      it('should handle pnpm exec path with spaces', async () => {
         mockGetNpxBinPath.mockReturnValue('/Program Files/npx/npx.exe')
 
         await cmdRawNpx.run(['cowsay'], importMeta, context)
@@ -467,7 +467,7 @@ describe('cmd-raw-npx', () => {
         )
       })
 
-      it('should handle complex npx commands', async () => {
+      it('should handle complex pnpm exec commands', async () => {
         await cmdRawNpx.run(
           ['create-react-app', 'my-app', '--template', 'typescript'],
           importMeta,

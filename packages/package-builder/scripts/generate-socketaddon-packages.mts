@@ -14,14 +14,74 @@ import { PLATFORM_CONFIGS } from 'build-infra/lib/platform-targets'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import {
-  getBuildOutDir,
-  getSocketaddonPackageDir,
   SOCKETADDON_MAIN_TEMPLATE_DIR,
   SOCKETADDON_TEMPLATE_DIR,
+  getBuildOutDir,
+  getSocketaddonPackageDir,
 } from './paths.mts'
 import { processTemplate } from './utils.mts'
 
 const logger = getDefaultLogger()
+
+/**
+ * Generate the main wrapper package.
+ */
+async function generateMainPackage() {
+  const packagePath = path.join(getBuildOutDir(), 'socketaddon-iocraft')
+  const templatePath = SOCKETADDON_MAIN_TEMPLATE_DIR
+
+  // Create package directory.
+  await fs.mkdir(packagePath, { recursive: true })
+
+  // Copy package.json.
+  const packageJsonContent = await fs.readFile(
+    path.join(templatePath, 'package.json'),
+    'utf-8',
+  )
+  await fs.writeFile(
+    path.join(packagePath, 'package.json'),
+    packageJsonContent,
+    'utf-8',
+  )
+
+  // Copy index.mjs.
+  const indexContent = await fs.readFile(
+    path.join(templatePath, 'index.mjs'),
+    'utf-8',
+  )
+  await fs.writeFile(path.join(packagePath, 'index.mjs'), indexContent, 'utf-8')
+
+  // Copy index.d.ts.
+  const indexDtsContent = await fs.readFile(
+    path.join(templatePath, 'index.d.ts'),
+    'utf-8',
+  )
+  await fs.writeFile(
+    path.join(packagePath, 'index.d.ts'),
+    indexDtsContent,
+    'utf-8',
+  )
+
+  // Copy LICENSE.
+  const licenseContent = await fs.readFile(
+    path.join(templatePath, 'LICENSE'),
+    'utf-8',
+  )
+  await fs.writeFile(path.join(packagePath, 'LICENSE'), licenseContent, 'utf-8')
+
+  // Copy README.md.
+  const readmeContent = await fs.readFile(
+    path.join(templatePath, 'README.md'),
+    'utf-8',
+  )
+  await fs.writeFile(
+    path.join(packagePath, 'README.md'),
+    readmeContent,
+    'utf-8',
+  )
+
+  logger.info('Generated socketaddon-iocraft (main wrapper)')
+}
 
 /**
  * Generate a single socketaddon package.
@@ -88,66 +148,6 @@ async function generatePackage(config) {
   )
 
   logger.info(`Generated ${packageName}`)
-}
-
-/**
- * Generate the main wrapper package.
- */
-async function generateMainPackage() {
-  const packagePath = path.join(getBuildOutDir(), 'socketaddon-iocraft')
-  const templatePath = SOCKETADDON_MAIN_TEMPLATE_DIR
-
-  // Create package directory.
-  await fs.mkdir(packagePath, { recursive: true })
-
-  // Copy package.json.
-  const packageJsonContent = await fs.readFile(
-    path.join(templatePath, 'package.json'),
-    'utf-8',
-  )
-  await fs.writeFile(
-    path.join(packagePath, 'package.json'),
-    packageJsonContent,
-    'utf-8',
-  )
-
-  // Copy index.mjs.
-  const indexContent = await fs.readFile(
-    path.join(templatePath, 'index.mjs'),
-    'utf-8',
-  )
-  await fs.writeFile(path.join(packagePath, 'index.mjs'), indexContent, 'utf-8')
-
-  // Copy index.d.ts.
-  const indexDtsContent = await fs.readFile(
-    path.join(templatePath, 'index.d.ts'),
-    'utf-8',
-  )
-  await fs.writeFile(
-    path.join(packagePath, 'index.d.ts'),
-    indexDtsContent,
-    'utf-8',
-  )
-
-  // Copy LICENSE.
-  const licenseContent = await fs.readFile(
-    path.join(templatePath, 'LICENSE'),
-    'utf-8',
-  )
-  await fs.writeFile(path.join(packagePath, 'LICENSE'), licenseContent, 'utf-8')
-
-  // Copy README.md.
-  const readmeContent = await fs.readFile(
-    path.join(templatePath, 'README.md'),
-    'utf-8',
-  )
-  await fs.writeFile(
-    path.join(packagePath, 'README.md'),
-    readmeContent,
-    'utf-8',
-  )
-
-  logger.info('Generated socketaddon-iocraft (main wrapper)')
 }
 
 /**

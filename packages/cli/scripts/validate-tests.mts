@@ -24,7 +24,7 @@ const VALIDATION_CHECKS = {
 /**
  * Format validation results for display.
  */
-function formatResults(results) {
+export function formatResults(results) {
   const errors = []
   const warnings = []
   const infos = []
@@ -55,7 +55,7 @@ function formatResults(results) {
 /**
  * Get list of test files to validate.
  */
-async function getTestFiles() {
+export async function getTestFiles() {
   const files = []
 
   /**
@@ -69,7 +69,7 @@ async function getTestFiles() {
         await collectFiles(fullPath)
       } else if (
         entry.isFile() &&
-        /\.test\.(mts|ts|js|mjs)$/.test(entry.name)
+        /\.test\.(js|mjs|mts|ts)$/.test(entry.name)
       ) {
         files.push(fullPath)
       }
@@ -83,7 +83,7 @@ async function getTestFiles() {
 /**
  * Validate that required build artifacts exist.
  */
-async function validateBuildArtifacts() {
+export async function validateBuildArtifacts() {
   const issues = []
   const distPath = path.join(rootPath, 'dist')
 
@@ -116,7 +116,7 @@ async function validateBuildArtifacts() {
 /**
  * Validate import statements in test files.
  */
-async function validateImportSyntax(testFile) {
+export async function validateImportSyntax(testFile) {
   const issues = []
   const relativePath = path.relative(rootPath, testFile)
 
@@ -174,7 +174,7 @@ async function validateImportSyntax(testFile) {
 /**
  * Check for orphaned snapshot files.
  */
-async function validateSnapshotFiles(testFile) {
+export async function validateSnapshotFiles(testFile) {
   const issues = []
   const relativePath = path.relative(rootPath, testFile)
   const snapshotDir = path.join(path.dirname(testFile), '__snapshots__')
@@ -207,7 +207,7 @@ async function validateSnapshotFiles(testFile) {
 /**
  * Run all validations for a test file.
  */
-async function validateTestFile(testFile) {
+export async function validateTestFile(testFile) {
   const allIssues = []
 
   const validations = [
@@ -234,7 +234,7 @@ async function validateTestFile(testFile) {
 /**
  * Validate test file structure and naming.
  */
-async function validateTestStructure(testFile) {
+export async function validateTestStructure(testFile) {
   const issues = []
   const relativePath = path.relative(rootPath, testFile)
 

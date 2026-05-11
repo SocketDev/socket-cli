@@ -21,8 +21,8 @@ vi.mock('../../../../src/constants/paths.mts', () => ({
 }))
 
 import {
-  areExternalToolsAvailable,
   EXTERNAL_TOOLS,
+  areExternalToolsAvailable,
   extractExternalTools,
   extractTool,
   getNodeSmolBasePath,
@@ -51,7 +51,7 @@ describe('utils/dlx/vfs-extract', () => {
   describe('EXTERNAL_TOOLS', () => {
     it('exposes a non-empty list of tool names', () => {
       expect(EXTERNAL_TOOLS.length).toBeGreaterThan(0)
-      // Sanity: every entry is a string.
+      // Quick: every entry is a string.
       for (const tool of EXTERNAL_TOOLS) {
         expect(typeof tool).toBe('string')
       }

@@ -25,7 +25,7 @@
  */
 
 import { promises as fs } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 
 import { describe, expect, it, vi } from 'vitest'
@@ -70,13 +70,13 @@ describe('socket pnpm', async () => {
               Note: Everything after "pnpm" is forwarded to Socket Firewall (sfw).
                     Socket Firewall provides real-time security scanning for pnpm packages.
           
-              Use \`socket wrapper on\` to alias this command as \`pnpm\`.
+              Use `socket wrapper on` to alias this command as `pnpm`.
           
               Examples
                 $ socket pnpm
                 $ socket pnpm install
                 $ socket pnpm add package-name
-                $ socket pnpm dlx package-name"
+                $ socket pnpm exec package-name"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -439,7 +439,7 @@ describe('socket pnpm', async () => {
       )
 
       // Check that the command succeeded.
-      expect(code, 'pnpm dlx socket pnpm should exit with code 0').toBe(0)
+      expect(code, 'pnpm exec socket pnpm should exit with code 0').toBe(0)
       expect(stdout).toContain('Socket CLI executed successfully')
     } finally {
       // Clean up the temporary directory.

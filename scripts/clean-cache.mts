@@ -8,7 +8,7 @@
  */
 
 import { readdirSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
@@ -47,32 +47,6 @@ interface CacheEntry {
 }
 
 /**
- * Find all .cache directories in packages.
- */
-function findCacheDirs(): CacheDirInfo[] {
-  const cacheDirs: CacheDirInfo[] = []
-  const packagesDir = join(ROOT_DIR, 'packages')
-
-  try {
-    const packages = readdirSync(packagesDir)
-    for (const pkg of packages) {
-      const cacheDir = join(packagesDir, pkg, '.cache')
-      try {
-        statSync(cacheDir)
-        cacheDirs.push({ package: pkg, path: cacheDir })
-      } catch {
-        // No cache dir, skip.
-      }
-    }
-  } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
-    logger.error(`Error scanning packages: ${message}`)
-  }
-
-  return cacheDirs
-}
-
-/**
  * Analyze cache directory and determine what to clean.
  */
 function analyzeCacheDir(cacheDir: string): CacheEntry[] {
@@ -105,6 +79,48 @@ function analyzeCacheDir(cacheDir: string): CacheEntry[] {
 }
 
 /**
+ * Find all .cache directories in packages.
+ */
+function findCacheDirs(): CacheDirInfo[] {
+  const cacheDirs: CacheDirInfo[] = []
+  const packagesDir = join(ROOT_DIR, 'packages')
+
+  try {
+    const packages = readdirSync(packagesDir)
+    for (const pkg of packages) {
+      const cacheDir = join(packagesDir, pkg, '.cache')
+      try {
+        statSync(cacheDir)
+        cacheDirs.push({ package: pkg, path: cacheDir })
+      } catch {
+        // No cache dir, skip.
+      }
+    }
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    logger.error(`Error scanning packages: ${message}`)
+  }
+
+  return cacheDirs
+}
+
+/**
+ * Format bytes to human readable.
+ */
+function formatSize(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} B`
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`
+  }
+  if (bytes < 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+}
+
+/**
  * Get directory size recursively.
  */
 function getDirSize(dir: string): number {
@@ -124,22 +140,6 @@ function getDirSize(dir: string): number {
     // Ignore errors.
   }
   return size
-}
-
-/**
- * Format bytes to human readable.
- */
-function formatSize(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`
-  }
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`
-  }
-  if (bytes < 1024 * 1024 * 1024) {
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  }
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
 }
 
 async function main(): Promise<void> {

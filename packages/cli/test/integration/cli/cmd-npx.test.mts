@@ -47,23 +47,23 @@ describe('socket npx', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "Wraps npx with Socket security scanning
+        "Wraps pnpm exec with Socket security scanning
 
           Usage
-                $ socket npx ...
+                $ socket pnpm exec ...
           
               API Token Requirements
                 - Quota: 100 units
                 - Permissions: packages:list
           
-              Note: Everything after "npx" is passed to the npx command.
-                    Only the \`--dry-run\` and \`--help\` flags are caught here.
+              Note: Everything after "npx" is passed to the pnpm exec command.
+                    Only the `--dry-run` and `--help` flags are caught here.
           
-              Use \`socket wrapper on\` to alias this command as \`npx\`.
+              Use `socket wrapper on` to alias this command as `npx`.
           
               Examples
-                $ socket npx cowsay
-                $ socket npx cowsay@1.6.0 hello"
+                $ socket pnpm exec cowsay
+                $ socket pnpm exec cowsay@1.6.0 hello"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -109,14 +109,14 @@ describe('socket npx', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should handle npx with version',
+    'should handle pnpm exec with version',
     async cmd => {
       const {
         code,
         stderr: _stderr,
         stdout: _stdout,
       } = await spawnSocketCli(binCliPath, cmd)
-      expect(code, 'dry-run npx should exit with code 0').toBe(0)
+      expect(code, 'dry-run pnpm exec should exit with code 0').toBe(0)
     },
   )
 
@@ -129,14 +129,14 @@ describe('socket npx', async () => {
       '-c',
       '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
     ],
-    'should handle npx with -c flag and issueRules for malware',
+    'should handle pnpm exec with -c flag and issueRules for malware',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
       expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(code, 'dry-run npx with -c should exit with code 0').toBe(0)
+      expect(code, 'dry-run pnpm exec with -c should exit with code 0').toBe(0)
     },
   )
 
@@ -149,14 +149,14 @@ describe('socket npx', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
     ],
-    'should handle npx with --config flag and issueRules for malware',
+    'should handle pnpm exec with --config flag and issueRules for malware',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
       expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(code, 'dry-run npx with --config should exit with code 0').toBe(0)
+      expect(code, 'dry-run pnpm exec with --config should exit with code 0').toBe(0)
     },
   )
 
@@ -169,7 +169,7 @@ describe('socket npx', async () => {
       '-c',
       '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
     ],
-    'should handle npx with -c flag and multiple issueRules (malware and gptMalware)',
+    'should handle pnpm exec with -c flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
 
@@ -178,7 +178,7 @@ describe('socket npx', async () => {
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
-        'dry-run npx with multiple issueRules should exit with code 0',
+        'dry-run pnpm exec with multiple issueRules should exit with code 0',
       ).toBe(0)
     },
   )
@@ -192,7 +192,7 @@ describe('socket npx', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
     ],
-    'should handle npx with --config flag and multiple issueRules (malware and gptMalware)',
+    'should handle pnpm exec with --config flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
 
@@ -201,7 +201,7 @@ describe('socket npx', async () => {
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
-        'dry-run npx with --config and multiple issueRules should exit with code 0',
+        'dry-run pnpm exec with --config and multiple issueRules should exit with code 0',
       ).toBe(0)
     },
   )

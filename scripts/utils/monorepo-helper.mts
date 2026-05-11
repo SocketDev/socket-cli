@@ -21,6 +21,46 @@ export interface PackageInfo {
 }
 
 /**
+ * Determine which packages are affected by changed files.
+ */
+export function getAffectedPackages(changedFiles: string[]): PackageInfo[] {
+  const affectedPkgs = new Set<PackageInfo>()
+  const packages = getPackagesWithScript('lint')
+
+  for (const file of changedFiles) {
+    // Root level files affect all packages.
+    if (
+      !file.startsWith('packages/') &&
+      (file.includes('pnpm-lock.yaml') ||
+        file.includes('tsconfig') ||
+        file.includes('.oxfmtrc.json') ||
+        file.includes('.oxlintrc.json'))
+    ) {
+      return packages
+    }
+
+    // Map packages/* files to specific packages.
+    if (file.startsWith('packages/')) {
+      const parts = file.split('/')
+      if (parts.length > 1) {
+        const pkgDir = parts[1]
+        const pkg = packages.find(p => p.displayName === pkgDir)
+        if (pkg) {
+          affectedPkgs.add(pkg)
+        }
+      }
+    }
+
+    // Scripts changes affect all packages.
+    if (file.startsWith('scripts/')) {
+      return packages
+    }
+  }
+
+  return Array.from(affectedPkgs)
+}
+
+/**
  * Get all packages in the monorepo with specific scripts.
  */
 export function getPackagesWithScript(scriptName: string): PackageInfo[] {
@@ -67,43 +107,38 @@ export function getPackagesWithScript(scriptName: string): PackageInfo[] {
 }
 
 /**
- * Determine which packages are affected by changed files.
+ * Run a script across multiple packages.
  */
-export function getAffectedPackages(changedFiles: string[]): PackageInfo[] {
-  const affectedPkgs = new Set<PackageInfo>()
-  const packages = getPackagesWithScript('lint')
-
-  for (const file of changedFiles) {
-    // Root level files affect all packages.
-    if (
-      !file.startsWith('packages/') &&
-      (file.includes('pnpm-lock.yaml') ||
-        file.includes('tsconfig') ||
-        file.includes('.oxfmtrc.json') ||
-        file.includes('.oxlintrc.json'))
-    ) {
-      return packages
+export async function runAcrossPackages(
+  packages: PackageInfo[],
+  scriptName: string,
+  args: string[] = [],
+  quiet: boolean = false,
+  sectionTitle: string = '',
+): Promise<number> {
+  if (!packages.length) {
+    if (!quiet) {
+      logger.substep('No packages to process')
     }
+    return 0
+  }
 
-    // Map packages/* files to specific packages.
-    if (file.startsWith('packages/')) {
-      const parts = file.split('/')
-      if (parts.length > 1) {
-        const pkgDir = parts[1]
-        const pkg = packages.find(p => p.displayName === pkgDir)
-        if (pkg) {
-          affectedPkgs.add(pkg)
-        }
-      }
-    }
-
-    // Scripts changes affect all packages.
-    if (file.startsWith('scripts/')) {
-      return packages
+  for (const pkg of packages) {
+    const progressMessage =
+      sectionTitle || `${pkg.displayName || pkg.name}: running ${scriptName}`
+    const exitCode = await runPackageScript(
+      pkg,
+      scriptName,
+      args,
+      quiet,
+      progressMessage,
+    )
+    if (exitCode !== 0) {
+      return exitCode
     }
   }
 
-  return Array.from(affectedPkgs)
+  return 0
 }
 
 /**
@@ -151,41 +186,6 @@ export async function runPackageScript(
   if (!quiet) {
     logger.clearLine()
     logger.success(`${displayName}: ${scriptName} passed`)
-  }
-
-  return 0
-}
-
-/**
- * Run a script across multiple packages.
- */
-export async function runAcrossPackages(
-  packages: PackageInfo[],
-  scriptName: string,
-  args: string[] = [],
-  quiet: boolean = false,
-  sectionTitle: string = '',
-): Promise<number> {
-  if (!packages.length) {
-    if (!quiet) {
-      logger.substep('No packages to process')
-    }
-    return 0
-  }
-
-  for (const pkg of packages) {
-    const progressMessage =
-      sectionTitle || `${pkg.displayName || pkg.name}: running ${scriptName}`
-    const exitCode = await runPackageScript(
-      pkg,
-      scriptName,
-      args,
-      quiet,
-      progressMessage,
-    )
-    if (exitCode !== 0) {
-      return exitCode
-    }
   }
 
   return 0

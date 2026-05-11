@@ -83,7 +83,7 @@ const rule = {
       if (node.type !== 'BinaryExpression') {
         return undefined
       }
-      if (node.operator !== '===' && node.operator !== '!==') {
+      if (node.operator !== '!==' && node.operator !== '===') {
         return undefined
       }
       // Right side must be a plain string-literal Identifier-comparand pattern.
@@ -144,7 +144,7 @@ const rule = {
 
       const op = rootNode.operator
       // We only process || and && chains.
-      if (op !== '||' && op !== '&&') {
+      if (op !== '&&' && op !== '||') {
         return
       }
 

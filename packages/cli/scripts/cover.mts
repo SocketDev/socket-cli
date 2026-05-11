@@ -22,17 +22,17 @@ import { spawn } from '@socketsecurity/lib/spawn'
 
 const logger = getDefaultLogger()
 
-function printError(message) {
+export function printError(message) {
   logger.error(`✖ ${message}`)
 }
 
-function printHeader(message) {
+export function printHeader(message) {
   logger.error('\n═══════════════════════════════════════════════════════')
   logger.error(`  ${message}`)
   logger.error('═══════════════════════════════════════════════════════\n')
 }
 
-function printSuccess(message) {
+export function printSuccess(message) {
   logger.log(`✔ ${message}`)
 }
 

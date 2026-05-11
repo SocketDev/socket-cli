@@ -28,9 +28,9 @@ import { isSeaBinary } from '../sea/detect.mjs'
 
 import type { StdioOptions } from 'node:child_process'
 import type {
+  SpawnExtra,
   SpawnOptions,
   SpawnResult,
-  SpawnExtra,
 } from '@socketsecurity/lib/spawn'
 
 /**

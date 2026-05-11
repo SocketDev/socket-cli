@@ -8,17 +8,6 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
 /**
- * Print section header.
- */
-export function printHeader(title: string): void {
-  logger.log('')
-  logger.log('━'.repeat(60))
-  logger.log(`  ${title}`)
-  logger.log('━'.repeat(60))
-  logger.log('')
-}
-
-/**
  * Print error with instructions.
  */
 export function printError(
@@ -41,6 +30,42 @@ export function printError(
 }
 
 /**
+ * Print section header.
+ */
+export function printHeader(title: string): void {
+  logger.log('')
+  logger.log('━'.repeat(60))
+  logger.log(`  ${title}`)
+  logger.log('━'.repeat(60))
+  logger.log('')
+}
+
+/**
+ * Print info message.
+ */
+export function printInfo(message: string): void {
+  logger.log(`ℹ️  ${message}`)
+}
+
+/**
+ * Print step with description.
+ */
+export function printStep(
+  step: number,
+  total: number,
+  description: string,
+): void {
+  logger.log(`[${step}/${total}] ${description}`)
+}
+
+/**
+ * Print success message.
+ */
+export function printSuccess(message: string): void {
+  logger.log(`✅ ${message}`)
+}
+
+/**
  * Print warning with suggestions.
  */
 export function printWarning(
@@ -60,29 +85,4 @@ export function printWarning(
     }
   }
   logger.warn('')
-}
-
-/**
- * Print success message.
- */
-export function printSuccess(message: string): void {
-  logger.log(`✅ ${message}`)
-}
-
-/**
- * Print info message.
- */
-export function printInfo(message: string): void {
-  logger.log(`ℹ️  ${message}`)
-}
-
-/**
- * Print step with description.
- */
-export function printStep(
-  step: number,
-  total: number,
-  description: string,
-): void {
-  logger.log(`[${step}/${total}] ${description}`)
 }

@@ -8,7 +8,7 @@
  * 3. External Security Tools - Python, Trivy, TruffleHog, OpenGrep downloads.
  */
 
-import { existsSync, readFileSync, promises as fs } from 'node:fs'
+import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -247,7 +247,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
         } catch (e) {
           // Fallback to copy + delete for cross-device moves.
           await fs.copyFile(archivePath, packageBinaryPath)
-          await fs.unlink(archivePath)
+          await safeDelete(archivePath)
         }
       }
 
@@ -474,7 +474,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
         } catch (e) {
           // Fallback to copy + delete for cross-device moves.
           await fs.copyFile(extractedBinaryPath, binaryPath)
-          await fs.unlink(extractedBinaryPath)
+          await safeDelete(extractedBinaryPath)
         }
       } else if (!existsSync(binaryPath)) {
         throw new Error(
@@ -503,7 +503,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
         } catch (e) {
           // Fallback to copy + delete for cross-device moves.
           await fs.copyFile(extractedBinaryPath, binaryPath)
-          await fs.unlink(extractedBinaryPath)
+          await safeDelete(extractedBinaryPath)
         }
       } else if (!existsSync(binaryPath)) {
         throw new Error(

@@ -20,7 +20,6 @@
  */
 
 import https from 'node:https'
-import { URL } from 'node:url'
 
 import semver from 'semver'
 

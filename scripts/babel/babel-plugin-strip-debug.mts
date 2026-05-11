@@ -4,6 +4,33 @@
  */
 
 /**
+ * Check if a node is a DEBUG identifier.
+ */
+function isDebugIdentifier(t, node, debugIds) {
+  return t.isIdentifier(node) && debugIds.has(node.name)
+}
+
+/**
+ * Check if test expression is a debug check.
+ */
+function isDebugTest(t, test, debugIds) {
+  // Simple: if (DEBUG)
+  if (isDebugIdentifier(t, test, debugIds)) {
+    return true
+  }
+
+  // Logical: if (DEBUG && x) or if (x && DEBUG)
+  if (t.isLogicalExpression(test, { operator: '&&' })) {
+    return (
+      isDebugIdentifier(t, test.left, debugIds) ||
+      isDebugIdentifier(t, test.right, debugIds)
+    )
+  }
+
+  return false
+}
+
+/**
  * Babel plugin to strip debug code.
  *
  * Removes:
@@ -78,31 +105,4 @@ export default function stripDebug(babel, options = {}) {
       },
     },
   }
-}
-
-/**
- * Check if a node is a DEBUG identifier.
- */
-function isDebugIdentifier(t, node, debugIds) {
-  return t.isIdentifier(node) && debugIds.has(node.name)
-}
-
-/**
- * Check if test expression is a debug check.
- */
-function isDebugTest(t, test, debugIds) {
-  // Simple: if (DEBUG)
-  if (isDebugIdentifier(t, test, debugIds)) {
-    return true
-  }
-
-  // Logical: if (DEBUG && x) or if (x && DEBUG)
-  if (t.isLogicalExpression(test, { operator: '&&' })) {
-    return (
-      isDebugIdentifier(t, test.left, debugIds) ||
-      isDebugIdentifier(t, test.right, debugIds)
-    )
-  }
-
-  return false
 }

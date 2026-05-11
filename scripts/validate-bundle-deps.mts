@@ -45,36 +45,6 @@ interface BundleValidationResult {
 }
 
 /**
- * Find all JavaScript files in dist directory.
- */
-async function findDistFiles(distPath: string): Promise<string[]> {
-  const files = []
-
-  try {
-    const entries = await fs.readdir(distPath, { withFileTypes: true })
-
-    for (const entry of entries) {
-      const fullPath = path.join(distPath, entry.name)
-
-      if (entry.isDirectory()) {
-        files.push(...(await findDistFiles(fullPath)))
-      } else if (
-        entry.name.endsWith('.js') ||
-        entry.name.endsWith('.mjs') ||
-        entry.name.endsWith('.cjs')
-      ) {
-        files.push(fullPath)
-      }
-    }
-  } catch {
-    // Directory doesn't exist or can't be read
-    return []
-  }
-
-  return files
-}
-
-/**
  * Extract bundled package names from node_modules paths in comments and code.
  */
 async function extractBundledPackages(filePath: string): Promise<Set<string>> {
@@ -137,6 +107,105 @@ async function extractBundledPackages(filePath: string): Promise<Set<string>> {
 }
 
 /**
+ * Extract external packages from esbuild config files.
+ */
+async function extractExternalsFromConfigs(): Promise<Set<string>> {
+  const externals = new Set()
+  const configFiles = [
+    path.join(cliPackagePath, '.config/esbuild.cli.build.mts'),
+    path.join(cliPackagePath, '.config/esbuild.inject.config.mts'),
+    path.join(cliPackagePath, '.config/esbuild.index.config.mts'),
+  ]
+
+  for (const configFile of configFiles) {
+    try {
+      const content = await fs.readFile(configFile, 'utf8')
+      // Extract external array from config.
+      // Look for: external: [...] pattern.
+      const externalMatch = content.match(/external\s*:\s*\[([\s\S]*?)\]/m)
+      if (externalMatch) {
+        const externalContent = externalMatch[1]
+        // Extract quoted strings from the array.
+        const packageMatches = externalContent.matchAll(/['"]([^'"]+)['"]/g)
+        for (const match of packageMatches) {
+          const packageName = getPackageName(match[1])
+          if (packageName && !BUILTIN_MODULES.has(packageName)) {
+            externals.add(packageName)
+          }
+        }
+      }
+    } catch {
+      // Config file doesn't exist or can't be read.
+      continue
+    }
+  }
+
+  return externals
+}
+
+/**
+ * Find all JavaScript files in dist directory.
+ */
+async function findDistFiles(distPath: string): Promise<string[]> {
+  const files = []
+
+  try {
+    const entries = await fs.readdir(distPath, { withFileTypes: true })
+
+    for (const entry of entries) {
+      const fullPath = path.join(distPath, entry.name)
+
+      if (entry.isDirectory()) {
+        files.push(...(await findDistFiles(fullPath)))
+      } else if (
+        entry.name.endsWith('.js') ||
+        entry.name.endsWith('.mjs') ||
+        entry.name.endsWith('.cjs')
+      ) {
+        files.push(fullPath)
+      }
+    }
+  } catch {
+    // Directory doesn't exist or can't be read
+    return []
+  }
+
+  return files
+}
+
+/**
+ * Find all source files in a directory.
+ */
+async function findSourceFiles(srcPath: string): Promise<string[]> {
+  const files = []
+
+  try {
+    const entries = await fs.readdir(srcPath, { withFileTypes: true })
+
+    for (const entry of entries) {
+      const fullPath = path.join(srcPath, entry.name)
+
+      if (entry.isDirectory()) {
+        files.push(...(await findSourceFiles(fullPath)))
+      } else if (
+        entry.name.endsWith('.ts') ||
+        entry.name.endsWith('.mts') ||
+        entry.name.endsWith('.cts') ||
+        entry.name.endsWith('.js') ||
+        entry.name.endsWith('.mjs') ||
+        entry.name.endsWith('.cjs')
+      ) {
+        files.push(fullPath)
+      }
+    }
+  } catch {
+    return []
+  }
+
+  return files
+}
+
+/**
  * Get package name from a module specifier (strip subpaths).
  */
 function getPackageName(specifier: string): string | undefined {
@@ -190,43 +259,6 @@ function getPackageName(specifier: string): string | undefined {
 }
 
 /**
- * Extract external packages from esbuild config files.
- */
-async function extractExternalsFromConfigs(): Promise<Set<string>> {
-  const externals = new Set()
-  const configFiles = [
-    path.join(cliPackagePath, '.config/esbuild.cli.build.mts'),
-    path.join(cliPackagePath, '.config/esbuild.inject.config.mts'),
-    path.join(cliPackagePath, '.config/esbuild.index.config.mts'),
-  ]
-
-  for (const configFile of configFiles) {
-    try {
-      const content = await fs.readFile(configFile, 'utf8')
-      // Extract external array from config.
-      // Look for: external: [...] pattern.
-      const externalMatch = content.match(/external\s*:\s*\[([\s\S]*?)\]/m)
-      if (externalMatch) {
-        const externalContent = externalMatch[1]
-        // Extract quoted strings from the array.
-        const packageMatches = externalContent.matchAll(/['"]([^'"]+)['"]/g)
-        for (const match of packageMatches) {
-          const packageName = getPackageName(match[1])
-          if (packageName && !BUILTIN_MODULES.has(packageName)) {
-            externals.add(packageName)
-          }
-        }
-      }
-    } catch {
-      // Config file doesn't exist or can't be read.
-      continue
-    }
-  }
-
-  return externals
-}
-
-/**
  * Check if a package is a direct dependency (not transitive).
  */
 async function isDirectDependency(
@@ -261,38 +293,6 @@ async function isDirectDependency(
   }
 
   return false
-}
-
-/**
- * Find all source files in a directory.
- */
-async function findSourceFiles(srcPath: string): Promise<string[]> {
-  const files = []
-
-  try {
-    const entries = await fs.readdir(srcPath, { withFileTypes: true })
-
-    for (const entry of entries) {
-      const fullPath = path.join(srcPath, entry.name)
-
-      if (entry.isDirectory()) {
-        files.push(...(await findSourceFiles(fullPath)))
-      } else if (
-        entry.name.endsWith('.ts') ||
-        entry.name.endsWith('.mts') ||
-        entry.name.endsWith('.cts') ||
-        entry.name.endsWith('.js') ||
-        entry.name.endsWith('.mjs') ||
-        entry.name.endsWith('.cjs')
-      ) {
-        files.push(fullPath)
-      }
-    }
-  } catch {
-    return []
-  }
-
-  return files
 }
 
 /**

@@ -12,13 +12,13 @@ import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'raw-npx'
 
-const description = 'Run npx without the Socket wrapper'
+const description = 'Run pnpm exec without the Socket wrapper'
 
 const hidden = false
 
 // Helper functions.
 
-async function run(
+export async function run(
   argv: readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
@@ -56,14 +56,14 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    outputDryRunExecute(getNpxBinPath(), argv as string[], 'raw npx command')
+    outputDryRunExecute(getNpxBinPath(), argv as string[], 'raw pnpm exec command')
     return
   }
 
   await runRawNpx(argv)
 }
 
-async function runRawNpx(argv: string[] | readonly string[]): Promise<void> {
+export async function runRawNpx(argv: string[] | readonly string[]): Promise<void> {
   process.exitCode = 1
 
   const spawnPromise = spawn(getNpxBinPath(), argv as string[], {

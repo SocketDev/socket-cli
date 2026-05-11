@@ -6,14 +6,14 @@
 /**
  * Get Node major version number.
  */
-function getNodeMajorVersion(): number {
+export function getNodeMajorVersion(): number {
   return Number.parseInt(process.version.slice(1).split('.')[0] || '0', 10)
 }
 
 /**
  * Get Node minor version number.
  */
-function getNodeMinorVersion(): number {
+export function getNodeMinorVersion(): number {
   return Number.parseInt(process.version.slice(1).split('.')[1] || '0', 10)
 }
 
@@ -21,7 +21,7 @@ function getNodeMinorVersion(): number {
  * Check if --disable-sigusr1 flag is supported.
  * Supported in v22.14.0+, v23.7.0+, v24.8.0+ (stable in v22.20.0+, v24.8.0+).
  */
-function supportsDisableSigusr1(): boolean {
+export function supportsDisableSigusr1(): boolean {
   const major = getNodeMajorVersion()
   const minor = getNodeMinorVersion()
 

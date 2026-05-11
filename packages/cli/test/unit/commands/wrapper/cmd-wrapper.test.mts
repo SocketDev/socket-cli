@@ -91,7 +91,7 @@ describe('cmd-wrapper', () => {
   describe('command metadata', () => {
     it('should have correct description', () => {
       expect(cmdWrapper.description).toBe(
-        'Enable or disable the Socket npm/npx wrapper',
+        'Enable or disable the Socket npm/pnpm exec wrapper',
       )
     })
 

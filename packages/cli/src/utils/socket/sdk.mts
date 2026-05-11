@@ -45,7 +45,7 @@ import { password } from '@socketsecurity/lib/stdio/prompts'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 import { isUrl } from '@socketsecurity/lib/url'
 import { pluralize } from '@socketsecurity/lib/words'
-import { createUserAgentFromPkgJson, SocketSdk } from '@socketsecurity/sdk'
+import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
 import {
   CONFIG_KEY_API_BASE_URL,

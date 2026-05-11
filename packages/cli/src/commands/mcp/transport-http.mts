@@ -8,6 +8,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { createConfiguredServer } from './server.mts'
 import {
+  OAUTH_PROTECTED_RESOURCE_METADATA_PATH,
+  OAuthIntrospector,
   buildProtectedResourceMetadata,
   destroySessionEntry,
   getProtectedResourceMetadataUrl,
@@ -16,8 +18,6 @@ import {
   handleRequestSafely,
   isLocalhostOrigin,
   makeOnTransportClose,
-  OAuthIntrospector,
-  OAUTH_PROTECTED_RESOURCE_METADATA_PATH,
   reapIdleSessions,
   writeJson,
 } from './transport-http-helpers.mts'

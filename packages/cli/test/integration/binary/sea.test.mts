@@ -5,10 +5,10 @@ import path from 'node:path'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import {
+  type BinaryConfig,
   ROOT_DIR,
   logger,
   prepareBinary,
-  type BinaryConfig,
 } from './helpers.mts'
 import ENV from '../../../src/constants/env.mts'
 import { getDefaultApiToken } from '../../../src/utils/socket/sdk.mts'
@@ -172,7 +172,7 @@ if (BINARY.enabled) {
       )
 
       it.skipIf(!ENV.RUN_INTEGRATION_TESTS)(
-        'should display npx command help',
+        'should display pnpm exec command help',
         async () => {
           if (!binaryExists) {
             return
@@ -1763,7 +1763,7 @@ if (BINARY.enabled) {
       )
 
       it.skipIf(!ENV.RUN_INTEGRATION_TESTS)(
-        'should handle npx --dry-run',
+        'should handle pnpm exec --dry-run',
         async () => {
           if (!binaryExists) {
             return

@@ -76,7 +76,7 @@ export const YARN_BERRY_AGENT_FIXTURE = path.join(
 export const BUN_AGENT_FIXTURE = path.join(AGENT_FIXTURE_PATH, 'bun')
 export const VLT_AGENT_FIXTURE = path.join(AGENT_FIXTURE_PATH, 'vlt')
 
-function normalizeLogSymbols(str: string): string {
+export function normalizeLogSymbols(str: string): string {
   return str
     .replaceAll('✖', '×')
     .replaceAll('ℹ', 'i')
@@ -84,7 +84,7 @@ function normalizeLogSymbols(str: string): string {
     .replaceAll('⚠', '‼')
 }
 
-function normalizeNewlines(str: string): string {
+export function normalizeNewlines(str: string): string {
   return (
     str
       // Replace all literal \r\n.
@@ -94,11 +94,11 @@ function normalizeNewlines(str: string): string {
   )
 }
 
-function stripZeroWidthSpace(str: string): string {
+export function stripZeroWidthSpace(str: string): string {
   return str.replaceAll('\u200b', '')
 }
 
-function toAsciiSafeString(str: string): string {
+export function toAsciiSafeString(str: string): string {
   return str.replace(asciiUnsafeRegexp, m => {
     const code = m.charCodeAt(0)
     return code < 255
@@ -107,7 +107,7 @@ function toAsciiSafeString(str: string): string {
   })
 }
 
-function stripTokenErrorMessages(str: string): string {
+export function stripTokenErrorMessages(str: string): string {
   // Remove API token error messages to avoid snapshot inconsistencies
   // when local environment has/doesn't have tokens set.
   return str.replace(
@@ -116,7 +116,7 @@ function stripTokenErrorMessages(str: string): string {
   )
 }
 
-function sanitizeTokens(str: string): string {
+export function sanitizeTokens(str: string): string {
   // Sanitize Socket API tokens to prevent leaking credentials into snapshots.
   // Socket tokens follow the format: sktsec_[alphanumeric+underscore characters]
 

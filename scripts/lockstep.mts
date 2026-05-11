@@ -35,7 +35,7 @@
  *     code 2 semantics: ultrathink/acorn/scripts/xlang-harness.mts.
  */
 
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -46,17 +46,17 @@ import { spawnSync } from '@socketsecurity/lib/spawn'
 import { validateSchema } from '@socketsecurity/lib/schema/validate'
 
 import {
-  LockstepManifestSchema,
   type FeatureParityRow,
   type FileForkRow,
   type LangParityRow,
+  type LockstepManifest,
+  LockstepManifestSchema,
   type PortStatus,
   type Row,
   type Site,
   type SpecConformanceRow,
   type Upstream,
   type VersionPinRow,
-  type LockstepManifest,
 } from './lockstep-schema.mts'
 
 const logger = getDefaultLogger()
@@ -139,7 +139,7 @@ type Report =
 // Generic helpers.
 // ---------------------------------------------------------------------------
 
-function readManifest(manifestPath: string): Manifest {
+export function readManifest(manifestPath: string): Manifest {
   if (!existsSync(manifestPath)) {
     logger.error(`lockstep: manifest not found at ${manifestPath}`)
     process.exit(1)
@@ -169,7 +169,7 @@ function readManifest(manifestPath: string): Manifest {
  * flattened view. Each sub-manifest contributes its rows; the top-level
  * upstreams/sites maps are merged (top-level wins on conflict).
  */
-function loadManifestTree(rootManifestPath: string): {
+export function loadManifestTree(rootManifestPath: string): {
   areas: Array<{ area: string; manifest: Manifest }>
   merged: Manifest
 } {
@@ -223,7 +223,7 @@ function loadManifestTree(rootManifestPath: string): {
   }
 }
 
-function gitIn(submoduleDir: string, args: string[]): string {
+export function gitIn(submoduleDir: string, args: string[]): string {
   const result = spawnSync('git', ['-C', submoduleDir, ...args], {
     stdio: ['ignore', 'pipe', 'pipe'],
     stdioString: true,
@@ -239,7 +239,7 @@ function gitIn(submoduleDir: string, args: string[]): string {
   return String(result.stdout)
 }
 
-function shaIsReachable(submoduleDir: string, sha: string): boolean {
+export function shaIsReachable(submoduleDir: string, sha: string): boolean {
   try {
     gitIn(submoduleDir, ['cat-file', '-e', sha])
     return true
@@ -248,7 +248,7 @@ function shaIsReachable(submoduleDir: string, sha: string): boolean {
   }
 }
 
-function driftCommitsSince(
+export function driftCommitsSince(
   submoduleDir: string,
   sha: string,
   pathInRepo: string,
@@ -280,7 +280,7 @@ function driftCommitsSince(
   }
 }
 
-function resolveUpstream(
+export function resolveUpstream(
   manifest: Manifest,
   alias: string,
   messages: string[],
@@ -294,7 +294,7 @@ function resolveUpstream(
   return upstream
 }
 
-function walkDirFiles(dir: string, extRe: RegExp): string[] {
+export function walkDirFiles(dir: string, extRe: RegExp): string[] {
   const files: string[] = []
   if (!existsSync(dir)) {
     return files
@@ -309,7 +309,7 @@ function walkDirFiles(dir: string, extRe: RegExp): string[] {
       continue
     }
     for (const entry of entries) {
-      if (entry === 'node_modules' || entry === '.git' || entry === 'dist') {
+      if (entry === '.git' || entry === 'dist' || entry === 'node_modules') {
         continue
       }
       const full = path.join(current, entry)
@@ -329,7 +329,7 @@ function walkDirFiles(dir: string, extRe: RegExp): string[] {
   return files
 }
 
-function countPatternHits(files: string[], patterns: string[]): number {
+export function countPatternHits(files: string[], patterns: string[]): number {
   if (patterns.length === 0) {
     return 0
   }
@@ -368,7 +368,7 @@ function countPatternHits(files: string[], patterns: string[]): number {
 // Kind checkers.
 // ---------------------------------------------------------------------------
 
-function checkFileFork(
+export function checkFileFork(
   row: FileForkRow,
   manifest: Manifest,
   area: string,
@@ -429,7 +429,7 @@ function checkFileFork(
   return base
 }
 
-function checkVersionPin(
+export function checkVersionPin(
   row: VersionPinRow,
   manifest: Manifest,
   area: string,
@@ -532,7 +532,7 @@ function checkVersionPin(
   return base
 }
 
-function checkFeatureParity(
+export function checkFeatureParity(
   row: FeatureParityRow,
   _manifest: Manifest,
   area: string,
@@ -562,7 +562,7 @@ function checkFeatureParity(
   const codePatterns = row.code_patterns ?? []
   const testPatterns = row.test_patterns ?? []
   const codeFiles = walkDirFiles(localAreaPath, /\.(m?[jt]sx?|json)$/).filter(
-    f => !/[/\\](test|tests|__tests__)[/\\]|\.test\.|\.spec\./.test(f),
+    f => !/[/\\](__tests__|test|tests)[/\\]|\.test\.|\.spec\./.test(f),
   )
 
   const codeScore =
@@ -578,7 +578,7 @@ function checkFeatureParity(
   const testFiles = row.test_area
     ? testAreaFiles
     : testAreaFiles.filter(f =>
-        /[/\\](test|tests|__tests__)[/\\]|\.test\.|\.spec\./.test(f),
+        /[/\\](__tests__|test|tests)[/\\]|\.test\.|\.spec\./.test(f),
       )
   const testScore =
     testPatterns.length === 0
@@ -620,7 +620,7 @@ function checkFeatureParity(
   return base
 }
 
-function checkSpecConformance(
+export function checkSpecConformance(
   row: SpecConformanceRow,
   manifest: Manifest,
   area: string,
@@ -659,7 +659,7 @@ function checkSpecConformance(
   return base
 }
 
-function checkLangParity(
+export function checkLangParity(
   row: LangParityRow,
   manifest: Manifest,
   area: string,
@@ -726,7 +726,7 @@ function checkLangParity(
  * already covers per-row shape, enum values, id pattern, and required
  * fields — this is the referential-integrity layer on top.
  */
-function checkCrossRowConsistency(
+export function checkCrossRowConsistency(
   rowsWithArea: Array<{ row: Row; area: string }>,
   merged: Manifest,
 ): string[] {
@@ -752,10 +752,10 @@ function checkCrossRowConsistency(
     areaIds.add(row.id)
 
     if (
-      row.kind === 'file-fork' ||
-      row.kind === 'version-pin' ||
       row.kind === 'feature-parity' ||
-      row.kind === 'spec-conformance'
+      row.kind === 'file-fork' ||
+      row.kind === 'spec-conformance' ||
+      row.kind === 'version-pin'
     ) {
       if (!upstreamAliases.has(row.upstream)) {
         errors.push(
@@ -782,7 +782,7 @@ function checkCrossRowConsistency(
 // Dispatcher.
 // ---------------------------------------------------------------------------
 
-function evaluate(
+export function evaluate(
   rowsWithArea: Array<{ row: Row; area: string }>,
   merged: Manifest,
 ): Report[] {
@@ -837,7 +837,7 @@ interface AreaSummary {
   error: number
 }
 
-function summarize(reports: Report[]): AreaSummary[] {
+export function summarize(reports: Report[]): AreaSummary[] {
   const byArea = new Map<string, AreaSummary>()
   for (const r of reports) {
     let s = byArea.get(r.area)
@@ -855,7 +855,7 @@ function summarize(reports: Report[]): AreaSummary[] {
 // Output.
 // ---------------------------------------------------------------------------
 
-function emitHuman(reports: Report[], summaries: AreaSummary[]): number {
+export function emitHuman(reports: Report[], summaries: AreaSummary[]): number {
   logger.info(
     `lockstep — ${reports.length} row(s) across ${summaries.length} area(s)`,
   )

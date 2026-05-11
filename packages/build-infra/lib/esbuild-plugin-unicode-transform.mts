@@ -12,7 +12,7 @@
  * }
  */
 
-import type { PluginBuild, BuildResult } from 'esbuild'
+import type { BuildResult, PluginBuild } from 'esbuild'
 
 import { transformUnicodePropertyEscapes } from './unicode-property-escape-transform.mts'
 

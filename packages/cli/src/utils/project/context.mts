@@ -3,7 +3,6 @@
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-
 interface ProjectContext {
   type: 'npm' | 'yarn' | 'pnpm' | 'unknown'
   root: string
@@ -17,7 +16,7 @@ interface ProjectContext {
 /**
  * Detect the framework being used
  */
-async function detectFramework(root: string): Promise<string | undefined> {
+export async function detectFramework(root: string): Promise<string | undefined> {
   const pkgPath = join(root, 'package.json')
   /* c8 ignore next 3 - root came from findProjectRoot which already verified package.json exists */
   if (!existsSync(pkgPath)) {
@@ -82,7 +81,7 @@ async function detectFramework(root: string): Promise<string | undefined> {
 /**
  * Detect if this is a monorepo
  */
-async function isMonorepo(root: string): Promise<boolean> {
+export async function isMonorepo(root: string): Promise<boolean> {
   const pkgPath = join(root, 'package.json')
   /* c8 ignore next 3 - root came from findProjectRoot which already verified package.json exists */
   if (!existsSync(pkgPath)) {

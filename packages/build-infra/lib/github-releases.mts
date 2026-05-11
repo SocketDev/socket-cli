@@ -24,7 +24,7 @@ const cache = createTtlCache({
  *
  * @returns {object} - Headers object with Authorization if token exists.
  */
-function getAuthHeaders() {
+export function getAuthHeaders() {
   const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
   const headers = {
     Accept: 'application/vnd.github+json',

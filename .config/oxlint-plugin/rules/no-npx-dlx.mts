@@ -30,10 +30,10 @@ const PATTERNS = [
   // Order matters — longest-prefix first so `pnpm dlx` is matched
   // before `pnpm` and `pnx ` is matched before `pnpm`. Each entry
   // is [match-prefix, replacement-prefix, label].
-  ['pnpm dlx ', 'pnpm exec ', 'pnpm dlx'],
-  ['yarn dlx ', 'pnpm exec ', 'yarn dlx'],
-  ['npx ', 'pnpm exec ', 'npx'],
-  ['pnx ', 'pnpm exec ', 'pnx'],
+  ['pnpm exec ', 'pnpm exec ', 'pnpm dlx'],
+  ['pnpm exec ', 'pnpm exec ', 'yarn dlx'],
+  ['pnpm exec ', 'pnpm exec ', 'npx'],
+  ['pnpm exec ', 'pnpm exec ', 'pnx'],
 ]
 
 const COMMENT_BYPASS_RE = /socket-hook:\s*allow\s+npx/
@@ -135,7 +135,7 @@ const rule = {
           if (next === value) {
             // Defensive — if our replace-all became a no-op, don't
             // ship an empty fix.
-            return null
+            return undefined
           }
           // Preserve the original quote style.
           const raw = sourceCode.getText(node)

@@ -16,9 +16,9 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  getSimpleCleanScan,
   getScanWithEnvVars,
   getScanWithMultiplePackages,
+  getSimpleCleanScan,
 } from '../../../helpers/generate-report-test-helpers.mts'
 
 describe('generate-report-test-helpers', () => {

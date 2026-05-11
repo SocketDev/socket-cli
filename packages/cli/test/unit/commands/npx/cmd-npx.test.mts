@@ -83,7 +83,7 @@ describe('cmd-npx', () => {
 
   describe('command metadata', () => {
     it('should have correct description', () => {
-      expect(cmdNpx.description).toBe('Run npx with Socket Firewall security')
+      expect(cmdNpx.description).toBe('Run pnpm exec with Socket Firewall security')
     })
 
     it('should not be hidden', () => {
@@ -123,7 +123,7 @@ describe('cmd-npx', () => {
         expect(hasDryRunMessage).toBe(true)
       })
 
-      it('should show dry-run output with npx command', async () => {
+      it('should show dry-run output with pnpm exec command', async () => {
         await cmdNpx.run(['--dry-run', 'cowsay', 'hello'], importMeta, context)
 
         expect(mockLogger.error).toHaveBeenCalled()
@@ -210,7 +210,7 @@ describe('cmd-npx', () => {
     })
 
     describe('command structure', () => {
-      it('should forward npx command to sfw', async () => {
+      it('should forward pnpm exec command to sfw', async () => {
         mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
 
         await cmdNpx.run(['cowsay'], importMeta, context)
@@ -220,7 +220,7 @@ describe('cmd-npx', () => {
         })
       })
 
-      it('should forward npx command with arguments', async () => {
+      it('should forward pnpm exec command with arguments', async () => {
         mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
 
         await cmdNpx.run(['cowsay', 'hello', 'world'], importMeta, context)
@@ -233,7 +233,7 @@ describe('cmd-npx', () => {
         )
       })
 
-      it('should forward npx with version specifier', async () => {
+      it('should forward pnpm exec with version specifier', async () => {
         mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
 
         await cmdNpx.run(['cowsay@1.6.0', 'hello'], importMeta, context)
@@ -246,7 +246,7 @@ describe('cmd-npx', () => {
         )
       })
 
-      it('should forward npx with --yes flag', async () => {
+      it('should forward pnpm exec with --yes flag', async () => {
         mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
 
         await cmdNpx.run(['--yes', 'cowsay', 'hello'], importMeta, context)
@@ -259,7 +259,7 @@ describe('cmd-npx', () => {
         )
       })
 
-      it('should forward npx with --package flag', async () => {
+      it('should forward pnpm exec with --package flag', async () => {
         mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
 
         await cmdNpx.run(

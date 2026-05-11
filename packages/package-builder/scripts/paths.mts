@@ -77,16 +77,16 @@ export function getPackageOutDir(packageName: string, mode = getBuildMode()) {
 }
 
 /**
- * Get the output path for a socketbin package.
+ * Get the output path for a socketaddon package.
  * Uses release platform naming (win instead of win32).
  *
  * @param {string} platform - Platform identifier (darwin, linux, win, or win32).
  * @param {string} arch - Architecture identifier (arm64, x64).
  * @param {string} [libc] - Linux libc variant ('musl' for Alpine).
  * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI detection.
- * @returns {string} Path to socketbin package directory.
+ * @returns {string} Path to socketaddon package directory.
  */
-export function getSocketbinPackageDir(
+export function getSocketaddonPackageDir(
   platform: string,
   arch: string,
   libc?: string,
@@ -95,7 +95,7 @@ export function getSocketbinPackageDir(
   // Normalize win32 → win for directory naming.
   const releasePlatform = platform === 'win32' ? 'win' : platform
   const muslSuffix = libc === 'musl' ? '-musl' : ''
-  const packageName = `socketbin-cli-${releasePlatform}-${arch}${muslSuffix}`
+  const packageName = `socketaddon-iocraft-${releasePlatform}-${arch}${muslSuffix}`
   return getPackageOutDir(packageName, mode)
 }
 
@@ -121,16 +121,16 @@ export function getSocketbinBinaryPath(
 }
 
 /**
- * Get the output path for a socketaddon package.
+ * Get the output path for a socketbin package.
  * Uses release platform naming (win instead of win32).
  *
  * @param {string} platform - Platform identifier (darwin, linux, win, or win32).
  * @param {string} arch - Architecture identifier (arm64, x64).
  * @param {string} [libc] - Linux libc variant ('musl' for Alpine).
  * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI detection.
- * @returns {string} Path to socketaddon package directory.
+ * @returns {string} Path to socketbin package directory.
  */
-export function getSocketaddonPackageDir(
+export function getSocketbinPackageDir(
   platform: string,
   arch: string,
   libc?: string,
@@ -139,6 +139,6 @@ export function getSocketaddonPackageDir(
   // Normalize win32 → win for directory naming.
   const releasePlatform = platform === 'win32' ? 'win' : platform
   const muslSuffix = libc === 'musl' ? '-musl' : ''
-  const packageName = `socketaddon-iocraft-${releasePlatform}-${arch}${muslSuffix}`
+  const packageName = `socketbin-cli-${releasePlatform}-${arch}${muslSuffix}`
   return getPackageOutDir(packageName, mode)
 }

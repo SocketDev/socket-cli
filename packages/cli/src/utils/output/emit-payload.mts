@@ -17,7 +17,7 @@
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-import { isMachineOutputMode, SENTINEL_BEGIN, SENTINEL_END } from './mode.mts'
+import { SENTINEL_BEGIN, SENTINEL_END, isMachineOutputMode } from './mode.mts'
 
 import type { MachineModeFlags } from './mode.mts'
 

@@ -140,6 +140,23 @@ export const unicodePropertyMap = {
 }
 
 /**
+ * Escape a string for insertion into JavaScript string literal context.
+ * When we get a pattern from Babel's StringLiteral.value, backslashes are interpreted.
+ * But when writing back into source code, we need to re-escape them.
+ */
+function escapeForStringLiteral(str: string) {
+  return (
+    str
+      // Backslash must be doubled.
+      .replace(/\\/g, '\\\\')
+      // Escape quotes if needed (handled by keeping original quotes).
+      .replace(/"/g, '\\"')
+      // Escape single quotes if needed.
+      .replace(/'/g, "\\'")
+  )
+}
+
+/**
  * Check if a regex pattern has unsupported Unicode features.
  */
 function hasUnsupportedUnicodeFeatures(pattern: string) {
@@ -171,23 +188,6 @@ function transformRegexPattern(pattern: string) {
   }
 
   return transformed
-}
-
-/**
- * Escape a string for insertion into JavaScript string literal context.
- * When we get a pattern from Babel's StringLiteral.value, backslashes are interpreted.
- * But when writing back into source code, we need to re-escape them.
- */
-function escapeForStringLiteral(str: string) {
-  return (
-    str
-      // Backslash must be doubled.
-      .replace(/\\/g, '\\\\')
-      // Escape quotes if needed (handled by keeping original quotes).
-      .replace(/"/g, '\\"')
-      // Escape single quotes if needed.
-      .replace(/'/g, "\\'")
-  )
 }
 
 /**

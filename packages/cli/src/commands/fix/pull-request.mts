@@ -18,12 +18,12 @@ import {
 } from '../../constants/github.mts'
 import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
 import {
-  cacheFetch,
   type GhsaDetails,
+  type Pr,
+  cacheFetch,
   getOctokit,
   getOctokitGraphql,
   handleGraphqlError,
-  type Pr,
   withGitHubRetry,
   writeCache,
 } from '../../utils/git/github.mts'

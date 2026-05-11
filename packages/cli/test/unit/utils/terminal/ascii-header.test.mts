@@ -6,18 +6,18 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  type HeaderTheme,
   formatInfoLine,
   renderLogoWithFallback,
   renderShimmerFrame,
   renderStaticLogo,
   supportsFullColor,
-  type HeaderTheme,
 } from '../../../../src/utils/terminal/ascii-header.mts'
 
 /**
  * Strip ANSI color codes from string for shimmer testing.
  */
-function stripAnsi(str: string): string {
+export function stripAnsi(str: string): string {
   return str.replace(/\x1b\[[0-9;]*m/g, '')
 }
 

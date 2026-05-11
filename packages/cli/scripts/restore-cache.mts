@@ -22,7 +22,7 @@
  *   - Extracts cache to packages/cli/build/ and packages/cli/dist/.
  */
 
-import { createHash } from 'node:crypto'
+import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -43,7 +43,7 @@ const isVerbose = () => process.argv.includes('--verbose')
 /**
  * Check if cache exists in GitHub Actions.
  */
-async function cacheExists(repo, cacheKey) {
+export async function cacheExists(repo, cacheKey) {
   try {
     const result = await spawn(
       'gh',
@@ -81,7 +81,7 @@ async function cacheExists(repo, cacheKey) {
 /**
  * Generate CLI build cache key (matches CI workflow).
  */
-async function generateCacheKey() {
+export async function generateCacheKey() {
   const pnpmLockHash = await hashFile(path.join(repoRoot, 'pnpm-lock.yaml'))
   const srcHash = await hashFiles('packages/cli/src', repoRoot)
   const configHash = await hashFiles(
@@ -95,7 +95,7 @@ async function generateCacheKey() {
 /**
  * Get current git commit SHA.
  */
-async function getCurrentCommit() {
+export async function getCurrentCommit() {
   try {
     const result = await spawn('git', ['rev-parse', 'HEAD'], {
       cwd: repoRoot,
@@ -113,7 +113,7 @@ async function getCurrentCommit() {
 /**
  * Check if gh CLI is available.
  */
-async function hasGhCli() {
+export async function hasGhCli() {
   try {
     const result = await spawn('gh', ['--version'], {
       stdio: 'pipe',
@@ -127,7 +127,7 @@ async function hasGhCli() {
 /**
  * Compute hash of file.
  */
-async function hashFile(filePath) {
+export async function hashFile(filePath) {
   try {
     const content = await fs.readFile(filePath, 'utf8')
     return createHash('sha256').update(content).digest('hex')
@@ -139,7 +139,7 @@ async function hashFile(filePath) {
 /**
  * Compute hash of all files matching glob pattern.
  */
-async function hashFiles(globPattern, cwd) {
+export async function hashFiles(globPattern, cwd) {
   try {
     const result = await spawn(
       'find',
@@ -184,7 +184,7 @@ async function hashFiles(globPattern, cwd) {
 /**
  * Download and extract cache from GitHub Actions.
  */
-async function restoreCache(repo, cacheKey) {
+export async function restoreCache(repo, cacheKey) {
   const tempDir = path.join(packageRoot, '.cache', 'restore')
   await fs.mkdir(tempDir, { recursive: true })
 

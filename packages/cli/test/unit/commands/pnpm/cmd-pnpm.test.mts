@@ -296,7 +296,7 @@ describe('cmd-pnpm', () => {
         )
       })
 
-      it('should forward pnpm dlx command', async () => {
+      it('should forward pnpm exec command', async () => {
         mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
 
         await cmdPnpm.run(['dlx', 'cowsay', 'hello'], importMeta, context)

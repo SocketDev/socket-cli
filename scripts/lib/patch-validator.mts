@@ -51,91 +51,6 @@ interface PatchApplicationResult {
 }
 
 /**
- * Parse patch metadata from header comments.
- */
-export function parsePatchMetadata(patchContent: string): PatchMetadata {
-  const lines = patchContent.split('\n')
-  const metadata: PatchMetadata = {
-    description: undefined,
-    nodeVersions: [],
-    requires: [],
-    conflicts: [],
-  }
-
-  for (const line of lines) {
-    // Stop at first non-comment
-    if (!line.startsWith('#')) {
-      break
-    }
-
-    // Parse metadata directives.
-    if (line.includes('@node-versions:')) {
-      const versions = line
-        .split(':')[1]
-        .trim()
-        .split(/[,\s]+/)
-      metadata.nodeVersions.push(...versions)
-    }
-    if (line.includes('@requires:')) {
-      const required = line.split(':')[1].trim()
-      metadata.requires.push(required)
-    }
-    if (line.includes('@conflicts:')) {
-      const conflicted = line.split(':')[1].trim()
-      metadata.conflicts.push(conflicted)
-    }
-    if (line.includes('@description:')) {
-      metadata.description = line.split(':')[1].trim()
-    }
-  }
-
-  return metadata
-}
-
-/**
- * Check if patch is compatible with Node version.
- */
-export function isPatchCompatible(
-  metadata: PatchMetadata,
-  nodeVersion: string,
-): CompatibilityResult {
-  if (metadata.nodeVersions.length === 0) {
-    // No version restriction = compatible with all.
-    return { compatible: true, reason: undefined }
-  }
-
-  // Check version ranges.
-  for (const versionSpec of metadata.nodeVersions) {
-    if (versionSpec.includes('+')) {
-      // v24.10.0+ means v24.10.0 and later.
-      const baseVersion = versionSpec.replace('+', '')
-      if (compareVersions(nodeVersion, baseVersion) >= 0) {
-        return { compatible: true, reason: undefined }
-      }
-    } else if (versionSpec.includes('-')) {
-      // v24.9.0-v24.9.5 means range.
-      const [min, max] = versionSpec.split('-')
-      if (
-        compareVersions(nodeVersion, min) >= 0 &&
-        compareVersions(nodeVersion, max) <= 0
-      ) {
-        return { compatible: true, reason: undefined }
-      }
-    } else {
-      // Exact version.
-      if (nodeVersion === versionSpec) {
-        return { compatible: true, reason: undefined }
-      }
-    }
-  }
-
-  return {
-    compatible: false,
-    reason: `Patch supports ${metadata.nodeVersions.join(', ')} but you're using ${nodeVersion}`,
-  }
-}
-
-/**
  * Compare Node.js versions.
  */
 function compareVersions(v1: string, v2: string): number {
@@ -151,71 +66,6 @@ function compareVersions(v1: string, v2: string): number {
     }
   }
   return 0
-}
-
-/**
- * Validate patch file before applying.
- */
-export async function validatePatch(
-  patchPath: string,
-  nodeVersion: string,
-): Promise<ValidationResult> {
-  try {
-    const content = await fs.readFile(patchPath, 'utf8')
-
-    // Parse metadata.
-    const metadata = parsePatchMetadata(content)
-
-    // Check version compatibility.
-    const compatibility = isPatchCompatible(metadata, nodeVersion)
-    if (!compatibility.compatible) {
-      return {
-        valid: false,
-        reason: compatibility.reason,
-        metadata,
-      }
-    }
-
-    // Check patch is not empty.
-    if (!content.includes('diff ') && !content.includes('---')) {
-      return {
-        valid: false,
-        reason: 'Patch file contains no diff content',
-        metadata,
-      }
-    }
-
-    // Check for suspicious patterns.
-    const suspiciousPatterns = [
-      {
-        pattern: /<html>/i,
-        reason: 'Patch contains HTML (probably download error)',
-      },
-      { pattern: /404 not found/i, reason: 'Patch contains 404 error' },
-      {
-        pattern: /access denied/i,
-        reason: 'Patch contains access denied error',
-      },
-    ]
-
-    for (const { pattern, reason } of suspiciousPatterns) {
-      if (pattern.test(content)) {
-        return { valid: false, reason, metadata }
-      }
-    }
-
-    return {
-      valid: true,
-      metadata,
-    }
-  } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
-    return {
-      valid: false,
-      reason: `Cannot read patch: ${message}`,
-      metadata: undefined,
-    }
-  }
 }
 
 /**
@@ -313,6 +163,91 @@ export function checkPatchConflicts(
 }
 
 /**
+ * Check if patch is compatible with Node version.
+ */
+export function isPatchCompatible(
+  metadata: PatchMetadata,
+  nodeVersion: string,
+): CompatibilityResult {
+  if (metadata.nodeVersions.length === 0) {
+    // No version restriction = compatible with all.
+    return { compatible: true, reason: undefined }
+  }
+
+  // Check version ranges.
+  for (const versionSpec of metadata.nodeVersions) {
+    if (versionSpec.includes('+')) {
+      // v24.10.0+ means v24.10.0 and later.
+      const baseVersion = versionSpec.replace('+', '')
+      if (compareVersions(nodeVersion, baseVersion) >= 0) {
+        return { compatible: true, reason: undefined }
+      }
+    } else if (versionSpec.includes('-')) {
+      // v24.9.0-v24.9.5 means range.
+      const [min, max] = versionSpec.split('-')
+      if (
+        compareVersions(nodeVersion, min) >= 0 &&
+        compareVersions(nodeVersion, max) <= 0
+      ) {
+        return { compatible: true, reason: undefined }
+      }
+    } else {
+      // Exact version.
+      if (nodeVersion === versionSpec) {
+        return { compatible: true, reason: undefined }
+      }
+    }
+  }
+
+  return {
+    compatible: false,
+    reason: `Patch supports ${metadata.nodeVersions.join(', ')} but you're using ${nodeVersion}`,
+  }
+}
+
+/**
+ * Parse patch metadata from header comments.
+ */
+export function parsePatchMetadata(patchContent: string): PatchMetadata {
+  const lines = patchContent.split('\n')
+  const metadata: PatchMetadata = {
+    description: undefined,
+    nodeVersions: [],
+    requires: [],
+    conflicts: [],
+  }
+
+  for (const line of lines) {
+    // Stop at first non-comment
+    if (!line.startsWith('#')) {
+      break
+    }
+
+    // Parse metadata directives.
+    if (line.includes('@node-versions:')) {
+      const versions = line
+        .split(':')[1]
+        .trim()
+        .split(/[,\s]+/)
+      metadata.nodeVersions.push(...versions)
+    }
+    if (line.includes('@requires:')) {
+      const required = line.split(':')[1].trim()
+      metadata.requires.push(required)
+    }
+    if (line.includes('@conflicts:')) {
+      const conflicted = line.split(':')[1].trim()
+      metadata.conflicts.push(conflicted)
+    }
+    if (line.includes('@description:')) {
+      metadata.description = line.split(':')[1].trim()
+    }
+  }
+
+  return metadata
+}
+
+/**
  * Test if a patch will apply cleanly (dry-run).
  */
 export async function testPatchApplication(
@@ -346,6 +281,71 @@ export async function testPatchApplication(
     return {
       canApply: false,
       reason: `Patch dry-run error: ${message}`,
+    }
+  }
+}
+
+/**
+ * Validate patch file before applying.
+ */
+export async function validatePatch(
+  patchPath: string,
+  nodeVersion: string,
+): Promise<ValidationResult> {
+  try {
+    const content = await fs.readFile(patchPath, 'utf8')
+
+    // Parse metadata.
+    const metadata = parsePatchMetadata(content)
+
+    // Check version compatibility.
+    const compatibility = isPatchCompatible(metadata, nodeVersion)
+    if (!compatibility.compatible) {
+      return {
+        valid: false,
+        reason: compatibility.reason,
+        metadata,
+      }
+    }
+
+    // Check patch is not empty.
+    if (!content.includes('diff ') && !content.includes('---')) {
+      return {
+        valid: false,
+        reason: 'Patch file contains no diff content',
+        metadata,
+      }
+    }
+
+    // Check for suspicious patterns.
+    const suspiciousPatterns = [
+      {
+        pattern: /<html>/i,
+        reason: 'Patch contains HTML (probably download error)',
+      },
+      { pattern: /404 not found/i, reason: 'Patch contains 404 error' },
+      {
+        pattern: /access denied/i,
+        reason: 'Patch contains access denied error',
+      },
+    ]
+
+    for (const { pattern, reason } of suspiciousPatterns) {
+      if (pattern.test(content)) {
+        return { valid: false, reason, metadata }
+      }
+    }
+
+    return {
+      valid: true,
+      metadata,
+    }
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    return {
+      valid: false,
+      reason: `Cannot read patch: ${message}`,
+      metadata: undefined,
     }
   }
 }

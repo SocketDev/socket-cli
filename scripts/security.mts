@@ -36,13 +36,13 @@ import { spawn } from '@socketsecurity/lib/spawn'
 
 const logger = getDefaultLogger()
 
-async function hasExecutable(name: string): Promise<boolean> {
+export async function hasExecutable(name: string): Promise<boolean> {
   // socket-lib's `which` returns null when the binary isn't on PATH
   // (no throw), so a simple truthy check suffices.
   return Boolean(await which(name))
 }
 
-async function runTool(command: string, args: string[]): Promise<number> {
+export async function runTool(command: string, args: string[]): Promise<number> {
   try {
     const result = await spawn(command, args, {
       stdio: 'inherit',

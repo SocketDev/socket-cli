@@ -6,7 +6,7 @@
  */
 
 import { createRequire } from 'node:module'
-import { platform, arch } from 'node:os'
+import os from 'node:os'
 
 const require = createRequire(import.meta.url)
 
@@ -14,7 +14,7 @@ const require = createRequire(import.meta.url)
  * Detect the current platform and architecture.
  * @returns {string} Platform identifier (e.g., 'darwin-arm64', 'linux-x64-musl')
  */
-function getPlatformIdentifier() {
+export function getPlatformIdentifier() {
   const platformName = platform()
   const archName = arch()
 
@@ -70,7 +70,7 @@ function getPlatformIdentifier() {
  * Load the native addon for the current platform.
  * @returns {object} The loaded iocraft native module
  */
-function loadNativeAddon() {
+export function loadNativeAddon() {
   const platformId = getPlatformIdentifier()
   const packageName = `@socketaddon/iocraft-${platformId}`
 

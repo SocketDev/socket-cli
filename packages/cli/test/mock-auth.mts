@@ -75,7 +75,7 @@ const MILLISECONDS_30_DAYS = Date.now() + 30 * 24 * 60 * 60 * 1000
 /**
  * Simulate a delay for realistic async behavior.
  */
-function simulateDelay(ms: number): Promise<void> {
+export function simulateDelay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 

@@ -3,7 +3,7 @@
 /**
  * Check if node is a __proto__ property access.
  */
-function isProtoAccess(node, t) {
+export function isProtoAccess(node, t) {
   return (
     t.isMemberExpression(node) &&
     t.isIdentifier(node.property, { name: '__proto__' })
@@ -11,7 +11,7 @@ function isProtoAccess(node, t) {
 }
 
 // Unwraps A.__proto__ or A.prototype.__proto__.
-function unwrapProto(node, t) {
+export function unwrapProto(node, t) {
   const { object } = node
   return {
     object,

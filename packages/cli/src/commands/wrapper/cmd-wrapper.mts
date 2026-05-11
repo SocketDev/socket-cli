@@ -22,7 +22,7 @@ const logger = getDefaultLogger()
 
 const config = {
   commandName: 'wrapper',
-  description: 'Enable or disable the Socket npm/npx wrapper',
+  description: 'Enable or disable the Socket npm/pnpm exec wrapper',
   hidden: false,
   flags: defineFlags({
     ...commonFlags,
@@ -50,7 +50,7 @@ export const cmdWrapper = {
   run,
 }
 
-async function run(
+export async function run(
   argv: readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
@@ -76,10 +76,10 @@ async function run(
   let enable = false
   let disable = false
   const [arg] = cli.input
-  if (arg === 'on' || arg === 'enable' || arg === 'enabled') {
+  if (arg === 'enable' || arg === 'enabled' || arg === 'on') {
     enable = true
     disable = false
-  } else if (arg === 'off' || arg === 'disable' || arg === 'disabled') {
+  } else if (arg === 'disable' || arg === 'disabled' || arg === 'off') {
     enable = false
     disable = true
   }
@@ -117,18 +117,18 @@ async function run(
     }
     const changes = enable
       ? [
-          'Add shell aliases/functions to wrap npm/npx commands',
-          'Redirect npm/npx calls to socket npm/socket npx',
+          'Add shell aliases/functions to wrap npm/pnpm exec commands',
+          'Redirect npm/pnpm exec calls to socket npm/socket npx',
         ]
       : [
           'Remove Socket wrapper aliases/functions from shell config',
-          'Restore original npm/npx behavior',
+          'Restore original npm/pnpm exec behavior',
         ]
     outputDryRunWrite(
       files.join(', '),
       enable
-        ? 'enable Socket npm/npx wrapper'
-        : 'disable Socket npm/npx wrapper',
+        ? 'enable Socket npm/pnpm exec wrapper'
+        : 'disable Socket npm/pnpm exec wrapper',
       changes,
     )
     return

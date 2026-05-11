@@ -142,6 +142,33 @@ describe('git utilities', () => {
       const result = await getBaseBranch('/test/dir')
       expect(result).toBe('main')
     })
+
+    it('returns "main" fallback when git remote show returns falsy (line 100)', async () => {
+      setEnv('GITHUB_BASE_REF', '')
+      setEnv('GITHUB_REF_TYPE', '')
+      setEnv('GITHUB_REF_NAME', '')
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockResolvedValueOnce(undefined as any)
+
+      const result = await getBaseBranch('/test/dir')
+      expect(result).toBe('main')
+    })
+
+    it('parses HEAD branch from git remote show origin output (line 110)', async () => {
+      setEnv('GITHUB_BASE_REF', '')
+      setEnv('GITHUB_REF_TYPE', '')
+      setEnv('GITHUB_REF_NAME', '')
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
+      spawn.mockResolvedValueOnce({
+        status: 0,
+        stdout:
+          '* remote origin\n  Fetch URL: git@github.com:o/r.git\n  HEAD branch: develop\n  Remote branches:\n',
+        stderr: '',
+      } as any)
+
+      const result = await getBaseBranch('/test/dir')
+      expect(result).toBe('develop')
+    })
   })
 
   describe('gitBranch', () => {

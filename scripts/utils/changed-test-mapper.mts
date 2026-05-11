@@ -41,7 +41,7 @@ interface GetTestsResult {
 /**
  * Map source files to their corresponding test files.
  */
-function mapSourceToTests(filepath: string): string[] {
+export function mapSourceToTests(filepath: string): string[] {
   const normalized = normalizePath(filepath)
 
   // Skip non-code files

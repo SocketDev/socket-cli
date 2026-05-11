@@ -4,8 +4,8 @@ import type {
   CommandContext,
   CommandDefinition,
   CommandPlugin,
-  FlagValues,
   CommandRegistry as ICommandRegistry,
+  FlagValues,
   MiddlewareFn,
 } from './registry-types.mjs'
 import type { CResult } from '../../types.mts'

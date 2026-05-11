@@ -29,7 +29,7 @@
  */
 
 import { existsSync, promises } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
@@ -63,7 +63,7 @@ const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
 const _npmFixtureDir = path.join(fixtureBaseDir, NPM)
 const pnpmFixtureDir = path.join(fixtureBaseDir, PNPM)
 
-async function _createTempFixture(sourceDir: string): Promise<string> {
+export async function _createTempFixture(sourceDir: string): Promise<string> {
   // Create a temporary directory with a unique name.
   const tempDir = path.join(
     tmpdir(),
@@ -95,7 +95,7 @@ async function _createTempFixture(sourceDir: string): Promise<string> {
   return tempDir
 }
 
-async function revertFixtureChanges() {
+export async function revertFixtureChanges() {
   // Reset only the package.json and pnpm-lock.yaml files that tests modify.
   const cwd = process.cwd()
   // Git needs the paths relative to the repository root.

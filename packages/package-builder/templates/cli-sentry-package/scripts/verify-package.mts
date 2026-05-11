@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import colors from 'yoctocolors-cjs'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { existsSync } from 'node:fs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -39,7 +40,7 @@ async function validate() {
   // Check package.json exists and validate Sentry configuration.
   logger.info('Checking package.json...')
   const pkgPath = path.join(packageRoot, 'package.json')
-  if (!(await fileExists(pkgPath))) {
+  if (!(await existsSync(pkgPath))) {
     errors.push('package.json does not exist')
   } else {
     logger.success('package.json exists')

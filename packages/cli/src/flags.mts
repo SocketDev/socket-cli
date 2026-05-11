@@ -39,7 +39,7 @@ export function resetFlagCache(): void {
   _maxSemiSpaceSizeFlag = undefined
 }
 
-function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
+export function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
   if (_rawSpaceSizeFlags === undefined) {
     const cli = meow({
       argv: process.argv.slice(2),

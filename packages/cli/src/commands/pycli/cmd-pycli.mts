@@ -83,7 +83,7 @@ export const cmdPyCli = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   context: CliCommandContext,

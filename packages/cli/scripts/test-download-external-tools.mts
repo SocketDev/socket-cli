@@ -58,7 +58,7 @@ const TOOL_REPOS = {
 /**
  * Download a file from GitHub releases using curl (simpler than handling streams).
  */
-async function downloadFile(url, destPath) {
+export async function downloadFile(url, destPath) {
   logger.log(`Downloading: ${url}`)
 
   await safeMkdir(path.dirname(destPath))
@@ -79,7 +79,7 @@ async function downloadFile(url, destPath) {
 /**
  * Download and extract an external tool.
  */
-async function downloadTool(toolName, platform) {
+export async function downloadTool(toolName, platform) {
   const config = TOOL_REPOS[toolName]
   const assetName = PLATFORM_MAP[platform]?.[toolName]
 
@@ -118,7 +118,7 @@ async function downloadTool(toolName, platform) {
   await extractFromTarGz(archivePath, binaryPath, archiveBinaryName)
 
   // Cleanup archive.
-  await fs.unlink(archivePath)
+  await safeDelete(archivePath)
 
   return binaryPath
 }
@@ -126,7 +126,7 @@ async function downloadTool(toolName, platform) {
 /**
  * Extract binary from tar.gz archive using system tar command.
  */
-async function extractFromTarGz(archivePath, outputPath, binaryName) {
+export async function extractFromTarGz(archivePath, outputPath, binaryName) {
   logger.log(`Extracting ${binaryName} from ${path.basename(archivePath)}...`)
 
   // Extract to temp directory.
@@ -179,7 +179,7 @@ async function extractFromTarGz(archivePath, outputPath, binaryName) {
  * Get current platform identifier (normalized for release naming).
  * Uses 'win' instead of 'win32' for Windows.
  */
-function getCurrentPlatform() {
+export function getCurrentPlatform() {
   const platform = process.platform === 'win32' ? 'win' : process.platform
   const arch = process.arch
   return `${platform}-${arch}`

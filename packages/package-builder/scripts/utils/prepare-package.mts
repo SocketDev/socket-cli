@@ -3,7 +3,7 @@
  */
 
 import { readFileSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import path from 'node:path'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
