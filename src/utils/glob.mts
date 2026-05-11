@@ -141,7 +141,7 @@ function ignorePatternToMinimatch(pattern: string): string {
 // here as `**/dist/` after `ignorePatternToMinimatch`, which fast-glob
 // then drops — defeating the entire ignore. Strip the trailing slash
 // so fast-glob actually honors the pattern.
-function stripTrailingSlash(pattern: string): string {
+export function stripTrailingSlash(pattern: string): string {
   if (
     pattern.length > 1 &&
     pattern.charCodeAt(pattern.length - 1) === 47 /*'/'*/
@@ -204,9 +204,12 @@ export function getSupportedFilePatterns(
 }
 
 type GlobWithGitIgnoreOptions = GlobOptions & {
-  // Already-anchored minimatch patterns appended to the ignore set without
-  // going through the gitignore translator. Use this for CLI-provided
-  // exclusions whose semantics are anchored micromatch from `cwd`.
+  // Already-anchored minimatch patterns merged into fast-glob's `ignore`
+  // option in every code path. These bypass the gitignore translator and
+  // the `ignore` package matcher entirely; use this channel for CLI flags
+  // whose contract is anchored micromatch from `cwd` (e.g. --exclude-paths).
+  // Patterns in `socketConfig.projectIgnorePaths` and discovered `.gitignore`
+  // files take the other channel: they're gitignore-translated first.
   additionalIgnores?: readonly string[] | undefined
   // Optional filter function to apply during streaming.
   // When provided, only files passing this filter are accumulated.

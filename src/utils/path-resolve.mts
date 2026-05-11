@@ -100,6 +100,10 @@ export function findNpmDirPathSync(npmBinPath: string): string | undefined {
 }
 
 export type PackageFilesForScanOptions = {
+  // Already-anchored minimatch patterns to skip, forwarded straight to
+  // fast-glob. Bypasses the gitignore translator — use this for CLI-supplied
+  // exclusions whose contract is anchored micromatch from `cwd`. Mix with
+  // `config.projectIgnorePaths` for gitignore-style patterns.
   additionalIgnores?: readonly string[] | undefined
   cwd?: string | undefined
   config?: SocketYml | undefined

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   applyFullExcludePaths,
-  assertNoNegationPatterns,
+  assertValidExcludePaths,
   excludePathToScanIgnores,
   projectIgnorePathsToReachExcludePaths,
 } from './exclude-paths.mts'
@@ -38,21 +38,48 @@ function makeReachOptions(
 }
 
 describe('exclude-paths', () => {
-  describe('assertNoNegationPatterns', () => {
+  describe('assertValidExcludePaths', () => {
     it('allows positive patterns', () => {
       expect(() =>
-        assertNoNegationPatterns(['tests', 'packages/*']),
+        assertValidExcludePaths(['tests', 'packages/*', 'a/b/c']),
       ).not.toThrow()
     })
 
     it('rejects negation patterns', () => {
-      expect(() => assertNoNegationPatterns(['!tests/keep'])).toThrow(
+      expect(() => assertValidExcludePaths(['!tests/keep'])).toThrow(
         InputError,
       )
-      expect(() => assertNoNegationPatterns(['!tests/keep'])).toThrow(
+      expect(() => assertValidExcludePaths(['!tests/keep'])).toThrow(
         "--exclude-paths does not support negation patterns. Got: '!tests/keep'.",
       )
     })
+
+    it.each(['', '.', './', './**', '/', '**', '/**'])(
+      'rejects match-everything sentinel %j',
+      input => {
+        expect(() => assertValidExcludePaths([input])).toThrow(
+          /match-everything|negation|absolute/,
+        )
+      },
+    )
+
+    it.each(['/repo/tests', '/etc/passwd'])(
+      'rejects absolute path %j',
+      input => {
+        expect(() => assertValidExcludePaths([input])).toThrow(
+          /absolute path/,
+        )
+      },
+    )
+
+    it.each(['..', '../tests', 'apps/../tests'])(
+      'rejects path %j that escapes scan root via ..',
+      input => {
+        expect(() => assertValidExcludePaths([input])).toThrow(
+          /cannot escape the scan root/,
+        )
+      },
+    )
   })
 
   describe('excludePathToScanIgnores', () => {
@@ -144,24 +171,16 @@ describe('exclude-paths', () => {
   })
 
   describe('applyFullExcludePaths', () => {
-    it('routes exclude-paths through additionalScaIgnores and leaves socket.yml untouched', () => {
-      const socketConfig = {
-        version: 2 as const,
-        issueRules: {},
-        githubApp: {},
-        projectIgnorePaths: ['fixtures/**', '!fixtures/keep'],
-      }
+    it('expands exclude-paths into SCA ignores and re-anchored Coana excludes', () => {
       const result = applyFullExcludePaths({
         cwd: '/repo',
         reachabilityOptions: makeReachOptions({
           excludePaths: ['tests'],
         }),
-        socketConfig,
         target: '/repo',
       })
 
       expect(result.additionalScaIgnores).toEqual(['tests', 'tests/**'])
-      expect(result.effectiveSocketConfig).toBe(socketConfig)
       expect(result.mergedReachabilityOptions.reachExcludePaths).toEqual([
         'tests',
       ])

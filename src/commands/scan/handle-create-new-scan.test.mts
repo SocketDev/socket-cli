@@ -332,4 +332,61 @@ describe('handleCreateNewScan excludePaths', () => {
     )
     expect(mockPerformReachabilityAnalysis).not.toHaveBeenCalled()
   })
+
+  it('passes config: undefined when socket.yml is absent', async () => {
+    mockFindSocketYmlSync.mockReturnValueOnce({ ok: false })
+
+    await handleCreateNewScan({
+      autoManifest: false,
+      branchName: 'main',
+      commitHash: '',
+      commitMessage: '',
+      committers: '',
+      cwd: '/repo',
+      defaultBranch: false,
+      interactive: false,
+      orgSlug: 'fakeOrg',
+      outputKind: 'text',
+      pendingHead: false,
+      pullRequest: 0,
+      reach: {
+        excludePaths: ['tests'],
+        reachAnalysisMemoryLimit: 8192,
+        reachAnalysisTimeout: 0,
+        reachConcurrency: 1,
+        reachContinueOnAnalysisErrors: false,
+        reachContinueOnInstallErrors: false,
+        reachContinueOnMissingLockFiles: false,
+        reachContinueOnNoSourceFiles: false,
+        reachDebug: false,
+        reachDetailedAnalysisLogFile: false,
+        reachDisableAnalytics: false,
+        reachDisableExternalToolChecks: false,
+        reachEcosystems: [],
+        reachEnableAnalysisSplitting: false,
+        reachExcludePaths: [],
+        reachLazyMode: false,
+        reachSkipCache: false,
+        reachUseOnlyPregeneratedSboms: false,
+        reachVersion: undefined,
+        runReachabilityAnalysis: false,
+      },
+      readOnly: false,
+      repoName: 'repo',
+      report: false,
+      reportLevel: 'error',
+      targets: ['/repo'],
+      tmp: false,
+    })
+
+    expect(mockGetPackageFilesForScan).toHaveBeenCalledWith(
+      ['/repo'],
+      { size: 1 },
+      {
+        additionalIgnores: ['tests', 'tests/**'],
+        config: undefined,
+        cwd: '/repo',
+      },
+    )
+  })
 })

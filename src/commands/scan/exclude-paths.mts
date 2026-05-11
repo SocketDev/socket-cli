@@ -1,20 +1,18 @@
 import path from 'node:path'
 
 import { InputError } from '../../utils/errors.mts'
+import { stripTrailingSlash } from '../../utils/glob.mts'
 
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
-import type { SocketYml } from '@socketsecurity/config'
 
 type ApplyFullExcludePathsOptions = {
   cwd: string
   reachabilityOptions: ReachabilityOptions
-  socketConfig: SocketYml | undefined
   target: string
 }
 
 type ApplyFullExcludePathsResult = {
   additionalScaIgnores: string[]
-  effectiveSocketConfig: SocketYml | undefined
   mergedReachabilityOptions: ReachabilityOptions
 }
 
@@ -54,25 +52,19 @@ function pathRelativeToTarget(
   return undefined
 }
 
-function stripTrailingSlash(path: string): string {
-  return path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path
-}
-
 function toPosixPath(path: string): string {
   return path.replaceAll('\\', '/')
 }
 
 /**
  * Fans --exclude-paths out to both exclusion sinks: the SCA manifest-discovery
- * pipeline (via the fast-glob ignore set) and the reachability analyzer (via
- * `reachExcludePaths`, ultimately coana's --exclude-dirs). The returned
- * `additionalScaIgnores` are already in minimatch form and bypass the
- * gitignore translator. The user's socket.yml is passed through unchanged.
+ * pipeline (via fast-glob's `ignore` option, as already-anchored minimatch
+ * patterns) and the reachability analyzer (via `reachExcludePaths`, ultimately
+ * coana's --exclude-dirs).
  */
 export function applyFullExcludePaths({
   cwd,
   reachabilityOptions,
-  socketConfig,
   target,
 }: ApplyFullExcludePathsOptions): ApplyFullExcludePathsResult {
   const { excludePaths } = reachabilityOptions
@@ -93,25 +85,56 @@ export function applyFullExcludePaths({
 
   return {
     additionalScaIgnores,
-    effectiveSocketConfig: socketConfig,
     mergedReachabilityOptions,
   }
 }
 
+// Patterns that resolve to "exclude the entire scan" or "exclude nothing
+// useful" are almost certainly typos. Rejecting them up front beats
+// silently producing an empty scan or a no-op exclusion.
+const DEGENERATE_EXCLUDE_PATHS = new Set<string>([
+  '',
+  '.',
+  './',
+  './**',
+  '/',
+  '**',
+  '/**',
+])
+
 /**
- * Rejects gitignore-style negation patterns for --exclude-paths. The flag is
- * a positive exclusion list; coana's --exclude-dirs has no negation form, so
- * accepting `!path` would be a lie on the reachability side.
+ * Validates --exclude-paths entries before they reach either exclusion sink.
+ * Rejects gitignore-style negations (coana's --exclude-dirs has no negation
+ * form), absolute paths (`/repo/tests` silently no-ops on both sinks today),
+ * patterns escaping the scan root via `..`, and degenerate match-everything
+ * sentinels like `.`, `**`, `/`.
  */
-export function assertNoNegationPatterns(paths: readonly string[]): void {
-  for (const path of paths) {
-    if (path.startsWith('!')) {
+export function assertValidExcludePaths(paths: readonly string[]): void {
+  for (const p of paths) {
+    if (p.startsWith('!')) {
       throw new InputError(
-        `--exclude-paths does not support negation patterns. Got: '${path}'.`,
+        `--exclude-paths does not support negation patterns. Got: '${p}'.`,
+      )
+    }
+    const posix = toPosixPath(p).trim()
+    if (DEGENERATE_EXCLUDE_PATHS.has(stripTrailingSlash(posix))) {
+      throw new InputError(
+        `--exclude-paths does not accept match-everything patterns. Got: '${p}'.`,
+      )
+    }
+    if (posix.startsWith('/')) {
+      throw new InputError(
+        `--exclude-paths must be relative to the scan root. Got absolute path: '${p}'.`,
+      )
+    }
+    if (posix === '..' || posix.startsWith('../') || posix.includes('/../')) {
+      throw new InputError(
+        `--exclude-paths cannot escape the scan root with '..'. Got: '${p}'.`,
       )
     }
   }
 }
+
 
 /**
  * Expands an anchored-micromatch --exclude-paths entry into the minimatch

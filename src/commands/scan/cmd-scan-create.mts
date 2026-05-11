@@ -3,7 +3,7 @@ import path from 'node:path'
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { assertNoNegationPatterns } from './exclude-paths.mts'
+import { assertValidExcludePaths } from './exclude-paths.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
@@ -281,7 +281,6 @@ async function run(
     setAsAlertsPage: boolean
     tmp: boolean
     // Reachability flags.
-    excludePaths: string[] | undefined
     reach: boolean
     reachAnalysisMemoryLimit: number
     reachAnalysisTimeout: number
@@ -467,7 +466,7 @@ async function run(
   }
 
   const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
-  assertNoNegationPatterns(excludePaths)
+  assertValidExcludePaths(excludePaths)
 
   const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
 

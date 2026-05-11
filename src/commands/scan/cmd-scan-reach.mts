@@ -3,7 +3,7 @@ import path from 'node:path'
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { assertNoNegationPatterns } from './exclude-paths.mts'
+import { assertValidExcludePaths } from './exclude-paths.mts'
 import { handleScanReach } from './handle-scan-reach.mts'
 import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
 import { suggestTarget } from './suggest_target.mts'
@@ -172,7 +172,7 @@ async function run(
   const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
   const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
   const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
-  assertNoNegationPatterns(excludePaths)
+  assertValidExcludePaths(excludePaths)
 
   // Validate ecosystem values.
   const reachEcosystems: PURL_Type[] = []

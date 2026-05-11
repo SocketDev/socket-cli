@@ -44,6 +44,9 @@ vi.mock('../../constants.mts', () => ({
       successAndStop: vi.fn(),
     },
   },
+  // glob.mts pulls NODE_MODULES through the import chain; re-export it
+  // here so the streaming-iterables loader inside fast-glob is happy.
+  NODE_MODULES: 'node_modules',
   UNKNOWN_ERROR: 'unknown',
 }))
 
@@ -242,5 +245,51 @@ describe('handleScanReach', () => {
       },
     )
     expect(mockPerformReachabilityAnalysis).not.toHaveBeenCalled()
+  })
+
+  it('passes config: undefined when socket.yml is absent', async () => {
+    mockFindSocketYmlSync.mockReturnValueOnce({ ok: false })
+
+    const reachabilityOptions = {
+      excludePaths: ['tests'],
+      reachAnalysisMemoryLimit: 8192,
+      reachAnalysisTimeout: 0,
+      reachConcurrency: 1,
+      reachContinueOnAnalysisErrors: false,
+      reachContinueOnInstallErrors: false,
+      reachContinueOnMissingLockFiles: false,
+      reachContinueOnNoSourceFiles: false,
+      reachDebug: false,
+      reachDetailedAnalysisLogFile: false,
+      reachDisableAnalytics: false,
+      reachDisableExternalToolChecks: false,
+      reachEcosystems: [],
+      reachEnableAnalysisSplitting: false,
+      reachExcludePaths: [],
+      reachLazyMode: false,
+      reachSkipCache: false,
+      reachUseOnlyPregeneratedSboms: false,
+      reachVersion: undefined,
+    }
+
+    await handleScanReach({
+      cwd: '/repo',
+      interactive: false,
+      orgSlug: 'fakeOrg',
+      outputKind: 'text',
+      outputPath: '',
+      reachabilityOptions,
+      targets: ['.'],
+    })
+
+    expect(mockGetPackageFilesForScan).toHaveBeenCalledWith(
+      ['.'],
+      { npm: { packageJson: { pattern: 'package.json' } } },
+      {
+        additionalIgnores: ['tests', 'tests/**'],
+        config: undefined,
+        cwd: '/repo',
+      },
+    )
   })
 })
