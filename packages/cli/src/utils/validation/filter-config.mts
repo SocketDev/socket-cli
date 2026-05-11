@@ -17,11 +17,11 @@ export type FilterConfig = {
   [key: string]: boolean | string[]
 }
 
-export function toFilterConfig(obj: any): FilterConfig {
+export function toFilterConfig(obj: unknown): FilterConfig {
   const normalized = Object.create(null) as FilterConfig
   const keys = isObject(obj) ? Object.keys(obj) : []
   for (const key of keys) {
-    const value = obj[key]
+    const value = (obj as Record<string, unknown>)[key]
     if (typeof value === 'boolean' || Array.isArray(value)) {
       normalized[key] = value
     }

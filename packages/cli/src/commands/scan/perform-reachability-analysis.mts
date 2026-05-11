@@ -141,7 +141,7 @@ export async function performReachabilityAnalysis(
         description: 'upload manifests',
         spinner,
       },
-    )) as any
+    )) as CResult<{ tarHash?: string }>
 
     spinner?.stop()
 

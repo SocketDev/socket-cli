@@ -436,7 +436,13 @@ export async function parseSocketFacts(factsPath: string): Promise<{
       }
     }
 
-    let facts: any
+    let facts: {
+      findings?: {
+        containers?: unknown[]
+        sast?: unknown[]
+        secrets?: unknown[]
+      }
+    }
     try {
       facts = JSON.parse(factsContent)
     } catch (parseError) {

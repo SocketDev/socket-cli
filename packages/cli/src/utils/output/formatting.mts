@@ -57,11 +57,16 @@ export function getFlagApiRequirementsOutput(
   } as ApiRequirementsOptions
   const key = getRequirementsKey(cmdPath)
   const requirements = getRequirements()
-  const data = (requirements.api as any)[key]
+  const data = (
+    requirements.api as Record<
+      string,
+      { quota?: number; permissions?: string[] } | undefined
+    >
+  )[key]
   let result = ''
   if (data) {
-    const quota: number = data?.quota
-    const rawPerms: string[] = data?.permissions
+    const quota: number = data.quota ?? 0
+    const rawPerms: string[] = data.permissions ?? []
     const padding = ''.padEnd(indent)
     const lines = []
     if (Number.isFinite(quota) && quota > 0) {

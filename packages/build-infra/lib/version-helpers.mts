@@ -38,7 +38,9 @@ export async function getToolVersion(
       cause: e,
     })
   }
-  let data: any
+  let data:
+    | { tools?: Record<string, { version?: string } | undefined> }
+    | undefined
   try {
     data = JSON.parse(raw)
   } catch (e) {

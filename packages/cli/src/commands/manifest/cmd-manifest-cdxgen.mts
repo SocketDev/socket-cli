@@ -247,6 +247,7 @@ export async function run(
   ])
   const yargv = {
     ...yargsParse(argsToProcess as string[], yargsConfig),
+    // eslint-disable-next-line typescript-eslint/no-explicit-any -- yargs-parser returns a dynamic flag bag; downstream code reads .help/.lifecycle/.output/.type/_/--.
   } as any
 
   const pathArgs: string[] = []

@@ -28,7 +28,7 @@ export { BUN, NPM, NPX, PNPM, VLT, YARN, YARN_BERRY, YARN_CLASSIC }
  * These are the minimum versions required by Socket CLI.
  */
 const MINIMUM_VERSIONS_BY_AGENT = {
-  __proto__: undefined as any,
+  __proto__: undefined as unknown as null,
   // Bun >=1.1.39 supports the text-based lockfile.
   [BUN]: '1.1.39',
   // The npm version bundled with Node 18.

@@ -86,14 +86,17 @@ export async function outputAsMarkdown(
   },
 ): Promise<string> {
   try {
-    const table = mdTable<any>(auditLogs.results, [
-      'event_id',
-      'created_at',
-      'type',
-      'user_email',
-      'ip_address',
-      'user_agent',
-    ])
+    const table = mdTable(
+      auditLogs.results as unknown as Array<Record<string, string>>,
+      [
+        'event_id',
+        'created_at',
+        'type',
+        'user_email',
+        'ip_address',
+        'user_agent',
+      ],
+    )
 
     return `
 # Socket Audit Logs

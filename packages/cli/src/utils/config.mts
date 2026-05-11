@@ -306,7 +306,7 @@ export function resetConfigForTesting(): void {
 export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   debugNs('notice', 'override: full config (not stored)')
 
-  let config: any
+  let config: unknown
   try {
     config = JSON.parse(String(jsonConfig))
     if (!config || typeof config !== 'object') {
@@ -334,9 +334,10 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
 
   // Only copy supported config keys to prevent prototype pollution.
   _cachedConfig = {} as LocalConfig
-  for (const key of Object.keys(config)) {
+  const configObj = config as Record<string, unknown>
+  for (const key of Object.keys(configObj)) {
     if (isSupportedConfigKey(key)) {
-      ;(_cachedConfig as Record<string, unknown>)[key] = config[key]
+      ;(_cachedConfig as Record<string, unknown>)[key] = configObj[key]
     }
   }
   _configFromFlag = true

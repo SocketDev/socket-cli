@@ -75,6 +75,7 @@ export async function configureGithub(
       default: config.repos,
       required: false,
       // validate: async string => bool
+      // eslint-disable-next-line typescript-eslint/no-explicit-any -- @inquirer/prompts InputConfig schema is narrower than runtime input; cast satisfies it.
     } as any)
     if (defaultRepos === undefined) {
       return canceledByUser()

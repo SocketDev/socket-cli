@@ -37,8 +37,9 @@ export function getOverridesDataPnpm(
   pkgEnvDetails: EnvDetails,
   pkgJson = pkgEnvDetails.editablePkgJson.content,
 ): { type: Agent; overrides: PnpmOrYarnOverrides } {
-  const overrides = ((pkgJson as any)?.[PNPM]?.[OVERRIDES] ??
-    {}) as PnpmOrYarnOverrides
+  const overrides = ((
+    pkgJson as Record<string, Record<string, unknown> | undefined> | undefined
+  )?.[PNPM]?.[OVERRIDES] ?? {}) as PnpmOrYarnOverrides
   return { type: PNPM, overrides }
 }
 

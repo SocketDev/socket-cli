@@ -34,7 +34,7 @@ export async function outputConfigList({
         value = '********'
       }
       if (full || value !== undefined) {
-        obj[key as any] = value ?? '<none>'
+        obj[key] = value ?? '<none>'
       }
     }
     if (failed) {

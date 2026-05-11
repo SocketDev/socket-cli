@@ -78,7 +78,7 @@ export async function outputScanView(
     }
   })
 
-  const md = mdTable<any>(display, [
+  const md = mdTable(display as Array<Record<string, string>>, [
     'type',
     'version',
     'name',

@@ -79,7 +79,7 @@ export function cmdPrefixMessage(cmdName: string, text: string): string {
  */
 export function filterFlags(
   argv: readonly string[],
-  flagsToFilter: Record<string, any>,
+  flagsToFilter: Record<string, { shortFlag?: string; type?: string }>,
   exceptions?: string[] | undefined,
 ): string[] {
   const filtered: string[] = []

@@ -17,7 +17,7 @@ export function cleanupQueryStdout(stdout: string): string {
   if (stdout === '') {
     return ''
   }
-  let pkgs: any
+  let pkgs: unknown
   try {
     pkgs = JSON.parse(stdout)
   } catch {

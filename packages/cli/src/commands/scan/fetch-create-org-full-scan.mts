@@ -78,6 +78,7 @@ export async function fetchCreateOrgFullScan(
         ? { set_as_pending_head: Boolean(pendingHead) }
         : {}),
       ...(tmp !== undefined ? { tmp: Boolean(tmp) } : {}),
+      // eslint-disable-next-line typescript-eslint/no-explicit-any -- SDK option shape varies by spread; downstream validates against canonical API contract.
     } as any),
     {
       commandPath,

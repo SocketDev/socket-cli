@@ -22,7 +22,10 @@ import { getHome } from '@socketsecurity/lib/env/home'
 export const WORD_OVERLAP_THRESHOLD = 0.3
 
 // Lazy-loaded ~3KB semantic index. `null` until loadSemanticIndex resolves.
-let semanticIndex: any = undefined
+type SemanticIndex = {
+  commands?: Record<string, unknown> | undefined
+}
+let semanticIndex: SemanticIndex | undefined = undefined
 
 /**
  * Extract meaningful words from text: lowercase, stripped of punctuation,

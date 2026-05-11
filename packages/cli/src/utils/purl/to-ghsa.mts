@@ -55,6 +55,7 @@ export async function convertPurlToGhsas(
 
     const response = await cacheFetch(cacheKey, () =>
       octokit.rest.securityAdvisories.listGlobalAdvisories({
+        // eslint-disable-next-line typescript-eslint/no-explicit-any -- Octokit's listGlobalAdvisories ecosystem union doesn't include the runtime-mapped value here; verified upstream.
         ecosystem: githubEcosystem as any,
         ...(affects ? { affects } : {}),
       }),

@@ -50,7 +50,7 @@ export type ArtifactAlertUpgrade = Remap<
 export type CveProps = {
   firstPatchedVersionIdentifier?: string | undefined
   vulnerableVersionRange: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export function isArtifactAlertCve(

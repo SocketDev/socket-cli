@@ -36,7 +36,12 @@ if (isSentryBuild()) {
   } else {
     Sentry.setTag('debugging', false)
   }
-  const internals = (global as any)[kInternalsSymbol]
+  const internals = (
+    global as unknown as Record<
+      symbol,
+      { setSentry?: (s: typeof Sentry) => void } | undefined
+    >
+  )[kInternalsSymbol]
   if (internals?.setSentry) {
     internals.setSentry(Sentry)
   }

@@ -34,7 +34,10 @@ export async function outputLicensePolicy(
   const entries = rules ? Object.entries(rules) : []
   const mapped: Array<[string, string]> = entries.map(
     ({ 0: key, 1: value }) =>
-      [key, (value as any)?.allowed ? ' yes' : ' no'] as const,
+      [
+        key,
+        (value as { allowed?: boolean } | undefined)?.allowed ? ' yes' : ' no',
+      ] as const,
   )
   mapped.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
   logger.log(mdTableOfPairs(mapped, ['License Name', 'Allowed']))

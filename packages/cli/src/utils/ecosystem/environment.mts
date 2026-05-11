@@ -495,7 +495,7 @@ export async function getAgentVersion(
   agentExecPath: string,
   cwd: string,
 ): Promise<SemVer | undefined> {
-  let result: any
+  let result: SemVer | undefined
   const quotedCmd = `\`${agent} ${FLAG_VERSION}\``
   debugNs('stdio', `spawn: ${quotedCmd}`)
   try {

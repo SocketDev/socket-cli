@@ -10,7 +10,10 @@
  */
 
 // Lazy-loaded ONNX embedding pipeline (~17MB model when enabled).
-const embeddingPipeline: any = undefined
+type EmbeddingPipeline = {
+  embed(text: string): Promise<{ embedding: Float32Array }>
+}
+const embeddingPipeline: EmbeddingPipeline | undefined = undefined
 let embeddingPipelineFailure = false
 const commandEmbeddings: Record<string, Float32Array> = {}
 
