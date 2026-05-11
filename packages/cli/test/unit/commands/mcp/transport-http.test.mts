@@ -43,6 +43,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { httpRequest } from '@socketsecurity/lib/http-request'
 
+import type * as HttpModule from 'node:http'
+import type * as LoggerModule from '@socketsecurity/lib/logger'
+import type * as NetModule from 'node:net'
+
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
   info: vi.fn(),
@@ -51,7 +55,7 @@ const mockLogger = vi.hoisted(() => ({
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
   const actual =
-    await importOriginal<typeof import('@socketsecurity/lib/logger')>()
+    await importOriginal<typeof LoggerModule>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -149,7 +153,7 @@ describe('runHttpTransport — request URL parsing', () => {
     // `//` parses to throw on `new URL('//', 'http://localhost:N')`.
     // httpRequest can't send `//` directly (it normalizes), so use raw
     // TCP to bypass the client-side normalization.
-    const net = require('node:net') as typeof import('node:net')
+    const net = require('node:net') as typeof NetModule
     const body = await new Promise<string>((resolve, reject) => {
       const socket = net.connect(port, '127.0.0.1', () => {
         socket.write(
@@ -241,7 +245,7 @@ describe('runHttpTransport — origin / host validation', () => {
   it('accepts bare localhost (no port) in Host header', async () => {
     const { port } = await startServer()
     // Use raw TCP so we can set Host without auto-appending the port.
-    const net = require('node:net') as typeof import('node:net')
+    const net = require('node:net') as typeof NetModule
     const response = await new Promise<string>((resolve, reject) => {
       const socket = net.connect(port, '127.0.0.1', () => {
         socket.write(
@@ -262,7 +266,7 @@ describe('runHttpTransport — origin / host validation', () => {
 
   it('accepts bare 127.0.0.1 in Host header', async () => {
     const { port } = await startServer()
-    const net = require('node:net') as typeof import('node:net')
+    const net = require('node:net') as typeof NetModule
     const response = await new Promise<string>((resolve, reject) => {
       const socket = net.connect(port, '127.0.0.1', () => {
         socket.write(
@@ -287,7 +291,7 @@ describe('runHttpTransport — origin / host validation', () => {
 
   it('accepts mcp.socket.dev as a Host (not just Origin)', async () => {
     const { port } = await startServer()
-    const net = require('node:net') as typeof import('node:net')
+    const net = require('node:net') as typeof NetModule
     const response = await new Promise<string>((resolve, reject) => {
       const socket = net.connect(port, '127.0.0.1', () => {
         socket.write(
@@ -311,7 +315,7 @@ describe('runHttpTransport — origin / host validation', () => {
     const { port } = await startServer()
     // Send via raw TCP with a Host that's none of the allowed values
     // and no Origin header.
-    const net = require('node:net') as typeof import('node:net')
+    const net = require('node:net') as typeof NetModule
     const response = await new Promise<string>((resolve, reject) => {
       const socket = net.connect(port, '127.0.0.1', () => {
         socket.write(
@@ -437,7 +441,7 @@ describe('runHttpTransport — Accept header patching', () => {
       },
     }
     // Use raw TCP so httpRequest doesn't auto-add Accept.
-    const net = require('node:net') as typeof import('node:net')
+    const net = require('node:net') as typeof NetModule
     const body = JSON.stringify(initBody)
     const response = await new Promise<string>((resolve, reject) => {
       const socket = net.connect(port, '127.0.0.1', () => {
@@ -738,7 +742,7 @@ describe('runHttpTransport — routing', () => {
       },
     }
     // Use raw TCP to omit Origin entirely.
-    const net = require('node:net') as typeof import('node:net')
+    const net = require('node:net') as typeof NetModule
     const body = JSON.stringify(initBody)
     await new Promise<void>((resolve, reject) => {
       const socket = net.connect(port, '127.0.0.1', () => {
@@ -835,7 +839,7 @@ describe('runHttpTransport — OAuth enabled', () => {
       | (() => Record<string, unknown>)
     introspectionStatus?: number
   }): Promise<{ url: string; close: () => Promise<void> }> {
-    const { createServer } = require('node:http') as typeof import('node:http')
+    const { createServer } = require('node:http') as typeof HttpModule
     const issuerPort = freshIssuerPort()
     const server = createServer((req, res) => {
       if (req.url === '/.well-known/oauth-authorization-server') {

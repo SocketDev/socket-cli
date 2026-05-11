@@ -42,6 +42,8 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
 
+import type * as DepscoreModule from '../../../../src/commands/mcp/depscore.mts'
+
 const { mockRunDepscore } = vi.hoisted(() => ({
   mockRunDepscore: vi.fn(),
 }))
@@ -49,7 +51,7 @@ const { mockRunDepscore } = vi.hoisted(() => ({
 vi.mock('../../../../src/commands/mcp/depscore.mts', async importOriginal => {
   const actual =
     await importOriginal<
-      typeof import('../../../../src/commands/mcp/depscore.mts')
+      typeof DepscoreModule
     >()
   return {
     ...actual,

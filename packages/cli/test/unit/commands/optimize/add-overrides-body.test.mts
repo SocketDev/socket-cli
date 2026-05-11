@@ -11,6 +11,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type * as PackagesModule from '@socketsecurity/lib/packages'
+
 const mockLogger = {
   fail: vi.fn(),
   log: vi.fn(),
@@ -20,7 +22,7 @@ const mockLogger = {
   error: vi.fn(),
 }
 
-const baseEnv = (overrides: Record<string, any> = {}) => ({
+const baseEnv = (overrides: Record<string, unknown> = {}) => ({
   agent: 'npm',
   agentVersion: '10.0.0',
   lockName: 'package-lock.json',
@@ -39,15 +41,15 @@ export async function loadAddOverrides(opts: {
   manifestEntries: Array<[string, any]>
   getMajor?: (v: string) => number | undefined
   safeNpa?: (s: string) => any
-  fetchPackageManifest?: (s: string) => Promise<any>
+  fetchPackageManifest?: (s: string) => Promise<unknown>
   globWorkspace?: () => Promise<string[]>
-  getDependencyEntries?: (env: any) => any
-  getOverridesData?: (env: any) => any
-  getOverridesDataNpm?: (env: any) => any
-  getOverridesDataYarnClassic?: (env: any) => any
-  lockSrcIncludes?: (...args: any[]) => boolean
-  lsStdoutIncludes?: (...args: any[]) => boolean
-  listPackages?: (...args: any[]) => Promise<string>
+  getDependencyEntries?: (env: unknown) => any
+  getOverridesData?: (env: unknown) => any
+  getOverridesDataNpm?: (env: unknown) => any
+  getOverridesDataYarnClassic?: (env: unknown) => any
+  lockSrcIncludes?: (...args: unknown[]) => boolean
+  lsStdoutIncludes?: (...args: unknown[]) => boolean
+  listPackages?: (...args: unknown[]) => Promise<string>
 }) {
   const { manifestEntries } = opts
   vi.doMock('@socketsecurity/registry', () => ({
@@ -55,7 +57,7 @@ export async function loadAddOverrides(opts: {
       agent === 'npm' ? manifestEntries : [],
   }))
   vi.doMock('@socketsecurity/lib/promises', () => ({
-    pEach: async (items: any[], fn: any) => {
+    pEach: async (items: unknown[], fn: unknown) => {
       for (const item of items) {
         await fn(item)
       }
@@ -117,7 +119,7 @@ export async function loadAddOverrides(opts: {
   if (opts.fetchPackageManifest) {
     vi.doMock('@socketsecurity/lib/packages', async importOriginal => {
       const actual =
-        await importOriginal<typeof import('@socketsecurity/lib/packages')>()
+        await importOriginal<typeof PackagesModule>()
       return {
         ...actual,
         fetchPackageManifest: opts.fetchPackageManifest,
@@ -144,8 +146,8 @@ describe('addOverrides body (manifestNpmOverrides loop)', () => {
       getMajor: vi.fn(() => undefined),
     })
     const env = baseEnv()
-    const state = await addOverrides(env as any, '/test/project', {
-      logger: mockLogger as any,
+    const state = await addOverrides(env as unknown, '/test/project', {
+      logger: mockLogger as unknown,
     })
     expect(state.added.size).toBe(0)
   })
@@ -161,8 +163,8 @@ describe('addOverrides body (manifestNpmOverrides loop)', () => {
       safeNpa: vi.fn(() => undefined),
     })
     const env = baseEnv()
-    const state = await addOverrides(env as any, '/test/project', {
-      logger: mockLogger as any,
+    const state = await addOverrides(env as unknown, '/test/project', {
+      logger: mockLogger as unknown,
     })
     expect(state.added.has('pkg-a')).toBe(true)
     expect(depObj['pkg-a-orig']).toMatch(/^npm:pkg-a@/)
@@ -184,8 +186,8 @@ describe('addOverrides body (manifestNpmOverrides loop)', () => {
       })),
     })
     const env = baseEnv()
-    const state = await addOverrides(env as any, '/test/project', {
-      logger: mockLogger as any,
+    const state = await addOverrides(env as unknown, '/test/project', {
+      logger: mockLogger as unknown,
     })
     // The valid alias is preserved.
     expect(state.added.has('pkg-a')).toBe(false)
@@ -203,8 +205,8 @@ describe('addOverrides body (manifestNpmOverrides loop)', () => {
       getMajor: vi.fn(() => 1),
     })
     const env = baseEnv()
-    const state = await addOverrides(env as any, '/test/project', {
-      logger: mockLogger as any,
+    const state = await addOverrides(env as unknown, '/test/project', {
+      logger: mockLogger as unknown,
     })
     // Without the orig spec, no add but sockSpec is mapped to alias.
     expect(state.added.size).toBe(0)
@@ -232,8 +234,8 @@ describe('addOverrides body (manifestNpmOverrides loop)', () => {
       listPackages: vi.fn(async () => ''),
     })
     const env = baseEnv()
-    const state = await addOverrides(env as any, '/test/project', {
-      logger: mockLogger as any,
+    const state = await addOverrides(env as unknown, '/test/project', {
+      logger: mockLogger as unknown,
       prod: true,
     })
     expect(state.added.has('pkg-a')).toBe(true)
@@ -263,8 +265,8 @@ describe('addOverrides body (manifestNpmOverrides loop)', () => {
       listPackages: vi.fn(async () => ''),
     })
     const env = baseEnv()
-    const state = await addOverrides(env as any, '/test/project', {
-      logger: mockLogger as any,
+    const state = await addOverrides(env as unknown, '/test/project', {
+      logger: mockLogger as unknown,
       prod: true,
     })
     // Since oldSpec='^0.9.0' doesn't start with `$` or sockOverridePrefix,
@@ -297,8 +299,8 @@ describe('addOverrides body (manifestNpmOverrides loop)', () => {
       listPackages: vi.fn(async () => ''),
     })
     const env = baseEnv()
-    const state = await addOverrides(env as any, '/test/project', {
-      logger: mockLogger as any,
+    const state = await addOverrides(env as unknown, '/test/project', {
+      logger: mockLogger as unknown,
       prod: true,
     })
     // depAlias is present, type=NPM → newSpec set to `$pkg-a-orig`
@@ -329,8 +331,8 @@ describe('addOverrides body (manifestNpmOverrides loop)', () => {
       getMajor: vi.fn(() => 1),
     })
     const env = baseEnv()
-    const state = await addOverrides(env as any, '/test/project', {
-      logger: mockLogger as any,
+    const state = await addOverrides(env as unknown, '/test/project', {
+      logger: mockLogger as unknown,
     })
     // pkg-a was added by the inner workspace call (isWorkspaceRoot=false), so
     // it appears in state.addedInWorkspaces — that propagates via line 295.
@@ -384,8 +386,8 @@ describe('addOverrides body (manifestNpmOverrides loop)', () => {
       fetchPackageManifest,
     })
     const env = baseEnv()
-    const state = await addOverrides(env as any, '/test/project', {
-      logger: mockLogger as any,
+    const state = await addOverrides(env as unknown, '/test/project', {
+      logger: mockLogger as unknown,
       prod: true,
       pin: true,
     })
