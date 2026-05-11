@@ -204,6 +204,10 @@ export function getSupportedFilePatterns(
 }
 
 type GlobWithGitIgnoreOptions = GlobOptions & {
+  // Already-anchored minimatch patterns appended to the ignore set without
+  // going through the gitignore translator. Use this for CLI-provided
+  // exclusions whose semantics are anchored micromatch from `cwd`.
+  additionalIgnores?: readonly string[] | undefined
   // Optional filter function to apply during streaming.
   // When provided, only files passing this filter are accumulated.
   // This is critical for memory efficiency when scanning large monorepos.
@@ -216,6 +220,7 @@ export async function globWithGitIgnore(
   options: GlobWithGitIgnoreOptions,
 ): Promise<string[]> {
   const {
+    additionalIgnores,
     cwd = process.cwd(),
     filter,
     socketConfig,
@@ -265,14 +270,21 @@ export async function globWithGitIgnore(
     }
   }
 
+  // CLI-supplied `additionalIgnores` are already anchored minimatch — they
+  // must not pass through the `ignore` package (whose gitignore "match
+  // anywhere" semantics would re-interpret a bare `tests` to match
+  // `subdir/tests/foo.json`). Keep them in fast-glob's ignore list across
+  // both paths; only gitignore-translated entries go into the `ig` matcher.
+  const cliMinimatchIgnores = additionalIgnores ?? []
+
   const globOptions = {
     __proto__: null,
     absolute: true,
     cwd,
     dot: true,
     ignore: hasNegatedPattern
-      ? defaultIgnore
-      : [...ignores].map(stripTrailingSlash),
+      ? [...defaultIgnore, ...cliMinimatchIgnores]
+      : [...ignores, ...cliMinimatchIgnores].map(stripTrailingSlash),
     ...additionalOptions,
   } as GlobOptions
 

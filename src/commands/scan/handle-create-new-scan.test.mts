@@ -137,12 +137,8 @@ describe('handleCreateNewScan excludePaths', () => {
       ['/repo'],
       { size: 1 },
       {
-        config: {
-          version: 2,
-          issueRules: {},
-          githubApp: {},
-          projectIgnorePaths: ['fixtures/**', 'tests/**', 'packages/*/**'],
-        },
+        additionalIgnores: ['tests', 'tests/**', 'packages/*', 'packages/*/**'],
+        config: { projectIgnorePaths: ['fixtures/**'] },
         cwd: '/repo',
       },
     )
@@ -203,16 +199,13 @@ describe('handleCreateNewScan excludePaths', () => {
       ['/repo/apps/api'],
       { size: 1 },
       {
-        config: {
-          version: 2,
-          issueRules: {},
-          githubApp: {},
-          projectIgnorePaths: [
-            'fixtures/**',
-            'apps/api/tests/**',
-            'dist/**',
-          ],
-        },
+        additionalIgnores: [
+          'apps/api/tests',
+          'apps/api/tests/**',
+          'dist',
+          'dist/**',
+        ],
+        config: { projectIgnorePaths: ['fixtures/**'] },
         cwd: '/repo',
       },
     )
@@ -274,12 +267,8 @@ describe('handleCreateNewScan excludePaths', () => {
       ['/repo'],
       { size: 1 },
       {
-        config: {
-          version: 2,
-          issueRules: {},
-          githubApp: {},
-          projectIgnorePaths: ['fixtures/**', 'tests/**'],
-        },
+        additionalIgnores: ['tests', 'tests/**'],
+        config: { projectIgnorePaths: ['fixtures/**'] },
         cwd: '/repo',
       },
     )
@@ -336,12 +325,8 @@ describe('handleCreateNewScan excludePaths', () => {
       ['/repo/apps/api'],
       { size: 1 },
       {
-        config: {
-          version: 2,
-          issueRules: {},
-          githubApp: {},
-          projectIgnorePaths: ['fixtures/**', 'apps/api/**'],
-        },
+        additionalIgnores: ['apps/api', 'apps/api/**'],
+        config: { projectIgnorePaths: ['fixtures/**'] },
         cwd: '/repo',
       },
     )

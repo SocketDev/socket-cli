@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   applyFullExcludePaths,
   assertNoNegationPatterns,
-  excludePathToProjectIgnorePath,
+  excludePathToScanIgnores,
   projectIgnorePathsToReachExcludePaths,
 } from './exclude-paths.mts'
 import { InputError } from '../../utils/errors.mts'
@@ -55,14 +55,14 @@ describe('exclude-paths', () => {
     })
   })
 
-  describe('excludePathToProjectIgnorePath', () => {
-    it.each([
-      ['packages/*', 'packages/*/**'],
-      ['tests', 'tests/**'],
-      ['tests/', 'tests/**'],
-      ['tests/**', 'tests/**'],
-    ])('anchors %s as %s for the SCA gitignore matcher', (input, expected) => {
-      expect(excludePathToProjectIgnorePath(input)).toBe(expected)
+  describe('excludePathToScanIgnores', () => {
+    it.each<[string, string[]]>([
+      ['packages/*', ['packages/*', 'packages/*/**']],
+      ['tests', ['tests', 'tests/**']],
+      ['tests/', ['tests', 'tests/**']],
+      ['tests/**', ['tests/**']],
+    ])('expands %s to %j for the fast-glob ignore set', (input, expected) => {
+      expect(excludePathToScanIgnores(input)).toEqual(expected)
     })
   })
 
@@ -144,26 +144,24 @@ describe('exclude-paths', () => {
   })
 
   describe('applyFullExcludePaths', () => {
-    it('keeps socket.yml projectIgnorePaths on the SCA side without forwarding them to reachability', () => {
+    it('routes exclude-paths through additionalScaIgnores and leaves socket.yml untouched', () => {
+      const socketConfig = {
+        version: 2 as const,
+        issueRules: {},
+        githubApp: {},
+        projectIgnorePaths: ['fixtures/**', '!fixtures/keep'],
+      }
       const result = applyFullExcludePaths({
         cwd: '/repo',
         reachabilityOptions: makeReachOptions({
           excludePaths: ['tests'],
         }),
-        socketConfig: {
-          version: 2,
-          issueRules: {},
-          githubApp: {},
-          projectIgnorePaths: ['fixtures/**', '!fixtures/keep'],
-        },
+        socketConfig,
         target: '/repo',
       })
 
-      expect(result.effectiveSocketConfig?.projectIgnorePaths).toEqual([
-        'fixtures/**',
-        '!fixtures/keep',
-        'tests/**',
-      ])
+      expect(result.additionalScaIgnores).toEqual(['tests', 'tests/**'])
+      expect(result.effectiveSocketConfig).toBe(socketConfig)
       expect(result.mergedReachabilityOptions.reachExcludePaths).toEqual([
         'tests',
       ])

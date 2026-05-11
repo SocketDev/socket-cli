@@ -13,6 +13,7 @@ type ApplyFullExcludePathsOptions = {
 }
 
 type ApplyFullExcludePathsResult = {
+  additionalScaIgnores: string[]
   effectiveSocketConfig: SocketYml | undefined
   mergedReachabilityOptions: ReachabilityOptions
 }
@@ -63,10 +64,10 @@ function toPosixPath(path: string): string {
 
 /**
  * Fans --exclude-paths out to both exclusion sinks: the SCA manifest-discovery
- * pipeline (via socket.yml `projectIgnorePaths`) and the reachability analyzer
- * (via `reachExcludePaths`, ultimately coana's --exclude-dirs). This only
- * translates user-provided --exclude-paths; existing socket.yml
- * `projectIgnorePaths` keep their previous reachability behavior.
+ * pipeline (via the fast-glob ignore set) and the reachability analyzer (via
+ * `reachExcludePaths`, ultimately coana's --exclude-dirs). The returned
+ * `additionalScaIgnores` are already in minimatch form and bypass the
+ * gitignore translator. The user's socket.yml is passed through unchanged.
  */
 export function applyFullExcludePaths({
   cwd,
@@ -75,23 +76,11 @@ export function applyFullExcludePaths({
   target,
 }: ApplyFullExcludePathsOptions): ApplyFullExcludePathsResult {
   const { excludePaths } = reachabilityOptions
-  const scaExcludeGlobs = excludePaths.map(excludePathToProjectIgnorePath)
-  const coanaExcludeGlobs = projectIgnorePathsToReachExcludePaths(
-    excludePaths,
-    { cwd, target },
-  )
-  const effectiveSocketConfig = scaExcludeGlobs.length
-    ? {
-        ...socketConfig,
-        version: socketConfig?.version ?? 2,
-        issueRules: socketConfig?.issueRules ?? {},
-        githubApp: socketConfig?.githubApp ?? {},
-        projectIgnorePaths: [
-          ...(socketConfig?.projectIgnorePaths ?? []),
-          ...scaExcludeGlobs,
-        ],
-      }
-    : socketConfig
+  const additionalScaIgnores = excludePaths.flatMap(excludePathToScanIgnores)
+  const coanaExcludeGlobs = projectIgnorePathsToReachExcludePaths(excludePaths, {
+    cwd,
+    target,
+  })
   const mergedReachabilityOptions = excludePaths.length
     ? {
         ...reachabilityOptions,
@@ -102,7 +91,11 @@ export function applyFullExcludePaths({
       }
     : reachabilityOptions
 
-  return { effectiveSocketConfig, mergedReachabilityOptions }
+  return {
+    additionalScaIgnores,
+    effectiveSocketConfig: socketConfig,
+    mergedReachabilityOptions,
+  }
 }
 
 /**
@@ -121,16 +114,22 @@ export function assertNoNegationPatterns(paths: readonly string[]): void {
 }
 
 /**
- * SCA-side adapter. The user-facing contract for --exclude-paths is anchored
- * micromatch from the Socket scan root, but socket.yml `projectIgnorePaths` is
- * gitignore-style and expands a bare name to a match-anywhere pattern. Append
- * `/**` so the pattern contains a slash and gets anchored by the gitignore
- * translator, matching files under the named directory at the user-specified
- * depth instead of any depth.
+ * Expands an anchored-micromatch --exclude-paths entry into the minimatch
+ * patterns fast-glob needs to skip both the matched entry itself (file-shaped
+ * matches like `packages/stray.json` against `packages/*`) and any subtree
+ * underneath it (`packages/a/foo.json`). Returned patterns are ready for
+ * fast-glob's `ignore` list — no gitignore translation involved.
  */
-export function excludePathToProjectIgnorePath(path: string): string {
-  const stripped = stripTrailingSlash(path)
-  return stripped.endsWith('/**') ? stripped : `${stripped}/**`
+export function excludePathToScanIgnores(input: string): string[] {
+  const stripped = stripTrailingSlash(toPosixPath(input))
+  // User already opted into "match everything under this dir" — one pattern
+  // is enough.
+  if (stripped.endsWith('/**')) {
+    return [stripped]
+  }
+  // Emit the entry itself (catches file-shaped hits) plus its subtree
+  // (catches descendants when the entry resolves to a directory).
+  return [stripped, `${stripped}/**`]
 }
 
 /**

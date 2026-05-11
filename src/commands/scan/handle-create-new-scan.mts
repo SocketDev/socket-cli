@@ -173,7 +173,7 @@ export async function handleCreateNewScan({
     ? socketYmlResult.data?.parsed
     : undefined
 
-  const { effectiveSocketConfig, mergedReachabilityOptions } =
+  const { additionalScaIgnores, effectiveSocketConfig, mergedReachabilityOptions } =
     applyFullExcludePaths({
       cwd,
       reachabilityOptions: reach,
@@ -182,6 +182,7 @@ export async function handleCreateNewScan({
     })
 
   const packagePaths = await getPackageFilesForScan(targets, supportedFiles, {
+    additionalIgnores: additionalScaIgnores,
     config: effectiveSocketConfig,
     cwd,
   })

@@ -100,6 +100,7 @@ export function findNpmDirPathSync(npmBinPath: string): string | undefined {
 }
 
 export type PackageFilesForScanOptions = {
+  additionalIgnores?: readonly string[] | undefined
   cwd?: string | undefined
   config?: SocketYml | undefined
 }
@@ -109,7 +110,11 @@ export async function getPackageFilesForScan(
   supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
   options?: PackageFilesForScanOptions | undefined,
 ): Promise<string[]> {
-  const { config: socketConfig, cwd = process.cwd() } = {
+  const {
+    additionalIgnores,
+    config: socketConfig,
+    cwd = process.cwd(),
+  } = {
     __proto__: null,
     ...options,
   } as PackageFilesForScanOptions
@@ -122,6 +127,7 @@ export async function getPackageFilesForScan(
   return await globWithGitIgnore(
     pathsToGlobPatterns(inputPaths, options?.cwd),
     {
+      additionalIgnores,
       cwd,
       filter,
       socketConfig,

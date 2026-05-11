@@ -13,6 +13,7 @@ import {
   globWithGitIgnore,
   pathsToGlobPatterns,
 } from './glob.mts'
+import { excludePathToScanIgnores } from '../commands/scan/exclude-paths.mts'
 
 import type FileSystem from 'mock-fs/lib/filesystem'
 
@@ -193,6 +194,54 @@ describe('glob utilities', () => {
       })
 
       const results = await globWithGitIgnore(['**/*.json'], {
+        cwd: mockFixturePath,
+      })
+
+      expect(results.map(normalizePath).sort()).toEqual([
+        `${mockFixturePath}/package.json`,
+      ])
+    })
+
+    it('keeps additionalIgnores anchored even when a gitignore negation forces the streaming path', async () => {
+      // A bare `tests` pattern means "the entry `tests` at the scan root".
+      // The streaming path uses the `ignore` package for gitignore-translated
+      // entries, which treats bare names as match-anywhere. CLI patterns
+      // must bypass that matcher so anchored semantics survive.
+      mockTestFs({
+        // `!nested/keep.json` forces hasNegatedPattern = true → streaming.
+        [`${mockFixturePath}/.gitignore`]: 'banned/**\n!nested/keep.json',
+        [`${mockFixturePath}/tests/foo.json`]: '{}',
+        [`${mockFixturePath}/subdir/tests/foo.json`]: '{}',
+        [`${mockFixturePath}/nested/keep.json`]: '{}',
+      })
+
+      const results = await globWithGitIgnore(['**/*.json'], {
+        additionalIgnores: excludePathToScanIgnores('tests'),
+        cwd: mockFixturePath,
+      })
+
+      expect(results.map(normalizePath).sort()).toEqual([
+        `${mockFixturePath}/nested/keep.json`,
+        `${mockFixturePath}/subdir/tests/foo.json`,
+      ])
+    })
+
+    it('excludes direct-child files when user writes `--exclude-paths packages/*`', async () => {
+      // Anchored micromatch semantics: `packages/*` matches every direct
+      // child of packages/ — both files like packages/stray.json and dirs
+      // like packages/a. The user-facing help text promises anchored
+      // micromatch, so all four manifest files below should be excluded
+      // from the scan, leaving only the top-level package.json.
+      mockTestFs({
+        [`${mockFixturePath}/package.json`]: '{}',
+        [`${mockFixturePath}/packages/stray.json`]: '{}',
+        [`${mockFixturePath}/packages/package.json`]: '{}',
+        [`${mockFixturePath}/packages/a/package.json`]: '{}',
+        [`${mockFixturePath}/packages/b/package.json`]: '{}',
+      })
+
+      const results = await globWithGitIgnore(['**/*.json'], {
+        additionalIgnores: excludePathToScanIgnores('packages/*'),
         cwd: mockFixturePath,
       })
 

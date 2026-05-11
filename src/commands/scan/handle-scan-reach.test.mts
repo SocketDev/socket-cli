@@ -124,12 +124,8 @@ describe('handleScanReach', () => {
       ['.'],
       { npm: { packageJson: { pattern: 'package.json' } } },
       {
-        config: {
-          version: 2,
-          issueRules: {},
-          githubApp: {},
-          projectIgnorePaths: ['vendor/**', 'tests/**', 'packages/*/**'],
-        },
+        additionalIgnores: ['tests', 'tests/**', 'packages/*', 'packages/*/**'],
+        config: { projectIgnorePaths: ['vendor/**'] },
         cwd: '/repo',
       },
     )
@@ -179,16 +175,13 @@ describe('handleScanReach', () => {
       ['/repo/apps/api'],
       { npm: { packageJson: { pattern: 'package.json' } } },
       {
-        config: {
-          version: 2,
-          issueRules: {},
-          githubApp: {},
-          projectIgnorePaths: [
-            'vendor/**',
-            'apps/api/tests/**',
-            'dist/**',
-          ],
-        },
+        additionalIgnores: [
+          'apps/api/tests',
+          'apps/api/tests/**',
+          'dist',
+          'dist/**',
+        ],
+        config: { projectIgnorePaths: ['vendor/**'] },
         cwd: '/repo',
       },
     )
@@ -243,12 +236,8 @@ describe('handleScanReach', () => {
       ['/repo/apps/api'],
       { npm: { packageJson: { pattern: 'package.json' } } },
       {
-        config: {
-          version: 2,
-          issueRules: {},
-          githubApp: {},
-          projectIgnorePaths: ['vendor/**', 'apps/api/**'],
-        },
+        additionalIgnores: ['apps/api', 'apps/api/**'],
+        config: { projectIgnorePaths: ['vendor/**'] },
         cwd: '/repo',
       },
     )
