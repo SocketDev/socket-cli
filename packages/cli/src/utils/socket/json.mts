@@ -156,9 +156,9 @@ export async function readSocketJson(
     }
   }
 
-  let obj: any
+  let obj: SocketJson | undefined
   try {
-    obj = JSON.parse(json)
+    obj = JSON.parse(json) as SocketJson | undefined
   } catch (e) {
     debugNs('error', `Failed to parse ${SOCKET_JSON} as JSON`)
     debugDirNs('inspect', { json })
@@ -216,9 +216,9 @@ export function readSocketJsonSync(
     }
   }
 
-  let jsonObj: any
+  let jsonObj: SocketJson | undefined
   try {
-    jsonObj = JSON.parse(jsonContent)
+    jsonObj = JSON.parse(jsonContent) as SocketJson | undefined
   } catch (e) {
     debugNs('error', `Failed to parse ${SOCKET_JSON} as JSON (sync)`)
     debugDirNs('inspect', { jsonContent })

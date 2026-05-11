@@ -239,7 +239,9 @@ export async function fetchGhsaDetails(
     for (let i = 0, { length } = ids; i < length; i += 1) {
       const id = ids[i]!
       const advisoryKey = `advisory${i}`
-      const advisory = (gqlResp as any)?.[advisoryKey]
+      const advisory = (gqlResp as Record<string, unknown> | undefined)?.[
+        advisoryKey
+      ] as GhsaDetails | undefined
       if (advisory?.ghsaId) {
         results.set(id, advisory as GhsaDetails)
       } else {
@@ -310,8 +312,15 @@ export async function enablePrAutoMerge({
       }`,
       { pullRequestId: prId },
     )
-    const respPrNumber = (gqlResp as any)?.enablePullRequestAutoMerge
-      ?.pullRequest?.number
+    const respPrNumber = (
+      gqlResp as
+        | {
+            enablePullRequestAutoMerge?: {
+              pullRequest?: { number?: number }
+            }
+          }
+        | undefined
+    )?.enablePullRequestAutoMerge?.pullRequest?.number
     if (respPrNumber) {
       return { enabled: true }
     }

@@ -37,6 +37,7 @@ import { socketHttpRequest } from '../socket/api.mjs'
 import { spawnNode } from '../spawn/spawn-node.mjs'
 
 import type { DlxOptions } from './spawn.mts'
+import type { SpawnNodeOptions } from '../spawn/spawn-node.mts'
 import type { CResult } from '../../types.mjs'
 
 /**
@@ -642,7 +643,7 @@ export async function spawnSocketPyCliDlx(
   try {
     // Use local Python CLI if available.
     if (resolution.type === 'local') {
-      const spawnNodeOpts: any = {
+      const spawnNodeOpts: SpawnNodeOptions = {
         ...(dlxOptions.cwd ? { cwd: dlxOptions.cwd } : {}),
         env: finalEnv,
         shell: WIN32,
@@ -713,7 +714,7 @@ export async function spawnSocketPyCli(
     // Check for local path override first.
     const resolution = resolvePyCli()
     if (resolution.type === 'local') {
-      const spawnNodeOpts: any = {
+      const spawnNodeOpts: SpawnNodeOptions = {
         ...(dlxOptions.cwd ? { cwd: dlxOptions.cwd } : {}),
         env: finalEnv,
         shell: WIN32,

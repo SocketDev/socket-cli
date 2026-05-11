@@ -11,11 +11,12 @@ import MagicString from 'magic-string'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
+
 const logger = getDefaultLogger()
 const traverse =
   typeof traverseImport === 'function'
     ? traverseImport
-    : (traverseImport as any).default
+    : (traverseImport as unknown as { default: typeof traverseImport }).default
 
 /**
  * Map of Unicode property escapes to explicit character ranges.
@@ -217,6 +218,7 @@ export function transformUnicodePropertyEscapes(content: string) {
   const s = new MagicString(content)
 
   traverse(ast, {
+    // eslint-disable-next-line typescript-eslint/no-explicit-any -- @babel/traverse types are not installed; visitor path uses dynamic AST node shape.
     RegExpLiteral(path: any) {
       const { node } = path
       const { flags, pattern } = node
@@ -285,6 +287,7 @@ export function transformUnicodePropertyEscapes(content: string) {
       }
     },
 
+    // eslint-disable-next-line typescript-eslint/no-explicit-any -- @babel/traverse types are not installed; visitor path uses dynamic AST node shape.
     NewExpression(path: any) {
       const { node } = path
 

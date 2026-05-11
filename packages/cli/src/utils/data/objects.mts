@@ -1,10 +1,10 @@
-export function createEnum<const T extends Record<string, any>>(
+export function createEnum<const T extends Record<string, unknown>>(
   obj: T,
 ): Readonly<T> {
-  return Object.freeze({ __proto__: null, ...obj }) as any
+  return Object.freeze({ __proto__: null, ...obj }) as Readonly<T>
 }
 
-export function pick<T extends Record<string, any>, K extends keyof T>(
+export function pick<T extends Record<string, unknown>, K extends keyof T>(
   input: T,
   keys: K[] | readonly K[],
 ): Pick<T, K> {

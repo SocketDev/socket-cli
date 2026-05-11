@@ -337,7 +337,7 @@ export async function meowWithSubcommands(
   // Hard override the config if instructed to do so.
   // The env var overrides the --flag, which overrides the persisted config
   // Also, when either of these are used, config updates won't persist.
-  let configOverrideResult: any
+  let configOverrideResult: ReturnType<typeof overrideCachedConfig> | undefined
   const socketCliConfig = getSocketCliConfig()
   if (socketCliConfig) {
     configOverrideResult = overrideCachedConfig(socketCliConfig)
@@ -533,7 +533,7 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
     flags: cliConfig.flags,
     help: trimNewlines(cliConfig.help(command, cliConfig)),
     importMeta,
-  } as any)
+  })
 
   const {
     compactHeader: compactHeaderFlag,

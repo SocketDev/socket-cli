@@ -32,7 +32,7 @@ const helpFlags = new Set([FLAG_HELP, '-h'])
 /**
  * Convert flag values to array format for processing.
  */
-export function cmdFlagValueToArray(value: any): string[] {
+export function cmdFlagValueToArray(value: unknown): string[] {
   if (typeof value === 'string') {
     return value.trim().split(/, */).filter(Boolean)
   }

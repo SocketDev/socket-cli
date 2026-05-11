@@ -145,13 +145,13 @@ export async function coanaFix(
       description: 'upload manifests',
       spinner,
     },
-  )) as any
+  )) as CResult<{ tarHash?: string }>
 
   if (!uploadCResult.ok) {
     return uploadCResult
   }
 
-  const tarHash: string = (uploadCResult as any).data.tarHash
+  const tarHash: string | undefined = uploadCResult.data.tarHash
   if (!tarHash) {
     spinner?.stop()
     return {

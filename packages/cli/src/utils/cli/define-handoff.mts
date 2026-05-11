@@ -224,7 +224,11 @@ export function defineHandoffCommand(
       stdio: 'inherit',
     })
 
-    const { process: childProcess } = spawnPromise as any
+    const { process: childProcess } = spawnPromise as unknown as {
+      process: NodeJS.Process & {
+        on: (event: string, listener: (...args: unknown[]) => void) => void
+      }
+    }
     wireChildExit(childProcess, {
       name,
       subprocessStartTime,
@@ -242,7 +246,9 @@ export function defineHandoffCommand(
  * telemetry first. Centralized so all wrappers share the same lifecycle.
  */
 export function wireChildExit(
-  childProcess: NodeJS.Process & { on: any },
+  childProcess: NodeJS.Process & {
+    on: (event: string, listener: (...args: unknown[]) => void) => void
+  },
   options: {
     name: string
     trackTelemetry: boolean
