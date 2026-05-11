@@ -168,7 +168,7 @@ Available styles:
     type: 'string',
     default: [],
     description:
-      'Limit fix analysis to specific ecosystems. Can be provided as comma separated values or as multiple flags. Defaults to all ecosystems.',
+      'Limit fix analysis to specific ecosystems. Accepts space- or comma-separated values and is case-insensitive. Defaults to all ecosystems.',
     isMultiple: true,
   },
   packageManagers: {
@@ -367,7 +367,11 @@ async function run(
   const outputKind = getOutputKind(json, markdown)
 
   // Process comma-separated values for ecosystems flag.
-  const ecosystemsRaw = cmdFlagValueToArray(ecosystems)
+  // ALL_ECOSYSTEMS is lowercase, so normalize input for a case-insensitive
+  // match (mirrors --package-managers behavior).
+  const ecosystemsRaw = cmdFlagValueToArray(ecosystems).map(s =>
+    s.toLowerCase(),
+  )
 
   // Validate ecosystem values early, before dry-run check.
   const validatedEcosystems: PURL_Type[] = []
