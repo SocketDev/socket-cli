@@ -63,9 +63,9 @@ export function findNpmDirPathSync(npmBinPath: string): string | undefined {
     iterations += 1
     const libNmNpmPath = path.join(thePath, `lib/${NODE_MODULES}/${NPM}`)
     // mise, which uses opaque binaries, puts its npm bin in a path like:
-    //   /Users/SomeUsername/.local/share/mise/installs/node/vX.X.X/bin/npm.
+    //   /Users/<user>/.local/share/mise/installs/node/vX.X.X/bin/npm.
     // HOWEVER, the location of the npm install is:
-    //   /Users/SomeUsername/.local/share/mise/installs/node/vX.X.X/lib/node_modules/npm.
+    //   /Users/<user>/.local/share/mise/installs/node/vX.X.X/lib/node_modules/npm.
     if (
       // Use existsSync here because statsSync, even with { throwIfNoEntry: false },
       // will throw an ENOTDIR error for paths like ./a-file-that-exists/a-directory-that-does-not.

@@ -1,3 +1,4 @@
+/* oxlint-disable socket/personal-path-placeholders -- "testuser" is a fixture username in test input for tilde-replacement assertions; not a real personal path. */
 /**
  * Unit tests for Telemetry integration utilities.
  *

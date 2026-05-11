@@ -1,3 +1,4 @@
+/* oxlint-disable socket/personal-path-placeholders -- "test" is a fixture username in mocked cwd / path test inputs; not a real personal path. */
 /**
  * Unit tests for json command.
  *

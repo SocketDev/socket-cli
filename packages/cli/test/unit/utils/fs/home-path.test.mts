@@ -1,3 +1,4 @@
+/* oxlint-disable socket/personal-path-placeholders -- "testuser" / "testuserother" are fixture usernames in test input strings exercising tildify; they are not real personal paths. */
 /**
  * Unit tests for home directory path utilities.
  *

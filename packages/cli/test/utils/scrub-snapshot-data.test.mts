@@ -1,3 +1,4 @@
+/* oxlint-disable socket/personal-path-placeholders -- "jdalton" / "testuser" are fixture inputs exercising the snapshot scrubber's path/username detection; the rule under test SHOULD scrub these. */
 import { describe, expect, it } from 'vitest'
 
 import { scrubSnapshotData, toSnapshotString } from './scrub-snapshot-data.mts'

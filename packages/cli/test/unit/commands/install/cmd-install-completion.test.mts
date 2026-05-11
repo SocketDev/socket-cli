@@ -1,3 +1,4 @@
+/* oxlint-disable socket/personal-path-placeholders -- "testuser" is a fixture username in expected dry-run output strings; not a real personal path. */
 /**
  * Unit tests for install completion command.
  *
