@@ -45,7 +45,7 @@ const { detectManifestActions } =
 let cwd = ''
 
 beforeEach(() => {
-  cwd = mkdtempSync(path.join(tmpdir(), 'detect-manifest-'))
+  cwd = mkdtempSync(path.join(os.tmpdir(), 'detect-manifest-'))
 })
 
 afterEach(() => {

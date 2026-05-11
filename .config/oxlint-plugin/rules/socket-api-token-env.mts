@@ -22,7 +22,11 @@
  *     socket-cli configuration setting, not an API token alias.
  */
 
-const LEGACY_ALIASES = new Set(['SOCKET_API_KEY', 'SOCKET_SECURITY_API_KEY', 'SOCKET_SECURITY_API_TOKEN'])
+const LEGACY_ALIASES = new Set([
+  'SOCKET_API_KEY',
+  'SOCKET_SECURITY_API_TOKEN',
+  'SOCKET_SECURITY_API_KEY',
+])
 
 const CANONICAL = 'SOCKET_API_TOKEN'
 

@@ -33,7 +33,7 @@
  *     stub detector requires a marker comment in the body.
  */
 
-const COMMENT_MARKER_RE = /\b(FIXME|HACK|STUB|TBD|TODO|UNIMPLEMENTED|WIP|XXX)\b/
+const COMMENT_MARKER_RE = /\b(TODO|FIXME|XXX|HACK|TBD|STUB|WIP|UNIMPLEMENTED)\b/
 
 const STUB_BODY_MARKER_RE =
   /\b(TODO|FIXME|XXX|HACK|TBD|STUB|WIP|UNIMPLEMENTED|not\s+implemented|unimplemented|placeholder|stub)\b/i
@@ -223,7 +223,7 @@ const rule = {
           !arg ||
           arg.type !== 'NewExpression' ||
           arg.callee.type !== 'Identifier' ||
-          !/^(Error|RangeError|TypeError)$/.test(arg.callee.name)
+          !/^(Error|TypeError|RangeError)$/.test(arg.callee.name)
         ) {
           return
         }

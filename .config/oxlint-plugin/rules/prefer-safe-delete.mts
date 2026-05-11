@@ -33,9 +33,16 @@
 
 import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'
 
-const DELETE_METHODS = new Set(['rm', 'rmSync', 'rmdir', 'rmdirSync', 'unlink', 'unlinkSync'])
+const DELETE_METHODS = new Set([
+  'rm',
+  'rmSync',
+  'unlink',
+  'unlinkSync',
+  'rmdir',
+  'rmdirSync',
+])
 
-const SYNC_METHODS = new Set(['rmSync', 'rmdirSync', 'unlinkSync'])
+const SYNC_METHODS = new Set(['rmSync', 'unlinkSync', 'rmdirSync'])
 
 /** @type {import('eslint').Rule.RuleModule} */
 const rule = {
@@ -105,8 +112,8 @@ const rule = {
       if (args.length === 2) {
         const second = args[1]
         if (
-          second.type === 'ArrowFunctionExpression' ||
-          second.type === 'FunctionExpression'
+          second.type === 'FunctionExpression' ||
+          second.type === 'ArrowFunctionExpression'
         ) {
           return false
         }
@@ -147,7 +154,7 @@ const rule = {
 
         // Match common fs aliases. Conservative — we'd rather miss a
         // case than flag `someChild.unlink()` on an unrelated object.
-        if (!/^(fs|fsPromises|fsp|promises)$/.test(objName)) {
+        if (!/^(fs|fsPromises|promises|fsp)$/.test(objName)) {
           return
         }
 

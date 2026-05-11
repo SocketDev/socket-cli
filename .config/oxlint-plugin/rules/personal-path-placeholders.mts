@@ -20,10 +20,10 @@
  *
  * Autofix: replaces the non-canonical placeholder with the canonical
  * one for the platform path prefix:
- *   /Users/<user>/      → /Users/<user>/
- *   /home/<user>/       → /home/<user>/
- *   C:\Users\<USERNAME>\    → C:\Users\<USERNAME>\
- *   C:/Users/<USERNAME>/    → C:/Users/<USERNAME>/
+ *   /Users/<X>/      → /Users/<user>/
+ *   /home/<X>/       → /home/<user>/
+ *   C:\Users\<X>\    → C:\Users\<USERNAME>\
+ *   C:/Users/<X>/    → C:/Users/<USERNAME>/
  *
  * Real personal data (a literal username instead of a placeholder)
  * is also flagged. Two scenarios:
@@ -48,19 +48,19 @@ const PLACEHOLDER_RE = /<([^>]+)>/
 
 const PATTERNS = [
   {
-    // /Users/<user>/...
+    // /Users/<X>/...
     re: /(\/Users\/)<([^>]+)>(\/|$)/,
     canonical: 'user',
     label: '/Users/<user>/',
   },
   {
-    // /home/<user>/...
+    // /home/<X>/...
     re: /(\/home\/)<([^>]+)>(\/|$)/,
     canonical: 'user',
     label: '/home/<user>/',
   },
   {
-    // C:\Users\<USERNAME>\... or C:/Users/<USERNAME>/
+    // C:\Users\<X>\... or C:/Users/<X>/
     re: /([A-Za-z]:[\\/]Users[\\/])<([^>]+)>([\\/]|$)/,
     canonical: 'USERNAME',
     label: 'C:\\Users\\<USERNAME>\\',
@@ -168,11 +168,11 @@ const rule = {
         // Skip if the slug is a known placeholder shape (already
         // handled above), env-var, or canonical literal "user".
         const slug = m[2]
-        if (slug === 'USERNAME' || slug === 'user') {
+        if (slug === 'user' || slug === 'USERNAME') {
           continue
         }
         // Skip platform-canonical literals like "Shared".
-        if (slug === 'Public' || slug === 'Shared') {
+        if (slug === 'Shared' || slug === 'Public') {
           continue
         }
         const label =

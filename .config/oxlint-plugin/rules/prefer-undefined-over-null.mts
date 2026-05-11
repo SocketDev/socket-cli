@@ -287,10 +287,10 @@ const rule = {
       while (cur) {
         // Boundary nodes — stop walking here.
         if (
-          cur.type === 'ArrowFunctionExpression' ||
-          cur.type === 'BlockStatement' ||
           cur.type === 'FunctionDeclaration' ||
           cur.type === 'FunctionExpression' ||
+          cur.type === 'ArrowFunctionExpression' ||
+          cur.type === 'BlockStatement' ||
           cur.type === 'Program'
         ) {
           // For functions, the return-type annotation lives on the

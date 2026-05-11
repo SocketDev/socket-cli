@@ -26,7 +26,7 @@
 
 const SCRIPT_ENTRY_NAMES = new Set(['main'])
 
-export function declVisibility(node) {
+function declVisibility(node) {
   // ExportNamedDeclaration wrapping a FunctionDeclaration.
   if (
     node.type === 'ExportNamedDeclaration' &&
@@ -47,6 +47,20 @@ export function declVisibility(node) {
     return { visibility: 'private', fn: node }
   }
   return undefined
+}
+
+/**
+ * Compute the sort key for a function entry. Private functions sort
+ * before exports; within each group, alphanumerical by name. The
+ * script entrypoint (`main`) is pinned to the end regardless of group.
+ */
+function sortKey(entry) {
+  if (entry.isEntrypoint) {
+    // '~' (0x7E) is the highest printable ASCII char, so this sort key
+    // pins the entrypoint to the end of any group.
+    return '~~entrypoint'
+  }
+  return `${entry.visibility === 'private' ? '0' : '1'}${entry.name}`
 }
 
 /**
@@ -79,20 +93,6 @@ function leadingCommentStart(sourceCode, node) {
     earliest = c.range[0]
   }
   return earliest
-}
-
-/**
- * Compute the sort key for a function entry. Private functions sort
- * before exports; within each group, alphanumerical by name. The
- * script entrypoint (`main`) is pinned to the end regardless of group.
- */
-function sortKey(entry) {
-  if (entry.isEntrypoint) {
-    // '~' (0x7E) is the highest printable ASCII char, so this sort key
-    // pins the entrypoint to the end of any group.
-    return '~~entrypoint'
-  }
-  return `${entry.visibility === 'private' ? '0' : '1'}${entry.name}`
 }
 
 /**
@@ -156,8 +156,8 @@ const rule = {
         // First pass: collect entries + detect violations.
         const entries = []
         let lastVisibilityRank = -1
-        let lastNameInGroup = undefined
-        let currentVisibility = undefined
+        let lastNameInGroup = null
+        let currentVisibility = null
         const violations = []
 
         // First find the next program-body node after each function, so

@@ -37,7 +37,7 @@ describe('fs utilities', () => {
 
     beforeEach(async () => {
       // Create temporary test directory structure.
-      testDir = path.join(tmpdir(), `socket-test-${Date.now()}`)
+      testDir = path.join(os.tmpdir(), `socket-test-${Date.now()}`)
       nestedDir = path.join(testDir, 'level1', 'level2', 'level3')
 
       await fs.mkdir(nestedDir, { recursive: true })

@@ -27,7 +27,7 @@ import { compressSocketFactsForUpload } from '../../../../src/utils/coana/compre
 describe('compress-facts', () => {
   describe('compressSocketFactsForUpload', () => {
     it('writes brotli .br as a sibling of the source file', async () => {
-      const wrapDir = mkdtempSync(path.join(tmpdir(), 'socket-coana-wrap-'))
+      const wrapDir = mkdtempSync(path.join(os.tmpdir(), 'socket-coana-wrap-'))
       const inputPath = path.join(wrapDir, '.socket.facts.json')
       const payload = { tier1ReachabilityScanId: 'compress-test', a: 1, b: 2 }
       writeFileSync(inputPath, JSON.stringify(payload))
@@ -56,7 +56,7 @@ describe('compress-facts', () => {
     })
 
     it('leaves non-facts paths unchanged', async () => {
-      const wrapDir = mkdtempSync(path.join(tmpdir(), 'socket-coana-wrap-'))
+      const wrapDir = mkdtempSync(path.join(os.tmpdir(), 'socket-coana-wrap-'))
       const lock = path.join(wrapDir, 'package-lock.json')
       const pkg = path.join(wrapDir, 'package.json')
       writeFileSync(lock, '{}')
@@ -72,7 +72,7 @@ describe('compress-facts', () => {
     })
 
     it('leaves a missing .socket.facts.json path unchanged', async () => {
-      const wrapDir = mkdtempSync(path.join(tmpdir(), 'socket-coana-wrap-'))
+      const wrapDir = mkdtempSync(path.join(os.tmpdir(), 'socket-coana-wrap-'))
       const missingFacts = path.join(wrapDir, '.socket.facts.json')
       // Note: no writeFileSync — file does not exist.
 
@@ -86,7 +86,7 @@ describe('compress-facts', () => {
     })
 
     it('mixes facts and non-facts entries correctly', async () => {
-      const wrapDir = mkdtempSync(path.join(tmpdir(), 'socket-coana-wrap-'))
+      const wrapDir = mkdtempSync(path.join(os.tmpdir(), 'socket-coana-wrap-'))
       const facts = path.join(wrapDir, '.socket.facts.json')
       const lock = path.join(wrapDir, 'package-lock.json')
       writeFileSync(facts, JSON.stringify({ tier1ReachabilityScanId: 'mix' }))
@@ -107,7 +107,7 @@ describe('compress-facts', () => {
     })
 
     it('cleanup is idempotent (safe to call twice)', async () => {
-      const wrapDir = mkdtempSync(path.join(tmpdir(), 'socket-coana-wrap-'))
+      const wrapDir = mkdtempSync(path.join(os.tmpdir(), 'socket-coana-wrap-'))
       const facts = path.join(wrapDir, '.socket.facts.json')
       writeFileSync(facts, JSON.stringify({ tier1ReachabilityScanId: 'idem' }))
 

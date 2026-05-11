@@ -20,11 +20,17 @@
  * Reporting only.
  */
 
-const RACE_METHODS = new Set(['any', 'race'])
+const RACE_METHODS = new Set(['race', 'any'])
 
-const LOOP_TYPES = new Set(['DoWhileStatement', 'ForInStatement', 'ForOfStatement', 'ForStatement', 'WhileStatement'])
+const LOOP_TYPES = new Set([
+  'ForStatement',
+  'ForOfStatement',
+  'ForInStatement',
+  'WhileStatement',
+  'DoWhileStatement',
+])
 
-export function isInsideLoop(node) {
+function isInsideLoop(node) {
   let current = node.parent
   while (current) {
     if (LOOP_TYPES.has(current.type)) {
@@ -33,9 +39,9 @@ export function isInsideLoop(node) {
     // Function boundaries break the chain — a function defined inside
     // a loop and invoked elsewhere isn't "in" the loop.
     if (
-      current.type === 'ArrowFunctionExpression' ||
       current.type === 'FunctionDeclaration' ||
-      current.type === 'FunctionExpression'
+      current.type === 'FunctionExpression' ||
+      current.type === 'ArrowFunctionExpression'
     ) {
       return false
     }

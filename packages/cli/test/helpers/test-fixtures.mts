@@ -17,7 +17,7 @@ export async function createTempFixture(
   cleanupHook?: (cleanup: () => Promise<void>) => void,
 ): Promise<string> {
   // Create a unique temporary directory.
-  const tempBaseDir = tmpdir()
+  const tempBaseDir = os.tmpdir()
   const tempDirName = `socket-cli-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
   const tempDir = path.join(tempBaseDir, tempDirName)
 

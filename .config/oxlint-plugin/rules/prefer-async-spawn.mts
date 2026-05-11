@@ -42,11 +42,14 @@
  *     core APIs. Handled at the .oxlintrc.json ignorePatterns level.
  */
 
-const CHILD_PROCESS_SPECIFIERS = new Set(['child_process', 'node:child_process'])
+const CHILD_PROCESS_SPECIFIERS = new Set([
+  'node:child_process',
+  'child_process',
+])
 
 const LIB_SPECIFIER = '@socketsecurity/lib/spawn'
 
-const BANNED_NAMES = new Set(['spawn', 'spawnSync'])
+const BANNED_NAMES = new Set(['spawnSync', 'spawn'])
 
 const BYPASS_RE = /prefer-async-spawn:\s*sync-required/
 
@@ -95,9 +98,9 @@ const rule = {
       let cur = node.parent
       while (cur) {
         if (
-          cur.type === 'ArrowFunctionExpression' ||
           cur.type === 'FunctionDeclaration' ||
-          cur.type === 'FunctionExpression'
+          cur.type === 'FunctionExpression' ||
+          cur.type === 'ArrowFunctionExpression'
         ) {
           return Boolean(cur.async)
         }
@@ -128,7 +131,7 @@ const rule = {
           BANNED_NAMES.has(s.imported.name),
       )
       if (banned.length === 0) {
-        return undefined
+        return null
       }
       const others = node.specifiers.filter(
         s =>
@@ -139,7 +142,7 @@ const rule = {
       if (others.length > 0) {
         // Mixed line — leave it alone; a partial rewrite could lose
         // the non-banned import.
-        return undefined
+        return null
       }
       // The lib re-exports `spawn` (and the user can wire `as
       // spawnSync` themselves if they really need a name). For the
@@ -211,7 +214,7 @@ const rule = {
         if (!objName) {
           return
         }
-        if (!/^(childProcess|child_process|cp)$/.test(objName)) {
+        if (!/^(child_process|childProcess|cp)$/.test(objName)) {
           return
         }
         if (hasBypassComment(node)) {

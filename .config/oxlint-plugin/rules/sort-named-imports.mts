@@ -131,7 +131,7 @@ const rule = {
               filter: t => t.value === '}',
             })
             if (!openBrace || !closeBrace) {
-              return undefined
+              return null
             }
             const sliceStart = openBrace.range[1]
             const sliceEnd = closeBrace.range[0]

@@ -118,7 +118,7 @@ const rule = {
         objectName === 'console' &&
         ['log', 'error', 'warn', 'info'].includes(propName)
       const isLoggerLog =
-        objectName === 'logger' && (propName === 'info' || propName === 'log')
+        objectName === 'logger' && (propName === 'log' || propName === 'info')
 
       if (!isConsole && !isLoggerLog) {
         return undefined

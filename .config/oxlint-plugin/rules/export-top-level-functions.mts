@@ -33,7 +33,7 @@ const SCRIPT_ENTRY_NAMES = new Set(['main'])
  * declarations only via `Program > FunctionDeclaration`; an
  * `ExportNamedDeclaration` wraps them in a different shape).
  */
-export function collectExportedNames(program) {
+function collectExportedNames(program) {
   const exported = new Set()
   for (const stmt of program.body) {
     if (stmt.type === 'ExportNamedDeclaration' && !stmt.declaration) {
