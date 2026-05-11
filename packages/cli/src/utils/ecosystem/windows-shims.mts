@@ -9,7 +9,7 @@
  * when one exists (so child_process can spawn it without `shell: true`).
  */
 
-import fs from 'node:fs'
+import { existsSync,  readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
@@ -46,7 +46,7 @@ export function preferWindowsCmdShim(binPath: string, binName: string): string {
   }
 
   const cmdShim = path.join(path.dirname(binPath), `${binName}.cmd`)
-  return fs.existsSync(cmdShim) ? cmdShim : binPath
+  return existsSync(cmdShim) ? cmdShim : binPath
 }
 
 /**
@@ -60,12 +60,12 @@ export function preferWindowsCmdShim(binPath: string, binName: string): string {
  * `npm-cli.js` entry point so we can spawn them via Node directly.
  */
 export function resolveBinPathSync(binPath: string): string {
-  if (!fs.existsSync(binPath)) {
+  if (!existsSync(binPath)) {
     return binPath
   }
 
   try {
-    const content = fs.readFileSync(binPath, 'utf8')
+    const content = readFileSync(binPath, 'utf8')
     // Look for common shim patterns:
     //   node "C:\path\to\npm-cli.js" "$@"
     //   "%_prog%"  "%dp0%\node_modules\npm\bin\npm-cli.js" %*

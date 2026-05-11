@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import { getSocketAppDataPath, rootPath } from '../../constants/paths.mts'
@@ -70,7 +70,7 @@ export function getCompletionSourcingCommand(): CResult<string> {
     'socket-completion.bash',
   )
 
-  if (!fs.existsSync(completionScriptPath)) {
+  if (!existsSync(completionScriptPath)) {
     return {
       ok: false,
       message: 'Tab Completion script not found',

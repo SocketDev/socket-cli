@@ -26,7 +26,8 @@
  * - File permission management
  */
 
-import fs from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
+import { chmod } from 'node:fs/promises'
 
 import { errorMessage } from '@socketsecurity/lib/errors'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
@@ -143,8 +144,8 @@ export function detectMusl(): boolean {
 
   // Method 1: Check /etc/os-release for Alpine.
   try {
-    if (fs.existsSync('/etc/os-release')) {
-      const osRelease = fs.readFileSync('/etc/os-release', 'utf8')
+    if (existsSync('/etc/os-release')) {
+      const osRelease = readFileSync('/etc/os-release', 'utf8')
       if (osRelease.includes('Alpine') || osRelease.includes('alpine')) {
         cachedLibc = 'musl'
         return true
@@ -157,8 +158,8 @@ export function detectMusl(): boolean {
   // Method 2: Check if ldd references musl.
   try {
     if (
-      fs.existsSync('/lib/ld-musl-x86_64.so.1') ||
-      fs.existsSync('/lib/ld-musl-aarch64.so.1')
+      existsSync('/lib/ld-musl-x86_64.so.1') ||
+      existsSync('/lib/ld-musl-aarch64.so.1')
     ) {
       cachedLibc = 'musl'
       return true
@@ -169,8 +170,8 @@ export function detectMusl(): boolean {
 
   // Method 3: Check /proc/version for musl indicators.
   try {
-    if (fs.existsSync('/proc/version')) {
-      const version = fs.readFileSync('/proc/version', 'utf8')
+    if (existsSync('/proc/version')) {
+      const version = readFileSync('/proc/version', 'utf8')
       if (version.includes('musl')) {
         cachedLibc = 'musl'
         return true
@@ -249,7 +250,7 @@ export async function ensureExecutable(filePath: string): Promise<void> {
   }
 
   try {
-    await fs.promises.chmod(filePath, 0o755)
+    await chmod(filePath, 0o755)
     logger.log('Set executable permissions')
   } catch (e) {
     logger.warn(`Failed to set executable permissions: ${errorMessage(e)}`)
