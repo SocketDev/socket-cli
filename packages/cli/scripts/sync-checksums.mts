@@ -52,6 +52,7 @@ export async function computeFileHash(filePath) {
  * Download a file from a URL.
  */
 export async function downloadFile(url, destPath) {
+  // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- streams response.body into a write stream via pipeline(); httpJson/httpText/httpRequest decode to string/JSON and don't expose the raw response body stream.
   const response = await fetch(url, {
     headers: {
       Accept: 'application/octet-stream',
@@ -87,6 +88,7 @@ export async function fetchGitHubReleaseChecksums(
 
   logger.log(`  Fetching release info from ${apiUrl}...`)
 
+  // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- dev script needs response.ok + response.status + response.statusText for diagnostic error; helpers throw HttpError without exposing those fields ergonomically.
   const response = await fetch(apiUrl, {
     headers: {
       Accept: 'application/vnd.github.v3+json',

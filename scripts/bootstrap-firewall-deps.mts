@@ -88,6 +88,7 @@ const checkFirewall = async (
   const timer = setTimeout(() => controller.abort(), FIREWALL_TIMEOUT_MS)
   timer.unref?.()
   try {
+    // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- bootstrap script runs before deps installed; uses AbortController.signal for hard timeout and reads res.ok + res.status for non-fatal proceed-anyway behavior.
     const res = await fetch(url, {
       headers: {
         'User-Agent': 'socket-bootstrap-firewall-deps/1.0',

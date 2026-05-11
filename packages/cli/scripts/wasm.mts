@@ -118,6 +118,7 @@ export async function downloadFile(url, outputPath, expectedSize) {
   logger.substep(`Size: ${(expectedSize / 1024 / 1024).toFixed(2)} MB\n`)
 
   try {
+    // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- needs response.arrayBuffer() to write binary WASM bundle; helpers only return decoded string/json.
     const response = await fetch(url, {
       headers: {
         Accept: 'application/octet-stream',
@@ -223,6 +224,7 @@ export async function getLatestWasmRelease() {
 
   try {
     const apiUrl = `https://api.github.com/repos/${GITHUB_REPO}/releases`
+    // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- dev script wants response.statusText in diagnostic error; helpers throw HttpError without that exact field.
     const response = await fetch(apiUrl, {
       headers: {
         Accept: 'application/vnd.github+json',
