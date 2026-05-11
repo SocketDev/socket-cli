@@ -23,21 +23,33 @@ function normalizeProjectIgnorePath(path: string): string {
   )
 }
 
+/**
+ * Converts a Socket-scan-root anchored --exclude-paths pattern into the shape
+ * Coana expects for the current analysis target. Coana resolves --exclude-dirs
+ * relative to the path passed to `coana run`, not relative to this command's
+ * cwd. For a root target the pattern can pass through unchanged; for a nested
+ * target we strip the target prefix; and for paths outside the target we return
+ * undefined because Coana cannot exclude directories it is not analyzing.
+ */
 function pathRelativeToTarget(
   path: string,
   target: string,
 ): string | undefined {
   const normalized = normalizeProjectIgnorePath(path)
   if (target === '.' || target === '') {
+    // Root target: the project root and Coana analysis root are the same directory.
     return normalized
   }
   if (normalized === target) {
-    return '**'
+    // Whole target excluded: manifest discovery should stop before Coana runs.
+    return undefined
   }
   const targetPrefix = `${target}/`
   if (normalized.startsWith(targetPrefix)) {
+    // Nested target: strip the target prefix to make the pattern target-relative.
     return normalized.slice(targetPrefix.length)
   }
+  // Outside the target: there is nothing for this Coana run to exclude.
   return undefined
 }
 
@@ -52,12 +64,9 @@ function toPosixPath(path: string): string {
 /**
  * Fans --exclude-paths out to both exclusion sinks: the SCA manifest-discovery
  * pipeline (via socket.yml `projectIgnorePaths`) and the reachability analyzer
- * (via `reachExcludePaths`, ultimately coana's --exclude-dirs). Existing
- * `projectIgnorePaths` from socket.yml are also forwarded to reachability so
- * coana sees the same effective set on both sides — coana's own socket.yml
- * inference fires only when --exclude-dirs isn't passed, so once we forward
- * the user's patterns we have to also forward the existing ones to keep the
- * analyzer's view in sync.
+ * (via `reachExcludePaths`, ultimately coana's --exclude-dirs). This only
+ * translates user-provided --exclude-paths; existing socket.yml
+ * `projectIgnorePaths` keep their previous reachability behavior.
  */
 export function applyFullExcludePaths({
   cwd,
@@ -71,12 +80,6 @@ export function applyFullExcludePaths({
     excludePaths,
     { cwd, target },
   )
-  const socketConfigReachExcludeGlobs = excludePaths.length
-    ? projectIgnorePathsToReachExcludePaths(socketConfig?.projectIgnorePaths, {
-        cwd,
-        target,
-      })
-    : []
   const effectiveSocketConfig = scaExcludeGlobs.length
     ? {
         ...socketConfig,
@@ -93,7 +96,6 @@ export function applyFullExcludePaths({
     ? {
         ...reachabilityOptions,
         reachExcludePaths: [
-          ...socketConfigReachExcludeGlobs,
           ...reachabilityOptions.reachExcludePaths,
           ...coanaExcludeGlobs,
         ],
@@ -120,7 +122,7 @@ export function assertNoNegationPatterns(paths: readonly string[]): void {
 
 /**
  * SCA-side adapter. The user-facing contract for --exclude-paths is anchored
- * micromatch from the project root, but socket.yml `projectIgnorePaths` is
+ * micromatch from the Socket scan root, but socket.yml `projectIgnorePaths` is
  * gitignore-style and expands a bare name to a match-anywhere pattern. Append
  * `/**` so the pattern contains a slash and gets anchored by the gitignore
  * translator, matching files under the named directory at the user-specified
@@ -132,9 +134,9 @@ export function excludePathToProjectIgnorePath(path: string): string {
 }
 
 /**
- * Re-anchors project-root patterns onto the reachability analysis target.
+ * Re-anchors Socket-scan-root patterns onto the reachability analysis target.
  * Coana matches --exclude-dirs relative to whichever directory it was invoked
- * on, so when the analysis target is a nested subdirectory, project-root
+ * on, so when the analysis target is a nested subdirectory, scan-root
  * patterns need their target prefix stripped. Patterns that fall outside the
  * target are dropped — coana cannot exclude what it isn't analyzing. Bails
  * out entirely when any input contains a negation, since coana's --exclude-dirs
@@ -147,10 +149,9 @@ export function projectIgnorePathsToReachExcludePaths(
   if (!Array.isArray(paths) || paths.some(p => p.startsWith('!'))) {
     return []
   }
-  const targetPath = path.isAbsolute(options.target)
-    ? path.relative(options.cwd, options.target)
-    : options.target
-  const targetPattern = toPosixPath(stripTrailingSlash(targetPath))
+  const targetPattern = normalizeProjectIgnorePath(
+    path.relative(options.cwd, path.resolve(options.cwd, options.target)),
+  )
   return paths.flatMap(p => {
     const reachPath = pathRelativeToTarget(p, targetPattern)
     return reachPath === undefined ? [] : [reachPath]

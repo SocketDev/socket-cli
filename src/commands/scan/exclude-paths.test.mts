@@ -88,6 +88,24 @@ describe('exclude-paths', () => {
       ).toEqual(['tests', 'fixtures/**'])
     })
 
+    it('normalizes leading dot-slash targets before re-anchoring', () => {
+      expect(
+        projectIgnorePathsToReachExcludePaths(['apps/api/tests'], {
+          cwd: '/repo',
+          target: './apps/api',
+        }),
+      ).toEqual(['tests'])
+    })
+
+    it('does not send a Coana exclude when the exclude names the whole target', () => {
+      expect(
+        projectIgnorePathsToReachExcludePaths(['apps/api'], {
+          cwd: '/repo',
+          target: '/repo/apps/api',
+        }),
+      ).toEqual([])
+    })
+
     it('strips the target prefix and drops out-of-target patterns for nested targets', () => {
       expect(
         projectIgnorePathsToReachExcludePaths(
@@ -126,7 +144,7 @@ describe('exclude-paths', () => {
   })
 
   describe('applyFullExcludePaths', () => {
-    it('keeps socket.yml negation entries on the SCA side but drops them from the reachability forwarding', () => {
+    it('keeps socket.yml projectIgnorePaths on the SCA side without forwarding them to reachability', () => {
       const result = applyFullExcludePaths({
         cwd: '/repo',
         reachabilityOptions: makeReachOptions({

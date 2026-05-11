@@ -136,18 +136,13 @@ describe('handleScanReach', () => {
     expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
       expect.objectContaining({
         reachabilityOptions: expect.objectContaining({
-          reachExcludePaths: [
-            'vendor/**',
-            'node_modules',
-            'tests',
-            'packages/*',
-          ],
+          reachExcludePaths: ['node_modules', 'tests', 'packages/*'],
         }),
       }),
     )
   })
 
-  it('translates excludePaths from project root for nested targets', async () => {
+  it('translates excludePaths from the scan root for nested targets', async () => {
     const reachabilityOptions = {
       excludePaths: ['apps/api/tests', 'dist'],
       reachAnalysisMemoryLimit: 8192,
@@ -204,5 +199,59 @@ describe('handleScanReach', () => {
         }),
       }),
     )
+  })
+
+  it('does not invoke Coana when excludePaths remove the whole target from manifest discovery', async () => {
+    mockGetPackageFilesForScan.mockResolvedValueOnce([])
+    mockCheckCommandInput.mockImplementation(
+      (_outputKind: unknown, ...checks: Array<{ test: boolean }>) =>
+        checks.every(check => check.test),
+    )
+    const reachabilityOptions = {
+      excludePaths: ['apps/api'],
+      reachAnalysisMemoryLimit: 8192,
+      reachAnalysisTimeout: 0,
+      reachConcurrency: 1,
+      reachContinueOnAnalysisErrors: false,
+      reachContinueOnInstallErrors: false,
+      reachContinueOnMissingLockFiles: false,
+      reachContinueOnNoSourceFiles: false,
+      reachDebug: false,
+      reachDetailedAnalysisLogFile: false,
+      reachDisableAnalytics: false,
+      reachDisableExternalToolChecks: false,
+      reachEcosystems: [],
+      reachEnableAnalysisSplitting: false,
+      reachExcludePaths: ['node_modules'],
+      reachLazyMode: false,
+      reachSkipCache: false,
+      reachUseOnlyPregeneratedSboms: false,
+      reachVersion: undefined,
+    }
+
+    await handleScanReach({
+      cwd: '/repo',
+      interactive: false,
+      orgSlug: 'fakeOrg',
+      outputKind: 'text',
+      outputPath: '',
+      reachabilityOptions,
+      targets: ['/repo/apps/api'],
+    })
+
+    expect(mockGetPackageFilesForScan).toHaveBeenCalledWith(
+      ['/repo/apps/api'],
+      { npm: { packageJson: { pattern: 'package.json' } } },
+      {
+        config: {
+          version: 2,
+          issueRules: {},
+          githubApp: {},
+          projectIgnorePaths: ['vendor/**', 'apps/api/**'],
+        },
+        cwd: '/repo',
+      },
+    )
+    expect(mockPerformReachabilityAnalysis).not.toHaveBeenCalled()
   })
 })

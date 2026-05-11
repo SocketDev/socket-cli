@@ -40,7 +40,7 @@ describe('socket scan create', async () => {
             --committers        Committers
             --cwd               working directory, defaults to process.cwd()
             --default-branch    Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.
-            --exclude-paths     List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) Tier 1 reachability analysis. Patterns are anchored micromatch globs matched relative to the project root: \`tests\` matches only \`./tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
+            --exclude-paths     List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) Tier 1 reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (\`--cwd\` if set), not the reachability target: \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json              Output as JSON
             --markdown          Output as Markdown
@@ -211,6 +211,34 @@ describe('socket scan create', async () => {
         code,
         'should exit with code 0 when --exclude-paths is used standalone',
       ).toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      FLAG_ORG,
+      'fakeOrg',
+      'target',
+      FLAG_DRY_RUN,
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--exclude-paths',
+      '!tests/keep',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should reject --exclude-paths negation patterns',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        "--exclude-paths does not support negation patterns. Got: '!tests/keep'.",
+      )
+      expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )
 
