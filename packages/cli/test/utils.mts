@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- test fixture: normalizes emoji output across Unicode/ASCII terminals. */
+
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 

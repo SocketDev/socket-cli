@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
+
 #!/usr/bin/env node
 /**
  * @fileoverview Setup script to install iocraft dev build into node_modules for local testing.

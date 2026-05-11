@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
+
 /**
  * @fileoverview Validates that bundled vs external dependencies are correctly declared in package.json.
  *

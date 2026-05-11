@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- test asserts on emoji output. */
+
 /**
  * Unit tests for alert translations.
  *

@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
+
 /**
  * @fileoverview Unified coverage script - runs tests with coverage reporting.
  * Standardized across all socket-* repositories.

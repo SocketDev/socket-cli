@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- test asserts on emoji output. */
+
 /**
  * @fileoverview Tests for rich progress indicators and spinners.
  * Validates MultiProgress, Spinner, and FileProgress components.

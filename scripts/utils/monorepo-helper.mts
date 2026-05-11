@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
+
 /**
  * @fileoverview Monorepo helper utilities for running commands across packages.
  * Provides package detection, file-to-package mapping, and pretty UI for multi-package operations.

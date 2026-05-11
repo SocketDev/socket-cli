@@ -113,7 +113,7 @@ export async function shouldExtract({
 
     // Cache hit.
     const logger = getDefaultLogger()
-    logger.log(`✓ Using cached ${outputPath}`)
+    logger.success(`Using cached ${outputPath}`)
     return false
   } catch {
     // Any error, regenerate.

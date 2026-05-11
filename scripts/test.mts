@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
+
 /**
  * @fileoverview Monorepo-aware test runner with smart file detection.
  * Runs tests across affected packages based on changed files.

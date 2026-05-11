@@ -783,4 +783,37 @@ describe('git utilities', () => {
       }
     })
   })
+
+  describe('getGitPath', () => {
+    it('throws a helpful error when whichReal returns null (line 58)', async () => {
+      // Reset modules so the module-level _gitPath cache is fresh and
+      // whichReal can be mocked to return null without other tests
+      // having already filled the cache.
+      vi.resetModules()
+      vi.doMock('@socketsecurity/lib/bin', () => ({
+        whichReal: vi.fn().mockResolvedValue(null),
+      }))
+      const { getGitPath: freshGetGitPath } = await import(
+        '../../../../src/utils/git/operations.mts'
+      )
+      await expect(freshGetGitPath()).rejects.toThrow(
+        /whichReal returned null/,
+      )
+      vi.doUnmock('@socketsecurity/lib/bin')
+      vi.resetModules()
+    })
+
+    it('throws when whichReal returns multiple matches', async () => {
+      vi.resetModules()
+      vi.doMock('@socketsecurity/lib/bin', () => ({
+        whichReal: vi.fn().mockResolvedValue(['/usr/bin/git', '/opt/bin/git']),
+      }))
+      const { getGitPath: freshGetGitPath } = await import(
+        '../../../../src/utils/git/operations.mts'
+      )
+      await expect(freshGetGitPath()).rejects.toThrow(/multiple matches/)
+      vi.doUnmock('@socketsecurity/lib/bin')
+      vi.resetModules()
+    })
+  })
 })

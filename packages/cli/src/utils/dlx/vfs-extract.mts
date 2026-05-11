@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- TUI / custom output formatter; emojis are part of the visual contract. */
+
 /**
  * VFS extraction utilities for external tools bundled in SEA binaries.
  *

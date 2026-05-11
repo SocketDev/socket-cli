@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- test asserts on emoji output. */
+
 import { describe, expect, it } from 'vitest'
 import { Writable } from 'node:stream'
 

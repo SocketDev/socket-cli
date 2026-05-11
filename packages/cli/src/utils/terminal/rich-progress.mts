@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- TUI / custom output formatter; emojis are part of the visual contract. */
+
 /** @fileoverview Rich progress indicators for better CLI UX. */
 
 import colors from 'yoctocolors-cjs'

@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
+
 /**
  * @fileoverview Bootstrap zero-dep Socket packages into node_modules/
  * before `pnpm install` runs, with Socket Firewall verification on each

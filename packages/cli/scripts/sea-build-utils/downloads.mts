@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
+
 /**
  * @fileoverview Download utilities for SEA build assets.
  * Manages downloads of node-smol binaries, binject tool, and security tools from GitHub releases.

@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- TUI / custom output formatter; emojis are part of the visual contract. */
+
 /** @fileoverview Simplified output formatter to DRY out repetitive output-*.mts files */
 
 import chalkTable from 'chalk-table'

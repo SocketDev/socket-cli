@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
+
 /**
  * Build Socket SEA (Single Executable Application) binaries.
  * Uses pre-compiled Node.js smol binaries from socket-btm releases.

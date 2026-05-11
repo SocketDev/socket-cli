@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
+
 /**
  * Simple test entry point for SEA bundling test.
  * Just outputs version to verify the binary works.

@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
+
 /**
  * @fileoverview Utilities for creating pnpm patches using Babel AST + MagicString.
  * Provides helpers for transforming node_modules files and generating patch files.

@@ -193,6 +193,23 @@ describe('buildHelpLines', () => {
       expect(blob).not.toContain('mcp description')
     })
 
+    it('skips bucket entries whose subcommand is not registered (line 212)', () => {
+      // A bucket entry that has no matching subcommand should be silently
+      // skipped — defensive guard for stale buckets vs. removed commands.
+      const lines = buildHelpLines({
+        aliases: {},
+        argv: [],
+        buckets: { fix: 'main', 'ghost-command': 'main' } as any,
+        flags: FLAGS,
+        isRootCommand: true,
+        name: 'socket',
+        subcommands: { fix: makeSubcommand('fix description') } as any,
+      })
+      const blob = lines.join('\n')
+      expect(blob).toContain('fix')
+      expect(blob).not.toContain('ghost-command')
+    })
+
     it('emits hero rows in the Main commands bucket', () => {
       const lines = buildHelpLines({
         aliases: {},

@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- this file IS the rule definition; emoji literals are lookup-table data, not real usage. */
+
 /**
  * @fileoverview Ban status-symbol emoji literals (✓ ✔ ❌ ✗ ⚠ ⚠️ ❗ ✅
  * ❎ ☑) inside string literals. The `@socketsecurity/lib/logger`

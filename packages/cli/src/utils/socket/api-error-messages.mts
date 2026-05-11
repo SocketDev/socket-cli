@@ -1,3 +1,5 @@
+/* oxlint-disable socket/no-status-emoji -- user-facing API error strings; emojis are part of the message-template contract. */
+
 /**
  * User-facing error messages + permission-requirements logging for
  * Socket API failures.
