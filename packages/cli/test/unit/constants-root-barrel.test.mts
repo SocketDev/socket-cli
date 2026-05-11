@@ -16,6 +16,7 @@
 
 import { describe, expect, it } from 'vitest'
 
+// oxlint-disable-next-line socket/sort-named-imports -- imports are intentionally grouped by domain (Agent / Alert / Cache / CLI / Config / ...) with section comments; alpha-sort would erase the documented grouping.
 import constants, {
   // Agent constants.
   BUN,
