@@ -136,6 +136,8 @@ function listProcesses(): ProcRow[] {
     return []
   }
   const rows: ProcRow[] = []
+  // `ps -A` is unix-only (see comment above), so the output uses LF
+  // line endings — no CRLF normalization needed here.
   for (const line of result.stdout.split('\n')) {
     if (!line.trim()) {
       continue

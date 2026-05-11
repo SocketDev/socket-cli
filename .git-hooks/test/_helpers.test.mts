@@ -17,6 +17,7 @@ import {
   aliasMatches,
   containsAiAttribution,
   filterAllowedApiKeys,
+  gitOrThrow,
   isInsideBackticks,
   lineIsSuppressed,
   looksLikeDocumentation,
@@ -29,6 +30,7 @@ import {
   scanPrivateKeys,
   scanSocketApiKeys,
   socketHookMarkerFor,
+  splitLines,
   stripAiAttribution,
   suggestLoggerReplacement,
   suggestNpxReplacement,
@@ -539,4 +541,44 @@ test('scanCrossRepoPaths: flags absolute /Users/.../projects/<other-repo>', () =
 test('scanCrossRepoPaths: allows same-repo relative imports', () => {
   const hits = scanCrossRepoPaths('import x from "./foo"', 'src/test.ts')
   assert.strictEqual(hits.length, 0)
+})
+
+// ── splitLines (CRLF normalization) ───────────────────────────────
+
+test('splitLines: LF-only input passes through', () => {
+  assert.deepStrictEqual(splitLines('a\nb\nc'), ['a', 'b', 'c'])
+})
+
+test('splitLines: CRLF input normalizes to LF', () => {
+  assert.deepStrictEqual(splitLines('a\r\nb\r\nc'), ['a', 'b', 'c'])
+})
+
+test('splitLines: mixed CRLF + LF input normalizes', () => {
+  assert.deepStrictEqual(splitLines('a\r\nb\nc\r\nd'), ['a', 'b', 'c', 'd'])
+})
+
+test('splitLines: trailing CRLF produces a trailing empty', () => {
+  assert.deepStrictEqual(splitLines('a\r\n'), ['a', ''])
+})
+
+test('splitLines: standalone \\r is preserved (mac classic — out of scope)', () => {
+  // Modern git / subprocess output is LF or CRLF, never bare CR. We
+  // don't try to normalize CR-only line endings; the helper is a
+  // pragmatic CRLF stripper, not a full line-ending sniffer.
+  assert.deepStrictEqual(splitLines('a\rb'), ['a\rb'])
+})
+
+// ── gitOrThrow ────────────────────────────────────────────────────
+
+test('gitOrThrow: returns stdout on success', () => {
+  // `git --version` works in any environment with git on PATH.
+  const out = gitOrThrow('--version')
+  assert.ok(out.startsWith('git version'), `expected "git version ...", got ${out}`)
+})
+
+test('gitOrThrow: throws on non-zero exit', () => {
+  assert.throws(
+    () => gitOrThrow('this-subcommand-does-not-exist'),
+    /git this-subcommand-does-not-exist:/,
+  )
 })

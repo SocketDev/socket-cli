@@ -223,6 +223,15 @@ function loadManifestTree(rootManifestPath: string): {
   }
 }
 
+/**
+ * Split text on LF after CRLF normalization. Git on Windows / msys may
+ * emit CRLF-terminated output; bare `.split('\n')` leaves a trailing
+ * `\r` on every line that throws off downstream `includes`/match checks.
+ */
+function splitLines(text: string): string[] {
+  return text.replace(/\r\n/g, '\n').split('\n')
+}
+
 function gitIn(submoduleDir: string, args: string[]): string {
   const result = spawnSync('git', ['-C', submoduleDir, ...args], {
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -265,7 +274,7 @@ function driftCommitsSince(
     if (!trimmed) {
       return []
     }
-    return trimmed.split('\n').map(line => {
+    return splitLines(trimmed).map(line => {
       // Preserve any embedded tabs in the commit subject (rare but
       // possible) — `.split` destructuring would truncate at the
       // first tab inside the summary.
@@ -492,7 +501,7 @@ function checkVersionPin(
       '--format=%(refname)',
       'refs/remotes/origin/',
     ])
-    const lines = remoteRefs.split('\n').filter(s => s.trim())
+    const lines = splitLines(remoteRefs).filter(s => s.trim())
     const pref = [
       'refs/remotes/origin/HEAD',
       'refs/remotes/origin/main',

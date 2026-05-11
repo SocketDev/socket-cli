@@ -42,9 +42,25 @@ const __dirname = path.dirname(__filename)
 const REPO_ROOT = path.join(__dirname, '..')
 const EXTERNAL_TOOLS_PATH = path.join(REPO_ROOT, 'external-tools.json')
 
-const HOME = process.env['HOME'] || process.env['USERPROFILE']
+// HOME on POSIX, USERPROFILE on Windows. Both can be set to an empty
+// string in degenerate shells (`HOME= some-cmd`) or to a non-absolute
+// stub like `~`, which would resolve `path.join(HOME, ...)` to a path
+// rooted at the current working directory — silently installing sfw
+// somewhere unexpected. Insist on an absolute path before accepting
+// either value.
+const resolveHome = (): string | undefined => {
+  for (const candidate of [process.env['HOME'], process.env['USERPROFILE']]) {
+    if (candidate && path.isAbsolute(candidate)) {
+      return candidate
+    }
+  }
+  return undefined
+}
+const HOME = resolveHome()
 if (!HOME) {
-  logger.fail('HOME / USERPROFILE not set — cannot resolve install dir')
+  logger.fail(
+    'HOME / USERPROFILE not set to an absolute path — cannot resolve install dir',
+  )
   process.exit(1)
 }
 const SFW_BIN_DIR = path.join(HOME, '.socket', 'sfw', 'bin')

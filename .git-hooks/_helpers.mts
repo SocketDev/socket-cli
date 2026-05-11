@@ -88,6 +88,24 @@ export const SOCKET_SECURITY_ENV = SOCKET_TOKEN_ENV_NAMES[0]!
 // matching assumes forward slashes. Cheap to convert once.
 export const normalizePath = (p: string): string => p.replace(/\\/g, '/')
 
+/**
+ * Split text into lines, normalizing CRLF (`\r\n`) to LF (`\n`) first.
+ *
+ * Hooks consume text from three sources where CRLF can show up:
+ *   - subprocess stdout/stderr (especially git on Windows / msys)
+ *   - stdin from the git push protocol on Windows
+ *   - file contents from a working copy with `core.autocrlf` semantics
+ *
+ * Plain `text.split('\n')` on CRLF input leaves a trailing `\r` on every
+ * line, which breaks per-line regex anchors used by the secret /
+ * personal-path / AI-attribution scanners. The hook then reports "no
+ * findings" on Windows even though the input clearly contains them —
+ * a security-gate fail-open. Always go through this helper for any
+ * text that didn't originate as a literal in our own code.
+ */
+export const splitLines = (text: string): string[] =>
+  text.replace(/\r\n/g, '\n').split('\n')
+
 // ── API-key allowlist filter ───────────────────────────────────────
 
 // Returns true if a line is on the allowlist (a public/example/fake
@@ -301,7 +319,7 @@ function scanLines(
   } = {},
 ): LineHit[] {
   const hits: LineHit[] = []
-  const lines = text.split('\n')
+  const lines = splitLines(text)
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!
     if (!pattern.test(line)) {
@@ -514,7 +532,7 @@ export const scanCrossRepoPaths = (
   currentRepoName?: string,
 ): LineHit[] => {
   const hits: LineHit[] = []
-  const lines = text.split('\n')
+  const lines = splitLines(text)
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!
     const m = line.match(CROSS_REPO_ANY_RE)
@@ -556,7 +574,7 @@ export const containsAiAttribution = (text: string): boolean =>
 export const stripAiAttribution = (
   text: string,
 ): { cleaned: string; removed: number } => {
-  const lines = text.split('\n')
+  const lines = splitLines(text)
   const kept: string[] = []
   let removed = 0
   for (const line of lines) {
@@ -643,7 +661,7 @@ const LINEAR_KEY_DIGITS_RE = new RegExp(
 // references that appeared in the diff snippet that git inlined.
 export const scanLinearRefs = (text: string, limit = 5): string[] => {
   const hits: string[] = []
-  for (const rawLine of text.split('\n')) {
+  for (const rawLine of splitLines(text)) {
     if (rawLine.trimStart().startsWith('#')) {
       continue
     }
@@ -707,13 +725,49 @@ export const readFileForScan = (filePath: string): string => {
 }
 
 // ── Git wrappers ───────────────────────────────────────────────────
+//
+// Two flavors:
+//
+//   git(...)         — loose. Returns '' on failure. Used by callers that
+//                      legitimately tolerate a missing ref (e.g. probing
+//                      remote default-branch HEAD which may not be set up
+//                      locally) and provide their own fallback. Silent
+//                      by design — _helpers.mts can't import the canonical
+//                      logger because it runs before the Node-version
+//                      gate has cleared, and a fire-and-forget dynamic
+//                      import races process exit. Callers that need to
+//                      know about failure should use gitOrThrow().
+//
+//   gitOrThrow(...)  — strict. Throws on either spawn error (git not on
+//                      PATH, EAGAIN, …) or non-zero exit. Used by gitLines
+//                      and every security-gate caller in pre-commit /
+//                      pre-push: if `git diff --cached --name-only` fails
+//                      we MUST refuse to greenlight the commit, not pass
+//                      it with "no files to check."
+//
+// gitLines goes through gitOrThrow because every call site we have
+// (staged-file iteration, push-range walking, repo-toplevel lookup)
+// makes a security or correctness decision based on the result; an
+// empty array from a failed git invocation is a fail-open.
 
 export const git = (...args: string[]): string => {
   const result = spawnSync('git', args, { encoding: 'utf8' })
-  return result.stdout.trim()
+  return (result.stdout ?? '').trim()
+}
+
+export const gitOrThrow = (...args: string[]): string => {
+  const result = spawnSync('git', args, { encoding: 'utf8' })
+  if (result.error) {
+    throw new Error(`git ${args.join(' ')}: ${result.error.message}`)
+  }
+  if (typeof result.status !== 'number' || result.status !== 0) {
+    const err = result.stderr?.trim() || `exit ${result.status}`
+    throw new Error(`git ${args.join(' ')}: ${err}`)
+  }
+  return (result.stdout ?? '').trim()
 }
 
 export const gitLines = (...args: string[]): string[] => {
-  const out = git(...args)
-  return out ? out.split('\n') : []
+  const out = gitOrThrow(...args)
+  return out ? splitLines(out) : []
 }
