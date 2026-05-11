@@ -30,8 +30,26 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
 
+export function checkpointDir(buildDir, packageName) {
+  return packageName
+    ? path.join(buildDir, 'checkpoints', packageName)
+    : path.join(buildDir, 'checkpoints')
+}
+
 export function checkpointFile(buildDir, packageName, name) {
   return path.join(checkpointDir(buildDir, packageName), `${name}.json`)
+}
+
+/**
+ * Delete all checkpoints under a build dir (or a single package's scope).
+ */
+export async function cleanCheckpoint(buildDir, packageName) {
+  const dir = checkpointDir(buildDir, packageName)
+  if (!existsSync(dir)) {
+    return
+  }
+  await safeDelete(dir)
+  logger.substep('Checkpoints cleaned')
 }
 
 export function computeCacheHash(sourcePaths, options) {
@@ -45,55 +63,6 @@ export function computeCacheHash(sourcePaths, options) {
     .update('|')
     .update(platformHash)
     .digest('hex')
-}
-
-export function hashSourcePaths(sourcePaths) {
-  const hash = createHash('sha256')
-  for (const file of [...sourcePaths].sort()) {
-    hash.update(`${file}:`)
-    if (existsSync(file)) {
-      try {
-        hash.update(readFileSync(file))
-      } catch (e) {
-        if (e.code !== 'ENOENT') {
-          throw e
-        }
-      }
-    }
-  }
-  return hash.digest('hex')
-}
-
-export function platformCacheKey({ buildMode, nodeVersion, platform, arch, libc }) {
-  const parts = [
-    buildMode && `mode=${buildMode}`,
-    nodeVersion && `node=${nodeVersion}`,
-    platform && `platform=${platform}`,
-    arch && `arch=${arch}`,
-    libc && `libc=${libc}`,
-  ].filter(Boolean)
-  if (!parts.length) {
-    return ''
-  }
-  return createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 16)
-}
-
-export function checkpointDir(buildDir, packageName) {
-  return packageName
-    ? path.join(buildDir, 'checkpoints', packageName)
-    : path.join(buildDir, 'checkpoints')
-}
-
-/**
- * Delete all checkpoints under a build dir (or a single package's scope).
- */
-export async function cleanCheckpoint(buildDir, packageName) {
-  const dir = checkpointDir(buildDir, packageName)
-  if (!existsSync(dir)) {
-    return
-  }
-  await safeDelete(dir)
-  logger.substep('Checkpoints cleaned')
 }
 
 /**
@@ -206,6 +175,37 @@ export async function getCheckpointData(buildDir, packageName, name) {
  */
 export function hasCheckpoint(buildDir, packageName, name) {
   return existsSync(checkpointFile(buildDir, packageName, name))
+}
+
+export function hashSourcePaths(sourcePaths) {
+  const hash = createHash('sha256')
+  for (const file of [...sourcePaths].sort()) {
+    hash.update(`${file}:`)
+    if (existsSync(file)) {
+      try {
+        hash.update(readFileSync(file))
+      } catch (e) {
+        if (e.code !== 'ENOENT') {
+          throw e
+        }
+      }
+    }
+  }
+  return hash.digest('hex')
+}
+
+export function platformCacheKey({ buildMode, nodeVersion, platform, arch, libc }) {
+  const parts = [
+    buildMode && `mode=${buildMode}`,
+    nodeVersion && `node=${nodeVersion}`,
+    platform && `platform=${platform}`,
+    arch && `arch=${arch}`,
+    libc && `libc=${libc}`,
+  ].filter(Boolean)
+  if (!parts.length) {
+    return ''
+  }
+  return createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 16)
 }
 
 /**

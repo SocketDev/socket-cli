@@ -251,69 +251,6 @@ export function resolveCheckpointBuildDir(stage, ctx) {
   return ctx.paths.buildDir
 }
 
-export async function runStage(stage, ctx, stageParams) {
-  const { buildMode, forceRebuild, logger } = ctx
-
-  if (stage.skipInDev && buildMode === 'dev') {
-    logger.substep(`Skipping ${stage.name} (dev build)`)
-    return
-  }
-
-  if (typeof stage.skip === 'function' && stage.skip(ctx)) {
-    logger.substep(`Skipping ${stage.name} (skip predicate)`)
-    return
-  }
-
-  const buildDir = resolveCheckpointBuildDir(stage, ctx)
-  const sourcePaths = [
-    path.join(ctx.packageRoot, 'external-tools.json'),
-    path.join(ctx.packageRoot, 'package.json'),
-    ...(stage.sourcePaths ?? []),
-  ].filter(p => existsSync(p))
-
-  const platformMeta = stage.shared
-    ? {}
-    : {
-        buildMode,
-        nodeVersion: ctx.nodeVersion,
-        platform: process.platform,
-        arch: process.arch,
-      }
-
-  const shouldProceed = await shouldRun(
-    buildDir,
-    '',
-    stage.name,
-    forceRebuild,
-    sourcePaths,
-    platformMeta,
-  )
-
-  if (!shouldProceed) {
-    // oxlint-disable-next-line socket/no-status-emoji -- substep takes its own indent prefix; ✓ marks the cache-hit state.
-    logger.substep(`✓ ${stage.name} up-to-date (cached)`)
-    return
-  }
-
-  logger.step(`Running ${stage.name}`)
-  const result = (await stage.run(ctx, stageParams)) ?? {}
-  const {
-    artifactPath,
-    binaryPath,
-    binarySize,
-    smokeTest = async () => {},
-  } = result
-
-  await createCheckpoint(buildDir, stage.name, smokeTest, {
-    ...(artifactPath ? { artifactPath } : {}),
-    ...(binaryPath ? { binaryPath } : {}),
-    ...(binarySize !== undefined ? { binarySize } : {}),
-    packageRoot: ctx.packageRoot,
-    sourcePaths,
-    ...platformMeta,
-  })
-}
-
 /**
  * Validate + run a pipeline. On --cache-key, prints the key and exits without
  * building. Returns the context so the caller can render a summary.
@@ -489,4 +426,67 @@ export async function runPipelineCli(options) {
     process.exitCode = 1
     throw e
   }
+}
+
+export async function runStage(stage, ctx, stageParams) {
+  const { buildMode, forceRebuild, logger } = ctx
+
+  if (stage.skipInDev && buildMode === 'dev') {
+    logger.substep(`Skipping ${stage.name} (dev build)`)
+    return
+  }
+
+  if (typeof stage.skip === 'function' && stage.skip(ctx)) {
+    logger.substep(`Skipping ${stage.name} (skip predicate)`)
+    return
+  }
+
+  const buildDir = resolveCheckpointBuildDir(stage, ctx)
+  const sourcePaths = [
+    path.join(ctx.packageRoot, 'external-tools.json'),
+    path.join(ctx.packageRoot, 'package.json'),
+    ...(stage.sourcePaths ?? []),
+  ].filter(p => existsSync(p))
+
+  const platformMeta = stage.shared
+    ? {}
+    : {
+        buildMode,
+        nodeVersion: ctx.nodeVersion,
+        platform: process.platform,
+        arch: process.arch,
+      }
+
+  const shouldProceed = await shouldRun(
+    buildDir,
+    '',
+    stage.name,
+    forceRebuild,
+    sourcePaths,
+    platformMeta,
+  )
+
+  if (!shouldProceed) {
+    // oxlint-disable-next-line socket/no-status-emoji -- substep takes its own indent prefix; ✓ marks the cache-hit state.
+    logger.substep(`✓ ${stage.name} up-to-date (cached)`)
+    return
+  }
+
+  logger.step(`Running ${stage.name}`)
+  const result = (await stage.run(ctx, stageParams)) ?? {}
+  const {
+    artifactPath,
+    binaryPath,
+    binarySize,
+    smokeTest = async () => {},
+  } = result
+
+  await createCheckpoint(buildDir, stage.name, smokeTest, {
+    ...(artifactPath ? { artifactPath } : {}),
+    ...(binaryPath ? { binaryPath } : {}),
+    ...(binarySize !== undefined ? { binarySize } : {}),
+    packageRoot: ctx.packageRoot,
+    sourcePaths,
+    ...platformMeta,
+  })
 }

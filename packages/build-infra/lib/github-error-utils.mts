@@ -26,21 +26,6 @@ const TRANSIENT_ERROR_PATTERNS = [
 ]
 
 /**
- * Extract error message from various error types.
- * @param {Error|string|unknown} error - The error to extract message from.
- * @returns {string} The error message.
- */
-export function getErrorMessage(error) {
-  if (typeof error === 'string') {
-    return error
-  }
-  if (error instanceof Error) {
-    return error.message
-  }
-  return error?.message || 'Unknown error'
-}
-
-/**
  * Fetch GitHub status and return a human-readable summary.
  * @returns {Promise<{status: string, description: string, url: string}|undefined>}
  */
@@ -62,6 +47,21 @@ export async function checkGitHubStatus() {
     // GitHub status check failed - don't let this block error reporting.
   }
   return undefined
+}
+
+/**
+ * Extract error message from various error types.
+ * @param {Error|string|unknown} error - The error to extract message from.
+ * @returns {string} The error message.
+ */
+export function getErrorMessage(error) {
+  if (typeof error === 'string') {
+    return error
+  }
+  if (error instanceof Error) {
+    return error.message
+  }
+  return error?.message || 'Unknown error'
 }
 
 /**
