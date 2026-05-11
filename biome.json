@@ -10,9 +10,11 @@
       "!**/.github",
       "!**/.husky",
       "!**/.nvm",
+      "!.pnpm-store",
       "!**/.rollup.cache",
       "!**/.type-coverage",
       "!**/.vscode",
+      "!.claude/worktrees",
       "!**/coverage",
       "!**/package.json",
       "!**/package-lock.json"

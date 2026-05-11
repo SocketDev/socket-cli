@@ -9,6 +9,13 @@ export default defineConfig({
     // from racing on the npm _npx cache directory.
     fileParallelism: false,
     include: ['**/*.e2e.test.mts'],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '.claude/worktrees/**',
+      '.pnpm-store/**',
+      '**/.{idea,git,cache,output,temp}/**',
+    ],
     coverage: {
       exclude: [
         '**/{eslint,vitest}.config.*',

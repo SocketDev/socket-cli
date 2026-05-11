@@ -4,6 +4,7 @@ Thumbs.db
 /.env
 /.env.local
 /.nvm
+/.pnpm-store
 /.rollup.cache
 /.type-coverage
 /.vscode
